@@ -81,7 +81,7 @@ namespace Channel {
 
     type alias Lock = ##java.util.concurrent.locks.Lock
 
-    type alias LockConditionPair = (Lock, Condition)
+    type alias LockConditionPair = (Lock, Condition) /// TODO: change to (ReentrantLock, Condition)
 
     pub def getLock(pair: LockConditionPair): Lock = match pair {
             case (lock, _)   => lock
@@ -90,6 +90,20 @@ namespace Channel {
     pub def getCondition(pair: LockConditionPair): Condition = match pair {
             case (_, cond)   => cond
         }
+
+    def java_signalAll(cond: Condition): Unit & Impure =
+        import java.util.concurrent.locks.Condition.signalAll() as signalAll;
+        signalAll(cond);
+        ()
+    
+    def java_lock(reentrantLock: ReentrantLock): Unit & Impure =
+        import java.util.concurrent.locks.ReentrantLock.lock() as lock;
+        lock(reentrantLock);
+        ()
+    def java_unlock(reentrantLock: ReentrantLock): Unit & Impure =
+        import java.util.concurrent.locks.ReentrantLock.unlock() as unlock;
+        unlock(reentrantLock);
+        ()
 
     type alias ReentrantLock = ##java.util.concurrent.locks.ReentrantLock
 
@@ -214,4 +228,110 @@ namespace Channel {
         getChannelLock(c).r_unlock();
         c
 
+
+def cmp(a: Channele[a], b: Channele[a]): Int32=
+    let a_id = getId(a);
+    let b_id = getId(b);
+    if (a_id == b_id) (0)
+    else if (a_id > b_id) (1)
+    else (-1)
+
+def sortChannels(channels: Array[Channele[a]]): Array[Channele[a]] & Impure=
+    Array.sortWith(cmp, channels)
+
+def lock(chan: Channele[a]): Unit & Impure=
+    let lock = getChannelLock(chan);
+    java_lock(lock);
+    ()
+
+def unlock(chan: Channele[a]): Unit & Impure= try {
+    let lock = getChannelLock(chan);
+    java_unlock(lock);
+    ()
+} catch {
+    case _: ##java.lang.Exception => ()
+}
+
+def lockAllChannels(channels: Array[Channele[a]]): Unit & Impure=
+    Array.foreach(lock,channels);
+    ()
+def unlockAllChannels(channels: Array[Channele[a]]): Unit & Impure=
+    Array.foreach(unlock,channels);
+    ()
+
+
+def tryGet(chan: Channele[a]): a & Impure=
+    lock(chan);
+    let queue = getElementQueue(chan); ///TODO move inside try/catch and return null in catch
+    /// let len = MutList.length(queue)
+    let element = MutList.get(0,queue); 
+    try {
+        match element {
+            case e => {
+                unlock(chan);
+                e
+            }
+            case _ => {
+                let ws = getWaitingSetters(chan);
+                java_signalAll(ws);
+                unlock(chan);
+                element
+            }
+        }
+    } catch {
+        case _: ##java.lang.Exception => { unlock(chan); element }
+    }
+
+
+/// def get_internal_loop(chan: Channele[a], e: Option[a]): Unit & Impure=
+///     let queue = getElementQueue(chan);
+///     /// let e = MutList.get(0,queue);
+///     match e {
+///             case _ => { //not null??
+///                 ()
+///             }
+///             case None => { ///null
+///                 let conditionLock = newReentrantLock();
+///                 java_lock(conditionLock);
+///                 try {
+///                     let condition = newCondition(conditionLock);
+///                     addGetter(chan, conditionLock, condition);
+///                     try {
+///                         let channelLock = getChannelLock(chan);
+///                         java_unlock(channelLock);
+///                         java_await(condition)
+///                     } catch {
+///                         case _: ##java.lang.Exception => { lock(chan) }
+///                     }
+///                    /// e = MutList.get(0,queue);
+///                 } catch {
+///                     case _: ##java.lang.Exception => { java_unlock(conditionLock); 
+///                                                        get_internal_loop(chan,MutList.get(0,queue)) 
+///                     }
+///                 }
+///             }
+///         }
+
+    
+    
+
+/// def get(chan: Channele[a]): a & Impure=
+///     lock(chan);
+///     let queue = getElementQueue(chan);
+///     let e = MutList.get(0,queue);
+///     try {
+///         match e {
+///             case element => {
+///                 element
+///             }
+///             case _ => { ///null
+///                 get_internal_loop(chan,e);
+///                 java_signalAll(getWaitingSetters(chan));
+///                 unlock(chan);
+///                 e
+///             }
+///         }
+///     } catch {
+///         case _: ##java.lang.Exception => e
+///   }
 }
