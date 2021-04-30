@@ -155,7 +155,10 @@ namespace Channel {
         // If channel not full, return
         if (MutList.length(getElementQueue(c)) < bufferSize) ()
         // Else, wait
-        else getWaitingSetters(c).await()
+        else {
+        getWaitingSetters(c).await();
+        loopOnFullChannel(c, bufferSize)
+        }
     } catch {
         case _: ##java.lang.Exception => ()
     }
