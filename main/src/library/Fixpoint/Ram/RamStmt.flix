@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
+use Fixpoint/Ast.Constraint;
+
 namespace Fixpoint/Ram {
     pub enum RamStmt[v] {
+        case Facts(Array[Constraint[v]])
         case Insert(RelOp[v])
         case Merge(RamSym[v], RamSym[v])
         case Assign(RamSym[v], RamSym[v])
@@ -29,6 +32,7 @@ namespace Fixpoint/Ram {
         pub def toString(stmt: RamStmt[v]): String =
             let nl = String.lineSeparator();
             match stmt {
+                case Facts(fs) => Array.formatWith(ToString.toString, ";${nl}", fs) as & Pure
                 case Insert(op) => ToString.toString(op)
                 case Merge(src, dst) => "merge ${src} into ${dst}"
                 case Assign(lhs, rhs) => "${lhs} := ${rhs}"
