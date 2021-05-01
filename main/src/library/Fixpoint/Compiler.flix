@@ -98,7 +98,7 @@ namespace Fixpoint {
     /// Negative atoms are compiled into if-statements.
     /// The rule `R(x) :- not A(x), B(x),  C(x).` compiles to:
     ///     search B$1 ∈ B do
-    ///         search C$2 C do
+    ///         search C$2 ∈ C do
     ///             if (B$1[0] == C$2[0] ∧ (B$1[0]) ∉ A) then
     ///                 project (B$1[0]) into R
     ///             end
@@ -138,14 +138,14 @@ namespace Fixpoint {
     /// Negative atoms are compiled into if-statements.
     /// The rule `R(x) :- not A(x), B(x),  C(x).` compiles to:
     ///     search B$1 ∈ ΔB do
-    ///         search C$2 C do
+    ///         search C$2 ∈ C do
     ///             if (B$1[0] == C$2[0] ∧ (B$1[0]) ∉ A ∧ (B$1[0]) ∉ R) then
     ///                 project (B$1[0]) into ΔR'
     ///             end
     ///         end
     ///     end
     ///     search B$1 ∈ B do
-    ///         search C$2 ΔC do
+    ///         search C$2 ∈ ΔC do
     ///             if (B$1[0] == C$2[0] ∧ (B$1[0]) ∉ A ∧ (B$1[0]) ∉ R) then
     ///                 project (B$1[0]) into ΔR'
     ///             end
@@ -162,7 +162,6 @@ namespace Fixpoint {
             let ramTerms = Array.map(compileHeadTerm(env), headTerms);
             let projection = RelOp.Project(ramTerms, RamSym.New(headPred, headDen));
             let join = compileBody(env, augBody);
-            // TODO: make sure membership tests are checked last.
             let loopBody = RelOp.If(BoolExp.NotMemberOf(ramTerms, RamSym.Full(headPred, headDen)) :: join, projection);
             let compile = delta -> { // `delta` designates the focused atom.
                 let insert =
@@ -254,12 +253,14 @@ namespace Fixpoint {
                 Array.mapWithIndex(term -> i -> (term, i), terms) |>
                 Array.foldRight(match (term, i) -> match term {
                     case BodyTerm.Var(var) => match denotation {
-                        case Denotation.Relational => Map.insert(var, RamTerm.RowLoad(rowVar, i))
+                        case Denotation.Relational =>
+                            Map.insertWith(_ -> t -> t, var, RamTerm.RowLoad(rowVar, i))
                         case Denotation.Latticenal(_, _, _, glb) =>
                             if (i < Array.length(terms) - 1)
-                                Map.insert(var, RamTerm.RowLoad(rowVar, i))
+                                Map.insertWith(_ -> t -> t, var, RamTerm.RowLoad(rowVar, i))
                             else
-                                Map.insertWith(t1 -> t2 -> RamTerm.Meet(glb, t1, t2), var, RamTerm.LoadLatVar(rowVar))
+                                let f = t1 -> t2 -> RamTerm.Meet(glb, t1, t2);
+                                Map.insertWith(f, var, RamTerm.LoadLatVar(rowVar))
                     }
                     case _ => x -> x
                 }, acc)

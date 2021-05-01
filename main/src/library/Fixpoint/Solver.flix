@@ -41,6 +41,7 @@ namespace Fixpoint {
     pub def solveWithStratification(d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] with Order[v], Eq[v], ToString[v] =
         let _ = notifyPreSolve(d, stf);
         let model = (compile(d, stf) |>
+         simplifyStmt |>
          queryStmt |>
          lowerStmt |>
          interpret |>
