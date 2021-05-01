@@ -59,6 +59,7 @@ namespace Fixpoint {
     /// Step 1 and Step 2 are implemented as one pass.
     ///
     pub def queryStmt(stmt: RamStmt[v]): RamStmt[v] = match stmt {
+        case RamStmt.Facts(_) => stmt
         case RamStmt.Insert(op) =>
             let (innerOp, ground) = queryOp(op, Set#{});
             if (List.isEmpty(ground))

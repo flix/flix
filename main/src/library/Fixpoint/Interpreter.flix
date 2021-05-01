@@ -29,6 +29,27 @@ namespace Fixpoint {
         db
 
     def evalStmt(db: Database[v], stmt: RamStmt[v]): Unit & Impure with Order[v], Eq[v], ToString[v] = match stmt {
+        case RamStmt.Facts(fs) =>
+            use Fixpoint/Ast.HeadPredicate.HeadAtom;
+            use Fixpoint/Ast.Constraint.Constraint;
+            use Fixpoint/Ast.PredSym.PredSym;
+            Array.foreach(match Constraint(HeadAtom(PredSym(headSym), denotation, terms), _) -> {
+                let ramSym = RamSym.Full(headSym, denotation);
+                let rel = MutMap.getOrElsePut!(ramSym, MutMap.empty(), db);
+                match denotation {
+                    case Denotation.Relational =>
+                        let tuple = Array.map(headTermValue, terms);
+                        MutMap.put!(tuple, default, rel)
+                    case Denotation.Latticenal(bot, leq, lub, _) =>
+                        let len = Array.length(terms);
+                        let key = Array.init(i -> headTermValue(terms[i]), len - 1);
+                        let lat = headTermValue(terms[len - 1]);
+                        if (lat `leq` bot)
+                            ()
+                        else
+                            MutMap.putWith!(lub, key, lat, rel)
+                }
+            }, fs)
         case RamStmt.Insert(relOp) => evalOp(db, allocEnv(0, relOp), relOp)
         case RamStmt.Merge(srcSym, dstSym) =>
             let dst = MutMap.getOrElsePut!(dstSym, MutMap.empty(), db);

@@ -34,7 +34,7 @@ namespace Fixpoint {
     def compile(cs: Datalog[v], strat: Map[PredSym, Int32]): RamStmt[v] with ToString[v] =
         let doIt = match Datalog(facts, rules) -> {
             let stmts = MutList.new();
-            Array.foreach(compileRule(stmts), facts);
+            MutList.push!(RamStmt.Facts(facts), stmts);
             Map.invert(strat) |>
             Map.foreach(_ -> restrict(rules) >> compileStratum(stmts));
             RamStmt.Seq(MutList.toArray(stmts))
