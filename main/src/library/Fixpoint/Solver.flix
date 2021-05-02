@@ -436,8 +436,15 @@ namespace Fixpoint {
     ///
     def factsOf(f: Array[HeadTerm[v]] -> t & e, p: PredSym, d: Datalog[v]): Array[t] & Impure =
         let Datalog(facts, _) = d;
-        restrict(facts, Set#{p}) |>
-        Array.map(match Constraint(HeadAtom(_, _, terms), _) -> f(terms))
+        let factsP = MutList.new();
+        MutList.reserve!(Array.length(facts), factsP);
+        Array.foreach(match Constraint(HeadAtom(headPred, _, terms), _) -> {
+            if (headPred == p)
+                MutList.push!(f(terms), factsP)
+            else
+                ()
+        }, facts);
+        MutList.toArray(factsP)
 
     ///
     /// Returns the value of the given head term `v`.
