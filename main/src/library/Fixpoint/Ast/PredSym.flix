@@ -28,9 +28,10 @@ namespace Fixpoint/Ast {
     }
 
     instance Eq[PredSym] {
-        pub def eq(x: PredSym, y: PredSym): Bool = match x <=> y {
-            case EqualTo => true
-            case _ => false
+        pub def eq(x: PredSym, y: PredSym): Bool = match x {
+            case PredSym(s1) => match y {
+                case PredSym(s2) => s1 == s2
+            }
         }
     }
 
