@@ -146,7 +146,7 @@ object BytecodeCompiler {
         SWAP ~
         POP
 
-    case Expression.Ref(exp, className, tpe, loc) =>
+    case Expression.Ref(exp, tpe, loc) =>
       val tpeRRef = RType.convert(tpe)
       WithSource[R](loc) ~[R ** (T with Cat1)] // note: this explicit type is necessary
         NEW(tpeRRef) ~
@@ -156,12 +156,12 @@ object BytecodeCompiler {
         compileExp(exp) ~
         PUTFIELD(tpeRRef, GenRefClasses.ValueFieldName, exp.tpe)
 
-    case Expression.Deref(exp, className, tpe, loc) =>
+    case Expression.Deref(exp, tpe, loc) =>
       WithSource[R](loc) ~
         compileExp(exp) ~
         XGETFIELD(RType.convert(exp.tpe), GenRefClasses.ValueFieldName, tpe)
 
-    case Expression.Assign(exp1, exp2, className, tpe, loc) =>
+    case Expression.Assign(exp1, exp2, tpe, loc) =>
       WithSource[R](loc) ~
         compileExp(exp1) ~
         compileExp(exp2) ~

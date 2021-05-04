@@ -17,23 +17,24 @@
 package ca.uwaterloo.flix.language.phase.sjvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.FinalAst.Root
+import ca.uwaterloo.flix.language.ast.ErasedAst.Root
 import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.RRefType._
 import ca.uwaterloo.flix.language.ast.RType._
 import ca.uwaterloo.flix.language.ast.{PType, RType}
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
+import ca.uwaterloo.flix.language.phase.sjvm.ClassMaker.Mod
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 
 /**
-  * Generates bytecode for the ref classes.
-  */
+ * Generates bytecode for the ref classes.
+ */
 object GenRefClasses {
   val ValueFieldName: String = "value"
 
   /**
-    * Returns the bytecode for the ref classes built-in to the Flix language.
-    */
+   * Returns the bytecode for the ref classes built-in to the Flix language.
+   */
   def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
 
     // Generating each ref class
@@ -56,13 +57,13 @@ object GenRefClasses {
   }
 
   /**
-    * Generating class `className` with value of type `innerType`
-    */
+   * Generating class `className` with value of type `innerType`
+   */
   private def genByteCode[T <: PType](refType: RReference[PRef[T]], valueFieldType: RType[T])(implicit root: Root, flix: Flix): Array[Byte] = {
-    val classMaker = ClassMaker.openClassWriter(refType, isFinal = true)
+    val classMaker = ClassMaker.openClassWriter(refType)
 
     // Generate the instance field
-    classMaker.mkField(ValueFieldName, valueFieldType, isPublic = true)
+    classMaker.mkField(ValueFieldName, valueFieldType, Mod.isPublic)
 
     val constructorDescriptor = JvmName.getMethodDescriptor(valueFieldType, None)
     classMaker.mkConstructor(genConstructor(valueFieldType), constructorDescriptor)
@@ -71,11 +72,11 @@ object GenRefClasses {
   }
 
   /**
-    * Generating constructor for the class with value of type `innerType`
-    */
+   * Generating constructor for the class with value of type `innerType`
+   */
   def genConstructor[T <: PType](valueFieldType: RType[T]): F[StackNil] => F[StackEnd] = {
     START[StackNil] ~
-    THISLOAD(tag[PRef[T]]) ~
+      THISLOAD(tag[PRef[T]]) ~
       INVOKEOBJECTCONSTRUCTOR ~
       RETURN
   }

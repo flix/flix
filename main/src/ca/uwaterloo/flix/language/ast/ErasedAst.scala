@@ -30,7 +30,8 @@ object ErasedAst {
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
-  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: List[ErasedAst.FormalParam], exp: ErasedAst.Expression[PType], tpe: RType[PType], loc: SourceLocation) {
+  // TODO(JLS): fix this _ <: PType
+  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: List[ErasedAst.FormalParam], exp: ErasedAst.Expression[PType], tpe: RType[_ <: PType], loc: SourceLocation) {
     var method: Method = _
   }
 

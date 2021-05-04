@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.api
 import ca.uwaterloo.flix.language.ast.Ast.Input
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase._
-import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
 import ca.uwaterloo.flix.language.phase.sjvm.SjvmBackend
 import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult
@@ -34,35 +33,35 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 /**
-  * Main programmatic interface for Flix.
-  */
+ * Main programmatic interface for Flix.
+ */
 class Flix {
 
   /**
-    * A sequence of strings to parsed into Flix ASTs.
-    */
+   * A sequence of strings to parsed into Flix ASTs.
+   */
   private val strings = ListBuffer.empty[String]
 
   /**
-    * A sequence of paths to be parsed into Flix ASTs.
-    */
+   * A sequence of paths to be parsed into Flix ASTs.
+   */
   private val paths = ListBuffer.empty[Path]
 
   /**
-    * A sequence of inputs to be parsed into Flix ASTs.
-    */
+   * A sequence of inputs to be parsed into Flix ASTs.
+   */
   private val inputs = ListBuffer.empty[Input]
 
   /**
-    * A set of reachable root definitions.
-    */
+   * A set of reachable root definitions.
+   */
   private val reachableRoots = mutable.Set.empty[Symbol.DefnSym]
 
   /**
-    * A sequence of internal inputs to be parsed into Flix ASTs.
-    *
-    * The core library *must* be present for any program to compile.
-    */
+   * A sequence of internal inputs to be parsed into Flix ASTs.
+   *
+   * The core library *must* be present for any program to compile.
+   */
   private val coreLibrary = List(
     // Prelude
     "Prelude.flix" -> LocalResource.get("/src/library/Prelude.flix"),
@@ -107,10 +106,10 @@ class Flix {
   )
 
   /**
-    * A sequence of internal inputs to be parsed into Flix ASTs.
-    *
-    * The standard library is not required to be present for at least some programs to compile.
-    */
+   * A sequence of internal inputs to be parsed into Flix ASTs.
+   *
+   * The standard library is not required to be present for at least some programs to compile.
+   */
   private val standardLibrary = List(
     "Array.flix" -> LocalResource.get("/src/library/Array.flix"),
     "Benchmark.flix" -> LocalResource.get("/src/library/Benchmark.flix"),
@@ -167,7 +166,7 @@ class Flix {
     "StringBuilder.flix" -> LocalResource.get("/src/library/StringBuilder.flix"),
     "RedBlackTree.flix" -> LocalResource.get("/src/library/RedBlackTree.flix"),
     "GetOpt.flix" -> LocalResource.get("/src/library/GetOpt.flix"),
-    
+
     "Fixpoint/Compiler.flix" -> LocalResource.get("/src/library/Fixpoint/Compiler.flix"),
     "Fixpoint/Debugging.flix" -> LocalResource.get("/src/library/Fixpoint/Debugging.flix"),
     "Fixpoint/IndexSelection.flix" -> LocalResource.get("/src/library/Fixpoint/IndexSelection.flix"),
@@ -203,48 +202,48 @@ class Flix {
   )
 
   /**
-    * A case class to track the compile time spent in a phase and its sub-phases.
-    */
+   * A case class to track the compile time spent in a phase and its sub-phases.
+   */
   case class PhaseTime(phase: String, time: Long, subphases: List[(String, Long)])
 
   /**
-    * A map to track the time spent in each phase and sub-phase.
-    */
+   * A map to track the time spent in each phase and sub-phase.
+   */
   var phaseTimers: ListBuffer[PhaseTime] = ListBuffer.empty
 
   /**
-    * The current phase we are in. Initially null.
-    */
+   * The current phase we are in. Initially null.
+   */
   var currentPhase: PhaseTime = _
 
   /**
-    * The default assumed charset.
-    */
+   * The default assumed charset.
+   */
   val defaultCharset: Charset = Charset.forName("UTF-8")
 
   /**
-    * The current Flix options.
-    */
+   * The current Flix options.
+   */
   var options: Options = Options.Default
 
   /**
-    * The fork join pool for `this` Flix instance.
-    */
+   * The fork join pool for `this` Flix instance.
+   */
   var forkJoinPool: java.util.concurrent.ForkJoinPool = _
 
   /**
-    * The fork join task support for `this` Flix instance.
-    */
+   * The fork join task support for `this` Flix instance.
+   */
   var forkJoinTaskSupport: scala.collection.parallel.ForkJoinTaskSupport = _
 
   /**
-    * The symbol generator associated with this Flix instance.
-    */
+   * The symbol generator associated with this Flix instance.
+   */
   val genSym = new GenSym()
 
   /**
-    * Adds the given string `s` to the list of strings to be parsed.
-    */
+   * Adds the given string `s` to the list of strings to be parsed.
+   */
   def addStr(s: String): Flix = {
     if (s == null)
       throw new IllegalArgumentException("'s' must be non-null.")
@@ -253,8 +252,8 @@ class Flix {
   }
 
   /**
-    * Adds the given path `p` to the list of paths to be parsed.
-    */
+   * Adds the given path `p` to the list of paths to be parsed.
+   */
   def addPath(p: String): Flix = {
     if (p == null)
       throw new IllegalArgumentException("'p' must be non-null.")
@@ -263,8 +262,8 @@ class Flix {
   }
 
   /**
-    * Adds the given string `text` with the given `name`.
-    */
+   * Adds the given string `text` with the given `name`.
+   */
   def addInput(name: String, text: String): Flix = {
     if (name == null)
       throw new IllegalArgumentException("'name' must be non-null.")
@@ -275,8 +274,8 @@ class Flix {
   }
 
   /**
-    * Adds the given path `p` to the list of paths to be parsed.
-    */
+   * Adds the given path `p` to the list of paths to be parsed.
+   */
   def addPath(p: Path): Flix = {
     if (p == null)
       throw new IllegalArgumentException("'p' must be non-null.")
@@ -292,20 +291,20 @@ class Flix {
   }
 
   /**
-    * Adds the given fully-qualified name as a reachable root.
-    */
+   * Adds the given fully-qualified name as a reachable root.
+   */
   def addReachableRoot(fqn: String): scala.Unit = {
     reachableRoots += Symbol.mkDefnSym(fqn)
   }
 
   /**
-    * Returns the reachable root definitions.
-    */
+   * Returns the reachable root definitions.
+   */
   def getReachableRoots: Set[Symbol.DefnSym] = reachableRoots.toSet
 
   /**
-    * Sets the options used for this Flix instance.
-    */
+   * Sets the options used for this Flix instance.
+   */
   def setOptions(opts: Options): Flix = {
     if (opts == null)
       throw new IllegalArgumentException("'opts' must be non-null.")
@@ -314,8 +313,8 @@ class Flix {
   }
 
   /**
-    * Compiles the Flix program and returns a typed ast.
-    */
+   * Compiles the Flix program and returns a typed ast.
+   */
   def check(): Validation[TypedAst.Root, CompilationError] = {
     // Initialize fork join pool.
     initForkJoin()
@@ -349,8 +348,8 @@ class Flix {
   }
 
   /**
-    * Compiles the given typed ast to an executable ast.
-    */
+   * Compiles the given typed ast to an executable ast.
+   */
   def codeGen(typedAst: TypedAst.Root): Validation[CompilationResult, CompilationError] = {
     // Initialize fork join pool.
     initForkJoin()
@@ -371,8 +370,8 @@ class Flix {
       QuickChecker |>
       Verifier |>
       Eraser |>
-      //SjvmBackend |>
-      JvmBackend |>
+      SjvmBackend |>
+      //    JvmBackend |>
       Finish
 
     // Apply the pipeline to the parsed AST.
@@ -386,16 +385,16 @@ class Flix {
   }
 
   /**
-    * Compiles the given typed ast to an executable ast.
-    */
+   * Compiles the given typed ast to an executable ast.
+   */
   def compile(): Validation[CompilationResult, CompilationError] =
     check() flatMap {
       case typedAst => codeGen(typedAst)
     }
 
   /**
-    * Enters the phase with the given name.
-    */
+   * Enters the phase with the given name.
+   */
   def phase[A](phase: String)(f: => A): A = {
     // Initialize the phase time object.
     currentPhase = PhaseTime(phase, 0, Nil)
@@ -436,8 +435,8 @@ class Flix {
   }
 
   /**
-    * Enters the sub-phase with the given name.
-    */
+   * Enters the sub-phase with the given name.
+   */
   def subphase[A](subphase: String)(f: => A): A = {
     // Measure the execution time.
     val t = System.nanoTime()
@@ -453,8 +452,8 @@ class Flix {
   }
 
   /**
-    * Returns a list of inputs constructed from the strings and paths passed to Flix.
-    */
+   * Returns a list of inputs constructed from the strings and paths passed to Flix.
+   */
   private def getInputs: List[Input] = {
     val si1 = getStringInputs
     val si2 = getPathInputs
@@ -464,15 +463,15 @@ class Flix {
   }
 
   /**
-    * Returns the inputs corresponding to the strings passed to Flix.
-    */
+   * Returns the inputs corresponding to the strings passed to Flix.
+   */
   private def getStringInputs: List[Input] = strings.foldLeft(List.empty[Input]) {
     case (xs, s) => Input.Str(s) :: xs
   }
 
   /**
-    * Returns the inputs corresponding to the paths passed to Flix.
-    */
+   * Returns the inputs corresponding to the paths passed to Flix.
+   */
   private def getPathInputs: List[Input] = paths.foldLeft(List.empty[Input]) {
     case (xs, p) if p.getFileName.toString.endsWith(".flix") => Input.TxtFile(p) :: xs
     case (xs, p) if p.getFileName.toString.endsWith(".fpkg") => Input.PkgFile(p) :: xs
@@ -480,23 +479,23 @@ class Flix {
   }
 
   /**
-    * Returns the inputs for the given list of (path, text) pairs.
-    */
+   * Returns the inputs for the given list of (path, text) pairs.
+   */
   private def getInputs(xs: List[(String, String)]): List[Input] = xs.foldLeft(List.empty[Input]) {
     case (xs, (name, text)) => Input.Internal(name, text) :: xs
   }
 
   /**
-    * Initializes the fork join pools.
-    */
+   * Initializes the fork join pools.
+   */
   private def initForkJoin(): Unit = {
     forkJoinPool = new java.util.concurrent.ForkJoinPool(options.threads)
     forkJoinTaskSupport = new scala.collection.parallel.ForkJoinTaskSupport(forkJoinPool)
   }
 
   /**
-    * Shuts down the fork join pools.
-    */
+   * Shuts down the fork join pools.
+   */
   private def shutdownForkJoin(): Unit = {
     forkJoinPool.shutdown()
   }
