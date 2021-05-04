@@ -917,7 +917,32 @@ namespace Array {
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def filter(f: a -> Bool, a: Array[a]): Array[a] & Impure =
-        foldRight((x,xs) -> if (f(x)) x :: xs else xs, Nil, a) |> List.toArray
+        let len = length(a);
+        if (len < 1) {
+            []
+        } else {
+            let out = new(a[0], len);
+            let endPos = filterHelper(f, 0, a, 0, out);
+            slice(out, 0, endPos)
+        }
+
+    ///
+    /// Helper function for `filter`.
+    /// The array `out` is mutated if successes are found as the initial array `a` is iterated.
+    /// The returned Int32 is the current "write position" and it tells the calling function where to slice `out`.
+    ///
+    def filterHelper(f: a -> Bool, aix: Int32, a: Array[a], oix: Int32, out: Array[a]): Int32 & Impure =
+        if (aix >= length(a))
+            oix
+        else {
+            let x = a[aix];
+            if (f(x)) {
+                out[oix] = x;
+                filterHelper(f, aix + 1, a, oix + 1, out)
+            } else {
+                filterHelper(f, aix + 1, a, oix, out)
+            }
+        }
 
     ///
     /// Returns a pair of lists `(a1, a2)`.
