@@ -35,7 +35,7 @@ object Bootstrap {
     //
     // Load each class into the JVM in a fresh class loader.
     //
-    val loadedClasses: Map[JvmName, Class[_]] = ??? // TODO(JLS): BytecodeLoader.loadAll(classes)
+    val loadedClasses: Map[JvmName, Class[_]] = BytecodeLoader.loadAll(classes)
 
     //
     // Print the number of loaded classes, if debugging and verbosity is enabled.

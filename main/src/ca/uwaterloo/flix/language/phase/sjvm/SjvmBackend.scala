@@ -87,8 +87,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
       //
       // Generate lazy classes.
       //
-
-      val lazyClasses = GenLazyClasses.gen()
+//      val lazyClasses = GenLazyClasses.gen()
 
       //
       // Collect all the classes and interfaces together.
@@ -96,7 +95,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
       List(
         mainClass,
         refClasses,
-        lazyClasses
+//        lazyClasses
       ).reduce(_ ++ _)
     }
 
