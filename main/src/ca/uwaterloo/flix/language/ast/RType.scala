@@ -178,7 +178,7 @@ object RRefType {
   }
 
   case class RArrow(args: List[RType[PType]], result: RType[PType]) extends RRefType[PFunction] {
-    override val jvmName: JvmName = JvmName(Nil, s"Fn${args.length}${JvmName.reservedDelimiter}${args.map(_.toErasedString).mkString(JvmName.reservedDelimiter)}")
+    override val jvmName: JvmName = JvmName(Nil, s"Fn${args.length}${JvmName.reservedDelimiter}${(args ::: result :: Nil).map(_.toErasedString).mkString(JvmName.reservedDelimiter)}")
   }
 
   case class RRecordEmpty() extends RRefType[PAnyObject] {
