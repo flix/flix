@@ -23,13 +23,15 @@ namespace Fixpoint {
     type alias SearchEnv[v] = (Array[Tuple[v]], Array[v])
 
     def interpret(stmt: RamStmt[v]): Database[v] & Impure with Order[v], Eq[v], ToString[v] =
+        interpretWithDatabase(MutMap.empty(), stmt)
+
+    def interpretWithDatabase(db: Database[v], stmt: RamStmt[v]): Database[v] & Impure with Order[v], Eq[v], ToString[v] =
         let _ = notifyPreInterpret(stmt);
-        let db = MutMap.empty();
         evalStmt(db, stmt);
         db
 
     def evalStmt(db: Database[v], stmt: RamStmt[v]): Unit & Impure with Order[v], Eq[v], ToString[v] = match stmt {
-        case RamStmt.Facts(fs) =>
+        case RamStmt.Facts(fs) => // TODO: consider removing this.
             use Fixpoint/Ast.HeadPredicate.HeadAtom;
             use Fixpoint/Ast.Constraint.Constraint;
             use Fixpoint/Ast.PredSym.PredSym;

@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-use Boxable.box;
-use Boxable.unbox;
+use Boxable.{box, unbox};
 use Fixpoint/Ast.{Datalog, Constraint, HeadTerm, PredSym, Denotation};
-use Fixpoint/Ast.Datalog.Datalog;
+use Fixpoint/Ast.Datalog.{Datalog, Model, Join};
 use Fixpoint/Ast.Constraint.Constraint;
 use Fixpoint/Ast.HeadPredicate.HeadAtom;
 use Fixpoint/Ast.PredSym.PredSym;
+use Fixpoint/Ast.Denotation.{Relational, Latticenal};
 use Fixpoint/Ram.RamSym;
 
 namespace Fixpoint {
@@ -40,12 +40,19 @@ namespace Fixpoint {
     ///
     pub def solveWithStratification(d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] with Order[v], Eq[v], ToString[v] =
         let _ = notifyPreSolve(d, stf);
-        let model = (compile(d, stf) |>
-         simplifyStmt |>
-         queryStmt |>
-         lowerStmt |>
-         interpret |>
-         toAst) as & Pure;
+        let compiler = cs ->
+            compile(cs, stf) |>
+            simplifyStmt |>
+            queryStmt |>
+            lowerStmt;
+        let model = match d {
+            case Datalog(_) => compiler(d) |> interpret |> toModel
+            case Model(_) => d
+            case Join(Model(m), cs) =>
+                let db = Map.map(Map.toMut, m) |> Map.toMut;
+                compiler(cs) |> interpretWithDatabase(db) |> toModel
+            case _ => bug!("Datalog normalization bug")
+        } as & Pure;
         let _ = notifyPostSolve(model);
         model
 
@@ -54,17 +61,43 @@ namespace Fixpoint {
     /// I.e. the facts of the union is the union of the facts and likewise for rules.
     /// A fact or rule may occur twice in the Datalog program. This has no effect on its semantics.
     ///
-    pub def union(d1: Datalog[v], d2: Datalog[v]): Datalog[v] = match (d1, d2) {
+    pub def union(d1: Datalog[v], d2: Datalog[v]): Datalog[v] with Order[v] = match (d1, d2) {
         case (Datalog(edb1, idb1), Datalog(edb2, idb2)) =>
-            Datalog(Array.append(edb1, edb2), Array.append(idb1, idb2)) as & Pure
-    }
+            Datalog(Array.append(edb1, edb2), Array.append(idb1, idb2))
+        case (Model(db1), Model(db2)) =>
+            use Fixpoint/Ram.toDenotation;
+            let union = ramSym -> match toDenotation(ramSym) {
+                case Relational => Map.union
+                case Latticenal(_, _, lub, _) => Map.unionWith(lub)
+            };
+            Model(Map.unionWithKey(union, db1, db2))
+        case (Model(_), Datalog(_, _)) => Join(d1, d2)
+        case (Datalog(_, _), Model(_)) => Join(d2, d1)
+        case (Join(model, datalog), Datalog(_, _)) => Join(model, union(datalog, d2))
+        case (Datalog(_, _), Join(model, datalog)) => Join(model, union(datalog, d1))
+        case (Join(model, datalog), Model(_)) => Join(union(model, d2), datalog)
+        case (Model(_), Join(model, datalog)) => Join(union(model, d1), datalog)
+        case (Join(x, y), Join(z, w)) => Join(union(x, z), union(y, w))
+    } as & Pure
 
     ///
     /// Project all facts in the given Datalog program `d` that has `p` in its head.
     ///
-    pub def project(p: PredSym, d: Datalog[v]): Datalog[v] = match d {
-        case Datalog(facts, rules) => Datalog(restrict(facts, Set#{p}), rules)
-    }
+    pub def project(p: PredSym, d: Datalog[v]): Datalog[v] with Order[v] = match d {
+        case Datalog(facts, _) => Datalog(restrict(facts, Set#{p}), [])
+        case Model(db) =>
+            let PredSym(key) = p;
+            Map.query(ramSym -> match ramSym {
+                case RamSym.Full(relName, _) => match relName <=> key {
+                    case EqualTo => EqualTo
+                    case cmp => cmp
+                }
+                case _ => LessThan
+            }, db) |>
+            List.toMap |>
+            Model
+        case Join(d1, d2) => union(project(p, d1), project(p, d2))
+    } as & Pure
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -74,7 +107,7 @@ namespace Fixpoint {
     ///
     pub def projectInto1[f: Type -> Type, t1: Type](p: PredSym, ts: f[(t1)]):
         Datalog[Boxed] with Boxable[t1], Foldable[f] =
-        projectIntoX(match (v1) -> [HeadTerm.Lit(box(v1))] as & Pure, p, ts) as & Pure
+        projectIntoX(match (v1) -> [box(v1)] as & Pure, p, ts) as & Pure
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -85,8 +118,8 @@ namespace Fixpoint {
     pub def projectInto2[f: Type -> Type, t1: Type, t2: Type](p: PredSym, ts: f[(t1, t2)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Foldable[f] =
         projectIntoX(match (v1, v2) ->
-            [HeadTerm.Lit(box(v1)),
-             HeadTerm.Lit(box(v2))] as & Pure
+            [box(v1),
+             box(v2)] as & Pure
         , p, ts) as & Pure
 
     ///
@@ -98,9 +131,9 @@ namespace Fixpoint {
     pub def projectInto3[f: Type -> Type, t1: Type, t2: Type, t3: Type](p: PredSym, ts: f[(t1, t2, t3)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Foldable[f] =
         projectIntoX(match (v1, v2, v3) ->
-            [HeadTerm.Lit(box(v1)),
-             HeadTerm.Lit(box(v2)),
-             HeadTerm.Lit(box(v3))] as & Pure
+            [box(v1),
+             box(v2),
+             box(v3)] as & Pure
         , p, ts) as & Pure
 
     ///
@@ -113,10 +146,10 @@ namespace Fixpoint {
     pub def projectInto4[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type](p: PredSym, ts: f[(t1, t2, t3, t4)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Foldable[f] =
         projectIntoX(match (v1, v2, v3, v4) ->
-            [HeadTerm.Lit(box(v1)),
-             HeadTerm.Lit(box(v2)),
-             HeadTerm.Lit(box(v3)),
-             HeadTerm.Lit(box(v4))] as & Pure
+            [box(v1),
+             box(v2),
+             box(v3),
+             box(v4)] as & Pure
         , p, ts) as & Pure
 
     ///
@@ -129,11 +162,11 @@ namespace Fixpoint {
     pub def projectInto5[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Foldable[f] =
         projectIntoX(match (v1, v2, v3, v4, v5) ->
-            [HeadTerm.Lit(box(v1)),
-             HeadTerm.Lit(box(v2)),
-             HeadTerm.Lit(box(v3)),
-             HeadTerm.Lit(box(v4)),
-             HeadTerm.Lit(box(v5))] as & Pure
+            [box(v1),
+             box(v2),
+             box(v3),
+             box(v4),
+             box(v5)] as & Pure
         , p, ts) as & Pure
 
     ///
@@ -146,12 +179,12 @@ namespace Fixpoint {
     pub def projectInto6[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Foldable[f] =
         projectIntoX(match (v1, v2, v3, v4, v5, v6) ->
-            [HeadTerm.Lit(box(v1)),
-             HeadTerm.Lit(box(v2)),
-             HeadTerm.Lit(box(v3)),
-             HeadTerm.Lit(box(v4)),
-             HeadTerm.Lit(box(v5)),
-             HeadTerm.Lit(box(v6))] as & Pure
+            [box(v1),
+             box(v2),
+             box(v3),
+             box(v4),
+             box(v5),
+             box(v6)] as & Pure
         , p, ts) as & Pure
 
     ///
@@ -164,13 +197,13 @@ namespace Fixpoint {
     pub def projectInto7[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Foldable[f] =
         projectIntoX(match (v1, v2, v3, v4, v5, v6, v7) ->
-            [HeadTerm.Lit(box(v1)),
-             HeadTerm.Lit(box(v2)),
-             HeadTerm.Lit(box(v3)),
-             HeadTerm.Lit(box(v4)),
-             HeadTerm.Lit(box(v5)),
-             HeadTerm.Lit(box(v6)),
-             HeadTerm.Lit(box(v7))] as & Pure
+            [box(v1),
+             box(v2),
+             box(v3),
+             box(v4),
+             box(v5),
+             box(v6),
+             box(v7)] as & Pure
         , p, ts) as & Pure
 
     ///
@@ -184,14 +217,14 @@ namespace Fixpoint {
     pub def projectInto8[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Foldable[f] =
         projectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8) ->
-            [HeadTerm.Lit(box(v1)),
-             HeadTerm.Lit(box(v2)),
-             HeadTerm.Lit(box(v3)),
-             HeadTerm.Lit(box(v4)),
-             HeadTerm.Lit(box(v5)),
-             HeadTerm.Lit(box(v6)),
-             HeadTerm.Lit(box(v7)),
-             HeadTerm.Lit(box(v8))] as & Pure
+            [box(v1),
+             box(v2),
+             box(v3),
+             box(v4),
+             box(v5),
+             box(v6),
+             box(v7),
+             box(v8)] as & Pure
         , p, ts) as & Pure
 
     ///
@@ -205,15 +238,15 @@ namespace Fixpoint {
     pub def projectInto9[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Foldable[f] =
         projectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9) ->
-            [HeadTerm.Lit(box(v1)),
-             HeadTerm.Lit(box(v2)),
-             HeadTerm.Lit(box(v3)),
-             HeadTerm.Lit(box(v4)),
-             HeadTerm.Lit(box(v5)),
-             HeadTerm.Lit(box(v6)),
-             HeadTerm.Lit(box(v7)),
-             HeadTerm.Lit(box(v8)),
-             HeadTerm.Lit(box(v9))] as & Pure
+            [box(v1),
+             box(v2),
+             box(v3),
+             box(v4),
+             box(v5),
+             box(v6),
+             box(v7),
+             box(v8),
+             box(v9)] as & Pure
         , p, ts) as & Pure
 
     ///
@@ -229,16 +262,16 @@ namespace Fixpoint {
     pub def projectInto10[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Foldable[f] =
         projectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10) ->
-            [HeadTerm.Lit(box(v1)),
-             HeadTerm.Lit(box(v2)),
-             HeadTerm.Lit(box(v3)),
-             HeadTerm.Lit(box(v4)),
-             HeadTerm.Lit(box(v5)),
-             HeadTerm.Lit(box(v6)),
-             HeadTerm.Lit(box(v7)),
-             HeadTerm.Lit(box(v8)),
-             HeadTerm.Lit(box(v9)),
-             HeadTerm.Lit(box(v10))] as & Pure
+            [box(v1),
+             box(v2),
+             box(v3),
+             box(v4),
+             box(v5),
+             box(v6),
+             box(v7),
+             box(v8),
+             box(v9),
+             box(v10)] as & Pure
         , p, ts) as & Pure
 
     ///
@@ -254,17 +287,17 @@ namespace Fixpoint {
     pub def projectInto11[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Foldable[f] =
         projectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11) ->
-            [HeadTerm.Lit(box(v1)),
-             HeadTerm.Lit(box(v2)),
-             HeadTerm.Lit(box(v3)),
-             HeadTerm.Lit(box(v4)),
-             HeadTerm.Lit(box(v5)),
-             HeadTerm.Lit(box(v6)),
-             HeadTerm.Lit(box(v7)),
-             HeadTerm.Lit(box(v8)),
-             HeadTerm.Lit(box(v9)),
-             HeadTerm.Lit(box(v10)),
-             HeadTerm.Lit(box(v11))] as & Pure
+            [box(v1),
+             box(v2),
+             box(v3),
+             box(v4),
+             box(v5),
+             box(v6),
+             box(v7),
+             box(v8),
+             box(v9),
+             box(v10),
+             box(v11)] as & Pure
         , p, ts) as & Pure
 
     ///
@@ -280,18 +313,18 @@ namespace Fixpoint {
     pub def projectInto12[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type, t12: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Foldable[f] =
         projectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12) ->
-            [HeadTerm.Lit(box(v1)),
-             HeadTerm.Lit(box(v2)),
-             HeadTerm.Lit(box(v3)),
-             HeadTerm.Lit(box(v4)),
-             HeadTerm.Lit(box(v5)),
-             HeadTerm.Lit(box(v6)),
-             HeadTerm.Lit(box(v7)),
-             HeadTerm.Lit(box(v8)),
-             HeadTerm.Lit(box(v9)),
-             HeadTerm.Lit(box(v10)),
-             HeadTerm.Lit(box(v11)),
-             HeadTerm.Lit(box(v12))] as & Pure
+            [box(v1),
+             box(v2),
+             box(v3),
+             box(v4),
+             box(v5),
+             box(v6),
+             box(v7),
+             box(v8),
+             box(v9),
+             box(v10),
+             box(v11),
+             box(v12)] as & Pure
         , p, ts) as & Pure
 
     ///
@@ -307,19 +340,19 @@ namespace Fixpoint {
     pub def projectInto13[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type, t12: Type, t13: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Boxable[t13], Foldable[f] =
         projectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13) ->
-            [HeadTerm.Lit(box(v1)),
-             HeadTerm.Lit(box(v2)),
-             HeadTerm.Lit(box(v3)),
-             HeadTerm.Lit(box(v4)),
-             HeadTerm.Lit(box(v5)),
-             HeadTerm.Lit(box(v6)),
-             HeadTerm.Lit(box(v7)),
-             HeadTerm.Lit(box(v8)),
-             HeadTerm.Lit(box(v9)),
-             HeadTerm.Lit(box(v10)),
-             HeadTerm.Lit(box(v11)),
-             HeadTerm.Lit(box(v12)),
-             HeadTerm.Lit(box(v13))] as & Pure
+            [box(v1),
+             box(v2),
+             box(v3),
+             box(v4),
+             box(v5),
+             box(v6),
+             box(v7),
+             box(v8),
+             box(v9),
+             box(v10),
+             box(v11),
+             box(v12),
+             box(v13)] as & Pure
         , p, ts) as & Pure
 
     ///
@@ -335,20 +368,20 @@ namespace Fixpoint {
     pub def projectInto14[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type, t12: Type, t13: Type, t14: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Boxable[t13], Boxable[t14], Foldable[f] =
         projectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14) ->
-            [HeadTerm.Lit(box(v1)),
-             HeadTerm.Lit(box(v2)),
-             HeadTerm.Lit(box(v3)),
-             HeadTerm.Lit(box(v4)),
-             HeadTerm.Lit(box(v5)),
-             HeadTerm.Lit(box(v6)),
-             HeadTerm.Lit(box(v7)),
-             HeadTerm.Lit(box(v8)),
-             HeadTerm.Lit(box(v9)),
-             HeadTerm.Lit(box(v10)),
-             HeadTerm.Lit(box(v11)),
-             HeadTerm.Lit(box(v12)),
-             HeadTerm.Lit(box(v13)),
-             HeadTerm.Lit(box(v14))] as & Pure
+            [box(v1),
+             box(v2),
+             box(v3),
+             box(v4),
+             box(v5),
+             box(v6),
+             box(v7),
+             box(v8),
+             box(v9),
+             box(v10),
+             box(v11),
+             box(v12),
+             box(v13),
+             box(v14)] as & Pure
         , p, ts) as & Pure
 
     ///
@@ -364,31 +397,30 @@ namespace Fixpoint {
     pub def projectInto15[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type, t12: Type, t13: Type, t14: Type, t15: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15)]):
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Boxable[t13], Boxable[t14], Boxable[t15], Foldable[f] =
         projectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15) ->
-            [HeadTerm.Lit(box(v1)),
-             HeadTerm.Lit(box(v2)),
-             HeadTerm.Lit(box(v3)),
-             HeadTerm.Lit(box(v4)),
-             HeadTerm.Lit(box(v5)),
-             HeadTerm.Lit(box(v6)),
-             HeadTerm.Lit(box(v7)),
-             HeadTerm.Lit(box(v8)),
-             HeadTerm.Lit(box(v9)),
-             HeadTerm.Lit(box(v10)),
-             HeadTerm.Lit(box(v11)),
-             HeadTerm.Lit(box(v12)),
-             HeadTerm.Lit(box(v13)),
-             HeadTerm.Lit(box(v14)),
-             HeadTerm.Lit(box(v15))] as & Pure
+            [box(v1),
+             box(v2),
+             box(v3),
+             box(v4),
+             box(v5),
+             box(v6),
+             box(v7),
+             box(v8),
+             box(v9),
+             box(v10),
+             box(v11),
+             box(v12),
+             box(v13),
+             box(v14),
+             box(v15)] as & Pure
         , p, ts) as & Pure
 
-    def projectIntoX[f: Type -> Type, t: Type](f: t -> Array[HeadTerm[Boxed]], p: PredSym, ts: f[t]):
-        Datalog[Boxed] & Impure with Foldable[f] =
-        let facts = MutList.new();
-        Foldable.foldLeft(() -> vs -> {            
-            let fact = Constraint(HeadAtom(p, Denotation.Relational, f(vs)), []);
-            MutList.push!(fact, facts)
-        }, (), ts);
-        Datalog(MutList.toArray(facts), [])
+    def projectIntoX[f: Type -> Type, t: Type](f: t -> Array[Boxed], p: PredSym, ts: f[t]): Datalog[Boxed] & Impure with Foldable[f] =
+        let PredSym(relName) = p;
+        let ramSym = RamSym.Full(relName, Denotation.Relational);
+        let rel = MutMap.empty();
+        let db = MutMap.singleton(ramSym, rel);
+        Foldable.foldLeft(() -> vs -> MutMap.put!(f(vs), default, rel), (), ts);
+        toModel(db)
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
@@ -400,50 +432,81 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     pub def facts1(p: PredSym, d: Datalog[Boxed]): Array[v] with Boxable[v] =
-        let f = terms -> unbox(headTermValue(terms[0]));
+        let f = terms -> unbox(terms[0]);
         factsOf(f, p, d) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     pub def facts2(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2)] with Boxable[t1], Boxable[t2] =
-        let f = terms -> (unbox(headTermValue(terms[0])), unbox(headTermValue(terms[1])));
+        let f = terms -> (unbox(terms[0]), unbox(terms[1]));
         factsOf(f, p, d) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     pub def facts3(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3)] with Boxable[t1], Boxable[t2], Boxable[t3] =
-        let f = terms -> (unbox(headTermValue(terms[0])), unbox(headTermValue(terms[1])), unbox(headTermValue(terms[2])));
+        let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]));
         factsOf(f, p, d) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     pub def facts4(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4] =
-        let f = terms -> (unbox(headTermValue(terms[0])), unbox(headTermValue(terms[1])), unbox(headTermValue(terms[2])), unbox(headTermValue(terms[3])));
+        let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]));
         factsOf(f, p, d) as & Pure
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     pub def facts5(p: PredSym, d: Datalog[Boxed]): Array[(t1, t2, t3, t4, t5)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5] =
-        let f = terms -> (unbox(headTermValue(terms[0])), unbox(headTermValue(terms[1])), unbox(headTermValue(terms[2])), unbox(headTermValue(terms[3])), unbox(headTermValue(terms[4])));
+        let f = terms -> (unbox(terms[0]), unbox(terms[1]), unbox(terms[2]), unbox(terms[3]), unbox(terms[4]));
         factsOf(f, p, d) as & Pure
 
     ///
     /// Returns an array of facts associated with the given predicate symbol `p` in the given Datalog program `d`.
     ///
-    def factsOf(f: Array[HeadTerm[v]] -> t & e, p: PredSym, d: Datalog[v]): Array[t] & Impure =
-        let Datalog(facts, _) = d;
-        let pFacts = MutList.new();
-        Array.foreach(match Constraint(HeadAtom(headPred, _, terms), _) -> {
-            if (headPred == p)
-                MutList.push!(f(terms), pFacts)
-            else
-                ()
-        }, facts);
-        MutList.toArray(pFacts)
+    def factsOf(f: Array[v] -> t & e, p: PredSym, d: Datalog[v]): Array[t] & Impure = match d {
+        case Datalog(_, cs) =>
+            let pFacts = MutList.new();
+            Array.foreach(c -> match c {
+                case Constraint(HeadAtom(headPred, _, terms), []) =>
+                    if (headPred == p)
+                        let vs = Array.map(headTermValue, terms);
+                        MutList.push!(f(vs), pFacts)
+                    else
+                        ()
+                case _ => ()
+            }, cs);
+            MutList.toArray(pFacts)
+        case Model(db) =>
+            use Fixpoint/Ram.toDenotation;
+            let pFacts = MutList.new();
+            let PredSym(key) = p;
+            let query = ramSym -> match ramSym {
+                case RamSym.Full(relName, _) => match relName <=> key {
+                    case EqualTo => EqualTo
+                    case cmp => cmp
+                }
+                case _ => LessThan
+            };
+            Map.queryWith(query, ramSym -> rel -> match toDenotation(ramSym) {
+                case Denotation.Relational =>
+                    Map.foreach(tuple -> _ -> MutList.push!(f(tuple), pFacts), rel)
+                case Denotation.Latticenal(_) =>
+                    Map.foreach(tuple -> lat -> {
+                        let vs = Array.init(i -> {
+                            if (i < Array.length(tuple))
+                                tuple[i]
+                            else
+                                lat
+                        }, Array.length(tuple) + 1);
+                        MutList.push!(f(vs), pFacts)
+                    }, rel)
+            }, db);
+            MutList.toArray(pFacts)
+        case Join(d1, d2) => Array.append(factsOf(f, p, d1), factsOf(f, p, d2))
+    }
 
     ///
     /// Returns the value of the given head term `v`.
@@ -467,29 +530,8 @@ namespace Fixpoint {
     ///
     pub def unsafeCast(v: a): Datalog[Boxed] = v as Datalog[Boxed]
 
-    def tupleToFact(ramSym: RamSym[v], tuple: Array[v], lat: v): Constraint[v] & Impure = match ramSym {
-        case RamSym.Full(relName, denotation) =>
-            let terms = match denotation {
-                case Denotation.Relational => Array.map(v -> HeadTerm.Lit(v), tuple)
-                case Denotation.Latticenal(_) => Array.init(i -> {
-                    if (i < Array.length(tuple))
-                        HeadTerm.Lit(tuple[i])
-                    else
-                        HeadTerm.Lit(lat)
-                }, Array.length(tuple) + 1)
-            };
-            Constraint(HeadAtom(PredSym(relName), denotation, terms), [])
-        case _ => ?bug
-    }
-
-    def toAst(db: Database[v]): Datalog[v] & Impure =
-        // TODO: don't eagerly convert back to AST. Keep it as a database as long as possible.
-        let facts = MutList.new();
-        MutMap.foreach(ramSym -> rel -> match ramSym {
-            case RamSym.Full(_) => MutMap.foreach(t -> l -> {
-                MutList.push!(tupleToFact(ramSym, t, l), facts)
-            }, rel)
-            case _ => ()
-        }, db);
-        Datalog(MutList.toArray(facts), [])
+    def toModel(db: Database[v]): Datalog[v] & Impure =
+        MutMap.toImmutable(db) |>
+        Map.map(MutMap.toImmutable) |>
+        Model
 }
