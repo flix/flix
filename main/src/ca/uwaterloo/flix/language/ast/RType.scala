@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.PType._
+import ca.uwaterloo.flix.language.ast.RType.RReference
 import ca.uwaterloo.flix.language.phase.sjvm.JvmName
 import ca.uwaterloo.flix.util.InternalRuntimeException
 
@@ -28,7 +29,7 @@ trait Describable {
 // actual flix types
 sealed trait RType[T <: PType] extends Describable {
   val toDescriptor: String = RType.toDescriptor(this)
-  val toErasedString: String = RType.toErasedString(this)
+  val toErasedDescriptor: String = RType.toErasedString(this)
 }
 
 object RType {
@@ -140,7 +141,7 @@ object RRefType {
   }
 
   case class RArray[T <: PType](tpe: RType[T]) extends RRefType[PArray[T]] {
-    override val jvmName: JvmName = JvmName.Java.Lang.Object
+    override val jvmName: JvmName = JvmName.Java.Lang.Object // TODO(JLS): What to do here? s"[${tpe.toErasedDescriptor}"
   }
 
   case class RChannel[T <: PType](tpe: RType[T]) extends RRefType[PChan[T]] {
@@ -152,7 +153,7 @@ object RRefType {
   }
 
   case class RRef[T <: PType](tpe: RType[T]) extends RRefType[PRef[T]] {
-    private val className = s"Ref${JvmName.reservedDelimiter}${tpe.toErasedString}"
+    private val className = s"Ref${JvmName.reservedDelimiter}${tpe.toErasedDescriptor}"
     override val jvmName: JvmName = JvmName(Nil, className)
   }
 
@@ -178,7 +179,7 @@ object RRefType {
   }
 
   case class RArrow(args: List[RType[PType]], result: RType[PType]) extends RRefType[PFunction] {
-    override val jvmName: JvmName = JvmName(Nil, s"Fn${args.length}${JvmName.reservedDelimiter}${(args ::: result :: Nil).map(_.toErasedString).mkString(JvmName.reservedDelimiter)}")
+    override val jvmName: JvmName = JvmName(Nil, s"Fn${args.length}${JvmName.reservedDelimiter}${(args ::: result :: Nil).map(_.toErasedDescriptor).mkString(JvmName.reservedDelimiter)}")
   }
 
   case class RRecordEmpty() extends RRefType[PAnyObject] {

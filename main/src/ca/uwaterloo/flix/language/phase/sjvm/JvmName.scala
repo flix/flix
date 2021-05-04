@@ -31,6 +31,7 @@ object JvmName {
   val constructorMethod = "<init>"
 
   val voidDescriptor = "V"
+  val javaMainDescriptor = "([Ljava/lang/String;)V"
 
   val nothingToVoid: String = getMethodDescriptor(Nil, None)
   val booleanToVoid: String = getMethodDescriptor(Java.Lang.Boolean, None)

@@ -20,9 +20,11 @@ package ca.uwaterloo.flix.language.phase.sjvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst.{Def, Root}
 import ca.uwaterloo.flix.language.ast.PRefType.PFunction
-import ca.uwaterloo.flix.language.ast.RRefType.RArrow
+import ca.uwaterloo.flix.language.ast.RRefType.{RArray, RArrow, RStr}
 import ca.uwaterloo.flix.language.ast.RType.RReference
 import ca.uwaterloo.flix.language.ast.{PRefType, PType, RRefType, Symbol}
+import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler.{F, StackEnd, StackNil}
+import ca.uwaterloo.flix.language.phase.sjvm.ClassMaker.Mod
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
@@ -59,26 +61,25 @@ object GenMainClass {
     val classMaker = ClassMaker.openClassWriter(mainType, addSource = true)
 
     // Emit the code for the main method
-    //    compileMainMethod(visitor, jvmType, retJvmType)
-    //    classMaker.mkMethod(compileMainMethod(???), mainMethod, mainType.toDescriptor, Mod.create(isPublic = true, isStatic = true))
+    classMaker.mkMethod(compileMainMethod(???), mainMethod, mainType.toDescriptor, Mod.isPublic.isStatic)
 
     classMaker.closeClassMaker
   }
 
-  //  /**
-  //   * Emits code for the main method in the main class. The emitted (byte)code should satisfy the following signature for the method:
-  //   * public static void main(String[])
-  //   *
-  //   * The method itself needs simply invoke the m_main method which is in the root namespace.
-  //   *
-  //   * The emitted code for the method should correspond to:
-  //   *
-  //   * Ns.m_main((Object)null);
-  //   */
-  //  def compileMainMethod(visitor: ClassWriter, jvmType: JvmType.Reference, retJvmType: JvmType)(implicit root: Root, flix: Flix): Unit = {
-  //
-  //    //Get the (argument) descriptor, since the main argument is of type String[], we need to get it's corresponding descriptor
-  //    val argumentDescriptor = AsmOps.getArrayType(JvmType.String)
+    /**
+     * Emits code for the main method in the main class. The emitted (byte)code should satisfy the following signature for the method:
+     * public static void main(String[])
+     *
+     * The method itself needs simply invoke the m_main method which is in the root namespace.
+     *
+     * The emitted code for the method should correspond to:
+     *
+     * Ns.m_main((Object)null);
+     */
+    def compileMainMethod(mainType: RReference[PFunction])(implicit root: Root, flix: Flix): F[StackNil] => F[StackEnd] = {
+
+      //Get the (argument) descriptor, since the main argument is of type String[], we need to get it's corresponding descriptor
+      val argumentDescriptor = JvmName.javaMainDescriptor
   //
   //    //Get the (result) descriptor, since main method returns void, we need to get the void type descriptor
   //    val resultDescriptor = JvmType.Void.toDescriptor
@@ -103,7 +104,8 @@ object GenMainClass {
   //    main.visitInsn(RETURN)
   //    main.visitMaxs(1,1)
   //    main.visitEnd()
-  //  }
+      ???
+    }
 
   /**
    * Optionally returns the main definition in the given AST `root`.
