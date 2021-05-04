@@ -14,6 +14,16 @@
  * limitations under the License.
  */
 
+
+// TODO : remove this
+def printf[a, e](toString: a -> String & e, str: String, val: a): Unit & Impure =
+    let stringBuilder = StringBuilder.new();
+    let convertedStr = toString(val);
+    StringBuilder.appendString!(stringBuilder, str);
+    StringBuilder.appendString!(stringBuilder, convertedStr);
+    let fullStr = StringBuilder.toString(stringBuilder);
+    Console.printLine(fullStr)
+
 namespace Channel {
 
     // todo: remove this
@@ -23,14 +33,26 @@ namespace Channel {
         import java.lang.Runtime.exit(Int32);
         runtime.exit(status)
 
-    /// The tuple corresponds to (id, channelLock, bufferSize, unbuffered, elementQueue, waitingGetters, waitingSetters)
+    /**
+    * The tuple corresponds to (id, channelLock, bufferSize, unbuffered, elementQueue, waitingGetters, waitingSetters)
+    *   - id
+    *   - channelLock is the channelLock of this channel.
+    *   - bufferSize is the size of a channel. If you try to put an
+    *   element in a channel that's full, you wait until there's space.
+    *   - a flag for whether the channel is unbuffered or not
+    *   - elementQueue is the elementQueue of elements in the list.
+    *   - waitingGetters is a set of conditions that is waiting for get.
+    *   This set is cleared after each new element.
+    *   - waitingSetters is a condition that can notify threads of
+    *   available space in the elementQueue.
+    */
     pub opaque type Channel[a] = (
         Int64,
         ReentrantLock,
         Int,
         Bool,
         MutList[a],
-        MutSet[LockConditionPair],
+        MutList[LockConditionPair],
         Condition
     )
 
@@ -54,7 +76,8 @@ namespace Channel {
             case Channel(_, _, _, _, elementQueue, _, _)   => elementQueue
         }
 
-    pub def getWaitingGetters(c: Channel[a]): MutSet[LockConditionPair] = match c {
+    // TODO : make it a MutList or MutSet??
+    pub def getWaitingGetters(c: Channel[a]): MutList[LockConditionPair] = match c {
             case Channel(_, _, _, _, _, waitingGetters, _)   => waitingGetters
         }
 
@@ -70,20 +93,22 @@ namespace Channel {
     }
     */
 
-    instance Eq[Channel] {
-        pub def eq(x: Channel[a], y: Channel[b]): Bool =
-            channelId(x) == channelId(y)
-    }
+    /// instance Eq[Channel] {
+    ///     pub def eq(x: Channel[a], y: Channel[b]): Bool =
+    ///         channelId(x) == channelId(y)
+    /// }
 
-    def channelId(channel: Channel[a]): Int =
-        let Channel(c) = channel;
-        c.id
+    /// def channelId(channel: Channel[a]): Int =
+    ///     let Channel(c) = channel;
+    ///     getId(c)
 
-    type alias Lock = ##java.util.concurrent.locks.Lock
+    type alias ReentrantLock = ##java.util.concurrent.locks.ReentrantLock
 
-    type alias LockConditionPair = (Lock, Condition) /// TODO: change to (ReentrantLock, Condition)
+    /// type alias Lock = ##java.util.concurrent.locks.ReentrantLock
 
-    pub def getLock(pair: LockConditionPair): Lock = match pair {
+    type alias LockConditionPair = (ReentrantLock, Condition)
+
+    pub def getLock(pair: LockConditionPair): ReentrantLock = match pair {
             case (lock, _)   => lock
         }
 
@@ -95,17 +120,20 @@ namespace Channel {
         import java.util.concurrent.locks.Condition.signalAll() as signalAll;
         signalAll(cond);
         ()
-    
+
     def java_lock(reentrantLock: ReentrantLock): Unit & Impure =
         import java.util.concurrent.locks.ReentrantLock.lock() as lock;
         lock(reentrantLock);
         ()
+
     def java_unlock(reentrantLock: ReentrantLock): Unit & Impure =
         import java.util.concurrent.locks.ReentrantLock.unlock() as unlock;
         unlock(reentrantLock);
         ()
 
-    type alias ReentrantLock = ##java.util.concurrent.locks.ReentrantLock
+    def java_await(condition: Condition): Unit & Impure =
+        import java.util.concurrent.locks.Condition.await();
+        condition.await()
 
     def newReentrantLock(): ReentrantLock & Impure =
         import new java.util.concurrent.locks.ReentrantLock() as javaNewReentrantLock;
@@ -117,9 +145,9 @@ namespace Channel {
         import java.util.concurrent.locks.ReentrantLock.newCondition() as javaNewCondition;
         javaNewCondition(reentrantLock)
 
-    def newId(): Int64 & Impure =
-        import library.Channel.GlobalCounter:newId() as javaNewId;
-        javaNewId()
+    /// def newId(): Int64 & Impure =
+    ///     import library.Channel.GlobalCounter:newId() as javaNewId;
+    ///     javaNewId()
 
     ///
     /// Returns a fresh unbuffered channel.
@@ -154,7 +182,7 @@ namespace Channel {
             bufferSize,
             unbuffered,
             mutList,
-            MutSet.empty(),
+            MutList.new(), // MutSet.empty()
             newCondition(reentrantLock)
         )
     ///
@@ -162,16 +190,16 @@ namespace Channel {
     ///
     /// Equivalent to the expression `<- c`.
     ///
-    pub def get(c: Channel[a]): a & Impure = <- c
+    /// pub def get(c: Channel[a]): a & Impure = <- c
 
-    pub def loopOnFullChannel(c: Channel[a], bufferSize: Int): () & Impure = try {
+    pub def put_waitOnFullChannel(c: Channel[a], bufferSize: Int): () & Impure = try {
         import java.util.concurrent.locks.Condition.await();
         // If channel not full, return
         if (MutList.length(getElementQueue(c)) < bufferSize) ()
         // Else, wait
         else {
         getWaitingSetters(c).await();
-        loopOnFullChannel(c, bufferSize)
+        put_waitOnFullChannel(c, bufferSize)
         }
     } catch {
         case _: ##java.lang.Exception => ()
@@ -184,154 +212,170 @@ namespace Channel {
     /// Equivalent to the expression `c <- x`.
     ///
     pub def put(c: Channel[a], x: a): Channel[a] & Impure =
-        import java.util.concurrent.locks.ReentrantLock.lock() as r_lock;
-        import java.util.concurrent.locks.ReentrantLock.unlock() as r_unlock;
-        import java.util.concurrent.locks.Lock.lock();
-        import java.util.concurrent.locks.Lock.unlock();
-        import java.util.concurrent.locks.Condition.signalAll();
+        /// import java.util.concurrent.locks.ReentrantLock.lock() as lock2;
+        /// import java.util.concurrent.locks.ReentrantLock.unlock() as unlock2;
+        /// import java.util.concurrent.locks.Condition.signalAll();
         import java.util.concurrent.locks.Condition.await();
 
-        getChannelLock(c).r_lock();
+        lock(c);
 
-        try {
-            // Check if the channel is full
-            loopOnFullChannel(c, getBufferSize(c));
+        // Check if the channel is full
+        put_waitOnFullChannel(c, getBufferSize(c));
 
-            // There was space to put another element in the channel
-            MutList.push!(x, getElementQueue(c));
+        // There was space to put another element in the channel
+        MutList.push!(x, getElementQueue(c));
 
-            // Signal waitingGetters that there is an element available
-            MutSet.foreach(
-                (pair) -> {
-                    let conditionLock = getLock(pair);
-                    let condition = getCondition(pair);
-                    try {
-                        conditionLock.lock();
-                        condition.signalAll()
-                    } catch {
-                       case _: ##java.lang.Exception => conditionLock.unlock()
-                    };
-                        conditionLock.unlock()
-                },
-                getWaitingGetters(c));
+        // Signal waitingGetters that there is an element available
+        MutList.foreach(
+            (pair) -> {
+                lockConditionLock(pair);
+                signalAll(pair);
+                unlockConditionLock(pair)
+            },
+            getWaitingGetters(c));
 
-            // Clear waitingGetters.
-            // If a waitingGetter does not receive an element, it can add itself again
-            MutSet.clear!(getWaitingGetters(c));
+        // Clear waitingGetters.
+        // If a waitingGetter does not receive an element, it can add itself again
+        MutList.clear!(getWaitingGetters(c));
 
-            // If the channel is unbuffered, wait for the element to be handed off before continuing
-            if (getUnbuffered(c)) getWaitingSetters(c).await()
-            else ()
-        } catch {
-            case _: ##java.lang.Exception => getChannelLock(c).r_unlock()
-        };
-        getChannelLock(c).r_unlock();
+        // If the channel is unbuffered, wait for the element to be handed off before continuing
+        if (getUnbuffered(c)) getWaitingSetters(c).await()
+        else ();
+
+        unlock(c);
         c
 
 
-def cmp(a: Channele[a], b: Channele[a]): Int32=
-    let a_id = getId(a);
-    let b_id = getId(b);
-    if (a_id == b_id) (0)
-    else if (a_id > b_id) (1)
-    else (-1)
+    /// def cmp(a: Channel[a], b: Channel[a]): Int32=
+    ///     let a_id = getId(a);
+    ///     let b_id = getId(b);
+    ///     if (a_id == b_id) (0)
+    ///     else if (a_id > b_id) (1)
+    ///     else (-1)
 
-def sortChannels(channels: Array[Channele[a]]): Array[Channele[a]] & Impure=
-    Array.sortWith(cmp, channels)
+    /// def sortChannels(channels: Array[Channel[a]]): Array[Channel[a]] & Impure=
+    ///     Array.sortWith(cmp, channels)
 
-def lock(chan: Channele[a]): Unit & Impure=
-    let lock = getChannelLock(chan);
-    java_lock(lock);
-    ()
+    def lock(chan: Channel[a]): Unit & Impure=
+        let lock = getChannelLock(chan);
+        java_lock(lock);
+        ()
 
-def unlock(chan: Channele[a]): Unit & Impure= try {
-    let lock = getChannelLock(chan);
-    java_unlock(lock);
-    ()
-} catch {
-    case _: ##java.lang.Exception => ()
-}
+    def unlock(chan: Channel[a]): Unit & Impure=
+        let lock = getChannelLock(chan);
+        java_unlock(lock);
+        ()
 
-def lockAllChannels(channels: Array[Channele[a]]): Unit & Impure=
-    Array.foreach(lock,channels);
-    ()
-def unlockAllChannels(channels: Array[Channele[a]]): Unit & Impure=
-    Array.foreach(unlock,channels);
-    ()
+    def lockConditionLock(pair: LockConditionPair): Unit & Impure=
+        let conditionLock = getLock(pair);
+        java_lock(conditionLock);
+        ()
+
+    def unlockConditionLock(pair: LockConditionPair): Unit & Impure=
+        let conditionLock = getLock(pair);
+        java_unlock(conditionLock);
+        ()
+
+    def signalAll(pair: LockConditionPair): Unit & Impure=
+        let condition = getCondition(pair);
+        Console.printLine("java_signalAll called");
+        java_signalAll(condition)
+
+    /// def lockAllChannels(channels: Array[Channel[a]]): Unit & Impure=
+    ///     Array.foreach(lock,channels);
+    ///     ()
+    /// def unlockAllChannels(channels: Array[Channel[a]]): Unit & Impure=
+    ///     Array.foreach(unlock,channels);
+    ///     ()
 
 
-def tryGet(chan: Channele[a]): a & Impure=
-    lock(chan);
-    let queue = getElementQueue(chan); ///TODO move inside try/catch and return null in catch
-    /// let len = MutList.length(queue)
-    let element = MutList.get(0,queue); 
-    try {
-        match element {
-            case e => {
+    /// def tryGet(chan: Channel[a]): Option[a] & Impure=
+    ///     lock(chan);
+    ///     let queue = getElementQueue(chan); ///TODO move inside try/catch and return null in catch
+    ///     /// let len = MutList.length(queue)
+    ///     let element = MutList.pop!(queue);
+
+    ///     match element {
+    ///         case e => {
+    ///             let setters = getWaitingSetters(chan);
+    ///             java_signalAll(ws)
+    ///         }
+    ///         case _ => ()
+    ///     };
+    ///     unlock(chan);
+    ///     /// let unwrappedElement = Option.getWithDefault(element, None);
+    ///     element
+
+    /*
+    * Recursive helper function for get, loops and awaits on empty channel
+    */
+    def get_waitOnEmptyChannel(chan: Channel[a], e: Option[a]): Option[a] & Impure=
+        let queue = getElementQueue(chan);
+
+        match e {
+            case None => { // Null
+                Console.printLine("null");
+
+                // Create a new Lock and Condition
+                let conditionLock = newReentrantLock();
+                java_lock(conditionLock);
+                let condition = newCondition(conditionLock);
+
+                // Create a new LockConditionPair
+                let pair = (conditionLock, condition);
+                let getters = getWaitingGetters(chan);
+
+                // Add LockConditionPair to the channel
+                MutList.push!(pair, getters);
+
+                // Temporarily unlock the channel while waiting. This is necessary as the Condition comes from a different Lock.
                 unlock(chan);
+                java_await(condition);
+                lock(chan);
+
+                // TODO :  will always pop LIFO, should pop randomly?
+                // Someone signalled that an element was put in the channel.
+                // Try to get the element (which could already be taken by someone else)
+                ref e := MutList.pop!(queue);
+
+                java_unlock(conditionLock);
+                get_waitOnEmptyChannel(chan, e);
+
+                // Return the element to get
                 e
             }
-            case _ => {
-                let ws = getWaitingSetters(chan);
-                java_signalAll(ws);
-                unlock(chan);
-                element
+            case _ => { //Not Null
+                Console.printLine("not null");
+
+                // Return the element to get
+                e
             }
         }
-    } catch {
-        case _: ##java.lang.Exception => { unlock(chan); element }
-    }
 
 
-/// def get_internal_loop(chan: Channele[a], e: Option[a]): Unit & Impure=
-///     let queue = getElementQueue(chan);
-///     /// let e = MutList.get(0,queue);
-///     match e {
-///             case _ => { //not null??
-///                 ()
-///             }
-///             case None => { ///null
-///                 let conditionLock = newReentrantLock();
-///                 java_lock(conditionLock);
-///                 try {
-///                     let condition = newCondition(conditionLock);
-///                     addGetter(chan, conditionLock, condition);
-///                     try {
-///                         let channelLock = getChannelLock(chan);
-///                         java_unlock(channelLock);
-///                         java_await(condition)
-///                     } catch {
-///                         case _: ##java.lang.Exception => { lock(chan) }
-///                     }
-///                    /// e = MutList.get(0,queue);
-///                 } catch {
-///                     case _: ##java.lang.Exception => { java_unlock(conditionLock); 
-///                                                        get_internal_loop(chan,MutList.get(0,queue)) 
-///                     }
-///                 }
-///             }
-///         }
 
-    
-    
+    pub def get(chan: Channel[a]): a & Impure=
+        lock(chan);
+        let queue = getElementQueue(chan);
 
-/// def get(chan: Channele[a]): a & Impure=
-///     lock(chan);
-///     let queue = getElementQueue(chan);
-///     let e = MutList.get(0,queue);
-///     try {
-///         match e {
-///             case element => {
-///                 element
-///             }
-///             case _ => { ///null
-///                 get_internal_loop(chan,e);
-///                 java_signalAll(getWaitingSetters(chan));
-///                 unlock(chan);
-///                 e
-///             }
-///         }
-///     } catch {
-///         case _: ##java.lang.Exception => e
-///   }
+        let e_opt = MutList.pop!(queue);
+        get_waitOnEmptyChannel(chan, e_opt);
+
+        // Unwrap the Optional type element
+        let e_mutList = List.toMut(Option.toList(e_opt));
+        let e = MutList.get(0, e_mutList);
+
+        // Signal waiting setters that the channel has space
+        let waitingSetters = getWaitingSetters(chan);
+        java_signalAll(waitingSetters);
+        unlock(chan);
+
+        // Return the element from the channel
+        e
+
+    // TODO : remove this
+    def waitFiveSec(): Unit & Impure =
+        import java.lang.Thread:sleep(Int64);
+        let fiveSec = 5000i64;
+        sleep(fiveSec)
 }
