@@ -90,7 +90,6 @@ object RType {
 
 }
 
-
 sealed trait RRefType[T <: PRefType] extends Describable {
   val jvmName: JvmName
   lazy val toInternalName: String = RRefType.toInternalName(this)
@@ -178,7 +177,7 @@ object RRefType {
     override val jvmName: JvmName = JvmName.Java.Lang.String
   }
 
-  case class RArrow(args: List[RType[PType]], result: RType[PType]) extends RRefType[PAnyObject] {
+  case class RArrow(args: List[RType[PType]], result: RType[PType]) extends RRefType[PFunction] {
     override val jvmName: JvmName = JvmName(Nil, s"Fn${args.length}${JvmName.reservedDelimiter}${args.map(_.toErasedString).mkString(JvmName.reservedDelimiter)}")
   }
 

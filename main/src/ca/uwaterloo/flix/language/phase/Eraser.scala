@@ -46,10 +46,10 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
   /**
    * Translates the given definition `def0` to the ErasedAst.
    */
-  private def visitDef(def0: FinalAst.Def): ErasedAst.Def = {
+  private def visitDef[T <: PType](def0: FinalAst.Def): ErasedAst.Def[T] = {
     val fs = def0.formals.map(visitFormalParam)
-    val exp = visitExp[PType](def0.exp)
-    val tpe = visitTpe[PType](def0.tpe)
+    val exp = visitExp[T](def0.exp)
+    val tpe = visitTpe[T](def0.tpe)
     ErasedAst.Def(def0.ann, def0.mod, def0.sym, fs, exp, tpe, def0.loc)
   }
 

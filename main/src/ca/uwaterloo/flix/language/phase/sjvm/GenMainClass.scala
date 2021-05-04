@@ -19,9 +19,10 @@ package ca.uwaterloo.flix.language.phase.sjvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst.{Def, Root}
+import ca.uwaterloo.flix.language.ast.PRefType.PFunction
 import ca.uwaterloo.flix.language.ast.RRefType.RArrow
 import ca.uwaterloo.flix.language.ast.RType.RReference
-import ca.uwaterloo.flix.language.ast.{PRefType, RRefType, Symbol}
+import ca.uwaterloo.flix.language.ast.{PRefType, PType, RRefType, Symbol}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
@@ -48,11 +49,12 @@ object GenMainClass {
         case RReference(referenceType) => RReference(mainTypeMatch(referenceType))
         case _ => throw InternalCompilerException(s"The type of main cannot be a primitive, ${defn.tpe}")
       }
+
       val bytecode = genByteCode(mainType)
       Map(mainMethodClassName -> JvmClass(mainMethodClassName, bytecode))
   }
 
-  def genByteCode[T <: PRefType](mainType: RReference[T])(implicit root: Root, flix: Flix): Array[Byte] = {
+  def genByteCode(mainType: RReference[PFunction])(implicit root: Root, flix: Flix): Array[Byte] = {
     // class writer
     val classMaker = ClassMaker.openClassWriter(mainType, addSource = true)
 
@@ -106,7 +108,7 @@ object GenMainClass {
   /**
    * Optionally returns the main definition in the given AST `root`.
    */
-  private def getMain(root: Root): Option[Def] = {
+  private def getMain(root: Root): Option[Def[_ <: PType]] = {
     // The main function must be called `main` and occur in the root namespace.
     val sym = Symbol.Main
 

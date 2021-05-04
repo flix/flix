@@ -19,14 +19,14 @@ package ca.uwaterloo.flix.language.phase.sjvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst.{Def, Root}
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{PType, Symbol}
 
 object SjvmOps {
 
   /**
    * Returns `true` if the given definition `defn` is a law.
    */
-  def nonLaw(defn: Def): Boolean = !defn.ann.isLaw
+  def nonLaw(defn: Def[_ <: PType]): Boolean = !defn.ann.isLaw
 
   /**
    * Returns the namespace info of the given definition symbol `sym`.

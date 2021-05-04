@@ -24,14 +24,14 @@ import java.lang.reflect.{Constructor, Field, Method}
 
 object ErasedAst {
 
-  case class Root(defs: Map[Symbol.DefnSym, ErasedAst.Def],
+  case class Root(defs: Map[Symbol.DefnSym, ErasedAst.Def[_ <: PType]],
                   enums: Map[Symbol.EnumSym, ErasedAst.Enum],
                   properties: List[ErasedAst.Property],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
-  // TODO(JLS): fix this _ <: PType
-  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: List[ErasedAst.FormalParam], exp: ErasedAst.Expression[PType], tpe: RType[_ <: PType], loc: SourceLocation) {
+  // TODO(JLS): This method, of using T <: PType and the _ <: PType at use is probably better and should be used elsewhere
+  case class Def[T <: PType](ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: List[ErasedAst.FormalParam], exp: ErasedAst.Expression[T], tpe: RType[T], loc: SourceLocation) {
     var method: Method = _
   }
 
