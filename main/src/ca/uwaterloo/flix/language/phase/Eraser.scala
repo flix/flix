@@ -18,17 +18,17 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.RRefType._
-import ca.uwaterloo.flix.language.ast.RType._
 import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.PType._
-import ca.uwaterloo.flix.language.ast.{RType, ErasedAst, FinalAst, MonoType, PType, Symbol}
+import ca.uwaterloo.flix.language.ast.RRefType._
+import ca.uwaterloo.flix.language.ast.RType._
+import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
-object Eraser extends Phase[FinalAst.Root, FinalAst.Root] {
+object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
 
-  def run(root: FinalAst.Root)(implicit flix: Flix): Validation[FinalAst.Root, CompilationError] = flix.phase("Eraser") {
+  def run(root: FinalAst.Root)(implicit flix: Flix): Validation[ErasedAst.Root, CompilationError] = flix.phase("Eraser") {
     val defns = root.defs.map { case (k, v) => k -> visitDef(v) }
     val enums = root.enums.map {
       case (k, FinalAst.Enum(mod, sym, cases0, _, loc)) =>
@@ -40,23 +40,22 @@ object Eraser extends Phase[FinalAst.Root, FinalAst.Root] {
     val properties = root.properties.map { p => visitProperty(p) }
     val reachable = root.reachable
 
-    val actualTransformation = ErasedAst.Root(defns, enums, properties, reachable, root.sources).toSuccess
-    root.toSuccess
+    ErasedAst.Root(defns, enums, properties, reachable, root.sources).toSuccess
   }
 
   /**
-    * Translates the given definition `def0` to the ErasedAst.
-    */
-  private def visitDef(def0: FinalAst.Def): ErasedAst.Def = {
+   * Translates the given definition `def0` to the ErasedAst.
+   */
+  private def visitDef[T <: PType](def0: FinalAst.Def): ErasedAst.Def[T] = {
     val fs = def0.formals.map(visitFormalParam)
-    val exp = visitExp[PType](def0.exp)
-    val tpe = visitTpe[PType](def0.tpe)
+    val exp = visitExp[T](def0.exp)
+    val tpe = visitTpe[T](def0.tpe)
     ErasedAst.Def(def0.ann, def0.mod, def0.sym, fs, exp, tpe, def0.loc)
   }
 
   /**
-    * Translates the given expression `exp0` to the ErasedAst.
-    */
+   * Translates the given expression `exp0` to the ErasedAst.
+   */
   private def visitExp[T <: PType](exp0: FinalAst.Expression): ErasedAst.Expression[T] = exp0 match {
     case FinalAst.Expression.Unit(loc) =>
       ErasedAst.Expression.Unit(loc).asInstanceOf[ErasedAst.Expression[T]]
@@ -268,20 +267,20 @@ object Eraser extends Phase[FinalAst.Root, FinalAst.Root] {
   }
 
   /**
-    * Translates the given formal param `p` to the ErasedAst.
-    */
+   * Translates the given formal param `p` to the ErasedAst.
+   */
   private def visitFormalParam(p: FinalAst.FormalParam): ErasedAst.FormalParam =
     ErasedAst.FormalParam(p.sym, visitTpe(p.tpe))
 
   /**
-    * Translates the property `p` to the ErasedAst.
-    */
+   * Translates the property `p` to the ErasedAst.
+   */
   private def visitProperty(p: FinalAst.Property): ErasedAst.Property =
     ErasedAst.Property(p.law, p.defn, visitExp(p.exp))
 
   /**
-    * Translates the type 'tpe' to the ErasedType.
-    */
+   * Translates the type 'tpe' to the ErasedType.
+   */
   private def visitTpe[T <: PType](tpe: MonoType): RType[T] = (tpe match {
     case MonoType.Unit => RReference(RUnit())
     case MonoType.Bool => RBool()

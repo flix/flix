@@ -23,7 +23,6 @@ import ca.uwaterloo.flix.language.ast.RType._
 import ca.uwaterloo.flix.language.ast.{Cat1, Cat2, PRefType, PType, RRefType, RType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
 import ca.uwaterloo.flix.util.InternalCompilerException
-import ca.uwaterloo.flix.language.phase.sjvm.GenRefClasses
 import org.objectweb.asm.{Label, Opcodes}
 
 object Instructions {
@@ -128,15 +127,15 @@ object Instructions {
   [R <: Stack, T1 <: PType with Cat1, T2 <: PType]
   (t2: RType[T2]):
   F[R ** T2 ** T1] => F[R ** T1 ** T2] = t2 match {
-    case RBool() => ???//SWAP
-    case RInt8() => ???//SWAP
-    case RInt16() => ???//SWAP
-    case RInt32() => ???//SWAP
-    case RInt64() => ???//SWAP_cat1_onCat2
-    case RChar() => ???//SWAP
-    case RFloat32() => ???//SWAP
-    case RFloat64() => ???//SWAP_cat1_onCat2
-    case RReference(referenceType) => ???//SWAP
+    case RBool() => ??? //SWAP
+    case RInt8() => ??? //SWAP
+    case RInt16() => ??? //SWAP
+    case RInt32() => ??? //SWAP
+    case RInt64() => ??? //SWAP_cat1_onCat2
+    case RChar() => ??? //SWAP
+    case RFloat32() => ??? //SWAP
+    case RFloat64() => ??? //SWAP_cat1_onCat2
+    case RReference(referenceType) => ??? //SWAP
   }
 
   // NATIVE
@@ -854,8 +853,9 @@ object Instructions {
   def foo[R <: Stack] = (r: F[R]) => defMakeFunction(defMakeFunction(r, RInt32()), RInt32())
 
   // META
-  implicit class ComposeOps[A, B](f: F[A] => F[B]) {
-    def ~[C](that: F[B] => F[C]): F[A] => F[C] = ???
+  implicit class ComposeOps[A, B](ab: F[A] => F[B]) {
+    def ~[C](bc: F[B] => F[C]): F[A] => F[C] =
+      f => bc(ab(f))
   }
 
 }

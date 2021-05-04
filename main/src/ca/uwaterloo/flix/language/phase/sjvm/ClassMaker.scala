@@ -20,33 +20,26 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.RType.RReference
 import ca.uwaterloo.flix.language.ast.{PRefType, PType, RType}
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
+import ca.uwaterloo.flix.language.phase.sjvm.ClassMaker.Mod
 import ca.uwaterloo.flix.util.{InternalCompilerException, JvmTarget}
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes._
 
 class ClassMaker(visitor: ClassWriter) {
-  private def makeField[T <: PType](fieldName: String, fieldType: RType[T], isStatic: Boolean, isPublic: Boolean): Unit = {
-    val visibility = if (isPublic) ACC_PUBLIC else ACC_PRIVATE
-    val access = if (isStatic) ACC_STATIC else 0
-    val field = visitor.visitField(visibility + access, fieldName, fieldType.toDescriptor, null, null)
+  private def makeField[T <: PType](fieldName: String, fieldType: RType[T], mod: Mod): Unit = {
+    val field = visitor.visitField(mod.getInt, fieldName, fieldType.toDescriptor, null, null)
     field.visitEnd()
   }
 
-  def mkStaticField[T <: PType](fieldName: String, fieldType: RType[T], isPublic: Boolean): Unit = {
-    makeField(fieldName, fieldType, isStatic = true, isPublic)
-  }
-
-  def mkField[T <: PType](fieldName: String, fieldType: RType[T], isPublic: Boolean): Unit = {
-    makeField(fieldName, fieldType, isStatic = false, isPublic)
+  def mkField[T <: PType](fieldName: String, fieldType: RType[T], mod: Mod = Mod.nothing): Unit = {
+    makeField(fieldName, fieldType, mod)
   }
 
   def mkConstructor(f: F[StackNil] => F[StackEnd], descriptor: String): Unit =
-    mkMethod(f, JvmName.constructorMethod, descriptor, isFinal = false, isPublic = true)
+    mkMethod(f, JvmName.constructorMethod, descriptor, Mod.isPublic)
 
-  def mkMethod(f: F[StackNil] => F[StackEnd], methodName: String, descriptor: String, isFinal: Boolean, isPublic: Boolean): Unit = {
-    val visibility = if (isPublic) ACC_PUBLIC else ACC_PRIVATE
-    val finality = if (isFinal) ACC_FINAL else 0
-    val methodVisitor = visitor.visitMethod(visibility + finality, methodName, descriptor, null, null)
+  def mkMethod(f: F[StackNil] => F[StackEnd], methodName: String, descriptor: String, mod: Mod): Unit = {
+    val methodVisitor = visitor.visitMethod(mod.getInt, methodName, descriptor, null, null)
     methodVisitor.visitCode()
     f(F(methodVisitor))
     methodVisitor.visitMaxs(1, 1)
@@ -82,12 +75,65 @@ object ClassMaker {
     }
   }
 
-  def openClassWriter[T <: PRefType](classType: RReference[T], isFinal: Boolean)(implicit flix: Flix): ClassMaker = {
-    val visibility = ACC_PUBLIC
-    val finality = if (isFinal) ACC_FINAL else 0
+  def openClassWriter[T <: PRefType](classType: RReference[T], addSource: Boolean = false)(implicit flix: Flix): ClassMaker = {
+    val mod = Mod.isPublic.isFinal
+    val internalName = classType.toInternalName
+
     val visitor = makeClassWriter()
-    visitor.visit(JavaVersion, visibility + finality, classType.toInternalName, null, JvmName.Java.Lang.Object.toInternalName, null)
+    visitor.visit(JavaVersion, mod.getInt, internalName, null, JvmName.Java.Lang.Object.toInternalName, null)
+    if (addSource) visitor.visitSource(internalName, null)
     new ClassMaker(visitor)
+  }
+
+  class Mod private {
+    private var fin = 0
+    private var stat = 0
+    private var pub = 0
+    private var priv = 0
+
+    def getInt: Int = fin + stat + pub + priv
+
+    def isFinal: Mod = {
+      fin = ACC_FINAL
+      this
+    }
+
+    def isStatic: Mod = {
+      stat = ACC_STATIC
+      this
+    }
+
+    def isPublic: Mod = {
+      if (priv != 0) throw InternalCompilerException("mod cannot both be private and public")
+      pub = ACC_PUBLIC
+      this
+    }
+
+    def isPrivate: Mod = {
+      if (pub != 0) throw InternalCompilerException("mod cannot both be private and public")
+      priv = ACC_PRIVATE
+      this
+    }
+  }
+
+  object Mod {
+    def isFinal: Mod = {
+      new Mod().isFinal
+    }
+
+    def isStatic: Mod = {
+      new Mod().isStatic
+    }
+
+    def isPublic: Mod = {
+      new Mod().isPublic
+    }
+
+    def isPrivate: Mod = {
+      new Mod().isPrivate
+    }
+
+    def nothing: Mod = new Mod()
   }
 
 }

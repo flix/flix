@@ -17,13 +17,14 @@
 package ca.uwaterloo.flix.language.phase.sjvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.FinalAst.Root
+import ca.uwaterloo.flix.language.ast.ErasedAst.Root
 import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.PType._
 import ca.uwaterloo.flix.language.ast.RRefType._
 import ca.uwaterloo.flix.language.ast.RType._
 import ca.uwaterloo.flix.language.ast.{PType, RType}
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
+import ca.uwaterloo.flix.language.phase.sjvm.ClassMaker.Mod
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 
 /**
@@ -80,14 +81,14 @@ object GenLazyClasses {
    * After that point it will store the result in value and just return that.
    */
   private def genByteCode[T <: PType](lazyType: RReference[PLazy[T]], valueFieldType: RType[T])(implicit root: Root, flix: Flix): Array[Byte] = {
-    val classMaker = ClassMaker.openClassWriter(lazyType, isFinal = true)
+    val classMaker = ClassMaker.openClassWriter(lazyType)
 
-    classMaker.mkField(InitializedFieldName, InitializedFieldType, isPublic = false)
-    classMaker.mkField(ExpressionFieldName, ExpressionFieldType, isPublic = false)
-    classMaker.mkField(ValueFieldName, valueFieldType, isPublic = false)
+    classMaker.mkField(InitializedFieldName, InitializedFieldType)
+    classMaker.mkField(ExpressionFieldName, ExpressionFieldType)
+    classMaker.mkField(ValueFieldName, valueFieldType)
     // TODO(JLS): This is temporary, call method needs to be changed
     val methodDescriptor = s"(LContext;)${valueFieldType.toDescriptor}"
-    classMaker.mkMethod(compileForceMethod(lazyType, valueFieldType), ForceMethod, methodDescriptor, isFinal = true, isPublic = true)
+    classMaker.mkMethod(compileForceMethod(lazyType, valueFieldType), ForceMethod, methodDescriptor, Mod.isFinal.isPublic)
     classMaker.mkConstructor(compileLazyConstructor(lazyType, valueFieldType), ExpressionToVoid)
     classMaker.closeClassMaker
   }

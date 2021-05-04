@@ -16,9 +16,6 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import java.lang.reflect.InvocationTargetException
-import java.nio.file.{Path, Paths}
-
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.FinalAst._
@@ -29,17 +26,20 @@ import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalRuntimeException, Validation}
 import flix.runtime.ProxyObject
 
+import java.lang.reflect.InvocationTargetException
+import java.nio.file.{Path, Paths}
+
 
 object JvmBackend extends Phase[Root, CompilationResult] {
 
   /**
-    * The directory where to place the generated class files.
-    */
+   * The directory where to place the generated class files.
+   */
   val TargetDirectory: Path = Paths.get("./target/flix/")
 
   /**
-    * Emits JVM bytecode for the given AST `root`.
-    */
+   * Emits JVM bytecode for the given AST `root`.
+   */
   def run(root: Root)(implicit flix: Flix): Validation[CompilationResult, CompilationError] = flix.phase("JvmBackend") {
 
     //
@@ -53,7 +53,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       // Immediately return if in verification mode.
       //
       if (flix.options.verifier) {
-        return new CompilationResult(root, None, Map.empty).toSuccess
+        return new CompilationResult(??? /*root */ , None, Map.empty).toSuccess
       }
 
       //
@@ -199,7 +199,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       //
       // Do not load any classes.
       //
-      new CompilationResult(root, None, Map.empty).toSuccess
+      new CompilationResult(??? /*root*/ , None, Map.empty).toSuccess
     } else {
       //
       // Loads all the generated classes into the JVM and decorates the AST.
@@ -209,26 +209,26 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       //
       // Return the compilation result.
       //
-      new CompilationResult(root, getCompiledMain(root), getCompiledDefs(root)).toSuccess
+      new CompilationResult(??? /*root*/ , getCompiledMain(root), getCompiledDefs(root)).toSuccess
     }
   }
 
   /**
-    * Optionally returns a reference to main.
-    */
+   * Optionally returns a reference to main.
+   */
   private def getCompiledMain(root: Root)(implicit flix: Flix): Option[Array[String] => Int] =
     root.defs.get(Symbol.Main) map {
       case defn =>
         (actualArgs: Array[String]) => {
-        val args: Array[AnyRef] = Array(actualArgs)
+          val args: Array[AnyRef] = Array(actualArgs)
           val result = link(defn.sym, root).apply(args).getValue
           result.asInstanceOf[Integer].intValue()
         }
     }
 
   /**
-    * Returns a map from definition symbols to executable functions (backed by JVM backend).
-    */
+   * Returns a map from definition symbols to executable functions (backed by JVM backend).
+   */
   private def getCompiledDefs(root: Root)(implicit flix: Flix): Map[Symbol.DefnSym, () => ProxyObject] =
     root.defs.foldLeft(Map.empty[Symbol.DefnSym, () => ProxyObject]) {
       case (macc, (sym, defn)) =>
@@ -237,8 +237,8 @@ object JvmBackend extends Phase[Root, CompilationResult] {
     }
 
   /**
-    * Returns a function object for the given definition symbol `sym`.
-    */
+   * Returns a function object for the given definition symbol `sym`.
+   */
   private def link(sym: Symbol.DefnSym, root: Root)(implicit flix: Flix): java.util.function.Function[Array[AnyRef], ProxyObject] =
     (args: Array[AnyRef]) => {
       ///
@@ -272,8 +272,8 @@ object JvmBackend extends Phase[Root, CompilationResult] {
     }
 
   /**
-    * Returns a proxy object that wraps the given result value.
-    */
+   * Returns a proxy object that wraps the given result value.
+   */
   private def newProxyObj(result: AnyRef, resultType: MonoType, root: Root)(implicit flix: Flix): ProxyObject = {
     // Lookup the Equality method.
     val eq = null
