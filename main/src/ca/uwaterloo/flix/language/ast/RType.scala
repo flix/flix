@@ -18,6 +18,8 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.PType._
+import ca.uwaterloo.flix.language.ast.RRefType.RObject
+import ca.uwaterloo.flix.language.ast.RType.RReference
 import ca.uwaterloo.flix.language.phase.sjvm.JvmName
 import ca.uwaterloo.flix.util.InternalRuntimeException
 
@@ -29,6 +31,7 @@ trait Describable {
 sealed trait RType[T <: PType] extends Describable {
   val toDescriptor: String = RType.toDescriptor(this)
   val toErasedString: String = RType.toErasedString(this)
+  val erasedType: RType[_ <: PType] = RType.erasedType(this)
 }
 
 object RType {
@@ -51,6 +54,18 @@ object RType {
     case RFloat32() => "F"
     case RFloat64() => "D"
     case RReference(referenceType) => referenceType.toDescriptor
+  }
+
+  def erasedType[T <: PType](e: RType[T]): RType[_ <: PType] = e match {
+    case r: RBool => r
+    case r: RInt8 => r
+    case r: RInt16 => r
+    case r: RInt32 => r
+    case r: RInt64 => r
+    case r: RChar => r
+    case r: RFloat32 => r
+    case r: RFloat64 => r
+    case RReference(_) => RReference(RObject())
   }
 
   def toErasedString[T <: PType](e: RType[T]): String = e match {
@@ -87,7 +102,6 @@ object RType {
   }
 
 }
-
 
 sealed trait RRefType[T <: PRefType] extends Describable {
   val jvmName: JvmName
@@ -139,7 +153,7 @@ object RRefType {
   }
 
   case class RArray[T <: PType](tpe: RType[T]) extends RRefType[PArray[T]] {
-    override val jvmName: JvmName = JvmName.Java.Lang.Object
+    override val jvmName: JvmName = JvmName.Java.Lang.Object // TODO(JLS): What to do here? s"[${tpe.toErasedDescriptor}"
   }
 
   case class RChannel[T <: PType](tpe: RType[T]) extends RRefType[PChan[T]] {
@@ -176,8 +190,8 @@ object RRefType {
     override val jvmName: JvmName = JvmName.Java.Lang.String
   }
 
-  case class RArrow(args: List[RType[PType]], result: RType[PType]) extends RRefType[PAnyObject] {
-    override val jvmName: JvmName = JvmName.Java.Lang.Object
+  case class RArrow(args: List[RType[_ <: PType]], result: RType[_ <: PType]) extends RRefType[PFunction] {
+    override val jvmName: JvmName = JvmName(Nil, s"Fn${args.length}${JvmName.reservedDelimiter}${(args ::: result :: Nil).map(_.toErasedString).mkString(JvmName.reservedDelimiter)}")
   }
 
   case class RRecordEmpty() extends RRefType[PAnyObject] {
