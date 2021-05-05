@@ -29,7 +29,8 @@ trait Describable {
 
 // actual flix types
 sealed trait RType[T <: PType] extends Describable {
-  val toDescriptor: String = RType.toDescriptor(this)
+  private val descriptor: String = RType.toDescriptor(this)
+  def toDescriptor: String = descriptor
   val toErasedString: String = RType.toErasedString(this)
   val erasedType: RType[_ <: PType] = RType.erasedType(this)
 }
@@ -105,15 +106,15 @@ object RType {
 
 sealed trait RRefType[T <: PRefType] extends Describable {
   val jvmName: JvmName
-  def toInternalName: String = RRefType.toInternalName(this)
-  def toDescriptor: String = RRefType.toDescriptor(this)
+  def toInternalName: String = jvmName.toInternalName
+  def toDescriptor: String = jvmName.toDescriptor
 }
 
 object RRefType {
 
-  def toDescriptor[T <: PRefType](e: RRefType[T]): String = e.jvmName.toDescriptor
+  def toDescriptor[T <: PRefType](e: RRefType[T]): String = e.toDescriptor
 
-  def toInternalName[T <: PRefType](e: RRefType[T]): String = e.jvmName.toInternalName
+  def toInternalName[T <: PRefType](e: RRefType[T]): String = e.toInternalName
 
   // TODO(JLS): These should be object for the sake of jvm strings
   case class RBoxedBool() extends RRefType[PBoxedBool] {
