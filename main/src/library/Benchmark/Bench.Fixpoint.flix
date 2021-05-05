@@ -39,7 +39,8 @@ namespace Bench/Exp/Fixpoint {
             defBenchmark("Select (Int, Int) from A (n = ${2 ** 04})", () -> { query facts04 select (x, y) from A(x, y) }),
             defBenchmark("Select (Int, Int) from A (n = ${2 ** 08})", () -> { query facts08 select (x, y) from A(x, y) }),
             defBenchmark("Select (Int, Int) from A (n = ${2 ** 12})", () -> { query facts12 select (x, y) from A(x, y) }),
-            defBenchmark("Select (Int, Int) from A (n = ${2 ** 16})", () -> { query facts16 select (x, y) from A(x, y) }
+            defBenchmark("Select (Int, Int) from A (n = ${2 ** 16})", () -> { query facts16 select (x, y) from A(x, y) }),
+            defBenchmark("Select (Int, Int) from A (n = ${2 ** 20})", () -> { query facts20 select (x, y) from A(x, y) })
         ]
 
     pub def benchmarkSolve(): Array[Benchmark] & Impure =

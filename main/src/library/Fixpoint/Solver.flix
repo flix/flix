@@ -84,7 +84,9 @@ namespace Fixpoint {
     /// Project all facts in the given Datalog program `d` that has `p` in its head.
     ///
     pub def project(p: PredSym, d: Datalog[v]): Datalog[v] with Order[v] = match d {
-        case Datalog(facts, _) => Datalog(restrict(facts, Set#{p}), [])
+        case Datalog(facts, _) =>
+            let pFacts = Array.filter(match Constraint(HeadAtom(head, _, _), _) -> head == p, facts);
+            Datalog(pFacts, [])
         case Model(db) =>
             let PredSym(key) = p;
             Map.query(ramSym -> match ramSym {
