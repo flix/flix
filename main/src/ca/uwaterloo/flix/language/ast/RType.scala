@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.phase.sjvm.JvmName
 import ca.uwaterloo.flix.util.InternalRuntimeException
 
 trait Describable {
-  val toDescriptor: String
+  def toDescriptor: String
 }
 
 // actual flix types
@@ -35,12 +35,10 @@ object RType {
 
   def convert[T <: PRefType](x: RType[PReference[T]]): RReference[T] = x match {
     case res@RReference(_) => res
-    case _ => throw InternalRuntimeException(s"Expected RReference but found $x")
   }
 
   def internalNameOfReference[T <: PRefType](e: RType[PReference[T]]): String = e match {
     case RReference(referenceType) => referenceType.toInternalName
-    case _ => throw new IllegalArgumentException("Primitive types do not have internal names")
   }
 
   def toDescriptor[T <: PType](e: RType[T]): String = e match {
@@ -84,8 +82,8 @@ object RType {
   case class RFloat64() extends RType[PFloat64 with Cat2]
 
   case class RReference[T <: PRefType](referenceType: RRefType[T]) extends RType[PReference[T] with Cat1] {
-    val toInternalName: String = referenceType.toInternalName
-    val jvmName: JvmName = referenceType.jvmName
+    def toInternalName: String = referenceType.toInternalName
+    def jvmName: JvmName = referenceType.jvmName
   }
 
 }
@@ -93,8 +91,8 @@ object RType {
 
 sealed trait RRefType[T <: PRefType] extends Describable {
   val jvmName: JvmName
-  lazy val toInternalName: String = RRefType.toInternalName(this)
-  lazy val toDescriptor: String = RRefType.toDescriptor(this)
+  def toInternalName: String = RRefType.toInternalName(this)
+  def toDescriptor: String = RRefType.toDescriptor(this)
 }
 
 object RRefType {
