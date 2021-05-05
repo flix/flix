@@ -35,6 +35,10 @@ class ClassMaker(visitor: ClassWriter) {
     makeField(fieldName, fieldType, mod)
   }
 
+  def mkStaticField[T <: PType](fieldName: String, fieldType: RType[T]): Unit = {
+    makeField(fieldName, fieldType, Mod.isStatic)
+  }
+
   def mkConstructor(f: F[StackNil] => F[StackEnd], descriptor: String): Unit =
     mkMethod(f, JvmName.constructorMethod, descriptor, Mod.isPublic)
 
@@ -75,14 +79,20 @@ object ClassMaker {
     }
   }
 
-  def openClassWriter[T <: PRefType](classType: RReference[T], addSource: Boolean = false)(implicit flix: Flix): ClassMaker = {
-    val mod = Mod.isPublic.isFinal
+  def makeClass[T <: PRefType](classType: RReference[T], addSource: Boolean = false, mod: Mod)(implicit flix: Flix): ClassMaker = {
     val internalName = classType.toInternalName
-
     val visitor = makeClassWriter()
     visitor.visit(JavaVersion, mod.getInt, internalName, null, JvmName.Java.Lang.Object.toInternalName, null)
     if (addSource) visitor.visitSource(internalName, null)
     new ClassMaker(visitor)
+  }
+
+  def mkClass[T <: PRefType](classType: RReference[T], addSource: Boolean = false)(implicit flix: Flix): ClassMaker = {
+    makeClass(classType, addSource = addSource, Mod.isPublic.isFinal)
+  }
+
+  def mkInterface[T <: PRefType](classType: RReference[T], addSource: Boolean = false)(implicit flix: Flix): ClassMaker = {
+    makeClass(classType, addSource = addSource, Mod.isPublic.isAbstract.isInterface)
   }
 
   class Mod private {
@@ -90,8 +100,10 @@ object ClassMaker {
     private var stat = 0
     private var pub = 0
     private var priv = 0
+    private var abs = 0
+    private var inter = 0
 
-    def getInt: Int = fin + stat + pub + priv
+    def getInt: Int = fin + stat + pub + priv + abs + inter
 
     def isFinal: Mod = {
       fin = ACC_FINAL
@@ -114,24 +126,30 @@ object ClassMaker {
       priv = ACC_PRIVATE
       this
     }
+
+    def isAbstract: Mod = {
+      abs = ACC_ABSTRACT
+      this
+    }
+
+    def isInterface: Mod = {
+      inter = ACC_INTERFACE
+      this
+    }
   }
 
   object Mod {
-    def isFinal: Mod = {
-      new Mod().isFinal
-    }
+    def isFinal: Mod = new Mod().isFinal
 
-    def isStatic: Mod = {
-      new Mod().isStatic
-    }
+    def isStatic: Mod = new Mod().isStatic
 
-    def isPublic: Mod = {
-      new Mod().isPublic
-    }
+    def isPublic: Mod = new Mod().isPublic
 
-    def isPrivate: Mod = {
-      new Mod().isPrivate
-    }
+    def isPrivate: Mod = new Mod().isPrivate
+
+    def isAbstract: Mod = new Mod().isAbstract
+
+    def isInterface: Mod = new Mod().isInterface
 
     def nothing: Mod = new Mod()
   }

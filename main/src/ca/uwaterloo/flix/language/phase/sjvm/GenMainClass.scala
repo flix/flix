@@ -19,12 +19,14 @@ package ca.uwaterloo.flix.language.phase.sjvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst.{Def, Root}
-import ca.uwaterloo.flix.language.ast.PRefType.PFunction
-import ca.uwaterloo.flix.language.ast.RRefType.{RArray, RArrow, RStr}
+import ca.uwaterloo.flix.language.ast.PRefType._
+import ca.uwaterloo.flix.language.ast.PType.PReference
+import ca.uwaterloo.flix.language.ast.RRefType._
 import ca.uwaterloo.flix.language.ast.RType.RReference
 import ca.uwaterloo.flix.language.ast.{PRefType, PType, RRefType, Symbol}
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler.{F, StackEnd, StackNil}
 import ca.uwaterloo.flix.language.phase.sjvm.ClassMaker.Mod
+import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
@@ -58,10 +60,10 @@ object GenMainClass {
 
   def genByteCode(mainType: RReference[PFunction])(implicit root: Root, flix: Flix): Array[Byte] = {
     // class writer
-    val classMaker = ClassMaker.openClassWriter(mainType, addSource = true)
+    val classMaker = ClassMaker.mkClass(mainType, addSource = true)
 
     // Emit the code for the main method
-    classMaker.mkMethod(compileMainMethod(???), mainMethod, mainType.toDescriptor, Mod.isPublic.isStatic)
+    classMaker.mkMethod(compileMainMethod(mainType), mainMethod, JvmName.javaMainDescriptor, Mod.isPublic.isStatic)
 
     classMaker.closeClassMaker
   }
@@ -78,32 +80,23 @@ object GenMainClass {
      */
     def compileMainMethod(mainType: RReference[PFunction])(implicit root: Root, flix: Flix): F[StackNil] => F[StackEnd] = {
 
-      //Get the (argument) descriptor, since the main argument is of type String[], we need to get it's corresponding descriptor
-      val argumentDescriptor = JvmName.javaMainDescriptor
-  //
-  //    //Get the (result) descriptor, since main method returns void, we need to get the void type descriptor
-  //    val resultDescriptor = JvmType.Void.toDescriptor
-  //
-  //    //Emit the main method signature
-  //    val main = visitor.visitMethod(ACC_PUBLIC + ACC_STATIC, "main",s"($argumentDescriptor)$resultDescriptor", null, null)
-  //
-  //    main.visitCode()
-  //
-  //    //Get the root namespace in order to get the class type when invoking m_main
-  //    val ns = JvmOps.getNamespace(Symbol.Main)
-  //
-  //    // Call Ns.m_main(args)
-  //
-  //    // Push the args array on the stack.
-  //    main.visitVarInsn(ALOAD, 0)
-  //
-  //    //Invoke m_main
-  //    main.visitMethodInsn(INVOKESTATIC, JvmOps.getNamespaceClassType(ns).name.toInternalName, "m_main",
-  //      AsmOps.getMethodDescriptor(List(/* TODO: Should be string array */ JvmType.Object), JvmType.PrimInt), false)
-  //
-  //    main.visitInsn(RETURN)
-  //    main.visitMaxs(1,1)
-  //    main.visitEnd()
+      //Get the root namespace in order to get the class type when invoking m_main
+      val ns = SjvmOps.getNamespace(Symbol.Main)
+
+      // Call Ns.m_main(args)
+
+      // Push the args array on the stack.
+//      main.visitVarInsn(ALOAD, 0)
+      START[StackNil] ~
+      THISLOAD(tag[PArray[PReference[PStr]]]) ~
+        ???
+//      Invoke m_main
+//      main.visitMethodInsn(INVOKESTATIC, JvmOps.getNamespaceClassType(ns).name.toInternalName, "m_main",
+//        AsmOps.getMethodDescriptor(List(/* TODO: Should be string array */ JvmType.Object), JvmType.PrimInt), false)
+//
+//      main.visitInsn(RETURN)
+//      main.visitMaxs(1,1)
+//      main.visitEnd()
       ???
     }
 

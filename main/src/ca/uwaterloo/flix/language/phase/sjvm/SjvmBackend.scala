@@ -20,7 +20,9 @@ package ca.uwaterloo.flix.language.phase.sjvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.ErasedAst.Root
-import ca.uwaterloo.flix.language.ast.{PType, Symbol}
+import ca.uwaterloo.flix.language.ast.RRefType._
+import ca.uwaterloo.flix.language.ast.RType.{RInt32, RReference}
+import ca.uwaterloo.flix.language.ast.{PType, RType, Symbol}
 import ca.uwaterloo.flix.language.phase.Phase
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Validation.ToSuccess
@@ -54,25 +56,19 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
         return new CompilationResult(input, None, Map.empty).toSuccess
       }
 
-      //
-      // Compute the set of closures in the program.
-      //
-      // val closures = SjvmOps.closuresOf(input)
+      val types: Set[RType[_ <: PType]] = Set() // TODO(JLS): how can a set of RTypes be typed
 
       //
-      // Compute the set of namespaces in the program.
+      // Generate function interfaces for each function type in the program.
       //
-      // val namespaces = SjvmOps.namespacesOf(input)
-
-      //
-      // Compute the set of instantiated tags in the program.
-      //
-      // val tags = SjvmOps.tagsOf(input)
-
-      //
-      // Compute the set of types in the program.
-      //
-      // val types = SjvmOps.typesOf(input)
+      // TODO(JLS): Actually find set of types here
+      val functionInterfaces = GenFunctionInterfaces.gen(
+        RReference(RArrow(
+          List(RReference(
+            RArray(
+              RReference(
+                RStr())))),
+          RInt32())))
 
       //
       // Generate the main class.
@@ -87,7 +83,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
       //
       // Generate lazy classes.
       //
-//      val lazyClasses = GenLazyClasses.gen()
+      //      val lazyClasses = GenLazyClasses.gen()
 
       //
       // Collect all the classes and interfaces together.
@@ -95,7 +91,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
       List(
         mainClass,
         refClasses,
-//        lazyClasses
+        //        lazyClasses
       ).reduce(_ ++ _)
     }
 
