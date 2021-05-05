@@ -24,6 +24,8 @@ import java.lang.reflect.{Constructor, Field, Method}
 
 object ErasedAst {
 
+  // TODO(JLS): add ast traversal sets/lists/map here
+  // example: tuples: Set[RType[_ <: PType]]
   case class Root(defs: Map[Symbol.DefnSym, ErasedAst.Def[_ <: PType]],
                   enums: Map[Symbol.EnumSym, ErasedAst.Enum],
                   properties: List[ErasedAst.Property],

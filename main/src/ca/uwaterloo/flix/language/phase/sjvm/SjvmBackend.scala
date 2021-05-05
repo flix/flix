@@ -56,7 +56,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
         return new CompilationResult(input, None, Map.empty).toSuccess
       }
 
-      val types: Set[RType[_ <: PType]] = Set() // TODO(JLS): how can a set of RTypes be typed
+      val types: Set[RType[_ <: PType]] = Set() // TODO(JLS): how can a set of RTypes be types
 
       //
       // Generate function interfaces for each function type in the program.
@@ -91,6 +91,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
       List(
         mainClass,
         refClasses,
+        functionInterfaces
         //        lazyClasses
       ).reduce(_ ++ _)
     }

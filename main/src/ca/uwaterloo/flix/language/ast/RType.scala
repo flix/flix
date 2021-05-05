@@ -29,10 +29,10 @@ trait Describable {
 
 // actual flix types
 sealed trait RType[T <: PType] extends Describable {
-  private val descriptor: String = RType.toDescriptor(this)
+  private lazy val descriptor: String = RType.toDescriptor(this)
   def toDescriptor: String = descriptor
-  val toErasedString: String = RType.toErasedString(this)
-  val erasedType: RType[_ <: PType] = RType.erasedType(this)
+  lazy val toErasedString: String = RType.toErasedString(this)
+  lazy val erasedType: RType[_ <: PType] = RType.erasedType(this)
 }
 
 object RType {
@@ -175,7 +175,7 @@ object RRefType {
     override val jvmName: JvmName = JvmName.Java.Lang.Object
   }
 
-  case class RTuple(elms: List[RType[PType]]) extends RRefType[PAnyObject] {
+  case class RTuple(elms: List[RType[_ <: PType]]) extends RRefType[PAnyObject] {
     override val jvmName: JvmName = JvmName.Java.Lang.Object
   }
 

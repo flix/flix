@@ -37,22 +37,15 @@ object GenFunctionInterfaces {
   /**
    * Returns the set of function interfaces for the given set of types `ts`.
    */
-  def gen[T <: PType](tpe: RType[PReference[PFunction]])(implicit root: Root, flix: Flix): (JvmName, JvmClass) = {
+  def gen[T <: PType](tpe: RType[PReference[PFunction]])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     // Case 1: The type constructor is an arrow type.
     // Construct the functional interface.
     def getRType(m: RType[PReference[PFunction]]): RReference[PFunction] = {
-//      def innerMatch[T <: PRefType](m: RReference[PRefType]): RReference[PFunction] = m match {
-//        case r@ RArrow(_, _) => r
-//      }
-
-      m match {
-        case r@ RReference(referenceType) => r
-      }
+      m match {case r@ RReference(referenceType) => r}
     }
-
     val tpe0 = getRType(tpe)
     val bytecode = genByteCode(tpe0)
-    tpe0.jvmName -> JvmClass(tpe0.jvmName, bytecode)
+    Map() + (tpe0.jvmName -> JvmClass(tpe0.jvmName, bytecode))
   }
 
   /**
@@ -75,7 +68,7 @@ object GenFunctionInterfaces {
     val fieldMod = Mod.isAbstract.isPublic
     // Adding setters for each argument of the function
     for ((arg, index) <- concreteFunctionType.args.zipWithIndex) {
-      // `arg$ind()` field
+      // `arg$index` field
       classMaker.mkField(s"arg$index", arg.erasedType, fieldMod)
     }
     classMaker.mkField(resultFieldName, concreteFunctionType.result.erasedType, fieldMod)

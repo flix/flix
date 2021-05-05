@@ -65,6 +65,7 @@ object GenRefClasses {
     // Generate the instance field
     classMaker.mkField(ValueFieldName, valueFieldType, Mod.isPublic)
 
+    // TODO(JLS): Something is wrong
     val constructorDescriptor = JvmName.getMethodDescriptor(valueFieldType, None)
     classMaker.mkConstructor(genConstructor(valueFieldType), constructorDescriptor)
 

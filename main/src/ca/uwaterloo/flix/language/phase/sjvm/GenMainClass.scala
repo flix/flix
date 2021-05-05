@@ -88,8 +88,9 @@ object GenMainClass {
       // Push the args array on the stack.
 //      main.visitVarInsn(ALOAD, 0)
       START[StackNil] ~
-      THISLOAD(tag[PArray[PReference[PStr]]]) ~
-        ???
+        RETURN
+//      THISLOAD(tag[PArray[PReference[PStr]]]) ~
+//        ???
 //      Invoke m_main
 //      main.visitMethodInsn(INVOKESTATIC, JvmOps.getNamespaceClassType(ns).name.toInternalName, "m_main",
 //        AsmOps.getMethodDescriptor(List(/* TODO: Should be string array */ JvmType.Object), JvmType.PrimInt), false)
@@ -97,7 +98,6 @@ object GenMainClass {
 //      main.visitInsn(RETURN)
 //      main.visitMaxs(1,1)
 //      main.visitEnd()
-      ???
     }
 
   /**

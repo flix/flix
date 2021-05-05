@@ -26,7 +26,8 @@ import java.nio.file.{Path, Paths}
  */
 object JvmName {
 
-  val reservedDelimiter: String = "$"
+  // TODO(JLS): Find better alternative
+  val reservedDelimiter: String = "_"
 
   val constructorMethod = "<init>"
 
