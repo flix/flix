@@ -523,4 +523,150 @@ namespace ChannelImpl {
         // Add LockConditionPair to the channel
         MutList.push!(pair, getWaitingGetters(channel));
         unlock(channel)
+
+
+pub def send(num_messages: Int, c: ChannelImpl[Int]): Int & Impure =
+    if (num_messages == 0) (0)
+    else {
+        ChannelImpl.put(c, num_messages); ///send arbitrary value
+        send(num_messages-1, c) //repeat
+    }
+
+pub def recv(num_messages: Int, c: ChannelImpl[Int]): Int & Impure =
+    if (num_messages == 500) (0) //must change if num messages change
+    else {
+        ChannelImpl.get(c);
+        recv(num_messages+1, c)
+    }
+
+
+pub def mult_send(num_messages: Int, num_threads: Int, c: ChannelImpl[Int]): Int & Impure =
+    if (num_threads == 0 ) (0)
+    else {
+        spawn send(num_messages/num_threads, c);
+        mult_send(num_messages,num_threads-1,c)
+    }
+
+pub def mult_recv(num_messages: Int, num_threads: Int, c: ChannelImpl[Int]): Int & Impure =
+    if (num_threads == 0) (0)
+    else {
+        spawn recv(num_messages/num_threads, c);
+        mult_recv(num_messages,num_threads-1,c)
+    }
+
+pub def select_recv(num_messages: Int, c1: ChannelImpl[Int], c2: ChannelImpl[Int], c3: ChannelImpl[Int], c4: ChannelImpl[Int]): Int & Impure =
+    if (num_messages == 0) (0)
+    else {
+        let channels = [c1, c2, c3, c4];
+        /// channels[1] = c2;
+        /// channels[2] = c3;
+        /// channels[3] = c4;
+        match ChannelImpl.selectImpl(channels, true) {
+            case Some((cInd, el, _))   => {printf(Int32.toString, "Selected channel ", cInd); el}
+            ///     1 => {printf(Int32.toString, "Selected channel ", cInd); el}
+            ///     2 => {printf(Int32.toString, "Selected channel ", cInd); el}
+            ///     3 => {printf(Int32.toString, "Selected channel ", cInd); el}
+            /// }
+            case None => -1
+        };
+
+
+            /// match c {
+            ///     case c1 => c1
+            ///     case c2 => c2
+            ///     case c3 => c3
+            ///     case c4 => c4
+            /// }
+
+        /// select {
+        /// case v <- c1 => v
+        /// case v <- c2 => v
+        /// case v <- c3 => v
+        /// case v <- c4 => v
+        /// case _ => 0
+        /// };
+        select_recv(num_messages-1,c1,c2,c3,c4)
+    }
+
+pub def spsc(num_messages: Int, c: ChannelImpl[Int]): Int & Impure =
+    send(num_messages,c);
+    recv(num_messages,c)
+
+
+pub def mpsc(num_messages: Int, num_threads: Int, c: ChannelImpl[Int]): Int & Impure =
+    mult_send(num_messages,num_threads,c);
+    recv(num_messages,c)
+
+pub def mpmc(num_messages: Int, num_threads: Int, c: ChannelImpl[Int]): Int & Impure =
+    mult_send(num_messages,num_threads,c);
+    mult_recv(num_messages,num_threads,c)
+
+
+pub def select_rx_u(num_messages: Int): Int & Impure =
+    let c1 = ChannelImpl.new();
+    let c2 = ChannelImpl.new();
+    let c3 = ChannelImpl.new();
+    let c4 = ChannelImpl.new();
+
+    let n1 = num_messages;
+    let n2 = num_messages;
+    let n3 = num_messages;
+    let n4 = num_messages;
+    let n5 = num_messages;
+
+    send(n1,c1);
+    send(n2,c2);
+    send(n3,c3);
+    send(n4,c4);
+
+    select_recv(n5,c1,c2,c3,c4)
+
+pub def select_rx_b(num_messages: Int): Int & Impure =
+    let c1 = ChannelImpl.newWithCapacity(num_messages);
+    let c2 = ChannelImpl.newWithCapacity(num_messages);
+    let c3 = ChannelImpl.newWithCapacity(num_messages);
+    let c4 = ChannelImpl.newWithCapacity(num_messages);
+
+    let n1 = num_messages;
+    let n2 = num_messages;
+    let n3 = num_messages;
+    let n4 = num_messages;
+    let n5 = num_messages;
+
+    send(n1,c1);
+    send(n2,c2);
+    send(n3,c3);
+    send(n4,c4);
+
+    select_recv(n5,c1,c2,c3,c4)
 }
+
+// TODO : remove this
+/// def waitFiveSec(): Unit & Impure =
+///     import java.lang.Thread:sleep(Int64);
+///     let fiveSec = 5000i64;
+///     sleep(fiveSec)
+
+
+/// def main(): String & Impure =
+///     printf(Int32.toString, "Starting...", 0);
+
+
+
+///     let messages = 500; //from crossbeam  (5000000)
+///     let threads = 4; //from crossbeam
+///     let c_unbounded = ChannelImpl.new();
+///     let c_bounded = ChannelImpl.newWithCapacity(messages);
+///     spawn ChannelImpl.spsc(messages, c_bounded);
+///     spawn ChannelImpl.spsc(messages, c_unbounded);
+
+///     spawn ChannelImpl.mpsc(messages,threads,c_unbounded);
+///     spawn ChannelImpl.mpsc(messages,threads, c_bounded);
+
+///     spawn ChannelImpl.mpmc(messages,threads,c_unbounded);
+///     spawn ChannelImpl.mpmc(messages,threads, c_bounded);
+
+///     spawn ChannelImpl.select_rx_u(messages); //runtime crash
+///     spawn ChannelImpl.select_rx_b(messages); //runtime crash
+
+///     "end"
