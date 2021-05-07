@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 // TODO : remove this
 def printf[a, e](toString: a -> String & e, str: String, val: a): Unit & Impure =
     let stringBuilder = StringBuilder.new();
@@ -25,7 +24,7 @@ def printf[a, e](toString: a -> String & e, str: String, val: a): Unit & Impure 
     Console.printLine(fullStr)
 
 
-namespace Channel {
+namespace ChannelImpl {
 
     // todo: remove this
     def exit(status: Int32): () & Impure =
@@ -47,7 +46,7 @@ namespace Channel {
     *   - waitingSetters is a condition that can notify threads of
     *   available space in the elementQueue.
     */
-    pub opaque type Channel[a] = (
+    pub opaque type ChannelImpl[a] = (
         Int64,
         ReentrantLock,
         Int,
@@ -57,38 +56,20 @@ namespace Channel {
         Condition
     )
 
-    /**
-    * public int branchNumber;
-    * public boolean defaultChoice;
-    * public Object element;
-    */
-    pub opaque type SelectChoice[a] = (
-        Int,
-        Bool,
-        a
-    )
-
-    pub def newSelectChoice(branchNumber: Int, element: a, defaultChoice: Bool): SelectChoice[a] =
-        SelectChoice(
-            branchNumber,
-            defaultChoice,
-            element
-        )
-    // FYI default choice is false in this constructor, TODO : delete
 
     // channel, index
     pub opaque type ChannelIndexPair[a] = (
-        Channel[a],
+        ChannelImpl[a],
         Int
         )
 
-    pub def newChannelIndexPair(channel: Channel[a], index: Int): ChannelIndexPair[a] =
+    pub def newChannelIndexPair(channel: ChannelImpl[a], index: Int): ChannelIndexPair[a] =
         ChannelIndexPair(
             channel,
             index
         )
 
-    pub def getChannel(cip: ChannelIndexPair[a]): Channel[a] = match cip {
+    pub def getChannel(cip: ChannelIndexPair[a]): ChannelImpl[a] = match cip {
             case ChannelIndexPair(c, _)   => c
         }
 
@@ -110,33 +91,33 @@ namespace Channel {
     ///     hash(getChannel(cip), getIndex(cip))
 
 
-    pub def getId(c: Channel[a]): Int64 = match c {
-            case Channel(id, _, _, _, _, _, _)   => id
+    pub def getId(c: ChannelImpl[a]): Int64 = match c {
+            case ChannelImpl(id, _, _, _, _, _, _)   => id
         }
 
-    pub def getChannelLock(c: Channel[a]): ReentrantLock = match c {
-            case Channel(_, channelLock, _, _, _, _, _)   => channelLock
+    pub def getChannelLock(c: ChannelImpl[a]): ReentrantLock = match c {
+            case ChannelImpl(_, channelLock, _, _, _, _, _)   => channelLock
         }
 
-    pub def getBufferSize(c: Channel[a]): Int = match c {
-            case Channel(_, _, bufferSize, _, _, _, _)   => bufferSize
+    pub def getBufferSize(c: ChannelImpl[a]): Int = match c {
+            case ChannelImpl(_, _, bufferSize, _, _, _, _)   => bufferSize
         }
 
-    pub def getUnbuffered(c: Channel[a]): Bool = match c {
-            case Channel(_, _, _, unbuffered, _, _, _)   => unbuffered
+    pub def getUnbuffered(c: ChannelImpl[a]): Bool = match c {
+            case ChannelImpl(_, _, _, unbuffered, _, _, _)   => unbuffered
         }
 
-    pub def getElementQueue(c: Channel[a]): MutList[a] = match c {
-            case Channel(_, _, _, _, elementQueue, _, _)   => elementQueue
+    pub def getElementQueue(c: ChannelImpl[a]): MutList[a] = match c {
+            case ChannelImpl(_, _, _, _, elementQueue, _, _)   => elementQueue
         }
 
     // TODO : make it a MutList or MutSet??
-    pub def getWaitingGetters(c: Channel[a]): MutList[LockConditionPair] = match c {
-            case Channel(_, _, _, _, _, waitingGetters, _)   => waitingGetters
+    pub def getWaitingGetters(c: ChannelImpl[a]): MutList[LockConditionPair] = match c {
+            case ChannelImpl(_, _, _, _, _, waitingGetters, _)   => waitingGetters
         }
 
-    pub def getWaitingSetters(c: Channel[a]): Condition = match c {
-            case Channel(_, _, _, _, _, _, waitingSetters)   => waitingSetters
+    pub def getWaitingSetters(c: ChannelImpl[a]): Condition = match c {
+            case ChannelImpl(_, _, _, _, _, _, waitingSetters)   => waitingSetters
         }
 
 
@@ -208,14 +189,22 @@ namespace Channel {
     ///
     /// An unbuffered channel has an internal capacity of `0`.
     ///
-    pub def new(): Channel[a] & Impure = newWithCapacity(0)
+    pub def new(): ChannelImpl[a] & Impure = newWithCapacity(0)
 
     ///
     /// Returns a fresh buffered channel with internal capacity `c`.
     ///
-    pub def newWithCapacity(bufferSize: Int): Channel[a] & Impure =
+    pub def newWithCapacity(bufferSize: Int): ChannelImpl[a] & Impure =
+
+///   TODO  This does not do what you think it does :)
+/// Here is what you want:
+/// let unbuffered = ref false;
+/// ...
+/// unbuffered := true
+
         let unbuffered = false;
         if (bufferSize < 0) {
+            // TODO bug!("foo")
             Console.printLine("Channel bufferSize must be positive");
             exit(1)
         } else if (bufferSize == 0) {
@@ -230,7 +219,7 @@ namespace Channel {
 
         let reentrantLock = newReentrantLock();
 
-        Channel(
+        ChannelImpl(
             0i64,
             reentrantLock,
             bufferSize,
@@ -246,7 +235,7 @@ namespace Channel {
     ///
     /// pub def get(c: Channel[a]): a & Impure = <- c
 
-    pub def put_waitOnFullChannel(c: Channel[a], bufferSize: Int): () & Impure =
+    pub def put_waitOnFullChannel(c: ChannelImpl[a], bufferSize: Int): () & Impure =
         // If channel not full, return
         if (MutList.length(getElementQueue(c)) < bufferSize) ()
         // Else, wait
@@ -261,7 +250,7 @@ namespace Channel {
     ///
     /// Equivalent to the expression `c <- x`.
     ///
-    pub def put(c: Channel[a], x: a): Channel[a] & Impure =
+    pub def put(c: ChannelImpl[a], x: a): ChannelImpl[a] & Impure =
         lock(c);
 
         // Check if the channel is full
@@ -300,7 +289,7 @@ namespace Channel {
         else false
 
 
-    pub def select_helper(channels: Array[Channel[a]], sortedChannels: Array[Channel[a]], selectLock: ReentrantLock, condition: Condition, hasDefault: Bool): Option[SelectChoice[a]] & Impure =
+    pub def select_helper(channels: Array[ChannelImpl[a]], sortedChannels: Array[ChannelImpl[a]], selectLock: ReentrantLock, condition: Condition, hasDefault: Bool): Option[(Int, a, Bool)] & Impure =
         // MutList used to persist the Select Choice from the inner scope
         let selectChoices = MutList.new();
 
@@ -337,7 +326,7 @@ namespace Channel {
                             // Return the element and the branchNumber of this channel
 
                             // If an element found, add a new selectChoice to the MutList in order to later return
-                            let selectChoice = Some(newSelectChoice(getIndex(cip), element, false));
+                            let selectChoice = Some((getIndex(cip), element, false));
                             MutList.push!(selectChoice, selectChoices)
                         }
                     }
@@ -354,6 +343,7 @@ namespace Channel {
             // No element was found but if there is a default case, choose this
             else if (hasDefault) {
                 Console.printLine("Default selection");
+                // TODO what exactly to return?
                 None
             }
             // No element was found.
@@ -382,13 +372,6 @@ namespace Channel {
             }
         }
 
-    // TODO : -implement spawn
-    /// pub def spawn2(s: Spawnable) {
-    ///     // Create a new Thread and evaluate the spawned expression in the new Thread
-    ///     Thread thread = new Thread(s::spawn);
-    ///     thread.start();
-    /// }
-
   /**
    * Given a array of channels, returns the first channel that has an element
    * and return the index of that channel and the retrieved element in a
@@ -398,35 +381,32 @@ namespace Channel {
    * @return the channel index of the channel with an element and the element
    */
    // TODO : resolve the function name issue
-    pub def select2(channels: Array[Channel[a]], hasDefault: Bool): SelectChoice[a] & Impure =
+    pub def selectImpl(channels: Array[ChannelImpl[a]], hasDefault: Bool): Option[(Int, a, Bool)] & Impure =
         // Create new Condition and channelLock the current thread
         let selectLock = newReentrantLock();
         let condition = newCondition(selectLock);
 
         // Sort channels to avoid deadlock when locking
         let sortedChannels = sortChannels(channels);
-        select_helper(channels, sortedChannels, selectLock, condition, hasDefault);
-        ref hasDefault := false;
-        let el = get(sortedChannels[0]);
-        newSelectChoice(1, el, hasDefault)
+        select_helper(channels, sortedChannels, selectLock, condition, hasDefault)
 
 
-    def cmp(a: Channel[a], b: Channel[a]): Int32=
+    def cmp(a: ChannelImpl[a], b: ChannelImpl[a]): Int32=
         let a_id = getId(a);
         let b_id = getId(b);
         if (a_id == b_id) (0)
         else if (a_id > b_id) (1)
         else (-1)
 
-    def sortChannels(channels: Array[Channel[a]]): Array[Channel[a]] & Impure=
+    def sortChannels(channels: Array[ChannelImpl[a]]): Array[ChannelImpl[a]] & Impure=
         Array.sortWith(cmp, channels)
 
-    def lock(chan: Channel[a]): Unit & Impure=
+    def lock(chan: ChannelImpl[a]): Unit & Impure=
         let lock = getChannelLock(chan);
         java_lock(lock);
         ()
 
-    def unlock(chan: Channel[a]): Unit & Impure=
+    def unlock(chan: ChannelImpl[a]): Unit & Impure=
         let lock = getChannelLock(chan);
         java_unlock(lock);
         ()
@@ -437,11 +417,11 @@ namespace Channel {
         Console.printLine("java_signalAll called");
         java_signalAll(condition)
 
-    def lockAllChannels(channels: Array[Channel[a]]): Unit & Impure=
+    def lockAllChannels(channels: Array[ChannelImpl[a]]): Unit & Impure=
         Array.foreach(lock,channels);
         ()
 
-    def unlockAllChannels(channels: Array[Channel[a]]): Unit & Impure=
+    def unlockAllChannels(channels: Array[ChannelImpl[a]]): Unit & Impure=
         Array.foreach(unlock,channels);
         ()
 
@@ -449,7 +429,7 @@ namespace Channel {
     /*
     * Recursive helper function for get, loops and awaits on empty channel
     */
-    def get_waitOnEmptyChannel(chan: Channel[a], e: Option[a]): Option[a] & Impure=
+    def get_waitOnEmptyChannel(chan: ChannelImpl[a], e: Option[a]): Option[a] & Impure=
         let queue = getElementQueue(chan);
 
         match e {
@@ -492,7 +472,7 @@ namespace Channel {
 
 
 
-    pub def get(chan: Channel[a]): a & Impure=
+    pub def get(chan: ChannelImpl[a]): a & Impure=
         lock(chan);
         let queue = getElementQueue(chan);
 
@@ -514,7 +494,7 @@ namespace Channel {
 
 
 
-    def tryGet(chan: Channel[a]): Option[a] & Impure=
+    def tryGet(chan: ChannelImpl[a]): Option[a] & Impure=
         lock(chan);
         let queue = getElementQueue(chan);
         let element = MutList.pop!(queue);
@@ -537,46 +517,10 @@ namespace Channel {
     *
     * @param condition the condition to add
     */
-    pub def addGetter(channel: Channel[a], conditionLock: ReentrantLock, condition: Condition): Unit & Impure=
+    pub def addGetter(channel: ChannelImpl[a], conditionLock: ReentrantLock, condition: Condition): Unit & Impure=
         lock(channel);
         let pair = (conditionLock, condition);
         // Add LockConditionPair to the channel
         MutList.push!(pair, getWaitingGetters(channel));
         unlock(channel)
 }
-
-// TODO : remove this
-def waitFiveSec(): Unit & Impure =
-    import java.lang.Thread:sleep(Int64);
-    let fiveSec = 5000i64;
-    sleep(fiveSec)
-
-/// def main(): String & Impure =
-///     let c = Channel.newWithCapacity(5);
-///     let toChannel = 2;
-///     Channel.put(c, toChannel);
-///     printf(Int32.toString, "Putting ", toChannel);
-///     let toChannel2 = 5;
-///     Channel.put(c, toChannel2);
-///     printf(Int32.toString, "Putting ", toChannel2);
-///     let fromChannel = Channel.get(c);
-///     printf(Int32.toString, "Getting ", fromChannel);
-///     let fromChannel2 = Channel.get(c);
-///     printf(Int32.toString, "Getting ", fromChannel2);
-
-///     let c2 = Channel.newWithCapacity(3);
-///     Channel.put(c2, 10);
-///     Channel.put(c2, 17);
-///     Channel.put(c2, 27);
-
-///     // Test getting on empty channel
-///     /// let fromChannel3 = Channel.get(c);
-///     /// printf(Int32.toString, "Getting ", fromChannel3);
-///     let channels = [Channel.newWithCapacity(0); 2];
-///     channels[0] = c;
-///     channels[1] = c2;
-///     // TODO : - test how it acts on default
-///     Channel.select2(channels, false);
-///     waitFiveSec();
-
-///     "end"
