@@ -420,47 +420,42 @@ object Lowering extends Phase[Root, Root] {
       Expression.PutStaticField(field, e, t, eff, loc)
 
     case Expression.NewChannel(exp, tpe, eff, loc) =>
-      val enumSym = Symbol.mkEnumSym("Channel.ChannelImpl")
-
-      val sym = Symbol.mkDefnSym("Channel.newWithCapacity")
-      // TODO: Q: Should `tpe` in the following line be visited with `visitType` before being used?
-      val defTpe = Type.mkImpureArrow(Type.Int32, Type.mkEnum(enumSym, List(tpe)))
-
       val e = visitExp(exp)
       val t = visitType(tpe)
+
+      val enumSym = Symbol.mkEnumSym("Channel.ChannelImpl")
+      val chanType = Type.mkEnum(enumSym, List(t))
+      val defTpe = Type.mkImpureArrow(Type.Int32, chanType)
+      val sym = Symbol.mkDefnSym("Channel.newWithCapacity")
       // TODO: Q: Is `loc` in the following line the location of the definition of the function or the use of the function? If it's the former, then I think that this is incorrect.
       val callExp = Expression.Def(sym, defTpe, loc)
       val args = List(e)
-      Expression.Apply(callExp, args, Type.mkEnum(enumSym, List(t)), eff, loc)
+      Expression.Apply(callExp, args, chanType, eff, loc)
 
     case Expression.GetChannel(exp, tpe, eff, loc) =>
       // <- exp ... Here "tpe" its the element type of the channel.
       // specifically we also know that exp itself has type Channel[tpe].
       // we want to construct the call "Channel.get(exp)": tpe.
       // In fact what we will care about is the type of "Channel.get"
-
-      val enumSym = Symbol.mkEnumSym("Channel.ChannelImpl")
-
-      val sym = Symbol.mkDefnSym("Channel.get")
-      val defTpe = Type.mkImpureArrow(Type.mkEnum(enumSym, List(tpe)), tpe)
-
       val e = visitExp(exp)
       val t = visitType(tpe)
+      val enumSym = Symbol.mkEnumSym("Channel.ChannelImpl")
+      val defTpe = Type.mkImpureArrow(Type.mkEnum(enumSym, List(tpe)), tpe)
+      val sym = Symbol.mkDefnSym("Channel.get")
       val callExp = Expression.Def(sym, defTpe, loc)
       val args = List(e)
       Expression.Apply(callExp, args, t, eff, loc)
 
     case Expression.PutChannel(chanExp, exp, tpe, eff, loc) =>
-      val enumSym = Symbol.mkEnumSym("Channel.ChannelImpl")
-      val chanType = Type.mkEnum(enumSym, List(tpe))
-
-      val sym = Symbol.mkDefnSym("Channel.put")
-      // TODO: Q: Should this be curried?
-      val defTpe = Type.mkImpureCurriedArrow(List(chanType, tpe), chanType)
-
       val e1 = visitExp(chanExp)
       val e2 = visitExp(exp)
       val t = visitType(tpe)
+      val enumSym = Symbol.mkEnumSym("Channel.ChannelImpl")
+      // TODO: Q: Below, should it be `List(t)` or `List(tpe)`
+      val chanType = Type.mkEnum(enumSym, List(t))
+      val sym = Symbol.mkDefnSym("Channel.put")
+      // TODO: Q: Should this be curried?
+      val defTpe = Type.mkImpureCurriedArrow(List(chanType, t), chanType)
       val callExp = Expression.Def(sym, defTpe, loc)
       val args = List(e1, e2)
       Expression.Apply(callExp, args, chanType, eff, loc)
