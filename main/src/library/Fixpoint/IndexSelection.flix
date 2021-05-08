@@ -59,6 +59,7 @@ namespace Fixpoint {
     /// Step 1 and Step 2 are implemented as one pass.
     ///
     pub def queryStmt(stmt: RamStmt[v]): RamStmt[v] = match stmt {
+        case RamStmt.Facts(_) => stmt
         case RamStmt.Insert(op) =>
             let (innerOp, ground) = queryOp(op, Set#{});
             if (List.isEmpty(ground))
@@ -68,7 +69,7 @@ namespace Fixpoint {
         case RamStmt.Merge(_, _) => stmt
         case RamStmt.Assign(_, _) => stmt
         case RamStmt.Purge(_) => stmt
-        case RamStmt.Seq(xs) => RamStmt.Seq(List.map(queryStmt, xs))
+        case RamStmt.Seq(xs) => RamStmt.Seq(Array.map(queryStmt, xs)) as & Pure
         case RamStmt.Until(test, body) => RamStmt.Until(test, queryStmt(body))
         case RamStmt.Comment(_) => stmt
     }
