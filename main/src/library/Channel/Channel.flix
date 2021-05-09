@@ -89,6 +89,10 @@ namespace Channel {
     ///         channelId(x) == channelId(y)
     /// }
 
+    def newId(): Int64 & Impure =
+        import library.Channel.GlobalCounter:newId() as javaNewId;
+        javaNewId()
+
     ///
     /// Returns a fresh buffered channel with internal capacity `c`.
     ///
@@ -113,14 +117,12 @@ namespace Channel {
             newCondition(reentrantLock)
         )
 
-    def waitOnFullChannel(c: ChannelImpl[a], bufferSize: Int): () & Impure =
-        if (MutList.length(getElementQueue(c)) < bufferSize) 
-            // If channel not full, return
-            ()
-        else {
-            // Else, wait
+    def putHelperWaitOnFullChannel(c: ChannelImpl[a]): () & Impure =
+        if (MutList.length(getElementQueue(c)) >= getBufferSize(c))
             await(getWaitingSetters(c));
-            waitOnFullChannel(c, bufferSize)
+            putHelperWaitOnFullChannel(c, bufferSize)
+        else {
+            ()
         }
 
 
@@ -133,7 +135,7 @@ namespace Channel {
         lock(c);
 
         // Check if the channel is full
-        waitOnFullChannel(c, getBufferSize(c));
+        putHelperWaitOnFullChannel(c);
 
         // There was space to put another element in the channel
         MutList.push!(x, getElementQueue(c));
@@ -159,6 +161,7 @@ namespace Channel {
             ();
 
         unlock(c);
+
         c
 
     /*
@@ -233,68 +236,63 @@ namespace Channel {
         // Return the element from the channel, or None if channel was empty
         element
 
+    def threadInterrupted(): Bool & Impure =
+        import java.lang.Thread:interrupted();
+        let isInterrupted = interrupted();
+        if (isInterrupted)
+            true
+        else
+            false
 
-    def select_helper(channels: Array[ChannelImpl[a]], sortedChannels: Array[ChannelImpl[a]], selectLock: ReentrantLock, condition: Condition, hasDefault: Bool): Option[(Int, a, Bool)] & Impure =
-        // MutList used to persist the Select Choice from the inner scope
-        let selectChoices = MutList.new();
+    def cmp(a: ChannelImpl[a], b: ChannelImpl[a]): Int32 =
+        let a_id = getId(a);
+        let b_id = getId(b);
+        if (a_id == b_id)
+            (0)
+        else if (a_id > b_id)
+            (1)
+        else
+            (-1)
 
-        if (threadInterrupted()) {
-            Console.printLine("Thread is interrupted"); 
-            None
-        } else {
+    def sortChannels(channels: Array[ChannelImpl[a]]): Array[ChannelImpl[a]] & Impure =
+        Array.sortWith(cmp, channels)
+
+    def selectHelper(channels: Array[ChannelImpl[a]], sortedChannels: Array[ChannelImpl[a]], selectLock: ReentrantLock, condition: Condition, hasDefault: Bool): Option[(Int, a, Bool)] & Impure =
+        if (not threadInterrupted()) {
             // Lock all channels in sorted order
             lockAllChannels(sortedChannels);
 
             // Lock the select lock after the channels
             java_lock(selectLock);
 
-            // Find channels with waiting elements in a random order to prevent backpressure.
-            // Build list mapping a channel to it's branchNumber (the index of the 'channels' array)
-            let channelIndexPairs = MutList.new();
-            Array.foreachWithIndex(
-                (c, i) -> MutList.push!((c, i), channelIndexPairs),
-                channels
-                );
-
-
-            // TODO : Randomize the order channels are looked at.
-            // This prevents backpressure from building up on one channel.
-            /// Collections.shuffle(channelIndexPairs, ThreadLocalRandom.current());
-
             // Find channels with waiting elements
+            let selectChoicesWithWaitingElements = MutList.new();
             MutList.foreachWithIndex(
-                (cip, _) -> {
-                    let e_opt = tryGet(fst(cip));
-
-                    match e_opt {
+                ((c, i)) -> {
+                    match tryGet(c) {
                         case None => ()
                         case Some(element) => {
                             // There is a waiting element in this channel.
                             // Return the element and the branchNumber of this channel
 
                             // If an element found, add a new selectChoice to the MutList in order to later return
-                            let selectChoice = Some((snd(cip), element, false));
-                            MutList.push!(selectChoice, selectChoices)
+                            MutList.push!((i, element, false), selectChoicesWithWaitingElements)
                         }
                     }
                 },
-                channelIndexPairs
+                channels
                 );
 
-
-            // Element found
-            if (not MutList.isEmpty(selectChoices)) {
-                Console.printLine("Selected an element");
-
-                MutList.get(0, selectChoices)
+            if (not MutList.isEmpty(selectChoicesWithWaitingElements)) {
+                // Element found
+                MutList.get(0, selectChoicesWithWaitingElements)
             }
-            // No element was found but if there is a default case, choose this
             else if (hasDefault) {
-                Console.printLine("Default selection");
+                // No element was found and default case exists
                 // TODO what exactly to return?
                 None
-            } else { // No element was found.
-                Console.printLine("Nothing selected");
+            } else {
+                // No element was found.
                 // Add our condition to all channels to get notified when a new element is added
                 Array.foreach(
                     (c) -> {
@@ -314,8 +312,11 @@ namespace Channel {
                 // so it needs the lock.
                 java_unlock(selectLock);
 
-                select_helper(channels, sortedChannels, selectLock, condition, hasDefault)
+                selectHelper(channels, sortedChannels, selectLock, condition, hasDefault)
             }
+        } else {
+            Console.printLine("Thread is interrupted");
+            None
         }
 
   /**
@@ -334,7 +335,7 @@ namespace Channel {
 
         // Sort channels to avoid deadlock when locking
         let sortedChannels = sortChannels(channels);
-        select_helper(channels, sortedChannels, selectLock, condition, hasDefault)
+        selectHelper(channels, sortedChannels, selectLock, condition, hasDefault)
 
     def getId(c: ChannelImpl[a]): Int64 = match c {
             case Mpmc(id, _, _, _, _, _, _)   => id
@@ -365,19 +366,6 @@ namespace Channel {
             case Mpmc(_, _, _, _, _, _, waitingSetters)   => waitingSetters
         }
 
-    def cmp(a: ChannelImpl[a], b: ChannelImpl[a]): Int32 =
-        let a_id = getId(a);
-        let b_id = getId(b);
-        if (a_id == b_id) 
-            (0)
-        else if (a_id > b_id) 
-            (1)
-        else 
-            (-1)
-
-    def sortChannels(channels: Array[ChannelImpl[a]]): Array[ChannelImpl[a]] & Impure =
-        Array.sortWith(cmp, channels)
-
     def lock(chan: ChannelImpl[a]): Unit & Impure =
         let lock = getChannelLock(chan);
         java_lock(lock)
@@ -405,17 +393,5 @@ namespace Channel {
         // Add LockConditionPair to the channel
         MutList.push!(pair, getWaitingGetters(channel));
         unlock(channel)
-
-    def newId(): Int64 & Impure =
-        import library.Channel.GlobalCounter:newId() as javaNewId;
-        javaNewId()
-
-    def threadInterrupted(): Bool & Impure =
-        import java.lang.Thread:interrupted();
-        let isInterrupted = interrupted();
-        if (isInterrupted)
-            true
-        else
-            false
 
 }
