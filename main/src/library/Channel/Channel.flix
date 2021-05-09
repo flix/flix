@@ -101,9 +101,6 @@ namespace Channel {
             else
                 (bufferSize, false);
 
-        let mutList = MutList.new();
-        MutList.reserve!(bufferSize, mutList);
-
         let reentrantLock = newReentrantLock();
 
         Mpmc(
@@ -111,12 +108,12 @@ namespace Channel {
             reentrantLock,
             bufSize,
             unbuffered,
-            mutList,
+            MutList.new(),
             MutList.new(), // MutSet.empty()
             newCondition(reentrantLock)
         )
 
-    pub def waitOnFullChannel(c: ChannelImpl[a], bufferSize: Int): () & Impure =
+    def waitOnFullChannel(c: ChannelImpl[a], bufferSize: Int): () & Impure =
         if (MutList.length(getElementQueue(c)) < bufferSize) 
             // If channel not full, return
             ()
@@ -167,45 +164,33 @@ namespace Channel {
     /*
     * Recursive helper function for get, loops and awaits on empty channel
     */
-    def get_waitOnEmptyChannel(chan: ChannelImpl[a], e: Option[a]): Option[a] & Impure =
-        let queue = getElementQueue(chan);
-
-        match e {
-            case None => { // Null
-                Console.printLine("Empty channel");
+    def getHelperWaitOnEmptyChannel(chan: ChannelImpl[a], element: Option[a]): a & Impure =
+        match element {
+            case None => {
+                // No element was found
 
                 // Create a new Lock and Condition
                 let conditionLock = newReentrantLock();
                 java_lock(conditionLock);
+
                 let condition = newCondition(conditionLock);
-
-                // Create a new LockConditionPair
-                let pair = (conditionLock, condition);
-                let getters = getWaitingGetters(chan);
-
                 // Add LockConditionPair to the channel
-                MutList.push!(pair, getters);
+                MutList.push!((conditionLock, condition), getWaitingGetters(chan));
 
                 // Temporarily unlock the channel while waiting. This is necessary as the Condition comes from a different Lock.
                 unlock(chan);
                 await(condition);
                 lock(chan);
 
-                // TODO :  will always pop LIFO, should pop randomly?
                 // Someone signalled that an element was put in the channel.
                 // Try to get the element (which could already be taken by someone else)
-                ref e := MutList.pop!(queue);
+                let optionalElement = MutList.pop!(getElementQueue(chan));
 
                 java_unlock(conditionLock);
-                get_waitOnEmptyChannel(chan, e);
 
-                // Return the element to get
-                e
+                getHelperWaitOnEmptyChannel(chan, optionalElement)
             }
-            case _ => { //Not Null
-                // Return the element to get
-                e
-            }
+            case Some(e) => e
         }
 
     ///
@@ -213,32 +198,29 @@ namespace Channel {
     ///
     /// Equivalent to the expression `<- c`.
     ///
-    /// pub def get(c: Channel[a]): a & Impure = <- c
     pub def get(chan: ChannelImpl[a]): a & Impure =
         lock(chan);
-        let queue = getElementQueue(chan);
 
-        let e_opt = MutList.pop!(queue);
-        get_waitOnEmptyChannel(chan, e_opt);
-
-        // Unwrap the Optional type element
-        let e_mutList = List.toMut(Option.toList(e_opt));
-        let e = MutList.get(0, e_mutList);
+        let optionalElement = MutList.pop!(getElementQueue(chan));
+        let element = getHelperWaitOnEmptyChannel(chan, optionalElement);
 
         // Signal waiting setters that the channel has space
-        let waitingSetters = getWaitingSetters(chan);
-        signalAll(waitingSetters);
+        signalAll(getWaitingSetters(chan));
+
         unlock(chan);
 
         // Return the element from the channel
-        e
-    // TODO : test putting on full channel
+        element
+        // TODO : test putting on full channel
 
     def tryGet(chan: ChannelImpl[a]): Option[a] & Impure =
         lock(chan);
+
+        // Try to get an element from the channel
         let queue = getElementQueue(chan);
         let element = MutList.pop!(queue);
 
+        // If there was an element, signal waiting setters
         match element {
             case None => ()
             case _ => {
@@ -248,10 +230,11 @@ namespace Channel {
         };
 
         unlock(chan);
+        // Return the element from the channel, or None if channel was empty
         element
 
 
-    pub def select_helper(channels: Array[ChannelImpl[a]], sortedChannels: Array[ChannelImpl[a]], selectLock: ReentrantLock, condition: Condition, hasDefault: Bool): Option[(Int, a, Bool)] & Impure =
+    def select_helper(channels: Array[ChannelImpl[a]], sortedChannels: Array[ChannelImpl[a]], selectLock: ReentrantLock, condition: Condition, hasDefault: Bool): Option[(Int, a, Bool)] & Impure =
         // MutList used to persist the Select Choice from the inner scope
         let selectChoices = MutList.new();
 
@@ -353,32 +336,32 @@ namespace Channel {
         let sortedChannels = sortChannels(channels);
         select_helper(channels, sortedChannels, selectLock, condition, hasDefault)
 
-    pub def getId(c: ChannelImpl[a]): Int64 = match c {
+    def getId(c: ChannelImpl[a]): Int64 = match c {
             case Mpmc(id, _, _, _, _, _, _)   => id
         }
 
-    pub def getChannelLock(c: ChannelImpl[a]): ReentrantLock = match c {
+    def getChannelLock(c: ChannelImpl[a]): ReentrantLock = match c {
             case Mpmc(_, channelLock, _, _, _, _, _)   => channelLock
         }
 
-    pub def getBufferSize(c: ChannelImpl[a]): Int = match c {
+    def getBufferSize(c: ChannelImpl[a]): Int = match c {
             case Mpmc(_, _, bufferSize, _, _, _, _)   => bufferSize
         }
 
-    pub def getUnbuffered(c: ChannelImpl[a]): Bool = match c {
+    def getUnbuffered(c: ChannelImpl[a]): Bool = match c {
             case Mpmc(_, _, _, unbuffered, _, _, _)   => unbuffered
         }
 
-    pub def getElementQueue(c: ChannelImpl[a]): MutList[a] = match c {
+    def getElementQueue(c: ChannelImpl[a]): MutList[a] = match c {
             case Mpmc(_, _, _, _, elementQueue, _, _)   => elementQueue
         }
 
     // TODO : make it a MutList or MutSet??
-    pub def getWaitingGetters(c: ChannelImpl[a]): MutList[(ReentrantLock, Condition)] = match c {
+    def getWaitingGetters(c: ChannelImpl[a]): MutList[(ReentrantLock, Condition)] = match c {
             case Mpmc(_, _, _, _, _, waitingGetters, _)   => waitingGetters
         }
 
-    pub def getWaitingSetters(c: ChannelImpl[a]): Condition = match c {
+    def getWaitingSetters(c: ChannelImpl[a]): Condition = match c {
             case Mpmc(_, _, _, _, _, _, waitingSetters)   => waitingSetters
         }
 
@@ -415,7 +398,7 @@ namespace Channel {
     *
     * @param condition the condition to add
     */
-    pub def addGetter(channel: ChannelImpl[a], conditionLock: ReentrantLock, condition: Condition): Unit & Impure =
+    def addGetter(channel: ChannelImpl[a], conditionLock: ReentrantLock, condition: Condition): Unit & Impure =
         lock(channel);
         let pair = (conditionLock, condition);
 
@@ -427,7 +410,7 @@ namespace Channel {
         import library.Channel.GlobalCounter:newId() as javaNewId;
         javaNewId()
 
-    pub def threadInterrupted(): Bool & Impure =
+    def threadInterrupted(): Bool & Impure =
         import java.lang.Thread:interrupted();
         let isInterrupted = interrupted();
         if (isInterrupted)
