@@ -1,7 +1,6 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.errors.ParseError
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
@@ -314,15 +313,6 @@ class TestParser extends FunSuite with TestUtils {
          |def bar(): String = foo()
          |d
          """.stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.Enum.01") {
-    val input =
-      """
-        |enum Empty {}
-        |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }

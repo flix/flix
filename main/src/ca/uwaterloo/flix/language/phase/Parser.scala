@@ -181,7 +181,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def NonEmptyBody = rule {
-        optWS ~ "{" ~ optWS ~ NonEmptyCaseList ~ optWS ~ "}"
+        optWS ~ "{" ~ optWS ~ optional(NonEmptyCaseList) ~ optWS ~ "}" ~> ((o: Option[Seq[ParsedAst.Case]]) => o.getOrElse(Seq.empty))
       }
 
       def Body = rule {
@@ -1583,6 +1583,9 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   def keyword(word: String): Rule0 = namedRule(word) {
     atomic(word) ~ !Names.LegalLetter
   }
+
+  // MATT docs
+  def flattenOptSeq[a](o: Option[Seq[a]]): Seq[a] = o.getOrElse(Seq.empty)
 
   /////////////////////////////////////////////////////////////////////////////
   // Case Separator                                                          //
