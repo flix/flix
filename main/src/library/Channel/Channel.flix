@@ -79,12 +79,12 @@ namespace Channel {
     ///     import java.util.Objects.hash as hash;
     ///     hash(getChannel(cip), getIndex(cip))
 
-    /// instance Order[Channel] {
-    ///     pub def compare(x: Channel, y: Channel): Comparison =
+    /// instance Order[ChannelImpl[a]] {
+    ///     pub def compare(x: Channel[a], y: Channel[a]): Comparison =
     ///         compare(x.id, y.id)
     /// }
 
-    /// instance Eq[Channel] {
+    /// instance Eq[ChannelImpl[a]] {
     ///     pub def eq(x: Channel[a], y: Channel[b]): Bool =
     ///         channelId(x) == channelId(y)
     /// }
@@ -92,11 +92,10 @@ namespace Channel {
     ///
     /// Returns a fresh buffered channel with internal capacity `c`.
     ///
-    pub def newWithCapacity_duplicate(bufferSize: Int): ChannelImpl[a] & Impure =
+    pub def newWithCapacity(bufferSize: Int): ChannelImpl[a] & Impure =
         let (bufSize, unbuffered) =
             if (bufferSize < 0)
-                /// TODO: replace the line below with `bug!("Channel's buffer size must be non-negative.")`
-                (0, false)
+                bug!("Channel's buffer size must be non-negative.")
             else if (bufferSize == 0)
                 (1, true)
             else
@@ -108,7 +107,7 @@ namespace Channel {
         let reentrantLock = newReentrantLock();
 
         Mpmc(
-            1i64, // TODO: replace with 1newId()`
+            newId(),
             reentrantLock,
             bufSize,
             unbuffered,
@@ -133,7 +132,7 @@ namespace Channel {
     ///
     /// Equivalent to the expression `c <- x`.
     ///
-    pub def put_duplicate(c: ChannelImpl[a], x: a): ChannelImpl[a] & Impure =
+    pub def put(c: ChannelImpl[a], x: a): ChannelImpl[a] & Impure =
         lock(c);
 
         // Check if the channel is full
@@ -215,7 +214,7 @@ namespace Channel {
     /// Equivalent to the expression `<- c`.
     ///
     /// pub def get(c: Channel[a]): a & Impure = <- c
-    pub def get_duplicate(chan: ChannelImpl[a]): a & Impure =
+    pub def get(chan: ChannelImpl[a]): a & Impure =
         lock(chan);
         let queue = getElementQueue(chan);
 
@@ -424,9 +423,9 @@ namespace Channel {
         MutList.push!(pair, getWaitingGetters(channel));
         unlock(channel)
 
-    /// def newId(): Int64 & Impure =
-    ///     import library.Channel.GlobalCounter:newId() as javaNewId;
-    ///     javaNewId()
+    def newId(): Int64 & Impure =
+        import library.Channel.GlobalCounter:newId() as javaNewId;
+        javaNewId()
 
     pub def threadInterrupted(): Bool & Impure =
         import java.lang.Thread:interrupted();
