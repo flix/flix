@@ -1584,9 +1584,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     atomic(word) ~ !Names.LegalLetter
   }
 
-  // MATT docs
-  def flattenOptSeq[a](o: Option[Seq[a]]): Seq[a] = o.getOrElse(Seq.empty)
-
   /////////////////////////////////////////////////////////////////////////////
   // Case Separator                                                          //
   /////////////////////////////////////////////////////////////////////////////
