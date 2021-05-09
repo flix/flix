@@ -37,7 +37,7 @@ object FormatScheme {
       if (sc.constraints.isEmpty)
         ""
       else
-        " with [" + sc.constraints.map(tconstr => s"${FormatType.formatType(tconstr.arg)} : ${tconstr.sym.name}").mkString(", ") + "]"
+        " with " + sc.constraints.map(FormatTypeConstraint.formatTypeConstraint).mkString(", ")
 
     quantifiersPart + typePart + tconstrPart
   }
