@@ -439,8 +439,9 @@ object Lowering extends Phase[Root, Root] {
       // In fact what we will care about is the type of "Channel.get"
       val e = visitExp(exp)
       val t = visitType(tpe)
+
       val enumSym = Symbol.mkEnumSym("Channel.ChannelImpl")
-      val defTpe = Type.mkImpureArrow(Type.mkEnum(enumSym, List(tpe)), tpe)
+      val defTpe = Type.mkImpureArrow(Type.mkEnum(enumSym, List(t)), t)
       val sym = Symbol.mkDefnSym("Channel.get")
       val callExp = Expression.Def(sym, defTpe, loc)
       val args = List(e)
@@ -450,12 +451,11 @@ object Lowering extends Phase[Root, Root] {
       val e1 = visitExp(chanExp)
       val e2 = visitExp(exp)
       val t = visitType(tpe)
+
       val enumSym = Symbol.mkEnumSym("Channel.ChannelImpl")
-      // TODO: Q: Below, should it be `List(t)` or `List(tpe)`
       val chanType = Type.mkEnum(enumSym, List(t))
+      val defTpe = Type.mkImpureUncurriedArrow(List(chanType, t), chanType)
       val sym = Symbol.mkDefnSym("Channel.put")
-      // TODO: Q: Should this be curried?
-      val defTpe = Type.mkImpureCurriedArrow(List(chanType, t), chanType)
       val callExp = Expression.Def(sym, defTpe, loc)
       val args = List(e1, e2)
       Expression.Apply(callExp, args, chanType, eff, loc)
