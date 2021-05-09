@@ -318,4 +318,13 @@ class TestParser extends FunSuite with TestUtils {
     expectError[ParseError](result)
   }
 
+  test("ParseError.Enum.01") {
+    val input =
+      """
+        |enum Empty {}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ParseError](result)
+  }
+
 }
