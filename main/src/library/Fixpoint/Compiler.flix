@@ -24,22 +24,26 @@ use Fixpoint/Ast.PredSym.PredSym;
 
 namespace Fixpoint {
     ///
-    /// Compile the given Datalog program `cs` to RAM.
-    /// First compile all facts in `cs` to project-statements.
+    /// Compile the given Datalog program `d` to RAM.
+    /// First compile all facts in `d` to project-statements.
     /// For example, the fact `Path(1, 2).` becomes `project (1, 2) into Path`.
-    /// Second compile all rules in `cs` according to the given stratification `strat`.
+    /// Second compile all rules in `d` according to the given stratification `strat`.
     /// This means to compile all rules in stratum 0, then stratum 1 and so on.
     /// A rule belongs to the same stratum as its head predicate.
     ///
-    def compile(cs: Datalog[v], strat: Map[PredSym, Int32]): RamStmt[v] with ToString[v] =
-        let doIt = match Datalog(facts, rules) -> {
+    def compile(d: Datalog[v], strat: Map[PredSym, Int32]): RamStmt[v] with ToString[v] = match d {
+        case Datalog(facts, rules) =>
             let stmts = MutList.new();
-            MutList.push!(RamStmt.Facts(facts), stmts);
-            Map.invert(strat) |>
-            Map.foreach(_ -> restrict(rules) >> compileStratum(stmts));
+            Array.foreach(compileRule(stmts), facts);
+            Array.foldRight(rule -> match rule {
+                case Constraint(HeadAtom(p, _, _), _) =>
+                    let ruleStratum = Map.getWithDefault(p, 0, strat);
+                    Map.insertWith(List.append, ruleStratum, rule :: Nil)
+            }, Map#{}, rules) |>
+            Map.foreach(_ -> List.toArray >> compileStratum(stmts));
             RamStmt.Seq(MutList.toArray(stmts))
-        };
-        doIt(cs) as & Pure
+        case _ => bug!("Datalog normalization bug")
+    } as & Pure
 
     ///
     /// Compile all rules to be evaluated in `stratum` to RAM
@@ -333,20 +337,6 @@ namespace Fixpoint {
                     let t5 = unwrap(Map.get(v5, env));
                     BoolExp.Guard5(f, t1, t2, t3, t4, t5) :: acc
             }, Nil, body) as & Pure
-
-    ///
-    /// Restrict a constraint system to those constraints whose head predicate belongs to the given domain.
-    ///
-    def restrict(cs: Array[Constraint[v]], domain: Set[PredSym]): Array[Constraint[v]] =
-        let headPred = match Constraint(HeadAtom(headSym, _, _), _) -> headSym;
-        let memberOf = xs -> x -> Set.memberOf(x, xs);
-        Array.filter(headPred >> memberOf(domain), cs) as & Pure
-
-    ///
-    /// Return the set of predicates of the given constraint system.
-    ///
-    def predicatesOf(cs: Array[Constraint[v]]): Set[PredSym] =
-        Array.foldRight(match Constraint(HeadAtom(headPred, _, _), _) -> Set.insert(headPred), Set#{}, cs) as & Pure
 
     def unwrap(o: Option[a]): a = match o {
         case Some(a) => a

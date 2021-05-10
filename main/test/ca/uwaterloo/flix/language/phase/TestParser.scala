@@ -1,7 +1,6 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.errors.ParseError
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
