@@ -39,7 +39,7 @@ object GenFunctionInterfaces {
    */
   def gen[T <: PType](tpe: Set[RType[PReference[PFunction]]])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     tpe.foldLeft(Map.empty[JvmName, JvmClass]) {
-      case (macc, tpe@ RReference(RArrow(args, result))) =>
+      case (macc, tpe@RReference(RArrow(args, result))) =>
         val bytecode = genByteCode(tpe, args, result)
         macc + (tpe.jvmName -> JvmClass(tpe.jvmName, bytecode))
     }
@@ -48,14 +48,14 @@ object GenFunctionInterfaces {
   /**
    * Returns the function interface of the given type `tpe`.
    */
-  private def genByteCode(functionType: RReference[PFunction], args: List[RType[_ <: PType]], result: RType[_ <: PType])(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genByteCode(functionType: RReference[PFunction], args: List[RType[_ <: PType]], resultType: RType[_ <: PType])(implicit root: Root, flix: Flix): Array[Byte] = {
 
     // Class visitor
     // TODO(JLS): Add the two super interfaces
     //`JvmType` of the continuation interface for `tpe`
-//        val continuationSuperInterface = JvmOps.getContinuationInterfaceType()
+    val continuationSuperInterface = resultType.contName
     // `JvmType` of the java.util.functions.Function
-//        val javaFunctionSuperInterface = JvmType.Function
+    //        val javaFunctionSuperInterface = JvmType.Function
     val classMaker = ClassMaker.mkClass(functionType.jvmName, addSource = false)
 
     val fieldMod = Mod.isAbstract.isPublic
@@ -64,7 +64,7 @@ object GenFunctionInterfaces {
       // `arg$index` field
       classMaker.mkField(s"arg$index", arg.erasedType, fieldMod)
     }
-    classMaker.mkField(resultFieldName, result.erasedType, fieldMod)
+    classMaker.mkField(resultFieldName, resultType.erasedType, fieldMod)
 
     classMaker.closeClassMaker
   }
