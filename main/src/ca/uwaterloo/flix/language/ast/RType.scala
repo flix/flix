@@ -37,7 +37,7 @@ sealed trait RType[T <: PType] extends Describable {
 
 object RType {
 
-  def convert[T <: PRefType](x: RType[PReference[T]]): RReference[T] = x match {
+  def getRReference[T <: PRefType](x: RType[PReference[T]]): RReference[T] = x match {
     case res@RReference(_) => res
   }
 
@@ -179,7 +179,7 @@ object RRefType {
     override val jvmName: JvmName = JvmName.Java.Lang.Object
   }
 
-  case class REnum(sym: Symbol.EnumSym, args: List[RType[PType]]) extends RRefType[PAnyObject] {
+  case class REnum(sym: Symbol.EnumSym, args: List[RType[_ <: PType]]) extends RRefType[PAnyObject] {
     override val jvmName: JvmName = JvmName.Java.Lang.Object
   }
 
@@ -192,14 +192,15 @@ object RRefType {
   }
 
   case class RArrow(args: List[RType[_ <: PType]], result: RType[_ <: PType]) extends RRefType[PFunction] {
-    override val jvmName: JvmName = JvmName(Nil, s"Fn${args.length}${JvmName.reservedDelimiter}${(args ::: result :: Nil).map(_.toErasedString).mkString(JvmName.reservedDelimiter)}")
+    override val jvmName: JvmName =
+      JvmName(Nil, s"Fn${args.length}${JvmName.reservedDelimiter}${(args ::: result :: Nil).map(_.toErasedString).mkString(JvmName.reservedDelimiter)}")
   }
 
   case class RRecordEmpty() extends RRefType[PAnyObject] {
     override val jvmName: JvmName = JvmName.Java.Lang.Object
   }
 
-  case class RRecordExtend(field: String, value: RType[PType], rest: RType[PReference[PAnyObject]]) extends RRefType[PAnyObject] {
+  case class RRecordExtend(field: String, value: RType[_ <: PType], rest: RType[_ <: PReference[_ <: PRefType]]) extends RRefType[PAnyObject] {
     override val jvmName: JvmName = JvmName.Java.Lang.Object
   }
 
@@ -207,15 +208,15 @@ object RRefType {
     override val jvmName: JvmName = JvmName.Java.Lang.Object
   }
 
-  case class RSchemaExtend(name: String, tpe: RType[PType], rest: RType[PReference[PAnyObject]]) extends RRefType[PAnyObject] {
+  case class RSchemaExtend(name: String, tpe: RType[_ <: PType], rest: RType[_ <: PReference[_ <: PRefType]]) extends RRefType[PAnyObject] {
     override val jvmName: JvmName = JvmName.Java.Lang.Object
   }
 
-  case class RRelation(tpes: List[RType[PType]]) extends RRefType[PAnyObject] {
+  case class RRelation(tpes: List[RType[_ <: PType]]) extends RRefType[PAnyObject] {
     override val jvmName: JvmName = JvmName.Java.Lang.Object
   }
 
-  case class RLattice(tpes: List[RType[PType]]) extends RRefType[PAnyObject] {
+  case class RLattice(tpes: List[RType[_ <: PType]]) extends RRefType[PAnyObject] {
     override val jvmName: JvmName = JvmName.Java.Lang.Object
   }
 

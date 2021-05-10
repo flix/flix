@@ -20,6 +20,7 @@ package ca.uwaterloo.flix.language.phase.sjvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.ErasedAst.Root
+import ca.uwaterloo.flix.language.ast.PRefType.PFunction
 import ca.uwaterloo.flix.language.ast.RRefType._
 import ca.uwaterloo.flix.language.ast.RType.{RInt32, RReference}
 import ca.uwaterloo.flix.language.ast.{PType, RType, Symbol}
@@ -56,19 +57,11 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
         return new CompilationResult(input, None, Map.empty).toSuccess
       }
 
-      val types: Set[RType[_ <: PType]] = Set() // TODO(JLS): how can a set of RTypes be types
-
       //
       // Generate function interfaces for each function type in the program.
       //
       // TODO(JLS): Actually find set of types here
-      val functionInterfaces = GenFunctionInterfaces.gen(
-        RReference(RArrow(
-          List(RReference(
-            RArray(
-              RReference(
-                RStr())))),
-          RInt32())))
+      val functionInterfaces = GenFunctionInterfaces.gen(input.functionTypes)
 
       //
       // Generate the main class.

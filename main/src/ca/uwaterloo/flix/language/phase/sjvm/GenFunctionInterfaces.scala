@@ -37,25 +37,19 @@ object GenFunctionInterfaces {
   /**
    * Returns the set of function interfaces for the given set of types `ts`.
    */
-  def gen[T <: PType](tpe: RType[PReference[PFunction]])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
-    // Case 1: The type constructor is an arrow type.
-    // Construct the functional interface.
-    def getRType(m: RType[PReference[PFunction]]): RReference[PFunction] = {
-      m match {case r@ RReference(referenceType) => r}
+  def gen[T <: PType](tpe: Set[RType[PReference[PFunction]]])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+    tpe.foldLeft(Map.empty[JvmName, JvmClass]) {
+      case (macc, tpe@ RReference(RArrow(args, result))) =>
+        val bytecode = genByteCode(tpe, args, result)
+        macc + (tpe.jvmName -> JvmClass(tpe.jvmName, bytecode))
     }
-    val tpe0 = getRType(tpe)
-    val bytecode = genByteCode(tpe0)
-    Map() + (tpe0.jvmName -> JvmClass(tpe0.jvmName, bytecode))
   }
 
   /**
    * Returns the function interface of the given type `tpe`.
    */
-  private def genByteCode(functionType: RReference[PFunction])(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genByteCode(functionType: RReference[PFunction], args: List[RType[_ <: PType]], result: RType[_ <: PType])(implicit root: Root, flix: Flix): Array[Byte] = {
 
-    val concreteFunctionType: RArrow = functionType match {
-      case RReference(r@ RArrow(args, result)) => r
-    }
     // Class visitor
     // TODO(JLS): Add the two super interfaces
     //`JvmType` of the continuation interface for `tpe`
@@ -67,11 +61,11 @@ object GenFunctionInterfaces {
 
     val fieldMod = Mod.isAbstract.isPublic
     // Adding setters for each argument of the function
-    for ((arg, index) <- concreteFunctionType.args.zipWithIndex) {
+    for ((arg, index) <- args.zipWithIndex) {
       // `arg$index` field
       classMaker.mkField(s"arg$index", arg.erasedType, fieldMod)
     }
-    classMaker.mkField(resultFieldName, concreteFunctionType.result.erasedType, fieldMod)
+    classMaker.mkField(resultFieldName, result.erasedType, fieldMod)
 
     classMaker.closeClassMaker
   }

@@ -27,10 +27,11 @@ object ErasedAst {
   // TODO(JLS): add ast traversal sets/lists/map here
   // example: tuples: Set[RType[_ <: PType]]
   case class Root(defs: Map[Symbol.DefnSym, ErasedAst.Def[_ <: PType]],
-                  enums: Map[Symbol.EnumSym, ErasedAst.Enum],
-                  properties: List[ErasedAst.Property],
+                  //enums: Map[Symbol.EnumSym, ErasedAst.Enum],
+                  //properties: List[ErasedAst.Property],
                   reachable: Set[Symbol.DefnSym],
-                  sources: Map[Source, SourceLocation])
+                  sources: Map[Source, SourceLocation],
+                  functionTypes: Set[RType[PReference[PFunction]]])
 
   // TODO(JLS): This method, of using T <: PType and the _ <: PType at use is probably better and should be used elsewhere
   case class Def[T <: PType](ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: List[ErasedAst.FormalParam], exp: ErasedAst.Expression[T], tpe: RType[T], loc: SourceLocation) {
@@ -105,13 +106,13 @@ object ErasedAst {
 
     case class Var[T <: PType](sym: Symbol.VarSym, tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
-    case class Closure(sym: Symbol.DefnSym, freeVars: List[FreeVar], tpe: RType[PReference[PAnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PAnyObject]]
+    case class Closure(sym: Symbol.DefnSym, freeVars: List[FreeVar], tpe: RType[PReference[PFunction]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PFunction]]
 
-    case class ApplyClo[T <: PType](exp: ErasedAst.Expression[PReference[PAnyObject]], args: List[ErasedAst.Expression[PType]], tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
+    case class ApplyClo[T <: PType](exp: ErasedAst.Expression[PReference[PFunction]], args: List[ErasedAst.Expression[PType]], tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
     case class ApplyDef[T <: PType](sym: Symbol.DefnSym, args: List[ErasedAst.Expression[PType]], tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
-    case class ApplyCloTail[T <: PType](exp: ErasedAst.Expression[PReference[PAnyObject]], args: List[ErasedAst.Expression[PType]], tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
+    case class ApplyCloTail[T <: PType](exp: ErasedAst.Expression[PReference[PFunction]], args: List[ErasedAst.Expression[PType]], tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
     case class ApplyDefTail[T <: PType](sym: Symbol.DefnSym, args: List[ErasedAst.Expression[PType]], tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
@@ -140,13 +141,13 @@ object ErasedAst {
 
     case class Index[T <: PType](base: ErasedAst.Expression[PReference[PAnyObject]], offset: scala.Int, tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
-    case class Tuple(elms: List[ErasedAst.Expression[PType]], tpe: RType[PReference[PAnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PAnyObject]]
+    case class Tuple(elms: List[ErasedAst.Expression[_ <: PType]], tpe: RType[PReference[PAnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PAnyObject]]
 
     case class RecordEmpty(tpe: RType[PReference[PAnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PAnyObject]]
 
     case class RecordSelect[T <: PType](exp: ErasedAst.Expression[PReference[PAnyObject]], field: Name.Field, tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
-    case class RecordExtend(field: Name.Field, value: ErasedAst.Expression[PType], rest: ErasedAst.Expression[PReference[PAnyObject]], tpe: RType[PReference[PAnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PAnyObject]]
+    case class RecordExtend(field: Name.Field, value: ErasedAst.Expression[_ <: PType], rest: ErasedAst.Expression[PReference[PAnyObject]], tpe: RType[PReference[PAnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PAnyObject]]
 
     case class RecordRestrict(field: Name.Field, rest: ErasedAst.Expression[PReference[PAnyObject]], tpe: RType[PReference[PAnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PAnyObject]]
 
@@ -176,23 +177,23 @@ object ErasedAst {
       final val tpe = RType.RBool()
     }
 
-    case class Cast[T <: PType](exp: ErasedAst.Expression[PType], tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
+    case class Cast[T <: PType](exp: ErasedAst.Expression[_ <: PType], tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
     case class TryCatch[T <: PType](exp: ErasedAst.Expression[T], rules: List[ErasedAst.CatchRule[T]], tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
-    case class InvokeConstructor(constructor: Constructor[_], args: List[ErasedAst.Expression[PType]], tpe: RType[PReference[PAnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PAnyObject]]
+    case class InvokeConstructor(constructor: Constructor[_], args: List[ErasedAst.Expression[_ <: PType]], tpe: RType[PReference[PAnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PAnyObject]]
 
-    case class InvokeMethod[T <: PType](method: Method, exp: ErasedAst.Expression[PReference[PAnyObject]], args: List[ErasedAst.Expression[PType]], tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
+    case class InvokeMethod[T <: PType](method: Method, exp: ErasedAst.Expression[PReference[PAnyObject]], args: List[ErasedAst.Expression[_ <: PType]], tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
-    case class InvokeStaticMethod[T <: PType](method: Method, args: List[ErasedAst.Expression[PType]], tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
+    case class InvokeStaticMethod[T <: PType](method: Method, args: List[ErasedAst.Expression[_ <: PType]], tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
     case class GetField[T <: PType](field: Field, exp: ErasedAst.Expression[PReference[PAnyObject]], tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
-    case class PutField(field: Field, exp1: ErasedAst.Expression[PReference[PAnyObject]], exp2: ErasedAst.Expression[PType], tpe: RType[PReference[PUnit]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PUnit]]
+    case class PutField(field: Field, exp1: ErasedAst.Expression[PReference[PAnyObject]], exp2: ErasedAst.Expression[_ <: PType], tpe: RType[PReference[PUnit]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PUnit]]
 
     case class GetStaticField[T <: PType](field: Field, tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
-    case class PutStaticField(field: Field, exp: ErasedAst.Expression[PType], tpe: RType[PReference[PUnit]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PUnit]]
+    case class PutStaticField(field: Field, exp: ErasedAst.Expression[_ <: PType], tpe: RType[PReference[PUnit]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PUnit]]
 
     case class NewChannel[T <: PType](exp: ErasedAst.Expression[PInt32], tpe: RType[PReference[PChan[T]]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PChan[T]]]
 
