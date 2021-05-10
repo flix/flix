@@ -437,7 +437,7 @@ object Lowering extends Phase[Root, Root] {
       val rs = rules.map(visitSelectChannelRule)
       val d = default.map(visitExp)
       val t = visitType(tpe)
-      Expression.SelectChannel(rs, d, tpe, t, loc)
+      Expression.SelectChannel(rs, d, t, eff, loc)
 
     case Expression.Spawn(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
