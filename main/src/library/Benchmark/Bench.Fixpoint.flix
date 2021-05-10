@@ -20,16 +20,12 @@ namespace Bench/Exp/Fixpoint {
         let facts12 = mkFacts(2 ** 12);
         let facts16 = mkFacts(2 ** 16);
         let facts20 = mkFacts(2 ** 20);
-        //let facts21 = mkFacts(2 ** 21);
-        //let facts22 = mkFacts(2 ** 22);
         [
             defBenchmark("Project (Int, Int) into A (n = ${2 ** 04})", () -> { project facts04 into A }),
             defBenchmark("Project (Int, Int) into A (n = ${2 ** 08})", () -> { project facts08 into A }),
             defBenchmark("Project (Int, Int) into A (n = ${2 ** 12})", () -> { project facts12 into A }),
             defBenchmark("Project (Int, Int) into A (n = ${2 ** 16})", () -> { project facts16 into A }),
             defBenchmark("Project (Int, Int) into A (n = ${2 ** 20})", () -> { project facts20 into A })
-            //defBenchmark("Project (Int, Int) into A (n = ${2 ** 21})", () -> { project facts21 into A })
-            //defBenchmark("Project (Int, Int) into A (n = ${2 ** 22})", () -> { project facts22 into A })
         ]
 
     pub def benchmarkSelect(): Array[Benchmark] & Impure =
@@ -38,17 +34,13 @@ namespace Bench/Exp/Fixpoint {
         let facts08 = mkFacts(2 ** 8);
         let facts12 = mkFacts(2 ** 12);
         let facts16 = mkFacts(2 ** 16);
-        // let facts20 = mkFacts(2 ** 20);
-        // let facts21 = mkFacts(2 ** 21);
-        // let facts22 = mkFacts(2 ** 22);
+        let facts20 = mkFacts(2 ** 20);
         [
             defBenchmark("Select (Int, Int) from A (n = ${2 ** 04})", () -> { query facts04 select (x, y) from A(x, y) }),
             defBenchmark("Select (Int, Int) from A (n = ${2 ** 08})", () -> { query facts08 select (x, y) from A(x, y) }),
             defBenchmark("Select (Int, Int) from A (n = ${2 ** 12})", () -> { query facts12 select (x, y) from A(x, y) }),
-            defBenchmark("Select (Int, Int) from A (n = ${2 ** 16})", () -> { query facts16 select (x, y) from A(x, y) })
-            //defBenchmark("Select (Int, Int) from A (n = ${2 ** 20})", () -> { query facts20 select (x, y) from A(x, y) })
-            //defBenchmark("Select (Int, Int) from A (n = ${2 ** 21})", () -> { query facts21 select (x, y) from A(x, y) })
-            //defBenchmark("Select (Int, Int) from A (n = ${2 ** 22})", () -> { query facts22 select (x, y) from A(x, y) })
+            defBenchmark("Select (Int, Int) from A (n = ${2 ** 16})", () -> { query facts16 select (x, y) from A(x, y) }),
+            defBenchmark("Select (Int, Int) from A (n = ${2 ** 20})", () -> { query facts20 select (x, y) from A(x, y) })
         ]
 
     pub def benchmarkSolve(): Array[Benchmark] & Impure =

@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
-use Fixpoint/Ast.{Datalog, PrecedenceGraph, PredSym};
-use Fixpoint/Ast.Datalog.Datalog;
+use Fixpoint/Ast.{Datalog, Constraint, HeadPredicate, BodyPredicate, Polarity, PrecedenceGraph, PredSym};
+use Fixpoint/Ast.Datalog.{Datalog, Model, Join};
 use Fixpoint/Ast.PrecedenceGraph.PrecedenceGraph;
 use Fixpoint/Ast.PrecedenceEdge.{PositiveEdge, NegativeEdge};
+use Fixpoint/Ast.Constraint.Constraint;
+use Fixpoint/Ast.HeadPredicate.HeadAtom;
+use Fixpoint/Ast.BodyPredicate.BodyAtom;
 
 namespace Fixpoint {
     ///
@@ -28,11 +31,11 @@ namespace Fixpoint {
     ///
     def stratify(d: Datalog[v]): Map[PredSym, Int32] = match d {
         case Datalog(_, rules) =>
-            use Fixpoint/Ast.mkDepGraph;
-            predicatesOf(rules) |>
-            Set.foldRight(p -> Map.insert(p, 0), Map#{}) |>
+            Array.foldRight(match Constraint(HeadAtom(p, _, _), _) -> Map.insert(p, 0), Map#{}, rules) |>
             stratifyHelper(mkDepGraph(d))
-    }
+        case Model(_) => Map#{} // Models contain only facts.
+        case Join(d1, d2) => Map.unionWith(Int32.max, stratify(d1), stratify(d2))
+    } as & Pure
 
     def stratifyHelper(g: PrecedenceGraph, stf: Map[PredSym, Int32]): Map[PredSym, Int32] = match g {
         case PrecedenceGraph(xs) =>
@@ -71,5 +74,23 @@ namespace Fixpoint {
                 stratifyHelper(g, newStf)
             else
                 stf
+    }
+
+    def mkDepGraph(d: Datalog[v]): PrecedenceGraph = match d {
+        case Datalog(_, rules) => Array.fold(Array.map(precedenceHelper, rules)) as & Pure
+        case Model(_) => Monoid.empty()
+        case Join(d1, d2) => Monoid.combine(mkDepGraph(d1), mkDepGraph(d2))
+    }
+
+    def precedenceHelper(cnst: Constraint[v]): PrecedenceGraph = match cnst {
+        case Constraint(head, body) => Array.fold(Array.map(mkDepEdge(head), body)) as & Pure
+    }
+
+    def mkDepEdge(dst: HeadPredicate[v], src: BodyPredicate[v]): PrecedenceGraph = match (dst, src) {
+        case (HeadAtom(headSym, _, _), BodyAtom(bodySym, _, Polarity.Positive, _)) =>
+            PrecedenceGraph(Set#{PositiveEdge(bodySym, headSym)})
+        case (HeadAtom(headSym, _, _), BodyAtom(bodySym, _, Polarity.Negative, _)) =>
+            PrecedenceGraph(Set#{NegativeEdge(bodySym, headSym)})
+        case _ => PrecedenceGraph(Set#{})
     }
 }
