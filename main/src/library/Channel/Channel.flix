@@ -257,7 +257,7 @@ namespace Channel {
     def sortChannels(channels: Array[ChannelImpl[a]]): Array[ChannelImpl[a]] & Impure =
         Array.sortWith(cmp, channels)
 
-    def selectHelper(channels: Array[ChannelImpl[a]], sortedChannels: Array[ChannelImpl[a]], selectLock: ReentrantLock, condition: Condition, hasDefault: Bool): Option[(Int, a, Bool)] & Impure =
+    def selectHelper(channels: Array[ChannelImpl[a]], sortedChannels: Array[ChannelImpl[a]], selectLock: ReentrantLock, condition: Condition, hasDefault: Bool): Option[(Int, a)] & Impure =
         if (not threadInterrupted()) {
             // Lock all channels in sorted order
             lockAllChannels(sortedChannels);
@@ -327,7 +327,7 @@ namespace Channel {
    * @return the channel index of the channel with an element and the element
    */
    // TODO : resolve the function name issue
-    pub def selectImpl(channels: Array[ChannelImpl[a]], hasDefault: Bool): Option[(Int, a, Bool)] & Impure =
+    pub def selectImpl(channels: Array[ChannelImpl[a]], hasDefault: Bool): Option[(Int, a)] & Impure =
         // Create new Condition and channelLock the current thread
         let selectLock = newReentrantLock();
         let condition = newCondition(selectLock);
