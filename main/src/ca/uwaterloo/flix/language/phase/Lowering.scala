@@ -461,10 +461,45 @@ object Lowering extends Phase[Root, Root] {
       Expression.Apply(callExp, args, chanType, eff, loc)
 
     case Expression.SelectChannel(rules, default, tpe, eff, loc) =>
+      // Translate this to:
+      // let channels = [<scala> rs.map(rule => rule.chan) </scala>]
+      // let hasDefault = <scala> d match {
+      //    case Some(_) => Expression.True
+      //    case None => Expression.False
+      //  } </scala>
+      //
+      // match selectImpl(channels, hasDefault) {
+      //   Some(i, e) => {
+      //    let channelRuleExps = [<scala> rs.map(rule => rule.exp) </scala>];
+      //    (channelRuleExps[i])(e) // TODO: Q: I'm unsure how to invoke the expression with `e`
+      //   }
+      //   None => <scala> default </scala>
+      // }
       val rs = rules.map(visitSelectChannelRule)
       val d = default.map(visitExp)
       val t = visitType(tpe)
-      Expression.SelectChannel(rs, d, t, eff, loc)
+
+      val enumSym = Symbol.mkEnumSym("Channel.ChannelImpl")
+      val chanType = Type.mkEnum(enumSym, List(t))
+      val indexElementTupleTpe = Type.mkTuple(List(Type.mkInt32(loc), t))
+      val optionSym = Symbol.mkEnumSym("Option")
+      val selectImplReturnTpe = Type.mkEnum(optionSym, List(indexElementTupleTpe))
+      val selectImplDefTpe = Type.mkImpureUncurriedArrow(List(Type.mkArray(chanType, loc), Type.mkBool(loc)), selectImplReturnTpe)
+      val selectImplSym = Symbol.mkDefnSym("Channel.selectImpl")
+      val selectImplCallExp = Expression.Def(selectImplSym, selectImplDefTpe, loc)
+      val channelsInRs = rs.map(rule => rule.chan)
+      val hasDefault = d match {
+        case Some(_) => Expression.True
+        case None => Expression.False
+      }
+      val selectImplArgs = List(Expression.ArrayLit(channelsInRs, chanType, Type.Impure, loc), hasDefault)
+      val selectImplApply = Expression.Apply(selectImplCallExp, selectImplArgs, selectImplReturnTpe, eff, loc)
+
+      // TODO: Q: I'm unsure how to construct the `TypedAst.Pattern` that will go where asdfSome and asdfNone are.
+      val someMatchRule = MatchRule(asdfSome, Expression.True, asdfExp)
+      val noneMatchRule = MatchRule(asdfNone, Expression.True, default)
+      val matchRules = List(someMatchRule, noneMatchRule)
+      Expression.Match(selectImplApply, matchRules, t, Type.Impure, loc)
 
     case Expression.Spawn(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
