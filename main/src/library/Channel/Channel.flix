@@ -118,10 +118,10 @@ namespace Channel {
         )
 
     def putHelperWaitOnFullChannel(c: ChannelImpl[a]): () & Impure =
-        if (MutList.length(getElementQueue(c)) >= getBufferSize(c))
+        if (MutList.length(getElementQueue(c)) >= getBufferSize(c)) {
             await(getWaitingSetters(c));
-            putHelperWaitOnFullChannel(c, bufferSize)
-        else {
+            putHelperWaitOnFullChannel(c)
+        } else {
             ()
         }
 
@@ -267,8 +267,8 @@ namespace Channel {
 
             // Find channels with waiting elements
             let selectChoicesWithWaitingElements = MutList.new();
-            MutList.foreachWithIndex(
-                ((c, i)) -> {
+            Array.foreachWithIndex(
+                (c, i) -> {
                     match tryGet(c) {
                         case None => ()
                         case Some(element) => {
@@ -285,7 +285,7 @@ namespace Channel {
 
             if (not MutList.isEmpty(selectChoicesWithWaitingElements)) {
                 // Element found
-                MutList.get(0, selectChoicesWithWaitingElements)
+                Some(MutList.get(0, selectChoicesWithWaitingElements))
             }
             else if (hasDefault) {
                 // No element was found and default case exists
@@ -315,8 +315,7 @@ namespace Channel {
                 selectHelper(channels, sortedChannels, selectLock, condition, hasDefault)
             }
         } else {
-            Console.printLine("Thread is interrupted");
-            None
+            bug!("Thread is interrupted")
         }
 
   /**
