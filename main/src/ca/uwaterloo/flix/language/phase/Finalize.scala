@@ -444,7 +444,7 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
 
           case TypeConstructor.Array => MonoType.Array(args.head)
 
-          case TypeConstructor.Channel => MonoType.Channel(args.head)
+          case TypeConstructor.Channel => throw InternalCompilerException(s"Channel types should already have been replaced. args: '$args''")
 
           case TypeConstructor.Lazy => MonoType.Lazy(args.head)
 
