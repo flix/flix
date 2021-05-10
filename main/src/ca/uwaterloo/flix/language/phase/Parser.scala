@@ -176,12 +176,20 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         )
       }
 
-      def Cases: Rule1[Seq[ParsedAst.Case]] = rule {
-        optional(NonEmptyCaseList) ~> ((xs: Option[Seq[ParsedAst.Case]]) => xs.getOrElse(Seq.empty))
+      def EmptyBody = rule {
+        push(Nil)
+      }
+
+      def NonEmptyBody = rule {
+        optWS ~ "{" ~ optWS ~ optional(NonEmptyCaseList) ~ optWS ~ "}" ~> ((o: Option[Seq[ParsedAst.Case]]) => o.getOrElse(Seq.empty))
+      }
+
+      def Body = rule {
+        NonEmptyBody | EmptyBody
       }
 
       rule {
-        Documentation ~ Modifiers ~ SP ~ keyword("enum") ~ WS ~ Names.Type ~ TypeParams ~ optWS ~ "{" ~ optWS ~ Cases ~ optWS ~ "}" ~ SP ~> ParsedAst.Declaration.Enum
+        Documentation ~ Modifiers ~ SP ~ keyword("enum") ~ WS ~ Names.Type ~ TypeParams ~ optWS ~ Body ~ SP ~> ParsedAst.Declaration.Enum
       }
     }
 
