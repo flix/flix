@@ -37,20 +37,4 @@ namespace Fixpoint/Ast {
             case (PositiveEdge(_), NegativeEdge(_)) => GreaterThan
         }
     }
-
-    pub def mkDepGraph(d: Datalog[v]): PrecedenceGraph = match d {
-        case Datalog(_, rules) => Array.fold(Array.map(precedenceHelper, rules)) as & Pure
-    }
-
-    def precedenceHelper(cnst: Constraint[v]): PrecedenceGraph = match cnst {
-        case Constraint(head, body) => Array.fold(Array.map(mkDepEdge(head), body)) as & Pure
-    }
-
-    def mkDepEdge(dst: HeadPredicate[v], src: BodyPredicate[v]): PrecedenceGraph = match (dst, src) {
-        case (HeadAtom(headSym, _, _), BodyAtom(bodySym, _, Positive, _)) =>
-            PrecedenceGraph(Set#{PositiveEdge(bodySym, headSym)})
-        case (HeadAtom(headSym, _, _), BodyAtom(bodySym, _, Negative, _)) =>
-            PrecedenceGraph(Set#{NegativeEdge(bodySym, headSym)})
-        case _ => PrecedenceGraph(Set#{})
-    }
 }

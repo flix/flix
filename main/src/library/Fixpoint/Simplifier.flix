@@ -36,7 +36,6 @@ namespace Fixpoint {
         Option.getWithDefault(simplifyHelper(Set#{}, stmt), RamStmt.Seq([])) as & Pure
 
     def simplifyHelper(stratum: Set[RamSym[v]], stmt: RamStmt[v]): Option[RamStmt[v]] = match stmt {
-        case RamStmt.Facts(_) => Some(stmt)
         case RamStmt.Insert(op) => simplifyOp(stratum, op) |> Option.map(RamStmt.Insert)
         case RamStmt.Merge(_, _) => Some(stmt)
         case RamStmt.Assign(_, _) => Some(stmt)
