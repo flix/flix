@@ -22,6 +22,19 @@ pub enum Nel[a] {
     case Nel(a, List[a])
 }
 
+instance Boxable[Nel[a]] with Order[a], ToString[a] {
+    pub def box(x: Nel[a]): Boxed = {
+        let value = x as ##java.lang.Object;
+        let compare = (o1, o2) -> Order.compare(o1 as Nel[a], o2 as Nel[a]);
+        let toString = o -> ToString.toString(o as Nel[a]);
+        BoxedObject(value, compare, toString)
+    }
+    pub def unbox(x: Boxed): Nel[a] = match x {
+        case BoxedObject(v, _, _) => v as Nel[a]
+        case _                    => ?bug
+    }
+}
+
 instance ToString[Nel[a]] with ToString[a] {
     pub def toString(l: Nel[a]): String = match l {
         case Nel(x, xs) => "Nel(${x}, ${xs})"
@@ -37,6 +50,17 @@ instance Hash[Nel[a]] with Hash[a] {
 instance Eq[Nel[a]] with Eq[a] {
     pub def eq(xs: Nel[a], ys: Nel[a]): Bool = match (xs, ys) {
         case (Nel(x, l1), Nel(y, l2)) => x == y and l1 == l2
+    }
+}
+
+instance Order[Nel[a]] with Order[a] {
+    ///
+    /// Compares `xs` and `ys` lexicographically.
+    ///
+    pub def compare(xs: Nel[a], ys: Nel[a]): Comparison = match (xs, ys) {
+        case (Nel(x, l1), Nel(y, l2)) =>
+            let cmp = x <=> y;
+            if (cmp == EqualTo) l1 <=> l2 else cmp
     }
 }
 
@@ -121,14 +145,14 @@ namespace Nel {
     /// Returns `true` if and only if `xs` contains the element `a`.
     ///
     @Time(length(xs)) @Space(1)
-    pub def memberOf[a](a: a, xs: Nel[a]): Bool with Eq[a] = match xs {
+    pub def memberOf(a: a, xs: Nel[a]): Bool with Eq[a] = match xs {
         case Nel(h, l) => h == a or List.memberOf(a, l)
     }
 
     ///
     /// Finds the smallest element of `xs` according to the `Order` on `a`.
     ///
-    pub def minimum[a](xs: Nel[a]): a with Order[a] =
+    pub def minimum(xs: Nel[a]): a with Order[a] =
         reduceLeft(Order.min, xs)
 
     ///
@@ -140,7 +164,7 @@ namespace Nel {
     ///
     /// Finds the largest element of `xs` according to the `Order` on `a`.
     ///
-    pub def maximum[a](xs: Nel[a]): a with Order[a] =
+    pub def maximum(xs: Nel[a]): a with Order[a] =
         reduceLeft(Order.max, xs)
 
     ///
@@ -227,7 +251,7 @@ namespace Nel {
     /// Returns `xs` with every occurrence of `x` replaced by `y`.
     ///
     @Time(length(xs)) @Space(length(xs))
-    pub def replace[a](x: a, y: a, xs: Nel[a]): Nel[a] with Eq[a] = map(e -> if (e == x) y else e, xs)
+    pub def replace(x: a, y: a, xs: Nel[a]): Nel[a] with Eq[a] = map(e -> if (e == x) y else e, xs)
 
     ///
     /// Returns all permutations of `xs` in lexicographical order by element indices in `xs`.
@@ -267,7 +291,7 @@ namespace Nel {
     ///
     /// Returns the result of applying `combine` to all the elements in `xs`, using `empty` as the initial value.
     ///
-    pub def fold[a](xs: Nel[a]): a with Monoid[a] = Foldable.fold(xs)
+    pub def fold(xs: Nel[a]): a with Monoid[a] = Foldable.fold(xs)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `xs` going from left to right.
@@ -290,7 +314,7 @@ namespace Nel {
     ///
     /// Applies `combine` to all elements in `xs` until a single value is obtained.
     ///
-    pub def reduce[a](xs: Nel[a]): a with Semigroup[a] = match xs {
+    pub def reduce(xs: Nel[a]): a with Semigroup[a] = match xs {
         case Nel(h, l) => Foldable.foldLeft((acc, x) -> Semigroup.combine(acc, x), h, l)
     }
 

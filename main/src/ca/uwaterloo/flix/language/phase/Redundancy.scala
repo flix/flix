@@ -20,9 +20,10 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.{Name, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError._
+import ca.uwaterloo.flix.language.phase.unification.ClassEnvironment
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.MultiMap
 import ca.uwaterloo.flix.util.{ParOps, Validation}
@@ -67,7 +68,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     val usedRes =
       checkUnusedDefs(usedAll)(root) and
         checkUnusedEnumsAndTags(usedAll)(root) and
-        checkUnusedTypeParamsEnums()(root)
+        checkUnusedTypeParamsEnums()(root) ++
+        checkRedundantTypeConstraints()(root)
 
     // Return the root if successful, otherwise returns all redundancy errors.
     usedRes.toValidation(root)
@@ -167,6 +169,40 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         acc ++ unusedTypeParams.map(tparam => UnusedTypeParam(tparam.name))
     }
   }
+
+  /**
+    * Checks for redundant type constraints in the given `root`.
+    */
+  private def checkRedundantTypeConstraints()(implicit root: Root): List[RedundancyError] = {
+    def findRedundantTypeConstraints(tconstrs: List[Ast.TypeConstraint]): List[RedundancyError] = {
+      for {
+        (tconstr1, i1) <- tconstrs.zipWithIndex
+        (tconstr2, i2) <- tconstrs.zipWithIndex
+        // don't compare a constraint against itself
+        if i1 != i2 && ClassEnvironment.entails(tconstr1, tconstr2, root.classEnv)
+      } yield RedundancyError.RedundantTypeConstraint(tconstr1, tconstr2, tconstr2.loc)
+    }
+
+    val instErrors = root.instances.values.flatten.flatMap {
+      inst => findRedundantTypeConstraints(inst.tconstrs)
+    }
+
+    val defErrors = root.defs.values.flatMap {
+      defn => findRedundantTypeConstraints(defn.spec.declaredScheme.constraints)
+    }
+
+    val classErrors = root.classes.values.flatMap {
+      clazz =>
+        findRedundantTypeConstraints(clazz.superClasses)
+    }
+
+    val sigErrors = root.sigs.values.flatMap {
+      sig => findRedundantTypeConstraints(sig.spec.declaredScheme.constraints)
+    }
+
+    (instErrors ++ defErrors ++ classErrors ++ sigErrors).toList
+  }
+
 
   /**
     * Returns the symbols used in the given expression `e0` under the given environment `env0`.
@@ -524,7 +560,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         case (used, con) => used and visitConstraint(con, env0)
       }
 
-    case Expression.FixpointCompose(exp1, exp2, _, _, _, _) =>
+    case Expression.FixpointMerge(exp1, exp2, _, _, _, _) =>
       val us1 = visitExp(exp1, env0)
       val us2 = visitExp(exp2, env0)
       us1 and us2
@@ -532,19 +568,15 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case Expression.FixpointSolve(exp, _, _, _, _) =>
       visitExp(exp, env0)
 
-    case Expression.FixpointProject(_, exp, _, _, _) =>
+    case Expression.FixpointFilter(_, exp, _, _, _) =>
       visitExp(exp, env0)
 
-    case Expression.FixpointEntails(exp1, exp2, _, _, _) =>
-      val used1 = visitExp(exp1, env0)
-      val used2 = visitExp(exp2, env0)
-      used1 and used2
+    case Expression.FixpointProjectIn(exp, _, _, _, _) =>
+      visitExp(exp, env0)
 
-    case Expression.FixpointFold(_, exp1, exp2, exp3, _, _, _) =>
-      val us1 = visitExp(exp1, env0)
-      val us2 = visitExp(exp2, env0)
-      val us3 = visitExp(exp3, env0)
-      us1 and us2 and us3
+    case Expression.FixpointProjectOut(_, exp, _, _, _) =>
+      visitExp(exp, env0)
+
   }
 
   /**
@@ -604,9 +636,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   private def visitHeadPred(h0: Predicate.Head, env0: Env): Used = h0 match {
     case Head.Atom(_, _, terms, _, _) =>
       visitExps(terms, env0)
-
-    case Head.Union(exp, _, _) =>
-      visitExp(exp, env0)
   }
 
   /**

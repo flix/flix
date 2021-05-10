@@ -320,136 +320,11 @@ object SimplifiedAstOps {
         checkExp(exp, env0, ienv0)
         checkType(tpe)
 
-      case Expression.FixpointConstraintSet(_, tpe, _) =>
-        checkType(tpe)
-
-      case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
-        checkExp(exp1, env0, ienv0)
-        checkExp(exp2, env0, ienv0)
-        checkType(tpe)
-
-      case Expression.FixpointSolve(exp, stf, tpe, loc) =>
-        checkExp(exp, env0, ienv0)
-        checkType(tpe)
-
-      case Expression.FixpointProject(_, exp, tpe, loc) =>
-        checkExp(exp, env0, ienv0)
-        checkType(tpe)
-
-      case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
-        checkExp(exp1, env0, ienv0)
-        checkExp(exp2, env0, ienv0)
-        checkType(tpe)
-
-      case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, loc) =>
-        checkExp(exp1, env0, ienv0)
-        checkExp(exp2, env0, ienv0)
-        checkExp(exp3, env0, ienv0)
-        checkType(tpe)
-
       case Expression.HoleError(sym, tpe, loc) =>
         checkType(tpe)
 
       case Expression.MatchError(tpe, loc) =>
         checkType(tpe)
-    }
-
-    /**
-      * Checks invariants of the given constraint `c0`.
-      */
-    def checkConstraint(c0: Constraint, env0: Set[Symbol.VarSym], ienv0: Set[Symbol.LabelSym]): Unit = {
-      for (param <- c0.cparams) {
-        checkConstraintParam(param)
-      }
-      val envHead = c0.cparams.collect {
-        case ConstraintParam.HeadParam(sym, tpe, loc) => sym
-      }
-      val ruleEnv = c0.cparams.map {
-        case ConstraintParam.HeadParam(sym, tpe, loc) => sym
-        case ConstraintParam.RuleParam(sym, tpe, loc) => sym
-      }
-      checkHeadPred(c0.head, envHead.toSet, ienv0)
-      for (bodyPred <- c0.body) {
-        checkBodyPred(bodyPred, ruleEnv.toSet, ienv0)
-      }
-    }
-
-    /**
-      * Checks invariants of the given constraint parameter `p0`.
-      */
-    def checkConstraintParam(p0: ConstraintParam): Unit = p0 match {
-      case ConstraintParam.HeadParam(sym, tpe, loc) =>
-        checkType(tpe)
-      case ConstraintParam.RuleParam(sym, tpe, loc) =>
-        checkType(tpe)
-    }
-
-    /**
-      * Checks invariants of the given head predicate `h0`.
-      */
-    def checkHeadPred(h0: Predicate.Head, env0: Set[Symbol.VarSym], ienv0: Set[Symbol.LabelSym]): Unit = h0 match {
-      case Predicate.Head.Atom(pred, den, terms, tpe, loc) =>
-        for (term <- terms) {
-          checkHeadTerm(term, env0)
-        }
-        checkType(tpe)
-
-      case Predicate.Head.Union(exp, tpe, loc) =>
-        checkExp(exp, env0, ienv0)
-        checkType(tpe)
-
-    }
-
-    /**
-      * Checks invariants of the given body predicate `b0`.
-      */
-    def checkBodyPred(b0: Predicate.Body, env0: Set[Symbol.VarSym], ienv0: Set[Symbol.LabelSym]): Unit = b0 match {
-      case Predicate.Body.Atom(pred, den, polarity, terms, tpe, loc) =>
-        for (term <- terms) {
-          checkBodyTerm(term, env0)
-        }
-        checkType(tpe)
-
-      case Predicate.Body.Guard(exp, loc) =>
-        checkExp(exp, env0, ienv0)
-    }
-
-    /**
-      * Checks invariants of the given head term `t0`.
-      */
-    def checkHeadTerm(t0: Term.Head, env0: Set[Symbol.VarSym]): Unit = t0 match {
-      case Term.Head.QuantVar(sym, tpe, loc) =>
-        checkType(tpe)
-      case Term.Head.CapturedVar(sym, tpe, loc) =>
-        checkType(tpe)
-      case Term.Head.Lit(exp, tpe, loc) =>
-        checkExp(exp0 = exp, env0 = env0, ienv0 = Set.empty)
-        checkType(tpe)
-      case Term.Head.App(exp, args, tpe, loc) =>
-        checkExp(exp0 = exp, env0 = env0, ienv0 = Set.empty)
-        checkType(tpe)
-    }
-
-    /**
-      * Checks invariants of the given body term `t0`.
-      */
-    def checkBodyTerm(t0: Term.Body, env0: Set[Symbol.VarSym]): Unit = t0 match {
-      case Term.Body.Wild(tpe, loc) =>
-      // TODO: What is the type allowed to be here?
-      case Term.Body.QuantVar(sym, tpe, loc) =>
-        checkType(tpe)
-      case Term.Body.CapturedVar(sym, tpe, loc) =>
-        checkType(tpe)
-      case Term.Body.Lit(exp, tpe, loc) =>
-        checkExp(exp0 = exp, env0 = env0, ienv0 = Set.empty)
-        checkType(tpe)
-    }
-
-    /**
-      * Checks invariants of the given attribute `a0`.
-      */
-    def checkAttribute(a0: Attribute): Unit = {
-      checkType(a0.tpe)
     }
 
     /**
@@ -470,15 +345,6 @@ object SimplifiedAstOps {
     //
     for ((sym, defn) <- root.defs) {
       checkDefn(defn)
-    }
-
-    //
-    // Check all lattices in the program.
-    //
-    for ((tpe1, LatticeOps(tpe2, bot, equ, leq, lub, glb)) <- root.latticeOps) {
-      assert(tpe1 == tpe2)
-      checkType(tpe1)
-      checkType(tpe2)
     }
 
     //

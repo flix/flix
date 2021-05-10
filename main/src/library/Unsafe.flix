@@ -18,14 +18,14 @@ namespace Unsafe {
     ///
     /// Converts `x` to a string and unsafely prints it to standard out.
     ///
-    pub def print[a](x: a): a with ToString[a] =
+    pub def print(x: a): a with ToString[a] =
         let _ = (x |> ToString.toString |> Console.print) as & Pure;
         x
 
     ///
     /// Converts `x` to a string and unsafely prints it to standard out followed by a new line.
     ///
-    pub def println[a](x: a): a with ToString[a] =
+    pub def println(x: a): a with ToString[a] =
         let _ = (x |> ToString.toString |> Console.printLine) as & Pure;
         x
 

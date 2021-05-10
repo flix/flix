@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Root
-import ca.uwaterloo.flix.language.ast.{MonoType, SourceLocation, SpecialOperator, Symbol}
+import ca.uwaterloo.flix.language.ast.{MonoType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.{InternalCompilerException, JvmTarget}
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.{ClassWriter, Label, MethodVisitor}
@@ -532,22 +532,13 @@ object AsmOps {
     */
   def newProxyObject(tpe: MonoType, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
     // Construct the equal function object.
-    root.specialOps(SpecialOperator.Equality).get(tpe) match {
-      case None => mv.visitInsn(ACONST_NULL)
-      case Some(hashSym) => AsmOps.compileDefSymbol(hashSym, mv)
-    }
+    mv.visitInsn(ACONST_NULL)
 
     // Construct the hash function object.
-    root.specialOps(SpecialOperator.HashCode).get(tpe) match {
-      case None => mv.visitInsn(ACONST_NULL)
-      case Some(hashSym) => AsmOps.compileDefSymbol(hashSym, mv)
-    }
+    mv.visitInsn(ACONST_NULL)
 
     // Construct the toStr function object.
-    root.specialOps(SpecialOperator.ToString).get(tpe) match {
-      case None => mv.visitInsn(ACONST_NULL)
-      case Some(hashSym) => AsmOps.compileDefSymbol(hashSym, mv)
-    }
+    mv.visitInsn(ACONST_NULL)
 
     // Construct the proxy object.
     mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.ProxyObject.toInternalName, "of", "(Ljava/lang/Object;Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;)Lflix/runtime/ProxyObject;", false);

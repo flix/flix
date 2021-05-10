@@ -17,7 +17,7 @@ def getEdgesWithNumbers(): #{ LabelEdge[Int], LabelPath[Int] } = #{
 /// Note that the return type is `open` (polymorphic) which
 /// means that the facts can be used within any constraint
 /// as long as the edges are labelled with strings.
-def getEdgesWithColor[r](): #{ LabelEdge[String] | r } = #{
+def getEdgesWithColor(): #{ LabelEdge[String] | r } = #{
     LabelEdge("a", "red", "b").
     LabelEdge("b", "red", "c").
     LabelEdge("c", "blu", "d").
@@ -25,21 +25,21 @@ def getEdgesWithColor[r](): #{ LabelEdge[String] | r } = #{
 
 /// Returns a set of polymorphic rules to compute the transitive
 /// closure of edges with the *same* label.
-def getRules[l](): #{ LabelEdge[l], LabelPath[l] } with Eq[l], Hash[l], ToString[l] = #{
+def getRules(): #{ LabelEdge[l], LabelPath[l] } with Boxable[l] = #{
     LabelPath(x, l, y) :- LabelEdge(x, l, y).
     LabelPath(x, l, z) :- LabelPath(x, l, y), LabelPath(y, l, z).
 }
 
 /// Computes the fixpoint of the two sets of facts with the rules.
 /// Note that polymorphism allow us to use `getRules` with both types of facts.
-def f(): Unit =
+def _f(): Unit =
     let _r1 = solve getEdgesWithColor() <+> getRules();
     let _r2 = solve getEdgesWithNumbers() <+> getRules();
     ()
 
 /// However, the type system ensures that we do not mix facts of
 /// different type:
-def g(): Unit =
+def _g(): Unit =
     /// Uncomment to see that the composition does not type check:
     /// let _r1 = solve getEdgesWithColor() <+> getEdgesWithNumbers();
     ()

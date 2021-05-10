@@ -177,16 +177,6 @@ object ParsedAst {
     case class Lattice(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, attr: Seq[ParsedAst.Attribute], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
-      * Constraint Declaration.
-      *
-      * @param sp1  the position of the first character in the declaration.
-      * @param head the head predicate.
-      * @param body the body predicates.
-      * @param sp2  the position of the last character in the declaration.
-      */
-    case class Constraint(sp1: SourcePosition, head: ParsedAst.Predicate.Head, body: Seq[ParsedAst.Predicate.Body], sp2: SourcePosition) extends ParsedAst.Declaration
-
-    /**
       * Typeclass Declaration.
       *
       * @param doc          the optional comment associated with the declaration.
@@ -939,7 +929,7 @@ object ParsedAst {
       * @param con the constraint.
       * @param sp2 the position of the last character in the expression.
       */
-    case class FixpointConstraint(sp1: SourcePosition, con: Declaration.Constraint, sp2: SourcePosition) extends ParsedAst.Expression
+    case class FixpointConstraint(sp1: SourcePosition, con: Constraint, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Fixpoint Constraint Set expression.
@@ -948,7 +938,7 @@ object ParsedAst {
       * @param cs  the set of constraints.
       * @param sp2 the position of the last character in the expression.
       */
-    case class FixpointConstraintSet(sp1: SourcePosition, cs: Seq[Declaration.Constraint], sp2: SourcePosition) extends ParsedAst.Expression
+    case class FixpointConstraintSet(sp1: SourcePosition, cs: Seq[Constraint], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Fixpoint Compose expression.
@@ -960,44 +950,36 @@ object ParsedAst {
     case class FixpointCompose(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Fixpoint Solve expression.
+      * Fixpoint Project-Into expression.
       *
-      * @param sp1 the position of the first character in the expression.
-      * @param exp the constraint expression.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class FixpointSolve(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * Fixpoint Project expression.
-      *
-      * @param sp1   the position of the first character in the expression.
-      * @param ident the name of the predicate.
-      * @param exp   the constraint expression.
-      * @param sp2   the position of the last character in the expression.
-      */
-    case class FixpointProject(sp1: SourcePosition, ident: Name.Ident, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * Fixpoint Entails expression.
-      *
-      * @param exp1 the lhs expression.
-      * @param exp2 the rhs expression.
+      * @param sp1  the position of the first character in the expression.
+      * @param exps the non-empty sequence of expressions to project.
+      * @param into the non-empty sequence of predicate symbols to project into.
       * @param sp2  the position of the last character in the expression.
       */
-    case class FixpointEntails(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class FixpointProjectInto(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], into: Seq[Name.Ident], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Fixpoint Fold expression.
+      * Fixpoint Solve-Project expression.
       *
-      * @param sp1   the position of the first character in the expression.
-      * @param ident the name of the predicate.
-      * @param exp1  the initial value.
-      * @param exp2  the function to fold.
-      * @param exp3  the constraints over which to fold.
-      * @param sp2   the position of the last character in the expression.
+      * @param sp1    the position of the first character in the expression.
+      * @param exps   the non-empty sequence of expressions to merge and solve.
+      * @param idents the (optional) non-empty sequence of predicates to project and merge out of the solution.
+      * @param sp2    the position of the last character in the expression.
       */
-    case class FixpointFold(sp1: SourcePosition, ident: Name.Ident, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, exp3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class FixpointSolveWithProject(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], idents: Option[Seq[Name.Ident]], sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Fixpoint Query expression.
+      *
+      * @param sp1      the position of the first character in the expression.
+      * @param exps     the non-empty sequence of expressions to merge and solve.
+      * @param selects  the expressions of the selected tuple. (the head of the pseudo-rule).
+      * @param from     the predicates to select from (the body of the pseudo-rule).
+      * @param whereExp the optional guard of the pseudo-rule.
+      * @param sp2      the position of the last character in the expression.
+      */
+    case class FixpointQueryWithSelect(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], selects: Seq[Expression], from: Seq[ParsedAst.Predicate.Body.Atom], whereExp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
   }
 
@@ -1122,6 +1104,16 @@ object ParsedAst {
   }
 
   /**
+    * Constraint Declaration.
+    *
+    * @param sp1  the position of the first character in the declaration.
+    * @param head the head predicate.
+    * @param body the body predicates.
+    * @param sp2  the position of the last character in the declaration.
+    */
+  case class Constraint(sp1: SourcePosition, head: ParsedAst.Predicate.Head, body: Seq[ParsedAst.Predicate.Body], sp2: SourcePosition)
+
+  /**
     * Predicates.
     */
   sealed trait Predicate
@@ -1142,15 +1134,6 @@ object ParsedAst {
         * @param sp2   the position of the last character in the predicate.
         */
       case class Atom(sp1: SourcePosition, ident: Name.Ident, terms: Seq[ParsedAst.Expression], term: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate.Head
-
-      /**
-        * Union Predicate.
-        *
-        * @param sp1 the position of the first character in the predicate.
-        * @param exp the expression to evaluate and union with the current constraint set.
-        * @param sp2 the position of the last character in the predicate.
-        */
-      case class Union(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Predicate.Head
 
     }
 
@@ -1451,10 +1434,10 @@ object ParsedAst {
   /**
     * A single type parameter, with optional kind and constraint.
     *
-    * @param sp1     the position of the first character in the type parameter.
-    * @param ident   the type variable being bound
-    * @param kind    the optional kind of the type variable.
-    * @param sp2     the position of the last character in the type parameter.
+    * @param sp1   the position of the first character in the type parameter.
+    * @param ident the type variable being bound
+    * @param kind  the optional kind of the type variable.
+    * @param sp2   the position of the last character in the type parameter.
     */
   case class TypeParam(sp1: SourcePosition, ident: Name.Ident, kind: Option[ParsedAst.Kind], sp2: SourcePosition)
 

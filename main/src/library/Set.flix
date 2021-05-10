@@ -25,6 +25,19 @@ enum Set[t] {
     case Set(RedBlackTree[t, Unit])
 }
 
+instance Boxable[Set[t]] with Order[t], ToString[t] {
+    pub def box(x: Set[t]): Boxed = {
+        let value = x as ##java.lang.Object;
+        let compare = (o1, o2) -> Order.compare(o1 as Set[t], o2 as Set[t]);
+        let toString = o -> ToString.toString(o as Set[t]);
+        BoxedObject(value, compare, toString)
+    }
+    pub def unbox(x: Boxed): Set[t] = match x {
+        case BoxedObject(v, _, _) => v as Set[t]
+        case _                    => ?bug
+    }
+}
+
 instance ToString[Set[a]] with ToString[a] {
     pub def toString(xs: Set[a]): String =
         let s = Set.foldRight((x, acc) -> "${x}, ${acc}", "", xs);
@@ -82,7 +95,7 @@ namespace Set {
     /// `Set#{x}` is syntactic sugar for `singleton` (`Set#{x} = singleton(x)`).
     ///
     @Time(1) @Space(1)
-    pub def singleton[a](x: a): Set[a] with Order[a] = insert(x, empty())
+    pub def singleton(x: a): Set[a] with Order[a] = insert(x, empty())
 
     ///
     /// Returns a set of all integers between `b` (inclusive) and `e` (exclusive).
@@ -97,7 +110,7 @@ namespace Set {
     /// Adds `x` to `xs`.
     ///
     @Time(Int32.log2(size(xs))) @Space(Int32.log2(size(xs)))
-    pub def insert[a](x: a, xs: Set[a]): Set[a] with Order[a] =
+    pub def insert(x: a, xs: Set[a]): Set[a] with Order[a] =
         let Set(es) = xs;
         Set(RedBlackTree.insert(x, (), es))
 
@@ -105,7 +118,7 @@ namespace Set {
     /// Removes `x` from `xs`.
     ///
     @Time(Int32.log2(size(xs))) @Space(Int32.log2(size(xs)))
-    pub def delete[a](x: a, xs: Set[a]): Set[a] with Order[a] =
+    pub def delete(x: a, xs: Set[a]): Set[a] with Order[a] =
         let Set(es) = xs;
         Set(RedBlackTree.delete(x, es))
 
@@ -125,7 +138,7 @@ namespace Set {
     /// Returns true if and only if `x` is a member of `xs`.
     ///
     @Time(Int32.log2(size(xs))) @Space(1)
-    pub def memberOf[a](x: a, xs: Set[a]): Bool with Order[a] =
+    pub def memberOf(x: a, xs: Set[a]): Bool with Order[a] =
         let Set(es) = xs;
         RedBlackTree.memberOf(x, es)
 
@@ -167,13 +180,13 @@ namespace Set {
     /// Returns true if and only if every element in `xs` appears in `ys`.
     ///
     @Time(size(xs)) @Space(size(xs) * Int32.log2(size(ys)))
-    pub def isSubsetOf[a](xs: Set[a], ys: Set[a]): Bool with Order[a] = forall(x -> memberOf(x, ys), xs)
+    pub def isSubsetOf(xs: Set[a], ys: Set[a]): Bool with Order[a] = forall(x -> memberOf(x, ys), xs)
 
     ///
     /// Returns true if and only if every element in `xs` appears in `ys` and `xs != ys`.
     ///
     @Time(size(xs)) @Space(size(xs) * Int32.log2(size(ys)))
-    pub def isProperSubsetOf[a](xs: Set[a], ys: Set[a]): Bool with Order[a] = size(xs) != size(ys) and isSubsetOf(xs, ys)
+    pub def isProperSubsetOf(xs: Set[a], ys: Set[a]): Bool with Order[a] = size(xs) != size(ys) and isSubsetOf(xs, ys)
 
     ///
     /// Alias for `findLeft`.
@@ -211,7 +224,7 @@ namespace Set {
     ///
     /// Returns the result of applying `combine` to all the elements in `xs`, using `empty` as the initial value.
     ///
-    pub def fold[a](xs: Set[a]): a with Monoid[a] = Foldable.fold(xs)
+    pub def fold(xs: Set[a]): a with Monoid[a] = Foldable.fold(xs)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `xs` going from left to right.
@@ -267,7 +280,7 @@ namespace Set {
     /// Returns the union of the elements in `xs`.
     ///
     @Time(size(xs) * Int32.log2(size(xs))) @Space(size(xs) * Int32.log2(size(xs)))
-    pub def flatten[a](xs: Set[Set[a]]): Set[a] with Order[a] =
+    pub def flatten(xs: Set[Set[a]]): Set[a] with Order[a] =
         foldLeft((acc, x) -> union(acc, x), empty(), xs)
 
     ///
@@ -304,7 +317,7 @@ namespace Set {
     ///
     @Time(Int32.min(size(xs), size(ys)) * Int32.log2(size(xs) + size(ys)))
     @Space(Int32.min(size(xs), size(ys)) * Int32.log2(size(xs) + size(ys)))
-    pub def union[a](xs: Set[a], ys: Set[a]): Set[a] with Order[a] =
+    pub def union(xs: Set[a], ys: Set[a]): Set[a] with Order[a] =
         use RedBlackTree.{blackHeight, foldLeft, insert};
         let Set(as) = xs;
         let Set(bs) = ys;
@@ -317,21 +330,21 @@ namespace Set {
     /// Returns the intersection of `xs` and `ys`.
     ///
     @Time(size(ys) * Int32.log2(size(xs))) @Space(size(ys) * Int32.log2(size(xs)))
-    pub def intersection[a](xs: Set[a], ys: Set[a]): Set[a] with Order[a] =
+    pub def intersection(xs: Set[a], ys: Set[a]): Set[a] with Order[a] =
         foldLeft((acc, x) -> if (memberOf(x, xs)) insert(x, acc) else acc, empty(), ys)
 
     ///
     /// Returns the difference of `xs` and `ys`, i.e. `xs - ys`.
     ///
     @Time(size(xs) * Int32.log2(size(ys))) @Space(size(xs) * Int32.log2(size(ys)))
-    pub def difference[a](xs: Set[a], ys: Set[a]): Set[a] with Order[a] =
+    pub def difference(xs: Set[a], ys: Set[a]): Set[a] with Order[a] =
         foldLeft((acc, x) -> if (not memberOf(x, ys)) insert(x, acc) else acc, empty(), xs)
 
     ///
     /// Returns all subsets of `xs`.
     ///
     @Time(size(xs) * (1 <<< size(xs))) @Space(size(xs) * (1 <<< size(xs)))
-    pub def subsets[a](xs: Set[a]): Set[Set[a]] with Order[a] =
+    pub def subsets(xs: Set[a]): Set[Set[a]] with Order[a] =
         foldLeft((acc, x) -> union(map(y -> insert(x, y), acc), acc), insert(empty(), empty()), xs)
 
 
@@ -345,7 +358,7 @@ namespace Set {
     /// The function `f` must be pure.
     ///
     @Time(time(f) * size(xs)) @Space(space(f) * size(xs))
-    pub def filter[a](f: a -> Bool, xs: Set[a]): Set[a] with Order[a] =
+    pub def filter(f: a -> Bool, xs: Set[a]): Set[a] with Order[a] =
         foldLeft((acc, x) -> if (f(x)) insert(x, acc) else acc, empty(), xs)
 
     ///
@@ -354,14 +367,14 @@ namespace Set {
     /// Note: The returned set may be smaller than `xs`.
     ///
     @Time(time(f) * size(xs)) @Space(space(f) * size(xs))
-    pub def map[a, b, e](f: a -> b & e, xs: Set[a]): Set[b] & e with Order[b] =
+    pub def map(f: a -> b & e, xs: Set[a]): Set[b] & e with Order[b] =
         foldLeft((acc, x) -> insert(f(x), acc), empty(), xs)
 
     ///
     /// Returns the result of applying `f` to every element in `xs` and taking the union.
     ///
     @Time(time(f) * size(xs) * Int32.log2(size(xs))) @Space(space(f) * size(xs) * Int32.log2(size(xs)))
-    pub def flatMap[a, b, e](f: a -> Set[b] & e, xs: Set[a]): Set[b] & e with Order[b] =
+    pub def flatMap(f: a -> Set[b] & e, xs: Set[a]): Set[b] & e with Order[b] =
         foldLeft((acc, x) -> union(acc, f(x)), empty(), xs)
 
     ///
@@ -370,7 +383,7 @@ namespace Set {
     /// Note: The returned set may be smaller than `xs`.
     ///
     @Time(Int32.log2(size(xs))) @Space(Int32.log2(size(xs)))
-    pub def replace[a](x: a, y: a, xs: Set[a]): Set[a] with Order[a] =
+    pub def replace(x: a, y: a, xs: Set[a]): Set[a] with Order[a] =
         if (memberOf(x, xs)) insert(y, delete(x, xs)) else xs
 
     ///
@@ -382,7 +395,7 @@ namespace Set {
     /// The function `f` must be pure.
     ///
     @Time(size(xs) * Int32.log2(size(xs))) @Space(size(xs) * Int32.log2(size(xs)))
-    pub def partition[a](f: a -> Bool, xs: Set[a]): (Set[a], Set[a]) with Order[a] =
+    pub def partition(f: a -> Bool, xs: Set[a]): (Set[a], Set[a]) with Order[a] =
         foldLeft((acc, x) ->
             let (a, b) = acc;
             if (f(x))
@@ -415,7 +428,7 @@ namespace Set {
     /// make any guarantees about which mapping will be in the resulting map.
     ///
     @Time(size(xs)) @Space(size(xs))
-    pub def toMap[a, b](xs: Set[(a, b)]): Map[a, b] with Order[a] =
+    pub def toMap(xs: Set[(a, b)]): Map[a, b] with Order[a] =
         foldRight((x, acc) -> let (k, v) = x; Map.insert(k, v, acc), Map#{}, xs)
 
     ///
@@ -435,12 +448,12 @@ namespace Set {
     ///
     /// `f` should return `None` to signal the end of building the set.
     ///
-    pub def unfold[a, s, e](f: s -> Option[(a, s)] & e, st: s): Set[a] & e with Order[a] = unfoldHelper(f, st, empty())
+    pub def unfold(f: s -> Option[(a, s)] & e, st: s): Set[a] & e with Order[a] = unfoldHelper(f, st, empty())
 
     ///
     /// Helper function for `unfold`.
     ///
-    def unfoldHelper[a, s, e](f: s -> Option[(a, s)] & e, st: s, ac: Set[a]): Set[a] & e with Order[a] = match f(st) {
+    def unfoldHelper(f: s -> Option[(a, s)] & e, st: s, ac: Set[a]): Set[a] & e with Order[a] = match f(st) {
         case None => ac
         case Some((a, st1)) => unfoldHelper(f, st1, insert(a, ac))
     }
@@ -453,12 +466,12 @@ namespace Set {
     ///
     /// `next` should return `None` to signal the end of building the set.
     ///
-    pub def unfoldWithIter[a](next: () ~> Option[a]): Set[a] & Impure with Order[a] = unfoldWithIterHelper(next, empty())
+    pub def unfoldWithIter(next: () ~> Option[a]): Set[a] & Impure with Order[a] = unfoldWithIterHelper(next, empty())
 
     ///
     /// Helper function for `unfoldWithIter`.
     ///
-    def unfoldWithIterHelper[a](next: () ~> Option[a], ac: Set[a]): Set[a] & Impure with Order[a] = match next() {
+    def unfoldWithIterHelper(next: () ~> Option[a], ac: Set[a]): Set[a] & Impure with Order[a] = match next() {
         case None => ac
         case Some(a) => unfoldWithIterHelper(next, insert(a, ac))
     }

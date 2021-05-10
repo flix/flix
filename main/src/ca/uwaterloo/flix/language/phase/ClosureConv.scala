@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.SimplifiedAst._
-import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, Symbol, Type}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
@@ -339,34 +339,6 @@ object ClosureConv extends Phase[Root, Root] {
       val e = visitExp(exp)
       Expression.Force(e, tpe, loc)
 
-    case Expression.FixpointConstraintSet(cs0, tpe, loc) =>
-      val cs = cs0.map(visitConstraint)
-      Expression.FixpointConstraintSet(cs, tpe, loc)
-
-    case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expression.FixpointCompose(e1, e2, tpe, loc)
-
-    case Expression.FixpointSolve(exp, stf, tpe, loc) =>
-      val e = visitExp(exp)
-      Expression.FixpointSolve(e, stf, tpe, loc)
-
-    case Expression.FixpointProject(pred, exp, tpe, loc) =>
-      val e = visitExp(exp)
-      Expression.FixpointProject(pred, e, tpe, loc)
-
-    case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expression.FixpointEntails(e1, e2, tpe, loc)
-
-    case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val e3 = visitExp(exp3)
-      Expression.FixpointFold(pred, e1, e2, e3, tpe, loc)
-
     case Expression.HoleError(sym, tpe, loc) => exp0
     case Expression.MatchError(tpe, loc) => exp0
 
@@ -374,71 +346,6 @@ object ClosureConv extends Phase[Root, Root] {
     case Expression.LambdaClosure(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
     case Expression.ApplyClo(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
     case Expression.ApplyDef(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
-  }
-
-  /**
-    * Performs closure conversion on the given constraint `c0`.
-    */
-  private def visitConstraint(c0: Constraint)(implicit flix: Flix): Constraint = {
-    val Constraint(cparams0, head0, body0, loc) = c0
-    val head = visitHeadPredicate(head0)
-    val body = body0 map visitBodyPredicate
-    Constraint(cparams0, head, body, loc)
-  }
-
-  /**
-    * Performs closure conversion on the given head predicate `head0`.
-    */
-  private def visitHeadPredicate(head0: Predicate.Head)(implicit flix: Flix): Predicate.Head = head0 match {
-    case Predicate.Head.Atom(pred, den, terms, tpe, loc) =>
-      val ts = terms map visitHeadTerm
-      Predicate.Head.Atom(pred, den, ts, tpe, loc)
-
-    case Predicate.Head.Union(exp, tpe, loc) =>
-      val e = visitExp(exp)
-      Predicate.Head.Union(e, tpe, loc)
-  }
-
-  /**
-    * Performs closure conversion on the given body predicate `body0`.
-    */
-  private def visitBodyPredicate(body0: Predicate.Body)(implicit flix: Flix): Predicate.Body = body0 match {
-    case Predicate.Body.Atom(pred, den, polarity, terms, tpe, loc) =>
-      val ts = terms map visitBodyTerm
-      Predicate.Body.Atom(pred, den, polarity, ts, tpe, loc)
-
-    case Predicate.Body.Guard(exp0, loc) =>
-      val e = visitExp(exp0)
-      Predicate.Body.Guard(e, loc)
-  }
-
-  /**
-    * Performs closure conversion on the given head term `term0`.
-    */
-  private def visitHeadTerm(term0: Term.Head)(implicit flix: Flix): Term.Head = term0 match {
-    case Term.Head.QuantVar(sym, tpe, loc) => term0
-
-    case Term.Head.CapturedVar(sym, tpe, loc) => term0
-
-    case Term.Head.Lit(lit, tpe, loc) =>
-      val e = visitExp(lit)
-      Term.Head.Lit(e, tpe, loc)
-
-    case Term.Head.App(exp0, args, tpe, loc) =>
-      val e = visitExp(exp0)
-      Term.Head.App(e, args, tpe, loc)
-  }
-
-  /**
-    * Performs closure conversion on the given body term `term0`.
-    */
-  private def visitBodyTerm(term0: Term.Body)(implicit flix: Flix): Term.Body = term0 match {
-    case Term.Body.Wild(tpe, loc) => Term.Body.Wild(tpe, loc)
-    case Term.Body.QuantVar(sym, tpe, loc) => Term.Body.QuantVar(sym, tpe, loc)
-    case Term.Body.CapturedVar(sym, tpe, loc) => Term.Body.CapturedVar(sym, tpe, loc)
-    case Term.Body.Lit(exp, tpe, loc) =>
-      val e = visitExp(exp)
-      Term.Body.Lit(e, tpe, loc)
   }
 
   /**
@@ -543,17 +450,6 @@ object ClosureConv extends Phase[Root, Root] {
 
     case Expression.Force(exp, tpe, loc) => freeVars(exp)
 
-    case Expression.FixpointConstraintSet(cs, tpe, loc) =>
-      cs.foldLeft(mutable.LinkedHashSet.empty[(Symbol.VarSym, Type)]) {
-        case (m, c) => m ++ freeVars(c)
-      }
-
-    case Expression.FixpointCompose(exp1, exp2, tpe, loc) => freeVars(exp1) ++ freeVars(exp2)
-    case Expression.FixpointSolve(exp, stf, tpe, loc) => freeVars(exp)
-    case Expression.FixpointProject(pred, exp, tpe, loc) => freeVars(exp)
-    case Expression.FixpointEntails(exp1, exp2, tpe, loc) => freeVars(exp1) ++ freeVars(exp2)
-    case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, loc) => freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
-
     case Expression.HoleError(sym, tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.MatchError(tpe, loc) => mutable.LinkedHashSet.empty
 
@@ -561,64 +457,6 @@ object ClosureConv extends Phase[Root, Root] {
     case Expression.Closure(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
     case Expression.ApplyClo(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
     case Expression.ApplyDef(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
-  }
-
-  /**
-    * Returns the free variables in the given constraint `c0`.
-    */
-  private def freeVars(c0: Constraint): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = {
-    val Constraint(cparams, head, body, loc) = c0
-    freeVars(head) ++ body.flatMap(freeVars)
-  }
-
-  /**
-    * Returns the free variables in the given head predicate `head0`.
-    */
-  private def freeVars(head0: Predicate.Head): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = head0 match {
-    case Predicate.Head.Atom(pred, den, terms, tpe, loc) =>
-      mutable.LinkedHashSet.empty ++ terms.flatMap(freeVars)
-
-    case Predicate.Head.Union(exp, tpe, loc) =>
-      freeVars(exp)
-  }
-
-  /**
-    * Returns the free variables in the given body predicate `body0`.
-    */
-  private def freeVars(body0: Predicate.Body): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = body0 match {
-    case Predicate.Body.Atom(pred, den, polarity, terms, tpe, loc) =>
-      mutable.LinkedHashSet.empty ++ terms.flatMap(freeVars)
-
-    case Predicate.Body.Guard(exp, loc) =>
-      freeVars(exp)
-  }
-
-  /**
-    * Returns the free variables in the given head term `term0`.
-    */
-  private def freeVars(term0: Term.Head): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = term0 match {
-    case Term.Head.QuantVar(sym, tpe, loc) =>
-      // Quantified variables are never free.
-      mutable.LinkedHashSet.empty
-    case Term.Head.CapturedVar(sym, tpe, loc) =>
-      // Captured variables are by definition free.
-      mutable.LinkedHashSet((sym, tpe))
-    case Term.Head.Lit(lit, tpe, loc) => mutable.LinkedHashSet.empty
-    case Term.Head.App(exp, args, tpe, loc) => freeVars(exp)
-  }
-
-  /**
-    * Returns the free variables in the given body term `term0`.
-    */
-  private def freeVars(term0: Term.Body): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = term0 match {
-    case Term.Body.Wild(tpe, loc) => mutable.LinkedHashSet.empty
-    case Term.Body.QuantVar(sym, tpe, loc) =>
-      // Quantified variables are never free.
-      mutable.LinkedHashSet.empty
-    case Term.Body.CapturedVar(sym, tpe, loc) =>
-      // Captured variables are by definition free.
-      mutable.LinkedHashSet((sym, tpe))
-    case Term.Body.Lit(exp, tpe, loc) => freeVars(exp)
   }
 
   /**
@@ -891,100 +729,9 @@ object ClosureConv extends Phase[Root, Root] {
         val e = visitExp(exp)
         Expression.Force(e, tpe, loc)
 
-      case Expression.FixpointConstraintSet(cs0, tpe, loc) =>
-        val cs = cs0.map(visitConstraint)
-        Expression.FixpointConstraintSet(cs, tpe, loc)
-
-      case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        Expression.FixpointCompose(e1, e2, tpe, loc)
-
-      case Expression.FixpointSolve(exp, stf, tpe, loc) =>
-        val e = visitExp(exp)
-        Expression.FixpointSolve(e, stf, tpe, loc)
-
-      case Expression.FixpointProject(pred, exp, tpe, loc) =>
-        val e = visitExp(exp)
-        Expression.FixpointProject(pred, e, tpe, loc)
-
-      case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        Expression.FixpointEntails(e1, e2, tpe, loc)
-
-      case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        val e3 = visitExp(exp3)
-        Expression.FixpointFold(pred, e1, e2, e3, tpe, loc)
-
       case Expression.HoleError(sym, tpe, loc) => e
 
       case Expression.MatchError(tpe, loc) => e
-    }
-
-    def visitConstraint(c0: Constraint): Constraint = {
-      val Constraint(cparams0, head0, body0, loc) = c0
-      val cs = cparams0 map {
-        case ConstraintParam.HeadParam(s, t, l) => ConstraintParam.HeadParam(subst.getOrElse(s, s), t, l)
-        case ConstraintParam.RuleParam(s, t, l) => ConstraintParam.RuleParam(subst.getOrElse(s, s), t, l)
-      }
-      val head = visitHeadPredicate(head0)
-      val body = body0 map visitBodyPredicate
-      Constraint(cs, head, body, loc)
-    }
-
-    def visitHeadPredicate(head0: Predicate.Head): Predicate.Head = head0 match {
-      case Predicate.Head.Atom(pred, den, terms, tpe, loc) =>
-        val ts = terms map visitHeadTerm
-        Predicate.Head.Atom(pred, den, ts, tpe, loc)
-
-      case Predicate.Head.Union(exp, tpe, loc) =>
-        val e = visitExp(exp)
-        Predicate.Head.Union(e, tpe, loc)
-    }
-
-    def visitBodyPredicate(body0: Predicate.Body): Predicate.Body = body0 match {
-      case Predicate.Body.Atom(pred, den, polarity, terms, tpe, loc) =>
-        val ts = terms map visitBodyTerm
-        Predicate.Body.Atom(pred, den, polarity, ts, tpe, loc)
-
-      case Predicate.Body.Guard(exp, loc) =>
-        val e = visitExp(exp)
-        Predicate.Body.Guard(e, loc)
-    }
-
-    def visitHeadTerm(term0: Term.Head): Term.Head = term0 match {
-      case Term.Head.QuantVar(sym, tpe, loc) =>
-        val s = subst.getOrElse(sym, sym)
-        Term.Head.QuantVar(s, tpe, loc)
-
-      case Term.Head.CapturedVar(sym, tpe, loc) =>
-        val s = subst.getOrElse(sym, sym)
-        Term.Head.CapturedVar(s, tpe, loc)
-
-      case Term.Head.Lit(lit, tpe, loc) => Term.Head.Lit(lit, tpe, loc)
-
-      case Term.Head.App(exp, args, tpe, loc) =>
-        val e = visitExp(exp)
-        val as = args.map(s => subst.getOrElse(s, s))
-        Term.Head.App(e, as, tpe, loc)
-    }
-
-    def visitBodyTerm(term0: Term.Body): Term.Body = term0 match {
-      case Term.Body.Wild(tpe, loc) => Term.Body.Wild(tpe, loc)
-      case Term.Body.QuantVar(sym, tpe, loc) =>
-        val s = subst.getOrElse(sym, sym)
-        Term.Body.QuantVar(sym, tpe, loc)
-
-      case Term.Body.CapturedVar(sym, tpe, loc) =>
-        val s = subst.getOrElse(sym, sym)
-        Term.Body.CapturedVar(s, tpe, loc)
-
-      case Term.Body.Lit(exp, tpe, loc) =>
-        val e = visitExp(exp)
-        Term.Body.Lit(e, tpe, loc)
     }
 
     visitExp(e0)

@@ -25,6 +25,19 @@ enum List[t] {
     case Cons(t, List[t])
 }
 
+instance Boxable[List[t]] with Order[t], ToString[t] {
+    pub def box(x: List[t]): Boxed = {
+        let value = x as ##java.lang.Object;
+        let compare = (o1, o2) -> Order.compare(o1 as List[t], o2 as List[t]);
+        let toString = o -> ToString.toString(o as List[t]);
+        BoxedObject(value, compare, toString)
+    }
+    pub def unbox(x: Boxed): List[t] = match x {
+        case BoxedObject(v, _, _) => v as List[t]
+        case _                    => ?bug
+    }
+}
+
 instance ToString[List[a]] with ToString[a] {
     pub def toString(xs: List[a]): String =
         List.foldRight((x, acc) -> "${x} :: ${acc}", "Nil", xs)
@@ -130,7 +143,7 @@ namespace List {
     /// Returns `true` if and only if `xs` contains the element `a`.
     ///
     @Time(length(xs)) @Space(1)
-    pub def memberOf[a](a: a, xs: List[a]): Bool with Eq[a] = match xs {
+    pub def memberOf(a: a, xs: List[a]): Bool with Eq[a] = match xs {
         case Nil => false
         case x :: rs => if (x == a) true else memberOf(a, rs)
     }
@@ -140,7 +153,7 @@ namespace List {
     ///
     /// Returns `None` if `xs` is empty.
     ///
-    pub def minimum[a](xs: List[a]): Option[a] with Order[a] =
+    pub def minimum(xs: List[a]): Option[a] with Order[a] =
         reduceLeft(Order.min, xs)
 
     ///
@@ -156,7 +169,7 @@ namespace List {
     ///
     /// Returns `None` if `xs` is empty.
     ///
-    pub def maximum[a](xs: List[a]): Option[a] with Order[a] =
+    pub def maximum(xs: List[a]): Option[a] with Order[a] =
         reduceLeft(Order.max, xs)
 
     ///
@@ -173,12 +186,12 @@ namespace List {
     /// Returns `-1` if `a` does not exist in `xs`.
     ///
     @Time(length(xs)) @Space(1)
-    pub def indexOf[a](a: a, xs: List[a]): Int32 with Eq[a] = indexOfHelper(a, xs, 0)
+    pub def indexOf(a: a, xs: List[a]): Int32 with Eq[a] = indexOfHelper(a, xs, 0)
 
     ///
     /// Helper function for `indexOf`.
     ///
-    def indexOfHelper[a](a: a, xs: List[a], acc: Int32): Int32 with Eq[a] = match xs {
+    def indexOfHelper(a: a, xs: List[a], acc: Int32): Int32 with Eq[a] = match xs {
         case Nil => -1
         case x :: rs => if (x == a) acc else indexOfHelper(a, rs, acc+1)
     }
@@ -384,7 +397,7 @@ namespace List {
     /// Returns `xs` with every occurrence of `x` replaced by `y`.
     ///
     @Time(length(xs)) @Space(length(xs))
-    pub def replace[a](x: a, y: a, xs: List[a]): List[a] with Eq[a] = map(e -> if (e == x) y else e, xs)
+    pub def replace(x: a, y: a, xs: List[a]): List[a] with Eq[a] = map(e -> if (e == x) y else e, xs)
 
     ///
     /// Returns `ys` with the `n` elements starting at index `i` replaced with the elements of `xs`.
@@ -531,7 +544,7 @@ namespace List {
     /// Returns `true` if and only if `xs` is a prefix of `ys`.
     ///
     @Time(length(xs)) @Space(1)
-    pub def isPrefixOf[a](xs: List[a], ys: List[a]): Bool with Eq[a] = match (xs, ys) {
+    pub def isPrefixOf(xs: List[a], ys: List[a]): Bool with Eq[a] = match (xs, ys) {
         case (Nil, _) => true
         case (_, Nil) => false
         case (x :: qs, y :: rs) => if (x == y) isPrefixOf(qs, rs) else false
@@ -541,7 +554,7 @@ namespace List {
     /// Returns `true` if and only if `xs` is an infix of `ys`.
     ///
     @Time(length(xs)) @Space(1)
-    pub def isInfixOf[a](xs: List[a], ys: List[a]): Bool with Eq[a] = match (xs, ys) {
+    pub def isInfixOf(xs: List[a], ys: List[a]): Bool with Eq[a] = match (xs, ys) {
         case (Nil, _) => true
         case (_, Nil) => false
         case (_, _ :: rs) => if (isPrefixOf(xs, ys)) true else isInfixOf(xs, rs)
@@ -551,7 +564,7 @@ namespace List {
     /// Returns `true` if and only if `xs` is a suffix of `ys`.
     ///
     @Time(length(xs)) @Space(Int32.max(length(xs), length(ys)))
-    pub def isSuffixOf[a](xs: List[a], ys: List[a]): Bool with Eq[a] = isPrefixOf(reverse(xs), reverse(ys))
+    pub def isSuffixOf(xs: List[a], ys: List[a]): Bool with Eq[a] = isPrefixOf(reverse(xs), reverse(ys))
 
 
 
@@ -560,7 +573,7 @@ namespace List {
     ///
     /// Returns the result of applying `combine` to all the elements in `xs`, using `empty` as the initial value.
     ///
-    pub def fold[a](xs: List[a]): a with Monoid[a] = Foldable.fold(xs)
+    pub def fold(xs: List[a]): a with Monoid[a] = Foldable.fold(xs)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `xs` going from left to right.
@@ -1047,7 +1060,7 @@ namespace List {
     /// Returns the list `xs` as a set.
     ///
     @Time(length(xs)) @Space(length(xs))
-    pub def toSet[a](xs: List[a]): Set[a] with Order[a] = foldRight(Set.insert, Set.empty(), xs)
+    pub def toSet(xs: List[a]): Set[a] with Order[a] = foldRight(Set.insert, Set.empty(), xs)
 
     ///
     /// Returns the association list `xs` as a map.
@@ -1056,7 +1069,7 @@ namespace List {
     /// make any guarantees about which mapping will be in the resulting map.
     ///
     @Time(length(xs)) @Space(length(xs))
-    pub def toMap[a, b](xs: List[(a, b)]): Map[a, b] with Order[a] = foldRight((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), xs)
+    pub def toMap(xs: List[(a, b)]): Map[a, b] with Order[a] = foldRight((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), xs)
 
     ///
     /// Applies `f` to every element of `xs`.
@@ -1225,13 +1238,13 @@ namespace List {
     /// `distinct` uses the Flix's builtin equality test. Use `distinctWith` if you
     /// need a custom equality test.
     ///
-    pub def distinct[a](xs: List[a]): List[a] with Eq[a] =
+    pub def distinct(xs: List[a]): List[a] with Eq[a] =
         distinctHelper(xs, Nil, ks -> ks)
 
     ///
     /// Helper function for `distinct`.
     ///
-    def distinctHelper[a](xs: List[a], ys: List[a], k: List[a] -> List[a]): List[a] with Eq[a] = match xs {
+    def distinctHelper(xs: List[a], ys: List[a], k: List[a] -> List[a]): List[a] with Eq[a] = match xs {
         case Nil => k(Nil)
         case x :: rs =>
             if (memberOf(x, ys))

@@ -37,32 +37,16 @@ object Eraser extends Phase[FinalAst.Root, FinalAst.Root] {
         }
         k -> ErasedAst.Enum(mod, sym, cases, loc)
     }
-    val latticeOps: Map[EType[PType], ErasedAst.LatticeOps] = root.latticeOps.map { case (k, v) => visitTpe[PType](k) -> visitLatticeOps(v) }
     val properties = root.properties.map { p => visitProperty(p) }
-    val specialOps = root.specialOps.map { case (k1, m) => k1 -> m.map[EType[PType], Symbol.DefnSym] { case (k2, v) => visitTpe[PType](k2) -> v } }
     val reachable = root.reachable
 
-    val actualTransformation = ErasedAst.Root(defns, enums, latticeOps, properties, specialOps, reachable, root.sources).toSuccess
+    val actualTransformation = ErasedAst.Root(defns, enums, properties, reachable, root.sources).toSuccess
     root.toSuccess
   }
 
   /**
-   * Translates the given `constraint0` to the ErasedAst.
-   */
-  private def visitConstraint(constraint0: FinalAst.Constraint): ErasedAst.Constraint = {
-    val cparams = constraint0.cparams.map {
-      case FinalAst.ConstraintParam.HeadParam(sym, tpe, loc) => ErasedAst.ConstraintParam.HeadParam(sym, visitTpe(tpe), loc)
-      case FinalAst.ConstraintParam.RuleParam(sym, tpe, loc) => ErasedAst.ConstraintParam.RuleParam(sym, visitTpe(tpe), loc)
-    }
-    val head = visitHeadPred(constraint0.head)
-    val body = constraint0.body.map(visitBodyPred)
-
-    ErasedAst.Constraint(cparams, head, body, constraint0.loc)
-  }
-
-  /**
-   * Translates the given definition `def0` to the ErasedAst.
-   */
+    * Translates the given definition `def0` to the ErasedAst.
+    */
   private def visitDef(def0: FinalAst.Def): ErasedAst.Def = {
     val fs = def0.formals.map(visitFormalParam)
     val exp = visitExp[PType](def0.exp)
@@ -71,8 +55,8 @@ object Eraser extends Phase[FinalAst.Root, FinalAst.Root] {
   }
 
   /**
-   * Translates the given expression `exp0` to the ErasedAst.
-   */
+    * Translates the given expression `exp0` to the ErasedAst.
+    */
   private def visitExp[T <: PType](exp0: FinalAst.Expression): ErasedAst.Expression[T] = exp0 match {
     case FinalAst.Expression.Unit(loc) =>
       ErasedAst.Expression.Unit(loc).asInstanceOf[ErasedAst.Expression[T]]
@@ -278,28 +262,6 @@ object Eraser extends Phase[FinalAst.Root, FinalAst.Root] {
     case FinalAst.Expression.Force(exp, tpe, loc) =>
       ErasedAst.Expression.Force(visitExp(exp), visitTpe(tpe), loc)
 
-    case FinalAst.Expression.FixpointConstraintSet(cs, tpe, loc) =>
-      val newCs = cs.map(visitConstraint)
-      ErasedAst.Expression.FixpointConstraintSet(newCs, visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
-      ErasedAst.Expression.FixpointCompose(visitExp(exp1), visitExp(exp2), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.FixpointSolve(exp, stf, tpe, loc) =>
-      ErasedAst.Expression.FixpointSolve(visitExp(exp), stf, visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.FixpointProject(pred, exp, tpe, loc) =>
-      ErasedAst.Expression.FixpointProject(pred, visitExp(exp), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
-      ErasedAst.Expression.FixpointEntails(visitExp(exp1), visitExp(exp2), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.FixpointFold(pred, init, f, constraints, tpe, loc) =>
-      def visitVar[TT <: PType](v: FinalAst.Expression.Var): ErasedAst.Expression.Var[TT] =
-        visitExp(v).asInstanceOf[ErasedAst.Expression.Var[TT]]
-
-      ErasedAst.Expression.FixpointFold(pred, visitVar(init), visitVar(f), visitVar(constraints), visitTpe(tpe), loc)
-
     case FinalAst.Expression.HoleError(sym, tpe, loc) =>
       ErasedAst.Expression.HoleError(sym, visitTpe(tpe), loc)
 
@@ -308,84 +270,20 @@ object Eraser extends Phase[FinalAst.Root, FinalAst.Root] {
   }
 
   /**
-   * Translates the given `head` predicate to the ErasedAst.
-   */
-  private def visitHeadPred(head: FinalAst.Predicate.Head): ErasedAst.Predicate.Head = head match {
-    case FinalAst.Predicate.Head.Atom(pred, den, terms, tpe, loc) =>
-      ErasedAst.Predicate.Head.Atom(pred, den, terms.map(visitTermHead), visitTpe(tpe), loc)
-
-    case FinalAst.Predicate.Head.Union(exp, terms, tpe, loc) =>
-      ErasedAst.Predicate.Head.Union(visitExp(exp), terms.map(visitTermHead), visitTpe(tpe), loc)
-  }
-
-  /**
-   * Translates the given `body` predicate to the ErasedAst.
-   */
-  private def visitBodyPred(body: FinalAst.Predicate.Body): ErasedAst.Predicate.Body = body match {
-    case FinalAst.Predicate.Body.Atom(pred, den, polarity, terms, tpe, loc) =>
-      ErasedAst.Predicate.Body.Atom(pred, den, polarity, terms.map(visitTermBody), visitTpe(tpe), loc)
-
-    case FinalAst.Predicate.Body.Guard(exp, terms, loc) =>
-      ErasedAst.Predicate.Body.Guard(visitExp(exp), terms.map(visitTermBody), loc)
-  }
-
-  /**
-   * Translates the given 'head' term to the ErasedAst.
-   */
-  private def visitTermHead(head: FinalAst.Term.Head): ErasedAst.Term.Head = head match {
-    case FinalAst.Term.Head.QuantVar(sym, tpe, loc) =>
-      ErasedAst.Term.Head.QuantVar(sym, visitTpe(tpe), loc)
-    case FinalAst.Term.Head.CapturedVar(sym, tpe, loc) =>
-      ErasedAst.Term.Head.CapturedVar(sym, visitTpe(tpe), loc)
-    case FinalAst.Term.Head.Lit(sym, tpe, loc) =>
-      ErasedAst.Term.Head.Lit(sym, visitTpe(tpe), loc)
-    case FinalAst.Term.Head.App(exp, args, tpe, loc) =>
-      ErasedAst.Term.Head.App(visitExp(exp), args, visitTpe(tpe), loc)
-  }
-
-  /**
-   * Translates the given `body` term to the ErasedAst.
-   */
-  private def visitTermBody(body: FinalAst.Term.Body): ErasedAst.Term.Body = body match {
-    case FinalAst.Term.Body.Wild(tpe, loc) =>
-      ErasedAst.Term.Body.Wild(visitTpe(tpe), loc)
-    case FinalAst.Term.Body.QuantVar(sym, tpe, loc) =>
-      ErasedAst.Term.Body.QuantVar(sym, visitTpe(tpe), loc)
-    case FinalAst.Term.Body.CapturedVar(sym, tpe, loc) =>
-      ErasedAst.Term.Body.CapturedVar(sym, visitTpe(tpe), loc)
-    case FinalAst.Term.Body.Lit(sym, tpe, loc) =>
-      ErasedAst.Term.Body.Lit(sym, visitTpe(tpe), loc)
-  }
-
-  /**
-   * Translates the given `lattice0` to the ErasedAst.
-   */
-  private def visitLatticeOps(lattice0: FinalAst.LatticeOps): ErasedAst.LatticeOps = lattice0 match {
-    case FinalAst.LatticeOps(tpe, bot, equ, leq, lub, glb) =>
-      ErasedAst.LatticeOps(visitTpe(tpe), bot, equ, leq, lub, glb)
-  }
-
-  /**
-   * Translates the given attribute `a` to the ErasedAst.
-   */
-  private def visitAttribute(a: FinalAst.Attribute): ErasedAst.Attribute =
-    ErasedAst.Attribute(a.name, visitTpe(a.tpe))
-
-  /**
-   * Translates the given formal param `p` to the ErasedAst.
-   */
+    * Translates the given formal param `p` to the ErasedAst.
+    */
   private def visitFormalParam(p: FinalAst.FormalParam): ErasedAst.FormalParam =
     ErasedAst.FormalParam(p.sym, visitTpe(p.tpe))
 
   /**
-   * Translates the property `p` to the ErasedAst.
-   */
+    * Translates the property `p` to the ErasedAst.
+    */
   private def visitProperty(p: FinalAst.Property): ErasedAst.Property =
     ErasedAst.Property(p.law, p.defn, visitExp(p.exp))
 
   /**
-   * Translates the type 'tpe' to the ErasedType.
-   */
+    * Translates the type 'tpe' to the ErasedType.
+    */
   private def visitTpe[T <: PType](tpe: MonoType): EType[T] = (tpe match {
     case MonoType.Unit => Reference(Unit())
     case MonoType.Bool => Bool()

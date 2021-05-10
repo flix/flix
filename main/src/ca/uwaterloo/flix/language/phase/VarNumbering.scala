@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.LiftedAst._
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.Validation
 
 import scala.annotation.tailrec
 
@@ -274,30 +274,6 @@ object VarNumbering extends Phase[Root, Root] {
       case Expression.Force(exp, tpe, loc) =>
         visitExp(exp, i0)
 
-      case Expression.FixpointConstraintSet(cs, tpe, loc) =>
-        for (c <- cs) {
-          visitConstraint(c)
-        }
-        i0
-
-      case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
-        val i1 = visitExp(exp1, i0)
-        visitExp(exp2, i1)
-
-      case Expression.FixpointSolve(exp, stf, tpe, loc) => visitExp(exp, i0)
-
-      case Expression.FixpointProject(pred, exp, tpe, loc) =>
-        visitExp(exp, i0)
-
-      case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
-        val i1 = visitExp(exp1, i0)
-        visitExp(exp2, i1)
-
-      case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, loc) =>
-        val i1 = visitExp(exp1, i0)
-        val i2 = visitExp(exp2, i1)
-        visitExp(exp3, i2)
-
       case Expression.HoleError(sym, tpe, loc) => i0
 
       case Expression.MatchError(tpe, loc) => i0
@@ -312,20 +288,6 @@ object VarNumbering extends Phase[Root, Root] {
       case x :: xs =>
         val i2 = visitExp(x, i)
         visitExps(xs, i2)
-    }
-
-    /**
-      * Returns the next available stack offset.
-      */
-    def visitConstraint(c: Constraint): Unit = {
-      // Assign a number to each constraint parameters.
-      // These are unrelated to the true stack offsets.
-      for ((cparam, index) <- c.cparams.zipWithIndex) {
-        cparam match {
-          case ConstraintParam.HeadParam(sym, _, _) => sym.setStackOffset(index)
-          case ConstraintParam.RuleParam(sym, _, _) => sym.setStackOffset(index)
-        }
-      }
     }
 
     // Compute the stack offset for each formal parameter.

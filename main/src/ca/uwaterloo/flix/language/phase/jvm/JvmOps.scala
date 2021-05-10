@@ -19,8 +19,6 @@ package ca.uwaterloo.flix.language.phase.jvm
 import java.nio.file.{Files, LinkOption, Path}
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.FinalAst.Predicate.Body
-import ca.uwaterloo.flix.language.ast.FinalAst.Term.Head
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast.{Kind, MonoType, Name, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.Finalize
@@ -702,61 +700,9 @@ object JvmOps {
 
       case Expression.Force(exp, tpe, loc) => visitExp(exp)
 
-      case Expression.FixpointConstraintSet(cs, tpe, loc) => cs.foldLeft(Set.empty[ClosureInfo]) {
-        case (sacc, constraint) => sacc ++ visitConstraint(constraint)
-      }
-
-      case Expression.FixpointCompose(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
-
-      case Expression.FixpointSolve(exp, stf, tpe, loc) => visitExp(exp)
-
-      case Expression.FixpointProject(pred, exp, tpe, loc) => visitExp(exp)
-
-      case Expression.FixpointEntails(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
-
-      case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
-
       case Expression.HoleError(sym, tpe, loc) => Set.empty
 
       case Expression.MatchError(tpe, loc) => Set.empty
-    }
-
-    /**
-      * Returns the set of closures in the given constraint `c0`.
-      */
-    def visitConstraint(c0: Constraint): Set[ClosureInfo] = {
-      // TODO: Look for more closures.
-      val headClosures = c0.head match {
-        case Predicate.Head.Atom(_, _, terms, _, _) => terms.foldLeft(Set.empty[ClosureInfo]) {
-          case (sacc, t) => sacc ++ visitHeadTerm(t)
-        }
-        case Predicate.Head.Union(exp, terms, _, _) => visitExp(exp)
-      }
-
-      val bodyClosures = c0.body.foldLeft(Set.empty[ClosureInfo]) {
-        case (sacc, b) => sacc ++ visitBodyAtom(b)
-      }
-
-      headClosures ++ bodyClosures
-    }
-
-    /**
-      * Returns the set of closures in the given body atom `b0`.
-      */
-    def visitBodyAtom(b0: Predicate.Body): Set[ClosureInfo] = b0 match {
-      case Body.Atom(_, _, _, _, _, _) => Set.empty
-
-      case Body.Guard(exp, _, _) => visitExp(exp)
-    }
-
-    /**
-      * Returns the set of closures in the given head term `t0`.
-      */
-    def visitHeadTerm(h0: Term.Head): Set[ClosureInfo] = h0 match {
-      case Head.QuantVar(_, _, _) => Set.empty
-      case Head.CapturedVar(_, _, _) => Set.empty
-      case Head.Lit(_, _, _) => Set.empty
-      case Head.App(exp, _, _, _) => visitExp(exp)
     }
 
     // TODO: Look for closures in other places.
@@ -1060,57 +1006,9 @@ object JvmOps {
 
       case Expression.Force(exp, tpe, loc) => visitExp(exp) + tpe
 
-      case Expression.FixpointConstraintSet(cs, tpe, loc) => cs.foldLeft(Set(tpe))((ts, c) => ts ++ visitConstraint(c))
-
-      case Expression.FixpointCompose(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
-
-      case Expression.FixpointSolve(exp, stf, tpe, loc) => visitExp(exp) + tpe
-
-      case Expression.FixpointProject(pred, exp, tpe, loc) => visitExp(exp) + tpe
-
-      case Expression.FixpointEntails(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
-
-      case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) + tpe
-
       case Expression.HoleError(sym, tpe, loc) => Set(tpe)
 
       case Expression.MatchError(tpe, loc) => Set(tpe)
-    }
-
-    def visitConstraint(c0: Constraint): Set[MonoType] = c0 match {
-      case Constraint(cparams, head, body, _) =>
-        visitHeadPred(head) ++ body.flatMap(visitBodyPred)
-    }
-
-    def visitHeadPred(h0: Predicate.Head): Set[MonoType] = h0 match {
-      case Predicate.Head.Atom(pred, den, terms, tpe, loc) =>
-        Set(tpe) ++ terms.flatMap(visitHeadTerm)
-
-      case Predicate.Head.Union(exp, terms, tpe, loc) =>
-        visitExp(exp) ++ terms.flatMap(visitHeadTerm) + tpe
-
-    }
-
-    def visitBodyPred(b0: Predicate.Body): Set[MonoType] = b0 match {
-      case Predicate.Body.Atom(pred, den, polarity, terms, tpe, loc) =>
-        terms.flatMap(visitBodyTerm).toSet
-
-      case Predicate.Body.Guard(exp, terms, loc) =>
-        visitExp(exp) ++ terms.flatMap(visitBodyTerm).toSet
-    }
-
-    def visitHeadTerm(t0: Term.Head): Set[MonoType] = t0 match {
-      case Term.Head.QuantVar(sym, tpe, loc) => Set(tpe)
-      case Term.Head.CapturedVar(sym, tpe, loc) => Set(tpe)
-      case Term.Head.Lit(sym, tpe, loc) => Set(tpe)
-      case Term.Head.App(exp, args, tpe, loc) => visitExp(exp) + tpe
-    }
-
-    def visitBodyTerm(t0: Term.Body): Set[MonoType] = t0 match {
-      case Term.Body.Wild(tpe, loc) => Set(tpe)
-      case Term.Body.QuantVar(sym, tpe, loc) => Set(tpe)
-      case Term.Body.CapturedVar(sym, tpe, loc) => Set(tpe)
-      case Term.Body.Lit(sym, tpe, loc) => Set(tpe)
     }
 
     // TODO: Magnus: Look for types in other places.

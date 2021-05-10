@@ -434,98 +434,11 @@ object PrettyPrinter {
           vt.text("force ")
           visitExp(exp)
 
-        case Expression.FixpointConstraintSet(cs, tpe, loc) =>
-          vt.text("#{")
-          for (c <- cs) {
-            vt.text(" ")
-            fmtConstraint(c, vt)
-            vt.text(" ")
-          }
-          vt.text("}")
-
-        case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
-          visitExp(exp1)
-          vt.text("<+>")
-          visitExp(exp2)
-
-        case Expression.FixpointSolve(exp, stf, tpe, loc) =>
-          vt.text("solve ")
-          visitExp(exp)
-
-        case Expression.FixpointProject(pred, exp, tpe, loc) =>
-          vt.text("project ")
-          vt.text(pred.name)
-          vt.text(" ")
-          visitExp(exp)
-
-        case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
-          visitExp(exp1)
-          vt.text("|=")
-          visitExp(exp2)
-
-        case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, loc) =>
-          vt.text("fold ")
-          vt.text(pred.name)
-          vt.text(" ")
-          visitExp(exp1)
-          vt.text(" ")
-          visitExp(exp2)
-          vt.text(" ")
-          visitExp(exp3)
-
         case Expression.HoleError(sym, tpe, loc) => Red("HoleError")
         case Expression.MatchError(tpe, loc) => vt << Red("MatchError")
       }
 
       visitExp(exp0)
-    }
-
-    def fmtConstraint(c0: Constraint, vt: VirtualTerminal): Unit = {
-      if (c0.body.isEmpty) {
-        fmtHeadAtom(c0.head, vt)
-      } else {
-        fmtHeadAtom(c0.head, vt)
-        vt.text(" :- ")
-        for (b <- c0.body) {
-          fmtBodyAtom(b, vt)
-        }
-      }
-      vt.text(".")
-    }
-
-    def fmtHeadAtom(p0: Predicate.Head, vt: VirtualTerminal): Unit = p0 match {
-      case Predicate.Head.Atom(pred, _, terms, _, _) =>
-        vt.text(pred.name)
-        vt.text("(")
-        for (term <- terms) {
-          fmtHeadTerm(term, vt)
-          vt.text(", ")
-        }
-        vt.text(")")
-
-      case Predicate.Head.Union(exp, _, _) =>
-        vt.text("union")
-        vt.text(" ")
-        fmtExp(exp, vt)
-
-    }
-
-    def fmtBodyAtom(p0: Predicate.Body, vt: VirtualTerminal): Unit = {
-      vt.text("<body>")
-    }
-
-    def fmtHeadTerm(t0: Term.Head, vt: VirtualTerminal): Unit = t0 match {
-      case Term.Head.QuantVar(sym, _, _) =>
-        fmtSym(sym, vt)
-
-      case Term.Head.CapturedVar(sym, _, _) =>
-        fmtSym(sym, vt)
-
-      case Term.Head.Lit(lit, _, _) =>
-        fmtExp(lit, vt)
-
-      case Term.Head.App(exp, args, _, _) =>
-        vt.text("app")
     }
 
     def fmtParam(p: FormalParam, vt: VirtualTerminal): Unit = {

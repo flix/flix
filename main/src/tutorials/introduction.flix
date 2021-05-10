@@ -57,17 +57,6 @@ instance Eq[Constant] {
 }
 
 //
-// We define a simple hash function for lattice elements:
-//
-instance Hash[Constant] {
-    pub def hash(x: Constant): Int32 = match x {
-        case Top    => 1
-        case Bot    => 2
-        case Cst(n) => n
-    }
-}
-
-//
 // The next task is to define the partial order on Constant.
 // This is straightforward with pattern matching on the arguments:
 //
@@ -104,6 +93,33 @@ instance MeetLattice[Constant] {
     }
 }
 
+instance Order[Constant] {
+    pub def compare(x: Constant, y: Constant): Comparison = match (x, y) {
+        case (Bot, Bot)         => EqualTo
+        case (Bot, Cst(_))      => LessThan
+        case (Bot, Top)         => LessThan
+        case (Cst(_), Bot)      => GreaterThan
+        case (Cst(v1), Cst(v2)) => v1 <=> v2
+        case (Cst(_), Top)      => LessThan
+        case (Top, Bot)         => GreaterThan
+        case (Top, Cst(_))      => GreaterThan
+        case (Top, Top)         => EqualTo
+    }
+}
+
+instance Boxable[Constant] {
+    pub def box(x: Constant): Boxed = {
+        let value = x as ##java.lang.Object;
+        let compare = (o1, o2) -> Order.compare(o1 as Constant, o2 as Constant);
+        let toString = o -> ToString.toString(o as Constant);
+        BoxedObject(value, compare, toString)
+    }
+    pub def unbox(x: Boxed): Constant= match x {
+        case BoxedObject(v, _, _) => v as Constant
+        case _                    => ?bug
+    }
+}
+
 //
 // We need an instance of ToString for pretty printing:
 //
@@ -121,36 +137,6 @@ instance ToString[Constant] {
 // this is not necessary.
 //
 def alpha(i: Int): Constant = Cst(i)
-
-//
-// We can now define the semantic rules of the analysis.
-//
-
-//
-// The first rule models literal statements r = c and lifts the constant
-// into the constant propagation lattice. Intuitively, if the body of
-// the rule holds (whatever is to the right of ':-') then the head (what
-// is on the left of ':-') is inferred.
-//
-LocalVar(r; alpha(c)) :- LitStm(r, c).
-
-//
-// The second rule is more interesting. This says that if we have an
-// addition statement r = x + y, and the value of x is v1 and of y is v2
-// then the value of r is at least the value of the sum of v1 and v2.
-//
-// Here sum is a reference to a transfer function implemented below.
-//
-LocalVar(r; sum(v1, v2)) :- AddStm(r, x, y),
-                            LocalVar(x; v1),
-                            LocalVar(y; v2).
-
-//
-// The third rule is similar, but for division:
-//
-LocalVar(r; div(v1, v2)) :- DivStm(r, x, y),
-                            LocalVar(x; v1),
-                            LocalVar(y; v2).
 
 //
 // We must define the sum transfer function:
@@ -186,15 +172,7 @@ def div(e1: Constant, e2: Constant): Constant = match (e1, e2) {
 //
 rel ArithmeticError(r: String)
 
-//
-// We populate this relation with the rule below. This rule states that if
-// there is a division statement r = n / d, the value of the local variable
-// d is y, and y is possibly zero according to the `isMaybeZero` filter
-// function then we infer a possible error for `r`.
-//
-ArithmeticError(r) :- isMaybeZero(y),
-                      DivStm(r, n, d),
-                      LocalVar(d; y).
+
 
 //
 // Defining the filter function is straightforward:
@@ -205,28 +183,72 @@ def isMaybeZero(e: Constant): Bool = match e {
     case Top    => true
 }
 
-//
-// Let us now try to analyse the following small program:
-//
-// x = 3;
-// y = 7;
-// z = 0;
-// w = x + y;
-// v = w / z;
+pub def main(_: Array[String]): Int32 & Impure =
+    let p = #{
+        //
+        // We can now define the semantic rules of the analysis.
+        //
 
-//
-// We encode this program using the input facts:
-//
-LitStm("x", 3).        // x = 3
-LitStm("y", 7).        // y = 7
-LitStm("z", 0).        // z = 0
-AddStm("w", "x", "y"). // w = x + y
-DivStm("v", "w", "z"). // v = w / z
+        //
+        // The first rule models literal statements r = c and lifts the constant
+        // into the constant propagation lattice. Intuitively, if the body of
+        // the rule holds (whatever is to the right of ':-') then the head (what
+        // is on the left of ':-') is inferred.
+        //
+        LocalVar(r; alpha(c)) :- LitStm(r, c).
+
+        //
+        // The second rule is more interesting. This says that if we have an
+        // addition statement r = x + y, and the value of x is v1 and of y is v2
+        // then the value of r is at least the value of the sum of v1 and v2.
+        //
+        // Here sum is a reference to a transfer function implemented below.
+        //
+        LocalVar(r; sum(v1, v2)) :- AddStm(r, x, y),
+                                    LocalVar(x; v1),
+                                    LocalVar(y; v2).
+
+        //
+        // The third rule is similar, but for division:
+        //
+        LocalVar(r; div(v1, v2)) :- DivStm(r, x, y),
+                                    LocalVar(x; v1),
+                                    LocalVar(y; v2).
+
+        //
+        // We populate this relation with the rule below. This rule states that if
+        // there is a division statement r = n / d, the value of the local variable
+        // d is y, and y is possibly zero according to the `isMaybeZero` filter
+        // function then we infer a possible error for `r`.
+        //
+        ArithmeticError(r) :- isMaybeZero(y),
+                              DivStm(r, n, d),
+                              LocalVar(d; y).
+
+        //
+        // Let us now try to analyse the following small program:
+        //
+        // x = 3;
+        // y = 7;
+        // z = 0;
+        // w = x + y;
+        // v = w / z;
+
+        //
+        // We encode this program using the input facts:
+        //
+        LitStm("x", 3).        // x = 3
+        LitStm("y", 7).        // y = 7
+        LitStm("z", 0).        // z = 0
+        AddStm("w", "x", "y"). // w = x + y
+        DivStm("v", "w", "z"). // v = w / z
+    };
+    let m = solve p;
+    (m |> Fixpoint.unsafePrint) as & Impure;
+    0
 
 //
 // We can now run our program with Flix and inspect the output!
-//
-// Run: flix --print LocalVar,ArithmeticError introduction.flix
 //
 // This should produce output like:
 //
@@ -241,7 +263,6 @@ DivStm("v", "w", "z"). // v = w / z
 // | List(w) | Cst(10) |
 // | List(z) | Cst(0)  |
 // +---------+---------+
-// Query matched 5 row(s) out of 5 total row(s).
 
 // ArithmeticError
 // +---+
@@ -249,7 +270,6 @@ DivStm("v", "w", "z"). // v = w / z
 // +---+
 // | v |
 // +---+
-// Query matched 1 row(s) out of 1 total row(s).
 
 //
 // Here are some exercises for learning Flix:

@@ -19,7 +19,7 @@ namespace Random {
     ///
     /// Returns `None` if the given array `a` is empty.
     ///
-    pub def choose[a](r: Random, a: Array[a]): Option[a] & Impure =
+    pub def choose(r: Random, a: Array[a]): Option[a] & Impure =
         if (a.length == 0) {
             None
         } else {
