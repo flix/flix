@@ -79,20 +79,19 @@ object ClassMaker {
     }
   }
 
-  def makeClass[T <: PRefType](classType: RReference[T], addSource: Boolean = false, mod: Mod)(implicit flix: Flix): ClassMaker = {
-    val internalName = classType.toInternalName
+  def mkClassMaker[T <: PRefType](className: JvmName, addSource: Boolean = false, mod: Mod)(implicit flix: Flix): ClassMaker = {
     val visitor = makeClassWriter()
-    visitor.visit(JavaVersion, mod.getInt, internalName, null, JvmName.Java.Lang.Object.toInternalName, null)
-    if (addSource) visitor.visitSource(internalName, null)
+    visitor.visit(JavaVersion, mod.getInt, className.toInternalName, null, JvmName.Java.Lang.Object.toInternalName, null)
+    if (addSource) visitor.visitSource(className.toInternalName, null)
     new ClassMaker(visitor)
   }
 
   def mkClass[T <: PRefType](classType: RReference[T], addSource: Boolean = false)(implicit flix: Flix): ClassMaker = {
-    makeClass(classType, addSource = addSource, Mod.isPublic.isFinal)
+    mkClassMaker(classType.jvmName, addSource = addSource, Mod.isPublic.isFinal)
   }
 
   def mkInterface[T <: PRefType](classType: RReference[T], addSource: Boolean = false)(implicit flix: Flix): ClassMaker = {
-    makeClass(classType, addSource = addSource, Mod.isPublic.isAbstract.isInterface)
+    mkClassMaker(classType.jvmName, addSource = addSource, Mod.isPublic.isAbstract.isInterface)
   }
 
   class Mod private {
