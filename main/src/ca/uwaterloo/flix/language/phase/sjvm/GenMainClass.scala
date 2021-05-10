@@ -60,7 +60,7 @@ object GenMainClass {
 
   def genByteCode(mainType: RReference[PFunction])(implicit root: Root, flix: Flix): Array[Byte] = {
     // class writer
-    val classMaker = ClassMaker.mkClassMaker(JvmName.main, addSource = true, Mod.isPublic.isFinal)
+    val classMaker = ClassMaker.mkClass(JvmName.main, addSource = true)
 
     // Emit the code for the main method
     classMaker.mkMethod(compileMainMethod(mainType), mainMethod, JvmName.javaMainDescriptor, Mod.isPublic.isStatic)
@@ -88,6 +88,8 @@ object GenMainClass {
       // Push the args array on the stack.
 //      main.visitVarInsn(ALOAD, 0)
       START[StackNil] ~
+        ALOAD(0, tag[PArray[PReference[PStr]]]) ~
+        POP ~
         RETURN
 //      THISLOAD(tag[PArray[PReference[PStr]]]) ~
 //        ???

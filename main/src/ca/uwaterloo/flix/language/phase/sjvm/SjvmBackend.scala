@@ -57,11 +57,8 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
         return new CompilationResult(input, None, Map.empty).toSuccess
       }
 
-      //
-      // Generate function interfaces for each function type in the program.
-      //
-      // TODO(JLS): Actually find set of types here
       val functionInterfaces = GenFunctionInterfaces.gen(input.functionTypes)
+      val continuationInterfaces = GenContinuationInterfaces.gen()
 
       //
       // Generate the main class.
@@ -84,7 +81,8 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
       List(
         mainClass,
         refClasses,
-        functionInterfaces
+        functionInterfaces,
+        continuationInterfaces
         //        lazyClasses
       ).reduce(_ ++ _)
     }

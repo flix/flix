@@ -50,6 +50,11 @@ class ClassMaker(visitor: ClassWriter) {
     methodVisitor.visitEnd()
   }
 
+  // TODO(JLS): make a better interface. Mod doesn't work as an API
+  def mkAbstractMethod(methodName: String, descriptor: String, mod: Mod): Unit = {
+    visitor.visitMethod(mod.getInt, methodName, descriptor, null, null).visitEnd()
+  }
+
   def closeClassMaker: Array[Byte] = {
     visitor.visitEnd()
     visitor.toByteArray
@@ -79,19 +84,23 @@ object ClassMaker {
     }
   }
 
-  def mkClassMaker[T <: PRefType](className: JvmName, addSource: Boolean = false, mod: Mod)(implicit flix: Flix): ClassMaker = {
+  private def mkClassMaker[T <: PRefType](className: JvmName, addSource: Boolean, mod: Mod, superclasses: JvmName*)(implicit flix: Flix): ClassMaker = {
     val visitor = makeClassWriter()
-    visitor.visit(JavaVersion, mod.getInt, className.toInternalName, null, JvmName.Java.Lang.Object.toInternalName, null)
+    visitor.visit(JavaVersion, mod.getInt, className.toInternalName, null, JvmName.Java.Lang.Object.toInternalName, superclasses.map(_.toInternalName).toArray)
     if (addSource) visitor.visitSource(className.toInternalName, null)
     new ClassMaker(visitor)
   }
 
-  def mkClass[T <: PRefType](classType: RReference[T], addSource: Boolean = false)(implicit flix: Flix): ClassMaker = {
-    mkClassMaker(classType.jvmName, addSource = addSource, Mod.isPublic.isFinal)
+  def mkClass(className: JvmName, addSource: Boolean, superclasses: JvmName*)(implicit flix: Flix): ClassMaker = {
+    mkClassMaker(className, addSource = addSource, Mod.isPublic.isFinal, superclasses:_*)
   }
 
-  def mkInterface[T <: PRefType](classType: RReference[T], addSource: Boolean = false)(implicit flix: Flix): ClassMaker = {
-    mkClassMaker(classType.jvmName, addSource = addSource, Mod.isPublic.isAbstract.isInterface)
+  def mkAbstractClass(className: JvmName, addSource: Boolean, superclasses: JvmName*)(implicit flix: Flix): ClassMaker = {
+    mkClassMaker(className, addSource = addSource, Mod.isPublic.isAbstract, superclasses:_*)
+  }
+
+  def mkInterface(className: JvmName, addSource: Boolean, superclasses: JvmName*)(implicit flix: Flix): ClassMaker = {
+    mkClassMaker(className, addSource = addSource, Mod.isPublic.isAbstract.isInterface, superclasses:_*)
   }
 
   class Mod private {

@@ -45,6 +45,7 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
     //    }
     //    val properties = root.properties.map { p => visitProperty(p) }
     val reachable = root.reachable
+    val functionResultTypes = functionTypes.foldLeft(Set[RType[_ <: PType]]()){case (s, RReference(RArrow(_, result))) => s + result}
 
     ErasedAst.Root(defns, reachable, root.sources, functionTypes).toSuccess
   }

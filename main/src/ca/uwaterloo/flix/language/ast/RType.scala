@@ -33,6 +33,9 @@ sealed trait RType[T <: PType] extends Describable {
   def toDescriptor: String = descriptor
   lazy val toErasedString: String = RType.toErasedString(this)
   lazy val erasedType: RType[_ <: PType] = RType.erasedType(this)
+  lazy val contName: JvmName = JvmName(Nil, s"Cont${JvmName.reservedDelimiter}${this.toErasedString}")
+  lazy val nothingToCont: String = JvmName.getMethodDescriptor(Nil, this.contName)
+  lazy val nothingToThisMethodDescriptor: String = JvmName.getMethodDescriptor(Nil, this)
 }
 
 object RType {

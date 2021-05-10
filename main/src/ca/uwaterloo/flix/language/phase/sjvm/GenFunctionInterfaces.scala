@@ -53,11 +53,10 @@ object GenFunctionInterfaces {
     // Class visitor
     // TODO(JLS): Add the two super interfaces
     //`JvmType` of the continuation interface for `tpe`
-    //    val continuationSuperInterface = JvmOps.getContinuationInterfaceType(tpe)
+//        val continuationSuperInterface = JvmOps.getContinuationInterfaceType()
     // `JvmType` of the java.util.functions.Function
-    //    val javaFunctionSuperInterface = JvmType.Function
-    //    val superInterfaces = Array(continuationSuperInterface.name.toInternalName, javaFunctionSuperInterface.name.toInternalName)
-    val classMaker = ClassMaker.mkInterface(functionType)
+//        val javaFunctionSuperInterface = JvmType.Function
+    val classMaker = ClassMaker.mkClass(functionType.jvmName, addSource = false)
 
     val fieldMod = Mod.isAbstract.isPublic
     // Adding setters for each argument of the function

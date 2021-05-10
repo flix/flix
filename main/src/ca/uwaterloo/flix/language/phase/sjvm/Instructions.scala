@@ -307,7 +307,7 @@ object Instructions {
   def INVOKEOBJECTCONSTRUCTOR
   [R <: Stack, T <: PRefType]:
   F[R ** PReference[T]] => F[R] = f => {
-    f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, JvmName.Java.Lang.Object.name, JvmName.constructorMethod, JvmName.nothingToVoid, false)
+    f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, JvmName.Java.Lang.Object.toInternalName, JvmName.constructorMethod, JvmName.nothingToVoid, false)
     castF(f)
   }
 
