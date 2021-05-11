@@ -32,7 +32,7 @@ import ca.uwaterloo.flix.language.phase.sjvm.Instructions.RETURN
  */
 object GenContinuationInterfaces {
   val resultFieldName: String = "result"
-  val invokeMethodName: String = "invoke"
+  val invokeMethodName: String = "apply"
 
   /**
    * Returns the set of continuation interfaces for

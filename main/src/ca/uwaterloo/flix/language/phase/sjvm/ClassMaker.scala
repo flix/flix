@@ -102,6 +102,7 @@ object ClassMaker {
     new ClassMaker(visitor)
   }
 
+  // TODO(JLS): maybe individual classes, since interface fields are always abstract etc
   def mkClass(className: JvmName, addSource: Boolean, superclasses: JvmName*)(implicit flix: Flix): ClassMaker = {
     mkClassMaker(className, addSource = addSource, Mod.isPublic.isFinal, superclasses:_*)
   }
