@@ -36,3 +36,4 @@ By adding your name to this document, you agree to release all your contribution
 - [Benjamin Dahse](https://github.com/bdahse)
 - [J. Ryan Stinnett](https://github.com/jryans)
 - [Andreas Heglingegård](https://github.com/racerand)
+- [Felix Wiemuth](https://github.com/felixwiemuth)
