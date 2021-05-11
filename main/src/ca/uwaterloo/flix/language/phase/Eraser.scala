@@ -54,7 +54,6 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
    * Translates the given definition `def0` to the ErasedAst.
    */
   private def visitDef[T <: PType](def0: FinalAst.Def): (ErasedAst.Def[T], FTypes) = {
-    val fs = def0.formals.map(visitFormalParam)
     val (formals0, ftypes0) = def0.formals.foldLeft((List[ErasedAst.FormalParam](), emptyFTypes())) {
       case ((l, s), param) =>
         val (expRes, ftypesRes) = visitFormalParam(param)
