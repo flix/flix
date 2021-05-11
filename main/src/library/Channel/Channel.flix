@@ -276,7 +276,7 @@ namespace Channel {
                             // Return the element and the branchNumber of this channel
 
                             // If an element found, add a new selectChoice to the MutList in order to later return
-                            MutList.push!((i, element, false), selectChoicesWithWaitingElements)
+                            MutList.push!((i, element), selectChoicesWithWaitingElements)
                         }
                     }
                 },
@@ -289,7 +289,6 @@ namespace Channel {
             }
             else if (hasDefault) {
                 // No element was found and default case exists
-                // TODO what exactly to return?
                 None
             } else {
                 // No element was found.
