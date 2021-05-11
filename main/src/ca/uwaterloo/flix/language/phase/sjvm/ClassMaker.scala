@@ -17,13 +17,14 @@
 package ca.uwaterloo.flix.language.phase.sjvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.RType.RReference
+import ca.uwaterloo.flix.language.ast.PRefType.PRef
 import ca.uwaterloo.flix.language.ast.{PRefType, PType, RType}
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
 import ca.uwaterloo.flix.language.phase.sjvm.ClassMaker.Mod
+import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 import ca.uwaterloo.flix.util.{InternalCompilerException, JvmTarget}
 import org.objectweb.asm.ClassWriter
-import org.objectweb.asm.Opcodes._
+import org.objectweb.asm.Opcodes
 
 class ClassMaker(visitor: ClassWriter) {
   private def makeField[T <: PType](fieldName: String, fieldType: RType[T], mod: Mod): Unit = {
@@ -41,6 +42,16 @@ class ClassMaker(visitor: ClassWriter) {
 
   def mkConstructor(f: F[StackNil] => F[StackEnd], descriptor: String): Unit =
     mkMethod(f, JvmName.constructorMethod, descriptor, Mod.isPublic)
+
+  def mkObjectConstructor[T <: PRefType](): Unit = {
+    val f: F[StackNil] => F[StackEnd] = {
+      START[StackNil] ~
+        THISLOAD(tag[T]) ~
+        INVOKEOBJECTCONSTRUCTOR ~
+        RETURN
+    }
+    mkConstructor(f, JvmName.nothingToVoid)
+  }
 
   def mkMethod(f: F[StackNil] => F[StackEnd], methodName: String, descriptor: String, mod: Mod): Unit = {
     val methodVisitor = visitor.visitMethod(mod.getInt, methodName, descriptor, null, null)
@@ -67,9 +78,9 @@ object ClassMaker {
    * Returns the target JVM version.
    */
   private def JavaVersion(implicit flix: Flix): Int = flix.options.target match {
-    case JvmTarget.Version16 => V1_6
-    case JvmTarget.Version17 => V1_7
-    case JvmTarget.Version18 => V1_8
+    case JvmTarget.Version16 => Opcodes.V1_6
+    case JvmTarget.Version17 => Opcodes.V1_7
+    case JvmTarget.Version18 => Opcodes.V1_8
     case JvmTarget.Version19 => throw InternalCompilerException(s"Unsupported Java version: '1.9'.")
   }
 
@@ -114,34 +125,34 @@ object ClassMaker {
     def getInt: Int = fin + stat + pub + priv + abs + inter
 
     def isFinal: Mod = {
-      fin = ACC_FINAL
+      fin = Opcodes.ACC_FINAL
       this
     }
 
     def isStatic: Mod = {
-      stat = ACC_STATIC
+      stat = Opcodes.ACC_STATIC
       this
     }
 
     def isPublic: Mod = {
       if (priv != 0) throw InternalCompilerException("mod cannot both be private and public")
-      pub = ACC_PUBLIC
+      pub = Opcodes.ACC_PUBLIC
       this
     }
 
     def isPrivate: Mod = {
       if (pub != 0) throw InternalCompilerException("mod cannot both be private and public")
-      priv = ACC_PRIVATE
+      priv = Opcodes.ACC_PRIVATE
       this
     }
 
     def isAbstract: Mod = {
-      abs = ACC_ABSTRACT
+      abs = Opcodes.ACC_ABSTRACT
       this
     }
 
     def isInterface: Mod = {
-      inter = ACC_INTERFACE
+      inter = Opcodes.ACC_INTERFACE
       this
     }
   }

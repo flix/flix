@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase.sjvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst.Root
+import ca.uwaterloo.flix.language.ast.PRefType.PAnyObject
 import ca.uwaterloo.flix.language.ast.RRefType.{RObject, RRef}
 import ca.uwaterloo.flix.language.ast.RType._
 import ca.uwaterloo.flix.language.ast.{PType, RType}
@@ -82,6 +83,7 @@ object GenContinuationInterfaces {
 
     // Class visitor
     val classMaker = ClassMaker.mkAbstractClass(resultType.contName, addSource = false)
+    classMaker.mkObjectConstructor[PAnyObject]()
     classMaker.mkField(resultFieldName, resultType, Mod.isPublic.isAbstract)
     classMaker.mkAbstractMethod(invokeMethodName, resultType.nothingToCont, Mod.isAbstract.isPublic)
 

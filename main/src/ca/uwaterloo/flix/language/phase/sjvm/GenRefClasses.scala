@@ -65,19 +65,8 @@ object GenRefClasses {
     // Generate the instance field
     classMaker.mkField(ValueFieldName, valueFieldType, Mod.isPublic)
 
-    val constructorDescriptor = JvmName.nothingToVoid
-    classMaker.mkConstructor(genConstructor(valueFieldType), constructorDescriptor)
+    classMaker.mkObjectConstructor[PRef[T]]()
 
     classMaker.closeClassMaker
-  }
-
-  /**
-   * Generating constructor for the class with value of type `innerType`
-   */
-  def genConstructor[T <: PType](valueFieldType: RType[T]): F[StackNil] => F[StackEnd] = {
-    START[StackNil] ~
-      THISLOAD(tag[PRef[T]]) ~
-      INVOKEOBJECTCONSTRUCTOR ~
-      RETURN
   }
 }
