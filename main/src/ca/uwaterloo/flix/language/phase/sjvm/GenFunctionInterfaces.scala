@@ -56,7 +56,7 @@ object GenFunctionInterfaces {
     val continuationSuperInterface = resultType.contName
     // `JvmType` of the java.util.functions.Function
     //        val javaFunctionSuperInterface = JvmType.Function
-    val classMaker = ClassMaker.mkClass(functionType.jvmName, addSource = false)
+    val classMaker = ClassMaker.mkAbstractClass(functionType.jvmName, addSource = false, Some(continuationSuperInterface))
 
     val fieldMod = Mod.isAbstract.isPublic
     // Adding setters for each argument of the function

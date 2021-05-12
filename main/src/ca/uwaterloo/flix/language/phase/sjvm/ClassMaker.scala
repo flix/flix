@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.sjvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.PRefType.PRef
-import ca.uwaterloo.flix.language.ast.{PRefType, PType, RType}
+import ca.uwaterloo.flix.language.ast.{Describable, PRefType, PType, RType}
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
 import ca.uwaterloo.flix.language.phase.sjvm.ClassMaker.Mod
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
@@ -95,24 +95,24 @@ object ClassMaker {
     }
   }
 
-  private def mkClassMaker[T <: PRefType](className: JvmName, addSource: Boolean, mod: Mod, superclasses: JvmName*)(implicit flix: Flix): ClassMaker = {
+  def mkClassMaker[T <: PRefType](className: JvmName, addSource: Boolean, superClass: Option[JvmName], mod: Mod, interfaces: JvmName*)(implicit flix: Flix): ClassMaker = {
     val visitor = makeClassWriter()
-    visitor.visit(JavaVersion, mod.getInt, className.toInternalName, null, JvmName.Java.Lang.Object.toInternalName, superclasses.map(_.toInternalName).toArray)
+    visitor.visit(JavaVersion, mod.getInt, className.toInternalName, null, superClass.getOrElse(JvmName.Java.Lang.Object).toInternalName, interfaces.map(_.toInternalName).toArray)
     if (addSource) visitor.visitSource(className.toInternalName, null)
     new ClassMaker(visitor)
   }
 
   // TODO(JLS): maybe individual classes, since interface fields are always abstract etc
-  def mkClass(className: JvmName, addSource: Boolean, superclasses: JvmName*)(implicit flix: Flix): ClassMaker = {
-    mkClassMaker(className, addSource = addSource, Mod.isPublic.isFinal, superclasses:_*)
+  def mkClass(className: JvmName, addSource: Boolean, superClass: Option[JvmName], interfaces: JvmName*)(implicit flix: Flix): ClassMaker = {
+    mkClassMaker(className, addSource = addSource, superClass, Mod.isPublic.isFinal, interfaces:_*)
   }
 
-  def mkAbstractClass(className: JvmName, addSource: Boolean, superclasses: JvmName*)(implicit flix: Flix): ClassMaker = {
-    mkClassMaker(className, addSource = addSource, Mod.isPublic.isAbstract, superclasses:_*)
+  def mkAbstractClass(className: JvmName, addSource: Boolean, superClass: Option[JvmName], interfaces: JvmName*)(implicit flix: Flix): ClassMaker = {
+    mkClassMaker(className, addSource = addSource, superClass, Mod.isPublic.isAbstract, interfaces:_*)
   }
 
-  def mkInterface(className: JvmName, addSource: Boolean, superclasses: JvmName*)(implicit flix: Flix): ClassMaker = {
-    mkClassMaker(className, addSource = addSource, Mod.isPublic.isAbstract.isInterface, superclasses:_*)
+  def mkInterface(className: JvmName, addSource: Boolean, interfaces: JvmName*)(implicit flix: Flix): ClassMaker = {
+    mkClassMaker(className, addSource = addSource, None, Mod.isPublic.isAbstract.isInterface, interfaces:_*)
   }
 
   class Mod private {

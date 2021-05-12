@@ -46,7 +46,7 @@ object GenRefClasses {
    * Generating class `className` with value of type `innerType`
    */
   private def genByteCode[T <: PType](refType: RReference[PRef[T]], valueFieldType: RType[T])(implicit root: Root, flix: Flix): Array[Byte] = {
-    val classMaker = ClassMaker.mkClass(refType.jvmName, addSource = false)
+    val classMaker = ClassMaker.mkClass(refType.jvmName, addSource = false, None)
 
     // Generate the instance field
     classMaker.mkField(ValueFieldName, valueFieldType, Mod.isPublic)

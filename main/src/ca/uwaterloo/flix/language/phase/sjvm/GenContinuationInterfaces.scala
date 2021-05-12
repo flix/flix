@@ -65,7 +65,7 @@ object GenContinuationInterfaces {
     //
 
     // Class visitor
-    val classMaker = ClassMaker.mkAbstractClass(resultType.contName, addSource = false)
+    val classMaker = ClassMaker.mkAbstractClass(resultType.contName, addSource = false, None)
     classMaker.mkObjectConstructor[PAnyObject]()
     classMaker.mkField(resultFieldName, resultType, Mod.isPublic.isAbstract)
     classMaker.mkAbstractMethod(invokeMethodName, resultType.nothingToCont, Mod.isAbstract.isPublic)

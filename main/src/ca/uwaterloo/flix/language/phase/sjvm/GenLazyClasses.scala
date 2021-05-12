@@ -69,7 +69,7 @@ object GenLazyClasses {
    * After that point it will store the result in value and just return that.
    */
   private def genByteCode[T <: PType](lazyType: RReference[PLazy[T]], valueFieldType: RType[T])(implicit root: Root, flix: Flix): Array[Byte] = {
-    val classMaker = ClassMaker.mkClass(lazyType.jvmName, addSource = false)
+    val classMaker = ClassMaker.mkClass(lazyType.jvmName, addSource = false, None)
 
     classMaker.mkField(InitializedFieldName, InitializedFieldType)
     classMaker.mkField(ExpressionFieldName, ExpressionFieldType)
