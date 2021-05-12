@@ -90,7 +90,7 @@ namespace Fixpoint {
         case Model(db) =>
             let PredSym(key) = p;
             Map.query(ramSym -> match ramSym {
-                case RamSym.Full(relName, _) => match relName <=> key {
+                case RamSym.Full(relName, _, _) => match relName <=> key {
                     case EqualTo => EqualTo
                     case cmp => cmp
                 }
@@ -418,10 +418,14 @@ namespace Fixpoint {
 
     def projectIntoX[f: Type -> Type, t: Type](f: t -> Array[Boxed], p: PredSym, ts: f[t]): Datalog[Boxed] & Impure with Foldable[f] =
         let PredSym(relName) = p;
-        let ramSym = RamSym.Full(relName, Denotation.Relational);
-        let rel = MutMap.empty();
-        let db = MutMap.singleton(ramSym, rel);
-        Foldable.foldLeft(() -> vs -> MutMap.put!(f(vs), default, rel), (), ts);
+        let db = MutMap.empty();
+        Foldable.foldLeft(() -> t -> {
+            let vs = f(t);
+            let arity = Array.length(vs);
+            let ramSym = RamSym.Full(relName, arity, Denotation.Relational);
+            let rel = MutMap.getOrElsePut!(ramSym, MutMap.empty(), db);
+            MutMap.put!(vs, default, rel)
+        }, (), ts);
         toModel(db)
 
     ///
@@ -486,7 +490,7 @@ namespace Fixpoint {
             let pFacts = MutList.new();
             let PredSym(key) = p;
             let query = ramSym -> match ramSym {
-                case RamSym.Full(relName, _) => match relName <=> key {
+                case RamSym.Full(relName, _, _) => match relName <=> key {
                     case EqualTo => EqualTo
                     case cmp => cmp
                 }
