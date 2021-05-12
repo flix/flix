@@ -317,6 +317,7 @@ object Instructions {
     ???
 
   // NATIVE
+  // TODO(JLS): maybe return Nothing (Nothing <: F[_]). atleast something better than StackEnd
   def RETURN[R <: Stack]: F[StackNil] => F[StackEnd] = f => {
     f.visitor.visitInsn(Opcodes.RETURN)
     castF(f)
