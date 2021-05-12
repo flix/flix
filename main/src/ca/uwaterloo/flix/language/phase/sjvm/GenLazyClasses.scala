@@ -46,25 +46,13 @@ object GenLazyClasses {
    * Returns the set of lazy classes for the given set of types `ts`.
    */
   def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
-
-    // Generating each lazy class
-    def genAUX[T <: PType](valueFieldType: RType[T]): (JvmName, JvmClass) = {
-      val lazyType = RReference(RLazy(valueFieldType))
-      val bytecode = genByteCode(lazyType, valueFieldType)
-      lazyType.jvmName -> JvmClass(lazyType.jvmName, bytecode)
-    }
-
     //Type that we need a cell class for
-    Map() +
-      genAUX(RBool) +
-      genAUX(RInt8) +
-      genAUX(RInt16) +
-      genAUX(RInt32) +
-      genAUX(RInt64) +
-      genAUX(RChar) +
-      genAUX(RFloat32) +
-      genAUX(RFloat64) +
-      genAUX(RReference(RObject))
+    RType.baseTypes.foldLeft(Map[JvmName, JvmClass]()) {
+      case (macc, tpe) =>
+        val lazyType = RReference(RLazy(tpe))
+        val bytecode = genByteCode(lazyType, tpe)
+        macc + (lazyType.jvmName -> JvmClass(lazyType.jvmName, bytecode))
+    }
   }
 
   /**

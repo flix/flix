@@ -20,11 +20,8 @@ package ca.uwaterloo.flix.language.phase.sjvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst.Root
 import ca.uwaterloo.flix.language.ast.PRefType.PAnyObject
-import ca.uwaterloo.flix.language.ast.RRefType.{RObject, RRef}
-import ca.uwaterloo.flix.language.ast.RType._
 import ca.uwaterloo.flix.language.ast.{PType, RType}
 import ca.uwaterloo.flix.language.phase.sjvm.ClassMaker.Mod
-import ca.uwaterloo.flix.language.phase.sjvm.Instructions.RETURN
 
 /**
  * Generates bytecode for the continuation interfaces.
@@ -38,25 +35,11 @@ object GenContinuationInterfaces {
    * Returns the set of continuation interfaces for
    */
   def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
-
-    // Generating each cont class
-    def genAUX[T <: PType](resultType: RType[T]): (JvmName, JvmClass) = {
-      val contName = resultType.contName
-      contName -> JvmClass(contName, genByteCode(resultType))
+    RType.baseTypes.foldLeft(Map[JvmName, JvmClass]()) {
+      case (macc, tpe) =>
+        val contName = tpe.contName
+        macc + (contName -> JvmClass(contName, genByteCode(tpe)))
     }
-
-    // TODO(JLS): make this list once using List[RType[_ <: PType]]
-    //Type that we need a cont interface for
-    Map() +
-      genAUX(RBool) +
-      genAUX(RInt8) +
-      genAUX(RInt16) +
-      genAUX(RInt32) +
-      genAUX(RInt64) +
-      genAUX(RChar) +
-      genAUX(RFloat32) +
-      genAUX(RFloat64) +
-      genAUX(RReference(RObject))
   }
 
   /**

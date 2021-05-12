@@ -22,9 +22,7 @@ import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.RRefType._
 import ca.uwaterloo.flix.language.ast.RType._
 import ca.uwaterloo.flix.language.ast.{PType, RType}
-import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
 import ca.uwaterloo.flix.language.phase.sjvm.ClassMaker.Mod
-import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 
 /**
  * Generates bytecode for the ref classes.
@@ -36,24 +34,12 @@ object GenRefClasses {
    * Returns the bytecode for the ref classes built-in to the Flix language.
    */
   def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
-
-    // Generating each ref class
-    def genAUX[T <: PType](valueFieldType: RType[T]): (JvmName, JvmClass) = {
-      val refType = RReference(RRef(valueFieldType))
-      refType.jvmName -> JvmClass(refType.jvmName, genByteCode(refType, valueFieldType))
-    }
-
     //Type that we need a cell class for
-    Map() +
-      genAUX(RBool) +
-      genAUX(RInt8) +
-      genAUX(RInt16) +
-      genAUX(RInt32) +
-      genAUX(RInt64) +
-      genAUX(RChar) +
-      genAUX(RFloat32) +
-      genAUX(RFloat64) +
-      genAUX(RReference(RObject))
+    RType.baseTypes.foldLeft(Map[JvmName,JvmClass]()){
+      case (macc, tpe) =>
+        val refType = RReference(RRef(tpe))
+        macc + (refType.jvmName -> JvmClass(refType.jvmName, genByteCode(refType, tpe)))
+    }
   }
 
   /**

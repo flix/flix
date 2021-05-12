@@ -40,6 +40,8 @@ sealed trait RType[T <: PType] extends Describable {
 
 object RType {
 
+  val baseTypes = List(RBool, RInt8, RInt16, RInt16, RInt32, RInt64, RChar, RFloat32, RFloat64, RReference(RObject))
+
   def getRReference[T <: PRefType](x: RType[PReference[T]]): RReference[T] = x match {
     case res@RReference(_) => res
   }
