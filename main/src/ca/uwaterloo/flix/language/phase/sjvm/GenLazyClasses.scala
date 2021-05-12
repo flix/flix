@@ -35,9 +35,9 @@ object GenLazyClasses {
   // TODO(JLS): Needs to use new call protocol and use type erasure
 
   val InitializedFieldName: String = "initialized"
-  val InitializedFieldType: RType[PInt32] = RBool()
+  val InitializedFieldType: RType[PInt32] = RBool
   val ExpressionFieldName: String = "expression"
-  val ExpressionFieldType: RReference[PAnyObject] = RReference(RObject())
+  val ExpressionFieldType: RReference[PAnyObject] = RReference(RObject)
   val ExpressionToVoid: String = JvmName.objectToVoid
   val ValueFieldName: String = "value"
   val ForceMethod: String = "force"
@@ -56,15 +56,15 @@ object GenLazyClasses {
 
     //Type that we need a cell class for
     Map() +
-      genAUX(RBool()) +
-      genAUX(RInt8()) +
-      genAUX(RInt16()) +
-      genAUX(RInt32()) +
-      genAUX(RInt64()) +
-      genAUX(RChar()) +
-      genAUX(RFloat32()) +
-      genAUX(RFloat64()) +
-      genAUX(RReference(RObject()))
+      genAUX(RBool) +
+      genAUX(RInt8) +
+      genAUX(RInt16) +
+      genAUX(RInt32) +
+      genAUX(RInt64) +
+      genAUX(RChar) +
+      genAUX(RFloat32) +
+      genAUX(RFloat64) +
+      genAUX(RReference(RObject))
   }
 
   /**
@@ -130,7 +130,7 @@ object GenLazyClasses {
               PUTFIELD(lazyType, ValueFieldName, valueFieldType) ~
               THISLOAD(tag[PLazy[T]]) ~
               pushInt32(1) ~
-              PUTFIELD(lazyType, InitializedFieldName, RInt32())
+              PUTFIELD(lazyType, InitializedFieldName, RInt32)
           }) ~
           THISLOAD(tag[PLazy[T]]) ~
           XGETFIELD(lazyType, ValueFieldName, valueFieldType)

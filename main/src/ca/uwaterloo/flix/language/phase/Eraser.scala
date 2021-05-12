@@ -552,71 +552,68 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
   /**
    * Translates the type 'tpe' to the ErasedType.
    */
-  private def visitTpe[T <: PType](tpe: MonoType): (RType[T], FTypes) = {
-    val (tpeRes, ftypesRes) = tpe match {
-      case MonoType.Unit => (RReference(RUnit()), emptyFTypes())
-      case MonoType.Bool => (RBool(), emptyFTypes())
-      case MonoType.Char => (RChar(), emptyFTypes())
-      case MonoType.Float32 => (RFloat32(), emptyFTypes())
-      case MonoType.Float64 => (RFloat64(), emptyFTypes())
-      case MonoType.Int8 => (RInt8(), emptyFTypes())
-      case MonoType.Int16 => (RInt16(), emptyFTypes())
-      case MonoType.Int32 => (RInt32(), emptyFTypes())
-      case MonoType.Int64 => (RInt64(), emptyFTypes())
-      case MonoType.BigInt =>
-        (RReference(RBigInt()), emptyFTypes())
-      case MonoType.Str =>
-        (RReference(RStr()), emptyFTypes())
-      case MonoType.Array(tpe) =>
-        val (tpe0, ftypesRes) = visitTpe[PType](tpe)
-        (RReference(RArray[PType](tpe0)), ftypesRes)
-      case MonoType.Channel(tpe) =>
-        val (tpe0, ftypesRes) = visitTpe[T](tpe)
-        (RReference(RChannel(tpe0)), ftypesRes)
-      case MonoType.Lazy(tpe) =>
-        val (tpe0, ftypesRes) = visitTpe[T](tpe)
-        (RReference(RLazy(tpe0)), ftypesRes)
-      case MonoType.Ref(tpe) =>
-        val (tpe0, ftypesRes) = visitTpe[T](tpe)
-        (RReference(RRef(tpe0)), ftypesRes)
-      case MonoType.Tuple(elms) =>
-        val (elms0, ftypesRes) = visitTpes(elms)
-        (RReference(RTuple(elms0)), ftypesRes)
-      case MonoType.Enum(sym, args) =>
-        val (args0, ftypesRes) = visitTpes[PType](args)
-        (RReference(REnum(sym, args0)), ftypesRes)
-      case MonoType.Arrow(args, result) =>
-        val (args0, ftypes0) = visitTpes(args)
-        val (result0, ftypes1) = visitTpe(result)
-        val tpeRes = RReference(RArrow(args0, result0))
-        val ftypesRes = ftypes0 union ftypes1
-        (tpeRes, ftypesRes + tpeRes)
-      case MonoType.RecordEmpty() =>
-        (RReference(RRecordEmpty()), emptyFTypes())
-      case MonoType.RecordExtend(field, value, rest) =>
-        val (value0, ftypes0) = visitTpe[PType](value)
-        val (rest0, ftypes1) = visitTpe[PReference[PAnyObject]](rest)
-        val ftypesRes = ftypes0 union ftypes1
-        (RReference(RRecordExtend(field, value0, rest0)), ftypesRes)
-      case MonoType.SchemaEmpty() =>
-        (RReference(RSchemaEmpty()), emptyFTypes())
-      case MonoType.SchemaExtend(name, tpe, rest) =>
-        val (tpe0, ftypes0) = visitTpe[PType](tpe)
-        val (rest0, ftypes1) = visitTpe[PReference[PAnyObject]](rest)
-        val ftypesRes = ftypes0 union ftypes1
-        (RReference(RSchemaExtend(name, tpe0, rest0)), ftypesRes)
-      case MonoType.Relation(tpes) =>
-        val (tpes0, ftypesRes) = visitTpes[PType](tpes)
-        (RReference(RRelation(tpes0)), ftypesRes)
-      case MonoType.Lattice(tpes) =>
-        val (tpes0, ftypesRes) = visitTpes[PType](tpes)
-        (RReference(RLattice(tpes0)), ftypesRes)
-      case MonoType.Native(clazz) =>
-        (RReference(RNative(clazz)), emptyFTypes())
-      case MonoType.Var(id) =>
-        (RReference(RVar(id)), emptyFTypes())
-    }
-    (tpeRes.asInstanceOf[RType[T]], ftypesRes)
+  private def visitTpe[T <: PType](tpe: MonoType): (RType[T], FTypes) = tpe match {
+    case MonoType.Unit => (RReference(RUnit).asInstanceOf[RType[T]], emptyFTypes())
+    case MonoType.Bool => (RBool.asInstanceOf[RType[T]], emptyFTypes())
+    case MonoType.Char => (RChar.asInstanceOf[RType[T]], emptyFTypes())
+    case MonoType.Float32 => (RFloat32.asInstanceOf[RType[T]], emptyFTypes())
+    case MonoType.Float64 => (RFloat64.asInstanceOf[RType[T]], emptyFTypes())
+    case MonoType.Int8 => (RInt8.asInstanceOf[RType[T]], emptyFTypes())
+    case MonoType.Int16 => (RInt16.asInstanceOf[RType[T]], emptyFTypes())
+    case MonoType.Int32 => (RInt32.asInstanceOf[RType[T]], emptyFTypes())
+    case MonoType.Int64 => (RInt64.asInstanceOf[RType[T]], emptyFTypes())
+    case MonoType.BigInt =>
+      (RReference(RBigInt).asInstanceOf[RType[T]], emptyFTypes())
+    case MonoType.Str =>
+      (RReference(RStr).asInstanceOf[RType[T]], emptyFTypes())
+    case MonoType.Array(tpe) =>
+      val (tpe0, ftypesRes) = visitTpe[PType](tpe)
+      (RReference(RArray[PType](tpe0)).asInstanceOf[RType[T]], ftypesRes)
+    case MonoType.Channel(tpe) =>
+      val (tpe0, ftypesRes) = visitTpe[T](tpe)
+      (RReference(RChannel(tpe0)).asInstanceOf[RType[T]], ftypesRes)
+    case MonoType.Lazy(tpe) =>
+      val (tpe0, ftypesRes) = visitTpe[T](tpe)
+      (RReference(RLazy(tpe0)).asInstanceOf[RType[T]], ftypesRes)
+    case MonoType.Ref(tpe) =>
+      val (tpe0, ftypesRes) = visitTpe[T](tpe)
+      (RReference(RRef(tpe0)).asInstanceOf[RType[T]], ftypesRes)
+    case MonoType.Tuple(elms) =>
+      val (elms0, ftypesRes) = visitTpes(elms)
+      (RReference(RTuple(elms0)).asInstanceOf[RType[T]], ftypesRes)
+    case MonoType.Enum(sym, args) =>
+      val (args0, ftypesRes) = visitTpes[PType](args)
+      (RReference(REnum(sym, args0)).asInstanceOf[RType[T]], ftypesRes)
+    case MonoType.Arrow(args, result) =>
+      val (args0, ftypes0) = visitTpes(args)
+      val (result0, ftypes1) = visitTpe(result)
+      val tpeRes = RReference(RArrow(args0, result0))
+      val ftypesRes = ftypes0 union ftypes1
+      (tpeRes.asInstanceOf[RType[T]], ftypesRes + tpeRes)
+    case MonoType.RecordEmpty() =>
+      (RReference(RRecordEmpty).asInstanceOf[RType[T]], emptyFTypes())
+    case MonoType.RecordExtend(field, value, rest) =>
+      val (value0, ftypes0) = visitTpe[PType](value)
+      val (rest0, ftypes1) = visitTpe[PReference[PAnyObject]](rest)
+      val ftypesRes = ftypes0 union ftypes1
+      (RReference(RRecordExtend(field, value0, rest0)).asInstanceOf[RType[T]], ftypesRes)
+    case MonoType.SchemaEmpty() =>
+      (RReference(RSchemaEmpty).asInstanceOf[RType[T]], emptyFTypes())
+    case MonoType.SchemaExtend(name, tpe, rest) =>
+      val (tpe0, ftypes0) = visitTpe[PType](tpe)
+      val (rest0, ftypes1) = visitTpe[PReference[PAnyObject]](rest)
+      val ftypesRes = ftypes0 union ftypes1
+      (RReference(RSchemaExtend(name, tpe0, rest0)).asInstanceOf[RType[T]], ftypesRes)
+    case MonoType.Relation(tpes) =>
+      val (tpes0, ftypesRes) = visitTpes[PType](tpes)
+      (RReference(RRelation(tpes0)).asInstanceOf[RType[T]], ftypesRes)
+    case MonoType.Lattice(tpes) =>
+      val (tpes0, ftypesRes) = visitTpes[PType](tpes)
+      (RReference(RLattice(tpes0)).asInstanceOf[RType[T]], ftypesRes)
+    case MonoType.Native(clazz) =>
+      (RReference(RNative(clazz)).asInstanceOf[RType[T]], emptyFTypes())
+    case MonoType.Var(id) =>
+      (RReference(RVar(id)).asInstanceOf[RType[T]], emptyFTypes())
   }
 
   private def visitTpes[T <: PType](tpes: List[MonoType]): (List[RType[T]], FTypes) =

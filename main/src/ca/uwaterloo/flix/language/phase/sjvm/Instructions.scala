@@ -127,14 +127,14 @@ object Instructions {
   [R <: Stack, T1 <: PType with Cat1, T2 <: PType]
   (t2: RType[T2]):
   F[R ** T2 ** T1] => F[R ** T1 ** T2] = t2 match {
-    case RBool() => ??? //SWAP
-    case RInt8() => ??? //SWAP
-    case RInt16() => ??? //SWAP
-    case RInt32() => ??? //SWAP
-    case RInt64() => ??? //SWAP_cat1_onCat2
-    case RChar() => ??? //SWAP
-    case RFloat32() => ??? //SWAP
-    case RFloat64() => ??? //SWAP_cat1_onCat2
+    case RBool => ??? //SWAP
+    case RInt8 => ??? //SWAP
+    case RInt16 => ??? //SWAP
+    case RInt32 => ??? //SWAP
+    case RInt64 => ??? //SWAP_cat1_onCat2
+    case RChar => ??? //SWAP
+    case RFloat32 => ??? //SWAP
+    case RFloat64 => ??? //SWAP_cat1_onCat2
     case RReference(referenceType) => ??? //SWAP
   }
 
@@ -143,16 +143,16 @@ object Instructions {
   [R <: Stack, T1 <: PType, T2 <: PType]
   (t1: RType[T1], t2: RType[T2]):
   F[R ** T2 ** T1] => F[R ** T1 ** T2] = (t1, t2) match {
-    case (RInt64(), RInt64()) => ??? //SWAP_cat2_onCat2
-    case (RInt64(), RFloat64()) => ??? //SWAP_cat2_onCat2
-    case (RFloat64(), RInt64()) => ??? //SWAP_cat2_onCat2
-    case (RFloat64(), RFloat64()) => ??? //SWAP_cat2_onCat2
+    case (RInt64, RInt64) => ??? //SWAP_cat2_onCat2
+    case (RInt64, RFloat64) => ??? //SWAP_cat2_onCat2
+    case (RFloat64, RInt64) => ??? //SWAP_cat2_onCat2
+    case (RFloat64, RFloat64) => ??? //SWAP_cat2_onCat2
 
-    case (RInt64(), _) => ??? //SWAP_cat2_onCat1
-    case (RFloat64(), _) => ??? //SWAP_cat2_onCat1
+    case (RInt64, _) => ??? //SWAP_cat2_onCat1
+    case (RFloat64, _) => ??? //SWAP_cat2_onCat1
 
-    case (_, RInt64()) => ??? //SWAP_cat1_onCat2
-    case (_, RFloat64()) => ??? //SWAP_cat1_onCat2
+    case (_, RInt64) => ??? //SWAP_cat1_onCat2
+    case (_, RFloat64) => ??? //SWAP_cat1_onCat2
 
     case _ => ??? //SWAP
   }
@@ -163,21 +163,20 @@ object Instructions {
   F[R] => F[R] =
     x => x
 
-
   // NATIVE
   def XGETFIELD
   [R <: Stack, T1 <: PType, T2 <: PRefType]
   (classType: RReference[T2], fieldName: String, fieldType: RType[T1]):
   F[R ** PReference[T2]] => F[R ** T1] =
     fieldType match {
-      case RBool() => GetBoolField(classType, fieldName)
-      case RInt8() => GetInt8Field(classType, fieldName)
-      case RInt16() => GetInt16Field(classType, fieldName)
-      case RInt32() => GetInt32Field(classType, fieldName)
-      case RInt64() => GetInt64Field(classType, fieldName)
-      case RChar() => GetCharField(classType, fieldName)
-      case RFloat32() => GetFloat32Field(classType, fieldName)
-      case RFloat64() => GetFloat64Field(classType, fieldName)
+      case RBool => GetBoolField(classType, fieldName)
+      case RInt8 => GetInt8Field(classType, fieldName)
+      case RInt16 => GetInt16Field(classType, fieldName)
+      case RInt32 => GetInt32Field(classType, fieldName)
+      case RInt64 => GetInt64Field(classType, fieldName)
+      case RChar => GetCharField(classType, fieldName)
+      case RFloat32 => GetFloat32Field(classType, fieldName)
+      case RFloat64 => GetFloat64Field(classType, fieldName)
       case RReference(referenceType) => GetClassField(classType, fieldName, referenceType)
     }
 
@@ -186,7 +185,7 @@ object Instructions {
   [R <: Stack, T2 <: PRefType]
   (classType: RReference[T2], fieldName: String):
   F[R ** PReference[T2]] => F[R ** PInt32] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, RBool().toDescriptor)
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, RBool.toDescriptor)
     castF(f)
   }
 
@@ -195,7 +194,7 @@ object Instructions {
   [R <: Stack, T1 <: PType, T2 <: PRefType]
   (classType: RReference[T2], fieldName: String):
   F[R ** PReference[T2]] => F[R ** PInt8] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, RInt8().toDescriptor)
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, RInt8.toDescriptor)
     castF(f)
   }
 
@@ -204,7 +203,7 @@ object Instructions {
   [R <: Stack, T1 <: PType, T2 <: PRefType]
   (classType: RReference[T2], fieldName: String):
   F[R ** PReference[T2]] => F[R ** PInt16] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, RInt16().toDescriptor)
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, RInt16.toDescriptor)
     castF(f)
   }
 
@@ -213,7 +212,7 @@ object Instructions {
   [R <: Stack, T1 <: PType, T2 <: PRefType]
   (classType: RReference[T2], fieldName: String):
   F[R ** PReference[T2]] => F[R ** PInt32] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, RInt32().toDescriptor)
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, RInt32.toDescriptor)
     castF(f)
   }
 
@@ -222,7 +221,7 @@ object Instructions {
   [R <: Stack, T1 <: PType, T2 <: PRefType]
   (classType: RReference[T2], fieldName: String):
   F[R ** PReference[T2]] => F[R ** PInt64] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, RInt64().toDescriptor)
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, RInt64.toDescriptor)
     castF(f)
   }
 
@@ -231,7 +230,7 @@ object Instructions {
   [R <: Stack, T1 <: PType, T2 <: PRefType]
   (classType: RReference[T2], fieldName: String):
   F[R ** PReference[T2]] => F[R ** PChar] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, RChar().toDescriptor)
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, RChar.toDescriptor)
     castF(f)
   }
 
@@ -240,7 +239,7 @@ object Instructions {
   [R <: Stack, T1 <: PType, T2 <: PRefType]
   (classType: RReference[T2], fieldName: String):
   F[R ** PReference[T2]] => F[R ** PFloat32] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, RFloat32().toDescriptor)
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, RFloat32.toDescriptor)
     castF(f)
   }
 
@@ -249,7 +248,7 @@ object Instructions {
   [R <: Stack, T1 <: PType, T2 <: PRefType]
   (classType: RReference[T2], fieldName: String):
   F[R ** PReference[T2]] => F[R ** PFloat64] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, RFloat64().toDescriptor)
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, RFloat64.toDescriptor)
     castF(f)
   }
 
@@ -414,8 +413,8 @@ object Instructions {
   def pushUnit
   [R <: Stack]:
   F[R] => F[R ** PReference[PUnit]] = f => {
-    val className = RUnit().toInternalName
-    val classDescriptor = RUnit().toDescriptor
+    val className = RUnit.toInternalName
+    val classDescriptor = RUnit.toDescriptor
     f.visitor.visitMethodInsn(Opcodes.INVOKESTATIC, className, "getInstance", classDescriptor, false)
     castF(f)
   }
@@ -533,14 +532,14 @@ object Instructions {
   (tpe: RType[T], index: Int):
   F[R] => F[R ** T] =
     tpe match {
-      case RBool() => ???
-      case RInt8() => ???
-      case RInt16() => ???
-      case RInt32() => ILOAD(index)
-      case RInt64() => LLOAD(index)
-      case RChar() => ???
-      case RFloat32() => FLOAD(index)
-      case RFloat64() => DLOAD(index)
+      case RBool => ???
+      case RInt8 => ???
+      case RInt16 => ???
+      case RInt32 => ILOAD(index)
+      case RInt64 => LLOAD(index)
+      case RChar => ???
+      case RFloat32 => FLOAD(index)
+      case RFloat64 => DLOAD(index)
       case RReference(_) => ALOAD(index)
     }
 
@@ -598,13 +597,13 @@ object Instructions {
   (tpe: RType[T]):
   F[R ** PReference[PArray[T]] ** PInt32] => F[R ** T] =
     tpe match {
-      case RBool() | RInt32() => IALoad
-      case RChar() => CALoad
-      case RFloat32() => FALoad
-      case RFloat64() => DALoad
-      case RInt8() => BALoad
-      case RInt16() => SALoad
-      case RInt64() => LALoad
+      case RBool | RInt32 => IALoad
+      case RChar => CALoad
+      case RFloat32 => FALoad
+      case RFloat64 => DALoad
+      case RInt8 => BALoad
+      case RInt16 => SALoad
+      case RInt64 => LALoad
       case RReference(_) => AALoad
     }
 
@@ -662,13 +661,13 @@ object Instructions {
   (tpe: RType[T]):
   F[R ** PReference[PArray[T]] ** PInt32 ** T] => F[R] =
     tpe match {
-      case RChar() => CAStore
-      case RFloat32() => FAStore
-      case RFloat64() => DAStore
-      case RInt8() => BAStore
-      case RInt16() => SAStore
-      case RBool() | RInt32() => IAStore
-      case RInt64() => LAStore
+      case RChar => CAStore
+      case RFloat32 => FAStore
+      case RFloat64 => DAStore
+      case RInt8 => BAStore
+      case RInt16 => SAStore
+      case RBool | RInt32 => IAStore
+      case RInt64 => LAStore
       case RReference(_) => AAStore
     }
 
@@ -735,13 +734,13 @@ object Instructions {
   (sym: Symbol.VarSym, tpe: RType[T]):
   F[R ** T] => F[R] =
     tpe match {
-      case RChar() => CStore(sym)
-      case RFloat32() => FStore(sym)
-      case RFloat64() => DStore(sym)
-      case RInt8() => BStore(sym)
-      case RInt16() => SStore(sym)
-      case RBool() | RInt32() => IStore(sym)
-      case RInt64() => LStore(sym)
+      case RChar => CStore(sym)
+      case RFloat32 => FStore(sym)
+      case RFloat64 => DStore(sym)
+      case RInt8 => BStore(sym)
+      case RInt16 => SStore(sym)
+      case RBool | RInt32 => IStore(sym)
+      case RInt64 => LStore(sym)
       case RReference(_) => AStore(sym)
     }
 
@@ -809,14 +808,14 @@ object Instructions {
   F[R ** PInt32] => F[R ** PReference[PArray[T]]] =
     arrayType match {
       case RReference(RArray(tpe)) => tpe match {
-        case RBool() => BOOLNEWARRAY
-        case RChar() => CNEWARRAY
-        case RFloat32() => FNEWARRAY
-        case RFloat64() => DNEWARRAY
-        case RInt8() => BNEWARRAY
-        case RInt16() => SNEWARRAY
-        case RInt32() => INEWARRAY
-        case RInt64() => LNEWARRAY
+        case RBool => BOOLNEWARRAY
+        case RChar => CNEWARRAY
+        case RFloat32 => FNEWARRAY
+        case RFloat64 => DNEWARRAY
+        case RInt8 => BNEWARRAY
+        case RInt16 => SNEWARRAY
+        case RInt32 => INEWARRAY
+        case RInt64 => LNEWARRAY
         case RReference(_) => ANEWARRAY
       }
       case _ => throw InternalCompilerException("unexpected non-array type")
@@ -850,11 +849,11 @@ object Instructions {
     ???
   }
 
-  def foo[R <: Stack] = (r: F[R]) => defMakeFunction(defMakeFunction(r, RInt32()), RInt32())
+  def foo[R <: Stack] = (r: F[R]) => defMakeFunction(defMakeFunction(r, RInt32), RInt32)
 
   // META
-  implicit class ComposeOps[A, B](ab: F[A] => F[B]) {
-    def ~[C](bc: F[B] => F[C]): F[A] => F[C] =
+  implicit class ComposeOps[A <: Stack, B <: Stack](ab: F[A] => F[B]) {
+    def ~[C <: Stack](bc: F[B] => F[C]): F[A] => F[C] =
       f => bc(ab(f))
   }
 

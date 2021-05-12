@@ -45,15 +45,15 @@ object GenRefClasses {
 
     //Type that we need a cell class for
     Map() +
-      genAUX(RBool()) +
-      genAUX(RInt8()) +
-      genAUX(RInt16()) +
-      genAUX(RInt32()) +
-      genAUX(RInt64()) +
-      genAUX(RChar()) +
-      genAUX(RFloat32()) +
-      genAUX(RFloat64()) +
-      genAUX(RReference(RObject()))
+      genAUX(RBool) +
+      genAUX(RInt8) +
+      genAUX(RInt16) +
+      genAUX(RInt32) +
+      genAUX(RInt64) +
+      genAUX(RChar) +
+      genAUX(RFloat32) +
+      genAUX(RFloat64) +
+      genAUX(RReference(RObject))
   }
 
   /**

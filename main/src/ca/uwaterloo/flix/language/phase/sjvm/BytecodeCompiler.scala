@@ -27,13 +27,13 @@ object BytecodeCompiler {
 
   sealed trait StackNil extends Stack
 
-  sealed case class StackCons[R <: Stack, T <: PType](rest: R, top: T) extends Stack
+  sealed trait StackCons[R <: Stack, T <: PType] extends Stack
 
   sealed trait StackEnd extends Stack
 
   type **[R <: Stack, T <: PType] = StackCons[R, T]
 
-  sealed case class F[T](visitor: MethodVisitor)
+  sealed case class F[T <: Stack](visitor: MethodVisitor)
 
   def compileExp[R <: Stack, T <: PType](exp: Expression[T]): F[R] => F[R ** T] = exp match {
     case Expression.Unit(loc) =>
