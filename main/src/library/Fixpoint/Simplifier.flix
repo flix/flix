@@ -19,7 +19,7 @@ use Fixpoint/Ram.RamTerm.{RowLoad, LoadLatVar, Lit, Meet};
 
 namespace Fixpoint {
     ///
-    /// Simplify `stmt` by deleting redundant code and reordering code.
+    /// Optimize and simplify `stmt` by deleting redundant code and reordering code.
     /// Examples of redundancy include `x[i] == x[i]` or `x ⊓ y ≤ x`.
     /// Reordering means `(0, 1) ∉ Path ∧ x[1] = y[0]` would be swapped `x[1] = y[0] ∧ (0, 1) ∉ Path`.
     /// A simple static analysis also reveals that the following join-loop is redundant
@@ -36,7 +36,31 @@ namespace Fixpoint {
         Option.getWithDefault(simplifyHelper(Set#{}, stmt), RamStmt.Seq([])) as & Pure
 
     def simplifyHelper(stratum: Set[RamSym[v]], stmt: RamStmt[v]): Option[RamStmt[v]] = match stmt {
-        case RamStmt.Insert(op) => simplifyOp(stratum, op) |> Option.map(RamStmt.Insert)
+        case RamStmt.Insert(op) =>
+            use Option.flatMap;
+            let* newOp = simplifyOp(stratum, op);
+            match newOp {
+                // Rewrite join loops that copy one relation into another into a `merge` statement.
+                // search b ∈ B do
+                //   project (b[0], b[1]) into A
+                // end
+                // ==>
+                // merge B into A
+                // If A and B have the same arity.
+                case RelOp.Search(varB, relB, RelOp.Project(tuple, relA)) =>
+                    use Fixpoint/Ram.arityOf;
+                    let isCopy =
+                        Array.map(t -> match t {
+                            case RamTerm.RowLoad(var, i) => if (varB == var) i else -1
+                            case _ => -1
+                        }, tuple) |>
+                        Array.sameElements(Array.range(0, arityOf(relB)));
+                    if (isCopy)
+                        Some(RamStmt.Merge(relB, relA))
+                    else
+                        Some(RamStmt.Insert(newOp))
+                case _ => Some(RamStmt.Insert(newOp))
+            } as & Pure
         case RamStmt.Merge(_, _) => Some(stmt)
         case RamStmt.Assign(_, _) => Some(stmt)
         case RamStmt.Purge(_) => Some(stmt)
