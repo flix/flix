@@ -58,31 +58,30 @@ pub lawless class Order[a] {
         case _              => false
     }
 
-}
-
-namespace Order {
-
     ///
     /// Returns the minimum of `x` and `y`.
     ///
-    pub def min(x: a, y: a): a with Order[a] = match (x <=> y) {
+    pub def min(x: a, y: a): a = match (x <=> y) {
         case GreaterThan => y
         case _ => x
     }
+
+    ///
+    /// Returns the maximum of `x` and `y`.
+    ///
+    pub def max(x: a, y: a): a = match (x <=> y) {
+        case LessThan => y
+        case _ => x
+    }
+}
+
+namespace Order {
 
     ///
     /// Returns the minimum of `x` and `y` according to the given comparator `cmp`.
     ///
     pub def minBy(cmp: (a, a) -> Comparison, x: a, y: a): a =
         if (cmp(x, y) == GreaterThan) y else x
-
-    ///
-    /// Returns the maximum of `x` and `y`.
-    ///
-    pub def max(x: a, y: a): a with Order[a] = match (x <=> y) {
-        case LessThan => y
-        case _ => x
-    }
 
     ///
     /// Returns the maximum of `x` and `y` according to the given comparator `cmp`.
