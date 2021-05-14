@@ -69,6 +69,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
       // Generate references classes.
       //
       val refClasses = GenRefClasses.gen()
+      val defClasses = GenDefClasses.gen(input.defs)
 
       //
       // Generate lazy classes.
@@ -82,7 +83,8 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
         mainClass,
         refClasses,
         functionInterfaces,
-        continuationInterfaces
+        continuationInterfaces,
+        defClasses,
         //        lazyClasses
       ).reduce(_ ++ _)
     }

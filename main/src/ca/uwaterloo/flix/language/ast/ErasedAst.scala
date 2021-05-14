@@ -26,7 +26,7 @@ object ErasedAst {
 
   // TODO(JLS): add ast traversal sets/lists/map here
   // example: tuples: Set[RType[_ <: PType]]
-  case class Root(defs: Map[Symbol.DefnSym, ErasedAst.Def[_ <: PType]],
+  case class Root(defs: Map[Symbol.DefnSym, ErasedAst.Def[PReference[PFunction]]],
                   //enums: Map[Symbol.EnumSym, ErasedAst.Enum],
                   //properties: List[ErasedAst.Property],
                   reachable: Set[Symbol.DefnSym],

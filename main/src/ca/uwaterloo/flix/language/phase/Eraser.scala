@@ -32,8 +32,8 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
   def emptyFTypes(): FTypes = Set[RType[PReference[PFunction]]]()
 
   def run(root: FinalAst.Root)(implicit flix: Flix): Validation[ErasedAst.Root, CompilationError] = flix.phase("Eraser") {
-    val (defns, functionTypes) = root.defs.foldLeft((Map[Symbol.DefnSym, ErasedAst.Def[_ <: PType]](), emptyFTypes())) { case ((m, s), (k, v)) =>
-      val (defn, ftypes) = visitDef(v)
+    val (defns, functionTypes) = root.defs.foldLeft((Map[Symbol.DefnSym, ErasedAst.Def[PReference[PFunction]]](), emptyFTypes())) { case ((m, s), (k, v)) =>
+      val (defn, ftypes) = visitDef[PReference[PFunction]](v)
       (m + (k -> defn), s union ftypes)
     }
     //    val enums = root.enums.map {
