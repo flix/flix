@@ -58,56 +58,30 @@ pub lawless class Order[a] {
         case _              => false
     }
 
-}
-
-namespace Order {
-
-    ///
-    /// Converts a `Comparison` value to an integer.
-    /// The return value is:
-    /// `-1` if `c` is `LessThan`.
-    /// `0` if `c` is `EqualTo`.
-    /// `+1` if `c` is `GreaterThan`.
-    ///
-    pub def toInt(c: Comparison): Int32 = match c {
-        case LessThan => -1
-        case EqualTo => 0
-        case GreaterThan => +1
-    }
-
-    ///
-    /// Converts an integer to a `Comparison` value.
-    /// The return value is:
-    /// `LessThan` if `i < 0`.
-    /// `EqualTo` if `i == 0`.
-    /// `GreaterThan` if `i > 0`.
-    ///
-    pub def fromInt(i: Int32): Comparison =
-        if (i < 0) LessThan
-        else if (i == 0) EqualTo
-        else GreaterThan
-
     ///
     /// Returns the minimum of `x` and `y`.
     ///
-    pub def min(x: a, y: a): a with Order[a] = match (x <=> y) {
+    pub def min(x: a, y: a): a = match (x <=> y) {
         case GreaterThan => y
         case _ => x
     }
+
+    ///
+    /// Returns the maximum of `x` and `y`.
+    ///
+    pub def max(x: a, y: a): a = match (x <=> y) {
+        case LessThan => y
+        case _ => x
+    }
+}
+
+namespace Order {
 
     ///
     /// Returns the minimum of `x` and `y` according to the given comparator `cmp`.
     ///
     pub def minBy(cmp: (a, a) -> Comparison, x: a, y: a): a =
         if (cmp(x, y) == GreaterThan) y else x
-
-    ///
-    /// Returns the maximum of `x` and `y`.
-    ///
-    pub def max(x: a, y: a): a with Order[a] = match (x <=> y) {
-        case LessThan => y
-        case _ => x
-    }
 
     ///
     /// Returns the maximum of `x` and `y` according to the given comparator `cmp`.
@@ -312,7 +286,7 @@ instance Order[String] {
 
     pub def compare(x: String, y: String): Comparison =
         import java.lang.String.compareTo(String);
-        Order.fromInt(x.compareTo(y) as & Pure)
+        Comparison.fromInt(x.compareTo(y) as & Pure)
 
 }
 
