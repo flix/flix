@@ -22,15 +22,15 @@ namespace Fixpoint {
     type alias Database[v] = MutMap[RamSym[v], MutMap[Tuple[v], v]]
     type alias SearchEnv[v] = (Array[Tuple[v]], Array[v])
 
-    def interpret(stmt: RamStmt[v]): Database[v] & Impure with Order[v], Eq[v], ToString[v] =
+    def interpret(stmt: RamStmt[v]): Database[v] & Impure with Order[v], ToString[v] =
         interpretWithDatabase(MutMap.empty(), stmt)
 
-    def interpretWithDatabase(db: Database[v], stmt: RamStmt[v]): Database[v] & Impure with Order[v], Eq[v], ToString[v] =
+    def interpretWithDatabase(db: Database[v], stmt: RamStmt[v]): Database[v] & Impure with Order[v], ToString[v] =
         let _ = notifyPreInterpret(stmt);
         evalStmt(db, stmt);
         db
 
-    def evalStmt(db: Database[v], stmt: RamStmt[v]): Unit & Impure with Order[v], Eq[v], ToString[v] = match stmt {
+    def evalStmt(db: Database[v], stmt: RamStmt[v]): Unit & Impure with Order[v], ToString[v] = match stmt {
         case RamStmt.Insert(relOp) => evalOp(db, allocEnv(0, relOp), relOp)
         case RamStmt.Merge(srcSym, dstSym) =>
             let dst = MutMap.getOrElsePut!(dstSym, MutMap.empty(), db);
@@ -61,7 +61,7 @@ namespace Fixpoint {
         case RelOp.If(_, then) => allocEnv(depth, then)
     }
 
-    def evalOp(db: Database[v], env: SearchEnv[v], op: RelOp[v]): Unit & Impure with Order[v], Eq[v], ToString[v] =
+    def evalOp(db: Database[v], env: SearchEnv[v], op: RelOp[v]): Unit & Impure with Order[v], ToString[v] =
         match op {
             case RelOp.Search(RowVar.Index(i), ramSym, body) =>
                 let (tupleEnv, latEnv) = env;
@@ -112,7 +112,7 @@ namespace Fixpoint {
             }
         }
 
-    def evalBoolExp(db: Database[v], env: SearchEnv[v], es: List[BoolExp[v]]): Bool with Order[v], Eq[v], ToString[v] =
+    def evalBoolExp(db: Database[v], env: SearchEnv[v], es: List[BoolExp[v]]): Bool with Order[v], ToString[v] =
         List.forall(exp -> match exp {
             case BoolExp.Empty(ramSym) =>
                 MutMap.isEmpty(MutMap.getWithDefault(ramSym, MutMap.empty(), db))

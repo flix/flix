@@ -25,7 +25,7 @@ enum Map[k, v] {
     case Map(RedBlackTree[k, v])
 }
 
-instance Boxable[Map[k, v]] with Eq[k], Order[k], ToString[k], Eq[v], Order[v], ToString[v] {
+instance Boxable[Map[k, v]] with Order[k], ToString[k], Order[v], ToString[v] {
     pub def box(x: Map[k, v]): Boxed = {
         let value = x as ##java.lang.Object;
         let compare = (o1, o2) -> Order.compare(o1 as Map[k, v], o2 as Map[k, v]);
@@ -49,13 +49,13 @@ instance Hash[Map[k, v]] with Hash[k], Hash[v] {
         Map.foldLeftWithKey((acc, k, v) -> acc * 17 + Hash.hash(k) + 19 * Hash.hash(v), 7937, m)
 }
 
-instance Eq[Map[k, v]] with Eq[k], Order[k], Eq[v] {
+instance Eq[Map[k, v]] with Order[k], Eq[v] {
     pub def eq(m1: Map[k, v], m2: Map[k, v]): Bool =
         Map.isSubmapOf(m1, m2) and Map.isSubmapOf(m2, m1)
 
 }
 
-instance Order[Map[k, v]] with Order[k], Eq[v], Order[v] {
+instance Order[Map[k, v]] with Order[k], Order[v] {
 
     pub def compare(x: Map[k, v], y: Map[k, v]): Comparison =
         Map.toList(x) <=> Map.toList(y)

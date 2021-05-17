@@ -14,6 +14,13 @@
  * limitations under the License.
  */
 
+instance Eq[Array[v]] with Eq[v] {
+    // TODO More efficient implementation
+    pub def eq(a: Array[v], b: Array[v]): Bool =
+        (Array.length(a) == Array.length(b)) and
+        (Foldable.foldLeft((acc, p) -> let (x,y) = p; (acc and (x == y)), true, Array.zip(a,b))) as & Pure
+}
+
 instance Order[Array[v]] with Order[v] {
     ///
     /// Compares `a` and `b` lexicographically.

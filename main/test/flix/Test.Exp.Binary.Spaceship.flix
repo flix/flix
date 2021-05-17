@@ -221,15 +221,22 @@ namespace Test/Exp/Binary/Spaceship {
         case Blu
     }
 
-    instance Order[Color] {
+    instance Eq[Color] {
+        pub def eq(c1: Color, c2: Color): Bool = match (c1, c2) {
+            case (Red, Red) => true
+            case (Blu, Blu) => true
+            case (Red, Blu) => false
+            case (Blu, Red) => false
+        }
+    }
 
+    instance Order[Color] {
         pub def compare(c1: Color, c2: Color): Comparison = match (c1, c2) {
             case (Red, Red) => EqualTo
             case (Blu, Blu) => EqualTo
             case (Red, Blu) => LessThan
             case (Blu, Red) => GreaterThan
         }
-
     }
 
 }
