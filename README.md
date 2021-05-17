@@ -17,6 +17,10 @@ We refer you to the [official Flix website (flix.dev)](https://flix.dev/) for mo
     title="Example Flix Program">
 </p>
 
+## Building
+
+See [doc/BUILD.md](doc/BUILD.md).
+
 ## License
 
 Flix is available under the Apache 2.0 license.
