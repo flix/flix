@@ -330,9 +330,23 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         mapN(baseVal, beginIndexVal, endIndexVal) {
           case (base, beginIndex, endIndex) => KindedAst.Expression.ArraySlice(base, beginIndex, endIndex, loc)
         }
-      case ResolvedAst.Expression.Ref(exp, loc) => ???
-      case ResolvedAst.Expression.Deref(exp, tpe, loc) => ???
-      case ResolvedAst.Expression.Assign(exp1, exp2, loc) => ???
+      case ResolvedAst.Expression.Ref(exp0, loc) =>
+        val expVal = visit(exp0)
+        mapN(expVal) {
+          exp => KindedAst.Expression.Ref(exp, loc)
+        }
+      case ResolvedAst.Expression.Deref(exp0, tpe0, loc) =>
+        val expVal = visit(exp0)
+        val tpe = tpe0.ascribedWith(Kind.Star)
+        mapN(expVal) {
+          exp => KindedAst.Expression.Deref(exp, tpe, loc)
+        }
+      case ResolvedAst.Expression.Assign(exp10, exp20, loc) =>
+        val exp1Val = visit(exp10)
+        val exp2Val = visit(exp20)
+        mapN(exp1Val, exp2Val) {
+          case (exp1, exp2) => KindedAst.Expression.Assign(exp1, exp2, loc)
+        }
       case ResolvedAst.Expression.Existential(fparam, exp, loc) => ???
       case ResolvedAst.Expression.Universal(fparam, exp, loc) => ???
       case ResolvedAst.Expression.Ascribe(exp, expectedType, expectedEff, tpe, loc) => ???
