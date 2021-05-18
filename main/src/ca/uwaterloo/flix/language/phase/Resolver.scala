@@ -74,19 +74,14 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       }
     }
 
-    val propertiesVal = traverse(root.properties) {
-      case (ns0, properties) => Properties.resolve(properties, ns0, root)
-    }
-
     for {
       classes <- sequence(classesVal)
       instances <- sequence(instancesVal)
       definitions <- sequence(definitionsVal)
       enums <- sequence(enumsVal)
-      properties <- propertiesVal
       _ <- checkSuperClassDag(classes.toMap)
     } yield ResolvedAst.Root(
-      classes.toMap, combine(instances), definitions.toMap, enums.toMap, properties.flatten, root.reachable, root.sources
+      classes.toMap, combine(instances), definitions.toMap, enums.toMap, root.reachable, root.sources
     )
   }
 
@@ -985,26 +980,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e <- Expressions.resolve(exp, tenv0, ns0, root)
           } yield ResolvedAst.Predicate.Body.Guard(e, loc)
       }
-    }
-
-  }
-
-  object Properties {
-
-    /**
-      * Performs name resolution on each of the given `properties` in the given namespace `ns0`.
-      */
-    def resolve(properties: List[NamedAst.Property], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[List[ResolvedAst.Property], ResolutionError] = {
-      traverse(properties)(p => resolve(p, ns0, root))
-    }
-
-    /**
-      * Performs name resolution on the given property `p0` in the given namespace `ns0`.
-      */
-    def resolve(p0: NamedAst.Property, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Property, ResolutionError] = {
-      for {
-        e <- Expressions.resolve(p0.exp, Map.empty, ns0, root)
-      } yield ResolvedAst.Property(p0.law, p0.defn, e, p0.loc)
     }
 
   }

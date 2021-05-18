@@ -77,7 +77,7 @@ object ParsedAst {
       * @param tconstrs   the type constraints.
       * @param sp2        the position of the last character in the declaration.
       */
-    case class Def(doc: ParsedAst.Doc, ann: Seq[ParsedAst.AnnotationOrProperty], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Type], tconstrs: Seq[ParsedAst.TypeConstraint], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Def(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Type], tconstrs: Seq[ParsedAst.TypeConstraint], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Signature Declaration.
@@ -94,7 +94,7 @@ object ParsedAst {
       * @param exp        the optional expression.
       * @param sp2        the position of the last character in the declaration.
       */
-    case class Sig(doc: ParsedAst.Doc, ann: Seq[ParsedAst.AnnotationOrProperty], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Type], tconstrs: Seq[ParsedAst.TypeConstraint], exp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Declaration with ParsedAst.Declaration.LawOrSig
+    case class Sig(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Type], tconstrs: Seq[ParsedAst.TypeConstraint], exp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Declaration with ParsedAst.Declaration.LawOrSig
 
     /**
       * Law Declaration.
@@ -109,7 +109,7 @@ object ParsedAst {
       * @param exp     the expression.
       * @param sp2     the position of the last character in the declaration.
       */
-    case class Law(doc: ParsedAst.Doc, ann: Seq[ParsedAst.AnnotationOrProperty], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparams: Seq[ParsedAst.FormalParam], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration with ParsedAst.Declaration.LawOrSig
+    case class Law(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparams: Seq[ParsedAst.FormalParam], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration with ParsedAst.Declaration.LawOrSig
 
     /**
       * Enum Declaration.
@@ -1509,11 +1509,6 @@ object ParsedAst {
   case class Modifier(sp1: SourcePosition, name: String, sp2: SourcePosition)
 
   /**
-    * A common super-type for annotations or properties.
-    */
-  sealed trait AnnotationOrProperty
-
-  /**
     * Annotation.
     *
     * @param sp1   the position of the first character in the annotation.
@@ -1521,7 +1516,7 @@ object ParsedAst {
     * @param args  the arguments passed to the annotation.
     * @param sp2   the position of the last character in the annotation.
     */
-  case class Annotation(sp1: SourcePosition, ident: Name.Ident, args: Option[Seq[ParsedAst.Expression]], sp2: SourcePosition) extends AnnotationOrProperty
+  case class Annotation(sp1: SourcePosition, ident: Name.Ident, args: Option[Seq[ParsedAst.Expression]], sp2: SourcePosition)
 
   /**
     * String Interpolation Part.
@@ -1617,16 +1612,6 @@ object ParsedAst {
     case class PutStaticField(fqn: Seq[String], ident: Name.Ident) extends JvmOp
 
   }
-
-  /**
-    * Property.
-    *
-    * @param sp1  the position of the first character in the property.
-    * @param law  the qualified name of the law.
-    * @param args the optional arguments of the property.
-    * @param sp2  the position of the last character in the property.
-    */
-  case class Property(sp1: SourcePosition, law: Name.QName, args: Option[Seq[ParsedAst.Expression]], sp2: SourcePosition) extends AnnotationOrProperty
 
   /**
     * Record Operations.

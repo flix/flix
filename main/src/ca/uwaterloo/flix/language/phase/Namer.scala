@@ -21,7 +21,6 @@ import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.WeededAst.ChoicePattern
 import ca.uwaterloo.flix.language.ast.{NamedAst, _}
 import ca.uwaterloo.flix.language.errors.NameError
-import ca.uwaterloo.flix.language.phase.Namer.visitType
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
@@ -48,7 +47,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       defsAndSigs = Map.empty,
       enums = Map.empty,
       typealiases = Map.empty,
-      properties = Map.empty,
       reachable = program.reachable,
       sources = locations
     )
@@ -223,19 +221,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
             }
           // Case 2: The name is in use.
           case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateNamePair(ident.name, ident.loc, otherLoc)
-        }
-
-      /*
-     * Property.
-     */
-      case WeededAst.Declaration.Property(law, defn, exp0, loc) =>
-        visitExp(exp0, Map.empty, uenv0, Map.empty) map {
-          case exp =>
-            val lawSym = Symbol.mkDefnSym(law.namespace, law.ident)
-            val defnSym = Symbol.mkDefnSym(ns0, defn)
-            val property = NamedAst.Property(lawSym, defnSym, exp, loc)
-            val properties = prog0.properties.getOrElse(ns0, Nil)
-            prog0.copy(properties = prog0.properties + (ns0 -> (property :: properties)))
         }
 
       case _: WeededAst.Declaration.Sig =>

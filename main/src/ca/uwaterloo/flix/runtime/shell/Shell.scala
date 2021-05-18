@@ -26,7 +26,6 @@ import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
-import ca.uwaterloo.flix.runtime.verifier.Verifier
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
 import ca.uwaterloo.flix.util._
