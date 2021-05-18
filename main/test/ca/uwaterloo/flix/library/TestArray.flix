@@ -1738,6 +1738,77 @@ def isSuffixOf12(): Bool & Impure = Array.isSuffixOf([1,2,3], [1,2]) == false
 def isSuffixOf13(): Bool & Impure = Array.isSuffixOf([1,2,3], [89,11,1,2,3])
 
 /////////////////////////////////////////////////////////////////////////////
+// eq                                                                      //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def testEq01(): Bool & Impure = ([] : Array[Int]) == ([] : Array[Int])
+
+@test
+def testEq02(): Bool & Impure = [1] != []
+
+@test
+def testEq03(): Bool & Impure = [] != [1]
+
+@test
+def testEq04(): Bool & Impure = [1] == [1]
+
+@test
+def testEq05(): Bool & Impure = [1] != [2]
+
+@test
+def testEq06(): Bool & Impure = [1,2] != [1]
+
+@test
+def testEq07(): Bool & Impure = [1] != [1,2]
+
+@test
+def testEq08(): Bool & Impure = [1,2,3,4] == [1,2,3,4]
+
+/////////////////////////////////////////////////////////////////////////////
+// compare                                                                 //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def testCompare01(): Bool & Impure = ([] : Array[Int]) <=> ([] : Array[Int]) == EqualTo
+
+@test
+def testCompare02(): Bool & Impure = [1] <=> [] == GreaterThan
+
+@test
+def testCompare03(): Bool & Impure = [] <=> [1] == LessThan
+
+@test
+def testCompare04(): Bool & Impure = [1] <=> [1] == EqualTo
+
+@test
+def testCompare05(): Bool & Impure = [1] <=> [2] == LessThan
+
+@test
+def testCompare06(): Bool & Impure = [2] <=> [1] == GreaterThan
+
+@test
+def testCompare07(): Bool & Impure = [1] <=> [1,2] == LessThan
+
+@test
+def testCompare08(): Bool & Impure = [1,2] <=> [1] == GreaterThan
+
+@test
+def testCompare09(): Bool & Impure = [1] <=> [0,0] == GreaterThan
+
+@test
+def testCompare10(): Bool & Impure = [0,0] <=> [1] == LessThan
+
+@test
+def testCompare11(): Bool & Impure = [1,2] <=> [1,1] == GreaterThan
+
+@test
+def testCompare12(): Bool & Impure = [1,2] <=> [1,3] == LessThan
+
+@test
+def testCompare13(): Bool & Impure = [1,2,3,4] <=> [1,2,3,4] == EqualTo
+
+/////////////////////////////////////////////////////////////////////////////
 // fold                                                                    //
 /////////////////////////////////////////////////////////////////////////////
 
