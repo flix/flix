@@ -1375,8 +1375,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     "(" ~ optWS ~ zeroOrMore(Attribute).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
   }
 
-  def Annotations: Rule1[Seq[ParsedAst.AnnotationOrProperty]] = rule {
-    zeroOrMore(Annotation | Property).separatedBy(WS) ~ optWS
+  def Annotations: Rule1[Seq[ParsedAst.Annotation]] = rule {
+    zeroOrMore(Annotation).separatedBy(WS) ~ optWS
   }
 
   def Modifiers: Rule1[Seq[ParsedAst.Modifier]] = {
@@ -1413,12 +1413,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
   }
 
-  def Annotation: Rule1[ParsedAst.AnnotationOrProperty] = rule {
+  def Annotation: Rule1[ParsedAst.Annotation] = rule {
     SP ~ atomic("@") ~ Names.Annotation ~ OptArgumentList ~ SP ~> ParsedAst.Annotation
-  }
-
-  def Property: Rule1[ParsedAst.AnnotationOrProperty] = rule {
-    SP ~ atomic("#") ~ Names.QualifiedDefinition ~ OptArgumentList ~ SP ~> ParsedAst.Property
   }
 
   /////////////////////////////////////////////////////////////////////////////

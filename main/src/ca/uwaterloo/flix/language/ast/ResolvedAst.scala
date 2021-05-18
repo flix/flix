@@ -29,7 +29,6 @@ object ResolvedAst {
                   instances: Map[Symbol.ClassSym, List[ResolvedAst.Instance]],
                   defs: Map[Symbol.DefnSym, ResolvedAst.Def],
                   enums: Map[Symbol.EnumSym, ResolvedAst.Enum],
-                  properties: List[ResolvedAst.Property],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
@@ -45,8 +44,6 @@ object ResolvedAst {
   case class Spec(doc: Ast.Doc, ann: List[ResolvedAst.Annotation], mod: Ast.Modifiers, tparams: List[ResolvedAst.TypeParam], fparams: List[ResolvedAst.FormalParam], sc: Scheme, eff: Type, loc: SourceLocation)
 
   case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[ResolvedAst.TypeParam], cases: Map[Name.Tag, ResolvedAst.Case], tpeDeprecated: Type, sc: Scheme, loc: SourceLocation)
-
-  case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: ResolvedAst.Expression, loc: SourceLocation)
 
   sealed trait Expression {
     def loc: SourceLocation
