@@ -18,6 +18,14 @@ pub def constant(y: a): b -> a = _ -> y
 @Time(1) @Space(1)
 pub def flip(f: (a, b) -> c & e): (b, a) -> c & e = (x, y) -> f(y, x)
 
+// This function is adopted from the Haskell base libraries. See https://hackage.haskell.org/package/base-4.15.0.0/docs/Data-Function.html#v:on.
+///
+/// `on(f, g, x, y) = f(g(x), g(y))`.
+/// Partially applying this function to its first two arguments lifts the binary function `f` to work on
+/// inputs transformed by `g`.
+///
+pub def on(f: (b, b) -> c & e1, g: a -> b & e2, x: a, y: a): c & (e1 and e2) = f(g(x), g(y))
+
 ///
 /// Returns the result of currying the function `f`.
 /// That is, given the function `f: (a, b) -> c`, returns a function `a -> b -> c`
