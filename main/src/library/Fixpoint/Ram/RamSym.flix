@@ -43,7 +43,18 @@ namespace Fixpoint/Ram {
         }
     }
 
+    instance Eq[RamSym[v]] {
+        pub def eq(a: RamSym[v], b: RamSym[v]): Bool = Fixpoint/Ram/RamSym.compare(a, b) == EqualTo
+    }
+
     instance Order[RamSym[v]] {
+        pub def compare(a: RamSym[v], b: RamSym[v]): Comparison = Fixpoint/Ram/RamSym.compare(a, b)
+    }
+
+    namespace RamSym {
+        use Fixpoint/Ram.RamSym;
+        use Fixpoint/Ram.RamSym.{Full, Delta, New};
+
         pub def compare(a: RamSym[v], b: RamSym[v]): Comparison = match a {
             case Full(s1, _, _) => match b {
                 case Full(s2, _, _) => s1 <=> s2

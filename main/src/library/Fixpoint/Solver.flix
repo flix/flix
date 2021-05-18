@@ -29,7 +29,7 @@ namespace Fixpoint {
     /// The minimal model is given by the model semantics for Datalog programs with stratified negation.
     /// The stratification is computed automatically by the solver.
     ///
-    pub def solve(d: Datalog[v]): Datalog[v] with Order[v], Eq[v], ToString[v] =
+    pub def solve(d: Datalog[v]): Datalog[v] with Order[v], ToString[v] =
         stratify(d) |>
         solveWithStratification(d)
 
@@ -38,7 +38,7 @@ namespace Fixpoint {
     /// The minimal model is given by the model semantics for Datalog programs with stratified negation.
     /// A stratification of `d` is given by `stf`.
     ///
-    pub def solveWithStratification(d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] with Order[v], Eq[v], ToString[v] =
+    pub def solveWithStratification(d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] with Order[v], ToString[v] =
         let _ = notifyPreSolve(d, stf);
         let compiler = cs ->
             compile(cs, stf) |>

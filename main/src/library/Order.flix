@@ -17,7 +17,7 @@
 ///
 /// A type class for types with a total order.
 ///
-pub lawless class Order[a] {
+pub class Order[a] with Eq[a] {
 
     ///
     /// Returns `LessThan` if `x` < `y`, `Equal` if `x` == `y` or `GreaterThan` `if `x` > `y`.
@@ -73,6 +73,57 @@ pub lawless class Order[a] {
         case LessThan => y
         case _ => x
     }
+
+    ///
+    /// Reflexivity: An element `x` is lower or equal to itself.
+    ///
+    law reflexivity: forall(x: a). x <= x
+
+    ///
+    /// Antisymmetry: If `x` is lower or equal to `y` and `y` is lower or equal to `x` then `x` must be equal to `y`.
+    ///
+    law symmetry: forall(x: a, y: a). ((x <= y) and (y <= x)) ==> (x == y)
+
+    ///
+    /// Transitivity: If `x` is lower or equal to `y` and `y` is lower equal to `z` then `x` must be lower or equal to `z`.
+    ///
+    law transitivity: forall(x: a, y: a, z: a). ((x <= y) and (y <= z)) ==> (x <= z)
+
+    ///
+    /// Totality: For each two elements `x` and `y` either `x` is lower or equal to `y` or the other way round.
+    ///
+    law totality: forall(x: a, y: a). ((x <= y) or (y <= x))
+
+    ///
+    /// Definition of the minimum function.
+    ///
+    law min: forall(x: a, y: a). ((x <= y) ==> (Order.min(x, y) == x)) and ((y <= x) ==> (Order.min(x, y) == y))
+
+    ///
+    /// Definition of the maximum function.
+    ///
+    law max: forall(x: a, y: a). ((y <= x) ==> (Order.max(x, y) == x)) and ((x <= y) ==> (Order.max(x, y) == y))
+
+    ///
+    /// x < y is logically equivalent to not (y <= x).
+    /// This law defines the associated strict total order "<" associated with "<=".
+    ///
+    law strictTotalOrder: forall(x: a, y: a). (x < y) <==> (not (y <= x))
+
+    ///
+    /// This law defines ">" based on "<".
+    ///
+    law inverseOrder1: forall(x: a, y: a). (x > y) <==> (y < x)
+
+    ///
+    /// This law defines ">=" based on "<=".
+    ///
+    law inverseOrder2: forall(x: a, y: a). (x >= y) <==> (y <= x)
+
+    ///
+    /// Definition of `compare` based on the defined total order.
+    ///
+    law compare: forall(x: a, y: a). ((x < y) ==> (Order.compare(x, y) == LessThan)) and ((x == y) ==> (Order.compare(x, y) == EqualTo)) and ((x > y) ==> (Order.compare(x, y) == GreaterThan))
 }
 
 namespace Order {
