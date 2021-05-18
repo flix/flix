@@ -1102,15 +1102,15 @@ namespace List {
     /// Acknowledgement: derived from Thomas Nordin's `sortBy` in the Haskell base libraries.
     ///
     @Time(length(xs) * Int32.log2(length(xs))) @Space(length(xs))
-    pub def sortWith(cmp: (a,a) -> Int32, xs: List[a]): List[a] =
+    pub def sortWith(cmp: (a,a) -> Comparison, xs: List[a]): List[a] =
         sortGenerateSequences(cmp, xs, zss -> zss) |> sortMergeAll(cmp)
 
     ///
     /// Helper function for `sortWith`.
     ///
-    def sortGenerateSequences(cmp: (a,a) -> Int32, xs: List[a], k: List[List[a]] -> List[List[a]]): List[List[a]] = match xs {
+    def sortGenerateSequences(cmp: (a,a) -> Comparison, xs: List[a], k: List[List[a]] -> List[List[a]]): List[List[a]] = match xs {
         case a :: b :: rs =>
-            if (cmp(a, b) > 0)
+            if (cmp(a, b) == GreaterThan)
                 sortDescendingStep(cmp, b, a :: Nil, rs, k)
             else
                 sortAscendingStep(cmp, b, vs -> a :: vs, rs, k)
@@ -1120,8 +1120,8 @@ namespace List {
     ///
     /// Helper function for `sortWith`.
     ///
-    def sortDescendingStep(cmp: (a,a) -> Int32, x: a, xs: List[a], ys: List[a], k: List[List[a]] -> List[List[a]]): List[List[a]] = match ys {
-        case r1 :: rs if (cmp(x, r1) > 0) =>
+    def sortDescendingStep(cmp: (a,a) -> Comparison, x: a, xs: List[a], ys: List[a], k: List[List[a]] -> List[List[a]]): List[List[a]] = match ys {
+        case r1 :: rs if (cmp(x, r1) == GreaterThan) =>
             sortDescendingStep(cmp, r1, x :: xs, rs, k)
         case rs =>
             sortGenerateSequences(cmp, rs, zss -> k((x :: xs) :: zss))
@@ -1130,8 +1130,8 @@ namespace List {
     ///
     /// Helper function for `sortWith`.
     ///
-    def sortAscendingStep(cmp: (a,a) -> Int32, x: a, xsf: List[a] -> List[a], ys: List[a], k: List[List[a]] -> List[List[a]]): List[List[a]] = match ys {
-        case r1 :: rs if (cmp(x, r1) <= 0)  =>
+    def sortAscendingStep(cmp: (a,a) -> Comparison, x: a, xsf: List[a] -> List[a], ys: List[a], k: List[List[a]] -> List[List[a]]): List[List[a]] = match ys {
+        case r1 :: rs if (cmp(x, r1) != GreaterThan) =>
             sortAscendingStep(cmp, r1, vs -> xsf(x :: vs), rs, k)
         case rs =>
             let x1 = xsf(x :: Nil);
@@ -1141,7 +1141,7 @@ namespace List {
     ///
     /// Helper function for `sortWith`.
     ///
-    def sortMergeAll(cmp: (a,a) -> Int32, xss: List[List[a]]) : List[a] = match xss {
+    def sortMergeAll(cmp: (a,a) -> Comparison, xss: List[List[a]]) : List[a] = match xss {
         case x :: Nil => x
         case rs => {
             let xss = sortMergePairs(cmp, rs, zs -> zs);
@@ -1152,7 +1152,7 @@ namespace List {
     ///
     /// Helper function for `sortWith`.
     ///
-    def sortMergePairs(cmp: (a,a) -> Int32, xss: List[List[a]], k: List[List[a]] -> List[List[a]]) : List[List[a]] = match xss {
+    def sortMergePairs(cmp: (a,a) -> Comparison, xss: List[List[a]], k: List[List[a]] -> List[List[a]]) : List[List[a]] = match xss {
         case a :: b :: rs => {
             let x = sortMerge(cmp, a, b, zs -> zs);
             sortMergePairs(cmp, rs, zss -> k(x :: zss))
@@ -1163,9 +1163,9 @@ namespace List {
     ///
     /// Helper function for `sortWith`.
     ///
-    def sortMerge(cmp: (a,a) -> Int32, xs: List[a], ys: List[a], k: List[a] -> List[a]) : List[a] = match (xs, ys) {
+    def sortMerge(cmp: (a,a) -> Comparison, xs: List[a], ys: List[a], k: List[a] -> List[a]) : List[a] = match (xs, ys) {
         case (r :: rs, s :: ss) =>
-            if (cmp(r,s) > 0)
+            if (cmp(r,s) == GreaterThan)
                 sortMerge(cmp, xs, ss, zs -> k(s :: zs))
             else
                 sortMerge(cmp, rs, ys, zs -> k(r :: zs))
