@@ -17,18 +17,16 @@
 package ca.uwaterloo.flix.language.phase.sjvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.PRefType.PRef
-import ca.uwaterloo.flix.language.ast.{Describable, PRefType, PType, RType}
+import ca.uwaterloo.flix.language.ast.{PRefType, PType, RType}
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
 import ca.uwaterloo.flix.language.phase.sjvm.ClassMaker.Mod
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 import ca.uwaterloo.flix.util.{InternalCompilerException, JvmTarget}
-import org.objectweb.asm.ClassWriter
-import org.objectweb.asm.Opcodes
+import org.objectweb.asm.{ClassWriter, Opcodes}
 
-class ClassMaker(visitor: ClassWriter) {
+class ClassMaker(visitor: ClassWriter, superClass: JvmName) {
   private def makeField[T <: PType](fieldName: String, fieldType: RType[T], mod: Mod): Unit = {
-    val field = visitor.visitField(mod.getInt, fieldName, fieldType.toDescriptor, null, null)
+    val field = visitor.visitField(mod.getValue, fieldName, fieldType.toDescriptor, null, null)
     field.visitEnd()
   }
 
@@ -43,18 +41,23 @@ class ClassMaker(visitor: ClassWriter) {
   def mkConstructor(f: F[StackNil] => F[StackEnd], descriptor: String): Unit =
     mkMethod(f, JvmName.constructorMethod, descriptor, Mod.isPublic)
 
-  def mkObjectConstructor[T <: PRefType](): Unit = {
-    val f: F[StackNil] => F[StackEnd] = {
+  def compileSuperConstructor[R <: Stack](): F[R] => F[R] = f => {
+    f.visitor.visitVarInsn(Opcodes.ALOAD, 0)
+    f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, superClass.toInternalName, JvmName.constructorMethod, JvmName.nothingToVoid, false)
+    f
+  }
+
+  def mkSuperConstructor(): Unit = {
+    val f = {
       START[StackNil] ~
-        THISLOAD(tag[T]) ~
-        INVOKEOBJECTCONSTRUCTOR ~
+        compileSuperConstructor() ~
         RETURN
     }
     mkConstructor(f, JvmName.nothingToVoid)
   }
 
   def mkMethod(f: F[StackNil] => F[StackEnd], methodName: String, descriptor: String, mod: Mod): Unit = {
-    val methodVisitor = visitor.visitMethod(mod.getInt, methodName, descriptor, null, null)
+    val methodVisitor = visitor.visitMethod(mod.getValue, methodName, descriptor, null, null)
     methodVisitor.visitCode()
     f(F(methodVisitor))
     methodVisitor.visitMaxs(1, 1)
@@ -63,7 +66,7 @@ class ClassMaker(visitor: ClassWriter) {
 
   // TODO(JLS): make a better interface. Mod doesn't work as an API
   def mkAbstractMethod(methodName: String, descriptor: String, mod: Mod): Unit = {
-    visitor.visitMethod(mod.getInt, methodName, descriptor, null, null).visitEnd()
+    visitor.visitMethod(mod.getValue, methodName, descriptor, null, null).visitEnd()
   }
 
   def closeClassMaker: Array[Byte] = {
@@ -75,8 +78,8 @@ class ClassMaker(visitor: ClassWriter) {
 object ClassMaker {
 
   /**
-   * Returns the target JVM version.
-   */
+    * Returns the target JVM version.
+    */
   private def JavaVersion(implicit flix: Flix): Int = flix.options.target match {
     case JvmTarget.Version16 => Opcodes.V1_6
     case JvmTarget.Version17 => Opcodes.V1_7
@@ -85,10 +88,10 @@ object ClassMaker {
   }
 
   /**
-   * Returns a freshly created class writer object.
-   *
-   * The object is constructed to compute stack map frames automatically.
-   */
+    * Returns a freshly created class writer object.
+    *
+    * The object is constructed to compute stack map frames automatically.
+    */
   private def makeClassWriter(): ClassWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES) {
     override def getCommonSuperClass(tpe1: String, tpe2: String): String = {
       JvmName.Java.Lang.Object.name
@@ -97,22 +100,23 @@ object ClassMaker {
 
   def mkClassMaker[T <: PRefType](className: JvmName, addSource: Boolean, superClass: Option[JvmName], mod: Mod, interfaces: JvmName*)(implicit flix: Flix): ClassMaker = {
     val visitor = makeClassWriter()
-    visitor.visit(JavaVersion, mod.getInt, className.toInternalName, null, superClass.getOrElse(JvmName.Java.Lang.Object).toInternalName, interfaces.map(_.toInternalName).toArray)
+    val superClassName = superClass.getOrElse(JvmName.Java.Lang.Object)
+    visitor.visit(JavaVersion, mod.getValue, className.toInternalName, null, superClassName.toInternalName, interfaces.map(_.toInternalName).toArray)
     if (addSource) visitor.visitSource(className.toInternalName, null)
-    new ClassMaker(visitor)
+    new ClassMaker(visitor, superClassName)
   }
 
   // TODO(JLS): maybe individual classes, since interface fields are always abstract etc
   def mkClass(className: JvmName, addSource: Boolean, superClass: Option[JvmName], interfaces: JvmName*)(implicit flix: Flix): ClassMaker = {
-    mkClassMaker(className, addSource = addSource, superClass, Mod.isPublic.isFinal, interfaces:_*)
+    mkClassMaker(className, addSource = addSource, superClass, Mod.isPublic.isFinal, interfaces: _*)
   }
 
   def mkAbstractClass(className: JvmName, addSource: Boolean, superClass: Option[JvmName], interfaces: JvmName*)(implicit flix: Flix): ClassMaker = {
-    mkClassMaker(className, addSource = addSource, superClass, Mod.isPublic.isAbstract, interfaces:_*)
+    mkClassMaker(className, addSource = addSource, superClass, Mod.isPublic.isAbstract, interfaces: _*)
   }
 
   def mkInterface(className: JvmName, addSource: Boolean, interfaces: JvmName*)(implicit flix: Flix): ClassMaker = {
-    mkClassMaker(className, addSource = addSource, None, Mod.isPublic.isAbstract.isInterface, interfaces:_*)
+    mkClassMaker(className, addSource = addSource, None, Mod.isPublic.isAbstract.isInterface, interfaces: _*)
   }
 
   class Mod private {
@@ -123,7 +127,7 @@ object ClassMaker {
     private var abs = 0
     private var inter = 0
 
-    def getInt: Int = fin + stat + pub + priv + abs + inter
+    def getValue: Int = fin + stat + pub + priv + abs + inter
 
     def isFinal: Mod = {
       fin = Opcodes.ACC_FINAL

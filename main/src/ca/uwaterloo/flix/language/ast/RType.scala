@@ -21,6 +21,8 @@ import ca.uwaterloo.flix.language.ast.PType._
 import ca.uwaterloo.flix.language.ast.RRefType.RObject
 import ca.uwaterloo.flix.language.phase.sjvm.JvmName
 
+import java.nio.file.Path
+
 trait Describable {
   def toDescriptor: String
 }
@@ -33,8 +35,9 @@ sealed trait RType[T <: PType] extends Describable {
 
   lazy val toErasedString: String = RType.toErasedString(this)
   lazy val erasedType: RType[_ <: PType] = RType.erasedType(this)
+  // TODO(JLS): add cont and Fn in RRefType maybe?
   lazy val contName: JvmName = JvmName(Nil, s"Cont${JvmName.reservedDelimiter}${this.toErasedString}")
-  lazy val nothingToCont: String = JvmName.getMethodDescriptor(Nil, this.contName)
+  lazy val nothingToContMethodDescriptor: String = JvmName.getMethodDescriptor(Nil, this.contName)
   lazy val nothingToThisMethodDescriptor: String = JvmName.getMethodDescriptor(Nil, this)
 }
 
@@ -192,8 +195,13 @@ object RRefType {
   }
 
   case class RArrow(args: List[RType[_ <: PType]], result: RType[_ <: PType]) extends RRefType[PFunction] {
-    override val jvmName: JvmName =
-      JvmName(Nil, s"Fn${args.length}${JvmName.reservedDelimiter}${(args ::: result :: Nil).map(_.toErasedString).mkString(JvmName.reservedDelimiter)}")
+    override val jvmName: JvmName = new JvmName(Nil, "") {
+      override lazy val toBinaryName: String = ???
+      override lazy val toDescriptor: String = ???
+      override lazy val toInternalName: String = ???
+      override lazy val toPath: Path = ???
+    } // TODO(JLS): does any general name here make sense?
+    lazy val functionInterfaceName: JvmName = JvmName(Nil, s"Fn${args.length}${JvmName.reservedDelimiter}${(args ::: result :: Nil).map(_.toErasedString).mkString(JvmName.reservedDelimiter)}")
   }
 
   object RRecordEmpty extends RRefType[PAnyObject] {

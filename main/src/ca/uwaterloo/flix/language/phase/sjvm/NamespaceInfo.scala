@@ -18,12 +18,12 @@
 package ca.uwaterloo.flix.language.phase.sjvm
 
 import ca.uwaterloo.flix.language.ast.ErasedAst.Def
-import ca.uwaterloo.flix.language.ast.{PType, Symbol}
+import ca.uwaterloo.flix.language.ast.Symbol
 
 /**
   * Meta information about a namespace.
   */
-case class NamespaceInfo(ns: List[String], defs: Map[Symbol.DefnSym, Def[_ <: PType]]) {
+case class NamespaceInfo(ns: List[String], defs: Map[Symbol.DefnSym, Def]) {
 
   /**
     * Returns `true` if `this` is the root namespace.

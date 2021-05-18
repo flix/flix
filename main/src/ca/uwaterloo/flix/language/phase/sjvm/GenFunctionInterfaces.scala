@@ -21,50 +21,51 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst.Root
 import ca.uwaterloo.flix.language.ast.PRefType.PFunction
 import ca.uwaterloo.flix.language.ast.PType.PReference
-import ca.uwaterloo.flix.language.ast.RRefType.{RArrow, RObject}
+import ca.uwaterloo.flix.language.ast.RRefType.RArrow
 import ca.uwaterloo.flix.language.ast.RType.RReference
-import ca.uwaterloo.flix.language.ast.{PRefType, PType, RType}
+import ca.uwaterloo.flix.language.ast.{PType, RType}
 import ca.uwaterloo.flix.language.phase.sjvm.ClassMaker.Mod
-import ca.uwaterloo.flix.util.InternalCompilerException
-import org.objectweb.asm.Opcodes._
 
 /**
- * Generates bytecode for the function interfaces.
- */
+  * Generates bytecode for the function interfaces.
+  */
 object GenFunctionInterfaces {
   val resultFieldName: String = "res"
 
+  def argFieldName(index: Int) = s"arg$index"
+
   /**
-   * Returns the set of function interfaces for the given set of types `ts`.
-   */
+    * Returns the set of function interfaces for the given set of types `ts`.
+    */
   def gen[T <: PType](tpe: Set[RType[PReference[PFunction]]])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     tpe.foldLeft(Map.empty[JvmName, JvmClass]) {
-      case (macc, tpe@RReference(RArrow(args, result))) =>
-        val bytecode = genByteCode(tpe, args, result)
-        macc + (tpe.jvmName -> JvmClass(tpe.jvmName, bytecode))
+      case (macc, RReference(functionType@RArrow(_, _))) =>
+        val bytecode = genByteCode(functionType)
+        macc + (functionType.functionInterfaceName -> JvmClass(functionType.functionInterfaceName, bytecode))
     }
   }
 
   /**
-   * Returns the function interface of the given type `tpe`.
-   */
-  private def genByteCode(functionType: RReference[PFunction], args: List[RType[_ <: PType]], resultType: RType[_ <: PType])(implicit root: Root, flix: Flix): Array[Byte] = {
+    * Returns the function interface of the given type `tpe`.
+    */
+  private def genByteCode(functionType: RArrow)(implicit root: Root, flix: Flix): Array[Byte] = {
 
     // Class visitor
     // TODO(JLS): Add the two super interfaces
     //`JvmType` of the continuation interface for `tpe`
-    val continuationSuperInterface = resultType.contName
+    val continuationSuperInterface = functionType.result.contName
     // `JvmType` of the java.util.functions.Function
     //        val javaFunctionSuperInterface = JvmType.Function
-    val classMaker = ClassMaker.mkAbstractClass(functionType.jvmName, addSource = false, Some(continuationSuperInterface))
+    val classMaker = ClassMaker.mkAbstractClass(functionType.functionInterfaceName, addSource = false, Some(continuationSuperInterface))
 
     val fieldMod = Mod.isAbstract.isPublic
     // Adding setters for each argument of the function
-    for ((arg, index) <- args.zipWithIndex) {
+    for ((arg, index) <- functionType.args.zipWithIndex) {
       // `arg$index` field
-      classMaker.mkField(s"arg$index", arg.erasedType, fieldMod)
+      classMaker.mkField(argFieldName(index), arg.erasedType, fieldMod)
     }
-    classMaker.mkField(resultFieldName, resultType.erasedType, fieldMod)
+    classMaker.mkField(resultFieldName, functionType.result.erasedType, fieldMod)
+    classMaker.mkSuperConstructor()
 
     classMaker.closeClassMaker
   }

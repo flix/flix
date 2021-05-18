@@ -32,8 +32,8 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
   def emptyFTypes(): FTypes = Set[RType[PReference[PFunction]]]()
 
   def run(root: FinalAst.Root)(implicit flix: Flix): Validation[ErasedAst.Root, CompilationError] = flix.phase("Eraser") {
-    val (defns, functionTypes) = root.defs.foldLeft((Map[Symbol.DefnSym, ErasedAst.Def[PReference[PFunction]]](), emptyFTypes())) { case ((m, s), (k, v)) =>
-      val (defn, ftypes) = visitDef[PReference[PFunction]](v)
+    val (defns, functionTypes) = root.defs.foldLeft((Map[Symbol.DefnSym, ErasedAst.Def](), emptyFTypes())) { case ((m, s), (k, v)) =>
+      val (defn, ftypes) = visitDef(v)
       (m + (k -> defn), s union ftypes)
     }
     //    val enums = root.enums.map {
@@ -45,30 +45,30 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
     //    }
     //    val properties = root.properties.map { p => visitProperty(p) }
     val reachable = root.reachable
-    val functionResultTypes = functionTypes.foldLeft(Set[RType[_ <: PType]]()){case (s, RReference(RArrow(_, result))) => s + result}
+    val functionResultTypes = functionTypes.foldLeft(Set[RType[_ <: PType]]()) { case (s, RReference(RArrow(_, result))) => s + result }
 
     ErasedAst.Root(defns, reachable, root.sources, functionTypes).toSuccess
   }
 
   /**
-   * Translates the given definition `def0` to the ErasedAst.
-   */
-  private def visitDef[T <: PType](def0: FinalAst.Def): (ErasedAst.Def[T], FTypes) = {
+    * Translates the given definition `def0` to the ErasedAst.
+    */
+  private def visitDef(def0: FinalAst.Def): (ErasedAst.Def, FTypes) = {
     val (formals0, ftypes0) = def0.formals.foldLeft((List[ErasedAst.FormalParam](), emptyFTypes())) {
       case ((l, s), param) =>
         val (expRes, ftypesRes) = visitFormalParam(param)
         (l :+ expRes, s union ftypesRes)
     }
-    val (exp, ftypes1) = visitExp[T](def0.exp)
-    val (tpe, ftypes2) = visitTpe[T](def0.tpe)
+    val (exp, ftypes1) = visitExp[PReference[PFunction]](def0.exp)
+    val (tpe, ftypes2) = visitTpe[PReference[PFunction]](def0.tpe)
     val expRes = ErasedAst.Def(def0.ann, def0.mod, def0.sym, formals0, exp, tpe, def0.loc)
     val ftypesRes = ftypes0 union ftypes1 union ftypes2
     (expRes, ftypesRes)
   }
 
   /**
-   * Translates the given expression `exp0` to the ErasedAst.
-   */
+    * Translates the given expression `exp0` to the ErasedAst.
+    */
   private def visitExp[T <: PType](baseExp: FinalAst.Expression): (ErasedAst.Expression[T], FTypes) = baseExp match {
     case FinalAst.Expression.Unit(loc) =>
       val expRes = ErasedAst.Expression.Unit(loc)
@@ -534,24 +534,24 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
     }
 
   /**
-   * Translates the given formal param `p` to the ErasedAst.
-   */
+    * Translates the given formal param `p` to the ErasedAst.
+    */
   private def visitFormalParam(p: FinalAst.FormalParam): (ErasedAst.FormalParam, FTypes) = {
     val (tpe0, ftypesRes) = visitTpe[PType](p.tpe)
     (ErasedAst.FormalParam(p.sym, tpe0), ftypesRes)
   }
 
   /**
-   * Translates the property `p` to the ErasedAst.
-   */
+    * Translates the property `p` to the ErasedAst.
+    */
   private def visitProperty(p: FinalAst.Property): (ErasedAst.Property, FTypes) = {
     val (exp0, ftypesRes) = visitExp[PInt32](p.exp)
     (ErasedAst.Property(p.law, p.defn, exp0), ftypesRes)
   }
 
   /**
-   * Translates the type 'tpe' to the ErasedType.
-   */
+    * Translates the type 'tpe' to the ErasedType.
+    */
   private def visitTpe[T <: PType](tpe: MonoType): (RType[T], FTypes) = tpe match {
     case MonoType.Unit => (RReference(RUnit).asInstanceOf[RType[T]], emptyFTypes())
     case MonoType.Bool => (RBool.asInstanceOf[RType[T]], emptyFTypes())

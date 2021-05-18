@@ -26,7 +26,7 @@ object ErasedAst {
 
   // TODO(JLS): add ast traversal sets/lists/map here
   // example: tuples: Set[RType[_ <: PType]]
-  case class Root(defs: Map[Symbol.DefnSym, ErasedAst.Def[PReference[PFunction]]],
+  case class Root(defs: Map[Symbol.DefnSym, ErasedAst.Def],
                   //enums: Map[Symbol.EnumSym, ErasedAst.Enum],
                   //properties: List[ErasedAst.Property],
                   reachable: Set[Symbol.DefnSym],
@@ -34,7 +34,7 @@ object ErasedAst {
                   functionTypes: Set[RType[PReference[PFunction]]])
 
   // TODO(JLS): This method, of using T <: PType and the _ <: PType at use is probably better and should be used elsewhere
-  case class Def[T <: PType](ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: List[ErasedAst.FormalParam], exp: ErasedAst.Expression[T], tpe: RType[T], loc: SourceLocation) {
+  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: List[ErasedAst.FormalParam], exp: ErasedAst.Expression[PReference[PFunction]], tpe: RType[PReference[PFunction]], loc: SourceLocation) {
     var method: Method = _
   }
 
@@ -221,7 +221,7 @@ object ErasedAst {
 
   case class CatchRule[T <: PType](sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: ErasedAst.Expression[T])
 
-  case class FormalParam(sym: Symbol.VarSym, tpe: RType[PType])
+  case class FormalParam(sym: Symbol.VarSym, tpe: RType[_ <: PType])
 
   case class FreeVar(sym: Symbol.VarSym, tpe: RType[PType])
 

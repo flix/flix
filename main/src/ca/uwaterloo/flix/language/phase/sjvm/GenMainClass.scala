@@ -23,15 +23,15 @@ import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.PType.PReference
 import ca.uwaterloo.flix.language.ast.RRefType._
 import ca.uwaterloo.flix.language.ast.RType.RReference
-import ca.uwaterloo.flix.language.ast.{PRefType, PType, RRefType, Symbol}
+import ca.uwaterloo.flix.language.ast.{PRefType, RRefType, Symbol}
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler.{F, StackEnd, StackNil}
 import ca.uwaterloo.flix.language.phase.sjvm.ClassMaker.Mod
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
- * Generates bytecode for the main class.
- */
+  * Generates bytecode for the main class.
+  */
 object GenMainClass {
 
   val mainMethod: String = "main"
@@ -39,8 +39,8 @@ object GenMainClass {
   val mainMethodClassName: JvmName = JvmName.main
 
   /**
-   * Returns the main class.
-   */
+    * Returns the main class.
+    */
   def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = getMain(root) match {
     case None => Map.empty
     case Some(defn) =>
@@ -68,44 +68,44 @@ object GenMainClass {
     classMaker.closeClassMaker
   }
 
-    /**
-     * Emits code for the main method in the main class. The emitted (byte)code should satisfy the following signature for the method:
-     * public static void main(String[])
-     *
-     * The method itself needs simply invoke the m_main method which is in the root namespace.
-     *
-     * The emitted code for the method should correspond to:
-     *
-     * Ns.m_main((Object)null);
-     */
-    def compileMainMethod(mainType: RReference[PFunction])(implicit root: Root, flix: Flix): F[StackNil] => F[StackEnd] = {
+  /**
+    * Emits code for the main method in the main class. The emitted (byte)code should satisfy the following signature for the method:
+    * public static void main(String[])
+    *
+    * The method itself needs simply invoke the m_main method which is in the root namespace.
+    *
+    * The emitted code for the method should correspond to:
+    *
+    * Ns.m_main((Object)null);
+    */
+  def compileMainMethod(mainType: RReference[PFunction])(implicit root: Root, flix: Flix): F[StackNil] => F[StackEnd] = {
 
-      //Get the root namespace in order to get the class type when invoking m_main
-      val ns = SjvmOps.getNamespace(Symbol.Main)
+    //Get the root namespace in order to get the class type when invoking m_main
+    val ns = SjvmOps.getNamespace(Symbol.Main)
 
-      // Call Ns.m_main(args)
+    // Call Ns.m_main(args)
 
-      // Push the args array on the stack.
-//      main.visitVarInsn(ALOAD, 0)
-      START[StackNil] ~
-        ALOAD(0, tag[PArray[PReference[PStr]]]) ~
-        POP ~
-        RETURN
-//      THISLOAD(tag[PArray[PReference[PStr]]]) ~
-//        ???
-//      Invoke m_main
-//      main.visitMethodInsn(INVOKESTATIC, JvmOps.getNamespaceClassType(ns).name.toInternalName, "m_main",
-//        AsmOps.getMethodDescriptor(List(/* TODO: Should be string array */ JvmType.Object), JvmType.PrimInt), false)
-//
-//      main.visitInsn(RETURN)
-//      main.visitMaxs(1,1)
-//      main.visitEnd()
-    }
+    // Push the args array on the stack.
+    //      main.visitVarInsn(ALOAD, 0)
+    START[StackNil] ~
+      ALOAD(0, tag[PArray[PReference[PStr]]]) ~
+      POP ~
+      RETURN
+    //      THISLOAD(tag[PArray[PReference[PStr]]]) ~
+    //        ???
+    //      Invoke m_main
+    //      main.visitMethodInsn(INVOKESTATIC, JvmOps.getNamespaceClassType(ns).name.toInternalName, "m_main",
+    //        AsmOps.getMethodDescriptor(List(/* TODO: Should be string array */ JvmType.Object), JvmType.PrimInt), false)
+    //
+    //      main.visitInsn(RETURN)
+    //      main.visitMaxs(1,1)
+    //      main.visitEnd()
+  }
 
   /**
-   * Optionally returns the main definition in the given AST `root`.
-   */
-  private def getMain(root: Root): Option[Def[_ <: PType]] = {
+    * Optionally returns the main definition in the given AST `root`.
+    */
+  private def getMain(root: Root): Option[Def] = {
     // The main function must be called `main` and occur in the root namespace.
     val sym = Symbol.Main
 

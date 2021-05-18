@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Name.{Ident, NName}
+import ca.uwaterloo.flix.language.phase.sjvm.JvmName
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 object Symbol {
@@ -215,7 +216,7 @@ object Symbol {
     /**
       * Human readable representation.
       */
-    override def toString: String = text + "$" + id
+    override def toString: String = text + JvmName.reservedDelimiter + id
   }
 
   /**
@@ -230,12 +231,15 @@ object Symbol {
       */
     def isMain: Boolean = this == Symbol.Main
 
+    // TODO(JLS): Should maybe mangle here? (+ -> $add)
+    lazy val defName: JvmName = JvmName(namespace, s"Def${JvmName.reservedDelimiter}$name")
+
     /**
       * Returns the name of `this` symbol.
       */
     def name: String = id match {
       case None => text
-      case Some(i) => text + "$" + i
+      case Some(i) => text + JvmName.reservedDelimiter + i
     }
 
     /**
@@ -346,7 +350,7 @@ object Symbol {
     /**
       * Human readable representation.
       */
-    override def toString: String = text + "$" + id
+    override def toString: String = text + JvmName.reservedDelimiter + id
   }
 
   /**

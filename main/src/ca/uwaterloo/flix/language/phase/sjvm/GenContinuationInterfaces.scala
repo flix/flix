@@ -19,21 +19,20 @@ package ca.uwaterloo.flix.language.phase.sjvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst.Root
-import ca.uwaterloo.flix.language.ast.PRefType.PAnyObject
 import ca.uwaterloo.flix.language.ast.{PType, RType}
 import ca.uwaterloo.flix.language.phase.sjvm.ClassMaker.Mod
 
 /**
- * Generates bytecode for the continuation interfaces.
- * TODO(JLS): fix comments in general
- */
+  * Generates bytecode for the continuation interfaces.
+  * TODO(JLS): fix comments in general
+  */
 object GenContinuationInterfaces {
   val resultFieldName: String = "result"
   val invokeMethodName: String = "apply"
 
   /**
-   * Returns the set of continuation interfaces for
-   */
+    * Returns the set of continuation interfaces for
+    */
   def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     RType.baseTypes.foldLeft(Map[JvmName, JvmClass]()) {
       case (macc, tpe) =>
@@ -43,8 +42,8 @@ object GenContinuationInterfaces {
   }
 
   /**
-   * Returns the bytecode for the given continuation interface.
-   */
+    * Returns the bytecode for the given continuation interface.
+    */
   private def genByteCode[T <: PType](resultType: RType[T])(implicit root: Root, flix: Flix): Array[Byte] = {
 
     // Pseudo code to generate:
@@ -66,9 +65,9 @@ object GenContinuationInterfaces {
 
     // Class visitor
     val classMaker = ClassMaker.mkAbstractClass(resultType.contName, addSource = false, None)
-    classMaker.mkObjectConstructor[PAnyObject]()
+    classMaker.mkSuperConstructor()
     classMaker.mkField(resultFieldName, resultType, Mod.isPublic.isAbstract)
-    classMaker.mkAbstractMethod(invokeMethodName, resultType.nothingToCont, Mod.isAbstract.isPublic)
+    classMaker.mkAbstractMethod(invokeMethodName, resultType.nothingToContMethodDescriptor, Mod.isAbstract.isPublic)
 
     classMaker.closeClassMaker
   }

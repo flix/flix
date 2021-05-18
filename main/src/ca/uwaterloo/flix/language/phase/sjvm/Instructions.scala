@@ -672,62 +672,80 @@ object Instructions {
       case RReference(_) => AAStore
     }
 
+  val symOffsetOffset = 3
+
   // I/S/B/C-Store are all just jvm ISTORE
   // NATIVE
   def IStore
   [R <: Stack]
   (sym: Symbol.VarSym):
-  F[R ** PInt32] => F[R] =
-    ???
+  F[R ** PInt32] => F[R] = f => {
+    f.visitor.visitVarInsn(Opcodes.ISTORE, sym.getStackOffset + symOffsetOffset)
+    castF(f)
+  }
 
   // NATIVE
   def SStore
   [R <: Stack]
   (sym: Symbol.VarSym):
-  F[R ** PInt16] => F[R] =
-    ???
+  F[R ** PInt16] => F[R] = f => {
+    f.visitor.visitVarInsn(Opcodes.ISTORE, sym.getStackOffset + symOffsetOffset)
+    castF(f)
+  }
 
   // NATIVE
   def BStore
   [R <: Stack]
   (sym: Symbol.VarSym):
-  F[R ** PInt8] => F[R] =
-    ???
+  F[R ** PInt8] => F[R] = f => {
+    f.visitor.visitVarInsn(Opcodes.ISTORE, sym.getStackOffset + symOffsetOffset)
+    castF(f)
+  }
 
   // NATIVE
   def CStore
   [R <: Stack]
   (sym: Symbol.VarSym):
-  F[R ** PChar] => F[R] =
-    ???
+  F[R ** PChar] => F[R] = f => {
+    f.visitor.visitVarInsn(Opcodes.ISTORE, sym.getStackOffset + symOffsetOffset)
+    castF(f)
+  }
 
   // NATIVE
   def LStore
   [R <: Stack]
   (sym: Symbol.VarSym):
-  F[R ** PInt64] => F[R] =
-    ???
+  F[R ** PInt64] => F[R] = f => {
+    f.visitor.visitVarInsn(Opcodes.LSTORE, sym.getStackOffset + symOffsetOffset)
+    castF(f)
+  }
 
   // NATIVE
   def FStore
   [R <: Stack]
   (sym: Symbol.VarSym):
-  F[R ** PFloat32] => F[R] =
-    ???
+  F[R ** PFloat32] => F[R] = f => {
+    f.visitor.visitVarInsn(Opcodes.FSTORE, sym.getStackOffset + symOffsetOffset)
+    castF(f)
+  }
 
   // NATIVE
   def DStore
   [R <: Stack]
   (sym: Symbol.VarSym):
-  F[R ** PFloat64] => F[R] =
-    ???
+  F[R ** PFloat64] => F[R] = f => {
+    f.visitor.visitVarInsn(Opcodes.DSTORE, sym.getStackOffset + symOffsetOffset)
+    castF(f)
+  }
 
   // NATIVE
   def AStore
   [R <: Stack, T <: PRefType]
   (sym: Symbol.VarSym):
-  F[R ** PReference[T]] => F[R] =
-    ???
+  F[R ** PReference[T]] => F[R] = f => {
+    f.visitor.visitVarInsn(Opcodes.ASTORE, sym.getStackOffset + symOffsetOffset)
+    castF(f)
+  }
 
   // META
   def XStore
