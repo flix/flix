@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError._
 import ca.uwaterloo.flix.language.phase.unification.ClassEnvironment
@@ -69,7 +69,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       checkUnusedDefs(usedAll)(root) and
         checkUnusedEnumsAndTags(usedAll)(root) and
         checkUnusedTypeParamsEnums()(root) ++
-        checkRedundantTypeConstraints()(root)
+          checkRedundantTypeConstraints()(root)
 
     // Return the root if successful, otherwise returns all redundancy errors.
     usedRes.toValidation(root)
@@ -636,7 +636,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def visitBodyPred(b0: Predicate.Body, env0: Env): Used = b0 match {
     case Body.Atom(_, _, _, terms, _, _) =>
-      Used.empty
+      terms.foldLeft(Used.empty) {
+        case (acc, term) => acc and Used.of(freeVars(term))
+      }
 
     case Body.Guard(exp, _) =>
       visitExp(exp, env0)
@@ -800,6 +802,11 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       * Returns an object where the given variable symbol `sym` is marked as used.
       */
     def of(sym: Symbol.VarSym): Used = empty.copy(varSyms = Set(sym))
+
+    /**
+      * Returns an object where the given variable symbols `syms` are marked as used.
+      */
+    def of(syms: Set[Symbol.VarSym]): Used = empty.copy(varSyms = syms)
 
   }
 
