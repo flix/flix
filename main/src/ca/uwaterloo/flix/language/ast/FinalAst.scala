@@ -24,7 +24,6 @@ object FinalAst {
 
   case class Root(defs: Map[Symbol.DefnSym, FinalAst.Def],
                   enums: Map[Symbol.EnumSym, FinalAst.Enum],
-                  properties: List[FinalAst.Property],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
@@ -33,10 +32,6 @@ object FinalAst {
   }
 
   case class Enum(mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Name.Tag, FinalAst.Case], tpeDeprecated: MonoType, loc: SourceLocation)
-
-  case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: FinalAst.Expression) {
-    def loc: SourceLocation = defn.loc
-  }
 
   sealed trait Expression {
     def tpe: MonoType

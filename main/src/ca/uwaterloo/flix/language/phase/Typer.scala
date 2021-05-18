@@ -68,12 +68,11 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     val instancesVal = visitInstances(root, classEnv)
     val defsVal = visitDefs(root, classEnv)
     val enumsVal = visitEnums(root)
-    val propertiesVal = visitProperties(root)
 
-    Validation.mapN(classesVal, instancesVal, defsVal, enumsVal, propertiesVal) {
-      case (classes, instances, defs, enums, properties) =>
+    Validation.mapN(classesVal, instancesVal, defsVal, enumsVal) {
+      case (classes, instances, defs, enums) =>
         val sigs = classes.values.flatMap(_.signatures).map(sig => sig.sym -> sig).toMap
-        TypedAst.Root(classes, instances, sigs, defs, enums, properties, root.reachable, root.sources, classEnv)
+        TypedAst.Root(classes, instances, sigs, defs, enums, root.reachable, root.sources, classEnv)
     }
   }
 
@@ -333,31 +332,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
     // Sequence the results and convert them back to a map.
     Validation.sequence(result).map(_.toMap)
-  }
-
-  /**
-    * Infers the types of all the properties in the given AST `root`.
-    */
-  private def visitProperties(root: ResolvedAst.Root)(implicit flix: Flix): Validation[List[TypedAst.Property], TypeError] = {
-
-    /**
-      * Infers the type of the given property `p0`.
-      */
-    def visitProperty(p0: ResolvedAst.Property): Result[TypedAst.Property, TypeError] = p0 match {
-      case ResolvedAst.Property(law, defn, exp0, loc) =>
-        val result = inferExp(exp0, root)
-        result.run(Substitution.empty) map {
-          case (subst, tpe) =>
-            val exp = reassembleExp(exp0, root, subst)
-            TypedAst.Property(law, defn, exp, loc)
-        }
-    }
-
-    // Visit every property in the ast.
-    val results = root.properties.map(visitProperty).map(_.toValidation)
-
-    // Sequence the results and sort the properties by their source location.
-    Validation.sequence(results)
   }
 
   /**

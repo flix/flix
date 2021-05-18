@@ -36,14 +36,7 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
       val (defn, ftypes) = visitDef(v)
       (m + (k -> defn), s union ftypes)
     }
-    //    val enums = root.enums.map {
-    //      case (k, FinalAst.Enum(mod, sym, cases0, _, loc)) =>
-    //        val cases = cases0 map {
-    //          case (tag, FinalAst.Case(enumSym, tagName, tagTpeDeprecated, tagLoc)) => tag -> ErasedAst.Case(enumSym, tagName, visitTpe(tagTpeDeprecated), tagLoc)
-    //        }
-    //        k -> ErasedAst.Enum(mod, sym, cases, loc)
-    //    }
-    //    val properties = root.properties.map { p => visitProperty(p) }
+
     val reachable = root.reachable
     val functionResultTypes = functionTypes.foldLeft(Set[RType[_ <: PType]]()) { case (s, RReference(RArrow(_, result))) => s + result }
 
@@ -542,14 +535,7 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
   }
 
   /**
-    * Translates the property `p` to the ErasedAst.
-    */
-  private def visitProperty(p: FinalAst.Property): (ErasedAst.Property, FTypes) = {
-    val (exp0, ftypesRes) = visitExp[PInt32](p.exp)
-    (ErasedAst.Property(p.law, p.defn, exp0), ftypesRes)
-  }
 
-  /**
     * Translates the type 'tpe' to the ErasedType.
     */
   private def visitTpe[T <: PType](tpe: MonoType): (RType[T], FTypes) = tpe match {

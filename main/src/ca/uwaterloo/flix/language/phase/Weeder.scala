@@ -52,12 +52,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   private def visitRoot(root: ParsedAst.Root)(implicit flix: Flix): Validation[WeededAst.Root, WeederError] = {
     val usesVal = traverse(root.uses)(visitUse)
     val declarationsVal = traverse(root.decls)(visitDecl)
-    val propertiesVal = visitAllProperties(root)
     val loc = mkSL(root.sp1, root.sp2)
 
-    mapN(usesVal, declarationsVal, propertiesVal) {
-      case (uses, decls1, decls2) =>
-        WeededAst.Root(uses.flatten, decls1.flatten ++ decls2, loc)
+    mapN(usesVal, declarationsVal) {
+      case (uses, decls) =>
+        WeededAst.Root(uses.flatten, decls.flatten, loc)
     }
   }
 
@@ -118,7 +117,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Declaration.Sig(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpe0, effOpt, tconstrs0, exp0, sp2) =>
       val loc = mkSL(ident.sp1, ident.sp2)
       val doc = visitDoc(doc0)
-      val annVal = visitAnnotationOrProperty(ann)
+      val annVal = visitAnnotations(ann)
       val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Inline, Ast.Modifier.Public))
       val tparamsVal = visitKindedTypeParams(tparams0)
       val formalsVal = visitFormalParams(fparams0, typeRequired = true)
@@ -172,7 +171,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Declaration.Def(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpe0, effOpt, tconstrs0, exp0, sp2) =>
       val loc = mkSL(ident.sp1, ident.sp2)
       val doc = visitDoc(doc0)
-      val annVal = visitAnnotationOrProperty(ann)
+      val annVal = visitAnnotations(ann)
       val modVal = visitModifiers(mods, legalModifiers)
       val expVal = visitExp(exp0)
       val tparamsVal = visitKindedTypeParams(tparams0)
@@ -196,7 +195,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Declaration.Law(doc0, ann0, mod0, sp1, ident, tparams0, fparams0, exp0, sp2) =>
       val loc = mkSL(ident.sp1, ident.sp2)
       val doc = visitDoc(doc0)
-      val annVal = visitAnnotationOrProperty(ann0)
+      val annVal = visitAnnotations(ann0)
       val modVal = visitModifiers(mod0, legalModifiers = Set.empty)
       val expVal = visitExp(exp0)
       val tparamsVal = visitKindedTypeParams(tparams0)
@@ -1732,7 +1731,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Weeds the given sequence of parsed annotation `xs`.
     */
-  private def visitAnnotationOrProperty(xs: Seq[ParsedAst.AnnotationOrProperty])(implicit flix: Flix): Validation[List[WeededAst.Annotation], WeederError] = {
+  private def visitAnnotations(xs: Seq[ParsedAst.Annotation])(implicit flix: Flix): Validation[List[WeededAst.Annotation], WeederError] = {
     // collect seen annotations.
     val seen = mutable.Map.empty[String, ParsedAst.Annotation]
 
@@ -1838,49 +1837,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     } else {
       WeederError.IllegalPrivateDeclaration(ident, ident.loc).toFailure
     }
-  }
-
-  /**
-    * Collects all the properties in the given AST `root`.
-    */
-  private def visitAllProperties(root: ParsedAst.Root)(implicit flix: Flix): Validation[List[WeededAst.Declaration], WeederError] = {
-
-    /**
-      * Local declaration visitor.
-      */
-    def visit(decl: ParsedAst.Declaration): Validation[List[WeededAst.Declaration], WeederError] = decl match {
-      // Recurse through the namespace.
-      case ParsedAst.Declaration.Namespace(sp1, name, uses, decls, sp2) =>
-        val usesVal = traverse(uses)(visitUse)
-        val declarationsVal = traverse(decls)(visit)
-        mapN(usesVal, declarationsVal) {
-          case (us, ds) => List(WeededAst.Declaration.Namespace(name, us.flatten, ds.flatten, mkSL(sp1, sp2)))
-        }
-
-      case ParsedAst.Declaration.Def(_, meta, _, _, defn, _, _, _, _, _, _, _) =>
-        // Instantiate properties based on the laws referenced by the definition.
-        sequence(meta.collect {
-          case ParsedAst.Property(sp1, law, args, sp2) =>
-            val loc = mkSL(sp1, sp2)
-
-            // Weeds the arguments of the property.
-            val argsVal = args match {
-              case None => Nil.toSuccess
-              case Some(es) => traverse(es)(e => visitExp(e))
-            }
-
-            argsVal map {
-              case as =>
-                val lam = WeededAst.Expression.DefOrSig(law, loc) // TODO allow signatures?
-                val fun = WeededAst.Expression.VarOrDefOrSig(defn, loc)
-                val exp = WeededAst.Expression.Apply(lam, fun :: as, loc)
-                WeededAst.Declaration.Property(law, defn, exp, loc)
-            }
-        })
-      case _ => Nil.toSuccess
-    }
-
-    sequence(root.decls.map(visit)).map(_.flatten)
   }
 
   /**

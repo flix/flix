@@ -37,13 +37,8 @@ object ClosureConv extends Phase[Root, Root] {
       case (sym, decl) => sym -> visitDef(decl)
     }
 
-    // Properties.
-    val properties = root.properties.map {
-      property => visitProperty(property)
-    }
-
     // Return the updated AST root.
-    root.copy(defs = definitions, properties = properties).toSuccess
+    root.copy(defs = definitions).toSuccess
   }
 
   /**
@@ -52,16 +47,6 @@ object ClosureConv extends Phase[Root, Root] {
   private def visitDef(def0: Def)(implicit flix: Flix): Def = {
     val convertedExp = visitExp(def0.exp)
     def0.copy(exp = convertedExp)
-  }
-
-  /**
-    * Performs closure conversion on the given property `property0`.
-    */
-  private def visitProperty(property0: Property)(implicit flix: Flix): Property = {
-    val convertedExp = visitExp(property0.exp)
-
-    // Reassemble the property.
-    property0.copy(exp = convertedExp)
   }
 
   /**

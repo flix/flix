@@ -28,3 +28,32 @@ instance Eq[Comparison] {
         case _ => false
     }
 }
+
+namespace Comparison {
+
+    ///
+    /// Converts a `Comparison` value to an integer.
+    /// The return value is:
+    /// `-1` if `c` is `LessThan`.
+    /// `0` if `c` is `EqualTo`.
+    /// `+1` if `c` is `GreaterThan`.
+    ///
+    pub def toInt(c: Comparison): Int32 = match c {
+        case LessThan => -1
+        case EqualTo => 0
+        case GreaterThan => +1
+    }
+
+    ///
+    /// Converts an integer to a `Comparison` value.
+    /// The return value is:
+    /// `LessThan` if `i < 0`.
+    /// `EqualTo` if `i == 0`.
+    /// `GreaterThan` if `i > 0`.
+    ///
+    pub def fromInt(i: Int32): Comparison =
+        if (i < 0) LessThan
+        else if (i == 0) EqualTo
+        else GreaterThan
+
+}

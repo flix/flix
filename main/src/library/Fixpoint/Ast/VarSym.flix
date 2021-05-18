@@ -18,15 +18,26 @@ namespace Fixpoint/Ast {
         case VarSym(String)
     }
 
+    instance Eq[VarSym] {
+        pub def eq(a: VarSym, b: VarSym): Bool = Fixpoint/Ast/VarSym.compare(a, b) == EqualTo
+    }
+
     instance Order[VarSym] {
-        pub def compare(a: VarSym, b: VarSym): Comparison = match (a, b) {
-            case (VarSym(s1), VarSym(s2)) => s1 <=> s2
-        }
+        pub def compare(a: VarSym, b: VarSym): Comparison = Fixpoint/Ast/VarSym.compare(a, b)
     }
 
     instance ToString[VarSym] {
         pub def toString(varSym: VarSym): String = match varSym {
             case VarSym(name) => name
+        }
+    }
+
+    namespace VarSym {
+        use Fixpoint/Ast.VarSym;
+        use Fixpoint/Ast.VarSym.VarSym;
+
+        pub def compare(a: VarSym, b: VarSym): Comparison = match (a, b) {
+            case (VarSym(s1), VarSym(s2)) => s1 <=> s2
         }
     }
 }
