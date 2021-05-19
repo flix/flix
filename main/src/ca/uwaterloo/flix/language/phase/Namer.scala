@@ -1347,6 +1347,38 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.Ascribe(tpe, _, _) => freeVars(tpe)
   }
 
+  // MATT docs
+  // MATT kill other freeVars?
+  private def freeVarsInTenv(tpe0: WeededAst.Type, tenv: Map[String, UnkindedType.Var]): List[Name.Ident] = {
+    def visit(tpe0: WeededAst.Type): List[Name.Ident] = tpe0 match {
+      case WeededAst.Type.Var(ident, loc) if tenv.contains(ident.name) => Nil
+      case WeededAst.Type.Var(ident, loc) => ident :: Nil
+      case WeededAst.Type.Ambiguous(qname, loc) => Nil
+      case WeededAst.Type.Unit(loc) => Nil
+      case WeededAst.Type.Tuple(elms, loc) => elms.flatMap(visit)
+      case WeededAst.Type.RecordEmpty(loc) => Nil
+      case WeededAst.Type.RecordExtend(l, t, r, loc) => visit(t) ::: visit(r)
+      case WeededAst.Type.RecordGeneric(t, loc) => visit(t)
+      case WeededAst.Type.SchemaEmpty(loc) => Nil
+      case WeededAst.Type.SchemaExtendByTypes(_, _, ts, r, loc) => ts.flatMap(visit) ::: visit(r)
+      case WeededAst.Type.SchemaExtendByAlias(_, ts, r, _) => ts.flatMap(visit) ::: visit(r)
+      case WeededAst.Type.SchemaGeneric(t, loc) => visit(t)
+      case WeededAst.Type.Relation(ts, loc) => ts.flatMap(visit)
+      case WeededAst.Type.Lattice(ts, loc) => ts.flatMap(visit)
+      case WeededAst.Type.Native(fqm, loc) => Nil
+      case WeededAst.Type.Arrow(tparams, eff, tresult, loc) => tparams.flatMap(visit) ::: visit(eff) ::: visit(tresult)
+      case WeededAst.Type.Apply(tpe1, tpe2, loc) => visit(tpe1) ++ visit(tpe2)
+      case WeededAst.Type.True(loc) => Nil
+      case WeededAst.Type.False(loc) => Nil
+      case WeededAst.Type.Not(tpe, loc) => visit(tpe)
+      case WeededAst.Type.And(tpe1, tpe2, loc) => visit(tpe1) ++ visit(tpe2)
+      case WeededAst.Type.Or(tpe1, tpe2, loc) => visit(tpe1) ++ visit(tpe2)
+      case WeededAst.Type.Ascribe(tpe, _, _) => visit(tpe)
+    }
+
+    visit(tpe0)
+  }
+
   /**
     * Returns the free vars and their inferred kinds in the given type `tpe0`, with `varKind` assigned if `tpe0` is a type var.
     */
@@ -1566,16 +1598,15 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def getImplicitTypeParamsFromFormalParams(fparams: List[WeededAst.FormalParam], tpe: WeededAst.Type, loc: SourceLocation, tenv: Map[String, UnkindedType.Var])(implicit flix: Flix): Validation[NamedAst.TypeParams, NameError] = {
     // Compute the type variables that occur in the formal parameters.
     val fparamTvars = fparams.flatMap {
-      case WeededAst.FormalParam(_, _, Some(tpe), _) => freeVars(tpe)
+      case WeededAst.FormalParam(_, _, Some(tpe), _) => freeVarsInTenv(tpe, tenv)
       case WeededAst.FormalParam(_, _, None, _) => Nil
     }
 
-    val returnTvars = freeVars(tpe)
+    val returnTvars = freeVarsInTenv(tpe, tenv)
 
     val tparams = (fparamTvars ++ returnTvars).distinct.map {
       tvar => NamedAst.TypeParam.Unkinded(tvar, UnkindedType.freshVar(Some(tvar.name)), tvar.loc)
     }
-    // MATT need to use tenv b/c of class sym
     // MATT maybe make a helper for ident -> tparam
 
     NamedAst.TypeParams.Unkinded(tparams).toSuccess // MATT no chance of NameError here
