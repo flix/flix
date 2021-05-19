@@ -178,9 +178,9 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
 
   // MATT docs
   // MATT include ascriptions?
-  private def visitExp(exp00: ResolvedAst.Expression, ascriptions: Map[Int, Kind], root: ResolvedAst.Root): Validation[KindedAst.Expression, KindError] = {
+  private def visitExp(exp000: ResolvedAst.Expression, ascriptions: Map[Int, Kind], root: ResolvedAst.Root): Validation[KindedAst.Expression, KindError] = {
 
-    def visit(exp0: ResolvedAst.Expression): Validation[KindedAst.Expression, KindError] = exp0 match {
+    def visit(exp00: ResolvedAst.Expression): Validation[KindedAst.Expression, KindError] = exp00 match {
       case ResolvedAst.Expression.Wild(tpe, loc) => KindedAst.Expression.Wild(tpe.ascribedWith(Kind.Star), loc).toSuccess
       case ResolvedAst.Expression.Var(sym, tpe0, loc) => ascribeType(tpe0, KindMatch.Star, ascriptions, root).map {
         tpe => KindedAst.Expression.Var(sym, tpe, loc)
@@ -361,7 +361,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         val expectedEffVal = traverse(expectedEff0)(ascribeType(_, KindMatch.Bool, ascriptions, root))
         val tpe = tpe0.ascribedWith(Kind.Star)
         mapN(expVal, expectedTypeVal, expectedEffVal) {
-          case (exp, expectedType, expectedEff) => KindedAst.Expression.Cast(exp, expectedType.headOption, expectedEff.headOption, tpe, loc)
+          case (exp, expectedType, expectedEff) => KindedAst.Expression.Ascribe(exp, expectedType.headOption, expectedEff.headOption, tpe, loc)
         }
       case ResolvedAst.Expression.Cast(exp0, declaredType0, declaredEff0, tpe0, loc) =>
         val expVal = visit(exp0)
@@ -371,8 +371,17 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         mapN(expVal, declaredTypeVal, declaredEffVal) {
           case (exp, declaredType, declaredEff) => KindedAst.Expression.Cast(exp, declaredType.headOption, declaredEff.headOption, tpe, loc)
         }
-      case ResolvedAst.Expression.TryCatch(exp, rules, loc) => ???
-      case ResolvedAst.Expression.InvokeConstructor(constructor, args, loc) => ???
+      case ResolvedAst.Expression.TryCatch(exp0, rules0, loc) =>
+        val expVal = visit(exp0)
+        val rulesVal = traverse(rules0)(visitCatchRule(_, ascriptions, root))
+        mapN(expVal, rulesVal) {
+          case (exp, rules) => KindedAst.Expression.TryCatch(exp, rules, loc)
+        }
+      case ResolvedAst.Expression.InvokeConstructor(constructor, args0, loc) =>
+        val argsVal = traverse(args0)(visit)
+        mapN(argsVal) {
+          args => KindedAst.Expression.InvokeConstructor(constructor, args, loc)
+        }
       case ResolvedAst.Expression.InvokeMethod(method, exp0, args0, loc) =>
         val expVal = visit(exp0)
         val argsVal = traverse(args0)(visit)
@@ -384,15 +393,54 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         mapN(argsVal) {
           args => KindedAst.Expression.InvokeStaticMethod(method, args, loc)
         }
-      case ResolvedAst.Expression.GetField(field, exp, loc) => ???
-      case ResolvedAst.Expression.PutField(field, exp1, exp2, loc) => ???
+      case ResolvedAst.Expression.GetField(field, exp0, loc) =>
+        val expVal = visit(exp0)
+        mapN(expVal) {
+          exp => KindedAst.Expression.GetField(field, exp, loc)
+        }
+      case ResolvedAst.Expression.PutField(field, exp10, exp20, loc) =>
+        val exp1Val = visit(exp10)
+        val exp2Val = visit(exp20)
+        mapN(exp1Val, exp2Val) {
+          case (exp1, exp2) => KindedAst.Expression.PutField(field, exp1, exp2, loc)
+        }
       case ResolvedAst.Expression.GetStaticField(field, loc) => KindedAst.Expression.GetStaticField(field, loc).toSuccess
-      case ResolvedAst.Expression.PutStaticField(field, exp, loc) => ???
-      case ResolvedAst.Expression.NewChannel(exp, tpe, loc) => ???
-      case ResolvedAst.Expression.GetChannel(exp, tpe, loc) => ???
-      case ResolvedAst.Expression.PutChannel(exp1, exp2, tpe, loc) => ???
-      case ResolvedAst.Expression.SelectChannel(rules, default, tpe, loc) => ???
-      case ResolvedAst.Expression.Spawn(exp, loc) => ???
+      case ResolvedAst.Expression.PutStaticField(field, exp0, loc) =>
+        val expVal = visit(exp0)
+        mapN(expVal) {
+          exp => KindedAst.Expression.PutStaticField(field, exp, loc)
+        }
+      case ResolvedAst.Expression.NewChannel(exp0, tpe0, loc) =>
+        val expVal = visit(exp0)
+        val tpeVal = ascribeType(tpe0, KindMatch.Star, ascriptions, root) // MATT can fail because type and not tvar
+        mapN(expVal, tpeVal) {
+          case (exp, tpe) => KindedAst.Expression.NewChannel(exp, tpe, loc)
+        }
+      case ResolvedAst.Expression.GetChannel(exp0, tpe0, loc) =>
+        val expVal = visit(exp0)
+        val tpe = tpe0.ascribedWith(Kind.Star)
+        mapN(expVal) {
+          exp => KindedAst.Expression.GetChannel(exp, tpe, loc)
+        }
+      case ResolvedAst.Expression.PutChannel(exp10, exp20, tpe0, loc) =>
+        val exp1Val = visit(exp10)
+        val exp2Val = visit(exp20)
+        val tpe = tpe0.ascribedWith(Kind.Star)
+        mapN(exp1Val, exp2Val) {
+          case (exp1, exp2) => KindedAst.Expression.PutChannel(exp1, exp2, tpe, loc)
+        }
+      case ResolvedAst.Expression.SelectChannel(rules0, default0, tpe0, loc) =>
+        val rulesVal = traverse(rules0)(visitSelectChannelRule(_, ascriptions, root))
+        val defaultVal = traverse(default0)(visit)
+        val tpe = tpe0.ascribedWith(Kind.Star)
+        mapN(rulesVal, defaultVal) {
+          case (rules, default) => KindedAst.Expression.SelectChannel(rules, default.headOption, tpe, loc)
+        }
+      case ResolvedAst.Expression.Spawn(exp0, loc) =>
+        val expVal = visit(exp0)
+        mapN(expVal) {
+          exp => KindedAst.Expression.Spawn(exp, loc)
+        }
       case ResolvedAst.Expression.Lazy(exp0, loc) =>
         val expVal = visit(exp0)
         mapN(expVal) {
@@ -412,7 +460,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       case ResolvedAst.Expression.FixpointProjectOut(pred, exp1, exp2, tpe, loc) => ???
     }
 
-    visit(exp00)
+    visit(exp000)
   }
 
   // MATT docs
@@ -433,6 +481,25 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       val expVal = visitExp(exp0, ascriptions, root)
       mapN(expVal) {
         exp => KindedAst.ChoiceRule(pats, exp)
+      }
+  }
+
+  // MATT docs
+  private def visitCatchRule(rule: ResolvedAst.CatchRule, ascriptions: Map[Int, Kind], root: ResolvedAst.Root): Validation[KindedAst.CatchRule, KindError] = rule match {
+    case ResolvedAst.CatchRule(sym, clazz, exp0) =>
+      val expVal = visitExp(exp0, ascriptions, root)
+      mapN(expVal) {
+        exp => KindedAst.CatchRule(sym, clazz, exp)
+      }
+  }
+
+  // MATT docs
+  private def visitSelectChannelRule(rule: ResolvedAst.SelectChannelRule, ascriptions: Map[Int, Kind], root: ResolvedAst.Root): Validation[KindedAst.SelectChannelRule, KindError] = rule match {
+    case ResolvedAst.SelectChannelRule(sym, chan0, exp0) =>
+      val chanVal = visitExp(chan0, ascriptions, root)
+      val expVal = visitExp(exp0, ascriptions, root)
+      mapN(chanVal, expVal) {
+        case (chan, exp) => KindedAst.SelectChannelRule(sym, chan, exp)
       }
   }
 
@@ -864,7 +931,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     }
 
     def toKind(k: KindMatch): Kind = k match {
-      case Wild => throw InternalCompilerException("impossible maybe?") // MATT
+      case Wild => Kind.Var(-1) // MATT
       case Star => Kind.Star
       case Bool => Kind.Bool
       case Record => Kind.Record
