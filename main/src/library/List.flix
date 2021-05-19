@@ -1096,11 +1096,27 @@ namespace List {
         }
 
     ///
+    /// Sort list `xs` using the `Order` instance on the elements.
+    ///
+    /// The sort implementation is a mergesort.
+    ///
+    pub def sort(xs: List[a]): List[a] with Order[a] = sortWith(Order.compare, xs)
+
+    ///
+    /// Sort list `xs` by a property of the elements specified by the funtion `f`.
+    /// Uses the `Order` instance on these properties.
+    ///
+    /// The sort implementation is a mergesort.
+    ///
+    pub def sortBy(f: a -> b, xs: List[a]): List[a] with Order[b] = sortWith(Order.compare `on` f, xs)
+
+    ///
     /// Sort list `xs` with the comparing function `cmp`.
     ///
     /// The sort implementation is a mergesort.
     /// Acknowledgement: derived from Thomas Nordin's `sortBy` in the Haskell base libraries.
     ///
+    // TODO Revise time and space annotations. Both only hold when cmp is O(1). Space is probably n*log(n).
     @Time(length(xs) * Int32.log2(length(xs))) @Space(length(xs))
     pub def sortWith(cmp: (a,a) -> Comparison, xs: List[a]): List[a] =
         sortGenerateSequences(cmp, xs, zss -> zss) |> sortMergeAll(cmp)
