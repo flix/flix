@@ -18,12 +18,11 @@ package ca.uwaterloo.flix.tools
 import java.net.InetSocketAddress
 import java.text.SimpleDateFormat
 import java.util.Date
-
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.vt.TerminalContext
-import ca.uwaterloo.flix.util.{InternalCompilerException, InternalRuntimeException, Options, Result, SafeExec, Timer}
+import ca.uwaterloo.flix.util.{Inclusion, InternalCompilerException, InternalRuntimeException, Options, Result, SafeExec, Timer}
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
@@ -126,7 +125,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
 
     // Construct the options object.
     val opts = Options.Default.copy(
-      core = xcore,
+      inclusion = if (xcore) Inclusion.Core else Inclusion.Full,
       writeClassFiles = false,
       xallowredundancies = xallowredundancies,
       xnostratifier = xnostratifier,

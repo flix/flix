@@ -24,7 +24,7 @@ object Options {
     * Default options.
     */
   val Default: Options = Options(
-    core = false,
+    inclusion = Inclusion.Core,
     debug = false,
     documentor = false,
     invariants = false,
@@ -51,7 +51,7 @@ object Options {
   /**
     * Default test options.
     */
-  val DefaultTest: Options = Default.copy(core = false, test = true, verbosity = Verbosity.Silent)
+  val DefaultTest: Options = Default.copy(inclusion = Inclusion.Core, test = true, verbosity = Verbosity.Silent)
 
   /**
     * Default test options with the standard library.
@@ -61,13 +61,18 @@ object Options {
   /**
     * Default test options without the standard library.
     */
-  val TestWithoutLibrary: Options = DefaultTest.copy(core = true)
+  val TestWithoutLibrary: Options = DefaultTest.copy(inclusion = Inclusion.Core)
+
+  /**
+    * Default test options without any library.
+    */
+  val TestWithoutCore: Options = DefaultTest.copy(inclusion = Inclusion.SubCore)
 }
 
 /**
   * General Flix options.
   *
-  * @param core               disables loading of all non-essential namespaces.
+  * @param inclusion          selects the level of libraries to include.
   * @param debug              enables the emission of debugging information.
   * @param documentor         enables generation of flixdoc.
   * @param invariants         enables checking of compiler invariants.
@@ -89,7 +94,7 @@ object Options {
   * @param xnostratifier      disables computation of stratification.
   * @param xstatistics        prints compiler statistics.
   */
-case class Options(core: Boolean,
+case class Options(inclusion: Inclusion,
                    debug: Boolean,
                    documentor: Boolean,
                    invariants: Boolean,
@@ -204,5 +209,24 @@ object Verbosity {
     * Output nothing. Useful for when Flix is used as a library.
     */
   case object Silent extends Verbosity
+}
 
+sealed trait Inclusion
+
+object Inclusion {
+
+  /**
+    * Do not include any libraries, even those essential for basic functionality.
+    */
+  case object SubCore extends Inclusion
+
+  /**
+    * Only include essential libraries.
+    */
+  case object Core extends Inclusion
+
+  /**
+    * Include the full standard library.
+    */
+  case object Full extends Inclusion
 }

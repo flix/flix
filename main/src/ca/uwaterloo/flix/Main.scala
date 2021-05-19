@@ -85,7 +85,7 @@ object Main {
 
     // construct flix options.
     val options = Options.Default.copy(
-      core = cmdOpts.xcore,
+      inclusion = if (cmdOpts.xcore) Inclusion.Core else Inclusion.Full,
       debug = cmdOpts.xdebug,
       documentor = cmdOpts.documentor,
       json = cmdOpts.json,

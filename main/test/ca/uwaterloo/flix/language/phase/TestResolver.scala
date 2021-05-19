@@ -23,7 +23,7 @@ import org.scalatest.FunSuite
 
 class TestResolver extends FunSuite with TestUtils {
 
-  val DefaultOptions: Options = Options.DefaultTest.copy(core = true)
+  val DefaultOptions: Options = Options.TestWithoutLibrary
 
   test("AmbiguousTag.01") {
     val input =
