@@ -24,7 +24,7 @@ object Options {
     * Default options.
     */
   val Default: Options = Options(
-    inclusion = Inclusion.Core,
+    inclusion = Inclusion.Full,
     debug = false,
     documentor = false,
     invariants = false,
@@ -51,7 +51,7 @@ object Options {
   /**
     * Default test options.
     */
-  val DefaultTest: Options = Default.copy(inclusion = Inclusion.Core, test = true, verbosity = Verbosity.Silent)
+  val DefaultTest: Options = Default.copy(inclusion = Inclusion.Full, test = true, verbosity = Verbosity.Silent)
 
   /**
     * Default test options with the standard library.
