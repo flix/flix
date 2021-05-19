@@ -1590,7 +1590,7 @@ namespace Array {
     /// The sort implementation is quicksort.
     ///
     @Time(length(a)) @Space(length(a))
-    pub def sortWith(cmp: (a,a) -> Int32, a: Array[a]): Array[a] & Impure =
+    pub def sortWith(cmp: (a,a) -> Comparison, a: Array[a]): Array[a] & Impure =
         let len = length(a);
         let b = slice(a, 0, len);
         sortWith!(cmp, b);
@@ -1602,7 +1602,7 @@ namespace Array {
     /// The sort implementation is quicksort.
     ///
     @Time(length(a) * length(a)) @Space(length(a))
-    pub def sortWith!(cmp: (a,a) -> Int32, a: mut Array[a]): Unit & Impure =
+    pub def sortWith!(cmp: (a,a) -> Comparison, a: mut Array[a]): Unit & Impure =
         let len = length(a);
         if (len == 0)
             ()
@@ -1612,7 +1612,7 @@ namespace Array {
     ///
     /// Helper function for `sortWith!`.
     ///
-    def sortWithHelper!(cmp: (a,a) -> Int32, a: mut Array[a], lo: Int32, hi: Int32): Unit & Impure =
+    def sortWithHelper!(cmp: (a,a) -> Comparison, a: mut Array[a], lo: Int32, hi: Int32): Unit & Impure =
         if (lo >= hi)
             ()
         else {
@@ -1636,15 +1636,15 @@ namespace Array {
     ///
     /// Partition step of the quicksort algorithm (helper for sorting).
     ///
-    def sortWithPartition(cmp: (a,a) -> Int32, a: Array[a], lo: Int32, hi: Int32): Int32 & Impure =
+    def sortWithPartition(cmp: (a,a) -> Comparison, a: Array[a], lo: Int32, hi: Int32): Int32 & Impure =
         let pivot = a[hi];
         let i = forWithAccum(lo, hi, lo, (j,ix) ->
-            if (cmp(a[j], pivot) >= 0)
-                ix
-            else {
+            if (cmp(a[j], pivot) == LessThan) {
                 swap!(a, ix, j);
                 ix+1
-            });
+            } else
+                ix
+            );
         swap!(a, i, hi);
         i
 
