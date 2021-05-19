@@ -434,5 +434,44 @@ namespace Nel {
         case Nel(h, l) => f(h); List.foreach(f, l)
     }
 
+    ///
+    /// Sort the non-empty list `xs` using the `Order` instance on the elements.
+    ///
+    /// The sort implementation is a mergesort.
+    ///
+    pub def sort(xs: Nel[a]): Nel[a] with Order[a] = match xs {
+        case Nel(_, Nil) => xs
+        case Nel(h, l) => match List.sort(h :: l) {
+            case y :: ys => Nel(y, ys)
+            case _       => unreachable!()
+        }
+    }
+
+    ///
+    /// Sort the non-empy list `xs` by a property of the elements specified by the funtion `f`.
+    /// Uses the `Order` instance on these properties.
+    ///
+    /// The sort implementation is a mergesort.
+    ///
+    pub def sortBy(f: a -> b, xs: Nel[a]): Nel[a] with Order[b] = match xs {
+        case Nel(_, Nil) => xs
+        case Nel(h, l) => match List.sortBy(f, h :: l) {
+            case y :: ys => Nel(y, ys)
+            case _       => unreachable!()
+        }
+    }
+
+    ///
+    /// Sort the non-empty list `xs` with the comparing function `cmp`.
+    ///
+    /// The sort implementation is a mergesort.
+    ///
+    pub def sortWith(cmp: (a,a) -> Comparison, xs: Nel[a]): Nel[a] = match xs {
+        case Nel(_, Nil) => xs
+        case Nel(h, l) => match List.sortWith(cmp, h :: l) {
+            case y :: ys => Nel(y, ys)
+            case _       => unreachable!()
+        }
+    }
 }
 
