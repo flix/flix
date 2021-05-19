@@ -353,8 +353,20 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         mapN(exp1Val, exp2Val) {
           case (exp1, exp2) => KindedAst.Expression.Assign(exp1, exp2, loc)
         }
-      case ResolvedAst.Expression.Existential(fparam, exp, loc) => ???
-      case ResolvedAst.Expression.Universal(fparam, exp, loc) => ???
+      case ResolvedAst.Expression.Existential(fparam0, exp0, loc) =>
+        // MATT need to add fparam to ascriptions?
+        val fParamVal = ascribeFparam(fparam0, ascriptions, root)
+        val expVal = visit(exp0)
+        mapN(fParamVal, expVal) {
+          case (fparam, exp) => KindedAst.Expression.Existential(fparam, exp, loc)
+        }
+      case ResolvedAst.Expression.Universal(fparam0, exp0, loc) =>
+        // MATT need to add fparam to ascriptions?
+        val fParamVal = ascribeFparam(fparam0, ascriptions, root)
+        val expVal = visit(exp0)
+        mapN(fParamVal, expVal) {
+          case (fparam, exp) => KindedAst.Expression.Universal(fparam, exp, loc)
+        }
       case ResolvedAst.Expression.Ascribe(exp0, expectedType0, expectedEff0, tpe0, loc) =>
         val expVal = visit(exp0)
         val expectedTypeVal = traverse(expectedType0)(ascribeType(_, KindMatch.Star, ascriptions, root))
