@@ -1585,6 +1585,19 @@ namespace Array {
         StringBuilder.toString(sb)
 
     ///
+    /// Sort array `a` using the `Order` instance on the elements.
+    ///
+    @Time(length(a)) @Space(length(a))
+    pub def sort(a: Array[a]): Array[a] & Impure with Order[a] = sortWith(Order.compare, a)
+
+    ///
+    /// Sort array `a` by a property of the elements specified by the funtion `f`.
+    /// Uses the `Order` instance on these properties.
+    ///
+    @Time(length(a)) @Space(length(a))
+    pub def sortBy(f: a -> b, a: Array[a]): Array[a] & Impure with Order[b] = sortWith(Order.compare `on` f, a)
+
+    ///
     /// Sort array `a` with the comparing function `cmp`, returning a sorted copy.
     ///
     /// The sort implementation is quicksort.
