@@ -1027,12 +1027,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         }
 
         def SelectManyLat: Rule1[ParsedAst.SelectFragment] = rule {
-          "(" ~ optWS ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ";" ~ Expression ~ optWS ~ ")" ~>
+          "(" ~ optWS ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ";" ~ optWS ~ Expression ~ optWS ~ ")" ~>
             ((es: Seq[ParsedAst.Expression], e: ParsedAst.Expression) => ParsedAst.SelectFragment.Latticenal(es, e))
         }
 
         rule {
-          WS ~ keyword("select") ~ WS ~ (SelectManyRel | SelectManyLat | SelectOne)
+          WS ~ keyword("select") ~ WS ~ (SelectManyLat | SelectManyRel | SelectOne)
         }
       }
 
