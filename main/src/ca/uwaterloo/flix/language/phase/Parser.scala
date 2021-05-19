@@ -1018,21 +1018,25 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       def SelectPart: Rule1[ParsedAst.SelectFragment] = {
         def SelectOne: Rule1[ParsedAst.SelectFragment] = rule {
-          Expression ~> ((e: ParsedAst.Expression) => ParsedAst.SelectFragment.Relational(Seq(e)))
+          Expression ~> ((e: ParsedAst.Expression) => ParsedAst.SelectFragment(Seq(e), None))
         }
 
-        def SelectManyRel: Rule1[ParsedAst.SelectFragment] = rule {
-          "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~>
-            ((es: Seq[ParsedAst.Expression]) => ParsedAst.SelectFragment.Relational(es))
-        }
+        def SelectMany: Rule1[ParsedAst.SelectFragment] = {
+          def TermList: Rule1[Seq[ParsedAst.Expression]] = rule {
+            zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS)
+          }
 
-        def SelectManyLat: Rule1[ParsedAst.SelectFragment] = rule {
-          "(" ~ optWS ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ";" ~ optWS ~ Expression ~ optWS ~ ")" ~>
-            ((es: Seq[ParsedAst.Expression], e: ParsedAst.Expression) => ParsedAst.SelectFragment.Latticenal(es, e))
+          def LatTerm: Rule1[Option[ParsedAst.Expression]] = rule {
+            optional(optWS ~ ";" ~ optWS ~ Expression)
+          }
+
+          rule {
+            "(" ~ optWS ~ TermList ~ LatTerm ~ optWS ~ ")" ~> ParsedAst.SelectFragment
+          }
         }
 
         rule {
-          WS ~ keyword("select") ~ WS ~ (SelectManyLat | SelectManyRel | SelectOne)
+          WS ~ keyword("select") ~ WS ~ (SelectMany | SelectOne)
         }
       }
 

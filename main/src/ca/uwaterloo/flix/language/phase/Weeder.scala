@@ -1404,8 +1404,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.FixpointQueryWithSelect(sp1, exps0, selects0, from0, whereExp0, sp2) =>
       val loc = mkSL(sp1, sp2)
       val selects1 = selects0 match {
-        case SelectFragment.Relational(exps) => exps
-        case SelectFragment.Latticenal(exps, exp) => exps.toList ::: exp :: Nil
+        case ParsedAst.SelectFragment(exps, None) => exps
+        case ParsedAst.SelectFragment(exps, Some(exp)) => exps.toList ::: exp :: Nil
       }
 
       mapN(traverse(exps0)(visitExp), traverse(selects1)(visitExp), traverse(from0)(visitPredicateBody), traverse(whereExp0)(visitExp)) {
@@ -1424,8 +1424,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
           // The head of the pseudo-rule.
           val den = selects0 match {
-            case SelectFragment.Relational(_) => Denotation.Relational
-            case SelectFragment.Latticenal(_, _) => Denotation.Latticenal
+            case ParsedAst.SelectFragment(_, None) => Denotation.Relational
+            case ParsedAst.SelectFragment(_, Some(_)) => Denotation.Latticenal
           }
           val head = WeededAst.Predicate.Head.Atom(pred, den, selects, loc)
 
