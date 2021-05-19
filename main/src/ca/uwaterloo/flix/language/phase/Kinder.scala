@@ -18,7 +18,8 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.ResolvedAst.{TypeParam, TypeParams}
+import ca.uwaterloo.flix.language.ast.ResolvedAst.Predicate.{Body, Head}
+import ca.uwaterloo.flix.language.ast.ResolvedAst.{ConstraintParam, TypeParam, TypeParams}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN, fold, mapN, sequenceT, traverse}
@@ -452,7 +453,12 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         mapN(expVal) {
           exp => KindedAst.Expression.Force(exp, tpe, loc)
         }
-      case ResolvedAst.Expression.FixpointConstraintSet(cs, tpe, loc) => ???
+      case ResolvedAst.Expression.FixpointConstraintSet(cs0, tpe0, loc) =>
+        val csVal = traverse(cs0)(visitConstraint(_, ascriptions, root))
+        val tpe = tpe0.ascribedWith(Kind.Schema)
+        mapN(csVal) {
+          cs => KindedAst.Expression.FixpointConstraintSet(cs, tpe, loc)
+        }
       case ResolvedAst.Expression.FixpointMerge(exp1, exp2, loc) => ???
       case ResolvedAst.Expression.FixpointSolve(exp, loc) => ???
       case ResolvedAst.Expression.FixpointFilter(pred, exp, tpe, loc) => ???
@@ -500,6 +506,46 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       val expVal = visitExp(exp0, ascriptions, root)
       mapN(chanVal, expVal) {
         case (chan, exp) => KindedAst.SelectChannelRule(sym, chan, exp)
+      }
+  }
+
+  private def visitConstraint(constraint: ResolvedAst.Constraint, ascriptions: Map[Int, Kind], root: ResolvedAst.Root): Validation[KindedAst.Constraint, KindError] = constraint match {
+    case ResolvedAst.Constraint(cparams0, head0, body0, loc) =>
+      // MATT probably need to add cparams to ascriptions
+      val cparams = cparams0.map(visitConstraintParam)
+      val headVal = visitPredicateHead(head0, ascriptions, root)
+      val bodyVal = traverse(body0)(visitPredicateBody(_, ascriptions, root))
+      mapN(headVal, bodyVal) {
+        case (head, body) => KindedAst.Constraint(cparams, head, body, loc)
+      }
+
+  }
+
+  // MATT docs
+  private def visitConstraintParam(cparam: ResolvedAst.ConstraintParam): KindedAst.ConstraintParam = cparam match {
+    case ResolvedAst.ConstraintParam.HeadParam(sym, tpe, loc) => KindedAst.ConstraintParam.HeadParam(sym, tpe.ascribedWith(Kind.Star), loc)
+    case ResolvedAst.ConstraintParam.RuleParam(sym, tpe, loc) => KindedAst.ConstraintParam.RuleParam(sym, tpe.ascribedWith(Kind.Star), loc)
+  }
+
+  // MATT docs
+  private def visitPredicateHead(head: ResolvedAst.Predicate.Head, ascriptions: Map[Int, Kind], root: ResolvedAst.Root) = head match {
+    case ResolvedAst.Predicate.Head.Atom(pred, den, terms0, tvar0, loc) =>
+      val termsVal = traverse(terms0)(visitExp(_, ascriptions, root))
+      val tvar = tvar0.ascribedWith(Kind.Schema) // MATT right?
+      mapN(termsVal) {
+        terms => KindedAst.Predicate.Head.Atom(pred, den, terms, tvar, loc)
+      }
+  }
+
+  private def visitPredicateBody(body: ResolvedAst.Predicate.Body, ascriptions: Map[Int, Kind], root: ResolvedAst.Root): Validation[KindedAst.Predicate.Body, KindError] = body match {
+    case ResolvedAst.Predicate.Body.Atom(pred, den, polarity, terms0, tvar0, loc) =>
+      val terms = terms0.map(visitPattern)
+      val tvar = tvar0.ascribedWith(Kind.Schema) // MATT right?
+      KindedAst.Predicate.Body.Atom(pred, den, polarity, terms, tvar, loc).toSuccess
+    case ResolvedAst.Predicate.Body.Guard(exp0, loc) =>
+      val expVal = visitExp(exp0, ascriptions, root)
+      mapN(expVal) {
+        exp => KindedAst.Predicate.Body.Guard(exp, loc)
       }
   }
 
