@@ -18,8 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.ResolvedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.ResolvedAst.{ConstraintParam, TypeParam, TypeParams}
+import ca.uwaterloo.flix.language.ast.ResolvedAst.{TypeParam, TypeParams}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN, fold, mapN, sequenceT, traverse}
@@ -459,11 +458,36 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         mapN(csVal) {
           cs => KindedAst.Expression.FixpointConstraintSet(cs, tpe, loc)
         }
-      case ResolvedAst.Expression.FixpointMerge(exp1, exp2, loc) => ???
-      case ResolvedAst.Expression.FixpointSolve(exp, loc) => ???
-      case ResolvedAst.Expression.FixpointFilter(pred, exp, tpe, loc) => ???
-      case ResolvedAst.Expression.FixpointProjectIn(exp, pred, tpe, loc) => ???
-      case ResolvedAst.Expression.FixpointProjectOut(pred, exp1, exp2, tpe, loc) => ???
+      case ResolvedAst.Expression.FixpointMerge(exp10, exp20, loc) =>
+        val exp1Val = visit(exp10)
+        val exp2Val = visit(exp20)
+        mapN(exp1Val, exp2Val) {
+          case (exp1, exp2) => KindedAst.Expression.FixpointMerge(exp1, exp2, loc)
+        }
+      case ResolvedAst.Expression.FixpointSolve(exp0, loc) =>
+        val expVal = visit(exp0)
+        mapN(expVal) {
+          exp => KindedAst.Expression.FixpointSolve(exp, loc)
+        }
+      case ResolvedAst.Expression.FixpointFilter(pred, exp0, tpe0, loc) =>
+        val expVal = visit(exp0)
+        val tpe = tpe0.ascribedWith(Kind.Schema) // MATT right?
+        mapN(expVal) {
+          exp => KindedAst.Expression.FixpointFilter(pred, exp, tpe, loc)
+        }
+      case ResolvedAst.Expression.FixpointProjectIn(exp0, pred, tpe0, loc) =>
+        val expVal = visit(exp0)
+        val tpe = tpe0.ascribedWith(Kind.Schema) // MATT right?
+        mapN(expVal) {
+          exp => KindedAst.Expression.FixpointProjectIn(exp, pred, tpe, loc)
+        }
+      case ResolvedAst.Expression.FixpointProjectOut(pred, exp10, exp20, tpe0, loc) =>
+        val exp1Val = visit(exp10)
+        val exp2Val = visit(exp20)
+        val tpe = tpe0.ascribedWith(Kind.Schema) // MATT right?
+        mapN(exp1Val, exp2Val) {
+          case (exp1, exp2) => KindedAst.Expression.FixpointProjectOut(pred, exp1, exp2, tpe, loc)
+        }
     }
 
     visit(exp000)
