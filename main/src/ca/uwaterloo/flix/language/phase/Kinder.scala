@@ -259,7 +259,13 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         mapN(expVal, rulesVal) {
           case (exp, rules) => KindedAst.Expression.Match(exp, rules, loc)
         }
-      case ResolvedAst.Expression.Choose(star, exps, rules, tpe, loc) => ???
+      case ResolvedAst.Expression.Choose(star, exps0, rules0, tpe0, loc) =>
+        val expsVal = traverse(exps0)(visit)
+        val rulesVal = traverse(rules0)(visitChoiceRule(_, ascriptions, root))
+        val tpe = tpe0.ascribedWith(Kind.Star)
+        mapN(expsVal, rulesVal) {
+          case (exps, rules) => KindedAst.Expression.Choose(star, exps, rules, tpe, loc)
+        }
       case ResolvedAst.Expression.Tag(sym, tag, exp0, tpe0, loc) =>
         val expVal = visit(exp0)
         val tpe = tpe0.ascribedWith(Kind.Star)
@@ -349,7 +355,14 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         }
       case ResolvedAst.Expression.Existential(fparam, exp, loc) => ???
       case ResolvedAst.Expression.Universal(fparam, exp, loc) => ???
-      case ResolvedAst.Expression.Ascribe(exp, expectedType, expectedEff, tpe, loc) => ???
+      case ResolvedAst.Expression.Ascribe(exp0, expectedType0, expectedEff0, tpe0, loc) =>
+        val expVal = visit(exp0)
+        val expectedTypeVal = traverse(expectedType0)(ascribeType(_, KindMatch.Star, ascriptions, root))
+        val expectedEffVal = traverse(expectedEff0)(ascribeType(_, KindMatch.Bool, ascriptions, root))
+        val tpe = tpe0.ascribedWith(Kind.Star)
+        mapN(expVal, expectedTypeVal, expectedEffVal) {
+          case (exp, expectedType, expectedEff) => KindedAst.Expression.Cast(exp, expectedType.headOption, expectedEff.headOption, tpe, loc)
+        }
       case ResolvedAst.Expression.Cast(exp0, declaredType0, declaredEff0, tpe0, loc) =>
         val expVal = visit(exp0)
         val declaredTypeVal = traverse(declaredType0)(ascribeType(_, KindMatch.Star, ascriptions, root))
@@ -411,7 +424,16 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       mapN(guardVal, expVal) {
         case (guard, exp) => KindedAst.MatchRule(pat, guard, exp)
       }
+  }
 
+  // MATT docs
+  private def visitChoiceRule(rule: ResolvedAst.ChoiceRule, ascriptions: Map[Int, Kind], root: ResolvedAst.Root): Validation[KindedAst.ChoiceRule, KindError] = rule match {
+    case ResolvedAst.ChoiceRule(pats0, exp0) =>
+      val pats = pats0.map(visitChoicePattern)
+      val expVal = visitExp(exp0, ascriptions, root)
+      mapN(expVal) {
+        exp => KindedAst.ChoiceRule(pats, exp)
+      }
   }
 
   // MATT docs
@@ -435,6 +457,13 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     case ResolvedAst.Pattern.Array(elms, tvar, loc) => KindedAst.Pattern.Array(elms.map(visitPattern), tvar.ascribedWith(Kind.Star), loc)
     case ResolvedAst.Pattern.ArrayTailSpread(elms, sym, tvar, loc) => KindedAst.Pattern.ArrayTailSpread(elms.map(visitPattern), sym, tvar.ascribedWith(Kind.Star), loc)
     case ResolvedAst.Pattern.ArrayHeadSpread(sym, elms, tvar, loc) => KindedAst.Pattern.ArrayHeadSpread(sym, elms.map(visitPattern), tvar.ascribedWith(Kind.Star), loc)
+  }
+
+  // MATT docs
+  private def visitChoicePattern(pat: ResolvedAst.ChoicePattern): KindedAst.ChoicePattern = pat match {
+    case ResolvedAst.ChoicePattern.Wild(loc) => KindedAst.ChoicePattern.Wild(loc)
+    case ResolvedAst.ChoicePattern.Absent(loc) => KindedAst.ChoicePattern.Absent(loc)
+    case ResolvedAst.ChoicePattern.Present(sym, tvar, loc) => KindedAst.ChoicePattern.Present(sym, tvar.ascribedWith(Kind.Star), loc)
   }
 
 
