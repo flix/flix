@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
+import ca.uwaterloo.flix.language.ast.ParsedAst.SelectFragment
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
@@ -1402,8 +1403,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Expression.FixpointQueryWithSelect(sp1, exps0, selects0, from0, whereExp0, sp2) =>
       val loc = mkSL(sp1, sp2)
+      val selects1 = selects0 match {
+        case SelectFragment.Relational(exps) => exps
+        case SelectFragment.Latticenal(exps, exp) => exps.toList ::: exp :: Nil
+      }
 
-      mapN(traverse(exps0)(visitExp), traverse(selects0)(visitExp), traverse(from0)(visitPredicateBody), traverse(whereExp0)(visitExp)) {
+      mapN(traverse(exps0)(visitExp), traverse(selects1)(visitExp), traverse(from0)(visitPredicateBody), traverse(whereExp0)(visitExp)) {
         case (exps, selects, from, where) =>
           //
           // Performs the following rewrite:
@@ -1418,7 +1423,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           val pred = Name.Pred("$Result", loc)
 
           // The head of the pseudo-rule.
-          val head = WeededAst.Predicate.Head.Atom(pred, Denotation.Relational, selects, loc)
+          val den = selects0 match {
+            case SelectFragment.Relational(_) => Denotation.Relational
+            case SelectFragment.Latticenal(_, _) => Denotation.Latticenal
+          }
+          val head = WeededAst.Predicate.Head.Atom(pred, den, selects, loc)
 
           // The body of the pseudo-rule.
           val body = where match {

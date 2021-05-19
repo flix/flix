@@ -1016,17 +1016,23 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS)
       }
 
-      def SelectPart: Rule1[Seq[ParsedAst.Expression]] = {
-        def SelectOne: Rule1[Seq[ParsedAst.Expression]] = rule {
-          Expression ~> ((e: ParsedAst.Expression) => Seq(e))
+      def SelectPart: Rule1[ParsedAst.SelectFragment] = {
+        def SelectOne: Rule1[ParsedAst.SelectFragment] = rule {
+          Expression ~> ((e: ParsedAst.Expression) => ParsedAst.SelectFragment.Relational(Seq(e)))
         }
 
-        def SelectMany: Rule1[Seq[ParsedAst.Expression]] = rule {
-          "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
+        def SelectManyRel: Rule1[ParsedAst.SelectFragment] = rule {
+          "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~>
+            ((es: Seq[ParsedAst.Expression]) => ParsedAst.SelectFragment.Relational(es))
+        }
+
+        def SelectManyLat: Rule1[ParsedAst.SelectFragment] = rule {
+          "(" ~ optWS ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ";" ~ Expression ~ optWS ~ ")" ~>
+            ((es: Seq[ParsedAst.Expression], e: ParsedAst.Expression) => ParsedAst.SelectFragment.Latticenal(es, e))
         }
 
         rule {
-          WS ~ keyword("select") ~ WS ~ (SelectMany | SelectOne)
+          WS ~ keyword("select") ~ WS ~ (SelectManyRel | SelectManyLat | SelectOne)
         }
       }
 
