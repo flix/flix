@@ -838,10 +838,27 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       case (Bool, Kind.Bool) => true
       case (Record, Kind.Record) => true
       case (Schema, Kind.Schema) => true
-      case (Arrow(k11, k12),  Kind.Arrow(k21, k22)) => matches(k11, k21) && matches(k12, k22)
+      case (Arrow(k11, k12),  Kind.Arrow(k21, k22)) => contramatches(k11, k21) && matches(k12, k22)
 
       case (Star, Kind.Record) => true
       case (Star, Kind.Schema) => true
+
+      case _ => false
+    }
+
+    // MATT docs
+    // for contravariance
+    // k1 >:: k2
+    def contramatches(k1: KindMatch, k2: Kind): Boolean = (k1, k2) match {
+      case (Wild, _) => true
+      case (Star, Kind.Star) => true
+      case (Bool, Kind.Bool) => true
+      case (Record, Kind.Record) => true
+      case (Schema, Kind.Schema) => true
+      case (Arrow(k11, k12),  Kind.Arrow(k21, k22)) => matches(k11, k21) && contramatches(k12, k22)
+
+      case (Record, Kind.Star) => true
+      case (Schema, Kind.Star) => true
 
       case _ => false
     }

@@ -59,7 +59,8 @@ sealed trait Kind {
     case (Kind.Record, Kind.Star) => true
     case (Kind.Schema, Kind.Star) => true
 
-    case (Kind.Arrow(k11, k12), Kind.Arrow(k21, k22)) => (k11 <:: k21) && (k12 <:: k22)
+    // arrow kinds: the left side is contravariant
+    case (Kind.Arrow(k11, k12), Kind.Arrow(k21, k22)) => (k21 <:: k11) && (k12 <:: k22)
     case _ => false
   }
 
