@@ -567,7 +567,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   private def visitPredicateHead(head: ResolvedAst.Predicate.Head, ascriptions: Map[Int, Kind], root: ResolvedAst.Root) = head match {
     case ResolvedAst.Predicate.Head.Atom(pred, den, terms0, tvar0, loc) =>
       val termsVal = traverse(terms0)(visitExp(_, ascriptions, root))
-      val tvar = tvar0.ascribedWith(Kind.Schema) // MATT right?
+      val tvar = tvar0.ascribedWith(Kind.Star) // MATT right?
       mapN(termsVal) {
         terms => KindedAst.Predicate.Head.Atom(pred, den, terms, tvar, loc)
       }
@@ -576,7 +576,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   private def visitPredicateBody(body: ResolvedAst.Predicate.Body, ascriptions: Map[Int, Kind], root: ResolvedAst.Root): Validation[KindedAst.Predicate.Body, KindError] = body match {
     case ResolvedAst.Predicate.Body.Atom(pred, den, polarity, terms0, tvar0, loc) =>
       val terms = terms0.map(visitPattern)
-      val tvar = tvar0.ascribedWith(Kind.Schema) // MATT right?
+      val tvar = tvar0.ascribedWith(Kind.Star) // MATT right?
       KindedAst.Predicate.Body.Atom(pred, den, polarity, terms, tvar, loc).toSuccess
     case ResolvedAst.Predicate.Body.Guard(exp0, loc) =>
       val expVal = visitExp(exp0, ascriptions, root)
