@@ -1016,13 +1016,23 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS)
       }
 
-      def SelectPart: Rule1[Seq[ParsedAst.Expression]] = {
-        def SelectOne: Rule1[Seq[ParsedAst.Expression]] = rule {
-          Expression ~> ((e: ParsedAst.Expression) => Seq(e))
+      def SelectPart: Rule1[ParsedAst.SelectFragment] = {
+        def SelectOne: Rule1[ParsedAst.SelectFragment] = rule {
+          Expression ~> ((e: ParsedAst.Expression) => ParsedAst.SelectFragment(Seq(e), None))
         }
 
-        def SelectMany: Rule1[Seq[ParsedAst.Expression]] = rule {
-          "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
+        def SelectMany: Rule1[ParsedAst.SelectFragment] = {
+          def TermList: Rule1[Seq[ParsedAst.Expression]] = rule {
+            zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS)
+          }
+
+          def LatTerm: Rule1[Option[ParsedAst.Expression]] = rule {
+            optional(optWS ~ ";" ~ optWS ~ Expression)
+          }
+
+          rule {
+            "(" ~ optWS ~ TermList ~ LatTerm ~ optWS ~ ")" ~> ParsedAst.SelectFragment
+          }
         }
 
         rule {
