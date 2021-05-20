@@ -1657,18 +1657,24 @@ namespace Array {
         if (len == 0)
             ()
         else
-            sortWithHelper!(cmp, a, 0, len-1)
+            sortWithin!(cmp, a, 0, len-1)
 
     ///
-    /// Helper function for `sortWith!`.
+    /// Sort array `a` between the indices `lo` and `hi` (both inclusive) so that elements in that range are ordered
+    /// from low to high according to the comparison function `cmp`. The array is mutated in-place where elements
+    /// outside the specified range are not changed.
     ///
-    def sortWithHelper!(cmp: (a,a) -> Comparison, a: mut Array[a], lo: Int32, hi: Int32): Unit & Impure =
+    /// The sort is not stable, i.e., after sorting equal elements may appear in a different order than before.
+    ///
+    /// The sort implementation is Quicksort.
+    ///
+    pub def sortWithin!(cmp: (a,a) -> Comparison, a: mut Array[a], lo: Int32, hi: Int32): Unit & Impure =
         if (lo >= hi)
             ()
         else {
-            let p = sortWithPartition(cmp, a, lo, hi);
-            sortWithHelper!(cmp, a, lo, p-1);
-            sortWithHelper!(cmp, a, p+1, hi)
+            let p = quicksortPartition(cmp, a, lo, hi);
+            sortWithin!(cmp, a, lo, p-1);
+            sortWithin!(cmp, a, p+1, hi)
         }
 
     ///
@@ -1684,9 +1690,9 @@ namespace Array {
         ()
 
     ///
-    /// Partition step of the Quicksort algorithm (helper for sorting).
+    /// Partition step of the Quicksort algorithm.
     ///
-    def sortWithPartition(cmp: (a,a) -> Comparison, a: Array[a], lo: Int32, hi: Int32): Int32 & Impure =
+    def quicksortPartition(cmp: (a,a) -> Comparison, a: Array[a], lo: Int32, hi: Int32): Int32 & Impure =
         let pivot = a[hi];
         let i = forWithAccum(lo, hi, lo, (j,ix) ->
             if (cmp(a[j], pivot) == LessThan) {
