@@ -1585,22 +1585,34 @@ namespace Array {
         StringBuilder.toString(sb)
 
     ///
-    /// Sort array `a` using the `Order` instance on the elements.
+    /// Returns a sorted copy of array `a`, where the elements are ordered from low to high according to
+    /// their `Order` instance.
+    ///
+    /// The sort is not stable, i.e., equal elements may appear in a different order than in the input `a`.
+    ///
+    /// The sort implementation is Quicksort.
     ///
     @Time(length(a)) @Space(length(a))
     pub def sort(a: Array[a]): Array[a] & Impure with Order[a] = sortWith(Order.compare, a)
 
     ///
-    /// Sort array `a` by a property of the elements specified by the funtion `f`.
-    /// Uses the `Order` instance on these properties.
+    /// Returns a sorted copy of array `a`, where the elements are ordered from low to high according to
+    /// the `Order` instance for the values obtained by applying `f` to each element.
+    ///
+    /// The sort is not stable, i.e., equal elements may appear in a different order than in the input `a`.
+    ///
+    /// The sort implementation is Quicksort.
     ///
     @Time(length(a)) @Space(length(a))
     pub def sortBy(f: a -> b, a: Array[a]): Array[a] & Impure with Order[b] = sortWith(Order.compare `on` f, a)
 
     ///
-    /// Sort array `a` with the comparing function `cmp`, returning a sorted copy.
+    /// Returns a sorted copy of array `a`, where the elements are ordered from low to high according to
+    /// the comparison function `cmp`.
     ///
-    /// The sort implementation is quicksort.
+    /// The sort is not stable, i.e., equal elements may appear in a different order than in the input `a`.
+    ///
+    /// The sort implementation is Quicksort.
     ///
     @Time(length(a)) @Space(length(a))
     pub def sortWith(cmp: (a,a) -> Comparison, a: Array[a]): Array[a] & Impure =
@@ -1610,9 +1622,34 @@ namespace Array {
         b
 
     ///
-    /// Sort array `a` with the comparing function `cmp`. Array `a` is mutated in place.
+    /// Sort array `a` so that elements are ordered from low to high according to their `Order` instance.
+    /// The array is mutated in-place.
     ///
-    /// The sort implementation is quicksort.
+    /// The sort is not stable, i.e., after sorting equal elements may appear in a different order than before.
+    ///
+    /// The sort implementation is Quicksort.
+    ///
+    @Time(length(a)) @Space(length(a))
+    pub def sort!(a: mut Array[a]): Unit & Impure with Order[a] = sortWith!(Order.compare, a)
+
+    ///
+    /// Sort array `a` so that elements are ordered from low to high according to the `Order` instance for
+    /// the values obtained by applying `f` to each element. The array is mutated in-place.
+    ///
+    /// The sort is not stable, i.e., after sorting equal elements may appear in a different order than before.
+    ///
+    /// The sort implementation is Quicksort.
+    ///
+    @Time(length(a)) @Space(length(a))
+    pub def sortBy!(f: a -> b, a: mut Array[a]): Unit & Impure with Order[b] = sortWith!(Order.compare `on` f, a)
+
+    ///
+    /// Sort array `a` so that elements are ordered from low to high according to the comparison function `cmp`.
+    /// The array is mutated in-place.
+    ///
+    /// The sort is not stable, i.e., after sorting equal elements may appear in a different order than before.
+    ///
+    /// The sort implementation is Quicksort.
     ///
     @Time(length(a) * length(a)) @Space(length(a))
     pub def sortWith!(cmp: (a,a) -> Comparison, a: mut Array[a]): Unit & Impure =
@@ -1647,7 +1684,7 @@ namespace Array {
         ()
 
     ///
-    /// Partition step of the quicksort algorithm (helper for sorting).
+    /// Partition step of the Quicksort algorithm (helper for sorting).
     ///
     def sortWithPartition(cmp: (a,a) -> Comparison, a: Array[a], lo: Int32, hi: Int32): Int32 & Impure =
         let pivot = a[hi];
