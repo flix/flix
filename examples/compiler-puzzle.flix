@@ -1,14 +1,15 @@
-/// We can use first-class Datalog constraints to solve the following
-/// complex reachability problem: Given a collection of compilers and
-/// interpreters, what source languages can be compiled to what targets?
+/// We can use Datalog constraints to solve the following problem:
+/// Given a collection of compilers and interpreters, what source
+/// languages can be compiled to what target languages?
 def main(_args: Array[String]): Int32 & Impure =
-    let p = #{
-    /// We have the following interpreters and compilers:
-    Interpreter("x86").
-    Compiler("Scala", "x86", "MiniScala").
-    Compiler("MiniScala", "C++", "C++").
-    Compiler("C++", "x86", "x86").
-
+    let facts = #{
+        /// We have the following interpreters and compilers:
+        Interpreter("x86").
+        Compiler("Scala", "x86", "MiniScala").
+        Compiler("MiniScala", "C++", "C++").
+        Compiler("C++", "x86", "x86").
+    };
+    let rules = #{
     // Bootstrapping Compilation:
     // We have a compiler from src1 -> dst1 written in lang1.
     // We have a compiler that can compile lang1 to dst2.
@@ -27,5 +28,6 @@ def main(_args: Array[String]): Int32 & Impure =
         Compiler(intermediate, dst, lang),
         Interpreter(lang).
     };
-    (solve p) |> Fixpoint.unsafePrint as & Impure;
+    query facts, rules
+        select (src, dst) from Compiler(src, _, dst) |> println;
     0 // exit code
