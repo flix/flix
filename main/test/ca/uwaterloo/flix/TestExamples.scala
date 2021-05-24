@@ -14,7 +14,6 @@ class TestExamples extends Suites(
   new FlixTest("polymorphic-record-update", "examples/polymorphic-record-update.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("polymorphic-record-extension-and-restriction", "examples/polymorphic-record-extension-and-restriction.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("function-composition-pipelines-and-currying", "examples/function-composition-pipelines-and-currying.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
-  new FlixTest("uniform-function-call-syntax", "examples/uniform-function-call-syntax.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("pure-and-impure-functions", "examples/pure-and-impure-functions.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("effect-polymorphic-functions", "examples/effect-polymorphic-functions.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("opaque-types", "examples/opaque-types.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
