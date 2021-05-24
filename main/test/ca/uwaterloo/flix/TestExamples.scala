@@ -20,7 +20,6 @@ class TestExamples extends Suites(
   new FlixTest("opaque-types", "examples/opaque-types.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("type-aliases", "examples/type-aliases.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("reading-and-writing-a-text-file", "examples/reading-and-writing-a-text-file.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
-  new FlixTest("type-safe-builders-with-ufcs-and-records", "examples/type-safe-builders-with-ufcs-and-records.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("mutual-recursion-with-full-tail-call-elimination", "examples/mutual-recursion-with-full-tail-call-elimination.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("sending-and-receiving-on-channels", "examples/sending-and-receiving-on-channels.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("using-channels-and-select", "examples/using-channels-and-select.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
