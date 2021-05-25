@@ -1,6 +1,8 @@
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.Kind
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation}
+import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.ToOk
 
@@ -35,5 +37,19 @@ object KindUnification {
 
     case _ => Result.Err(KindUnificationError.MismatchedKinds(k1, k2))
 
+  }
+
+  def unifyKindM(k1: Kind, k2: Kind, loc: SourceLocation)(implicit flix: Flix): KindInferMonad[Kind] = {
+    KindInferMonad((s: KindSubstitution) => {
+      val kind1 = s(k1)
+      val kind2 = s(k2)
+      unify(kind1, kind2) match {
+        case Result.Ok(s1) =>
+          val subst = s1 @@ s
+          Result.Ok(subst, subst(k1))
+        case Result.Err(KindUnificationError.MismatchedKinds(k1, k2)) =>
+          Result.Err(KindError.MismatchedKinds(k1, k2, loc))
+      }
+    })
   }
 }

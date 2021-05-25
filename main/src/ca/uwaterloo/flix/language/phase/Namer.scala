@@ -439,16 +439,17 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Returns a fresh type environment constructed from the given identifiers `idents`.
     */
-  private def typeEnvFromFreeVars(idents: List[Name.Ident])(implicit flix: Flix): Map[String, Type.Var] =
-    idents.foldLeft(Map.empty[String, Type.Var]) {
-      case (macc, ident) => macc.get(ident.name) match {
-        case None =>
-          // We use a kind variable since we do not know the kind of the type variable.
-          val tvar = Type.freshVar(Kind.freshVar(), text = Some(ident.name))
-          macc + (ident.name -> tvar)
-        case Some(tvar) => macc
-      }
-    }
+//  private def typeEnvFromFreeVars(idents: List[Name.Ident])(implicit flix: Flix): Map[String, Type.Var] =
+//    idents.foldLeft(Map.empty[String, Type.Var]) {
+//      case (macc, ident) => macc.get(ident.name) match {
+//        case None =>
+//          // We use a kind variable since we do not know the kind of the type variable.
+//          val tvar = Type.freshVar(Kind.freshVar(), text = Some(ident.name))
+//          macc + (ident.name -> tvar)
+//        case Some(tvar) => macc
+//      }
+//    }
+  // MATT unused
 
   /**
     * Performs naming on the given expression `exp0` under the given environments `env0`, `uenv0`, and `tenv0`.
@@ -1379,46 +1380,47 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     visit(tpe0)
   }
 
-  /**
-    * Returns the free vars and their inferred kinds in the given type `tpe0`, with `varKind` assigned if `tpe0` is a type var.
-    */
-  private def freeVarsWithKind(tpe0: WeededAst.Type, tenv: Map[String, Type.Var])(implicit flix: Flix): List[(Name.Ident, Kind)] = {
-    def visit(tpe0: WeededAst.Type, varKind: => Kind): List[(Name.Ident, Kind)] = tpe0 match {
-      case WeededAst.Type.Var(ident, loc) =>
-        if (tenv.contains(ident.name))
-          Nil
-        else
-          List(ident -> varKind)
-      case WeededAst.Type.Ambiguous(qname, loc) => Nil
-      case WeededAst.Type.Unit(loc) => Nil
-      case WeededAst.Type.Tuple(elms, loc) => elms.flatMap(visit(_, Kind.Star))
-      case WeededAst.Type.RecordEmpty(loc) => Nil
-      case WeededAst.Type.RecordExtend(l, t, r, loc) => visit(t, Kind.Star) ::: visit(r, Kind.Record)
-      case WeededAst.Type.RecordGeneric(t, loc) => visit(t, Kind.Record)
-      case WeededAst.Type.SchemaEmpty(loc) => Nil
-      case WeededAst.Type.SchemaExtendByTypes(_, _, ts, r, loc) => ts.flatMap(visit(_, Kind.Star)) ::: visit(r, Kind.Schema)
-      case WeededAst.Type.SchemaExtendByAlias(_, ts, r, _) => ts.flatMap(visit(_, Kind.Star)) ::: visit(r, Kind.Schema)
-      case WeededAst.Type.SchemaGeneric(t, loc) => visit(t, Kind.Schema)
-      case WeededAst.Type.Relation(ts, loc) => ts.flatMap(visit(_, Kind.Star))
-      case WeededAst.Type.Lattice(ts, loc) => ts.flatMap(visit(_, Kind.Star))
-      case WeededAst.Type.Native(fqm, loc) => Nil
-      case WeededAst.Type.Arrow(tparams, eff, tresult, loc) => tparams.flatMap(visit(_, Kind.Star)) ::: visit(eff, Kind.Bool) ::: visit(tresult, Kind.Star)
-      case WeededAst.Type.Apply(tpe1, tpe2, loc) => visit(tpe1, Kind.freshVar()) ++ visit(tpe2, Kind.freshVar())
-      case WeededAst.Type.True(loc) => Nil
-      case WeededAst.Type.False(loc) => Nil
-      case WeededAst.Type.Not(tpe, loc) => visit(tpe, Kind.Bool)
-      case WeededAst.Type.And(tpe1, tpe2, loc) => visit(tpe1, Kind.Bool) ++ visit(tpe2, Kind.Bool)
-      case WeededAst.Type.Or(tpe1, tpe2, loc) => visit(tpe1, Kind.Bool) ++ visit(tpe2, Kind.Bool)
-      case WeededAst.Type.Ascribe(tpe, kind, loc) =>
-        // Match on `tpe` to determine if it is a variable.
-        tpe match {
-          case WeededAst.Type.Var(ident, _) => List(ident -> kind)
-          case _ => freeVarsWithKind(tpe, tenv)
-        }
-    }
-
-    visit(tpe0, Kind.Star)
-  }
+  // MATT unused
+//  /**
+//    * Returns the free vars and their inferred kinds in the given type `tpe0`, with `varKind` assigned if `tpe0` is a type var.
+//    */
+//  private def freeVarsWithKind(tpe0: WeededAst.Type, tenv: Map[String, Type.Var])(implicit flix: Flix): List[(Name.Ident, Kind)] = {
+//    def visit(tpe0: WeededAst.Type, varKind: => Kind): List[(Name.Ident, Kind)] = tpe0 match {
+//      case WeededAst.Type.Var(ident, loc) =>
+//        if (tenv.contains(ident.name))
+//          Nil
+//        else
+//          List(ident -> varKind)
+//      case WeededAst.Type.Ambiguous(qname, loc) => Nil
+//      case WeededAst.Type.Unit(loc) => Nil
+//      case WeededAst.Type.Tuple(elms, loc) => elms.flatMap(visit(_, Kind.Star))
+//      case WeededAst.Type.RecordEmpty(loc) => Nil
+//      case WeededAst.Type.RecordExtend(l, t, r, loc) => visit(t, Kind.Star) ::: visit(r, Kind.Record)
+//      case WeededAst.Type.RecordGeneric(t, loc) => visit(t, Kind.Record)
+//      case WeededAst.Type.SchemaEmpty(loc) => Nil
+//      case WeededAst.Type.SchemaExtendByTypes(_, _, ts, r, loc) => ts.flatMap(visit(_, Kind.Star)) ::: visit(r, Kind.Schema)
+//      case WeededAst.Type.SchemaExtendByAlias(_, ts, r, _) => ts.flatMap(visit(_, Kind.Star)) ::: visit(r, Kind.Schema)
+//      case WeededAst.Type.SchemaGeneric(t, loc) => visit(t, Kind.Schema)
+//      case WeededAst.Type.Relation(ts, loc) => ts.flatMap(visit(_, Kind.Star))
+//      case WeededAst.Type.Lattice(ts, loc) => ts.flatMap(visit(_, Kind.Star))
+//      case WeededAst.Type.Native(fqm, loc) => Nil
+//      case WeededAst.Type.Arrow(tparams, eff, tresult, loc) => tparams.flatMap(visit(_, Kind.Star)) ::: visit(eff, Kind.Bool) ::: visit(tresult, Kind.Star)
+//      case WeededAst.Type.Apply(tpe1, tpe2, loc) => visit(tpe1, Kind.freshVar()) ++ visit(tpe2, Kind.freshVar())
+//      case WeededAst.Type.True(loc) => Nil
+//      case WeededAst.Type.False(loc) => Nil
+//      case WeededAst.Type.Not(tpe, loc) => visit(tpe, Kind.Bool)
+//      case WeededAst.Type.And(tpe1, tpe2, loc) => visit(tpe1, Kind.Bool) ++ visit(tpe2, Kind.Bool)
+//      case WeededAst.Type.Or(tpe1, tpe2, loc) => visit(tpe1, Kind.Bool) ++ visit(tpe2, Kind.Bool)
+//      case WeededAst.Type.Ascribe(tpe, kind, loc) =>
+//        // Match on `tpe` to determine if it is a variable.
+//        tpe match {
+//          case WeededAst.Type.Var(ident, _) => List(ident -> kind)
+//          case _ => freeVarsWithKind(tpe, tenv)
+//        }
+//    }
+//
+//    visit(tpe0, Kind.Star)
+//  }
 
   /**
     * Returns the free variables in the given constraint `c0`.

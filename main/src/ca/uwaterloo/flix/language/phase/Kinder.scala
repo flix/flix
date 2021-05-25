@@ -21,6 +21,8 @@ import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.ResolvedAst.{TypeParam, TypeParams}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.KindError
+import ca.uwaterloo.flix.language.phase.unification.KindInferMonad
+import ca.uwaterloo.flix.language.phase.unification.KindUnification.unifyKindM
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN, fold, mapN, sequenceT, traverse}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
@@ -865,6 +867,63 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
           tparams = ascribeTparams(utparams, ascriptions)
         } yield (KindedAst.Spec(doc, ann, mod, tparams, fparams, scheme, eff, loc), ascriptions)
     }
+  }
+
+  private def inferType(tpe00: UnkindedType, root: KindedAst.Root)(implicit flix: Flix): KindInferMonad[Kind] = {
+    val loc = SourceLocation.Unknown // MATT
+    def visitType(tpe0: UnkindedType): KindInferMonad[Kind] = tpe0 match {
+      case UnkindedType.Cst(cst, _) => KindInferMonad.point(getTyconKind(cst, root))
+      case UnkindedType.Apply(t1, t2) =>
+        val resultKind = Kind.freshVar()
+        for {
+          tyconKind <- visitType(t1)
+          argKind <- visitType(t2)
+          _ <- unifyKindM(tyconKind, argKind ->: resultKind, loc)
+        } yield resultKind
+      case UnkindedType.Lambda(t1, t2) =>
+        for {
+          argKind <- visitType(t1)
+          bodyKind <- visitType(t2)
+        } yield argKind ->: bodyKind // MATT do I need to introduce a result kind var here?
+      case UnkindedType.Var(_, _) => KindInferMonad.point(Kind.freshVar())
+    }
+
+    visitType(tpe00)
+  }
+
+  private def getTyconKind(tycon: UnkindedType.Constructor, root: KindedAst.Root): Kind = tycon match {
+    case UnkindedType.Constructor.Unit => Kind.Star
+    case UnkindedType.Constructor.Null => Kind.Star
+    case UnkindedType.Constructor.Bool => Kind.Star
+    case UnkindedType.Constructor.Char => Kind.Star
+    case UnkindedType.Constructor.Float32 => Kind.Star
+    case UnkindedType.Constructor.Float64 => Kind.Star
+    case UnkindedType.Constructor.Int8 => Kind.Star
+    case UnkindedType.Constructor.Int16 => Kind.Star
+    case UnkindedType.Constructor.Int32 => Kind.Star
+    case UnkindedType.Constructor.Int64 => Kind.Star
+    case UnkindedType.Constructor.BigInt => Kind.Star
+    case UnkindedType.Constructor.Str => Kind.Star
+    case UnkindedType.Constructor.Arrow(arity) => Kind.Bool ->: Kind.mkArrow(arity)
+    case UnkindedType.Constructor.RecordEmpty => Kind.Record
+    case UnkindedType.Constructor.RecordExtend(field) => Kind.Star ->: Kind.Record ->: Kind.Record
+    case UnkindedType.Constructor.SchemaEmpty => Kind.Schema
+    case UnkindedType.Constructor.SchemaExtend(pred) => Kind.Star ->: Kind.Schema ->: Kind.Schema
+    case UnkindedType.Constructor.Array => Kind.Star ->: Kind.Star
+    case UnkindedType.Constructor.Channel => Kind.Star ->: Kind.Star
+    case UnkindedType.Constructor.Lazy => Kind.Star ->: Kind.Star ->: Kind.Star
+    case UnkindedType.Constructor.Tag(sym, tag) => Kind.Star ->: Kind.Star ->: Kind.Star
+    case UnkindedType.Constructor.Enum(sym) => getEnumKind(root.enums(sym))
+    case UnkindedType.Constructor.Native(clazz) => Kind.Star
+    case UnkindedType.Constructor.Ref => Kind.Star ->: Kind.Star
+    case UnkindedType.Constructor.Tuple(l) => Kind.mkArrow(l)
+    case UnkindedType.Constructor.Relation => Kind.Star ->: Kind.Star
+    case UnkindedType.Constructor.Lattice => Kind.Star ->: Kind.Star
+    case UnkindedType.Constructor.True => Kind.Bool
+    case UnkindedType.Constructor.False => Kind.Bool
+    case UnkindedType.Constructor.Not => Kind.Bool ->: Kind.Bool
+    case UnkindedType.Constructor.And => Kind.Bool ->: Kind.Bool ->: Kind.Bool
+    case UnkindedType.Constructor.Or => Kind.Bool ->: Kind.Bool ->: Kind.Bool
   }
 
   // MATT docs
