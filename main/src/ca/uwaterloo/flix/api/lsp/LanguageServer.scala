@@ -169,6 +169,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
       case JString("lsp/check") => Request.parseCheck(json)
       case JString("lsp/codelens") => Request.parseCodelens(json)
+      case JString("lsp/complete") => Request.parseComplete(json)
       case JString("lsp/highlight") => Request.parseHighlight(json)
       case JString("lsp/hover") => Request.parseHover(json)
       case JString("lsp/goto") => Request.parseGoto(json)
@@ -214,6 +215,8 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     case Request.Check(id) => processCheck(id)
 
     case Request.Codelens(id, uri) => processCodelens(id, uri)
+
+    case Request.Complete(id, uri, pos) => processComplete(id, uri, pos)
 
     case Request.Highlight(id, uri, pos) =>
       ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(index, root)
@@ -327,6 +330,17 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> JArray(allCodeLenses.map(_.toJSON)))
   }
 
+  /**
+    * Processes a complete request.
+    */
+  private def processComplete(requestId: String, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
+    val result = List(
+      CompletionItem("foo", Some("This is a foo suggestion.")),
+      CompletionItem("bar", Some("This is a bar suggestion.")),
+      CompletionItem("baz", Some("This is a baz suggestion.")),
+    )
+    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result.map(_.toJSON))
+  }
 
   /**
     * Processes a request to run all benchmarks. Re-compiles and runs the program.
