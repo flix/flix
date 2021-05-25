@@ -30,8 +30,6 @@ import ca.uwaterloo.flix.language.phase.sjvm.ClassMaker.Mod
   * Generates bytecode for the function interfaces.
   */
 object GenFunctionInterfaces {
-  val resultFieldName: String = "res"
-
   def argFieldName(index: Int) = s"arg$index"
 
   /**
@@ -64,7 +62,6 @@ object GenFunctionInterfaces {
       // `arg$index` field
       classMaker.mkField(argFieldName(index), arg.erasedType, fieldMod)
     }
-    classMaker.mkField(resultFieldName, functionType.result.erasedType, fieldMod)
     classMaker.mkSuperConstructor()
 
     classMaker.closeClassMaker

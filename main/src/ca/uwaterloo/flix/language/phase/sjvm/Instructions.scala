@@ -279,10 +279,28 @@ object Instructions {
   def CAST
   [R <: Stack, T <: PRefType]
   (e: RRefType[T]):
-  F[R ** PReference[PAnyObject]] => F[R ** PReference[T]] = f => {
+  F[R ** PReference[_ <: PRefType]] => F[R ** PReference[T]] = f => {
     f.visitor.visitTypeInsn(Opcodes.CHECKCAST, e.toInternalName)
     castF(f)
   }
+
+  // TODO(JLS): What to do here
+//  def CastIfNotPrim
+//  [R <: Stack, T1 <: PType, T2 <: PType]
+//  (expType: RType[T1], newType: RType[T2]):
+//  F[R ** T1] => F[R ** T2] = (expType, newType) match {
+//    case (RBool, RBool) => NOP
+//    case (RInt8, RInt8) => NOP
+//    case (RInt16, RInt16) => NOP
+//    case (RInt32, RInt32) => NOP
+//    case (RInt64, RInt64) => NOP
+//    case (RChar, RChar) => NOP
+//    case (RFloat32, RFloat32) => NOP
+//    case (RFloat64, RFloat64) => NOP
+//    case (RReference(_), castType@RReference(b)) =>
+//      SCAFFOLD//CAST(b)
+//    case _ =>
+//  }
 
   // NATIVE
   def NEW
@@ -323,12 +341,67 @@ object Instructions {
     castF(f)
   }
 
+  def RETURNNULL[R <: Stack]: F[StackNil] => F[StackEnd] = f => {
+    f.visitor.visitInsn(Opcodes.ACONST_NULL)
+    f.visitor.visitInsn(Opcodes.ARETURN)
+    castF(f)
+  }
+
+  def ARETURN[R <: Stack, T <: PRefType]: F[StackNil ** PReference[T]] => F[StackEnd] = f => {
+    f.visitor.visitInsn(Opcodes.ARETURN)
+    castF(f)
+  }
+
+  def IRETURN[R <: Stack]: F[StackNil ** PInt32] => F[StackEnd] = f => {
+    f.visitor.visitInsn(Opcodes.IRETURN)
+    castF(f)
+  }
+
+  def BRETURN[R <: Stack]: F[StackNil ** PInt8] => F[StackEnd] = f => {
+    f.visitor.visitInsn(Opcodes.IRETURN)
+    castF(f)
+  }
+
+  def SRETURN[R <: Stack]: F[StackNil ** PInt16] => F[StackEnd] = f => {
+    f.visitor.visitInsn(Opcodes.IRETURN)
+    castF(f)
+  }
+
+  def CRETURN[R <: Stack]: F[StackNil ** PChar] => F[StackEnd] = f => {
+    f.visitor.visitInsn(Opcodes.IRETURN)
+    castF(f)
+  }
+
+  def LRETURN[R <: Stack]: F[StackNil ** PInt64] => F[StackEnd] = f => {
+    f.visitor.visitInsn(Opcodes.LRETURN)
+    castF(f)
+  }
+
+  def FRETURN[R <: Stack]: F[StackNil ** PFloat32] => F[StackEnd] = f => {
+    f.visitor.visitInsn(Opcodes.FRETURN)
+    castF(f)
+  }
+
+  def DRETURN[R <: Stack]: F[StackNil ** PFloat64] => F[StackEnd] = f => {
+    f.visitor.visitInsn(Opcodes.DRETURN)
+    castF(f)
+  }
+
   // NATIVE
   def XRETURN
   [R <: Stack, T <: PType]
   (e: RType[T]):
-  F[StackNil ** T] => F[StackEnd] =
-    ???
+  F[StackNil ** T] => F[StackEnd] = e match {
+    case RType.RBool => IRETURN
+    case RType.RInt8 => BRETURN
+    case RType.RInt16 => SRETURN
+    case RType.RInt32 => IRETURN
+    case RType.RInt64 => LRETURN
+    case RType.RChar => CRETURN
+    case RType.RFloat32 => FRETURN
+    case RType.RFloat64 => DRETURN
+    case RReference(_) => ARETURN
+  }
 
   // NATIVE
   def POP
@@ -672,7 +745,7 @@ object Instructions {
       case RReference(_) => AAStore
     }
 
-  val symOffsetOffset = 3
+  val symOffsetOffset = 1
 
   // I/S/B/C-Store are all just jvm ISTORE
   // NATIVE
@@ -846,9 +919,14 @@ object Instructions {
     ???
 
   def arrayLength
-  [R <: Stack, T <: PType]:
-  F[R ** PReference[PArray[T]]] => F[R ** PInt32] =
-    ???
+  [R <: Stack, T <: PType]
+  (arrayType: RType[PReference[PArray[T]]]):
+  F[R ** PReference[PArray[T]]] => F[R ** PInt32] = f => {
+    // TODO(JLS): checkcast needed?
+    f.visitor.visitTypeInsn(Opcodes.CHECKCAST, arrayType.toDescriptor)
+    f.visitor.visitInsn(Opcodes.ARRAYLENGTH)
+    castF(f)
+  }
 
   def setRefValue
   [R <: Stack, T <: PType]

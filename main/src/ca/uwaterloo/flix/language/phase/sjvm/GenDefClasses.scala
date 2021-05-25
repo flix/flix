@@ -19,6 +19,8 @@ package ca.uwaterloo.flix.language.phase.sjvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst.Root
+import ca.uwaterloo.flix.language.ast.PRefType.PAnyObject
+import ca.uwaterloo.flix.language.ast.PType.PReference
 import ca.uwaterloo.flix.language.ast.RRefType.RArrow
 import ca.uwaterloo.flix.language.ast.{ErasedAst, PType, RType, Symbol}
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
@@ -44,21 +46,37 @@ object GenDefClasses {
 
     val classMaker = ClassMaker.mkClass(defName, addSource = false, Some(functionType.functionInterfaceName))
     classMaker.mkSuperConstructor()
-    classMaker.mkMethod(genApplyFunction(defn, defName, functionType), GenContinuationInterfaces.invokeMethodName, functionType.result.nothingToThisMethodDescriptor, Mod.isPublic)
+    classMaker.mkMethod(genApplyFunction(defn, defn.exp, defName, functionType), GenContinuationInterfaces.invokeMethodName, functionType.result.nothingToContMethodDescriptor, Mod.isPublic)
     classMaker.closeClassMaker
   }
 
-  def genApplyFunction(defn: ErasedAst.Def, defName: JvmName, functionType: RArrow): F[StackNil] => F[StackEnd] = {
+  def genApplyFunction[T <: PType](defn: ErasedAst.Def, functionBody: ErasedAst.Expression[T], defName: JvmName, functionType: RArrow): F[StackNil] => F[StackEnd] = {
 
     START[StackNil] ~
       (defn.formals.zipWithIndex.foldLeft(START[StackNil]) {
         case (prev, (ErasedAst.FormalParam(sym, tpe), index)) =>
-          prev ~ storeArg(index, tpe, defName, sym)
-      }) ~ RETURN
+          prev ~ magicStoreArg(index, tpe, defName, sym)
+      }) ~
+      compileExp(functionBody) ~
+      THISLOAD(tag[PAnyObject]) ~
+      magicReversePutField(defName, functionBody.tpe) ~
+      RETURNNULL
     // TODO(JLS): Finish This
   }
 
-  def storeArg[R <: Stack, T <: PType](index: Int, tpe: RType[T], defName: JvmName, sym: Symbol.VarSym): F[R] => F[R] = {
+  def magicReversePutField[R <: Stack, T <: PType](className: JvmName, resultType: RType[T]): F[R ** T ** PReference[PAnyObject]] => F[R] = f => {
+    resultType match {
+      case RType.RInt64 | RType.RFloat64 =>
+        f.visitor.visitInsn(Opcodes.DUP_X2)
+        f.visitor.visitInsn(Opcodes.POP)
+      case _ =>
+        f.visitor.visitInsn(Opcodes.SWAP)
+    }
+    f.visitor.visitFieldInsn(Opcodes.PUTFIELD, className.toInternalName, GenContinuationInterfaces.resultFieldName, resultType.toDescriptor)
+    f.asInstanceOf[F[R]]
+  }
+
+  def magicStoreArg[R <: Stack, T <: PType](index: Int, tpe: RType[T], defName: JvmName, sym: Symbol.VarSym): F[R] => F[R] = {
     ((f: F[R]) => {
       f.visitor.visitVarInsn(Opcodes.ALOAD, 0)
       f.visitor.visitFieldInsn(Opcodes.GETFIELD, defName.toInternalName, GenFunctionInterfaces.argFieldName(index), tpe.toDescriptor)

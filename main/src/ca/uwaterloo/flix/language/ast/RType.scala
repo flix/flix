@@ -157,7 +157,10 @@ object RRefType {
   }
 
   case class RArray[T <: PType](tpe: RType[T]) extends RRefType[PArray[T]] {
-    override val jvmName: JvmName = JvmName.Java.Lang.Object // TODO(JLS): What to do here? s"[${tpe.toErasedDescriptor}"
+    private val className: String = s"[${tpe.erasedType.toDescriptor}"
+    override val jvmName: JvmName = new JvmName(Nil, className) {
+      override lazy val toDescriptor: String = this.toInternalName
+    }
   }
 
   case class RChannel[T <: PType](tpe: RType[T]) extends RRefType[PChan[T]] {

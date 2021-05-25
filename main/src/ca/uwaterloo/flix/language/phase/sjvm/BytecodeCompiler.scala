@@ -73,7 +73,9 @@ object BytecodeCompiler {
 
     case Expression.BigInt(lit, loc) => ???
     case Expression.Str(lit, loc) => ???
-    case Expression.Var(sym, tpe, loc) => ???
+    case Expression.Var(sym, tpe, loc) =>
+      WithSource[R](loc) ~
+        XLOAD(tpe, sym.getStackOffset + symOffsetOffset)
     case Expression.Closure(sym, freeVars, tpe, loc) => ???
     case Expression.ApplyClo(exp, args, tpe, loc) => ???
     case Expression.ApplyDef(sym, args, tpe, loc) => ???
@@ -126,7 +128,7 @@ object BytecodeCompiler {
     case Expression.ArrayLength(base, tpe, loc) =>
       WithSource[R](loc) ~
         compileExp(base) ~
-        arrayLength
+        arrayLength(base.tpe)
 
     case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
       WithSource[R](loc) ~
@@ -170,7 +172,14 @@ object BytecodeCompiler {
 
     case Expression.Existential(fparam, exp, loc) => ???
     case Expression.Universal(fparam, exp, loc) => ???
-    case Expression.Cast(exp, tpe, loc) => ???
+    case Expression.Cast(exp, tpe, loc) => {
+      // TODO(JLS): implement Cast
+      def fixStack[R <: Stack, T1 <: PType, T2 <: PType]: F[R ** T1] => F[R ** T2] = f => f.asInstanceOf[F[R ** T2]]
+      WithSource[R](loc) ~
+        compileExp(exp) ~
+        fixStack
+    }
+
     case Expression.TryCatch(exp, rules, tpe, loc) => ???
     case Expression.InvokeConstructor(constructor, args, tpe, loc) => ???
     case Expression.InvokeMethod(method, exp, args, tpe, loc) => ???

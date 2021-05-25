@@ -33,7 +33,7 @@ object ErasedAst {
                   functionTypes: Set[RType[PReference[PFunction]]])
 
   // TODO(JLS): This method, of using T <: PType and the _ <: PType at use is probably better and should be used elsewhere
-  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: List[ErasedAst.FormalParam], exp: ErasedAst.Expression[PReference[PFunction]], tpe: RType[PReference[PFunction]], loc: SourceLocation) {
+  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: List[ErasedAst.FormalParam], exp: ErasedAst.Expression[_ <: PType], tpe: RType[PReference[PFunction]], loc: SourceLocation) {
     var method: Method = _
   }
 
@@ -172,7 +172,7 @@ object ErasedAst {
       final val tpe = RType.RBool
     }
 
-    case class Cast[T <: PType](exp: ErasedAst.Expression[_ <: PType], tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
+    case class Cast[T1 <: PType, T2 <: PType](exp: ErasedAst.Expression[T2], tpe: RType[T1], loc: SourceLocation) extends ErasedAst.Expression[T1]
 
     case class TryCatch[T <: PType](exp: ErasedAst.Expression[T], rules: List[ErasedAst.CatchRule[T]], tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
