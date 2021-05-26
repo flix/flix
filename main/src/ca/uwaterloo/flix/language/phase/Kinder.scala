@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.ResolvedAst.{TypeParam, TypeParams}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.language.phase.unification.KindInferMonad
+import ca.uwaterloo.flix.language.phase.unification.KindInferMonad.seqM
 import ca.uwaterloo.flix.language.phase.unification.KindUnification.unifyKindM
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN, fold, mapN, sequenceT, traverse}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
@@ -869,8 +870,69 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     }
   }
 
-  private def inferType(tpe00: UnkindedType, root: KindedAst.Root)(implicit flix: Flix): KindInferMonad[Kind] = {
+  private def visitSpec(spec0: ResolvedAst.Spec, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Spec, KindError] = spec0 match {
+    case ResolvedAst.Spec(doc, ann, mod, tparams, fparams0, sc, eff, loc) => ???
+    // if tparams kinded:
+    // make sure kinds generalize to tparam kinds
+    // if tparams unkinded:
+    // map still-unbound to Star
+
+  }
+
+  private def inferTparams(tparams0: ResolvedAst.TypeParams): KindInferMonad[Unit] = tparams0 match {
+    case ResolvedAst.TypeParams.Kinded(tparams) => ???
+    //      val points = tparams.map {
+    //      case ResolvedAst.TypeParam.Kinded(_, tpe, kind, _) =>
+    //    }
+    case TypeParams.Unkinded(tparams) => ???
+  }
+
+  // MATT docs
+  private def inferSpec(spec0: ResolvedAst.Spec, root: ResolvedAst.Root)(implicit flix: Flix): KindInferMonad[Unit] = spec0 match {
+    case ResolvedAst.Spec(_, _, _, _, fparams, sc, eff, _) =>
+      val loc = SourceLocation.Unknown // MATT
+      for {
+        _ <- seqM(fparams.map(inferFparam(_, root)))
+        _ <- inferScheme(sc, root)
+        effKind <- inferType(eff, root)
+        _ <- unifyKindM(effKind, Kind.Bool, loc)
+      } yield ()
+  }
+
+  // MATT docs
+  private def inferScheme(scheme: ResolvedAst.Scheme, root: ResolvedAst.Root)(implicit flix: Flix): KindInferMonad[Unit] = scheme match {
+    case ResolvedAst.Scheme(quantifiers, constraints, base) =>
+      val loc = SourceLocation.Unknown // MATT
+      for {
+        _ <- seqM(quantifiers.map(inferType(_, root)))
+        _ <- seqM(constraints.map(inferTconstr(_, root)))
+        kind <- inferType(base, root)
+        _ <- unifyKindM(kind, Kind.Star, loc)
+      } yield ()
+  }
+
+  private def inferTconstr(tconstr: ResolvedAst.TypeConstraint, root: ResolvedAst.Root)(implicit flix: Flix): KindInferMonad[Unit] = tconstr match {
+    case ResolvedAst.TypeConstraint(clazz, tpe, loc) =>
+      val classKind = getClassKind(root.classes(clazz))
+      for {
+        kind <- inferType(tpe, root)
+        _ <- unifyKindM(classKind, kind, loc)
+      } yield ()
+  }
+
+  // MATT docs
+  private def inferFparam(fparam: ResolvedAst.FormalParam, root: ResolvedAst.Root)(implicit flix: Flix): KindInferMonad[Unit] = fparam match {
+    case ResolvedAst.FormalParam(_, _, tpe, loc) =>
+      for {
+        kind <- inferType(tpe, root)
+        _ <- unifyKindM(kind, Kind.Star, loc)
+      } yield ()
+  }
+
+  // MATT docs
+  private def inferType(tpe00: UnkindedType, root: ResolvedAst.Root)(implicit flix: Flix): KindInferMonad[Kind] = {
     val loc = SourceLocation.Unknown // MATT
+
     def visitType(tpe0: UnkindedType): KindInferMonad[Kind] = tpe0 match {
       case UnkindedType.Cst(cst, _) => KindInferMonad.point(getTyconKind(cst, root))
       case UnkindedType.Apply(t1, t2) =>
@@ -891,7 +953,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     visitType(tpe00)
   }
 
-  private def getTyconKind(tycon: UnkindedType.Constructor, root: KindedAst.Root): Kind = tycon match {
+  private def getTyconKind(tycon: UnkindedType.Constructor, root: ResolvedAst.Root): Kind = tycon match {
     case UnkindedType.Constructor.Unit => Kind.Star
     case UnkindedType.Constructor.Null => Kind.Star
     case UnkindedType.Constructor.Bool => Kind.Star
