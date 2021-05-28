@@ -80,6 +80,11 @@ object Request {
   case class Codelens(requestId: String, uri: String) extends Request
 
   /**
+    * A complete request.
+    */
+  case class Complete(requestId: String, uri: String, pos: Position) extends Request
+
+  /**
     * A request to go to a declaration.
     */
   case class Goto(requestId: String, uri: String, pos: Position) extends Request
@@ -199,6 +204,17 @@ object Request {
       id <- parseId(json)
       uri <- parseUri(json)
     } yield Request.Codelens(id, uri)
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[Complete]] request.
+    */
+  def parseComplete(json: json4s.JValue): Result[Request, String] = {
+    for {
+      id <- parseId(json)
+      uri <- parseUri(json)
+      pos <- Position.parse(json \\ "position")
+    } yield Request.Complete(id, uri, pos)
   }
 
   /**
