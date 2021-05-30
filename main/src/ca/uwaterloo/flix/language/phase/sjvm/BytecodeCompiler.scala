@@ -17,8 +17,9 @@
 package ca.uwaterloo.flix.language.phase.sjvm
 
 import ca.uwaterloo.flix.language.ast.ErasedAst.Expression
-import ca.uwaterloo.flix.language.ast.{Cat1, Cat2, EType, ErasedAst, PType}
+import ca.uwaterloo.flix.language.ast.{Cat1, PType, RType}
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
+import org.objectweb.asm.MethodVisitor
 
 object BytecodeCompiler {
 
@@ -26,11 +27,13 @@ object BytecodeCompiler {
 
   sealed trait StackNil extends Stack
 
-  sealed case class StackCons[R <: Stack, T <: PType](rest: R, top: T) extends Stack
+  sealed trait StackCons[R <: Stack, T <: PType] extends Stack
+
+  sealed trait StackEnd extends Stack
 
   type **[R <: Stack, T <: PType] = StackCons[R, T]
 
-  sealed trait F[T]
+  sealed case class F[T <: Stack](visitor: MethodVisitor)
 
   def compileExp[R <: Stack, T <: PType](exp: Expression[T]): F[R] => F[R ** T] = exp match {
     case Expression.Unit(loc) =>
@@ -70,7 +73,9 @@ object BytecodeCompiler {
 
     case Expression.BigInt(lit, loc) => ???
     case Expression.Str(lit, loc) => ???
-    case Expression.Var(sym, tpe, loc) => ???
+    case Expression.Var(sym, tpe, loc) =>
+      WithSource[R](loc) ~
+        XLOAD(tpe, sym.getStackOffset + symOffsetOffset)
     case Expression.Closure(sym, freeVars, tpe, loc) => ???
     case Expression.ApplyClo(exp, args, tpe, loc) => ???
     case Expression.ApplyDef(sym, args, tpe, loc) => ???
@@ -99,7 +104,13 @@ object BytecodeCompiler {
     case Expression.RecordExtend(field, value, rest, tpe, loc) => ???
     case Expression.RecordRestrict(field, rest, tpe, loc) => ???
     case Expression.ArrayLit(elms, tpe, loc) => ???
-    case Expression.ArrayNew(elm, len, tpe, loc) => ???
+    case Expression.ArrayNew(elm, len, tpe, loc) =>
+      WithSource[R](loc) ~
+        compileExp(elm) ~
+        compileExp(len) ~
+        XNEWARRAY(tpe) ~
+        ???
+
     case Expression.ArrayLoad(base, index, tpe, loc) =>
       WithSource[R](loc) ~
         compileExp(base) ~
@@ -117,7 +128,7 @@ object BytecodeCompiler {
     case Expression.ArrayLength(base, tpe, loc) =>
       WithSource[R](loc) ~
         compileExp(base) ~
-        arrayLength
+        arrayLength(base.tpe)
 
     case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
       WithSource[R](loc) ~
@@ -137,30 +148,38 @@ object BytecodeCompiler {
         SWAP ~
         POP
 
-    case Expression.Ref(exp, className, tpe, loc) =>
+    case Expression.Ref(exp, tpe, loc) =>
+      val tpeRRef = RType.getRReference(tpe)
       WithSource[R](loc) ~[R ** (T with Cat1)] // note: this explicit type is necessary
-        NEW(className) ~
+        NEW(tpeRRef) ~
         DUP ~
-        INVOKESPECIAL(className, "()V)") ~
+        INVOKESPECIAL(tpeRRef, JvmName.nothingToVoid) ~
         DUP ~
         compileExp(exp) ~
-        PUTFIELD(className, "value", exp.tpe)
+        PUTFIELD(tpeRRef, GenRefClasses.ValueFieldName, exp.tpe)
 
-    case Expression.Deref(exp, className, tpe, loc) =>
+    case Expression.Deref(exp, tpe, loc) =>
       WithSource[R](loc) ~
         compileExp(exp) ~
-        XGETFIELD(className, "value", tpe)
+        XGETFIELD(RType.getRReference(exp.tpe), GenRefClasses.ValueFieldName, tpe)
 
-    case Expression.Assign(exp1, exp2, className, tpe, loc) =>
+    case Expression.Assign(exp1, exp2, tpe, loc) =>
       WithSource[R](loc) ~
         compileExp(exp1) ~
         compileExp(exp2) ~
-        PUTFIELD(className, "value", exp2.tpe) ~
+        PUTFIELD(RType.getRReference(exp1.tpe), GenRefClasses.ValueFieldName, exp2.tpe) ~
         pushUnit
 
     case Expression.Existential(fparam, exp, loc) => ???
     case Expression.Universal(fparam, exp, loc) => ???
-    case Expression.Cast(exp, tpe, loc) => ???
+    case Expression.Cast(exp, tpe, loc) => {
+      // TODO(JLS): implement Cast
+      def fixStack[R <: Stack, T1 <: PType, T2 <: PType]: F[R ** T1] => F[R ** T2] = f => f.asInstanceOf[F[R ** T2]]
+      WithSource[R](loc) ~
+        compileExp(exp) ~
+        fixStack
+    }
+
     case Expression.TryCatch(exp, rules, tpe, loc) => ???
     case Expression.InvokeConstructor(constructor, args, tpe, loc) => ???
     case Expression.InvokeMethod(method, exp, args, tpe, loc) => ???
@@ -173,33 +192,34 @@ object BytecodeCompiler {
       WithSource[R](loc) ~
         pushNull
 
-    case Expression.GetChannel(exp, tpe, loc) => ???
-    case Expression.PutChannel(exp1, exp2, tpe, loc) => ???
-    case Expression.SelectChannel(rules, default, tpe, loc) => ???
-    case Expression.Spawn(exp, tpe, loc) => ???
-    case Expression.Lazy(exp, tpe, loc) => ???
-    case Expression.Force(exp, tpe, loc) => ???
-    case Expression.FixpointConstraintSet(cs, tpe, loc) => ???
-    case Expression.FixpointCompose(exp1, exp2, tpe, loc) => ???
-    case Expression.FixpointSolve(exp, stf, tpe, loc) => ???
-    case Expression.FixpointProject(pred, exp, tpe, loc) => ???
-    case Expression.FixpointFold(pred, init, f, constraints, tpe, loc) => ???
-    case Expression.HoleError(sym, tpe, loc) => ???
-    case Expression.MatchError(tpe, loc) => ???
-    case ErasedAst.BoxInt8(exp, loc) => ???
-    case ErasedAst.BoxInt16(exp, loc) => ???
-    case ErasedAst.BoxInt32(exp, loc) => ???
-    case ErasedAst.BoxInt64(exp, loc) => ???
-    case ErasedAst.BoxChar(exp, loc) => ???
-    case ErasedAst.BoxFloat32(exp, loc) => ???
-    case ErasedAst.BoxFloat64(exp, loc) => ???
-    case ErasedAst.UnboxInt8(exp, loc) => ???
-    case ErasedAst.UnboxInt16(exp, loc) => ???
-    case ErasedAst.UnboxInt32(exp, loc) => ???
-    case ErasedAst.UnboxInt64(exp, loc) => ???
-    case ErasedAst.UnboxChar(exp, loc) => ???
-    case ErasedAst.UnboxFloat32(exp, loc) => ???
-    case ErasedAst.UnboxFloat64(exp, loc) => ???
+    //    case Expression.GetChannel(exp, tpe, loc) => ???
+    //    case Expression.PutChannel(exp1, exp2, tpe, loc) => ???
+    //    case Expression.SelectChannel(rules, default, tpe, loc) => ???
+    //    case Expression.Spawn(exp, tpe, loc) => ???
+    //    case Expression.Lazy(exp, tpe, loc) => ???
+    //    case Expression.Force(exp, tpe, loc) => ???
+    //    case Expression.FixpointConstraintSet(cs, tpe, loc) => ???
+    //    case Expression.FixpointCompose(exp1, exp2, tpe, loc) => ???
+    //    case Expression.FixpointSolve(exp, stf, tpe, loc) => ???
+    //    case Expression.FixpointProject(pred, exp, tpe, loc) => ???
+    //    case Expression.FixpointFold(pred, init, f, constraints, tpe, loc) => ???
+    //    case Expression.HoleError(sym, tpe, loc) => ???
+    //    case Expression.MatchError(tpe, loc) => ???
+    //    case ErasedAst.BoxInt8(exp, loc) => ???
+    //    case ErasedAst.BoxInt16(exp, loc) => ???
+    //    case ErasedAst.BoxInt32(exp, loc) => ???
+    //    case ErasedAst.BoxInt64(exp, loc) => ???
+    //    case ErasedAst.BoxChar(exp, loc) => ???
+    //    case ErasedAst.BoxFloat32(exp, loc) => ???
+    //    case ErasedAst.BoxFloat64(exp, loc) => ???
+    //    case ErasedAst.UnboxInt8(exp, loc) => ???
+    //    case ErasedAst.UnboxInt16(exp, loc) => ???
+    //    case ErasedAst.UnboxInt32(exp, loc) => ???
+    //    case ErasedAst.UnboxInt64(exp, loc) => ???
+    //    case ErasedAst.UnboxChar(exp, loc) => ???
+    //    case ErasedAst.UnboxFloat32(exp, loc) => ???
+    //    case ErasedAst.UnboxFloat64(exp, loc) => ???
+    case _ => ???
   }
 
 }

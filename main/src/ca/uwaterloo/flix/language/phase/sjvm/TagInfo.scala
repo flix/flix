@@ -17,28 +17,24 @@
 
 package ca.uwaterloo.flix.language.phase.sjvm
 
+import ca.uwaterloo.flix.language.ast.{Symbol, MonoType}
+
 /**
- * Represents a Java class (or interface).
- *
- * @param name     the name of the class (or interface).
- * @param bytecode the bytecode of the class (or interface).
- */
-case class JvmClass(name: JvmName, bytecode: Array[Byte]) {
+  * Meta information about a tag.
+  */
+// TODO: Magnus: What components are needed here?
+// TODO: Magnus: Check the equality method.
+case class TagInfo(sym: Symbol.EnumSym, tag: String, tparams: List[MonoType], enumType: MonoType, tagType: MonoType) {
   /**
-   * Returns the hashCode of `this` JvmClass.
-   */
-  override def hashCode(): Int = name.hashCode()
+    * Returns the hash code of `this` tag info.
+    */
+  override def hashCode(): Int = 7 * sym.hashCode + 11 * tag.hashCode
 
   /**
-   * Returns `true` if `obj` is a JvmClass with the same JvmName.
-   */
+    * Returns `true` if the given `obj` is the same enum and tag as this tag info.
+    */
   override def equals(obj: scala.Any): Boolean = obj match {
-    case that: JvmClass => this.name == that.name
+    case that: TagInfo => this.sym == that.sym && this.tag == that.tag && this.tparams == that.tparams
     case _ => false
   }
-
-  /**
-   * Returns a string representation of `this` JvmClass.
-   */
-  override def toString: String = s"JvmClass($name, ${bytecode.length} bytes)"
 }

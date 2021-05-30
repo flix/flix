@@ -63,8 +63,6 @@ object PRefType {
 
   sealed trait PBoxedFloat64 extends PRefType
 
-  sealed trait PAnyObject extends PRefType
-
   sealed trait PUnit extends PRefType
 
   sealed trait PRef[T <: PType] extends PRefType
@@ -78,5 +76,9 @@ object PRefType {
   sealed trait PStr extends PRefType
 
   sealed trait PBigInt extends PRefType
+
+  sealed trait PAnyObject extends PRefType
+
+  sealed trait PFunction extends PRefType
 
 }

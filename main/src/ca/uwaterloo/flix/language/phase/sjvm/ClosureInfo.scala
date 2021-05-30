@@ -17,28 +17,25 @@
 
 package ca.uwaterloo.flix.language.phase.sjvm
 
+import ca.uwaterloo.flix.language.ast.ErasedAst.FreeVar
+import ca.uwaterloo.flix.language.ast.PRefType.PAnyObject
+import ca.uwaterloo.flix.language.ast.PType.PReference
+import ca.uwaterloo.flix.language.ast.{PRefType, PType, RType, Symbol}
+
 /**
- * Represents a Java class (or interface).
- *
- * @param name     the name of the class (or interface).
- * @param bytecode the bytecode of the class (or interface).
- */
-case class JvmClass(name: JvmName, bytecode: Array[Byte]) {
+  * Meta information about a closure.
+  */
+case class ClosureInfo(sym: Symbol.DefnSym, freeVars: List[FreeVar], tpe: RType[PReference[PAnyObject]]) {
   /**
-   * Returns the hashCode of `this` JvmClass.
-   */
-  override def hashCode(): Int = name.hashCode()
+    * Returns the hash code of `this` closure info.
+    */
+  override def hashCode(): Int = 7 * sym.hashCode + 11 * freeVars.hashCode()
 
   /**
-   * Returns `true` if `obj` is a JvmClass with the same JvmName.
-   */
+    * Returns `true` if the given `obj` is the same closure info as `this`.
+    */
   override def equals(obj: scala.Any): Boolean = obj match {
-    case that: JvmClass => this.name == that.name
+    case that: ClosureInfo => this.sym == that.sym && this.freeVars == that.freeVars
     case _ => false
   }
-
-  /**
-   * Returns a string representation of `this` JvmClass.
-   */
-  override def toString: String = s"JvmClass($name, ${bytecode.length} bytes)"
 }
