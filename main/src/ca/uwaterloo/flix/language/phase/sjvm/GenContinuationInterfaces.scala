@@ -71,41 +71,34 @@ object GenContinuationInterfaces {
     classMaker.mkSuperConstructor()
     classMaker.mkField(resultFieldName, resultType, Mod.isPublic.isAbstract)
     classMaker.mkAbstractMethod(invokeMethodName, resultType.nothingToContMethodDescriptor, Mod.isAbstract.isPublic)
-    //classMaker.mkMethod(compileUnwindMethod(resultType), unwindMethodName, resultType.nothingToThisMethodDescriptor, Mod.isPublic)
+    classMaker.mkMethod(compileUnwindMethod(resultType), unwindMethodName, resultType.nothingToThisMethodDescriptor, Mod.isPublic)
 
     classMaker.closeClassMaker
   }
 
-//  def compileUnwindMethod[T <: PType](resultType: RType[T]): F[StackNil] => F[StackEnd] = f => {
-//    import org.objectweb.asm.Label
-//    import org.objectweb.asm.Opcodes._
-//
-//    f.visitor.visitVarInsn(ALOAD, 0)
-//    f.visitor.visitVarInsn(ASTORE, 1)
-//
-//    f.visitor.visitInsn(ACONST_NULL)
-//    f.visitor.visitVarInsn(ASTORE, 2)
-//
-//
-//    val loopStart = new Label()
-//    val loopEnd = new Label()
-//    // TODO(JLS): can be rewritten without an initial check
-//    f.visitor.visitLabel(loopStart)
-//    //f.visitor.visitFrame(F_APPEND, 2, Array(resultType.contName.toInternalName, resultType.contName.toInternalName), 0, null);
-//    f.visitor.visitVarInsn(ALOAD, 1)
-//
-//    f.visitor.visitJumpInsn(IFNULL, loopEnd)
-//    f.visitor.visitVarInsn(ALOAD, 0)
-//    f.visitor.visitVarInsn(ASTORE, 2)
-//    f.visitor.visitVarInsn(ALOAD, 1)
-//    f.visitor.visitMethodInsn(INVOKEVIRTUAL, resultType.contName.toInternalName, invokeMethodName, resultType.nothingToThisMethodDescriptor, false)
-//    f.visitor.visitVarInsn(ASTORE, 1)
-//    f.visitor.visitJumpInsn(GOTO, loopStart)
-//    f.visitor.visitFrame(F_SAME, 0, null, 0, null);
-//    f.visitor.visitLabel(loopEnd)
-//    f.visitor.visitVarInsn(ALOAD, 2)
-//    f.visitor.visitFieldInsn(GETFIELD, resultType.contName.toInternalName, resultFieldName, resultType.toDescriptor)
-//    XRETURN(resultType)(f.asInstanceOf[F[StackNil ** T]])
-//  }
+  def compileUnwindMethod[T <: PType](resultType: RType[T]): F[StackNil] => F[StackEnd] = f => {
+    import org.objectweb.asm.Label
+    import org.objectweb.asm.Opcodes._
+
+    f.visitor.visitVarInsn(ALOAD, 0)
+    f.visitor.visitVarInsn(ASTORE, 1)
+
+    f.visitor.visitInsn(ACONST_NULL)
+    f.visitor.visitVarInsn(ASTORE, 2)
+
+    val loopStart = new Label()
+    f.visitor.visitLabel(loopStart)
+    f.visitor.visitVarInsn(ALOAD, 1)
+    f.visitor.visitVarInsn(ASTORE, 2)
+    f.visitor.visitVarInsn(ALOAD, 1)
+    f.visitor.visitMethodInsn(INVOKEVIRTUAL, resultType.contName.toInternalName, invokeMethodName, resultType.nothingToContMethodDescriptor, false)
+    f.visitor.visitVarInsn(ASTORE, 1)
+    f.visitor.visitVarInsn(ALOAD, 1)
+    f.visitor.visitJumpInsn(IFNONNULL, loopStart)
+
+    f.visitor.visitVarInsn(ALOAD, 2)
+    f.visitor.visitFieldInsn(GETFIELD, resultType.contName.toInternalName, resultFieldName, resultType.toDescriptor)
+    XRETURN(resultType)(f.asInstanceOf[F[StackNil ** T]])
+  }
 
 }
