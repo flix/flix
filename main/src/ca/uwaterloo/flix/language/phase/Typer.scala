@@ -687,18 +687,30 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
       case ResolvedAst.Expression.LetScopedRef(sym, exp1, exp2, loc) =>
+        // TODO: Move into BoolUnification and simplify.
+        def purify2(tvar: Type.Var, eff: Type): Type = eff match {
+          case Type.Var(id, _, _, _) =>
+            if (tvar.id == id) Type.True else eff
+          case Type.Cst(tc, loc) => eff
+          case Type.Apply(tpe1, tpe2) =>
+            val t1 = purify2(tvar, tpe1)
+            val t2 = purify2(tvar, tpe2)
+            Type.Apply(t1, t2)
+          case Type.Lambda(tvar, tpe) => throw InternalCompilerException(s"Unexpected type lambda.")
+        }
+
         def purify(tvar: Type.Var, eff: Type): Type = {
-          println(tvar)
-          println(eff)
-          eff // TODO: Subst.
+          println(s"purify(${tvar}, ${eff})")
+          val result = purify2(tvar, eff)
+          result
         }
 
         // Introduce a rigid variable for the lifetime of `exp1`.
         val lifetimeVar = Type.freshVar(Kind.Bool, Rigidity.Rigid, Some("lifetime"))
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
+          boundVar <- unifyTypeM(sym.tvar, Type.mkScopedRef(tpe1, lifetimeVar), loc) // TODO: If this goes on the next line it doesnt work... O_O
           (constrs2, tpe2, eff2) <- visitExp(exp2)
-          boundVar <- unifyTypeM(sym.tvar, Type.mkScopedRef(tpe1, lifetimeVar), loc)
           resultTyp = tpe2
           resultEff = Type.mkAnd(eff1, purify(lifetimeVar, eff2))
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
@@ -1122,7 +1134,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           (constrs, typ, _) <- visitExp(exp)
           refType <- unifyTypeM(typ, Type.mkScopedRef(elementType, lifetimeVar), loc)
           resultTyp <- unifyTypeM(tvar, elementType, loc)
-          resultEff = Type.Impure // TODO: Use lifetime var
+          resultEff = lifetimeVar
         } yield (constrs, resultTyp, resultEff)
 
       case ResolvedAst.Expression.Assign(exp1, exp2, loc) =>
