@@ -1194,6 +1194,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         e <- visitExp(exp)
       } yield WeededAst.Expression.Deref(e, mkSL(sp1, sp2))
 
+    case ParsedAst.Expression.ScopedDeref(sp1, exp, sp2) =>
+      for {
+        e <- visitExp(exp)
+      } yield WeededAst.Expression.ScopedDeref(e, mkSL(sp1, sp2))
+
     case ParsedAst.Expression.Assign(exp1, exp2, sp2) =>
       val sp1 = leftMostSourcePosition(exp1)
       for {
@@ -2313,6 +2318,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Interpolation(sp1, _, _) => sp1
     case ParsedAst.Expression.Ref(sp1, _, _) => sp1
     case ParsedAst.Expression.Deref(sp1, _, _) => sp1
+    case ParsedAst.Expression.ScopedDeref(sp1, _, _) => sp1
     case ParsedAst.Expression.Assign(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Existential(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Universal(sp1, _, _, _, _) => sp1

@@ -676,6 +676,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e <- visit(exp, tenv0)
           } yield ResolvedAst.Expression.Deref(e, tvar, loc)
 
+        case NamedAst.Expression.ScopedDeref(exp, tvar, loc) =>
+          for {
+            e <- visit(exp, tenv0)
+          } yield ResolvedAst.Expression.ScopedDeref(e, tvar, loc)
+
         case NamedAst.Expression.Assign(exp1, exp2, loc) =>
           for {
             e1 <- visit(exp1, tenv0)

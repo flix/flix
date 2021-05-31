@@ -799,6 +799,9 @@ object ParsedAst {
       */
     case class Deref(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
+    // TODO
+    case class ScopedDeref(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
     /**
       * Assignment expression.
       *

@@ -1100,11 +1100,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         } yield (constrs1 ++ constrs2 ++ constrs3, resultTyp, resultEff)
 
       case ResolvedAst.Expression.Ref(exp, loc) =>
-        //
-        //  exp : t @ eff
-        //  -------------------------
-        //  ref exp : Ref[t] @ Impure
-        //
         for {
           (constrs, tpe, _) <- visitExp(exp)
           resultTyp = Type.mkRef(tpe)
@@ -1112,17 +1107,22 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         } yield (constrs, resultTyp, resultEff)
 
       case ResolvedAst.Expression.Deref(exp, tvar, loc) =>
-        //
-        //  exp : Ref[t] @ eff
-        //  -------------------
-        //  deref exp : t @ Impure
-        //
         val elementType = Type.freshVar(Kind.Star)
         for {
           (constrs, typ, _) <- visitExp(exp)
           refType <- unifyTypeM(typ, Type.mkRef(elementType), loc)
           resultTyp <- unifyTypeM(tvar, elementType, loc)
           resultEff = Type.Impure
+        } yield (constrs, resultTyp, resultEff)
+
+      case ResolvedAst.Expression.ScopedDeref(exp, tvar, loc) =>
+        val elementType = Type.freshVar(Kind.Star)
+        val lifetimeVar = Type.freshVar(Kind.Bool)
+        for {
+          (constrs, typ, _) <- visitExp(exp)
+          refType <- unifyTypeM(typ, Type.mkScopedRef(elementType, lifetimeVar), loc)
+          resultTyp <- unifyTypeM(tvar, elementType, loc)
+          resultEff = Type.Impure // TODO: Use lifetime var
         } yield (constrs, resultTyp, resultEff)
 
       case ResolvedAst.Expression.Assign(exp1, exp2, loc) =>
@@ -1664,6 +1664,11 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       case ResolvedAst.Expression.Deref(exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
         val eff = Type.Impure
+        TypedAst.Expression.Deref(e, subst0(tvar), eff, loc)
+
+      case ResolvedAst.Expression.ScopedDeref(exp, tvar, loc) =>
+        val e = visitExp(exp, subst0)
+        val eff = Type.Pure /* TODO */
         TypedAst.Expression.Deref(e, subst0(tvar), eff, loc)
 
       case ResolvedAst.Expression.Assign(exp1, exp2, loc) =>

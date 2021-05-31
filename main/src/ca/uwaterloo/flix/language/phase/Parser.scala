@@ -585,7 +585,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Ref: Rule1[ParsedAst.Expression] = rule {
-      (SP ~ keyword("ref") ~ WS ~ Ref ~ SP ~> ParsedAst.Expression.Ref) | Deref
+      (SP ~ keyword("ref") ~ WS ~ Ref ~ SP ~> ParsedAst.Expression.Ref) | ScopedDeref
+    }
+
+    def ScopedDeref: Rule1[ParsedAst.Expression] = rule {
+      (SP ~ keyword("scoped_deref") ~ WS ~ ScopedDeref ~ SP ~> ParsedAst.Expression.ScopedDeref) | Deref
     }
 
     def Deref: Rule1[ParsedAst.Expression] = rule {
