@@ -11,7 +11,7 @@ sealed trait UnkindedType {
     case UnkindedType.Cst(cst, _) => Some(cst)
     case UnkindedType.Apply(t1, _) => t1.typeConstructor
     case UnkindedType.Lambda(_, _) => throw InternalCompilerException("Unexpected type constructor: Lambda")
-    case UnkindedType.Var(_, _) => None
+    case UnkindedType.Var(_, _, _) => None
   }
 
   // MATT docs
@@ -28,7 +28,7 @@ object UnkindedType {
 
   case class Lambda(t1: UnkindedType.Var, t2: UnkindedType) extends UnkindedType
 
-  case class Var(id: Int, text: Option[String] = None) extends UnkindedType {
+  case class Var(id: Int, kind: Kind, text: Option[String] = None) extends UnkindedType {
     def ascribedWith(kind: Kind): Type.Var = Type.Var(id, kind, text = text)
   }
 
@@ -139,8 +139,8 @@ object UnkindedType {
   def mkFalse(loc: SourceLocation): UnkindedType = Cst(Constructor.False, loc)
 
   // MATT docs
-  def freshVar(text: Option[String] = None)(implicit flix: Flix): UnkindedType.Var = {
-    Var(flix.genSym.freshId(), text)
+  def freshVar(kind: Option[Kind] = None, text: Option[String] = None)(implicit flix: Flix): UnkindedType.Var = {
+    Var(flix.genSym.freshId(), kind.getOrElse(Kind.freshVar()), text)
   }
 
   /**

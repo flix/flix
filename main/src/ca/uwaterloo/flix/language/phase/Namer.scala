@@ -1526,9 +1526,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def getTypeParam(tparam0: WeededAst.TypeParam)(implicit flix: Flix): NamedAst.TypeParam = tparam0 match {
     case WeededAst.TypeParam.Kinded(ident, kind) =>
-      NamedAst.TypeParam.Kinded(ident, UnkindedType.freshVar(Some(ident.name)), kind, ident.loc)
+      NamedAst.TypeParam.Kinded(ident, UnkindedType.freshVar(text = Some(ident.name)), kind, ident.loc)
     case WeededAst.TypeParam.Unkinded(ident) =>
-      NamedAst.TypeParam.Unkinded(ident, UnkindedType.freshVar(Some(ident.name)), ident.loc)
+      NamedAst.TypeParam.Unkinded(ident, UnkindedType.freshVar(text = Some(ident.name)), ident.loc)
   }
 
   /**
@@ -1565,7 +1565,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def getExplicitKindedTypeParams(tparams0: List[WeededAst.TypeParam.Kinded])(implicit flix: Flix): NamedAst.TypeParams.Kinded = {
     val tparams = tparams0.map {
       case WeededAst.TypeParam.Kinded(ident, kind) =>
-        val tvar = UnkindedType.freshVar(Some(ident.name))
+        val tvar = UnkindedType.freshVar(text = Some(ident.name))
         NamedAst.TypeParam.Kinded(ident, tvar, kind, ident.loc)
     }
     NamedAst.TypeParams.Kinded(tparams)
@@ -1607,7 +1607,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     val returnTvars = freeVarsInTenv(tpe, tenv)
 
     val tparams = (fparamTvars ++ returnTvars).distinct.map {
-      tvar => NamedAst.TypeParam.Unkinded(tvar, UnkindedType.freshVar(Some(tvar.name)), tvar.loc)
+      tvar => NamedAst.TypeParam.Unkinded(tvar, UnkindedType.freshVar(text = Some(tvar.name)), tvar.loc)
     }
     // MATT maybe make a helper for ident -> tparam
 

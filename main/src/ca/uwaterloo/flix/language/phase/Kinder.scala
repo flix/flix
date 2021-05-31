@@ -146,7 +146,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
 
   // MATT docs
   private def ascribeTvar(tvar: UnkindedType.Var, kind: Kind): Type.Var = tvar match {
-    case UnkindedType.Var(id, text) => Type.Var(id, kind, text = text)
+    case UnkindedType.Var(id, kind, text) => Type.Var(id, kind, text = text) // MATT broken (kvar vs kind)
   }
 
   // MATT docs
@@ -621,7 +621,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
 
   // MATT only useful for instances b/c of complexity assumptions
   private def inferKinds(tpe: UnkindedType, expected: KindMatch, root: ResolvedAst.Root): Validation[(Type, Map[Int, Kind]), KindError] = tpe match {
-    case tvar@UnkindedType.Var(id, text) =>
+    case tvar@UnkindedType.Var(id, kind, text) =>
       val k = KindMatch.toKind(expected)
       (ascribeTvar(tvar, k), Map(id -> k)).toSuccess
 
@@ -698,7 +698,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   private def ascribeType(tpe: UnkindedType, expected: KindMatch, ascriptions: Map[Int, Kind], root: ResolvedAst.Root): Validation[Type, KindError] = {
 
     def visit(tpe: UnkindedType, expected: KindMatch): Validation[Type, KindError] = tpe match {
-      case UnkindedType.Var(id, text) =>
+      case UnkindedType.Var(id, kind, text) =>
         ascriptions.get(id) match {
           case Some(actual) =>
             checkKindsMatch(expected, actual) map {
@@ -947,7 +947,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
           argKind <- visitType(t1)
           bodyKind <- visitType(t2)
         } yield argKind ->: bodyKind // MATT do I need to introduce a result kind var here?
-      case UnkindedType.Var(_, _) => KindInferMonad.point(Kind.freshVar())
+      case UnkindedType.Var(_, _, _) => KindInferMonad.point(Kind.freshVar())
     }
 
     visitType(tpe00)
@@ -1013,7 +1013,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
           val kind = getClassKind(clazz)
           tpe match {
               // MATT case docs
-            case UnkindedType.Var(id, _) => mergeAscriptions(acc, Map(id -> kind))
+            case UnkindedType.Var(id, _, _) => mergeAscriptions(acc, Map(id -> kind))
             case _ => acc.toSuccess
           }
       }
