@@ -687,32 +687,20 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
       case ResolvedAst.Expression.LetScopedRef(sym, exp1, exp2, loc) =>
-        // TODO: Move into BoolUnification and simplify.
-        def purify2(tvar: Type.Var, eff: Type): Type = eff match {
-          case Type.Var(id, _, _, _) =>
-            if (tvar.id == id) Type.True else eff
-          case Type.Cst(tc, loc) => eff
-          case Type.Apply(tpe1, tpe2) =>
-            val t1 = purify2(tvar, tpe1)
-            val t2 = purify2(tvar, tpe2)
-            Type.Apply(t1, t2)
-          case Type.Lambda(tvar, tpe) => throw InternalCompilerException(s"Unexpected type lambda.")
-        }
-
-        def purify(tvar: Type.Var, eff: Type): Type = {
-          println(s"purify(${tvar}, ${eff})")
-          val result = purify2(tvar, eff)
-          result
+        def purifyAndPrint(tvar: Type.Var, eff: Type): Type = {
+          println(s"At ${loc.format}: purify $tvar in $eff")
+          purify(tvar, eff)
         }
 
         // Introduce a rigid variable for the lifetime of `exp1`.
         val lifetimeVar = Type.freshVar(Kind.Bool, Rigidity.Rigid, Some("lifetime"))
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
-          boundVar <- unifyTypeM(sym.tvar, Type.mkScopedRef(tpe1, lifetimeVar), loc) // TODO: If this goes on the next line it doesnt work... O_O
+          // TODO: Current this line MUST appear here before the call to visitExp(exp2).
+          boundVar <- unifyTypeM(sym.tvar, Type.mkScopedRef(tpe1, lifetimeVar), loc)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
           resultTyp = tpe2
-          resultEff = Type.mkAnd(eff1, purify(lifetimeVar, eff2))
+          resultEff = Type.mkAnd(eff1, purifyAndPrint(lifetimeVar, eff2))
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
       case ResolvedAst.Expression.Match(exp, rules, loc) =>
@@ -1128,13 +1116,22 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         } yield (constrs, resultTyp, resultEff)
 
       case ResolvedAst.Expression.ScopedDeref(exp, tvar, loc) =>
-        val elementType = Type.freshVar(Kind.Star)
-        val lifetimeVar = Type.freshVar(Kind.Bool)
+        // This is super ugly, but more correct, because it does not introduce
+        // fresh type variables.
+        def assertScopeRef(tpe: Type): InferMonad[(Type, Type)] = InferMonad(
+          (subst: Substitution) =>
+            tpe match {
+              case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.ScopedRef, _), elmType), lifetime) =>
+                Result.Ok(subst, (subst(elmType), subst(lifetime)))
+              case _ => Result.Err(???) // TODO: Raise mismatched type.
+            }
+        )
+
         for {
           (constrs, typ, _) <- visitExp(exp)
-          refType <- unifyTypeM(typ, Type.mkScopedRef(elementType, lifetimeVar), loc)
-          resultTyp <- unifyTypeM(tvar, elementType, loc)
-          resultEff = lifetimeVar
+          (elmType, lifetime) <- assertScopeRef(typ)
+          resultTyp <- unifyTypeM(tvar, elmType, loc)
+          resultEff = lifetime
         } yield (constrs, resultTyp, resultEff)
 
       case ResolvedAst.Expression.Assign(exp1, exp2, loc) =>
@@ -2163,6 +2160,33 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     * Returns an open schema type.
     */
   private def mkAnySchemaType()(implicit flix: Flix): Type = Type.freshVar(Kind.Schema)
+
+  /**
+    * Returns the given Boolean formula `tpe` with the (possibly rigid) type variable `tvar` replaced by `True`.
+    */
+  private def purify(tvar: Type.Var, tpe: Type): Type = tpe.typeConstructor match {
+    case None => tpe match {
+      case Type.Var(id, _, _, _) =>
+        if (tvar.id == id) Type.True else tpe
+      case _ => throw InternalCompilerException(s"Unexpected type constructor: '$tpe'.")
+    }
+
+    case Some(tc) => tc match {
+      case TypeConstructor.Not =>
+        val List(t) = tpe.typeArguments
+        BoolUnification.mkNot(purify(tvar, t))
+
+      case TypeConstructor.And =>
+        val List(t1, t2) = tpe.typeArguments
+        BoolUnification.mkAnd(purify(tvar, t1), purify(tvar, t2))
+
+      case TypeConstructor.Or =>
+        val List(t1, t2) = tpe.typeArguments
+        BoolUnification.mkOr(purify(tvar, t1), purify(tvar, t2))
+
+      case _ => throw InternalCompilerException(s"Unexpected non-Boolean type constructor: '$tc'.")
+    }
+  }
 
   /**
     * Returns the Flix Type of a Java Class

@@ -88,10 +88,9 @@ object FormatType {
       base match {
         case None => tpe match {
           case tvar@Type.Var(id, kind, rigidity, _) => audience match {
-            case Audience.Internal => (kind, rigidity) match {
-              // TODO: Find a better scheme.
-              case (Bool, Rigidity.Flexible) => s"('$id : Bool)"
-              case (Bool, Rigidity.Rigid) => s"('${id}r : Bool)"
+            case Audience.Internal => kind match {
+              // TODO: We need a systematic way to print type variables, their kind, and rigidity.
+              case Bool => s"''$id"
               case _ => s"'$id"
             }
             case Audience.External => tvar.text.getOrElse(renameMap(tvar.id))
