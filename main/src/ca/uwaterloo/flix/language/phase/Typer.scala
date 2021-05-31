@@ -687,12 +687,20 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
       case ResolvedAst.Expression.LetScopedRef(sym, exp1, exp2, loc) =>
+        def purify(tvar: Type.Var, eff: Type): Type = {
+          println(tvar)
+          println(eff)
+          eff // TODO: Subst.
+        }
+
+        // Introduce a rigid variable for the lifetime of `exp1`.
+        val lifetimeVar = Type.freshVar(Kind.Bool, Rigidity.Rigid, Some("lifetime"))
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
-          boundVar <- unifyTypeM(sym.tvar, Type.mkRef(tpe1), loc)
+          boundVar <- unifyTypeM(sym.tvar, Type.mkScopedRef(tpe1, lifetimeVar), loc)
           resultTyp = tpe2
-          resultEff = Type.mkAnd(eff1, eff2)
+          resultEff = Type.mkAnd(eff1, purify(lifetimeVar, eff2))
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
       case ResolvedAst.Expression.Match(exp, rules, loc) =>

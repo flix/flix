@@ -18,7 +18,7 @@
 package ca.uwaterloo.flix.language.debug
 
 import ca.uwaterloo.flix.language.ast.Kind.Bool
-import ca.uwaterloo.flix.language.ast.{Kind, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.vt.{VirtualString, VirtualTerminal}
 
@@ -87,9 +87,11 @@ object FormatType {
 
       base match {
         case None => tpe match {
-          case tvar@Type.Var(id, kind, _, _) => audience match {
-            case Audience.Internal => kind match {
-              case Bool => s"''$id"
+          case tvar@Type.Var(id, kind, rigidity, _) => audience match {
+            case Audience.Internal => (kind, rigidity) match {
+              // TODO: Find a better scheme.
+              case (Bool, Rigidity.Flexible) => s"('$id : Bool)"
+              case (Bool, Rigidity.Rigid) => s"('${id}r : Bool)"
               case _ => s"'$id"
             }
             case Audience.External => tvar.text.getOrElse(renameMap(tvar.id))
@@ -148,6 +150,8 @@ object FormatType {
           case TypeConstructor.Lazy => formatApply("Lazy", args)
 
           case TypeConstructor.Ref => formatApply("Ref", args)
+
+          case TypeConstructor.ScopedRef => formatApply("ScopedRef", args)
 
           case TypeConstructor.RecordExtend(field) => args.length match {
             case 0 => s"{ $field: ??? }"

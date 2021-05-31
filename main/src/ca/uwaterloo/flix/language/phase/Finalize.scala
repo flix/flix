@@ -452,6 +452,9 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
 
           case TypeConstructor.Ref => MonoType.Ref(args.head)
 
+          case TypeConstructor.ScopedRef =>
+            throw InternalCompilerException(s"Unexpected type: '$t0'.")
+
           case TypeConstructor.Tuple(l) => MonoType.Tuple(args)
 
           case TypeConstructor.Arrow(l) => MonoType.Arrow(args.drop(1).init, args.last)
