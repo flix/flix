@@ -686,6 +686,15 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = Type.mkAnd(eff1, eff2)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
+      case ResolvedAst.Expression.LetScopedRef(sym, exp1, exp2, loc) =>
+        for {
+          (constrs1, tpe1, eff1) <- visitExp(exp1)
+          (constrs2, tpe2, eff2) <- visitExp(exp2)
+          boundVar <- unifyTypeM(sym.tvar, Type.mkRef(tpe1), loc)
+          resultTyp = tpe2
+          resultEff = Type.mkAnd(eff1, eff2)
+        } yield (constrs1 ++ constrs2, resultTyp, resultEff)
+
       case ResolvedAst.Expression.Match(exp, rules, loc) =>
         val patterns = rules.map(_.pat)
         val guards = rules.map(_.guard)
@@ -1533,6 +1542,14 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val e2 = visitExp(exp2, subst0)
         val tpe = e2.tpe
         val eff = Type.mkAnd(e1.eff, e2.eff)
+        TypedAst.Expression.Let(sym, e1, e2, tpe, eff, loc)
+
+      case ResolvedAst.Expression.LetScopedRef(sym, exp1, exp2, loc) =>
+        val inner = visitExp(exp1, subst0)
+        val e1 = TypedAst.Expression.Ref(inner, Type.mkRef(inner.tpe), /* TODO:? */ Type.Pure, loc)
+        val e2 = visitExp(exp2, subst0)
+        val tpe = e2.tpe
+        val eff = Type.mkAnd(e1.eff, e2.eff) // TODO
         TypedAst.Expression.Let(sym, e1, e2, tpe, eff, loc)
 
       case ResolvedAst.Expression.Match(matchExp, rules, loc) =>

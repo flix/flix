@@ -598,6 +598,9 @@ object ParsedAst {
       */
     case class LetImport(sp1: SourcePosition, op: ParsedAst.JvmOp, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
+    // TODO: DOC
+    case class LetScopedRef(sp1: SourcePosition, ident: Name.Ident, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
     /**
       * Match Expression (pattern match expression).
       *

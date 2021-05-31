@@ -881,6 +881,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           }
       }
 
+    case ParsedAst.Expression.LetScopedRef(sp1, ident, exp1, exp2, sp2) =>
+      mapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) =>
+          WeededAst.Expression.LetScopedRef(ident, e1, e2, mkSL(sp1, sp2))
+      }
+
     case ParsedAst.Expression.Match(sp1, exp, rules, sp2) =>
       val rulesVal = traverse(rules) {
         case ParsedAst.MatchRule(pat, None, body) =>
