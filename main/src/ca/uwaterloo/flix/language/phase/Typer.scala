@@ -1414,6 +1414,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           // TODO: Current this line MUST appear here before the call to visitExp(exp2).
+          // Otherwise the rigid variable is not put into the context / subst. at the right time to remain rigid.
           boundVar <- unifyTypeM(sym.tvar, Type.mkScopedRef(tpe1, lifetimeVar), loc)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
           resultTyp = tpe2
@@ -1421,23 +1422,13 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
       case ResolvedAst.Expression.ScopedDeref(exp, tvar, loc) =>
-        // This is super ugly, but more correct, because it does not introduce
-        // fresh type variables.
-        // TODO: What if tpe is a type variable?? Will this work or not?
-        def assertScopeRef(tpe: Type): InferMonad[(Type, Type)] = InferMonad(
-          (subst: Substitution) =>
-            tpe match {
-              case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.ScopedRef, _), elmType), lifetime) =>
-                Result.Ok(subst, (subst(elmType), subst(lifetime)))
-              case _ => Result.Err(???) // TODO: Raise mismatched type.
-            }
-        )
-
+        val elmTypeVar = Type.freshVar(Kind.Star)
+        val lifeTimeVar = Type.freshVar(Kind.Bool)
         for {
           (constrs, typ, _) <- visitExp(exp)
-          (elmType, lifetime) <- assertScopeRef(typ)
-          resultTyp <- unifyTypeM(tvar, elmType, loc)
-          resultEff = lifetime
+          _ <- unifyTypeM(typ, Type.mkScopedRef(elmTypeVar, lifeTimeVar), loc)
+          resultTyp <- unifyTypeM(tvar, elmTypeVar, loc)
+          resultEff = lifeTimeVar
         } yield (constrs, resultTyp, resultEff)
 
       case ResolvedAst.Expression.ScopedAssign(exp1, exp2, loc) =>
