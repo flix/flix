@@ -1425,32 +1425,22 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
       case ResolvedAst.Expression.ScopedDeref(exp, tvar, evar, loc) =>
         val elmTypeVar = Type.freshVar(Kind.Star)
-        val lifeTimeVar = Type.freshVar(Kind.Bool)
+        val lifetimeVar = Type.freshVar(Kind.Bool)
         for {
-          (constrs, typ, _) <- visitExp(exp)
-          _ <- unifyTypeM(typ, Type.mkScopedRef(elmTypeVar, lifeTimeVar), loc)
+          (constrs, tpe, _) <- visitExp(exp)
+          refType <- unifyTypeM(tpe, Type.mkScopedRef(elmTypeVar, lifetimeVar), loc)
           resultTyp <- unifyTypeM(tvar, elmTypeVar, loc)
-          resultEff <- unifyTypeM(evar, lifeTimeVar, loc)
+          resultEff <- unifyTypeM(evar, lifetimeVar, loc)
         } yield (constrs, resultTyp, resultEff)
 
       case ResolvedAst.Expression.ScopedAssign(exp1, exp2, evar, loc) =>
-        // TODO: What if tpe is a type variable?? Will this work or not?
-      def assertScopeRef(tpe: Type): InferMonad[(Type, Type)] = InferMonad(
-          (subst: Substitution) =>
-            tpe match {
-              case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.ScopedRef, _), elmType), lifetime) =>
-                Result.Ok(subst, (subst(elmType), subst(lifetime)))
-              case _ => Result.Err(???) // TODO: Raise mismatched type.
-            }
-        )
-
+        val lifetimeVar = Type.freshVar(Kind.Bool)
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
-          (elmType, lifetime) <- assertScopeRef(tpe1)
-          _ <- unifyTypeM(elmType, tpe2, loc)
+          refType <- unifyTypeM(tpe1, Type.mkScopedRef(tpe2, lifetimeVar), loc)
           resultTyp = Type.Unit
-          resultEff <- unifyTypeM(evar, Type.mkAnd(eff1 :: eff2 :: lifetime :: Nil), loc)
+          resultEff <- unifyTypeM(evar, Type.mkAnd(eff1 :: eff2 :: lifetimeVar :: Nil), loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
     }
@@ -1845,7 +1835,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
       case ResolvedAst.Expression.LetScopedRef(sym, exp1, exp2, evar, loc) =>
         val inner = visitExp(exp1, subst0)
-        val e1 = TypedAst.Expression.Ref(inner, Type.mkRef(inner.tpe), /* TODO: Scoped */ Type.Pure, loc)
+        val innerEff = subst0(evar) // TODO: Is this right?
+        val e1 = TypedAst.Expression.Ref(inner, Type.mkRef(inner.tpe), innerEff, loc)
         val e2 = visitExp(exp2, subst0)
         val tpe = e2.tpe
         val eff = subst0(evar)
