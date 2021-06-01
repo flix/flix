@@ -1408,6 +1408,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           println(s"At ${loc.format}: purify $tvar in $eff")
           purify(tvar, eff)
         }
+        // TODO: Purify also has to be applied to resultTyp? Or at least we need an argument
+        // why it does not have to be applied?
 
         // Introduce a rigid variable for the lifetime of `exp1`.
         val lifetimeVar = Type.freshVar(Kind.Bool, Rigidity.Rigid, Some("lifetime"))
