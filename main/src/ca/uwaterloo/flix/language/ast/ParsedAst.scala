@@ -598,9 +598,6 @@ object ParsedAst {
       */
     case class LetImport(sp1: SourcePosition, op: ParsedAst.JvmOp, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
-    // TODO: DOC
-    case class LetScopedRef(sp1: SourcePosition, ident: Name.Ident, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
     /**
       * Match Expression (pattern match expression).
       *
@@ -799,9 +796,6 @@ object ParsedAst {
       */
     case class Deref(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
-    // TODO
-    case class ScopedDeref(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
     /**
       * Assignment expression.
       *
@@ -986,6 +980,15 @@ object ParsedAst {
       * @param sp2      the position of the last character in the expression.
       */
     case class FixpointQueryWithSelect(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], selects: ParsedAst.SelectFragment, from: Seq[ParsedAst.Predicate.Body.Atom], whereExp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+
+    // TODO: DOC
+    case class LetScopedRef(sp1: SourcePosition, ident: Name.Ident, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    // TODO
+    case class ScopedDeref(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    // TODO
+    case class ScopedAssign(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
   }
 

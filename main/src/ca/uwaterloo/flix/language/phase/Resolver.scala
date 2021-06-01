@@ -524,12 +524,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.Let(sym, e1, e2, loc)
 
-        case NamedAst.Expression.LetScopedRef(sym, exp1, exp2, loc) =>
-          for {
-            e1 <- visit(exp1, tenv0)
-            e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.LetScopedRef(sym, e1, e2, loc)
-
         case NamedAst.Expression.Match(exp, rules, loc) =>
           val rulesVal = traverse(rules) {
             case NamedAst.MatchRule(pat, guard, body) =>
@@ -675,11 +669,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           for {
             e <- visit(exp, tenv0)
           } yield ResolvedAst.Expression.Deref(e, tvar, loc)
-
-        case NamedAst.Expression.ScopedDeref(exp, tvar, loc) =>
-          for {
-            e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.ScopedDeref(e, tvar, loc)
 
         case NamedAst.Expression.Assign(exp1, exp2, loc) =>
           for {
@@ -886,6 +875,23 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.FixpointProjectOut(pred, e1, e2, tvar, loc)
+
+        case NamedAst.Expression.LetScopedRef(sym, exp1, exp2, loc) =>
+          for {
+            e1 <- visit(exp1, tenv0)
+            e2 <- visit(exp2, tenv0)
+          } yield ResolvedAst.Expression.LetScopedRef(sym, e1, e2, loc)
+
+        case NamedAst.Expression.ScopedDeref(exp, tvar, loc) =>
+          for {
+            e <- visit(exp, tenv0)
+          } yield ResolvedAst.Expression.ScopedDeref(e, tvar, loc)
+
+        case NamedAst.Expression.ScopedAssign(exp1, exp2, loc) =>
+          for {
+            e1 <- visit(exp1, tenv0)
+            e2 <- visit(exp2, tenv0)
+          } yield ResolvedAst.Expression.ScopedAssign(e1, e2, loc)
 
       }
 

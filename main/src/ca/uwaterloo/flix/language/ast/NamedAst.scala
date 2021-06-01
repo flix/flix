@@ -120,8 +120,6 @@ object NamedAst {
 
     case class Let(sym: Symbol.VarSym, exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
-    case class LetScopedRef(sym: Symbol.VarSym, exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
-
     case class Match(exp: NamedAst.Expression, rules: List[NamedAst.MatchRule], loc: SourceLocation) extends NamedAst.Expression
 
     case class Choose(star: Boolean, exps: List[NamedAst.Expression], rules: List[NamedAst.ChoiceRule], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
@@ -153,8 +151,6 @@ object NamedAst {
     case class Ref(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Deref(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
-
-    case class ScopedDeref(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class Assign(exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
@@ -207,6 +203,12 @@ object NamedAst {
     case class FixpointProjectIn(exp: NamedAst.Expression, pred: Name.Pred, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class FixpointProjectOut(pred: Name.Pred, exp1: NamedAst.Expression, exp2: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
+    case class LetScopedRef(sym: Symbol.VarSym, exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+
+    case class ScopedDeref(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
+    case class ScopedAssign(exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
   }
 

@@ -686,23 +686,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = Type.mkAnd(eff1, eff2)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
-      case ResolvedAst.Expression.LetScopedRef(sym, exp1, exp2, loc) =>
-        def purifyAndPrint(tvar: Type.Var, eff: Type): Type = {
-          println(s"At ${loc.format}: purify $tvar in $eff")
-          purify(tvar, eff)
-        }
-
-        // Introduce a rigid variable for the lifetime of `exp1`.
-        val lifetimeVar = Type.freshVar(Kind.Bool, Rigidity.Rigid, Some("lifetime"))
-        for {
-          (constrs1, tpe1, eff1) <- visitExp(exp1)
-          // TODO: Current this line MUST appear here before the call to visitExp(exp2).
-          boundVar <- unifyTypeM(sym.tvar, Type.mkScopedRef(tpe1, lifetimeVar), loc)
-          (constrs2, tpe2, eff2) <- visitExp(exp2)
-          resultTyp = tpe2
-          resultEff = Type.mkAnd(eff1, purifyAndPrint(lifetimeVar, eff2))
-        } yield (constrs1 ++ constrs2, resultTyp, resultEff)
-
       case ResolvedAst.Expression.Match(exp, rules, loc) =>
         val patterns = rules.map(_.pat)
         val guards = rules.map(_.guard)
@@ -1115,32 +1098,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = Type.Impure
         } yield (constrs, resultTyp, resultEff)
 
-      case ResolvedAst.Expression.ScopedDeref(exp, tvar, loc) =>
-        // This is super ugly, but more correct, because it does not introduce
-        // fresh type variables.
-        // TODO: What if tpe is a type variable?? Then this will not work...
-        def assertScopeRef(tpe: Type): InferMonad[(Type, Type)] = InferMonad(
-          (subst: Substitution) =>
-            tpe match {
-              case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.ScopedRef, _), elmType), lifetime) =>
-                Result.Ok(subst, (subst(elmType), subst(lifetime)))
-              case _ => Result.Err(???) // TODO: Raise mismatched type.
-            }
-        )
-
-        for {
-          (constrs, typ, _) <- visitExp(exp)
-          (elmType, lifetime) <- assertScopeRef(typ)
-          resultTyp <- unifyTypeM(tvar, elmType, loc)
-          resultEff = lifetime
-        } yield (constrs, resultTyp, resultEff)
-
       case ResolvedAst.Expression.Assign(exp1, exp2, loc) =>
-        //
-        //  exp1 : Ref[t] @ eff1   exp2: t @ eff2
-        //  -------------------------------------
-        //  exp1 := exp2 : Unit @ Impure
-        //
         for {
           (constrs1, tpe1, _) <- visitExp(exp1)
           (constrs2, tpe2, _) <- visitExp(exp2)
@@ -1443,6 +1401,55 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultTyp <- unifyTypeM(tvar, Type.mkArray(freshTupleVar), loc)
           resultEff = Type.mkAnd(eff1, eff2)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
+
+
+      case ResolvedAst.Expression.LetScopedRef(sym, exp1, exp2, loc) =>
+        def purifyAndPrint(tvar: Type.Var, eff: Type): Type = {
+          println(s"At ${loc.format}: purify $tvar in $eff")
+          purify(tvar, eff)
+        }
+
+        // Introduce a rigid variable for the lifetime of `exp1`.
+        val lifetimeVar = Type.freshVar(Kind.Bool, Rigidity.Rigid, Some("lifetime"))
+        for {
+          (constrs1, tpe1, eff1) <- visitExp(exp1)
+          // TODO: Current this line MUST appear here before the call to visitExp(exp2).
+          boundVar <- unifyTypeM(sym.tvar, Type.mkScopedRef(tpe1, lifetimeVar), loc)
+          (constrs2, tpe2, eff2) <- visitExp(exp2)
+          resultTyp = tpe2
+          resultEff = Type.mkAnd(eff1, purifyAndPrint(lifetimeVar, eff2))
+        } yield (constrs1 ++ constrs2, resultTyp, resultEff)
+
+      case ResolvedAst.Expression.ScopedDeref(exp, tvar, loc) =>
+        // This is super ugly, but more correct, because it does not introduce
+        // fresh type variables.
+        // TODO: What if tpe is a type variable?? Then this will not work...
+        def assertScopeRef(tpe: Type): InferMonad[(Type, Type)] = InferMonad(
+          (subst: Substitution) =>
+            tpe match {
+              case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.ScopedRef, _), elmType), lifetime) =>
+                Result.Ok(subst, (subst(elmType), subst(lifetime)))
+              case _ => Result.Err(???) // TODO: Raise mismatched type.
+            }
+        )
+
+        for {
+          (constrs, typ, _) <- visitExp(exp)
+          (elmType, lifetime) <- assertScopeRef(typ)
+          resultTyp <- unifyTypeM(tvar, elmType, loc)
+          resultEff = lifetime
+        } yield (constrs, resultTyp, resultEff)
+
+      case ResolvedAst.Expression.ScopedAssign(exp1, exp2, loc) =>
+        val lifetimeVar = Type.freshVar(Kind.Bool, Rigidity.Flexible, None)
+        for {
+          (constrs1, tpe1, eff1) <- visitExp(exp1)
+          (constrs2, tpe2, eff2) <- visitExp(exp2)
+          refType <- unifyTypeM(tpe1, Type.mkScopedRef(tpe2, lifetimeVar), loc)
+          resultTyp = Type.Unit
+          resultEff = Type.mkAnd(eff1 :: eff2 :: lifetimeVar :: Nil)
+        } yield (constrs1 ++ constrs2, resultTyp, resultEff)
+
     }
 
     /**
@@ -1562,14 +1569,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val eff = Type.mkAnd(e1.eff, e2.eff)
         TypedAst.Expression.Let(sym, e1, e2, tpe, eff, loc)
 
-      case ResolvedAst.Expression.LetScopedRef(sym, exp1, exp2, loc) =>
-        val inner = visitExp(exp1, subst0)
-        val e1 = TypedAst.Expression.Ref(inner, Type.mkRef(inner.tpe), /* TODO:? */ Type.Pure, loc)
-        val e2 = visitExp(exp2, subst0)
-        val tpe = e2.tpe
-        val eff = Type.mkAnd(e1.eff, e2.eff) // TODO
-        TypedAst.Expression.Let(sym, e1, e2, tpe, eff, loc)
-
       case ResolvedAst.Expression.Match(matchExp, rules, loc) =>
         val e1 = visitExp(matchExp, subst0)
         val rs = rules map {
@@ -1674,11 +1673,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       case ResolvedAst.Expression.Deref(exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
         val eff = Type.Impure
-        TypedAst.Expression.Deref(e, subst0(tvar), eff, loc)
-
-      case ResolvedAst.Expression.ScopedDeref(exp, tvar, loc) =>
-        val e = visitExp(exp, subst0)
-        val eff = Type.Impure /* TODO */
         TypedAst.Expression.Deref(e, subst0(tvar), eff, loc)
 
       case ResolvedAst.Expression.Assign(exp1, exp2, loc) =>
@@ -1845,6 +1839,26 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val mergeExp = TypedAst.Expression.FixpointMerge(e1, e2, stf, tpe, eff, loc)
         val solveExp = TypedAst.Expression.FixpointSolve(mergeExp, stf, tpe, eff, loc)
         TypedAst.Expression.FixpointProjectOut(pred, solveExp, tpe, eff, loc)
+
+      case ResolvedAst.Expression.LetScopedRef(sym, exp1, exp2, loc) =>
+        val inner = visitExp(exp1, subst0)
+        val e1 = TypedAst.Expression.Ref(inner, Type.mkRef(inner.tpe), /* TODO: Scoped */ Type.Pure, loc)
+        val e2 = visitExp(exp2, subst0)
+        val tpe = e2.tpe
+        val eff = Type.mkAnd(e1.eff, e2.eff) // TODO
+        TypedAst.Expression.Let(sym, e1, e2, tpe, eff, loc)
+
+      case ResolvedAst.Expression.ScopedDeref(exp, tvar, loc) =>
+        val e = visitExp(exp, subst0)
+        val eff = Type.Impure // TODO: Scoped
+        TypedAst.Expression.Deref(e, subst0(tvar), eff, loc)
+
+      case ResolvedAst.Expression.ScopedAssign(exp1, exp2, loc) =>
+        val e1 = visitExp(exp1, subst0)
+        val e2 = visitExp(exp2, subst0)
+        val tpe = Type.Unit
+        val eff = Type.Impure // TODO: Scoped
+        TypedAst.Expression.Assign(e1, e2, tpe, eff, loc)
     }
 
     /**

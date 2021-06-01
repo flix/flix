@@ -155,8 +155,6 @@ object WeededAst {
 
     case class Deref(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class ScopedDeref(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
-
     case class Assign(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Existential(tparams: WeededAst.TypeParams, fparam: WeededAst.FormalParam, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
@@ -208,6 +206,10 @@ object WeededAst {
     case class FixpointProjectIn(exp: WeededAst.Expression, pred: Name.Pred, loc: SourceLocation) extends WeededAst.Expression
 
     case class FixpointProjectOut(pred: Name.Pred, exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class ScopedDeref(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class ScopedAssign(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
   }
 
