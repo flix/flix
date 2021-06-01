@@ -1423,7 +1423,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       case ResolvedAst.Expression.ScopedDeref(exp, tvar, loc) =>
         // This is super ugly, but more correct, because it does not introduce
         // fresh type variables.
-        // TODO: What if tpe is a type variable?? Then this will not work...
+        // TODO: What if tpe is a type variable?? Will this work or not?
         def assertScopeRef(tpe: Type): InferMonad[(Type, Type)] = InferMonad(
           (subst: Substitution) =>
             tpe match {
@@ -1441,13 +1441,23 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         } yield (constrs, resultTyp, resultEff)
 
       case ResolvedAst.Expression.ScopedAssign(exp1, exp2, loc) =>
-        val lifetimeVar = Type.freshVar(Kind.Bool, Rigidity.Flexible, None)
+        // TODO: What if tpe is a type variable?? Will this work or not?
+      def assertScopeRef(tpe: Type): InferMonad[(Type, Type)] = InferMonad(
+          (subst: Substitution) =>
+            tpe match {
+              case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.ScopedRef, _), elmType), lifetime) =>
+                Result.Ok(subst, (subst(elmType), subst(lifetime)))
+              case _ => Result.Err(???) // TODO: Raise mismatched type.
+            }
+        )
+
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
-          refType <- unifyTypeM(tpe1, Type.mkScopedRef(tpe2, lifetimeVar), loc)
+          (elmType, lifetime) <- assertScopeRef(tpe1)
+          _ <- unifyTypeM(elmType, tpe2, loc)
           resultTyp = Type.Unit
-          resultEff = Type.mkAnd(eff1 :: eff2 :: lifetimeVar :: Nil)
+          resultEff = Type.mkAnd(eff1 :: eff2 :: lifetime :: Nil)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
     }
