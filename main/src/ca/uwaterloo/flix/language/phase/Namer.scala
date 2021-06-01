@@ -887,17 +887,23 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       // make a fresh variable symbol for the local variable.
       val sym = Symbol.freshVarSym(ident)
       mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0 + (ident.name -> sym), uenv0, tenv0)) {
-        case (e1, e2) => NamedAst.Expression.LetScopedRef(sym, e1, e2, loc)
+        case (e1, e2) =>
+          val evar = Type.freshVar(Kind.Bool)
+          NamedAst.Expression.LetScopedRef(sym, e1, e2, evar, loc)
       }
 
     case WeededAst.Expression.ScopedDeref(exp, loc) =>
       visitExp(exp, env0, uenv0, tenv0) map {
-        case e => NamedAst.Expression.ScopedDeref(e, Type.freshVar(Kind.Star), loc)
+        case e =>
+          val evar = Type.freshVar(Kind.Bool)
+          NamedAst.Expression.ScopedDeref(e, Type.freshVar(Kind.Star), evar, loc)
       }
 
     case WeededAst.Expression.ScopedAssign(exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0)) {
-        case (e1, e2) => NamedAst.Expression.ScopedAssign(e1, e2, loc)
+        case (e1, e2) =>
+          val evar = Type.freshVar(Kind.Bool)
+          NamedAst.Expression.ScopedAssign(e1, e2, evar, loc)
       }
 
   }

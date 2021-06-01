@@ -876,22 +876,22 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.FixpointProjectOut(pred, e1, e2, tvar, loc)
 
-        case NamedAst.Expression.LetScopedRef(sym, exp1, exp2, loc) =>
+        case NamedAst.Expression.LetScopedRef(sym, exp1, exp2, evar, loc) =>
           for {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.LetScopedRef(sym, e1, e2, loc)
+          } yield ResolvedAst.Expression.LetScopedRef(sym, e1, e2, evar, loc)
 
-        case NamedAst.Expression.ScopedDeref(exp, tvar, loc) =>
+        case NamedAst.Expression.ScopedDeref(exp, tvar, evar, loc) =>
           for {
             e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.ScopedDeref(e, tvar, loc)
+          } yield ResolvedAst.Expression.ScopedDeref(e, tvar, evar, loc)
 
-        case NamedAst.Expression.ScopedAssign(exp1, exp2, loc) =>
+        case NamedAst.Expression.ScopedAssign(exp1, exp2, evar, loc) =>
           for {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.ScopedAssign(e1, e2, loc)
+          } yield ResolvedAst.Expression.ScopedAssign(e1, e2, evar, loc)
 
       }
 
