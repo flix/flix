@@ -23,8 +23,8 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.language.phase.unification.KindInferMonad.seqM
 import ca.uwaterloo.flix.language.phase.unification.KindUnification.unifyKindM
-import ca.uwaterloo.flix.language.phase.unification.{KindInferMonad, KindSubstitution}
-import ca.uwaterloo.flix.util.Validation.{mapN, traverse}
+import ca.uwaterloo.flix.language.phase.unification.{KindInferMonad, KindSubstitution, KindUnification}
+import ca.uwaterloo.flix.util.Validation.{ToSuccess, mapN, traverse}
 import ca.uwaterloo.flix.util.{Result, Validation}
 
 // MATT docs
@@ -225,6 +225,35 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       }
   }
 
+  private def visitSig(sig0: ResolvedAst.Sig, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Sig, KindError] = sig0 match {
+    case ResolvedAst.Sig(sym, spec0, expOpt0) =>
+      val inference = for {
+        _ <- inferSpec(spec0, root)
+        _ <- expOpt.map(inferExp(_, root)).getOrElse(KindInferMonad.point(()))
+      } yield ()
+
+      mapN(visitSpec(spec0, inference, root)) {
+        spec => KindedAst.Sig(sym, spec, ???) // MATT reassembleExp
+      }
+  }
+
+  private def visitSpec(spec0: ResolvedAst.Spec, inference: KindInferMonad[Unit], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Sig, KindError] = spec0 match {
+    case ResolvedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc0, eff0, loc) =>
+      val KindInferMonad(run) = inference
+      val initialSubst = getSubstFromTparams(tparams0)
+      run(initialSubst) match {
+        case Result.Ok((subst, _)) =>
+          val ann = ann0.map(reassembleAnnotation(_, subst, root))
+          val tparams = reassembleTparams(tparams0, subst, root)
+          val fparams = fparams0.map(reassembleFparam(_, subst, root))
+          val sc = reassembleScheme(sc0, subst, root)
+          val eff = reassembleType(eff0, subst, root)
+          KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, eff, loc).toSuccess
+
+        case Result.Err(e) => Validation.Failure(LazyList(e))
+      }
+  }
+
   private def getSubstFromTparams(tparams0: ResolvedAst.TypeParams)(implicit flix: Flix): KindSubstitution = tparams0 match {
     case ResolvedAst.TypeParams.Kinded(tparams) =>
       tparams.foldLeft(KindSubstitution.empty) {
@@ -299,6 +328,125 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     }
 
     visitType(tpe00)
+  }
+
+  private def inferExp(exp00: ResolvedAst.Expression, root: ResolvedAst.Root)(implicit flix: Flix): KindInferMonad[Unit] = {
+
+    def visit(exp0: ResolvedAst.Expression): KindInferMonad[Unit] = exp0 match {
+      case ResolvedAst.Expression.Wild(tpe, loc) =>
+        for {
+          _ <- unifyKindM(tpe.kvar, Kind.Star, loc)
+        } yield ()
+      case ResolvedAst.Expression.Var(sym, tpe, loc) =>
+        for {
+          kind <- inferType(tpe, root)
+          _ <- unifyKindM(kind, Kind.Star, loc)
+        } yield ()
+      case ResolvedAst.Expression.Def(sym, tpe, loc) =>
+        for {
+          _ <- unifyKindM(tpe.kvar, Kind.Star, loc)
+        } yield ()
+      case ResolvedAst.Expression.Sig(sym, tpe, loc) =>
+        for {
+          _ <- unifyKindM(tpe.kvar, Kind.Star, loc)
+        } yield ()
+      case ResolvedAst.Expression.Hole(sym, tpe, eff, loc) =>
+        for {
+          _ <- unifyKindM(tpe.kvar, Kind.Star, loc)
+          _ <- unifyKindM(eff.kvar, Kind.Bool, loc)
+        } yield ()
+      case ResolvedAst.Expression.Unit(loc) => KindInferMonad.point(())
+      case ResolvedAst.Expression.Null(loc) => KindInferMonad.point(())
+      case ResolvedAst.Expression.True(loc) => KindInferMonad.point(())
+      case ResolvedAst.Expression.False(loc) => KindInferMonad.point(())
+      case ResolvedAst.Expression.Char(lit, loc) => KindInferMonad.point(())
+      case ResolvedAst.Expression.Float32(lit, loc) => KindInferMonad.point(())
+      case ResolvedAst.Expression.Float64(lit, loc) => KindInferMonad.point(())
+      case ResolvedAst.Expression.Int8(lit, loc) => KindInferMonad.point(())
+      case ResolvedAst.Expression.Int16(lit, loc) => KindInferMonad.point(())
+      case ResolvedAst.Expression.Int32(lit, loc) => KindInferMonad.point(())
+      case ResolvedAst.Expression.Int64(lit, loc) => KindInferMonad.point(())
+      case ResolvedAst.Expression.BigInt(lit, loc) => KindInferMonad.point(())
+      case ResolvedAst.Expression.Str(lit, loc) => KindInferMonad.point(())
+      case ResolvedAst.Expression.Default(tpe, loc) => KindInferMonad.point(())
+      case ResolvedAst.Expression.Apply(exp, exps, tpe, eff, loc) =>
+        for {
+          _ <- visit(exp)
+          _ <- seqM(exps.map(visit))
+          _ <- unifyKindM(tpe.kvar, Kind.Star, loc)
+          _ <- unifyKindM(eff.kvar, Kind.Bool, loc)
+        } yield ()
+      case ResolvedAst.Expression.Lambda(fparam, exp, tpe, loc) => ??? // MATT have to add fparam to scope ?
+      case ResolvedAst.Expression.Unary(sop, exp, tpe, loc) =>
+        for {
+          _ <- visit(exp)
+          _ <- unifyKindM(tpe.kvar, Kind.Star, loc)
+        } yield ()
+      case ResolvedAst.Expression.Binary(sop, exp1, exp2, tpe, loc) =>
+        for {
+          _ <- visit(exp1)
+          _ <- visit(exp2)
+          _ <- unifyKindM(tpe.kvar, Kind.Star, loc)
+        } yield ()
+      case ResolvedAst.Expression.IfThenElse(exp1, exp2, exp3, loc) =>
+        for {
+          _ <- visit(exp1)
+          _ <- visit(exp2)
+          _ <- visit(exp3)
+        } yield ()
+      case ResolvedAst.Expression.Stm(exp1, exp2, loc) =>
+        for {
+          _ <- visit(exp1)
+          _ <- visit(exp2)
+        } yield ()
+      case ResolvedAst.Expression.Let(sym, exp1, exp2, loc) =>
+        for {
+          _ <- visit(exp1)
+          _ <- visit(exp2)
+        } yield ()
+      case ResolvedAst.Expression.Match(exp, rules, loc) => ???// MATT
+      case ResolvedAst.Expression.Choose(star, exps, rules, tpe, loc) => ???// MATT
+      case ResolvedAst.Expression.Tag(sym, tag, exp, tpe, loc) => ???// MATT
+      case ResolvedAst.Expression.Tuple(elms, loc) => ???// MATT
+      case ResolvedAst.Expression.RecordEmpty(tpe, loc) => ???// MATT
+      case ResolvedAst.Expression.RecordSelect(exp, field, tpe, loc) => ???// MATT
+      case ResolvedAst.Expression.RecordExtend(field, value, rest, tpe, loc) => ???// MATT
+      case ResolvedAst.Expression.RecordRestrict(field, rest, tpe, loc) => ???// MATT
+      case ResolvedAst.Expression.ArrayLit(elms, tpe, loc) => ???// MATT
+      case ResolvedAst.Expression.ArrayNew(elm, len, tpe, loc) => ???// MATT
+      case ResolvedAst.Expression.ArrayLoad(base, index, tpe, loc) => ???// MATT
+      case ResolvedAst.Expression.ArrayStore(base, index, elm, loc) => ???// MATT
+      case ResolvedAst.Expression.ArrayLength(base, loc) => ???// MATT
+      case ResolvedAst.Expression.ArraySlice(base, beginIndex, endIndex, loc) => ???// MATT
+      case ResolvedAst.Expression.Ref(exp, loc) => ???// MATT
+      case ResolvedAst.Expression.Deref(exp, tpe, loc) => ???// MATT
+      case ResolvedAst.Expression.Assign(exp1, exp2, loc) => ???// MATT
+      case ResolvedAst.Expression.Existential(fparam, exp, loc) => ???// MATT
+      case ResolvedAst.Expression.Universal(fparam, exp, loc) => ???// MATT
+      case ResolvedAst.Expression.Ascribe(exp, expectedType, expectedEff, tpe, loc) => ???// MATT
+      case ResolvedAst.Expression.Cast(exp, declaredType, declaredEff, tpe, loc) => ???// MATT
+      case ResolvedAst.Expression.TryCatch(exp, rules, loc) => ???// MATT
+      case ResolvedAst.Expression.InvokeConstructor(constructor, args, loc) => ???// MATT
+      case ResolvedAst.Expression.InvokeMethod(method, exp, args, loc) => ???// MATT
+      case ResolvedAst.Expression.InvokeStaticMethod(method, args, loc) => ???// MATT
+      case ResolvedAst.Expression.GetField(field, exp, loc) => ???// MATT
+      case ResolvedAst.Expression.PutField(field, exp1, exp2, loc) => ???// MATT
+      case ResolvedAst.Expression.GetStaticField(field, loc) => ???// MATT
+      case ResolvedAst.Expression.PutStaticField(field, exp, loc) => ???// MATT
+      case ResolvedAst.Expression.NewChannel(exp, tpe, loc) => ???// MATT
+      case ResolvedAst.Expression.GetChannel(exp, tpe, loc) => ???// MATT
+      case ResolvedAst.Expression.PutChannel(exp1, exp2, tpe, loc) => ???// MATT
+      case ResolvedAst.Expression.SelectChannel(rules, default, tpe, loc) => ???// MATT
+      case ResolvedAst.Expression.Spawn(exp, loc) => ???// MATT
+      case ResolvedAst.Expression.Lazy(exp, loc) => ???// MATT
+      case ResolvedAst.Expression.Force(exp, tpe, loc) => ???// MATT
+      case ResolvedAst.Expression.FixpointConstraintSet(cs, tpe, loc) => ???// MATT
+      case ResolvedAst.Expression.FixpointMerge(exp1, exp2, loc) => ???// MATT
+      case ResolvedAst.Expression.FixpointSolve(exp, loc) => ???// MATT
+      case ResolvedAst.Expression.FixpointFilter(pred, exp, tpe, loc) => ???// MATT
+      case ResolvedAst.Expression.FixpointProjectIn(exp, pred, tpe, loc) => ???// MATT
+      case ResolvedAst.Expression.FixpointProjectOut(pred, exp1, exp2, tpe, loc) => ???// MATT
+    }
   }
 
   private def getTyconKind(tycon: UnkindedType.Constructor, root: ResolvedAst.Root): Kind = tycon match {
@@ -422,13 +570,17 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         case UnkindedType.Cst(cst, loc) => Type.Cst(reassembleTypeConstructor(cst, root), loc)
         case UnkindedType.Apply(t1, t2) => Type.Apply(visit(t1), visit(t2))
         case UnkindedType.Lambda(t1, t2) => Type.Lambda(visit(t1).asInstanceOf[Type.Var], visit(t2)) // MATT how to avoid cast
-        case UnkindedType.Var(id, kvar, text) =>
-          val kind = subst(kvar) // MATT need to check for not found?
-          Type.Var(id, kind, text = text)
+        case tvar: UnkindedType.Var => reassembleTypeVar(tvar, subst, root)
       }
     }
 
     visit(tpe0)
+  }
+
+  private def reassembleTypeVar(tvar0: UnkindedType.Var, subst: KindSubstitution, root: ResolvedAst.Root): Type.Var = tvar match {
+    case UnkindedType.Var(id, kvar, text) =>
+      val kind = subst(kvar) // MATT need to check for not found?
+      Type.Var(id, kind, text = text)
   }
 
   private def reassembleTparams(tparams: ResolvedAst.TypeParams, subst: KindSubstitution, root: ResolvedAst.Root): List[KindedAst.TypeParam] = tparams match {
@@ -437,15 +589,35 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   }
 
   private def reassembleTparam(tparam: ResolvedAst.TypeParam, subst: KindSubstitution, root: ResolvedAst.Root): KindedAst.TypeParam = tparam match {
-    case ResolvedAst.TypeParam.Kinded(name, tpe0, _, loc) =>
+    case ResolvedAst.TypeParam.Kinded(name, tvar0, _, loc) =>
       // MATT kinds should match here (can add assert for checking)
-      val tpe = reassembleType(tpe0, subst, root)
-      KindedAst.TypeParam(name, tpe.asInstanceOf[Type.Var], loc) // MATT avoid cast
-    case ResolvedAst.TypeParam.Unkinded(name, tpe0, loc) =>
+      val tvar = reassembleTypeVar(tvar0, subst, root)
+      KindedAst.TypeParam(name, tvar, loc)
+    case ResolvedAst.TypeParam.Unkinded(name, tvar0, loc) =>
       // MATT kinds should match here (can add assert for checking)
-      val tpe = reassembleType(tpe0, subst, root)
-      KindedAst.TypeParam(name, tpe.asInstanceOf[Type.Var], loc) // MATT avoid cast
+      val tvar = reassembleTypeVar(tvar0, subst, root)
+      KindedAst.TypeParam(name, tvar, loc)
     // MATT copy paste
+  }
+
+  private def reassembleFparam(fparam0: ResolvedAst.FormalParam, subst: KindSubstitution, root: ResolvedAst.Root): KindedAst.FormalParam = fparam0 match {
+    case ResolvedAst.FormalParam(sym, mod, tpe0, loc) =>
+      val tpe = reassembleType(tpe0, subst, root)
+      KindedAst.FormalParam(sym, mod, tpe, loc)
+  }
+
+  private def reassembleScheme(scheme: ResolvedAst.Scheme, subst: KindSubstitution, root: ResolvedAst.Root): Scheme = {
+    case ResolvedAst.Scheme(quantifiers0, constraints0, base0) =>
+      val quantifiers = quantifiers0.map(reassembleTypeVar(_, subst, root))
+      val constraints = constraints0.map(reassembleTconstr(_, subst, root))
+      val base = reassembleType(base0, subst, root)
+      Scheme(quantifiers, constraints, base)
+  }
+
+  private def reassembleTconstr(tconstr: ResolvedAst.TypeConstraint, subst: KindSubstitution, root: ResolvedAst.Root): Ast.TypeConstraint = tconstr match {
+    case ResolvedAst.TypeConstraint(clazz, tpe0, loc) =>
+      val tpe = reassembleType(tpe0, subst, root)
+      Ast.TypeConstraint(clazz, tpe, loc)
   }
 
 }
