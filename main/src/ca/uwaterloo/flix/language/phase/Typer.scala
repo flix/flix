@@ -1118,6 +1118,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       case ResolvedAst.Expression.ScopedDeref(exp, tvar, loc) =>
         // This is super ugly, but more correct, because it does not introduce
         // fresh type variables.
+        // TODO: What if tpe is a type variable?? Then this will not work...
         def assertScopeRef(tpe: Type): InferMonad[(Type, Type)] = InferMonad(
           (subst: Substitution) =>
             tpe match {
@@ -1677,7 +1678,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
       case ResolvedAst.Expression.ScopedDeref(exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
-        val eff = Type.Pure /* TODO */
+        val eff = Type.Impure /* TODO */
         TypedAst.Expression.Deref(e, subst0(tvar), eff, loc)
 
       case ResolvedAst.Expression.Assign(exp1, exp2, loc) =>

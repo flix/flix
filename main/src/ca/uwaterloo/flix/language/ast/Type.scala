@@ -501,6 +501,12 @@ object Type {
   def mkRef(tpe: Type, loc: SourceLocation = SourceLocation.Unknown): Type = Type.Apply(Type.Cst(TypeConstructor.Ref, loc), tpe)
 
   /**
+    * Returns the type ScopedRef type with the given source location `loc`.
+    */
+  def mkScopedRef(loc: SourceLocation): Type =
+    Type.Cst(TypeConstructor.ScopedRef, loc)
+
+  /**
     * Returns the type `ScopedRef[tpe, lifetime]` with the given optional source location `loc`.
     */
   def mkScopedRef(tpe1: Type, tpe2: Type, loc: SourceLocation = SourceLocation.Unknown): Type =
