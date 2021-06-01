@@ -122,6 +122,6 @@ object Kind {
   /**
     * Returns a fresh kind variable.
     */
-  def freshVar()(implicit flix: Flix): Kind = Var(flix.genSym.freshId())
+  def freshVar()(implicit flix: Flix): Kind.Var = Var(flix.genSym.freshId())
 
 }
