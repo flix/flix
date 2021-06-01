@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.language.phase.unification.KindInferMonad.seqM
 import ca.uwaterloo.flix.language.phase.unification.KindUnification.unifyKindM
 import ca.uwaterloo.flix.language.phase.unification.{KindInferMonad, KindSubstitution, KindUnification}
-import ca.uwaterloo.flix.util.Validation.{ToSuccess, mapN, traverse}
+import ca.uwaterloo.flix.util.Validation.{ToSuccess, flatMapN, mapN, traverse}
 import ca.uwaterloo.flix.util.{Result, Validation}
 
 // MATT docs
@@ -212,32 +212,28 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       }
   }
 
-  private def visitSpec(spec0: ResolvedAst.Spec, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Spec, KindError] = spec0 match {
-    case ResolvedAst.Spec(doc, ann0, mod, tparams, fparams0, sc, eff, loc) =>
-      val KindInferMonad(run) = inferSpec(spec0, root)
-      val initialSubst = getSubstFromTparams(tparams)
-      run(initialSubst) match {
-        case Result.Ok((subst, _)) =>
-          val ann = ann0.map(reassembleAnnotation(_, subst, root))
-          val tparams = reassembleTparams(tparams, subst, root)
-
-        case Result.Err(e) => Validation.Failure(LazyList(e))
-      }
-  }
-
   private def visitSig(sig0: ResolvedAst.Sig, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Sig, KindError] = sig0 match {
     case ResolvedAst.Sig(sym, spec0, expOpt0) =>
       val inference = for {
         _ <- inferSpec(spec0, root)
-        _ <- expOpt.map(inferExp(_, root)).getOrElse(KindInferMonad.point(()))
+        _ <- expOpt0.map(inferExp(_, root)).getOrElse(KindInferMonad.point(()))
       } yield ()
 
-      mapN(visitSpec(spec0, inference, root)) {
-        spec => KindedAst.Sig(sym, spec, ???) // MATT reassembleExp
+
+      flatMapN(visitSpec(spec0, inference, root)) {
+        spec =>
+          val KindInferMonad(run) = inference
+          run(KindSubstitution.empty) match {
+            case Result.Ok((subst, _)) =>
+              val expOpt = expOpt0.map(reassembleExpression(_, subst, root))
+              KindedAst.Sig(sym, spec, expOpt).toSuccess
+            case Result.Err(e) =>
+              Validation.Failure(LazyList(e))
+          }
       }
   }
 
-  private def visitSpec(spec0: ResolvedAst.Spec, inference: KindInferMonad[Unit], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Sig, KindError] = spec0 match {
+  private def visitSpec(spec0: ResolvedAst.Spec, inference: KindInferMonad[Unit], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Spec, KindError] = spec0 match {
     case ResolvedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc0, eff0, loc) =>
       val KindInferMonad(run) = inference
       val initialSubst = getSubstFromTparams(tparams0)
