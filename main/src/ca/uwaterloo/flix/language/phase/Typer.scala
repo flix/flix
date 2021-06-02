@@ -2184,6 +2184,10 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     }
 
     case Some(tc) => tc match {
+      case TypeConstructor.True => Type.True
+
+      case TypeConstructor.False => Type.False
+
       case TypeConstructor.Not =>
         val List(t) = tpe.typeArguments
         BoolUnification.mkNot(purify(tvar, t))
