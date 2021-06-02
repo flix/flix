@@ -80,26 +80,44 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
 
 
   // MATT docs
-  private def visitClass(clazz: ResolvedAst.Class, root: ResolvedAst.Root): Validation[KindedAst.Class, CompilationError] = clazz match {
+  private def visitClass(clazz: ResolvedAst.Class, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Class, CompilationError] = clazz match {
     case ResolvedAst.Class(doc, mod, sym, tparam0, superClasses0, sigs0, laws0, loc) =>
-      val (tparam, ascriptions) = visitTparam(tparam0)
-      val superClassesVal = traverse(superClasses0)(ascribeTconstr(_, ascriptions, root))
+      val subst = getSubstFromTparamDefaultStar(tparam0)
+      val tparam = reassembleTparam(tparam0, subst, root)
+      // MATT can't just reassemble here; need to check
+      val superClasses = superClasses0.map(reassembleTconstr(_, subst, root))
       val sigsVal = traverse(sigs0) {
-        case (sigSym, sig0) => visitSig(sig0, ascriptions, root).map(sig => sigSym -> sig)
+        // MATT need to factor in tparam subst (?)
+        case (sigSym, sig0) => visitSig(sig0, root).map(sig => sigSym -> sig)
       }
-      val lawsVal = traverse(laws0)(visitDef(_, ascriptions, root))
+      // MATT need to factor in tparam subst (?)
+      val lawsVal = traverse(laws0)(visitDef(_, root))
 
-      mapN(superClassesVal, sigsVal, lawsVal) {
-        case (superClasses, sigs, laws) => KindedAst.Class(doc, mod, sym, tparam, superClasses, sigs.toMap, laws, loc)
+      mapN(sigsVal, lawsVal) {
+        case (sigs, laws) => KindedAst.Class(doc, mod, sym, tparam, superClasses, sigs.toMap, laws, loc)
       }
   }
 
   // MATT docs
-  private def visitInstance(inst: ResolvedAst.Instance, root: ResolvedAst.Root): Validation[KindedAst.Instance, CompilationError] = inst match {
+  private def visitInstance(inst: ResolvedAst.Instance, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, CompilationError] = inst match {
     case ResolvedAst.Instance(doc, mod, sym, tpe, tconstrs0, defs0, ns, loc) =>
       val clazz = root.classes(sym)
-      val kind = getClassKind(clazz)
-      val expectedKind = KindMatch.fromKind(kind)
+      val expectedKind = getClassKind(clazz)
+
+      for {
+        kind <- inferType(tpe, root)
+        _ <- unifyKindM(kind, expectedKind, loc) // MATT better loc
+        _ <- seqM(tconstrs0.map(inferTconstr(_, root)))
+      } yield () // MATT do something with this value
+
+      // MATT thoughts:
+      // add inference param to defs, sigs
+      // then do
+      //   for {
+      //     _ <- inference
+      //     ... other stuff
+      //   } yield ...
+      // for non-instance defs, use KindInferMonad.point(())
 
       inferKinds(tpe, expectedKind, root) flatMap {
         case (tpe, ascriptions) =>
@@ -109,38 +127,6 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
             case (tconstrs, defs) => KindedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, ns, loc)
           }
       }
-  }
-
-  // MATT docs
-  private def visitTparams(tparams0: ResolvedAst.TypeParams): (List[KindedAst.TypeParam], Map[Int, Kind]) = tparams0 match {
-    // Case 1: Kinded tparams: use their kinds
-    case ResolvedAst.TypeParams.Kinded(tparams) =>
-      val ascriptions = tparams.foldLeft(Map.empty[Int, Kind]) {
-        case (acc, ResolvedAst.TypeParam.Kinded(_, tpe, kind, _)) => acc + (tpe.id -> kind)
-      }
-      val ktparams = tparams.map {
-        case ResolvedAst.TypeParam.Kinded(name, tpe, kind, loc) => KindedAst.TypeParam(name, ascribeTvar(tpe, kind), loc)
-      }
-      (ktparams, ascriptions)
-    // Case 2: Unkinded tparams: default to Star kind
-    case ResolvedAst.TypeParams.Unkinded(tparams) =>
-      val ascriptions = tparams.foldLeft(Map.empty[Int, Kind]) {
-        case (acc, tparam) => acc + (tparam.tpe.id -> Kind.Star)
-      }
-      val ktparams = tparams.map {
-        case ResolvedAst.TypeParam.Unkinded(name, tpe, loc) => KindedAst.TypeParam(name, ascribeTvar(tpe, Kind.Star), loc)
-      }
-      (ktparams, ascriptions)
-  }
-
-  // MATT docs
-  private def visitDef(defn0: ResolvedAst.Def, ascriptions0: Map[Int, Kind], root: ResolvedAst.Root): Validation[KindedAst.Def, KindError] = defn0 match {
-    case ResolvedAst.Def(sym, spec0, exp0) =>
-      for {
-        res <- visitSpec(spec0, ascriptions0, root)
-        (spec, ascriptions) = res
-        exp <- visitExp(exp0, ascriptions, root)
-      } yield KindedAst.Def(sym, spec, exp)
   }
 
   // MATT docs
@@ -198,19 +184,6 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     case UnkindedType.Constructor.Or => TypeConstructor.Or
   }
 
-  // MATT docs
-  def getAscriptions(tparams0: ResolvedAst.TypeParams): Map[Int, Kind] = tparams0 match {
-      // Case 1: Kinded tparams: use their kinds
-    case ResolvedAst.TypeParams.Kinded(tparams) => tparams.foldLeft(Map.empty[Int, Kind]) {
-      case (acc, ResolvedAst.TypeParam.Kinded(_, tpe, kind, _)) => acc + (tpe.id -> kind)
-    }
-      // Case 2: Unkinded tparams: default to Star kind
-    case ResolvedAst.TypeParams.Unkinded(tparams) =>
-      tparams.foldLeft(Map.empty[Int, Kind]) {
-        case (acc, tparam) => acc + (tparam.tpe.id -> Kind.Star)
-      }
-  }
-
   private def visitSig(sig0: ResolvedAst.Sig, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Sig, KindError] = sig0 match {
     case ResolvedAst.Sig(sym, spec0, expOpt0) =>
       val inference = for {
@@ -226,6 +199,26 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
             case Result.Ok((subst, _)) =>
               val expOpt = expOpt0.map(reassembleExpression(_, subst, root))
               KindedAst.Sig(sym, spec, expOpt).toSuccess
+            case Result.Err(e) =>
+              Validation.Failure(LazyList(e))
+          }
+      }
+  }
+
+  private def visitDef(def0: ResolvedAst.Def, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Def, KindError] = def0 match {
+    case ResolvedAst.Def(sym, spec0, exp0) =>
+      val inference = for {
+        _ <- inferSpec(spec0, root)
+        _ <- inferExp(exp0, root)
+      } yield ()
+
+      flatMapN(visitSpec(spec0, inference, root)) {
+        spec =>
+          val KindInferMonad(run) = inference
+          run(KindSubstitution.empty) match {
+            case Result.Ok((subst, _)) =>
+              val exp = reassembleExpression(exp0, subst, root)
+              KindedAst.Def(sym, spec, exp).toSuccess
             case Result.Err(e) =>
               Validation.Failure(LazyList(e))
           }
@@ -256,7 +249,26 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
           acc ++ KindSubstitution.singleton(tpe.kvar, kind)
       }
     case _: ResolvedAst.TypeParams.Unkinded => KindSubstitution.empty
+  }
 
+  private def getSubstFromTparamsDefaultStar(tparams0: ResolvedAst.TypeParams)(implicit flix: Flix): KindSubstitution = tparams0 match {
+    case ResolvedAst.TypeParams.Kinded(tparams) =>
+      tparams.foldLeft(KindSubstitution.empty) {
+        case (acc, ResolvedAst.TypeParam.Kinded(_, tpe, kind, _)) =>
+          acc ++ KindSubstitution.singleton(tpe.kvar, kind)
+      }
+    case ResolvedAst.TypeParams.Unkinded(tparams) =>
+      tparams.foldLeft(KindSubstitution.empty) {
+        case (acc, ResolvedAst.TypeParam.Unkinded(_, tpe, _)) =>
+          acc ++ KindSubstitution.singleton(tpe.kvar, Kind.Star)
+      }
+  }
+
+  private def getSubstFromTparamDefaultStar(tparam0: ResolvedAst.TypeParam)(implicit flix: Flix): KindSubstitution = {
+    case ResolvedAst.TypeParam.Kinded(_, tpe, kind, _) =>
+      KindSubstitution.singleton(tpe.kvar, kind)
+    case ResolvedAst.TypeParam.Unkinded(_, tpe, _) =>
+      KindSubstitution.singleton(tpe.kvar, Kind.Star)
   }
 
   // MATT docs
