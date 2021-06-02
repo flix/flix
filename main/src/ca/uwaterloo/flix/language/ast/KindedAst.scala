@@ -28,7 +28,6 @@ object KindedAst {
                   instances: Map[Symbol.ClassSym, List[KindedAst.Instance]],
                   defs: Map[Symbol.DefnSym, KindedAst.Def],
                   enums: Map[Symbol.EnumSym, KindedAst.Enum],
-                  properties: List[KindedAst.Property],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
@@ -44,8 +43,6 @@ object KindedAst {
   case class Spec(doc: Ast.Doc, ann: List[KindedAst.Annotation], mod: Ast.Modifiers, tparams: List[KindedAst.TypeParam], fparams: List[KindedAst.FormalParam], sc: Scheme, eff: Type, loc: SourceLocation)
 
   case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[KindedAst.TypeParam], cases: Map[Name.Tag, KindedAst.Case], tpeDeprecated: Type, sc: Scheme, loc: SourceLocation)
-
-  case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: KindedAst.Expression, loc: SourceLocation)
 
   sealed trait Expression {
     def loc: SourceLocation
