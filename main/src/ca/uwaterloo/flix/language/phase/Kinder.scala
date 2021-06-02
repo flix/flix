@@ -43,7 +43,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     }
 
     val defsVal = Validation.traverse(root.defs) {
-      case (sym, defn) => visitDef(defn, Map.empty, root).map((sym, _))
+      case (sym, defn) => visitDef(defn, KindInferMonad.point(()), root).map((sym, _))
     }
 
     val instancesVal = Validation.traverse(root.instances) {
@@ -82,50 +82,57 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   // MATT docs
   private def visitClass(clazz: ResolvedAst.Class, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Class, CompilationError] = clazz match {
     case ResolvedAst.Class(doc, mod, sym, tparam0, superClasses0, sigs0, laws0, loc) =>
-      val subst = getSubstFromTparamDefaultStar(tparam0)
-      val tparam = reassembleTparam(tparam0, subst, root)
-      // MATT can't just reassemble here; need to check
-      val superClasses = superClasses0.map(reassembleTconstr(_, subst, root))
-      val sigsVal = traverse(sigs0) {
-        // MATT need to factor in tparam subst (?)
-        case (sigSym, sig0) => visitSig(sig0, root).map(sig => sigSym -> sig)
-      }
-      // MATT need to factor in tparam subst (?)
-      val lawsVal = traverse(laws0)(visitDef(_, root))
+      val initialSubst = getSubstFromTparamDefaultStar(tparam0)
 
-      mapN(sigsVal, lawsVal) {
-        case (sigs, laws) => KindedAst.Class(doc, mod, sym, tparam, superClasses, sigs.toMap, laws, loc)
+      val inference = for {
+        _ <- seqM(superClasses0.map(inferTconstr(_, root)))
+      } yield ()
+
+      val KindInferMonad(run) = inference
+
+      val sigsVal = traverse(sigs0) {
+        case (sigSym, sig0) => visitSig(sig0, inference, root).map(sig => sigSym -> sig)
       }
+      val lawsVal = traverse(laws0)(visitDef(_, inference, root))
+
+      run(initialSubst) match {
+        case Result.Ok((subst, _)) =>
+          val tparam = reassembleTparam(tparam0, subst, root)
+          val superClasses = superClasses0.map(reassembleTconstr(_, subst, root))
+          mapN(sigsVal, lawsVal) {
+            case (sigs, laws) => KindedAst.Class(doc, mod, sym, tparam, superClasses, sigs.toMap, laws, loc)
+          }
+        case Result.Err(e) => Validation.Failure(LazyList(e))
+      }
+
   }
 
   // MATT docs
   private def visitInstance(inst: ResolvedAst.Instance, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, CompilationError] = inst match {
-    case ResolvedAst.Instance(doc, mod, sym, tpe, tconstrs0, defs0, ns, loc) =>
+    case ResolvedAst.Instance(doc, mod, sym, tpe0, tconstrs0, defs0, ns, loc) =>
       val clazz = root.classes(sym)
       val expectedKind = getClassKind(clazz)
 
-      for {
-        kind <- inferType(tpe, root)
+      val inference = for {
+        kind <- inferType(tpe0, root)
         _ <- unifyKindM(kind, expectedKind, loc) // MATT better loc
         _ <- seqM(tconstrs0.map(inferTconstr(_, root)))
-      } yield () // MATT do something with this value
+      } yield ()
 
-      // MATT thoughts:
-      // add inference param to defs, sigs
-      // then do
-      //   for {
-      //     _ <- inference
-      //     ... other stuff
-      //   } yield ...
-      // for non-instance defs, use KindInferMonad.point(())
+      val KindInferMonad(run) = inference
 
-      inferKinds(tpe, expectedKind, root) flatMap {
-        case (tpe, ascriptions) =>
-          val tconstrsVal = traverse(tconstrs0)(ascribeTconstr(_, ascriptions, root))
-          val defsVal = traverse(defs0)(visitDef(_, ascriptions, root))
-          mapN(tconstrsVal, defsVal) {
-            case (tconstrs, defs) => KindedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, ns, loc)
+      val defsVal = traverse(defs0)(visitDef(_, inference, root))
+
+      // MATT instances should have internally explicit tparams
+      // MATT so we don't run this on empty
+      run(KindSubstitution.empty) match {
+        case Result.Ok((subst, _)) =>
+          val tpe = reassembleType(tpe0, subst, root)
+          val tconstrs = tconstrs0.map(reassembleTconstr(_, subst, root))
+          mapN(defsVal) {
+            defs => KindedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, ns, loc)
           }
+        case Result.Err(e) => Validation.Failure(LazyList(e))
       }
   }
 
@@ -145,7 +152,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   }
 
   // MATT docs
-  def reassembleTypeConstructor(tycon: UnkindedType.Constructor, root: ResolvedAst.Root): TypeConstructor = tycon match {
+  def reassembleTypeConstructor(tycon: UnkindedType.Constructor, root: ResolvedAst.Root)(implicit flix: Flix): TypeConstructor = tycon match {
     case UnkindedType.Constructor.Unit => TypeConstructor.Unit
     case UnkindedType.Constructor.Null => TypeConstructor.Null
     case UnkindedType.Constructor.Bool => TypeConstructor.Bool
@@ -183,9 +190,10 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     case UnkindedType.Constructor.Or => TypeConstructor.Or
   }
 
-  private def visitSig(sig0: ResolvedAst.Sig, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Sig, KindError] = sig0 match {
+  private def visitSig(sig0: ResolvedAst.Sig, inf0: KindInferMonad[Unit], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Sig, KindError] = sig0 match {
     case ResolvedAst.Sig(sym, spec0, expOpt0) =>
       val inference = for {
+        _ <- inf0
         _ <- inferSpec(spec0, root)
         _ <- expOpt0.map(inferExp(_, root)).getOrElse(KindInferMonad.point(()))
       } yield ()
@@ -204,9 +212,10 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       }
   }
 
-  private def visitDef(def0: ResolvedAst.Def, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Def, KindError] = def0 match {
+  private def visitDef(def0: ResolvedAst.Def, inf0: KindInferMonad[Unit], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Def, KindError] = def0 match {
     case ResolvedAst.Def(sym, spec0, exp0) =>
       val inference = for {
+        _ <- inf0
         _ <- inferSpec(spec0, root)
         _ <- inferExp(exp0, root)
       } yield ()
