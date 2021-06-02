@@ -1412,7 +1412,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         // why it does not have to be applied?
 
         // Introduce a rigid variable for the lifetime of `exp1`.
-        val lifetimeVar = Type.freshVar(Kind.Bool, Rigidity.Rigid, Some("lifetime"))
+        val lifetimeVar = Type.freshVar(Kind.Bool, Rigidity.Rigid, Some("lifetime")) // TODO: Use "l" everywhere.
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           // TODO: Current this line MUST appear here before the call to visitExp(exp2).
@@ -1424,8 +1424,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
       case ResolvedAst.Expression.ScopedDeref(exp, tvar, evar, loc) =>
-        val elmTypeVar = Type.freshVar(Kind.Star)
-        val lifetimeVar = Type.freshVar(Kind.Bool)
+        val elmTypeVar = Type.freshVar(Kind.Star)  // TODO: Use t?
+        val lifetimeVar = Type.freshVar(Kind.Bool)  // TODO: Use "l" everywhere.
         for {
           (constrs, tpe, _) <- visitExp(exp)
           refType <- unifyTypeM(tpe, Type.mkScopedRef(elmTypeVar, lifetimeVar), loc)
@@ -1434,7 +1434,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         } yield (constrs, resultTyp, resultEff)
 
       case ResolvedAst.Expression.ScopedAssign(exp1, exp2, evar, loc) =>
-        val lifetimeVar = Type.freshVar(Kind.Bool)
+        val lifetimeVar = Type.freshVar(Kind.Bool)  // TODO: Use "l" everywhere.
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)

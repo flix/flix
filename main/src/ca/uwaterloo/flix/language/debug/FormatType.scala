@@ -87,13 +87,17 @@ object FormatType {
 
       base match {
         case None => tpe match {
-          case tvar@Type.Var(id, kind, rigidity, _) => audience match {
+          case Type.Var(id, kind, rigidity, text) => audience match {
             case Audience.Internal => kind match {
               // TODO: We need a systematic way to print type variables, their kind, and rigidity.
+              // TODO: We need to rid ourselves of alpha renaming. Its too brittle. We need something else.
               case Bool => s"''$id"
               case _ => s"'$id"
             }
-            case Audience.External => tvar.text.getOrElse(renameMap(tvar.id))
+            case Audience.External => text match {
+              case None => s"'$id"
+              case Some(t) => s"$t$id"
+            }
           }
           case Type.Lambda(tvar, tpe) => audience match {
             case Audience.Internal => s"${tvar.id.toString} => ${visit(tpe)}"
