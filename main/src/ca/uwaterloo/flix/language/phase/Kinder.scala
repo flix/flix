@@ -58,9 +58,20 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   }
 
   // MATT docs
-  private def visitEnum(enum: ResolvedAst.Enum, root: ResolvedAst.Root): Validation[KindedAst.Enum, CompilationError] = enum match {
+  private def visitEnum(enum: ResolvedAst.Enum, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Enum, CompilationError] = enum match {
     case ResolvedAst.Enum(doc, mod, sym, tparams0, cases0, tpeDeprecated, sc0, loc) =>
-      val (tparams, ascriptions) = visitTparams(tparams0)
+      val initialSubst = getSubstFromTparamsDefaultStar(tparams0)
+
+      val inference = for {
+        _ <- inferScheme(sc0, root)
+        _ <- inferType(tpeDeprecated, root)
+        _ <- seqM(cases0.values.map(inferCase(_, root)).toList)
+      } yield ()
+
+      val KindInferMonad(run) = inference
+
+      // MATT finish
+
       val casesVal = traverse(cases0) {
         case (_, ResolvedAst.Case(enum, tag, tpeDeprecated, sc)) =>
           val schemeVal = ascribeScheme(sc, ascriptions, root)
@@ -277,6 +288,16 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       KindSubstitution.singleton(tpe.kvar, kind)
     case ResolvedAst.TypeParam.Unkinded(_, tpe, _) =>
       KindSubstitution.singleton(tpe.kvar, Kind.Star)
+  }
+
+  private def inferCase(case0: ResolvedAst.Case, root: ResolvedAst.Root)(implicit flix: Flix): KindInferMonad[Unit] = case0 match {
+    case ResolvedAst.Case(enum, tag, tpeDeprecated, sc) =>
+      val loc = SourceLocation.Unknown // MATT
+      for {
+        kind <- inferType(tpeDeprecated, root)
+        _ <- unifyKindM(kind, Kind.Star, loc)
+        _ <- inferScheme(sc, root)
+      } yield ()
   }
 
   // MATT docs
