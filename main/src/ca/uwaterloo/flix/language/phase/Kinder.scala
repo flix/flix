@@ -130,13 +130,12 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   }
 
   // MATT docs
-  def getEnumKind(enum: ResolvedAst.Enum): Kind = enum match {
+  def getEnumKind(enum: ResolvedAst.Enum)(implicit flix: Flix): Kind = enum match {
     case ResolvedAst.Enum(_, _, _, tparams, _, _, _, _) =>
-      val ascriptions = getAscriptions(tparams)
+      val subst = getSubstFromTparamsDefaultStar(tparams)
       tparams.tparams.foldRight(Kind.Star: Kind) { // MATT is foldRight right?
-        case (tparam, acc) => ascriptions(tparam.tpe.id) ->: acc
+        case (tparam, acc) => subst(tparam.tpe.kvar) ->: acc
       }
-    // MATT use types to enforce explicit/implicit kinding invariant
   }
 
   // MATT docs
