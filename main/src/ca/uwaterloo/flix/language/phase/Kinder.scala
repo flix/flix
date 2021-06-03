@@ -18,7 +18,9 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.ResolvedAst.{TypeParam, TypeParams}
+import ca.uwaterloo.flix.language.ast.KindedAst.ChoicePattern
+import ca.uwaterloo.flix.language.ast.ResolvedAst.Predicate.{Body, Head}
+import ca.uwaterloo.flix.language.ast.ResolvedAst.{ConstraintParam, Pattern, Predicate, TypeParam, TypeParams}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.language.phase.unification.KindInferMonad.seqM
@@ -439,48 +441,347 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
           _ <- visit(exp1)
           _ <- visit(exp2)
         } yield ()
-      case ResolvedAst.Expression.Match(exp, rules, loc) => ???// MATT
-      case ResolvedAst.Expression.Choose(star, exps, rules, tpe, loc) => ???// MATT
-      case ResolvedAst.Expression.Tag(sym, tag, exp, tpe, loc) => ???// MATT
-      case ResolvedAst.Expression.Tuple(elms, loc) => ???// MATT
-      case ResolvedAst.Expression.RecordEmpty(tpe, loc) => ???// MATT
-      case ResolvedAst.Expression.RecordSelect(exp, field, tpe, loc) => ???// MATT
-      case ResolvedAst.Expression.RecordExtend(field, value, rest, tpe, loc) => ???// MATT
-      case ResolvedAst.Expression.RecordRestrict(field, rest, tpe, loc) => ???// MATT
-      case ResolvedAst.Expression.ArrayLit(elms, tpe, loc) => ???// MATT
-      case ResolvedAst.Expression.ArrayNew(elm, len, tpe, loc) => ???// MATT
-      case ResolvedAst.Expression.ArrayLoad(base, index, tpe, loc) => ???// MATT
-      case ResolvedAst.Expression.ArrayStore(base, index, elm, loc) => ???// MATT
-      case ResolvedAst.Expression.ArrayLength(base, loc) => ???// MATT
-      case ResolvedAst.Expression.ArraySlice(base, beginIndex, endIndex, loc) => ???// MATT
-      case ResolvedAst.Expression.Ref(exp, loc) => ???// MATT
-      case ResolvedAst.Expression.Deref(exp, tpe, loc) => ???// MATT
-      case ResolvedAst.Expression.Assign(exp1, exp2, loc) => ???// MATT
-      case ResolvedAst.Expression.Existential(fparam, exp, loc) => ???// MATT
-      case ResolvedAst.Expression.Universal(fparam, exp, loc) => ???// MATT
-      case ResolvedAst.Expression.Ascribe(exp, expectedType, expectedEff, tpe, loc) => ???// MATT
-      case ResolvedAst.Expression.Cast(exp, declaredType, declaredEff, tpe, loc) => ???// MATT
-      case ResolvedAst.Expression.TryCatch(exp, rules, loc) => ???// MATT
-      case ResolvedAst.Expression.InvokeConstructor(constructor, args, loc) => ???// MATT
-      case ResolvedAst.Expression.InvokeMethod(method, exp, args, loc) => ???// MATT
-      case ResolvedAst.Expression.InvokeStaticMethod(method, args, loc) => ???// MATT
-      case ResolvedAst.Expression.GetField(field, exp, loc) => ???// MATT
-      case ResolvedAst.Expression.PutField(field, exp1, exp2, loc) => ???// MATT
-      case ResolvedAst.Expression.GetStaticField(field, loc) => ???// MATT
-      case ResolvedAst.Expression.PutStaticField(field, exp, loc) => ???// MATT
-      case ResolvedAst.Expression.NewChannel(exp, tpe, loc) => ???// MATT
-      case ResolvedAst.Expression.GetChannel(exp, tpe, loc) => ???// MATT
-      case ResolvedAst.Expression.PutChannel(exp1, exp2, tpe, loc) => ???// MATT
-      case ResolvedAst.Expression.SelectChannel(rules, default, tpe, loc) => ???// MATT
-      case ResolvedAst.Expression.Spawn(exp, loc) => ??? // MATT
-      case ResolvedAst.Expression.Lazy(exp, loc) => ??? // MATT
-      case ResolvedAst.Expression.Force(exp, tpe, loc) => ??? // MATT
-      case ResolvedAst.Expression.FixpointConstraintSet(cs, tpe, loc) => ??? // MATT
-      case ResolvedAst.Expression.FixpointMerge(exp1, exp2, loc) => ??? // MATT
-      case ResolvedAst.Expression.FixpointSolve(exp, loc) => ??? // MATT
-      case ResolvedAst.Expression.FixpointFilter(pred, exp, tpe, loc) => ??? // MATT
-      case ResolvedAst.Expression.FixpointProjectIn(exp, pred, tpe, loc) => ??? // MATT
-      case ResolvedAst.Expression.FixpointProjectOut(pred, exp1, exp2, tpe, loc) => ??? // MATT
+      case ResolvedAst.Expression.Match(exp, rules, loc) =>
+        for {
+          _ <- visit(exp)
+          _ <- seqM(rules.map(visitMatchRule))
+        } yield ()
+      case ResolvedAst.Expression.Choose(star, exps, rules, tpe, loc) =>
+        for {
+          _ <- seqM(exps.map(visit))
+          _ <- seqM(rules.map(visitChoiceRule))
+          _ <- unifyKindM(tpe.kvar, Kind.Star, loc)
+        } yield ()
+      case ResolvedAst.Expression.Tag(sym, tag, exp, tpe, loc) =>
+        for {
+          _ <- visit(exp)
+          _ <- unifyKindM(tpe.kvar, Kind.Star, loc)
+        } yield ()
+      case ResolvedAst.Expression.Tuple(elms, loc) =>
+        for {
+          _ <- seqM(elms.map(visit))
+        } yield ()
+      case ResolvedAst.Expression.RecordEmpty(tpe, loc) =>
+        for {
+          _ <- unifyKindM(tpe.kvar, Kind.Record, loc)
+        } yield ()
+      case ResolvedAst.Expression.RecordSelect(exp, field, tpe, loc) =>
+        for {
+          _ <- visit(exp)
+          _ <- unifyKindM(tpe.kvar, Kind.Star, loc)
+        } yield ()
+      case ResolvedAst.Expression.RecordExtend(field, value, rest, tpe, loc) =>
+        for {
+          _ <- visit(value)
+          _ <- visit(rest)
+          _ <- unifyKindM(tpe.kvar, Kind.Record, loc)
+        } yield ()
+      case ResolvedAst.Expression.RecordRestrict(field, rest, tpe, loc) =>
+        for {
+          _ <- visit(rest)
+          _ <- unifyKindM(tpe.kvar, Kind.Record, loc)
+        } yield ()
+      case ResolvedAst.Expression.ArrayLit(elms, tpe, loc) =>
+        for {
+          _ <- seqM(elms.map(visit))
+          _ <- unifyKindM(tpe.kvar, Kind.Star, loc)
+        } yield ()
+      case ResolvedAst.Expression.ArrayNew(elm, len, tpe, loc) =>
+        for {
+          _ <- visit(elm)
+          _ <- visit(len)
+          _ <- unifyKindM(tpe.kvar, Kind.Star, loc)
+        } yield ()
+      case ResolvedAst.Expression.ArrayLoad(base, index, tpe, loc) =>
+        for {
+          _ <- visit(base)
+          _ <- visit(index)
+          _ <- unifyKindM(tpe.kvar, Kind.Star, loc)
+        } yield ()
+      case ResolvedAst.Expression.ArrayStore(base, index, elm, loc) =>
+        for {
+          _ <- visit(base)
+          _ <- visit(index)
+          _ <- visit(elm)
+        } yield ()
+      case ResolvedAst.Expression.ArrayLength(base, loc) =>
+        for {
+          _ <- visit(base)
+        } yield ()
+      case ResolvedAst.Expression.ArraySlice(base, beginIndex, endIndex, loc) =>
+        for {
+          _ <- visit(base)
+          _ <- visit(beginIndex)
+          _ <- visit(endIndex)
+        } yield ()
+      case ResolvedAst.Expression.Ref(exp, loc) =>
+        for {
+          _ <- visit(exp)
+        } yield ()
+      case ResolvedAst.Expression.Deref(exp, tpe, loc) =>
+        for {
+          _ <- visit(exp)
+          _ <- unifyKindM(tpe.kvar, Kind.Star, loc)
+        } yield ()
+      case ResolvedAst.Expression.Assign(exp1, exp2, loc) =>
+        for {
+          _ <- visit(exp1)
+          _ <- visit(exp2)
+        } yield ()
+      case ResolvedAst.Expression.Existential(fparam, exp, loc) =>
+        for {
+          _ <- inferFparam(fparam, root)
+          _ <- visit(exp)
+        } yield ()
+      case ResolvedAst.Expression.Universal(fparam, exp, loc) =>
+        for {
+          _ <- inferFparam(fparam, root)
+          _ <- visit(exp)
+        } yield ()
+      case ResolvedAst.Expression.Ascribe(exp, expectedType, expectedEff, tpe, loc) =>
+        for {
+          _ <- visit(exp)
+          expectedTypeKind <- expectedType.map(inferType(_, root)).getOrElse(KindInferMonad.point(Kind.Star))
+          expectedEffKind <- expectedEff.map(inferType(_, root)).getOrElse(KindInferMonad.point(Kind.Bool))
+          _ <- unifyKindM(expectedTypeKind, Kind.Star, loc)
+          _ <- unifyKindM(expectedEffKind, Kind.Bool, loc)
+          _ <- unifyKindM(tpe.kvar, Kind.Star, loc)
+        } yield ()
+      case ResolvedAst.Expression.Cast(exp, declaredType, declaredEff, tpe, loc) =>
+        for {
+          _ <- visit(exp)
+          declaredTypeKind <- declaredType.map(inferType(_, root)).getOrElse(KindInferMonad.point(Kind.Star))
+          declaredEffKind <- declaredEff.map(inferType(_, root)).getOrElse(KindInferMonad.point(Kind.Bool))
+          _ <- unifyKindM(declaredTypeKind, Kind.Star, loc)
+          _ <- unifyKindM(declaredEffKind, Kind.Bool, loc)
+          _ <- unifyKindM(tpe.kvar, Kind.Star, loc)
+        } yield ()
+      case ResolvedAst.Expression.TryCatch(exp, rules, loc) =>
+        for {
+          _ <- visit(exp)
+          _ <- seqM(rules.map(visitCatchRule))
+        } yield ()
+      case ResolvedAst.Expression.InvokeConstructor(constructor, args, loc) =>
+        for {
+          _ <- seqM(args.map(visit))
+        } yield ()
+      case ResolvedAst.Expression.InvokeMethod(method, exp, args, loc) =>
+        for {
+          _ <- visit(exp)
+          _ <- seqM(args.map(visit))
+        } yield ()
+      case ResolvedAst.Expression.InvokeStaticMethod(method, args, loc) =>
+        for {
+          _ <- seqM(args.map(visit))
+        } yield ()
+      case ResolvedAst.Expression.GetField(field, exp, loc) =>
+        for {
+          _ <- visit(exp)
+        } yield ()
+      case ResolvedAst.Expression.PutField(field, exp1, exp2, loc) =>
+        for {
+          _ <- visit(exp1)
+          _ <- visit(exp2)
+        } yield ()
+      case ResolvedAst.Expression.GetStaticField(field, loc) => KindInferMonad.point(())
+      case ResolvedAst.Expression.PutStaticField(field, exp, loc) =>
+        for {
+          _ <- visit(exp)
+        } yield ()
+      case ResolvedAst.Expression.NewChannel(exp, tpe, loc) =>
+        for {
+          _ <- visit(exp)
+          kind <- inferType(tpe, root)
+          _ <- unifyKindM(kind, Kind.Star, loc)
+        } yield ()
+      case ResolvedAst.Expression.GetChannel(exp, tpe, loc) =>
+        for {
+          _ <- visit(exp)
+          _ <- unifyKindM(tpe.kvar, Kind.Star, loc)
+        } yield ()
+      case ResolvedAst.Expression.PutChannel(exp1, exp2, tpe, loc) =>
+        for {
+          _ <- visit(exp1)
+          _ <- visit(exp2)
+          _ <- unifyKindM(tpe.kvar, Kind.Star, loc)
+        } yield ()
+      case ResolvedAst.Expression.SelectChannel(rules, default, tpe, loc) =>
+        for {
+          _ <- seqM(rules.map(visitSelectChannelRule))
+          _ <- default.map(visit).getOrElse(KindInferMonad.point(())) // MATT change seqM to take iterable
+          _ <- unifyKindM(tpe.kvar, Kind.Star, loc)
+        } yield ()
+      case ResolvedAst.Expression.Spawn(exp, loc) =>
+        for {
+          _ <- visit(exp)
+        } yield ()
+      case ResolvedAst.Expression.Lazy(exp, loc) =>
+        for {
+          _ <- visit(exp)
+        } yield ()
+      case ResolvedAst.Expression.Force(exp, tpe, loc) =>
+        for {
+          _ <- visit(exp)
+          _ <- unifyKindM(tpe.kvar, Kind.Star, loc)
+        } yield ()
+      case ResolvedAst.Expression.FixpointConstraintSet(cs, tpe, loc) =>
+        for {
+          _ <- seqM(cs.map(visitConstraint))
+          _ <- unifyKindM(tpe.kvar, Kind.Schema, loc)
+        } yield ()
+      case ResolvedAst.Expression.FixpointMerge(exp1, exp2, loc) =>
+        for {
+          _ <- visit(exp1)
+          _ <- visit(exp2)
+        } yield ()
+      case ResolvedAst.Expression.FixpointSolve(exp, loc) =>
+        for {
+          _ <- visit(exp)
+        } yield ()
+      case ResolvedAst.Expression.FixpointFilter(pred, exp, tpe, loc) =>
+        for {
+          _ <- visit(exp)
+          _ <- unifyKindM(tpe.kvar, Kind.Record, loc) // MATT right?
+        } yield ()
+      case ResolvedAst.Expression.FixpointProjectIn(exp, pred, tpe, loc) =>
+        for {
+          _ <- visit(exp)
+          _ <- unifyKindM(tpe.kvar, Kind.Record, loc) // MATT right?
+        } yield ()
+      case ResolvedAst.Expression.FixpointProjectOut(pred, exp1, exp2, tpe, loc) =>
+        for {
+          _ <- visit(exp1)
+          _ <- visit(exp2)
+          _ <- unifyKindM(tpe.kvar, Kind.Record, loc) // MATT right?
+        } yield ()
+    }
+
+    def visitMatchRule(rule: ResolvedAst.MatchRule): KindInferMonad[Unit] = rule match {
+      case ResolvedAst.MatchRule(pat, guard, exp) =>
+        for {
+          _ <- visitPattern(pat)
+          _ <- visit(guard)
+          _ <- visit(exp)
+        } yield ()
+    }
+
+    def visitChoiceRule(rule: ResolvedAst.ChoiceRule): KindInferMonad[Unit] = rule match {
+      case ResolvedAst.ChoiceRule(pat, exp) =>
+        for {
+          _ <- seqM(pat.map(visitChoicePattern))
+          _ <- visit(exp)
+        } yield ()
+    }
+
+    def visitCatchRule(rule: ResolvedAst.CatchRule): KindInferMonad[Unit] = rule match {
+      case ResolvedAst.CatchRule(sym, clazz, exp) =>
+        for {
+          _ <- visit(exp)
+        } yield ()
+    }
+
+    def visitSelectChannelRule(rule: ResolvedAst.SelectChannelRule): KindInferMonad[Unit] = rule match {
+      case ResolvedAst.SelectChannelRule(sym, chan, exp) =>
+        for {
+          _ <- visit(chan)
+          _ <- visit(exp)
+        } yield ()
+    }
+
+    def visitPattern(pattern: ResolvedAst.Pattern): KindInferMonad[Unit] = pattern match {
+      case Pattern.Wild(tvar, loc) =>
+        for {
+          _ <- unifyKindM(tvar.kvar, Kind.Star, loc)
+        } yield ()
+      case Pattern.Var(sym, tvar, loc) =>
+        for {
+          _ <- unifyKindM(tvar.kvar, Kind.Star, loc)
+        } yield ()
+      case Pattern.Unit(loc) => KindInferMonad.point(())
+      case Pattern.True(loc) => KindInferMonad.point(())
+      case Pattern.False(loc) => KindInferMonad.point(())
+      case Pattern.Char(lit, loc) => KindInferMonad.point(())
+      case Pattern.Float32(lit, loc) => KindInferMonad.point(())
+      case Pattern.Float64(lit, loc) => KindInferMonad.point(())
+      case Pattern.Int8(lit, loc) => KindInferMonad.point(())
+      case Pattern.Int16(lit, loc) => KindInferMonad.point(())
+      case Pattern.Int32(lit, loc) => KindInferMonad.point(())
+      case Pattern.Int64(lit, loc) => KindInferMonad.point(())
+      case Pattern.BigInt(lit, loc) => KindInferMonad.point(())
+      case Pattern.Str(lit, loc) => KindInferMonad.point(())
+      case Pattern.Tag(sym, tag, pat, tvar, loc) =>
+        for {
+          _ <- visitPattern(pat)
+          _ <- unifyKindM(tvar.kvar, Kind.Star, loc)
+        } yield ()
+      case Pattern.Tuple(elms, loc) =>
+        for {
+          _ <- seqM(elms.map(visitPattern))
+        } yield ()
+      case Pattern.Array(elms, tvar, loc) =>
+        for {
+          _ <- seqM(elms.map(visitPattern))
+          _ <- unifyKindM(tvar.kvar, Kind.Star, loc)
+        } yield ()
+      case Pattern.ArrayTailSpread(elms, sym, tvar, loc) =>
+        for {
+          _ <- seqM(elms.map(visitPattern))
+          _ <- unifyKindM(tvar.kvar, Kind.Star, loc)
+        } yield ()
+      case Pattern.ArrayHeadSpread(sym, elms, tvar, loc) =>
+        for {
+          _ <- seqM(elms.map(visitPattern))
+          _ <- unifyKindM(tvar.kvar, Kind.Star, loc)
+        } yield ()
+    }
+
+    def visitChoicePattern(pattern: ResolvedAst.ChoicePattern): KindInferMonad[Unit] = pattern match {
+      case ResolvedAst.ChoicePattern.Wild(loc) => KindInferMonad.point(())
+      case ResolvedAst.ChoicePattern.Absent(loc) => KindInferMonad.point(())
+      case ResolvedAst.ChoicePattern.Present(sym, tvar, loc) =>
+        for {
+          _ <- unifyKindM(tvar.kvar, Kind.Star, loc)
+        } yield ()
+    }
+
+    def visitConstraint(constraint: ResolvedAst.Constraint): KindInferMonad[Unit] = constraint match {
+      case ResolvedAst.Constraint(cparams, head, body, loc) =>
+        for {
+          _ <- seqM(cparams.map(visitCparam))
+          _ <- visitHead(head)
+          _ <- seqM(body.map(visitBody))
+        } yield ()
+    }
+
+    def visitCparam(cparam: ResolvedAst.ConstraintParam): KindInferMonad[Unit] = cparam match {
+      case ConstraintParam.HeadParam(sym, tpe, loc) =>
+        for {
+          _ <- unifyKindM(tpe.kvar, Kind.Star, loc)
+        } yield ()
+      case ConstraintParam.RuleParam(sym, tpe, loc) =>
+        for {
+          _ <- unifyKindM(tpe.kvar, Kind.Star, loc)
+        } yield ()
+    }
+
+    def visitHead(head: ResolvedAst.Predicate.Head): KindInferMonad[Unit] = head match {
+      case Head.Atom(pred, den, terms, tvar, loc) =>
+        for {
+          _ <- seqM(terms.map(visit))
+          _ <- unifyKindM(tvar.kvar, Kind.Star, loc)
+        } yield ()
+    }
+
+    def visitBody(body: ResolvedAst.Predicate.Body): KindInferMonad[Unit] = body match {
+      case Body.Atom(pred, den, polarity, terms, tvar, loc) =>
+        for {
+          _ <- seqM(terms.map(visitPattern))
+          _ <- unifyKindM(tvar.kvar, Kind.Star, loc)
+        } yield ()
+      case Body.Guard(exp, loc) =>
+        for {
+          _ <- visit(exp)
+        } yield ()
     }
 
     visit(exp00)
