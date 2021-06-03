@@ -258,8 +258,6 @@ object KindedAst {
 
       case class Atom(pred: Name.Pred, den: Denotation, terms: List[KindedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends KindedAst.Predicate.Head
 
-      case class Union(exp: KindedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends KindedAst.Predicate.Head
-
     }
 
     sealed trait Body extends KindedAst.Predicate

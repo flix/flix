@@ -279,7 +279,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       }
   }
 
-  private def getSubstFromTparamDefaultStar(tparam0: ResolvedAst.TypeParam)(implicit flix: Flix): KindSubstitution = {
+  private def getSubstFromTparamDefaultStar(tparam0: ResolvedAst.TypeParam)(implicit flix: Flix): KindSubstitution = tparam0 match {
     case ResolvedAst.TypeParam.Kinded(_, tpe, kind, _) =>
       KindSubstitution.singleton(tpe.kvar, kind)
     case ResolvedAst.TypeParam.Unkinded(_, tpe, _) =>
