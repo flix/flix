@@ -18,9 +18,8 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.KindedAst.ChoicePattern
 import ca.uwaterloo.flix.language.ast.ResolvedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.ResolvedAst.{ConstraintParam, Pattern, Predicate, TypeParam, TypeParams}
+import ca.uwaterloo.flix.language.ast.ResolvedAst.{ConstraintParam, Pattern, TypeParam, TypeParams}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.language.phase.unification.KindInferMonad.seqM
@@ -641,18 +640,18 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       case ResolvedAst.Expression.FixpointFilter(pred, exp, tpe, loc) =>
         for {
           _ <- visit(exp)
-          _ <- unifyKindM(tpe.kvar, Kind.Record, loc) // MATT right?
+          _ <- unifyKindM(tpe.kvar, Kind.Schema, loc) // MATT right?
         } yield ()
       case ResolvedAst.Expression.FixpointProjectIn(exp, pred, tpe, loc) =>
         for {
           _ <- visit(exp)
-          _ <- unifyKindM(tpe.kvar, Kind.Record, loc) // MATT right?
+          _ <- unifyKindM(tpe.kvar, Kind.Schema, loc) // MATT right?
         } yield ()
       case ResolvedAst.Expression.FixpointProjectOut(pred, exp1, exp2, tpe, loc) =>
         for {
           _ <- visit(exp1)
           _ <- visit(exp2)
-          _ <- unifyKindM(tpe.kvar, Kind.Record, loc) // MATT right?
+          _ <- unifyKindM(tpe.kvar, Kind.Star, loc) // MATT right?
         } yield ()
     }
 
@@ -807,7 +806,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     case UnkindedType.Constructor.SchemaExtend(pred) => Kind.Star ->: Kind.Schema ->: Kind.Schema
     case UnkindedType.Constructor.Array => Kind.Star ->: Kind.Star
     case UnkindedType.Constructor.Channel => Kind.Star ->: Kind.Star
-    case UnkindedType.Constructor.Lazy => Kind.Star ->: Kind.Star ->: Kind.Star
+    case UnkindedType.Constructor.Lazy => Kind.Star ->: Kind.Star
     case UnkindedType.Constructor.Tag(sym, tag) => Kind.Star ->: Kind.Star ->: Kind.Star
     case UnkindedType.Constructor.Enum(sym) => getEnumKind(root.enums(sym))
     case UnkindedType.Constructor.Native(clazz) => Kind.Star
@@ -828,8 +827,8 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       KindedAst.Annotation(name, exps, loc)
   }
 
-  private def reassembleExpression(exp00: ResolvedAst.Expression, subst: KindSubstitution, root: ResolvedAst.Root)(implicit flix: Flix): KindedAst.Expression = {
-    def visit(exp0: ResolvedAst.Expression): KindedAst.Expression = exp0 match {
+  private def reassembleExpression(exp000: ResolvedAst.Expression, subst: KindSubstitution, root: ResolvedAst.Root)(implicit flix: Flix): KindedAst.Expression = {
+    def visit(exp00: ResolvedAst.Expression): KindedAst.Expression = exp00 match {
       case ResolvedAst.Expression.Wild(tpe, loc) => KindedAst.Expression.Wild(reassembleTypeVar(tpe, subst, root), loc)
       case ResolvedAst.Expression.Var(sym, tpe, loc) => KindedAst.Expression.Var(sym, reassembleType(tpe, subst, root), loc)
       case ResolvedAst.Expression.Def(sym, tpe, loc) => KindedAst.Expression.Def(sym, reassembleTypeVar(tpe, subst, root), loc)
@@ -838,72 +837,336 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         val tpe = reassembleTypeVar(tpe0, subst, root)
         val eff = reassembleTypeVar(eff0, subst, root)
         KindedAst.Expression.Hole(sym, tpe, eff, loc)
-      case ResolvedAst.Expression.Unit(loc) => ???
-      case ResolvedAst.Expression.Null(loc) => ???
-      case ResolvedAst.Expression.True(loc) => ???
-      case ResolvedAst.Expression.False(loc) => ???
-      case ResolvedAst.Expression.Char(lit, loc) => ???
-      case ResolvedAst.Expression.Float32(lit, loc) => ???
-      case ResolvedAst.Expression.Float64(lit, loc) => ???
-      case ResolvedAst.Expression.Int8(lit, loc) => ???
-      case ResolvedAst.Expression.Int16(lit, loc) => ???
-      case ResolvedAst.Expression.Int32(lit, loc) => ???
-      case ResolvedAst.Expression.Int64(lit, loc) => ???
-      case ResolvedAst.Expression.BigInt(lit, loc) => ???
-      case ResolvedAst.Expression.Str(lit, loc) => ???
-      case ResolvedAst.Expression.Default(tpe, loc) => ???
-      case ResolvedAst.Expression.Apply(exp, exps, tpe, eff, loc) => ???
-      case ResolvedAst.Expression.Lambda(fparam, exp, tpe, loc) => ???
-      case ResolvedAst.Expression.Unary(sop, exp, tpe, loc) => ???
-      case ResolvedAst.Expression.Binary(sop, exp1, exp2, tpe, loc) => ???
-      case ResolvedAst.Expression.IfThenElse(exp1, exp2, exp3, loc) => ???
-      case ResolvedAst.Expression.Stm(exp1, exp2, loc) => ???
-      case ResolvedAst.Expression.Let(sym, exp1, exp2, loc) => ???
-      case ResolvedAst.Expression.Match(exp, rules, loc) => ???
-      case ResolvedAst.Expression.Choose(star, exps, rules, tpe, loc) => ???
-      case ResolvedAst.Expression.Tag(sym, tag, exp, tpe, loc) => ???
-      case ResolvedAst.Expression.Tuple(elms, loc) => ???
-      case ResolvedAst.Expression.RecordEmpty(tpe, loc) => ???
-      case ResolvedAst.Expression.RecordSelect(exp, field, tpe, loc) => ???
-      case ResolvedAst.Expression.RecordExtend(field, value, rest, tpe, loc) => ???
-      case ResolvedAst.Expression.RecordRestrict(field, rest, tpe, loc) => ???
-      case ResolvedAst.Expression.ArrayLit(elms, tpe, loc) => ???
-      case ResolvedAst.Expression.ArrayNew(elm, len, tpe, loc) => ???
-      case ResolvedAst.Expression.ArrayLoad(base, index, tpe, loc) => ???
-      case ResolvedAst.Expression.ArrayStore(base, index, elm, loc) => ???
-      case ResolvedAst.Expression.ArrayLength(base, loc) => ???
-      case ResolvedAst.Expression.ArraySlice(base, beginIndex, endIndex, loc) => ???
-      case ResolvedAst.Expression.Ref(exp, loc) => ???
-      case ResolvedAst.Expression.Deref(exp, tpe, loc) => ???
-      case ResolvedAst.Expression.Assign(exp1, exp2, loc) => ???
-      case ResolvedAst.Expression.Existential(fparam, exp, loc) => ???
-      case ResolvedAst.Expression.Universal(fparam, exp, loc) => ???
-      case ResolvedAst.Expression.Ascribe(exp, expectedType, expectedEff, tpe, loc) => ???
-      case ResolvedAst.Expression.Cast(exp, declaredType, declaredEff, tpe, loc) => ???
-      case ResolvedAst.Expression.TryCatch(exp, rules, loc) => ???
-      case ResolvedAst.Expression.InvokeConstructor(constructor, args, loc) => ???
-      case ResolvedAst.Expression.InvokeMethod(method, exp, args, loc) => ???
-      case ResolvedAst.Expression.InvokeStaticMethod(method, args, loc) => ???
-      case ResolvedAst.Expression.GetField(field, exp, loc) => ???
-      case ResolvedAst.Expression.PutField(field, exp1, exp2, loc) => ???
-      case ResolvedAst.Expression.GetStaticField(field, loc) => ???
-      case ResolvedAst.Expression.PutStaticField(field, exp, loc) => ???
-      case ResolvedAst.Expression.NewChannel(exp, tpe, loc) => ???
-      case ResolvedAst.Expression.GetChannel(exp, tpe, loc) => ???
-      case ResolvedAst.Expression.PutChannel(exp1, exp2, tpe, loc) => ???
-      case ResolvedAst.Expression.SelectChannel(rules, default, tpe, loc) => ???
-      case ResolvedAst.Expression.Spawn(exp, loc) => ???
-      case ResolvedAst.Expression.Lazy(exp, loc) => ???
-      case ResolvedAst.Expression.Force(exp, tpe, loc) => ???
-      case ResolvedAst.Expression.FixpointConstraintSet(cs, tpe, loc) => ???
-      case ResolvedAst.Expression.FixpointMerge(exp1, exp2, loc) => ???
-      case ResolvedAst.Expression.FixpointSolve(exp, loc) => ???
-      case ResolvedAst.Expression.FixpointFilter(pred, exp, tpe, loc) => ???
-      case ResolvedAst.Expression.FixpointProjectIn(exp, pred, tpe, loc) => ???
-      case ResolvedAst.Expression.FixpointProjectOut(pred, exp1, exp2, tpe, loc) => ???
+      case ResolvedAst.Expression.Unit(loc) => KindedAst.Expression.Unit(loc)
+      case ResolvedAst.Expression.Null(loc) => KindedAst.Expression.Null(loc)
+      case ResolvedAst.Expression.True(loc) => KindedAst.Expression.True(loc)
+      case ResolvedAst.Expression.False(loc) => KindedAst.Expression.False(loc)
+      case ResolvedAst.Expression.Char(lit, loc) => KindedAst.Expression.Char(lit, loc)
+      case ResolvedAst.Expression.Float32(lit, loc) => KindedAst.Expression.Float32(lit, loc)
+      case ResolvedAst.Expression.Float64(lit, loc) => KindedAst.Expression.Float64(lit, loc)
+      case ResolvedAst.Expression.Int8(lit, loc) => KindedAst.Expression.Int8(lit, loc)
+      case ResolvedAst.Expression.Int16(lit, loc) => KindedAst.Expression.Int16(lit, loc)
+      case ResolvedAst.Expression.Int32(lit, loc) => KindedAst.Expression.Int32(lit, loc)
+      case ResolvedAst.Expression.Int64(lit, loc) => KindedAst.Expression.Int64(lit, loc)
+      case ResolvedAst.Expression.BigInt(lit, loc) => KindedAst.Expression.BigInt(lit, loc)
+      case ResolvedAst.Expression.Str(lit, loc) => KindedAst.Expression.Str(lit, loc)
+      case ResolvedAst.Expression.Default(tpe0, loc) =>
+        val tpe = reassembleTypeVar(tpe0, subst, root)
+        KindedAst.Expression.Default(tpe, loc)
+      case ResolvedAst.Expression.Apply(exp0, exps0, tpe0, eff0, loc) =>
+        val exp = visit(exp0)
+        val exps = exps0.map(visit)
+        val tpe = reassembleTypeVar(tpe0, subst, root)
+        val eff = reassembleTypeVar(eff0, subst, root)
+        KindedAst.Expression.Apply(exp, exps, tpe, eff, loc)
+      case ResolvedAst.Expression.Lambda(fparam0, exp0, tpe0, loc) =>
+        val fparam = reassembleFparam(fparam0, subst, root)
+        val exp = visit(exp0)
+        val tpe = reassembleTypeVar(tpe0, subst, root)
+        KindedAst.Expression.Lambda(fparam, exp, tpe, loc)
+      case ResolvedAst.Expression.Unary(sop, exp0, tpe0, loc) =>
+        val exp = visit(exp0)
+        val tpe = reassembleTypeVar(tpe0, subst, root)
+        KindedAst.Expression.Unary(sop, exp, tpe, loc)
+      case ResolvedAst.Expression.Binary(sop, exp10, exp20, tpe0, loc) =>
+        val exp1 = visit(exp10)
+        val exp2 = visit(exp20)
+        val tpe = reassembleTypeVar(tpe0, subst, root)
+        KindedAst.Expression.Binary(sop, exp1, exp2, tpe, loc)
+      case ResolvedAst.Expression.IfThenElse(exp10, exp20, exp30, loc) =>
+        val exp1 = visit(exp10)
+        val exp2 = visit(exp20)
+        val exp3 = visit(exp30)
+        KindedAst.Expression.IfThenElse(exp1, exp2, exp3, loc)
+      case ResolvedAst.Expression.Stm(exp10, exp20, loc) =>
+        val exp1 = visit(exp10)
+        val exp2 = visit(exp20)
+        KindedAst.Expression.Stm(exp1, exp2, loc)
+      case ResolvedAst.Expression.Let(sym, exp10, exp20, loc) =>
+        val exp1 = visit(exp10)
+        val exp2 = visit(exp20)
+        KindedAst.Expression.Let(sym, exp1, exp2, loc)
+      case ResolvedAst.Expression.Match(exp0, rules0, loc) =>
+        val exp = visit(exp0)
+        val rules = rules0.map(visitMatchRule)
+        KindedAst.Expression.Match(exp, rules, loc)
+      case ResolvedAst.Expression.Choose(star, exps0, rules0, tpe0, loc) =>
+        val exps = exps0.map(visit)
+        val rules = rules0.map(visitChoiceRule)
+        val tpe = reassembleTypeVar(tpe0, subst, root)
+        KindedAst.Expression.Choose(star, exps, rules, tpe, loc)
+      case ResolvedAst.Expression.Tag(sym, tag, exp0, tpe0, loc) =>
+        val exp = visit(exp0)
+        val tpe = reassembleTypeVar(tpe0, subst, root)
+        KindedAst.Expression.Tag(sym, tag, exp, tpe, loc)
+      case ResolvedAst.Expression.Tuple(elms0, loc) =>
+        val elms = elms0.map(visit)
+        KindedAst.Expression.Tuple(elms, loc)
+      case ResolvedAst.Expression.RecordEmpty(tpe0, loc) =>
+        val tpe = reassembleTypeVar(tpe0, subst, root)
+        KindedAst.Expression.RecordEmpty(tpe, loc)
+      case ResolvedAst.Expression.RecordSelect(exp0, field, tpe0, loc) =>
+        val exp = visit(exp0)
+        val tpe = reassembleTypeVar(tpe0, subst, root)
+        KindedAst.Expression.RecordSelect(exp, field, tpe, loc)
+      case ResolvedAst.Expression.RecordExtend(field, value0, rest0, tpe0, loc) =>
+        val value = visit(value0)
+        val rest = visit(rest0)
+        val tpe = reassembleTypeVar(tpe0, subst, root)
+        KindedAst.Expression.RecordExtend(field, value, rest, tpe, loc)
+      case ResolvedAst.Expression.RecordRestrict(field, rest0, tpe0, loc) =>
+        val rest = visit(rest0)
+        val tpe = reassembleTypeVar(tpe0, subst, root)
+        KindedAst.Expression.RecordRestrict(field, rest, tpe, loc)
+      case ResolvedAst.Expression.ArrayLit(elms0, tpe0, loc) =>
+        val elms = elms0.map(visit)
+        val tpe = reassembleTypeVar(tpe0, subst, root)
+        KindedAst.Expression.ArrayLit(elms, tpe, loc)
+      case ResolvedAst.Expression.ArrayNew(elm0, len0, tpe0, loc) =>
+        val elm = visit(elm0)
+        val len = visit(len0)
+        val tpe = reassembleTypeVar(tpe0, subst, root)
+        KindedAst.Expression.ArrayNew(elm, len, tpe, loc)
+      case ResolvedAst.Expression.ArrayLoad(base0, index0, tpe0, loc) =>
+        val base = visit(base0)
+        val index = visit(index0)
+        val tpe = reassembleTypeVar(tpe0, subst, root)
+        KindedAst.Expression.ArrayLoad(base, index, tpe, loc)
+      case ResolvedAst.Expression.ArrayStore(base0, index0, elm0, loc) =>
+        val base = visit(base0)
+        val index = visit(index0)
+        val elm = visit(elm0)
+        KindedAst.Expression.ArrayStore(base, index, elm, loc)
+      case ResolvedAst.Expression.ArrayLength(base0, loc) =>
+        val base = visit(base0)
+        KindedAst.Expression.ArrayLength(base, loc)
+      case ResolvedAst.Expression.ArraySlice(base0, beginIndex0, endIndex0, loc) =>
+        val base = visit(base0)
+        val beginIndex = visit(beginIndex0)
+        val endIndex = visit(endIndex0)
+        KindedAst.Expression.ArraySlice(base, beginIndex, endIndex, loc)
+      case ResolvedAst.Expression.Ref(exp0, loc) =>
+        val exp = visit(exp0)
+        KindedAst.Expression.Ref(exp, loc)
+      case ResolvedAst.Expression.Deref(exp0, tpe0, loc) =>
+        val exp = visit(exp0)
+        val tpe = reassembleTypeVar(tpe0, subst, root)
+        KindedAst.Expression.Deref(exp, tpe, loc)
+      case ResolvedAst.Expression.Assign(exp10, exp20, loc) =>
+        val exp1 = visit(exp10)
+        val exp2 = visit(exp20)
+        KindedAst.Expression.Assign(exp1, exp2, loc)
+      case ResolvedAst.Expression.Existential(fparam0, exp0, loc) =>
+        val fparam = reassembleFparam(fparam0, subst, root)
+        val exp = visit(exp0)
+        KindedAst.Expression.Existential(fparam, exp, loc)
+      case ResolvedAst.Expression.Universal(fparam0, exp0, loc) =>
+        val fparam = reassembleFparam(fparam0, subst, root)
+        val exp = visit(exp0)
+        KindedAst.Expression.Universal(fparam, exp, loc)
+      case ResolvedAst.Expression.Ascribe(exp0, expectedType0, expectedEff0, tpe0, loc) =>
+        val exp = visit(exp0)
+        val expectedType = expectedType0.map(reassembleType(_, subst, root))
+        val expectedEff = expectedEff0.map(reassembleType(_, subst, root))
+        val tpe = reassembleTypeVar(tpe0, subst, root)
+        KindedAst.Expression.Ascribe(exp, expectedType, expectedEff, tpe, loc)
+      case ResolvedAst.Expression.Cast(exp0, declaredType0, declaredEff0, tpe0, loc) =>
+        val exp = visit(exp0)
+        val declaredType = declaredType0.map(reassembleType(_, subst, root))
+        val declaredEff = declaredEff0.map(reassembleType(_, subst, root))
+        val tpe = reassembleTypeVar(tpe0, subst, root)
+        KindedAst.Expression.Cast(exp, declaredType, declaredEff, tpe, loc)
+      case ResolvedAst.Expression.TryCatch(exp0, rules0, loc) =>
+        val exp = visit(exp0)
+        val rules = rules0.map(visitCatchRule)
+        KindedAst.Expression.TryCatch(exp, rules, loc)
+      case ResolvedAst.Expression.InvokeConstructor(constructor, args0, loc) =>
+        val args = args0.map(visit)
+        KindedAst.Expression.InvokeConstructor(constructor, args, loc)
+      case ResolvedAst.Expression.InvokeMethod(method, exp0, args0, loc) =>
+        val exp = visit(exp0)
+        val args = args0.map(visit)
+        KindedAst.Expression.InvokeMethod(method, exp, args, loc)
+      case ResolvedAst.Expression.InvokeStaticMethod(method, args0, loc) =>
+        val args = args0.map(visit)
+        KindedAst.Expression.InvokeStaticMethod(method, args, loc)
+      case ResolvedAst.Expression.GetField(field, exp0, loc) =>
+        val exp = visit(exp0)
+        KindedAst.Expression.GetField(field, exp, loc)
+      case ResolvedAst.Expression.PutField(field, exp10, exp20, loc) =>
+        val exp1 = visit(exp10)
+        val exp2 = visit(exp20)
+        KindedAst.Expression.PutField(field, exp1, exp2, loc)
+      case ResolvedAst.Expression.GetStaticField(field, loc) =>
+        KindedAst.Expression.GetStaticField(field, loc)
+      case ResolvedAst.Expression.PutStaticField(field, exp0, loc) =>
+        val exp = visit(exp0)
+        KindedAst.Expression.PutStaticField(field, exp, loc)
+      case ResolvedAst.Expression.NewChannel(exp0, tpe0, loc) =>
+        val exp = visit(exp0)
+        val tpe = reassembleType(tpe0, subst, root)
+        KindedAst.Expression.NewChannel(exp, tpe, loc)
+      case ResolvedAst.Expression.GetChannel(exp0, tpe0, loc) =>
+        val exp = visit(exp0)
+        val tpe = reassembleTypeVar(tpe0, subst, root)
+        KindedAst.Expression.GetChannel(exp, tpe, loc)
+      case ResolvedAst.Expression.PutChannel(exp10, exp20, tpe0, loc) =>
+        val exp1 = visit(exp10)
+        val exp2 = visit(exp20)
+        val tpe = reassembleTypeVar(tpe0, subst, root)
+        KindedAst.Expression.PutChannel(exp1, exp2, tpe, loc)
+      case ResolvedAst.Expression.SelectChannel(rules0, default0, tpe0, loc) =>
+        val rules = rules0.map(visitSelectChannelRule)
+        val default = default0.map(visit)
+        val tpe = reassembleTypeVar(tpe0, subst, root)
+        KindedAst.Expression.SelectChannel(rules, default, tpe, loc)
+      case ResolvedAst.Expression.Spawn(exp0, loc) =>
+        val exp = visit(exp0)
+        KindedAst.Expression.Spawn(exp, loc)
+      case ResolvedAst.Expression.Lazy(exp0, loc) =>
+        val exp = visit(exp0)
+        KindedAst.Expression.Lazy(exp, loc)
+      case ResolvedAst.Expression.Force(exp0, tpe0, loc) =>
+        val exp = visit(exp0)
+        val tpe = reassembleTypeVar(tpe0, subst, root)
+        KindedAst.Expression.Force(exp, tpe, loc)
+      case ResolvedAst.Expression.FixpointConstraintSet(cs0, tpe0, loc) =>
+        val cs = cs0.map(visitConstraint)
+        val tpe = reassembleTypeVar(tpe0, subst, root)
+        KindedAst.Expression.FixpointConstraintSet(cs, tpe, loc)
+      case ResolvedAst.Expression.FixpointMerge(exp10, exp20, loc) =>
+        val exp1 = visit(exp10)
+        val exp2 = visit(exp20)
+        KindedAst.Expression.FixpointMerge(exp1, exp2, loc)
+      case ResolvedAst.Expression.FixpointSolve(exp0, loc) =>
+        val exp = visit(exp0)
+        KindedAst.Expression.FixpointSolve(exp, loc)
+      case ResolvedAst.Expression.FixpointFilter(pred, exp0, tpe0, loc) =>
+        val exp = visit(exp0)
+        val tpe = reassembleTypeVar(tpe0, subst, root)
+        KindedAst.Expression.FixpointFilter(pred, exp, tpe, loc)
+      case ResolvedAst.Expression.FixpointProjectIn(exp0, pred, tpe0, loc) =>
+        val exp = visit(exp0)
+        val tpe = reassembleTypeVar(tpe0, subst, root)
+        KindedAst.Expression.FixpointProjectIn(exp, pred, tpe, loc)
+      case ResolvedAst.Expression.FixpointProjectOut(pred, exp10, exp20, tpe0, loc) =>
+        val exp1 = visit(exp10)
+        val exp2 = visit(exp20)
+        val tpe = reassembleTypeVar(tpe0, subst, root)
+        KindedAst.Expression.FixpointProjectOut(pred, exp1, exp2, tpe, loc)
     }
 
-    visit(exp00)
+    def visitMatchRule(rule: ResolvedAst.MatchRule): KindedAst.MatchRule = rule match {
+      case ResolvedAst.MatchRule(pat0, guard0, exp0) =>
+        val pat = visitPattern(pat0)
+        val guard = visit(guard0)
+        val exp = visit(exp0)
+        KindedAst.MatchRule(pat, guard, exp)
+    }
+
+    def visitChoiceRule(rule: ResolvedAst.ChoiceRule): KindedAst.ChoiceRule = rule match {
+      case ResolvedAst.ChoiceRule(pat0, exp0) =>
+        val pat = pat0.map(visitChoicePattern)
+        val exp = visit(exp0)
+        KindedAst.ChoiceRule(pat, exp)
+    }
+
+    def visitCatchRule(rule: ResolvedAst.CatchRule): KindedAst.CatchRule = rule match {
+      case ResolvedAst.CatchRule(sym, clazz, exp0) =>
+        val exp = visit(exp0)
+        KindedAst.CatchRule(sym, clazz, exp)
+    }
+
+    def visitSelectChannelRule(rule: ResolvedAst.SelectChannelRule): KindedAst.SelectChannelRule = rule match {
+      case ResolvedAst.SelectChannelRule(sym, chan0, exp0) =>
+        val chan = visit(chan0)
+        val exp = visit(exp0)
+        KindedAst.SelectChannelRule(sym, chan, exp)
+    }
+
+    def visitPattern(pattern: ResolvedAst.Pattern): KindedAst.Pattern = pattern match {
+      case ResolvedAst.Pattern.Wild(tvar0, loc) =>
+        val tvar = reassembleTypeVar(tvar0, subst, root)
+        KindedAst.Pattern.Wild(tvar, loc)
+      case ResolvedAst.Pattern.Var(sym, tvar0, loc) =>
+        val tvar = reassembleTypeVar(tvar0, subst, root)
+        KindedAst.Pattern.Var(sym, tvar, loc)
+      case ResolvedAst.Pattern.Unit(loc) => KindedAst.Pattern.Unit(loc)
+      case ResolvedAst.Pattern.True(loc) => KindedAst.Pattern.True(loc)
+      case ResolvedAst.Pattern.False(loc) => KindedAst.Pattern.False(loc)
+      case ResolvedAst.Pattern.Char(lit, loc) => KindedAst.Pattern.Char(lit, loc)
+      case ResolvedAst.Pattern.Float32(lit, loc) => KindedAst.Pattern.Float32(lit, loc)
+      case ResolvedAst.Pattern.Float64(lit, loc) => KindedAst.Pattern.Float64(lit, loc)
+      case ResolvedAst.Pattern.Int8(lit, loc) => KindedAst.Pattern.Int8(lit, loc)
+      case ResolvedAst.Pattern.Int16(lit, loc) => KindedAst.Pattern.Int16(lit, loc)
+      case ResolvedAst.Pattern.Int32(lit, loc) => KindedAst.Pattern.Int32(lit, loc)
+      case ResolvedAst.Pattern.Int64(lit, loc) => KindedAst.Pattern.Int64(lit, loc)
+      case ResolvedAst.Pattern.BigInt(lit, loc) => KindedAst.Pattern.BigInt(lit, loc)
+      case ResolvedAst.Pattern.Str(lit, loc) => KindedAst.Pattern.Str(lit, loc)
+      case ResolvedAst.Pattern.Tag(sym, tag, pat0, tvar0, loc) =>
+        val pat = visitPattern(pat0)
+        val tvar = reassembleTypeVar(tvar0, subst, root)
+        KindedAst.Pattern.Tag(sym, tag, pat, tvar, loc)
+      case ResolvedAst.Pattern.Tuple(elms0, loc) =>
+        val elms = elms0.map(visitPattern)
+        KindedAst.Pattern.Tuple(elms, loc)
+      case ResolvedAst.Pattern.Array(elms0, tvar0, loc) =>
+        val elms = elms0.map(visitPattern)
+        val tvar = reassembleTypeVar(tvar0, subst, root)
+        KindedAst.Pattern.Array(elms, tvar, loc)
+      case ResolvedAst.Pattern.ArrayTailSpread(elms0, sym, tvar0, loc) =>
+        val elms = elms0.map(visitPattern)
+        val tvar = reassembleTypeVar(tvar0, subst, root)
+        KindedAst.Pattern.ArrayTailSpread(elms, sym, tvar, loc)
+      case ResolvedAst.Pattern.ArrayHeadSpread(sym, elms0, tvar0, loc) =>
+        val elms = elms0.map(visitPattern)
+        val tvar = reassembleTypeVar(tvar0, subst, root)
+        KindedAst.Pattern.ArrayHeadSpread(sym, elms, tvar, loc)
+    }
+
+    def visitChoicePattern(pattern: ResolvedAst.ChoicePattern): KindedAst.ChoicePattern = pattern match {
+      case ResolvedAst.ChoicePattern.Wild(loc) => KindedAst.ChoicePattern.Wild(loc)
+      case ResolvedAst.ChoicePattern.Absent(loc) => KindedAst.ChoicePattern.Absent(loc)
+      case ResolvedAst.ChoicePattern.Present(sym, tvar0, loc) =>
+        val tvar = reassembleTypeVar(tvar0, subst, root)
+        KindedAst.ChoicePattern.Present(sym, tvar, loc)
+    }
+
+    def visitConstraint(constraint: ResolvedAst.Constraint): KindedAst.Constraint = constraint match {
+      case ResolvedAst.Constraint(cparams0, head0, body0, loc) =>
+        val cparams = cparams0.map(visitCparam)
+        val head = visitHead(head0)
+        val body = body0.map(visitBody)
+        KindedAst.Constraint(cparams, head, body, loc)
+    }
+
+    def visitCparam(cparam: ResolvedAst.ConstraintParam): KindedAst.ConstraintParam = cparam match {
+      case ResolvedAst.ConstraintParam.HeadParam(sym, tpe0, loc) =>
+        val tpe = reassembleTypeVar(tpe0, subst, root)
+        KindedAst.ConstraintParam.HeadParam(sym, tpe, loc)
+      case ResolvedAst.ConstraintParam.RuleParam(sym, tpe0, loc) =>
+        val tpe = reassembleTypeVar(tpe0, subst, root)
+        KindedAst.ConstraintParam.RuleParam(sym, tpe, loc)
+    }
+
+    def visitHead(head: ResolvedAst.Predicate.Head): KindedAst.Predicate.Head = head match {
+      case ResolvedAst.Predicate.Head.Atom(pred, den, terms0, tvar0, loc) =>
+        val terms = terms0.map(visit)
+        val tvar = reassembleTypeVar(tvar0, subst, root)
+        KindedAst.Predicate.Head.Atom(pred, den, terms, tvar, loc)
+    }
+
+    def visitBody(body: ResolvedAst.Predicate.Body): KindedAst.Predicate.Body = body match {
+      case ResolvedAst.Predicate.Body.Atom(pred, den, polarity, terms0, tvar0, loc) =>
+        val terms = terms0.map(visitPattern)
+        val tvar = reassembleTypeVar(tvar0, subst, root)
+        KindedAst.Predicate.Body.Atom(pred, den, polarity, terms, tvar, loc)
+      case ResolvedAst.Predicate.Body.Guard(exp0, loc) =>
+        val exp = visit(exp0)
+        KindedAst.Predicate.Body.Guard(exp, loc)
+    }
+
+    visit(exp000)
   }
 
   private def reassembleType(tpe0: UnkindedType, subst: KindSubstitution, root: ResolvedAst.Root)(implicit flix: Flix): Type = {
