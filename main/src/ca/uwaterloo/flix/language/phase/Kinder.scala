@@ -70,22 +70,16 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
 
       val KindInferMonad(run) = inference
 
-      // MATT finish
-
-      val casesVal = traverse(cases0) {
-        case (_, ResolvedAst.Case(enum, tag, tpeDeprecated, sc)) =>
-          val schemeVal = ascribeScheme(sc, ascriptions, root)
-          val tpeVal = ascribeType(tpeDeprecated, KindMatch.Star, ascriptions, root)
-          mapN(schemeVal, tpeVal) {
-            case (scheme, tpe) => (tag, KindedAst.Case(enum, tag, tpe, scheme))
+      run(initialSubst) match {
+        case Result.Ok((subst, _)) =>
+          val tparams = reassembleTparams(tparams0, subst, root)
+          val cases = cases0.map {
+            case (tag, caze) => (tag, reassembleCase(caze, subst, root))
           }
-      }
-
-      val schemeVal = ascribeScheme(sc0, ascriptions, root)
-      val tpeVal = ascribeType(tpeDeprecated, KindMatch.Star, ascriptions, root)
-      mapN(casesVal, schemeVal, tpeVal) {
-        case (cases, scheme, tpe) =>
-          KindedAst.Enum(doc, mod, sym, tparams, cases.toMap, tpe, scheme, loc)
+          val tpe = reassembleType(tpeDeprecated, subst, root)
+          val sc = reassembleScheme(sc0, subst, root)
+          KindedAst.Enum(doc, mod, sym, tparams, cases, tpe, sc, loc).toSuccess
+        case Result.Err(e) => Validation.Failure(LazyList(e))
       }
   }
 
@@ -645,7 +639,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       KindedAst.FormalParam(sym, mod, tpe, loc)
   }
 
-  private def reassembleScheme(scheme: ResolvedAst.Scheme, subst: KindSubstitution, root: ResolvedAst.Root): Scheme = {
+  private def reassembleScheme(scheme: ResolvedAst.Scheme, subst: KindSubstitution, root: ResolvedAst.Root): Scheme = scheme match {
     case ResolvedAst.Scheme(quantifiers0, constraints0, base0) =>
       val quantifiers = quantifiers0.map(reassembleTypeVar(_, subst, root))
       val constraints = constraints0.map(reassembleTconstr(_, subst, root))
@@ -657,6 +651,13 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     case ResolvedAst.TypeConstraint(clazz, tpe0, loc) =>
       val tpe = reassembleType(tpe0, subst, root)
       Ast.TypeConstraint(clazz, tpe, loc)
+  }
+
+  private def reassembleCase(case0: ResolvedAst.Case, subst: KindSubstitution, root: ResolvedAst.Root): KindedAst.Case = case0 match {
+    case ResolvedAst.Case(enum, tag, tpeDeprecated, sc0) =>
+      val tpe = reassembleType(tpeDeprecated, subst, root)
+      val sc = reassembleScheme(sc0, subst, root)
+      KindedAst.Case(enum, tag, tpe, sc)
   }
 
 }
