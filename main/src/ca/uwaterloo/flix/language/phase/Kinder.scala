@@ -18,12 +18,12 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.ResolvedAst.{Expression, TypeParam, TypeParams}
+import ca.uwaterloo.flix.language.ast.ResolvedAst.{TypeParam, TypeParams}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.language.phase.unification.KindInferMonad.seqM
 import ca.uwaterloo.flix.language.phase.unification.KindUnification.unifyKindM
-import ca.uwaterloo.flix.language.phase.unification.{KindInferMonad, KindSubstitution, KindUnification}
+import ca.uwaterloo.flix.language.phase.unification.{KindInferMonad, KindSubstitution}
 import ca.uwaterloo.flix.util.Validation.{ToSuccess, flatMapN, mapN, traverse}
 import ca.uwaterloo.flix.util.{Result, Validation}
 
@@ -406,7 +406,12 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
           _ <- unifyKindM(tpe.kvar, Kind.Star, loc)
           _ <- unifyKindM(eff.kvar, Kind.Bool, loc)
         } yield ()
-      case ResolvedAst.Expression.Lambda(fparam, exp, tpe, loc) => ??? // MATT have to add fparam to scope ?
+      case ResolvedAst.Expression.Lambda(fparam, exp, tpe, loc) =>
+        for {
+          _ <- inferFparam(fparam, root)
+          _ <- visit(exp)
+          _ <- unifyKindM(tpe.kvar, Kind.Star, loc)
+        } yield ()
       case ResolvedAst.Expression.Unary(sop, exp, tpe, loc) =>
         for {
           _ <- visit(exp)
@@ -467,19 +472,21 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       case ResolvedAst.Expression.GetChannel(exp, tpe, loc) => ???// MATT
       case ResolvedAst.Expression.PutChannel(exp1, exp2, tpe, loc) => ???// MATT
       case ResolvedAst.Expression.SelectChannel(rules, default, tpe, loc) => ???// MATT
-      case ResolvedAst.Expression.Spawn(exp, loc) => ???// MATT
-      case ResolvedAst.Expression.Lazy(exp, loc) => ???// MATT
-      case ResolvedAst.Expression.Force(exp, tpe, loc) => ???// MATT
-      case ResolvedAst.Expression.FixpointConstraintSet(cs, tpe, loc) => ???// MATT
-      case ResolvedAst.Expression.FixpointMerge(exp1, exp2, loc) => ???// MATT
-      case ResolvedAst.Expression.FixpointSolve(exp, loc) => ???// MATT
-      case ResolvedAst.Expression.FixpointFilter(pred, exp, tpe, loc) => ???// MATT
-      case ResolvedAst.Expression.FixpointProjectIn(exp, pred, tpe, loc) => ???// MATT
-      case ResolvedAst.Expression.FixpointProjectOut(pred, exp1, exp2, tpe, loc) => ???// MATT
+      case ResolvedAst.Expression.Spawn(exp, loc) => ??? // MATT
+      case ResolvedAst.Expression.Lazy(exp, loc) => ??? // MATT
+      case ResolvedAst.Expression.Force(exp, tpe, loc) => ??? // MATT
+      case ResolvedAst.Expression.FixpointConstraintSet(cs, tpe, loc) => ??? // MATT
+      case ResolvedAst.Expression.FixpointMerge(exp1, exp2, loc) => ??? // MATT
+      case ResolvedAst.Expression.FixpointSolve(exp, loc) => ??? // MATT
+      case ResolvedAst.Expression.FixpointFilter(pred, exp, tpe, loc) => ??? // MATT
+      case ResolvedAst.Expression.FixpointProjectIn(exp, pred, tpe, loc) => ??? // MATT
+      case ResolvedAst.Expression.FixpointProjectOut(pred, exp1, exp2, tpe, loc) => ??? // MATT
     }
+
+    visit(exp00)
   }
 
-  private def getTyconKind(tycon: UnkindedType.Constructor, root: ResolvedAst.Root): Kind = tycon match {
+  private def getTyconKind(tycon: UnkindedType.Constructor, root: ResolvedAst.Root)(implicit flix: Flix): Kind = tycon match {
     case UnkindedType.Constructor.Unit => Kind.Star
     case UnkindedType.Constructor.Null => Kind.Star
     case UnkindedType.Constructor.Bool => Kind.Star
@@ -514,13 +521,13 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     case UnkindedType.Constructor.Or => Kind.Bool ->: Kind.Bool ->: Kind.Bool
   }
 
-  private def reassembleAnnotation(ann0: ResolvedAst.Annotation, subst: KindSubstitution, root: ResolvedAst.Root): KindedAst.Annotation = ann0 match {
+  private def reassembleAnnotation(ann0: ResolvedAst.Annotation, subst: KindSubstitution, root: ResolvedAst.Root)(implicit flix: Flix): KindedAst.Annotation = ann0 match {
     case ResolvedAst.Annotation(name, exps0, loc) =>
       val exps = exps0.map(reassembleExpression(_, subst, root))
       KindedAst.Annotation(name, exps, loc)
   }
 
-  private def reassembleExpression(exp00: ResolvedAst.Expression, subst: KindSubstitution, root: ResolvedAst.Root): KindedAst.Expression = {
+  private def reassembleExpression(exp00: ResolvedAst.Expression, subst: KindSubstitution, root: ResolvedAst.Root)(implicit flix: Flix): KindedAst.Expression = {
     def visit(exp0: ResolvedAst.Expression): KindedAst.Expression = exp0 match {
       case ResolvedAst.Expression.Wild(tpe, loc) => KindedAst.Expression.Wild(reassembleTypeVar(tpe, subst, root), loc)
       case ResolvedAst.Expression.Var(sym, tpe, loc) => KindedAst.Expression.Var(sym, reassembleType(tpe, subst, root), loc)
@@ -594,9 +601,11 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       case ResolvedAst.Expression.FixpointProjectIn(exp, pred, tpe, loc) => ???
       case ResolvedAst.Expression.FixpointProjectOut(pred, exp1, exp2, tpe, loc) => ???
     }
+
+    visit(exp00)
   }
 
-  private def reassembleType(tpe0: UnkindedType, subst: KindSubstitution, root: ResolvedAst.Root): Type = {
+  private def reassembleType(tpe0: UnkindedType, subst: KindSubstitution, root: ResolvedAst.Root)(implicit flix: Flix): Type = {
 
     def visit(tpe: UnkindedType): Type = {
       tpe match {
@@ -633,13 +642,13 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     // MATT copy paste
   }
 
-  private def reassembleFparam(fparam0: ResolvedAst.FormalParam, subst: KindSubstitution, root: ResolvedAst.Root): KindedAst.FormalParam = fparam0 match {
+  private def reassembleFparam(fparam0: ResolvedAst.FormalParam, subst: KindSubstitution, root: ResolvedAst.Root)(implicit flix: Flix): KindedAst.FormalParam = fparam0 match {
     case ResolvedAst.FormalParam(sym, mod, tpe0, loc) =>
       val tpe = reassembleType(tpe0, subst, root)
       KindedAst.FormalParam(sym, mod, tpe, loc)
   }
 
-  private def reassembleScheme(scheme: ResolvedAst.Scheme, subst: KindSubstitution, root: ResolvedAst.Root): Scheme = scheme match {
+  private def reassembleScheme(scheme: ResolvedAst.Scheme, subst: KindSubstitution, root: ResolvedAst.Root)(implicit flix: Flix): Scheme = scheme match {
     case ResolvedAst.Scheme(quantifiers0, constraints0, base0) =>
       val quantifiers = quantifiers0.map(reassembleTypeVar(_, subst, root))
       val constraints = constraints0.map(reassembleTconstr(_, subst, root))
@@ -647,13 +656,13 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       Scheme(quantifiers, constraints, base)
   }
 
-  private def reassembleTconstr(tconstr: ResolvedAst.TypeConstraint, subst: KindSubstitution, root: ResolvedAst.Root): Ast.TypeConstraint = tconstr match {
+  private def reassembleTconstr(tconstr: ResolvedAst.TypeConstraint, subst: KindSubstitution, root: ResolvedAst.Root)(implicit flix: Flix): Ast.TypeConstraint = tconstr match {
     case ResolvedAst.TypeConstraint(clazz, tpe0, loc) =>
       val tpe = reassembleType(tpe0, subst, root)
       Ast.TypeConstraint(clazz, tpe, loc)
   }
 
-  private def reassembleCase(case0: ResolvedAst.Case, subst: KindSubstitution, root: ResolvedAst.Root): KindedAst.Case = case0 match {
+  private def reassembleCase(case0: ResolvedAst.Case, subst: KindSubstitution, root: ResolvedAst.Root)(implicit flix: Flix): KindedAst.Case = case0 match {
     case ResolvedAst.Case(enum, tag, tpeDeprecated, sc0) =>
       val tpe = reassembleType(tpeDeprecated, subst, root)
       val sc = reassembleScheme(sc0, subst, root)
