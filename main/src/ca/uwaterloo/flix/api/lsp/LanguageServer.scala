@@ -333,7 +333,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     * Processes a complete request.
     */
   private def processComplete(requestId: String, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
-    val result = Snippets.lookupSnippets()
+    val result = Snippets.lookupSnippets(root)
     ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result.map(_.toJSON))
   }
 
