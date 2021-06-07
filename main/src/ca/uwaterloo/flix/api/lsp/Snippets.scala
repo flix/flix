@@ -26,7 +26,7 @@ object Snippets {
       val listDefs = root.defs.filter(kv => kv._1.namespace == List("List") && kv._2.spec.mod.isPublic)
       listDefs.map {
         case (_, defn) =>
-          val label = defn.sym.name
+          val label = defn.sym.toString
           val insertText = defInsertText(defn)
           val detail = Some(defn.spec.doc.text.stripLeading())
           CompletionItem(label, insertText, detail, InsertTextFormat.Snippet)
@@ -46,7 +46,7 @@ object Snippets {
 
   // TODO: DOC
   private def defInsertText(defn: TypedAst.Def): String = {
-    val prefix = defn.sym.text
+    val prefix = defn.sym.toString
     val args = defn.spec.fparams.zipWithIndex.map {
       case (fparam, idx) => "$" + s"{${idx + 1}:${fparam.sym.text}}"
     }

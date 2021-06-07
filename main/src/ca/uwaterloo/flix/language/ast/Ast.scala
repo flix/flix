@@ -208,7 +208,7 @@ object Ast {
     * @param loc   the source location of the text.
     */
   case class Doc(lines: List[String], loc: SourceLocation) {
-    def text: String = lines.mkString("\n")
+    def text: String = lines.mkString("\n") // TODO: Strip indentation etc.
   }
 
   /**
