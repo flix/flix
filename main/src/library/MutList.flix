@@ -434,11 +434,12 @@ namespace MutList {
 
     ///
     /// Returns a shallow copy of the given mutable list `v`.
+    /// The capacity of the copy is equal to the length of the list.
     ///
     pub def copy(v: MutList[a]): MutList[a] & Impure =
         let MutList(a, l) = v;
         let len = deref l;
-        MutList(ref Array.slice(deref a, 0, Array.length(deref a)), ref len)
+        MutList(ref Array.slice(deref a, 0, len), ref len)
 
     ///
     /// Optionally removes and returns the last element in the given mutable list `v`.
