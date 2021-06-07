@@ -15,11 +15,6 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import java.net.InetSocketAddress
-import java.nio.file.Path
-import java.text.SimpleDateFormat
-import java.util.Date
-
 import ca.uwaterloo.flix.api.lsp.provider._
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
@@ -41,6 +36,10 @@ import org.json4s._
 import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods.parse
 
+import java.net.InetSocketAddress
+import java.nio.file.Path
+import java.text.SimpleDateFormat
+import java.util.Date
 import scala.collection.mutable
 
 /**
@@ -334,11 +333,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     * Processes a complete request.
     */
   private def processComplete(requestId: String, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
-    val result = List(
-      CompletionItem("foo", Some("This is a foo suggestion.")),
-      CompletionItem("bar", Some("This is a bar suggestion.")),
-      CompletionItem("baz", Some("This is a baz suggestion.")),
-    )
+    val result = Snippets.lookupSnippets()
     ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result.map(_.toJSON))
   }
 

@@ -28,11 +28,15 @@ object CompletionItem {
 /**
   * Represents a `CompletionItem` in LSP.
   *
-  * @param label  The label of this completion item. By default also the text that is inserted when selecting this completion.
-  * @param detail A human-readable string with additional information about this item, like type or symbol information.
+  * @param label            The label of this completion item. By default also the text that is inserted when selecting this completion.
+  * @param detail           A human-readable string with additional information about this item, like type or symbol information.
+  * @param insertTextFormat The format of the insert text. The format applies to both the `insertText` property and the `newText` property
+  *                         of a provided `textEdit`. If omitted defaults to `InsertTextFormat.PlainText`.
   */
-case class CompletionItem(label: String, detail: Option[String]) {
+case class CompletionItem(label: String, insertText: String, detail: Option[String], insertTextFormat: InsertTextFormat) {
   def toJSON: JValue =
     ("label" -> label) ~
-      ("detail" -> detail)
+      ("insertText" -> insertText) ~
+      ("detail" -> detail) ~
+      ("insertTextFormat" -> insertTextFormat.toInt)
 }
