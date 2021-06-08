@@ -20,10 +20,10 @@ object CompleteProvider {
     // NB: Please keep the list alphabetically sorted.
 
     // Keywords:
-    CompletionItem("namespace", "namespace", None, CompletionItemKind.Keyword, InsertTextFormat.PlainText, List("{", "}")),
+    CompletionItem("namespace", "namespace", None, None, CompletionItemKind.Keyword, InsertTextFormat.PlainText, List("{", "}")),
 
     // Keyword-like (e.g. println):
-    CompletionItem("println", "println", None, CompletionItemKind.Keyword, InsertTextFormat.PlainText, List("(", ")")),
+    CompletionItem("println", "println", None, None, CompletionItemKind.Keyword, InsertTextFormat.PlainText, List("(", ")")),
   )
 
   /**
@@ -36,8 +36,8 @@ object CompleteProvider {
     // Declaration-based:
 
     // Expressed-based:
-    CompletionItem("match", "match ${1:exp} {\n case ${2:pat} => ${3:exp}\n}", None, CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-    CompletionItem("query", "query ${1:db} select ${2:cols} from ${3:preds} ${4:where ${5:cond}}", None, CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
+    CompletionItem("match", "match ${1:exp} {\n case ${2:pat} => ${3:exp}\n}", None, None, CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
+    CompletionItem("query", "query ${1:db} select ${2:cols} from ${3:preds} ${4:where ${5:cond}}", None, None, CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
   )
 
   /**
@@ -54,7 +54,8 @@ object CompleteProvider {
           val label = defn.sym.toString
           val insertText = defInsertText(defn)
           val detail = Some(defn.spec.doc.text.stripLeading())
-          CompletionItem(label, insertText, detail, CompletionItemKind.Function, InsertTextFormat.Snippet, List("(", ")"))
+          val documentation = detail
+          CompletionItem(label, insertText, detail, documentation, CompletionItemKind.Function, InsertTextFormat.Snippet, List("(", ")"))
       }
     }.toList
     result1
