@@ -1835,57 +1835,62 @@ def toArray04(): Bool & Impure =
 // sortWith                                                                //
 /////////////////////////////////////////////////////////////////////////////
 
+def cmp(x: Int32, y: Int32): Comparison =
+    if (x < y) LessThan
+    else if (x == y) EqualTo
+    else GreaterThan
+
 @test
 def sortWith01(): Bool =
-    List.sortWith((x,y) -> if (x < y) -1 else 1, Nil: List[Int32]) == Nil
+    List.sortWith(cmp, Nil: List[Int32]) == Nil
 
 @test
 def sortWith02(): Bool =
-    List.sortWith((x,y) -> if (x < y) -1 else 1, 0 :: Nil) == 0 :: Nil
+    List.sortWith(cmp, 0 :: Nil) == 0 :: Nil
 
 @test
 def sortWith03(): Bool =
-    List.sortWith((x,y) -> if (x < y) -1 else 1, 0 :: 1 :: Nil) == 0 :: 1 :: Nil
+    List.sortWith(cmp, 0 :: 1 :: Nil) == 0 :: 1 :: Nil
 
 @test
 def sortWith04(): Bool =
-    List.sortWith((x,y) -> if (x < y) -1 else 1, 1 :: 0 :: Nil) == 0 :: 1 :: Nil
+    List.sortWith(cmp, 1 :: 0 :: Nil) == 0 :: 1 :: Nil
 
 @test
 def sortWith05(): Bool =
-    List.sortWith((x,y) -> if (x < y) -1 else 1, 1 :: 1 :: Nil) == 1 :: 1 :: Nil
+    List.sortWith(cmp, 1 :: 1 :: Nil) == 1 :: 1 :: Nil
 
 @test
 def sortWith06(): Bool =
-    List.sortWith((x,y) -> if (x < y) -1 else 1, 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil) == 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil
+    List.sortWith(cmp, 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil) == 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil
 
 @test
 def sortWith07(): Bool =
-    List.sortWith((x,y) -> if (x < y) -1 else 1, 5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil) == 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil
+    List.sortWith(cmp, 5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil) == 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil
 
 @test
 def sortWith08(): Bool =
-    List.sortWith((x,y) -> if (x < y) -1 else 1, 5 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil) == 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil
+    List.sortWith(cmp, 5 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil) == 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil
 
 @test
 def sortWith09(): Bool =
-    List.sortWith((x,y) -> if (x < y) -1 else 1, 2 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil) == 0 :: 1 :: 2 :: 2 :: 3 :: 4 :: Nil
+    List.sortWith(cmp, 2 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil) == 0 :: 1 :: 2 :: 2 :: 3 :: 4 :: Nil
 
 @test
 def sortWith10(): Bool =
-    List.sortWith((x,y) -> if (x > y) -1 else 1, 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil) == 5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil
+    List.sortWith(flip(cmp), 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil) == 5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil
 
 @test
 def sortWith11(): Bool =
-    List.sortWith((x,y) -> if (x > y) -1 else 1, 5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil) == 5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil
+    List.sortWith(flip(cmp), 5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil) == 5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil
 
 @test
 def sortWith12(): Bool =
-    List.sortWith((x,y) -> if (x > y) -1 else 1, 5 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil) == 5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil
+    List.sortWith(flip(cmp), 5 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil) == 5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil
 
 @test
 def sortWith13(): Bool =
-    List.sortWith((x,y) -> if (x > y) -1 else 1, 2 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil) == 4 :: 3 :: 2 :: 2 :: 1 :: 0 :: Nil
+    List.sortWith(flip(cmp), 2 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil) == 4 :: 3 :: 2 :: 2 :: 1 :: 0 :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
 // unfold                                                                  //
