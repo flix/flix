@@ -95,7 +95,7 @@ object CompleteProvider {
     */
   private def getDefCompletionItem(defn: TypedAst.Def): CompletionItem = {
     val name = defn.sym.text
-    val label = reconstructSignature(defn)
+    val label = getDefLabel(defn)
     val insertText = getApplySnippet(name, defn.spec.fparams)
     val detail = Some(FormatScheme.formatScheme(defn.spec.declaredScheme))
     val documentation = Some(defn.spec.doc.text)
@@ -103,6 +103,29 @@ object CompleteProvider {
     val textFormat = InsertTextFormat.Snippet
     val commitCharacters = List("(", ")")
     CompletionItem(label, insertText, detail, documentation, completionKind, textFormat, commitCharacters)
+  }
+
+  /**
+    * Returns the label for the given `defn`.
+    */
+  private def getDefLabel(defn: TypedAst.Def): String = {
+    val name = defn.sym.text
+    val args = defn.spec.fparams.map {
+      case fparam => s"${fparam.sym.text}: ${FormatType.formatType(fparam.tpe)}"
+    }
+
+    val base = defn.spec.declaredScheme.base
+    val tpe = FormatType.formatType(getResultType(defn.spec.declaredScheme.base))
+    val eff = base.typeConstructor match {
+      case Some(TypeConstructor.Arrow(_)) => base.typeArguments.head match {
+        case Type.Cst(TypeConstructor.True, _) => ""
+        case Type.Cst(TypeConstructor.False, _) => " & Impure"
+        case e => " & " + FormatType.formatType(e)
+      }
+      case _ => ""
+    }
+
+    s"$name(${args.mkString(", ")}): $tpe$eff"
   }
 
   /**
@@ -116,18 +139,6 @@ object CompleteProvider {
     }
     s"$name(${args.mkString(", ")})"
   }
-
-  // TODO: Magnus
-  private def reconstructSignature(defn: TypedAst.Def): String = {
-    val prefix = defn.sym.toString
-    val args = defn.spec.fparams.map {
-      case fparam => s"${fparam.sym.text}: ${FormatType.formatType(fparam.tpe)}"
-    }
-    val tpe = FormatType.formatType(getResultType(defn.spec.declaredScheme.base))
-    val eff = FormatType.formatType(defn.spec.eff) // TODO: Dont show pure
-    s"${prefix}(${args.mkString(", ")}): $tpe$eff"
-  }
-
 
   /**
     * Returns the return type of the given function type `tpe0`.
