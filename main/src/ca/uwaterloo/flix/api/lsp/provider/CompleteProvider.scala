@@ -84,17 +84,37 @@ object CompleteProvider {
     // TODO: Cleanup
     val listDefs = root.defs.filter(kv => includeDef(kv._2))
     listDefs.map {
-      case (_, defn) =>
-        val label = reconstructSignature(defn)
-        val insertText = defInsertText(defn)
-        val detail = Some(FormatScheme.formatScheme(defn.spec.declaredScheme))
-        val documentation = Some(defn.spec.doc.text)
-        val completionKind = CompletionItemKind.Function
-        val textFormat = InsertTextFormat.Snippet
-        val commitCharacters = List("(", ")")
-        CompletionItem(label, insertText, detail, documentation, completionKind, textFormat, commitCharacters)
+      case (_, defn) => getDefCompletionItem(defn)
+
     }.toList
 
+  }
+
+  /**
+    * Returns a completion item for the given definition `defn`.
+    */
+  private def getDefCompletionItem(defn: TypedAst.Def): CompletionItem = {
+    val name = defn.sym.text
+    val label = reconstructSignature(defn)
+    val insertText = getApplySnippet(name, defn.spec.fparams)
+    val detail = Some(FormatScheme.formatScheme(defn.spec.declaredScheme))
+    val documentation = Some(defn.spec.doc.text)
+    val completionKind = CompletionItemKind.Function
+    val textFormat = InsertTextFormat.Snippet
+    val commitCharacters = List("(", ")")
+    CompletionItem(label, insertText, detail, documentation, completionKind, textFormat, commitCharacters)
+  }
+
+  /**
+    * Returns a snippet for a function with the given `name` and `fparams`.
+    *
+    * For example, `name(${0:arg1}, ${1:arg2})`.
+    */
+  private def getApplySnippet(name: String, fparams: List[TypedAst.FormalParam]): String = {
+    val args = fparams.zipWithIndex.map {
+      case (fparam, idx) => "$" + s"{${idx + 1}:${fparam.sym.text}}"
+    }
+    s"$name(${args.mkString(", ")})"
   }
 
   // TODO: Magnus
@@ -108,14 +128,6 @@ object CompleteProvider {
     s"${prefix}(${args.mkString(", ")}): $tpe$eff"
   }
 
-  // TODO: Magnus
-  private def defInsertText(defn: TypedAst.Def): String = {
-    val prefix = defn.sym.toString
-    val args = defn.spec.fparams.zipWithIndex.map {
-      case (fparam, idx) => "$" + s"{${idx + 1}:${fparam.sym.text}}"
-    }
-    s"${prefix}(${args.mkString(", ")})"
-  }
 
   /**
     * Returns the return type of the given function type `tpe0`.
