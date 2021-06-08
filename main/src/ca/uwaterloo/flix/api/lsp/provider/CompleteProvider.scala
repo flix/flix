@@ -53,7 +53,7 @@ object CompleteProvider {
       listDefs.map {
         case (_, defn) =>
           implicit val audience = Audience.External
-          val label = defn.sym.toString
+          val label = reconstructSignature(defn)
           val insertText = defInsertText(defn)
           val detail = Some(FormatScheme.formatScheme(defn.spec.declaredScheme))
           val documentation = Some(defn.spec.doc.text)
@@ -63,7 +63,19 @@ object CompleteProvider {
     result1
   }
 
-  // TODO: DOC
+  // TODO: Magnus
+  private def reconstructSignature(defn: TypedAst.Def): String = {
+    implicit val audience = Audience.External
+
+    val prefix = defn.sym.toString
+    val args = defn.spec.fparams.map {
+      case fparam => s"${fparam.sym.text}: ${FormatType.formatType(fparam.tpe)}"
+    }
+    val eff = FormatType.formatType(defn.spec.eff)
+    s"${prefix}(${args.mkString(", ")}): ??? & "
+  }
+
+  // TODO: Magnus
   private def defInsertText(defn: TypedAst.Def): String = {
     val prefix = defn.sym.toString
     val args = defn.spec.fparams.zipWithIndex.map {
