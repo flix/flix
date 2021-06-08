@@ -2,6 +2,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, InsertTextFormat, Position}
 import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme, FormatType}
 
 object CompleteProvider {
 
@@ -51,10 +52,11 @@ object CompleteProvider {
       val listDefs = root.defs.filter(kv => kv._1.namespace == List("List") && kv._2.spec.mod.isPublic)
       listDefs.map {
         case (_, defn) =>
+          implicit val audience = Audience.External
           val label = defn.sym.toString
           val insertText = defInsertText(defn)
-          val detail = Some(defn.spec.doc.text.stripLeading())
-          val documentation = detail
+          val detail = Some(FormatScheme.formatScheme(defn.spec.declaredScheme))
+          val documentation = Some(defn.spec.doc.text.stripLeading())
           CompletionItem(label, insertText, detail, documentation, CompletionItemKind.Function, InsertTextFormat.Snippet, List("(", ")"))
       }
     }.toList

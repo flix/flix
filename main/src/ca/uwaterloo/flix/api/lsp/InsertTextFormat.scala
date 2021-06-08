@@ -15,6 +15,9 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
+/**
+  * Represents an `InsertTextFormat` in LSP.
+  */
 sealed trait InsertTextFormat {
   def toInt: Int = this match {
     case InsertTextFormat.PlainText => 1
