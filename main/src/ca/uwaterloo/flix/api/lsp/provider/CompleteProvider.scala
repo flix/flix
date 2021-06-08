@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, InsertTextFormat, Position}
-import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Scheme, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme, FormatType}
 
 object CompleteProvider {
@@ -79,22 +79,24 @@ object CompleteProvider {
 
     def includeDef(defn: TypedAst.Def): Boolean = includeNamespaces.contains(defn.sym.namespace) && defn.spec.mod.isPublic
 
-    // TODO: Magnus
+    def includeSig(sign: TypedAst.Sig): Boolean = sign.spec.mod.isPublic
 
-    // TODO: Cleanup
-    val listDefs = root.defs.filter(kv => includeDef(kv._2))
-    listDefs.map {
+    val defSuggestions = root.defs.filter(kv => includeDef(kv._2)).map {
       case (_, defn) => getDefCompletionItem(defn)
+    }
 
-    }.toList
+    val sigSuggestions = root.sigs.filter(kv => includeSig(kv._2)).map {
+      case (_, sign) => getSigCompletionItem(sign)
+    }
 
+    (defSuggestions ++ sigSuggestions).toList
   }
 
   /**
     * Returns a completion item for the given definition `defn`.
     */
   private def getDefCompletionItem(defn: TypedAst.Def): CompletionItem = {
-    val name = defn.sym.text
+    val name = defn.sym.toString
     val label = getDefLabel(defn)
     val insertText = getApplySnippet(name, defn.spec.fparams)
     val detail = Some(FormatScheme.formatScheme(defn.spec.declaredScheme))
@@ -106,16 +108,42 @@ object CompleteProvider {
   }
 
   /**
-    * Returns the label for the given `defn`.
+    * Returns a completion item for the given signature `sign`.
     */
-  private def getDefLabel(defn: TypedAst.Def): String = {
-    val name = defn.sym.text
-    val args = defn.spec.fparams.map {
+  private def getSigCompletionItem(sign: TypedAst.Sig): CompletionItem = {
+    val name = sign.sym.toString
+    val label = getSigLabel(sign)
+    val insertText = getApplySnippet(name, sign.spec.fparams)
+    val detail = Some(FormatScheme.formatScheme(sign.spec.declaredScheme))
+    val documentation = Some(sign.spec.doc.text)
+    val completionKind = CompletionItemKind.Method
+    val textFormat = InsertTextFormat.Snippet
+    val commitCharacters = List("(", ")")
+    CompletionItem(label, insertText, detail, documentation, completionKind, textFormat, commitCharacters)
+  }
+
+  /**
+    * Returns the label for the given definition `defn`.
+    */
+  private def getDefLabel(defn: TypedAst.Def): String =
+    getLabel(defn.sym.text, defn.spec.fparams, defn.spec.declaredScheme)
+
+  /**
+    * Returns the label for the given signature `sign`.
+    */
+  private def getSigLabel(sign: TypedAst.Sig): String =
+    getLabel(sign.sym.toString, sign.spec.fparams, sign.spec.declaredScheme)
+
+  /**
+    * Returns the label for the given `name`, formal parameters `fparams`, and scheme `sc`.
+    */
+  private def getLabel(name: String, fparams: List[TypedAst.FormalParam], sc: Scheme): String = {
+    val args = fparams.map {
       case fparam => s"${fparam.sym.text}: ${FormatType.formatType(fparam.tpe)}"
     }
 
-    val base = defn.spec.declaredScheme.base
-    val tpe = FormatType.formatType(getResultType(defn.spec.declaredScheme.base))
+    val base = sc.base
+    val tpe = FormatType.formatType(getResultType(base))
     val eff = base.typeConstructor match {
       case Some(TypeConstructor.Arrow(_)) => base.typeArguments.head match {
         case Type.Cst(TypeConstructor.True, _) => ""

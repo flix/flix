@@ -323,7 +323,7 @@ object Symbol {
     /**
       * Human readable representation.
       */
-    override def toString: String = if (clazz.namespace.isEmpty) name else clazz.namespace.mkString("/") + "." + name
+    override def toString: String = clazz.toString + "." + name
   }
 
   /**
