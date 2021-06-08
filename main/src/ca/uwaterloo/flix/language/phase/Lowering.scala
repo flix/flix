@@ -199,10 +199,10 @@ object Lowering extends Phase[Root, Root] {
     * Lowers the given `spec0`.
     */
   private def visitSpec(spec0: Spec)(implicit root: Root, flix: Flix): Spec = spec0 match {
-    case Spec(doc, ann, mod, tparams, fparams, declaredScheme, eff, loc) =>
+    case Spec(doc, ann, mod, tparams, fparams, declaredScheme, eff, returnType, loc) =>
       val fs = fparams.map(visitFormalParam)
       val ds = visitScheme(declaredScheme)
-      Spec(doc, ann, mod, tparams, fs, ds, eff, loc)
+      Spec(doc, ann, mod, tparams, fs, ds, eff, returnType, loc)
   }
 
   /**

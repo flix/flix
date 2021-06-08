@@ -30,6 +30,7 @@ import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 import ca.uwaterloo.flix.util._
 
 import java.io.PrintWriter
+import scala.annotation.tailrec
 
 object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
@@ -199,10 +200,19 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       val annVal = visitAnnotations(ann0, root)
       val tparams = getTypeParams(tparams0)
       val fparams = getFormalParams(fparams0, subst)
+      val returnType = getReturnType(sc.base, fparams.length)
       Validation.mapN(annVal) {
-        ann => TypedAst.Spec(doc, ann, mod, tparams, fparams, sc, eff, loc)
+        ann => TypedAst.Spec(doc, ann, mod, tparams, fparams, sc, eff, Ast.Meta(returnType), loc)
       }
+  }
 
+  // MATT docs
+  // MATT have to be careful with 0-ary functions
+  @tailrec
+  private def getReturnType(base: Type, numParams: Int): Type = numParams match {
+    case 0 => base
+    case n if n < 0 => throw InternalCompilerException("Number of parameters cannot be negative")
+    case n => getReturnType(base.arrowResultType, n - 1)
   }
 
   /**
