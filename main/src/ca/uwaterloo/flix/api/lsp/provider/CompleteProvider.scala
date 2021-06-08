@@ -9,11 +9,11 @@ object CompleteProvider {
     * Returns a list of auto-complete suggestions.
     */
   def autoComplete(root: TypedAst.Root): List[CompletionItem] = {
-    // TODO: Experiment with snippets
     val result2 = List(
       CompletionItem("foo", "fooooooo", Some("This is a foo suggestion."), InsertTextFormat.PlainText),
     )
-    result2 ::: getSnippetCompletionItems() ::: getKeywordCompletionItems() :: getOtherCompletionItems()
+
+    result2 ::: getSnippetCompletionItems() ::: getKeywordCompletionItems() ::: getOtherCompletionItems(root)
   }
 
 
@@ -21,7 +21,7 @@ object CompleteProvider {
     * Returns a list of keyword completion items.
     */
   private def getKeywordCompletionItems(): List[CompletionItem] = List(
-    // TODO: Add more
+    // TODO: Add more.
     CompletionItem("namespace", "namespace", None, InsertTextFormat.PlainText),
     CompletionItem("println", "println", None, InsertTextFormat.PlainText),
   )
@@ -30,7 +30,7 @@ object CompleteProvider {
     * Returns a list of snippet completion items.
     */
   private def getSnippetCompletionItems(): List[CompletionItem] = List(
-    // TODO: Add more
+    // TODO: Add more.
     CompletionItem("match", "match ${1:exp} {\n case ${2:pat} => ${3:exp}\n}", None, InsertTextFormat.Snippet),
     CompletionItem("query", "query ${1:db} select ${2:cols} from ${3:preds} ${4:where ${5:cond}}", None, InsertTextFormat.Snippet),
   )
