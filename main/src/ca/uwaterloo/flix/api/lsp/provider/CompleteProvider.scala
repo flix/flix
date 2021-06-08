@@ -1,3 +1,18 @@
+/*
+ * Copyright 2021 Magnus Madsen
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, InsertTextFormat, Position}
@@ -5,6 +20,8 @@ import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme, FormatType}
 
 object CompleteProvider {
+
+  private implicit val audience: Audience = Audience.External
 
   /**
     * Returns a list of auto-complete suggestions.
@@ -45,28 +62,40 @@ object CompleteProvider {
     * Returns a list of other completion items.
     */
   private def getSuggestions(root: TypedAst.Root): List[CompletionItem] = {
+    ///
+    /// Return immediately if there is no AST.
+    ///
+    if (root == null) {
+      return Nil
+    }
+
+    val includeNamespaces = List(
+      List("Option"),
+      List("Result"),
+      List("List"),
+      List("Set"),
+      List("Map")
+    )
+
+    def includeDef(defn: TypedAst.Def): Boolean = includeNamespaces.contains(defn.sym.namespace) && defn.spec.mod.isPublic
+
     // TODO: Magnus
 
-    val result1 = if (root == null) Nil else {
-      // TODO: Cleanup
-      val listDefs = root.defs.filter(kv => kv._1.namespace == List("List") && kv._2.spec.mod.isPublic)
-      listDefs.map {
-        case (_, defn) =>
-          implicit val audience = Audience.External
-          val label = reconstructSignature(defn)
-          val insertText = defInsertText(defn)
-          val detail = Some(FormatScheme.formatScheme(defn.spec.declaredScheme))
-          val documentation = Some(defn.spec.doc.text)
-          CompletionItem(label, insertText, detail, documentation, CompletionItemKind.Function, InsertTextFormat.Snippet, List("(", ")"))
-      }
+    // TODO: Cleanup
+    val listDefs = root.defs.filter(kv => includeDef(kv._2))
+    listDefs.map {
+      case (_, defn) =>
+        val label = reconstructSignature(defn)
+        val insertText = defInsertText(defn)
+        val detail = Some(FormatScheme.formatScheme(defn.spec.declaredScheme))
+        val documentation = Some(defn.spec.doc.text)
+        CompletionItem(label, insertText, detail, documentation, CompletionItemKind.Function, InsertTextFormat.Snippet, List("(", ")"))
     }.toList
-    result1
+
   }
 
   // TODO: Magnus
   private def reconstructSignature(defn: TypedAst.Def): String = {
-    implicit val audience = Audience.External
-
     val prefix = defn.sym.toString
     val args = defn.spec.fparams.map {
       case fparam => s"${fparam.sym.text}: ${FormatType.formatType(fparam.tpe)}"
