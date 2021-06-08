@@ -210,7 +210,6 @@ object Ast {
   case class Doc(lines: List[String], loc: SourceLocation) {
     def text: String = lines.
       dropWhile(_.trim.isEmpty).
-      takeWhile(_.trim.nonEmpty).
       map(_.trim).
       mkString("\n")
   }
