@@ -56,7 +56,7 @@ object CompleteProvider {
           val label = defn.sym.toString
           val insertText = defInsertText(defn)
           val detail = Some(FormatScheme.formatScheme(defn.spec.declaredScheme))
-          val documentation = Some(defn.spec.doc.text.stripLeading())
+          val documentation = Some(defn.spec.doc.text)
           CompletionItem(label, insertText, detail, documentation, CompletionItemKind.Function, InsertTextFormat.Snippet, List("(", ")"))
       }
     }.toList

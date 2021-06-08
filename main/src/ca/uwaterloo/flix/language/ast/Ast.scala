@@ -208,7 +208,11 @@ object Ast {
     * @param loc   the source location of the text.
     */
   case class Doc(lines: List[String], loc: SourceLocation) {
-    def text: String = lines.mkString("\n") // TODO: Strip indentation etc.
+    def text: String = lines.
+      dropWhile(_.trim.isEmpty).
+      takeWhile(_.trim.nonEmpty).
+      map(_.trim).
+      mkString("\n")
   }
 
   /**
