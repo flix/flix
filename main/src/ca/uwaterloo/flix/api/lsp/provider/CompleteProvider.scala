@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
-import ca.uwaterloo.flix.api.lsp.{CompletionItem, InsertTextFormat, Position}
+import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, InsertTextFormat, Position}
 import ca.uwaterloo.flix.language.ast.TypedAst
 
 object CompleteProvider {
@@ -10,7 +10,7 @@ object CompleteProvider {
     */
   def autoComplete(uri: String, pos: Position, prefix: String, root: TypedAst.Root): List[CompletionItem] = {
     val result2 = List(
-      CompletionItem("foo", "fooooooo", Some("This is a foo suggestion."), InsertTextFormat.PlainText),
+      CompletionItem("foo", "fooooooo", Some("This is a foo suggestion."), CompletionItemKind.Module, InsertTextFormat.PlainText, Nil),
     )
 
     result2 ::: getSnippetCompletionItems() ::: getKeywordCompletionItems() ::: getOtherCompletionItems(root)
@@ -25,10 +25,10 @@ object CompleteProvider {
     // NB: Please keep the list alphabetically sorted.
 
     // Keywords
-    CompletionItem("namespace", "namespace", None, InsertTextFormat.PlainText),
+    CompletionItem("namespace", "namespace", None, CompletionItemKind.Keyword, InsertTextFormat.PlainText, List("{", "}")),
 
     // Keyword-like names (e.g. built-in functions).
-    CompletionItem("println", "println", None, InsertTextFormat.PlainText),
+    CompletionItem("println", "println", None, CompletionItemKind.Keyword, InsertTextFormat.PlainText, List("(", ")")),
   )
 
   /**
@@ -37,8 +37,8 @@ object CompleteProvider {
   private def getSnippetCompletionItems(): List[CompletionItem] = List(
     // TODO: Add more.
     // NB: Please keep the list alphabetically sorted.
-    CompletionItem("match", "match ${1:exp} {\n case ${2:pat} => ${3:exp}\n}", None, InsertTextFormat.Snippet),
-    CompletionItem("query", "query ${1:db} select ${2:cols} from ${3:preds} ${4:where ${5:cond}}", None, InsertTextFormat.Snippet),
+    CompletionItem("match", "match ${1:exp} {\n case ${2:pat} => ${3:exp}\n}", None, CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
+    CompletionItem("query", "query ${1:db} select ${2:cols} from ${3:preds} ${4:where ${5:cond}}", None, CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
   )
 
   /**
@@ -55,7 +55,7 @@ object CompleteProvider {
           val label = defn.sym.toString
           val insertText = defInsertText(defn)
           val detail = Some(defn.spec.doc.text.stripLeading())
-          CompletionItem(label, insertText, detail, InsertTextFormat.Snippet)
+          CompletionItem(label, insertText, detail, CompletionItemKind.Function, InsertTextFormat.Snippet, List("(", ")"))
       }
     }.toList
     result1

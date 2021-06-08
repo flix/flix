@@ -30,13 +30,19 @@ object CompletionItem {
   *
   * @param label            The label of this completion item. By default also the text that is inserted when selecting this completion.
   * @param detail           A human-readable string with additional information about this item, like type or symbol information.
+  * @param kind             The kind of this completion item. Based of the kind an icon is chosen by the editor. The standardized set of available values is defined in `CompletionItemKind`.
   * @param insertTextFormat The format of the insert text. The format applies to both the `insertText` property and the `newText` property
   *                         of a provided `textEdit`. If omitted defaults to `InsertTextFormat.PlainText`.
+  * @param commitCharacters An optional set of characters that when pressed while this completion is active will accept it first and
+  *                         then type that character. *Note* that all commit characters should have `length=1` and that superfluous characters
+  *                         will be ignored.
   */
-case class CompletionItem(label: String, insertText: String, detail: Option[String], insertTextFormat: InsertTextFormat) {
+case class CompletionItem(label: String, insertText: String, detail: Option[String], kind: CompletionItemKind, insertTextFormat: InsertTextFormat, commitCharacters: List[String]) {
   def toJSON: JValue =
     ("label" -> label) ~
       ("insertText" -> insertText) ~
       ("detail" -> detail) ~
-      ("insertTextFormat" -> insertTextFormat.toInt)
+      ("kind" -> kind.toInt) ~
+      ("insertTextFormat" -> insertTextFormat.toInt) ~
+      ("commitCharacters" -> commitCharacters)
 }
