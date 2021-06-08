@@ -4031,7 +4031,41 @@ def sortWith13(): Bool & Impure =
     a == [4,3,2,2,1,0]
 
 /////////////////////////////////////////////////////////////////////////////
-// sortWith!                                                           //
+// sort                                                                    //
+/////////////////////////////////////////////////////////////////////////////
+
+def testSortVsSortWith(a: Array[Int32]) : Bool & Impure =
+    Array.sort(a) == Array.sortWith(cmp, a)
+
+@test
+def sort01(): Bool & Impure = testSortVsSortWith([]: Array[Int32])
+
+@test
+def sort02(): Bool & Impure = testSortVsSortWith([0])
+
+@test
+def sort03(): Bool & Impure = testSortVsSortWith([0,1])
+
+@test
+def sort04(): Bool & Impure = testSortVsSortWith([1,0])
+
+@test
+def sort05(): Bool & Impure = testSortVsSortWith([1,1])
+
+@test
+def sort06(): Bool & Impure = testSortVsSortWith([0,1,2,3,4,5])
+
+@test
+def sort07(): Bool & Impure = testSortVsSortWith([5,4,3,2,1,0])
+
+@test
+def sort08(): Bool & Impure = testSortVsSortWith([5,3,0,4,1,2])
+
+@test
+def sort09(): Bool & Impure = testSortVsSortWith([2,3,0,4,1,2])
+
+/////////////////////////////////////////////////////////////////////////////
+// sortWith!                                                               //
 /////////////////////////////////////////////////////////////////////////////
 
 @test
@@ -4111,6 +4145,135 @@ def sortWith13!(): Bool & Impure =
     let a = [2,3,0,4,1,2];
     Array.sortWith!(flip(cmp), a);
     a == [4,3,2,2,1,0]
+
+/////////////////////////////////////////////////////////////////////////////
+// sort!                                                                   //
+/////////////////////////////////////////////////////////////////////////////
+
+def testSort!VsSortWith!(a: Array[Int32]) : Bool & Impure =
+    let b = Array.slice(a, 0, Array.length(a));
+    let c = Array.slice(a, 0, Array.length(a));
+    Array.sort!(b);
+    Array.sortWith!(cmp, c);
+    b == c
+
+@test
+def sort!01(): Bool & Impure = testSort!VsSortWith!([]: Array[Int32])
+
+@test
+def sort!02(): Bool & Impure = testSort!VsSortWith!([0])
+
+@test
+def sort!03(): Bool & Impure = testSort!VsSortWith!([0,1])
+
+@test
+def sort!04(): Bool & Impure = testSort!VsSortWith!([1,0])
+
+@test
+def sort!05(): Bool & Impure = testSort!VsSortWith!([1,1])
+
+@test
+def sort!06(): Bool & Impure = testSort!VsSortWith!([0,1,2,3,4,5])
+
+@test
+def sort!07(): Bool & Impure = testSort!VsSortWith!([5,4,3,2,1,0])
+
+@test
+def sort!08(): Bool & Impure = testSort!VsSortWith!([5,3,0,4,1,2])
+
+@test
+def sort!09(): Bool & Impure = testSort!VsSortWith!([2,3,0,4,1,2])
+
+/////////////////////////////////////////////////////////////////////////////
+// sortBy                                                                  //
+/////////////////////////////////////////////////////////////////////////////
+
+def testSortByVsSort(a: Array[Int32]) : Bool & Impure =
+    (Array.sortBy(identity, a) == Array.sort(a)) and
+    (Array.sortBy(x -> 4*x+7, a) == Array.sort(a)) and
+    (Array.sortBy(x -> -x, a) == Array.sortWith(flip(cmp),a))
+
+@test
+def sortBy01(): Bool & Impure = testSortByVsSort([]: Array[Int32])
+
+@test
+def sortBy02(): Bool & Impure = testSortByVsSort([0])
+
+@test
+def sortBy03(): Bool & Impure = testSortByVsSort([0,1])
+
+@test
+def sortBy04(): Bool & Impure = testSortByVsSort([1,0])
+
+@test
+def sortBy05(): Bool & Impure = testSortByVsSort([1,1])
+
+@test
+def sortBy06(): Bool & Impure = testSortByVsSort([0,1,2,3,4,5])
+
+@test
+def sortBy07(): Bool & Impure = testSortByVsSort([5,4,3,2,1,0])
+
+@test
+def sortBy08(): Bool & Impure = testSortByVsSort([5,3,0,4,1,2])
+
+@test
+def sortBy09(): Bool & Impure = testSortByVsSort([2,3,0,4,1,2])
+
+enum R {
+    case R({i: Int32, s: String})
+}
+
+instance Eq[R] {
+    pub def eq(a: R, b: R): Bool =
+        let R(x) = a;
+        let R(y) = b;
+        x.i == y.i and x.s == y.s
+}
+
+@test
+def sortBy10(): Bool & Impure =
+    Array.sortBy(r -> let R(x) = r; x.i, [R({i = 2, s = "A"}), R({i = 1, s = "B"}), R({i = 3, s = "C"})])
+    == [R({i = 1, s = "B"}), R({i = 2, s = "A"}), R({i = 3, s = "C"})]
+
+/////////////////////////////////////////////////////////////////////////////
+// sortBy!                                                                 //
+/////////////////////////////////////////////////////////////////////////////
+
+def testSortBy!VsSortBy(a: Array[Int32]) : Bool & Impure =
+    let b = Array.slice(a, 0, Array.length(a));
+    let c = Array.slice(a, 0, Array.length(a));
+    Array.sortBy!(identity, b);
+    Array.sortBy!(x -> 4*x+7, c);
+    (b == Array.sortBy(x -> 4*x+7, a)) and
+    (c == Array.sortBy(identity, a))
+
+@test
+def sortBy!01(): Bool & Impure = testSortBy!VsSortBy([]: Array[Int32])
+
+@test
+def sortBy!02(): Bool & Impure = testSortBy!VsSortBy([0])
+
+@test
+def sortBy!03(): Bool & Impure = testSortBy!VsSortBy([0,1])
+
+@test
+def sortBy!04(): Bool & Impure = testSortBy!VsSortBy([1,0])
+
+@test
+def sortBy!05(): Bool & Impure = testSortBy!VsSortBy([1,1])
+
+@test
+def sortBy!06(): Bool & Impure = testSortBy!VsSortBy([0,1,2,3,4,5])
+
+@test
+def sortBy!07(): Bool & Impure = testSortBy!VsSortBy([5,4,3,2,1,0])
+
+@test
+def sortBy!08(): Bool & Impure = testSortBy!VsSortBy([5,3,0,4,1,2])
+
+@test
+def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
 
     /////////////////////////////////////////////////////////////////////////////
     // minimumBy                                                               //
