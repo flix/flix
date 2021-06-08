@@ -1893,6 +1893,160 @@ def sortWith13(): Bool =
     List.sortWith(flip(cmp), 2 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil) == 4 :: 3 :: 2 :: 2 :: 1 :: 0 :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
+// sort                                                                    //
+/////////////////////////////////////////////////////////////////////////////
+
+def testSortVsSortWith(xs: List[Int32]) : Bool =
+    List.sort(xs) == List.sortWith(cmp, xs)
+
+@test
+def sort01(): Bool = testSortVsSortWith(Nil: List[Int32])
+
+@test
+def sort02(): Bool = testSortVsSortWith(0 :: Nil)
+
+@test
+def sort03(): Bool = testSortVsSortWith(0 :: 1 :: Nil)
+
+@test
+def sort04(): Bool = testSortVsSortWith(1 :: 0 :: Nil)
+
+@test
+def sort05(): Bool = testSortVsSortWith(1 :: 1 :: Nil)
+
+@test
+def sort06(): Bool = testSortVsSortWith(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil)
+
+@test
+def sort07(): Bool = testSortVsSortWith(5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil)
+
+@test
+def sort08(): Bool = testSortVsSortWith(5 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil)
+
+@test
+def sort09(): Bool = testSortVsSortWith(2 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil)
+
+/////////////////////////////////////////////////////////////////////////////
+// sortBy                                                                  //
+/////////////////////////////////////////////////////////////////////////////
+
+def testSortByVsSort(a: List[Int32]) : Bool =
+    (List.sortBy(identity, a) == List.sort(a)) and
+    (List.sortBy(x -> 4*x+7, a) == List.sort(a)) and
+    (List.sortBy(x -> -x, a) == List.sortWith(flip(cmp),a))
+
+@test
+def sortBy01(): Bool = testSortByVsSort(Nil: List[Int32])
+
+@test
+def sortBy02(): Bool = testSortByVsSort(0 :: Nil)
+
+@test
+def sortBy03(): Bool = testSortByVsSort(0 :: 1 :: Nil)
+
+@test
+def sortBy04(): Bool = testSortByVsSort(1 :: 0 :: Nil)
+
+@test
+def sortBy05(): Bool = testSortByVsSort(1 :: 1 :: Nil)
+
+@test
+def sortBy06(): Bool = testSortByVsSort(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil)
+
+@test
+def sortBy07(): Bool = testSortByVsSort(5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil)
+
+@test
+def sortBy08(): Bool = testSortByVsSort(5 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil)
+
+@test
+def sortBy09(): Bool = testSortByVsSort(2 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil)
+
+enum R {
+    case R({i: Int32, s: String})
+}
+
+instance Eq[R] {
+    pub def eq(a: R, b: R): Bool =
+        let R(x) = a;
+        let R(y) = b;
+        x.i == y.i and x.s == y.s
+}
+
+// Tests stability
+@test
+def sortBy10(): Bool =
+    List.sortBy(r -> let R(x) = r; x.i,
+        R({i = 1, s = "1"}) ::
+        R({i = 1, s = "2"}) ::
+        R({i = 1, s = "3"}) ::
+        R({i = 1, s = "4"}) ::
+        R({i = 1, s = "5"}) ::
+        R({i = 1, s = "6"}) ::
+        R({i = 1, s = "7"}) ::
+        R({i = 1, s = "8"}) ::
+        R({i = 1, s = "9"}) :: Nil
+        )
+    ==  R({i = 1, s = "1"}) ::
+        R({i = 1, s = "2"}) ::
+        R({i = 1, s = "3"}) ::
+        R({i = 1, s = "4"}) ::
+        R({i = 1, s = "5"}) ::
+        R({i = 1, s = "6"}) ::
+        R({i = 1, s = "7"}) ::
+        R({i = 1, s = "8"}) ::
+        R({i = 1, s = "9"}) :: Nil
+
+// Tests stability
+@test
+def sortBy11(): Bool =
+    List.sortBy(r -> let R(x) = r; x.i,
+        R({i = 5, s = "5a"}) ::
+        R({i = 4, s = "4a"}) ::
+        R({i = 3, s = "3a"}) ::
+        R({i = 2, s = "2a"}) ::
+        R({i = 1, s = "1a"}) ::
+        R({i = 2, s = "2b"}) ::
+        R({i = 4, s = "4b"}) ::
+        R({i = 5, s = "5b"}) ::
+        R({i = 5, s = "5c"}) :: Nil
+        )
+    ==  R({i = 1, s = "1a"}) ::
+        R({i = 2, s = "2a"}) ::
+        R({i = 2, s = "2b"}) ::
+        R({i = 3, s = "3a"}) ::
+        R({i = 4, s = "4a"}) ::
+        R({i = 4, s = "4b"}) ::
+        R({i = 5, s = "5a"}) ::
+        R({i = 5, s = "5b"}) ::
+        R({i = 5, s = "5c"}) :: Nil
+
+// Tests stability
+@test
+def sortBy12(): Bool =
+    List.sortBy(r -> let R(x) = r; x.i,
+        R({i = 2, s = "2a"}) ::
+        R({i = 1, s = "1a"}) ::
+        R({i = 3, s = "3a"}) ::
+        R({i = 3, s = "3b"}) ::
+        R({i = 1, s = "1b"}) ::
+        R({i = 3, s = "3c"}) ::
+        R({i = 2, s = "2b"}) ::
+        R({i = 2, s = "2c"}) ::
+        R({i = 2, s = "2d"}) :: Nil
+        )
+    ==  R({i = 1, s = "1a"}) ::
+        R({i = 1, s = "1b"}) ::
+        R({i = 2, s = "2a"}) ::
+        R({i = 2, s = "2b"}) ::
+        R({i = 2, s = "2c"}) ::
+        R({i = 2, s = "2d"}) ::
+        R({i = 3, s = "3a"}) ::
+        R({i = 3, s = "3b"}) ::
+        R({i = 3, s = "3c"}) :: Nil
+
+
+/////////////////////////////////////////////////////////////////////////////
 // unfold                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 
