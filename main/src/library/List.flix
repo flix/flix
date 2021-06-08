@@ -1096,22 +1096,27 @@ namespace List {
         }
 
     ///
-    /// Sort list `xs` using the `Order` instance on the elements.
+    /// Sort list `xs` so that elements are ordered from low to high according to their `Order` instance.
+    ///
+    /// The sort is stable, i.e., equal elements appear in the same order as in the input `xs`.
     ///
     /// The sort implementation is a mergesort.
     ///
     pub def sort(xs: List[a]): List[a] with Order[a] = sortWith(Order.compare, xs)
 
+    /// Sort list `xs` so that elements are ordered from low to high according to the `Order` instance
+    /// for the values obtained by applying `f` to each element.
     ///
-    /// Sort list `xs` by a property of the elements specified by the funtion `f`.
-    /// Uses the `Order` instance on these properties.
+    /// The sort is stable, i.e., equal elements appear in the same order as in the input `xs`.
     ///
     /// The sort implementation is a mergesort.
     ///
     pub def sortBy(f: a -> b, xs: List[a]): List[a] with Order[b] = sortWith(Order.compare `on` f, xs)
 
     ///
-    /// Sort list `xs` with the comparing function `cmp`.
+    /// Sort list `xs` so that elements are ordered from low to high according to the comparison function `cmp`.
+    ///
+    /// The sort is stable, i.e., equal elements appear in the same order as in the input `xs`.
     ///
     /// The sort implementation is a mergesort.
     /// Acknowledgement: derived from Thomas Nordin's `sortBy` in the Haskell base libraries.
