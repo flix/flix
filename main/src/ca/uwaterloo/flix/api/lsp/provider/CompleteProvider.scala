@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, InsertTextFormat, Position}
-import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme, FormatType}
 
 object CompleteProvider {
@@ -71,8 +71,9 @@ object CompleteProvider {
     val args = defn.spec.fparams.map {
       case fparam => s"${fparam.sym.text}: ${FormatType.formatType(fparam.tpe)}"
     }
-    val eff = FormatType.formatType(defn.spec.eff)
-    s"${prefix}(${args.mkString(", ")}): ??? & "
+    val tpe = FormatType.formatType(getResultType(defn.spec.declaredScheme.base))
+    val eff = FormatType.formatType(defn.spec.eff) // TODO: Dont show pure
+    s"${prefix}(${args.mkString(", ")}): $tpe$eff"
   }
 
   // TODO: Magnus
@@ -83,5 +84,10 @@ object CompleteProvider {
     }
     s"${prefix}(${args.mkString(", ")})"
   }
+
+  /**
+    * Returns the return type of the given function type `tpe0`.
+    */
+  private def getResultType(tpe0: Type): Type = tpe0.typeArguments.last
 
 }
