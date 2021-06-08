@@ -89,7 +89,10 @@ object CompleteProvider {
         val insertText = defInsertText(defn)
         val detail = Some(FormatScheme.formatScheme(defn.spec.declaredScheme))
         val documentation = Some(defn.spec.doc.text)
-        CompletionItem(label, insertText, detail, documentation, CompletionItemKind.Function, InsertTextFormat.Snippet, List("(", ")"))
+        val completionKind = CompletionItemKind.Function
+        val textFormat = InsertTextFormat.Snippet
+        val commitCharacters = List("(", ")")
+        CompletionItem(label, insertText, detail, documentation, completionKind, textFormat, commitCharacters)
     }.toList
 
   }
