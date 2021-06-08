@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
-import ca.uwaterloo.flix.api.lsp.{CompletionItem, InsertTextFormat}
+import ca.uwaterloo.flix.api.lsp.{CompletionItem, InsertTextFormat, Position}
 import ca.uwaterloo.flix.language.ast.TypedAst
 
 object CompleteProvider {
@@ -8,7 +8,7 @@ object CompleteProvider {
   /**
     * Returns a list of auto-complete suggestions.
     */
-  def autoComplete(root: TypedAst.Root): List[CompletionItem] = {
+  def autoComplete(uri: String, pos: Position, prefix: String, root: TypedAst.Root): List[CompletionItem] = {
     val result2 = List(
       CompletionItem("foo", "fooooooo", Some("This is a foo suggestion."), InsertTextFormat.PlainText),
     )
@@ -22,7 +22,12 @@ object CompleteProvider {
     */
   private def getKeywordCompletionItems(): List[CompletionItem] = List(
     // TODO: Add more.
+    // NB: Please keep the list alphabetically sorted.
+
+    // Keywords
     CompletionItem("namespace", "namespace", None, InsertTextFormat.PlainText),
+
+    // Keyword-like names (e.g. built-in functions).
     CompletionItem("println", "println", None, InsertTextFormat.PlainText),
   )
 
@@ -31,6 +36,7 @@ object CompleteProvider {
     */
   private def getSnippetCompletionItems(): List[CompletionItem] = List(
     // TODO: Add more.
+    // NB: Please keep the list alphabetically sorted.
     CompletionItem("match", "match ${1:exp} {\n case ${2:pat} => ${3:exp}\n}", None, InsertTextFormat.Snippet),
     CompletionItem("query", "query ${1:db} select ${2:cols} from ${3:preds} ${4:where ${5:cond}}", None, InsertTextFormat.Snippet),
   )
