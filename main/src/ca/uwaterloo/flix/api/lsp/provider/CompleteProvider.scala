@@ -116,7 +116,7 @@ object CompleteProvider {
     val insertText = getApplySnippet(name, sign.spec.fparams)
     val detail = Some(FormatScheme.formatScheme(sign.spec.declaredScheme))
     val documentation = Some(sign.spec.doc.text)
-    val completionKind = CompletionItemKind.Method
+    val completionKind = CompletionItemKind.Function
     val textFormat = InsertTextFormat.Snippet
     val commitCharacters = List("(", ")")
     CompletionItem(label, insertText, detail, documentation, completionKind, textFormat, commitCharacters)
@@ -126,7 +126,7 @@ object CompleteProvider {
     * Returns the label for the given definition `defn`.
     */
   private def getDefLabel(defn: TypedAst.Def): String =
-    getLabel(defn.sym.text, defn.spec.fparams, defn.spec.declaredScheme)
+    getLabel(defn.sym.toString, defn.spec.fparams, defn.spec.declaredScheme)
 
   /**
     * Returns the label for the given signature `sign`.
