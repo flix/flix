@@ -3968,67 +3968,67 @@ def cmp(x: Int32, y: Int32): Comparison =
 @test
 def sortWith01(): Bool & Impure =
     let a = Array.sortWith(cmp, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
+    a == []: Array[Int32]
 
 @test
 def sortWith02(): Bool & Impure =
     let a = Array.sortWith(cmp, [0]);
-    Array.sameElements(a, [0])
+    a == [0]
 
 @test
 def sortWith03(): Bool & Impure =
     let a = Array.sortWith(cmp, [0,1]);
-    Array.sameElements(a, [0,1])
+    a == [0,1]
 
 @test
 def sortWith04(): Bool & Impure =
     let a = Array.sortWith(cmp, [1,0]);
-    Array.sameElements(a, [0,1])
+    a == [0,1]
 
 @test
 def sortWith05(): Bool & Impure =
     let a = Array.sortWith(cmp, [1,1]);
-    Array.sameElements(a, [1,1])
+    a == [1,1]
 
 @test
 def sortWith06(): Bool & Impure =
     let a = Array.sortWith(cmp, [0,1,2,3,4,5]);
-    Array.sameElements(a, [0,1,2,3,4,5])
+    a == [0,1,2,3,4,5]
 
 @test
 def sortWith07(): Bool & Impure =
     let a = Array.sortWith(cmp, [5,4,3,2,1,0]);
-    Array.sameElements(a, [0,1,2,3,4,5])
+    a == [0,1,2,3,4,5]
 
 @test
 def sortWith08(): Bool & Impure =
     let a = Array.sortWith(cmp, [5,3,0,4,1,2]);
-    Array.sameElements(a, [0,1,2,3,4,5])
+    a == [0,1,2,3,4,5]
 
 @test
 def sortWith09(): Bool & Impure =
     let a = Array.sortWith(cmp, [2,3,0,4,1,2]);
-    Array.sameElements(a, [0,1,2,2,3,4])
+    a == [0,1,2,2,3,4]
 
 @test
 def sortWith10(): Bool & Impure =
     let a = Array.sortWith(flip(cmp), [0,1,2,3,4,5]);
-    Array.sameElements(a, [5,4,3,2,1,0])
+    a == [5,4,3,2,1,0]
 
 @test
 def sortWith11(): Bool & Impure =
     let a = Array.sortWith(flip(cmp), [5,4,3,2,1,0]);
-    Array.sameElements(a, [5,4,3,2,1,0])
+    a == [5,4,3,2,1,0]
 
 @test
 def sortWith12(): Bool & Impure =
     let a = Array.sortWith(flip(cmp), [5,3,0,4,1,2]);
-    Array.sameElements(a, [5,4,3,2,1,0])
+    a == [5,4,3,2,1,0]
 
 @test
 def sortWith13(): Bool & Impure =
     let a = Array.sortWith(flip(cmp), [2,3,0,4,1,2]);
-    Array.sameElements(a, [4,3,2,2,1,0])
+    a == [4,3,2,2,1,0]
 
 /////////////////////////////////////////////////////////////////////////////
 // sortWith!                                                           //
@@ -4038,79 +4038,79 @@ def sortWith13(): Bool & Impure =
 def sortWith01!(): Bool & Impure =
     let a = []: Array[Int32];
     Array.sortWith(cmp, a);
-    Array.sameElements(a, []: Array[Int32])
+    a == []: Array[Int32]
 
 @test
 def sortWith02!(): Bool & Impure =
     let a = [0];
-     Array.sortWith!(cmp, a);
-    Array.sameElements(a, [0])
+    Array.sortWith!(cmp, a);
+    a == [0]
 
 @test
 def sortWith03!(): Bool & Impure =
     let a = [0,1];
     Array.sortWith!(cmp, a);
-    Array.sameElements(a, [0,1])
+    a == [0,1]
 
 @test
 def sortWith04!(): Bool & Impure =
     let a = [1,0];
     Array.sortWith!(cmp, a);
-    Array.sameElements(a, [0,1])
+    a == [0,1]
 
 @test
 def sortWith05!(): Bool & Impure =
     let a = [1,1];
     Array.sortWith!(cmp, a);
-    Array.sameElements(a, [1,1])
+    a == [1,1]
 
 @test
 def sortWith06!(): Bool & Impure =
     let a = [0,1,2,3,4,5];
     Array.sortWith!(cmp, a);
-    Array.sameElements(a, [0,1,2,3,4,5])
+    a == [0,1,2,3,4,5]
 
 @test
 def sortWith07!(): Bool & Impure =
     let a = [5,4,3,2,1,0];
     Array.sortWith!(cmp, a);
-    Array.sameElements(a, [0,1,2,3,4,5])
+    a == [0,1,2,3,4,5]
 
 @test
 def sortWith08!(): Bool & Impure =
     let a = [5,3,0,4,1,2];
     Array.sortWith!(cmp, a);
-    Array.sameElements(a, [0,1,2,3,4,5])
+    a == [0,1,2,3,4,5]
 
 @test
 def sortWith09!(): Bool & Impure =
     let a = [2,3,0,4,1,2];
     Array.sortWith!(cmp, a);
-    Array.sameElements(a, [0,1,2,2,3,4])
+    a == [0,1,2,2,3,4]
 
 @test
 def sortWith10!(): Bool & Impure =
     let a = [0,1,2,3,4,5];
     Array.sortWith!(flip(cmp), a);
-    Array.sameElements(a, [5,4,3,2,1,0])
+    a == [5,4,3,2,1,0]
 
 @test
 def sortWith11!(): Bool & Impure =
     let a = [5,4,3,2,1,0];
     Array.sortWith!(flip(cmp), a);
-    Array.sameElements(a, [5,4,3,2,1,0])
+    a == [5,4,3,2,1,0]
 
 @test
 def sortWith12!(): Bool & Impure =
     let a = [5,3,0,4,1,2];
     Array.sortWith!(flip(cmp), a);
-    Array.sameElements(a, [5,4,3,2,1,0])
+    a == [5,4,3,2,1,0]
 
 @test
 def sortWith13!(): Bool & Impure =
     let a = [2,3,0,4,1,2];
     Array.sortWith!(flip(cmp), a);
-    Array.sameElements(a, [4,3,2,2,1,0])
+    a == [4,3,2,2,1,0]
 
     /////////////////////////////////////////////////////////////////////////////
     // minimumBy                                                               //
