@@ -334,8 +334,66 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     */
   private def processComplete(requestId: String, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
     // TODO: Get the actual line prefix.
+    val word = for {
+      source <- sources.get(uri)
+      line <- lineAt(source, pos.line - 1)
+      word <- wordAt(line, pos.character - 1)
+    } yield word
+
+    println("WORD: " + word)
     val result = CompleteProvider.autoComplete(uri, pos, "")(index, root)
     ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result.map(_.toJSON))
+  }
+
+  /**
+    * Optionally returns line number `n` in the string `s`.
+    */
+  private def lineAt(s: String, n: Int): Option[String] = {
+    import java.io.{BufferedReader, StringReader}
+
+    val br = new BufferedReader(new StringReader(s))
+
+    var i = 0
+    var line = br.readLine()
+    while (line != null && i < n) {
+      line = br.readLine()
+      i = i + 1
+    }
+    Option(line)
+  }
+
+  /**
+    * Optionally returns the word at the given index `n` in the string `s`.
+    */
+  private def wordAt(s: String, n: Int): Option[String] = {
+    println(s"s = $s, n = $n")
+
+    // Bounds Check
+    if (!(0 <= n && n < s.length)) {
+      return None
+    }
+
+    // Inside Word?
+    if (!Character.isLetterOrDigit(s.charAt(n))) {
+      return None
+    }
+
+    // Compute the beginning of the word.
+    var begin = n
+    while (0 < begin && Character.isLetterOrDigit(s.charAt(begin))) {
+      begin = begin - 1
+    }
+
+    // Compute the ending of the word.
+    var end = n
+    while (end < s.length && Character.isLetterOrDigit(s.charAt(end))) {
+      end = end + 1
+    }
+
+    println(s"begin = $begin, end = $end")
+
+    // Return the word.
+    Some(s.substring(begin + 1, end))
   }
 
   /**
