@@ -369,7 +369,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     println(s"s = $s, n = $n")
 
     // Bounds Check
-    if (!(0 <= n && n <= s.length)) {
+    if (!(0 <= n && n < s.length)) {
       return None
     }
 
