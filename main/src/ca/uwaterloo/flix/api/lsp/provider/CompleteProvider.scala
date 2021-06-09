@@ -26,8 +26,8 @@ object CompleteProvider {
   /**
     * Returns a list of auto-complete suggestions.
     */
-  def autoComplete(uri: String, pos: Position, prefix: String)(implicit index: Index, root: TypedAst.Root): List[CompletionItem] = {
-    getKeywordCompletionItems() ::: getSnippetCompletionItems() ::: getSuggestions(uri, pos)
+  def autoComplete(uri: String, pos: Position, prefix: Option[String])(implicit index: Index, root: TypedAst.Root): List[CompletionItem] = {
+    getKeywordCompletionItems() ::: getSnippetCompletionItems() ::: getSuggestions(uri, pos, prefix)
   }
 
   /**
@@ -61,44 +61,49 @@ object CompleteProvider {
   /**
     * Returns a list of other completion items.
     */
-  private def getSuggestions(uri: String, pos: Position)(implicit index: Index, root: TypedAst.Root): List[CompletionItem] = {
+  private def getSuggestions(uri: String, pos: Position, prefix: Option[String])(implicit index: Index, root: TypedAst.Root): List[CompletionItem] = {
     ///
     /// Return immediately if there is no AST.
     ///
     if (root == null) {
       return Nil
     }
-
-    // TODO: Use uri and pos to determine what should be suggested.
-
-    val includeNamespaces = List(
-      List("Option"),
-      List("Result"),
-      List("List"),
-      List("Set"),
-      List("Map")
-    )
-
-    def matchesEnum(enum: TypedAst.Enum): Boolean = {
-      val isPublic = enum.mod.isPublic
-      val isInFile = enum.loc.source.name == uri
-
-      isPublic && isInFile
-    }
-
     // TODO: Need to take into account "where" in the document we are. E.g. inside exp/defn or inside decl? or something else?
 
     // TODO: Need to decide whether to include private defs based on the current file/namespace.
+
+
+    println(s"Prefix: ${prefix}")
+
+    // TODO: Use uri and pos to determine what should be suggested.
+    def matchesEnum(enum: TypedAst.Enum): Boolean = {
+      val isPublic = enum.mod.isPublic
+      val isInFile = enum.loc.source.name == uri
+      val isMatch = prefix match {
+        case None => true
+        case Some(s) => true
+      }
+
+      isPublic && isMatch && isInFile
+    }
+
     def matchesDef(defn: TypedAst.Def): Boolean = {
       val isPublic = defn.spec.mod.isPublic
+      val isMatch = prefix match {
+        case None => true
+        case Some(s) => true
+      }
       val isInFile = defn.spec.loc.source.name == uri
-      val isWhiteListed = includeNamespaces.contains(defn.sym.namespace)
-      (isWhiteListed && isPublic) || isInFile
+      (isPublic && isMatch) || isInFile
     }
 
     def matchesSig(sign: TypedAst.Sig): Boolean = {
       val isPublic = sign.spec.mod.isPublic
-      isPublic
+      val isMatch = prefix match {
+        case None => true
+        case Some(s) => sign.sym.name.contains(s)
+      }
+      isPublic && isMatch
     }
 
     // TODO: Need to aggressively filter these suggestions based on the string.

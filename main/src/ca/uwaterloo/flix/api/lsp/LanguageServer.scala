@@ -333,15 +333,13 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     * Processes a complete request.
     */
   private def processComplete(requestId: String, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
-    // TODO: Get the actual line prefix.
     val word = for {
       source <- sources.get(uri)
       line <- lineAt(source, pos.line - 1)
       word <- wordAt(line, pos.character - 1)
     } yield word
 
-    println("WORD: " + word)
-    val result = CompleteProvider.autoComplete(uri, pos, "")(index, root)
+    val result = CompleteProvider.autoComplete(uri, pos, word)(index, root)
     ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result.map(_.toJSON))
   }
 
@@ -369,13 +367,13 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     def isValidChar(c: Char): Boolean = Character.isLetterOrDigit(c)
 
     // Bounds Check
-    if (!(0 <= n && n < s.length)) {
+    if (!(0 <= n && n <= s.length)) {
       return None
     }
 
     // Determine if the word is to the left of us, to the right of us, or out of bounds.
-    val leftOf = n > 0 && isValidChar(s.charAt(n - 1))
-    val rightOf = isValidChar(s.charAt(n))
+    val leftOf = 0 < n && isValidChar(s.charAt(n - 1))
+    val rightOf = n < s.length && isValidChar(s.charAt(n))
 
     val i = (leftOf, rightOf) match {
       case (true, _) => n - 1
@@ -394,8 +392,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     while (end < s.length && isValidChar(s.charAt(end))) {
       end = end + 1
     }
-
-    println(s"begin = $begin, end = $end")
 
     // Return the word.
     Some(s.substring(begin, end))
