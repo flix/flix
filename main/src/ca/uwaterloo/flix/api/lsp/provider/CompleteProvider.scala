@@ -77,29 +77,37 @@ object CompleteProvider {
       List("Map")
     )
 
-    def includeEnum(enum: TypedAst.Enum): Boolean = {
+    def matchesEnum(enum: TypedAst.Enum): Boolean = {
       val isPublic = enum.mod.isPublic
-      val inFile = enum.loc.source.name == uri
+      val isInFile = enum.loc.source.name == uri
 
-      isPublic && inFile
+      isPublic && isInFile
     }
 
     // TODO: Need to decide whether to include private defs based on the current file/namespace.
-    def includeDef(defn: TypedAst.Def): Boolean = includeNamespaces.contains(defn.sym.namespace) && defn.spec.mod.isPublic
+    def matchesDef(defn: TypedAst.Def): Boolean = {
+      val isPublic = defn.spec.mod.isPublic
+      val isInFile = defn.spec.loc.source.name == uri
+      val isWhiteListed = includeNamespaces.contains(defn.sym.namespace)
+      (isWhiteListed && isPublic) || isInFile
+    }
 
-    def includeSig(sign: TypedAst.Sig): Boolean = sign.spec.mod.isPublic
+    def matchesSig(sign: TypedAst.Sig): Boolean = {
+      val isPublic = sign.spec.mod.isPublic
+      isPublic
+    }
 
     // TODO: Need to aggressively filter these suggestions based on the string.
 
-    val enumSuggestions = root.enums.toList.filter(kv => includeEnum(kv._2)).flatMap {
+    val enumSuggestions = root.enums.toList.filter(kv => matchesEnum(kv._2)).flatMap {
       case (_, enum) => getEnumCompletionItems(enum)
     }
 
-    val defSuggestions = root.defs.filter(kv => includeDef(kv._2)).map {
+    val defSuggestions = root.defs.filter(kv => matchesDef(kv._2)).map {
       case (_, defn) => getDefCompletionItem(defn)
     }
 
-    val sigSuggestions = root.sigs.filter(kv => includeSig(kv._2)).map {
+    val sigSuggestions = root.sigs.filter(kv => matchesSig(kv._2)).map {
       case (_, sign) => getSigCompletionItem(sign)
     }
 
