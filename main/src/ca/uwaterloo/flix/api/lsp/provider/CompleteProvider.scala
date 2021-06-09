@@ -27,7 +27,7 @@ object CompleteProvider {
     * Returns a list of auto-complete suggestions.
     */
   def autoComplete(uri: String, pos: Position, prefix: Option[String])(implicit index: Index, root: TypedAst.Root): List[CompletionItem] = {
-    getKeywordCompletionItems() ::: getSnippetCompletionItems() ::: getSuggestions(uri, pos, prefix)
+    getKeywordCompletionItems() ++ getSnippetCompletionItems() ++ getSuggestions(uri, pos, prefix)
   }
 
   /**
@@ -61,7 +61,7 @@ object CompleteProvider {
   /**
     * Returns a list of other completion items.
     */
-  private def getSuggestions(uri: String, pos: Position, prefix: Option[String])(implicit index: Index, root: TypedAst.Root): List[CompletionItem] = {
+  private def getSuggestions(uri: String, pos: Position, prefix: Option[String])(implicit index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
     ///
     /// Return immediately if there is no AST.
     ///
@@ -81,7 +81,7 @@ object CompleteProvider {
       val isInFile = enum.loc.source.name == uri
       val isMatch = prefix match {
         case None => true
-        case Some(s) => true
+        case Some(s) => enum.sym.name.startsWith(s)
       }
 
       isPublic && isMatch && isInFile
@@ -91,7 +91,7 @@ object CompleteProvider {
       val isPublic = defn.spec.mod.isPublic
       val isMatch = prefix match {
         case None => true
-        case Some(s) => true
+        case Some(s) => defn.sym.text.startsWith(s)
       }
       val isInFile = defn.spec.loc.source.name == uri
       (isPublic && isMatch) || isInFile
@@ -101,7 +101,7 @@ object CompleteProvider {
       val isPublic = sign.spec.mod.isPublic
       val isMatch = prefix match {
         case None => true
-        case Some(s) => sign.sym.name.contains(s)
+        case Some(s) => sign.sym.name.startsWith(s)
       }
       isPublic && isMatch
     }
@@ -120,12 +120,12 @@ object CompleteProvider {
       case (_, enum) => getEnumCompletionItems(enum)
     }
 
-    val defSuggestions = root.defs.filter(kv => matchesDef(kv._2)).map {
-      case (_, defn) => getDefCompletionItem(defn)
+    val defSuggestions = root.defs.values.filter(matchesDef).map {
+      case defn => getDefCompletionItem(defn)
     }
 
-    val sigSuggestions = root.sigs.filter(kv => matchesSig(kv._2)).map {
-      case (_, sign) => getSigCompletionItem(sign)
+    val sigSuggestions = root.sigs.values.filter(matchesSig).map {
+      case sign => getSigCompletionItem(sign)
     }
 
     classSuggestions ++ enumSuggestions ++ defSuggestions ++ sigSuggestions
