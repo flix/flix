@@ -25,6 +25,6 @@ import org.json4s._
   *                     Recomputed lists have all their items replaced (not appended) in the incomplete completion sessions.
   * @param items        The completion items.
   */
-case class CompletionList(isIncomplete: Boolean, items: List[CompletionItem]) {
+case class CompletionList(isIncomplete: Boolean, items: Iterable[CompletionItem]) {
   def toJSON: JValue = ("isIncomplete" -> isIncomplete) ~ ("items" -> items.map(_.toJSON))
 }

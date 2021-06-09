@@ -339,7 +339,10 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       word <- wordAt(line, pos.character - 1)
     } yield word
 
+    val t = System.nanoTime()
     val suggestions = CompleteProvider.autoComplete(uri, pos, word)(index, root)
+    println("Elapsed " + ((System.nanoTime() - t) / 1_000_000) + "ms")
+
     val result = CompletionList(isIncomplete = true, suggestions)
     ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result.toJSON)
   }

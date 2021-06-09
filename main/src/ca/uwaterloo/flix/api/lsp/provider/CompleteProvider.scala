@@ -26,7 +26,7 @@ object CompleteProvider {
   /**
     * Returns a list of auto-complete suggestions.
     */
-  def autoComplete(uri: String, pos: Position, prefix: Option[String])(implicit index: Index, root: TypedAst.Root): List[CompletionItem] = {
+  def autoComplete(uri: String, pos: Position, prefix: Option[String])(implicit index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
     getKeywordCompletionItems() ++ getSnippetCompletionItems() ++ getSuggestions(uri, pos, prefix)
   }
 
@@ -96,9 +96,7 @@ object CompleteProvider {
 
     // TODO: Add type classes.
 
-    val defSuggestions = root.defs.values.filter(matchesDef(_, prefix, uri)).map {
-      case defn => getDefCompletionItem(defn)
-    }
+    val defSuggestions = root.defs.values.filter(matchesDef(_, prefix, uri)).map(getDefCompletionItem)
 
     val enumSuggestions = root.enums.filter(kv => matchesEnum(kv._2)).flatMap {
       case (_, enum) => getEnumCompletionItems(enum)
