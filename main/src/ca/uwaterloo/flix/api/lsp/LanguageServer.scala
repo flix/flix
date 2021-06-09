@@ -339,8 +339,9 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       word <- wordAt(line, pos.character - 1)
     } yield word
 
-    val result = CompleteProvider.autoComplete(uri, pos, word)(index, root)
-    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result.map(_.toJSON))
+    val suggestions = CompleteProvider.autoComplete(uri, pos, word)(index, root)
+    val result = CompletionList(isIncomplete = true, suggestions)
+    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result.toJSON)
   }
 
   /**
