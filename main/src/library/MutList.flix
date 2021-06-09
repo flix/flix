@@ -28,6 +28,23 @@ instance ToString[MutList[a]] with ToString[a] {
     }
 }
 
+instance Eq[MutList[a]] with Eq[a] {
+    pub def eq(xs: MutList[a], ys: MutList[a]): Bool =
+        (let MutList(a, _) = xs;
+        let MutList(b, _) = ys;
+        deref a == deref b) as & Pure
+}
+
+instance Order[MutList[v]] with Order[v] {
+    ///
+    /// Compares `u` and `v` lexicographically.
+    ///
+    pub def compare(u: MutList[v], v: MutList[v]): Comparison =
+        (let MutList(a, _) = u;
+        let MutList(b, _) = v;
+        deref a <=> deref b) as & Pure
+}
+
 instance Functor[MutList] {
     pub def map(f: a -> b & e, v: MutList[a]): MutList[b] & e = MutList.map(f, v) as & e
 }

@@ -19,6 +19,49 @@ namespace TestMutList {
     use ToString.toString;
 
     /////////////////////////////////////////////////////////////////////////////
+    // Eq.eq                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+    
+    @test
+    def eq01(): Bool & Impure =
+        let u: MutList[Int32] = MutList.new();
+        let v: MutList[Int32] = MutList.new();
+        u == v
+
+    @test
+    def eq02(): Bool & Impure =
+        let u = MutList.new();
+        MutList.push!(0, u);
+        let v = MutList.new();
+        u != v
+
+    @test
+    def eq03(): Bool & Impure =
+        let u = MutList.new();
+        MutList.push!(2, u);
+        MutList.push!(3, u);
+        let v = MutList.new();
+        MutList.push!(2, v);
+        MutList.push!(3, v);
+        u == v
+        
+    @test
+    def eq04(): Bool & Impure =
+        let u = MutList.new();
+        MutList.push!(2, u);
+        MutList.push!(3, u);
+        let v = MutList.new();
+        MutList.push!(2, v);
+        MutList.push!(2, v);
+        u != v
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Order.compare                                                           //
+    /////////////////////////////////////////////////////////////////////////////
+
+    // TODO
+
+    /////////////////////////////////////////////////////////////////////////////
     // length                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
