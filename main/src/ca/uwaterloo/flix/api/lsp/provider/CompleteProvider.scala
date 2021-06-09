@@ -84,6 +84,8 @@ object CompleteProvider {
       isPublic && isInFile
     }
 
+    // TODO: Need to take into account "where" in the document we are. E.g. inside exp/defn or inside decl? or something else?
+
     // TODO: Need to decide whether to include private defs based on the current file/namespace.
     def matchesDef(defn: TypedAst.Def): Boolean = {
       val isPublic = defn.spec.mod.isPublic
