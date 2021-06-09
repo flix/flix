@@ -69,17 +69,14 @@ object CompleteProvider {
       return Nil
     }
 
-    // TODO: Need to take into account "where" in the document we are. E.g. inside exp/defn or inside decl? or something else?
-    // TODO: Need to decide whether to include private defs based on the current file/namespace.
-    // TODO: Use uri and pos to determine what should be suggested.
-    // TODO: Add support for fields, predicates, type classes.
-
     println(s"Auto-completing the prefix: $prefix.")
 
+    // TODO: Add support for classes and enums?
+    // TODO: Use the current position to determine what to suggest.
+
     val defSuggestions = root.defs.values.filter(matchesDef(_, prefix, uri)).map(getDefCompletionItem)
-    val enumSuggestions = root.enums.values.filter(matchesEnum(_, prefix, uri)).flatMap(getEnumCompletionItems)
     val sigSuggestions = root.sigs.values.filter(matchesSig(_, prefix, uri)).map(getSigCompletionItem)
-    defSuggestions ++ enumSuggestions ++ sigSuggestions
+    defSuggestions ++ sigSuggestions
   }
 
   /**
@@ -97,26 +94,6 @@ object CompleteProvider {
           decl.sym.text.startsWith(s)
     }
     val isInFile = decl.spec.loc.source.name == uri
-
-    isMatch && (isPublic || isInFile)
-  }
-
-  /**
-    * Returns `true` if the given enum `decl` should be included in the suggestions.
-    */
-  private def matchesEnum(decl: TypedAst.Enum, prefix: Option[String], uri: String): Boolean = {
-    // TODO: Wrong. Need to work at the level of tags.
-    val isPublic = decl.mod.isPublic
-    val isMatch = prefix match {
-      case None => true
-      case Some(s) =>
-        val isNamespace = s.contains(".")
-        if (isNamespace)
-          decl.sym.toString.startsWith(s)
-        else
-          decl.sym.name.startsWith(s)
-    }
-    val isInFile = decl.loc.source.name == uri
 
     isMatch && (isPublic || isInFile)
   }
@@ -159,14 +136,14 @@ object CompleteProvider {
   }
 
   /**
-    * Returns a completion item for the given definition `defn`.
+    * Returns a completion item for the given definition `decl`.
     */
-  private def getDefCompletionItem(defn: TypedAst.Def): CompletionItem = {
-    val name = defn.sym.toString
-    val label = getDefLabel(defn)
-    val insertText = getApplySnippet(name, defn.spec.fparams)
-    val detail = Some(FormatScheme.formatScheme(defn.spec.declaredScheme))
-    val documentation = Some(defn.spec.doc.text)
+  private def getDefCompletionItem(decl: TypedAst.Def): CompletionItem = {
+    val name = decl.sym.toString
+    val label = getDefLabel(decl)
+    val insertText = getApplySnippet(name, decl.spec.fparams)
+    val detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme))
+    val documentation = Some(decl.spec.doc.text)
     val completionKind = CompletionItemKind.Function
     val textFormat = InsertTextFormat.Snippet
     val commitCharacters = Nil
@@ -174,14 +151,14 @@ object CompleteProvider {
   }
 
   /**
-    * Returns a completion item for the given signature `sign`.
+    * Returns a completion item for the given signature `decl`.
     */
-  private def getSigCompletionItem(sign: TypedAst.Sig): CompletionItem = {
-    val name = sign.sym.toString
-    val label = getSigLabel(sign)
-    val insertText = getApplySnippet(name, sign.spec.fparams)
-    val detail = Some(FormatScheme.formatScheme(sign.spec.declaredScheme))
-    val documentation = Some(sign.spec.doc.text)
+  private def getSigCompletionItem(decl: TypedAst.Sig): CompletionItem = {
+    val name = decl.sym.toString
+    val label = getSigLabel(decl)
+    val insertText = getApplySnippet(name, decl.spec.fparams)
+    val detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme))
+    val documentation = Some(decl.spec.doc.text)
     val completionKind = CompletionItemKind.Function
     val textFormat = InsertTextFormat.Snippet
     val commitCharacters = Nil
@@ -189,16 +166,16 @@ object CompleteProvider {
   }
 
   /**
-    * Returns the label for the given definition `defn`.
+    * Returns the label for the given definition `decl`.
     */
-  private def getDefLabel(defn: TypedAst.Def): String =
-    getLabel(defn.sym.toString, defn.spec.fparams, defn.spec.declaredScheme)
+  private def getDefLabel(decl: TypedAst.Def): String =
+    getLabel(decl.sym.toString, decl.spec.fparams, decl.spec.declaredScheme)
 
   /**
-    * Returns the label for the given signature `sign`.
+    * Returns the label for the given signature `decl`.
     */
-  private def getSigLabel(sign: TypedAst.Sig): String =
-    getLabel(sign.sym.toString, sign.spec.fparams, sign.spec.declaredScheme)
+  private def getSigLabel(decl: TypedAst.Sig): String =
+    getLabel(decl.sym.toString, decl.spec.fparams, decl.spec.declaredScheme)
 
   /**
     * Returns the label for the given `name`, formal parameters `fparams`, and scheme `sc`.
