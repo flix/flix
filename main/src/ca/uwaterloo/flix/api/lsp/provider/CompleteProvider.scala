@@ -153,7 +153,7 @@ object CompleteProvider {
         val documentation = Some(enum.doc.text)
         val completionKind = CompletionItemKind.EnumMember
         val textFormat = InsertTextFormat.Snippet
-        val commitCharacters = Nil // TODO
+        val commitCharacters = Nil
         CompletionItem(label, insertText, detail, documentation, completionKind, textFormat, commitCharacters)
     }.toList
   }
@@ -169,7 +169,7 @@ object CompleteProvider {
     val documentation = Some(defn.spec.doc.text)
     val completionKind = CompletionItemKind.Function
     val textFormat = InsertTextFormat.Snippet
-    val commitCharacters = Nil // TODO
+    val commitCharacters = Nil
     CompletionItem(label, insertText, detail, documentation, completionKind, textFormat, commitCharacters)
   }
 
@@ -184,7 +184,7 @@ object CompleteProvider {
     val documentation = Some(sign.spec.doc.text)
     val completionKind = CompletionItemKind.Function
     val textFormat = InsertTextFormat.Snippet
-    val commitCharacters = Nil // TODO
+    val commitCharacters = Nil
     CompletionItem(label, insertText, detail, documentation, completionKind, textFormat, commitCharacters)
   }
 
