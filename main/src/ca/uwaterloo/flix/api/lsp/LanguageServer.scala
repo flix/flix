@@ -195,7 +195,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
   private def processRequest(request: Request)(implicit ws: WebSocket): JValue = request match {
     case Request.AddUri(id, uri, src) =>
       sources += (uri -> src)
-      println(s"Added uri: $uri")
       ("id" -> id) ~ ("status" -> "success")
 
     case Request.RemUri(id, uri) =>

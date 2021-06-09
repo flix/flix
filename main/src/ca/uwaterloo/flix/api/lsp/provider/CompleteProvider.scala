@@ -83,35 +83,42 @@ object CompleteProvider {
   }
 
   /**
-    * Returns `true` if the given definition `defn` matches the given `prefix`.
+    * Returns `true` if the given definition `decl` should be included in the suggestions.
     */
-  private def matchesDef(defn: TypedAst.Def, prefix: Option[String], uri: String): Boolean = {
-    val isPublic = defn.spec.mod.isPublic
+  private def matchesDef(decl: TypedAst.Def, prefix: Option[String], uri: String): Boolean = {
+    val isPublic = decl.spec.mod.isPublic
     val isMatch = prefix match {
       case None => true
       case Some(s) =>
         val isNamespace = s.contains(".")
         if (isNamespace)
-          defn.sym.toString.startsWith(s)
+          decl.sym.toString.startsWith(s)
         else
-          defn.sym.text.startsWith(s)
+          decl.sym.text.startsWith(s)
     }
-    val isInFile = defn.spec.loc.source.name == uri
-    (isPublic && isMatch) || isInFile // TODO: Deal with the name?
+    val isInFile = decl.spec.loc.source.name == uri
+
+    isMatch && (isPublic || isInFile)
   }
 
   /**
-    * Returns `true` if the given enum `enum` matches the given `prefix`.
+    * Returns `true` if the given enum `decl` should be included in the suggestions.
     */
-  private def matchesEnum(enum: TypedAst.Enum, prefix: Option[String], uri: String): Boolean = {
-    val isPublic = enum.mod.isPublic
-    val isInFile = enum.loc.source.name == uri
+  private def matchesEnum(decl: TypedAst.Enum, prefix: Option[String], uri: String): Boolean = {
+    // TODO: Wrong. Need to work at the level of tags.
+    val isPublic = decl.mod.isPublic
     val isMatch = prefix match {
       case None => true
-      case Some(s) => enum.sym.name.startsWith(s)
+      case Some(s) =>
+        val isNamespace = s.contains(".")
+        if (isNamespace)
+          decl.sym.toString.startsWith(s)
+        else
+          decl.sym.name.startsWith(s)
     }
+    val isInFile = decl.loc.source.name == uri
 
-    isPublic && isMatch && isInFile
+    isMatch && (isPublic || isInFile)
   }
 
   /**
