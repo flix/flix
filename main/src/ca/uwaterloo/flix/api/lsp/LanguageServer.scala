@@ -385,7 +385,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
     // Compute the beginning of the word.
     var begin = i
-    while (0 < begin && isValidChar(s.charAt(begin))) {
+    while (0 < begin && isValidChar(s.charAt(begin - 1))) {
       begin = begin - 1
     }
 
@@ -398,7 +398,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     println(s"begin = $begin, end = $end")
 
     // Return the word.
-    Some(s.substring(begin + 1, end))
+    Some(s.substring(begin, end))
   }
 
   /**
