@@ -27,7 +27,7 @@ object CompleteProvider {
     * Returns a list of auto-complete suggestions.
     */
   def autoComplete(uri: String, pos: Position, prefix: String, root: TypedAst.Root): List[CompletionItem] = {
-    getKeywordCompletionItems() ::: getSnippetCompletionItems() ::: getSuggestions(root)
+    getKeywordCompletionItems() ::: getSnippetCompletionItems() ::: getSuggestions(uri, pos, root)
   }
 
   /**
@@ -61,7 +61,7 @@ object CompleteProvider {
   /**
     * Returns a list of other completion items.
     */
-  private def getSuggestions(root: TypedAst.Root): List[CompletionItem] = {
+  private def getSuggestions(uri: String, pos: Position, root: TypedAst.Root): List[CompletionItem] = {
     ///
     /// Return immediately if there is no AST.
     ///
@@ -77,9 +77,23 @@ object CompleteProvider {
       List("Map")
     )
 
+    def includeEnum(enum: TypedAst.Enum): Boolean = {
+      val isPublic = enum.mod.isPublic
+      val inFile = enum.loc.source.name == uri
+
+      isPublic && inFile
+    }
+
+    // TODO: Need to decide whether to include private defs based on the current file/namespace.
     def includeDef(defn: TypedAst.Def): Boolean = includeNamespaces.contains(defn.sym.namespace) && defn.spec.mod.isPublic
 
     def includeSig(sign: TypedAst.Sig): Boolean = sign.spec.mod.isPublic
+
+    // TODO: Need to aggressively filter these suggestions based on the string.
+
+    val enumSuggestions = root.enums.toList.filter(kv => includeEnum(kv._2)).flatMap {
+      case (_, enum) => getEnumCompletionItems(enum)
+    }
 
     val defSuggestions = root.defs.filter(kv => includeDef(kv._2)).map {
       case (_, defn) => getDefCompletionItem(defn)
@@ -89,7 +103,25 @@ object CompleteProvider {
       case (_, sign) => getSigCompletionItem(sign)
     }
 
-    (defSuggestions ++ sigSuggestions).toList
+    enumSuggestions ++ defSuggestions ++ sigSuggestions
+  }
+
+  /**
+    * Returns a list of completion items for the given enum `enum`.
+    */
+  private def getEnumCompletionItems(enum: TypedAst.Enum): List[CompletionItem] = {
+    enum.cases.map {
+      case (tag, caze) =>
+        val name = tag.name
+        val label = tag.name
+        val insertText = tag.name + "$" + "({1:exp})"
+        val detail = Some(FormatScheme.formatScheme(caze.sc))
+        val documentation = Some(enum.doc.text)
+        val completionKind = CompletionItemKind.EnumMember
+        val textFormat = InsertTextFormat.Snippet
+        val commitCharacters = List("(", ")")
+        CompletionItem(label, insertText, detail, documentation, completionKind, textFormat, commitCharacters)
+    }.toList
   }
 
   /**
