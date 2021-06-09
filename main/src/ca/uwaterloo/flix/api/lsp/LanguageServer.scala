@@ -369,23 +369,28 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     println(s"s = $s, n = $n")
 
     // Bounds Check
-    if (!(0 <= n && n < s.length)) {
+    if (!(0 <= n && n <= s.length)) {
       return None
     }
 
-    // Inside Word?
-    if (!Character.isLetterOrDigit(s.charAt(n))) {
-      return None
+    // Determine if the word is to the left of us, to the right of us, or out of bounds.
+    val leftOf = Character.isLetterOrDigit(s.charAt(n - 1))
+    val rightOf = Character.isLetterOrDigit(s.charAt(n))
+
+    val i = (leftOf, rightOf) match {
+      case (true, _) => n - 1
+      case (_, true) => n
+      case _ => return None
     }
 
     // Compute the beginning of the word.
-    var begin = n
+    var begin = i
     while (0 < begin && Character.isLetterOrDigit(s.charAt(begin))) {
       begin = begin - 1
     }
 
     // Compute the ending of the word.
-    var end = n
+    var end = i
     while (end < s.length && Character.isLetterOrDigit(s.charAt(end))) {
       end = end + 1
     }
