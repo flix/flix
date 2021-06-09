@@ -366,7 +366,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     * Optionally returns the word at the given index `n` in the string `s`.
     */
   private def wordAt(s: String, n: Int): Option[String] = {
-    println(s"s = $s, n = $n")
+    def isValidChar(c: Char): Boolean = Character.isLetterOrDigit(c)
 
     // Bounds Check
     if (!(0 <= n && n < s.length)) {
@@ -374,8 +374,8 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     }
 
     // Determine if the word is to the left of us, to the right of us, or out of bounds.
-    val leftOf = Character.isLetterOrDigit(s.charAt(n - 1))
-    val rightOf = Character.isLetterOrDigit(s.charAt(n))
+    val leftOf = n > 0 && isValidChar(s.charAt(n - 1))
+    val rightOf = isValidChar(s.charAt(n))
 
     val i = (leftOf, rightOf) match {
       case (true, _) => n - 1
@@ -385,13 +385,13 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
     // Compute the beginning of the word.
     var begin = i
-    while (0 < begin && Character.isLetterOrDigit(s.charAt(begin))) {
+    while (0 < begin && isValidChar(s.charAt(begin))) {
       begin = begin - 1
     }
 
     // Compute the ending of the word.
     var end = i
-    while (end < s.length && Character.isLetterOrDigit(s.charAt(end))) {
+    while (end < s.length && isValidChar(s.charAt(end))) {
       end = end + 1
     }
 
