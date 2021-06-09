@@ -72,7 +72,7 @@ object CompleteProvider {
     // TODO: Need to take into account "where" in the document we are. E.g. inside exp/defn or inside decl? or something else?
     // TODO: Need to decide whether to include private defs based on the current file/namespace.
 
-    println(s"Prefix: ${prefix}")
+    println(s"Auto-completing the prefix: $prefix.")
 
     // TODO: Use uri and pos to determine what should be suggested.
     def matchesEnum(enum: TypedAst.Enum): Boolean = {
@@ -114,10 +114,15 @@ object CompleteProvider {
     val isPublic = defn.spec.mod.isPublic
     val isMatch = prefix match {
       case None => true
-      case Some(s) => defn.sym.toString.startsWith(s)
+      case Some(s) =>
+        val isNamespace = s.contains(".")
+        if (isNamespace)
+          defn.sym.toString.startsWith(s)
+        else
+          defn.sym.text.startsWith(s)
     }
     val isInFile = defn.spec.loc.source.name == uri
-    (isPublic && isMatch) || isInFile
+    (isPublic && isMatch) || isInFile // TODO: Deal with the name?
   }
 
   /**

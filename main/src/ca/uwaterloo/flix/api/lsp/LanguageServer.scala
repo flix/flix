@@ -195,6 +195,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
   private def processRequest(request: Request)(implicit ws: WebSocket): JValue = request match {
     case Request.AddUri(id, uri, src) =>
       sources += (uri -> src)
+      println(s"Added uri: $uri")
       ("id" -> id) ~ ("status" -> "success")
 
     case Request.RemUri(id, uri) =>
@@ -341,7 +342,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
     val t = System.nanoTime()
     val suggestions = CompleteProvider.autoComplete(uri, pos, word)(index, root)
-    println("Elapsed " + ((System.nanoTime() - t) / 1_000_000) + "ms")
+    println("Elapsed " + ((System.nanoTime() - t) / 1_000_000) + s"ms (${suggestions.size} items)")
 
     val result = CompletionList(isIncomplete = true, suggestions)
     ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result.toJSON)
