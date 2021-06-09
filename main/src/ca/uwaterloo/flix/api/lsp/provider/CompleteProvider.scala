@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
-import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, Entity, Index, InsertTextFormat, Position}
+import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, Index, InsertTextFormat, Position}
 import ca.uwaterloo.flix.language.ast.{Scheme, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme, FormatType}
 
@@ -71,46 +71,21 @@ object CompleteProvider {
 
     // TODO: Need to take into account "where" in the document we are. E.g. inside exp/defn or inside decl? or something else?
     // TODO: Need to decide whether to include private defs based on the current file/namespace.
+    // TODO: Use uri and pos to determine what should be suggested.
+    // TODO: Add support for fields, predicates, type classes.
 
     println(s"Auto-completing the prefix: $prefix.")
 
-    // TODO: Use uri and pos to determine what should be suggested.
-    def matchesEnum(enum: TypedAst.Enum): Boolean = {
-      val isPublic = enum.mod.isPublic
-      val isInFile = enum.loc.source.name == uri
-      val isMatch = prefix match {
-        case None => true
-        case Some(s) => enum.sym.name.startsWith(s)
-      }
-
-      isPublic && isMatch && isInFile
-    }
-
-
-
-
-
-    // TODO: Need to aggressively filter these suggestions based on the string.
-
-    // TODO: Add support for fields+ predicates + etc
-
-    // TODO: Add type classes.
-
     val defSuggestions = root.defs.values.filter(matchesDef(_, prefix, uri)).map(getDefCompletionItem)
-
-    val enumSuggestions = root.enums.filter(kv => matchesEnum(kv._2)).flatMap {
-      case (_, enum) => getEnumCompletionItems(enum)
-    }
-
+    val enumSuggestions = root.enums.values.filter(matchesEnum(_, prefix, uri)).flatMap(getEnumCompletionItems)
     val sigSuggestions = root.sigs.values.filter(matchesSig(_, prefix)).map(getSigCompletionItem)
-
     defSuggestions ++ enumSuggestions ++ sigSuggestions
   }
 
   /**
     * Returns `true` if the given definition `defn` matches the given `prefix`.
     */
-  def matchesDef(defn: TypedAst.Def, prefix: Option[String], uri: String): Boolean = {
+  private def matchesDef(defn: TypedAst.Def, prefix: Option[String], uri: String): Boolean = {
     val isPublic = defn.spec.mod.isPublic
     val isMatch = prefix match {
       case None => true
@@ -123,6 +98,20 @@ object CompleteProvider {
     }
     val isInFile = defn.spec.loc.source.name == uri
     (isPublic && isMatch) || isInFile // TODO: Deal with the name?
+  }
+
+  /**
+    * Returns `true` if the given enum `enum` matches the given `prefix`.
+    */
+  private def matchesEnum(enum: TypedAst.Enum, prefix: Option[String], uri: String): Boolean = {
+    val isPublic = enum.mod.isPublic
+    val isInFile = enum.loc.source.name == uri
+    val isMatch = prefix match {
+      case None => true
+      case Some(s) => enum.sym.name.startsWith(s)
+    }
+
+    isPublic && isMatch && isInFile
   }
 
   /**
