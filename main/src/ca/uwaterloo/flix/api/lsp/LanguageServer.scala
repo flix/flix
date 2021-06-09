@@ -365,7 +365,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     * Optionally returns the word at the given index `n` in the string `s`.
     */
   private def wordAt(s: String, n: Int): Option[String] = {
-    def isValidChar(c: Char): Boolean = Character.isLetterOrDigit(c)
+    def isValidChar(c: Char): Boolean = Character.isLetterOrDigit(c) || c == '.'
 
     // Bounds Check
     if (!(0 <= n && n <= s.length)) {

@@ -68,10 +68,9 @@ object CompleteProvider {
     if (root == null) {
       return Nil
     }
+
     // TODO: Need to take into account "where" in the document we are. E.g. inside exp/defn or inside decl? or something else?
-
     // TODO: Need to decide whether to include private defs based on the current file/namespace.
-
 
     println(s"Prefix: ${prefix}")
 
@@ -87,24 +86,9 @@ object CompleteProvider {
       isPublic && isMatch && isInFile
     }
 
-    def matchesDef(defn: TypedAst.Def): Boolean = {
-      val isPublic = defn.spec.mod.isPublic
-      val isMatch = prefix match {
-        case None => true
-        case Some(s) => defn.sym.text.startsWith(s)
-      }
-      val isInFile = defn.spec.loc.source.name == uri
-      (isPublic && isMatch) || isInFile
-    }
 
-    def matchesSig(sign: TypedAst.Sig): Boolean = {
-      val isPublic = sign.spec.mod.isPublic
-      val isMatch = prefix match {
-        case None => true
-        case Some(s) => sign.sym.name.startsWith(s)
-      }
-      isPublic && isMatch
-    }
+
+
 
     // TODO: Need to aggressively filter these suggestions based on the string.
 
@@ -112,38 +96,42 @@ object CompleteProvider {
 
     // TODO: Add type classes.
 
-    val classSuggestions = root.classes.toList.map {
-      case (_, clazz) => getClassCompletionItem(clazz)
+    val defSuggestions = root.defs.values.filter(matchesDef(_, prefix, uri)).map {
+      case defn => getDefCompletionItem(defn)
     }
 
     val enumSuggestions = root.enums.filter(kv => matchesEnum(kv._2)).flatMap {
       case (_, enum) => getEnumCompletionItems(enum)
     }
 
-    val defSuggestions = root.defs.values.filter(matchesDef).map {
-      case defn => getDefCompletionItem(defn)
-    }
+    val sigSuggestions = root.sigs.values.filter(matchesSig(_, prefix)).map(getSigCompletionItem)
 
-    val sigSuggestions = root.sigs.values.filter(matchesSig).map {
-      case sign => getSigCompletionItem(sign)
-    }
-
-    classSuggestions ++ enumSuggestions ++ defSuggestions ++ sigSuggestions
+    defSuggestions ++ enumSuggestions ++ sigSuggestions
   }
 
   /**
-    * Returns a completion item for the given class `clazz`.
+    * Returns `true` if the given definition `defn` matches the given `prefix`.
     */
-  private def getClassCompletionItem(clazz: TypedAst.Class): CompletionItem = {
-    val name = clazz.sym.toString
-    val label = clazz.sym.toString + "[t]"
-    val insertText = clazz.sym.toString + "[$" + "{1:type}]"
-    val detail = Some(clazz.doc.text)
-    val documentation = Some(clazz.doc.text)
-    val completionKind = CompletionItemKind.Class
-    val textFormat = InsertTextFormat.Snippet
-    val commitCharacters = List("[", "]")
-    CompletionItem(label, insertText, detail, documentation, completionKind, textFormat, commitCharacters)
+  def matchesDef(defn: TypedAst.Def, prefix: Option[String], uri: String): Boolean = {
+    val isPublic = defn.spec.mod.isPublic
+    val isMatch = prefix match {
+      case None => true
+      case Some(s) => defn.sym.toString.startsWith(s)
+    }
+    val isInFile = defn.spec.loc.source.name == uri
+    (isPublic && isMatch) || isInFile
+  }
+
+  /**
+    * Returns `true` if the given signature `sign` matches the given `prefix`.
+    */
+  private def matchesSig(sign: TypedAst.Sig, prefix: Option[String]): Boolean = {
+    val isPublic = sign.spec.mod.isPublic
+    val isMatch = prefix match {
+      case None => true
+      case Some(s) => sign.sym.toString.startsWith(s)
+    }
+    isPublic && isMatch
   }
 
   /**
