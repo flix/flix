@@ -105,7 +105,13 @@ object CompleteProvider {
 
     // TODO: Add support for fields+ predicates + etc
 
-    val enumSuggestions = root.enums.toList.filter(kv => matchesEnum(kv._2)).flatMap {
+    // TODO: Add type classes.
+
+    val classSuggestions = root.classes.toList.map {
+      case (_, clazz) => getClassCompletionItem(clazz)
+    }
+
+    val enumSuggestions = root.enums.filter(kv => matchesEnum(kv._2)).flatMap {
       case (_, enum) => getEnumCompletionItems(enum)
     }
 
@@ -117,7 +123,22 @@ object CompleteProvider {
       case (_, sign) => getSigCompletionItem(sign)
     }
 
-    enumSuggestions ++ defSuggestions ++ sigSuggestions
+    classSuggestions ++ enumSuggestions ++ defSuggestions ++ sigSuggestions
+  }
+
+  /**
+    * Returns a completion item for the given class `clazz`.
+    */
+  private def getClassCompletionItem(clazz: TypedAst.Class): CompletionItem = {
+    val name = clazz.sym.toString
+    val label = clazz.sym.toString + "[t]"
+    val insertText = clazz.sym.toString + "[$" + "{1:type}]"
+    val detail = Some(clazz.doc.text)
+    val documentation = Some(clazz.doc.text)
+    val completionKind = CompletionItemKind.Class
+    val textFormat = InsertTextFormat.Snippet
+    val commitCharacters = List("[", "]")
+    CompletionItem(label, insertText, detail, documentation, completionKind, textFormat, commitCharacters)
   }
 
   /**
@@ -128,12 +149,12 @@ object CompleteProvider {
       case (tag, caze) =>
         val name = tag.name
         val label = tag.name
-        val insertText = tag.name + "$" + "({1:exp})"
+        val insertText = tag.name + "($" + "{1:exp})"
         val detail = Some(FormatScheme.formatScheme(caze.sc))
         val documentation = Some(enum.doc.text)
         val completionKind = CompletionItemKind.EnumMember
         val textFormat = InsertTextFormat.Snippet
-        val commitCharacters = List("(", ")")
+        val commitCharacters = Nil // TODO
         CompletionItem(label, insertText, detail, documentation, completionKind, textFormat, commitCharacters)
     }.toList
   }
@@ -149,7 +170,7 @@ object CompleteProvider {
     val documentation = Some(defn.spec.doc.text)
     val completionKind = CompletionItemKind.Function
     val textFormat = InsertTextFormat.Snippet
-    val commitCharacters = List("(", ")")
+    val commitCharacters = Nil // TODO
     CompletionItem(label, insertText, detail, documentation, completionKind, textFormat, commitCharacters)
   }
 
@@ -164,7 +185,7 @@ object CompleteProvider {
     val documentation = Some(sign.spec.doc.text)
     val completionKind = CompletionItemKind.Function
     val textFormat = InsertTextFormat.Snippet
-    val commitCharacters = List("(", ")")
+    val commitCharacters = Nil // TODO
     CompletionItem(label, insertText, detail, documentation, completionKind, textFormat, commitCharacters)
   }
 
