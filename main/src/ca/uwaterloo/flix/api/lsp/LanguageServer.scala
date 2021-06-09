@@ -334,7 +334,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     */
   private def processComplete(requestId: String, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
     // TODO: Get the actual line prefix.
-    val result = CompleteProvider.autoComplete(uri, pos, "", root)
+    val result = CompleteProvider.autoComplete(uri, pos, "")(index, root)
     ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result.map(_.toJSON))
   }
 

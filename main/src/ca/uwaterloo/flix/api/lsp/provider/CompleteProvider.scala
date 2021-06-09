@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
-import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, InsertTextFormat, Position}
+import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, Entity, Index, InsertTextFormat, Position}
 import ca.uwaterloo.flix.language.ast.{Scheme, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme, FormatType}
 
@@ -26,8 +26,8 @@ object CompleteProvider {
   /**
     * Returns a list of auto-complete suggestions.
     */
-  def autoComplete(uri: String, pos: Position, prefix: String, root: TypedAst.Root): List[CompletionItem] = {
-    getKeywordCompletionItems() ::: getSnippetCompletionItems() ::: getSuggestions(uri, pos, root)
+  def autoComplete(uri: String, pos: Position, prefix: String)(implicit index: Index, root: TypedAst.Root): List[CompletionItem] = {
+    getKeywordCompletionItems() ::: getSnippetCompletionItems() ::: getSuggestions(uri, pos)
   }
 
   /**
@@ -61,13 +61,15 @@ object CompleteProvider {
   /**
     * Returns a list of other completion items.
     */
-  private def getSuggestions(uri: String, pos: Position, root: TypedAst.Root): List[CompletionItem] = {
+  private def getSuggestions(uri: String, pos: Position)(implicit index: Index, root: TypedAst.Root): List[CompletionItem] = {
     ///
     /// Return immediately if there is no AST.
     ///
     if (root == null) {
       return Nil
     }
+
+    // TODO: Use uri and pos to determine what should be suggested.
 
     val includeNamespaces = List(
       List("Option"),
@@ -100,6 +102,8 @@ object CompleteProvider {
     }
 
     // TODO: Need to aggressively filter these suggestions based on the string.
+
+    // TODO: Add support for fields+ predicates + etc
 
     val enumSuggestions = root.enums.toList.filter(kv => matchesEnum(kv._2)).flatMap {
       case (_, enum) => getEnumCompletionItems(enum)
