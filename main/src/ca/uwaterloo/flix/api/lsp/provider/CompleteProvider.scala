@@ -78,7 +78,7 @@ object CompleteProvider {
 
     val defSuggestions = root.defs.values.filter(matchesDef(_, prefix, uri)).map(getDefCompletionItem)
     val enumSuggestions = root.enums.values.filter(matchesEnum(_, prefix, uri)).flatMap(getEnumCompletionItems)
-    val sigSuggestions = root.sigs.values.filter(matchesSig(_, prefix)).map(getSigCompletionItem)
+    val sigSuggestions = root.sigs.values.filter(matchesSig(_, prefix, uri)).map(getSigCompletionItem)
     defSuggestions ++ enumSuggestions ++ sigSuggestions
   }
 
@@ -124,13 +124,20 @@ object CompleteProvider {
   /**
     * Returns `true` if the given signature `sign` matches the given `prefix`.
     */
-  private def matchesSig(sign: TypedAst.Sig, prefix: Option[String]): Boolean = {
+  private def matchesSig(sign: TypedAst.Sig, prefix: Option[String], uri: String): Boolean = {
     val isPublic = sign.spec.mod.isPublic
     val isMatch = prefix match {
       case None => true
-      case Some(s) => sign.sym.toString.startsWith(s)
+      case Some(s) =>
+        val isNamespace = s.contains(".")
+        if (isNamespace)
+          sign.sym.toString.startsWith(s)
+        else
+          sign.sym.name.startsWith(s)
     }
-    isPublic && isMatch
+    val isInFile = sign.spec.loc.source.name == uri
+
+    isMatch && (isPublic || isInFile)
   }
 
   /**
