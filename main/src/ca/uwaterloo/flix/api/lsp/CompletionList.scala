@@ -19,7 +19,7 @@ import org.json4s.JsonDSL._
 import org.json4s._
 
 /**
-  * Represents a `Diagnostic` in LSP.
+  * Represents a `CompletionList` in LSP.
   *
   * @param isIncomplete This list is not complete. Further typing should result in recomputing this list.
   *                     Recomputed lists have all their items replaced (not appended) in the incomplete completion sessions.

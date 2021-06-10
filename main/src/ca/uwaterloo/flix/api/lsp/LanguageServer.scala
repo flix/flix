@@ -341,7 +341,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
     val t = System.nanoTime()
     val suggestions = CompleteProvider.autoComplete(uri, pos, word)(index, root)
-    println("Elapsed " + ((System.nanoTime() - t) / 1_000_000) + s"ms (${suggestions.size} items)")
+    println(s"Found ${suggestions.size} suggestions for '$word' (elapsed: " + ((System.nanoTime() - t) / 1_000_000) + "ms)")
 
     val result = CompletionList(isIncomplete = true, suggestions)
     ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result.toJSON)
@@ -368,7 +368,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     * Optionally returns the word at the given index `n` in the string `s`.
     */
   private def wordAt(s: String, n: Int): Option[String] = {
-    def isValidChar(c: Char): Boolean = Character.isLetterOrDigit(c) || c == '.'
+    def isValidChar(c: Char): Boolean = Character.isLetterOrDigit(c) || c == '.' || c == '/'
 
     // Bounds Check
     if (!(0 <= n && n <= s.length)) {

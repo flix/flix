@@ -69,8 +69,6 @@ object CompleteProvider {
       return Nil
     }
 
-    println(s"Auto-completing the prefix: $prefix.")
-
     // TODO: Add support for classes and enums?
     // TODO: Use the current position to determine what to suggest.
 
