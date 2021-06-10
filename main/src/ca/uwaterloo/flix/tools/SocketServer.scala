@@ -125,7 +125,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
 
     // Construct the options object.
     val opts = Options.Default.copy(
-      inclusion = if (xcore) Inclusion.Core else Inclusion.Full,
+      inclusion = if (xcore) Inclusion.Min else Inclusion.All,
       writeClassFiles = false,
       xallowredundancies = xallowredundancies,
       xnostratifier = xnostratifier,

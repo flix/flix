@@ -454,9 +454,9 @@ class Flix {
     val si2 = getPathInputs
     val si3 = inputs.toList
     val si4 = options.inclusion match {
-      case Inclusion.SubCore => Nil
-      case Inclusion.Core => getInputs(coreLibrary)
-      case Inclusion.Full => getInputs(coreLibrary ++ standardLibrary)
+      case Inclusion.Nix => Nil
+      case Inclusion.Min => getInputs(coreLibrary)
+      case Inclusion.All => getInputs(coreLibrary ++ standardLibrary)
     }
     si1 ::: si2 ::: si3 ::: si4
   }

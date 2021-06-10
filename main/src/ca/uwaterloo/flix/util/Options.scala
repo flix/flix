@@ -24,7 +24,7 @@ object Options {
     * Default options.
     */
   val Default: Options = Options(
-    inclusion = Inclusion.Full,
+    inclusion = Inclusion.All,
     debug = false,
     documentor = false,
     invariants = false,
@@ -51,7 +51,7 @@ object Options {
   /**
     * Default test options.
     */
-  val DefaultTest: Options = Default.copy(inclusion = Inclusion.Full, test = true, verbosity = Verbosity.Silent)
+  val DefaultTest: Options = Default.copy(inclusion = Inclusion.All, test = true, verbosity = Verbosity.Silent)
 
   /**
     * Default test options with the standard library.
@@ -61,12 +61,12 @@ object Options {
   /**
     * Default test options without the standard library.
     */
-  val TestWithoutLibrary: Options = DefaultTest.copy(inclusion = Inclusion.Core)
+  val TestWithoutLibrary: Options = DefaultTest.copy(inclusion = Inclusion.Min)
 
   /**
     * Default test options without any library.
     */
-  val TestWithoutCore: Options = DefaultTest.copy(inclusion = Inclusion.SubCore)
+  val TestWithoutCore: Options = DefaultTest.copy(inclusion = Inclusion.Nix)
 }
 
 /**
@@ -218,15 +218,15 @@ object Inclusion {
   /**
     * Do not include any libraries, even those essential for basic functionality.
     */
-  case object SubCore extends Inclusion
+  case object Nix extends Inclusion
 
   /**
     * Only include essential libraries.
     */
-  case object Core extends Inclusion
+  case object Min extends Inclusion
 
   /**
     * Include the full standard library.
     */
-  case object Full extends Inclusion
+  case object All extends Inclusion
 }
