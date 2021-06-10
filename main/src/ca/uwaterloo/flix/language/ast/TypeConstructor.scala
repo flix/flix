@@ -211,9 +211,9 @@ object TypeConstructor {
     */
   case object ScopedRef extends TypeConstructor {
     /**
-      * The shape of a reference is `ScopedRef[t, l]` where `t` is any type and `l` is a region type.
+      * The shape of a reference is `ScopedRef[t, l]`.
       */
-    def kind: Kind = Kind.Star ->: Kind.Star ->: Kind.Star
+    def kind: Kind = Kind.Star ->: Kind.Bool ->: Kind.Star
   }
 
   /**
