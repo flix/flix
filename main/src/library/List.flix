@@ -1119,7 +1119,11 @@ namespace List {
     /// The sort is stable, i.e., equal elements appear in the same order as in the input `xs`.
     ///
     /// The sort implementation is a mergesort.
+    ///
     /// Acknowledgement: derived from Thomas Nordin's `sortBy` in the Haskell base libraries.
+    ///
+    /// TODO Review to verify it satisfies stability. The referenced `sortBy` is stable and
+    /// the tests suggest that this implementation is also.
     ///
     pub def sortWith(cmp: (a,a) -> Comparison, xs: List[a]): List[a] =
         sortGenerateSequences(cmp, xs, zss -> zss) |> sortMergeAll(cmp)
