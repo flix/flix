@@ -152,12 +152,6 @@ class TestMain extends FunSuite {
     assert(opts.xbenchmarkThroughput)
   }
 
-  test("--Xcore") {
-    val args = Array("--Xcore", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xcore)
-  }
-
   test("--Xdebug") {
     val args = Array("--Xdebug", "p.flix")
     val opts = Main.parseCmdOpts(args).get

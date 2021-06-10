@@ -16,10 +16,6 @@
 
 package ca.uwaterloo.flix
 
-import java.io.{File, PrintWriter}
-import java.net.BindException
-import java.nio.file.Paths
-
 import ca.uwaterloo.flix.api.lsp.LanguageServer
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.runtime.shell.Shell
@@ -27,6 +23,10 @@ import ca.uwaterloo.flix.tools._
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt._
 import flix.runtime.FlixError
+
+import java.io.{File, PrintWriter}
+import java.net.BindException
+import java.nio.file.Paths
 
 /**
   * The main entry point for the Flix compiler and runtime.
@@ -395,7 +395,7 @@ object Main {
         text("[experimental] benchmarks the throughput of the entire compiler.")
 
       // Xlib
-      opt[Inclusion]("Xlib").action((_, c) => c.copy(xlib = c)).
+      opt[Inclusion]("Xlib").action((_, c) => c.copy(xlib = c.xlib)).
         text("[experimental] sets the amount of StdLib content to include (nix, min, all).")
 
       // Xdebug.
