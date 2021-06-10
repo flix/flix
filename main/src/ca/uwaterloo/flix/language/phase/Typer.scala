@@ -1403,37 +1403,22 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
       case ResolvedAst.Expression.LetRegion(sym, exp, evar, loc) =>
-        // Introduce a rigid variable for the lifetime of `exp`.
-        val lifetimeVar = Type.freshVar(Kind.Bool, Rigidity.Rigid, Some(sym.text))
+        // Introduce a rigid variable for the region of `exp`.
+        val regionVar = Type.freshVar(Kind.Bool, Rigidity.Rigid, Some(sym.text))
         for {
-          _ <- unifyTypeM(sym.tvar, Type.mkRegion(lifetimeVar, loc), loc)
+          _ <- unifyTypeM(sym.tvar, Type.mkRegion(regionVar, loc), loc)
           (constrs, tpe, eff) <- visitExp(exp)
           resultTyp = tpe
-          resultEff <- unifyTypeM(evar, purify(lifetimeVar, eff), loc)
+          resultEff <- unifyTypeM(evar, purify(regionVar, eff), loc)
         } yield (constrs, resultTyp, resultEff)
 
-      case ResolvedAst.Expression.LetScopedRef(sym, exp1, exp2, evar, loc) =>
-        // TODO: Scoped: Does Purify also need to be applied to the result type?
-        // TODO: Scoped: It seems that it could refer to the rigid variable?
-
-        // Introduce a rigid variable for the lifetime of `exp1`.
-        val lifetimeVar = Type.freshVar(Kind.Bool, Rigidity.Rigid, Some("l"))
-        for {
-          (constrs1, tpe1, eff1) <- visitExp(exp1)
-          // TODO: Scoped: The next line *MUST OCCUR BEFORE* the call to visitExp(exp2).
-          // TODO: Scoped: The reason is that otherwise the variable does not become rigid.
-          // TODO: Scoped: It is not exactly clear to me what can be done to fix this brittleness.
-          boundVar <- unifyTypeM(sym.tvar, Type.mkScopedRef(tpe1, lifetimeVar), loc)
-          (constrs2, tpe2, eff2) <- visitExp(exp2)
-          resultTyp = tpe2
-          resultEff <- unifyTypeM(evar, Type.mkAnd(eff1, purify(lifetimeVar, eff2)), loc)
-        } yield (constrs1 ++ constrs2, resultTyp, resultEff)
-
       case ResolvedAst.Expression.ScopedRef(exp1, exp2, tvar, evar, loc) =>
+        val regionVar = Type.freshVar(Kind.Bool, Rigidity.Flexible, Some("l"))
         for {
           (constrs1, elmType, eff1) <- visitExp(exp1) // TODO: Eff
-          (constrs2, lifeTime, eff2) <- visitExp(exp2) // TODO: Eff
-          resultTyp <- unifyTypeM(tvar, Type.mkScopedRef(elmType, lifeTime, loc), loc)
+          (constrs2, regionType, eff2) <- visitExp(exp2) // TODO: Eff
+          _ <- unifyTypeM(regionType, Type.mkRegion(regionVar, loc), loc)
+          resultTyp <- unifyTypeM(tvar, Type.mkScopedRef(elmType, regionVar, loc), loc)
           resultEff <- unifyTypeM(evar, Type.Pure, loc) // TODO
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
@@ -1441,14 +1426,14 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         // Introduce a fresh type variable for element type.
         val elmTypeVar = Type.freshVar(Kind.Star, Rigidity.Flexible, Some("t"))
 
-        // Introduce a flexible variable for the lifetime.
+        // Introduce a flexible variable for the region variable.
         // This variable will become unified with the rigid variable.
-        val lifetimeVar = Type.freshVar(Kind.Bool, Rigidity.Flexible, Some("l"))
+        val regionVar = Type.freshVar(Kind.Bool, Rigidity.Flexible, Some("l"))
         for {
-          (constrs, tpe, _) <- visitExp(exp)
-          refType <- unifyTypeM(tpe, Type.mkScopedRef(elmTypeVar, lifetimeVar), loc)
+          (constrs, tpe, eff) <- visitExp(exp) // TODO: Eff
+          refType <- unifyTypeM(tpe, Type.mkScopedRef(elmTypeVar, regionVar, loc), loc)
           resultTyp <- unifyTypeM(tvar, elmTypeVar, loc)
-          resultEff <- unifyTypeM(evar, lifetimeVar, loc)
+          resultEff <- unifyTypeM(evar, regionVar, loc)
         } yield (constrs, resultTyp, resultEff)
 
       case ResolvedAst.Expression.ScopedAssign(exp1, exp2, evar, loc) =>
