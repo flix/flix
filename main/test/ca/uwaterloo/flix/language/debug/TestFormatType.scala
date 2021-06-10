@@ -34,7 +34,7 @@ class TestFormatType extends FunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("FormatWellFormedType.Record.External.02") {
+  ignore("FormatWellFormedType.Record.External.02") {
     val rest = Type.Var(0, Kind.Record, Rigidity.Rigid)
     val tpe = Type.mkRecordExtend(Name.Field("x", loc), Type.Int32, rest)
 
@@ -44,7 +44,7 @@ class TestFormatType extends FunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("FormatWellFormedType.Arrow.External.01") {
+  ignore("FormatWellFormedType.Arrow.External.01") {
     val paramType = Type.Var(0, Kind.Star, Rigidity.Rigid)
     val tpe = Type.mkArrowWithEffect(paramType, Type.Pure, paramType)
 
@@ -54,7 +54,7 @@ class TestFormatType extends FunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("FormatWellFormedType.Arrow.External.02") {
+  ignore("FormatWellFormedType.Arrow.External.02") {
     val paramType = Type.Var(0, Kind.Star, Rigidity.Rigid)
     val returnType = Type.Var(1, Kind.Star, Rigidity.Rigid)
     val effectType = Type.Var(2, Kind.Bool, Rigidity.Rigid)
@@ -66,7 +66,7 @@ class TestFormatType extends FunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("FormatWellFormedType.Arrow.External.03") {
+  ignore("FormatWellFormedType.Arrow.External.03") {
     val paramType = Type.Var(0, Kind.Star, Rigidity.Rigid)
     val returnType = Type.Var(1, Kind.Star, Rigidity.Rigid)
     val tpe = Type.mkArrowWithEffect(paramType, Type.Impure, returnType)
@@ -86,7 +86,7 @@ class TestFormatType extends FunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("FormatWellFormedType.Arrow.External.05") {
+  ignore("FormatWellFormedType.Arrow.External.05") {
     val eff = Type.mkAnd(Type.Var(1, Kind.Bool, Rigidity.Flexible), Type.Var(2, Kind.Bool, Rigidity.Flexible))
     val tpe = Type.mkArrowWithEffect(Type.BigInt, eff, Type.Bool)
 
@@ -106,7 +106,7 @@ class TestFormatType extends FunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("FormatWellFormedType.Schema.External.02") {
+  ignore("FormatWellFormedType.Schema.External.02") {
     val latticeType1 = Type.mkLattice(List(Type.Str))
     val latticeType2 = Type.mkLattice(List(Type.Int32, Type.Str))
     val restType = Type.Var(5, Kind.Schema, Rigidity.Flexible)
@@ -118,7 +118,7 @@ class TestFormatType extends FunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("FormatWellFormedType.Enum.External.07") {
+  ignore("FormatWellFormedType.Enum.External.07") {
     val tvar1 = Type.Var(1, Kind.Star, Rigidity.Flexible)
     val tvar2 = Type.Var(2, Kind.Star, Rigidity.Flexible)
     val tvar3 = Type.Var(3, Kind.Star, Rigidity.Flexible)

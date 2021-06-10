@@ -876,6 +876,23 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.FixpointProjectOut(pred, e1, e2, tvar, loc)
 
+        case NamedAst.Expression.LetScopedRef(sym, exp1, exp2, evar, loc) =>
+          for {
+            e1 <- visit(exp1, tenv0)
+            e2 <- visit(exp2, tenv0)
+          } yield ResolvedAst.Expression.LetScopedRef(sym, e1, e2, evar, loc)
+
+        case NamedAst.Expression.ScopedDeref(exp, tvar, evar, loc) =>
+          for {
+            e <- visit(exp, tenv0)
+          } yield ResolvedAst.Expression.ScopedDeref(e, tvar, evar, loc)
+
+        case NamedAst.Expression.ScopedAssign(exp1, exp2, evar, loc) =>
+          for {
+            e1 <- visit(exp1, tenv0)
+            e2 <- visit(exp2, tenv0)
+          } yield ResolvedAst.Expression.ScopedAssign(e1, e2, evar, loc)
+
       }
 
       visit(exp0, Map.empty)
@@ -1286,6 +1303,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       case "Channel" => Type.mkChannel(loc).toSuccess
       case "Lazy" => Type.mkLazy(loc).toSuccess
       case "Ref" => Type.mkRef(loc).toSuccess
+      case "ScopedRef" => Type.mkScopedRef(loc).toSuccess
 
       // Disambiguate type.
       case typeName =>

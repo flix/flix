@@ -452,6 +452,9 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
 
           case TypeConstructor.Ref => MonoType.Ref(args.head)
 
+          case TypeConstructor.ScopedRef =>
+            MonoType.Ref(args.head)
+
           case TypeConstructor.Tuple(l) => MonoType.Tuple(args)
 
           case TypeConstructor.Arrow(l) => MonoType.Arrow(args.drop(1).init, args.last)
