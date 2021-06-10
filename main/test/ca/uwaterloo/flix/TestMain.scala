@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix
 
-import ca.uwaterloo.flix.util.Inclusion
+import ca.uwaterloo.flix.util.LibLevel
 import org.scalatest.FunSuite
 
 class TestMain extends FunSuite {
@@ -198,18 +198,18 @@ class TestMain extends FunSuite {
   test("--Xlib nix") {
     val args = Array("--Xlib", "nix", "p.flix")
     val opts = Main.parseCmdOpts(args).get
-    assert(opts.xlib == Inclusion.Nix)
+    assert(opts.xlib == LibLevel.Nix)
   }
 
   test("--Xlib min") {
     val args = Array("--Xlib", "min", "p.flix")
     val opts = Main.parseCmdOpts(args).get
-    assert(opts.xlib == Inclusion.Min)
+    assert(opts.xlib == LibLevel.Min)
   }
 
   test("--Xlib all") {
     val args = Array("--Xlib", "all", "p.flix")
     val opts = Main.parseCmdOpts(args).get
-    assert(opts.xlib == Inclusion.All)
+    assert(opts.xlib == LibLevel.All)
   }
 }

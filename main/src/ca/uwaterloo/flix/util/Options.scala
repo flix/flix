@@ -24,7 +24,7 @@ object Options {
     * Default options.
     */
   val Default: Options = Options(
-    inclusion = Inclusion.All,
+    inclusion = LibLevel.All,
     debug = false,
     documentor = false,
     invariants = false,
@@ -51,7 +51,7 @@ object Options {
   /**
     * Default test options.
     */
-  val DefaultTest: Options = Default.copy(inclusion = Inclusion.All, test = true, verbosity = Verbosity.Silent)
+  val DefaultTest: Options = Default.copy(inclusion = LibLevel.All, test = true, verbosity = Verbosity.Silent)
 
   /**
     * Default test options with the standard library.
@@ -61,12 +61,12 @@ object Options {
   /**
     * Default test options without the standard library.
     */
-  val TestWithoutLibrary: Options = DefaultTest.copy(inclusion = Inclusion.Min)
+  val TestWithoutLibrary: Options = DefaultTest.copy(inclusion = LibLevel.Min)
 
   /**
     * Default test options without any library.
     */
-  val TestWithoutCore: Options = DefaultTest.copy(inclusion = Inclusion.Nix)
+  val TestWithoutCore: Options = DefaultTest.copy(inclusion = LibLevel.Nix)
 }
 
 /**
@@ -94,7 +94,7 @@ object Options {
   * @param xnostratifier      disables computation of stratification.
   * @param xstatistics        prints compiler statistics.
   */
-case class Options(inclusion: Inclusion,
+case class Options(inclusion: LibLevel,
                    debug: Boolean,
                    documentor: Boolean,
                    invariants: Boolean,
@@ -211,22 +211,22 @@ object Verbosity {
   case object Silent extends Verbosity
 }
 
-sealed trait Inclusion
+sealed trait LibLevel
 
-object Inclusion {
+object LibLevel {
 
   /**
     * Do not include any libraries, even those essential for basic functionality.
     */
-  case object Nix extends Inclusion
+  case object Nix extends LibLevel
 
   /**
     * Only include essential libraries.
     */
-  case object Min extends Inclusion
+  case object Min extends LibLevel
 
   /**
     * Include the full standard library.
     */
-  case object All extends Inclusion
+  case object All extends LibLevel
 }

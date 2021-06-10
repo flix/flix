@@ -243,7 +243,7 @@ object Main {
                      xallowredundancies: Boolean = false,
                      xbenchmarkPhases: Boolean = false,
                      xbenchmarkThroughput: Boolean = false,
-                     xlib: Inclusion = Inclusion.All,
+                     xlib: LibLevel = LibLevel.All,
                      xdebug: Boolean = false,
                      xinvariants: Boolean = false,
                      xnoboolunification: Boolean = false,
@@ -286,10 +286,10 @@ object Main {
     * @param args the arguments array.
     */
   def parseCmdOpts(args: Array[String]): Option[CmdOpts] = {
-    implicit val readInclusion: scopt.Read[Inclusion] = scopt.Read.reads {
-      case "nix" => Inclusion.Nix
-      case "min" => Inclusion.Min
-      case "all" => Inclusion.All
+    implicit val readInclusion: scopt.Read[LibLevel] = scopt.Read.reads {
+      case "nix" => LibLevel.Nix
+      case "min" => LibLevel.Min
+      case "all" => LibLevel.All
       case _ => throw new IllegalArgumentException("illegal library argument") // Read should catch this and throw a better error
     }
 
@@ -395,7 +395,7 @@ object Main {
         text("[experimental] benchmarks the throughput of the entire compiler.")
 
       // Xlib
-      opt[Inclusion]("Xlib").action((arg, c) => c.copy(xlib = arg)).
+      opt[LibLevel]("Xlib").action((arg, c) => c.copy(xlib = arg)).
         text("[experimental] sets the amount of StdLib content to include (nix, min, all).")
 
       // Xdebug.
