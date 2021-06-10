@@ -87,7 +87,7 @@ object CompleteProvider {
     val isMatch = prefix match {
       case None => true
       case Some(s) =>
-        val isNamespace = s.contains(".")
+        val isNamespace = s.nonEmpty && s.head.isUpper
         if (isNamespace)
           decl.sym.toString.startsWith(s)
         else
@@ -106,7 +106,7 @@ object CompleteProvider {
     val isMatch = prefix match {
       case None => true
       case Some(s) =>
-        val isNamespace = s.contains(".")
+        val isNamespace = s.nonEmpty && s.head.isUpper
         if (isNamespace)
           sign.sym.toString.startsWith(s)
         else
