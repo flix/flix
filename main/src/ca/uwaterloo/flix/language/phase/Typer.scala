@@ -1878,10 +1878,11 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         // TODO: Need a deref somewhere here.
         //        val e1 = visitExp(exp1, subst0)
         //        val e2 = visitExp(exp2, subst0)
-        //        val tpe = Type.Unit
-        //        val eff = subst0(evar)
         //        TypedAst.Expression.Assign(e1, e2, tpe, eff, loc)
-        TypedAst.Expression.Unit(loc) // TODO :)
+        val inner = TypedAst.Expression.Unit(loc)
+        val tpe = Type.Unit
+        val eff = subst0(evar)
+        TypedAst.Expression.Cast(inner, tpe, eff, loc)
     }
 
     /**
