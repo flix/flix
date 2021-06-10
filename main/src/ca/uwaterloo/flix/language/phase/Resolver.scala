@@ -1308,7 +1308,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       case "Channel" => Type.mkChannel(loc).toSuccess
       case "Lazy" => Type.mkLazy(loc).toSuccess
       case "Ref" => Type.mkRef(loc).toSuccess
-      case "ScopedRef" => Type.mkScopedRef(loc).toSuccess
+      case "ScopedRef" => Type.Cst(TypeConstructor.ScopedRef, loc).toSuccess
+      case "Region" => Type.Cst(TypeConstructor.Region, loc).toSuccess
 
       // Disambiguate type.
       case typeName =>
