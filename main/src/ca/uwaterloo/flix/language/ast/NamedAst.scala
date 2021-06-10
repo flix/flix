@@ -212,6 +212,8 @@ object NamedAst {
 
     case class ScopedAssign(exp1: NamedAst.Expression, exp2: NamedAst.Expression, evar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
+    case class ScopedAssign2(exp1: NamedAst.Expression, exp2: NamedAst.Expression, evar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
   }
 
   sealed trait Pattern {

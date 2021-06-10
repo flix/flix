@@ -469,7 +469,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def ScopedAssign: Rule1[ParsedAst.Expression] = rule {
-      Assign ~ optional(optWS ~ atomic(":=*") ~ optWS ~ Assign ~ SP ~> ParsedAst.Expression.ScopedAssign)
+      ScopedAssign2 ~ optional(optWS ~ atomic(":=*") ~ optWS ~ Assign ~ SP ~> ParsedAst.Expression.ScopedAssign2)
+    }
+
+    def ScopedAssign2: Rule1[ParsedAst.Expression] = rule {
+      Assign ~ optional(optWS ~ atomic(":==") ~ optWS ~ Assign ~ SP ~> ParsedAst.Expression.ScopedAssign2)
     }
 
     def Assign: Rule1[ParsedAst.Expression] = rule {
