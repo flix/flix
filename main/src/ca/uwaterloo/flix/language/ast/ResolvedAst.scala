@@ -189,8 +189,6 @@ object ResolvedAst {
 
     case class LetRegion(sym: Symbol.VarSym, exp: ResolvedAst.Expression, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class LetScopedRef(sym: Symbol.VarSym, exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
-
     case class ScopedRef(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tpe: Type.Var, evra: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class ScopedDeref(exp: ResolvedAst.Expression, tpe: Type.Var, evra: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression

@@ -892,15 +892,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           NamedAst.Expression.LetRegion(sym, e, evar, loc)
       }
 
-    case WeededAst.Expression.LetScopedRef(ident, exp1, exp2, loc) =>
-      // make a fresh variable symbol for the local variable.
-      val sym = Symbol.freshVarSym(ident)
-      mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0 + (ident.name -> sym), uenv0, tenv0)) {
-        case (e1, e2) =>
-          val evar = Type.freshVar(Kind.Bool)
-          NamedAst.Expression.LetScopedRef(sym, e1, e2, evar, loc)
-      }
-
     case WeededAst.Expression.ScopedRef(exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0)) {
         case (e1, e2) =>
@@ -1317,7 +1308,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.FixpointProjectIn(exp, pred, loc) => freeVars(exp)
     case WeededAst.Expression.FixpointProjectOut(pred, exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
 
-    case WeededAst.Expression.LetScopedRef(ident, exp1, exp2, loc) => freeVars(exp1) ++ filterBoundVars(freeVars(exp2), List(ident))
     case WeededAst.Expression.LetRegion(ident, exp, loc) => filterBoundVars(freeVars(exp), List(ident))
     case WeededAst.Expression.ScopedRef(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.ScopedDeref(exp, loc) => freeVars(exp)

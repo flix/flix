@@ -207,8 +207,6 @@ object WeededAst {
 
     case class LetRegion(ident: Name.Ident, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class LetScopedRef(ident: Name.Ident, exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
-
     case class ScopedRef(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class ScopedDeref(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression

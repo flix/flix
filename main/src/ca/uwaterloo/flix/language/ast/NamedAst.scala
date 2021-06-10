@@ -206,8 +206,6 @@ object NamedAst {
 
     case class LetRegion(sym: Symbol.VarSym, exp: NamedAst.Expression, evar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class LetScopedRef(sym: Symbol.VarSym, exp1: NamedAst.Expression, exp2: NamedAst.Expression, evar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
-
     case class ScopedRef(exp1: NamedAst.Expression, exp2: NamedAst.Expression, tvar: ast.Type.Var, evar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class ScopedDeref(exp: NamedAst.Expression, tvar: ast.Type.Var, evar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression

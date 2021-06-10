@@ -1457,12 +1457,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           WeededAst.Expression.LetRegion(ident, e, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.LetScopedRef(sp1, ident, exp1, exp2, sp2) =>
-      mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) =>
-          WeededAst.Expression.LetScopedRef(ident, e1, e2, mkSL(sp1, sp2))
-      }
-
     case ParsedAst.Expression.ScopedRef(sp1, exp1, exp2, sp2) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
         case (e1, e2) =>
@@ -2356,7 +2350,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.FixpointSolveWithProject(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointQueryWithSelect(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetRegion(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.LetScopedRef(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.ScopedRef(sp1, _, _, _) => sp1
     case ParsedAst.Expression.ScopedDeref(sp1, _, _) => sp1
     case ParsedAst.Expression.ScopedAssign(e1, _, _) => leftMostSourcePosition(e1)

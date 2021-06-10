@@ -881,12 +881,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e <- visit(exp, tenv0)
           } yield ResolvedAst.Expression.LetRegion(sym, e, evar, loc)
 
-        case NamedAst.Expression.LetScopedRef(sym, exp1, exp2, evar, loc) =>
-          for {
-            e1 <- visit(exp1, tenv0)
-            e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.LetScopedRef(sym, e1, e2, evar, loc)
-
         case NamedAst.Expression.ScopedRef(exp1, exp2, tvar, evar, loc) =>
           for {
             e1 <- visit(exp1, tenv0)
