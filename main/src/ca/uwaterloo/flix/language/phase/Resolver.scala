@@ -876,11 +876,22 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.FixpointProjectOut(pred, e1, e2, tvar, loc)
 
+        case NamedAst.Expression.LetRegion(sym, exp, evar, loc) =>
+          for {
+            e <- visit(exp, tenv0)
+          } yield ResolvedAst.Expression.LetRegion(sym, e, evar, loc)
+
         case NamedAst.Expression.LetScopedRef(sym, exp1, exp2, evar, loc) =>
           for {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.LetScopedRef(sym, e1, e2, evar, loc)
+
+        case NamedAst.Expression.ScopedRef(exp1, exp2, tvar, evar, loc) =>
+          for {
+            e1 <- visit(exp1, tenv0)
+            e2 <- visit(exp2, tenv0)
+          } yield ResolvedAst.Expression.ScopedRef(e1, e2, tvar, evar, loc)
 
         case NamedAst.Expression.ScopedDeref(exp, tvar, evar, loc) =>
           for {
@@ -1025,7 +1036,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       * Performs name resolution on the given type parameter `tparam0` in the given namespace `ns0`.
       */
     def resolve(tparam0: NamedAst.TypeParam, ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.TypeParam, ResolutionError] = tparam0 match {
-        case NamedAst.TypeParam(name, tpe, loc) => ResolvedAst.TypeParam(name, tpe, loc).toSuccess // MATT monadic stuff is redundant here(?)
+      case NamedAst.TypeParam(name, tpe, loc) => ResolvedAst.TypeParam(name, tpe, loc).toSuccess // MATT monadic stuff is redundant here(?)
     }
 
   }
@@ -1823,7 +1834,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     * Create a well-formed type applying `tpe1` to `tpe2`.
     */
   private def mkApply(tpe1: Type, tpe2: Type, loc: SourceLocation): Validation[Type, ResolutionError] = {
-    (tpe1.kind, tpe2.kind)  match {
+    (tpe1.kind, tpe2.kind) match {
       case (Kind.Arrow(k1, _), k2) if k2 <:: k1 => Type.Apply(tpe1, tpe2).toSuccess
       case _ => ResolutionError.IllegalTypeApplication(tpe1, tpe2, loc).toFailure
     }
@@ -1913,9 +1924,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     * Enum describing the extent to which a class is accessible.
     */
   private sealed trait Accessibility
+
   private object Accessibility {
     case object Accessible extends Accessibility
+
     case object Sealed extends Accessibility
+
     case object Inaccessible extends Accessibility
   }
 }

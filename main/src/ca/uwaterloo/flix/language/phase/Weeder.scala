@@ -1451,10 +1451,22 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           WeededAst.Expression.FixpointProjectOut(pred, queryExp, dbExp, loc)
       }
 
+    case ParsedAst.Expression.LetRegion(sp1, ident, exp, sp2) =>
+      mapN(visitExp(exp)) {
+        case e =>
+          WeededAst.Expression.LetRegion(ident, e, mkSL(sp1, sp2))
+      }
+
     case ParsedAst.Expression.LetScopedRef(sp1, ident, exp1, exp2, sp2) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
         case (e1, e2) =>
           WeededAst.Expression.LetScopedRef(ident, e1, e2, mkSL(sp1, sp2))
+      }
+
+    case ParsedAst.Expression.ScopedRef(sp1, exp1, exp2, sp2) =>
+      mapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) =>
+          WeededAst.Expression.ScopedRef(e1, e2, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.ScopedDeref(sp1, exp, sp2) =>

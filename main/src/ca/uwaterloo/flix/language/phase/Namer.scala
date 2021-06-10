@@ -883,6 +883,15 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (e1, e2) => NamedAst.Expression.FixpointProjectOut(pred, e1, e2, Type.freshVar(Kind.Star), loc)
       }
 
+    case WeededAst.Expression.LetRegion(ident, exp, loc) =>
+      // make a fresh variable symbol for the local variable.
+      val sym = Symbol.freshVarSym(ident)
+      mapN(visitExp(exp, env0 + (ident.name -> sym), uenv0, tenv0)) {
+        case e =>
+          val evar = Type.freshVar(Kind.Bool)
+          NamedAst.Expression.LetRegion(sym, e, evar, loc)
+      }
+
     case WeededAst.Expression.LetScopedRef(ident, exp1, exp2, loc) =>
       // make a fresh variable symbol for the local variable.
       val sym = Symbol.freshVarSym(ident)
@@ -892,11 +901,20 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           NamedAst.Expression.LetScopedRef(sym, e1, e2, evar, loc)
       }
 
+    case WeededAst.Expression.ScopedRef(exp1, exp2, loc) =>
+      mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0)) {
+        case (e1, e2) =>
+          val tvar = Type.freshVar(Kind.Star) // TODO: Need tvar?
+          val evar = Type.freshVar(Kind.Bool)
+          NamedAst.Expression.ScopedRef(e1, e2, tvar, evar, loc)
+      }
+
     case WeededAst.Expression.ScopedDeref(exp, loc) =>
       visitExp(exp, env0, uenv0, tenv0) map {
         case e =>
+          val tvar = Type.freshVar(Kind.Star)
           val evar = Type.freshVar(Kind.Bool)
-          NamedAst.Expression.ScopedDeref(e, Type.freshVar(Kind.Star), evar, loc)
+          NamedAst.Expression.ScopedDeref(e, tvar, evar, loc)
       }
 
     case WeededAst.Expression.ScopedAssign(exp1, exp2, loc) =>
