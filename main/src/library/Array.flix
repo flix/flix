@@ -1592,7 +1592,6 @@ namespace Array {
     ///
     /// The sort implementation is Quicksort.
     ///
-    @Time(length(a)) @Space(length(a))
     pub def sort(a: Array[a]): Array[a] & Impure with Order[a] = sortWith(Order.compare, a)
 
     ///
@@ -1603,7 +1602,6 @@ namespace Array {
     ///
     /// The sort implementation is Quicksort.
     ///
-    @Time(length(a)) @Space(length(a))
     pub def sortBy(f: a -> b, a: Array[a]): Array[a] & Impure with Order[b] = sortWith(Order.compare `on` f, a)
 
     ///
@@ -1614,7 +1612,6 @@ namespace Array {
     ///
     /// The sort implementation is Quicksort.
     ///
-    @Time(length(a)) @Space(length(a))
     pub def sortWith(cmp: (a,a) -> Comparison, a: Array[a]): Array[a] & Impure =
         let len = length(a);
         let b = slice(a, 0, len);
@@ -1629,7 +1626,6 @@ namespace Array {
     ///
     /// The sort implementation is Quicksort.
     ///
-    @Time(length(a)) @Space(length(a))
     pub def sort!(a: mut Array[a]): Unit & Impure with Order[a] = sortWith!(Order.compare, a)
 
     ///
@@ -1640,7 +1636,6 @@ namespace Array {
     ///
     /// The sort implementation is Quicksort.
     ///
-    @Time(length(a)) @Space(length(a))
     pub def sortBy!(f: a -> b, a: mut Array[a]): Unit & Impure with Order[b] = sortWith!(Order.compare `on` f, a)
 
     ///
@@ -1651,7 +1646,6 @@ namespace Array {
     ///
     /// The sort implementation is Quicksort.
     ///
-    @Time(length(a) * length(a)) @Space(length(a))
     pub def sortWith!(cmp: (a,a) -> Comparison, a: mut Array[a]): Unit & Impure =
         let len = length(a);
         if (len == 0)

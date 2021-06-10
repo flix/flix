@@ -1121,8 +1121,6 @@ namespace List {
     /// The sort implementation is a mergesort.
     /// Acknowledgement: derived from Thomas Nordin's `sortBy` in the Haskell base libraries.
     ///
-    // TODO Revise time and space annotations. Both only hold when cmp is O(1). Space is probably n*log(n).
-    @Time(length(xs) * Int32.log2(length(xs))) @Space(length(xs))
     pub def sortWith(cmp: (a,a) -> Comparison, xs: List[a]): List[a] =
         sortGenerateSequences(cmp, xs, zss -> zss) |> sortMergeAll(cmp)
 
