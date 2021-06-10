@@ -154,6 +154,8 @@ object FormatType {
 
           case TypeConstructor.Ref => formatApply("Ref", args)
 
+          case TypeConstructor.Region => formatApply("Region", args)
+
           case TypeConstructor.ScopedRef => formatApply("ScopedRef", args)
 
           case TypeConstructor.RecordExtend(field) => args.length match {

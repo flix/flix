@@ -1402,6 +1402,15 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = Type.mkAnd(eff1, eff2)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
+      case ResolvedAst.Expression.LetRegion(sym, exp, evar, loc) =>
+        // Introduce a rigid variable for the lifetime of `exp`.
+        val lifetimeVar = Type.freshVar(Kind.Bool, Rigidity.Rigid, Some(sym.text))
+        for {
+          _ <- unifyTypeM(sym.tvar, Type.mkRegion(lifetimeVar, loc), loc)
+          (constrs, tpe, eff) <- visitExp(exp)
+          resultTyp = tpe
+          resultEff <- unifyTypeM(evar, purify(lifetimeVar, eff), loc)
+        } yield (constrs, resultTyp, resultEff)
 
       case ResolvedAst.Expression.LetScopedRef(sym, exp1, exp2, evar, loc) =>
         // TODO: Scoped: Does Purify also need to be applied to the result type?
@@ -1418,6 +1427,14 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           (constrs2, tpe2, eff2) <- visitExp(exp2)
           resultTyp = tpe2
           resultEff <- unifyTypeM(evar, Type.mkAnd(eff1, purify(lifetimeVar, eff2)), loc)
+        } yield (constrs1 ++ constrs2, resultTyp, resultEff)
+
+      case ResolvedAst.Expression.ScopedRef(exp1, exp2, tvar, evar, loc) =>
+        for {
+          (constrs1, elmType, eff1) <- visitExp(exp1) // TODO: Eff
+          (constrs2, lifeTime, eff2) <- visitExp(exp2) // TODO: Eff
+          resultTyp <- unifyTypeM(tvar, Type.mkScopedRef(elmType, lifeTime, loc), loc)
+          resultEff <- unifyTypeM(evar, Type.Pure, loc) // TODO
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
       case ResolvedAst.Expression.ScopedDeref(exp, tvar, evar, loc) =>
@@ -1836,6 +1853,9 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val solveExp = TypedAst.Expression.FixpointSolve(mergeExp, stf, tpe, eff, loc)
         TypedAst.Expression.FixpointProjectOut(pred, solveExp, tpe, eff, loc)
 
+      case ResolvedAst.Expression.LetRegion(_, exp, _, _) =>
+        visitExp(exp, subst0)
+
       case ResolvedAst.Expression.LetScopedRef(sym, exp1, exp2, evar, loc) =>
         val inner = visitExp(exp1, subst0)
         val innerEff = subst0(evar) // TODO: Is this right?
@@ -1844,6 +1864,11 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val tpe = e2.tpe
         val eff = subst0(evar)
         TypedAst.Expression.Let(sym, e1, e2, tpe, eff, loc)
+
+      case ResolvedAst.Expression.ScopedRef(exp, _, tvar, evar, loc) =>
+        val e = visitExp(exp, subst0)
+        val eff = subst0(evar) // TODO: Eff?
+        TypedAst.Expression.Ref(e, subst0(tvar), eff, loc)
 
       case ResolvedAst.Expression.ScopedDeref(exp, tvar, evar, loc) =>
         val e = visitExp(exp, subst0)

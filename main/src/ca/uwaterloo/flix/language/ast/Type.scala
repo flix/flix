@@ -501,6 +501,14 @@ object Type {
   def mkRef(tpe: Type, loc: SourceLocation = SourceLocation.Unknown): Type = Type.Apply(Type.Cst(TypeConstructor.Ref, loc), tpe)
 
   /**
+    * Returns a Region type for the given rigid variable `l` with the given source location `loc`.
+    */
+  def mkRegion(l: Type.Var, loc: SourceLocation): Type = {
+    assert(l.rigidity == Rigidity.Rigid)
+    Type.Apply(Type.Cst(TypeConstructor.Region, loc), l)
+  }
+
+  /**
     * Returns the type ScopedRef type with the given source location `loc`.
     */
   def mkScopedRef(loc: SourceLocation): Type =
