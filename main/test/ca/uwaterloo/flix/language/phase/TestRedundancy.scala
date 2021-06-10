@@ -2,8 +2,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.RedundancyError
-import ca.uwaterloo.flix.util.vt.TerminalContext
-import ca.uwaterloo.flix.util.{Options, Validation}
+import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
 class TestRedundancy extends FunSuite with TestUtils {
@@ -757,7 +756,7 @@ class TestRedundancy extends FunSuite with TestUtils {
          |    f()
          |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[RedundancyError.UnconditionalRecursion](result)
+    expectError[RedundancyError.UnconditionalDefRecursion](result)
   }
 
   test("UnconditionalRecursion.02") {
@@ -767,7 +766,7 @@ class TestRedundancy extends FunSuite with TestUtils {
          |    foo(x, y)
          |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[RedundancyError.UnconditionalRecursion](result)
+    expectError[RedundancyError.UnconditionalDefRecursion](result)
   }
 
   test("UnconditionalRecursion.03") {
@@ -779,7 +778,7 @@ class TestRedundancy extends FunSuite with TestUtils {
          |}
          |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[RedundancyError.UnconditionalRecursion](result)
+    expectError[RedundancyError.UnconditionalDefRecursion](result)
   }
 
   test("UnconditionalRecursion.04") {
@@ -792,7 +791,7 @@ class TestRedundancy extends FunSuite with TestUtils {
          |        foo(7)
          |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[RedundancyError.UnconditionalRecursion](result)
+    expectError[RedundancyError.UnconditionalDefRecursion](result)
   }
 
   test("UnconditionalRecursion.05") {
@@ -983,4 +982,27 @@ class TestRedundancy extends FunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     expectError[RedundancyError.RedundantTypeConstraint](result)
   }
+
+  test("UnconditionalRecursion.Class.01") {
+    val input =
+      """
+        |pub lawless class C[a] {
+        |  pub def f(x: a): String = C.f(x)
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UnconditionalSigRecursion](result)
+  }
+
+  test("UnusedFormalParam.Class.01") {
+    val input =
+      """
+        |pub lawless class C[a] {
+        |  pub def f(x: a): String = "Hello!"
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UnusedFormalParam](result)
+  }
+
 }

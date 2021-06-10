@@ -15,11 +15,6 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import java.net.InetSocketAddress
-import java.nio.file.Path
-import java.text.SimpleDateFormat
-import java.util.Date
-
 import ca.uwaterloo.flix.api.lsp.provider._
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
@@ -41,6 +36,10 @@ import org.json4s._
 import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods.parse
 
+import java.net.InetSocketAddress
+import java.nio.file.Path
+import java.text.SimpleDateFormat
+import java.util.Date
 import scala.collection.mutable
 
 /**
@@ -334,12 +333,72 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     * Processes a complete request.
     */
   private def processComplete(requestId: String, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
-    val result = List(
-      CompletionItem("foo", Some("This is a foo suggestion.")),
-      CompletionItem("bar", Some("This is a bar suggestion.")),
-      CompletionItem("baz", Some("This is a baz suggestion.")),
-    )
-    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result.map(_.toJSON))
+    val word = for {
+      source <- sources.get(uri)
+      line <- lineAt(source, pos.line - 1)
+      word <- wordAt(line, pos.character - 1)
+    } yield word
+
+    val t = System.nanoTime()
+    val suggestions = CompleteProvider.autoComplete(uri, pos, word)(index, root)
+    println(s"Found ${suggestions.size} suggestions for '$word' (elapsed: " + ((System.nanoTime() - t) / 1_000_000) + "ms)")
+
+    val result = CompletionList(isIncomplete = true, suggestions)
+    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result.toJSON)
+  }
+
+  /**
+    * Optionally returns line number `n` in the string `s`.
+    */
+  private def lineAt(s: String, n: Int): Option[String] = {
+    import java.io.{BufferedReader, StringReader}
+
+    val br = new BufferedReader(new StringReader(s))
+
+    var i = 0
+    var line = br.readLine()
+    while (line != null && i < n) {
+      line = br.readLine()
+      i = i + 1
+    }
+    Option(line)
+  }
+
+  /**
+    * Optionally returns the word at the given index `n` in the string `s`.
+    */
+  private def wordAt(s: String, n: Int): Option[String] = {
+    def isValidChar(c: Char): Boolean = Character.isLetterOrDigit(c) || c == '.' || c == '/'
+
+    // Bounds Check
+    if (!(0 <= n && n <= s.length)) {
+      return None
+    }
+
+    // Determine if the word is to the left of us, to the right of us, or out of bounds.
+    val leftOf = 0 < n && isValidChar(s.charAt(n - 1))
+    val rightOf = n < s.length && isValidChar(s.charAt(n))
+
+    val i = (leftOf, rightOf) match {
+      case (true, _) => n - 1
+      case (_, true) => n
+      case _ => return None
+    }
+
+    // Compute the beginning of the word.
+    var begin = i
+    while (0 < begin && isValidChar(s.charAt(begin - 1))) {
+      begin = begin - 1
+    }
+
+    // Compute the ending of the word.
+    var end = i
+    while (end < s.length && isValidChar(s.charAt(end))) {
+      end = end + 1
+    }
+
+    // Return the word.
+    Some(s.substring(begin, end))
   }
 
   /**
