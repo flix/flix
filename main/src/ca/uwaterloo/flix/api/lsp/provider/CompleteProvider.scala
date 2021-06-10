@@ -61,7 +61,7 @@ object CompleteProvider {
   /**
     * Returns a list of other completion items.
     */
-  private def getSuggestions(uri: String, pos: Position, prefix: Option[String])(implicit index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
+  private def getSuggestions(uri: String, pos: Position, prefix: Option[String])(implicit index: Index, root: TypedAst.Root): List[CompletionItem] = {
     ///
     /// Return immediately if there is no AST.
     ///
@@ -76,7 +76,7 @@ object CompleteProvider {
 
     val defSuggestions = root.defs.values.filter(matchesDef(_, prefix, uri)).map(getDefCompletionItem)
     val sigSuggestions = root.sigs.values.filter(matchesSig(_, prefix, uri)).map(getSigCompletionItem)
-    defSuggestions ++ sigSuggestions
+    (defSuggestions ++ sigSuggestions).toList.sortBy(_.label)
   }
 
   /**
@@ -118,24 +118,6 @@ object CompleteProvider {
   }
 
   /**
-    * Returns a list of completion items for the given enum `enum`.
-    */
-  private def getEnumCompletionItems(enum: TypedAst.Enum): List[CompletionItem] = {
-    enum.cases.map {
-      case (tag, caze) =>
-        val name = tag.name
-        val label = tag.name
-        val insertText = tag.name + "($" + "{1:exp})"
-        val detail = Some(FormatScheme.formatScheme(caze.sc))
-        val documentation = Some(enum.doc.text)
-        val completionKind = CompletionItemKind.EnumMember
-        val textFormat = InsertTextFormat.Snippet
-        val commitCharacters = Nil
-        CompletionItem(label, insertText, detail, documentation, completionKind, textFormat, commitCharacters)
-    }.toList
-  }
-
-  /**
     * Returns a completion item for the given definition `decl`.
     */
   private def getDefCompletionItem(decl: TypedAst.Def): CompletionItem = {
@@ -159,7 +141,7 @@ object CompleteProvider {
     val insertText = getApplySnippet(name, decl.spec.fparams)
     val detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme))
     val documentation = Some(decl.spec.doc.text)
-    val completionKind = CompletionItemKind.Function
+    val completionKind = CompletionItemKind.Interface
     val textFormat = InsertTextFormat.Snippet
     val commitCharacters = Nil
     CompletionItem(label, insertText, detail, documentation, completionKind, textFormat, commitCharacters)
