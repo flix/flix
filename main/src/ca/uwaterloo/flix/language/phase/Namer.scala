@@ -1318,6 +1318,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.FixpointProjectOut(pred, exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
 
     case WeededAst.Expression.LetScopedRef(ident, exp1, exp2, loc) => freeVars(exp1) ++ filterBoundVars(freeVars(exp2), List(ident))
+    case WeededAst.Expression.LetRegion(ident, exp, loc) => filterBoundVars(freeVars(exp), List(ident))
+    case WeededAst.Expression.ScopedRef(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.ScopedDeref(exp, loc) => freeVars(exp)
     case WeededAst.Expression.ScopedAssign(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
 

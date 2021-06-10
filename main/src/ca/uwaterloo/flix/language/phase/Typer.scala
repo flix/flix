@@ -1412,6 +1412,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff <- unifyTypeM(evar, purify(regionVar, eff), loc)
         } yield (constrs, resultTyp, resultEff)
 
+      case ResolvedAst.Expression.LetScopedRef(sym, exp1, exp2, evar, loc) => ??? // TODO: Kill
+
       case ResolvedAst.Expression.ScopedRef(exp1, exp2, tvar, evar, loc) =>
         val regionVar = Type.freshVar(Kind.Bool, Rigidity.Flexible, Some("l"))
         for {
@@ -1430,10 +1432,10 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         // This variable will become unified with the rigid variable.
         val regionVar = Type.freshVar(Kind.Bool, Rigidity.Flexible, Some("l"))
         for {
-          (constrs, tpe, eff) <- visitExp(exp) // TODO: Eff
+          (constrs, tpe, eff) <- visitExp(exp)
           refType <- unifyTypeM(tpe, Type.mkScopedRef(elmTypeVar, regionVar, loc), loc)
           resultTyp <- unifyTypeM(tvar, elmTypeVar, loc)
-          resultEff <- unifyTypeM(evar, regionVar, loc)
+          resultEff <- unifyTypeM(evar, Type.mkAnd(eff, regionVar), loc)
         } yield (constrs, resultTyp, resultEff)
 
       case ResolvedAst.Expression.ScopedAssign(exp1, exp2, evar, loc) =>

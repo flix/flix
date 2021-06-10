@@ -2355,7 +2355,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.FixpointProjectInto(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointSolveWithProject(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointQueryWithSelect(sp1, _, _, _, _, _) => sp1
+    case ParsedAst.Expression.LetRegion(sp1, _, _, _) => sp1
     case ParsedAst.Expression.LetScopedRef(sp1, _, _, _, _) => sp1
+    case ParsedAst.Expression.ScopedRef(sp1, _, _, _) => sp1
     case ParsedAst.Expression.ScopedDeref(sp1, _, _) => sp1
     case ParsedAst.Expression.ScopedAssign(e1, _, _) => leftMostSourcePosition(e1)
   }
