@@ -981,6 +981,15 @@ object ParsedAst {
       */
     case class FixpointQueryWithSelect(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], selects: ParsedAst.SelectFragment, from: Seq[ParsedAst.Predicate.Body.Atom], whereExp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
+    // TODO: Experimental: SHOULD NOT BE USED AND WILL BE REMOVED!
+    case class LetScopedRef(sp1: SourcePosition, ident: Name.Ident, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    // TODO: Experimental: SHOULD NOT BE USED AND WILL BE REMOVED!
+    case class ScopedDeref(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    // TODO: Experimental: SHOULD NOT BE USED AND WILL BE REMOVED!
+    case class ScopedAssign(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
   }
 
   /**

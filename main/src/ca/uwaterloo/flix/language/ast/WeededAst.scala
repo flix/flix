@@ -205,6 +205,12 @@ object WeededAst {
 
     case class FixpointProjectOut(pred: Name.Pred, exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
+    case class LetScopedRef(ident: Name.Ident, exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class ScopedDeref(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class ScopedAssign(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
   }
 
   sealed trait Pattern {

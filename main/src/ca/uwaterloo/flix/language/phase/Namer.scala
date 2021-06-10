@@ -698,7 +698,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (e1, e2) => NamedAst.Expression.Assign(e1, e2, loc)
       }
 
-
     case WeededAst.Expression.Existential(tparams0, fparam, exp, loc) =>
       for {
         tparams <- getTypeParamsFromFormalParams(tparams0, List(fparam), WeededAst.Type.Ambiguous(Name.mkQName("Bool"), loc), loc, allowElision = true, uenv0, tenv0)
@@ -882,6 +881,29 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.FixpointProjectOut(pred, exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0)) {
         case (e1, e2) => NamedAst.Expression.FixpointProjectOut(pred, e1, e2, Type.freshVar(Kind.Star), loc)
+      }
+
+    case WeededAst.Expression.LetScopedRef(ident, exp1, exp2, loc) =>
+      // make a fresh variable symbol for the local variable.
+      val sym = Symbol.freshVarSym(ident)
+      mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0 + (ident.name -> sym), uenv0, tenv0)) {
+        case (e1, e2) =>
+          val evar = Type.freshVar(Kind.Bool)
+          NamedAst.Expression.LetScopedRef(sym, e1, e2, evar, loc)
+      }
+
+    case WeededAst.Expression.ScopedDeref(exp, loc) =>
+      visitExp(exp, env0, uenv0, tenv0) map {
+        case e =>
+          val evar = Type.freshVar(Kind.Bool)
+          NamedAst.Expression.ScopedDeref(e, Type.freshVar(Kind.Star), evar, loc)
+      }
+
+    case WeededAst.Expression.ScopedAssign(exp1, exp2, loc) =>
+      mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0)) {
+        case (e1, e2) =>
+          val evar = Type.freshVar(Kind.Bool)
+          NamedAst.Expression.ScopedAssign(e1, e2, evar, loc)
       }
 
   }
@@ -1276,6 +1298,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.FixpointFilter(qname, exp, loc) => freeVars(exp)
     case WeededAst.Expression.FixpointProjectIn(exp, pred, loc) => freeVars(exp)
     case WeededAst.Expression.FixpointProjectOut(pred, exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
+
+    case WeededAst.Expression.LetScopedRef(ident, exp1, exp2, loc) => freeVars(exp1) ++ filterBoundVars(freeVars(exp2), List(ident))
+    case WeededAst.Expression.ScopedDeref(exp, loc) => freeVars(exp)
+    case WeededAst.Expression.ScopedAssign(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
+
   }
 
   /**

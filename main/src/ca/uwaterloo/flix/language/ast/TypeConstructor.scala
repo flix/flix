@@ -197,6 +197,16 @@ object TypeConstructor {
   }
 
   /**
+    * A type constructor that represent the type of scoped references.
+    */
+  case object ScopedRef extends TypeConstructor {
+    /**
+      * The shape of a reference is ScopedRef[t, l].
+      */
+    def kind: Kind = Kind.Star ->: Kind.Bool ->: Kind.Star
+  }
+
+  /**
     * A type constructor that represent the type of tuples.
     */
   case class Tuple(l: Int) extends TypeConstructor {
