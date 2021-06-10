@@ -395,7 +395,7 @@ object Main {
         text("[experimental] benchmarks the throughput of the entire compiler.")
 
       // Xlib
-      opt[Inclusion]("Xlib").action((_, c) => c.copy(xlib = c.xlib)).
+      opt[Inclusion]("Xlib").action((arg, c) => c.copy(xlib = arg)).
         text("[experimental] sets the amount of StdLib content to include (nix, min, all).")
 
       // Xdebug.
