@@ -1408,8 +1408,9 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         for {
           _ <- unifyTypeM(sym.tvar, Type.mkRegion(regionVar, loc), loc)
           (constrs, tpe, eff) <- visitExp(exp)
+          purifiedEff <- purifyEffM(regionVar, eff)
+          resultEff <- unifyTypeM(evar, purifiedEff, loc)
           resultTyp = tpe
-          resultEff <- unifyTypeM(evar, purify(regionVar, eff), loc)
         } yield (constrs, resultTyp, resultEff)
 
       case ResolvedAst.Expression.ScopedRef(exp1, exp2, tvar, evar, loc) =>
@@ -2177,37 +2178,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     * Returns an open schema type.
     */
   private def mkAnySchemaType()(implicit flix: Flix): Type = Type.freshVar(Kind.Schema)
-
-  /**
-    * Returns the given Boolean formula `tpe` with the (possibly rigid) type variable `tvar` replaced by `True`.
-    */
-  private def purify(tvar: Type.Var, tpe: Type): Type = tpe.typeConstructor match {
-    case None => tpe match {
-      case Type.Var(id, _, _, _) =>
-        if (tvar.id == id) Type.True else tpe
-      case _ => throw InternalCompilerException(s"Unexpected type constructor: '$tpe'.")
-    }
-
-    case Some(tc) => tc match {
-      case TypeConstructor.True => Type.True
-
-      case TypeConstructor.False => Type.False
-
-      case TypeConstructor.Not =>
-        val List(t) = tpe.typeArguments
-        BoolUnification.mkNot(purify(tvar, t))
-
-      case TypeConstructor.And =>
-        val List(t1, t2) = tpe.typeArguments
-        BoolUnification.mkAnd(purify(tvar, t1), purify(tvar, t2))
-
-      case TypeConstructor.Or =>
-        val List(t1, t2) = tpe.typeArguments
-        BoolUnification.mkOr(purify(tvar, t1), purify(tvar, t2))
-
-      case _ => throw InternalCompilerException(s"Unexpected non-Boolean type constructor: '$tc'.")
-    }
-  }
 
   /**
     * Returns the Flix Type of a Java Class

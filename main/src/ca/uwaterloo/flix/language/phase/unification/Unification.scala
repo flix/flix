@@ -367,6 +367,46 @@ object Unification {
   }
 
   /**
+    * Purifies the given effect `eff` in the type inference monad.
+    */
+  def purifyEffM(tvar: Type.Var, eff: Type): InferMonad[Type] =
+    InferMonad(s => {
+      val purifiedEff = purify(tvar, s(eff))
+      Ok((s, purifiedEff))
+    })
+
+  /**
+    * Returns the given Boolean formula `tpe` with the (possibly rigid) type variable `tvar` replaced by `True`.
+    */
+  private def purify(tvar: Type.Var, tpe: Type): Type = tpe.typeConstructor match {
+    case None => tpe match {
+      case Type.Var(id, _, _, _) =>
+        if (tvar.id == id) Type.True else tpe
+      case _ => throw InternalCompilerException(s"Unexpected type constructor: '$tpe'.")
+    }
+
+    case Some(tc) => tc match {
+      case TypeConstructor.True => Type.True
+
+      case TypeConstructor.False => Type.False
+
+      case TypeConstructor.Not =>
+        val List(t) = tpe.typeArguments
+        BoolUnification.mkNot(purify(tvar, t))
+
+      case TypeConstructor.And =>
+        val List(t1, t2) = tpe.typeArguments
+        BoolUnification.mkAnd(purify(tvar, t1), purify(tvar, t2))
+
+      case TypeConstructor.Or =>
+        val List(t1, t2) = tpe.typeArguments
+        BoolUnification.mkOr(purify(tvar, t1), purify(tvar, t2))
+
+      case _ => throw InternalCompilerException(s"Unexpected non-Boolean type constructor: '$tc'.")
+    }
+  }
+
+  /**
     * Returns true iff `tpe1` unifies with `tpe2`.
     */
   def unifiesWith(tpe1: Type, tpe2: Type)(implicit flix: Flix): Boolean = {
