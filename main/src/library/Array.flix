@@ -1646,17 +1646,12 @@ namespace Array {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith!(cmp: (a,a) -> Comparison, a: mut Array[a]): Unit & Impure =
-        let len = length(a);
-        if (len == 0)
-            ()
-        else
-            sortWithin!(cmp, a, 0, len-1)
+    pub def sortWith!(cmp: (a,a) -> Comparison, a: mut Array[a]): Unit & Impure = sortWithin!(cmp, a, 0, length(a)-1)
 
     ///
     /// Sort array `a` between the indices `lo` and `hi` (both inclusive) so that elements in that range are ordered
     /// from low to high according to the comparison function `cmp`. The array is mutated in-place where elements
-    /// outside the specified range are not changed.
+    /// outside the specified range are not changed. If `lo >= hi`, this does nothing.
     ///
     /// The sort is not stable, i.e., equal elements may appear in a different order than in the input `a`.
     ///
