@@ -198,6 +198,26 @@ namespace Test/Dec/Class {
         pub def f(x: a, y: b): Bool with C[a], D[b] = ???
     }
 
+    namespace Test16 {
+        rel R(x: Int, y: Bool)
+
+        lawless class C[a] {
+            pub def f(_x: a): #{ R(Int, Bool) } = #{
+                R(1, true).
+            }
+        }
+
+        lawless class D[a] {
+            pub def f(x: a): #{ R(Int, Bool) }
+        }
+
+        instance D[Int] {
+            pub def f(_x: Int): #{ R(Int, Bool) } = #{
+                R(2, false).
+            }
+        }
+    }
+
     pub enum List[a] {
         case Nil
         case Cons(a, List[a])
