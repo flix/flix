@@ -290,7 +290,7 @@ object Main {
       case "nix" => LibLevel.Nix
       case "min" => LibLevel.Min
       case "all" => LibLevel.All
-      case arg => throw new IllegalArgumentException(s"$arg is not a valid library level. Valid options are 'all', 'min', and 'nix'.")
+      case arg => throw new IllegalArgumentException(s"'$arg' is not a valid library level. Valid options are 'all', 'min', and 'nix'.")
     }
 
     val parser = new scopt.OptionParser[CmdOpts]("flix") {
