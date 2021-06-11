@@ -28,6 +28,23 @@ instance ToString[MutList[a]] with ToString[a] {
     }
 }
 
+instance Eq[MutList[a]] with Eq[a] {
+    pub def eq(xs: MutList[a], ys: MutList[a]): Bool =
+        (let MutList(a, _) = xs;
+        let MutList(b, _) = ys;
+        deref a == deref b) as & Pure
+}
+
+instance Order[MutList[v]] with Order[v] {
+    ///
+    /// Compares `u` and `v` lexicographically.
+    ///
+    pub def compare(u: MutList[v], v: MutList[v]): Comparison =
+        (let MutList(a, _) = u;
+        let MutList(b, _) = v;
+        deref a <=> deref b) as & Pure
+}
+
 instance Functor[MutList] {
     pub def map(f: a -> b & e, v: MutList[a]): MutList[b] & e = MutList.map(f, v) as & e
 }
@@ -434,11 +451,12 @@ namespace MutList {
 
     ///
     /// Returns a shallow copy of the given mutable list `v`.
+    /// The capacity of the copy is equal to the length of the list.
     ///
     pub def copy(v: MutList[a]): MutList[a] & Impure =
         let MutList(a, l) = v;
         let len = deref l;
-        MutList(ref Array.slice(deref a, 0, Array.length(deref a)), ref len)
+        MutList(ref Array.slice(deref a, 0, len), ref len)
 
     ///
     /// Optionally removes and returns the last element in the given mutable list `v`.
