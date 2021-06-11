@@ -453,7 +453,11 @@ class Flix {
     val si1 = getStringInputs
     val si2 = getPathInputs
     val si3 = inputs.toList
-    val si4 = if (options.core) getInputs(coreLibrary) else getInputs(coreLibrary ++ standardLibrary)
+    val si4 = options.lib match {
+      case LibLevel.Nix => Nil
+      case LibLevel.Min => getInputs(coreLibrary)
+      case LibLevel.All => getInputs(coreLibrary ++ standardLibrary)
+    }
     si1 ::: si2 ::: si3 ::: si4
   }
 

@@ -25,7 +25,7 @@ import org.scalatest.FunSuite
 
 class FlixTest(name: String, paths: List[String], options: Options) extends FunSuite {
 
-  def this(name: String, path: String)(implicit options: Options = Options.TestWithoutLibrary) = this(name, List(path), options)
+  def this(name: String, path: String)(implicit options: Options = Options.TestWithLibMin) = this(name, List(path), options)
 
   /**
     * Returns the name of the test suite.

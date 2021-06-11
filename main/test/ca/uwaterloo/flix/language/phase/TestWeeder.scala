@@ -23,7 +23,7 @@ import org.scalatest.FunSuite
 
 class TestWeeder extends FunSuite with TestUtils {
 
-  val DefaultOptions: Options = Options.DefaultTest.copy(core = true)
+  val DefaultOptions: Options = Options.TestWithLibMin
 
   test("DuplicateAnnotation.01") {
     val input =
