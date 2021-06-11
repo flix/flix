@@ -1415,11 +1415,11 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       case ResolvedAst.Expression.ScopedRef(exp1, exp2, tvar, evar, loc) =>
         val regionVar = Type.freshVar(Kind.Bool, Rigidity.Flexible, Some("l"))
         for {
-          (constrs1, elmType, eff1) <- visitExp(exp1) // TODO: Eff
-          (constrs2, regionType, eff2) <- visitExp(exp2) // TODO: Eff
+          (constrs1, elmType, eff1) <- visitExp(exp1)
+          (constrs2, regionType, eff2) <- visitExp(exp2)
           _ <- unifyTypeM(regionType, Type.mkRegion(regionVar, loc), loc)
           resultTyp <- unifyTypeM(tvar, Type.mkScopedRef(elmType, regionVar, loc), loc)
-          resultEff <- unifyTypeM(evar, Type.Pure, loc) // TODOÆ Need to include eff of regionVar.
+          resultEff <- unifyTypeM(evar, Type.mkAnd(eff1, eff2, regionVar), loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
       case ResolvedAst.Expression.ScopedDeref(exp, tvar, evar, loc) =>

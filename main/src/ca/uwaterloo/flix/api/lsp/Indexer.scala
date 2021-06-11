@@ -326,7 +326,7 @@ object Indexer {
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expression.LetRegion(sym, exp, _, _, _) =>
-      Index.occurrenceOf(sym, sym.tvar) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
+      visitExp(exp) ++ Index.occurrenceOf(exp0)
 
   }
 
