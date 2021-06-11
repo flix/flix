@@ -96,7 +96,7 @@ object FormatType {
             }
             case Audience.External => text match {
               case None => s"'$id"
-              case Some(t) => s"$t$id"
+              case Some(t) => t
             }
           }
           case Type.Lambda(tvar, tpe) => audience match {
