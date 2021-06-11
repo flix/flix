@@ -1590,7 +1590,7 @@ namespace Array {
     ///
     /// The sort is not stable, i.e., equal elements may appear in a different order than in the input `a`.
     ///
-    /// The sort implementation is Quicksort.
+    /// The sort implementation is a Quicksort.
     ///
     pub def sort(a: Array[a]): Array[a] & Impure with Order[a] = sortWith(Order.compare, a)
 
@@ -1600,7 +1600,7 @@ namespace Array {
     ///
     /// The sort is not stable, i.e., equal elements may appear in a different order than in the input `a`.
     ///
-    /// The sort implementation is Quicksort.
+    /// The sort implementation is a Quicksort.
     ///
     pub def sortBy(f: a -> b, a: Array[a]): Array[a] & Impure with Order[b] = sortWith(Order.compare `on` f, a)
 
@@ -1610,7 +1610,7 @@ namespace Array {
     ///
     /// The sort is not stable, i.e., equal elements may appear in a different order than in the input `a`.
     ///
-    /// The sort implementation is Quicksort.
+    /// The sort implementation is a Quicksort.
     ///
     pub def sortWith(cmp: (a,a) -> Comparison, a: Array[a]): Array[a] & Impure =
         let len = length(a);
@@ -1622,9 +1622,9 @@ namespace Array {
     /// Sort array `a` so that elements are ordered from low to high according to their `Order` instance.
     /// The array is mutated in-place.
     ///
-    /// The sort is not stable, i.e., after sorting equal elements may appear in a different order than before.
+    /// The sort is not stable, i.e., equal elements may appear in a different order than in the input `a`.
     ///
-    /// The sort implementation is Quicksort.
+    /// The sort implementation is a Quicksort.
     ///
     pub def sort!(a: mut Array[a]): Unit & Impure with Order[a] = sortWith!(Order.compare, a)
 
@@ -1632,9 +1632,9 @@ namespace Array {
     /// Sort array `a` so that elements are ordered from low to high according to the `Order` instance for
     /// the values obtained by applying `f` to each element. The array is mutated in-place.
     ///
-    /// The sort is not stable, i.e., after sorting equal elements may appear in a different order than before.
+    /// The sort is not stable, i.e., equal elements may appear in a different order than in the input `a`.
     ///
-    /// The sort implementation is Quicksort.
+    /// The sort implementation is a Quicksort.
     ///
     pub def sortBy!(f: a -> b, a: mut Array[a]): Unit & Impure with Order[b] = sortWith!(Order.compare `on` f, a)
 
@@ -1642,9 +1642,9 @@ namespace Array {
     /// Sort array `a` so that elements are ordered from low to high according to the comparison function `cmp`.
     /// The array is mutated in-place.
     ///
-    /// The sort is not stable, i.e., after sorting equal elements may appear in a different order than before.
+    /// The sort is not stable, i.e., equal elements may appear in a different order than in the input `a`.
     ///
-    /// The sort implementation is Quicksort.
+    /// The sort implementation is a Quicksort.
     ///
     pub def sortWith!(cmp: (a,a) -> Comparison, a: mut Array[a]): Unit & Impure =
         let len = length(a);
@@ -1658,9 +1658,9 @@ namespace Array {
     /// from low to high according to the comparison function `cmp`. The array is mutated in-place where elements
     /// outside the specified range are not changed.
     ///
-    /// The sort is not stable, i.e., after sorting equal elements may appear in a different order than before.
+    /// The sort is not stable, i.e., equal elements may appear in a different order than in the input `a`.
     ///
-    /// The sort implementation is Quicksort.
+    /// The sort implementation is a Quicksort.
     ///
     pub def sortWithin!(cmp: (a,a) -> Comparison, a: mut Array[a], lo: Int32, hi: Int32): Unit & Impure =
         if (lo >= hi)

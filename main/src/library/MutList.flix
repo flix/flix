@@ -788,7 +788,7 @@ namespace MutList {
     ///
     /// The sort is not stable, i.e., equal elements may appear in a different order than in the input `v`.
     ///
-    /// The sort implementation is Quicksort.
+    /// The sort implementation is a Quicksort.
     ///
     pub def sort(v: MutList[a]): MutList[a] & Impure with Order[a] = sortWith(Order.compare, v)
 
@@ -798,7 +798,7 @@ namespace MutList {
     ///
     /// The sort is not stable, i.e., equal elements may appear in a different order than in the input `v`.
     ///
-    /// The sort implementation is Quicksort.
+    /// The sort implementation is a Quicksort.
     ///
     pub def sortBy(f: a -> b, v: MutList[a]): MutList[a] & Impure with Order[b] = sortWith(Order.compare `on` f, v)
 
@@ -808,7 +808,7 @@ namespace MutList {
     ///
     /// The sort is not stable, i.e., equal elements may appear in a different order than in the input `v`.
     ///
-    /// The sort implementation is Quicksort.
+    /// The sort implementation is a Quicksort.
     ///
     pub def sortWith(cmp: (a,a) -> Comparison, v: MutList[a]): MutList[a] & Impure =
         let vCopy = copy(v);
@@ -819,9 +819,9 @@ namespace MutList {
     /// Sort MutList `v` so that elements are ordered from low to high according to their `Order` instance.
     /// The MutList is mutated in-place.
     ///
-    /// The sort is not stable, i.e., after sorting equal elements may appear in a different order than before.
+    /// The sort is not stable, i.e., equal elements may appear in a different order than in the input `v`.
     ///
-    /// The sort implementation is Quicksort.
+    /// The sort implementation is a Quicksort.
     ///
     pub def sort!(v: mut MutList[a]): Unit & Impure with Order[a] = sortWith!(Order.compare, v)
 
@@ -829,9 +829,9 @@ namespace MutList {
     /// Sort MutList `v` so that elements are ordered from low to high according to the `Order` instance for
     /// the values obtained by applying `f` to each element. The MutList is mutated in-place.
     ///
-    /// The sort is not stable, i.e., after sorting equal elements may appear in a different order than before.
+    /// The sort is not stable, i.e., equal elements may appear in a different order than in the input `v`.
     ///
-    /// The sort implementation is Quicksort.
+    /// The sort implementation is a Quicksort.
     ///
     pub def sortBy!(f: a -> b, v: mut MutList[a]): Unit & Impure with Order[b] = sortWith!(Order.compare `on` f, v)
 
@@ -839,9 +839,9 @@ namespace MutList {
     /// Sort MutList `v` so that elements are ordered from low to high according to the comparison function `cmp`.
     /// The MutList is mutated in-place.
     ///
-    /// The sort is not stable, i.e., after sorting equal elements may appear in a different order than before.
+    /// The sort is not stable, i.e., equal elements may appear in a different order than in the input `v`.
     ///
-    /// The sort implementation is Quicksort.
+    /// The sort implementation is a Quicksort.
     ///
     pub def sortWith!(cmp: (a,a) -> Comparison, v: mut MutList[a]): Unit & Impure =
         let MutList(a, l) = v;
