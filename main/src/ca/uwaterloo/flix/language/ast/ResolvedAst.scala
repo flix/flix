@@ -195,8 +195,6 @@ object ResolvedAst {
 
     case class ScopedAssign(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class ScopedAssign2(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
-
   }
 
   sealed trait Pattern {

@@ -1419,7 +1419,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           (constrs2, regionType, eff2) <- visitExp(exp2) // TODO: Eff
           _ <- unifyTypeM(regionType, Type.mkRegion(regionVar, loc), loc)
           resultTyp <- unifyTypeM(tvar, Type.mkScopedRef(elmType, regionVar, loc), loc)
-          resultEff <- unifyTypeM(evar, Type.Pure, loc) // TODO
+          resultEff <- unifyTypeM(evar, Type.Pure, loc) // TODOÆ Need to include eff of regionVar.
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
       case ResolvedAst.Expression.ScopedDeref(exp, tvar, evar, loc) =>
@@ -1446,22 +1446,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           refType <- unifyTypeM(tpe1, Type.mkScopedRef(tpe2, lifetimeVar), loc)
           resultTyp = Type.Unit
           resultEff <- unifyTypeM(evar, Type.mkAnd(eff1 :: eff2 :: lifetimeVar :: Nil), loc)
-        } yield (constrs1 ++ constrs2, resultTyp, resultEff)
-
-      case ResolvedAst.Expression.ScopedAssign2(exp1, exp2, evar, loc) =>
-        // Capture the dependency between life times.
-        // Introduce a fresh type variable for element type.
-        val elmTypeVar = Type.freshVar(Kind.Star, Rigidity.Flexible, Some("t"))
-
-        val lifeVar1 = Type.freshVar(Kind.Bool, Rigidity.Flexible, Some("l"))
-        val lifeVar2 = Type.freshVar(Kind.Bool, Rigidity.Flexible, Some("l"))
-        for {
-          (constrs1, tpe1, _eff1) <- visitExp(exp1) // NB: Deliberately ignore eff1 for this experiment.
-          (constrs2, tpe2, _eff2) <- visitExp(exp2) // NB: Deliberately ignore eff2 for this experiment.
-          refType1 <- unifyTypeM(tpe1, Type.mkScopedRef(elmTypeVar, lifeVar1), loc)
-          refType2 <- unifyTypeM(tpe2, Type.mkScopedRef(elmTypeVar, lifeVar2), loc)
-          resultTyp = Type.Unit
-          resultEff <- unifyTypeM(evar, Type.mkImplies(lifeVar1, lifeVar2), loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
     }
@@ -1859,7 +1843,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
 
       case ResolvedAst.Expression.ScopedRef(exp, _, tvar, evar, loc) =>
         val e = visitExp(exp, subst0)
-        val eff = subst0(evar) // TODO: Eff?
+        val eff = subst0(evar)
         TypedAst.Expression.Ref(e, subst0(tvar), eff, loc)
 
       case ResolvedAst.Expression.ScopedDeref(exp, tvar, evar, loc) =>
@@ -1874,15 +1858,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val eff = subst0(evar)
         TypedAst.Expression.Assign(e1, e2, tpe, eff, loc)
 
-      case ResolvedAst.Expression.ScopedAssign2(exp1, exp2, evar, loc) =>
-        // TODO: Need a deref somewhere here.
-        //        val e1 = visitExp(exp1, subst0)
-        //        val e2 = visitExp(exp2, subst0)
-        //        TypedAst.Expression.Assign(e1, e2, tpe, eff, loc)
-        val inner = TypedAst.Expression.Unit(loc)
-        val tpe = Type.Unit
-        val eff = subst0(evar)
-        TypedAst.Expression.Cast(inner, tpe, eff, loc)
     }
 
     /**

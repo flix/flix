@@ -915,13 +915,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           NamedAst.Expression.ScopedAssign(e1, e2, evar, loc)
       }
 
-    case WeededAst.Expression.ScopedAssign2(exp1, exp2, loc) =>
-      mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0)) {
-        case (e1, e2) =>
-          val evar = Type.freshVar(Kind.Bool)
-          NamedAst.Expression.ScopedAssign2(e1, e2, evar, loc)
-      }
-
   }
 
   /**
@@ -1319,7 +1312,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.ScopedRef(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.ScopedDeref(exp, loc) => freeVars(exp)
     case WeededAst.Expression.ScopedAssign(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
-    case WeededAst.Expression.ScopedAssign2(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
 
   }
 
