@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix
 
+import ca.uwaterloo.flix.util.LibLevel
 import org.scalatest.FunSuite
 
 class TestMain extends FunSuite {
@@ -152,12 +153,6 @@ class TestMain extends FunSuite {
     assert(opts.xbenchmarkThroughput)
   }
 
-  test("--Xcore") {
-    val args = Array("--Xcore", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xcore)
-  }
-
   test("--Xdebug") {
     val args = Array("--Xdebug", "p.flix")
     val opts = Main.parseCmdOpts(args).get
@@ -200,4 +195,21 @@ class TestMain extends FunSuite {
     assert(opts.xstatistics)
   }
 
+  test("--Xlib nix") {
+    val args = Array("--Xlib", "nix", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xlib == LibLevel.Nix)
+  }
+
+  test("--Xlib min") {
+    val args = Array("--Xlib", "min", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xlib == LibLevel.Min)
+  }
+
+  test("--Xlib all") {
+    val args = Array("--Xlib", "all", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xlib == LibLevel.All)
+  }
 }

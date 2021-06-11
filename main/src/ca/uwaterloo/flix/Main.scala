@@ -16,10 +16,6 @@
 
 package ca.uwaterloo.flix
 
-import java.io.{File, PrintWriter}
-import java.net.BindException
-import java.nio.file.Paths
-
 import ca.uwaterloo.flix.api.lsp.LanguageServer
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.runtime.shell.Shell
@@ -27,6 +23,10 @@ import ca.uwaterloo.flix.tools._
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt._
 import flix.runtime.FlixError
+
+import java.io.{File, PrintWriter}
+import java.net.BindException
+import java.nio.file.Paths
 
 /**
   * The main entry point for the Flix compiler and runtime.
@@ -85,7 +85,7 @@ object Main {
 
     // construct flix options.
     val options = Options.Default.copy(
-      core = cmdOpts.xcore,
+      lib = cmdOpts.xlib,
       debug = cmdOpts.xdebug,
       documentor = cmdOpts.documentor,
       json = cmdOpts.json,
@@ -243,7 +243,7 @@ object Main {
                      xallowredundancies: Boolean = false,
                      xbenchmarkPhases: Boolean = false,
                      xbenchmarkThroughput: Boolean = false,
-                     xcore: Boolean = false,
+                     xlib: LibLevel = LibLevel.All,
                      xdebug: Boolean = false,
                      xinvariants: Boolean = false,
                      xnoboolunification: Boolean = false,
@@ -286,6 +286,13 @@ object Main {
     * @param args the arguments array.
     */
   def parseCmdOpts(args: Array[String]): Option[CmdOpts] = {
+    implicit val readInclusion: scopt.Read[LibLevel] = scopt.Read.reads {
+      case "nix" => LibLevel.Nix
+      case "min" => LibLevel.Min
+      case "all" => LibLevel.All
+      case arg => throw new IllegalArgumentException(s"'$arg' is not a valid library level. Valid options are 'all', 'min', and 'nix'.")
+    }
+
     val parser = new scopt.OptionParser[CmdOpts]("flix") {
 
       // Head
@@ -387,9 +394,9 @@ object Main {
       opt[Unit]("Xbenchmark-throughput").action((_, c) => c.copy(xbenchmarkThroughput = true)).
         text("[experimental] benchmarks the throughput of the entire compiler.")
 
-      // Xcore.
-      opt[Unit]("Xcore").action((_, c) => c.copy(xcore = true)).
-        text("[experimental] disables loading of all non-essential namespaces.")
+      // Xlib
+      opt[LibLevel]("Xlib").action((arg, c) => c.copy(xlib = arg)).
+        text("[experimental] sets the amount of StdLib content to include (nix, min, all).")
 
       // Xdebug.
       opt[Unit]("Xdebug").action((_, c) => c.copy(xdebug = true)).

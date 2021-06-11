@@ -17,7 +17,7 @@ class LangSuite extends Suites(
   new FlixTest("Test.Dec.Enum", "main/test/flix/Test.Dec.Enum.flix"),
   new FlixTest("Test.Dec.Namespace", "main/test/flix/Test.Dec.Namespace.flix"),
   new FlixTest("Test.Dec.OpaqueType", "main/test/flix/Test.Dec.OpaqueType.flix"),
-  new FlixTest("Test.Dec.RelAlias", "main/test/flix/Test.Dec.RelAlias.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Dec.RelAlias", "main/test/flix/Test.Dec.RelAlias.flix")(Options.TestWithLibAll),
   new FlixTest("Test.Dec.TypeAlias", "main/test/flix/Test.Dec.TypeAlias.flix"),
 
   //
@@ -29,7 +29,7 @@ class LangSuite extends Suites(
   // Effects.
   //
   new FlixTest("Test.Eff.Advanced", "main/test/flix/Test.Eff.Advanced.flix"),
-  new FlixTest("Test.Eff.Polymorphism", "main/test/flix/Test.Eff.Polymorphism.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Eff.Polymorphism", "main/test/flix/Test.Eff.Polymorphism.flix")(Options.TestWithLibAll),
 
   //
   // Equality.
@@ -48,8 +48,8 @@ class LangSuite extends Suites(
   new FlixTest("Test.Equality.Tuple", "main/test/flix/Test.Equality.Tuple.flix"),
   new FlixTest("Test.Equality.Unit", "main/test/flix/Test.Equality.Unit.flix"),
 
-  new FlixTest("Test.Equality.Map", "main/test/flix/Test.Equality.Map.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Equality.Set", "main/test/flix/Test.Equality.Set.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Equality.Map", "main/test/flix/Test.Equality.Map.flix")(Options.TestWithLibAll),
+  new FlixTest("Test.Equality.Set", "main/test/flix/Test.Equality.Set.flix")(Options.TestWithLibAll),
 
   //
   // Apply.Tail.
@@ -69,12 +69,12 @@ class LangSuite extends Suites(
     "main/test/flix/Test.Exp.ArraySliceCopy.flix",
     "main/test/flix/Test.Exp.ArrayStore.flix",
     "main/test/flix/Test.Exp.ArrayNew.flix"
-  ), Options.TestWithLibrary),
+  ), Options.TestWithLibAll),
 
   //
   // Ascribe.
   //
-  new FlixTest("Test.Exp.Ascribe", "main/test/flix/Test.Exp.Ascribe.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Exp.Ascribe", "main/test/flix/Test.Exp.Ascribe.flix")(Options.TestWithLibAll),
 
   //
   // BigInt.
@@ -88,7 +88,7 @@ class LangSuite extends Suites(
   new FlixTest("Test.Exp.Binary.Bitwise", "main/test/flix/Test.Exp.Binary.Bitwise.flix"),
   new FlixTest("Test.Exp.Binary.Comparison", "main/test/flix/Test.Exp.Binary.Comparison.flix"),
   new FlixTest("Test.Exp.Binary.Logic", "main/test/flix/Test.Exp.Binary.Logic.flix"),
-  new FlixTest("Test.Exp.Binary.Spaceship", "main/test/flix/Test.Exp.Binary.Spaceship.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Exp.Binary.Spaceship", "main/test/flix/Test.Exp.Binary.Spaceship.flix")(Options.TestWithLibAll),
 
   //
   // Block.
@@ -98,7 +98,7 @@ class LangSuite extends Suites(
   //
   // Cast.
   //
-  new FlixTest("Test.Exp.Cast", "main/test/flix/Test.Exp.Cast.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Exp.Cast", "main/test/flix/Test.Exp.Cast.flix")(Options.TestWithLibAll),
 
   //
   // Char.
@@ -108,16 +108,16 @@ class LangSuite extends Suites(
   //
   // Choose.
   //
-  new FlixTest("Test.Exp.Choose", "main/test/flix/Test.Exp.Choose.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Exp.ChooseStar", "main/test/flix/Test.Exp.ChooseStar.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Exp.Choose", "main/test/flix/Test.Exp.Choose.flix")(Options.TestWithLibAll),
+  new FlixTest("Test.Exp.ChooseStar", "main/test/flix/Test.Exp.ChooseStar.flix")(Options.TestWithLibAll),
 
   //
   // Concurrency.
   //
-  new FlixTest("Test.Exp.Concurrency.Buffered", "main/test/flix/Test.Exp.Concurrency.Buffered.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Exp.Concurrency.NewChannel", "main/test/flix/Test.Exp.Concurrency.NewChannel.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Exp.Concurrency.Unbuffered", "main/test/flix/Test.Exp.Concurrency.Unbuffered.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Exp.Concurrency.Spawn", "main/test/flix/Test.Exp.Concurrency.Spawn.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Exp.Concurrency.Buffered", "main/test/flix/Test.Exp.Concurrency.Buffered.flix")(Options.TestWithLibAll),
+  new FlixTest("Test.Exp.Concurrency.NewChannel", "main/test/flix/Test.Exp.Concurrency.NewChannel.flix")(Options.TestWithLibAll),
+  new FlixTest("Test.Exp.Concurrency.Unbuffered", "main/test/flix/Test.Exp.Concurrency.Unbuffered.flix")(Options.TestWithLibAll),
+  new FlixTest("Test.Exp.Concurrency.Spawn", "main/test/flix/Test.Exp.Concurrency.Spawn.flix")(Options.TestWithLibAll),
   new FlixTest("Test.Exp.Concurrency.Select", "main/test/flix/Test.Exp.Concurrency.Select.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
 
   //
@@ -141,7 +141,7 @@ class LangSuite extends Suites(
     "main/test/flix/Test.Exp.Fixpoint.Query.flix",
     "main/test/flix/Test.Exp.Fixpoint.Solve.flix",
     "main/test/flix/Test.Exp.Fixpoint.Solve.Lattice.flix"
-  ), Options.TestWithLibrary),
+  ), Options.TestWithLibAll),
 
   //
   // Force.
@@ -151,7 +151,7 @@ class LangSuite extends Suites(
   //
   // Hole.
   //
-  new FlixTest("Test.Exp.Hole", "main/test/flix/Test.Exp.Hole.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Exp.Hole", "main/test/flix/Test.Exp.Hole.flix")(Options.TestWithLibAll),
 
   //
   // IfThenElse.
@@ -180,7 +180,7 @@ class LangSuite extends Suites(
   // JVM.
   //
   new FlixTest("Test.Exp.Jvm.GetField", "main/test/flix/Test.Exp.Jvm.GetField.flix"),
-  new FlixTest("Test.Exp.Jvm.GetStaticField", "main/test/flix/Test.Exp.Jvm.GetStaticField.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Exp.Jvm.GetStaticField", "main/test/flix/Test.Exp.Jvm.GetStaticField.flix")(Options.TestWithLibAll),
   new FlixTest("Test.Exp.Jvm.InvokeConstructor", "main/test/flix/Test.Exp.Jvm.InvokeConstructor.flix"),
   new FlixTest("Test.Exp.Jvm.InvokeMethod", "main/test/flix/Test.Exp.Jvm.InvokeMethod.flix"),
   new FlixTest("Test.Exp.Jvm.InvokeStaticMethod", "main/test/flix/Test.Exp.Jvm.InvokeStaticMethod.flix"),
@@ -202,7 +202,7 @@ class LangSuite extends Suites(
   //
   new FlixTest("Test.Exp.Let", "main/test/flix/Test.Exp.Let.flix"),
   new FlixTest("Test.Exp.Let.Match", "main/test/flix/Test.Exp.Let.Match.flix"),
-  new FlixTest("Test.Exp.Let.MatchStar", "main/test/flix/Test.Exp.Let.MatchStar.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Exp.Let.MatchStar", "main/test/flix/Test.Exp.Let.MatchStar.flix")(Options.TestWithLibAll),
 
   //
   // List.
@@ -257,13 +257,13 @@ class LangSuite extends Suites(
     "main/test/flix/Test.Exp.Reference.Ref.flix",
     "main/test/flix/Test.Exp.Reference.Deref.flix",
     "main/test/flix/Test.Exp.Reference.Precedence.flix"
-  ), Options.TestWithLibrary),
+  ), Options.TestWithLibAll),
 
   //
   // Tag.
   //
   new FlixTest("Test.Exp.Tag", "main/test/flix/Test.Exp.Tag.flix"),
-  new FlixTest("Test.Exp.Tag.Lambda", "main/test/flix/Test.Exp.Tag.Lambda.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Exp.Tag.Lambda", "main/test/flix/Test.Exp.Tag.Lambda.flix")(Options.TestWithLibAll),
 
   //
   // Tuple.
@@ -300,12 +300,12 @@ class LangSuite extends Suites(
     "main/test/flix/Test.Predicate.Guard.flix",
     "main/test/flix/Test.Predicate.Nullary.flix",
     // "main/test/flix/Test.Predicate.Union.flix" // TODO
-  ), Options.TestWithLibrary),
+  ), Options.TestWithLibAll),
 
   //
   // Stratified Negation.
   //
-  new FlixTest("Test.Stratification", "main/test/flix/Test.Stratification.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Stratification", "main/test/flix/Test.Stratification.flix")(Options.TestWithLibAll),
 
   //
   // Term.
@@ -320,12 +320,12 @@ class LangSuite extends Suites(
     "main/test/flix/Test.Term.Var.CapturedVar.flix",
     "main/test/flix/Test.Term.Var.QuantVar.flix",
     "main/test/flix/Test.Term.Var.WildVar.flix"
-  ), Options.TestWithLibrary),
+  ), Options.TestWithLibAll),
 
   //
   // Type Alias.
   //
-  new FlixTest("Test.TypeAlias.Rel", "main/test/flix/Test.TypeAlias.Rel.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.TypeAlias.Rel", "main/test/flix/Test.TypeAlias.Rel.flix")(Options.TestWithLibAll),
 
   //
   // Unused.
