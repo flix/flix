@@ -325,6 +325,9 @@ object Indexer {
     case Expression.FixpointProjectOut(_, exp, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
+    case Expression.LetRegion(sym, exp, _, _, _) =>
+      visitExp(exp) ++ Index.occurrenceOf(exp0)
+
   }
 
   /**
