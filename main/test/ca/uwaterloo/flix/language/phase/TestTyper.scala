@@ -23,7 +23,7 @@ import org.scalatest.FunSuite
 
 class TestTyper extends FunSuite with TestUtils {
 
-  val DefaultOptions: Options = Options.TestWithoutLibrary
+  val DefaultOptions: Options = Options.TestWithLibMin
 
   test("TestLeq01") {
     val input =

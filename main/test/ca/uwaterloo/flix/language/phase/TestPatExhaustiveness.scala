@@ -25,7 +25,7 @@ import org.scalatest.FunSuite
 
 class TestPatExhaustiveness extends FunSuite with TestUtils {
 
-  val DefaultOptions: Options = Options.TestWithoutLibrary
+  val DefaultOptions: Options = Options.TestWithLibMin
 
   test("Pattern.Literal.Char.01") {
     val input =

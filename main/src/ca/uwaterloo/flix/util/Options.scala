@@ -24,7 +24,7 @@ object Options {
     * Default options.
     */
   val Default: Options = Options(
-    inclusion = LibLevel.All,
+    lib = LibLevel.All,
     debug = false,
     documentor = false,
     invariants = false,
@@ -51,28 +51,28 @@ object Options {
   /**
     * Default test options.
     */
-  val DefaultTest: Options = Default.copy(inclusion = LibLevel.All, test = true, verbosity = Verbosity.Silent)
+  val DefaultTest: Options = Default.copy(lib = LibLevel.All, test = true, verbosity = Verbosity.Silent)
 
   /**
     * Default test options with the standard library.
     */
-  val TestWithLibrary: Options = DefaultTest
+  val TestWithLibAll: Options = DefaultTest
 
   /**
-    * Default test options without the standard library.
+    * Default test options with the minimal library.
     */
-  val TestWithoutLibrary: Options = DefaultTest.copy(inclusion = LibLevel.Min)
+  val TestWithLibMin: Options = DefaultTest.copy(lib = LibLevel.Min)
 
   /**
     * Default test options without any library.
     */
-  val TestWithoutCore: Options = DefaultTest.copy(inclusion = LibLevel.Nix)
+  val TestWithLibNix: Options = DefaultTest.copy(lib = LibLevel.Nix)
 }
 
 /**
   * General Flix options.
   *
-  * @param inclusion          selects the level of libraries to include.
+  * @param lib                selects the level of libraries to include.
   * @param debug              enables the emission of debugging information.
   * @param documentor         enables generation of flixdoc.
   * @param invariants         enables checking of compiler invariants.
@@ -94,7 +94,7 @@ object Options {
   * @param xnostratifier      disables computation of stratification.
   * @param xstatistics        prints compiler statistics.
   */
-case class Options(inclusion: LibLevel,
+case class Options(lib: LibLevel,
                    debug: Boolean,
                    documentor: Boolean,
                    invariants: Boolean,

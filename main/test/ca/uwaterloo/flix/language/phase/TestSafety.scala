@@ -24,7 +24,7 @@ import org.scalatest.FunSuite
 
 class TestSafety extends FunSuite with TestUtils {
 
-  val DefaultOptions: Options = Options.TestWithoutLibrary
+  val DefaultOptions: Options = Options.TestWithLibMin
 
   test("NonPositivelyBoundVariable.01") {
     val input =

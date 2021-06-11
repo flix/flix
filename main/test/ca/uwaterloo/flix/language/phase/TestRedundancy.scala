@@ -7,7 +7,7 @@ import org.scalatest.FunSuite
 
 class TestRedundancy extends FunSuite with TestUtils {
 
-  val DefaultOptions: Options = Options.TestWithoutLibrary
+  val DefaultOptions: Options = Options.TestWithLibMin
 
   test("HiddenVarSym.Let.01") {
     val input =

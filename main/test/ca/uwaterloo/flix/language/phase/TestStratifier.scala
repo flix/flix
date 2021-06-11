@@ -24,7 +24,7 @@ import org.scalatest.FunSuite
 
 class TestStratifier extends FunSuite with TestUtils {
 
-  val DefaultOptions: Options = Options.TestWithoutLibrary
+  val DefaultOptions: Options = Options.TestWithLibMin
 
   test("Stratification.01") {
     val input =

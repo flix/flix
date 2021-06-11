@@ -23,7 +23,7 @@ import org.scalatest.FunSuite
 
 class TestNamer extends FunSuite with TestUtils {
 
-  val DefaultOptions: Options = Options.TestWithoutLibrary
+  val DefaultOptions: Options = Options.TestWithLibMin
 
   test("AmbiguousVarOrUse.01") {
     val input =

@@ -24,7 +24,7 @@ import org.scalatest.FunSuite
 
 class TestInstances extends FunSuite with TestUtils {
 
-  val DefaultOptions: Options = Options.TestWithoutLibrary
+  val DefaultOptions: Options = Options.TestWithLibMin
 
   test("Test.OverlappingInstance.01") {
     val input =

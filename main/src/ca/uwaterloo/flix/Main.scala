@@ -85,7 +85,7 @@ object Main {
 
     // construct flix options.
     val options = Options.Default.copy(
-      inclusion = cmdOpts.xlib,
+      lib = cmdOpts.xlib,
       debug = cmdOpts.xdebug,
       documentor = cmdOpts.documentor,
       json = cmdOpts.json,
@@ -290,7 +290,7 @@ object Main {
       case "nix" => LibLevel.Nix
       case "min" => LibLevel.Min
       case "all" => LibLevel.All
-      case _ => throw new IllegalArgumentException("illegal library argument") // Read should catch this and throw a better error
+      case arg => throw new IllegalArgumentException(s"$arg is not a valid library level. Valid options are 'all', 'min', and 'nix'.")
     }
 
     val parser = new scopt.OptionParser[CmdOpts]("flix") {

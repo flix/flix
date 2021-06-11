@@ -20,6 +20,6 @@ import ca.uwaterloo.flix.util.{FlixTest, Ignore, Options}
 import org.scalatest.Suites
 
 class TestTutorials extends Suites(
-  new FlixTest("TestIntroduction", "main/src/tutorials/introduction.flix")(Options.TestWithLibrary),
-  new FlixTest("TestInterpreter", "main/src/tutorials/interpreter.flix")(Options.TestWithLibrary)
+  new FlixTest("TestIntroduction", "main/src/tutorials/introduction.flix")(Options.TestWithLibAll),
+  new FlixTest("TestInterpreter", "main/src/tutorials/interpreter.flix")(Options.TestWithLibAll)
 )
