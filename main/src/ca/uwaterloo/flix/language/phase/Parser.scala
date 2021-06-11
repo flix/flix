@@ -588,12 +588,19 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
+    // TODO: Why are these not primary?
     def Ref: Rule1[ParsedAst.Expression] = rule {
-      (SP ~ keyword("ref") ~ WS ~ Ref ~ SP ~> ParsedAst.Expression.Ref) | ScopedDeref
+      (SP ~ keyword("ref") ~ WS ~ Ref ~ SP ~> ParsedAst.Expression.Ref) | ScopedRef
+    }
+
+    def ScopedRef: Rule1[ParsedAst.Expression] = rule {
+      // TODO: Two keywords
+      (SP ~ keyword("scoped ref") ~ WS ~ Expression ~ WS ~ keyword("in") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ScopedRef) | ScopedDeref
     }
 
     def ScopedDeref: Rule1[ParsedAst.Expression] = rule {
-      (SP ~ keyword("scoped_deref") ~ WS ~ ScopedDeref ~ SP ~> ParsedAst.Expression.ScopedDeref) | Deref
+      // TODO: Two keywords
+      (SP ~ keyword("scoped deref") ~ WS ~ ScopedDeref ~ SP ~> ParsedAst.Expression.ScopedDeref) | Deref
     }
 
     def Deref: Rule1[ParsedAst.Expression] = rule {
@@ -635,7 +642,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetScopedRef | LetMatch | LetMatchStar | LetUse | LetImport | IfThenElse | Choose | Match | LambdaMatch | TryCatch | Lambda | Tuple |
+      LetRegion | LetMatch | LetMatchStar | LetUse | LetImport | IfThenElse | Choose | Match | LambdaMatch | TryCatch | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | Spawn | Lazy | Force | Intrinsic | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointProject | FixpointSolveWithProject | FixpointQueryWithSelect |
@@ -687,8 +694,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ Use ~ optWS ~ ";" ~ optWS ~ Expressions.Stm ~ SP ~> ParsedAst.Expression.Use
     }
 
-    def LetScopedRef: Rule1[ParsedAst.Expression.LetScopedRef] = rule {
-      SP ~ keyword("let scoped") ~ WS ~ Names.Variable ~ optWS ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.LetScopedRef
+    def LetRegion: Rule1[ParsedAst.Expression.LetRegion] = rule {
+      SP ~ keyword("let region") ~ WS ~ Names.Variable ~ optWS ~ ";" ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.LetRegion
     }
 
     def LetImport: Rule1[ParsedAst.Expression] = {

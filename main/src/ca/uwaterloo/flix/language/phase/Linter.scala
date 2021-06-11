@@ -238,6 +238,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.FixpointProjectOut(_, exp, _, _, _) => visitExp(exp, lint0)
 
+      case Expression.LetRegion(_, exp, _, _, _) => visitExp(exp, lint0)
 
     }
 
@@ -947,6 +948,10 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       case Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) =>
         val e = apply(exp)
         Expression.FixpointProjectOut(pred, e, tpe, eff, loc)
+
+      case Expression.LetRegion(sym, exp, tpe, eff, loc) =>
+        val e = apply(exp)
+        Expression.LetRegion(sym, e, tpe, eff, loc)
 
       case Expression.Existential(_, _, _) => throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
