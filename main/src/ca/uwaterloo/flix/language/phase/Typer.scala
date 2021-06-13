@@ -202,7 +202,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
       val fparams = getFormalParams(fparams0, subst)
       val returnType = getReturnType(sc.base, fparams.length)
       Validation.mapN(annVal) {
-        ann => TypedAst.Spec(doc, ann, mod, tparams, fparams, sc, eff, Ast.Meta(returnType), loc)
+        ann => TypedAst.Spec(doc, ann, mod, tparams, fparams, sc, eff, returnType, loc)
       }
   }
 
