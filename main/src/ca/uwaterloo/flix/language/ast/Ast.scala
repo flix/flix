@@ -446,9 +446,4 @@ object Ast {
     */
   case class ClassContext(superClasses: List[Symbol.ClassSym], instances: List[Ast.Instance])
 
-  /**
-    * Marks a value as metadata: the compiler must not rely on this information.
-    */
-  case class Meta[T](value: T)
-
 }
