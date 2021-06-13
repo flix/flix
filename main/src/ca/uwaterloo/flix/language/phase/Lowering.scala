@@ -130,11 +130,18 @@ object Lowering extends Phase[Root, Root] {
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Lowering") {
     val defs = ParOps.parMap(root.defs.values, (d: Def) => visitDef(d)(root, flix))
-
-    // TODO: Matt: Visit classes and instances.
+    val sigs = ParOps.parMap(root.sigs.values, (s: Sig) => visitSig(s)(root, flix))
+    val instances = ParOps.parMap(root.instances.values, (insts: List[Instance]) => insts.map(i => visitInstance(i)(root, flix)))
 
     val newDefs = defs.map(kv => kv.sym -> kv).toMap
-    root.copy(defs = newDefs).toSuccess
+    val newSigs = sigs.map(kv => kv.sym -> kv).toMap
+    val newInstances = instances.map(kv => kv.head.sym -> kv).toMap
+
+    // Sigs are shared between the `sigs` field and the `classes` field.
+    // Instead of visiting twice, we visit the `sigs` field and then look up the results when visiting classes.
+    val classes = ParOps.parMap(root.classes.values, (c: Class) => visitClass(c, newSigs)(root, flix))
+    val newClasses = classes.map(kv => kv.sym -> kv).toMap
+    root.copy(defs = newDefs, sigs = newSigs, instances = newInstances, classes = newClasses).toSuccess
   }
 
   /**
@@ -145,6 +152,47 @@ object Lowering extends Phase[Root, Root] {
       val spec = visitSpec(spec0)
       val impl = visitImpl(impl0)
       Def(sym, spec, impl)
+  }
+
+  /**
+    * Lowers the given signature `sig0`.
+    */
+  private def visitSig(sig0: Sig)(implicit root: Root, flix: Flix): Sig = sig0 match {
+    case Sig(sym, spec0, impl0) =>
+      val spec = visitSpec(spec0)
+      val impl = impl0.map(visitImpl)
+      Sig(sym, spec, impl)
+  }
+
+  /**
+    * Lowers the given instance `inst0`.
+    */
+  private def visitInstance(inst0: Instance)(implicit root: Root, flix: Flix): Instance = inst0 match {
+    case Instance(doc, mod, sym, tpe0, tconstrs0, defs0, ns, loc) =>
+      val tpe = visitType(tpe0)
+      val tconstrs = tconstrs0.map(visitTypeConstraint)
+      val defs = defs0.map(visitDef)
+      Instance(doc, mod, sym, tpe, tconstrs, defs, ns, loc)
+  }
+
+  /**
+    * Lowers the given type constraint `tconstr0`.
+    */
+  private def visitTypeConstraint(tconstr0: Ast.TypeConstraint)(implicit root: Root, flix: Flix): Ast.TypeConstraint = tconstr0 match {
+    case Ast.TypeConstraint(sym, tpe0, loc) =>
+      val tpe = visitType(tpe0)
+      Ast.TypeConstraint(sym, tpe, loc)
+  }
+
+  /**
+    * Lowers the given class `clazz0`, with the given lowered sigs `sigs`.
+    */
+  private def visitClass(clazz0: Class, sigs: Map[Symbol.SigSym, Sig])(implicit root: Root, flix: Flix): Class = clazz0 match {
+    case Class(doc, mod, sym, tparam, superClasses0, signatures0, laws0, loc) =>
+      val superClasses = superClasses0.map(visitTypeConstraint)
+      val signatures = signatures0.map(sig => sigs(sig.sym))
+      val laws = laws0.map(visitDef)
+      Class(doc, mod, sym, tparam, superClasses, signatures, laws, loc)
   }
 
   /**

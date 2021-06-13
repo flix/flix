@@ -341,4 +341,8 @@ class LangSuite extends Suites(
   new FlixTest("Test.Use.Tag", "main/test/flix/Test.Use.Tag.flix"),
   new FlixTest("Test.Use.Type", "main/test/flix/Test.Use.Type.flix"),
 
+  //
+  // Integration.
+  //
+  new FlixTest("Test.Integ.Class.Schema", "main/test/flix/Test.Integ.Class.Schema.flix")(Options.TestWithLibAll),
 )
