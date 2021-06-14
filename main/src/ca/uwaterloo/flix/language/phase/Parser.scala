@@ -586,12 +586,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     // TODO: Why are these not primary?
     def Ref: Rule1[ParsedAst.Expression] = rule {
-      (SP ~ keyword("ref") ~ WS ~ Ref ~ SP ~> ParsedAst.Expression.Ref) | ScopedRef
-    }
-
-    def ScopedRef: Rule1[ParsedAst.Expression] = rule {
-      // TODO: Two keywords
-      (SP ~ keyword("scoped ref") ~ WS ~ Expression ~ WS ~ keyword("in") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.RefWithRegion) | Deref
+      (SP ~ keyword("ref") ~ WS ~ Ref ~ optional(WS ~ keyword("@") ~ WS ~ Expression) ~ SP ~> ParsedAst.Expression.Ref) | Deref
     }
 
     def Deref: Rule1[ParsedAst.Expression] = rule {

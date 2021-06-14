@@ -781,11 +781,12 @@ object ParsedAst {
     /**
       * Reference expression.
       *
-      * @param sp1 the position of the first character in the expression.
-      * @param exp the expression to reference.
-      * @param sp2 the position of the last character in the expression.
+      * @param sp1  the position of the first character in the expression.
+      * @param exp1 the reference.
+      * @param exp2 the optional region.
+      * @param sp2  the position of the last character in the expression.
       */
-    case class Ref(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class Ref(sp1: SourcePosition, exp1: ParsedAst.Expression, exp2: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Dereference expression.
@@ -984,9 +985,6 @@ object ParsedAst {
     // TODO: Experimental: SHOULD NOT BE USED AND WILL BE REMOVED!
     // TODO: A region variable should not really be a VarSym but a different kind of entity.
     case class LetRegion(sp1: SourcePosition, ident: Name.Ident, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    // TODO: Experimental: SHOULD NOT BE USED AND WILL BE REMOVED!
-    case class RefWithRegion(sp1: SourcePosition, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
   }
 

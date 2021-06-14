@@ -1178,16 +1178,18 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           }
       }
 
-    case ParsedAst.Expression.Ref(sp1, exp, sp2) =>
-      for {
-        e <- visitExp(exp)
-      } yield WeededAst.Expression.Ref(e, mkSL(sp1, sp2))
+    case ParsedAst.Expression.Ref(sp1, exp, reg, sp2) => reg match {
+      case None =>
+        for {
+          e <- visitExp(exp)
+        } yield WeededAst.Expression.Ref(e, mkSL(sp1, sp2))
 
-    case ParsedAst.Expression.RefWithRegion(sp1, exp1, exp2, sp2) =>
-      mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) =>
-          WeededAst.Expression.RefWithRegion(e1, e2, mkSL(sp1, sp2))
-      }
+      case Some(exp2) =>
+        for {
+          e <- visitExp(exp)
+          e2 <- visitExp(exp2)
+        } yield WeededAst.Expression.RefWithRegion(e, e2, mkSL(sp1, sp2))
+    }
 
     case ParsedAst.Expression.Deref(sp1, exp, sp2) =>
       for {
@@ -2315,8 +2317,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.FSet(sp1, _, _) => sp1
     case ParsedAst.Expression.FMap(sp1, _, _) => sp1
     case ParsedAst.Expression.Interpolation(sp1, _, _) => sp1
-    case ParsedAst.Expression.Ref(sp1, _, _) => sp1
-    case ParsedAst.Expression.RefWithRegion(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.Ref(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Deref(sp1, _, _) => sp1
     case ParsedAst.Expression.Assign(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Existential(sp1, _, _, _, _) => sp1
