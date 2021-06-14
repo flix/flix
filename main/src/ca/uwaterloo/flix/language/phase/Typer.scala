@@ -1402,36 +1402,39 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = Type.mkAnd(eff1, eff2)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
-
-      case ResolvedAst.Expression.LetScopedRef(sym, exp1, exp2, evar, loc) =>
-        // TODO: Scoped: Does Purify also need to be applied to the result type?
-        // TODO: Scoped: It seems that it could refer to the rigid variable?
-
-        // Introduce a rigid variable for the lifetime of `exp1`.
-        val lifetimeVar = Type.freshVar(Kind.Bool, Rigidity.Rigid, Some("l"))
+      case ResolvedAst.Expression.LetRegion(sym, exp, evar, loc) =>
+        // Introduce a rigid variable for the region of `exp`.
+        val regionVar = Type.freshVar(Kind.Bool, Rigidity.Rigid, Some(sym.text))
         for {
-          (constrs1, tpe1, eff1) <- visitExp(exp1)
-          // TODO: Scoped: The next line *MUST OCCUR BEFORE* the call to visitExp(exp2).
-          // TODO: Scoped: The reason is that otherwise the variable does not become rigid.
-          // TODO: Scoped: It is not exactly clear to me what can be done to fix this brittleness.
-          boundVar <- unifyTypeM(sym.tvar, Type.mkScopedRef(tpe1, lifetimeVar), loc)
-          (constrs2, tpe2, eff2) <- visitExp(exp2)
-          resultTyp = tpe2
-          resultEff <- unifyTypeM(evar, Type.mkAnd(eff1, purify(lifetimeVar, eff2)), loc)
+          _ <- unifyTypeM(sym.tvar, Type.mkRegion(regionVar, loc), loc)
+          (constrs, tpe, eff) <- visitExp(exp)
+          purifiedEff <- purifyEffM(regionVar, eff)
+          resultEff <- unifyTypeM(evar, purifiedEff, loc)
+          resultTyp = tpe
+        } yield (constrs, resultTyp, resultEff)
+
+      case ResolvedAst.Expression.ScopedRef(exp1, exp2, tvar, evar, loc) =>
+        val regionVar = Type.freshVar(Kind.Bool, Rigidity.Flexible, Some("l"))
+        for {
+          (constrs1, elmType, eff1) <- visitExp(exp1)
+          (constrs2, regionType, eff2) <- visitExp(exp2)
+          _ <- unifyTypeM(regionType, Type.mkRegion(regionVar, loc), loc)
+          resultTyp <- unifyTypeM(tvar, Type.mkScopedRef(elmType, regionVar, loc), loc)
+          resultEff <- unifyTypeM(evar, Type.mkAnd(eff1, eff2, regionVar), loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
       case ResolvedAst.Expression.ScopedDeref(exp, tvar, evar, loc) =>
         // Introduce a fresh type variable for element type.
         val elmTypeVar = Type.freshVar(Kind.Star, Rigidity.Flexible, Some("t"))
 
-        // Introduce a flexible variable for the lifetime.
+        // Introduce a flexible variable for the region variable.
         // This variable will become unified with the rigid variable.
-        val lifetimeVar = Type.freshVar(Kind.Bool, Rigidity.Flexible, Some("l"))
+        val regionVar = Type.freshVar(Kind.Bool, Rigidity.Flexible, Some("l"))
         for {
-          (constrs, tpe, _) <- visitExp(exp)
-          refType <- unifyTypeM(tpe, Type.mkScopedRef(elmTypeVar, lifetimeVar), loc)
+          (constrs, tpe, eff) <- visitExp(exp)
+          refType <- unifyTypeM(tpe, Type.mkScopedRef(elmTypeVar, regionVar, loc), loc)
           resultTyp <- unifyTypeM(tvar, elmTypeVar, loc)
-          resultEff <- unifyTypeM(evar, lifetimeVar, loc)
+          resultEff <- unifyTypeM(evar, Type.mkAnd(eff, regionVar), loc)
         } yield (constrs, resultTyp, resultEff)
 
       case ResolvedAst.Expression.ScopedAssign(exp1, exp2, evar, loc) =>
@@ -1836,14 +1839,16 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val solveExp = TypedAst.Expression.FixpointSolve(mergeExp, stf, tpe, eff, loc)
         TypedAst.Expression.FixpointProjectOut(pred, solveExp, tpe, eff, loc)
 
-      case ResolvedAst.Expression.LetScopedRef(sym, exp1, exp2, evar, loc) =>
-        val inner = visitExp(exp1, subst0)
-        val innerEff = subst0(evar) // TODO: Is this right?
-        val e1 = TypedAst.Expression.Ref(inner, Type.mkRef(inner.tpe), innerEff, loc)
-        val e2 = visitExp(exp2, subst0)
-        val tpe = e2.tpe
+      case ResolvedAst.Expression.LetRegion(sym, exp, evar, loc) =>
+        val e = visitExp(exp, subst0)
+        val tpe = e.tpe
         val eff = subst0(evar)
-        TypedAst.Expression.Let(sym, e1, e2, tpe, eff, loc)
+        TypedAst.Expression.LetRegion(sym, e, tpe, eff, loc)
+
+      case ResolvedAst.Expression.ScopedRef(exp, _, tvar, evar, loc) =>
+        val e = visitExp(exp, subst0)
+        val eff = subst0(evar)
+        TypedAst.Expression.Ref(e, subst0(tvar), eff, loc)
 
       case ResolvedAst.Expression.ScopedDeref(exp, tvar, evar, loc) =>
         val e = visitExp(exp, subst0)
@@ -1856,6 +1861,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val tpe = Type.Unit
         val eff = subst0(evar)
         TypedAst.Expression.Assign(e1, e2, tpe, eff, loc)
+
     }
 
     /**
@@ -2172,37 +2178,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     * Returns an open schema type.
     */
   private def mkAnySchemaType()(implicit flix: Flix): Type = Type.freshVar(Kind.Schema)
-
-  /**
-    * Returns the given Boolean formula `tpe` with the (possibly rigid) type variable `tvar` replaced by `True`.
-    */
-  private def purify(tvar: Type.Var, tpe: Type): Type = tpe.typeConstructor match {
-    case None => tpe match {
-      case Type.Var(id, _, _, _) =>
-        if (tvar.id == id) Type.True else tpe
-      case _ => throw InternalCompilerException(s"Unexpected type constructor: '$tpe'.")
-    }
-
-    case Some(tc) => tc match {
-      case TypeConstructor.True => Type.True
-
-      case TypeConstructor.False => Type.False
-
-      case TypeConstructor.Not =>
-        val List(t) = tpe.typeArguments
-        BoolUnification.mkNot(purify(tvar, t))
-
-      case TypeConstructor.And =>
-        val List(t1, t2) = tpe.typeArguments
-        BoolUnification.mkAnd(purify(tvar, t1), purify(tvar, t2))
-
-      case TypeConstructor.Or =>
-        val List(t1, t2) = tpe.typeArguments
-        BoolUnification.mkOr(purify(tvar, t1), purify(tvar, t2))
-
-      case _ => throw InternalCompilerException(s"Unexpected non-Boolean type constructor: '$tc'.")
-    }
-  }
 
   /**
     * Returns the Flix Type of a Java Class

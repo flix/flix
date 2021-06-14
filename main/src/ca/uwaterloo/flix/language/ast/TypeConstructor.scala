@@ -197,11 +197,21 @@ object TypeConstructor {
   }
 
   /**
+    * A type constructor that represent the type of regions.
+    */
+  case object Region extends TypeConstructor {
+    /**
+      * The shape of a region is Region[l].
+      */
+    def kind: Kind = Kind.Bool ->: Kind.Star
+  }
+
+  /**
     * A type constructor that represent the type of scoped references.
     */
   case object ScopedRef extends TypeConstructor {
     /**
-      * The shape of a reference is ScopedRef[t, l].
+      * The shape of a reference is `ScopedRef[t, l]`.
       */
     def kind: Kind = Kind.Star ->: Kind.Bool ->: Kind.Star
   }

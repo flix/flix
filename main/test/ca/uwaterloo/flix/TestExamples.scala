@@ -34,22 +34,22 @@ class TestExamples extends Suites(
   new FlixTest("an-interpreter-for-a-trivial-expression-language", "examples/an-interpreter-for-a-trivial-expression-language.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
 
   // Others
-  new FlixTest("TestBelnap", "examples/domains/Belnap.flix")(Options.TestWithLibrary),
-  new FlixTest("TestConstant", List("examples/domains/Constant.flix", "examples/domains/Belnap.flix"), Options.TestWithLibrary),
-  new FlixTest("ConstantParity", List("examples/domains/ConstantParity.flix", "examples/domains/Belnap.flix"), Options.TestWithLibrary),
-  new FlixTest("ConstantSign", List("examples/domains/ConstantSign.flix", "examples/domains/Belnap.flix"), Options.TestWithLibrary),
-  new FlixTest("Interval", List("examples/domains/Interval.flix", "examples/domains/Belnap.flix"), Options.TestWithLibrary),
-  new FlixTest("IntervalAlt", List("examples/domains/IntervalAlt.flix", "examples/domains/Belnap.flix"), Options.TestWithLibrary),
-  new FlixTest("Mod3", List("examples/domains/Mod3.flix", "examples/domains/Belnap.flix"), Options.TestWithLibrary),
-  new FlixTest("Parity", List("examples/domains/Parity.flix", "examples/domains/Belnap.flix"), Options.TestWithLibrary),
-  new FlixTest("ParitySign", List("examples/domains/ParitySign.flix", "examples/domains/Belnap.flix"), Options.TestWithLibrary),
-  new FlixTest("PrefixSuffix", List("examples/domains/PrefixSuffix.flix", "examples/domains/Belnap.flix"), Options.TestWithLibrary),
-  new FlixTest("Sign", List("examples/domains/Sign.flix", "examples/domains/Belnap.flix"), Options.TestWithLibrary),
-  new FlixTest("StrictSign", List("examples/domains/StrictSign.flix", "examples/domains/Belnap.flix"), Options.TestWithLibrary),
+  new FlixTest("TestBelnap", "examples/domains/Belnap.flix")(Options.TestWithLibAll),
+  new FlixTest("TestConstant", List("examples/domains/Constant.flix", "examples/domains/Belnap.flix"), Options.TestWithLibAll),
+  new FlixTest("ConstantParity", List("examples/domains/ConstantParity.flix", "examples/domains/Belnap.flix"), Options.TestWithLibAll),
+  new FlixTest("ConstantSign", List("examples/domains/ConstantSign.flix", "examples/domains/Belnap.flix"), Options.TestWithLibAll),
+  new FlixTest("Interval", List("examples/domains/Interval.flix", "examples/domains/Belnap.flix"), Options.TestWithLibAll),
+  new FlixTest("IntervalAlt", List("examples/domains/IntervalAlt.flix", "examples/domains/Belnap.flix"), Options.TestWithLibAll),
+  new FlixTest("Mod3", List("examples/domains/Mod3.flix", "examples/domains/Belnap.flix"), Options.TestWithLibAll),
+  new FlixTest("Parity", List("examples/domains/Parity.flix", "examples/domains/Belnap.flix"), Options.TestWithLibAll),
+  new FlixTest("ParitySign", List("examples/domains/ParitySign.flix", "examples/domains/Belnap.flix"), Options.TestWithLibAll),
+  new FlixTest("PrefixSuffix", List("examples/domains/PrefixSuffix.flix", "examples/domains/Belnap.flix"), Options.TestWithLibAll),
+  new FlixTest("Sign", List("examples/domains/Sign.flix", "examples/domains/Belnap.flix"), Options.TestWithLibAll),
+  new FlixTest("StrictSign", List("examples/domains/StrictSign.flix", "examples/domains/Belnap.flix"), Options.TestWithLibAll),
 
-  new FlixTest("IFDS", "examples/analysis/IFDS.flix")(Options.TestWithLibrary),
-  new FlixTest("IDE", "examples/analysis/IDE.flix")(Options.TestWithLibrary),
-  new FlixTest("SUOpt", "examples/analysis/SUopt.flix")(Options.TestWithLibrary),
-  new FlixTest("FloydWarshall", "examples/misc/FloydWarshall.flix")(Options.TestWithLibrary)
+  new FlixTest("IFDS", "examples/analysis/IFDS.flix")(Options.TestWithLibAll),
+  new FlixTest("IDE", "examples/analysis/IDE.flix")(Options.TestWithLibAll),
+  new FlixTest("SUOpt", "examples/analysis/SUopt.flix")(Options.TestWithLibAll),
+  new FlixTest("FloydWarshall", "examples/misc/FloydWarshall.flix")(Options.TestWithLibAll)
 
 )

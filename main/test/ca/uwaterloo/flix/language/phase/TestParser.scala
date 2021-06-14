@@ -7,7 +7,7 @@ import org.scalatest.FunSuite
 
 class TestParser extends FunSuite with TestUtils {
 
-  val DefaultOptions: Options = Options.DefaultTest.copy(core = true)
+  val DefaultOptions: Options = Options.TestWithLibMin
 
   test("ParseError.Int.01") {
     val input =

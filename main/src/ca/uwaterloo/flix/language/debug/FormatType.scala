@@ -96,7 +96,7 @@ object FormatType {
             }
             case Audience.External => text match {
               case None => s"'$id"
-              case Some(t) => s"$t$id"
+              case Some(t) => t
             }
           }
           case Type.Lambda(tvar, tpe) => audience match {
@@ -153,6 +153,8 @@ object FormatType {
           case TypeConstructor.Lazy => formatApply("Lazy", args)
 
           case TypeConstructor.Ref => formatApply("Ref", args)
+
+          case TypeConstructor.Region => formatApply("Region", args)
 
           case TypeConstructor.ScopedRef => formatApply("ScopedRef", args)
 

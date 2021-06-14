@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.{DependencyEdge, DependencyGraph, Polarity}
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, SourcePosition, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.StratificationError
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{ParOps, Validation}
@@ -402,6 +402,12 @@ object Stratifier extends Phase[Root, Root] {
       mapN(visitExp(exp)) {
         case e => Expression.FixpointProjectOut(pred, e, tpe, eff, loc)
       }
+
+    case Expression.LetRegion(sym, exp, tpe, eff, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.LetRegion(sym, e, tpe, eff, loc)
+      }
+
   }
 
   /**
@@ -629,6 +635,9 @@ object Stratifier extends Phase[Root, Root] {
       dependencyGraphOfExp(exp)
 
     case Expression.FixpointProjectOut(_, exp, _, _, _) =>
+      dependencyGraphOfExp(exp)
+
+    case Expression.LetRegion(_, exp, _, _, _) =>
       dependencyGraphOfExp(exp)
 
   }

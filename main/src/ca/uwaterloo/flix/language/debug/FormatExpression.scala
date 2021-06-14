@@ -79,6 +79,7 @@ object FormatExpression {
     case TypedAst.Expression.FixpointFilter(pred, exp, tpe, eff, loc) => s"FixpointFilter($pred, $exp)"
     case TypedAst.Expression.FixpointProjectIn(exp, pred, tpe, eff, loc) => s"FixpointProjectIn($exp, $pred)"
     case TypedAst.Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) => s"FixpointProjectOut($pred, $exp)"
+    case TypedAst.Expression.LetRegion(sym, exp, tpe, eff, loc) => s"LetRegion($sym, $exp)"
   }
 
 }
