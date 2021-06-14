@@ -988,12 +988,6 @@ object ParsedAst {
     // TODO: Experimental: SHOULD NOT BE USED AND WILL BE REMOVED!
     case class ScopedRef(sp1: SourcePosition, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
-    // TODO: Experimental: SHOULD NOT BE USED AND WILL BE REMOVED!
-    case class ScopedDeref(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    // TODO: Experimental: SHOULD NOT BE USED AND WILL BE REMOVED!
-    case class ScopedAssign(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
   }
 
   /**

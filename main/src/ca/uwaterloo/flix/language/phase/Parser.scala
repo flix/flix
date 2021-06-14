@@ -460,16 +460,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Expressions                                                             //
   /////////////////////////////////////////////////////////////////////////////
   def Expression: Rule1[ParsedAst.Expression] = rule {
-    Expressions.ScopedAssign
+    Expressions.Assign
   }
 
   object Expressions {
     def Stm: Rule1[ParsedAst.Expression] = rule {
       Expression ~ optional(optWS ~ atomic(";") ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.Stm)
-    }
-
-    def ScopedAssign: Rule1[ParsedAst.Expression] = rule {
-      Assign ~ optional(optWS ~ atomic(":=*") ~ optWS ~ Assign ~ SP ~> ParsedAst.Expression.ScopedAssign)
     }
 
     def Assign: Rule1[ParsedAst.Expression] = rule {
@@ -595,12 +591,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def ScopedRef: Rule1[ParsedAst.Expression] = rule {
       // TODO: Two keywords
-      (SP ~ keyword("scoped ref") ~ WS ~ Expression ~ WS ~ keyword("in") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ScopedRef) | ScopedDeref
-    }
-
-    def ScopedDeref: Rule1[ParsedAst.Expression] = rule {
-      // TODO: Two keywords
-      (SP ~ keyword("scoped deref") ~ WS ~ ScopedDeref ~ SP ~> ParsedAst.Expression.ScopedDeref) | Deref
+      (SP ~ keyword("scoped ref") ~ WS ~ Expression ~ WS ~ keyword("in") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ScopedRef) | Deref
     }
 
     def Deref: Rule1[ParsedAst.Expression] = rule {

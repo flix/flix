@@ -1463,10 +1463,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           WeededAst.Expression.ScopedRef(e1, e2, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.ScopedDeref(sp1, exp, sp2) => ??? // TODO: Remove
-
-    case ParsedAst.Expression.ScopedAssign(exp1, exp2, sp2) => ??? // TODO: Remove
-
   }
 
   /**
@@ -2343,8 +2339,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.FixpointQueryWithSelect(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetRegion(sp1, _, _, _) => sp1
     case ParsedAst.Expression.ScopedRef(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.ScopedDeref(sp1, _, _) => sp1
-    case ParsedAst.Expression.ScopedAssign(e1, _, _) => leftMostSourcePosition(e1)
   }
 
   /**
