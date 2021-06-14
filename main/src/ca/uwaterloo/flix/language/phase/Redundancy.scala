@@ -375,6 +375,10 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       else
         (innerUsed1 and innerUsed2 and shadowedVar) - sym
 
+    case Expression.LetRegion(sym, exp, _, _, _) =>
+      // TODO: Rules for region variables?
+      visitExp(exp, env0) - sym
+
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       val us1 = visitExp(exp1, env0)
       val us2 = visitExp(exp2, env0)
@@ -640,9 +644,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.FixpointProjectOut(_, exp, _, _, _) =>
       visitExp(exp, env0)
-
-    case Expression.LetRegion(sym, exp, _, _, _) =>
-      visitExp(exp, env0) - sym
 
   }
 
