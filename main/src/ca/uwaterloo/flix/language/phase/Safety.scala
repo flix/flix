@@ -222,6 +222,8 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) => visitExp(exp)
 
+    case Expression.LetRegion(sym, exp, tpe, eff, loc) => visitExp(exp)
+
   }
 
   /**

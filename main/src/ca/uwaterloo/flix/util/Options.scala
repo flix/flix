@@ -24,7 +24,7 @@ object Options {
     * Default options.
     */
   val Default: Options = Options(
-    core = false,
+    lib = LibLevel.All,
     debug = false,
     documentor = false,
     invariants = false,
@@ -51,23 +51,28 @@ object Options {
   /**
     * Default test options.
     */
-  val DefaultTest: Options = Default.copy(core = false, test = true, verbosity = Verbosity.Silent)
+  val DefaultTest: Options = Default.copy(lib = LibLevel.All, test = true, verbosity = Verbosity.Silent)
 
   /**
     * Default test options with the standard library.
     */
-  val TestWithLibrary: Options = DefaultTest
+  val TestWithLibAll: Options = DefaultTest
 
   /**
-    * Default test options without the standard library.
+    * Default test options with the minimal library.
     */
-  val TestWithoutLibrary: Options = DefaultTest.copy(core = true)
+  val TestWithLibMin: Options = DefaultTest.copy(lib = LibLevel.Min)
+
+  /**
+    * Default test options without any library.
+    */
+  val TestWithLibNix: Options = DefaultTest.copy(lib = LibLevel.Nix)
 }
 
 /**
   * General Flix options.
   *
-  * @param core               disables loading of all non-essential namespaces.
+  * @param lib                selects the level of libraries to include.
   * @param debug              enables the emission of debugging information.
   * @param documentor         enables generation of flixdoc.
   * @param invariants         enables checking of compiler invariants.
@@ -89,7 +94,7 @@ object Options {
   * @param xnostratifier      disables computation of stratification.
   * @param xstatistics        prints compiler statistics.
   */
-case class Options(core: Boolean,
+case class Options(lib: LibLevel,
                    debug: Boolean,
                    documentor: Boolean,
                    invariants: Boolean,
@@ -204,5 +209,24 @@ object Verbosity {
     * Output nothing. Useful for when Flix is used as a library.
     */
   case object Silent extends Verbosity
+}
 
+sealed trait LibLevel
+
+object LibLevel {
+
+  /**
+    * Do not include any libraries, even those essential for basic functionality.
+    */
+  case object Nix extends LibLevel
+
+  /**
+    * Only include essential libraries.
+    */
+  case object Min extends LibLevel
+
+  /**
+    * Include the full standard library.
+    */
+  case object All extends LibLevel
 }
