@@ -690,7 +690,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           NamedAst.Expression.Ref(e, tvar, loc)
       }
 
-    case WeededAst.Expression.ScopedRef(exp1, exp2, loc) =>
+    case WeededAst.Expression.RefWithRegion(exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0)) {
         case (e1, e2) =>
           val tvar = Type.freshVar(Kind.Star)
@@ -1263,6 +1263,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.ArrayLength(base, loc) => freeVars(base)
     case WeededAst.Expression.ArraySlice(base, startIndex, endIndex, loc) => freeVars(base) ++ freeVars(startIndex) ++ freeVars(endIndex)
     case WeededAst.Expression.Ref(exp, loc) => freeVars(exp)
+    case WeededAst.Expression.RefWithRegion(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.Deref(exp, loc) => freeVars(exp)
     case WeededAst.Expression.Assign(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.Existential(tparams, fparam, exp, loc) => filterBoundVars(freeVars(exp), List(fparam.ident))
@@ -1301,7 +1302,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.FixpointProjectOut(pred, exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
 
     case WeededAst.Expression.LetRegion(ident, exp, loc) => filterBoundVars(freeVars(exp), List(ident))
-    case WeededAst.Expression.ScopedRef(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
 
   }
 

@@ -1183,6 +1183,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         e <- visitExp(exp)
       } yield WeededAst.Expression.Ref(e, mkSL(sp1, sp2))
 
+    case ParsedAst.Expression.RefWithRegion(sp1, exp1, exp2, sp2) =>
+      mapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) =>
+          WeededAst.Expression.RefWithRegion(e1, e2, mkSL(sp1, sp2))
+      }
+
     case ParsedAst.Expression.Deref(sp1, exp, sp2) =>
       for {
         e <- visitExp(exp)
@@ -1344,7 +1350,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       mapN(traverse(exps)(visitExp)) {
         case es =>
           val init = WeededAst.Expression.FixpointConstraintSet(Nil, loc)
-          (es.zip(idents.toList)).foldRight(init: WeededAst.Expression) {
+          es.zip(idents.toList).foldRight(init: WeededAst.Expression) {
             case ((exp, ident), acc) =>
               val pred = Name.mkPred(ident)
               val innerExp = WeededAst.Expression.FixpointProjectIn(exp, pred, loc)
@@ -1455,12 +1461,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       mapN(visitExp(exp)) {
         case e =>
           WeededAst.Expression.LetRegion(ident, e, mkSL(sp1, sp2))
-      }
-
-    case ParsedAst.Expression.ScopedRef(sp1, exp1, exp2, sp2) =>
-      mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) =>
-          WeededAst.Expression.ScopedRef(e1, e2, mkSL(sp1, sp2))
       }
 
   }
@@ -1872,7 +1872,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Type.Tuple(sp1, elms, sp2) => WeededAst.Type.Tuple(elms.toList.map(visitType), mkSL(sp1, sp2))
 
-    case ParsedAst.Type.Record(sp1, fields, restOpt, sp2) => {
+    case ParsedAst.Type.Record(sp1, fields, restOpt, sp2) =>
       def buildRecord(base: WeededAst.Type): WeededAst.Type = {
         fields.foldRight(base) {
           case (ParsedAst.RecordFieldType(ssp1, ident, t, ssp2), acc) =>
@@ -1888,7 +1888,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         // Case 3: `{x: Int | r}` Polymorphic record with field. `r` must be a `Record` variable.
         case (_, Some(base)) => buildRecord(WeededAst.Type.Var(base, base.loc))
       }
-    }
 
     case ParsedAst.Type.Schema(sp1, predicates, restOpt, sp2) =>
       def buildSchema(base: WeededAst.Type): WeededAst.Type = {
@@ -2317,6 +2316,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.FMap(sp1, _, _) => sp1
     case ParsedAst.Expression.Interpolation(sp1, _, _) => sp1
     case ParsedAst.Expression.Ref(sp1, _, _) => sp1
+    case ParsedAst.Expression.RefWithRegion(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Deref(sp1, _, _) => sp1
     case ParsedAst.Expression.Assign(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Existential(sp1, _, _, _, _) => sp1
@@ -2338,7 +2338,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.FixpointSolveWithProject(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointQueryWithSelect(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetRegion(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.ScopedRef(sp1, _, _, _) => sp1
   }
 
   /**

@@ -986,7 +986,7 @@ object ParsedAst {
     case class LetRegion(sp1: SourcePosition, ident: Name.Ident, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     // TODO: Experimental: SHOULD NOT BE USED AND WILL BE REMOVED!
-    case class ScopedRef(sp1: SourcePosition, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class RefWithRegion(sp1: SourcePosition, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
   }
 
