@@ -769,7 +769,7 @@ object JvmOps {
     case MonoType.Lazy(tpe) => Type.mkLazy(hackMonoType2Type(tpe))
     case MonoType.Channel(elm) => Type.mkChannel(hackMonoType2Type(elm))
     case MonoType.Native(clazz) => Type.mkNative(clazz)
-    case MonoType.Ref(elm) => Type.mkRef(hackMonoType2Type(elm))
+    case MonoType.Ref(elm) => Type.mkScopedRef(hackMonoType2Type(elm), Type.False)
     case MonoType.Arrow(targs, tresult) => Type.mkPureCurriedArrow(targs map hackMonoType2Type, hackMonoType2Type(tresult))
     case MonoType.Enum(sym, args) => Type.mkEnum(sym, args.map(hackMonoType2Type))
     case MonoType.Relation(attr) => Type.mkRelation(attr.map(hackMonoType2Type))

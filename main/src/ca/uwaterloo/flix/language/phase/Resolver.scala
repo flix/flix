@@ -1774,7 +1774,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
       case TypeConstructor.Enum(_, _) => Class.forName("java.lang.Object").toSuccess
 
-      case TypeConstructor.Ref => Class.forName("java.lang.Object").toSuccess
+      case TypeConstructor.ScopedRef => Class.forName("java.lang.Object").toSuccess
 
       case TypeConstructor.Tuple(_) => Class.forName("java.lang.Object").toSuccess
 

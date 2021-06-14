@@ -152,10 +152,6 @@ object FormatType {
 
           case TypeConstructor.Lazy => formatApply("Lazy", args)
 
-          case TypeConstructor.Ref => formatApply("Ref", args)
-
-          case TypeConstructor.Region => formatApply("Region", args)
-
           case TypeConstructor.ScopedRef => formatApply("ScopedRef", args)
 
           case TypeConstructor.RecordExtend(field) => args.length match {
@@ -250,6 +246,8 @@ object FormatType {
                 formatApply(s"($applyPart)", applyParams)
               }
             }
+
+          case TypeConstructor.Region => formatApply("Region", args)
 
           case TypeConstructor.Native(clazz) => s"${clazz.getSimpleName}"
         }
