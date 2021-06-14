@@ -589,4 +589,210 @@ namespace Nel {
     @test
     def maximumBy05(): Bool = Nel.maximumBy((x, y) -> x <=> y, Nel(3, 5 :: 4 :: 9 :: 7 :: 10 :: Nil)) == 10
 
+/////////////////////////////////////////////////////////////////////////////
+// The following tests for sort functions correspond to those in TestList  //
+/////////////////////////////////////////////////////////////////////////////
+// sortWith                                                                //
+/////////////////////////////////////////////////////////////////////////////
+
+def cmp(x: Int32, y: Int32): Comparison =
+    if (x < y) LessThan
+    else if (x == y) EqualTo
+    else GreaterThan
+
+@test
+def sortWith02(): Bool =
+    Nel.sortWith(cmp, Nel(0, Nil)) == Nel(0, Nil)
+
+@test
+def sortWith03(): Bool =
+    Nel.sortWith(cmp, Nel(0, 1 :: Nil)) == Nel(0, 1 :: Nil)
+
+@test
+def sortWith04(): Bool =
+    Nel.sortWith(cmp, Nel(1, 0 :: Nil)) == Nel(0, 1 :: Nil)
+
+@test
+def sortWith05(): Bool =
+    Nel.sortWith(cmp, Nel(1, 1 :: Nil)) == Nel(1, 1 :: Nil)
+
+@test
+def sortWith06(): Bool =
+    Nel.sortWith(cmp, Nel(0, 1 :: 2 :: 3 :: 4 :: 5 :: Nil)) == Nel(0, 1 :: 2 :: 3 :: 4 :: 5 :: Nil)
+
+@test
+def sortWith07(): Bool =
+    Nel.sortWith(cmp, Nel(5, 4 :: 3 :: 2 :: 1 :: 0 :: Nil)) == Nel(0, 1 :: 2 :: 3 :: 4 :: 5 :: Nil)
+
+@test
+def sortWith08(): Bool =
+    Nel.sortWith(cmp, Nel(5, 3 :: 0 :: 4 :: 1 :: 2 :: Nil)) == Nel(0, 1 :: 2 :: 3 :: 4 :: 5 :: Nil)
+
+@test
+def sortWith09(): Bool =
+    Nel.sortWith(cmp, Nel(2, 3 :: 0 :: 4 :: 1 :: 2 :: Nil)) == Nel(0, 1 :: 2 :: 2 :: 3 :: 4 :: Nil)
+
+@test
+def sortWith10(): Bool =
+    Nel.sortWith(flip(cmp), Nel(0, 1 :: 2 :: 3 :: 4 :: 5 :: Nil)) == Nel(5, 4 :: 3 :: 2 :: 1 :: 0 :: Nil)
+
+@test
+def sortWith11(): Bool =
+    Nel.sortWith(flip(cmp), Nel(5, 4 :: 3 :: 2 :: 1 :: 0 :: Nil)) == Nel(5, 4 :: 3 :: 2 :: 1 :: 0 :: Nil)
+
+@test
+def sortWith12(): Bool =
+    Nel.sortWith(flip(cmp), Nel(5, 3 :: 0 :: 4 :: 1 :: 2 :: Nil)) == Nel(5, 4 :: 3 :: 2 :: 1 :: 0 :: Nil)
+
+@test
+def sortWith13(): Bool =
+    Nel.sortWith(flip(cmp), Nel(2, 3 :: 0 :: 4 :: 1 :: 2 :: Nil)) == Nel(4, 3 :: 2 :: 2 :: 1 :: 0 :: Nil)
+
+/////////////////////////////////////////////////////////////////////////////
+// sort                                                                    //
+/////////////////////////////////////////////////////////////////////////////
+
+def testSortVsSortWith(xs: Nel[Int32]) : Bool =
+    Nel.sort(xs) == Nel.sortWith(cmp, xs)
+
+@test
+def sort02(): Bool = testSortVsSortWith(Nel(0, Nil))
+
+@test
+def sort03(): Bool = testSortVsSortWith(Nel(0, 1 :: Nil))
+
+@test
+def sort04(): Bool = testSortVsSortWith(Nel(1, 0 :: Nil))
+
+@test
+def sort05(): Bool = testSortVsSortWith(Nel(1, 1 :: Nil))
+
+@test
+def sort06(): Bool = testSortVsSortWith(Nel(0, 1 :: 2 :: 3 :: 4 :: 5 :: Nil))
+
+@test
+def sort07(): Bool = testSortVsSortWith(Nel(5, 4 :: 3 :: 2 :: 1 :: 0 :: Nil))
+
+@test
+def sort08(): Bool = testSortVsSortWith(Nel(5, 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
+
+@test
+def sort09(): Bool = testSortVsSortWith(Nel(2, 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
+
+/////////////////////////////////////////////////////////////////////////////
+// sortBy                                                                  //
+/////////////////////////////////////////////////////////////////////////////
+
+def testSortByVsSort(a: Nel[Int32]) : Bool =
+    (Nel.sortBy(identity, a) == Nel.sort(a)) and
+    (Nel.sortBy(x -> 4*x+7, a) == Nel.sort(a)) and
+    (Nel.sortBy(x -> -x, a) == Nel.sortWith(flip(cmp),a))
+
+@test
+def sortBy02(): Bool = testSortByVsSort(Nel(0, Nil))
+
+@test
+def sortBy03(): Bool = testSortByVsSort(Nel(0, 1 :: Nil))
+
+@test
+def sortBy04(): Bool = testSortByVsSort(Nel(1, 0 :: Nil))
+
+@test
+def sortBy05(): Bool = testSortByVsSort(Nel(1, 1 :: Nil))
+
+@test
+def sortBy06(): Bool = testSortByVsSort(Nel(0, 1 :: 2 :: 3 :: 4 :: 5 :: Nil))
+
+@test
+def sortBy07(): Bool = testSortByVsSort(Nel(5, 4 :: 3 :: 2 :: 1 :: 0 :: Nil))
+
+@test
+def sortBy08(): Bool = testSortByVsSort(Nel(5, 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
+
+@test
+def sortBy09(): Bool = testSortByVsSort(Nel(2, 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
+
+enum R {
+    case R({i: Int32, s: String})
+}
+
+instance Eq[R] {
+    pub def eq(a: R, b: R): Bool =
+        let R(x) = a;
+        let R(y) = b;
+        x.i == y.i and x.s == y.s
+}
+
+// Tests stability
+@test
+def sortBy10(): Bool =
+    Nel.sortBy(r -> let R(x) = r; x.i,
+        Nel(R({i = 1, s = "1"}),
+            R({i = 1, s = "2"}) ::
+            R({i = 1, s = "3"}) ::
+            R({i = 1, s = "4"}) ::
+            R({i = 1, s = "5"}) ::
+            R({i = 1, s = "6"}) ::
+            R({i = 1, s = "7"}) ::
+            R({i = 1, s = "8"}) ::
+            R({i = 1, s = "9"}) :: Nil)
+        )
+    ==  Nel(R({i = 1, s = "1"}),
+            R({i = 1, s = "2"}) ::
+            R({i = 1, s = "3"}) ::
+            R({i = 1, s = "4"}) ::
+            R({i = 1, s = "5"}) ::
+            R({i = 1, s = "6"}) ::
+            R({i = 1, s = "7"}) ::
+            R({i = 1, s = "8"}) ::
+            R({i = 1, s = "9"}) :: Nil)
+
+// Tests stability
+@test
+def sortBy11(): Bool =
+    Nel.sortBy(r -> let R(x) = r; x.i,
+        Nel(R({i = 5, s = "5a"}),
+            R({i = 4, s = "4a"}) ::
+            R({i = 3, s = "3a"}) ::
+            R({i = 2, s = "2a"}) ::
+            R({i = 1, s = "1a"}) ::
+            R({i = 2, s = "2b"}) ::
+            R({i = 4, s = "4b"}) ::
+            R({i = 5, s = "5b"}) ::
+            R({i = 5, s = "5c"}) :: Nil)
+        )
+    ==  Nel(R({i = 1, s = "1a"}),
+            R({i = 2, s = "2a"}) ::
+            R({i = 2, s = "2b"}) ::
+            R({i = 3, s = "3a"}) ::
+            R({i = 4, s = "4a"}) ::
+            R({i = 4, s = "4b"}) ::
+            R({i = 5, s = "5a"}) ::
+            R({i = 5, s = "5b"}) ::
+            R({i = 5, s = "5c"}) :: Nil)
+
+// Tests stability
+@test
+def sortBy12(): Bool =
+    Nel.sortBy(r -> let R(x) = r; x.i,
+        Nel(R({i = 2, s = "2a"}),
+            R({i = 1, s = "1a"}) ::
+            R({i = 3, s = "3a"}) ::
+            R({i = 3, s = "3b"}) ::
+            R({i = 1, s = "1b"}) ::
+            R({i = 3, s = "3c"}) ::
+            R({i = 2, s = "2b"}) ::
+            R({i = 2, s = "2c"}) ::
+            R({i = 2, s = "2d"}) :: Nil)
+        )
+    ==  Nel(R({i = 1, s = "1a"}),
+            R({i = 1, s = "1b"}) ::
+            R({i = 2, s = "2a"}) ::
+            R({i = 2, s = "2b"}) ::
+            R({i = 2, s = "2c"}) ::
+            R({i = 2, s = "2d"}) ::
+            R({i = 3, s = "3a"}) ::
+            R({i = 3, s = "3b"}) ::
+            R({i = 3, s = "3c"}) :: Nil)
+
 }
