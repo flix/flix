@@ -685,17 +685,32 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.Ref(exp, loc) =>
       visitExp(exp, env0, uenv0, tenv0) map {
-        case e => NamedAst.Expression.Ref(e, loc)
+        case e =>
+          val tvar = Type.freshVar(Kind.Star)
+          NamedAst.Expression.Ref(e, tvar, loc)
+      }
+
+    case WeededAst.Expression.ScopedRef(exp1, exp2, loc) =>
+      mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0)) {
+        case (e1, e2) =>
+          val tvar = Type.freshVar(Kind.Star)
+          val evar = Type.freshVar(Kind.Bool)
+          NamedAst.Expression.RefWithRegion(e1, e2, tvar, evar, loc)
       }
 
     case WeededAst.Expression.Deref(exp, loc) =>
       visitExp(exp, env0, uenv0, tenv0) map {
-        case e => NamedAst.Expression.Deref(e, Type.freshVar(Kind.Star), loc)
+        case e =>
+          val tvar = Type.freshVar(Kind.Star)
+          val evar = Type.freshVar(Kind.Bool)
+          NamedAst.Expression.Deref(e, tvar, evar, loc)
       }
 
     case WeededAst.Expression.Assign(exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0)) {
-        case (e1, e2) => NamedAst.Expression.Assign(e1, e2, loc)
+        case (e1, e2) =>
+          val evar = Type.freshVar(Kind.Bool)
+          NamedAst.Expression.Assign(e1, e2, evar, loc)
       }
 
     case WeededAst.Expression.Existential(tparams0, fparam, exp, loc) =>
@@ -890,29 +905,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case e =>
           val evar = Type.freshVar(Kind.Bool)
           NamedAst.Expression.LetRegion(sym, e, evar, loc)
-      }
-
-    case WeededAst.Expression.ScopedRef(exp1, exp2, loc) =>
-      mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0)) {
-        case (e1, e2) =>
-          val tvar = Type.freshVar(Kind.Star) // TODO: Need tvar?
-          val evar = Type.freshVar(Kind.Bool)
-          NamedAst.Expression.ScopedRef(e1, e2, tvar, evar, loc)
-      }
-
-    case WeededAst.Expression.ScopedDeref(exp, loc) =>
-      visitExp(exp, env0, uenv0, tenv0) map {
-        case e =>
-          val tvar = Type.freshVar(Kind.Star)
-          val evar = Type.freshVar(Kind.Bool)
-          NamedAst.Expression.ScopedDeref(e, tvar, evar, loc)
-      }
-
-    case WeededAst.Expression.ScopedAssign(exp1, exp2, loc) =>
-      mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0)) {
-        case (e1, e2) =>
-          val evar = Type.freshVar(Kind.Bool)
-          NamedAst.Expression.ScopedAssign(e1, e2, evar, loc)
       }
 
   }
@@ -1310,8 +1302,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.LetRegion(ident, exp, loc) => filterBoundVars(freeVars(exp), List(ident))
     case WeededAst.Expression.ScopedRef(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
-    case WeededAst.Expression.ScopedDeref(exp, loc) => freeVars(exp)
-    case WeededAst.Expression.ScopedAssign(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
 
   }
 
