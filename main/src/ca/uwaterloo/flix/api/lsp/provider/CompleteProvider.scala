@@ -117,8 +117,6 @@ object CompleteProvider {
     // Expressed-based:
     CompletionItem("def", "def ${1:name}(${2:arg}:${3:type}): ${4:type} & Impure = \n\t", None, Some("snippet to define Impure function"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
     CompletionItem("def", "def ${1:name}(${2:arg}:${3:type}): ${4:type} & Pure = \n\t", None, Some("snippet to define Pure function"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-    CompletionItem("elif", "else if (${1:/* condition */}) {\n    ${2:/* code */}\n}", None, Some("snippet for else if ()"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-    CompletionItem("else", "else {\n    ${1:/* code */}\n}", None, Some("snippet for else"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
     CompletionItem("enum", "enum ${1:Name} {\n\tcase ${2:name}\n}", None, Some("snippet for enum"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
     CompletionItem("if", "if ${1:cond} ${2:exp} else ${3:exp}", None, Some("snippet for if ()"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
     CompletionItem("import", "import ${1:method}", None, Some("import snippet for method call"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
