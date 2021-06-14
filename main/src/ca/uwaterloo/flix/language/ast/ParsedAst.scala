@@ -599,6 +599,16 @@ object ParsedAst {
     case class LetImport(sp1: SourcePosition, op: ParsedAst.JvmOp, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * Let Region Expression.
+      *
+      * @param sp1   the position of the first character in the expression.
+      * @param ident the name of the region.
+      * @param exp   the body expression.
+      * @param sp2   the position of the last character in the expression.
+      */
+    case class LetRegion(sp1: SourcePosition, ident: Name.Ident, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Match Expression (pattern match expression).
       *
       * @param sp1   the position of the first character in the expression.
@@ -981,10 +991,6 @@ object ParsedAst {
       * @param sp2      the position of the last character in the expression.
       */
     case class FixpointQueryWithSelect(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], selects: ParsedAst.SelectFragment, from: Seq[ParsedAst.Predicate.Body.Atom], whereExp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
-
-    // TODO: Experimental: SHOULD NOT BE USED AND WILL BE REMOVED!
-    // TODO: A region variable should not really be a VarSym but a different kind of entity.
-    case class LetRegion(sp1: SourcePosition, ident: Name.Ident, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
   }
 

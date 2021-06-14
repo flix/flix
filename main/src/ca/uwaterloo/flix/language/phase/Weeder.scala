@@ -881,6 +881,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           }
       }
 
+    case ParsedAst.Expression.LetRegion(sp1, ident, exp, sp2) =>
+      mapN(visitExp(exp)) {
+        case e => WeededAst.Expression.LetRegion(ident, e, mkSL(sp1, sp2))
+      }
+
     case ParsedAst.Expression.Match(sp1, exp, rules, sp2) =>
       val rulesVal = traverse(rules) {
         case ParsedAst.MatchRule(pat, None, body) =>
@@ -1457,12 +1462,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
           // Extract the tuples of the result predicate.
           WeededAst.Expression.FixpointProjectOut(pred, queryExp, dbExp, loc)
-      }
-
-    case ParsedAst.Expression.LetRegion(sp1, ident, exp, sp2) =>
-      mapN(visitExp(exp)) {
-        case e =>
-          WeededAst.Expression.LetRegion(ident, e, mkSL(sp1, sp2))
       }
 
   }
@@ -2298,6 +2297,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.LetMatch(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetMatchStar(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetImport(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.LetRegion(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Choose(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Tag(sp1, _, _, _) => sp1
@@ -2338,7 +2338,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.FixpointProjectInto(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointSolveWithProject(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointQueryWithSelect(sp1, _, _, _, _, _) => sp1
-    case ParsedAst.Expression.LetRegion(sp1, _, _, _) => sp1
   }
 
   /**

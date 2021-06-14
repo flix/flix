@@ -686,6 +686,17 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = Type.mkAnd(eff1, eff2)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
+      case ResolvedAst.Expression.LetRegion(sym, exp, evar, loc) =>
+        // Introduce a rigid variable for the region of `exp`.
+        val regionVar = Type.freshVar(Kind.Bool, Rigidity.Rigid, Some(sym.text))
+        for {
+          _ <- unifyTypeM(sym.tvar, Type.mkRegion(regionVar, loc), loc)
+          (constrs, tpe, eff) <- visitExp(exp)
+          purifiedEff <- purifyEffM(regionVar, eff)
+          resultEff <- unifyTypeM(evar, purifiedEff, loc)
+          resultTyp = tpe
+        } yield (constrs, resultTyp, resultEff)
+
       case ResolvedAst.Expression.Match(exp, rules, loc) =>
         val patterns = rules.map(_.pat)
         val guards = rules.map(_.guard)
@@ -1421,18 +1432,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = Type.mkAnd(eff1, eff2)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
-      case ResolvedAst.Expression.LetRegion(sym, exp, evar, loc) =>
-        // Introduce a rigid variable for the region of `exp`.
-        val regionVar = Type.freshVar(Kind.Bool, Rigidity.Rigid, Some(sym.text))
-        for {
-          _ <- unifyTypeM(sym.tvar, Type.mkRegion(regionVar, loc), loc)
-          (constrs, tpe, eff) <- visitExp(exp)
-          purifiedEff <- purifyEffM(regionVar, eff)
-          resultEff <- unifyTypeM(evar, purifiedEff, loc)
-          resultTyp = tpe
-        } yield (constrs, resultTyp, resultEff)
-
-
     }
 
     /**
@@ -1551,6 +1550,12 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val tpe = e2.tpe
         val eff = Type.mkAnd(e1.eff, e2.eff)
         TypedAst.Expression.Let(sym, e1, e2, tpe, eff, loc)
+
+      case ResolvedAst.Expression.LetRegion(sym, exp, evar, loc) =>
+        val e = visitExp(exp, subst0)
+        val tpe = e.tpe
+        val eff = subst0(evar)
+        TypedAst.Expression.LetRegion(sym, e, tpe, eff, loc)
 
       case ResolvedAst.Expression.Match(matchExp, rules, loc) =>
         val e1 = visitExp(matchExp, subst0)
@@ -1829,12 +1834,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val mergeExp = TypedAst.Expression.FixpointMerge(e1, e2, stf, tpe, eff, loc)
         val solveExp = TypedAst.Expression.FixpointSolve(mergeExp, stf, tpe, eff, loc)
         TypedAst.Expression.FixpointProjectOut(pred, solveExp, tpe, eff, loc)
-
-      case ResolvedAst.Expression.LetRegion(sym, exp, evar, loc) =>
-        val e = visitExp(exp, subst0)
-        val tpe = e.tpe
-        val eff = subst0(evar)
-        TypedAst.Expression.LetRegion(sym, e, tpe, eff, loc)
 
     }
 
