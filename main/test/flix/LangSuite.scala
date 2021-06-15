@@ -256,7 +256,8 @@ class LangSuite extends Suites(
     "main/test/flix/Test.Exp.Reference.Assign.flix",
     "main/test/flix/Test.Exp.Reference.Ref.flix",
     "main/test/flix/Test.Exp.Reference.Deref.flix",
-    "main/test/flix/Test.Exp.Reference.Precedence.flix"
+    "main/test/flix/Test.Exp.Reference.Precedence.flix",
+    "main/test/flix/Test.Exp.ScopedReference.flix"
   ), Options.TestWithLibAll),
 
   //
