@@ -1,5 +1,5 @@
 ///
-/// Ref is a type alias for a scoped ref with global lifetime.
+/// Ref[t] is a type alias for a scoped ref with a global lifetime.
 ///
 type alias Ref[t] = ScopedRef[t, false]
 
