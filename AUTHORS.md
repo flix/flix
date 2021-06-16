@@ -37,3 +37,4 @@ By adding your name to this document, you agree to release all your contribution
 - [J. Ryan Stinnett](https://github.com/jryans)
 - [Andreas Heglingegård](https://github.com/racerand)
 - [Felix Wiemuth](https://github.com/felixwiemuth)
+- [Manoj Kumar](https://github.com/manoj2601)
