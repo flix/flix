@@ -111,12 +111,6 @@ class TestMain extends FunSuite {
     assert(opts.threads.contains(42))
   }
 
-  test("--verbose") {
-    val args = Array("--verbose", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.verbose)
-  }
-
   test("--Xbenchmark-phases") {
     val args = Array("--Xbenchmark-phases", "p.flix")
     val opts = Main.parseCmdOpts(args).get

@@ -85,7 +85,6 @@ object Main {
       documentor = cmdOpts.documentor,
       json = cmdOpts.json,
       threads = cmdOpts.threads.getOrElse(Runtime.getRuntime.availableProcessors()),
-      verbosity = if (cmdOpts.verbose) Verbosity.Verbose else Verbosity.Normal,
       writeClassFiles = !cmdOpts.interactive,
       xlinter = cmdOpts.xlinter,
       xnoboolunification = cmdOpts.xnoboolunification,
@@ -225,7 +224,6 @@ object Main {
                      lsp: Option[Int] = None,
                      test: Boolean = false,
                      threads: Option[Int] = None,
-                     verbose: Boolean = false,
                      xbenchmarkPhases: Boolean = false,
                      xbenchmarkThroughput: Boolean = false,
                      xlib: LibLevel = LibLevel.All,
@@ -345,10 +343,6 @@ object Main {
       // Threads.
       opt[Int]("threads").action((n, c) => c.copy(threads = Some(n))).
         text("number of threads to use for compilation.")
-
-      // Verbose.
-      opt[Unit]("verbose").action((_, c) => c.copy(verbose = true))
-        .text("enables verbose output.")
 
       // Version.
       version("version").text("prints the version number.")

@@ -406,7 +406,7 @@ class Flix {
     phaseTimers += currentPhase
 
     // Print performance information if in verbose mode.
-    if (options.verbosity == Verbosity.Verbose) {
+    if (options.debug) {
       // Print information about the phase.
       val d = new Duration(e)
       val terminalCtx = TerminalContext.AnsiTerminal

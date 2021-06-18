@@ -31,7 +31,6 @@ object Options {
     target = JvmTarget.Version18,
     targetDirectory = Paths.get("./target/flix/"),
     threads = Runtime.getRuntime.availableProcessors(),
-    verbosity = Verbosity.Normal,
     loadClassFiles = true,
     writeClassFiles = true,
     xallowredundancies = false,
@@ -43,7 +42,7 @@ object Options {
   /**
     * Default test options.
     */
-  val DefaultTest: Options = Default.copy(lib = LibLevel.All, test = true, verbosity = Verbosity.Silent)
+  val DefaultTest: Options = Default.copy(lib = LibLevel.All, test = true)
 
   /**
     * Default test options with the standard library.
@@ -72,7 +71,6 @@ object Options {
   * @param target             the target JVM.
   * @param targetDirectory    the target directory for compiled code.
   * @param threads            selects the number of threads to use.
-  * @param verbosity          selects the level of verbosity.
   * @param loadClassFiles     loads the generated class files into the JVM.
   * @param writeClassFiles    enables output of class files.
   * @param xallowredundancies disables the redundancy checker.
@@ -88,7 +86,6 @@ case class Options(lib: LibLevel,
                    targetDirectory: Path,
                    test: Boolean,
                    threads: Int,
-                   verbosity: Verbosity,
                    loadClassFiles: Boolean,
                    writeClassFiles: Boolean,
                    xallowredundancies: Boolean,
@@ -124,29 +121,6 @@ object JvmTarget {
     */
   object Version19 extends JvmTarget
 
-}
-
-/**
-  * An option to control the level of verbosity.
-  */
-sealed trait Verbosity
-
-object Verbosity {
-
-  /**
-    * Output verbose information. Useful for debugging.
-    */
-  case object Verbose extends Verbosity
-
-  /**
-    * Output condensed information. The default.
-    */
-  case object Normal extends Verbosity
-
-  /**
-    * Output nothing. Useful for when Flix is used as a library.
-    */
-  case object Silent extends Verbosity
 }
 
 sealed trait LibLevel
