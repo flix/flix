@@ -45,7 +45,7 @@ object Request {
   case class RemUri(requestId: String, uri: String) extends Request
 
   /**
-    * A request to add (or update) the package at the given uri with the given source code.
+    * A request to add (or update) the package at the given uri with the given binary data.
     */
   case class AddPkg(requestId: String, uri: String, data: Array[Byte]) extends Request
 
