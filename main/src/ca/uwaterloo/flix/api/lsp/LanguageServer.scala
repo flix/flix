@@ -298,7 +298,10 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
           val runMain = Command("Run Main", "flix.cmdRunMain", Nil)
           val runMainNewTerminal = Command("Run Main (New Term)", "flix.cmdRunMainNewTerminal", Nil)
           val loc = defn.sym.loc
-          CodeLens(Range.from(loc), Some(runMain)) :: CodeLens(Range.from(loc), Some(runMainNewTerminal)) :: Nil
+          List(
+            CodeLens(Range.from(loc), Some(runMain)),
+            CodeLens(Range.from(loc), Some(runMainNewTerminal))
+          )
         case _ => Nil
       }
     }
@@ -342,7 +345,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
     val t = System.nanoTime()
     val suggestions = CompleteProvider.autoComplete(uri, pos, word)(index, root)
-    println(s"Found ${suggestions.size} suggestions for '$word' (elapsed: " + ((System.nanoTime() - t) / 1_000_000) + "ms)")
+    // println(s"Found ${suggestions.size} suggestions for '$word' (elapsed: " + ((System.nanoTime() - t) / 1_000_000) + "ms)")
 
     val result = CompletionList(isIncomplete = true, suggestions)
     ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result.toJSON)
