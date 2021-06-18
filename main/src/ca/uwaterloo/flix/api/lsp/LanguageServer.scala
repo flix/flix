@@ -17,13 +17,14 @@ package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.provider._
 import ca.uwaterloo.flix.api.{Flix, Version}
+import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.debug._
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
 import ca.uwaterloo.flix.util.vt.TerminalContext
-import ca.uwaterloo.flix.util.{InternalCompilerException, InternalRuntimeException, Options, Result}
+import ca.uwaterloo.flix.util.{InternalCompilerException, InternalRuntimeException, Options, Result, StreamOps}
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
@@ -34,9 +35,12 @@ import org.json4s._
 import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods.parse
 
+import java.io.ByteArrayInputStream
 import java.net.InetSocketAddress
+import java.nio.charset.Charset
 import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.zip.ZipInputStream
 import scala.collection.mutable
 
 /**
@@ -83,6 +87,11 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     * A map from source URIs to source code.
     */
   val sources: mutable.Map[String, String] = mutable.Map.empty
+
+  /**
+    * A map from package URIs to source code.
+    */
+  val packages: mutable.Map[String, List[String]] = mutable.Map.empty
 
   /**
     * The current AST root. The root is null until the source code is compiled.
@@ -188,6 +197,28 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       sources -= uri
       ("id" -> id) ~ ("status" -> "success")
 
+    case Request.AddPkg(id, uri, data) =>
+      val inputStream = new ZipInputStream(new ByteArrayInputStream(data))
+      val items = mutable.ListBuffer.empty[String]
+      var entry = inputStream.getNextEntry
+      while (entry != null) {
+        val name = entry.getName
+        if (name.endsWith(".flix")) {
+          val bytes = StreamOps.readAllBytes(inputStream)
+          val src = new String(bytes, Charset.forName("UTF-8"))
+          items += src
+        }
+        entry = inputStream.getNextEntry
+      }
+      inputStream.close()
+
+      packages += (uri -> items.toList)
+      ("id" -> id) ~ ("status" -> "success")
+
+    case Request.RemPkg(id, uri) =>
+      packages -= uri
+      ("id" -> id) ~ ("status" -> "success")
+
     case Request.Version(id) => processVersion(id)
 
     case Request.Shutdown(id) => processShutdown()
@@ -221,8 +252,17 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
   private def processCheck(requestId: String)(implicit ws: WebSocket): JValue = {
     // Configure the Flix compiler.
     val flix = new Flix()
+
+    // Add sources.
     for ((uri, source) <- sources) {
       flix.addInput(uri, source)
+    }
+
+    // Add sources from packages.
+    for ((uri, items) <- packages) {
+      for (src <- items) {
+        flix.addInput(uri, src)
+      }
     }
 
     // Measure elapsed time.
