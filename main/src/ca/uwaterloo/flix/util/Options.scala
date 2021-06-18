@@ -27,7 +27,6 @@ object Options {
     debug = false,
     documentor = false,
     json = false,
-    optimizations = Optimization.All,
     test = false,
     target = JvmTarget.Version18,
     targetDirectory = Paths.get("./target/flix/"),
@@ -87,7 +86,6 @@ case class Options(lib: LibLevel,
                    debug: Boolean,
                    documentor: Boolean,
                    json: Boolean,
-                   optimizations: Set[Optimization],
                    target: JvmTarget,
                    targetDirectory: Path,
                    test: Boolean,
@@ -101,27 +99,6 @@ case class Options(lib: LibLevel,
                    xnostratifier: Boolean,
                    xstatistics: Boolean
                   )
-
-/**
-  * A common super-type for optimizations.
-  */
-sealed trait Optimization
-
-object Optimization {
-
-  /**
-    * All optimizations supported by the compiler.
-    */
-  val All: Set[Optimization] = Set(
-    TailCalls
-  )
-
-  /**
-    * Enables compilation with full tail calls.
-    */
-  case object TailCalls extends Optimization
-
-}
 
 /**
   * An option to control the version of emitted JVM bytecode.

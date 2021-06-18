@@ -159,12 +159,6 @@ class TestMain extends FunSuite {
     assert(opts.xnostratifier)
   }
 
-  test("--Xno-tailcalls") {
-    val args = Array("--Xno-tailcalls", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xnotailcalls)
-  }
-
   test("--Xstatistics") {
     val args = Array("--Xstatistics", "p.flix")
     val opts = Main.parseCmdOpts(args).get

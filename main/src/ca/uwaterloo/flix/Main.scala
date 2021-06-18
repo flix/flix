@@ -78,18 +78,12 @@ object Main {
     // the default color context.
     implicit val terminal: TerminalContext = TerminalContext.AnsiTerminal
 
-    // compute the enabled optimizations.
-    val optimizations = Optimization.All.filter {
-      case Optimization.TailCalls => !cmdOpts.xnotailcalls
-    }
-
     // construct flix options.
     val options = Options.Default.copy(
       lib = cmdOpts.xlib,
       debug = cmdOpts.xdebug,
       documentor = cmdOpts.documentor,
       json = cmdOpts.json,
-      optimizations = optimizations,
       threads = cmdOpts.threads.getOrElse(Runtime.getRuntime.availableProcessors()),
       verbosity = if (cmdOpts.verbose) Verbosity.Verbose else Verbosity.Normal,
       writeClassFiles = !cmdOpts.interactive,
@@ -242,7 +236,6 @@ object Main {
                      xnoboolunification: Boolean = false,
                      xlinter: Boolean = false,
                      xnostratifier: Boolean = false,
-                     xnotailcalls: Boolean = false,
                      xstatistics: Boolean = false,
                      files: Seq[File] = Seq())
 
@@ -396,10 +389,6 @@ object Main {
       // Xno-stratifier
       opt[Unit]("Xno-stratifier").action((_, c) => c.copy(xnostratifier = true)).
         text("[experimental] disables computation of stratification.")
-
-      // Xno-tailcalls
-      opt[Unit]("Xno-tailcalls").action((_, c) => c.copy(xnotailcalls = true)).
-        text("[experimental] disables tail call elimination.")
 
       // Xstatistics
       opt[Unit]("Xstatistics").action((_, c) => c.copy(xstatistics = true)).
