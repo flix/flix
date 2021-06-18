@@ -246,7 +246,6 @@ object Packager {
     addToZip(zip, "HISTORY.md", getHistoryFile(p))
     addToZip(zip, "LICENSE.md", getLicenseFile(p))
     addToZip(zip, "README.md", getReadmeFile(p))
-    addToZip(zip, "package.json", getPackageFile(p))
 
     // Add all source files.
     for (sourceFile <- getAllFiles(getSourceDirectory(p))) {
@@ -369,8 +368,7 @@ object Packager {
       Files.exists(getTestDirectory(p)) &&
       Files.exists(getHistoryFile(p)) &&
       Files.exists(getLicenseFile(p)) &&
-      Files.exists(getReadmeFile(p)) &&
-      Files.exists(getPackageFile(p))
+      Files.exists(getReadmeFile(p))
 
   /**
     * Returns the package name based on the given path `p`.
@@ -401,11 +399,6 @@ object Packager {
     * Returns the path to the test directory relative to the given path `p`.
     */
   private def getTestDirectory(p: Path): Path = p.resolve("./test/").normalize()
-
-  /**
-    * Returns the path to the package file relative to the given path `p`.
-    */
-  private def getPackageFile(p: Path): Path = p.resolve("./package.sn").normalize()
 
   /**
     * Returns the path to the HISTORY file relative to the given path `p`.

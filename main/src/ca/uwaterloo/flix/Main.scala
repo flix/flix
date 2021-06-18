@@ -279,21 +279,21 @@ object Main {
       head("The Flix Programming Language", Version.CurrentVersion.toString)
 
       // Command
-      cmd("init").action((_, c) => c.copy(command = Command.Init)).text("  create a new project in the current directory.")
+      cmd("init").action((_, c) => c.copy(command = Command.Init)).text("  creates a new project in the current directory.")
 
-      cmd("check").action((_, c) => c.copy(command = Command.Check)).text("  type checks the current project.")
+      cmd("check").action((_, c) => c.copy(command = Command.Check)).text("  checks the current project for errors.")
 
-      cmd("build").action((_, c) => c.copy(command = Command.Build)).text("  build the current project.")
+      cmd("build").action((_, c) => c.copy(command = Command.Build)).text("  builds (i.e. compiles) the current project.")
 
-      cmd("build-jar").action((_, c) => c.copy(command = Command.BuildJar)).text("  build a jar-file for the current project.")
+      cmd("build-jar").action((_, c) => c.copy(command = Command.BuildJar)).text("  builds a jar-file from the current project.")
 
-      cmd("build-pkg").action((_, c) => c.copy(command = Command.BuildPkg)).text("  build a fpkg-file for the current project.")
+      cmd("build-pkg").action((_, c) => c.copy(command = Command.BuildPkg)).text("  builds a fpkg-file from the current project.")
 
-      cmd("run").action((_, c) => c.copy(command = Command.Run)).text("  run main for the current project.")
+      cmd("run").action((_, c) => c.copy(command = Command.Run)).text("  runs main for the current project.")
 
-      cmd("benchmark").action((_, c) => c.copy(command = Command.Benchmark)).text("  run benchmarks for the current project.")
+      cmd("benchmark").action((_, c) => c.copy(command = Command.Benchmark)).text("  runs the benchmarks for the current project.")
 
-      cmd("test").action((_, c) => c.copy(command = Command.Test)).text("  run tests for the current project.")
+      cmd("test").action((_, c) => c.copy(command = Command.Test)).text("  runs the tests for the current project.")
 
       note("")
 
