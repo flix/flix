@@ -304,8 +304,7 @@ object Main {
 
       // Benchmark.
       opt[Unit]("benchmark").action((_, c) => c.copy(benchmark = true)).
-        text("runs benchmarks.").
-        hidden() // TODO: Will eventually be removed.
+        text("runs benchmarks.")
 
       // Doc.
       opt[Unit]("doc").action((_, c) => c.copy(documentor = true)).
@@ -320,25 +319,20 @@ object Main {
 
       // Json.
       opt[Unit]("json").action((f, c) => c.copy(json = true)).
-        text("enables json output.").
-        hidden() // internal use.
+        text("enables json output.")
 
       // Listen.
       opt[Int]("listen").action((s, c) => c.copy(listen = Some(s))).
         valueName("<port>").
-        text("starts the socket server and listens on the given port.").
-        hidden() // internal use: playground.
+        text("starts the socket server and listens on the given port.")
 
       // LSP.
       opt[Int]("lsp").action((s, c) => c.copy(lsp = Some(s))).
         valueName("<port>").
-        text("starts the LSP server and listens on the given port.").
-        hidden() // internal use: language server protocol.
-
+        text("starts the LSP server and listens on the given port.")
       // Test.
       opt[Unit]("test").action((_, c) => c.copy(test = true)).
-        text("runs unit tests.").
-        hidden() // TODO: Will eventually be removed.
+        text("runs unit tests.")
 
       // Threads.
       opt[Int]("threads").action((n, c) => c.copy(threads = Some(n))).
@@ -369,18 +363,15 @@ object Main {
 
       // Xlinter.
       opt[Unit]("Xlinter").action((_, c) => c.copy(xlinter = true)).
-        text("[experimental] enables the semantic linter.").
-        hidden() // TODO: Scheduled for removal?
+        text("[experimental] enables the semantic linter.")
 
       // Xno-bool-unification
       opt[Unit]("Xno-bool-unification").action((_, c) => c.copy(xnoboolunification = true)).
-        text("[experimental] disables bool unification.").
-        hidden() // TODO: Will eventually be removed.
+        text("[experimental] disables bool unification.")
 
       // Xno-stratifier
       opt[Unit]("Xno-stratifier").action((_, c) => c.copy(xnostratifier = true)).
-        text("[experimental] disables computation of stratification.").
-        hidden() // TODO: Will eventually be removed.
+        text("[experimental] disables computation of stratification.")
 
       note("")
 
