@@ -269,12 +269,16 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       val main = Symbol.Main
       root.defs.get(main) match {
         case Some(defn) if matchesUri(uri, defn.spec.loc) =>
-          val runMain = Command("Run Main", "flix.cmdRunMain", Nil)
-          val runMainNewTerminal = Command("Run Main (New Term)", "flix.cmdRunMainNewTerminal", Nil)
+          val runMain = Command("Run", "flix.cmdRunMain", Nil)
+          val runMainWithArgs = Command("Run with args...", "flix.runMainWithArgs", Nil)
+          val runMainNewTerminal = Command("Run (in new terminal)", "flix.runMainNewTerminal", Nil)
+          val runMainNewTerminalWithArgs = Command("Run with args... (in new terminal)", "flix.runMainNewTerminalWithArgs", Nil)
           val loc = defn.sym.loc
           List(
             CodeLens(Range.from(loc), Some(runMain)),
-            CodeLens(Range.from(loc), Some(runMainNewTerminal))
+            CodeLens(Range.from(loc), Some(runMainWithArgs)),
+            CodeLens(Range.from(loc), Some(runMainNewTerminal)),
+            CodeLens(Range.from(loc), Some(runMainNewTerminalWithArgs))
           )
         case _ => Nil
       }
