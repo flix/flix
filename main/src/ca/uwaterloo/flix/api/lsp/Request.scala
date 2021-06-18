@@ -20,6 +20,8 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import org.json4s
 import org.json4s.JsonAST.{JString, JValue}
 
+import java.util.Base64
+
 /**
   * A common super-type for language server requests.
   */
@@ -41,6 +43,16 @@ object Request {
     * A request to remove the given uri.
     */
   case class RemUri(requestId: String, uri: String) extends Request
+
+  /**
+    * A request to add (or update) the package at the given uri with the given source code.
+    */
+  case class AddPkg(requestId: String, uri: String, data: Array[Byte]) extends Request
+
+  /**
+    * A request to remove the package at the given uri.
+    */
+  case class RemPkg(requestId: String, uri: String) extends Request
 
   /**
     * A request for the compiler version.
@@ -108,6 +120,50 @@ object Request {
   }
 
   /**
+    * Tries to parse the given `json` value as a [[RemUri]] request.
+    */
+  def parseRemUri(json: json4s.JValue): Result[Request, String] = {
+    for {
+      id <- parseId(json)
+      uri <- parseUri(json)
+    } yield Request.RemUri(id, uri)
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[AddPkg]] request.
+    */
+  def parseAddPkg(json: json4s.JValue): Result[Request, String] = {
+    val base64Res: Result[String, String] = json \\ "base64" match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected base64: '$s'.")
+    }
+
+    try {
+      for {
+        id <- parseId(json)
+        uri <- parseUri(json)
+        base64 <- base64Res
+      } yield {
+        val decoder = Base64.getDecoder
+        val data = decoder.decode(base64)
+        Request.AddPkg(id, uri, data)
+      }
+    } catch {
+      case ex: IllegalArgumentException => Result.Err(ex.getMessage)
+    }
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[RemPkg]] request.
+    */
+  def parseRemPkg(json: json4s.JValue): Result[Request, String] = {
+    for {
+      id <- parseId(json)
+      uri <- parseUri(json)
+    } yield Request.RemPkg(id, uri)
+  }
+
+  /**
     * Tries to parse the given `json` value as a [[Version]] request.
     */
   def parseVersion(json: json4s.JValue): Result[Request, String] = {
@@ -123,16 +179,6 @@ object Request {
     for {
       id <- parseId(json)
     } yield Request.Shutdown(id)
-  }
-
-  /**
-    * Tries to parse the given `json` value as a [[RemUri]] request.
-    */
-  def parseRemUri(json: json4s.JValue): Result[Request, String] = {
-    for {
-      id <- parseId(json)
-      uri <- parseUri(json)
-    } yield Request.RemUri(id, uri)
   }
 
   /**
