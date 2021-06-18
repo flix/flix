@@ -89,8 +89,7 @@ object Main {
       writeClassFiles = !cmdOpts.interactive,
       xlinter = cmdOpts.xlinter,
       xnoboolunification = cmdOpts.xnoboolunification,
-      xnostratifier = cmdOpts.xnostratifier,
-      xstatistics = cmdOpts.xstatistics
+      xnostratifier = cmdOpts.xnostratifier
     )
 
     // check if command was passed.
@@ -234,7 +233,6 @@ object Main {
                      xnoboolunification: Boolean = false,
                      xlinter: Boolean = false,
                      xnostratifier: Boolean = false,
-                     xstatistics: Boolean = false,
                      files: Seq[File] = Seq())
 
   /**
@@ -358,35 +356,34 @@ object Main {
 
       // Xbenchmark-phases
       opt[Unit]("Xbenchmark-phases").action((_, c) => c.copy(xbenchmarkPhases = true)).
-        text("[experimental] benchmarks each individual compiler phase.")
+        text("[experimental] benchmarks the performance of each compiler phase.")
 
       // Xbenchmark-throughput
       opt[Unit]("Xbenchmark-throughput").action((_, c) => c.copy(xbenchmarkThroughput = true)).
-        text("[experimental] benchmarks the throughput of the entire compiler.")
-
-      // Xlib
-      opt[LibLevel]("Xlib").action((arg, c) => c.copy(xlib = arg)).
-        text("[experimental] sets the amount of StdLib content to include (nix, min, all).")
+        text("[experimental] benchmarks the performance of the entire compiler.")
 
       // Xdebug.
       opt[Unit]("Xdebug").action((_, c) => c.copy(xdebug = true)).
-        text("[experimental] enables output of debugging information.")
+        text("[experimental] enables compiler debugging output.")
+
+      // Xlib
+      opt[LibLevel]("Xlib").action((arg, c) => c.copy(xlib = arg)).
+        text("[experimental] controls the amount of std. lib. to include (nix, min, all).")
 
       // Xlinter.
       opt[Unit]("Xlinter").action((_, c) => c.copy(xlinter = true)).
-        text("[experimental] enables the semantic linter.")
+        text("[experimental] enables the semantic linter.").
+        hidden() // TODO: Scheduled for removal?
 
-      // Xno-effects
+      // Xno-bool-unification
       opt[Unit]("Xno-bool-unification").action((_, c) => c.copy(xnoboolunification = true)).
-        text("[experimental] disables bool unification.")
+        text("[experimental] disables bool unification.").
+        hidden() // TODO: Will eventually be removed.
 
       // Xno-stratifier
       opt[Unit]("Xno-stratifier").action((_, c) => c.copy(xnostratifier = true)).
-        text("[experimental] disables computation of stratification.")
-
-      // Xstatistics
-      opt[Unit]("Xstatistics").action((_, c) => c.copy(xstatistics = true)).
-        text("[experimental] prints statistics about the compilation.")
+        text("[experimental] disables computation of stratification.").
+        hidden() // TODO: Will eventually be removed.
 
       note("")
 

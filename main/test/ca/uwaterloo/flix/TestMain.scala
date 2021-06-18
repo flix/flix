@@ -117,12 +117,6 @@ class TestMain extends FunSuite {
     assert(opts.verbose)
   }
 
-  test("--Xallow-redundancies") {
-    val args = Array("--Xallow-redundancies", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xallowredundancies)
-  }
-
   test("--Xbenchmark-phases") {
     val args = Array("--Xbenchmark-phases", "p.flix")
     val opts = Main.parseCmdOpts(args).get
@@ -157,12 +151,6 @@ class TestMain extends FunSuite {
     val args = Array("--Xno-stratifier", "p.flix")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.xnostratifier)
-  }
-
-  test("--Xstatistics") {
-    val args = Array("--Xstatistics", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xstatistics)
   }
 
   test("--Xlib nix") {
