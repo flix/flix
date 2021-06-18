@@ -54,7 +54,8 @@ object Packager {
     // Check that the project directories and files do not already exist.
     //
     val allPaths = List(
-      sourceDirectory, testDirectory, historyFile, licenseFile, readmeFile, mainSourceFile, mainTestFile
+      buildDirectory, libraryDirectory, sourceDirectory, testDirectory,
+      historyFile, licenseFile, readmeFile, mainSourceFile, mainTestFile
     )
     val pathExists = allPaths.find(f => Files.exists(f))
     if (pathExists.nonEmpty) {
@@ -135,7 +136,11 @@ object Packager {
 
     // Configure a new Flix object.
     val flix = new Flix()
-    flix.setOptions(o.copy(targetDirectory = getBuildDirectory(p), loadClassFiles = loadClasses, writeClassFiles = true))
+    val newOptions = o.copy(
+      targetDirectory = getBuildDirectory(p),
+      loadClassFiles = loadClasses,
+      writeClassFiles = true)
+    flix.setOptions(newOptions)
 
     // Copy all class files from the Flix runtime jar.
     copyRuntimeClassFiles(p)
