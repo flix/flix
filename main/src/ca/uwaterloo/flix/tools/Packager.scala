@@ -18,8 +18,6 @@ import scala.collection.mutable
   */
 object Packager {
 
-  // TODO: Every operation should return a value that determines whether it was successful.
-
   /**
     * Initializes a new flix project at the given path `p`.
     *
@@ -45,7 +43,6 @@ object Packager {
     val sourceDirectory = getSourceDirectory(p)
     val testDirectory = getTestDirectory(p)
 
-    val packageFile = getPackageFile(p)
     val historyFile = getHistoryFile(p)
     val licenseFile = getLicenseFile(p)
     val readmeFile = getReadmeFile(p)
@@ -56,7 +53,7 @@ object Packager {
     // Check that the project directories and files do not already exist.
     //
     val allPaths = List(
-      sourceDirectory, testDirectory, packageFile, historyFile, licenseFile, readmeFile, mainSourceFile, mainTestFile
+      sourceDirectory, testDirectory, historyFile, licenseFile, readmeFile, mainSourceFile, mainTestFile
     )
     val pathExists = allPaths.find(f => Files.exists(f))
     if (pathExists.nonEmpty) {
@@ -69,14 +66,6 @@ object Packager {
     newDirectory(buildDirectory)
     newDirectory(sourceDirectory)
     newDirectory(testDirectory)
-
-    newFile(packageFile) {
-      s"""(package
-         |  (name     "$packageName")
-         |  (version  "0.1.0")
-         |)
-         |""".stripMargin
-    }
 
     newFile(historyFile) {
       """### v0.1.0
@@ -141,7 +130,6 @@ object Packager {
     flix.check() match {
       case Validation.Success(_) => ()
       case Validation.Failure(errors) =>
-        implicit val term = TerminalContext.AnsiTerminal
         errors.foreach(e => println(e.message.fmt))
     }
   }
@@ -178,7 +166,6 @@ object Packager {
     flix.compile() match {
       case Validation.Success(r) => Some(r)
       case Validation.Failure(errors) =>
-        implicit val term = TerminalContext.AnsiTerminal
         errors.foreach(e => println(e.message.fmt))
         None
     }
@@ -246,7 +233,6 @@ object Packager {
     addToZip(zip, "HISTORY.md", getHistoryFile(p))
     addToZip(zip, "LICENSE.md", getLicenseFile(p))
     addToZip(zip, "README.md", getReadmeFile(p))
-    addToZip(zip, "package.json", getPackageFile(p))
 
     // Add all source files.
     for (sourceFile <- getAllFiles(getSourceDirectory(p))) {
@@ -369,8 +355,7 @@ object Packager {
       Files.exists(getTestDirectory(p)) &&
       Files.exists(getHistoryFile(p)) &&
       Files.exists(getLicenseFile(p)) &&
-      Files.exists(getReadmeFile(p)) &&
-      Files.exists(getPackageFile(p))
+      Files.exists(getReadmeFile(p))
 
   /**
     * Returns the package name based on the given path `p`.
@@ -401,11 +386,6 @@ object Packager {
     * Returns the path to the test directory relative to the given path `p`.
     */
   private def getTestDirectory(p: Path): Path = p.resolve("./test/").normalize()
-
-  /**
-    * Returns the path to the package file relative to the given path `p`.
-    */
-  private def getPackageFile(p: Path): Path = p.resolve("./package.sn").normalize()
 
   /**
     * Returns the path to the HISTORY file relative to the given path `p`.
