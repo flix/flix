@@ -90,7 +90,6 @@ object Main {
       documentor = cmdOpts.documentor,
       json = cmdOpts.json,
       optimizations = optimizations,
-      mode = if (cmdOpts.release) CompilationMode.Release else CompilationMode.Development,
       threads = cmdOpts.threads.getOrElse(Runtime.getRuntime.availableProcessors()),
       verbosity = if (cmdOpts.verbose) Verbosity.Verbose else Verbosity.Normal,
       verifier = cmdOpts.verifier,
@@ -233,7 +232,6 @@ object Main {
                      json: Boolean = false,
                      listen: Option[Int] = None,
                      lsp: Option[Int] = None,
-                     release: Boolean = false,
                      test: Boolean = false,
                      threads: Option[Int] = None,
                      verbose: Boolean = false,
@@ -348,10 +346,6 @@ object Main {
       opt[Int]("lsp").action((s, c) => c.copy(lsp = Some(s))).
         valueName("<port>").
         text("starts the LSP server and listens on the given port.")
-
-      // Release.
-      opt[Unit]("release").action((_, c) => c.copy(release = true)).
-        text("enables release mode.")
 
       // Test.
       opt[Unit]("test").action((_, c) => c.copy(test = true)).

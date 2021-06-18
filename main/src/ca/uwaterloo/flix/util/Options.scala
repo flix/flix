@@ -29,7 +29,6 @@ object Options {
     documentor = false,
     invariants = false,
     json = false,
-    mode = CompilationMode.Development,
     optimizations = Optimization.All,
     test = false,
     target = JvmTarget.Version18,
@@ -76,7 +75,6 @@ object Options {
   * @param documentor         enables generation of flixdoc.
   * @param invariants         enables checking of compiler invariants.
   * @param json               enable json output
-  * @param mode               the compilation mode.
   * @param test               enables test mode.
   * @param target             the target JVM.
   * @param targetDirectory    the target directory for compiled code.
@@ -98,7 +96,6 @@ case class Options(lib: LibLevel,
                    invariants: Boolean,
                    json: Boolean,
                    optimizations: Set[Optimization],
-                   mode: CompilationMode,
                    target: JvmTarget,
                    targetDirectory: Path,
                    test: Boolean,
@@ -133,26 +130,6 @@ object Optimization {
     * Enables compilation with full tail calls.
     */
   case object TailCalls extends Optimization
-
-}
-
-/**
-  * A common super-type for the compilation mode.
-  */
-sealed trait CompilationMode
-
-object CompilationMode {
-
-  /**
-    * Enables the development mode of the compiler.
-    */
-  case object Development extends CompilationMode
-
-
-  /**
-    * Enables the release mode of the compiler.
-    */
-  case object Release extends CompilationMode
 
 }
 
