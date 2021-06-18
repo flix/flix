@@ -117,12 +117,6 @@ class TestMain extends FunSuite {
     assert(opts.verbose)
   }
 
-  test("--verifier") {
-    val args = Array("--verifier", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.verifier)
-  }
-
   test("--Xallow-redundancies") {
     val args = Array("--Xallow-redundancies", "p.flix")
     val opts = Main.parseCmdOpts(args).get

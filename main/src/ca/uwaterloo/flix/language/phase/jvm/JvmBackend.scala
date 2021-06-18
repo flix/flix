@@ -49,12 +49,6 @@ object JvmBackend extends Phase[Root, CompilationResult] {
 
     // Generate all classes.
     val allClasses = flix.subphase("CodeGen") {
-      //
-      // Immediately return if in verification mode.
-      //
-      if (flix.options.verifier) {
-        return new CompilationResult(root, None, Map.empty).toSuccess
-      }
 
       //
       // Compute the set of closures in the program.

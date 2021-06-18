@@ -92,7 +92,6 @@ object Main {
       optimizations = optimizations,
       threads = cmdOpts.threads.getOrElse(Runtime.getRuntime.availableProcessors()),
       verbosity = if (cmdOpts.verbose) Verbosity.Verbose else Verbosity.Normal,
-      verifier = cmdOpts.verifier,
       writeClassFiles = !cmdOpts.interactive,
       xallowredundancies = cmdOpts.xallowredundancies,
       xlinter = cmdOpts.xlinter,
@@ -235,7 +234,6 @@ object Main {
                      test: Boolean = false,
                      threads: Option[Int] = None,
                      verbose: Boolean = false,
-                     verifier: Boolean = false,
                      xallowredundancies: Boolean = false,
                      xbenchmarkPhases: Boolean = false,
                      xbenchmarkThroughput: Boolean = false,
@@ -357,10 +355,6 @@ object Main {
       // Verbose.
       opt[Unit]("verbose").action((_, c) => c.copy(verbose = true))
         .text("enables verbose output.")
-
-      // Verifier.
-      opt[Unit]("verifier").action((_, c) => c.copy(verifier = true)).
-        text("enables the verifier.")
 
       // Version.
       version("version").text("prints the version number.")
