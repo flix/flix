@@ -322,17 +322,20 @@ object Main {
 
       // Json.
       opt[Unit]("json").action((f, c) => c.copy(json = true)).
-        text("enables json output.")
+        text("enables json output.").
+        hidden() // internal use.
 
       // Listen.
       opt[Int]("listen").action((s, c) => c.copy(listen = Some(s))).
         valueName("<port>").
-        text("starts the socket server and listens on the given port.")
+        text("starts the socket server and listens on the given port.").
+        hidden() // internal use: playground.
 
       // LSP.
       opt[Int]("lsp").action((s, c) => c.copy(lsp = Some(s))).
         valueName("<port>").
-        text("starts the LSP server and listens on the given port.")
+        text("starts the LSP server and listens on the given port.").
+        hidden() // internal use: language server protocol.
 
       // Test.
       opt[Unit]("test").action((_, c) => c.copy(test = true)).
@@ -341,7 +344,7 @@ object Main {
 
       // Threads.
       opt[Int]("threads").action((n, c) => c.copy(threads = Some(n))).
-        text("number of threads for compilation.")
+        text("number of threads to use for compilation.")
 
       // Verbose.
       opt[Unit]("verbose").action((_, c) => c.copy(verbose = true))
