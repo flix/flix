@@ -31,7 +31,6 @@ object Options {
     json = false,
     mode = CompilationMode.Development,
     optimizations = Optimization.All,
-    quickchecker = false,
     test = false,
     target = JvmTarget.Version18,
     targetDirectory = Paths.get("./target/flix/"),
@@ -78,7 +77,6 @@ object Options {
   * @param invariants         enables checking of compiler invariants.
   * @param json               enable json output
   * @param mode               the compilation mode.
-  * @param quickchecker       enables the quickchecker.
   * @param test               enables test mode.
   * @param target             the target JVM.
   * @param targetDirectory    the target directory for compiled code.
@@ -101,7 +99,6 @@ case class Options(lib: LibLevel,
                    json: Boolean,
                    optimizations: Set[Optimization],
                    mode: CompilationMode,
-                   quickchecker: Boolean,
                    target: JvmTarget,
                    targetDirectory: Path,
                    test: Boolean,

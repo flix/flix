@@ -22,7 +22,7 @@ import org.scalatest.FunSuite
 
 class TestQuickChecker extends FunSuite {
 
-  val opts: Options = Options.DefaultTest.copy(quickchecker = true)
+  val opts: Options = Options.DefaultTest
 
   test("Belnap.flix") {
     new Flix()
