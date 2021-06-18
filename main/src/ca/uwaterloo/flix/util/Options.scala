@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.util
 
 import java.nio.file.{Path, Paths}
-import java.time.{Duration => JDuration}
 
 object Options {
   /**
@@ -27,13 +26,11 @@ object Options {
     lib = LibLevel.All,
     debug = false,
     documentor = false,
-    invariants = false,
     json = false,
     optimizations = Optimization.All,
     test = false,
     target = JvmTarget.Version18,
     targetDirectory = Paths.get("./target/flix/"),
-    timeout = None,
     threads = Runtime.getRuntime.availableProcessors(),
     verbosity = Verbosity.Normal,
     verifier = false,
@@ -73,12 +70,10 @@ object Options {
   * @param lib                selects the level of libraries to include.
   * @param debug              enables the emission of debugging information.
   * @param documentor         enables generation of flixdoc.
-  * @param invariants         enables checking of compiler invariants.
   * @param json               enable json output
   * @param test               enables test mode.
   * @param target             the target JVM.
   * @param targetDirectory    the target directory for compiled code.
-  * @param timeout            selects the solver timeout.
   * @param threads            selects the number of threads to use.
   * @param verbosity          selects the level of verbosity.
   * @param verifier           enables the verifier.
@@ -93,13 +88,11 @@ object Options {
 case class Options(lib: LibLevel,
                    debug: Boolean,
                    documentor: Boolean,
-                   invariants: Boolean,
                    json: Boolean,
                    optimizations: Set[Optimization],
                    target: JvmTarget,
                    targetDirectory: Path,
                    test: Boolean,
-                   timeout: Option[JDuration],
                    threads: Int,
                    verbosity: Verbosity,
                    verifier: Boolean,

@@ -241,7 +241,6 @@ object Main {
                      xbenchmarkThroughput: Boolean = false,
                      xlib: LibLevel = LibLevel.All,
                      xdebug: Boolean = false,
-                     xinvariants: Boolean = false,
                      xnoboolunification: Boolean = false,
                      xlinter: Boolean = false,
                      xnostratifier: Boolean = false,
@@ -389,10 +388,6 @@ object Main {
       // Xdebug.
       opt[Unit]("Xdebug").action((_, c) => c.copy(xdebug = true)).
         text("[experimental] enables output of debugging information.")
-
-      // Xinvariants.
-      opt[Unit]("Xinvariants").action((_, c) => c.copy(xinvariants = true)).
-        text("[experimental] enables compiler invariants.")
 
       // Xlinter.
       opt[Unit]("Xlinter").action((_, c) => c.copy(xlinter = true)).
