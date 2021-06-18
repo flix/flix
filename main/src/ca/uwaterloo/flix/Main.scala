@@ -76,12 +76,7 @@ object Main {
     }
 
     // the default color context.
-    implicit val terminal = TerminalContext.AnsiTerminal
-
-    // compute the enabled optimizations.
-    val optimizations = Optimization.All.filter {
-      case Optimization.TailCalls => !cmdOpts.xnotailcalls
-    }
+    implicit val terminal: TerminalContext = TerminalContext.AnsiTerminal
 
     // construct flix options.
     val options = Options.Default.copy(
@@ -89,18 +84,11 @@ object Main {
       debug = cmdOpts.xdebug,
       documentor = cmdOpts.documentor,
       json = cmdOpts.json,
-      optimizations = optimizations,
-      mode = if (cmdOpts.release) CompilationMode.Release else CompilationMode.Development,
-      quickchecker = cmdOpts.quickchecker,
       threads = cmdOpts.threads.getOrElse(Runtime.getRuntime.availableProcessors()),
-      verbosity = if (cmdOpts.verbose) Verbosity.Verbose else Verbosity.Normal,
-      verifier = cmdOpts.verifier,
       writeClassFiles = !cmdOpts.interactive,
-      xallowredundancies = cmdOpts.xallowredundancies,
       xlinter = cmdOpts.xlinter,
       xnoboolunification = cmdOpts.xnoboolunification,
-      xnostratifier = cmdOpts.xnostratifier,
-      xstatistics = cmdOpts.xstatistics
+      xnostratifier = cmdOpts.xnostratifier
     )
 
     // check if command was passed.
@@ -234,23 +222,15 @@ object Main {
                      json: Boolean = false,
                      listen: Option[Int] = None,
                      lsp: Option[Int] = None,
-                     quickchecker: Boolean = false,
-                     release: Boolean = false,
                      test: Boolean = false,
                      threads: Option[Int] = None,
-                     verbose: Boolean = false,
-                     verifier: Boolean = false,
-                     xallowredundancies: Boolean = false,
                      xbenchmarkPhases: Boolean = false,
                      xbenchmarkThroughput: Boolean = false,
                      xlib: LibLevel = LibLevel.All,
                      xdebug: Boolean = false,
-                     xinvariants: Boolean = false,
                      xnoboolunification: Boolean = false,
                      xlinter: Boolean = false,
                      xnostratifier: Boolean = false,
-                     xnotailcalls: Boolean = false,
-                     xstatistics: Boolean = false,
                      files: Seq[File] = Seq())
 
   /**
@@ -350,30 +330,13 @@ object Main {
       opt[Int]("lsp").action((s, c) => c.copy(lsp = Some(s))).
         valueName("<port>").
         text("starts the LSP server and listens on the given port.")
-
-      // Quickchecker.
-      opt[Unit]("quickchecker").action((_, c) => c.copy(quickchecker = true)).
-        text("enables the quickchecker.")
-
-      // Release.
-      opt[Unit]("release").action((_, c) => c.copy(release = true)).
-        text("enables release mode.")
-
       // Test.
       opt[Unit]("test").action((_, c) => c.copy(test = true)).
         text("runs unit tests.")
 
       // Threads.
       opt[Int]("threads").action((n, c) => c.copy(threads = Some(n))).
-        text("number of threads for compilation.")
-
-      // Verbose.
-      opt[Unit]("verbose").action((_, c) => c.copy(verbose = true))
-        .text("enables verbose output.")
-
-      // Verifier.
-      opt[Unit]("verifier").action((_, c) => c.copy(verifier = true)).
-        text("enables the verifier.")
+        text("number of threads to use for compilation.")
 
       // Version.
       version("version").text("prints the version number.")
@@ -382,49 +345,33 @@ object Main {
       note("")
       note("The following options are experimental:")
 
-      // Xallow-redundancies.
-      opt[Unit]("Xallow-redundancies").action((_, c) => c.copy(xallowredundancies = true)).
-        text("[experimental] disables the redundancies checker.")
-
       // Xbenchmark-phases
       opt[Unit]("Xbenchmark-phases").action((_, c) => c.copy(xbenchmarkPhases = true)).
-        text("[experimental] benchmarks each individual compiler phase.")
+        text("[experimental] benchmarks the performance of each compiler phase.")
 
       // Xbenchmark-throughput
       opt[Unit]("Xbenchmark-throughput").action((_, c) => c.copy(xbenchmarkThroughput = true)).
-        text("[experimental] benchmarks the throughput of the entire compiler.")
-
-      // Xlib
-      opt[LibLevel]("Xlib").action((arg, c) => c.copy(xlib = arg)).
-        text("[experimental] sets the amount of StdLib content to include (nix, min, all).")
+        text("[experimental] benchmarks the performance of the entire compiler.")
 
       // Xdebug.
       opt[Unit]("Xdebug").action((_, c) => c.copy(xdebug = true)).
-        text("[experimental] enables output of debugging information.")
+        text("[experimental] enables compiler debugging output.")
 
-      // Xinvariants.
-      opt[Unit]("Xinvariants").action((_, c) => c.copy(xinvariants = true)).
-        text("[experimental] enables compiler invariants.")
+      // Xlib
+      opt[LibLevel]("Xlib").action((arg, c) => c.copy(xlib = arg)).
+        text("[experimental] controls the amount of std. lib. to include (nix, min, all).")
 
       // Xlinter.
       opt[Unit]("Xlinter").action((_, c) => c.copy(xlinter = true)).
         text("[experimental] enables the semantic linter.")
 
-      // Xno-effects
+      // Xno-bool-unification
       opt[Unit]("Xno-bool-unification").action((_, c) => c.copy(xnoboolunification = true)).
         text("[experimental] disables bool unification.")
 
       // Xno-stratifier
       opt[Unit]("Xno-stratifier").action((_, c) => c.copy(xnostratifier = true)).
         text("[experimental] disables computation of stratification.")
-
-      // Xno-tailcalls
-      opt[Unit]("Xno-tailcalls").action((_, c) => c.copy(xnotailcalls = true)).
-        text("[experimental] disables tail call elimination.")
-
-      // Xstatistics
-      opt[Unit]("Xstatistics").action((_, c) => c.copy(xstatistics = true)).
-        text("[experimental] prints statistics about the compilation.")
 
       note("")
 

@@ -99,18 +99,6 @@ class TestMain extends FunSuite {
     assert(opts.lsp.nonEmpty)
   }
 
-  test("--quickchecker") {
-    val args = Array("--quickchecker")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.quickchecker)
-  }
-
-  test("--release") {
-    val args = Array("--release", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.release)
-  }
-
   test("--test") {
     val args = Array("--test", "p.flix")
     val opts = Main.parseCmdOpts(args).get
@@ -121,24 +109,6 @@ class TestMain extends FunSuite {
     val args = Array("--threads", "42", "p.flix")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.threads.contains(42))
-  }
-
-  test("--verbose") {
-    val args = Array("--verbose", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.verbose)
-  }
-
-  test("--verifier") {
-    val args = Array("--verifier", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.verifier)
-  }
-
-  test("--Xallow-redundancies") {
-    val args = Array("--Xallow-redundancies", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xallowredundancies)
   }
 
   test("--Xbenchmark-phases") {
@@ -159,12 +129,6 @@ class TestMain extends FunSuite {
     assert(opts.xdebug)
   }
 
-  test("--Xinvariants") {
-    val args = Array("--Xinvariants", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xinvariants)
-  }
-
   test("--Xlinter") {
     val args = Array("--Xlinter", "p.flix")
     val opts = Main.parseCmdOpts(args).get
@@ -181,18 +145,6 @@ class TestMain extends FunSuite {
     val args = Array("--Xno-stratifier", "p.flix")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.xnostratifier)
-  }
-
-  test("--Xno-tailcalls") {
-    val args = Array("--Xno-tailcalls", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xnotailcalls)
-  }
-
-  test("--Xstatistics") {
-    val args = Array("--Xstatistics", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xstatistics)
   }
 
   test("--Xlib nix") {

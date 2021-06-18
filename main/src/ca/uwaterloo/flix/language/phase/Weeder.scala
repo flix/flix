@@ -18,12 +18,11 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
-import ca.uwaterloo.flix.language.ast.ParsedAst.SelectFragment
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{CompilationMode, InternalCompilerException, ParOps, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 import java.lang.{Byte => JByte, Integer => JInt, Long => JLong, Short => JShort}
 import java.math.BigInteger
@@ -367,12 +366,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Expression.Hole(sp1, name, sp2) =>
       val loc = mkSL(sp1, sp2)
-      /*
-       * Checks for `IllegalHole`.
-       */
-      if (flix.options.mode == CompilationMode.Release) {
-        return IllegalHole(loc).toFailure
-      }
       WeededAst.Expression.Hole(name, loc).toSuccess
 
     case ParsedAst.Expression.Use(sp1, use, exp, sp2) =>
