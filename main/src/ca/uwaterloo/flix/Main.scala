@@ -317,7 +317,8 @@ object Main {
 
       // Benchmark.
       opt[Unit]("benchmark").action((_, c) => c.copy(benchmark = true)).
-        text("runs benchmarks.")
+        text("runs benchmarks.").
+        hidden() // TODO: Will eventually be removed.
 
       // Doc.
       opt[Unit]("doc").action((_, c) => c.copy(documentor = true)).
@@ -346,7 +347,8 @@ object Main {
 
       // Test.
       opt[Unit]("test").action((_, c) => c.copy(test = true)).
-        text("runs unit tests.")
+        text("runs unit tests.").
+        hidden() // TODO: Will eventually be removed.
 
       // Threads.
       opt[Int]("threads").action((n, c) => c.copy(threads = Some(n))).
