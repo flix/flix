@@ -20,8 +20,6 @@ import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.debug._
-import ca.uwaterloo.flix.tools.Tester.TestResult
-import ca.uwaterloo.flix.tools.{Packager, Tester}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
 import ca.uwaterloo.flix.util.vt.TerminalContext
@@ -37,7 +35,6 @@ import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods.parse
 
 import java.net.InetSocketAddress
-import java.nio.file.Path
 import java.text.SimpleDateFormat
 import java.util.Date
 import scala.collection.mutable
