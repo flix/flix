@@ -40,6 +40,7 @@ object Packager {
     // Compute all the directories and files we intend to create.
     //
     val buildDirectory = getBuildDirectory(p)
+    val libraryDirectory = getLibraryDirectory(p)
     val sourceDirectory = getSourceDirectory(p)
     val testDirectory = getTestDirectory(p)
 
@@ -53,7 +54,8 @@ object Packager {
     // Check that the project directories and files do not already exist.
     //
     val allPaths = List(
-      sourceDirectory, testDirectory, historyFile, licenseFile, readmeFile, mainSourceFile, mainTestFile
+      buildDirectory, libraryDirectory, sourceDirectory, testDirectory,
+      historyFile, licenseFile, readmeFile, mainSourceFile, mainTestFile
     )
     val pathExists = allPaths.find(f => Files.exists(f))
     if (pathExists.nonEmpty) {
@@ -64,6 +66,7 @@ object Packager {
     // Create the project directories and files.
     //
     newDirectory(buildDirectory)
+    newDirectory(libraryDirectory)
     newDirectory(sourceDirectory)
     newDirectory(testDirectory)
 
@@ -113,19 +116,8 @@ object Packager {
     val flix = new Flix()
     flix.setOptions(o)
 
-    // Add all source files.
-    for (sourceFile <- getAllFiles(getSourceDirectory(p))) {
-      if (sourceFile.getFileName.toString.endsWith(".flix")) {
-        flix.addPath(sourceFile)
-      }
-    }
-
-    // Add all test files.
-    for (testFile <- getAllFiles(getTestDirectory(p))) {
-      if (testFile.getFileName.toString.endsWith(".flix")) {
-        flix.addPath(testFile)
-      }
-    }
+    // Add sources and packages.
+    addSourcesAndPackages(p, o, flix)
 
     flix.check() match {
       case Validation.Success(_) => ()
@@ -144,11 +136,30 @@ object Packager {
 
     // Configure a new Flix object.
     val flix = new Flix()
-    flix.setOptions(o.copy(targetDirectory = getBuildDirectory(p), loadClassFiles = loadClasses, writeClassFiles = true))
+    val newOptions = o.copy(
+      targetDirectory = getBuildDirectory(p),
+      loadClassFiles = loadClasses,
+      writeClassFiles = true)
+    flix.setOptions(newOptions)
 
     // Copy all class files from the Flix runtime jar.
     copyRuntimeClassFiles(p)
 
+    // Add sources and packages.
+    addSourcesAndPackages(p, o, flix)
+
+    flix.compile() match {
+      case Validation.Success(r) => Some(r)
+      case Validation.Failure(errors) =>
+        errors.foreach(e => println(e.message.fmt))
+        None
+    }
+  }
+
+  /**
+    * Adds all source files and packages to the given `flix` object.
+    */
+  private def addSourcesAndPackages(p: Path, o: Options, flix: Flix): Unit = {
     // Add all source files.
     for (sourceFile <- getAllFiles(getSourceDirectory(p))) {
       if (sourceFile.getFileName.toString.endsWith(".flix")) {
@@ -163,11 +174,11 @@ object Packager {
       }
     }
 
-    flix.compile() match {
-      case Validation.Success(r) => Some(r)
-      case Validation.Failure(errors) =>
-        errors.foreach(e => println(e.message.fmt))
-        None
+    // Add all library packages.
+    for (pkgFile <- getAllFiles(getLibraryDirectory(p))) {
+      if (pkgFile.getFileName.toString.endsWith(".fpkg")) {
+        flix.addPath(pkgFile)
+      }
     }
   }
 
@@ -351,7 +362,8 @@ object Packager {
     * Returns `true` if the given path `p` appears to be a flix project path.
     */
   private def isProjectPath(p: Path): Boolean =
-    Files.exists(getSourceDirectory(p)) &&
+    Files.exists(getLibraryDirectory(p)) &&
+      Files.exists(getSourceDirectory(p)) &&
       Files.exists(getTestDirectory(p)) &&
       Files.exists(getHistoryFile(p)) &&
       Files.exists(getLicenseFile(p)) &&
@@ -376,6 +388,11 @@ object Packager {
     * Returns the path to the build directory relative to the given path `p`.
     */
   private def getBuildDirectory(p: Path): Path = p.resolve("./build/").normalize()
+
+  /**
+    * Returns the path to the library directory relative to the given path `p`.
+    */
+  private def getLibraryDirectory(p: Path): Path = p.resolve("./lib/").normalize()
 
   /**
     * Returns the path to the source directory relative to the given path `p`.
