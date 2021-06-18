@@ -87,7 +87,6 @@ object Main {
       threads = cmdOpts.threads.getOrElse(Runtime.getRuntime.availableProcessors()),
       verbosity = if (cmdOpts.verbose) Verbosity.Verbose else Verbosity.Normal,
       writeClassFiles = !cmdOpts.interactive,
-      xallowredundancies = cmdOpts.xallowredundancies,
       xlinter = cmdOpts.xlinter,
       xnoboolunification = cmdOpts.xnoboolunification,
       xnostratifier = cmdOpts.xnostratifier,
@@ -228,7 +227,6 @@ object Main {
                      test: Boolean = false,
                      threads: Option[Int] = None,
                      verbose: Boolean = false,
-                     xallowredundancies: Boolean = false,
                      xbenchmarkPhases: Boolean = false,
                      xbenchmarkThroughput: Boolean = false,
                      xlib: LibLevel = LibLevel.All,
@@ -357,10 +355,6 @@ object Main {
       // Experimental options:
       note("")
       note("The following options are experimental:")
-
-      // Xallow-redundancies.
-      opt[Unit]("Xallow-redundancies").action((_, c) => c.copy(xallowredundancies = true)).
-        text("[experimental] disables the redundancies checker.")
 
       // Xbenchmark-phases
       opt[Unit]("Xbenchmark-phases").action((_, c) => c.copy(xbenchmarkPhases = true)).
