@@ -198,6 +198,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       ("id" -> id) ~ ("status" -> "success")
 
     case Request.AddPkg(id, uri, data) =>
+      // TODO: Possibly move into Input class?
       val inputStream = new ZipInputStream(new ByteArrayInputStream(data))
       val items = mutable.ListBuffer.empty[String]
       var entry = inputStream.getNextEntry
