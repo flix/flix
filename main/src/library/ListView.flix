@@ -17,9 +17,34 @@
 ///
 /// The ListView type.
 ///
-enum ListView[t] {
+pub enum ListView[t, a] {
     case VNil,
-    case VCons(t, List[t])
+    case LVFilter(a -> Bool, ListView[t, a])
 }
 
+namespace ListView {
+
+    ///
+    /// Returns true if and only if `l` is the empty list view.
+    ///
+    /// Forces evaluation of the view.
+    ///
+    pub def isEmpty(l: ListView[_, a]): Bool = match l {
+      case VNil => true
+      case _    => false
+    }
+
+    ///
+    /// Returns a list view of every element in `l` that satisfies the predicate `p`.
+    ///
+    /// Forces evaluation of the view if `f` is impure.
+    ///
+    pub def filter(f: a -> Bool, l: ListView[t, a]): ListView[t, a] = ???
+
+
+
+
+    pub def ispure(_f: a -> b & eff): Bool = true
+
+}
 
