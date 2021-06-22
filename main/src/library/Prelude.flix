@@ -1,4 +1,9 @@
 ///
+/// Ref[t] is a type alias for a scoped ref with a global lifetime.
+///
+type alias Ref[t] = ScopedRef[t, false]
+
+///
 /// The identity function.
 ///
 @Time(1) @Space(1)

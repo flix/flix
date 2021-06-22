@@ -450,8 +450,6 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
 
           case TypeConstructor.Native(clazz) => MonoType.Native(clazz)
 
-          case TypeConstructor.Ref => MonoType.Ref(args.head)
-
           case TypeConstructor.ScopedRef =>
             MonoType.Ref(args.head)
 

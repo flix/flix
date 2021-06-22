@@ -524,6 +524,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.Let(sym, e1, e2, loc)
 
+        case NamedAst.Expression.LetRegion(sym, exp, evar, loc) =>
+          for {
+            e <- visit(exp, tenv0)
+          } yield ResolvedAst.Expression.LetRegion(sym, e, evar, loc)
+
         case NamedAst.Expression.Match(exp, rules, loc) =>
           val rulesVal = traverse(rules) {
             case NamedAst.MatchRule(pat, guard, body) =>
@@ -660,21 +665,27 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             i2 <- visit(endIndex, tenv0)
           } yield ResolvedAst.Expression.ArraySlice(b, i1, i2, loc)
 
-        case NamedAst.Expression.Ref(exp, loc) =>
+        case NamedAst.Expression.Ref(exp, tvar, loc) =>
           for {
             e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.Ref(e, loc)
+          } yield ResolvedAst.Expression.Ref(e, tvar, loc)
 
-        case NamedAst.Expression.Deref(exp, tvar, loc) =>
-          for {
-            e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.Deref(e, tvar, loc)
-
-        case NamedAst.Expression.Assign(exp1, exp2, loc) =>
+        case NamedAst.Expression.RefWithRegion(exp1, exp2, tvar, evar, loc) =>
           for {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.Assign(e1, e2, loc)
+          } yield ResolvedAst.Expression.RefWithRegion(e1, e2, tvar, evar, loc)
+
+        case NamedAst.Expression.Deref(exp, tvar, evar, loc) =>
+          for {
+            e <- visit(exp, tenv0)
+          } yield ResolvedAst.Expression.Deref(e, tvar, evar, loc)
+
+        case NamedAst.Expression.Assign(exp1, exp2, evar, loc) =>
+          for {
+            e1 <- visit(exp1, tenv0)
+            e2 <- visit(exp2, tenv0)
+          } yield ResolvedAst.Expression.Assign(e1, e2, evar, loc)
 
         case NamedAst.Expression.Existential(fparam, exp, loc) =>
           for {
@@ -875,28 +886,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.FixpointProjectOut(pred, e1, e2, tvar, loc)
-
-        case NamedAst.Expression.LetRegion(sym, exp, evar, loc) =>
-          for {
-            e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.LetRegion(sym, e, evar, loc)
-
-        case NamedAst.Expression.ScopedRef(exp1, exp2, tvar, evar, loc) =>
-          for {
-            e1 <- visit(exp1, tenv0)
-            e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.ScopedRef(e1, e2, tvar, evar, loc)
-
-        case NamedAst.Expression.ScopedDeref(exp, tvar, evar, loc) =>
-          for {
-            e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.ScopedDeref(e, tvar, evar, loc)
-
-        case NamedAst.Expression.ScopedAssign(exp1, exp2, evar, loc) =>
-          for {
-            e1 <- visit(exp1, tenv0)
-            e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.ScopedAssign(e1, e2, evar, loc)
 
       }
 
@@ -1307,7 +1296,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       case "Array" => Type.mkArray(loc).toSuccess
       case "Channel" => Type.mkChannel(loc).toSuccess
       case "Lazy" => Type.mkLazy(loc).toSuccess
-      case "Ref" => Type.mkRef(loc).toSuccess
       case "ScopedRef" => Type.Cst(TypeConstructor.ScopedRef, loc).toSuccess
       case "Region" => Type.Cst(TypeConstructor.Region, loc).toSuccess
 
@@ -1786,7 +1774,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
       case TypeConstructor.Enum(_, _) => Class.forName("java.lang.Object").toSuccess
 
-      case TypeConstructor.Ref => Class.forName("java.lang.Object").toSuccess
+      case TypeConstructor.ScopedRef => Class.forName("java.lang.Object").toSuccess
 
       case TypeConstructor.Tuple(_) => Class.forName("java.lang.Object").toSuccess
 

@@ -103,6 +103,8 @@ object ResolvedAst {
 
     case class Let(sym: Symbol.VarSym, exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
+    case class LetRegion(sym: Symbol.VarSym, exp: ResolvedAst.Expression, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
     case class Match(exp: ResolvedAst.Expression, rules: List[ResolvedAst.MatchRule], loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Choose(star: Boolean, exps: List[ResolvedAst.Expression], rules: List[ResolvedAst.ChoiceRule], tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
@@ -131,11 +133,13 @@ object ResolvedAst {
 
     case class ArraySlice(base: ResolvedAst.Expression, beginIndex: ResolvedAst.Expression, endIndex: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Ref(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Ref(exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Deref(exp: ResolvedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class RefWithRegion(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tpe: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Assign(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Deref(exp: ResolvedAst.Expression, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class Assign(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Existential(fparam: ResolvedAst.FormalParam, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -186,14 +190,6 @@ object ResolvedAst {
     case class FixpointProjectIn(exp: ResolvedAst.Expression, pred: Name.Pred, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class FixpointProjectOut(pred: Name.Pred, exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class LetRegion(sym: Symbol.VarSym, exp: ResolvedAst.Expression, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class ScopedRef(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tpe: Type.Var, evra: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class ScopedDeref(exp: ResolvedAst.Expression, tpe: Type.Var, evra: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class ScopedAssign(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
   }
 

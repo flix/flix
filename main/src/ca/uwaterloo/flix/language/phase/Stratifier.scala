@@ -150,6 +150,11 @@ object Stratifier extends Phase[Root, Root] {
         case (e1, e2) => Expression.Let(sym, e1, e2, tpe, eff, loc)
       }
 
+    case Expression.LetRegion(sym, exp, tpe, eff, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.LetRegion(sym, e, tpe, eff, loc)
+      }
+
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
         case (e1, e2, e3) => Expression.IfThenElse(e1, e2, e3, tpe, eff, loc)
@@ -403,11 +408,6 @@ object Stratifier extends Phase[Root, Root] {
         case e => Expression.FixpointProjectOut(pred, e, tpe, eff, loc)
       }
 
-    case Expression.LetRegion(sym, exp, tpe, eff, loc) =>
-      mapN(visitExp(exp)) {
-        case e => Expression.LetRegion(sym, e, tpe, eff, loc)
-      }
-
   }
 
   /**
@@ -474,6 +474,9 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.Let(_, exp1, exp2, _, _, _) =>
       dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2)
+
+    case Expression.LetRegion(_, exp, _, _, _) =>
+      dependencyGraphOfExp(exp)
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2) + dependencyGraphOfExp(exp3)
@@ -635,9 +638,6 @@ object Stratifier extends Phase[Root, Root] {
       dependencyGraphOfExp(exp)
 
     case Expression.FixpointProjectOut(_, exp, _, _, _) =>
-      dependencyGraphOfExp(exp)
-
-    case Expression.LetRegion(_, exp, _, _, _) =>
       dependencyGraphOfExp(exp)
 
   }

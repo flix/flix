@@ -686,6 +686,17 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = Type.mkAnd(eff1, eff2)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
+      case ResolvedAst.Expression.LetRegion(sym, exp, evar, loc) =>
+        // Introduce a rigid variable for the region of `exp`.
+        val regionVar = Type.freshVar(Kind.Bool, Rigidity.Rigid, Some(sym.text))
+        for {
+          _ <- unifyTypeM(sym.tvar, Type.mkRegion(regionVar, loc), loc)
+          (constrs, tpe, eff) <- visitExp(exp)
+          purifiedEff <- purifyEffM(regionVar, eff)
+          resultEff <- unifyTypeM(evar, purifiedEff, loc)
+          resultTyp = tpe
+        } yield (constrs, resultTyp, resultEff)
+
       case ResolvedAst.Expression.Match(exp, rules, loc) =>
         val patterns = rules.map(_.pat)
         val guards = rules.map(_.guard)
@@ -1082,29 +1093,48 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = Type.Impure
         } yield (constrs1 ++ constrs2 ++ constrs3, resultTyp, resultEff)
 
-      case ResolvedAst.Expression.Ref(exp, loc) =>
+      case ResolvedAst.Expression.Ref(exp, tvar, loc) =>
+        val regionVar = Type.False
         for {
-          (constrs, tpe, _) <- visitExp(exp)
-          resultTyp = Type.mkRef(tpe)
+          (constrs, elmType, eff1) <- visitExp(exp)
+          resultTyp <- unifyTypeM(tvar, Type.mkScopedRef(elmType, regionVar, loc), loc)
           resultEff = Type.Impure
         } yield (constrs, resultTyp, resultEff)
 
-      case ResolvedAst.Expression.Deref(exp, tvar, loc) =>
-        val elementType = Type.freshVar(Kind.Star)
+      case ResolvedAst.Expression.RefWithRegion(exp1, exp2, tvar, evar, loc) =>
+        val regionVar = Type.freshVar(Kind.Bool, Rigidity.Flexible, Some("l"))
         for {
-          (constrs, typ, _) <- visitExp(exp)
-          refType <- unifyTypeM(typ, Type.mkRef(elementType), loc)
-          resultTyp <- unifyTypeM(tvar, elementType, loc)
-          resultEff = Type.Impure
+          (constrs1, elmType, eff1) <- visitExp(exp1)
+          (constrs2, regionType, eff2) <- visitExp(exp2)
+          _ <- unifyTypeM(regionType, Type.mkRegion(regionVar, loc), loc)
+          resultTyp <- unifyTypeM(tvar, Type.mkScopedRef(elmType, regionVar, loc), loc)
+          resultEff <- unifyTypeM(evar, Type.mkAnd(eff1, eff2, regionVar), loc)
+        } yield (constrs1 ++ constrs2, resultTyp, resultEff)
+
+      case ResolvedAst.Expression.Deref(exp, tvar, evar, loc) =>
+        // Introduce a fresh type variable for element type.
+        val elmTypeVar = Type.freshVar(Kind.Star, Rigidity.Flexible, Some("t"))
+
+        // Introduce a flexible variable for the region variable.
+        // This variable will become unified with the rigid variable.
+        val regionVar = Type.freshVar(Kind.Bool, Rigidity.Flexible, Some("l"))
+        for {
+          (constrs, tpe, eff) <- visitExp(exp)
+          refType <- unifyTypeM(tpe, Type.mkScopedRef(elmTypeVar, regionVar, loc), loc)
+          resultTyp <- unifyTypeM(tvar, elmTypeVar, loc)
+          resultEff <- unifyTypeM(evar, Type.mkAnd(eff, regionVar), loc)
         } yield (constrs, resultTyp, resultEff)
 
-      case ResolvedAst.Expression.Assign(exp1, exp2, loc) =>
+      case ResolvedAst.Expression.Assign(exp1, exp2, evar, loc) =>
+        // Introduce a flexible variable for the lifetime.
+        // This variable will become unified with the rigid variable.
+        val lifetimeVar = Type.freshVar(Kind.Bool, Rigidity.Flexible, Some("l"))
         for {
-          (constrs1, tpe1, _) <- visitExp(exp1)
-          (constrs2, tpe2, _) <- visitExp(exp2)
-          refType <- unifyTypeM(tpe1, Type.mkRef(tpe2), loc)
+          (constrs1, tpe1, eff1) <- visitExp(exp1)
+          (constrs2, tpe2, eff2) <- visitExp(exp2)
+          refType <- unifyTypeM(tpe1, Type.mkScopedRef(tpe2, lifetimeVar), loc)
           resultTyp = Type.Unit
-          resultEff = Type.Impure
+          resultEff <- unifyTypeM(evar, Type.mkAnd(eff1 :: eff2 :: lifetimeVar :: Nil), loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
       case ResolvedAst.Expression.Existential(fparam, exp, loc) =>
@@ -1402,53 +1432,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = Type.mkAnd(eff1, eff2)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
-      case ResolvedAst.Expression.LetRegion(sym, exp, evar, loc) =>
-        // Introduce a rigid variable for the region of `exp`.
-        val regionVar = Type.freshVar(Kind.Bool, Rigidity.Rigid, Some(sym.text))
-        for {
-          _ <- unifyTypeM(sym.tvar, Type.mkRegion(regionVar, loc), loc)
-          (constrs, tpe, eff) <- visitExp(exp)
-          purifiedEff <- purifyEffM(regionVar, eff)
-          resultEff <- unifyTypeM(evar, purifiedEff, loc)
-          resultTyp = tpe
-        } yield (constrs, resultTyp, resultEff)
-
-      case ResolvedAst.Expression.ScopedRef(exp1, exp2, tvar, evar, loc) =>
-        val regionVar = Type.freshVar(Kind.Bool, Rigidity.Flexible, Some("l"))
-        for {
-          (constrs1, elmType, eff1) <- visitExp(exp1)
-          (constrs2, regionType, eff2) <- visitExp(exp2)
-          _ <- unifyTypeM(regionType, Type.mkRegion(regionVar, loc), loc)
-          resultTyp <- unifyTypeM(tvar, Type.mkScopedRef(elmType, regionVar, loc), loc)
-          resultEff <- unifyTypeM(evar, Type.mkAnd(eff1, eff2, regionVar), loc)
-        } yield (constrs1 ++ constrs2, resultTyp, resultEff)
-
-      case ResolvedAst.Expression.ScopedDeref(exp, tvar, evar, loc) =>
-        // Introduce a fresh type variable for element type.
-        val elmTypeVar = Type.freshVar(Kind.Star, Rigidity.Flexible, Some("t"))
-
-        // Introduce a flexible variable for the region variable.
-        // This variable will become unified with the rigid variable.
-        val regionVar = Type.freshVar(Kind.Bool, Rigidity.Flexible, Some("l"))
-        for {
-          (constrs, tpe, eff) <- visitExp(exp)
-          refType <- unifyTypeM(tpe, Type.mkScopedRef(elmTypeVar, regionVar, loc), loc)
-          resultTyp <- unifyTypeM(tvar, elmTypeVar, loc)
-          resultEff <- unifyTypeM(evar, Type.mkAnd(eff, regionVar), loc)
-        } yield (constrs, resultTyp, resultEff)
-
-      case ResolvedAst.Expression.ScopedAssign(exp1, exp2, evar, loc) =>
-        // Introduce a flexible variable for the lifetime.
-        // This variable will become unified with the rigid variable.
-        val lifetimeVar = Type.freshVar(Kind.Bool, Rigidity.Flexible, Some("l"))
-        for {
-          (constrs1, tpe1, eff1) <- visitExp(exp1)
-          (constrs2, tpe2, eff2) <- visitExp(exp2)
-          refType <- unifyTypeM(tpe1, Type.mkScopedRef(tpe2, lifetimeVar), loc)
-          resultTyp = Type.Unit
-          resultEff <- unifyTypeM(evar, Type.mkAnd(eff1 :: eff2 :: lifetimeVar :: Nil), loc)
-        } yield (constrs1 ++ constrs2, resultTyp, resultEff)
-
     }
 
     /**
@@ -1568,6 +1551,12 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val eff = Type.mkAnd(e1.eff, e2.eff)
         TypedAst.Expression.Let(sym, e1, e2, tpe, eff, loc)
 
+      case ResolvedAst.Expression.LetRegion(sym, exp, evar, loc) =>
+        val e = visitExp(exp, subst0)
+        val tpe = e.tpe
+        val eff = subst0(evar)
+        TypedAst.Expression.LetRegion(sym, e, tpe, eff, loc)
+
       case ResolvedAst.Expression.Match(matchExp, rules, loc) =>
         val e1 = visitExp(matchExp, subst0)
         val rs = rules map {
@@ -1663,22 +1652,29 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val tpe = e1.tpe
         TypedAst.Expression.ArraySlice(e1, e2, e3, tpe, loc)
 
-      case ResolvedAst.Expression.Ref(exp, loc) =>
+      case ResolvedAst.Expression.Ref(exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
-        val tpe = Type.mkRef(e.tpe)
+        val tpe = subst0(tvar)
         val eff = Type.Impure
         TypedAst.Expression.Ref(e, tpe, eff, loc)
 
-      case ResolvedAst.Expression.Deref(exp, tvar, loc) =>
+      case ResolvedAst.Expression.RefWithRegion(exp, _, tvar, evar, loc) =>
         val e = visitExp(exp, subst0)
-        val eff = Type.Impure
-        TypedAst.Expression.Deref(e, subst0(tvar), eff, loc)
+        val tpe = subst0(tvar)
+        val eff = subst0(evar)
+        TypedAst.Expression.Ref(e, tpe, eff, loc)
 
-      case ResolvedAst.Expression.Assign(exp1, exp2, loc) =>
+      case ResolvedAst.Expression.Deref(exp, tvar, evar, loc) =>
+        val e = visitExp(exp, subst0)
+        val tpe = subst0(tvar)
+        val eff = subst0(evar)
+        TypedAst.Expression.Deref(e, tpe, eff, loc)
+
+      case ResolvedAst.Expression.Assign(exp1, exp2, evar, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val tpe = Type.Unit
-        val eff = Type.Impure
+        val eff = subst0(evar)
         TypedAst.Expression.Assign(e1, e2, tpe, eff, loc)
 
       case ResolvedAst.Expression.Existential(fparam, exp, loc) =>
@@ -1838,29 +1834,6 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val mergeExp = TypedAst.Expression.FixpointMerge(e1, e2, stf, tpe, eff, loc)
         val solveExp = TypedAst.Expression.FixpointSolve(mergeExp, stf, tpe, eff, loc)
         TypedAst.Expression.FixpointProjectOut(pred, solveExp, tpe, eff, loc)
-
-      case ResolvedAst.Expression.LetRegion(sym, exp, evar, loc) =>
-        val e = visitExp(exp, subst0)
-        val tpe = e.tpe
-        val eff = subst0(evar)
-        TypedAst.Expression.LetRegion(sym, e, tpe, eff, loc)
-
-      case ResolvedAst.Expression.ScopedRef(exp, _, tvar, evar, loc) =>
-        val e = visitExp(exp, subst0)
-        val eff = subst0(evar)
-        TypedAst.Expression.Ref(e, subst0(tvar), eff, loc)
-
-      case ResolvedAst.Expression.ScopedDeref(exp, tvar, evar, loc) =>
-        val e = visitExp(exp, subst0)
-        val eff = subst0(evar)
-        TypedAst.Expression.Deref(e, subst0(tvar), eff, loc)
-
-      case ResolvedAst.Expression.ScopedAssign(exp1, exp2, evar, loc) =>
-        val e1 = visitExp(exp1, subst0)
-        val e2 = visitExp(exp2, subst0)
-        val tpe = Type.Unit
-        val eff = subst0(evar)
-        TypedAst.Expression.Assign(e1, e2, tpe, eff, loc)
 
     }
 

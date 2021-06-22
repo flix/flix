@@ -460,16 +460,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Expressions                                                             //
   /////////////////////////////////////////////////////////////////////////////
   def Expression: Rule1[ParsedAst.Expression] = rule {
-    Expressions.ScopedAssign
+    Expressions.Assign
   }
 
   object Expressions {
     def Stm: Rule1[ParsedAst.Expression] = rule {
       Expression ~ optional(optWS ~ atomic(";") ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.Stm)
-    }
-
-    def ScopedAssign: Rule1[ParsedAst.Expression] = rule {
-      Assign ~ optional(optWS ~ atomic(":=*") ~ optWS ~ Assign ~ SP ~> ParsedAst.Expression.ScopedAssign)
     }
 
     def Assign: Rule1[ParsedAst.Expression] = rule {
@@ -590,17 +586,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     // TODO: Why are these not primary?
     def Ref: Rule1[ParsedAst.Expression] = rule {
-      (SP ~ keyword("ref") ~ WS ~ Ref ~ SP ~> ParsedAst.Expression.Ref) | ScopedRef
-    }
-
-    def ScopedRef: Rule1[ParsedAst.Expression] = rule {
-      // TODO: Two keywords
-      (SP ~ keyword("scoped ref") ~ WS ~ Expression ~ WS ~ keyword("in") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ScopedRef) | ScopedDeref
-    }
-
-    def ScopedDeref: Rule1[ParsedAst.Expression] = rule {
-      // TODO: Two keywords
-      (SP ~ keyword("scoped deref") ~ WS ~ ScopedDeref ~ SP ~> ParsedAst.Expression.ScopedDeref) | Deref
+      (SP ~ keyword("ref") ~ WS ~ Ref ~ optional(WS ~ keyword("@") ~ WS ~ Expression) ~ SP ~> ParsedAst.Expression.Ref) | Deref
     }
 
     def Deref: Rule1[ParsedAst.Expression] = rule {

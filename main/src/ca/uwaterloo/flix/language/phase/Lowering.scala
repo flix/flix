@@ -298,6 +298,10 @@ object Lowering extends Phase[Root, Root] {
       val t = visitType(tpe)
       Expression.Let(sym, e1, e2, t, eff, loc)
 
+    case Expression.LetRegion(sym, exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      Expression.LetRegion(sym, e, tpe, eff, loc)
+
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
@@ -570,9 +574,6 @@ object Lowering extends Phase[Root, Root] {
       val argExps = mkPredSym(pred) :: visitExp(exp) :: Nil
       Expression.Apply(defExp, argExps, tpe, eff, loc)
 
-    case Expression.LetRegion(sym, exp, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      Expression.LetRegion(sym, e, tpe, eff, loc)
   }
 
   /**
@@ -1269,6 +1270,11 @@ object Lowering extends Phase[Root, Root] {
       val e2 = substExp(exp2, subst)
       Expression.Let(s, e1, e2, tpe, eff, loc)
 
+    case Expression.LetRegion(sym, exp, tpe, eff, loc) =>
+      val s = subst.getOrElse(sym, sym)
+      val e = substExp(exp, subst)
+      Expression.LetRegion(s, e, tpe, eff, loc)
+
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = substExp(exp1, subst)
       val e2 = substExp(exp2, subst)
@@ -1451,11 +1457,6 @@ object Lowering extends Phase[Root, Root] {
     case Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) =>
       val e = substExp(exp, subst)
       Expression.FixpointProjectOut(pred, e, tpe, eff, loc)
-
-    case Expression.LetRegion(sym, exp, tpe, eff, loc) =>
-      val s = subst.getOrElse(sym, sym)
-      val e = substExp(exp, subst)
-      Expression.LetRegion(s, e, tpe, eff, loc)
 
     case Expression.FixpointConstraintSet(cs, stf, tpe, loc) => throw InternalCompilerException(s"Unexpected expression near ${loc.format}.")
   }

@@ -874,6 +874,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           }
       }
 
+    case ParsedAst.Expression.LetRegion(sp1, ident, exp, sp2) =>
+      mapN(visitExp(exp)) {
+        case e => WeededAst.Expression.LetRegion(ident, e, mkSL(sp1, sp2))
+      }
+
     case ParsedAst.Expression.Match(sp1, exp, rules, sp2) =>
       val rulesVal = traverse(rules) {
         case ParsedAst.MatchRule(pat, None, body) =>
@@ -1171,10 +1176,18 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           }
       }
 
-    case ParsedAst.Expression.Ref(sp1, exp, sp2) =>
-      for {
-        e <- visitExp(exp)
-      } yield WeededAst.Expression.Ref(e, mkSL(sp1, sp2))
+    case ParsedAst.Expression.Ref(sp1, exp, reg, sp2) => reg match {
+      case None =>
+        for {
+          e <- visitExp(exp)
+        } yield WeededAst.Expression.Ref(e, mkSL(sp1, sp2))
+
+      case Some(exp2) =>
+        for {
+          e <- visitExp(exp)
+          e2 <- visitExp(exp2)
+        } yield WeededAst.Expression.RefWithRegion(e, e2, mkSL(sp1, sp2))
+    }
 
     case ParsedAst.Expression.Deref(sp1, exp, sp2) =>
       for {
@@ -1337,7 +1350,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       mapN(traverse(exps)(visitExp)) {
         case es =>
           val init = WeededAst.Expression.FixpointConstraintSet(Nil, loc)
-          (es.zip(idents.toList)).foldRight(init: WeededAst.Expression) {
+          es.zip(idents.toList).foldRight(init: WeededAst.Expression) {
             case ((exp, ident), acc) =>
               val pred = Name.mkPred(ident)
               val innerExp = WeededAst.Expression.FixpointProjectIn(exp, pred, loc)
@@ -1443,30 +1456,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           // Extract the tuples of the result predicate.
           WeededAst.Expression.FixpointProjectOut(pred, queryExp, dbExp, loc)
       }
-
-    case ParsedAst.Expression.LetRegion(sp1, ident, exp, sp2) =>
-      mapN(visitExp(exp)) {
-        case e =>
-          WeededAst.Expression.LetRegion(ident, e, mkSL(sp1, sp2))
-      }
-
-    case ParsedAst.Expression.ScopedRef(sp1, exp1, exp2, sp2) =>
-      mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) =>
-          WeededAst.Expression.ScopedRef(e1, e2, mkSL(sp1, sp2))
-      }
-
-    case ParsedAst.Expression.ScopedDeref(sp1, exp, sp2) =>
-      for {
-        e <- visitExp(exp)
-      } yield WeededAst.Expression.ScopedDeref(e, mkSL(sp1, sp2))
-
-    case ParsedAst.Expression.ScopedAssign(exp1, exp2, sp2) =>
-      val sp1 = leftMostSourcePosition(exp1)
-      for {
-        e1 <- visitExp(exp1)
-        e2 <- visitExp(exp2)
-      } yield WeededAst.Expression.ScopedAssign(e1, e2, mkSL(sp1, sp2))
 
   }
 
@@ -1877,7 +1866,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Type.Tuple(sp1, elms, sp2) => WeededAst.Type.Tuple(elms.toList.map(visitType), mkSL(sp1, sp2))
 
-    case ParsedAst.Type.Record(sp1, fields, restOpt, sp2) => {
+    case ParsedAst.Type.Record(sp1, fields, restOpt, sp2) =>
       def buildRecord(base: WeededAst.Type): WeededAst.Type = {
         fields.foldRight(base) {
           case (ParsedAst.RecordFieldType(ssp1, ident, t, ssp2), acc) =>
@@ -1893,7 +1882,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         // Case 3: `{x: Int | r}` Polymorphic record with field. `r` must be a `Record` variable.
         case (_, Some(base)) => buildRecord(WeededAst.Type.Var(base, base.loc))
       }
-    }
 
     case ParsedAst.Type.Schema(sp1, predicates, restOpt, sp2) =>
       def buildSchema(base: WeededAst.Type): WeededAst.Type = {
@@ -2302,6 +2290,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.LetMatch(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetMatchStar(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetImport(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.LetRegion(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Choose(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Tag(sp1, _, _, _) => sp1
@@ -2321,7 +2310,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.FSet(sp1, _, _) => sp1
     case ParsedAst.Expression.FMap(sp1, _, _) => sp1
     case ParsedAst.Expression.Interpolation(sp1, _, _) => sp1
-    case ParsedAst.Expression.Ref(sp1, _, _) => sp1
+    case ParsedAst.Expression.Ref(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Deref(sp1, _, _) => sp1
     case ParsedAst.Expression.Assign(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Existential(sp1, _, _, _, _) => sp1
@@ -2342,10 +2331,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.FixpointProjectInto(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointSolveWithProject(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointQueryWithSelect(sp1, _, _, _, _, _) => sp1
-    case ParsedAst.Expression.LetRegion(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.ScopedRef(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.ScopedDeref(sp1, _, _) => sp1
-    case ParsedAst.Expression.ScopedAssign(e1, _, _) => leftMostSourcePosition(e1)
   }
 
   /**
