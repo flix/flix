@@ -319,4 +319,54 @@ namespace Float32 {
             nanValue
         else
             valueOf(clamp(x, minf32, maxf32)).longValue() as & Pure
+
+    ///
+    /// Returns the absolute value of `x`.
+    ///
+    @Time(1) @Space(1)
+    pub def abs(x: Float32): Float32 =
+        import java.lang.Math:abs(Float32);
+        abs(x) as & Pure
+
+    ///
+    /// Returns `x` rounded up to a Float32 representing the nearest larger integer value.
+    ///
+    @Time(1) @Space(1)
+    pub def ceil(x: Float32): Float32 =
+        import java.lang.Float:valueOf(Float32) as valueOfF32;
+        import java.lang.Double:valueOf(Float64) as valueOfF64;
+        import java.lang.Math:ceil(Float64);
+        import java.lang.Double.floatValue();
+        import java.lang.Float.doubleValue();
+        let x1 = ceil(doubleValue(valueOfF32(x))) as & Pure;
+        floatValue(valueOfF64(x1)) as & Pure
+
+    ///
+    /// Returns `x` rounded down to a Float32 representing the nearest smaller integer value.
+    ///
+    @Time(1) @Space(1)
+    pub def floor(x: Float32): Float32 =
+        import java.lang.Float:valueOf(Float32) as valueOfF32;
+        import java.lang.Double:valueOf(Float64) as valueOfF64;
+        import java.lang.Math:floor(Float64);
+        import java.lang.Double.floatValue();
+        import java.lang.Float.doubleValue();
+        let x1 = floor(doubleValue(valueOfF32(x))) as & Pure;
+        floatValue(valueOfF64(x1)) as & Pure
+
+    ///
+    /// Returns `x` rounded to a Float32 representing the nearest integer value.
+    ///
+    /// The rounding may be upwards or downwards.
+    ///
+    @Time(1) @Space(1)
+    pub def round(x: Float32): Float32 =
+        import java.lang.Float:valueOf(Float32) as valueOfF32;
+        import java.lang.Double:valueOf(Float64) as valueOfF64;
+        import java.lang.Math:rint(Float64);
+        import java.lang.Double.floatValue();
+        import java.lang.Float.doubleValue();
+        let x1 = rint(doubleValue(valueOfF32(x))) as & Pure;
+        floatValue(valueOfF64(x1)) as & Pure
+
 }

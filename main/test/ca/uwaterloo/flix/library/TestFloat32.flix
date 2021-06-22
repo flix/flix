@@ -523,4 +523,13 @@ namespace TestFloat32 {
     @test
     def clampToInt6408(): Bool = Float32.clampToInt64(Float32.nan(), -100i64, 100i64, -127i64) == -127i64
 
+    /////////////////////////////////////////////////////////////////////////////
+    // ceil                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def ceil01(): Bool =
+        let d1 = Float32.ceil(0.5f32);
+        Float32.tryToInt32(d1) == Some(2)
+
+
 }
