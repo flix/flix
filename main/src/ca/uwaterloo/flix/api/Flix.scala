@@ -276,13 +276,13 @@ class Flix {
     */
   def addPath(p: Path): Flix = {
     if (p == null)
-      throw new IllegalArgumentException("'p' must be non-null.")
+      throw new IllegalArgumentException(s"'p' must be non-null.")
     if (!Files.exists(p))
-      throw new IllegalArgumentException("'p' must a file.")
+      throw new IllegalArgumentException(s"'$p' must a file.")
     if (!Files.isRegularFile(p))
-      throw new IllegalArgumentException("'p' must a regular file.")
+      throw new IllegalArgumentException(s"'$p' must a regular file.")
     if (!Files.isReadable(p))
-      throw new IllegalArgumentException("'p' must a readable file.")
+      throw new IllegalArgumentException(s"'$p' must a readable file.")
 
     paths += p
     this
@@ -406,7 +406,7 @@ class Flix {
     phaseTimers += currentPhase
 
     // Print performance information if in verbose mode.
-    if (options.verbosity == Verbosity.Verbose) {
+    if (options.debug) {
       // Print information about the phase.
       val d = new Duration(e)
       val terminalCtx = TerminalContext.AnsiTerminal

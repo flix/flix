@@ -4,7 +4,7 @@ import java.lang.reflect.Method
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Root
-import ca.uwaterloo.flix.util.{InternalCompilerException, Verbosity}
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
   * Loads all the generated classes into the JVM and decorates the AST.
@@ -23,7 +23,7 @@ object Bootstrap {
     //
     // Print the number of loaded classes, if debugging and verbosity is enabled.
     //
-    if (flix.options.debug && flix.options.verbosity == Verbosity.Verbose) {
+    if (flix.options.debug) {
       Console.println(s"Loaded: ${loadedClasses.size} classes.")
     }
 
