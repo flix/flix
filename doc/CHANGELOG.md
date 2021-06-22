@@ -2,6 +2,9 @@
 
 HEAD:
 
+Version 0.16.1:
+- Minor improvements to LSP.
+
 Version 0.16.0:
 - Added experimental support for auto-complete (thanks Manoj!)
 - Added sortBy and sortWith to most collections (thanks Felix!)
