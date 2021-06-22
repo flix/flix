@@ -19,7 +19,7 @@
 ///
 pub enum ListView[t, a] {
 		case VNil,
-		case VCons(a, ListView[t, a])
+		case VCons(a, ListView[t, a]) // TODO: Seems this should just be a list....
 		case LVFilter(a -> Bool, ListView[t, a])
 }
 
@@ -83,6 +83,22 @@ namespace ListView {
 			case LVFilter(f, xs) 	=> count(x -> f(x) and p(x), xs)
 		}
 
+
+		///
+		/// Returns `l` without the first `n` elements.
+		///
+		/// Returns `VNil` if `n > length(xs)`. Returns `l` if `n < 0`.
+		///
+		/// Does not force evaluation of `l`.
+		///
+		pub def drop(n: Int32, l: ListView[t, a]): ListView[t, a] = dropWithFilter(constant(true), n, l)
+
+		pub def dropWithFilter(p: a -> Bool, n: Int32, l: ListView[t, a]): ListView[t, a] = match (n, l) {
+			case (_, VNil) 				=> VNil
+			case (0, _) 				=> l
+			case (i, VCons(x, xs)) 		=> if (p(x)) dropWithFilter(p, i - 1, xs) else dropWithFilter(p, i, xs)
+			case (i, LVFilter(f, xs)) 	=> dropWithFilter(x -> f(x) and p(x), i, xs)
+		}
 
 		pub def ispure(_f: a -> b & eff): Bool = true
 
