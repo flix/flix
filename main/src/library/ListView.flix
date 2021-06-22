@@ -83,6 +83,26 @@ namespace ListView {
 			case LVFilter(f, xs) 	=> count(x -> f(x) and p(x), xs)
 		}
 
+		///
+		/// Returns the result of applying `f` to every element in `l`.
+		///
+		/// That is, the result is of the form: `f(x1) :: f(x2) :: ...`.
+		///
+		pub def map(f: a -> b & ef, l: ListView[t, a]): ListView[t, b] = ???
+
+
+		pub def mapWithFilterE(f1: a -> Bool, f: a -> b & ef, l: ListView[t, a]): ListView[t, b] & ef = match l {
+			case VNil 		  		=> VNil
+			case VCons(x, xs) 		=>
+				if (f1(x))
+					VCons(f(x), mapWithFilterE(f1, f, xs))
+				else
+					mapWithFilterE(f1, f, xs)
+			case LVFilter(f2, xs) 	=> mapWithFilterE(x -> f1(x) and f2(x), f, xs)
+		}
+
+		// TODO: Compose filters.
+		pub def andF(f: a -> Bool, g: a -> Bool): a -> Bool = x -> f(x) and g(x)
 
 		///
 		/// Returns `l` without the first `n` elements.
