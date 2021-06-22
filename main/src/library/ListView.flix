@@ -18,33 +18,73 @@
 /// The ListView type.
 ///
 pub enum ListView[t, a] {
-    case VNil,
-    case LVFilter(a -> Bool, ListView[t, a])
+		case VNil,
+		case VCons(a, ListView[t, a])
+		case LVFilter(a -> Bool, ListView[t, a])
 }
 
 namespace ListView {
 
-    ///
-    /// Returns true if and only if `l` is the empty list view.
-    ///
-    /// Forces evaluation of the view.
-    ///
-    pub def isEmpty(l: ListView[_, a]): Bool = match l {
-      case VNil => true
-      case _    => false
-    }
+		///
+		/// Returns true if and only if `l` is the empty list view.
+		///
+		/// Forces evaluation of the view.
+		///
+		pub def isEmpty(l: ListView[_, a]): Bool = match l {
+			case VNil => true
+			case _    => false
+		}
 
-    ///
-    /// Returns a list view of every element in `l` that satisfies the predicate `p`.
-    ///
-    /// Forces evaluation of the view if `f` is impure.
-    ///
-    pub def filter(f: a -> Bool, l: ListView[t, a]): ListView[t, a] = ???
+		///
+		/// Returns `Some(x)` if `x` is the first element of `l`.
+		///
+		/// Returns `None` if `l` is empty.
+		///
+		/// Forces evaluation of the view `l`.
+		///
+		pub def head(l: ListView[_, a]): Option[a] = match l {
+			case VNil 			 => None
+			case VCons(x, _) 	 => Some(x)
+			case LVFilter(f, xs) => ??? // TODO: How?
+		}
+
+		pub def headWithFilter(p: a -> Bool, l: ListView[_, a]): Option[a] = match l {
+			case VNil 			 => None
+			case VCons(x, xs) 	 => if (p(x)) Some(x) else headWithFilter(p, xs)
+			case LVFilter(g, xs) => headWithFilter(x -> g(x) and p(x), xs)
+		}
+
+		///
+		/// Returns a list view of every element in `l` that satisfies the predicate `p`.
+		///
+		/// Forces evaluation of the view if `p` is impure.
+		///
+		pub def filter(p: a -> Bool & ef, l: ListView[t, a]): ListView[t, a] & ef = ???
+
+		// TODO: DOC
+		pub def filterL(p: a -> Bool, l: ListView[t, a]): ListView[t, a] = match l {
+			case VNil 				=> VNil
+			case VCons(_, _)		=> LVFilter(p, l)
+			case LVFilter(g, xs) 	=> LVFilter(x -> g(x) and p(x), xs)
+		}
+
+		pub def filterE(p: a -> Bool & ef, l: ListView[t, a]): ListView[t, a] & ef = match l {
+			case VNil 				=> VNil
+			case VCons(x, xs)		=> if (p(x)) VCons(x, filterE(p, xs)) else filterE(p, xs)
+			case LVFilter(g, xs) 	=> filterE(x -> g(x) and p(x), xs)
+		}
+
+		///
+		/// Returns the number of elements in `l` that satisfy the predicate `p`.
+		///
+		pub def count(p: a -> Bool & ef, l: ListView[_, a]): Int32 & ef = match l {
+			case VNil 		  		=> 0
+			case VCons(x, xs) 		=> (if (p(x)) 1 else 0) + count(p, xs)
+			case LVFilter(f, xs) 	=> count(x -> f(x) and p(x), xs)
+		}
 
 
-
-
-    pub def ispure(_f: a -> b & eff): Bool = true
+		pub def ispure(_f: a -> b & eff): Bool = true
 
 }
 
