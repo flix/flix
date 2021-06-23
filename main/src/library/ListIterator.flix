@@ -12,12 +12,18 @@ type alias IsDone = Unit ~> Bool
 type alias Pull[a] = Unit ~> a
 
 ///
-/// An iterator consists of two impure functions that can produce a (possibly
-/// infinite) sequence of values.
+/// An iterator is either an actual iterator or a filtered iterator.
 ///
 pub enum ListIterator[a] {
-    case ListIterator(IsDone, Pull[a])
-	case FilteredIterator(a -> Bool, IsDone, Pull[a])
+    case Iterator(Iter[a])
+	case FilteredIterator(a -> Bool, Iter[a])
+}
+
+///
+/// An iter consists of two functions: done and next.
+///
+pub enum Iter[a] {
+	case Iter(IsDone, Pull[a])
 }
 
 namespace ListIterator {
@@ -26,10 +32,10 @@ namespace ListIterator {
     /// Returns `true` if and only if the iterator `iter` has no more elements.
     ///
     pub def isEmpty(iter: ListIterator[a]): Bool & Impure = match iter {
-		case ListIterator(done, _) => done()
-		case FilteredIterator(f, done, next) =>
-			let (done1, _) = transformFilter(f, done, next) ;
-			done1()
+		case Iterator(Iter(done, _)) => done()
+		case FilteredIterator(f, it) =>
+			let Iter(done, _) = transformFilter(f, it);
+			done()
 	}
 
 	///
@@ -87,15 +93,13 @@ namespace ListIterator {
 	///
 	/// Does _not_ consume any elements from the iterator.
 	///
-    def mapL(f: a -> b, iter: ListIterator[a]): ListIterator[b] & Impure = match iter {
-		case ListIterator(done, next) =>
-		    let next1 = () -> f(next());
-        	ListIterator(done, next1)
-		case FilteredIterator(g, done, next) =>
-			let (done1, next1) = transformFilter(g, done, next);
-			let next2 = () -> f(next1());
-        	ListIterator(done1, next2)
-	}
+    def mapL(f: a -> b, iter: ListIterator[a]): ListIterator[b] & Impure =
+		let Iter(done, next) = match iter {
+			case Iterator(it) 				=> it
+			case FilteredIterator(g, it) 	=> transformFilter(g, it)
+		};
+		let next1 = () -> f(next());
+		Iterator(Iter(done, next1))
 
 	///
 	/// Returns an iterator with the given impure function `f` eagerly applied
@@ -130,12 +134,8 @@ namespace ListIterator {
 	/// Does _not_ consume any elements from the iterator.
 	///
 	pub def filterL(f: a -> Bool, iter: ListIterator[a]): ListIterator[a] & Impure = match iter {
-		case ListIterator(done, next) =>
-		    let pair = transformFilter(f, done, next);
-        	ListIterator(pair)
-		case FilteredIterator(g, done, next) =>
-		    let pair = transformFilter(x -> g(x) and f(x), done, next);
-        	ListIterator(pair)
+		case Iterator(it) 				=> Iterator(transformFilter(f, it))
+		case FilteredIterator(g, it) 	=> Iterator(transformFilter(x -> g(x) and f(x), it))
 	}
 
     ///
@@ -160,7 +160,7 @@ namespace ListIterator {
                 cursor := xs;
                 x
         };
-        ListIterator(done, next)
+        Iterator(Iter(done, next))
 
 	///
 	/// Returns all elements in the given iterator `iter` as a list.
@@ -181,10 +181,10 @@ namespace ListIterator {
 	/// Note: The iterator _must_ have a next element.
 	///
     def next(iter: ListIterator[a]): a & Impure = match iter {
-		case ListIterator(_, n) => n()
-		case FilteredIterator(f, done, next) =>
-			let (_, next1) = transformFilter(f, done, next);
-			next1()
+		case Iterator(Iter(_, next)) => next()
+		case FilteredIterator(f, it) =>
+			let Iter(_, next) = transformFilter(f, it);
+			next()
 	}
 
 	///
@@ -202,7 +202,9 @@ namespace ListIterator {
 
     // TODO: DOC
 	// TODO: Why not reutrn an iterator?
-    def transformFilter(f: a -> Bool, isDone: IsDone, pull: Pull[a]): (IsDone, Pull[a]) & Impure = {
+    def transformFilter(f: a -> Bool, it: Iter[a]): Iter[a] & Impure =
+		let Iter(isDone, pull) = it;
+	{
         let cursor = ref None;
         let isDone1 = () -> match forward(f, isDone, pull) {
             case None   => true
@@ -216,7 +218,7 @@ namespace ListIterator {
                 cursor := None;
                 x
         };
-        (isDone1, pull1)
+        Iter(isDone1, pull1)
     }
 }
 
