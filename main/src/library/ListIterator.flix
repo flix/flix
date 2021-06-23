@@ -102,8 +102,6 @@ namespace ListIterator {
 
 
 
-
-
     pub def filter(f: a -> Bool, iter: ListIterator[a]): ListIterator[a] = filterL(f, iter) as & Pure // TODO
 
     // TODO: A shame this cannot be pure.
@@ -185,14 +183,14 @@ pub def benchmarkList(): Array[Benchmark] & Impure =
     let pipeline = n ->
         List.range(1, n) |>
         List.map(x -> x + 1) |>
-        List.map(x -> x + 1) |>
+        List.map(x -> List.length(List.range(1, 100)) + x) |>
         List.map(x -> x + 1) |>
         List.drop(n / 4) |>
         List.filter(x -> x % 2 == 0) |>
         List.filter(x -> x % 2 == 0) |>
         List.filter(x -> x % 2 == 0) |>
         List.map(x -> x + 1) |>
-        List.map(x -> x + 1) |>
+        List.map(x -> List.length(List.range(1, 100)) + x) |>
         List.map(x -> x + 1) |>
         List.drop(n / 2) |>
         List.count(constant(true));
@@ -208,14 +206,14 @@ pub def benchmarkListIterator(): Array[Benchmark] & Impure =
         List.range(1, n) |>
         ListIterator.toIter |>
         ListIterator.map(x -> x + 1) |>
-        ListIterator.map(x -> x + 1) |>
+        ListIterator.map(x -> List.length(List.range(1, 100)) + x) |>
         ListIterator.map(x -> x + 1) |>
         ListIterator.drop(n / 4) |>
         ListIterator.filter(x -> x % 2 == 0) |>
         ListIterator.filter(x -> x % 2 == 0) |>
         ListIterator.filter(x -> x % 2 == 0) |>
         ListIterator.map(x -> x + 1) |>
-        ListIterator.map(x -> x + 1) |>
+        ListIterator.map(x -> List.length(List.range(1, 100)) + x) |>
         ListIterator.map(x -> x + 1) |>
         ListIterator.drop(n / 2) |>
         ListIterator.count(constant(true));
