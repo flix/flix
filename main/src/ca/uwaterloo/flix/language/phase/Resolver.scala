@@ -74,19 +74,14 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       }
     }
 
-    val propertiesVal = traverse(root.properties) {
-      case (ns0, properties) => Properties.resolve(properties, ns0, root)
-    }
-
     for {
       classes <- sequence(classesVal)
       instances <- sequence(instancesVal)
       definitions <- sequence(definitionsVal)
       enums <- sequence(enumsVal)
-      properties <- propertiesVal
       _ <- checkSuperClassDag(classes.toMap)
     } yield ResolvedAst.Root(
-      classes.toMap, combine(instances), definitions.toMap, enums.toMap, properties.flatten, root.reachable, root.sources
+      classes.toMap, combine(instances), definitions.toMap, enums.toMap, root.reachable, root.sources
     )
   }
 
@@ -529,6 +524,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.Let(sym, e1, e2, loc)
 
+        case NamedAst.Expression.LetRegion(sym, exp, evar, loc) =>
+          for {
+            e <- visit(exp, tenv0)
+          } yield ResolvedAst.Expression.LetRegion(sym, e, evar, loc)
+
         case NamedAst.Expression.Match(exp, rules, loc) =>
           val rulesVal = traverse(rules) {
             case NamedAst.MatchRule(pat, guard, body) =>
@@ -665,21 +665,27 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             i2 <- visit(endIndex, tenv0)
           } yield ResolvedAst.Expression.ArraySlice(b, i1, i2, loc)
 
-        case NamedAst.Expression.Ref(exp, loc) =>
+        case NamedAst.Expression.Ref(exp, tvar, loc) =>
           for {
             e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.Ref(e, loc)
+          } yield ResolvedAst.Expression.Ref(e, tvar, loc)
 
-        case NamedAst.Expression.Deref(exp, tvar, loc) =>
-          for {
-            e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.Deref(e, tvar, loc)
-
-        case NamedAst.Expression.Assign(exp1, exp2, loc) =>
+        case NamedAst.Expression.RefWithRegion(exp1, exp2, tvar, evar, loc) =>
           for {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.Assign(e1, e2, loc)
+          } yield ResolvedAst.Expression.RefWithRegion(e1, e2, tvar, evar, loc)
+
+        case NamedAst.Expression.Deref(exp, tvar, evar, loc) =>
+          for {
+            e <- visit(exp, tenv0)
+          } yield ResolvedAst.Expression.Deref(e, tvar, evar, loc)
+
+        case NamedAst.Expression.Assign(exp1, exp2, evar, loc) =>
+          for {
+            e1 <- visit(exp1, tenv0)
+            e2 <- visit(exp2, tenv0)
+          } yield ResolvedAst.Expression.Assign(e1, e2, evar, loc)
 
         case NamedAst.Expression.Existential(fparam, exp, loc) =>
           for {
@@ -989,26 +995,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
   }
 
-  object Properties {
-
-    /**
-      * Performs name resolution on each of the given `properties` in the given namespace `ns0`.
-      */
-    def resolve(properties: List[NamedAst.Property], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[List[ResolvedAst.Property], ResolutionError] = {
-      traverse(properties)(p => resolve(p, ns0, root))
-    }
-
-    /**
-      * Performs name resolution on the given property `p0` in the given namespace `ns0`.
-      */
-    def resolve(p0: NamedAst.Property, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Property, ResolutionError] = {
-      for {
-        e <- Expressions.resolve(p0.exp, Map.empty, ns0, root)
-      } yield ResolvedAst.Property(p0.law, p0.defn, e, p0.loc)
-    }
-
-  }
-
   object Params {
 
     /**
@@ -1033,7 +1019,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       * Performs name resolution on the given type parameter `tparam0` in the given namespace `ns0`.
       */
     def resolve(tparam0: NamedAst.TypeParam, ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.TypeParam, ResolutionError] = tparam0 match {
-        case NamedAst.TypeParam(name, tpe, loc) => ResolvedAst.TypeParam(name, tpe, loc).toSuccess // MATT monadic stuff is redundant here(?)
+      case NamedAst.TypeParam(name, tpe, loc) => ResolvedAst.TypeParam(name, tpe, loc).toSuccess // MATT monadic stuff is redundant here(?)
     }
 
   }
@@ -1310,7 +1296,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       case "Array" => Type.mkArray(loc).toSuccess
       case "Channel" => Type.mkChannel(loc).toSuccess
       case "Lazy" => Type.mkLazy(loc).toSuccess
-      case "Ref" => Type.mkRef(loc).toSuccess
+      case "ScopedRef" => Type.Cst(TypeConstructor.ScopedRef, loc).toSuccess
+      case "Region" => Type.Cst(TypeConstructor.Region, loc).toSuccess
 
       // Disambiguate type.
       case typeName =>
@@ -1787,7 +1774,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
       case TypeConstructor.Enum(_, _) => Class.forName("java.lang.Object").toSuccess
 
-      case TypeConstructor.Ref => Class.forName("java.lang.Object").toSuccess
+      case TypeConstructor.ScopedRef => Class.forName("java.lang.Object").toSuccess
 
       case TypeConstructor.Tuple(_) => Class.forName("java.lang.Object").toSuccess
 
@@ -1830,7 +1817,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     * Create a well-formed type applying `tpe1` to `tpe2`.
     */
   private def mkApply(tpe1: Type, tpe2: Type, loc: SourceLocation): Validation[Type, ResolutionError] = {
-    (tpe1.kind, tpe2.kind)  match {
+    (tpe1.kind, tpe2.kind) match {
       case (Kind.Arrow(k1, _), k2) if k2 <:: k1 => Type.Apply(tpe1, tpe2).toSuccess
       case _ => ResolutionError.IllegalTypeApplication(tpe1, tpe2, loc).toFailure
     }
@@ -1920,9 +1907,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     * Enum describing the extent to which a class is accessible.
     */
   private sealed trait Accessibility
+
   private object Accessibility {
     case object Accessible extends Accessibility
+
     case object Sealed extends Accessibility
+
     case object Inaccessible extends Accessibility
   }
 }

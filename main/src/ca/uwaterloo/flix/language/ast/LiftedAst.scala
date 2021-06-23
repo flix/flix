@@ -24,15 +24,12 @@ object LiftedAst {
 
   case class Root(defs: Map[Symbol.DefnSym, LiftedAst.Def],
                   enums: Map[Symbol.EnumSym, LiftedAst.Enum],
-                  properties: List[LiftedAst.Property],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
   case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, fparams: List[LiftedAst.FormalParam], exp: LiftedAst.Expression, tpe: Type, loc: SourceLocation)
 
   case class Enum(mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Name.Tag, LiftedAst.Case], tpeDeprecated: Type, loc: SourceLocation)
-
-  case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: LiftedAst.Expression)
 
   sealed trait Expression {
     def tpe: Type

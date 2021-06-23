@@ -216,6 +216,10 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val env1 = env0 + (sym -> freshSym)
           Expression.Let(freshSym, visitExp(exp1, env1), visitExp(exp2, env1), subst0(tpe), eff, loc)
 
+        case Expression.LetRegion(sym, exp, tpe, eff, loc) =>
+          val e = visitExp(exp, env0)
+          Expression.LetRegion(sym, e, subst0(tpe), eff, loc)
+
         case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
           val e1 = visitExp(exp1, env0)
           val e2 = visitExp(exp2, env0)
@@ -653,7 +657,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
      * A map used to collect specialized definitions, etc.
      */
     val specializedDefns: mutable.Map[Symbol.DefnSym, TypedAst.Def] = mutable.Map.empty
-    val specializedProperties: mutable.ListBuffer[TypedAst.Property] = mutable.ListBuffer.empty
 
     /*
      * Collect all non-parametric function definitions.
@@ -677,23 +680,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
       // Reassemble the definition.
       specializedDefns.put(sym, defn.copy(spec = defn.spec.copy(fparams = fparams), impl = defn.impl.copy(exp = body)))
-    }
-
-    /*
-     * Perform specialization of all properties.
-     */
-    for (TypedAst.Property(law, defn, exp0, loc) <- root.properties) {
-      // Specialize the property under the empty substitution.
-      val subst0 = StrictSubstitution(Substitution.empty)
-
-      // A property has no formal parameters and hence the initial environment is empty.
-      val env0 = Map.empty[Symbol.VarSym, Symbol.VarSym]
-
-      // Specialize the expression.
-      val exp = specialize(exp0, env0, subst0)
-
-      // Reassemble the property.
-      specializedProperties += TypedAst.Property(law, defn, exp, loc)
     }
 
     /*
@@ -726,8 +712,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
     // Reassemble the AST.
     root.copy(
-      defs = specializedDefns.toMap,
-      properties = specializedProperties.toList,
+      defs = specializedDefns.toMap
     ).toSuccess
   }
 

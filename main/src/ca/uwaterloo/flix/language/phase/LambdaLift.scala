@@ -47,14 +47,9 @@ object LambdaLift extends Phase[SimplifiedAst.Root, LiftedAst.Root] {
       case (sym, enum0) => sym -> visitEnum(enum0)
     }
 
-    val newProperties = root.properties.map {
-      property => liftProperty(property, m)
-    }
-
     LiftedAst.Root(
       newDefs ++ m,
       newEnums,
-      newProperties,
       root.reachable,
       root.sources
     ).toSuccess
@@ -80,15 +75,6 @@ object LambdaLift extends Phase[SimplifiedAst.Root, LiftedAst.Root] {
         case (tag, SimplifiedAst.Case(_, _, tpeDeprecated, loc)) => tag -> LiftedAst.Case(sym, tag, tpeDeprecated, loc)
       }
       LiftedAst.Enum(mod, sym, cs, tpeDeprecated, loc)
-  }
-
-  /**
-    * Performs lambda lifting on the given property `property0`.
-    */
-  private def liftProperty(property0: SimplifiedAst.Property, m: TopLevel)(implicit flix: Flix): LiftedAst.Property = property0 match {
-    case SimplifiedAst.Property(law, defn, exp) =>
-      val e = liftExp(property0.defn.namespace, property0.exp, "property", m)
-      LiftedAst.Property(law, defn, e)
   }
 
   /**

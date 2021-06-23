@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError._
 import ca.uwaterloo.flix.language.phase.unification.ClassEnvironment
@@ -62,63 +62,126 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       case (acc, decl) => acc and visitDef(decl)(root, flix)
     }, _ and _)
 
-    val usedAll = usedDefs and usedInstDefs
+    val usedSigs = ParOps.parAgg(root.sigs, Used.empty)({
+      case (acc, (_, decl)) => acc and visitSig(decl)(root, flix)
+    }, _ and _)
+
+    val usedAll = usedDefs and usedInstDefs and usedSigs
 
     // Check for unused symbols.
     val usedRes =
       checkUnusedDefs(usedAll)(root) and
         checkUnusedEnumsAndTags(usedAll)(root) and
         checkUnusedTypeParamsEnums()(root) ++
-        checkRedundantTypeConstraints()(root)
+          checkRedundantTypeConstraints()(root)
 
     // Return the root if successful, otherwise returns all redundancy errors.
     usedRes.toValidation(root)
   }
 
   /**
-    * Checks for unused symbols in the given definition and returns all used symbols.
+    * Checks for unused symbols in the given signature and returns all used symbols.
     */
-  private def visitDef(defn: Def)(implicit root: Root, flix: Flix): Used = {
-    /**
-      * Checks for unused formal parameters.
-      */
-    def checkUnusedFormalParameters(used: Used): Used = {
-      val unusedParams = defn.spec.fparams.collect {
-        case fparam if deadVarSym(fparam.sym, used) => UnusedFormalParam(fparam.sym)
-      }
-      used ++ unusedParams
-    }
+  private def visitSig(sig: Sig)(implicit root: Root, flix: Flix): Used = {
 
-    /**
-      * Checks for unused type parameters.
-      */
-    def checkUnusedTypeParameters(used: Used): Used = {
-      val unusedParams = defn.spec.tparams.collect {
-        case tparam if deadTypeVar(tparam.tpe, defn.spec.declaredScheme.base.typeVars) => UnusedTypeParam(tparam.name)
-      }
-      used ++ unusedParams
+    // Compute the used symbols inside the signature.
+    val usedExp = sig.impl match {
+      case None => Used.empty
+      case Some(impl) =>
+        val recursionContext = RecursionContext.RecursableSig(sig.sym, arity(sig.spec))
+        visitExp(impl.exp, Env.of(recursionContext) ++ sig.spec.fparams.map(_.sym))
     }
-
-    // Compute the used symbols inside the definition.
-    val recursionContext = RecursionContext.Recursable(defn.sym, arity(defn))
-    val usedExp = visitExp(defn.impl.exp, Env.of(recursionContext) ++ defn.spec.fparams.map(_.sym))
 
     // Check for unused parameters and remove all variable symbols.
-    val usedAll = (usedExp and checkUnusedFormalParameters(usedExp) and checkUnusedTypeParameters(usedExp)).copy(varSyms = Set.empty)
-    val usedAllWithUnconditionalRecursions = if (usedAll.unconditionallyRecurses) usedAll + UnconditionalRecursion(defn.sym) else usedAll
+    val unusedFormalParams = sig.impl.toList.flatMap(_ => findUnusedFormalParameters(sig.spec, usedExp))
+    val unusedTypeParams = findUnusedTypeParamters(sig.spec)
+    val unconditionalRecursion = findUnconditionalSigRecursion(sig.sym, usedExp)
+
+    val usedAll = (usedExp ++
+      unusedFormalParams ++
+      unusedTypeParams ++
+      unconditionalRecursion).copy(varSyms = Set.empty)
 
     // Check if the expression contains holes.
     // If it does, we discard all unused local variable errors.
-    if (usedAllWithUnconditionalRecursions.holeSyms.isEmpty)
-      usedAllWithUnconditionalRecursions
+    if (usedAll.holeSyms.isEmpty)
+      usedAll
     else
-      usedAllWithUnconditionalRecursions.withoutUnusedVars
+      usedAll.withoutUnusedVars
   }
 
   /**
-    * Finds the arity of the Def.
+    * Checks for unused symbols in the given definition and returns all used symbols.
     */
-  private def arity(defn: Def): Int = defn.spec.fparams.size
+  private def visitDef(defn: Def)(implicit root: Root, flix: Flix): Used = {
+
+    // Compute the used symbols inside the definition.
+    val recursionContext = RecursionContext.RecursableDef(defn.sym, arity(defn.spec))
+    val usedExp = visitExp(defn.impl.exp, Env.of(recursionContext) ++ defn.spec.fparams.map(_.sym))
+
+    val unusedFormalParams = findUnusedFormalParameters(defn.spec, usedExp)
+    val unusedTypeParams = findUnusedTypeParamters(defn.spec)
+    val unconditionalRecursion = findUnconditionalDefRecursion(defn.sym, usedExp)
+
+    // Check for unused parameters and remove all variable symbols.
+    val usedAll = (usedExp ++
+      unusedFormalParams ++
+      unusedTypeParams ++
+      unconditionalRecursion).copy(varSyms = Set.empty)
+
+    // Check if the expression contains holes.
+    // If it does, we discard all unused local variable errors.
+    if (usedAll.holeSyms.isEmpty)
+      usedAll
+    else
+      usedAll.withoutUnusedVars
+  }
+
+  /**
+    * Finds unused formal parameters.
+    */
+  private def findUnusedFormalParameters(spec: Spec, used: Used): List[UnusedFormalParam] = {
+    spec.fparams.collect {
+      case fparam if deadVarSym(fparam.sym, used) => UnusedFormalParam(fparam.sym)
+    }
+  }
+
+  /**
+    * Finds unused type parameters.
+    */
+  private def findUnusedTypeParamters(spec: Spec): List[UnusedTypeParam] = {
+    spec.tparams.collect {
+      case tparam if deadTypeVar(tparam.tpe, spec.declaredScheme.base.typeVars) => UnusedTypeParam(tparam.name)
+    }
+  }
+
+  /**
+    * Creates an UnconditionalRecursion error if applicable to the sig.
+    */
+  private def findUnconditionalSigRecursion(sig: Symbol.SigSym, used: Used): Option[RedundancyError] = {
+    if (used.unconditionallyRecurses) {
+      Some(UnconditionalSigRecursion(sig))
+    } else {
+      None
+    }
+  }
+
+  /**
+    * Creates an UnconditionalRecursion error if applicable to the def.
+    */
+  private def findUnconditionalDefRecursion(defn: Symbol.DefnSym, used: Used): Option[RedundancyError] = {
+    if (used.unconditionallyRecurses) {
+      Some(UnconditionalDefRecursion(defn))
+    } else {
+      None
+    }
+  }
+
+  /**
+    * Finds the arity of the Spec.
+    */
+  private def arity(spec: Spec): Int = spec.fparams.size
+
 
   /**
     * Checks for unused definition symbols.
@@ -246,7 +309,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.Def(sym, _, _) => Used.of(sym)
 
-    case Expression.Sig(sym, _, _) => Used.empty
+    case Expression.Sig(sym, _, _) => Used.of(sym)
 
     case Expression.Hole(sym, _, _, _) => Used.of(sym)
 
@@ -267,12 +330,20 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       else
         innerUsed and shadowedVar - fparam.sym
 
-    case Expression.Apply(defn@Expression.Def(sym, _, _), exps, _, _, _) if env0.recursionContext.isRecursiveCall(sym, exps.length) =>
+    case Expression.Apply(Expression.Def(sym, _, _), exps, _, _, _) if env0.recursionContext.isRecursiveCall(sym, exps.length) =>
       // Check for unconditional recursion.
       // NB: A function that calls itself recursively is not used.
       val us1 = Used.empty
       val us2 = visitExps(exps, env0)
       (us1 and us2).withUnconditionalRecursion
+
+    case Expression.Apply(Expression.Sig(sym, _, _), exps, _, _, _) if env0.recursionContext.isRecursiveCall(sym, exps.length) =>
+      // Check for unconditional recursion.
+      // NB: A function that calls itself recursively is not used.
+      val us1 = Used.empty
+      val us2 = visitExps(exps, env0)
+      (us1 and us2).withUnconditionalRecursion
+
 
     case Expression.Apply(exp, exps, _, _, _) =>
       val us1 = visitExp(exp, env0)
@@ -303,6 +374,10 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         (innerUsed1 and innerUsed2 and shadowedVar) - sym + UnusedVarSym(sym)
       else
         (innerUsed1 and innerUsed2 and shadowedVar) - sym
+
+    case Expression.LetRegion(sym, exp, _, _, _) =>
+      // TODO: Rules for region variables?
+      visitExp(exp, env0) - sym
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       val us1 = visitExp(exp1, env0)
@@ -636,7 +711,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def visitBodyPred(b0: Predicate.Body, env0: Env): Used = b0 match {
     case Body.Atom(_, _, _, terms, _, _) =>
-      Used.empty
+      terms.foldLeft(Used.empty) {
+        case (acc, term) => acc and Used.of(freeVars(term))
+      }
 
     case Body.Guard(exp, _) =>
       visitExp(exp, env0)
@@ -779,7 +856,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Represents the empty set of used symbols.
       */
-    val empty: Used = Used(MultiMap.empty, Set.empty, Set.empty, Set.empty, unconditionallyRecurses = false, Set.empty)
+    val empty: Used = Used(MultiMap.empty, Set.empty, Set.empty, Set.empty, Set.empty, unconditionallyRecurses = false, Set.empty)
 
     /**
       * Returns an object where the given enum symbol `sym` and `tag` are marked as used.
@@ -792,6 +869,11 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     def of(sym: Symbol.DefnSym): Used = empty.copy(defSyms = Set(sym))
 
     /**
+      * Returns an object where the given sig symbol `sym` is marked as used.
+      */
+    def of(sym: Symbol.SigSym): Used = empty.copy(sigSyms = Set(sym))
+
+    /**
       * Returns an object where the given hole symbol `sym` is marked as used.
       */
     def of(sym: Symbol.HoleSym): Used = empty.copy(holeSyms = Set(sym))
@@ -801,6 +883,11 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       */
     def of(sym: Symbol.VarSym): Used = empty.copy(varSyms = Set(sym))
 
+    /**
+      * Returns an object where the given variable symbols `syms` are marked as used.
+      */
+    def of(syms: Set[Symbol.VarSym]): Used = empty.copy(varSyms = syms)
+
   }
 
   /**
@@ -808,6 +895,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private case class Used(enumSyms: MultiMap[Symbol.EnumSym, Name.Tag],
                           defSyms: Set[Symbol.DefnSym],
+                          sigSyms: Set[Symbol.SigSym],
                           holeSyms: Set[Symbol.HoleSym],
                           varSyms: Set[Symbol.VarSym],
                           unconditionallyRecurses: Boolean,
@@ -827,6 +915,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         Used(
           this.enumSyms ++ that.enumSyms,
           this.defSyms ++ that.defSyms,
+          this.sigSyms ++ that.sigSyms,
           this.holeSyms ++ that.holeSyms,
           this.varSyms ++ that.varSyms,
           this.unconditionallyRecurses && that.unconditionallyRecurses,
@@ -848,6 +937,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         Used(
           this.enumSyms ++ that.enumSyms,
           this.defSyms ++ that.defSyms,
+          this.sigSyms ++ that.sigSyms,
           this.holeSyms ++ that.holeSyms,
           this.varSyms ++ that.varSyms,
           this.unconditionallyRecurses || that.unconditionallyRecurses,
@@ -899,15 +989,20 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   /**
-    * Describes the context where a def call might be recursive.
+    * Describes the context where a def or sig call might be recursive.
     *
-    * Tracks the def, its arity, and the number of applications made to allow for detection of [[UnconditionalRecursion]]
+    * Tracks the def or sig, its arity, and the number of applications made to allow for detection of [[UnconditionalDefRecursion]]
     */
   private sealed trait RecursionContext {
     /**
-      * True iff the call is recursive in this context.
+      * True iff the definition call is recursive in this context.
       */
     def isRecursiveCall(call: Symbol.DefnSym, nParams: Int): Boolean
+
+    /**
+      * True iff the signature call is recursive in this context.
+      */
+    def isRecursiveCall(call: Symbol.SigSym, nParams: Int): Boolean
   }
 
   private object RecursionContext {
@@ -917,15 +1012,27 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       */
     case object NoContext extends RecursionContext {
       override def isRecursiveCall(call: Symbol.DefnSym, nParams: Int): Boolean = false
+
+      override def isRecursiveCall(call: Symbol.SigSym, nParams: Int): Boolean = false
     }
 
     /**
       * Context where a recursive call is possible.
       */
-    case class Recursable(call: Symbol.DefnSym, nParams: Int) extends RecursionContext {
+    case class RecursableDef(call: Symbol.DefnSym, nParams: Int) extends RecursionContext {
       override def isRecursiveCall(call: Symbol.DefnSym, nParams: Int): Boolean = {
         call == this.call && nParams == this.nParams
       }
+
+      override def isRecursiveCall(call: Symbol.SigSym, nParams: Int): Boolean = false
+    }
+
+    case class RecursableSig(call: Symbol.SigSym, nParams: Int) extends RecursionContext {
+      override def isRecursiveCall(call: Symbol.SigSym, nParams: Int): Boolean = {
+        call == this.call && nParams == this.nParams
+      }
+
+      override def isRecursiveCall(call: Symbol.DefnSym, nParams: Int): Boolean = false
     }
 
   }

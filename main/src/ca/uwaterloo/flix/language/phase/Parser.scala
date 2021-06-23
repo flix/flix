@@ -584,8 +584,9 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
+    // TODO: Why are these not primary?
     def Ref: Rule1[ParsedAst.Expression] = rule {
-      (SP ~ keyword("ref") ~ WS ~ Ref ~ SP ~> ParsedAst.Expression.Ref) | Deref
+      (SP ~ keyword("ref") ~ WS ~ Ref ~ optional(WS ~ keyword("@") ~ WS ~ Expression) ~ SP ~> ParsedAst.Expression.Ref) | Deref
     }
 
     def Deref: Rule1[ParsedAst.Expression] = rule {
@@ -627,7 +628,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetMatch | LetMatchStar | LetUse | LetImport | IfThenElse | Choose | Match | LambdaMatch | TryCatch | Lambda | Tuple |
+      LetRegion | LetMatch | LetMatchStar | LetUse | LetImport | IfThenElse | Choose | Match | LambdaMatch | TryCatch | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | Spawn | Lazy | Force | Intrinsic | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointProject | FixpointSolveWithProject | FixpointQueryWithSelect |
@@ -677,6 +678,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def LetUse: Rule1[ParsedAst.Expression.Use] = rule {
       SP ~ Use ~ optWS ~ ";" ~ optWS ~ Expressions.Stm ~ SP ~> ParsedAst.Expression.Use
+    }
+
+    def LetRegion: Rule1[ParsedAst.Expression.LetRegion] = rule {
+      SP ~ keyword("let region") ~ WS ~ Names.Variable ~ optWS ~ ";" ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.LetRegion
     }
 
     def LetImport: Rule1[ParsedAst.Expression] = {
@@ -1016,13 +1021,23 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS)
       }
 
-      def SelectPart: Rule1[Seq[ParsedAst.Expression]] = {
-        def SelectOne: Rule1[Seq[ParsedAst.Expression]] = rule {
-          Expression ~> ((e: ParsedAst.Expression) => Seq(e))
+      def SelectPart: Rule1[ParsedAst.SelectFragment] = {
+        def SelectOne: Rule1[ParsedAst.SelectFragment] = rule {
+          Expression ~> ((e: ParsedAst.Expression) => ParsedAst.SelectFragment(Seq(e), None))
         }
 
-        def SelectMany: Rule1[Seq[ParsedAst.Expression]] = rule {
-          "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
+        def SelectMany: Rule1[ParsedAst.SelectFragment] = {
+          def TermList: Rule1[Seq[ParsedAst.Expression]] = rule {
+            zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS)
+          }
+
+          def LatTerm: Rule1[Option[ParsedAst.Expression]] = rule {
+            optional(optWS ~ ";" ~ optWS ~ Expression)
+          }
+
+          rule {
+            "(" ~ optWS ~ TermList ~ LatTerm ~ optWS ~ ")" ~> ParsedAst.SelectFragment
+          }
         }
 
         rule {
@@ -1375,8 +1390,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     "(" ~ optWS ~ zeroOrMore(Attribute).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
   }
 
-  def Annotations: Rule1[Seq[ParsedAst.AnnotationOrProperty]] = rule {
-    zeroOrMore(Annotation | Property).separatedBy(WS) ~ optWS
+  def Annotations: Rule1[Seq[ParsedAst.Annotation]] = rule {
+    zeroOrMore(Annotation).separatedBy(WS) ~ optWS
   }
 
   def Modifiers: Rule1[Seq[ParsedAst.Modifier]] = {
@@ -1413,12 +1428,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
   }
 
-  def Annotation: Rule1[ParsedAst.AnnotationOrProperty] = rule {
+  def Annotation: Rule1[ParsedAst.Annotation] = rule {
     SP ~ atomic("@") ~ Names.Annotation ~ OptArgumentList ~ SP ~> ParsedAst.Annotation
-  }
-
-  def Property: Rule1[ParsedAst.AnnotationOrProperty] = rule {
-    SP ~ atomic("#") ~ Names.QualifiedDefinition ~ OptArgumentList ~ SP ~> ParsedAst.Property
   }
 
   /////////////////////////////////////////////////////////////////////////////

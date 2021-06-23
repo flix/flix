@@ -248,13 +248,6 @@ object Type {
   val Lazy: Type = Type.Cst(TypeConstructor.Lazy, SourceLocation.Unknown)
 
   /**
-    * Represents the Reference type constructor.
-    *
-    * NB: This type has kind: * -> *.
-    */
-  val Ref: Type = Type.Cst(TypeConstructor.Ref, SourceLocation.Unknown)
-
-  /**
     * Represents the Relation type constructor.
     */
   val Relation: Type = Type.Cst(TypeConstructor.Relation, SourceLocation.Unknown)
@@ -491,14 +484,10 @@ object Type {
   def mkLazy(tpe: Type, loc: SourceLocation = SourceLocation.Unknown): Type = Type.Apply(Type.Cst(TypeConstructor.Lazy, loc), tpe)
 
   /**
-    * Returns the Ref type with the given source location `loc`.
+    * Returns the type `ScopedRef[tpe, lifetime]` with the given optional source location `loc`.
     */
-  def mkRef(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Ref, loc)
-
-  /**
-    * Returns the type `Ref[tpe]` with the given optional source location `loc`.
-    */
-  def mkRef(tpe: Type, loc: SourceLocation = SourceLocation.Unknown): Type = Type.Apply(Type.Cst(TypeConstructor.Ref, loc), tpe)
+  def mkScopedRef(tpe1: Type, tpe2: Type, loc: SourceLocation = SourceLocation.Unknown): Type =
+    Type.Apply(Type.Apply(Type.Cst(TypeConstructor.ScopedRef, loc), tpe1), tpe2)
 
   /**
     * Constructs the pure arrow type A -> B.
@@ -725,6 +714,12 @@ object Type {
   def mkEquiv(x: Type, y: Type): Type = Type.mkOr(Type.mkAnd(x, y), Type.mkAnd(Type.mkNot(x), Type.mkNot(y)))
 
   /**
+    * Returns a Region type for the given rigid variable `l` with the given source location `loc`.
+    */
+  def mkRegion(l: Type.Var, loc: SourceLocation): Type =
+    Type.Apply(Type.Cst(TypeConstructor.Region, loc), l)
+
+  /**
     * Returns a simplified (evaluated) form of the given type `tpe0`.
     *
     * Performs beta-reduction of type abstractions and applications.
@@ -756,5 +751,6 @@ object Type {
 
     eval(tpe0, Map.empty)
   }
+
 
 }

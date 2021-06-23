@@ -21,7 +21,6 @@ import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.WeededAst.ChoicePattern
 import ca.uwaterloo.flix.language.ast.{NamedAst, _}
 import ca.uwaterloo.flix.language.errors.NameError
-import ca.uwaterloo.flix.language.phase.Namer.visitType
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
@@ -48,7 +47,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       defsAndSigs = Map.empty,
       enums = Map.empty,
       typealiases = Map.empty,
-      properties = Map.empty,
       reachable = program.reachable,
       sources = locations
     )
@@ -223,19 +221,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
             }
           // Case 2: The name is in use.
           case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateNamePair(ident.name, ident.loc, otherLoc)
-        }
-
-      /*
-     * Property.
-     */
-      case WeededAst.Declaration.Property(law, defn, exp0, loc) =>
-        visitExp(exp0, Map.empty, uenv0, Map.empty) map {
-          case exp =>
-            val lawSym = Symbol.mkDefnSym(law.namespace, law.ident)
-            val defnSym = Symbol.mkDefnSym(ns0, defn)
-            val property = NamedAst.Property(lawSym, defnSym, exp, loc)
-            val properties = prog0.properties.getOrElse(ns0, Nil)
-            prog0.copy(properties = prog0.properties + (ns0 -> (property :: properties)))
         }
 
       case _: WeededAst.Declaration.Sig =>
@@ -593,6 +578,15 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (e1, e2) => NamedAst.Expression.Let(sym, e1, e2, loc)
       }
 
+    case WeededAst.Expression.LetRegion(ident, exp, loc) =>
+      // make a fresh variable symbol for the local variable.
+      val sym = Symbol.freshVarSym(ident)
+      mapN(visitExp(exp, env0 + (ident.name -> sym), uenv0, tenv0)) {
+        case e =>
+          val evar = Type.freshVar(Kind.Bool)
+          NamedAst.Expression.LetRegion(sym, e, evar, loc)
+      }
+
     case WeededAst.Expression.Match(exp, rules, loc) =>
       val expVal = visitExp(exp, env0, uenv0, tenv0)
       val rulesVal = traverse(rules) {
@@ -700,19 +694,33 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.Ref(exp, loc) =>
       visitExp(exp, env0, uenv0, tenv0) map {
-        case e => NamedAst.Expression.Ref(e, loc)
+        case e =>
+          val tvar = Type.freshVar(Kind.Star)
+          NamedAst.Expression.Ref(e, tvar, loc)
+      }
+
+    case WeededAst.Expression.RefWithRegion(exp1, exp2, loc) =>
+      mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0)) {
+        case (e1, e2) =>
+          val tvar = Type.freshVar(Kind.Star)
+          val evar = Type.freshVar(Kind.Bool)
+          NamedAst.Expression.RefWithRegion(e1, e2, tvar, evar, loc)
       }
 
     case WeededAst.Expression.Deref(exp, loc) =>
       visitExp(exp, env0, uenv0, tenv0) map {
-        case e => NamedAst.Expression.Deref(e, Type.freshVar(Kind.Star), loc)
+        case e =>
+          val tvar = Type.freshVar(Kind.Star)
+          val evar = Type.freshVar(Kind.Bool)
+          NamedAst.Expression.Deref(e, tvar, evar, loc)
       }
 
     case WeededAst.Expression.Assign(exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0)) {
-        case (e1, e2) => NamedAst.Expression.Assign(e1, e2, loc)
+        case (e1, e2) =>
+          val evar = Type.freshVar(Kind.Bool)
+          NamedAst.Expression.Assign(e1, e2, evar, loc)
       }
-
 
     case WeededAst.Expression.Existential(tparams0, fparam, exp, loc) =>
       for {
@@ -1236,6 +1244,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.IfThenElse(exp1, exp2, exp3, loc) => freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
     case WeededAst.Expression.Stm(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.Let(ident, exp1, exp2, loc) => freeVars(exp1) ++ filterBoundVars(freeVars(exp2), List(ident))
+    case WeededAst.Expression.LetRegion(ident, exp, loc) => filterBoundVars(freeVars(exp), List(ident))
     case WeededAst.Expression.Match(exp, rules, loc) => freeVars(exp) ++ rules.flatMap {
       case WeededAst.MatchRule(pat, guard, body) => filterBoundVars(freeVars(guard) ++ freeVars(body), freeVars(pat))
     }
@@ -1255,6 +1264,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.ArrayLength(base, loc) => freeVars(base)
     case WeededAst.Expression.ArraySlice(base, startIndex, endIndex, loc) => freeVars(base) ++ freeVars(startIndex) ++ freeVars(endIndex)
     case WeededAst.Expression.Ref(exp, loc) => freeVars(exp)
+    case WeededAst.Expression.RefWithRegion(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.Deref(exp, loc) => freeVars(exp)
     case WeededAst.Expression.Assign(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.Existential(tparams, fparam, exp, loc) => filterBoundVars(freeVars(exp), List(fparam.ident))

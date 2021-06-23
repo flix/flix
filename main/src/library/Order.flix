@@ -17,7 +17,7 @@
 ///
 /// A type class for types with a total order.
 ///
-pub lawless class Order[a] {
+pub class Order[a] with Eq[a] {
 
     ///
     /// Returns `LessThan` if `x` < `y`, `Equal` if `x` == `y` or `GreaterThan` `if `x` > `y`.
@@ -58,56 +58,81 @@ pub lawless class Order[a] {
         case _              => false
     }
 
-}
-
-namespace Order {
-
-    ///
-    /// Converts a `Comparison` value to an integer.
-    /// The return value is:
-    /// `-1` if `c` is `LessThan`.
-    /// `0` if `c` is `EqualTo`.
-    /// `+1` if `c` is `GreaterThan`.
-    ///
-    pub def toInt(c: Comparison): Int32 = match c {
-        case LessThan => -1
-        case EqualTo => 0
-        case GreaterThan => +1
-    }
-
-    ///
-    /// Converts an integer to a `Comparison` value.
-    /// The return value is:
-    /// `LessThan` if `i < 0`.
-    /// `EqualTo` if `i == 0`.
-    /// `GreaterThan` if `i > 0`.
-    ///
-    pub def fromInt(i: Int32): Comparison =
-        if (i < 0) LessThan
-        else if (i == 0) EqualTo
-        else GreaterThan
-
     ///
     /// Returns the minimum of `x` and `y`.
     ///
-    pub def min(x: a, y: a): a with Order[a] = match (x <=> y) {
+    pub def min(x: a, y: a): a = match (x <=> y) {
         case GreaterThan => y
         case _ => x
     }
+
+    ///
+    /// Returns the maximum of `x` and `y`.
+    ///
+    pub def max(x: a, y: a): a = match (x <=> y) {
+        case LessThan => y
+        case _ => x
+    }
+
+    ///
+    /// Reflexivity: An element `x` is lower or equal to itself.
+    ///
+    law reflexivity: forall(x: a). x <= x
+
+    ///
+    /// Antisymmetry: If `x` is lower or equal to `y` and `y` is lower or equal to `x` then `x` must be equal to `y`.
+    ///
+    law symmetry: forall(x: a, y: a). ((x <= y) and (y <= x)) ==> (x == y)
+
+    ///
+    /// Transitivity: If `x` is lower or equal to `y` and `y` is lower equal to `z` then `x` must be lower or equal to `z`.
+    ///
+    law transitivity: forall(x: a, y: a, z: a). ((x <= y) and (y <= z)) ==> (x <= z)
+
+    ///
+    /// Totality: For each two elements `x` and `y` either `x` is lower or equal to `y` or the other way round.
+    ///
+    law totality: forall(x: a, y: a). ((x <= y) or (y <= x))
+
+    ///
+    /// Definition of the minimum function.
+    ///
+    law min: forall(x: a, y: a). ((x <= y) ==> (Order.min(x, y) == x)) and ((y <= x) ==> (Order.min(x, y) == y))
+
+    ///
+    /// Definition of the maximum function.
+    ///
+    law max: forall(x: a, y: a). ((y <= x) ==> (Order.max(x, y) == x)) and ((x <= y) ==> (Order.max(x, y) == y))
+
+    ///
+    /// x < y is logically equivalent to not (y <= x).
+    /// This law defines the associated strict total order "<" associated with "<=".
+    ///
+    law strictTotalOrder: forall(x: a, y: a). (x < y) <==> (not (y <= x))
+
+    ///
+    /// This law defines ">" based on "<".
+    ///
+    law inverseOrder1: forall(x: a, y: a). (x > y) <==> (y < x)
+
+    ///
+    /// This law defines ">=" based on "<=".
+    ///
+    law inverseOrder2: forall(x: a, y: a). (x >= y) <==> (y <= x)
+
+    ///
+    /// Definition of `compare` based on the defined total order.
+    ///
+    law compare: forall(x: a, y: a). ((x < y) ==> (Order.compare(x, y) == LessThan)) and ((x == y) ==> (Order.compare(x, y) == EqualTo)) and ((x > y) ==> (Order.compare(x, y) == GreaterThan))
+}
+
+namespace Order {
 
     ///
     /// Returns the minimum of `x` and `y` according to the given comparator `cmp`.
     ///
     pub def minBy(cmp: (a, a) -> Comparison, x: a, y: a): a =
         if (cmp(x, y) == GreaterThan) y else x
-
-    ///
-    /// Returns the maximum of `x` and `y`.
-    ///
-    pub def max(x: a, y: a): a with Order[a] = match (x <=> y) {
-        case LessThan => y
-        case _ => x
-    }
 
     ///
     /// Returns the maximum of `x` and `y` according to the given comparator `cmp`.
@@ -312,7 +337,7 @@ instance Order[String] {
 
     pub def compare(x: String, y: String): Comparison =
         import java.lang.String.compareTo(String);
-        Order.fromInt(x.compareTo(y) as & Pure)
+        Comparison.fromInt(x.compareTo(y) as & Pure)
 
 }
 

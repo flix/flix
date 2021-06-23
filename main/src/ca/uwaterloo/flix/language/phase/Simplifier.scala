@@ -115,6 +115,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Let(sym, e1, e2, tpe, eff, loc) =>
         SimplifiedAst.Expression.Let(sym, visitExp(e1), visitExp(e2), tpe, loc)
 
+      case TypedAst.Expression.LetRegion(_, exp, _, _, _) =>
+        visitExp(exp)
+
       case TypedAst.Expression.Match(exp0, rules, tpe, eff, loc) =>
         patternMatchWithLabels(exp0, rules, tpe, loc)
 
@@ -311,12 +314,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       */
     def visitFormalParam(p: TypedAst.FormalParam): SimplifiedAst.FormalParam =
       SimplifiedAst.FormalParam(p.sym, p.mod, p.tpe, p.loc)
-
-    /**
-      * Translates the property `p` to the SimplifiedAst.
-      */
-    def visitProperty(p: TypedAst.Property): SimplifiedAst.Property =
-      SimplifiedAst.Property(p.law, p.defn, visitExp(p.exp))
 
     /**
       * Returns the given pattern `pat0` as an expression.
@@ -789,10 +786,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         }
         k -> SimplifiedAst.Enum(mod, sym, cases, enumType, loc)
     }
-    val properties = root.properties.map { p => visitProperty(p) }
     val reachable = root.reachable
 
-    SimplifiedAst.Root(defns ++ toplevel, enums, properties, reachable, root.sources).toSuccess
+    SimplifiedAst.Root(defns ++ toplevel, enums, reachable, root.sources).toSuccess
   }
 
   /**

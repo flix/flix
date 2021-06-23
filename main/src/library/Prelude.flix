@@ -1,4 +1,9 @@
 ///
+/// Ref[t] is a type alias for a scoped ref with a global lifetime.
+///
+type alias Ref[t] = ScopedRef[t, false]
+
+///
 /// The identity function.
 ///
 @Time(1) @Space(1)
@@ -17,6 +22,14 @@ pub def constant(y: a): b -> a = _ -> y
 ///
 @Time(1) @Space(1)
 pub def flip(f: (a, b) -> c & e): (b, a) -> c & e = (x, y) -> f(y, x)
+
+///
+/// `on(f, g, x, y) = f(g(x), g(y))`
+///
+/// Partially applying this function in the form ``f `on` g`` lifts the binary function `f` to work on
+/// inputs transformed by `g`.
+///
+pub def on(f: (b, b) -> c & e1, g: a -> b & e2, x: a, y: a): c & (e1 and e2) = f(g(x), g(y))
 
 ///
 /// Returns the result of currying the function `f`.

@@ -82,14 +82,14 @@ object Scheme {
           case InstantiateMode.Rigid => Rigidity.Rigid
           case InstantiateMode.Mixed => Rigidity.Flexible
         }
-        macc + (tvar.id -> Type.freshVar(tvar.kind, rigidity))
+        macc + (tvar.id -> Type.freshVar(tvar.kind, rigidity, tvar.text))
     }
 
     /**
       * Replaces every variable occurrence in the given type using `freeVars`. Updates the rigidity.
       */
     def visitTvar(t: Type.Var): Type.Var = t match {
-      case Type.Var(x, k, rigidity, name) =>
+      case Type.Var(x, k, rigidity, text) =>
         freshVars.get(x) match {
           case None =>
             // Determine the rigidity of the free type variable.
@@ -98,7 +98,7 @@ object Scheme {
               case InstantiateMode.Rigid => Rigidity.Rigid
               case InstantiateMode.Mixed => Rigidity.Rigid
             }
-            Type.Var(x, k, newRigidity)
+            Type.Var(x, k, newRigidity, text)
           case Some(tvar) => tvar
         }
     }
