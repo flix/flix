@@ -81,11 +81,11 @@ namespace ListIterator {
 	/// If `f` is impure it is applied immediately (consuming the entire
 	/// iterator). Otherwise it is applied lazily.
 	///
-    pub def map(f: a -> b, iter: ListIterator[a]): ListIterator[b] & Impure =
-		if (true) // TODO: Use the purity of `f` to decide which function to call.
-			mapL(f, iter)
-		else
-			mapE(f, iter)
+    pub def map(f: a -> b & ef, iter: ListIterator[a]): ListIterator[b] & Impure =
+        matchEff f {
+            case Pure   => mapL(f, iter)
+            case Impure => mapE(f, iter)
+        }
 
     ///
 	/// Return an iterator with the given pure function `f` *lazily* applied to
@@ -93,7 +93,7 @@ namespace ListIterator {
 	///
 	/// Does _not_ consume any elements from the iterator.
 	///
-    def mapL(f: a -> b, iter: ListIterator[a]): ListIterator[b] & Impure =
+    def mapL(f: a -> b & ef, iter: ListIterator[a]): ListIterator[b] & Impure =
 		let Iter(done, next) = match iter {
 			case Iterator(it) 				=> it
 			case FilteredIterator(g, it) 	=> transformFilter(g, it)
@@ -107,7 +107,7 @@ namespace ListIterator {
 	///
 	/// Consumes all elements in the iterator and returns a new iterator.
 	///
-    def mapE(f: a -> b, iter: ListIterator[a]): ListIterator[b] & Impure =
+    def mapE(f: a -> b & ef, iter: ListIterator[a]): ListIterator[b] & Impure =
 		// TODO: Rewrite to use a more efficient implementation.
 		toList(iter) |> List.map(f) |> toIter
 
@@ -121,11 +121,11 @@ namespace ListIterator {
 	/// If `f` is impure it is applied immediately (consuming the entire
 	/// iterator). Otherwise it is applied lazily.
     ///
-    pub def filter(f: a -> Bool, iter: ListIterator[a]): ListIterator[a] & Impure =
-		if (true) // TODO: Use the purity of `f` to decide which function to call.
-			filterL(f, iter)
-		else
-			filterE(f, iter)
+    pub def filter(f: a -> Bool & ef, iter: ListIterator[a]): ListIterator[a] & Impure =
+        matchEff f {
+            case Pure   => filterL(f, iter)
+            case Impure => filterE(f, iter)
+        }
 
     ///
     /// Returns an iterator with every element of the iterator `iter` that
@@ -133,9 +133,9 @@ namespace ListIterator {
 	///
 	/// Does _not_ consume any elements from the iterator.
 	///
-	pub def filterL(f: a -> Bool, iter: ListIterator[a]): ListIterator[a] & Impure = match iter {
-		case Iterator(it) 				=> Iterator(transformFilter(f, it))
-		case FilteredIterator(g, it) 	=> Iterator(transformFilter(x -> g(x) and f(x), it))
+	pub def filterL(f: a -> Bool & ef, iter: ListIterator[a]): ListIterator[a] & Impure = match iter {
+		case Iterator(it) 				=> FilteredIterator(f as a -> Bool, it) as & Impure
+		case FilteredIterator(g, it) 	=> FilteredIterator((x -> g(x) and f(x)) as a -> Bool, it)
 	}
 
     ///
@@ -144,9 +144,9 @@ namespace ListIterator {
 	///
 	/// Consume the entire iterator.
 	///
-	pub def filterE(f: a -> Bool, iter: ListIterator[a]): ListIterator[a] & Impure =
+	pub def filterE(f: a -> Bool & ef, iter: ListIterator[a]): ListIterator[a] & Impure =
 		// TODO: Rewrite to use a more efficient implementation.
-		toList(iter) |> List.filter(f) |> toIter
+		(toList(iter) |> List.filter(f as a -> Bool) |> toIter) as & Impure
 
 	///
 	/// Returns an iterator over the elements of the given list `l`.
@@ -273,5 +273,13 @@ pub def benchmarkListIterator(): Array[Benchmark] & Impure =
         defBenchmark("ListIterator (n = ${2 ** 12})", () -> { pipeline(2 ** 12) as & Pure })
     ]
 
-def main(_args: Array[String]) : Int32 & Impure =
+pub def main(_args: Array[String]) : Int32 & Impure =
     Benchmark.runWithBudget(benchmarks(), 15_000_000_000i64)
+
+pub def main2(_args: Array[String]) : Int32 & Impure =
+    List.range(1, 4) |>
+    ListIterator.toIter |>
+    ListIterator.map(x -> { println("a"); x + 1 } as & Pure) |>
+    ListIterator.map(x -> { println("b"); x } as & Pure) |>
+    ListIterator.toList;
+    0
