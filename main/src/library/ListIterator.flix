@@ -1,3 +1,6 @@
+use Benchmark.Benchmark;
+use Benchmark.defBenchmark;
+
 type alias IsDone = Unit ~> Bool
 
 type alias Pull[a] = Unit ~> a
@@ -36,13 +39,13 @@ namespace ListIterator {
         let pull1 = () -> f(pull());
         ListIterator(isDone, pull1)
 
+    // TODO: A shame this cannot be pure.
     pub def filterL(f: a -> Bool, iter: ListIterator[a]): ListIterator[a] & Impure =
         let ListIterator(_isDone, pull) = iter;
         let cursor = ref None;
-        let isDone1 = () -> match skipToNext(f, iter) {
-            case None => true
+        let isDone1 = () -> match fastForward(f, iter) {
+            case None   => true
             case Some(x) =>
-                // TODO: Stash x.
                 cursor := Some(x);
                 false
         };
@@ -54,15 +57,7 @@ namespace ListIterator {
         };
         ListIterator(isDone1, pull1)
 
-    // TODO: Make private
-    pub def skipToNext(f: a -> Bool, iter: ListIterator[a]): Option[a] & Impure =
-        let ListIterator(isDone, pull) = iter;
-        if (isDone())
-            None
-        else {
-            let n = pull();
-            if (f(n)) Some(n) else skipToNext(f, iter)
-        }
+
 
     pub def toIter(l: List[a]): ListIterator[a] & Impure =
         let curr = ref l;
@@ -83,18 +78,42 @@ namespace ListIterator {
             pull() :: toList(iter)
 
 
-
     def next(iter: ListIterator[a]): a & Impure =
         let ListIterator(_isDone, pull) = iter;
         pull()
 
+    def fastForward(f: a -> Bool, iter: ListIterator[a]): Option[a] & Impure =
+        if (isEmpty(iter))
+            None
+        else {
+            let n = next(iter);
+            if (f(n)) Some(n) else fastForward(f, iter)
+        }
 }
 
 
-def main(_args: Array[String]) : Int32 & Impure =
-    let l = List.range(1, 10);
-    let iter = ListIterator.toIter(l)
-        |> ListIterator.filterL(x -> x % 2 == 0)
-        |> ListIterator.mapL(x -> x * x);
-    ListIterator.toList(iter) |> println;
-    0
+pub def benchmarks(): Array[Benchmark] & Impure = [
+        benchmarkList()
+    ] |> Array.flatten
+
+pub def benchmarkList(): Array[Benchmark] & Impure =
+    let pipeline = l ->
+        l |>
+        List.map(x -> x + 1) |>
+        List.map(x -> x + 1) |>
+        List.map(x -> x + 1) |>
+        List.filter(x -> x % 2 == 0) |>
+        List.filter(x -> x % 2 == 0) |>
+        List.filter(x -> x % 2 == 0) |>
+        List.map(x -> x + 1) |>
+        List.map(x -> x + 1) |>
+        List.map(x -> x + 1);
+    [
+        defBenchmark("List (n = ${2 **  2})", () -> { pipeline(List.range(1, 2 **  2)) }),
+        defBenchmark("List (n = ${2 **  4})", () -> { pipeline(List.range(1, 2 **  4)) }),
+        defBenchmark("List (n = ${2 **  8})", () -> { pipeline(List.range(1, 2 **  8)) }),
+        defBenchmark("List (n = ${2 ** 12})", () -> { pipeline(List.range(1, 2 ** 12)) })
+    ]
+
+//def main(_args: Array[String]) : Int32 & Impure =
+//    Benchmark.runWithBudget(benchmarks(), 1_000_000_000i64)
