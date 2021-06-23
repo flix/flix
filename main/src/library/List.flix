@@ -691,11 +691,12 @@ namespace List {
     /// The function `f` must be pure.
     ///
     @Time(time(f) * length(xs)) @Space(space(f) * length(xs))
-    pub def filter(f: a -> Bool, xs: List[a]): List[a] = match xs {
-        case Nil => Nil
-        case x :: rs =>
-            let r = filter(f, rs);
-                if (f(x)) x :: r else r
+    pub def filter(f: a -> Bool, xs: List[a]): List[a] = filterAcc(f, xs, Nil) |> List.reverse
+
+    pub def filterAcc(f: a -> Bool, l: List[a], rs: List[a]): List[a] = match l {
+        case Nil => rs
+        case x :: xs =>
+            if (f(x)) filterAcc(f, xs, x :: rs) else filterAcc(f, xs, rs)
     }
 
     ///
