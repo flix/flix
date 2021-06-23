@@ -1845,6 +1845,13 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val solveExp = TypedAst.Expression.FixpointSolve(mergeExp, stf, tpe, eff, loc)
         TypedAst.Expression.FixpointProjectOut(pred, solveExp, tpe, eff, loc)
 
+      case ResolvedAst.Expression.MatchEff(exp1, exp2, exp3, loc) =>
+        val e1 = visitExp(exp1, subst0)
+        val e2 = visitExp(exp2, subst0)
+        val e3 = visitExp(exp3, subst0)
+        val tpe = e2.tpe
+        val eff = Type.mkAnd(e1.eff, e2.eff, e3.eff)
+        TypedAst.Expression.MatchEff(e1, e2, e3, tpe, eff, loc)
     }
 
     /**
