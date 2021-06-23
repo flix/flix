@@ -4,12 +4,12 @@ use Benchmark.defBenchmark;
 ///
 /// The type of the isDone function.
 ///
-type alias IsDone = Unit ~> Bool
+type alias IsDone = Unit ~> Bool 	// TODO: Rename
 
 ///
 /// The type of the pull function.
 ///
-type alias Pull[a] = Unit ~> a
+type alias Pull[a] = Unit ~> a		 // TODO: Rename
 
 ///
 /// An iterator is either an actual iterator or a filtered iterator.
@@ -121,11 +121,11 @@ namespace ListIterator {
 	/// If `f` is impure it is applied immediately (consuming the entire
 	/// iterator). Otherwise it is applied lazily.
     ///
-    pub def filter(f: a -> Bool, iter: ListIterator[a]): ListIterator[a] =
+    pub def filter(f: a -> Bool, iter: ListIterator[a]): ListIterator[a] & Impure =
 		if (true) // TODO: Use the purity of `f` to decide which function to call.
-			filterL(f, iter) as & Pure // TODO
+			filterL(f, iter)
 		else
-			???
+			filterE(f, iter)
 
     ///
     /// Returns an iterator with every element of the iterator `iter` that
