@@ -9,24 +9,30 @@ pub enum ListIterator[a] {
     case ListIterator(IsDone, Pull[a])
 }
 
-// TODO: The constant unwrapping of ListIterator is probably expensive.
-// TODO: Need opaque types.
-// TODO: Can we then introduce hasNext as separate functions?
-
 namespace ListIterator {
 
     pub def isEmpty(iter: ListIterator[a]): Bool & Impure =
         let ListIterator(isDone, _pull) = iter;
         isDone()
 
-    pub def count(f: a -> Bool, iter: ListIterator[a]): Int32 & Impure =
+    pub def count(f: a -> Bool, iter: ListIterator[a]): Int32 & Impure = countAcc(f, iter, 0)
+
+    pub def countAcc(f: a -> Bool, iter: ListIterator[a], n: Int32): Int32 & Impure =
         if (isEmpty(iter))
-            0
+            n
+        else if (f(next(iter)))
+            countAcc(f, iter, n + 1)
+        else
+            countAcc(f, iter, n)
+
+    pub def drop(n: Int32, iter: ListIterator[a]): ListIterator[a] & Impure =
+        if (n == 0)
+            iter
+        else if (isEmpty(iter))
+            iter
         else {
-            if (f(next(iter)))
-                1 + count(f, iter) // TODO: Tail call
-            else
-                count(f, iter)
+            next(iter);
+            drop(n  - 1, iter)
         }
 
     pub def map(f: a -> b, iter: ListIterator[a]): ListIterator[b] = mapL(f, iter) // TODO
@@ -44,9 +50,14 @@ namespace ListIterator {
 
     // TODO: A shame this cannot be pure.
     pub def filterL(f: a -> Bool, iter: ListIterator[a]): ListIterator[a] & Impure =
-        let ListIterator(_isDone, pull) = iter;
+        let ListIterator(isDone, pull) = iter;
+        let pair = transformFilter(f, isDone, pull);
+        ListIterator(pair)
+
+    // TODO: Private
+    pub def transformFilter(f: a -> Bool, isDone: IsDone, pull: Pull[a]): (IsDone, Pull[a]) & Impure = {
         let cursor = ref None;
-        let isDone1 = () -> match fastForward(f, iter) {
+        let isDone1 = () -> match forward(f, isDone, pull) {
             case None   => true
             case Some(x) =>
                 cursor := Some(x);
@@ -58,9 +69,8 @@ namespace ListIterator {
                 cursor := None;
                 x
         };
-        ListIterator(isDone1, pull1)
-
-
+        (isDone1, pull1)
+    }
 
     pub def toIter(l: List[a]): ListIterator[a] & Impure =
         let curr = ref l;
@@ -85,60 +95,65 @@ namespace ListIterator {
         let ListIterator(_isDone, pull) = iter;
         pull()
 
-    def fastForward(f: a -> Bool, iter: ListIterator[a]): Option[a] & Impure =
-        if (isEmpty(iter))
+    def forward(f: a -> Bool, isDone: IsDone, next: Pull[a]): Option[a] & Impure =
+        if (isDone())
             None
         else {
-            let n = next(iter);
-            if (f(n)) Some(n) else fastForward(f, iter)
+            let n = next();
+            if (f(n)) Some(n) else forward(f, isDone, next)
         }
 }
 
 
 pub def benchmarks(): Array[Benchmark] & Impure = [
-        benchmarkList(),
-        benchmarkListIterator()
+        benchmarkListIterator(),
+        benchmarkList()
     ] |> Array.flatten
 
 pub def benchmarkList(): Array[Benchmark] & Impure =
-    let pipeline = l ->
-        l |>
+    let pipeline = n ->
+        List.range(1, n) |>
         List.map(x -> x + 1) |>
         List.map(x -> x + 1) |>
         List.map(x -> x + 1) |>
+        List.drop(n / 4) |>
         List.filter(x -> x % 2 == 0) |>
         List.filter(x -> x % 2 == 0) |>
         List.filter(x -> x % 2 == 0) |>
         List.map(x -> x + 1) |>
         List.map(x -> x + 1) |>
-        List.map(x -> x + 1);
+        List.map(x -> x + 1) |>
+        List.drop(n / 2) |>
+        List.count(constant(true));
     [
-        defBenchmark("List (n = ${2 **  2})", () -> { pipeline(List.range(1, 2 **  2)) }),
-        defBenchmark("List (n = ${2 **  4})", () -> { pipeline(List.range(1, 2 **  4)) }),
-        defBenchmark("List (n = ${2 **  8})", () -> { pipeline(List.range(1, 2 **  8)) }),
-        defBenchmark("List (n = ${2 ** 12})", () -> { pipeline(List.range(1, 2 ** 12)) })
+        defBenchmark("List (n = ${2 **  2})", () -> { pipeline(2 **  2) }),
+        defBenchmark("List (n = ${2 **  4})", () -> { pipeline(2 **  4) }),
+        defBenchmark("List (n = ${2 **  8})", () -> { pipeline(2 **  8) }),
+        defBenchmark("List (n = ${2 ** 12})", () -> { pipeline(2 ** 12) })
     ]
 
 pub def benchmarkListIterator(): Array[Benchmark] & Impure =
-    let pipeline = l ->
-        l |>
+    let pipeline = n ->
+        List.range(1, n) |>
         ListIterator.toIter |>
         ListIterator.map(x -> x + 1) |>
         ListIterator.map(x -> x + 1) |>
         ListIterator.map(x -> x + 1) |>
+        ListIterator.drop(n / 4) |>
         ListIterator.filter(x -> x % 2 == 0) |>
         ListIterator.filter(x -> x % 2 == 0) |>
         ListIterator.filter(x -> x % 2 == 0) |>
         ListIterator.map(x -> x + 1) |>
         ListIterator.map(x -> x + 1) |>
         ListIterator.map(x -> x + 1) |>
-        ListIterator.toList;
+        ListIterator.drop(n / 2) |>
+        ListIterator.count(constant(true));
     [
-        defBenchmark("ListIterator (n = ${2 **  2})", () -> { pipeline(List.range(1, 2 **  2)) as & Pure }),
-        defBenchmark("ListIterator (n = ${2 **  4})", () -> { pipeline(List.range(1, 2 **  4)) as & Pure }),
-        defBenchmark("ListIterator (n = ${2 **  8})", () -> { pipeline(List.range(1, 2 **  8)) as & Pure }),
-        defBenchmark("ListIterator (n = ${2 ** 12})", () -> { pipeline(List.range(1, 2 ** 12)) as & Pure })
+        defBenchmark("ListIterator (n = ${2 **  2})", () -> { pipeline(2 **  2) as & Pure }),
+        defBenchmark("ListIterator (n = ${2 **  4})", () -> { pipeline(2 **  4) as & Pure }),
+        defBenchmark("ListIterator (n = ${2 **  8})", () -> { pipeline(2 **  8) as & Pure }),
+        defBenchmark("ListIterator (n = ${2 ** 12})", () -> { pipeline(2 ** 12) as & Pure })
     ]
 
 //def main(_args: Array[String]) : Int32 & Impure =
-//    Benchmark.runWithBudget(benchmarks(), 1_000_000_000i64)
+//    Benchmark.runWithBudget(benchmarks(), 15_000_000_000i64)
