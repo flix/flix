@@ -1457,6 +1457,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           WeededAst.Expression.FixpointProjectOut(pred, queryExp, dbExp, loc)
       }
 
+    case ParsedAst.Expression.MatchEff(sp1, exp1, exp2, exp3, sp2) =>
+      mapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
+        case (e1, e2, e3) => WeededAst.Expression.MatchEff(e1, e2, e3, mkSL(sp1, sp2))
+      }
+
   }
 
   /**

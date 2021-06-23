@@ -1432,6 +1432,16 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = Type.mkAnd(eff1, eff2)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
+      case ResolvedAst.Expression.MatchEff(exp1, exp2, exp3, loc) =>
+        // TODO: Enforce function type.
+        for {
+          (constrs1, tpe1, eff1) <- visitExp(exp1)
+          (constrs2, tpe2, eff2) <- visitExp(exp2)
+          (constrs3, tpe3, eff3) <- visitExp(exp2)
+          resultTyp <- unifyTypeM(tpe2, tpe3, loc)
+          resultEff = Type.mkAnd(eff1, eff2, eff3)
+        } yield (constrs1 ++ constrs2, resultTyp, resultEff)
+
     }
 
     /**

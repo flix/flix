@@ -887,6 +887,13 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.FixpointProjectOut(pred, e1, e2, tvar, loc)
 
+        case NamedAst.Expression.MatchEff(exp1, exp2, exp3, loc) =>
+          for {
+            e1 <- visit(exp1, tenv0)
+            e2 <- visit(exp2, tenv0)
+            e3 <- visit(exp2, tenv0)
+          } yield ResolvedAst.Expression.MatchEff(e1, e2, e3, loc)
+
       }
 
       visit(exp0, Map.empty)
