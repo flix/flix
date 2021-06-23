@@ -17,6 +17,7 @@ type alias Pull[a] = Unit ~> a
 ///
 pub enum ListIterator[a] {
     case ListIterator(IsDone, Pull[a])
+	case FilteredIterator(a -> Bool, IsDone, Pull[a])
 }
 
 namespace ListIterator {
@@ -26,6 +27,9 @@ namespace ListIterator {
     ///
     pub def isEmpty(iter: ListIterator[a]): Bool & Impure = match iter {
 		case ListIterator(done, _) => done()
+		case FilteredIterator(f, done, next) =>
+			let (done1, _) = transformFilter(f, done, next) ;
+			done1()
 	}
 
 	///
@@ -83,10 +87,14 @@ namespace ListIterator {
 	///
 	/// Does _not_ consume any elements from the iterator.
 	///
-    def mapL(f: a -> b, iter: ListIterator[a]): ListIterator[b] = match iter {
+    def mapL(f: a -> b, iter: ListIterator[a]): ListIterator[b] & Impure = match iter {
 		case ListIterator(done, next) =>
 		    let next1 = () -> f(next());
         	ListIterator(done, next1)
+		case FilteredIterator(g, done, next) =>
+			let (done1, next1) = transformFilter(g, done, next);
+			let next2 = () -> f(next1());
+        	ListIterator(done1, next2)
 	}
 
 	///
@@ -124,6 +132,9 @@ namespace ListIterator {
 	pub def filterL(f: a -> Bool, iter: ListIterator[a]): ListIterator[a] & Impure = match iter {
 		case ListIterator(done, next) =>
 		    let pair = transformFilter(f, done, next);
+        	ListIterator(pair)
+		case FilteredIterator(g, done, next) =>
+		    let pair = transformFilter(x -> g(x) and f(x), done, next);
         	ListIterator(pair)
 	}
 
@@ -171,6 +182,9 @@ namespace ListIterator {
 	///
     def next(iter: ListIterator[a]): a & Impure = match iter {
 		case ListIterator(_, n) => n()
+		case FilteredIterator(f, done, next) =>
+			let (_, next1) = transformFilter(f, done, next);
+			next1()
 	}
 
 	///
@@ -187,6 +201,7 @@ namespace ListIterator {
 
 
     // TODO: DOC
+	// TODO: Why not reutrn an iterator?
     def transformFilter(f: a -> Bool, isDone: IsDone, pull: Pull[a]): (IsDone, Pull[a]) & Impure = {
         let cursor = ref None;
         let isDone1 = () -> match forward(f, isDone, pull) {
