@@ -4,8 +4,7 @@ use Benchmark.defBenchmark;
 ///
 /// The type of the isDone function.
 ///
-type alias IsDone = Unit ~> Bool // TODO: Pure or impure?
-
+type alias IsDone = Unit ~> Bool
 
 ///
 /// The type of the pull function.
@@ -138,25 +137,6 @@ namespace ListIterator {
 		// TODO: Rewrite to use a more efficient implementation.
 		toList(iter) |> List.filter(f) |> toIter
 
-
-    // TODO: Private
-    pub def transformFilter(f: a -> Bool, isDone: IsDone, pull: Pull[a]): (IsDone, Pull[a]) & Impure = {
-        let cursor = ref None;
-        let isDone1 = () -> match forward(f, isDone, pull) {
-            case None   => true
-            case Some(x) =>
-                cursor := Some(x);
-                false
-        };
-        let pull1 = () -> match deref cursor {
-            case None => pull()
-            case Some(x) =>
-                cursor := None;
-                x
-        };
-        (isDone1, pull1)
-    }
-
 	///
 	/// Returns an iterator over the elements of the given list `l`.
 	///
@@ -190,16 +170,39 @@ namespace ListIterator {
 	/// Note: The iterator _must_ have a next element.
 	///
     def next(iter: ListIterator[a]): a & Impure = match iter {
-		case ListIterator(_, pull) => pull()
+		case ListIterator(_, n) => n()
 	}
 
-    def forward(f: a -> Bool, isDone: IsDone, next: Pull[a]): Option[a] & Impure =
-        if (isDone())
+	///
+	/// Fast forwards the given iterator until the next element that satisfies
+	/// the given predicate `f`. Returns it (if it exists).
+	///
+    def forward(f: a -> Bool, done: IsDone, next: Pull[a]): Option[a] & Impure =
+        if (done())
             None
         else {
             let n = next();
-            if (f(n)) Some(n) else forward(f, isDone, next)
+            if (f(n)) Some(n) else forward(f, done, next)
         }
+
+
+    // TODO: DOC
+    def transformFilter(f: a -> Bool, isDone: IsDone, pull: Pull[a]): (IsDone, Pull[a]) & Impure = {
+        let cursor = ref None;
+        let isDone1 = () -> match forward(f, isDone, pull) {
+            case None   => true
+            case Some(x) =>
+                cursor := Some(x);
+                false
+        };
+        let pull1 = () -> match deref cursor {
+            case None => pull()
+            case Some(x) =>
+                cursor := None;
+                x
+        };
+        (isDone1, pull1)
+    }
 }
 
 
