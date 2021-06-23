@@ -1437,10 +1437,10 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
-          (constrs3, tpe3, eff3) <- visitExp(exp2)
+          (constrs3, tpe3, eff3) <- visitExp(exp3)
           resultTyp <- unifyTypeM(tpe2, tpe3, loc)
           resultEff = Type.mkAnd(eff1, eff2, eff3)
-        } yield (constrs1 ++ constrs2, resultTyp, resultEff)
+        } yield (constrs1 ++ constrs2 ++ constrs3, resultTyp, resultEff)
 
     }
 
@@ -1849,7 +1849,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val e3 = visitExp(exp3, subst0)
-        val tpe = e2.tpe
+        val tpe = subst0(e2.tpe)
         val eff = Type.mkAnd(e1.eff, e2.eff, e3.eff)
         TypedAst.Expression.MatchEff(e1, e2, e3, tpe, eff, loc)
     }
