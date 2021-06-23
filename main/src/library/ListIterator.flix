@@ -4,7 +4,7 @@ use Benchmark.defBenchmark;
 ///
 /// The type of the isDone function.
 ///
-type alias IsDone = Unit ~> Bool
+type alias IsDone = Unit ~> Bool // TODO: Pure or impure?
 
 
 ///
@@ -72,11 +72,11 @@ namespace ListIterator {
 	/// If `f` is impure it is applied immediately (consuming the entire
 	/// iterator). Otherwise it is applied lazily.
 	///
-    pub def map(f: a -> b, iter: ListIterator[a]): ListIterator[b] =
+    pub def map(f: a -> b, iter: ListIterator[a]): ListIterator[b] & Impure =
 		if (true) // TODO: Use the purity of `f` to decide which function to call.
 			mapL(f, iter)
 		else
-			???
+			mapE(f, iter)
 
     ///
 	/// Return an iterator with the given pure function `f` *lazily* applied to
@@ -84,11 +84,24 @@ namespace ListIterator {
 	///
 	/// Does _not_ consume any elements from the iterator.
 	///
-    pub def mapL(f: a -> b, iter: ListIterator[a]): ListIterator[b] = match iter {
+    def mapL(f: a -> b, iter: ListIterator[a]): ListIterator[b] = match iter {
 		case ListIterator(done, next) =>
 		    let next1 = () -> f(next());
         	ListIterator(done, next1)
 	}
+
+	///
+	/// Returns an iterator with the given impure function `f` eagerly applied
+	/// to every element of the given iterator `iter`.
+	///
+	/// Consumes all elements in the iterator and returns a new iterator.
+	///
+    def mapE(f: a -> b, iter: ListIterator[a]): ListIterator[b] & Impure =
+		// TODO: Rewrite to use a more efficient implementation.
+		toList(iter) |> List.map(f) |> toIter
+
+
+
 
 
     pub def filter(f: a -> Bool, iter: ListIterator[a]): ListIterator[a] = filterL(f, iter) as & Pure // TODO
