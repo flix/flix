@@ -29,6 +29,7 @@ namespace ListIterator {
                 count(f, iter)
         }
 
+    pub def map(f: a -> b, iter: ListIterator[a]): ListIterator[b] = mapL(f, iter) // TODO
 
 
     // TODO: mapE
@@ -38,6 +39,8 @@ namespace ListIterator {
         let ListIterator(isDone, pull) = iter;
         let pull1 = () -> f(pull());
         ListIterator(isDone, pull1)
+
+    pub def filter(f: a -> Bool, iter: ListIterator[a]): ListIterator[a] = filterL(f, iter) as & Pure // TODO
 
     // TODO: A shame this cannot be pure.
     pub def filterL(f: a -> Bool, iter: ListIterator[a]): ListIterator[a] & Impure =
@@ -93,7 +96,8 @@ namespace ListIterator {
 
 
 pub def benchmarks(): Array[Benchmark] & Impure = [
-        benchmarkList()
+        benchmarkList(),
+        benchmarkListIterator()
     ] |> Array.flatten
 
 pub def benchmarkList(): Array[Benchmark] & Impure =
@@ -113,6 +117,27 @@ pub def benchmarkList(): Array[Benchmark] & Impure =
         defBenchmark("List (n = ${2 **  4})", () -> { pipeline(List.range(1, 2 **  4)) }),
         defBenchmark("List (n = ${2 **  8})", () -> { pipeline(List.range(1, 2 **  8)) }),
         defBenchmark("List (n = ${2 ** 12})", () -> { pipeline(List.range(1, 2 ** 12)) })
+    ]
+
+pub def benchmarkListIterator(): Array[Benchmark] & Impure =
+    let pipeline = l ->
+        l |>
+        ListIterator.toIter |>
+        ListIterator.map(x -> x + 1) |>
+        ListIterator.map(x -> x + 1) |>
+        ListIterator.map(x -> x + 1) |>
+        ListIterator.filter(x -> x % 2 == 0) |>
+        ListIterator.filter(x -> x % 2 == 0) |>
+        ListIterator.filter(x -> x % 2 == 0) |>
+        ListIterator.map(x -> x + 1) |>
+        ListIterator.map(x -> x + 1) |>
+        ListIterator.map(x -> x + 1) |>
+        ListIterator.toList;
+    [
+        defBenchmark("ListIterator (n = ${2 **  2})", () -> { pipeline(List.range(1, 2 **  2)) as & Pure }),
+        defBenchmark("ListIterator (n = ${2 **  4})", () -> { pipeline(List.range(1, 2 **  4)) as & Pure }),
+        defBenchmark("ListIterator (n = ${2 **  8})", () -> { pipeline(List.range(1, 2 **  8)) as & Pure }),
+        defBenchmark("ListIterator (n = ${2 ** 12})", () -> { pipeline(List.range(1, 2 ** 12)) as & Pure })
     ]
 
 //def main(_args: Array[String]) : Int32 & Impure =
