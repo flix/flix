@@ -62,19 +62,34 @@ namespace ListIterator {
             drop(n  - 1, iter)
         }
 
+	///
+	/// Returns an iterator with the given function `f` applied to every element
+	/// of the given iterator `iter`.
+	///
+	/// Whether `f` is applied eagerly or lazily depends on whether it is
+	/// impure.
+	///
+	/// If `f` is impure it is applied immediately (consuming the entire
+	/// iterator). Otherwise it is applied lazily.
+	///
+    pub def map(f: a -> b, iter: ListIterator[a]): ListIterator[b] =
+		if (true) // TODO: Use the purity of `f` to decide which function to call.
+			mapL(f, iter)
+		else
+			???
 
+    ///
+	/// Return an iterator with the given pure function `f` *lazily* applied to
+	/// every element of the given iterator `iter`.
+	///
+	/// Does _not_ consume any elements from the iterator.
+	///
+    pub def mapL(f: a -> b, iter: ListIterator[a]): ListIterator[b] = match iter {
+		case ListIterator(done, next) =>
+		    let next1 = () -> f(next());
+        	ListIterator(done, next1)
+	}
 
-
-    pub def map(f: a -> b, iter: ListIterator[a]): ListIterator[b] = mapL(f, iter) // TODO
-
-
-    // TODO: mapE
-
-    // NB: Pure (!!!)
-    pub def mapL(f: a -> b, iter: ListIterator[a]): ListIterator[b] =
-        let ListIterator(isDone, pull) = iter;
-        let pull1 = () -> f(pull());
-        ListIterator(isDone, pull1)
 
     pub def filter(f: a -> Bool, iter: ListIterator[a]): ListIterator[a] = filterL(f, iter) as & Pure // TODO
 
@@ -102,30 +117,41 @@ namespace ListIterator {
         (isDone1, pull1)
     }
 
+	///
+	/// Returns an iterator over the elements of the given list `l`.
+	///
     pub def toIter(l: List[a]): ListIterator[a] & Impure =
-        let curr = ref l;
-        let isDone = () -> List.isEmpty(deref curr);
-        let pull = () -> match deref curr {
+        let cursor = ref l;
+        let done = () -> List.isEmpty(deref cursor);
+        let next = () -> match (deref cursor) {
             case Nil     => bug!("Empty iterator.")
             case x :: xs =>
-                curr := xs;
+                cursor := xs;
                 x
         };
-        ListIterator(isDone, pull)
+        ListIterator(done, next)
 
 	///
 	/// Returns all elements in the given iterator `iter` as a list.
 	///
 	/// Consumes the entire iterator.
 	///
-    pub def toList(iter: ListIterator[a]): List[a] & Impure =
-		if (isEmpty(iter)) Nil else next(iter) :: toList(iter)
+    pub def toList(iter: ListIterator[a]): List[a] & Impure = toListAcc(iter, Nil) |> List.reverse
+
+	def toListAcc(iter: ListIterator[a], rs: List[a]): List[a] & Impure =
+		if (isEmpty(iter)) rs else toListAcc(iter, next(iter) :: rs)
 
 
-
-    def next(iter: ListIterator[a]): a & Impure =
-        let ListIterator(_isDone, pull) = iter;
-        pull()
+	///
+	/// Returns the next element of the given iterator `iter`.
+	///
+	/// Consumes one element from the iterator.
+	///
+	/// Note: The iterator _must_ have a next element.
+	///
+    def next(iter: ListIterator[a]): a & Impure = match iter {
+		case ListIterator(_, pull) => pull()
+	}
 
     def forward(f: a -> Bool, isDone: IsDone, next: Pull[a]): Option[a] & Impure =
         if (isDone())
