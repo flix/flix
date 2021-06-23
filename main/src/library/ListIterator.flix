@@ -1,23 +1,42 @@
 use Benchmark.Benchmark;
 use Benchmark.defBenchmark;
 
+///
+/// The type of the isDone function.
+///
 type alias IsDone = Unit ~> Bool
 
+
+///
+/// The type of the pull function.
+///
 type alias Pull[a] = Unit ~> a
 
+///
+/// An iterator consists of two impure functions that can produce a (possibly
+/// infinite) sequence of values.
+///
 pub enum ListIterator[a] {
     case ListIterator(IsDone, Pull[a])
 }
 
 namespace ListIterator {
 
-    pub def isEmpty(iter: ListIterator[a]): Bool & Impure =
-        let ListIterator(isDone, _pull) = iter;
-        isDone()
+    ///
+    /// Returns `true` if and only if the iterator `iter` has no more elements.
+    ///
+    pub def isEmpty(iter: ListIterator[a]): Bool & Impure = match iter {
+		case ListIterator(done, _) => done()
+	}
 
+	///
+    /// Returns the number of elements in `iter` that satisfy the predicate `f`.
+	///
+	/// Consumes the entire iterator.
+    ///
     pub def count(f: a -> Bool, iter: ListIterator[a]): Int32 & Impure = countAcc(f, iter, 0)
 
-    pub def countAcc(f: a -> Bool, iter: ListIterator[a], n: Int32): Int32 & Impure =
+    def countAcc(f: a -> Bool, iter: ListIterator[a], n: Int32): Int32 & Impure =
         if (isEmpty(iter))
             n
         else if (f(next(iter)))
@@ -25,8 +44,16 @@ namespace ListIterator {
         else
             countAcc(f, iter, n)
 
+    ///
+    /// Returns an iterator with the first `n` elements of the given iterator `iter`.
+    ///
+    /// Returns the empty iterator if `iter` is empty.
+	/// Returns the same iterator if `n <= 0`.
+	///
+	/// Consumes the first `n` elements of the iterator.
+    ///
     pub def drop(n: Int32, iter: ListIterator[a]): ListIterator[a] & Impure =
-        if (n == 0)
+        if (n <= 0)
             iter
         else if (isEmpty(iter))
             iter
@@ -34,6 +61,9 @@ namespace ListIterator {
             next(iter);
             drop(n  - 1, iter)
         }
+
+
+
 
     pub def map(f: a -> b, iter: ListIterator[a]): ListIterator[b] = mapL(f, iter) // TODO
 
@@ -83,12 +113,14 @@ namespace ListIterator {
         };
         ListIterator(isDone, pull)
 
+	///
+	/// Returns all elements in the given iterator `iter` as a list.
+	///
+	/// Consumes the entire iterator.
+	///
     pub def toList(iter: ListIterator[a]): List[a] & Impure =
-        let ListIterator(isDone, pull) = iter;
-        if (isDone())
-            Nil
-        else
-            pull() :: toList(iter)
+		if (isEmpty(iter)) Nil else next(iter) :: toList(iter)
+
 
 
     def next(iter: ListIterator[a]): a & Impure =
@@ -155,5 +187,5 @@ pub def benchmarkListIterator(): Array[Benchmark] & Impure =
         defBenchmark("ListIterator (n = ${2 ** 12})", () -> { pipeline(2 ** 12) as & Pure })
     ]
 
-//def main(_args: Array[String]) : Int32 & Impure =
-//    Benchmark.runWithBudget(benchmarks(), 15_000_000_000i64)
+def main(_args: Array[String]) : Int32 & Impure =
+    Benchmark.runWithBudget(benchmarks(), 15_000_000_000i64)
