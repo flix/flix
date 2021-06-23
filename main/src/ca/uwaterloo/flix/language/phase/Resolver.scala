@@ -891,7 +891,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           for {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
-            e3 <- visit(exp2, tenv0)
+            e3 <- visit(exp3, tenv0)
           } yield ResolvedAst.Expression.MatchEff(e1, e2, e3, loc)
 
       }

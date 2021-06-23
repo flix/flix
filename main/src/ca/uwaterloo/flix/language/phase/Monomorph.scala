@@ -459,7 +459,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val isPure = eff match {
             case Type.Cst(TypeConstructor.True, _) => true
             case Type.Cst(TypeConstructor.False, _) => false
-            case other => throw InternalCompilerException(s"Unexpected non-Boolean type: ${other}.")
+            case other => throw InternalCompilerException(s"Unexpected non-Boolean type: '$other'.")
           }
 
           if (isPure)
