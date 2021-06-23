@@ -100,15 +100,44 @@ namespace ListIterator {
 		// TODO: Rewrite to use a more efficient implementation.
 		toList(iter) |> List.map(f) |> toIter
 
+    ///
+    /// Returns an iterator with every element of the iterator `iter` that
+    /// satisfies the predicate `f`.
+	///
+	/// Whether `f` is applied eagerly or lazily depends on whether it is
+	/// impure.
+	///
+	/// If `f` is impure it is applied immediately (consuming the entire
+	/// iterator). Otherwise it is applied lazily.
+    ///
+    pub def filter(f: a -> Bool, iter: ListIterator[a]): ListIterator[a] =
+		if (true) // TODO: Use the purity of `f` to decide which function to call.
+			filterL(f, iter) as & Pure // TODO
+		else
+			???
 
+    ///
+    /// Returns an iterator with every element of the iterator `iter` that
+    /// satisfies the predicate `f`.
+	///
+	/// Does _not_ consume any elements from the iterator.
+	///
+	pub def filterL(f: a -> Bool, iter: ListIterator[a]): ListIterator[a] & Impure = match iter {
+		case ListIterator(done, next) =>
+		    let pair = transformFilter(f, done, next);
+        	ListIterator(pair)
+	}
 
-    pub def filter(f: a -> Bool, iter: ListIterator[a]): ListIterator[a] = filterL(f, iter) as & Pure // TODO
+    ///
+    /// Returns an iterator with every element of the iterator `iter` that
+    /// satisfies the predicate `f`.
+	///
+	/// Consume the entire iterator.
+	///
+	pub def filterE(f: a -> Bool, iter: ListIterator[a]): ListIterator[a] & Impure =
+		// TODO: Rewrite to use a more efficient implementation.
+		toList(iter) |> List.filter(f) |> toIter
 
-    // TODO: A shame this cannot be pure.
-    pub def filterL(f: a -> Bool, iter: ListIterator[a]): ListIterator[a] & Impure =
-        let ListIterator(isDone, pull) = iter;
-        let pair = transformFilter(f, isDone, pull);
-        ListIterator(pair)
 
     // TODO: Private
     pub def transformFilter(f: a -> Bool, isDone: IsDone, pull: Pull[a]): (IsDone, Pull[a]) & Impure = {
