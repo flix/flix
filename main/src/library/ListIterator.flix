@@ -4,12 +4,12 @@ use Benchmark.defBenchmark;
 ///
 /// The type of the isDone function.
 ///
-type alias IsDone = Unit ~> Bool 	// TODO: Rename
+type alias Done = Unit ~> Bool
 
 ///
 /// The type of the pull function.
 ///
-type alias Pull[a] = Unit ~> a		 // TODO: Rename
+type alias Next[a] = Unit ~> a
 
 ///
 /// An iterator is either an actual iterator or a filtered iterator.
@@ -23,7 +23,7 @@ pub enum ListIterator[a] {
 /// An iter consists of two functions: done and next.
 ///
 pub enum Iter[a] {
-	case Iter(IsDone, Pull[a])
+	case Iter(Done, Next[a])
 }
 
 namespace ListIterator {
@@ -210,7 +210,7 @@ namespace ListIterator {
 	/// Fast forwards the given iterator until the next element that satisfies
 	/// the given predicate `f`. Returns it (if it exists).
 	///
-    def forward(f: a -> Bool, done: IsDone, next: Pull[a]): Option[a] & Impure =
+    def forward(f: a -> Bool, done: Done, next: Next[a]): Option[a] & Impure =
         if (done())
             None
         else {
