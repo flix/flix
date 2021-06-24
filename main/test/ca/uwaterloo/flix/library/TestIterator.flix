@@ -205,4 +205,15 @@ namespace TestIterator {
         Iterator.toList;
         deref l == ("b" :: "a" :: "b" :: "a" :: "b" :: "a" :: Nil)
 
+    /////////////////////////////////////////////////////////////////////////////
+    // filter (pure)                                                           //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def testFilterPure01(): Bool & Impure =
+        Nil |> Iterator.toIter |> Iterator.filter(x -> x > 100) |> Iterator.toList == Nil
+
+    @test
+    def testFilterPure02(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.filter(x -> x > 0) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+
 }
