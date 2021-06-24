@@ -29,7 +29,18 @@ namespace Fixpoint/Ast {
         }
     }
 
+    instance Eq[PrecedenceEdge] {
+        pub def eq(a: PrecedenceEdge, b: PrecedenceEdge): Bool = Fixpoint/Ast/PrecedenceEdge.compare(a, b) == EqualTo
+    }
+
     instance Order[PrecedenceEdge] {
+        pub def compare(a: PrecedenceEdge, b: PrecedenceEdge): Comparison = Fixpoint/Ast/PrecedenceEdge.compare(a, b)
+    }
+
+    namespace PrecedenceEdge {
+        use Fixpoint/Ast.PrecedenceEdge;
+        use Fixpoint/Ast.PrecedenceEdge.{PositiveEdge, NegativeEdge};
+
         pub def compare(a: PrecedenceEdge, b: PrecedenceEdge): Comparison = match (a, b) {
             case (PositiveEdge(x), PositiveEdge(y)) => x <=> y
             case (NegativeEdge(x), NegativeEdge(y)) => x <=> y

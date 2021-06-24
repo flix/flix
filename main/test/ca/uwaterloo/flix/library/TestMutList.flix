@@ -19,6 +19,49 @@ namespace TestMutList {
     use ToString.toString;
 
     /////////////////////////////////////////////////////////////////////////////
+    // Eq.eq                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+    
+    @test
+    def eq01(): Bool & Impure =
+        let u: MutList[Int32] = MutList.new();
+        let v: MutList[Int32] = MutList.new();
+        u == v
+
+    @test
+    def eq02(): Bool & Impure =
+        let u = MutList.new();
+        MutList.push!(0, u);
+        let v = MutList.new();
+        u != v
+
+    @test
+    def eq03(): Bool & Impure =
+        let u = MutList.new();
+        MutList.push!(2, u);
+        MutList.push!(3, u);
+        let v = MutList.new();
+        MutList.push!(2, v);
+        MutList.push!(3, v);
+        u == v
+        
+    @test
+    def eq04(): Bool & Impure =
+        let u = MutList.new();
+        MutList.push!(2, u);
+        MutList.push!(3, u);
+        let v = MutList.new();
+        MutList.push!(2, v);
+        MutList.push!(2, v);
+        u != v
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Order.compare                                                           //
+    /////////////////////////////////////////////////////////////////////////////
+
+    // TODO
+
+    /////////////////////////////////////////////////////////////////////////////
     // length                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -1367,4 +1410,324 @@ namespace TestMutList {
         MutList.pop!(v);
         Array.length(MutList.toArray(v)) == 1
 
+/////////////////////////////////////////////////////////////////////////////
+// The following tests for sort functions correspond to those in TestArray //
+/////////////////////////////////////////////////////////////////////////////
+// sortWith                                                                //
+/////////////////////////////////////////////////////////////////////////////
+
+def cmp(x: Int32, y: Int32): Comparison =
+    if (x < y) LessThan
+    else if (x == y) EqualTo
+    else GreaterThan
+
+@test
+def sortWith01(): Bool & Impure =
+    let a = MutList.sortWith(cmp, Array.toMutList([]: Array[Int32]));
+    a == Array.toMutList([]: Array[Int32])
+
+@test
+def sortWith02(): Bool & Impure =
+    let a = MutList.sortWith(cmp, Array.toMutList([0]));
+    a == Array.toMutList([0])
+
+@test
+def sortWith03(): Bool & Impure =
+    let a = MutList.sortWith(cmp, Array.toMutList([0,1]));
+    a == Array.toMutList([0,1])
+
+@test
+def sortWith04(): Bool & Impure =
+    let a = MutList.sortWith(cmp, Array.toMutList([1,0]));
+    a == Array.toMutList([0,1])
+
+@test
+def sortWith05(): Bool & Impure =
+    let a = MutList.sortWith(cmp, Array.toMutList([1,1]));
+    a == Array.toMutList([1,1])
+
+@test
+def sortWith06(): Bool & Impure =
+    let a = MutList.sortWith(cmp, Array.toMutList([0,1,2,3,4,5]));
+    a == Array.toMutList([0,1,2,3,4,5])
+
+@test
+def sortWith07(): Bool & Impure =
+    let a = MutList.sortWith(cmp, Array.toMutList([5,4,3,2,1,0]));
+    a == Array.toMutList([0,1,2,3,4,5])
+
+@test
+def sortWith08(): Bool & Impure =
+    let a = MutList.sortWith(cmp, Array.toMutList([5,3,0,4,1,2]));
+    a == Array.toMutList([0,1,2,3,4,5])
+
+@test
+def sortWith09(): Bool & Impure =
+    let a = MutList.sortWith(cmp, Array.toMutList([2,3,0,4,1,2]));
+    a == Array.toMutList([0,1,2,2,3,4])
+
+@test
+def sortWith10(): Bool & Impure =
+    let a = MutList.sortWith(flip(cmp), Array.toMutList([0,1,2,3,4,5]));
+    a == Array.toMutList([5,4,3,2,1,0])
+
+@test
+def sortWith11(): Bool & Impure =
+    let a = MutList.sortWith(flip(cmp), Array.toMutList([5,4,3,2,1,0]));
+    a == Array.toMutList([5,4,3,2,1,0])
+
+@test
+def sortWith12(): Bool & Impure =
+    let a = MutList.sortWith(flip(cmp), Array.toMutList([5,3,0,4,1,2]));
+    a == Array.toMutList([5,4,3,2,1,0])
+
+@test
+def sortWith13(): Bool & Impure =
+    let a = MutList.sortWith(flip(cmp), Array.toMutList([2,3,0,4,1,2]));
+    a == Array.toMutList([4,3,2,2,1,0])
+
+/////////////////////////////////////////////////////////////////////////////
+// sort                                                                    //
+/////////////////////////////////////////////////////////////////////////////
+
+def testSortVsSortWith(a: MutList[Int32]) : Bool & Impure =
+    MutList.sort(a) == MutList.sortWith(cmp, a)
+
+@test
+def sort01(): Bool & Impure = testSortVsSortWith(Array.toMutList([]: Array[Int32]))
+
+@test
+def sort02(): Bool & Impure = testSortVsSortWith(Array.toMutList([0]))
+
+@test
+def sort03(): Bool & Impure = testSortVsSortWith(Array.toMutList([0,1]))
+
+@test
+def sort04(): Bool & Impure = testSortVsSortWith(Array.toMutList([1,0]))
+
+@test
+def sort05(): Bool & Impure = testSortVsSortWith(Array.toMutList([1,1]))
+
+@test
+def sort06(): Bool & Impure = testSortVsSortWith(Array.toMutList([0,1,2,3,4,5]))
+
+@test
+def sort07(): Bool & Impure = testSortVsSortWith(Array.toMutList([5,4,3,2,1,0]))
+
+@test
+def sort08(): Bool & Impure = testSortVsSortWith(Array.toMutList([5,3,0,4,1,2]))
+
+@test
+def sort09(): Bool & Impure = testSortVsSortWith(Array.toMutList([2,3,0,4,1,2]))
+
+/////////////////////////////////////////////////////////////////////////////
+// sortWith!                                                               //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def sortWith01!(): Bool & Impure =
+    let a = Array.toMutList([]: Array[Int32]);
+    MutList.sortWith(cmp, a);
+    a == Array.toMutList([]: Array[Int32])
+
+@test
+def sortWith02!(): Bool & Impure =
+    let a = Array.toMutList([0]);
+    MutList.sortWith!(cmp, a);
+    a == Array.toMutList([0])
+
+@test
+def sortWith03!(): Bool & Impure =
+    let a = Array.toMutList([0,1]);
+    MutList.sortWith!(cmp, a);
+    a == Array.toMutList([0,1])
+
+@test
+def sortWith04!(): Bool & Impure =
+    let a = Array.toMutList([1,0]);
+    MutList.sortWith!(cmp, a);
+    a == Array.toMutList([0,1])
+
+@test
+def sortWith05!(): Bool & Impure =
+    let a = Array.toMutList([1,1]);
+    MutList.sortWith!(cmp, a);
+    a == Array.toMutList([1,1])
+
+@test
+def sortWith06!(): Bool & Impure =
+    let a = Array.toMutList([0,1,2,3,4,5]);
+    MutList.sortWith!(cmp, a);
+    a == Array.toMutList([0,1,2,3,4,5])
+
+@test
+def sortWith07!(): Bool & Impure =
+    let a = Array.toMutList([5,4,3,2,1,0]);
+    MutList.sortWith!(cmp, a);
+    a == Array.toMutList([0,1,2,3,4,5])
+
+@test
+def sortWith08!(): Bool & Impure =
+    let a = Array.toMutList([5,3,0,4,1,2]);
+    MutList.sortWith!(cmp, a);
+    a == Array.toMutList([0,1,2,3,4,5])
+
+@test
+def sortWith09!(): Bool & Impure =
+    let a = Array.toMutList([2,3,0,4,1,2]);
+    MutList.sortWith!(cmp, a);
+    a == Array.toMutList([0,1,2,2,3,4])
+
+@test
+def sortWith10!(): Bool & Impure =
+    let a = Array.toMutList([0,1,2,3,4,5]);
+    MutList.sortWith!(flip(cmp), a);
+    a == Array.toMutList([5,4,3,2,1,0])
+
+@test
+def sortWith11!(): Bool & Impure =
+    let a = Array.toMutList([5,4,3,2,1,0]);
+    MutList.sortWith!(flip(cmp), a);
+    a == Array.toMutList([5,4,3,2,1,0])
+
+@test
+def sortWith12!(): Bool & Impure =
+    let a = Array.toMutList([5,3,0,4,1,2]);
+    MutList.sortWith!(flip(cmp), a);
+    a == Array.toMutList([5,4,3,2,1,0])
+
+@test
+def sortWith13!(): Bool & Impure =
+    let a = Array.toMutList([2,3,0,4,1,2]);
+    MutList.sortWith!(flip(cmp), a);
+    a == Array.toMutList([4,3,2,2,1,0])
+
+/////////////////////////////////////////////////////////////////////////////
+// sort!                                                                   //
+/////////////////////////////////////////////////////////////////////////////
+
+def testSort!VsSortWith!(a: MutList[Int32]) : Bool & Impure =
+    let b = MutList.copy(a);
+    let c = MutList.copy(a);
+    MutList.sort!(b);
+    MutList.sortWith!(cmp, c);
+    b == c
+
+@test
+def sort!01(): Bool & Impure = testSort!VsSortWith!(Array.toMutList([]: Array[Int32]))
+
+@test
+def sort!02(): Bool & Impure = testSort!VsSortWith!(Array.toMutList([0]))
+
+@test
+def sort!03(): Bool & Impure = testSort!VsSortWith!(Array.toMutList([0,1]))
+
+@test
+def sort!04(): Bool & Impure = testSort!VsSortWith!(Array.toMutList([1,0]))
+
+@test
+def sort!05(): Bool & Impure = testSort!VsSortWith!(Array.toMutList([1,1]))
+
+@test
+def sort!06(): Bool & Impure = testSort!VsSortWith!(Array.toMutList([0,1,2,3,4,5]))
+
+@test
+def sort!07(): Bool & Impure = testSort!VsSortWith!(Array.toMutList([5,4,3,2,1,0]))
+
+@test
+def sort!08(): Bool & Impure = testSort!VsSortWith!(Array.toMutList([5,3,0,4,1,2]))
+
+@test
+def sort!09(): Bool & Impure = testSort!VsSortWith!(Array.toMutList([2,3,0,4,1,2]))
+
+/////////////////////////////////////////////////////////////////////////////
+// sortBy                                                                  //
+/////////////////////////////////////////////////////////////////////////////
+
+def testSortByVsSort(a: MutList[Int32]) : Bool & Impure =
+    (MutList.sortBy(identity, a) == MutList.sort(a)) and
+    (MutList.sortBy(x -> 4*x+7, a) == MutList.sort(a)) and
+    (MutList.sortBy(x -> -x, a) == MutList.sortWith(flip(cmp),a))
+
+@test
+def sortBy01(): Bool & Impure = testSortByVsSort(Array.toMutList([]: Array[Int32]))
+
+@test
+def sortBy02(): Bool & Impure = testSortByVsSort(Array.toMutList([0]))
+
+@test
+def sortBy03(): Bool & Impure = testSortByVsSort(Array.toMutList([0,1]))
+
+@test
+def sortBy04(): Bool & Impure = testSortByVsSort(Array.toMutList([1,0]))
+
+@test
+def sortBy05(): Bool & Impure = testSortByVsSort(Array.toMutList([1,1]))
+
+@test
+def sortBy06(): Bool & Impure = testSortByVsSort(Array.toMutList([0,1,2,3,4,5]))
+
+@test
+def sortBy07(): Bool & Impure = testSortByVsSort(Array.toMutList([5,4,3,2,1,0]))
+
+@test
+def sortBy08(): Bool & Impure = testSortByVsSort(Array.toMutList([5,3,0,4,1,2]))
+
+@test
+def sortBy09(): Bool & Impure = testSortByVsSort(Array.toMutList([2,3,0,4,1,2]))
+
+enum R {
+    case R({i: Int32, s: String})
+}
+
+instance Eq[R] {
+    pub def eq(a: R, b: R): Bool =
+        let R(x) = a;
+        let R(y) = b;
+        x.i == y.i and x.s == y.s
+}
+
+@test
+def sortBy10(): Bool & Impure =
+    MutList.sortBy(r -> let R(x) = r; x.i, Array.toMutList([R({i = 2, s = "A"}), R({i = 1, s = "B"}), R({i = 3, s = "C"})]))
+    == Array.toMutList([R({i = 1, s = "B"}), R({i = 2, s = "A"}), R({i = 3, s = "C"})])
+
+/////////////////////////////////////////////////////////////////////////////
+// sortBy!                                                                 //
+/////////////////////////////////////////////////////////////////////////////
+
+def testSortBy!VsSortBy(a: MutList[Int32]) : Bool & Impure =
+    let b = MutList.copy(a);
+    let c = MutList.copy(a);
+    MutList.sortBy!(identity, b);
+    MutList.sortBy!(x -> 4*x+7, c);
+    (b == MutList.sortBy(x -> 4*x+7, a)) and
+    (c == MutList.sortBy(identity, a))
+
+@test
+def sortBy!01(): Bool & Impure = testSortBy!VsSortBy(Array.toMutList([]: Array[Int32]))
+
+@test
+def sortBy!02(): Bool & Impure = testSortBy!VsSortBy(Array.toMutList([0]))
+
+@test
+def sortBy!03(): Bool & Impure = testSortBy!VsSortBy(Array.toMutList([0,1]))
+
+@test
+def sortBy!04(): Bool & Impure = testSortBy!VsSortBy(Array.toMutList([1,0]))
+
+@test
+def sortBy!05(): Bool & Impure = testSortBy!VsSortBy(Array.toMutList([1,1]))
+
+@test
+def sortBy!06(): Bool & Impure = testSortBy!VsSortBy(Array.toMutList([0,1,2,3,4,5]))
+
+@test
+def sortBy!07(): Bool & Impure = testSortBy!VsSortBy(Array.toMutList([5,4,3,2,1,0]))
+
+@test
+def sortBy!08(): Bool & Impure = testSortBy!VsSortBy(Array.toMutList([5,3,0,4,1,2]))
+
+@test
+def sortBy!09(): Bool & Impure = testSortBy!VsSortBy(Array.toMutList([2,3,0,4,1,2]))
 }

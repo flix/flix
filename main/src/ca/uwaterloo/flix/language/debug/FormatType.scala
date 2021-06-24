@@ -18,7 +18,7 @@
 package ca.uwaterloo.flix.language.debug
 
 import ca.uwaterloo.flix.language.ast.Kind.Bool
-import ca.uwaterloo.flix.language.ast.{Kind, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.vt.{VirtualString, VirtualTerminal}
 
@@ -87,12 +87,17 @@ object FormatType {
 
       base match {
         case None => tpe match {
-          case tvar@Type.Var(id, kind, _, _) => audience match {
+          case Type.Var(id, kind, rigidity, text) => audience match {
             case Audience.Internal => kind match {
+              // TODO: We need a systematic way to print type variables, their kind, and rigidity.
+              // TODO: We need to rid ourselves of alpha renaming. Its too brittle. We need something else.
               case Bool => s"''$id"
               case _ => s"'$id"
             }
-            case Audience.External => tvar.text.getOrElse(renameMap(tvar.id))
+            case Audience.External => text match {
+              case None => s"'$id"
+              case Some(t) => t
+            }
           }
           case Type.Lambda(tvar, tpe) => audience match {
             case Audience.Internal => s"${tvar.id.toString} => ${visit(tpe)}"
@@ -147,7 +152,7 @@ object FormatType {
 
           case TypeConstructor.Lazy => formatApply("Lazy", args)
 
-          case TypeConstructor.Ref => formatApply("Ref", args)
+          case TypeConstructor.ScopedRef => formatApply("ScopedRef", args)
 
           case TypeConstructor.RecordExtend(field) => args.length match {
             case 0 => s"{ $field: ??? }"
@@ -241,6 +246,8 @@ object FormatType {
                 formatApply(s"($applyPart)", applyParams)
               }
             }
+
+          case TypeConstructor.Region => formatApply("Region", args)
 
           case TypeConstructor.Native(clazz) => s"${clazz.getSimpleName}"
         }

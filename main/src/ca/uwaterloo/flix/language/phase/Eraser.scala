@@ -37,10 +37,9 @@ object Eraser extends Phase[FinalAst.Root, FinalAst.Root] {
         }
         k -> ErasedAst.Enum(mod, sym, cases, loc)
     }
-    val properties = root.properties.map { p => visitProperty(p) }
     val reachable = root.reachable
 
-    val actualTransformation = ErasedAst.Root(defns, enums, properties, reachable, root.sources).toSuccess
+    val actualTransformation = ErasedAst.Root(defns, enums, reachable, root.sources).toSuccess
     root.toSuccess
   }
 
@@ -274,12 +273,6 @@ object Eraser extends Phase[FinalAst.Root, FinalAst.Root] {
     */
   private def visitFormalParam(p: FinalAst.FormalParam): ErasedAst.FormalParam =
     ErasedAst.FormalParam(p.sym, visitTpe(p.tpe))
-
-  /**
-    * Translates the property `p` to the ErasedAst.
-    */
-  private def visitProperty(p: FinalAst.Property): ErasedAst.Property =
-    ErasedAst.Property(p.law, p.defn, visitExp(p.exp))
 
   /**
     * Translates the type 'tpe' to the ErasedType.

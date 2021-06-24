@@ -170,6 +170,10 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
           _ <- checkPats(exp1, root)
           _ <- checkPats(exp2, root)
         } yield tast
+        case Expression.LetRegion(_, exp, _, _, _) =>
+          for {
+            _ <- checkPats(exp, root)
+          } yield tast
         case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) => for {
           _ <- checkPats(exp1, root)
           _ <- checkPats(exp2, root)
@@ -697,7 +701,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Some(TypeConstructor.Int64) => 0
       case Some(TypeConstructor.BigInt) => 0
       case Some(TypeConstructor.Str) => 0
-      case Some(TypeConstructor.Ref) => 0
+      case Some(TypeConstructor.ScopedRef) => 0
       case Some(TypeConstructor.Relation) => 0
       case Some(TypeConstructor.Lattice) => 0
       case Some(TypeConstructor.RecordEmpty) => 0

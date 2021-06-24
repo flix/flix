@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.{DependencyEdge, DependencyGraph, Polarity}
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, SourcePosition, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.StratificationError
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{ParOps, Validation}
@@ -148,6 +148,11 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.Let(sym, exp1, exp2, tpe, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
         case (e1, e2) => Expression.Let(sym, e1, e2, tpe, eff, loc)
+      }
+
+    case Expression.LetRegion(sym, exp, tpe, eff, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.LetRegion(sym, e, tpe, eff, loc)
       }
 
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
@@ -405,6 +410,7 @@ object Stratifier extends Phase[Root, Root] {
       mapN(visitExp(exp)) {
         case e => Expression.FixpointProjectOut(pred, e, tpe, eff, loc)
       }
+
   }
 
   /**
@@ -471,6 +477,9 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.Let(_, exp1, exp2, _, _, _) =>
       dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2)
+
+    case Expression.LetRegion(_, exp, _, _, _) =>
+      dependencyGraphOfExp(exp)
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2) + dependencyGraphOfExp(exp3)

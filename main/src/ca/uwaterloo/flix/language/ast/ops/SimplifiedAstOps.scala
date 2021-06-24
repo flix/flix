@@ -347,13 +347,6 @@ object SimplifiedAstOps {
       checkDefn(defn)
     }
 
-    //
-    // Check all properties in the program.
-    //
-    for (Property(law, defn, exp) <- root.properties) {
-      checkExp(exp0 = exp, env0 = Set.empty, ienv0 = Set.empty)
-    }
-
     // Success :)
     root
   }

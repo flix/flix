@@ -277,25 +277,6 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate the presence of a hole in release mode.
-    *
-    * @param loc the location where the illegal expression occurs.
-    */
-  case class IllegalHole(loc: SourceLocation) extends WeederError {
-    def summary: String = "Hole expressions are not allowed in release mode."
-
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Hole expressions are not allowed in release mode." << NewLine
-      vt << NewLine
-      vt << Code(loc, "illegal hole.") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " Implement the hole or disable release mode." << NewLine
-    }
-  }
-
-  /**
     * An error raised to indicate an illegal modifier.
     *
     * @param loc the location where the illegal modifier occurs.

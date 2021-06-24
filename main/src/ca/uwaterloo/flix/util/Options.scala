@@ -17,142 +17,82 @@
 package ca.uwaterloo.flix.util
 
 import java.nio.file.{Path, Paths}
-import java.time.{Duration => JDuration}
 
 object Options {
   /**
     * Default options.
     */
   val Default: Options = Options(
-    core = false,
+    lib = LibLevel.All,
     debug = false,
     documentor = false,
-    invariants = false,
     json = false,
-    mode = CompilationMode.Development,
-    optimizations = Optimization.All,
-    quickchecker = false,
     test = false,
     target = JvmTarget.Version18,
     targetDirectory = Paths.get("./target/flix/"),
-    timeout = None,
     threads = Runtime.getRuntime.availableProcessors(),
-    verbosity = Verbosity.Normal,
-    verifier = false,
     loadClassFiles = true,
     writeClassFiles = true,
     xallowredundancies = false,
     xlinter = false,
     xnoboolunification = false,
-    xnostratifier = false,
-    xstatistics = false
+    xnostratifier = false
   )
 
   /**
     * Default test options.
     */
-  val DefaultTest: Options = Default.copy(core = false, test = true, verbosity = Verbosity.Silent)
+  val DefaultTest: Options = Default.copy(lib = LibLevel.All, test = true)
 
   /**
     * Default test options with the standard library.
     */
-  val TestWithLibrary: Options = DefaultTest
+  val TestWithLibAll: Options = DefaultTest
 
   /**
-    * Default test options without the standard library.
+    * Default test options with the minimal library.
     */
-  val TestWithoutLibrary: Options = DefaultTest.copy(core = true)
+  val TestWithLibMin: Options = DefaultTest.copy(lib = LibLevel.Min)
+
+  /**
+    * Default test options without any library.
+    */
+  val TestWithLibNix: Options = DefaultTest.copy(lib = LibLevel.Nix)
 }
 
 /**
   * General Flix options.
   *
-  * @param core               disables loading of all non-essential namespaces.
+  * @param lib                selects the level of libraries to include.
   * @param debug              enables the emission of debugging information.
   * @param documentor         enables generation of flixdoc.
-  * @param invariants         enables checking of compiler invariants.
   * @param json               enable json output
-  * @param mode               the compilation mode.
-  * @param quickchecker       enables the quickchecker.
   * @param test               enables test mode.
   * @param target             the target JVM.
   * @param targetDirectory    the target directory for compiled code.
-  * @param timeout            selects the solver timeout.
   * @param threads            selects the number of threads to use.
-  * @param verbosity          selects the level of verbosity.
-  * @param verifier           enables the verifier.
   * @param loadClassFiles     loads the generated class files into the JVM.
   * @param writeClassFiles    enables output of class files.
   * @param xallowredundancies disables the redundancy checker.
   * @param xlinter            enables the semantic linter.
   * @param xnoboolunification disables boolean unification.
   * @param xnostratifier      disables computation of stratification.
-  * @param xstatistics        prints compiler statistics.
   */
-case class Options(core: Boolean,
+case class Options(lib: LibLevel,
                    debug: Boolean,
                    documentor: Boolean,
-                   invariants: Boolean,
                    json: Boolean,
-                   optimizations: Set[Optimization],
-                   mode: CompilationMode,
-                   quickchecker: Boolean,
                    target: JvmTarget,
                    targetDirectory: Path,
                    test: Boolean,
-                   timeout: Option[JDuration],
                    threads: Int,
-                   verbosity: Verbosity,
-                   verifier: Boolean,
                    loadClassFiles: Boolean,
                    writeClassFiles: Boolean,
                    xallowredundancies: Boolean,
                    xlinter: Boolean,
                    xnoboolunification: Boolean,
-                   xnostratifier: Boolean,
-                   xstatistics: Boolean
+                   xnostratifier: Boolean
                   )
-
-/**
-  * A common super-type for optimizations.
-  */
-sealed trait Optimization
-
-object Optimization {
-
-  /**
-    * All optimizations supported by the compiler.
-    */
-  val All: Set[Optimization] = Set(
-    TailCalls
-  )
-
-  /**
-    * Enables compilation with full tail calls.
-    */
-  case object TailCalls extends Optimization
-
-}
-
-/**
-  * A common super-type for the compilation mode.
-  */
-sealed trait CompilationMode
-
-object CompilationMode {
-
-  /**
-    * Enables the development mode of the compiler.
-    */
-  case object Development extends CompilationMode
-
-
-  /**
-    * Enables the release mode of the compiler.
-    */
-  case object Release extends CompilationMode
-
-}
 
 /**
   * An option to control the version of emitted JVM bytecode.
@@ -183,26 +123,22 @@ object JvmTarget {
 
 }
 
-/**
-  * An option to control the level of verbosity.
-  */
-sealed trait Verbosity
+sealed trait LibLevel
 
-object Verbosity {
+object LibLevel {
 
   /**
-    * Output verbose information. Useful for debugging.
+    * Do not include any libraries, even those essential for basic functionality.
     */
-  case object Verbose extends Verbosity
+  case object Nix extends LibLevel
 
   /**
-    * Output condensed information. The default.
+    * Only include essential libraries.
     */
-  case object Normal extends Verbosity
+  case object Min extends LibLevel
 
   /**
-    * Output nothing. Useful for when Flix is used as a library.
+    * Include the full standard library.
     */
-  case object Silent extends Verbosity
-
+  case object All extends LibLevel
 }

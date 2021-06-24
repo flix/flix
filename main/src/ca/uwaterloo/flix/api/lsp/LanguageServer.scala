@@ -15,22 +15,16 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import java.net.InetSocketAddress
-import java.nio.file.Path
-import java.text.SimpleDateFormat
-import java.util.Date
-
 import ca.uwaterloo.flix.api.lsp.provider._
 import ca.uwaterloo.flix.api.{Flix, Version}
+import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.debug._
-import ca.uwaterloo.flix.tools.Tester.TestResult
-import ca.uwaterloo.flix.tools.{Packager, Tester}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
 import ca.uwaterloo.flix.util.vt.TerminalContext
-import ca.uwaterloo.flix.util.{InternalCompilerException, InternalRuntimeException, Options, Result}
+import ca.uwaterloo.flix.util.{InternalCompilerException, InternalRuntimeException, Options, Result, StreamOps}
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
@@ -41,6 +35,12 @@ import org.json4s._
 import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods.parse
 
+import java.io.ByteArrayInputStream
+import java.net.InetSocketAddress
+import java.nio.charset.Charset
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.zip.ZipInputStream
 import scala.collection.mutable
 
 /**
@@ -87,6 +87,11 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     * A map from source URIs to source code.
     */
   val sources: mutable.Map[String, String] = mutable.Map.empty
+
+  /**
+    * A map from package URIs to source code.
+    */
+  val packages: mutable.Map[String, List[String]] = mutable.Map.empty
 
   /**
     * The current AST root. The root is null until the source code is compiled.
@@ -160,28 +165,19 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     json \\ "request" match {
       case JString("api/addUri") => Request.parseAddUri(json)
       case JString("api/remUri") => Request.parseRemUri(json)
+      case JString("api/addPkg") => Request.parseAddPkg(json)
+      case JString("api/remPkg") => Request.parseRemPkg(json)
       case JString("api/version") => Request.parseVersion(json)
       case JString("api/shutdown") => Request.parseShutdown(json)
 
-      case JString("cmd/runBenchmarks") => Request.parseRunBenchmarks(json)
-      case JString("cmd/runMain") => Request.parseRunMain(json)
-      case JString("cmd/runTests") => Request.parseRunTests(json)
-
       case JString("lsp/check") => Request.parseCheck(json)
       case JString("lsp/codelens") => Request.parseCodelens(json)
+      case JString("lsp/complete") => Request.parseComplete(json)
       case JString("lsp/highlight") => Request.parseHighlight(json)
       case JString("lsp/hover") => Request.parseHover(json)
       case JString("lsp/goto") => Request.parseGoto(json)
       case JString("lsp/rename") => Request.parseRename(json)
       case JString("lsp/uses") => Request.parseUses(json)
-
-      case JString("pkg/benchmark") => Request.parsePackageBenchmark(json)
-      case JString("pkg/build") => Request.parsePackageBuild(json)
-      case JString("pkg/buildDoc") => Request.parsePackageBuildDoc(json)
-      case JString("pkg/buildJar") => Request.parsePackageBuildJar(json)
-      case JString("pkg/buildPkg") => Request.parsePackageBuildPkg(json)
-      case JString("pkg/init") => Request.parsePackageInit(json)
-      case JString("pkg/test") => Request.parsePackageTest(json)
 
       case s => Err(s"Unsupported request: '$s'.")
     }
@@ -201,19 +197,38 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       sources -= uri
       ("id" -> id) ~ ("status" -> "success")
 
+    case Request.AddPkg(id, uri, data) =>
+      // TODO: Possibly move into Input class?
+      val inputStream = new ZipInputStream(new ByteArrayInputStream(data))
+      val items = mutable.ListBuffer.empty[String]
+      var entry = inputStream.getNextEntry
+      while (entry != null) {
+        val name = entry.getName
+        if (name.endsWith(".flix")) {
+          val bytes = StreamOps.readAllBytes(inputStream)
+          val src = new String(bytes, Charset.forName("UTF-8"))
+          items += src
+        }
+        entry = inputStream.getNextEntry
+      }
+      inputStream.close()
+
+      packages += (uri -> items.toList)
+      ("id" -> id) ~ ("status" -> "success")
+
+    case Request.RemPkg(id, uri) =>
+      packages -= uri
+      ("id" -> id) ~ ("status" -> "success")
+
     case Request.Version(id) => processVersion(id)
 
     case Request.Shutdown(id) => processShutdown()
 
-    case Request.RunBenchmarks(id) => runBenchmarks(id)
-
-    case Request.RunMain(id) => runMain(id)
-
-    case Request.RunTests(id) => runTests(id)
-
     case Request.Check(id) => processCheck(id)
 
     case Request.Codelens(id, uri) => processCodelens(id, uri)
+
+    case Request.Complete(id, uri, pos) => processComplete(id, uri, pos)
 
     case Request.Highlight(id, uri, pos) =>
       ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(index, root)
@@ -230,14 +245,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     case Request.Uses(id, uri, pos) =>
       ("id" -> id) ~ FindReferencesProvider.findRefs(uri, pos)(index, root)
 
-    case Request.PackageBenchmark(id, projectRoot) => benchmarkPackage(id, projectRoot)
-    case Request.PackageBuild(id, projectRoot) => buildPackage(id, projectRoot)
-    case Request.PackageBuildDoc(id, projectRoot) => buildDoc(id, projectRoot)
-    case Request.PackageBuildJar(id, projectRoot) => buildJar(id, projectRoot)
-    case Request.PackageBuildPkg(id, projectRoot) => buildPkg(id, projectRoot)
-    case Request.PackageInit(id, projectRoot) => initPackage(id, projectRoot)
-    case Request.PackageTest(id, projectRoot) => testPackage(id, projectRoot)
-
   }
 
   /**
@@ -246,8 +253,17 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
   private def processCheck(requestId: String)(implicit ws: WebSocket): JValue = {
     // Configure the Flix compiler.
     val flix = new Flix()
+
+    // Add sources.
     for ((uri, source) <- sources) {
       flix.addInput(uri, source)
+    }
+
+    // Add sources from packages.
+    for ((uri, items) <- packages) {
+      for (src <- items) {
+        flix.addInput(uri, src)
+      }
     }
 
     // Measure elapsed time.
@@ -293,9 +309,17 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       val main = Symbol.Main
       root.defs.get(main) match {
         case Some(defn) if matchesUri(uri, defn.spec.loc) =>
+          val runMain = Command("Run", "flix.runMain", Nil)
+          val runMainWithArgs = Command("Run with args...", "flix.runMainWithArgs", Nil)
+          val runMainNewTerminal = Command("Run (in new terminal)", "flix.runMainNewTerminal", Nil)
+          val runMainNewTerminalWithArgs = Command("Run with args... (in new terminal)", "flix.runMainNewTerminalWithArgs", Nil)
           val loc = defn.sym.loc
-          val cmd = Command("Run Main", "flix.cmdRunMain", Nil)
-          CodeLens(Range.from(loc), Some(cmd)) :: Nil
+          List(
+            CodeLens(Range.from(loc), Some(runMain)),
+            CodeLens(Range.from(loc), Some(runMainWithArgs)),
+            CodeLens(Range.from(loc), Some(runMainNewTerminal)),
+            CodeLens(Range.from(loc), Some(runMainNewTerminalWithArgs))
+          )
         case _ => Nil
       }
     }
@@ -327,143 +351,76 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> JArray(allCodeLenses.map(_.toJSON)))
   }
 
-
   /**
-    * Processes a request to run all benchmarks. Re-compiles and runs the program.
+    * Processes a complete request.
     */
-  private def runBenchmarks(requestId: String): JValue = {
-    // TODO: runBenchmarks
-    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> "TBD: TEXT WILL GO HERE")
+  private def processComplete(requestId: String, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
+    val word = for {
+      source <- sources.get(uri)
+      line <- lineAt(source, pos.line - 1)
+      word <- wordAt(line, pos.character - 1)
+    } yield word
+
+    val t = System.nanoTime()
+    val suggestions = CompleteProvider.autoComplete(uri, pos, word)(index, root)
+    // println(s"Found ${suggestions.size} suggestions for '$word' (elapsed: " + ((System.nanoTime() - t) / 1_000_000) + "ms)")
+
+    val result = CompletionList(isIncomplete = true, suggestions)
+    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result.toJSON)
   }
 
   /**
-    * Processes a request to run main. Re-compiles and runs the program.
+    * Optionally returns line number `n` in the string `s`.
     */
-  private def runMain(requestId: String): JValue = {
-    // Configure the Flix compiler.
-    val flix = new Flix()
-    for ((uri, source) <- sources) {
-      flix.addInput(uri, source)
+  private def lineAt(s: String, n: Int): Option[String] = {
+    import java.io.{BufferedReader, StringReader}
+
+    val br = new BufferedReader(new StringReader(s))
+
+    var i = 0
+    var line = br.readLine()
+    while (line != null && i < n) {
+      line = br.readLine()
+      i = i + 1
+    }
+    Option(line)
+  }
+
+  /**
+    * Optionally returns the word at the given index `n` in the string `s`.
+    */
+  private def wordAt(s: String, n: Int): Option[String] = {
+    def isValidChar(c: Char): Boolean = Character.isLetterOrDigit(c) || c == '.' || c == '/'
+
+    // Bounds Check
+    if (!(0 <= n && n <= s.length)) {
+      return None
     }
 
-    flix.compile() match {
-      case Success(t) => t.getMain match {
-        case None =>
-          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> "Compilation successful. No main to run.")
-        case Some(main) =>
-          try {
-            val result = main(Array.empty)
-            ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result.toString)
-          } catch {
-            case ex: Throwable =>
-              ex.printStackTrace(System.err)
-              ("id" -> requestId) ~ ("status" -> "failure") ~ ("result" -> ex.getMessage)
-          }
-      }
-      case Failure(errors) =>
-        // Case 2: Compilation failed. Send back the error messages.
-        val results = PublishDiagnosticsParams.from(errors)
-        ("id" -> requestId) ~ ("status" -> "failure") ~ ("result" -> results.map(_.toJSON))
-    }
-  }
+    // Determine if the word is to the left of us, to the right of us, or out of bounds.
+    val leftOf = 0 < n && isValidChar(s.charAt(n - 1))
+    val rightOf = n < s.length && isValidChar(s.charAt(n))
 
-  /**
-    * Processes a request to run all tests. Re-compiles and runs all unit tests.
-    */
-  private def runTests(requestId: String): JValue = {
-    // Configure the Flix compiler.
-    val flix = new Flix()
-    for ((uri, source) <- sources) {
-      flix.addInput(uri, source)
+    val i = (leftOf, rightOf) match {
+      case (true, _) => n - 1
+      case (_, true) => n
+      case _ => return None
     }
 
-    flix.compile() match {
-      case Success(t) =>
-        try {
-          val testResults = Tester.test(t).results.sortBy(tr => tr.sym.loc)
-          val results: List[JValue] = testResults.map {
-            case TestResult.Success(sym, _) =>
-              ("name" -> sym.toString) ~ ("location" -> Location.from(sym.loc).toJSON) ~ ("outcome" -> "success")
-            case TestResult.Failure(sym, m) =>
-              ("name" -> sym.toString) ~ ("location" -> Location.from(sym.loc).toJSON) ~ ("outcome" -> "failure") ~ ("message" -> m)
-          }
-          ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> JArray(results))
-        } catch {
-          case ex: Throwable =>
-            ex.printStackTrace(System.err)
-            ("id" -> requestId) ~ ("status" -> "failure") ~ ("result" -> ex.getMessage)
-        }
-      case Failure(errors) =>
-        // Case 2: Compilation failed. Send back the error messages.
-        val results = PublishDiagnosticsParams.from(errors)
-        ("id" -> requestId) ~ ("status" -> "failure") ~ ("result" -> results.map(_.toJSON))
+    // Compute the beginning of the word.
+    var begin = i
+    while (0 < begin && isValidChar(s.charAt(begin - 1))) {
+      begin = begin - 1
     }
-  }
 
-  /**
-    * Processes a request to run all benchmarks in the project.
-    */
-  private def benchmarkPackage(requestId: String, projectRoot: Path): JValue = {
-    // TODO: benchmarkPackage
-    Packager.benchmark(projectRoot, DefaultOptions)
-    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> "TBD: TEXT WILL GO HERE")
-  }
-
-  /**
-    * Processes a request to build the project.
-    */
-  private def buildPackage(requestId: String, projectRoot: Path): JValue = {
-    // TODO: buildPackage
-    Packager.build(projectRoot, DefaultOptions) match {
-      case None =>
-        ("id" -> requestId) ~ ("status" -> "failure") ~ ("result" -> "TEXT WILL GO HERE")
-      case Some(_) =>
-        ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> "Package built.")
+    // Compute the ending of the word.
+    var end = i
+    while (end < s.length && isValidChar(s.charAt(end))) {
+      end = end + 1
     }
-  }
 
-  /**
-    * Processes a request to build the documentation.
-    */
-  private def buildDoc(requestId: String, projectRoot: Path): JValue = {
-    // TODO: buildDoc
-    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> "TBD: TEXT WILL GO HERE")
-  }
-
-  /**
-    * Processes a request to build a jar from the project.
-    */
-  private def buildJar(requestId: String, projectRoot: Path): JValue = {
-    // TODO: buildJar
-    Packager.buildJar(projectRoot, DefaultOptions)
-    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> "TBD: TEXT WILL GO HERE")
-  }
-
-  /**
-    * Processes a request to build a flix package from the project.
-    */
-  private def buildPkg(requestId: String, projectRoot: Path): JValue = {
-    // TODO: buildPkg
-    Packager.buildPkg(projectRoot, DefaultOptions)
-    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> "TBD: TEXT WILL GO HERE")
-  }
-
-  /**
-    * Processes a request to init a new flix package.
-    */
-  private def initPackage(requestId: String, projectRoot: Path): JValue = {
-    // TODO: initPackage
-    Packager.init(projectRoot, DefaultOptions)
-    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> "TBD: TEXT WILL GO HERE")
-  }
-
-  /**
-    * Processes a request to run all tests in the package.
-    */
-  private def testPackage(requestId: String, projectRoot: Path): JValue = {
-    // TODO: initPackage
-    Packager.test(projectRoot, DefaultOptions)
-    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> "TBD: TEXT WILL GO HERE")
+    // Return the word.
+    Some(s.substring(begin, end))
   }
 
   /**

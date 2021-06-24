@@ -21,9 +21,9 @@ import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.LiftedAst._
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.debug.PrettyPrinter
+import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.vt._
-import ca.uwaterloo.flix.util.Validation
 
 /**
   * The Optimization phase performs intra-procedural optimizations.
@@ -331,16 +331,8 @@ object Optimizer extends Phase[Root, Root] {
       case (sym, defn) => sym -> defn.copy(exp = visitExp(defn.exp, Map.empty))
     }
 
-    // Visit every property in the program.
-    val properties = root.properties.map {
-      case property => property.copy(exp = visitExp(property.exp, Map.empty))
-    }
-
     // Reassemble the ast root.
-    val result = root.copy(
-      defs = defs,
-      properties = properties
-    )
+    val result = root.copy(defs = defs)
 
     // Print the ast if debugging is enabled.
     if (flix.options.debug) {

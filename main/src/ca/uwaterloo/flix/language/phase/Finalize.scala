@@ -40,11 +40,9 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
       case (sym, enum) => sym -> visitEnum(enum, m)
     }
 
-    val properties = root.properties.map(p => visitProperty(p, m))
-
     val reachable = root.reachable
 
-    FinalAst.Root(defs ++ m, enums, properties, reachable, root.sources).toSuccess
+    FinalAst.Root(defs ++ m, enums, reachable, root.sources).toSuccess
   }
 
   private def visitDef(def0: LiftedAst.Def, m: TopLevel)(implicit flix: Flix): FinalAst.Def = {
@@ -405,9 +403,6 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
     FinalAst.FreeVar(v0.sym, tpe)
   }
 
-  private def visitProperty(p0: LiftedAst.Property, m: TopLevel)(implicit flix: Flix): FinalAst.Property =
-    FinalAst.Property(p0.law, p0.defn, visitExp(p0.exp, m))
-
   // TODO: Should be private
   def visitType(t0: Type): MonoType = {
     val base = t0.typeConstructor
@@ -460,7 +455,11 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
 
           case TypeConstructor.Native(clazz) => MonoType.Native(clazz)
 
-          case TypeConstructor.Ref => MonoType.Ref(args.head)
+          case TypeConstructor.ScopedRef =>
+            MonoType.Ref(args.head)
+
+          case TypeConstructor.Region =>
+            MonoType.Unit // TODO: Should be erased?
 
           case TypeConstructor.Tuple(l) => MonoType.Tuple(args)
 

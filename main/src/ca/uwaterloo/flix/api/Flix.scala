@@ -22,8 +22,6 @@ import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
 import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult
-import ca.uwaterloo.flix.runtime.quickchecker.QuickChecker
-import ca.uwaterloo.flix.runtime.verifier.Verifier
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt.TerminalContext
 
@@ -278,13 +276,13 @@ class Flix {
     */
   def addPath(p: Path): Flix = {
     if (p == null)
-      throw new IllegalArgumentException("'p' must be non-null.")
+      throw new IllegalArgumentException(s"'p' must be non-null.")
     if (!Files.exists(p))
-      throw new IllegalArgumentException("'p' must a file.")
+      throw new IllegalArgumentException(s"'$p' must a file.")
     if (!Files.isRegularFile(p))
-      throw new IllegalArgumentException("'p' must a regular file.")
+      throw new IllegalArgumentException(s"'$p' must a regular file.")
     if (!Files.isReadable(p))
-      throw new IllegalArgumentException("'p' must a readable file.")
+      throw new IllegalArgumentException(s"'$p' must a readable file.")
 
     paths += p
     this
@@ -367,8 +365,6 @@ class Flix {
       TreeShaker |>
       VarNumbering |>
       Finalize |>
-      QuickChecker |>
-      Verifier |>
       Eraser |>
       JvmBackend |>
       Finish
@@ -410,7 +406,7 @@ class Flix {
     phaseTimers += currentPhase
 
     // Print performance information if in verbose mode.
-    if (options.verbosity == Verbosity.Verbose) {
+    if (options.debug) {
       // Print information about the phase.
       val d = new Duration(e)
       val terminalCtx = TerminalContext.AnsiTerminal
@@ -457,7 +453,11 @@ class Flix {
     val si1 = getStringInputs
     val si2 = getPathInputs
     val si3 = inputs.toList
-    val si4 = if (options.core) getInputs(coreLibrary) else getInputs(coreLibrary ++ standardLibrary)
+    val si4 = options.lib match {
+      case LibLevel.Nix => Nil
+      case LibLevel.Min => getInputs(coreLibrary)
+      case LibLevel.All => getInputs(coreLibrary ++ standardLibrary)
+    }
     si1 ::: si2 ::: si3 ::: si4
   }
 

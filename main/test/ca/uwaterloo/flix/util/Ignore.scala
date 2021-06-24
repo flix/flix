@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.util
 
 import org.scalatest.FunSuite
 
-class Ignore(name: String, paths: String*)(implicit options: Options = Options.TestWithoutLibrary) extends FunSuite {
+class Ignore(name: String, paths: String*)(implicit options: Options = Options.TestWithLibMin) extends FunSuite {
 
   /**
     * Returns the name of the test suite.

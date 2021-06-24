@@ -34,13 +34,13 @@ namespace TestOrder {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def fromInt01(): Bool = Order.fromInt(-1) == LessThan
+    def fromInt01(): Bool = Comparison.fromInt(-1) == LessThan
 
     @test
-    def fromInt02(): Bool = Order.fromInt(0) == EqualTo
+    def fromInt02(): Bool = Comparison.fromInt(0) == EqualTo
 
     @test
-    def fromInt03(): Bool = Order.fromInt(+1) == GreaterThan
+    def fromInt03(): Bool = Comparison.fromInt(+1) == GreaterThan
 
     /////////////////////////////////////////////////////////////////////////////
     // min                                                                     //
