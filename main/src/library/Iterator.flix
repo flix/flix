@@ -14,7 +14,7 @@ type alias Next[a] = Unit ~> a
 ///
 /// An iterator is either an actual iterator or a filtered iterator.
 ///
-pub enum ListIterator[a] {
+pub enum Iterator[a] {
     case Iterator(Iter[a])
 	case FilteredIterator(a -> Bool, Iter[a])
 }
@@ -26,12 +26,12 @@ pub enum Iter[a] {
 	case Iter(Done, Next[a])
 }
 
-namespace ListIterator {
+namespace Iterator {
 
     ///
     /// Returns `true` if and only if the iterator `iter` has no more elements.
     ///
-    pub def isEmpty(iter: ListIterator[a]): Bool & Impure = match iter {
+    pub def isEmpty(iter: Iterator[a]): Bool & Impure = match iter {
 		case Iterator(Iter(done, _)) => done()
 		case FilteredIterator(f, it) =>
 			let Iter(done, _) = transformFilter(f, it);
@@ -43,9 +43,9 @@ namespace ListIterator {
 	///
 	/// Consumes the entire iterator.
     ///
-    pub def count(f: a -> Bool, iter: ListIterator[a]): Int32 & Impure = countAcc(f, iter, 0)
+    pub def count(f: a -> Bool, iter: Iterator[a]): Int32 & Impure = countAcc(f, iter, 0)
 
-    def countAcc(f: a -> Bool, iter: ListIterator[a], n: Int32): Int32 & Impure =
+    def countAcc(f: a -> Bool, iter: Iterator[a], n: Int32): Int32 & Impure =
         if (isEmpty(iter))
             n
         else if (f(next(iter)))
@@ -58,7 +58,7 @@ namespace ListIterator {
     ///
 	/// Consumes the first `n` elements of the iterator.
     ///
-    pub def drop(n: Int32, iter: ListIterator[a]): ListIterator[a] & Impure =
+    pub def drop(n: Int32, iter: Iterator[a]): Iterator[a] & Impure =
         if (n <= 0)
             iter
         else if (isEmpty(iter))
@@ -73,7 +73,7 @@ namespace ListIterator {
     ///
     /// Does _not_ consume any elements from the iterator.
     ///
-    pub def take(n: Int32, iter: ListIterator[a]): ListIterator[a] & Impure =
+    pub def take(n: Int32, iter: Iterator[a]): Iterator[a] & Impure =
         if (n <= 0)
             Iterator(Iter(() -> false as & Impure, () -> bug!("Empty iterator") as & Impure))
         else {
@@ -100,7 +100,7 @@ namespace ListIterator {
 	/// If `f` is impure it is applied immediately (consuming the entire
 	/// iterator). Otherwise it is applied lazily.
 	///
-    pub def map(f: a -> b & ef, iter: ListIterator[a]): ListIterator[b] & Impure =
+    pub def map(f: a -> b & ef, iter: Iterator[a]): Iterator[b] & Impure =
         matchEff f {
             case Pure   => mapL(f, iter)
             case Impure => mapE(f, iter)
@@ -112,7 +112,7 @@ namespace ListIterator {
 	///
 	/// Does _not_ consume any elements from the iterator.
 	///
-    def mapL(f: a -> b & ef, iter: ListIterator[a]): ListIterator[b] & Impure =
+    def mapL(f: a -> b & ef, iter: Iterator[a]): Iterator[b] & Impure =
 		let Iter(done, next) = match iter {
 			case Iterator(it) 				=> it
 			case FilteredIterator(g, it) 	=> transformFilter(g, it)
@@ -126,7 +126,7 @@ namespace ListIterator {
 	///
 	/// Consumes all elements in the iterator and returns a new iterator.
 	///
-    def mapE(f: a -> b & ef, iter: ListIterator[a]): ListIterator[b] & Impure =
+    def mapE(f: a -> b & ef, iter: Iterator[a]): Iterator[b] & Impure =
 		// TODO: Rewrite to use a more efficient implementation.
 		toList(iter) |> List.map(f) |> toIter
 
@@ -140,7 +140,7 @@ namespace ListIterator {
 	/// If `f` is impure it is applied immediately (consuming the entire
 	/// iterator). Otherwise it is applied lazily.
     ///
-    pub def filter(f: a -> Bool & ef, iter: ListIterator[a]): ListIterator[a] & Impure =
+    pub def filter(f: a -> Bool & ef, iter: Iterator[a]): Iterator[a] & Impure =
         matchEff f {
             case Pure   => filterL(f, iter)
             case Impure => filterE(f, iter)
@@ -152,7 +152,7 @@ namespace ListIterator {
 	///
 	/// Does _not_ consume any elements from the iterator.
 	///
-	pub def filterL(f: a -> Bool & ef, iter: ListIterator[a]): ListIterator[a] & Impure = match iter {
+	pub def filterL(f: a -> Bool & ef, iter: Iterator[a]): Iterator[a] & Impure = match iter {
 		case Iterator(it) 				=> FilteredIterator(f as a -> Bool, it) as & Impure
 		case FilteredIterator(g, it) 	=> FilteredIterator((x -> g(x) and f(x)) as a -> Bool, it)
 	}
@@ -163,14 +163,14 @@ namespace ListIterator {
 	///
 	/// Consume the entire iterator.
 	///
-	pub def filterE(f: a -> Bool & ef, iter: ListIterator[a]): ListIterator[a] & Impure =
+	pub def filterE(f: a -> Bool & ef, iter: Iterator[a]): Iterator[a] & Impure =
 		// TODO: Rewrite to use a more efficient implementation.
 		(toList(iter) |> List.filter(f as a -> Bool) |> toIter) as & Impure
 
 	///
 	/// Returns an iterator over the elements of the given list `l`.
 	///
-    pub def toIter(l: List[a]): ListIterator[a] & Impure =
+    pub def toIter(l: List[a]): Iterator[a] & Impure =
         let cursor = ref l;
         let done = () -> List.isEmpty(deref cursor);
         let next = () -> match (deref cursor) {
@@ -186,9 +186,9 @@ namespace ListIterator {
 	///
 	/// Consumes the entire iterator.
 	///
-    pub def toList(iter: ListIterator[a]): List[a] & Impure = toListAcc(iter, Nil) |> List.reverse
+    pub def toList(iter: Iterator[a]): List[a] & Impure = toListAcc(iter, Nil) |> List.reverse
 
-	def toListAcc(iter: ListIterator[a], rs: List[a]): List[a] & Impure =
+	def toListAcc(iter: Iterator[a], rs: List[a]): List[a] & Impure =
 		if (isEmpty(iter)) rs else toListAcc(iter, next(iter) :: rs)
 
 
@@ -199,7 +199,7 @@ namespace ListIterator {
 	///
 	/// Note: The iterator _must_ have a next element.
 	///
-    def next(iter: ListIterator[a]): a & Impure = match iter {
+    def next(iter: Iterator[a]): a & Impure = match iter {
 		case Iterator(Iter(_, next)) => next()
 		case FilteredIterator(f, it) =>
 			let Iter(_, next) = transformFilter(f, it);
@@ -249,7 +249,7 @@ namespace ListIterator {
 
 
 pub def benchmarks(): Array[Benchmark] & Impure = [
-        benchmarkListIterator(),
+        benchmarkIterator(),
         benchmarkList()
     ] |> Array.flatten
 
@@ -274,21 +274,21 @@ pub def benchmarkList(): Array[Benchmark] & Impure =
         defBenchmark("List (n = ${2 ** 12})", () -> { pipeline(2 ** 12) })
     ]
 
-pub def benchmarkListIterator(): Array[Benchmark] & Impure =
+pub def benchmarkIterator(): Array[Benchmark] & Impure =
     let pipeline = n ->
         List.range(1, n) |>
-        ListIterator.toIter |>
-        ListIterator.map(x -> x + 1) |>
-        ListIterator.map(x -> List.length(List.range(1, 100)) + x) |>
-        ListIterator.map(x -> x + 1) |>
-        ListIterator.filter(x -> x % 2 == 0) |>
-        ListIterator.filter(x -> x % 2 == 0) |>
-        ListIterator.filter(x -> x % 2 == 0) |>
-        ListIterator.map(x -> x + 1) |>
-        ListIterator.map(x -> List.length(List.range(1, 100)) + x) |>
-        ListIterator.map(x -> x + 1) |>
-        ListIterator.take(n / 4) |>
-        ListIterator.count(constant(true));
+        Iterator.toIter |>
+        Iterator.map(x -> x + 1) |>
+        Iterator.map(x -> List.length(List.range(1, 100)) + x) |>
+        Iterator.map(x -> x + 1) |>
+        Iterator.filter(x -> x % 2 == 0) |>
+        Iterator.filter(x -> x % 2 == 0) |>
+        Iterator.filter(x -> x % 2 == 0) |>
+        Iterator.map(x -> x + 1) |>
+        Iterator.map(x -> List.length(List.range(1, 100)) + x) |>
+        Iterator.map(x -> x + 1) |>
+        Iterator.take(n / 4) |>
+        Iterator.count(constant(true));
     [
         defBenchmark("Iterator (n = ${2 **  2})", () -> { pipeline(2 **  2) as & Pure }),
         defBenchmark("Iterator (n = ${2 **  4})", () -> { pipeline(2 **  4) as & Pure }),
@@ -301,8 +301,8 @@ pub def main(_args: Array[String]) : Int32 & Impure =
 
 pub def main2(_args: Array[String]) : Int32 & Impure =
     List.range(1, 4) |>
-    ListIterator.toIter |>
-    ListIterator.map(x -> { println("a"); x + 1 } as & Pure) |>
-    ListIterator.map(x -> { println("b"); x } as & Pure) |>
-    ListIterator.toList;
+    Iterator.toIter |>
+    Iterator.map(x -> { println("a"); x + 1 } as & Pure) |>
+    Iterator.map(x -> { println("b"); x } as & Pure) |>
+    Iterator.toList;
     0
