@@ -231,7 +231,6 @@ namespace ChannelImpl {
             case Some(e) => e
         }
 
-
     pub def tryGet(chan: ChannelImpl[a]): Option[a] & Impure =
         lock(chan);
 
@@ -251,7 +250,6 @@ namespace ChannelImpl {
         // Return the element from the channel, or None if channel was empty
         element
 
-
     def cmp(a: ChannelImpl[a], b: ChannelImpl[a]): Int32 =
         let Mpmc(a_id, _, _, _, _, _, _) = a;
         let Mpmc(b_id, _, _, _, _, _, _) = b;
@@ -261,7 +259,6 @@ namespace ChannelImpl {
             (1)
         else
             (-1)
-
 
     def sortChannels(channels: Array[ChannelImpl[a]]): Array[ChannelImpl[a]] & Impure =
         Array.sortWith(cmp, channels)
@@ -274,7 +271,7 @@ namespace ChannelImpl {
    * @param channels the channels to select on
    * @return the channel index of the channel with an element and the element
    */
-    pub def selectImpl(channels: Array[ChannelImpl[a]], hasDefault: Bool): Option[(Int, a)] & Impure =
+    def selectImpl(channels: Array[ChannelImpl[a]], hasDefault: Bool): Option[(Int, a)] & Impure =
         // Create new Condition and channelLock the current thread
         let selectLock = newReentrantLock();
         let condition = newCondition(selectLock);
