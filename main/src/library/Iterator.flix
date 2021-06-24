@@ -103,9 +103,7 @@ namespace Iterator {
 	/// of the given iterator `iter`.
 	///
 	/// Whether `f` is applied eagerly or lazily depends on whether it is
-	/// impure.
-	///
-	/// If `f` is impure it is applied immediately (consuming the entire
+	/// impure. If `f` is impure it is applied immediately (consuming the entire
 	/// iterator). Otherwise it is applied lazily.
 	///
     pub def map(f: a -> b & ef, iter: Iterator[a]): Iterator[b] & Impure =
