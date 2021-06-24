@@ -101,4 +101,108 @@ namespace TestIterator {
     def testTake06(): Bool & Impure =
         (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.take(1000) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
 
+    /////////////////////////////////////////////////////////////////////////////
+    // map (pure)                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def testMapPure01(): Bool & Impure =
+        Nil |> Iterator.toIter |> Iterator.map(x -> x + 1) |> Iterator.toList == Nil
+
+    @test
+    def testMapPure02(): Bool & Impure =
+        (1 :: Nil) |> Iterator.toIter |> Iterator.map(x -> x + 1) |> Iterator.toList == 2 :: Nil
+
+    @test
+    def testMapPure03(): Bool & Impure =
+        (1 :: 2 :: Nil) |> Iterator.toIter |> Iterator.map(x -> x + 1) |> Iterator.toList == 2 :: 3 :: Nil
+
+    @test
+    def testMapPure04(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.map(x -> x + 1) |> Iterator.toList == 2 :: 3 :: 4 :: Nil
+
+    /////////////////////////////////////////////////////////////////////////////
+    // map (impure)                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def testMapImpure01(): Bool & Impure =
+        Nil |> Iterator.toIter |> Iterator.map(x -> x + 1 as & Impure) |> Iterator.toList == Nil
+
+    @test
+    def testMapImpure02(): Bool & Impure =
+        (1 :: Nil) |> Iterator.toIter |> Iterator.map(x -> x + 1 as & Impure) |> Iterator.toList == 2 :: Nil
+
+    @test
+    def testMapImpure03(): Bool & Impure =
+        (1 :: 2 :: Nil) |> Iterator.toIter |> Iterator.map(x -> x + 1 as & Impure) |> Iterator.toList == 2 :: 3 :: Nil
+
+    @test
+    def testMapImpure04(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.map(x -> x + 1 as & Impure) |> Iterator.toList == 2 :: 3 :: 4 :: Nil
+
+    /////////////////////////////////////////////////////////////////////////////
+    // map map                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def testMapMap01(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.map(x -> x + 1) |> Iterator.map(x -> x * 2) |> Iterator.toList == 4 :: 6 :: 8 :: Nil
+
+    @test
+    def testMapMap02(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.map(x -> x + 1 as & Impure) |> Iterator.map(x -> x * 2) |> Iterator.toList == 4 :: 6 :: 8 :: Nil
+
+    @test
+    def testMapMap03(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.map(x -> x + 1) |> Iterator.map(x -> x * 2 as & Impure) |> Iterator.toList == 4 :: 6 :: 8 :: Nil
+
+    @test
+    def testMapMap04(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.map(x -> x + 1 as & Impure) |> Iterator.map(x -> x * 2 as & Impure) |> Iterator.toList == 4 :: 6 :: 8 :: Nil
+
+    /////////////////////////////////////////////////////////////////////////////
+    // map map fusion                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def testMapFusion01(): Bool & Impure =
+        let r = ref 0;
+        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |>
+        Iterator.map(x -> {r := deref r + x; x}) |>
+        Iterator.map(x -> {r := deref r * 2; x});
+        deref r == (1 + 2 + 3) * 2 * 2 * 2
+
+    @test
+    def testMapFusion02(): Bool & Impure =
+        let r = ref 0;
+        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |>
+        Iterator.map(x -> {r := deref r + x; x}) |>
+        Iterator.map(x -> {r := deref r * 2; x}) |>
+        Iterator.map(identity);
+        deref r == (1 + 2 + 3) * 2 * 2 * 2
+
+    @test
+    def testMapFusion03(): Bool & Impure =
+        let r = ref 0;
+        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |>
+        Iterator.map(x -> {r := deref r + x; x}) |>
+        Iterator.map(x -> {r := deref r * 2; x}) |>
+        Iterator.toList;
+        deref r == (1 + 2 + 3) * 2 * 2 * 2
+
+    @test
+    def testMapFusion04(): Bool & Impure =
+        let l = ref Nil;
+        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |>
+        Iterator.map(x -> {l := "a" :: deref l; x}) |>
+        Iterator.map(x -> {l := "b" :: deref l; x}) |>
+        Iterator.toList;
+        deref l == ("b" :: "b" :: "b" :: "a" :: "a" :: "a" :: Nil)
+
+    @test
+    def testMapFusion05(): Bool & Impure =
+        let l = ref Nil;
+        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |>
+        Iterator.map(x -> {l := "a" :: deref l; x} as & Pure) |>
+        Iterator.map(x -> {l := "b" :: deref l; x} as & Pure) |>
+        Iterator.toList;
+        deref l == ("b" :: "a" :: "b" :: "a" :: "b" :: "a" :: Nil)
+
 }
