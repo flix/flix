@@ -73,7 +73,22 @@ namespace ListIterator {
     ///
     /// Does _not_ consume any elements from the iterator.
     ///
-    pub def take(n: Int32, iter: ListIterator[a]): ListIterator[a] & Impure = ??? // TODO
+    pub def take(n: Int32, iter: ListIterator[a]): ListIterator[a] & Impure =
+        if (n <= 0)
+            Iterator(Iter(() -> false as & Impure, () -> bug!("Empty iterator") as & Impure))
+        else {
+            let Iter(done, next) = match iter {
+                case Iterator(it)            => it
+                case FilteredIterator(f, it) => transformFilter(f, it)
+            };
+            let count = ref 0;
+            let done1 = () -> deref count >= n or done();
+            let next1 = () -> {
+                count := (deref count + 1);
+                next()
+            };
+            Iterator(Iter(done1, next1))
+        }
 
 	///
 	/// Returns an iterator with the given function `f` applied to every element
@@ -203,7 +218,6 @@ namespace ListIterator {
             if (f(n)) Some(n) else forward(f, done, next)
         }
 
-
     ///
     /// Returns a new iterator which is equivalent to the iterator `iter` with
     /// its elements filter by `f`.
@@ -245,21 +259,19 @@ pub def benchmarkList(): Array[Benchmark] & Impure =
         List.map(x -> x + 1) |>
         List.map(x -> List.length(List.range(1, 100)) + x) |>
         List.map(x -> x + 1) |>
-        List.drop(n / 4) |>
         List.filter(x -> x % 2 == 0) |>
         List.filter(x -> x % 2 == 0) |>
         List.filter(x -> x % 2 == 0) |>
         List.map(x -> x + 1) |>
         List.map(x -> List.length(List.range(1, 100)) + x) |>
         List.map(x -> x + 1) |>
-        List.drop(n / 2) |>
+        List.take(n / 4) |>
         List.count(constant(true));
     [
         defBenchmark("List (n = ${2 **  2})", () -> { pipeline(2 **  2) }),
         defBenchmark("List (n = ${2 **  4})", () -> { pipeline(2 **  4) }),
         defBenchmark("List (n = ${2 **  8})", () -> { pipeline(2 **  8) }),
-        defBenchmark("List (n = ${2 ** 12})", () -> { pipeline(2 ** 12) }),
-        defBenchmark("List (n = ${2 ** 14})", () -> { pipeline(2 ** 14) })
+        defBenchmark("List (n = ${2 ** 12})", () -> { pipeline(2 ** 12) })
     ]
 
 pub def benchmarkListIterator(): Array[Benchmark] & Impure =
@@ -269,21 +281,19 @@ pub def benchmarkListIterator(): Array[Benchmark] & Impure =
         ListIterator.map(x -> x + 1) |>
         ListIterator.map(x -> List.length(List.range(1, 100)) + x) |>
         ListIterator.map(x -> x + 1) |>
-        ListIterator.drop(n / 4) |>
         ListIterator.filter(x -> x % 2 == 0) |>
         ListIterator.filter(x -> x % 2 == 0) |>
         ListIterator.filter(x -> x % 2 == 0) |>
         ListIterator.map(x -> x + 1) |>
         ListIterator.map(x -> List.length(List.range(1, 100)) + x) |>
         ListIterator.map(x -> x + 1) |>
-        ListIterator.drop(n / 2) |>
+        ListIterator.take(n / 4) |>
         ListIterator.count(constant(true));
     [
-        defBenchmark("ListIterator (n = ${2 **  2})", () -> { pipeline(2 **  2) as & Pure }),
-        defBenchmark("ListIterator (n = ${2 **  4})", () -> { pipeline(2 **  4) as & Pure }),
-        defBenchmark("ListIterator (n = ${2 **  8})", () -> { pipeline(2 **  8) as & Pure }),
-        defBenchmark("ListIterator (n = ${2 ** 12})", () -> { pipeline(2 ** 12) as & Pure }),
-        defBenchmark("ListIterator (n = ${2 ** 14})", () -> { pipeline(2 ** 14) as & Pure })
+        defBenchmark("Iterator (n = ${2 **  2})", () -> { pipeline(2 **  2) as & Pure }),
+        defBenchmark("Iterator (n = ${2 **  4})", () -> { pipeline(2 **  4) as & Pure }),
+        defBenchmark("Iterator (n = ${2 **  8})", () -> { pipeline(2 **  8) as & Pure }),
+        defBenchmark("Iterator (n = ${2 ** 12})", () -> { pipeline(2 ** 12) as & Pure })
     ]
 
 pub def main(_args: Array[String]) : Int32 & Impure =
