@@ -54,11 +54,8 @@ namespace ListIterator {
             countAcc(f, iter, n)
 
     ///
-    /// Returns an iterator with the first `n` elements of the given iterator `iter`.
+    /// Returns an iterator without the first `n` elements of the iterator `iter`.
     ///
-    /// Returns the empty iterator if `iter` is empty.
-	/// Returns the same iterator if `n <= 0`.
-	///
 	/// Consumes the first `n` elements of the iterator.
     ///
     pub def drop(n: Int32, iter: ListIterator[a]): ListIterator[a] & Impure =
@@ -70,6 +67,13 @@ namespace ListIterator {
             next(iter);
             drop(n  - 1, iter)
         }
+
+    ///
+    /// Returns an iterator with the first `n` elements of the iterator `iter`.
+    ///
+    /// Does _not_ consume any elements from the iterator.
+    ///
+    pub def take(n: Int32, iter: ListIterator[a]): ListIterator[a] & Impure = ??? // TODO
 
 	///
 	/// Returns an iterator with the given function `f` applied to every element
@@ -200,26 +204,33 @@ namespace ListIterator {
         }
 
 
-    // TODO: DOC
-	// TODO: Why not reutrn an iterator?
+    ///
+    /// Returns a new iterator which is equivalent to the iterator `iter` with
+    /// its elements filter by `f`.
+    ///
     def transformFilter(f: a -> Bool, it: Iter[a]): Iter[a] & Impure =
-		let Iter(isDone, pull) = it;
-	{
+		let Iter(done, next) = it;
+
+        // Allocate a reference to hold the next element.
         let cursor = ref None;
-        let isDone1 = () -> match forward(f, isDone, pull) {
-            case None   => true
+
+        let done1 = () -> match forward(f, done, next) {
+            case None    => true
             case Some(x) =>
+                // An element was found. Store it in the reference.
                 cursor := Some(x);
                 false
         };
-        let pull1 = () -> match deref cursor {
-            case None => pull()
+
+        let next1 = () -> match deref cursor {
+            case None    => next()
             case Some(x) =>
+                // An element is in the reference. Use it.
                 cursor := None;
                 x
         };
-        Iter(isDone1, pull1)
-    }
+        Iter(done1, next1)
+
 }
 
 
@@ -247,7 +258,8 @@ pub def benchmarkList(): Array[Benchmark] & Impure =
         defBenchmark("List (n = ${2 **  2})", () -> { pipeline(2 **  2) }),
         defBenchmark("List (n = ${2 **  4})", () -> { pipeline(2 **  4) }),
         defBenchmark("List (n = ${2 **  8})", () -> { pipeline(2 **  8) }),
-        defBenchmark("List (n = ${2 ** 12})", () -> { pipeline(2 ** 12) })
+        defBenchmark("List (n = ${2 ** 12})", () -> { pipeline(2 ** 12) }),
+        defBenchmark("List (n = ${2 ** 14})", () -> { pipeline(2 ** 14) })
     ]
 
 pub def benchmarkListIterator(): Array[Benchmark] & Impure =
@@ -270,7 +282,8 @@ pub def benchmarkListIterator(): Array[Benchmark] & Impure =
         defBenchmark("ListIterator (n = ${2 **  2})", () -> { pipeline(2 **  2) as & Pure }),
         defBenchmark("ListIterator (n = ${2 **  4})", () -> { pipeline(2 **  4) as & Pure }),
         defBenchmark("ListIterator (n = ${2 **  8})", () -> { pipeline(2 **  8) as & Pure }),
-        defBenchmark("ListIterator (n = ${2 ** 12})", () -> { pipeline(2 ** 12) as & Pure })
+        defBenchmark("ListIterator (n = ${2 ** 12})", () -> { pipeline(2 ** 12) as & Pure }),
+        defBenchmark("ListIterator (n = ${2 ** 14})", () -> { pipeline(2 ** 14) as & Pure })
     ]
 
 pub def main(_args: Array[String]) : Int32 & Impure =
