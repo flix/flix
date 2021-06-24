@@ -47,7 +47,7 @@ namespace Iterator {
 	}
 
 	///
-    /// Returns the number of elements in `iter` that satisfy the predicate `f`.
+    /// Returns the number of elements in `iter` that satisfies the predicate `f`.
 	///
 	/// Consumes the entire iterator.
     ///
@@ -99,13 +99,13 @@ namespace Iterator {
         }
 
 	///
-	/// Returns an iterator with the given function `f` applied to every element
-	/// of the given iterator `iter`.
+	/// Returns an iterator with the function `f` applied to every element of
+	/// the iterator `iter`.
 	///
-	/// Whether `f` is applied eagerly or lazily depends on whether it is
-	/// impure. If `f` is impure it is applied immediately (consuming the entire
-	/// iterator). Otherwise it is applied lazily.
-	///
+	/// Whether `f` is applied eagerly or lazily depends on its purity:
+    /// - If `f` is pure then it is applied lazily.
+    /// - If `f` is impure then it is applied eagerly (consuming the iterator).
+    ///
     pub def map(f: a -> b & ef, iter: Iterator[a]): Iterator[b] & Impure =
         matchEff f {
             case Pure   => mapL(f, iter)
@@ -113,10 +113,10 @@ namespace Iterator {
         }
 
     ///
-	/// Return an iterator with the given pure function `f` *lazily* applied to
-	/// every element of the given iterator `iter`.
+	/// Returns an iterator with the pure function `f` applied *lazily* to every
+	/// element of the iterator `iter`.
 	///
-	/// Does _not_ consume any elements from the iterator.
+	/// Does *not* consume any elements from the iterator.
 	///
     def mapL(f: a -> b & ef, iter: Iterator[a]): Iterator[b] & Impure =
 		let Iter(done, next) = match iter {
@@ -127,24 +127,22 @@ namespace Iterator {
 		Iterator(Iter(done, next1))
 
 	///
-	/// Returns an iterator with the given impure function `f` eagerly applied
-	/// to every element of the given iterator `iter`.
+	/// Returns an iterator with the impure function `f` applied eagerly to
+	/// every element of the iterator `iter`.
 	///
-	/// Consumes all elements in the iterator and returns a new iterator.
+	/// Consumes all elements in the iterator.
 	///
     def mapE(f: a -> b & ef, iter: Iterator[a]): Iterator[b] & Impure =
-		// TODO: Rewrite to use a more efficient implementation.
 		toList(iter) |> List.map(f) |> toIter
 
     ///
     /// Returns an iterator with every element of the iterator `iter` that
     /// satisfies the predicate `f`.
 	///
-	/// Whether `f` is applied eagerly or lazily depends on whether it is
-	/// impure.
+	/// Whether `f` is applied eagerly or lazily depends on its purity:
 	///
-	/// If `f` is impure it is applied immediately (consuming the entire
-	/// iterator). Otherwise it is applied lazily.
+    /// - If `f` is pure then it is applied lazily.
+    /// - If `f` is impure then it is applied eagerly (consuming the iterator).
     ///
     pub def filter(f: a -> Bool & ef, iter: Iterator[a]): Iterator[a] & Impure =
         matchEff f {
@@ -156,7 +154,7 @@ namespace Iterator {
     /// Returns an iterator with every element of the iterator `iter` that
     /// satisfies the predicate `f`.
 	///
-	/// Does _not_ consume any elements from the iterator.
+	/// Does *not* consume any elements from the iterator.
 	///
 	pub def filterL(f: a -> Bool & ef, iter: Iterator[a]): Iterator[a] & Impure = match iter {
 		case Iterator(it) 				=> FilteredIterator(f as a -> Bool, it) as & Impure
@@ -170,7 +168,6 @@ namespace Iterator {
 	/// Consume the entire iterator.
 	///
 	pub def filterE(f: a -> Bool & ef, iter: Iterator[a]): Iterator[a] & Impure =
-		// TODO: Rewrite to use a more efficient implementation.
 		(toList(iter) |> List.filter(f as a -> Bool) |> toIter) as & Impure
 
     ///
