@@ -31,6 +31,8 @@ namespace Iterator {
     ///
     /// Returns `true` if and only if the iterator `iter` has no more elements.
     ///
+    /// Does *not* consume any elements of the iterator.
+    ///
     pub def isEmpty(iter: Iterator[a]): Bool & Impure = match iter {
 		case Iterator(Iter(done, _)) => done()
 		case FilteredIterator(f, it) =>
@@ -312,6 +314,7 @@ pub def benchmarkIterator(): Array[Benchmark] & Impure =
         defBenchmark("Iterator (n = ${2 ** 12})", () -> { pipeline(2 ** 12) as & Pure })
     ]
 
+
 pub def main(_args: Array[String]) : Int32 & Impure =
     Benchmark.runWithBudget(benchmarks(), 15_000_000_000i64)
 
@@ -322,3 +325,4 @@ pub def main2(_args: Array[String]) : Int32 & Impure =
     Iterator.map(x -> { println("b"); x } as & Pure) |>
     Iterator.toList;
     0
+
