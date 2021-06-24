@@ -46,4 +46,32 @@ namespace TestIterator {
     def testCount07(): Bool & Impure =
         (1 :: 2 :: 3 ::  Nil) |> Iterator.toIter |> Iterator.count(x -> x < 2) == 1
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // drop                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def testDrop01(): Bool & Impure =
+        Nil |> Iterator.toIter |> Iterator.drop(0) |> Iterator.isEmpty
+
+    @test
+    def testDrop02(): Bool & Impure =
+        ((1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.drop(0) |> Iterator.toList) == 1 :: 2 :: 3 :: Nil
+
+    @test
+    def testDrop03(): Bool & Impure =
+        ((1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.drop(1) |> Iterator.toList) == 2 :: 3 :: Nil
+
+    @test
+    def testDrop04(): Bool & Impure =
+        ((1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.drop(2) |> Iterator.toList) == 3 :: Nil
+
+    @test
+    def testDrop05(): Bool & Impure =
+        ((1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.drop(3) |> Iterator.toList) == Nil
+
+    @test
+    def testDrop06(): Bool & Impure =
+        ((1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.drop(4) |> Iterator.toList) == Nil
+
 }

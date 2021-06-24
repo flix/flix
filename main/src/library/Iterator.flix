@@ -2,17 +2,17 @@ use Benchmark.Benchmark;
 use Benchmark.defBenchmark;
 
 ///
-/// The type of the isDone function.
+/// The type of the done function.
 ///
 type alias Done = Unit ~> Bool
 
 ///
-/// The type of the pull function.
+/// The type of the next function.
 ///
 type alias Next[a] = Unit ~> a
 
 ///
-/// An iterator is either an actual iterator or a filtered iterator.
+/// An iterator is a stream of elements that are produced on demand.
 ///
 pub enum Iterator[a] {
     case Iterator(Iter[a])
@@ -20,7 +20,13 @@ pub enum Iterator[a] {
 }
 
 ///
-/// An iter consists of two functions: done and next.
+/// An iter consists of two functions: `done` and `next`.
+///
+/// The `done` function can be called to determine if the iterator contains
+/// additional elements. Calling `done` is idempotent (but may still cause
+/// underlying changes to the iterator.) If `done` returns `false` then `next`
+/// may be called to retrieve the next element of the iterator. Every call to
+/// `next` must be proceeded by a call to `done` that returns `false`.
 ///
 pub enum Iter[a] {
 	case Iter(Done, Next[a])
