@@ -72,6 +72,33 @@ namespace TestIterator {
 
     @test
     def testDrop06(): Bool & Impure =
-        ((1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.drop(4) |> Iterator.toList) == Nil
+        ((1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.drop(1000) |> Iterator.toList) == Nil
+
+    /////////////////////////////////////////////////////////////////////////////
+    // take                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def testTake01(): Bool & Impure =
+        Nil |> Iterator.toIter |> Iterator.take(0) |> Iterator.isEmpty
+
+    @test
+    def testTake02(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.take(0) |> Iterator.toList == Nil
+
+    @test
+    def testTake03(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.take(1) |> Iterator.toList == 1 :: Nil
+
+    @test
+    def testTake04(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.take(2) |> Iterator.toList == 1 :: 2 :: Nil
+
+    @test
+    def testTake05(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.take(3) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+
+    @test
+    def testTake06(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.take(1000) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
 
 }

@@ -79,11 +79,11 @@ namespace Iterator {
     ///
     /// Returns an iterator with the first `n` elements of the iterator `iter`.
     ///
-    /// Does _not_ consume any elements from the iterator.
+    /// Does *not* consume any elements from the iterator.
     ///
     pub def take(n: Int32, iter: Iterator[a]): Iterator[a] & Impure =
         if (n <= 0)
-            Iterator(Iter(() -> false as & Impure, () -> bug!("Empty iterator") as & Impure))
+            Iterator(Iter(() -> true as & Impure, () -> bug!("Empty iterator") as & Impure))
         else {
             let Iter(done, next) = match iter {
                 case Iterator(it)            => it
