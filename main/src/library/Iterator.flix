@@ -167,6 +167,22 @@ namespace Iterator {
 		// TODO: Rewrite to use a more efficient implementation.
 		(toList(iter) |> List.filter(f as a -> Bool) |> toIter) as & Impure
 
+    ///
+    /// Alias for `findLeft`.
+    ///
+    pub def find(f: a -> Bool & ef, iter: Iterator[a]): Option[a] & Impure = findLeft(f, iter)
+
+    ///
+    /// Optionally returns the first element of `iter` that satisfies the
+    /// predicate `f` when searching from left to right.
+    ///
+    pub def findLeft(f: a -> Bool & ef, iter: Iterator[a]): Option[a] & Impure =
+        let Iter(done, next) = match iter {
+            case Iterator(it)            => it
+            case FilteredIterator(g, it) => transformFilter(g, it)
+        };
+        forward(f, done, next)
+
 	///
 	/// Returns an iterator over the elements of the given list `l`.
 	///
@@ -210,7 +226,7 @@ namespace Iterator {
 	/// Fast forwards the given iterator until the next element that satisfies
 	/// the given predicate `f`. Returns it (if it exists).
 	///
-    def forward(f: a -> Bool, done: Done, next: Next[a]): Option[a] & Impure =
+    def forward(f: a -> Bool & ef, done: Done, next: Next[a]): Option[a] & Impure =
         if (done())
             None
         else {
