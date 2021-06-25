@@ -34,7 +34,6 @@ object CompleteProvider {
     * Returns a list of keyword completion items.
     */
   private def getKeywordCompletionItems(): List[CompletionItem] = List(
-    // TODO: Manoj: Add more.
     // NB: Please keep the list alphabetically sorted.
 
     // Keywords:
@@ -93,6 +92,7 @@ object CompleteProvider {
     CompletionItem("with", "with", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
     CompletionItem("where", "where", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
 
+    // Types:
     CompletionItem("BigInt", "BigInt", None, Some("type"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
     CompletionItem("Bool", "Bool", None, Some("type"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
     CompletionItem("Char", "Char", None, Some("type"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
@@ -109,37 +109,34 @@ object CompleteProvider {
     * Returns a list of snippet completion items.
     */
   private def getSnippetCompletionItems(): List[CompletionItem] = List(
-    // TODO: Manoj: Add more.
     // NB: Please keep the list alphabetically sorted.
 
     // Declaration-based:
-
-    // Expressed-based:
+    CompletionItem("class", "pub class ${1:name}[${2:clause}] {\n    $3\n}", None, Some("snippet for class"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
     CompletionItem("def", "def ${1:name}(${2:arg}:${3:type}): ${4:type} & Impure = \n\t", None, Some("snippet to define Impure function"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
     CompletionItem("def", "def ${1:name}(${2:arg}:${3:type}): ${4:type} & Pure = \n\t", None, Some("snippet to define Pure function"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-    CompletionItem("enum", "enum ${1:Name} {\n\tcase ${2:name}\n}", None, Some("snippet for enum"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
+    CompletionItem("enum", "enum ${1:Name} {\n\tcase ${2:Name}\n}", None, Some("snippet for enum"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
+    CompletionItem("instance", "instance ${1:Name}[${2:type}] {\n    ${3:/* code */}\n}", None, Some("snippet for instance"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
+    CompletionItem("law", "law ${1:name}: forall(${2:params}).${3:exp}", None, Some("snippet for law"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
+    CompletionItem("main", "def main(_args: Array[String]) : Int32 & Impure = \n    println(\"Hello World!\");\n    0", None, Some("snippet for Hello World Program"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
+    CompletionItem("namespace", "namespace ${1:Name} {\n    ${2:/* code */} \n}", None, Some("snippet to create namespace"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
+    CompletionItem("project", "project ${1:exp} into ${2:fixPoint}", None, Some("snippet for project"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
+    CompletionItem("opaque", "opaque type ${1:name} = ${2:type}", None, Some("snippet for opaque type"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
+    CompletionItem("rel", "rel ${1:name}(${2:x}: ${3:type}, ${4:y}: ${5:type})", None, Some("snippet to declare predicate symbol"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
+    CompletionItem("type alias", "type alias ${1:name} = ${2:type}", None, Some("snippet for type alias"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
+    CompletionItem("use", "use ${1:module};", None, Some("snippet for use"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
+
+    // Expressed-based:
     CompletionItem("if", "if ${1:cond} ${2:exp} else ${3:exp}", None, Some("snippet for if ()"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
     CompletionItem("import", "import ${1:method}", None, Some("import snippet for method call"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
     CompletionItem("import", "import new ${1:object} as ${2:name}", None, Some("import snippet for new object"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
     CompletionItem("import", "import get ${1:field} as ${2:name}", None, Some("import snippet to get field"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
     CompletionItem("import", "import set ${1:field} as ${2:name}", None, Some("import snippet to set field"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-    CompletionItem("instance", "instance ${1:name}[Option[${2:a}]] with $1[$2] {\n    ${3:/* code */}\n}", None, Some("snippet for instance"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
     CompletionItem("let", "let ${1:name}:${2:type} = ${3:exp};", None, Some("snippet for let"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
     CompletionItem("let*", "let* ${1:name}:${2:type} = ${3:exp};", None, Some("snippet for let*"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-    CompletionItem("main", "def main(args: Array[String]) : Int32 & Impure = \n    ${1:/* code */} \n    0", None, Some("snippet for main ()"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-    CompletionItem("Hello World", "def main(_args: Array[String]) : Int32 & Impure = \n    println(\"Hello World!\");\n    0", None, Some("snippet for Hello World Program"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
     CompletionItem("match", "match ${1:exp} {\n    case ${2:pat} => ${3:exp}\n}", None, Some("snippet for pattern match"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-    CompletionItem("namespace", "namespace ${1:name} {\n    ${2:/* code */} \n}", None, Some("snippet to create namespace"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-    CompletionItem("opaque", "opaque type ${1:name} = ${2:type}", None, Some("snippet for opaque type"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
     CompletionItem("query", "query ${1:db} select ${2:cols} from ${3:preds} ${4:where ${5:cond}}", None, Some("snippet for query"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-    CompletionItem("rel", "rel ${1:name}(${2:x}: ${3:type}, ${4:y}: ${5:type})", None, Some("snippet to declare predicate symbol"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
     CompletionItem("select", "select {\n\tcase ${1:x} <- ${2:c} =>${3:exp}\n}", None, Some("snippet for select"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-    CompletionItem("type alias", "type alias ${1:name} = ${2:type}", None, Some("snippet for type alias"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-    CompletionItem("use", "use ${1:module};", None, Some("snippet for use"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-    CompletionItem("law", "law ${1:name}: forall(${2:params}).${3:exp}", None, Some("snippet for law"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-    CompletionItem("class", "pub class ${1:name}[${2:clause}] {\n    $3\n}", None, Some("snippet for class"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-    CompletionItem("project", "project ${1:exp} into ${2:fixPoint}", None, Some("snippet for project"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil)
-
   )
 
   /**
