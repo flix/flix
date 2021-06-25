@@ -315,4 +315,42 @@ namespace TestIterator {
         Iterator.toList;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
+    /////////////////////////////////////////////////////////////////////////////
+    // findLeft                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def testFindLeft01(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.find(x -> x > 0) == Some(1)
+
+    @test
+    def testFindLeft02(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.find(x -> x > 1) == Some(2)
+
+    @test
+    def testFindLeft03(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.find(x -> x > 2) == Some(3)
+
+    @test
+    def testFindLeft04(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.find(x -> x > 3) == None
+
+    /////////////////////////////////////////////////////////////////////////////
+    // findLeft fusion                                                         //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def testFindLeftFusion01(): Bool & Impure =
+        let l = ref Nil;
+        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |>
+        Iterator.map( x -> {l := "a" :: deref l; x}) |>
+        Iterator.find(x -> {l := "b" :: deref l; x > 1});
+        List.reverse(deref l) == "a" :: "a" :: "a" :: "b" :: "b" :: Nil
+
+    @test
+    def testFindLeftFusion02(): Bool & Impure =
+        let l = ref Nil;
+        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |>
+        Iterator.map( x -> {l := "a" :: deref l; x} as & Pure) |>
+        Iterator.find(x -> {l := "b" :: deref l; x > 1});
+        List.reverse(deref l) == "a" :: "b" :: "a" :: "b" :: Nil
+
 }

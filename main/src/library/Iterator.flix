@@ -281,32 +281,32 @@ pub def benchmarkIterator(): Array[Benchmark] & Impure =
     ]
 
 
-pub def main(_args: Array[String]) : Int32 & Impure =
-    Benchmark.runWithBudget(benchmarks(), 15_000_000_000i64)
-
-pub def main2(_args: Array[String]) : Int32 & Impure =
-    List.range(1, 4) |>
-    Iterator.toIter |>
-    Iterator.map(x -> { println("a"); x + 1 } as & Pure) |>
-    Iterator.map(x -> { println("b"); x } as & Pure) |>
-    Iterator.toList;
-    0
-
-pub def main3(_args: Array[String]) : Int32 & Impure =
-    let b1 = () -> {
-        List.range(1, 1000) |>
-        List.map(x -> List.range(1, x)) |>
-        List.find(l -> List.length(l) > 10)
-    };
-    let b2 = () -> {
-        List.range(1, 1000) |>
-        Iterator.toIter |>
-        Iterator.map(x -> List.range(1, x)) |>
-        Iterator.find(l -> List.length(l) > 10)
-    } as & Pure;
-    Benchmark.runWithBudget([
-        defBenchmark("Bench 1", b1),
-        defBenchmark("Bench 2", b2)
-    ],
-    15_000_000_000i64)
+//pub def main(_args: Array[String]) : Int32 & Impure =
+//    Benchmark.runWithBudget(benchmarks(), 15_000_000_000i64)
+//
+//pub def main2(_args: Array[String]) : Int32 & Impure =
+//    List.range(1, 4) |>
+//    Iterator.toIter |>
+//    Iterator.map(x -> { println("a"); x + 1 } as & Pure) |>
+//    Iterator.map(x -> { println("b"); x } as & Pure) |>
+//    Iterator.toList;
+//    0
+//
+//pub def main3(_args: Array[String]) : Int32 & Impure =
+//    let b1 = () -> {
+//        List.range(1, 1000) |>
+//        List.map(x -> List.range(1, x)) |>
+//        List.find(l -> List.length(l) > 10)
+//    };
+//    let b2 = () -> {
+//        List.range(1, 1000) |>
+//        Iterator.toIter |>
+//        Iterator.map(x -> List.range(1, x)) |>
+//        Iterator.find(l -> List.length(l) > 10)
+//    } as & Pure;
+//    Benchmark.runWithBudget([
+//        defBenchmark("Bench 1", b1),
+//        defBenchmark("Bench 2", b2)
+//    ],
+//    15_000_000_000i64)
 
