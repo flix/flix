@@ -214,7 +214,7 @@ namespace Iterator {
 	///
 	/// Note: The iterator _must_ have a next element.
 	///
-    def next(iter: Iterator[a]): a & Impure =
+    def next(iter: Iterator[a]): a & Impure = // TODO: Avoid because it is slow to destruct multiple times?
         let Iterator(_, n) = iter;
         n()
 
