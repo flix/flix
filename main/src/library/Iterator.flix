@@ -88,8 +88,8 @@ namespace Iterator {
     ///
     pub def map(f: a -> b & ef, iter: Iterator[a]): Iterator[b] & Impure =
         matchEff f {
-            case Pure   => mapL(f, iter)
-            case Impure => mapE(f, iter)
+            case Pure   => mapL(f as a -> b, iter)
+            case Impure => mapE(f as a -> b & Impure, iter)
         }
 
     ///
@@ -98,7 +98,7 @@ namespace Iterator {
 	///
 	/// Does *not* consume any elements from the iterator.
 	///
-    def mapL(f: a -> b & ef, iter: Iterator[a]): Iterator[b] =
+    def mapL(f: a -> b, iter: Iterator[a]): Iterator[b] =
 		let Iterator(done, next) = iter;
 		let next1 = () -> f(next());
 		Iterator(done, next1)
@@ -109,7 +109,7 @@ namespace Iterator {
 	///
 	/// Consumes all elements in the iterator.
 	///
-    def mapE(f: a -> b & ef, iter: Iterator[a]): Iterator[b] & Impure =
+    def mapE(f: a -> b & Impure, iter: Iterator[a]): Iterator[b] & Impure =
 		toList(iter) |> List.map(f) |> toIter
 
     ///
@@ -123,8 +123,8 @@ namespace Iterator {
     ///
     pub def filter(f: a -> Bool & ef, iter: Iterator[a]): Iterator[a] & Impure =
         matchEff f {
-            case Pure   => filterL(f, iter)
-            case Impure => filterE(f, iter)
+            case Pure   => filterL(f as a -> Bool, iter)
+            case Impure => filterE(f as a -> Bool & Impure, iter)
         }
 
     ///
@@ -133,7 +133,7 @@ namespace Iterator {
 	///
 	/// Does *not* consume any elements from the iterator.
 	///
-	pub def filterL(f: a -> Bool & ef, iter: Iterator[a]): Iterator[a] & Impure =
+	pub def filterL(f: a -> Bool, iter: Iterator[a]): Iterator[a] & Impure =
         let Iterator(done, next) = iter;
 
         // Allocate a reference to hold the next element.
@@ -166,7 +166,7 @@ namespace Iterator {
 	///
 	/// Consume the entire iterator.
 	///
-	pub def filterE(f: a -> Bool & ef, iter: Iterator[a]): Iterator[a] & Impure =
+	pub def filterE(f: a -> Bool & Impure, iter: Iterator[a]): Iterator[a] & Impure =
 		(toList(iter) |> List.filter(f as a -> Bool) |> toIter) as & Impure
 
     ///
@@ -231,7 +231,6 @@ namespace Iterator {
         }
 
 }
-
 
 pub def benchmarks(): Array[Benchmark] & Impure = [
         benchmarkIterator(),
