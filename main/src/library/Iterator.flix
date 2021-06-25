@@ -36,13 +36,13 @@ namespace Iterator {
     ///
     pub def count(f: a -> Bool, iter: Iterator[a]): Int32 & Impure = countAcc(f, iter, 0)
 
-    def countAcc(f: a -> Bool, iter: Iterator[a], n: Int32): Int32 & Impure =
+    def countAcc(f: a -> Bool, iter: Iterator[a], acc: Int32): Int32 & Impure =
         if (isEmpty(iter))
-            n
+            acc
         else if (f(next(iter)))
-            countAcc(f, iter, n + 1)
+            countAcc(f, iter, acc + 1)
         else
-            countAcc(f, iter, n)
+            countAcc(f, iter, acc)
 
     ///
     /// Returns an iterator without the first `n` elements of the iterator `iter`.
