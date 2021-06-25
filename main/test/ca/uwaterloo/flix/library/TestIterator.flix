@@ -214,24 +214,68 @@ namespace TestIterator {
 
     @test
     def testFilterPure02(): Bool & Impure =
-        ((1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.filter(x -> x > 0) |> Iterator.toList) == 1 :: 2 :: 3 :: Nil
+        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.filter(x -> x > 0) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
 
     @test
     def testFilterPure03(): Bool & Impure =
-        ((1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.filter(x -> x > 1) |> Iterator.toList) == 2 :: 3 :: Nil
+        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.filter(x -> x > 1) |> Iterator.toList == 2 :: 3 :: Nil
 
     @test
     def testFilterPure04(): Bool & Impure =
-        ((1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.filter(x -> x > 2) |> Iterator.toList) == 3 :: Nil
+        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.filter(x -> x > 2) |> Iterator.toList == 3 :: Nil
 
     @test
     def testFilterPure05(): Bool & Impure =
-        ((1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.filter(x -> x > 3) |> Iterator.toList) == Nil
+        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.filter(x -> x > 3) |> Iterator.toList == Nil
 
     @test
     def testFilterPure06(): Bool & Impure =
-        ((1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.filter(x -> x > 100)) |> Iterator.toList == Nil
+        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.filter(x -> x > 100) |> Iterator.toList == Nil
 
+    /////////////////////////////////////////////////////////////////////////////
+    // filter (impure)                                                         //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def testFilterImpure01(): Bool & Impure =
+        Nil |> Iterator.toIter |> Iterator.filter(x -> x > 100 as & Impure) |> Iterator.toList == Nil
 
+    @test
+    def testFilterImpure02(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.filter(x -> x > 0 as & Impure) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+
+    @test
+    def testFilterImpure03(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.filter(x -> x > 1 as & Impure) |> Iterator.toList == 2 :: 3 :: Nil
+
+    @test
+    def testFilterImpure04(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.filter(x -> x > 2 as & Impure) |> Iterator.toList == 3 :: Nil
+
+    @test
+    def testFilterImpure05(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.filter(x -> x > 3 as & Impure) |> Iterator.toList == Nil
+
+    @test
+    def testFilterImpure06(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.filter(x -> x > 100 as & Impure) |> Iterator.toList == Nil
+
+    /////////////////////////////////////////////////////////////////////////////
+    // filter filter                                                           //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def testFilterFilter01(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.filter(x -> x > 1) |> Iterator.filter(x -> x < 3) |> Iterator.toList == 2 :: Nil
+
+    @test
+    def testFilterFilter02(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.filter(x -> x > 1 as & Impure) |> Iterator.filter(x -> x < 3) |> Iterator.toList == 2 :: Nil
+
+    @test
+    def testFilterFilter03(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.filter(x -> x > 1) |> Iterator.filter(x -> x < 3 as & Impure) |> Iterator.toList == 2 :: Nil
+
+    @test
+    def testFilterFilter04(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.filter(x -> x > 1 as & Impure) |> Iterator.filter(x -> x < 3 as & Impure) |> Iterator.toList == 2 :: Nil
 
 }
