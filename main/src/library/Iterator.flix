@@ -15,21 +15,7 @@ type alias Next[a] = Unit ~> a
 /// An iterator is a stream of elements that are produced on demand.
 ///
 pub enum Iterator[a] {
-    case Iterator(Iter[a])
-	case FilteredIterator(a -> Bool, Iter[a])
-}
-
-///
-/// An iter consists of two functions: `done` and `next`.
-///
-/// The `done` function can be called to determine if the iterator contains
-/// additional elements. Calling `done` is idempotent (but may still cause
-/// underlying changes to the iterator.) If `done` returns `false` then `next`
-/// may be called to retrieve the next element of the iterator. Every call to
-/// `next` must be proceeded by a call to `done` that returns `false`.
-///
-pub enum Iter[a] {
-	case Iter(Done, Next[a])
+    case Iterator(Done, Next[a])
 }
 
 namespace Iterator {
@@ -39,12 +25,9 @@ namespace Iterator {
     ///
     /// Does *not* consume any elements of the iterator.
     ///
-    pub def isEmpty(iter: Iterator[a]): Bool & Impure = match iter {
-		case Iterator(Iter(done, _)) => done()
-		case FilteredIterator(f, it) =>
-			let Iter(done, _) = transformFilter(f, it);
-			done()
-	}
+    pub def isEmpty(iter: Iterator[a]): Bool & Impure =
+        let Iterator(done, _) = iter;
+        done()
 
 	///
     /// Returns the number of elements in `iter` that satisfies the predicate `f`.
@@ -83,19 +66,16 @@ namespace Iterator {
     ///
     pub def take(n: Int32, iter: Iterator[a]): Iterator[a] & Impure =
         if (n <= 0)
-            Iterator(Iter(() -> true as & Impure, () -> bug!("Empty iterator") as & Impure))
+            Iterator(() -> true as & Impure, () -> bug!("Empty iterator") as & Impure)
         else {
-            let Iter(done, next) = match iter {
-                case Iterator(it)            => it
-                case FilteredIterator(f, it) => transformFilter(f, it)
-            };
+            let Iterator(done, next) = iter;
             let count = ref 0;
             let done1 = () -> deref count >= n or done();
             let next1 = () -> {
                 count := (deref count + 1);
                 next()
             };
-            Iterator(Iter(done1, next1))
+            Iterator(done1, next1)
         }
 
 	///
@@ -118,13 +98,10 @@ namespace Iterator {
 	///
 	/// Does *not* consume any elements from the iterator.
 	///
-    def mapL(f: a -> b & ef, iter: Iterator[a]): Iterator[b] & Impure =
-		let Iter(done, next) = match iter {
-			case Iterator(it) 				=> it
-			case FilteredIterator(g, it) 	=> transformFilter(g, it)
-		};
+    def mapL(f: a -> b & ef, iter: Iterator[a]): Iterator[b] =
+		let Iterator(done, next) = iter;
 		let next1 = () -> f(next());
-		Iterator(Iter(done, next1))
+		Iterator(done, next1)
 
 	///
 	/// Returns an iterator with the impure function `f` applied eagerly to
@@ -156,10 +133,32 @@ namespace Iterator {
 	///
 	/// Does *not* consume any elements from the iterator.
 	///
-	pub def filterL(f: a -> Bool & ef, iter: Iterator[a]): Iterator[a] & Impure = match iter {
-		case Iterator(it) 				=> FilteredIterator(f as a -> Bool, it) as & Impure
-		case FilteredIterator(g, it) 	=> FilteredIterator((x -> g(x) and f(x)) as a -> Bool, it)
-	}
+	pub def filterL(f: a -> Bool & ef, iter: Iterator[a]): Iterator[a] & Impure =
+        let Iterator(done, next) = iter;
+
+        // Allocate a reference to hold the next element.
+        let cursor = ref None;
+
+        let done1 = () -> match deref cursor {
+            case None => match forward(f, done, next) {
+                case None    => true
+                case Some(x) =>
+                    // An element was found. Store it in the reference.
+                    cursor := Some(x);
+                    false
+            }
+            case Some(_) => false
+        };
+
+        let next1 = () -> match deref cursor {
+            case None    => bug!("Empty iterator")
+            case Some(x) =>
+                // An element is in the reference. Use it.
+                cursor := None;
+                x
+        };
+
+        Iterator(done1, next1)
 
     ///
     /// Returns an iterator with every element of the iterator `iter` that
@@ -180,10 +179,7 @@ namespace Iterator {
     /// predicate `f` when searching from left to right.
     ///
     pub def findLeft(f: a -> Bool & ef, iter: Iterator[a]): Option[a] & Impure =
-        let Iter(done, next) = match iter {
-            case Iterator(it)            => it
-            case FilteredIterator(g, it) => transformFilter(g, it)
-        };
+        let Iterator(done, next) = iter;
         forward(f, done, next)
 
 	///
@@ -198,7 +194,7 @@ namespace Iterator {
                 cursor := xs;
                 x
         };
-        Iterator(Iter(done, next))
+        Iterator(done, next)
 
 	///
 	/// Returns all elements in the given iterator `iter` as a list.
@@ -218,12 +214,9 @@ namespace Iterator {
 	///
 	/// Note: The iterator _must_ have a next element.
 	///
-    def next(iter: Iterator[a]): a & Impure = match iter {
-		case Iterator(Iter(_, next)) => next()
-		case FilteredIterator(f, it) =>
-			let Iter(_, next) = transformFilter(f, it);
-			next()
-	}
+    def next(iter: Iterator[a]): a & Impure =
+        let Iterator(_, n) = iter;
+        n()
 
 	///
 	/// Fast forwards the given iterator until the next element that satisfies
@@ -233,36 +226,9 @@ namespace Iterator {
         if (done())
             None
         else {
-            let n = next();
-            if (f(n)) Some(n) else forward(f, done, next)
+            let e = next();
+            if (f(e)) Some(e) else forward(f, done, next)
         }
-
-    ///
-    /// Returns a new iterator which is equivalent to the iterator `iter` with
-    /// its elements filter by `f`.
-    ///
-    def transformFilter(f: a -> Bool, it: Iter[a]): Iter[a] & Impure =
-		let Iter(done, next) = it;
-
-        // Allocate a reference to hold the next element.
-        let cursor = ref None;
-
-        let done1 = () -> match forward(f, done, next) {
-            case None    => true
-            case Some(x) =>
-                // An element was found. Store it in the reference.
-                cursor := Some(x);
-                false
-        };
-
-        let next1 = () -> match deref cursor {
-            case None    => next()
-            case Some(x) =>
-                // An element is in the reference. Use it.
-                cursor := None;
-                x
-        };
-        Iter(done1, next1)
 
 }
 
@@ -316,7 +282,7 @@ pub def benchmarkIterator(): Array[Benchmark] & Impure =
     ]
 
 
-pub def main1(_args: Array[String]) : Int32 & Impure =
+pub def main(_args: Array[String]) : Int32 & Impure =
     Benchmark.runWithBudget(benchmarks(), 15_000_000_000i64)
 
 pub def main2(_args: Array[String]) : Int32 & Impure =
@@ -327,7 +293,7 @@ pub def main2(_args: Array[String]) : Int32 & Impure =
     Iterator.toList;
     0
 
-pub def main(_args: Array[String]) : Int32 & Impure =
+pub def main3(_args: Array[String]) : Int32 & Impure =
     let b1 = () -> {
         List.range(1, 1000) |>
         List.map(x -> List.range(1, x)) |>
