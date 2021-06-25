@@ -163,47 +163,21 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
     @test
     def testMapFusion01(): Bool & Impure =
-        let r = ref 0;
-        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |>
-        Iterator.map(x -> {r := deref r + x; x}) |>
-        Iterator.map(x -> {r := deref r * 2; x});
-        deref r == (1 + 2 + 3) * 2 * 2 * 2
-
-    @test
-    def testMapFusion02(): Bool & Impure =
-        let r = ref 0;
-        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |>
-        Iterator.map(x -> {r := deref r + x; x}) |>
-        Iterator.map(x -> {r := deref r * 2; x}) |>
-        Iterator.map(identity);
-        deref r == (1 + 2 + 3) * 2 * 2 * 2
-
-    @test
-    def testMapFusion03(): Bool & Impure =
-        let r = ref 0;
-        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |>
-        Iterator.map(x -> {r := deref r + x; x}) |>
-        Iterator.map(x -> {r := deref r * 2; x}) |>
-        Iterator.toList;
-        deref r == (1 + 2 + 3) * 2 * 2 * 2
-
-    @test
-    def testMapFusion04(): Bool & Impure =
         let l = ref Nil;
         (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |>
         Iterator.map(x -> {l := "a" :: deref l; x}) |>
         Iterator.map(x -> {l := "b" :: deref l; x}) |>
         Iterator.toList;
-        deref l == ("b" :: "b" :: "b" :: "a" :: "a" :: "a" :: Nil)
+        List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
 
     @test
-    def testMapFusion05(): Bool & Impure =
+    def testMapFusion02(): Bool & Impure =
         let l = ref Nil;
         (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |>
         Iterator.map(x -> {l := "a" :: deref l; x} as & Pure) |>
         Iterator.map(x -> {l := "b" :: deref l; x} as & Pure) |>
         Iterator.toList;
-        deref l == ("b" :: "a" :: "b" :: "a" :: "b" :: "a" :: Nil)
+        List.reverse(deref l) == ( "a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // filter (pure)                                                           //
@@ -277,5 +251,30 @@ namespace TestIterator {
     @test
     def testFilterFilter04(): Bool & Impure =
         (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.filter(x -> x > 1 as & Impure) |> Iterator.filter(x -> x < 3 as & Impure) |> Iterator.toList == 2 :: Nil
+
+    /////////////////////////////////////////////////////////////////////////////
+    // filter filter fusion                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def testFilterFusion01(): Bool & Impure =
+        let l = ref Nil;
+        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |>
+        Iterator.filter(_x -> {l := "a" :: deref l; true}) |>
+        Iterator.filter(_x -> {l := "b" :: deref l; true}) |>
+        Iterator.toList;
+        List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
+
+    @test
+    def testFilterFusion02(): Bool & Impure =
+        let l = ref Nil;
+        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |>
+        Iterator.filter(_x -> {l := "a" :: deref l; true} as & Pure) |>
+        Iterator.filter(_x -> {l := "b" :: deref l; true} as & Pure) |>
+        Iterator.toList;
+        List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // map filter fusion                                                       //
+    /////////////////////////////////////////////////////////////////////////////
 
 }
