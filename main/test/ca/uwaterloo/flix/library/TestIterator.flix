@@ -276,5 +276,43 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
     // map filter fusion                                                       //
     /////////////////////////////////////////////////////////////////////////////
+    @test
+    def testMapFilterFusion01(): Bool & Impure =
+        let l = ref Nil;
+        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |>
+        Iterator.map(    x -> {l := "a" :: deref l; x}) |>
+        Iterator.filter(_x -> {l := "b" :: deref l; true}) |>
+        Iterator.toList;
+        List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
+
+    @test
+    def testMapFilterFusion02(): Bool & Impure =
+        let l = ref Nil;
+        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |>
+        Iterator.map(    x -> {l := "a" :: deref l; x}    as & Pure) |>
+        Iterator.filter(_x -> {l := "b" :: deref l; true} as & Pure) |>
+        Iterator.toList;
+        List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // filter map fusion                                                       //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def testFilterMapFusion01(): Bool & Impure =
+        let l = ref Nil;
+        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |>
+        Iterator.filter(_x -> {l := "a" :: deref l; true}) |>
+        Iterator.map(    x -> {l := "b" :: deref l; x}) |>
+        Iterator.toList;
+        List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
+
+    @test
+    def testFilterMapFusion02(): Bool & Impure =
+        let l = ref Nil;
+        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |>
+        Iterator.filter(_x -> {l := "a" :: deref l; true} as & Pure) |>
+        Iterator.map(    x -> {l := "b" :: deref l; x}    as & Pure) |>
+        Iterator.toList;
+        List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
 }
