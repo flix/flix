@@ -524,12 +524,163 @@ namespace TestFloat32 {
     def clampToInt6408(): Bool = Float32.clampToInt64(Float32.nan(), -100i64, 100i64, -127i64) == -127i64
 
     /////////////////////////////////////////////////////////////////////////////
+    // abs                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    def equalsEps(x: Float32, y: Float32, eps: Float32): Bool =
+        let diff = Float32.abs(x - y);
+        let x1 = Float32.abs(x);
+        let y1 = Float32.abs(y);
+        let largest = if (y1 > x1) y1 else x1;
+        if (diff <= largest * eps) true else false
+
+    @test
+    def abs01(): Bool =
+        equalsEps(Float32.abs(0.0f32), 0.0f32, 0.001f32)
+
+    @test
+    def abs02(): Bool =
+        equalsEps(Float32.abs(10.1f32), 10.1f32, 0.001f32)
+
+    @test
+    def abs03(): Bool =
+        equalsEps(Float32.abs(-10.1f32), 10.1f32, 0.001f32)
+
+    @test
+    def abs04(): Bool =
+        Float32.abs(Float32.nan()) |> Float32.isNan
+
+    @test
+    def abs05(): Bool =
+        Float32.abs(Float32.positiveInfinity()) == Float32.positiveInfinity()
+
+    @test
+    def abs06(): Bool =
+        Float32.abs(Float32.negativeInfinity()) == Float32.positiveInfinity()
+
+    /////////////////////////////////////////////////////////////////////////////
     // ceil                                                                    //
     /////////////////////////////////////////////////////////////////////////////
     @test
     def ceil01(): Bool =
-        let d1 = Float32.ceil(0.5f32);
-        Float32.tryToInt32(d1) == Some(2)
+        equalsEps(Float32.ceil(0.5f32), 1.0f32, 0.001f32)
 
+    @test
+    def ceil02(): Bool =
+        equalsEps(Float32.ceil(0.1f32), 1.0f32, 0.001f32)
+
+    @test
+    def ceil03(): Bool =
+        equalsEps(Float32.ceil(1.0f32), 1.0f32, 0.001f32)
+
+    @test
+    def ceil04(): Bool =
+        equalsEps(Float32.ceil(0.0f32), 0.0f32, 0.001f32)
+
+    @test
+    def ceil05(): Bool =
+        equalsEps(Float32.ceil(-0.1f32), 0.0f32, 0.001f32)
+
+    @test
+    def ceil06(): Bool =
+        equalsEps(Float32.ceil(-0.9f32), 0.0f32, 0.001f32)
+
+    @test
+    def ceil07(): Bool =
+        Float32.ceil(Float32.nan()) |> Float32.isNan
+
+    @test
+    def ceil08(): Bool =
+        Float32.ceil(Float32.positiveInfinity()) == Float32.positiveInfinity()
+
+    @test
+    def ceil09(): Bool =
+        Float32.ceil(Float32.negativeInfinity()) == Float32.negativeInfinity()
+
+    /////////////////////////////////////////////////////////////////////////////
+    // floor                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def floor01(): Bool =
+        equalsEps(Float32.floor(0.5f32), 0.0f32, 0.001f32)
+
+    @test
+    def floor02(): Bool =
+        equalsEps(Float32.floor(0.1f32), 0.0f32, 0.001f32)
+
+    @test
+    def floor03(): Bool =
+        equalsEps(Float32.floor(1.0f32), 1.0f32, 0.001f32)
+
+    @test
+    def floor04(): Bool =
+        equalsEps(Float32.floor(0.0f32), 0.0f32, 0.001f32)
+
+    @test
+    def floor05(): Bool =
+        equalsEps(Float32.floor(-0.1f32), -1.0f32, 0.001f32)
+
+    @test
+    def floor06(): Bool =
+        equalsEps(Float32.floor(-0.9f32), -1.0f32, 0.001f32)
+
+    @test
+    def floor07(): Bool =
+        Float32.floor(Float32.nan()) |> Float32.isNan
+
+    @test
+    def floor08(): Bool =
+        Float32.floor(Float32.positiveInfinity()) == Float32.positiveInfinity()
+
+    @test
+    def floor09(): Bool =
+        Float32.floor(Float32.negativeInfinity()) == Float32.negativeInfinity()
+
+    /////////////////////////////////////////////////////////////////////////////
+    // round                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def round01(): Bool =
+        equalsEps(Float32.round(0.5f32), 0.0f32, 0.001f32)
+
+    @test
+    def round02(): Bool =
+        equalsEps(Float32.round(0.1f32), 0.0f32, 0.001f32)
+
+    @test
+    def round03(): Bool =
+        equalsEps(Float32.round(1.0f32), 1.0f32, 0.001f32)
+
+    @test
+    def round04(): Bool =
+        equalsEps(Float32.round(0.0f32), 0.0f32, 0.001f32)
+
+    @test
+    def round05(): Bool =
+        equalsEps(Float32.round(-0.1f32), 0.0f32, 0.001f32)
+
+    @test
+    def round06(): Bool =
+        equalsEps(Float32.round(-0.9f32), -1.0f32, 0.001f32)
+
+    @test
+    def round07(): Bool =
+        Float32.round(Float32.nan()) |> Float32.isNan
+
+    @test
+    def round08(): Bool =
+        Float32.round(Float32.positiveInfinity()) == Float32.positiveInfinity()
+
+    @test
+    def round09(): Bool =
+        Float32.round(Float32.negativeInfinity()) == Float32.negativeInfinity()
+
+    @test
+    def round10(): Bool =
+        equalsEps(Float32.round(1.5f32), 2.0f32, 0.001f32)
+
+    @test
+    def round11(): Bool =
+        equalsEps(Float32.round(2.5f32), 2.0f32, 0.001f32)
 
 }

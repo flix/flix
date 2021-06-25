@@ -391,7 +391,8 @@ namespace Float64 {
     ///
     /// Returns `x` rounded to a Float64 representing the nearest integer value.
     ///
-    /// The rounding may be upwards or downwards.
+    /// The rounding may be upwards or downwards. If the rounding up and rounding down are equally
+    /// close, `x` will be rounded to an even value (i.e. `round(0.5f64) == 0.0f64`).
     ///
     @Time(1) @Space(1)
     pub def round(x: Float64): Float64 =
