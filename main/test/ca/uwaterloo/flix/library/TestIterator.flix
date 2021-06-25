@@ -214,6 +214,24 @@ namespace TestIterator {
 
     @test
     def testFilterPure02(): Bool & Impure =
-        (1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.filter(x -> x > 0) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+        ((1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.filter(x -> x > 0) |> Iterator.toList) == 1 :: 2 :: 3 :: Nil
+
+    @test
+    def testFilterPure03(): Bool & Impure =
+        ((1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.filter(x -> x > 1) |> Iterator.toList) == 2 :: 3 :: Nil
+
+    @test
+    def testFilterPure04(): Bool & Impure =
+        ((1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.filter(x -> x > 2) |> Iterator.toList) == 3 :: Nil
+
+    @test
+    def testFilterPure05(): Bool & Impure =
+        ((1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.filter(x -> x > 3) |> Iterator.toList) == Nil
+
+    @test
+    def testFilterPure06(): Bool & Impure =
+        ((1 :: 2 :: 3 :: Nil) |> Iterator.toIter |> Iterator.filter(x -> x > 100)) |> Iterator.toList == Nil
+
+
 
 }
