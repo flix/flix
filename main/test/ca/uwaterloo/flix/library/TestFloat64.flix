@@ -555,4 +555,164 @@ namespace TestFloat64 {
         let ans = Float64.clampToFloat32(Float64.nan(), -100.0f32, 100.0f32);
         Float32.isNan(ans) == true
 
+    /////////////////////////////////////////////////////////////////////////////
+    // abs                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    def equalsEps(x: Float64, y: Float64, eps: Float64): Bool =
+        let diff = Float64.abs(x - y);
+        let x1 = Float64.abs(x);
+        let y1 = Float64.abs(y);
+        let largest = if (y1 > x1) y1 else x1;
+        if (diff <= largest * eps) true else false
+
+    @test
+    def abs01(): Bool =
+        equalsEps(Float64.abs(0.0f64), 0.0f64, 0.001f64)
+
+    @test
+    def abs02(): Bool =
+        equalsEps(Float64.abs(10.1f64), 10.1f64, 0.001f64)
+
+    @test
+    def abs03(): Bool =
+        equalsEps(Float64.abs(-10.1f64), 10.1f64, 0.001f64)
+
+    @test
+    def abs04(): Bool =
+        Float64.abs(Float64.nan()) |> Float64.isNan
+
+    @test
+    def abs05(): Bool =
+        Float64.abs(Float64.positiveInfinity()) == Float64.positiveInfinity()
+
+    @test
+    def abs06(): Bool =
+        Float64.abs(Float64.negativeInfinity()) == Float64.positiveInfinity()
+
+    /////////////////////////////////////////////////////////////////////////////
+    // ceil                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def ceil01(): Bool =
+        equalsEps(Float64.ceil(0.5f64), 1.0f64, 0.001f64)
+
+    @test
+    def ceil02(): Bool =
+        equalsEps(Float64.ceil(0.1f64), 1.0f64, 0.001f64)
+
+    @test
+    def ceil03(): Bool =
+        equalsEps(Float64.ceil(1.0f64), 1.0f64, 0.001f64)
+
+    @test
+    def ceil04(): Bool =
+        equalsEps(Float64.ceil(0.0f64), 0.0f64, 0.001f64)
+
+    @test
+    def ceil05(): Bool =
+        equalsEps(Float64.ceil(-0.1f64), 0.0f64, 0.001f64)
+
+    @test
+    def ceil06(): Bool =
+        equalsEps(Float64.ceil(-0.9f64), 0.0f64, 0.001f64)
+
+    @test
+    def ceil07(): Bool =
+        Float64.ceil(Float64.nan()) |> Float64.isNan
+
+    @test
+    def ceil08(): Bool =
+        Float64.ceil(Float64.positiveInfinity()) == Float64.positiveInfinity()
+
+    @test
+    def ceil09(): Bool =
+        Float64.ceil(Float64.negativeInfinity()) == Float64.negativeInfinity()
+
+    /////////////////////////////////////////////////////////////////////////////
+    // floor                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def floor01(): Bool =
+        equalsEps(Float64.floor(0.5f64), 0.0f64, 0.001f64)
+
+    @test
+    def floor02(): Bool =
+        equalsEps(Float64.floor(0.1f64), 0.0f64, 0.001f64)
+
+    @test
+    def floor03(): Bool =
+        equalsEps(Float64.floor(1.0f64), 1.0f64, 0.001f64)
+
+    @test
+    def floor04(): Bool =
+        equalsEps(Float64.floor(0.0f64), 0.0f64, 0.001f64)
+
+    @test
+    def floor05(): Bool =
+        equalsEps(Float64.floor(-0.1f64), -1.0f64, 0.001f64)
+
+    @test
+    def floor06(): Bool =
+        equalsEps(Float64.floor(-0.9f64), -1.0f64, 0.001f64)
+
+    @test
+    def floor07(): Bool =
+        Float64.floor(Float64.nan()) |> Float64.isNan
+
+    @test
+    def floor08(): Bool =
+        Float64.floor(Float64.positiveInfinity()) == Float64.positiveInfinity()
+
+    @test
+    def floor09(): Bool =
+        Float64.floor(Float64.negativeInfinity()) == Float64.negativeInfinity()
+
+    /////////////////////////////////////////////////////////////////////////////
+    // round                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def round01(): Bool =
+        equalsEps(Float64.round(0.5f64), 0.0f64, 0.001f64)
+
+    @test
+    def round02(): Bool =
+        equalsEps(Float64.round(0.1f64), 0.0f64, 0.001f64)
+
+    @test
+    def round03(): Bool =
+        equalsEps(Float64.round(1.0f64), 1.0f64, 0.001f64)
+
+    @test
+    def round04(): Bool =
+        equalsEps(Float64.round(0.0f64), 0.0f64, 0.001f64)
+
+    @test
+    def round05(): Bool =
+        equalsEps(Float64.round(-0.1f64), 0.0f64, 0.001f64)
+
+    @test
+    def round06(): Bool =
+        equalsEps(Float64.round(-0.9f64), -1.0f64, 0.001f64)
+
+    @test
+    def round07(): Bool =
+        Float64.round(Float64.nan()) |> Float64.isNan
+
+    @test
+    def round08(): Bool =
+        Float64.round(Float64.positiveInfinity()) == Float64.positiveInfinity()
+
+    @test
+    def round09(): Bool =
+        Float64.round(Float64.negativeInfinity()) == Float64.negativeInfinity()
+
+    @test
+    def round10(): Bool =
+        equalsEps(Float64.round(1.5f64), 2.0f64, 0.001f64)
+
+    @test
+    def round11(): Bool =
+        equalsEps(Float64.round(2.5f64), 2.0f64, 0.001f64)
+
 }
