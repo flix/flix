@@ -1078,7 +1078,7 @@ namespace List {
     /// The function `f` must be impure.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def foreach(f: a ~> Unit, xs: List[a]): Unit & Impure = match xs {
+    pub def foreach(f: a -> Unit & ef, xs: List[a]): Unit & ef = match xs {
         case Nil => ()
         case x :: rs => f(x); foreach(f, rs)
     }
@@ -1222,12 +1222,12 @@ namespace List {
     ///
     /// `next` should return `None` to signal the end of building the list.
     ///
-    pub def unfoldWithIter(next: () ~> Option[a]): List[a] & Impure = unfoldWithIterHelper(next, xs -> xs)
+    pub def unfoldWithIter(next: () -> Option[a] & ef): List[a] & ef = unfoldWithIterHelper(next, xs -> xs)
 
     ///
     /// Helper function for `unfoldWithIter`.
     ///
-    def unfoldWithIterHelper(next: () ~> Option[a], k: List[a] -> List[a]): List[a] & Impure = match next() {
+    def unfoldWithIterHelper(next: () -> Option[a] & ef, k: List[a] -> List[a]): List[a] & ef = match next() {
         case None => k(Nil)
         case Some(a) => unfoldWithIterHelper(next, xs -> k(a :: xs))
     }

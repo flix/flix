@@ -350,7 +350,7 @@ namespace Result {
     /// The function `f` must be impure.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def foreach(f: t ~> Unit, r: Result[t, e]): Unit & Impure = match r {
+    pub def foreach(f: t -> Unit & ef, r: Result[t, e]): Unit & ef = match r {
         case Ok(v)  => f(v)
         case Err(_) => ()
     }
