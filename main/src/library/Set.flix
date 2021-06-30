@@ -437,7 +437,7 @@ namespace Set {
     /// The function `f` must be impure.
     ///
     @Time(size(f) * size(xs)) @Space(space(f) * Int32.log2(size(xs)))
-    pub def foreach(f: a ~> Unit, xs: Set[a]): Unit & Impure =
+    pub def foreach(f: a -> Unit & ef, xs: Set[a]): Unit & ef =
         let Set(es) = xs;
         RedBlackTree.foreach((x, _) -> f(x), es)
 
