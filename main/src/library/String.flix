@@ -1218,7 +1218,7 @@ namespace String {
     ///
     /// This implements a forloop, the end point `e` is inclusive.
     ///
-    def forIndex(b: Int32, e: Int32, f: Int32 ~> Unit): Unit & Impure =
+    def forIndex(b: Int32, e: Int32, f: Int32 -> Unit & ef): Unit & ef =
         if (b <= e) { f(b); forIndex(b+1, e, f) } else ()
 
     ///
