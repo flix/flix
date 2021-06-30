@@ -260,7 +260,7 @@ namespace RedBlackTree {
     /// The function `f` must be impure.
     ///
     @Time(time(f) * size(tree)) @Space(space(f) * Int32.log2(size(tree)))
-    pub def foreach(f: (k, v) -> Unit, tree: RedBlackTree[k, v]): Unit & ef = match tree {
+    pub def foreach(f: (k, v) -> Unit & ef, tree: RedBlackTree[k, v]): Unit & ef = match tree {
         case Node(_, a, k, v, b) => foreach(f, a); f(k, v); foreach(f, b)
         case _ => ()
     }

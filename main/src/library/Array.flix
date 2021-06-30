@@ -1485,7 +1485,7 @@ namespace Array {
     /// Apply the effectful function `f` to all the elements in the array `a`.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
-    pub def foreach(f: a -> Unit, a: Array[a]): Unit & ef =
+    pub def foreach(f: a -> Unit & ef, a: Array[a]): Unit & ef =
         let len = length(a);
         if (len < 1)
             ()
@@ -1495,7 +1495,7 @@ namespace Array {
     ///
     /// Helper function for `foreach`.
     ///
-    def foreachHelper(f: a -> Unit, a: Array[a], len: Int32, i: Int32): Unit & ef =
+    def foreachHelper(f: a -> Unit & ef, a: Array[a], len: Int32, i: Int32): Unit & ef =
         if (i >= len)
             ()
         else {
