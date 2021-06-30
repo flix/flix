@@ -423,7 +423,7 @@ namespace RedBlackTree {
     ///
     /// The function `f` must be impure.
     ///
-    pub def queryWith(p: k -> Comparison & e, f: (k, v) ~> Unit, tree: RedBlackTree[k, v]): Unit & Impure = match tree {
+    pub def queryWith(p: k -> Comparison & ef1, f: (k, v) -> Unit & ef2, tree: RedBlackTree[k, v]): Unit & (ef1 and ef2) = match tree {
         case Node(_, a, k, v, b) =>
             match p(k) {
                 case LessThan => queryWith(p, f, b)
