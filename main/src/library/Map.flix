@@ -648,7 +648,7 @@ namespace Map {
     ///
     /// The function `f` must be impure.
     ///
-    pub def queryWith(p: k -> Comparison & e, f: (k, v) ~> Unit, m: Map[k, v]): Unit & Impure =
+    pub def queryWith(p: k -> Comparison & ef1, f: (k, v) -> Unit & ef2, m: Map[k, v]): Unit & (ef1 and ef2) =
         let Map(xs) = m;
         RedBlackTree.queryWith(p, f, xs)
 
