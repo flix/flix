@@ -466,12 +466,12 @@ namespace Set {
     ///
     /// `next` should return `None` to signal the end of building the set.
     ///
-    pub def unfoldWithIter(next: () ~> Option[a]): Set[a] & Impure with Order[a] = unfoldWithIterHelper(next, empty())
+    pub def unfoldWithIter(next: () -> Option[a] & ef): Set[a] & ef with Order[a] = unfoldWithIterHelper(next, empty())
 
     ///
     /// Helper function for `unfoldWithIter`.
     ///
-    def unfoldWithIterHelper(next: () ~> Option[a], ac: Set[a]): Set[a] & Impure with Order[a] = match next() {
+    def unfoldWithIterHelper(next: () -> Option[a] & ef, ac: Set[a]): Set[a] & ef with Order[a] = match next() {
         case None => ac
         case Some(a) => unfoldWithIterHelper(next, insert(a, ac))
     }
@@ -490,7 +490,7 @@ namespace Set {
     ///
     /// The function `f` must be impure.
     ///
-    pub def queryWith(p: a -> Comparison & e, f: a ~> Unit, xs: Set[a]): Unit & Impure =
+    pub def queryWith(p: a -> Comparison & ef1, f: a -> Unit & ef2, xs: Set[a]): Unit & (ef1 and ef2) =
         let Set(es) = xs;
         RedBlackTree.queryWith(p, (k, _) -> f(k), es)
 
