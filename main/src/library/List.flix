@@ -1237,7 +1237,7 @@ namespace List {
     /// Build a list by applying the function `next` to `()`. `next` is expected to encapsulate
     /// a stateful resource such as a file handle that can be iterated.
     ///
-    /// `next` should return `Ok(Some(a)` to signal a new list element `Ok(a)`.
+    /// `next` should return `Ok(Some(a))` to signal a new list element `Ok(a)`.
     ///
     /// `next` should return `Ok(None)` to signal the end of building the list.
     ///
