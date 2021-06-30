@@ -433,7 +433,7 @@ namespace MutMap {
     ///
     /// The function `f` must be impure.
     ///
-    pub def foreach(f: (k, v) ~> Unit, m: MutMap[k, v]): Unit & Impure =
+    pub def foreach(f: (k, v) -> Unit, m: MutMap[k, v]): Unit & ef =
         let MutMap(mm) = m;
         Map.foreach(f, deref mm)
 
