@@ -607,7 +607,7 @@ namespace Fixpoint {
     pub def unsafeCast(v: a): Datalog[Boxed] = v as Datalog[Boxed]
 
     def toModel(db: Database[v]): Datalog[v] & Impure =
-        MutMap.toImmutable(db) |>
-        Map.map(MutMap.toImmutable) |>
+        MutMap.toImm(db) |>
+        Map.map(MutMap.toImm) |>
         Model
 }
