@@ -311,7 +311,7 @@ namespace MutSet {
     ///
     /// Returns the mutable set `s` as an immutable set.
     ///
-    pub def toImmutable(s: MutSet[a]): Set[a] & Impure =
+    pub def toImm(s: MutSet[a]): Set[a] & Impure =
         let MutSet(ms) = s;
         deref ms
 
