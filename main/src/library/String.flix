@@ -695,14 +695,14 @@ namespace String {
     ///
     /// `next` should return `None` to signal the end of building the string.
     ///
-    pub def unfoldWithIter(f: Unit ~> Option[Char]): String =
-        let sb = StringBuilder.new() as & Pure;
-        unfoldWithIterHelper(f, sb) as & Pure
+    pub def unfoldWithIter(f: Unit -> Option[Char] & ef): String & ef =
+        let sb = StringBuilder.new();
+        unfoldWithIterHelper(f, sb)
 
     ///
     /// Helper function for `unfoldWithIter`.
     ///
-    def unfoldWithIterHelper(next: Unit ~> Option[Char], sb: StringBuilder): String & Impure = match next() {
+    def unfoldWithIterHelper(next: Unit -> Option[Char] & ef, sb: StringBuilder): String & ef = match next() {
         case None => StringBuilder.toString(sb)
         case Some(c) => {
             StringBuilder.appendChar!(sb, c);
