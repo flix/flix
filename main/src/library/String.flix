@@ -695,14 +695,14 @@ namespace String {
     ///
     /// `next` should return `None` to signal the end of building the string.
     ///
-    pub def unfoldWithIter(f: Unit ~> Option[Char]): String =
-        let sb = StringBuilder.new() as & Pure;
-        unfoldWithIterHelper(f, sb) as & Pure
+    pub def unfoldWithIter(f: Unit -> Option[Char] & ef): String & ef =
+        let sb = StringBuilder.new();
+        unfoldWithIterHelper(f, sb)
 
     ///
     /// Helper function for `unfoldWithIter`.
     ///
-    def unfoldWithIterHelper(next: Unit ~> Option[Char], sb: StringBuilder): String & Impure = match next() {
+    def unfoldWithIterHelper(next: Unit -> Option[Char] & ef, sb: StringBuilder): String & ef = match next() {
         case None => StringBuilder.toString(sb)
         case Some(c) => {
             StringBuilder.appendChar!(sb, c);
@@ -740,14 +740,14 @@ namespace String {
     ///
     /// `next` should return `None` to signal the end of building the string.
     ///
-    pub def unfoldStringWithIter(f: Unit ~> Option[String]): String =
-        let sb = StringBuilder.new() as & Pure;
-        unfoldStringWithIterHelper(f, sb) as & Pure
+    pub def unfoldStringWithIter(f: Unit -> Option[String] & ef): String & Impure =
+        let sb = StringBuilder.new();
+        unfoldStringWithIterHelper(f, sb)
 
     ///
     /// Helper function for `unfoldStringWithIter`.
     ///
-    def unfoldStringWithIterHelper(next: Unit ~> Option[String], sb: StringBuilder): String & Impure = match next() {
+    def unfoldStringWithIterHelper(next: Unit -> Option[String] & ef, sb: StringBuilder): String & Impure = match next() {
         case None => StringBuilder.toString(sb)
         case Some(s) => {
             StringBuilder.appendString!(sb, s);
@@ -1218,7 +1218,7 @@ namespace String {
     ///
     /// This implements a forloop, the end point `e` is inclusive.
     ///
-    def forIndex(b: Int32, e: Int32, f: Int32 ~> Unit): Unit & Impure =
+    def forIndex(b: Int32, e: Int32, f: Int32 -> Unit & ef): Unit & ef =
         if (b <= e) { f(b); forIndex(b+1, e, f) } else ()
 
     ///

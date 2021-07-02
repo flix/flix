@@ -433,7 +433,7 @@ namespace MutMap {
     ///
     /// The function `f` must be impure.
     ///
-    pub def foreach(f: (k, v) ~> Unit, m: MutMap[k, v]): Unit & Impure =
+    pub def foreach(f: (k, v) -> Unit & ef, m: MutMap[k, v]): Unit & Impure =
         let MutMap(mm) = m;
         Map.foreach(f, deref mm)
 
@@ -451,7 +451,7 @@ namespace MutMap {
     ///
     /// The function `f` must be impure.
     ///
-    pub def queryWith(p: k -> Comparison & e, f: (k, v) ~> Unit, m: MutMap[k, v]): Unit & Impure =
+    pub def queryWith(p: k -> Comparison & ef1, f: (k, v) -> Unit & ef2, m: MutMap[k, v]): Unit & Impure =
         let MutMap(mm) = m;
         Map.queryWith(p, f, deref mm)
 

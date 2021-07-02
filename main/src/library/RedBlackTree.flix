@@ -260,7 +260,7 @@ namespace RedBlackTree {
     /// The function `f` must be impure.
     ///
     @Time(time(f) * size(tree)) @Space(space(f) * Int32.log2(size(tree)))
-    pub def foreach(f: (k, v) ~> Unit, tree: RedBlackTree[k, v]): Unit & Impure = match tree {
+    pub def foreach(f: (k, v) -> Unit & ef, tree: RedBlackTree[k, v]): Unit & ef = match tree {
         case Node(_, a, k, v, b) => foreach(f, a); f(k, v); foreach(f, b)
         case _ => ()
     }
@@ -423,7 +423,7 @@ namespace RedBlackTree {
     ///
     /// The function `f` must be impure.
     ///
-    pub def queryWith(p: k -> Comparison & e, f: (k, v) ~> Unit, tree: RedBlackTree[k, v]): Unit & Impure = match tree {
+    pub def queryWith(p: k -> Comparison & ef1, f: (k, v) -> Unit & ef2, tree: RedBlackTree[k, v]): Unit & (ef1 and ef2) = match tree {
         case Node(_, a, k, v, b) =>
             match p(k) {
                 case LessThan => queryWith(p, f, b)
