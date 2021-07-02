@@ -716,7 +716,7 @@ namespace MutList {
     ///
     /// Apply the effectful function `f` to all the elements in `v`.
     ///
-    pub def foreach(f: a -> Unit & ef, v: MutList[a]): Unit & ef =
+    pub def foreach(f: a -> Unit & ef, v: MutList[a]): Unit & Impure =
         let MutList(a, l) = v;
         let len = deref l;
         if (len < 1)
@@ -727,7 +727,7 @@ namespace MutList {
     ///
     /// Helper function for `foreach`.
     ///
-    def foreachHelper(f: a -> Unit & ef, a: Array[a], i: Int32, n: Int32): Unit & ef =
+    def foreachHelper(f: a -> Unit & ef, a: Array[a], i: Int32, n: Int32): Unit & Impure =
         if (i >= n)
             ()
         else {
