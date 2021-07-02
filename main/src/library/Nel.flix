@@ -459,13 +459,7 @@ namespace Nel {
     ///
     /// The sort implementation is a mergesort.
     ///
-    pub def sortBy(f: a -> b, xs: Nel[a]): Nel[a] with Order[b] = match xs {
-        case Nel(_, Nil) => xs
-        case Nel(h, l) => match List.sortBy(f, h :: l) {
-            case y :: ys => Nel(y, ys)
-            case _       => unreachable!()
-        }
-    }
+    pub def sortBy(f: a -> b, xs: Nel[a]): Nel[a] & Impure = Array.sortBy(f, toArray(xs))
 
     ///
     /// Sort the non-empty list `xs` so that elements are ordered from low to high according
