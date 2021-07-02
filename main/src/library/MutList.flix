@@ -738,7 +738,7 @@ namespace MutList {
     ///
     /// Apply the effectful function `f` to all the elements in `v`.
     ///
-    pub def foreachWithIndex(f: (a, Int32) ~> Unit, v: MutList[a]): Unit & Impure =
+    pub def foreachWithIndex(f: (a, Int32) -> Unit & ef, v: MutList[a]): Unit & Impure =
         let MutList(a, l) = v;
         let len = deref l;
         if (len < 1)
@@ -749,7 +749,7 @@ namespace MutList {
     ///
     /// Helper function for `foreachWithIndex`.
     ///
-    def foreachWithIndexHelper(f: (a, Int32) ~> Unit, a: Array[a], i: Int32, n: Int32): Unit & Impure =
+    def foreachWithIndexHelper(f: (a, Int32) -> Unit & ef, a: Array[a], i: Int32, n: Int32): Unit & Impure =
         if (i >= n)
             ()
         else {
