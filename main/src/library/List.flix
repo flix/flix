@@ -1112,7 +1112,7 @@ namespace List {
     ///
     /// The sort implementation is a mergesort.
     ///
-    pub def sortBy(f: a -> b, xs: List[a]): List[a] with Order[b] = sortWith(Order.compare `on` f, xs)
+    pub def sortBy(f: a -> b, xs: List[a]): List[a] & Impure = Array.toList(Array.sortBy(f, toArray(xs)))
 
     ///
     /// Sort list `xs` so that elements are ordered from low to high according to the comparison function `cmp`.
