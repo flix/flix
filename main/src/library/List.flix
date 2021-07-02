@@ -1126,13 +1126,13 @@ namespace List {
     /// TODO Review to verify it satisfies stability. The referenced `sortBy` is stable and
     /// the tests suggest that this implementation is also.
     ///
-    pub def sortWith(cmp: (a,a) -> Comparison, xs: List[a]): List[a] =
-        sortGenerateSequences(cmp, xs, zss -> zss) |> sortMergeAll(cmp)
+    pub def sortWith(cmp: (a,a) -> Comparison, xs: List[a]): List[a] & Impure =
+        Array.toList(Array.sortWith(cmp, toArray(xs)))
 
     ///
     /// Helper function for `sortWith`.
     ///
-    def sortGenerateSequences(cmp: (a,a) -> Comparison, xs: List[a], k: List[List[a]] -> List[List[a]]): List[List[a]] = match xs {
+    def _sortGenerateSequences(cmp: (a,a) -> Comparison, xs: List[a], k: List[List[a]] -> List[List[a]]): List[List[a]] = match xs {
         case a :: b :: rs =>
             if (cmp(a, b) == GreaterThan)
                 sortDescendingStep(cmp, b, a :: Nil, rs, k)
@@ -1144,7 +1144,7 @@ namespace List {
     ///
     /// Helper function for `sortWith`.
     ///
-    def sortDescendingStep(cmp: (a,a) -> Comparison, x: a, xs: List[a], ys: List[a], k: List[List[a]] -> List[List[a]]): List[List[a]] = match ys {
+    def _sortDescendingStep(cmp: (a,a) -> Comparison, x: a, xs: List[a], ys: List[a], k: List[List[a]] -> List[List[a]]): List[List[a]] = match ys {
         case r1 :: rs if (cmp(x, r1) == GreaterThan) =>
             sortDescendingStep(cmp, r1, x :: xs, rs, k)
         case rs =>
@@ -1154,7 +1154,7 @@ namespace List {
     ///
     /// Helper function for `sortWith`.
     ///
-    def sortAscendingStep(cmp: (a,a) -> Comparison, x: a, xsf: List[a] -> List[a], ys: List[a], k: List[List[a]] -> List[List[a]]): List[List[a]] = match ys {
+    def _sortAscendingStep(cmp: (a,a) -> Comparison, x: a, xsf: List[a] -> List[a], ys: List[a], k: List[List[a]] -> List[List[a]]): List[List[a]] = match ys {
         case r1 :: rs if (cmp(x, r1) != GreaterThan) =>
             sortAscendingStep(cmp, r1, vs -> xsf(x :: vs), rs, k)
         case rs =>
@@ -1176,7 +1176,7 @@ namespace List {
     ///
     /// Helper function for `sortWith`.
     ///
-    def sortMergePairs(cmp: (a,a) -> Comparison, xss: List[List[a]], k: List[List[a]] -> List[List[a]]) : List[List[a]] = match xss {
+    def _sortMergePairs(cmp: (a,a) -> Comparison, xss: List[List[a]], k: List[List[a]] -> List[List[a]]) : List[List[a]] = match xss {
         case a :: b :: rs => {
             let x = sortMerge(cmp, a, b, zs -> zs);
             sortMergePairs(cmp, rs, zss -> k(x :: zss))
@@ -1187,7 +1187,7 @@ namespace List {
     ///
     /// Helper function for `sortWith`.
     ///
-    def sortMerge(cmp: (a,a) -> Comparison, xs: List[a], ys: List[a], k: List[a] -> List[a]) : List[a] = match (xs, ys) {
+    def _sortMerge(cmp: (a,a) -> Comparison, xs: List[a], ys: List[a], k: List[a] -> List[a]) : List[a] = match (xs, ys) {
         case (r :: rs, s :: ss) =>
             if (cmp(r,s) == GreaterThan)
                 sortMerge(cmp, xs, ss, zs -> k(s :: zs))
