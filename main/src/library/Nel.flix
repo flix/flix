@@ -425,6 +425,11 @@ namespace Nel {
     }
 
     ///
+    /// Returns `xs` as an array.
+    ///
+    pub def toArray(xs: Nel[a]): Array[a] & Impure = List.toArray(toList(xs))
+
+    ///
     /// Applies `f` to every element of `xs`.
     ///
     /// The function `f` must be impure.
@@ -442,13 +447,9 @@ namespace Nel {
     ///
     /// The sort implementation is a mergesort.
     ///
-    pub def sort(xs: Nel[a]): Nel[a] with Order[a] = match xs {
-        case Nel(_, Nil) => xs
-        case Nel(h, l) => match List.sort(h :: l) {
-            case y :: ys => Nel(y, ys)
-            case _       => unreachable!()
-        }
-    }
+    pub def sort(xs: Nel[a]): Nel[a] & Impure =
+        let h :: l = Array.toList(Array.sort(toArray(xs)));
+        Nel(h, l)
 
     ///
     /// Sort the non-empty list `xs` so that elements are ordered from low to high according
