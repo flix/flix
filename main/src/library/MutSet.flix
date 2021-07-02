@@ -337,7 +337,7 @@ namespace MutSet {
     ///
     /// The function `f` must be impure.
     ///
-    pub def foreach(f: a -> Unit & ef, s: MutSet[a]): Unit & ef =
+    pub def foreach(f: a -> Unit & ef, s: MutSet[a]): Unit & Impure =
         let MutSet(ms) = s;
         Set.foreach(f, deref ms)
 
@@ -355,7 +355,7 @@ namespace MutSet {
     ///
     /// The function `f` must be impure.
     ///
-    pub def queryWith(p: a -> Comparison & ef1, f: a -> Unit & ef2, s: MutSet[a]): Unit & (ef1 and ef2) =
+    pub def queryWith(p: a -> Comparison & ef1, f: a -> Unit & ef2, s: MutSet[a]): Unit & Impure =
         let MutSet(ms) = s;
         Set.queryWith(p, f, deref ms)
 
