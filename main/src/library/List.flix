@@ -1103,10 +1103,7 @@ namespace List {
     ///
     /// The sort implementation is a mergesort.
     ///
-    pub def sort(xs: List[a]): List[a] & Impure with Order[a] = {
-        let arr = Array.sort(toArray(xs));
-        Array.foldRight((a, acc) -> a :: acc, Nil[a], arr)
-    }
+    pub def sort(xs: List[a]): List[a] & Impure with Order[a] = Array.toList(Array.sort(toArray(xs)))
 
     /// Sort list `xs` so that elements are ordered from low to high according to the `Order` instance
     /// for the values obtained by applying `f` to each element.
