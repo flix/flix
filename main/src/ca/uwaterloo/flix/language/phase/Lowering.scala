@@ -574,6 +574,13 @@ object Lowering extends Phase[Root, Root] {
       val argExps = mkPredSym(pred) :: visitExp(exp) :: Nil
       Expression.Apply(defExp, argExps, tpe, eff, loc)
 
+    case Expression.MatchEff(exp1, exp2, exp3, tpe, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val e3 = visitExp(exp3)
+      val t = visitType(tpe)
+      Expression.MatchEff(e1, e2, e3, t, eff, loc)
+
   }
 
   /**
@@ -1457,6 +1464,12 @@ object Lowering extends Phase[Root, Root] {
     case Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) =>
       val e = substExp(exp, subst)
       Expression.FixpointProjectOut(pred, e, tpe, eff, loc)
+
+    case Expression.MatchEff(exp1, exp2, exp3, tpe, eff, loc) =>
+      val e1 = substExp(exp1, subst)
+      val e2 = substExp(exp2, subst)
+      val e3 = substExp(exp3, subst)
+      Expression.MatchEff(e1, e2, e3, tpe, eff, loc)
 
     case Expression.FixpointConstraintSet(cs, stf, tpe, loc) => throw InternalCompilerException(s"Unexpected expression near ${loc.format}.")
   }
