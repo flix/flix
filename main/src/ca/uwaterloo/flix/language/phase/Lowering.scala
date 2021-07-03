@@ -123,6 +123,8 @@ object Lowering extends Phase[Root, Root] {
     lazy val SolveType: Type = Type.mkPureArrow(Datalog, Datalog)
     lazy val MergeType: Type = Type.mkPureUncurriedArrow(List(Datalog, Datalog), Datalog)
     lazy val FilterType: Type = Type.mkPureUncurriedArrow(List(PredSym, Datalog), Datalog)
+
+//    lazy val NewChannelType: Type = Type.mkImpureArrow()
   }
 
   /**
@@ -472,24 +474,84 @@ object Lowering extends Phase[Root, Root] {
     case Expression.NewChannel(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      Expression.NewChannel(e, t, eff, loc)
+
+      val enumSym = Symbol.mkEnumSym("Channel.ChannelImpl")
+      val chanType = Type.mkEnum(enumSym, List(t))
+      val defTpe = Type.mkImpureArrow(Type.Int32, chanType)
+      val sym = Symbol.mkDefnSym("Channel.newWithCapacity")
+      // TODO: Q: Is `loc` in the following line the location of the definition of the function or the use of the function? If it's the former, then I think that this is incorrect.
+      val callExp = Expression.Def(sym, defTpe, loc)
+      val args = List(e)
+      Expression.Apply(callExp, args, chanType, eff, loc)
 
     case Expression.GetChannel(exp, tpe, eff, loc) =>
+      // <- exp ... Here "tpe" its the element type of the channel.
+      // specifically we also know that exp itself has type Channel[tpe].
+      // we want to construct the call "Channel.get(exp)": tpe.
+      // In fact what we will care about is the type of "Channel.get"
       val e = visitExp(exp)
       val t = visitType(tpe)
-      Expression.GetChannel(e, t, eff, loc)
 
-    case Expression.PutChannel(exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
+      val enumSym = Symbol.mkEnumSym("Channel.ChannelImpl")
+      val defTpe = Type.mkImpureArrow(Type.mkEnum(enumSym, List(t)), t)
+      val sym = Symbol.mkDefnSym("Channel.get")
+      val callExp = Expression.Def(sym, defTpe, loc)
+      val args = List(e)
+      Expression.Apply(callExp, args, t, eff, loc)
+
+    case Expression.PutChannel(chanExp, exp, tpe, eff, loc) =>
+      val e1 = visitExp(chanExp)
+      val e2 = visitExp(exp)
       val t = visitType(tpe)
-      Expression.PutChannel(e1, e2, t, eff, loc)
+
+      val enumSym = Symbol.mkEnumSym("Channel.ChannelImpl")
+      val chanType = Type.mkEnum(enumSym, List(t))
+      val defTpe = Type.mkImpureUncurriedArrow(List(chanType, t), chanType)
+      val sym = Symbol.mkDefnSym("Channel.put")
+      val callExp = Expression.Def(sym, defTpe, loc)
+      val args = List(e1, e2)
+      Expression.Apply(callExp, args, chanType, eff, loc)
 
     case Expression.SelectChannel(rules, default, tpe, eff, loc) =>
+      // Translate this to:
+      // let channels = [<scala> rs.map(rule => rule.chan) </scala>]
+      // let hasDefault = <scala> d match {
+      //    case Some(_) => Expression.True
+      //    case None => Expression.False
+      //  } </scala>
+      //
+      // match selectImpl(channels, hasDefault) {
+      //   Some(i, e) => {
+      //    let channelRuleExps = [<scala> rs.map(rule => rule.exp) </scala>];
+      //    (channelRuleExps[i])(e) // TODO: Q: I'm unsure how to invoke the expression with `e`
+      //   }
+      //   None => <scala> default </scala>
+      // }
       val rs = rules.map(visitSelectChannelRule)
       val d = default.map(visitExp)
       val t = visitType(tpe)
-      Expression.SelectChannel(rs, d, t, eff, loc)
+
+      val enumSym = Symbol.mkEnumSym("Channel.ChannelImpl")
+      val chanType = Type.mkEnum(enumSym, List(t))
+      val indexElementTupleTpe = Type.mkTuple(List(Type.mkInt32(loc), t))
+      val optionSym = Symbol.mkEnumSym("Option")
+      val selectImplReturnTpe = Type.mkEnum(optionSym, List(indexElementTupleTpe))
+      val selectImplDefTpe = Type.mkImpureUncurriedArrow(List(Type.mkArray(chanType, loc), Type.mkBool(loc)), selectImplReturnTpe)
+      val selectImplSym = Symbol.mkDefnSym("Channel.selectImpl")
+      val selectImplCallExp = Expression.Def(selectImplSym, selectImplDefTpe, loc)
+      val channelsInRs = rs.map(rule => rule.chan)
+      val hasDefault = d match {
+        case Some(_) => Expression.True
+        case None => Expression.False
+      }
+      val selectImplArgs = List(Expression.ArrayLit(channelsInRs, chanType, Type.Impure, loc), hasDefault)
+      val selectImplApply = Expression.Apply(selectImplCallExp, selectImplArgs, selectImplReturnTpe, eff, loc)
+
+      // TODO: Q: I'm unsure how to construct the `TypedAst.Pattern` that will go where asdfSome and asdfNone are.
+      val someMatchRule = MatchRule(asdfSome, Expression.True, asdfExp)
+      val noneMatchRule = MatchRule(asdfNone, Expression.True, default)
+      val matchRules = List(someMatchRule, noneMatchRule)
+      Expression.Match(selectImplApply, matchRules, t, Type.Impure, loc)
 
     case Expression.Spawn(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -670,7 +732,13 @@ object Lowering extends Phase[Root, Root] {
         case _ => tpe0
       }
 
-      case Type.Cst(tc, loc) => tpe0
+      case Type.Cst(tc, loc) => tc match {
+        case TypeConstructor.Channel =>
+          val sym = Symbol.mkEnumSym("Channel.ChannelImpl")
+          val kind = Kind.Arrow(Kind.Star, Kind.Star)
+          Type.Cst(TypeConstructor.Enum(sym, kind), loc)
+        case _ => tpe0
+      }
 
       case Type.Apply(tpe1, tpe2) =>
         val t1 = visitType(tpe1)
