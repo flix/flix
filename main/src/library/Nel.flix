@@ -447,12 +447,9 @@ namespace Nel {
     ///
     /// The sort implementation is a mergesort.
     ///
-    pub def sort(xs: Nel[a]): Nel[a] with Order[a] = match xs {
-        case Nel(_, Nil) => xs
-        case Nel(h, l) => match List.sort(h :: l) {
-            case y :: ys => Nel(y, ys)
-            case _       => unreachable!()
-        }
+    pub def sort(xs: Nel[a]): Nel[a] & Impure with Order[a] = match Array.toList(Array.sort(toArray(xs))) {
+        case Nil    => ???
+        case h :: l => Nel(h, l)
     }
 
     ///
@@ -463,12 +460,9 @@ namespace Nel {
     ///
     /// The sort implementation is a mergesort.
     ///
-    pub def sortBy(f: a -> b, xs: Nel[a]): Nel[a] with Order[b] = match xs {
-        case Nel(_, Nil) => xs
-        case Nel(h, l) => match List.sortBy(f, h :: l) {
-            case y :: ys => Nel(y, ys)
-            case _       => unreachable!()
-        }
+    pub def sortBy(f: a -> b, xs: Nel[a]): Nel[a] with Order[b] = match Array.toList(Array.sortBy(f, toArray(xs))) {
+        case Nil    => ???
+        case h :: l => Nel(h, l)
     }
 
     ///
@@ -479,12 +473,9 @@ namespace Nel {
     ///
     /// The sort implementation is a mergesort.
     ///
-    pub def sortWith(cmp: (a,a) -> Comparison, xs: Nel[a]): Nel[a] = match xs {
-        case Nel(_, Nil) => xs
-        case Nel(h, l) => match List.sortWith(cmp, h :: l) {
-            case y :: ys => Nel(y, ys)
-            case _       => unreachable!()
-        }
+    pub def sortWith(cmp: (a,a) -> Comparison, xs: Nel[a]): Nel[a] = match Array.toList(Array.sortWith(cmp, toArray(xs))) {
+        case Nil    => ???
+        case h :: l => Nel(h, l)
     }
 }
 
