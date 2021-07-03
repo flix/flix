@@ -1103,7 +1103,7 @@ namespace List {
     ///
     /// The sort implementation is a mergesort.
     ///
-    pub def sort(xs: List[a]): List[a] with Order[a] = sortWith(Order.compare, xs)
+    pub def sort(xs: List[a]): List[a] & Impure = Array.toList(Array.sort(toArray(xs)))
 
     /// Sort list `xs` so that elements are ordered from low to high according to the `Order` instance
     /// for the values obtained by applying `f` to each element.
@@ -1112,7 +1112,7 @@ namespace List {
     ///
     /// The sort implementation is a mergesort.
     ///
-    pub def sortBy(f: a -> b, xs: List[a]): List[a] with Order[b] = sortWith(Order.compare `on` f, xs)
+    pub def sortBy(f: a -> b, xs: List[a]): List[a] & Impure = Array.toList(Array.sortBy(f, toArray(xs)))
 
     ///
     /// Sort list `xs` so that elements are ordered from low to high according to the comparison function `cmp`.
@@ -1126,76 +1126,7 @@ namespace List {
     /// TODO Review to verify it satisfies stability. The referenced `sortBy` is stable and
     /// the tests suggest that this implementation is also.
     ///
-    pub def sortWith(cmp: (a,a) -> Comparison, xs: List[a]): List[a] =
-        sortGenerateSequences(cmp, xs, zss -> zss) |> sortMergeAll(cmp)
-
-    ///
-    /// Helper function for `sortWith`.
-    ///
-    def sortGenerateSequences(cmp: (a,a) -> Comparison, xs: List[a], k: List[List[a]] -> List[List[a]]): List[List[a]] = match xs {
-        case a :: b :: rs =>
-            if (cmp(a, b) == GreaterThan)
-                sortDescendingStep(cmp, b, a :: Nil, rs, k)
-            else
-                sortAscendingStep(cmp, b, vs -> a :: vs, rs, k)
-        case rs => k(rs :: Nil)
-    }
-
-    ///
-    /// Helper function for `sortWith`.
-    ///
-    def sortDescendingStep(cmp: (a,a) -> Comparison, x: a, xs: List[a], ys: List[a], k: List[List[a]] -> List[List[a]]): List[List[a]] = match ys {
-        case r1 :: rs if (cmp(x, r1) == GreaterThan) =>
-            sortDescendingStep(cmp, r1, x :: xs, rs, k)
-        case rs =>
-            sortGenerateSequences(cmp, rs, zss -> k((x :: xs) :: zss))
-    }
-
-    ///
-    /// Helper function for `sortWith`.
-    ///
-    def sortAscendingStep(cmp: (a,a) -> Comparison, x: a, xsf: List[a] -> List[a], ys: List[a], k: List[List[a]] -> List[List[a]]): List[List[a]] = match ys {
-        case r1 :: rs if (cmp(x, r1) != GreaterThan) =>
-            sortAscendingStep(cmp, r1, vs -> xsf(x :: vs), rs, k)
-        case rs =>
-            let x1 = xsf(x :: Nil);
-            sortGenerateSequences(cmp, rs, zss -> k(x1 :: zss))
-        }
-
-    ///
-    /// Helper function for `sortWith`.
-    ///
-    def sortMergeAll(cmp: (a,a) -> Comparison, xss: List[List[a]]) : List[a] = match xss {
-        case x :: Nil => x
-        case rs => {
-            let xss = sortMergePairs(cmp, rs, zs -> zs);
-            sortMergeAll(cmp, xss)
-        }
-    }
-
-    ///
-    /// Helper function for `sortWith`.
-    ///
-    def sortMergePairs(cmp: (a,a) -> Comparison, xss: List[List[a]], k: List[List[a]] -> List[List[a]]) : List[List[a]] = match xss {
-        case a :: b :: rs => {
-            let x = sortMerge(cmp, a, b, zs -> zs);
-            sortMergePairs(cmp, rs, zss -> k(x :: zss))
-        }
-        case rs => k(rs)
-    }
-
-    ///
-    /// Helper function for `sortWith`.
-    ///
-    def sortMerge(cmp: (a,a) -> Comparison, xs: List[a], ys: List[a], k: List[a] -> List[a]) : List[a] = match (xs, ys) {
-        case (r :: rs, s :: ss) =>
-            if (cmp(r,s) == GreaterThan)
-                sortMerge(cmp, xs, ss, zs -> k(s :: zs))
-            else
-                sortMerge(cmp, rs, ys, zs -> k(r :: zs))
-        case (Nil, ss) => k(ss)
-        case (rs, Nil) => k(rs)
-    }
+    pub def sortWith(cmp: (a,a) -> Comparison, xs: List[a]): List[a] & Impure = Array.toList(Array.sortWith(cmp, toArray(xs)))
 
     ///
     /// Build a list by applying `f` to the seed value `st`.
