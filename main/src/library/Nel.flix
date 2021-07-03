@@ -425,6 +425,11 @@ namespace Nel {
     }
 
     ///
+    /// Returns `xs` as an array.
+    ///
+    pub def toArray(xs: Nel[a]): Array[a] & Impure = List.toArray(toList(xs))
+
+    ///
     /// Applies `f` to every element of `xs`.
     ///
     /// The function `f` must be impure.
