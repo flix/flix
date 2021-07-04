@@ -1126,7 +1126,7 @@ namespace List {
     /// TODO Review to verify it satisfies stability. The referenced `sortBy` is stable and
     /// the tests suggest that this implementation is also.
     ///
-    pub def sortWith(cmp: (a,a) -> Comparison, xs: List[a]): List[a] with Order[a] = Array.toList(Array.sortWith(cmp, toArray(xs))) as & Pure
+    pub def sortWith(cmp: (a,a) -> Comparison, xs: List[a]): List[a] = Array.toList(Array.sortWith(cmp, toArray(xs))) as & Pure
 
     ///
     /// Build a list by applying `f` to the seed value `st`.
