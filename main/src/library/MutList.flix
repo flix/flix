@@ -88,6 +88,7 @@ namespace MutList {
     ///
     /// Returns `true` if the given mutable list `v` is empty.
     ///
+    // TODO: Change assumption that empty == length 0
     pub def isEmpty(v: MutList[a]): Bool & Impure = length(v) == 0
 
     ///
@@ -461,6 +462,7 @@ namespace MutList {
     ///
     /// Optionally removes and returns the last element in the given mutable list `v`.
     ///
+    // TODO: Change assumption that length can be 0
     pub def pop!(v: mut MutList[a]): Option[a] & Impure =
         let MutList(a, l) = v;
         let len = deref l;
@@ -476,6 +478,7 @@ namespace MutList {
     ///
     /// Inserts the given element `x` at the end of the given mutable list `v`.
     ///
+    // TODO: Change assumption that length can be 0
     pub def push!(x: a, v: mut MutList[a]): Unit & Impure =
         let MutList(a, l) = v;
         let len = deref l;
@@ -499,6 +502,7 @@ namespace MutList {
     ///
     /// If the given index `i` exceeds the length of the mutable list, the element is inserted at the last position.
     ///
+    // TODO: Change assumption that length can be 0
     pub def insert!(x: a, i: Int32, v: mut MutList[a]): Unit & Impure =
         let MutList(a, l) = v;
         let len = deref l;
@@ -607,6 +611,7 @@ namespace MutList {
     ///
     /// Truncates the mutable list as needed.
     ///
+    // TODO: Change assumption that length can be 0
     pub def shrinkTo!(n: Int32, v: mut MutList[a]): Unit & Impure =
         let MutList(a, l) = v;
         if (n == 0) {
@@ -633,6 +638,7 @@ namespace MutList {
     ///
     /// If the given length `l` is negative, all elements are removed.
     ///
+    // TODO: Change assumption that length can be 0
     pub def truncate!(l: Int32, v: mut MutList[a]): Unit & Impure =
         if (l < 0)
             clear!(v)
@@ -651,6 +657,7 @@ namespace MutList {
     ///
     /// The content of the mutable list is unchanged.
     ///
+    // TODO: Change assumption that length can be 0
     pub def reserve!(n: Int32, v: mut MutList[a]): Unit & Impure =
         let MutList(a, l) = v;
         let len = deref l;
@@ -668,6 +675,7 @@ namespace MutList {
     ///
     /// Returns `v` as an immutable list.
     ///
+    // TODO: Use directly tail recursive function
     pub def toImm(v: MutList[a]): List[a] & Impure =
         foldRight((x, acc) -> x :: acc, Nil, v)
 
