@@ -1103,7 +1103,7 @@ namespace List {
     ///
     /// The sort implementation is a mergesort.
     ///
-    pub def sort(xs: List[a]): List[a] & Impure with Order[a] = Array.toList(Array.sort(toArray(xs)))
+    pub def sort(xs: List[a]): List[a] with Order[a] = Array.toList(Array.sort(toArray(xs))) as & Pure
 
     /// Sort list `xs` so that elements are ordered from low to high according to the `Order` instance
     /// for the values obtained by applying `f` to each element.
@@ -1112,7 +1112,7 @@ namespace List {
     ///
     /// The sort implementation is a mergesort.
     ///
-    pub def sortBy(f: a -> b, xs: List[a]): List[a] & Impure with Order[a] = Array.toList(Array.sortBy(f, toArray(xs)))
+    pub def sortBy(f: a -> b, xs: List[a]): List[a] with Order[a] = Array.toList(Array.sortBy(f, toArray(xs))) as & Pure
 
     ///
     /// Sort list `xs` so that elements are ordered from low to high according to the comparison function `cmp`.
@@ -1126,7 +1126,7 @@ namespace List {
     /// TODO Review to verify it satisfies stability. The referenced `sortBy` is stable and
     /// the tests suggest that this implementation is also.
     ///
-    pub def sortWith(cmp: (a,a) -> Comparison, xs: List[a]): List[a] & Impure with Order[a] = Array.toList(Array.sortWith(cmp, toArray(xs)))
+    pub def sortWith(cmp: (a,a) -> Comparison, xs: List[a]): List[a] with Order[a] = Array.toList(Array.sortWith(cmp, toArray(xs))) as & Pure
 
     ///
     /// Build a list by applying `f` to the seed value `st`.
