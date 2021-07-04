@@ -447,10 +447,10 @@ namespace Nel {
     ///
     /// The sort implementation is a mergesort.
     ///
-    pub def sort(xs: Nel[a]): Nel[a] & Impure with Order[a] = match Array.toList(Array.sort(toArray(xs))) {
+    pub def sort(xs: Nel[a]): Nel[a] with Order[a] = match Array.toList(Array.sort(toArray(xs))) {
         case Nil    => ???
         case h :: l => Nel(h, l)
-    }
+    } as & Pure
 
     ///
     /// Sort the non-empty list `xs` so that elements are ordered from low to high according
@@ -463,7 +463,7 @@ namespace Nel {
     pub def sortBy(f: a -> b, xs: Nel[a]): Nel[a] with Order[b] = match Array.toList(Array.sortBy(f, toArray(xs))) {
         case Nil    => ???
         case h :: l => Nel(h, l)
-    }
+    } as & Pure
 
     ///
     /// Sort the non-empty list `xs` so that elements are ordered from low to high according
@@ -476,6 +476,6 @@ namespace Nel {
     pub def sortWith(cmp: (a,a) -> Comparison, xs: Nel[a]): Nel[a] = match Array.toList(Array.sortWith(cmp, toArray(xs))) {
         case Nil    => ???
         case h :: l => Nel(h, l)
-    }
+    } as & Pure
 }
 
