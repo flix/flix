@@ -443,9 +443,9 @@ namespace Nel {
     /// Sort the non-empty list `xs` so that elements are ordered from low to high according
     /// to their `Order` instance.
     ///
-    /// The sort is stable, i.e., equal elements appear in the same order as in the input `xs`.
+    /// The sort is not stable, i.e., equal elements may appear in a different order than in the input `xs`.
     ///
-    /// The sort implementation is a mergesort.
+    /// The sort implementation is a Quicksort.
     ///
     pub def sort(xs: Nel[a]): Nel[a] with Order[a] = match Array.toList(Array.sort(toArray(xs))) {
         case Nil    => ???
@@ -456,9 +456,9 @@ namespace Nel {
     /// Sort the non-empty list `xs` so that elements are ordered from low to high according
     /// to the `Order` instance for the values obtained by applying `f` to each element.
     ///
-    /// The sort is stable, i.e., equal elements appear in the same order as in the input `xs`.
+    /// The sort is not stable, i.e., equal elements may appear in a different order than in the input `xs`.
     ///
-    /// The sort implementation is a mergesort.
+    /// The sort implementation is a Quicksort.
     ///
     pub def sortBy(f: a -> b, xs: Nel[a]): Nel[a] with Order[b] = match Array.toList(Array.sortBy(f, toArray(xs))) {
         case Nil    => ???
@@ -469,9 +469,9 @@ namespace Nel {
     /// Sort the non-empty list `xs` so that elements are ordered from low to high according
     /// to the comparison function `cmp`.
     ///
-    /// The sort is stable, i.e., equal elements appear in the same order as in the input `xs`.
+    /// The sort is not stable, i.e., equal elements may appear in a different order than in the input `xs`.
     ///
-    /// The sort implementation is a mergesort.
+    /// The sort implementation is a Quicksort.
     ///
     pub def sortWith(cmp: (a,a) -> Comparison, xs: Nel[a]): Nel[a] = match Array.toList(Array.sortWith(cmp, toArray(xs))) {
         case Nil    => ???
