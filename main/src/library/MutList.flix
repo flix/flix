@@ -79,10 +79,7 @@ namespace MutList {
     ///
     pub def get(i: Int32, v: MutList[a]): a & Impure =
         let MutList(a, _) = v;
-        if (i > length(v))
-            (deref a)[-1] /// deliberately trigger index-out-of-bounds
-        else
-            Array.get(deref a, i)
+        Array.get(deref a, i)
 
     ///
     /// Returns the number of elements in the given mutable list `v`.
