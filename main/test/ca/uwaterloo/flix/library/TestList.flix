@@ -1831,378 +1831,378 @@ def toArray04(): Bool & Impure =
     let a = List.toArray(1 :: 2 :: 3 :: Nil);
     Array.sameElements(a, [1,2,3])
 
-/////////////////////////////////////////////////////////////////////////////
-// sortWith                                                                //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // sortWith                                                                //
+    /////////////////////////////////////////////////////////////////////////////
 
-def cmp(x: Int32, y: Int32): Comparison =
-    if (x < y) LessThan
-    else if (x == y) EqualTo
-    else GreaterThan
+    def cmp(x: Int32, y: Int32): Comparison =
+        if (x < y) LessThan
+        else if (x == y) EqualTo
+        else GreaterThan
 
-@test
-def sortWith01(): Bool =
-    List.sortWith(cmp, Nil: List[Int32]) == Nil
+    @test
+    def sortWith01(): Bool =
+        List.sortWith(cmp, Nil: List[Int32]) == Nil
 
-@test
-def sortWith02(): Bool =
-    List.sortWith(cmp, 0 :: Nil) == 0 :: Nil
+    @test
+    def sortWith02(): Bool =
+        List.sortWith(cmp, 0 :: Nil) == 0 :: Nil
 
-@test
-def sortWith03(): Bool =
-    List.sortWith(cmp, 0 :: 1 :: Nil) == 0 :: 1 :: Nil
+    @test
+    def sortWith03(): Bool =
+        List.sortWith(cmp, 0 :: 1 :: Nil) == 0 :: 1 :: Nil
 
-@test
-def sortWith04(): Bool =
-    List.sortWith(cmp, 1 :: 0 :: Nil) == 0 :: 1 :: Nil
+    @test
+    def sortWith04(): Bool =
+        List.sortWith(cmp, 1 :: 0 :: Nil) == 0 :: 1 :: Nil
 
-@test
-def sortWith05(): Bool =
-    List.sortWith(cmp, 1 :: 1 :: Nil) == 1 :: 1 :: Nil
+    @test
+    def sortWith05(): Bool =
+        List.sortWith(cmp, 1 :: 1 :: Nil) == 1 :: 1 :: Nil
 
-@test
-def sortWith06(): Bool =
-    List.sortWith(cmp, 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil) == 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil
+    @test
+    def sortWith06(): Bool =
+        List.sortWith(cmp, 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil) == 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil
 
-@test
-def sortWith07(): Bool =
-    List.sortWith(cmp, 5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil) == 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil
+    @test
+    def sortWith07(): Bool =
+        List.sortWith(cmp, 5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil) == 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil
 
-@test
-def sortWith08(): Bool =
-    List.sortWith(cmp, 5 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil) == 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil
+    @test
+    def sortWith08(): Bool =
+        List.sortWith(cmp, 5 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil) == 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil
 
-@test
-def sortWith09(): Bool =
-    List.sortWith(cmp, 2 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil) == 0 :: 1 :: 2 :: 2 :: 3 :: 4 :: Nil
+    @test
+    def sortWith09(): Bool =
+        List.sortWith(cmp, 2 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil) == 0 :: 1 :: 2 :: 2 :: 3 :: 4 :: Nil
 
-@test
-def sortWith10(): Bool =
-    List.sortWith(flip(cmp), 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil) == 5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil
+    @test
+    def sortWith10(): Bool =
+        List.sortWith(flip(cmp), 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil) == 5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil
 
-@test
-def sortWith11(): Bool =
-    List.sortWith(flip(cmp), 5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil) == 5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil
+    @test
+    def sortWith11(): Bool =
+        List.sortWith(flip(cmp), 5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil) == 5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil
 
-@test
-def sortWith12(): Bool =
-    List.sortWith(flip(cmp), 5 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil) == 5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil
+    @test
+    def sortWith12(): Bool =
+        List.sortWith(flip(cmp), 5 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil) == 5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil
 
-@test
-def sortWith13(): Bool =
-    List.sortWith(flip(cmp), 2 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil) == 4 :: 3 :: 2 :: 2 :: 1 :: 0 :: Nil
+    @test
+    def sortWith13(): Bool =
+        List.sortWith(flip(cmp), 2 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil) == 4 :: 3 :: 2 :: 2 :: 1 :: 0 :: Nil
 
-/////////////////////////////////////////////////////////////////////////////
-// sort                                                                    //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // sort                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
 
-def testSortVsSortWith(xs: List[Int32]) : Bool =
-    List.sort(xs) == List.sortWith(cmp, xs)
+    def testSortVsSortWith(xs: List[Int32]) : Bool =
+        List.sort(xs) == List.sortWith(cmp, xs)
 
-@test
-def sort01(): Bool = testSortVsSortWith(Nil: List[Int32])
+    @test
+    def sort01(): Bool = testSortVsSortWith(Nil: List[Int32])
 
-@test
-def sort02(): Bool = testSortVsSortWith(0 :: Nil)
+    @test
+    def sort02(): Bool = testSortVsSortWith(0 :: Nil)
 
-@test
-def sort03(): Bool = testSortVsSortWith(0 :: 1 :: Nil)
+    @test
+    def sort03(): Bool = testSortVsSortWith(0 :: 1 :: Nil)
 
-@test
-def sort04(): Bool = testSortVsSortWith(1 :: 0 :: Nil)
+    @test
+    def sort04(): Bool = testSortVsSortWith(1 :: 0 :: Nil)
 
-@test
-def sort05(): Bool = testSortVsSortWith(1 :: 1 :: Nil)
+    @test
+    def sort05(): Bool = testSortVsSortWith(1 :: 1 :: Nil)
 
-@test
-def sort06(): Bool = testSortVsSortWith(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil)
+    @test
+    def sort06(): Bool = testSortVsSortWith(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil)
 
-@test
-def sort07(): Bool = testSortVsSortWith(5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil)
+    @test
+    def sort07(): Bool = testSortVsSortWith(5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil)
 
-@test
-def sort08(): Bool = testSortVsSortWith(5 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil)
+    @test
+    def sort08(): Bool = testSortVsSortWith(5 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil)
 
-@test
-def sort09(): Bool = testSortVsSortWith(2 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil)
+    @test
+    def sort09(): Bool = testSortVsSortWith(2 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil)
 
-/////////////////////////////////////////////////////////////////////////////
-// sortBy                                                                  //
-/////////////////////////////////////////////////////////////////////////////
-
-def testSortByVsSort(a: List[Int32]) : Bool =
-    (List.sortBy(identity, a) == List.sort(a)) and
-    (List.sortBy(x -> 4*x+7, a) == List.sort(a)) and
-    (List.sortBy(x -> -x, a) == List.sortWith(flip(cmp),a))
-
-@test
-def sortBy01(): Bool = testSortByVsSort(Nil: List[Int32])
-
-@test
-def sortBy02(): Bool = testSortByVsSort(0 :: Nil)
-
-@test
-def sortBy03(): Bool = testSortByVsSort(0 :: 1 :: Nil)
-
-@test
-def sortBy04(): Bool = testSortByVsSort(1 :: 0 :: Nil)
-
-@test
-def sortBy05(): Bool = testSortByVsSort(1 :: 1 :: Nil)
-
-@test
-def sortBy06(): Bool = testSortByVsSort(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil)
-
-@test
-def sortBy07(): Bool = testSortByVsSort(5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil)
-
-@test
-def sortBy08(): Bool = testSortByVsSort(5 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil)
-
-@test
-def sortBy09(): Bool = testSortByVsSort(2 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil)
-
-enum R {
-    case R({i: Int32, s: String})
-}
-
-instance Eq[R] {
-    pub def eq(a: R, b: R): Bool =
-        let R(x) = a;
-        let R(y) = b;
-        x.i == y.i and x.s == y.s
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
-// unfold                                                                  //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def unfold01(): Bool =
-    List.unfold(s -> if (true) None else Some(Char.fromInt32(s + 48), s + 1), 0) == Nil
-
-@test
-def unfold02(): Bool =
-    List.unfold(s -> if (s > 0) None else Some(Char.fromInt32(s + 48), s + 1), 0) == '0' :: Nil
-
-@test
-def unfold03(): Bool =
-    List.unfold(s -> if (s > 1) None else Some(Char.fromInt32(s + 48), s + 1), 0) == '0' :: '1' :: Nil
-
-@test
-def unfold04(): Bool =
-    List.unfold(s -> if (s >= 10) None else Some(Char.fromInt32(s + 48), s + 1), 0) == '0' :: '1' :: '2' :: '3' :: '4' :: '5' :: '6' :: '7' :: '8' :: '9' :: Nil
-
-@test
-def unfold05(): Bool =
-    List.unfold(s -> if (s >= 10) None else Some(Char.fromInt32(s + 48), s + 1), 5) == '5' :: '6' :: '7' :: '8' :: '9' :: Nil
-
-@test
-def unfold06(): Bool =
-    List.unfold(s -> if (s >= 10) None else Some(Char.fromInt32(s + 48), s + 2), 0) == '0' :: '2' :: '4' :: '6' :: '8' :: Nil
-
-/////////////////////////////////////////////////////////////////////////////
-// unfoldWithIter                                                          //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def unfoldWithIter01(): Bool & Impure =
-    let x = ref 0;
-    let step = () ->
-        if (true)
-            None
-        else {
-            let c = Char.fromInt32(deref x + 48);
-            x := deref x + 1;
-            Some(c)
-        };
-    List.unfoldWithIter(step) == Nil
-
-@test
-def unfoldWithIter02(): Bool & Impure =
-    let x = ref 0;
-    let step = () ->
-        if (deref x > 0)
-            None
-        else {
-            let c = Char.fromInt32(deref x + 48);
-            x := deref x + 1;
-            Some(c)
-        };
-    List.unfoldWithIter(step) == '0' :: Nil
-
-@test
-def unfoldWithIter03(): Bool & Impure =
-    let x = ref 0;
-    let step = () ->
-        if (deref x > 1)
-            None
-        else {
-            let c = Char.fromInt32(deref x + 48);
-            x := deref x + 1;
-            Some(c)
-        };
-    List.unfoldWithIter(step) == '0' :: '1' :: Nil
-
-@test
-def unfoldWithIter04(): Bool & Impure =
-    let x = ref 0;
-    let step = () ->
-        if (deref x >= 10)
-            None
-        else {
-            let c = Char.fromInt32(deref x + 48);
-            x := deref x + 1;
-            Some(c)
-        };
-    List.unfoldWithIter(step) == '0' :: '1' :: '2' :: '3' :: '4' :: '5' :: '6' :: '7' :: '8' :: '9' :: Nil
-
-@test
-def unfoldWithIter05(): Bool & Impure =
-    let x = ref 5;
-    let step = () ->
-        if (deref x >= 10)
-            None
-        else {
-            let c = Char.fromInt32(deref x + 48);
-            x := deref x + 1;
-            Some(c)
-        };
-    List.unfoldWithIter(step) == '5' :: '6' :: '7' :: '8' :: '9' :: Nil
-
-@test
-def unfoldWithIter06(): Bool & Impure =
-    let x = ref 0;
-    let step = () ->
-        if (deref x >= 10)
-            None
-        else {
-            let c = Char.fromInt32(deref x + 48);
-            x := deref x + 2;
-            Some(c)
-        };
-    List.unfoldWithIter(step) == '0' :: '2' :: '4' :: '6' :: '8' :: Nil
-
-
-/////////////////////////////////////////////////////////////////////////////
-// unfoldWithOkIter                                                        //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def unfoldWithOkIter01(): Bool & Impure =
-    let x = ref 0;
-    let step = () ->
-        if (true) {
-            Ok(None)
-        } else {
-            Ok(Some(deref x))
-        };
-    List.unfoldWithOkIter(step): Result[_, Unit] == Ok(Nil)
-
-@test
-def unfoldWithOkIter02(): Bool & Impure =
-    let x = ref 0;
-    let step = () ->
-        if (true) {
-            Err(deref x)
-        } else {
-            Ok(Some(deref x))
-        };
-    List.unfoldWithOkIter(step) == Err(0)
-
-@test
-def unfoldWithOkIter03(): Bool & Impure =
-    let x = ref 1;
-    let step = () ->
-        if (deref x % 5 > 0) {
-            let c = deref x;
-            x := deref x + 1;
-            Ok(Some(c))
-        } else {
-            Ok(None)
-        };
-    List.unfoldWithOkIter(step): Result[_, Unit] == Ok(1 :: 2 :: 3 :: 4 :: Nil)
-
-/////////////////////////////////////////////////////////////////////////////
-// distinct                                                                //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def distinct01(): Bool =
-    List.distinct(Nil: List[Unit]) == Nil
-
-@test
-def distinct02(): Bool =
-    List.distinct(1 :: Nil) == 1 :: Nil
-
-@test
-def distinct03(): Bool =
-    List.distinct(1 :: 2 :: Nil) == 1 :: 2 :: Nil
-
-@test
-def distinct04(): Bool =
-    List.distinct(1 :: 1 :: 2 :: Nil) == 1 :: 2 :: Nil
-
-@test
-def distinct05(): Bool =
-    List.distinct(1 :: 2 :: 1 :: Nil) == 1 :: 2 :: Nil
-
-@test
-def distinct06(): Bool =
-    List.distinct(1 :: 2 :: 2 :: Nil) == 1 :: 2 :: Nil
-
-@test
-def distinct07(): Bool =
-    List.distinct(1 :: 2 :: 2 :: 3 :: Nil) == 1 :: 2 :: 3 :: Nil
-
-@test
-def distinct08(): Bool =
-    List.distinct(1 :: 2 :: 2 :: 3 :: 1 :: 4 :: Nil) == 1 :: 2 :: 3 :: 4 :: Nil
-
-@test
-def distinct09(): Bool =
-    List.distinct(4 :: 4 :: 3  :: 4 :: 2 :: 1 :: 1 :: Nil) == 4 :: 3 :: 2 :: 1 :: Nil
-
-/////////////////////////////////////////////////////////////////////////////
-// distinctWith                                                            //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def distinctWith01(): Bool =
-    List.distinctWith((x,y) -> x == y, Nil: List[Unit]) == Nil
-
-@test
-def distinctWith02(): Bool =
-    List.distinctWith((x,y) -> x == y, 1 :: Nil) == 1 :: Nil
-
-@test
-def distinctWith03(): Bool =
-    List.distinctWith((x,y) -> x == y, 1 :: 2 :: Nil) == 1 :: 2 :: Nil
-
-@test
-def distinctWith04(): Bool =
-    List.distinctWith((x,y) -> x == y, 1 :: 1 :: 2 :: Nil) == 1 :: 2 :: Nil
-
-@test
-def distinctWith05(): Bool =
-    List.distinctWith((x,y) -> x == y, 1 :: 2 :: 1 :: Nil) == 1 :: 2 :: Nil
-
-@test
-def distinctWith06(): Bool =
-    List.distinctWith((x,y) -> x == y, 1 :: 2 :: 2 :: Nil) == 1 :: 2 :: Nil
-
-@test
-def distinctWith07(): Bool =
-    List.distinctWith((x,y) -> x == y, 1 :: 2 :: 2 :: 3 :: Nil) == 1 :: 2 :: 3 :: Nil
-
-@test
-def distinctWith08(): Bool =
-    List.distinctWith((x,y) -> x == y, 1 :: 2 :: 2 :: 3 :: 1 :: 4 :: Nil) == 1 :: 2 :: 3 :: 4 :: Nil
-
-@test
-def distinctWith09(): Bool =
-    List.distinctWith((x,y) -> x == y, 4 :: 4 :: 3  :: 4 :: 2 :: 1 :: 1 :: Nil) == 4 :: 3 :: 2 :: 1 :: Nil
+    /////////////////////////////////////////////////////////////////////////////
+    // sortBy                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    def testSortByVsSort(a: List[Int32]) : Bool =
+        (List.sortBy(identity, a) == List.sort(a)) and
+        (List.sortBy(x -> 4*x+7, a) == List.sort(a)) and
+        (List.sortBy(x -> -x, a) == List.sortWith(flip(cmp),a))
+
+    @test
+    def sortBy01(): Bool = testSortByVsSort(Nil: List[Int32])
+
+    @test
+    def sortBy02(): Bool = testSortByVsSort(0 :: Nil)
+
+    @test
+    def sortBy03(): Bool = testSortByVsSort(0 :: 1 :: Nil)
+
+    @test
+    def sortBy04(): Bool = testSortByVsSort(1 :: 0 :: Nil)
+
+    @test
+    def sortBy05(): Bool = testSortByVsSort(1 :: 1 :: Nil)
+
+    @test
+    def sortBy06(): Bool = testSortByVsSort(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil)
+
+    @test
+    def sortBy07(): Bool = testSortByVsSort(5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil)
+
+    @test
+    def sortBy08(): Bool = testSortByVsSort(5 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil)
+
+    @test
+    def sortBy09(): Bool = testSortByVsSort(2 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil)
+
+    enum R {
+        case R({i: Int32, s: String})
+    }
+
+    instance Eq[R] {
+        pub def eq(a: R, b: R): Bool =
+            let R(x) = a;
+            let R(y) = b;
+            x.i == y.i and x.s == y.s
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // unfold                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def unfold01(): Bool =
+        List.unfold(s -> if (true) None else Some(Char.fromInt32(s + 48), s + 1), 0) == Nil
+
+    @test
+    def unfold02(): Bool =
+        List.unfold(s -> if (s > 0) None else Some(Char.fromInt32(s + 48), s + 1), 0) == '0' :: Nil
+
+    @test
+    def unfold03(): Bool =
+        List.unfold(s -> if (s > 1) None else Some(Char.fromInt32(s + 48), s + 1), 0) == '0' :: '1' :: Nil
+
+    @test
+    def unfold04(): Bool =
+        List.unfold(s -> if (s >= 10) None else Some(Char.fromInt32(s + 48), s + 1), 0) == '0' :: '1' :: '2' :: '3' :: '4' :: '5' :: '6' :: '7' :: '8' :: '9' :: Nil
+
+    @test
+    def unfold05(): Bool =
+        List.unfold(s -> if (s >= 10) None else Some(Char.fromInt32(s + 48), s + 1), 5) == '5' :: '6' :: '7' :: '8' :: '9' :: Nil
+
+    @test
+    def unfold06(): Bool =
+        List.unfold(s -> if (s >= 10) None else Some(Char.fromInt32(s + 48), s + 2), 0) == '0' :: '2' :: '4' :: '6' :: '8' :: Nil
+
+    /////////////////////////////////////////////////////////////////////////////
+    // unfoldWithIter                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def unfoldWithIter01(): Bool & Impure =
+        let x = ref 0;
+        let step = () ->
+            if (true)
+                None
+            else {
+                let c = Char.fromInt32(deref x + 48);
+                x := deref x + 1;
+                Some(c)
+            };
+        List.unfoldWithIter(step) == Nil
+
+    @test
+    def unfoldWithIter02(): Bool & Impure =
+        let x = ref 0;
+        let step = () ->
+            if (deref x > 0)
+                None
+            else {
+                let c = Char.fromInt32(deref x + 48);
+                x := deref x + 1;
+                Some(c)
+            };
+        List.unfoldWithIter(step) == '0' :: Nil
+
+    @test
+    def unfoldWithIter03(): Bool & Impure =
+        let x = ref 0;
+        let step = () ->
+            if (deref x > 1)
+                None
+            else {
+                let c = Char.fromInt32(deref x + 48);
+                x := deref x + 1;
+                Some(c)
+            };
+        List.unfoldWithIter(step) == '0' :: '1' :: Nil
+
+    @test
+    def unfoldWithIter04(): Bool & Impure =
+        let x = ref 0;
+        let step = () ->
+            if (deref x >= 10)
+                None
+            else {
+                let c = Char.fromInt32(deref x + 48);
+                x := deref x + 1;
+                Some(c)
+            };
+        List.unfoldWithIter(step) == '0' :: '1' :: '2' :: '3' :: '4' :: '5' :: '6' :: '7' :: '8' :: '9' :: Nil
+
+    @test
+    def unfoldWithIter05(): Bool & Impure =
+        let x = ref 5;
+        let step = () ->
+            if (deref x >= 10)
+                None
+            else {
+                let c = Char.fromInt32(deref x + 48);
+                x := deref x + 1;
+                Some(c)
+            };
+        List.unfoldWithIter(step) == '5' :: '6' :: '7' :: '8' :: '9' :: Nil
+
+    @test
+    def unfoldWithIter06(): Bool & Impure =
+        let x = ref 0;
+        let step = () ->
+            if (deref x >= 10)
+                None
+            else {
+                let c = Char.fromInt32(deref x + 48);
+                x := deref x + 2;
+                Some(c)
+            };
+        List.unfoldWithIter(step) == '0' :: '2' :: '4' :: '6' :: '8' :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // unfoldWithOkIter                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def unfoldWithOkIter01(): Bool & Impure =
+        let x = ref 0;
+        let step = () ->
+            if (true) {
+                Ok(None)
+            } else {
+                Ok(Some(deref x))
+            };
+        List.unfoldWithOkIter(step): Result[_, Unit] == Ok(Nil)
+
+    @test
+    def unfoldWithOkIter02(): Bool & Impure =
+        let x = ref 0;
+        let step = () ->
+            if (true) {
+                Err(deref x)
+            } else {
+                Ok(Some(deref x))
+            };
+        List.unfoldWithOkIter(step) == Err(0)
+
+    @test
+    def unfoldWithOkIter03(): Bool & Impure =
+        let x = ref 1;
+        let step = () ->
+            if (deref x % 5 > 0) {
+                let c = deref x;
+                x := deref x + 1;
+                Ok(Some(c))
+            } else {
+                Ok(None)
+            };
+        List.unfoldWithOkIter(step): Result[_, Unit] == Ok(1 :: 2 :: 3 :: 4 :: Nil)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // distinct                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def distinct01(): Bool =
+        List.distinct(Nil: List[Unit]) == Nil
+
+    @test
+    def distinct02(): Bool =
+        List.distinct(1 :: Nil) == 1 :: Nil
+
+    @test
+    def distinct03(): Bool =
+        List.distinct(1 :: 2 :: Nil) == 1 :: 2 :: Nil
+
+    @test
+    def distinct04(): Bool =
+        List.distinct(1 :: 1 :: 2 :: Nil) == 1 :: 2 :: Nil
+
+    @test
+    def distinct05(): Bool =
+        List.distinct(1 :: 2 :: 1 :: Nil) == 1 :: 2 :: Nil
+
+    @test
+    def distinct06(): Bool =
+        List.distinct(1 :: 2 :: 2 :: Nil) == 1 :: 2 :: Nil
+
+    @test
+    def distinct07(): Bool =
+        List.distinct(1 :: 2 :: 2 :: 3 :: Nil) == 1 :: 2 :: 3 :: Nil
+
+    @test
+    def distinct08(): Bool =
+        List.distinct(1 :: 2 :: 2 :: 3 :: 1 :: 4 :: Nil) == 1 :: 2 :: 3 :: 4 :: Nil
+
+    @test
+    def distinct09(): Bool =
+        List.distinct(4 :: 4 :: 3  :: 4 :: 2 :: 1 :: 1 :: Nil) == 4 :: 3 :: 2 :: 1 :: Nil
+
+    /////////////////////////////////////////////////////////////////////////////
+    // distinctWith                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def distinctWith01(): Bool =
+        List.distinctWith((x,y) -> x == y, Nil: List[Unit]) == Nil
+
+    @test
+    def distinctWith02(): Bool =
+        List.distinctWith((x,y) -> x == y, 1 :: Nil) == 1 :: Nil
+
+    @test
+    def distinctWith03(): Bool =
+        List.distinctWith((x,y) -> x == y, 1 :: 2 :: Nil) == 1 :: 2 :: Nil
+
+    @test
+    def distinctWith04(): Bool =
+        List.distinctWith((x,y) -> x == y, 1 :: 1 :: 2 :: Nil) == 1 :: 2 :: Nil
+
+    @test
+    def distinctWith05(): Bool =
+        List.distinctWith((x,y) -> x == y, 1 :: 2 :: 1 :: Nil) == 1 :: 2 :: Nil
+
+    @test
+    def distinctWith06(): Bool =
+        List.distinctWith((x,y) -> x == y, 1 :: 2 :: 2 :: Nil) == 1 :: 2 :: Nil
+
+    @test
+    def distinctWith07(): Bool =
+        List.distinctWith((x,y) -> x == y, 1 :: 2 :: 2 :: 3 :: Nil) == 1 :: 2 :: 3 :: Nil
+
+    @test
+    def distinctWith08(): Bool =
+        List.distinctWith((x,y) -> x == y, 1 :: 2 :: 2 :: 3 :: 1 :: 4 :: Nil) == 1 :: 2 :: 3 :: 4 :: Nil
+
+    @test
+    def distinctWith09(): Bool =
+        List.distinctWith((x,y) -> x == y, 4 :: 4 :: 3  :: 4 :: 2 :: 1 :: 1 :: Nil) == 4 :: 3 :: 2 :: 1 :: Nil
 
     /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //
