@@ -70,9 +70,19 @@ namespace MutList {
     ///
     pub def range(b: Int32, e: Int32): MutList[Int32] & Impure =
         if (e - b < minSize())
-            new()
+            MutList(ref rangeHelperFill(b, e), ref minSize())
+
         else
             MutList(ref Array.range(b, e), ref (e - b))
+
+    def rangeHelperFill(b: Int32, e: Int32): Array[Int32] & Impure = fill([default; 8], 0, b, e)
+
+    def fill(a: Array[Int32], idx: Int32, c: Int32, e: Int32): Array[Int32] & Impure = {
+        if (e - c == 0)
+            a
+        else
+            fill(Array.put(a, idx, c), idx + 1, c + 1, e)
+    }
 
     ///
     /// Returns the element at position `i` in the mutable list `v`.
@@ -91,8 +101,7 @@ namespace MutList {
     ///
     /// Returns `true` if the given mutable list `v` is empty.
     ///
-    // TODO: Change assumption that empty == length 0
-    pub def isEmpty(v: MutList[a]): Bool & Impure = length(v) == 0
+    pub def isEmpty(v: MutList[a]): Bool & Impure =
 
     ///
     /// Returns `true` if the given element `x` is a member of the given mutable list `v`.
