@@ -1099,32 +1099,27 @@ namespace List {
     ///
     /// Sort list `xs` so that elements are ordered from low to high according to their `Order` instance.
     ///
-    /// The sort is stable, i.e., equal elements appear in the same order as in the input `xs`.
+    /// The sort is not stable, i.e., equal elements may appear in a different order than in the input `xs`.
     ///
-    /// The sort implementation is a mergesort.
+    /// The sort implementation is a Quicksort.
     ///
     pub def sort(xs: List[a]): List[a] with Order[a] = Array.toList(Array.sort(toArray(xs))) as & Pure
 
     /// Sort list `xs` so that elements are ordered from low to high according to the `Order` instance
     /// for the values obtained by applying `f` to each element.
     ///
-    /// The sort is stable, i.e., equal elements appear in the same order as in the input `xs`.
+    /// The sort is not stable, i.e., equal elements may appear in a different order than in the input `xs`.
     ///
-    /// The sort implementation is a mergesort.
+    /// The sort implementation is a Quicksort.
     ///
     pub def sortBy(f: a -> b, xs: List[a]): List[a] with Order[b] = Array.toList(Array.sortBy(f, toArray(xs))) as & Pure
 
     ///
     /// Sort list `xs` so that elements are ordered from low to high according to the comparison function `cmp`.
     ///
-    /// The sort is stable, i.e., equal elements appear in the same order as in the input `xs`.
+    /// The sort is not stable, i.e., equal elements may appear in a different order than in the input `xs`.
     ///
-    /// The sort implementation is a mergesort.
-    ///
-    /// Acknowledgement: derived from Thomas Nordin's `sortBy` in the Haskell base libraries.
-    ///
-    /// TODO Review to verify it satisfies stability. The referenced `sortBy` is stable and
-    /// the tests suggest that this implementation is also.
+    /// The sort implementation is a Quicksort.
     ///
     pub def sortWith(cmp: (a,a) -> Comparison, xs: List[a]): List[a] = Array.toList(Array.sortWith(cmp, toArray(xs))) as & Pure
 
