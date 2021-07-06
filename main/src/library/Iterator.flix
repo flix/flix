@@ -21,6 +21,22 @@ pub enum Iterator[a] {
 namespace Iterator {
 
     ///
+    /// Returns `Some(x)` if `x` is the first element of `iter`.
+    ///
+    /// Returns `None` if `iter` is empty.
+    ///
+    /// Consumes the first element of the iterator.
+    ///
+    pub def head(iter: Iterator[a]): Option[a] & Impure = ???
+
+    ///
+    /// Returns an iterator of all integers between `b` (inclusive) and `e` (exclusive).
+    ///
+    /// Returns `Done` if `b >= e`.
+    ///
+    pub def range(b: Int32, e: Int32): Iterator[Int32] & Impure = ???
+
+    ///
     /// Returns `true` if and only if the iterator `iter` has no more elements.
     ///
     /// Does *not* consume any elements of the iterator.
