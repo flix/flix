@@ -295,6 +295,13 @@ namespace Iterator {
     pub def findRight(f: a -> Bool, iter: Iterator[a]): Option[a] = ???
 
     ///
+    /// Returns an iterator with the element `a` repeated `n` times.
+    ///
+    /// Returns `Done` if `n < 0`.
+    ///
+    pub def repeat(a: a, n: Int32): Iterator[a] & Impure = ???
+
+    ///
     /// Returns `true` if and only if the iterator `iter` has no more elements.
     ///
     /// Does *not* consume any elements of the iterator.
