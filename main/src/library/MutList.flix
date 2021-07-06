@@ -101,7 +101,7 @@ namespace MutList {
     ///
     /// Returns `true` if the given mutable list `v` is empty.
     ///
-    pub def isEmpty(v: MutList[a]): Bool & Impure =
+    pub def isEmpty(v: MutList[a]): Bool & Impure = length(v) == 0
 
     ///
     /// Returns `true` if the given element `x` is a member of the given mutable list `v`.
