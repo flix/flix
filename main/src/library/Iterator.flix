@@ -44,6 +44,13 @@ namespace Iterator {
     pub def repeat(a: a, n: Int32): Iterator[a] & Impure = ???
 
     ///
+    /// Returns `true` if and only if `iter` contains the element `a`.
+    ///
+    // TODO: Does this consume elements until next() == a?
+    pub def memberOf(a: a, iter: Iterator[a]): Bool & Impure with Eq[a] = ???
+
+
+    ///
     /// Returns `true` if and only if the iterator `iter` has no more elements.
     ///
     /// Does *not* consume any elements of the iterator.
