@@ -56,17 +56,23 @@ instance Foldable[MutList] {
 
 namespace MutList {
 
+    def minSize(): Int32 = 8
+
     ///
     /// Returns a new empty mutable list with a default capacity.
     ///
-    pub def new(): MutList[a] & Impure = MutList(ref [], ref 0)
+    pub def new(): MutList[a] & Impure = MutList(ref [default; minSize()], ref minSize())
 
     ///
     /// Returns a mutable list of all integers between `b` (inclusive) and `e` (exclusive).
     ///
     /// Returns an empty mutable list if `b >= e`.
     ///
-    pub def range(b: Int32, e: Int32): MutList[Int32] & Impure = MutList(ref Array.range(b, e), ref (e - b))
+    pub def range(b: Int32, e: Int32): MutList[Int32] & Impure =
+        if (e - b < minSize())
+            new()
+        else
+            MutList(ref Array.range(b, e), ref (e - b))
 
     ///
     /// Returns the element at position `i` in the mutable list `v`.
