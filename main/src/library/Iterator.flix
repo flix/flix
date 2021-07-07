@@ -27,7 +27,13 @@ namespace Iterator {
     ///
     /// Consumes the first element of the iterator.
     ///
-    pub def head(iter: Iterator[a]): Option[a] & Impure = ???
+    pub def head(iter: Iterator[a]): Option[a] & Impure = {
+        let Iterator(done, next) = iter;
+        if (done())
+            None
+        else
+            Some(next())
+    }
 
     ///
     /// Returns an iterator of all integers between `b` (inclusive) and `e` (exclusive).
