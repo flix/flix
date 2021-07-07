@@ -61,7 +61,7 @@ namespace MutList {
     ///
     /// Returns a new empty mutable list with a default capacity.
     ///
-    pub def new(): MutList[a] & Impure = MutList(ref [default; minSize()], ref minSize())
+    pub def new(): MutList[a] & Impure = MutList(ref [default; minSize()], ref 0)
 
     ///
     /// Returns a mutable list of all integers between `b` (inclusive) and `e` (exclusive).
@@ -70,19 +70,19 @@ namespace MutList {
     ///
     pub def range(b: Int32, e: Int32): MutList[Int32] & Impure =
         if (e - b < minSize())
-            MutList(ref rangeHelperFill(b, e), ref minSize())
+            MutList(ref rangeHelperFill(b, e), ref (e - b))
 
         else
             MutList(ref Array.range(b, e), ref (e - b))
 
-    def rangeHelperFill(b: Int32, e: Int32): Array[Int32] & Impure = fill([default; 8], 0, b, e)
+    def rangeHelperFill(b: Int32, e: Int32): Array[Int32] & Impure = fill([default; minSize()], 0, b, e)
 
-    def fill(a: Array[Int32], idx: Int32, c: Int32, e: Int32): Array[Int32] & Impure = {
+    def fill(a: Array[Int32], idx: Int32, c: Int32, e: Int32): Array[Int32] & Impure =
         if (e - c == 0)
             a
         else
             fill(Array.put(a, idx, c), idx + 1, c + 1, e)
-    }
+
 
     ///
     /// Returns the element at position `i` in the mutable list `v`.
