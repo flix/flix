@@ -450,8 +450,8 @@ namespace Nel {
     pub def sort(xs: Nel[a]): Nel[a] with Order[a] =
         let list = (xs |> toArray |> Array.sort |> Array.toList) as & Pure;
         match list {
-            case Nil    => ???
             case h :: l => Nel(h, l)
+            case _      => unreachable!()
         }
 
     ///
@@ -465,8 +465,8 @@ namespace Nel {
     pub def sortBy(f: a -> b, xs: Nel[a]): Nel[a] with Order[b] =
         let list = (xs |> toArray |> Array.sortBy(f) |> Array.toList) as & Pure;
         match list {
-            case Nil    => ???
             case h :: l => Nel(h, l)
+            case _      => unreachable!()
         }
 
     ///
@@ -480,8 +480,8 @@ namespace Nel {
     pub def sortWith(cmp: (a,a) -> Comparison, xs: Nel[a]): Nel[a] =
         let list = (xs |> toArray |> Array.sortWith(cmp) |> Array.toList) as & Pure;
         match list {
-            case Nil    => ???
             case h :: l => Nel(h, l)
+            case _      => unreachable!()
         }
 }
 
