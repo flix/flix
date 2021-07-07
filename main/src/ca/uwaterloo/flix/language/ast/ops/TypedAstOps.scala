@@ -204,7 +204,8 @@ object TypedAstOps {
 
       case Expression.SelectChannel(rules, default, tpe, eff, loc) =>
         val rs = rules.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
-          case (macc, SelectChannelRule(sym, chan, exp)) => macc ++ visitExp(chan, env0) ++ visitExp(exp, env0)
+          case (macc, SelectChannelRule.SelectGet(sym, chan, exp)) => macc ++ visitExp(chan, env0) ++ visitExp(exp, env0)
+          case (macc, SelectChannelRule.SelectPut(chan, value, exp)) => macc ++ visitExp(chan, env0) ++ visitExp(value, env0) ++ visitExp(exp, env0)
         }
 
         val d = default.map(visitExp(_, env0)).getOrElse(Map.empty)
@@ -384,7 +385,10 @@ object TypedAstOps {
     case Expression.NewChannel(exp, _, _, _) => sigSymsOf(exp)
     case Expression.GetChannel(exp, _, _, _) => sigSymsOf(exp)
     case Expression.PutChannel(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
-    case Expression.SelectChannel(rules, default, _, _, _) => rules.flatMap(rule => sigSymsOf(rule.chan) ++ sigSymsOf(rule.exp)).toSet ++ default.toSet.flatMap(sigSymsOf)
+    case Expression.SelectChannel(rules, default, _, _, _) => rules.flatMap {
+        case SelectChannelRule.SelectGet(_, chan, exp) => sigSymsOf(chan) ++ sigSymsOf(exp)
+        case SelectChannelRule.SelectPut(chan, value, exp) => sigSymsOf(chan) ++ sigSymsOf(value) ++ sigSymsOf(exp)
+      }.toSet ++ default.toSet.flatMap(sigSymsOf)
     case Expression.Spawn(exp, _, _, _) => sigSymsOf(exp)
     case Expression.Lazy(exp, _, _) => sigSymsOf(exp)
     case Expression.Force(exp, _, _, _) => sigSymsOf(exp)

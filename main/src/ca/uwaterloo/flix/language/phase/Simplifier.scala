@@ -257,10 +257,15 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
       case TypedAst.Expression.SelectChannel(rules, default, tpe, eff, loc) =>
         val rs = rules map {
-          case TypedAst.SelectChannelRule(sym, chan, exp) =>
+          case TypedAst.SelectChannelRule.SelectGet(sym, chan, exp) =>
             val c = visitExp(chan)
             val e = visitExp(exp)
-            SimplifiedAst.SelectChannelRule(sym, c, e)
+            SimplifiedAst.SelectChannelRule.SelectGet(sym, c, e)
+          case TypedAst.SelectChannelRule.SelectPut(chan, value, exp) =>
+            val c = visitExp(chan)
+            val v = visitExp(value)
+            val e = visitExp(exp)
+            SimplifiedAst.SelectChannelRule.SelectPut(c, v, e)
         }
 
         val d = default.map(visitExp)
@@ -984,10 +989,15 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
       case SimplifiedAst.Expression.SelectChannel(rules, default, tpe, loc) =>
         val rs = rules map {
-          case SimplifiedAst.SelectChannelRule(sym, chan, exp) =>
+          case SimplifiedAst.SelectChannelRule.SelectGet(sym, chan, exp) =>
             val c = visitExp(chan)
             val e = visitExp(exp)
-            SimplifiedAst.SelectChannelRule(sym, c, e)
+            SimplifiedAst.SelectChannelRule.SelectGet(sym, c, e)
+          case SimplifiedAst.SelectChannelRule.SelectPut(chan, value, exp) =>
+            val c = visitExp(chan)
+            val v = visitExp(value)
+            val e = visitExp(exp)
+            SimplifiedAst.SelectChannelRule.SelectPut(c, v, e)
         }
 
         val d = default.map(visitExp)

@@ -234,18 +234,34 @@ object VarNumbering extends Phase[Root, Root] {
       case Expression.SelectChannel(rules, default, tpe, loc) =>
         var currentOffset = i0
         for (r <- rules) {
-          // Set the stack offset for the symbol.
-          r.sym.setStackOffset(currentOffset)
+          r match {
+            case SelectChannelRule.SelectGet(sym, chan, exp) =>
+              // Set the stack offset for the symbol.
+              sym.setStackOffset (currentOffset)
 
-          // Compute the next free stack offset.
-          val elementType = r.chan.tpe.typeArguments.head
-          currentOffset = currentOffset + getStackSize(elementType)
+              // Compute the next free stack offset.
+              val elementType = chan.tpe.typeArguments.head
+              currentOffset = currentOffset + getStackSize (elementType)
 
-          // Visit the channel expression of the rule.
-          currentOffset = visitExp(r.chan, currentOffset)
+              // Visit the channel expression of the rule.
+              currentOffset = visitExp (chan, currentOffset)
 
-          // Visit the expression of the rule.
-          currentOffset = visitExp(r.exp, currentOffset)
+              // Visit the expression of the rule.
+              currentOffset = visitExp (exp, currentOffset)
+            case SelectChannelRule.SelectPut(chan, value, exp) =>
+              // Compute the next free stack offset.
+              val elementType = chan.tpe.typeArguments.head
+              currentOffset = currentOffset + getStackSize (elementType)
+
+              // Visit the channel expression of the rule.
+              currentOffset = visitExp (chan, currentOffset)
+
+              // Visit the value expression of the rule.
+              currentOffset = visitExp (value, currentOffset)
+
+              // Visit the expression of the rule.
+              currentOffset = visitExp (exp, currentOffset)
+          }
         }
         default.map(visitExp(_, currentOffset)).getOrElse(currentOffset)
 

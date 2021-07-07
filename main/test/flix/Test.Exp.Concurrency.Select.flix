@@ -382,4 +382,13 @@ namespace Test/Exp/Concurrency/Select {
         ()
     }
 
+    @test
+    def testSelectPut01(): Unit & Impure = {
+        let c1 = chan Int 1;
+        spawn <- c1;
+        select {
+            case c1 <- 1 => ()
+        }
+    }
+
 }

@@ -294,10 +294,15 @@ object Optimizer extends Phase[Root, Root] {
 
       case Expression.SelectChannel(rules, default, tpe, loc) =>
         val rs = rules map {
-          case SelectChannelRule(sym, chan, exp) =>
+          case SelectChannelRule.SelectGet(sym, chan, exp) =>
             val c = visitExp(chan, env0)
             val e = visitExp(exp, env0)
-            SelectChannelRule(sym, c, e)
+            SelectChannelRule.SelectGet(sym, c, e)
+          case SelectChannelRule.SelectPut(chan, value, exp) =>
+            val c = visitExp(chan, env0)
+            val v = visitExp(value, env0)
+            val e = visitExp(exp, env0)
+            SelectChannelRule.SelectPut(c, v, e)
         }
 
         val d = default.map(visitExp(_, env0))

@@ -841,12 +841,18 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.SelectChannel(rules, default, loc) =>
       val rulesVal = traverse(rules) {
-        case WeededAst.SelectChannelRule(ident, chan, body) =>
+        case WeededAst.SelectChannelRule.SelectGet(ident, chan, body) =>
           // make a fresh variable symbol for the local recursive variable.
           val sym = Symbol.freshVarSym(ident)
           val env1 = env0 + (ident.name -> sym)
           mapN(visitExp(chan, env0, uenv0, tenv0), visitExp(body, env1, uenv0, tenv0)) {
-            case (c, b) => NamedAst.SelectChannelRule(sym, c, b)
+            case (c, b) => NamedAst.SelectChannelRule.SelectGet(sym, c, b)
+          }
+
+        case WeededAst.SelectChannelRule.SelectPut(chan, value, body) =>
+          // make a fresh variable symbol for the local recursive variable.
+          mapN(visitExp(chan, env0, uenv0, tenv0), visitExp(value, env0, uenv0, tenv0), visitExp(body, env0, uenv0, tenv0)) {
+            case (c, v, b) => NamedAst.SelectChannelRule.SelectPut(c, v, b)
           }
       }
 
@@ -1292,8 +1298,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.PutChannel(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.SelectChannel(rules, default, loc) =>
       val rulesFreeVars = rules.flatMap {
-        case WeededAst.SelectChannelRule(ident, chan, exp) =>
+        case WeededAst.SelectChannelRule.SelectGet(ident, chan, exp) =>
           freeVars(chan) ++ filterBoundVars(freeVars(exp), List(ident))
+        case WeededAst.SelectChannelRule.SelectPut(chan, value, exp) =>
+          freeVars(chan) ++ freeVars(value) ++ freeVars(exp)
       }
       val defaultFreeVars = default.map(freeVars).getOrElse(Nil)
       rulesFreeVars ++ defaultFreeVars

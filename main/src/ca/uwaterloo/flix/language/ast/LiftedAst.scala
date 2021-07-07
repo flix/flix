@@ -199,7 +199,15 @@ object LiftedAst {
 
   }
 
-  case class SelectChannelRule(sym: Symbol.VarSym, chan: LiftedAst.Expression, exp: LiftedAst.Expression)
+  sealed trait SelectChannelRule
+
+  object SelectChannelRule {
+
+    case class SelectGet(sym: Symbol.VarSym, chan: LiftedAst.Expression, exp: LiftedAst.Expression) extends SelectChannelRule
+
+    case class SelectPut(chan: LiftedAst.Expression, value: LiftedAst.Expression, exp: LiftedAst.Expression) extends SelectChannelRule
+
+  }
 
   case class Case(sym: Symbol.EnumSym, tag: Name.Tag, tpeDeprecated: Type, loc: SourceLocation)
 

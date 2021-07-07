@@ -336,8 +336,11 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.SelectChannel(rules, default, tpe, eff, loc) =>
       val rulesVal = traverse(rules) {
-        case SelectChannelRule(sym, chan, exp) => mapN(visitExp(chan), visitExp(exp)) {
-          case (c, e) => SelectChannelRule(sym, c, e)
+        case SelectChannelRule.SelectGet(sym, chan, exp) => mapN(visitExp(chan), visitExp(exp)) {
+          case (c, e) => SelectChannelRule.SelectGet(sym, c, e)
+        }
+        case SelectChannelRule.SelectPut(chan, value, exp) => mapN(visitExp(chan), visitExp(value), visitExp(exp)) {
+          case (c, v, e) => SelectChannelRule.SelectPut(c, v, e)
         }
       }
 
@@ -613,7 +616,8 @@ object Stratifier extends Phase[Root, Root] {
       }
 
       rules.foldLeft(dg) {
-        case (acc, SelectChannelRule(_, exp1, exp2)) => acc + dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2)
+        case (acc, SelectChannelRule.SelectGet(_, exp1, exp2)) => acc + dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2)
+        case (acc, SelectChannelRule.SelectPut(exp1, exp2, exp3)) => acc + dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2) + dependencyGraphOfExp(exp3)
       }
 
     case Expression.Spawn(exp, _, _, _) =>

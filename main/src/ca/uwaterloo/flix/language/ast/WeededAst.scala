@@ -378,7 +378,15 @@ object WeededAst {
 
   case class MatchRule(pat: WeededAst.Pattern, guard: WeededAst.Expression, exp: WeededAst.Expression)
 
-  case class SelectChannelRule(ident: Name.Ident, channel: WeededAst.Expression, exp: WeededAst.Expression)
+  sealed trait SelectChannelRule
+
+  object SelectChannelRule {
+
+    case class SelectGet(ident: Name.Ident, chan: WeededAst.Expression, exp: WeededAst.Expression) extends SelectChannelRule
+
+    case class SelectPut(chan: WeededAst.Expression, value: WeededAst.Expression, exp: WeededAst.Expression) extends SelectChannelRule
+
+  }
 
   sealed trait TypeParam
 
