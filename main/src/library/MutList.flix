@@ -190,8 +190,8 @@ namespace MutList {
     /// Returns `None` if the given mutable list `v` is empty.
     ///
     pub def head(v: MutList[a]): Option[a] & Impure =
-        let MutList(a, l) = v;
-        if ((deref l) == 0)
+        let MutList(a, _) = v;
+        if (isEmpty(v))
             None
         else
             Array.head(deref a)
