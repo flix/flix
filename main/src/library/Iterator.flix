@@ -295,44 +295,6 @@ namespace Iterator {
     pub def findRight(f: a -> Bool, iter: Iterator[a]): Option[a] = ???
 
     ///
-    /// Returns an iterator over an iterable with the element `a` repeated `n` times.
-    ///
-    /// Returns `Done` if `n < 0`.
-    ///
-    pub def repeat(a: a, n: Int32): Iterator[a] & Impure = ???
-
-    ///
-    /// Returns `true` if and only if `iter` contains the element `a`.
-    ///
-    // TODO: Does this consume elements until next() == a?
-    ///
-    pub def memberOf(a: a, iter: Iterator[a]): Bool & Impure with Eq[a] = ???
-
-    ///
-    /// Returns the iterator `iter` as an array.
-    ///
-    /// Consumes the entire iterator.
-    ///
-    pub def toArray(iter: Iterator[a]): Array[a] & Impure = ???
-
-    ///
-    /// Returns the association iterator `iter` as a map.
-    ///
-    /// If `iter` contains multiple mappings with the same key, `toMap` does not
-    /// make any guarantees about which mapping will be in the resulting map.
-    ///
-    /// Consumes the entire iterator.
-    ///
-    pub def toMap(iter: Iterator[(a, b)]): Map[a, b] & Impure with Order[a] = ???
-
-    ///
-    /// Returns the iterator `iter` as a set.
-    ///
-    /// Consumes the entire iterator.
-    ///
-    pub def toSet(iter: Iterator[a]): Set[a] & Impure with Order[a] = ???
-
-    ///
     /// Returns `true` if and only if the iterator `iter` has no more elements.
     ///
     /// Does *not* consume any elements of the iterator.
