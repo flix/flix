@@ -32,21 +32,21 @@ namespace Iterator {
     ///
     /// Returns an iterator of all integers between `b` (inclusive) and `e` (exclusive).
     ///
-    /// Returns `Done` if `b >= e`.
+    /// Returns an empty iterator if `b >= e`.
     ///
     pub def range(b: Int32, e: Int32): Iterator[Int32] & Impure = ???
 
     ///
     /// Returns an iterator over an iterable with the element `a` repeated `n` times.
     ///
-    /// Returns `Done` if `n < 0`.
+    /// Returns an empty iterator if `n < 0`.
     ///
     pub def repeat(a: a, n: Int32): Iterator[a] & Impure = ???
 
     ///
     /// Returns `true` if and only if `iter` contains the element `a`.
     ///
-    // TODO: Does this consume elements until next() == a?
+    /// Consumes elements of the iterator until an element equal to `a` is found.
     ///
     pub def memberOf(a: a, iter: Iterator[a]): Bool & Impure with Eq[a] = ???
 
