@@ -29,6 +29,9 @@ final class GenSym() {
     * Returns a freshly generated unique id.
     */
   def freshId(): Int = {
+//    if (List(1845, 1841, 1810).contains(counter.get())) {
+//      println("debug") // MATT
+//    }
     counter.getAndIncrement()
   }
 

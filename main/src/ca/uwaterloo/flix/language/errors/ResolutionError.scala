@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, UnkindedType}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatKind, FormatType}
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
@@ -117,12 +117,14 @@ object ResolutionError {
     * @param tpe the illegal type.
     * @param loc the location where the error occurred.
     */
-  case class IllegalType(tpe: Type, loc: SourceLocation) extends ResolutionError {
+  case class IllegalType(tpe: UnkindedType, loc: SourceLocation) extends ResolutionError {
+    private def formatUnkindedType(tpe: UnkindedType): String = ??? // MATT implement in its own file
+
     def summary: String = "Illegal type."
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Illegal type: '" << Red(FormatType.formatType(tpe)) << "'." << NewLine
+      vt << ">> Illegal type: '" << Red(formatUnkindedType(tpe)) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "illegal type.") << NewLine
     }
