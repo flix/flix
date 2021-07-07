@@ -23,8 +23,8 @@ class TestKinder extends FunSuite with TestUtils {
   }
 
   test("MismatchedTypeParamKind.Implicit.03") {
-    val input = "def f(s: #{| a}, r: {| a}): Int = 123"
-    val result = compile(input, DefaultOptions)
+    val input = "def f(s: #{| a}, r: {| a}): Int = 123" // MATT #{| } is just a syntactic hint; doesn't make it to the kinder
+    val result = compile(input, Options.TestWithLibNix)
     expectError[KindError.MismatchedKinds](result)
   }
 
@@ -41,8 +41,15 @@ class TestKinder extends FunSuite with TestUtils {
   }
 
   test("MismatchedTypeParamKind.Implicit.06") {
-    val input = "def f(g: Option[a -> b & e]): Int & not (a or b) = 123"
-    val result = compile(input, DefaultOptions)
+    val input =
+      """
+        |enum E[a] {
+        |  case E1(a)
+        |}
+        |
+        |def f(g: E[a -> b & e]): Int & not (a or b) = 123
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
     expectError[KindError.MismatchedKinds](result)
   }
 
@@ -69,7 +76,7 @@ class TestKinder extends FunSuite with TestUtils {
     expectError[KindError.MismatchedKinds](result)
   }
 
-  test("MismatchedTypeParamKind.Enum.03") {
+  test("MismatchedTypeParamKind.Enum.03") { // MATT error caused by #{| } erasure
     val input =
       """
         |enum E[a] {
@@ -80,7 +87,7 @@ class TestKinder extends FunSuite with TestUtils {
     expectError[KindError.MismatchedKinds](result)
   }
 
-  test("MismatchedTypeParamKind.Enum.04") {
+  test("MismatchedTypeParamKind.Enum.04") { // MATT error caused by subkinding
     val input =
       """
         |enum E[a] {
@@ -105,8 +112,11 @@ class TestKinder extends FunSuite with TestUtils {
   test("MismatchedTypeParamKind.Enum.06") {
     val input =
       """
+        |enum D[a] {
+        |  case D1(a)
+        |}
         |enum E[a, b, e] {
-        |    case A(Option[a -> b & e] -> Int & not (a or b))
+        |    case A(D[a -> b & e] -> Int & not (a or b))
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
