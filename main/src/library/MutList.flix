@@ -687,9 +687,21 @@ namespace MutList {
     ///
     /// Returns `v` as an immutable list.
     ///
-    // TODO: Use directly tail recursive function
     pub def toImm(v: MutList[a]): List[a] & Impure =
-        foldRight((x, acc) -> x :: acc, Nil, v)
+        toImmHelper(v, Nil)
+
+    ///
+    /// Helper function for `toImm`
+    ///
+    def toImmHelper(v: MutList[a], acc: List[a]): List[a] & Impure =
+        if (MutList.isEmpty(v))
+            acc
+        else
+            let x = match pop!(v) {
+                case Some(a) => a
+                case _       => unreachable!()
+            };
+            toImmHelper(v, x :: acc)
 
     ///
     /// Returns `v` as an array.
