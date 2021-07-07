@@ -694,7 +694,7 @@ namespace MutList {
     /// Helper function for `toImm`
     ///
     def toImmHelper(v: MutList[a], acc: List[a]): List[a] & Impure =
-        if (MutList.isEmpty(v))
+        if (isEmpty(v))
             acc
         else
             let x = match pop!(v) {
