@@ -1103,7 +1103,8 @@ namespace List {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sort(xs: List[a]): List[a] with Order[a] = Array.toList(Array.sort(toArray(xs))) as & Pure
+    pub def sort(xs: List[a]): List[a] with Order[a] =
+        (xs |> toArray |> Array.sort |> Array.toList) as & Pure
 
     /// Sort list `xs` so that elements are ordered from low to high according to the `Order` instance
     /// for the values obtained by applying `f` to each element.
@@ -1112,7 +1113,8 @@ namespace List {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortBy(f: a -> b, xs: List[a]): List[a] with Order[b] = Array.toList(Array.sortBy(f, toArray(xs))) as & Pure
+    pub def sortBy(f: a -> b, xs: List[a]): List[a] with Order[b] =
+        (xs |> toArray |> Array.sortBy(f) |> Array.toList) as & Pure
 
     ///
     /// Sort list `xs` so that elements are ordered from low to high according to the comparison function `cmp`.
@@ -1121,7 +1123,8 @@ namespace List {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith(cmp: (a,a) -> Comparison, xs: List[a]): List[a] = Array.toList(Array.sortWith(cmp, toArray(xs))) as & Pure
+    pub def sortWith(cmp: (a,a) -> Comparison, xs: List[a]): List[a] =
+        (xs |> toArray |> Array.sortWith(cmp) |> Array.toList) as & Pure
 
     ///
     /// Build a list by applying `f` to the seed value `st`.

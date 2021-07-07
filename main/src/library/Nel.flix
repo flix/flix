@@ -447,10 +447,12 @@ namespace Nel {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sort(xs: Nel[a]): Nel[a] with Order[a] = match Array.toList(Array.sort(toArray(xs))) {
-        case Nil    => ???
-        case h :: l => Nel(h, l)
-    } as & Pure
+    pub def sort(xs: Nel[a]): Nel[a] with Order[a] =
+        let list = (xs |> toArray |> Array.sort |> Array.toList) as & Pure;
+        match list {
+            case Nil    => ???
+            case h :: l => Nel(h, l)
+        }
 
     ///
     /// Sort the non-empty list `xs` so that elements are ordered from low to high according
@@ -460,10 +462,12 @@ namespace Nel {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortBy(f: a -> b, xs: Nel[a]): Nel[a] with Order[b] = match Array.toList(Array.sortBy(f, toArray(xs))) {
-        case Nil    => ???
-        case h :: l => Nel(h, l)
-    } as & Pure
+    pub def sortBy(f: a -> b, xs: Nel[a]): Nel[a] with Order[b] =
+        let list = (xs |> toArray |> Array.sortBy(f) |> Array.toList) as & Pure;
+        match list {
+            case Nil    => ???
+            case h :: l => Nel(h, l)
+        }
 
     ///
     /// Sort the non-empty list `xs` so that elements are ordered from low to high according
@@ -473,9 +477,11 @@ namespace Nel {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith(cmp: (a,a) -> Comparison, xs: Nel[a]): Nel[a] = match Array.toList(Array.sortWith(cmp, toArray(xs))) {
-        case Nil    => ???
-        case h :: l => Nel(h, l)
-    } as & Pure
+    pub def sortWith(cmp: (a,a) -> Comparison, xs: Nel[a]): Nel[a] =
+        let list = (xs |> toArray |> Array.sortWith(cmp) |> Array.toList) as & Pure;
+        match list {
+            case Nil    => ???
+            case h :: l => Nel(h, l)
+        }
 }
 
