@@ -3,22 +3,15 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
     // head                                                                    //
     /////////////////////////////////////////////////////////////////////////////
+
     @test
     def testHead01(): Bool & Impure =
-        (Nil |> Iterator.toIter |> Iterator.head) == None
+        (Nil: List[Int32] |> Iterator.toIter |> Iterator.head) == None
 
     @test
     def testHead02(): Bool & Impure =
-        ((1 :: 2 :: Nil) |> Iterator.toIter |> Iterator.head) == Some(1)
-/*
-    @test
-    def testHead03(): Bool & Impure =
-        (1 :: 2 :: Nil) |> Iterator.toIter |> Iterator.head |> Iterator.head() == Some(2)
+        ((1 :: 2 :: Nil): List[Int32] |> Iterator.toIter |> Iterator.head) == Some(1)
 
-    @test
-    def testHead04(): Bool & Impure =
-        (1 :: 2 :: Nil) |> Iterator.toIter |> Iterator.head |> Iterator.head |> Iterator.head() == None
-*/
 
     /////////////////////////////////////////////////////////////////////////////
     // isEmpty                                                                 //
