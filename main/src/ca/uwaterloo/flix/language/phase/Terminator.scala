@@ -22,7 +22,9 @@ import ca.uwaterloo.flix.language.errors.TerminationError
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 
-// MATT docs
+/**
+  * Performs checks related to termination.
+  */
 object Terminator extends Phase[Root, Root] {
 
   // MATT wrap with timer thingy
@@ -37,6 +39,9 @@ object Terminator extends Phase[Root, Root] {
     }
   }
 
+  /**
+    * Returns an error if the `defn` recurses unconditionally.
+    */
   def checkDef(defn: Def): Validation[Unit, TerminationError] = {
     if (unconditionallyRecurses(defn.impl.exp, isRecursiveDefApp(defn, _))) {
       TerminationError.UnconditionalDefRecursion(defn.sym, defn.spec.loc).toFailure
@@ -45,6 +50,9 @@ object Terminator extends Phase[Root, Root] {
     }
   }
 
+  /**
+    * Returns an error if the `sig` recurses unconditionally.
+    */
   def checkSig(sig: Sig): Validation[Unit, TerminationError] = {
     sig.impl match {
       case Some(impl) =>
@@ -57,18 +65,27 @@ object Terminator extends Phase[Root, Root] {
     }
   }
 
+  /**
+    * Returns true if `app` is a recursive application of `defn`.
+    */
   def isRecursiveDefApp(defn: Def, app: Expression.Apply): Boolean = app match {
     case Expression.Apply(Expression.Def(sym, _, _), exps, _, _, _) =>
       defn.sym == sym && exps.length >= defn.spec.fparams.length
     case _ => false
   }
 
+  /**
+    * Returns true if `app` is a recursive application of `sig`.
+    */
   def isRecursiveSigApp(sig: Sig, app: Expression.Apply): Boolean = app match {
     case Expression.Apply(Expression.Sig(sym, _, _), exps, _, _, _) =>
       sig.sym == sym && exps.length >= sig.spec.fparams.length
     case _ => false
   }
 
+  /**
+    * Returns true if `exp00` unconditionally recurses, according to `recursiveAppCheck`.
+    */
   def unconditionallyRecurses(exp00: Expression, recursiveAppCheck: Expression.Apply => Boolean): Boolean = {
     def visit(exp0: Expression): Boolean = exp0 match {
       case Expression.Unit(loc) => false
@@ -121,31 +138,31 @@ object Terminator extends Phase[Root, Root] {
       case Expression.Deref(exp, tpe, eff, loc) => visit(exp)
       case Expression.Assign(exp1, exp2, tpe, eff, loc) => visit(exp1) || visit(exp2)
       case Expression.Existential(fparam, exp, loc) => visit(exp)
-        case Expression.Universal(fparam, exp, loc) => visit(exp)
-        case Expression.Ascribe(exp, tpe, eff, loc) => visit(exp)
-        case Expression.Cast(exp, tpe, eff, loc) => visit(exp)
-        case Expression.TryCatch(exp, rules, tpe, eff, loc) => visit(exp) || rules.forall { rule => visit(rule.exp) }
-        case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) => args.exists(visit)
-        case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) => visit(exp) || args.exists(visit)
-        case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) => args.exists(visit)
-        case Expression.GetField(field, exp, tpe, eff, loc) => visit(exp)
-        case Expression.PutField(field, exp1, exp2, tpe, eff, loc) => visit(exp1) || visit(exp2)
-        case Expression.GetStaticField(field, tpe, eff, loc) => false
-        case Expression.PutStaticField(field, exp, tpe, eff, loc) => visit(exp)
-        case Expression.NewChannel(exp, tpe, eff, loc) => visit(exp)
-        case Expression.GetChannel(exp, tpe, eff, loc) => visit(exp)
-        case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => visit(exp1) || visit(exp2)
-        case Expression.SelectChannel(rules, default, tpe, eff, loc) => rules.forall { rule => visit(rule.exp) || visit(rule.chan) } && default.forall(visit)
-        case Expression.Spawn(exp, tpe, eff, loc) => visit(exp)
-        case Expression.Lazy(exp, tpe, loc) => false
-        case Expression.Force(exp, tpe, eff, loc) => visit(exp)
-        case Expression.FixpointConstraintSet(cs, stf, tpe, loc) => false
-        case Expression.FixpointMerge(exp1, exp2, stf, tpe, eff, loc) => visit(exp1) || visit(exp2)
-        case Expression.FixpointSolve(exp, stf, tpe, eff, loc) => visit(exp)
-        case Expression.FixpointFilter(pred, exp, tpe, eff, loc) => visit(exp)
-        case Expression.FixpointProjectIn(exp, pred, tpe, eff, loc) => visit(exp)
-        case Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) => visit(exp)
-        case Expression.MatchEff(exp1, exp2, exp3, tpe, eff, loc) => visit(exp1) || (visit(exp2) || visit(exp3))
+      case Expression.Universal(fparam, exp, loc) => visit(exp)
+      case Expression.Ascribe(exp, tpe, eff, loc) => visit(exp)
+      case Expression.Cast(exp, tpe, eff, loc) => visit(exp)
+      case Expression.TryCatch(exp, rules, tpe, eff, loc) => visit(exp) || rules.forall { rule => visit(rule.exp) }
+      case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) => args.exists(visit)
+      case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) => visit(exp) || args.exists(visit)
+      case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) => args.exists(visit)
+      case Expression.GetField(field, exp, tpe, eff, loc) => visit(exp)
+      case Expression.PutField(field, exp1, exp2, tpe, eff, loc) => visit(exp1) || visit(exp2)
+      case Expression.GetStaticField(field, tpe, eff, loc) => false
+      case Expression.PutStaticField(field, exp, tpe, eff, loc) => visit(exp)
+      case Expression.NewChannel(exp, tpe, eff, loc) => visit(exp)
+      case Expression.GetChannel(exp, tpe, eff, loc) => visit(exp)
+      case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => visit(exp1) || visit(exp2)
+      case Expression.SelectChannel(rules, default, tpe, eff, loc) => rules.forall { rule => visit(rule.exp) || visit(rule.chan) } && default.forall(visit)
+      case Expression.Spawn(exp, tpe, eff, loc) => visit(exp)
+      case Expression.Lazy(exp, tpe, loc) => false
+      case Expression.Force(exp, tpe, eff, loc) => visit(exp)
+      case Expression.FixpointConstraintSet(cs, stf, tpe, loc) => false
+      case Expression.FixpointMerge(exp1, exp2, stf, tpe, eff, loc) => visit(exp1) || visit(exp2)
+      case Expression.FixpointSolve(exp, stf, tpe, eff, loc) => visit(exp)
+      case Expression.FixpointFilter(pred, exp, tpe, eff, loc) => visit(exp)
+      case Expression.FixpointProjectIn(exp, pred, tpe, eff, loc) => visit(exp)
+      case Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) => visit(exp)
+      case Expression.MatchEff(exp1, exp2, exp3, tpe, eff, loc) => visit(exp1) || (visit(exp2) || visit(exp3))
     }
 
     visit(exp00)
