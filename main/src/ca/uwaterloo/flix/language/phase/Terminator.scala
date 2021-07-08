@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.TypedAst._
+import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.errors.TerminationError
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
@@ -27,25 +28,50 @@ import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 object Terminator extends Phase[Root, Root] {
 
   // MATT wrap with timer thingy
-  override def run(input: Root)(implicit flix: Flix): Validation[Root, TerminationError] = {
-    val defVal = Validation.traverseX(input.defs.values)(checkDef)
+  override def run(root: Root)(implicit flix: Flix): Validation[Root, TerminationError] = {
+    val defVal = Validation.traverseX(root.defs.values)(checkDef)
 
+    // val sigVal = Validation.traverseX(root.sigs.values)(checkSig)
+    // Sig check is currently too strict
 
     Validation.sequenceX(defVal :: Nil) map {
-      _ => input
+      _ => root
     }
   }
 
   def checkDef(defn: Def): Validation[Unit, TerminationError] = {
-    if (unconditionallyRecurses(defn.impl.exp, defn.sym, defn.spec.fparams.length)) {
+    if (unconditionallyRecurses(defn.impl.exp, isRecursiveDefApp(defn, _))) {
       TerminationError.UnconditionalDefRecursion(defn.sym, defn.spec.loc).toFailure
     } else {
       ().toSuccess
     }
   }
 
-  // MATT also check sigs
-  def unconditionallyRecurses(exp0: Expression, sym: Symbol.DefnSym, arity: Int): Boolean = {
+  def checkSig(sig: Sig): Validation[Unit, TerminationError] = {
+    sig.impl match {
+      case Some(impl) =>
+        if (unconditionallyRecurses(impl.exp, isRecursiveSigApp(sig, _))) {
+          TerminationError.UnconditionalSigRecursion(sig.sym, sig.spec.loc).toFailure
+        } else {
+          ().toSuccess
+        }
+      case None => ().toSuccess
+    }
+  }
+
+  def isRecursiveDefApp(defn: Def, app: Expression.Apply): Boolean = app match {
+    case Expression.Apply(Expression.Def(sym, _, _), exps, _, _, _) =>
+      defn.sym == sym && exps.length >= defn.spec.fparams.length
+    case _ => false
+  }
+
+  def isRecursiveSigApp(sig: Sig, app: Expression.Apply): Boolean = app match {
+    case Expression.Apply(Expression.Sig(sym, _, _), exps, _, _, _) =>
+      sig.sym == sym && exps.length >= sig.spec.fparams.length
+    case _ => false
+  }
+
+  def unconditionallyRecurses(exp0: Expression, recursiveAppCheck: Expression.Apply => Boolean): Boolean = {
     def visit(exp: Expression): Boolean = {
       exp match {
         case Expression.Unit(loc) => false
@@ -68,8 +94,12 @@ object Terminator extends Phase[Root, Root] {
         case Expression.Sig(sym, tpe, loc) => false
         case Expression.Hole(sym, tpe, eff, loc) => false
         case Expression.Lambda(fparam, exp, tpe, loc) => false
-        case Expression.Apply(Expression.Def(sym1, _, _), exps, tpe, eff, loc) if sym1 == sym && exps.lengthIs >= arity => true
+
+          // If the Apply is a recursive call, then return true
+        case app: Expression.Apply if recursiveAppCheck(app) => true
+          // Otherwise continue as normal
         case Expression.Apply(exp, exps, tpe, eff, loc) => visit(exp) || exps.exists(visit)
+
         case Expression.Unary(sop, exp, tpe, eff, loc) => visit(exp)
         case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) => visit(exp1) || visit(exp2)
         case Expression.Let(sym, exp1, exp2, tpe, eff, loc) => visit(exp1) || visit(exp2)

@@ -101,7 +101,8 @@ class TestTerminator extends FunSuite with TestUtils {
     rejectError[TerminationError.UnconditionalDefRecursion](result)
   }
 
-  test("UnconditionalRecursion.Class.01") {
+  // TODO remove or unignore once we decide how to handle signatures
+  ignore("UnconditionalRecursion.Class.01") {
     val input =
       """
         |pub lawless class C[a] {
@@ -109,7 +110,6 @@ class TestTerminator extends FunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-//    expectError[TerminationError.UnconditionalSigRecursion](result)
-    // MATT handle sigs
+    expectError[TerminationError.UnconditionalSigRecursion](result)
   }
 }
