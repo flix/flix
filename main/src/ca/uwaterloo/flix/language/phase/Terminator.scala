@@ -80,8 +80,8 @@ object Terminator extends Phase[Root, Root] {
         case Expression.Assign(exp1, exp2, tpe, eff, loc) => visit(exp1) || visit(exp2)
         case Expression.Existential(fparam, exp, loc) => ??? // MATT
         case Expression.Universal(fparam, exp, loc) => ??? // MATT
-        case Expression.Ascribe(exp, tpe, eff, loc) => ??? // MATT
-        case Expression.Cast(exp, tpe, eff, loc) => ??? // MATT
+        case Expression.Ascribe(exp, tpe, eff, loc) => visit(exp)
+        case Expression.Cast(exp, tpe, eff, loc) => visit(exp)
         case Expression.TryCatch(exp, rules, tpe, eff, loc) => ??? // MATT
         case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) => args.exists(visit)
         case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) => visit(exp) || args.exists(visit)
