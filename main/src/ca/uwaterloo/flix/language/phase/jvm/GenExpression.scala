@@ -1337,6 +1337,8 @@ object GenExpression {
    * Division also takes a separate codepath in order to implement the defined integer division by zero: n / 0 == 0.
    * Float types divide normally, but for integer division, divisors are checked for equality with zero. If the divisor
    * is equal to zero, operands are popped off and zero is pushed onto the stack. Otherwise division occurs normally.
+   *
+   * The modulo operater works in the same way as division.
    */
   private def compileArithmeticExpr(e1: Expression,
                                     e2: Expression,
