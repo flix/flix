@@ -712,14 +712,4 @@ def sortBy08(): Bool = testSortByVsSort(Nel(5, 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
 @test
 def sortBy09(): Bool = testSortByVsSort(Nel(2, 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
 
-enum R {
-    case R({i: Int32, s: String})
-}
-
-instance Eq[R] {
-    pub def eq(a: R, b: R): Bool =
-        let R(x) = a;
-        let R(y) = b;
-        x.i == y.i and x.s == y.s
-}
 }
