@@ -69,59 +69,58 @@ object Terminator extends Phase[Root, Root] {
     case _ => false
   }
 
-  def unconditionallyRecurses(exp0: Expression, recursiveAppCheck: Expression.Apply => Boolean): Boolean = {
-    def visit(exp: Expression): Boolean = {
-      exp match {
-        case Expression.Unit(loc) => false
-        case Expression.Null(tpe, loc) => false
-        case Expression.True(loc) => false
-        case Expression.False(loc) => false
-        case Expression.Char(lit, loc) => false
-        case Expression.Float32(lit, loc) => false
-        case Expression.Float64(lit, loc) => false
-        case Expression.Int8(lit, loc) => false
-        case Expression.Int16(lit, loc) => false
-        case Expression.Int32(lit, loc) => false
-        case Expression.Int64(lit, loc) => false
-        case Expression.BigInt(lit, loc) => false
-        case Expression.Str(lit, loc) => false
-        case Expression.Default(tpe, loc) => false
-        case Expression.Wild(tpe, loc) => false
-        case Expression.Var(sym, tpe, loc) => false
-        case Expression.Def(sym, tpe, loc) => false
-        case Expression.Sig(sym, tpe, loc) => false
-        case Expression.Hole(sym, tpe, eff, loc) => false
-        case Expression.Lambda(fparam, exp, tpe, loc) => false
+  def unconditionallyRecurses(exp00: Expression, recursiveAppCheck: Expression.Apply => Boolean): Boolean = {
+    def visit(exp0: Expression): Boolean = exp0 match {
+      case Expression.Unit(loc) => false
+      case Expression.Null(tpe, loc) => false
+      case Expression.True(loc) => false
+      case Expression.False(loc) => false
+      case Expression.Char(lit, loc) => false
+      case Expression.Float32(lit, loc) => false
+      case Expression.Float64(lit, loc) => false
+      case Expression.Int8(lit, loc) => false
+      case Expression.Int16(lit, loc) => false
+      case Expression.Int32(lit, loc) => false
+      case Expression.Int64(lit, loc) => false
+      case Expression.BigInt(lit, loc) => false
+      case Expression.Str(lit, loc) => false
+      case Expression.Default(tpe, loc) => false
+      case Expression.Wild(tpe, loc) => false
+      case Expression.Var(sym, tpe, loc) => false
+      case Expression.Def(sym, tpe, loc) => false
+      case Expression.Sig(sym, tpe, loc) => false
+      case Expression.Hole(sym, tpe, eff, loc) => false
+      case Expression.Lambda(fparam, exp, tpe, loc) => false
 
-          // If the Apply is a recursive call, then return true
-        case app: Expression.Apply if recursiveAppCheck(app) => true
-          // Otherwise continue as normal
-        case Expression.Apply(exp, exps, tpe, eff, loc) => visit(exp) || exps.exists(visit)
+      // If the Apply is a recursive call, then return true
+      case app: Expression.Apply if recursiveAppCheck(app) => true
+      // Otherwise continue as normal
+      case Expression.Apply(exp, exps, tpe, eff, loc) => visit(exp) || exps.exists(visit)
 
-        case Expression.Unary(sop, exp, tpe, eff, loc) => visit(exp)
-        case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) => visit(exp1) || visit(exp2)
-        case Expression.Let(sym, exp1, exp2, tpe, eff, loc) => visit(exp1) || visit(exp2)
-        case Expression.LetRegion(sym, exp, tpe, eff, loc) => visit(exp)
-        case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => visit(exp1) || (visit(exp2) && visit(exp3))
-        case Expression.Stm(exp1, exp2, tpe, eff, loc) => visit(exp1) || visit(exp2)
-        case Expression.Match(exp, rules, tpe, eff, loc) => visit(exp) || rules.forall { case MatchRule(_, guard, exp1) => visit(guard) || visit(exp1) } // MATT docs
-        case Expression.Choose(exps, rules, tpe, eff, loc) => exps.exists(visit) || rules.forall { rule => visit(rule.exp) }
-        case Expression.Tag(sym, tag, exp, tpe, eff, loc) => visit(exp)
-        case Expression.Tuple(elms, tpe, eff, loc) => elms.exists(visit)
-        case Expression.RecordEmpty(tpe, loc) => false
-        case Expression.RecordSelect(exp, field, tpe, eff, loc) => visit(exp)
-        case Expression.RecordExtend(field, value, rest, tpe, eff, loc) => visit(exp) || visit(rest)
-        case Expression.RecordRestrict(field, rest, tpe, eff, loc) => visit(rest)
-        case Expression.ArrayLit(elms, tpe, eff, loc) => elms.exists(visit)
-        case Expression.ArrayNew(elm, len, tpe, eff, loc) => visit(elm) || visit(len)
-        case Expression.ArrayLoad(base, index, tpe, eff, loc) => visit(base) || visit(index)
-        case Expression.ArrayLength(base, eff, loc) => visit(base)
-        case Expression.ArrayStore(base, index, elm, loc) => visit(base) || visit(index) || visit(elm)
-        case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) => visit(base) || visit(beginIndex) || visit(endIndex)
-        case Expression.Ref(exp, tpe, eff, loc) => visit(exp)
-        case Expression.Deref(exp, tpe, eff, loc) => visit(exp)
-        case Expression.Assign(exp1, exp2, tpe, eff, loc) => visit(exp1) || visit(exp2)
-        case Expression.Existential(fparam, exp, loc) => visit(exp)
+      case Expression.Unary(sop, exp, tpe, eff, loc) => visit(exp)
+      case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) => visit(exp1) || visit(exp2)
+      case Expression.Let(sym, exp1, exp2, tpe, eff, loc) => visit(exp1) || visit(exp2)
+      case Expression.LetRegion(sym, exp, tpe, eff, loc) => visit(exp)
+      case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => visit(exp1) || (visit(exp2) && visit(exp3))
+      case Expression.Stm(exp1, exp2, tpe, eff, loc) => visit(exp1) || visit(exp2)
+      case Expression.Match(exp, rules, tpe, eff, loc) => visit(exp) || rules.forall { case MatchRule(_, guard, exp1) => visit(guard) || visit(exp1) } // MATT docs
+      case Expression.Choose(exps, rules, tpe, eff, loc) => exps.exists(visit) || rules.forall { rule => visit(rule.exp) }
+      case Expression.Tag(sym, tag, exp, tpe, eff, loc) => visit(exp)
+      case Expression.Tuple(elms, tpe, eff, loc) => elms.exists(visit)
+      case Expression.RecordEmpty(tpe, loc) => false
+      case Expression.RecordSelect(exp, field, tpe, eff, loc) => visit(exp)
+      case Expression.RecordExtend(field, value, rest, tpe, eff, loc) => visit(value) || visit(rest)
+      case Expression.RecordRestrict(field, rest, tpe, eff, loc) => visit(rest)
+      case Expression.ArrayLit(elms, tpe, eff, loc) => elms.exists(visit)
+      case Expression.ArrayNew(elm, len, tpe, eff, loc) => visit(elm) || visit(len)
+      case Expression.ArrayLoad(base, index, tpe, eff, loc) => visit(base) || visit(index)
+      case Expression.ArrayLength(base, eff, loc) => visit(base)
+      case Expression.ArrayStore(base, index, elm, loc) => visit(base) || visit(index) || visit(elm)
+      case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) => visit(base) || visit(beginIndex) || visit(endIndex)
+      case Expression.Ref(exp, tpe, eff, loc) => visit(exp)
+      case Expression.Deref(exp, tpe, eff, loc) => visit(exp)
+      case Expression.Assign(exp1, exp2, tpe, eff, loc) => visit(exp1) || visit(exp2)
+      case Expression.Existential(fparam, exp, loc) => visit(exp)
         case Expression.Universal(fparam, exp, loc) => visit(exp)
         case Expression.Ascribe(exp, tpe, eff, loc) => visit(exp)
         case Expression.Cast(exp, tpe, eff, loc) => visit(exp)
@@ -147,10 +146,9 @@ object Terminator extends Phase[Root, Root] {
         case Expression.FixpointProjectIn(exp, pred, tpe, eff, loc) => visit(exp)
         case Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) => visit(exp)
         case Expression.MatchEff(exp1, exp2, exp3, tpe, eff, loc) => visit(exp1) || (visit(exp2) || visit(exp3))
-      }
     }
 
-    visit(exp0)
+    visit(exp00)
   }
 
 }
