@@ -1432,7 +1432,73 @@ object GenExpression {
           visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.BigInteger.toInternalName, "divide",
             AsmOps.getMethodDescriptor(List(JvmType.BigInteger), JvmType.BigInteger), false)
           visitor.visitLabel(endDiv)
-        case _ => InternalCompilerException(s"Unexpected sematic operator: $sop.")
+        case _ => InternalCompilerException(s"Unexpected semantic operator: $sop.")
+      }
+    } else if (o == BinaryOperator.Modulo) {
+      compileExpression(e1, visitor, currentClassType, jumpLabels, entryPoint)
+      compileExpression(e2, visitor, currentClassType, jumpLabels, entryPoint)
+      val rem = new Label()
+      val endRem = new Label()
+      sop match {
+        case Float32Op.Rem => visitor.visitInsn(FREM)
+        case Float64Op.Rem => visitor.visitInsn(DREM)
+        case Int8Op.Rem =>
+          visitor.visitInsn(DUP)
+          visitor.visitJumpInsn(IFNE, rem)
+          visitor.visitInsn(POP2)
+          visitor.visitInsn(ICONST_0)
+          visitor.visitJumpInsn(GOTO, endRem)
+          visitor.visitLabel(rem)
+          visitor.visitInsn(IREM)
+          visitor.visitLabel(endRem)
+          visitor.visitInsn(I2B)
+        case Int16Op.Rem =>
+          visitor.visitInsn(DUP)
+          visitor.visitJumpInsn(IFNE, rem)
+          visitor.visitInsn(POP2)
+          visitor.visitInsn(ICONST_0)
+          visitor.visitJumpInsn(GOTO, endRem)
+          visitor.visitLabel(rem)
+          visitor.visitInsn(IREM)
+          visitor.visitLabel(endRem)
+          visitor.visitInsn(I2S)
+        case Int32Op.Rem =>
+          visitor.visitInsn(DUP)
+          visitor.visitJumpInsn(IFNE, rem)
+          visitor.visitInsn(POP2)
+          visitor.visitInsn(ICONST_0)
+          visitor.visitJumpInsn(GOTO, endRem)
+          visitor.visitLabel(rem)
+          visitor.visitInsn(IREM)
+          visitor.visitLabel(endRem)
+        case Int64Op.Rem =>
+          visitor.visitInsn(DUP2)
+          visitor.visitInsn(LCONST_0)
+          visitor.visitInsn(LCMP)
+          visitor.visitJumpInsn(IFNE, rem)
+          visitor.visitInsn(POP2)
+          visitor.visitInsn(POP2)
+          visitor.visitInsn(LCONST_0)
+          visitor.visitJumpInsn(GOTO, endRem)
+          visitor.visitLabel(rem)
+          visitor.visitInsn(LREM)
+          visitor.visitLabel(endRem)
+        case BigIntOp.Rem =>
+          visitor.visitInsn(DUP)
+          visitor.visitFieldInsn(GETSTATIC, JvmName.BigInteger.toInternalName, "ZERO",
+            JvmType.BigInteger.toDescriptor)
+          visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Object.toInternalName, "equals",
+            AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.PrimBool), false)
+          visitor.visitJumpInsn(IFEQ, rem)
+          visitor.visitInsn(POP2)
+          visitor.visitFieldInsn(GETSTATIC, JvmName.BigInteger.toInternalName, "ZERO",
+            JvmType.BigInteger.toDescriptor)
+          visitor.visitJumpInsn(GOTO, endRem)
+          visitor.visitLabel(rem)
+          visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.BigInteger.toInternalName, "remainder",
+            AsmOps.getMethodDescriptor(List(JvmType.BigInteger), JvmType.BigInteger), false)
+          visitor.visitLabel(endRem)
+        case _ => InternalCompilerException(s"Unexpected semantic operator: $sop.")
       }
     } else {
       compileExpression(e1, visitor, currentClassType, jumpLabels, entryPoint)
@@ -1441,7 +1507,7 @@ object GenExpression {
         case BinaryOperator.Plus => (IADD, LADD, FADD, DADD, "add")
         case BinaryOperator.Minus => (ISUB, LSUB, FSUB, DSUB, "subtract")
         case BinaryOperator.Times => (IMUL, LMUL, FMUL, DMUL, "multiply")
-        case BinaryOperator.Modulo => (IREM, LREM, FREM, DREM, "remainder")
+        case BinaryOperator.Modulo => throw InternalCompilerException("BinaryOperator.Modulo already handled.")
         case BinaryOperator.Divide => throw InternalCompilerException("BinaryOperator.Divide already handled.")
         case BinaryOperator.Exponentiate => throw InternalCompilerException("BinaryOperator.Exponentiate already handled.")
       }
