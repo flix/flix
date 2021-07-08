@@ -44,7 +44,7 @@ object Terminator extends Phase[Root, Root] {
     */
   def checkDef(defn: Def): Validation[Unit, TerminationError] = {
     if (unconditionallyRecurses(defn.impl.exp, isRecursiveDefApp(defn, _))) {
-      TerminationError.UnconditionalDefRecursion(defn.sym, defn.spec.loc).toFailure
+      TerminationError.UnconditionalDefRecursion(defn.sym).toFailure
     } else {
       ().toSuccess
     }
@@ -57,7 +57,7 @@ object Terminator extends Phase[Root, Root] {
     sig.impl match {
       case Some(impl) =>
         if (unconditionallyRecurses(impl.exp, isRecursiveSigApp(sig, _))) {
-          TerminationError.UnconditionalSigRecursion(sig.sym, sig.spec.loc).toFailure
+          TerminationError.UnconditionalSigRecursion(sig.sym).toFailure
         } else {
           ().toSuccess
         }
