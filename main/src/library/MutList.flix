@@ -466,6 +466,7 @@ namespace MutList {
     /// Returns a shallow copy of the given mutable list `v`.
     /// The capacity of the copy is equal to the length of the list.
     ///
+    // TODO: Check for minSize
     pub def copy(v: MutList[a]): MutList[a] & Impure =
         let MutList(a, l) = v;
         let len = deref l;
