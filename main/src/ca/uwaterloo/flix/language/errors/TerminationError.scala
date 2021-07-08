@@ -16,7 +16,9 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.debug.FormatTypeConstraint
+import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Green, Line, NewLine, Red}
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
@@ -27,15 +29,54 @@ sealed trait TerminationError extends CompilationError {
 }
 
 object TerminationError {
-  case class UnconditionalDefRecursion(defn: Symbol.DefnSym, loc: SourceLocation) extends TerminationError {
-    override def summary: String = "" // MATT
 
-    override def message: VirtualTerminal = new VirtualTerminal() // MATT
+  /**
+    * An error raised to indicate that the given definition recurses unconditionally.
+    *
+    * @param sym the unconditionally recursive definition.
+    */
+  case class UnconditionalDefRecursion(sym: Symbol.DefnSym) extends TerminationError {
+    def summary: String = "Unconditional recursion."
+
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Unconditionally recursive definition '" << Red(sym.name) << "'. All branches will recurse indefinitely." << NewLine
+      vt << NewLine
+      vt << Code(sym.loc, "unconditional recursion.") << NewLine
+      vt << NewLine
+      vt << "Possible fixes:" << NewLine
+      vt << NewLine
+      vt << "  (1)  Add a non-recursive branch to the definition." << NewLine
+      vt << NewLine
+      vt
+    }
+
+    def loc: SourceLocation = sym.loc
   }
 
-  case class UnconditionalSigRecursion(sig: Symbol.SigSym, loc: SourceLocation) extends TerminationError {
-    override def summary: String = "" // MATT
+  /**
+    * An error raised to indicate that the given signature recurses unconditionally.
+    *
+    * @param sym the unconditionally recursive signature.
+    */
+  case class UnconditionalSigRecursion(sym: Symbol.SigSym) extends TerminationError {
+    def summary: String = "Unconditional recursion."
 
-    override def message: VirtualTerminal = new VirtualTerminal() // MATT
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Unconditionally recursive signature '" << Red(sym.name) << "'. All branches will recurse indefinitely." << NewLine
+      vt << NewLine
+      vt << Code(sym.loc, "unconditional recursion.") << NewLine
+      vt << NewLine
+      vt << "Possible fixes:" << NewLine
+      vt << NewLine
+      vt << "  (1)  Add a non-recursive branch to the signature." << NewLine
+      vt << NewLine
+      vt
+    }
+
+    def loc: SourceLocation = sym.loc
   }
 }
