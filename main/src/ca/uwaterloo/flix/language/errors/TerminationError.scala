@@ -16,4 +16,10 @@ object TerminationError {
 
     override def message: VirtualTerminal = new VirtualTerminal() // MATT
   }
+
+  case class UnconditionalSigRecursion(sig: Symbol.SigSym, loc: SourceLocation) extends TerminationError {
+    override def summary: String = "" // MATT
+
+    override def message: VirtualTerminal = new VirtualTerminal() // MATT
+  }
 }
