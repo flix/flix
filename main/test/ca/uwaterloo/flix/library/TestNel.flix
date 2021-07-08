@@ -683,43 +683,43 @@ namespace Nel {
     // sortBy                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    def testSortByVsSort(a: Nel[Int32]) : Bool =
-        (Nel.sortBy(identity, a) == Nel.sort(a)) and
-        (Nel.sortBy(x -> 4*x+7, a) == Nel.sort(a)) and
-        (Nel.sortBy(x -> -x, a) == Nel.sortWith(flip(cmp),a))
+def testSortByVsSort(a: Nel[Int32]) : Bool =
+    (Nel.sortBy(identity, a) == Nel.sort(a)) and
+    (Nel.sortBy(x -> 4*x+7, a) == Nel.sort(a)) and
+    (Nel.sortBy(x -> -x, a) == Nel.sortWith(flip(cmp),a))
 
-    @test
-    def sortBy02(): Bool = testSortByVsSort(Nel(0, Nil))
+@test
+def sortBy02(): Bool = testSortByVsSort(Nel(0, Nil))
 
-    @test
-    def sortBy03(): Bool = testSortByVsSort(Nel(0, 1 :: Nil))
+@test
+def sortBy03(): Bool = testSortByVsSort(Nel(0, 1 :: Nil))
 
-    @test
-    def sortBy04(): Bool = testSortByVsSort(Nel(1, 0 :: Nil))
+@test
+def sortBy04(): Bool = testSortByVsSort(Nel(1, 0 :: Nil))
 
-    @test
-    def sortBy05(): Bool = testSortByVsSort(Nel(1, 1 :: Nil))
+@test
+def sortBy05(): Bool = testSortByVsSort(Nel(1, 1 :: Nil))
 
-    @test
-    def sortBy06(): Bool = testSortByVsSort(Nel(0, 1 :: 2 :: 3 :: 4 :: 5 :: Nil))
+@test
+def sortBy06(): Bool = testSortByVsSort(Nel(0, 1 :: 2 :: 3 :: 4 :: 5 :: Nil))
 
-    @test
-    def sortBy07(): Bool = testSortByVsSort(Nel(5, 4 :: 3 :: 2 :: 1 :: 0 :: Nil))
+@test
+def sortBy07(): Bool = testSortByVsSort(Nel(5, 4 :: 3 :: 2 :: 1 :: 0 :: Nil))
 
-    @test
-    def sortBy08(): Bool = testSortByVsSort(Nel(5, 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
+@test
+def sortBy08(): Bool = testSortByVsSort(Nel(5, 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
 
-    @test
-    def sortBy09(): Bool = testSortByVsSort(Nel(2, 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
+@test
+def sortBy09(): Bool = testSortByVsSort(Nel(2, 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
 
-    enum R {
-        case R({i: Int32, s: String})
-    }
+enum R {
+    case R({i: Int32, s: String})
+}
 
-    instance Eq[R] {
-        pub def eq(a: R, b: R): Bool =
-            let R(x) = a;
-            let R(y) = b;
-            x.i == y.i and x.s == y.s
-    }
+instance Eq[R] {
+    pub def eq(a: R, b: R): Bool =
+        let R(x) = a;
+        let R(y) = b;
+        x.i == y.i and x.s == y.s
+}
 }
