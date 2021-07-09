@@ -499,24 +499,16 @@ namespace MutList {
     ///
     /// If the given index `i` exceeds the length of the mutable list, the element is inserted at the last position.
     ///
-    // TODO: Change assumption that length can be 0
     pub def insert!(x: a, i: Int32, v: mut MutList[a]): Unit & Impure =
         let MutList(a, l) = v;
         let len = deref l;
-        if (len == 0) {
-            a := Array.new(x, 1);
-            l := 1
-        }
-        else {
-            if (capacity(v) - len == 0)
-                reserve!(len, v)
-            else
-                ();
-            let sub = Array.slice(deref a, i, len);
-            Array.updateSequence!(i + 1, sub, deref a);
-            (deref a)[i] = x;
-            l := len + 1
-        }
+        if (capacity(v) - len == 0)
+            reserve!(len, v)
+        else ();
+        let sub = Array.slice(deref a, i, len);
+        Array.updateSequence!(i + 1, sub, deref a);
+        (deref a)[i] = x;
+        l := len + 1
 
     ///
     /// Removes the element at the given position `i` in the given mutable list `v`.
