@@ -797,8 +797,7 @@ namespace MutList {
             else
                 shrinkTo!(c / 2, v)
         }
-        else
-            ()
+        else ()
 
     ///
     /// Returns the capacity of `v`.
