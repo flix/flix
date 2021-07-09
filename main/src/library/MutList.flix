@@ -69,7 +69,7 @@ namespace MutList {
     /// Returns an empty mutable list if `b >= e`.
     ///
     pub def range(b: Int32, e: Int32): MutList[Int32] & Impure =
-        if (e - b < minSize())
+        if (e - b < minSize() || b - e < minSize())
             MutList(ref rangeHelperFill(b, e), ref (e - b))
 
         else
