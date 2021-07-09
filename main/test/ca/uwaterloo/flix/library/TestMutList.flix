@@ -965,7 +965,7 @@ namespace TestMutList {
         let m1 = MutList(ref (deref arr), ref (deref len));
         let c2 = MutList.capacity(v);
         MutList.shrinkTo!(0, v);
-        c1 == 8 and c2 == 8 and MutList.capacity(v) == 8 and MutList.length(m1) == 8 and MutList.length(v) == 5
+        c1 == 8 and c2 == 8 and MutList.capacity(v) == 8 and MutList.length(m1) == 5 and MutList.length(v) == 5
 
     @test
     def shrinkTo!04(): Bool & Impure =
