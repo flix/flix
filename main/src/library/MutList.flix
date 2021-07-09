@@ -56,12 +56,12 @@ instance Foldable[MutList] {
 
 namespace MutList {
 
-    def minSize(): Int32 = 8
+    def minCapacity(): Int32 = 8
 
     ///
     /// Returns a new empty mutable list with a default capacity.
     ///
-    pub def new(): MutList[a] & Impure = MutList(ref [default; minSize()], ref 0)
+    pub def new(): MutList[a] & Impure = MutList(ref [default; minCapacity()], ref 0)
 
     ///
     /// Returns a mutable list of all integers between `b` (inclusive) and `e` (exclusive).
@@ -69,10 +69,10 @@ namespace MutList {
     /// Returns an empty mutable list if `b >= e`.
     ///
     pub def range(b: Int32, e: Int32): MutList[Int32] & Impure =
-        let min = minSize();
-        if (e - b < min)
+        let minCap = minCapacity();
+        if (e - b < minCap)
             let f = i -> if (b + i < e) b + i else default;
-            MutList(ref Array.init(f, min), ref (e - b))
+            MutList(ref Array.init(f, minCap), ref (e - b))
         else
             MutList(ref Array.range(b, e), ref (e - b))
 
@@ -458,7 +458,7 @@ namespace MutList {
     /// Returns a shallow copy of the given mutable list `v`.
     /// The capacity of the copy is equal to the length of the list.
     ///
-    // TODO: Check for minSize
+    // TODO: Check for minCapacity
     pub def copy(v: MutList[a]): MutList[a] & Impure =
         let MutList(a, l) = v;
         let len = deref l;
@@ -617,12 +617,12 @@ namespace MutList {
     /// Truncates the mutable list as needed.
     ///
     pub def shrinkTo!(n: Int32, v: mut MutList[a]): Unit & Impure =
-        let min = minSize();
+        let minCap = minCapacity();
         let MutList(a, l) = v;
-        if (n < min) {
+        if (n < minCap) {
             let len = deref l;
-            a := [default; min];
-            l := if (len < min) len else min
+            a := [default; minCap];
+            l := if (len < minCap) len else minCap
         }
         else if (n < capacity(v)) {
             let f = i -> if (i < n) (deref a)[i] else default;
@@ -649,8 +649,8 @@ namespace MutList {
             clear!(v)
         else if (l < length(v)) {
             let MutList(a, l0) = v;
-            let min = minSize();
-            let c = if (l < min) min else l;
+            let minCap = minCapacity();
+            let c = if (l < minCap) minCap else l;
             l0 := l;
             Array.updateSequence!(0, deref a, Array.new(default, c))
         }
