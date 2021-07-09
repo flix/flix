@@ -652,14 +652,15 @@ namespace MutList {
     ///
     /// If the given length `l` is negative, all elements are removed.
     ///
-    // TODO: Change assumption that length can be 0
     pub def truncate!(l: Int32, v: mut MutList[a]): Unit & Impure =
         if (l < 0)
             clear!(v)
         else if (l < length(v)) {
             let MutList(a, l0) = v;
+            let min = minSize();
+            let c = if (l < min) min else l;
             l0 := l;
-            Array.updateSequence!(0, deref a, Array.new(default, l))
+            Array.updateSequence!(0, deref a, Array.new(default, c))
         }
         else
             ()
