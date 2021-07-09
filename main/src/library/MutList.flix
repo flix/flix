@@ -483,22 +483,14 @@ namespace MutList {
     ///
     /// Inserts the given element `x` at the end of the given mutable list `v`.
     ///
-    // TODO: Change assumption that length can be 0
     pub def push!(x: a, v: mut MutList[a]): Unit & Impure =
         let MutList(a, l) = v;
         let len = deref l;
-        if (len == 0) {
-            a := Array.new(x, 1);
-            l := 1
-        }
-        else {
-            if (capacity(v) - len == 0)
-                reserve!(len, v)
-            else
-                ();
-            (deref a)[len] = x;
-            l := len + 1
-        }
+        if (capacity(v) - len == 0)
+            reserve!(len, v)
+        else ();
+        (deref a)[len] = x;
+        l := len + 1
 
     ///
     /// Inserts the given element `x` at the given position `i` in the given mutable list `v`.
