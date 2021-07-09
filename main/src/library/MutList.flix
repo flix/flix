@@ -793,7 +793,7 @@ namespace MutList {
     ///
     /// Compresses the given mutable list `v` if needed.
     ///
-    /// The mutable will be shrunk to 1/2 of its size if the load factor is less than 1/4.
+    /// The mutable list will be shrunk to 1/2 of its size if the load factor is less than 1/4.
     ///
     pub def compress!(v: mut MutList[a]): Unit & Impure =
         let c = capacity(v);
