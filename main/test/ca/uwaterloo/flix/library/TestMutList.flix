@@ -1734,4 +1734,23 @@ def sortBy!08(): Bool & Impure = testSortBy!VsSortBy(Array.toMutList([5,3,0,4,1,
 
 @test
 def sortBy!09(): Bool & Impure = testSortBy!VsSortBy(Array.toMutList([2,3,0,4,1,2]))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // range                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def range01(): Bool & Impure =
+        let v1 = MutList.range(1, 4) |> MutList.toArray;
+        let v2 = MutList.range(0, 5) |> MutList.toArray;
+        let arr1 = [1, 2, 3];
+        let arr2 = [0, 1, 2, 3, 4];
+        Array.sameElements(v1, arr1) and Array.sameElements(v2, arr2) and v1 == arr1 and v2 == arr2
+
+    @test
+    def range02(): Bool & Impure =
+        let v = MutList.range(-1, 3) |> MutList.toArray;
+        let arr = [-1, 0, 1, 2];
+        Array.sameElements(v, arr) and v == arr
+
 }
