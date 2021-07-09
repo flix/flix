@@ -624,12 +624,13 @@ namespace MutList {
     ///
     /// Truncates the mutable list as needed.
     ///
-    // TODO: Change assumption that length can be 0
     pub def shrinkTo!(n: Int32, v: mut MutList[a]): Unit & Impure =
+        let min = minSize();
         let MutList(a, l) = v;
-        if (n == 0) {
-            a := [];
-            l := 0
+        if (n < min) {
+            let len = deref l;
+            a := [default; min];
+            l := if (len < min) len else min
         }
         else if (n < capacity(v)) {
             let f = i -> if (i < n) (deref a)[i] else default;
