@@ -1068,7 +1068,7 @@ namespace TestMutList {
     def reserve!01(): Bool & Impure =
         let v = MutList.new();
         MutList.reserve!(4, v);
-        MutList.capacity(v) == 4
+        MutList.capacity(v) == 8
 
     @test
     def reserve!02(): Bool & Impure =
@@ -1090,10 +1090,9 @@ namespace TestMutList {
 
     @test
     def reserve!05(): Bool & Impure =
-        let n = 5;
-        let v = MutList.range(0, n);
+        let v = MutList.range(0, 5);
         MutList.reserve!(MutList.length(v), v);
-        MutList.capacity(v) == 2 * n
+        MutList.capacity(v) == 13
 
     @test
     def reserve!06(): Bool & Impure =
