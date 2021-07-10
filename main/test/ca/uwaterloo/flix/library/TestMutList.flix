@@ -1201,10 +1201,8 @@ namespace TestMutList {
     @test
     def compress!01(): Bool & Impure =
         let v = MutList.range(0, 100);
-        //
-        // What does this do??? TODO: Refactor to be more readable.
-        //
-        List.foreach(_ -> let _ = MutList.pop!(v); (), List.range(0, 75));
+        let f = _ -> { let _ = MutList.pop!(v); () };
+        List.foreach(f, List.range(0, 75));
         let c = MutList.capacity(v);
         let _ = MutList.pop!(v);
         c == 100 and MutList.capacity(v) == 50
