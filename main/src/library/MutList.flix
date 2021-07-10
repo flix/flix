@@ -29,10 +29,11 @@ instance ToString[MutList[a]] with ToString[a] {
 }
 
 instance Eq[MutList[a]] with Eq[a] {
-    pub def eq(xs: MutList[a], ys: MutList[a]): Bool =
-        (let MutList(a, _) = xs;
-        let MutList(b, _) = ys;
-        deref a == deref b) as & Pure
+        pub def eq(xs: MutList[a], ys: MutList[a]): Bool = {
+            let MutList(a, _) = xs;
+            let MutList(b, _) = ys;
+            deref a == deref b
+        } as & Pure
 }
 
 instance Order[MutList[v]] with Order[v] {
