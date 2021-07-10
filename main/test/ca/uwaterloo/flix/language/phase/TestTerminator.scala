@@ -100,16 +100,4 @@ class TestTerminator extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     rejectError[TerminationError.UnconditionalRecursion](result)
   }
-
-  // TODO remove or unignore once we decide how to handle signatures
-  ignore("UnconditionalRecursion.Class.01") {
-    val input =
-      """
-        |pub lawless class C[a] {
-        |  pub def f(x: a): String = C.f(x)
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TerminationError.UnconditionalSigRecursion](result)
-  }
 }
