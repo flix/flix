@@ -466,7 +466,6 @@ namespace MutList {
     ///
     /// Optionally removes and returns the last element in the given mutable list `v`.
     ///
-    // TODO: Change assumption that length can be 0
     pub def pop!(v: mut MutList[a]): Option[a] & Impure =
         let MutList(a, l) = v;
         let len = deref l;
