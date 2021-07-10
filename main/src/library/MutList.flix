@@ -644,15 +644,9 @@ namespace MutList {
     ///
     pub def reserve!(n: Int32, v: mut MutList[a]): Unit & Impure =
         let MutList(a, l) = v;
-        let len = deref l;
-        let cap = capacity(v);
-        if (n > cap - len)
-            let f = i ->
-                if (i < len)
-                    (deref a)[i]
-                else
-                    default;
-            a := Array.init(f, cap + n)
+        let empty = capacity(v) - deref l;
+        if (n > empty)
+            a := Array.append(deref a, [default; n - empty])
         else ()
 
     ///
