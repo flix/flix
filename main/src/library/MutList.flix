@@ -601,22 +601,13 @@ namespace MutList {
     ///
     pub def shrinkTo!(n: Int32, v: mut MutList[a]): Unit & Impure =
         let minCap = minCapacity();
+        let capv = capacity(v);
         let MutList(a, l) = v;
-        if (capacity(v) != minCap) {
+        if (n < capv and capv != minCap) {
             let len = deref l;
-
-            if (n < minCap) {
-                a := Array.slice(deref a, 0, minCap);
-                l := if (len < minCap) len else minCap
-            }
-
-            else if (n < capacity(v)) {
-                let f = i -> if (i < n) (deref a)[i] else default;
-                a := Array.init(f, n);
-                l := if (len < n) len else n
-            }
-
-            else ()
+            let newCap = if (n < minCap) minCap else n;
+            a := Array.slice(deref a, 0, newCap);
+            l := if (len < newCap) len else newCap
         }
         else ()
 
