@@ -55,6 +55,13 @@ namespace TestMutList {
         MutList.push!(2, v);
         u != v
 
+    @test
+    def eq02(): Bool & Impure =
+        let u = MutList.new();
+        MutList.push!(1, u);
+        let v = MutList.new();
+        u != v
+
     /////////////////////////////////////////////////////////////////////////////
     // Order.compare                                                           //
     /////////////////////////////////////////////////////////////////////////////
