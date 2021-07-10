@@ -30,7 +30,7 @@ class TestTerminator extends FunSuite with TestUtils {
          |    f()
          |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TerminationError.UnconditionalDefRecursion](result)
+    expectError[TerminationError.UnconditionalRecursion](result)
   }
 
   test("UnconditionalRecursion.02") {
@@ -40,7 +40,7 @@ class TestTerminator extends FunSuite with TestUtils {
          |    foo(x, y)
          |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TerminationError.UnconditionalDefRecursion](result)
+    expectError[TerminationError.UnconditionalRecursion](result)
   }
 
   test("UnconditionalRecursion.03") {
@@ -52,7 +52,7 @@ class TestTerminator extends FunSuite with TestUtils {
          |}
          |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TerminationError.UnconditionalDefRecursion](result)
+    expectError[TerminationError.UnconditionalRecursion](result)
   }
 
   test("UnconditionalRecursion.04") {
@@ -65,7 +65,7 @@ class TestTerminator extends FunSuite with TestUtils {
          |        foo(7)
          |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[TerminationError.UnconditionalDefRecursion](result)
+    expectError[TerminationError.UnconditionalRecursion](result)
   }
 
   test("UnconditionalRecursion.05") {
@@ -79,7 +79,7 @@ class TestTerminator extends FunSuite with TestUtils {
          |
          |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    rejectError[TerminationError.UnconditionalDefRecursion](result)
+    rejectError[TerminationError.UnconditionalRecursion](result)
   }
 
   test("UnconditionalRecursion.06") {
@@ -98,7 +98,7 @@ class TestTerminator extends FunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    rejectError[TerminationError.UnconditionalDefRecursion](result)
+    rejectError[TerminationError.UnconditionalRecursion](result)
   }
 
   // TODO remove or unignore once we decide how to handle signatures
