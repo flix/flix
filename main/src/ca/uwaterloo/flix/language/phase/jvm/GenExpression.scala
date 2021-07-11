@@ -1372,7 +1372,7 @@ object GenExpression {
         case BinaryOperator.Minus => (ISUB, LSUB, FSUB, DSUB, "subtract")
         case BinaryOperator.Times => (IMUL, LMUL, FMUL, DMUL, "multiply")
         case BinaryOperator.Modulo => (IREM, LREM, FREM, DREM, "remainder")
-        case BinaryOperator.Divide => throw InternalCompilerException("BinaryOperator.Divide already handled.")
+        case BinaryOperator.Divide => (IDIV, LDIV, FDIV, DDIV, "divide")
         case BinaryOperator.Exponentiate => throw InternalCompilerException("BinaryOperator.Exponentiate already handled.")
       }
       sop match {
