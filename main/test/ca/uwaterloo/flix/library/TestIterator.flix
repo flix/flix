@@ -14,6 +14,45 @@ namespace TestIterator {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // range                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def range01(): Bool & Impure =
+        Iterator.range(0, 0) |> Iterator.isEmpty
+
+    @test
+    def range02(): Bool & Impure =
+        Iterator.range(10, 0) |> Iterator.isEmpty
+
+    @test
+    def range03(): Bool & Impure =
+        let iter = Iterator.range(1, 4);
+        let one = Iterator.head(iter);
+        let two = Iterator.head(iter);
+        let three = Iterator.head(iter);
+        Some(1) == one and
+        Some(2) == two and
+        Some(3) == three and
+        None == Iterator.head(iter)
+
+    @test
+    def range04(): Bool & Impure =
+        let iter = Iterator.range(-1, 2);
+        let minusOne = Iterator.head(iter);
+        let zero = Iterator.head(iter);
+        let one = Iterator.head(iter);
+        Some(-1) == minusOne and
+        Some(0) == zero and
+        Some(1) == one and
+        None == Iterator.head(iter)
+
+    @test
+    def range05(): Bool & Impure =
+        (Iterator.range(-100, 200) |> Iterator.toList) == List.range(-100, 200)
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // isEmpty                                                                 //
     /////////////////////////////////////////////////////////////////////////////
     @test
