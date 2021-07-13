@@ -54,7 +54,12 @@ namespace Iterator {
     ///
     /// Consumes elements of the iterator until an element equal to `a` is found.
     ///
-    pub def memberOf(a: a, iter: Iterator[a]): Bool & Impure with Eq[a] = ???
+    pub def memberOf(a: a, iter: Iterator[a]): Bool & Impure with Eq[a] =
+        let Iterator(done, next) = iter;
+        if (done())
+            false
+        else
+            next() == a or memberOf(a, iter)
 
     ///
     /// Returns the iterator `iter` as an array.
