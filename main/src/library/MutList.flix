@@ -29,10 +29,11 @@ instance ToString[MutList[a]] with ToString[a] {
 }
 
 instance Eq[MutList[a]] with Eq[a] {
-    pub def eq(xs: MutList[a], ys: MutList[a]): Bool =
-        (let MutList(a, _) = xs;
-        let MutList(b, _) = ys;
-        deref a == deref b) as & Pure
+        pub def eq(xs: MutList[a], ys: MutList[a]): Bool = {
+            let MutList(a, k) = xs;
+            let MutList(b, l) = ys;
+            deref a == deref b and deref k == deref l
+        } as & Pure
 }
 
 instance Order[MutList[v]] with Order[v] {
@@ -56,27 +57,32 @@ instance Foldable[MutList] {
 
 namespace MutList {
 
+    def minCapacity(): Int32 = 8
+
     ///
     /// Returns a new empty mutable list with a default capacity.
     ///
-    pub def new(): MutList[a] & Impure = MutList(ref [], ref 0)
+    pub def new(): MutList[a] & Impure = MutList(ref [default; minCapacity()], ref 0)
 
     ///
     /// Returns a mutable list of all integers between `b` (inclusive) and `e` (exclusive).
     ///
     /// Returns an empty mutable list if `b >= e`.
     ///
-    pub def range(b: Int32, e: Int32): MutList[Int32] & Impure = MutList(ref Array.range(b, e), ref (e - b))
+    pub def range(b: Int32, e: Int32): MutList[Int32] & Impure =
+        let minCap = minCapacity();
+        if (e - b < minCap)
+            let f = i -> if (b + i < e) b + i else default;
+            MutList(ref Array.init(f, minCap), ref (e - b))
+        else
+            MutList(ref Array.range(b, e), ref (e - b))
 
     ///
     /// Returns the element at position `i` in the mutable list `v`.
     ///
     pub def get(i: Int32, v: MutList[a]): a & Impure =
         let MutList(a, _) = v;
-        if (i > length(v))
-            (deref a)[-1] /// deliberately trigger index-out-of-bounds
-        else
-            Array.get(deref a, i)
+        Array.get(deref a, i)
 
     ///
     /// Returns the number of elements in the given mutable list `v`.
@@ -177,8 +183,8 @@ namespace MutList {
     /// Returns `None` if the given mutable list `v` is empty.
     ///
     pub def head(v: MutList[a]): Option[a] & Impure =
-        let MutList(a, l) = v;
-        if ((deref l) == 0)
+        let MutList(a, _) = v;
+        if (isEmpty(v))
             None
         else
             Array.head(deref a)
@@ -456,7 +462,7 @@ namespace MutList {
     pub def copy(v: MutList[a]): MutList[a] & Impure =
         let MutList(a, l) = v;
         let len = deref l;
-        MutList(ref Array.slice(deref a, 0, len), ref len)
+        MutList(ref Array.slice(deref a, 0, capacity(v)), ref len)
 
     ///
     /// Optionally removes and returns the last element in the given mutable list `v`.
@@ -479,18 +485,11 @@ namespace MutList {
     pub def push!(x: a, v: mut MutList[a]): Unit & Impure =
         let MutList(a, l) = v;
         let len = deref l;
-        if (len == 0) {
-            a := Array.new(x, 1);
-            l := 1
-        }
-        else {
-            if (capacity(v) - len == 0)
-                reserve!(len, v)
-            else
-                ();
-            (deref a)[len] = x;
-            l := len + 1
-        }
+        if (capacity(v) - len == 0)
+            reserve!(len, v)
+        else ();
+        (deref a)[len] = x;
+        l := len + 1
 
     ///
     /// Inserts the given element `x` at the given position `i` in the given mutable list `v`.
@@ -502,20 +501,13 @@ namespace MutList {
     pub def insert!(x: a, i: Int32, v: mut MutList[a]): Unit & Impure =
         let MutList(a, l) = v;
         let len = deref l;
-        if (len == 0) {
-            a := Array.new(x, 1);
-            l := 1
-        }
-        else {
-            if (capacity(v) - len == 0)
-                reserve!(len, v)
-            else
-                ();
-            let sub = Array.slice(deref a, i, len);
-            Array.updateSequence!(i + 1, sub, deref a);
-            (deref a)[i] = x;
-            l := len + 1
-        }
+        if (capacity(v) - len == 0)
+            reserve!(len, v)
+        else ();
+        let sub = Array.slice(deref a, i, len);
+        Array.updateSequence!(i + 1, sub, deref a);
+        (deref a)[i] = x;
+        l := len + 1
 
     ///
     /// Removes the element at the given position `i` in the given mutable list `v`.
@@ -608,18 +600,16 @@ namespace MutList {
     /// Truncates the mutable list as needed.
     ///
     pub def shrinkTo!(n: Int32, v: mut MutList[a]): Unit & Impure =
+        let minCap = minCapacity();
+        let capv = capacity(v);
         let MutList(a, l) = v;
-        if (n == 0) {
-            a := [];
-            l := 0
+        if (n < capv and capv != minCap) {
+            let len = deref l;
+            let newCap = if (n < minCap) minCap else n;
+            a := Array.slice(deref a, 0, newCap);
+            l := if (len < newCap) len else newCap
         }
-        else if (n < capacity(v)) {
-            let f = i -> if (i < n) (deref a)[i] else default;
-            a := Array.init(f, n);
-            l := n
-        }
-        else
-            ()
+        else ()
 
     ///
     /// Shrinks the given mutable list `v` to its actual size.
@@ -638,8 +628,10 @@ namespace MutList {
             clear!(v)
         else if (l < length(v)) {
             let MutList(a, l0) = v;
+            let minCap = minCapacity();
+            let c = if (l < minCap) minCap else l;
             l0 := l;
-            Array.updateSequence!(0, deref a, Array.new(default, l))
+            Array.updateSequence!(0, deref a, Array.new(default, c))
         }
         else
             ()
@@ -653,23 +645,29 @@ namespace MutList {
     ///
     pub def reserve!(n: Int32, v: mut MutList[a]): Unit & Impure =
         let MutList(a, l) = v;
-        let len = deref l;
-        if (len == 0)
-            a := Array.new(default, n)
-        else {
-            let f = i ->
-                if (i < len)
-                    (deref a)[i]
-                else
-                    default;
-            a := Array.init(f, len + n)
-        }
+        let empty = capacity(v) - deref l;
+        if (n > empty)
+            a := Array.append(deref a, [default; n - empty])
+        else ()
 
     ///
     /// Returns `v` as an immutable list.
     ///
     pub def toImm(v: MutList[a]): List[a] & Impure =
-        foldRight((x, acc) -> x :: acc, Nil, v)
+        toImmHelper(v, Nil)
+
+    ///
+    /// Helper function for `toImm`
+    ///
+    def toImmHelper(v: MutList[a], acc: List[a]): List[a] & Impure =
+        if (isEmpty(v))
+            acc
+        else
+            let x = match pop!(v) {
+                case Some(a) => a
+                case _       => unreachable!()
+            };
+            toImmHelper(v, x :: acc)
 
     ///
     /// Returns `v` as an array.
@@ -760,7 +758,7 @@ namespace MutList {
     ///
     /// Compresses the given mutable list `v` if needed.
     ///
-    /// The mutable will be shrunk to 1/2 of its size if the load factor is less than 1/4.
+    /// The mutable list will be shrunk to 1/2 of its size if the load factor is less than 1/4.
     ///
     pub def compress!(v: mut MutList[a]): Unit & Impure =
         let c = capacity(v);
@@ -772,13 +770,12 @@ namespace MutList {
             else
                 shrinkTo!(c / 2, v)
         }
-        else
-            ()
+        else ()
 
     ///
     /// Returns the capacity of `v`.
     ///
-    pub def capacity(v: MutList[a]): Int32 & Impure =
+    def capacity(v: MutList[a]): Int32 & Impure =
         let MutList(a, _) = v;
         Array.length(deref a)
 

@@ -15,8 +15,15 @@
  */
 
 namespace TestMutList {
-
     use ToString.toString;
+
+    ///
+    /// Helper function to test capacity of internal array.
+    ///
+    def capacity(v: MutList[a]): Int32 & Impure =
+        let MutList(a, _) = v;
+        Array.length(deref a)
+
 
     /////////////////////////////////////////////////////////////////////////////
     // Eq.eq                                                                   //
@@ -53,6 +60,13 @@ namespace TestMutList {
         let v = MutList.new();
         MutList.push!(2, v);
         MutList.push!(2, v);
+        u != v
+
+    @test
+    def eq05(): Bool & Impure =
+        let u = MutList.new();
+        MutList.push!(1, u);
+        let v = MutList.new();
         u != v
 
     /////////////////////////////////////////////////////////////////////////////
@@ -933,22 +947,22 @@ namespace TestMutList {
     @test
     def shrinkTo!01(): Bool & Impure =
         let v = MutList.new();
-        let c = MutList.capacity(v);
+        let c = capacity(v);
         MutList.shrinkTo!(0, v);
-        c == MutList.capacity(v) and MutList.length(v) == 0
+        c == capacity(v) and MutList.length(v) == 0
 
     @test
     def shrinkTo!02(): Bool & Impure =
         let v = MutList.range(0, 99);
-        let c1 = MutList.capacity(v);
+        let c1 = capacity(v);
         MutList.shrinkTo!(90, v);
-        let c2 = MutList.capacity(v);
+        let c2 = capacity(v);
         MutList.shrinkTo!(2, v);
-        let c3 = MutList.capacity(v);
+        let c3 = capacity(v);
         MutList.shrinkTo!(1, v);
-        let c4 = MutList.capacity(v);
+        let c4 = capacity(v);
         MutList.shrinkTo!(0, v);
-        c1 == 99 and c2 == 90 and c3 == 2 and c4 == 1 and MutList.capacity(v) == 0 and MutList.length(v) == 0
+        c1 == 99 and c2 == 90 and c3 == 8 and c4 == 8 and capacity(v) == 8 and MutList.length(v) == 8
 
     @test
     def shrinkTo!03(): Bool & Impure =
@@ -959,25 +973,27 @@ namespace TestMutList {
         MutList.push!(6, v);
         MutList.push!(7, v);
         MutList.shrinkTo!(4, v);
-        let c1 = MutList.capacity(v);
+        let c1 = capacity(v);
         MutList.shrinkTo!(2, v);
-        let c2 = MutList.capacity(v);
+        let MutList(arr, len) = v;
+        let m1 = MutList(ref (deref arr), ref (deref len));
+        let c2 = capacity(v);
         MutList.shrinkTo!(0, v);
-        c1 == 4 and c2 == 2 and MutList.capacity(v) == 0 and MutList.length(v) == 0
+        c1 == 8 and c2 == 8 and capacity(v) == 8 and MutList.length(m1) == 5 and MutList.length(v) == 5
 
     @test
     def shrinkTo!04(): Bool & Impure =
         let v = MutList.range(0, 10);
         MutList.shrinkTo!(11, v);
-        let c = MutList.capacity(v);
+        let c = capacity(v);
         MutList.shrinkTo!(10, v);
-        c == 10 and MutList.capacity(v) == 10 and MutList.length(v) == 10
+        c == 10 and capacity(v) == 10 and MutList.length(v) == 10
 
     @test
     def shrinkTo!05(): Bool & Impure =
         let v = MutList.range(0, 10);
         MutList.shrinkTo!(1, v);
-        MutList.capacity(v) == 1 and MutList.length(v) == 1
+        capacity(v) == 8 and MutList.length(v) == 8
 
     @test
     def shrinkTo!06(): Bool & Impure =
@@ -985,7 +1001,7 @@ namespace TestMutList {
         MutList.push!(42, v);
         MutList.insert!(99, 3, v);
         MutList.shrinkTo!(3, v);
-        MutList.capacity(v) == 3 and MutList.length(v) == 3
+        capacity(v) == 8 and MutList.length(v) == 6
 
     /////////////////////////////////////////////////////////////////////////////
     // shrink!                                                                 //
@@ -994,37 +1010,37 @@ namespace TestMutList {
     @test
     def shrink!01(): Bool & Impure =
         let v = MutList.new();
-        let c = MutList.capacity(v);
+        let c = capacity(v);
         MutList.push!(0, v);
         MutList.push!(1, v);
         MutList.push!(2, v);
         MutList.shrink!(v);
-        c == 0 and MutList.capacity(v) == 3 and MutList.length(v) == 3
+        c == 8 and capacity(v) == 8 and MutList.length(v) == 3
 
     @test
     def shrink!02(): Bool & Impure =
         let v = MutList.new();
-        let c = MutList.capacity(v);
+        let c = capacity(v);
         MutList.shrink!(v);
-        c == 0 and MutList.capacity(v) == 0 and MutList.length(v) == 0
+        c == 8 and capacity(v) == 8 and MutList.length(v) == 0
 
     @test
     def shrink!03(): Bool & Impure =
         let v = MutList.range(0, 9);
-        let c = MutList.capacity(v);
+        let c = capacity(v);
         MutList.push!(9, v);
         MutList.shrink!(v);
-        c == 9 and MutList.capacity(v) == 10 and MutList.length(v) == 10
+        c == 9 and capacity(v) == 10 and MutList.length(v) == 10
 
     @test
     def shrink!04(): Bool & Impure =
         let v = MutList.new();
-        let c = MutList.capacity(v);
+        let c = capacity(v);
         MutList.push!(4, v);
         MutList.append!(v, MutList.range(0, 4));
         MutList.push!(5, v);
         MutList.shrink!(v);
-        c == 0 and MutList.capacity(v) == 6 and MutList.length(v) == 6
+        c == 8 and capacity(v) == 8 and MutList.length(v) == 6
 
     /////////////////////////////////////////////////////////////////////////////
     // truncate!                                                               //
@@ -1068,32 +1084,31 @@ namespace TestMutList {
     def reserve!01(): Bool & Impure =
         let v = MutList.new();
         MutList.reserve!(4, v);
-        MutList.capacity(v) == 4
+        capacity(v) == 8
 
     @test
     def reserve!02(): Bool & Impure =
         let v = MutList.range(0, 5);
         MutList.reserve!(5, v);
-        MutList.capacity(v) == 10
+        capacity(v) == 10
 
     @test
     def reserve!03(): Bool & Impure =
         let v = MutList.range(0, 99);
         MutList.reserve!(1, v);
-        MutList.capacity(v) == 100
+        capacity(v) == 100
 
     @test
     def reserve!04(): Bool & Impure =
         let v = MutList.range(0, 100);
         MutList.reserve!(100, v);
-        MutList.capacity(v) == 200
+        capacity(v) == 200
 
     @test
     def reserve!05(): Bool & Impure =
-        let n = 5;
-        let v = MutList.range(0, n);
+        let v = MutList.range(0, 5);
         MutList.reserve!(MutList.length(v), v);
-        MutList.capacity(v) == 2 * n
+        capacity(v) == 10
 
     @test
     def reserve!06(): Bool & Impure =
@@ -1104,7 +1119,7 @@ namespace TestMutList {
         MutList.reserve!(1, v);
         MutList.reserve!(1, v);
         MutList.reserve!(1, v);
-        MutList.capacity(v) == n + 1
+        capacity(v) == n + 1
 
     /////////////////////////////////////////////////////////////////////////////
     // formatWith                                                              //
@@ -1200,29 +1215,30 @@ namespace TestMutList {
     @test
     def compress!01(): Bool & Impure =
         let v = MutList.range(0, 100);
-        List.foreach(_ -> let _ = MutList.pop!(v); (), List.range(0, 75));
-        let c = MutList.capacity(v);
+        let f = _ -> { let _ = MutList.pop!(v); () };
+        List.foreach(f, List.range(0, 75));
+        let c = capacity(v);
         let _ = MutList.pop!(v);
-        c == 100 and MutList.capacity(v) == 50
+        c == 100 and capacity(v) == 50
 
     @test
     def compress!02(): Bool & Impure =
         let v = MutList.new();
         MutList.compress!(v);
-        MutList.capacity(v) == 0
+        capacity(v) == 8
 
     @test
     def compress!03(): Bool & Impure =
         let v = MutList.new();
         MutList.push!(42, v);
         MutList.compress!(v);
-        MutList.capacity(v) == 1
+        capacity(v) == 8
 
     @test
     def compress!04(): Bool & Impure =
         let v = MutList.range(0, 5);
         MutList.compress!(v);
-        MutList.capacity(v) == 5
+        capacity(v) == 8
 
     @test
     def compress!05(): Bool & Impure =
@@ -1233,9 +1249,9 @@ namespace TestMutList {
         MutList.remove!(0, v);
         MutList.remove!(0, v);
         MutList.remove!(0, v);
-        let c = MutList.capacity(v);
+        let c = capacity(v);
         MutList.remove!(0, v);
-        c == 16 and MutList.capacity(v) == 8
+        c == 16 and capacity(v) == 8
 
     @test
     def compress!06(): Bool & Impure =
@@ -1246,9 +1262,9 @@ namespace TestMutList {
         let _ = MutList.pop!(v);
         let _ = MutList.pop!(v);
         let _ = MutList.pop!(v);
-        let c = MutList.capacity(v);
+        let c = capacity(v);
         let _ = MutList.pop!(v);
-        c == 16 and MutList.capacity(v) == 8
+        c == 16 and capacity(v) == 8
 
     /////////////////////////////////////////////////////////////////////////////
     // capacity                                                                //
@@ -1257,12 +1273,12 @@ namespace TestMutList {
     @test
     def capacity01(): Bool & Impure =
         let v = MutList.new();
-        MutList.capacity(v) == 0
+        capacity(v) == 8
 
     @test
     def capacity02(): Bool & Impure =
         let v = MutList.range(0, 9);
-        MutList.capacity(v) == 9
+        capacity(v) == 9
 
     @test
     def capacity03(): Bool & Impure =
@@ -1271,7 +1287,7 @@ namespace TestMutList {
         MutList.push!(1, v);
         MutList.push!(2, v);
         MutList.push!(3, v);
-        MutList.capacity(v) == 4
+        capacity(v) == 8
 
     @test
     def capacity04(): Bool & Impure =
@@ -1280,19 +1296,19 @@ namespace TestMutList {
         MutList.insert!(41, 0, v);
         MutList.insert!(40, 0, v);
         MutList.insert!(39, 0, v);
-        MutList.capacity(v) == 4
+        capacity(v) == 8
 
     @test
     def capacity05(): Bool & Impure =
         let v = MutList.new();
         MutList.push!(99, v);
-        MutList.capacity(v) == 1
+        capacity(v) == 8
 
     @test
     def capacity06(): Bool & Impure =
         let v = MutList.new();
         MutList.insert!(42, 0, v);
-        MutList.capacity(v) == 1
+        capacity(v) == 8
 
     @test
     def capacity07(): Bool & Impure =
@@ -1302,7 +1318,7 @@ namespace TestMutList {
         MutList.insert!(3, 0, v);
         MutList.insert!(2, 0, v);
         MutList.insert!(1, 0, v);
-        MutList.capacity(v) == 8
+        capacity(v) == 8
 
     /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //
@@ -1730,4 +1746,28 @@ def sortBy!08(): Bool & Impure = testSortBy!VsSortBy(Array.toMutList([5,3,0,4,1,
 
 @test
 def sortBy!09(): Bool & Impure = testSortBy!VsSortBy(Array.toMutList([2,3,0,4,1,2]))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // range                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def range01(): Bool & Impure =
+        let v1 = MutList.range(1, 4) |> MutList.toArray;
+        let v2 = MutList.range(0, 5) |> MutList.toArray;
+        let arr1 = [1, 2, 3];
+        let arr2 = [0, 1, 2, 3, 4];
+        v1 == arr1 and v2 == arr2
+
+    @test
+    def range02(): Bool & Impure =
+        let v = MutList.range(-1, 3) |> MutList.toArray;
+        let arr = [-1, 0, 1, 2];
+        v == arr
+
+    @test
+    def range03(): Bool & Impure =
+        let MutList(a, l) = MutList.range(0, 4);
+        let arr = [0, 1, 2, 3, default, default, default, default];
+        deref a == arr and deref l == 4
 }
