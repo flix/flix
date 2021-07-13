@@ -344,6 +344,23 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
+    object Chars {
+      def Special: Rule1[String] = rule {
+        "\\\\" ~ push("\\") |
+          "\\'" ~ push("'") |
+          "\\\"" ~ push("\"") |
+          "\\n" ~ push("\n") |
+          "\\r" ~ push("\r") |
+          "\\t" ~ push("\t")
+      }
+
+      def Unicode: Rule1[String] = rule {
+        "\\u" ~ capture(4 times CharPredicate.HexDigit) ~> ((x: String) =>
+          // Convert the 4-digit string to a single character.
+          Integer.parseInt(x, 16).toChar.toString)
+      }
+    }
+
     def Char: Rule1[ParsedAst.Literal.Char] = {
       def Normal: Rule1[String] = {
         def Quote: Rule0 = rule("'")
@@ -355,22 +372,28 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         }
       }
 
-      def Special: Rule1[String] = rule {
-        "\\\\" ~ push("\\") |
-          "\\'" ~ push("'") |
-          "\\n" ~ push("\n") |
-          "\\r" ~ push("\r") |
-          "\\t" ~ push("\t")
+      rule {
+        SP ~ "'" ~ (Normal | Chars.Special | Chars.Unicode) ~ "'" ~ SP ~> ParsedAst.Literal.Char
+      }
+    }
+
+    def Str: Rule1[ParsedAst.Literal.Str] = {
+      def Normal: Rule1[String] = {
+        def Quote: Rule0 = rule("\"")
+
+        def Backslash: Rule0 = rule("\\")
+
+        rule {
+          capture(!(Quote | Backslash | EOI) ~ CharPredicate.All)
+        }
       }
 
-      def Unicode: Rule1[String] = rule {
-        "\\u" ~ capture(4 times CharPredicate.HexDigit) ~> ((x: String) =>
-          // Convert the 4-digit string to a single character.
-          Integer.parseInt(x, 16).toChar.toString)
+      def StringContents: Rule1[String] = rule {
+        zeroOrMore(Normal | Chars.Special | Chars.Unicode) ~> ((substrings: Seq[String]) => substrings.mkString)
       }
 
       rule {
-        SP ~ "'" ~ (Normal | Special | Unicode) ~ "'" ~ SP ~> ParsedAst.Literal.Char
+        SP ~ "\"" ~ StringContents ~ "\"" ~ SP ~> ParsedAst.Literal.Str
       }
     }
 
@@ -416,14 +439,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def BigInt: Rule1[ParsedAst.Literal.BigInt] = rule {
       SP ~ Sign ~ RadixedInt ~ atomic("ii") ~ SP ~> ParsedAst.Literal.BigInt
-    }
-
-    def Str: Rule1[ParsedAst.Literal.Str] = {
-      def Quote: Rule0 = rule("\"")
-
-      rule {
-        SP ~ "\"" ~ capture(zeroOrMore(!(Quote | EOI) ~ CharPredicate.All)) ~ "\"" ~ SP ~> ParsedAst.Literal.Str
-      }
     }
 
     def Default: Rule1[ParsedAst.Literal.Default] = rule {
