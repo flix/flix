@@ -27,25 +27,11 @@ namespace TestIterator {
 
     @test
     def range03(): Bool & Impure =
-        let iter = Iterator.range(1, 4);
-        let one = Iterator.head(iter);
-        let two = Iterator.head(iter);
-        let three = Iterator.head(iter);
-        Some(1) == one and
-        Some(2) == two and
-        Some(3) == three and
-        None == Iterator.head(iter)
+        (Iterator.range(1, 4) |> Iterator.toList) == (1 :: 2 :: 3 :: Nil)
 
     @test
     def range04(): Bool & Impure =
-        let iter = Iterator.range(-1, 2);
-        let minusOne = Iterator.head(iter);
-        let zero = Iterator.head(iter);
-        let one = Iterator.head(iter);
-        Some(-1) == minusOne and
-        Some(0) == zero and
-        Some(1) == one and
-        None == Iterator.head(iter)
+        (Iterator.range(-1, 2) |> Iterator.toList) == (-1 :: 0 :: 1 :: Nil)
 
     @test
     def range05(): Bool & Impure =
