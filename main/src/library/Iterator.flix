@@ -66,7 +66,20 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def toArray(iter: Iterator[a]): Array[a] & Impure = ???
+    pub def toArray(iter: Iterator[a]): Array[a] & Impure =
+        toArrayHelper(MutList.new(), iter) |> MutList.toArray
+
+    ///
+    /// Helper function for `toArray`
+    ///
+    def toArrayHelper(v: MutList[a], iter: Iterator[a]): MutList[a] & Impure =
+        let Iterator(done, next) = iter;
+        if (done())
+            v
+        else {
+            v |> MutList.push!(next());
+            toArrayHelper(v, iter)
+        }
 
     ///
     /// Returns the association iterator `iter` as a map.
