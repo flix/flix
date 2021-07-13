@@ -59,7 +59,16 @@ namespace Iterator {
     ///
     /// Returns an empty iterator if `n < 0`.
     ///
-    pub def repeat(a: a, n: Int32): Iterator[a] & Impure = List.repeat(a, n) |> toIter
+    pub def repeat(a: a, n: Int32): Iterator[a] & Impure =
+        let i = ref 0;
+        let done: Done = () -> deref i >= n;
+        let next: Next[a] =
+            () -> {
+                i := (deref i) + 1;
+                a
+            };
+
+        Iterator(done, next)
 
     ///
     /// Returns `true` if and only if `iter` contains the element `a`.
