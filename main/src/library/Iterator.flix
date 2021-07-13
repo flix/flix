@@ -40,7 +40,19 @@ namespace Iterator {
     ///
     /// Returns an empty iterator if `b >= e`.
     ///
-    pub def range(b: Int32, e: Int32): Iterator[Int32] & Impure = List.range(b, e) |> toIter
+    pub def range(b: Int32, e: Int32): Iterator[Int32] & Impure =
+        if (b >= e)
+            Nil |> toIter
+        else
+            let i = ref b;
+            let d: Done = () -> deref i >= e;
+            let n: Next[Int32] =
+                () -> {
+                    let res = deref i;
+                    i := (deref i) + 1;
+                    res
+                };
+            Iterator(d, n)
 
     ///
     /// Returns an iterator over an iterable with the element `a` repeated `n` times.
