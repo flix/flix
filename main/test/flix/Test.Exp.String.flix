@@ -27,4 +27,10 @@ namespace Test/Exp/String {
     @test
     def testString09(): String = "\\"
 
+    @test
+    def testString10(): String = "\""
+
+    @test
+    def testString11(): String = "\'"
+
 }
