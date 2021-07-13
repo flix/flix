@@ -53,6 +53,27 @@ namespace TestIterator {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // repeat                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def repeat01(): Bool & Impure =
+        Iterator.repeat(10, 0) |> Iterator.isEmpty
+
+    @test
+    def repeat02(): Bool & Impure =
+        Iterator.repeat(2, -100) |> Iterator.isEmpty
+
+    @test
+    def repeat03(): Bool & Impure =
+        not (Iterator.repeat(2, 100) |> Iterator.isEmpty)
+
+    @test
+    def repeat04(): Bool & Impure =
+        (Iterator.repeat(1, 3) |> Iterator.toList) == (1 :: 1 :: 1 :: Nil)
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // isEmpty                                                                 //
     /////////////////////////////////////////////////////////////////////////////
     @test
