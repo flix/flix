@@ -1,6 +1,125 @@
 namespace TestIterator {
 
     /////////////////////////////////////////////////////////////////////////////
+    // head                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def testHead01(): Bool & Impure =
+        (Nil: List[Int32] |> Iterator.toIter |> Iterator.head) == None
+
+    @test
+    def testHead02(): Bool & Impure =
+        ((1 :: 2 :: Nil): List[Int32] |> Iterator.toIter |> Iterator.head) == Some(1)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // range                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def range01(): Bool & Impure =
+        Iterator.range(0, 0) |> Iterator.isEmpty
+
+    @test
+    def range02(): Bool & Impure =
+        Iterator.range(10, 0) |> Iterator.isEmpty
+
+    @test
+    def range03(): Bool & Impure =
+        (Iterator.range(1, 4) |> Iterator.toList) == (1 :: 2 :: 3 :: Nil)
+
+    @test
+    def range04(): Bool & Impure =
+        (Iterator.range(-1, 2) |> Iterator.toList) == (-1 :: 0 :: 1 :: Nil)
+
+    @test
+    def range05(): Bool & Impure =
+        (Iterator.range(-100, 200) |> Iterator.toList) == List.range(-100, 200)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // repeat                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def repeat01(): Bool & Impure =
+        Iterator.repeat(10, 0) |> Iterator.isEmpty
+
+    @test
+    def repeat02(): Bool & Impure =
+        Iterator.repeat(2, -100) |> Iterator.isEmpty
+
+    @test
+    def repeat03(): Bool & Impure =
+        not (Iterator.repeat(2, 100) |> Iterator.isEmpty)
+
+    @test
+    def repeat04(): Bool & Impure =
+        (Iterator.repeat(1, 3) |> Iterator.toList) == (1 :: 1 :: 1 :: Nil)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // memberOf                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def memberOf01(): Bool & Impure =
+        not (Nil: List[Int32] |> Iterator.toIter |> Iterator.memberOf(1))
+
+    @test
+    def memberOf02(): Bool & Impure =
+        let iter = Iterator.range(-10, 2);
+        iter |> Iterator.memberOf(1) and
+        iter |> Iterator.isEmpty
+
+    @test
+    def memberOf03(): Bool & Impure =
+        let el = "A";
+        let iter = Iterator.repeat(el, 5);
+        iter |> Iterator.memberOf(el) and
+        iter |> Iterator.memberOf(el) and
+        iter |> Iterator.memberOf(el) and
+        iter |> Iterator.memberOf(el) and
+        iter |> Iterator.memberOf(el) and
+        iter |> Iterator.isEmpty
+
+    @test
+    def memberOf04(): Bool & Impure =
+        let el = "A";
+        let iter = Iterator.repeat(el, 100);
+        not (iter |> Iterator.memberOf("Not A")) and
+        iter |> Iterator.isEmpty
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toArray                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toArray01(): Bool & Impure =
+        (Nil: List[Int32] |> Iterator.toIter |> Iterator.toArray) == []
+
+    @test
+    def toArray02(): Bool & Impure =
+        let iter = Iterator.range(-10, -5);
+        (iter |> Iterator.toArray) == [-10, -9, -8, -7, -6] and
+        iter |> Iterator.isEmpty
+
+    @test
+    def toArray03(): Bool & Impure =
+        let iter = Iterator.repeat(1, 3);
+        (iter |> Iterator.toArray) == [1, 1, 1] and
+        iter |> Iterator.isEmpty
+
+    @test
+    def toArray04(): Bool & Impure =
+        let iter = Iterator.range(-100, 200);
+        (iter |> Iterator.toArray) == (List.range(-100, 200) |> List.toArray) and
+        iter |> Iterator.isEmpty
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // isEmpty                                                                 //
     /////////////////////////////////////////////////////////////////////////////
     @test

@@ -21,6 +21,102 @@ pub enum Iterator[a] {
 namespace Iterator {
 
     ///
+    /// Returns `Some(x)` if `x` is the first element of `iter`.
+    ///
+    /// Returns `None` if `iter` is empty.
+    ///
+    /// Consumes the first element of the iterator.
+    ///
+    pub def head(iter: Iterator[a]): Option[a] & Impure = {
+        let Iterator(done, next) = iter;
+        if (done())
+            None
+        else
+            Some(next())
+    }
+
+    ///
+    /// Returns an iterator of all integers between `b` (inclusive) and `e` (exclusive).
+    ///
+    /// Returns an empty iterator if `b >= e`.
+    ///
+    pub def range(b: Int32, e: Int32): Iterator[Int32] & Impure =
+        let i = ref b;
+        let d: Done = () -> deref i >= e;
+        let n: Next[Int32] =
+            () -> {
+                let res = deref i;
+                i := (deref i) + 1;
+                res
+            };
+        Iterator(d, n)
+
+    ///
+    /// Returns an iterator over an iterable with the element `a` repeated `n` times.
+    ///
+    /// Returns an empty iterator if `n < 0`.
+    ///
+    pub def repeat(a: a, n: Int32): Iterator[a] & Impure =
+        let i = ref 0;
+        let done: Done = () -> deref i >= n;
+        let next: Next[a] =
+            () -> {
+                i := (deref i) + 1;
+                a
+            };
+
+        Iterator(done, next)
+
+    ///
+    /// Returns `true` if and only if `iter` contains the element `a`.
+    ///
+    /// Consumes elements of the iterator until an element equal to `a` is found.
+    ///
+    pub def memberOf(a: a, iter: Iterator[a]): Bool & Impure with Eq[a] =
+        let Iterator(done, next) = iter;
+        if (done())
+            false
+        else
+            next() == a or memberOf(a, iter)
+
+    ///
+    /// Returns the iterator `iter` as an array.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def toArray(iter: Iterator[a]): Array[a] & Impure =
+        toArrayHelper(MutList.new(), iter) |> MutList.toArray
+
+    ///
+    /// Helper function for `toArray`
+    ///
+    def toArrayHelper(v: MutList[a], iter: Iterator[a]): MutList[a] & Impure =
+        let Iterator(done, next) = iter;
+        if (done())
+            v
+        else {
+            v |> MutList.push!(next());
+            toArrayHelper(v, iter)
+        }
+
+    ///
+    /// Returns the association iterator `iter` as a map.
+    ///
+    /// If `iter` contains multiple mappings with the same key, `toMap` does not
+    /// make any guarantees about which mapping will be in the resulting map.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def toMap(iter: Iterator[(a, b)]): Map[a, b] & Impure with Order[a] = ???
+
+    ///
+    /// Returns the iterator `iter` as a set.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def toSet(iter: Iterator[a]): Set[a] & Impure with Order[a] = ???
+
+    ///
     /// Returns `true` if and only if the iterator `iter` has no more elements.
     ///
     /// Does *not* consume any elements of the iterator.
