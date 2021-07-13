@@ -483,6 +483,33 @@ namespace TestIterator {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // toArray                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toArray01(): Bool & Impure =
+        (Nil: List[Int32] |> Iterator.toIter |> Iterator.toArray) == []
+
+    @test
+    def toArray02(): Bool & Impure =
+        let iter = Iterator.range(-10, -5);
+        (iter |> Iterator.toArray) == [-10, -9, -8, -7, -6] and
+        iter |> Iterator.isEmpty
+
+    @test
+    def toArray03(): Bool & Impure =
+        let iter = Iterator.repeat(1, 3);
+        (iter |> Iterator.toArray) == [1, 1, 1] and
+        iter |> Iterator.isEmpty
+
+    @test
+    def toArray04(): Bool & Impure =
+        let iter = Iterator.range(-100, 200);
+        (iter |> Iterator.toArray) == (List.range(-100, 200) |> List.toArray) and
+        iter |> Iterator.isEmpty
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // isEmpty                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
