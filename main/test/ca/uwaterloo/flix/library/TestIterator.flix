@@ -74,6 +74,32 @@ namespace TestIterator {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // memberOf                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def memberOf01(): Bool & Impure =
+        not (Nil: List[Int32] |> Iterator.toIter |> Iterator.memberOf(1))
+
+    @test
+    def memberOf02(): Bool & Impure =
+        let iter = Iterator.range(-10, 2);
+        iter |> Iterator.memberOf(1) and
+        iter |> Iterator.isEmpty
+
+    @test
+    def memberOf03(): Bool & Impure =
+        let el = "A";
+        let iter = Iterator.repeat(el, 5);
+        iter |> Iterator.memberOf(el) and
+        iter |> Iterator.memberOf(el) and
+        iter |> Iterator.memberOf(el) and
+        iter |> Iterator.memberOf(el) and
+        iter |> Iterator.memberOf(el) and
+        iter |> Iterator.isEmpty
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // isEmpty                                                                 //
     /////////////////////////////////////////////////////////////////////////////
     @test
