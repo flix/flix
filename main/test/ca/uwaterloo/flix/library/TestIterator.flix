@@ -102,7 +102,7 @@ namespace TestIterator {
     def memberOf04(): Bool & Impure =
         let el = "A";
         let iter = Iterator.repeat(el, 100);
-        iter |> Iterator.memberOf("Not A") and
+        not (iter |> Iterator.memberOf("Not A")) and
         iter |> Iterator.isEmpty
 
 
