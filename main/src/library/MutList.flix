@@ -775,7 +775,7 @@ namespace MutList {
     ///
     /// Returns the capacity of `v`.
     ///
-    pub def capacity(v: MutList[a]): Int32 & Impure =
+    def capacity(v: MutList[a]): Int32 & Impure =
         let MutList(a, _) = v;
         Array.length(deref a)
 
