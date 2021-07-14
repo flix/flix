@@ -529,6 +529,29 @@ namespace TestIterator {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // toSet                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toSet01(): Bool & Impure =
+        Nil: List[Int32] |> Iterator.toIter |> Iterator.toSet == Set.empty()
+
+    @test
+    def toSet02(): Bool & Impure =
+        let xs = ("a" :: "b" :: "b" :: "c" :: Nil);
+        let iter = xs |> Iterator.toIter;
+        iter |> Iterator.toSet == List.toSet(xs) and
+        iter |> Iterator.isEmpty
+
+    @test
+    def toSet03(): Bool & Impure =
+        let xs = Set.range(0, 10000);
+        let iter = xs |> Set.toList |> Iterator.toIter;
+        iter |> Iterator.toSet == xs and
+        iter |> Iterator.isEmpty
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // isEmpty                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
