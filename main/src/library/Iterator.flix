@@ -306,6 +306,17 @@ namespace Iterator {
     pub def exists(f: a -> Bool, iter: Iterator[a]): Bool & Impure = ???
 
     ///
+    /// Returns `true` if and only if all elements in `iter` satisfy the predicate `f`.
+    ///
+    /// Returns `true` if `iter` is empty.
+    ///
+    /// The function `f` must be pure.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def forall(f: a -> Bool, iter: Iterator[a]): Bool & Impure = ???
+
+    ///
     /// Returns `true` if and only if the iterator `iter` has no more elements.
     ///
     /// Does *not* consume any elements of the iterator.
