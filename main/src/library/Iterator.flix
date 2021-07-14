@@ -107,7 +107,19 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def toMap(iter: Iterator[(a, b)]): Map[a, b] & Impure with Order[a] = ???
+    pub def toMap(iter: Iterator[(a, b)]): Map[a, b] & Impure with Order[a] =
+        toMapHelper(Map.empty(), iter)
+
+    ///
+    /// Helper function for `toMap`
+    ///
+    def toMapHelper(m: Map[a, b], iter: Iterator[(a, b)]): Map[a, b] & Impure with Order[a] =
+        let Iterator(done, next) = iter;
+        if (done())
+            m
+        else
+            let (a, b) = next();
+            toMapHelper(Map.insert(a, b, m), iter)
 
     ///
     /// Returns the iterator `iter` as a set.
