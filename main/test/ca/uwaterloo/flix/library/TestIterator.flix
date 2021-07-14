@@ -160,7 +160,7 @@ namespace TestIterator {
     @test
     def toSet03(): Bool & Impure =
         let xs = Set.range(0, 10000);
-        let iter = xs |> Iterator.toIter;
+        let iter = xs |> Set.toList |> Iterator.toIter;
         iter |> Iterator.toSet == xs and
         iter |> Iterator.isEmpty
 
