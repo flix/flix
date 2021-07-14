@@ -27,22 +27,20 @@ namespace MutDeque {
     ///
     /// Creates a new MutDeque with default values.
     //
-    pub def new(): MutDeque[a] & Impure = MutDeque(ref [], ref 0, ref 0)
+    pub def new(): MutDeque[a] & Impure = MutDeque(ref [default; 8], ref 0, ref 0)
 
 
     ///
     /// Removes and returns the front element as an optional of d in O(1) time. Returns None if d is empty.
     ///
-    pub def popFront(d: MutDeque[a]): Option[a] & Impure = match d {
-        case _ if isEmpty(d) => None
-
-        case MutDeque(arr, f, _) if isWithinBounds(deref f, deref arr) =>
+    pub def popFront(d: MutDeque[a]): Option[a] & Impure =
+        if (isEmpty(d))
+            None
+        else
+            let MutDeque(a, f, _) = d;
             let front = deref f;
-            f := increment(front)(withRespectTo(deref arr));
-            Some(get(deref arr, front))
-
-        case MutDeque(arr, _, _) => Some((deref arr)[-1]) // Internal Error - should be unreachable
-    }
+            f := increment(front, Array.length(deref a));
+            Some(Array.get(deref a, front))
 
 
     ///
@@ -146,7 +144,7 @@ namespace MutDeque {
     ///
     def requiresExpansion(d: MutDeque[a]): Bool & Impure =
         let MutDeque(arr, front, back) = d;
-        length(deref arr) == 0 || (deref back + 1) % length(deref arr) == deref front
+        length(deref arr) == 0 or (deref back + 1) % length(deref arr) == deref front
 
 
     ///
@@ -189,7 +187,7 @@ namespace MutDeque {
     /// Helper function for pop operations to determine if index i is within bounds of arr.
     ///
     def isWithinBounds(i: Int32, arr: Array[a]): Bool = {
-        i >= 0 && i < length(arr)
+        i >= 0 and i < length(arr)
     }
 
 
