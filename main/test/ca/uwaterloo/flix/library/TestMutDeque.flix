@@ -14,58 +14,23 @@
  * limitations under the License.
  */
 
-use List.{filter, head, foreach};
-use Array.{length => lengthOfArray};
-use Console.{printLine => println};
-use TestUtil.{impureAssert, printErrors};
-use MutDeque.{popFront, popBack, pushFront, pushBack, count, isEmpty};
-
-
 namespace TestMutDeque {
-    pub def testAll(): Int32 & Impure = {
 
-        let testResults: List[Int32] =
-            testInitialParameters_expectSuccess() ::
-            testPopFront_withEmptyDeque_expectFailure() ::
-            testPopFront_withNonEmptyDeque_expectSuccess() ::
-            testPopFront_withNonEmptyDequeUntilEmpty_expectFailure() ::
-            testPushBack_withEmptyDeque_expectSuccess() ::
-            testPushBack_withFullDeque_expectSuccess() ::
-            testPushBack_withExpansion_expectSuccess() ::
-            testPopBack_withEmptyDeque_expectFailure() ::
-            testPopBack_withNoneEmptyDeque_expectSuccess() ::
-            testPushFront_withEmptyDeque_expectSuccess() ::
-            testPushFront_withFullDeque_expectSuccess() ::
-            testCount_withAlwaysTrueCondition_expectSuccess() ::
-            testCount_withNumberOfALetters_expectSuccess() ::
-            testCount_withEmptyDeque_expectSuccess() ::
-            testCount_withAlwaysFalseCondition_expectSuccess() ::
-            testCount_withNumberOfAsAndPushAndPop_expectSuccess() ::
-            testAllOperations_expectSuccess() ::
-            Nil;
+    /////////////////////////////////////////////////////////////////////////////
+    // new                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
 
-        printErrors("TestMutDeque")(testResults);
-
-        match testResults |> filter(x -> x == 1) |> head {
-            case Some(_) =>
-                println("Tests exited with errors.");
-                1
-            case _       =>
-                println("All tests passed.");
-                0
-        }
-    }
+    @test
+    def new01(): Bool & Impure =
+        let MutDeque(a, f, b) = MutDeque.new();
+        Array.length(deref a) == 8 and
+        deref f == 0 and
+        deref b == 0
 
 
-    def testInitialParameters_expectSuccess(): Int32 & Impure = {
-        let MutDeque(a, s, e) = MutDeque.new();
-
-        impureAssert(() ->
-            lengthOfArray(deref a) == 0
-            && deref s == 0
-            && deref e == 0
-        )
-    }
+    /////////////////////////////////////////////////////////////////////////////
+    // popFront                                                                //
+    /////////////////////////////////////////////////////////////////////////////
 
 
     def testPopFront_withEmptyDeque_expectFailure(): Int32 & Impure = {
