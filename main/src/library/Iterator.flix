@@ -148,6 +148,17 @@ namespace Iterator {
     pub def replace(x: a, y: a, iter: Iterator[a]): Iterator[a] & Impure with Eq[a] = ???
 
     ///
+    /// Returns `true` if and only if at least one element in `iter` satisfies the predicate `f`.
+    ///
+    /// Returns `false` if `iter` is empty.
+    ///
+    /// The function `f` must be pure.
+    ///
+    /// Consumes elements of the iterator until an element that satisfies predicate `f` is found.
+    ///
+    pub def exists(f: a -> Bool, iter: Iterator[a]): Bool & Impure = ???
+
+    ///
     /// Returns `true` if and only if the iterator `iter` has no more elements.
     ///
     /// Does *not* consume any elements of the iterator.
