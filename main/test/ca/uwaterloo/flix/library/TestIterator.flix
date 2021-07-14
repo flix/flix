@@ -510,6 +510,24 @@ namespace TestIterator {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // toMap                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toMap01(): Bool & Impure =
+        (Nil: List[(String, Int32)] |> Iterator.toIter |> Iterator.toMap) == Map.empty()
+
+    @test
+    def toMap02(): Bool & Impure =
+        let list = ("A", 1) :: ("B", 2) :: ("C", 3) :: ("D", 4) :: Nil;
+        (list |> Iterator.toIter |> Iterator.toMap) == (list |> List.toMap)
+
+    @test
+    def toMap03(): Bool & Impure =
+        let map = Map.empty() |> Map.insert("1", 2) |> Map.insert("2", 3) |> Map.insert("3", 4);
+        map |> Map.toList |> Iterator.toIter |> Iterator.toMap == map
+
+    /////////////////////////////////////////////////////////////////////////////
     // isEmpty                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
