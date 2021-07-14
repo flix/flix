@@ -141,6 +141,13 @@ namespace Iterator {
             toSetHelper(iter, Set.insert(x, xs))
 
     ///
+    /// Returns a copy of `iter` with every occurrence of `x` replaced by `y`.
+    ///
+    /// Does *not* consume any elements of the iterator.
+    ///
+    pub def replace(x: a, y: a, iter: Iterator[a]): Iterator[a] & Impure with Eq[a] = ???
+
+    ///
     /// Returns `true` if and only if the iterator `iter` has no more elements.
     ///
     /// Does *not* consume any elements of the iterator.
