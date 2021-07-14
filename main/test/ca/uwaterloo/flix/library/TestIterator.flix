@@ -141,6 +141,7 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
     // isEmpty                                                                 //
     /////////////////////////////////////////////////////////////////////////////
+
     @test
     def testIsEmpty01(): Bool & Impure =
         Nil |> Iterator.toIter |> Iterator.isEmpty
