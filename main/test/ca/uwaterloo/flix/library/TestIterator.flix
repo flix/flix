@@ -527,6 +527,7 @@ namespace TestIterator {
         let map = Map.empty() |> Map.insert("1", 2) |> Map.insert("2", 3) |> Map.insert("3", 4);
         map |> Map.toList |> Iterator.toIter |> Iterator.toMap == map
 
+
     /////////////////////////////////////////////////////////////////////////////
     // isEmpty                                                                 //
     /////////////////////////////////////////////////////////////////////////////
