@@ -520,12 +520,16 @@ namespace TestIterator {
     @test
     def toMap02(): Bool & Impure =
         let list = ("A", 1) :: ("B", 2) :: ("C", 3) :: ("D", 4) :: Nil;
-        (list |> Iterator.toIter |> Iterator.toMap) == (list |> List.toMap)
+        let iter = list |> Iterator.toIter;
+        iter |> Iterator.toMap == list |> List.toMap and
+        iter |> Iterator.isEmpty
 
     @test
     def toMap03(): Bool & Impure =
         let map = Map.empty() |> Map.insert("1", 2) |> Map.insert("2", 3) |> Map.insert("3", 4);
-        map |> Map.toList |> Iterator.toIter |> Iterator.toMap == map
+        let iter = map |> Map.toList |> Iterator.toIter;
+        iter |> Iterator.toMap == map and
+        iter |> Iterator.isEmpty
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -546,7 +550,7 @@ namespace TestIterator {
     @test
     def toSet03(): Bool & Impure =
         let xs = Set.range(0, 10000);
-        let iter = xs |> Set.toList |> Iterator.toIter;
+        let iter = xs |> Iterator.toIter;
         iter |> Iterator.toSet == xs and
         iter |> Iterator.isEmpty
 
