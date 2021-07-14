@@ -126,7 +126,19 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def toSet(iter: Iterator[a]): Set[a] & Impure with Order[a] = ???
+    pub def toSet(iter: Iterator[a]): Set[a] & Impure with Order[a] =
+        toSetHelper(iter, Set.empty())
+
+    ///
+    /// Helper function for `toSet`
+    ///
+    def toSetHelper(iter: Iterator[a], xs: Set[a]): Set[a] & Impure with Order[a] =
+        let Iterator(done, next) = iter;
+        if (done())
+            xs
+        else
+            let x = next();
+            toSetHelper(iter, Set.insert(x, xs))
 
     ///
     /// Returns `true` if and only if the iterator `iter` has no more elements.
