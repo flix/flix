@@ -178,7 +178,12 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def forall(f: a -> Bool, iter: Iterator[a]): Bool & Impure = ???
+    pub def forall(f: a -> Bool, iter: Iterator[a]): Bool & Impure =
+        let Iterator(done, next) = iter;
+        if (done())
+            true
+        else
+            f(next()) and forall(f, iter)
 
     ///
     /// Returns `iter` without the longest prefix that satisfies the predicate `f`.
