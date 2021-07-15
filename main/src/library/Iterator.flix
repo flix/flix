@@ -208,6 +208,17 @@ namespace Iterator {
     ///
     pub def zip(iterA: Iterator[a], iterB: Iterator[b]): Iterator[(a, b)] & Impure = ???
 
+    ///
+    /// Returns an iterator where the element at index `i` is `f(a, b)` where
+    /// `a` is the element at index `i` in `iterA` and `b` is the element at index `i` in `iterB`.
+    ///
+    /// If either `iterA` or `iterB` becomes depleted, then no further elements are added to the resulting list.
+    ///
+    /// Consumes elements of both `iterA` and `iterB` equal to the length of the shortest iterator.
+    /// If `iterA` and `iterB` are equal length, both iterators are fully consumed.
+    ///
+    pub def zipWith(f: (a, b) -> c & e, iterA: Iterator[a], iterB: Iterator[b]): Iterator[c] & Impure = ???
+
 
     ///
     /// Returns `true` if and only if the iterator `iter` has no more elements.
