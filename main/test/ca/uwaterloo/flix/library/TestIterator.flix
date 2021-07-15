@@ -661,7 +661,7 @@ namespace TestIterator {
         let iter = Iterator.range(0, 1);
         iter |> Iterator.forall(x -> x == 0) and
         iter |> Iterator.isEmpty and
-        iter |> Iterator.exists(_ -> false)
+        iter |> Iterator.forall(_ -> false)
 
     @test
     def forall03(): Bool & Impure =
