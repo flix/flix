@@ -179,6 +179,16 @@ namespace Iterator {
     pub def dropWhile(f: a -> Bool, iter: Iterator[a]): Iterator[a] & Impure = ???
 
     ///
+    /// Returns the longest prefix of `iter` that satisfies the predicate `f`.
+    ///
+    /// The function `f` must be pure.
+    ///
+    /// Consumes elements of the iterator until the first element that does *not* satisfy predicate `f`.
+    ///
+    pub def takeWhile(f: a -> Bool, iter: Iterator[a]): Iterator[a] & Impure = ???
+
+
+    ///
     /// Returns `true` if and only if the iterator `iter` has no more elements.
     ///
     /// Does *not* consume any elements of the iterator.
