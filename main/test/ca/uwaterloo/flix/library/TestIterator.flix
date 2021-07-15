@@ -622,7 +622,7 @@ namespace TestIterator {
     @test
     def exists05(): Bool & Impure =
         let iter = Iterator.range(0, 1000);
-        iter |> Iterator.exists(_ -> false) and
+        not (iter |> Iterator.exists(_ -> false)) and
         iter |> Iterator.isEmpty
 
     @test
