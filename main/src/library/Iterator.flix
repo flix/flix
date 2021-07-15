@@ -189,7 +189,21 @@ namespace Iterator {
     ///
     /// Consumes elements of the iterator until the first element that does *not* satisfy predicate `f`.
     ///
-    pub def dropWhile(f: a -> Bool, iter: Iterator[a]): Iterator[a] & Impure = ???
+    pub def dropWhile(f: a -> Bool, iter: Iterator[a]): Iterator[a] & Impure =
+        let Iterator(done, next) = iter;
+        let x = next();
+        let p = ref true;
+        let n = () -> {
+            if (deref p) {
+                p := false;
+                x
+            } else next()
+        };
+
+        if (done() or not f(x))
+            Iterator(done, n)
+        else dropWhile(f, iter)
+
 
     ///
     /// Returns the longest prefix of `iter` that satisfies the predicate `f`.
