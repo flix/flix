@@ -375,6 +375,15 @@ namespace Iterator {
     ///
     pub def foldLeft(f: (b, a) -> b & e, s: b, iter: Iterator[a]): b & Impure = ???
 
+    ///
+    /// Applies `f` to a start value `s` and all elements in `iter` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def foldRight(f: (a, b) -> b & e, s: b, iter: Iterator[a]): b & Impure = ???
+
 
     ///
     /// Returns `true` if and only if the iterator `iter` has no more elements.
