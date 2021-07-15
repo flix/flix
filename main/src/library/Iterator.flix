@@ -334,6 +334,17 @@ namespace Iterator {
     ///
     pub def takeWhile(f: a -> Bool, iter: Iterator[a]): Iterator[a] & Impure = ???
 
+    ///
+    /// Applies `f` to every element of `iter`.
+    ///
+    /// The function `f` must be impure.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    // TODO: Should this be f: a -> Unit & ef, or is the compiler bug still prohibiting this?
+    pub def foreach(f: a ~> Unit, iter: Iterator[a]): Unit & Impure = ???
+
+
 
     ///
     /// Returns `true` if and only if the iterator `iter` has no more elements.
