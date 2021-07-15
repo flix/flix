@@ -377,6 +377,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
+    // Note that outside of patterns, Strings are parsed as [[Interpolation]]s
     def Str: Rule1[ParsedAst.Literal.Str] = {
       def Normal: Rule1[String] = {
         def Quote: Rule0 = rule("\"")
@@ -656,6 +657,16 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Interpolation: Rule1[ParsedAst.Expression.Interpolation] = {
+      def Normal: Rule1[String] = {
+        def Quote: Rule0 = rule("\"")
+
+        def Backslash: Rule0 = rule("\\")
+
+        rule {
+          capture(!(Quote | Backslash | DollarLBrace | EOI) ~ CharPredicate.All)
+        }
+      }
+
       def DblQuote: Rule0 = rule("\"")
 
       def DollarLBrace: Rule0 = rule("${")
@@ -667,8 +678,9 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def StrPart: Rule1[ParsedAst.InterpolationPart] = rule {
-        SP ~ capture(oneOrMore(!(DblQuote | DollarLBrace | EOI) ~ CharPredicate.All)) ~ SP ~> ParsedAst.InterpolationPart.StrPart
+        SP ~ oneOrMore(Normal | Literals.Chars.Special | Literals.Chars.Unicode) ~ SP ~> ParsedAst.InterpolationPart.StrPart
       }
+      // MATT do Rule0s for and capture at the end to avoid having to do mkString or whatever
 
       def InterpolationPart: Rule1[ParsedAst.InterpolationPart] = rule {
         ExpPart | StrPart
