@@ -141,11 +141,17 @@ namespace Iterator {
             toSetHelper(iter, Set.insert(x, xs))
 
     ///
-    /// Returns a copy of `iter` with every occurrence of `x` replaced by `y`.
+    /// Returns `iter` with every occurrence of `x` replaced by `y`.
     ///
     /// Does *not* consume any elements of the iterator.
     ///
-    pub def replace(x: a, y: a, iter: Iterator[a]): Iterator[a] & Impure with Eq[a] = ???
+    pub def replace(x: a, y: a, iter: Iterator[a]): Iterator[a] with Eq[a] =
+        let Iterator(done, next) = iter;
+        let n = () -> {
+            let el = next();
+            if (el == x) y else el
+        };
+        Iterator(done, n)
 
     ///
     /// Returns `true` if and only if at least one element in `iter` satisfies the predicate `f`.
