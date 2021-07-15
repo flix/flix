@@ -326,7 +326,7 @@ namespace TestIterator {
     @test
     def dropWhile02(): Bool & Impure =
         let iter = () -> Iterator.range(0, 1000);
-        iter() |> Iterator.dropWhile(_ -> false) |> Iterator.toList == List.range(0, 1000)
+        iter() |> Iterator.dropWhile(_ -> false) |> Iterator.toList == List.range(1, 1000)
 
     @test
     def dropWhile03(): Bool & Impure =
@@ -341,7 +341,7 @@ namespace TestIterator {
     @test
     def dropWhile05(): Bool & Impure =
         let iter = () -> Iterator.repeat(2, 1000);
-        iter() |> Iterator.dropWhile(x -> x < 500) |> Iterator.isEmpty
+        iter() |> Iterator.dropWhile(x -> x < 3) |> Iterator.isEmpty
 
     @test
     def dropWhile06(): Bool & Impure =
