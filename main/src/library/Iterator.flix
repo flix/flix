@@ -43,10 +43,9 @@ namespace Iterator {
     pub def range(b: Int32, e: Int32): Iterator[Int32] & Impure =
         let i = ref b;
         let d: Done = () -> deref i >= e;
-        let n: Next[Int32] =
-            () -> {
+        let n: Next[Int32] = () -> {
                 let res = deref i;
-                i := (deref i) + 1;
+                i := res + 1;
                 res
             };
         Iterator(d, n)
@@ -59,12 +58,10 @@ namespace Iterator {
     pub def repeat(a: a, n: Int32): Iterator[a] & Impure =
         let i = ref 0;
         let done: Done = () -> deref i >= n;
-        let next: Next[a] =
-            () -> {
+        let next: Next[a] = () -> {
                 i := (deref i) + 1;
                 a
             };
-
         Iterator(done, next)
 
     ///
