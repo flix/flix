@@ -202,6 +202,49 @@ namespace TestIterator {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // exists                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def exists01(): Bool & Impure =
+        not (Iterator.range(0, 0) |> Iterator.exists(_ -> true))
+
+    @test
+    def exists02(): Bool & Impure =
+        let iter = Iterator.range(0, 1);
+        iter |> Iterator.exists(x -> x == 0) and
+        iter |> Iterator.isEmpty and
+        not (iter |> Iterator.exists(_ -> true))
+
+    @test
+    def exists03(): Bool & Impure =
+        let iter = ("a" :: "b" :: "c" :: Nil): List[String] |> Iterator.toIter;
+        iter |> Iterator.exists(x -> x == "b") and
+        not (iter |> Iterator.isEmpty) and
+        iter |> Iterator.toList == ("c" :: Nil)
+
+    @test
+    def exists04(): Bool & Impure =
+        let iter = ("a" :: "b" :: "c" :: Nil): List[String] |> Iterator.toIter;
+        iter |> Iterator.exists(x -> x == "1000") and
+        iter |> Iterator.isEmpty
+
+    @test
+    def exists05(): Bool & Impure =
+        let iter = Iterator.range(0, 1000);
+        iter |> Iterator.exists(_ -> false) and
+        not (iter |> Iterator.isEmpty) and
+        iter |> Iterator.toList == List.range(0, 1000)
+
+    @test
+    def exists06(): Bool & Impure =
+        let iter = Iterator.range(0, 1000);
+        iter |> Iterator.exists(_ -> true) and
+        not (iter |> Iterator.isEmpty) and
+        iter |> Iterator.toList == List.range(1, 1000)
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // isEmpty                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
