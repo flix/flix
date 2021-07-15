@@ -162,7 +162,12 @@ namespace Iterator {
     ///
     /// Consumes elements of the iterator until an element that satisfies predicate `f` is found.
     ///
-    pub def exists(f: a -> Bool, iter: Iterator[a]): Bool & Impure = ???
+    pub def exists(f: a -> Bool, iter: Iterator[a]): Bool & Impure =
+        let Iterator(done, next) = iter;
+        if (done())
+            false
+        else
+            f(next()) or exists(f, iter)
 
     ///
     /// Returns `true` if and only if all elements in `iter` satisfy the predicate `f`.
