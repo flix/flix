@@ -616,15 +616,14 @@ namespace TestIterator {
     @test
     def exists04(): Bool & Impure =
         let iter = ("a" :: "b" :: "c" :: Nil): List[String] |> Iterator.toIter;
-        iter |> Iterator.exists(x -> x == "1000") and
+        not (iter |> Iterator.exists(x -> x == "1000")) and
         iter |> Iterator.isEmpty
 
     @test
     def exists05(): Bool & Impure =
         let iter = Iterator.range(0, 1000);
         iter |> Iterator.exists(_ -> false) and
-        not (iter |> Iterator.isEmpty) and
-        iter |> Iterator.toList == List.range(0, 1000)
+        iter |> Iterator.isEmpty
 
     @test
     def exists06(): Bool & Impure =
