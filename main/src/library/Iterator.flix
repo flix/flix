@@ -366,6 +366,15 @@ namespace Iterator {
     ///
     pub def zipWith(f: (a, b) -> c & e, iterA: Iterator[a], iterB: Iterator[b]): Iterator[c] & Impure = ???
 
+    ///
+    /// Applies `f` to a start value `s` and all elements in `iter` going from left to right.
+    ///
+    /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def foldLeft(f: (b, a) -> b & e, s: b, iter: Iterator[a]): b & Impure = ???
+
 
     ///
     /// Returns `true` if and only if the iterator `iter` has no more elements.
