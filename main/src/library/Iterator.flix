@@ -384,6 +384,14 @@ namespace Iterator {
     ///
     pub def foldRight(f: (a, b) -> b & e, s: b, iter: Iterator[a]): b & Impure = ???
 
+    ///
+    /// Optionally returns the first element of `iter` that satisfies the predicate `f` when searching from right to left.
+    ///
+    /// The function `f` must be pure.
+    ///
+    /// Consumes elements from the right until an element that satisfies predicate `f` is found.
+    ///
+    pub def findRight(f: a -> Bool, iter: Iterator[a]): Option[a] = ???
 
     ///
     /// Returns `true` if and only if the iterator `iter` has no more elements.
