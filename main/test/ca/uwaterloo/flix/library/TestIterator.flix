@@ -207,7 +207,8 @@ namespace TestIterator {
 
     @test
     def exists01(): Bool & Impure =
-        not (Iterator.range(0, 0) |> Iterator.exists(_ -> true))
+        not (Iterator.range(0, 0) |> Iterator.exists(_ -> true)) and
+        not (Iterator.range(0, 0) |> Iterator.exists(_ -> false))
 
     @test
     def exists02(): Bool & Impure =
@@ -241,6 +242,75 @@ namespace TestIterator {
         iter |> Iterator.exists(_ -> true) and
         not (iter |> Iterator.isEmpty) and
         iter |> Iterator.toList == List.range(1, 1000)
+
+    @test
+    def exists07(): Bool & Impure =
+        let iter = Iterator.repeat(2, 1000);
+        iter |> Iterator.exists(x -> x == 2) and
+        not (iter |> Iterator.isEmpty) and
+        iter |> Iterator.toList == List.repeat(2, 999)
+
+    @test
+    def exists08(): Bool & Impure =
+        let iter = Iterator.repeat(2, 1000);
+        not (iter |> Iterator.exists(x -> x == 1)) and
+        iter |> Iterator.isEmpty
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // forall                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def forall01(): Bool & Impure =
+        Iterator.range(0, 0) |> Iterator.forall(_ -> false) and
+        Iterator.range(0, 0) |> Iterator.forall(_ -> true)
+
+    @test
+    def forall02(): Bool & Impure =
+        let iter = Iterator.range(0, 1);
+        iter |> Iterator.forall(x -> x == 0) and
+        iter |> Iterator.isEmpty and
+        iter |> Iterator.exists(_ -> false)
+
+    @test
+    def forall03(): Bool & Impure =
+        let iter = ("a" :: "b" :: "c" :: Nil): List[String] |> Iterator.toIter;
+        not (iter |> Iterator.forall(x -> x == "b")) and
+        not (iter |> Iterator.isEmpty) and
+        iter |> Iterator.toList == ("b" :: "c" :: Nil)
+
+    @test
+    def forall04(): Bool & Impure =
+        let iter = ("a" :: "b" :: "c" :: Nil): List[String] |> Iterator.toIter;
+        not (iter |> Iterator.forall(x -> x == "1000")) and
+        not (iter |> Iterator.isEmpty)
+
+    @test
+    def forall05(): Bool & Impure =
+        let iter = Iterator.range(0, 1000);
+        not (iter |> Iterator.forall(_ -> false)) and
+        not (iter |> Iterator.isEmpty) and
+        iter |> Iterator.toList == List.range(1, 1000)
+
+    @test
+    def forall06(): Bool & Impure =
+        let iter = Iterator.range(0, 1000);
+        iter |> Iterator.forall(_ -> true) and
+        iter |> Iterator.isEmpty
+
+    @test
+    def forall07(): Bool & Impure =
+        let iter = Iterator.repeat(2, 1000);
+        iter |> Iterator.forall(x -> x == 2) and
+        iter |> Iterator.isEmpty
+
+    @test
+    def forall08(): Bool & Impure =
+        let iter = Iterator.repeat(2, 1000);
+        not (iter |> Iterator.forall(x -> x == 1)) and
+        not (iter |> Iterator.isEmpty) and
+        iter |> Iterator.toList == List.repeat(2, 999)
 
 
     /////////////////////////////////////////////////////////////////////////////
