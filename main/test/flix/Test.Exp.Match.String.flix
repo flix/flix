@@ -33,6 +33,12 @@ namespace Test/Exp/Match/String {
     }
 
     @test
+    def testMatchString05(): Bool = match "\"" {
+        case "\"" => true
+        case _ => false
+    }
+
+    @test
     def testMatchStringVar01(): Bool = match "abc" {
         case x => x == "abc"
     }

@@ -989,7 +989,7 @@ namespace String {
         if (isEmpty(s))
             Nil
         else
-            Array.toList(split(s, "\R")) as & Pure
+            Array.toList(split(s, "\r")) as & Pure
 
     ///
     /// Join the array of strings `a` separating each pair of strings and
@@ -1013,7 +1013,7 @@ namespace String {
     @Time(length(s)) @Space(length(s))
     pub def words(s: String): List[String] = match trim(s) {
         case s1 if isEmpty(s1) => Nil
-        case s1 => Array.toList(split(s1, "\s+")) as & Pure
+        case s1 => Array.toList(split(s1, "\\s+")) as & Pure
     }
 
     ///

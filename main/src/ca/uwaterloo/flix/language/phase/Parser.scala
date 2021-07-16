@@ -677,10 +677,13 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         SP ~ DollarLBrace ~ optWS ~ Expression ~ optWS ~ RBrace ~ SP ~> ParsedAst.InterpolationPart.ExpPart
       }
 
-      def StrPart: Rule1[ParsedAst.InterpolationPart] = rule {
-        SP ~ oneOrMore(Normal | Literals.Chars.Special | Literals.Chars.Unicode) ~ SP ~> ParsedAst.InterpolationPart.StrPart
+      def StringContents: Rule1[String] = rule {
+        oneOrMore(Normal | Literals.Chars.Special | Literals.Chars.Unicode) ~> ((l: Seq[String]) => l.mkString)
       }
-      // MATT do Rule0s for and capture at the end to avoid having to do mkString or whatever
+
+      def StrPart: Rule1[ParsedAst.InterpolationPart] = rule {
+        SP ~ StringContents ~ SP ~> ParsedAst.InterpolationPart.StrPart
+      }
 
       def InterpolationPart: Rule1[ParsedAst.InterpolationPart] = rule {
         ExpPart | StrPart
