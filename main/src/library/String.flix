@@ -989,7 +989,7 @@ namespace String {
         if (isEmpty(s))
             Nil
         else
-            Array.toList(split(s, "\r")) as & Pure
+            Array.toList(split(s, "\\R")) as & Pure
 
     ///
     /// Join the array of strings `a` separating each pair of strings and
