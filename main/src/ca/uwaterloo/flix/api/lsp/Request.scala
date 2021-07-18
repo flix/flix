@@ -105,6 +105,11 @@ object Request {
   case class Uses(requestId: String, uri: String, pos: Position) extends Request
 
   /**
+   * A symbol request.
+   */
+  case class Symbol(requestId: String, uri: String, pos: Position) extends Request
+
+  /**
     * Tries to parse the given `json` value as a [[AddUri]] request.
     */
   def parseAddUri(json: json4s.JValue): Result[Request, String] = {
@@ -242,6 +247,17 @@ object Request {
       uri <- parseUri(json)
       pos <- Position.parse(json \\ "position")
     } yield Request.Hover(id, uri, pos)
+  }
+
+  /**
+   * Tries to parse the given `json` value to a [[Symbol]] request.
+   */
+  def parseSymbol(json: json4s.JValue): Result[Request, String] = {
+    for {
+      id <- parseId(json)
+      uri <- parseUri(json)
+      pos <- Position.parse(json \\ "position")
+    } yield Request.Symbol(id, uri, pos)
   }
 
   /**

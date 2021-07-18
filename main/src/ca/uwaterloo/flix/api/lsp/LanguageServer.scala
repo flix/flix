@@ -178,6 +178,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       case JString("lsp/goto") => Request.parseGoto(json)
       case JString("lsp/rename") => Request.parseRename(json)
       case JString("lsp/uses") => Request.parseUses(json)
+      case JString("lsp/symbols") => Request.parseSymbol(json)
 
       case s => Err(s"Unsupported request: '$s'.")
     }
@@ -229,6 +230,8 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     case Request.Codelens(id, uri) => processCodelens(id, uri)
 
     case Request.Complete(id, uri, pos) => processComplete(id, uri, pos)
+
+    case Request.Symbol(id, uri, pos) => processSymbol(id, uri, pos)
 
     case Request.Highlight(id, uri, pos) =>
       ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(index, root)
@@ -351,6 +354,15 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> JArray(allCodeLenses.map(_.toJSON)))
   }
 
+
+  /**
+   * Processes a symbol request
+   */
+  private def processSymbol(requestId: String, uri: String, pos: Position): JValue = {
+
+    // TODO implement the function
+    ("id" -> requestId) ~ ("status" -> "success")
+  }
   /**
     * Processes a complete request.
     */
