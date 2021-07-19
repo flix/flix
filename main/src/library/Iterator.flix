@@ -237,7 +237,13 @@ namespace Iterator {
     /// Consumes elements of both `iterA` and `iterB` equal to the length of the shortest iterator.
     /// If `iterA` and `iterB` are equal length, both iterators are fully consumed.
     ///
-    pub def zip(iterA: Iterator[a], iterB: Iterator[b]): Iterator[(a, b)] & Impure = ???
+    pub def zip(iterA: Iterator[a], iterB: Iterator[b]): Iterator[(a, b)] =
+        let Iterator(doneA, nextA) = iterA;
+        let Iterator(doneB, nextB) = iterB;
+        let doneAB = () -> doneA() or doneB();
+        let nextAB = () -> (nextA(), nextB());
+        Iterator(doneAB, nextAB)
+
 
     ///
     /// Returns an iterator where the element at index `i` is `f(a, b)` where
