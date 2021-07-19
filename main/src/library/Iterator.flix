@@ -232,7 +232,7 @@ namespace Iterator {
     /// Returns an iterator where the element at index `i` is `(a, b)` where
     /// `a` is the element at index `i` in `iterA` and `b` is the element at index `i` in `iterB`.
     ///
-    /// If either `iterA` or `iterB` becomes depleted, then no further elements are added to the resulting iterator.
+    /// If either `iterA` or `iterB` is depleted, then no further elements are added to the resulting iterator.
     ///
     /// Consumes elements of both `iterA` and `iterB` equal to the length of the shortest iterator.
     /// If `iterA` and `iterB` are equal length, both iterators are fully consumed.
