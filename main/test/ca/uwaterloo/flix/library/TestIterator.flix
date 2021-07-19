@@ -365,6 +365,33 @@ namespace TestIterator {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // foreach                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foreach01(): Bool & Impure =
+        let l: List[Int32] = Nil;
+        let ml: MutList[Int32] = MutList.new();
+        l |> Iterator.toIter |> Iterator.foreach(x -> ml |> MutList.push!(x));
+        ml |> MutList.toImm == l
+
+    @test
+    def foreach02(): Bool & Impure =
+        let iter = Iterator.range(0, 10000);
+        let ml: MutList[Int32] = MutList.new();
+        iter |> Iterator.foreach(x -> ml |> MutList.push!(x));
+        ml |> MutList.toImm == List.range(0, 10000) and
+        iter |> Iterator.isEmpty
+
+    @test
+    def foreach03(): Bool & Impure =
+        let iter = Iterator.range(0, 10000);
+        let x = ref 0;
+        iter |> Iterator.foreach(_ -> x := (deref x) + 1);
+        deref x == 10000 and iter |> Iterator.isEmpty
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // isEmpty                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
