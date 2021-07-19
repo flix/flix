@@ -741,6 +741,24 @@ namespace Test/Exp/Binary/Arithmetic {
     def testBinaryModulo45(): Bool = (-1200000000000000000000ii % -500000000000000000000ii) == -200000000000000000000ii
 
     @test
+    def testBinaryModulo46(): Bool = (1 % 0) == 0
+
+    @test
+    def testBinaryModulo47(): Bool = (1i8 % 0i8) == 0i8
+
+    @test
+    def testBinaryModulo48(): Bool = (1i16 % 0i16) == 0i16
+
+    @test
+    def testBinaryModulo49(): Bool = (1i32 % 0i32) == 0i32
+
+    @test
+    def testBinaryModulo50(): Bool = (1i64 % 0i64) == 0i64
+
+    @test
+    def testBinaryModulo51(): Bool = (1ii % 0ii) == 0ii
+
+    @test
     def testBinaryExponentiate01(): Bool = (2 ** 0) == 1
 
     @test
