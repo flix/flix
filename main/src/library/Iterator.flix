@@ -220,8 +220,13 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    // TODO: Should this be f: a -> Unit & ef, or is the compiler bug still prohibiting this?
-    pub def foreach(f: a ~> Unit, iter: Iterator[a]): Unit & Impure = ???
+    pub def foreach(f: a ~> Unit, iter: Iterator[a]): Unit & Impure =
+        let Iterator(done, next) = iter;
+        if (not done()) {
+            f(next());
+            foreach(f, iter)
+        }
+        else ()
 
     ///
     /// Returns an iterator where the element at index `i` is `(a, b)` where
