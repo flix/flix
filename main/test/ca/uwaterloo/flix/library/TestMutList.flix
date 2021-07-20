@@ -1217,7 +1217,7 @@ namespace TestMutList {
     def compress!02(): Bool & Impure =
         let v = MutList.new();
         MutList.compress!(v);
-        capacity(v) == 8
+        capacity(v) == capacity(MutList.new())
 
     @test
     def compress!03(): Bool & Impure =
