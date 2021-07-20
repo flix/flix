@@ -1258,59 +1258,6 @@ namespace TestMutList {
         let _ = MutList.pop!(v);
         c == 16 and capacity(v) == 8
 
-    /////////////////////////////////////////////////////////////////////////////
-    // capacity                                                                //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def capacity01(): Bool & Impure =
-        let v = MutList.new();
-        capacity(v) == 8
-
-    @test
-    def capacity02(): Bool & Impure =
-        let v = MutList.range(0, 9);
-        capacity(v) == 9
-
-    @test
-    def capacity03(): Bool & Impure =
-        let v = MutList.new();
-        MutList.push!(0, v);
-        MutList.push!(1, v);
-        MutList.push!(2, v);
-        MutList.push!(3, v);
-        capacity(v) == 8
-
-    @test
-    def capacity04(): Bool & Impure =
-        let v = MutList.new();
-        MutList.push!(42, v);
-        MutList.insert!(41, 0, v);
-        MutList.insert!(40, 0, v);
-        MutList.insert!(39, 0, v);
-        capacity(v) == 8
-
-    @test
-    def capacity05(): Bool & Impure =
-        let v = MutList.new();
-        MutList.push!(99, v);
-        capacity(v) == 8
-
-    @test
-    def capacity06(): Bool & Impure =
-        let v = MutList.new();
-        MutList.insert!(42, 0, v);
-        capacity(v) == 8
-
-    @test
-    def capacity07(): Bool & Impure =
-        let v = MutList.new();
-        MutList.insert!(5, 0, v);
-        MutList.insert!(4, 0, v);
-        MutList.insert!(3, 0, v);
-        MutList.insert!(2, 0, v);
-        MutList.insert!(1, 0, v);
-        capacity(v) == 8
 
     /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //
