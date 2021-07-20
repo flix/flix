@@ -17,26 +17,28 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.phase.Eraser.FTypes
+import ca.uwaterloo.flix.language.phase.sjvm.NamespaceInfo
 
 import scala.collection.mutable
 
-sealed case class EraserMonad[+T](value: T, fTypes: FTypes) {
+sealed case class EraserMonad[+T](value: T, fTypes: FTypes, namespaces: Set[NamespaceInfo]) {
 
   final def map[U](f: T => U): EraserMonad[U] =
-    EraserMonad(f(value), fTypes)
+    EraserMonad(f(value), fTypes, namespaces)
 
   final def flatMap[U](f: T => EraserMonad[U]): EraserMonad[U] = {
     val monad0 = f(value)
-    EraserMonad(monad0.value, fTypes union monad0.fTypes)
+    EraserMonad(monad0.value, fTypes union monad0.fTypes, namespaces union monad0.namespaces)
   }
 
-  final def setFTypes(f: FTypes => FTypes): EraserMonad[T] =
-    EraserMonad(value, f(fTypes))
+  final def copyWith(fTypes: FTypes = fTypes, namespaces: Set[NamespaceInfo] = namespaces): EraserMonad[T] =
+    EraserMonad(value, fTypes, namespaces)
 
 }
 
 object EraserMonad {
-  final def toMonad[T](t: T): EraserMonad[T] = EraserMonad(t, Set.empty)
+  final def toMonad[T](t: T): EraserMonad[T] =
+    EraserMonad(t, Set.empty, Set.empty)
 
   implicit class ToMonad[+T](val t: T) {
     def toMonad[U >: T]: EraserMonad[U] = EraserMonad.toMonad(t)
@@ -53,15 +55,17 @@ object EraserMonad {
     // Two mutable arrays to hold the intermediate results.
     val values = mutable.ArrayBuffer.empty[S]
     var fTypes: FTypes = Set.empty
+    var nss: Set[NamespaceInfo] = Set.empty
 
     // Apply f to each element and collect the results.
     for (x <- xs) {
-      val EraserMonad(v, ft) = f(x)
+      val EraserMonad(v, ft, ns) = f(x)
       values += v
       fTypes = fTypes union ft
+      nss = nss union ns
     }
 
-    EraserMonad(values.toList, fTypes)
+    EraserMonad(values.toList, fTypes, nss)
   }
 
   /**
@@ -75,9 +79,11 @@ object EraserMonad {
     }
   }
 
+  def combine[T](em1: EraserMonad[T], em2: EraserMonad[_]): EraserMonad[T] =
+    em1.flatMap(t => em2.map(_ => t))
+
   def combineN[T](value: T)(ms: EraserMonad[_]*): EraserMonad[T] = {
-    val fTypes = ms.foldLeft[FTypes](Set.empty)((fts, em) => fts union em.fTypes)
-    EraserMonad(value, fTypes)
+    ms.foldLeft[EraserMonad[T]](value.toMonad)((acc, em) => combine(acc, em))
   }
 
   /**

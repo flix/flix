@@ -40,10 +40,8 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
     }
 
     val reachable = root.reachable
-    // TODO(JLS): implement this by monad on eraser by defns
-    val namespaces: Set[NamespaceInfo] = Set.empty
 
-    ErasedAst.Root(defns.value, reachable, root.sources, defns.fTypes, namespaces).toSuccess
+    ErasedAst.Root(defns.value, reachable, root.sources, defns.fTypes, defns.namespaces).toSuccess
   }
 
   /**
@@ -557,7 +555,7 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
         result0 <- visitTpe[PType](result)
         tpeRes = RReference(RArrow(args0, result0))
       } yield tpeRes
-      newMonad.flatMap(f => EraserMonad(f.asInstanceOf[RType[T]], Set(f)))
+      newMonad.flatMap(f => f.asInstanceOf[RType[T]].toMonad.copyWith(fTypes = Set(f)))
     case MonoType.RecordEmpty() =>
       RReference(RRecordEmpty).asInstanceOf[RType[T]].toMonad
     case MonoType.RecordExtend(field, value, rest) =>
