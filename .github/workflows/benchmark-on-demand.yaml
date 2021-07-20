@@ -27,7 +27,7 @@ jobs:
       - name: Check out feature branch
         uses: actions/checkout@v2
         with:
-          ref: github.event.issue.head.label
+          ref: ${{ github.event.issue.head.label }}
       - name: Build
         run: ./gradlew classes testClasses
       - name: Benchmark feature phases
@@ -47,7 +47,7 @@ jobs:
       - uses: actions/checkout@v2
         name: Check out master branch
         with:
-          ref: github.event.issue.base.label
+          ref: ${{ github.event.issue.base.label }}
       - name: Download feature phases results
         uses: actions/download-artifact@v2
         with:
