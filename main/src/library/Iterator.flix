@@ -65,16 +65,16 @@ namespace Iterator {
         Iterator(done, next)
 
     ///
-    /// Returns `true` if and only if `iter` contains the element `a`.
+    /// Returns `true` if and only if `iter` contains the element `x`.
     ///
-    /// Consumes elements of the iterator until an element equal to `a` is found.
+    /// Consumes elements of the iterator until an element equal to `x` is found.
     ///
-    pub def memberOf(a: a, iter: Iterator[a]): Bool & Impure with Eq[a] =
+    pub def memberOf(x: a, iter: Iterator[a]): Bool & Impure with Eq[a] =
         let Iterator(done, next) = iter;
         if (done())
             false
         else
-            next() == a or memberOf(a, iter)
+            next() == a or memberOf(x, iter)
 
     ///
     /// Returns all elements in the iterator `iter` as an array.
