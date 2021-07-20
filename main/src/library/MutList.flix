@@ -57,6 +57,9 @@ instance Foldable[MutList] {
 
 namespace MutList {
 
+    ///
+    /// Constant which stores the minimum capacity of a MutList.
+    ///
     def minCapacity(): Int32 = 8
 
     ///
