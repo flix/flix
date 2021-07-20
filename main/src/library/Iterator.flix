@@ -51,16 +51,21 @@ namespace Iterator {
         Iterator(d, n)
 
     ///
-    /// Returns an iterator over an iterable with the element `a` repeated `n` times.
+    /// Returns an iterator over an iterable with the element `x` repeated `n` times.
     ///
     /// Returns an empty iterator if `n < 0`.
     ///
-    pub def repeat(a: a, n: Int32): Iterator[a] & Impure =
+    pub def repeat(x: a, n: Int32): Iterator[a] & Impure =
         let i = ref 0;
         let done: Done = () -> deref i >= n;
         let next: Next[a] = () -> {
-                i := (deref i) + 1;
-                a
+              let j = deref i;
+              if (j > n)
+                  bug!("Empty Iterator!")
+              else {
+                  i := j + 1;
+                  x
+              }
             };
         Iterator(done, next)
 
