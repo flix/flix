@@ -24,10 +24,25 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 1.11
+      - name: Lookup branches
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: >
+            var pull = github.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+            core.exportVariable("feature_repo", pull.head.repo.full_name);
+            core.exportVariable("feature_ref", pull.head.ref);
+            core.exportVariable("master_repo", pull.base.repo.full_name);
+            core.exportVariable("master_ref", pull.base.ref);
       - name: Check out feature branch
         uses: actions/checkout@v2
         with:
-          ref: ${{ github.event.issue.head.label }}
+          repository: ${{ env.feature_repo }}
+          ref: ${{ env.feature_ref }}
       - name: Build
         run: ./gradlew classes testClasses
       - name: Benchmark feature phases
@@ -47,7 +62,8 @@ jobs:
       - uses: actions/checkout@v2
         name: Check out master branch
         with:
-          ref: ${{ github.event.issue.base.label }}
+          repository: ${{ env.master_repo }}
+          ref: ${{ env.master_ref }}
       - name: Download feature phases results
         uses: actions/download-artifact@v2
         with:
