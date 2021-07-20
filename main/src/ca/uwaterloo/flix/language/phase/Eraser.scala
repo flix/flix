@@ -23,7 +23,9 @@ import ca.uwaterloo.flix.language.ast.PType._
 import ca.uwaterloo.flix.language.ast.RRefType._
 import ca.uwaterloo.flix.language.ast.RType._
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.phase.EraserMonad.ToMonad
 import ca.uwaterloo.flix.language.phase.sjvm.NamespaceInfo
+import ca.uwaterloo.flix.language.phase.{EraserMonad => EM}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
@@ -33,582 +35,556 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
   def emptyFTypes(): FTypes = Set[RType[PReference[PFunction]]]()
 
   def run(root: FinalAst.Root)(implicit flix: Flix): Validation[ErasedAst.Root, CompilationError] = flix.phase("Eraser") {
-    val (defns, functionTypes) = root.defs.foldLeft((Map[Symbol.DefnSym, ErasedAst.Def](), emptyFTypes())) { case ((m, s), (k, v)) =>
-      val (defn, ftypes) = visitDef(v)
-      (m + (k -> defn), s union ftypes)
+    val defns = EM.foldRight(root.defs)(Map[Symbol.DefnSym, ErasedAst.Def]().toMonad) {
+      case ((k, v), mapp) => visitDef(v) map (defn => mapp + (k -> defn))
     }
 
     val reachable = root.reachable
-    // TODO(JLS): implement this by monad on eraser
+    // TODO(JLS): implement this by monad on eraser by defns
     val namespaces: Set[NamespaceInfo] = Set.empty
 
-    ErasedAst.Root(defns, reachable, root.sources, functionTypes, namespaces).toSuccess
+    ErasedAst.Root(defns.value, reachable, root.sources, defns.fTypes, namespaces).toSuccess
   }
 
   /**
     * Translates the given definition `def0` to the ErasedAst.
     */
-  private def visitDef(def0: FinalAst.Def): (ErasedAst.Def, FTypes) = {
-    val (formals0, ftypes0) = def0.formals.foldLeft((List[ErasedAst.FormalParam](), emptyFTypes())) {
-      case ((l, s), param) =>
-        val (expRes, ftypesRes) = visitFormalParam(param)
-        (l :+ expRes, s union ftypesRes)
+  private def visitDef(def0: FinalAst.Def): EraserMonad[ErasedAst.Def] = {
+    val formalsV = EM.traverse(def0.formals)(visitFormalParam)
+    val expV = visitExp[PReference[PFunction]](def0.exp)
+    val tpeV = visitTpe[PReference[PFunction]](def0.tpe)
+
+    EM.mapN(formalsV, expV, tpeV) {
+      case (formals0, exp, tpe) =>
+        ErasedAst.Def(def0.ann, def0.mod, def0.sym, formals0, exp, tpe, def0.loc)
     }
-    val (exp, ftypes1) = visitExp[PReference[PFunction]](def0.exp)
-    val (tpe, ftypes2) = visitTpe[PReference[PFunction]](def0.tpe)
-    val expRes = ErasedAst.Def(def0.ann, def0.mod, def0.sym, formals0, exp, tpe, def0.loc)
-    val ftypesRes = ftypes0 union ftypes1 union ftypes2
-    (expRes, ftypesRes)
   }
 
   /**
     * Translates the given expression `exp0` to the ErasedAst.
     */
-  private def visitExp[T <: PType](baseExp: FinalAst.Expression): (ErasedAst.Expression[T], FTypes) = baseExp match {
+  private def visitExp[T <: PType](baseExp: FinalAst.Expression): EraserMonad[ErasedAst.Expression[T]] = baseExp match {
     case FinalAst.Expression.Unit(loc) =>
-      val expRes = ErasedAst.Expression.Unit(loc)
-      (expRes.asInstanceOf[ErasedAst.Expression[T]], emptyFTypes())
+      ErasedAst.Expression.Unit(loc).asInstanceOf[ErasedAst.Expression[T]].toMonad
 
     case FinalAst.Expression.Null(tpe, loc) =>
-      val (tpe0, ftypesRes) = visitTpe[PReference[PRefType]](tpe)
-      val expRes = ErasedAst.Expression.Null[PRefType](tpe0, loc)
-      (expRes.asInstanceOf[ErasedAst.Expression[T]], ftypesRes)
+      for {
+        tpe0 <- visitTpe[PReference[PRefType]](tpe)
+        expRes = ErasedAst.Expression.Null[PRefType](tpe0, loc)
+      } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.True(loc) =>
-      val expRes = ErasedAst.Expression.True(loc)
-      (expRes.asInstanceOf[ErasedAst.Expression[T]], emptyFTypes())
+      ErasedAst.Expression.True(loc).asInstanceOf[ErasedAst.Expression[T]].toMonad
 
     case FinalAst.Expression.False(loc) =>
-      val expRes = ErasedAst.Expression.False(loc)
-      (expRes.asInstanceOf[ErasedAst.Expression[T]], emptyFTypes())
+      ErasedAst.Expression.False(loc).asInstanceOf[ErasedAst.Expression[T]].toMonad
 
     case FinalAst.Expression.Char(lit, loc) =>
-      val expRes = ErasedAst.Expression.Char(lit, loc)
-      (expRes.asInstanceOf[ErasedAst.Expression[T]], emptyFTypes())
+      ErasedAst.Expression.Char(lit, loc).asInstanceOf[ErasedAst.Expression[T]].toMonad
 
     case FinalAst.Expression.Float32(lit, loc) =>
-      val expRes = ErasedAst.Expression.Float32(lit, loc)
-      (expRes.asInstanceOf[ErasedAst.Expression[T]], emptyFTypes())
+      ErasedAst.Expression.Float32(lit, loc).asInstanceOf[ErasedAst.Expression[T]].toMonad
 
     case FinalAst.Expression.Float64(lit, loc) =>
-      val expRes = ErasedAst.Expression.Float64(lit, loc)
-      (expRes.asInstanceOf[ErasedAst.Expression[T]], emptyFTypes())
+      ErasedAst.Expression.Float64(lit, loc).asInstanceOf[ErasedAst.Expression[T]].toMonad
 
     case FinalAst.Expression.Int8(lit, loc) =>
-      val expRes = ErasedAst.Expression.Int8(lit, loc)
-      (expRes.asInstanceOf[ErasedAst.Expression[T]], emptyFTypes())
+      ErasedAst.Expression.Int8(lit, loc).asInstanceOf[ErasedAst.Expression[T]].toMonad
 
     case FinalAst.Expression.Int16(lit, loc) =>
-      val expRes = ErasedAst.Expression.Int16(lit, loc)
-      (expRes.asInstanceOf[ErasedAst.Expression[T]], emptyFTypes())
+      ErasedAst.Expression.Int16(lit, loc).asInstanceOf[ErasedAst.Expression[T]].toMonad
 
     case FinalAst.Expression.Int32(lit, loc) =>
-      val expRes = ErasedAst.Expression.Int32(lit, loc)
-      (expRes.asInstanceOf[ErasedAst.Expression[T]], emptyFTypes())
+      ErasedAst.Expression.Int32(lit, loc).asInstanceOf[ErasedAst.Expression[T]].toMonad
 
     case FinalAst.Expression.Int64(lit, loc) =>
-      val expRes = ErasedAst.Expression.Int64(lit, loc)
-      (expRes.asInstanceOf[ErasedAst.Expression[T]], emptyFTypes())
+      ErasedAst.Expression.Int64(lit, loc).asInstanceOf[ErasedAst.Expression[T]].toMonad
 
     case FinalAst.Expression.BigInt(lit, loc) =>
-      val expRes = ErasedAst.Expression.BigInt(lit, loc)
-      (expRes.asInstanceOf[ErasedAst.Expression[T]], emptyFTypes())
+      ErasedAst.Expression.BigInt(lit, loc).asInstanceOf[ErasedAst.Expression[T]].toMonad
 
     case FinalAst.Expression.Str(lit, loc) =>
-      val expRes = ErasedAst.Expression.Str(lit, loc)
-      (expRes.asInstanceOf[ErasedAst.Expression[T]], emptyFTypes())
+      ErasedAst.Expression.Str(lit, loc).asInstanceOf[ErasedAst.Expression[T]].toMonad
 
     case FinalAst.Expression.Var(sym, tpe, loc) =>
-      val (tpe0, ftypesRes) = visitTpe[T](tpe)
-      val expRes = ErasedAst.Expression.Var(sym, tpe0, loc)
-      (expRes, ftypesRes)
+      for {
+        tpe0 <- visitTpe[T](tpe)
+      } yield ErasedAst.Expression.Var(sym, tpe0, loc)
 
     case FinalAst.Expression.Closure(sym, freeVars, _, tpe, loc) =>
-      val (freeVars0, ftypes0) = freeVars.foldLeft((List[ErasedAst.FreeVar](), emptyFTypes())) {
-        case ((l, s), FinalAst.FreeVar(sym, tpe)) => {
-          val (tpe0, ftypes0) = visitTpe[PType](tpe)
-          (l :+ ErasedAst.FreeVar(sym, tpe0), s union ftypes0)
-        }
-      }
-      val (tpe0, ftypes1) = visitTpe[PReference[PFunction]](tpe)
-      val expRes = ErasedAst.Expression.Closure(sym, freeVars0, tpe0, loc)
-      val ftypesRes = ftypes0 union ftypes1
-      (expRes.asInstanceOf[ErasedAst.Expression[T]], ftypesRes)
+      for {
+        freeVars0 <- EM.traverse(freeVars)(fv => visitTpe[PType](fv.tpe) map (
+          tpe0 => ErasedAst.FreeVar(fv.sym, tpe0))
+        )
+        tpe0 <- visitTpe[PReference[PFunction]](tpe)
+        expRes = ErasedAst.Expression.Closure(sym, freeVars0, tpe0, loc)
+      } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.ApplyClo(exp, args, tpe, loc) =>
-      val (tpe0, ftypes0) = visitTpe[T](tpe)
-      val (args0, ftypes1) = visitExps[PType](args)
-      val (exp0, ftypes2) = visitExp[PReference[PFunction]](exp)
-      val expRes = ErasedAst.Expression.ApplyClo(exp0, args0, tpe0, loc)
-      val ftypesRes = ftypes0 union ftypes1 union ftypes2
-      (expRes.asInstanceOf[ErasedAst.Expression[T]], ftypesRes)
+      for {
+        tpe0 <- visitTpe[T](tpe)
+        args0 <- EM.traverse(args)(visitExp[PType])
+        exp0 <- visitExp[PReference[PFunction]](exp)
+        expRes =  ErasedAst.Expression.ApplyClo(exp0, args0, tpe0, loc)
+      } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.ApplyDef(sym, args, tpe, loc) =>
-      val (args0, ftypes0) = visitExps[PType](args)
-      val (tpe0, ftypes1) = visitTpe[T](tpe)
-      val expRes = ErasedAst.Expression.ApplyDef(sym, args0, tpe0, loc)
-      val ftypesRes = ftypes0 union ftypes1
-      (expRes.asInstanceOf[ErasedAst.Expression[T]], ftypesRes)
+      for {
+        args0 <- EM.traverse(args)(visitExp[PType])
+        tpe0 <- visitTpe[T](tpe)
+        expRes = ErasedAst.Expression.ApplyDef(sym, args0, tpe0, loc)
+      } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.ApplyCloTail(exp, args, tpe, loc) =>
-      val (exp0, ftypes0) = visitExp[PReference[PFunction]](exp)
-      val (args0, ftypes1) = visitExps[PType](args)
-      val (tpe0, ftypes2) = visitTpe[T](tpe)
-      val expRes = ErasedAst.Expression.ApplyCloTail(exp0, args0, tpe0, loc)
-      val ftypesRes = ftypes0 union ftypes1 union ftypes2
-      (expRes.asInstanceOf[ErasedAst.Expression[T]], ftypesRes)
+      for {
+        exp0 <- visitExp[PReference[PFunction]](exp)
+        args0 <- EM.traverse(args)(visitExp[PType])
+        tpe0 <- visitTpe[T](tpe)
+        expRes = ErasedAst.Expression.ApplyCloTail(exp0, args0, tpe0, loc)
+      } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.ApplyDefTail(sym, args, tpe, loc) =>
-      val (args0, ftypes0) = visitExps[PType](args)
-      val (tpe0, ftypes1) = visitTpe[T](tpe)
-      val expRes = ErasedAst.Expression.ApplyDefTail(sym, args0, tpe0, loc)
-      val ftypesRes = ftypes0 union ftypes1
-      (expRes.asInstanceOf[ErasedAst.Expression[T]], ftypesRes)
+      for {
+        args0 <- EM.traverse(args)(visitExp[PType])
+        tpe0 <- visitTpe[T](tpe)
+        expRes = ErasedAst.Expression.ApplyDefTail(sym, args0, tpe0, loc)
+      } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) =>
-      val (formals0, ftypes0) = formals.foldLeft((List[ErasedAst.FormalParam](), emptyFTypes())) {
-        case ((l, s), FinalAst.FormalParam(sym, tpe)) => {
-          val (tpe0, ftypes0) = visitTpe[PType](tpe)
-          (l :+ ErasedAst.FormalParam(sym, tpe0), s union ftypes0)
-        }
-      }
-      val (actuals0, ftypes1) = visitExps[PType](actuals)
-      val (tpe0, ftypes2) = visitTpe[T](tpe)
-      val expRes = ErasedAst.Expression.ApplySelfTail(sym, formals0, actuals0, tpe0, loc)
-      val ftypesRes = ftypes0 union ftypes1 union ftypes2
-      (expRes.asInstanceOf[ErasedAst.Expression[T]], ftypesRes)
+      for {
+        formals0 <- EM.traverse(formals)(fp =>
+          visitTpe[PType](fp.tpe) map ( tpe0 => ErasedAst.FormalParam(fp.sym, tpe0))
+        )
+        actuals0 <- EM.traverse(actuals)(visitExp[PType])
+        tpe0 <- visitTpe[T](tpe)
+        expRes = ErasedAst.Expression.ApplySelfTail(sym, formals0, actuals0, tpe0, loc)
+      } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.Unary(sop, op, exp, tpe, loc) =>
-      val (exp0, ftypes0) = visitExp[PType](exp)
-      val (tpe0, ftypes1) = visitTpe[T](tpe)
-      val expRes = ErasedAst.Expression.Unary(sop, op, exp0, tpe0, loc)
-      val ftypesRes = ftypes0 union ftypes1
-      (expRes.asInstanceOf[ErasedAst.Expression[T]], ftypesRes)
+      for {
+        exp0 <- visitExp[PType](exp)
+        tpe0 <- visitTpe[T](tpe)
+        expRes = ErasedAst.Expression.Unary(sop, op, exp0, tpe0, loc)
+      } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
-      val (exp10, ftypes0) = visitExp[PType](exp1)
-      val (exp20, ftypes1) = visitExp[PType](exp2)
-      val (tpe0, ftypes2) = visitTpe[T](tpe)
-      val expRes = ErasedAst.Expression.Binary(sop, op, exp10, exp20, tpe0, loc)
-      val ftypesRes = ftypes0 union ftypes1 union ftypes2
-      (expRes.asInstanceOf[ErasedAst.Expression[T]], ftypesRes)
+      for {
+        exp10 <- visitExp[PType](exp1)
+        exp20 <- visitExp[PType](exp2)
+        tpe0 <- visitTpe[T](tpe)
+        expRes = ErasedAst.Expression.Binary(sop, op, exp10, exp20, tpe0, loc)
+      } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
-      val (exp10, ftypes0) = visitExp[PInt32](exp1)
-      val (exp20, ftypes1) = visitExp[T](exp2)
-      val (exp30, ftypes2) = visitExp[T](exp3)
-      val (tpe0, ftypes3) = visitTpe[T](tpe)
-      val ftypesRes = ftypes0 union ftypes1 union ftypes2 union ftypes3
-      val expRes = ErasedAst.Expression.IfThenElse(exp10, exp20, exp30, tpe0, loc)
-      (expRes, ftypesRes)
+      for {
+        exp10 <- visitExp[PInt32](exp1)
+        exp20 <- visitExp[T](exp2)
+        exp30 <- visitExp[T](exp3)
+        tpe0 <- visitTpe[T](tpe)
+        expRes = ErasedAst.Expression.IfThenElse(exp10, exp20, exp30, tpe0, loc)
+      } yield expRes
 
     case FinalAst.Expression.Branch(exp, branches, tpe, loc) =>
-      val (branches0, ftypes0) = branches.foldLeft((Map[Symbol.LabelSym, ErasedAst.Expression[T]](), emptyFTypes())) {
-        case ((m, s), (label, branchExp)) => {
-          val (exp0, ftypes0) = visitExp[T](branchExp)
-          (m + (label -> exp0), s union ftypes0)
+      for {
+        branches0 <- EM.foldRight(branches)(Map[Symbol.LabelSym, ErasedAst.Expression[T]]().toMonad){
+          case ((label, branchExp), map) => visitExp[T](branchExp) map (exp0 => map + (label -> exp0))
         }
-      }
-      val (exp0, ftypes1) = visitExp[T](exp)
-      val (tpe0, ftypes2) = visitTpe[T](tpe)
-      val expRes = ErasedAst.Expression.Branch(exp0, branches0, tpe0, loc)
-      val ftypesRes = ftypes0 union ftypes1 union ftypes2
-      (expRes, ftypesRes)
+        exp0 <- visitExp[T](exp)
+        tpe0 <- visitTpe[T](tpe)
+        expRes = ErasedAst.Expression.Branch(exp0, branches0, tpe0, loc)
+      } yield expRes
 
     case FinalAst.Expression.JumpTo(sym, tpe, loc) =>
-      val (tpe0, ftypesRes) = visitTpe[T](tpe)
-      val expRes = ErasedAst.Expression.JumpTo(sym, tpe0, loc)
-      (expRes, ftypesRes)
+      for {
+        tpe0 <- visitTpe[T](tpe)
+        expRes = ErasedAst.Expression.JumpTo(sym, tpe0, loc)
+      } yield expRes
 
     case FinalAst.Expression.Let(sym, exp1, exp2, tpe, loc) =>
-      val (exp10, ftypes0) = visitExp[PType](exp1)
-      val (exp20, ftypes1) = visitExp[T](exp2)
-      val (tpe0, ftypes2) = visitTpe[T](tpe)
-      val expRes = ErasedAst.Expression.Let(sym, exp10, exp20, tpe0, loc)
-      val ftypesRes = ftypes0 union ftypes1 union ftypes2
-      (expRes, ftypesRes)
+      for {
+        exp10 <- visitExp[PType](exp1)
+        exp20 <- visitExp[T](exp2)
+        tpe0 <- visitTpe[T](tpe)
+        expRes = ErasedAst.Expression.Let(sym, exp10, exp20, tpe0, loc)
+      } yield expRes
 
     case FinalAst.Expression.Is(sym, tag, exp, loc) =>
-      val (exp0, ftypesRes) = visitExp[PReference[PAnyObject]](exp)
-      val expRes = ErasedAst.Expression.Is(sym, tag, exp0, loc)
-      (expRes.asInstanceOf[ErasedAst.Expression[T]], ftypesRes)
+      for {
+        exp0 <- visitExp[PReference[PAnyObject]](exp)
+        expRes = ErasedAst.Expression.Is(sym, tag, exp0, loc)
+      } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.Tag(sym, tag, exp, tpe, loc) =>
-      val (exp0, ftypes0) = visitExp[PType](exp)
-      val (tpe0, ftypes1) = visitTpe[PReference[PAnyObject]](tpe)
-      val expRes = ErasedAst.Expression.Tag(sym, tag, exp0, tpe0, loc)
-      val ftypesRes = ftypes0 union ftypes1
-      (expRes.asInstanceOf[ErasedAst.Expression[T]], ftypesRes)
+      for {
+        exp0 <- visitExp[PType](exp)
+        tpe0 <- visitTpe[PReference[PAnyObject]](tpe)
+        expRes = ErasedAst.Expression.Tag(sym, tag, exp0, tpe0, loc)
+      } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.Untag(sym, tag, exp, tpe, loc) =>
-      val (exp0, ftypes0) = visitExp[PReference[PAnyObject]](exp)
-      val (tpe0, ftypes1) = visitTpe[T](tpe)
-      val ftypesRes = ftypes0 union ftypes1
-      (ErasedAst.Expression.Untag(sym, tag, exp0, tpe0, loc), ftypesRes)
+      for {
+        exp0 <- visitExp[PReference[PAnyObject]](exp)
+        tpe0 <- visitTpe[T](tpe)
+        expRes = ErasedAst.Expression.Untag(sym, tag, exp0, tpe0, loc)
+      } yield expRes
 
     case FinalAst.Expression.Index(base, offset, tpe, loc) =>
-      val (base0, ftypes0) = visitExp[PReference[PAnyObject]](base)
-      val (tpe0, ftypes1) = visitTpe[T](tpe)
-      // TODO(JLS): maybe add cast
-      val expRes = ErasedAst.Expression.Index(base0, offset, tpe0, loc)
-      val ftypesRes = ftypes0 union ftypes1
-      (expRes, ftypesRes)
+      for {
+        base0 <- visitExp[PReference[PAnyObject]](base)
+        tpe0 <- visitTpe[T](tpe)
+        // TODO(JLS): maybe add cast
+        expRes = ErasedAst.Expression.Index(base0, offset, tpe0, loc)
+      } yield expRes
 
     case FinalAst.Expression.Tuple(elms, tpe, loc) =>
-      val (elms0, ftypes0) = visitExps[PType](elms)
-      val (tpe0, ftypes1) = visitTpe[PReference[PAnyObject]](tpe)
-      val expRes = ErasedAst.Expression.Tuple(elms0, tpe0, loc)
-      val ftypesRes = ftypes0 union ftypes1
-      (expRes.asInstanceOf[ErasedAst.Expression[T]], ftypesRes)
+      for {
+        elms0 <- EM.traverse(elms)(visitExp[PType])
+        tpe0 <- visitTpe[PReference[PAnyObject]](tpe)
+        expRes = ErasedAst.Expression.Tuple(elms0, tpe0, loc)
+      } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.RecordEmpty(tpe, loc) =>
-      val (tpe0, ftypesRes) = visitTpe[PReference[PAnyObject]](tpe)
-      val expRes = ErasedAst.Expression.RecordEmpty(tpe0, loc)
-      (expRes.asInstanceOf[ErasedAst.Expression[T]], ftypesRes)
+      for {
+        tpe0 <- visitTpe[PReference[PAnyObject]](tpe)
+        expRes = ErasedAst.Expression.RecordEmpty(tpe0, loc)
+      } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.RecordSelect(exp, field, tpe, loc) =>
-      val (exp0, ftypes0) = visitExp[PReference[PAnyObject]](exp)
-      val (tpe0, ftypes1) = visitTpe[T](tpe)
-      val expRes = ErasedAst.Expression.RecordSelect(exp0, field, tpe0, loc)
-      val ftypesRes = ftypes0 union ftypes1
-      (expRes, ftypesRes)
+      for {
+        exp0 <- visitExp[PReference[PAnyObject]](exp)
+        tpe0 <- visitTpe[T](tpe)
+        expRes = ErasedAst.Expression.RecordSelect(exp0, field, tpe0, loc)
+      } yield expRes
 
     case FinalAst.Expression.RecordExtend(field, value, rest, tpe, loc) =>
-      val (value0, ftypes0) = visitExp[PType](value)
-      val (res0, ftypes1) = visitExp[PReference[PAnyObject]](rest)
-      val (tpe0, ftypes2) = visitTpe[PReference[PAnyObject]](tpe)
-      val expRes = ErasedAst.Expression.RecordExtend(field, value0, res0, tpe0, loc)
-      val ftypesRes = ftypes0 union ftypes1 union ftypes2
-      (expRes.asInstanceOf[ErasedAst.Expression[T]], ftypesRes)
+      for {
+        value0 <- visitExp[PType](value)
+        res0 <- visitExp[PReference[PAnyObject]](rest)
+        tpe0 <- visitTpe[PReference[PAnyObject]](tpe)
+        expRes = ErasedAst.Expression.RecordExtend(field, value0, res0, tpe0, loc)
+      } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.RecordRestrict(field, rest, tpe, loc) =>
-      val (rest0, ftypes0) = visitExp[PReference[PAnyObject]](rest)
-      val (tpe0, ftypes1) = visitTpe[PReference[PAnyObject]](tpe)
-      val expRes = ErasedAst.Expression.RecordRestrict(field, rest0, tpe0, loc)
-      val ftypesRes = ftypes0 union ftypes1
-      (expRes.asInstanceOf[ErasedAst.Expression[T]], ftypesRes)
+      for {
+        rest0 <- visitExp[PReference[PAnyObject]](rest)
+        tpe0 <- visitTpe[PReference[PAnyObject]](tpe)
+        expRes = ErasedAst.Expression.RecordRestrict(field, rest0, tpe0, loc)
+      } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.ArrayLit(elms, tpe, loc) =>
-      val (elms0, ftypes0) = visitExps[T](elms)
-      val (tpe0, ftypes1) = visitTpe[PReference[PArray[T]]](tpe)
-      val expRes = ErasedAst.Expression.ArrayLit(elms0, tpe0, loc)
-      val ftypesRes = ftypes0 union ftypes1
-      (expRes.asInstanceOf[ErasedAst.Expression[T]], ftypesRes)
+      for {
+        elms0 <- EM.traverse(elms)(visitExp[PType])
+        tpe0 <- visitTpe[PReference[PArray[PType]]](tpe)
+        expRes = ErasedAst.Expression.ArrayLit(elms0, tpe0, loc)
+      } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.ArrayNew(elm, len, tpe, loc) =>
-      val (elm0, ftypes0) = visitExp[T](elm)
-      val (len0, ftypes1) = visitExp[PInt32](len)
-      val (tpe0, ftypes2) = visitTpe[PReference[PArray[T]]](tpe)
-      val expRes = ErasedAst.Expression.ArrayNew(elm0, len0, tpe0, loc)
-      val ftypesRes = ftypes0 union ftypes1 union ftypes2
-      (expRes.asInstanceOf[ErasedAst.Expression[T]], ftypesRes)
+      for {
+        elm0 <- visitExp[T](elm)
+        len0 <- visitExp[PInt32](len)
+        tpe0 <- visitTpe[PReference[PArray[T]]](tpe)
+        expRes = ErasedAst.Expression.ArrayNew(elm0, len0, tpe0, loc)
+      } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.ArrayLoad(base, index, tpe, loc) =>
-      val (base0, ftypes0) = visitExp[PReference[PArray[T]]](base)
-      val (index0, ftypes1) = visitExp[PInt32](index)
-      val (tpe0, ftypes2) = visitTpe[T](tpe)
-      val expRes = ErasedAst.Expression.ArrayLoad(base0, index0, tpe0, loc)
-      val ftypesRes = ftypes0 union ftypes1 union ftypes2
-      (expRes, ftypesRes)
+      for {
+        base0 <- visitExp[PReference[PArray[T]]](base)
+        index0 <- visitExp[PInt32](index)
+        tpe0 <- visitTpe[T](tpe)
+        expRes = ErasedAst.Expression.ArrayLoad(base0, index0, tpe0, loc)
+      } yield expRes
 
     case FinalAst.Expression.ArrayStore(base, index, elm, tpe, loc) =>
-      val (base0, ftypes0) = visitExp[PReference[PArray[T]]](base)
-      val (index0, ftypes1) = visitExp[PInt32](index)
-      val (elm0, ftypes2) = visitExp[T](elm)
-      val (tpe0, ftypes3) = visitTpe[PReference[PUnit]](tpe)
-      val expRes = ErasedAst.Expression.ArrayStore(base0, index0, elm0, tpe0, loc)
-      val ftypesRes = ftypes0 union ftypes1 union ftypes2 union ftypes3
-      (expRes.asInstanceOf[ErasedAst.Expression[T]], ftypesRes)
+      for {
+        base0 <- visitExp[PReference[PArray[T]]](base)
+        index0 <- visitExp[PInt32](index)
+        elm0 <- visitExp[T](elm)
+        tpe0 <- visitTpe[PReference[PUnit]](tpe)
+        expRes = ErasedAst.Expression.ArrayStore(base0, index0, elm0, tpe0, loc)
+      } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.ArrayLength(base, tpe, loc) =>
-      val (base0, ftypes0) = visitExp[PReference[PArray[T]]](base)
-      val (tpe0, ftypes1) = visitTpe[PInt32](tpe)
-      val expRes = ErasedAst.Expression.ArrayLength(base0, tpe0, loc)
-      val ftypesRes = ftypes0 union ftypes1
-      (expRes.asInstanceOf[ErasedAst.Expression[T]], ftypesRes)
+      for {
+        base0 <- visitExp[PReference[PArray[T]]](base)
+        tpe0 <- visitTpe[PInt32](tpe)
+        expRes = ErasedAst.Expression.ArrayLength(base0, tpe0, loc)
+      } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
-      val (base0, ftypes0) = visitExp[PReference[PArray[T]]](base)
-      val (beginIndex0, ftypes1) = visitExp[PInt32](beginIndex)
-      val (endIndex0, ftypes2) = visitExp[PInt32](endIndex)
-      val (tpe0, ftypes3) = visitTpe[PReference[PArray[T]]](tpe)
-      val expRes = ErasedAst.Expression.ArraySlice(base0, beginIndex0, endIndex0, tpe0, loc)
-      val ftypesRes = ftypes0 union ftypes1 union ftypes2 union ftypes3
-      (expRes.asInstanceOf[ErasedAst.Expression[T]], ftypesRes)
+      for {
+        base0 <- visitExp[PReference[PArray[T]]](base)
+        beginIndex0 <- visitExp[PInt32](beginIndex)
+        endIndex0 <- visitExp[PInt32](endIndex)
+        tpe0 <- visitTpe[PReference[PArray[T]]](tpe)
+        expRes = ErasedAst.Expression.ArraySlice(base0, beginIndex0, endIndex0, tpe0, loc)
+      } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.Ref(exp, tpe, loc) =>
-      val (exp0, ftypes0) = visitExp[PType](exp)
-      val (tpe0, ftypes1) = visitTpe[PReference[PRef[PType]]](tpe)
-      val expRes = ErasedAst.Expression.Ref(exp0, tpe0, loc)
-      val ftypesRes = ftypes0 union ftypes1
-      (expRes.asInstanceOf[ErasedAst.Expression[T]], ftypesRes)
+      for {
+        exp0 <- visitExp[PType](exp)
+        tpe0 <- visitTpe[PReference[PRef[PType]]](tpe)
+        expRes = ErasedAst.Expression.Ref(exp0, tpe0, loc)
+      } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.Deref(exp, tpe, loc) =>
-      val (exp0, ftypes0) = visitExp[PReference[PRef[T]]](exp)
-      val (tpe0, ftypes1) = visitTpe[T](tpe)
-      val expRes = ErasedAst.Expression.Deref(exp0, tpe0, loc)
-      val ftypesRes = ftypes0 union ftypes1
-      (expRes, ftypesRes)
+      for {
+        exp0 <- visitExp[PReference[PRef[T]]](exp)
+        tpe0 <- visitTpe[T](tpe)
+        expRes = ErasedAst.Expression.Deref(exp0, tpe0, loc)
+      } yield expRes
 
     case FinalAst.Expression.Assign(exp1, exp2, tpe, loc) =>
-      val (exp10, ftypes0) = visitExp[PReference[PRef[T]]](exp1)
-      val (exp20, ftypes1) = visitExp[T](exp2)
-      val (tpe0, ftypes2) = visitTpe[PReference[PUnit]](tpe)
-      val expRes = ErasedAst.Expression.Assign(exp10, exp20, tpe0, loc)
-      val ftypesRes = ftypes0 union ftypes1 union ftypes2
-      (expRes.asInstanceOf[ErasedAst.Expression[T]], ftypesRes)
+      for {
+        exp10 <- visitExp[PReference[PRef[T]]](exp1)
+        exp20 <- visitExp[T](exp2)
+        tpe0 <- visitTpe[PReference[PUnit]](tpe)
+        expRes = ErasedAst.Expression.Assign(exp10, exp20, tpe0, loc)
+      } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.Existential(fparam, exp, loc) =>
       val FinalAst.FormalParam(sym, tpe) = fparam
-      val (exp0, ftypes0) = visitExp[PInt32](exp)
-      val (tpe0, ftypes1) = visitTpe[PType](tpe)
-      val fparam0 = ErasedAst.FormalParam(sym, tpe0)
-      val expRes = ErasedAst.Expression.Existential(fparam0, exp0, loc)
-      val ftypesRes = ftypes0 union ftypes1
-      (expRes.asInstanceOf[ErasedAst.Expression[T]], ftypesRes)
+      for {
+        exp0 <- visitExp[PInt32](exp)
+        tpe0 <- visitTpe[PType](tpe)
+        fparam0 = ErasedAst.FormalParam(sym, tpe0)
+        expRes = ErasedAst.Expression.Existential(fparam0, exp0, loc)
+      } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.Universal(fparam, exp, loc) =>
       val FinalAst.FormalParam(sym, tpe) = fparam
-      val (exp0, ftypes0) = visitExp[PInt32](exp)
-      val (tpe0, ftypes1) = visitTpe[PType](tpe)
-      val fparam0 = ErasedAst.FormalParam(sym, tpe0)
-      val expRes = ErasedAst.Expression.Universal(fparam0, exp0, loc)
-      val ftypesRes = ftypes0 union ftypes1
-      (expRes.asInstanceOf[ErasedAst.Expression[T]], ftypesRes)
+      for {
+        exp0 <- visitExp[PInt32](exp)
+        tpe0 <- visitTpe[PType](tpe)
+        fparam0 = ErasedAst.FormalParam(sym, tpe0)
+        expRes = ErasedAst.Expression.Universal(fparam0, exp0, loc)
+      } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.Cast(exp, tpe, loc) =>
-      val (exp0, ftypes0) = visitExp[PType](exp)
-      val (tpe0, ftypes1) = visitTpe[T](tpe)
-      val expRes = ErasedAst.Expression.Cast(exp0, tpe0, loc)
-      val ftypesRes = ftypes0 union ftypes1
-      (expRes, ftypesRes)
+      for {
+        exp0 <- visitExp[PType](exp)
+        tpe0 <- visitTpe[T](tpe)
+        expRes = ErasedAst.Expression.Cast(exp0, tpe0, loc)
+      } yield expRes
 
     case FinalAst.Expression.TryCatch(exp, rules, tpe, loc) =>
-      val (rules0, ftypes0) = rules.foldLeft((List[ErasedAst.CatchRule[T]](), emptyFTypes())) {
-        case ((l, s), FinalAst.CatchRule(sym, clazz, cexp)) =>
-          val (cexp0, ftypesRes) = visitExp[T](cexp)
-          val expRes = ErasedAst.CatchRule[T](sym, clazz, cexp0)
-          (l :+ expRes, s union ftypesRes)
-      }
-      val (exp0, ftypes1) = visitExp[T](exp)
-      val (tpe0, ftypes2) = visitTpe[T](tpe)
-      val expRes = ErasedAst.Expression.TryCatch(exp0, rules0, tpe0, loc)
-      val ftypesRes = ftypes0 union ftypes1 union ftypes2
-      (expRes, ftypesRes)
+      for {
+        rules0 <- EM.traverse(rules)( cr =>
+          for {
+            cexp0 <- visitExp[T](cr.exp)
+          } yield ErasedAst.CatchRule[T](cr.sym, cr.clazz, cexp0)
+        )
+        exp0 <- visitExp[T](exp)
+        tpe0 <- visitTpe[T](tpe)
+        expRes = ErasedAst.Expression.TryCatch(exp0, rules0, tpe0, loc)
+      } yield expRes
 
     case FinalAst.Expression.InvokeConstructor(constructor, args, tpe, loc) =>
-      val (args0, ftypes0) = visitExps[PType](args)
-      val (tpe0, ftypes1) = visitTpe[PReference[PAnyObject]](tpe)
-      val expRes = ErasedAst.Expression.InvokeConstructor(constructor, args0, tpe0, loc)
-      val ftypesRes = ftypes0 union ftypes1
-      (expRes.asInstanceOf[ErasedAst.Expression[T]], ftypesRes)
+      for {
+        args0 <- EM.traverse(args)(visitExp[PType])
+        tpe0 <- visitTpe[PReference[PAnyObject]](tpe)
+        expRes = ErasedAst.Expression.InvokeConstructor(constructor, args0, tpe0, loc)
+      } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.InvokeMethod(method, exp, args, tpe, loc) =>
-      val (exp0, ftypes0) = visitExp[PReference[PAnyObject]](exp)
-      val (args0, ftypes1) = visitExps[PType](args)
-      val (tpe0, ftypes2) = visitTpe[T](tpe)
-      val expRes = ErasedAst.Expression.InvokeMethod(method, exp0, args0, tpe0, loc)
-      val ftypesRes = ftypes0 union ftypes1 union ftypes2
-      (expRes, ftypesRes)
+      for {
+        exp0 <- visitExp[PReference[PAnyObject]](exp)
+        args0 <- EM.traverse(args)(visitExp[PType])
+        tpe0 <- visitTpe[T](tpe)
+        expRes = ErasedAst.Expression.InvokeMethod(method, exp0, args0, tpe0, loc)
+      } yield expRes
 
     case FinalAst.Expression.InvokeStaticMethod(method, args, tpe, loc) =>
-      val (args0, ftypes0) = visitExps[PType](args)
-      val (tpe0, ftypes1) = visitTpe[T](tpe)
-      val expRes = ErasedAst.Expression.InvokeStaticMethod(method, args0, tpe0, loc)
-      val ftypesRes = ftypes0 union ftypes1
-      (expRes, ftypesRes)
+      for {
+        args0 <- EM.traverse(args)(visitExp[PType])
+        tpe0 <- visitTpe[T](tpe)
+        expRes = ErasedAst.Expression.InvokeStaticMethod(method, args0, tpe0, loc)
+      } yield expRes
 
     case FinalAst.Expression.GetField(field, exp, tpe, loc) =>
-      val (exp0, ftypes0) = visitExp[PReference[PAnyObject]](exp)
-      val (tpe0, ftypes1) = visitTpe[T](tpe)
-      val expRes = ErasedAst.Expression.GetField(field, exp0, tpe0, loc)
-      val ftypesRes = ftypes0 union ftypes1
-      (expRes, ftypesRes)
+      for {
+        exp0 <- visitExp[PReference[PAnyObject]](exp)
+        tpe0 <- visitTpe[T](tpe)
+        expRes = ErasedAst.Expression.GetField(field, exp0, tpe0, loc)
+      } yield expRes
 
     case FinalAst.Expression.PutField(field, exp1, exp2, tpe, loc) =>
-      val (exp10, ftypes0) = visitExp[PReference[PAnyObject]](exp1)
-      val (exp20, ftypes1) = visitExp[PType](exp2)
-      val (tpe0, ftypes2) = visitTpe[PReference[PUnit]](tpe)
-      val expRes = ErasedAst.Expression.PutField(field, exp10, exp20, tpe0, loc)
-      val ftypesRes = ftypes0 union ftypes1 union ftypes2
-      (expRes.asInstanceOf[ErasedAst.Expression[T]], ftypesRes)
+      for {
+        exp10 <- visitExp[PReference[PAnyObject]](exp1)
+        exp20 <- visitExp[PType](exp2)
+        tpe0 <- visitTpe[PReference[PUnit]](tpe)
+        expRes = ErasedAst.Expression.PutField(field, exp10, exp20, tpe0, loc)
+      } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.GetStaticField(field, tpe, loc) =>
-      val (tpe0, ftypesRes) = visitTpe[T](tpe)
-      val expRes = ErasedAst.Expression.GetStaticField(field, tpe0, loc)
-      (expRes, ftypesRes)
+      for {
+        tpe0 <- visitTpe[T](tpe)
+        expRes = ErasedAst.Expression.GetStaticField(field, tpe0, loc)
+      } yield expRes
 
     case FinalAst.Expression.PutStaticField(field, exp, tpe, loc) =>
-      val (exp0, ftypes0) = visitExp[PType](exp)
-      val (tpe0, ftypes1) = visitTpe[PReference[PUnit]](tpe)
-      val expRes = ErasedAst.Expression.PutStaticField(field, exp0, tpe0, loc)
-      val ftypesRes = ftypes0 union ftypes1
-      (expRes.asInstanceOf[ErasedAst.Expression[T]], ftypesRes)
+      for {
+        exp0 <- visitExp[PType](exp)
+        tpe0 <- visitTpe[PReference[PUnit]](tpe)
+        expRes = ErasedAst.Expression.PutStaticField(field, exp0, tpe0, loc)
+      } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.NewChannel(exp, tpe, loc) =>
-      val (exp0, ftypes0) = visitExp[PInt32](exp)
-      val (tpe0, ftypes1) = visitTpe[PReference[PChan[T]]](tpe)
-      val expRes = ErasedAst.Expression.NewChannel(exp0, tpe0, loc)
-      val ftypesRes = ftypes0 union ftypes1
-      (expRes.asInstanceOf[ErasedAst.Expression[T]], ftypesRes)
+      for {
+        exp0 <- visitExp[PInt32](exp)
+        tpe0 <- visitTpe[PReference[PChan[T]]](tpe)
+        expRes = ErasedAst.Expression.NewChannel(exp0, tpe0, loc)
+      } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.GetChannel(exp, tpe, loc) =>
-      val (exp0, ftypes0) = visitExp[PReference[PChan[T]]](exp)
-      val (tpe0, ftypes1) = visitTpe[T](tpe)
-      val expRes = ErasedAst.Expression.GetChannel(exp0, tpe0, loc)
-      val ftypesRes = ftypes0 union ftypes1
-      (expRes, ftypesRes)
+      for {
+        exp0 <- visitExp[PReference[PChan[T]]](exp)
+        tpe0 <- visitTpe[T](tpe)
+        expRes = ErasedAst.Expression.GetChannel(exp0, tpe0, loc)
+      } yield expRes
 
     case FinalAst.Expression.PutChannel(exp1, exp2, tpe, loc) =>
-      val (exp10, ftypes0) = visitExp[PReference[PChan[T]]](exp1)
-      val (exp20, ftypes1) = visitExp[T](exp2)
-      val (tpe0, ftypes2) = visitTpe[PReference[PChan[T]]](tpe)
-      val expRes = ErasedAst.Expression.PutChannel(exp10, exp20, tpe0, loc)
-      val ftypesRes = ftypes0 union ftypes1 union ftypes2
-      (expRes.asInstanceOf[ErasedAst.Expression[T]], ftypesRes)
+      for {
+        exp10 <- visitExp[PReference[PChan[T]]](exp1)
+        exp20 <- visitExp[T](exp2)
+        tpe0 <- visitTpe[PReference[PChan[T]]](tpe)
+        expRes = ErasedAst.Expression.PutChannel(exp10, exp20, tpe0, loc)
+      } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.SelectChannel(rules, default, tpe, loc) =>
-      val (rules0, ftypes0) = rules.foldLeft((List[ErasedAst.SelectChannelRule[T]](), emptyFTypes())) {
-        case ((l, s), rule) =>
-          val FinalAst.SelectChannelRule(sym, chan, exp) = rule
-          val (exp0, ftypes0) = visitExp[T](exp)
-          val (chan0, ftypes1) = visitExp[PReference[PChan[PType]]](chan)
-          val ftypesRes = ftypes0 union ftypes1
-          val expRes = ErasedAst.SelectChannelRule(sym, chan0, exp0)
-          (l :+ expRes, s union ftypesRes)
-      }
-      val (default0, ftypes1: FTypes) = default match {
-        case Some(defaultExp) =>
-          val (defaultExp0, ftypes0) = visitExp[T](defaultExp)
-          (Some(defaultExp0), ftypes0)
-        case None => (None, Set())
-      }
-      val (tpe0, ftypes2) = visitTpe[T](tpe)
-      val expRes = ErasedAst.Expression.SelectChannel(rules0, default0, tpe0, loc)
-      val ftypesRes = ftypes0 union ftypes1 union ftypes2
-      (expRes, ftypesRes)
+      for {
+        rules0 <- EM.traverse(rules)( rule => {
+          for {
+            exp0 <- visitExp[T](rule.exp)
+            chan0 <- visitExp[PReference[PChan[PType]]](rule.chan)
+          } yield ErasedAst.SelectChannelRule(rule.sym, chan0, exp0)
+        })
+        default0 <- default match {
+          case Some(defaultExp) =>
+            visitExp[T](defaultExp) map (v => Some(v))
+          case None => None.toMonad
+        }
+        tpe0 <- visitTpe[T](tpe)
+        expRes = ErasedAst.Expression.SelectChannel(rules0, default0, tpe0, loc)
+      } yield expRes
 
     case FinalAst.Expression.Spawn(exp, tpe, loc) =>
-      val (exp0, ftypes0) = visitExp[PType](exp)
-      val (tpe0, ftypes1) = visitTpe[PReference[PUnit]](tpe)
-      val expRes = ErasedAst.Expression.Spawn(exp0, tpe0, loc)
-      val ftypesRes = ftypes0 union ftypes1
-      (expRes.asInstanceOf[ErasedAst.Expression[T]], ftypesRes)
+      for {
+        exp0 <- visitExp[PType](exp)
+        tpe0 <- visitTpe[PReference[PUnit]](tpe)
+        expRes = ErasedAst.Expression.Spawn(exp0, tpe0, loc)
+      } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.Lazy(exp, tpe, loc) =>
-      val (exp0, ftypes0) = visitExp[T](exp)
-      val (tpe0, ftypes1) = visitTpe[PReference[PLazy[T]]](tpe)
-      val expRes = ErasedAst.Expression.Lazy(exp0, tpe0, loc)
-      val ftypesRes = ftypes0 union ftypes1
-      (expRes.asInstanceOf[ErasedAst.Expression[T]], ftypesRes)
+      for {
+        exp0 <- visitExp[T](exp)
+        tpe0 <- visitTpe[PReference[PLazy[T]]](tpe)
+        expRes = ErasedAst.Expression.Lazy(exp0, tpe0, loc)
+      } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.Force(exp, tpe, loc) =>
-      val (exp0, ftypes0) = visitExp[PReference[PLazy[T]]](exp)
-      val (tpe0, ftypes1) = visitTpe[T](tpe)
-      val expRes = ErasedAst.Expression.Force(exp0, tpe0, loc)
-      val ftypesRes = ftypes0 union ftypes1
-      (expRes, ftypesRes)
+      for {
+        exp0 <- visitExp[PReference[PLazy[T]]](exp)
+        tpe0 <- visitTpe[T](tpe)
+        expRes = ErasedAst.Expression.Force(exp0, tpe0, loc)
+      } yield expRes
 
     case FinalAst.Expression.HoleError(sym, tpe, loc) =>
-      val (tpe0, ftypesRes) = visitTpe[T](tpe)
-      val expRes = ErasedAst.Expression.HoleError(sym, tpe0, loc)
-      (expRes, ftypesRes)
+      for {
+        tpe0 <- visitTpe[T](tpe)
+        expRes = ErasedAst.Expression.HoleError(sym, tpe0, loc)
+      } yield expRes
 
     case FinalAst.Expression.MatchError(tpe, loc) =>
-      val (tpe0, ftypesRes) = visitTpe[T](tpe)
-      val expRes = ErasedAst.Expression.MatchError(tpe0, loc)
-      (expRes, ftypesRes)
+      for {
+        tpe0 <- visitTpe[T](tpe)
+        expRes = ErasedAst.Expression.MatchError(tpe0, loc)
+      } yield expRes
   }
-
-  private def visitExps[T <: PType](exps: List[FinalAst.Expression]): (List[ErasedAst.Expression[T]], FTypes) =
-    exps.foldLeft((List[ErasedAst.Expression[T]](), emptyFTypes())) {
-      case ((l, s), exp) => {
-        val (expRes, ftypesRes) = visitExp[T](exp)
-        (l :+ expRes, s union ftypesRes)
-      }
-    }
 
   /**
     * Translates the given formal param `p` to the ErasedAst.
     */
-  private def visitFormalParam(p: FinalAst.FormalParam): (ErasedAst.FormalParam, FTypes) = {
-    val (tpe0, ftypesRes) = visitTpe[PType](p.tpe)
-    (ErasedAst.FormalParam(p.sym, tpe0), ftypesRes)
+  private def visitFormalParam(p: FinalAst.FormalParam): EraserMonad[ErasedAst.FormalParam] = {
+    visitTpe[PType](p.tpe) map (tpe0 => ErasedAst.FormalParam(p.sym, tpe0))
   }
 
   /**
-
+    *
     * Translates the type 'tpe' to the ErasedType.
     */
-  private def visitTpe[T <: PType](tpe: MonoType): (RType[T], FTypes) = tpe match {
-    case MonoType.Unit => (RReference(RUnit).asInstanceOf[RType[T]], emptyFTypes())
-    case MonoType.Bool => (RBool.asInstanceOf[RType[T]], emptyFTypes())
-    case MonoType.Char => (RChar.asInstanceOf[RType[T]], emptyFTypes())
-    case MonoType.Float32 => (RFloat32.asInstanceOf[RType[T]], emptyFTypes())
-    case MonoType.Float64 => (RFloat64.asInstanceOf[RType[T]], emptyFTypes())
-    case MonoType.Int8 => (RInt8.asInstanceOf[RType[T]], emptyFTypes())
-    case MonoType.Int16 => (RInt16.asInstanceOf[RType[T]], emptyFTypes())
-    case MonoType.Int32 => (RInt32.asInstanceOf[RType[T]], emptyFTypes())
-    case MonoType.Int64 => (RInt64.asInstanceOf[RType[T]], emptyFTypes())
+  private def visitTpe[T <: PType](tpe: MonoType): EraserMonad[RType[T]] = tpe match {
+    case MonoType.Unit => RReference(RUnit).asInstanceOf[RType[T]].toMonad
+    case MonoType.Bool => RBool.asInstanceOf[RType[T]].toMonad
+    case MonoType.Char => RChar.asInstanceOf[RType[T]].toMonad
+    case MonoType.Float32 => RFloat32.asInstanceOf[RType[T]].toMonad
+    case MonoType.Float64 => RFloat64.asInstanceOf[RType[T]].toMonad
+    case MonoType.Int8 => RInt8.asInstanceOf[RType[T]].toMonad
+    case MonoType.Int16 => RInt16.asInstanceOf[RType[T]].toMonad
+    case MonoType.Int32 => RInt32.asInstanceOf[RType[T]].toMonad
+    case MonoType.Int64 => RInt64.asInstanceOf[RType[T]].toMonad
     case MonoType.BigInt =>
-      (RReference(RBigInt).asInstanceOf[RType[T]], emptyFTypes())
+      RReference(RBigInt).asInstanceOf[RType[T]].toMonad
     case MonoType.Str =>
-      (RReference(RStr).asInstanceOf[RType[T]], emptyFTypes())
+      RReference(RStr).asInstanceOf[RType[T]].toMonad
     case MonoType.Array(tpe) =>
-      val (tpe0, ftypesRes) = visitTpe[PType](tpe)
-      (RReference(RArray[PType](tpe0)).asInstanceOf[RType[T]], ftypesRes)
+      for {
+        tpe0 <- visitTpe[PType](tpe)
+      } yield RReference(RArray[PType](tpe0)).asInstanceOf[RType[T]]
     case MonoType.Channel(tpe) =>
-      val (tpe0, ftypesRes) = visitTpe[T](tpe)
-      (RReference(RChannel(tpe0)).asInstanceOf[RType[T]], ftypesRes)
+      for {
+        tpe0 <- visitTpe[T](tpe)
+      } yield RReference(RChannel(tpe0)).asInstanceOf[RType[T]]
     case MonoType.Lazy(tpe) =>
-      val (tpe0, ftypesRes) = visitTpe[T](tpe)
-      (RReference(RLazy(tpe0)).asInstanceOf[RType[T]], ftypesRes)
+      for {
+        tpe0 <- visitTpe[T](tpe)
+      } yield RReference(RLazy(tpe0)).asInstanceOf[RType[T]]
     case MonoType.Ref(tpe) =>
-      val (tpe0, ftypesRes) = visitTpe[T](tpe)
-      (RReference(RRef(tpe0)).asInstanceOf[RType[T]], ftypesRes)
+      for {
+        tpe0 <- visitTpe[T](tpe)
+      } yield RReference(RRef(tpe0)).asInstanceOf[RType[T]]
     case MonoType.Tuple(elms) =>
-      val (elms0, ftypesRes) = visitTpes(elms)
-      (RReference(RTuple(elms0)).asInstanceOf[RType[T]], ftypesRes)
+      for {
+        elms0 <- EM.traverse(elms)(visitTpe[PType])
+        expRes = RReference(RTuple(elms0))
+      } yield expRes.asInstanceOf[RType[T]]
     case MonoType.Enum(sym, args) =>
-      val (args0, ftypesRes) = visitTpes[PType](args)
-      (RReference(REnum(sym, args0)).asInstanceOf[RType[T]], ftypesRes)
+      for {
+        args0 <- EM.traverse(args)(visitTpe[PType])
+      } yield RReference(REnum(sym, args0)).asInstanceOf[RType[T]]
     case MonoType.Arrow(args, result) =>
-      val (args0, ftypes0) = visitTpes(args)
-      val (result0, ftypes1) = visitTpe(result)
-      val tpeRes = RReference(RArrow(args0, result0))
-      val ftypesRes = ftypes0 union ftypes1
-      (tpeRes.asInstanceOf[RType[T]], ftypesRes + tpeRes)
+      val newMonad = for {
+        args0 <- EM.traverse(args)(visitTpe[PType])
+        result0 <- visitTpe[PType](result)
+        tpeRes = RReference(RArrow(args0, result0))
+      } yield tpeRes
+      newMonad.flatMap(f => EraserMonad(f.asInstanceOf[RType[T]], Set(f)))
     case MonoType.RecordEmpty() =>
-      (RReference(RRecordEmpty).asInstanceOf[RType[T]], emptyFTypes())
+      RReference(RRecordEmpty).asInstanceOf[RType[T]].toMonad
     case MonoType.RecordExtend(field, value, rest) =>
-      val (value0, ftypes0) = visitTpe[PType](value)
-      val (rest0, ftypes1) = visitTpe[PReference[PAnyObject]](rest)
-      val ftypesRes = ftypes0 union ftypes1
-      (RReference(RRecordExtend(field, value0, rest0)).asInstanceOf[RType[T]], ftypesRes)
+      for {
+        value0 <- visitTpe[PType](value)
+        rest0 <- visitTpe[PReference[PAnyObject]](rest)
+        expRes = RReference(RRecordExtend(field, value0, rest0))
+      } yield expRes.asInstanceOf[RType[T]]
     case MonoType.SchemaEmpty() =>
-      (RReference(RSchemaEmpty).asInstanceOf[RType[T]], emptyFTypes())
+      RReference(RSchemaEmpty).asInstanceOf[RType[T]].toMonad
     case MonoType.SchemaExtend(name, tpe, rest) =>
-      val (tpe0, ftypes0) = visitTpe[PType](tpe)
-      val (rest0, ftypes1) = visitTpe[PReference[PAnyObject]](rest)
-      val ftypesRes = ftypes0 union ftypes1
-      (RReference(RSchemaExtend(name, tpe0, rest0)).asInstanceOf[RType[T]], ftypesRes)
+      for {
+        tpe0 <- visitTpe[PType](tpe)
+        rest0 <- visitTpe[PReference[PAnyObject]](rest)
+        expRes = RReference(RSchemaExtend(name, tpe0, rest0))
+      } yield expRes.asInstanceOf[RType[T]]
     case MonoType.Relation(tpes) =>
-      val (tpes0, ftypesRes) = visitTpes[PType](tpes)
-      (RReference(RRelation(tpes0)).asInstanceOf[RType[T]], ftypesRes)
+      for {
+        tpes0 <- EM.traverse(tpes)(visitTpe[PType])
+      } yield RReference(RRelation(tpes0)).asInstanceOf[RType[T]]
     case MonoType.Lattice(tpes) =>
-      val (tpes0, ftypesRes) = visitTpes[PType](tpes)
-      (RReference(RLattice(tpes0)).asInstanceOf[RType[T]], ftypesRes)
+      for {
+        tpes0 <- EM.traverse(tpes)(visitTpe[PType])
+      } yield RReference(RLattice(tpes0)).asInstanceOf[RType[T]]
     case MonoType.Native(clazz) =>
-      (RReference(RNative(clazz)).asInstanceOf[RType[T]], emptyFTypes())
+      RReference(RNative(clazz)).asInstanceOf[RType[T]].toMonad
     case MonoType.Var(id) =>
-      (RReference(RVar(id)).asInstanceOf[RType[T]], emptyFTypes())
+      RReference(RVar(id)).asInstanceOf[RType[T]].toMonad
   }
-
-  private def visitTpes[T <: PType](tpes: List[MonoType]): (List[RType[T]], FTypes) =
-    tpes.foldLeft((List[RType[T]](), emptyFTypes())) {
-      case ((l, s), tpe) => {
-        val (tpe0, ftypesRes) = visitTpe[T](tpe)
-        (l :+ tpe0, s union ftypesRes)
-      }
-    }
 }
