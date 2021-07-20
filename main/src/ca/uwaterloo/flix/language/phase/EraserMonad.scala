@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.phase.sjvm.NamespaceInfo
 
 import scala.collection.mutable
 
+// TODO(JLS): namespaces not really needed
 sealed case class EraserMonad[+T](value: T, fTypes: FTypes, namespaces: Set[NamespaceInfo]) {
 
   final def map[U](f: T => U): EraserMonad[U] =

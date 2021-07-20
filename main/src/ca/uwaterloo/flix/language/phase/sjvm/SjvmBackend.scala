@@ -61,8 +61,8 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
 
       //
       // Compute the set of namespaces in the program.
-      //
-      val namespaces = SjvmOps.namespacesOf(root)
+      // TODO(JLS): create this
+      val namespaceClasses = ???//GenNamespaces.gen(root.namespaces)
 
       //
       // Generate references classes.
@@ -84,6 +84,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
         functionInterfaces,
         continuationInterfaces,
         defClasses,
+        namespaceClasses
         //        lazyClasses
       ).reduce(_ ++ _)
     }

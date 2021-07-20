@@ -86,21 +86,6 @@ object SjvmOps {
     NamespaceInfo(sym.namespace, Map.empty) // TODO: Magnus: Empty map.
   }
 
-  /**
-   * Returns the set of namespaces in the given AST `root`.
-   */
-  def namespacesOf(root: Root): Set[NamespaceInfo] = {
-    // Group every symbol by namespace.
-    root.defs.groupBy(_._1.namespace).map {
-      case (ns, defs) =>
-        // Collect all non-law definitions.
-        val nonLaws = defs filter {
-          case (sym, defn) => nonLaw(defn)
-        }
-        NamespaceInfo(ns, nonLaws)
-    }.toSet
-  }
-
   //  /**
   //   * Returns the set of closures in the given AST `root`.
   //   */

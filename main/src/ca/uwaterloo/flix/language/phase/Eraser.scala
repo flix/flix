@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.ast.RRefType._
 import ca.uwaterloo.flix.language.ast.RType._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase.EraserMonad.ToMonad
-import ca.uwaterloo.flix.language.phase.sjvm.NamespaceInfo
+import ca.uwaterloo.flix.language.phase.sjvm.{NamespaceInfo, SjvmOps}
 import ca.uwaterloo.flix.language.phase.{EraserMonad => EM}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
@@ -36,8 +36,19 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
 
   def run(root: FinalAst.Root)(implicit flix: Flix): Validation[ErasedAst.Root, CompilationError] = flix.phase("Eraser") {
     val defns = EM.foldRight(root.defs)(Map[Symbol.DefnSym, ErasedAst.Def]().toMonad) {
-      case ((k, v), mapp) => visitDef(v) map (defn => mapp + (k -> defn))
+      case ((k, v), mapp) => {
+        visitDef(v) map (defn => mapp + (k -> defn))
+      }
     }
+    // TODO(JLS): should maybe be integrated to the other fold
+    defns.copyWith(namespaces = defns.value.groupBy(_._1.namespace).map {
+      case (ns, defs) =>
+        // Collect all non-law definitions.
+        val nonLaws = defs filter {
+          case (_, defn) => SjvmOps.nonLaw(defn)
+        }
+        NamespaceInfo(ns, nonLaws)
+    }.toSet)
 
     val reachable = root.reachable
 
@@ -48,14 +59,11 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
     * Translates the given definition `def0` to the ErasedAst.
     */
   private def visitDef(def0: FinalAst.Def): EraserMonad[ErasedAst.Def] = {
-    val formalsV = EM.traverse(def0.formals)(visitFormalParam)
-    val expV = visitExp[PReference[PFunction]](def0.exp)
-    val tpeV = visitTpe[PReference[PFunction]](def0.tpe)
-
-    EM.mapN(formalsV, expV, tpeV) {
-      case (formals0, exp, tpe) =>
-        ErasedAst.Def(def0.ann, def0.mod, def0.sym, formals0, exp, tpe, def0.loc)
-    }
+    for {
+      formals0 <- EM.traverse(def0.formals)(visitFormalParam)
+      exp <- visitExp[PReference[PFunction]](def0.exp)
+      tpe <- visitTpe[PReference[PFunction]](def0.tpe)
+    } yield ErasedAst.Def(def0.ann, def0.mod, def0.sym, formals0, exp, tpe, def0.loc)
   }
 
   /**
