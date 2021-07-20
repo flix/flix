@@ -345,57 +345,27 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     object Chars {
-      def Special: Rule1[String] = rule {
-        "\\\\" ~ push("\\") |
-          "\\'" ~ push("'") |
-          "\\\"" ~ push("\"") |
-          "\\n" ~ push("\n") |
-          "\\r" ~ push("\r") |
-          "\\t" ~ push("\t")
+
+      def Literal: Rule1[ParsedAst.Literal.CharCode.Literal] = rule {
+        !("\\" | EOI) ~ capture(CharPredicate.All) ~> ParsedAst.Literal.CharCode.Literal
       }
 
-      def Unicode: Rule1[String] = rule {
-        "\\u" ~ capture(4 times CharPredicate.HexDigit) ~> ((x: String) =>
-          // Convert the 4-digit string to a single character.
-          Integer.parseInt(x, 16).toChar.toString)
+      def Escape: Rule1[ParsedAst.Literal] = rule {
+        "\\" ~ capture(CharPredicate.All) ~> ParsedAst.Literal.CharCode.Escape
+      }
+
+      def CharCode: Rule1[ParsedAst.Literal.CharCode] = rule {
+        Escape | Literal
       }
     }
 
-    def Char: Rule1[ParsedAst.Literal.Char] = {
-      def Normal: Rule1[String] = {
-        def Quote: Rule0 = rule("'")
-
-        def Backslash: Rule0 = rule("\\")
-
-        rule {
-          capture(!(Quote | Backslash | EOI) ~ CharPredicate.All)
-        }
-      }
-
-      rule {
-        SP ~ "'" ~ (Normal | Chars.Special | Chars.Unicode) ~ "'" ~ SP ~> ParsedAst.Literal.Char
-      }
+    def Char: Rule1[ParsedAst.Literal.Char] = rule {
+      SP ~ "'" ~ oneOrMore(!"'" ~ Chars.CharCode) ~ "'" ~ SP ~> ParsedAst.Literal.Char
     }
 
     // Note that outside of patterns, Strings are parsed as [[Interpolation]]s
-    def Str: Rule1[ParsedAst.Literal.Str] = {
-      def Normal: Rule1[String] = {
-        def Quote: Rule0 = rule("\"")
-
-        def Backslash: Rule0 = rule("\\")
-
-        rule {
-          capture(!(Quote | Backslash | EOI) ~ CharPredicate.All)
-        }
-      }
-
-      def StringContents: Rule1[String] = rule {
-        zeroOrMore(Normal | Chars.Special | Chars.Unicode) ~> ((substrings: Seq[String]) => substrings.mkString)
-      }
-
-      rule {
-        SP ~ "\"" ~ StringContents ~ "\"" ~ SP ~> ParsedAst.Literal.Str
-      }
+    def Str: Rule1[ParsedAst.Literal.Str] = rule {
+      SP ~ "\"" ~ oneOrMore(!"\"" ~ Chars.CharCode) ~ "\"" ~ SP ~> ParsedAst.Literal.Str
     }
 
     def Float: Rule1[ParsedAst.Literal] = rule {
@@ -657,16 +627,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Interpolation: Rule1[ParsedAst.Expression.Interpolation] = {
-      def Normal: Rule1[String] = {
-        def Quote: Rule0 = rule("\"")
-
-        def Backslash: Rule0 = rule("\\")
-
-        rule {
-          capture(!(Quote | Backslash | DollarLBrace | EOI) ~ CharPredicate.All)
-        }
-      }
-
       def DblQuote: Rule0 = rule("\"")
 
       def DollarLBrace: Rule0 = rule("${")
@@ -677,12 +637,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         SP ~ DollarLBrace ~ optWS ~ Expression ~ optWS ~ RBrace ~ SP ~> ParsedAst.InterpolationPart.ExpPart
       }
 
-      def StringContents: Rule1[String] = rule {
-        oneOrMore(Normal | Literals.Chars.Special | Literals.Chars.Unicode) ~> ((l: Seq[String]) => l.mkString)
-      }
-
       def StrPart: Rule1[ParsedAst.InterpolationPart] = rule {
-        SP ~ StringContents ~ SP ~> ParsedAst.InterpolationPart.StrPart
+        SP ~ oneOrMore(!("\"" | DollarLBrace) ~ Literals.Chars.CharCode) ~ SP ~> ParsedAst.InterpolationPart.StrPart
       }
 
       def InterpolationPart: Rule1[ParsedAst.InterpolationPart] = rule {
