@@ -49,8 +49,8 @@ object Terminator extends Phase[Root, Root] {
   /**
     * Returns true if `exp00` unconditionally recurses, according to `recursiveAppCheck`.
     */
-  private def unconditionallyRecurses(exp00: Expression, defn: Def): Boolean = {
-    def visit(exp0: Expression): Boolean = exp0 match {
+  private def unconditionallyRecurses(exp0: Expression, defn: Def): Boolean = {
+    def visit(e0: Expression): Boolean = e0 match {
       case Expression.Unit(_) => false
       case Expression.Null(_, _) => false
       case Expression.True(_) => false
@@ -130,7 +130,7 @@ object Terminator extends Phase[Root, Root] {
       case Expression.MatchEff(exp1, exp2, exp3, _, _, _) => visit(exp1) || (visit(exp2) || visit(exp3))
     }
 
-    visit(exp00)
+    visit(exp0)
   }
 
 }
