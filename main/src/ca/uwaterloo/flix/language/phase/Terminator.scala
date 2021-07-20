@@ -38,7 +38,7 @@ object Terminator extends Phase[Root, Root] {
   /**
     * Returns an error if the `defn` recurses unconditionally.
     */
-  def checkDef(defn: Def): Validation[Unit, TerminationError] = {
+  private def checkDef(defn: Def): Validation[Unit, TerminationError] = {
     if (unconditionallyRecurses(defn.impl.exp, defn)) {
       TerminationError.UnconditionalRecursion(defn.sym).toFailure
     } else {
@@ -49,7 +49,7 @@ object Terminator extends Phase[Root, Root] {
   /**
     * Returns true if `exp00` unconditionally recurses, according to `recursiveAppCheck`.
     */
-  def unconditionallyRecurses(exp00: Expression, defn: Def): Boolean = {
+  private def unconditionallyRecurses(exp00: Expression, defn: Def): Boolean = {
     def visit(exp0: Expression): Boolean = exp0 match {
       case Expression.Unit(_) => false
       case Expression.Null(_, _) => false
