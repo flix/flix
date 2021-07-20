@@ -1223,15 +1223,17 @@ namespace TestMutList {
     @test
     def compress!03(): Bool & Impure =
         let v = MutList.new();
+        let c = capacity(v);
         MutList.push!(42, v);
         MutList.compress!(v);
-        capacity(v) == 8
+        capacity(v) <= c and
+        MutList.length(v) == 1
 
     @test
     def compress!04(): Bool & Impure =
         let v = MutList.range(0, 5);
         MutList.compress!(v);
-        capacity(v) == 8
+        capacity(v) <= capacity(MutList.range(0, 5))
 
     @test
     def compress!05(): Bool & Impure =
