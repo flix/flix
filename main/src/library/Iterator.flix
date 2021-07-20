@@ -189,6 +189,7 @@ namespace Iterator {
     ///
     /// Consumes elements of the iterator until the first element that does *not* satisfy predicate `f`.
     ///
+    // TODO: Overload based on purity.
     pub def dropWhile(f: a -> Bool, iter: Iterator[a]): Iterator[a] & Impure =
         let Iterator(done, next) = iter;
         if (done())
