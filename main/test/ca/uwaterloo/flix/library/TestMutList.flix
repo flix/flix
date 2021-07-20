@@ -1235,33 +1235,6 @@ namespace TestMutList {
         MutList.compress!(v);
         capacity(v) <= capacity(MutList.range(0, 5))
 
-    @test
-    def compress!05(): Bool & Impure =
-        let v = MutList.range(0, 8);
-        MutList.push!(99, v);
-        MutList.remove!(0, v);
-        MutList.remove!(0, v);
-        MutList.remove!(0, v);
-        MutList.remove!(0, v);
-        MutList.remove!(0, v);
-        let c = capacity(v);
-        MutList.remove!(0, v);
-        c == 16 and capacity(v) == 8
-
-    @test
-    def compress!06(): Bool & Impure =
-        let v = MutList.range(0, 8);
-        MutList.push!(7, v);
-        let _ = MutList.pop!(v);
-        let _ = MutList.pop!(v);
-        let _ = MutList.pop!(v);
-        let _ = MutList.pop!(v);
-        let _ = MutList.pop!(v);
-        let c = capacity(v);
-        let _ = MutList.pop!(v);
-        c == 16 and capacity(v) == 8
-
-
     /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //
     /////////////////////////////////////////////////////////////////////////////
