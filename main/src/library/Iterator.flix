@@ -115,8 +115,8 @@ namespace Iterator {
         if (done())
             m
         else
-            let (a, b) = next();
-            toMapHelper(iter, Map.insert(a, b, m))
+            let (x, y) = next();
+            toMapHelper(iter, Map.insert(x, y, m))
 
     ///
     /// Returns all elements in the iterator `iter` as a set.
