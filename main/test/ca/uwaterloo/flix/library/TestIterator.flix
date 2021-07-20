@@ -192,8 +192,7 @@ namespace TestIterator {
 
     @test
     def replace02(): Bool & Impure =
-        Iterator.repeat("a", 10) |> Iterator.replace("a", "b") |> Iterator.toList ==
-        Iterator.repeat("b", 10) |> Iterator.toList
+        Iterator.repeat("a", 10) |> Iterator.replace("a", "b") |> Iterator.toList == List.repeat("b", 10)
 
     @test
     def replace03(): Bool & Impure =
