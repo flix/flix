@@ -29,9 +29,9 @@ jobs:
       - name: Build
         run: ./gradlew classes testClasses
       - name: Benchmark feature phases
-        run: ./gradlew run -q --args="--Xbenchmark-phases" > feature-phases.json
+        run: ./gradlew run -q --args="--Xbenchmark-phases --json" > feature-phases.json
       - name: Benchmark feature throughput
-        run: ./gradlew run -q --args="--Xbenchmark-throughput" > feature-throughput.json
+        run: ./gradlew run -q --args="--Xbenchmark-throughput --json" > feature-throughput.json
       - name: Upload feature phases results
         uses: actions/upload-artifact@v1
         with:
