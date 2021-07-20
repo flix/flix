@@ -1076,31 +1076,31 @@ namespace TestMutList {
     def reserve!01(): Bool & Impure =
         let v = MutList.new();
         MutList.reserve!(4, v);
-        capacity(v) == 8
+        capacity(v) - MutList.length(v) >= 4
 
     @test
     def reserve!02(): Bool & Impure =
         let v = MutList.range(0, 5);
         MutList.reserve!(5, v);
-        capacity(v) == 10
+        capacity(v) - MutList.length(v) >= 5
 
     @test
     def reserve!03(): Bool & Impure =
         let v = MutList.range(0, 99);
         MutList.reserve!(1, v);
-        capacity(v) == 100
+        capacity(v) - MutList.length(v) >= 1
 
     @test
     def reserve!04(): Bool & Impure =
         let v = MutList.range(0, 100);
         MutList.reserve!(100, v);
-        capacity(v) == 200
+        capacity(v) - MutList.length(v) >= 100
 
     @test
     def reserve!05(): Bool & Impure =
         let v = MutList.range(0, 5);
         MutList.reserve!(MutList.length(v), v);
-        capacity(v) == 10
+        capacity(v) - MutList.length(v) >= MutList.length(v)
 
     @test
     def reserve!06(): Bool & Impure =
@@ -1111,7 +1111,7 @@ namespace TestMutList {
         MutList.reserve!(1, v);
         MutList.reserve!(1, v);
         MutList.reserve!(1, v);
-        capacity(v) == n + 1
+        capacity(v) - MutList.length(v) >= 1
 
     /////////////////////////////////////////////////////////////////////////////
     // formatWith                                                              //
