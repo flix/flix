@@ -45,7 +45,7 @@ namespace Iterator {
         let d: Done = () -> deref i >= e;
         let n: Next[Int32] = () -> {
                 let res = deref i;
-                if (res < b) {
+                if (res < e) {
                     i := res + 1;
                     res
                 }
