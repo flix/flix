@@ -35,11 +35,10 @@ jobs:
               pull_number: context.issue.number
             });
             pull_promise.then(pull => {
-              console.log(pull);
-              core.exportVariable("feature_repo", pull.head.repo.full_name);
-              core.exportVariable("feature_ref", pull.head.ref);
-              core.exportVariable("master_repo", pull.base.repo.full_name);
-              core.exportVariable("master_ref", pull.base.ref);
+              core.exportVariable("feature_repo", pull.data.head.repo.full_name);
+              core.exportVariable("feature_ref", pull.data.head.ref);
+              core.exportVariable("master_repo", pull.data.base.repo.full_name);
+              core.exportVariable("master_ref", pull.data.base.ref);
             });
       - name: Check out feature branch
         uses: actions/checkout@v2
