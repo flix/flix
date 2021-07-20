@@ -311,7 +311,7 @@ object ParsedAst {
         *
         * @param lit the char.
         */
-      case class Literal(lit: Char) extends ParsedAst.Literal.CharCode
+      case class Literal(lit: scala.Char) extends ParsedAst.Literal.CharCode
 
 
       /**
@@ -319,7 +319,7 @@ object ParsedAst {
         *
         * @param seq the escape code.
         */
-      case class Escape(seq: Char) extends ParsedAst.Literal.CharCode
+      case class Escape(seq: scala.Char) extends ParsedAst.Literal.CharCode
     }
 
     /**

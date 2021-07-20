@@ -1467,6 +1467,43 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
   }
 
+  // MATT docs
+  private def translateHexCode(code: String): Validation[Char, WeederError] = {
+    try {
+      Integer.parseInt(code, 16).toChar.toSuccess
+    } catch {
+      case ex: NumberFormatException => ???
+      // MATT WeederError.MalformedUnicode or something
+    }
+  }
+
+  // MATT docs
+  @tailrec
+  private def weedCharSequence(chars: List[ParsedAst.Literal.CharCode], acc: List[Char]): Validation[String, WeederError] = {
+    chars match {
+      case Nil => acc.reverse.mkString.toSuccess
+      case ParsedAst.Literal.CharCode.Literal(char) :: rest => weedCharSequence(rest, char :: acc)
+      case ParsedAst.Literal.CharCode.Escape('n') :: rest => weedCharSequence(rest, '\n' :: acc)
+      case ParsedAst.Literal.CharCode.Escape('r') :: rest => weedCharSequence(rest, '\r' :: acc)
+      case ParsedAst.Literal.CharCode.Escape('\\') :: rest => weedCharSequence(rest, '\\' :: acc)
+      case ParsedAst.Literal.CharCode.Escape('\"') :: rest => weedCharSequence(rest, '\"' :: acc)
+      case ParsedAst.Literal.CharCode.Escape('\'') :: rest => weedCharSequence(rest, '\'' :: acc)
+      case ParsedAst.Literal.CharCode.Escape('t') :: rest => weedCharSequence(rest, '\t' :: acc)
+      case ParsedAst.Literal.CharCode.Escape('u') ::
+        ParsedAst.Literal.CharCode.Literal(d0) ::
+        ParsedAst.Literal.CharCode.Literal(d1) ::
+        ParsedAst.Literal.CharCode.Literal(d2) ::
+        ParsedAst.Literal.CharCode.Literal(d3) ::
+        rest =>
+        val code = List(d0, d1, d2, d3).mkString
+        translateHexCode(code) flatMap {
+          char => weedCharSequence(rest, char :: acc)
+        }
+      case ParsedAst.Literal.CharCode.Escape('u') :: _ => ??? // MATT WeederError.TruncatedUnicode or something
+      case _ => ??? // MATT WeederError.InvalidEscapeSequence or something
+    }
+  }
+
   /**
     * Translates the given literal to an expression.
     */
