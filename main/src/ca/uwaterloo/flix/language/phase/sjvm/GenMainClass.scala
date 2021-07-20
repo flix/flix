@@ -20,14 +20,15 @@ package ca.uwaterloo.flix.language.phase.sjvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst.{Def, Root}
 import ca.uwaterloo.flix.language.ast.PRefType._
-import ca.uwaterloo.flix.language.ast.PType.PReference
+import ca.uwaterloo.flix.language.ast.PType._
 import ca.uwaterloo.flix.language.ast.RRefType._
-import ca.uwaterloo.flix.language.ast.RType.RReference
-import ca.uwaterloo.flix.language.ast.{PRefType, RRefType, Symbol}
-import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler.{F, StackEnd, StackNil}
+import ca.uwaterloo.flix.language.ast.RType._
+import ca.uwaterloo.flix.language.ast.{PRefType, PType, RRefType, Symbol}
+import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
 import ca.uwaterloo.flix.language.phase.sjvm.ClassMaker.Mod
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 import ca.uwaterloo.flix.util.InternalCompilerException
+import org.objectweb.asm.Opcodes
 
 /**
   * Generates bytecode for the main class.
@@ -45,7 +46,7 @@ object GenMainClass {
     case None => Map.empty
     case Some(defn) =>
       def mainTypeMatch[T <: PRefType](m: RRefType[T]) = m match {
-        case r: RArrow => r
+        case r: RArrow => r // TODO(JLS): maybe match more here on type etc
         case _ => throw InternalCompilerException(s"The type of main has to be a function, not ${m.toInternalName}")
       }
 
@@ -54,6 +55,7 @@ object GenMainClass {
         case _ => throw InternalCompilerException(s"The type of main cannot be a primitive, ${defn.tpe}")
       }
 
+      // TODO(JLS): should get a namespace and a name. maybe its always Ns.m_main(args)
       val bytecode = genByteCode(mainType)
       Map(mainMethodClassName -> JvmClass(mainMethodClassName, bytecode))
   }
@@ -84,13 +86,16 @@ object GenMainClass {
     val ns = SjvmOps.getNamespace(Symbol.Main)
 
     // Call Ns.m_main(args)
-
+    def callNs[R <: Stack]: F[R ** PReference[PArray[PReference[PStr]]]] => F[R ** PInt32] = f => {
+      //f.visitor.visitMethodInsn(Opcodes.INVOKESTATIC, )
+      f.asInstanceOf[F[R ** PInt32]]
+    }
     // Push the args array on the stack.
     //      main.visitVarInsn(ALOAD, 0)
     START[StackNil] ~
-      ALOAD(0, tag[PArray[PReference[PStr]]]) ~
-      POP ~
-      RETURN
+      ALOAD(1, tag[PArray[PReference[PStr]]]) ~
+      callNs ~
+      IRETURN
     //      THISLOAD(tag[PArray[PReference[PStr]]]) ~
     //        ???
     //      Invoke m_main
@@ -113,6 +118,7 @@ object GenMainClass {
     root.defs.get(sym) flatMap {
       case defn =>
         // The main function must take zero arguments.
+        // TODO(JLS): is this always the correct main?
         Some(defn)
     }
   }

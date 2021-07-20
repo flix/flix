@@ -32,7 +32,7 @@ import ca.uwaterloo.flix.util.Validation._
 object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
   type FTypes = Set[RType[PReference[PFunction]]]
 
-  def emptyFTypes(): FTypes = Set[RType[PReference[PFunction]]]()
+  def emptyFTypes: FTypes = Set[RType[PReference[PFunction]]]()
 
   def run(root: FinalAst.Root)(implicit flix: Flix): Validation[ErasedAst.Root, CompilationError] = flix.phase("Eraser") {
     val defns = EM.foldRight(root.defs)(Map[Symbol.DefnSym, ErasedAst.Def]().toMonad) {

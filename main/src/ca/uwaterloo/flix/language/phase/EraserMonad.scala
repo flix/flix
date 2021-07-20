@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.phase.Eraser.FTypes
+import ca.uwaterloo.flix.language.phase.Eraser.{FTypes, emptyFTypes}
 import ca.uwaterloo.flix.language.phase.sjvm.NamespaceInfo
 
 import scala.collection.mutable
@@ -39,8 +39,7 @@ sealed case class EraserMonad[+T](value: T, fTypes: FTypes, namespaces: Set[Name
 
 object EraserMonad {
   final def toMonad[T](t: T): EraserMonad[T] =
-    EraserMonad(t, Set.empty, Set.empty)
-
+    EraserMonad(t, emptyFTypes, Set())
   implicit class ToMonad[+T](val t: T) {
     def toMonad[U >: T]: EraserMonad[U] = EraserMonad.toMonad(t)
   }
@@ -55,7 +54,7 @@ object EraserMonad {
 
     // Two mutable arrays to hold the intermediate results.
     val values = mutable.ArrayBuffer.empty[S]
-    var fTypes: FTypes = Set.empty
+    var fTypes: FTypes = emptyFTypes
     var nss: Set[NamespaceInfo] = Set.empty
 
     // Apply f to each element and collect the results.

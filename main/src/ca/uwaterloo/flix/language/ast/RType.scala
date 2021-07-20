@@ -203,7 +203,7 @@ object RRefType {
       override lazy val toDescriptor: String = ???
       override lazy val toInternalName: String = ???
       override lazy val toPath: Path = ???
-    } // TODO(JLS): does any general name here make sense?
+    } // TODO(JLS): does any general name here make sense? figure out something Def_???
     lazy val functionInterfaceName: JvmName = JvmName(Nil, s"Fn${args.length}${JvmName.reservedDelimiter}${(args ::: result :: Nil).map(_.toErasedString).mkString(JvmName.reservedDelimiter)}")
   }
 
