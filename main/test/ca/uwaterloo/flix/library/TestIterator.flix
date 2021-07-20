@@ -844,8 +844,9 @@ namespace TestIterator {
     @test
     def zip08(): Bool & Impure =
         let iter = Iterator.range(0, 500);
-        let list = List.range(0, 500);
-        Iterator.zip(iter, iter) |> Iterator.toList == List.zip(list, list) and
+        let listEven = List.range(0, 500) |> List.filter(x -> x % 2 == 0);
+        let listOdd = List.range(0, 500) |> List.filter(x -> x % 2 != 0);
+        Iterator.zip(iter, iter) |> Iterator.toList == List.zip(listEven, listOdd) and
         iter |> Iterator.isEmpty
 
 
