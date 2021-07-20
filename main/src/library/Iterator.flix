@@ -256,6 +256,7 @@ namespace Iterator {
     /// Consumes elements of both `iterA` and `iterB` equal to the length of the shortest iterator.
     /// If `iterA` and `iterB` are equal length, both iterators are fully consumed.
     ///
+    // TODO: Overload based on purity.
     pub def zipWith(f: (a, b) -> c & e, iterA: Iterator[a], iterB: Iterator[b]): Iterator[c] & Impure = ???
 
     ///
