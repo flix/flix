@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.ast.PType._
 import ca.uwaterloo.flix.language.ast.RRefType._
 import ca.uwaterloo.flix.language.ast.RType._
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.phase.sjvm.NamespaceInfo
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
@@ -38,9 +39,10 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
     }
 
     val reachable = root.reachable
-    val functionResultTypes = functionTypes.foldLeft(Set[RType[_ <: PType]]()) { case (s, RReference(RArrow(_, result))) => s + result }
+    // TODO(JLS): implement this by monad on eraser
+    val namespaces: Set[NamespaceInfo] = Set.empty
 
-    ErasedAst.Root(defns, reachable, root.sources, functionTypes).toSuccess
+    ErasedAst.Root(defns, reachable, root.sources, functionTypes, namespaces).toSuccess
   }
 
   /**

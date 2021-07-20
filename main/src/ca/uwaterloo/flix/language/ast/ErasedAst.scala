@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.PType._
+import ca.uwaterloo.flix.language.phase.sjvm.NamespaceInfo
 
 import java.lang.reflect.{Constructor, Field, Method}
 
@@ -30,7 +31,8 @@ object ErasedAst {
                   //enums: Map[Symbol.EnumSym, ErasedAst.Enum],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
-                  functionTypes: Set[RType[PReference[PFunction]]])
+                  functionTypes: Set[RType[PReference[PFunction]]],
+                  namespaces: Set[NamespaceInfo])
 
   // TODO(JLS): This method, of using T <: PType and the _ <: PType at use is probably better and should be used elsewhere
   case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: List[ErasedAst.FormalParam], exp: ErasedAst.Expression[_ <: PType], tpe: RType[PReference[PFunction]], loc: SourceLocation) {

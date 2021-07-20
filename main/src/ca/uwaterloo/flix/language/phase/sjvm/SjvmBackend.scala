@@ -42,16 +42,16 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
   /**
    * Emits JVM bytecode for the given AST `root`.
    */
-  def run(input: Root)(implicit flix: Flix): Validation[CompilationResult, CompilationError] = flix.phase("SjvmBackend") {
+  def run(root: Root)(implicit flix: Flix): Validation[CompilationResult, CompilationError] = flix.phase("SjvmBackend") {
 
     //
     // Put the AST root into implicit scope.
     //
-    implicit val r: Root = input
+    implicit val r: Root = root
 
     val allClasses: Map[JvmName, JvmClass] = flix.subphase("CodeGen") {
 
-      val functionInterfaces = GenFunctionInterfaces.gen(input.functionTypes)
+      val functionInterfaces = GenFunctionInterfaces.gen(root.functionTypes)
       val continuationInterfaces = GenContinuationInterfaces.gen()
 
       //
@@ -60,10 +60,15 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
       val mainClass = GenMainClass.gen()
 
       //
+      // Compute the set of namespaces in the program.
+      //
+      val namespaces = SjvmOps.namespacesOf(root)
+
+      //
       // Generate references classes.
       //
       val refClasses = GenRefClasses.gen()
-      val defClasses = GenDefClasses.gen(input.defs)
+      val defClasses = GenDefClasses.gen(root.defs)
 
       //
       // Generate lazy classes.
@@ -101,7 +106,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
       //
       // Do not load any classes.
       //
-      new CompilationResult(input, None, Map.empty).toSuccess
+      new CompilationResult(root, None, Map.empty).toSuccess
     } else {
       //
       // Loads all the generated classes into the JVM and decorates the AST.
@@ -111,7 +116,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
       //
       // Return the compilation result.
       //
-      new CompilationResult(input, getCompiledMain(input), getCompiledDefs(input)).toSuccess
+      new CompilationResult(root, getCompiledMain(root), getCompiledDefs(root)).toSuccess
     }
   }
 

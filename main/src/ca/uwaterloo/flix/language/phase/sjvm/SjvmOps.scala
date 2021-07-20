@@ -24,6 +24,57 @@ import ca.uwaterloo.flix.language.ast.{PType, Symbol}
 object SjvmOps {
 
   /**
+    * Returns the method name of a defn as used in a namespace class.
+    *
+    * For example:
+    *
+    * find      =>  m_find
+    * length    =>  m_length
+    */
+  def getDefMethodNameInNamespaceClass(sym: Symbol.DefnSym): String = "m_" + mangle(sym.name)
+
+  /**
+    * Performs name mangling on the given string `s` to avoid issues with special characters.
+    */
+  // TODO(JLS):  Use this in appropriate places.
+  def mangle(s: String): String = s.
+    replace("+", JvmName.reservedDelimiter + "plus").
+    replace("-", JvmName.reservedDelimiter + "minus").
+    replace("*", JvmName.reservedDelimiter + "times").
+    replace("/", JvmName.reservedDelimiter + "divide").
+    replace("%", JvmName.reservedDelimiter + "modulo").
+    replace("**", JvmName.reservedDelimiter + "exponentiate").
+    replace("<", JvmName.reservedDelimiter + "lt").
+    replace("<=", JvmName.reservedDelimiter + "le").
+    replace(">", JvmName.reservedDelimiter + "gt").
+    replace(">=", JvmName.reservedDelimiter + "ge").
+    replace("==", JvmName.reservedDelimiter + "eq").
+    replace("!=", JvmName.reservedDelimiter + "neq").
+    replace("&&", JvmName.reservedDelimiter + "land").
+    replace("||", JvmName.reservedDelimiter + "lor").
+    replace("&", JvmName.reservedDelimiter + "band").
+    replace("|", JvmName.reservedDelimiter + "bor").
+    replace("^", JvmName.reservedDelimiter + "bxor").
+    replace("<<", JvmName.reservedDelimiter + "lshift").
+    replace(">>", JvmName.reservedDelimiter + "rshift")
+
+  /**
+    * Returns the namespace type for the given namespace `ns`.
+    *
+    * For example:
+    *
+    * <root>      =>  Ns
+    * Foo         =>  Foo.Ns
+    * Foo.Bar     =>  Foo.Bar.Ns
+    * Foo.Bar.Baz =>  Foo.Bar.Baz.Ns
+    */
+  def getNamespaceClassType(ns: NamespaceInfo)(implicit root: Root, flix: Flix): JvmName = {
+    val pkg = ns.ns
+    val name = "Ns"
+    JvmName(pkg, name)
+  }
+
+  /**
    * Returns `true` if the given definition `defn` is a law.
    */
   def nonLaw(defn: Def): Boolean = !defn.ann.isLaw
