@@ -45,8 +45,11 @@ namespace Iterator {
         let d: Done = () -> deref i >= e;
         let n: Next[Int32] = () -> {
                 let res = deref i;
-                i := res + 1;
-                res
+                if (res < b) {
+                    i := res + 1;
+                    res
+                }
+                else bug!("Empty Iterator!")
             };
         Iterator(d, n)
 
