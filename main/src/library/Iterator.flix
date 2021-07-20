@@ -77,7 +77,7 @@ namespace Iterator {
             next() == a or memberOf(a, iter)
 
     ///
-    /// Returns the iterator `iter` as an array.
+    /// Returns all elements in the iterator `iter` as an array.
     ///
     /// Consumes the entire iterator.
     ///
@@ -119,7 +119,7 @@ namespace Iterator {
             toMapHelper(iter, Map.insert(a, b, m))
 
     ///
-    /// Returns the iterator `iter` as a set.
+    /// Returns all elements in the iterator `iter` as a set.
     ///
     /// Consumes the entire iterator.
     ///
