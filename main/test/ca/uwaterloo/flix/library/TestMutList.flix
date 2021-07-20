@@ -1211,7 +1211,8 @@ namespace TestMutList {
         List.foreach(f, List.range(0, 75));
         let c = capacity(v);
         let _ = MutList.pop!(v);
-        c == 100 and capacity(v) == 50
+        capacity(v) == c / 2 and
+        MutList.length(v) == 100 - 75 - 1
 
     @test
     def compress!02(): Bool & Impure =
