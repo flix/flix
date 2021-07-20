@@ -74,7 +74,7 @@ namespace Iterator {
         if (done())
             false
         else
-            next() == a or memberOf(x, iter)
+            next() == x or memberOf(x, iter)
 
     ///
     /// Returns all elements in the iterator `iter` as an array.
