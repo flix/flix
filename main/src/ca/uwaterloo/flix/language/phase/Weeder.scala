@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{CompilationMode, InternalCompilerException, ParOps, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 import java.lang.{Byte => JByte, Integer => JInt, Long => JLong, Short => JShort}
 import java.math.BigInteger
@@ -366,12 +366,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Expression.Hole(sp1, name, sp2) =>
       val loc = mkSL(sp1, sp2)
-      /*
-       * Checks for `IllegalHole`.
-       */
-      if (flix.options.mode == CompilationMode.Release) {
-        return IllegalHole(loc).toFailure
-      }
       WeededAst.Expression.Hole(name, loc).toSuccess
 
     case ParsedAst.Expression.Use(sp1, use, exp, sp2) =>
@@ -880,6 +874,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           }
       }
 
+    case ParsedAst.Expression.LetRegion(sp1, ident, exp, sp2) =>
+      mapN(visitExp(exp)) {
+        case e => WeededAst.Expression.LetRegion(ident, e, mkSL(sp1, sp2))
+      }
+
     case ParsedAst.Expression.Match(sp1, exp, rules, sp2) =>
       val rulesVal = traverse(rules) {
         case ParsedAst.MatchRule(pat, None, body) =>
@@ -1177,10 +1176,18 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           }
       }
 
-    case ParsedAst.Expression.Ref(sp1, exp, sp2) =>
-      for {
-        e <- visitExp(exp)
-      } yield WeededAst.Expression.Ref(e, mkSL(sp1, sp2))
+    case ParsedAst.Expression.Ref(sp1, exp, reg, sp2) => reg match {
+      case None =>
+        for {
+          e <- visitExp(exp)
+        } yield WeededAst.Expression.Ref(e, mkSL(sp1, sp2))
+
+      case Some(exp2) =>
+        for {
+          e <- visitExp(exp)
+          e2 <- visitExp(exp2)
+        } yield WeededAst.Expression.RefWithRegion(e, e2, mkSL(sp1, sp2))
+    }
 
     case ParsedAst.Expression.Deref(sp1, exp, sp2) =>
       for {
@@ -1343,7 +1350,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       mapN(traverse(exps)(visitExp)) {
         case es =>
           val init = WeededAst.Expression.FixpointConstraintSet(Nil, loc)
-          (es.zip(idents.toList)).foldRight(init: WeededAst.Expression) {
+          es.zip(idents.toList).foldRight(init: WeededAst.Expression) {
             case ((exp, ident), acc) =>
               val pred = Name.mkPred(ident)
               val innerExp = WeededAst.Expression.FixpointProjectIn(exp, pred, loc)
@@ -1402,8 +1409,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Expression.FixpointQueryWithSelect(sp1, exps0, selects0, from0, whereExp0, sp2) =>
       val loc = mkSL(sp1, sp2)
+      val selects1 = selects0 match {
+        case ParsedAst.SelectFragment(exps, None) => exps
+        case ParsedAst.SelectFragment(exps, Some(exp)) => exps.toList ::: exp :: Nil
+      }
 
-      mapN(traverse(exps0)(visitExp), traverse(selects0)(visitExp), traverse(from0)(visitPredicateBody), traverse(whereExp0)(visitExp)) {
+      mapN(traverse(exps0)(visitExp), traverse(selects1)(visitExp), traverse(from0)(visitPredicateBody), traverse(whereExp0)(visitExp)) {
         case (exps, selects, from, where) =>
           //
           // Performs the following rewrite:
@@ -1418,7 +1429,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           val pred = Name.Pred("$Result", loc)
 
           // The head of the pseudo-rule.
-          val head = WeededAst.Predicate.Head.Atom(pred, Denotation.Relational, selects, loc)
+          val den = selects0 match {
+            case ParsedAst.SelectFragment(_, None) => Denotation.Relational
+            case ParsedAst.SelectFragment(_, Some(_)) => Denotation.Latticenal
+          }
+          val head = WeededAst.Predicate.Head.Atom(pred, den, selects, loc)
 
           // The body of the pseudo-rule.
           val body = where match {
@@ -1440,6 +1455,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
           // Extract the tuples of the result predicate.
           WeededAst.Expression.FixpointProjectOut(pred, queryExp, dbExp, loc)
+      }
+
+    case ParsedAst.Expression.MatchEff(sp1, exp1, exp2, exp3, sp2) =>
+      mapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
+        case (e1, e2, e3) => WeededAst.Expression.MatchEff(e1, e2, e3, mkSL(sp1, sp2))
       }
 
   }
@@ -1851,7 +1871,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Type.Tuple(sp1, elms, sp2) => WeededAst.Type.Tuple(elms.toList.map(visitType), mkSL(sp1, sp2))
 
-    case ParsedAst.Type.Record(sp1, fields, restOpt, sp2) => {
+    case ParsedAst.Type.Record(sp1, fields, restOpt, sp2) =>
       def buildRecord(base: WeededAst.Type): WeededAst.Type = {
         fields.foldRight(base) {
           case (ParsedAst.RecordFieldType(ssp1, ident, t, ssp2), acc) =>
@@ -1867,7 +1887,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         // Case 3: `{x: Int | r}` Polymorphic record with field. `r` must be a `Record` variable.
         case (_, Some(base)) => buildRecord(WeededAst.Type.Var(base, base.loc))
       }
-    }
 
     case ParsedAst.Type.Schema(sp1, predicates, restOpt, sp2) =>
       def buildSchema(base: WeededAst.Type): WeededAst.Type = {
@@ -2276,6 +2295,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.LetMatch(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetMatchStar(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetImport(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.LetRegion(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Choose(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Tag(sp1, _, _, _) => sp1
@@ -2295,7 +2315,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.FSet(sp1, _, _) => sp1
     case ParsedAst.Expression.FMap(sp1, _, _) => sp1
     case ParsedAst.Expression.Interpolation(sp1, _, _) => sp1
-    case ParsedAst.Expression.Ref(sp1, _, _) => sp1
+    case ParsedAst.Expression.Ref(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Deref(sp1, _, _) => sp1
     case ParsedAst.Expression.Assign(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Existential(sp1, _, _, _, _) => sp1
@@ -2316,6 +2336,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.FixpointProjectInto(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointSolveWithProject(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointQueryWithSelect(sp1, _, _, _, _, _) => sp1
+    case ParsedAst.Expression.MatchEff(sp1, _, _, _, _) => sp1
   }
 
   /**

@@ -599,6 +599,16 @@ object ParsedAst {
     case class LetImport(sp1: SourcePosition, op: ParsedAst.JvmOp, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * Let Region Expression.
+      *
+      * @param sp1   the position of the first character in the expression.
+      * @param ident the name of the region.
+      * @param exp   the body expression.
+      * @param sp2   the position of the last character in the expression.
+      */
+    case class LetRegion(sp1: SourcePosition, ident: Name.Ident, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Match Expression (pattern match expression).
       *
       * @param sp1   the position of the first character in the expression.
@@ -781,11 +791,12 @@ object ParsedAst {
     /**
       * Reference expression.
       *
-      * @param sp1 the position of the first character in the expression.
-      * @param exp the expression to reference.
-      * @param sp2 the position of the last character in the expression.
+      * @param sp1  the position of the first character in the expression.
+      * @param exp1 the reference.
+      * @param exp2 the optional region.
+      * @param sp2  the position of the last character in the expression.
       */
-    case class Ref(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class Ref(sp1: SourcePosition, exp1: ParsedAst.Expression, exp2: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Dereference expression.
@@ -979,7 +990,10 @@ object ParsedAst {
       * @param whereExp the optional guard of the pseudo-rule.
       * @param sp2      the position of the last character in the expression.
       */
-    case class FixpointQueryWithSelect(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], selects: Seq[Expression], from: Seq[ParsedAst.Predicate.Body.Atom], whereExp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+    case class FixpointQueryWithSelect(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], selects: ParsedAst.SelectFragment, from: Seq[ParsedAst.Predicate.Body.Atom], whereExp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+
+    // TODO: DOC
+    case class MatchEff(sp1: SourcePosition, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, exp3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
   }
 
@@ -1175,6 +1189,14 @@ object ParsedAst {
     }
 
   }
+
+  /**
+    * Represents a select fragment in a query expression.
+    *
+    * @param exps the list of terms.
+    * @param exp  the optional lattice term.
+    */
+  case class SelectFragment(exps: Seq[Expression], exp: Option[Expression])
 
   /**
     * Types.

@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix
 
+import ca.uwaterloo.flix.util.LibLevel
 import org.scalatest.FunSuite
 
 class TestMain extends FunSuite {
@@ -98,18 +99,6 @@ class TestMain extends FunSuite {
     assert(opts.lsp.nonEmpty)
   }
 
-  test("--quickchecker") {
-    val args = Array("--quickchecker")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.quickchecker)
-  }
-
-  test("--release") {
-    val args = Array("--release", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.release)
-  }
-
   test("--test") {
     val args = Array("--test", "p.flix")
     val opts = Main.parseCmdOpts(args).get
@@ -120,24 +109,6 @@ class TestMain extends FunSuite {
     val args = Array("--threads", "42", "p.flix")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.threads.contains(42))
-  }
-
-  test("--verbose") {
-    val args = Array("--verbose", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.verbose)
-  }
-
-  test("--verifier") {
-    val args = Array("--verifier", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.verifier)
-  }
-
-  test("--Xallow-redundancies") {
-    val args = Array("--Xallow-redundancies", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xallowredundancies)
   }
 
   test("--Xbenchmark-phases") {
@@ -152,22 +123,10 @@ class TestMain extends FunSuite {
     assert(opts.xbenchmarkThroughput)
   }
 
-  test("--Xcore") {
-    val args = Array("--Xcore", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xcore)
-  }
-
   test("--Xdebug") {
     val args = Array("--Xdebug", "p.flix")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.xdebug)
-  }
-
-  test("--Xinvariants") {
-    val args = Array("--Xinvariants", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xinvariants)
   }
 
   test("--Xlinter") {
@@ -188,16 +147,21 @@ class TestMain extends FunSuite {
     assert(opts.xnostratifier)
   }
 
-  test("--Xno-tailcalls") {
-    val args = Array("--Xno-tailcalls", "p.flix")
+  test("--Xlib nix") {
+    val args = Array("--Xlib", "nix", "p.flix")
     val opts = Main.parseCmdOpts(args).get
-    assert(opts.xnotailcalls)
+    assert(opts.xlib == LibLevel.Nix)
   }
 
-  test("--Xstatistics") {
-    val args = Array("--Xstatistics", "p.flix")
+  test("--Xlib min") {
+    val args = Array("--Xlib", "min", "p.flix")
     val opts = Main.parseCmdOpts(args).get
-    assert(opts.xstatistics)
+    assert(opts.xlib == LibLevel.Min)
   }
 
+  test("--Xlib all") {
+    val args = Array("--Xlib", "all", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xlib == LibLevel.All)
+  }
 }

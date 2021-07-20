@@ -216,6 +216,10 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val env1 = env0 + (sym -> freshSym)
           Expression.Let(freshSym, visitExp(exp1, env1), visitExp(exp2, env1), subst0(tpe), eff, loc)
 
+        case Expression.LetRegion(sym, exp, tpe, eff, loc) =>
+          val e = visitExp(exp, env0)
+          Expression.LetRegion(sym, e, subst0(tpe), eff, loc)
+
         case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
           val e1 = visitExp(exp1, env0)
           val e2 = visitExp(exp2, env0)
@@ -439,6 +443,29 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) =>
           throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
 
+        case Expression.MatchEff(exp1, exp2, exp3, _, _, _) =>
+          // TODO: Magic!
+
+          // The match expression must be a function type.
+          val arrowType = subst0(exp1.tpe)
+
+          // Its type arguments are the effect followed by the argument and return types.
+          val targs = arrowType.typeArguments
+
+          // The effect is the first type argument.
+          val eff = targs.head
+
+          // Determine if the function is pure.
+          val isPure = eff match {
+            case Type.Cst(TypeConstructor.True, _) => true
+            case Type.Cst(TypeConstructor.False, _) => false
+            case other => throw InternalCompilerException(s"Unexpected non-Boolean type: '$other'.")
+          }
+
+          if (isPure)
+            visitExp(exp2, env0)
+          else
+            visitExp(exp3, env0)
       }
 
       /**

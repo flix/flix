@@ -50,12 +50,6 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
     implicit val r: Root = input
 
     val allClasses: Map[JvmName, JvmClass] = flix.subphase("CodeGen") {
-      //
-      // Immediately return if in verification mode.
-      //
-      if (flix.options.verifier) {
-        return new CompilationResult(input, None, Map.empty).toSuccess
-      }
 
       val functionInterfaces = GenFunctionInterfaces.gen(input.functionTypes)
       val continuationInterfaces = GenContinuationInterfaces.gen()

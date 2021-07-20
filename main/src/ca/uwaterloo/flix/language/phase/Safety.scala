@@ -96,6 +96,8 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.Let(sym, exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
 
+    case Expression.LetRegion(sym, exp, tpe, eff, loc) => visitExp(exp)
+
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2) ::: visitExp(exp3)
 
     case Expression.Stm(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
@@ -221,6 +223,8 @@ object Safety extends Phase[Root, Root] {
     case Expression.FixpointProjectIn(exp, pred, tpe, eff, loc) => visitExp(exp)
 
     case Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) => visitExp(exp)
+
+    case Expression.MatchEff(exp1, exp2, exp3, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2) ::: visitExp(exp3)
 
   }
 

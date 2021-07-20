@@ -155,4 +155,40 @@ namespace Test/Exp/Fixpoint/Solve {
         Path(x, z) :- Path(x, y), Edge(y, z).
     }
 
+    @test
+    def testFixpointSolveArity1(): Bool & Impure =
+        let p = #{
+            One("one").
+            Last(x) :- One(x).
+        };
+        let m = query p select x from Last(x);
+        Array.sameElements(m, ["one"])
+
+    @test
+    def testFixpointSolveArity5(): Bool & Impure =
+        let p = #{
+            Five("one", "two", "three", "four", "five").
+            Last(x) :- Five(_, _, _,   _, x).
+        };
+        let m = query p select x from Last(x);
+        Array.sameElements(m, ["five"])
+
+    @test
+    def testFixpointSolveArity10(): Bool & Impure =
+        let p = #{
+            Ten("one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten").
+            Last(x) :- Ten(_, _, _,   _, _, _,   _, _, _,  x).
+        };
+        let m = query p select x from Last(x);
+        Array.sameElements(m, ["ten"])
+
+
+    @test
+    def testFixpointSolveArity15(): Bool & Impure =
+        let p = #{
+            Fifteen("one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen").
+            Last(x) :- Fifteen(_, _, _,   _, _, _,   _, _, _,   _, _, _,    _, _, x).
+        };
+        let m = query p select x from Last(x);
+        Array.sameElements(m, ["fifteen"])
 }

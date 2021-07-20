@@ -122,6 +122,7 @@ class Flix {
     "Int16.flix" -> LocalResource.get("/src/library/Int16.flix"),
     "Int32.flix" -> LocalResource.get("/src/library/Int32.flix"),
     "Int64.flix" -> LocalResource.get("/src/library/Int64.flix"),
+    "Iterator.flix" -> LocalResource.get("/src/library/Iterator.flix"),
     "List.flix" -> LocalResource.get("/src/library/List.flix"),
     "LazyList.flix" -> LocalResource.get("/src/library/LazyList.flix"),
     "LazyList2.flix" -> LocalResource.get("/src/library/LazyList2.flix"),
@@ -152,7 +153,6 @@ class Flix {
     "Foldable.flix" -> LocalResource.get("/src/library/Foldable.flix"),
 
     "Bounded.flix" -> LocalResource.get("/src/library/Bounded.flix"),
-    "TotalOrder.flix" -> LocalResource.get("/src/library/TotalOrder.flix"),
     "Validation.flix" -> LocalResource.get("/src/library/Validation.flix"),
 
     "Channel.flix" -> LocalResource.get("/src/library/Channel.flix"),
@@ -276,13 +276,13 @@ class Flix {
    */
   def addPath(p: Path): Flix = {
     if (p == null)
-      throw new IllegalArgumentException("'p' must be non-null.")
+      throw new IllegalArgumentException(s"'p' must be non-null.")
     if (!Files.exists(p))
-      throw new IllegalArgumentException("'p' must a file.")
+      throw new IllegalArgumentException(s"'$p' must a file.")
     if (!Files.isRegularFile(p))
-      throw new IllegalArgumentException("'p' must a regular file.")
+      throw new IllegalArgumentException(s"'$p' must a regular file.")
     if (!Files.isReadable(p))
-      throw new IllegalArgumentException("'p' must a readable file.")
+      throw new IllegalArgumentException(s"'$p' must a readable file.")
 
     paths += p
     this
@@ -407,7 +407,7 @@ class Flix {
     phaseTimers += currentPhase
 
     // Print performance information if in verbose mode.
-    if (options.verbosity == Verbosity.Verbose) {
+    if (options.debug) {
       // Print information about the phase.
       val d = new Duration(e)
       val terminalCtx = TerminalContext.AnsiTerminal
@@ -454,7 +454,11 @@ class Flix {
     val si1 = getStringInputs
     val si2 = getPathInputs
     val si3 = inputs.toList
-    val si4 = if (options.core) getInputs(coreLibrary) else getInputs(coreLibrary ++ standardLibrary)
+    val si4 = options.lib match {
+      case LibLevel.Nix => Nil
+      case LibLevel.Min => getInputs(coreLibrary)
+      case LibLevel.All => getInputs(coreLibrary ++ standardLibrary)
+    }
     si1 ::: si2 ::: si3 ::: si4
   }
 

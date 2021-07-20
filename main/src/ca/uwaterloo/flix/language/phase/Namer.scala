@@ -578,6 +578,15 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (e1, e2) => NamedAst.Expression.Let(sym, e1, e2, loc)
       }
 
+    case WeededAst.Expression.LetRegion(ident, exp, loc) =>
+      // make a fresh variable symbol for the local variable.
+      val sym = Symbol.freshVarSym(ident)
+      mapN(visitExp(exp, env0 + (ident.name -> sym), uenv0, tenv0)) {
+        case e =>
+          val evar = Type.freshVar(Kind.Bool)
+          NamedAst.Expression.LetRegion(sym, e, evar, loc)
+      }
+
     case WeededAst.Expression.Match(exp, rules, loc) =>
       val expVal = visitExp(exp, env0, uenv0, tenv0)
       val rulesVal = traverse(rules) {
@@ -685,19 +694,33 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.Ref(exp, loc) =>
       visitExp(exp, env0, uenv0, tenv0) map {
-        case e => NamedAst.Expression.Ref(e, loc)
+        case e =>
+          val tvar = Type.freshVar(Kind.Star)
+          NamedAst.Expression.Ref(e, tvar, loc)
+      }
+
+    case WeededAst.Expression.RefWithRegion(exp1, exp2, loc) =>
+      mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0)) {
+        case (e1, e2) =>
+          val tvar = Type.freshVar(Kind.Star)
+          val evar = Type.freshVar(Kind.Bool)
+          NamedAst.Expression.RefWithRegion(e1, e2, tvar, evar, loc)
       }
 
     case WeededAst.Expression.Deref(exp, loc) =>
       visitExp(exp, env0, uenv0, tenv0) map {
-        case e => NamedAst.Expression.Deref(e, Type.freshVar(Kind.Star), loc)
+        case e =>
+          val tvar = Type.freshVar(Kind.Star)
+          val evar = Type.freshVar(Kind.Bool)
+          NamedAst.Expression.Deref(e, tvar, evar, loc)
       }
 
     case WeededAst.Expression.Assign(exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0)) {
-        case (e1, e2) => NamedAst.Expression.Assign(e1, e2, loc)
+        case (e1, e2) =>
+          val evar = Type.freshVar(Kind.Bool)
+          NamedAst.Expression.Assign(e1, e2, evar, loc)
       }
-
 
     case WeededAst.Expression.Existential(tparams0, fparam, exp, loc) =>
       for {
@@ -882,6 +905,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.FixpointProjectOut(pred, exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0)) {
         case (e1, e2) => NamedAst.Expression.FixpointProjectOut(pred, e1, e2, Type.freshVar(Kind.Star), loc)
+      }
+
+    case WeededAst.Expression.MatchEff(exp1, exp2, exp3, loc) =>
+      mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0), visitExp(exp3, env0, uenv0, tenv0)) {
+        case (e1, e2, e3) => NamedAst.Expression.MatchEff(e1, e2, e3, loc)
       }
 
   }
@@ -1221,6 +1249,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.IfThenElse(exp1, exp2, exp3, loc) => freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
     case WeededAst.Expression.Stm(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.Let(ident, exp1, exp2, loc) => freeVars(exp1) ++ filterBoundVars(freeVars(exp2), List(ident))
+    case WeededAst.Expression.LetRegion(ident, exp, loc) => filterBoundVars(freeVars(exp), List(ident))
     case WeededAst.Expression.Match(exp, rules, loc) => freeVars(exp) ++ rules.flatMap {
       case WeededAst.MatchRule(pat, guard, body) => filterBoundVars(freeVars(guard) ++ freeVars(body), freeVars(pat))
     }
@@ -1240,6 +1269,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.ArrayLength(base, loc) => freeVars(base)
     case WeededAst.Expression.ArraySlice(base, startIndex, endIndex, loc) => freeVars(base) ++ freeVars(startIndex) ++ freeVars(endIndex)
     case WeededAst.Expression.Ref(exp, loc) => freeVars(exp)
+    case WeededAst.Expression.RefWithRegion(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.Deref(exp, loc) => freeVars(exp)
     case WeededAst.Expression.Assign(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.Existential(tparams, fparam, exp, loc) => filterBoundVars(freeVars(exp), List(fparam.ident))
@@ -1276,6 +1306,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.FixpointFilter(qname, exp, loc) => freeVars(exp)
     case WeededAst.Expression.FixpointProjectIn(exp, pred, loc) => freeVars(exp)
     case WeededAst.Expression.FixpointProjectOut(pred, exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
+    case WeededAst.Expression.MatchEff(exp1, exp2, exp3, loc) => freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
   }
 
   /**

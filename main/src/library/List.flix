@@ -691,11 +691,12 @@ namespace List {
     /// The function `f` must be pure.
     ///
     @Time(time(f) * length(xs)) @Space(space(f) * length(xs))
-    pub def filter(f: a -> Bool, xs: List[a]): List[a] = match xs {
-        case Nil => Nil
-        case x :: rs =>
-            let r = filter(f, rs);
-                if (f(x)) x :: r else r
+    pub def filter(f: a -> Bool, xs: List[a]): List[a] = filterAcc(f, xs, Nil) |> List.reverse
+
+    pub def filterAcc(f: a -> Bool, l: List[a], rs: List[a]): List[a] = match l {
+        case Nil => rs
+        case x :: xs =>
+            if (f(x)) filterAcc(f, xs, x :: rs) else filterAcc(f, xs, rs)
     }
 
     ///
@@ -1096,82 +1097,34 @@ namespace List {
         }
 
     ///
-    /// Sort list `xs` with the comparing function `cmp`.
+    /// Sort list `xs` so that elements are ordered from low to high according to their `Order` instance.
     ///
-    /// The sort implementation is a mergesort.
-    /// Acknowledgement: derived from Thomas Nordin's `sortBy` in the Haskell base libraries.
+    /// The sort is not stable, i.e., equal elements may appear in a different order than in the input `xs`.
     ///
-    @Time(length(xs) * Int32.log2(length(xs))) @Space(length(xs))
-    pub def sortWith(cmp: (a,a) -> Int32, xs: List[a]): List[a] =
-        sortGenerateSequences(cmp, xs, zss -> zss) |> sortMergeAll(cmp)
+    /// The sort implementation is a Quicksort.
+    ///
+    pub def sort(xs: List[a]): List[a] with Order[a] =
+        (xs |> toArray |> Array.sort |> Array.toList) as & Pure
+
+    /// Sort list `xs` so that elements are ordered from low to high according to the `Order` instance
+    /// for the values obtained by applying `f` to each element.
+    ///
+    /// The sort is not stable, i.e., equal elements may appear in a different order than in the input `xs`.
+    ///
+    /// The sort implementation is a Quicksort.
+    ///
+    pub def sortBy(f: a -> b, xs: List[a]): List[a] with Order[b] =
+        (xs |> toArray |> Array.sortBy(f) |> Array.toList) as & Pure
 
     ///
-    /// Helper function for `sortWith`.
+    /// Sort list `xs` so that elements are ordered from low to high according to the comparison function `cmp`.
     ///
-    def sortGenerateSequences(cmp: (a,a) -> Int32, xs: List[a], k: List[List[a]] -> List[List[a]]): List[List[a]] = match xs {
-        case a :: b :: rs =>
-            if (cmp(a, b) > 0)
-                sortDescendingStep(cmp, b, a :: Nil, rs, k)
-            else
-                sortAscendingStep(cmp, b, vs -> a :: vs, rs, k)
-        case rs => k(rs :: Nil)
-    }
-
+    /// The sort is not stable, i.e., equal elements may appear in a different order than in the input `xs`.
     ///
-    /// Helper function for `sortWith`.
+    /// The sort implementation is a Quicksort.
     ///
-    def sortDescendingStep(cmp: (a,a) -> Int32, x: a, xs: List[a], ys: List[a], k: List[List[a]] -> List[List[a]]): List[List[a]] = match ys {
-        case r1 :: rs if (cmp(x, r1) > 0) =>
-            sortDescendingStep(cmp, r1, x :: xs, rs, k)
-        case rs =>
-            sortGenerateSequences(cmp, rs, zss -> k((x :: xs) :: zss))
-    }
-
-    ///
-    /// Helper function for `sortWith`.
-    ///
-    def sortAscendingStep(cmp: (a,a) -> Int32, x: a, xsf: List[a] -> List[a], ys: List[a], k: List[List[a]] -> List[List[a]]): List[List[a]] = match ys {
-        case r1 :: rs if (cmp(x, r1) <= 0)  =>
-            sortAscendingStep(cmp, r1, vs -> xsf(x :: vs), rs, k)
-        case rs =>
-            let x1 = xsf(x :: Nil);
-            sortGenerateSequences(cmp, rs, zss -> k(x1 :: zss))
-        }
-
-    ///
-    /// Helper function for `sortWith`.
-    ///
-    def sortMergeAll(cmp: (a,a) -> Int32, xss: List[List[a]]) : List[a] = match xss {
-        case x :: Nil => x
-        case rs => {
-            let xss = sortMergePairs(cmp, rs, zs -> zs);
-            sortMergeAll(cmp, xss)
-        }
-    }
-
-    ///
-    /// Helper function for `sortWith`.
-    ///
-    def sortMergePairs(cmp: (a,a) -> Int32, xss: List[List[a]], k: List[List[a]] -> List[List[a]]) : List[List[a]] = match xss {
-        case a :: b :: rs => {
-            let x = sortMerge(cmp, a, b, zs -> zs);
-            sortMergePairs(cmp, rs, zss -> k(x :: zss))
-        }
-        case rs => k(rs)
-    }
-
-    ///
-    /// Helper function for `sortWith`.
-    ///
-    def sortMerge(cmp: (a,a) -> Int32, xs: List[a], ys: List[a], k: List[a] -> List[a]) : List[a] = match (xs, ys) {
-        case (r :: rs, s :: ss) =>
-            if (cmp(r,s) > 0)
-                sortMerge(cmp, xs, ss, zs -> k(s :: zs))
-            else
-                sortMerge(cmp, rs, ys, zs -> k(r :: zs))
-        case (Nil, ss) => k(ss)
-        case (rs, Nil) => k(rs)
-    }
+    pub def sortWith(cmp: (a,a) -> Comparison, xs: List[a]): List[a] =
+        (xs |> toArray |> Array.sortWith(cmp) |> Array.toList) as & Pure
 
     ///
     /// Build a list by applying `f` to the seed value `st`.

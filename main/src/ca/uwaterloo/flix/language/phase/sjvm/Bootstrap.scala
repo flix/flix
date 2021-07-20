@@ -17,9 +17,11 @@
 
 package ca.uwaterloo.flix.language.phase.sjvm
 
+import java.lang.reflect.Method
+
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ErasedAst.{Def, Root}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Verbosity}
+import ca.uwaterloo.flix.language.ast.ErasedAst.Root
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.lang.reflect.Method
 
@@ -40,7 +42,7 @@ object Bootstrap {
     //
     // Print the number of loaded classes, if debugging and verbosity is enabled.
     //
-    if (flix.options.debug && flix.options.verbosity == Verbosity.Verbose) {
+    if (flix.options.debug) {
       Console.println(s"Loaded: ${loadedClasses.size} classes.")
     }
 

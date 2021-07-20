@@ -2,6 +2,19 @@
 
 HEAD:
 
+Version 0.16.1:
+- Minor improvements to LSP.
+
+Version 0.16.0:
+- Added experimental support for auto-complete (thanks Manoj!)
+- Added sortBy and sortWith to most collections (thanks Felix!)
+
+Version 0.15.0:
+- Added experimental support for type classes (thanks Matthew!)
+- Added new Datalog backend (thanks Benjamin!)
+- Added `query` and `project` expressions.
+- Numerous bug fixes.
+
 Version 0.14.6:
 - Fix a bug in the parser.
 

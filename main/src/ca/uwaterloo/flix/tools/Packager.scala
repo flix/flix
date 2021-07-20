@@ -18,8 +18,6 @@ import scala.collection.mutable
   */
 object Packager {
 
-  // TODO: Every operation should return a value that determines whether it was successful.
-
   /**
     * Initializes a new flix project at the given path `p`.
     *
@@ -42,10 +40,10 @@ object Packager {
     // Compute all the directories and files we intend to create.
     //
     val buildDirectory = getBuildDirectory(p)
+    val libraryDirectory = getLibraryDirectory(p)
     val sourceDirectory = getSourceDirectory(p)
     val testDirectory = getTestDirectory(p)
 
-    val packageFile = getPackageFile(p)
     val historyFile = getHistoryFile(p)
     val licenseFile = getLicenseFile(p)
     val readmeFile = getReadmeFile(p)
@@ -56,7 +54,8 @@ object Packager {
     // Check that the project directories and files do not already exist.
     //
     val allPaths = List(
-      sourceDirectory, testDirectory, packageFile, historyFile, licenseFile, readmeFile, mainSourceFile, mainTestFile
+      buildDirectory, libraryDirectory, sourceDirectory, testDirectory,
+      historyFile, licenseFile, readmeFile, mainSourceFile, mainTestFile
     )
     val pathExists = allPaths.find(f => Files.exists(f))
     if (pathExists.nonEmpty) {
@@ -67,16 +66,9 @@ object Packager {
     // Create the project directories and files.
     //
     newDirectory(buildDirectory)
+    newDirectory(libraryDirectory)
     newDirectory(sourceDirectory)
     newDirectory(testDirectory)
-
-    newFile(packageFile) {
-      s"""(package
-         |  (name     "$packageName")
-         |  (version  "0.1.0")
-         |)
-         |""".stripMargin
-    }
 
     newFile(historyFile) {
       """### v0.1.0
@@ -124,24 +116,12 @@ object Packager {
     val flix = new Flix()
     flix.setOptions(o)
 
-    // Add all source files.
-    for (sourceFile <- getAllFiles(getSourceDirectory(p))) {
-      if (sourceFile.getFileName.toString.endsWith(".flix")) {
-        flix.addPath(sourceFile)
-      }
-    }
-
-    // Add all test files.
-    for (testFile <- getAllFiles(getTestDirectory(p))) {
-      if (testFile.getFileName.toString.endsWith(".flix")) {
-        flix.addPath(testFile)
-      }
-    }
+    // Add sources and packages.
+    addSourcesAndPackages(p, o, flix)
 
     flix.check() match {
       case Validation.Success(_) => ()
       case Validation.Failure(errors) =>
-        implicit val term = TerminalContext.AnsiTerminal
         errors.foreach(e => println(e.message.fmt))
     }
   }
@@ -156,11 +136,30 @@ object Packager {
 
     // Configure a new Flix object.
     val flix = new Flix()
-    flix.setOptions(o.copy(targetDirectory = getBuildDirectory(p), loadClassFiles = loadClasses, writeClassFiles = true))
+    val newOptions = o.copy(
+      targetDirectory = getBuildDirectory(p),
+      loadClassFiles = loadClasses,
+      writeClassFiles = true)
+    flix.setOptions(newOptions)
 
     // Copy all class files from the Flix runtime jar.
     copyRuntimeClassFiles(p)
 
+    // Add sources and packages.
+    addSourcesAndPackages(p, o, flix)
+
+    flix.compile() match {
+      case Validation.Success(r) => Some(r)
+      case Validation.Failure(errors) =>
+        errors.foreach(e => println(e.message.fmt))
+        None
+    }
+  }
+
+  /**
+    * Adds all source files and packages to the given `flix` object.
+    */
+  private def addSourcesAndPackages(p: Path, o: Options, flix: Flix): Unit = {
     // Add all source files.
     for (sourceFile <- getAllFiles(getSourceDirectory(p))) {
       if (sourceFile.getFileName.toString.endsWith(".flix")) {
@@ -175,12 +174,11 @@ object Packager {
       }
     }
 
-    flix.compile() match {
-      case Validation.Success(r) => Some(r)
-      case Validation.Failure(errors) =>
-        implicit val term = TerminalContext.AnsiTerminal
-        errors.foreach(e => println(e.message.fmt))
-        None
+    // Add all library packages.
+    for (pkgFile <- getAllFiles(getLibraryDirectory(p))) {
+      if (pkgFile.getFileName.toString.endsWith(".fpkg")) {
+        flix.addPath(pkgFile)
+      }
     }
   }
 
@@ -246,7 +244,6 @@ object Packager {
     addToZip(zip, "HISTORY.md", getHistoryFile(p))
     addToZip(zip, "LICENSE.md", getLicenseFile(p))
     addToZip(zip, "README.md", getReadmeFile(p))
-    addToZip(zip, "package.json", getPackageFile(p))
 
     // Add all source files.
     for (sourceFile <- getAllFiles(getSourceDirectory(p))) {
@@ -365,12 +362,12 @@ object Packager {
     * Returns `true` if the given path `p` appears to be a flix project path.
     */
   private def isProjectPath(p: Path): Boolean =
-    Files.exists(getSourceDirectory(p)) &&
+    Files.exists(getLibraryDirectory(p)) &&
+      Files.exists(getSourceDirectory(p)) &&
       Files.exists(getTestDirectory(p)) &&
       Files.exists(getHistoryFile(p)) &&
       Files.exists(getLicenseFile(p)) &&
-      Files.exists(getReadmeFile(p)) &&
-      Files.exists(getPackageFile(p))
+      Files.exists(getReadmeFile(p))
 
   /**
     * Returns the package name based on the given path `p`.
@@ -393,6 +390,11 @@ object Packager {
   private def getBuildDirectory(p: Path): Path = p.resolve("./build/").normalize()
 
   /**
+    * Returns the path to the library directory relative to the given path `p`.
+    */
+  private def getLibraryDirectory(p: Path): Path = p.resolve("./lib/").normalize()
+
+  /**
     * Returns the path to the source directory relative to the given path `p`.
     */
   private def getSourceDirectory(p: Path): Path = p.resolve("./src/").normalize()
@@ -401,11 +403,6 @@ object Packager {
     * Returns the path to the test directory relative to the given path `p`.
     */
   private def getTestDirectory(p: Path): Path = p.resolve("./test/").normalize()
-
-  /**
-    * Returns the path to the package file relative to the given path `p`.
-    */
-  private def getPackageFile(p: Path): Path = p.resolve("./package.sn").normalize()
 
   /**
     * Returns the path to the HISTORY file relative to the given path `p`.
