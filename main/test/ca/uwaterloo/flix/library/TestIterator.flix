@@ -76,19 +76,35 @@ namespace TestIterator {
     @test
     def memberOf03(): Bool & Impure =
         let el = "A";
-        let iter = Iterator.repeat(el, 5);
-        iter |> Iterator.memberOf(el) and
-        iter |> Iterator.memberOf(el) and
-        iter |> Iterator.memberOf(el) and
-        iter |> Iterator.memberOf(el) and
-        iter |> Iterator.memberOf(el) and
+        let iter = Iterator.repeat(el, 100);
+        not (iter |> Iterator.memberOf("Not A")) and
         iter |> Iterator.isEmpty
 
     @test
     def memberOf04(): Bool & Impure =
-        let el = "A";
-        let iter = Iterator.repeat(el, 100);
-        not (iter |> Iterator.memberOf("Not A")) and
+        let iter = Iterator.range(0, 1000);
+        iter |> Iterator.memberOf(0) and
+        iter |> Iterator.memberOf(500) and
+        not (iter |> Iterator.isEmpty)
+
+    @test
+    def memberOf05(): Bool & Impure =
+        let iter = Iterator.range(0, 1000);
+        not (iter |> Iterator.memberOf(-1)) and
+        not (iter |> Iterator.memberOf(500)) and
+        iter |> Iterator.isEmpty
+
+    @test
+    def memberOf06(): Bool & Impure =
+        let iter = Iterator.range(0, 1000);
+        not (iter |> Iterator.memberOf(1000)) and
+        not (iter |> Iterator.memberOf(500)) and
+        iter |> Iterator.isEmpty
+
+    @test
+    def memberOf07(): Bool & Impure =
+        let iter = Iterator.range(0, 1000);
+        iter |> Iterator.memberOf(999) and
         iter |> Iterator.isEmpty
 
 
