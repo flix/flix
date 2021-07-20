@@ -5,8 +5,8 @@ on:
     types: [created]
 
 jobs:
-  build:
-    if: contains(github.event.comment.body, '!!!benchmark') && github.event.issue.pull_request
+  handle-request:
+    if: github.event.issue.pull_request && (contains(github.event.comment.body, '!!!benchmark') || contains(github.event.comment.body, '🤖🤖🤖')
     runs-on: ubuntu-latest
     steps:
       - name: Acknowledge request
@@ -26,6 +26,8 @@ jobs:
           java-version: 1.11
       - name: Check out feature branch
         uses: actions/checkout@v2
+        with:
+          ref: github.event.issue.head.label
       - name: Build
         run: ./gradlew classes testClasses
       - name: Benchmark feature phases
@@ -45,7 +47,7 @@ jobs:
       - uses: actions/checkout@v2
         name: Check out master branch
         with:
-          ref: master
+          ref: github.event.issue.base.label
       - name: Download feature phases results
         uses: actions/download-artifact@v2
         with:
