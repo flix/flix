@@ -364,4 +364,66 @@ class TestWeeder extends FunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     expectError[WeederError.UnkindedTypeParameters](result)
   }
+
+  test("MalformedUnicodeEscape.String.01") {
+    // In Scala we cannot put a representation of a unicode escape in a multiline string:
+    // `\\uXXXX` is unchanged (backslashes unescaped)
+    // `\uXXXX` is interpreted as a unicode escape
+    // So we put the bad escape sequence in a separate variable to get around that.
+    // See https://github.com/scala/bug/issues/6631#issuecomment-292414389
+
+    val code = "\\uINVALID"
+    val input =
+      s"""
+        |def f(): String = "${code}"
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.MalformedUnicodeEscape](result)
+  }
+
+  test("MalformedUnicodeEscape.Char.01") {
+    val code = "\\uINVALID"
+    val input =
+      s"""
+         |def f(): Char = '${code}'
+         |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.MalformedUnicodeEscape](result)
+  }
+
+  test("MalformedUnicodeEscape.Interpolation.01") {
+    val code = "\\uINVALID"
+    val input =
+      s"""
+         |def f(): String = '$${25}${code}'
+         |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.MalformedUnicodeEscape](result)
+  }
+
+  test("MalformedUnicodeEscape.Patten.String.01") {
+    val code = "\\uINVALID"
+    val input =
+      s"""
+         |def f(x: String): Bool = match x {
+         |  case "${code}" => true
+         |  case _ => false
+         |}
+         |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.MalformedUnicodeEscape](result)
+  }
+
+  test("MalformedUnicodeEscape.Patten.Char.01") {
+    val code = "\\uINVALID"
+    val input =
+      s"""
+         |def f(x: Char): Bool = match x {
+         |  case '${code}' => true
+         |  case _ => false
+         |}
+         |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.MalformedUnicodeEscape](result)
+  }
 }
