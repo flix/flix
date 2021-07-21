@@ -476,6 +476,20 @@ namespace TestIterator {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // foldLeft                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldLeft01(): Bool & Impure =
+        Nil: List[Int32] |> Iterator.toIter |> Iterator.foldLeft((acc, n) -> n :: acc, Nil: List[Int32]) == Nil: List[Int32]
+
+    @test
+    def foldLeft02(): Bool & Impure =
+        Iterator.range(0, 1000) |> Iterator.foldLeft((acc, n) -> n :: acc, Nil: List[Int32]) ==
+            List.range(0, 1000) |> List.reverse
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // isEmpty                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
