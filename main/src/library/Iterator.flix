@@ -265,7 +265,7 @@ namespace Iterator {
     /// If `iterA` and `iterB` are equal length, both iterators are fully consumed.
     ///
     // TODO: Overload based on purity.
-    pub def zipWith(f: (a, b) -> c & e, iterA: Iterator[a], iterB: Iterator[b]): Iterator[c] & Impure = ???
+    pub def zipWith(f: (a, b) -> c & ef, iterA: Iterator[a], iterB: Iterator[b]): Iterator[c] & Impure = ???
 
     ///
     /// Applies `f` to a start value `s` and all elements in `iter` going from left to right.
