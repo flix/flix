@@ -1352,7 +1352,7 @@ namespace TestMutList {
 
     @test
     def toImm02(): Bool & Impure =
-        let ml = MutList.range(0, 1000)
+        let ml = MutList.range(0, 1000);
         ml |> MutList.toImm == List.range(0, 1000) and
             not (MutList.isEmpty(ml))
 
