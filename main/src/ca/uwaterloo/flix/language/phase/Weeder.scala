@@ -1472,7 +1472,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
   }
 
-  // MATT docs
+  /**
+    * Translates the hex code into the corresponding character.
+    * Returns an error if the code is not hexadecimal.
+    */
   private def translateHexCode(code: String, loc: SourceLocation): Validation[Char, WeederError] = {
     try {
       Integer.parseInt(code, 16).toChar.toSuccess
@@ -1481,7 +1484,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     }
   }
 
-  // MATT docs
+  /**
+    * Performs weeding on the given sequence of CharCodes.
+    */
   private def weedCharSequence(chars0: Seq[ParsedAst.Literal.CharCode]): Validation[String, WeederError] = {
 
     @tailrec
@@ -1510,7 +1515,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           }
         // `\u` followed by less than 4 literals
         case ParsedAst.Literal.CharCode.Escape(sp1, "u", sp2) :: _ => WeederError.TruncatedUnicodeEscape(mkSL(sp1, sp2)).toFailure
-        // MATT kinda weird just to point at the `\u`
         case ParsedAst.Literal.CharCode.Escape(sp1, char, sp2) :: _ => WeederError.InvalidEscapeSequence(char.head, mkSL(sp1, sp2)).toFailure
       }
     }
@@ -1597,7 +1601,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case string if string.lengthIs == 1 => WeededAst.Pattern.Char(string.head, mkSL(sp1, sp2)).toSuccess
         case string => WeederError.NonSingleCharacter(string, mkSL(sp1, sp2)).toFailure
       }
-      // MATT maybe dedupe against char literal expression
     case ParsedAst.Literal.Float32(sp1, sign, before, after, sp2) =>
       toFloat32(sign, before, after, mkSL(sp1, sp2)) map {
         case lit => WeededAst.Pattern.Float32(lit, mkSL(sp1, sp2))
