@@ -1206,13 +1206,20 @@ namespace TestMutList {
 
     @test
     def compress!01(): Bool & Impure =
+        // Pop 76 element such that the load factor is strictly lower than 1 / 4.
         let v = MutList.range(0, 100);
-        let f = _ -> { let _ = MutList.pop!(v); () };
-        List.foreach(f, List.range(0, 75));
         let c = capacity(v);
-        let _ = MutList.pop!(v);
+        let i = ref 0;
+        let f = _ -> {
+            if (deref i < 76) {
+                MutList.pop!(v);
+                i := deref i + 1
+            }
+            else ()
+        };
+        MutList.foreach(f, v)
         capacity(v) == c / 2 and
-        MutList.length(v) == 100 - 75 - 1
+            MutList.length(v) == 100 - 75 - 1
 
     @test
     def compress!02(): Bool & Impure =
@@ -1704,7 +1711,5 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy(Array.toMutList([2,3,0,4,1,
 
     @test
     def range03(): Bool & Impure =
-        let MutList(a, l) = MutList.range(0, 4);
-        let arr = [0, 1, 2, 3, default, default, default, default];
-        deref a == arr and deref l == 4
+        MutList.range(0, 1000) |> MutList.toImm == List.range(0, 1000)
 }
