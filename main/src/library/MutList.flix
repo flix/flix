@@ -656,21 +656,7 @@ namespace MutList {
     ///
     /// Returns `v` as an immutable list.
     ///
-    pub def toImm(v: MutList[a]): List[a] & Impure =
-        toImmHelper(v, Nil)
-
-    ///
-    /// Helper function for `toImm`
-    ///
-    def toImmHelper(v: MutList[a], acc: List[a]): List[a] & Impure =
-        if (isEmpty(v))
-            acc
-        else
-            let x = match pop!(v) {
-                case Some(a) => a
-                case _       => unreachable!()
-            };
-            toImmHelper(v, x :: acc)
+    pub def toImm(v: MutList[a]): List[a] & Impure = foldLeft((acc, x) -> x :: acc, Nil, v) |> List.reverse
 
     ///
     /// Returns `v` as an array.
