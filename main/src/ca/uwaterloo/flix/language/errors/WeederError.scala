@@ -538,7 +538,7 @@ object WeederError {
       vt << NewLine
       vt << Code(loc, "invalid escape sequence") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << s" Valid escape sequences are '\\t', '\\\\', '\\\'', '\\\"', '\\n', and '\\r'."
+      vt << Underline("Tip:") << " Valid escape sequences are '\\t', '\\\\', '\\\'', '\\\"', '\\n', and '\\r'."
     }
   }
 

@@ -347,11 +347,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     object Chars { // MATT move outside Literal
 
       def Literal: Rule1[ParsedAst.Literal.CharCode.Literal] = rule {
-        !("\\" | EOI) ~ capture(CharPredicate.All) ~> ParsedAst.Literal.CharCode.Literal
+        SP ~ !("\\" | EOI) ~ capture(CharPredicate.All) ~ SP ~> ParsedAst.Literal.CharCode.Literal
       }
 
       def Escape: Rule1[ParsedAst.Literal.CharCode.Escape] = rule {
-        "\\" ~ capture(CharPredicate.All) ~> ParsedAst.Literal.CharCode.Escape
+        SP ~ "\\" ~ capture(CharPredicate.All) ~ SP ~> ParsedAst.Literal.CharCode.Escape
       }
 
       def CharCode: Rule1[ParsedAst.Literal.CharCode] = rule {
