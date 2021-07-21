@@ -1477,7 +1477,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     try {
       Integer.parseInt(code, 16).toChar.toSuccess
     } catch {
-      case ex: NumberFormatException => WeederError.MalformedUnicodeEscape(code, loc).toFailure
+      case _: NumberFormatException => WeederError.MalformedUnicodeEscape(code, loc).toFailure
     }
   }
 
