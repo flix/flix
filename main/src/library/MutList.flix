@@ -606,7 +606,7 @@ namespace MutList {
         let minCap = minCapacity();
         let capv = capacity(v);
         let MutList(a, l) = v;
-        if (n < capv) {
+        if (n < capv and capv != minCap) {
             let len = deref l;
             let newCap = Order.max(n, minCap);
             a := Array.slice(deref a, 0, newCap);
