@@ -483,32 +483,83 @@ object WeederError {
     }
   }
 
-  // MATT docs
+  /**
+    * An error raised to indicate a malformed unicode escape.
+    *
+    * @param code the escape sequence
+    * @param loc  the location where the error occurred.
+    */
   case class MalformedUnicodeEscape(code: String, loc: SourceLocation) extends WeederError {
-    def summary: String = "" // MATT
+    def summary: String = s"Malformed unicode escape '${code}'."
 
-    def message: VirtualTerminal = new VirtualTerminal // MATT
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Malformed unicode escape." << NewLine
+      vt << NewLine
+      vt << Code(loc, "malformed unicode escape") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << s" Unicode escapes consist of exactly 4 hexadecimal characters."
+    }
   }
 
-  // MATT docs
+  /**
+    * An error raised to indicate a truncated unicode escape.
+    *
+    * @param loc the location where the error occurred.
+    */
   case class TruncatedUnicodeEscape(loc: SourceLocation) extends WeederError {
-    def summary: String = "" // MATT
+    def summary: String = "Truncated unicode escape."
 
-    def message: VirtualTerminal = new VirtualTerminal // MATT
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Truncated unicode escape." << NewLine
+      vt << NewLine
+      vt << Code(loc, "truncated unicode escape") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << s" Unicode escapes consist of exactly 4 hexadecimal characters."
+    }
   }
 
-  // MATT docs
+  /**
+    * An error raised to indicate an invalid escape sequence.
+    *
+    * @param char the invalid escape character.
+    * @param loc  the location where the error occurred.
+    */
   case class InvalidEscapeSequence(char: Char, loc: SourceLocation) extends WeederError {
-    def summary: String = "" // MATT
+    def summary: String = s"Invalid escape sequence '\\${char}'."
 
-    def message: VirtualTerminal = new VirtualTerminal // MATT
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Invalid escape sequence." << NewLine
+      vt << NewLine
+      vt << Code(loc, "invalid escape sequence") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << s" Valid escape sequences are '\\t', '\\\\', '\\\'', '\\\"', '\\n', and '\\r'."
+    }
   }
 
-  // MATT docs
+  /**
+    * An error raised to indicate a non-single character literal.
+    *
+    * @param chars the characters in the character literal.
+    * @param loc   the location where the error occurred.
+    */
   case class NonSingleCharacter(chars: String, loc: SourceLocation) extends WeederError {
-    def summary: String = "" // MATT
+    def summary: String = "Non-single-character literal."
 
-    def message: VirtualTerminal = new VirtualTerminal // MATT
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Non-single-character literal." << NewLine
+      vt << NewLine
+      vt << Code(loc, "non-single-character literal") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Character literals consist of a single character."
+    }
   }
 
 }
