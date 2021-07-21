@@ -254,6 +254,11 @@ object Ast {
     def isSealed: Boolean = mod contains Modifier.Sealed
 
     /**
+      * Returns `true` if these modifiers contain the scoped modifier.
+      */
+    def isScoped: Boolean = mod contains Modifier.Scoped
+
+    /**
       * Returns `true` if these modifiers contain the synthetic modifier.
       */
     def isSynthetic: Boolean = mod contains Modifier.Synthetic
@@ -296,6 +301,11 @@ object Ast {
       * The sealed modifier.
       */
     case object Sealed extends Modifier
+
+    /**
+      * The scoped modifier.
+      */
+    case object Scoped extends Modifier
 
     /**
       * The synthetic modifier.
