@@ -1342,6 +1342,21 @@ namespace TestMutList {
         MutList.pop!(v);
         Array.length(MutList.toArray(v)) == 1
 
+    /////////////////////////////////////////////////////////////////////////////
+    // toImm                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toImm01(): Bool & Impure =
+        MutList.new() |> MutList.toImm == Nil
+
+    @test
+    def toImm02(): Bool & Impure =
+        let ml = MutList.range(0, 1000)
+        ml |> MutList.toImm == List.range(0, 1000) and
+            not (MutList.isEmpty(ml))
+
+
 /////////////////////////////////////////////////////////////////////////////
 // The following tests for sort functions correspond to those in TestArray //
 /////////////////////////////////////////////////////////////////////////////
