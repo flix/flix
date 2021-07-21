@@ -602,15 +602,15 @@ namespace MutList {
     ///
     /// Truncates the mutable list as needed.
     ///
-    pub def shrinkTo!(n: Int32, v: mut MutList[a]): Unit & Impure =
+    pub def shrinkTo!(n: Int32, v: MutList[a]): Unit & Impure =
         let minCap = minCapacity();
         let capv = capacity(v);
         let MutList(a, l) = v;
         if (n < capv and capv != minCap) {
             let len = deref l;
-            let newCap = if (n < minCap) minCap else n;
+            let newCap = Order.max(n, minCap);
             a := Array.slice(deref a, 0, newCap);
-            l := if (len < newCap) len else newCap
+            l := Order.min(len, newCap)
         }
         else ()
 
