@@ -632,7 +632,7 @@ namespace MutList {
         else if (l < length(v)) {
             let MutList(a, l0) = v;
             let minCap = minCapacity();
-            let c = if (l < minCap) minCap else l;
+            let c = Order.max(l, minCap);
             l0 := l;
             Array.updateSequence!(0, deref a, Array.new(default, c))
         }
