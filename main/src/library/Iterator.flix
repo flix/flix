@@ -274,7 +274,7 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def foldLeft(f: (b, a) -> b & e, s: b, iter: Iterator[a]): b & Impure = ???
+    pub def foldLeft(f: (b, a) -> b & ef, s: b, iter: Iterator[a]): b & Impure = ???
 
     ///
     /// Applies `f` to a start value `s` and all elements in `iter` going from right to left.
@@ -283,7 +283,7 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def foldRight(f: (a, b) -> b & e, s: b, iter: Iterator[a]): b & Impure = ???
+    pub def foldRight(f: (a, b) -> b & ef, s: b, iter: Iterator[a]): b & Impure = ???
 
     ///
     /// Optionally returns the first element of `iter` that satisfies the predicate `f` when searching from right to left.
