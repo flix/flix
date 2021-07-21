@@ -2044,7 +2044,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             seen += (ident.name -> param)
           }
 
-          visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Inline)) flatMap {
+          visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Inline, Ast.Modifier.Scoped)) flatMap {
             case mod =>
               if (typeRequired && typeOpt.isEmpty)
                 IllegalFormalParameter(ident.name, mkSL(sp1, sp2)).toFailure
