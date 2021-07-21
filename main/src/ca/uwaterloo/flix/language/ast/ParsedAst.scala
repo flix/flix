@@ -312,7 +312,7 @@ object ParsedAst {
         *
         * @param lit the char as a singleton string.
         */
-      case class Literal(lit: String) extends ParsedAst.Literal.CharCode
+      case class Literal(sp1: SourcePosition, lit: String, sp2: SourcePosition) extends ParsedAst.Literal.CharCode
 
 
       /**
@@ -320,7 +320,7 @@ object ParsedAst {
         *
         * @param seq the escape code as a singleton string.
         */
-      case class Escape(seq: String) extends ParsedAst.Literal.CharCode
+      case class Escape(sp1: SourcePosition, seq: String, sp2: SourcePosition) extends ParsedAst.Literal.CharCode
     }
 
     /**
