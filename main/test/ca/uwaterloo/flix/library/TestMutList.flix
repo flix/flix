@@ -1217,7 +1217,7 @@ namespace TestMutList {
             }
             else ()
         };
-        MutList.foreach(f, v)
+        MutList.foreach(f, v);
         capacity(v) == c / 2 and
             MutList.length(v) == 100 - 75 - 1
 
