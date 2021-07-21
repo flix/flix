@@ -305,21 +305,22 @@ object ParsedAst {
 
     sealed trait CharCode
 
+    // MATT move outside Literal
     object CharCode {
       /**
         * Char literal.
         *
-        * @param lit the char.
+        * @param lit the char as a singleton string.
         */
-      case class Literal(lit: scala.Char) extends ParsedAst.Literal.CharCode
+      case class Literal(lit: String) extends ParsedAst.Literal.CharCode
 
 
       /**
         * The head of an escape sequence.
         *
-        * @param seq the escape code.
+        * @param seq the escape code as a singleton string.
         */
-      case class Escape(seq: scala.Char) extends ParsedAst.Literal.CharCode
+      case class Escape(seq: String) extends ParsedAst.Literal.CharCode
     }
 
     /**

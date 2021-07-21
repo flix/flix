@@ -483,4 +483,32 @@ object WeederError {
     }
   }
 
+  // MATT docs
+  case class MalformedUnicodeEscape(code: String, loc: SourceLocation) extends WeederError {
+    def summary: String = "" // MATT
+
+    def message: VirtualTerminal = new VirtualTerminal // MATT
+  }
+
+  // MATT docs
+  case class TruncatedUnicodeEscape(loc: SourceLocation) extends WeederError {
+    def summary: String = "" // MATT
+
+    def message: VirtualTerminal = new VirtualTerminal // MATT
+  }
+
+  // MATT docs
+  case class InvalidEscapeSequence(char: Char, loc: SourceLocation) extends WeederError {
+    def summary: String = "" // MATT
+
+    def message: VirtualTerminal = new VirtualTerminal // MATT
+  }
+
+  // MATT docs
+  case class NonSingleCharacter(chars: String, loc: SourceLocation) extends WeederError {
+    def summary: String = "" // MATT
+
+    def message: VirtualTerminal = new VirtualTerminal // MATT
+  }
+
 }
