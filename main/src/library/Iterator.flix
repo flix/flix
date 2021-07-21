@@ -274,7 +274,10 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def foldLeft(f: (b, a) -> b & ef, s: b, iter: Iterator[a]): b & Impure = ???
+    pub def foldLeft(f: (b, a) -> b & ef, s: b, iter: Iterator[a]): b & Impure =
+        let Iterator(done, next) = iter;
+        if (done()) s
+        else foldLeft(f, f(s, next()), iter)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `iter` going from right to left.
