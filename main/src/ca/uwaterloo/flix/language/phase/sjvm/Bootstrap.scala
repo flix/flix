@@ -38,7 +38,6 @@ object Bootstrap {
     // Load each class into the JVM in a fresh class loader.
     //
     val loadedClasses: Map[JvmName, Class[_]] = BytecodeLoader.loadAll(classes)
-    println(loadedClasses)
 
     //
     // Print the number of loaded classes, if debugging and verbosity is enabled.
@@ -70,7 +69,7 @@ object Bootstrap {
         val nsClass = loadedClasses.getOrElse(nsJvmName, throw InternalCompilerException(s"Unknown namespace: '$nsJvmName'."))
 
         // Retrieve the method name of the symbol.
-        val methodName: String = SjvmOps.getDefMethodNameInNamespaceClass(sym)
+        val methodName: String = sym.nsMethodName
 
         // Retrieve the method object.
         val method = allMethods.get(nsClass) match {

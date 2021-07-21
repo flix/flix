@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.PType._
 import ca.uwaterloo.flix.language.ast.RRefType._
 import ca.uwaterloo.flix.language.ast.RType._
-import ca.uwaterloo.flix.language.ast.{PRefType, PType, RRefType, Symbol}
+import ca.uwaterloo.flix.language.ast.{PRefType, RRefType, Symbol}
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
 import ca.uwaterloo.flix.language.phase.sjvm.ClassMaker.Mod
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
@@ -45,7 +45,7 @@ object GenMainClass {
   def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = getMain(root) match {
     case None => Map.empty
     case Some(defn) =>
-      def mainTypeMatch[T <: PRefType](m: RRefType[T]) = m match {
+      def mainTypeMatch[T <: PRefType](m: RRefType[T]): RRefType[PFunction] = m match {
         case r: RArrow => r // TODO(JLS): maybe match more here on type etc
         case _ => throw InternalCompilerException(s"The type of main has to be a function, not ${m.toInternalName}")
       }
@@ -56,16 +56,16 @@ object GenMainClass {
       }
 
       // TODO(JLS): should get a namespace and a name. maybe its always Ns.m_main(args)
-      val bytecode = genByteCode(mainType)
+      val bytecode = genByteCode(defn, mainType)
       Map(mainMethodClassName -> JvmClass(mainMethodClassName, bytecode))
   }
 
-  def genByteCode(mainType: RReference[PFunction])(implicit root: Root, flix: Flix): Array[Byte] = {
+  def genByteCode(defn: Def, mainType: RReference[PFunction])(implicit root: Root, flix: Flix): Array[Byte] = {
     // class writer
     val classMaker = ClassMaker.mkClass(JvmName.main, addSource = true, None)
 
     // Emit the code for the main method
-    classMaker.mkMethod(compileMainMethod(mainType), mainMethod, JvmName.javaMainDescriptor, Mod.isPublic.isStatic)
+    classMaker.mkMethod(compileMainMethod(defn, mainType), mainMethod, JvmName.javaMainDescriptor, Mod.isPublic.isStatic)
 
     classMaker.closeClassMaker
   }
@@ -80,22 +80,35 @@ object GenMainClass {
     *
     * Ns.m_main((Object)null);
     */
-  def compileMainMethod(mainType: RReference[PFunction])(implicit root: Root, flix: Flix): F[StackNil] => F[StackEnd] = {
+  def compileMainMethod(defn: Def, mainType: RReference[PFunction])(implicit root: Root, flix: Flix): F[StackNil] => F[StackEnd] = {
 
     //Get the root namespace in order to get the class type when invoking m_main
-    val ns = SjvmOps.getNamespace(Symbol.Main)
-
     // Call Ns.m_main(args)
-    def callNs[R <: Stack]: F[R ** PReference[PArray[PReference[PStr]]]] => F[R ** PInt32] = f => {
-      //f.visitor.visitMethodInsn(Opcodes.INVOKESTATIC, )
-      f.asInstanceOf[F[R ** PInt32]]
-    }
     // Push the args array on the stack.
     //      main.visitVarInsn(ALOAD, 0)
+    // TODO(JLS): This could just call NS.m_main()
     START[StackNil] ~
-      ALOAD(1, tag[PArray[PReference[PStr]]]) ~
-      callNs ~
-      IRETURN
+      { f: F[StackNil] =>
+        f.visitor.visitTypeInsn(Opcodes.NEW, defn.sym.defName.toInternalName)
+        f.visitor.visitInsn(Opcodes.DUP)
+        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, defn.sym.defName.toInternalName, JvmName.constructorMethod, JvmName.nothingToVoid, false)
+        f.asInstanceOf[F[StackNil ** PReference[PRefType.PAnyObject]]]
+      } ~
+      DUP ~
+      ALOAD(0, tag[PArray[PReference[PStr]]]) ~
+      {f: F[StackNil ** PReference[PAnyObject] ** PReference[PAnyObject] ** PReference[PArray[PReference[PStr]]]] =>
+        f.visitor.visitFieldInsn(Opcodes.PUTFIELD, defn.sym.defName.toInternalName, GenFunctionInterfaces.argFieldName(0), JvmName.Java.Lang.Object.toDescriptor)
+        f.asInstanceOf[F[StackNil ** PReference[PAnyObject]]]
+      } ~
+      { f: F[StackNil ** PReference[PAnyObject]] =>
+        f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, RInt32.contName.toInternalName, GenContinuationInterfaces.unwindMethodName, RInt32.nothingToThisMethodDescriptor, false)
+        f.asInstanceOf[F[StackNil ** PInt32]]
+      } ~
+      { f: F[StackNil ** PInt32] =>
+        f.visitor.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/System", "exit", "(I)V", false);
+        f.asInstanceOf[F[StackNil]]
+      } ~
+      RETURN
     //      THISLOAD(tag[PArray[PReference[PStr]]]) ~
     //        ???
     //      Invoke m_main

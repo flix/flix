@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.PType._
 import ca.uwaterloo.flix.language.ast.RRefType._
 import ca.uwaterloo.flix.language.ast.RType._
-import ca.uwaterloo.flix.language.ast.{Cat1, Cat2, PRefType, PType, RRefType, RType, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{Cat1, Cat2, ErasedAst, PRefType, PType, RRefType, RType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm.{Label, Opcodes}
@@ -571,6 +571,36 @@ object Instructions {
   (tpe: T = tag[T]):
   F[R] => F[R ** PReference[T]] =
     ALOAD(0)
+
+  // TODO(JLS): This should both return StackEnd (no code should follow) and R ** T (compileExp should push T on stack)
+  // TODO(JLS): TAILCALL/CALL only differ in the last instructions => rewrite and reuse
+  def TAILCALL
+  [R <: Stack, T <: PType]
+  (arguments: List[ErasedAst.Expression[_ <: PType]], funClassName: JvmName, tpe: T = tag[T]):
+  F[R ** PReference[PFunction]] => F[R ** T] = f => {
+    for (argIndex <- arguments.indices) {
+      val arg = arguments(argIndex)
+      f.visitor.visitInsn(Opcodes.DUP)
+      compileExp(arg)(f)
+      f.visitor.visitFieldInsn(Opcodes.PUTFIELD, funClassName.toInternalName, GenFunctionInterfaces.argFieldName(argIndex), arg.tpe.toDescriptor)
+    }
+    f.visitor.visitInsn(Opcodes.ARETURN)
+    castF(f)
+  }
+
+  def CALL
+  [R <: Stack, T <: PType]
+  (arguments: List[ErasedAst.Expression[_ <: PType]], funClassName: JvmName, contName: JvmName, returnType: RType[T]):
+  F[R ** PReference[PFunction]] => F[R ** T] = f => {
+    for (argIndex <- arguments.indices) {
+      val arg = arguments(argIndex)
+      f.visitor.visitInsn(Opcodes.DUP)
+      compileExp(arg)(f)
+      f.visitor.visitFieldInsn(Opcodes.PUTFIELD, funClassName.toInternalName, GenFunctionInterfaces.argFieldName(argIndex), arg.tpe.toDescriptor)
+    }
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, contName.toInternalName, GenContinuationInterfaces.unwindMethodName, returnType.nothingToThisMethodDescriptor, false)
+    castF(f)
+  }
 
   // NATIVE
   def FLOAD

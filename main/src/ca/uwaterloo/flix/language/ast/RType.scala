@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.PType._
-import ca.uwaterloo.flix.language.ast.RRefType.RObject
+import ca.uwaterloo.flix.language.ast.RRefType.{RArray, RObject}
 import ca.uwaterloo.flix.language.phase.sjvm.JvmName
 
 import java.nio.file.Path
@@ -66,6 +66,16 @@ object RType {
   }
 
   def erasedType[T <: PType](e: RType[T]): RType[_ <: PType] = e match {
+    case RBool | RInt8 | RInt16 | RInt32 | RInt64 | RChar | RFloat32 | RFloat64 => e
+    case RReference(rref) => getErasedInnerType(rref)
+  }
+
+  private def getErasedInnerType[T <: PRefType](r: RRefType[T]): RReference[_ <: PRefType] = r match {
+    case RArray(tpe) => RReference(RArray(pureErasedType(tpe)))
+    case _ => RReference(RObject)
+  }
+
+  private def pureErasedType[T <: PType](e: RType[T]): RType[_ <: PType] = e match {
     case RBool | RInt8 | RInt16 | RInt32 | RInt64 | RChar | RFloat32 | RFloat64 => e
     case RReference(_) => RReference(RObject)
   }
@@ -200,7 +210,7 @@ object RRefType {
   case class RArrow(args: List[RType[_ <: PType]], result: RType[_ <: PType]) extends RRefType[PFunction] {
     override val jvmName: JvmName = new JvmName(Nil, "") {
       override lazy val toBinaryName: String = ???
-      override lazy val toDescriptor: String = ???
+      override lazy val toDescriptor: String = JvmName.getMethodDescriptor(args, result)
       override lazy val toInternalName: String = ???
       override lazy val toPath: Path = ???
     } // TODO(JLS): does any general name here make sense? figure out something Def_???

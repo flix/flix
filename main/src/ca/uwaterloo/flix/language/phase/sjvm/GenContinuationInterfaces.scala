@@ -51,7 +51,7 @@ object GenContinuationInterfaces {
 
     // Pseudo code to generate:
     //
-    // interface Cont_Bool {
+    // abstract class Cont_Bool {
     //   boolean getResult();
     //   Cont_Bool invoke();
     // }

@@ -24,16 +24,6 @@ import ca.uwaterloo.flix.language.ast.{PType, Symbol}
 object SjvmOps {
 
   /**
-    * Returns the method name of a defn as used in a namespace class.
-    *
-    * For example:
-    *
-    * find      =>  m_find
-    * length    =>  m_length
-    */
-  def getDefMethodNameInNamespaceClass(sym: Symbol.DefnSym): String = "m_" + mangle(sym.name)
-
-  /**
     * Performs name mangling on the given string `s` to avoid issues with special characters.
     */
   // TODO(JLS):  Use this in appropriate places.

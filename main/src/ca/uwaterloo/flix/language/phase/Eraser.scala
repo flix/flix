@@ -41,7 +41,7 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
       }
     }
     // TODO(JLS): should maybe be integrated to the other fold
-    defns.copyWith(namespaces = defns.value.groupBy(_._1.namespace).map {
+    val defnsResult = defns.copyWith(namespaces = defns.value.groupBy(_._1.namespace).map {
       case (ns, defs) =>
         // Collect all non-law definitions.
         val nonLaws = defs filter {
@@ -52,7 +52,7 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
 
     val reachable = root.reachable
 
-    ErasedAst.Root(defns.value, reachable, root.sources, defns.fTypes, defns.namespaces).toSuccess
+    ErasedAst.Root(defnsResult.value, reachable, root.sources, defnsResult.fTypes, defnsResult.namespaces).toSuccess
   }
 
   /**

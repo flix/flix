@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.sjvm
 
 import ca.uwaterloo.flix.language.ast.ErasedAst.Expression
-import ca.uwaterloo.flix.language.ast.{Cat1, PType, RType}
+import ca.uwaterloo.flix.language.ast.{Cat1, PRefType, PType, RType}
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 import org.objectweb.asm.MethodVisitor
 
@@ -81,7 +81,11 @@ object BytecodeCompiler {
     case Expression.ApplyDef(sym, args, tpe, loc) => ???
     case Expression.ApplyCloTail(exp, args, tpe, loc) => ???
     case Expression.ApplyDefTail(sym, args, tpe, loc) => ???
-    case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) => ???
+    case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) =>
+      WithSource[R](loc) ~
+        THISLOAD(tag[PRefType.PFunction]) ~
+        TAILCALL(actuals, sym.defName, tag[T])
+
     case Expression.Unary(sop, op, exp, tpe, loc) => ???
     case Expression.Binary(sop, op, exp1, exp2, tpe, loc) => ???
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => ???
