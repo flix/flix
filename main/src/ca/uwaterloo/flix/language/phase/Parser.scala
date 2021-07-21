@@ -1429,12 +1429,16 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ capture(keyword("sealed")) ~ SP ~> ParsedAst.Modifier
     }
 
+    def Scoped: Rule1[ParsedAst.Modifier] = rule {
+      SP ~ capture(keyword("scoped")) ~ SP ~> ParsedAst.Modifier
+    }
+
     def Unlawful: Rule1[ParsedAst.Modifier] = rule {
       SP ~ capture(keyword("unlawful")) ~ SP ~> ParsedAst.Modifier
     }
 
     def Modifier: Rule1[ParsedAst.Modifier] = rule {
-      Inline | Lawless | Override | Public | Sealed | Unlawful
+      Inline | Lawless | Override | Public | Sealed | Scoped | Unlawful
     }
 
     rule {
