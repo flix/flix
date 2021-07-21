@@ -598,7 +598,7 @@ namespace MutList {
         }
 
     ///
-    /// Shrinks the given mutable list `v` down to a capacity of `n` elements.
+    /// Shrinks the given mutable list `v` down to a capacity of `n` elements but no less than 8.
     ///
     /// Truncates the mutable list as needed.
     ///
@@ -606,7 +606,7 @@ namespace MutList {
         let minCap = minCapacity();
         let capv = capacity(v);
         let MutList(a, l) = v;
-        if (n < capv and capv != minCap) {
+        if (n < capv) {
             let len = deref l;
             let newCap = Order.max(n, minCap);
             a := Array.slice(deref a, 0, newCap);
