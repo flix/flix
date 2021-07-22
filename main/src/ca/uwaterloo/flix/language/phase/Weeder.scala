@@ -638,7 +638,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (e1, e2) => WeededAst.Expression.Stm(e1, e2, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.LetMatch(sp1, pat, tpe, exp1, exp2, sp2) =>
+    case ParsedAst.Expression.LetMatch(sp1, mod, pat, tpe, exp1, exp2, sp2) => // MATT handle mods
       //
       // Rewrites a let-match to a regular let-binding or a full-blown pattern match.
       //
@@ -652,7 +652,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           WeededAst.Expression.Match(withAscription(value, tpe), List(rule), mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.LetMatchStar(sp1, pat, tpe, exp1, exp2, sp2) =>
+    case ParsedAst.Expression.LetMatchStar(sp1, mod, pat, tpe, exp1, exp2, sp2) => // MATT handle mods
       val loc = SourceLocation.mk(sp1, sp2)
 
       //
@@ -2293,8 +2293,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Binary(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.IfThenElse(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Stm(e1, _, _) => leftMostSourcePosition(e1)
-    case ParsedAst.Expression.LetMatch(sp1, _, _, _, _, _) => sp1
-    case ParsedAst.Expression.LetMatchStar(sp1, _, _, _, _, _) => sp1
+    case ParsedAst.Expression.LetMatch(sp1, _, _, _, _, _, _) => sp1
+    case ParsedAst.Expression.LetMatchStar(sp1, _, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetImport(sp1, _, _, _) => sp1
     case ParsedAst.Expression.LetRegion(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
