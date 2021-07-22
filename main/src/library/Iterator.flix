@@ -247,12 +247,21 @@ namespace Iterator {
             let next1 = () -> deref x;
             Iterator(done1, next1)
 
+    ///
+    /// Returns the longest prefix of `iter` that satisfies the predicate `f`.
+    /// `f` is applied *eagerly*.
+    ///
+    /// Consumes elements of the iterator until the first element that does *not* satisfy predicate `f`.
+    ///
     def takeWhileE(f: a -> Bool & Impure, iter: Iterator[a]): Iterator[a] & Impure = ???
         let Iterator(done, _) = iter;
         if (done())
             Iterator(() -> true as & Impure, () -> bug!("Empty iterator") as & Impure)
         else takeWhileEHelper(f, iter, Nil)
 
+    ///
+    /// Helper function for takeWhileE
+    ///
     def takeWhileEHelper(f: a -> Bool & Impure, iter: Iterator[a], acc: List[a]): Iterator[a] & Impure =
         let Iterator(done, next) = iter;
         if (done())
