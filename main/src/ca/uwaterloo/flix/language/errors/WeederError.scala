@@ -504,25 +504,6 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate a truncated unicode escape sequence.
-    *
-    * @param loc the location where the error occurred.
-    */
-  case class TruncatedUnicodeEscapeSequence(loc: SourceLocation) extends WeederError {
-    def summary: String = "Truncated unicode escape sequence."
-
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Truncated unicode escape sequence." << NewLine
-      vt << NewLine
-      vt << Code(loc, "truncated unicode escape sequence") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " A Unicode escape sequence must be of the form \\uXXXX where X is a hexadecimal."
-    }
-  }
-
-  /**
     * An error raised to indicate an invalid escape sequence.
     *
     * @param char the invalid escape character.

@@ -1517,7 +1517,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (u @ ParsedAst.CharCode.Escape(sp1, "u", _)) :: rest =>
           val code = rest.takeWhile(_.isInstanceOf[ParsedAst.CharCode.Literal])
           val sp2 = code.lastOption.getOrElse(u).sp2
-          WeederError.TruncatedUnicodeEscapeSequence(mkSL(sp1, sp2)).toFailure
+          WeederError.MalformedUnicodeEscapeSequence(code.mkString, mkSL(sp1, sp2)).toFailure
         case ParsedAst.CharCode.Escape(sp1, char, sp2) :: _ => WeederError.InvalidEscapeSequence(char.head, mkSL(sp1, sp2)).toFailure
       }
     }

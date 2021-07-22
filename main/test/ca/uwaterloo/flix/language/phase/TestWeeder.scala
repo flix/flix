@@ -377,6 +377,15 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.MalformedUnicodeEscapeSequence](result)
   }
 
+  test("MalformedUnicodeEscapeSequence.String.02") {
+    val input =
+      """
+        |def f(): String = "BSu000"
+        |""".stripMargin.replace("BS", "\\")
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.MalformedUnicodeEscapeSequence](result)
+  }
+
   test("MalformedUnicodeEscape.Char.01") {
     val input =
       """
@@ -386,10 +395,28 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.MalformedUnicodeEscapeSequence](result)
   }
 
+  test("MalformedUnicodeEscape.Char.02") {
+    val input =
+      """
+        |def f(): Char = 'BSu000'
+        |""".stripMargin.replace("BS", "\\")
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.MalformedUnicodeEscapeSequence](result)
+  }
+
   test("MalformedUnicodeEscape.Interpolation.01") {
     val input =
       """
         |def f(): String = '${25}BSuINVALID'
+        |""".stripMargin.replace("BS", "\\")
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.MalformedUnicodeEscapeSequence](result)
+  }
+
+  test("MalformedUnicodeEscape.Interpolation.02") {
+    val input =
+      """
+        |def f(): String = '${25}BSu000'
         |""".stripMargin.replace("BS", "\\")
     val result = compile(input, DefaultOptions)
     expectError[WeederError.MalformedUnicodeEscapeSequence](result)
@@ -407,6 +434,18 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.MalformedUnicodeEscapeSequence](result)
   }
 
+  test("MalformedUnicodeEscape.Patten.String.02") {
+    val input =
+      """
+        |def f(x: String): Bool = match x {
+        |  case "BSu000" => true
+        |  case _ => false
+        |}
+        |""".stripMargin.replace("BS", "\\")
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.MalformedUnicodeEscapeSequence](result)
+  }
+
   test("MalformedUnicodeEscape.Patten.Char.01") {
     val input =
       """
@@ -419,46 +458,7 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.MalformedUnicodeEscapeSequence](result)
   }
 
-  test("TruncatedUnicodeEscape.String.01") {
-    val input =
-    """
-      |def f(): String = "BSu000"
-      |""".stripMargin.replace("BS", "\\")
-    val result = compile(input, DefaultOptions)
-    expectError[WeederError.TruncatedUnicodeEscapeSequence](result)
-  }
-
-  test("TruncatedUnicodeEscape.Char.01") {
-    val input =
-      """
-        |def f(): Char = 'BSu000'
-        |""".stripMargin.replace("BS", "\\")
-    val result = compile(input, DefaultOptions)
-    expectError[WeederError.TruncatedUnicodeEscapeSequence](result)
-  }
-
-  test("TruncatedUnicodeEscape.Interpolation.01") {
-    val input =
-      """
-        |def f(): String = '${25}BSu000'
-        |""".stripMargin.replace("BS", "\\")
-    val result = compile(input, DefaultOptions)
-    expectError[WeederError.TruncatedUnicodeEscapeSequence](result)
-  }
-
-  test("TruncatedUnicodeEscape.Patten.String.01") {
-    val input =
-      """
-        |def f(x: String): Bool = match x {
-        |  case "BSu000" => true
-        |  case _ => false
-        |}
-        |""".stripMargin.replace("BS", "\\")
-    val result = compile(input, DefaultOptions)
-    expectError[WeederError.TruncatedUnicodeEscapeSequence](result)
-  }
-
-  test("TruncatedUnicodeEscape.Patten.Char.01") {
+  test("MalformedUnicodeEscape.Patten.Char.02") {
     val input =
       """
         |def f(x: Char): Bool = match x {
@@ -467,7 +467,7 @@ class TestWeeder extends FunSuite with TestUtils {
         |}
         |""".stripMargin.replace("BS", "\\")
     val result = compile(input, DefaultOptions)
-    expectError[WeederError.TruncatedUnicodeEscapeSequence](result)
+    expectError[WeederError.MalformedUnicodeEscapeSequence](result)
   }
 
   test("InvalidEscapeSequence.String.01") {
