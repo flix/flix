@@ -409,12 +409,12 @@ class TestWeeder extends FunSuite with TestUtils {
 
   test("MalformedUnicodeEscape.Patten.Char.01") {
     val input =
-      s"""
-         |def f(x: Char): Bool = match x {
-         |  case 'BSuINVALID' => true
-         |  case _ => false
-         |}
-         |""".stripMargin.replace("BS", "\\")
+      """
+        |def f(x: Char): Bool = match x {
+        |  case 'BSuINVALID' => true
+        |  case _ => false
+        |}
+        |""".stripMargin.replace("BS", "\\")
     val result = compile(input, DefaultOptions)
     expectError[WeederError.MalformedUnicodeEscape](result)
   }
@@ -460,13 +460,64 @@ class TestWeeder extends FunSuite with TestUtils {
 
   test("TruncatedUnicodeEscape.Patten.Char.01") {
     val input =
-      s"""
-         |def f(x: Char): Bool = match x {
-         |  case 'BSu000' => true
-         |  case _ => false
-         |}
-         |""".stripMargin.replace("BS", "\\")
+      """
+        |def f(x: Char): Bool = match x {
+        |  case 'BSu000' => true
+        |  case _ => false
+        |}
+        |""".stripMargin.replace("BS", "\\")
     val result = compile(input, DefaultOptions)
     expectError[WeederError.TruncatedUnicodeEscape](result)
+  }
+
+  test("InvalidEscapeSequence.String.01") {
+    val input =
+      """
+        |def f(): String = "\Q"
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.InvalidEscapeSequence](result)
+  }
+
+  test("InvalidEscapeSequence.Char.01") {
+    val input =
+      """
+        |def f(): Char = '\Q'
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.InvalidEscapeSequence](result)
+  }
+
+  test("InvalidEscapeSequence.Interpolation.01") {
+    val input =
+      """
+        |def f(): String = '${25}\Q'
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.InvalidEscapeSequence](result)
+  }
+
+  test("InvalidEscapeSequence.Patten.String.01") {
+    val input =
+      """
+        |def f(x: String): Bool = match x {
+        |  case "\Q" => true
+        |  case _ => false
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.InvalidEscapeSequence](result)
+  }
+
+  test("InvalidEscapeSequence.Patten.Char.01") {
+    val input =
+      """
+        |def f(x: Char): Bool = match x {
+        |  case '\Q' => true
+        |  case _ => false
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.InvalidEscapeSequence](result)
   }
 }
