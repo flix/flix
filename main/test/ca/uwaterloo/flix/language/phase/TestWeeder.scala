@@ -366,63 +366,55 @@ class TestWeeder extends FunSuite with TestUtils {
   }
 
   test("MalformedUnicodeEscape.String.01") {
-    // In Scala we cannot put a representation of a unicode escape in a multiline string:
-    // `\\uXXXX` is unchanged (backslashes unescaped)
-    // `\uXXXX` is interpreted as a unicode escape
-    // So we put the bad escape sequence in a separate variable to get around that.
-    // See https://github.com/scala/bug/issues/6631#issuecomment-292414389
-
-    val code = "\\uINVALID"
+    // In scala, unicode escapes are preprocessed,
+    // and other escapes are not processed in triple-quoted strings.
+    // So we use BS in the input and replace it with a real backslash afterward.
     val input =
-      s"""
-        |def f(): String = "${code}"
-        |""".stripMargin
+    """
+      |def f(): String = "BSuINVALID"
+      |""".stripMargin.replace("BS", "\\")
     val result = compile(input, DefaultOptions)
     expectError[WeederError.MalformedUnicodeEscape](result)
   }
 
   test("MalformedUnicodeEscape.Char.01") {
-    val code = "\\uINVALID"
     val input =
-      s"""
-         |def f(): Char = '${code}'
-         |""".stripMargin
+      """
+        |def f(): Char = 'BSuINVALID'
+        |""".stripMargin.replace("BS", "\\")
     val result = compile(input, DefaultOptions)
     expectError[WeederError.MalformedUnicodeEscape](result)
   }
 
   test("MalformedUnicodeEscape.Interpolation.01") {
-    val code = "\\uINVALID"
     val input =
-      s"""
-         |def f(): String = '$${25}${code}'
-         |""".stripMargin
+      """
+        |def f(): String = '${25}BSuINVALID'
+        |""".stripMargin.replace("BS", "\\")
     val result = compile(input, DefaultOptions)
     expectError[WeederError.MalformedUnicodeEscape](result)
   }
 
   test("MalformedUnicodeEscape.Patten.String.01") {
-    val code = "\\uINVALID"
     val input =
-      s"""
+      """
          |def f(x: String): Bool = match x {
-         |  case "${code}" => true
+         |  case "BSuINVALID" => true
          |  case _ => false
          |}
-         |""".stripMargin
+         |""".stripMargin.replace("BS", "\\")
     val result = compile(input, DefaultOptions)
     expectError[WeederError.MalformedUnicodeEscape](result)
   }
 
   test("MalformedUnicodeEscape.Patten.Char.01") {
-    val code = "\\uINVALID"
     val input =
       s"""
          |def f(x: Char): Bool = match x {
-         |  case '${code}' => true
+         |  case 'BSuINVALID' => true
          |  case _ => false
          |}
-         |""".stripMargin
+         |""".stripMargin.replace("BS", "\\")
     val result = compile(input, DefaultOptions)
     expectError[WeederError.MalformedUnicodeEscape](result)
   }
