@@ -6,7 +6,7 @@ on:
 
 jobs:
   handle-request:
-    if: github.event.issue.pull_request && (contains(github.event.comment.body, '!!!benchmark') || contains(github.event.comment.body, '🤖🤖🤖'))
+    if: github.event.issue.pull_request && (contains(github.event.comment.body, '!!!benchmark') || contains(github.event.comment.body, '🤖🤖🤖') || contains(github.event.comment.body, '🤖 🤖 🤖'))
     runs-on: ubuntu-latest
     steps:
       - name: Acknowledge request
