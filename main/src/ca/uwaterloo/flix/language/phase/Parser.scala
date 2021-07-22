@@ -440,7 +440,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ "\\" ~ capture(CharPredicate.All) ~ SP ~> ParsedAst.CharCode.Escape
     }
 
-    def CharCode: Rule1[ParsedAst.Literal.CharCode] = rule {
+    def CharCode: Rule1[ParsedAst.CharCode] = rule {
       Escape | Literal
     }
   }

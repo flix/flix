@@ -264,16 +264,22 @@ object ParsedAst {
 
   }
 
+
   /**
     * CharCodes.
     */
+  sealed trait CharCode {
+    val sp1: SourcePosition
+    val sp2: SourcePosition
+  }
+
   object CharCode {
     /**
       * Char literal.
       *
       * @param lit the char as a singleton string.
       */
-    case class Literal(sp1: SourcePosition, lit: String, sp2: SourcePosition) extends ParsedAst.Literal.CharCode
+    case class Literal(sp1: SourcePosition, lit: String, sp2: SourcePosition) extends ParsedAst.CharCode
 
 
     /**
@@ -281,7 +287,7 @@ object ParsedAst {
       *
       * @param seq the escape code as a singleton string.
       */
-    case class Escape(sp1: SourcePosition, seq: String, sp2: SourcePosition) extends ParsedAst.Literal.CharCode
+    case class Escape(sp1: SourcePosition, seq: String, sp2: SourcePosition) extends ParsedAst.CharCode
   }
 
   /**
@@ -323,11 +329,6 @@ object ParsedAst {
       */
     case class False(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Literal
 
-    sealed trait CharCode {
-      val sp1: SourcePosition
-      val sp2: SourcePosition
-    }
-
     /**
       * Char Literal.
       *
@@ -335,7 +336,7 @@ object ParsedAst {
       * @param chars the char codes.
       * @param sp2 the position of the last character in the literal.
       */
-    case class Char(sp1: SourcePosition, chars: Seq[CharCode], sp2: SourcePosition) extends ParsedAst.Literal
+    case class Char(sp1: SourcePosition, chars: Seq[ParsedAst.CharCode], sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
       * Float32 Literal (32-bit floating-point number).
@@ -421,7 +422,7 @@ object ParsedAst {
       * @param chars the char codes
       * @param sp2   the position of the last character in the literal.
       */
-    case class Str(sp1: SourcePosition, chars: Seq[CharCode], sp2: SourcePosition) extends ParsedAst.Literal
+    case class Str(sp1: SourcePosition, chars: Seq[ParsedAst.CharCode], sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
       * Default Literal.
@@ -1588,7 +1589,7 @@ object ParsedAst {
       * @param chars the char codes.
       * @param sp2   the position of the last character in the string.
       */
-    case class StrPart(sp1: SourcePosition, chars: Seq[ParsedAst.Literal.CharCode], sp2: SourcePosition) extends InterpolationPart
+    case class StrPart(sp1: SourcePosition, chars: Seq[ParsedAst.CharCode], sp2: SourcePosition) extends InterpolationPart
 
   }
 

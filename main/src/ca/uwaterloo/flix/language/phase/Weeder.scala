@@ -1487,10 +1487,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Performs weeding on the given sequence of CharCodes.
     */
-  private def weedCharSequence(chars0: Seq[ParsedAst.Literal.CharCode]): Validation[String, WeederError] = {
+  private def weedCharSequence(chars0: Seq[ParsedAst.CharCode]): Validation[String, WeederError] = {
 
     @tailrec
-    def visit(chars: List[ParsedAst.Literal.CharCode], acc: List[Char]): Validation[String, WeederError] = {
+    def visit(chars: List[ParsedAst.CharCode], acc: List[Char]): Validation[String, WeederError] = {
       chars match {
         case Nil => acc.reverse.mkString.toSuccess
         case ParsedAst.CharCode.Literal(_, char, _) :: rest => visit(rest, char.head :: acc)
