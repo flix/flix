@@ -281,7 +281,6 @@ object ParsedAst {
       */
     case class Literal(sp1: SourcePosition, lit: String, sp2: SourcePosition) extends ParsedAst.CharCode
 
-
     /**
       * The head of an escape sequence.
       *
