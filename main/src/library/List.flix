@@ -1054,14 +1054,11 @@ namespace List {
     ///
     /// Returns `xs` as a mutable list.
     ///
-    pub def toMut(xs: List[a]): MutList[a] & Impure =
-        let MutList(a, _) = MutList.new();
-        let minCap = Array.length(deref a);
-        let ys = toArray(xs);
-        let len = Array.length(ys);
-        if (len < minCap)
-            MutList(ref Array.append(ys, [default; minCap - len]), ref len)
-        else MutList(ref ys, ref len)
+    pub def toMut(xs: List[a]): MutList[a] & Impure = {
+        let v = MutList.new();
+        xs |> foreach(x -> MutList.push!(x, v));
+        v
+    }
 
     ///
     /// Returns the list `xs` as a set.
