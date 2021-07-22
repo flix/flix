@@ -1492,33 +1492,44 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     @tailrec
     def visit(chars: List[ParsedAst.CharCode], acc: List[Char]): Validation[String, WeederError] = {
       chars match {
+        // Case 1: End of the sequence
         case Nil => acc.reverse.mkString.toSuccess
+        // Case 2: Simple character literal
         case ParsedAst.CharCode.Literal(_, char, _) :: rest => visit(rest, char.head :: acc)
-        case ParsedAst.CharCode.Escape(_, "n", _) :: rest => visit(rest, '\n' :: acc)
-        case ParsedAst.CharCode.Escape(_, "r", _) :: rest => visit(rest, '\r' :: acc)
-        case ParsedAst.CharCode.Escape(_, "\\", _) :: rest => visit(rest, '\\' :: acc)
-        case ParsedAst.CharCode.Escape(_, "\"", _) :: rest => visit(rest, '\"' :: acc)
-        case ParsedAst.CharCode.Escape(_, "\'", _) :: rest => visit(rest, '\'' :: acc)
-        case ParsedAst.CharCode.Escape(_, "t", _) :: rest => visit(rest, '\t' :: acc)
-        // `\u` followed by 4 or more literals
-        case ParsedAst.CharCode.Escape(_, "u", _) ::
-          ParsedAst.CharCode.Literal(sp1, d0, _) ::
-          ParsedAst.CharCode.Literal(_, d1, _) ::
-          ParsedAst.CharCode.Literal(_, d2, _) ::
-          ParsedAst.CharCode.Literal(_, d3, sp2) ::
-          rest =>
-          val code = List(d0, d1, d2, d3).mkString
-          // Doing a manual flatMap to keep the function tail-recursive
-          translateHexCode(code, mkSL(sp1, sp2)) match {
-            case Validation.Success(char) => visit(rest, char :: acc)
-            case Validation.Failure(errors) => Validation.Failure(errors)
+        // Case 3: Escape sequence
+        case (esc@ParsedAst.CharCode.Escape(sp1, char, sp2)) :: rest => char match {
+          // Cases 3.1: Standard escapes
+          case "n" => visit(rest, '\n' :: acc)
+          case "r" => visit(rest, '\r' :: acc)
+          case "\\" => visit(rest, '\\' :: acc)
+          case "\"" => visit(rest, '\"' :: acc)
+          case "\'" => visit(rest, '\'' :: acc)
+          case "t" => visit(rest, '\t' :: acc)
+
+          // Case 3.2: Unicode escape
+          case "u" => rest match {
+            // Case 3.2.1: `\u` followed by 4 or more literals
+            case ParsedAst.CharCode.Literal(sp1, d0, _) ::
+              ParsedAst.CharCode.Literal(_, d1, _) ::
+              ParsedAst.CharCode.Literal(_, d2, _) ::
+              ParsedAst.CharCode.Literal(_, d3, sp2) ::
+              rest2 =>
+              val code = List(d0, d1, d2, d3).mkString
+              // Doing a manual flatMap to keep the function tail-recursive
+              translateHexCode(code, mkSL(sp1, sp2)) match {
+                case Validation.Success(char) => visit(rest2, char :: acc)
+                case Validation.Failure(errors) => Validation.Failure(errors)
+              }
+            // Case 3.2.2: `\u` followed by less than 4 literals
+            case rest2 =>
+              val code = rest2.takeWhile(_.isInstanceOf[ParsedAst.CharCode.Literal])
+              val sp2 = code.lastOption.getOrElse(esc).sp2
+              WeederError.MalformedUnicodeEscapeSequence(code.mkString, mkSL(esc.sp1, sp2)).toFailure
           }
-        // `\u` followed by less than 4 literals
-        case (u @ ParsedAst.CharCode.Escape(sp1, "u", _)) :: rest =>
-          val code = rest.takeWhile(_.isInstanceOf[ParsedAst.CharCode.Literal])
-          val sp2 = code.lastOption.getOrElse(u).sp2
-          WeederError.MalformedUnicodeEscapeSequence(code.mkString, mkSL(sp1, sp2)).toFailure
-        case ParsedAst.CharCode.Escape(sp1, char, sp2) :: _ => WeederError.InvalidEscapeSequence(char.head, mkSL(sp1, sp2)).toFailure
+
+          // Case 3.3: Invalid escape character
+          case _ => WeederError.InvalidEscapeSequence(char.head, mkSL(sp1, sp2)).toFailure
+        }
       }
     }
 
