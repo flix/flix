@@ -488,6 +488,12 @@ namespace TestIterator {
         Iterator.range(0, 1000) |> Iterator.foldLeft((acc, n) -> n :: acc, Nil: List[Int32]) ==
             List.range(0, 1000) |> List.reverse
 
+    @test
+    def foldLeft03(): Bool & Impure =
+        let iter = Iterator.range(0, 1000);
+        iter |> Iterator.foldLeft((_, _) -> true, true);
+        iter |> Iterator.isEmpty
+
 
     /////////////////////////////////////////////////////////////////////////////
     // isEmpty                                                                 //
