@@ -33,4 +33,31 @@ namespace Test/Exp/String {
     @test
     def testString11(): String = "\'"
 
+    @test
+    def testString12(): String = "\'\t\r\n\""
+
+    @test
+    def testString13(): String = "\uffff"
+
+    @test
+    def testString14(): String = "十"
+
+    @test
+    def testString15(): String = "\u200b"
+
+    @test
+    def testString16(): Bool = "\u0041" == "A"
+
+    @test
+    def testString17(): Bool = "\u005A" == "Z"
+
+    @test
+    def testString18(): Bool = "\u0061" == "a"
+
+    @test
+    def testString19(): Bool = "\u007a" == "z"
+
+    @test
+    def testString20(): Bool = "\u2603" == "☃"
+
 }

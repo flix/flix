@@ -39,6 +39,18 @@ namespace Test/Exp/Match/String {
     }
 
     @test
+    def testMatchString06(): Bool = match "\'\u1234\'" {
+        case "\'\u1234\'" => true
+        case _ => false
+    }
+
+    @test
+    def testMatchString07(): Bool = match "\r\n" {
+        case "\r\n" => true
+        case _ => false
+    }
+
+    @test
     def testMatchStringVar01(): Bool = match "abc" {
         case x => x == "abc"
     }
