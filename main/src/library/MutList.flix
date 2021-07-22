@@ -551,7 +551,7 @@ namespace MutList {
     ///
     /// Inserts all the elements in the given mutable list `v2` into the mutable list `v1`.
     ///
-    pub def append!(v1: mut MutList[a], v2: MutList[a]): Unit & Impure =
+    pub def append!(v1: MutList[a], v2: MutList[a]): Unit & Impure =
         let MutList(a1, l1) = v1;
         let MutList(a2, l2) = v2;
         let len1 = deref l1;
