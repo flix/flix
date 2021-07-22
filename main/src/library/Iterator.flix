@@ -241,6 +241,22 @@ namespace Iterator {
             Iterator(done1, next1)
 
     def takeWhileE(f: a -> Bool & Impure, iter: Iterator[a]): Iterator[a] & Impure = ???
+        let Iterator(done, _) = iter;
+        if (done())
+            Iterator(() -> true as & Impure, () -> bug!("Empty iterator") as & Impure)
+        else takeWhileEHelper(f, iter, Nil)
+
+    def takeWhileEHelper(f: a -> Bool & Impure, iter: Iterator[a], acc: List[a]): Iterator[a] & Impure =
+        let Iterator(done, next) = iter;
+        if (done())
+            acc |> List.reverse |> Iterator.toIter
+        else
+            let x = next();
+            if (f(x))
+                takeWhileEHelper(f, iter, x :: acc)
+            else
+                let d = () -> true as & Impure;
+                takeWhileEHelper(f, Iterator(d, next), acc)
 
     ///
     /// Applies `f` to every element of `iter`.
