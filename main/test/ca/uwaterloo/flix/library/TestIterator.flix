@@ -533,7 +533,7 @@ namespace TestIterator {
 
     @test
     def takeWhilePure04(): Bool & Impure =
-        Iterator.repeat(0, 0) |> Iterator.takeWhile(x -> x < 100) |> Iterator.toList == List.range(0, 100)
+        Iterator.repeat(0, 0) |> Iterator.takeWhile(x -> x < 100) |> Iterator.toList == Nil: List[Int32]
 
     @test
     def takeWhilePure05(): Bool & Impure =
