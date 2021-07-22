@@ -145,9 +145,9 @@ object Stratifier extends Phase[Root, Root] {
         case (e1, e2) => Expression.Binary(sop, e1, e2, tpe, eff, loc)
       }
 
-    case Expression.Let(sym, exp1, exp2, tpe, eff, loc) =>
+    case Expression.Let(mod, sym, exp1, exp2, tpe, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => Expression.Let(sym, e1, e2, tpe, eff, loc)
+        case (e1, e2) => Expression.Let(mod, sym, e1, e2, tpe, eff, loc)
       }
 
     case Expression.LetRegion(sym, exp, tpe, eff, loc) =>
@@ -477,7 +477,7 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.Binary(_, exp1, exp2, _, _, _) =>
       dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2)
 
-    case Expression.Let(_, exp1, exp2, _, _, _) =>
+    case Expression.Let(_, _, exp1, exp2, _, _, _) =>
       dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2)
 
     case Expression.LetRegion(_, exp, _, _, _) =>

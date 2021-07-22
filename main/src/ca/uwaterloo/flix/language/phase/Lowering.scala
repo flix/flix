@@ -292,11 +292,11 @@ object Lowering extends Phase[Root, Root] {
       val t = visitType(tpe)
       Expression.Binary(sop, e1, e2, t, eff, loc)
 
-    case Expression.Let(sym, exp1, exp2, tpe, eff, loc) =>
+    case Expression.Let(mod, sym, exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      Expression.Let(sym, e1, e2, t, eff, loc)
+      Expression.Let(mod, sym, e1, e2, t, eff, loc)
 
     case Expression.LetRegion(sym, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -1271,11 +1271,11 @@ object Lowering extends Phase[Root, Root] {
       val e2 = substExp(exp2, subst)
       Expression.Binary(sop, e1, e2, tpe, eff, loc)
 
-    case Expression.Let(sym, exp1, exp2, tpe, eff, loc) =>
+    case Expression.Let(mod, sym, exp1, exp2, tpe, eff, loc) =>
       val s = subst.getOrElse(sym, sym)
       val e1 = substExp(exp1, subst)
       val e2 = substExp(exp2, subst)
-      Expression.Let(s, e1, e2, tpe, eff, loc)
+      Expression.Let(mod, s, e1, e2, tpe, eff, loc)
 
     case Expression.LetRegion(sym, exp, tpe, eff, loc) =>
       val s = subst.getOrElse(sym, sym)
