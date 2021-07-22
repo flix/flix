@@ -220,8 +220,27 @@ namespace Iterator {
     ///
     /// Consumes elements of the iterator until the first element that does *not* satisfy predicate `f`.
     ///
-    // TODO: Overload based on purity.
-    pub def takeWhile(f: a -> Bool, iter: Iterator[a]): Iterator[a] & Impure = ???
+    pub def takeWhile(f: a -> Bool & ef, iter: Iterator[a]): Iterator[a] & Impure =
+        matchEff f {
+            case Pure   => takeWhileL(f as a -> Bool, iter)
+            case Impure => takeWhileE(f as a -> Bool & Impure, iter)
+        }
+
+    def takeWhileL(f: a -> Bool, iter: Iterator[a]): Iterator[a] & Impure =
+        let Iterator(done, next) = iter;
+        if (done())
+            Iterator(() -> true as & Impure, () -> bug!("Empty iterator") as & Impure)
+        else
+            let x = ref default;
+            let p = () -> {
+                x := next();
+                not f(deref x)
+            };
+            let done1 = () -> done() or p();
+            let next1 = () -> deref x;
+            Iterator(done1, next1)
+
+    def takeWhileE(f: a -> Bool & Impure, iter: Iterator[a]): Iterator[a] & Impure = ???
 
     ///
     /// Applies `f` to every element of `iter`.
