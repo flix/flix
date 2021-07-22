@@ -416,6 +416,8 @@ namespace MutList {
     ///
     /// That is, the result is of the form: `f(...f(f(s, a[0]), a[1])..., xn)`.
     ///
+    /// The implementation is tail recursive.
+    ///
     pub def foldRight(f: (a, b) -> b & e, s: b, v: MutList[a]): b & Impure =
         let len = length(v);
         foldRightHelper(f, s, v, len - 1)
