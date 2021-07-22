@@ -499,7 +499,7 @@ object WeederError {
       vt << NewLine
       vt << Code(loc, "malformed unicode escape sequence") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << s" Unicode escapes consist of exactly 4 hexadecimal characters."
+      vt << Underline("Tip:") << " A Unicode escape sequence must be of the form \\uXXXX where X is a hexadecimal."
     }
   }
 
@@ -518,7 +518,7 @@ object WeederError {
       vt << NewLine
       vt << Code(loc, "truncated unicode escape sequence") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << s" Unicode escapes consist of exactly 4 hexadecimal characters."
+      vt << Underline("Tip:") << " A Unicode escape sequence must be of the form \\uXXXX where X is a hexadecimal."
     }
   }
 
