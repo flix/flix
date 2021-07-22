@@ -652,7 +652,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           WeededAst.Expression.Match(withAscription(value, tpe), List(rule), mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.LetMatchStar(sp1, mod0, pat, tpe, exp1, exp2, sp2) => // MATT handle mods
+    case ParsedAst.Expression.LetMatchStar(sp1, pat, tpe, exp1, exp2, sp2) => // MATT handle mods
       val loc = SourceLocation.mk(sp1, sp2)
 
       //
@@ -663,14 +663,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val ident = Name.Ident(sp1, "flatMap", sp2)
       val flatMap = WeededAst.Expression.VarOrDefOrSig(ident, loc)
 
-      mapN(visitModifiers(mod0, legalModifiers=Set(Ast.Modifier.Scoped)), visitPattern(pat), visitExp(exp1), visitExp(exp2)) {
-        case (mod, WeededAst.Pattern.Var(ident, loc), value, body) =>
+      mapN(visitPattern(pat), visitExp(exp1), visitExp(exp2)) {
+        case (WeededAst.Pattern.Var(ident, loc), value, body) =>
           // No pattern match.
           val fparam = WeededAst.FormalParam(ident, Ast.Modifiers.Empty, tpe.map(visitType), loc)
           val lambda = WeededAst.Expression.Lambda(fparam, body, loc)
           val inner = WeededAst.Expression.Apply(flatMap, List(lambda), loc)
           WeededAst.Expression.Apply(inner, List(value), loc)
-        case (mod, pat, value, body) =>
+        case (pat, value, body) =>
           // Full-blown pattern match.
           val lambdaIdent = Name.Ident(sp1, "pat$0", sp2)
           val lambdaVar = WeededAst.Expression.VarOrDefOrSig(lambdaIdent, loc)
@@ -2294,7 +2294,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.IfThenElse(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Stm(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.LetMatch(sp1, _, _, _, _, _, _) => sp1
-    case ParsedAst.Expression.LetMatchStar(sp1, _, _, _, _, _, _) => sp1
+    case ParsedAst.Expression.LetMatchStar(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetImport(sp1, _, _, _) => sp1
     case ParsedAst.Expression.LetRegion(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
