@@ -284,7 +284,7 @@ object ParsedAst {
     /**
       * The head of an escape sequence:
       * For standard escapes (e.g. `\t`), contains the distinguishing letter (e.g., `t`).
-      * For unicode escapes, (e.g. `\u1234`), contains the letter `u`.
+      * For unicode escape sequences, (e.g. `\u1234`), contains the letter `u`.
       *
       * @param seq the escape code as a singleton string.
       */

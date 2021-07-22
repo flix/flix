@@ -484,39 +484,39 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate a malformed unicode escape.
+    * An error raised to indicate a malformed unicode escape sequence.
     *
     * @param code the escape sequence
     * @param loc  the location where the error occurred.
     */
   case class MalformedUnicodeEscape(code: String, loc: SourceLocation) extends WeederError {
-    def summary: String = s"Malformed unicode escape '${code}'."
+    def summary: String = s"Malformed unicode escape sequence '${code}'."
 
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Malformed unicode escape." << NewLine
+      vt << ">> Malformed unicode escape sequence." << NewLine
       vt << NewLine
-      vt << Code(loc, "malformed unicode escape") << NewLine
+      vt << Code(loc, "malformed unicode escape sequence") << NewLine
       vt << NewLine
       vt << Underline("Tip:") << s" Unicode escapes consist of exactly 4 hexadecimal characters."
     }
   }
 
   /**
-    * An error raised to indicate a truncated unicode escape.
+    * An error raised to indicate a truncated unicode escape sequence.
     *
     * @param loc the location where the error occurred.
     */
   case class TruncatedUnicodeEscape(loc: SourceLocation) extends WeederError {
-    def summary: String = "Truncated unicode escape."
+    def summary: String = "Truncated unicode escape sequence."
 
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Truncated unicode escape." << NewLine
+      vt << ">> Truncated unicode escape sequence." << NewLine
       vt << NewLine
-      vt << Code(loc, "truncated unicode escape") << NewLine
+      vt << Code(loc, "truncated unicode escape sequence") << NewLine
       vt << NewLine
       vt << Underline("Tip:") << s" Unicode escapes consist of exactly 4 hexadecimal characters."
     }
