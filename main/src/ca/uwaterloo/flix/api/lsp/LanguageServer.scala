@@ -361,7 +361,8 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
   private def processSymbol(requestId: String, uri: String, pos: Position): JValue = {
 
     // TODO implement the function
-    ("id" -> requestId) ~ ("status" -> "success")
+    val result = SymbolProvider.getSymbol(uri, pos)
+    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result.toJSON)
   }
   /**
     * Processes a complete request.
