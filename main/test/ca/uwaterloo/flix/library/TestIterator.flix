@@ -537,14 +537,31 @@ namespace TestIterator {
 
     @test
     def takeWhilePure05(): Bool & Impure =
-        let list = Iterator.repeat(10, 10) |> Iterator.takeWhile(x -> x < 100) |> Iterator.toList;
-        Console.printLine(ToString.toString(list));
-        list == List.repeat(10, 10)
+        Iterator.repeat(10, 1000) |> Iterator.takeWhile(x -> x < 100) |> Iterator.toList == List.repeat(10, 1000)
 
     /////////////////////////////////////////////////////////////////////////////
     // takeWhile (impure)                                                      //
     /////////////////////////////////////////////////////////////////////////////
 
+    @test
+    def takeWhileImpure01(): Bool & Impure =
+        Iterator.repeat(0, 0) |> Iterator.takeWhile(x -> x > 100 as & Impure) |> Iterator.toList == Nil: List[Int32]
+
+    @test
+    def takeWhileImpure02(): Bool & Impure =
+        Iterator.range(0, 1000) |> Iterator.takeWhile(x -> x > 100 as & Impure) |> Iterator.toList == Nil: List[Int32]
+
+    @test
+    def takeWhileImpure03(): Bool & Impure =
+        Iterator.range(0, 1000) |> Iterator.takeWhile(x -> x < 100 as & Impure) |> Iterator.toList == List.range(0, 100)
+
+    @test
+    def takeWhileImpure04(): Bool & Impure =
+        Iterator.repeat(0, 0) |> Iterator.takeWhile(x -> x < 100 as & Impure) |> Iterator.toList == Nil: List[Int32]
+
+    @test
+    def takeWhileImpure05(): Bool & Impure =
+        Iterator.repeat(10, 1000) |> Iterator.takeWhile(x -> x < 100 as & Impure) |> Iterator.toList == List.repeat(10, 1000)
 
     /////////////////////////////////////////////////////////////////////////////
     // isEmpty                                                                 //
