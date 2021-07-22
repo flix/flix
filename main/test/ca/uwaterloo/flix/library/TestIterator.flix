@@ -539,6 +539,7 @@ namespace TestIterator {
     def takeWhilePure05(): Bool & Impure =
         Iterator.repeat(10, 1000) |> Iterator.takeWhile(x -> x < 100) |> Iterator.toList == List.repeat(10, 1000)
 
+
     /////////////////////////////////////////////////////////////////////////////
     // takeWhile (impure)                                                      //
     /////////////////////////////////////////////////////////////////////////////
