@@ -539,6 +539,12 @@ namespace TestIterator {
     def takeWhilePure05(): Bool & Impure =
         Iterator.repeat(10, 1000) |> Iterator.takeWhile(x -> x < 100) |> Iterator.toList == List.repeat(10, 1000)
 
+    @test
+    def takeWhilePure06(): Bool & Impure =
+        let iter = Iterator.range(0, 1000);
+        iter |> Iterator.takeWhile(x -> x < 100) |> Iterator.toList == List.range(0, 100) and
+            iter |> Iterator.toList == List.range(101, 1000) // Element '100' is consumed by takeWhile
+
 
     /////////////////////////////////////////////////////////////////////////////
     // takeWhile (impure)                                                      //
@@ -563,6 +569,12 @@ namespace TestIterator {
     @test
     def takeWhileImpure05(): Bool & Impure =
         Iterator.repeat(10, 1000) |> Iterator.takeWhile(x -> x < 100 as & Impure) |> Iterator.toList == List.repeat(10, 1000)
+
+    @test
+    def takeWhileImpure06(): Bool & Impure =
+        let iter = Iterator.range(0, 1000);
+        iter |> Iterator.takeWhile(x -> x < 100 as & Impure) |> Iterator.toList == List.range(0, 100) and
+            iter |> Iterator.toList == List.range(101, 1000) // Element '100' is consumed by takeWhile
 
 
     /////////////////////////////////////////////////////////////////////////////
