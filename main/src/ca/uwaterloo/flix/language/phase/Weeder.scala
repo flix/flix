@@ -1480,7 +1480,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     try {
       Integer.parseInt(code, 16).toChar.toSuccess
     } catch {
-      case _: NumberFormatException => WeederError.MalformedUnicodeEscape(code, loc).toFailure
+      case _: NumberFormatException => WeederError.MalformedUnicodeEscapeSequence(code, loc).toFailure
     }
   }
 
@@ -1517,7 +1517,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (u @ ParsedAst.CharCode.Escape(sp1, "u", _)) :: rest =>
           val code = rest.takeWhile(_.isInstanceOf[ParsedAst.CharCode.Literal])
           val sp2 = code.lastOption.getOrElse(u).sp2
-          WeederError.TruncatedUnicodeEscape(mkSL(sp1, sp2)).toFailure
+          WeederError.TruncatedUnicodeEscapeSequence(mkSL(sp1, sp2)).toFailure
         case ParsedAst.CharCode.Escape(sp1, char, sp2) :: _ => WeederError.InvalidEscapeSequence(char.head, mkSL(sp1, sp2)).toFailure
       }
     }

@@ -489,7 +489,7 @@ object WeederError {
     * @param code the escape sequence
     * @param loc  the location where the error occurred.
     */
-  case class MalformedUnicodeEscape(code: String, loc: SourceLocation) extends WeederError {
+  case class MalformedUnicodeEscapeSequence(code: String, loc: SourceLocation) extends WeederError {
     def summary: String = s"Malformed unicode escape sequence '${code}'."
 
     def message: VirtualTerminal = {
@@ -508,7 +508,7 @@ object WeederError {
     *
     * @param loc the location where the error occurred.
     */
-  case class TruncatedUnicodeEscape(loc: SourceLocation) extends WeederError {
+  case class TruncatedUnicodeEscapeSequence(loc: SourceLocation) extends WeederError {
     def summary: String = "Truncated unicode escape sequence."
 
     def message: VirtualTerminal = {
