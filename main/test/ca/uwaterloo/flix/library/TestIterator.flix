@@ -496,6 +496,26 @@ namespace TestIterator {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // foldRight                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldRight01(): Bool & Impure =
+        Nil: List[Int32] |> Iterator.toIter |> Iterator.foldRight((n, acc) -> n :: acc, Nil: List[Int32]) == Nil: List[Int32]
+
+    @test
+    def foldRight02(): Bool & Impure =
+        Iterator.range(0, 1000) |> Iterator.foldRight((n, acc) -> n :: acc, Nil: List[Int32]) ==
+            List.range(0, 1000)
+
+    @test
+    def foldRight03(): Bool & Impure =
+        let iter = Iterator.range(0, 1000);
+        iter |> Iterator.foldRight((_, _) -> true, true);
+        iter |> Iterator.isEmpty
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // isEmpty                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
