@@ -282,7 +282,9 @@ object ParsedAst {
     case class Literal(sp1: SourcePosition, lit: String, sp2: SourcePosition) extends ParsedAst.CharCode
 
     /**
-      * The head of an escape sequence.
+      * The head of an escape sequence:
+      * For standard escapes (e.g. `\t`), contains the distinguishing letter (e.g., `t`).
+      * For unicode escapes, (e.g. `\u1234`), contains the letter `u`.
       *
       * @param seq the escape code as a singleton string.
       */
