@@ -344,21 +344,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    object Chars { // MATT move outside Literal
-
-      def Literal: Rule1[ParsedAst.Literal.CharCode.Literal] = rule {
-        SP ~ !("\\" | EOI) ~ capture(CharPredicate.All) ~ SP ~> ParsedAst.Literal.CharCode.Literal
-      }
-
-      def Escape: Rule1[ParsedAst.Literal.CharCode.Escape] = rule {
-        SP ~ "\\" ~ capture(CharPredicate.All) ~ SP ~> ParsedAst.Literal.CharCode.Escape
-      }
-
-      def CharCode: Rule1[ParsedAst.Literal.CharCode] = rule {
-        Escape | Literal
-      }
-    }
-
     def Char: Rule1[ParsedAst.Literal.Char] = rule {
       SP ~ "'" ~ oneOrMore(!"'" ~ Chars.CharCode) ~ "'" ~ SP ~> ParsedAst.Literal.Char
     }
@@ -440,6 +425,24 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       push(10) ~ SeparableDecDigits
     }
 
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Characters
+  /////////////////////////////////////////////////////////////////////////////
+  object Chars {
+
+    def Literal: Rule1[ParsedAst.CharCode.Literal] = rule {
+      SP ~ !("\\" | EOI) ~ capture(CharPredicate.All) ~ SP ~> ParsedAst.CharCode.Literal
+    }
+
+    def Escape: Rule1[ParsedAst.CharCode.Escape] = rule {
+      SP ~ "\\" ~ capture(CharPredicate.All) ~ SP ~> ParsedAst.CharCode.Escape
+    }
+
+    def CharCode: Rule1[ParsedAst.Literal.CharCode] = rule {
+      Escape | Literal
+    }
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -638,7 +641,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def StrPart: Rule1[ParsedAst.InterpolationPart] = rule {
-        SP ~ oneOrMore(!("\"" | DollarLBrace) ~ Literals.Chars.CharCode) ~ SP ~> ParsedAst.InterpolationPart.StrPart
+        SP ~ oneOrMore(!("\"" | DollarLBrace) ~ Chars.CharCode) ~ SP ~> ParsedAst.InterpolationPart.StrPart
       }
 
       def InterpolationPart: Rule1[ParsedAst.InterpolationPart] = rule {

@@ -1493,19 +1493,19 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     def visit(chars: List[ParsedAst.Literal.CharCode], acc: List[Char]): Validation[String, WeederError] = {
       chars match {
         case Nil => acc.reverse.mkString.toSuccess
-        case ParsedAst.Literal.CharCode.Literal(_, char, _) :: rest => visit(rest, char.head :: acc)
-        case ParsedAst.Literal.CharCode.Escape(_, "n", _) :: rest => visit(rest, '\n' :: acc)
-        case ParsedAst.Literal.CharCode.Escape(_, "r", _) :: rest => visit(rest, '\r' :: acc)
-        case ParsedAst.Literal.CharCode.Escape(_, "\\", _) :: rest => visit(rest, '\\' :: acc)
-        case ParsedAst.Literal.CharCode.Escape(_, "\"", _) :: rest => visit(rest, '\"' :: acc)
-        case ParsedAst.Literal.CharCode.Escape(_, "\'", _) :: rest => visit(rest, '\'' :: acc)
-        case ParsedAst.Literal.CharCode.Escape(_, "t", _) :: rest => visit(rest, '\t' :: acc)
+        case ParsedAst.CharCode.Literal(_, char, _) :: rest => visit(rest, char.head :: acc)
+        case ParsedAst.CharCode.Escape(_, "n", _) :: rest => visit(rest, '\n' :: acc)
+        case ParsedAst.CharCode.Escape(_, "r", _) :: rest => visit(rest, '\r' :: acc)
+        case ParsedAst.CharCode.Escape(_, "\\", _) :: rest => visit(rest, '\\' :: acc)
+        case ParsedAst.CharCode.Escape(_, "\"", _) :: rest => visit(rest, '\"' :: acc)
+        case ParsedAst.CharCode.Escape(_, "\'", _) :: rest => visit(rest, '\'' :: acc)
+        case ParsedAst.CharCode.Escape(_, "t", _) :: rest => visit(rest, '\t' :: acc)
         // `\u` followed by 4 or more literals
-        case ParsedAst.Literal.CharCode.Escape(_, "u", _) ::
-          ParsedAst.Literal.CharCode.Literal(sp1, d0, _) ::
-          ParsedAst.Literal.CharCode.Literal(_, d1, _) ::
-          ParsedAst.Literal.CharCode.Literal(_, d2, _) ::
-          ParsedAst.Literal.CharCode.Literal(_, d3, sp2) ::
+        case ParsedAst.CharCode.Escape(_, "u", _) ::
+          ParsedAst.CharCode.Literal(sp1, d0, _) ::
+          ParsedAst.CharCode.Literal(_, d1, _) ::
+          ParsedAst.CharCode.Literal(_, d2, _) ::
+          ParsedAst.CharCode.Literal(_, d3, sp2) ::
           rest =>
           val code = List(d0, d1, d2, d3).mkString
           // Doing a manual flatMap to keep the function tail-recursive
@@ -1514,11 +1514,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             case Validation.Failure(errors) => Validation.Failure(errors)
           }
         // `\u` followed by less than 4 literals
-        case (u @ ParsedAst.Literal.CharCode.Escape(sp1, "u", _)) :: rest =>
-          val code = rest.takeWhile(_.isInstanceOf[ParsedAst.Literal.CharCode.Literal])
+        case (u @ ParsedAst.CharCode.Escape(sp1, "u", _)) :: rest =>
+          val code = rest.takeWhile(_.isInstanceOf[ParsedAst.CharCode.Literal])
           val sp2 = code.lastOption.getOrElse(u).sp2
           WeederError.TruncatedUnicodeEscape(mkSL(sp1, sp2)).toFailure
-        case ParsedAst.Literal.CharCode.Escape(sp1, char, sp2) :: _ => WeederError.InvalidEscapeSequence(char.head, mkSL(sp1, sp2)).toFailure
+        case ParsedAst.CharCode.Escape(sp1, char, sp2) :: _ => WeederError.InvalidEscapeSequence(char.head, mkSL(sp1, sp2)).toFailure
       }
     }
 

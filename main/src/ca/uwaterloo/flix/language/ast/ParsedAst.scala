@@ -265,6 +265,26 @@ object ParsedAst {
   }
 
   /**
+    * CharCodes.
+    */
+  object CharCode {
+    /**
+      * Char literal.
+      *
+      * @param lit the char as a singleton string.
+      */
+    case class Literal(sp1: SourcePosition, lit: String, sp2: SourcePosition) extends ParsedAst.Literal.CharCode
+
+
+    /**
+      * The head of an escape sequence.
+      *
+      * @param seq the escape code as a singleton string.
+      */
+    case class Escape(sp1: SourcePosition, seq: String, sp2: SourcePosition) extends ParsedAst.Literal.CharCode
+  }
+
+  /**
     * Literals.
     */
   sealed trait Literal
@@ -306,24 +326,6 @@ object ParsedAst {
     sealed trait CharCode {
       val sp1: SourcePosition
       val sp2: SourcePosition
-    }
-
-    // MATT move outside Literal
-    object CharCode {
-      /**
-        * Char literal.
-        *
-        * @param lit the char as a singleton string.
-        */
-      case class Literal(sp1: SourcePosition, lit: String, sp2: SourcePosition) extends ParsedAst.Literal.CharCode
-
-
-      /**
-        * The head of an escape sequence.
-        *
-        * @param seq the escape code as a singleton string.
-        */
-      case class Escape(sp1: SourcePosition, seq: String, sp2: SourcePosition) extends ParsedAst.Literal.CharCode
     }
 
     /**
