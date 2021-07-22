@@ -638,21 +638,21 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (e1, e2) => WeededAst.Expression.Stm(e1, e2, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.LetMatch(sp1, mod, pat, tpe, exp1, exp2, sp2) => // MATT handle mods
+    case ParsedAst.Expression.LetMatch(sp1, mod0, pat, tpe, exp1, exp2, sp2) => // MATT handle mods
       //
       // Rewrites a let-match to a regular let-binding or a full-blown pattern match.
       //
-      mapN(visitPattern(pat), visitExp(exp1), visitExp(exp2)) {
-        case (WeededAst.Pattern.Var(ident, loc), value, body) =>
+      mapN(visitModifiers(mod0, legalModifiers=Set(Ast.Modifier.Scoped)), visitPattern(pat), visitExp(exp1), visitExp(exp2)) {
+        case (mod, WeededAst.Pattern.Var(ident, loc), value, body) =>
           // No pattern match.
           WeededAst.Expression.Let(ident, withAscription(value, tpe), body, mkSL(sp1, sp2))
-        case (pat, value, body) =>
+        case (mod, pat, value, body) =>
           // Full-blown pattern match.
           val rule = WeededAst.MatchRule(pat, WeededAst.Expression.True(mkSL(sp1, sp2)), body)
           WeededAst.Expression.Match(withAscription(value, tpe), List(rule), mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.LetMatchStar(sp1, mod, pat, tpe, exp1, exp2, sp2) => // MATT handle mods
+    case ParsedAst.Expression.LetMatchStar(sp1, mod0, pat, tpe, exp1, exp2, sp2) => // MATT handle mods
       val loc = SourceLocation.mk(sp1, sp2)
 
       //
@@ -663,14 +663,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val ident = Name.Ident(sp1, "flatMap", sp2)
       val flatMap = WeededAst.Expression.VarOrDefOrSig(ident, loc)
 
-      mapN(visitPattern(pat), visitExp(exp1), visitExp(exp2)) {
-        case (WeededAst.Pattern.Var(ident, loc), value, body) =>
+      mapN(visitModifiers(mod0, legalModifiers=Set(Ast.Modifier.Scoped)), visitPattern(pat), visitExp(exp1), visitExp(exp2)) {
+        case (mod, WeededAst.Pattern.Var(ident, loc), value, body) =>
           // No pattern match.
           val fparam = WeededAst.FormalParam(ident, Ast.Modifiers.Empty, tpe.map(visitType), loc)
           val lambda = WeededAst.Expression.Lambda(fparam, body, loc)
           val inner = WeededAst.Expression.Apply(flatMap, List(lambda), loc)
           WeededAst.Expression.Apply(inner, List(value), loc)
-        case (pat, value, body) =>
+        case (mod, pat, value, body) =>
           // Full-blown pattern match.
           val lambdaIdent = Name.Ident(sp1, "pat$0", sp2)
           val lambdaVar = WeededAst.Expression.VarOrDefOrSig(lambdaIdent, loc)
