@@ -656,16 +656,8 @@ namespace MutList {
     ///
     /// Returns `v` as an immutable list.
     ///
-    pub def toImm(v: MutList[a]): List[a] & Impure = toImmHelper(v, length(v) - 1, Nil)
-
-    ///
-    /// Helper function for `toImm`
-    ///
-    def toImmHelper(v: MutList[a], i: Int32, acc: List[a]): List[a] & Impure =
-        if (i >= 0)
-            let x = get(i, v);
-            toImmHelper(v, i - 1, x :: acc)
-        else acc
+    pub def toImm(v: MutList[a]): List[a] & Impure =
+        foldRight((x, acc) -> x :: acc, Nil, v)
 
     ///
     /// Returns `v` as an array.
