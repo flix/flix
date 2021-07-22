@@ -539,7 +539,7 @@ object WeederError {
       vt << NewLine
       vt << Code(loc, "non-single-character literal") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << " Character literals consist of a single character."
+      vt << Underline("Tip:") << " A character literal must consist of a single character."
     }
   }
 
