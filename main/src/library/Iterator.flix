@@ -218,7 +218,7 @@ namespace Iterator {
     ///
     /// Whether `f` is applied eagerly or lazily depends on its purity:
     /// - If `f` is pure then it is applied lazily.
-    /// - If `f` is impure then it is applied eagerly (consuming elements of the iterator until
+    /// - If `f` is impure then it is applied eagerly (consuming elements of the iterator until and including
     /// the first element that does *not* satisfy predicate `f`).
     ///
     pub def takeWhile(f: a -> Bool & ef, iter: Iterator[a]): Iterator[a] & Impure =
@@ -251,7 +251,7 @@ namespace Iterator {
     /// Returns the longest prefix of `iter` that satisfies the predicate `f`.
     /// `f` is applied *eagerly*.
     ///
-    /// Consumes elements of the iterator until the first element that does *not* satisfy predicate `f`.
+    /// Consumes elements of the iterator until and including the first element that does *not* satisfy predicate `f`.
     ///
     def takeWhileE(f: a -> Bool & Impure, iter: Iterator[a]): Iterator[a] & Impure =
         let Iterator(done, _) = iter;
