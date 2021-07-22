@@ -516,6 +516,37 @@ namespace TestIterator {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // takeWhile (pure)                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def takeWhilePure01(): Bool & Impure =
+        Iterator.repeat(0, 0) |> Iterator.takeWhile(x -> x > 100) |> Iterator.toList == Nil: List[Int32]
+
+    @test
+    def takeWhilePure02(): Bool & Impure =
+        Iterator.range(0, 1000) |> Iterator.takeWhile(x -> x > 100) |> Iterator.toList == Nil: List[Int32]
+
+    @test
+    def takeWhilePure03(): Bool & Impure =
+        Iterator.range(0, 1000) |> Iterator.takeWhile(x -> x < 100) |> Iterator.toList == List.range(0, 100)
+
+    @test
+    def takeWhilePure04(): Bool & Impure =
+        Iterator.repeat(0, 0) |> Iterator.takeWhile(x -> x < 100) |> Iterator.toList == List.range(0, 100)
+
+    @test
+    def takeWhilePure05(): Bool & Impure =
+        let list = Iterator.repeat(10, 10) |> Iterator.takeWhile(x -> x < 100) |> Iterator.toList;
+        Console.printLine(ToString.toString(list));
+        list == List.repeat(10, 10)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // takeWhile (impure)                                                      //
+    /////////////////////////////////////////////////////////////////////////////
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // isEmpty                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
