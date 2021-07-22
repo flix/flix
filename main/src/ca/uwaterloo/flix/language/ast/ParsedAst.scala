@@ -303,7 +303,10 @@ object ParsedAst {
       */
     case class False(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Literal
 
-    sealed trait CharCode
+    sealed trait CharCode {
+      val sp1: SourcePosition
+      val sp2: SourcePosition
+    }
 
     // MATT move outside Literal
     object CharCode {

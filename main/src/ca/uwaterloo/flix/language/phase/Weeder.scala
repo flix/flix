@@ -1514,7 +1514,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             case Validation.Failure(errors) => Validation.Failure(errors)
           }
         // `\u` followed by less than 4 literals
-        case ParsedAst.Literal.CharCode.Escape(sp1, "u", sp2) :: _ => WeederError.TruncatedUnicodeEscape(mkSL(sp1, sp2)).toFailure
+        case (u @ ParsedAst.Literal.CharCode.Escape(sp1, "u", _)) :: rest =>
+          val code = rest.takeWhile(_.isInstanceOf[ParsedAst.Literal.CharCode.Literal])
+          val sp2 = code.lastOption.getOrElse(u).sp2
+          WeederError.TruncatedUnicodeEscape(mkSL(sp1, sp2)).toFailure
         case ParsedAst.Literal.CharCode.Escape(sp1, char, sp2) :: _ => WeederError.InvalidEscapeSequence(char.head, mkSL(sp1, sp2)).toFailure
       }
     }
