@@ -300,7 +300,7 @@ namespace Iterator {
     ///
     /// Consumes elements from the right until an element that satisfies predicate `f` is found.
     ///
-    pub def findRight(f: a -> Bool, iter: Iterator[a]): Option[a] = ???
+    pub def findRight(f: a -> Bool, iter: Iterator[a]): Option[a] & Impure = ???
 
     ///
     /// Returns `true` if and only if the iterator `iter` has no more elements.
