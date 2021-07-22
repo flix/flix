@@ -286,7 +286,12 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def foldRight(f: (a, b) -> b & ef, s: b, iter: Iterator[a]): b & Impure = ???
+    pub def foldRight(f: (a, b) -> b & ef, s: b, iter: Iterator[a]): b & Impure =
+        let Iterator(done, next) = iter;
+        if (done())
+            s
+        else
+            f(next(), foldRight(f, s, iter))
 
     ///
     /// Optionally returns the first element of `iter` that satisfies the predicate `f` when searching from right to left.
