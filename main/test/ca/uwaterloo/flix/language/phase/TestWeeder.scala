@@ -520,4 +520,26 @@ class TestWeeder extends FunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     expectError[WeederError.InvalidEscapeSequence](result)
   }
+
+  test("NonSingleCharacter.Char.01") {
+    val input =
+      """
+        |def f(): Char = 'ab'
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.NonSingleCharacter](result)
+  }
+
+  test("NonSingleCharacter.Patten.Char.01") {
+    val input =
+      """
+        |def f(x: Char): Bool = match x {
+        |  case 'ab' => true
+        |  case _ => false
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.NonSingleCharacter](result)
+  }
+
 }
