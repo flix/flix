@@ -227,6 +227,12 @@ namespace Iterator {
             case Impure => takeWhileE(f as a -> Bool & Impure, iter)
         }
 
+    ///
+    /// Returns the longest prefix of `iter` that satisfies the predicate `f`.
+    /// `f` is applied *lazily*.
+    ///
+    /// Does *not* consume any elements of the iterator.
+    ///
     def takeWhileL(f: a -> Bool, iter: Iterator[a]): Iterator[a] & Impure =
         let Iterator(done, next) = iter;
         if (done())
