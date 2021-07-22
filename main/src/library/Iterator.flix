@@ -253,7 +253,7 @@ namespace Iterator {
     ///
     /// Consumes elements of the iterator until the first element that does *not* satisfy predicate `f`.
     ///
-    def takeWhileE(f: a -> Bool & Impure, iter: Iterator[a]): Iterator[a] & Impure = ???
+    def takeWhileE(f: a -> Bool & Impure, iter: Iterator[a]): Iterator[a] & Impure =
         let Iterator(done, _) = iter;
         if (done())
             Iterator(() -> true as & Impure, () -> bug!("Empty iterator") as & Impure)
