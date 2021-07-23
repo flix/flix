@@ -129,9 +129,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         (as, mod, tparams, fparams, eff, exp) = res
         _ <- requirePublic(mod, ident)
         ts = fparams.map(_.tpe.get)
-        tpe = WeededAst.Type.Arrow(ts, eff, visitType(tpe0), loc)
+        retTpe = visitType(tpe0)
+        tpe = WeededAst.Type.Arrow(ts, eff, retTpe, loc)
         tconstrs <- traverse(tconstrs0)(visitTypeConstraint)
-      } yield List(WeededAst.Declaration.Sig(doc, as, mod, ident, tparams, fparams, exp.headOption, tpe, eff, tconstrs, loc))
+      } yield List(WeededAst.Declaration.Sig(doc, as, mod, ident, tparams, fparams, exp.headOption, tpe, retTpe, eff, tconstrs, loc))
   }
 
   /**
@@ -183,9 +184,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         (as, mod, tparams, fparams, exp, eff) = res
         _ <- if (requiresPublic) requirePublic(mod, ident) else ().toSuccess // conditionally require a public modifier
         ts = fparams.map(_.tpe.get)
-        tpe = WeededAst.Type.Arrow(ts, eff, visitType(tpe0), loc)
+        retTpe = visitType(tpe0)
+        tpe = WeededAst.Type.Arrow(ts, eff, retTpe, loc)
         tconstrs <- traverse(tconstrs0)(visitTypeConstraint)
-      } yield List(WeededAst.Declaration.Def(doc, as, mod, ident, tparams, fparams, exp, tpe, eff, tconstrs, loc))
+      } yield List(WeededAst.Declaration.Def(doc, as, mod, ident, tparams, fparams, exp, tpe, retTpe, eff, tconstrs, loc))
   }
 
   /**
@@ -204,8 +206,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       mapN(annVal, modVal, tparamsVal, formalsVal, expVal) {
         case (ann, mod, tparams, fs, exp) =>
           val ts = fs.map(_.tpe.get)
-          val tpe = WeededAst.Type.Arrow(ts, WeededAst.Type.True(loc), WeededAst.Type.Ambiguous(Name.mkQName("Bool"), loc), loc)
-          List(WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fs, exp, tpe, WeededAst.Type.True(loc), Nil, loc))
+          val retTpe = WeededAst.Type.Ambiguous(Name.mkQName("Bool"), loc)
+          val tpe = WeededAst.Type.Arrow(ts, WeededAst.Type.True(loc), retTpe, loc)
+          List(WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fs, exp, tpe, retTpe, WeededAst.Type.True(loc), Nil, loc))
       }
   }
 

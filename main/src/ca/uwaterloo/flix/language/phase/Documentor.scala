@@ -105,7 +105,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     // Compute return type and effect.
-    val result = defn0.spec.tpe
+    val result = defn0.spec.retTpe
     val effect = defn0.spec.eff
 
     // Construct the JSON object.

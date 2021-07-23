@@ -242,19 +242,19 @@ object CompleteProvider {
     * Returns the label for the given `name`, and `spec`.
     */
   private def getLabel(name: String, spec: TypedAst.Spec): String = spec match {
-    case TypedAst.Spec(_, _, _, _, fparams, _, tpe0, eff0, _) =>
+    case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, eff0, _) =>
       val args = fparams.map {
         fparam => s"${fparam.sym.text}: ${FormatType.formatType(fparam.tpe)}"
       }
 
-      val tpe = FormatType.formatType(tpe0)
+      val retTpe = FormatType.formatType(retTpe0)
       val eff = eff0 match {
-        case Type.Cst(TypeConstructor.True, _) => ""
-        case Type.Cst(TypeConstructor.False, _) => " & Impure"
-        case e => " & " + FormatType.formatType(e)
+        case Type.Cst(TypeConstructor.True, _) => "Pure"
+        case Type.Cst(TypeConstructor.False, _) => "Impure"
+        case e => FormatType.formatType(e)
       }
 
-      s"$name(${args.mkString(", ")}): $tpe$eff"
+      s"$name(${args.mkString(", ")}): $retTpe & $eff"
   }
 
   /**
