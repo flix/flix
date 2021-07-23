@@ -135,7 +135,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       /*
      * Definition.
      */
-      case decl@WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, tconstrs, loc) =>
+      case decl@WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, retTpe, eff0, tconstrs, loc) =>
         // Check if the definition already exists.
         val defsAndSigs = prog0.defsAndSigs.getOrElse(ns0, Map.empty)
         defsAndSigs.get(ident.name) match {
@@ -159,7 +159,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       /*
      * Law.
      */
-      case WeededAst.Declaration.Law(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, tconstrs, loc) => ??? // TODO
+      case WeededAst.Declaration.Law(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, retTpe, eff0, tconstrs, loc) => ??? // TODO
 
       /*
      * Enum.
@@ -376,7 +376,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Performs naming on the given signature declaration `sig` under the given environments `env0`, `uenv0`, and `tenv0`.
     */
   private def visitSig(sig: WeededAst.Declaration.Sig, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName, classIdent: Name.Ident, classSym: Symbol.ClassSym, classTparam: NamedAst.TypeParam)(implicit flix: Flix): Validation[NamedAst.Sig, NameError] = sig match {
-    case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, exp0, tpe0, eff0, tconstrs0, loc) =>
+    case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, exp0, tpe0, retTpe0, eff0, tconstrs0, loc) =>
       flatMapN(getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, loc, allowElision = true, uenv0, tenv0), checkSigType(ident, classTparam, tpe0, loc)) {
         case (tparams, _) =>
           val tenv = tenv0 ++ getTypeEnv(tparams)
@@ -387,12 +387,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
               val classTconstr = NamedAst.TypeConstraint(Name.mkQName(classIdent), NamedAst.Type.Var(classTparam.tpe, classTparam.loc), classSym.loc)
               val schemeVal = getDefOrSigScheme(tparams, tpe0, uenv0, tenv, classTconstr :: tconstrs, List(classTparam.tpe))
               val expVal = traverse(exp0)(visitExp(_, env0, uenv0, tenv))
-              val tpeVal = visitType(tpe0, uenv0, tenv)
+              val retTpeVal = visitType(retTpe0, uenv0, tenv)
               val effVal = visitType(eff0, uenv0, tenv)
-              mapN(annVal, schemeVal, tpeVal, effVal, expVal) {
-                case (as, sc, tpe, eff, exp) =>
+              mapN(annVal, schemeVal, retTpeVal, effVal, expVal) {
+                case (as, sc, retTpe, eff, exp) =>
                   val sym = Symbol.mkSigSym(classSym, ident)
-                  val spec = NamedAst.Spec(doc, as, mod, tparams, fparams, sc, tpe, eff, loc)
+                  val spec = NamedAst.Spec(doc, as, mod, tparams, fparams, sc, retTpe, eff, loc)
                   NamedAst.Sig(sym, spec, exp.headOption)
               }
           }
@@ -414,7 +414,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Performs naming on the given definition declaration `decl0` under the given environments `env0`, `uenv0`, and `tenv0`, with type constraints `tconstrs`.
     */
   private def visitDef(decl0: WeededAst.Declaration.Def, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName, addedTconstrs: List[NamedAst.TypeConstraint], addedQuantifiers: List[Type.Var])(implicit flix: Flix): Validation[NamedAst.Def, NameError] = decl0 match {
-    case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe0, eff0, tconstrs, loc) =>
+    case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe0, retTpe0, eff0, tconstrs, loc) =>
       // TODO: we use tenv when getting the types from formal params first, before the explicit tparams have a chance to modify it
       // This means that if an explicit type variable is shadowing, the outer scope variable will be used for some parts, and inner for others
       // Resulting in a type error rather than a redundancy error (as redundancy checking happens later)
@@ -429,12 +429,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
               val annVal = traverse(ann)(visitAnnotation(_, env0, uenv0, tenv))
               val expVal = visitExp(exp, env0, uenv0, tenv)
               val schemeVal = getDefOrSigScheme(tparams, tpe0, uenv0, tenv, tconstrs ++ addedTconstrs, addedQuantifiers)
-              val tpeVal = visitType(tpe0, uenv0, tenv)
+              val retTpeVal = visitType(retTpe0, uenv0, tenv)
               val effVal = visitType(eff0, uenv0, tenv)
-              mapN(annVal, expVal, schemeVal, tpeVal, effVal) {
-                case (as, e, sc, tpe, eff) =>
+              mapN(annVal, expVal, schemeVal, retTpeVal, effVal) {
+                case (as, e, sc, retTpe, eff) =>
                   val sym = Symbol.mkDefnSym(ns0, ident)
-                  val spec = NamedAst.Spec(doc, as, mod, tparams, fparams, sc, tpe, eff, loc)
+                  val spec = NamedAst.Spec(doc, as, mod, tparams, fparams, sc, retTpe, eff, loc)
                   NamedAst.Def(sym, spec, e)
               }
           }
