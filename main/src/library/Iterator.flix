@@ -360,7 +360,8 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def findRight(f: a -> Bool, iter: Iterator[a]): Option[a] & Impure = ???
+    pub def findRight(f: a -> Bool, iter: Iterator[a]): Option[a] & Impure =
+        toList(iter) |> List.findRight(f)
 
     ///
     /// Returns `true` if and only if the iterator `iter` has no more elements.
