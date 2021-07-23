@@ -329,52 +329,52 @@ namespace TestIterator {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // dropWhile                                                               //
+    // dropWhile (pure)                                                        //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def dropWhile01(): Bool & Impure =
+    def dropWhilePure01(): Bool & Impure =
         let list: List[Int32] = Nil;
         list |> Iterator.toIter |> Iterator.dropWhile(_ -> true)  |> Iterator.toList ==  list and
         list |> Iterator.toIter |> Iterator.dropWhile(_ -> false) |> Iterator.toList ==  list
 
     @test
-    def dropWhile02(): Bool & Impure =
+    def dropWhilePure02(): Bool & Impure =
         let iter = () -> Iterator.range(0, 1000);
         iter() |> Iterator.dropWhile(_ -> false) |> Iterator.toList == List.range(0, 1000)
 
     @test
-    def dropWhile03(): Bool & Impure =
+    def dropWhilePure03(): Bool & Impure =
         let iter = () -> Iterator.range(0, 1000);
         iter() |> Iterator.dropWhile(_ -> true) |> Iterator.isEmpty
 
     @test
-    def dropWhile04(): Bool & Impure =
+    def dropWhilePure04(): Bool & Impure =
         let iter = () -> Iterator.range(0, 1000);
         iter() |> Iterator.dropWhile(x -> x < 500) |> Iterator.toList == List.range(500, 1000)
 
     @test
-    def dropWhile05(): Bool & Impure =
+    def dropWhilePure05(): Bool & Impure =
         let iter = () -> Iterator.repeat(2, 1000);
         iter() |> Iterator.dropWhile(x -> x < 3) |> Iterator.isEmpty
 
     @test
-    def dropWhile06(): Bool & Impure =
+    def dropWhilePure06(): Bool & Impure =
         let iter = () -> ("a" :: "a" :: "b" :: "b" :: "c" :: "c" :: Nil) |> Iterator.toIter;
         iter() |> Iterator.dropWhile(x -> x == "a") |> Iterator.toList == ("b" :: "b" :: "c" :: "c" :: Nil)
 
     @test
-    def dropWhile07(): Bool & Impure =
+    def dropWhilePure07(): Bool & Impure =
         let iter = () -> ("a" :: "a" :: "b" :: "b" :: "c" :: "c" :: Nil) |> Iterator.toIter;
         iter() |> Iterator.dropWhile(x -> x == "b") |> Iterator.toList == iter() |> Iterator.toList
 
     @test
-    def dropWhile08(): Bool & Impure =
+    def dropWhilePure08(): Bool & Impure =
         let iter = () -> ("a" :: "a" :: "b" :: "b" :: "c" :: "c" :: Nil) |> Iterator.toIter;
         iter() |> Iterator.dropWhile(x -> x == "a" or x == "c") |> Iterator.toList == ("b" :: "b" :: "c" :: "c" :: Nil)
 
     @test
-    def dropWhile09(): Bool & Impure =
+    def dropWhilePure09(): Bool & Impure =
         let iter = () -> ("a" :: "a" :: "b" :: "b" :: "c" :: "c" :: Nil) |> Iterator.toIter;
         iter() |> Iterator.dropWhile(x -> x == "a" or x == "b") |> Iterator.toList == List.repeat("c", 2)
 
