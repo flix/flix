@@ -394,7 +394,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     case (Expression.Binary(op1, exp11, exp12, _, _, _), Expression.Binary(op2, exp21, exp22, _, _, _)) if op1 == op2 =>
       unifyExp(exp11, exp12, exp21, exp22, metaVars)
 
-    case (Expression.Let(_, sym1, exp11, exp12, _, _, _), Expression.Let(_, sym2, exp21, exp22, _, _, _)) =>
+    case (Expression.Let(sym1, _, exp11, exp12, _, _, _), Expression.Let(sym2, _, exp21, exp22, _, _, _)) =>
       for {
         s1 <- unifyVar(sym1, exp11.tpe, sym2, exp21.tpe)
         s2 <- unifyExp(s1(exp12), s1(exp22), metaVars)
@@ -755,11 +755,11 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         val e2 = apply(exp2)
         Expression.Binary(sop, e1, e2, tpe, eff, loc)
 
-      case Expression.Let(mod, sym, exp1, exp2, tpe, eff, loc) =>
+      case Expression.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
         val newSym = apply(sym)
         val e1 = apply(exp1)
         val e2 = apply(exp2)
-        Expression.Let(mod, newSym, e1, e2, tpe, eff, loc)
+        Expression.Let(newSym, mod, e1, e2, tpe, eff, loc)
 
       case Expression.LetRegion(sym, exp, tpe, eff, loc) =>
         val e = apply(exp)

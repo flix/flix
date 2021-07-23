@@ -70,7 +70,7 @@ object TypedAstOps {
       case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0)
 
-      case Expression.Let(_, sym, exp1, exp2, tpe, eff, loc) =>
+      case Expression.Let(sym, _, exp1, exp2, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0 + (sym -> exp1.tpe))
 
       case Expression.LetRegion(_, exp, _, _, _) =>
@@ -492,7 +492,7 @@ object TypedAstOps {
     case Expression.Binary(_, exp1, exp2, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)
 
-    case Expression.Let(_, sym, exp1, exp2, _, _, _) =>
+    case Expression.Let(sym, _, exp1, exp2, _, _, _) =>
       (freeVars(exp1) ++ freeVars(exp2)) - sym
 
     case Expression.LetRegion(sym, exp, _, _, _) =>
