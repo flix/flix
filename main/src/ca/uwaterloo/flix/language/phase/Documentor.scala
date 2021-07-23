@@ -105,8 +105,8 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     // Compute return type and effect.
-    val result = getResultType(defn0.spec.declaredScheme.base)
-    val effect = getEffectType(defn0.spec.declaredScheme.base)
+    val result = defn0.spec.tpe
+    val effect = defn0.spec.eff
 
     // Construct the JSON object.
     ("name" -> defn0.sym.name) ~
@@ -117,19 +117,6 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       ("time" -> getTime(defn0)) ~
       ("space" -> getSpace(defn0)) ~
       ("comment" -> defn0.spec.doc.text.trim)
-  }
-
-  /**
-    * Returns the return type of the given function type `tpe0`.
-    */
-  private def getResultType(tpe0: Type): Type = tpe0.typeArguments.last
-
-  /**
-    * Returns the effect of the given function type `tpe0`.
-    */
-  private def getEffectType(tpe0: Type): Type = tpe0.typeConstructor match {
-    case Some(TypeConstructor.Arrow(_)) => tpe0.typeArguments.head
-    case _ => tpe0
   }
 
   /**
