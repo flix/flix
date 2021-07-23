@@ -221,6 +221,8 @@ namespace Iterator {
     /// - If `f` is impure then it is applied eagerly (consuming elements of the iterator until and including
     /// the first element that does *not* satisfy predicate `f`).
     ///
+    /// The original iterator `iter` should not be reused.
+    ///
     pub def takeWhile(f: a -> Bool & ef, iter: Iterator[a]): Iterator[a] & Impure =
         matchEff f {
             case Pure   => takeWhileL(f as a -> Bool, iter)
@@ -232,6 +234,8 @@ namespace Iterator {
     /// `f` is applied *lazily*.
     ///
     /// Does *not* consume any elements of the iterator.
+    ///
+    /// The original iterator `iter` should not be reused.
     ///
     def takeWhileL(f: a -> Bool, iter: Iterator[a]): Iterator[a] & Impure =
         let Iterator(done, next) = iter;
@@ -253,6 +257,8 @@ namespace Iterator {
     ///
     /// Consumes elements of the iterator until and including the first element that does *not* satisfy predicate `f`.
     ///
+    /// The original iterator `iter` should not be reused.
+    ///
     def takeWhileE(f: a -> Bool & Impure, iter: Iterator[a]): Iterator[a] & Impure =
         let Iterator(done, _) = iter;
         if (done())
@@ -261,6 +267,9 @@ namespace Iterator {
 
     ///
     /// Helper function for takeWhileE
+    ///
+    ///
+    /// The original iterator `iter` should not be reused.
     ///
     def takeWhileEHelper(f: a -> Bool & Impure, iter: Iterator[a], acc: List[a]): Iterator[a] & Impure =
         let Iterator(done, next) = iter;
