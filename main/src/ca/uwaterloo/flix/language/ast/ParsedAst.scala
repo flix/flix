@@ -595,13 +595,14 @@ object ParsedAst {
       * LetMatch Expression (let-binding with pattern match).
       *
       * @param sp1  the position of the first character in the expression.
+      * @param mod  the associated modifiers.
       * @param pat  the match pattern.
       * @param tpe  the optional type annotation.
       * @param exp1 the value expression.
       * @param exp2 the body expression.
       * @param sp2  the position of the last character in the expression.
       */
-    case class LetMatch(sp1: SourcePosition, pat: ParsedAst.Pattern, tpe: Option[ParsedAst.Type], exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class LetMatch(sp1: SourcePosition, mod: Seq[ParsedAst.Modifier], pat: ParsedAst.Pattern, tpe: Option[ParsedAst.Type], exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * LetMatchStar Expression (monadic let-binding with pattern match).

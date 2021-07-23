@@ -22,6 +22,11 @@ import org.scalatest.Suites
 class FeatureSuite extends Suites(
 
   //
+  // Lambda
+  //
+  new FlixTest("Test.Expression.Lambda", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Lambda.flix")(Options.TestWithLibMin),
+
+  //
   // Pattern Match.
   //
   new FlixTest("Test.Expression.Match.Array.TailSpread", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Match.Array.TailSpread.flix")(Options.TestWithLibAll),

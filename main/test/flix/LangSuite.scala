@@ -1,6 +1,6 @@
 package flix
 
-import ca.uwaterloo.flix.util.{Ignore, FlixTest, Options}
+import ca.uwaterloo.flix.util.{FlixTest, Options}
 import org.scalatest.Suites
 
 class LangSuite extends Suites(
@@ -24,6 +24,7 @@ class LangSuite extends Suites(
   // Definitions.
   //
   new FlixTest("Test.Def.KindInference", "main/test/flix/Test.Def.KindInference.flix"),
+  new FlixTest("Test.Def.Scoped", "main/test/flix/Test.Def.Scoped.flix"),
 
   //
   // Effects.

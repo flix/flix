@@ -676,7 +676,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = Type.mkAnd(eff1, eff2)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
-      case ResolvedAst.Expression.Let(sym, exp1, exp2, loc) =>
+      case ResolvedAst.Expression.Let(sym, mod, exp1, exp2, loc) =>
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
@@ -1553,12 +1553,12 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val eff = Type.mkAnd(e1.eff, e2.eff)
         TypedAst.Expression.Stm(e1, e2, tpe, eff, loc)
 
-      case ResolvedAst.Expression.Let(sym, exp1, exp2, loc) =>
+      case ResolvedAst.Expression.Let(sym, mod, exp1, exp2, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val tpe = e2.tpe
         val eff = Type.mkAnd(e1.eff, e2.eff)
-        TypedAst.Expression.Let(sym, e1, e2, tpe, eff, loc)
+        TypedAst.Expression.Let(sym, mod, e1, e2, tpe, eff, loc)
 
       case ResolvedAst.Expression.LetRegion(sym, exp, evar, loc) =>
         val e = visitExp(exp, subst0)

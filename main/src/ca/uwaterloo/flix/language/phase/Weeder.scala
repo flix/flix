@@ -641,18 +641,23 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (e1, e2) => WeededAst.Expression.Stm(e1, e2, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.LetMatch(sp1, pat, tpe, exp1, exp2, sp2) =>
+    case ParsedAst.Expression.LetMatch(sp1, mod0, pat, tpe, exp1, exp2, sp2) =>
       //
       // Rewrites a let-match to a regular let-binding or a full-blown pattern match.
       //
-      mapN(visitPattern(pat), visitExp(exp1), visitExp(exp2)) {
+      flatMapN(visitPattern(pat), visitExp(exp1), visitExp(exp2)) {
         case (WeededAst.Pattern.Var(ident, loc), value, body) =>
           // No pattern match.
-          WeededAst.Expression.Let(ident, withAscription(value, tpe), body, mkSL(sp1, sp2))
+          mapN(visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Scoped))) {
+            mod => WeededAst.Expression.Let(ident, mod, withAscription(value, tpe), body, mkSL(sp1, sp2))
+          }
         case (pat, value, body) =>
           // Full-blown pattern match.
-          val rule = WeededAst.MatchRule(pat, WeededAst.Expression.True(mkSL(sp1, sp2)), body)
-          WeededAst.Expression.Match(withAscription(value, tpe), List(rule), mkSL(sp1, sp2))
+          mapN(visitModifiers(mod0, legalModifiers = Set.empty)) {
+            mod =>
+              val rule = WeededAst.MatchRule(pat, WeededAst.Expression.True(mkSL(sp1, sp2)), body)
+              WeededAst.Expression.Match(withAscription(value, tpe), List(rule), mkSL(sp1, sp2))
+          }
       }
 
     case ParsedAst.Expression.LetMatchStar(sp1, pat, tpe, exp1, exp2, sp2) =>
@@ -710,7 +715,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
                 val fparam = WeededAst.FormalParam(Name.Ident(sp1, "_", sp2), Ast.Modifiers.Empty, Some(WeededAst.Type.Unit(loc)), loc)
                 val lambdaBody = WeededAst.Expression.InvokeConstructor(className, Nil, Nil, loc)
                 val e1 = WeededAst.Expression.Lambda(fparam, lambdaBody, loc)
-                return WeededAst.Expression.Let(ident, e1, e2, loc).toSuccess
+                return WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc).toSuccess
               }
 
               // Compute the types of declared parameters.
@@ -733,7 +738,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               // Assemble the lambda expression.
               val lambdaBody = WeededAst.Expression.InvokeConstructor(className, as, ts, loc)
               val e1 = mkCurried(fs, lambdaBody, loc)
-              WeededAst.Expression.Let(ident, e1, e2, loc)
+              WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
           }
 
         case ParsedAst.JvmOp.Method(fqn, sig, identOpt) =>
@@ -772,7 +777,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               // Assemble the lambda expression.
               val lambdaBody = WeededAst.Expression.InvokeMethod(className, methodName, as.head, as.tail, ts, loc)
               val e1 = mkCurried(fs, lambdaBody, loc)
-              WeededAst.Expression.Let(ident, e1, e2, loc)
+              WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
           }
 
         case ParsedAst.JvmOp.StaticMethod(fqn, sig, identOpt) =>
@@ -792,7 +797,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
                 val fparam = WeededAst.FormalParam(Name.Ident(sp1, "_", sp2), Ast.Modifiers.Empty, Some(WeededAst.Type.Unit(loc)), loc)
                 val lambdaBody = WeededAst.Expression.InvokeStaticMethod(className, methodName, Nil, Nil, loc)
                 val e1 = WeededAst.Expression.Lambda(fparam, lambdaBody, loc)
-                return WeededAst.Expression.Let(ident, e1, e2, loc).toSuccess
+                return WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc).toSuccess
               }
 
               // Compute the types of declared parameters.
@@ -815,7 +820,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               // Assemble the lambda expression.
               val lambdaBody = WeededAst.Expression.InvokeStaticMethod(className, methodName, as, ts, loc)
               val e1 = mkCurried(fs, lambdaBody, loc)
-              WeededAst.Expression.Let(ident, e1, e2, loc)
+              WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
           }
 
         case ParsedAst.JvmOp.GetField(fqn, ident) =>
@@ -829,7 +834,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               val objectParam = WeededAst.FormalParam(objectId, Ast.Modifiers.Empty, None, loc)
               val lambdaBody = WeededAst.Expression.GetField(className, fieldName, objectExp, loc)
               val e1 = WeededAst.Expression.Lambda(objectParam, lambdaBody, loc)
-              WeededAst.Expression.Let(ident, e1, e2, loc)
+              WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
           }
 
         case ParsedAst.JvmOp.PutField(fqn, ident) =>
@@ -846,7 +851,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               val valueParam = WeededAst.FormalParam(valueId, Ast.Modifiers.Empty, None, loc)
               val lambdaBody = WeededAst.Expression.PutField(className, fieldName, objectExp, valueExp, loc)
               val e1 = mkCurried(objectParam :: valueParam :: Nil, lambdaBody, loc)
-              WeededAst.Expression.Let(ident, e1, e2, loc)
+              WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
           }
 
         case ParsedAst.JvmOp.GetStaticField(fqn, ident) =>
@@ -859,7 +864,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               val unitParam = WeededAst.FormalParam(unitId, Ast.Modifiers.Empty, Some(WeededAst.Type.Unit(loc)), loc)
               val lambdaBody = WeededAst.Expression.GetStaticField(className, fieldName, loc)
               val e1 = WeededAst.Expression.Lambda(unitParam, lambdaBody, loc)
-              WeededAst.Expression.Let(ident, e1, e2, loc)
+              WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
           }
 
         case ParsedAst.JvmOp.PutStaticField(fqn, ident) =>
@@ -873,7 +878,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               val valueParam = WeededAst.FormalParam(valueId, Ast.Modifiers.Empty, None, loc)
               val lambdaBody = WeededAst.Expression.PutStaticField(className, fieldName, valueExp, loc)
               val e1 = WeededAst.Expression.Lambda(valueParam, lambdaBody, loc)
-              WeededAst.Expression.Let(ident, e1, e2, loc)
+              WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
           }
       }
 
@@ -1412,7 +1417,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           }
 
           // Bind the $tmp variable to the minimal model and combine it with the body expression.
-          WeededAst.Expression.Let(localVar, modelExp, bodyExp, loc)
+          WeededAst.Expression.Let(localVar, Ast.Modifiers.Empty, modelExp, bodyExp, loc)
       }
 
     case ParsedAst.Expression.FixpointQueryWithSelect(sp1, exps0, selects0, from0, whereExp0, sp2) =>
@@ -1918,6 +1923,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       case "override" => Ast.Modifier.Override
       case "pub" => Ast.Modifier.Public
       case "sealed" => Ast.Modifier.Sealed
+      case "scoped" => Ast.Modifier.Scoped
       case "unlawful" => Ast.Modifier.Unlawful
       case s => throw InternalCompilerException(s"Unknown modifier '$s' near ${mkSL(m.sp1, m.sp2).format}.")
     }
@@ -2127,7 +2133,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             seen += (ident.name -> param)
           }
 
-          visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Inline)) flatMap {
+          visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Inline, Ast.Modifier.Scoped)) flatMap {
             case mod =>
               if (typeRequired && typeOpt.isEmpty)
                 IllegalFormalParameter(ident.name, mkSL(sp1, sp2)).toFailure
@@ -2375,7 +2381,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Binary(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.IfThenElse(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Stm(e1, _, _) => leftMostSourcePosition(e1)
-    case ParsedAst.Expression.LetMatch(sp1, _, _, _, _, _) => sp1
+    case ParsedAst.Expression.LetMatch(sp1, _, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetMatchStar(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetImport(sp1, _, _, _) => sp1
     case ParsedAst.Expression.LetRegion(sp1, _, _, _) => sp1
