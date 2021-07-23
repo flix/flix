@@ -24,7 +24,7 @@ class FeatureSuite extends Suites(
   //
   // Lambda
   //
-  new FlixTest("Test.Expression.Lambda", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Lambda.flix")(Options.TestWithLibAll),
+  new FlixTest("Test.Expression.Lambda", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Lambda.flix")(Options.TestWithLibMin),
 
   //
   // Pattern Match.
