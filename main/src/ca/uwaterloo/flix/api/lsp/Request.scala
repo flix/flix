@@ -107,7 +107,7 @@ object Request {
   /**
    * A symbol request.
    */
-  case class Symbol(requestId: String, uri: String, pos: Position) extends Request
+  case class Symbol(requestId: String, uri: String) extends Request
 
   /**
     * Tries to parse the given `json` value as a [[AddUri]] request.
@@ -256,8 +256,8 @@ object Request {
     for {
       id <- parseId(json)
       uri <- parseUri(json)
-      pos <- Position.parse(json \\ "position")
-    } yield Request.Symbol(id, uri, pos)
+//      pos <- Position.parse(json \\ "position")
+    } yield Request.Symbol(id, uri)
   }
 
   /**
@@ -294,16 +294,6 @@ object Request {
   }
 
   /**
-    * Attempts to parse the `uri` from the given JSON value `v`.
-    */
-  private def parseUri(v: JValue): Result[String, String] = {
-    v \\ "uri" match {
-      case JString(s) => Ok(s)
-      case s => Err(s"Unexpected uri: '$s'.")
-    }
-  }
-
-  /**
     * Attempts to parse the given `key` as a String from the given JSON value `v`.
     */
   private def parseString(k: String, v: JValue): Result[String, String] = {
@@ -320,6 +310,28 @@ object Request {
     v \\ "projectRootUri" match {
       case JString(s) => Ok(s)
       case s => Err(s"Unexpected projectRootUri: '$s'.")
+    }
+  }
+
+  /**
+   * Attempts to parse the `uri` from the given JSON value `v`.
+   */
+  private def parseUri(v: JValue): Result[String, String] = {
+    v \\ "uri" match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected uri: '$s'.")
+    }
+  }
+
+  /**
+   * Attempts to parse the `uri` from the given JSON value `v`.
+   */
+  private def parseTextDocumentUri(v: JValue): Result[String, String] = {
+    println("v : ")
+    println(v)
+    v \\ "textDocument" \\ "uri" match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected uri: '$s'.")
     }
   }
 

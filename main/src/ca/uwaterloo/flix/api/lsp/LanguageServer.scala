@@ -231,7 +231,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
     case Request.Complete(id, uri, pos) => processComplete(id, uri, pos)
 
-    case Request.Symbol(id, uri, pos) => processSymbol(id, uri, pos)
+    case Request.Symbol(id, uri) => processSymbol(id, uri)
 
     case Request.Highlight(id, uri, pos) =>
       ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(index, root)
@@ -358,11 +358,13 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
   /**
    * Processes a symbol request
    */
-  private def processSymbol(requestId: String, uri: String, pos: Position): JValue = {
+  private def processSymbol(requestId: String, uri: String): JValue = {
 
     // TODO implement the function
-    val result = SymbolProvider.getSymbol(uri, pos)
-    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result.toJSON)
+    println("uri : ")
+    println(uri)
+    val result = SymbolProvider.getSymbolList(root)
+    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> result.map(_.toJSON))
   }
   /**
     * Processes a complete request.
