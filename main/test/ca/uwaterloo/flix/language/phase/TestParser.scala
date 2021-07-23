@@ -318,37 +318,27 @@ class TestParser extends FunSuite with TestUtils {
   }
 
   test("ParseError.EOI.01") {
-    val input =
-      """
-        |def foo(): String = "
-        |""".stripMargin
+    val input = """def foo(): String = """"
     val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
   test("ParseError.EOI.02") {
     val input =
-      """
-        |def foo(): Char = '
-        |""".stripMargin
+      """def foo(): Char = '"""
     val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
   test("ParseError.EOI.03") {
     val input =
-      """
-        |def foo (): String = "\
-        |""".stripMargin
+      """def foo (): String = "\"""
     val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
 
   test("ParseError.EOI.04") {
-    val input =
-      """
-        |def foo (): Char = "\
-        |""".stripMargin
+    val input = """def foo (): Char = "\"""
     val result = compile(input, DefaultOptions)
     expectError[ParseError](result)
   }
