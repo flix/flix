@@ -229,17 +229,18 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     * Performs name resolution on the given spec `s0` in the given namespace `ns0`.
     */
   def resolve(s0: NamedAst.Spec, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Spec, ResolutionError] = s0 match {
-    case NamedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc0, eff0, loc) =>
+    case NamedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc0, tpe0, eff0, loc) =>
 
       val fparamsVal = resolveFormalParams(fparams0, ns0, root)
       val tparamsVal = resolveTypeParams(tparams0, ns0, root)
       val annVal = traverse(ann0)(visitAnnotation(_, ns0, root))
       val schemeVal = resolveScheme(sc0, ns0, root)
+      val tpeVal = lookupType(tpe0, ns0, root)
       val effVal = lookupType(eff0, ns0, root)
 
-      mapN(fparamsVal, tparamsVal, annVal, schemeVal, effVal) {
-        case (fparams, tparams, ann, scheme, eff) =>
-          ResolvedAst.Spec(doc, ann, mod, tparams, fparams, scheme, eff, loc)
+      mapN(fparamsVal, tparamsVal, annVal, schemeVal, tpeVal, effVal) {
+        case (fparams, tparams, ann, scheme, tpe, eff) =>
+          ResolvedAst.Spec(doc, ann, mod, tparams, fparams, scheme, tpe, eff, loc)
       }
   }
 

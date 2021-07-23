@@ -70,10 +70,4 @@ class CompilationResult(root: Root, main: Option[Array[String] => Int], defs: Ma
   def getTotalTime(): Long = flix.phaseTimers.foldLeft(0L) {
     case (acc, phase) => acc + phase.time
   }
-
-  /**
-    * Returns the result type of the given lambda type.
-    */
-  private def getResultType(tpe: Type): Type = tpe.typeArguments.last
-
 }

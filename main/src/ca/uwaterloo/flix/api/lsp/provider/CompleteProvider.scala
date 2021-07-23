@@ -15,8 +15,8 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
-import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, Index, InsertTextFormat, Position}
-import ca.uwaterloo.flix.language.ast.{Scheme, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.api.lsp._
+import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme, FormatType}
 
 object CompleteProvider {
@@ -230,34 +230,31 @@ object CompleteProvider {
     * Returns the label for the given definition `decl`.
     */
   private def getDefLabel(decl: TypedAst.Def): String =
-    getLabel(decl.sym.toString, decl.spec.fparams, decl.spec.declaredScheme)
+    getLabel(decl.sym.toString, decl.spec)
 
   /**
     * Returns the label for the given signature `decl`.
     */
   private def getSigLabel(decl: TypedAst.Sig): String =
-    getLabel(decl.sym.toString, decl.spec.fparams, decl.spec.declaredScheme)
+    getLabel(decl.sym.toString, decl.spec)
 
   /**
-    * Returns the label for the given `name`, formal parameters `fparams`, and scheme `sc`.
+    * Returns the label for the given `name`, and `spec`.
     */
-  private def getLabel(name: String, fparams: List[TypedAst.FormalParam], sc: Scheme): String = {
-    val args = fparams.map {
-      case fparam => s"${fparam.sym.text}: ${FormatType.formatType(fparam.tpe)}"
-    }
+  private def getLabel(name: String, spec: TypedAst.Spec): String = spec match {
+    case TypedAst.Spec(_, _, _, _, fparams, _, tpe0, eff0, _) =>
+      val args = fparams.map {
+        fparam => s"${fparam.sym.text}: ${FormatType.formatType(fparam.tpe)}"
+      }
 
-    val base = sc.base
-    val tpe = FormatType.formatType(getResultType(base))
-    val eff = base.typeConstructor match {
-      case Some(TypeConstructor.Arrow(_)) => base.typeArguments.head match {
+      val tpe = FormatType.formatType(tpe0)
+      val eff = eff0 match {
         case Type.Cst(TypeConstructor.True, _) => ""
         case Type.Cst(TypeConstructor.False, _) => " & Impure"
         case e => " & " + FormatType.formatType(e)
       }
-      case _ => ""
-    }
 
-    s"$name(${args.mkString(", ")}): $tpe$eff"
+      s"$name(${args.mkString(", ")}): $tpe$eff"
   }
 
   /**
@@ -271,10 +268,4 @@ object CompleteProvider {
     }
     s"$name(${args.mkString(", ")})"
   }
-
-  /**
-    * Returns the return type of the given function type `tpe0`.
-    */
-  private def getResultType(tpe0: Type): Type = tpe0.typeArguments.last
-
 }
