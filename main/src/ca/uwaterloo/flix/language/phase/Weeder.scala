@@ -1159,9 +1159,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val loc = mkSL(sp1, sp2)
 
       parts match {
-        case Seq(ParsedAst.InterpolationPart.StrPart(innerSp1, lit, innerSp2)) =>
-          // Special case: We have a constant string. Simply return it.
-          WeededAst.Expression.Str(lit, mkSL(innerSp1, innerSp2)).toSuccess
+        case Seq(ParsedAst.InterpolationPart.StrPart(innerSp1, chars, innerSp2)) =>
+          // Special case: We have a constant string. Check the contents and return it.
+          weedCharSequence(chars) map {
+            string => WeededAst.Expression.Str(string, mkSL(innerSp1, innerSp2))
+          }
 
         case _ =>
           // General Case: Fold the interpolator parts together.
@@ -1173,9 +1175,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
                   val e2 = mkApplyToString(e, innerSp1, innerSp2)
                   mkConcat(acc, e2, mkSL(innerSp1, innerSp2))
               }
-            case (acc, ParsedAst.InterpolationPart.StrPart(innerSp1, s, innerSp2)) =>
-              val e2 = WeededAst.Expression.Str(s, mkSL(innerSp1, innerSp2))
-              mkConcat(acc, e2, loc).toSuccess
+            case (acc, ParsedAst.InterpolationPart.StrPart(innerSp1, chars, innerSp2)) =>
+              weedCharSequence(chars) map {
+                string =>
+                  val e2 = WeededAst.Expression.Str(string, mkSL(innerSp1, innerSp2))
+                  mkConcat(acc, e2, loc)
+              }
           }
       }
 
@@ -1468,6 +1473,70 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   }
 
   /**
+    * Translates the hex code into the corresponding character.
+    * Returns an error if the code is not hexadecimal.
+    */
+  private def translateHexCode(code: String, loc: SourceLocation): Validation[Char, WeederError] = {
+    try {
+      Integer.parseInt(code, 16).toChar.toSuccess
+    } catch {
+      case _: NumberFormatException => WeederError.MalformedUnicodeEscapeSequence(code, loc).toFailure
+    }
+  }
+
+  /**
+    * Performs weeding on the given sequence of CharCodes.
+    */
+  private def weedCharSequence(chars0: Seq[ParsedAst.CharCode]): Validation[String, WeederError] = {
+
+    @tailrec
+    def visit(chars: List[ParsedAst.CharCode], acc: List[Char]): Validation[String, WeederError] = {
+      chars match {
+        // Case 1: End of the sequence
+        case Nil => acc.reverse.mkString.toSuccess
+        // Case 2: Simple character literal
+        case ParsedAst.CharCode.Literal(_, char, _) :: rest => visit(rest, char.head :: acc)
+        // Case 3: Escape sequence
+        case (esc@ParsedAst.CharCode.Escape(sp1, char, sp2)) :: rest => char match {
+          // Cases 3.1: Standard escapes
+          case "n" => visit(rest, '\n' :: acc)
+          case "r" => visit(rest, '\r' :: acc)
+          case "\\" => visit(rest, '\\' :: acc)
+          case "\"" => visit(rest, '\"' :: acc)
+          case "\'" => visit(rest, '\'' :: acc)
+          case "t" => visit(rest, '\t' :: acc)
+
+          // Case 3.2: Unicode escape
+          case "u" => rest match {
+            // Case 3.2.1: `\u` followed by 4 or more literals
+            case ParsedAst.CharCode.Literal(sp1, d0, _) ::
+              ParsedAst.CharCode.Literal(_, d1, _) ::
+              ParsedAst.CharCode.Literal(_, d2, _) ::
+              ParsedAst.CharCode.Literal(_, d3, sp2) ::
+              rest2 =>
+              val code = List(d0, d1, d2, d3).mkString
+              // Doing a manual flatMap to keep the function tail-recursive
+              translateHexCode(code, mkSL(sp1, sp2)) match {
+                case Validation.Success(char) => visit(rest2, char :: acc)
+                case Validation.Failure(errors) => Validation.Failure(errors)
+              }
+            // Case 3.2.2: `\u` followed by less than 4 literals
+            case rest2 =>
+              val code = rest2.takeWhile(_.isInstanceOf[ParsedAst.CharCode.Literal])
+              val sp2 = code.lastOption.getOrElse(esc).sp2
+              WeederError.MalformedUnicodeEscapeSequence(code.mkString, mkSL(esc.sp1, sp2)).toFailure
+          }
+
+          // Case 3.3: Invalid escape character
+          case _ => WeederError.InvalidEscapeSequence(char.head, mkSL(sp1, sp2)).toFailure
+        }
+      }
+    }
+
+    visit(chars0.toList, Nil)
+  }
+
+  /**
     * Translates the given literal to an expression.
     */
   private def lit2exp(lit0: ParsedAst.Literal)(implicit flix: Flix): Validation[WeededAst.Expression, WeederError] = lit0 match {
@@ -1483,8 +1552,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Literal.False(sp1, sp2) =>
       WeededAst.Expression.False(mkSL(sp1, sp2)).toSuccess
 
-    case ParsedAst.Literal.Char(sp1, lit, sp2) =>
-      WeededAst.Expression.Char(lit(0), mkSL(sp1, sp2)).toSuccess
+    case ParsedAst.Literal.Char(sp1, chars, sp2) =>
+      weedCharSequence(chars) flatMap {
+        case string if string.lengthIs == 1 => WeededAst.Expression.Char(string.head, mkSL(sp1, sp2)).toSuccess
+        case string => WeederError.NonSingleCharacter(string, mkSL(sp1, sp2)).toFailure
+      }
 
     case ParsedAst.Literal.Float32(sp1, sign, before, after, sp2) =>
       toFloat32(sign, before, after, mkSL(sp1, sp2)) map {
@@ -1521,8 +1593,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case lit => WeededAst.Expression.BigInt(lit, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Literal.Str(sp1, lit, sp2) =>
-      WeededAst.Expression.Str(lit, mkSL(sp1, sp2)).toSuccess
+    case ParsedAst.Literal.Str(sp1, chars, sp2) =>
+      weedCharSequence(chars) map {
+        string => WeededAst.Expression.Str(string, mkSL(sp1, sp2))
+      }
 
     case ParsedAst.Literal.Default(sp1, sp2) =>
       WeededAst.Expression.Default(mkSL(sp1, sp2)).toSuccess
@@ -1536,7 +1610,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Literal.Null(sp1, sp2) => WeederError.IllegalNullPattern(mkSL(sp1, sp2)).toFailure
     case ParsedAst.Literal.True(sp1, sp2) => WeededAst.Pattern.True(mkSL(sp1, sp2)).toSuccess
     case ParsedAst.Literal.False(sp1, sp2) => WeededAst.Pattern.False(mkSL(sp1, sp2)).toSuccess
-    case ParsedAst.Literal.Char(sp1, lit, sp2) => WeededAst.Pattern.Char(lit(0), mkSL(sp1, sp2)).toSuccess
+    case ParsedAst.Literal.Char(sp1, chars, sp2) =>
+      weedCharSequence(chars) flatMap {
+        case string if string.lengthIs == 1 => WeededAst.Pattern.Char(string.head, mkSL(sp1, sp2)).toSuccess
+        case string => WeederError.NonSingleCharacter(string, mkSL(sp1, sp2)).toFailure
+      }
     case ParsedAst.Literal.Float32(sp1, sign, before, after, sp2) =>
       toFloat32(sign, before, after, mkSL(sp1, sp2)) map {
         case lit => WeededAst.Pattern.Float32(lit, mkSL(sp1, sp2))
@@ -1565,8 +1643,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       toBigInt(sign, radix, digits, mkSL(sp1, sp2)) map {
         case lit => WeededAst.Pattern.BigInt(lit, mkSL(sp1, sp2))
       }
-    case ParsedAst.Literal.Str(sp1, lit, sp2) =>
-      WeededAst.Pattern.Str(lit, mkSL(sp1, sp2)).toSuccess
+    case ParsedAst.Literal.Str(sp1, chars, sp2) =>
+      weedCharSequence(chars) map {
+        string => WeededAst.Pattern.Str(string, mkSL(sp1, sp2))
+      }
     case ParsedAst.Literal.Default(sp1, sp2) =>
       throw InternalCompilerException(s"Illegal default pattern near: ${mkSL(sp1, sp2).format}")
   }

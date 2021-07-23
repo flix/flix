@@ -190,6 +190,11 @@ namespace Test/Exp/Interpolation {
         let x = Ok(Some(123)): Result[Option[Int], Int32];
         "${x}" == "Ok(Some(123))"
 
+    @test
+    def interpolation36(): Bool =
+        let x = "abc";
+        "\"${x}\"" == "\"abc\""
+
     pub enum Color {
         case Red,
         case Green,

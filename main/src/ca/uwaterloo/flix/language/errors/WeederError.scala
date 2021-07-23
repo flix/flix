@@ -483,4 +483,64 @@ object WeederError {
     }
   }
 
+  /**
+    * An error raised to indicate a malformed unicode escape sequence.
+    *
+    * @param code the escape sequence
+    * @param loc  the location where the error occurred.
+    */
+  case class MalformedUnicodeEscapeSequence(code: String, loc: SourceLocation) extends WeederError {
+    def summary: String = s"Malformed unicode escape sequence '${code}'."
+
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Malformed unicode escape sequence." << NewLine
+      vt << NewLine
+      vt << Code(loc, "malformed unicode escape sequence") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " A Unicode escape sequence must be of the form \\uXXXX where X is a hexadecimal."
+    }
+  }
+
+  /**
+    * An error raised to indicate an invalid escape sequence.
+    *
+    * @param char the invalid escape character.
+    * @param loc  the location where the error occurred.
+    */
+  case class InvalidEscapeSequence(char: Char, loc: SourceLocation) extends WeederError {
+    def summary: String = s"Invalid escape sequence '\\${char}'."
+
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Invalid escape sequence." << NewLine
+      vt << NewLine
+      vt << Code(loc, "invalid escape sequence") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " The valid escape sequences are '\\t', '\\\\', '\\\'', '\\\"', '\\n', and '\\r'."
+    }
+  }
+
+  /**
+    * An error raised to indicate a non-single character literal.
+    *
+    * @param chars the characters in the character literal.
+    * @param loc   the location where the error occurred.
+    */
+  case class NonSingleCharacter(chars: String, loc: SourceLocation) extends WeederError {
+    def summary: String = "Non-single-character literal."
+
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Non-single-character literal." << NewLine
+      vt << NewLine
+      vt << Code(loc, "non-single-character literal") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " A character literal must consist of a single character."
+    }
+  }
+
 }
