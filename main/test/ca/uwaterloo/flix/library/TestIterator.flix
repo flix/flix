@@ -527,6 +527,64 @@ namespace TestIterator {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // zipWith (pure)                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def zipWithPure01(): Bool & Impure =
+        let iterA = Iterator.repeat(0, 0);
+        let iterB = Iterator.repeat(0, 0);
+        Iterator.zipWith((x, y) -> x + y, iterA, iterB) |> Iterator.toList == List.repeat(0, 0)
+
+    @test
+    def zipWithPure02(): Bool & Impure =
+        let iterA = Iterator.repeat(1, 1000);
+        let iterB = Iterator.repeat(0, 0);
+        Iterator.zipWith((x, y) -> x + y, iterA, iterB) |> Iterator.toList == List.repeat(0, 0)
+
+    @test
+    def zipWithPure03(): Bool & Impure =
+        let iterA = Iterator.repeat(0, 0);
+        let iterB = Iterator.repeat(1, 1000);
+        Iterator.zipWith((x, y) -> x + y, iterA, iterB) |> Iterator.toList == List.repeat(0, 0)
+
+    @test
+    def zipWithPure04(): Bool & Impure =
+        let iterA = Iterator.range(0, 1000);
+        let iterB = Iterator.range(0, 1000);
+        Iterator.zipWith((x, y) -> x + y, iterA, iterB) |> Iterator.toList == List.range(0, 1000) |> List.map(x -> 2 * x)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // zipWith (impure)                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def zipWithImpure01(): Bool & Impure =
+        let iterA = Iterator.repeat(0, 0);
+        let iterB = Iterator.repeat(0, 0);
+        Iterator.zipWith((x, y) -> x + y as & Impure, iterA, iterB) |> Iterator.toList == List.repeat(0, 0)
+
+    @test
+    def zipWithImpure02(): Bool & Impure =
+        let iterA = Iterator.repeat(1, 1000);
+        let iterB = Iterator.repeat(0, 0);
+        Iterator.zipWith((x, y) -> x + y as & Impure, iterA, iterB) |> Iterator.toList == List.repeat(0, 0)
+
+    @test
+    def zipWithImpure03(): Bool & Impure =
+        let iterA = Iterator.repeat(0, 0);
+        let iterB = Iterator.repeat(1, 1000);
+        Iterator.zipWith((x, y) -> x + y as & Impure, iterA, iterB) |> Iterator.toList == List.repeat(0, 0)
+
+    @test
+    def zipWithImpure04(): Bool & Impure =
+        let iterA = Iterator.range(0, 1000);
+        let iterB = Iterator.range(0, 1000);
+        Iterator.zipWith((x, y) -> x + y as & Impure, iterA, iterB) |> Iterator.toList == List.range(0, 1000) |> List.map(x -> 2 * x)
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // foldLeft                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
