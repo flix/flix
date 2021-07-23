@@ -566,6 +566,27 @@ namespace TestIterator {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // findRight                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def findRight01(): Bool & Impure =
+        Iterator.repeat(0, 0) |> Iterator.findRight(_ -> true) == None
+
+    @test
+    def findRight02(): Bool & Impure =
+        Iterator.range(0, 1000) |> Iterator.findRight(_ -> true) == Some(999)
+
+    @test
+    def findRight03(): Bool & Impure =
+        Iterator.range(0, 1000) |> Iterator.findRight(x -> x == 500) == Some(500)
+
+    @test
+    def findRight04(): Bool & Impure =
+        Iterator.range(0, 1000) |> Iterator.findRight(x -> x == -1) == None
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // isEmpty                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
