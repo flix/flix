@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.debug
 
-import ca.uwaterloo.flix.language.ast.{Scheme, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
 
 object FormatSignature {
 
@@ -23,16 +23,23 @@ object FormatSignature {
     * Returns a markdown string for the signature of the given definition.
     */
   def asMarkDown(defn: TypedAst.Def)(implicit audience: Audience): String = {
-    s"""def **${defn.sym.name}**(${formatFormalParams(defn.spec.fparams)}): ${formatResultTypeAndEff(defn.spec.declaredScheme)}
-       |""".stripMargin
+    formatSpec(defn.sym.name, defn.spec)
   }
 
   /**
     * Returns a markdown string for the signature of the given definition.
     */
   def asMarkDown(sig: TypedAst.Sig)(implicit audience: Audience): String = {
-    s"""def **${sig.sym.name}**(${formatFormalParams(sig.spec.fparams)}): ${formatResultTypeAndEff(sig.spec.declaredScheme)}
+    formatSpec(sig.sym.name, sig.spec)
+  }
+
+  /**
+    * Returns a markdown string for the given `name` and `spec`.
+    */
+  private def formatSpec(name: String, spec: TypedAst.Spec)(implicit audience: Audience): String = {
+    s"""def **${name}**(${formatFormalParams(spec.fparams)}): ${formatResultTypeAndEff(spec.retTpe, spec.eff)}
        |""".stripMargin
+
   }
 
   /**
@@ -49,29 +56,9 @@ object FormatSignature {
   /**
     * Returns a formatted string of the result type and effect.
     */
-  private def formatResultTypeAndEff(sc: Scheme)(implicit audience: Audience): String = {
-    val baseType = sc.base
-    val resultTyp = getResultType(baseType)
-    val resultEff = getEffectType(baseType)
-
-    resultEff match {
-      case Type.Cst(TypeConstructor.True, _) => FormatType.formatType(resultTyp)
-      case Type.Cst(TypeConstructor.False, _) => s"${FormatType.formatType(resultTyp)} & Impure"
-      case eff => s"${FormatType.formatType(resultTyp)} & ${FormatType.formatType(eff)}"
-    }
+  private def formatResultTypeAndEff(tpe: Type, eff: Type)(implicit audience: Audience): String = eff match {
+    case Type.Cst(TypeConstructor.True, _) => FormatType.formatType(tpe)
+    case Type.Cst(TypeConstructor.False, _) => s"${FormatType.formatType(tpe)} & Impure"
+    case eff => s"${FormatType.formatType(tpe)} & ${FormatType.formatType(eff)}"
   }
-
-  /**
-    * Returns the return type of the given function type `tpe0`.
-    */
-  private def getResultType(tpe0: Type): Type = tpe0.typeArguments.last
-
-  /**
-    * Returns the effect of the given function type `tpe0`.
-    */
-  private def getEffectType(tpe0: Type): Type = tpe0.typeConstructor match {
-    case Some(TypeConstructor.Arrow(_)) => tpe0.typeArguments.head
-    case _ => tpe0
-  }
-
 }
