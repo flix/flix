@@ -249,12 +249,12 @@ object CompleteProvider {
 
       val tpe = FormatType.formatType(tpe0)
       val eff = eff0 match {
-        case Type.Cst(TypeConstructor.True, _) => ""
-        case Type.Cst(TypeConstructor.False, _) => " & Impure"
-        case e => " & " + FormatType.formatType(e)
+        case Type.Cst(TypeConstructor.True, _) => "Pure"
+        case Type.Cst(TypeConstructor.False, _) => "Impure"
+        case e => FormatType.formatType(e)
       }
 
-      s"$name(${args.mkString(", ")}): $tpe$eff"
+      s"$name(${args.mkString(", ")}): $tpe & $eff"
   }
 
   /**
