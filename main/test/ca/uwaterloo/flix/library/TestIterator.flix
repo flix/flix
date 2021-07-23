@@ -382,7 +382,7 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
     // dropWhile (impure)                                                      //
     /////////////////////////////////////////////////////////////////////////////
-
+/*
     @test
     def dropWhileImpure01(): Bool & Impure =
         let list: List[Int32] = Nil;
@@ -429,7 +429,7 @@ namespace TestIterator {
         let iter = () -> ("a" :: "a" :: "b" :: "b" :: "c" :: "c" :: Nil) |> Iterator.toIter;
         iter() |> Iterator.dropWhile(x -> x == "a" or x == "b" as & Impure) |> Iterator.toList == List.repeat("c", 2)
 
-
+*/
     /////////////////////////////////////////////////////////////////////////////
     // foreach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
