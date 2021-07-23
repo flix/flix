@@ -380,6 +380,57 @@ namespace TestIterator {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // dropWhile (impure)                                                      //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def dropWhileImpure01(): Bool & Impure =
+        let list: List[Int32] = Nil;
+        list |> Iterator.toIter |> Iterator.dropWhile(_ -> true as & Impure)  |> Iterator.toList ==  list and
+        list |> Iterator.toIter |> Iterator.dropWhile(_ -> false as & Impure) |> Iterator.toList ==  list
+
+    @test
+    def dropWhileImpure02(): Bool & Impure =
+        let iter = () -> Iterator.range(0, 1000);
+        iter() |> Iterator.dropWhile(_ -> false as & Impure) |> Iterator.toList == List.range(0, 1000)
+
+    @test
+    def dropWhileImpure03(): Bool & Impure =
+        let iter = () -> Iterator.range(0, 1000);
+        iter() |> Iterator.dropWhile(_ -> true as & Impure) |> Iterator.isEmpty
+
+    @test
+    def dropWhileImpure04(): Bool & Impure =
+        let iter = () -> Iterator.range(0, 1000);
+        iter() |> Iterator.dropWhile(x -> x < 500 as & Impure) |> Iterator.toList == List.range(500, 1000)
+
+    @test
+    def dropWhileImpure05(): Bool & Impure =
+        let iter = () -> Iterator.repeat(2, 1000);
+        iter() |> Iterator.dropWhile(x -> x < 3 as & Impure) |> Iterator.isEmpty
+
+    @test
+    def dropWhileImpure06(): Bool & Impure =
+        let iter = () -> ("a" :: "a" :: "b" :: "b" :: "c" :: "c" :: Nil) |> Iterator.toIter;
+        iter() |> Iterator.dropWhile(x -> x == "a" as & Impure) |> Iterator.toList == ("b" :: "b" :: "c" :: "c" :: Nil)
+
+    @test
+    def dropWhileImpure07(): Bool & Impure =
+        let iter = () -> ("a" :: "a" :: "b" :: "b" :: "c" :: "c" :: Nil) |> Iterator.toIter;
+        iter() |> Iterator.dropWhile(x -> x == "b" as & Impure) |> Iterator.toList == iter() |> Iterator.toList
+
+    @test
+    def dropWhileImpure08(): Bool & Impure =
+        let iter = () -> ("a" :: "a" :: "b" :: "b" :: "c" :: "c" :: Nil) |> Iterator.toIter;
+        iter() |> Iterator.dropWhile(x -> x == "a" or x == "c" as & Impure) |> Iterator.toList == ("b" :: "b" :: "c" :: "c" :: Nil)
+
+    @test
+    def dropWhileImpure09(): Bool & Impure =
+        let iter = () -> ("a" :: "a" :: "b" :: "b" :: "c" :: "c" :: Nil) |> Iterator.toIter;
+        iter() |> Iterator.dropWhile(x -> x == "a" or x == "b" as & Impure) |> Iterator.toList == List.repeat("c", 2)
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // foreach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
