@@ -34,7 +34,7 @@ object FormatExpression {
     case TypedAst.Expression.Apply(exp1, exp2, tpe, eff, loc) => s"Apply($exp1, $exp2)"
     case TypedAst.Expression.Unary(sop, exp, tpe, eff, loc) => s"Unary($sop, $exp)"
     case TypedAst.Expression.Binary(sop, exp1, exp2, tpe, eff, loc) => s"Binary($sop, $exp1, $exp2)"
-    case TypedAst.Expression.Let(mod, sym, exp1, exp2, tpe, eff, loc) => s"Let($sym, $exp1, $exp2)"
+    case TypedAst.Expression.Let(mod, sym, exp1, exp2, tpe, eff, loc) => s"Let($mod, $sym, $exp1, $exp2)"
     case TypedAst.Expression.LetRegion(sym, exp, tpe, eff, loc) => s"LetRegion($sym, $exp)"
     case TypedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => s"IfThenElse($exp1, $exp2, $exp3)"
     case TypedAst.Expression.Stm(exp1, exp2, _, _, _) => s"Stm($exp1, $exp2)"
