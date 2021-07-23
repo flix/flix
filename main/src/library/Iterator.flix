@@ -358,7 +358,7 @@ namespace Iterator {
     ///
     /// The function `f` must be pure.
     ///
-    /// Consumes elements from the right until an element that satisfies predicate `f` is found.
+    /// Consumes the entire iterator.
     ///
     pub def findRight(f: a -> Bool, iter: Iterator[a]): Option[a] & Impure = ???
 
