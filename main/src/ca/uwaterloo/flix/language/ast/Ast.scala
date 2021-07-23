@@ -249,14 +249,14 @@ object Ast {
     def isPublic: Boolean = mod contains Modifier.Public
 
     /**
-      * Returns `true` if these modifiers contain the sealed modifier.
-      */
-    def isSealed: Boolean = mod contains Modifier.Sealed
-
-    /**
       * Returns `true` if these modifiers contain the scoped modifier.
       */
     def isScoped: Boolean = mod contains Modifier.Scoped
+
+    /**
+      * Returns `true` if these modifiers contain the sealed modifier.
+      */
+    def isSealed: Boolean = mod contains Modifier.Sealed
 
     /**
       * Returns `true` if these modifiers contain the synthetic modifier.
@@ -298,14 +298,14 @@ object Ast {
     case object Public extends Modifier
 
     /**
-      * The sealed modifier.
-      */
-    case object Sealed extends Modifier
-
-    /**
       * The scoped modifier.
       */
     case object Scoped extends Modifier
+
+    /**
+      * The sealed modifier.
+      */
+    case object Sealed extends Modifier
 
     /**
       * The synthetic modifier.
