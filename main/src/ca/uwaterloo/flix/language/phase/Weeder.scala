@@ -638,7 +638,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (e1, e2) => WeededAst.Expression.Stm(e1, e2, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.LetMatch(sp1, mod0, pat, tpe, exp1, exp2, sp2) => // MATT handle mods
+    case ParsedAst.Expression.LetMatch(sp1, mod0, pat, tpe, exp1, exp2, sp2) =>
       //
       // Rewrites a let-match to a regular let-binding or a full-blown pattern match.
       //
@@ -657,7 +657,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           }
       }
 
-    case ParsedAst.Expression.LetMatchStar(sp1, pat, tpe, exp1, exp2, sp2) => // MATT handle mods
+    case ParsedAst.Expression.LetMatchStar(sp1, pat, tpe, exp1, exp2, sp2) =>
       val loc = SourceLocation.mk(sp1, sp2)
 
       //
