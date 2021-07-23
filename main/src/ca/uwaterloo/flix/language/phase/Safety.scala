@@ -94,7 +94,7 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
 
-    case Expression.Let(mod, sym, exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
+    case Expression.Let(sym, mod, exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
 
     case Expression.LetRegion(sym, exp, tpe, eff, loc) => visitExp(exp)
 
