@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Kind, Name, Scheme, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, Unification}
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
 import java.math.BigInteger
 import scala.collection.mutable
@@ -692,8 +692,11 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
      * Perform specialization of all non-parametric function definitions.
      */
     for ((sym, defn) <- nonParametricDefns) {
+      // MATT hack
+      val Result.Ok(subst) = Unification.unifyTypes(defn.spec.declaredScheme.base, defn.impl.inferredScheme.base)
+      val subst0 = StrictSubstitution(subst)
       // Specialize the function definition under the empty substitution (it has no type parameters).
-      val subst0 = StrictSubstitution(Substitution.empty)
+//      val subst0 = StrictSubstitution(Substitution.empty)
 
       // Specialize the formal parameters to obtain fresh local variable symbols for them.
       val (fparams, env0) = specializeFormalParams(defn.spec.fparams, subst0)
