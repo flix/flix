@@ -74,7 +74,7 @@ object Symbol {
   }
 
   /**
-    * Returns a fresh variable symbol for the given identifier.
+    * Returns a fresh variable symbol for the given identifier and scopedness.
     */
   def freshVarSym(ident: Name.Ident, scopedness: Scopedness)(implicit flix: Flix): VarSym = {
     new VarSym(flix.genSym.freshId(), ident.name, Type.freshVar(Kind.Star), scopedness, ident.loc)
