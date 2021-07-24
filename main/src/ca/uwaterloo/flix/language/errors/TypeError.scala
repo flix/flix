@@ -40,17 +40,17 @@ object TypeError {
     * @param loc      the location where the error occurred.
     */
   case class GeneralizationError(declared: Scheme, inferred: Scheme, loc: SourceLocation) extends TypeError {
-    def summary: String = s"The type scheme '${FormatScheme.formatScheme(inferred)}' cannot be generalized to '${FormatScheme.formatScheme(declared)}'."
+    def summary: String = s"The type scheme '${FormatScheme.formatSchemeWithoutConstraints(inferred)}' cannot be generalized to '${FormatScheme.formatSchemeWithoutConstraints(declared)}'."
 
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> The type scheme: '" << Red(FormatScheme.formatScheme(inferred)) << "' cannot be generalized to '" << Red(FormatScheme.formatScheme(declared)) << "'." << NewLine
+      vt << ">> The type scheme: '" << Red(FormatScheme.formatSchemeWithoutConstraints(inferred)) << "' cannot be generalized to '" << Red(FormatScheme.formatSchemeWithoutConstraints(declared)) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "unable to generalize the type scheme.") << NewLine
       vt << NewLine
-      vt << s"  Declared: " << Cyan(FormatScheme.formatScheme(declared)) << NewLine
-      vt << s"  Inferred: " << Magenta(FormatScheme.formatScheme(inferred)) << NewLine
+      vt << s"  Declared: " << Cyan(FormatScheme.formatSchemeWithoutConstraints(declared)) << NewLine
+      vt << s"  Inferred: " << Magenta(FormatScheme.formatSchemeWithoutConstraints(inferred)) << NewLine
       vt
     }
   }
