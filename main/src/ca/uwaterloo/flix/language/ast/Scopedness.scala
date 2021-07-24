@@ -15,7 +15,10 @@
  */
 package ca.uwaterloo.flix.language.ast
 
-// MATT docs
+/**
+  * Indicates whether a variable is scoped.
+  * A scoped value must not escape its scope.
+  */
 sealed trait Scopedness
 
 object Scopedness {
