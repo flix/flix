@@ -63,21 +63,21 @@ object Symbol {
     * Returns a fresh variable symbol based on the given symbol.
     */
   def freshVarSym(sym: VarSym)(implicit flix: Flix): VarSym = {
-    new VarSym(flix.genSym.freshId(), sym.text, sym.tvar, sym.loc)
+    new VarSym(flix.genSym.freshId(), sym.text, sym.tvar, Scopedness.Unscoped, sym.loc)
   }
 
   /**
     * Returns a fresh variable symbol for the given identifier.
     */
   def freshVarSym(ident: Name.Ident)(implicit flix: Flix): VarSym = {
-    new VarSym(flix.genSym.freshId(), ident.name, Type.freshVar(Kind.Star), ident.loc)
+    new VarSym(flix.genSym.freshId(), ident.name, Type.freshVar(Kind.Star), Scopedness.Unscoped, ident.loc)
   }
 
   /**
     * Returns a fresh variable symbol with the given text.
     */
   def freshVarSym(text: String, loc: SourceLocation)(implicit flix: Flix): VarSym = {
-    new VarSym(flix.genSym.freshId(), text, Type.freshVar(Kind.Star), loc)
+    new VarSym(flix.genSym.freshId(), text, Type.freshVar(Kind.Star), Scopedness.Unscoped, loc)
   }
 
   /**
@@ -168,7 +168,7 @@ object Symbol {
     * @param tvar the type variable associated with the symbol.
     * @param loc  the source location associated with the symbol.
     */
-  final class VarSym(val id: Int, val text: String, val tvar: Type.Var, val loc: SourceLocation) {
+  final class VarSym(val id: Int, val text: String, val tvar: Type.Var, val scopedness: Scopedness, val loc: SourceLocation) {
 
     /**
       * The internal stack offset. Computed during variable numbering.
