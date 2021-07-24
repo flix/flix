@@ -25,6 +25,22 @@ object FormatScheme {
     * `∀(a, b).a -> Int -> b with Show[a], Eq[b]`
     */
   def formatScheme(sc: Scheme)(implicit audience: Audience): String = {
+    val mainPart = formatSchemeWithoutConstraints(sc)
+
+    val tconstrPart =
+      if (sc.constraints.isEmpty)
+        ""
+      else
+        " with " + sc.constraints.map(FormatTypeConstraint.formatTypeConstraint).mkString(", ")
+
+    mainPart + tconstrPart
+  }
+
+  /**
+    * Construct a string representation of the type scheme, excluding type constraints, e.g.,
+    * `∀(a, b).a -> Int -> b`
+    */
+  def formatSchemeWithoutConstraints(sc: Scheme)(implicit audience: Audience): String = {
     val quantifiersPart =
       if (sc.quantifiers.isEmpty)
         ""
@@ -33,12 +49,6 @@ object FormatScheme {
 
     val typePart = FormatType.formatType(sc.base)
 
-    val tconstrPart =
-      if (sc.constraints.isEmpty)
-        ""
-      else
-        " with " + sc.constraints.map(FormatTypeConstraint.formatTypeConstraint).mkString(", ")
-
-    quantifiersPart + typePart + tconstrPart
+    quantifiersPart + typePart
   }
 }
