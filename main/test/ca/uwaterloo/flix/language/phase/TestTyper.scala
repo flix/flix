@@ -1096,18 +1096,4 @@ class TestTyper extends FunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     expectError[TypeError.IllegalMain](result)
   }
-
-  test("MattTest") { // MATT
-    val input =
-      """
-        |def f(x: Int, y: Int): Bool = {
-        |  x + y + x + y + x + y
-        |}
-        |""".stripMargin
-    val result = compile(input, DefaultOptions)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message.fmt(ca.uwaterloo.flix.util.vt.TerminalContext.AnsiTerminal)))
-    }
-  }
 }
