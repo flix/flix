@@ -70,7 +70,7 @@ object TypedAstOps {
       case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0)
 
-      case Expression.Let(sym, exp1, exp2, tpe, eff, loc) =>
+      case Expression.Let(sym, _, exp1, exp2, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0 + (sym -> exp1.tpe))
 
       case Expression.LetRegion(_, exp, _, _, _) =>
@@ -237,6 +237,9 @@ object TypedAstOps {
       case Expression.FixpointProjectOut(_, exp, tpe, eff, loc) =>
         visitExp(exp, env0)
 
+      case Expression.MatchEff(exp1, exp2, exp3, _, _, _) =>
+        visitExp(exp1, env0) ++ visitExp(exp2, env0) ++ visitExp(exp3, env0)
+
     }
 
     /**
@@ -345,7 +348,7 @@ object TypedAstOps {
     case Expression.Apply(exp, exps, _, _, _) => sigSymsOf(exp) ++ exps.flatMap(sigSymsOf)
     case Expression.Unary(_, exp, _, _, _) => sigSymsOf(exp)
     case Expression.Binary(_, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
-    case Expression.Let(_, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
+    case Expression.Let(_, _, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.LetRegion(_, exp, _, _, _) => sigSymsOf(exp)
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
     case Expression.Stm(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
@@ -391,6 +394,7 @@ object TypedAstOps {
     case Expression.FixpointFilter(_, exp, _, _, _) => sigSymsOf(exp)
     case Expression.FixpointProjectIn(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.FixpointProjectOut(_, exp, _, _, _) => sigSymsOf(exp)
+    case Expression.MatchEff(exp1, exp2, exp3, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
   }
 
   /**
@@ -488,7 +492,7 @@ object TypedAstOps {
     case Expression.Binary(_, exp1, exp2, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)
 
-    case Expression.Let(sym, exp1, exp2, _, _, _) =>
+    case Expression.Let(sym, _, exp1, exp2, _, _, _) =>
       (freeVars(exp1) ++ freeVars(exp2)) - sym
 
     case Expression.LetRegion(sym, exp, _, _, _) =>
@@ -649,6 +653,9 @@ object TypedAstOps {
 
     case Expression.FixpointProjectOut(_, exp, _, _, _) =>
       freeVars(exp)
+
+    case Expression.MatchEff(exp1, exp2, exp3, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
 
   }
 

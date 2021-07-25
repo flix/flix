@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, ChoiceRule, Constraint, Def, Enum, Expression, FormalParam, Instance, MatchRule, Pattern, Predicate, Root, SelectChannelRule, Sig, Spec}
-import ca.uwaterloo.flix.language.ast.{Ast, Scheme, SourceLocation, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast._
 
 object Indexer {
 
@@ -62,7 +62,7 @@ object Indexer {
     * Returns a reverse index for the given signature `sig0`.
     */
   private def visitSig(sig0: Sig): Index = sig0 match {
-    case Sig(_, Spec(_, _, _, _, fparams, _, _, _), _) =>
+    case Sig(_, Spec(_, _, _, _, fparams, _, _, _, _), _) =>
       val idx1 = Index.occurrenceOf(sig0)
       val idx2 = fparams.foldLeft(Index.empty) {
         case (acc, fparam) => acc ++ visitFormalParam(fparam)
@@ -175,7 +175,7 @@ object Indexer {
     case Expression.Binary(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
-    case Expression.Let(sym, exp1, exp2, _, _, _) =>
+    case Expression.Let(sym, _, exp1, exp2, _, _, _) =>
       Index.occurrenceOf(sym, exp1.tpe) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
     case Expression.LetRegion(sym, exp, _, _, _) =>
@@ -327,6 +327,9 @@ object Indexer {
 
     case Expression.FixpointProjectOut(_, exp, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
+
+    case Expression.MatchEff(exp1, exp2, exp3, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ Index.occurrenceOf(exp0)
 
   }
 

@@ -135,7 +135,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       /*
      * Definition.
      */
-      case decl@WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, tconstrs, loc) =>
+      case decl@WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, retTpe, eff0, tconstrs, loc) =>
         // Check if the definition already exists.
         val defsAndSigs = prog0.defsAndSigs.getOrElse(ns0, Map.empty)
         defsAndSigs.get(ident.name) match {
@@ -159,7 +159,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       /*
      * Law.
      */
-      case WeededAst.Declaration.Law(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, tconstrs, loc) => ??? // TODO
+      case WeededAst.Declaration.Law(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, retTpe, eff0, tconstrs, loc) => ??? // TODO
 
       /*
      * Enum.
@@ -376,8 +376,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Performs naming on the given signature declaration `sig` under the given environments `env0`, `uenv0`, and `tenv0`.
     */
   private def visitSig(sig: WeededAst.Declaration.Sig, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName, classIdent: Name.Ident, classSym: Symbol.ClassSym, classTparam: NamedAst.TypeParam)(implicit flix: Flix): Validation[NamedAst.Sig, NameError] = sig match {
-    case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, exp0, tpe, eff0, tconstrs0, loc) =>
-      flatMapN(getTypeParamsFromFormalParams(tparams0, fparams0, tpe, loc, allowElision = true, uenv0, tenv0), checkSigType(ident, classTparam, tpe, loc)) {
+    case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, exp0, tpe0, retTpe0, eff0, tconstrs0, loc) =>
+      flatMapN(getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, loc, allowElision = true, uenv0, tenv0), checkSigType(ident, classTparam, tpe0, loc)) {
         case (tparams, _) =>
           val tenv = tenv0 ++ getTypeEnv(tparams)
           flatMapN(getFormalParams(fparams0, uenv0, tenv), traverse(tconstrs0)(visitTypeConstraint(_, uenv0, tenv, ns0))) {
@@ -385,13 +385,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
               val env0 = getVarEnv(fparams)
               val annVal = traverse(ann)(visitAnnotation(_, env0, uenv0, tenv))
               val classTconstr = NamedAst.TypeConstraint(Name.mkQName(classIdent), NamedAst.Type.Var(classTparam.tpe, classTparam.loc), classSym.loc)
-              val schemeVal = getDefOrSigScheme(tparams, tpe, uenv0, tenv, classTconstr :: tconstrs, List(classTparam.tpe))
+              val schemeVal = getDefOrSigScheme(tparams, tpe0, uenv0, tenv, classTconstr :: tconstrs, List(classTparam.tpe))
               val expVal = traverse(exp0)(visitExp(_, env0, uenv0, tenv))
-              val tpeVal = visitType(eff0, uenv0, tenv)
-              mapN(annVal, schemeVal, tpeVal, expVal) {
-                case (as, sc, eff, exp) =>
+              val retTpeVal = visitType(retTpe0, uenv0, tenv)
+              val effVal = visitType(eff0, uenv0, tenv)
+              mapN(annVal, schemeVal, retTpeVal, effVal, expVal) {
+                case (as, sc, retTpe, eff, exp) =>
                   val sym = Symbol.mkSigSym(classSym, ident)
-                  val spec = NamedAst.Spec(doc, as, mod, tparams, fparams, sc, eff, loc)
+                  val spec = NamedAst.Spec(doc, as, mod, tparams, fparams, sc, retTpe, eff, loc)
                   NamedAst.Sig(sym, spec, exp.headOption)
               }
           }
@@ -413,13 +414,13 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Performs naming on the given definition declaration `decl0` under the given environments `env0`, `uenv0`, and `tenv0`, with type constraints `tconstrs`.
     */
   private def visitDef(decl0: WeededAst.Declaration.Def, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName, addedTconstrs: List[NamedAst.TypeConstraint], addedQuantifiers: List[Type.Var])(implicit flix: Flix): Validation[NamedAst.Def, NameError] = decl0 match {
-    case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, tconstrs, loc) =>
+    case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe0, retTpe0, eff0, tconstrs, loc) =>
       // TODO: we use tenv when getting the types from formal params first, before the explicit tparams have a chance to modify it
       // This means that if an explicit type variable is shadowing, the outer scope variable will be used for some parts, and inner for others
       // Resulting in a type error rather than a redundancy error (as redundancy checking happens later)
       // To fix: require explicit kind annotations (getting rid of the formal-param-first logic)
       // Or delay using the tenv until evaluating explicit tparams (could become complex)
-      flatMapN(getTypeParamsFromFormalParams(tparams0, fparams0, tpe, loc, allowElision = true, uenv0, tenv0)) {
+      flatMapN(getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, loc, allowElision = true, uenv0, tenv0)) {
         tparams =>
           val tenv = tenv0 ++ getTypeEnv(tparams)
           flatMapN(getFormalParams(fparams0, uenv0, tenv), traverse(tconstrs)(visitTypeConstraint(_, uenv0, tenv, ns0))) {
@@ -427,12 +428,13 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
               val env0 = getVarEnv(fparams)
               val annVal = traverse(ann)(visitAnnotation(_, env0, uenv0, tenv))
               val expVal = visitExp(exp, env0, uenv0, tenv)
-              val schemeVal = getDefOrSigScheme(tparams, tpe, uenv0, tenv, tconstrs ++ addedTconstrs, addedQuantifiers)
-              val tpeVal = visitType(eff0, uenv0, tenv)
-              mapN(annVal, expVal, schemeVal, tpeVal) {
-                case (as, e, sc, eff) =>
+              val schemeVal = getDefOrSigScheme(tparams, tpe0, uenv0, tenv, tconstrs ++ addedTconstrs, addedQuantifiers)
+              val retTpeVal = visitType(retTpe0, uenv0, tenv)
+              val effVal = visitType(eff0, uenv0, tenv)
+              mapN(annVal, expVal, schemeVal, retTpeVal, effVal) {
+                case (as, e, sc, retTpe, eff) =>
                   val sym = Symbol.mkDefnSym(ns0, ident)
-                  val spec = NamedAst.Spec(doc, as, mod, tparams, fparams, sc, eff, loc)
+                  val spec = NamedAst.Spec(doc, as, mod, tparams, fparams, sc, retTpe, eff, loc)
                   NamedAst.Def(sym, spec, e)
               }
           }
@@ -571,11 +573,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         NamedAst.Expression.Stm(_, _, loc)
       }
 
-    case WeededAst.Expression.Let(ident, exp1, exp2, loc) =>
+    case WeededAst.Expression.Let(ident, mod, exp1, exp2, loc) =>
       // make a fresh variable symbol for the local variable.
       val sym = Symbol.freshVarSym(ident)
       mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0 + (ident.name -> sym), uenv0, tenv0)) {
-        case (e1, e2) => NamedAst.Expression.Let(sym, e1, e2, loc)
+        case (e1, e2) => NamedAst.Expression.Let(sym, mod, e1, e2, loc)
       }
 
     case WeededAst.Expression.LetRegion(ident, exp, loc) =>
@@ -905,6 +907,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.FixpointProjectOut(pred, exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0)) {
         case (e1, e2) => NamedAst.Expression.FixpointProjectOut(pred, e1, e2, Type.freshVar(Kind.Star), loc)
+      }
+
+    case WeededAst.Expression.MatchEff(exp1, exp2, exp3, loc) =>
+      mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0), visitExp(exp3, env0, uenv0, tenv0)) {
+        case (e1, e2, e3) => NamedAst.Expression.MatchEff(e1, e2, e3, loc)
       }
 
   }
@@ -1243,7 +1250,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.Binary(op, exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.IfThenElse(exp1, exp2, exp3, loc) => freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
     case WeededAst.Expression.Stm(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
-    case WeededAst.Expression.Let(ident, exp1, exp2, loc) => freeVars(exp1) ++ filterBoundVars(freeVars(exp2), List(ident))
+    case WeededAst.Expression.Let(ident, mod, exp1, exp2, loc) => freeVars(exp1) ++ filterBoundVars(freeVars(exp2), List(ident))
     case WeededAst.Expression.LetRegion(ident, exp, loc) => filterBoundVars(freeVars(exp), List(ident))
     case WeededAst.Expression.Match(exp, rules, loc) => freeVars(exp) ++ rules.flatMap {
       case WeededAst.MatchRule(pat, guard, body) => filterBoundVars(freeVars(guard) ++ freeVars(body), freeVars(pat))
@@ -1301,6 +1308,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.FixpointFilter(qname, exp, loc) => freeVars(exp)
     case WeededAst.Expression.FixpointProjectIn(exp, pred, loc) => freeVars(exp)
     case WeededAst.Expression.FixpointProjectOut(pred, exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
+    case WeededAst.Expression.MatchEff(exp1, exp2, exp3, loc) => freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
   }
 
   /**

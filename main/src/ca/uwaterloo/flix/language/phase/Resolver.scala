@@ -229,17 +229,18 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     * Performs name resolution on the given spec `s0` in the given namespace `ns0`.
     */
   def resolve(s0: NamedAst.Spec, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Spec, ResolutionError] = s0 match {
-    case NamedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc0, eff0, loc) =>
+    case NamedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc0, retTpe0, eff0, loc) =>
 
       val fparamsVal = resolveFormalParams(fparams0, ns0, root)
       val tparamsVal = resolveTypeParams(tparams0, ns0, root)
       val annVal = traverse(ann0)(visitAnnotation(_, ns0, root))
       val schemeVal = resolveScheme(sc0, ns0, root)
+      val retTpeVal = lookupType(retTpe0, ns0, root)
       val effVal = lookupType(eff0, ns0, root)
 
-      mapN(fparamsVal, tparamsVal, annVal, schemeVal, effVal) {
-        case (fparams, tparams, ann, scheme, eff) =>
-          ResolvedAst.Spec(doc, ann, mod, tparams, fparams, scheme, eff, loc)
+      mapN(fparamsVal, tparamsVal, annVal, schemeVal, retTpeVal, effVal) {
+        case (fparams, tparams, ann, scheme, retTpe, eff) =>
+          ResolvedAst.Spec(doc, ann, mod, tparams, fparams, scheme, retTpe, eff, loc)
       }
   }
 
@@ -518,11 +519,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.Stm(e1, e2, loc)
 
-        case NamedAst.Expression.Let(sym, exp1, exp2, loc) =>
+        case NamedAst.Expression.Let(sym, mod, exp1, exp2, loc) =>
           for {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.Let(sym, e1, e2, loc)
+          } yield ResolvedAst.Expression.Let(sym, mod, e1, e2, loc)
 
         case NamedAst.Expression.LetRegion(sym, exp, evar, loc) =>
           for {
@@ -886,6 +887,13 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.FixpointProjectOut(pred, e1, e2, tvar, loc)
+
+        case NamedAst.Expression.MatchEff(exp1, exp2, exp3, loc) =>
+          for {
+            e1 <- visit(exp1, tenv0)
+            e2 <- visit(exp2, tenv0)
+            e3 <- visit(exp3, tenv0)
+          } yield ResolvedAst.Expression.MatchEff(e1, e2, e3, loc)
 
       }
 

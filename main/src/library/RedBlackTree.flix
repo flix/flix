@@ -446,7 +446,7 @@ namespace RedBlackTree {
         let buffer = MutList.new() as & e;
         let g = k -> v -> MutList.push!(f(k, v), buffer);
         queryWith(p, g, tree) as & e;
-        MutList.toImmutable(buffer) as & e
+        MutList.toImm(buffer) as & e
 
     ///
     /// Extracts `k -> v` where `k` is the leftmost (i.e. smallest) key in the tree.

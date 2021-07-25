@@ -112,7 +112,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Stm(e1, e2, tpe, eff, loc) =>
         SimplifiedAst.Expression.Let(Symbol.freshVarSym("_", loc), visitExp(e1), visitExp(e2), tpe, loc)
 
-      case TypedAst.Expression.Let(sym, e1, e2, tpe, eff, loc) =>
+      case TypedAst.Expression.Let(sym, mod, e1, e2, tpe, eff, loc) =>
         SimplifiedAst.Expression.Let(sym, visitExp(e1), visitExp(e2), tpe, loc)
 
       case TypedAst.Expression.LetRegion(_, exp, _, _, _) =>
@@ -305,6 +305,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
       case TypedAst.Expression.FixpointProjectOut(_, _, _, _, _) =>
+        throw InternalCompilerException(s"Unexpected expression: $exp0.")
+
+      case TypedAst.Expression.MatchEff(_, _, _, _, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
     }

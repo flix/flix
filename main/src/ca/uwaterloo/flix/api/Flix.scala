@@ -122,6 +122,7 @@ class Flix {
     "Int16.flix" -> LocalResource.get("/src/library/Int16.flix"),
     "Int32.flix" -> LocalResource.get("/src/library/Int32.flix"),
     "Int64.flix" -> LocalResource.get("/src/library/Int64.flix"),
+    "Iterator.flix" -> LocalResource.get("/src/library/Iterator.flix"),
     "List.flix" -> LocalResource.get("/src/library/List.flix"),
     "LazyList.flix" -> LocalResource.get("/src/library/LazyList.flix"),
     "LazyList2.flix" -> LocalResource.get("/src/library/LazyList2.flix"),
@@ -152,7 +153,6 @@ class Flix {
     "Foldable.flix" -> LocalResource.get("/src/library/Foldable.flix"),
 
     "Bounded.flix" -> LocalResource.get("/src/library/Bounded.flix"),
-    "TotalOrder.flix" -> LocalResource.get("/src/library/TotalOrder.flix"),
     "Validation.flix" -> LocalResource.get("/src/library/Validation.flix"),
 
     "ChannelImpl.flix" -> LocalResource.get("/src/library/Channel/ChannelImpl.flix"),
@@ -332,6 +332,7 @@ class Flix {
         Stratifier |>
         PatternExhaustiveness |>
         Redundancy |>
+        Terminator |>
         Linter |>
         Safety
 

@@ -364,4 +364,39 @@ namespace Float64 {
         else
             valueOf(clamp(x, minf64, maxf64)).floatValue() as & Pure
 
+    ///
+    /// Returns the absolute value of `x`.
+    ///
+    @Time(1) @Space(1)
+    pub def abs(x: Float64): Float64 =
+        import java.lang.Math:abs(Float64);
+        abs(x) as & Pure
+
+    ///
+    /// Returns `x` rounded up to a Float64 representing the nearest larger integer value.
+    ///
+    @Time(1) @Space(1)
+    pub def ceil(x: Float64): Float64 =
+        import java.lang.Math:ceil(Float64);
+        ceil(x) as & Pure
+
+    ///
+    /// Returns `x` rounded down to a Float64 representing the nearest smaller integer value.
+    ///
+    @Time(1) @Space(1)
+    pub def floor(x: Float64): Float64 =
+        import java.lang.Math:floor(Float64);
+        floor(x) as & Pure
+
+    ///
+    /// Returns `x` rounded to a Float64 representing the nearest integer value.
+    ///
+    /// The rounding may be upwards or downwards. If the rounding up and rounding down are equally
+    /// close, `x` will be rounded to an even value (i.e. `round(0.5f64) == 0.0f64`).
+    ///
+    @Time(1) @Space(1)
+    pub def round(x: Float64): Float64 =
+        import java.lang.Math:rint(Float64);
+        rint(x) as & Pure
+
 }

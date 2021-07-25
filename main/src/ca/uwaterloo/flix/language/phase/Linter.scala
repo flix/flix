@@ -136,7 +136,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.Binary(_, exp1, exp2, _, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0)
 
-      case Expression.Let(_, exp1, exp2, _, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0)
+      case Expression.Let(_, _, exp1, exp2, _, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0)
 
       case Expression.LetRegion(_, exp, _, _, _) => visitExp(exp, lint0)
 
@@ -239,6 +239,8 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       case Expression.FixpointProjectIn(exp, _, _, _, _) => visitExp(exp, lint0)
 
       case Expression.FixpointProjectOut(_, exp, _, _, _) => visitExp(exp, lint0)
+
+      case Expression.MatchEff(exp1, exp2, exp3, _, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0) ::: visitExp(exp3, lint0)
 
     }
 
@@ -392,7 +394,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     case (Expression.Binary(op1, exp11, exp12, _, _, _), Expression.Binary(op2, exp21, exp22, _, _, _)) if op1 == op2 =>
       unifyExp(exp11, exp12, exp21, exp22, metaVars)
 
-    case (Expression.Let(sym1, exp11, exp12, _, _, _), Expression.Let(sym2, exp21, exp22, _, _, _)) =>
+    case (Expression.Let(sym1, _, exp11, exp12, _, _, _), Expression.Let(sym2, _, exp21, exp22, _, _, _)) =>
       for {
         s1 <- unifyVar(sym1, exp11.tpe, sym2, exp21.tpe)
         s2 <- unifyExp(s1(exp12), s1(exp22), metaVars)
@@ -753,11 +755,11 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         val e2 = apply(exp2)
         Expression.Binary(sop, e1, e2, tpe, eff, loc)
 
-      case Expression.Let(sym, exp1, exp2, tpe, eff, loc) =>
+      case Expression.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
         val newSym = apply(sym)
         val e1 = apply(exp1)
         val e2 = apply(exp2)
-        Expression.Let(newSym, e1, e2, tpe, eff, loc)
+        Expression.Let(newSym, mod, e1, e2, tpe, eff, loc)
 
       case Expression.LetRegion(sym, exp, tpe, eff, loc) =>
         val e = apply(exp)
@@ -952,6 +954,12 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       case Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) =>
         val e = apply(exp)
         Expression.FixpointProjectOut(pred, e, tpe, eff, loc)
+
+      case Expression.MatchEff(exp1, exp2, exp3, tpe, eff, loc) =>
+        val e1 = apply(exp1)
+        val e2 = apply(exp2)
+        val e3 = apply(exp3)
+        Expression.MatchEff(e1, e2, e3, tpe, eff, loc)
 
       case Expression.Existential(_, _, _) => throw InternalCompilerException(s"Unexpected expression: $exp0.")
 

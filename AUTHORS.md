@@ -38,3 +38,4 @@ By adding your name to this document, you agree to release all your contribution
 - [Andreas Heglingegård](https://github.com/racerand)
 - [Felix Wiemuth](https://github.com/felixwiemuth)
 - [Manoj Kumar](https://github.com/manoj2601)
+- [Jakob Schneider Villumsen](https://github.com/jaschdoc)

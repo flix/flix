@@ -166,7 +166,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
           _ <- checkPats(exp1, root)
           _ <- checkPats(exp2, root)
         } yield tast
-        case Expression.Let(_, exp1, exp2, _, _, _) => for {
+        case Expression.Let(_, _, exp1, exp2, _, _, _) => for {
           _ <- checkPats(exp1, root)
           _ <- checkPats(exp2, root)
         } yield tast
@@ -353,11 +353,17 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
             _ <- checkPats(exp, root)
           } yield tast
 
-        case Expression.FixpointProjectOut(_, exp, tpe, eff, loc) =>
+        case Expression.FixpointProjectOut(_, exp, _, _, _) =>
           for {
             _ <- checkPats(exp, root)
           } yield tast
 
+        case Expression.MatchEff(exp1, exp2, exp3, _, _, _) =>
+          for {
+            _ <- checkPats(exp1, root)
+            _ <- checkPats(exp2, root)
+            _ <- checkPats(exp3, root)
+          } yield tast
       }
     }
 

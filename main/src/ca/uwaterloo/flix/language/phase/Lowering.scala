@@ -201,10 +201,10 @@ object Lowering extends Phase[Root, Root] {
     * Lowers the given `spec0`.
     */
   private def visitSpec(spec0: Spec)(implicit root: Root, flix: Flix): Spec = spec0 match {
-    case Spec(doc, ann, mod, tparams, fparams, declaredScheme, eff, loc) =>
+    case Spec(doc, ann, mod, tparams, fparams, declaredScheme, retTpe, eff, loc) =>
       val fs = fparams.map(visitFormalParam)
       val ds = visitScheme(declaredScheme)
-      Spec(doc, ann, mod, tparams, fs, ds, eff, loc)
+      Spec(doc, ann, mod, tparams, fs, ds, retTpe, eff, loc)
   }
 
   /**
@@ -294,11 +294,11 @@ object Lowering extends Phase[Root, Root] {
       val t = visitType(tpe)
       Expression.Binary(sop, e1, e2, t, eff, loc)
 
-    case Expression.Let(sym, exp1, exp2, tpe, eff, loc) =>
+    case Expression.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      Expression.Let(sym, e1, e2, t, eff, loc)
+      Expression.Let(sym, mod, e1, e2, t, eff, loc)
 
     case Expression.LetRegion(sym, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -635,6 +635,13 @@ object Lowering extends Phase[Root, Root] {
       val defExp = Expression.Def(sym, defTpe, loc)
       val argExps = mkPredSym(pred) :: visitExp(exp) :: Nil
       Expression.Apply(defExp, argExps, tpe, eff, loc)
+
+    case Expression.MatchEff(exp1, exp2, exp3, tpe, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val e3 = visitExp(exp3)
+      val t = visitType(tpe)
+      Expression.MatchEff(e1, e2, e3, t, eff, loc)
 
   }
 
@@ -1332,11 +1339,11 @@ object Lowering extends Phase[Root, Root] {
       val e2 = substExp(exp2, subst)
       Expression.Binary(sop, e1, e2, tpe, eff, loc)
 
-    case Expression.Let(sym, exp1, exp2, tpe, eff, loc) =>
+    case Expression.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
       val s = subst.getOrElse(sym, sym)
       val e1 = substExp(exp1, subst)
       val e2 = substExp(exp2, subst)
-      Expression.Let(s, e1, e2, tpe, eff, loc)
+      Expression.Let(s, mod, e1, e2, tpe, eff, loc)
 
     case Expression.LetRegion(sym, exp, tpe, eff, loc) =>
       val s = subst.getOrElse(sym, sym)
@@ -1525,6 +1532,12 @@ object Lowering extends Phase[Root, Root] {
     case Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) =>
       val e = substExp(exp, subst)
       Expression.FixpointProjectOut(pred, e, tpe, eff, loc)
+
+    case Expression.MatchEff(exp1, exp2, exp3, tpe, eff, loc) =>
+      val e1 = substExp(exp1, subst)
+      val e2 = substExp(exp2, subst)
+      val e3 = substExp(exp3, subst)
+      Expression.MatchEff(e1, e2, e3, tpe, eff, loc)
 
     case Expression.FixpointConstraintSet(cs, stf, tpe, loc) => throw InternalCompilerException(s"Unexpected expression near ${loc.format}.")
   }

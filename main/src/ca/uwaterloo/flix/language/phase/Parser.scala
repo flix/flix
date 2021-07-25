@@ -344,34 +344,13 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def Char: Rule1[ParsedAst.Literal.Char] = {
-      def Normal: Rule1[String] = {
-        def Quote: Rule0 = rule("'")
+    def Char: Rule1[ParsedAst.Literal.Char] = rule {
+      SP ~ "'" ~ oneOrMore(!"'" ~ Chars.CharCode) ~ "'" ~ SP ~> ParsedAst.Literal.Char
+    }
 
-        def Backslash: Rule0 = rule("\\")
-
-        rule {
-          capture(!(Quote | Backslash | EOI) ~ CharPredicate.All)
-        }
-      }
-
-      def Special: Rule1[String] = rule {
-        "\\\\" ~ push("\\") |
-          "\\'" ~ push("'") |
-          "\\n" ~ push("\n") |
-          "\\r" ~ push("\r") |
-          "\\t" ~ push("\t")
-      }
-
-      def Unicode: Rule1[String] = rule {
-        "\\u" ~ capture(4 times CharPredicate.HexDigit) ~> ((x: String) =>
-          // Convert the 4-digit string to a single character.
-          Integer.parseInt(x, 16).toChar.toString)
-      }
-
-      rule {
-        SP ~ "'" ~ (Normal | Special | Unicode) ~ "'" ~ SP ~> ParsedAst.Literal.Char
-      }
+    // Note that outside of patterns, Strings are parsed as [[Interpolation]]s
+    def Str: Rule1[ParsedAst.Literal.Str] = rule {
+      SP ~ "\"" ~ zeroOrMore(!"\"" ~ Chars.CharCode) ~ "\"" ~ SP ~> ParsedAst.Literal.Str
     }
 
     def Float: Rule1[ParsedAst.Literal] = rule {
@@ -418,14 +397,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ Sign ~ RadixedInt ~ atomic("ii") ~ SP ~> ParsedAst.Literal.BigInt
     }
 
-    def Str: Rule1[ParsedAst.Literal.Str] = {
-      def Quote: Rule0 = rule("\"")
-
-      rule {
-        SP ~ "\"" ~ capture(zeroOrMore(!(Quote | EOI) ~ CharPredicate.All)) ~ "\"" ~ SP ~> ParsedAst.Literal.Str
-      }
-    }
-
     def Default: Rule1[ParsedAst.Literal.Default] = rule {
       SP ~ keyword("default") ~ SP ~> ParsedAst.Literal.Default
     }
@@ -454,6 +425,24 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       push(10) ~ SeparableDecDigits
     }
 
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Characters
+  /////////////////////////////////////////////////////////////////////////////
+  object Chars {
+
+    def Literal: Rule1[ParsedAst.CharCode.Literal] = rule {
+      SP ~ !("\\" | EOI) ~ capture(CharPredicate.All) ~ SP ~> ParsedAst.CharCode.Literal
+    }
+
+    def Escape: Rule1[ParsedAst.CharCode.Escape] = rule {
+      SP ~ "\\" ~ capture(CharPredicate.All) ~ SP ~> ParsedAst.CharCode.Escape
+    }
+
+    def CharCode: Rule1[ParsedAst.CharCode] = rule {
+      Escape | Literal
+    }
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -628,7 +617,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetRegion | LetMatch | LetMatchStar | LetUse | LetImport | IfThenElse | Choose | Match | LambdaMatch | TryCatch | Lambda | Tuple |
+      LetRegion | LetMatch | LetMatchStar | LetUse | LetImport | IfThenElse | Choose | Match | MatchEff | LambdaMatch | TryCatch | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | Spawn | Lazy | Force | Intrinsic | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointProject | FixpointSolveWithProject | FixpointQueryWithSelect |
@@ -652,7 +641,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def StrPart: Rule1[ParsedAst.InterpolationPart] = rule {
-        SP ~ capture(oneOrMore(!(DblQuote | DollarLBrace | EOI) ~ CharPredicate.All)) ~ SP ~> ParsedAst.InterpolationPart.StrPart
+        SP ~ oneOrMore(!("\"" | DollarLBrace) ~ Chars.CharCode) ~ SP ~> ParsedAst.InterpolationPart.StrPart
       }
 
       def InterpolationPart: Rule1[ParsedAst.InterpolationPart] = rule {
@@ -669,7 +658,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def LetMatch: Rule1[ParsedAst.Expression.LetMatch] = rule {
-      SP ~ keyword("let") ~ WS ~ Pattern ~ optWS ~ optional(":" ~ optWS ~ Type ~ optWS) ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.LetMatch
+      SP ~ keyword("let") ~ WS ~ Modifiers ~ Pattern ~ optWS ~ optional(":" ~ optWS ~ Type ~ optWS) ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.LetMatch
     }
 
     def LetMatchStar: Rule1[ParsedAst.Expression.LetMatchStar] = rule {
@@ -746,6 +735,20 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       rule {
         SP ~ keyword("match") ~ WS ~ Expression ~ optWS ~ "{" ~ optWS ~ oneOrMore(Rule).separatedBy(CaseSeparator) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Match
+      }
+    }
+
+    def MatchEff: Rule1[ParsedAst.Expression.MatchEff] = {
+      def CasePure: Rule1[ParsedAst.Expression] = rule {
+        keyword("case") ~ WS ~ keyword("Pure") ~ WS ~ atomic("=>") ~ optWS ~ Stm
+      }
+
+      def CaseImpure: Rule1[ParsedAst.Expression] = rule {
+        keyword("case") ~ WS ~ keyword("Impure") ~ WS ~ atomic("=>") ~ optWS ~ Stm
+      }
+
+      rule {
+        SP ~ keyword("matchEff") ~ WS ~ Expression ~ optWS ~ "{" ~ optWS ~ CasePure ~ CaseSeparator ~ CaseImpure ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.MatchEff
       }
     }
 
@@ -1415,12 +1418,16 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ capture(keyword("sealed")) ~ SP ~> ParsedAst.Modifier
     }
 
+    def Scoped: Rule1[ParsedAst.Modifier] = rule {
+      SP ~ capture(keyword("scoped")) ~ SP ~> ParsedAst.Modifier
+    }
+
     def Unlawful: Rule1[ParsedAst.Modifier] = rule {
       SP ~ capture(keyword("unlawful")) ~ SP ~> ParsedAst.Modifier
     }
 
     def Modifier: Rule1[ParsedAst.Modifier] = rule {
-      Inline | Lawless | Override | Public | Sealed | Unlawful
+      Inline | Lawless | Override | Public | Sealed | Scoped | Unlawful
     }
 
     rule {

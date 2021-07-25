@@ -34,7 +34,7 @@ object FormatExpression {
     case TypedAst.Expression.Apply(exp1, exp2, tpe, eff, loc) => s"Apply($exp1, $exp2)"
     case TypedAst.Expression.Unary(sop, exp, tpe, eff, loc) => s"Unary($sop, $exp)"
     case TypedAst.Expression.Binary(sop, exp1, exp2, tpe, eff, loc) => s"Binary($sop, $exp1, $exp2)"
-    case TypedAst.Expression.Let(sym, exp1, exp2, tpe, eff, loc) => s"Let($sym, $exp1, $exp2)"
+    case TypedAst.Expression.Let(sym, mod, exp1, exp2, tpe, eff, loc) => s"Let($sym, $mod, $exp1, $exp2)"
     case TypedAst.Expression.LetRegion(sym, exp, tpe, eff, loc) => s"LetRegion($sym, $exp)"
     case TypedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => s"IfThenElse($exp1, $exp2, $exp3)"
     case TypedAst.Expression.Stm(exp1, exp2, _, _, _) => s"Stm($exp1, $exp2)"
@@ -80,6 +80,7 @@ object FormatExpression {
     case TypedAst.Expression.FixpointFilter(pred, exp, tpe, eff, loc) => s"FixpointFilter($pred, $exp)"
     case TypedAst.Expression.FixpointProjectIn(exp, pred, tpe, eff, loc) => s"FixpointProjectIn($exp, $pred)"
     case TypedAst.Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) => s"FixpointProjectOut($pred, $exp)"
+    case TypedAst.Expression.MatchEff(exp1, exp2, exp3, tpe, eff, loc) => s"MatchEff($exp1, $exp2, $exp3)"
   }
 
 }
