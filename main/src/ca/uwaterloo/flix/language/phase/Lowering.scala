@@ -82,6 +82,8 @@ object Lowering extends Phase[Root, Root] {
 
     lazy val Comparison: Symbol.EnumSym = Symbol.mkEnumSym("Comparison")
     lazy val Boxed: Symbol.EnumSym = Symbol.mkEnumSym("Boxed")
+
+    lazy val ChannelImpl: Symbol.EnumSym = Symbol.mkEnumSym("Channel.ChannelImpl")
   }
 
   private object Sigs {
@@ -116,6 +118,8 @@ object Lowering extends Phase[Root, Root] {
     lazy val Comparison: Type = Type.mkEnum(Enums.Comparison, Nil)
     lazy val Boxed: Type = Type.mkEnum(Enums.Boxed, Nil)
 
+    def ChannelImpl(t: Type): Type = Type.mkEnum(Enums.ChannelImpl, List(t))
+
 
     //
     // Function Types.
@@ -123,8 +127,6 @@ object Lowering extends Phase[Root, Root] {
     lazy val SolveType: Type = Type.mkPureArrow(Datalog, Datalog)
     lazy val MergeType: Type = Type.mkPureUncurriedArrow(List(Datalog, Datalog), Datalog)
     lazy val FilterType: Type = Type.mkPureUncurriedArrow(List(PredSym, Datalog), Datalog)
-
-//    lazy val NewChannelType: Type = Type.mkImpureArrow()
   }
 
   /**
@@ -475,8 +477,7 @@ object Lowering extends Phase[Root, Root] {
       val e = visitExp(exp)
       val t = visitType(tpe)
 
-      val enumSym = Symbol.mkEnumSym("Channel.ChannelImpl")
-      val chanType = Type.mkEnum(enumSym, List(t))
+      val chanType = Types.ChannelImpl(t)
       val defTpe = Type.mkImpureArrow(Type.Int32, chanType)
       val sym = Symbol.mkDefnSym("Channel.newWithCapacity")
       // TODO: Q: Is `loc` in the following line the location of the definition of the function or the use of the function? If it's the former, then I think that this is incorrect.
@@ -492,8 +493,7 @@ object Lowering extends Phase[Root, Root] {
       val e = visitExp(exp)
       val t = visitType(tpe)
 
-      val enumSym = Symbol.mkEnumSym("Channel.ChannelImpl")
-      val defTpe = Type.mkImpureArrow(Type.mkEnum(enumSym, List(t)), t)
+      val defTpe = Type.mkImpureArrow(Types.ChannelImpl(t), t)
       val sym = Symbol.mkDefnSym("Channel.get")
       val callExp = Expression.Def(sym, defTpe, loc)
       val args = List(e)
@@ -504,35 +504,33 @@ object Lowering extends Phase[Root, Root] {
       val e2 = visitExp(exp)
       val t = visitType(tpe)
 
-      val enumSym = Symbol.mkEnumSym("Channel.ChannelImpl")
-      val chanType = Type.mkEnum(enumSym, List(t))
+      val chanType = Types.ChannelImpl(t)
       val defTpe = Type.mkImpureUncurriedArrow(List(chanType, t), chanType)
       val sym = Symbol.mkDefnSym("Channel.put")
       val callExp = Expression.Def(sym, defTpe, loc)
       val args = List(e1, e2)
       Expression.Apply(callExp, args, chanType, eff, loc)
 
+    // Translate this to:
+    // let channels = [<scala> rs.map(rule => rule.chan) </scala>]
+    // let hasDefault = <scala> d match {
+    //    case Some(_) => Expression.True
+    //    case None => Expression.False
+    //  } </scala>
+    //
+    // match selectImpl(channels, hasDefault) {
+    //   Some(i, e) => {
+    //    let channelRuleExps = [<scala> rs.map(rule => rule.exp) </scala>];
+    //    (channelRuleExps[i])(e) // TODO: Q: I'm unsure how to invoke the expression with `e`
+    //   }
+    //   None => <scala> default </scala>
+    // }
     case Expression.SelectChannel(rules, default, tpe, eff, loc) =>
-      // Translate this to:
-      // let channels = [<scala> rs.map(rule => rule.chan) </scala>]
-      // let hasDefault = <scala> d match {
-      //    case Some(_) => Expression.True
-      //    case None => Expression.False
-      //  } </scala>
-      //
-      // match selectImpl(channels, hasDefault) {
-      //   Some(i, e) => {
-      //    let channelRuleExps = [<scala> rs.map(rule => rule.exp) </scala>];
-      //    (channelRuleExps[i])(e) // TODO: Q: I'm unsure how to invoke the expression with `e`
-      //   }
-      //   None => <scala> default </scala>
-      // }
       val rs = rules.map(visitSelectChannelRule)
       val d = default.map(visitExp)
       val t = visitType(tpe)
 
-      val enumSym = Symbol.mkEnumSym("Channel.ChannelImpl")
-      val chanType = Type.mkEnum(enumSym, List(t))
+      val chanType = Types.ChannelImpl(t)
       val indexElementTupleTpe = Type.mkTuple(List(Type.mkInt32(loc), t))
       val optionSym = Symbol.mkEnumSym("Option")
       val selectImplReturnTpe = Type.mkEnum(optionSym, List(indexElementTupleTpe))
@@ -541,15 +539,15 @@ object Lowering extends Phase[Root, Root] {
       val selectImplCallExp = Expression.Def(selectImplSym, selectImplDefTpe, loc)
       val channelsInRs = rs.map(rule => rule.chan)
       val hasDefault = d match {
-        case Some(_) => Expression.True
-        case None => Expression.False
+        case Some(_) => Expression.True(loc)
+        case None => Expression.False(loc)
       }
       val selectImplArgs = List(Expression.ArrayLit(channelsInRs, chanType, Type.Impure, loc), hasDefault)
       val selectImplApply = Expression.Apply(selectImplCallExp, selectImplArgs, selectImplReturnTpe, eff, loc)
 
       // TODO: Q: I'm unsure how to construct the `TypedAst.Pattern` that will go where asdfSome and asdfNone are.
-      val someMatchRule = MatchRule(asdfSome, Expression.True, asdfExp)
-      val noneMatchRule = MatchRule(asdfNone, Expression.True, default)
+      val someMatchRule = ??? // MatchRule(asdfSome, Expression.True, asdfExp)
+      val noneMatchRule = ??? // MatchRule(asdfNone, Expression.True, default)
       val matchRules = List(someMatchRule, noneMatchRule)
       Expression.Match(selectImplApply, matchRules, t, Type.Impure, loc)
 
