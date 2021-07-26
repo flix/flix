@@ -18,4 +18,4 @@ def testLambda05(): (Bool, Int, Int) -> Int = (x, y, z) -> if (x) y else z
 def testLambda06(): Bool -> Int -> Int = y -> if (y) (x -> x + 1) else (x -> x + 2)
 
 @test
-def testLambda07(): Int -> Int = scoped x -> x
+def testLambda07(): Int -> Int = scoped x -> x + 1

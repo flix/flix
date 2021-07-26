@@ -722,7 +722,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           // TODO: this is very strict: with type/proper type split we'll be more precise
           resultSco = Type.mkAnd(sco :: bodyScopes)
           resultEff = Type.mkAnd(eff :: guardEffects ::: bodyEffects)
-        } yield (constrs ++ guardConstrs.flatten ++ bodyConstrs.flatten, resultSco, resultTyp, resultEff)
+        } yield (constrs ++ guardConstrs.flatten ++ bodyConstrs.flatten, resultTyp, resultSco, resultEff)
 
       case ResolvedAst.Expression.Choose(star, exps0, rules0, tvar, loc) =>
 
@@ -1036,7 +1036,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           for {
             (constrs, elementTypes, elementScopes, _) <- seqM(elms.map(visitExp)).map(unzip4)
             elementType <- unifyTypeM(elementTypes, loc)
-            _ <- unifyTypeM(Type.Unscoped :: elementTypes, loc) // all array elements must be unscoped
+            _ <- unifyTypeM(Type.Unscoped :: elementScopes, loc) // all array elements must be unscoped
             resultTyp <- unifyTypeM(tvar, Type.mkArray(elementType), loc)
             resultSco = Type.Unscoped
             resultEff = Type.Impure
