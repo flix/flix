@@ -358,7 +358,6 @@ namespace Iterator {
         let nextAB = () -> (nextA(), nextB());
         Iterator(doneAB, nextAB)
 
-
     ///
     /// Returns an iterator where the element at index `i` is `f(a, b)` where
     /// `a` is the element at index `i` in `iterA` and `b` is the element at index `i` in `iterB`.
@@ -368,8 +367,56 @@ namespace Iterator {
     /// Consumes elements of both `iterA` and `iterB` equal to the length of the shortest iterator.
     /// If `iterA` and `iterB` are equal length, both iterators are fully consumed.
     ///
-    // TODO: Overload based on purity.
-    pub def zipWith(f: (a, b) -> c & ef, iterA: Iterator[a], iterB: Iterator[b]): Iterator[c] & Impure = ???
+    /// Whether `f` is applied eagerly or lazily depends on its purity:
+    /// - If `f` is pure then it is applied lazily.
+    /// - If `f` is impure then it is applied eagerly.
+    ///
+    /// The original iterators `iterA` and `iterB` should not be reused.
+    ///
+    pub def zipWith(f: (a, b) -> c & ef, iterA: Iterator[a], iterB: Iterator[b]): Iterator[c] & Impure =
+        matchEff f {
+            case Pure   => zipWithL(f as (a, b) -> c & Pure,   iterA, iterB)
+            case Impure => zipWithE(f as (a, b) -> c & Impure, iterA, iterB)
+        }
+
+    ///
+    /// Returns an iterator where the element at index `i` is `f(a, b)` where
+    /// `a` is the element at index `i` in `iterA` and `b` is the element at index `i` in `iterB`.
+    ///
+    /// Applies `f` *lazily*.
+    ///
+    /// If either `iterA` or `iterB` becomes depleted, then no further elements are added to the resulting list.
+    ///
+    /// Consumes elements of both `iterA` and `iterB` equal to the length of the shortest iterator.
+    /// If `iterA` and `iterB` are equal length, both iterators are fully consumed.
+    ///
+    /// The original iterators `iterA` and `iterB` should not be reused.
+    ///
+    def zipWithL(f: (a, b) -> c, iterA: Iterator[a], iterB: Iterator[b]): Iterator[c] =
+        let Iterator(doneA, nextA) = iterA;
+        let Iterator(doneB, nextB) = iterB;
+        let doneAB = () -> doneA() or doneB();
+        let nextAB = () -> f(nextA(), nextB());
+        Iterator(doneAB, nextAB)
+
+    ///
+    /// Returns an iterator where the element at index `i` is `f(a, b)` where
+    /// `a` is the element at index `i` in `iterA` and `b` is the element at index `i` in `iterB`.
+    ///
+    /// Applies `f` *eagerly*.
+    ///
+    /// If either `iterA` or `iterB` becomes depleted, then no further elements are added to the resulting list.
+    ///
+    /// Consumes elements of both `iterA` and `iterB` equal to the length of the shortest iterator.
+    /// If `iterA` and `iterB` are equal length, both iterators are fully consumed.
+    ///
+    /// The original iterators `iterA` and `iterB` should not be reused.
+    ///
+    // TODO: Optimize this (use helper function)
+    def zipWithE(f: (a, b) -> c & Impure, iterA: Iterator[a], iterB: Iterator[b]): Iterator[c] & Impure =
+        let listA = toList(iterA);
+        let listB = toList(iterB);
+        List.zipWith(f, listA, listB) |> toIter
 
     ///
     /// Applies `f` to a start value `s` and all elements in `iter` going from left to right.

@@ -529,7 +529,7 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
     // zipWith (pure)                                                          //
     /////////////////////////////////////////////////////////////////////////////
-/*
+
     @test
     def zipWithPure01(): Bool & Impure =
         let iterA = Iterator.repeat(0, 0);
@@ -583,7 +583,7 @@ namespace TestIterator {
         let iterB = Iterator.range(0, 1000);
         Iterator.zipWith((x, y) -> x + y as & Impure, iterA, iterB) |> Iterator.toList == List.range(0, 1000) |> List.map(x -> 2 * x)
 
-*/
+
     /////////////////////////////////////////////////////////////////////////////
     // foldLeft                                                                //
     /////////////////////////////////////////////////////////////////////////////
