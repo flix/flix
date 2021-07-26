@@ -195,14 +195,13 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     * Performs type inference and reassembly on the given Spec `spec`.
     */
   private def visitSpec(spec: ResolvedAst.Spec, root: ResolvedAst.Root, subst: Substitution)(implicit flix: Flix): Validation[TypedAst.Spec, TypeError] = spec match {
-    case ResolvedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc, eff, loc) =>
+    case ResolvedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc, tpe, eff, loc) =>
       val annVal = visitAnnotations(ann0, root)
       val tparams = getTypeParams(tparams0)
       val fparams = getFormalParams(fparams0, subst)
       Validation.mapN(annVal) {
-        ann => TypedAst.Spec(doc, ann, mod, tparams, fparams, sc, eff, loc)
+        ann => TypedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, loc)
       }
-
   }
 
   /**
@@ -226,7 +225,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     * Infers the type of the given definition `defn0`.
     */
   private def typeCheckDecl(spec0: ResolvedAst.Spec, exp0: ResolvedAst.Expression, assumedTconstrs: List[Ast.TypeConstraint], root: ResolvedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[(TypedAst.Spec, TypedAst.Impl), TypeError] = spec0 match {
-    case ResolvedAst.Spec(doc, ann, mod, tparams0, fparams0, sc, eff, loc) =>
+    case ResolvedAst.Spec(doc, ann, mod, tparams0, fparams0, sc, tpe, eff, loc) =>
 
       ///
       /// Infer the type of the expression `exp0`.
@@ -677,7 +676,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           resultEff = Type.mkAnd(eff1, eff2)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
-      case ResolvedAst.Expression.Let(sym, exp1, exp2, loc) =>
+      case ResolvedAst.Expression.Let(sym, mod, exp1, exp2, loc) =>
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
@@ -1554,12 +1553,12 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         val eff = Type.mkAnd(e1.eff, e2.eff)
         TypedAst.Expression.Stm(e1, e2, tpe, eff, loc)
 
-      case ResolvedAst.Expression.Let(sym, exp1, exp2, loc) =>
+      case ResolvedAst.Expression.Let(sym, mod, exp1, exp2, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val tpe = e2.tpe
         val eff = Type.mkAnd(e1.eff, e2.eff)
-        TypedAst.Expression.Let(sym, e1, e2, tpe, eff, loc)
+        TypedAst.Expression.Let(sym, mod, e1, e2, tpe, eff, loc)
 
       case ResolvedAst.Expression.LetRegion(sym, exp, evar, loc) =>
         val e = visitExp(exp, subst0)

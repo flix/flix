@@ -414,52 +414,52 @@ namespace TestGetOpt {
 
     @test
     def preprocess02(): Bool & Impure =
-        let args = String.split("--version", "\s+");
+        let args = String.split("--version", "\\s+");
         GetOpt.preprocess({quoteOpen = squote(), quoteClose = squote(), stripQuoteMarks = false}, args)
             |> Array.toList == "--version" :: Nil
 
 
     @test
     def preprocess03(): Bool & Impure =
-        let args = String.split("--editor=vi", "\s+");
+        let args = String.split("--editor=vi", "\\s+");
         GetOpt.preprocess({quoteOpen = squote(), quoteClose = squote(), stripQuoteMarks = false}, args)
             |> Array.toList == "--editor=vi" :: Nil
 
     @test
     def preprocess04(): Bool & Impure =
         /// Note - not quoted...
-        let args = String.split("--editor=vs code", "\s+");
+        let args = String.split("--editor=vs code", "\\s+");
         GetOpt.preprocess({quoteOpen = squote(), quoteClose = squote(), stripQuoteMarks = false}, args)
             |> Array.toList == "--editor=vs" :: "code" :: Nil
 
     @test
     def preprocess05(): Bool & Impure =
         /// Note - not quoted...
-        let args = String.split("--editor='vs code'", "\s+");
+        let args = String.split("--editor='vs code'", "\\s+");
         GetOpt.preprocess({quoteOpen = squote(), quoteClose = squote(), stripQuoteMarks = false}, args)
             |> Array.toList == "--editor='vs code'" :: Nil
 
     @test
     def preprocess06(): Bool & Impure =
-        let args = String.split("--editor='vs code'", "\s+");
+        let args = String.split("--editor='vs code'", "\\s+");
         GetOpt.preprocess({quoteOpen = squote(), quoteClose = squote(), stripQuoteMarks = true}, args)
             |> Array.toList == "--editor=vs code" :: Nil
 
     @test
     def preprocess07(): Bool & Impure =
-        let args = String.split("--version --editor='vs code'", "\s+");
+        let args = String.split("--version --editor='vs code'", "\\s+");
         GetOpt.preprocess({quoteOpen = squote(), quoteClose = squote(), stripQuoteMarks = false}, args)
             |> Array.toList == "--version" :: "--editor='vs code'" :: Nil
 
     @test
     def preprocess08(): Bool & Impure =
-        let args = String.split("--version --editor='vs code' 'D:/my file1.txt'", "\s+");
+        let args = String.split("--version --editor='vs code' 'D:/my file1.txt'", "\\s+");
         GetOpt.preprocess({quoteOpen = squote(), quoteClose = squote(), stripQuoteMarks = false}, args)
             |> Array.toList == "--version" :: "--editor='vs code'" :: "'D:/my file1.txt'" :: Nil
 
     @test
     def preprocess09(): Bool & Impure =
-        let args = String.split("--version --editor='vs code' 'D:/my file1.txt'", "\s+");
+        let args = String.split("--version --editor='vs code' 'D:/my file1.txt'", "\\s+");
         GetOpt.preprocess({quoteOpen = squote(), quoteClose = squote(), stripQuoteMarks = true}, args)
             |> Array.toList == "--version" :: "--editor=vs code" :: "D:/my file1.txt" :: Nil
 
