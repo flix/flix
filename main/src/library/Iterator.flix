@@ -150,6 +150,8 @@ namespace Iterator {
     ///
     /// Does *not* consume any elements of the iterator.
     ///
+    /// The original iterator `iter` should not be reused.
+    ///
     pub def replace(x: a, y: a, iter: Iterator[a]): Iterator[a] with Eq[a] =
         let Iterator(done, next) = iter;
         let n = () -> {
@@ -351,6 +353,8 @@ namespace Iterator {
     /// Consumes elements of both `iterA` and `iterB` equal to the length of the shortest iterator.
     /// If `iterA` and `iterB` are equal length, both iterators are fully consumed.
     ///
+    /// The original iterators `iterA` and `iterB` should not be reused.
+    ///
     pub def zip(iterA: Iterator[a], iterB: Iterator[b]): Iterator[(a, b)] =
         let Iterator(doneA, nextA) = iterA;
         let Iterator(doneB, nextB) = iterB;
@@ -483,6 +487,8 @@ namespace Iterator {
     ///
 	/// Consumes the first `n` elements of the iterator.
     ///
+    /// The original iterator `iter` should not be reused.
+    ///
     pub def drop(n: Int32, iter: Iterator[a]): Iterator[a] & Impure =
         if (n <= 0)
             iter
@@ -497,6 +503,8 @@ namespace Iterator {
     /// Returns an iterator with the first `n` elements of the iterator `iter`.
     ///
     /// Does *not* consume any elements from the iterator.
+    ///
+    /// The original iterator `iter` should not be reused.
     ///
     pub def take(n: Int32, iter: Iterator[a]): Iterator[a] & Impure =
         if (n <= 0)
@@ -520,6 +528,8 @@ namespace Iterator {
     /// - If `f` is pure then it is applied lazily.
     /// - If `f` is impure then it is applied eagerly (consuming the iterator).
     ///
+    /// The original iterator `iter` should not be reused.
+    ///
     pub def map(f: a -> b & ef, iter: Iterator[a]): Iterator[b] & Impure =
         matchEff f {
             case Pure   => mapL(f as a -> b, iter)
@@ -532,6 +542,8 @@ namespace Iterator {
 	///
 	/// Does *not* consume any elements from the iterator.
 	///
+	/// The original iterator `iter` should not be reused.
+    ///
     def mapL(f: a -> b, iter: Iterator[a]): Iterator[b] =
 		let Iterator(done, next) = iter;
 		let next1 = () -> f(next());
@@ -543,6 +555,8 @@ namespace Iterator {
 	///
 	/// Consumes all elements in the iterator.
 	///
+	/// The original iterator `iter` should not be reused.
+    ///
     def mapE(f: a -> b & Impure, iter: Iterator[a]): Iterator[b] & Impure =
 		toList(iter) |> List.map(f) |> toIter
 
@@ -554,6 +568,8 @@ namespace Iterator {
 	///
     /// - If `f` is pure then it is applied lazily.
     /// - If `f` is impure then it is applied eagerly (consuming the iterator).
+    ///
+    /// The original iterator `iter` should not be reused.
     ///
     pub def filter(f: a -> Bool & ef, iter: Iterator[a]): Iterator[a] & Impure =
         matchEff f {
@@ -567,6 +583,8 @@ namespace Iterator {
 	///
 	/// Does *not* consume any elements from the iterator.
 	///
+	/// The original iterator `iter` should not be reused.
+    ///
 	pub def filterL(f: a -> Bool, iter: Iterator[a]): Iterator[a] & Impure =
         let Iterator(done, next) = iter;
 
@@ -600,6 +618,8 @@ namespace Iterator {
 	///
 	/// Consume the entire iterator.
 	///
+	/// The original iterator `iter` should not be reused.
+    ///
 	pub def filterE(f: a -> Bool & Impure, iter: Iterator[a]): Iterator[a] & Impure =
 		(toList(iter) |> List.filter(f as a -> Bool) |> toIter) as & Impure
 
