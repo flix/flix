@@ -515,25 +515,24 @@ object Lowering extends Phase[Root, Root] {
       val args = List(e1, e2)
       Expression.Apply(callExp, args, chanType, eff, loc)
 
-    // Translate this to:
-    // let channels = [<scala> rs.map(rule => rule.chan) </scala>]
-    // let hasDefault = <scala> d match {
-    //    case Some(_) => Expression.True
-    //    case None => Expression.False
-    //  } </scala>
-    //
-    // match selectImpl(channels, hasDefault) {
-    //   Some(i, e) => {
-    //    let channelRuleExps = [<scala> rs.map(rule => rule.exp) </scala>];
-    //    (channelRuleExps[i])(e) // TODO: Q: I'm unsure how to invoke the expression with `e`
+    // Translate this expression to:
+    // ```
+    // match selectImpl([ch1, ch2], false) {
+    //   case None => e3 (or into MatchError if there is no default case).
+    //   case Some(res) => match res {
+    //     case (0, IntResult(x)) => e1
+    //     case (1, AnyResult(x')) => let x = x' as String; e2
+    //     case _ => MatchError
     //   }
-    //   None => <scala> default </scala>
     // }
+    // ```
     case Expression.SelectChannel(rules, default, tpe, eff, loc) =>
       val rs = rules.map(visitSelectChannelRule)
       val d = default.map(visitExp)
       val t = visitType(tpe)
 
+      // Call `selectImpl([<scala> rs.map(rule => rule.chan) </scala>],
+      //    <scala> d match { case Some(_) => Expression.True(loc), case None => Expression.False(loc) } </scala>,)`
       val indexElementTupleType = Type.mkTuple(List(Type.mkInt32(loc), Types.SelectResult))
       val optionSym = Symbol.mkEnumSym("Option")
       val selectImplReturnTpe = Type.mkEnum(optionSym, List(indexElementTupleType))
@@ -548,11 +547,51 @@ object Lowering extends Phase[Root, Root] {
       val selectImplArgs = List(Expression.ArrayLit(channelsInRs, Types.ChannelImpl, Type.Impure, loc), hasDefault)
       val selectImplApply = Expression.Apply(selectImplCallExp, selectImplArgs, selectImplReturnTpe, eff, loc)
 
-      val noneMatchRule = MatchRule(???, Expression.True(loc), d match {
+      // The code below should implement this
+      // ```
+      // match <scala> selectImplApply </scala> {
+      //  case None => e3 (or into MatchError if there is no default case).
+      //  case Some(res) => match res {
+      //    case (0, IntResult(x)) => e1
+      //    case (1, AnyResult(x')) => let x = x' as String; e2
+      //    case _ => MatchError
+      //  }
+      // }
+      // ```
+
+      val sourcePositionBegin = SourcePosition(loc.source, loc.beginLine, loc.beginCol, None)
+      val sourcePositionEnd = SourcePosition(loc.source, loc.endLine, loc.endCol, None)
+
+      // None case
+      val noneTag = Name.mkTag(Name.Ident(sourcePositionBegin, "None", sourcePositionEnd))
+      val nonePattern = Pattern.Tag(optionSym, noneTag, Pattern.Unit(loc), t, loc)
+      val noneMatchRule = MatchRule(nonePattern, Expression.True(loc), d match {
         case Some(e) => e
-        case None => ??? // TODO: How to return a `MatchError` on the `TypedAST`?
+        case None => ??? // TODO: Q: How to return a `MatchError` on the `TypedAST`?
       })
-      val someMatchRule = MatchRule(???, Expression.True(loc), ???)
+
+      // Some case
+      val someTag = Name.mkTag(Name.Ident(sourcePositionBegin, "Some", sourcePositionEnd))
+      // TODO: Q: How do you get the global unique `id` for the new symbol?
+      val someVariableSymbol = ??? // Symbol.mkVarSym()
+      val someVariable = Pattern.Var(someVariableSymbol, indexElementTupleType, loc)
+      val somePattern = Pattern.Tag(optionSym, someTag, someVariable, t, loc)
+
+      // Inner match in the Some case
+      val someVariableExpression = Expression.Var(someVariableSymbol, indexElementTupleType, loc)
+      val someInnerMatchRules = rules.zipWithIndex.map { case (rule, i) =>
+        val channelIndex = Pattern.Int32(i, loc)
+        // I need to make an `Expression.Tag` based on the tag of the `Channel.SelectResult` enum.
+        // TODO: Q: How do I get the tag of the `Channel.SelectResult` enum to match over from within the compiler?
+        val selectResultType = ???
+        val pattern = Pattern.Tuple(List(channelIndex, selectResultType), indexElementTupleType, loc)
+        MatchRule(pattern, Expression.True(loc), ???)
+      }
+      someInnerMatchRules :+ MatchRule(Pattern.Wild(t, loc), Expression.True(loc), ???)
+      val someInnerMatch = Expression.Match(someVariableExpression, someInnerMatchRules, t, eff, loc)
+
+      val someMatchRule = MatchRule(somePattern, Expression.True(loc), someInnerMatch)
+
       val matchRules = List(noneMatchRule, someMatchRule)
       Expression.Match(selectImplApply, matchRules, t, eff, loc)
 
