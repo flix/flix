@@ -288,6 +288,16 @@ object Type {
   val Impure: Type = False
 
   /**
+    * Represents the unscoped scopedness. (TRUE in the Boolean algebra.)
+    */
+  val Unscoped: Type = True
+
+  /**
+    * Represents the scoped scopedness. (FALSE in the Boolean algebra.)
+    */
+  val Scoped: Type = False
+
+  /**
     * Represents the Not type constructor.
     *
     * NB: This type has kind: * -> *.

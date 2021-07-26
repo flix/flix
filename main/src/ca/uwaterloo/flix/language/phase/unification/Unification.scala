@@ -233,6 +233,13 @@ object Unification {
     InferMonad(s => Ok((s, (constraints.map(s.apply), s(tpe), s(eff)))))
 
   /**
+    * Lifts the given type constraints `tconstrs`, type `tpe` scope `sco` and effect `eff` into the inference monad.
+    */
+  def liftM(tconstrs: List[Ast.TypeConstraint], tpe: Type, sco: Type, eff: Type): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = {
+    InferMonad(s => Ok((s, (tconstrs.map(s.apply), s(tpe), s(sco), s(eff)))))
+  }
+
+  /**
     * Unifies the two given types `tpe1` and `tpe2` lifting their unified types and
     * associated substitution into the type inference monad.
     */

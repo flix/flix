@@ -576,9 +576,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.Let(ident, mod, exp1, exp2, loc) =>
       // make a fresh variable symbol for the local variable.
       val scopedness = if (mod.isScoped)
-        Scopedness.Scoped
+        Type.Scoped
       else
-        Scopedness.Unscoped
+        Type.Unscoped
 
       val sym = Symbol.freshVarSym(ident, scopedness)
       mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0 + (ident.name -> sym), uenv0, tenv0)) {
@@ -1478,9 +1478,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.FormalParam(ident, mod, optType, loc) =>
       // Generate a fresh variable symbol for the identifier.
       val scopedness = if (mod.isScoped)
-        Scopedness.Scoped
+        Type.Scoped
       else
-        Scopedness.Unscoped
+        Type.Unscoped
 
       val freshSym = if (ident.name == "_")
         Symbol.freshVarSym("_", fparam.loc)
