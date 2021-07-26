@@ -32,7 +32,8 @@ instance Eq[MutList[a]] with Eq[a] {
         pub def eq(xs: MutList[a], ys: MutList[a]): Bool = {
             let MutList(a, k) = xs;
             let MutList(b, l) = ys;
-            deref a == deref b and deref k == deref l
+            deref k == deref l and
+                Array.slice(deref a, 0, deref k) == Array.slice(deref b, 0, deref l)
         } as & Pure
 }
 
