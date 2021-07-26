@@ -193,12 +193,56 @@ namespace Iterator {
     ///
     /// Returns `iter` without the longest prefix that satisfies the predicate `f`.
     ///
-    /// The function `f` must be pure.
+    /// Whether `f` is applied eagerly or lazily depends on its purity:
+    /// - If `f` is pure then it is applied lazily.
+    /// - If `f` is impure then it is applied eagerly.
     ///
     /// Consumes elements of the iterator until the first element that does *not* satisfy predicate `f`.
     ///
-    // TODO: Overload based on purity.
-    pub def dropWhile(f: a -> Bool, iter: Iterator[a]): Iterator[a] & Impure =
+    /// The original iterator `iter` should not be reused.
+    ///
+    pub def dropWhile(f: a -> Bool & ef, iter: Iterator[a]): Iterator[a] & Impure =
+        matchEff f {
+            case Pure   => dropWhileL(f as a -> Bool, iter)
+            case Impure => dropWhileE(f as a -> Bool & Impure, iter)
+        }
+
+    ///
+    /// Returns `iter` without the longest prefix that satisfies the predicate `f`, where `f` is applied *lazily*.
+    ///
+    /// The function `f` must be pure.
+    ///
+    /// Does *not* consume any elements of the iterator.
+    ///
+    /// The original iterator `iter` should not be reused.
+    ///
+    def dropWhileL(f: a -> Bool, iter: Iterator[a]): Iterator[a] & Impure =
+        let needsEvaluation = ref true;
+        let newIter = ref iter;
+        let done = () -> {
+            if (deref needsEvaluation) {
+                newIter := dropWhile(f as a -> Bool & Impure, iter);
+                needsEvaluation := false
+            } else ();
+            let Iterator(d, _) = deref newIter;
+            d()
+        };
+        let next = () -> {
+            let Iterator(_, n) = deref newIter;
+            n()
+        };
+        Iterator(done, next)
+
+    ///
+    /// Returns `iter` without the longest prefix that satisfies the predicate `f`, where `f` is applied *eagerly*.
+    ///
+    /// The function `f` must be impure.
+    ///
+    /// Consumes elements of the iterator until the first element that does *not* satisfy predicate `f`.
+    ///
+    /// The original iterator `iter` should not be reused.
+    ///
+    def dropWhileE(f: a ~> Bool, iter: Iterator[a]): Iterator[a] & Impure =
         let Iterator(done, next) = iter;
         if (done())
             iter

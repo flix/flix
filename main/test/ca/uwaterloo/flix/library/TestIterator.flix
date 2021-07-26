@@ -382,7 +382,7 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
     // dropWhile (impure)                                                      //
     /////////////////////////////////////////////////////////////////////////////
-/*
+
     @test
     def dropWhileImpure01(): Bool & Impure =
         let list: List[Int32] = Nil;
@@ -429,7 +429,7 @@ namespace TestIterator {
         let iter = () -> ("a" :: "a" :: "b" :: "b" :: "c" :: "c" :: Nil) |> Iterator.toIter;
         iter() |> Iterator.dropWhile(x -> x == "a" or x == "b" as & Impure) |> Iterator.toList == List.repeat("c", 2)
 
-*/
+
     /////////////////////////////////////////////////////////////////////////////
     // foreach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
@@ -529,7 +529,7 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
     // zipWith (pure)                                                          //
     /////////////////////////////////////////////////////////////////////////////
-
+/*
     @test
     def zipWithPure01(): Bool & Impure =
         let iterA = Iterator.repeat(0, 0);
@@ -583,7 +583,7 @@ namespace TestIterator {
         let iterB = Iterator.range(0, 1000);
         Iterator.zipWith((x, y) -> x + y as & Impure, iterA, iterB) |> Iterator.toList == List.range(0, 1000) |> List.map(x -> 2 * x)
 
-
+*/
     /////////////////////////////////////////////////////////////////////////////
     // foldLeft                                                                //
     /////////////////////////////////////////////////////////////////////////////
