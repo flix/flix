@@ -14,6 +14,21 @@ namespace Test/Def/Scoped {
       r := default
     }
 
+    pub def scopedLambdaParam(): Int -> Int = scoped x -> x + 1
+
+    pub def nestedLambdas(): Int -> Int -> Int = scoped x -> scoped y -> x + y
+
+    pub def scopedLambda(): Int =
+        let scoped f = x -> x + 1;
+        let scoped g = y -> f(y);
+        g(4)
+
+    pub letInLambda(): Int -> Int =
+        x -> {
+            let scoped y = 5;
+            x + y
+        }
+
     // HELPERS
     def toArray(list: List[a]): Array[a] & Impure = ???
     def toList(array: Array[a]): List[a] & Impure = ???
