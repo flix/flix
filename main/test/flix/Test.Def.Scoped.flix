@@ -16,14 +16,14 @@ namespace Test/Def/Scoped {
 
     pub def scopedLambdaParam(): Int -> Int = scoped x -> x + 1
 
-    pub def nestedLambdas(): Int -> Int -> Int = scoped x -> scoped y -> x + y
+    pub def nestedLambdas(): Int -> Int -> Int = scoped x -> scoped y -> (x: Int) + (y: Int)
 
     pub def scopedLambda(): Int =
         let scoped f = x -> x + 1;
         let scoped g = y -> f(y);
         g(4)
 
-    pub letInLambda(): Int -> Int =
+    pub def letInLambda(): Int -> Int =
         x -> {
             let scoped y = 5;
             x + y
