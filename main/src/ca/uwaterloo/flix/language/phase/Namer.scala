@@ -575,7 +575,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.Let(ident, mod, exp1, exp2, loc) =>
       // make a fresh variable symbol for the local variable.
-      val sym = Symbol.freshVarSym(ident)
+      val scopedness = if (mod.isScoped)
+        Scopedness.Scoped
+      else
+        Scopedness.Unscoped
+
+      val sym = Symbol.freshVarSym(ident, scopedness)
       mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0 + (ident.name -> sym), uenv0, tenv0)) {
         case (e1, e2) => NamedAst.Expression.Let(sym, mod, e1, e2, loc)
       }
@@ -1472,10 +1477,15 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def visitFormalParam(fparam: WeededAst.FormalParam, uenv0: UseEnv, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.FormalParam, NameError] = fparam match {
     case WeededAst.FormalParam(ident, mod, optType, loc) =>
       // Generate a fresh variable symbol for the identifier.
+      val scopedness = if (mod.isScoped)
+        Scopedness.Scoped
+      else
+        Scopedness.Unscoped
+
       val freshSym = if (ident.name == "_")
         Symbol.freshVarSym("_", fparam.loc)
       else
-        Symbol.freshVarSym(ident)
+        Symbol.freshVarSym(ident, scopedness)
 
       // Compute the type of the formal parameter or use the type variable of the symbol.
       val tpeVal = optType match {
