@@ -1096,4 +1096,31 @@ class TestTyper extends FunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     expectError[TypeError.IllegalMain](result)
   }
+
+  test("Test.Scoped.01") {
+    val input =
+      """
+        |def f(scoped x: a): a = x
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("Test.Scoped.02") {
+    val input =
+      """
+        |def f(scoped x: a): (a, a) = (x, x)
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("Test.Scoped.03") {
+    val input =
+      """
+        |def f(): a -> a = scoped x -> x
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedTypes](result)
+  }
 }
