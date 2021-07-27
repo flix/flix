@@ -582,6 +582,7 @@ object Lowering extends Phase[Root, Root] {
       
       val someInnerMatchRules = rs.zipWithIndex.map { case (rule, i) =>
         val channelIndexPattern = Pattern.Int32(i, loc)
+
         // I need to make an `Expression.Tag` based on the tag of the `Channel.SelectResult` enum.
         val elementType = tpe.typeArguments.head
         
@@ -598,7 +599,7 @@ object Lowering extends Phase[Root, Root] {
           case class Int64() extends SelectResult
           case class Reference() extends SelectResult
         }
-        val selectResultType = elementType match {
+        val selectResultVariant = elementType match {
           case Type.Cst(tc, _) => tc match {
             case TypeConstructor.Unit => SelectResult.Unit()
             case TypeConstructor.Null => SelectResult.Unit()
@@ -638,15 +639,19 @@ object Lowering extends Phase[Root, Root] {
           case Type.Lambda(_, _) => SelectResult.Reference()
           case Type.Var(_, _, _, _) => throw InternalCompilerException("Type variable (" + elementType + ") not allowed.")
         }
-        val selectResultTypeString = selectResultType.toString.dropRight(2) + "Result"
-        val selectResultTagIdentifier = Name.Ident(sourcePositionBegin, selectResultTypeString, sourcePositionEnd)
-        val selectResultTag = Name.mkTag(selectResultTagIdentifier)
-        val selectResultPatternVariable = Pattern.Var(/* 2 */???, elementType, loc)
+        val selectResultVariantString = selectResultVariant.toString.dropRight(2) + "Result"
+        val selectResultIdentifier = Name.Ident(sourcePositionBegin, selectResultVariantString, sourcePositionEnd)
+        val selectResultTag = Name.mkTag(selectResultIdentifier)
+        val resultSymbol = /* 2 */???
+        val selectResultPatternVariable = Pattern.Var(resultSymbol, elementType, loc)
         val selectResultPattern = Pattern.Tag(Enums.SelectResult, selectResultTag, selectResultPatternVariable, Types.SelectResult, loc)
         val pattern = Pattern.Tuple(List(channelIndexPattern, selectResultPattern), indexElementTupleType, loc)
 
-        val castExpression = Expression.Cast(/* 2 */???, t, eff, loc)
-        val letExpression = Expression.Let(/* 2 */???, Ast.Modifiers(List()), /* 2 */???, castExpression, t, eff, loc)
+        // TODO: Q: Is `elementType` correct on the line below or should this be something akin to `java.lang.Object`?
+        val resultVariable = Expression.Var(resultSymbol, elementType, loc)
+        val castExpression = Expression.Cast(resultVariable, elementType, eff, loc)
+        val ruleSymbolVariable = Expression.Var(rule.sym, elementType, loc)
+        val letExpression = Expression.Let(rule.sym, Ast.Modifiers(List()), ruleSymbolVariable, castExpression, elementType, eff, loc)
         val expression = Expression.Stm(letExpression, rule.exp, t, eff, loc)
 
         MatchRule(pattern, Expression.True(loc), expression)
