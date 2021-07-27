@@ -1109,7 +1109,10 @@ class TestTyper extends FunSuite with TestUtils {
   test("Test.Scoped.02") {
     val input =
       """
-        |def f(scoped x: a): (a, a) = (x, x)
+        |def f(): a = {
+        |  let scoped x = default;
+        |  x
+        |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[TypeError.MismatchedBools](result)
@@ -1119,6 +1122,128 @@ class TestTyper extends FunSuite with TestUtils {
     val input =
       """
         |def f(): a -> a = scoped x -> x
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedBools](result)
+  }
+
+  test("Test.Scoped.Ref.01") {
+    val input =
+      """
+        |def f(scoped x: a): a =
+        |  let r = ref x;
+        |  deref x
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedBools](result)
+  }
+
+  test("Test.Scoped.Ref.02") {
+    val input =
+      """
+        |def f(scoped x: a): a = {
+        |  let r = ref default;
+        |  r := x;
+        |  deref x
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedBools](result)
+  }
+
+  test("Test.Scoped.Array.01") {
+    val input =
+      """
+        |def f(scoped x: a): a = {
+        |  let ar = [x];
+        |  ar[0]
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedBools](result)
+  }
+
+  test("Test.Scoped.Array.02") {
+    val input =
+      """
+        |def f(scoped x: a): a = {
+        |  let ar = [x; 5];
+        |  ar[0]
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedBools](result)
+  }
+
+  test("Test.Scoped.Array.03") {
+    val input =
+      """
+        |def f(scoped x: a): a = {
+        |  let ar = [default; 5];
+        |  ar[0] := x;
+        |  ar[0]
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedBools](result)
+  }
+
+  test("Test.Scoped.Channel.01") {
+    val input =
+      """
+        |def f(scoped x: a): a = {
+        |  let c = chan a 0;
+        |  spawn c <- x;
+        |  <- c
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedBools](result)
+  }
+
+  test("Test.Scoped.Tuple.01") {
+    val input =
+      """
+        |def f(scoped x: a): (a, a) = (x, x)
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedBools](result)
+  }
+
+  test("Test.Scoped.Tuple.02") {
+    val input =
+      """
+        |def f(scoped x: (a, a)): a = match x {
+        |  case (y, z) => y
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedBools](result)
+  }
+
+  test("Test.Scoped.Enum.01") {
+    val input =
+      """
+        |enum Box[a] {
+        |  case Box(a)
+        |}
+        |
+        |def f(scoped x: a): Box[a] = Box(x)
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[TypeError.MismatchedBools](result)
+  }
+
+  test("Test.Scoped.Enum.02") {
+    val input =
+      """
+        |enum Box[a] {
+        |  case Box(a)
+        |}
+        |
+        |def f(scoped x: Box[a]): a = match x {
+        |  case Box(y) => y
+        |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[TypeError.MismatchedBools](result)
