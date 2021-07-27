@@ -567,27 +567,74 @@ object Lowering extends Phase[Root, Root] {
       val nonePattern = Pattern.Tag(optionSym, noneTag, Pattern.Unit(loc), t, loc)
       val noneMatchRule = MatchRule(nonePattern, Expression.True(loc), d match {
         case Some(e) => e
-        case None => ??? // TODO: Q: How to return a `MatchError` on the `TypedAST`?
+        case None => ??? // TODO: 1 - Q: How to return a `MatchError` on the `TypedAST`?
       })
 
       // Some case
       val someTag = Name.mkTag(Name.Ident(sourcePositionBegin, "Some", sourcePositionEnd))
-      // TODO: Q: How do you get the global unique `id` for the new symbol?
+      // TODO: 2 - Q: How do you get the global unique `id` for the new symbol?
       val someVariableSymbol = ??? // Symbol.mkVarSym()
       val someVariable = Pattern.Var(someVariableSymbol, indexElementTupleType, loc)
       val somePattern = Pattern.Tag(optionSym, someTag, someVariable, t, loc)
 
       // Inner match in the Some case
       val someVariableExpression = Expression.Var(someVariableSymbol, indexElementTupleType, loc)
-      val someInnerMatchRules = rules.zipWithIndex.map { case (rule, i) =>
-        val channelIndex = Pattern.Int32(i, loc)
+      
+      val someInnerMatchRules = rs.zipWithIndex.map { case (rule, i) =>
+        val channelIndexPattern = Pattern.Int32(i, loc)
         // I need to make an `Expression.Tag` based on the tag of the `Channel.SelectResult` enum.
-        // TODO: Q: How do I get the tag of the `Channel.SelectResult` enum to match over from within the compiler?
-        val selectResultType = ???
-        val pattern = Pattern.Tuple(List(channelIndex, selectResultType), indexElementTupleType, loc)
-        MatchRule(pattern, Expression.True(loc), ???)
+        val elementType = tpe.typeArguments.head
+        val selectResultTypeString = elementType match {
+          case Type.Cst(tc, _) => tc match {
+            case TypeConstructor.Unit => "Unit"
+            case TypeConstructor.Null => "Unit"
+            case TypeConstructor.Bool => "Bool"
+            case TypeConstructor.Char => "Char"
+            case TypeConstructor.Float32 => "Float32"
+            case TypeConstructor.Float64 => "Float64"
+            case TypeConstructor.Int8 => "Int8"
+            case TypeConstructor.Int16 => "Int16"
+            case TypeConstructor.Int32 => "Int32"
+            case TypeConstructor.Int64 => "Int64"
+            case TypeConstructor.BigInt => MonoType.BigInt
+            case TypeConstructor.Str => MonoType.Str
+            case TypeConstructor.RecordEmpty => MonoType.RecordEmpty()
+            case TypeConstructor.Array => MonoType.Array(args.head)
+            case TypeConstructor.Channel => throw InternalCompilerException(s"Channel types should already have been replaced. args: '$args''")
+            case TypeConstructor.Lazy => MonoType.Lazy(args.head)
+            case TypeConstructor.Enum(sym, _) => MonoType.Enum(sym, args)
+            case TypeConstructor.Tag(sym, _) => throw InternalCompilerException(s"Unexpected type: '$t0'.")
+            case TypeConstructor.Native(clazz) => MonoType.Native(clazz)
+            case TypeConstructor.ScopedRef => MonoType.Ref(args.head)
+            case TypeConstructor.Region => "Unit"
+            case TypeConstructor.Tuple(l) => MonoType.Tuple(args)
+            case TypeConstructor.Arrow(l) => MonoType.Arrow(args.drop(1).init, args.last)
+            case TypeConstructor.RecordExtend(field) => MonoType.RecordExtend(field.name, args.head, args(1))
+            case TypeConstructor.True => "Unit"
+            case TypeConstructor.False => "Unit"
+            case TypeConstructor.Not => "Unit"
+            case TypeConstructor.And => "Unit"
+            case TypeConstructor.Or => "Unit"
+            case TypeConstructor.Relation => throw InternalCompilerException(s"Unexpected type: '$t0'.")
+            case TypeConstructor.Lattice => throw InternalCompilerException(s"Unexpected type: '$t0'.")
+            case TypeConstructor.SchemaEmpty => throw InternalCompilerException(s"Unexpected type: '$t0'.")
+            case TypeConstructor.SchemaExtend(pred) => throw InternalCompilerException(s"Unexpected type: '$t0'.")
+          }
+          case _ => ???
+        }
+        val selectResultTagIdentifier = Name.Ident(sourcePositionBegin, selectResultTypeString + "Result", sourcePositionEnd)
+        val selectResultTag = Name.mkTag(selectResultTagIdentifier)
+        val selectResultPatternVariable = Pattern.Var(/* 2 */???, elementType, loc)
+        val selectResultPattern = Pattern.Tag(Enums.SelectResult, selectResultTag, selectResultPatternVariable, Types.SelectResult, loc)
+        val pattern = Pattern.Tuple(List(channelIndexPattern, selectResultPattern), indexElementTupleType, loc)
+
+        val castExpression = Expression.Cast(/* 2 */???, t, eff, loc)
+        val letExpression = Expression.Let(/* 2 */???, Ast.Modifiers(List()), /* 2 */???, castExpression, t, eff, loc)
+        val expression = Expression.Stm(letExpression, rule.exp, t, eff, loc)
+
+        MatchRule(pattern, Expression.True(loc), expression)
       }
-      someInnerMatchRules :+ MatchRule(Pattern.Wild(t, loc), Expression.True(loc), ???)
+      someInnerMatchRules :+ MatchRule(Pattern.Wild(t, loc), Expression.True(loc), /* 1 */???)
       val someInnerMatch = Expression.Match(someVariableExpression, someInnerMatchRules, t, eff, loc)
 
       val someMatchRule = MatchRule(somePattern, Expression.True(loc), someInnerMatch)
@@ -776,9 +823,8 @@ object Lowering extends Phase[Root, Root] {
 
       case Type.Cst(tc, loc) => tc match {
         case TypeConstructor.Channel =>
-          val sym = Symbol.mkEnumSym("Channel.ChannelImpl")
           val kind = Kind.Arrow(Kind.Star, Kind.Star)
-          Type.Cst(TypeConstructor.Enum(sym, kind), loc)
+          Type.Cst(TypeConstructor.Enum(Enums.ChannelImpl, kind), loc)
         case _ => tpe0
       }
 
