@@ -30,10 +30,10 @@ instance ToString[MutList[a]] with ToString[a] {
 
 instance Eq[MutList[a]] with Eq[a] {
         pub def eq(xs: MutList[a], ys: MutList[a]): Bool = {
-            let MutList(a, k) = xs;
-            let MutList(b, l) = ys;
-            deref k == deref l and
-                Array.slice(deref a, 0, deref k) == Array.slice(deref b, 0, deref l)
+            let MutList(l1, n1) = xs;
+            let MutList(l2, n2) = ys;
+            deref n1 == deref n2 and
+                Array.slice(deref l1, 0, deref n1) == Array.slice(deref l2, 0, deref n2)
         } as & Pure
 }
 
@@ -85,8 +85,11 @@ namespace MutList {
     /// Returns the element at position `i` in the mutable list `v`.
     ///
     pub def get(i: Int32, v: MutList[a]): a & Impure =
-        let MutList(a, _) = v;
-        Array.get(deref a, i)
+        let MutList(a, l) = v;
+        if (i >= deref l)
+            bug!("Invalid argument ${i}")
+        else
+            Array.get(deref a, i)
 
     ///
     /// Returns the number of elements in the given mutable list `v`.
@@ -468,7 +471,10 @@ namespace MutList {
     pub def copy(v: MutList[a]): MutList[a] & Impure =
         let MutList(a, l) = v;
         let len = deref l;
-        MutList(ref Array.slice(deref a, 0, capacity(v)), ref len)
+        if (len > minCapacity())
+            MutList(ref Array.slice(deref a, 0, len), ref len)
+        else
+            MutList(ref Array.slice(deref a, 0, capacity(v)), ref len)
 
     ///
     /// Optionally removes and returns the last element in the given mutable list `v`.
@@ -605,7 +611,7 @@ namespace MutList {
     ///
     /// Truncates the mutable list as needed.
     ///
-    pub def shrinkTo!(n: Int32, v: MutList[a]): Unit & Impure =
+    def shrinkTo!(n: Int32, v: MutList[a]): Unit & Impure =
         let minCap = minCapacity();
         let capv = capacity(v);
         let MutList(a, l) = v;
@@ -651,9 +657,13 @@ namespace MutList {
     ///
     pub def reserve!(n: Int32, v: mut MutList[a]): Unit & Impure =
         let MutList(a, l) = v;
-        let empty = capacity(v) - deref l;
+        let c = capacity(v);
+        let len = deref l;
+        let empty = c - len;
         if (n > empty)
-            a := Array.append(deref a, [default; n - empty])
+            let newCapacity = c + (n - empty);
+            let arr = deref a;
+            a := Array.init(i -> if (i < len) arr[i] else default, newCapacity)
         else ()
 
     ///

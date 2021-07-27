@@ -594,8 +594,7 @@ namespace TestMutList {
     def copy01(): Bool & Impure =
         let v1 = MutList.range(0, 6);
         let v2 = MutList.copy(v1);
-        MutList.clear!(v1);
-        MutList.length(v1) == 0 and MutList.length(v2) == 6
+        v1 == v2
 
     @test
     def copy02(): Bool & Impure =
@@ -610,6 +609,22 @@ namespace TestMutList {
         let v2 = MutList.copy(v1);
         MutList.clear!(v1);
         MutList.length(v1) == 0 and MutList.length(v2) == 6
+
+    @test
+    def copy04(): Bool & Impure =
+        let v1 = MutList.range(0, 1000);
+        let MutList(l1, n1) = v1;
+        let MutList(l2, n2) = MutList.copy(v1);
+        deref n1 == deref n2 and deref l1 == deref l2
+
+    @test
+    def copy05(): Bool & Impure =
+        let v1 = MutList.range(0, 3);
+        let MutList(l1, n1) = v1;
+        let MutList(l2, n2) = MutList.copy(v1);
+        deref n1 == deref n2 and deref l1 == deref l2 and
+            Array.length(deref l2) == 8
+
 
     /////////////////////////////////////////////////////////////////////////////
     // pop                                                                     //
@@ -940,64 +955,6 @@ namespace TestMutList {
         MutList.reverse!(v);
         MutList.sameElements(v, MutList.range(2, 8))
 
-    /////////////////////////////////////////////////////////////////////////////
-    // shrinkTo!                                                               //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def shrinkTo!01(): Bool & Impure =
-        let v = MutList.new();
-        MutList.shrinkTo!(0, v);
-        MutList.length(v) == 0
-
-    @test
-    def shrinkTo!02(): Bool & Impure =
-        let v = MutList.range(0, 99);
-        let l1 = MutList.length(v);
-        MutList.shrinkTo!(90, v);
-        let l2 = MutList.length(v);
-        MutList.shrinkTo!(2, v);
-        let l3 = MutList.length(v);
-        MutList.shrinkTo!(1, v);
-        let l4 = MutList.length(v);
-        MutList.shrinkTo!(0, v);
-        l1 == 99 and l2 == 90 and l3 == 8 and l4 == 8 and MutList.length(v) == 8
-
-    @test
-    def shrinkTo!03(): Bool & Impure =
-        let v = MutList.new();
-        MutList.push!(3, v);
-        MutList.push!(4, v);
-        MutList.push!(5, v);
-        MutList.push!(6, v);
-        MutList.push!(7, v);
-        MutList.shrinkTo!(4, v);
-        MutList.shrinkTo!(2, v);
-        let MutList(arr, len) = v;
-        let m1 = MutList(ref (deref arr), ref (deref len));
-        MutList.shrinkTo!(0, v);
-        MutList.length(m1) == 5 and MutList.length(v) == 5
-
-    @test
-    def shrinkTo!04(): Bool & Impure =
-        let v = MutList.range(0, 10);
-        MutList.shrinkTo!(11, v);
-        MutList.shrinkTo!(10, v);
-        MutList.length(v) == 10
-
-    @test
-    def shrinkTo!05(): Bool & Impure =
-        let v = MutList.range(0, 10);
-        MutList.shrinkTo!(1, v);
-        MutList.length(v) == 8
-
-    @test
-    def shrinkTo!06(): Bool & Impure =
-        let v = MutList.range(0, 4);
-        MutList.push!(42, v);
-        MutList.insert!(99, 3, v);
-        MutList.shrinkTo!(3, v);
-        MutList.length(v) == 6
 
     /////////////////////////////////////////////////////////////////////////////
     // shrink!                                                                 //
