@@ -1103,7 +1103,7 @@ class TestTyper extends FunSuite with TestUtils {
         |def f(scoped x: a): a = x
         |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[TypeError.MismatchedTypes](result)
+    expectError[TypeError.MismatchedBools](result)
   }
 
   test("Test.Scoped.02") {
@@ -1112,7 +1112,7 @@ class TestTyper extends FunSuite with TestUtils {
         |def f(scoped x: a): (a, a) = (x, x)
         |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[TypeError.MismatchedTypes](result)
+    expectError[TypeError.MismatchedBools](result)
   }
 
   test("Test.Scoped.03") {
@@ -1121,6 +1121,6 @@ class TestTyper extends FunSuite with TestUtils {
         |def f(): a -> a = scoped x -> x
         |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[TypeError.MismatchedTypes](result)
+    expectError[TypeError.MismatchedBools](result)
   }
 }
