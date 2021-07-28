@@ -730,6 +730,26 @@ object Type {
     Type.Apply(Type.Cst(TypeConstructor.Region, loc), l)
 
   /**
+    * Return an unscoped Star type for the given type `t` with the given source location `loc`.
+    */
+  def mkUnscoped(t: Type, loc: SourceLocation): Type =
+    mkStar(Type.Unscoped, t, loc)
+
+  /**
+    * Return a Star type for the given scopedness `sco`, square type `squ`, and source location `loc`.
+    */
+  def mkStar(sco: Type, squ: Type, loc: SourceLocation): Type =
+    mkApply(Type.Cst(TypeConstructor.Star, loc), List(sco, squ))
+
+  /**
+    * Returns a Star type for the given type `t` with the given source location `loc`,
+    * where the scope is a free variable.
+    */
+  def mkScopeAgnostic(t: Type, loc: SourceLocation)(implicit flix: Flix): Type = {
+    mkStar(Type.freshVar(Kind.Bool), t, loc)
+  }
+
+  /**
     * Returns a simplified (evaluated) form of the given type `tpe0`.
     *
     * Performs beta-reduction of type abstractions and applications.

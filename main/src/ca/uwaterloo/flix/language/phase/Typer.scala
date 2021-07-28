@@ -375,15 +375,15 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
     /**
       * Infers the type of the given expression `exp0` inside the inference monad.
       */
-    def visitExp(e0: ResolvedAst.Expression): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = e0 match {
+    def visitExp(e0: ResolvedAst.Expression): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = e0 match {
 
       case ResolvedAst.Expression.Wild(tvar, loc) =>
-        liftM(List.empty, tvar, Type.Unscoped, Type.Pure)
+        liftM(List.empty, tvar, Type.Pure)
 
       case ResolvedAst.Expression.Var(sym, tpe, loc) =>
         for {
           resultTyp <- unifyTypeM(sym.tvar, tpe, loc)
-        } yield (List.empty, resultTyp, sym.scopedness, Type.Pure)
+        } yield (List.empty, resultTyp, Type.Pure)
 
       case ResolvedAst.Expression.Def(sym, tvar, loc) =>
         val defn = root.defs(sym)
@@ -391,7 +391,7 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         for {
           resultTyp <- unifyTypeM(tvar, defType, loc)
           tconstrs = tconstrs0.map(_.copy(loc = loc))
-        } yield (tconstrs, resultTyp, Type.Unscoped, Type.Pure)
+        } yield (tconstrs, resultTyp, Type.Pure)
 
       case ResolvedAst.Expression.Sig(sym, tvar, loc) =>
         // find the declared signature corresponding to this symbol
@@ -400,108 +400,124 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         for {
           resultTyp <- unifyTypeM(tvar, sigType, loc)
           tconstrs = tconstrs0.map(_.copy(loc = loc))
-        } yield (tconstrs, resultTyp, Type.Unscoped, Type.Pure)
+        } yield (tconstrs, resultTyp, Type.Pure)
 
       case ResolvedAst.Expression.Hole(sym, tvar, evar, loc) =>
-        liftM(List.empty, tvar, Type.Unscoped, evar)
+        liftM(List.empty, tvar, evar)
 
       case ResolvedAst.Expression.Unit(loc) =>
-        liftM(List.empty, Type.Unit, Type.Unscoped, Type.Pure)
+        liftM(List.empty, Type.mkUnscoped(Type.Unit, loc), Type.Pure)
 
       case ResolvedAst.Expression.Null(loc) =>
-        liftM(List.empty, Type.Null, Type.Unscoped, Type.Pure)
+        liftM(List.empty, Type.mkUnscoped(Type.Null, loc), Type.Pure)
 
       case ResolvedAst.Expression.True(loc) =>
-        liftM(List.empty, Type.Bool, Type.Unscoped, Type.Pure)
+        liftM(List.empty, Type.mkUnscoped(Type.Bool, loc), Type.Pure)
 
       case ResolvedAst.Expression.False(loc) =>
-        liftM(List.empty, Type.Bool, Type.Unscoped, Type.Pure)
+        liftM(List.empty, Type.mkUnscoped(Type.Bool, loc), Type.Pure)
 
       case ResolvedAst.Expression.Char(lit, loc) =>
-        liftM(List.empty, Type.Char, Type.Unscoped, Type.Pure)
+        liftM(List.empty, Type.mkUnscoped(Type.Char, loc), Type.Pure)
 
       case ResolvedAst.Expression.Float32(lit, loc) =>
-        liftM(List.empty, Type.Float32, Type.Unscoped, Type.Pure)
+        liftM(List.empty, Type.mkUnscoped(Type.Float32, loc), Type.Pure)
 
       case ResolvedAst.Expression.Float64(lit, loc) =>
-        liftM(List.empty, Type.Float64, Type.Unscoped, Type.Pure)
+        liftM(List.empty, Type.mkUnscoped(Type.Float64, loc), Type.Pure)
 
       case ResolvedAst.Expression.Int8(lit, loc) =>
-        liftM(List.empty, Type.Int8, Type.Unscoped, Type.Pure)
+        liftM(List.empty, Type.mkUnscoped(Type.Int8, loc), Type.Pure)
 
       case ResolvedAst.Expression.Int16(lit, loc) =>
-        liftM(List.empty, Type.Int16, Type.Unscoped, Type.Pure)
+        liftM(List.empty, Type.mkUnscoped(Type.Int16, loc), Type.Pure)
 
       case ResolvedAst.Expression.Int32(lit, loc) =>
-        liftM(List.empty, Type.Int32, Type.Unscoped, Type.Pure)
+        liftM(List.empty, Type.mkUnscoped(Type.Int32, loc), Type.Pure)
 
       case ResolvedAst.Expression.Int64(lit, loc) =>
-        liftM(List.empty, Type.Int64, Type.Unscoped, Type.Pure)
+        liftM(List.empty, Type.mkUnscoped(Type.Int64, loc), Type.Pure)
 
       case ResolvedAst.Expression.BigInt(lit, loc) =>
-        liftM(List.empty, Type.BigInt, Type.Unscoped, Type.Pure)
+        liftM(List.empty, Type.mkUnscoped(Type.BigInt, loc), Type.Pure)
 
       case ResolvedAst.Expression.Str(lit, loc) =>
-        liftM(List.empty, Type.Str, Type.Unscoped, Type.Pure)
+        liftM(List.empty, Type.mkUnscoped(Type.Str, loc), Type.Pure)
 
       case ResolvedAst.Expression.Default(tvar, loc) =>
-        liftM(List.empty, tvar, Type.Unscoped, Type.Pure)
+        liftM(List.empty, tvar, Type.Pure)
 
       case ResolvedAst.Expression.Lambda(fparam, exp, tvar, loc) =>
-        val argType = fparam.tpe
+        val intArgTpe = fparam.tpe
+        val intArgSqu = Type.freshVar(Kind.Square)
+        val intArgSco = Type.freshVar(Kind.Bool)
+
+        val bodySqu = Type.freshVar(Kind.Square)
+
+        val extArgSco = Type.freshVar(Kind.Bool)
+        val extArgTpe = Type.mkStar(extArgSco, intArgSqu, loc)
+
         for {
-          (constrs, bodyType, bodySco, bodyEff) <- visitExp(exp)
-          _ <- unifyTypeM(bodySco, Type.Unscoped, loc) // cannot return a scoped value
-          resultTyp <- unifyTypeM(tvar, Type.mkArrowWithEffect(argType, bodyEff, bodyType), loc)
-        } yield (constrs, resultTyp, Type.Unscoped, Type.Pure)
+          (constrs, bodyType, bodyEff) <- visitExp(exp)
+          _ <- unifyTypeM(Type.mkStar(intArgSco, intArgSqu, loc), intArgTpe, loc)
+          _ <- unifyTypeM(Type.mkImplies(intArgSco, extArgSco), Type.True, loc) // internal scope implies external scope
+          _ <- unifyTypeM(Type.mkStar(Type.Unscoped, bodySqu, loc), bodyType, loc) // body must be unscoped
+          resultTyp <- unifyTypeM(tvar, Type.mkUnscoped(Type.mkArrowWithEffect(extArgTpe, bodyEff, bodyType), loc), loc)
+        } yield (constrs, resultTyp, Type.Pure)
 
       case ResolvedAst.Expression.Apply(exp, exps, tvar, evar, loc) =>
         val lambdaBodyType = Type.freshVar(Kind.Star)
         val lambdaBodyEff = Type.freshVar(Kind.Bool)
         for {
-          (constrs1, tpe, sco, eff) <- visitExp(exp)
-          (constrs2, tpes, scos, effs) <- seqM(exps.map(visitExp)).map(unzip4)
-          lambdaType <- unifyTypeM(tpe, Type.mkUncurriedArrowWithEffect(tpes, lambdaBodyEff, lambdaBodyType), loc)
+          (constrs1, tpe, eff) <- visitExp(exp)
+          (constrs2, tpes, effs) <- seqM(exps.map(visitExp)).map(_.unzip3)
+          lambdaType <- unifyTypeM(tpe, Type.mkScopeAgnostic(Type.mkUncurriedArrowWithEffect(tpes, lambdaBodyEff, lambdaBodyType), loc), loc)
           resultTyp <- unifyTypeM(tvar, lambdaBodyType, loc)
           resultEff <- unifyBoolM(evar, Type.mkAnd(lambdaBodyEff :: eff :: effs), loc)
-        } yield (constrs1 ++ constrs2.flatten, resultTyp, Type.Unscoped, resultEff)
+        } yield (constrs1 ++ constrs2.flatten, resultTyp, resultEff)
 
       case ResolvedAst.Expression.Unary(sop, exp, tvar, loc) => sop match {
         case SemanticOperator.BoolOp.Not =>
           for {
-            (constrs, tpe, sco, eff) <- visitExp(exp)
-            resultTyp <- unifyTypeM(tvar, tpe, Type.Bool, loc)
+            (constrs, tpe, eff) <- visitExp(exp)
+            _ <- unifyTypeM(tvar, tpe, Type.mkScopeAgnostic(Type.Bool, loc), loc)
+            resultTpe = Type.mkUnscoped(Type.Bool, loc)
             resultEff = eff
-          } yield (constrs, resultTyp, Type.Unscoped, resultEff)
+          } yield (constrs, resultTpe, resultEff)
 
         case SemanticOperator.Float32Op.Neg =>
           for {
-            (constrs, tpe, sco, eff) <- visitExp(exp)
-            resultTyp <- unifyTypeM(tvar, tpe, Type.Float32, loc)
+            (constrs, tpe, eff) <- visitExp(exp)
+            _ <- unifyTypeM(tvar, tpe, Type.mkScopeAgnostic(Type.Float32, loc), loc)
+            resultTpe = Type.mkUnscoped(Type.Float32, loc)
             resultEff = eff
-          } yield (constrs, resultTyp, Type.Unscoped, resultEff)
+          } yield (constrs, resultTpe, resultEff)
 
         case SemanticOperator.Float64Op.Neg =>
           for {
-            (constrs, tpe, sco, eff) <- visitExp(exp)
-            resultTyp <- unifyTypeM(tvar, tpe, Type.Float64, loc)
+            (constrs, tpe, eff) <- visitExp(exp)
+            _ <- unifyTypeM(tvar, tpe, Type.mkScopeAgnostic(Type.Float64, loc), loc)
+            resultTpe = Type.mkUnscoped(Type.Float64, loc)
             resultEff = eff
-          } yield (constrs, resultTyp, Type.Unscoped, resultEff)
+          } yield (constrs, resultTpe, resultEff)
 
         case SemanticOperator.Int8Op.Neg | SemanticOperator.Int8Op.Not =>
           for {
-            (constrs, tpe, sco, eff) <- visitExp(exp)
-            resultTyp <- unifyTypeM(tvar, tpe, Type.Int8, loc)
+            (constrs, tpe, eff) <- visitExp(exp)
+            _ <- unifyTypeM(tvar, tpe, Type.mkScopeAgnostic(Type.Int8, loc), loc)
+            resultTpe = Type.mkUnscoped(Type.Int8, loc)
             resultEff = eff
-          } yield (constrs, resultTyp, Type.Unscoped, resultEff)
+          } yield (constrs, resultTpe, resultEff)
 
         case SemanticOperator.Int16Op.Neg | SemanticOperator.Int16Op.Not =>
           for {
-            (constrs, tpe, sco, eff) <- visitExp(exp)
-            resultTyp <- unifyTypeM(tvar, tpe, Type.Int16, loc)
+            (constrs, tpe, eff) <- visitExp(exp)
+            _ <- unifyTypeM(tvar, tpe, Type.mkScopeAgnostic(Type.Int16, loc), loc)
+            resultTpe = Type.mkUnscoped(Type.Int16, loc)
             resultEff = eff
-          } yield (constrs, resultTyp, Type.Unscoped, resultEff)
+          } yield (constrs, resultTpe, resultEff)
 
+          // MATT CONTINUE HERE
         case SemanticOperator.Int32Op.Neg | SemanticOperator.Int32Op.Not =>
           for {
             (constrs, tpe, sco, eff) <- visitExp(exp)
