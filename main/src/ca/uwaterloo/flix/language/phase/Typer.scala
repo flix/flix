@@ -27,8 +27,8 @@ import ca.uwaterloo.flix.language.phase.unification.Unification._
 import ca.uwaterloo.flix.language.phase.unification._
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
-import ca.uwaterloo.flix.util.collection.ListOps.unzip4
 import ca.uwaterloo.flix.util._
+import ca.uwaterloo.flix.util.collection.ListOps.unzip4
 
 import java.io.PrintWriter
 
@@ -752,24 +752,29 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           // MATT I didn't do anything here
         } yield (constrs, resultTyp, resultEff)
 
-        // MATT CONTINUE HERE
       case ResolvedAst.Expression.Match(exp, rules, loc) =>
         val patterns = rules.map(_.pat)
         val guards = rules.map(_.guard)
         val bodies = rules.map(_.exp)
 
+        val tpeSqu = Type.freshVar(Kind.Square)
+
+        val bodySqu = Type.freshVar(Kind.Square)
+        val bodyScos = bodies.map(_ => Type.freshVar(Kind.Square))
         for {
-          (constrs, tpe, sco, eff) <- visitExp(exp)
+          (constrs, tpe, eff) <- visitExp(exp)
+          _ <- unifyTypeM(tpe, Type.mkScopeAgnostic(tpeSqu, loc), loc)
           patternTypes <- inferPatterns(patterns, root)
-          patternType <- unifyTypeM(tpe :: patternTypes, loc)
-          (guardConstrs, guardTypes, guardScopes, guardEffects) <- seqM(guards map visitExp).map(unzip4)
-          guardType <- unifyTypeM(Type.Bool :: guardTypes, loc)
-          (bodyConstrs, bodyTypes, bodyScopes, bodyEffects) <- seqM(bodies map visitExp).map(unzip4)
-          resultTyp <- unifyTypeM(bodyTypes, loc)
+          _ <- unifyTypeM(tpe :: patternTypes, loc)
+          (guardConstrs, guardTypes, guardEffects) <- seqM(guards map visitExp).map(_.unzip3)
+          _ <- InferMonad.seqM(guardTypes.map(unifyTypeM(_, Type.mkScopeAgnostic(Type.Bool, loc), loc)))
+          (bodyConstrs, bodyTypes, bodyEffects) <- seqM(bodies map visitExp).map(_.unzip3)
+          _ <- InferMonad.seqM(bodyTypes.zip(bodyScos).map { case (tpe, sco) => unifyTypeM(tpe, Type.mkStar(sco, bodySqu, loc), loc) })
           // TODO: this is very strict: with type/proper type split we'll be more precise
-          resultSco = Type.mkAnd(sco :: bodyScopes)
+          resultSco = Type.mkAnd(bodyScos)
+          resultTpe = Type.mkStar(resultSco, bodySqu, loc)
           resultEff = Type.mkAnd(eff :: guardEffects ::: bodyEffects)
-        } yield (constrs ++ guardConstrs.flatten ++ bodyConstrs.flatten, resultTyp, resultSco, resultEff)
+        } yield (constrs ++ guardConstrs.flatten ++ bodyConstrs.flatten, resultTpe, resultEff)
 
       case ResolvedAst.Expression.Choose(star, exps0, rules0, tvar, loc) =>
 
@@ -778,18 +783,18 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           *
           * Returns a pair of lists of the types and effects of the match expressions.
           */
-        def visitMatchExps(exps: List[ResolvedAst.Expression], isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var]): InferMonad[(List[List[Ast.TypeConstraint]], List[Type], List[Type], List[Type])] = {
+        def visitMatchExps(exps: List[ResolvedAst.Expression], isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var]): InferMonad[(List[List[Ast.TypeConstraint]], List[Type], List[Type])] = {
           def visitMatchExp(exp: ResolvedAst.Expression, isAbsentVar: Type.Var, isPresentVar: Type.Var): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = {
             val freshElmVar = Type.freshVar(Kind.Star)
             for {
-              (constrs, tpe, sco, eff) <- visitExp(exp)
+              (constrs, tpe, eff) <- visitExp(exp)
               _ <- unifyTypeM(tpe, Type.mkChoice(freshElmVar, isAbsentVar, isPresentVar), loc)
-            } yield (constrs, freshElmVar, sco, eff)
+            } yield (constrs, freshElmVar, eff)
           }
 
           seqM(exps.zip(isAbsentVars.zip(isPresentVars)).map {
             case (matchExp, (isAbsentVar, isPresentVar)) => visitMatchExp(matchExp, isAbsentVar, isPresentVar)
-          }).map(unzip4)
+          }).map(_.unzip3)
         }
 
         /**
@@ -797,12 +802,12 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           *
           * Returns a pair of list of the types and effects of the rule expressions.
           */
-        def visitRuleBodies(rs: List[ResolvedAst.ChoiceRule]): InferMonad[(List[List[Ast.TypeConstraint]], List[Type], List[Type], List[Type])] = {
-          def visitRuleBody(r: ResolvedAst.ChoiceRule): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = r match {
+        def visitRuleBodies(rs: List[ResolvedAst.ChoiceRule]): InferMonad[(List[List[Ast.TypeConstraint]], List[Type], List[Type])] = {
+          def visitRuleBody(r: ResolvedAst.ChoiceRule): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = r match {
             case ResolvedAst.ChoiceRule(_, exp0) => visitExp(exp0)
           }
 
-          seqM(rs.map(visitRuleBody)).map(unzip4)
+          seqM(rs.map(visitRuleBody)).map(_.unzip3)
         }
 
         /**
@@ -939,10 +944,11 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         // Put everything together.
         //
         for {
+          // MATT continue here
           _ <- unifyBoolM(formula, Type.True, loc)
-          (matchConstrs, matchTyp, matchSco, matchEff) <- visitMatchExps(exps0, isAbsentVars, isPresentVars)
+          (matchConstrs, matchTyp, matchEff) <- visitMatchExps(exps0, isAbsentVars, isPresentVars)
           _ <- unifyMatchTypesAndRules(matchTyp, rules0)
-          (ruleBodyConstrs, ruleBodyTyp, ruleBodySco, ruleBodyEff) <- visitRuleBodies(rules0)
+          (ruleBodyConstrs, ruleBodyTyp, ruleBodyEff) <- visitRuleBodies(rules0)
           resultTypes <- transformResultTypes(isAbsentVars, isPresentVars, rules0, ruleBodyTyp, loc)
           resultTyp <- unifyTypeM(tvar, resultTypes, loc)
           // TODO: this is very strict: with type/proper type split we'll be more precise
