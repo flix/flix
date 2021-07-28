@@ -13,84 +13,84 @@ object TypeConstructor {
     * A type constructor that represent the Unit type.
     */
   case object Unit extends TypeConstructor {
-    def kind: Kind = Kind.Star
+    def kind: Kind = Kind.Square
   }
 
   /**
     * A type constructor that represent the Null type.
     */
   case object Null extends TypeConstructor {
-    def kind: Kind = Kind.Star
+    def kind: Kind = Kind.Square
   }
 
   /**
     * A type constructor that represent the Bool type.
     */
   case object Bool extends TypeConstructor {
-    def kind: Kind = Kind.Star
+    def kind: Kind = Kind.Square
   }
 
   /**
     * A type constructor that represent the Char type.
     */
   case object Char extends TypeConstructor {
-    def kind: Kind = Kind.Star
+    def kind: Kind = Kind.Square
   }
 
   /**
     * A type constructor that represent the type of 32-bit floating point numbers.
     */
   case object Float32 extends TypeConstructor {
-    def kind: Kind = Kind.Star
+    def kind: Kind = Kind.Square
   }
 
   /**
     * A type constructor that represent the type of 64-bit floating point numbers.
     */
   case object Float64 extends TypeConstructor {
-    def kind: Kind = Kind.Star
+    def kind: Kind = Kind.Square
   }
 
   /**
     * A type constructor that represent the type of 8-bit integers.
     */
   case object Int8 extends TypeConstructor {
-    def kind: Kind = Kind.Star
+    def kind: Kind = Kind.Square
   }
 
   /**
     * A type constructor that represent the type of 16-bit integers.
     */
   case object Int16 extends TypeConstructor {
-    def kind: Kind = Kind.Star
+    def kind: Kind = Kind.Square
   }
 
   /**
     * A type constructor that represent the type of 32-bit integers.
     */
   case object Int32 extends TypeConstructor {
-    def kind: Kind = Kind.Star
+    def kind: Kind = Kind.Square
   }
 
   /**
     * A type constructor that represent the type of 64-bit integers.
     */
   case object Int64 extends TypeConstructor {
-    def kind: Kind = Kind.Star
+    def kind: Kind = Kind.Square
   }
 
   /**
     * A type constructor that represent the type of arbitrary-precision integers.
     */
   case object BigInt extends TypeConstructor {
-    def kind: Kind = Kind.Star
+    def kind: Kind = Kind.Square
   }
 
   /**
     * A type constructor that represent the type of strings.
     */
   case object Str extends TypeConstructor {
-    def kind: Kind = Kind.Star
+    def kind: Kind = Kind.Square
   }
 
   /**
@@ -141,7 +141,7 @@ object TypeConstructor {
     /**
       * The shape of an array is Array[t].
       */
-    def kind: Kind = Kind.Star ->: Kind.Star
+    def kind: Kind = Kind.Star ->: Kind.Square
   }
 
   /**
@@ -151,7 +151,7 @@ object TypeConstructor {
     /**
       * The shape of a channel is Channel[t].
       */
-    def kind: Kind = Kind.Star ->: Kind.Star
+    def kind: Kind = Kind.Star ->: Kind.Square
   }
 
   /**
@@ -161,7 +161,7 @@ object TypeConstructor {
     /**
       * The shape of lazy is Lazy[t].
       */
-    def kind: Kind = Kind.Star ->: Kind.Star
+    def kind: Kind = Kind.Star ->: Kind.Square
   }
 
   /**
@@ -171,7 +171,7 @@ object TypeConstructor {
     /**
       * The shape of a tag is "like" a function `caseType` -> (`resultType`) -> *.
       */
-    def kind: Kind = Kind.Star ->: Kind.Star ->: Kind.Star
+    def kind: Kind = Kind.Star ->: Kind.Star ->: Kind.Square
   }
 
   /**
@@ -183,7 +183,7 @@ object TypeConstructor {
     * A type constructor that represent the type of JVM classes.
     */
   case class Native(clazz: Class[_]) extends TypeConstructor {
-    def kind: Kind = Kind.Star
+    def kind: Kind = Kind.Square
   }
 
   /**
@@ -193,7 +193,8 @@ object TypeConstructor {
     /**
       * The shape of a reference is `ScopedRef[t, l]`.
       */
-    def kind: Kind = Kind.Star ->: Kind.Bool ->: Kind.Star
+    def kind: Kind = Kind.Star ->: Kind.Bool ->: Kind.Square
+    // MATT ???
   }
 
   /**
@@ -210,14 +211,14 @@ object TypeConstructor {
     * A type constructor for relations.
     */
   case object Relation extends TypeConstructor {
-    def kind: Kind = Kind.Star ->: Kind.Star
+    def kind: Kind = Kind.Star ->: Kind.Square
   }
 
   /**
     * A type constructor for lattices.
     */
   case object Lattice extends TypeConstructor {
-    def kind: Kind = Kind.Star ->: Kind.Star
+    def kind: Kind = Kind.Star ->: Kind.Square
   }
 
   /**
@@ -263,6 +264,16 @@ object TypeConstructor {
       * The shape of a region is Region[l].
       */
     def kind: Kind = Kind.Bool ->: Kind.Star
+  }
+
+  /**
+    * A type constructor adding locality to square types.
+    */
+  case object Star extends TypeConstructor {
+    /**
+      * The shape of a Star type is Star[l, t]
+      */
+    def kind: Kind = Kind.Bool ->: Kind.Square ->: Kind.Star
   }
 
 }

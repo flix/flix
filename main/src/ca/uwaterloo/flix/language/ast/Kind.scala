@@ -50,14 +50,15 @@ sealed trait Kind {
     case (Kind.Bool, Kind.Bool) => true
     case (Kind.Record, Kind.Record) => true
     case (Kind.Schema, Kind.Schema) => true
+    case (Kind.Square, Kind.Square) => true
 
     // kind vars
     case (Kind.Var(_), _) => true
     case (_, Kind.Var(_)) => true
 
     // subkinds
-    case (Kind.Record, Kind.Star) => true
-    case (Kind.Schema, Kind.Star) => true
+    case (Kind.Record, Kind.Square) => true
+    case (Kind.Schema, Kind.Square) => true
 
     case (Kind.Arrow(k11, k12), Kind.Arrow(k21, k22)) => (k11 <:: k21) && (k12 <:: k22)
     case _ => false
@@ -76,6 +77,11 @@ object Kind {
     * Represents the kind of types.
     */
   case object Star extends Kind
+
+  /**
+    * Represents the kind of types lacking scope information.
+    */
+  case object Square extends Kind
 
   /**
     * Represents the kind of boolean formulas.
@@ -101,11 +107,7 @@ object Kind {
     * Returns the kind: * -> (* ... -> *)
     */
   def mkArrow(length: Int): Kind = {
-    if (length == 0) {
-      return Star
-    }
-
-    (0 until length).foldRight(Star: Kind) {
+    (0 until length).foldRight(Square: Kind) {
       case (_, acc) => Arrow(Star, acc)
     }
   }
