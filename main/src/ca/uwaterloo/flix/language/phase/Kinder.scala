@@ -46,8 +46,12 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       case (sym, insts0) => traverse(insts0)(visitInstance2(_, root)).map((sym, _))
     }
 
-    mapN(enumsVal, classesVal, defsVal, instancesVal) {
-      case (enums, classes, defs, instances) =>
+    val typeAliasesVal = Validation.traverseX(root.typealiases) {
+      case (_, typeAlias) => visitTypeAlias(typeAlias, root)
+    }
+
+    mapN(enumsVal, classesVal, defsVal, instancesVal, typeAliasesVal) {
+      case (enums, classes, defs, instances, _) =>
         KindedAst.Root(classes.toMap, instances.toMap, defs.toMap, enums.toMap, root.reachable, root.sources)
     }
 
@@ -68,6 +72,18 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
 
       mapN(tparamsVal, casesVal, tpeDeprecatedVal, scVal) {
         case (tparams, cases, tpeDeprecated, sc) => KindedAst.Enum(doc, mod, sym, tparams, cases.toMap, tpeDeprecated, sc, loc)
+      }
+  }
+
+  private def visitTypeAlias(alias: ResolvedAst.TypeAlias, root: ResolvedAst.Root)(implicit flix: Flix): Validation[Unit, KindError] = alias match {
+    case ResolvedAst.TypeAlias(doc, mod, sym, tparams0, tpe0, loc) =>
+      val kinds = getKindsFromTparamsDefaultStar(tparams0)
+
+      val tparamsVal = Validation.traverse(tparams0.tparams)(ascribeTparam(_, kinds))
+      val tpeVal = ascribeType(tpe0, KindMatch.wild, kinds, root)
+
+      mapN(tparamsVal, tpeVal) {
+        case (_, _) => ()
       }
   }
 

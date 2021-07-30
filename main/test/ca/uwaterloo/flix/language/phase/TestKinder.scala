@@ -123,39 +123,46 @@ class TestKinder extends FunSuite with TestUtils {
     expectError[KindError](result)
   }
 
-  // MATT reenable aftertype aliases through Kinder
-  ignore("MismatchedTypeParamKind.TypeAlias.01") {
+  test("MismatchedTypeParamKind.TypeAlias.01") {
     val input = "type alias T[o] = Int -> o & o"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
 
-  ignore("MismatchedTypeParamKind.TypeAlias.02") {
+  test("MismatchedTypeParamKind.TypeAlias.02") {
     val input = "type alias T[e] = (Int -> Int & e) -> e"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
 
-  ignore("MismatchedTypeParamKind.TypeAlias.03") {
+  ignore("MismatchedTypeParamKind.TypeAlias.03") { // MATT depends on kind ascriptions
     val input = "type alias T[a] = (#{| a}, {| a})"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
 
-  ignore("MismatchedTypeParamKind.TypeAlias.04") {
+  test("MismatchedTypeParamKind.TypeAlias.04") {
     val input = "type alias T[a] = (#{X(Int) | a}, {x: Int | a})"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
 
-  ignore("MismatchedTypeParamKind.TypeAlias.05") {
+  test("MismatchedTypeParamKind.TypeAlias.05") {
     val input = "type alias T[e] = e -> Int & not e"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
 
-  ignore("MismatchedTypeParamKind.TypeAlias.06") {
-    val input = "type alias T[a, b, e] = Option[a -> b & e] -> Int & not (a or b)"
+  test("MismatchedTypeParamKind.TypeAlias.06") {
+    val input =
+      """
+        |enum Option[a] {
+        |  case Some(a)
+        |  case None
+        |}
+        |
+        |type alias T[a, b, e] = Option[a -> b & e] -> Int & not (a or b)
+        |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
