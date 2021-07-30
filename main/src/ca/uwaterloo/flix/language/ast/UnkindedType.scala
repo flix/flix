@@ -1,12 +1,31 @@
+/*
+ * Copyright 2021 Matthew Lutze
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.util.InternalCompilerException
 
-// MATT license
-// MATT docs
+/**
+  * A type without an associated kind.
+  */
 sealed trait UnkindedType {
-  // MATT docs
+
+  /**
+    * Returns the type constructor of the given type.
+    */
   def typeConstructor: Option[UnkindedType.Constructor] = this match {
     case UnkindedType.Cst(cst, _) => Some(cst)
     case UnkindedType.Apply(t1, _) => t1.typeConstructor
@@ -15,13 +34,18 @@ sealed trait UnkindedType {
     case UnkindedType.Ascribe(t, _, _) => t.typeConstructor
   }
 
+  /**
+    * Returns the base type of a type application.
+    */
   def baseType: UnkindedType = this match {
     case UnkindedType.Apply(t1, _) => t1.baseType
     case UnkindedType.Ascribe(t, _, _) => t.baseType
     case _ => this
   }
 
-  // MATT docs
+  /**
+    * Returns the arguments of a type application.
+    */
   def typeArguments: List[UnkindedType] = this match {
     case UnkindedType.Apply(tpe1, tpe2) => tpe1.typeArguments ::: tpe2 :: Nil
     case UnkindedType.Ascribe(t, _, _) => t.typeArguments
@@ -30,16 +54,34 @@ sealed trait UnkindedType {
 }
 
 object UnkindedType {
+  /**
+    * Type constructor.
+    */
   case class Cst(cst: Constructor, loc: SourceLocation) extends UnkindedType
 
+  /**
+    * Type application.
+    */
   case class Apply(t1: UnkindedType, t2: UnkindedType) extends UnkindedType
 
+  /**
+    * Type lambda.
+    */
   case class Lambda(t1: UnkindedType.Var, t2: UnkindedType) extends UnkindedType
 
+  /**
+    * Type variable.
+    */
   case class Var(id: Int, text: Option[String] = None) extends UnkindedType {
+    /**
+      * Converts the UnkindedType to a Type with the given `kind`.
+      */
     def ascribedWith(kind: Kind): Type.Var = Type.Var(id, kind, text = text)
   }
 
+  /**
+    * Kind ascription.
+    */
   case class Ascribe(t: UnkindedType, k: Kind, loc: SourceLocation) extends UnkindedType
 
   /**
@@ -142,13 +184,19 @@ object UnkindedType {
     */
   def mkNative(clazz: Class[_]): UnkindedType = Cst(Constructor.Native(clazz), SourceLocation.Unknown)
 
-  // MATT docs
+  /**
+    * Constructs a true type at the given location.
+    */
   def mkTrue(loc: SourceLocation): UnkindedType = Cst(Constructor.True, loc)
 
-  // MATT docs
+  /**
+    * Constructs a false type at the given location.
+    */
   def mkFalse(loc: SourceLocation): UnkindedType = Cst(Constructor.False, loc)
 
-  // MATT docs
+  /**
+    * Returns a fresh type variable with the given text.
+    */
   def freshVar(text: Option[String] = None)(implicit flix: Flix): UnkindedType.Var = {
     Var(flix.genSym.freshId(), text)
   }
@@ -201,26 +249,33 @@ object UnkindedType {
     mkApply(Cst(Constructor.Tuple(ts.length), loc), ts)
   }
 
-  // MATT docs
+  /**
+    * Constructs the empty record type at the given source location.
+    */
   def mkRecordEmpty(loc: SourceLocation): UnkindedType = {
     Cst(Constructor.RecordEmpty, loc)
   }
 
-  // MATT docs
+  /**
+    * Constructs the extended record type at the given source location.
+    */
   def mkRecordExtend(field: Name.Field, tpe: UnkindedType, rest: UnkindedType, loc: SourceLocation): UnkindedType = {
     mkApply(Cst(Constructor.RecordExtend(field), loc), List(tpe, rest))
   }
 
-  // MATT docs
+  /**
+    * Constructs the empty schema type at the given source location.
+    */
   def mkSchemaEmpty(loc: SourceLocation): UnkindedType = {
     Cst(Constructor.SchemaEmpty, loc)
   }
 
-  // MATT docs
+  /**
+    * Constructs the extended schema type at the given source location.
+    */
   def mkSchemaExtend(pred: Name.Pred, tpe: UnkindedType, rest: UnkindedType, loc: SourceLocation): UnkindedType = {
     mkApply(Cst(Constructor.SchemaExtend(pred), loc), List(tpe, rest))
   }
-
 
   /**
     * Construct a relation type with the given list of type arguments `ts0`.
@@ -303,22 +358,26 @@ object UnkindedType {
     Apply(inner, b)
   }
 
-  // MATT docs
+  /**
+    * Constructs a Not type operator at the given source location.
+    */
   def mkNot(t: UnkindedType, loc: SourceLocation): UnkindedType = {
     Apply(Cst(Constructor.Not, loc), t)
   }
 
-  // MATT docs
+  /**
+    * Constructs an And type operator at the given source location.
+    */
   def mkAnd(t1: UnkindedType, t2: UnkindedType, loc: SourceLocation): UnkindedType = {
     mkApply(Cst(Constructor.And, loc), List(t1, t2))
   }
 
-  // MATT docs
+  /**
+    * Constructs an Or type operator at the given source location.
+    */
   def mkOr(t1: UnkindedType, t2: UnkindedType, loc: SourceLocation): UnkindedType = {
     mkApply(Cst(Constructor.Or, loc), List(t1, t2))
   }
-
-  // MATT reorganize all these functions
 
   /**
     * Returns a simplified (evaluated) form of the given type `tpe0`.

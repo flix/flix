@@ -119,20 +119,26 @@ object Kind {
     case x :: xs => Arrow(x, mkArrow(xs))
   }
 
-  // MATT docs
+  /**
+    * Returns the base of an arrow kind.
+    */
   @tailrec
   def base(k: Kind): Kind = k match {
     case Arrow(k1, _) => base(k1)
     case _ => k
   }
 
-  // MATT docs
+  /**
+    * Returns the arguments of an arrow kind.
+    */
   def args(k: Kind): List[Kind] = k match {
     case Arrow(k1, k2) => k1 :: args(k2)
     case _ => Nil
   }
 
-  // MATT docs
+  /**
+    * Returns the minimum kind, or None if the kinds are incomparable.
+    */
   def min(k1: Kind, k2: Kind): Option[Kind] = {
     if (k1 <:: k2)
       Some(k1)
