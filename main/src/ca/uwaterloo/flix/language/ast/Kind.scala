@@ -139,4 +139,14 @@ object Kind {
     case _ => Nil
   }
 
+  // MATT docs
+  def min(k1: Kind, k2: Kind): Option[Kind] = {
+    if (k1 <:: k2)
+      Some(k1)
+    else if (k2 <:: k1)
+      Some(k2)
+    else
+      None
+  }
+
 }

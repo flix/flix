@@ -12,8 +12,7 @@ class TestExamples extends Suites(
   new FlixTest("enums-and-parametric-polymorphism", "examples/enums-and-parametric-polymorphism.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("record-construction-and-use", "examples/record-construction-and-use.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("polymorphic-record-update", "examples/polymorphic-record-update.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
-  // MATT disabling temporarily as it depends on kind ascriptions
-//  new FlixTest("polymorphic-record-extension-and-restriction", "examples/polymorphic-record-extension-and-restriction.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  new FlixTest("polymorphic-record-extension-and-restriction", "examples/polymorphic-record-extension-and-restriction.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("function-composition-pipelines-and-currying", "examples/function-composition-pipelines-and-currying.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("pure-and-impure-functions", "examples/pure-and-impure-functions.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("effect-polymorphic-functions", "examples/effect-polymorphic-functions.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
