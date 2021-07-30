@@ -23,7 +23,16 @@ import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN, mapN, traverse}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
-// MATT docs
+/**
+  * Attributes kinds to the types in the AST.
+  *
+  * For enums, classes, instances, and type aliases,
+  * kinds are either explicit or assumed to be Star.
+  *
+  * For defs,
+  * kinds are either explicit or are inferred from their
+  * use in the formal parameters, return type and effect, and type constraints.
+  */
 object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
 
   override def run(root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Root, CompilationError] = flix.phase("Kinder") {

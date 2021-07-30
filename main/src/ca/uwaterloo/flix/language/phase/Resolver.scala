@@ -1458,7 +1458,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       for {
         tpe1 <- lookupType(base0, ns0, root)
         tpe2 <- lookupType(targ0, ns0, root)
-        app = UnkindedType.Apply(tpe1, tpe2) // MATT lost loc
+        app = UnkindedType.Apply(tpe1, tpe2)
       } yield UnkindedType.simplify(app)
 
     case NamedAst.Type.True(loc) =>
