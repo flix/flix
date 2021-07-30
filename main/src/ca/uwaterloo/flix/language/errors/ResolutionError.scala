@@ -131,69 +131,6 @@ object ResolutionError {
   }
 
   /**
-    * Illegal Uninhabited Type Error.
-    * @param tpe the uninhabited type.
-    * @param loc the location where the error occurred.
-    */
-  case class IllegalUninhabitedType(tpe: Type, loc: SourceLocation) extends ResolutionError {
-    override def summary: String = "Illegal uninhabited type."
-    override def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Illegal uninhabited type: '" << Red(FormatType.formatType(tpe)) << "' with kind '" << Red(FormatKind.formatKind(tpe.kind)) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "uninhabited type.")
-      vt << NewLine
-      vt << Underline("Tip:") << " Types in this location must be inhabited."
-      vt << "     Ensure the type has the correct number of parameters."
-    }
-  }
-
-  /**
-    * Illegal Type Application Error.
-    * @param tpe1 the type used as a type constructor.
-    * @param tpe2 the type used as an argument.
-    * @param loc the location where the error occurred.
-    */
-  case class IllegalTypeApplication(tpe1: Type, tpe2: Type, loc: SourceLocation) extends ResolutionError {
-    override def summary: String = "Illegal type application."
-    override def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Illegal type application: '" << Red(FormatType.formatType(tpe1)) << "' applied to '" << Red(FormatType.formatType(tpe2)) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "illegal type application.")
-      vt << NewLine
-      vt << "Type constructor kind: '" << Red(FormatKind.formatKind(tpe1.kind)) << "'."
-      vt << "Argument kind: '" << Red(FormatKind.formatKind(tpe2.kind)) << "'."
-      vt << NewLine
-      vt << "Possible fixes:" << NewLine
-      vt << NewLine
-      vt << "  (1)  Ensure the first type is a type constructor." << NewLine
-      vt << "  (2)  Ensure the type has the correct number of parameters." << NewLine
-      vt << "  (3)  Ensure the type constructor accepts the given argument kinds." << NewLine
-    }
-  }
-
-  /**
-    * Illegal effect error.
-    * @param tpe the type used as an effect.
-    * @param loc the location where the error occured.
-    */
-  case class IllegalEffect(tpe: Type, loc: SourceLocation) extends ResolutionError {
-    override def summary: String = "Illegal effect."
-    override def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Illegal effect: '"  << FormatType.formatType(tpe) << "'."
-      vt << NewLine
-      vt << Code(loc, "illegal effect.")
-      vt << NewLine
-      vt << Underline("Tip:") << " Effect types must be of boolean kind (Pure/Impure)."
-    }
-  }
-
-  /**
     * Inaccessible Class Error.
     *
     * @param sym the class symbol.
