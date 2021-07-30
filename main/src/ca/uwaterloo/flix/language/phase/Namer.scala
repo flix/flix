@@ -172,7 +172,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
             val sym = Symbol.mkEnumSym(ns0, ident)
 
             // Compute the type parameters.
-            flatMapN(getTypeParamsFromCases(tparams0, cases.values.toList, loc, uenv0)) {
+            flatMapN(getTypeParams(tparams0, uenv0)) {
               tparams =>
 
                 val tenv = tparams.tparams.map(kv => kv.name.name -> kv.tpe).toMap
@@ -437,21 +437,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           }
       }
   }
-
-  /**
-    * Returns a fresh type environment constructed from the given identifiers `idents`.
-    */
-//  private def typeEnvFromFreeVars(idents: List[Name.Ident])(implicit flix: Flix): Map[String, Type.Var] =
-//    idents.foldLeft(Map.empty[String, Type.Var]) {
-//      case (macc, ident) => macc.get(ident.name) match {
-//        case None =>
-//          // We use a kind variable since we do not know the kind of the type variable.
-//          val tvar = Type.freshVar(Kind.freshVar(), text = Some(ident.name))
-//          macc + (ident.name -> tvar)
-//        case Some(tvar) => macc
-//      }
-//    }
-  // MATT unused
 
   /**
     * Performs naming on the given expression `exp0` under the given environments `env0`, `uenv0`, and `tenv0`.
@@ -1380,8 +1365,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.Ascribe(tpe, _, _) => freeVars(tpe)
   }
 
-  // MATT docs
-  // MATT kill other freeVars?
+  /**
+    * Returns the free variables under the type environment `tenv`.
+    */
   private def freeVarsInTenv(tpe0: WeededAst.Type, tenv: Map[String, UnkindedType.Var]): List[Name.Ident] = {
     def visit(tpe0: WeededAst.Type): List[Name.Ident] = tpe0 match {
       case WeededAst.Type.Var(ident, loc) if tenv.contains(ident.name) => Nil
@@ -1527,14 +1513,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Performs naming on the given type parameters `tparam0` from the given cases `cases`.
     */
-    // MATT we don't even use the cases here
-  private def getTypeParamsFromCases(tparams0: WeededAst.TypeParams, cases: List[WeededAst.Case], loc: SourceLocation, uenv0: UseEnv)(implicit flix: Flix): Validation[NamedAst.TypeParams, NameError] = {
+  private def getTypeParams(tparams0: WeededAst.TypeParams, uenv0: UseEnv)(implicit flix: Flix): Validation[NamedAst.TypeParams, NameError] = {
     tparams0 match {
       case WeededAst.TypeParams.Elided => NamedAst.TypeParams.Kinded(Nil).toSuccess
       case WeededAst.TypeParams.Unkinded(tparams) => getExplicitUnkindedTypeParams(tparams, uenv0).toSuccess // MATT no errors possible here
       case WeededAst.TypeParams.Kinded(tparams) => getExplicitKindedTypeParams(tparams).toSuccess
     }
   }
+
 
   /**
     * Performs naming on the given type parameters `tparams0` from the given formal params `fparams` and overall type `tpe`.
