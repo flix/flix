@@ -46,7 +46,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     }
 
     val instancesVal = Validation.traverse(root.instances) {
-      case (sym, insts0) => traverse(insts0)(visitInstance(_, root)).map((sym, _))
+      case (sym, insts0) => traverse(insts0)(visitInstance2(_, root)).map((sym, _))
     }
 
     mapN(enumsVal, classesVal, defsVal, instancesVal) {
@@ -231,6 +231,20 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
 
       mapN(tparamVal, superClassesVal, sigsVal, lawsVal) {
         case (tparam, superClasses, sigs, laws) => KindedAst.Class(doc, mod, sym, tparam, superClasses, sigs.toMap, laws, loc)
+      }
+  }
+
+  private def visitInstance2(inst: ResolvedAst.Instance, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, KindError] = inst match {
+    case ResolvedAst.Instance(doc, mod, sym, tpe0, tconstrs0, defs0, ns, loc) =>
+      val kind = getClassKind(root.classes(sym))
+      val kinds = inferType(tpe0, KindMatch.subKindOf(KindMatch.Template.fromKind(kind)), root)
+
+      val tpeVal = ascribeType(tpe0, KindMatch.wild, kinds, root)
+      val tconstrsVal = Validation.traverse(tconstrs0)(ascribeTypeConstraint(_, kinds, root))
+      val defsVal = Validation.traverse(defs0)(visitDef2(_, kinds, root))
+
+      mapN(tpeVal, tconstrsVal, defsVal) {
+        case (tpe, tconstrs, defs) => KindedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, ns, loc)
       }
   }
 
