@@ -312,15 +312,11 @@ object WeededAst {
 
     case class RecordExtend(field: Name.Field, tpe: WeededAst.Type, rest: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
-    case class RecordGeneric(tvar: WeededAst.Type.Var, loc: SourceLocation) extends WeededAst.Type
-
     case class SchemaEmpty(loc: SourceLocation) extends WeededAst.Type
 
     case class SchemaExtendByAlias(qname: Name.QName, targs: List[WeededAst.Type], rest: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
     case class SchemaExtendByTypes(name: Name.Ident, den: Ast.Denotation, tpes: List[WeededAst.Type], rest: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
-
-    case class SchemaGeneric(tvar: WeededAst.Type.Var, loc: SourceLocation) extends WeededAst.Type
 
     case class Relation(tpes: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Type
 

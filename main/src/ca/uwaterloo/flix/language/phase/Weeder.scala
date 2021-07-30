@@ -1971,7 +1971,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
       (fields, restOpt) match {
         // Case 1: `{| r}` Polymorphic record with no fields. `r` must be a `Record` variable.
-        case (Nil, Some(ident)) => WeededAst.Type.RecordGeneric(WeededAst.Type.Var(ident, ident.loc), mkSL(sp1, sp2))
+        case (Nil, Some(ident)) => WeededAst.Type.Ascribe(WeededAst.Type.Var(ident, ident.loc), Kind.Record, mkSL(sp1, sp2))
         // Case 2: `{x: Int}` Nonpolymorphic record. Base must be an empty record.
         case (_, None) => buildRecord(WeededAst.Type.RecordEmpty(mkSL(sp1, sp2)))
         // Case 3: `{x: Int | r}` Polymorphic record with field. `r` must be a `Record` variable.
@@ -1998,7 +1998,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
       (predicates, restOpt) match {
         // Case 1: `#{| r}` Polymorphic schema with no fields. `r` must be a `Schema` variable.
-        case (Nil, Some(ident)) => WeededAst.Type.SchemaGeneric(WeededAst.Type.Var(restOpt.get, restOpt.get.loc), mkSL(sp1, sp2))
+        case (Nil, Some(ident)) => WeededAst.Type.Ascribe(WeededAst.Type.Var(ident, ident.loc), Kind.Schema, mkSL(sp1, sp2))
         // Case 2: `#{X(Int)}` Nonpolymorphic schema. Base must be an empty schema.
         case (_, None) => buildSchema(WeededAst.Type.SchemaEmpty(mkSL(sp1, sp2)))
         // Case 3: `#{X(Int) | r}` Polymorphic schema with field. `r` must be a `Schema` variable.

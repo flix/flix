@@ -22,8 +22,8 @@ class TestKinder extends FunSuite with TestUtils {
     expectError[KindError](result)
   }
 
-  ignore("MismatchedTypeParamKind.Implicit.03") { // MATT reenable after Kind ascriptions
-    val input = "def f(s: #{| a}, r: {| a}): Int = 123" // MATT #{| } is just a syntactic hint; doesn't make it to the kinder
+  test("MismatchedTypeParamKind.Implicit.03") {
+    val input = "def f(s: #{| a}, r: {| a}): Int = 123"
     val result = compile(input, Options.TestWithLibNix)
     expectError[KindError](result)
   }
@@ -76,7 +76,7 @@ class TestKinder extends FunSuite with TestUtils {
     expectError[KindError](result)
   }
 
-  ignore("MismatchedTypeParamKind.Enum.03") { // MATT reenable after kind ascriptions
+  test("MismatchedTypeParamKind.Enum.03") {
     val input =
       """
         |enum E[a] {
@@ -87,7 +87,7 @@ class TestKinder extends FunSuite with TestUtils {
     expectError[KindError](result)
   }
 
-  test("MismatchedTypeParamKind.Enum.04") { // MATT error caused by subkinding
+  test("MismatchedTypeParamKind.Enum.04") {
     val input =
       """
         |enum E[a] {
@@ -135,7 +135,7 @@ class TestKinder extends FunSuite with TestUtils {
     expectError[KindError](result)
   }
 
-  ignore("MismatchedTypeParamKind.TypeAlias.03") { // MATT depends on kind ascriptions
+  test("MismatchedTypeParamKind.TypeAlias.03") {
     val input = "type alias T[a] = (#{| a}, {| a})"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
@@ -276,7 +276,7 @@ class TestKinder extends FunSuite with TestUtils {
     expectError[KindError](result)
   }
 
-  test("IllegalUninhabitedType.10") { // MATT stack overflow
+  test("IllegalUninhabitedType.10") {
     val input = "def f(): Int = 1: Pure"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)

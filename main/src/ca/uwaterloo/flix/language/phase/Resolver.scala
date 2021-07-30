@@ -1477,6 +1477,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         case (t1, t2) => UnkindedType.mkOr(t1, t2, loc)
       }
 
+    case NamedAst.Type.Ascribe(tpe, kind, loc) =>
+      mapN(lookupType(tpe, ns0, root)) {
+        t => UnkindedType.Ascribe(t, kind, loc)
+      }
+
   }
 
   /**

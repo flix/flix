@@ -157,6 +157,12 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
           } yield Type.Lambda(t1, t2)
         case _ => ??? // MATT KindError (maybe we can accept Wild here?)
       }
+    case UnkindedType.Ascribe(t, k, loc) =>
+      if (KindMatch.matches(k, expectedKind)) {
+        ascribeType(t, KindMatch.subKindOf(KindMatch.Template.fromKind(k)), kinds, root)
+      } else {
+        KindError.UnexpectedKind(expectedKind = KindMatch.Template.toKind(expectedKind.kind), actualKind = k, loc).toFailure
+      }
   }
 
   private def ascribeScheme(sc: ResolvedAst.Scheme, kinds: Map[UnkindedType.Var, Kind], root: ResolvedAst.Root)(implicit flix: Flix): Validation[Scheme, KindError] = sc match {

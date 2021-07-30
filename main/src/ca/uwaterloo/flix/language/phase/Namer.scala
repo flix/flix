@@ -1126,9 +1126,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (t, r) => NamedAst.Type.RecordExtend(field, t, r, loc)
       }
 
-    case WeededAst.Type.RecordGeneric(tvar, loc) =>
-      visitType(tvar, uenv0, tenv0)
-
     case WeededAst.Type.SchemaEmpty(loc) =>
       NamedAst.Type.SchemaEmpty(loc).toSuccess
 
@@ -1148,9 +1145,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       mapN(traverse(tpes)(visitType(_, uenv0, tenv0)), visitType(rest, uenv0, tenv0)) {
         case (ts, r) => NamedAst.Type.SchemaExtendWithTypes(ident, den, ts, r, loc)
       }
-
-    case WeededAst.Type.SchemaGeneric(tvar, loc) =>
-      visitType(tvar, uenv0, tenv0)
 
     case WeededAst.Type.Relation(tpes, loc) =>
       mapN(traverse(tpes)(visitType(_, uenv0, tenv0))) {
@@ -1197,7 +1191,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
     case WeededAst.Type.Ascribe(tpe, kind, loc) =>
-      visitType(tpe, uenv0, tenv0)
+      mapN(visitType(tpe, uenv0, tenv0)) {
+        t => NamedAst.Type.Ascribe(t, kind, loc)
+      }
   }
 
   /**
@@ -1368,11 +1364,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.Tuple(elms, loc) => elms.flatMap(freeVars)
     case WeededAst.Type.RecordEmpty(loc) => Nil
     case WeededAst.Type.RecordExtend(l, t, r, loc) => freeVars(t) ::: freeVars(r)
-    case WeededAst.Type.RecordGeneric(t, loc) => freeVars(t)
     case WeededAst.Type.SchemaEmpty(loc) => Nil
     case WeededAst.Type.SchemaExtendByTypes(_, _, ts, r, loc) => ts.flatMap(freeVars) ::: freeVars(r)
     case WeededAst.Type.SchemaExtendByAlias(_, ts, r, _) => ts.flatMap(freeVars) ::: freeVars(r)
-    case WeededAst.Type.SchemaGeneric(t, loc) => freeVars(t)
     case WeededAst.Type.Relation(ts, loc) => ts.flatMap(freeVars)
     case WeededAst.Type.Lattice(ts, loc) => ts.flatMap(freeVars)
     case WeededAst.Type.Native(fqm, loc) => Nil
@@ -1397,11 +1391,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       case WeededAst.Type.Tuple(elms, loc) => elms.flatMap(visit)
       case WeededAst.Type.RecordEmpty(loc) => Nil
       case WeededAst.Type.RecordExtend(l, t, r, loc) => visit(t) ::: visit(r)
-      case WeededAst.Type.RecordGeneric(t, loc) => visit(t)
       case WeededAst.Type.SchemaEmpty(loc) => Nil
       case WeededAst.Type.SchemaExtendByTypes(_, _, ts, r, loc) => ts.flatMap(visit) ::: visit(r)
       case WeededAst.Type.SchemaExtendByAlias(_, ts, r, _) => ts.flatMap(visit) ::: visit(r)
-      case WeededAst.Type.SchemaGeneric(t, loc) => visit(t)
       case WeededAst.Type.Relation(ts, loc) => ts.flatMap(visit)
       case WeededAst.Type.Lattice(ts, loc) => ts.flatMap(visit)
       case WeededAst.Type.Native(fqm, loc) => Nil

@@ -12,16 +12,19 @@ sealed trait UnkindedType {
     case UnkindedType.Apply(t1, _) => t1.typeConstructor
     case UnkindedType.Lambda(_, _) => throw InternalCompilerException("Unexpected type constructor: Lambda")
     case UnkindedType.Var(_, _, _) => None
+    case UnkindedType.Ascribe(t, _, _) => t.typeConstructor
   }
 
   def baseType: UnkindedType = this match {
     case UnkindedType.Apply(t1, _) => t1.baseType
+    case UnkindedType.Ascribe(t, _, _) => t.baseType
     case _ => this
   }
 
   // MATT docs
   def typeArguments: List[UnkindedType] = this match {
     case UnkindedType.Apply(tpe1, tpe2) => tpe1.typeArguments ::: tpe2 :: Nil
+    case UnkindedType.Ascribe(t, _, _) => t.typeArguments
     case _ => Nil
   }
 }
@@ -36,6 +39,8 @@ object UnkindedType {
   case class Var(id: Int, kvar: Kind.Var, text: Option[String] = None) extends UnkindedType {
     def ascribedWith(kind: Kind): Type.Var = Type.Var(id, kind, text = text)
   }
+
+  case class Ascribe(t: UnkindedType, k: Kind, loc: SourceLocation) extends UnkindedType
 
   /**
     * Returns the Unit type with given source location `loc`.
@@ -343,6 +348,8 @@ object UnkindedType {
         case (Lambda(tvar, tpe3), t2) => eval(tpe3, subst + (tvar -> t2))
         case (t1, t2) => Apply(t1, t2)
       }
+
+      case Ascribe(t1, k, loc) => Ascribe(eval(t1, subst), k, loc)
     }
 
     eval(tpe0, Map.empty)
