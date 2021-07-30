@@ -384,4 +384,17 @@ class TestKinder extends FunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
+
+  test("TestMismatchedKinds.01") {
+    val input = "def foo(): {| x} = {a = 2} <+> {a = 2}"
+    val result = compile(input, DefaultOptions)
+    expectError[KindError](result)
+  }
+
+  test("TestMismatchedKinds.02") {
+    val input = "def foo(): #{| x} = {a = 2} <+> {a = 2}"
+    val result = compile(input, DefaultOptions)
+    expectError[KindError](result)
+  }
+
 }

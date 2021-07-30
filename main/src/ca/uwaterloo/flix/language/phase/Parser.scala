@@ -1355,8 +1355,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ keyword("Record") ~ SP ~> ParsedAst.Kind.Record
     }
 
-    def Schema: Rule1[ParsedAst.Kind.Record] = rule {
-      SP ~ keyword("Schema") ~ SP ~> ParsedAst.Kind.Record
+    def Schema: Rule1[ParsedAst.Kind.Schema] = rule {
+      SP ~ keyword("Schema") ~ SP ~> ParsedAst.Kind.Schema
     }
 
   }
