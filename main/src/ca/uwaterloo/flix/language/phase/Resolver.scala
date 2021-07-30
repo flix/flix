@@ -285,7 +285,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     }
   }
 
-  // MATT docs
+  /**
+    * Performs name resolution on the given type alias `typeAlias` in the given namespace `ns0`.
+    */
   private def resolve(typeAlias: NamedAst.TypeAlias, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.TypeAlias, ResolutionError] = typeAlias match {
     case NamedAst.TypeAlias(doc, mod, sym, tparams0, tpe0, loc) =>
       for {
@@ -1038,7 +1040,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     def resolve(fparam0: NamedAst.FormalParam, ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.FormalParam, ResolutionError] = {
       for {
         t <- lookupType(fparam0.tpe, ns0, root)
-//        _ <- checkProperType(t, fparam0.loc) // MATT
       } yield ResolvedAst.FormalParam(fparam0.sym, fparam0.mod, t, fparam0.loc)
     }
 
@@ -1050,12 +1051,16 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         case tparam: NamedAst.TypeParam.Unkinded => resolve(tparam)
     }
 
-    // MATT docs
+    /**
+      * Performs name resolution on the given kinded type parameter `tparam0` in the given namespace `ns0`.
+      */
     def resolve(tparam0: NamedAst.TypeParam.Kinded): Validation[ResolvedAst.TypeParam.Kinded, ResolutionError] = tparam0 match {
       case NamedAst.TypeParam.Kinded(name, tpe, kind, loc) => ResolvedAst.TypeParam.Kinded(name, tpe, kind, loc).toSuccess // MATT monadic stuff is redundant here(?).toSuccess
     }
 
-    // MATT docs
+    /**
+      * Performs name resolution on the given unkinded type parameter `tparam0` in the given namespace `ns0`.
+      */
     def resolve(tparam0: NamedAst.TypeParam.Unkinded): Validation[ResolvedAst.TypeParam.Unkinded, ResolutionError] = tparam0 match {
       case NamedAst.TypeParam.Unkinded(name, tpe, loc) => ResolvedAst.TypeParam.Unkinded(name, tpe, loc).toSuccess // MATT monadic stuff is redundant here(?).toSuccess
     }
@@ -1521,30 +1526,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   }
 
   /**
-    * Asserts that the given type is a proper type: that its kind is a subkind of `*`.
-    */
-    // MATT move this to Kinder
-  private def checkProperType(tpe: Type, loc: SourceLocation): Validation[Unit, ResolutionError] = {
-    if (tpe.kind <:: Kind.Star) {
-      ().toSuccess
-    } else {
-      ResolutionError.IllegalUninhabitedType(tpe, loc).toFailure
-    }
-  }
-
-  /**
-    * Asserts that the given type is an effect type: that its kind is a subkind of `Bool`.
-    */
-    // MATT move this to Kinder
-  private def checkEffectType(tpe: Type, loc: SourceLocation): Validation[Unit, ResolutionError] = {
-    if (tpe.kind <:: Kind.Bool) {
-      ().toSuccess
-    } else {
-      ResolutionError.IllegalEffect(tpe, loc).toFailure
-    }
-  }
-
-  /**
     * Determines if the class is accessible from the namespace.
     *
     * Accessibility depends on the modifiers on the class
@@ -1866,84 +1847,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     Name.NName(sp1, idents, sp2)
   }
 
-  // MATT remove these; kinder should check well-formedness of types
   /**
-    * Create a well-formed type applying `tpe1` to `tpe2`.
+    * Constructs a predicate type.
     */
-  private def mkApply(tpe1: Type, tpe2: Type, loc: SourceLocation): Validation[Type, ResolutionError] = {
-    (tpe1.kind, tpe2.kind) match {
-      case (Kind.Arrow(k1, _), k2) if k2 <:: k1 => Type.Apply(tpe1, tpe2).toSuccess
-      case _ => ResolutionError.IllegalTypeApplication(tpe1, tpe2, loc).toFailure
-    }
-  }
-
-  /**
-    * Create a well-formed type applying `tpe` to `args`.
-    */
-  private def mkApply(tpe: Type, args: List[Type], loc: SourceLocation): Validation[Type, ResolutionError] = {
-    Validation.fold(args, tpe)(mkApply(_, _, loc))
-  }
-
-  /**
-    * Create a well-formed `And` type.
-    */
-  private def mkAnd(tpe1: Type, tpe2: Type, loc: SourceLocation): Validation[Type, ResolutionError] = {
-    mkApply(Type.And, List(tpe1, tpe2), loc)
-  }
-
-  /**
-    * Create a well-formed `Or` type.
-    */
-  private def mkOr(tpe1: Type, tpe2: Type, loc: SourceLocation): Validation[Type, ResolutionError] = {
-    mkApply(Type.Or, List(tpe1, tpe2), loc)
-  }
-
-  /**
-    * Create a well-formed `Not` type.
-    */
-  private def mkNot(tpe: Type, loc: SourceLocation): Validation[Type, ResolutionError] = {
-    mkApply(Type.Not, tpe, loc)
-  }
-
-  /**
-    * Creates a well-formed `Tuple` type.
-    */
-  private def mkTuple(tpes: List[Type], loc: SourceLocation): Validation[Type, ResolutionError] = {
-    mkApply(Type.Cst(TypeConstructor.Tuple(tpes.length), loc), tpes, loc)
-  }
-
-  /**
-    * Creates a well-formed `RecordExtend` type.
-    */
-  private def mkRecordExtend(field: Name.Field, tpe: Type, rest: Type, loc: SourceLocation): Validation[Type, ResolutionError] = {
-    mkApply(Type.Cst(TypeConstructor.RecordExtend(field), loc), List(tpe, rest), loc)
-  }
-
-  /**
-    * Creates a well-formed `SchemaExtend` type.
-    */
-  private def mkSchemaExtend(pred: Name.Pred, tpe: Type, rest: Type, loc: SourceLocation): Validation[Type, ResolutionError] = {
-    mkApply(Type.Cst(TypeConstructor.SchemaExtend(pred), loc), List(tpe, rest), loc)
-  }
-
-  /**
-    * Creates a well-formed `Lattice` or `Relation` type.
-    */
-  private def mkPredicate(den: Ast.Denotation, ts0: List[Type], loc: SourceLocation): Validation[Type, ResolutionError] = {
-    val tycon = den match {
-      case Denotation.Relational => Type.Relation
-      case Denotation.Latticenal => Type.Lattice
-    }
-    val tsVal = ts0 match {
-      case Nil => Type.Unit.toSuccess
-      case x :: Nil => x.toSuccess
-      case xs => mkTuple(xs, loc)
-    }
-
-    flatMapN(tsVal)(mkApply(tycon, _, loc))
-  }
-
-  // MATT docs
   private def mkPredicate(den: Ast.Denotation, ts0: List[UnkindedType], loc: SourceLocation): UnkindedType = {
     val tycon = den match {
       case Denotation.Relational => UnkindedType.Cst(UnkindedType.Constructor.Relation, loc)
@@ -1956,20 +1862,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     }
 
     UnkindedType.Apply(tycon, ts)
-  }
-
-  /**
-    * Creates a well-formed `Relation` type.
-    */
-  private def mkRelation(ts0: List[Type], loc: SourceLocation): Validation[Type, ResolutionError] = {
-    mkPredicate(Ast.Denotation.Relational, ts0, loc)
-  }
-
-  /**
-    * Creates a well-formed `Lattice` type.
-    */
-  private def mkLattice(ts0: List[Type], loc: SourceLocation): Validation[Type, ResolutionError] = {
-    mkPredicate(Ast.Denotation.Latticenal, ts0, loc)
   }
 
   /**
