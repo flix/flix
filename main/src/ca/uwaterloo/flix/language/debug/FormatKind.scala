@@ -8,7 +8,7 @@ object FormatKind {
     * Create a string representation of the kind.
     */
   def formatKind(kind: Kind): String = kind match {
-    case Kind.Var(id) => s"`$id"
+    case Kind.Wild => "?"
     case Kind.Star => "Type"
     case Kind.Bool => "Bool"
     case Kind.Record => "Record"

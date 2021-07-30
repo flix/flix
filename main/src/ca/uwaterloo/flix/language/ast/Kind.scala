@@ -16,7 +16,6 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.debug.FormatKind
 
 import scala.annotation.tailrec
@@ -53,9 +52,8 @@ sealed trait Kind {
     case (Kind.Record, Kind.Record) => true
     case (Kind.Schema, Kind.Schema) => true
 
-    // kind vars
-    case (Kind.Var(_), _) => true
-    case (_, Kind.Var(_)) => true
+    case (_, Kind.Wild) => true
+    case (Kind.Wild, _) => true // MATT is this right?
 
     // subkinds
     case (Kind.Record, Kind.Star) => true
@@ -71,9 +69,9 @@ sealed trait Kind {
 object Kind {
 
   /**
-    * Represents a kind variable.
+    * Represents a wild kind.
     */
-  case class Var(id: Int) extends Kind
+  case object Wild extends Kind
 
   /**
     * Represents the kind of types.
@@ -120,11 +118,6 @@ object Kind {
     case Nil => Star
     case x :: xs => Arrow(x, mkArrow(xs))
   }
-
-  /**
-    * Returns a fresh kind variable.
-    */
-  def freshVar()(implicit flix: Flix): Kind.Var = Var(flix.genSym.freshId())
 
   // MATT docs
   @tailrec

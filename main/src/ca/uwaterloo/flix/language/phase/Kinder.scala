@@ -107,7 +107,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   }
 
   private def ascribeTypeVar(tvar: UnkindedType.Var, kindMatch: KindMatch, kenv: KindEnv): Validation[Type.Var, KindError] = tvar match {
-    case tvar@UnkindedType.Var(id, _, text) =>
+    case tvar@UnkindedType.Var(id, text) =>
       kenv.map.get(tvar) match {
         // MATT I don't know if we should be here
         // Case 1: we don't know about this kind, just ascribe it with what the context expects
@@ -126,7 +126,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   }
 
   private def ascribeFreeTypeVar(tvar: UnkindedType.Var, kindMatch: KindMatch): Type.Var = tvar match {
-    case UnkindedType.Var(id, _, text) =>
+    case UnkindedType.Var(id, text) =>
       val kind = KindMatch.Template.toKind(kindMatch.kind)
       Type.Var(id, kind, text = text)
   }
@@ -865,7 +865,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       def toKind2: Kind = Template.toKind(this)
     }
 
-    object Template {
+    object Template { // MATT this is redundant with normal kinds now
 
       case object Wild extends Template
 
@@ -880,8 +880,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       case class Arrow(k1: Template, k2: Template) extends Template
 
       def fromKind(k: Kind): KindMatch.Template = k match {
-        case Kind.Var(-1) => Wild // MATT hack
-        case Kind.Var(id) => throw InternalCompilerException("unexpected kvar")
+        case Kind.Wild => Wild // MATT hack
         case Kind.Star => Star
         case Kind.Bool => Bool
         case Kind.Record => Record
@@ -895,7 +894,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         case Record => Kind.Record
         case Schema => Kind.Schema
         case Arrow(k1, k2) => Kind.Arrow(toKind(k1), toKind(k2))
-        case Wild => Kind.Var(-1) // MATT hack
+        case Wild => Kind.Wild
       }
     }
 
