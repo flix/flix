@@ -1586,7 +1586,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     }
     // MATT maybe make a helper for ident -> tparam
 
-    NamedAst.TypeParams.Unkinded(tparams) // MATT no chance of NameError here
+    NamedAst.TypeParams.Unkinded(tparams)
   }
 
   /**
