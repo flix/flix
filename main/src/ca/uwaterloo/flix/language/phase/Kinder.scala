@@ -67,7 +67,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
           caze => (tag, caze)
         }
       }
-      val tpeDeprecatedVal = ascribeType(tpeDeprecated0, KindMatch.subKindOf(KindMatch.Template.Star), kinds, root)
+      val tpeDeprecatedVal = ascribeType(tpeDeprecated0, KindMatch.subKindOf(Kind.Star), kinds, root)
       val scVal = ascribeScheme(sc0, kinds, root)
 
       mapN(tparamsVal, casesVal, tpeDeprecatedVal, scVal) {
@@ -101,7 +101,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   private def ascribeCase(caze0: ResolvedAst.Case, kinds: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Case, KindError] = caze0 match {
     case ResolvedAst.Case(enum, tag, tpeDeprecated0, sc0) =>
       for {
-        tpeDeprecated <- ascribeType(tpeDeprecated0, KindMatch.subKindOf(KindMatch.Template.Star), kinds, root)
+        tpeDeprecated <- ascribeType(tpeDeprecated0, KindMatch.subKindOf(Kind.Star), kinds, root)
         sc <- ascribeScheme(sc0, kinds, root)
       } yield KindedAst.Case(enum, tag, tpeDeprecated, sc)
   }
@@ -111,13 +111,13 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       kenv.map.get(tvar) match {
         // MATT I don't know if we should be here
         // Case 1: we don't know about this kind, just ascribe it with what the context expects
-        case None => tvar.ascribedWith(kindMatch.kind.toKind2).toSuccess
+        case None => tvar.ascribedWith(kindMatch.kind).toSuccess
         // Case 2: we know about this kind, make sure it's behaving as we expect
         case Some(actualKind) =>
-          if (KindMatch.matches(actualKind, kindMatch)) {
+          if (kindMatch.matches(actualKind)) {
             Type.Var(id, actualKind, text = text).toSuccess
           } else {
-            val expectedKind = KindMatch.Template.toKind(kindMatch.kind)
+            val expectedKind = kindMatch.kind
             KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = actualKind, SourceLocation.Unknown).toFailure
             // MATT get real source loc
           }
@@ -127,29 +127,29 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
 
   private def ascribeFreeTypeVar(tvar: UnkindedType.Var, kindMatch: KindMatch): Type.Var = tvar match {
     case UnkindedType.Var(id, text) =>
-      val kind = KindMatch.Template.toKind(kindMatch.kind)
+      val kind = kindMatch.kind
       Type.Var(id, kind, text = text)
   }
 
   private def ascribeType(tpe0: UnkindedType, expectedKind: KindMatch, kenv: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[Type, KindError] = tpe0 match {
     case tvar: UnkindedType.Var => ascribeTypeVar(tvar, expectedKind, kenv)
     case UnkindedType.Cst(cst, loc) =>
-      val tycon = reassembleTypeConstructor(cst, root)
+      val tycon = ascribeTypeConstructor(cst, root)
       val kind = tycon.kind
-      if (KindMatch.matches(kind, expectedKind)) {
+      if (expectedKind.matches(kind)) {
         Type.Cst(tycon, loc).toSuccess
       } else {
-        KindError.UnexpectedKind(expectedKind = KindMatch.Template.toKind(expectedKind.kind), actualKind = kind, loc).toFailure
+        KindError.UnexpectedKind(expectedKind = expectedKind.kind, actualKind = kind, loc).toFailure
       }
     case UnkindedType.Apply(t10, t20) =>
       for {
         t2 <- ascribeType(t20, KindMatch.wild, kenv, root)
-        k1 = KindMatch.subKindOf(KindMatch.Template.Arrow(KindMatch.Template.fromKind(t2.kind), expectedKind.kind))
+        k1 = KindMatch.subKindOf(Kind.Arrow(t2.kind, expectedKind.kind))
         t1 <- ascribeType(t10, k1, kenv, root)
       } yield Type.Apply(t1, t2)
     case UnkindedType.Lambda(t10, t20) =>
       expectedKind match {
-        case KindMatch(_, KindMatch.Template.Arrow(expK1, expK2)) =>
+        case KindMatch(_, Kind.Arrow(expK1, expK2)) =>
           val t1 = ascribeFreeTypeVar(t10, KindMatch.subKindOf(expK1))
           for {
             newKinds <- kenv + (t10 -> t1.kind)
@@ -158,10 +158,10 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         case _ => ??? // MATT KindError (maybe we can accept Wild here?)
       }
     case UnkindedType.Ascribe(t, k, loc) =>
-      if (KindMatch.matches(k, expectedKind)) {
-        ascribeType(t, KindMatch.subKindOf(KindMatch.Template.fromKind(k)), kenv, root)
+      if (expectedKind.matches(k)) {
+        ascribeType(t, KindMatch.subKindOf(k), kenv, root)
       } else {
-        KindError.UnexpectedKind(expectedKind = KindMatch.Template.toKind(expectedKind.kind), actualKind = k, loc).toFailure
+        KindError.UnexpectedKind(expectedKind = expectedKind.kind, actualKind = k, loc).toFailure
       }
   }
 
@@ -170,14 +170,14 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       for {
         quantifiers <- Validation.traverse(quantifiers0)(ascribeTypeVar(_, KindMatch.wild, kinds))
         constraints <- Validation.traverse(constraints0)(ascribeTypeConstraint(_, kinds, root))
-        base <- ascribeType(base0, KindMatch.subKindOf(KindMatch.Template.Star), kinds, root)
+        base <- ascribeType(base0, KindMatch.subKindOf(Kind.Star), kinds, root)
       } yield Scheme(quantifiers, constraints, base)
   }
 
   private def ascribeTypeConstraint(tconstr: ResolvedAst.TypeConstraint, kinds: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[Ast.TypeConstraint, KindError] = tconstr match {
     case ResolvedAst.TypeConstraint(clazz, tpe0, loc) =>
       val classKind = getClassKind(root.classes(clazz))
-      mapN(ascribeType(tpe0, KindMatch.subKindOf(KindMatch.Template.fromKind(classKind)), kinds, root)) {
+      mapN(ascribeType(tpe0, KindMatch.subKindOf(classKind), kinds, root)) {
         tpe => Ast.TypeConstraint(clazz, tpe, loc)
       }
   }
@@ -202,7 +202,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     case ResolvedAst.Instance(doc, mod, sym, tpe0, tconstrs0, defs0, ns, loc) =>
       val kind = getClassKind(root.classes(sym))
       for {
-        kinds <- inferType(tpe0, KindMatch.subKindOf(KindMatch.Template.fromKind(kind)), root)
+        kinds <- inferType(tpe0, KindMatch.subKindOf(kind), root)
         tpeVal = ascribeType(tpe0, KindMatch.wild, kinds, root)
         tconstrsVal = Validation.traverse(tconstrs0)(ascribeTypeConstraint(_, kinds, root))
         defsVal = Validation.traverse(defs0)(visitDef(_, kinds, root))
@@ -227,7 +227,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   }
 
   // MATT docs
-  def reassembleTypeConstructor(tycon: UnkindedType.Constructor, root: ResolvedAst.Root)(implicit flix: Flix): TypeConstructor = tycon match {
+  def ascribeTypeConstructor(tycon: UnkindedType.Constructor, root: ResolvedAst.Root)(implicit flix: Flix): TypeConstructor = tycon match {
     case UnkindedType.Constructor.Unit => TypeConstructor.Unit
     case UnkindedType.Constructor.Null => TypeConstructor.Null
     case UnkindedType.Constructor.Bool => TypeConstructor.Bool
@@ -292,8 +292,8 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       val tparamsVal = Validation.traverse(tparams0.tparams)(ascribeTparam(_, kenv))
       val fparamsVal = Validation.traverse(fparams0)(ascribeFormalParam(_, kenv, root))
       val scVal = ascribeScheme(sc0, kenv, root)
-      val tpeVal = ascribeType(tpe0, KindMatch.subKindOf(KindMatch.Template.Star), kenv, root)
-      val effVal = ascribeType(eff0, KindMatch.subKindOf(KindMatch.Template.Bool), kenv, root)
+      val tpeVal = ascribeType(tpe0, KindMatch.subKindOf(Kind.Star), kenv, root)
+      val effVal = ascribeType(eff0, KindMatch.subKindOf(Kind.Bool), kenv, root)
       mapN(annVal, tparamsVal, fparamsVal, scVal, tpeVal, effVal) {
         case (ann, tparams, fparams, sc, tpe, eff) => KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, loc)
       }
@@ -301,7 +301,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
 
   private def ascribeFormalParam(fparam0: ResolvedAst.FormalParam, kinds: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.FormalParam, KindError] = fparam0 match {
     case ResolvedAst.FormalParam(sym, mod, tpe0, loc) =>
-      mapN(ascribeType(tpe0, KindMatch.subKindOf(KindMatch.Template.Star), kinds, root)) {
+      mapN(ascribeType(tpe0, KindMatch.subKindOf(Kind.Star), kinds, root)) {
         tpe => KindedAst.FormalParam(sym, mod, tpe, loc)
       }
   }
@@ -317,7 +317,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   private def ascribeExpression(exp00: ResolvedAst.Expression, kenv: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Expression, KindError] = exp00 match {
     case ResolvedAst.Expression.Wild(tpe, loc) => KindedAst.Expression.Wild(tpe.ascribedWith(Kind.Star), loc).toSuccess
     case ResolvedAst.Expression.Var(sym, tpe0, loc) =>
-      mapN(ascribeType(tpe0, KindMatch.subKindOf(KindMatch.Template.Star), kenv, root)) {
+      mapN(ascribeType(tpe0, KindMatch.subKindOf(Kind.Star), kenv, root)) {
         tpe => KindedAst.Expression.Var(sym, tpe, loc)
       }
     case ResolvedAst.Expression.Def(sym, tpe, loc) => KindedAst.Expression.Def(sym, tpe.ascribedWith(Kind.Star), loc).toSuccess
@@ -480,14 +480,14 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     case ResolvedAst.Expression.Ascribe(exp0, expectedType0, expectedEff0, tpe, loc) =>
       for {
         exp <- ascribeExpression(exp0, kenv, root)
-        expectedType <- Validation.traverse(expectedType0)(ascribeType(_, KindMatch.subKindOf(KindMatch.Template.Star), kenv, root))
-        expectedEff <- Validation.traverse(expectedEff0)(ascribeType(_, KindMatch.subKindOf(KindMatch.Template.Bool), kenv, root))
+        expectedType <- Validation.traverse(expectedType0)(ascribeType(_, KindMatch.subKindOf(Kind.Star), kenv, root))
+        expectedEff <- Validation.traverse(expectedEff0)(ascribeType(_, KindMatch.subKindOf(Kind.Bool), kenv, root))
       } yield KindedAst.Expression.Ascribe(exp, expectedType.headOption, expectedEff.headOption, tpe.ascribedWith(Kind.Star), loc)
     case ResolvedAst.Expression.Cast(exp0, declaredType0, declaredEff0, tpe, loc) =>
       for {
         exp <- ascribeExpression(exp0, kenv, root)
-        declaredType <- Validation.traverse(declaredType0)(ascribeType(_, KindMatch.subKindOf(KindMatch.Template.Star), kenv, root))
-        declaredEff <- Validation.traverse(declaredEff0)(ascribeType(_, KindMatch.subKindOf(KindMatch.Template.Bool), kenv, root))
+        declaredType <- Validation.traverse(declaredType0)(ascribeType(_, KindMatch.subKindOf(Kind.Star), kenv, root))
+        declaredEff <- Validation.traverse(declaredEff0)(ascribeType(_, KindMatch.subKindOf(Kind.Bool), kenv, root))
       } yield KindedAst.Expression.Cast(exp, declaredType.headOption, declaredEff.headOption, tpe.ascribedWith(Kind.Star), loc)
     case ResolvedAst.Expression.TryCatch(exp0, rules0, loc) =>
       for {
@@ -524,7 +524,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     case ResolvedAst.Expression.NewChannel(exp0, tpe0, loc) =>
       for {
         exp <- ascribeExpression(exp0, kenv, root)
-        tpe <- ascribeType(tpe0, KindMatch.subKindOf(KindMatch.Template.Star), kenv, root)
+        tpe <- ascribeType(tpe0, KindMatch.subKindOf(Kind.Star), kenv, root)
       } yield KindedAst.Expression.NewChannel(exp, tpe, loc)
     case ResolvedAst.Expression.GetChannel(exp0, tpe, loc) =>
       for {
@@ -707,7 +707,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         }
       }
       val schemeKenvVal = inferScheme(sc, root)
-      val effKenvVal = inferType(eff, KindMatch.subKindOf(KindMatch.Template.Bool), root)
+      val effKenvVal = inferType(eff, KindMatch.subKindOf(Kind.Bool), root)
 
       flatMapN(fparamKenvVal, schemeKenvVal, effKenvVal) {
         case (fparamKenv, schemeKenv, effKenv) => KindEnv.merge(fparamKenv, schemeKenv, effKenv)
@@ -716,12 +716,12 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   }
 
   private def inferFparam(fparam0: ResolvedAst.FormalParam, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = fparam0 match {
-    case ResolvedAst.FormalParam(_, _, tpe0, _) => inferType(tpe0, KindMatch.subKindOf(KindMatch.Template.Star), root)
+    case ResolvedAst.FormalParam(_, _, tpe0, _) => inferType(tpe0, KindMatch.subKindOf(Kind.Star), root)
   }
 
   private def inferScheme(sc0: ResolvedAst.Scheme, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = sc0 match {
     case ResolvedAst.Scheme(_, constraints, base) =>
-      val baseKenvVal = inferType(base, KindMatch.subKindOf(KindMatch.Template.Star), root)
+      val baseKenvVal = inferType(base, KindMatch.subKindOf(Kind.Star), root)
       val tconstrsKenvsVal = Validation.traverse(constraints)(inferTconstr(_, root))
 
       Validation.flatMapN(baseKenvVal, tconstrsKenvsVal) {
@@ -732,18 +732,18 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   private def inferTconstr(tconstr: ResolvedAst.TypeConstraint, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = tconstr match {
     case ResolvedAst.TypeConstraint(clazz, tpe, loc) =>
       val kind = getClassKind(root.classes(clazz))
-      inferType(tpe, KindMatch.subKindOf(KindMatch.Template.fromKind(kind)), root)
+      inferType(tpe, KindMatch.subKindOf(kind), root)
   }
 
   private def inferType(tpe: UnkindedType, expectedType: KindMatch, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = tpe.baseType match {
     // Case 1: the type constructor is a variable: all args are * and the constructor is * -> * -> * ... -> expectedType
     case tvar: UnkindedType.Var =>
-      val kind = tpe.typeArguments.foldLeft(expectedType.kind.toKind2) {
+      val kind = tpe.typeArguments.foldLeft(expectedType.kind) {
         case (acc, _) => Kind.Star ->: acc
       }
 
       Validation.fold(tpe.typeArguments, KindEnv.singleton(tvar -> kind)) {
-        case (acc, targ) => flatMapN(inferType(targ, KindMatch.subKindOf(KindMatch.Template.Star), root)) {
+        case (acc, targ) => flatMapN(inferType(targ, KindMatch.subKindOf(Kind.Star), root)) {
           kenv => acc ++ kenv
         }
       }
@@ -752,13 +752,13 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       val args = Kind.args(tyconKind)
 
       Validation.fold(tpe.typeArguments.zip(args), KindEnv.empty) {
-        case (acc, (targ, kind)) => flatMapN(inferType(targ, KindMatch.subKindOf(KindMatch.Template.fromKind(kind)), root)) {
+        case (acc, (targ, kind)) => flatMapN(inferType(targ, KindMatch.subKindOf(kind), root)) {
           kenv => acc ++ kenv
         }
       }
     case UnkindedType.Apply(_, _) => throw InternalCompilerException("Unexpected type application.")
     case UnkindedType.Lambda(t1, t2) => ??? // MATT I'll cross this bridge when i get to it
-    case UnkindedType.Ascribe(t, k, _) => inferType(t, KindMatch.subKindOf(Kinder.KindMatch.Template.fromKind(k)), root)
+    case UnkindedType.Ascribe(t, k, _) => inferType(t, KindMatch.subKindOf(k), root)
   }
 
   private def getKindsFromTparamsDefaultStar(tparams0: ResolvedAst.TypeParams)(implicit flix: Flix): KindEnv = tparams0 match {
@@ -837,16 +837,21 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     case UnkindedType.Constructor.Region => Kind.Bool ->: Kind.Star
   }
 
-  private case class KindMatch(assoc: KindMatch.Association, kind: KindMatch.Template)
+  private case class KindMatch(assoc: KindMatch.Association, kind: Kind) {
+    def matches(other: Kind): Boolean = assoc match {
+      case KindMatch.Association.SubKind => other <:: kind
+      case KindMatch.Association.SuperKind => kind <:: other
+    }
+  }
 
   private object KindMatch {
 
     // association doesn't matter
-    def wild: KindMatch = KindMatch(Association.SubKind, Template.Wild)
+    def wild: KindMatch = KindMatch(Association.SubKind, Kind.Wild)
 
-    def subKindOf(template: Template): KindMatch = KindMatch(Association.SubKind, template)
+    def subKindOf(kind: Kind): KindMatch = KindMatch(Association.SubKind, kind)
 
-    def superKindOf(template: Template): KindMatch = KindMatch(Association.SuperKind, template)
+    def superKindOf(kind: Kind): KindMatch = KindMatch(Association.SuperKind, kind)
 
     sealed trait Association
 
@@ -854,70 +859,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       case object SubKind extends Association
 
       case object SuperKind extends Association
-
-      def invert(assoc: Association): Association = assoc match {
-        case SubKind => SuperKind
-        case SuperKind => SubKind
-      }
     }
-
-    sealed trait Template {
-      def toKind2: Kind = Template.toKind(this)
-    }
-
-    object Template { // MATT this is redundant with normal kinds now
-
-      case object Wild extends Template
-
-      case object Star extends Template
-
-      case object Bool extends Template
-
-      case object Record extends Template
-
-      case object Schema extends Template
-
-      case class Arrow(k1: Template, k2: Template) extends Template
-
-      def fromKind(k: Kind): KindMatch.Template = k match {
-        case Kind.Wild => Wild // MATT hack
-        case Kind.Star => Star
-        case Kind.Bool => Bool
-        case Kind.Record => Record
-        case Kind.Schema => Schema
-        case Kind.Arrow(k1, k2) => Arrow(fromKind(k1), fromKind(k2))
-      }
-
-      def toKind(k: KindMatch.Template): Kind = k match {
-        case Star => Kind.Star
-        case Bool => Kind.Bool
-        case Record => Kind.Record
-        case Schema => Kind.Schema
-        case Arrow(k1, k2) => Kind.Arrow(toKind(k1), toKind(k2))
-        case Wild => Kind.Wild
-      }
-    }
-
-    def matches(k1: Kind, k2: KindMatch): Boolean = (k1, k2) match {
-      case (_, KindMatch(_, Template.Wild)) => true
-      case (Kind.Star, KindMatch(_, Template.Star)) => true
-      case (Kind.Bool, KindMatch(_, Template.Bool)) => true
-      case (Kind.Record, KindMatch(_, Template.Record)) => true
-      case (Kind.Schema, KindMatch(_, Template.Schema)) => true
-
-      case (Kind.Record, KindMatch(Association.SubKind, Template.Star)) => true
-      case (Kind.Schema, KindMatch(Association.SubKind, Template.Star)) => true
-
-      case (Kind.Star, KindMatch(Association.SuperKind, Template.Record)) => true
-      case (Kind.Star, KindMatch(Association.SuperKind, Template.Schema)) => true
-
-      case (Kind.Arrow(k11, k12), KindMatch(assoc, Template.Arrow(k21, k22))) =>
-        matches(k11, KindMatch(Association.invert(assoc), k21)) &&
-          matches(k12, KindMatch(assoc, k22))
-
-      case _ => false
-    }
-
   }
 
   private object KindEnv {
