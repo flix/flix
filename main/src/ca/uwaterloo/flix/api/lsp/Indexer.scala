@@ -295,7 +295,7 @@ object Indexer {
       val i0 = default.map(visitExp).getOrElse(Index.empty)
       val i1 = rules.foldLeft(Index.empty) {
         case (index, SelectChannelRule(sym, chan, body)) =>
-          index ++ Index.occurrenceOf(sym, sym.tvar) ++ visitExp(chan) ++ visitExp(body)
+          index ++ Index.occurrenceOf(sym, sym.tvar.ascribedWith(Kind.Star)) ++ visitExp(chan) ++ visitExp(body) // MATT ascription here is a hack
       }
       i0 ++ i1 ++ Index.occurrenceOf(exp0)
 
