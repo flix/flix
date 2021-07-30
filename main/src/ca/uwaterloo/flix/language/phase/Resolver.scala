@@ -265,7 +265,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           case (name, NamedAst.Case(enum, tag, tpe)) =>
             for {
               t <- lookupType(tpe, ns0, root)
-//              _ <- checkProperType(t, tag.loc)
             } yield {
               val freeVars = e0.tparams.tparams.map(_.tpe)
               val caseType = t
@@ -735,8 +734,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e <- visit(exp, tenv0)
             t <- expectedTypVal
             f <- expectedEffVal
-//            _ <- t.map(checkProperType(_, loc)).getOrElse(().toSuccess)
-//            _ <- f.map(checkEffectType(_, loc)).getOrElse(().toSuccess)
           } yield ResolvedAst.Expression.Ascribe(e, t, f, tvar, loc)
 
         case NamedAst.Expression.Cast(exp, declaredType, declaredEff, tvar, loc) =>
@@ -754,8 +751,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e <- visit(exp, tenv0)
             t <- declaredTypVal
             f <- declaredEffVal
-//            _ <- t.map(checkProperType(_, loc)).getOrElse(().toSuccess)
-//            _ <- f.map(checkEffectType(_, loc)).getOrElse(().toSuccess)
           } yield ResolvedAst.Expression.Cast(e, t, f, tvar, loc)
 
         case NamedAst.Expression.TryCatch(exp, rules, loc) =>
