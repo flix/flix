@@ -31,19 +31,19 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     */
   override def run(root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Root, CompilationError] = flix.phase("Kinder") {
     val enumsVal = Validation.traverse(root.enums) {
-      case (sym, enum) => visitEnum2(enum, root).map((sym, _))
+      case (sym, enum) => visitEnum(enum, root).map((sym, _))
     }
 
     val classesVal = Validation.traverse(root.classes) {
-      case (sym, clazz) => visitClass2(clazz, root).map((sym, _))
+      case (sym, clazz) => visitClass(clazz, root).map((sym, _))
     }
 
     val defsVal = Validation.traverse(root.defs) {
-      case (sym, defn) => visitDef2(defn, Map.empty, root).map((sym, _))
+      case (sym, defn) => visitDef(defn, Map.empty, root).map((sym, _))
     }
 
     val instancesVal = Validation.traverse(root.instances) {
-      case (sym, insts0) => traverse(insts0)(visitInstance2(_, root)).map((sym, _))
+      case (sym, insts0) => traverse(insts0)(visitInstance(_, root)).map((sym, _))
     }
 
     val typeAliasesVal = Validation.traverseX(root.typealiases) {
@@ -57,7 +57,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
 
   }
 
-  private def visitEnum2(enum: ResolvedAst.Enum, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Enum, CompilationError] = enum match {
+  private def visitEnum(enum: ResolvedAst.Enum, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Enum, CompilationError] = enum match {
     case ResolvedAst.Enum(doc, mod, sym, tparams0, cases0, tpeDeprecated0, sc0, loc) =>
       val kinds = getKindsFromTparamsDefaultStar(tparams0)
 
@@ -182,30 +182,30 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       }
   }
 
-  private def visitClass2(clazz: ResolvedAst.Class, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Class, KindError] = clazz match {
+  private def visitClass(clazz: ResolvedAst.Class, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Class, KindError] = clazz match {
     case ResolvedAst.Class(doc, mod, sym, tparam0, superClasses0, sigs0, laws0, loc) =>
       val kinds = getKindsFromTparamDefaultStar(tparam0)
 
       val tparamVal =  ascribeTparam(tparam0, kinds)
       val superClassesVal = Validation.traverse(superClasses0)(ascribeTypeConstraint(_, kinds, root))
       val sigsVal = Validation.traverse(sigs0){
-        case (sigSym, sig0) => visitSig2(sig0, kinds, root).map(sig => sigSym -> sig)
+        case (sigSym, sig0) => visitSig(sig0, kinds, root).map(sig => sigSym -> sig)
       }
-      val lawsVal = traverse(laws0)(visitDef2(_, kinds, root))
+      val lawsVal = traverse(laws0)(visitDef(_, kinds, root))
 
       mapN(tparamVal, superClassesVal, sigsVal, lawsVal) {
         case (tparam, superClasses, sigs, laws) => KindedAst.Class(doc, mod, sym, tparam, superClasses, sigs.toMap, laws, loc)
       }
   }
 
-  private def visitInstance2(inst: ResolvedAst.Instance, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, KindError] = inst match {
+  private def visitInstance(inst: ResolvedAst.Instance, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, KindError] = inst match {
     case ResolvedAst.Instance(doc, mod, sym, tpe0, tconstrs0, defs0, ns, loc) =>
       val kind = getClassKind(root.classes(sym))
       val kinds = inferType(tpe0, KindMatch.subKindOf(KindMatch.Template.fromKind(kind)), root)
 
       val tpeVal = ascribeType(tpe0, KindMatch.wild, kinds, root)
       val tconstrsVal = Validation.traverse(tconstrs0)(ascribeTypeConstraint(_, kinds, root))
-      val defsVal = Validation.traverse(defs0)(visitDef2(_, kinds, root))
+      val defsVal = Validation.traverse(defs0)(visitDef(_, kinds, root))
 
       mapN(tpeVal, tconstrsVal, defsVal) {
         case (tpe, tconstrs, defs) => KindedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, ns, loc)
@@ -267,7 +267,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     case UnkindedType.Constructor.Region => TypeConstructor.Region
   }
 
-  private def visitDef2(def0: ResolvedAst.Def, kinds0: Map[UnkindedType.Var, Kind], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Def, KindError] = def0 match {
+  private def visitDef(def0: ResolvedAst.Def, kinds0: Map[UnkindedType.Var, Kind], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Def, KindError] = def0 match {
     case ResolvedAst.Def(sym, spec0, exp0) =>
       val kinds = kinds0 ++ getKindsFromSpec(spec0, root)
       val specVal = ascribeSpec(spec0, kinds, root)
@@ -277,7 +277,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       }
   }
 
-  private def visitSig2(sig0: ResolvedAst.Sig, kinds0: Map[UnkindedType.Var, Kind], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Sig, KindError] = sig0 match {
+  private def visitSig(sig0: ResolvedAst.Sig, kinds0: Map[UnkindedType.Var, Kind], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Sig, KindError] = sig0 match {
     case ResolvedAst.Sig(sym, spec0, exp0) =>
       val kinds = kinds0 ++ getKindsFromSpec(spec0, root)
       val specVal = ascribeSpec(spec0, kinds, root)
@@ -464,7 +464,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       } yield KindedAst.Expression.Assign(exp1, exp2, evar.ascribedWith(Kind.Bool), loc)
     case ResolvedAst.Expression.Existential(fparam0, exp0, loc) =>
       // add the formal param kinds to the environment
-      val fparamKinds = inferFparam2(fparam0, root)
+      val fparamKinds = inferFparam(fparam0, root)
       val kinds1 = kinds ++ fparamKinds
       for {
         fparam <- ascribeFormalParam(fparam0, kinds1, root)
@@ -472,7 +472,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       } yield KindedAst.Expression.Existential(fparam, exp, loc)
     case ResolvedAst.Expression.Universal(fparam0, exp0, loc) =>
       // add the formal param kinds to the environment
-      val fparamKinds = inferFparam2(fparam0, root)
+      val fparamKinds = inferFparam(fparam0, root)
       val kinds1 = kinds ++ fparamKinds
       for {
         fparam <- ascribeFormalParam(fparam0, kinds1, root)
@@ -700,29 +700,29 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       } yield KindedAst.Predicate.Body.Guard(exp, loc)
   }
 
-  private def inferSpec2(spec0: ResolvedAst.Spec, root: ResolvedAst.Root)(implicit flix: Flix): Map[UnkindedType.Var, Kind] = spec0 match {
+  private def inferSpec(spec0: ResolvedAst.Spec, root: ResolvedAst.Root)(implicit flix: Flix): Map[UnkindedType.Var, Kind] = spec0 match {
     case ResolvedAst.Spec(_, _, _, _, fparams, sc, _, eff, _) =>
       fparams.foldLeft(Map.empty[UnkindedType.Var, Kind]) {
-        case (acc, fparam) => acc ++ inferFparam2(fparam, root)
+        case (acc, fparam) => acc ++ inferFparam(fparam, root)
       } ++
-        inferScheme2(sc, root) ++
+        inferScheme(sc, root) ++
         inferType(eff, KindMatch.subKindOf(KindMatch.Template.Bool), root) // MATT merge smarter
 
   }
 
-  private def inferFparam2(fparam0: ResolvedAst.FormalParam, root: ResolvedAst.Root)(implicit flix: Flix): Map[UnkindedType.Var, Kind] = fparam0 match {
+  private def inferFparam(fparam0: ResolvedAst.FormalParam, root: ResolvedAst.Root)(implicit flix: Flix): Map[UnkindedType.Var, Kind] = fparam0 match {
     case ResolvedAst.FormalParam(_, _, tpe0, _) => inferType(tpe0, KindMatch.subKindOf(KindMatch.Template.Star), root)
   }
 
-  private def inferScheme2(sc0: ResolvedAst.Scheme, root: ResolvedAst.Root)(implicit flix: Flix): Map[UnkindedType.Var, Kind] = sc0 match {
+  private def inferScheme(sc0: ResolvedAst.Scheme, root: ResolvedAst.Root)(implicit flix: Flix): Map[UnkindedType.Var, Kind] = sc0 match {
     case ResolvedAst.Scheme(_, constraints, base) =>
       val baseKinds = inferType(base, KindMatch.subKindOf(KindMatch.Template.Star), root)
       constraints.foldLeft(baseKinds) {
-        case (acc, tconstr) => acc ++ inferTconstr2(tconstr, root) // MATT merge smarter
+        case (acc, tconstr) => acc ++ inferTconstr(tconstr, root) // MATT merge smarter
       }
   }
 
-  private def inferTconstr2(tconstr: ResolvedAst.TypeConstraint, root: ResolvedAst.Root)(implicit flix: Flix): Map[UnkindedType.Var, Kind] = tconstr match {
+  private def inferTconstr(tconstr: ResolvedAst.TypeConstraint, root: ResolvedAst.Root)(implicit flix: Flix): Map[UnkindedType.Var, Kind] = tconstr match {
     case ResolvedAst.TypeConstraint(clazz, tpe, loc) =>
       val kind = getClassKind(root.classes(clazz))
       inferType(tpe, KindMatch.subKindOf(KindMatch.Template.fromKind(kind)), root)
@@ -765,7 +765,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     case ResolvedAst.Spec(_, _, _, tparams0, _, _, _, _, _) =>
       tparams0 match {
         case tparams: ResolvedAst.TypeParams.Kinded => getKindsFromKindedTparams(tparams)
-        case _: ResolvedAst.TypeParams.Unkinded => inferSpec2(spec0, root)
+        case _: ResolvedAst.TypeParams.Unkinded => inferSpec(spec0, root)
       }
   }
 
