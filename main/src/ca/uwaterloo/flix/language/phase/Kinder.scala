@@ -38,11 +38,11 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     }
 
     val classesVal = Validation.traverse(root.classes) {
-      case (sym, clazz) => visitClass(clazz, root).map((sym, _))
+      case (sym, clazz) => visitClass2(clazz, root).map((sym, _))
     }
 
     val defsVal = Validation.traverse(root.defs) {
-      case (sym, defn) => visitDef2(defn, root).map((sym, _))
+      case (sym, defn) => visitDef2(defn, Map.empty, root).map((sym, _))
     }
 
     val instancesVal = Validation.traverse(root.instances) {
@@ -218,6 +218,22 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
 
   }
 
+  private def visitClass2(clazz: ResolvedAst.Class, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Class, KindError] = clazz match {
+    case ResolvedAst.Class(doc, mod, sym, tparam0, superClasses0, sigs0, laws0, loc) =>
+      val kinds = getKindsFromTparamDefaultStar(tparam0)
+
+      val tparamVal =  ascribeTparam(tparam0, kinds)
+      val superClassesVal = Validation.traverse(superClasses0)(ascribeTypeConstraint(_, kinds, root))
+      val sigsVal = Validation.traverse(sigs0){
+        case (sigSym, sig0) => visitSig2(sig0, kinds, root).map(sig => sigSym -> sig)
+      }
+      val lawsVal = traverse(laws0)(visitDef2(_, kinds, root))
+
+      mapN(tparamVal, superClassesVal, sigsVal, lawsVal) {
+        case (tparam, superClasses, sigs, laws) => KindedAst.Class(doc, mod, sym, tparam, superClasses, sigs.toMap, laws, loc)
+      }
+  }
+
   // MATT docs
   private def visitInstance(inst: ResolvedAst.Instance, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, CompilationError] = inst match {
     case ResolvedAst.Instance(doc, mod, sym, tpe0, tconstrs0, defs0, ns, loc) =>
@@ -343,13 +359,23 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       }
   }
 
-  private def visitDef2(def0: ResolvedAst.Def, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Def, KindError] = def0 match {
+  private def visitDef2(def0: ResolvedAst.Def, kinds0: Map[UnkindedType.Var, Kind], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Def, KindError] = def0 match {
     case ResolvedAst.Def(sym, spec0, exp0) =>
-      val kinds = getKindsFromSpec(spec0, root)
+      val kinds = kinds0 ++ getKindsFromSpec(spec0, root)
       val specVal = ascribeSpec(spec0, kinds, root)
       val expVal = ascribeExpression(exp0, kinds, root)
       mapN(specVal, expVal) {
         case (spec, exp) => KindedAst.Def(sym, spec, exp)
+      }
+  }
+
+  private def visitSig2(sig0: ResolvedAst.Sig, kinds0: Map[UnkindedType.Var, Kind], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Sig, KindError] = sig0 match {
+    case ResolvedAst.Sig(sym, spec0, exp0) =>
+      val kinds = kinds0 ++ getKindsFromSpec(spec0, root)
+      val specVal = ascribeSpec(spec0, kinds, root)
+      val expVal = Validation.traverse(exp0)(ascribeExpression(_, kinds, root))
+      mapN(specVal, expVal) {
+        case (spec, exp) => KindedAst.Sig(sym, spec, exp.headOption)
       }
   }
 
@@ -847,6 +873,11 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       getKindsFromKindedTparams(tparams)
     case tparams: ResolvedAst.TypeParams.Unkinded =>
       getStarKindsForTparams(tparams)
+  }
+
+  private def getKindsFromTparamDefaultStar(tparam0: ResolvedAst.TypeParam)(implicit flix: Flix): Map[UnkindedType.Var, Kind] = tparam0 match {
+    case ResolvedAst.TypeParam.Kinded(_, tvar, kind, _) => Map(tvar -> kind)
+    case ResolvedAst.TypeParam.Unkinded(_, tvar, loc) => Map(tvar -> Kind.Star)
   }
 
   private def getKindsFromSpec(spec0: ResolvedAst.Spec, root: ResolvedAst.Root)(implicit flix: Flix): Map[UnkindedType.Var, Kind] = spec0 match {
