@@ -26,9 +26,6 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 // MATT docs
 object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
 
-  /**
-    * Runs the p
-    */
   override def run(root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Root, CompilationError] = flix.phase("Kinder") {
     val enumsVal = Validation.traverse(root.enums) {
       case (sym, enum) => visitEnum(enum, root).map((sym, _))
@@ -57,6 +54,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
 
   }
 
+  // MATT docs
   private def visitEnum(enum: ResolvedAst.Enum, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Enum, CompilationError] = enum match {
     case ResolvedAst.Enum(doc, mod, sym, tparams0, cases0, tpeDeprecated0, sc0, loc) =>
       val kinds = getKindsFromTparamsDefaultStar(tparams0)
@@ -75,6 +73,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       }
   }
 
+  // MATT docs
   private def visitTypeAlias(alias: ResolvedAst.TypeAlias, root: ResolvedAst.Root)(implicit flix: Flix): Validation[Unit, KindError] = alias match {
     case ResolvedAst.TypeAlias(doc, mod, sym, tparams0, tpe0, loc) =>
       val kinds = getKindsFromTparamsDefaultStar(tparams0)
@@ -87,6 +86,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       }
   }
 
+  // MATT docs
   private def ascribeTparam(tparam: ResolvedAst.TypeParam, kenv: KindEnv): Validation[KindedAst.TypeParam, KindError] = tparam match {
     // MATT don't really need monad here because this should never fail
     case ResolvedAst.TypeParam.Kinded(name, tpe0, _, loc) =>
@@ -98,6 +98,8 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         tpe => KindedAst.TypeParam(name, tpe, loc)
       }
   }
+
+  // MATT docs
   private def ascribeCase(caze0: ResolvedAst.Case, kinds: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Case, KindError] = caze0 match {
     case ResolvedAst.Case(enum, tag, tpeDeprecated0, sc0) =>
       for {
@@ -106,6 +108,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       } yield KindedAst.Case(enum, tag, tpeDeprecated, sc)
   }
 
+  // MATT docs
   private def ascribeTypeVar(tvar: UnkindedType.Var, kindMatch: KindMatch, kenv: KindEnv): Validation[Type.Var, KindError] = tvar match {
     case tvar@UnkindedType.Var(id, text) =>
       kenv.map.get(tvar) match {
@@ -125,12 +128,14 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
 
   }
 
+  // MATT docs
   private def ascribeFreeTypeVar(tvar: UnkindedType.Var, kindMatch: KindMatch): Type.Var = tvar match {
     case UnkindedType.Var(id, text) =>
       val kind = kindMatch.kind
       Type.Var(id, kind, text = text)
   }
 
+  // MATT docs
   private def ascribeType(tpe0: UnkindedType, expectedKind: KindMatch, kenv: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[Type, KindError] = tpe0 match {
     case tvar: UnkindedType.Var => ascribeTypeVar(tvar, expectedKind, kenv)
     case UnkindedType.Cst(cst, loc) =>
@@ -165,6 +170,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       }
   }
 
+  // MATT docs
   private def ascribeScheme(sc: ResolvedAst.Scheme, kinds: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[Scheme, KindError] = sc match {
     case ResolvedAst.Scheme(quantifiers0, constraints0, base0) =>
       for {
@@ -174,6 +180,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       } yield Scheme(quantifiers, constraints, base)
   }
 
+  // MATT docs
   private def ascribeTypeConstraint(tconstr: ResolvedAst.TypeConstraint, kinds: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[Ast.TypeConstraint, KindError] = tconstr match {
     case ResolvedAst.TypeConstraint(clazz, tpe0, loc) =>
       val classKind = getClassKind(root.classes(clazz))
@@ -182,6 +189,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       }
   }
 
+  // MATT docs
   private def visitClass(clazz: ResolvedAst.Class, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Class, KindError] = clazz match {
     case ResolvedAst.Class(doc, mod, sym, tparam0, superClasses0, sigs0, laws0, loc) =>
       val kinds = getKindsFromTparamDefaultStar(tparam0)
@@ -198,6 +206,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       }
   }
 
+  // MATT docs
   private def visitInstance(inst: ResolvedAst.Instance, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, KindError] = inst match {
     case ResolvedAst.Instance(doc, mod, sym, tpe0, tconstrs0, defs0, ns, loc) =>
       val kind = getClassKind(root.classes(sym))
@@ -266,6 +275,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     case UnkindedType.Constructor.Region => TypeConstructor.Region
   }
 
+  // MATT docs
   private def visitDef(def0: ResolvedAst.Def, kinds0: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Def, KindError] = def0 match {
     case ResolvedAst.Def(sym, spec0, exp0) =>
       for {
@@ -276,6 +286,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       } yield KindedAst.Def(sym, spec, exp)
   }
 
+  // MATT docs
   private def visitSig(sig0: ResolvedAst.Sig, kenv0: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Sig, KindError] = sig0 match {
     case ResolvedAst.Sig(sym, spec0, exp0) =>
       for {
@@ -286,6 +297,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       } yield KindedAst.Sig(sym, spec, exp.headOption)
   }
 
+  // MATT docs
   private def ascribeSpec(spec0: ResolvedAst.Spec, kenv: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Spec, KindError] = spec0 match {
     case ResolvedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc0, tpe0, eff0, loc) =>
       val annVal = Validation.traverse(ann0)(ascribeAnnotation(_, kenv, root))
@@ -299,6 +311,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       }
   }
 
+  // MATT docs
   private def ascribeFormalParam(fparam0: ResolvedAst.FormalParam, kinds: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.FormalParam, KindError] = fparam0 match {
     case ResolvedAst.FormalParam(sym, mod, tpe0, loc) =>
       mapN(ascribeType(tpe0, KindMatch.subKindOf(Kind.Star), kinds, root)) {
@@ -306,6 +319,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       }
   }
 
+  // MATT docs
   private def ascribeAnnotation(ann: ResolvedAst.Annotation, kinds: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Annotation, KindError] = ann match {
     case ResolvedAst.Annotation(name, exps0, loc) =>
       mapN(Validation.traverse(exps0)(ascribeExpression(_, kinds, root))) {
@@ -587,6 +601,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
 
   }
 
+  // MATT docs
   private def ascribeMatchRule(rule0: ResolvedAst.MatchRule, kinds: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.MatchRule, KindError] = rule0 match {
     case ResolvedAst.MatchRule(pat0, guard0, exp0) =>
       for {
@@ -596,6 +611,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       } yield KindedAst.MatchRule(pat, guard, exp)
   }
 
+  // MATT docs
   private def ascribeChoiceRule(rule0: ResolvedAst.ChoiceRule, kinds: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.ChoiceRule, KindError] = rule0 match {
     case ResolvedAst.ChoiceRule(pat0, exp0) =>
       for {
@@ -604,6 +620,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       } yield KindedAst.ChoiceRule(pat, exp)
   }
 
+  // MATT docs
   private def ascribeCatchRule(rule0: ResolvedAst.CatchRule, kinds: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.CatchRule, KindError] = rule0 match {
     case ResolvedAst.CatchRule(sym, clazz, exp0) =>
       for {
@@ -611,6 +628,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       } yield KindedAst.CatchRule(sym, clazz, exp)
   }
 
+  // MATT docs
   private def ascribeSelectChannelRule(rule0: ResolvedAst.SelectChannelRule, kinds: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.SelectChannelRule, KindError] = rule0 match {
     case ResolvedAst.SelectChannelRule(sym, chan0, exp0) =>
       for {
@@ -659,12 +677,14 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
 
 
   // MATT validation unneeded here
+  // MATT docs
   private def ascribeChoicePattern(pat0: ResolvedAst.ChoicePattern, kinds: KindEnv, root: ResolvedAst.Root): Validation[KindedAst.ChoicePattern, KindError] = pat0 match {
     case ResolvedAst.ChoicePattern.Wild(loc) => KindedAst.ChoicePattern.Wild(loc).toSuccess
     case ResolvedAst.ChoicePattern.Absent(loc) => KindedAst.ChoicePattern.Absent(loc).toSuccess
     case ResolvedAst.ChoicePattern.Present(sym, tvar, loc) => KindedAst.ChoicePattern.Present(sym, tvar.ascribedWith(Kind.Star), loc).toSuccess
   }
 
+  // MATT docs
   private def ascribeConstraint(constraint0: ResolvedAst.Constraint, kenv: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Constraint, KindError] = constraint0 match {
     case ResolvedAst.Constraint(cparams0, head0, body0, loc) =>
       for {
@@ -676,11 +696,13 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
 
   // MATT validation unneeded here
   // MATT other args unneeded here
+  // MATT docs
   private def ascribeCparam(cparam0: ResolvedAst.ConstraintParam, kenv: KindEnv, root: ResolvedAst.Root): Validation[KindedAst.ConstraintParam, KindError] = cparam0 match {
     case ResolvedAst.ConstraintParam.HeadParam(sym, tpe, loc) => KindedAst.ConstraintParam.HeadParam(sym, tpe.ascribedWith(Kind.Star), loc).toSuccess
     case ResolvedAst.ConstraintParam.RuleParam(sym, tpe, loc) => KindedAst.ConstraintParam.RuleParam(sym, tpe.ascribedWith(Kind.Star), loc).toSuccess
   }
 
+  // MATT docs
   private def ascribeHeadPredicate(pred: ResolvedAst.Predicate.Head, kenv: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Predicate.Head, KindError] = pred match {
     case ResolvedAst.Predicate.Head.Atom(pred, den, terms0, tvar, loc) =>
       for {
@@ -688,6 +710,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       } yield KindedAst.Predicate.Head.Atom(pred, den, terms, tvar.ascribedWith(Kind.Star), loc)
   }
 
+  // MATT docs
   private def ascribeBodyPredicate(pred: ResolvedAst.Predicate.Body, kenv: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Predicate.Body, KindError] = pred match {
     case ResolvedAst.Predicate.Body.Atom(pred, den, polarity, terms0, tvar, loc) =>
       for {
@@ -699,6 +722,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       } yield KindedAst.Predicate.Body.Guard(exp, loc)
   }
 
+  // MATT docs
   private def inferSpec(spec0: ResolvedAst.Spec, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = spec0 match {
     case ResolvedAst.Spec(_, _, _, _, fparams, sc, _, eff, _) =>
       val fparamKenvVal = Validation.fold(fparams, KindEnv.empty) {
@@ -715,10 +739,12 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
 
   }
 
+  // MATT docs
   private def inferFparam(fparam0: ResolvedAst.FormalParam, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = fparam0 match {
     case ResolvedAst.FormalParam(_, _, tpe0, _) => inferType(tpe0, KindMatch.subKindOf(Kind.Star), root)
   }
 
+  // MATT docs
   private def inferScheme(sc0: ResolvedAst.Scheme, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = sc0 match {
     case ResolvedAst.Scheme(_, constraints, base) =>
       val baseKenvVal = inferType(base, KindMatch.subKindOf(Kind.Star), root)
@@ -729,12 +755,14 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       }
   }
 
+  // MATT docs
   private def inferTconstr(tconstr: ResolvedAst.TypeConstraint, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = tconstr match {
     case ResolvedAst.TypeConstraint(clazz, tpe, loc) =>
       val kind = getClassKind(root.classes(clazz))
       inferType(tpe, KindMatch.subKindOf(kind), root)
   }
 
+  // MATT docs
   private def inferType(tpe: UnkindedType, expectedType: KindMatch, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = tpe.baseType match {
     // Case 1: the type constructor is a variable: all args are * and the constructor is * -> * -> * ... -> expectedType
     case tvar: UnkindedType.Var =>
@@ -761,6 +789,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     case UnkindedType.Ascribe(t, k, _) => inferType(t, KindMatch.subKindOf(k), root)
   }
 
+  // MATT docs
   private def getKindsFromTparamsDefaultStar(tparams0: ResolvedAst.TypeParams)(implicit flix: Flix): KindEnv = tparams0 match {
     case tparams: ResolvedAst.TypeParams.Kinded =>
       getKindsFromKindedTparams(tparams)
@@ -768,11 +797,13 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       getStarKindsForTparams(tparams)
   }
 
+  // MATT docs
   private def getKindsFromTparamDefaultStar(tparam0: ResolvedAst.TypeParam)(implicit flix: Flix): KindEnv = tparam0 match {
     case ResolvedAst.TypeParam.Kinded(_, tvar, kind, _) => KindEnv.singleton(tvar -> kind)
     case ResolvedAst.TypeParam.Unkinded(_, tvar, _) => KindEnv.singleton(tvar -> Kind.Star)
   }
 
+  // MATT docs
   private def getKindsFromSpec(spec0: ResolvedAst.Spec, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = spec0 match {
     case ResolvedAst.Spec(_, _, _, tparams0, _, _, _, _, _) =>
       tparams0 match {
@@ -781,6 +812,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       }
   }
 
+  // MATT docs
   private def getKindsFromKindedTparams(tparams0: ResolvedAst.TypeParams.Kinded)(implicit flix: Flix): KindEnv = tparams0 match {
     case ResolvedAst.TypeParams.Kinded(tparams) =>
       // no chance of collision
@@ -791,6 +823,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       KindEnv(map)
   }
 
+  // MATT docs
   private def getStarKindsForTparams(tparams0: ResolvedAst.TypeParams.Unkinded)(implicit flix: Flix): KindEnv = tparams0 match {
     case ResolvedAst.TypeParams.Unkinded(tparams) =>
       // no chance of collision
@@ -801,6 +834,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       KindEnv(map)
   }
 
+  // MATT docs
   private def getTyconKind(tycon: UnkindedType.Constructor, root: ResolvedAst.Root)(implicit flix: Flix): Kind = tycon match {
     case UnkindedType.Constructor.Unit => Kind.Star
     case UnkindedType.Constructor.Null => Kind.Star
@@ -837,7 +871,9 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     case UnkindedType.Constructor.Region => Kind.Bool ->: Kind.Star
   }
 
+  // MATT docs
   private case class KindMatch(assoc: KindMatch.Association, kind: Kind) {
+    // MATT docs
     def matches(other: Kind): Boolean = assoc match {
       case KindMatch.Association.SubKind => other <:: kind
       case KindMatch.Association.SuperKind => kind <:: other
@@ -847,25 +883,35 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   private object KindMatch {
 
     // association doesn't matter
+    // MATT docs
     def wild: KindMatch = KindMatch(Association.SubKind, Kind.Wild)
 
+    // MATT docs
     def subKindOf(kind: Kind): KindMatch = KindMatch(Association.SubKind, kind)
 
+    // MATT docs
     def superKindOf(kind: Kind): KindMatch = KindMatch(Association.SuperKind, kind)
 
+    // MATT docs
     sealed trait Association
 
     object Association {
+      // MATT docs
       case object SubKind extends Association
 
+      // MATT docs
       case object SuperKind extends Association
     }
   }
 
+  // MATT docs
   private object KindEnv {
+    // MATT docs
     val empty: KindEnv = KindEnv(Map.empty)
+    // MATT docs
     def singleton(pair: (UnkindedType.Var, Kind)): KindEnv = KindEnv(Map(pair))
 
+    // MATT docs
     def merge(kenvs: KindEnv*): Validation[KindEnv, KindError] = {
       Validation.fold(kenvs, KindEnv.empty) {
         case (acc, kenv) => acc ++ kenv

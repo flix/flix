@@ -1798,7 +1798,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     */
   private def getJVMType(tpe: UnkindedType, loc: SourceLocation): Validation[Class[_], ResolutionError] = tpe.typeConstructor match {
     case None =>
-      ResolutionError.IllegalType(tpe, loc).toFailure // MATT take unkinded type in IllegalType error
+      ResolutionError.IllegalType(tpe, loc).toFailure
 
     case Some(tc) => tc match {
       case UnkindedType.Constructor.Unit => Class.forName("java.lang.Object").toSuccess
