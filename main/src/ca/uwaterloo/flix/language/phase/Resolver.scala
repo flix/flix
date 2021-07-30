@@ -75,14 +75,23 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       }
     }
 
+    val typeAliasesVal = root.typealiases.flatMap {
+      case (ns0, typeAliases) => typeAliases.map {
+        case (_, typeAlias) => resolve(typeAlias, ns0, root) map {
+          case a => a.sym -> a
+        }
+      }
+    }
+
     for {
       classes <- sequence(classesVal)
       instances <- sequence(instancesVal)
       definitions <- sequence(definitionsVal)
       enums <- sequence(enumsVal)
+      typeAliases <- sequence(typeAliasesVal)
       _ <- checkSuperClassDag(classes.toMap)
     } yield ResolvedAst.Root(
-      classes.toMap, combine(instances), definitions.toMap, enums.toMap, root.reachable, root.sources
+      classes.toMap, combine(instances), definitions.toMap, enums.toMap, typeAliases.toMap, root.reachable, root.sources
     )
   }
 
@@ -274,6 +283,15 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           ResolvedAst.Enum(e0.doc, e0.mod, e0.sym, tparams, cases.toMap, tpe, sc, e0.loc)
         }
     }
+  }
+
+  // MATT docs
+  private def resolve(typeAlias: NamedAst.TypeAlias, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.TypeAlias, ResolutionError] = typeAlias match {
+    case NamedAst.TypeAlias(doc, mod, sym, tparams0, tpe0, loc) =>
+      for {
+        tparams <- resolveTypeParams(tparams0, ns0, root)
+        tpe <- lookupType(tpe0, ns0, root)
+      } yield ResolvedAst.TypeAlias(doc, mod, sym, tparams, tpe, loc)
   }
 
   /**

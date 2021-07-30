@@ -16,7 +16,6 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
 
 import java.lang.reflect.{Constructor, Field, Method}
@@ -28,6 +27,7 @@ object ResolvedAst {
                   instances: Map[Symbol.ClassSym, List[ResolvedAst.Instance]],
                   defs: Map[Symbol.DefnSym, ResolvedAst.Def],
                   enums: Map[Symbol.EnumSym, ResolvedAst.Enum],
+                  typealiases: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
@@ -43,6 +43,8 @@ object ResolvedAst {
   case class Spec(doc: Ast.Doc, ann: List[ResolvedAst.Annotation], mod: Ast.Modifiers, tparams: ResolvedAst.TypeParams, fparams: List[ResolvedAst.FormalParam], sc: ResolvedAst.Scheme, tpe: UnkindedType, eff: UnkindedType, loc: SourceLocation)
 
   case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: ResolvedAst.TypeParams, cases: Map[Name.Tag, ResolvedAst.Case], tpeDeprecated: UnkindedType, sc: ResolvedAst.Scheme, loc: SourceLocation)
+
+  case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: ResolvedAst.TypeParams, tpe: UnkindedType, loc: SourceLocation)
 
   sealed trait Expression {
     def loc: SourceLocation
