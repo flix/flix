@@ -747,6 +747,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       }
     case UnkindedType.Apply(_, _) => throw InternalCompilerException("Unexpected type application.")
     case UnkindedType.Lambda(t1, t2) => ??? // MATT I'll cross this bridge when i get to it
+    case UnkindedType.Ascribe(t, k, _) => inferType(t, KindMatch.subKindOf(Kinder.KindMatch.Template.fromKind(k)), root)
   }
 
   private def getKindsFromTparamsDefaultStar(tparams0: ResolvedAst.TypeParams)(implicit flix: Flix): Map[UnkindedType.Var, Kind] = tparams0 match {
