@@ -17,9 +17,12 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation}
+import ca.uwaterloo.flix.language.debug.FormatKind.formatKind
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
-// MATT docs
+/**
+  * A common super-type for kind errors.
+  */
 sealed trait KindError extends CompilationError {
   def kind: String = "Kind Error"
 }
@@ -33,7 +36,7 @@ object KindError {
     * @param loc the location where the error occurred.
     */
   case class MismatchedKinds(k1: Kind, k2: Kind, loc: SourceLocation) extends KindError {
-    override def summary: String = "" // MATT
+    override def summary: String = s"Mismatched kinds: ${formatKind(k1)} and ${formatKind(k2)}"
 
     override def message: VirtualTerminal = new VirtualTerminal() // MATT
   }
@@ -46,7 +49,7 @@ object KindError {
     * @param loc          the location where the error occurred.
     */
   case class UnexpectedKind(expectedKind: Kind, actualKind: Kind, loc: SourceLocation) extends KindError {
-    override def summary: String = "" // MATT
+    override def summary: String = s"Kind ${formatKind(actualKind)} found where kind ${actualKind} was expected."
 
     override def message: VirtualTerminal = new VirtualTerminal() // MATT
   }
