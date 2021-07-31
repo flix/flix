@@ -714,6 +714,17 @@ class TestKinder extends FunSuite with TestUtils {
     expectError[KindError.UnexpectedKind](result)
   }
 
+  test("KindError.TypeAlias.Type.03") {
+    val input =
+      """
+        |rel A(x: Int)
+        |
+        |type alias Z[r] = #{ A | r }
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
   test("KindError.Class.Law.01") {
     val input =
       """
