@@ -683,7 +683,7 @@ class TestKinder extends FunSuite with TestUtils {
     expectError[KindError.UnexpectedKind](result)
   }
 
-  ignore("KindError.Instance.TypeParameter.01") { // MATT broken
+  test("KindError.Instance.TypeParameter.01") {
     val input =
       """
         |class C[a]

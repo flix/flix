@@ -244,7 +244,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       val kind = getClassKind(root.classes(sym))
       for {
         kinds <- inferType(tpe0, KindMatch.subKindOf(kind), root)
-        tpeVal = ascribeType(tpe0, KindMatch.wild, kinds, root)
+        tpeVal = ascribeType(tpe0, KindMatch.subKindOf(kind), kinds, root)
         tconstrsVal = Validation.traverse(tconstrs0)(ascribeTypeConstraint(_, kinds, root))
         defsVal = Validation.traverse(defs0)(visitDef(_, kinds, root))
         result <- Validation.sequenceT(tpeVal, tconstrsVal, defsVal)
