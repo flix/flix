@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation}
 import ca.uwaterloo.flix.language.debug.FormatKind.formatKind
-import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Cyan, Line, Magenta, NewLine, Red}
+import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
@@ -61,6 +61,15 @@ object KindError {
   case class UnexpectedKind(expectedKind: Kind, actualKind: Kind, loc: SourceLocation) extends KindError {
     override def summary: String = s"Kind ${formatKind(actualKind)} found where kind ${actualKind} was expected."
 
-    override def message: VirtualTerminal = new VirtualTerminal() // MATT
+    override def message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Unable to unify the kinds: '" << Red(formatKind(expectedKind)) << "' and '" << Red(formatKind(actualKind)) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "mismatched kinds.") << NewLine
+      vt << NewLine
+      vt << "Expected kind: " << Cyan(formatKind(expectedKind)) << NewLine
+      vt << "Actual kind:   " << Magenta(formatKind(actualKind)) << NewLine
+    }
   }
 }
