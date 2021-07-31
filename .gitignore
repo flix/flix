@@ -9,3 +9,6 @@ target
 /*.flix
 /build
 /.gradle
+.metals
+.vscode
+.bloop

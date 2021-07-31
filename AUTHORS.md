@@ -39,3 +39,4 @@ By adding your name to this document, you agree to release all your contribution
 - [Felix Wiemuth](https://github.com/felixwiemuth)
 - [Manoj Kumar](https://github.com/manoj2601)
 - [Jakob Schneider Villumsen](https://github.com/jaschdoc)
+- [Ramiro Calle](https://github.com/rrramiro)

@@ -74,7 +74,7 @@ object JvmOps {
     case MonoType.Relation(attr) => JvmType.Reference(JvmName.PredSym)
     case MonoType.Native(clazz) =>
       // TODO: Ugly hack.
-      val fqn = clazz.getCanonicalName.replace('.', '/')
+      val fqn = clazz.getName.replace('.', '/')
       JvmType.Reference(JvmName.mk(fqn))
     case MonoType.SchemaEmpty() => JvmType.Reference(JvmName.Runtime.Fixpoint.ConstraintSystem)
     case MonoType.SchemaExtend(_, _, _) => JvmType.Reference(JvmName.Runtime.Fixpoint.ConstraintSystem)
