@@ -77,6 +77,12 @@ object UnkindedType {
       * Converts the UnkindedType to a Type with the given `kind`.
       */
     def ascribedWith(kind: Kind): Type.Var = Type.Var(id, kind, text = text)
+
+    override def equals(other: Any): Boolean = other match {
+      case Var(otherId, _) => id == otherId
+    }
+
+    override def hashCode(): Int = id.hashCode()
   }
 
   /**
