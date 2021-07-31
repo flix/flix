@@ -695,4 +695,55 @@ class TestKinder extends FunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
+
+  test("KindError.TypeAlias.Type.01") {
+    val input =
+      """
+        |type alias T = Pure -> Int
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
+  test("KindError.TypeAlias.Type.02") {
+    val input =
+      """
+        |type alias T[a] = Int -> Int & a
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
+  test("KindError.Class.Law.01") {
+    val input =
+      """
+        |class C[a: Type -> Type] {
+        |  law l: forall (x: a) . ???
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.MismatchedKinds](result)
+  }
+
+  test("KindError.Class.Sig.01") {
+    val input =
+      """
+        |class C[a: Type -> Type] {
+        |  pub def f(x: a): Int = ???
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.MismatchedKinds](result)
+  }
+
+  test("KindError.Class.TypeConstraint.01") {
+    val input =
+      """
+        |class C[a]
+        |
+        |class D[a: Type -> Type] with C[a]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
 }
