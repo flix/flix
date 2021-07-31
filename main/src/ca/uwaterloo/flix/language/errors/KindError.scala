@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation}
 import ca.uwaterloo.flix.language.debug.FormatKind.formatKind
+import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Cyan, Line, Magenta, NewLine, Red}
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
@@ -35,10 +36,19 @@ object KindError {
     * @param k2  the second kind.
     * @param loc the location where the error occurred.
     */
-  case class MismatchedKinds(k1: Kind, k2: Kind, loc: SourceLocation) extends KindError {
-    override def summary: String = s"Mismatched kinds: ${formatKind(k1)} and ${formatKind(k2)}"
+  case class MismatchedKinds(k1: Kind, k2: Kind, loc: SourceLocation) extends KindError { // MATT get better locations
+    override def summary: String = s"Mismatched kinds: '${formatKind(k1)}' and '${formatKind(k2)}''"
 
-    override def message: VirtualTerminal = new VirtualTerminal() // MATT
+    override def message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Unable to unify the kinds: '" << Red(formatKind(k1)) << "' and '" << Red(formatKind(k2)) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "mismatched kinds.") << NewLine
+      vt << NewLine
+      vt << "Kind One: " << Cyan(formatKind(k1)) << NewLine
+      vt << "Kind Two: " << Magenta(formatKind(k2)) << NewLine
+    }
   }
 
   /**
