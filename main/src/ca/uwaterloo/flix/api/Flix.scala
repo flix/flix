@@ -146,6 +146,8 @@ class Flix {
     "Core/Io/ZipInput.flix" -> LocalResource.get("/src/library/Core/Io/ZipInput.flix"),
     "Core/Io/ZipOutput.flix" -> LocalResource.get("/src/library/Core/Io/ZipOutput.flix"),
 
+    "Environment.flix" -> LocalResource.get("/src/library/Environment.flix"),
+
     "FromString.flix" -> LocalResource.get("/src/library/FromString.flix"),
     "Functor.flix" -> LocalResource.get("/src/library/Functor.flix"),
     "Semigroup.flix" -> LocalResource.get("/src/library/Semigroup.flix"),

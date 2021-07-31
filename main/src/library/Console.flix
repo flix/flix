@@ -749,32 +749,23 @@ namespace Console {
     /// Returns `true` if the terminal supports ANSI colors.
     ///
     def isAnsiTerminal(): Bool =
-        import java.lang.System:getenv(String);
-        let p = getenv("TERM") as & Pure;
-        if (Object.isNull(p))
-            false
-        else {
+        Environment.getVar("TERM") |>
+        Option.exists(p ->
             let keywords = "256" :: "ansi" :: "xterm" :: "screen" :: Nil;
             List.exists(s -> String.contains(p, s), keywords)
-        }
+        )
 
     ///
     /// Returns `true` if the terminal supports 24-bit colors.
     ///
     def isTrueColorTerminal(): Bool =
-        import java.lang.System:getenv(String);
-        let p = getenv("COLORTERM") as & Pure;
-        if (Object.isNull(p))
-            false
-        else
-            p == "truecolor"
+        Environment.getVar("COLORTERM") |>
+        Option.exists(p -> p == "truecolor")
 
     ///
     /// Returns `true` if the terminal is the Windows Terminal.
     ///
     def isWindowsTerminal(): Bool =
-        import java.lang.System:getenv(String);
-        let p = getenv("WT_SESSION") as & Pure;
-        not Object.isNull(p)
+        not (Environment.getVar("WT_SESSION") |> Option.isEmpty)
 
 }
