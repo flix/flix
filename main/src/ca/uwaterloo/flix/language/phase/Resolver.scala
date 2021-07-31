@@ -340,18 +340,18 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         val argExps = fparams.map(fparam => ResolvedAst.Expression.Var(fparam.sym, fparam.sym.tvar, loc))
 
         // The apply expression inside the lambda.
-        val applyExp = ResolvedAst.Expression.Apply(baseExp, argExps, UnkindedType.freshVar(), UnkindedType.freshVar(), loc)
+        val applyExp = ResolvedAst.Expression.Apply(baseExp, argExps, loc)
 
         // The curried lambda expressions.
         fparams.foldRight(applyExp: ResolvedAst.Expression) {
-          case (fparam, acc) => ResolvedAst.Expression.Lambda(fparam, acc, UnkindedType.freshVar(), loc)
+          case (fparam, acc) => ResolvedAst.Expression.Lambda(fparam, acc, loc)
         }
       }
 
       /**
         * Curry the def, wrapping it in lambda expressions.
         */
-      def visitDef(defn: NamedAst.Def, tvar: UnkindedType.Var, loc: SourceLocation): ResolvedAst.Expression = {
+      def visitDef(defn: NamedAst.Def, loc: SourceLocation): ResolvedAst.Expression = {
         // Find the arity of the function definition.
         val arity = defn.spec.fparams.length
 
@@ -359,7 +359,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         val fparams = mkFreshFparams(arity, loc)
 
         // The definition expression.
-        val defExp = ResolvedAst.Expression.Def(defn.sym, tvar, loc)
+        val defExp = ResolvedAst.Expression.Def(defn.sym, loc)
 
         // Create and apply the lambda expressions
         mkCurriedLambda(fparams, defExp, loc)
@@ -368,7 +368,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       /**
         * Curry the sig, wrapping it in lambda expressions.
         */
-      def visitSig(sig: NamedAst.Sig, tvar: UnkindedType.Var, loc: SourceLocation): ResolvedAst.Expression = {
+      def visitSig(sig: NamedAst.Sig, loc: SourceLocation): ResolvedAst.Expression = {
         // Find the arity of the function definition.
         val arity = sig.spec.fparams.length
 
@@ -376,7 +376,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         val fparams = mkFreshFparams(arity, loc)
 
         // The signature expression.
-        val sigExp = ResolvedAst.Expression.Sig(sig.sym, tvar, loc)
+        val sigExp = ResolvedAst.Expression.Sig(sig.sym, loc)
 
         // Create and apply the lambda expressions
         mkCurriedLambda(fparams, sigExp, loc)
@@ -392,7 +392,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             es <- traverse(exps)(visit(_, tenv0))
           } yield {
             es.foldLeft(e) {
-              case (acc, a) => ResolvedAst.Expression.Apply(acc, List(a), UnkindedType.freshVar(), UnkindedType.freshVar(), loc)
+              case (acc, a) => ResolvedAst.Expression.Apply(acc, List(a), loc)
             }
           }
       }
@@ -406,8 +406,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           for {
             es <- traverse(exps)(visit(_, tenv0))
           } yield {
-            val base = ResolvedAst.Expression.Def(defn.sym, UnkindedType.freshVar(), innerLoc)
-            ResolvedAst.Expression.Apply(base, es, UnkindedType.freshVar(), UnkindedType.freshVar(), outerLoc)
+            val base = ResolvedAst.Expression.Def(defn.sym, innerLoc)
+            ResolvedAst.Expression.Apply(base, es, outerLoc)
           }
         } else {
           // Case 2: We have to curry. (See below).
@@ -424,8 +424,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           for {
             es <- traverse(exps)(visit(_, tenv0))
           } yield {
-            val base = ResolvedAst.Expression.Sig(sig.sym, UnkindedType.freshVar(), innerLoc)
-            ResolvedAst.Expression.Apply(base, es, UnkindedType.freshVar(), UnkindedType.freshVar(), outerLoc)
+            val base = ResolvedAst.Expression.Sig(sig.sym, innerLoc)
+            ResolvedAst.Expression.Apply(base, es, outerLoc)
           }
         } else {
           // Case 2: We have to curry. (See below).
@@ -446,18 +446,18 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           case Some(tpe) => ResolvedAst.Expression.Var(sym, tpe, loc).toSuccess
         }
 
-        case NamedAst.Expression.DefOrSig(qname, tvar, loc) =>
+        case NamedAst.Expression.DefOrSig(qname, loc) =>
           mapN(lookupDefOrSig(qname, ns0, root)) {
-            case defn: NamedAst.Def => visitDef(defn, tvar, loc)
-            case sig: NamedAst.Sig => visitSig(sig, tvar, loc)
+            case defn: NamedAst.Def => visitDef(defn, loc)
+            case sig: NamedAst.Sig => visitSig(sig, loc)
           }
 
-        case NamedAst.Expression.Hole(nameOpt, tpe, evar, loc) =>
+        case NamedAst.Expression.Hole(nameOpt, loc) =>
           val sym = nameOpt match {
             case None => Symbol.freshHoleSym(loc)
             case Some(name) => Symbol.mkHoleSym(ns0, name)
           }
-          ResolvedAst.Expression.Hole(sym, tpe, evar, loc).toSuccess
+          ResolvedAst.Expression.Hole(sym, loc).toSuccess
 
         case NamedAst.Expression.Use(use, exp, loc) =>
           // Lookup the used name to ensure that it exists.
@@ -498,9 +498,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         case NamedAst.Expression.Str(lit, loc) => ResolvedAst.Expression.Str(lit, loc).toSuccess
 
-        case NamedAst.Expression.Default(loc) => ResolvedAst.Expression.Default(UnkindedType.freshVar(), loc).toSuccess
+        case NamedAst.Expression.Default(loc) => ResolvedAst.Expression.Default(loc).toSuccess
 
-        case app@NamedAst.Expression.Apply(NamedAst.Expression.DefOrSig(qname, _, innerLoc), exps, outerLoc) =>
+        case app@NamedAst.Expression.Apply(NamedAst.Expression.DefOrSig(qname, innerLoc), exps, outerLoc) =>
           flatMapN(lookupDefOrSig(qname, ns0, root)) {
             case defn: NamedAst.Def => visitApplyDef(app, defn, exps, innerLoc, outerLoc)
             case sig: NamedAst.Sig => visitApplySig(app, sig, exps, innerLoc, outerLoc)
@@ -508,23 +508,23 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         case app@NamedAst.Expression.Apply(_, _, _) => visitApply(app)
 
-        case NamedAst.Expression.Lambda(fparam, exp, tvar, loc) =>
+        case NamedAst.Expression.Lambda(fparam, exp, loc) =>
           for {
             paramType <- lookupType(fparam.tpe, ns0, root)
             e <- visit(exp, tenv0 + (fparam.sym -> paramType))
             p <- Params.resolve(fparam, ns0, root)
-          } yield ResolvedAst.Expression.Lambda(p, e, tvar, loc)
+          } yield ResolvedAst.Expression.Lambda(p, e, loc)
 
-        case NamedAst.Expression.Unary(sop, exp, tvar, loc) =>
+        case NamedAst.Expression.Unary(sop, exp, loc) =>
           for {
             e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.Unary(sop, e, tvar, loc)
+          } yield ResolvedAst.Expression.Unary(sop, e, loc)
 
-        case NamedAst.Expression.Binary(sop, exp1, exp2, tvar, loc) =>
+        case NamedAst.Expression.Binary(sop, exp1, exp2, loc) =>
           for {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.Binary(sop, e1, e2, tvar, loc)
+          } yield ResolvedAst.Expression.Binary(sop, e1, e2, loc)
 
         case NamedAst.Expression.IfThenElse(exp1, exp2, exp3, loc) =>
           for {
@@ -545,10 +545,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.Let(sym, mod, e1, e2, loc)
 
-        case NamedAst.Expression.LetRegion(sym, exp, evar, loc) =>
+        case NamedAst.Expression.LetRegion(sym, exp, loc) =>
           for {
             e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.LetRegion(sym, e, evar, loc)
+          } yield ResolvedAst.Expression.LetRegion(sym, e, loc)
 
         case NamedAst.Expression.Match(exp, rules, loc) =>
           val rulesVal = traverse(rules) {
@@ -565,24 +565,24 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             rs <- rulesVal
           } yield ResolvedAst.Expression.Match(e, rs, loc)
 
-        case NamedAst.Expression.Choose(star, exps, rules, tvar, loc) =>
+        case NamedAst.Expression.Choose(star, exps, rules, loc) =>
           val expsVal = traverse(exps)(visit(_, tenv0))
           val rulesVal = traverse(rules) {
             case NamedAst.ChoiceRule(pat0, exp0) =>
               val p = pat0.map {
                 case NamedAst.ChoicePattern.Wild(loc) => ResolvedAst.ChoicePattern.Wild(loc)
                 case NamedAst.ChoicePattern.Absent(loc) => ResolvedAst.ChoicePattern.Absent(loc)
-                case NamedAst.ChoicePattern.Present(sym, loc) => ResolvedAst.ChoicePattern.Present(sym, UnkindedType.freshVar(), loc)
+                case NamedAst.ChoicePattern.Present(sym, loc) => ResolvedAst.ChoicePattern.Present(sym, loc)
               }
               mapN(visit(exp0, tenv0)) {
                 case e => ResolvedAst.ChoiceRule(p, e)
               }
           }
           mapN(expsVal, rulesVal) {
-            case (es, rs) => ResolvedAst.Expression.Choose(star, es, rs, tvar, loc)
+            case (es, rs) => ResolvedAst.Expression.Choose(star, es, rs, loc)
           }
 
-        case NamedAst.Expression.Tag(enum, tag, expOpt, tvar, loc) => expOpt match {
+        case NamedAst.Expression.Tag(enum, tag, expOpt, loc) => expOpt match {
           case None =>
             // Case 1: The tag has does not have an expression.
             // Either it is implicitly Unit or the tag is used as a function.
@@ -597,7 +597,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
                 if (isUnitType(caze.tpe)) {
                   // Case 1.1: The tag value has Unit type. Construct the Unit expression.
                   val e = ResolvedAst.Expression.Unit(loc)
-                  ResolvedAst.Expression.Tag(decl.sym, tag, e, tvar, loc)
+                  ResolvedAst.Expression.Tag(decl.sym, tag, e, loc)
                 } else {
                   // Case 1.2: The tag has a non-Unit type. Hence the tag is used as a function.
                   // If the tag is `Some` we construct the lambda: x -> Some(x).
@@ -612,10 +612,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
                   val varExp = ResolvedAst.Expression.Var(freshVar, freshVar.tvar, loc)
 
                   // Construct the tag expression on the fresh symbol expression.
-                  val tagExp = ResolvedAst.Expression.Tag(decl.sym, caze.tag, varExp, UnkindedType.freshVar(), loc)
+                  val tagExp = ResolvedAst.Expression.Tag(decl.sym, caze.tag, varExp, loc)
 
                   // Assemble the lambda expressions.
-                  ResolvedAst.Expression.Lambda(freshParam, tagExp, UnkindedType.freshVar(), loc)
+                  ResolvedAst.Expression.Lambda(freshParam, tagExp, loc)
                 }
             }
           case Some(exp) =>
@@ -623,7 +623,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             for {
               d <- lookupEnumByTag(enum, tag, ns0, root)
               e <- visit(exp, tenv0)
-            } yield ResolvedAst.Expression.Tag(d.sym, tag, e, tvar, loc)
+            } yield ResolvedAst.Expression.Tag(d.sym, tag, e, loc)
         }
 
         case NamedAst.Expression.Tuple(elms, loc) =>
@@ -631,41 +631,41 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             es <- traverse(elms)(e => visit(e, tenv0))
           } yield ResolvedAst.Expression.Tuple(es, loc)
 
-        case NamedAst.Expression.RecordEmpty(tvar, loc) =>
-          ResolvedAst.Expression.RecordEmpty(tvar, loc).toSuccess
+        case NamedAst.Expression.RecordEmpty(loc) =>
+          ResolvedAst.Expression.RecordEmpty(loc).toSuccess
 
-        case NamedAst.Expression.RecordSelect(base, field, tvar, loc) =>
+        case NamedAst.Expression.RecordSelect(base, field, loc) =>
           for {
             b <- visit(base, tenv0)
-          } yield ResolvedAst.Expression.RecordSelect(b, field, tvar, loc)
+          } yield ResolvedAst.Expression.RecordSelect(b, field, loc)
 
-        case NamedAst.Expression.RecordExtend(field, value, rest, tvar, loc) =>
+        case NamedAst.Expression.RecordExtend(field, value, rest, loc) =>
           for {
             v <- visit(value, tenv0)
             r <- visit(rest, tenv0)
-          } yield ResolvedAst.Expression.RecordExtend(field, v, r, tvar, loc)
+          } yield ResolvedAst.Expression.RecordExtend(field, v, r, loc)
 
-        case NamedAst.Expression.RecordRestrict(field, rest, tvar, loc) =>
+        case NamedAst.Expression.RecordRestrict(field, rest, loc) =>
           for {
             r <- visit(rest, tenv0)
-          } yield ResolvedAst.Expression.RecordRestrict(field, r, tvar, loc)
+          } yield ResolvedAst.Expression.RecordRestrict(field, r, loc)
 
-        case NamedAst.Expression.ArrayLit(elms, tvar, loc) =>
+        case NamedAst.Expression.ArrayLit(elms, loc) =>
           for {
             es <- traverse(elms)(e => visit(e, tenv0))
-          } yield ResolvedAst.Expression.ArrayLit(es, tvar, loc)
+          } yield ResolvedAst.Expression.ArrayLit(es, loc)
 
-        case NamedAst.Expression.ArrayNew(elm, len, tvar, loc) =>
+        case NamedAst.Expression.ArrayNew(elm, len, loc) =>
           for {
             e <- visit(elm, tenv0)
             ln <- visit(len, tenv0)
-          } yield ResolvedAst.Expression.ArrayNew(e, ln, tvar, loc)
+          } yield ResolvedAst.Expression.ArrayNew(e, ln, loc)
 
-        case NamedAst.Expression.ArrayLoad(base, index, tvar, loc) =>
+        case NamedAst.Expression.ArrayLoad(base, index, loc) =>
           for {
             b <- visit(base, tenv0)
             i <- visit(index, tenv0)
-          } yield ResolvedAst.Expression.ArrayLoad(b, i, tvar, loc)
+          } yield ResolvedAst.Expression.ArrayLoad(b, i, loc)
 
         case NamedAst.Expression.ArrayStore(base, index, elm, loc) =>
           for {
@@ -686,27 +686,27 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             i2 <- visit(endIndex, tenv0)
           } yield ResolvedAst.Expression.ArraySlice(b, i1, i2, loc)
 
-        case NamedAst.Expression.Ref(exp, tvar, loc) =>
+        case NamedAst.Expression.Ref(exp, loc) =>
           for {
             e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.Ref(e, tvar, loc)
+          } yield ResolvedAst.Expression.Ref(e, loc)
 
-        case NamedAst.Expression.RefWithRegion(exp1, exp2, tvar, evar, loc) =>
+        case NamedAst.Expression.RefWithRegion(exp1, exp2, loc) =>
           for {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.RefWithRegion(e1, e2, tvar, evar, loc)
+          } yield ResolvedAst.Expression.RefWithRegion(e1, e2, loc)
 
-        case NamedAst.Expression.Deref(exp, tvar, evar, loc) =>
+        case NamedAst.Expression.Deref(exp, loc) =>
           for {
             e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.Deref(e, tvar, evar, loc)
+          } yield ResolvedAst.Expression.Deref(e, loc)
 
-        case NamedAst.Expression.Assign(exp1, exp2, evar, loc) =>
+        case NamedAst.Expression.Assign(exp1, exp2, loc) =>
           for {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.Assign(e1, e2, evar, loc)
+          } yield ResolvedAst.Expression.Assign(e1, e2, loc)
 
         case NamedAst.Expression.Existential(fparam, exp, loc) =>
           for {
@@ -720,7 +720,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e <- visit(exp, tenv0)
           } yield ResolvedAst.Expression.Universal(fp, e, loc)
 
-        case NamedAst.Expression.Ascribe(exp, expectedType, expectedEff, tvar, loc) =>
+        case NamedAst.Expression.Ascribe(exp, expectedType, expectedEff, loc) =>
           val expectedTypVal = expectedType match {
             case None => (None: Option[UnkindedType]).toSuccess
             case Some(t) => mapN(lookupType(t, ns0, root))(x => Some(x))
@@ -734,9 +734,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e <- visit(exp, tenv0)
             t <- expectedTypVal
             f <- expectedEffVal
-          } yield ResolvedAst.Expression.Ascribe(e, t, f, tvar, loc)
+          } yield ResolvedAst.Expression.Ascribe(e, t, f, loc)
 
-        case NamedAst.Expression.Cast(exp, declaredType, declaredEff, tvar, loc) =>
+        case NamedAst.Expression.Cast(exp, declaredType, declaredEff, loc) =>
 
           val declaredTypVal = declaredType match {
             case None => (None: Option[UnkindedType]).toSuccess
@@ -751,7 +751,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e <- visit(exp, tenv0)
             t <- declaredTypVal
             f <- declaredEffVal
-          } yield ResolvedAst.Expression.Cast(e, t, f, tvar, loc)
+          } yield ResolvedAst.Expression.Cast(e, t, f, loc)
 
         case NamedAst.Expression.TryCatch(exp, rules, loc) =>
           val rulesVal = traverse(rules) {
@@ -824,18 +824,18 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e <- visit(exp, tenv0)
           } yield ResolvedAst.Expression.NewChannel(e, t, loc)
 
-        case NamedAst.Expression.GetChannel(exp, tvar, loc) =>
+        case NamedAst.Expression.GetChannel(exp, loc) =>
           for {
             e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.GetChannel(e, tvar, loc)
+          } yield ResolvedAst.Expression.GetChannel(e, loc)
 
-        case NamedAst.Expression.PutChannel(exp1, exp2, tvar, loc) =>
+        case NamedAst.Expression.PutChannel(exp1, exp2, loc) =>
           for {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.PutChannel(e1, e2, tvar, loc)
+          } yield ResolvedAst.Expression.PutChannel(e1, e2, loc)
 
-        case NamedAst.Expression.SelectChannel(rules, default, tvar, loc) =>
+        case NamedAst.Expression.SelectChannel(rules, default, loc) =>
           val rulesVal = traverse(rules) {
             case NamedAst.SelectChannelRule(sym, chan, body) =>
               for {
@@ -855,7 +855,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           for {
             rs <- rulesVal
             d <- defaultVal
-          } yield ResolvedAst.Expression.SelectChannel(rs, d, tvar, loc)
+          } yield ResolvedAst.Expression.SelectChannel(rs, d, loc)
 
         case NamedAst.Expression.Spawn(exp, loc) =>
           for {
@@ -867,15 +867,15 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e <- visit(exp, tenv0)
           } yield ResolvedAst.Expression.Lazy(e, loc)
 
-        case NamedAst.Expression.Force(exp, tvar, loc) =>
+        case NamedAst.Expression.Force(exp, loc) =>
           for {
             e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.Force(e, tvar, loc)
+          } yield ResolvedAst.Expression.Force(e, loc)
 
-        case NamedAst.Expression.FixpointConstraintSet(cs0, tvar, loc) =>
+        case NamedAst.Expression.FixpointConstraintSet(cs0, loc) =>
           for {
             cs <- traverse(cs0)(Constraints.resolve(_, tenv0, ns0, root))
-          } yield ResolvedAst.Expression.FixpointConstraintSet(cs, tvar, loc)
+          } yield ResolvedAst.Expression.FixpointConstraintSet(cs, loc)
 
         case NamedAst.Expression.FixpointMerge(exp1, exp2, loc) =>
           for {
@@ -888,21 +888,21 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e <- visit(exp, tenv0)
           } yield ResolvedAst.Expression.FixpointSolve(e, loc)
 
-        case NamedAst.Expression.FixpointFilter(pred, exp, tvar, loc) =>
+        case NamedAst.Expression.FixpointFilter(pred, exp, loc) =>
           for {
             e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.FixpointFilter(pred, e, tvar, loc)
+          } yield ResolvedAst.Expression.FixpointFilter(pred, e, loc)
 
-        case NamedAst.Expression.FixpointProjectIn(exp, pred, tvar, loc) =>
+        case NamedAst.Expression.FixpointProjectIn(exp, pred, loc) =>
           for {
             e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.FixpointProjectIn(e, pred, tvar, loc)
+          } yield ResolvedAst.Expression.FixpointProjectIn(e, pred, loc)
 
-        case NamedAst.Expression.FixpointProjectOut(pred, exp1, exp2, tvar, loc) =>
+        case NamedAst.Expression.FixpointProjectOut(pred, exp1, exp2, loc) =>
           for {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.FixpointProjectOut(pred, e1, e2, tvar, loc)
+          } yield ResolvedAst.Expression.FixpointProjectOut(pred, e1, e2, loc)
 
         case NamedAst.Expression.MatchEff(exp1, exp2, exp3, loc) =>
           for {
@@ -926,9 +926,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     def resolve(pat0: NamedAst.Pattern, ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.Pattern, ResolutionError] = {
 
       def visit(p0: NamedAst.Pattern): Validation[ResolvedAst.Pattern, ResolutionError] = p0 match {
-        case NamedAst.Pattern.Wild(tvar, loc) => ResolvedAst.Pattern.Wild(tvar, loc).toSuccess
+        case NamedAst.Pattern.Wild(loc) => ResolvedAst.Pattern.Wild(loc).toSuccess
 
-        case NamedAst.Pattern.Var(sym, tvar, loc) => ResolvedAst.Pattern.Var(sym, tvar, loc).toSuccess
+        case NamedAst.Pattern.Var(sym, loc) => ResolvedAst.Pattern.Var(sym, loc).toSuccess
 
         case NamedAst.Pattern.Unit(loc) => ResolvedAst.Pattern.Unit(loc).toSuccess
 
@@ -954,31 +954,31 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         case NamedAst.Pattern.Str(lit, loc) => ResolvedAst.Pattern.Str(lit, loc).toSuccess
 
-        case NamedAst.Pattern.Tag(enum, tag, pat, tvar, loc) =>
+        case NamedAst.Pattern.Tag(enum, tag, pat, loc) =>
           for {
             d <- lookupEnumByTag(enum, tag, ns0, root)
             p <- visit(pat)
-          } yield ResolvedAst.Pattern.Tag(d.sym, tag, p, tvar, loc)
+          } yield ResolvedAst.Pattern.Tag(d.sym, tag, p, loc)
 
         case NamedAst.Pattern.Tuple(elms, loc) =>
           for {
             es <- traverse(elms)(visit)
           } yield ResolvedAst.Pattern.Tuple(es, loc)
 
-        case NamedAst.Pattern.Array(elms, tvar, loc) =>
+        case NamedAst.Pattern.Array(elms, loc) =>
           for {
             es <- traverse(elms)(visit)
-          } yield ResolvedAst.Pattern.Array(es, tvar, loc)
+          } yield ResolvedAst.Pattern.Array(es, loc)
 
-        case NamedAst.Pattern.ArrayTailSpread(elms, sym, tvar, loc) =>
+        case NamedAst.Pattern.ArrayTailSpread(elms, sym, loc) =>
           for {
             es <- traverse(elms)(visit)
-          } yield ResolvedAst.Pattern.ArrayTailSpread(es, sym, tvar, loc)
+          } yield ResolvedAst.Pattern.ArrayTailSpread(es, sym, loc)
 
-        case NamedAst.Pattern.ArrayHeadSpread(sym, elms, tvar, loc) =>
+        case NamedAst.Pattern.ArrayHeadSpread(sym, elms, loc) =>
           for {
             es <- traverse(elms)(visit)
-          } yield ResolvedAst.Pattern.ArrayHeadSpread(sym, es, tvar, loc)
+          } yield ResolvedAst.Pattern.ArrayHeadSpread(sym, es, loc)
       }
 
       visit(pat0)
@@ -993,10 +993,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         * Performs name resolution on the given head predicate `h0` in the given namespace `ns0`.
         */
       def resolve(h0: NamedAst.Predicate.Head, tenv0: Map[Symbol.VarSym, UnkindedType], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Predicate.Head, ResolutionError] = h0 match {
-        case NamedAst.Predicate.Head.Atom(pred, den, terms, tvar, loc) =>
+        case NamedAst.Predicate.Head.Atom(pred, den, terms, loc) =>
           for {
             ts <- traverse(terms)(t => Expressions.resolve(t, tenv0, ns0, root))
-          } yield ResolvedAst.Predicate.Head.Atom(pred, den, ts, tvar, loc)
+          } yield ResolvedAst.Predicate.Head.Atom(pred, den, ts, loc)
       }
     }
 
@@ -1005,10 +1005,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         * Performs name resolution on the given body predicate `b0` in the given namespace `ns0`.
         */
       def resolve(b0: NamedAst.Predicate.Body, tenv0: Map[Symbol.VarSym, UnkindedType], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Predicate.Body, ResolutionError] = b0 match {
-        case NamedAst.Predicate.Body.Atom(pred, den, polarity, terms, tvar, loc) =>
+        case NamedAst.Predicate.Body.Atom(pred, den, polarity, terms, loc) =>
           for {
             ts <- traverse(terms)(t => Patterns.resolve(t, ns0, root))
-          } yield ResolvedAst.Predicate.Body.Atom(pred, den, polarity, ts, tvar, loc)
+          } yield ResolvedAst.Predicate.Body.Atom(pred, den, polarity, ts, loc)
 
         case NamedAst.Predicate.Body.Guard(exp, loc) =>
           for {

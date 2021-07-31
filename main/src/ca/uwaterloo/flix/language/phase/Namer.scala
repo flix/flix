@@ -443,7 +443,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       NamedAst.Expression.Wild(UnkindedType.freshVar(), loc).toSuccess
 
     case WeededAst.Expression.DefOrSig(qname, loc) =>
-      NamedAst.Expression.DefOrSig(qname, UnkindedType.freshVar(), loc).toSuccess
+      NamedAst.Expression.DefOrSig(qname, loc).toSuccess
 
     case WeededAst.Expression.VarOrDefOrSig(ident, loc) =>
       // the ident name.
@@ -453,10 +453,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       (env0.get(name), uenv0.defsAndSigs.get(name)) match {
         case (None, None) =>
           // Case 1: the name is a top-level function.
-          NamedAst.Expression.DefOrSig(Name.mkQName(ident), UnkindedType.freshVar(), loc).toSuccess
+          NamedAst.Expression.DefOrSig(Name.mkQName(ident), loc).toSuccess
         case (None, Some(actualQName)) =>
           // Case 2: the name is a use def.
-          NamedAst.Expression.DefOrSig(actualQName, UnkindedType.freshVar(), loc).toSuccess
+          NamedAst.Expression.DefOrSig(actualQName, loc).toSuccess
         case (Some(sym), None) =>
           // Case 4: the name is a variable.
           NamedAst.Expression.Var(sym, loc).toSuccess
@@ -466,9 +466,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
     case WeededAst.Expression.Hole(name, loc) =>
-      val tpe = UnkindedType.freshVar()
-      val eff = UnkindedType.freshVar()
-      NamedAst.Expression.Hole(name, tpe, eff, loc).toSuccess
+      NamedAst.Expression.Hole(name, loc).toSuccess
 
     case WeededAst.Expression.Use(uses0, exp, loc) =>
       val uses = uses0.map {
@@ -523,18 +521,18 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case p =>
           val env1 = env0 + (p.sym.text -> p.sym)
           mapN(visitExp(exp, env1, uenv0, tenv0)) {
-            case e => NamedAst.Expression.Lambda(p, e, UnkindedType.freshVar(), loc)
+            case e => NamedAst.Expression.Lambda(p, e, loc)
           }
       }
 
     case WeededAst.Expression.Unary(sop, exp, loc) =>
       visitExp(exp, env0, uenv0, tenv0) map {
-        case e => NamedAst.Expression.Unary(sop, e, UnkindedType.freshVar(), loc)
+        case e => NamedAst.Expression.Unary(sop, e, loc)
       }
 
     case WeededAst.Expression.Binary(sop, exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0)) {
-        case (e1, e2) => NamedAst.Expression.Binary(sop, e1, e2, UnkindedType.freshVar(), loc)
+        case (e1, e2) => NamedAst.Expression.Binary(sop, e1, e2, loc)
       }
 
     case WeededAst.Expression.IfThenElse(exp1, exp2, exp3, loc) =>
@@ -569,8 +567,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       val sym = Symbol.freshVarSym(ident)
       mapN(visitExp(exp, env0 + (ident.name -> sym), uenv0, tenv0)) {
         case e =>
-          val evar = UnkindedType.freshVar()
-          NamedAst.Expression.LetRegion(sym, e, evar, loc)
+          NamedAst.Expression.LetRegion(sym, e, loc)
       }
 
     case WeededAst.Expression.Match(exp, rules, loc) =>
@@ -608,7 +605,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           }
       }
       mapN(expsVal, rulesVal) {
-        case (es, rs) => NamedAst.Expression.Choose(star, es, rs, UnkindedType.freshVar(), loc)
+        case (es, rs) => NamedAst.Expression.Choose(star, es, rs, loc)
       }
 
     case WeededAst.Expression.Tag(enumOpt0, tag0, expOpt, loc) =>
@@ -617,11 +614,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       expOpt match {
         case None =>
           // Case 1: The tag does not have an expression. Nothing more to be done.
-          NamedAst.Expression.Tag(enumOpt, tag, None, UnkindedType.freshVar(), loc).toSuccess
+          NamedAst.Expression.Tag(enumOpt, tag, None, loc).toSuccess
         case Some(exp) =>
           // Case 2: The tag has an expression. Perform naming on it.
           visitExp(exp, env0, uenv0, tenv0) map {
-            case e => NamedAst.Expression.Tag(enumOpt, tag, Some(e), UnkindedType.freshVar(), loc)
+            case e => NamedAst.Expression.Tag(enumOpt, tag, Some(e), loc)
           }
       }
 
@@ -631,36 +628,36 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
     case WeededAst.Expression.RecordEmpty(loc) =>
-      NamedAst.Expression.RecordEmpty(UnkindedType.freshVar(), loc).toSuccess
+      NamedAst.Expression.RecordEmpty(loc).toSuccess
 
     case WeededAst.Expression.RecordSelect(exp, field, loc) =>
       mapN(visitExp(exp, env0, uenv0, tenv0)) {
-        case e => NamedAst.Expression.RecordSelect(e, field, UnkindedType.freshVar(), loc)
+        case e => NamedAst.Expression.RecordSelect(e, field, loc)
       }
 
     case WeededAst.Expression.RecordExtend(field, value, rest, loc) =>
       mapN(visitExp(value, env0, uenv0, tenv0), visitExp(rest, env0, uenv0, tenv0)) {
-        case (v, r) => NamedAst.Expression.RecordExtend(field, v, r, UnkindedType.freshVar(), loc)
+        case (v, r) => NamedAst.Expression.RecordExtend(field, v, r, loc)
       }
 
     case WeededAst.Expression.RecordRestrict(field, rest, loc) =>
       mapN(visitExp(rest, env0, uenv0, tenv0)) {
-        case r => NamedAst.Expression.RecordRestrict(field, r, UnkindedType.freshVar(), loc)
+        case r => NamedAst.Expression.RecordRestrict(field, r, loc)
       }
 
     case WeededAst.Expression.ArrayLit(elms, loc) =>
       traverse(elms)(e => visitExp(e, env0, uenv0, tenv0)) map {
-        case es => NamedAst.Expression.ArrayLit(es, UnkindedType.freshVar(), loc)
+        case es => NamedAst.Expression.ArrayLit(es, loc)
       }
 
     case WeededAst.Expression.ArrayNew(elm, len, loc) =>
       mapN(visitExp(elm, env0, uenv0, tenv0), visitExp(len, env0, uenv0, tenv0)) {
-        case (es, ln) => NamedAst.Expression.ArrayNew(es, ln, UnkindedType.freshVar(), loc)
+        case (es, ln) => NamedAst.Expression.ArrayNew(es, ln, loc)
       }
 
     case WeededAst.Expression.ArrayLoad(base, index, loc) =>
       mapN(visitExp(base, env0, uenv0, tenv0), visitExp(index, env0, uenv0, tenv0)) {
-        case (b, i) => NamedAst.Expression.ArrayLoad(b, i, UnkindedType.freshVar(), loc)
+        case (b, i) => NamedAst.Expression.ArrayLoad(b, i, loc)
       }
 
     case WeededAst.Expression.ArrayStore(base, index, elm, loc) =>
@@ -681,31 +678,25 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.Ref(exp, loc) =>
       visitExp(exp, env0, uenv0, tenv0) map {
         case e =>
-          val tvar = UnkindedType.freshVar()
-          NamedAst.Expression.Ref(e, tvar, loc)
+          NamedAst.Expression.Ref(e, loc)
       }
 
     case WeededAst.Expression.RefWithRegion(exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0)) {
         case (e1, e2) =>
-          val tvar = UnkindedType.freshVar()
-          val evar = UnkindedType.freshVar()
-          NamedAst.Expression.RefWithRegion(e1, e2, tvar, evar, loc)
+          NamedAst.Expression.RefWithRegion(e1, e2, loc)
       }
 
     case WeededAst.Expression.Deref(exp, loc) =>
       visitExp(exp, env0, uenv0, tenv0) map {
         case e =>
-          val tvar = UnkindedType.freshVar()
-          val evar = UnkindedType.freshVar()
-          NamedAst.Expression.Deref(e, tvar, evar, loc)
+          NamedAst.Expression.Deref(e, loc)
       }
 
     case WeededAst.Expression.Assign(exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0)) {
         case (e1, e2) =>
-          val evar = UnkindedType.freshVar()
-          NamedAst.Expression.Assign(e1, e2, evar, loc)
+          NamedAst.Expression.Assign(e1, e2, loc)
       }
 
     case WeededAst.Expression.Existential(tparams0, fparam, exp, loc) =>
@@ -734,7 +725,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
       mapN(expVal, expectedTypVal, expectedEffVal) {
-        case (e, t, f) => NamedAst.Expression.Ascribe(e, t, f, UnkindedType.freshVar(), loc)
+        case (e, t, f) => NamedAst.Expression.Ascribe(e, t, f, loc)
       }
 
     case WeededAst.Expression.Cast(exp, declaredType, declaredEff, loc) =>
@@ -749,7 +740,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
       mapN(expVal, declaredTypVal, declaredEffVal) {
-        case (e, t, f) => NamedAst.Expression.Cast(e, t, f, UnkindedType.freshVar(), loc)
+        case (e, t, f) => NamedAst.Expression.Cast(e, t, f, loc)
       }
 
     case WeededAst.Expression.TryCatch(exp, rules, loc) =>
@@ -817,12 +808,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.GetChannel(exp, loc) =>
       visitExp(exp, env0, uenv0, tenv0) map {
-        case e => NamedAst.Expression.GetChannel(e, UnkindedType.freshVar(), loc)
+        case e => NamedAst.Expression.GetChannel(e, loc)
       }
 
     case WeededAst.Expression.PutChannel(exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0)) {
-        case (e1, e2) => NamedAst.Expression.PutChannel(e1, e2, UnkindedType.freshVar(), loc)
+        case (e1, e2) => NamedAst.Expression.PutChannel(e1, e2, loc)
       }
 
     case WeededAst.Expression.SelectChannel(rules, default, loc) =>
@@ -844,7 +835,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
       mapN(rulesVal, defaultVal) {
-        case (rs, d) => NamedAst.Expression.SelectChannel(rs, d, UnkindedType.freshVar(), loc)
+        case (rs, d) => NamedAst.Expression.SelectChannel(rs, d, loc)
       }
 
     case WeededAst.Expression.Spawn(exp, loc) =>
@@ -859,13 +850,13 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.Force(exp, loc) =>
       visitExp(exp, env0, uenv0, tenv0) map {
-        case e => NamedAst.Expression.Force(e, UnkindedType.freshVar(), loc)
+        case e => NamedAst.Expression.Force(e, loc)
       }
 
     case WeededAst.Expression.FixpointConstraintSet(cs0, loc) =>
       mapN(traverse(cs0)(visitConstraint(_, env0, uenv0, tenv0))) {
         case cs =>
-          NamedAst.Expression.FixpointConstraintSet(cs, UnkindedType.freshVar(), loc)
+          NamedAst.Expression.FixpointConstraintSet(cs, loc)
       }
 
     case WeededAst.Expression.FixpointMerge(exp1, exp2, loc) =>
@@ -880,17 +871,17 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.FixpointFilter(ident, exp, loc) =>
       mapN(visitExp(exp, env0, uenv0, tenv0)) {
-        case e => NamedAst.Expression.FixpointFilter(ident, e, UnkindedType.freshVar(), loc)
+        case e => NamedAst.Expression.FixpointFilter(ident, e, loc)
       }
 
     case WeededAst.Expression.FixpointProjectIn(exp, pred, loc) =>
       mapN(visitExp(exp, env0, uenv0, tenv0)) {
-        case e => NamedAst.Expression.FixpointProjectIn(e, pred, UnkindedType.freshVar(), loc)
+        case e => NamedAst.Expression.FixpointProjectIn(e, pred, loc)
       }
 
     case WeededAst.Expression.FixpointProjectOut(pred, exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0)) {
-        case (e1, e2) => NamedAst.Expression.FixpointProjectOut(pred, e1, e2, UnkindedType.freshVar(), loc)
+        case (e1, e2) => NamedAst.Expression.FixpointProjectOut(pred, e1, e2, loc)
       }
 
     case WeededAst.Expression.MatchEff(exp1, exp2, exp3, loc) =>
@@ -907,12 +898,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     val m = mutable.Map.empty[String, Symbol.VarSym]
 
     def visit(p: WeededAst.Pattern): NamedAst.Pattern = p match {
-      case WeededAst.Pattern.Wild(loc) => NamedAst.Pattern.Wild(UnkindedType.freshVar(), loc)
+      case WeededAst.Pattern.Wild(loc) => NamedAst.Pattern.Wild(loc)
       case WeededAst.Pattern.Var(ident, loc) =>
         // make a fresh variable symbol for the local variable.
         val sym = Symbol.freshVarSym(ident)
         m += (ident.name -> sym)
-        NamedAst.Pattern.Var(sym, UnkindedType.freshVar(), loc)
+        NamedAst.Pattern.Var(sym, loc)
       case WeededAst.Pattern.Unit(loc) => NamedAst.Pattern.Unit(loc)
       case WeededAst.Pattern.True(loc) => NamedAst.Pattern.True(loc)
       case WeededAst.Pattern.False(loc) => NamedAst.Pattern.False(loc)
@@ -928,29 +919,29 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
       case WeededAst.Pattern.Tag(enumOpt0, tag0, pat, loc) =>
         val (enumOpt, tag) = getDisambiguatedTag(enumOpt0, tag0, uenv0)
-        NamedAst.Pattern.Tag(enumOpt, tag, visit(pat), UnkindedType.freshVar(), loc)
+        NamedAst.Pattern.Tag(enumOpt, tag, visit(pat), loc)
 
       case WeededAst.Pattern.Tuple(elms, loc) => NamedAst.Pattern.Tuple(elms map visit, loc)
 
-      case WeededAst.Pattern.Array(elms, loc) => NamedAst.Pattern.Array(elms map visit, UnkindedType.freshVar(), loc)
+      case WeededAst.Pattern.Array(elms, loc) => NamedAst.Pattern.Array(elms map visit, loc)
 
       case WeededAst.Pattern.ArrayTailSpread(elms, ident, loc) => ident match {
         case None =>
           val sym = Symbol.freshVarSym("_", loc)
-          NamedAst.Pattern.ArrayTailSpread(elms map visit, sym, UnkindedType.freshVar(), loc)
+          NamedAst.Pattern.ArrayTailSpread(elms map visit, sym, loc)
         case Some(id) =>
           val sym = Symbol.freshVarSym(id)
           m += (id.name -> sym)
-          NamedAst.Pattern.ArrayTailSpread(elms map visit, sym, UnkindedType.freshVar(), loc)
+          NamedAst.Pattern.ArrayTailSpread(elms map visit, sym, loc)
       }
       case WeededAst.Pattern.ArrayHeadSpread(ident, elms, loc) => ident match {
         case None =>
           val sym = Symbol.freshVarSym("_", loc)
-          NamedAst.Pattern.ArrayTailSpread(elms map visit, sym, UnkindedType.freshVar(), loc)
+          NamedAst.Pattern.ArrayTailSpread(elms map visit, sym, loc)
         case Some(id) =>
           val sym = Symbol.freshVarSym(id)
           m += (id.name -> sym)
-          NamedAst.Pattern.ArrayHeadSpread(sym, elms map visit, UnkindedType.freshVar(), loc)
+          NamedAst.Pattern.ArrayHeadSpread(sym, elms map visit, loc)
       }
     }
 
@@ -964,10 +955,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def visitPattern(pat0: WeededAst.Pattern, env0: Map[String, Symbol.VarSym], uenv0: UseEnv)(implicit flix: Flix): NamedAst.Pattern = {
     def visit(p: WeededAst.Pattern): NamedAst.Pattern = p match {
-      case WeededAst.Pattern.Wild(loc) => NamedAst.Pattern.Wild(UnkindedType.freshVar(), loc)
+      case WeededAst.Pattern.Wild(loc) => NamedAst.Pattern.Wild(loc)
       case WeededAst.Pattern.Var(ident, loc) =>
         val sym = env0(ident.name)
-        NamedAst.Pattern.Var(sym, sym.tvar, loc)
+        NamedAst.Pattern.Var(sym, loc)
       case WeededAst.Pattern.Unit(loc) => NamedAst.Pattern.Unit(loc)
       case WeededAst.Pattern.True(loc) => NamedAst.Pattern.True(loc)
       case WeededAst.Pattern.False(loc) => NamedAst.Pattern.False(loc)
@@ -983,24 +974,24 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
       case WeededAst.Pattern.Tag(enumOpt0, tag0, pat, loc) =>
         val (enumOpt, tag) = getDisambiguatedTag(enumOpt0, tag0, uenv0)
-        NamedAst.Pattern.Tag(enumOpt, tag, visit(pat), UnkindedType.freshVar(), loc)
+        NamedAst.Pattern.Tag(enumOpt, tag, visit(pat), loc)
 
       case WeededAst.Pattern.Tuple(elms, loc) => NamedAst.Pattern.Tuple(elms map visit, loc)
 
-      case WeededAst.Pattern.Array(elms, loc) => NamedAst.Pattern.Array(elms map visit, UnkindedType.freshVar(), loc)
+      case WeededAst.Pattern.Array(elms, loc) => NamedAst.Pattern.Array(elms map visit, loc)
       case WeededAst.Pattern.ArrayTailSpread(elms, ident, loc) => ident match {
         case None =>
-          NamedAst.Pattern.ArrayTailSpread(elms map visit, Symbol.freshVarSym("_", loc), UnkindedType.freshVar(), loc)
+          NamedAst.Pattern.ArrayTailSpread(elms map visit, Symbol.freshVarSym("_", loc), loc)
         case Some(value) =>
           val sym = env0(value.name)
-          NamedAst.Pattern.ArrayTailSpread(elms map visit, sym, UnkindedType.freshVar(), loc)
+          NamedAst.Pattern.ArrayTailSpread(elms map visit, sym, loc)
       }
       case WeededAst.Pattern.ArrayHeadSpread(ident, elms, loc) => ident match {
         case None =>
-          NamedAst.Pattern.ArrayHeadSpread(Symbol.freshVarSym("_", loc), elms map visit, UnkindedType.freshVar(), loc)
+          NamedAst.Pattern.ArrayHeadSpread(Symbol.freshVarSym("_", loc), elms map visit, loc)
         case Some(value) =>
           val sym = env0(value.name)
-          NamedAst.Pattern.ArrayHeadSpread(sym, elms map visit, UnkindedType.freshVar(), loc)
+          NamedAst.Pattern.ArrayHeadSpread(sym, elms map visit, loc)
       }
     }
 
@@ -1014,7 +1005,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Predicate.Head.Atom(pred, den, terms, loc) =>
       for {
         ts <- traverse(terms)(t => visitExp(t, outerEnv ++ headEnv0 ++ ruleEnv0, uenv0, tenv0))
-      } yield NamedAst.Predicate.Head.Atom(pred, den, ts, UnkindedType.freshVar(), loc)
+      } yield NamedAst.Predicate.Head.Atom(pred, den, ts, loc)
   }
 
   /**
@@ -1023,7 +1014,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def visitBodyPredicate(body: WeededAst.Predicate.Body, outerEnv: Map[String, Symbol.VarSym], headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], uenv0: UseEnv, tenv0: Map[String, UnkindedType.Var])(implicit flix: Flix): Validation[NamedAst.Predicate.Body, NameError] = body match {
     case WeededAst.Predicate.Body.Atom(pred, den, polarity, terms, loc) =>
       val ts = terms.map(t => visitPattern(t, outerEnv ++ ruleEnv0, uenv0))
-      NamedAst.Predicate.Body.Atom(pred, den, polarity, ts, UnkindedType.freshVar(), loc).toSuccess
+      NamedAst.Predicate.Body.Atom(pred, den, polarity, ts, loc).toSuccess
 
     case WeededAst.Predicate.Body.Guard(exp, loc) =>
       for {
