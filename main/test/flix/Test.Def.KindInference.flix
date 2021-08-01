@@ -4,13 +4,10 @@ namespace Test/Def/KindInference {
         pub enum Func[ef : Bool] {
             case Function(Int -> Int & ef)
         }
-    }
-
-    namespace Test02 {
         pub def func[ef: Bool](f: Int -> Int & ef, g: Func[ef]): Int = ???
     }
 
-    namespace Test03 {
+    namespace Test02 {
         pub def project3(p: PredSym, ts: f[(t1, t2, t3)]): Datalog[v] with Boxable[t1], Boxable[t2], Boxable[t3], Foldable[f] = ???
 
         pub enum PredSym
@@ -19,7 +16,7 @@ namespace Test/Def/KindInference {
         pub class Foldable[a: Type -> Type]
     }
 
-    namespace Test04 {
+    namespace Test03 {
         pub enum E[a: Record] {
             case C(a)
         }
