@@ -160,7 +160,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   /**
     * Performs kinding on the given type under the given kind environment, with `kindMatch` expected from context.
     */
-  private def ascribeType(tpe0: UnkindedType, expectedKind: KindMatch, kenv: KindEnv, root: ResolvedAst.Root, context: SourceLocation)(implicit flix: Flix): Validation[Type, KindError] = tpe0 match {
+  private def ascribeType(tpe0: UnkindedType, expectedKind: KindMatch, kenv: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[Type, KindError] = tpe0 match {
     case tvar: UnkindedType.Var => ascribeTypeVar(tvar, expectedKind, kenv)
     case UnkindedType.Cst(cst, loc) =>
       val tycon = ascribeTypeConstructor(cst, root)
@@ -172,9 +172,9 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       }
     case UnkindedType.Apply(t10, t20) =>
       for {
-        t2 <- ascribeType(t20, KindMatch.wild, kenv, root, context)
+        t2 <- ascribeType(t20, KindMatch.wild, kenv, root)
         k1 = KindMatch.subKindOf(Kind.Arrow(t2.kind, expectedKind.kind))
-        t1 <- ascribeType(t10, k1, kenv, root, context)
+        t1 <- ascribeType(t10, k1, kenv, root)
       } yield Type.Apply(t1, t2)
     case UnkindedType.Lambda(t10, t20) =>
       expectedKind match {
@@ -182,15 +182,15 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
           val t1 = ascribeFreeTypeVar(t10, KindMatch.subKindOf(expK1))
           for {
             newKinds <- kenv + (t10 -> t1.kind)
-            t2 <- ascribeType(t20, KindMatch.subKindOf(expK2), newKinds, root, context)
+            t2 <- ascribeType(t20, KindMatch.subKindOf(expK2), newKinds, root)
           } yield Type.Lambda(t1, t2)
         case _ => ??? // MATT KindError (maybe we can accept Wild here?)
       }
     case UnkindedType.Ascribe(t, k, loc) =>
       if (expectedKind.matches(k)) {
-        ascribeType(t, KindMatch.subKindOf(k), kenv, root, context)
+        ascribeType(t, KindMatch.subKindOf(k), kenv, root)
       } else {
-        KindError.UnexpectedKind(expectedKind = expectedKind.kind, actualKind = k, context).toFailure
+        KindError.UnexpectedKind(expectedKind = expectedKind.kind, actualKind = k, loc).toFailure
       }
   }
 

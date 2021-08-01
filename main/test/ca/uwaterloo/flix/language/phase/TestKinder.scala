@@ -561,26 +561,6 @@ class TestKinder extends FunSuite with TestUtils {
     }
   }
 
-  test("TestMismatchedKinds.01") {
-    val input = "def foo(): {| x} = {a = 2} <+> {a = 2}"
-    val result = compile(input, DefaultOptions)
-    expectError[KindError](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message.fmt(ca.uwaterloo.flix.util.vt.TerminalContext.AnsiTerminal)))
-    }
-  }
-
-  test("TestMismatchedKinds.02") {
-    val input = "def foo(): #{| x} = {a = 2} <+> {a = 2}"
-    val result = compile(input, DefaultOptions)
-    expectError[KindError](result)
-    result match {
-      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
-      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message.fmt(ca.uwaterloo.flix.util.vt.TerminalContext.AnsiTerminal)))
-    }
-  }
-
   ////// NEW TESTS START HERE //////
 
   test("KindError.Def.Effect.01") {
@@ -875,6 +855,21 @@ class TestKinder extends FunSuite with TestUtils {
       """
         |enum E[a: Type -> Type] {
         |  case C(a)
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+    result match {
+      case ca.uwaterloo.flix.util.Validation.Success(_) => ()
+      case ca.uwaterloo.flix.util.Validation.Failure(errs) => errs.foreach(err => println(err.message.fmt(ca.uwaterloo.flix.util.vt.TerminalContext.AnsiTerminal)))
+    }
+  }
+
+  test("KindError.Enum.Case.04") {
+    val input =
+      """
+        |enum E[a] {
+        |  case C({i: Int | a})
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)

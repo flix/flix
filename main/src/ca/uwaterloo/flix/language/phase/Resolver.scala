@@ -1447,7 +1447,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         tparams <- traverse(tparams0)(lookupType(_, ns0, root))
         tresult <- lookupType(tresult0, ns0, root)
         eff <- lookupType(eff0, ns0, root)
-      } yield UnkindedType.mkUncurriedArrowWithEffect(tparams, eff, tresult) // TODO lift this once Type.Arrow effect is moved
+      } yield UnkindedType.mkUncurriedArrowWithEffect(tparams, eff, tresult, loc)
 
     case NamedAst.Type.Apply(base0, targ0, loc) =>
       for {

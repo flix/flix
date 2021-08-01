@@ -39,7 +39,6 @@ sealed trait UnkindedType {
     */
   def baseType: UnkindedType = this match {
     case UnkindedType.Apply(t1, _) => t1.baseType
-    case UnkindedType.Ascribe(t, _, _) => t.baseType
     case _ => this
   }
 
@@ -346,18 +345,19 @@ object UnkindedType {
   /**
     * Constructs the pure uncurried arrow type (A_1, ..., A_n) -> B.
     */
-  def mkPureUncurriedArrow(as: List[UnkindedType], b: UnkindedType): UnkindedType = mkUncurriedArrowWithEffect(as, Cst(Constructor.Pure, SourceLocation.Unknown), b)
+  def mkPureUncurriedArrow(as: List[UnkindedType], b: UnkindedType, loc: SourceLocation): UnkindedType = mkUncurriedArrowWithEffect(as, Cst(Constructor.Pure, SourceLocation.Unknown), b, loc)
 
   /**
     * Constructs the impure uncurried arrow type (A_1, ..., A_n) ~> B.
     */
-  def mkImpureUncurriedArrow(as: List[UnkindedType], b: UnkindedType): UnkindedType = mkUncurriedArrowWithEffect(as, Cst(Constructor.Impure, SourceLocation.Unknown), b)
+  def mkImpureUncurriedArrow(as: List[UnkindedType], b: UnkindedType, loc: SourceLocation): UnkindedType = mkUncurriedArrowWithEffect(as, Cst(Constructor.Impure, SourceLocation.Unknown), b, loc)
 
   /**
     * Constructs the uncurried arrow type (A_1, ..., A_n) -> B & e.
     */
-  def mkUncurriedArrowWithEffect(as: List[UnkindedType], e: UnkindedType, b: UnkindedType): UnkindedType = {
-    val arrow = Apply(Cst(Constructor.Arrow(as.length + 1), SourceLocation.Unknown), e)
+  def mkUncurriedArrowWithEffect(as: List[UnkindedType], e: UnkindedType, b: UnkindedType, loc: SourceLocation): UnkindedType = {
+    // MATT this loc is inaccurate: confuses the loc of the constructor with the loc of the whole type
+    val arrow = Apply(Cst(Constructor.Arrow(as.length + 1), loc), e)
     val inner = as.foldLeft(arrow: UnkindedType) {
       case (acc, x) => Apply(acc, x)
     }
