@@ -184,8 +184,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     */
   def resolve(c0: NamedAst.Class, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Class, ResolutionError] = c0 match {
     case NamedAst.Class(doc, mod, sym, tparam0, superClasses0, signatures, laws0, loc) =>
+      val tparam = Params.resolveTparam(tparam0)
       for {
-        tparam <- Params.resolve(tparam0)
         sigsList <- traverse(signatures)(resolve(_, ns0, root))
         // ignore the parameter of the super class; we don't use it
         superClasses <- traverse(superClasses0)(tconstr => resolveSuperClass(tconstr, ns0, root))
@@ -1039,22 +1039,22 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     /**
       * Performs name resolution on the given type parameter `tparam0` in the given namespace `ns0`.
       */
-    def resolve(tparam0: NamedAst.TypeParam): Validation[ResolvedAst.TypeParam, ResolutionError] = tparam0 match {
-        case tparam: NamedAst.TypeParam.Kinded => resolve(tparam)
-        case tparam: NamedAst.TypeParam.Unkinded => resolve(tparam)
+    def resolveTparam(tparam0: NamedAst.TypeParam): ResolvedAst.TypeParam = tparam0 match {
+        case tparam: NamedAst.TypeParam.Kinded => resolveKindedTparam(tparam)
+        case tparam: NamedAst.TypeParam.Unkinded => resolveUnkindedTparam(tparam)
     }
 
     /**
       * Performs name resolution on the given kinded type parameter `tparam0` in the given namespace `ns0`.
       */
-    def resolve(tparam0: NamedAst.TypeParam.Kinded): ResolvedAst.TypeParam.Kinded = tparam0 match {
+    def resolveKindedTparam(tparam0: NamedAst.TypeParam.Kinded): ResolvedAst.TypeParam.Kinded = tparam0 match {
       case NamedAst.TypeParam.Kinded(name, tpe, kind, loc) => ResolvedAst.TypeParam.Kinded(name, tpe, kind, loc)
     }
 
     /**
       * Performs name resolution on the given unkinded type parameter `tparam0` in the given namespace `ns0`.
       */
-    def resolve(tparam0: NamedAst.TypeParam.Unkinded): ResolvedAst.TypeParam.Unkinded = tparam0 match {
+    def resolveUnkindedTparam(tparam0: NamedAst.TypeParam.Unkinded): ResolvedAst.TypeParam.Unkinded = tparam0 match {
       case NamedAst.TypeParam.Unkinded(name, tpe, loc) => ResolvedAst.TypeParam.Unkinded(name, tpe, loc)
     }
   }
@@ -1071,10 +1071,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     */
   def resolveTypeParams(tparams0: NamedAst.TypeParams, ns0: Name.NName, root: NamedAst.Root): ResolvedAst.TypeParams = tparams0 match {
     case TypeParams.Kinded(tparams1) =>
-      val tparams2 = tparams1.map(Params.resolve)
+      val tparams2 = tparams1.map(Params.resolveKindedTparam)
       ResolvedAst.TypeParams.Kinded(tparams2)
     case TypeParams.Unkinded(tparams1) =>
-      val tparams2 = tparams1.map(Params.resolve)
+      val tparams2 = tparams1.map(Params.resolveUnkindedTparam)
       ResolvedAst.TypeParams.Unkinded(tparams2)
   }
 
