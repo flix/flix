@@ -104,7 +104,6 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     * Performs kinding on the given type parameter under the given kind environment.
     */
   private def ascribeTparam(tparam: ResolvedAst.TypeParam, kenv: KindEnv): Validation[KindedAst.TypeParam, KindError] = tparam match {
-    // MATT don't really need monad here because this should never fail
     case ResolvedAst.TypeParam.Kinded(name, tpe0, _, loc) =>
       mapN(ascribeTypeVar(tpe0, KindMatch.wild, kenv)) {
         tpe => KindedAst.TypeParam(name, tpe, loc)
@@ -132,7 +131,6 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   private def ascribeTypeVar(tvar: UnkindedType.Var, kindMatch: KindMatch, kenv: KindEnv): Validation[Type.Var, KindError] = tvar match {
     case tvar@UnkindedType.Var(id, text, loc) =>
       kenv.map.get(tvar) match {
-        // MATT I don't know if we should be here
         // Case 1: we don't know about this kind, just ascribe it with what the context expects
         case None => tvar.ascribedWith(kindMatch.kind).toSuccess
         // Case 2: we know about this kind, make sure it's behaving as we expect
@@ -142,7 +140,6 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
           } else {
             val expectedKind = kindMatch.kind
             KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = actualKind, loc).toFailure
-            // MATT get real source loc
           }
       }
 
@@ -636,16 +633,16 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     case ResolvedAst.Expression.FixpointFilter(pred, exp0, loc) =>
       for {
         exp <- ascribeExpression(exp0, kenv, root)
-      } yield KindedAst.Expression.FixpointFilter(pred, exp, Type.freshVar(Kind.Star), loc) // MATT right?
+      } yield KindedAst.Expression.FixpointFilter(pred, exp, Type.freshVar(Kind.Star), loc)
     case ResolvedAst.Expression.FixpointProjectIn(exp0, pred, loc) =>
       for {
         exp <- ascribeExpression(exp0, kenv, root)
-      } yield KindedAst.Expression.FixpointProjectIn(exp, pred, Type.freshVar(Kind.Star), loc) // MATT right?
+      } yield KindedAst.Expression.FixpointProjectIn(exp, pred, Type.freshVar(Kind.Star), loc)
     case ResolvedAst.Expression.FixpointProjectOut(pred, exp10, exp20, loc) =>
       for {
         exp1 <- ascribeExpression(exp10, kenv, root)
         exp2 <- ascribeExpression(exp20, kenv, root)
-      } yield KindedAst.Expression.FixpointProjectOut(pred, exp1, exp2, Type.freshVar(Kind.Star), loc) // MATT right?
+      } yield KindedAst.Expression.FixpointProjectOut(pred, exp1, exp2, Type.freshVar(Kind.Star), loc)
     case ResolvedAst.Expression.MatchEff(exp10, exp20, exp30, loc) =>
       for {
         exp1 <- ascribeExpression(exp10, kenv, root)
@@ -740,8 +737,6 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   }
 
 
-  // MATT validation unneeded here
-
   /**
     * Performs kinding on the given choice pattern under the given kind environment.
     */
@@ -762,9 +757,6 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         body <- Validation.traverse(body0)(ascribeBodyPredicate(_, kenv, root))
       } yield KindedAst.Constraint(cparams, head, body, loc)
   }
-
-  // MATT validation unneeded here
-  // MATT other args unneeded here
 
   /**
     * Performs kinding on the given constraint param under the given kind environment.
