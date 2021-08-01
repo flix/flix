@@ -118,7 +118,7 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class IllegalType(tpe: UnkindedType, loc: SourceLocation) extends ResolutionError {
-    private def formatUnkindedType(tpe: UnkindedType): String = ??? // MATT implement in its own file
+    private def formatUnkindedType(tpe: UnkindedType): String = tpe.toString // TODO
 
     def summary: String = "Illegal type."
     def message: VirtualTerminal = {

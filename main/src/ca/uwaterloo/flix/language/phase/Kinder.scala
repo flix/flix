@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.{Kind, _}
 import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN, mapN, traverse}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
@@ -181,7 +181,14 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
             newKinds <- kenv + (t10 -> t1.kind)
             t2 <- ascribeType(t20, KindMatch.subKindOf(expK2), newKinds, root)
           } yield Type.Lambda(t1, t2)
-        case _ => ??? // MATT KindError (maybe we can accept Wild here?)
+        case KindMatch(_, Kind.Wild) =>
+          val t1 = ascribeFreeTypeVar(t10, KindMatch.wild)
+          for {
+            newKinds <- kenv + (t10 -> t1.kind)
+            t2 <- ascribeType(t20, KindMatch.wild, newKinds, root)
+          } yield Type.Lambda(t1, t2)
+        case _ =>
+          KindError.UnexpectedKind(expectedKind = expectedKind.kind, actualKind = Kind.Wild ->: Kind.Wild,  loc = t10.loc).toFailure
       }
     case UnkindedType.Ascribe(t, k, loc) =>
       if (expectedKind.matches(k)) {
@@ -863,7 +870,25 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         }
       }
     case UnkindedType.Apply(_, _) => throw InternalCompilerException("Unexpected type application.")
-    case UnkindedType.Lambda(t1, t2) => ??? // MATT I'll cross this bridge when i get to it
+    case UnkindedType.Lambda(t1, t2) =>
+      val tyconKind = tpe.typeArguments.foldLeft(expectedType.kind) {
+        case (acc, _) => Kind.Star ->: acc
+      }
+
+      tyconKind match {
+        case Kind.Arrow(argKind, retKind) =>
+          val argKenvVal = inferType(t1, KindMatch.superKindOf(argKind), root)
+          val retKenvVal = inferType(t2, KindMatch.subKindOf(retKind), root)
+
+          val args = Kind.args(tyconKind)
+          val targsKenvVal = Validation.traverse(tpe.typeArguments.zip(args)) {
+            case (targ, kind) => inferType(targ, KindMatch.subKindOf(kind), root)
+          }
+          flatMapN(argKenvVal, retKenvVal, targsKenvVal) {
+            case (kenv1, kenv2, kenv3) => KindEnv.merge(kenv1 :: kenv2 :: kenv3: _*)
+          }
+        case _ => KindError.UnexpectedKind(actualKind = Kind.Wild ->: Kind.Wild, expectedKind = tyconKind, loc = t1.loc).toFailure
+      }
     case UnkindedType.Ascribe(t, k, _) => inferType(t, KindMatch.subKindOf(k), root)
   }
 
