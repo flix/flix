@@ -32,6 +32,8 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
   * For defs,
   * kinds are either explicit or are inferred from their
   * use in the formal parameters, return type and effect, and type constraints.
+  *
+  * In inferring types, variable type constructors are assumed to have kind * -> * -> * -> ???.
   */
 object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
 
