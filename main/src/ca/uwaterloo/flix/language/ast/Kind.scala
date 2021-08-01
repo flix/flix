@@ -53,7 +53,7 @@ sealed trait Kind {
     case (Kind.Schema, Kind.Schema) => true
 
     case (_, Kind.Wild) => true
-    case (Kind.Wild, _) => true // MATT is this right?
+    case (Kind.Wild, _) => true
 
     // subkinds
     case (Kind.Record, Kind.Star) => true

@@ -1575,7 +1575,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     val tparams = (fparamTvars ++ returnTvars).distinct.map {
       tvar => NamedAst.TypeParam.Unkinded(tvar, UnkindedType.freshVar(text = Some(tvar.name), tvar.loc), tvar.loc)
     }
-    // MATT maybe make a helper for ident -> tparam
 
     NamedAst.TypeParams.Unkinded(tparams)
   }

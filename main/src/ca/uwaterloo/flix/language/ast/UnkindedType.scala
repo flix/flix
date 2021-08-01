@@ -221,7 +221,6 @@ object UnkindedType {
   /**
     * Construct the enum type `Sym[ts]`.
     */
-  // MATT add loc (also to Type.mkEnum?)
   def mkEnum(sym: Symbol.EnumSym, ts: List[UnkindedType]): UnkindedType = mkApply(UnkindedType.Cst(Constructor.Enum(sym), SourceLocation.Unknown), ts)
 
   /**
@@ -356,7 +355,7 @@ object UnkindedType {
     * Constructs the uncurried arrow type (A_1, ..., A_n) -> B & e.
     */
   def mkUncurriedArrowWithEffect(as: List[UnkindedType], e: UnkindedType, b: UnkindedType, loc: SourceLocation): UnkindedType = {
-    // MATT this loc is inaccurate: confuses the loc of the constructor with the loc of the whole type
+    // TODO this loc is inaccurate: confuses the loc of the constructor with the loc of the whole type
     val arrow = Apply(Cst(Constructor.Arrow(as.length + 1), loc), e)
     val inner = as.foldLeft(arrow: UnkindedType) {
       case (acc, x) => Apply(acc, x)
