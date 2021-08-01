@@ -52,7 +52,7 @@ object ResolvedAst {
 
   object Expression {
 
-    case class Wild(tpe: UnkindedType.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Wild(loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Var(sym: Symbol.VarSym, tpe: UnkindedType, loc: SourceLocation) extends ResolvedAst.Expression
 

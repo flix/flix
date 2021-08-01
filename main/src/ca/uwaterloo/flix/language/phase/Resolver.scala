@@ -438,8 +438,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         */
       def visit(e0: NamedAst.Expression, tenv0: Map[Symbol.VarSym, UnkindedType]): Validation[ResolvedAst.Expression, ResolutionError] = e0 match {
 
-        case NamedAst.Expression.Wild(tvar, loc) =>
-          ResolvedAst.Expression.Wild(tvar, loc).toSuccess
+        case NamedAst.Expression.Wild(loc) =>
+          ResolvedAst.Expression.Wild(loc).toSuccess
 
         case NamedAst.Expression.Var(sym, loc) => tenv0.get(sym) match {
           case None => ResolvedAst.Expression.Var(sym, sym.tvar, loc).toSuccess
@@ -606,7 +606,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
                   val freshVar = Symbol.freshVarSym("x", loc)
 
                   // Construct the formal parameter for the fresh symbol.
-                  val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, UnkindedType.freshVar(), loc)
+                  val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, UnkindedType.freshVar(loc = loc), loc)
 
                   // Construct a variable expression for the fresh symbol.
                   val varExp = ResolvedAst.Expression.Var(freshVar, freshVar.tvar, loc)

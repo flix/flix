@@ -130,7 +130,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     * Performs kinding on the given type variable under the given kind environment, with `kindMatch` expected from context.
     */
   private def ascribeTypeVar(tvar: UnkindedType.Var, kindMatch: KindMatch, kenv: KindEnv): Validation[Type.Var, KindError] = tvar match {
-    case tvar@UnkindedType.Var(id, text) =>
+    case tvar@UnkindedType.Var(id, text, loc) =>
       kenv.map.get(tvar) match {
         // MATT I don't know if we should be here
         // Case 1: we don't know about this kind, just ascribe it with what the context expects
@@ -141,7 +141,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
             Type.Var(id, actualKind, text = text).toSuccess
           } else {
             val expectedKind = kindMatch.kind
-            KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = actualKind, SourceLocation.Unknown).toFailure
+            KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = actualKind, loc).toFailure
             // MATT get real source loc
           }
       }
@@ -152,7 +152,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     * Performs kinding on the given free type variable, with `kindMatch` expected from context.
     */
   private def ascribeFreeTypeVar(tvar: UnkindedType.Var, kindMatch: KindMatch): Type.Var = tvar match {
-    case UnkindedType.Var(id, text) =>
+    case UnkindedType.Var(id, text, loc) =>
       val kind = kindMatch.kind
       Type.Var(id, kind, text = text)
   }
@@ -160,7 +160,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   /**
     * Performs kinding on the given type under the given kind environment, with `kindMatch` expected from context.
     */
-  private def ascribeType(tpe0: UnkindedType, expectedKind: KindMatch, kenv: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[Type, KindError] = tpe0 match {
+  private def ascribeType(tpe0: UnkindedType, expectedKind: KindMatch, kenv: KindEnv, root: ResolvedAst.Root, context: SourceLocation)(implicit flix: Flix): Validation[Type, KindError] = tpe0 match {
     case tvar: UnkindedType.Var => ascribeTypeVar(tvar, expectedKind, kenv)
     case UnkindedType.Cst(cst, loc) =>
       val tycon = ascribeTypeConstructor(cst, root)
@@ -172,9 +172,9 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       }
     case UnkindedType.Apply(t10, t20) =>
       for {
-        t2 <- ascribeType(t20, KindMatch.wild, kenv, root)
+        t2 <- ascribeType(t20, KindMatch.wild, kenv, root, context)
         k1 = KindMatch.subKindOf(Kind.Arrow(t2.kind, expectedKind.kind))
-        t1 <- ascribeType(t10, k1, kenv, root)
+        t1 <- ascribeType(t10, k1, kenv, root, context)
       } yield Type.Apply(t1, t2)
     case UnkindedType.Lambda(t10, t20) =>
       expectedKind match {
@@ -182,15 +182,15 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
           val t1 = ascribeFreeTypeVar(t10, KindMatch.subKindOf(expK1))
           for {
             newKinds <- kenv + (t10 -> t1.kind)
-            t2 <- ascribeType(t20, KindMatch.subKindOf(expK2), newKinds, root)
+            t2 <- ascribeType(t20, KindMatch.subKindOf(expK2), newKinds, root, context)
           } yield Type.Lambda(t1, t2)
         case _ => ??? // MATT KindError (maybe we can accept Wild here?)
       }
     case UnkindedType.Ascribe(t, k, loc) =>
       if (expectedKind.matches(k)) {
-        ascribeType(t, KindMatch.subKindOf(k), kenv, root)
+        ascribeType(t, KindMatch.subKindOf(k), kenv, root, context)
       } else {
-        KindError.UnexpectedKind(expectedKind = expectedKind.kind, actualKind = k, loc).toFailure
+        KindError.UnexpectedKind(expectedKind = expectedKind.kind, actualKind = k, context).toFailure
       }
   }
 
@@ -349,12 +349,14 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       val annVal = Validation.traverse(ann0)(ascribeAnnotation(_, kenv, root))
       val tparamsVal = Validation.traverse(tparams0.tparams)(ascribeTparam(_, kenv))
       val fparamsVal = Validation.traverse(fparams0)(ascribeFormalParam(_, kenv, root))
-      val scVal = ascribeScheme(sc0, kenv, root)
       val tpeVal = ascribeType(tpe0, KindMatch.subKindOf(Kind.Star), kenv, root)
       val effVal = ascribeType(eff0, KindMatch.subKindOf(Kind.Bool), kenv, root)
-      mapN(annVal, tparamsVal, fparamsVal, scVal, tpeVal, effVal) {
-        case (ann, tparams, fparams, sc, tpe, eff) => KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, loc)
-      }
+      val scVal = ascribeScheme(sc0, kenv, root)
+      for {
+        result <- Validation.sequenceT(annVal, tparamsVal, fparamsVal, tpeVal, effVal)
+        (ann, tparams, fparams, tpe, eff) = result
+        sc <- scVal // ascribe the scheme separately
+      } yield KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, loc)
   }
 
   /**
@@ -380,9 +382,8 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   /**
     * Performs kinding on the given expression under the given kind environment.
     */
-  // MATT remove the tvars newly introduced in Resolver and introduce them here
   private def ascribeExpression(exp00: ResolvedAst.Expression, kenv: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Expression, KindError] = exp00 match {
-    case ResolvedAst.Expression.Wild(tpe, loc) => KindedAst.Expression.Wild(tpe.ascribedWith(Kind.Star), loc).toSuccess
+    case ResolvedAst.Expression.Wild(loc) => KindedAst.Expression.Wild(Type.freshVar(Kind.Star), loc).toSuccess
     case ResolvedAst.Expression.Var(sym, tpe0, loc) =>
       mapN(ascribeType(tpe0, KindMatch.subKindOf(Kind.Star), kenv, root)) {
         tpe => KindedAst.Expression.Var(sym, tpe, loc)
@@ -1038,7 +1039,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       case (tvar, kind) => map.get(tvar) match {
         case Some(kind0) => Kind.min(kind0, kind) match {
           case Some(minKind) => KindEnv(map + (tvar -> minKind)).toSuccess
-          case None => KindError.MismatchedKinds(kind0, kind, SourceLocation.Unknown).toFailure // MATT real loc, double error
+          case None => KindError.MismatchedKinds(kind0, kind, tvar.loc).toFailure
         }
         case None => KindEnv(map + (tvar -> kind)).toSuccess
       }

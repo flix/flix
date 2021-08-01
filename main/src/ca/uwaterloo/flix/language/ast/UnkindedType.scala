@@ -30,7 +30,7 @@ sealed trait UnkindedType {
     case UnkindedType.Cst(cst, _) => Some(cst)
     case UnkindedType.Apply(t1, _) => t1.typeConstructor
     case UnkindedType.Lambda(_, _) => throw InternalCompilerException("Unexpected type constructor: Lambda")
-    case UnkindedType.Var(_, _) => None
+    case UnkindedType.Var(_, _, loc) => None
     case UnkindedType.Ascribe(t, _, _) => t.typeConstructor
   }
 
@@ -72,14 +72,14 @@ object UnkindedType {
   /**
     * Type variable.
     */
-  case class Var(id: Int, text: Option[String] = None) extends UnkindedType {
+  case class Var(id: Int, text: Option[String] = None, loc: SourceLocation) extends UnkindedType {
     /**
       * Converts the UnkindedType to a Type with the given `kind`.
       */
     def ascribedWith(kind: Kind): Type.Var = Type.Var(id, kind, text = text)
 
     override def equals(other: Any): Boolean = other match {
-      case Var(otherId, _) => id == otherId
+      case Var(otherId, _, _) => id == otherId
     }
 
     override def hashCode(): Int = id.hashCode()
@@ -203,8 +203,8 @@ object UnkindedType {
   /**
     * Returns a fresh type variable with the given text.
     */
-  def freshVar(text: Option[String] = None)(implicit flix: Flix): UnkindedType.Var = {
-    Var(flix.genSym.freshId(), text)
+  def freshVar(text: Option[String] = None, loc: SourceLocation)(implicit flix: Flix): UnkindedType.Var = {
+    Var(flix.genSym.freshId(), text, loc)
   }
 
   /**

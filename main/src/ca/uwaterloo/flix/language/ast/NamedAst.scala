@@ -68,7 +68,7 @@ object NamedAst {
 
   object Expression {
 
-    case class Wild(tvar: ast.UnkindedType.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class Wild(loc: SourceLocation) extends NamedAst.Expression
 
     case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends NamedAst.Expression
 

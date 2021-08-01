@@ -32,8 +32,8 @@ object KindError {
   /**
     * An error describing mismatched inferred kinds.
     *
-    * @param k1  the first kind.
-    * @param k2  the second kind.
+    * @param k1   the first kind.
+    * @param k2   the second kind.
     * @param loc the location where the error occurred.
     */
   case class MismatchedKinds(k1: Kind, k2: Kind, loc: SourceLocation) extends KindError { // MATT get better locations
@@ -42,9 +42,9 @@ object KindError {
     override def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Unable to unify the kinds: '" << Red(formatKind(k1)) << "' and '" << Red(formatKind(k2)) << "'." << NewLine
+      vt << ">> This type variable was used as both kind '" << Red(formatKind(k1)) << "' and kind '" << Red(formatKind(k2)) << "'." << NewLine
       vt << NewLine
-      vt << Code(loc, "mismatched kinds.") << NewLine
+      vt << Code(loc, "mismatched kind.") << NewLine
       vt << NewLine
       vt << "Kind One: " << Cyan(formatKind(k1)) << NewLine
       vt << "Kind Two: " << Magenta(formatKind(k2)) << NewLine
@@ -66,7 +66,7 @@ object KindError {
       vt << Line(kind, source.format) << NewLine
       vt << ">> Unable to unify the kinds: '" << Red(formatKind(expectedKind)) << "' and '" << Red(formatKind(actualKind)) << "'." << NewLine
       vt << NewLine
-      vt << Code(loc, "mismatched kinds.") << NewLine
+      vt << Code(loc, "unexpected kind.") << NewLine
       vt << NewLine
       vt << "Expected kind: " << Cyan(formatKind(expectedKind)) << NewLine
       vt << "Actual kind:   " << Magenta(formatKind(actualKind)) << NewLine
