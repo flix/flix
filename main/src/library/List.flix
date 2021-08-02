@@ -39,8 +39,7 @@ instance Boxable[List[t]] with Order[t], ToString[t] {
 }
 
 instance ToString[List[a]] with ToString[a] {
-    pub def toString(xs: List[a]): String =
-        List.foldRight((x, acc) -> "${x} :: ${acc}", "Nil", xs)
+    pub def toString(xs: List[a]): String = List.toString(xs)
 }
 
 instance Hash[List[a]] with Hash[a] {
@@ -82,6 +81,20 @@ instance Foldable[List] {
 }
 
 namespace List {
+
+    ///
+    /// Renders the list `xs` to a String.
+    ///
+    pub def toString(xs: List[a]): String with ToString[a] = toStringHelper(xs) as & Pure
+
+    ///
+    /// Helper function for `toString`.
+    ///
+    def toStringHelper(xs: List[a]): String & Impure with ToString[a] =
+        let sb = StringBuilder.new();
+        List.foreach(x -> StringBuilder.appendString!(sb, "${x} :: "), xs);
+        StringBuilder.appendString!(sb, "Nil");
+        StringBuilder.toString(sb)
 
     ///
     /// Returns true if and only if `xs` is the empty list, i.e. `Nil`.
@@ -325,23 +338,34 @@ namespace List {
     /// That is, the result is of the form: `f(x1, 0) :: f(x2, 1) :: ...`.
     ///
     @Time(time(f) * length(xs)) @Space(space(f) * length(xs))
-    pub def mapWithIndex(f: (a, Int32) -> b & e, xs: List[a]): List[b] & e = mapWithIndexHelper(f, xs, 0)
+    pub def mapWithIndex(f: (a, Int32) -> b & e, xs: List[a]): List[b] & e = mapWithIndexHelper(f, xs, 0, ks -> ks)
 
     ///
     /// Helper function for `mapWithIndex`.
     ///
-    def mapWithIndexHelper(f: (a, Int32) -> b & e, xs: List[a], i: Int32): List[b] & e = match xs {
-        case Nil => Nil
-        case x :: rs => f(x, i) :: mapWithIndexHelper(f, rs, i+1)
+    def mapWithIndexHelper(f: (a, Int32) -> b & e, xs: List[a], i: Int32, k: List[b] -> List[b]): List[b] & e = match xs {
+        case Nil => k(Nil)
+        case x :: rs => {
+            let x1 = f(x, i);
+            mapWithIndexHelper(f, rs, i+1, ks -> k(x1 :: ks))
+        }
     }
 
     ///
     /// Returns the result of applying `f` to every element in `xs` and concatenating the results.
     ///
     @Time(time(f) * length(xs)) @Space(time(f) * length(xs))
-    pub def flatMap(f: a -> List[b] & e, xs: List[a]): List[b] & e = match xs {
-        case Nil => Nil
-        case x :: rs => f(x) ::: flatMap(f, rs)
+    pub def flatMap(f: a -> List[b] & e, xs: List[a]): List[b] & e = flatMapHelper(f, xs, ks -> ks)
+
+    ///
+    /// Helper function for `flatMap`.
+    ///
+    def flatMapHelper(f: a -> List[b] & e, xs: List[a], k: List[b] -> List[b]): List[b] & e = match xs {
+        case Nil => k(Nil)
+        case x :: rs => {
+            let xs1 = f(x);
+            flatMapHelper(f, rs, ks -> k(xs1 ::: ks))
+        }
     }
 
     ///
@@ -387,10 +411,15 @@ namespace List {
     /// Returns `xs` if `i < 0` or `i > length(xs)-1`.
     ///
     @Time(i) @Space(i)
-    pub def update(i: Int32, a: a, xs: List[a]): List[a] = match (i, xs) {
-        case (_, Nil) => xs
-        case (0, _ :: rs) => a :: rs
-        case (p, x :: rs) => x :: update(p-1, a, rs)
+    pub def update(i: Int32, a: a, xs: List[a]): List[a] = updateHelper(i, a, xs, ks -> ks)
+
+    ///
+    /// Helper function for `update`.
+    ///
+    def updateHelper(i: Int32, a: a, xs: List[a], k: List[a] -> List[a]): List[a] = match (i, xs) {
+        case (_, Nil) => k(xs)
+        case (0, _ :: rs) => k(a :: rs)
+        case (p, x :: rs) => updateHelper(p-1, a, rs, ks -> k(x :: ks))
     }
 
     ///
@@ -407,14 +436,19 @@ namespace List {
     /// If patching occurs at index `i+j` in `ys`, then the element at index `j` in `xs` is used.
     ///
     @Time(n) @Space(length(ys))
-    pub def patch(i: Int32, n: Int32, xs: List[a], ys: List[a]): List[a] = patchHelper(i, n, drop(-i, xs), ys, 0)
+    pub def patch(i: Int32, n: Int32, xs: List[a], ys: List[a]): List[a] = patchHelper(i, n, drop(-i, xs), ys, 0, ks -> ks)
 
     ///
     /// Helper function for `patch`.
     ///
-    def patchHelper(i: Int32, n: Int32, xs: List[a], ys: List[a], c: Int32): List[a] = match (xs, ys) {
-        case (x :: qs, y :: rs) => if (c >= i and c < i+n) x :: patchHelper(i, n, qs, rs, c+1) else y :: patchHelper(i, n, xs, rs, c+1)
-        case _ => ys
+    def patchHelper(i: Int32, n: Int32, xs: List[a], ys: List[a], c: Int32, k: List[a] -> List[a]): List[a] = match (xs, ys) {
+        case (x :: qs, y :: rs) => {
+            if (c >= i and c < i+n)
+                patchHelper(i, n, qs, rs, c+1, ks -> k(x :: ks))
+            else
+                patchHelper(i, n, xs, rs, c+1, ks -> k(y :: ks))
+        }
+        case _ => k(ys)
     }
 
     ///
@@ -480,9 +514,14 @@ namespace List {
     /// Returns `xs` with `a` inserted between every two adjacent elements.
     ///
     @Time(length(xs)) @Space(length(xs))
-    pub def intersperse(a: a, xs: List[a]): List[a] = match xs {
-        case x1 :: x2 :: rs => x1 :: a :: intersperse(a, x2 :: rs)
-        case _ => xs
+    pub def intersperse(a: a, xs: List[a]): List[a] = intersperseHelper(a, xs, ks -> ks)
+
+    ///
+    /// Helper function for `intersperse`.
+    ///
+    def intersperseHelper(a: a, xs: List[a], k: List[a] -> List[a]): List[a] = match xs {
+        case x1 :: x2 :: rs => intersperseHelper(a, x2 :: rs, ks -> k(x1 :: a :: ks))
+        case _ => k(xs)
     }
 
     ///
@@ -491,10 +530,15 @@ namespace List {
     /// That is, returns `y1 :: x1 ... xn :: y2 :: ... yn-1 :: x1 :: ... :: xn :: yn :: Nil`.
     ///
     @Time(length(ys) * length(xs)) @Space(length(ys) * length(xs))
-    pub def intercalate(xs: List[a], ys: List[List[a]]): List[a] = match ys {
-        case Nil => Nil
-        case y :: Nil => y
-        case y1 :: y2 :: rs => y1 ::: xs ::: intercalate(xs, y2 :: rs)
+    pub def intercalate(xs: List[a], ys: List[List[a]]): List[a] = intercalateHelper(xs, ys, ks -> ks)
+
+    ///
+    /// Helper function for `intercalate`.
+    ///
+    def intercalateHelper(xs: List[a], ys: List[List[a]], k: List[a] -> List[a]): List[a] = match ys {
+        case Nil => k(Nil)
+        case y :: Nil => k(y)
+        case y1 :: y2 :: rs => intercalateHelper(xs, y2 :: rs, ks -> k(y1 ::: xs ::: ks))
     }
 
     ///
@@ -627,31 +671,27 @@ namespace List {
         }
     }
 
-
-
-
-
-
     ///
     /// Returns the number of elements in `xs` that satisfy the predicate `f`.
     ///
     /// The function `f` must be pure.
     ///
     @Time(time(f) * length(xs)) @Space(space(f) * length(xs))
-    pub def count(f: a -> Bool, xs: List[a]): Int32 = match xs {
-        case Nil => 0
-        case x :: rs =>
-            let r = count(f, rs);
-                if (f(x)) r+1 else r
-    }
+    pub def count(f: a -> Bool, xs: List[a]): Int32 =
+        foldLeft((ac, x) -> if (f(x)) ac+1 else ac, 0, xs)
 
     ///
     /// Returns the concatenation of the elements in `xs`.
     ///
     @Time(length(xs)) @Space(length(xs))
-    pub def flatten(xs: List[List[a]]): List[a] = match xs {
-        case Nil => Nil
-        case x :: rs => x ::: flatten(rs)
+    pub def flatten(xs: List[List[a]]): List[a] = flattenHelper(xs, ks -> ks)
+
+    ///
+    /// Helper function for `transpose`.
+    ///
+    def flattenHelper(xs: List[List[a]], k: List[a] -> List[a]): List[a] = match xs {
+        case Nil => k(Nil)
+        case x :: rs => flattenHelper(rs, ks -> k(x ::: ks))
     }
 
     ///
@@ -722,16 +762,21 @@ namespace List {
     /// Note: Indices that are out of bounds in `xs` are not considered (i.e. slice(b, e, xs) = slice(max(0,b), min(length(xs),e), xs)).
     ///
     @Time(e - b) @Space(e - b)
-    pub def slice(b: Int32, e: Int32, xs: List[a]): List[a] = sliceHelper(b, e, xs, 0)
+    pub def slice(b: Int32, e: Int32, xs: List[a]): List[a] =
+        if (b < e) sliceHelper(b, e, xs, 0, ks -> ks) else Nil
 
     ///
     /// Helper function for `slice`.
     ///
-    def sliceHelper(b: Int32, e: Int32, xs: List[a], i: Int32): List[a] = match xs {
-        case Nil => Nil
-        case x :: rs =>
-            let r = sliceHelper(b, e, rs, i+1);
-                if (i >= b and i < e) x :: r else r
+    /// Precondition:  b < e
+    ///
+    def sliceHelper(b: Int32, e: Int32, xs: List[a], i: Int32, k: List[a] -> List[a]): List[a] = match xs {
+        case Nil => k(Nil)
+        case x :: rs => match i {
+            case pos if (pos < b) => sliceHelper(b, e, rs, i+1, k)
+            case pos if (pos >= e) => k(Nil)
+            case _ => sliceHelper(b, e, rs, i+1, ks -> k(x :: ks))
+        }
     }
 
     ///
@@ -743,11 +788,18 @@ namespace List {
     /// The function `f` must be pure.
     ///
     @Time(time(f) * length(xs)) @Space(space(f) * length(xs))
-    pub def partition(f: a -> Bool, xs: List[a]): (List[a], List[a]) = match xs {
-        case Nil => (Nil, Nil)
+    pub def partition(f: a -> Bool, xs: List[a]): (List[a], List[a]) = partitionHelper(f, xs, (ks, ls) -> (ks, ls))
+
+    ///
+    /// Helper function for `partition`.
+    ///
+    def partitionHelper(f: a -> Bool, xs: List[a], k: (List[a], List[a]) -> (List[a], List[a])): (List[a], List[a]) = match xs {
+        case Nil => k(Nil, Nil)
         case x :: rs =>
-            let (r1, r2) = partition(f, rs);
-                if (f(x)) (x :: r1, r2) else (r1, x :: r2)
+                if (f(x))
+                    partitionHelper(f, rs, (ks, ls) -> k(x :: ks, ls))
+                else
+                    partitionHelper(f, rs, (ks, ls) -> k(ks, x :: ls))
     }
 
     ///
@@ -759,14 +811,18 @@ namespace List {
     /// The function `f` must be pure.
     ///
     @Time(time(f) * length(xs)) @Space(space(f) * length(xs))
-    pub def span(f: a -> Bool, xs: List[a]): (List[a], List[a]) = match xs {
-        case Nil => (Nil, Nil)
+    pub def span(f: a -> Bool, xs: List[a]): (List[a], List[a]) = spanHelper(f, xs, (ks, ls) -> (ks, ls))
+
+    ///
+    /// Helper function for `span`.
+    ///
+    def spanHelper(f: a -> Bool, xs: List[a], k: (List[a], List[a]) -> (List[a], List[a])): (List[a], List[a]) = match xs {
+        case Nil => k(Nil, Nil)
         case x :: rs =>
             if (f(x))
-                let (r1, r2) = span(f, rs);
-                (x :: r1, r2)
+                spanHelper(f, rs, (ks,ls) -> k(x:: ks, ls))
             else
-                (Nil, xs)
+                k(Nil, xs)
     }
 
     ///
@@ -800,11 +856,17 @@ namespace List {
     /// Returns `Nil` if `n < 0`.
     ///
     @Time(n) @Space(n)
-    pub def take(n: Int32, xs: List[a]): List[a] = if (n < 0) Nil else match (n, xs) {
-        case (_, Nil) => Nil
-        case (0, _) => Nil
-        case (i, x :: rs) => x :: take(i-1, rs)
-    }
+    pub def take(n: Int32, xs: List[a]): List[a] = takeHelper(n, xs, ks -> ks)
+
+    ///
+    /// Helper function for `take`.
+    ///
+    def takeHelper(n: Int32, xs: List[a], k: List[a] -> List[a]): List[a] =
+        if (n < 0) k(Nil) else match (n, xs) {
+            case (_, Nil) => k(Nil)
+            case (0, _) => k(Nil)
+            case (i, x :: rs) => takeHelper(i-1, rs, ks -> k(x :: ks))
+        }
 
     ///
     /// Returns the longest prefix of `xs` that satisfies the predicate `f`.
@@ -812,15 +874,16 @@ namespace List {
     /// The function `f` must be pure.
     ///
     @Time(time(f) * length(xs)) @Space(space(f) * length(xs))
-    pub def takeWhile(f: a -> Bool, xs: List[a]): List[a] = match xs {
-        case Nil => Nil
-        case x :: rs => if (f(x)) x :: takeWhile(f, rs) else Nil
+    pub def takeWhile(f: a -> Bool, xs: List[a]): List[a] =
+        takeWhileHelper(f, xs, ks -> ks)
+
+    ///
+    /// Helper function for `takeWhile`.
+    ///
+    def takeWhileHelper(f: a -> Bool, xs: List[a], k: List[a] -> List[a]): List[a] = match xs {
+        case Nil => k(Nil)
+        case x :: rs => if (f(x)) takeWhileHelper(f, rs, ks -> k(x :: ks)) else k(Nil)
     }
-
-
-
-
-
 
     ///
     /// Partitions `xs` into sublists such that for any two elements `x` and `y` in a sublist, `f(x, y)` is true.
@@ -972,9 +1035,17 @@ namespace List {
     /// Concatenates the results of applying `f` pairwise to the elements of `xs` and `ys`.
     ///
     @Time(time(f) * Int32.min(length(xs), length(ys))) @Space(space(f) * Int32.min(length(xs), length(ys)))
-    pub def flatMap2(f: (a, b) -> List[c] & e, xs: List[a], ys: List[b]): List[c] & e = match (xs, ys) {
-        case (x :: rs, y :: qs) => f(x, y) ::: flatMap2(f, rs, qs)
-        case _ => Nil
+    pub def flatMap2(f: (a, b) -> List[c] & e, xs: List[a], ys: List[b]): List[c] & e = flatMap2Helper(f, xs, ys, ks -> ks)
+
+    ///
+    /// Helper function for `flatMap2`.
+    ///
+    def flatMap2Helper(f: (a, b) -> List[c] & e, xs: List[a], ys: List[b], k: List[c] -> List[c]): List[c] & e = match (xs, ys) {
+        case (x :: rs, y :: qs) => {
+            let xs1 = f(x, y);
+            flatMap2Helper(f, rs, qs, ks -> k(xs1 ::: ks))
+        }
+        case _ => k(Nil)
     }
 
     ///
@@ -1011,23 +1082,23 @@ namespace List {
         case _ => c
     }
 
-
-
-
-
-
     ///
     /// Collects the results of applying the partial function `f` to every element in `xs`.
     ///
     @Time(time(f) * length(xs)) @Space(space(f) * length(xs))
-    pub def filterMap(f: a -> Option[b] & e, xs: List[a]): List[b] & e = match xs {
-        case Nil => Nil
+    pub def filterMap(f: a -> Option[b] & e, xs: List[a]): List[b] & e =
+        filterMapHelper(f, xs, ks -> ks)
+
+    ///
+    /// Helper function for `filterMap`.
+    ///
+    def filterMapHelper(f: a -> Option[b] & e, xs: List[a], k: List[b] -> List[b]): List[b] & e = match xs {
+        case Nil => k(Nil)
         case x :: rs => match f(x) {
-                            case None => filterMap(f, rs)
-                            case Some(v) => v :: filterMap(f, rs)
+                            case None => filterMapHelper(f, rs, k)
+                            case Some(v) => filterMapHelper(f, rs, vs -> k(v :: vs))
         }
     }
-
     ///
     /// Returns the first non-None result of applying the partial function `f` to each element of `xs`.
     ///
@@ -1048,8 +1119,21 @@ namespace List {
     ///
     @Time(time(f) * length(xs)) @Space(space(f) * length(xs))
     pub def formatWith(f: a -> String, sep: String, xs: List[a]): String =
-        let s = foldRight((x, acc) -> "${f(x)}${sep}${acc}", "", xs) as & Pure;
-        String.dropRight(String.length(sep), s)
+        formatWithHelper(f, sep, xs) as & Pure
+
+    ///
+    /// Helper function for `formatWith`.
+    ///
+    def formatWithHelper(f: a -> String, sep: String, xs: List[a]): String & Impure =
+        let sb = StringBuilder.new();
+        match xs {
+            case Nil => ()
+            case x :: rs => {
+                StringBuilder.appendString!(sb, f(x));
+                foreach(x1 -> {StringBuilder.appendString!(sb, sep); StringBuilder.appendString!(sb, f(x1))}, rs)
+            }
+        };
+        StringBuilder.toString(sb)
 
     ///
     /// Returns `xs` as a mutable list.
