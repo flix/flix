@@ -19,7 +19,7 @@ We refer you to the [official Flix website (flix.dev)](https://flix.dev/) for mo
 
 ## Building
 
-See [doc/BUILD.md](doc/BUILD.md).
+See [doc/BUILD.md](docs/BUILD.md).
 
 ## License
 
