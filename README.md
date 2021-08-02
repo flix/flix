@@ -1,5 +1,5 @@
 <p align="center" >
-    <img src="https://raw.githubusercontent.com/flix/flix/master/doc/logo.png" height="91px" 
+    <img src="https://raw.githubusercontent.com/flix/flix/master/docs/logo.png" height="91px" 
     alt="The Flix Programming Language" 
     title="The Flix Programming Language">
 </p>
@@ -12,14 +12,14 @@ We refer you to the [official Flix website (flix.dev)](https://flix.dev/) for mo
 
 ## Example
 <p align="center" >
-    <img src="https://raw.githubusercontent.com/flix/flix/master/doc/example.png" height="696px" 
+    <img src="https://raw.githubusercontent.com/flix/flix/master/docs/example.png" height="696px" 
     alt="Example Flix Program" 
     title="Example Flix Program">
 </p>
 
 ## Building
 
-See [doc/BUILD.md](docs/BUILD.md).
+See [docs/BUILD.md](docs/BUILD.md).
 
 ## License
 
