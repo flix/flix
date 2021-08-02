@@ -24,7 +24,7 @@ object Scoper extends Phase[Root, Root] {
   }
 
   private def checkImpl(impl: Impl): Validation[Unit, ScopeError] = impl match {
-    case Impl(exp, inferredScheme) => checkExp(exp, Position.Tail, Nil, Map.empty).map(_ => ()) // MATT add fparams here (what is their ScopeScheme?)
+    case Impl(exp, inferredScheme) => checkExp(exp, Position.Tail, Nil, Map.empty).map(_ => ()) // MATT add fparams here (their ScopeScheme should be annotated)
   }
 
   /**
