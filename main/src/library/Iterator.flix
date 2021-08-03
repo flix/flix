@@ -204,42 +204,6 @@ namespace Iterator {
     /// The original iterator `iter` should not be reused.
     ///
     pub def dropWhile(f: a -> Bool & ef, iter: Iterator[a]): Iterator[a] & Impure = dropWhileE(f as a -> Bool & Impure, iter)
-        /*
-        matchEff f {
-            case Pure   => dropWhileL(f as a -> Bool, iter)
-            case Impure => dropWhileE(f as a -> Bool & Impure, iter)
-        }
-        */
-
-    ///
-    /// Returns `iter` without the longest prefix that satisfies the predicate `f`, where `f` is applied *lazily*.
-    ///
-    /// The function `f` must be pure.
-    ///
-    /// Does *not* consume any elements of the iterator.
-    ///
-    /// The original iterator `iter` should not be reused.
-    ///
-    /*
-    def dropWhileL(f: a -> Bool, iter: Iterator[a]): Iterator[a] & Impure =
-        let needsEvaluation = ref true;
-        let newIter = ref iter;
-        // If another function asks whether the iterator returned by dropWhileL is done, it must evaluate
-        // the dropped part such that a consumer knows whether it is empty or not.
-        let done = () -> {
-            if (deref needsEvaluation) {
-                newIter := dropWhileE(f as a -> Bool & Impure, iter);
-                needsEvaluation := false
-            } else ();
-            let Iterator(d, _) = deref newIter;
-            d()
-        };
-        let next = () -> {
-            let Iterator(_, n) = deref newIter;
-            n()
-        };
-        Iterator(done, next)
-    */
 
     ///
     /// Returns `iter` without the longest prefix that satisfies the predicate `f`, where `f` is applied *eagerly*.
@@ -276,36 +240,6 @@ namespace Iterator {
     /// The original iterator `iter` should not be reused.
     ///
     pub def takeWhile(f: a -> Bool & ef, iter: Iterator[a]): Iterator[a] & Impure = takeWhileE(f as a -> Bool & Impure, iter)
-        /*
-        matchEff f {
-            case Pure   => takeWhileL(f as a -> Bool, iter)
-            case Impure => takeWhileE(f as a -> Bool & Impure, iter)
-        }
-        */
-
-    ///
-    /// Returns the longest prefix of `iter` that satisfies the predicate `f`.
-    /// `f` is applied *lazily*.
-    ///
-    /// Does *not* consume any elements of the iterator.
-    ///
-    /// The original iterator `iter` should not be reused.
-    ///
-    /*
-    def takeWhileL(f: a -> Bool, iter: Iterator[a]): Iterator[a] & Impure =
-        let Iterator(done, next) = iter;
-        if (done())
-            Iterator(() -> true as & Impure, () -> bug!("Empty iterator") as & Impure)
-        else
-            let x = ref default;
-            let p = () -> {
-                x := next();
-                not f(deref x)
-            };
-            let done1 = () -> done() or p();
-            let next1 = () -> deref x;
-            Iterator(done1, next1)
-    */
 
     ///
     /// Returns the longest prefix of `iter` that satisfies the predicate `f`.
