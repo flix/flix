@@ -224,9 +224,11 @@ namespace Iterator {
     def dropWhileL(f: a -> Bool, iter: Iterator[a]): Iterator[a] & Impure =
         let needsEvaluation = ref true;
         let newIter = ref iter;
+        // If another function asks whether the iterator returned by dropWhileL is done, it must evaluate
+        // the dropped part such that a consumer knows whether it is empty or not.
         let done = () -> {
             if (deref needsEvaluation) {
-                newIter := dropWhile(f as a -> Bool & Impure, iter);
+                newIter := dropWhileE(f as a -> Bool & Impure, iter);
                 needsEvaluation := false
             } else ();
             let Iterator(d, _) = deref newIter;
@@ -253,15 +255,15 @@ namespace Iterator {
         if (done())
             iter
         else
-            let x = next();
-            let p = ref true;
+            let peekedElement = next();
+            let shouldReturnPeekedElement = ref true;
             let n = () -> {
-                if (deref p) {
-                    p := false;
-                    x
+                if (deref shouldReturnPeekedElement) {
+                    shouldReturnPeekedElement := false;
+                    peekedElement
                 } else next()
             };
-            if (f(x)) dropWhile(f, iter) else Iterator(done, n)
+            if (f(peekedElement)) dropWhile(f, iter) else Iterator(done, n)
 
     ///
     /// Returns the longest prefix of `iter` that satisfies the predicate `f`.
@@ -316,8 +318,9 @@ namespace Iterator {
     def takeWhileE(f: a -> Bool & Impure, iter: Iterator[a]): Iterator[a] & Impure =
         let Iterator(done, _) = iter;
         if (done())
-            Iterator(() -> true as & Impure, () -> bug!("Empty iterator") as & Impure)
-        else takeWhileEHelper(f, iter, Nil)
+            iter
+        else
+            takeWhileEHelper(f, iter, Nil)
 
     ///
     /// Helper function for takeWhileE
@@ -439,8 +442,10 @@ namespace Iterator {
     ///
     pub def foldLeft(f: (b, a) -> b & ef, s: b, iter: Iterator[a]): b & Impure =
         let Iterator(done, next) = iter;
-        if (done()) s
-        else foldLeft(f, f(s, next()), iter)
+        if (done())
+            s
+        else
+            foldLeft(f, f(s, next()), iter)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `iter` going from right to left.

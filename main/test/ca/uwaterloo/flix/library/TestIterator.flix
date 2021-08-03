@@ -648,6 +648,20 @@ namespace TestIterator {
     def takeWhilePure05(): Bool & Impure =
         Iterator.repeat(10, 1000) |> Iterator.takeWhile(x -> x < 100) |> Iterator.toList == List.repeat(10, 1000)
 
+    @test
+    def takeWhilePure06(): Bool & Impure =
+        let iter = (1 :: 2 :: 1 :: Nil): List[Int32] |> Iterator.toIter |> Iterator.takeWhile(x -> x == 1);
+        iter |> Iterator.head == Some(1)
+            and iter |> Iterator.head == None
+            and iter |> Iterator.head == None
+
+    @test
+    def takeWhilePure07(): Bool & Impure =
+        let iter = Iterator.range(1, 10000) |> Iterator.replace(10, 1) |> Iterator.takeWhile(x -> x == 1);
+        let Iterator(done, _) = iter;
+        iter |> Iterator.toList == List.repeat(1, 1)
+            and done() and done() and done() and done() and done()
+
 
     /////////////////////////////////////////////////////////////////////////////
     // takeWhile (impure)                                                      //
@@ -673,6 +687,16 @@ namespace TestIterator {
     def takeWhileImpure05(): Bool & Impure =
         Iterator.repeat(10, 1000) |> Iterator.takeWhile(x -> x < 100 as & Impure) |> Iterator.toList == List.repeat(10, 1000)
 
+<<<<<<< HEAD
+=======
+    @test
+    def takeWhileImpure06(): Bool & Impure =
+        let iter = (1 :: 2 :: 1 :: Nil): List[Int32] |> Iterator.toIter |> Iterator.takeWhile(x -> x == 1 as & Impure);
+        iter |> Iterator.head == Some(1)
+            and iter |> Iterator.head == None
+            and iter |> Iterator.head == None
+
+>>>>>>> iter-feedback
 
     /////////////////////////////////////////////////////////////////////////////
     // findRight                                                               //
@@ -873,7 +897,7 @@ namespace TestIterator {
         Iterator.map(x -> {l := "a" :: deref l; x} as & Pure) |>
         Iterator.map(x -> {l := "b" :: deref l; x} as & Pure) |>
         Iterator.toList;
-        List.reverse(deref l) == ( "a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
+        List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // filter (pure)                                                           //
