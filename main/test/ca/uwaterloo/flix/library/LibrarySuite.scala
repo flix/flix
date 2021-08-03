@@ -51,7 +51,6 @@ class LibrarySuite extends Suites(
   new FlixTest("TestToString", "main/test/ca/uwaterloo/flix/library/TestToString.flix")(Options.TestWithLibAll),
   new FlixTest("TestFromString", "main/test/ca/uwaterloo/flix/library/TestFromString.flix")(Options.TestWithLibAll),
   new FlixTest("TestHash", "main/test/ca/uwaterloo/flix/library/TestHash.flix")(Options.TestWithLibAll),
-  new FlixTest("TestLazyList", "main/test/ca/uwaterloo/flix/library/TestLazyList.flix")(Options.TestWithLibAll),
   new FlixTest("TestMonoid", "main/test/ca/uwaterloo/flix/library/TestMonoid.flix")(Options.TestWithLibAll),
   new FlixTest("TestLowerBound", "main/test/ca/uwaterloo/flix/library/TestLowerBound.flix")(Options.TestWithLibAll),
   new FlixTest("TestUpperBound", "main/test/ca/uwaterloo/flix/library/TestUpperBound.flix")(Options.TestWithLibAll),
