@@ -150,6 +150,8 @@ namespace Iterator {
     ///
     /// Does *not* consume any elements of the iterator.
     ///
+    /// The original iterator `iter` should not be reused.
+    ///
     pub def replace(x: a, y: a, iter: Iterator[a]): Iterator[a] with Eq[a] =
         let Iterator(done, next) = iter;
         let n = () -> {
@@ -191,39 +193,6 @@ namespace Iterator {
             f(next()) and forall(f, iter)
 
     ///
-    /// Returns `iter` without the longest prefix that satisfies the predicate `f`.
-    ///
-    /// The function `f` must be pure.
-    ///
-    /// Consumes elements of the iterator until the first element that does *not* satisfy predicate `f`.
-    ///
-    // TODO: Overload based on purity.
-    pub def dropWhile(f: a -> Bool, iter: Iterator[a]): Iterator[a] & Impure =
-        let Iterator(done, next) = iter;
-        if (done())
-            iter
-        else
-            let x = next();
-            let p = ref true;
-            let n = () -> {
-                if (deref p) {
-                    p := false;
-                    x
-                } else next()
-            };
-            if (f(x)) dropWhile(f, iter) else Iterator(done, n)
-
-    ///
-    /// Returns the longest prefix of `iter` that satisfies the predicate `f`.
-    ///
-    /// The function `f` must be pure.
-    ///
-    /// Consumes elements of the iterator until the first element that does *not* satisfy predicate `f`.
-    ///
-    // TODO: Overload based on purity.
-    pub def takeWhile(f: a -> Bool, iter: Iterator[a]): Iterator[a] & Impure = ???
-
-    ///
     /// Applies `f` to every element of `iter`.
     ///
     /// The function `f` must be impure.
@@ -247,13 +216,14 @@ namespace Iterator {
     /// Consumes elements of both `iterA` and `iterB` equal to the length of the shortest iterator.
     /// If `iterA` and `iterB` are equal length, both iterators are fully consumed.
     ///
+    /// The original iterators `iterA` and `iterB` should not be reused.
+    ///
     pub def zip(iterA: Iterator[a], iterB: Iterator[b]): Iterator[(a, b)] =
         let Iterator(doneA, nextA) = iterA;
         let Iterator(doneB, nextB) = iterB;
         let doneAB = () -> doneA() or doneB();
         let nextAB = () -> (nextA(), nextB());
         Iterator(doneAB, nextAB)
-
 
     ///
     /// Returns an iterator where the element at index `i` is `f(a, b)` where
@@ -264,8 +234,56 @@ namespace Iterator {
     /// Consumes elements of both `iterA` and `iterB` equal to the length of the shortest iterator.
     /// If `iterA` and `iterB` are equal length, both iterators are fully consumed.
     ///
-    // TODO: Overload based on purity.
-    pub def zipWith(f: (a, b) -> c & e, iterA: Iterator[a], iterB: Iterator[b]): Iterator[c] & Impure = ???
+    /// Whether `f` is applied eagerly or lazily depends on its purity:
+    /// - If `f` is pure then it is applied lazily.
+    /// - If `f` is impure then it is applied eagerly.
+    ///
+    /// The original iterators `iterA` and `iterB` should not be reused.
+    ///
+    pub def zipWith(f: (a, b) -> c & ef, iterA: Iterator[a], iterB: Iterator[b]): Iterator[c] & Impure =
+        matchEff f {
+            case Pure   => zipWithL(f as (a, b) -> c & Pure,   iterA, iterB)
+            case Impure => zipWithE(f as (a, b) -> c & Impure, iterA, iterB)
+        }
+
+    ///
+    /// Returns an iterator where the element at index `i` is `f(a, b)` where
+    /// `a` is the element at index `i` in `iterA` and `b` is the element at index `i` in `iterB`.
+    ///
+    /// Applies `f` *lazily*.
+    ///
+    /// If either `iterA` or `iterB` becomes depleted, then no further elements are added to the resulting list.
+    ///
+    /// Consumes elements of both `iterA` and `iterB` equal to the length of the shortest iterator.
+    /// If `iterA` and `iterB` are equal length, both iterators are fully consumed.
+    ///
+    /// The original iterators `iterA` and `iterB` should not be reused.
+    ///
+    def zipWithL(f: (a, b) -> c, iterA: Iterator[a], iterB: Iterator[b]): Iterator[c] =
+        let Iterator(doneA, nextA) = iterA;
+        let Iterator(doneB, nextB) = iterB;
+        let doneAB = () -> doneA() or doneB();
+        let nextAB = () -> f(nextA(), nextB());
+        Iterator(doneAB, nextAB)
+
+    ///
+    /// Returns an iterator where the element at index `i` is `f(a, b)` where
+    /// `a` is the element at index `i` in `iterA` and `b` is the element at index `i` in `iterB`.
+    ///
+    /// Applies `f` *eagerly*.
+    ///
+    /// If either `iterA` or `iterB` becomes depleted, then no further elements are added to the resulting list.
+    ///
+    /// Consumes elements of both `iterA` and `iterB` equal to the length of the shortest iterator.
+    /// If `iterA` and `iterB` are equal length, both iterators are fully consumed.
+    ///
+    /// The original iterators `iterA` and `iterB` should not be reused.
+    ///
+    // TODO: Optimize this (use helper function)
+    def zipWithE(f: (a, b) -> c & Impure, iterA: Iterator[a], iterB: Iterator[b]): Iterator[c] & Impure =
+        let listA = toList(iterA);
+        let listB = toList(iterB);
+        List.zipWith(f, listA, listB) |> toIter
 
     ///
     /// Applies `f` to a start value `s` and all elements in `iter` going from left to right.
@@ -274,7 +292,12 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def foldLeft(f: (b, a) -> b & e, s: b, iter: Iterator[a]): b & Impure = ???
+    pub def foldLeft(f: (b, a) -> b & ef, s: b, iter: Iterator[a]): b & Impure =
+        let Iterator(done, next) = iter;
+        if (done())
+            s
+        else
+            foldLeft(f, f(s, next()), iter)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `iter` going from right to left.
@@ -283,16 +306,22 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def foldRight(f: (a, b) -> b & e, s: b, iter: Iterator[a]): b & Impure = ???
+    pub def foldRight(f: (a, b) -> b & ef, s: b, iter: Iterator[a]): b & Impure =
+        let Iterator(done, next) = iter;
+        if (done())
+            s
+        else
+            f(next(), foldRight(f, s, iter))
 
     ///
     /// Optionally returns the first element of `iter` that satisfies the predicate `f` when searching from right to left.
     ///
     /// The function `f` must be pure.
     ///
-    /// Consumes elements from the right until an element that satisfies predicate `f` is found.
+    /// Consumes the entire iterator.
     ///
-    pub def findRight(f: a -> Bool, iter: Iterator[a]): Option[a] = ???
+    pub def findRight(f: a -> Bool, iter: Iterator[a]): Option[a] & Impure =
+        toList(iter) |> List.findRight(f)
 
     ///
     /// Returns `true` if and only if the iterator `iter` has no more elements.
@@ -323,6 +352,8 @@ namespace Iterator {
     ///
 	/// Consumes the first `n` elements of the iterator.
     ///
+    /// The original iterator `iter` should not be reused.
+    ///
     pub def drop(n: Int32, iter: Iterator[a]): Iterator[a] & Impure =
         if (n <= 0)
             iter
@@ -337,6 +368,8 @@ namespace Iterator {
     /// Returns an iterator with the first `n` elements of the iterator `iter`.
     ///
     /// Does *not* consume any elements from the iterator.
+    ///
+    /// The original iterator `iter` should not be reused.
     ///
     pub def take(n: Int32, iter: Iterator[a]): Iterator[a] & Impure =
         if (n <= 0)
@@ -360,6 +393,8 @@ namespace Iterator {
     /// - If `f` is pure then it is applied lazily.
     /// - If `f` is impure then it is applied eagerly (consuming the iterator).
     ///
+    /// The original iterator `iter` should not be reused.
+    ///
     pub def map(f: a -> b & ef, iter: Iterator[a]): Iterator[b] & Impure =
         matchEff f {
             case Pure   => mapL(f as a -> b, iter)
@@ -372,6 +407,8 @@ namespace Iterator {
 	///
 	/// Does *not* consume any elements from the iterator.
 	///
+	/// The original iterator `iter` should not be reused.
+    ///
     def mapL(f: a -> b, iter: Iterator[a]): Iterator[b] =
 		let Iterator(done, next) = iter;
 		let next1 = () -> f(next());
@@ -383,6 +420,8 @@ namespace Iterator {
 	///
 	/// Consumes all elements in the iterator.
 	///
+	/// The original iterator `iter` should not be reused.
+    ///
     def mapE(f: a -> b & Impure, iter: Iterator[a]): Iterator[b] & Impure =
 		toList(iter) |> List.map(f) |> toIter
 
@@ -394,6 +433,8 @@ namespace Iterator {
 	///
     /// - If `f` is pure then it is applied lazily.
     /// - If `f` is impure then it is applied eagerly (consuming the iterator).
+    ///
+    /// The original iterator `iter` should not be reused.
     ///
     pub def filter(f: a -> Bool & ef, iter: Iterator[a]): Iterator[a] & Impure =
         matchEff f {
@@ -407,6 +448,8 @@ namespace Iterator {
 	///
 	/// Does *not* consume any elements from the iterator.
 	///
+	/// The original iterator `iter` should not be reused.
+    ///
 	pub def filterL(f: a -> Bool, iter: Iterator[a]): Iterator[a] & Impure =
         let Iterator(done, next) = iter;
 
@@ -440,6 +483,8 @@ namespace Iterator {
 	///
 	/// Consume the entire iterator.
 	///
+	/// The original iterator `iter` should not be reused.
+    ///
 	pub def filterE(f: a -> Bool & Impure, iter: Iterator[a]): Iterator[a] & Impure =
 		(toList(iter) |> List.filter(f as a -> Bool) |> toIter) as & Impure
 
