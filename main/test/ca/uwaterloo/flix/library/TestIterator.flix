@@ -687,8 +687,6 @@ namespace TestIterator {
     def takeWhileImpure05(): Bool & Impure =
         Iterator.repeat(10, 1000) |> Iterator.takeWhile(x -> x < 100 as & Impure) |> Iterator.toList == List.repeat(10, 1000)
 
-<<<<<<< HEAD
-=======
     @test
     def takeWhileImpure06(): Bool & Impure =
         let iter = (1 :: 2 :: 1 :: Nil): List[Int32] |> Iterator.toIter |> Iterator.takeWhile(x -> x == 1 as & Impure);
@@ -696,7 +694,6 @@ namespace TestIterator {
             and iter |> Iterator.head == None
             and iter |> Iterator.head == None
 
->>>>>>> iter-feedback
 
     /////////////////////////////////////////////////////////////////////////////
     // findRight                                                               //

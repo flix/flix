@@ -203,7 +203,7 @@ namespace Iterator {
     ///
     /// The original iterator `iter` should not be reused.
     ///
-    pub def dropWhile(f: a -> Bool & ef, iter: Iterator[a]): Iterator[a] & Impure = dropWhileE(f, iter)
+    pub def dropWhile(f: a -> Bool & ef, iter: Iterator[a]): Iterator[a] & Impure = dropWhileE(f as a -> Bool & Impure, iter)
         /*
         matchEff f {
             case Pure   => dropWhileL(f as a -> Bool, iter)
@@ -275,7 +275,7 @@ namespace Iterator {
     ///
     /// The original iterator `iter` should not be reused.
     ///
-    pub def takeWhile(f: a -> Bool & ef, iter: Iterator[a]): Iterator[a] & Impure = takeWhileE(f, iter)
+    pub def takeWhile(f: a -> Bool & ef, iter: Iterator[a]): Iterator[a] & Impure = takeWhileE(f as a -> Bool & Impure, iter)
         /*
         matchEff f {
             case Pure   => takeWhileL(f as a -> Bool, iter)
