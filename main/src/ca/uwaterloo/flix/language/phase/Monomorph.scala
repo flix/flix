@@ -692,11 +692,15 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
      * Perform specialization of all non-parametric function definitions.
      */
     for ((sym, defn) <- nonParametricDefns) {
-      // MATT hack
-      val Result.Ok(subst) = Unification.unifyTypes(defn.spec.declaredScheme.base, defn.impl.inferredScheme.base)
+
+      // Get a substitution from the inferred scheme to the declared scheme.
+      // This is necessary because the inferred scheme may be more generic than the declared scheme.
+      val subst = Unification.unifyTypes(defn.spec.declaredScheme.base, defn.impl.inferredScheme.base) match {
+        case Result.Ok(subst1) => subst1
+        // This should not happen, since the Typer guarantees that the schemes unify
+        case Result.Err(_) => throw InternalCompilerException("Failed to unify declared and inferred schemes.")
+      }
       val subst0 = StrictSubstitution(subst)
-      // Specialize the function definition under the empty substitution (it has no type parameters).
-//      val subst0 = StrictSubstitution(Substitution.empty)
 
       // Specialize the formal parameters to obtain fresh local variable symbols for them.
       val (fparams, env0) = specializeFormalParams(defn.spec.fparams, subst0)
