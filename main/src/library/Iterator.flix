@@ -203,11 +203,13 @@ namespace Iterator {
     ///
     /// The original iterator `iter` should not be reused.
     ///
-    pub def dropWhile(f: a -> Bool & ef, iter: Iterator[a]): Iterator[a] & Impure =
+    pub def dropWhile(f: a -> Bool & ef, iter: Iterator[a]): Iterator[a] & Impure = dropWhileE(f, iter)
+        /*
         matchEff f {
             case Pure   => dropWhileL(f as a -> Bool, iter)
             case Impure => dropWhileE(f as a -> Bool & Impure, iter)
         }
+        */
 
     ///
     /// Returns `iter` without the longest prefix that satisfies the predicate `f`, where `f` is applied *lazily*.
@@ -218,6 +220,7 @@ namespace Iterator {
     ///
     /// The original iterator `iter` should not be reused.
     ///
+    /*
     def dropWhileL(f: a -> Bool, iter: Iterator[a]): Iterator[a] & Impure =
         let needsEvaluation = ref true;
         let newIter = ref iter;
@@ -234,6 +237,7 @@ namespace Iterator {
             n()
         };
         Iterator(done, next)
+    */
 
     ///
     /// Returns `iter` without the longest prefix that satisfies the predicate `f`, where `f` is applied *eagerly*.
@@ -269,11 +273,13 @@ namespace Iterator {
     ///
     /// The original iterator `iter` should not be reused.
     ///
-    pub def takeWhile(f: a -> Bool & ef, iter: Iterator[a]): Iterator[a] & Impure =
+    pub def takeWhile(f: a -> Bool & ef, iter: Iterator[a]): Iterator[a] & Impure = takeWhileE(f, iter)
+        /*
         matchEff f {
             case Pure   => takeWhileL(f as a -> Bool, iter)
             case Impure => takeWhileE(f as a -> Bool & Impure, iter)
         }
+        */
 
     ///
     /// Returns the longest prefix of `iter` that satisfies the predicate `f`.
@@ -283,6 +289,7 @@ namespace Iterator {
     ///
     /// The original iterator `iter` should not be reused.
     ///
+    /*
     def takeWhileL(f: a -> Bool, iter: Iterator[a]): Iterator[a] & Impure =
         let Iterator(done, next) = iter;
         if (done())
@@ -296,6 +303,7 @@ namespace Iterator {
             let done1 = () -> done() or p();
             let next1 = () -> deref x;
             Iterator(done1, next1)
+    */
 
     ///
     /// Returns the longest prefix of `iter` that satisfies the predicate `f`.
