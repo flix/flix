@@ -1096,26 +1096,4 @@ class TestTyper extends FunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     expectError[TypeError.IllegalMain](result)
   }
-
-  test("MattTest") { // MATT
-    val input =
-      """
-        |pub def testLambda03(): (Int, Int) -> Int = (x, y) -> x + y
-        |
-        |pub def f(): Int = testLambda03()(3, 4)
-        |""".stripMargin
-    val result = compile(input, DefaultOptions)
-    result.get
-  }
-
-  test("MattTest2") { // MATT
-    val input =
-      """
-        |pub def testLambda03(): (a, a) -> a with Add[a] = (x, y) -> x + y
-        |
-        |pub def f(): Int = testLambda03()(3, 4)
-        |""".stripMargin
-    val result = compile(input, DefaultOptions)
-    result.get
-  }
 }
