@@ -27,6 +27,83 @@ object Scoper extends Phase[Root, Root] {
     case Impl(exp, inferredScheme) => checkExp(exp, Position.Tail, Nil, Map.empty).map(_ => ()) // MATT add fparams here (their ScopeScheme should be annotated)
   }
 
+  private def checkExp(exp0: Expression): Validation[(Scopedness, ScopeScheme), ScopeError] = exp0 match {
+    case Expression.Unit(loc) => (Scopedness.Unscoped, ScopeScheme.Unit).toSuccess
+    case Expression.Null(tpe, loc) => (Scopedness.Unscoped, ScopeScheme.Unit).toSuccess
+    case Expression.True(loc) => (Scopedness.Unscoped, ScopeScheme.Unit).toSuccess
+    case Expression.False(loc) => (Scopedness.Unscoped, ScopeScheme.Unit).toSuccess
+    case Expression.Char(lit, loc) => (Scopedness.Unscoped, ScopeScheme.Unit).toSuccess
+    case Expression.Float32(lit, loc) => (Scopedness.Unscoped, ScopeScheme.Unit).toSuccess
+    case Expression.Float64(lit, loc) => (Scopedness.Unscoped, ScopeScheme.Unit).toSuccess
+    case Expression.Int8(lit, loc) => (Scopedness.Unscoped, ScopeScheme.Unit).toSuccess
+    case Expression.Int16(lit, loc) => (Scopedness.Unscoped, ScopeScheme.Unit).toSuccess
+    case Expression.Int32(lit, loc) => (Scopedness.Unscoped, ScopeScheme.Unit).toSuccess
+    case Expression.Int64(lit, loc) => (Scopedness.Unscoped, ScopeScheme.Unit).toSuccess
+    case Expression.BigInt(lit, loc) => (Scopedness.Unscoped, ScopeScheme.Unit).toSuccess
+    case Expression.Str(lit, loc) => (Scopedness.Unscoped, ScopeScheme.Unit).toSuccess
+    case Expression.Default(tpe, loc) => (Scopedness.Unscoped, ScopeScheme.Unit).toSuccess
+    case Expression.Wild(tpe, loc) => (Scopedness.Unscoped, ScopeScheme.Unit).toSuccess
+    case Expression.Var(sym, tpe, loc) => (sym.scopedness, ???).toSuccess // MATT how to get scheme?
+    case Expression.Def(sym, tpe, loc) => (Scopedness.Unscoped, ???).toSuccess // MATT lookup from earlier phase
+    case Expression.Sig(sym, tpe, loc) => (Scopedness.Unscoped, ???).toSuccess // MATT lookup from earlier phase
+    case Expression.Hole(sym, tpe, eff, loc) => (Scopedness.Unscoped, ???).toSuccess // MATT this has to match everything...
+    case Expression.Lambda(fparam, exp, tpe, loc) =>
+      for {
+        (bodySco, bodySch) <- checkExp(exp)
+        // MATT assert body unscoped
+      } yield (bodySco, ScopeScheme.Arrow(fparam.sym.scopedness, bodySch)) // MATT what if the unscoped value here is actually the fparam?
+    case Expression.Apply(exp, exps, tpe, eff, loc) => ???
+    case Expression.Unary(sop, exp, tpe, eff, loc) => ???
+    case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) => ???
+    case Expression.Let(sym, mod, exp1, exp2, tpe, eff, loc) => ???
+    case Expression.LetRegion(sym, exp, tpe, eff, loc) => ???
+    case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => ???
+    case Expression.Stm(exp1, exp2, tpe, eff, loc) => ???
+    case Expression.Match(exp, rules, tpe, eff, loc) => ???
+    case Expression.Choose(exps, rules, tpe, eff, loc) => ???
+    case Expression.Tag(sym, tag, exp, tpe, eff, loc) => ???
+    case Expression.Tuple(elms, tpe, eff, loc) => ???
+    case Expression.RecordEmpty(tpe, loc) => ???
+    case Expression.RecordSelect(exp, field, tpe, eff, loc) => ???
+    case Expression.RecordExtend(field, value, rest, tpe, eff, loc) => ???
+    case Expression.RecordRestrict(field, rest, tpe, eff, loc) => ???
+    case Expression.ArrayLit(elms, tpe, eff, loc) => ???
+    case Expression.ArrayNew(elm, len, tpe, eff, loc) => ???
+    case Expression.ArrayLoad(base, index, tpe, eff, loc) => ???
+    case Expression.ArrayLength(base, eff, loc) => ???
+    case Expression.ArrayStore(base, index, elm, loc) => ???
+    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) => ???
+    case Expression.Ref(exp, tpe, eff, loc) => ???
+    case Expression.Deref(exp, tpe, eff, loc) => ???
+    case Expression.Assign(exp1, exp2, tpe, eff, loc) => ???
+    case Expression.Existential(fparam, exp, loc) => ???
+    case Expression.Universal(fparam, exp, loc) => ???
+    case Expression.Ascribe(exp, tpe, eff, loc) => ???
+    case Expression.Cast(exp, tpe, eff, loc) => ???
+    case Expression.TryCatch(exp, rules, tpe, eff, loc) => ???
+    case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) => ???
+    case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) => ???
+    case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) => ???
+    case Expression.GetField(field, exp, tpe, eff, loc) => ???
+    case Expression.PutField(field, exp1, exp2, tpe, eff, loc) => ???
+    case Expression.GetStaticField(field, tpe, eff, loc) => ???
+    case Expression.PutStaticField(field, exp, tpe, eff, loc) => ???
+    case Expression.NewChannel(exp, tpe, eff, loc) => ???
+    case Expression.GetChannel(exp, tpe, eff, loc) => ???
+    case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => ???
+    case Expression.SelectChannel(rules, default, tpe, eff, loc) => ???
+    case Expression.Spawn(exp, tpe, eff, loc) => ???
+    case Expression.Lazy(exp, tpe, loc) => ???
+    case Expression.Force(exp, tpe, eff, loc) => ???
+    case Expression.FixpointConstraintSet(cs, stf, tpe, loc) => ???
+    case Expression.FixpointMerge(exp1, exp2, stf, tpe, eff, loc) => ???
+    case Expression.FixpointSolve(exp, stf, tpe, eff, loc) => ???
+    case Expression.FixpointFilter(pred, exp, tpe, eff, loc) => ???
+    case Expression.FixpointProjectIn(exp, pred, tpe, eff, loc) => ???
+    case Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) => ???
+    case Expression.MatchEff(exp1, exp2, exp3, tpe, eff, loc) => ???
+  }
+
   /**
     * Checks the expression for scope errors.
     *
