@@ -1,12 +1,12 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.Entity.TypeCon
 import ca.uwaterloo.flix.language.ast.TypedAst._
+import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.{Scopedness, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.ScopeError
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 
 // MATT license
@@ -30,7 +30,7 @@ object Scoper extends Phase[Root, Root] {
     case Impl(exp, inferredScheme) => checkExp(exp, Map.empty).map(_ => ()) // MATT add fparams here (their ScopeScheme should be annotated)
   }
 
-  private def checkExp(exp0: Expression, senv: Map[Symbol.VarSym, ScopeScheme]): Validation[(Scopedness, ScopeScheme, Set[Symbol.VarSym]), ScopeError] = exp0 match {
+  private def checkExp(exp0: Expression, senv: Map[Symbol.VarSym, (Scopedness, ScopeScheme)]): Validation[(Scopedness, ScopeScheme, Set[Symbol.VarSym]), ScopeError] = exp0 match {
     case Expression.Unit(loc) => noScope.toSuccess
     case Expression.Null(tpe, loc) => noScope.toSuccess
     case Expression.True(loc) => noScope.toSuccess
@@ -47,18 +47,17 @@ object Scoper extends Phase[Root, Root] {
     case Expression.Default(tpe, loc) => noScope.toSuccess
     case Expression.Wild(tpe, loc) => noScope.toSuccess
     case Expression.Var(sym, tpe, loc) =>
-      sym.scopedness match {
-        case Scopedness.Scoped => (sym.scopedness, senv(sym), Set(sym)).toSuccess
-        case Scopedness.Unscoped => (sym.scopedness, senv(sym), Set.empty[Symbol.VarSym]).toSuccess
+      senv(sym) match {
+        case (Scopedness.Scoped, sch) => (sym.scopedness, sch, Set(sym)).toSuccess
+        case (Scopedness.Unscoped, sch) => (sym.scopedness, sch, Set.empty[Symbol.VarSym]).toSuccess
       }
-      (sym.scopedness, senv(sym), Set(sym)).toSuccess
     case Expression.Def(sym, tpe, loc) => (Scopedness.Unscoped, ???, Set.empty[Symbol.VarSym]).toSuccess // MATT lookup from earlier phase
     case Expression.Sig(sym, tpe, loc) => (Scopedness.Unscoped, ???, Set.empty[Symbol.VarSym]).toSuccess // MATT lookup from earlier phase
     case Expression.Hole(sym, tpe, eff, loc) => (Scopedness.Unscoped, mkScopeScheme(tpe), Set.empty[Symbol.VarSym]).toSuccess
     case Expression.Lambda(fparam, exp, tpe, loc) =>
       val fparamSch = mkScopeScheme(fparam.tpe)
       for {
-        (bodySco, bodySch, bodyVars) <- checkExp(exp, senv + (fparam.sym -> fparamSch))
+        (bodySco, bodySch, bodyVars) <- checkExp(exp, senv + (fparam.sym -> (fparam.sym.scopedness, fparamSch)))
         // MATT assert body unscoped
         freeVars = bodyVars - fparam.sym
         sco = if (freeVars.isEmpty) Scopedness.Unscoped else Scopedness.Scoped
@@ -94,8 +93,8 @@ object Scoper extends Phase[Root, Root] {
       } yield (Scopedness.Unscoped, ScopeScheme.Unit, vars1 ++ vars2)
     case Expression.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
       for {
-        (_, varSch, varVars) <- checkExp(exp1, senv)
-        (sco, sch, vars) <- checkExp(exp2, senv + (sym -> varSch))
+        (varSco, varSch, varVars) <- checkExp(exp1, senv)
+        (sco, sch, vars) <- checkExp(exp2, senv + (sym -> (varSco, varSch)))
         freeVars = (varVars ++ vars) - sym
       } yield (sco, sch, freeVars)
     case Expression.LetRegion(sym, exp, tpe, eff, loc) => checkExp(exp, senv) // MATT right?
@@ -110,7 +109,11 @@ object Scoper extends Phase[Root, Root] {
         (_, _, vars1) <- checkExp(exp1, senv)
         (sco, sch, vars2) <- checkExp(exp2, senv)
       } yield (sco, sch, vars1 ++ vars2)
-    case Expression.Match(exp, rules, tpe, eff, loc) => ???
+    case Expression.Match(exp, rules, tpe, eff, loc) =>
+      for {
+        (sco, sch, vars) <- checkExp(exp, senv)
+        (ruleScos, ruleSchs, ruleVars) <- Validation.traverse(rules)(checkMatchRule(_, senv, sco)).map(_.unzip3)
+      } yield
     case Expression.Choose(exps, rules, tpe, eff, loc) => ???
     case Expression.Tag(sym, tag, exp, tpe, eff, loc) => ???
     case Expression.Tuple(elms, tpe, eff, loc) => ???
@@ -153,6 +156,19 @@ object Scoper extends Phase[Root, Root] {
     case Expression.FixpointProjectIn(exp, pred, tpe, eff, loc) => ???
     case Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) => ???
     case Expression.MatchEff(exp1, exp2, exp3, tpe, eff, loc) => ???
+  }
+
+  private def checkMatchRule(rule: MatchRule, senv: Map[Symbol.VarSym, (Scopedness, ScopeScheme)], sco: Scopedness): Validation[(Scopedness, ScopeScheme, Set[Symbol.VarSym]), ScopeError] = rule match {
+    case MatchRule(pat, guard, exp) =>
+      val patEnv = TypedAstOps.binds(pat).map {
+        case (sym, tpe) => sym -> (sco, mkScopeScheme(tpe))
+      }
+      val fullEnv = senv ++ patEnv
+      for {
+        (_, _, guardVars) <- checkExp(guard, fullEnv)
+        (expSco, expSch, expVars) <- checkExp(exp, fullEnv)
+        freeVars = (guardVars ++ expVars) -- patEnv.keys
+      } yield (expSco, expSch, freeVars)
   }
 
   private def mkScopeScheme(tpe: Type): ScopeScheme = tpe.typeConstructor match {
