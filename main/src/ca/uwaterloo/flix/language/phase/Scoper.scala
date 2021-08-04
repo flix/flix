@@ -195,9 +195,25 @@ object Scoper extends Phase[Root, Root] {
     case Expression.Universal(fparam, exp, loc) => noScope.toSuccess // MATT
     case Expression.Ascribe(exp, tpe, eff, loc) => checkExp(exp, senv)
     case Expression.Cast(exp, tpe, eff, loc) => checkExp(exp, senv)
-    case Expression.TryCatch(exp, rules, tpe, eff, loc) => ???
-    case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) => ???
-    case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) => ???
+    case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+      for {
+        (expSco, expSch, expVars) <- checkExp(exp, senv)
+        (ruleScos, ruleSchs, ruleVars) <- Validation.traverse(rules)(checkCatchRule(_, senv)).map(_.unzip3)
+        sco = ruleScos.foldLeft(expSco)(_ max _)
+        sch = ruleSchs.foldLeft(expSch)(_ max _)
+        vars = expVars ++ ruleVars.flatten
+      } yield (sco, sch, vars)
+    case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
+      for {
+        (scos, _, vars) <- Validation.traverse(args)(checkExp(_, senv)).map(_.unzip3)
+        // MATT check all unscoped
+      } yield (Scopedness.Unscoped, mkScopeScheme(tpe), vars.flatten.toSet)
+    case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) =>
+      for {
+        (expSco, _, expVars) <- checkExp(exp, senv)
+        (argScos, _, argVars) <- Validation.traverse(args)(checkExp(_, senv)).map(_.unzip3)
+        // MATT check all unscoped
+      } yield (Scopedness.Unscoped, mkScopeScheme(tpe), expVars ++ argVars.flatten)
     case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) => ???
     case Expression.GetField(field, exp, tpe, eff, loc) => ???
     case Expression.PutField(field, exp1, exp2, tpe, eff, loc) => ???
@@ -232,9 +248,9 @@ object Scoper extends Phase[Root, Root] {
       } yield (expSco, expSch, freeVars)
   }
 
-  private def checkChoiceRule(rule: ChoiceRule, senv: Map[Symbol.VarSym, (Scopedness, Scoper.ScopeScheme)], sco: Scopedness): Validation[(Scopedness, ScopeScheme, Set[Symbol.VarSym]), ScopeError] = rule match {
+  private def checkChoiceRule(rule: ChoiceRule, senv: Map[Symbol.VarSym, (Scopedness, ScopeScheme)], sco: Scopedness): Validation[(Scopedness, ScopeScheme, Set[Symbol.VarSym]), ScopeError] = rule match {
     case ChoiceRule(pat, exp) =>
-      val patEnv = pat.foldLeft(Map.empty[Symbol.VarSym, (Scopedness, Scoper.ScopeScheme)]) {
+      val patEnv = pat.foldLeft(Map.empty[Symbol.VarSym, (Scopedness, ScopeScheme)]) {
         case (acc, ChoicePattern.Wild(loc)) => acc
         case (acc, ChoicePattern.Absent(loc)) => acc
         case (acc, ChoicePattern.Present(sym, tpe, loc)) => acc + (sym -> (sco, mkScopeScheme(tpe)))
@@ -243,6 +259,15 @@ object Scoper extends Phase[Root, Root] {
       for {
         (expSco, expSch, expVars) <- checkExp(exp, fullEnv)
         freeVars = expVars -- patEnv.keys
+      } yield (expSco, expSch, freeVars)
+  }
+
+  private def checkCatchRule(rule: CatchRule, senv: Map[Symbol.VarSym, (Scopedness, ScopeScheme)]): Validation[(Scopedness, ScopeScheme, Set[Symbol.VarSym]), ScopeError] = rule match {
+    case CatchRule(sym, clazz, exp) =>
+      val fullEnv = senv + (sym -> (Scopedness.Unscoped, ScopeScheme.Unit))
+      for {
+        (expSco, expSch, expVars) <- checkExp(exp, fullEnv)
+        freeVars = expVars - sym
       } yield (expSco, expSch, freeVars)
   }
 
