@@ -460,6 +460,8 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
           lambdaType <- unifyTypeM(tpe, Type.mkUncurriedArrowWithEffect(tpes, lambdaBodyEff, lambdaBodyType), loc)
           resultTyp <- unifyTypeM(tvar, lambdaBodyType, loc)
           resultEff <- unifyBoolM(evar, Type.mkAnd(lambdaBodyEff :: eff :: effs), loc)
+          _ <- unbindVar(lambdaBodyType) // NB: Safe to unbind since the variable is not used elsewhere.
+          _ <- unbindVar(lambdaBodyEff) // NB: Safe to unbind since the variable is not used elsewhere.
         } yield (constrs1 ++ constrs2.flatten, resultTyp, resultEff)
 
       case ResolvedAst.Expression.Unary(sop, exp, tvar, loc) => sop match {
@@ -1006,9 +1008,11 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         //  [e1,..., en] : Array[t] @ Impure
         //
         if (elms.isEmpty) {
+          val elmTypeVar = Type.freshVar(Kind.Star)
           for {
-            resultTyp <- unifyTypeM(tvar, Type.mkArray(Type.freshVar(Kind.Star)), loc)
+            resultTyp <- unifyTypeM(tvar, Type.mkArray(elmTypeVar), loc)
             resultEff = Type.Impure
+            _ <- unbindVar(elmTypeVar)
           } yield (List.empty, resultTyp, resultEff)
         } else {
           for {
@@ -1053,11 +1057,12 @@ object Typer extends Phase[ResolvedAst.Root, TypedAst.Root] {
         //  --------------------
         //  exp.length : Int @ e
         //
-        val elementType = Type.freshVar(Kind.Star)
+        val elmTypeVar = Type.freshVar(Kind.Star)
         for {
           (constrs, tpe, eff) <- visitExp(exp)
-          arrayType <- unifyTypeM(tpe, Type.mkArray(elementType), loc)
+          arrayType <- unifyTypeM(tpe, Type.mkArray(elmTypeVar), loc)
           resultEff = eff
+          _ <- unbindVar(elmTypeVar)
         } yield (constrs, Type.Int32, resultEff)
 
       case ResolvedAst.Expression.ArrayStore(exp1, exp2, exp3, loc) =>

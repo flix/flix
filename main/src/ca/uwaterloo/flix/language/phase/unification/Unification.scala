@@ -367,6 +367,16 @@ object Unification {
   }
 
   /**
+    * Removes the given type variable from the substitution.
+    *
+    * NB: Use with EXTREME CAUTION.
+    */
+  def unbindVar(tvar: Type.Var): InferMonad[Unit] =
+    InferMonad(s => {
+      Ok((s.unbind(tvar), ()))
+    })
+
+  /**
     * Purifies the given effect `eff` in the type inference monad.
     */
   def purifyEffM(tvar: Type.Var, eff: Type): InferMonad[Type] =
