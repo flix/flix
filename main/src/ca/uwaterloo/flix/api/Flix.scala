@@ -328,7 +328,6 @@ class Flix {
         Namer |>
         Resolver |>
         Typer |>
-        Statistics |>
         Instances |>
         Stratifier |>
         PatternExhaustiveness |>
