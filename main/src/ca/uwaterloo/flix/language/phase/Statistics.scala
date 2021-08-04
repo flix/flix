@@ -22,6 +22,9 @@ import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 
+/**
+  * Collects statistics about the AST and reports them to stdout.
+  */
 object Statistics extends Phase[Root, Root] {
   override def run(root: Root)(implicit flix: Flix): Validation[Root, Nothing] = flix.phase("Statistics") {
     val defCounts = Counter.merge(root.defs.values.map(visitDef))
@@ -34,6 +37,9 @@ object Statistics extends Phase[Root, Root] {
     root.toSuccess
   }
 
+  /**
+    * Prints the list of AST nodes from most to least common.
+    */
   private def printStats(counter: Counter): Unit = {
     val ordered = counter.m.toList.sortBy(_._2).reverse
     ordered.foreach {
@@ -41,18 +47,30 @@ object Statistics extends Phase[Root, Root] {
     }
   }
 
+  /**
+    * Counts AST nodes in the given def.
+    */
   private def visitDef(defn: Def): Counter = defn match {
     case Def(sym, spec, impl) => visitImpl(impl)
   }
 
+  /**
+    * Counts AST nodes in the given sig.
+    */
   private def visitSig(sig: Sig): Counter = sig match {
     case Sig(sym, spec, impl) => Counter.merge(impl.map(visitImpl))
   }
 
+  /**
+    * Counts AST nodes in the given impl.
+    */
   private def visitImpl(impl: Impl): Counter = impl match {
     case Impl(exp, inferredScheme) => visitExp(exp)
   }
 
+  /**
+    * Counts AST nodes in the given expression.
+    */
   private def visitExp(exp0: Expression): Counter = {
     val base = Counter.of(getName(exp0))
 
@@ -132,39 +150,68 @@ object Statistics extends Phase[Root, Root] {
     base ++ subExprs
   }
 
+  /**
+    * Counts AST nodes in the given rule.
+    */
   private def visitMatchRule(rule: MatchRule): Counter = rule match {
     case MatchRule(pat, guard, exp) => visitExp(guard) ++ visitExp(exp)
   }
 
+  /**
+    * Counts AST nodes in the given rule.
+    */
   private def visitChoiceRule(rule: ChoiceRule): Counter = rule match {
     case ChoiceRule(pat, exp) => visitExp(exp)
   }
 
+  /**
+    * Counts AST nodes in the given rule.
+    */
   private def visitCatchRule(rule: CatchRule): Counter = rule match {
     case CatchRule(sym, clazz, exp) => visitExp(exp)
   }
 
+  /**
+    * Counts AST nodes in the given rule.
+    */
   private def visitSelectChannelRule(rule: SelectChannelRule): Counter = rule match {
     case SelectChannelRule(sym, chan, exp) => visitExp(chan) ++ visitExp(exp)
   }
 
+  /**
+    * Counts AST nodes in the given constraint.
+    */
   private def visitConstraint(constr: Constraint): Counter = constr match {
     case Constraint(cparams, head, body, loc) => visitHeadPredicate(head) ++ Counter.merge(body.map(visitBodyPredicate))
   }
 
+  /**
+    * Counts AST nodes in the given predicate.
+    */
   private def visitHeadPredicate(head: Predicate.Head): Counter = head match {
     case Head.Atom(pred, den, terms, tpe, loc) => Counter.merge(terms.map(visitExp))
   }
 
+  /**
+    * Counts AST nodes in the given predicate.
+    */
   private def visitBodyPredicate(body: Predicate.Body): Counter = body match {
     case Body.Atom(pred, den, polarity, terms, tpe, loc) => Counter.empty
     case Body.Guard(exp, loc) => visitExp(exp)
   }
 
-
+  /**
+    * Returns the name of the given expression.
+    */
   private def getName(expression: Expression): String = expression.productPrefix
 
+  /**
+    * Maintains a count of the
+    */
   private case class Counter(m: Map[String, Int]) {
+    /**
+      * Merges the two counters.
+      */
     def ++(other: Counter): Counter = {
       val m1 = other.m.foldLeft(m) {
         case (acc, (k, v)) => acc.updated(k, acc.getOrElse(k, 0) + v)
@@ -174,10 +221,19 @@ object Statistics extends Phase[Root, Root] {
   }
 
   private object Counter {
+    /**
+      * The empty counter.
+      */
     val empty: Counter = Counter(Map.empty)
 
+    /**
+      * Starts a counter with 1 of the given name.
+      */
     def of(name: String): Counter = Counter(Map(name -> 1))
 
+    /**
+      * Merges an interable of counters.
+      */
     def merge(counters: Iterable[Counter]): Counter = counters.foldLeft(Counter.empty)(_ ++ _)
   }
 
