@@ -675,24 +675,16 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def LetImport: Rule1[ParsedAst.Expression] = {
 
-      def JvmIdent: Rule1[String] = rule {
-        capture(CharPredicate.Alpha ~ zeroOrMore(CharPredicate.AlphaNum + '_'))
-      }
-
-      def JvmName: Rule1[Seq[String]] = rule {
-        oneOrMore(JvmIdent).separatedBy(".")
-      }
-
       def JvmStaticName: Rule1[Seq[String]] = rule {
-        oneOrMore(JvmIdent).separatedBy(".") ~ ":" ~ JvmIdent ~> ((xs: Seq[String], x: String) => xs :+ x)
+        oneOrMore(Names.JavaIdentifier).separatedBy(".") ~ ":" ~ Names.JavaIdentifier ~> ((xs: Seq[String], x: String) => xs :+ x)
       }
 
       def Constructor: Rule1[ParsedAst.JvmOp] = rule {
-        keyword("new") ~ WS ~ JvmName ~ optWS ~ Signature ~ WS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.Constructor
+        keyword("new") ~ WS ~ Names.JavaName ~ optWS ~ Signature ~ WS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.Constructor
       }
 
       def Method: Rule1[ParsedAst.JvmOp] = rule {
-        JvmName ~ optWS ~ Signature ~ optional(WS ~ keyword("as") ~ WS ~ Names.Variable) ~> ParsedAst.JvmOp.Method
+        Names.JavaName ~ optWS ~ Signature ~ optional(WS ~ keyword("as") ~ WS ~ Names.Variable) ~> ParsedAst.JvmOp.Method
       }
 
       def StaticMethod: Rule1[ParsedAst.JvmOp] = rule {
@@ -700,11 +692,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def GetField: Rule1[ParsedAst.JvmOp] = rule {
-        keyword("get") ~ WS ~ JvmName ~ WS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.GetField
+        keyword("get") ~ WS ~ Names.JavaName ~ WS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.GetField
       }
 
       def PutField: Rule1[ParsedAst.JvmOp] = rule {
-        keyword("set") ~ WS ~ JvmName ~ WS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.PutField
+        keyword("set") ~ WS ~ Names.JavaName ~ WS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.PutField
       }
 
       def GetStaticField: Rule1[ParsedAst.JvmOp] = rule {
@@ -1580,14 +1572,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       LowerCaseName | Wildcard | GreekName | MathName
     }
 
-    def JavaName: Rule1[Seq[String]] = {
-      def JavaIdentifier: Rule1[String] = rule {
-        capture(CharPredicate.Alpha ~ zeroOrMore(CharPredicate.AlphaNum))
-      }
+    def JavaIdentifier: Rule1[String] = rule {
+      capture((CharPredicate.Alpha | anyOf("_$")) ~ zeroOrMore(CharPredicate.AlphaNum | anyOf("_$")))
+    }
 
-      rule {
+    def JavaName: Rule1[Seq[String]] = rule {
         oneOrMore(JavaIdentifier).separatedBy(".")
-      }
     }
 
   }

@@ -37,6 +37,7 @@ class LibrarySuite extends Suites(
   new FlixTest("TestOption", "main/test/ca/uwaterloo/flix/library/TestOption.flix")(Options.TestWithLibAll),
   new FlixTest("TestRandom", "main/test/ca/uwaterloo/flix/library/TestRandom.flix")(Options.TestWithLibAll),
   new FlixTest("TestResult", "main/test/ca/uwaterloo/flix/library/TestResult.flix")(Options.TestWithLibAll),
+  new FlixTest("TestLazyList", "main/test/ca/uwaterloo/flix/library/TestLazyList.flix")(Options.TestWithLibAll),
   new FlixTest("TestList", "main/test/ca/uwaterloo/flix/library/TestList.flix")(Options.TestWithLibAll),
   new FlixTest("TestSet", "main/test/ca/uwaterloo/flix/library/TestSet.flix")(Options.TestWithLibAll),
   new FlixTest("TestMap", "main/test/ca/uwaterloo/flix/library/TestMap.flix")(Options.TestWithLibAll),
@@ -51,7 +52,6 @@ class LibrarySuite extends Suites(
   new FlixTest("TestToString", "main/test/ca/uwaterloo/flix/library/TestToString.flix")(Options.TestWithLibAll),
   new FlixTest("TestFromString", "main/test/ca/uwaterloo/flix/library/TestFromString.flix")(Options.TestWithLibAll),
   new FlixTest("TestHash", "main/test/ca/uwaterloo/flix/library/TestHash.flix")(Options.TestWithLibAll),
-  new FlixTest("TestLazyList", "main/test/ca/uwaterloo/flix/library/TestLazyList.flix")(Options.TestWithLibAll),
   new FlixTest("TestMonoid", "main/test/ca/uwaterloo/flix/library/TestMonoid.flix")(Options.TestWithLibAll),
   new FlixTest("TestLowerBound", "main/test/ca/uwaterloo/flix/library/TestLowerBound.flix")(Options.TestWithLibAll),
   new FlixTest("TestUpperBound", "main/test/ca/uwaterloo/flix/library/TestUpperBound.flix")(Options.TestWithLibAll),
@@ -60,4 +60,5 @@ class LibrarySuite extends Suites(
   new FlixTest("Core/Io/TestFile", "main/test/ca/uwaterloo/flix/library/Core/Io/TestFile.flix")(Options.TestWithLibAll),
   new FlixTest("Core/Io/TestInputStream", "main/test/ca/uwaterloo/flix/library/Core/Io/TestInputStream.flix")(Options.TestWithLibAll),
   new FlixTest("Core/Io/TestOutputStream", "main/test/ca/uwaterloo/flix/library/Core/Io/TestOutputStream.flix")(Options.TestWithLibAll),
+  new FlixTest("TestEnvironment", "main/test/ca/uwaterloo/flix/library/TestEnvironment.flix")(Options.TestWithLibAll),
 )
