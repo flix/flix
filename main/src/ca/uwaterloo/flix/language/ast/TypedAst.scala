@@ -48,7 +48,7 @@ object TypedAst {
 
   case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[TypedAst.TypeParam], cases: Map[Name.Tag, TypedAst.Case], tpeDeprecated: Type, sc: Scheme, loc: SourceLocation)
 
-  sealed trait Expression {
+  sealed trait Expression extends Product {
     def tpe: Type
 
     def eff: Type
