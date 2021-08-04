@@ -19,7 +19,26 @@ package ca.uwaterloo.flix.language.ast
   * Indicates whether a variable is scoped.
   * A scoped value must not escape its scope.
   */
-sealed trait Scopedness
+sealed trait Scopedness {
+
+  /**
+    * Unscoped may be considered a subtype of Scoped.
+    */
+  def <=(other: Scopedness): Boolean = (this, other) match {
+    case (Scopedness.Scoped, Scopedness.Unscoped) => false
+    case _ => true
+  }
+
+  /**
+    * The minimum of two Scopednesses according to the subtyping relation.
+    */
+  def min(other: Scopedness): Scopedness = if (this <= other) this else other
+
+  /**
+    * The minimum of two Scopednesses according to the subtyping relation.
+    */
+  def max(other: Scopedness): Scopedness = if (this <= other) other else this
+}
 
 object Scopedness {
   case object Scoped extends Scopedness
