@@ -111,23 +111,75 @@ object Scoper extends Phase[Root, Root] {
       } yield (sco, sch, vars1 ++ vars2)
     case Expression.Match(exp, rules, tpe, eff, loc) =>
       for {
-        (sco, sch, vars) <- checkExp(exp, senv)
+        (sco, _, vars) <- checkExp(exp, senv)
         (ruleScos, ruleSchs, ruleVars) <- Validation.traverse(rules)(checkMatchRule(_, senv, sco)).map(_.unzip3)
-      } yield
-    case Expression.Choose(exps, rules, tpe, eff, loc) => ???
-    case Expression.Tag(sym, tag, exp, tpe, eff, loc) => ???
-    case Expression.Tuple(elms, tpe, eff, loc) => ???
-    case Expression.RecordEmpty(tpe, loc) => ???
-    case Expression.RecordSelect(exp, field, tpe, eff, loc) => ???
-    case Expression.RecordExtend(field, value, rest, tpe, eff, loc) => ???
-    case Expression.RecordRestrict(field, rest, tpe, eff, loc) => ???
-    case Expression.ArrayLit(elms, tpe, eff, loc) => ???
-    case Expression.ArrayNew(elm, len, tpe, eff, loc) => ???
-    case Expression.ArrayLoad(base, index, tpe, eff, loc) => ???
-    case Expression.ArrayLength(base, eff, loc) => ???
-    case Expression.ArrayStore(base, index, elm, loc) => ???
-    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) => ???
-    case Expression.Ref(exp, tpe, eff, loc) => ???
+      } yield (ruleScos.reduce(_ max _), ruleSchs.reduce(_ max _), vars ++ ruleVars.flatten)
+    case Expression.Choose(exps, rules, tpe, eff, loc) =>
+      for {
+        (scos, _, vars) <- Validation.traverse(exps)(checkExp(_, senv)).map(_.unzip3)
+        expsSco = scos.reduce(_ max _)
+        (ruleScos, ruleSchs, ruleVars) <- Validation.traverse(rules)(checkChoiceRule(_, senv, expsSco)).map(_.unzip3)
+      } yield (ruleScos.reduce(_ max _), ruleSchs.reduce(_ max _), vars.flatten.toSet ++ ruleVars.flatten)
+    case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
+      for {
+        (sco, _, vars) <- checkExp(exp, senv)
+      } yield (sco, ScopeScheme.Unit, vars)
+    case Expression.Tuple(elms, tpe, eff, loc) =>
+      for {
+        (scos, schs, vars) <- Validation.traverse(elms)(checkExp(_, senv)).map(_.unzip3)
+      } yield (scos.reduce(_ max _), schs.reduce(_ max _), vars.flatten.toSet)
+    case Expression.RecordEmpty(tpe, loc) => noScope.toSuccess
+    case Expression.RecordSelect(exp, field, tpe, eff, loc) =>
+      for {
+        (sco, _, vars) <- checkExp(exp, senv)
+      } yield (sco, mkScopeScheme(tpe), vars)
+    case Expression.RecordExtend(field, value, rest, tpe, eff, loc) =>
+      for {
+        (valSco, _, valVars) <- checkExp(value, senv)
+        (restSco, _, restVars) <- checkExp(rest, senv)
+      } yield (valSco max restSco, ScopeScheme.Unit, valVars ++ restVars)
+    case Expression.RecordRestrict(field, rest, tpe, eff, loc) =>
+      for {
+        (sco, _, vars) <- checkExp(rest, senv)
+      } yield (sco, ScopeScheme.Unit, vars)
+    case Expression.ArrayLit(elms, tpe, eff, loc) =>
+      for {
+        (scos, _, vars) <- Validation.traverse(elms)(checkExp(_, senv)).map(_.unzip3)
+        // MATT check each elem is unscoped
+        sco = scos.foldLeft(Scopedness.Unscoped: Scopedness)(_ max _)
+      } yield (sco, ScopeScheme.Unit, vars.flatten.toSet)
+    case Expression.ArrayNew(elm, len, tpe, eff, loc) =>
+      for {
+        (elmSco, _, elmVars) <- checkExp(elm, senv)
+        (_, _, lenVars) <- checkExp(len, senv)
+        // MATT check elem is unscoped
+      } yield (elmSco, ScopeScheme.Unit, elmVars ++ lenVars)
+    case Expression.ArrayLoad(base, index, tpe, eff, loc) =>
+      for {
+        (baseSco, _, baseVars) <- checkExp(base, senv)
+        (_, _, indexVars) <- checkExp(index, senv)
+      } yield (baseSco, mkScopeScheme(tpe), baseVars ++ indexVars)
+    case Expression.ArrayLength(base, eff, loc) =>
+      for {
+        (_, _, baseVars) <- checkExp(base, senv)
+      } yield (Scopedness.Unscoped, ScopeScheme.Unit, baseVars)
+    case Expression.ArrayStore(base, index, elm, loc) =>
+      for {
+        (baseSco, baseSch, baseVars) <- checkExp(base, senv)
+        (indexSco, indexSch, indexVars) <- checkExp(index, senv)
+        (elmSco, elmSch, elmVars) <- checkExp(elm, senv)
+        // MATT check elem is unscoped
+      } yield (Scopedness.Unscoped, ScopeScheme.Unit, baseVars ++ indexVars ++ elmVars)
+    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
+      for {
+        (baseSco, _, baseVars) <- checkExp(base, senv)
+        (_, _, beginIndexVars) <- checkExp(beginIndex, senv)
+        (_, _, endIndexVars) <- checkExp(endIndex, senv)
+      } yield (baseSco, ScopeScheme.Unit, baseVars ++ beginIndexVars ++ endIndexVars)
+    case Expression.Ref(exp, tpe, eff, loc) =>
+      for {
+
+      }
     case Expression.Deref(exp, tpe, eff, loc) => ???
     case Expression.Assign(exp1, exp2, tpe, eff, loc) => ???
     case Expression.Existential(fparam, exp, loc) => ???
@@ -168,6 +220,20 @@ object Scoper extends Phase[Root, Root] {
         (_, _, guardVars) <- checkExp(guard, fullEnv)
         (expSco, expSch, expVars) <- checkExp(exp, fullEnv)
         freeVars = (guardVars ++ expVars) -- patEnv.keys
+      } yield (expSco, expSch, freeVars)
+  }
+
+  private def checkChoiceRule(rule: ChoiceRule, senv: Map[Symbol.VarSym, (Scopedness, Scoper.ScopeScheme)], sco: Scopedness): Validation[(Scopedness, ScopeScheme, Set[Symbol.VarSym]), ScopeError] = rule match {
+    case ChoiceRule(pat, exp) =>
+      val patEnv = pat.foldLeft(Map.empty[Symbol.VarSym, (Scopedness, Scoper.ScopeScheme)]) {
+        case (acc, ChoicePattern.Wild(loc)) => acc
+        case (acc, ChoicePattern.Absent(loc)) => acc
+        case (acc, ChoicePattern.Present(sym, tpe, loc)) => acc + (sym -> (sco, mkScopeScheme(tpe)))
+      }
+      val fullEnv = senv ++ patEnv
+      for {
+        (expSco, expSch, expVars) <- checkExp(exp, fullEnv)
+        freeVars = expVars -- patEnv.keys
       } yield (expSco, expSch, freeVars)
   }
 

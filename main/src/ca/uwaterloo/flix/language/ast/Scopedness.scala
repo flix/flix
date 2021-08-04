@@ -44,4 +44,8 @@ object Scopedness {
   case object Scoped extends Scopedness
 
   case object Unscoped extends Scopedness
+
+  def max(scos: List[Scopedness]): Scopedness = scos.reduce(_ max _)
+
+  def min(scos: List[Scopedness]): Scopedness = scos.reduce(_ min _)
 }
