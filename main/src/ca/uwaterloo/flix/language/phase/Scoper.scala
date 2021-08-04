@@ -178,14 +178,23 @@ object Scoper extends Phase[Root, Root] {
       } yield (baseSco, ScopeScheme.Unit, baseVars ++ beginIndexVars ++ endIndexVars)
     case Expression.Ref(exp, tpe, eff, loc) =>
       for {
-
-      }
-    case Expression.Deref(exp, tpe, eff, loc) => ???
-    case Expression.Assign(exp1, exp2, tpe, eff, loc) => ???
-    case Expression.Existential(fparam, exp, loc) => ???
-    case Expression.Universal(fparam, exp, loc) => ???
-    case Expression.Ascribe(exp, tpe, eff, loc) => ???
-    case Expression.Cast(exp, tpe, eff, loc) => ???
+        (sco, _, vars) <- checkExp(exp, senv)
+        // MATT check unscoped
+      } yield (Scopedness.Unscoped, ScopeScheme.Unit, vars)
+    case Expression.Deref(exp, tpe, eff, loc) =>
+      for {
+        (_, _, vars) <- checkExp(exp, senv)
+      } yield (Scopedness.Unscoped, mkScopeScheme(tpe), vars)
+    case Expression.Assign(exp1, exp2, tpe, eff, loc) =>
+      for {
+        (_, _, vars1) <- checkExp(exp1, senv)
+        (sco2, _, vars2) <- checkExp(exp2, senv)
+        // MATT check unscoped
+      } yield (Scopedness.Unscoped, ScopeScheme.Unit, vars1 ++ vars2)
+    case Expression.Existential(fparam, exp, loc) => noScope.toSuccess // MATT
+    case Expression.Universal(fparam, exp, loc) => noScope.toSuccess // MATT
+    case Expression.Ascribe(exp, tpe, eff, loc) => checkExp(exp, senv)
+    case Expression.Cast(exp, tpe, eff, loc) => checkExp(exp, senv)
     case Expression.TryCatch(exp, rules, tpe, eff, loc) => ???
     case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) => ???
     case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) => ???
