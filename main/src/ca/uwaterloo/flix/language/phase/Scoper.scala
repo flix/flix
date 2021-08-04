@@ -77,6 +77,7 @@ object Scoper extends Phase[Root, Root] {
             } else {
               rest.toSuccess
             }
+          case (ScopeScheme.Unit, _) => throw InternalCompilerException("Unexpected application.")
         }
         argVars = args.flatMap(_._3)
 
@@ -161,6 +162,7 @@ object Scoper extends Phase[Root, Root] {
       argSchemes.foldRight(retScheme) {
         case (arg, acc) => ScopeScheme.Arrow(Scopedness.Unscoped, arg, acc)
       }
+    case _ => ScopeScheme.Unit
   }
 
   private sealed trait ScopeScheme {
