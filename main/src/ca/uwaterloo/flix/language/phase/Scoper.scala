@@ -249,13 +249,40 @@ object Scoper extends Phase[Root, Root] {
       for {
         (sco, _, vars) <- checkExp(exp, senv)
       } yield (sco, mkScopeScheme(tpe), vars)
-    case Expression.PutField(field, exp1, exp2, tpe, eff, loc) => ???
-    case Expression.GetStaticField(field, tpe, eff, loc) => ???
-    case Expression.PutStaticField(field, exp, tpe, eff, loc) => ???
-    case Expression.NewChannel(exp, tpe, eff, loc) => ???
-    case Expression.GetChannel(exp, tpe, eff, loc) => ???
-    case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => ???
-    case Expression.SelectChannel(rules, default, tpe, eff, loc) => ???
+    case Expression.PutField(field, exp1, exp2, tpe, eff, loc) =>
+      for {
+        (sco1, _, vars1) <- checkExp(exp1, senv)
+        (sco2, _, vars2) <- checkExp(exp2, senv)
+        // MATT check sco2 unscoped
+      } yield (Scopedness.Unscoped, ScopeScheme.Unit, vars1 ++ vars2)
+    case Expression.GetStaticField(field, tpe, eff, loc) => (Scopedness.Unscoped, mkScopeScheme(tpe), Set.empty[Symbol.VarSym]).toSuccess
+    case Expression.PutStaticField(field, exp, tpe, eff, loc) =>
+      for {
+        (sco, _, vars) <- checkExp(exp, senv)
+        // MATT check sco unscoped
+      } yield (Scopedness.Unscoped, ScopeScheme.Unit, vars)
+    case Expression.NewChannel(exp, tpe, eff, loc) =>
+      for {
+        (_, _, vars) <- checkExp(exp, senv)
+      } yield (Scopedness.Unscoped, ScopeScheme.Unit, vars)
+    case Expression.GetChannel(exp, tpe, eff, loc) =>
+      for {
+        (_, _, vars) <- checkExp(exp, senv)
+      } yield (Scopedness.Unscoped, mkScopeScheme(tpe), vars)
+    case Expression.PutChannel(exp1, exp2, tpe, eff, loc) =>
+      for {
+        (_, _, vars1) <- checkExp(exp1, senv)
+        (sco2, _, vars2) <- checkExp(exp2, senv)
+        // MATT check sco2 unscoped
+      } yield (Scopedness.Unscoped, ScopeScheme.Unit, vars1 ++ vars2)
+    case Expression.SelectChannel(rules, default, tpe, eff, loc) =>
+      for {
+        (ruleScos, ruleSchs, ruleVars) <- Validation.traverse(rules)(checkSelectChannelRule(_, senv)).map(_.unzip3)
+        (defScos, defSchs, defVars) <- Validation.traverse(default)(checkExp(_, senv)).map(_.unzip3)
+        sco = (defScos ++ ruleScos).reduce(_ max _)
+        sch = (defSchs ++ ruleSchs).reduce(_ max _)
+        vars = ruleVars.flatten.toSet ++ defVars.flatten
+      } yield (sco, sch, vars)
     case Expression.Spawn(exp, tpe, eff, loc) => ???
     case Expression.Lazy(exp, tpe, loc) => ???
     case Expression.Force(exp, tpe, eff, loc) => ???
@@ -302,6 +329,21 @@ object Scoper extends Phase[Root, Root] {
         (expSco, expSch, expVars) <- checkExp(exp, fullEnv)
         freeVars = expVars - sym
       } yield (expSco, expSch, freeVars)
+  }
+
+  private def checkSelectChannelRule(rule: SelectChannelRule, senv: Map[Symbol.VarSym, (Scopedness, Scoper.ScopeScheme)]): Validation[(Scopedness, ScopeScheme, Set[Symbol.VarSym]), ScopeError] = rule match {
+    case SelectChannelRule(sym, chan, exp) =>
+      val elmTpe = chan.tpe match {
+        case Type.Apply(Type.Cst(TypeConstructor.Channel, _), tpe) => tpe
+        case _ => throw InternalCompilerException("Unexpected channel type in SelectChannelRule.")
+      }
+      for {
+        (_, _, chanVars) <- checkExp(chan, senv)
+        fullEnv = senv + (sym -> (Scopedness.Unscoped, mkScopeScheme(elmTpe)))
+        (expSco, expSch, expVars) <- checkExp(exp, fullEnv)
+        freeVars = (chanVars ++ expVars) - sym
+      } yield (expSco, expSch, freeVars)
+
   }
 
   private def mkScopeScheme(tpe: Type): ScopeScheme = tpe.typeConstructor match {
