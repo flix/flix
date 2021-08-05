@@ -1,3 +1,18 @@
+/*
+ * Copyright 2021 Matthew Lutze
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
@@ -9,8 +24,19 @@ import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 
-// MATT license
-// MATT docs
+/**
+  * Checks that the AST complies with the following scoping rules:
+  *
+  * Primary rules
+  * 1. Unscoped functions cannot access free Scoped variables.
+  * 2. Scoped values cannot be returned from functions.
+  * 3. Scoped values cannot be stored in mutable memory.
+  *
+  * Supplementary rules
+  * 4. Scoped values cannot be passed to functions expecting Unscoped parameters.
+  * 5. An immutable structure composed of at least one Scoped value is Scoped.
+  * 6. A value resulting from the destruction of a Scoped immutable structure is Scoped.
+  */
 object Scoper extends Phase[Root, Root] {
 
   private val noScope = (Scopedness.Unscoped, ScopeScheme.Unit, Set.empty[Symbol.VarSym])
@@ -214,8 +240,15 @@ object Scoper extends Phase[Root, Root] {
         (argScos, _, argVars) <- Validation.traverse(args)(checkExp(_, senv)).map(_.unzip3)
         // MATT check all unscoped
       } yield (Scopedness.Unscoped, mkScopeScheme(tpe), expVars ++ argVars.flatten)
-    case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) => ???
-    case Expression.GetField(field, exp, tpe, eff, loc) => ???
+    case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) =>
+      for {
+        (argScos, _, argVars) <- Validation.traverse(args)(checkExp(_, senv)).map(_.unzip3)
+        // MATT check all unscoped
+      } yield (Scopedness.Unscoped, mkScopeScheme(tpe), argVars.flatten.toSet)
+    case Expression.GetField(field, exp, tpe, eff, loc) =>
+      for {
+        (sco, _, vars) <- checkExp(exp, senv)
+      } yield (sco, mkScopeScheme(tpe), vars)
     case Expression.PutField(field, exp1, exp2, tpe, eff, loc) => ???
     case Expression.GetStaticField(field, tpe, eff, loc) => ???
     case Expression.PutStaticField(field, exp, tpe, eff, loc) => ???
