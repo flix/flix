@@ -1397,6 +1397,8 @@ object ParsedAst {
       */
     case class Ascribe(tpe: ParsedAst.Type, kind: ParsedAst.Kind, sp2: SourcePosition) extends ParsedAst.Type
 
+    // MATT docs
+    case class Scoped(sp1: SourcePosition, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
   }
 
   /**

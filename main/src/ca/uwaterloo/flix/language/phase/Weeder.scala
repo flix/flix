@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
+import ca.uwaterloo.flix.language.ast.ParsedAst.Type
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
@@ -2078,6 +2079,31 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val t = visitType(tpe)
       val k = visitKind(kind)
       WeededAst.Type.Ascribe(t, k, mkSL(sp1, sp2))
+
+    case ParsedAst.Type.Scoped(_, tpe, _) => visitType(tpe)
+  }
+
+  // MATT CONTINUE HERE
+  private def getScopeScheme(tpe: ParsedAst.Type): Validation[ScopeScheme, WeederError] = tpe match {
+    case Type.Unit(sp1, sp2) =>
+    case Type.Var(sp1, ident, sp2) =>
+    case Type.Ambiguous(sp1, qname, sp2) =>
+    case Type.Tuple(sp1, elms, sp2) =>
+    case Type.Record(sp1, fields, rest, sp2) =>
+    case Type.Schema(sp1, predicates, rest, sp2) =>
+    case Type.UnaryImpureArrow(tpe1, tpe2, sp2) =>
+    case Type.UnaryPolymorphicArrow(tpe1, tpe2, eff, sp2) =>
+    case Type.ImpureArrow(sp1, tparams, tresult, sp2) =>
+    case Type.PolymorphicArrow(sp1, tparams, tresult, eff, sp2) =>
+    case Type.Native(sp1, fqn, sp2) =>
+    case Type.Apply(base, tparams, sp2) =>
+    case Type.True(sp1, sp2) =>
+    case Type.False(sp1, sp2) =>
+    case Type.Not(sp1, tpe, sp2) =>
+    case Type.And(tpe1, tpe2, sp2) =>
+    case Type.Or(tpe1, tpe2, sp2) =>
+    case Type.Ascribe(tpe, kind, sp2) =>
+    case Type.Scoped(sp1, tpe, sp2) =>
   }
 
   /**

@@ -1313,6 +1313,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ keyword("not") ~ WS ~ Apply ~ SP ~> ParsedAst.Type.Not
     }
 
+    def Scoped: Rule1[ParsedAst.Type] = rule {
+      // NB: We must not use Type here because it gives the wrong precedence.
+      SP ~ keyword("scoped") ~ WS ~ Apply ~ SP ~> ParsedAst.Type.Scoped
+    }
+
     def Var: Rule1[ParsedAst.Type] = rule {
       SP ~ Names.Variable ~ SP ~> ParsedAst.Type.Var
     }
