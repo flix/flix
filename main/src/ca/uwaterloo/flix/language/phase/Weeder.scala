@@ -124,7 +124,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val formalsVal = visitFormalParams(fparams0, typeRequired = true)
       val effVal = visitEff(effOpt, loc)
       val expVal = Validation.traverse(exp0)(visitExp)
-
       for {
         res <- sequenceT(annVal, modVal, tparamsVal, formalsVal, effVal, expVal)
         (as, mod, tparams, fparams, eff, exp) = res
@@ -2083,27 +2082,70 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.Scoped(_, tpe, _) => visitType(tpe)
   }
 
-  // MATT CONTINUE HERE
+  private def getScopeScheme()
   private def getScopeScheme(tpe: ParsedAst.Type): Validation[ScopeScheme, WeederError] = tpe match {
-    case Type.Unit(sp1, sp2) =>
-    case Type.Var(sp1, ident, sp2) =>
-    case Type.Ambiguous(sp1, qname, sp2) =>
-    case Type.Tuple(sp1, elms, sp2) =>
-    case Type.Record(sp1, fields, rest, sp2) =>
-    case Type.Schema(sp1, predicates, rest, sp2) =>
-    case Type.UnaryImpureArrow(tpe1, tpe2, sp2) =>
-    case Type.UnaryPolymorphicArrow(tpe1, tpe2, eff, sp2) =>
-    case Type.ImpureArrow(sp1, tparams, tresult, sp2) =>
-    case Type.PolymorphicArrow(sp1, tparams, tresult, eff, sp2) =>
-    case Type.Native(sp1, fqn, sp2) =>
-    case Type.Apply(base, tparams, sp2) =>
-    case Type.True(sp1, sp2) =>
-    case Type.False(sp1, sp2) =>
-    case Type.Not(sp1, tpe, sp2) =>
-    case Type.And(tpe1, tpe2, sp2) =>
-    case Type.Or(tpe1, tpe2, sp2) =>
-    case Type.Ascribe(tpe, kind, sp2) =>
-    case Type.Scoped(sp1, tpe, sp2) =>
+    case ParsedAst.Type.Unit(sp1, sp2) => ScopeScheme.Unit.toSuccess
+    case ParsedAst.Type.Var(sp1, ident, sp2) => ScopeScheme.Unit.toSuccess
+    case ParsedAst.Type.Ambiguous(sp1, qname, sp2) => ScopeScheme.Unit.toSuccess
+    case ParsedAst.Type.Tuple(sp1, elms, sp2) => ScopeScheme.Unit.toSuccess
+    case ParsedAst.Type.Record(sp1, fields, rest, sp2) => ScopeScheme.Unit.toSuccess
+    case ParsedAst.Type.Schema(sp1, predicates, rest, sp2) => ScopeScheme.Unit.toSuccess
+    case ParsedAst.Type.UnaryImpureArrow(tpe1, tpe2, sp2) =>
+      for {
+        sco1 <- getScopedness(tpe1)
+        sch1 <- getScopeScheme(tpe1)
+        _ <- checkUnscoped(tpe2)
+        sch2 <- getScopeScheme(tpe2)
+      } yield ScopeScheme.Arrow(sco1, sch1, sch2)
+    case ParsedAst.Type.UnaryPolymorphicArrow(tpe1, tpe2, eff, sp2) =>
+      for {
+        sco1 <- getScopedness(tpe1)
+        sch1 <- getScopeScheme(tpe1)
+        _ <- checkUnscoped(tpe2)
+        sch2 <- getScopeScheme(tpe2)
+      } yield ScopeScheme.Arrow(sco1, sch1, sch2)
+    case ParsedAst.Type.ImpureArrow(sp1, tparams, tresult, sp2) =>
+      for {
+        scos <- Validation.traverse(tparams)(getScopedness)
+        schs <- Validation.traverse(tparams)(getScopeScheme)
+        _ <- checkUnscoped(tresult)
+        resSch <- getScopeScheme(tresult)
+      } yield {
+        scos.zip(schs).foldRight(resSch) {
+          case ((sco, sch), acc) => ScopeScheme.Arrow(sco, sch, acc)
+        }
+      }
+    case ParsedAst.Type.PolymorphicArrow(sp1, tparams, tresult, eff, sp2) =>
+      for {
+        scos <- Validation.traverse(tparams)(getScopedness)
+        schs <- Validation.traverse(tparams)(getScopeScheme)
+        _ <- checkUnscoped(tresult)
+        resSch <- getScopeScheme(tresult)
+      } yield {
+        scos.zip(schs).foldRight(resSch) {
+          case ((sco, sch), acc) => ScopeScheme.Arrow(sco, sch, acc)
+        }
+      }
+    case ParsedAst.Type.Native(sp1, fqn, sp2) => ScopeScheme.Unit.toSuccess
+    case ParsedAst.Type.Apply(base, tparams, sp2) => ScopeScheme.Unit.toSuccess
+    case ParsedAst.Type.True(sp1, sp2) => ScopeScheme.Unit.toSuccess
+    case ParsedAst.Type.False(sp1, sp2) => ScopeScheme.Unit.toSuccess
+    case ParsedAst.Type.Not(sp1, tpe, sp2) => ScopeScheme.Unit.toSuccess
+    case ParsedAst.Type.And(tpe1, tpe2, sp2) => ScopeScheme.Unit.toSuccess
+    case ParsedAst.Type.Or(tpe1, tpe2, sp2) => ScopeScheme.Unit.toSuccess
+    case ParsedAst.Type.Ascribe(tpe, kind, sp2) => getScopeScheme(tpe)
+    case ParsedAst.Type.Scoped(sp1, tpe, sp2) => getScopeScheme(tpe)
+  }
+
+  private def getScopedness(tpe: ParsedAst.Type): Validation[Scopedness, WeederError] = tpe match {
+    case ParsedAst.Type.Scoped(_, _: ParsedAst.Type.Scoped, _) => ??? // MATT duplicate mod
+    case _: ParsedAst.Type.Scoped => Scopedness.Scoped.toSuccess
+    case _ => Scopedness.Unscoped.toSuccess
+  }
+
+  private def checkUnscoped(tpe: ParsedAst.Type): Validation[Unit, WeederError] = tpe match {
+    case _: ParsedAst.Type.Scoped => ??? // MATT illegal mod
+    case _ => ().toSuccess
   }
 
   /**
