@@ -27,6 +27,11 @@ import ca.uwaterloo.flix.util.Validation.ToSuccess
   */
 object Statistics extends Phase[Root, Root] {
   override def run(root: Root)(implicit flix: Flix): Validation[Root, Nothing] = flix.phase("Statistics") {
+    // Return early if stats have not been enabled.
+    if (!flix.options.xstatistics) {
+      return root.toSuccess
+    }
+
     val defCounts = Counter.merge(root.defs.values.map(visitDef))
     val sigCounts = Counter.merge(root.sigs.values.map(visitSig))
     val instDefCounts = Counter.merge(TypedAstOps.instanceDefsOf(root).map(visitDef))

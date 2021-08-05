@@ -36,7 +36,8 @@ object Options {
     xallowredundancies = false,
     xlinter = false,
     xnoboolunification = false,
-    xnostratifier = false
+    xnostratifier = false,
+    xstatistics = false
   )
 
   /**
@@ -91,7 +92,8 @@ case class Options(lib: LibLevel,
                    xallowredundancies: Boolean,
                    xlinter: Boolean,
                    xnoboolunification: Boolean,
-                   xnostratifier: Boolean
+                   xnostratifier: Boolean,
+                   xstatistics: Boolean
                   )
 
 /**
