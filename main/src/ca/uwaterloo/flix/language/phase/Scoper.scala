@@ -84,8 +84,7 @@ object Scoper extends Phase[Root, Root] {
     case Expression.Lambda(fparam, exp, tpe, loc) =>
       val fparamSch = mkScopeScheme(fparam.tpe)
       for {
-        (bodySco, bodySch, bodyVars) <- checkExp(exp, senv + (fparam.sym -> (fparam.sym.scopedness, fparamSch)))
-        // MATT assert body unscoped
+        (bodySch, bodyVars) <- checkUnscopedExp(exp, senv + (fparam.sym -> (fparam.sym.scopedness, fparamSch)))
         freeVars = bodyVars - fparam.sym
         sco = if (freeVars.isEmpty) Scopedness.Unscoped else Scopedness.Scoped
         sch = ScopeScheme.Arrow(fparam.sym.scopedness, fparamSch, bodySch)
@@ -171,16 +170,13 @@ object Scoper extends Phase[Root, Root] {
       } yield (sco, ScopeScheme.Unit, vars)
     case Expression.ArrayLit(elms, tpe, eff, loc) =>
       for {
-        (scos, _, vars) <- Validation.traverse(elms)(checkExp(_, senv)).map(_.unzip3)
-        // MATT check each elem is unscoped
-        sco = scos.foldLeft(Scopedness.Unscoped: Scopedness)(_ max _)
-      } yield (sco, ScopeScheme.Unit, vars.flatten.toSet)
+        (_, vars) <- Validation.traverse(elms)(checkUnscopedExp(_, senv)).map(_.unzip)
+      } yield (Scopedness.Unscoped, ScopeScheme.Unit, vars.flatten.toSet)
     case Expression.ArrayNew(elm, len, tpe, eff, loc) =>
       for {
-        (elmSco, _, elmVars) <- checkExp(elm, senv)
+        (_, elmVars) <- checkUnscopedExp(elm, senv)
         (_, _, lenVars) <- checkExp(len, senv)
-        // MATT check elem is unscoped
-      } yield (elmSco, ScopeScheme.Unit, elmVars ++ lenVars)
+      } yield (Scopedness.Unscoped, ScopeScheme.Unit, elmVars ++ lenVars)
     case Expression.ArrayLoad(base, index, tpe, eff, loc) =>
       for {
         (baseSco, _, baseVars) <- checkExp(base, senv)
@@ -192,9 +188,9 @@ object Scoper extends Phase[Root, Root] {
       } yield (Scopedness.Unscoped, ScopeScheme.Unit, baseVars)
     case Expression.ArrayStore(base, index, elm, loc) =>
       for {
-        (baseSco, baseSch, baseVars) <- checkExp(base, senv)
-        (indexSco, indexSch, indexVars) <- checkExp(index, senv)
-        (elmSco, elmSch, elmVars) <- checkExp(elm, senv)
+        (_, _, baseVars) <- checkExp(base, senv)
+        (_, _, indexVars) <- checkExp(index, senv)
+        (_, elmVars) <- checkUnscopedExp(elm, senv)
         // MATT check elem is unscoped
       } yield (Scopedness.Unscoped, ScopeScheme.Unit, baseVars ++ indexVars ++ elmVars)
     case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
@@ -205,8 +201,7 @@ object Scoper extends Phase[Root, Root] {
       } yield (baseSco, ScopeScheme.Unit, baseVars ++ beginIndexVars ++ endIndexVars)
     case Expression.Ref(exp, tpe, eff, loc) =>
       for {
-        (sco, _, vars) <- checkExp(exp, senv)
-        // MATT check unscoped
+        (_, vars) <- checkUnscopedExp(exp, senv)
       } yield (Scopedness.Unscoped, ScopeScheme.Unit, vars)
     case Expression.Deref(exp, tpe, eff, loc) =>
       for {
@@ -215,8 +210,7 @@ object Scoper extends Phase[Root, Root] {
     case Expression.Assign(exp1, exp2, tpe, eff, loc) =>
       for {
         (_, _, vars1) <- checkExp(exp1, senv)
-        (sco2, _, vars2) <- checkExp(exp2, senv)
-        // MATT check unscoped
+        (_, vars2) <- checkUnscopedExp(exp2, senv)
       } yield (Scopedness.Unscoped, ScopeScheme.Unit, vars1 ++ vars2)
     case Expression.Existential(fparam, exp, loc) => noScope.toSuccess // MATT
     case Expression.Universal(fparam, exp, loc) => noScope.toSuccess // MATT
@@ -232,19 +226,16 @@ object Scoper extends Phase[Root, Root] {
       } yield (sco, sch, vars)
     case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
       for {
-        (scos, _, vars) <- Validation.traverse(args)(checkExp(_, senv)).map(_.unzip3)
-        // MATT check all unscoped
+        (_, vars) <- Validation.traverse(args)(checkUnscopedExp(_, senv)).map(_.unzip)
       } yield (Scopedness.Unscoped, mkScopeScheme(tpe), vars.flatten.toSet)
     case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) =>
       for {
-        (expSco, _, expVars) <- checkExp(exp, senv)
-        (argScos, _, argVars) <- Validation.traverse(args)(checkExp(_, senv)).map(_.unzip3)
-        // MATT check all unscoped
+        (_, expVars) <- checkUnscopedExp(exp, senv)
+        (_, argVars) <- Validation.traverse(args)(checkUnscopedExp(_, senv)).map(_.unzip)
       } yield (Scopedness.Unscoped, mkScopeScheme(tpe), expVars ++ argVars.flatten)
     case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) =>
       for {
-        (argScos, _, argVars) <- Validation.traverse(args)(checkExp(_, senv)).map(_.unzip3)
-        // MATT check all unscoped
+        (_, argVars) <- Validation.traverse(args)(checkUnscopedExp(_, senv)).map(_.unzip)
       } yield (Scopedness.Unscoped, mkScopeScheme(tpe), argVars.flatten.toSet)
     case Expression.GetField(field, exp, tpe, eff, loc) =>
       for {
@@ -252,15 +243,13 @@ object Scoper extends Phase[Root, Root] {
       } yield (sco, mkScopeScheme(tpe), vars)
     case Expression.PutField(field, exp1, exp2, tpe, eff, loc) =>
       for {
-        (sco1, _, vars1) <- checkExp(exp1, senv)
-        (sco2, _, vars2) <- checkExp(exp2, senv)
-        // MATT check sco2 unscoped
+        (_, _, vars1) <- checkExp(exp1, senv)
+        (_, vars2) <- checkUnscopedExp(exp2, senv)
       } yield (Scopedness.Unscoped, ScopeScheme.Unit, vars1 ++ vars2)
     case Expression.GetStaticField(field, tpe, eff, loc) => (Scopedness.Unscoped, mkScopeScheme(tpe), Set.empty[Symbol.VarSym]).toSuccess
     case Expression.PutStaticField(field, exp, tpe, eff, loc) =>
       for {
-        (sco, _, vars) <- checkExp(exp, senv)
-        // MATT check sco unscoped
+        (_, vars) <- checkUnscopedExp(exp, senv)
       } yield (Scopedness.Unscoped, ScopeScheme.Unit, vars)
     case Expression.NewChannel(exp, tpe, eff, loc) =>
       for {
@@ -273,8 +262,7 @@ object Scoper extends Phase[Root, Root] {
     case Expression.PutChannel(exp1, exp2, tpe, eff, loc) =>
       for {
         (_, _, vars1) <- checkExp(exp1, senv)
-        (sco2, _, vars2) <- checkExp(exp2, senv)
-        // MATT check sco2 unscoped
+        (_, vars2) <- checkUnscopedExp(exp2, senv)
       } yield (Scopedness.Unscoped, ScopeScheme.Unit, vars1 ++ vars2)
     case Expression.SelectChannel(rules, default, tpe, eff, loc) =>
       for {
@@ -286,7 +274,7 @@ object Scoper extends Phase[Root, Root] {
       } yield (sco, sch, vars)
     case Expression.Spawn(exp, tpe, eff, loc) =>
       for {
-        (sco, sch, vars) <- checkExp(exp, senv)
+        (_, _, vars) <- checkExp(exp, senv)
       } yield (Scopedness.Unscoped, ScopeScheme.Unit, vars)
     case Expression.Lazy(exp, tpe, loc) =>
       for {
@@ -320,9 +308,8 @@ object Scoper extends Phase[Root, Root] {
       } yield (sco, ScopeScheme.Unit, vars)
     case Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) =>
       for {
-        (sco, _, vars) <- checkExp(exp, senv)
-        // MATT check sco unscoped (goes into Array)
-      } yield (sco, ScopeScheme.Unit, vars)
+        (_, vars) <- checkUnscopedExp(exp, senv)
+      } yield (Scopedness.Unscoped, ScopeScheme.Unit, vars)
     case Expression.MatchEff(exp1, exp2, exp3, tpe, eff, loc) =>
       for {
         (_, _, vars1) <- checkExp(exp1, senv)
@@ -419,6 +406,13 @@ object Scoper extends Phase[Root, Root] {
         case (arg, acc) => ScopeScheme.Arrow(Scopedness.Unscoped, arg, acc)
       }
     case _ => ScopeScheme.Unit
+  }
+
+  private def checkUnscopedExp(exp: Expression, senv: Map[Symbol.VarSym, (Scopedness, ScopeScheme)]): Validation[(ScopeScheme, Set[Symbol.VarSym]), ScopeError] = {
+    Validation.flatMapN(checkExp(exp, senv)) {
+      case (Scopedness.Scoped, _, _) => ??? // MATT Scope error with exp.loc
+      case (Scopedness.Unscoped, sch, vars) => (sch, vars).toSuccess
+    }
   }
 
   private sealed trait ScopeScheme {
