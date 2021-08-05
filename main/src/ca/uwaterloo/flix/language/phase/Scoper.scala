@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.{Scopedness, Symbol, Type, TypeConstructor}
@@ -283,16 +284,51 @@ object Scoper extends Phase[Root, Root] {
         sch = (defSchs ++ ruleSchs).reduce(_ max _)
         vars = ruleVars.flatten.toSet ++ defVars.flatten
       } yield (sco, sch, vars)
-    case Expression.Spawn(exp, tpe, eff, loc) => ???
-    case Expression.Lazy(exp, tpe, loc) => ???
-    case Expression.Force(exp, tpe, eff, loc) => ???
-    case Expression.FixpointConstraintSet(cs, stf, tpe, loc) => ???
-    case Expression.FixpointMerge(exp1, exp2, stf, tpe, eff, loc) => ???
-    case Expression.FixpointSolve(exp, stf, tpe, eff, loc) => ???
-    case Expression.FixpointFilter(pred, exp, tpe, eff, loc) => ???
-    case Expression.FixpointProjectIn(exp, pred, tpe, eff, loc) => ???
-    case Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) => ???
-    case Expression.MatchEff(exp1, exp2, exp3, tpe, eff, loc) => ???
+    case Expression.Spawn(exp, tpe, eff, loc) =>
+      for {
+        (sco, sch, vars) <- checkExp(exp, senv)
+      } yield (Scopedness.Unscoped, ScopeScheme.Unit, vars)
+    case Expression.Lazy(exp, tpe, loc) =>
+      for {
+        (sco, _, vars) <- checkExp(exp, senv)
+      } yield (sco, ScopeScheme.Unit, vars)
+    case Expression.Force(exp, tpe, eff, loc) =>
+      for {
+        (sco, _, vars) <- checkExp(exp, senv)
+      } yield (sco, mkScopeScheme(tpe), vars)
+    case Expression.FixpointConstraintSet(cs, stf, tpe, loc) =>
+      for {
+        (scos, _, vars) <- Validation.traverse(cs)(checkConstraint(_, senv)).map(_.unzip3)
+        sco = scos.foldLeft(Scopedness.Unscoped: Scopedness)(_ max _)
+      } yield (sco, ScopeScheme.Unit, vars.flatten.toSet)
+    case Expression.FixpointMerge(exp1, exp2, stf, tpe, eff, loc) =>
+      for {
+        (sco1, _, vars1) <- checkExp(exp1, senv)
+        (sco2, _, vars2) <- checkExp(exp2, senv)
+      } yield (sco1 max sco2, ScopeScheme.Unit, vars1 ++ vars2)
+    case Expression.FixpointSolve(exp, stf, tpe, eff, loc) =>
+      for {
+        (sco, _, vars) <- checkExp(exp, senv)
+      } yield (sco, ScopeScheme.Unit, vars)
+    case Expression.FixpointFilter(pred, exp, tpe, eff, loc) =>
+      for {
+        (sco, _, vars) <- checkExp(exp, senv)
+      } yield (sco, ScopeScheme.Unit, vars)
+    case Expression.FixpointProjectIn(exp, pred, tpe, eff, loc) =>
+      for {
+        (sco, _, vars) <- checkExp(exp, senv)
+      } yield (sco, ScopeScheme.Unit, vars)
+    case Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) =>
+      for {
+        (sco, _, vars) <- checkExp(exp, senv)
+        // MATT check sco unscoped (goes into Array)
+      } yield (sco, ScopeScheme.Unit, vars)
+    case Expression.MatchEff(exp1, exp2, exp3, tpe, eff, loc) =>
+      for {
+        (_, _, vars1) <- checkExp(exp1, senv)
+        (sco2, sch2, vars2) <- checkExp(exp2, senv)
+        (sco3, sch3, vars3) <- checkExp(exp3, senv)
+      } yield (sco2 max sco3, sch2 max sch3, vars1 ++ vars2 ++ vars3)
   }
 
   private def checkMatchRule(rule: MatchRule, senv: Map[Symbol.VarSym, (Scopedness, ScopeScheme)], sco: Scopedness): Validation[(Scopedness, ScopeScheme, Set[Symbol.VarSym]), ScopeError] = rule match {
@@ -331,7 +367,7 @@ object Scoper extends Phase[Root, Root] {
       } yield (expSco, expSch, freeVars)
   }
 
-  private def checkSelectChannelRule(rule: SelectChannelRule, senv: Map[Symbol.VarSym, (Scopedness, Scoper.ScopeScheme)]): Validation[(Scopedness, ScopeScheme, Set[Symbol.VarSym]), ScopeError] = rule match {
+  private def checkSelectChannelRule(rule: SelectChannelRule, senv: Map[Symbol.VarSym, (Scopedness, ScopeScheme)]): Validation[(Scopedness, ScopeScheme, Set[Symbol.VarSym]), ScopeError] = rule match {
     case SelectChannelRule(sym, chan, exp) =>
       val elmTpe = chan.tpe match {
         case Type.Apply(Type.Cst(TypeConstructor.Channel, _), tpe) => tpe
@@ -344,6 +380,35 @@ object Scoper extends Phase[Root, Root] {
         freeVars = (chanVars ++ expVars) - sym
       } yield (expSco, expSch, freeVars)
 
+  }
+
+  private def checkConstraint(constr: Constraint, senv: Map[Symbol.VarSym, (Scopedness, ScopeScheme)]): Validation[(Scopedness, ScopeScheme, Set[Symbol.VarSym]), ScopeError] = constr match {
+    case Constraint(cparams, head, body, loc) =>
+      val cparamEnv = cparams.map { cparam => cparam.sym -> (cparam.sym.scopedness, mkScopeScheme(cparam.tpe)) }.toMap
+      val fullEnv = senv ++ cparamEnv
+      for {
+        (headSco, _, headVars) <- checkHeadPredicate(head, fullEnv)
+        (bodyScos, _, bodyVars) <- Validation.traverse(body)(checkBodyPredicate(_, fullEnv)).map(_.unzip3)
+        sco = (headSco :: bodyScos).reduce(_ max _)
+        sch = ScopeScheme.Unit
+        vars = (headVars ++ bodyVars.flatten) -- cparamEnv.keys
+      } yield (sco, sch, vars)
+
+  }
+
+  private def checkHeadPredicate(head: Predicate.Head, senv: Map[Symbol.VarSym, (Scopedness, ScopeScheme)]): Validation[(Scopedness, ScopeScheme, Set[Symbol.VarSym]), ScopeError] = head match {
+    case Head.Atom(pred, den, terms, tpe, loc) =>
+      for {
+        (scos, _, vars) <- Validation.traverse(terms)(checkExp(_, senv)).map(_.unzip3)
+      } yield (scos.reduce(_ max _), ScopeScheme.Unit, vars.flatten.toSet)
+  }
+
+  private def checkBodyPredicate(body: Predicate.Body, senv: Map[Symbol.VarSym, (Scopedness, ScopeScheme)]): Validation[(Scopedness, ScopeScheme, Set[Symbol.VarSym]), ScopeError] = body match {
+    case Body.Atom(pred, den, polarity, terms, tpe, loc) => noScope.toSuccess
+    case Body.Guard(exp, loc) =>
+      for {
+        (sco, _, vars) <- checkExp(exp, senv)
+      } yield (Scopedness.Unscoped, ScopeScheme.Unit, vars)
   }
 
   private def mkScopeScheme(tpe: Type): ScopeScheme = tpe.typeConstructor match {
