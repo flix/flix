@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.{Scopedness, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.ScopeError
-import ca.uwaterloo.flix.util.Validation.ToSuccess
+import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 
@@ -42,11 +42,17 @@ object Scoper extends Phase[Root, Root] {
 
   private val noScope = (Scopedness.Unscoped, ScopeScheme.Unit, Set.empty[Symbol.VarSym])
 
-  override def run(input: Root)(implicit flix: Flix): Validation[Root, ScopeError] = {
-    // analyze defs
-    // analyze sigs
-    // analyze instances
-    ???
+  override def run(root: Root)(implicit flix: Flix): Validation[Root, ScopeError] = {
+    val defsVal = Validation.traverseX(root.defs.values)(checkDef)
+    val sigsVal = Validation.traverseX(root.sigs.values)(checkSig)
+    val instanceDefsVal = Validation.traverseX(TypedAstOps.instanceDefsOf(root))(checkDef)
+
+    Validation.sequenceX(List(defsVal, sigsVal, instanceDefsVal)).map(_ => root)
+  }
+
+  private def checkSig(sig: Sig): Validation[Unit, ScopeError] = sig match {
+    case Sig(sym, spec, Some(impl)) => checkImpl(impl)
+    case Sig(_, _, None) => ().toSuccess
   }
 
   private def checkDef(defn: Def): Validation[Unit, ScopeError] = defn match {
@@ -107,11 +113,10 @@ object Scoper extends Phase[Root, Root] {
         argVars = args.flatMap(_._3)
 
       } yield (Scopedness.Unscoped, sch, funcVars ++ argVars)
-    case Expression.Unary(sop, exp, tpe, eff, loc) => {
+    case Expression.Unary(sop, exp, tpe, eff, loc) =>
       for {
         (_, _, vars) <- checkExp(exp, senv)
       } yield (Scopedness.Unscoped, ScopeScheme.Unit, vars)
-    }
     case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) =>
       for {
         (_, _, vars1) <- checkExp(exp1, senv)
@@ -410,7 +415,7 @@ object Scoper extends Phase[Root, Root] {
 
   private def checkUnscopedExp(exp: Expression, senv: Map[Symbol.VarSym, (Scopedness, ScopeScheme)]): Validation[(ScopeScheme, Set[Symbol.VarSym]), ScopeError] = {
     Validation.flatMapN(checkExp(exp, senv)) {
-      case (Scopedness.Scoped, _, _) => ??? // MATT Scope error with exp.loc
+      case (Scopedness.Scoped, _, _) => ScopeError.EscapingScopedValue(exp.loc).toFailure
       case (Scopedness.Unscoped, sch, vars) => (sch, vars).toSuccess
     }
   }
@@ -446,19 +451,5 @@ object Scoper extends Phase[Root, Root] {
     case object Unit extends ScopeScheme
 
     case class Arrow(paramSco: Scopedness, paramSch: ScopeScheme, retSch: ScopeScheme) extends ScopeScheme
-  }
-
-  private sealed trait Position {
-    def of(other: Position): Position = (this, other) match {
-      case (Position.Tail, Position.Tail) => Position.Tail
-      case _ => Position.Nontail
-
-    }
-  }
-
-  private object Position {
-    case object Tail extends Position
-
-    case object Nontail extends Position
   }
 }
