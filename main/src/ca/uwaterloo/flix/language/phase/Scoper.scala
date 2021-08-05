@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{Scopedness, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Scopedness, Symbol, Type, TypeConstructor, ScopeScheme}
 import ca.uwaterloo.flix.language.errors.ScopeError
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
@@ -420,36 +420,4 @@ object Scoper extends Phase[Root, Root] {
     }
   }
 
-  private sealed trait ScopeScheme {
-    def <=(other: ScopeScheme): Boolean = (this, other) match {
-      case (ScopeScheme.Unit, ScopeScheme.Unit) => true
-      case (ScopeScheme.Arrow(paramSco1, paramSch1, retSch1), ScopeScheme.Arrow(paramSco2, paramSch2, retSch2)) =>
-        // NB: Contravariant on the left
-        paramSco2 <= paramSco1 && paramSch2 <= paramSch1 && retSch1 <= retSch2
-      case _ => throw InternalCompilerException("Incompatible ScopeSchemes")
-    }
-
-    def max(other: ScopeScheme): ScopeScheme = (this, other) match {
-      case (ScopeScheme.Unit, ScopeScheme.Unit) => ScopeScheme.Unit
-      case (ScopeScheme.Arrow(paramSco1, paramSch1, retSch1), ScopeScheme.Arrow(paramSco2, paramSch2, retSch2)) =>
-        // NB: Contravariant on the left
-        ScopeScheme.Arrow(paramSco1 min paramSco2, paramSch1 min paramSch2, retSch1 max retSch2)
-      case _ => throw InternalCompilerException("Incompatible ScopeSchemes")
-    }
-
-    def min(other: ScopeScheme): ScopeScheme = (this, other) match {
-      case (ScopeScheme.Unit, ScopeScheme.Unit) => ScopeScheme.Unit
-      case (ScopeScheme.Arrow(paramSco1, paramSch1, retSch1), ScopeScheme.Arrow(paramSco2, paramSch2, retSch2)) =>
-        // NB: Contravariant on the left
-        ScopeScheme.Arrow(paramSco1 max paramSco2, paramSch1 max paramSch2, retSch1 min retSch2)
-      case _ => throw InternalCompilerException("Incompatible ScopeSchemes")
-    }
-
-  }
-
-  private object ScopeScheme {
-    case object Unit extends ScopeScheme
-
-    case class Arrow(paramSco: Scopedness, paramSch: ScopeScheme, retSch: ScopeScheme) extends ScopeScheme
-  }
 }
