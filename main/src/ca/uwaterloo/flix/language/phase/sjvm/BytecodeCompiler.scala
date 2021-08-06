@@ -75,7 +75,7 @@ object BytecodeCompiler {
     case Expression.Str(lit, loc) => ???
     case Expression.Var(sym, tpe, loc) =>
       WithSource[R](loc) ~
-        XLOAD(tpe, sym.getStackOffset + symOffsetOffset)
+        XLOAD(tpe, sym.getStackOffset + symOffsetOffset) // TODO: make this offset exist in F, dependent on static(0)/object function(1)
     case Expression.Closure(sym, freeVars, tpe, loc) => ???
     case Expression.ApplyClo(exp, args, tpe, loc) => ???
     case Expression.ApplyDef(sym, args, tpe, loc) => ???

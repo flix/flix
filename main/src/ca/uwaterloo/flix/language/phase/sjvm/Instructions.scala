@@ -606,29 +606,37 @@ object Instructions {
   def FLOAD
   [R <: Stack]
   (index: Int):
-  F[R] => F[R ** PFloat32] =
-    ???
+  F[R] => F[R ** PFloat32] = f => {
+    f.visitor.visitVarInsn(Opcodes.FLOAD, index)
+    castF(f)
+  }
 
   // NATIVE
   def DLOAD
   [R <: Stack]
   (index: Int):
-  F[R] => F[R ** PFloat64] =
-    ???
+  F[R] => F[R ** PFloat64] = f => {
+    f.visitor.visitVarInsn(Opcodes.DLOAD, index)
+    castF(f)
+  }
 
   // NATIVE
   def ILOAD
   [R <: Stack]
   (index: Int):
-  F[R] => F[R ** PInt32] =
-    ???
+  F[R] => F[R ** PInt32] = f => {
+    f.visitor.visitVarInsn(Opcodes.ILOAD, index)
+    castF(f)
+  }
 
   // NATIVE
   def LLOAD
   [R <: Stack]
   (index: Int):
-  F[R] => F[R ** PInt64] =
-    ???
+  F[R] => F[R ** PInt64] = f => {
+    f.visitor.visitVarInsn(Opcodes.LLOAD, index)
+    castF(f)
+  }
 
   // META
   def XLOAD
