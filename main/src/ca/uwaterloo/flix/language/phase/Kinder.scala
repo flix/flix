@@ -261,7 +261,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   /**
     * Gets the kind of the enum.
     */
-  def getEnumKind(enum: ResolvedAst.Enum)(implicit flix: Flix): Kind = enum match {
+  private def getEnumKind(enum: ResolvedAst.Enum)(implicit flix: Flix): Kind = enum match {
     case ResolvedAst.Enum(_, _, _, tparams, _, _, _, _) =>
       val kenv = getKindsFromTparamsDefaultStar(tparams)
       tparams.tparams.foldRight(Kind.Star: Kind) {
@@ -272,7 +272,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   /**
     * Gets the kind of the class.
     */
-  def getClassKind(clazz: ResolvedAst.Class): Kind = clazz.tparam match {
+  private def getClassKind(clazz: ResolvedAst.Class): Kind = clazz.tparam match {
     case ResolvedAst.TypeParam.Kinded(_, _, kind, _) => kind
     case _: ResolvedAst.TypeParam.Unkinded => Kind.Star
   }
@@ -281,7 +281,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   /**
     * Performs kinding on the given type constructor under the given kind environment.
     */
-  def ascribeTypeConstructor(tycon: UnkindedType.Constructor, root: ResolvedAst.Root)(implicit flix: Flix): TypeConstructor = tycon match {
+  private def ascribeTypeConstructor(tycon: UnkindedType.Constructor, root: ResolvedAst.Root)(implicit flix: Flix): TypeConstructor = tycon match {
     case UnkindedType.Constructor.Unit => TypeConstructor.Unit
     case UnkindedType.Constructor.Null => TypeConstructor.Null
     case UnkindedType.Constructor.Bool => TypeConstructor.Bool
