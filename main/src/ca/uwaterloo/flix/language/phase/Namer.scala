@@ -135,7 +135,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       /*
      * Definition.
      */
-      case decl@WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, retTpe, eff0, tconstrs, loc) =>
+      case decl@WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, retTpe, eff0, tconstrs, retScSc, loc) =>
         // Check if the definition already exists.
         val defsAndSigs = prog0.defsAndSigs.getOrElse(ns0, Map.empty)
         defsAndSigs.get(ident.name) match {
@@ -376,7 +376,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Performs naming on the given signature declaration `sig` under the given environments `env0`, `uenv0`, and `tenv0`.
     */
   private def visitSig(sig: WeededAst.Declaration.Sig, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName, classIdent: Name.Ident, classSym: Symbol.ClassSym, classTparam: NamedAst.TypeParam)(implicit flix: Flix): Validation[NamedAst.Sig, NameError] = sig match {
-    case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, exp0, tpe0, retTpe0, eff0, tconstrs0, loc) =>
+    case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, exp0, tpe0, retTpe0, eff0, tconstrs0, retScSc, loc) =>
       flatMapN(getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, loc, allowElision = true, uenv0, tenv0), checkSigType(ident, classTparam, tpe0, loc)) {
         case (tparams, _) =>
           val tenv = tenv0 ++ getTypeEnv(tparams)
@@ -389,10 +389,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
               val expVal = traverse(exp0)(visitExp(_, env0, uenv0, tenv))
               val retTpeVal = visitType(retTpe0, uenv0, tenv)
               val effVal = visitType(eff0, uenv0, tenv)
+              val scSc = mkScopeScheme(fparams0, retScSc)
               mapN(annVal, schemeVal, retTpeVal, effVal, expVal) {
                 case (as, sc, retTpe, eff, exp) =>
                   val sym = Symbol.mkSigSym(classSym, ident)
-                  val spec = NamedAst.Spec(doc, as, mod, tparams, fparams, sc, retTpe, eff, loc)
+                  val spec = NamedAst.Spec(doc, as, mod, tparams, fparams, sc, retTpe, eff, scSc, loc)
                   NamedAst.Sig(sym, spec, exp.headOption)
               }
           }
@@ -414,7 +415,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Performs naming on the given definition declaration `decl0` under the given environments `env0`, `uenv0`, and `tenv0`, with type constraints `tconstrs`.
     */
   private def visitDef(decl0: WeededAst.Declaration.Def, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName, addedTconstrs: List[NamedAst.TypeConstraint], addedQuantifiers: List[Type.Var])(implicit flix: Flix): Validation[NamedAst.Def, NameError] = decl0 match {
-    case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe0, retTpe0, eff0, tconstrs, loc) =>
+    case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe0, retTpe0, eff0, tconstrs, retScSc, loc) =>
       // TODO: we use tenv when getting the types from formal params first, before the explicit tparams have a chance to modify it
       // This means that if an explicit type variable is shadowing, the outer scope variable will be used for some parts, and inner for others
       // Resulting in a type error rather than a redundancy error (as redundancy checking happens later)
@@ -431,10 +432,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
               val schemeVal = getDefOrSigScheme(tparams, tpe0, uenv0, tenv, tconstrs ++ addedTconstrs, addedQuantifiers)
               val retTpeVal = visitType(retTpe0, uenv0, tenv)
               val effVal = visitType(eff0, uenv0, tenv)
+              val scSc = mkScopeScheme(fparams0, retScSc)
               mapN(annVal, expVal, schemeVal, retTpeVal, effVal) {
                 case (as, e, sc, retTpe, eff) =>
                   val sym = Symbol.mkDefnSym(ns0, ident)
-                  val spec = NamedAst.Spec(doc, as, mod, tparams, fparams, sc, retTpe, eff, loc)
+                  val spec = NamedAst.Spec(doc, as, mod, tparams, fparams, sc, retTpe, eff, retScSc, loc)
                   NamedAst.Def(sym, spec, e)
               }
           }
@@ -1475,7 +1477,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Translates the given weeded formal parameter to a named formal parameter.
     */
   private def visitFormalParam(fparam: WeededAst.FormalParam, uenv0: UseEnv, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.FormalParam, NameError] = fparam match {
-    case WeededAst.FormalParam(ident, mod, optType, loc) =>
+    case WeededAst.FormalParam(ident, mod, optType, scSc, loc) =>
       // Generate a fresh variable symbol for the identifier.
       val scopedness = if (mod.isScoped)
         Scopedness.Scoped
@@ -1623,8 +1625,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     // Compute the type variables that occur in the formal parameters.
     val typeVarsWithKindArgs = fparams.flatMap {
-      case WeededAst.FormalParam(_, _, Some(tpe), _) => freeVarsWithKind(tpe, tenv)
-      case WeededAst.FormalParam(_, _, None, _) => List.empty
+      case WeededAst.FormalParam(_, _, Some(tpe), _, _) => freeVarsWithKind(tpe, tenv)
+      case WeededAst.FormalParam(_, _, None, _, _) => List.empty
     }
 
     // Compute the type variables that occur in the overall type.
@@ -1817,6 +1819,20 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
               NameError.DuplicateUseTag(name, loc2, loc1)
             ))
         }
+    }
+  }
+
+  // MATT docs
+  // MATT mention fparam MUST have scsc
+  private def mkScopeScheme(fparams: List[WeededAst.FormalParam], retScSc: ScopeScheme): ScopeScheme = {
+    fparams.foldRight(retScSc) {
+      case (fparam, acc) =>
+        val sco = if (fparam.mod.isScoped) {
+          Scopedness.Scoped
+        } else {
+          Scopedness.Unscoped
+        }
+        ScopeScheme.Arrow(sco, fparam.scSc.get, acc)
     }
   }
 

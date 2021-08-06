@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
-import ca.uwaterloo.flix.language.ast.ParsedAst.Type
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
@@ -130,9 +129,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         _ <- requirePublic(mod, ident)
         ts = fparams.map(_.tpe.get)
         retTpe = visitType(tpe0)
+        retScSc <- getUnscopedScopeScheme(tpe0)
         tpe = WeededAst.Type.Arrow(ts, eff, retTpe, loc)
         tconstrs <- traverse(tconstrs0)(visitTypeConstraint)
-      } yield List(WeededAst.Declaration.Sig(doc, as, mod, ident, tparams, fparams, exp.headOption, tpe, retTpe, eff, tconstrs, loc))
+      } yield List(WeededAst.Declaration.Sig(doc, as, mod, ident, tparams, fparams, exp.headOption, tpe, retTpe, eff, tconstrs, retScSc, loc))
   }
 
   /**
@@ -185,9 +185,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         _ <- if (requiresPublic) requirePublic(mod, ident) else ().toSuccess // conditionally require a public modifier
         ts = fparams.map(_.tpe.get)
         retTpe = visitType(tpe0)
+        retScSc <- getUnscopedScopeScheme(tpe0)
         tpe = WeededAst.Type.Arrow(ts, eff, retTpe, loc)
         tconstrs <- traverse(tconstrs0)(visitTypeConstraint)
-      } yield List(WeededAst.Declaration.Def(doc, as, mod, ident, tparams, fparams, exp, tpe, retTpe, eff, tconstrs, loc))
+      } yield List(WeededAst.Declaration.Def(doc, as, mod, ident, tparams, fparams, exp, tpe, retTpe, eff, tconstrs, retScSc, loc))
   }
 
   /**
@@ -209,7 +210,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           val ts = fs.map(_.tpe.get)
           val retTpe = WeededAst.Type.Ambiguous(Name.mkQName("Bool"), loc)
           val tpe = WeededAst.Type.Arrow(ts, WeededAst.Type.True(loc), retTpe, loc)
-          List(WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fs, exp, tpe, retTpe, WeededAst.Type.True(loc), tconstrs, loc))
+          List(WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fs, exp, tpe, retTpe, WeededAst.Type.True(loc), tconstrs, ScopeScheme.Unit, loc))
       }
   }
 
@@ -585,7 +586,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           val varOrRef = WeededAst.Expression.VarOrDefOrSig(ident, loc)
           val rule = WeededAst.MatchRule(p, WeededAst.Expression.True(loc), e)
 
-          val fparam = WeededAst.FormalParam(ident, Ast.Modifiers.Empty, None, ident.loc)
+          val fparam = WeededAst.FormalParam(ident, Ast.Modifiers.Empty, None, None, ident.loc)
           val body = WeededAst.Expression.Match(varOrRef, List(rule), loc)
           WeededAst.Expression.Lambda(fparam, body, loc)
       }
@@ -672,14 +673,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val ident = Name.Ident(sp1, "flatMap", sp2)
       val flatMap = WeededAst.Expression.VarOrDefOrSig(ident, loc)
 
-      mapN(visitPattern(pat), visitExp(exp1), visitExp(exp2)) {
-        case (WeededAst.Pattern.Var(ident, loc), value, body) =>
+      mapN(visitPattern(pat), visitExp(exp1), visitExp(exp2), Validation.traverse(tpe)(getUnscopedScopeScheme)) {
+        case (WeededAst.Pattern.Var(ident, loc), value, body, scSc) =>
           // No pattern match.
-          val fparam = WeededAst.FormalParam(ident, Ast.Modifiers.Empty, tpe.map(visitType), loc)
+          val fparam = WeededAst.FormalParam(ident, Ast.Modifiers.Empty, tpe.map(visitType), scSc.headOption, loc)
           val lambda = WeededAst.Expression.Lambda(fparam, body, loc)
           val inner = WeededAst.Expression.Apply(flatMap, List(lambda), loc)
           WeededAst.Expression.Apply(inner, List(value), loc)
-        case (pat, value, body) =>
+        case (pat, value, body, scSc) =>
           // Full-blown pattern match.
           val lambdaIdent = Name.Ident(sp1, "pat$0", sp2)
           val lambdaVar = WeededAst.Expression.VarOrDefOrSig(lambdaIdent, loc)
@@ -687,7 +688,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           val rule = WeededAst.MatchRule(pat, WeededAst.Expression.True(mkSL(sp1, sp2)), body)
           val lambdaBody = WeededAst.Expression.Match(withAscription(lambdaVar, tpe), List(rule), mkSL(sp1, sp2))
 
-          val fparam = WeededAst.FormalParam(lambdaIdent, Ast.Modifiers.Empty, tpe.map(visitType), loc)
+          val fparam = WeededAst.FormalParam(lambdaIdent, Ast.Modifiers.Empty, tpe.map(visitType), scSc.headOption, loc)
           val lambda = WeededAst.Expression.Lambda(fparam, lambdaBody, loc)
           val inner = WeededAst.Expression.Apply(flatMap, List(lambda), loc)
           WeededAst.Expression.Apply(inner, List(value), loc)
@@ -704,7 +705,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           //
           // Introduce a let-bound lambda: (args...) -> InvokeConstructor(args).
           //
-          mapN(visitExp(exp2)) {
+          flatMapN(visitExp(exp2)) {
             case e2 =>
               // Compute the class name.
               val className = fqn.mkString(".")
@@ -713,40 +714,45 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               // Case 1: No arguments.
               //
               if (sig.isEmpty) {
-                val fparam = WeededAst.FormalParam(Name.Ident(sp1, "_", sp2), Ast.Modifiers.Empty, Some(WeededAst.Type.Unit(loc)), loc)
+                val fparam = WeededAst.FormalParam(Name.Ident(sp1, "_", sp2), Ast.Modifiers.Empty, Some(WeededAst.Type.Unit(loc)), Some(ScopeScheme.Unit), loc)
                 val lambdaBody = WeededAst.Expression.InvokeConstructor(className, Nil, Nil, loc)
                 val e1 = WeededAst.Expression.Lambda(fparam, lambdaBody, loc)
                 return WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc).toSuccess
               }
 
-              // Compute the types of declared parameters.
-              val ts = sig.map(visitType).toList
+              // Compute the ScopeSchemes of declared parameters
+              mapN(Validation.traverse(sig)(getUnscopedScopeScheme)) {
+                scScs =>
 
-              // Introduce a formal parameter (of appropriate type) for each declared argument.
-              val fs = ts.zipWithIndex.map {
-                case (tpe, index) =>
-                  val id = Name.Ident(sp1, "a" + index, sp2)
-                  WeededAst.FormalParam(id, Ast.Modifiers.Empty, Some(tpe), loc)
+                  // Compute the types of declared parameters.
+                  val ts = sig.map(visitType).toList
+
+                  // Introduce a formal parameter (of appropriate type) for each declared argument.
+                  val fs = ts.zipWithIndex.zip(scScs).map {
+                    case ((tpe, index), scSc) =>
+                      val id = Name.Ident(sp1, "a" + index, sp2)
+                      WeededAst.FormalParam(id, Ast.Modifiers.Empty, Some(tpe), Some(scSc), loc)
+                  }
+
+                  // Compute the argument to the method call.
+                  val as = ts.zipWithIndex.map {
+                    case (tpe, index) =>
+                      val ident = Name.Ident(sp1, "a" + index, sp2)
+                      WeededAst.Expression.VarOrDefOrSig(ident, loc)
+                  }
+
+                  // Assemble the lambda expression.
+                  val lambdaBody = WeededAst.Expression.InvokeConstructor(className, as, ts, loc)
+                  val e1 = mkCurried(fs, lambdaBody, loc)
+                  WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
               }
-
-              // Compute the argument to the method call.
-              val as = ts.zipWithIndex.map {
-                case (tpe, index) =>
-                  val ident = Name.Ident(sp1, "a" + index, sp2)
-                  WeededAst.Expression.VarOrDefOrSig(ident, loc)
-              }
-
-              // Assemble the lambda expression.
-              val lambdaBody = WeededAst.Expression.InvokeConstructor(className, as, ts, loc)
-              val e1 = mkCurried(fs, lambdaBody, loc)
-              WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
           }
 
         case ParsedAst.JvmOp.Method(fqn, sig, identOpt) =>
           //
           // Introduce a let-bound lambda: (obj, args...) -> InvokeMethod(obj, args).
           //
-          mapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
+          flatMapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
             case ((className, methodName), e2) =>
               // Compute the name of the let-bound variable.
               val ident = identOpt.getOrElse(Name.Ident(sp1, methodName, sp2))
@@ -758,34 +764,37 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
               // Introduce a formal parameter for the object argument.
               val objId = Name.Ident(sp1, "obj$", sp2)
-              val objParam = WeededAst.FormalParam(objId, Ast.Modifiers.Empty, Some(receiverType), loc)
+              val objParam = WeededAst.FormalParam(objId, Ast.Modifiers.Empty, Some(receiverType), Some(ScopeScheme.Unit), loc)
               val objExp = WeededAst.Expression.VarOrDefOrSig(objId, loc)
 
-              // Introduce a formal parameter (of appropriate type) for each declared argument.
-              val fs = objParam :: ts.zipWithIndex.map {
-                case (tpe, index) =>
-                  val ident = Name.Ident(sp1, "a" + index + "$", sp2)
-                  WeededAst.FormalParam(ident, Ast.Modifiers.Empty, Some(tpe), loc)
-              }
+              mapN(Validation.traverse(sig)(getUnscopedScopeScheme)) {
+                scScs =>
+                  // Introduce a formal parameter (of appropriate type) for each declared argument.
+                  val fs = objParam :: ts.zipWithIndex.zip(scScs).map {
+                    case ((tpe, index), scSc) =>
+                      val ident = Name.Ident(sp1, "a" + index + "$", sp2)
+                      WeededAst.FormalParam(ident, Ast.Modifiers.Empty, Some(tpe), Some(scSc), loc)
+                  }
 
-              // Compute the argument to the method call.
-              val as = objExp :: ts.zipWithIndex.map {
-                case (tpe, index) =>
-                  val ident = Name.Ident(sp1, "a" + index + "$", sp2)
-                  WeededAst.Expression.VarOrDefOrSig(ident, loc)
-              }
+                  // Compute the argument to the method call.
+                  val as = objExp :: ts.zipWithIndex.map {
+                    case (tpe, index) =>
+                      val ident = Name.Ident(sp1, "a" + index + "$", sp2)
+                      WeededAst.Expression.VarOrDefOrSig(ident, loc)
+                  }
 
-              // Assemble the lambda expression.
-              val lambdaBody = WeededAst.Expression.InvokeMethod(className, methodName, as.head, as.tail, ts, loc)
-              val e1 = mkCurried(fs, lambdaBody, loc)
-              WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
+                  // Assemble the lambda expression.
+                  val lambdaBody = WeededAst.Expression.InvokeMethod(className, methodName, as.head, as.tail, ts, loc)
+                  val e1 = mkCurried(fs, lambdaBody, loc)
+                  WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
+              }
           }
 
         case ParsedAst.JvmOp.StaticMethod(fqn, sig, identOpt) =>
           //
           // Introduce a let-bound lambda: (args...) -> InvokeStaticMethod(args).
           //
-          mapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
+          flatMapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
             case ((className, methodName), e2) =>
 
               // Compute the name of the let-bound variable.
@@ -795,33 +804,36 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               // Case 1: No arguments.
               //
               if (sig.isEmpty) {
-                val fparam = WeededAst.FormalParam(Name.Ident(sp1, "_", sp2), Ast.Modifiers.Empty, Some(WeededAst.Type.Unit(loc)), loc)
+                val fparam = WeededAst.FormalParam(Name.Ident(sp1, "_", sp2), Ast.Modifiers.Empty, Some(WeededAst.Type.Unit(loc)), Some(ScopeScheme.Unit), loc)
                 val lambdaBody = WeededAst.Expression.InvokeStaticMethod(className, methodName, Nil, Nil, loc)
                 val e1 = WeededAst.Expression.Lambda(fparam, lambdaBody, loc)
                 return WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc).toSuccess
               }
 
-              // Compute the types of declared parameters.
-              val ts = sig.map(visitType).toList
+              mapN(Validation.traverse(sig)(getUnscopedScopeScheme)) {
+                scScs =>
+                  // Compute the types of declared parameters.
+                  val ts = sig.map(visitType).toList
 
-              // Introduce a formal parameter (of appropriate type) for each declared argument.
-              val fs = ts.zipWithIndex.map {
-                case (tpe, index) =>
-                  val id = Name.Ident(sp1, "a" + index + "$", sp2)
-                  WeededAst.FormalParam(id, Ast.Modifiers.Empty, Some(tpe), loc)
+                  // Introduce a formal parameter (of appropriate type) for each declared argument.
+                  val fs = ts.zipWithIndex.zip(scScs).map {
+                    case ((tpe, index), scSc) =>
+                      val id = Name.Ident(sp1, "a" + index + "$", sp2)
+                      WeededAst.FormalParam(id, Ast.Modifiers.Empty, Some(tpe), Some(scSc), loc)
+                  }
+
+                  // Compute the argument to the method call.
+                  val as = ts.zipWithIndex.map {
+                    case (tpe, index) =>
+                      val ident = Name.Ident(sp1, "a" + index + "$", sp2)
+                      WeededAst.Expression.VarOrDefOrSig(ident, loc)
+                  }
+
+                  // Assemble the lambda expression.
+                  val lambdaBody = WeededAst.Expression.InvokeStaticMethod(className, methodName, as, ts, loc)
+                  val e1 = mkCurried(fs, lambdaBody, loc)
+                  WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
               }
-
-              // Compute the argument to the method call.
-              val as = ts.zipWithIndex.map {
-                case (tpe, index) =>
-                  val ident = Name.Ident(sp1, "a" + index + "$", sp2)
-                  WeededAst.Expression.VarOrDefOrSig(ident, loc)
-              }
-
-              // Assemble the lambda expression.
-              val lambdaBody = WeededAst.Expression.InvokeStaticMethod(className, methodName, as, ts, loc)
-              val e1 = mkCurried(fs, lambdaBody, loc)
-              WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
           }
 
         case ParsedAst.JvmOp.GetField(fqn, ident) =>
@@ -832,7 +844,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             case ((className, fieldName), e2) =>
               val objectId = Name.Ident(sp1, "o$", sp2)
               val objectExp = WeededAst.Expression.VarOrDefOrSig(objectId, loc)
-              val objectParam = WeededAst.FormalParam(objectId, Ast.Modifiers.Empty, None, loc)
+              val objectParam = WeededAst.FormalParam(objectId, Ast.Modifiers.Empty, None, None, loc)
               val lambdaBody = WeededAst.Expression.GetField(className, fieldName, objectExp, loc)
               val e1 = WeededAst.Expression.Lambda(objectParam, lambdaBody, loc)
               WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
@@ -848,8 +860,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               val valueId = Name.Ident(sp1, "v$", sp2)
               val objectExp = WeededAst.Expression.VarOrDefOrSig(objectId, loc)
               val valueExp = WeededAst.Expression.VarOrDefOrSig(valueId, loc)
-              val objectParam = WeededAst.FormalParam(objectId, Ast.Modifiers.Empty, None, loc)
-              val valueParam = WeededAst.FormalParam(valueId, Ast.Modifiers.Empty, None, loc)
+              val objectParam = WeededAst.FormalParam(objectId, Ast.Modifiers.Empty, None, None, loc)
+              val valueParam = WeededAst.FormalParam(valueId, Ast.Modifiers.Empty, None, None, loc)
               val lambdaBody = WeededAst.Expression.PutField(className, fieldName, objectExp, valueExp, loc)
               val e1 = mkCurried(objectParam :: valueParam :: Nil, lambdaBody, loc)
               WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
@@ -862,7 +874,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           mapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
             case ((className, fieldName), e2) =>
               val unitId = Name.Ident(sp1, "_", sp2)
-              val unitParam = WeededAst.FormalParam(unitId, Ast.Modifiers.Empty, Some(WeededAst.Type.Unit(loc)), loc)
+              val unitParam = WeededAst.FormalParam(unitId, Ast.Modifiers.Empty, Some(WeededAst.Type.Unit(loc)), Some(ScopeScheme.Unit), loc)
               val lambdaBody = WeededAst.Expression.GetStaticField(className, fieldName, loc)
               val e1 = WeededAst.Expression.Lambda(unitParam, lambdaBody, loc)
               WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
@@ -876,7 +888,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             case ((className, fieldName), e2) =>
               val valueId = Name.Ident(sp1, "v$", sp2)
               val valueExp = WeededAst.Expression.VarOrDefOrSig(valueId, loc)
-              val valueParam = WeededAst.FormalParam(valueId, Ast.Modifiers.Empty, None, loc)
+              val valueParam = WeededAst.FormalParam(valueId, Ast.Modifiers.Empty, None, None, loc)
               val lambdaBody = WeededAst.Expression.PutStaticField(className, fieldName, valueExp, loc)
               val e1 = WeededAst.Expression.Lambda(valueParam, lambdaBody, loc)
               WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
@@ -993,7 +1005,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.RecordSelectLambda(sp1, ident, sp2) =>
       val loc = mkSL(sp1, sp2)
       val ident = Name.Ident(sp1, "_rec", sp2)
-      val fparam = WeededAst.FormalParam(ident, Ast.Modifiers.Empty, None, loc)
+      val fparam = WeededAst.FormalParam(ident, Ast.Modifiers.Empty, None, None, loc)
       val varExp = WeededAst.Expression.VarOrDefOrSig(ident, loc)
       val lambdaBody = WeededAst.Expression.RecordSelect(varExp, Name.mkField(ident), loc)
       WeededAst.Expression.Lambda(fparam, lambdaBody, loc).toSuccess
@@ -2082,7 +2094,13 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.Scoped(_, tpe, _) => visitType(tpe)
   }
 
-  private def getScopeScheme()
+  private def getUnscopedScopeScheme(tpe: ParsedAst.Type): Validation[ScopeScheme, WeederError] = {
+    for {
+      _ <- checkUnscoped(tpe)
+      res <- getScopeScheme(tpe)
+    } yield res
+  }
+
   private def getScopeScheme(tpe: ParsedAst.Type): Validation[ScopeScheme, WeederError] = tpe match {
     case ParsedAst.Type.Unit(sp1, sp2) => ScopeScheme.Unit.toSuccess
     case ParsedAst.Type.Var(sp1, ident, sp2) => ScopeScheme.Unit.toSuccess
@@ -2094,22 +2112,19 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       for {
         sco1 <- getScopedness(tpe1)
         sch1 <- getScopeScheme(tpe1)
-        _ <- checkUnscoped(tpe2)
-        sch2 <- getScopeScheme(tpe2)
+        sch2 <- getUnscopedScopeScheme(tpe2)
       } yield ScopeScheme.Arrow(sco1, sch1, sch2)
     case ParsedAst.Type.UnaryPolymorphicArrow(tpe1, tpe2, eff, sp2) =>
       for {
         sco1 <- getScopedness(tpe1)
         sch1 <- getScopeScheme(tpe1)
-        _ <- checkUnscoped(tpe2)
-        sch2 <- getScopeScheme(tpe2)
+        sch2 <- getUnscopedScopeScheme(tpe2)
       } yield ScopeScheme.Arrow(sco1, sch1, sch2)
     case ParsedAst.Type.ImpureArrow(sp1, tparams, tresult, sp2) =>
       for {
         scos <- Validation.traverse(tparams)(getScopedness)
         schs <- Validation.traverse(tparams)(getScopeScheme)
-        _ <- checkUnscoped(tresult)
-        resSch <- getScopeScheme(tresult)
+        resSch <- getUnscopedScopeScheme(tresult)
       } yield {
         scos.zip(schs).foldRight(resSch) {
           case ((sco, sch), acc) => ScopeScheme.Arrow(sco, sch, acc)
@@ -2119,8 +2134,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       for {
         scos <- Validation.traverse(tparams)(getScopedness)
         schs <- Validation.traverse(tparams)(getScopeScheme)
-        _ <- checkUnscoped(tresult)
-        resSch <- getScopeScheme(tresult)
+        resSch <- getUnscopedScopeScheme(tresult)
       } yield {
         scos.zip(schs).foldRight(resSch) {
           case ((sco, sch), acc) => ScopeScheme.Arrow(sco, sch, acc)
@@ -2189,7 +2203,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val loc = mkSL(sp1, sp2)
       val ident = Name.Ident(sp1, "_unit", sp2)
       val tpe = Some(WeededAst.Type.Unit(loc))
-      return List(WeededAst.FormalParam(ident, Ast.Modifiers.Empty, tpe, loc)).toSuccess
+      val scSc = Some(ScopeScheme.Unit)
+      return List(WeededAst.FormalParam(ident, Ast.Modifiers.Empty, tpe, scSc, loc)).toSuccess
     }
 
     val seen = mutable.Map.empty[String, ParsedAst.FormalParam]
@@ -2202,13 +2217,17 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             seen += (ident.name -> param)
           }
 
-          visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Inline, Ast.Modifier.Scoped)) flatMap {
-            case mod =>
+          val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Inline, Ast.Modifier.Scoped))
+          val scScVal = Validation.traverse(typeOpt)(getScopeScheme)
+
+          flatMapN(modVal, scScVal) {
+            case (mod, scSc) =>
               if (typeRequired && typeOpt.isEmpty)
                 IllegalFormalParameter(ident.name, mkSL(sp1, sp2)).toFailure
               else
-                WeededAst.FormalParam(ident, mod, typeOpt.map(visitType), mkSL(sp1, sp2)).toSuccess
+                WeededAst.FormalParam(ident, mod, typeOpt.map(visitType), scSc.headOption, mkSL(sp1, sp2)).toSuccess
           }
+
         case Some(otherParam) =>
           val name = ident.name
           val loc1 = mkSL(otherParam.sp1, otherParam.sp2)
