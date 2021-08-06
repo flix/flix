@@ -387,9 +387,9 @@ object NamedAst {
   case class SelectChannelRule(sym: Symbol.VarSym, chan: NamedAst.Expression, exp: NamedAst.Expression)
 
   sealed trait TypeParam {
-    val name: Name.Ident
-    val tpe: ast.UnkindedType.Var
-    val loc: SourceLocation
+    def name: Name.Ident
+    def tpe: ast.UnkindedType.Var
+    def loc: SourceLocation
   }
 
   object TypeParam {
