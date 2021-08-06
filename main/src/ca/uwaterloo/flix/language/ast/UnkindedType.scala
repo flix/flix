@@ -29,9 +29,9 @@ sealed trait UnkindedType {
   def typeConstructor: Option[UnkindedType.Constructor] = this match {
     case UnkindedType.Cst(cst, _) => Some(cst)
     case UnkindedType.Apply(t1, _) => t1.typeConstructor
-    case UnkindedType.Lambda(_, _) => throw InternalCompilerException("Unexpected type constructor: Lambda")
     case UnkindedType.Var(_, _, loc) => None
     case UnkindedType.Ascribe(t, _, _) => t.typeConstructor
+    case UnkindedType.Lambda(_, _) => throw InternalCompilerException("Unexpected type constructor: Lambda")
   }
 
   /**
