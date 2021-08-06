@@ -24,8 +24,6 @@ class TestKinder extends FunSuite with TestUtils {
 
   private val DefaultOptions = Options.TestWithLibNix
 
-  ////// TESTS COPIED FROM OTHER PHASES //////
-
   test("MismatchedTypeParamKind.Implicit.01") {
     val input = "def f(g: Int -> o & o): Int = 123"
     val result = compile(input, DefaultOptions)
@@ -400,8 +398,6 @@ class TestKinder extends FunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
-
-  ////// NEW TESTS START HERE //////
 
   test("KindError.Def.Effect.01") {
     val input =
