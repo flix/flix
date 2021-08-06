@@ -627,9 +627,9 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       * Returns the new formal parameter and an environment mapping the variable symbol to a fresh variable symbol.
       */
     def specializeFormalParam(fparam0: FormalParam, subst0: StrictSubstitution): (FormalParam, Map[Symbol.VarSym, Symbol.VarSym]) = {
-      val FormalParam(sym, mod, tpe, loc) = fparam0
+      val FormalParam(sym, mod, tpe, scSc, loc) = fparam0
       val freshSym = Symbol.freshVarSym(sym)
-      (FormalParam(freshSym, mod, subst0(tpe), loc), Map(sym -> freshSym))
+      (FormalParam(freshSym, mod, subst0(tpe), scSc, loc), Map(sym -> freshSym))
     }
 
     /**

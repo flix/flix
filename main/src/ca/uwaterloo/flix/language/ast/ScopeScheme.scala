@@ -43,6 +43,21 @@ sealed trait ScopeScheme {
     case _ => throw InternalCompilerException("Incompatible ScopeSchemes")
   }
 
+  // MATT docs
+  override def toString: String = this match {
+    case ScopeScheme.Unit => "."
+    case ScopeScheme.Arrow(paramSco, paramSch, retSch) =>
+      val scoPart = paramSco match {
+        case Scopedness.Scoped => "scoped "
+        case Scopedness.Unscoped => ""
+      }
+      val scScPart = paramSch match {
+        case _: ScopeScheme.Arrow => s"($paramSch)"
+        case ScopeScheme.Unit => s"$paramSch"
+      }
+      s"$scoPart$scScPart -> $retSch"
+  }
+
 }
 
 object ScopeScheme {

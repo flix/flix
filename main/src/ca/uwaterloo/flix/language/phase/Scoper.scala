@@ -161,7 +161,7 @@ object Scoper extends Phase[Root, Root] {
     case Expression.Tuple(elms, tpe, eff, loc) =>
       for {
         (scos, schs, vars) <- Validation.traverse(elms)(checkExp(_, senv, root)).map(_.unzip3)
-      } yield (scos.reduce(_ max _), schs.reduce(_ max _), vars.flatten.toSet)
+      } yield (scos.reduce(_ max _), ScopeScheme.Unit, vars.flatten.toSet)
     case Expression.RecordEmpty(tpe, loc) => noScope.toSuccess
     case Expression.RecordSelect(exp, field, tpe, eff, loc) =>
       for {

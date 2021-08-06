@@ -1058,7 +1058,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       * Applies the substitution to the formal parameter `fparam0`.
       */
     def apply(fparam0: FormalParam): FormalParam = fparam0 match {
-      case FormalParam(sym, mod, tpe, loc) => FormalParam(apply(sym), mod, tpe, loc)
+      case FormalParam(sym, mod, tpe, scSc, loc) => FormalParam(apply(sym), mod, tpe, scSc, loc)
     }
 
     /**

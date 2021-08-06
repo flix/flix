@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Polarity}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, Scheme, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, Scheme, ScopeScheme, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
@@ -199,10 +199,10 @@ object Lowering extends Phase[Root, Root] {
     * Lowers the given `spec0`.
     */
   private def visitSpec(spec0: Spec)(implicit root: Root, flix: Flix): Spec = spec0 match {
-    case Spec(doc, ann, mod, tparams, fparams, declaredScheme, retTpe, eff, loc) =>
+    case Spec(doc, ann, mod, tparams, fparams, declaredScheme, retTpe, eff, scSc, loc) =>
       val fs = fparams.map(visitFormalParam)
       val ds = visitScheme(declaredScheme)
-      Spec(doc, ann, mod, tparams, fs, ds, retTpe, eff, loc)
+      Spec(doc, ann, mod, tparams, fs, ds, retTpe, eff, scSc, loc)
   }
 
   /**
@@ -690,9 +690,9 @@ object Lowering extends Phase[Root, Root] {
     * Lowers the given formal parameter `fparam0`.
     */
   private def visitFormalParam(fparam0: FormalParam)(implicit root: Root, flix: Flix): FormalParam = fparam0 match {
-    case FormalParam(sym, mod, tpe, loc) =>
+    case FormalParam(sym, mod, tpe, scSc, loc) =>
       val t = visitType(tpe)
-      FormalParam(sym, mod, t, loc)
+      FormalParam(sym, mod, t, scSc, loc)
   }
 
   /**
@@ -1021,7 +1021,7 @@ object Lowering extends Phase[Root, Root] {
     // Special case: No free variables.
     if (fvs.isEmpty) {
       // Construct a lambda that takes the unit argument.
-      val fparam = FormalParam(Symbol.freshVarSym("_unit", loc), Ast.Modifiers.Empty, Type.Unit, loc)
+      val fparam = FormalParam(Symbol.freshVarSym("_unit", loc), Ast.Modifiers.Empty, Type.Unit, Some(ScopeScheme.Unit), loc)
       val tpe = Type.mkPureArrow(Type.Unit, exp.tpe)
       val lambdaExp = Expression.Lambda(fparam, exp, tpe, loc)
       return mkTag(Enums.BodyPredicate, s"Guard0", lambdaExp, Types.BodyPredicate, loc)
@@ -1039,7 +1039,7 @@ object Lowering extends Phase[Root, Root] {
     val lambdaExp = fvs.foldRight(freshExp) {
       case ((oldSym, tpe), acc) =>
         val freshSym = freshVars(oldSym)
-        val fparam = FormalParam(freshSym, Ast.Modifiers.Empty, tpe, loc)
+        val fparam = FormalParam(freshSym, Ast.Modifiers.Empty, tpe, None, loc)
         val lambdaType = Type.mkPureArrow(tpe, acc.tpe)
         Expression.Lambda(fparam, acc, lambdaType, loc)
     }
@@ -1070,7 +1070,7 @@ object Lowering extends Phase[Root, Root] {
     // Special case: No free variables.
     if (fvs.isEmpty) {
       // Construct a lambda that takes the unit argument.
-      val fparam = FormalParam(Symbol.freshVarSym("_unit", loc), Ast.Modifiers.Empty, Type.Unit, loc)
+      val fparam = FormalParam(Symbol.freshVarSym("_unit", loc), Ast.Modifiers.Empty, Type.Unit, Some(ScopeScheme.Unit), loc)
       val tpe = Type.mkPureArrow(Type.Unit, exp.tpe)
       val lambdaExp = Expression.Lambda(fparam, exp, tpe, loc)
       return mkTag(Enums.HeadTerm, s"App0", lambdaExp, Types.HeadTerm, loc)
@@ -1088,7 +1088,7 @@ object Lowering extends Phase[Root, Root] {
     val lambdaExp = fvs.foldRight(freshExp) {
       case ((oldSym, tpe), acc) =>
         val freshSym = freshVars(oldSym)
-        val fparam = FormalParam(freshSym, Ast.Modifiers.Empty, tpe, loc)
+        val fparam = FormalParam(freshSym, Ast.Modifiers.Empty, tpe, None, loc)
         val lambdaType = Type.mkPureArrow(tpe, acc.tpe)
         Expression.Lambda(fparam, acc, lambdaType, loc)
     }
@@ -1478,9 +1478,9 @@ object Lowering extends Phase[Root, Root] {
     * Applies the given substitution `subst` to the given formal param `fparam0`.
     */
   private def substFormalParam(fparam0: FormalParam, subst: Map[Symbol.VarSym, Symbol.VarSym]): FormalParam = fparam0 match {
-    case FormalParam(sym, mod, tpe, loc) =>
+    case FormalParam(sym, mod, tpe, scSc, loc) =>
       val s = subst.getOrElse(sym, sym)
-      FormalParam(s, mod, tpe, loc)
+      FormalParam(s, mod, tpe, scSc, loc)
   }
 
 }
