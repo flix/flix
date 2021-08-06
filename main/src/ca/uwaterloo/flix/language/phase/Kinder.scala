@@ -70,16 +70,16 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     */
   private def visitEnum(enum: ResolvedAst.Enum, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Enum, CompilationError] = enum match {
     case ResolvedAst.Enum(doc, mod, sym, tparams0, cases0, tpeDeprecated0, sc0, loc) =>
-      val kinds = getKindsFromTypeParamsDefaultStar(tparams0)
+      val kenv = getKindEnvFromTypeParamsDefaultStar(tparams0)
 
-      val tparamsVal = Validation.traverse(tparams0.tparams)(ascribeTypeParam(_, kinds))
+      val tparamsVal = Validation.traverse(tparams0.tparams)(ascribeTypeParam(_, kenv))
       val casesVal = Validation.traverse(cases0) {
-        case (tag, case0) => mapN(ascribeCase(case0, kinds, root)) {
+        case (tag, case0) => mapN(ascribeCase(case0, kenv, root)) {
           caze => (tag, caze)
         }
       }
-      val tpeDeprecatedVal = ascribeType(tpeDeprecated0, KindMatch.subKindOf(Kind.Star), kinds, root)
-      val scVal = ascribeScheme(sc0, kinds, root)
+      val tpeDeprecatedVal = ascribeType(tpeDeprecated0, KindMatch.subKindOf(Kind.Star), kenv, root)
+      val scVal = ascribeScheme(sc0, kenv, root)
 
       mapN(tparamsVal, casesVal, tpeDeprecatedVal, scVal) {
         case (tparams, cases, tpeDeprecated, sc) => KindedAst.Enum(doc, mod, sym, tparams, cases.toMap, tpeDeprecated, sc, loc)
@@ -92,10 +92,10 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     */
   private def visitTypeAlias(alias: ResolvedAst.TypeAlias, root: ResolvedAst.Root)(implicit flix: Flix): Validation[Unit, KindError] = alias match {
     case ResolvedAst.TypeAlias(doc, mod, sym, tparams0, tpe0, loc) =>
-      val kinds = getKindsFromTypeParamsDefaultStar(tparams0)
+      val kenv = getKindEnvFromTypeParamsDefaultStar(tparams0)
 
-      val tparamsVal = Validation.traverse(tparams0.tparams)(ascribeTypeParam(_, kinds))
-      val tpeVal = ascribeType(tpe0, KindMatch.Wild, kinds, root)
+      val tparamsVal = Validation.traverse(tparams0.tparams)(ascribeTypeParam(_, kenv))
+      val tpeVal = ascribeType(tpe0, KindMatch.Wild, kenv, root)
 
       mapN(tparamsVal, tpeVal) {
         case (_, _) => ()
@@ -119,11 +119,11 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   /**
     * Performs kinding on the given enum case under the given kind environment.
     */
-  private def ascribeCase(caze0: ResolvedAst.Case, kinds: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Case, KindError] = caze0 match {
+  private def ascribeCase(caze0: ResolvedAst.Case, kenv: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Case, KindError] = caze0 match {
     case ResolvedAst.Case(enum, tag, tpeDeprecated0, sc0) =>
       for {
-        tpeDeprecated <- ascribeType(tpeDeprecated0, KindMatch.subKindOf(Kind.Star), kinds, root)
-        sc <- ascribeScheme(sc0, kinds, root)
+        tpeDeprecated <- ascribeType(tpeDeprecated0, KindMatch.subKindOf(Kind.Star), kenv, root)
+        sc <- ascribeScheme(sc0, kenv, root)
       } yield KindedAst.Case(enum, tag, tpeDeprecated, sc)
   }
 
@@ -180,14 +180,14 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         case KindMatch(_, Kind.Arrow(expK1, expK2)) =>
           val t1 = ascribeFreeTypeVar(t10, KindMatch.subKindOf(expK1))
           for {
-            newKinds <- kenv + (t10 -> t1.kind)
-            t2 <- ascribeType(t20, KindMatch.subKindOf(expK2), newKinds, root)
+            newKenv <- kenv + (t10 -> t1.kind)
+            t2 <- ascribeType(t20, KindMatch.subKindOf(expK2), newKenv, root)
           } yield Type.Lambda(t1, t2)
         case KindMatch(_, Kind.Wild) =>
           val t1 = ascribeFreeTypeVar(t10, KindMatch.Wild)
           for {
-            newKinds <- kenv + (t10 -> t1.kind)
-            t2 <- ascribeType(t20, KindMatch.Wild, newKinds, root)
+            newKenv <- kenv + (t10 -> t1.kind)
+            t2 <- ascribeType(t20, KindMatch.Wild, newKenv, root)
           } yield Type.Lambda(t1, t2)
         case _ =>
           KindError.UnexpectedKind(expectedKind = expectedKind.kind, actualKind = Kind.Wild ->: Kind.Wild,  loc = t10.loc).toFailure
@@ -203,22 +203,22 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   /**
     * Performs kinding on the given type under the given kind environment.
     */
-  private def ascribeScheme(sc: ResolvedAst.Scheme, kinds: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[Scheme, KindError] = sc match {
+  private def ascribeScheme(sc: ResolvedAst.Scheme, kenv: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[Scheme, KindError] = sc match {
     case ResolvedAst.Scheme(quantifiers0, constraints0, base0) =>
       for {
-        quantifiers <- Validation.traverse(quantifiers0)(ascribeTypeVar(_, KindMatch.Wild, kinds))
-        constraints <- Validation.traverse(constraints0)(ascribeTypeConstraint(_, kinds, root))
-        base <- ascribeType(base0, KindMatch.subKindOf(Kind.Star), kinds, root)
+        quantifiers <- Validation.traverse(quantifiers0)(ascribeTypeVar(_, KindMatch.Wild, kenv))
+        constraints <- Validation.traverse(constraints0)(ascribeTypeConstraint(_, kenv, root))
+        base <- ascribeType(base0, KindMatch.subKindOf(Kind.Star), kenv, root)
       } yield Scheme(quantifiers, constraints, base)
   }
 
   /**
     * Performs kinding on the given type constraint under the given kind environment.
     */
-  private def ascribeTypeConstraint(tconstr: ResolvedAst.TypeConstraint, kinds: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[Ast.TypeConstraint, KindError] = tconstr match {
+  private def ascribeTypeConstraint(tconstr: ResolvedAst.TypeConstraint, kenv: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[Ast.TypeConstraint, KindError] = tconstr match {
     case ResolvedAst.TypeConstraint(clazz, tpe0, loc) =>
       val classKind = getClassKind(root.classes(clazz))
-      mapN(ascribeType(tpe0, KindMatch.subKindOf(classKind), kinds, root)) {
+      mapN(ascribeType(tpe0, KindMatch.subKindOf(classKind), kenv, root)) {
         tpe => Ast.TypeConstraint(clazz, tpe, loc)
       }
   }
@@ -228,14 +228,14 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     */
   private def visitClass(clazz: ResolvedAst.Class, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Class, KindError] = clazz match {
     case ResolvedAst.Class(doc, mod, sym, tparam0, superClasses0, sigs0, laws0, loc) =>
-      val kinds = getKindsFromTypeParamDefaultStar(tparam0)
+      val kenv = getKindEnvFromTypeParamDefaultStar(tparam0)
 
-      val tparamVal = ascribeTypeParam(tparam0, kinds)
-      val superClassesVal = Validation.traverse(superClasses0)(ascribeTypeConstraint(_, kinds, root))
+      val tparamVal = ascribeTypeParam(tparam0, kenv)
+      val superClassesVal = Validation.traverse(superClasses0)(ascribeTypeConstraint(_, kenv, root))
       val sigsVal = Validation.traverse(sigs0) {
-        case (sigSym, sig0) => visitSig(sig0, kinds, root).map(sig => sigSym -> sig)
+        case (sigSym, sig0) => visitSig(sig0, kenv, root).map(sig => sigSym -> sig)
       }
-      val lawsVal = traverse(laws0)(visitDef(_, kinds, root))
+      val lawsVal = traverse(laws0)(visitDef(_, kenv, root))
 
       mapN(tparamVal, superClassesVal, sigsVal, lawsVal) {
         case (tparam, superClasses, sigs, laws) => KindedAst.Class(doc, mod, sym, tparam, superClasses, sigs.toMap, laws, loc)
@@ -249,10 +249,10 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     case ResolvedAst.Instance(doc, mod, sym, tpe0, tconstrs0, defs0, ns, loc) =>
       val kind = getClassKind(root.classes(sym))
       for {
-        kinds <- inferType(tpe0, KindMatch.subKindOf(kind), root)
-        tpeVal = ascribeType(tpe0, KindMatch.subKindOf(kind), kinds, root)
-        tconstrsVal = Validation.traverse(tconstrs0)(ascribeTypeConstraint(_, kinds, root))
-        defsVal = Validation.traverse(defs0)(visitDef(_, kinds, root))
+        kenv <- inferType(tpe0, KindMatch.subKindOf(kind), root)
+        tpeVal = ascribeType(tpe0, KindMatch.subKindOf(kind), kenv, root)
+        tconstrsVal = Validation.traverse(tconstrs0)(ascribeTypeConstraint(_, kenv, root))
+        defsVal = Validation.traverse(defs0)(visitDef(_, kenv, root))
         result <- Validation.sequenceT(tpeVal, tconstrsVal, defsVal)
         (tpe, tconstrs, defs) = result
       } yield KindedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, ns, loc)
@@ -263,7 +263,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     */
   private def getEnumKind(enum: ResolvedAst.Enum)(implicit flix: Flix): Kind = enum match {
     case ResolvedAst.Enum(_, _, _, tparams, _, _, _, _) =>
-      val kenv = getKindsFromTypeParamsDefaultStar(tparams)
+      val kenv = getKindEnvFromTypeParamsDefaultStar(tparams)
       tparams.tparams.foldRight(Kind.Star: Kind) {
         case (tparam, acc) => kenv.map(tparam.tpe) ->: acc
       }
@@ -324,13 +324,13 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   /**
     * Performs kinding on the given def under the given kind environment.
     */
-  private def visitDef(def0: ResolvedAst.Def, kinds0: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Def, KindError] = def0 match {
+  private def visitDef(def0: ResolvedAst.Def, kenv0: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Def, KindError] = def0 match {
     case ResolvedAst.Def(sym, spec0, exp0) =>
       for {
-        specKinds <- getKindsFromSpec(spec0, root)
-        kinds <- kinds0 ++ specKinds
-        spec <- ascribeSpec(spec0, kinds, root)
-        exp <- ascribeExpression(exp0, kinds, root)
+        specKenv <- getKindEnvFromSpec(spec0, root)
+        kenv <- kenv0 ++ specKenv
+        spec <- ascribeSpec(spec0, kenv, root)
+        exp <- ascribeExpression(exp0, kenv, root)
       } yield KindedAst.Def(sym, spec, exp)
   }
 
@@ -340,10 +340,10 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   private def visitSig(sig0: ResolvedAst.Sig, kenv0: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Sig, KindError] = sig0 match {
     case ResolvedAst.Sig(sym, spec0, exp0) =>
       for {
-        specKinds <- getKindsFromSpec(spec0, root)
-        kinds <- kenv0 ++ specKinds
-        spec <- ascribeSpec(spec0, kinds, root)
-        exp <- Validation.traverse(exp0)(ascribeExpression(_, kinds, root))
+        specKenv <- getKindEnvFromSpec(spec0, root)
+        kenv <- kenv0 ++ specKenv
+        spec <- ascribeSpec(spec0, kenv, root)
+        exp <- Validation.traverse(exp0)(ascribeExpression(_, kenv, root))
       } yield KindedAst.Sig(sym, spec, exp.headOption)
   }
 
@@ -368,9 +368,9 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   /**
     * Performs kinding on the given formal param under the given kind environment.
     */
-  private def ascribeFormalParam(fparam0: ResolvedAst.FormalParam, kinds: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.FormalParam, KindError] = fparam0 match {
+  private def ascribeFormalParam(fparam0: ResolvedAst.FormalParam, kenv: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.FormalParam, KindError] = fparam0 match {
     case ResolvedAst.FormalParam(sym, mod, tpe0, loc) =>
-      mapN(ascribeType(tpe0, KindMatch.subKindOf(Kind.Star), kinds, root)) {
+      mapN(ascribeType(tpe0, KindMatch.subKindOf(Kind.Star), kenv, root)) {
         tpe => KindedAst.FormalParam(sym, mod, tpe, loc)
       }
   }
@@ -378,9 +378,9 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   /**
     * Performs kinding on the given annotation under the given kind environment.
     */
-  private def ascribeAnnotation(ann: ResolvedAst.Annotation, kinds: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Annotation, KindError] = ann match {
+  private def ascribeAnnotation(ann: ResolvedAst.Annotation, kenv: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Annotation, KindError] = ann match {
     case ResolvedAst.Annotation(name, exps0, loc) =>
-      mapN(Validation.traverse(exps0)(ascribeExpression(_, kinds, root))) {
+      mapN(Validation.traverse(exps0)(ascribeExpression(_, kenv, root))) {
         exps => KindedAst.Annotation(name, exps, loc)
       }
   }
@@ -584,8 +584,8 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     case ResolvedAst.Expression.Existential(fparam0, exp0, loc) =>
       // add the formal param kinds to the environment
       for {
-        fparamKinds <- inferFormalParam(fparam0, root)
-        kenv1 <- kenv ++ fparamKinds
+        fparamKenv <- inferFormalParam(fparam0, root)
+        kenv1 <- kenv ++ fparamKenv
         fparam <- ascribeFormalParam(fparam0, kenv1, root)
         exp <- ascribeExpression(exp0, kenv1, root)
       } yield KindedAst.Expression.Existential(fparam, exp, loc)
@@ -593,8 +593,8 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     case ResolvedAst.Expression.Universal(fparam0, exp0, loc) =>
       // add the formal param kinds to the environment
       for {
-        fparamKinds <- inferFormalParam(fparam0, root)
-        kenv1 <- kenv ++ fparamKinds
+        fparamKenv <- inferFormalParam(fparam0, root)
+        kenv1 <- kenv ++ fparamKenv
         fparam <- ascribeFormalParam(fparam0, kenv1, root)
         exp <- ascribeExpression(exp0, kenv1, root)
       } yield KindedAst.Expression.Universal(fparam, exp, loc)
@@ -735,44 +735,44 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   /**
     * Performs kinding on the given match rule under the given kind environment.
     */
-  private def ascribeMatchRule(rule0: ResolvedAst.MatchRule, kinds: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.MatchRule, KindError] = rule0 match {
+  private def ascribeMatchRule(rule0: ResolvedAst.MatchRule, kenv: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.MatchRule, KindError] = rule0 match {
     case ResolvedAst.MatchRule(pat0, guard0, exp0) =>
       for {
-        pat <- ascribePattern(pat0, kinds, root)
-        guard <- ascribeExpression(guard0, kinds, root)
-        exp <- ascribeExpression(exp0, kinds, root)
+        pat <- ascribePattern(pat0, kenv, root)
+        guard <- ascribeExpression(guard0, kenv, root)
+        exp <- ascribeExpression(exp0, kenv, root)
       } yield KindedAst.MatchRule(pat, guard, exp)
   }
 
   /**
     * Performs kinding on the given choice rule under the given kind environment.
     */
-  private def ascribeChoiceRule(rule0: ResolvedAst.ChoiceRule, kinds: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.ChoiceRule, KindError] = rule0 match {
+  private def ascribeChoiceRule(rule0: ResolvedAst.ChoiceRule, kenv: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.ChoiceRule, KindError] = rule0 match {
     case ResolvedAst.ChoiceRule(pat0, exp0) =>
       for {
-        pat <- Validation.traverse(pat0)(ascribeChoicePattern(_, kinds, root))
-        exp <- ascribeExpression(exp0, kinds, root)
+        pat <- Validation.traverse(pat0)(ascribeChoicePattern(_, kenv, root))
+        exp <- ascribeExpression(exp0, kenv, root)
       } yield KindedAst.ChoiceRule(pat, exp)
   }
 
   /**
     * Performs kinding on the given catch rule under the given kind environment.
     */
-  private def ascribeCatchRule(rule0: ResolvedAst.CatchRule, kinds: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.CatchRule, KindError] = rule0 match {
+  private def ascribeCatchRule(rule0: ResolvedAst.CatchRule, kenv: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.CatchRule, KindError] = rule0 match {
     case ResolvedAst.CatchRule(sym, clazz, exp0) =>
       for {
-        exp <- ascribeExpression(exp0, kinds, root)
+        exp <- ascribeExpression(exp0, kenv, root)
       } yield KindedAst.CatchRule(sym, clazz, exp)
   }
 
   /**
     * Performs kinding on the given select channel rule under the given kind environment.
     */
-  private def ascribeSelectChannelRule(rule0: ResolvedAst.SelectChannelRule, kinds: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.SelectChannelRule, KindError] = rule0 match {
+  private def ascribeSelectChannelRule(rule0: ResolvedAst.SelectChannelRule, kenv: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.SelectChannelRule, KindError] = rule0 match {
     case ResolvedAst.SelectChannelRule(sym, chan0, exp0) =>
       for {
-        chan <- ascribeExpression(chan0, kinds, root)
-        exp <- ascribeExpression(exp0, kinds, root)
+        chan <- ascribeExpression(chan0, kenv, root)
+        exp <- ascribeExpression(exp0, kenv, root)
       } yield KindedAst.SelectChannelRule(sym, chan, exp)
   }
 
@@ -820,7 +820,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   /**
     * Performs kinding on the given choice pattern under the given kind environment.
     */
-  private def ascribeChoicePattern(pat0: ResolvedAst.ChoicePattern, kinds: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.ChoicePattern, KindError] = pat0 match {
+  private def ascribeChoicePattern(pat0: ResolvedAst.ChoicePattern, kenv: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.ChoicePattern, KindError] = pat0 match {
     case ResolvedAst.ChoicePattern.Wild(loc) => KindedAst.ChoicePattern.Wild(loc).toSuccess
     case ResolvedAst.ChoicePattern.Absent(loc) => KindedAst.ChoicePattern.Absent(loc).toSuccess
     case ResolvedAst.ChoicePattern.Present(sym, loc) => KindedAst.ChoicePattern.Present(sym, Type.freshVar(Kind.Star), loc).toSuccess
@@ -968,17 +968,17 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   /**
     * Gets a kind environment from the type params, defaulting to Star kind if they are unkinded.
     */
-  private def getKindsFromTypeParamsDefaultStar(tparams0: ResolvedAst.TypeParams)(implicit flix: Flix): KindEnv = tparams0 match {
+  private def getKindEnvFromTypeParamsDefaultStar(tparams0: ResolvedAst.TypeParams)(implicit flix: Flix): KindEnv = tparams0 match {
     case tparams: ResolvedAst.TypeParams.Kinded =>
-      getKindsFromKindedTypeParams(tparams)
+      getKindEnvFromKindedTypeParams(tparams)
     case tparams: ResolvedAst.TypeParams.Unkinded =>
-      getStarKindsForTypeParams(tparams)
+      getStarKindEnvForTypeParams(tparams)
   }
 
   /**
     * Gets a kind environment from the type param, defaulting to Star kind if it is unkinded.
     */
-  private def getKindsFromTypeParamDefaultStar(tparam0: ResolvedAst.TypeParam)(implicit flix: Flix): KindEnv = tparam0 match {
+  private def getKindEnvFromTypeParamDefaultStar(tparam0: ResolvedAst.TypeParam)(implicit flix: Flix): KindEnv = tparam0 match {
     case ResolvedAst.TypeParam.Kinded(_, tvar, kind, _) => KindEnv.singleton(tvar -> kind)
     case ResolvedAst.TypeParam.Unkinded(_, tvar, _) => KindEnv.singleton(tvar -> Kind.Star)
   }
@@ -986,10 +986,10 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   /**
     * Gets a kind environment from the spec.
     */
-  private def getKindsFromSpec(spec0: ResolvedAst.Spec, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = spec0 match {
+  private def getKindEnvFromSpec(spec0: ResolvedAst.Spec, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = spec0 match {
     case ResolvedAst.Spec(_, _, _, tparams0, _, _, _, _, _) =>
       tparams0 match {
-        case tparams: ResolvedAst.TypeParams.Kinded => getKindsFromKindedTypeParams(tparams).toSuccess
+        case tparams: ResolvedAst.TypeParams.Kinded => getKindEnvFromKindedTypeParams(tparams).toSuccess
         case _: ResolvedAst.TypeParams.Unkinded => inferSpec(spec0, root)
       }
   }
@@ -997,7 +997,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   /**
     * Gets a kind environment from the kinded type params.
     */
-  private def getKindsFromKindedTypeParams(tparams0: ResolvedAst.TypeParams.Kinded)(implicit flix: Flix): KindEnv = tparams0 match {
+  private def getKindEnvFromKindedTypeParams(tparams0: ResolvedAst.TypeParams.Kinded)(implicit flix: Flix): KindEnv = tparams0 match {
     case ResolvedAst.TypeParams.Kinded(tparams) =>
       // no chance of collision
       val map = tparams.foldLeft(Map.empty[UnkindedType.Var, Kind]) {
@@ -1010,7 +1010,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   /**
     * Gets a kind environment from the unkinded type params, defaulting each to Star kind.
     */
-  private def getStarKindsForTypeParams(tparams0: ResolvedAst.TypeParams.Unkinded)(implicit flix: Flix): KindEnv = tparams0 match {
+  private def getStarKindEnvForTypeParams(tparams0: ResolvedAst.TypeParams.Unkinded)(implicit flix: Flix): KindEnv = tparams0 match {
     case ResolvedAst.TypeParams.Unkinded(tparams) =>
       // no chance of collision
       val map = tparams.foldLeft(Map.empty[UnkindedType.Var, Kind]) {
