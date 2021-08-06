@@ -194,7 +194,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Performs weeding on the given law declaration `d0`.
     */
   private def visitLaw(d0: ParsedAst.Declaration.Law)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Def], WeederError] = d0 match {
-    case ParsedAst.Declaration.Law(doc0, ann0, mod0, sp1, ident, tparams0, fparams0, exp0, sp2) =>
+    case ParsedAst.Declaration.Law(doc0, ann0, mod0, sp1, ident, tparams0, fparams0, tconstrs0, exp0, sp2) =>
       val loc = mkSL(ident.sp1, ident.sp2)
       val doc = visitDoc(doc0)
       val annVal = visitAnnotations(ann0)
@@ -202,13 +202,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val expVal = visitExp(exp0)
       val tparamsVal = visitKindedTypeParams(tparams0)
       val formalsVal = visitFormalParams(fparams0, typeRequired = true)
+      val tconstrsVal = Validation.traverse(tconstrs0)(visitTypeConstraint)
 
-      mapN(annVal, modVal, tparamsVal, formalsVal, expVal) {
-        case (ann, mod, tparams, fs, exp) =>
+      mapN(annVal, modVal, tparamsVal, formalsVal, expVal, tconstrsVal) {
+        case (ann, mod, tparams, fs, exp, tconstrs) =>
           val ts = fs.map(_.tpe.get)
           val retTpe = WeededAst.Type.Ambiguous(Name.mkQName("Bool"), loc)
           val tpe = WeededAst.Type.Arrow(ts, WeededAst.Type.True(loc), retTpe, loc)
-          List(WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fs, exp, tpe, retTpe, WeededAst.Type.True(loc), Nil, loc))
+          List(WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fs, exp, tpe, retTpe, WeededAst.Type.True(loc), tconstrs, loc))
       }
   }
 

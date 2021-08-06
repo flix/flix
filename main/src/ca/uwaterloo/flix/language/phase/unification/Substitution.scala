@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.{Ast, Scheme, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Scheme, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
@@ -104,6 +104,11 @@ case class Substitution(m: Map[Type.Var, Type]) {
       }
       Scheme(quantifiers, constraints.map(apply), apply(base))
   }
+
+  /**
+    * Removes the binding for the given type variable `tvar` (if it exists).
+    */
+  def unbind(tvar: Type.Var): Substitution = Substitution(m - tvar)
 
   /**
     * Returns the left-biased composition of `this` substitution with `that` substitution.
