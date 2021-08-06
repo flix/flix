@@ -1497,7 +1497,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
       // Construct the formal parameter.
       mapN(tpeVal) {
-        case tpe => NamedAst.FormalParam(freshSym, mod, tpe, loc)
+        case tpe => NamedAst.FormalParam(freshSym, mod, tpe, scSc, loc)
       }
   }
 
@@ -1706,7 +1706,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def getVarEnv(fparams0: List[NamedAst.FormalParam]): Map[String, Symbol.VarSym] = {
     fparams0.foldLeft(Map.empty[String, Symbol.VarSym]) {
-      case (macc, NamedAst.FormalParam(sym, mod, tpe, loc)) =>
+      case (macc, NamedAst.FormalParam(sym, mod, tpe, _, loc)) =>
         if (sym.isWild()) macc else macc + (sym.text -> sym)
     }
   }

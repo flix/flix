@@ -309,7 +309,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         val varSyms = (0 until arity).map(i => Symbol.freshVarSym("$" + i, loc)).toList
 
         // Introduce a formal parameter for each variable symbol.
-        varSyms.map(sym => ResolvedAst.FormalParam(sym, Ast.Modifiers.Empty, sym.tvar, loc))
+        varSyms.map(sym => ResolvedAst.FormalParam(sym, Ast.Modifiers.Empty, sym.tvar, None, loc))
       }
 
       /**
@@ -586,7 +586,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
                   val freshVar = Symbol.freshVarSym("x", loc)
 
                   // Construct the formal parameter for the fresh symbol.
-                  val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, Type.freshVar(Kind.Star), loc)
+                  val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, Type.freshVar(Kind.Star), None, loc)
 
                   // Construct a variable expression for the fresh symbol.
                   val varExp = ResolvedAst.Expression.Var(freshVar, freshVar.tvar, loc)
@@ -1020,7 +1020,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       for {
         t <- lookupType(fparam0.tpe, ns0, root)
         _ <- checkProperType(t, fparam0.loc)
-      } yield ResolvedAst.FormalParam(fparam0.sym, fparam0.mod, t, fparam0.loc)
+      } yield ResolvedAst.FormalParam(fparam0.sym, fparam0.mod, t, fparam0.scSc, fparam0.loc)
     }
 
     /**

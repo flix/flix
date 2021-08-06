@@ -424,7 +424,7 @@ object TypedAst {
 
   }
 
-  case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, loc: SourceLocation)
+  case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, scSc: Option[ScopeScheme], loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: TypedAst.Expression)
 

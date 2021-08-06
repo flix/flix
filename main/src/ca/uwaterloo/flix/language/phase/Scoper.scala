@@ -51,16 +51,19 @@ object Scoper extends Phase[Root, Root] {
   }
 
   private def checkSig(sig: Sig, root: Root): Validation[Unit, ScopeError] = sig match {
-    case Sig(_, _, Some(impl)) => checkImpl(impl, root)
+    case Sig(_, spec, Some(impl)) => checkImpl(spec, impl, root)
     case Sig(_, _, None) => ().toSuccess
   }
 
   private def checkDef(defn: Def, root: Root): Validation[Unit, ScopeError] = defn match {
-    case Def(sym, spec, impl) => checkImpl(impl, root: Root)
+    case Def(sym, spec, impl) => checkImpl(spec, impl, root)
   }
 
-  private def checkImpl(impl: Impl, root: Root): Validation[Unit, ScopeError] = impl match {
-    case Impl(exp, inferredScheme) => checkExp(exp, Map.empty, root).map(_ => ()) // MATT add fparams here (their ScopeScheme should be annotated)
+  private def checkImpl(spec: Spec, impl: Impl, root: Root): Validation[Unit, ScopeError] = {
+    val senv = spec.fparams.map {
+      case FormalParam(sym, mod, tpe, scSc, loc) => sym -> (sym.scopedness, scSc.get)
+    }.toMap
+    checkExp(impl.exp, senv, root).map(_ => ())
   }
 
   private def checkExp(exp0: Expression, senv: Map[Symbol.VarSym, (Scopedness, ScopeScheme)], root: Root): Validation[(Scopedness, ScopeScheme, Set[Symbol.VarSym]), ScopeError] = exp0 match {
