@@ -95,7 +95,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       val kinds = getKindsFromTparamsDefaultStar(tparams0)
 
       val tparamsVal = Validation.traverse(tparams0.tparams)(ascribeTparam(_, kinds))
-      val tpeVal = ascribeType(tpe0, KindMatch.wild, kinds, root)
+      val tpeVal = ascribeType(tpe0, KindMatch.Wild, kinds, root)
 
       mapN(tparamsVal, tpeVal) {
         case (_, _) => ()
@@ -107,11 +107,11 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     */
   private def ascribeTparam(tparam: ResolvedAst.TypeParam, kenv: KindEnv): Validation[KindedAst.TypeParam, KindError] = tparam match {
     case ResolvedAst.TypeParam.Kinded(name, tpe0, _, loc) =>
-      mapN(ascribeTypeVar(tpe0, KindMatch.wild, kenv)) {
+      mapN(ascribeTypeVar(tpe0, KindMatch.Wild, kenv)) {
         tpe => KindedAst.TypeParam(name, tpe, loc)
       }
     case ResolvedAst.TypeParam.Unkinded(name, tpe0, loc) =>
-      mapN(ascribeTypeVar(tpe0, KindMatch.wild, kenv)) {
+      mapN(ascribeTypeVar(tpe0, KindMatch.Wild, kenv)) {
         tpe => KindedAst.TypeParam(name, tpe, loc)
       }
   }
@@ -171,7 +171,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       }
     case UnkindedType.Apply(t10, t20) =>
       for {
-        t2 <- ascribeType(t20, KindMatch.wild, kenv, root)
+        t2 <- ascribeType(t20, KindMatch.Wild, kenv, root)
         k1 = KindMatch.subKindOf(Kind.Arrow(t2.kind, expectedKind.kind))
         t1 <- ascribeType(t10, k1, kenv, root)
       } yield Type.Apply(t1, t2)
@@ -184,10 +184,10 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
             t2 <- ascribeType(t20, KindMatch.subKindOf(expK2), newKinds, root)
           } yield Type.Lambda(t1, t2)
         case KindMatch(_, Kind.Wild) =>
-          val t1 = ascribeFreeTypeVar(t10, KindMatch.wild)
+          val t1 = ascribeFreeTypeVar(t10, KindMatch.Wild)
           for {
             newKinds <- kenv + (t10 -> t1.kind)
-            t2 <- ascribeType(t20, KindMatch.wild, newKinds, root)
+            t2 <- ascribeType(t20, KindMatch.Wild, newKinds, root)
           } yield Type.Lambda(t1, t2)
         case _ =>
           KindError.UnexpectedKind(expectedKind = expectedKind.kind, actualKind = Kind.Wild ->: Kind.Wild,  loc = t10.loc).toFailure
@@ -206,7 +206,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   private def ascribeScheme(sc: ResolvedAst.Scheme, kinds: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[Scheme, KindError] = sc match {
     case ResolvedAst.Scheme(quantifiers0, constraints0, base0) =>
       for {
-        quantifiers <- Validation.traverse(quantifiers0)(ascribeTypeVar(_, KindMatch.wild, kinds))
+        quantifiers <- Validation.traverse(quantifiers0)(ascribeTypeVar(_, KindMatch.Wild, kinds))
         constraints <- Validation.traverse(constraints0)(ascribeTypeConstraint(_, kinds, root))
         base <- ascribeType(base0, KindMatch.subKindOf(Kind.Star), kinds, root)
       } yield Scheme(quantifiers, constraints, base)
@@ -1008,7 +1008,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       * A KindMatch that matches every kind.
       */
     // association doesn't matter
-    val wild: KindMatch = KindMatch(Association.SubKind, Kind.Wild)
+    val Wild: KindMatch = KindMatch(Association.SubKind, Kind.Wild)
 
     def subKindOf(kind: Kind): KindMatch = KindMatch(Association.SubKind, kind)
 
