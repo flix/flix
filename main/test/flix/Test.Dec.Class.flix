@@ -198,6 +198,16 @@ namespace Test/Dec/Class {
         pub def f(x: a, y: b): Bool with C[a], D[b] = ???
     }
 
+    namespace Test16 {
+      lawless class D[a] {
+        pub def f(x: a, y: a): Bool
+      }
+
+      class C[a] {
+        law l: forall (x: a, y: a) with D[a] . Test/Dec/Class/Test16/D.f(x, y)
+      }
+    }
+
     pub enum List[a] {
         case Nil
         case Cons(a, List[a])

@@ -1,6 +1,6 @@
 package flix
 
-import ca.uwaterloo.flix.util.{Ignore, FlixTest, Options}
+import ca.uwaterloo.flix.util.{FlixTest, Options}
 import org.scalatest.Suites
 
 class LangSuite extends Suites(
@@ -24,6 +24,7 @@ class LangSuite extends Suites(
   // Definitions.
   //
   new FlixTest("Test.Def.KindInference", "main/test/flix/Test.Def.KindInference.flix"),
+  new FlixTest("Test.Def.Scoped", "main/test/flix/Test.Def.Scoped.flix"),
 
   //
   // Effects.
@@ -181,6 +182,9 @@ class LangSuite extends Suites(
   //
   new FlixTest("Test.Exp.Jvm.GetField", "main/test/flix/Test.Exp.Jvm.GetField.flix"),
   new FlixTest("Test.Exp.Jvm.GetStaticField", "main/test/flix/Test.Exp.Jvm.GetStaticField.flix")(Options.TestWithLibAll),
+  new FlixTest("Test.Exp.Jvm.GetFieldStaticInnerClass", "main/test/flix/Test.Exp.Jvm.GetFieldStaticInnerClass.flix"),
+  new FlixTest("Test.Exp.Jvm.GetStaticFieldStaticInnerClass", "main/test/flix/Test.Exp.Jvm.GetStaticFieldStaticInnerClass.flix"),
+  new FlixTest("Test.Exp.Jvm.GetFieldDoubleNestedClass", "main/test/flix/Test.Exp.Jvm.GetFieldDoubleNestedClass.flix"),
   new FlixTest("Test.Exp.Jvm.InvokeConstructor", "main/test/flix/Test.Exp.Jvm.InvokeConstructor.flix"),
   new FlixTest("Test.Exp.Jvm.InvokeMethod", "main/test/flix/Test.Exp.Jvm.InvokeMethod.flix"),
   new FlixTest("Test.Exp.Jvm.InvokeStaticMethod", "main/test/flix/Test.Exp.Jvm.InvokeStaticMethod.flix"),

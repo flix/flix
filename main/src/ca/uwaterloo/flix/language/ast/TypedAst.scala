@@ -42,13 +42,13 @@ object TypedAst {
 
   case class Def(sym: Symbol.DefnSym, spec: TypedAst.Spec, impl: TypedAst.Impl)
 
-  case class Spec(doc: Ast.Doc, ann: List[TypedAst.Annotation], mod: Ast.Modifiers, tparams: List[TypedAst.TypeParam], fparams: List[TypedAst.FormalParam], declaredScheme: Scheme, eff: Type, loc: SourceLocation)
+  case class Spec(doc: Ast.Doc, ann: List[TypedAst.Annotation], mod: Ast.Modifiers, tparams: List[TypedAst.TypeParam], fparams: List[TypedAst.FormalParam], declaredScheme: Scheme, retTpe: Type, eff: Type, loc: SourceLocation)
 
   case class Impl(exp: TypedAst.Expression, inferredScheme: Scheme)
 
   case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[TypedAst.TypeParam], cases: Map[Name.Tag, TypedAst.Case], tpeDeprecated: Type, sc: Scheme, loc: SourceLocation)
 
-  sealed trait Expression {
+  sealed trait Expression extends Product {
     def tpe: Type
 
     def eff: Type
@@ -168,7 +168,7 @@ object TypedAst {
 
     case class Binary(sop: SemanticOperator, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class Let(sym: Symbol.VarSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class Let(sym: Symbol.VarSym, mod: Ast.Modifiers, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class LetRegion(sym: Symbol.VarSym, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 

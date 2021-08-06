@@ -329,57 +329,6 @@ namespace TestIterator {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // dropWhile                                                               //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def dropWhile01(): Bool & Impure =
-        let list: List[Int32] = Nil;
-        list |> Iterator.toIter |> Iterator.dropWhile(_ -> true)  |> Iterator.toList ==  list and
-        list |> Iterator.toIter |> Iterator.dropWhile(_ -> false) |> Iterator.toList ==  list
-
-    @test
-    def dropWhile02(): Bool & Impure =
-        let iter = () -> Iterator.range(0, 1000);
-        iter() |> Iterator.dropWhile(_ -> false) |> Iterator.toList == List.range(0, 1000)
-
-    @test
-    def dropWhile03(): Bool & Impure =
-        let iter = () -> Iterator.range(0, 1000);
-        iter() |> Iterator.dropWhile(_ -> true) |> Iterator.isEmpty
-
-    @test
-    def dropWhile04(): Bool & Impure =
-        let iter = () -> Iterator.range(0, 1000);
-        iter() |> Iterator.dropWhile(x -> x < 500) |> Iterator.toList == List.range(500, 1000)
-
-    @test
-    def dropWhile05(): Bool & Impure =
-        let iter = () -> Iterator.repeat(2, 1000);
-        iter() |> Iterator.dropWhile(x -> x < 3) |> Iterator.isEmpty
-
-    @test
-    def dropWhile06(): Bool & Impure =
-        let iter = () -> ("a" :: "a" :: "b" :: "b" :: "c" :: "c" :: Nil) |> Iterator.toIter;
-        iter() |> Iterator.dropWhile(x -> x == "a") |> Iterator.toList == ("b" :: "b" :: "c" :: "c" :: Nil)
-
-    @test
-    def dropWhile07(): Bool & Impure =
-        let iter = () -> ("a" :: "a" :: "b" :: "b" :: "c" :: "c" :: Nil) |> Iterator.toIter;
-        iter() |> Iterator.dropWhile(x -> x == "b") |> Iterator.toList == iter() |> Iterator.toList
-
-    @test
-    def dropWhile08(): Bool & Impure =
-        let iter = () -> ("a" :: "a" :: "b" :: "b" :: "c" :: "c" :: Nil) |> Iterator.toIter;
-        iter() |> Iterator.dropWhile(x -> x == "a" or x == "c") |> Iterator.toList == ("b" :: "b" :: "c" :: "c" :: Nil)
-
-    @test
-    def dropWhile09(): Bool & Impure =
-        let iter = () -> ("a" :: "a" :: "b" :: "b" :: "c" :: "c" :: Nil) |> Iterator.toIter;
-        iter() |> Iterator.dropWhile(x -> x == "a" or x == "b") |> Iterator.toList == List.repeat("c", 2)
-
-
-    /////////////////////////////////////////////////////////////////////////////
     // foreach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -473,6 +422,125 @@ namespace TestIterator {
         let listOdd = List.range(0, 500) |> List.filter(x -> x % 2 != 0);
         Iterator.zip(iter, iter) |> Iterator.toList == List.zip(listEven, listOdd) and
         iter |> Iterator.isEmpty
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // zipWith (pure)                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def zipWithPure01(): Bool & Impure =
+        let iterA = Iterator.repeat(0, 0);
+        let iterB = Iterator.repeat(0, 0);
+        Iterator.zipWith((x, y) -> x + y, iterA, iterB) |> Iterator.toList == List.repeat(0, 0)
+
+    @test
+    def zipWithPure02(): Bool & Impure =
+        let iterA = Iterator.repeat(1, 1000);
+        let iterB = Iterator.repeat(0, 0);
+        Iterator.zipWith((x, y) -> x + y, iterA, iterB) |> Iterator.toList == List.repeat(0, 0)
+
+    @test
+    def zipWithPure03(): Bool & Impure =
+        let iterA = Iterator.repeat(0, 0);
+        let iterB = Iterator.repeat(1, 1000);
+        Iterator.zipWith((x, y) -> x + y, iterA, iterB) |> Iterator.toList == List.repeat(0, 0)
+
+    @test
+    def zipWithPure04(): Bool & Impure =
+        let iterA = Iterator.range(0, 1000);
+        let iterB = Iterator.range(0, 1000);
+        Iterator.zipWith((x, y) -> x + y, iterA, iterB) |> Iterator.toList == List.range(0, 1000) |> List.map(x -> 2 * x)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // zipWith (impure)                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def zipWithImpure01(): Bool & Impure =
+        let iterA = Iterator.repeat(0, 0);
+        let iterB = Iterator.repeat(0, 0);
+        Iterator.zipWith((x, y) -> x + y as & Impure, iterA, iterB) |> Iterator.toList == List.repeat(0, 0)
+
+    @test
+    def zipWithImpure02(): Bool & Impure =
+        let iterA = Iterator.repeat(1, 1000);
+        let iterB = Iterator.repeat(0, 0);
+        Iterator.zipWith((x, y) -> x + y as & Impure, iterA, iterB) |> Iterator.toList == List.repeat(0, 0)
+
+    @test
+    def zipWithImpure03(): Bool & Impure =
+        let iterA = Iterator.repeat(0, 0);
+        let iterB = Iterator.repeat(1, 1000);
+        Iterator.zipWith((x, y) -> x + y as & Impure, iterA, iterB) |> Iterator.toList == List.repeat(0, 0)
+
+    @test
+    def zipWithImpure04(): Bool & Impure =
+        let iterA = Iterator.range(0, 1000);
+        let iterB = Iterator.range(0, 1000);
+        Iterator.zipWith((x, y) -> x + y as & Impure, iterA, iterB) |> Iterator.toList == List.range(0, 1000) |> List.map(x -> 2 * x)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldLeft                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldLeft01(): Bool & Impure =
+        Nil: List[Int32] |> Iterator.toIter |> Iterator.foldLeft((acc, n) -> n :: acc, Nil: List[Int32]) == Nil: List[Int32]
+
+    @test
+    def foldLeft02(): Bool & Impure =
+        Iterator.range(0, 1000) |> Iterator.foldLeft((acc, n) -> n :: acc, Nil: List[Int32]) ==
+            List.range(0, 1000) |> List.reverse
+
+    @test
+    def foldLeft03(): Bool & Impure =
+        let iter = Iterator.range(0, 1000);
+        iter |> Iterator.foldLeft((_, _) -> true, true);
+        iter |> Iterator.isEmpty
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldRight                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldRight01(): Bool & Impure =
+        Nil: List[Int32] |> Iterator.toIter |> Iterator.foldRight((n, acc) -> n :: acc, Nil: List[Int32]) == Nil: List[Int32]
+
+    @test
+    def foldRight02(): Bool & Impure =
+        Iterator.range(0, 1000) |> Iterator.foldRight((n, acc) -> n :: acc, Nil: List[Int32]) ==
+            List.range(0, 1000)
+
+    @test
+    def foldRight03(): Bool & Impure =
+        let iter = Iterator.range(0, 1000);
+        iter |> Iterator.foldRight((_, _) -> true, true);
+        iter |> Iterator.isEmpty
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // findRight                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def findRight01(): Bool & Impure =
+        Iterator.repeat(0, 0) |> Iterator.findRight(_ -> true) == None
+
+    @test
+    def findRight02(): Bool & Impure =
+        Iterator.range(0, 1000) |> Iterator.findRight(_ -> true) == Some(999)
+
+    @test
+    def findRight03(): Bool & Impure =
+        Iterator.range(0, 1000) |> Iterator.findRight(x -> x == 500) == Some(500)
+
+    @test
+    def findRight04(): Bool & Impure =
+        Iterator.range(0, 1000) |> Iterator.findRight(x -> x == -1) == None
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -653,7 +721,7 @@ namespace TestIterator {
         Iterator.map(x -> {l := "a" :: deref l; x} as & Pure) |>
         Iterator.map(x -> {l := "b" :: deref l; x} as & Pure) |>
         Iterator.toList;
-        List.reverse(deref l) == ( "a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
+        List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // filter (pure)                                                           //

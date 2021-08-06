@@ -71,9 +71,4 @@ class CompilationResult(root: Root, main: Option[Array[String] => Int], defs: Ma
     case (acc, phase) => acc + phase.time
   }
 
-  /**
-   * Returns the result type of the given lambda type.
-   */
-  private def getResultType(tpe: Type): Type = tpe.typeArguments.last
-
 }

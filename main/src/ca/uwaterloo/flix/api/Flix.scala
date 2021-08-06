@@ -123,9 +123,8 @@ class Flix {
     "Int32.flix" -> LocalResource.get("/src/library/Int32.flix"),
     "Int64.flix" -> LocalResource.get("/src/library/Int64.flix"),
     "Iterator.flix" -> LocalResource.get("/src/library/Iterator.flix"),
-    "List.flix" -> LocalResource.get("/src/library/List.flix"),
     "LazyList.flix" -> LocalResource.get("/src/library/LazyList.flix"),
-    "LazyList2.flix" -> LocalResource.get("/src/library/LazyList2.flix"),
+    "List.flix" -> LocalResource.get("/src/library/List.flix"),
     "Map.flix" -> LocalResource.get("/src/library/Map.flix"),
     "Nel.flix" -> LocalResource.get("/src/library/Nel.flix"),
     "Object.flix" -> LocalResource.get("/src/library/Object.flix"),
@@ -145,6 +144,8 @@ class Flix {
     "Core/Io/OutputStream.flix" -> LocalResource.get("/src/library/Core/Io/OutputStream.flix"),
     "Core/Io/ZipInput.flix" -> LocalResource.get("/src/library/Core/Io/ZipInput.flix"),
     "Core/Io/ZipOutput.flix" -> LocalResource.get("/src/library/Core/Io/ZipOutput.flix"),
+
+    "Environment.flix" -> LocalResource.get("/src/library/Environment.flix"),
 
     "FromString.flix" -> LocalResource.get("/src/library/FromString.flix"),
     "Functor.flix" -> LocalResource.get("/src/library/Functor.flix"),
@@ -328,6 +329,7 @@ class Flix {
         Namer |>
         Resolver |>
         Typer |>
+        Statistics |>
         Instances |>
         Stratifier |>
         PatternExhaustiveness |>
