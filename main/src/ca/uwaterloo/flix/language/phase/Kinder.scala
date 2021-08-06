@@ -389,90 +389,124 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     * Performs kinding on the given expression under the given kind environment.
     */
   private def ascribeExpression(exp00: ResolvedAst.Expression, kenv: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Expression, KindError] = exp00 match {
+
     case ResolvedAst.Expression.Wild(loc) => KindedAst.Expression.Wild(Type.freshVar(Kind.Star), loc).toSuccess
+
     case ResolvedAst.Expression.Var(sym, tpe0, loc) =>
       mapN(ascribeType(tpe0, KindMatch.subKindOf(Kind.Star), kenv, root)) {
         tpe => KindedAst.Expression.Var(sym, tpe, loc)
       }
+
     case ResolvedAst.Expression.Def(sym, loc) => KindedAst.Expression.Def(sym, Type.freshVar(Kind.Star), loc).toSuccess
+
     case ResolvedAst.Expression.Sig(sym, loc) => KindedAst.Expression.Sig(sym, Type.freshVar(Kind.Star), loc).toSuccess
+
     case ResolvedAst.Expression.Hole(sym, loc) => KindedAst.Expression.Hole(sym, Type.freshVar(Kind.Star), Type.freshVar(Kind.Bool), loc).toSuccess
+
     case ResolvedAst.Expression.Unit(loc) => KindedAst.Expression.Unit(loc).toSuccess
+
     case ResolvedAst.Expression.Null(loc) => KindedAst.Expression.Null(loc).toSuccess
+
     case ResolvedAst.Expression.True(loc) => KindedAst.Expression.True(loc).toSuccess
+
     case ResolvedAst.Expression.False(loc) => KindedAst.Expression.False(loc).toSuccess
+
     case ResolvedAst.Expression.Char(lit, loc) => KindedAst.Expression.Char(lit, loc).toSuccess
+
     case ResolvedAst.Expression.Float32(lit, loc) => KindedAst.Expression.Float32(lit, loc).toSuccess
+
     case ResolvedAst.Expression.Float64(lit, loc) => KindedAst.Expression.Float64(lit, loc).toSuccess
+
     case ResolvedAst.Expression.Int8(lit, loc) => KindedAst.Expression.Int8(lit, loc).toSuccess
+
     case ResolvedAst.Expression.Int16(lit, loc) => KindedAst.Expression.Int16(lit, loc).toSuccess
+
     case ResolvedAst.Expression.Int32(lit, loc) => KindedAst.Expression.Int32(lit, loc).toSuccess
+
     case ResolvedAst.Expression.Int64(lit, loc) => KindedAst.Expression.Int64(lit, loc).toSuccess
+
     case ResolvedAst.Expression.BigInt(lit, loc) => KindedAst.Expression.BigInt(lit, loc).toSuccess
+
     case ResolvedAst.Expression.Str(lit, loc) => KindedAst.Expression.Str(lit, loc).toSuccess
+
     case ResolvedAst.Expression.Default(loc) => KindedAst.Expression.Default(Type.freshVar(Kind.Star), loc).toSuccess
+
     case ResolvedAst.Expression.Apply(exp0, exps0, loc) =>
       for {
         exp <- ascribeExpression(exp0, kenv, root)
         exps <- Validation.traverse(exps0)(ascribeExpression(_, kenv, root))
       } yield KindedAst.Expression.Apply(exp, exps, Type.freshVar(Kind.Star), Type.freshVar(Kind.Bool), loc)
+
     case ResolvedAst.Expression.Lambda(fparam0, exp0, loc) =>
       for {
         fparam <- ascribeFormalParam(fparam0, kenv, root)
         exp <- ascribeExpression(exp0, kenv, root)
       } yield KindedAst.Expression.Lambda(fparam, exp, Type.freshVar(Kind.Star), loc)
+
     case ResolvedAst.Expression.Unary(sop, exp0, loc) =>
       for {
         exp <- ascribeExpression(exp0, kenv, root)
       } yield KindedAst.Expression.Unary(sop, exp, Type.freshVar(Kind.Star), loc)
+
     case ResolvedAst.Expression.Binary(sop, exp10, exp20,  loc) =>
       for {
         exp1 <- ascribeExpression(exp10, kenv, root)
         exp2 <- ascribeExpression(exp20, kenv, root)
       } yield KindedAst.Expression.Binary(sop, exp1, exp2, Type.freshVar(Kind.Star), loc)
+
     case ResolvedAst.Expression.IfThenElse(exp10, exp20, exp30, loc) =>
       for {
         exp1 <- ascribeExpression(exp10, kenv, root)
         exp2 <- ascribeExpression(exp20, kenv, root)
         exp3 <- ascribeExpression(exp30, kenv, root)
       } yield KindedAst.Expression.IfThenElse(exp1, exp2, exp3, loc)
+
     case ResolvedAst.Expression.Stm(exp10, exp20, loc) =>
       for {
         exp1 <- ascribeExpression(exp10, kenv, root)
         exp2 <- ascribeExpression(exp20, kenv, root)
       } yield KindedAst.Expression.Stm(exp1, exp2, loc)
+
     case ResolvedAst.Expression.Let(sym, mod, exp10, exp20, loc) =>
       for {
         exp1 <- ascribeExpression(exp10, kenv, root)
         exp2 <- ascribeExpression(exp20, kenv, root)
       } yield KindedAst.Expression.Let(sym, mod, exp1, exp2, loc)
+
     case ResolvedAst.Expression.LetRegion(sym, exp0, loc) =>
       for {
         exp <- ascribeExpression(exp0, kenv, root)
       } yield KindedAst.Expression.LetRegion(sym, exp, Type.freshVar(Kind.Bool), loc)
+
     case ResolvedAst.Expression.Match(exp0, rules0, loc) =>
       for {
         exp <- ascribeExpression(exp0, kenv, root)
         rules <- traverse(rules0)(ascribeMatchRule(_, kenv, root))
       } yield KindedAst.Expression.Match(exp, rules, loc)
+
     case ResolvedAst.Expression.Choose(star, exps0, rules0,  loc) =>
       for {
         exps <- Validation.traverse(exps0)(ascribeExpression(_, kenv, root))
         rules <- Validation.traverse(rules0)(ascribeChoiceRule(_, kenv, root))
       } yield KindedAst.Expression.Choose(star, exps, rules, Type.freshVar(Kind.Star), loc)
+
     case ResolvedAst.Expression.Tag(sym, tag, exp0, loc) =>
       for {
         exp <- ascribeExpression(exp0, kenv, root)
       } yield KindedAst.Expression.Tag(sym, tag, exp, Type.freshVar(Kind.Star), loc)
+
     case ResolvedAst.Expression.Tuple(elms0, loc) =>
       for {
         elms <- Validation.traverse(elms0)(ascribeExpression(_, kenv, root))
       } yield KindedAst.Expression.Tuple(elms, loc)
+
     case ResolvedAst.Expression.RecordEmpty(loc) => KindedAst.Expression.RecordEmpty(Type.freshVar(Kind.Record), loc).toSuccess
+
     case ResolvedAst.Expression.RecordSelect(exp0, field, loc) =>
       for {
         exp <- ascribeExpression(exp0, kenv, root)
       } yield KindedAst.Expression.RecordSelect(exp, field, Type.freshVar(Kind.Star), loc)
+
     case ResolvedAst.Expression.RecordExtend(field, value0, rest0, loc) =>
       // Ideally, if `rest` is not of record kind, we should throw a kind error.
       // But because we have subkinding, we can't do this in the Kinder.
@@ -483,58 +517,70 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         value <- ascribeExpression(value0, kenv, root)
         rest <- ascribeExpression(rest0, kenv, root)
       } yield KindedAst.Expression.RecordExtend(field, value, rest, Type.freshVar(Kind.Record), loc)
+
     case ResolvedAst.Expression.RecordRestrict(field, rest0, loc) =>
       for {
         rest <- ascribeExpression(rest0, kenv, root)
       } yield KindedAst.Expression.RecordRestrict(field, rest, Type.freshVar(Kind.Record), loc)
+
     case ResolvedAst.Expression.ArrayLit(elms0, loc) =>
       for {
         elms <- Validation.traverse(elms0)(ascribeExpression(_, kenv, root))
       } yield KindedAst.Expression.ArrayLit(elms, Type.freshVar(Kind.Star), loc)
+
     case ResolvedAst.Expression.ArrayNew(elm0, len0, loc) =>
       for {
         elm <- ascribeExpression(elm0, kenv, root)
         len <- ascribeExpression(len0, kenv, root)
       } yield KindedAst.Expression.ArrayNew(elm, len, Type.freshVar(Kind.Star), loc)
+
     case ResolvedAst.Expression.ArrayLoad(base0, index0, loc) =>
       for {
         base <- ascribeExpression(base0, kenv, root)
         index <- ascribeExpression(index0, kenv, root)
       } yield KindedAst.Expression.ArrayLoad(base, index, Type.freshVar(Kind.Star), loc)
+
     case ResolvedAst.Expression.ArrayStore(base0, index0, elm0, loc) =>
       for {
         base <- ascribeExpression(base0, kenv, root)
         index <- ascribeExpression(index0, kenv, root)
         elm <- ascribeExpression(elm0, kenv, root)
       } yield KindedAst.Expression.ArrayStore(base, index, elm, loc)
+
     case ResolvedAst.Expression.ArrayLength(base0, loc) =>
       for {
         base <- ascribeExpression(base0, kenv, root)
       } yield KindedAst.Expression.ArrayLength(base, loc)
+
     case ResolvedAst.Expression.ArraySlice(base0, beginIndex0, endIndex0, loc) =>
       for {
         base <- ascribeExpression(base0, kenv, root)
         beginIndex <- ascribeExpression(beginIndex0, kenv, root)
         endIndex <- ascribeExpression(endIndex0, kenv, root)
       } yield KindedAst.Expression.ArraySlice(base, beginIndex, endIndex, loc)
+
     case ResolvedAst.Expression.Ref(exp0, loc) =>
       for {
         exp <- ascribeExpression(exp0, kenv, root)
       } yield KindedAst.Expression.Ref(exp, Type.freshVar(Kind.Star), loc)
+
     case ResolvedAst.Expression.RefWithRegion(exp10, exp20, loc) =>
       for {
         exp1 <- ascribeExpression(exp10, kenv, root)
         exp2 <- ascribeExpression(exp20, kenv, root)
       } yield KindedAst.Expression.RefWithRegion(exp1, exp2, Type.freshVar(Kind.Star), Type.freshVar(Kind.Bool), loc)
+
     case ResolvedAst.Expression.Deref(exp0, loc) =>
       for {
         exp <- ascribeExpression(exp0, kenv, root)
       } yield KindedAst.Expression.Deref(exp, Type.freshVar(Kind.Star), Type.freshVar(Kind.Bool), loc)
+
     case ResolvedAst.Expression.Assign(exp10, exp20, loc) =>
       for {
         exp1 <- ascribeExpression(exp10, kenv, root)
         exp2 <- ascribeExpression(exp20, kenv, root)
       } yield KindedAst.Expression.Assign(exp1, exp2, Type.freshVar(Kind.Bool), loc)
+
     case ResolvedAst.Expression.Existential(fparam0, exp0, loc) =>
       // add the formal param kinds to the environment
       for {
@@ -543,6 +589,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         fparam <- ascribeFormalParam(fparam0, kenv1, root)
         exp <- ascribeExpression(exp0, kenv1, root)
       } yield KindedAst.Expression.Existential(fparam, exp, loc)
+
     case ResolvedAst.Expression.Universal(fparam0, exp0, loc) =>
       // add the formal param kinds to the environment
       for {
@@ -551,107 +598,131 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         fparam <- ascribeFormalParam(fparam0, kenv1, root)
         exp <- ascribeExpression(exp0, kenv1, root)
       } yield KindedAst.Expression.Universal(fparam, exp, loc)
+
     case ResolvedAst.Expression.Ascribe(exp0, expectedType0, expectedEff0, loc) =>
       for {
         exp <- ascribeExpression(exp0, kenv, root)
         expectedType <- Validation.traverse(expectedType0)(ascribeType(_, KindMatch.subKindOf(Kind.Star), kenv, root))
         expectedEff <- Validation.traverse(expectedEff0)(ascribeType(_, KindMatch.subKindOf(Kind.Bool), kenv, root))
       } yield KindedAst.Expression.Ascribe(exp, expectedType.headOption, expectedEff.headOption, Type.freshVar(Kind.Star), loc)
+
     case ResolvedAst.Expression.Cast(exp0, declaredType0, declaredEff0, loc) =>
       for {
         exp <- ascribeExpression(exp0, kenv, root)
         declaredType <- Validation.traverse(declaredType0)(ascribeType(_, KindMatch.subKindOf(Kind.Star), kenv, root))
         declaredEff <- Validation.traverse(declaredEff0)(ascribeType(_, KindMatch.subKindOf(Kind.Bool), kenv, root))
       } yield KindedAst.Expression.Cast(exp, declaredType.headOption, declaredEff.headOption, Type.freshVar(Kind.Star), loc)
+
     case ResolvedAst.Expression.TryCatch(exp0, rules0, loc) =>
       for {
         exp <- ascribeExpression(exp0, kenv, root)
         rules <- Validation.traverse(rules0)(ascribeCatchRule(_, kenv, root))
       } yield KindedAst.Expression.TryCatch(exp, rules, loc)
+
     case ResolvedAst.Expression.InvokeConstructor(constructor, args0, loc) =>
       for {
         args <- Validation.traverse(args0)(ascribeExpression(_, kenv, root))
       } yield KindedAst.Expression.InvokeConstructor(constructor, args, loc)
+
     case ResolvedAst.Expression.InvokeMethod(method, exp0, args0, loc) =>
       for {
         exp <- ascribeExpression(exp0, kenv, root)
         args <- Validation.traverse(args0)(ascribeExpression(_, kenv, root))
       } yield KindedAst.Expression.InvokeMethod(method, exp, args, loc)
+
     case ResolvedAst.Expression.InvokeStaticMethod(method, args0, loc) =>
       for {
         args <- Validation.traverse(args0)(ascribeExpression(_, kenv, root))
       } yield KindedAst.Expression.InvokeStaticMethod(method, args, loc)
+
     case ResolvedAst.Expression.GetField(field, exp0, loc) =>
       for {
         exp <- ascribeExpression(exp0, kenv, root)
       } yield KindedAst.Expression.GetField(field, exp, loc)
+
     case ResolvedAst.Expression.PutField(field, exp10, exp20, loc) =>
       for {
         exp1 <- ascribeExpression(exp10, kenv, root)
         exp2 <- ascribeExpression(exp20, kenv, root)
       } yield KindedAst.Expression.PutField(field, exp1, exp2, loc)
+
     case ResolvedAst.Expression.GetStaticField(field, loc) => KindedAst.Expression.GetStaticField(field, loc).toSuccess
+
     case ResolvedAst.Expression.PutStaticField(field, exp0, loc) =>
       for {
         exp <- ascribeExpression(exp0, kenv, root)
       } yield KindedAst.Expression.PutStaticField(field, exp, loc)
+
     case ResolvedAst.Expression.NewChannel(exp0, tpe0, loc) =>
       for {
         exp <- ascribeExpression(exp0, kenv, root)
         tpe <- ascribeType(tpe0, KindMatch.subKindOf(Kind.Star), kenv, root)
       } yield KindedAst.Expression.NewChannel(exp, tpe, loc)
+
     case ResolvedAst.Expression.GetChannel(exp0, loc) =>
       for {
         exp <- ascribeExpression(exp0, kenv, root)
       } yield KindedAst.Expression.GetChannel(exp, Type.freshVar(Kind.Star), loc)
+
     case ResolvedAst.Expression.PutChannel(exp10, exp20, loc) =>
       for {
         exp1 <- ascribeExpression(exp10, kenv, root)
         exp2 <- ascribeExpression(exp20, kenv, root)
       } yield KindedAst.Expression.PutChannel(exp1, exp2, Type.freshVar(Kind.Star), loc)
+
     case ResolvedAst.Expression.SelectChannel(rules0, default0, loc) =>
       for {
         rules <- Validation.traverse(rules0)(ascribeSelectChannelRule(_, kenv, root))
         default <- Validation.traverse(default0)(ascribeExpression(_, kenv, root))
       } yield KindedAst.Expression.SelectChannel(rules, default.headOption, Type.freshVar(Kind.Star), loc)
+
     case ResolvedAst.Expression.Spawn(exp0, loc) =>
       for {
         exp <- ascribeExpression(exp0, kenv, root)
       } yield KindedAst.Expression.Spawn(exp, loc)
+
     case ResolvedAst.Expression.Lazy(exp0, loc) =>
       for {
         exp <- ascribeExpression(exp0, kenv, root)
       } yield KindedAst.Expression.Lazy(exp, loc)
+
     case ResolvedAst.Expression.Force(exp0, loc) =>
       for {
         exp <- ascribeExpression(exp0, kenv, root)
       } yield KindedAst.Expression.Force(exp, Type.freshVar(Kind.Star), loc)
+
     case ResolvedAst.Expression.FixpointConstraintSet(cs0, loc) =>
       for {
         cs <- Validation.traverse(cs0)(ascribeConstraint(_, kenv, root))
       } yield KindedAst.Expression.FixpointConstraintSet(cs, Type.freshVar(Kind.Schema), loc)
+
     case ResolvedAst.Expression.FixpointMerge(exp10, exp20, loc) =>
       for {
         exp1 <- ascribeExpression(exp10, kenv, root)
         exp2 <- ascribeExpression(exp20, kenv, root)
       } yield KindedAst.Expression.FixpointMerge(exp1, exp2, loc)
+
     case ResolvedAst.Expression.FixpointSolve(exp0, loc) =>
       for {
         exp <- ascribeExpression(exp0, kenv, root)
       } yield KindedAst.Expression.FixpointSolve(exp, loc)
+
     case ResolvedAst.Expression.FixpointFilter(pred, exp0, loc) =>
       for {
         exp <- ascribeExpression(exp0, kenv, root)
       } yield KindedAst.Expression.FixpointFilter(pred, exp, Type.freshVar(Kind.Star), loc)
+
     case ResolvedAst.Expression.FixpointProjectIn(exp0, pred, loc) =>
       for {
         exp <- ascribeExpression(exp0, kenv, root)
       } yield KindedAst.Expression.FixpointProjectIn(exp, pred, Type.freshVar(Kind.Star), loc)
+
     case ResolvedAst.Expression.FixpointProjectOut(pred, exp10, exp20, loc) =>
       for {
         exp1 <- ascribeExpression(exp10, kenv, root)
         exp2 <- ascribeExpression(exp20, kenv, root)
       } yield KindedAst.Expression.FixpointProjectOut(pred, exp1, exp2, Type.freshVar(Kind.Star), loc)
+
     case ResolvedAst.Expression.MatchEff(exp10, exp20, exp30, loc) =>
       for {
         exp1 <- ascribeExpression(exp10, kenv, root)
