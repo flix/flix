@@ -2238,7 +2238,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       }
   }
 
-  // MATT docs
+  /**
+    * Returns true iff the type is composed only of type variables possibly applied to other type variables.
+    */
   private def isAllVars(tpe: WeededAst.Type): Boolean = tpe match {
     case _: WeededAst.Type.Var => true
     case WeededAst.Type.Apply(tpe1, tpe2, _) => isAllVars(tpe1) && isAllVars(tpe2)
