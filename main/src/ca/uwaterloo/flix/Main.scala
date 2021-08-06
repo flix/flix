@@ -88,7 +88,8 @@ object Main {
       writeClassFiles = !cmdOpts.interactive,
       xlinter = cmdOpts.xlinter,
       xnoboolunification = cmdOpts.xnoboolunification,
-      xnostratifier = cmdOpts.xnostratifier
+      xnostratifier = cmdOpts.xnostratifier,
+      xstatistics = cmdOpts.xstatistics
     )
 
     // check if command was passed.
@@ -231,6 +232,7 @@ object Main {
                      xnoboolunification: Boolean = false,
                      xlinter: Boolean = false,
                      xnostratifier: Boolean = false,
+                     xstatistics: Boolean = false,
                      files: Seq[File] = Seq())
 
   /**
@@ -372,6 +374,9 @@ object Main {
       // Xno-stratifier
       opt[Unit]("Xno-stratifier").action((_, c) => c.copy(xnostratifier = true)).
         text("[experimental] disables computation of stratification.")
+
+      opt[Unit]("Xstatistics").action((_, c) => c.copy(xstatistics = true)).
+        text("[experimental] prints compilation statistics.")
 
       note("")
 
