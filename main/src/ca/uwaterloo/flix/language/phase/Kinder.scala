@@ -103,20 +103,6 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   }
 
   /**
-    * Performs kinding on the given type parameter under the given kind environment.
-    */
-  private def visitTypeParam(tparam: ResolvedAst.TypeParam, kenv: KindEnv): Validation[KindedAst.TypeParam, KindError] = tparam match {
-    case ResolvedAst.TypeParam.Kinded(name, tpe0, _, loc) =>
-      mapN(visitTypeVar(tpe0, KindMatch.Wild, kenv)) {
-        tpe => KindedAst.TypeParam(name, tpe, loc)
-      }
-    case ResolvedAst.TypeParam.Unkinded(name, tpe0, loc) =>
-      mapN(visitTypeVar(tpe0, KindMatch.Wild, kenv)) {
-        tpe => KindedAst.TypeParam(name, tpe, loc)
-      }
-  }
-
-  /**
     * Performs kinding on the given enum case under the given kind environment.
     */
   private def visitCase(caze0: ResolvedAst.Case, kenv: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Case, KindError] = caze0 match {
@@ -125,102 +111,6 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         tpeDeprecated <- visitType(tpeDeprecated0, KindMatch.subKindOf(Kind.Star), kenv, root)
         sc <- visitScheme(sc0, kenv, root)
       } yield KindedAst.Case(enum, tag, tpeDeprecated, sc)
-  }
-
-  /**
-    * Performs kinding on the given type variable under the given kind environment, with `kindMatch` expected from context.
-    */
-  private def visitTypeVar(tvar: UnkindedType.Var, kindMatch: KindMatch, kenv: KindEnv): Validation[Type.Var, KindError] = tvar match {
-    case tvar@UnkindedType.Var(id, text, loc) =>
-      kenv.map.get(tvar) match {
-        // Case 1: we don't know about this kind, just ascribe it with what the context expects
-        case None => tvar.ascribedWith(kindMatch.kind).toSuccess
-        // Case 2: we know about this kind, make sure it's behaving as we expect
-        case Some(actualKind) =>
-          if (kindMatch.matches(actualKind)) {
-            Type.Var(id, actualKind, text = text).toSuccess
-          } else {
-            val expectedKind = kindMatch.kind
-            KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = actualKind, loc).toFailure
-          }
-      }
-
-  }
-
-  /**
-    * Performs kinding on the given free type variable, with `kindMatch` expected from context.
-    */
-  private def visitFreeTypeVar(tvar: UnkindedType.Var, kindMatch: KindMatch): Type.Var = tvar match {
-    case UnkindedType.Var(id, text, loc) =>
-      val kind = kindMatch.kind
-      Type.Var(id, kind, text = text)
-  }
-
-  /**
-    * Performs kinding on the given type under the given kind environment, with `kindMatch` expected from context.
-    */
-  private def visitType(tpe0: UnkindedType, expectedKind: KindMatch, kenv: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[Type, KindError] = tpe0 match {
-    case tvar: UnkindedType.Var => visitTypeVar(tvar, expectedKind, kenv)
-    case UnkindedType.Cst(cst, loc) =>
-      val tycon = visitTypeConstructor(cst, root)
-      val kind = tycon.kind
-      if (expectedKind.matches(kind)) {
-        Type.Cst(tycon, loc).toSuccess
-      } else {
-        KindError.UnexpectedKind(expectedKind = expectedKind.kind, actualKind = kind, loc).toFailure
-      }
-    case UnkindedType.Apply(t10, t20) =>
-      for {
-        t2 <- visitType(t20, KindMatch.Wild, kenv, root)
-        k1 = KindMatch.subKindOf(Kind.Arrow(t2.kind, expectedKind.kind))
-        t1 <- visitType(t10, k1, kenv, root)
-      } yield Type.Apply(t1, t2)
-    case UnkindedType.Lambda(t10, t20) =>
-      expectedKind match {
-        case KindMatch(_, Kind.Arrow(expK1, expK2)) =>
-          val t1 = visitFreeTypeVar(t10, KindMatch.subKindOf(expK1))
-          for {
-            newKenv <- kenv + (t10 -> t1.kind)
-            t2 <- visitType(t20, KindMatch.subKindOf(expK2), newKenv, root)
-          } yield Type.Lambda(t1, t2)
-        case KindMatch(_, Kind.Wild) =>
-          val t1 = visitFreeTypeVar(t10, KindMatch.Wild)
-          for {
-            newKenv <- kenv + (t10 -> t1.kind)
-            t2 <- visitType(t20, KindMatch.Wild, newKenv, root)
-          } yield Type.Lambda(t1, t2)
-        case _ =>
-          KindError.UnexpectedKind(expectedKind = expectedKind.kind, actualKind = Kind.Wild ->: Kind.Wild,  loc = t10.loc).toFailure
-      }
-    case UnkindedType.Ascribe(t, k, loc) =>
-      if (expectedKind.matches(k)) {
-        visitType(t, KindMatch.subKindOf(k), kenv, root)
-      } else {
-        KindError.UnexpectedKind(expectedKind = expectedKind.kind, actualKind = k, loc).toFailure
-      }
-  }
-
-  /**
-    * Performs kinding on the given type under the given kind environment.
-    */
-  private def visitScheme(sc: ResolvedAst.Scheme, kenv: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[Scheme, KindError] = sc match {
-    case ResolvedAst.Scheme(quantifiers0, constraints0, base0) =>
-      for {
-        quantifiers <- Validation.traverse(quantifiers0)(visitTypeVar(_, KindMatch.Wild, kenv))
-        constraints <- Validation.traverse(constraints0)(visitTypeConstraint(_, kenv, root))
-        base <- visitType(base0, KindMatch.subKindOf(Kind.Star), kenv, root)
-      } yield Scheme(quantifiers, constraints, base)
-  }
-
-  /**
-    * Performs kinding on the given type constraint under the given kind environment.
-    */
-  private def visitTypeConstraint(tconstr: ResolvedAst.TypeConstraint, kenv: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[Ast.TypeConstraint, KindError] = tconstr match {
-    case ResolvedAst.TypeConstraint(clazz, tpe0, loc) =>
-      val classKind = getClassKind(root.classes(clazz))
-      mapN(visitType(tpe0, KindMatch.subKindOf(classKind), kenv, root)) {
-        tpe => Ast.TypeConstraint(clazz, tpe, loc)
-      }
   }
 
   /**
@@ -257,69 +147,6 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         (tpe, tconstrs, defs) = result
       } yield KindedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, ns, loc)
   }
-
-  /**
-    * Gets the kind of the enum.
-    */
-  private def getEnumKind(enum: ResolvedAst.Enum)(implicit flix: Flix): Kind = enum match {
-    case ResolvedAst.Enum(_, _, _, tparams, _, _, _, _) =>
-      val kenv = getKindEnvFromTypeParamsDefaultStar(tparams)
-      tparams.tparams.foldRight(Kind.Star: Kind) {
-        case (tparam, acc) => kenv.map(tparam.tpe) ->: acc
-      }
-  }
-
-  /**
-    * Gets the kind of the class.
-    */
-  private def getClassKind(clazz: ResolvedAst.Class): Kind = clazz.tparam match {
-    case ResolvedAst.TypeParam.Kinded(_, _, kind, _) => kind
-    case _: ResolvedAst.TypeParam.Unkinded => Kind.Star
-  }
-
-
-  /**
-    * Performs kinding on the given type constructor under the given kind environment.
-    */
-  private def visitTypeConstructor(tycon: UnkindedType.Constructor, root: ResolvedAst.Root)(implicit flix: Flix): TypeConstructor = tycon match {
-    case UnkindedType.Constructor.Unit => TypeConstructor.Unit
-    case UnkindedType.Constructor.Null => TypeConstructor.Null
-    case UnkindedType.Constructor.Bool => TypeConstructor.Bool
-    case UnkindedType.Constructor.Char => TypeConstructor.Char
-    case UnkindedType.Constructor.Float32 => TypeConstructor.Float32
-    case UnkindedType.Constructor.Float64 => TypeConstructor.Float64
-    case UnkindedType.Constructor.Int8 => TypeConstructor.Int8
-    case UnkindedType.Constructor.Int16 => TypeConstructor.Int16
-    case UnkindedType.Constructor.Int32 => TypeConstructor.Int32
-    case UnkindedType.Constructor.Int64 => TypeConstructor.Int64
-    case UnkindedType.Constructor.BigInt => TypeConstructor.BigInt
-    case UnkindedType.Constructor.Str => TypeConstructor.Str
-    case UnkindedType.Constructor.Arrow(arity) => TypeConstructor.Arrow(arity)
-    case UnkindedType.Constructor.RecordEmpty => TypeConstructor.RecordEmpty
-    case UnkindedType.Constructor.RecordExtend(field) => TypeConstructor.RecordExtend(field)
-    case UnkindedType.Constructor.SchemaEmpty => TypeConstructor.SchemaEmpty
-    case UnkindedType.Constructor.SchemaExtend(pred) => TypeConstructor.SchemaExtend(pred)
-    case UnkindedType.Constructor.Array => TypeConstructor.Array
-    case UnkindedType.Constructor.Channel => TypeConstructor.Channel
-    case UnkindedType.Constructor.Lazy => TypeConstructor.Lazy
-    case UnkindedType.Constructor.Tag(sym, tag) => TypeConstructor.Tag(sym, tag)
-    case UnkindedType.Constructor.Enum(sym) =>
-      // Lookup the enum kind
-      val kind = getEnumKind(root.enums(sym))
-      TypeConstructor.Enum(sym, kind)
-    case UnkindedType.Constructor.Native(clazz) => TypeConstructor.Native(clazz)
-    case UnkindedType.Constructor.ScopedRef => TypeConstructor.ScopedRef
-    case UnkindedType.Constructor.Tuple(l) => TypeConstructor.Tuple(l)
-    case UnkindedType.Constructor.Relation => TypeConstructor.Relation
-    case UnkindedType.Constructor.Lattice => TypeConstructor.Lattice
-    case UnkindedType.Constructor.True => TypeConstructor.True
-    case UnkindedType.Constructor.False => TypeConstructor.False
-    case UnkindedType.Constructor.Not => TypeConstructor.Not
-    case UnkindedType.Constructor.And => TypeConstructor.And
-    case UnkindedType.Constructor.Or => TypeConstructor.Or
-    case UnkindedType.Constructor.Region => TypeConstructor.Region
-  }
-
 
   /**
     * Performs kinding on the given def under the given kind environment.
@@ -363,26 +190,6 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         (ann, tparams, fparams, tpe, eff) = result
         sc <- scVal // ascribe the scheme separately
       } yield KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, loc)
-  }
-
-  /**
-    * Performs kinding on the given formal param under the given kind environment.
-    */
-  private def visitFormalParam(fparam0: ResolvedAst.FormalParam, kenv: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.FormalParam, KindError] = fparam0 match {
-    case ResolvedAst.FormalParam(sym, mod, tpe0, loc) =>
-      mapN(visitType(tpe0, KindMatch.subKindOf(Kind.Star), kenv, root)) {
-        tpe => KindedAst.FormalParam(sym, mod, tpe, loc)
-      }
-  }
-
-  /**
-    * Performs kinding on the given annotation under the given kind environment.
-    */
-  private def visitAnnotation(ann: ResolvedAst.Annotation, kenv: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Annotation, KindError] = ann match {
-    case ResolvedAst.Annotation(name, exps0, loc) =>
-      mapN(Validation.traverse(exps0)(visitExpression(_, kenv, root))) {
-        exps => KindedAst.Annotation(name, exps, loc)
-      }
   }
 
   /**
@@ -448,7 +255,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         exp <- visitExpression(exp0, kenv, root)
       } yield KindedAst.Expression.Unary(sop, exp, Type.freshVar(Kind.Star), loc)
 
-    case ResolvedAst.Expression.Binary(sop, exp10, exp20,  loc) =>
+    case ResolvedAst.Expression.Binary(sop, exp10, exp20, loc) =>
       for {
         exp1 <- visitExpression(exp10, kenv, root)
         exp2 <- visitExpression(exp20, kenv, root)
@@ -484,7 +291,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         rules <- traverse(rules0)(visitMatchRule(_, kenv, root))
       } yield KindedAst.Expression.Match(exp, rules, loc)
 
-    case ResolvedAst.Expression.Choose(star, exps0, rules0,  loc) =>
+    case ResolvedAst.Expression.Choose(star, exps0, rules0, loc) =>
       for {
         exps <- Validation.traverse(exps0)(visitExpression(_, kenv, root))
         rules <- Validation.traverse(rules0)(visitChoiceRule(_, kenv, root))
@@ -510,7 +317,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     case ResolvedAst.Expression.RecordExtend(field, value0, rest0, loc) =>
       // Ideally, if `rest` is not of record kind, we should throw a kind error.
       // But because we have subkinding, we can't do this in the Kinder.
-      // Consider: { +name = 5 | id({})
+      // Consider: { +name = 5 | id({}) }
       // This is OK, but would be seen as a kind error since id is `(a: *) -> (a: *)`, so `id({}) :: *`
       // This KindError will be caught later in the Typer
       for {
@@ -816,7 +623,6 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       } yield KindedAst.Pattern.ArrayHeadSpread(sym, elms, Type.freshVar(Kind.Star), loc)
   }
 
-
   /**
     * Performs kinding on the given choice pattern under the given kind environment.
     */
@@ -868,6 +674,178 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       for {
         exp <- visitExpression(exp0, kenv, root)
       } yield KindedAst.Predicate.Body.Guard(exp, loc)
+  }
+
+  /**
+    * Performs kinding on the given type variable under the given kind environment, with `kindMatch` expected from context.
+    */
+  private def visitTypeVar(tvar: UnkindedType.Var, kindMatch: KindMatch, kenv: KindEnv): Validation[Type.Var, KindError] = tvar match {
+    case tvar@UnkindedType.Var(id, text, loc) =>
+      kenv.map.get(tvar) match {
+        // Case 1: we don't know about this kind, just ascribe it with what the context expects
+        case None => tvar.ascribedWith(kindMatch.kind).toSuccess
+        // Case 2: we know about this kind, make sure it's behaving as we expect
+        case Some(actualKind) =>
+          if (kindMatch.matches(actualKind)) {
+            Type.Var(id, actualKind, text = text).toSuccess
+          } else {
+            val expectedKind = kindMatch.kind
+            KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = actualKind, loc).toFailure
+          }
+      }
+
+  }
+
+  /**
+    * Performs kinding on the given free type variable, with `kindMatch` expected from context.
+    */
+  private def visitFreeTypeVar(tvar: UnkindedType.Var, kindMatch: KindMatch): Type.Var = tvar match {
+    case UnkindedType.Var(id, text, loc) =>
+      val kind = kindMatch.kind
+      Type.Var(id, kind, text = text)
+  }
+
+  /**
+    * Performs kinding on the given type under the given kind environment, with `kindMatch` expected from context.
+    */
+  private def visitType(tpe0: UnkindedType, expectedKind: KindMatch, kenv: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[Type, KindError] = tpe0 match {
+    case tvar: UnkindedType.Var => visitTypeVar(tvar, expectedKind, kenv)
+    case UnkindedType.Cst(cst, loc) =>
+      val tycon = visitTypeConstructor(cst, root)
+      val kind = tycon.kind
+      if (expectedKind.matches(kind)) {
+        Type.Cst(tycon, loc).toSuccess
+      } else {
+        KindError.UnexpectedKind(expectedKind = expectedKind.kind, actualKind = kind, loc).toFailure
+      }
+    case UnkindedType.Apply(t10, t20) =>
+      for {
+        t2 <- visitType(t20, KindMatch.Wild, kenv, root)
+        k1 = KindMatch.subKindOf(Kind.Arrow(t2.kind, expectedKind.kind))
+        t1 <- visitType(t10, k1, kenv, root)
+      } yield Type.Apply(t1, t2)
+    case UnkindedType.Lambda(t10, t20) =>
+      expectedKind match {
+        case KindMatch(_, Kind.Arrow(expK1, expK2)) =>
+          val t1 = visitFreeTypeVar(t10, KindMatch.subKindOf(expK1))
+          for {
+            newKenv <- kenv + (t10 -> t1.kind)
+            t2 <- visitType(t20, KindMatch.subKindOf(expK2), newKenv, root)
+          } yield Type.Lambda(t1, t2)
+        case KindMatch(_, Kind.Wild) =>
+          val t1 = visitFreeTypeVar(t10, KindMatch.Wild)
+          for {
+            newKenv <- kenv + (t10 -> t1.kind)
+            t2 <- visitType(t20, KindMatch.Wild, newKenv, root)
+          } yield Type.Lambda(t1, t2)
+        case _ =>
+          KindError.UnexpectedKind(expectedKind = expectedKind.kind, actualKind = Kind.Wild ->: Kind.Wild,  loc = t10.loc).toFailure
+      }
+    case UnkindedType.Ascribe(t, k, loc) =>
+      if (expectedKind.matches(k)) {
+        visitType(t, KindMatch.subKindOf(k), kenv, root)
+      } else {
+        KindError.UnexpectedKind(expectedKind = expectedKind.kind, actualKind = k, loc).toFailure
+      }
+  }
+
+  /**
+    * Performs kinding on the given type under the given kind environment.
+    */
+  private def visitScheme(sc: ResolvedAst.Scheme, kenv: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[Scheme, KindError] = sc match {
+    case ResolvedAst.Scheme(quantifiers0, constraints0, base0) =>
+      for {
+        quantifiers <- Validation.traverse(quantifiers0)(visitTypeVar(_, KindMatch.Wild, kenv))
+        constraints <- Validation.traverse(constraints0)(visitTypeConstraint(_, kenv, root))
+        base <- visitType(base0, KindMatch.subKindOf(Kind.Star), kenv, root)
+      } yield Scheme(quantifiers, constraints, base)
+  }
+
+  /**
+    * Performs kinding on the given type constraint under the given kind environment.
+    */
+  private def visitTypeConstraint(tconstr: ResolvedAst.TypeConstraint, kenv: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[Ast.TypeConstraint, KindError] = tconstr match {
+    case ResolvedAst.TypeConstraint(clazz, tpe0, loc) =>
+      val classKind = getClassKind(root.classes(clazz))
+      mapN(visitType(tpe0, KindMatch.subKindOf(classKind), kenv, root)) {
+        tpe => Ast.TypeConstraint(clazz, tpe, loc)
+      }
+  }
+
+  /**
+    * Performs kinding on the given type constructor under the given kind environment.
+    */
+  private def visitTypeConstructor(tycon: UnkindedType.Constructor, root: ResolvedAst.Root)(implicit flix: Flix): TypeConstructor = tycon match {
+    case UnkindedType.Constructor.Unit => TypeConstructor.Unit
+    case UnkindedType.Constructor.Null => TypeConstructor.Null
+    case UnkindedType.Constructor.Bool => TypeConstructor.Bool
+    case UnkindedType.Constructor.Char => TypeConstructor.Char
+    case UnkindedType.Constructor.Float32 => TypeConstructor.Float32
+    case UnkindedType.Constructor.Float64 => TypeConstructor.Float64
+    case UnkindedType.Constructor.Int8 => TypeConstructor.Int8
+    case UnkindedType.Constructor.Int16 => TypeConstructor.Int16
+    case UnkindedType.Constructor.Int32 => TypeConstructor.Int32
+    case UnkindedType.Constructor.Int64 => TypeConstructor.Int64
+    case UnkindedType.Constructor.BigInt => TypeConstructor.BigInt
+    case UnkindedType.Constructor.Str => TypeConstructor.Str
+    case UnkindedType.Constructor.Arrow(arity) => TypeConstructor.Arrow(arity)
+    case UnkindedType.Constructor.RecordEmpty => TypeConstructor.RecordEmpty
+    case UnkindedType.Constructor.RecordExtend(field) => TypeConstructor.RecordExtend(field)
+    case UnkindedType.Constructor.SchemaEmpty => TypeConstructor.SchemaEmpty
+    case UnkindedType.Constructor.SchemaExtend(pred) => TypeConstructor.SchemaExtend(pred)
+    case UnkindedType.Constructor.Array => TypeConstructor.Array
+    case UnkindedType.Constructor.Channel => TypeConstructor.Channel
+    case UnkindedType.Constructor.Lazy => TypeConstructor.Lazy
+    case UnkindedType.Constructor.Tag(sym, tag) => TypeConstructor.Tag(sym, tag)
+    case UnkindedType.Constructor.Enum(sym) =>
+      // Lookup the enum kind
+      val kind = getEnumKind(root.enums(sym))
+      TypeConstructor.Enum(sym, kind)
+    case UnkindedType.Constructor.Native(clazz) => TypeConstructor.Native(clazz)
+    case UnkindedType.Constructor.ScopedRef => TypeConstructor.ScopedRef
+    case UnkindedType.Constructor.Tuple(l) => TypeConstructor.Tuple(l)
+    case UnkindedType.Constructor.Relation => TypeConstructor.Relation
+    case UnkindedType.Constructor.Lattice => TypeConstructor.Lattice
+    case UnkindedType.Constructor.True => TypeConstructor.True
+    case UnkindedType.Constructor.False => TypeConstructor.False
+    case UnkindedType.Constructor.Not => TypeConstructor.Not
+    case UnkindedType.Constructor.And => TypeConstructor.And
+    case UnkindedType.Constructor.Or => TypeConstructor.Or
+    case UnkindedType.Constructor.Region => TypeConstructor.Region
+  }
+
+  /**
+    * Performs kinding on the given type parameter under the given kind environment.
+    */
+  private def visitTypeParam(tparam: ResolvedAst.TypeParam, kenv: KindEnv): Validation[KindedAst.TypeParam, KindError] = tparam match {
+    case ResolvedAst.TypeParam.Kinded(name, tpe0, _, loc) =>
+      mapN(visitTypeVar(tpe0, KindMatch.Wild, kenv)) {
+        tpe => KindedAst.TypeParam(name, tpe, loc)
+      }
+    case ResolvedAst.TypeParam.Unkinded(name, tpe0, loc) =>
+      mapN(visitTypeVar(tpe0, KindMatch.Wild, kenv)) {
+        tpe => KindedAst.TypeParam(name, tpe, loc)
+      }
+  }
+
+  /**
+    * Performs kinding on the given formal param under the given kind environment.
+    */
+  private def visitFormalParam(fparam0: ResolvedAst.FormalParam, kenv: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.FormalParam, KindError] = fparam0 match {
+    case ResolvedAst.FormalParam(sym, mod, tpe0, loc) =>
+      mapN(visitType(tpe0, KindMatch.subKindOf(Kind.Star), kenv, root)) {
+        tpe => KindedAst.FormalParam(sym, mod, tpe, loc)
+      }
+  }
+
+  /**
+    * Performs kinding on the given annotation under the given kind environment.
+    */
+  private def visitAnnotation(ann: ResolvedAst.Annotation, kenv: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Annotation, KindError] = ann match {
+    case ResolvedAst.Annotation(name, exps0, loc) =>
+      mapN(Validation.traverse(exps0)(visitExpression(_, kenv, root))) {
+        exps => KindedAst.Annotation(name, exps, loc)
+      }
   }
 
   /**
@@ -1020,6 +998,25 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   }
 
   /**
+    * Gets the kind of the enum.
+    */
+  private def getEnumKind(enum: ResolvedAst.Enum)(implicit flix: Flix): Kind = enum match {
+    case ResolvedAst.Enum(_, _, _, tparams, _, _, _, _) =>
+      val kenv = getKindEnvFromTypeParamsDefaultStar(tparams)
+      tparams.tparams.foldRight(Kind.Star: Kind) {
+        case (tparam, acc) => kenv.map(tparam.tpe) ->: acc
+      }
+  }
+
+  /**
+    * Gets the kind of the class.
+    */
+  private def getClassKind(clazz: ResolvedAst.Class): Kind = clazz.tparam match {
+    case ResolvedAst.TypeParam.Kinded(_, _, kind, _) => kind
+    case _: ResolvedAst.TypeParam.Unkinded => Kind.Star
+  }
+
+  /**
     * Gets the kind associated with the type constructor.
     */
   private def getTyconKind(tycon: UnkindedType.Constructor, root: ResolvedAst.Root)(implicit flix: Flix): Kind = tycon match {
@@ -1072,7 +1069,6 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   }
 
   private object KindMatch {
-
 
     /**
       * A KindMatch that matches every kind.
@@ -1142,6 +1138,5 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         case (acc, pair) => acc + pair
       }
     }
-
   }
 }
