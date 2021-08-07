@@ -172,7 +172,7 @@ object Symbol {
     *
     * @param id   the globally unique name of the symbol.
     * @param text the original name, as it appears in the source code, of the symbol
-    * @param tvar the type variable associated with the symbol.
+    * @param tvar the type variable associated with the symbol. This type variable always has kind `Star`.
     * @param loc  the source location associated with the symbol.
     */
   final class VarSym(val id: Int, val text: String, val tvar: UnkindedType.Var, val scopedness: Scopedness, val loc: SourceLocation) {
