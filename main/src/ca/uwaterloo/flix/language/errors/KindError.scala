@@ -59,12 +59,12 @@ object KindError {
     * @param loc          the location where the error occurred.
     */
   case class UnexpectedKind(expectedKind: Kind, actualKind: Kind, loc: SourceLocation) extends KindError {
-    override def summary: String = s"Kind ${formatKind(actualKind)} found where kind ${formatKind(actualKind)} was expected."
+    override def summary: String = s"Kind ${formatKind(expectedKind)} was expected, but found ${formatKind(actualKind)}."
 
     override def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> This type has kind '" << Red(formatKind(actualKind)) << "', but is used where kind '" << Red(formatKind(expectedKind)) << "' is expected." << NewLine
+      vt << ">> Expected kind '" << Red(formatKind(expectedKind)) << "' here, but kind '" << Red(formatKind(actualKind)) << "' is used." << NewLine
       vt << NewLine
       vt << Code(loc, "unexpected kind.") << NewLine
       vt << NewLine
