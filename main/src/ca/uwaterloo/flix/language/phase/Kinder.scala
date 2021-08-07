@@ -26,12 +26,25 @@ import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN, mapN, 
 /**
   * Attributes kinds to the types in the AST.
   *
-  * For enums, classes, instances, and type aliases,
-  * kinds are either explicit or assumed to be Star.
+  * For enums, classes, instances, and type aliases:
+  * Either:
+  *   - type parameters are not annotated and are then assumed all to be Star, or
+  *   - type parameters are all annotated with their kinds.
   *
-  * For defs,
-  * kinds are either explicit or are inferred from their
-  * use in the formal parameters, return type and effect, and type constraints.
+  * For defs:
+  * Either:
+  *   - type parameters are all annotated with their kinds, or
+  *   - type parameters are not annotated and their kinds are inferred from their
+  *     use in the formal parameters, return type and effect, and type constraints.
+  *     This inference uses the following rules:
+  *       - If the type variable is the type of a formal parameter, it is ascribed kind Star.
+  *       - If the type variable is the return type of the function, it is ascribed kind Star.
+  *       - If the type variable is the effect type of the function, it is ascribed kind Bool.
+  *       - If the type variable is an argument to a type constraint, it is ascribed the class's parameter kind
+  *       - If the type variable is an argument to a type constructor, it is ascribed the type constructor's parameter kind.
+  *       - If the type variable is used as an type constructor, it is ascribed the kind Star -> Star ... -> Star -> X,
+  *         where X is the kind inferred from enacting these rules in the place of the fully-applied type.
+  *       - If there is an inconsistency among these kinds, an error is raised.
   *
   * In inferring types, variable type constructors are assumed to have kind * -> * -> * -> ???.
   */
