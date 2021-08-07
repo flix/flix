@@ -46,11 +46,11 @@ object GenDefClasses {
 
     val classMaker = ClassMaker.mkClass(defName, addSource = false, Some(functionType.functionInterfaceName))
     classMaker.mkSuperConstructor()
-    classMaker.mkMethod(genApplyFunction(defn, defn.exp, defName, functionType), GenContinuationInterfaces.invokeMethodName, functionType.result.nothingToContMethodDescriptor, Mod.isPublic)
+    classMaker.mkMethod(genInvokeFunction(defn, defn.exp, defName, functionType), GenContinuationInterfaces.invokeMethodName, functionType.result.nothingToContMethodDescriptor, Mod.isPublic)
     classMaker.closeClassMaker
   }
 
-  def genApplyFunction[T <: PType](defn: ErasedAst.Def, functionBody: ErasedAst.Expression[T], defName: JvmName, functionType: RArrow): F[StackNil] => F[StackEnd] = {
+  def genInvokeFunction[T <: PType](defn: ErasedAst.Def, functionBody: ErasedAst.Expression[T], defName: JvmName, functionType: RArrow): F[StackNil] => F[StackEnd] = {
 
     START[StackNil] ~
       (defn.formals.zipWithIndex.foldLeft(START[StackNil]) {
@@ -72,7 +72,7 @@ object GenDefClasses {
       case _ =>
         f.visitor.visitInsn(Opcodes.SWAP)
     }
-    f.visitor.visitFieldInsn(Opcodes.PUTFIELD, className.toInternalName, GenContinuationInterfaces.resultFieldName, resultType.toDescriptor)
+    f.visitor.visitFieldInsn(Opcodes.PUTFIELD, className.toInternalName, GenContinuationInterfaces.resultFieldName, resultType.erasedType.toDescriptor)
     f.asInstanceOf[F[R]]
   }
 

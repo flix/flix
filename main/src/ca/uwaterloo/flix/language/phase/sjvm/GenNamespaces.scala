@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.ErasedAst.Root
 import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.PType._
 import ca.uwaterloo.flix.language.ast.RRefType._
-import ca.uwaterloo.flix.language.ast.{PRefType, PType, RType, Symbol}
+import ca.uwaterloo.flix.language.ast.{PType, RType, Symbol}
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 import org.objectweb.asm.Opcodes
@@ -69,25 +69,24 @@ object GenNamespaces {
     * Adding a shim for the function `defn` on namespace `ns`
     */
   private def compileShimMethod[T <: PType](sym: Symbol.DefnSym, functionType: RArrow, resType: RType[T])(implicit root: Root, flix: Flix): F[StackNil] => F[StackEnd] = {
-    START[StackNil] ~
-      { f: F[StackNil] =>
-        f.visitor.visitTypeInsn(Opcodes.NEW, sym.defName.toInternalName)
+    //TODO(JLS): largely the same as CALL/TAILCALL except compiling arguments versus the loading of arguments here
+    START[StackNil] ~ { f: F[StackNil] =>
+      f.visitor.visitTypeInsn(Opcodes.NEW, sym.defName.toInternalName)
+      f.visitor.visitInsn(Opcodes.DUP)
+      f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, sym.defName.toInternalName, JvmName.constructorMethod, JvmName.nothingToVoid, false)
+      f.asInstanceOf[F[StackNil ** PReference[PFunction]]]
+    } ~ { f: F[StackNil ** PReference[PFunction]] =>
+      for (argIndex <- functionType.args.indices) {
         f.visitor.visitInsn(Opcodes.DUP)
-        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, sym.defName.toInternalName, JvmName.constructorMethod, JvmName.nothingToVoid, false)
-        f.asInstanceOf[F[StackNil ** PReference[PRefType.PAnyObject]]]
-      } ~
-      {f: F[StackNil ** PReference[PAnyObject]] =>
-        for (argIndex <- functionType.args.indices) {
-          f.visitor.visitInsn(Opcodes.DUP)
-          XLOAD(functionType.args(argIndex), argIndex)(f) // TODO(JLS): This does not work for cat 2 types
-          f.visitor.visitFieldInsn(Opcodes.PUTFIELD, sym.defName.toInternalName, GenFunctionInterfaces.argFieldName(argIndex), functionType.args(argIndex).toDescriptor)
-        }
-        f.asInstanceOf[F[StackNil ** PReference[PAnyObject]]]
-      } ~
-      { f: F[StackNil ** PReference[PAnyObject]] =>
-        f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, resType.contName.toInternalName, GenContinuationInterfaces.unwindMethodName, resType.nothingToThisMethodDescriptor, false)
-        f.asInstanceOf[F[StackNil ** T]]
-      } ~
+        XLOAD(functionType.args(argIndex), argIndex)(f) // TODO(JLS): This does not work for cat 2 types
+        f.visitor.visitFieldInsn(Opcodes.PUTFIELD, sym.defName.toInternalName, GenFunctionInterfaces.argFieldName(argIndex), functionType.args(argIndex).toDescriptor)
+      }
+      f.asInstanceOf[F[StackNil ** PReference[PFunction]]]
+    } ~ { f: F[StackNil ** PReference[PFunction]] =>
+      f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, resType.contName.toInternalName, GenContinuationInterfaces.unwindMethodName, resType.nothingToThisMethodDescriptor, false)
+      RType.undoErasure(resType, f.visitor)
+      f.asInstanceOf[F[StackNil ** T]]
+    } ~
       XRETURN(resType)
   }
 

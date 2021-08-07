@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.PType._
 import ca.uwaterloo.flix.language.ast.RRefType.{RArray, RObject}
 import ca.uwaterloo.flix.language.phase.sjvm.JvmName
+import org.objectweb.asm.{MethodVisitor, Opcodes}
 
 import java.nio.file.Path
 
@@ -38,7 +39,10 @@ sealed trait RType[T <: PType] extends Describable {
   // TODO(JLS): add cont and Fn in RRefType maybe?
   lazy val contName: JvmName = JvmName(Nil, s"Cont${JvmName.reservedDelimiter}${this.toErasedString}")
   lazy val nothingToContMethodDescriptor: String = JvmName.getMethodDescriptor(Nil, this.contName)
+  lazy val erasedNothingToThisMethodDescriptor: String = JvmName.getMethodDescriptor(Nil, this.erasedType)
   lazy val nothingToThisMethodDescriptor: String = JvmName.getMethodDescriptor(Nil, this)
+
+  def erasable: Boolean = erasedType != this //TODO(JLS): this could be lazily done
 }
 
 object RType {
@@ -79,6 +83,12 @@ object RType {
     case RBool | RInt8 | RInt16 | RInt32 | RInt64 | RChar | RFloat32 | RFloat64 => e
     case RReference(_) => RReference(RObject)
   }
+
+  def undoErasure(rType: RType[_ <: PType], methodVisitor: MethodVisitor): Unit =
+    if (rType.erasable) rType match {
+      case RReference(referenceType) => methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, referenceType.toInternalName)
+      case _ => ()
+    }
 
   def toErasedString[T <: PType](e: RType[T]): String = e match {
     case RBool => "Bool"
@@ -122,6 +132,9 @@ sealed trait RRefType[T <: PRefType] extends Describable {
   def toInternalName: String = jvmName.toInternalName
 
   def toDescriptor: String = jvmName.toDescriptor
+
+  lazy val erasedNothingToThisMethodDescriptor: String = JvmName.getMethodDescriptor(Nil, RObject) //TODO(JLS): Implicit erased type
+  lazy val nothingToThisMethodDescriptor: String = JvmName.getMethodDescriptor(Nil, this)
 }
 
 object RRefType {

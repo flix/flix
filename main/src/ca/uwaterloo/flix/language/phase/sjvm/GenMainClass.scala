@@ -87,27 +87,23 @@ object GenMainClass {
     // Push the args array on the stack.
     //      main.visitVarInsn(ALOAD, 0)
     // TODO(JLS): This could just call NS.m_main()
-    START[StackNil] ~
-      { f: F[StackNil] =>
-        f.visitor.visitTypeInsn(Opcodes.NEW, defn.sym.defName.toInternalName)
-        f.visitor.visitInsn(Opcodes.DUP)
-        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, defn.sym.defName.toInternalName, JvmName.constructorMethod, JvmName.nothingToVoid, false)
-        f.asInstanceOf[F[StackNil ** PReference[PRefType.PAnyObject]]]
-      } ~
+    START[StackNil] ~ { f: F[StackNil] =>
+      f.visitor.visitTypeInsn(Opcodes.NEW, defn.sym.defName.toInternalName)
+      f.visitor.visitInsn(Opcodes.DUP)
+      f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, defn.sym.defName.toInternalName, JvmName.constructorMethod, JvmName.nothingToVoid, false)
+      f.asInstanceOf[F[StackNil ** PReference[PFunction]]]
+    } ~
       DUP ~
-      ALOAD(0, tag[PArray[PReference[PStr]]]) ~
-      {f: F[StackNil ** PReference[PAnyObject] ** PReference[PAnyObject] ** PReference[PArray[PReference[PStr]]]] =>
-        f.visitor.visitFieldInsn(Opcodes.PUTFIELD, defn.sym.defName.toInternalName, GenFunctionInterfaces.argFieldName(0), JvmName.Java.Lang.Object.toDescriptor)
-        f.asInstanceOf[F[StackNil ** PReference[PAnyObject]]]
-      } ~
-      { f: F[StackNil ** PReference[PAnyObject]] =>
-        f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, RInt32.contName.toInternalName, GenContinuationInterfaces.unwindMethodName, RInt32.nothingToThisMethodDescriptor, false)
-        f.asInstanceOf[F[StackNil ** PInt32]]
-      } ~
-      { f: F[StackNil ** PInt32] =>
-        f.visitor.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/System", "exit", "(I)V", false);
-        f.asInstanceOf[F[StackNil]]
-      } ~
+      ALOAD(0, tag[PArray[PReference[PStr]]]) ~ { f: F[StackNil ** PReference[PFunction] ** PReference[PFunction] ** PReference[PArray[PReference[PStr]]]] =>
+      f.visitor.visitFieldInsn(Opcodes.PUTFIELD, defn.sym.defName.toInternalName, GenFunctionInterfaces.argFieldName(0), JvmName.Java.Lang.Object.toDescriptor)
+      f.asInstanceOf[F[StackNil ** PReference[PFunction]]]
+    } ~ { f: F[StackNil ** PReference[PFunction]] =>
+      f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, RInt32.contName.toInternalName, GenContinuationInterfaces.unwindMethodName, RInt32.nothingToThisMethodDescriptor, false)
+      f.asInstanceOf[F[StackNil ** PInt32]]
+    } ~ { f: F[StackNil ** PInt32] =>
+      f.visitor.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/System", "exit", "(I)V", false);
+      f.asInstanceOf[F[StackNil]]
+    } ~
       RETURN
     //      THISLOAD(tag[PArray[PReference[PStr]]]) ~
     //        ???

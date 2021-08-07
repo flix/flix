@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.sjvm
 
 import ca.uwaterloo.flix.language.ast.ErasedAst.Expression
-import ca.uwaterloo.flix.language.ast.{Cat1, PRefType, PType, RType}
+import ca.uwaterloo.flix.language.ast.{Cat1, PType, RType}
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 import org.objectweb.asm.MethodVisitor
 
@@ -41,7 +41,7 @@ object BytecodeCompiler {
         pushUnit
 
     case Expression.Null(tpe, loc) =>
-      WithSource[R](loc) ~ pushNull
+      WithSource[R](loc) ~ pushNull(tpe)
 
     case Expression.True(loc) =>
       WithSource[R](loc) ~ pushBool(true)
@@ -75,15 +75,20 @@ object BytecodeCompiler {
     case Expression.Str(lit, loc) => ???
     case Expression.Var(sym, tpe, loc) =>
       WithSource[R](loc) ~
-        XLOAD(tpe, sym.getStackOffset + symOffsetOffset) // TODO: make this offset exist in F, dependent on static(0)/object function(1)
+        XLOAD(tpe, sym.getStackOffset + symOffsetOffset) // TODO(JLS): make this offset exist in F, dependent on static(0)/object function(1)
     case Expression.Closure(sym, freeVars, tpe, loc) => ???
     case Expression.ApplyClo(exp, args, tpe, loc) => ???
-    case Expression.ApplyDef(sym, args, tpe, loc) => ???
+    case Expression.ApplyDef(sym, args, tpe, loc) =>
+      WithSource[R](loc) ~
+        CALL(args, sym.defName, tpe.contName, tpe)
+
     case Expression.ApplyCloTail(exp, args, tpe, loc) => ???
-    case Expression.ApplyDefTail(sym, args, tpe, loc) => ???
+    case Expression.ApplyDefTail(sym, args, tpe, loc) =>
+      WithSource[R](loc) ~
+        TAILCALL(args, sym.defName, tpe)
+
     case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) =>
       WithSource[R](loc) ~
-        THISLOAD(tag[PRefType.PFunction]) ~
         TAILCALL(actuals, sym.defName, tag[T])
 
     case Expression.Unary(sop, op, exp, tpe, loc) => ???
@@ -92,7 +97,7 @@ object BytecodeCompiler {
     case Expression.Branch(exp, branches, tpe, loc) => ???
     case Expression.JumpTo(sym, tpe, loc) => ???
     case Expression.Let(sym, exp1, exp2, tpe, loc) =>
-      // sym is unsafe. localvar stack + reg as types?
+      //TODO(JLS): sym is unsafe. localvar stack + reg as types?
       WithSource[R](loc) ~
         compileExp(exp1) ~
         XStore(sym, exp1.tpe) ~
@@ -179,6 +184,7 @@ object BytecodeCompiler {
     case Expression.Cast(exp, tpe, loc) => {
       // TODO(JLS): implement Cast
       def fixStack[R <: Stack, T1 <: PType, T2 <: PType]: F[R ** T1] => F[R ** T2] = f => f.asInstanceOf[F[R ** T2]]
+
       WithSource[R](loc) ~
         compileExp(exp) ~
         fixStack
@@ -194,7 +200,7 @@ object BytecodeCompiler {
     case Expression.PutStaticField(field, exp, tpe, loc) => ???
     case Expression.NewChannel(exp, tpe, loc) =>
       WithSource[R](loc) ~
-        pushNull
+        pushNull(tpe)
 
     //    case Expression.GetChannel(exp, tpe, loc) => ???
     //    case Expression.PutChannel(exp1, exp2, tpe, loc) => ???

@@ -285,22 +285,23 @@ object Instructions {
   }
 
   // TODO(JLS): What to do here
-//  def CastIfNotPrim
-//  [R <: Stack, T1 <: PType, T2 <: PType]
-//  (expType: RType[T1], newType: RType[T2]):
-//  F[R ** T1] => F[R ** T2] = (expType, newType) match {
-//    case (RBool, RBool) => NOP
-//    case (RInt8, RInt8) => NOP
-//    case (RInt16, RInt16) => NOP
-//    case (RInt32, RInt32) => NOP
-//    case (RInt64, RInt64) => NOP
-//    case (RChar, RChar) => NOP
-//    case (RFloat32, RFloat32) => NOP
-//    case (RFloat64, RFloat64) => NOP
-//    case (RReference(_), castType@RReference(b)) =>
-//      SCAFFOLD//CAST(b)
-//    case _ =>
-//  }
+
+  //  def CastIfNotPrim
+  //  [R <: Stack, T1 <: PType, T2 <: PType]
+  //  (expType: RType[T1], newType: RType[T2]):
+  //  F[R ** T1] => F[R ** T2] = (expType, newType) match {
+  //    case (RBool, RBool) => NOP
+  //    case (RInt8, RInt8) => NOP
+  //    case (RInt16, RInt16) => NOP
+  //    case (RInt32, RInt32) => NOP
+  //    case (RInt64, RInt64) => NOP
+  //    case (RChar, RChar) => NOP
+  //    case (RFloat32, RFloat32) => NOP
+  //    case (RFloat64, RFloat64) => NOP
+  //    case (RReference(_), castType@RReference(b)) =>
+  //      SCAFFOLD//CAST(b)
+  //    case _ =>
+  //  }
 
   // NATIVE
   def NEW
@@ -488,16 +489,18 @@ object Instructions {
   [R <: Stack]:
   F[R] => F[R ** PReference[PUnit]] = f => {
     val className = RUnit.toInternalName
-    val classDescriptor = RUnit.toDescriptor
+    val classDescriptor = RUnit.nothingToThisMethodDescriptor
     f.visitor.visitMethodInsn(Opcodes.INVOKESTATIC, className, "getInstance", classDescriptor, false)
     castF(f)
   }
 
   // NATIVE
   def pushNull
-  [R <: Stack, T <: PRefType]:
+  [R <: Stack, T <: PRefType]
+  (tpe: RType[PReference[T]]):
   F[R] => F[R ** PReference[T]] = f => {
     f.visitor.visitInsn(Opcodes.ACONST_NULL)
+    f.visitor.visitTypeInsn(Opcodes.CHECKCAST, RType.internalNameOfReference(tpe))
     castF(f)
   }
 
@@ -526,8 +529,11 @@ object Instructions {
   def pushInt32
   [R <: Stack]
   (n: Int):
-  F[R] => F[R ** PInt32] =
-    ???
+  F[R] => F[R ** PInt32] = f => {
+    f.visitor.visitInsn(Opcodes.ICONST_0)
+    // TODO(JLS): make proper implementation
+    castF(f)
+  }
 
   // NATIVE
   def pushInt64
@@ -572,17 +578,18 @@ object Instructions {
   F[R] => F[R ** PReference[T]] =
     ALOAD(0)
 
-  // TODO(JLS): This should both return StackEnd (no code should follow) and R ** T (compileExp should push T on stack)
-  // TODO(JLS): TAILCALL/CALL only differ in the last instructions => rewrite and reuse
+  // TODO(JLS): This should both return StackEnd (no code should follow) and R ** T (compileExp should push T on stack) (maybe stop flag type on F)
+  // TODO(JLS): TAILCALL/CALL only differ slightly, reuse code
   def TAILCALL
   [R <: Stack, T <: PType]
-  (arguments: List[ErasedAst.Expression[_ <: PType]], funClassName: JvmName, tpe: T = tag[T]):
-  F[R ** PReference[PFunction]] => F[R ** T] = f => {
+  (arguments: List[ErasedAst.Expression[_ <: PType]], defClassName: JvmName, tpe: T = tag[T]):
+  F[R] => F[R ** T] = f => {
+    f.visitor.visitVarInsn(Opcodes.ALOAD, 0) //TODO(JLS): is this a good solution? what about static contexts?
     for (argIndex <- arguments.indices) {
       val arg = arguments(argIndex)
       f.visitor.visitInsn(Opcodes.DUP)
       compileExp(arg)(f)
-      f.visitor.visitFieldInsn(Opcodes.PUTFIELD, funClassName.toInternalName, GenFunctionInterfaces.argFieldName(argIndex), arg.tpe.toDescriptor)
+      f.visitor.visitFieldInsn(Opcodes.PUTFIELD, defClassName.toInternalName, GenFunctionInterfaces.argFieldName(argIndex), arg.tpe.toDescriptor)
     }
     f.visitor.visitInsn(Opcodes.ARETURN)
     castF(f)
@@ -590,15 +597,20 @@ object Instructions {
 
   def CALL
   [R <: Stack, T <: PType]
-  (arguments: List[ErasedAst.Expression[_ <: PType]], funClassName: JvmName, contName: JvmName, returnType: RType[T]):
-  F[R ** PReference[PFunction]] => F[R ** T] = f => {
+  (arguments: List[ErasedAst.Expression[_ <: PType]], defClassName: JvmName, contName: JvmName, returnType: RType[T]):
+  F[R] => F[R ** T] = f => {
+    f.visitor.visitTypeInsn(Opcodes.NEW, defClassName.toInternalName)
+    f.visitor.visitInsn(Opcodes.DUP)
+    f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, defClassName.toInternalName, JvmName.constructorMethod, JvmName.nothingToVoid, false)
+    f.asInstanceOf[F[StackNil ** PReference[PFunction]]]
     for (argIndex <- arguments.indices) {
       val arg = arguments(argIndex)
       f.visitor.visitInsn(Opcodes.DUP)
       compileExp(arg)(f)
-      f.visitor.visitFieldInsn(Opcodes.PUTFIELD, funClassName.toInternalName, GenFunctionInterfaces.argFieldName(argIndex), arg.tpe.toDescriptor)
+      f.visitor.visitFieldInsn(Opcodes.PUTFIELD, defClassName.toInternalName, GenFunctionInterfaces.argFieldName(argIndex), arg.tpe.toDescriptor)
     }
-    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, contName.toInternalName, GenContinuationInterfaces.unwindMethodName, returnType.nothingToThisMethodDescriptor, false)
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, contName.toInternalName, GenContinuationInterfaces.unwindMethodName, returnType.erasedNothingToThisMethodDescriptor, false)
+    undoErasure(returnType, f.visitor)
     castF(f)
   }
 
