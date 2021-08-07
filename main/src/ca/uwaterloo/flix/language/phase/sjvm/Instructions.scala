@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.RType._
 import ca.uwaterloo.flix.language.ast.{Cat1, Cat2, ErasedAst, PRefType, PType, RRefType, RType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
 import ca.uwaterloo.flix.util.InternalCompilerException
-import org.objectweb.asm.{Label, Opcodes}
+import org.objectweb.asm.{Label, MethodVisitor, Opcodes}
 
 object Instructions {
 
@@ -157,7 +157,6 @@ object Instructions {
     case _ => ??? //SWAP
   }
 
-  // META
   def NOP
   [R <: Stack]:
   F[R] => F[R] =
@@ -268,7 +267,7 @@ object Instructions {
     castF(f)
   }
 
-  // NATIVE
+  //TODO(JLS): Should probably not be used directly (with functions/ref/modelled things)
   def PUTFIELD
   [R <: Stack, T1 <: PType, T2 <: PRefType]
   (classType: RReference[T2], fieldName: String, fieldType: RType[T1]):
@@ -303,7 +302,7 @@ object Instructions {
   //    case _ =>
   //  }
 
-  // NATIVE
+  //TODO(JLS): Only use the new+init combo instruction (impl with capability)
   def NEW
   [R <: Stack, T <: PRefType]
   (classType: RReference[T]):
@@ -335,7 +334,6 @@ object Instructions {
   F[R1] => F[R2] =
     ???
 
-  // NATIVE
   // TODO(JLS): maybe return Nothing (Nothing <: F[_]). atleast something better than StackEnd
   def RETURN[R <: Stack]: F[StackNil] => F[StackEnd] = f => {
     f.visitor.visitInsn(Opcodes.RETURN)
@@ -388,7 +386,7 @@ object Instructions {
     castF(f)
   }
 
-  // NATIVE
+
   def XRETURN
   [R <: Stack, T <: PType]
   (e: RType[T]):
@@ -404,7 +402,7 @@ object Instructions {
     case RReference(_) => ARETURN
   }
 
-  // NATIVE
+
   def POP
   [R <: Stack, T <: PType with Cat1]:
   F[R ** T] => F[R] = f => {
@@ -412,7 +410,6 @@ object Instructions {
     castF(f)
   }
 
-  // NATIVE
   def DUP_X1
   [R <: Stack, T1 <: PType with Cat1, T2 <: PType with Cat1]:
   F[R ** T2 ** T1] => F[R ** T1 ** T2 ** T1] = f => {
@@ -420,7 +417,6 @@ object Instructions {
     castF(f)
   }
 
-  // NATIVE
   def DUP_X2_onCat1
   [R <: Stack, T1 <: PType with Cat1, T2 <: PType with Cat1, T3 <: PType with Cat1]:
   F[R ** T3 ** T2 ** T1] => F[R ** T1 ** T3 ** T2 ** T1] = f => {
@@ -428,7 +424,6 @@ object Instructions {
     castF(f)
   }
 
-  // NATIVE
   def DUP_X2_onCat2
   [R <: Stack, T1 <: PType with Cat1, T2 <: PType with Cat2]:
   F[R ** T2 ** T1] => F[R ** T1 ** T2 ** T1] = f => {
@@ -436,7 +431,6 @@ object Instructions {
     castF(f)
   }
 
-  // NATIVE
   def DUP2_X2_cat1_onCat1
   [R <: Stack, T1 <: PType with Cat1, T2 <: PType with Cat1, T3 <: PType with Cat1, T4 <: PType with Cat1]:
   F[R ** T4 ** T3 ** T2 ** T1] => F[R ** T2 ** T1 ** T4 ** T3 ** T2 ** T1] = f => {
@@ -444,7 +438,6 @@ object Instructions {
     castF(f)
   }
 
-  // NATIVE
   def DUP2_X2_cat2_onCat1
   [R <: Stack, T1 <: PType with Cat2, T2 <: PType with Cat1, T3 <: PType with Cat1]:
   F[R ** T3 ** T2 ** T1] => F[R ** T1 ** T3 ** T2 ** T1] = f => {
@@ -452,7 +445,6 @@ object Instructions {
     castF(f)
   }
 
-  // NATIVE
   def DUP2_X2_cat1_onCat2
   [R <: Stack, T1 <: PType with Cat1, T2 <: PType with Cat1, T3 <: PType with Cat2]:
   F[R ** T3 ** T2 ** T1] => F[R ** T2 ** T1 ** T3 ** T2 ** T1] = f => {
@@ -460,7 +452,6 @@ object Instructions {
     castF(f)
   }
 
-  // NATIVE
   def DUP2_X2_cat2_onCat2
   [R <: Stack, T1 <: PType with Cat2, T2 <: PType with Cat2]:
   F[R ** T2 ** T1] => F[R ** T1 ** T2 ** T1] = f => {
@@ -468,7 +459,6 @@ object Instructions {
     castF(f)
   }
 
-  // NATIVE
   def DUP
   [R <: Stack, T <: PType with Cat1]:
   F[R ** T] => F[R ** T ** T] = f => {
@@ -476,7 +466,6 @@ object Instructions {
     castF(f)
   }
 
-  // NATIVE
   def ISUB
   [R <: Stack]:
   F[R ** PInt32 ** PInt32] => F[R ** PInt32] = f => {
@@ -484,7 +473,6 @@ object Instructions {
     castF(f)
   }
 
-  // NATIVE
   def pushUnit
   [R <: Stack]:
   F[R] => F[R ** PReference[PUnit]] = f => {
@@ -494,7 +482,6 @@ object Instructions {
     castF(f)
   }
 
-  // NATIVE
   def pushNull
   [R <: Stack, T <: PRefType]
   (tpe: RType[PReference[T]]):
@@ -504,66 +491,93 @@ object Instructions {
     castF(f)
   }
 
-  // NATIVE
+  /*
+   * Generate code to load an integer constant.
+   *
+   * Uses the smallest number of bytes necessary, e.g. ICONST_0 takes 1 byte to load a 0, but BIPUSH 7 takes 2 bytes to
+   * load a 7, and SIPUSH 200 takes 3 bytes to load a 200. However, note that values on the stack normally take up 4
+   * bytes. The exception is if we set `isLong` to true, in which case a cast will be performed if necessary.
+   *
+   * This is needed because sometimes we expect the operands to be a long, which means two (int) values are popped from
+   * the stack and concatenated to form a long.
+   */
+  private def compileInt(visitor: MethodVisitor, i: Long, isCat2: Boolean = false): Unit = {
+    i match {
+      case -1 => visitor.visitInsn(Opcodes.ICONST_M1)
+      case 0 => if (!isCat2) visitor.visitInsn(Opcodes.ICONST_0) else visitor.visitInsn(Opcodes.LCONST_0)
+      case 1 => if (!isCat2) visitor.visitInsn(Opcodes.ICONST_1) else visitor.visitInsn(Opcodes.LCONST_1)
+      case 2 => visitor.visitInsn(Opcodes.ICONST_2)
+      case 3 => visitor.visitInsn(Opcodes.ICONST_3)
+      case 4 => visitor.visitInsn(Opcodes.ICONST_4)
+      case 5 => visitor.visitInsn(Opcodes.ICONST_5)
+      case _ if scala.Byte.MinValue <= i && i <= scala.Byte.MaxValue => visitor.visitIntInsn(Opcodes.BIPUSH, i.toInt)
+      case _ if scala.Short.MinValue <= i && i <= scala.Short.MaxValue => visitor.visitIntInsn(Opcodes.SIPUSH, i.toInt)
+      case _ if scala.Int.MinValue <= i && i <= scala.Int.MaxValue => visitor.visitLdcInsn(i.toInt)
+      case _ => visitor.visitLdcInsn(i)
+    }
+    if (isCat2 && scala.Int.MinValue <= i && i <= scala.Int.MaxValue && i != 0 && i != 1) visitor.visitInsn(Opcodes.I2L)
+  }
+
   def pushBool
   [R <: Stack]
   (b: Boolean):
   F[R] => F[R ** PInt32] =
     pushInt32(if (b) 1 else 0)
 
-  // NATIVE
   def pushInt8
   [R <: Stack]
   (n: Int):
-  F[R] => F[R ** PInt8] =
-    ???
+  F[R] => F[R ** PInt8] = f => {
+    compileInt(f.visitor, n)
+    castF(f)
+  }
 
-  // NATIVE
   def pushInt16
   [R <: Stack]
   (n: Int):
-  F[R] => F[R ** PInt16] =
-    ???
+  F[R] => F[R ** PInt16] = f => {
+    compileInt(f.visitor, n)
+    castF(f)
+  }
 
-  // NATIVE
   def pushInt32
   [R <: Stack]
   (n: Int):
   F[R] => F[R ** PInt32] = f => {
-    f.visitor.visitInsn(Opcodes.ICONST_0)
-    // TODO(JLS): make proper implementation
+    compileInt(f.visitor, n)
     castF(f)
   }
 
-  // NATIVE
   def pushInt64
   [R <: Stack]
   (n: Long):
-  F[R] => F[R ** PInt64] =
-    ???
+  F[R] => F[R ** PInt64] = f => {
+    compileInt(f.visitor, n, isCat2 = true)
+    castF(f)
+  }
 
-  // NATIVE
   def pushFloat32
   [R <: Stack]
   (n: Float):
-  F[R] => F[R ** PFloat32] =
-    ???
+  F[R] => F[R ** PFloat32] = f => {
+    compileInt(f.visitor, n)
+    castF(f)
+  }
 
-  // NATIVE
   def pushFloat64
   [R <: Stack]
   (n: Double):
-  F[R] => F[R ** PFloat64] =
-    ???
+  F[R] => F[R ** PFloat64] = f => {
+    compileInt(f.visitor, n, isCat2 = true)
+    castF(f)
+  }
 
-  // NATIVE
   def pushChar
   [R <: Stack]
   (c: scala.Char):
   F[R] => F[R ** PChar] =
     f => castF(pushInt16(c)(f))
 
-  // NATIVE
   def ALOAD
   [R <: Stack, T <: PRefType]
   (index: Int, tpe: T = tag[T]):
@@ -614,7 +628,6 @@ object Instructions {
     castF(f)
   }
 
-  // NATIVE
   def FLOAD
   [R <: Stack]
   (index: Int):
@@ -623,7 +636,6 @@ object Instructions {
     castF(f)
   }
 
-  // NATIVE
   def DLOAD
   [R <: Stack]
   (index: Int):
@@ -632,7 +644,6 @@ object Instructions {
     castF(f)
   }
 
-  // NATIVE
   def ILOAD
   [R <: Stack]
   (index: Int):
@@ -641,7 +652,6 @@ object Instructions {
     castF(f)
   }
 
-  // NATIVE
   def LLOAD
   [R <: Stack]
   (index: Int):
@@ -650,7 +660,6 @@ object Instructions {
     castF(f)
   }
 
-  // META
   def XLOAD
   [R <: Stack, T <: PType]
   (tpe: RType[T], index: Int):
@@ -667,55 +676,46 @@ object Instructions {
       case RReference(_) => ALOAD(index)
     }
 
-  // NATIVE
   def BALoad
   [R <: Stack]:
   F[R ** PReference[PArray[PInt8]] ** PInt32] => F[R ** PInt8] =
     ???
 
-  // NATIVE
   def SALoad
   [R <: Stack]:
   F[R ** PReference[PArray[PInt16]] ** PInt32] => F[R ** PInt16] =
     ???
 
-  // NATIVE
   def IALoad
   [R <: Stack]:
   F[R ** PReference[PArray[PInt32]] ** PInt32] => F[R ** PInt32] =
     ???
 
-  // NATIVE
   def LALoad
   [R <: Stack]:
   F[R ** PReference[PArray[PInt64]] ** PInt32] => F[R ** PInt64] =
     ???
 
-  // NATIVE
   def CALoad
   [R <: Stack]:
   F[R ** PReference[PArray[PChar]] ** PInt32] => F[R ** PChar] =
     ???
 
-  // NATIVE
   def FALoad
   [R <: Stack]:
   F[R ** PReference[PArray[PFloat32]] ** PInt32] => F[R ** PFloat32] =
     ???
 
-  // NATIVE
   def DALoad
   [R <: Stack]:
   F[R ** PReference[PArray[PFloat64]] ** PInt32] => F[R ** PFloat64] =
     ???
 
-  // NATIVE
   def AALoad
   [R <: Stack, T <: PRefType]:
   F[R ** PReference[PArray[PReference[T]]] ** PInt32] => F[R ** PReference[T]] =
     ???
 
-  // META
   def XALoad
   [R <: Stack, T <: PType]
   (tpe: RType[T]):
@@ -731,55 +731,46 @@ object Instructions {
       case RReference(_) => AALoad
     }
 
-  // NATIVE
   def BAStore
   [R <: Stack]:
   F[R ** PReference[PArray[PInt8]] ** PInt32 ** PInt8] => F[R] =
     ???
 
-  // NATIVE
   def SAStore
   [R <: Stack]:
   F[R ** PReference[PArray[PInt16]] ** PInt32 ** PInt16] => F[R] =
     ???
 
-  // NATIVE
   def IAStore
   [R <: Stack]:
   F[R ** PReference[PArray[PInt32]] ** PInt32 ** PInt32] => F[R] =
     ???
 
-  // NATIVE
   def LAStore
   [R <: Stack]:
   F[R ** PReference[PArray[PInt64]] ** PInt32 ** PInt64] => F[R] =
     ???
 
-  // NATIVE
   def CAStore
   [R <: Stack]:
   F[R ** PReference[PArray[PChar]] ** PInt32 ** PChar] => F[R] =
     ???
 
-  // NATIVE
   def FAStore
   [R <: Stack]:
   F[R ** PReference[PArray[PFloat32]] ** PInt32 ** PFloat32] => F[R] =
     ???
 
-  // NATIVE
   def DAStore
   [R <: Stack]:
   F[R ** PReference[PArray[PFloat64]] ** PInt32 ** PFloat64] => F[R] =
     ???
 
-  // NATIVE
   def AAStore
   [R <: Stack, T <: PRefType]:
   F[R ** PReference[PArray[PReference[T]]] ** PInt32 ** PReference[T]] => F[R] =
     ???
 
-  // META
   def XAStore
   [R <: Stack, T <: PType]
   (tpe: RType[T]):
@@ -798,7 +789,6 @@ object Instructions {
   val symOffsetOffset = 1
 
   // I/S/B/C-Store are all just jvm ISTORE
-  // NATIVE
   def IStore
   [R <: Stack]
   (sym: Symbol.VarSym):
@@ -807,7 +797,6 @@ object Instructions {
     castF(f)
   }
 
-  // NATIVE
   def SStore
   [R <: Stack]
   (sym: Symbol.VarSym):
@@ -816,7 +805,6 @@ object Instructions {
     castF(f)
   }
 
-  // NATIVE
   def BStore
   [R <: Stack]
   (sym: Symbol.VarSym):
@@ -825,7 +813,6 @@ object Instructions {
     castF(f)
   }
 
-  // NATIVE
   def CStore
   [R <: Stack]
   (sym: Symbol.VarSym):
@@ -834,7 +821,6 @@ object Instructions {
     castF(f)
   }
 
-  // NATIVE
   def LStore
   [R <: Stack]
   (sym: Symbol.VarSym):
@@ -843,7 +829,6 @@ object Instructions {
     castF(f)
   }
 
-  // NATIVE
   def FStore
   [R <: Stack]
   (sym: Symbol.VarSym):
@@ -852,7 +837,6 @@ object Instructions {
     castF(f)
   }
 
-  // NATIVE
   def DStore
   [R <: Stack]
   (sym: Symbol.VarSym):
@@ -861,7 +845,6 @@ object Instructions {
     castF(f)
   }
 
-  // NATIVE
   def AStore
   [R <: Stack, T <: PRefType]
   (sym: Symbol.VarSym):
@@ -870,7 +853,6 @@ object Instructions {
     castF(f)
   }
 
-  // META
   def XStore
   [R <: Stack, T <: PType]
   (sym: Symbol.VarSym, tpe: RType[T]):
@@ -886,55 +868,46 @@ object Instructions {
       case RReference(_) => AStore(sym)
     }
 
-  // NATIVE
   def BOOLNEWARRAY
   [R <: Stack]:
   F[R ** PInt32] => F[R ** PReference[PArray[PInt32]]] =
     ???
 
-  // NATIVE
   def CNEWARRAY
   [R <: Stack]:
   F[R ** PInt32] => F[R ** PReference[PArray[PChar]]] =
     ???
 
-  // NATIVE
   def FNEWARRAY
   [R <: Stack]:
   F[R ** PInt32] => F[R ** PReference[PArray[PFloat32]]] =
     ???
 
-  // NATIVE
   def DNEWARRAY
   [R <: Stack]:
   F[R ** PInt32] => F[R ** PReference[PArray[PFloat64]]] =
     ???
 
-  // NATIVE
   def BNEWARRAY
   [R <: Stack]:
   F[R ** PInt32] => F[R ** PReference[PArray[PInt8]]] =
     ???
 
-  // NATIVE
   def SNEWARRAY
   [R <: Stack]:
   F[R ** PInt32] => F[R ** PReference[PArray[PInt16]]] =
     ???
 
-  // NATIVE
   def INEWARRAY
   [R <: Stack]:
   F[R ** PInt32] => F[R ** PReference[PArray[PInt32]]] =
     ???
 
-  // NATIVE
   def LNEWARRAY
   [R <: Stack]:
   F[R ** PInt32] => F[R ** PReference[PArray[PInt64]]] =
     ???
 
-  // NATIVE
   def ANEWARRAY
   [R <: Stack, T <: PRefType]:
   F[R ** PInt32] => F[R ** PReference[PArray[PReference[T]]]] =
@@ -943,7 +916,6 @@ object Instructions {
   // should type be built?
     ???
 
-  // META
   def XNEWARRAY
   [R <: Stack, T <: PType]
   (arrayType: RType[PReference[PArray[T]]]):
@@ -998,7 +970,6 @@ object Instructions {
 
   def foo[R <: Stack] = (r: F[R]) => defMakeFunction(defMakeFunction(r, RInt32), RInt32)
 
-  // META
   implicit class ComposeOps[A <: Stack, B <: Stack](ab: F[A] => F[B]) {
     def ~[C <: Stack](bc: F[B] => F[C]): F[A] => F[C] =
       f => bc(ab(f))
