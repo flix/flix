@@ -105,15 +105,15 @@ object ErasedAst {
 
     case class Closure(sym: Symbol.DefnSym, freeVars: List[FreeVar], tpe: RType[PReference[PFunction]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PFunction]]
 
-    case class ApplyClo[T <: PType](exp: ErasedAst.Expression[PReference[PFunction]], args: List[ErasedAst.Expression[PType]], tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
+    case class ApplyClo[T <: PType](exp: ErasedAst.Expression[PReference[PFunction]], args: List[ErasedAst.Expression[_ <: PType]], tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
-    case class ApplyDef[T <: PType](sym: Symbol.DefnSym, args: List[ErasedAst.Expression[PType]], tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
+    case class ApplyDef[T <: PType](sym: Symbol.DefnSym, args: List[ErasedAst.Expression[_ <: PType]], tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
-    case class ApplyCloTail[T <: PType](exp: ErasedAst.Expression[PReference[PFunction]], args: List[ErasedAst.Expression[PType]], tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
+    case class ApplyCloTail[T <: PType](exp: ErasedAst.Expression[PReference[PFunction]], args: List[ErasedAst.Expression[_ <: PType]], tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
-    case class ApplyDefTail[T <: PType](sym: Symbol.DefnSym, args: List[ErasedAst.Expression[PType]], tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
+    case class ApplyDefTail[T <: PType](sym: Symbol.DefnSym, args: List[ErasedAst.Expression[_ <: PType]], tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
-    case class ApplySelfTail[T <: PType](sym: Symbol.DefnSym, formals: List[ErasedAst.FormalParam], actuals: List[ErasedAst.Expression[PType]], tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
+    case class ApplySelfTail[T <: PType](sym: Symbol.DefnSym, formals: List[ErasedAst.FormalParam], actuals: List[ErasedAst.Expression[_ <: PType]], tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
     // TODO(JLS): maybe make multiple classes for different exp types
     case class Unary[T <: PType](sop: SemanticOperator, op: UnaryOperator, exp: ErasedAst.Expression[PType], tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
