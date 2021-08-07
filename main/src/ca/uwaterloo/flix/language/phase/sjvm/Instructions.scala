@@ -560,7 +560,12 @@ object Instructions {
   [R <: Stack]
   (n: Float):
   F[R] => F[R ** PFloat32] = f => {
-    compileInt(f.visitor, n)
+    n match {
+      case 0f => f.visitor.visitInsn(Opcodes.FCONST_0)
+      case 1f => f.visitor.visitInsn(Opcodes.FCONST_1)
+      case 2f => f.visitor.visitInsn(Opcodes.FCONST_2)
+      case _ => f.visitor.visitLdcInsn(f)
+    }
     castF(f)
   }
 
@@ -568,7 +573,11 @@ object Instructions {
   [R <: Stack]
   (n: Double):
   F[R] => F[R ** PFloat64] = f => {
-    compileInt(f.visitor, n, isCat2 = true)
+    n match {
+      case 0d => f.visitor.visitInsn(Opcodes.DCONST_0)
+      case 1d => f.visitor.visitInsn(Opcodes.DCONST_1)
+      case _ => f.visitor.visitLdcInsn(n)
+    }
     castF(f)
   }
 
