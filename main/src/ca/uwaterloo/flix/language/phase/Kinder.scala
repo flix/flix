@@ -18,10 +18,10 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{Kind, _}
+import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.KindError
+import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN, mapN, traverse}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 /**
   * Attributes kinds to the types in the AST.
@@ -942,7 +942,6 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
           kenv => acc ++ kenv
         }
       }
-    case UnkindedType.Apply(_, _) => throw InternalCompilerException("Unexpected type application.")
     case UnkindedType.Lambda(t1, t2) =>
       val tyconKind = tpe.typeArguments.foldLeft(expectedType.kind) {
         case (acc, _) => Kind.Star ->: acc

@@ -29,7 +29,7 @@ sealed trait UnkindedType {
   def typeConstructor: Option[UnkindedType.Constructor] = this match {
     case UnkindedType.Cst(cst, _) => Some(cst)
     case UnkindedType.Apply(t1, _) => t1.typeConstructor
-    case UnkindedType.Var(_, _, loc) => None
+    case UnkindedType.Var(_, _, _) => None
     case UnkindedType.Ascribe(t, _, _) => t.typeConstructor
     case UnkindedType.Lambda(_, _) => throw InternalCompilerException("Unexpected type constructor: Lambda")
   }
@@ -37,9 +37,9 @@ sealed trait UnkindedType {
   /**
     * Returns the base type of a type application.
     */
-  def baseType: UnkindedType = this match {
+  def baseType: UnkindedType.BaseType = this match {
     case UnkindedType.Apply(t1, _) => t1.baseType
-    case _ => this
+    case bt: UnkindedType.BaseType => bt
   }
 
   /**
@@ -53,10 +53,16 @@ sealed trait UnkindedType {
 }
 
 object UnkindedType {
+
+  /**
+    * The union of non-Apply types.
+    */
+  sealed trait BaseType
+
   /**
     * Type constructor.
     */
-  case class Cst(cst: Constructor, loc: SourceLocation) extends UnkindedType
+  case class Cst(cst: Constructor, loc: SourceLocation) extends UnkindedType with BaseType
 
   /**
     * Type application.
@@ -66,12 +72,12 @@ object UnkindedType {
   /**
     * Type lambda.
     */
-  case class Lambda(t1: UnkindedType.Var, t2: UnkindedType) extends UnkindedType
+  case class Lambda(t1: UnkindedType.Var, t2: UnkindedType) extends UnkindedType with BaseType
 
   /**
     * Type variable.
     */
-  case class Var(id: Int, text: Option[String] = None, loc: SourceLocation) extends UnkindedType {
+  case class Var(id: Int, text: Option[String] = None, loc: SourceLocation) extends UnkindedType with BaseType {
     /**
       * Converts the UnkindedType to a Type with the given `kind`.
       */
@@ -87,7 +93,7 @@ object UnkindedType {
   /**
     * Kind ascription.
     */
-  case class Ascribe(t: UnkindedType, k: Kind, loc: SourceLocation) extends UnkindedType
+  case class Ascribe(t: UnkindedType, k: Kind, loc: SourceLocation) extends UnkindedType with BaseType
 
   /**
     * Returns the Unit type with given source location `loc`.
