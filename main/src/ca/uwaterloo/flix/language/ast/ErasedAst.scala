@@ -210,6 +210,62 @@ object ErasedAst {
 
     case class MatchError[T <: PType](tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
+    case class BoxInt8(exp: ErasedAst.Expression[PInt8], loc: SourceLocation) extends ErasedAst.Expression[PReference[PBoxedInt8]] {
+      final val tpe = RType.RReference(RRefType.RBoxedInt8)
+    }
+
+    case class BoxInt16(exp: ErasedAst.Expression[PInt16], loc: SourceLocation) extends ErasedAst.Expression[PReference[PBoxedInt16]] {
+      final val tpe = RType.RReference(RRefType.RBoxedInt16)
+    }
+
+    case class BoxInt32(exp: ErasedAst.Expression[PInt32], loc: SourceLocation) extends ErasedAst.Expression[PReference[PBoxedInt32]] {
+      final val tpe = RType.RReference(RRefType.RBoxedInt32)
+    }
+
+    case class BoxInt64(exp: ErasedAst.Expression[PInt64], loc: SourceLocation) extends ErasedAst.Expression[PReference[PBoxedInt64]] {
+      final val tpe = RType.RReference(RRefType.RBoxedInt64)
+    }
+
+    case class BoxChar(exp: ErasedAst.Expression[PChar], loc: SourceLocation) extends ErasedAst.Expression[PReference[PBoxedChar]] {
+      final val tpe = RType.RReference(RRefType.RBoxedChar)
+    }
+
+    case class BoxFloat32(exp: ErasedAst.Expression[PFloat32], loc: SourceLocation) extends ErasedAst.Expression[PReference[PBoxedFloat32]] {
+      final val tpe = RType.RReference(RRefType.RBoxedFloat32)
+    }
+
+    case class BoxFloat64(exp: ErasedAst.Expression[PFloat64], loc: SourceLocation) extends ErasedAst.Expression[PReference[PBoxedFloat64]] {
+      final val tpe = RType.RReference(RRefType.RBoxedFloat64)
+    }
+
+    case class UnboxInt8(exp: ErasedAst.Expression[PReference[PBoxedInt8]], loc: SourceLocation) extends ErasedAst.Expression[PInt8] {
+      final val tpe = RType.RInt8
+    }
+
+    case class UnboxInt16(exp: ErasedAst.Expression[PReference[PBoxedInt16]], loc: SourceLocation) extends ErasedAst.Expression[PInt16] {
+      final val tpe = RType.RInt16
+    }
+
+    case class UnboxInt32(exp: ErasedAst.Expression[PReference[PBoxedInt32]], loc: SourceLocation) extends ErasedAst.Expression[PInt32] {
+      final val tpe = RType.RInt32
+    }
+
+    case class UnboxInt64(exp: ErasedAst.Expression[PReference[PBoxedInt64]], loc: SourceLocation) extends ErasedAst.Expression[PInt64] {
+      final val tpe = RType.RInt64
+    }
+
+    case class UnboxChar(exp: ErasedAst.Expression[PReference[PBoxedChar]], loc: SourceLocation) extends ErasedAst.Expression[PChar] {
+      final val tpe = RType.RChar
+    }
+
+    case class UnboxFloat32(exp: ErasedAst.Expression[PReference[PBoxedFloat32]], loc: SourceLocation) extends ErasedAst.Expression[PFloat32] {
+      final val tpe = RType.RFloat32
+    }
+
+    case class UnboxFloat64(exp: ErasedAst.Expression[PReference[PBoxedFloat64]], loc: SourceLocation) extends ErasedAst.Expression[PFloat64] {
+      final val tpe = RType.RFloat64
+    }
+
   }
 
   case class SelectChannelRule[T <: PType](sym: Symbol.VarSym, chan: ErasedAst.Expression[PReference[PChan[PType]]], exp: ErasedAst.Expression[T])
@@ -221,62 +277,6 @@ object ErasedAst {
   case class FormalParam(sym: Symbol.VarSym, tpe: RType[_ <: PType])
 
   case class FreeVar(sym: Symbol.VarSym, tpe: RType[PType])
-
-  case class BoxInt8(exp: ErasedAst.Expression[PInt8], loc: SourceLocation) extends ErasedAst.Expression[PReference[PBoxedInt8]] {
-    final val tpe = RType.RReference(RRefType.RBoxedInt8)
-  }
-
-  case class BoxInt16(exp: ErasedAst.Expression[PInt16], loc: SourceLocation) extends ErasedAst.Expression[PReference[PBoxedInt16]] {
-    final val tpe = RType.RReference(RRefType.RBoxedInt16)
-  }
-
-  case class BoxInt32(exp: ErasedAst.Expression[PInt32], loc: SourceLocation) extends ErasedAst.Expression[PReference[PBoxedInt32]] {
-    final val tpe = RType.RReference(RRefType.RBoxedInt32)
-  }
-
-  case class BoxInt64(exp: ErasedAst.Expression[PInt64], loc: SourceLocation) extends ErasedAst.Expression[PReference[PBoxedInt64]] {
-    final val tpe = RType.RReference(RRefType.RBoxedInt64)
-  }
-
-  case class BoxChar(exp: ErasedAst.Expression[PChar], loc: SourceLocation) extends ErasedAst.Expression[PReference[PBoxedChar]] {
-    final val tpe = RType.RReference(RRefType.RBoxedChar)
-  }
-
-  case class BoxFloat32(exp: ErasedAst.Expression[PFloat32], loc: SourceLocation) extends ErasedAst.Expression[PReference[PBoxedFloat32]] {
-    final val tpe = RType.RReference(RRefType.RBoxedFloat32)
-  }
-
-  case class BoxFloat64(exp: ErasedAst.Expression[PFloat64], loc: SourceLocation) extends ErasedAst.Expression[PReference[PBoxedFloat64]] {
-    final val tpe = RType.RReference(RRefType.RBoxedFloat64)
-  }
-
-  case class UnboxInt8(exp: ErasedAst.Expression[PReference[PBoxedInt8]], loc: SourceLocation) extends ErasedAst.Expression[PInt8] {
-    final val tpe = RType.RInt8
-  }
-
-  case class UnboxInt16(exp: ErasedAst.Expression[PReference[PBoxedInt16]], loc: SourceLocation) extends ErasedAst.Expression[PInt16] {
-    final val tpe = RType.RInt16
-  }
-
-  case class UnboxInt32(exp: ErasedAst.Expression[PReference[PBoxedInt32]], loc: SourceLocation) extends ErasedAst.Expression[PInt32] {
-    final val tpe = RType.RInt32
-  }
-
-  case class UnboxInt64(exp: ErasedAst.Expression[PReference[PBoxedInt64]], loc: SourceLocation) extends ErasedAst.Expression[PInt64] {
-    final val tpe = RType.RInt64
-  }
-
-  case class UnboxChar(exp: ErasedAst.Expression[PReference[PBoxedChar]], loc: SourceLocation) extends ErasedAst.Expression[PChar] {
-    final val tpe = RType.RChar
-  }
-
-  case class UnboxFloat32(exp: ErasedAst.Expression[PReference[PBoxedFloat32]], loc: SourceLocation) extends ErasedAst.Expression[PFloat32] {
-    final val tpe = RType.RFloat32
-  }
-
-  case class UnboxFloat64(exp: ErasedAst.Expression[PReference[PBoxedFloat64]], loc: SourceLocation) extends ErasedAst.Expression[PFloat64] {
-    final val tpe = RType.RFloat64
-  }
 
 }
 
