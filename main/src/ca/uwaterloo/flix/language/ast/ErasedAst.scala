@@ -118,7 +118,7 @@ object ErasedAst {
     // TODO(JLS): maybe make multiple classes for different exp types
     case class Unary[T <: PType](sop: SemanticOperator, op: UnaryOperator, exp: ErasedAst.Expression[PType], tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
-    case class Binary[T <: PType](sop: SemanticOperator, op: BinaryOperator, exp1: ErasedAst.Expression[PType], exp2: ErasedAst.Expression[PType], tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
+    case class Binary[T <: PType](sop: SemanticOperator, op: BinaryOperator, exp1: ErasedAst.Expression[_ <: PType], exp2: ErasedAst.Expression[_ <: PType], tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
     case class IfThenElse[T <: PType](exp1: ErasedAst.Expression[PInt32], exp2: ErasedAst.Expression[T], exp3: ErasedAst.Expression[T], tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
