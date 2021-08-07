@@ -85,7 +85,7 @@ object BytecodeCompiler {
     case Expression.ApplyCloTail(exp, args, tpe, loc) => ???
     case Expression.ApplyDefTail(sym, args, tpe, loc) =>
       WithSource[R](loc) ~
-        TAILCALL(args, sym.defName, tpe)
+        TAILCALL(args, sym.defName, tag[T])
 
     case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) =>
       WithSource[R](loc) ~
