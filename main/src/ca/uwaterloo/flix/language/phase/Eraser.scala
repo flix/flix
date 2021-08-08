@@ -175,12 +175,22 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
       } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
-      for {
-        exp10 <- visitExp[PType](exp1)
-        exp20 <- visitExp[PType](exp2)
-        tpe0 <- visitTpe[T](tpe)
-        expRes = ErasedAst.Expression.Binary(sop, op, exp10, exp20, tpe0, loc)
-      } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
+      sop match {
+        case SemanticOperator.BoolOp.Eq =>
+          for {
+            exp10 <- visitExp[PInt32](exp1)
+            exp20 <- visitExp[PInt32](exp2)
+            tpe0 <- visitTpe[PInt32](tpe)
+            expRes = ErasedAst.Expression.Int32EqInt32(exp10, exp20, tpe0, loc)
+          } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
+        case _ =>
+          for {
+            exp10 <- visitExp[PType](exp1)
+            exp20 <- visitExp[PType](exp2)
+            tpe0 <- visitTpe[T](tpe)
+            expRes = ErasedAst.Expression.Binary(sop, op, exp10, exp20, tpe0, loc)
+          } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
+      }
 
     case FinalAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
       for {

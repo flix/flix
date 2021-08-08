@@ -93,6 +93,12 @@ object BytecodeCompiler {
 
     case Expression.Unary(sop, op, exp, tpe, loc) => ???
     case Expression.Binary(sop, op, exp1, exp2, tpe, loc) => ???
+    case Expression.Int32EqInt32(exp1, exp2, tpe, loc) =>
+      WithSource[R](loc) ~
+        compileExp(exp1) ~
+        compileExp(exp2) ~
+        IF_CMPNE(pushBool(false), pushBool(true))
+
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => ???
     case Expression.Branch(exp, branches, tpe, loc) => ???
     case Expression.JumpTo(sym, tpe, loc) => ???

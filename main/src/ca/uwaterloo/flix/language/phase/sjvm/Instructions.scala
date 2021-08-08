@@ -80,7 +80,7 @@ object Instructions {
   [R <: Stack]
   (f: F[R] => F[R]):
   F[R ** PInt32] => F[R] = {
-    val label = new Label
+    val label = new Label()
     IFNE(label) ~
       f ~
       (f0 => {
@@ -470,6 +470,23 @@ object Instructions {
   [R <: Stack]:
   F[R ** PInt32 ** PInt32] => F[R ** PInt32] = f => {
     f.visitor.visitInsn(Opcodes.ISUB)
+    castF(f)
+  }
+
+  def IF_CMPNE
+  [R <: Stack, R2 <: Stack]
+  (branch1: F[R] => F[R2], branch2: F[R] => F[R2]):
+  F[R ** PInt32 ** PInt32] => F[R2] = f => {
+    val b1 = new Label()
+    val end = new Label()
+    f.visitor.visitJumpInsn(Opcodes.IF_ICMPNE, b1)
+
+    branch2(castF(f))
+    f.visitor.visitJumpInsn(Opcodes.GOTO, end)
+
+    f.visitor.visitLabel(b1)
+    branch1(castF(f))
+    f.visitor.visitLabel(end)
     castF(f)
   }
 
