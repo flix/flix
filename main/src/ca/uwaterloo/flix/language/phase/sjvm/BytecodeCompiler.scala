@@ -17,9 +17,12 @@
 package ca.uwaterloo.flix.language.phase.sjvm
 
 import ca.uwaterloo.flix.language.ast.ErasedAst.Expression
-import ca.uwaterloo.flix.language.ast.{Cat1, PType, RType}
+import ca.uwaterloo.flix.language.ast.PType._
+import ca.uwaterloo.flix.language.ast.{PRefType, PType, RType}
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 import org.objectweb.asm.MethodVisitor
+
+import scala.language.implicitConversions
 
 object BytecodeCompiler {
 
@@ -34,6 +37,20 @@ object BytecodeCompiler {
   type **[R <: Stack, T <: PType] = StackCons[R, T]
 
   sealed case class F[T <: Stack](visitor: MethodVisitor)
+
+  trait Cat1[T]
+
+  implicit val int8Cat1: PInt8 => Cat1[PInt8] = null
+  implicit val int16Cat1: PInt16 => Cat1[PInt16] = null
+  implicit val int32Cat1: PInt32 => Cat1[PInt32] = null
+  implicit val charCat1: PChar => Cat1[PChar] = null
+  implicit val float32Cat1: PFloat32 => Cat1[PFloat32] = null
+  implicit def referenceCat1[T <: PRefType](t: PReference[T]): Cat1[PReference[T]] = null
+
+  trait Cat2[T]
+
+  implicit val int64Cat1: PInt64 => Cat2[PInt64] = null
+  implicit val float64Cat1: PFloat64 => Cat2[PFloat64] = null
 
   def compileExp[R <: Stack, T <: PType](exp: Expression[T]): F[R] => F[R ** T] = exp match {
     case Expression.Unit(loc) =>
@@ -171,7 +188,7 @@ object BytecodeCompiler {
 
     case Expression.Ref(exp, tpe, loc) =>
       val tpeRRef = RType.getRReference(tpe)
-      WithSource[R](loc) ~[R ** (T with Cat1)] // note: this explicit type is necessary
+      WithSource[R](loc) ~
         NEW(tpeRRef) ~
         DUP ~
         INVOKESPECIAL(tpeRRef, JvmName.nothingToVoid) ~

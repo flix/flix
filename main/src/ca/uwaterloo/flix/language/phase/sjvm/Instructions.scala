@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.PType._
 import ca.uwaterloo.flix.language.ast.RRefType._
 import ca.uwaterloo.flix.language.ast.RType._
-import ca.uwaterloo.flix.language.ast.{Cat1, Cat2, ErasedAst, PRefType, PType, RRefType, RType, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{ErasedAst, PRefType, PType, RRefType, RType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm.{Label, MethodVisitor, Opcodes}
@@ -84,7 +84,7 @@ object Instructions {
     IFNE(label) ~
       f ~
       (f0 => {
-        f0.visitor.visitLabel(label);
+        f0.visitor.visitLabel(label)
         castF(f0)
       })
   }
@@ -97,9 +97,9 @@ object Instructions {
     castF(f)
   }
 
-  // NATIVE
   def SWAP
-  [R <: Stack, T1 <: PType with Cat1, T2 <: PType with Cat1]:
+  [R <: Stack, T1 <: PType, T2 <: PType]
+  (implicit t1: T1 => Cat1[T1], t2: T2 => Cat1[T2]):
   F[R ** T2 ** T1] => F[R ** T1 ** T2] = {
     f =>
       f.visitor.visitInsn(Opcodes.SWAP)
@@ -107,54 +107,56 @@ object Instructions {
   }
 
   def SWAP_cat1_onCat2
-  [R <: Stack, T1 <: PType with Cat1, T2 <: PType with Cat2]:
+  [R <: Stack, T1 <: PType, T2 <: PType]
+  (implicit t1: T1 => Cat1[T1], t2: T2 => Cat2[T2]):
   F[R ** T2 ** T1] => F[R ** T1 ** T2] =
     ???
 
   def SWAP_cat2_onCat1
-  [R <: Stack, T1 <: PType with Cat2, T2 <: PType with Cat1]:
+  [R <: Stack, T1 <: PType, T2 <: PType]
+  (implicit t1: T1 => Cat2[T1], t2: T2 => Cat1[T2]):
   F[R ** T2 ** T1] => F[R ** T1 ** T2] =
     ???
 
   def SWAP_cat2_onCat2
-  [R <: Stack, T1 <: PType with Cat2, T2 <: PType with Cat2]:
+  [R <: Stack, T1 <: PType, T2 <: PType]
+  (implicit t1: T1 => Cat2[T1], t2: T2 => Cat2[T2]):
   F[R ** T2 ** T1] => F[R ** T1 ** T2] =
     ???
 
-  // TODO(JLS): fix automatic swap
-
   def SWAP_cat1_onSomething
-  [R <: Stack, T1 <: PType with Cat1, T2 <: PType]
-  (t2: RType[T2]):
+  [R <: Stack, T1 <: PType, T2 <: PType]
+  (t2: RType[T2])
+  (implicit t1: T1 => Cat1[T1]):
   F[R ** T2 ** T1] => F[R ** T1 ** T2] = t2 match {
-    case RBool => ??? //SWAP
-    case RInt8 => ??? //SWAP
-    case RInt16 => ??? //SWAP
-    case RInt32 => ??? //SWAP
-    case RInt64 => ??? //SWAP_cat1_onCat2
-    case RChar => ??? //SWAP
-    case RFloat32 => ??? //SWAP
-    case RFloat64 => ??? //SWAP_cat1_onCat2
-    case RReference(referenceType) => ??? //SWAP
+    case RBool => SWAP
+    case RInt8 => SWAP
+    case RInt16 => SWAP
+    case RInt32 => SWAP
+    case RInt64 => SWAP_cat1_onCat2
+    case RChar => SWAP
+    case RFloat32 => SWAP
+    case RFloat64 => SWAP_cat1_onCat2
+    case RReference(_) => SWAP
   }
 
-  // NATIVE
+  //TODO(JLS): note: this doesn't work with clever wildcards
   def XSWAP
   [R <: Stack, T1 <: PType, T2 <: PType]
   (t1: RType[T1], t2: RType[T2]):
   F[R ** T2 ** T1] => F[R ** T1 ** T2] = (t1, t2) match {
-    case (RInt64, RInt64) => ??? //SWAP_cat2_onCat2
-    case (RInt64, RFloat64) => ??? //SWAP_cat2_onCat2
-    case (RFloat64, RInt64) => ??? //SWAP_cat2_onCat2
-    case (RFloat64, RFloat64) => ??? //SWAP_cat2_onCat2
+    case (RInt64, RInt64) => SWAP_cat2_onCat2
+    case (RInt64, RFloat64) => SWAP_cat2_onCat2
+    case (RFloat64, RInt64) => SWAP_cat2_onCat2
+    case (RFloat64, RFloat64) => SWAP_cat2_onCat2
 
-    case (RInt64, _) => ??? //SWAP_cat2_onCat1
-    case (RFloat64, _) => ??? //SWAP_cat2_onCat1
+    case (RInt64, RBool | RChar | RInt8 | RInt16 | RInt32 | RFloat32 | RReference(_)) => SWAP_cat2_onCat1
+    case (RFloat64, RBool | RChar | RInt8 | RInt16 | RInt32 | RFloat32 | RReference(_)) => SWAP_cat2_onCat1
 
-    case (_, RInt64) => ??? //SWAP_cat1_onCat2
-    case (_, RFloat64) => ??? //SWAP_cat1_onCat2
+    case (RBool | RChar | RInt8 | RInt16 | RInt32 | RFloat32 | RReference(_), RInt64) => SWAP_cat1_onCat2
+    case (RBool | RChar | RInt8 | RInt16 | RInt32 | RFloat32 | RReference(_), RFloat64) => SWAP_cat1_onCat2
 
-    case _ => ??? //SWAP
+    case (RBool | RChar | RInt8 | RInt16 | RInt32 | RFloat32 | RReference(_), RBool | RChar | RInt8 | RInt16 | RInt32 | RFloat32 | RReference(_)) => SWAP
   }
 
   def NOP
@@ -162,7 +164,6 @@ object Instructions {
   F[R] => F[R] =
     x => x
 
-  // NATIVE
   def XGETFIELD
   [R <: Stack, T1 <: PType, T2 <: PRefType]
   (classType: RReference[T2], fieldName: String, fieldType: RType[T1]):
@@ -179,7 +180,6 @@ object Instructions {
       case RReference(referenceType) => GetClassField(classType, fieldName, referenceType)
     }
 
-  // NATIVE
   def GetBoolField
   [R <: Stack, T2 <: PRefType]
   (classType: RReference[T2], fieldName: String):
@@ -188,7 +188,6 @@ object Instructions {
     castF(f)
   }
 
-  // NATIVE
   def GetInt8Field
   [R <: Stack, T1 <: PType, T2 <: PRefType]
   (classType: RReference[T2], fieldName: String):
@@ -197,7 +196,6 @@ object Instructions {
     castF(f)
   }
 
-  // NATIVE
   def GetInt16Field
   [R <: Stack, T1 <: PType, T2 <: PRefType]
   (classType: RReference[T2], fieldName: String):
@@ -206,7 +204,6 @@ object Instructions {
     castF(f)
   }
 
-  // NATIVE
   def GetInt32Field
   [R <: Stack, T1 <: PType, T2 <: PRefType]
   (classType: RReference[T2], fieldName: String):
@@ -215,7 +212,6 @@ object Instructions {
     castF(f)
   }
 
-  // NATIVE
   def GetInt64Field
   [R <: Stack, T1 <: PType, T2 <: PRefType]
   (classType: RReference[T2], fieldName: String):
@@ -224,7 +220,6 @@ object Instructions {
     castF(f)
   }
 
-  // NATIVE
   def GetCharField
   [R <: Stack, T1 <: PType, T2 <: PRefType]
   (classType: RReference[T2], fieldName: String):
@@ -233,7 +228,6 @@ object Instructions {
     castF(f)
   }
 
-  // NATIVE
   def GetFloat32Field
   [R <: Stack, T1 <: PType, T2 <: PRefType]
   (classType: RReference[T2], fieldName: String):
@@ -242,7 +236,6 @@ object Instructions {
     castF(f)
   }
 
-  // NATIVE
   def GetFloat64Field
   [R <: Stack, T1 <: PType, T2 <: PRefType]
   (classType: RReference[T2], fieldName: String):
@@ -274,7 +267,6 @@ object Instructions {
   F[R ** PReference[T2] ** T1] => F[R] =
     ???
 
-  // NATIVE
   def CAST
   [R <: Stack, T <: PRefType]
   (e: RRefType[T]):
@@ -312,7 +304,6 @@ object Instructions {
   }
 
   // TODO(JLS): type should be constructed along with descriptor string
-  // NATIVE
   def INVOKESPECIAL
   [R <: Stack, T <: PRefType]
   (classType: RReference[T], constructorDescriptor: String):
@@ -404,63 +395,72 @@ object Instructions {
 
 
   def POP
-  [R <: Stack, T <: PType with Cat1]:
+  [R <: Stack, T <: PType]
+  (implicit t: T => Cat1[T]):
   F[R ** T] => F[R] = f => {
     f.visitor.visitInsn(Opcodes.POP)
     castF(f)
   }
 
   def DUP_X1
-  [R <: Stack, T1 <: PType with Cat1, T2 <: PType with Cat1]:
+  [R <: Stack, T1 <: PType, T2 <: PType]
+  (implicit t1: T1 => Cat1[T1], t2: T2 => Cat1[T2]):
   F[R ** T2 ** T1] => F[R ** T1 ** T2 ** T1] = f => {
     f.visitor.visitInsn(Opcodes.DUP_X1)
     castF(f)
   }
 
   def DUP_X2_onCat1
-  [R <: Stack, T1 <: PType with Cat1, T2 <: PType with Cat1, T3 <: PType with Cat1]:
+  [R <: Stack, T1 <: PType, T2 <: PType, T3 <: PType]
+  (implicit t1: T1 => Cat1[T1], t2: T2 => Cat1[T2], t3: T2 => Cat1[T2]):
   F[R ** T3 ** T2 ** T1] => F[R ** T1 ** T3 ** T2 ** T1] = f => {
     f.visitor.visitInsn(Opcodes.DUP_X2)
     castF(f)
   }
 
   def DUP_X2_onCat2
-  [R <: Stack, T1 <: PType with Cat1, T2 <: PType with Cat2]:
+  [R <: Stack, T1 <: PType, T2 <: PType]
+  (implicit t1: T1 => Cat1[T1], t2: T2 => Cat2[T2]):
   F[R ** T2 ** T1] => F[R ** T1 ** T2 ** T1] = f => {
     f.visitor.visitInsn(Opcodes.DUP_X2)
     castF(f)
   }
 
   def DUP2_X2_cat1_onCat1
-  [R <: Stack, T1 <: PType with Cat1, T2 <: PType with Cat1, T3 <: PType with Cat1, T4 <: PType with Cat1]:
+  [R <: Stack, T1 <: PType, T2 <: PType, T3 <: PType, T4 <: PType]
+  (implicit t1: T1 => Cat1[T1], t2: T2 => Cat1[T2], t3: T2 => Cat1[T2], t4: T2 => Cat1[T2]):
   F[R ** T4 ** T3 ** T2 ** T1] => F[R ** T2 ** T1 ** T4 ** T3 ** T2 ** T1] = f => {
     f.visitor.visitInsn(Opcodes.DUP2_X2)
     castF(f)
   }
 
   def DUP2_X2_cat2_onCat1
-  [R <: Stack, T1 <: PType with Cat2, T2 <: PType with Cat1, T3 <: PType with Cat1]:
+  [R <: Stack, T1 <: PType, T2 <: PType, T3 <: PType]
+  (implicit t1: T1 => Cat2[T1], t2: T2 => Cat1[T2], t3: T2 => Cat1[T2]):
   F[R ** T3 ** T2 ** T1] => F[R ** T1 ** T3 ** T2 ** T1] = f => {
     f.visitor.visitInsn(Opcodes.DUP2_X2)
     castF(f)
   }
 
   def DUP2_X2_cat1_onCat2
-  [R <: Stack, T1 <: PType with Cat1, T2 <: PType with Cat1, T3 <: PType with Cat2]:
+  [R <: Stack, T1 <: PType, T2 <: PType, T3 <: PType]
+  (implicit t1: T1 => Cat1[T1], t2: T2 => Cat1[T2], t3: T2 => Cat2[T2]):
   F[R ** T3 ** T2 ** T1] => F[R ** T2 ** T1 ** T3 ** T2 ** T1] = f => {
     f.visitor.visitInsn(Opcodes.DUP2_X2)
     castF(f)
   }
 
   def DUP2_X2_cat2_onCat2
-  [R <: Stack, T1 <: PType with Cat2, T2 <: PType with Cat2]:
+  [R <: Stack, T1 <: PType, T2 <: PType]
+  (implicit t1: T1 => Cat2[T1], t2: T2 => Cat2[T2]):
   F[R ** T2 ** T1] => F[R ** T1 ** T2 ** T1] = f => {
     f.visitor.visitInsn(Opcodes.DUP2_X2)
     castF(f)
   }
 
   def DUP
-  [R <: Stack, T <: PType with Cat1]:
+  [R <: Stack, T <: PType]
+  (implicit t: T => Cat1[T]):
   F[R ** T] => F[R ** T ** T] = f => {
     f.visitor.visitInsn(Opcodes.DUP)
     castF(f)

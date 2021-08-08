@@ -18,28 +18,24 @@ package ca.uwaterloo.flix.language.ast
 
 sealed trait PType
 
-sealed trait Cat1
-
-sealed trait Cat2
-
 // only exist at scala compile time, to help compiler writers
 object PType {
 
-  sealed trait PInt8 extends PType with Cat1
+  sealed trait PInt8 extends PType
 
-  sealed trait PInt16 extends PType with Cat1
+  sealed trait PInt16 extends PType
 
-  sealed trait PInt32 extends PType with Cat1
+  sealed trait PInt32 extends PType
 
-  sealed trait PInt64 extends PType with Cat2
+  sealed trait PInt64 extends PType
 
-  sealed trait PChar extends PType with Cat1
+  sealed trait PChar extends PType
 
-  sealed trait PFloat32 extends PType with Cat1
+  sealed trait PFloat32 extends PType
 
-  sealed trait PFloat64 extends PType with Cat2
+  sealed trait PFloat64 extends PType
 
-  sealed trait PReference[T <: PRefType] extends PType with Cat1
+  sealed trait PReference[T <: PRefType] extends PType
 
 }
 

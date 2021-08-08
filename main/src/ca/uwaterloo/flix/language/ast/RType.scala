@@ -102,23 +102,23 @@ object RType {
     case RReference(_) => "Obj"
   }
 
-  object RBool extends RType[PInt32 with Cat1]
+  object RBool extends RType[PInt32]
 
-  object RInt8 extends RType[PInt8 with Cat1]
+  object RInt8 extends RType[PInt8]
 
-  object RInt16 extends RType[PInt16 with Cat1]
+  object RInt16 extends RType[PInt16]
 
-  object RInt32 extends RType[PInt32 with Cat1]
+  object RInt32 extends RType[PInt32]
 
-  object RInt64 extends RType[PInt64 with Cat2]
+  object RInt64 extends RType[PInt64]
 
-  object RChar extends RType[PChar with Cat1]
+  object RChar extends RType[PChar]
 
-  object RFloat32 extends RType[PFloat32 with Cat1]
+  object RFloat32 extends RType[PFloat32]
 
-  object RFloat64 extends RType[PFloat64 with Cat2]
+  object RFloat64 extends RType[PFloat64]
 
-  case class RReference[T <: PRefType](referenceType: RRefType[T]) extends RType[PReference[T] with Cat1] {
+  case class RReference[T <: PRefType](referenceType: RRefType[T]) extends RType[PReference[T]] {
     def toInternalName: String = referenceType.toInternalName
 
     def jvmName: JvmName = referenceType.jvmName
