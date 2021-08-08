@@ -2230,10 +2230,21 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     */
   private def visitTypeConstraint(tconstr: ParsedAst.TypeConstraint): Validation[WeededAst.TypeConstraint, WeederError] = tconstr match {
     case ParsedAst.TypeConstraint(sp1, clazz, tparam0, sp2) =>
-      visitType(tparam0) match {
-        case tparam: WeededAst.Type.Var => WeededAst.TypeConstraint(clazz, tparam, mkSL(sp1, sp2)).toSuccess
-        case _ => WeederError.IllegalTypeConstraintParameter(mkSL(sp1, sp2)).toFailure
+      val tpe = visitType(tparam0)
+      if (isAllVars(tpe)) {
+        WeededAst.TypeConstraint(clazz, tpe, mkSL(sp1, sp2)).toSuccess
+      } else {
+        WeederError.IllegalTypeConstraintParameter(mkSL(sp1, sp2)).toFailure
       }
+  }
+
+  /**
+    * Returns true iff the type is composed only of type variables possibly applied to other type variables.
+    */
+  private def isAllVars(tpe: WeededAst.Type): Boolean = tpe match {
+    case _: WeededAst.Type.Var => true
+    case WeededAst.Type.Apply(tpe1, tpe2, _) => isAllVars(tpe1) && isAllVars(tpe2)
+    case _ => false
   }
 
   /**

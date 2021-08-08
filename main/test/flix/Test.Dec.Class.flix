@@ -208,6 +208,16 @@ namespace Test/Dec/Class {
       }
     }
 
+    namespace Test17 {
+      lawless class D[a] {
+        pub def f(x: a): Bool
+      }
+
+      class E[a: Type -> Type] {
+        law l: forall (x: a[b]) with D[a[b]] . Test/Dec/Class/Test17/D.f(x)
+      }
+    }
+
     pub enum List[a] {
         case Nil
         case Cons(a, List[a])
