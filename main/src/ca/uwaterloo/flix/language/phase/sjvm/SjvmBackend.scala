@@ -156,6 +156,8 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
       case ErasedAst.Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) => actuals
       case ErasedAst.Expression.Unary(sop, op, exp, tpe, loc) => exp :: Nil
       case ErasedAst.Expression.Binary(sop, op, exp1, exp2, tpe, loc) => exp1 :: exp2 :: Nil
+      case ErasedAst.Expression.Int16Eq(exp1, exp2, tpe, loc) => exp1 :: exp2 :: Nil
+      case ErasedAst.Expression.Int32Eq(exp1, exp2, tpe, loc) => exp1 :: exp2 :: Nil
       case ErasedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => exp1 :: exp2 :: exp3 :: Nil
       case ErasedAst.Expression.Branch(exp, branches, tpe, loc) => branches.foldLeft(List[ErasedAst.Expression[_ <: PType]]()) { case (list, (_, exp)) => list :+ exp }
       case ErasedAst.Expression.JumpTo(sym, tpe, loc) => Nil

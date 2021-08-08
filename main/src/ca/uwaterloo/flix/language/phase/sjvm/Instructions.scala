@@ -473,7 +473,24 @@ object Instructions {
     castF(f)
   }
 
-  def IF_CMPNE
+  def IF_ICMPEQ32
+  [R <: Stack, R2 <: Stack]
+  (branch1: F[R] => F[R2], branch2: F[R] => F[R2]):
+  F[R ** PInt32 ** PInt32] => F[R2] = f => {
+    val b1 = new Label()
+    val end = new Label()
+    f.visitor.visitJumpInsn(Opcodes.IF_ICMPEQ, b1)
+
+    branch2(castF(f))
+    f.visitor.visitJumpInsn(Opcodes.GOTO, end)
+
+    f.visitor.visitLabel(b1)
+    branch1(castF(f))
+    f.visitor.visitLabel(end)
+    castF(f)
+  }
+
+  def IF_ICMPNE32
   [R <: Stack, R2 <: Stack]
   (branch1: F[R] => F[R2], branch2: F[R] => F[R2]):
   F[R ** PInt32 ** PInt32] => F[R2] = f => {
@@ -487,6 +504,22 @@ object Instructions {
     f.visitor.visitLabel(b1)
     branch1(castF(f))
     f.visitor.visitLabel(end)
+    castF(f)
+  }
+
+  def IF_ICMPEQ16
+  [R <: Stack, R2 <: Stack]
+  (branch1: F[R] => F[R2], branch2: F[R] => F[R2]):
+  F[R ** PInt16 ** PInt16] => F[R2] = f => {
+    IF_ICMPEQ32(branch1, branch2)(castF(f))
+    castF(f)
+  }
+
+  def IF_ICMPNE16
+  [R <: Stack, R2 <: Stack]
+  (branch1: F[R] => F[R2], branch2: F[R] => F[R2]):
+  F[R ** PInt16 ** PInt16] => F[R2] = f => {
+    IF_ICMPNE32(branch1, branch2)(castF(f))
     castF(f)
   }
 
@@ -926,8 +959,10 @@ object Instructions {
 
   def INEWARRAY
   [R <: Stack]:
-  F[R ** PInt32] => F[R ** PReference[PArray[PInt32]]] =
-    ???
+  F[R ** PInt32] => F[R ** PReference[PArray[PInt32]]] = f => {
+    f.visitor.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_INT) //TODO(JLS): Save strings somewhere else
+    castF(f)
+  }
 
   def LNEWARRAY
   [R <: Stack]:

@@ -92,12 +92,18 @@ object BytecodeCompiler {
         TAILCALL(actuals, sym.defName, tag[T])
 
     case Expression.Unary(sop, op, exp, tpe, loc) => ???
-    case Expression.Binary(sop, op, exp1, exp2, tpe, loc) => ???
-    case Expression.Int32EqInt32(exp1, exp2, tpe, loc) =>
+    case Expression.Binary(sop, op, exp1, exp2, tpe, loc) => println(sop.getClass.getCanonicalName, tpe); ???
+    case Expression.Int16Eq(exp1, exp2, tpe, loc) =>
       WithSource[R](loc) ~
         compileExp(exp1) ~
         compileExp(exp2) ~
-        IF_CMPNE(pushBool(false), pushBool(true))
+        IF_ICMPEQ16(pushBool(true), pushBool(false))
+
+    case Expression.Int32Eq(exp1, exp2, tpe, loc) =>
+      WithSource[R](loc) ~
+        compileExp(exp1) ~
+        compileExp(exp2) ~
+        IF_ICMPEQ32(pushBool(true), pushBool(false))
 
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => ???
     case Expression.Branch(exp, branches, tpe, loc) => ???

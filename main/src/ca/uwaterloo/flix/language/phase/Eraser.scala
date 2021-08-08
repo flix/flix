@@ -57,8 +57,8 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
   }
 
   /**
-    * Translates the given definition `def0` to the ErasedAst.
-    */
+   * Translates the given definition `def0` to the ErasedAst.
+   */
   private def visitDef(def0: FinalAst.Def): EraserMonad[ErasedAst.Def] = {
     for {
       formals0 <- EM.traverse(def0.formals)(visitFormalParam)
@@ -68,8 +68,8 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
   }
 
   /**
-    * Translates the given expression `exp0` to the ErasedAst.
-    */
+   * Translates the given expression `exp0` to the ErasedAst.
+   */
   private def visitExp[T <: PType](baseExp: FinalAst.Expression): EraserMonad[ErasedAst.Expression[T]] = baseExp match {
     case FinalAst.Expression.Unit(loc) =>
       ErasedAst.Expression.Unit(loc).asInstanceOf[ErasedAst.Expression[T]].toMonad
@@ -176,12 +176,19 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
 
     case FinalAst.Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
       sop match {
-        case SemanticOperator.BoolOp.Eq =>
+        case SemanticOperator.Int16Op.Eq =>
+          for {
+            exp10 <- visitExp[PInt16](exp1)
+            exp20 <- visitExp[PInt16](exp2)
+            tpe0 <- visitTpe[PInt32](tpe)
+            expRes = ErasedAst.Expression.Int16Eq(exp10, exp20, tpe0, loc)
+          } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
+        case SemanticOperator.Int32Op.Eq =>
           for {
             exp10 <- visitExp[PInt32](exp1)
             exp20 <- visitExp[PInt32](exp2)
             tpe0 <- visitTpe[PInt32](tpe)
-            expRes = ErasedAst.Expression.Int32EqInt32(exp10, exp20, tpe0, loc)
+            expRes = ErasedAst.Expression.Int32Eq(exp10, exp20, tpe0, loc)
           } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
         case _ =>
           for {
@@ -519,16 +526,16 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
   }
 
   /**
-    * Translates the given formal param `p` to the ErasedAst.
-    */
+   * Translates the given formal param `p` to the ErasedAst.
+   */
   private def visitFormalParam(p: FinalAst.FormalParam): EraserMonad[ErasedAst.FormalParam] = {
     visitTpe[PType](p.tpe) map (tpe0 => ErasedAst.FormalParam(p.sym, tpe0))
   }
 
   /**
-    *
-    * Translates the type 'tpe' to the ErasedType.
-    */
+   *
+   * Translates the type 'tpe' to the ErasedType.
+   */
   private def visitTpe[T <: PType](tpe: MonoType): EraserMonad[RType[T]] = tpe match {
     case MonoType.Unit => RReference(RUnit).asInstanceOf[RType[T]].toMonad
     case MonoType.Bool => RBool.asInstanceOf[RType[T]].toMonad
