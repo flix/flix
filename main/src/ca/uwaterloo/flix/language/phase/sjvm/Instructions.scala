@@ -1005,6 +1005,7 @@ object Instructions {
   [R <: Stack, T <: PType]
   (elementType: RType[T]):
   F[R ** PReference[PArray[T]] ** T] => F[R] = f => {
+    //TODO(JLS): where to store the name?
     f.visitor.visitMethodInsn(Opcodes.INVOKESTATIC, JvmName.Java.Util.Arrays.toInternalName, "fill", JvmName.getMethodDescriptor(RReference(RArray(elementType)) :: elementType :: Nil, None), false)
     castF(f)
   }
