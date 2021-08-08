@@ -17,7 +17,9 @@
 package ca.uwaterloo.flix.language.phase.sjvm
 
 import ca.uwaterloo.flix.language.ast.ErasedAst.Expression
+import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.PType._
+import ca.uwaterloo.flix.language.ast.RType._
 import ca.uwaterloo.flix.language.ast.{PRefType, PType, RType}
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 import org.objectweb.asm.MethodVisitor
@@ -45,6 +47,7 @@ object BytecodeCompiler {
   implicit val int32Cat1: PInt32 => Cat1[PInt32] = null
   implicit val charCat1: PChar => Cat1[PChar] = null
   implicit val float32Cat1: PFloat32 => Cat1[PFloat32] = null
+
   implicit def referenceCat1[T <: PRefType](t: PReference[T]): Cat1[PReference[T]] = null
 
   trait Cat2[T]
@@ -109,7 +112,7 @@ object BytecodeCompiler {
         TAILCALL(actuals, sym.defName, tag[T])
 
     case Expression.Unary(sop, op, exp, tpe, loc) => ???
-    case Expression.Binary(sop, op, exp1, exp2, tpe, loc) => println(sop.getClass.getCanonicalName, tpe); ???
+    case Expression.Binary(sop, op, exp1, exp2, tpe, loc) => /*TODO(JLS): remove*/ println(sop.getClass.getCanonicalName, tpe); ???
     case Expression.Int16Eq(exp1, exp2, tpe, loc) =>
       WithSource[R](loc) ~
         compileExp(exp1) ~
@@ -143,11 +146,31 @@ object BytecodeCompiler {
     case Expression.RecordRestrict(field, rest, tpe, loc) => ???
     case Expression.ArrayLit(elms, tpe, loc) => ???
     case Expression.ArrayNew(elm, len, tpe, loc) =>
+      def elmArraySwitch
+      [R0 <: Stack, T0 <: PType]
+      (elmType: RType[T0]):
+      F[R0 ** T0 ** PReference[PArray[T0]]] => F[R0 ** PReference[PArray[T0]] ** PReference[PArray[T0]] ** T0] =
+        elmType match {
+          case RBool | RInt8 | RInt16 | RInt32 | RChar | RFloat32 | RReference(_) =>
+            //Cat1
+            //TODO(JLS): note: start here is needed because of some implicit overshadowing
+            START[R0 ** T0 ** PReference[PArray[T0]]] ~
+              DUP_X1 ~
+              SWAP
+          case RInt64 | RFloat64 =>
+            //Cat2
+            START[R0 ** T0 ** PReference[PArray[T0]]] ~
+              DUP_X2_onCat2 ~
+              DUP_X2_onCat2 ~
+              POP
+        }
+
       WithSource[R](loc) ~
         compileExp(elm) ~
         compileExp(len) ~
         XNEWARRAY(tpe) ~
-        ???
+        elmArraySwitch(elm.tpe) ~
+        arraysFill(elm.tpe)
 
     case Expression.ArrayLoad(base, index, tpe, loc) =>
       WithSource[R](loc) ~

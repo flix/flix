@@ -997,9 +997,17 @@ object Instructions {
     }
 
   def systemArrayCopy
-  [R <: Stack, S <: PRefType]:
-  F[R ** PReference[S] ** PInt32 ** PReference[S] ** PInt32 ** PInt32] => F[R] =
+  [R <: Stack, T <: PType]:
+  F[R ** PReference[PArray[T]] ** PInt32 ** PReference[PArray[T]] ** PInt32 ** PInt32] => F[R] =
     ???
+
+  def arraysFill
+  [R <: Stack, T <: PType]
+  (elementType: RType[T]):
+  F[R ** PReference[PArray[T]] ** T] => F[R] = f => {
+    f.visitor.visitMethodInsn(Opcodes.INVOKESTATIC, JvmName.Java.Util.Arrays.toInternalName, "fill", JvmName.getMethodDescriptor(RReference(RArray(elementType)) :: elementType :: Nil, None), false)
+    castF(f)
+  }
 
   def arrayLength
   [R <: Stack, T <: PType]

@@ -68,6 +68,7 @@ object JvmName {
   def getMethodDescriptor(argument: Describable, result: Describable): String =
     getMethodDescriptor(List(argument), Some(result))
 
+  //TODO(JLS): redo this tree stuff
   object Java {
     val pckage: List[String] = List("java")
 
@@ -89,6 +90,11 @@ object JvmName {
     object Math {
       val pckage: List[String] = Java.pckage :+ "math"
       val BigInteger: JvmName = JvmName(pckage, "BigInteger")
+    }
+
+    object Util {
+      val pckage: List[String] = Java.pckage :+ "util"
+      val Arrays: JvmName = JvmName(pckage, "Arrays")
     }
 
   }
