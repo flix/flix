@@ -670,7 +670,7 @@ object Instructions {
       val arg = arguments(argIndex)
       f.visitor.visitInsn(Opcodes.DUP)
       compileExp(arg)(f)
-      f.visitor.visitFieldInsn(Opcodes.PUTFIELD, defClassName.toInternalName, GenFunctionInterfaces.argFieldName(argIndex), arg.tpe.erasedType.toDescriptor)
+      f.visitor.visitFieldInsn(Opcodes.PUTFIELD, defClassName.toInternalName, GenFunctionInterfaces.argFieldName(argIndex), arg.tpe.erasedDescriptor)
     }
     f.visitor.visitInsn(Opcodes.ARETURN)
     castF(f)
@@ -685,7 +685,7 @@ object Instructions {
       val arg = arguments(argIndex)
       f.visitor.visitInsn(Opcodes.DUP)
       compileExp(arg)(f)
-      f.visitor.visitFieldInsn(Opcodes.PUTFIELD, defClassName.toInternalName, GenFunctionInterfaces.argFieldName(argIndex), arg.tpe.erasedType.toDescriptor)
+      f.visitor.visitFieldInsn(Opcodes.PUTFIELD, defClassName.toInternalName, GenFunctionInterfaces.argFieldName(argIndex), arg.tpe.erasedDescriptor)
     }
     castF(f)
   }

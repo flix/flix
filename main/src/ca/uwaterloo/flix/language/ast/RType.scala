@@ -34,8 +34,11 @@ sealed trait RType[T <: PType] extends Describable {
 
   def toDescriptor: String = descriptor
 
+  def isCat1: Boolean = RType.isCat1(this)
+
   lazy val toErasedString: String = RType.toErasedString(this)
   lazy val erasedType: RType[_ <: PType] = RType.erasedType(this)
+  lazy val erasedDescriptor: String = RType.erasedDescriptor(this)
   // TODO(JLS): add cont and Fn in RRefType maybe?
   lazy val contName: JvmName = JvmName(Nil, s"Cont${JvmName.reservedDelimiter}${this.toErasedString}")
   lazy val nothingToContMethodDescriptor: String = JvmName.getMethodDescriptor(Nil, this.contName)
@@ -57,6 +60,11 @@ object RType {
     case RReference(referenceType) => referenceType.toInternalName
   }
 
+  def isCat1(rType: RType[_ <: PType]): Boolean = rType match {
+    case RBool | RInt8 | RInt16 | RInt32 | RChar | RFloat32 | RReference(_) => true
+    case RInt64 | RFloat64 => false
+  }
+
   def toDescriptor[T <: PType](e: RType[T]): String = e match {
     case RBool => "Z"
     case RInt8 => "B"
@@ -71,11 +79,13 @@ object RType {
 
   def erasedType[T <: PType](e: RType[T]): RType[_ <: PType] = {
     pureErasedType(e) //TODO(JLS): should arrays be erased?
-//    e match {
-//      case RBool | RInt8 | RInt16 | RInt32 | RInt64 | RChar | RFloat32 | RFloat64 => e
-//      case RReference(rref) => getErasedInnerType(rref)
-//    }
+    //    e match {
+    //      case RBool | RInt8 | RInt16 | RInt32 | RInt64 | RChar | RFloat32 | RFloat64 => e
+    //      case RReference(rref) => getErasedInnerType(rref)
+    //    }
   }
+
+  def erasedDescriptor[T <: PType](e: RType[T]): String = e.erasedType.toDescriptor
 
   private def getErasedInnerType[T <: PRefType](r: RRefType[T]): RReference[_ <: PRefType] = r match {
     case RArray(tpe) => RReference(RArray(pureErasedType(tpe)))
@@ -183,7 +193,7 @@ object RRefType {
   }
 
   case class RArray[T <: PType](tpe: RType[T]) extends RRefType[PArray[T]] {
-    private val className: String = s"[${tpe.erasedType.toDescriptor}"
+    private val className: String = s"[${tpe.erasedDescriptor}"
     override val jvmName: JvmName = new JvmName(Nil, className) {
       override lazy val toDescriptor: String = this.toInternalName
     }

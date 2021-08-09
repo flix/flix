@@ -72,14 +72,14 @@ object GenDefClasses {
       case _ =>
         f.visitor.visitInsn(Opcodes.SWAP)
     }
-    f.visitor.visitFieldInsn(Opcodes.PUTFIELD, className.toInternalName, GenContinuationInterfaces.resultFieldName, resultType.erasedType.toDescriptor)
+    f.visitor.visitFieldInsn(Opcodes.PUTFIELD, className.toInternalName, GenContinuationInterfaces.resultFieldName, resultType.erasedDescriptor)
     f.asInstanceOf[F[R]]
   }
 
   def magicStoreArg[R <: Stack, T <: PType](index: Int, tpe: RType[T], defName: JvmName, sym: Symbol.VarSym): F[R] => F[R] = {
     ((f: F[R]) => {
       f.visitor.visitVarInsn(Opcodes.ALOAD, 0)
-      f.visitor.visitFieldInsn(Opcodes.GETFIELD, defName.toInternalName, GenFunctionInterfaces.argFieldName(index), tpe.erasedType.toDescriptor)
+      f.visitor.visitFieldInsn(Opcodes.GETFIELD, defName.toInternalName, GenFunctionInterfaces.argFieldName(index), tpe.erasedDescriptor)
       f.asInstanceOf[F[R ** T]]
     }) ~ XStore(sym, tpe)
   }

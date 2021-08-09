@@ -76,10 +76,13 @@ object GenNamespaces {
       f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, sym.defName.toInternalName, JvmName.constructorMethod, JvmName.nothingToVoid, false)
       f.asInstanceOf[F[StackNil ** PReference[PFunction]]]
     } ~ { f: F[StackNil ** PReference[PFunction]] =>
-      for (argIndex <- functionType.args.indices) {
+      var nextIndex = 0
+      for ((argType, argIndex) <- functionType.args.zipWithIndex) {
         f.visitor.visitInsn(Opcodes.DUP)
-        XLOAD(functionType.args(argIndex), argIndex)(f) // TODO(JLS): This does not work for cat 2 types
-        f.visitor.visitFieldInsn(Opcodes.PUTFIELD, sym.defName.toInternalName, GenFunctionInterfaces.argFieldName(argIndex), functionType.args(argIndex).erasedType.toDescriptor)
+        XLOAD(functionType.args(argIndex), nextIndex)(f)
+        val inc = if (argType.isCat1) 1 else 2
+        nextIndex += inc
+        f.visitor.visitFieldInsn(Opcodes.PUTFIELD, sym.defName.toInternalName, GenFunctionInterfaces.argFieldName(argIndex), functionType.args(argIndex).erasedDescriptor)
       }
       f.asInstanceOf[F[StackNil ** PReference[PFunction]]]
     } ~ { f: F[StackNil ** PReference[PFunction]] =>
