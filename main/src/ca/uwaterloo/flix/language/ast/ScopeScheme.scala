@@ -20,31 +20,29 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 // MATT docs
 sealed trait ScopeScheme {
   def <=(other: ScopeScheme): Boolean = (this, other) match {
-    case (ScopeScheme.Unit, ScopeScheme.Unit) => true
-    case (ScopeScheme.Arrow(paramSco1, paramSch1, retSch1), ScopeScheme.Arrow(paramSco2, paramSch2, retSch2)) =>
-      // NB: Contravariant on the left
-      paramSco2 <= paramSco1 && paramSch2 <= paramSch1 && retSch1 <= retSch2
-    case _ => throw InternalCompilerException("Incompatible ScopeSchemes")
-  }
-
-  def max(other: ScopeScheme): ScopeScheme = (this, other) match {
-    case (ScopeScheme.Unit, ScopeScheme.Unit) => ScopeScheme.Unit
-    case (ScopeScheme.Arrow(paramSco1, paramSch1, retSch1), ScopeScheme.Arrow(paramSco2, paramSch2, retSch2)) =>
-      // NB: Contravariant on the left
-      ScopeScheme.Arrow(paramSco1 min paramSco2, paramSch1 min paramSch2, retSch1 max retSch2)
-    case _ => throw InternalCompilerException("Incompatible ScopeSchemes")
+    case (ScopeScheme.Implicit, ScopeScheme.Implicit) => true
+    case (expl: ScopeScheme.Explicit, ScopeScheme.Implicit) => ScopeScheme.Explicit.lt(expl, ScopeScheme.mkUnscoped(expl))
+    case (ScopeScheme.Implicit, expl: ScopeScheme.Explicit) => ScopeScheme.Explicit.lt(ScopeScheme.mkUnscoped(expl), expl)
+    case (expl1: ScopeScheme.Explicit, expl2: ScopeScheme.Explicit) => ScopeScheme.Explicit.lt(expl1, expl2)
   }
 
   def min(other: ScopeScheme): ScopeScheme = (this, other) match {
-    case (ScopeScheme.Unit, ScopeScheme.Unit) => ScopeScheme.Unit
-    case (ScopeScheme.Arrow(paramSco1, paramSch1, retSch1), ScopeScheme.Arrow(paramSco2, paramSch2, retSch2)) =>
-      // NB: Contravariant on the left
-      ScopeScheme.Arrow(paramSco1 max paramSco2, paramSch1 max paramSch2, retSch1 min retSch2)
-    case _ => throw InternalCompilerException("Incompatible ScopeSchemes")
+    case (ScopeScheme.Implicit, ScopeScheme.Implicit) => ScopeScheme.Implicit
+    case (expl: ScopeScheme.Explicit, ScopeScheme.Implicit) => ScopeScheme.Explicit.min(expl, ScopeScheme.mkUnscoped(expl))
+    case (ScopeScheme.Implicit, expl: ScopeScheme.Explicit) => ScopeScheme.Explicit.min(ScopeScheme.mkUnscoped(expl), expl)
+    case (expl1: ScopeScheme.Explicit, expl2: ScopeScheme.Explicit) => ScopeScheme.Explicit.min(expl1, expl2)
+  }
+
+  def max(other: ScopeScheme): ScopeScheme = (this, other) match {
+    case (ScopeScheme.Implicit, ScopeScheme.Implicit) => ScopeScheme.Implicit
+    case (expl: ScopeScheme.Explicit, ScopeScheme.Implicit) => ScopeScheme.Explicit.max(expl, ScopeScheme.mkUnscoped(expl))
+    case (ScopeScheme.Implicit, expl: ScopeScheme.Explicit) => ScopeScheme.Explicit.max(ScopeScheme.mkUnscoped(expl), expl)
+    case (expl1: ScopeScheme.Explicit, expl2: ScopeScheme.Explicit) => ScopeScheme.Explicit.max(expl1, expl2)
   }
 
   // MATT docs
   override def toString: String = this match {
+    case ScopeScheme.Implicit => "???"
     case ScopeScheme.Unit => "."
     case ScopeScheme.Arrow(paramSco, paramSch, retSch) =>
       val scoPart = paramSco match {
@@ -61,7 +59,42 @@ sealed trait ScopeScheme {
 }
 
 object ScopeScheme {
-  case object Unit extends ScopeScheme
+  sealed trait Explicit extends ScopeScheme
 
-  case class Arrow(paramSco: Scopedness, paramSch: ScopeScheme, retSch: ScopeScheme) extends ScopeScheme
+  object Explicit {
+    def lt(scSc1: Explicit, scSc2: Explicit): Boolean = (scSc1, scSc2) match {
+      case (ScopeScheme.Unit, ScopeScheme.Unit) => true
+      case (ScopeScheme.Arrow(paramSco1, paramSch1, retSch1), ScopeScheme.Arrow(paramSco2, paramSch2, retSch2)) =>
+        // NB: Contravariant on the left
+        paramSco2 <= paramSco1 && paramSch2 <= paramSch1 && retSch1 <= retSch2
+      case _ => throw InternalCompilerException("Incompatible ScopeSchemes")
+    }
+
+    def max(scSc1: Explicit, scSc2: Explicit): ScopeScheme.Explicit = (scSc1, scSc2) match {
+      case (ScopeScheme.Unit, ScopeScheme.Unit) => ScopeScheme.Unit
+      case (ScopeScheme.Arrow(paramSco1, paramSch1, retSch1), ScopeScheme.Arrow(paramSco2, paramSch2, retSch2)) =>
+        // NB: Contravariant on the left
+        ScopeScheme.Arrow(paramSco1 min paramSco2, min(paramSch1, paramSch2), max(retSch1, retSch2))
+      case _ => throw InternalCompilerException("Incompatible ScopeSchemes")
+    }
+
+    def min(scSc1: Explicit, scSc2: Explicit): ScopeScheme.Explicit = (scSc1, scSc2) match {
+      case (ScopeScheme.Unit, ScopeScheme.Unit) => ScopeScheme.Unit
+      case (ScopeScheme.Arrow(paramSco1, paramSch1, retSch1), ScopeScheme.Arrow(paramSco2, paramSch2, retSch2)) =>
+        // NB: Contravariant on the left
+        ScopeScheme.Arrow(paramSco1 max paramSco2, max(paramSch1, paramSch2), min(retSch1, retSch2))
+      case _ => throw InternalCompilerException("Incompatible ScopeSchemes")
+    }
+  }
+
+  case object Implicit extends ScopeScheme
+
+  case object Unit extends Explicit
+
+  case class Arrow(paramSco: Scopedness, paramSch: Explicit, retSch: Explicit) extends Explicit
+
+  private def mkUnscoped(scSc: ScopeScheme.Explicit): ScopeScheme.Explicit = scSc match {
+    case Unit => ScopeScheme.Unit
+    case Arrow(_, paramSch, retSch) => Arrow(Scopedness.Unscoped, mkUnscoped(paramSch), mkUnscoped(retSch))
+  }
 }
