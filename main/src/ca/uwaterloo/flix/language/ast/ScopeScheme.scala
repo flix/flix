@@ -52,6 +52,7 @@ sealed trait ScopeScheme {
       val scScPart = paramSch match {
         case _: ScopeScheme.Arrow => s"($paramSch)"
         case ScopeScheme.Unit => s"$paramSch"
+        case ScopeScheme.Implicit => "?"
       }
       s"$scoPart$scScPart -> $retSch"
   }

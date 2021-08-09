@@ -2103,7 +2103,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
   private def getScopeScheme(tpe: ParsedAst.Type): Validation[ScopeScheme, WeederError] = tpe match {
     case ParsedAst.Type.Unit(sp1, sp2) => ScopeScheme.Unit.toSuccess
-    case ParsedAst.Type.Var(sp1, ident, sp2) => ScopeScheme.Unit.toSuccess
+    case ParsedAst.Type.Var(sp1, ident, sp2) => ScopeScheme.Implicit.toSuccess
     case ParsedAst.Type.Ambiguous(sp1, qname, sp2) => ScopeScheme.Unit.toSuccess
     case ParsedAst.Type.Tuple(sp1, elms, sp2) => ScopeScheme.Unit.toSuccess
     case ParsedAst.Type.Record(sp1, fields, rest, sp2) => ScopeScheme.Unit.toSuccess
@@ -2550,6 +2550,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.And(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.Or(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.Ascribe(tpe, _, _) => leftMostSourcePosition(tpe)
+    case ParsedAst.Type.Scoped(sp1, _, _) => sp1
   }
 
   /**

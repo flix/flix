@@ -62,7 +62,7 @@ object Indexer {
     * Returns a reverse index for the given signature `sig0`.
     */
   private def visitSig(sig0: Sig): Index = sig0 match {
-    case Sig(_, Spec(_, _, _, _, fparams, _, _, _, _), _) =>
+    case Sig(_, Spec(_, _, _, _, fparams, _, _, _, _, _), _) =>
       val idx1 = Index.occurrenceOf(sig0)
       val idx2 = fparams.foldLeft(Index.empty) {
         case (acc, fparam) => acc ++ visitFormalParam(fparam)
@@ -402,7 +402,7 @@ object Indexer {
     * Returns a reverse index for the given formal parameter `fparam0`.
     */
   private def visitFormalParam(fparam0: FormalParam): Index = fparam0 match {
-    case FormalParam(_, _, tpe, _) =>
+    case FormalParam(_, _, tpe, _, _) =>
       Index.occurrenceOf(fparam0) ++ visitType(tpe)
   }
 
