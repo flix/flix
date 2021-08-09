@@ -233,6 +233,7 @@ object Main {
                      xlinter: Boolean = false,
                      xnostratifier: Boolean = false,
                      xstatistics: Boolean = false,
+                     xinternal: Boolean = false,
                      files: Seq[File] = Seq())
 
   /**
@@ -377,6 +378,9 @@ object Main {
 
       opt[Unit]("Xstatistics").action((_, c) => c.copy(xstatistics = true)).
         text("[experimental] prints compilation statistics.")
+
+      opt[Unit]("Xinternal").action((_, c) => c.copy(xinternal = true)).
+        text("[experimental] sets the error message audience to internal.")
 
       note("")
 

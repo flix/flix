@@ -37,7 +37,8 @@ object Options {
     xlinter = false,
     xnoboolunification = false,
     xnostratifier = false,
-    xstatistics = false
+    xstatistics = false,
+    xinternal = false
   )
 
   /**
@@ -78,6 +79,8 @@ object Options {
   * @param xlinter            enables the semantic linter.
   * @param xnoboolunification disables boolean unification.
   * @param xnostratifier      disables computation of stratification.
+  * @param xstatistics        enables printing of compiler statistics.
+  * @param xinternal          sets the error message audience to internal.
   */
 case class Options(lib: LibLevel,
                    debug: Boolean,
@@ -93,7 +96,8 @@ case class Options(lib: LibLevel,
                    xlinter: Boolean,
                    xnoboolunification: Boolean,
                    xnostratifier: Boolean,
-                   xstatistics: Boolean
+                   xstatistics: Boolean,
+                   xinternal: Boolean
                   )
 
 /**
