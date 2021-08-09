@@ -16,8 +16,9 @@ def testLambda05(): (Bool, Int, Int) -> Int = (x, y, z) -> if (x) y else z
 @test
 def testLambda06(): Bool -> Int -> Int = y -> if (y) (x -> x + 1) else (x -> x + 2)
 
-@test
-def testLambda07(): Int -> Int = scoped x -> x
+    // fails because x escapes
+//@test
+//def testLambda07(): Int -> Int = scoped x -> x
 
 @test
 def testLambda08(): Int -> Int -> Int = x -> y -> x + y

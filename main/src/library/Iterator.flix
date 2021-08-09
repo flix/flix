@@ -15,7 +15,7 @@ type alias Next[a] = Unit ~> a
 /// An iterator is a stream of elements that are produced on demand.
 ///
 pub enum Iterator[a] {
-    case Iterator(Done, Next[a])
+    case Iterator(Unit ~> Bool, Unit ~> a)
 }
 
 namespace Iterator {
@@ -42,8 +42,8 @@ namespace Iterator {
     ///
     pub def range(b: Int32, e: Int32): Iterator[Int32] & Impure =
         let i = ref b;
-        let d: Done = () -> deref i >= e;
-        let n: Next[Int32] = () -> {
+        let d: Unit ~> Bool = () -> deref i >= e;
+        let n: Unit ~> Int32 = () -> {
                 let res = deref i;
                 if (res < e) {
                     i := res + 1;
@@ -60,8 +60,8 @@ namespace Iterator {
     ///
     pub def repeat(x: a, n: Int32): Iterator[a] & Impure =
         let i = ref 0;
-        let done: Done = () -> deref i >= n;
-        let next: Next[a] = () -> {
+        let done: Unit ~> Bool = () -> deref i >= n;
+        let next: Unit ~> a = () -> {
               let j = deref i;
               if (j > n)
                   bug!("Empty Iterator!")
@@ -541,7 +541,7 @@ namespace Iterator {
 	/// Fast forwards the given iterator until the next element that satisfies
 	/// the given predicate `f`. Returns it (if it exists).
 	///
-    def forward(f: a -> Bool & ef, done: Done, next: Next[a]): Option[a] & Impure =
+    def forward(f: a -> Bool & ef, done: Unit ~> Bool, next: Unit ~> a): Option[a] & Impure =
         if (done())
             None
         else {

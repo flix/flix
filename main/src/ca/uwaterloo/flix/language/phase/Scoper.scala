@@ -395,7 +395,7 @@ object Scoper extends Phase[Root, Root] {
     case Head.Atom(pred, den, terms, tpe, loc) =>
       for {
         (scos, _, vars) <- Validation.traverse(terms)(checkExp(_, senv, root)).map(_.unzip3)
-      } yield (scos.reduce(_ max _), ScopeScheme.Unit, vars.flatten.toSet)
+      } yield ((Scopedness.Unscoped :: scos).reduce(_ max _), ScopeScheme.Unit, vars.flatten.toSet)
   }
 
   private def checkBodyPredicate(body: Predicate.Body, senv: Map[Symbol.VarSym, (Scopedness, ScopeScheme)], root: Root): Validation[(Scopedness, ScopeScheme, Set[Symbol.VarSym]), ScopeError] = body match {

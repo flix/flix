@@ -1,8 +1,10 @@
 namespace Test/Def/Scoped {
 
-    pub def oneScopedParam(scoped x: Int): Int = x - 1
+    // this fails because Sub.sub is not scoped
+//    pub def oneScopedParam(scoped x: Int): Int = x - 1
 
-    pub def twoScopedParams(scoped x: Int, scoped y: Int): Int = x + y
+    // this fails because Add.add is not scoped
+//    pub def twoScopedParams(scoped x: Int, scoped y: Int): Int = x + y
 
     @test
     def empty(): Bool = true

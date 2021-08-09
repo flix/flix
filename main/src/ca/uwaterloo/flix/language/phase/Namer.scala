@@ -436,8 +436,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
               mapN(annVal, expVal, schemeVal, retTpeVal, effVal) {
                 case (as, e, sc, retTpe, eff) =>
                   val sym = Symbol.mkDefnSym(ns0, ident)
-                  if (sym.text == "lift3")
-                    println("debug")// MATT
                   val spec = NamedAst.Spec(doc, as, mod, tparams, fparams, sc, retTpe, eff, scSc, loc)
                   NamedAst.Def(sym, spec, e)
               }
