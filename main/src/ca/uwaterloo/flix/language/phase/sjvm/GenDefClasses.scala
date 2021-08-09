@@ -79,7 +79,7 @@ object GenDefClasses {
   def magicStoreArg[R <: Stack, T <: PType](index: Int, tpe: RType[T], defName: JvmName, sym: Symbol.VarSym): F[R] => F[R] = {
     ((f: F[R]) => {
       f.visitor.visitVarInsn(Opcodes.ALOAD, 0)
-      f.visitor.visitFieldInsn(Opcodes.GETFIELD, defName.toInternalName, GenFunctionInterfaces.argFieldName(index), tpe.toDescriptor)
+      f.visitor.visitFieldInsn(Opcodes.GETFIELD, defName.toInternalName, GenFunctionInterfaces.argFieldName(index), tpe.erasedType.toDescriptor)
       f.asInstanceOf[F[R ** T]]
     }) ~ XStore(sym, tpe)
   }

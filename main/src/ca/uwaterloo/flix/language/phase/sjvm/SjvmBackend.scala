@@ -53,11 +53,10 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
         val vt = new VirtualTerminal()
         vt << "All seen expressions (a-z):" << VirtualString.Indent << VirtualString.NewLine
         val expressionStrings = root.defs.foldLeft(Set[String]()) { case (set, (_, defn)) => set union collectExpressions(defn.exp) }
-        expressionStrings.toList.sorted.zipWithIndex.foreach { case (str, index) => {
+        expressionStrings.toList.sorted.zipWithIndex.foreach { case (str, index) =>
           vt << str
           if (index != expressionStrings.size - 1)
             vt << VirtualString.NewLine
-        }
         }
         vt << VirtualString.Dedent
         println(vt.fmt(TerminalContext.AnsiTerminal))
@@ -106,7 +105,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
     // NB: In interactive and test mode we skip writing the files to disk.
     if (flix.options.writeClassFiles && !flix.options.test) {
       flix.subphase("WriteClasses") {
-        for ((jvmName, jvmClass) <- allClasses) {
+        for ((_, jvmClass) <- allClasses) {
           writeClass(TargetDirectory, jvmClass)
         }
       }

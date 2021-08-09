@@ -109,7 +109,7 @@ object BytecodeCompiler {
 
     case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) =>
       WithSource[R](loc) ~
-        TAILCALL(actuals, sym.defName, tag[T])
+        SELFTAILCALL(actuals, sym.defName, tag[T])
 
     case Expression.Unary(sop, op, exp, tpe, loc) => ???
     case Expression.Binary(sop, op, exp1, exp2, tpe, loc) => /*TODO(JLS): remove*/ println(sop.getClass.getCanonicalName, tpe); ???
@@ -176,7 +176,7 @@ object BytecodeCompiler {
       WithSource[R](loc) ~
         compileExp(base) ~
         compileExp(index) ~
-        XALoad(tpe)
+        XALOAD(tpe)
 
     case Expression.ArrayStore(base, index, elm, tpe, loc) =>
       WithSource[R](loc) ~

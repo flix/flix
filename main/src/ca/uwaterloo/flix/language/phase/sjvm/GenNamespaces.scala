@@ -79,7 +79,7 @@ object GenNamespaces {
       for (argIndex <- functionType.args.indices) {
         f.visitor.visitInsn(Opcodes.DUP)
         XLOAD(functionType.args(argIndex), argIndex)(f) // TODO(JLS): This does not work for cat 2 types
-        f.visitor.visitFieldInsn(Opcodes.PUTFIELD, sym.defName.toInternalName, GenFunctionInterfaces.argFieldName(argIndex), functionType.args(argIndex).toDescriptor)
+        f.visitor.visitFieldInsn(Opcodes.PUTFIELD, sym.defName.toInternalName, GenFunctionInterfaces.argFieldName(argIndex), functionType.args(argIndex).erasedType.toDescriptor)
       }
       f.asInstanceOf[F[StackNil ** PReference[PFunction]]]
     } ~ { f: F[StackNil ** PReference[PFunction]] =>

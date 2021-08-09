@@ -652,19 +652,41 @@ object Instructions {
     ALOAD(0)
 
   // TODO(JLS): This should both return StackEnd (no code should follow) and R ** T (compileExp should push T on stack) (maybe stop flag type on F)
-  // TODO(JLS): TAILCALL/CALL only differ slightly, reuse code
   def TAILCALL
   [R <: Stack, T <: PType]
   (arguments: List[ErasedAst.Expression[_ <: PType]], defClassName: JvmName, tpe: T = tag[T]):
   F[R] => F[R ** T] = f => {
-    f.visitor.visitVarInsn(Opcodes.ALOAD, 0) //TODO(JLS): is this a good solution? what about static contexts?
+    makeDefWithArgs(defClassName, arguments)(f)
+    f.visitor.visitInsn(Opcodes.ARETURN)
+    castF(f)
+  }
+
+  def SELFTAILCALL
+  [R <: Stack, T <: PType]
+  (arguments: List[ErasedAst.Expression[_ <: PType]], defClassName: JvmName, tpe: T = tag[T]):
+  F[R] => F[R ** T] = f => {
+    f.visitor.visitVarInsn(Opcodes.ALOAD, 0)
     for (argIndex <- arguments.indices) {
       val arg = arguments(argIndex)
       f.visitor.visitInsn(Opcodes.DUP)
       compileExp(arg)(f)
-      f.visitor.visitFieldInsn(Opcodes.PUTFIELD, defClassName.toInternalName, GenFunctionInterfaces.argFieldName(argIndex), arg.tpe.toDescriptor)
+      f.visitor.visitFieldInsn(Opcodes.PUTFIELD, defClassName.toInternalName, GenFunctionInterfaces.argFieldName(argIndex), arg.tpe.erasedType.toDescriptor)
     }
     f.visitor.visitInsn(Opcodes.ARETURN)
+    castF(f)
+  }
+
+  private def makeDefWithArgs[R <: Stack]
+  (defClassName: JvmName, arguments: List[ErasedAst.Expression[_ <: PType]]): F[R] => F[R ** PReference[PFunction]] = f => {
+    f.visitor.visitTypeInsn(Opcodes.NEW, defClassName.toInternalName)
+    f.visitor.visitInsn(Opcodes.DUP)
+    f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, defClassName.toInternalName, JvmName.constructorMethod, JvmName.nothingToVoid, false)
+    for (argIndex <- arguments.indices) {
+      val arg = arguments(argIndex)
+      f.visitor.visitInsn(Opcodes.DUP)
+      compileExp(arg)(f)
+      f.visitor.visitFieldInsn(Opcodes.PUTFIELD, defClassName.toInternalName, GenFunctionInterfaces.argFieldName(argIndex), arg.tpe.erasedType.toDescriptor)
+    }
     castF(f)
   }
 
@@ -672,18 +694,49 @@ object Instructions {
   [R <: Stack, T <: PType]
   (arguments: List[ErasedAst.Expression[_ <: PType]], defClassName: JvmName, contName: JvmName, returnType: RType[T]):
   F[R] => F[R ** T] = f => {
-    f.visitor.visitTypeInsn(Opcodes.NEW, defClassName.toInternalName)
-    f.visitor.visitInsn(Opcodes.DUP)
-    f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, defClassName.toInternalName, JvmName.constructorMethod, JvmName.nothingToVoid, false)
-    f.asInstanceOf[F[StackNil ** PReference[PFunction]]]
-    for (argIndex <- arguments.indices) {
-      val arg = arguments(argIndex)
-      f.visitor.visitInsn(Opcodes.DUP)
-      compileExp(arg)(f)
-      f.visitor.visitFieldInsn(Opcodes.PUTFIELD, defClassName.toInternalName, GenFunctionInterfaces.argFieldName(argIndex), arg.tpe.toDescriptor)
-    }
+    makeDefWithArgs(defClassName, arguments)(f)
     f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, contName.toInternalName, GenContinuationInterfaces.unwindMethodName, returnType.erasedNothingToThisMethodDescriptor, false)
     undoErasure(returnType, f.visitor)
+    castF(f)
+  }
+
+  def ILOAD
+  [R <: Stack]
+  (index: Int):
+  F[R] => F[R ** PInt32] = f => {
+    f.visitor.visitVarInsn(Opcodes.ILOAD, index)
+    castF(f)
+  }
+
+  def BLOAD
+  [R <: Stack]
+  (index: Int):
+  F[R] => F[R ** PInt8] = f => {
+    ILOAD(index)(f)
+    castF(f)
+  }
+
+  def SLOAD
+  [R <: Stack]
+  (index: Int):
+  F[R] => F[R ** PInt16] = f => {
+    ILOAD(index)(f)
+    castF(f)
+  }
+
+  def LLOAD
+  [R <: Stack]
+  (index: Int):
+  F[R] => F[R ** PInt64] = f => {
+    f.visitor.visitVarInsn(Opcodes.LLOAD, index)
+    castF(f)
+  }
+
+  def CLOAD
+  [R <: Stack]
+  (index: Int):
+  F[R] => F[R ** PChar] = f => {
+    ILOAD(index)(f)
     castF(f)
   }
 
@@ -703,92 +756,89 @@ object Instructions {
     castF(f)
   }
 
-  def ILOAD
-  [R <: Stack]
-  (index: Int):
-  F[R] => F[R ** PInt32] = f => {
-    f.visitor.visitVarInsn(Opcodes.ILOAD, index)
-    castF(f)
-  }
-
-  def LLOAD
-  [R <: Stack]
-  (index: Int):
-  F[R] => F[R ** PInt64] = f => {
-    f.visitor.visitVarInsn(Opcodes.LLOAD, index)
-    castF(f)
-  }
-
   def XLOAD
   [R <: Stack, T <: PType]
   (tpe: RType[T], index: Int):
-  F[R] => F[R ** T] =
-    tpe match {
-      case RBool => ???
-      case RInt8 => ???
-      case RInt16 => ???
-      case RInt32 => ILOAD(index)
-      case RInt64 => LLOAD(index)
-      case RChar => ???
-      case RFloat32 => FLOAD(index)
-      case RFloat64 => DLOAD(index)
-      case RReference(_) => ALOAD(index)
-    }
+  F[R] => F[R ** T] = tpe match {
+    case RBool | RInt32 => ILOAD(index)
+    case RInt8 => BLOAD(index)
+    case RInt16 => SLOAD(index)
+    case RInt64 => LLOAD(index)
+    case RChar => CLOAD(index)
+    case RFloat32 => FLOAD(index)
+    case RFloat64 => DLOAD(index)
+    case RReference(_) => ALOAD(index)
+  }
 
-  def BALoad
+  def BALOAD
   [R <: Stack]:
-  F[R ** PReference[PArray[PInt8]] ** PInt32] => F[R ** PInt8] =
-    ???
+  F[R ** PReference[PArray[PInt8]] ** PInt32] => F[R ** PInt8] = f => {
+    f.visitor.visitInsn(Opcodes.BALOAD)
+    castF(f)
+  }
 
-  def SALoad
+  def SALOAD
   [R <: Stack]:
-  F[R ** PReference[PArray[PInt16]] ** PInt32] => F[R ** PInt16] =
-    ???
+  F[R ** PReference[PArray[PInt16]] ** PInt32] => F[R ** PInt16] = f => {
+    f.visitor.visitInsn(Opcodes.SALOAD)
+    castF(f)
+  }
 
-  def IALoad
+  def IALOAD
   [R <: Stack]:
-  F[R ** PReference[PArray[PInt32]] ** PInt32] => F[R ** PInt32] =
-    ???
+  F[R ** PReference[PArray[PInt32]] ** PInt32] => F[R ** PInt32] = f => {
+    f.visitor.visitInsn(Opcodes.IALOAD)
+    castF(f)
+  }
 
-  def LALoad
+  def LALOAD
   [R <: Stack]:
-  F[R ** PReference[PArray[PInt64]] ** PInt32] => F[R ** PInt64] =
-    ???
+  F[R ** PReference[PArray[PInt64]] ** PInt32] => F[R ** PInt64] = f => {
+    f.visitor.visitInsn(Opcodes.LALOAD)
+    castF(f)
+  }
 
-  def CALoad
+  def CALOAD
   [R <: Stack]:
-  F[R ** PReference[PArray[PChar]] ** PInt32] => F[R ** PChar] =
-    ???
+  F[R ** PReference[PArray[PChar]] ** PInt32] => F[R ** PChar] = f => {
+    f.visitor.visitInsn(Opcodes.CALOAD)
+    castF(f)
+  }
 
-  def FALoad
+  def FALOAD
   [R <: Stack]:
-  F[R ** PReference[PArray[PFloat32]] ** PInt32] => F[R ** PFloat32] =
-    ???
+  F[R ** PReference[PArray[PFloat32]] ** PInt32] => F[R ** PFloat32] = f => {
+    f.visitor.visitInsn(Opcodes.FALOAD)
+    castF(f)
+  }
 
-  def DALoad
+  def DALOAD
   [R <: Stack]:
-  F[R ** PReference[PArray[PFloat64]] ** PInt32] => F[R ** PFloat64] =
-    ???
+  F[R ** PReference[PArray[PFloat64]] ** PInt32] => F[R ** PFloat64] = f => {
+    f.visitor.visitInsn(Opcodes.DALOAD)
+    castF(f)
+  }
 
-  def AALoad
+  def AALOAD
   [R <: Stack, T <: PRefType]:
-  F[R ** PReference[PArray[PReference[T]]] ** PInt32] => F[R ** PReference[T]] =
-    ???
+  F[R ** PReference[PArray[PReference[T]]] ** PInt32] => F[R ** PReference[T]] = f => {
+    f.visitor.visitInsn(Opcodes.AALOAD)
+    castF(f)
+  }
 
-  def XALoad
+  def XALOAD
   [R <: Stack, T <: PType]
   (tpe: RType[T]):
-  F[R ** PReference[PArray[T]] ** PInt32] => F[R ** T] =
-    tpe match {
-      case RBool | RInt32 => IALoad
-      case RChar => CALoad
-      case RFloat32 => FALoad
-      case RFloat64 => DALoad
-      case RInt8 => BALoad
-      case RInt16 => SALoad
-      case RInt64 => LALoad
-      case RReference(_) => AALoad
-    }
+  F[R ** PReference[PArray[T]] ** PInt32] => F[R ** T] = tpe match {
+    case RBool | RInt32 => IALOAD
+    case RInt8 => BALOAD
+    case RInt16 => SALOAD
+    case RInt64 => LALOAD
+    case RChar => CALOAD
+    case RFloat32 => FALOAD
+    case RFloat64 => DALOAD
+    case RReference(_) => AALOAD
+  }
 
   def BAStore
   [R <: Stack]:

@@ -69,9 +69,12 @@ object RType {
     case RReference(referenceType) => referenceType.toDescriptor
   }
 
-  def erasedType[T <: PType](e: RType[T]): RType[_ <: PType] = e match {
-    case RBool | RInt8 | RInt16 | RInt32 | RInt64 | RChar | RFloat32 | RFloat64 => e
-    case RReference(rref) => getErasedInnerType(rref)
+  def erasedType[T <: PType](e: RType[T]): RType[_ <: PType] = {
+    pureErasedType(e) //TODO(JLS): should arrays be erased?
+//    e match {
+//      case RBool | RInt8 | RInt16 | RInt32 | RInt64 | RChar | RFloat32 | RFloat64 => e
+//      case RReference(rref) => getErasedInnerType(rref)
+//    }
   }
 
   private def getErasedInnerType[T <: PRefType](r: RRefType[T]): RReference[_ <: PRefType] = r match {
