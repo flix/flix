@@ -97,6 +97,11 @@ object Instructions {
     castF(f)
   }
 
+  def multiComposition[A, R <: Stack](xs: IterableOnce[A])(generator: A => F[R] => F[R]): F[R] => F[R] = f => {
+    xs.iterator.foreach(x => generator(x)(f))
+    f
+  }
+
   def SWAP
   [R <: Stack, T1 <: PType, T2 <: PType]
   (implicit t1: T1 => Cat1[T1], t2: T2 => Cat1[T2]):
@@ -842,43 +847,59 @@ object Instructions {
 
   def BAStore
   [R <: Stack]:
-  F[R ** PReference[PArray[PInt8]] ** PInt32 ** PInt8] => F[R] =
-    ???
+  F[R ** PReference[PArray[PInt8]] ** PInt32 ** PInt8] => F[R] = f => {
+    f.visitor.visitInsn(Opcodes.BASTORE)
+    castF(f)
+  }
 
   def SAStore
   [R <: Stack]:
-  F[R ** PReference[PArray[PInt16]] ** PInt32 ** PInt16] => F[R] =
-    ???
+  F[R ** PReference[PArray[PInt16]] ** PInt32 ** PInt16] => F[R] = f => {
+    f.visitor.visitInsn(Opcodes.SASTORE)
+    castF(f)
+  }
 
   def IAStore
   [R <: Stack]:
-  F[R ** PReference[PArray[PInt32]] ** PInt32 ** PInt32] => F[R] =
-    ???
+  F[R ** PReference[PArray[PInt32]] ** PInt32 ** PInt32] => F[R] = f => {
+    f.visitor.visitInsn(Opcodes.IASTORE)
+    castF(f)
+  }
 
   def LAStore
   [R <: Stack]:
-  F[R ** PReference[PArray[PInt64]] ** PInt32 ** PInt64] => F[R] =
-    ???
+  F[R ** PReference[PArray[PInt64]] ** PInt32 ** PInt64] => F[R] = f => {
+    f.visitor.visitInsn(Opcodes.LASTORE)
+    castF(f)
+  }
 
   def CAStore
   [R <: Stack]:
-  F[R ** PReference[PArray[PChar]] ** PInt32 ** PChar] => F[R] =
-    ???
+  F[R ** PReference[PArray[PChar]] ** PInt32 ** PChar] => F[R] = f => {
+    f.visitor.visitInsn(Opcodes.CASTORE)
+    castF(f)
+  }
 
   def FAStore
   [R <: Stack]:
-  F[R ** PReference[PArray[PFloat32]] ** PInt32 ** PFloat32] => F[R] =
-    ???
+  F[R ** PReference[PArray[PFloat32]] ** PInt32 ** PFloat32] => F[R] = f => {
+    f.visitor.visitInsn(Opcodes.FASTORE)
+    castF(f)
+  }
 
   def DAStore
   [R <: Stack]:
-  F[R ** PReference[PArray[PFloat64]] ** PInt32 ** PFloat64] => F[R] =
-    ???
+  F[R ** PReference[PArray[PFloat64]] ** PInt32 ** PFloat64] => F[R] = f => {
+    f.visitor.visitInsn(Opcodes.DASTORE)
+    castF(f)
+  }
 
   def AAStore
   [R <: Stack, T <: PRefType]:
-  F[R ** PReference[PArray[PReference[T]]] ** PInt32 ** PReference[T]] => F[R] =
-    ???
+  F[R ** PReference[PArray[PReference[T]]] ** PInt32 ** PReference[T]] => F[R] = f => {
+    f.visitor.visitInsn(Opcodes.AASTORE)
+    castF(f)
+  }
 
   def XAStore
   [R <: Stack, T <: PType]
@@ -977,35 +998,27 @@ object Instructions {
       case RReference(_) => AStore(sym)
     }
 
+  // TODO(JLS): bools are awkward with no PType, PBool
   def BOOLNEWARRAY
   [R <: Stack]:
-  F[R ** PInt32] => F[R ** PReference[PArray[PInt32]]] =
-    ???
-
-  def CNEWARRAY
-  [R <: Stack]:
-  F[R ** PInt32] => F[R ** PReference[PArray[PChar]]] =
-    ???
-
-  def FNEWARRAY
-  [R <: Stack]:
-  F[R ** PInt32] => F[R ** PReference[PArray[PFloat32]]] =
-    ???
-
-  def DNEWARRAY
-  [R <: Stack]:
-  F[R ** PInt32] => F[R ** PReference[PArray[PFloat64]]] =
-    ???
+  F[R ** PInt32] => F[R ** PReference[PArray[PInt32]]] = f => {
+    f.visitor.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_BOOLEAN)
+    castF(f)
+  }
 
   def BNEWARRAY
   [R <: Stack]:
-  F[R ** PInt32] => F[R ** PReference[PArray[PInt8]]] =
-    ???
+  F[R ** PInt32] => F[R ** PReference[PArray[PInt8]]] = f => {
+    f.visitor.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_BYTE)
+    castF(f)
+  }
 
   def SNEWARRAY
   [R <: Stack]:
-  F[R ** PInt32] => F[R ** PReference[PArray[PInt16]]] =
-    ???
+  F[R ** PInt32] => F[R ** PReference[PArray[PInt16]]] = f => {
+    f.visitor.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_SHORT)
+    castF(f)
+  }
 
   def INEWARRAY
   [R <: Stack]:
@@ -1016,16 +1029,39 @@ object Instructions {
 
   def LNEWARRAY
   [R <: Stack]:
-  F[R ** PInt32] => F[R ** PReference[PArray[PInt64]]] =
-    ???
+  F[R ** PInt32] => F[R ** PReference[PArray[PInt64]]] = f => {
+    f.visitor.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_LONG)
+    castF(f)
+  }
+
+  def CNEWARRAY
+  [R <: Stack]:
+  F[R ** PInt32] => F[R ** PReference[PArray[PChar]]] = f => {
+    f.visitor.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_CHAR)
+    castF(f)
+  }
+
+  def FNEWARRAY
+  [R <: Stack]:
+  F[R ** PInt32] => F[R ** PReference[PArray[PFloat32]]] = f => {
+    f.visitor.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_FLOAT)
+    castF(f)
+  }
+
+  def DNEWARRAY
+  [R <: Stack]:
+  F[R ** PInt32] => F[R ** PReference[PArray[PFloat64]]] = f => {
+    f.visitor.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_DOUBLE)
+    castF(f)
+  }
 
   def ANEWARRAY
-  [R <: Stack, T <: PRefType]:
-  F[R ** PInt32] => F[R ** PReference[PArray[PReference[T]]]] =
-  // from genExpression:
-  // visitor.visitTypeInsn(ANEWARRAY, "java/lang/Object")
-  // should type be built?
-    ???
+  [R <: Stack, T <: PRefType]
+  (elmType: RType[PReference[T]]):
+  F[R ** PInt32] => F[R ** PReference[PArray[PReference[T]]]] = f => {
+    f.visitor.visitTypeInsn(Opcodes.ANEWARRAY, RType.getRReference(elmType).referenceType.toInternalName)
+    castF(f)
+  }
 
   def XNEWARRAY
   [R <: Stack, T <: PType]
@@ -1034,14 +1070,14 @@ object Instructions {
     arrayType match {
       case RReference(RArray(tpe)) => tpe match {
         case RBool => BOOLNEWARRAY
-        case RChar => CNEWARRAY
-        case RFloat32 => FNEWARRAY
-        case RFloat64 => DNEWARRAY
         case RInt8 => BNEWARRAY
         case RInt16 => SNEWARRAY
         case RInt32 => INEWARRAY
         case RInt64 => LNEWARRAY
-        case RReference(_) => ANEWARRAY
+        case RChar => CNEWARRAY
+        case RFloat32 => FNEWARRAY
+        case RFloat64 => DNEWARRAY
+        case RReference(_) => ANEWARRAY(tpe)
       }
       case _ => throw InternalCompilerException("unexpected non-array type")
     }

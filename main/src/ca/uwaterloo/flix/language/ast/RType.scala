@@ -44,8 +44,6 @@ sealed trait RType[T <: PType] extends Describable {
   lazy val nothingToContMethodDescriptor: String = JvmName.getMethodDescriptor(Nil, this.contName)
   lazy val erasedNothingToThisMethodDescriptor: String = JvmName.getMethodDescriptor(Nil, this.erasedType)
   lazy val nothingToThisMethodDescriptor: String = JvmName.getMethodDescriptor(Nil, this)
-
-  def erasable: Boolean = erasedType != this //TODO(JLS): this could be lazily done
 }
 
 object RType {
@@ -54,6 +52,11 @@ object RType {
 
   def getRReference[T <: PRefType](x: RType[PReference[T]]): RReference[T] = x match {
     case res@RReference(_) => res
+  }
+
+  // TODO(JLS): can these be added implicitly?
+  def squeezeArray[T <: PType](x: RReference[PArray[T]]): RArray[T] = x.referenceType match {
+    case res@RArray(_) => res
   }
 
   def internalNameOfReference[T <: PRefType](e: RType[PReference[T]]): String = e match {
@@ -98,9 +101,9 @@ object RType {
   }
 
   def undoErasure(rType: RType[_ <: PType], methodVisitor: MethodVisitor): Unit =
-    if (rType.erasable) rType match {
+    rType match {
       case RReference(referenceType) => methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, referenceType.toInternalName)
-      case _ => ()
+      case RBool | RInt8 | RInt16 | RInt32 | RInt64 | RChar | RFloat32 | RFloat64 => ()
     }
 
   def toErasedString[T <: PType](e: RType[T]): String = e match {

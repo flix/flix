@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase.sjvm
 import ca.uwaterloo.flix.language.ast.ErasedAst.Expression
 import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.PType._
+import ca.uwaterloo.flix.language.ast.RRefType._
 import ca.uwaterloo.flix.language.ast.RType._
 import ca.uwaterloo.flix.language.ast.{PRefType, PType, RType}
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
@@ -144,21 +145,50 @@ object BytecodeCompiler {
     case Expression.RecordSelect(exp, field, tpe, loc) => ???
     case Expression.RecordExtend(field, value, rest, tpe, loc) => ???
     case Expression.RecordRestrict(field, rest, tpe, loc) => ???
-    case Expression.ArrayLit(elms, tpe, loc) => ???
+    case Expression.ArrayLit(elms, tpe, loc) =>
+      def makeAndFillArray[R0 <: Stack, T0 <: PType]
+      (elms: List[Expression[T0]], arrayType: RArray[T0]):
+      F[R0 ** PReference[PArray[T0]]] => F[R0 ** PReference[PArray[T0]]] = {
+        val elmType = arrayType.tpe
+        elmType match {
+          case RType.RBool => ???
+          case RType.RInt8 => ???
+          case RType.RInt16 => ???
+          case RType.RInt32 =>
+            START[R0 ** PReference[PArray[T0]]] ~
+              multiComposition(elms.zipWithIndex) { case (elm, index) =>
+                START[R0 ** PReference[PArray[T0]]] ~
+                  DUP ~
+                  pushInt32(index) ~
+                  compileExp(elm) ~
+                  XAStore(elmType)
+              }
+          case RType.RInt64 => ???
+          case RType.RChar => ???
+          case RType.RFloat32 => ???
+          case RType.RFloat64 => ???
+          case RReference(_) => ???
+        }
+      }
+
+      WithSource[R](loc) ~
+        pushInt32(elms.length) ~
+        XNEWARRAY(tpe) ~
+        makeAndFillArray(elms, squeezeArray(getRReference(tpe)))
+
+
     case Expression.ArrayNew(elm, len, tpe, loc) =>
       def elmArraySwitch
       [R0 <: Stack, T0 <: PType]
       (elmType: RType[T0]):
       F[R0 ** T0 ** PReference[PArray[T0]]] => F[R0 ** PReference[PArray[T0]] ** PReference[PArray[T0]] ** T0] =
         elmType match {
-          case RBool | RInt8 | RInt16 | RInt32 | RChar | RFloat32 | RReference(_) =>
-            //Cat1
+          case RBool | RInt8 | RInt16 | RInt32 | RChar | RFloat32 | RReference(_) => // Cat1
             //TODO(JLS): note: start here is needed because of some implicit overshadowing
             START[R0 ** T0 ** PReference[PArray[T0]]] ~
               DUP_X1 ~
               SWAP
-          case RInt64 | RFloat64 =>
-            //Cat2
+          case RInt64 | RFloat64 => // Cat2
             START[R0 ** T0 ** PReference[PArray[T0]]] ~
               DUP_X2_onCat2 ~
               DUP_X2_onCat2 ~

@@ -19,9 +19,10 @@ package ca.uwaterloo.flix.language.phase.sjvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst.Root
-import ca.uwaterloo.flix.language.ast.PRefType.PAnyObject
-import ca.uwaterloo.flix.language.ast.PType.PReference
-import ca.uwaterloo.flix.language.ast.RRefType.RArrow
+import ca.uwaterloo.flix.language.ast.PRefType._
+import ca.uwaterloo.flix.language.ast.PType._
+import ca.uwaterloo.flix.language.ast.RRefType._
+import ca.uwaterloo.flix.language.ast.RType._
 import ca.uwaterloo.flix.language.ast.{ErasedAst, PType, RType, Symbol}
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
 import ca.uwaterloo.flix.language.phase.sjvm.ClassMaker.Mod
@@ -43,7 +44,6 @@ object GenDefClasses {
   }
 
   private def genByteCode(defn: ErasedAst.Def, defName: JvmName, functionType: RArrow)(implicit root: Root, flix: Flix): Array[Byte] = {
-
     val classMaker = ClassMaker.mkClass(defName, addSource = false, Some(functionType.functionInterfaceName))
     classMaker.mkSuperConstructor()
     classMaker.mkMethod(genInvokeFunction(defn, defn.exp, defName, functionType), GenContinuationInterfaces.invokeMethodName, functionType.result.nothingToContMethodDescriptor, Mod.isPublic)
@@ -80,6 +80,7 @@ object GenDefClasses {
     ((f: F[R]) => {
       f.visitor.visitVarInsn(Opcodes.ALOAD, 0)
       f.visitor.visitFieldInsn(Opcodes.GETFIELD, defName.toInternalName, GenFunctionInterfaces.argFieldName(index), tpe.erasedDescriptor)
+      undoErasure(tpe, f.visitor)
       f.asInstanceOf[F[R ** T]]
     }) ~ XStore(sym, tpe)
   }
