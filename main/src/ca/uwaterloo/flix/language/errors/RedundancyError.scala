@@ -16,9 +16,10 @@
 
 package ca.uwaterloo.flix.language.errors
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol}
-import ca.uwaterloo.flix.language.debug.{Audience, FormatTypeConstraint}
+import ca.uwaterloo.flix.language.debug.FormatTypeConstraint
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
@@ -30,8 +31,6 @@ trait RedundancyError extends CompilationError {
 }
 
 object RedundancyError {
-
-  private implicit val audience: Audience = Audience.External
 
   /**
     * An error raised to indicate that the variable symbol `sym` is hidden.
@@ -280,13 +279,13 @@ object RedundancyError {
     * @param redundantTconstr the tconstr that is made redundant by the other.
     * @param loc              the location where the error occured.
     */
-  case class RedundantTypeConstraint(entailingTconstr: Ast.TypeConstraint, redundantTconstr: Ast.TypeConstraint, loc: SourceLocation) extends RedundancyError {
+  case class RedundantTypeConstraint(entailingTconstr: Ast.TypeConstraint, redundantTconstr: Ast.TypeConstraint, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
     def summary: String = "Redundant type constraint."
 
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Type constraint '" << Red(FormatTypeConstraint.formatTypeConstraint(redundantTconstr)) << "' is entailed by type constraint '" << Green(FormatTypeConstraint.formatTypeConstraint(redundantTconstr)) << "'." << NewLine
+      vt << ">> Type constraint '" << Red(FormatTypeConstraint.formatTypeConstraint(redundantTconstr)(flix.options.audience)) << "' is entailed by type constraint '" << Green(FormatTypeConstraint.formatTypeConstraint(redundantTconstr)(flix.options.audience)) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "redundant type constraint.") << NewLine
       vt << NewLine

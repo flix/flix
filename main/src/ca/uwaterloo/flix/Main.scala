@@ -18,6 +18,7 @@ package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.api.lsp.LanguageServer
 import ca.uwaterloo.flix.api.{Flix, Version}
+import ca.uwaterloo.flix.language.debug.Audience
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools._
 import ca.uwaterloo.flix.util._
@@ -89,7 +90,8 @@ object Main {
       xlinter = cmdOpts.xlinter,
       xnoboolunification = cmdOpts.xnoboolunification,
       xnostratifier = cmdOpts.xnostratifier,
-      xstatistics = cmdOpts.xstatistics
+      xstatistics = cmdOpts.xstatistics,
+      audience = if (cmdOpts.xinternal) Audience.Internal else Audience.External
     )
 
     // check if command was passed.

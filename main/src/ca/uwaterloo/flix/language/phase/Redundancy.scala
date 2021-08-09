@@ -73,7 +73,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       checkUnusedDefs(usedAll)(root) ++
         checkUnusedEnumsAndTags(usedAll)(root) ++
         checkUnusedTypeParamsEnums()(root) ++
-          checkRedundantTypeConstraints()(root)
+          checkRedundantTypeConstraints()(root, flix)
 
     // Return the root if successful, otherwise returns all redundancy errors.
     usedRes.toValidation(root)
@@ -202,7 +202,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Checks for redundant type constraints in the given `root`.
     */
-  private def checkRedundantTypeConstraints()(implicit root: Root): List[RedundancyError] = {
+  private def checkRedundantTypeConstraints()(implicit root: Root, flix: Flix): List[RedundancyError] = {
     def findRedundantTypeConstraints(tconstrs: List[Ast.TypeConstraint]): List[RedundancyError] = {
       for {
         (tconstr1, i1) <- tconstrs.zipWithIndex

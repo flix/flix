@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.errors
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme, FormatType, TypeDiff}
@@ -30,7 +31,6 @@ sealed trait TypeError extends CompilationError {
 }
 
 object TypeError {
-  implicit val audience: Audience = Audience.External
 
   /**
     * Generalization Error.
@@ -39,7 +39,9 @@ object TypeError {
     * @param inferred the inferred type scheme.
     * @param loc      the location where the error occurred.
     */
-  case class GeneralizationError(declared: Scheme, inferred: Scheme, loc: SourceLocation) extends TypeError {
+  case class GeneralizationError(declared: Scheme, inferred: Scheme, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    private implicit val audience: Audience = flix.options.audience
+
     def summary: String = s"The type scheme '${FormatScheme.formatSchemeWithoutConstraints(inferred)}' cannot be generalized to '${FormatScheme.formatSchemeWithoutConstraints(declared)}'."
 
     def message: VirtualTerminal = {
@@ -64,7 +66,9 @@ object TypeError {
     * @param fullType2 the second full type.
     * @param loc       the location where the error occurred.
     */
-  case class MismatchedTypes(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
+  case class MismatchedTypes(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    private implicit val audience: Audience = flix.options.audience
+
     def summary: String = s"Unable to unify the types '$fullType1' and '$fullType2'."
 
     def message: VirtualTerminal = {
@@ -88,7 +92,9 @@ object TypeError {
     * @param fullType2 the second optional full type in which the second boolean formula occurs.
     * @param loc       the location where the error occurred.
     */
-  case class MismatchedBools(baseType1: Type, baseType2: Type, fullType1: Option[Type], fullType2: Option[Type], loc: SourceLocation) extends TypeError {
+  case class MismatchedBools(baseType1: Type, baseType2: Type, fullType1: Option[Type], fullType2: Option[Type], loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    private implicit val audience: Audience = flix.options.audience
+
     def summary: String = s"Unable to unify the Boolean formulas '$baseType1' and '$baseType2'."
 
     def message: VirtualTerminal = {
@@ -127,7 +133,9 @@ object TypeError {
     * @param kind2 the second kind.
     * @param loc   the location where the error occurred.
     */
-  case class MismatchedKinds(tpe1: Type, tpe2: Type, kind1: Kind, kind2: Kind, loc: SourceLocation) extends TypeError {
+  case class MismatchedKinds(tpe1: Type, tpe2: Type, kind1: Kind, kind2: Kind, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    private implicit val audience: Audience = flix.options.audience
+
     def summary: String = s"Unable to unify the kinds '$kind1' and '$kind2'.'"
 
     def message: VirtualTerminal = {
@@ -149,7 +157,9 @@ object TypeError {
     * @param tpe2 the second type.
     * @param loc  the location where the error occurred.
     */
-  case class MismatchedArity(tpe1: Type, tpe2: Type, loc: SourceLocation) extends TypeError {
+  case class MismatchedArity(tpe1: Type, tpe2: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    private implicit val audience: Audience = flix.options.audience
+
     def summary: String = s"Unable to unify the types '$tpe1' and '$tpe2'."
 
     def message: VirtualTerminal = {
@@ -170,7 +180,9 @@ object TypeError {
     * @param fullType2 the second full type.
     * @param loc       the location where the error occurred.
     */
-  case class OccursCheckError(baseVar: Type.Var, baseType: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
+  case class OccursCheckError(baseVar: Type.Var, baseType: Type, fullType1: Type, fullType2: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    private implicit val audience: Audience = flix.options.audience
+
     def summary: String = s"Unable to unify the type variable '$baseVar' with the type '$baseType'."
 
     def message: VirtualTerminal = {
@@ -194,7 +206,9 @@ object TypeError {
     * @param recordType the record type where the field is missing.
     * @param loc        the location where the error occurred.
     */
-  case class UndefinedField(field: Name.Field, fieldType: Type, recordType: Type, loc: SourceLocation) extends TypeError {
+  case class UndefinedField(field: Name.Field, fieldType: Type, recordType: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    private implicit val audience: Audience = flix.options.audience
+
     def summary: String = s"Missing field '$field' of type '$fieldType'."
 
     def message: VirtualTerminal = {
@@ -219,7 +233,9 @@ object TypeError {
     * @param schemaType the schema type where the predicate is missing.
     * @param loc        the location where the error occurred.
     */
-  case class UndefinedPredicate(pred: Name.Pred, predType: Type, schemaType: Type, loc: SourceLocation) extends TypeError {
+  case class UndefinedPredicate(pred: Name.Pred, predType: Type, schemaType: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    private implicit val audience: Audience = flix.options.audience
+
     def summary: String = s"Missing predicate '${pred.name}' of type '$predType'."
 
     def message: VirtualTerminal = {
@@ -242,7 +258,9 @@ object TypeError {
     * @param tpe the unexpected non-record type.
     * @param loc the location where the error occurred.
     */
-  case class NonRecordType(tpe: Type, loc: SourceLocation) extends TypeError {
+  case class NonRecordType(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    private implicit val audience: Audience = flix.options.audience
+
     def summary: String = s"Unexpected non-record type '$tpe'."
 
     def message: VirtualTerminal = {
@@ -260,7 +278,9 @@ object TypeError {
     * @param tpe the unexpected non-schema type.
     * @param loc the location where the error occurred.
     */
-  case class NonSchemaType(tpe: Type, loc: SourceLocation) extends TypeError {
+  case class NonSchemaType(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    private implicit val audience: Audience = flix.options.audience
+
     def summary: String = s"Unexpected non-schema type '$tpe'."
 
     def message: VirtualTerminal = {
@@ -279,7 +299,9 @@ object TypeError {
     * @param tpe   the type of the instance.
     * @param loc   the location where the error occurred.
     */
-  case class NoMatchingInstance(clazz: Symbol.ClassSym, tpe: Type, loc: SourceLocation) extends TypeError {
+  case class NoMatchingInstance(clazz: Symbol.ClassSym, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    private implicit val audience: Audience = flix.options.audience
+
     def summary: String = s"No instance of class '$clazz' for type '${FormatType.formatType(tpe)}'."
 
     def message: VirtualTerminal = {

@@ -16,9 +16,9 @@
 
 package ca.uwaterloo.flix.language.errors
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, UnkindedType}
-import ca.uwaterloo.flix.language.debug.{Audience, FormatKind, FormatType}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, UnkindedType}
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
@@ -32,8 +32,6 @@ sealed trait ResolutionError extends CompilationError {
 }
 
 object ResolutionError {
-
-  private implicit val audience: Audience = Audience.External
 
   /**
     * Ambiguous Name Error.
@@ -117,10 +115,11 @@ object ResolutionError {
     * @param tpe the illegal type.
     * @param loc the location where the error occurred.
     */
-  case class IllegalType(tpe: UnkindedType, loc: SourceLocation) extends ResolutionError {
+  case class IllegalType(tpe: UnkindedType, loc: SourceLocation)(implicit flix: Flix) extends ResolutionError {
     private def formatUnkindedType(tpe: UnkindedType): String = tpe.toString // TODO
 
     def summary: String = "Illegal type."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine

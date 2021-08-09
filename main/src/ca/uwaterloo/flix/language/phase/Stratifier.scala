@@ -64,7 +64,7 @@ object Stratifier extends Phase[Root, Root] {
     // Compute the stratification at every solve expression in the ast.`
     val defsVal = flix.subphase("Compute Stratification") {
       traverse(root.defs) {
-        case (sym, defn) => visitDef(defn)(dg, cache).map(d => sym -> d)
+        case (sym, defn) => visitDef(defn)(dg, cache, flix).map(d => sym -> d)
       }
     }
 
@@ -76,7 +76,7 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * Performs stratification of the given definition `def0`.
     */
-  private def visitDef(def0: Def)(implicit dg: DependencyGraph, cache: Cache): Validation[Def, CompilationError] =
+  private def visitDef(def0: Def)(implicit dg: DependencyGraph, cache: Cache, flix: Flix): Validation[Def, CompilationError] =
     visitExp(def0.impl.exp) map {
       case e => def0.copy(impl = def0.impl.copy(exp = e))
     }
@@ -86,7 +86,7 @@ object Stratifier extends Phase[Root, Root] {
     *
     * Returns [[Success]] if the expression is stratified. Otherwise returns [[Failure]] with a [[StratificationError]].
     */
-  private def visitExp(exp0: Expression)(implicit dg: DependencyGraph, cache: Cache): Validation[Expression, StratificationError] = exp0 match {
+  private def visitExp(exp0: Expression)(implicit dg: DependencyGraph, cache: Cache, flix: Flix): Validation[Expression, StratificationError] = exp0 match {
     case Expression.Unit(_) => exp0.toSuccess
 
     case Expression.Null(_, _) => exp0.toSuccess
@@ -687,7 +687,7 @@ object Stratifier extends Phase[Root, Root] {
     *
     * Uses the given cache and updates it if required.
     */
-  private def stratifyWithCache(dg: DependencyGraph, tpe: Type, loc: SourceLocation)(implicit cache: Cache): Validation[Ast.Stratification, StratificationError] = {
+  private def stratifyWithCache(dg: DependencyGraph, tpe: Type, loc: SourceLocation)(implicit cache: Cache, flix: Flix): Validation[Ast.Stratification, StratificationError] = {
     // The key is the set of predicates that occur in the row type.
     val key = predicateSymbolsOf(tpe)
 
@@ -722,7 +722,7 @@ object Stratifier extends Phase[Root, Root] {
     *
     * See Database and Knowledge - Base Systems Volume 1 Ullman, Algorithm 3.5 p 133
     */
-  private def stratify(g: DependencyGraph, tpe: Type, loc: SourceLocation): Validation[Ast.Stratification, StratificationError] = {
+  private def stratify(g: DependencyGraph, tpe: Type, loc: SourceLocation)(implicit flix: Flix): Validation[Ast.Stratification, StratificationError] = {
     //
     // Maintain a mutable map from predicates to their (maximum) stratum number.
     //

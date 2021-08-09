@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.errors
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
@@ -25,8 +26,7 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
 /**
   * An error raised to indicate that a constraint set is not stratified.
   */
-case class StratificationError(cycle: List[(Name.Pred, SourceLocation)], tpe: Type, loc: SourceLocation) extends CompilationError {
-  private implicit val audience: Audience = Audience.External
+case class StratificationError(cycle: List[(Name.Pred, SourceLocation)], tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends CompilationError {
   def kind: String = "Stratification Error"
   def summary: String = "The expression is not stratified. A predicate depends negatively on itself."
   def message: VirtualTerminal = {
@@ -38,7 +38,7 @@ case class StratificationError(cycle: List[(Name.Pred, SourceLocation)], tpe: Ty
     vt << NewLine
     vt << "The type of the expression is:"
     vt << Indent << NewLine << NewLine
-    vt << Cyan(FormatType.formatType(tpe))
+    vt << Cyan(FormatType.formatType(tpe)(flix.options.audience))
     vt << Dedent << NewLine << NewLine
     vt << "The following predicate symbols are on the negative cycle:" << NewLine
     vt << Indent << NewLine

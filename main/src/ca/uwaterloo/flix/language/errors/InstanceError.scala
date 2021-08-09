@@ -16,9 +16,10 @@
 
 package ca.uwaterloo.flix.language.errors
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, Type}
-import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme, FormatType}
+import ca.uwaterloo.flix.language.debug.{FormatScheme, FormatType}
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
@@ -30,7 +31,6 @@ sealed trait InstanceError extends CompilationError {
 }
 
 object InstanceError {
-  private implicit val audience: Audience = Audience.External
 
   /**
     * Error indicating that the types of two instances overlap.
@@ -63,7 +63,7 @@ object InstanceError {
     * @param expected the scheme of the signature
     * @param actual   the scheme of the definition
     */
-  case class MismatchedSignatures(sigSym: Symbol.SigSym, loc: SourceLocation, expected: Scheme, actual: Scheme) extends InstanceError {
+  case class MismatchedSignatures(sigSym: Symbol.SigSym, loc: SourceLocation, expected: Scheme, actual: Scheme)(implicit flix: Flix) extends InstanceError {
     def summary: String = "Mismatched signature."
 
     def message: VirtualTerminal = {
@@ -74,8 +74,8 @@ object InstanceError {
       vt << NewLine
       vt << Code(loc, "mismatched signature.") << NewLine
       vt << NewLine
-      vt << s"Expected scheme: ${FormatScheme.formatScheme(expected)}" << NewLine
-      vt << s"Actual scheme:   ${FormatScheme.formatScheme(actual)}" << NewLine
+      vt << s"Expected scheme: ${FormatScheme.formatScheme(expected)(flix.options.audience)}" << NewLine
+      vt << s"Actual scheme:   ${FormatScheme.formatScheme(actual)(flix.options.audience)}" << NewLine
       vt << NewLine
       vt << Underline("Tip:") << " Modify the definition to match the signature."
     }
@@ -128,15 +128,15 @@ object InstanceError {
     * @param sym  the class symbol.
     * @param loc  the location where the error occurred.
     */
-  case class DuplicateTypeVariableOccurrence(tvar: Type.Var, sym: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
+  case class DuplicateTypeVariableOccurrence(tvar: Type.Var, sym: Symbol.ClassSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
     override def summary: String = "Duplicate type variable."
 
     override def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Duplicate type variable '" << Red(FormatType.formatType(tvar)) << "' in '" << Red(sym.name) << "'."
+      vt << ">> Duplicate type variable '" << Red(FormatType.formatType(tvar)(flix.options.audience)) << "' in '" << Red(sym.name) << "'."
       vt << NewLine
-      vt << Code(loc, s"The type variable '${FormatType.formatType(tvar)}' occurs more than once.")
+      vt << Code(loc, s"The type variable '${FormatType.formatType(tvar)(flix.options.audience)}' occurs more than once.")
       vt << NewLine
       vt << Underline("Tip:") << " Rename one of the instances of the type variable."
     }
@@ -149,13 +149,13 @@ object InstanceError {
     * @param sym the class symbol.
     * @param loc the location where the error occurred.
     */
-  case class ComplexInstanceType(tpe: Type, sym: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
+  case class ComplexInstanceType(tpe: Type, sym: Symbol.ClassSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
     override def summary: String = "Complex instance type."
 
     override def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Complex instance type '" << Red(FormatType.formatType(tpe)) << "' in '" << Red(sym.name) << "'."
+      vt << ">> Complex instance type '" << Red(FormatType.formatType(tpe)(flix.options.audience)) << "' in '" << Red(sym.name) << "'."
       vt << NewLine
       vt << Code(loc, s"complex instance type")
       vt << NewLine
@@ -170,13 +170,13 @@ object InstanceError {
     * @param sym the class symbol.
     * @param loc the location where the error occurred.
     */
-  case class OrphanInstance(tpe: Type, sym: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
+  case class OrphanInstance(tpe: Type, sym: Symbol.ClassSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
     override def summary: String = "Orphan instance."
 
     override def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Orphan instance for type '" << Red(FormatType.formatType(tpe)) << "' in '" << Red(sym.name) << "'."
+      vt << ">> Orphan instance for type '" << Red(FormatType.formatType(tpe)(flix.options.audience)) << "' in '" << Red(sym.name) << "'."
       vt << NewLine
       vt << Code(loc, s"orphan instance")
       vt << NewLine
@@ -192,20 +192,20 @@ object InstanceError {
     * @param superClass the symbol of the super class.
     * @param loc        the location where the error occurred.
     */
-  case class MissingSuperClassInstance(tpe: Type, subClass: Symbol.ClassSym, superClass: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
+  case class MissingSuperClassInstance(tpe: Type, subClass: Symbol.ClassSym, superClass: Symbol.ClassSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError {
     override def summary: String = s"Missing super class instance '$superClass'."
 
     override def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Missing super class instance '" << Red(superClass.name) << "' for type '" << Red(FormatType.formatType(tpe)) << "'." << NewLine
+      vt << ">> Missing super class instance '" << Red(superClass.name) << "' for type '" << Red(FormatType.formatType(tpe)(flix.options.audience)) << "'." << NewLine
       vt << NewLine
       vt << ">> The class '" << Red(subClass.name) << "' extends the class '" << Red(superClass.name) << "'." << NewLine
       vt << ">> If you provide an instance for '" << Red(subClass.name) << "' you must also provide an instance for '" << Red(superClass.name) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, s"missing super class instance")
       vt << NewLine
-      vt << Underline("Tip:") << s" Add an instance of '${superClass.name}' for '${FormatType.formatType(tpe)}'."
+      vt << Underline("Tip:") << s" Add an instance of '${superClass.name}' for '${FormatType.formatType(tpe)(flix.options.audience)}'."
     }
   }
 

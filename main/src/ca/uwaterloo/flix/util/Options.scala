@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.util
 
+import ca.uwaterloo.flix.language.debug.Audience
+
 import java.nio.file.{Path, Paths}
 
 object Options {
@@ -38,7 +40,7 @@ object Options {
     xnoboolunification = false,
     xnostratifier = false,
     xstatistics = false,
-    xinternal = false
+    audience = Audience.External
   )
 
   /**
@@ -80,7 +82,7 @@ object Options {
   * @param xnoboolunification disables boolean unification.
   * @param xnostratifier      disables computation of stratification.
   * @param xstatistics        enables printing of compiler statistics.
-  * @param xinternal          sets the error message audience to internal.
+  * @param audience           the audience to use for error messages.
   */
 case class Options(lib: LibLevel,
                    debug: Boolean,
@@ -97,7 +99,7 @@ case class Options(lib: LibLevel,
                    xnoboolunification: Boolean,
                    xnostratifier: Boolean,
                    xstatistics: Boolean,
-                   xinternal: Boolean
+                   audience: Audience
                   )
 
 /**
