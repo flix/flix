@@ -242,7 +242,7 @@ object CompleteProvider {
     * Returns the label for the given `name`, and `spec`.
     */
   private def getLabel(name: String, spec: TypedAst.Spec): String = spec match {
-    case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, eff0, _) =>
+    case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, eff0, _, _) =>
       val args = fparams.map {
         fparam => s"${fparam.sym.text}: ${FormatType.formatType(fparam.tpe)}"
       }

@@ -47,7 +47,7 @@ object FormatSignature {
     */
   private def formatFormalParams(fparams: List[TypedAst.FormalParam])(implicit audience: Audience): String = {
     val formattedArgs = fparams.map {
-      case TypedAst.FormalParam(sym, _, tpe, _) => s"${sym.text}: ${FormatType.formatType(tpe)}"
+      case TypedAst.FormalParam(sym, _, tpe, _, _) => s"${sym.text}: ${FormatType.formatType(tpe)}"
     }
 
     formattedArgs.mkString(", ")

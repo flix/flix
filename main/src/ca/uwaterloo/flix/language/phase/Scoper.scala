@@ -112,6 +112,7 @@ object Scoper extends Phase[Root, Root] {
               rest.toSuccess
             }
           case (ScopeScheme.Unit, _) => throw InternalCompilerException("Unexpected application.")
+          case (ScopeScheme.Implicit, _) => ???
         }
         argVars = args.flatMap(_._3)
 
