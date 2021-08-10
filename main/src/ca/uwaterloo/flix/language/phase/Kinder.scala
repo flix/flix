@@ -720,8 +720,8 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
 
   /**
     * Performs kinding on the given type under the given kind environment, with `expectedKind` expected from context.
-    * This is roughly analogous to type-checking expressions, except that unification is not performed;
-    * limitations on kinds allow the check to be performed mostly top-down.
+    * This is roughly analogous to the reassembly of expressions under a type environment, except that:
+    * - Kind errors may be discovered here as they may not have been found during inference (or inference may not have happened at all).
     */
   private def visitType(tpe0: UnkindedType, expectedKind: KindMatch, kenv: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[Type, KindError] = tpe0 match {
     case tvar: UnkindedType.Var => visitTypeVar(tvar, expectedKind, kenv)
