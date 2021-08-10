@@ -123,4 +123,67 @@ namespace LazyList {
         case LCons(x, ys) => toListAcc(force ys, x :: acc)
         case LList(ys)    => toListAcc(force ys, acc)
     }
+
+    ///
+    /// Reverses the list `l`.
+    ///
+    pub def reverse(l: LazyList[a]): LazyList[a] = reverseAcc(ENil, l)
+
+    ///
+    /// Helper function for `reverse`.
+    ///
+    def reverseAcc(acc: LazyList[a], l: LazyList[a]): LazyList[a] = match l {
+        case ENil         => acc
+        case ECons(x, ys) => reverseAcc(prepend(x, acc), ys)
+        case LCons(x, ys) => reverseAcc(prepend(x, acc), force ys)
+        case LList(ys)    => reverseAcc(acc, force ys)
+    }
+
+    ///
+    /// Prepends `x` to the list `l`.
+    ///
+    pub def prepend(x: a, l: LazyList[a]): LazyList[a] = ECons(x, l)
+
+    ///
+    /// Returns the result of applying `f` to every element in `l`.
+    ///
+    /// Whether `f` is applied eagerly or lazily depends on its purity:
+    ///
+    /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
+    /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
+    ///
+    pub def map(f: a -> b & ef, l: LazyList[a]): LazyList[b] & Impure =
+        matchEff f {
+            case Pure   => mapLazy(f as a -> b & Pure,   l)
+            case Impure => mapEager(f as a -> b & Impure, l)
+        }
+
+    ///
+    /// Returns the result of applying `f` to every element in `l`.
+    ///
+    /// Applies `f` lazily (i.e. the tail is not forced).
+    ///
+    def mapLazy(f: a -> b, l: LazyList[a]): LazyList[b] = match l {
+        case ENil         => ENil
+        case ECons(x, ys) => LCons(f(x), lazy mapLazy(f, ys))
+        case LCons(x, ys) => LCons(f(x), lazy mapLazy(f, force ys))
+        case LList(ys)    => LList(lazy mapLazy(f, force ys))
+    }
+
+    ///
+    /// Returns the result of applying `f` to every element in `l`.
+    ///
+    /// Applies `f` eagerly (i.e. the entire list `l` is forced).
+    ///
+    def mapEager(f: a -> b & Impure, l: LazyList[a]): LazyList[b] & Impure = mapEagerAcc(ENil, f, l) |> reverse
+
+    ///
+    /// Helper function for `mapEager`.
+    ///
+    def mapEagerAcc(acc: LazyList[b], f: a -> b & Impure, l: LazyList[a]): LazyList[b] & Impure = match l {
+        case ENil         => acc
+        case ECons(x, ys) => mapEagerAcc(prepend(f(x), acc), f, ys)
+        case LCons(x, ys) => mapEagerAcc(prepend(f(x), acc), f, force ys)
+        case LList(ys)    => mapEagerAcc(acc, f, force ys)
+    }
 }
