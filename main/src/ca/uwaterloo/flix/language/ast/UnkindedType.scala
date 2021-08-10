@@ -56,6 +56,7 @@ object UnkindedType {
 
   /**
     * The union of non-Apply types.
+    * Used to restrict the range of return values of [[UnkindedType.baseType]].
     */
   sealed trait BaseType
 
