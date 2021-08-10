@@ -160,7 +160,7 @@ namespace LazyList {
     ///
     def mapLazy(f: a -> b, l: LazyList[a]): LazyList[b] = match l {
         case ENil         => ENil
-        case ECons(x, ys) => LCons(f(x), lazy mapLazy(f, ys))
+        case ECons(x, ys) => ECons(f(x), mapLazy(f, ys))
         case LCons(x, ys) => LCons(f(x), lazy mapLazy(f, force ys))
         case LList(ys)    => LList(lazy mapLazy(f, force ys))
     }
