@@ -94,7 +94,7 @@ object GenMainClass {
       f.asInstanceOf[F[StackNil ** PReference[PFunction]]]
     } ~
       DUP ~
-      ALOAD(0, tag[PArray[PReference[PStr]]]) ~ { f: F[StackNil ** PReference[PFunction] ** PReference[PFunction] ** PReference[PArray[PReference[PStr]]]] =>
+      ALOAD(0, tagOf[PArray[PReference[PStr]]]) ~ { f: F[StackNil ** PReference[PFunction] ** PReference[PFunction] ** PReference[PArray[PReference[PStr]]]] =>
       f.visitor.visitFieldInsn(Opcodes.PUTFIELD, defn.sym.defName.toInternalName, GenFunctionInterfaces.argFieldName(0), JvmName.Java.Lang.Object.toDescriptor)
       f.asInstanceOf[F[StackNil ** PReference[PFunction]]]
     } ~ { f: F[StackNil ** PReference[PFunction]] =>

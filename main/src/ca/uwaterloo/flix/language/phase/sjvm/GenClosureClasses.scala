@@ -25,35 +25,79 @@ import ca.uwaterloo.flix.language.ast.RRefType._
 import ca.uwaterloo.flix.language.ast.RType._
 import ca.uwaterloo.flix.language.ast.{ErasedAst, PType, RType, Symbol}
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
+import ca.uwaterloo.flix.language.phase.sjvm.ClassMaker.Mod
+import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 import ca.uwaterloo.flix.util.ParOps
+import org.objectweb.asm.Opcodes
 
+
+// TODO(JLS): refactoring against GenDefClasses
 object GenClosureClasses {
+
+  def cloArgFieldName(index: Int): String = s"clo$index"
 
   def gen(closures: Set[ClosureInfo])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
 
     ParOps.parAgg(closures, Map.empty[JvmName, JvmClass])({
       case (macc, closure) =>
-        val cloName = closure.sym.cloName
-        val bytecode = genByteCode(root.defs(closure.sym), cloName, squeezeFunction(squeezeReference(closure.tpe)))
+        val cloSym = closure.sym
+        val cloName = cloSym.cloName
+        val bytecode = genByteCode(root.defs(cloSym), cloName, closure.freeVars, squeezeFunction(squeezeReference(closure.tpe)))
         macc + (cloName -> JvmClass(cloName, bytecode))
     }, _ ++ _)
 
   }
 
-  private def genByteCode(defn: ErasedAst.Def, defName: JvmName, functionType: RArrow)(implicit root: Root, flix: Flix): Array[Byte] = {
-    ???
+  private def genByteCode(defn: ErasedAst.Def, cloName: JvmName, freeVars: List[ErasedAst.FreeVar], functionType: RArrow)(implicit root: Root, flix: Flix): Array[Byte] = {
+    val classMaker = ClassMaker.mkClass(cloName, addSource = false, Some(functionType.functionInterfaceName))
+    classMaker.mkSuperConstructor()
+    classMaker.mkMethod(genInvokeFunction(defn, defn.exp, cloName, freeVars, functionType), GenContinuationInterfaces.invokeMethodName, functionType.result.nothingToContMethodDescriptor, Mod.isPublic)
+    for ((fv, index) <- freeVars.zipWithIndex) {
+      classMaker.mkField(GenClosureClasses.cloArgFieldName(index), fv.tpe.erasedType, Mod.isPublic)
+    }
+    classMaker.closeClassMaker
   }
 
-  def genInvokeFunction[T <: PType](defn: ErasedAst.Def, functionBody: ErasedAst.Expression[T], defName: JvmName, functionType: RArrow): F[StackNil] => F[StackEnd] = {
-    ???
+  def genInvokeFunction[T <: PType](defn: ErasedAst.Def, functionBody: ErasedAst.Expression[T], cloName: JvmName, freeVars: List[ErasedAst.FreeVar], functionType: RArrow): F[StackNil] => F[StackEnd] = {
+    // TODO(JLS): maybe frees should not be in formals?
+    // Free variables
+    val frees = defn.formals.take(freeVars.length).map(x => ErasedAst.FreeVar(x.sym, x.tpe))
+    // Function parameters
+    val params = defn.formals.takeRight(defn.formals.length - freeVars.length)
+
+    START[StackNil] ~
+      (multiComposition(frees.zipWithIndex) { case (freeVar, index) =>
+        magicStoreArg(index, freeVar.tpe, cloName, freeVar.sym, GenClosureClasses.cloArgFieldName)
+      }) ~
+      (multiComposition(params.zipWithIndex) { case (formalParam, index) =>
+        magicStoreArg(index, formalParam.tpe, cloName, formalParam.sym, GenFunctionInterfaces.argFieldName)
+      }) ~
+      compileExp(functionBody) ~
+      THISLOAD(tagOf[PAnyObject]) ~
+      magicReversePutField(cloName, functionBody.tpe) ~
+      RETURNNULL
   }
 
+  // TODO(JLS): could be SWAP_cat1_onSomething(..) ~ PUTFIELD(..)
   def magicReversePutField[R <: Stack, T <: PType](className: JvmName, resultType: RType[T]): F[R ** T ** PReference[PAnyObject]] => F[R] = f => {
-    ???
+    resultType match {
+      case RType.RInt64 | RType.RFloat64 =>
+        f.visitor.visitInsn(Opcodes.DUP_X2)
+        f.visitor.visitInsn(Opcodes.POP)
+      case _ =>
+        f.visitor.visitInsn(Opcodes.SWAP)
+    }
+    f.visitor.visitFieldInsn(Opcodes.PUTFIELD, className.toInternalName, GenContinuationInterfaces.resultFieldName, resultType.erasedDescriptor)
+    f.asInstanceOf[F[R]]
   }
 
-  def magicStoreArg[R <: Stack, T <: PType](index: Int, tpe: RType[T], defName: JvmName, sym: Symbol.VarSym): F[R] => F[R] = {
-    ???
+  def magicStoreArg[R <: Stack, T <: PType](index: Int, tpe: RType[T], defName: JvmName, sym: Symbol.VarSym, fieldName: Int => String): F[R] => F[R] = {
+    ((f: F[R]) => {
+      f.visitor.visitVarInsn(Opcodes.ALOAD, 0)
+      f.visitor.visitFieldInsn(Opcodes.GETFIELD, defName.toInternalName, fieldName(index), tpe.erasedDescriptor)
+      undoErasure(tpe, f.visitor)
+      f.asInstanceOf[F[R ** T]]
+    }) ~ XStore(sym, tpe)
   }
 
 }

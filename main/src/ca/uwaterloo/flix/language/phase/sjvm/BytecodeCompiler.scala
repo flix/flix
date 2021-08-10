@@ -97,20 +97,34 @@ object BytecodeCompiler {
     case Expression.Var(sym, tpe, loc) =>
       WithSource[R](loc) ~
         XLOAD(tpe, sym.getStackOffset + symOffsetOffset) // TODO(JLS): make this offset exist in F, dependent on static(0)/object function(1)
-    case Expression.Closure(sym, freeVars, tpe, loc) => ???
-    case Expression.ApplyClo(exp, args, tpe, loc) => ???
+
+    case Expression.Closure(sym, freeVars, _, loc) =>
+      WithSource[R](loc) ~
+        Instructions.CREATECLOSURE(freeVars, sym.cloName)
+
+    case Expression.ApplyClo(exp, args, tpe, loc) =>
+      WithSource[R](loc) ~
+        compileExp(exp) ~
+        CALL(args, squeezeFunction(squeezeReference(exp.tpe)).functionInterfaceName, tpe)
+
     case Expression.ApplyDef(sym, args, tpe, loc) =>
       WithSource[R](loc) ~
-        CALL(args, sym.defName, tpe.contName, tpe)
+        CREATEDEF(sym.defName) ~
+        CALL(args, sym.defName, tpe)
 
-    case Expression.ApplyCloTail(exp, args, tpe, loc) => ???
+    case Expression.ApplyCloTail(exp, args, _, loc) =>
+      WithSource[R](loc) ~
+        compileExp(exp) ~
+        TAILCALL(args, squeezeFunction(squeezeReference(exp.tpe)).functionInterfaceName, tagOf[T])
+
     case Expression.ApplyDefTail(sym, args, tpe, loc) =>
       WithSource[R](loc) ~
-        TAILCALL(args, sym.defName, tag[T])
+        CREATEDEF(sym.defName) ~
+        TAILCALL(args, sym.defName, tpe.tagOf)
 
-    case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) =>
+    case Expression.ApplySelfTail(sym, _, actuals, _, loc) =>
       WithSource[R](loc) ~
-        SELFTAILCALL(actuals, sym.defName, tag[T])
+        SELFTAILCALL(actuals, sym.defName, tagOf[T])
 
     case Expression.Unary(sop, op, exp, tpe, loc) => ???
     case Expression.Binary(sop, op, exp1, exp2, tpe, loc) => /*TODO(JLS): remove*/ println(sop.getClass.getCanonicalName, tpe); ???

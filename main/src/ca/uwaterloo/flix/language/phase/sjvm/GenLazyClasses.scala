@@ -103,24 +103,24 @@ object GenLazyClasses {
     unlock(this)
     return result
      */
-    THISLOAD(tag[PLazy[T]]) ~
+    THISLOAD(tagOf[PLazy[T]]) ~
       (WITHMONITOR(valueFieldType) {
         START[StackNil ** PReference[PLazy[T]]] ~
-          THISLOAD(tag[PLazy[T]]) ~
+          THISLOAD(tagOf[PLazy[T]]) ~
           GetBoolField(lazyType, InitializedFieldName) ~
           (RUNIFTRUE {
             START[StackNil ** PReference[PLazy[T]]] ~
-              THISLOAD(tag[PLazy[T]]) ~
-              GetObjectField(lazyType, ExpressionFieldName, tag[PAnyObject]) ~
+              THISLOAD(tagOf[PLazy[T]]) ~
+              GetObjectField(lazyType, ExpressionFieldName, tagOf[PAnyObject]) ~
               compileClosureApplication(valueFieldType) ~
-              THISLOAD(tag[PLazy[T]]) ~
+              THISLOAD(tagOf[PLazy[T]]) ~
               XSWAP(lazyType, valueFieldType) ~
               PUTFIELD(lazyType, ValueFieldName, valueFieldType) ~
-              THISLOAD(tag[PLazy[T]]) ~
+              THISLOAD(tagOf[PLazy[T]]) ~
               pushInt32(1) ~
               PUTFIELD(lazyType, InitializedFieldName, RInt32)
           }) ~
-          THISLOAD(tag[PLazy[T]]) ~
+          THISLOAD(tagOf[PLazy[T]]) ~
           XGETFIELD(lazyType, ValueFieldName, valueFieldType)
       }) ~
       XRETURN(valueFieldType)
@@ -138,13 +138,13 @@ object GenLazyClasses {
     this.expression = expression.
      */
     START[StackNil] ~
-      THISLOAD(tag[PLazy[T]]) ~
+      THISLOAD(tagOf[PLazy[T]]) ~
       INVOKEOBJECTCONSTRUCTOR ~
-      THISLOAD(tag[PLazy[T]]) ~
+      THISLOAD(tagOf[PLazy[T]]) ~
       pushBool(false) ~
       PUTFIELD(lazyType, InitializedFieldName, InitializedFieldType) ~
-      THISLOAD(tag[PLazy[T]]) ~
-      ALOAD(1, tag[PAnyObject]) ~
+      THISLOAD(tagOf[PLazy[T]]) ~
+      ALOAD(1, tagOf[PAnyObject]) ~
       PUTFIELD(lazyType, ExpressionFieldName, ExpressionFieldType) ~
       RETURN
   }

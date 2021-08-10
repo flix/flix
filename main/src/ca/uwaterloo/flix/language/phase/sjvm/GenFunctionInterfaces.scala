@@ -27,14 +27,14 @@ import ca.uwaterloo.flix.language.ast.{PType, RType}
 import ca.uwaterloo.flix.language.phase.sjvm.ClassMaker.Mod
 
 /**
-  * Generates bytecode for the function interfaces.
-  */
+ * Generates bytecode for the function interfaces.
+ */
 object GenFunctionInterfaces {
   def argFieldName(index: Int) = s"arg$index"
 
   /**
-    * Returns the set of function interfaces for the given set of types `ts`.
-    */
+   * Returns the set of function interfaces for the given set of types `ts`.
+   */
   def gen[T <: PType](tpe: Set[RType[PReference[PFunction]]])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     tpe.foldLeft(Map.empty[JvmName, JvmClass]) {
       case (macc, RReference(functionType@RArrow(_, _))) =>
@@ -44,8 +44,8 @@ object GenFunctionInterfaces {
   }
 
   /**
-    * Returns the function interface of the given type `tpe`.
-    */
+   * Returns the function interface of the given type `tpe`.
+   */
   private def genByteCode(functionType: RArrow)(implicit root: Root, flix: Flix): Array[Byte] = {
 
     // Class visitor

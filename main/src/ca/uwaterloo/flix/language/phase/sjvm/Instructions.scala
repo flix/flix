@@ -29,14 +29,20 @@ object Instructions {
 
   private def castF[S1 <: Stack, S2 <: Stack](f: F[S1]): F[S2] = f.asInstanceOf[F[S2]]
 
+  trait Tag[T]
+
+  def tagOf[T]: Tag[T] = null
+
+  implicit class TagBox[X <: PType](x: RType[X]) {
+    def tagOf: Tag[X] = null
+  }
+
   def WithSource[R <: Stack](loc: SourceLocation): F[R] => F[R] = f => {
     val label = new Label()
     f.visitor.visitLabel(label)
     f.visitor.visitLineNumber(loc.beginLine, label)
     f
   }
-
-  def tag[T]: T = null.asInstanceOf[T]
 
   def START
   [R <: Stack]:
@@ -51,7 +57,7 @@ object Instructions {
 
   def WITHMONITOR
   [R <: Stack, S <: PRefType, T <: PType]
-  (e: RType[T], tpe: S = tag[T])(f: F[R ** PReference[S]] => F[R ** PReference[S] ** T]):
+  (e: RType[T])(f: F[R ** PReference[S]] => F[R ** PReference[S] ** T]):
   F[R ** PReference[S]] => F[R ** T] = {
     // TODO(JLS): why is NOP/the type needed here?
     NOP ~[R ** PReference[S] ** PReference[S]]
@@ -259,7 +265,7 @@ object Instructions {
 
   def GetObjectField
   [R <: Stack, T1 <: PRefType, T2 <: PRefType]
-  (classType: RReference[T2], fieldName: String, tpe: T1 = tag[T1]):
+  (classType: RReference[T2], fieldName: String, fieldType: Tag[T1] = null):
   F[R ** PReference[T2]] => F[R ** PReference[T1]] = f => {
     f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, JvmName.Java.Lang.Object.toDescriptor)
     castF(f)
@@ -644,7 +650,7 @@ object Instructions {
 
   def ALOAD
   [R <: Stack, T <: PRefType]
-  (index: Int, tpe: T = tag[T]):
+  (index: Int, tpe: Tag[T] = null):
   F[R] => F[R ** PReference[T]] = f => {
     f.visitor.visitVarInsn(Opcodes.ALOAD, index)
     castF(f)
@@ -652,58 +658,97 @@ object Instructions {
 
   def THISLOAD
   [R <: Stack, T <: PRefType]
-  (tpe: T = tag[T]):
+  (tpe: Tag[T] = null):
   F[R] => F[R ** PReference[T]] =
     ALOAD(0)
 
   // TODO(JLS): This should both return StackEnd (no code should follow) and R ** T (compileExp should push T on stack) (maybe stop flag type on F)
   def TAILCALL
   [R <: Stack, T <: PType]
-  (arguments: List[ErasedAst.Expression[_ <: PType]], defClassName: JvmName, tpe: T = tag[T]):
-  F[R] => F[R ** T] = f => {
-    makeDefWithArgs(defClassName, arguments)(f)
+  (arguments: List[ErasedAst.Expression[_ <: PType]], fnName: JvmName, returnType: Tag[T] = null):
+  F[R ** PReference[PFunction]] => F[R ** T] = {
+    START[R ** PReference[PFunction]] ~
+      setArgs(fnName, arguments, GenFunctionInterfaces.argFieldName) ~
+      AReturnNoEnd(tagOf[T])
+  }
+
+  private def AReturnNoEnd
+  [R <: Stack, T1 <: PRefType, T2 <: PType]
+  (t2: Tag[T2] = null):
+  F[R ** PReference[T1]] => F[R ** T2] = f => {
     f.visitor.visitInsn(Opcodes.ARETURN)
+    castF(f)
+  }
+
+  private def unwind
+  [R <: Stack, T <: PType]
+  (contName: JvmName, returnType: RType[T]):
+  F[R ** PReference[PFunction]] => F[R ** T] = f => {
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, contName.toInternalName, GenContinuationInterfaces.unwindMethodName, returnType.erasedNothingToThisMethodDescriptor, false)
+    undoErasure(returnType, f.visitor)
     castF(f)
   }
 
   def SELFTAILCALL
   [R <: Stack, T <: PType]
-  (arguments: List[ErasedAst.Expression[_ <: PType]], defClassName: JvmName, tpe: T = tag[T]):
-  F[R] => F[R ** T] = f => {
-    f.visitor.visitVarInsn(Opcodes.ALOAD, 0)
-    for (argIndex <- arguments.indices) {
-      val arg = arguments(argIndex)
-      f.visitor.visitInsn(Opcodes.DUP)
-      compileExp(arg)(f)
-      f.visitor.visitFieldInsn(Opcodes.PUTFIELD, defClassName.toInternalName, GenFunctionInterfaces.argFieldName(argIndex), arg.tpe.erasedDescriptor)
-    }
-    f.visitor.visitInsn(Opcodes.ARETURN)
-    castF(f)
+  (arguments: List[ErasedAst.Expression[_ <: PType]], defClassName: JvmName, returnType: Tag[T] = null):
+  F[R] => F[R ** T] = {
+    START[R] ~
+      THISLOAD(tagOf[PFunction]) ~
+      setArgs(defClassName, arguments, GenFunctionInterfaces.argFieldName) ~
+      AReturnNoEnd(returnType)
   }
 
-  private def makeDefWithArgs[R <: Stack]
-  (defClassName: JvmName, arguments: List[ErasedAst.Expression[_ <: PType]]): F[R] => F[R ** PReference[PFunction]] = f => {
-    f.visitor.visitTypeInsn(Opcodes.NEW, defClassName.toInternalName)
+  // TODO(JLS): could be made with other instructions
+  private def makeAndInitDef[R <: Stack]
+  (className: JvmName):
+  F[R] => F[R ** PReference[PFunction]] = f => {
+    f.visitor.visitTypeInsn(Opcodes.NEW, className.toInternalName)
     f.visitor.visitInsn(Opcodes.DUP)
-    f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, defClassName.toInternalName, JvmName.constructorMethod, JvmName.nothingToVoid, false)
-    for (argIndex <- arguments.indices) {
-      val arg = arguments(argIndex)
-      f.visitor.visitInsn(Opcodes.DUP)
-      compileExp(arg)(f)
-      f.visitor.visitFieldInsn(Opcodes.PUTFIELD, defClassName.toInternalName, GenFunctionInterfaces.argFieldName(argIndex), arg.tpe.erasedDescriptor)
-    }
+    f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.toInternalName, JvmName.constructorMethod, JvmName.nothingToVoid, false)
     castF(f)
   }
 
+  private def setArgs[R <: Stack]
+  (defClassName: JvmName, args: List[ErasedAst.Expression[_ <: PType]], fieldName: Int => String):
+  F[R ** PReference[PFunction]] => F[R ** PReference[PFunction]] =
+    START[R ** PReference[PFunction]] ~
+      multiComposition(args.zipWithIndex) {
+        case (exp, index) =>
+          START[R ** PReference[PFunction]] ~ DUP ~ compileExp(exp) ~ putArg(defClassName, fieldName(index), exp.tpe.erasedDescriptor)
+      }
+
+  private def putArg[R <: Stack, T <: PType]
+  (defClassName: JvmName, fieldName: String, erasedTpe: String):
+  F[R ** PReference[PFunction] ** T] => F[R] = f => {
+    f.visitor.visitFieldInsn(Opcodes.PUTFIELD, defClassName.toInternalName, fieldName, erasedTpe)
+    castF(f)
+  }
+
+  // TODO(JLS): fnName can be Fn interface or Def class but that is a bit confusing
   def CALL
   [R <: Stack, T <: PType]
-  (arguments: List[ErasedAst.Expression[_ <: PType]], defClassName: JvmName, contName: JvmName, returnType: RType[T]):
-  F[R] => F[R ** T] = f => {
-    makeDefWithArgs(defClassName, arguments)(f)
-    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, contName.toInternalName, GenContinuationInterfaces.unwindMethodName, returnType.erasedNothingToThisMethodDescriptor, false)
-    undoErasure(returnType, f.visitor)
-    castF(f)
+  (arguments: List[ErasedAst.Expression[_ <: PType]], fnName: JvmName, returnType: RType[T]):
+  F[R ** PReference[PFunction]] => F[R ** T] = {
+    START[R ** PReference[PFunction]] ~
+      setArgs(fnName, arguments, GenFunctionInterfaces.argFieldName) ~
+      unwind(fnName, returnType)
   }
+
+  def CREATEDEF
+  [R <: Stack, T <: PType]
+  (defClassName: JvmName):
+  F[R] => F[R ** PReference[PFunction]] = {
+    START[R] ~ makeAndInitDef(defClassName)
+  }
+
+  def CREATECLOSURE
+  [R <: Stack, T <: PType]
+  (freeVars: List[ErasedAst.FreeVar], defClassName: JvmName):
+  F[R] => F[R ** PReference[PFunction]] =
+    makeAndInitDef(defClassName) ~
+      setArgs(defClassName, freeVars.map(f => ErasedAst.Expression.Var(f.sym, f.tpe, SourceLocation.Unknown)), GenClosureClasses.cloArgFieldName)
+  // TODO(JLS): This added exp could maybe cause trouble
 
   def ILOAD
   [R <: Stack]

@@ -49,14 +49,13 @@ object GenDefClasses {
   }
 
   def genInvokeFunction[T <: PType](defn: ErasedAst.Def, functionBody: ErasedAst.Expression[T], defName: JvmName, functionType: RArrow): F[StackNil] => F[StackEnd] = {
-
     START[StackNil] ~
-      (defn.formals.zipWithIndex.foldLeft(START[StackNil]) {
-        case (prev, (ErasedAst.FormalParam(sym, tpe), index)) =>
-          prev ~ magicStoreArg(index, tpe, defName, sym)
+      (multiComposition(defn.formals.zipWithIndex) {
+        case (ErasedAst.FormalParam(sym, tpe), index) =>
+          magicStoreArg(index, tpe, defName, sym)
       }) ~
       compileExp(functionBody) ~
-      THISLOAD(tag[PAnyObject]) ~
+      THISLOAD(tagOf[PAnyObject]) ~
       magicReversePutField(defName, functionBody.tpe) ~
       RETURNNULL
   }

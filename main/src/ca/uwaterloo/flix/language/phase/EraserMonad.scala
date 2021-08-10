@@ -29,7 +29,7 @@ sealed case class EraserMonad[+T](value: T, fTypes: FTypes, namespaces: Set[Name
 
   final def flatMap[U](f: T => EraserMonad[U]): EraserMonad[U] = {
     val monad0 = f(value)
-    EraserMonad(monad0.value, fTypes union monad0.fTypes, namespaces union monad0.namespaces, closures)
+    EraserMonad(monad0.value, fTypes union monad0.fTypes, namespaces union monad0.namespaces, closures union monad0.closures)
   }
 
   final def copyWith(fTypes: FTypes = fTypes, namespaces: Set[NamespaceInfo] = namespaces, closures: Set[ClosureInfo] = closures): EraserMonad[T] =
@@ -147,7 +147,7 @@ object EraserMonad {
    */
   def flatMapN[T1, U](t1: EraserMonad[T1])
                      (f: T1 => EraserMonad[U]): EraserMonad[U] =
-    t1 flatMap f
+    f(t1.value).flatMap(combineN(_)(t1))
 
   /**
    * FlatMaps over t1 and t2.
