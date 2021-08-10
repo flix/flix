@@ -63,7 +63,7 @@ object Scoper extends Phase[Root, Root] {
     val senv = spec.fparams.map {
       case FormalParam(sym, mod, tpe, scSc, loc) => sym -> (sym.scopedness, scSc.get)
     }.toMap
-    checkExp(impl.exp, senv, root).map(_ => ())
+    checkUnscopedExp(impl.exp, senv, root).map(_ => ())
   }
 
   private def checkExp(exp0: Expression, senv: Map[Symbol.VarSym, (Scopedness, ScopeScheme)], root: Root): Validation[(Scopedness, ScopeScheme, Set[Symbol.VarSym]), ScopeError] = exp0 match {
@@ -84,8 +84,8 @@ object Scoper extends Phase[Root, Root] {
     case Expression.Wild(tpe, loc) => noScope.toSuccess
     case Expression.Var(sym, tpe, loc) =>
       senv(sym) match {
-        case (Scopedness.Scoped, sch) => (sym.scopedness, sch, Set(sym)).toSuccess
-        case (Scopedness.Unscoped, sch) => (sym.scopedness, sch, Set.empty[Symbol.VarSym]).toSuccess
+        case (Scopedness.Scoped, sch) => (Scopedness.Scoped, sch, Set(sym)).toSuccess
+        case (Scopedness.Unscoped, sch) => (Scopedness.Unscoped, sch, Set.empty[Symbol.VarSym]).toSuccess
       }
     case Expression.Def(sym, tpe, loc) => (Scopedness.Unscoped, root.defs(sym).spec.scSc, Set.empty[Symbol.VarSym]).toSuccess
     case Expression.Sig(sym, tpe, loc) => (Scopedness.Unscoped, root.sigs(sym).spec.scSc, Set.empty[Symbol.VarSym]).toSuccess
@@ -105,14 +105,14 @@ object Scoper extends Phase[Root, Root] {
         sch <- Validation.fold(args, funcSch) {
           case (ScopeScheme.Arrow(paramSco, paramSch, rest), (argSco, argSch, _)) =>
             if (!(argSco <= paramSco)) {
-              ??? // error bad arg
+              ScopeError.EscapingScopedValue(loc).toFailure // MATT better message
             } else if (!(argSch <= paramSch)) {
-              ??? // error bad arg
+              ScopeError.EscapingScopedValue(loc).toFailure // MATT better message
             } else {
               rest.toSuccess
             }
           case (ScopeScheme.Unit, _) => throw InternalCompilerException("Unexpected application.")
-          case (ScopeScheme.Implicit, _) => ???
+          case (ScopeScheme.Implicit, _) => ??? // MATT probably should handle this but haven't run into trouble yet
         }
         argVars = args.flatMap(_._3)
 
@@ -128,7 +128,9 @@ object Scoper extends Phase[Root, Root] {
       } yield (Scopedness.Unscoped, ScopeScheme.Unit, vars1 ++ vars2)
     case Expression.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
       for {
-        (varSco, varSch, varVars) <- checkExp(exp1, senv, root)
+        (infVarSco, varSch, varVars) <- checkExp(exp1, senv, root)
+        declVarSco = sym.scopedness
+        varSco = infVarSco max declVarSco
         (sco, sch, vars) <- checkExp(exp2, senv + (sym -> (varSco, varSch)), root)
         freeVars = (varVars ++ vars) - sym
       } yield (sco, sch, freeVars)
