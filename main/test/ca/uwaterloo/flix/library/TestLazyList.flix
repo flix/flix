@@ -138,6 +138,39 @@ namespace TestLazyListOld {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // reverse                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def reverse01(): Bool =
+        LazyList.reverse(LazyList.empty(): LazyList[Unit]) |> LazyList.toList == Nil
+
+    @test
+    def reverse02(): Bool =
+        (1 :: Nil) |> LazyList.toLazy |> LazyList.reverse |> LazyList.toList == 1 :: Nil
+
+    @test
+    def reverse03(): Bool =
+        (1 :: 2 :: Nil) |> LazyList.toLazy |> LazyList.reverse |> LazyList.toList == 2 :: 1 :: Nil
+
+    @test
+    def reverse04(): Bool =
+        (1 :: 1 :: Nil) |> LazyList.toLazy |> LazyList.reverse |> LazyList.toList == 1 :: 1 :: Nil
+
+    @test
+    def reverse05(): Bool =
+        (1 :: 2 :: 3 :: Nil) |> LazyList.toLazy |> LazyList.reverse |> LazyList.toList == 3 :: 2 :: 1 :: Nil
+
+    @test
+    def reverse06(): Bool =
+        (1 :: 2 :: 3 :: 4 :: Nil) |> LazyList.toLazy |> LazyList.reverse |> LazyList.toList == 4 :: 3 :: 2 :: 1 :: Nil
+
+    @test
+    def reverse07(): Bool =
+        LazyList.range(-100, 1000) |> LazyList.reverse |> LazyList.toList == List.range(-100, 1000) |> List.reverse
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // map (pure)                                                              //
     /////////////////////////////////////////////////////////////////////////////
 

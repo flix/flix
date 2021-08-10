@@ -134,15 +134,10 @@ namespace LazyList {
     ///
     def reverseAcc(acc: LazyList[a], l: LazyList[a]): LazyList[a] = match l {
         case ENil         => acc
-        case ECons(x, ys) => reverseAcc(prepend(x, acc), ys)
-        case LCons(x, ys) => reverseAcc(prepend(x, acc), force ys)
+        case ECons(x, ys) => reverseAcc(ECons(x, acc), ys)
+        case LCons(x, ys) => reverseAcc(ECons(x, acc), force ys)
         case LList(ys)    => reverseAcc(acc, force ys)
     }
-
-    ///
-    /// Prepends `x` to the list `l`.
-    ///
-    pub def prepend(x: a, l: LazyList[a]): LazyList[a] = ECons(x, l)
 
     ///
     /// Returns the result of applying `f` to every element in `l`.
@@ -182,8 +177,8 @@ namespace LazyList {
     ///
     def mapEagerAcc(acc: LazyList[b], f: a -> b & Impure, l: LazyList[a]): LazyList[b] & Impure = match l {
         case ENil         => acc
-        case ECons(x, ys) => mapEagerAcc(prepend(f(x), acc), f, ys)
-        case LCons(x, ys) => mapEagerAcc(prepend(f(x), acc), f, force ys)
+        case ECons(x, ys) => mapEagerAcc(ECons(f(x), acc), f, ys)
+        case LCons(x, ys) => mapEagerAcc(ECons(f(x), acc), f, force ys)
         case LList(ys)    => mapEagerAcc(acc, f, force ys)
     }
 }
