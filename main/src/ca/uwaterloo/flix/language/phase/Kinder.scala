@@ -913,6 +913,10 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
 
   /**
     * Infers a kind environment from the given type, with an expectation from context.
+    * The inference is roughly analogous to the inference of types for expressions.
+    * The primary differences are:
+    * - There are no kind variables; kinds that cannot be determined are instead marked with [[Kind.Wild]].
+    * - Subkinding may allow a variable to be ascribed with two different kinds; the most specific is used in the returned environment.
     */
   private def inferType(tpe: UnkindedType, expectedType: KindMatch, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = tpe.baseType match {
     // Case 1: the type constructor is a variable: all args are * and the constructor is * -> * -> * ... -> expectedType
