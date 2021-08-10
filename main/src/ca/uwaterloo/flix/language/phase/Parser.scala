@@ -617,7 +617,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetRegion | LetMatch | LetMatchStar | LetUse | LetImport | IfThenElse | Choose | Match | MatchEff | LambdaMatch | TryCatch | Lambda | Tuple |
+      LetRegion | LetMatch | LetMatchStar | LetMatchPlus | LetUse | LetImport | IfThenElse | Choose | Match | MatchEff | LambdaMatch | TryCatch | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | Spawn | Lazy | Force | Intrinsic | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointProject | FixpointSolveWithProject | FixpointQueryWithSelect |
@@ -661,8 +661,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ keyword("let") ~ WS ~ Modifiers ~ Pattern ~ optWS ~ optional(":" ~ optWS ~ Type ~ optWS) ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.LetMatch
     }
 
-    def LetMatchStar: Rule1[ParsedAst.Expression.LetMatchStar] = rule {
-      SP ~ keyword("let*") ~ WS ~ Pattern ~ optWS ~ optional(":" ~ optWS ~ Type ~ optWS) ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.LetMatchStar
+    def LetMatchPlus: Rule1[ParsedAst.Expression.LetMatchMod] = rule {
+      SP ~ keyword("let+") ~ push(ParsedAst.MonadicLetSymbol.Plus) ~ WS ~ Pattern ~ optWS ~ optional(":" ~ optWS ~ Type ~ optWS) ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.LetMatchMod
+    }
+
+    def LetMatchStar: Rule1[ParsedAst.Expression.LetMatchMod] = rule {
+      SP ~ keyword("let*") ~ push(ParsedAst.MonadicLetSymbol.Star) ~ WS ~ Pattern ~ optWS ~ optional(":" ~ optWS ~ Type ~ optWS) ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.LetMatchMod
     }
 
     def LetUse: Rule1[ParsedAst.Expression.Use] = rule {

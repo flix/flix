@@ -605,16 +605,17 @@ object ParsedAst {
     case class LetMatch(sp1: SourcePosition, mod: Seq[ParsedAst.Modifier], pat: ParsedAst.Pattern, tpe: Option[ParsedAst.Type], exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * LetMatchStar Expression (monadic let-binding with pattern match).
+      * LetMatchMod Expression (monadic let-binding with pattern match).
       *
       * @param sp1  the position of the first character in the expression.
+      * @param sym the symbol attached to the let
       * @param pat  the match pattern.
       * @param tpe  the optional type annotation.
       * @param exp1 the value expression.
       * @param exp2 the body expression.
       * @param sp2  the position of the last character in the expression.
       */
-    case class LetMatchStar(sp1: SourcePosition, pat: ParsedAst.Pattern, tpe: Option[ParsedAst.Type], exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class LetMatchMod(sp1: SourcePosition, sym: MonadicLetSymbol, pat: ParsedAst.Pattern, tpe: Option[ParsedAst.Type], exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Let Import Expression.
@@ -1758,6 +1759,16 @@ object ParsedAst {
       */
     case class LatPredicateWithTypes(sp1: SourcePosition, name: Name.Ident, tpes: Seq[ParsedAst.Type], tpe: ParsedAst.Type, sp2: SourcePosition) extends PredicateType
 
+  }
+
+  /**
+    * Symbol indicating whether the monadic let expression is a `let*` or a `let+`.
+    */
+  sealed trait MonadicLetSymbol
+
+  object MonadicLetSymbol {
+    case object Star extends MonadicLetSymbol
+    case object Plus extends MonadicLetSymbol
   }
 
 }

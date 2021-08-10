@@ -661,23 +661,27 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           }
       }
 
-    case ParsedAst.Expression.LetMatchStar(sp1, pat, tpe, exp1, exp2, sp2) =>
+    case ParsedAst.Expression.LetMatchMod(sp1, sym, pat, tpe, exp1, exp2, sp2) =>
       val loc = SourceLocation.mk(sp1, sp2)
 
       //
-      // Rewrites a monadic let-match to a regular let-binding or a full-blown pattern match inside a flatMap.
+      // Rewrites a monadic let-match to a regular let-binding or a full-blown pattern match inside a flatMap or map.
       //
       // let* x = exp1; exp2     ==>   flatMap(x -> exp2)(exp1)
+      // let+ x = exp1; exp2     ==>   map(x -> exp2)(exp1)
       //
-      val ident = Name.Ident(sp1, "flatMap", sp2)
-      val flatMap = WeededAst.Expression.VarOrDefOrSig(ident, loc)
+      val ident = sym match {
+        case ParsedAst.MonadicLetSymbol.Star => Name.Ident(sp1, "flatMap", sp2)
+        case ParsedAst.MonadicLetSymbol.Plus => Name.Ident(sp1, "map", sp2)
+      }
+      val func = WeededAst.Expression.VarOrDefOrSig(ident, loc)
 
       mapN(visitPattern(pat), visitExp(exp1), visitExp(exp2)) {
         case (WeededAst.Pattern.Var(ident, loc), value, body) =>
           // No pattern match.
           val fparam = WeededAst.FormalParam(ident, Ast.Modifiers.Empty, tpe.map(visitType), loc)
           val lambda = WeededAst.Expression.Lambda(fparam, body, loc)
-          val inner = WeededAst.Expression.Apply(flatMap, List(lambda), loc)
+          val inner = WeededAst.Expression.Apply(func, List(lambda), loc)
           WeededAst.Expression.Apply(inner, List(value), loc)
         case (pat, value, body) =>
           // Full-blown pattern match.
@@ -689,7 +693,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
           val fparam = WeededAst.FormalParam(lambdaIdent, Ast.Modifiers.Empty, tpe.map(visitType), loc)
           val lambda = WeededAst.Expression.Lambda(fparam, lambdaBody, loc)
-          val inner = WeededAst.Expression.Apply(flatMap, List(lambda), loc)
+          val inner = WeededAst.Expression.Apply(func, List(lambda), loc)
           WeededAst.Expression.Apply(inner, List(value), loc)
       }
 
@@ -2394,7 +2398,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.IfThenElse(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Stm(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.LetMatch(sp1, _, _, _, _, _, _) => sp1
-    case ParsedAst.Expression.LetMatchStar(sp1, _, _, _, _, _) => sp1
+    case ParsedAst.Expression.LetMatchMod(sp1, _, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetImport(sp1, _, _, _) => sp1
     case ParsedAst.Expression.LetRegion(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
