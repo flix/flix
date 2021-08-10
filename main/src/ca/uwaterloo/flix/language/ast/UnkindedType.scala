@@ -86,6 +86,7 @@ object UnkindedType {
 
     override def equals(other: Any): Boolean = other match {
       case Var(otherId, _, _) => id == otherId
+      case _ => false
     }
 
     override def hashCode(): Int = id.hashCode()
