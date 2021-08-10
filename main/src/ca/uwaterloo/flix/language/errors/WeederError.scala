@@ -441,7 +441,7 @@ object WeederError {
       vt << NewLine
       vt << Code(loc, "illegal type constraint parameter") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << s" Type constraint parameters can only be type variables."
+      vt << Underline("Tip:") << s" Type constraint parameters must be composed only of type variables."
     }
   }
 
