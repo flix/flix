@@ -70,6 +70,8 @@ object Kind {
 
   /**
     * Represents a wild kind.
+    * A wild kind exists during the kinding phase, but should be eliminated before the following phase,
+    * unless the kind is deemed irrelevant (e.g. the kind of a wildcard type).
     */
   case object Wild extends Kind
 
