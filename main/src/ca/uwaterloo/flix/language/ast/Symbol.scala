@@ -241,6 +241,8 @@ object Symbol {
     // TODO(JLS): Should maybe mangle here? (+ -> $add)
     lazy val defName: JvmName = JvmName(namespace, s"Def${JvmName.reservedDelimiter}$name")
 
+    lazy val cloName: JvmName = JvmName(namespace, s"Clo${JvmName.reservedDelimiter}$name")
+
     lazy val nsMethodName: String = s"m${JvmName.reservedDelimiter}$name"
 
     /**

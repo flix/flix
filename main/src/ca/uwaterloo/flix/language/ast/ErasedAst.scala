@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.PType._
-import ca.uwaterloo.flix.language.phase.sjvm.NamespaceInfo
+import ca.uwaterloo.flix.language.phase.sjvm.{ClosureInfo, NamespaceInfo}
 
 import java.lang.reflect.{Constructor, Field, Method}
 
@@ -32,6 +32,7 @@ object ErasedAst {
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
                   functionTypes: Set[RType[PReference[PFunction]]],
+                  closures: Set[ClosureInfo],
                   namespaces: Set[NamespaceInfo])
 
   // TODO(JLS): This method, of using T <: PType and the _ <: PType at use is probably better and should be used elsewhere
@@ -280,7 +281,7 @@ object ErasedAst {
 
   case class FormalParam(sym: Symbol.VarSym, tpe: RType[_ <: PType])
 
-  case class FreeVar(sym: Symbol.VarSym, tpe: RType[PType])
+  case class FreeVar(sym: Symbol.VarSym, tpe: RType[_ <: PType])
 
 }
 

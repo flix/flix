@@ -58,7 +58,7 @@ object Instructions {
       DUP ~
       MONITORENTER ~
       f ~
-      XSWAP(e, RType.RReference(null)) ~ // TODO(JLS): fix and make partial automatic swap
+      XSWAP(e, RReference(null)) ~ // TODO(JLS): fix and make partial automatic swap
       MONITOREXIT
   }
 
@@ -387,14 +387,14 @@ object Instructions {
   [R <: Stack, T <: PType]
   (e: RType[T]):
   F[StackNil ** T] => F[StackEnd] = e match {
-    case RType.RBool => IRETURN
-    case RType.RInt8 => BRETURN
-    case RType.RInt16 => SRETURN
-    case RType.RInt32 => IRETURN
-    case RType.RInt64 => LRETURN
-    case RType.RChar => CRETURN
-    case RType.RFloat32 => FRETURN
-    case RType.RFloat64 => DRETURN
+    case RBool => IRETURN
+    case RInt8 => BRETURN
+    case RInt16 => SRETURN
+    case RInt32 => IRETURN
+    case RInt64 => LRETURN
+    case RChar => CRETURN
+    case RFloat32 => FRETURN
+    case RFloat64 => DRETURN
     case RReference(_) => ARETURN
   }
 
@@ -542,7 +542,7 @@ object Instructions {
   (tpe: RType[PReference[T]]):
   F[R] => F[R ** PReference[T]] = f => {
     f.visitor.visitInsn(Opcodes.ACONST_NULL)
-    f.visitor.visitTypeInsn(Opcodes.CHECKCAST, RType.internalNameOfReference(tpe))
+    f.visitor.visitTypeInsn(Opcodes.CHECKCAST, internalNameOfReference(tpe))
     castF(f)
   }
 
@@ -1059,7 +1059,7 @@ object Instructions {
   [R <: Stack, T <: PRefType]
   (elmType: RType[PReference[T]]):
   F[R ** PInt32] => F[R ** PReference[PArray[PReference[T]]]] = f => {
-    f.visitor.visitTypeInsn(Opcodes.ANEWARRAY, RType.getRReference(elmType).referenceType.toInternalName)
+    f.visitor.visitTypeInsn(Opcodes.ANEWARRAY, squeezeReference(elmType).referenceType.toInternalName)
     castF(f)
   }
 

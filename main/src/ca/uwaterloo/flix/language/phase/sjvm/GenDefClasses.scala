@@ -35,10 +35,8 @@ object GenDefClasses {
     defs.foldLeft(Map[JvmName, JvmClass]()) {
       case (macc, (sym, defn)) =>
         if (SjvmOps.nonLaw(defn)) {
-          RType.getRReference(defn.tpe).referenceType match {
-            case functionType@RArrow(_, _) =>
-              macc + (sym.defName -> JvmClass(sym.defName, genByteCode(defn, sym.defName, functionType)))
-          }
+          val functionType = squeezeFunction(squeezeReference(defn.tpe))
+          macc + (sym.defName -> JvmClass(sym.defName, genByteCode(defn, sym.defName, functionType)))
         } else macc
     }
   }
@@ -61,7 +59,6 @@ object GenDefClasses {
       THISLOAD(tag[PAnyObject]) ~
       magicReversePutField(defName, functionBody.tpe) ~
       RETURNNULL
-    // TODO(JLS): Finish This
   }
 
   def magicReversePutField[R <: Stack, T <: PType](className: JvmName, resultType: RType[T]): F[R ** T ** PReference[PAnyObject]] => F[R] = f => {

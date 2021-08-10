@@ -22,19 +22,20 @@ import ca.uwaterloo.flix.language.ast.ErasedAst.Root
 import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.PType._
 import ca.uwaterloo.flix.language.ast.RRefType._
+import ca.uwaterloo.flix.language.ast.RType._
 import ca.uwaterloo.flix.language.ast.{PType, RType, Symbol}
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 import org.objectweb.asm.Opcodes
 
 /**
-  * Generates bytecode for the namespace classes.
-  */
+ * Generates bytecode for the namespace classes.
+ */
 object GenNamespaces {
 
   /**
-    * Returns the set of namespaces classes for the given set of namespaces.
-    */
+   * Returns the set of namespaces classes for the given set of namespaces.
+   */
   def gen(namespaces: Set[NamespaceInfo])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     //
     // Generate a namespace class for each namespace and collect the results in a map.
@@ -48,26 +49,21 @@ object GenNamespaces {
   }
 
   /**
-    * Returns the namespace class for the given namespace `ns`.
-    */
+   * Returns the namespace class for the given namespace `ns`.
+   */
   private def genBytecode(className: JvmName, ns: NamespaceInfo)(implicit root: Root, flix: Flix): Array[Byte] = {
     val classMaker = ClassMaker.mkClass(className, addSource = false, None)
     classMaker.mkSuperConstructor()
     for ((sym, defn) <- ns.defs) {
-      val arrow = getArrow(defn.tpe)
+      val arrow = squeezeFunction(squeezeReference(defn.tpe))
       classMaker.mkMethod(compileShimMethod(sym, arrow, arrow.result), sym.nsMethodName, defn.tpe.toDescriptor, ClassMaker.Mod.isPublic.isFinal.isStatic)
     }
     classMaker.closeClassMaker
   }
 
-  def getArrow(tpe: RType[PReference[PFunction]]): RArrow =
-    RType.getRReference(tpe).referenceType match {
-      case r: RArrow => r
-    }
-
   /**
-    * Adding a shim for the function `defn` on namespace `ns`
-    */
+   * Adding a shim for the function `defn` on namespace `ns`
+   */
   private def compileShimMethod[T <: PType](sym: Symbol.DefnSym, functionType: RArrow, resType: RType[T])(implicit root: Root, flix: Flix): F[StackNil] => F[StackEnd] = {
     //TODO(JLS): largely the same as CALL/TAILCALL except compiling arguments versus the loading of arguments here
     START[StackNil] ~ { f: F[StackNil] =>

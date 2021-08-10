@@ -151,10 +151,10 @@ object BytecodeCompiler {
       F[R0 ** PReference[PArray[T0]]] => F[R0 ** PReference[PArray[T0]]] = {
         val elmType = arrayType.tpe
         elmType match {
-          case RType.RBool => ???
-          case RType.RInt8 => ???
-          case RType.RInt16 => ???
-          case RType.RInt32 =>
+          case RBool => ???
+          case RInt8 => ???
+          case RInt16 => ???
+          case RInt32 =>
             START[R0 ** PReference[PArray[T0]]] ~
               multiComposition(elms.zipWithIndex) { case (elm, index) =>
                 START[R0 ** PReference[PArray[T0]]] ~
@@ -163,10 +163,10 @@ object BytecodeCompiler {
                   compileExp(elm) ~
                   XAStore(elmType)
               }
-          case RType.RInt64 => ???
-          case RType.RChar => ???
-          case RType.RFloat32 => ???
-          case RType.RFloat64 => ???
+          case RInt64 => ???
+          case RChar => ???
+          case RFloat32 => ???
+          case RFloat64 => ???
           case RReference(_) => ???
         }
       }
@@ -174,7 +174,7 @@ object BytecodeCompiler {
       WithSource[R](loc) ~
         pushInt32(elms.length) ~
         XNEWARRAY(tpe) ~
-        makeAndFillArray(elms, squeezeArray(getRReference(tpe)))
+        makeAndFillArray(elms, squeezeArray(squeezeReference(tpe)))
 
 
     case Expression.ArrayNew(elm, len, tpe, loc) =>
@@ -240,7 +240,7 @@ object BytecodeCompiler {
         POP
 
     case Expression.Ref(exp, tpe, loc) =>
-      val tpeRRef = RType.getRReference(tpe)
+      val tpeRRef = squeezeReference(tpe)
       WithSource[R](loc) ~
         NEW(tpeRRef) ~
         DUP ~
@@ -252,13 +252,13 @@ object BytecodeCompiler {
     case Expression.Deref(exp, tpe, loc) =>
       WithSource[R](loc) ~
         compileExp(exp) ~
-        XGETFIELD(RType.getRReference(exp.tpe), GenRefClasses.ValueFieldName, tpe)
+        XGETFIELD(squeezeReference(exp.tpe), GenRefClasses.ValueFieldName, tpe)
 
     case Expression.Assign(exp1, exp2, tpe, loc) =>
       WithSource[R](loc) ~
         compileExp(exp1) ~
         compileExp(exp2) ~
-        PUTFIELD(RType.getRReference(exp1.tpe), GenRefClasses.ValueFieldName, exp2.tpe) ~
+        PUTFIELD(squeezeReference(exp1.tpe), GenRefClasses.ValueFieldName, exp2.tpe) ~
         pushUnit
 
     case Expression.Existential(fparam, exp, loc) => ???

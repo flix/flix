@@ -18,22 +18,22 @@
 package ca.uwaterloo.flix.language.phase.sjvm
 
 import ca.uwaterloo.flix.language.ast.ErasedAst.FreeVar
-import ca.uwaterloo.flix.language.ast.PRefType.PAnyObject
+import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.PType.PReference
-import ca.uwaterloo.flix.language.ast.{PRefType, PType, RType, Symbol}
+import ca.uwaterloo.flix.language.ast.{RType, Symbol}
 
 /**
-  * Meta information about a closure.
-  */
-case class ClosureInfo(sym: Symbol.DefnSym, freeVars: List[FreeVar], tpe: RType[PReference[PAnyObject]]) {
+ * Meta information about a closure.
+ */
+case class ClosureInfo(sym: Symbol.DefnSym, freeVars: List[FreeVar], tpe: RType[PReference[PFunction]]) {
   /**
-    * Returns the hash code of `this` closure info.
-    */
+   * Returns the hash code of `this` closure info.
+   */
   override def hashCode(): Int = 7 * sym.hashCode + 11 * freeVars.hashCode()
 
   /**
-    * Returns `true` if the given `obj` is the same closure info as `this`.
-    */
+   * Returns `true` if the given `obj` is the same closure info as `this`.
+   */
   override def equals(obj: scala.Any): Boolean = obj match {
     case that: ClosureInfo => this.sym == that.sym && this.freeVars == that.freeVars
     case _ => false

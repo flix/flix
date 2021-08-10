@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.PType._
-import ca.uwaterloo.flix.language.ast.RRefType.{RArray, RObject}
+import ca.uwaterloo.flix.language.ast.RRefType.{RArray, RArrow, RObject}
 import ca.uwaterloo.flix.language.phase.sjvm.JvmName
 import org.objectweb.asm.{MethodVisitor, Opcodes}
 
@@ -50,13 +50,17 @@ object RType {
 
   val baseTypes = List(RBool, RInt8, RInt16, RInt16, RInt32, RInt64, RChar, RFloat32, RFloat64, RReference(RObject))
 
-  def getRReference[T <: PRefType](x: RType[PReference[T]]): RReference[T] = x match {
+  // TODO(JLS): can these be added implicitly?
+  def squeezeReference[T <: PRefType](x: RType[PReference[T]]): RReference[T] = x match {
     case res@RReference(_) => res
   }
 
-  // TODO(JLS): can these be added implicitly?
   def squeezeArray[T <: PType](x: RReference[PArray[T]]): RArray[T] = x.referenceType match {
     case res@RArray(_) => res
+  }
+
+  def squeezeFunction(x: RReference[PFunction]): RArrow = x.referenceType match {
+    case res@RArrow(_, _) => res
   }
 
   def internalNameOfReference[T <: PRefType](e: RType[PReference[T]]): String = e match {

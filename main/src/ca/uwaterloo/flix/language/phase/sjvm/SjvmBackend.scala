@@ -33,18 +33,15 @@ import java.nio.file.{Files, LinkOption, Path, Paths}
 
 object SjvmBackend extends Phase[Root, CompilationResult] {
   /**
-    * The directory where to place the generated class files.
-    */
+   * The directory where to place the generated class files.
+   */
   val TargetDirectory: Path = Paths.get("./target/flix/")
 
   /**
-    * Emits JVM bytecode for the given AST `root`.
-    */
+   * Emits JVM bytecode for the given AST `root`.
+   */
   def run(root: Root)(implicit flix: Flix): Validation[CompilationResult, CompilationError] = flix.phase("SjvmBackend") {
 
-    //
-    // Put the AST root into implicit scope.
-    //
     implicit val r: Root = root
 
     val allClasses: Map[JvmName, JvmClass] = flix.subphase("CodeGen") {
@@ -65,37 +62,27 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
       val functionInterfaces = GenFunctionInterfaces.gen(root.functionTypes)
       val continuationInterfaces = GenContinuationInterfaces.gen()
 
-      //
-      // Generate the main class.
-      //
       val mainClass = GenMainClass.gen()
 
-      //
-      // Compute the set of namespaces in the program.
       val namespaceClasses = GenNamespaces.gen(root.namespaces)
 
-      //
-      // Generate references classes.
-      //
       val refClasses = GenRefClasses.gen()
+
       val defClasses = GenDefClasses.gen(root.defs)
 
-      //
-      // Generate lazy classes.
-      //
-      //      val lazyClasses = GenLazyClasses.gen()
+      val closureClasses = GenClosureClasses.gen(root.closures)
 
-      //
-      // Collect all the classes and interfaces together.
-      //
+      // val lazyClasses = GenLazyClasses.gen()
+
       List(
         mainClass,
         refClasses,
         namespaceClasses,
         functionInterfaces,
         continuationInterfaces,
-        defClasses
-        //        lazyClasses
+        defClasses,
+        closureClasses
+        // lazyClasses
       ).reduce(_ ++ _)
     }
 
@@ -147,85 +134,86 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
       case ErasedAst.Expression.BigInt(_, _) => Nil
       case ErasedAst.Expression.Str(_, _) => Nil
       case ErasedAst.Expression.Var(_, _, _) => Nil
-      case ErasedAst.Expression.Closure(sym, freeVars, tpe, loc) => Nil
-      case ErasedAst.Expression.ApplyClo(exp, args, tpe, loc) => exp :: args
-      case ErasedAst.Expression.ApplyDef(sym, args, tpe, loc) => args
-      case ErasedAst.Expression.ApplyCloTail(exp, args, tpe, loc) => exp :: args
-      case ErasedAst.Expression.ApplyDefTail(sym, args, tpe, loc) => args
-      case ErasedAst.Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) => actuals
-      case ErasedAst.Expression.Unary(sop, op, exp, tpe, loc) => exp :: Nil
-      case ErasedAst.Expression.Binary(sop, op, exp1, exp2, tpe, loc) => exp1 :: exp2 :: Nil
-      case ErasedAst.Expression.Int16Eq(exp1, exp2, tpe, loc) => exp1 :: exp2 :: Nil
-      case ErasedAst.Expression.Int32Eq(exp1, exp2, tpe, loc) => exp1 :: exp2 :: Nil
-      case ErasedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => exp1 :: exp2 :: exp3 :: Nil
-      case ErasedAst.Expression.Branch(exp, branches, tpe, loc) => branches.foldLeft(List[ErasedAst.Expression[_ <: PType]]()) { case (list, (_, exp)) => list :+ exp }
-      case ErasedAst.Expression.JumpTo(sym, tpe, loc) => Nil
-      case ErasedAst.Expression.Let(sym, exp1, exp2, tpe, loc) => exp1 :: exp2 :: Nil
-      case ErasedAst.Expression.Is(sym, tag, exp, loc) => exp :: Nil
-      case ErasedAst.Expression.Tag(sym, tag, exp, tpe, loc) => exp :: Nil
-      case ErasedAst.Expression.Untag(sym, tag, exp, tpe, loc) => exp :: Nil
-      case ErasedAst.Expression.Index(base, offset, tpe, loc) => Nil
-      case ErasedAst.Expression.Tuple(elms, tpe, loc) => elms
-      case ErasedAst.Expression.RecordEmpty(tpe, loc) => Nil
-      case ErasedAst.Expression.RecordSelect(exp, field, tpe, loc) => exp :: Nil
-      case ErasedAst.Expression.RecordExtend(field, value, rest, tpe, loc) => value :: rest :: Nil
-      case ErasedAst.Expression.RecordRestrict(field, rest, tpe, loc) => rest :: Nil
-      case ErasedAst.Expression.ArrayLit(elms, tpe, loc) => elms
-      case ErasedAst.Expression.ArrayNew(elm, len, tpe, loc) => elm :: len :: Nil
-      case ErasedAst.Expression.ArrayLoad(base, index, tpe, loc) => base :: index :: Nil
-      case ErasedAst.Expression.ArrayStore(base, index, elm, tpe, loc) => base :: index :: elm :: Nil
-      case ErasedAst.Expression.ArrayLength(base, tpe, loc) => base :: Nil
-      case ErasedAst.Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) => base :: beginIndex :: endIndex :: Nil
-      case ErasedAst.Expression.Ref(exp, tpe, loc) => exp :: Nil
-      case ErasedAst.Expression.Deref(exp, tpe, loc) => exp :: Nil
-      case ErasedAst.Expression.Assign(exp1, exp2, tpe, loc) => exp1 :: exp2 :: Nil
-      case ErasedAst.Expression.Existential(fparam, exp, loc) => exp :: Nil
-      case ErasedAst.Expression.Universal(fparam, exp, loc) => exp :: Nil
-      case ErasedAst.Expression.Cast(exp, tpe, loc) => exp :: Nil
-      case ErasedAst.Expression.TryCatch(exp, rules, tpe, loc) => exp :: rules.map(rule => rule.exp)
-      case ErasedAst.Expression.InvokeConstructor(constructor, args, tpe, loc) => args
-      case ErasedAst.Expression.InvokeMethod(method, exp, args, tpe, loc) => exp :: args
-      case ErasedAst.Expression.InvokeStaticMethod(method, args, tpe, loc) => args
-      case ErasedAst.Expression.GetField(field, exp, tpe, loc) => exp :: Nil
-      case ErasedAst.Expression.PutField(field, exp1, exp2, tpe, loc) => exp1 :: exp2 :: Nil
-      case ErasedAst.Expression.GetStaticField(field, tpe, loc) => Nil
-      case ErasedAst.Expression.PutStaticField(field, exp, tpe, loc) => exp :: Nil
-      case ErasedAst.Expression.NewChannel(exp, tpe, loc) => exp :: Nil
-      case ErasedAst.Expression.GetChannel(exp, tpe, loc) => exp :: Nil
-      case ErasedAst.Expression.PutChannel(exp1, exp2, tpe, loc) => exp1 :: exp2 :: Nil
-      case ErasedAst.Expression.SelectChannel(rules, default, tpe, loc) =>
+      case ErasedAst.Expression.Closure(_, _, _, _) => Nil
+      case ErasedAst.Expression.ApplyClo(exp, args, _, _) => exp :: args
+      case ErasedAst.Expression.ApplyDef(_, args, _, _) => args
+      case ErasedAst.Expression.ApplyCloTail(exp, args, _, _) => exp :: args
+      case ErasedAst.Expression.ApplyDefTail(_, args, _, _) => args
+      case ErasedAst.Expression.ApplySelfTail(_, _, actuals, _, _) => actuals
+      case ErasedAst.Expression.Unary(_, __, exp, _, _) => exp :: Nil
+      case ErasedAst.Expression.Binary(_, _, exp1, exp2, _, _) => exp1 :: exp2 :: Nil
+      case ErasedAst.Expression.Int16Eq(exp1, exp2, _, _) => exp1 :: exp2 :: Nil
+      case ErasedAst.Expression.Int32Eq(exp1, exp2, _, _) => exp1 :: exp2 :: Nil
+      case ErasedAst.Expression.IfThenElse(exp1, exp2, exp3, _, _) => exp1 :: exp2 :: exp3 :: Nil
+      case ErasedAst.Expression.Branch(exp, branches, _, _) =>
+        branches.foldLeft(List[ErasedAst.Expression[_ <: PType]](exp)) { case (list, (_, exp)) => list :+ exp }
+      case ErasedAst.Expression.JumpTo(_, _, _) => Nil
+      case ErasedAst.Expression.Let(_, exp1, exp2, _, _) => exp1 :: exp2 :: Nil
+      case ErasedAst.Expression.Is(_, _, exp, _) => exp :: Nil
+      case ErasedAst.Expression.Tag(_, _, exp, _, _) => exp :: Nil
+      case ErasedAst.Expression.Untag(_, _, exp, _, _) => exp :: Nil
+      case ErasedAst.Expression.Index(_, _, _, _) => Nil
+      case ErasedAst.Expression.Tuple(elms, _, _) => elms
+      case ErasedAst.Expression.RecordEmpty(_, _) => Nil
+      case ErasedAst.Expression.RecordSelect(exp, _, _, _) => exp :: Nil
+      case ErasedAst.Expression.RecordExtend(_, value, rest, _, _) => value :: rest :: Nil
+      case ErasedAst.Expression.RecordRestrict(_, rest, _, _) => rest :: Nil
+      case ErasedAst.Expression.ArrayLit(elms, _, _) => elms
+      case ErasedAst.Expression.ArrayNew(elm, len, _, _) => elm :: len :: Nil
+      case ErasedAst.Expression.ArrayLoad(base, index, _, _) => base :: index :: Nil
+      case ErasedAst.Expression.ArrayStore(base, index, elm, _, _) => base :: index :: elm :: Nil
+      case ErasedAst.Expression.ArrayLength(base, _, _) => base :: Nil
+      case ErasedAst.Expression.ArraySlice(base, beginIndex, endIndex, _, _) => base :: beginIndex :: endIndex :: Nil
+      case ErasedAst.Expression.Ref(exp, _, _) => exp :: Nil
+      case ErasedAst.Expression.Deref(exp, _, _) => exp :: Nil
+      case ErasedAst.Expression.Assign(exp1, exp2, _, _) => exp1 :: exp2 :: Nil
+      case ErasedAst.Expression.Existential(_, exp, _) => exp :: Nil
+      case ErasedAst.Expression.Universal(_, exp, _) => exp :: Nil
+      case ErasedAst.Expression.Cast(exp, _, _) => exp :: Nil
+      case ErasedAst.Expression.TryCatch(exp, rules, _, _) => exp :: rules.map(rule => rule.exp)
+      case ErasedAst.Expression.InvokeConstructor(_, args, _, _) => args
+      case ErasedAst.Expression.InvokeMethod(_, exp, args, _, _) => exp :: args
+      case ErasedAst.Expression.InvokeStaticMethod(_, args, _, _) => args
+      case ErasedAst.Expression.GetField(_, exp, _, _) => exp :: Nil
+      case ErasedAst.Expression.PutField(_, exp1, exp2, _, _) => exp1 :: exp2 :: Nil
+      case ErasedAst.Expression.GetStaticField(_, _, _) => Nil
+      case ErasedAst.Expression.PutStaticField(_, exp, _, _) => exp :: Nil
+      case ErasedAst.Expression.NewChannel(exp, _, _) => exp :: Nil
+      case ErasedAst.Expression.GetChannel(exp, _, _) => exp :: Nil
+      case ErasedAst.Expression.PutChannel(exp1, exp2, _, _) => exp1 :: exp2 :: Nil
+      case ErasedAst.Expression.SelectChannel(rules, default, _, _) =>
         val baseList = rules.flatMap(rule => rule.chan :: rule.exp :: Nil)
         default match {
           case Some(value) => baseList :+ value
           case None => baseList
         }
-      case ErasedAst.Expression.Spawn(exp, tpe, loc) => exp :: Nil
-      case ErasedAst.Expression.Lazy(exp, tpe, loc) => exp :: Nil
-      case ErasedAst.Expression.Force(exp, tpe, loc) => exp :: Nil
-      case ErasedAst.Expression.HoleError(sym, tpe, loc) => Nil
-      case ErasedAst.Expression.MatchError(tpe, loc) => Nil
-      case ErasedAst.Expression.BoxInt8(exp, loc) => exp :: Nil
-      case ErasedAst.Expression.BoxInt16(exp, loc) => exp :: Nil
-      case ErasedAst.Expression.BoxInt32(exp, loc) => exp :: Nil
-      case ErasedAst.Expression.BoxInt64(exp, loc) => exp :: Nil
-      case ErasedAst.Expression.BoxChar(exp, loc) => exp :: Nil
-      case ErasedAst.Expression.BoxFloat32(exp, loc) => exp :: Nil
-      case ErasedAst.Expression.BoxFloat64(exp, loc) => exp :: Nil
-      case ErasedAst.Expression.UnboxInt8(exp, loc) => exp :: Nil
-      case ErasedAst.Expression.UnboxInt16(exp, loc) => exp :: Nil
-      case ErasedAst.Expression.UnboxInt32(exp, loc) => exp :: Nil
-      case ErasedAst.Expression.UnboxInt64(exp, loc) => exp :: Nil
-      case ErasedAst.Expression.UnboxChar(exp, loc) => exp :: Nil
-      case ErasedAst.Expression.UnboxFloat32(exp, loc) => exp :: Nil
-      case ErasedAst.Expression.UnboxFloat64(exp, loc) => exp :: Nil
+      case ErasedAst.Expression.Spawn(exp, _, _) => exp :: Nil
+      case ErasedAst.Expression.Lazy(exp, _, _) => exp :: Nil
+      case ErasedAst.Expression.Force(exp, _, _) => exp :: Nil
+      case ErasedAst.Expression.HoleError(_, _, _) => Nil
+      case ErasedAst.Expression.MatchError(_, _) => Nil
+      case ErasedAst.Expression.BoxInt8(exp, _) => exp :: Nil
+      case ErasedAst.Expression.BoxInt16(exp, _) => exp :: Nil
+      case ErasedAst.Expression.BoxInt32(exp, _) => exp :: Nil
+      case ErasedAst.Expression.BoxInt64(exp, _) => exp :: Nil
+      case ErasedAst.Expression.BoxChar(exp, _) => exp :: Nil
+      case ErasedAst.Expression.BoxFloat32(exp, _) => exp :: Nil
+      case ErasedAst.Expression.BoxFloat64(exp, _) => exp :: Nil
+      case ErasedAst.Expression.UnboxInt8(exp, _) => exp :: Nil
+      case ErasedAst.Expression.UnboxInt16(exp, _) => exp :: Nil
+      case ErasedAst.Expression.UnboxInt32(exp, _) => exp :: Nil
+      case ErasedAst.Expression.UnboxInt64(exp, _) => exp :: Nil
+      case ErasedAst.Expression.UnboxChar(exp, _) => exp :: Nil
+      case ErasedAst.Expression.UnboxFloat32(exp, _) => exp :: Nil
+      case ErasedAst.Expression.UnboxFloat64(exp, _) => exp :: Nil
     }
     recursiveCalls.foldLeft(Set[String](exp.getClass.getSimpleName))((set, exp) => set union collectExpressions(exp))
   }
 
 
   /**
-    * Optionally returns a reference to main.
-    */
+   * Optionally returns a reference to main.
+   */
   private def getCompiledMain(root: Root)(implicit flix: Flix): Option[Array[String] => Int] = {
     root.defs.get(Symbol.Main) map { defn =>
       (actualArgs: Array[String]) => {
@@ -237,8 +225,8 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
   }
 
   /**
-    * Returns a map from definition symbols to executable functions (backed by JVM backend).
-    */
+   * Returns a map from definition symbols to executable functions (backed by JVM backend).
+   */
   private def getCompiledDefs(root: Root)(implicit flix: Flix): Map[Symbol.DefnSym, () => ProxyObject] = {
     root.defs.foldLeft(Map.empty[Symbol.DefnSym, () => ProxyObject]) {
       case (macc, (sym, defn)) =>
@@ -248,8 +236,8 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
   }
 
   /**
-    * Returns a function object for the given definition symbol `sym`.
-    */
+   * Returns a function object for the given definition symbol `sym`.
+   */
   private def link(sym: Symbol.DefnSym, root: Root)(implicit flix: Flix): java.util.function.Function[Array[AnyRef], ProxyObject] = {
     (args: Array[AnyRef]) => {
       ///
@@ -283,8 +271,8 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
   }
 
   /**
-    * Returns a proxy object that wraps the given result value.
-    */
+   * Returns a proxy object that wraps the given result value.
+   */
   private def newProxyObj[T <: PType](result: AnyRef)(implicit flix: Flix): ProxyObject = {
     // Lookup the Equality method.
     val eq = null
@@ -300,12 +288,12 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
   }
 
   /**
-    * Writes the given JVM class `clazz` to a sub path under the given `prefixPath`.
-    *
-    * For example, if the prefix path is `/tmp/` and the class name is Foo.Bar.Baz
-    * then the bytecode is written to the path `/tmp/Foo/Bar/Baz.class` provided
-    * that this path either does not exist or is already a JVM class file.
-    */
+   * Writes the given JVM class `clazz` to a sub path under the given `prefixPath`.
+   *
+   * For example, if the prefix path is `/tmp/` and the class name is Foo.Bar.Baz
+   * then the bytecode is written to the path `/tmp/Foo/Bar/Baz.class` provided
+   * that this path either does not exist or is already a JVM class file.
+   */
   private def writeClass(prefixPath: Path, clazz: JvmClass): Unit = {
     // Compute the absolute path of the class file to write.
     val path = prefixPath.resolve(clazz.name.toPath).toAbsolutePath
@@ -336,15 +324,15 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
   }
 
   /**
-    * Returns `true` if the given `path` is non-empty (i.e. contains data).
-    */
+   * Returns `true` if the given `path` is non-empty (i.e. contains data).
+   */
   private def isEmpty(path: Path): Boolean = {
     Files.size(path) == 0L
   }
 
   /**
-    * Returns `true` if the given `path` exists and is a Java Virtual Machine class file.
-    */
+   * Returns `true` if the given `path` exists and is a Java Virtual Machine class file.
+   */
   private def isClassFile(path: Path): Boolean = {
     if (Files.exists(path) && Files.isReadable(path) && Files.isRegularFile(path)) {
       // Read the first four bytes of the file.
