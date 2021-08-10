@@ -926,7 +926,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       }
     case UnkindedType.Cst(cst, loc) =>
       val tyconKind = getTyconKind(cst, root)
-      val args = Kind.args(tyconKind)
+      val args = Kind.kindArgs(tyconKind)
 
       Validation.fold(tpe.typeArguments.zip(args), KindEnv.empty) {
         case (acc, (targ, kind)) => flatMapN(inferType(targ, KindMatch.subKindOf(kind), root)) {
@@ -943,7 +943,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
           val argKenvVal = inferType(t1, KindMatch.superKindOf(argKind), root)
           val retKenvVal = inferType(t2, KindMatch.subKindOf(retKind), root)
 
-          val args = Kind.args(tyconKind)
+          val args = Kind.kindArgs(tyconKind)
           val targsKenvVal = Validation.traverse(tpe.typeArguments.zip(args)) {
             case (targ, kind) => inferType(targ, KindMatch.subKindOf(kind), root)
           }

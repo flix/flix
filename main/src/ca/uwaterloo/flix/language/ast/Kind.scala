@@ -131,8 +131,8 @@ object Kind {
   /**
     * Returns the arguments of an arrow kind.
     */
-  def args(k: Kind): List[Kind] = k match {
-    case Arrow(k1, k2) => k1 :: args(k2)
+  def kindArgs(k: Kind): List[Kind] = k match {
+    case Arrow(k1, k2) => k1 :: kindArgs(k2)
     case _ => Nil
   }
 
