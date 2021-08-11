@@ -194,6 +194,13 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
             tpe0 <- visitTpe[PInt32](tpe)
             expRes = ErasedAst.Expression.Int32Eq(exp10, exp20, tpe0, loc)
           } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
+        case SemanticOperator.Int32Op.Add =>
+          for {
+            exp10 <- visitExp[PInt32](exp1)
+            exp20 <- visitExp[PInt32](exp2)
+            tpe0 <- visitTpe[PInt32](tpe)
+            expRes = ErasedAst.Expression.Int32Add(exp10, exp20, tpe0, loc)
+          } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
         case _ =>
           for {
             exp10 <- visitExp[PType](exp1)

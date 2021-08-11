@@ -125,6 +125,8 @@ object ErasedAst {
 
     case class Int32Eq(exp1: ErasedAst.Expression[PInt32], exp2: ErasedAst.Expression[PInt32], tpe: RType[PInt32], loc: SourceLocation) extends ErasedAst.Expression[PInt32]
 
+    case class Int32Add(exp1: ErasedAst.Expression[PInt32], exp2: ErasedAst.Expression[PInt32], tpe: RType[PInt32], loc: SourceLocation) extends ErasedAst.Expression[PInt32]
+
     case class IfThenElse[T <: PType](exp1: ErasedAst.Expression[PInt32], exp2: ErasedAst.Expression[T], exp3: ErasedAst.Expression[T], tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
     case class Branch[T <: PType](exp: ErasedAst.Expression[T], branches: Map[Symbol.LabelSym, ErasedAst.Expression[T]], tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]

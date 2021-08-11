@@ -484,6 +484,13 @@ object Instructions {
     castF(f)
   }
 
+  def IADD
+  [R <: Stack]:
+  F[R ** PInt32 ** PInt32] => F[R ** PInt32] = f => {
+    f.visitor.visitInsn(Opcodes.IADD)
+    castF(f)
+  }
+
   def IF_ICMPEQ32
   [R <: Stack, R2 <: Stack]
   (branch1: F[R] => F[R2], branch2: F[R] => F[R2]):

@@ -134,11 +134,17 @@ object BytecodeCompiler {
         compileExp(exp2) ~
         IF_ICMPEQ16(pushBool(true), pushBool(false))
 
-    case Expression.Int32Eq(exp1, exp2, tpe, loc) =>
+    case Expression.Int32Eq(exp1, exp2, _, loc) =>
       WithSource[R](loc) ~
         compileExp(exp1) ~
         compileExp(exp2) ~
         IF_ICMPEQ32(pushBool(true), pushBool(false))
+
+    case Expression.Int32Add(exp1, exp2, _, loc) =>
+      WithSource[R](loc) ~
+        compileExp(exp1) ~
+        compileExp(exp2) ~
+        IADD
 
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => ???
     case Expression.Branch(exp, branches, tpe, loc) => ???
@@ -298,34 +304,28 @@ object BytecodeCompiler {
       WithSource[R](loc) ~
         pushNull(tpe)
 
-    //    case Expression.GetChannel(exp, tpe, loc) => ???
-    //    case Expression.PutChannel(exp1, exp2, tpe, loc) => ???
-    //    case Expression.SelectChannel(rules, default, tpe, loc) => ???
-    //    case Expression.Spawn(exp, tpe, loc) => ???
-    //    case Expression.Lazy(exp, tpe, loc) => ???
-    //    case Expression.Force(exp, tpe, loc) => ???
-    //    case Expression.FixpointConstraintSet(cs, tpe, loc) => ???
-    //    case Expression.FixpointCompose(exp1, exp2, tpe, loc) => ???
-    //    case Expression.FixpointSolve(exp, stf, tpe, loc) => ???
-    //    case Expression.FixpointProject(pred, exp, tpe, loc) => ???
-    //    case Expression.FixpointFold(pred, init, f, constraints, tpe, loc) => ???
-    //    case Expression.HoleError(sym, tpe, loc) => ???
-    //    case Expression.MatchError(tpe, loc) => ???
-    //    case ErasedAst.BoxInt8(exp, loc) => ???
-    //    case ErasedAst.BoxInt16(exp, loc) => ???
-    //    case ErasedAst.BoxInt32(exp, loc) => ???
-    //    case ErasedAst.BoxInt64(exp, loc) => ???
-    //    case ErasedAst.BoxChar(exp, loc) => ???
-    //    case ErasedAst.BoxFloat32(exp, loc) => ???
-    //    case ErasedAst.BoxFloat64(exp, loc) => ???
-    //    case ErasedAst.UnboxInt8(exp, loc) => ???
-    //    case ErasedAst.UnboxInt16(exp, loc) => ???
-    //    case ErasedAst.UnboxInt32(exp, loc) => ???
-    //    case ErasedAst.UnboxInt64(exp, loc) => ???
-    //    case ErasedAst.UnboxChar(exp, loc) => ???
-    //    case ErasedAst.UnboxFloat32(exp, loc) => ???
-    //    case ErasedAst.UnboxFloat64(exp, loc) => ???
-    case _ => ???
+    case Expression.GetChannel(exp, tpe, loc) => ???
+    case Expression.PutChannel(exp1, exp2, tpe, loc) => ???
+    case Expression.SelectChannel(rules, default, tpe, loc) => ???
+    case Expression.Spawn(exp, tpe, loc) => ???
+    case Expression.Lazy(exp, tpe, loc) => ???
+    case Expression.Force(exp, tpe, loc) => ???
+    case Expression.HoleError(sym, tpe, loc) => ???
+    case Expression.MatchError(tpe, loc) => ???
+    case Expression.BoxInt8(exp, loc) => ???
+    case Expression.BoxInt16(exp, loc) => ???
+    case Expression.BoxInt32(exp, loc) => ???
+    case Expression.BoxInt64(exp, loc) => ???
+    case Expression.BoxChar(exp, loc) => ???
+    case Expression.BoxFloat32(exp, loc) => ???
+    case Expression.BoxFloat64(exp, loc) => ???
+    case Expression.UnboxInt8(exp, loc) => ???
+    case Expression.UnboxInt16(exp, loc) => ???
+    case Expression.UnboxInt32(exp, loc) => ???
+    case Expression.UnboxInt64(exp, loc) => ???
+    case Expression.UnboxChar(exp, loc) => ???
+    case Expression.UnboxFloat32(exp, loc) => ???
+    case Expression.UnboxFloat64(exp, loc) => ???
   }
 
 }
