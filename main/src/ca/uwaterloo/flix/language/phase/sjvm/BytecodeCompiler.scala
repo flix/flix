@@ -21,9 +21,10 @@ import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.PType._
 import ca.uwaterloo.flix.language.ast.RRefType._
 import ca.uwaterloo.flix.language.ast.RType._
-import ca.uwaterloo.flix.language.ast.{PRefType, PType, RType}
+import ca.uwaterloo.flix.language.ast.{PRefType, PType, RRefType, RType}
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
-import org.objectweb.asm.MethodVisitor
+import org.objectweb.asm
+import org.objectweb.asm.{MethodVisitor, Opcodes}
 
 import scala.language.implicitConversions
 
@@ -294,11 +295,120 @@ object BytecodeCompiler {
 
     case Expression.TryCatch(exp, rules, tpe, loc) => ???
     case Expression.InvokeConstructor(constructor, args, tpe, loc) => ???
-    case Expression.InvokeMethod(method, exp, args, tpe, loc) => ???
-    case Expression.InvokeStaticMethod(method, args, tpe, loc) => ???
+    case Expression.InvokeMethod(method, exp, args, tpe, loc) => f => {
+      // TODO(JLS): fix this
+      // Adding source line number for debugging
+      WithSource(loc)(f)
+
+      // Evaluate the receiver object.
+      compileExp(exp)(f)
+      val thisType = asm.Type.getInternalName(method.getDeclaringClass)
+      f.visitor.visitTypeInsn(Opcodes.CHECKCAST, thisType)
+
+      // Retrieve the signature.
+      val signature = method.getParameterTypes
+
+      // Evaluate arguments left-to-right and push them onto the stack.
+      for (((arg, argType), index) <- args.zip(signature).zipWithIndex) {
+        compileExp(arg)(f)
+        if (!argType.isPrimitive) {
+          // NB: Really just a hack because the backend does not support array JVM types properly.
+          f.visitor.visitTypeInsn(Opcodes.CHECKCAST, asm.Type.getInternalName(argType))
+        } else {
+          def castArray(tpe: RRefType[_ <: PRefType]): Unit = tpe match {
+            case RArray(arrTpe) =>
+              def castArrayElm[T0 <: PType](arrTpe: RType[T0]): Unit = arrTpe match {
+                // NB: This is not exhaustive. In the new backend we should handle all types, including multidim arrays.
+                case RInt8 => f.visitor.visitTypeInsn(Opcodes.CHECKCAST, "[B")
+                case RInt16 => f.visitor.visitTypeInsn(Opcodes.CHECKCAST, "[S")
+                case RInt32 => f.visitor.visitTypeInsn(Opcodes.CHECKCAST, "[I")
+                case RInt64 => f.visitor.visitTypeInsn(Opcodes.CHECKCAST, "[J")
+                case RFloat32 => f.visitor.visitTypeInsn(Opcodes.CHECKCAST, "[F")
+                case RFloat64 => f.visitor.visitTypeInsn(Opcodes.CHECKCAST, "[D")
+                case _ => // nop
+              }
+
+              castArrayElm(arrTpe)
+            case _ => // nop
+          }
+
+          arg.tpe match {
+            case RReference(referenceType) => castArray(referenceType)
+            case _ => // nop
+          }
+        }
+      }
+      val declaration = asm.Type.getInternalName(method.getDeclaringClass)
+      val name = method.getName
+      val descriptor = asm.Type.getMethodDescriptor(method)
+
+      // Check if we are invoking an interface or class.
+      if (method.getDeclaringClass.isInterface) {
+        f.visitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, declaration, name, descriptor, true)
+      } else {
+        f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, declaration, name, descriptor, false)
+      }
+
+      // If the method is void, put a unit on top of the stack
+      if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) pushUnit(f)
+      f.asInstanceOf[F[R ** T]]
+    }
+
+    case Expression.InvokeStaticMethod(method, args, tpe, loc) => f => {
+      // TODO(JLS): fix this
+      // Adding source line number for debugging
+      WithSource(loc)(f)
+
+      // Retrieve the signature.
+      val signature = method.getParameterTypes
+
+      // Evaluate arguments left-to-right and push them onto the stack.
+      for (((arg, argType), index) <- args.zip(signature).zipWithIndex) {
+        compileExp(arg)(f)
+        if (!argType.isPrimitive) {
+          // NB: Really just a hack because the backend does not support array JVM types properly.
+          f.visitor.visitTypeInsn(Opcodes.CHECKCAST, asm.Type.getInternalName(argType))
+        } else {
+          def castArray(tpe: RRefType[_ <: PRefType]): Unit = tpe match {
+            case RArray(arrTpe) =>
+              def castArrayElm[T0 <: PType](arrTpe: RType[T0]): Unit = arrTpe match {
+                // NB: This is not exhaustive. In the new backend we should handle all types, including multidim arrays.
+                case RInt8 => f.visitor.visitTypeInsn(Opcodes.CHECKCAST, "[B")
+                case RInt16 => f.visitor.visitTypeInsn(Opcodes.CHECKCAST, "[S")
+                case RInt32 => f.visitor.visitTypeInsn(Opcodes.CHECKCAST, "[I")
+                case RInt64 => f.visitor.visitTypeInsn(Opcodes.CHECKCAST, "[J")
+                case RFloat32 => f.visitor.visitTypeInsn(Opcodes.CHECKCAST, "[F")
+                case RFloat64 => f.visitor.visitTypeInsn(Opcodes.CHECKCAST, "[D")
+                case _ => // nop
+              }
+
+              castArrayElm(arrTpe)
+            case _ => // nop
+          }
+
+          arg.tpe match {
+            case RReference(referenceType) => castArray(referenceType)
+            case _ => // nop
+          }
+        }
+      }
+      val declaration = asm.Type.getInternalName(method.getDeclaringClass)
+      val name = method.getName
+      val descriptor = asm.Type.getMethodDescriptor(method)
+
+      f.visitor.visitMethodInsn(Opcodes.INVOKESTATIC, declaration, name, descriptor, false)
+
+      // If the method is void, put a unit on top of the stack
+      if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) pushUnit(f)
+      f.asInstanceOf[F[R ** T]]
+    }
+
     case Expression.GetField(field, exp, tpe, loc) => ???
     case Expression.PutField(field, exp1, exp2, tpe, loc) => ???
-    case Expression.GetStaticField(field, tpe, loc) => ???
+    case Expression.GetStaticField(field, tpe, loc) =>
+      WithSource[R](loc) ~
+        getStaticField(field, tpe)
+
     case Expression.PutStaticField(field, exp, tpe, loc) => ???
     case Expression.NewChannel(exp, tpe, loc) =>
       WithSource[R](loc) ~

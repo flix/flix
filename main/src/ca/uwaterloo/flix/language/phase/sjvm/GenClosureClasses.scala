@@ -51,14 +51,14 @@ object GenClosureClasses {
   private def genByteCode(defn: ErasedAst.Def, cloName: JvmName, freeVars: List[ErasedAst.FreeVar], functionType: RArrow)(implicit root: Root, flix: Flix): Array[Byte] = {
     val classMaker = ClassMaker.mkClass(cloName, addSource = false, Some(functionType.functionInterfaceName))
     classMaker.mkSuperConstructor()
-    classMaker.mkMethod(genInvokeFunction(defn, defn.exp, cloName, freeVars, functionType), GenContinuationInterfaces.invokeMethodName, functionType.result.nothingToContMethodDescriptor, Mod.isPublic)
+    classMaker.mkMethod(genInvokeFunction(defn, defn.exp, cloName, freeVars), GenContinuationInterfaces.invokeMethodName, functionType.result.nothingToContMethodDescriptor, Mod.isPublic)
     for ((fv, index) <- freeVars.zipWithIndex) {
       classMaker.mkField(GenClosureClasses.cloArgFieldName(index), fv.tpe.erasedType, Mod.isPublic)
     }
     classMaker.closeClassMaker
   }
 
-  def genInvokeFunction[T <: PType](defn: ErasedAst.Def, functionBody: ErasedAst.Expression[T], cloName: JvmName, freeVars: List[ErasedAst.FreeVar], functionType: RArrow): F[StackNil] => F[StackEnd] = {
+  def genInvokeFunction[T <: PType](defn: ErasedAst.Def, functionBody: ErasedAst.Expression[T], cloName: JvmName, freeVars: List[ErasedAst.FreeVar]): F[StackNil] => F[StackEnd] = {
     // TODO(JLS): maybe frees should not be in formals?
     // Free variables
     val frees = defn.formals.take(freeVars.length).map(x => ErasedAst.FreeVar(x.sym, x.tpe))

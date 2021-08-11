@@ -66,12 +66,8 @@ object GenNamespaces {
    */
   private def compileShimMethod[T <: PType](sym: Symbol.DefnSym, functionType: RArrow, resType: RType[T])(implicit root: Root, flix: Flix): F[StackNil] => F[StackEnd] = {
     //TODO(JLS): largely the same as CALL/TAILCALL except compiling arguments versus the loading of arguments here
-    START[StackNil] ~ { f: F[StackNil] =>
-      f.visitor.visitTypeInsn(Opcodes.NEW, sym.defName.toInternalName)
-      f.visitor.visitInsn(Opcodes.DUP)
-      f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, sym.defName.toInternalName, JvmName.constructorMethod, JvmName.nothingToVoid, false)
-      f.asInstanceOf[F[StackNil ** PReference[PFunction]]]
-    } ~ { f: F[StackNil ** PReference[PFunction]] =>
+    START[StackNil] ~
+      makeAndInitDef(sym.defName) ~ { f: F[StackNil ** PReference[PFunction]] =>
       var nextIndex = 0
       for ((argType, argIndex) <- functionType.args.zipWithIndex) {
         f.visitor.visitInsn(Opcodes.DUP)
@@ -81,11 +77,8 @@ object GenNamespaces {
         f.visitor.visitFieldInsn(Opcodes.PUTFIELD, sym.defName.toInternalName, GenFunctionInterfaces.argFieldName(argIndex), functionType.args(argIndex).erasedDescriptor)
       }
       f.asInstanceOf[F[StackNil ** PReference[PFunction]]]
-    } ~ { f: F[StackNil ** PReference[PFunction]] =>
-      f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, resType.contName.toInternalName, GenContinuationInterfaces.unwindMethodName, resType.nothingToThisMethodDescriptor, false)
-      RType.undoErasure(resType, f.visitor)
-      f.asInstanceOf[F[StackNil ** T]]
     } ~
+      unwind(resType.contName, resType) ~
       XRETURN(resType)
   }
 

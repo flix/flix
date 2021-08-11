@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.ast.RType._
 import ca.uwaterloo.flix.language.ast.{ErasedAst, PRefType, PType, RRefType, RType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
 import ca.uwaterloo.flix.util.InternalCompilerException
+import org.objectweb.asm
 import org.objectweb.asm.{Label, MethodVisitor, Opcodes}
 
 object Instructions {
@@ -174,6 +175,15 @@ object Instructions {
   [R <: Stack]:
   F[R] => F[R] =
     x => x
+
+  def getStaticField
+  [R <: Stack, T <: PType]
+  (field: java.lang.reflect.Field, tpe: RType[T]):
+  F[R] => F[R ** T] = f => {
+    val declaration = asm.Type.getInternalName(field.getDeclaringClass)
+    f.visitor.visitFieldInsn(Opcodes.GETSTATIC, declaration, field.getName, tpe.toDescriptor)
+    castF(f)
+  }
 
   def XGETFIELD
   [R <: Stack, T1 <: PType, T2 <: PRefType]
@@ -687,7 +697,7 @@ object Instructions {
     castF(f)
   }
 
-  private def unwind
+  def unwind
   [R <: Stack, T <: PType]
   (contName: JvmName, returnType: RType[T]):
   F[R ** PReference[PFunction]] => F[R ** T] = f => {
@@ -707,7 +717,7 @@ object Instructions {
   }
 
   // TODO(JLS): could be made with other instructions
-  private def makeAndInitDef[R <: Stack]
+  def makeAndInitDef[R <: Stack]
   (className: JvmName):
   F[R] => F[R ** PReference[PFunction]] = f => {
     f.visitor.visitTypeInsn(Opcodes.NEW, className.toInternalName)
@@ -716,16 +726,16 @@ object Instructions {
     castF(f)
   }
 
-  private def setArgs[R <: Stack]
+  def setArgs[R <: Stack]
   (defClassName: JvmName, args: List[ErasedAst.Expression[_ <: PType]], fieldName: Int => String):
   F[R ** PReference[PFunction]] => F[R ** PReference[PFunction]] =
     START[R ** PReference[PFunction]] ~
       multiComposition(args.zipWithIndex) {
         case (exp, index) =>
-          START[R ** PReference[PFunction]] ~ DUP ~ compileExp(exp) ~ putArg(defClassName, fieldName(index), exp.tpe.erasedDescriptor)
+          START[R ** PReference[PFunction]] ~ DUP ~ compileExp(exp) ~ setArg(defClassName, fieldName(index), exp.tpe.erasedDescriptor)
       }
 
-  private def putArg[R <: Stack, T <: PType]
+  private def setArg[R <: Stack, T <: PType]
   (defClassName: JvmName, fieldName: String, erasedTpe: String):
   F[R ** PReference[PFunction] ** T] => F[R] = f => {
     f.visitor.visitFieldInsn(Opcodes.PUTFIELD, defClassName.toInternalName, fieldName, erasedTpe)
@@ -1167,7 +1177,7 @@ object Instructions {
   }
 
   // also make void
-  def defMakeFunction
+  private def defMakeFunction
   [R <: Stack, T <: PType]
   (x: F[R], t: RType[T]):
   F[R ** T] = {
@@ -1176,7 +1186,7 @@ object Instructions {
     ???
   }
 
-  def foo[R <: Stack] = (r: F[R]) => defMakeFunction(defMakeFunction(r, RInt32), RInt32)
+  private def foo[R <: Stack] = (r: F[R]) => defMakeFunction(defMakeFunction(r, RInt32), RInt32)
 
   implicit class ComposeOps[A <: Stack, B <: Stack](ab: F[A] => F[B]) {
     def ~[C <: Stack](bc: F[B] => F[C]): F[A] => F[C] =

@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.ErasedAst.Root
 import ca.uwaterloo.flix.language.ast.{ErasedAst, PType, Symbol}
+import ca.uwaterloo.flix.language.debug.PrettyPrinter
 import ca.uwaterloo.flix.language.phase.Phase
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Validation.ToSuccess
@@ -45,6 +46,10 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
     implicit val r: Root = root
 
     val allClasses: Map[JvmName, JvmClass] = flix.subphase("CodeGen") {
+
+      if (flix.options.debug) {
+        println(PrettyPrinter.Erased.fmtRoot(root).fmt(TerminalContext.AnsiTerminal))
+      }
 
       if (flix.options.debug) {
         val vt = new VirtualTerminal()
@@ -144,6 +149,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
       case ErasedAst.Expression.Binary(_, _, exp1, exp2, _, _) => exp1 :: exp2 :: Nil
       case ErasedAst.Expression.Int16Eq(exp1, exp2, _, _) => exp1 :: exp2 :: Nil
       case ErasedAst.Expression.Int32Eq(exp1, exp2, _, _) => exp1 :: exp2 :: Nil
+      case ErasedAst.Expression.Int32Add(exp1, exp2, _, _) => exp1 :: exp2 :: Nil
       case ErasedAst.Expression.IfThenElse(exp1, exp2, exp3, _, _) => exp1 :: exp2 :: exp3 :: Nil
       case ErasedAst.Expression.Branch(exp, branches, _, _) =>
         branches.foldLeft(List[ErasedAst.Expression[_ <: PType]](exp)) { case (list, (_, exp)) => list :+ exp }

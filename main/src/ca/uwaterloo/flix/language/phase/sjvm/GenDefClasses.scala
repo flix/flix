@@ -27,28 +27,30 @@ import ca.uwaterloo.flix.language.ast.{ErasedAst, PType, RType, Symbol}
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
 import ca.uwaterloo.flix.language.phase.sjvm.ClassMaker.Mod
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
+import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm.Opcodes
 
 object GenDefClasses {
 
   def gen(defs: Map[Symbol.DefnSym, ErasedAst.Def])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
-    defs.foldLeft(Map[JvmName, JvmClass]()) {
+    // TODO(JLS): check parops for all gens
+    ParOps.parAgg(defs, Map[JvmName, JvmClass]())({
       case (macc, (sym, defn)) =>
         if (SjvmOps.nonLaw(defn)) {
           val functionType = squeezeFunction(squeezeReference(defn.tpe))
           macc + (sym.defName -> JvmClass(sym.defName, genByteCode(defn, sym.defName, functionType)))
         } else macc
-    }
+    }, _ ++ _)
   }
 
   private def genByteCode(defn: ErasedAst.Def, defName: JvmName, functionType: RArrow)(implicit root: Root, flix: Flix): Array[Byte] = {
     val classMaker = ClassMaker.mkClass(defName, addSource = false, Some(functionType.functionInterfaceName))
     classMaker.mkSuperConstructor()
-    classMaker.mkMethod(genInvokeFunction(defn, defn.exp, defName, functionType), GenContinuationInterfaces.invokeMethodName, functionType.result.nothingToContMethodDescriptor, Mod.isPublic)
+    classMaker.mkMethod(genInvokeFunction(defn, defn.exp, defName), GenContinuationInterfaces.invokeMethodName, functionType.result.nothingToContMethodDescriptor, Mod.isPublic)
     classMaker.closeClassMaker
   }
 
-  def genInvokeFunction[T <: PType](defn: ErasedAst.Def, functionBody: ErasedAst.Expression[T], defName: JvmName, functionType: RArrow): F[StackNil] => F[StackEnd] = {
+  def genInvokeFunction[T <: PType](defn: ErasedAst.Def, functionBody: ErasedAst.Expression[T], defName: JvmName): F[StackNil] => F[StackEnd] = {
     START[StackNil] ~
       (multiComposition(defn.formals.zipWithIndex) {
         case (ErasedAst.FormalParam(sym, tpe), index) =>

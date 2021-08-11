@@ -139,7 +139,7 @@ object ErasedAst {
       final val tpe: RType[PInt32] = RType.RBool
     }
 
-    case class Tag(sym: Symbol.EnumSym, tag: Name.Tag, exp: ErasedAst.Expression[PType], tpe: RType[PReference[PAnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PAnyObject]]
+    case class Tag(sym: Symbol.EnumSym, tag: Name.Tag, exp: ErasedAst.Expression[_ <: PType], tpe: RType[PReference[PAnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PAnyObject]]
 
     case class Untag[T <: PType](sym: Symbol.EnumSym, tag: Name.Tag, exp: ErasedAst.Expression[PReference[PAnyObject]], tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
@@ -187,7 +187,7 @@ object ErasedAst {
 
     case class InvokeConstructor(constructor: Constructor[_], args: List[ErasedAst.Expression[_ <: PType]], tpe: RType[PReference[PAnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PAnyObject]]
 
-    case class InvokeMethod[T <: PType](method: Method, exp: ErasedAst.Expression[PReference[PAnyObject]], args: List[ErasedAst.Expression[_ <: PType]], tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
+    case class InvokeMethod[T1 <: PType, T2 <: PRefType](method: Method, exp: ErasedAst.Expression[PReference[T2]], args: List[ErasedAst.Expression[_ <: PType]], tpe: RType[T1], loc: SourceLocation) extends ErasedAst.Expression[T1]
 
     case class InvokeStaticMethod[T <: PType](method: Method, args: List[ErasedAst.Expression[_ <: PType]], tpe: RType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
