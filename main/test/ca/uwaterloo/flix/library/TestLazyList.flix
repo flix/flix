@@ -5,123 +5,123 @@ namespace TestLazyList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    pub def eq01(): Bool =
+    def eq01(): Bool =
         ENil: LazyList[Unit] == ENil: LazyList[Unit]
 
     @test
-    pub def eq02(): Bool =
+    def eq02(): Bool =
         ECons(1, ENil) == ECons(1, ENil)
 
     @test
-    pub def eq03(): Bool =
+    def eq03(): Bool =
         LCons(1, lazy ENil) == LCons(1, lazy ENil)
 
     @test
-    pub def eq04(): Bool =
+    def eq04(): Bool =
         LList(lazy ECons(1, ENil)) == LList(lazy ECons(1, ENil))
 
     @test
-    pub def eq05(): Bool =
+    def eq05(): Bool =
         ECons(1, ENil) == LCons(1, lazy ENil)
 
     @test
-    pub def eq06(): Bool =
+    def eq06(): Bool =
         LCons(1, lazy ENil) == ECons(1, ENil)
 
     @test
-    pub def eq07(): Bool =
+    def eq07(): Bool =
         ECons(1, ENil) == LList(lazy ECons(1, ENil))
 
     @test
-    pub def eq08(): Bool =
+    def eq08(): Bool =
         LList(lazy ECons(1, ENil)) == ECons(1, ENil)
 
     @test
-    pub def eq09(): Bool =
+    def eq09(): Bool =
         ECons(1, ENil) == LList(lazy LCons(1, lazy ENil))
 
     @test
-    pub def eq10(): Bool =
+    def eq10(): Bool =
         LList(lazy LCons(1, lazy ENil)) == ECons(1, ENil)
 
     @test
-    pub def eq11(): Bool =
+    def eq11(): Bool =
         ECons(1, ECons(2, ECons(3, ENil))) == ECons(1, ECons(2, ECons(3, ENil)))
 
     @test
-    pub def eq12(): Bool =
+    def eq12(): Bool =
         ECons(1, ECons(2, ECons(3, ENil))) == LCons(1, lazy LCons(2, lazy LCons(3, lazy ENil)))
 
     @test
-    pub def eq13(): Bool =
+    def eq13(): Bool =
         LCons(1, lazy LCons(2, lazy LCons(3, lazy ENil))) == ECons(1, ECons(2, ECons(3, ENil)))
 
     @test
-    pub def eq14(): Bool =
+    def eq14(): Bool =
         ECons(1, LCons(2, lazy ECons(3, ENil))) == LCons(1, lazy LCons(2, lazy LCons(3, lazy ENil)))
 
     @test
-    pub def eq15(): Bool =
+    def eq15(): Bool =
         LCons(1, lazy ECons(2, LCons(3, lazy ENil))) == ECons(1, ECons(2, ECons(3, ENil)))
 
     @test
-    pub def eq16(): Bool =
+    def eq16(): Bool =
         ECons(1, ECons(2, ECons(3, ENil))) == LCons(1, lazy LCons(2, lazy LCons(3, lazy ENil)))
 
     @test
-    pub def eq17(): Bool =
+    def eq17(): Bool =
         LList(lazy ECons(1, ECons(2, ECons(3, ENil)))) == LList(lazy LCons(1, lazy LCons(2, lazy LCons(3, lazy ENil))))
 
     @test
-    pub def eq18(): Bool =
+    def eq18(): Bool =
         LList(lazy ECons(1, ECons(2, ECons(3, ENil)))) == LList(lazy LCons(1, lazy LCons(2, lazy LCons(3, lazy ENil))))
 
     @test
-    pub def eq19(): Bool =
+    def eq19(): Bool =
         ECons(0, ENil) != ECons(1, ENil)
 
     @test
-    pub def eq20(): Bool =
+    def eq20(): Bool =
         ECons(0, ENil) != LCons(1, lazy ENil)
 
     @test
-    pub def eq21(): Bool =
+    def eq21(): Bool =
         LCons(0, lazy ENil) != ECons(1, ENil)
 
     @test
-    pub def eq22(): Bool =
+    def eq22(): Bool =
         LCons(0, lazy ENil) != LCons(1, lazy ENil)
 
     @test
-    pub def eq23(): Bool =
+    def eq23(): Bool =
         LList(lazy ECons(0, ENil)) != LCons(1, lazy ENil)
 
     @test
-    pub def eq24(): Bool =
+    def eq24(): Bool =
         LCons(0, lazy ENil) != LList(lazy ECons(1, ENil))
 
     @test
-    pub def eq25(): Bool =
+    def eq25(): Bool =
         ECons(0, ENil) != ECons(0, ECons(0, ENil))
 
     @test
-    pub def eq26(): Bool =
+    def eq26(): Bool =
         ECons(0, ENil) != ECons(0, ECons(1, ENil))
 
     @test
-    pub def eq27(): Bool =
+    def eq27(): Bool =
         ECons(0, ENil) != ENil
 
     @test
-    pub def eq28(): Bool =
+    def eq28(): Bool =
         ENil != ECons(0, ENil)
 
     @test
-    pub def eq29(): Bool =
+    def eq29(): Bool =
         LCons(0, lazy ENil) != ENil
 
     @test
-    pub def eq30(): Bool =
+    def eq30(): Bool =
         ENil != LCons(0, lazy ENil)
 
 
@@ -130,7 +130,7 @@ namespace TestLazyList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    pub def empty01(): Bool =
+    def empty01(): Bool =
         (LazyList.empty()): LazyList[Int32] |> LazyList.toList == Nil
 
 
@@ -139,11 +139,11 @@ namespace TestLazyList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    pub def isEmpty01(): Bool =
+    def isEmpty01(): Bool =
         (LazyList.empty()): LazyList[Int32] |> LazyList.isEmpty
 
     @test
-    pub def isEmpty02(): Bool =
+    def isEmpty02(): Bool =
         not (LazyList.range(0, 1000) |> LazyList.isEmpty)
 
 
@@ -152,31 +152,31 @@ namespace TestLazyList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    pub def range01(): Bool =
+    def range01(): Bool =
         LazyList.range(0, 0) |> LazyList.isEmpty
 
     @test
-    pub def range02(): Bool =
+    def range02(): Bool =
         LazyList.range(100, 100) |> LazyList.isEmpty
 
     @test
-    pub def range03(): Bool =
+    def range03(): Bool =
         LazyList.range(1, 0) |> LazyList.isEmpty
 
     @test
-    pub def range04(): Bool =
+    def range04(): Bool =
         not (LazyList.range(0, 100) |> LazyList.isEmpty)
 
     @test
-    pub def range05(): Bool =
+    def range05(): Bool =
         LazyList.range(0, 100) |> LazyList.toList == List.range(0, 100)
 
     @test
-    pub def range06(): Bool =
+    def range06(): Bool =
         not (LazyList.range(-100, 100) |> LazyList.isEmpty)
 
     @test
-    pub def range07(): Bool =
+    def range07(): Bool =
         LazyList.range(-100, 100) |> LazyList.toList == List.range(-100, 100)
 
 
@@ -185,15 +185,15 @@ namespace TestLazyList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    pub def head01(): Bool =
+    def head01(): Bool =
         (LazyList.empty()): LazyList[Int32] |> LazyList.head == None
 
     @test
-    pub def head02(): Bool =
+    def head02(): Bool =
         LazyList.range(0, 1000) |> LazyList.head == Some(0)
 
     @test
-    pub def head03(): Bool =
+    def head03(): Bool =
         let l = LazyList.range(0, 1000);
         LazyList.head(l) == Some(0)
             and LazyList.head(l) == Some(0)
@@ -204,25 +204,25 @@ namespace TestLazyList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    pub def take01(): Bool =
+    def take01(): Bool =
         (LazyList.empty()): LazyList[Int32] |> LazyList.take(1000) |> LazyList.isEmpty
 
     @test
-    pub def take02(): Bool =
+    def take02(): Bool =
         (LazyList.empty()): LazyList[Int32] |> LazyList.take(0) |> LazyList.isEmpty
 
     @test
-    pub def take03(): Bool =
+    def take03(): Bool =
         (LazyList.range(0, 1000)): LazyList[Int32] |> LazyList.take(0) |> LazyList.isEmpty
 
     @test
-    pub def take04(): Bool =
+    def take04(): Bool =
         (LazyList.range(0, 1000)): LazyList[Int32]
             |> LazyList.take(500)
             |> LazyList.toList == List.range(0, 500)
 
     @test
-    pub def take05(): Bool =
+    def take05(): Bool =
         (LazyList.range(0, 1000)): LazyList[Int32]
             |> LazyList.take(1)
             |> LazyList.toList == List.range(0, 1)
@@ -233,11 +233,11 @@ namespace TestLazyList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    pub def length01(): Bool =
+    def length01(): Bool =
         (LazyList.empty()): LazyList[Int32] |> LazyList.length == 0
 
     @test
-    pub def length02(): Bool =
+    def length02(): Bool =
         LazyList.range(0, 100000) |> LazyList.length == 100000
 
 
