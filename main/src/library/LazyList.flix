@@ -118,12 +118,20 @@ namespace LazyList {
     }
 
     ///
-    /// Returns the elements of `l` in a lazy list.
+    /// Returns `l` as a `List`.
     ///
-    // TODO: Move to List.
-    pub def toLazy(l: List[a]): LazyList[a] = match l {
-        case Nil     => ENil
-        case x :: xs => LCons(x, lazy toLazy(xs))
+    /// Forces the entire list `l`.
+    ///
+    pub def toList(l: LazyList[a]): List[a] = toListAcc(reverse(l), Nil)
+
+    ///
+    /// Helper function for `toList`.
+    ///
+    def toListAcc(l: LazyList[a], acc: List[a]): List[a] = match l {
+        case ENil         => acc
+        case ECons(x, xs) => toListAcc(xs, x :: acc)
+        case LCons(x, xs) => toListAcc(force xs, x :: acc)
+        case LList(xs)    => toListAcc(force xs, acc)
     }
 
     ///
