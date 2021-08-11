@@ -51,6 +51,7 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
 
     val reachable = root.reachable
 
+    // TODO(JLS): fix the problem of defclass generation of closures
     val result = ErasedAst.Root(defnsResult.value, reachable, root.sources, defnsResult.fTypes, defnsResult.closures, defnsResult.namespaces)
     result.toSuccess
   }
