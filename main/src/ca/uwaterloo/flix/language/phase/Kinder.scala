@@ -168,7 +168,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     case ResolvedAst.Def(sym, spec0, exp0) =>
       for {
         specKenv <- getKindEnvFromSpec(spec0, root)
-        kenv <- kenv0 ++ specKenv
+        kenv <- specKenv.refinedBy(kenv0)
         spec <- visitSpec(spec0, kenv, root)
         exp <- visitExpression(exp0, kenv, root)
       } yield KindedAst.Def(sym, spec, exp)
@@ -181,7 +181,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     case ResolvedAst.Sig(sym, spec0, exp0) =>
       for {
         specKenv <- getKindEnvFromSpec(spec0, root)
-        kenv <- kenv0 ++ specKenv
+        kenv <- specKenv.refinedBy(kenv0)
         spec <- visitSpec(spec0, kenv, root)
         exp <- Validation.traverse(exp0)(visitExpression(_, kenv, root))
       } yield KindedAst.Sig(sym, spec, exp.headOption)
@@ -1155,6 +1155,31 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     def ++(other: KindEnv): Validation[KindEnv, KindError] = {
       Validation.fold(other.map, this) {
         case (acc, pair) => acc + pair
+      }
+    }
+
+    /**
+      * Helper function for [[refinedBy]]
+      */
+    private def refinedBy1(pair: (UnkindedType.Var, Kind)): Validation[KindEnv, KindError] = pair match {
+      case (tvar, kind) => map.get(tvar) match {
+        case Some(kind0) =>
+          if (kind <:: kind0) {
+            KindEnv(map + (tvar -> kind)).toSuccess
+          } else {
+            KindError.MismatchedKinds(kind0, kind, tvar.loc).toFailure
+          }
+      }
+    }
+
+    /**
+      * Merges the given kind environment into this kind environment,
+      * where if a type variable is present in both environments,
+      * the right environment's kind must be a subkind of the left environment's kind.
+      */
+    def refinedBy(other: KindEnv): Validation[KindEnv, KindError] = {
+      Validation.fold(other.map, this) {
+        case (acc, pair) => acc.refinedBy1(pair)
       }
     }
   }
