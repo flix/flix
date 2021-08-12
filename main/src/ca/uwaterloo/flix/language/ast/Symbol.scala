@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Name.{Ident, NName}
 import ca.uwaterloo.flix.language.phase.sjvm.JvmName
+import ca.uwaterloo.flix.language.phase.sjvm.SjvmOps.mangle
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 object Symbol {
@@ -239,11 +240,11 @@ object Symbol {
     def isMain: Boolean = this == Symbol.Main
 
     // TODO(JLS): Should maybe mangle here? (+ -> $add)
-    lazy val defName: JvmName = JvmName(namespace, s"Def${JvmName.reservedDelimiter}$name")
+    lazy val defName: JvmName = JvmName(namespace, s"Def${JvmName.reservedDelimiter}${mangle(name)}")
 
-    lazy val cloName: JvmName = JvmName(namespace, s"Clo${JvmName.reservedDelimiter}$name")
+    lazy val cloName: JvmName = JvmName(namespace, s"Clo${JvmName.reservedDelimiter}${mangle(name)}")
 
-    lazy val nsMethodName: String = s"m${JvmName.reservedDelimiter}$name"
+    lazy val nsMethodName: String = s"m${JvmName.reservedDelimiter}${mangle(name)}"
 
     /**
       * Returns the name of `this` symbol.
