@@ -5,10 +5,6 @@ import org.scalatest.Suites
 
 class LangSuite extends Suites(
   //
-  // Classes.
-  //
-  new FlixTest("Test.Class.Kinding", "main/test/flix/Test.Class.Kinding.flix"),
-  //
   // Currying.
   //
   new FlixTest("Test.Currying", "main/test/flix/Test.Currying.flix"),
@@ -26,7 +22,6 @@ class LangSuite extends Suites(
   //
   // Definitions.
   //
-  new FlixTest("Test.Def.Kinding", "main/test/flix/Test.Def.Kinding.flix"),
   new FlixTest("Test.Def.Scoped", "main/test/flix/Test.Def.Scoped.flix"),
 
   //
@@ -35,10 +30,6 @@ class LangSuite extends Suites(
   new FlixTest("Test.Eff.Advanced", "main/test/flix/Test.Eff.Advanced.flix"),
   new FlixTest("Test.Eff.Polymorphism", "main/test/flix/Test.Eff.Polymorphism.flix")(Options.TestWithLibAll),
 
-  //
-  // Enums.
-  //
-  new FlixTest("Test.Enum.Kinding", "main/test/flix/Test.Enum.Kinding.flix"),
   //
   // Equality.
   //
@@ -172,11 +163,6 @@ class LangSuite extends Suites(
   new FlixTest("Test.Exp.Infix", "main/test/flix/Test.Exp.Infix.flix"),
 
   //
-  // Instance.
-  //
-  new FlixTest("Test.Instance.Kinding", "main/test/flix/Test.Instance.Kinding.flix"),
-
-  //
   // Int.
   //
   new FlixTest("Test.Exp.Int8", "main/test/flix/Test.Exp.Int8.flix"),
@@ -202,6 +188,15 @@ class LangSuite extends Suites(
   new FlixTest("Test.Exp.Jvm.InvokeStaticMethod", "main/test/flix/Test.Exp.Jvm.InvokeStaticMethod.flix"),
   new FlixTest("Test.Exp.Jvm.PutField", "main/test/flix/Test.Exp.Jvm.PutField.flix"),
   new FlixTest("Test.Exp.Jvm.PutStaticField", "main/test/flix/Test.Exp.Jvm.PutStaticField.flix"),
+
+  //
+  // Kind.
+  //
+  new FlixTest("Test.Kind.Class", "main/test/flix/Test.Kind.Class.flix"),
+  new FlixTest("Test.Kind.Def", "main/test/flix/Test.Kind.Def.flix"),
+  new FlixTest("Test.Kind.Enum", "main/test/flix/Test.Kind.Enum.flix"),
+  new FlixTest("Test.Kind.Instance", "main/test/flix/Test.Kind.Instance.flix"),
+  new FlixTest("Test.Kind.TypeAlias", "main/test/flix/Test.Kind.TypeAlias.flix"),
 
   //
   // Lambda.
@@ -342,7 +337,6 @@ class LangSuite extends Suites(
   //
   // Type Alias.
   //
-  new FlixTest("Test.TypeAlias.Kinding", "main/test/flix/Test.TypeAlias.Kinding.flix"),
   new FlixTest("Test.TypeAlias.Rel", "main/test/flix/Test.TypeAlias.Rel.flix")(Options.TestWithLibAll),
 
   //
