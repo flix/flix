@@ -7,7 +7,7 @@ class LangSuite extends Suites(
   //
   // Classes.
   //
-  new FlixTest("Test.Class.Kinding", "main/test/flix/Test.Class.Kinding.flix")(Options.TestWithLibMin.copy(xallowredundancies = true)), // MATT remove allow redundancies
+  new FlixTest("Test.Class.Kinding", "main/test/flix/Test.Class.Kinding.flix"),
   //
   // Currying.
   //
@@ -26,7 +26,7 @@ class LangSuite extends Suites(
   //
   // Definitions.
   //
-  new FlixTest("Test.Def.Kinding", "main/test/flix/Test.Def.Kinding.flix")(Options.TestWithLibMin.copy(xallowredundancies = true)), // MATT remove allow redundancies
+  new FlixTest("Test.Def.Kinding", "main/test/flix/Test.Def.Kinding.flix"),
   new FlixTest("Test.Def.Scoped", "main/test/flix/Test.Def.Scoped.flix"),
 
   //
@@ -38,7 +38,7 @@ class LangSuite extends Suites(
   //
   // Enums.
   //
-  new FlixTest("Test.Enum.Kinding", "main/test/flix/Test.Enum.Kinding.flix")(Options.TestWithLibMin.copy(xallowredundancies = true)), // MATT remove allow redundancies
+  new FlixTest("Test.Enum.Kinding", "main/test/flix/Test.Enum.Kinding.flix"),
   //
   // Equality.
   //
@@ -174,7 +174,7 @@ class LangSuite extends Suites(
   //
   // Instance.
   //
-  new FlixTest("Test.Instance.Kinding", "main/test/flix/Test.Instance.Kinding.flix")(Options.TestWithLibNix.copy(xallowredundancies = true)), // MATT disallow redundancies
+  new FlixTest("Test.Instance.Kinding", "main/test/flix/Test.Instance.Kinding.flix"),
 
   //
   // Int.
@@ -342,7 +342,7 @@ class LangSuite extends Suites(
   //
   // Type Alias.
   //
-  new FlixTest("Test.TypeAlias.Kinding", "main/test/flix/Test.TypeAlias.Kinding.flix")(Options.TestWithLibMin.copy(xallowredundancies = true)), // MATT remove allow redundancies
+  new FlixTest("Test.TypeAlias.Kinding", "main/test/flix/Test.TypeAlias.Kinding.flix"),
   new FlixTest("Test.TypeAlias.Rel", "main/test/flix/Test.TypeAlias.Rel.flix")(Options.TestWithLibAll),
 
   //
