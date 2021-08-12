@@ -1,27 +1,10 @@
-// MATT move to better namespace
-class CStarToStar[a: Type -> Type]
-class CBoolToStar[a: Bool -> Type]
-class CRecordToStar[a: Record -> Type]
-class CSchemaToStar[a: Schema -> Type]
-class CStar[a: Type]
-class CBool[a: Bool]
-class CRecord[a: Record]
-class CSchema[a: Schema]
-enum EStarToStar[a: Type -> Type]
-enum EBoolToStar[a: Bool -> Type]
-enum ERecordToStar[a: Record -> Type]
-enum ESchemaToStar[a: Schema -> Type]
-enum EStar[a: Type]
-enum EBool[a: Bool]
-enum ERecord[a: Record]
-enum ESchema[a: Schema]
-rel R(i: Int)
-
 namespace Test/Def/Kinding {
 
     namespace Implicit {
 
         namespace FormalParams {
+            rel R(i: Int)
+
             pub def star(x: a): Int = ???
 
             pub def record(x: { l: Int | a }): Int = ???
@@ -38,6 +21,8 @@ namespace Test/Def/Kinding {
         }
 
         namespace Return {
+            rel R(i: Int)
+
             pub def star(): a = ???
 
             pub def recordStar(x: { l: Int | a }): a = ???
@@ -46,12 +31,20 @@ namespace Test/Def/Kinding {
         }
 
         namespace TypeConstraint {
+            class CStar[a: Type]
+            class CStarToStar[a: Type -> Type]
+
             pub def star(x: a): Int with CStar[a] = ???
 
             pub def starToStar(x: a[Int]): Int with CStarToStar[a] = ???
         }
 
         namespace Enum {
+            pub enum EStar[_a: Type]
+            pub enum EBool[_a: Bool]
+            pub enum ERecord[_a: Record]
+            pub enum ESchema[_a: Schema]
+
             pub def star(x: EStar[a]): Int = ???
 
             pub def bool(x: EBool[a]): Int = ???
@@ -62,12 +55,14 @@ namespace Test/Def/Kinding {
 
             pub def starStar(x: a, y: EStar[a]): Int = ???
 
-            pub def starRecord(x: a, y: EStar[a]): Int = ???
+            pub def starRecord(x: a, y: ERecord[a]): Int = ???
 
-            pub def starSchema(x: a, y: EStar[a]): Int = ???
+            pub def starSchema(x: a, y: ESchema[a]): Int = ???
         }
 
         namespace Effect {
+            pub enum EBool[_a: Bool]
+
             pub def bool(): Int & ef = ???
 
             pub def func(x: Int -> Int & ef): Int & ef = ???
@@ -76,6 +71,8 @@ namespace Test/Def/Kinding {
         }
 
         namespace Exp {
+            rel R(i: Int)
+
             pub def star(x: a): Int = ???: a; ???
 
             pub def record(x: { l: Int | a }): Int = ???: a; ???
@@ -87,6 +84,8 @@ namespace Test/Def/Kinding {
     namespace Explicit {
 
         namespace FormalParams {
+            rel R(i: Int)
+
             pub def star[a: Type](x: a): Int = ???
 
             pub def record[a: Record](x: { l: Int | a }): Int = ???
@@ -103,6 +102,8 @@ namespace Test/Def/Kinding {
         }
 
         namespace Return {
+            rel R(i: Int)
+
             pub def star[a: Type](): a = ???
 
             pub def recordStar[a: Record](x: { l: Int | a }): a = ???
@@ -111,6 +112,10 @@ namespace Test/Def/Kinding {
         }
 
         namespace TypeConstraint {
+            class CStar[a: Type]
+            class CStarToStar[a: Type -> Type]
+            class CBoolToStar[a: Bool -> Type]
+
             pub def star[a: Type](x: a): Int with CStar[a] = ???
 
             pub def starToStar[a: Type -> Type](x: a[Int]): Int with CStarToStar[a] = ???
@@ -120,6 +125,11 @@ namespace Test/Def/Kinding {
         }
 
         namespace Enum {
+            pub enum EStar[_a: Type]
+            pub enum EBool[_a: Bool]
+            pub enum ERecord[_a: Record]
+            pub enum ESchema[_a: Schema]
+
             pub def star[a: Type](x: EStar[a]): Int = ???
 
             pub def bool[a: Bool](x: EBool[a]): Int = ???
@@ -136,6 +146,8 @@ namespace Test/Def/Kinding {
         }
 
         namespace Effect {
+            pub enum EBool[_a: Bool]
+
             pub def bool[ef: Bool](): Int & ef = ???
 
             pub def func[ef: Bool](x: Int -> Int & ef): Int & ef = ???
@@ -144,6 +156,8 @@ namespace Test/Def/Kinding {
         }
 
         namespace Exp {
+            rel R(i: Int)
+
             pub def star[a: Type](x: a): Int = ???: a; ???
 
             pub def record[a: Record](x: { l: Int | a }): Int = ???: a; ???
