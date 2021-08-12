@@ -12,3 +12,6 @@ target
 .metals
 .vscode
 .bloop
+
+# local development files
+**/personal/**
