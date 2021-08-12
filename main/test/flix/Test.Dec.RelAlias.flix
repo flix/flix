@@ -49,6 +49,6 @@ namespace Test/Dec/RelAlias {
 
     type alias Y = #{ A, B, C[Bool] }
 
-    type alias Z[r] = #{ A | r }
+    type alias Z[r: Schema] = #{ A | r }
 
 }

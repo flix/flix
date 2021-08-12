@@ -16,8 +16,9 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.debug.FormatKind
+
+import scala.annotation.tailrec
 
 /**
   * A kind represents the "type" of a type expression.
@@ -51,15 +52,15 @@ sealed trait Kind {
     case (Kind.Record, Kind.Record) => true
     case (Kind.Schema, Kind.Schema) => true
 
-    // kind vars
-    case (Kind.Var(_), _) => true
-    case (_, Kind.Var(_)) => true
+    case (_, Kind.Wild) => true
+    case (Kind.Wild, _) => true
 
     // subkinds
     case (Kind.Record, Kind.Star) => true
     case (Kind.Schema, Kind.Star) => true
 
-    case (Kind.Arrow(k11, k12), Kind.Arrow(k21, k22)) => (k11 <:: k21) && (k12 <:: k22)
+    // arrow kinds: the left side is contravariant
+    case (Kind.Arrow(k11, k12), Kind.Arrow(k21, k22)) => (k21 <:: k11) && (k12 <:: k22)
     case _ => false
   }
 
@@ -68,9 +69,11 @@ sealed trait Kind {
 object Kind {
 
   /**
-    * Represents a kind variable.
+    * Represents a wild kind.
+    * A wild kind exists during the kinding phase, but should be eliminated before the following phase,
+    * unless the kind is deemed irrelevant (e.g. the kind of a wildcard type).
     */
-  case class Var(id: Int) extends Kind
+  case object Wild extends Kind
 
   /**
     * Represents the kind of types.
@@ -119,8 +122,32 @@ object Kind {
   }
 
   /**
-    * Returns a fresh kind variable.
+    * Returns the base of an arrow kind.
     */
-  def freshVar()(implicit flix: Flix): Kind = Var(flix.genSym.freshId())
+  @tailrec
+  def base(k: Kind): Kind = k match {
+    case Arrow(k1, _) => base(k1)
+    case _ => k
+  }
+
+  /**
+    * Returns the arguments of an arrow kind.
+    */
+  def kindArgs(k: Kind): List[Kind] = k match {
+    case Arrow(k1, k2) => k1 :: kindArgs(k2)
+    case _ => Nil
+  }
+
+  /**
+    * Returns the minimum kind, or None if the kinds are incomparable.
+    */
+  def min(k1: Kind, k2: Kind): Option[Kind] = {
+    if (k1 <:: k2)
+      Some(k1)
+    else if (k2 <:: k1)
+      Some(k2)
+    else
+      None
+  }
 
 }

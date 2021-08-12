@@ -4,7 +4,10 @@ import ca.uwaterloo.flix.util.{FlixTest, Options}
 import org.scalatest.Suites
 
 class LangSuite extends Suites(
-
+  //
+  // Classes.
+  //
+  new FlixTest("Test.Class.Kinding", "main/test/flix/Test.Class.Kinding.flix"),
   //
   // Currying.
   //
@@ -23,7 +26,7 @@ class LangSuite extends Suites(
   //
   // Definitions.
   //
-  new FlixTest("Test.Def.KindInference", "main/test/flix/Test.Def.KindInference.flix"),
+  new FlixTest("Test.Def.Kinding", "main/test/flix/Test.Def.Kinding.flix"),
   new FlixTest("Test.Def.Scoped", "main/test/flix/Test.Def.Scoped.flix"),
 
   //
@@ -32,6 +35,10 @@ class LangSuite extends Suites(
   new FlixTest("Test.Eff.Advanced", "main/test/flix/Test.Eff.Advanced.flix"),
   new FlixTest("Test.Eff.Polymorphism", "main/test/flix/Test.Eff.Polymorphism.flix")(Options.TestWithLibAll),
 
+  //
+  // Enums.
+  //
+  new FlixTest("Test.Enum.Kinding", "main/test/flix/Test.Enum.Kinding.flix"),
   //
   // Equality.
   //
@@ -163,6 +170,11 @@ class LangSuite extends Suites(
   // Infix.
   //
   new FlixTest("Test.Exp.Infix", "main/test/flix/Test.Exp.Infix.flix"),
+
+  //
+  // Instance.
+  //
+  new FlixTest("Test.Instance.Kinding", "main/test/flix/Test.Instance.Kinding.flix"),
 
   //
   // Int.
@@ -330,6 +342,7 @@ class LangSuite extends Suites(
   //
   // Type Alias.
   //
+  new FlixTest("Test.TypeAlias.Kinding", "main/test/flix/Test.TypeAlias.Kinding.flix"),
   new FlixTest("Test.TypeAlias.Rel", "main/test/flix/Test.TypeAlias.Rel.flix")(Options.TestWithLibAll),
 
   //
