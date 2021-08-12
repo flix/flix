@@ -30,7 +30,7 @@ namespace Test/Class/Kinding {
             }
 
             namespace Enum {
-                enum EStar[a: Type]
+                pub enum EStar[_a: Type]
 
                 lawless class CStar1[a] {
                     pub def star(x: EStar[a]): Int = ???
@@ -60,7 +60,7 @@ namespace Test/Class/Kinding {
             }
 
             namespace Enum {
-                enum EStar[a: Type]
+                pub enum EStar[_a: Type]
 
                 class CStar1[a] {
                     law star: forall(x: EStar[a]) . ???
@@ -125,8 +125,8 @@ namespace Test/Class/Kinding {
             }
 
             namespace Enum {
-                enum EStar[a: Type]
-                enum EStarToStar[a: Type -> Type]
+                pub enum EStar[_a: Type]
+                pub enum EStarToStar[_a: Type -> Type]
 
                 lawless class CStar1[a: Type] {
                     pub def star(x: EStar[a]): Int = ???
@@ -174,8 +174,8 @@ namespace Test/Class/Kinding {
             }
 
             namespace Enum {
-                enum EStar[a: Type]
-                enum EStarToStar[a: Type -> Type]
+                pub enum EStar[_a: Type]
+                pub enum EStarToStar[_a: Type -> Type]
 
                 class CStar1[a: Type] {
                     law star: forall(x: EStar[a]) . ???
