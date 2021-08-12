@@ -118,11 +118,11 @@ namespace Test/Class/Kinding {
                 }
 
                 lawless class CStarToStar1[a: Type -> Type] {
-                    pub def starToStar[a: Type -> Type](x: a[Int]): Int with CStarToStar[a] = ???
+                    pub def starToStar(x: a[Int]): Int with CStarToStar[a] = ???
                 }
 
                 lawless class CBoolToStar1[a: Bool -> Type] {
-                    pub def boolToStar(x: a[Pure]): Int & e with CBoolToStar[a] = ???
+                    pub def boolToStar(x: a[Pure]): Int with CBoolToStar[a] = ???
                 }
             }
 
@@ -139,6 +139,48 @@ namespace Test/Class/Kinding {
             namespace Exp {
                 lawless class CStar1[a: Type] {
                     pub def star(x: a): Int = ???: a; ???
+                }
+            }
+        }
+
+        namespace Law {
+            namespace FormalParams {
+                class CStar1[a: Type] {
+                    law star: forall(x: a) . ???
+                }
+
+                class CStarToStar1[a: Type -> Type] {
+                    law starToStar: forall(x: a[Int]) . ???
+                }
+            }
+
+            namespace TypeConstraint {
+                class CStar1[a: Type] {
+                    law star: forall(x: a) with CStar[a] . ???
+                }
+
+                class CStarToStar1[a: Type -> Type] {
+                    law starToStar: forall(x: a[Int]) with CStarToStar[a] . ???
+                }
+
+                class CBoolToStar1[a: Bool -> Type] {
+                    law boolToStar: forall(x: a[Pure]) with CBoolToStar[a] . ???
+                }
+            }
+
+            namespace Enum {
+                class CStar1[a: Type] {
+                    law star: forall(x: EStar[a]) . ???
+                }
+
+                class CStarToStar1[a: Type -> Type] {
+                    law starToStar: forall(x: EStarToStar[a]) . ???
+                }
+            }
+
+            namespace Exp {
+                class CStar1[a: Type] {
+                    law star: forall(x: a) . { ???: a; ??? }
                 }
             }
         }
