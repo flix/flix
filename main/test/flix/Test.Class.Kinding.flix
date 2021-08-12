@@ -78,75 +78,70 @@ namespace Test/Class/Kinding {
 
             namespace Exp {
                  class CStar1[a] {
-                    law star: forall(x: a) . ???: a; ???
+                    law star: forall(x: a) . { ???: a; ??? }
                 }
             }
-        }
-
-        namespace FormalParams {
-            pub def star(x: a): Int = ???
-
-            pub def record(x: { l: Int | a }): Int = ???
-
-            pub def schema(x: #{ R | a }): Int = ???
-
-            pub def bool(x: Int -> Int & a): Int = ???
-
-            pub def starToStar(x: a[Int]): Int = ???
-
-            pub def starRecord(x: a, y: { l: Int | a }): Int = ???
-
-            pub def starSchema(x: a, y: #{ R | a }): Int = ???
-        }
-
-        namespace Return {
-            pub def star(): a = ???
-
-            pub def recordStar(x: { l: Int | a }): a = ???
-
-            pub def schemaStar(x: #{ R | a }): a = ???
-        }
-
-        namespace TypeConstraint {
-            pub def star(x: a): Int with CStar[a] = ???
-
-            pub def starToStar(x: a[Int]): Int with CStarToStar[a] = ???
-        }
-
-        namespace Enum {
-            pub def star(x: EStar[a]): Int = ???
-
-            pub def bool(x: EBool[a]): Int = ???
-
-            pub def record(x: ERecord[a]): Int = ???
-
-            pub def schema(x: ESchema[a]): Int = ???
-
-            pub def starStar(x: a, y: EStar[a]): Int = ???
-
-            pub def starRecord(x: a, y: EStar[a]): Int = ???
-
-            pub def starSchema(x: a, y: EStar[a]): Int = ???
-        }
-
-        namespace Effect {
-            pub def bool(): Int & ef = ???
-
-            pub def func(x: Int -> Int & ef): Int & ef = ???
-
-            pub def enum(x: EBool[ef]): Int & ef = ???
-        }
-
-        namespace Exp {
-            pub def star(x: a): Int = ???: a; ???
-
-            pub def record(x: { l: Int | a }): Int = ???: a; ???
-
-            pub def schema(x: #{ R | a }): Int = ???: a; ???
         }
     }
 
     namespace Explicit {
+        namespace TypeConstraint {
+            class CStar1[a: Type] with CStar[a]
+
+            class CStarToStar1[a: Type -> Type] with CStarToStar[a]
+        }
+
+        namespace Sig {
+            namespace FormalParams {
+                lawless class CStar1[a: Type] {
+                    pub def star(x: a): Int = ???
+                }
+
+                lawless class CStarToStar1[a: Type -> Type] {
+                    pub def starToStar(x: a[Int]): Int = ???
+                }
+            }
+
+            namespace Return {
+                lawless class CStar1[a: Type] {
+                    pub def star(): a = ???
+                }
+
+                lawless class CStarToStar1[a: Type -> Type] {
+                    pub def starToStar(): a[Int] = ???
+                }
+            }
+
+            namespace TypeConstraint {
+                lawless class CStar1[a: Type] {
+                    pub def star(x: a): Int with CStar[a] = ???
+                }
+
+                lawless class CStarToStar1[a: Type -> Type] {
+                    pub def starToStar[a: Type -> Type](x: a[Int]): Int with CStarToStar[a] = ???
+                }
+
+                lawless class CBoolToStar1[a: Bool -> Type] {
+                    pub def boolToStar(x: a[Pure]): Int & e with CBoolToStar[a] = ???
+                }
+            }
+
+            namespace Enum {
+                lawless class CStar1[a: Type] {
+                    pub def star(x: EStar[a]): Int = ???
+                }
+
+                lawless class CStarToStar1[a: Type -> Type] {
+                    pub def starToStar(x: EStarToStar[a]): Int = ???
+                }
+            }
+
+            namespace Exp {
+                lawless class CStar1[a: Type] {
+                    pub def star(x: a): Int = ???: a; ???
+                }
+            }
+        }
 
         namespace FormalParams {
             pub def star[a: Type](x: a): Int = ???

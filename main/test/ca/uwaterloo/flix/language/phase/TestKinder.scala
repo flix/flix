@@ -774,7 +774,7 @@ class TestKinder extends FunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[KindError.MismatchedKinds](result)
+    expectError[KindError.UnexpectedKind](result)
   }
 
   test("KindError.Class.Sig.01") {
@@ -785,7 +785,7 @@ class TestKinder extends FunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[KindError.MismatchedKinds](result)
+    expectError[KindError.UnexpectedKind](result)
   }
 
   test("KindError.Class.Sig.02") {
@@ -796,7 +796,7 @@ class TestKinder extends FunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[KindError.MismatchedKinds](result)
+    expectError[KindError.UnexpectedKind](result)
   }
 
   test("KindError.Class.TypeConstraint.01") {
