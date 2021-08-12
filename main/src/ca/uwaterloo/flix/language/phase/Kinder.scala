@@ -1164,32 +1164,5 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         case (acc, pair) => acc + pair
       }
     }
-
-    /**
-      * Helper function for [[refinedBy]]
-      */
-    private def refinedBy1(pair: (UnkindedType.Var, Kind)): Validation[KindEnv, KindError] = pair match {
-      case (tvar, kind) => KindEnv(map + (tvar -> kind)).toSuccess // MATT testing override
-      //      case (tvar, kind) => map.get(tvar) match {
-      //        case Some(kind0) =>
-      //          if (kind <:: kind0) {
-      //            KindEnv(map + (tvar -> kind)).toSuccess
-      //          } else {
-      //            KindError.MismatchedKinds(kind0, kind, tvar.loc).toFailure
-      //          }
-      //        case None => KindEnv(map + (tvar -> kind)).toSuccess
-      //      }
-    }
-
-    /**
-      * Merges the given kind environment into this kind environment,
-      * where if a type variable is present in both environments,
-      * the right environment's kind must be a subkind of the left environment's kind.
-      */
-    def refinedBy(other: KindEnv): Validation[KindEnv, KindError] = {
-      Validation.fold(other.map, this) {
-        case (acc, pair) => acc.refinedBy1(pair)
-      }
-    }
   }
 }
