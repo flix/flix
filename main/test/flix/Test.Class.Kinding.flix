@@ -184,6 +184,7 @@ namespace Test/Class/Kinding {
                 }
             }
         }
+    }
 
     @test
     def empty(): Bool = true
