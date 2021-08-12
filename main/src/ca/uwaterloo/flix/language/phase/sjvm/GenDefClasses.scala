@@ -44,7 +44,7 @@ object GenDefClasses {
   }
 
   private def genByteCode(defn: ErasedAst.Def, defName: JvmName, functionType: RArrow)(implicit root: Root, flix: Flix): Array[Byte] = {
-    val classMaker = ClassMaker.mkClass(defName, addSource = false, Some(functionType.functionInterfaceName))
+    val classMaker = ClassMaker.mkClass(defName, addSource = false, Some(functionType.jvmName))
     classMaker.mkSuperConstructor()
     classMaker.mkMethod(genInvokeFunction(defn, defn.exp, defName), GenContinuationInterfaces.invokeMethodName, functionType.result.nothingToContMethodDescriptor, Mod.isPublic)
     classMaker.closeClassMaker

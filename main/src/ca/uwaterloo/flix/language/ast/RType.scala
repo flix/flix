@@ -22,8 +22,6 @@ import ca.uwaterloo.flix.language.ast.RRefType.{RArray, RArrow, RObject}
 import ca.uwaterloo.flix.language.phase.sjvm.JvmName
 import org.objectweb.asm.{MethodVisitor, Opcodes}
 
-import java.nio.file.Path
-
 trait Describable {
   def toDescriptor: String
 }
@@ -241,13 +239,7 @@ object RRefType {
   }
 
   case class RArrow(args: List[RType[_ <: PType]], result: RType[_ <: PType]) extends RRefType[PFunction] {
-    override val jvmName: JvmName = new JvmName(Nil, "") {
-      override lazy val toBinaryName: String = ???
-      override lazy val toDescriptor: String = JvmName.getMethodDescriptor(args, result)
-      override lazy val toInternalName: String = ???
-      override lazy val toPath: Path = ???
-    } // TODO(JLS): does any general name here make sense? figure out something Def_???
-    lazy val functionInterfaceName: JvmName = JvmName(Nil, s"Fn${args.length}${JvmName.reservedDelimiter}${(args ::: result :: Nil).map(_.toErasedString).mkString(JvmName.reservedDelimiter)}")
+    override val jvmName: JvmName = JvmName(Nil, s"Fn${args.length}${JvmName.reservedDelimiter}${(args ::: result :: Nil).map(_.toErasedString).mkString(JvmName.reservedDelimiter)}")
   }
 
   object RRecordEmpty extends RRefType[PAnyObject] {

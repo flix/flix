@@ -99,33 +99,33 @@ object BytecodeCompiler {
       WithSource[R](loc) ~
         XLOAD(tpe, sym.getStackOffset + symOffsetOffset) // TODO(JLS): make this offset exist in F, dependent on static(0)/object function(1)
 
-    case Expression.Closure(sym, freeVars, _, loc) =>
+    case Expression.Closure(sym, freeVars, tpe, loc) =>
       WithSource[R](loc) ~
-        Instructions.CREATECLOSURE(freeVars, sym.cloName)
+        Instructions.CREATECLOSURE(freeVars, sym.cloName, squeezeFunction(squeezeReference(tpe)))
 
     case Expression.ApplyClo(exp, args, tpe, loc) =>
       WithSource[R](loc) ~
         compileExp(exp) ~
-        CALL(args, squeezeFunction(squeezeReference(exp.tpe)).functionInterfaceName, tpe)
+        CALL(args, squeezeFunction(squeezeReference(exp.tpe)), tpe)
 
-    case Expression.ApplyDef(sym, args, tpe, loc) =>
+    case Expression.ApplyDef(sym, args, fnTpe, tpe, loc) =>
       WithSource[R](loc) ~
         CREATEDEF(sym.defName) ~
-        CALL(args, sym.defName, tpe)
+        CALL(args, squeezeFunction(squeezeReference(fnTpe)), tpe)
 
     case Expression.ApplyCloTail(exp, args, _, loc) =>
       WithSource[R](loc) ~
         compileExp(exp) ~
-        TAILCALL(args, squeezeFunction(squeezeReference(exp.tpe)).functionInterfaceName, tagOf[T])
+        TAILCALL(args, squeezeFunction(squeezeReference(exp.tpe)), tagOf[T])
 
-    case Expression.ApplyDefTail(sym, args, tpe, loc) =>
+    case Expression.ApplyDefTail(sym, args, fnTpe, tpe, loc) =>
       WithSource[R](loc) ~
         CREATEDEF(sym.defName) ~
-        TAILCALL(args, sym.defName, tpe.tagOf)
+        TAILCALL(args, squeezeFunction(squeezeReference(fnTpe)), tpe.tagOf)
 
-    case Expression.ApplySelfTail(sym, _, actuals, _, loc) =>
+    case Expression.ApplySelfTail(sym, _, actuals, fnTpe, _, loc) =>
       WithSource[R](loc) ~
-        SELFTAILCALL(actuals, sym.defName, tagOf[T])
+        SELFTAILCALL(actuals, squeezeFunction(squeezeReference(fnTpe)), tagOf[T])
 
     case Expression.Unary(sop, op, exp, tpe, loc) => ???
     case Expression.Binary(sop, op, exp1, exp2, tpe, loc) => /*TODO(JLS): remove*/ println(sop.getClass.getCanonicalName, tpe); ???

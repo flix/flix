@@ -56,7 +56,9 @@ object GenNamespaces {
     classMaker.mkSuperConstructor()
     for ((sym, defn) <- ns.defs) {
       val arrow = squeezeFunction(squeezeReference(defn.tpe))
-      classMaker.mkMethod(compileShimMethod(sym.defName, arrow, arrow.result), sym.nsMethodName, defn.tpe.toDescriptor, ClassMaker.Mod.isPublic.isFinal.isStatic)
+      val functionDescriptor = JvmName.getMethodDescriptor(arrow.args, arrow.result)
+      println(sym.nsMethodName, functionDescriptor, ClassMaker.Mod.isPublic.isFinal.isStatic)
+      classMaker.mkMethod(compileShimMethod(sym.defName, arrow, arrow.result), sym.nsMethodName, functionDescriptor, ClassMaker.Mod.isPublic.isFinal.isStatic)
     }
     classMaker.closeClassMaker
   }
@@ -78,7 +80,7 @@ object GenNamespaces {
       }
       f.asInstanceOf[F[StackNil ** PReference[PFunction]]]
     } ~
-      unwind(resType.contName, resType) ~
+      unwind(functionType, resType) ~
       XRETURN(resType)
   }
 

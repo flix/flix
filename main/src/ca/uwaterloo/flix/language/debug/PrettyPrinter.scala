@@ -558,7 +558,7 @@ object PrettyPrinter {
           }
           vt.text(")")
 
-        case Expression.ApplyDef(sym, args, tpe, loc) =>
+        case Expression.ApplyDef(sym, args, fnTpe, tpe, loc) =>
           fmtSym(sym, vt)
           vt.text("(")
           for (arg <- args) {
@@ -577,7 +577,7 @@ object PrettyPrinter {
           }
           vt.text(")")
 
-        case Expression.ApplyDefTail(sym, args, tpe, loc) =>
+        case Expression.ApplyDefTail(sym, args, fnTpe, tpe, loc) =>
           fmtSym(sym, vt)
           vt.text("*(")
           for (arg <- args) {
@@ -586,7 +586,7 @@ object PrettyPrinter {
           }
           vt.text(")")
 
-        case Expression.ApplySelfTail(name, formals, args, tpe, loc) =>
+        case Expression.ApplySelfTail(name, formals, args, fnTpe, tpe, loc) =>
           vt.text("ApplySelfTail")
           vt.text("*(")
           for (arg <- args) {

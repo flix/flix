@@ -39,7 +39,7 @@ object GenFunctionInterfaces {
     tpe.foldLeft(Map.empty[JvmName, JvmClass]) {
       case (macc, RReference(functionType@RArrow(_, _))) =>
         val bytecode = genByteCode(functionType)
-        macc + (functionType.functionInterfaceName -> JvmClass(functionType.functionInterfaceName, bytecode))
+        macc + (functionType.jvmName -> JvmClass(functionType.jvmName, bytecode))
     }
   }
 
@@ -54,7 +54,7 @@ object GenFunctionInterfaces {
     val continuationSuperInterface = functionType.result.contName
     // `JvmType` of the java.util.functions.Function
     //        val javaFunctionSuperInterface = JvmType.Function
-    val classMaker = ClassMaker.mkAbstractClass(functionType.functionInterfaceName, addSource = false, Some(continuationSuperInterface))
+    val classMaker = ClassMaker.mkAbstractClass(functionType.jvmName, addSource = false, Some(continuationSuperInterface))
 
     val fieldMod = Mod.isAbstract.isPublic
     // Adding setters for each argument of the function

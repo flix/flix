@@ -145,7 +145,8 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
       for {
         args0 <- EM.traverse(args)(visitExp[PType])
         tpe0 <- visitTpe[T](tpe)
-        expRes = ErasedAst.Expression.ApplyDef(sym, args0, tpe0, loc)
+        fnType <- visitTpe[PReference[PFunction]](MonoType.Arrow(args.map(_.tpe), tpe))
+        expRes = ErasedAst.Expression.ApplyDef(sym, args0, fnType, tpe0, loc)
       } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.ApplyCloTail(exp, args, tpe, loc) =>
@@ -160,7 +161,8 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
       for {
         args0 <- EM.traverse(args)(visitExp[PType])
         tpe0 <- visitTpe[T](tpe)
-        expRes = ErasedAst.Expression.ApplyDefTail(sym, args0, tpe0, loc)
+        fnType <- visitTpe[PReference[PFunction]](MonoType.Arrow(args.map(_.tpe), tpe))
+        expRes = ErasedAst.Expression.ApplyDefTail(sym, args0, fnType, tpe0, loc)
       } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) =>
@@ -170,7 +172,8 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
         )
         actuals0 <- EM.traverse(actuals)(visitExp[PType])
         tpe0 <- visitTpe[T](tpe)
-        expRes = ErasedAst.Expression.ApplySelfTail(sym, formals0, actuals0, tpe0, loc)
+        fnType <- visitTpe[PReference[PFunction]](MonoType.Arrow(actuals.map(_.tpe), tpe))
+        expRes = ErasedAst.Expression.ApplySelfTail(sym, formals0, actuals0, fnType, tpe0, loc)
       } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.Unary(sop, op, exp, tpe, loc) =>
