@@ -57,7 +57,6 @@ object GenNamespaces {
     for ((sym, defn) <- ns.defs) {
       val arrow = squeezeFunction(squeezeReference(defn.tpe))
       val functionDescriptor = JvmName.getMethodDescriptor(arrow.args, arrow.result)
-      println(sym.nsMethodName, functionDescriptor, ClassMaker.Mod.isPublic.isFinal.isStatic)
       classMaker.mkMethod(compileShimMethod(sym.defName, arrow, arrow.result), sym.nsMethodName, functionDescriptor, ClassMaker.Mod.isPublic.isFinal.isStatic)
     }
     classMaker.closeClassMaker
