@@ -788,6 +788,17 @@ class TestKinder extends FunSuite with TestUtils {
     expectError[KindError.MismatchedKinds](result)
   }
 
+  test("KindError.Class.Sig.02") {
+    val input =
+      """
+        |class C[a] {
+        |  pub def f(x: {l:  Int | a}): Int = ???
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.MismatchedKinds](result)
+  }
+
   test("KindError.Class.TypeConstraint.01") {
     val input =
       """

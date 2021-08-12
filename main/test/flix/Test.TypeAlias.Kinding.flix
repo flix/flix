@@ -1,0 +1,49 @@
+// MATT move to better namespace
+class CStarToStar[a: Type -> Type]
+class CBoolToStar[a: Bool -> Type]
+class CRecordToStar[a: Record -> Type]
+class CSchemaToStar[a: Schema -> Type]
+class CStar[a: Type]
+class CBool[a: Bool]
+class CRecord[a: Record]
+class CSchema[a: Schema]
+enum EStarToStar[a: Type -> Type]
+enum EBoolToStar[a: Bool -> Type]
+enum ERecordToStar[a: Record -> Type]
+enum ESchemaToStar[a: Schema -> Type]
+enum EStar[a: Type]
+enum EBool[a: Bool]
+enum ERecord[a: Record]
+enum ESchema[a: Schema]
+rel R(i: Int)
+
+namespace Test/Enum/Kinding {
+    namespace Implicit {
+        type alias TStar[a] = a
+
+        type alias EStarStar[a, b] = (a, b)
+    }
+
+    namespace Explicit {
+        type alias TStar[a: Type] = a
+
+        type alias TStarStar[a: Type, b: Type] = (a, b)
+
+        type alias TBool[a: Bool] = Int -> Int & a
+
+        type alias TRecord[a: Record] = { l: Int | a }
+
+        type alias TSchema[a: Schema] = #{ R | a }
+
+        type alias TStarToStar[a: Type -> Type] = a[Int]
+
+        type alias TBoolToStar[a: Bool -> Type] = a[Pure]
+
+        type alias TRecordToStar[a: Record -> Type] = a[{}]
+
+        type alias TSchemaToStar[a: Schema -> Type] = a[#{}]
+    }
+
+    @test
+    def empty(): Bool = true
+}
