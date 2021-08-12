@@ -172,6 +172,11 @@ class LangSuite extends Suites(
   new FlixTest("Test.Exp.Infix", "main/test/flix/Test.Exp.Infix.flix"),
 
   //
+  // Instance.
+  //
+  new FlixTest("Test.Instance.Kinding", "main/test/flix/Test.Instance.Kinding.flix")(Options.TestWithLibNix.copy(xallowredundancies = true)), // MATT disallow redundancies
+
+  //
   // Int.
   //
   new FlixTest("Test.Exp.Int8", "main/test/flix/Test.Exp.Int8.flix"),
