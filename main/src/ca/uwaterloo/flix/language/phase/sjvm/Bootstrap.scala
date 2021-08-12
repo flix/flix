@@ -17,10 +17,9 @@
 
 package ca.uwaterloo.flix.language.phase.sjvm
 
-import java.lang.reflect.Method
-
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst.Root
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.lang.reflect.Method
@@ -33,7 +32,7 @@ object Bootstrap {
   /**
     * Loads all the generated classes into the JVM and decorates the AST.
     */
-  def bootstrap(classes: Map[JvmName, JvmClass])(implicit flix: Flix, root: Root): Unit = {
+  def bootstrap(classes: Map[JvmName, JvmClass], closureSyms: Set[Symbol.DefnSym])(implicit flix: Flix, root: Root): Unit = {
     //
     // Load each class into the JVM in a fresh class loader.
     //
@@ -58,7 +57,7 @@ object Bootstrap {
       //
       // Decorate each defn in the ast with its method object.
       //
-      for ((sym, defn) <- root.defs; if SjvmOps.nonLaw(defn)) {
+      for ((sym, defn) <- root.functions; if SjvmOps.nonLaw(defn) && !closureSyms.contains(sym)) {
         // Retrieve the namespace info of sym.
         val nsInfo = SjvmOps.getNamespace(sym)
 

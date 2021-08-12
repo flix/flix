@@ -55,7 +55,7 @@ object GenMainClass {
         case _ => throw InternalCompilerException(s"The type of main cannot be a primitive, ${defn.tpe}")
       }
 
-      // TODO(JLS): should get a namespace and a name. maybe its always Ns.m_main(args)
+      // TODO(JLS): should get a namespace and a name. maybe its always Ns.m_main(args). just call Ns.m_main(args)
       val bytecode = genByteCode(defn, mainType)
       Map(mainMethodClassName -> JvmClass(mainMethodClassName, bytecode))
   }
@@ -124,7 +124,7 @@ object GenMainClass {
     val sym = Symbol.Main
 
     // Check if the main function exists.
-    root.defs.get(sym) flatMap {
+    root.functions.get(sym) flatMap {
       case defn =>
         // The main function must take zero arguments.
         // TODO(JLS): is this always the correct main?

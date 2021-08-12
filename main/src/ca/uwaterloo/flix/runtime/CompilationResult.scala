@@ -44,7 +44,7 @@ class CompilationResult(root: Root, main: Option[Array[String] => Int], defs: Ma
    */
   def getBenchmarks: Map[Symbol.DefnSym, () => AnyRef] = {
     defs filter {
-      case (sym, _) => root.defs(sym).ann.isBenchmark
+      case (sym, _) => root.functions(sym).ann.isBenchmark
     }
   }
 
@@ -53,7 +53,7 @@ class CompilationResult(root: Root, main: Option[Array[String] => Int], defs: Ma
    */
   def getTests: Map[Symbol.DefnSym, () => AnyRef] = {
     defs filter {
-      case (sym, _) => root.defs(sym).ann.isTest
+      case (sym, _) => root.functions(sym).ann.isTest
     }
   }
 

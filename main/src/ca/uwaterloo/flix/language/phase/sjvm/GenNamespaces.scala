@@ -56,7 +56,7 @@ object GenNamespaces {
     classMaker.mkSuperConstructor()
     for ((sym, defn) <- ns.defs) {
       val arrow = squeezeFunction(squeezeReference(defn.tpe))
-      classMaker.mkMethod(compileShimMethod(sym, arrow, arrow.result), sym.nsMethodName, defn.tpe.toDescriptor, ClassMaker.Mod.isPublic.isFinal.isStatic)
+      classMaker.mkMethod(compileShimMethod(sym.defName, arrow, arrow.result), sym.nsMethodName, defn.tpe.toDescriptor, ClassMaker.Mod.isPublic.isFinal.isStatic)
     }
     classMaker.closeClassMaker
   }
@@ -64,17 +64,17 @@ object GenNamespaces {
   /**
    * Adding a shim for the function `defn` on namespace `ns`
    */
-  private def compileShimMethod[T <: PType](sym: Symbol.DefnSym, functionType: RArrow, resType: RType[T])(implicit root: Root, flix: Flix): F[StackNil] => F[StackEnd] = {
+  private def compileShimMethod[T <: PType](defName: JvmName, functionType: RArrow, resType: RType[T])(implicit root: Root, flix: Flix): F[StackNil] => F[StackEnd] = {
     //TODO(JLS): largely the same as CALL/TAILCALL except compiling arguments versus the loading of arguments here
     START[StackNil] ~
-      makeAndInitDef(sym.defName) ~ { f: F[StackNil ** PReference[PFunction]] =>
+      makeAndInitDef(defName) ~ { f: F[StackNil ** PReference[PFunction]] =>
       var nextIndex = 0
       for ((argType, argIndex) <- functionType.args.zipWithIndex) {
         f.visitor.visitInsn(Opcodes.DUP)
         XLOAD(functionType.args(argIndex), nextIndex)(f)
         val inc = if (argType.isCat1) 1 else 2
         nextIndex += inc
-        f.visitor.visitFieldInsn(Opcodes.PUTFIELD, sym.defName.toInternalName, GenFunctionInterfaces.argFieldName(argIndex), functionType.args(argIndex).erasedDescriptor)
+        f.visitor.visitFieldInsn(Opcodes.PUTFIELD, defName.toInternalName, GenFunctionInterfaces.argFieldName(argIndex), functionType.args(argIndex).erasedDescriptor)
       }
       f.asInstanceOf[F[StackNil ** PReference[PFunction]]]
     } ~

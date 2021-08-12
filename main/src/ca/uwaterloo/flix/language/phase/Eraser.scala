@@ -39,20 +39,21 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
       case ((k, v), mapp) =>
         visitDef(v) map (defn => mapp + (k -> defn))
     }
+
+    val closureSyms = defns.closures.map(_.sym)
+
     // TODO(JLS): should maybe be integrated to the other fold
     val defnsResult = defns.copyWith(namespaces = defns.value.groupBy(_._1.namespace).map {
-      case (ns, defs) =>
-        // Collect all non-law definitions.
-        val nonLaws = defs filter {
-          case (_, defn) => SjvmOps.nonLaw(defn)
-        }
-        NamespaceInfo(ns, nonLaws)
-    }.toSet)
+          case (ns, defs) =>
+            // Collect all non-law definitions.
+            val nonLaws = defs filter {
+              case (sym, defn) => SjvmOps.nonLaw(defn) && !closureSyms.contains(sym)
+            }
+            NamespaceInfo(ns, nonLaws)
+        }.toSet)
 
-    val reachable = root.reachable
-
-    // TODO(JLS): fix the problem of defclass generation of closures
-    val result = ErasedAst.Root(defnsResult.value, reachable, root.sources, defnsResult.fTypes, defnsResult.closures, defnsResult.namespaces)
+    // TODO(JLS): the function list should be split into closures and functions (and maybe include nonLaw checking)
+    val result = ErasedAst.Root(defnsResult.value, root.reachable, root.sources, defnsResult.fTypes, defnsResult.closures, defnsResult.namespaces)
     result.toSuccess
   }
 
@@ -595,9 +596,7 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
         case (args0, result0) =>
           val tpeRes = RReference(RArrow(args0, result0))
           val result = tpeRes.asInstanceOf[RType[T]]
-          result.toMonad.copyWith(
-            fTypes = Set(result.asInstanceOf[RType[PReference[PFunction]]])
-          )
+          result.toMonad.copyWith(fTypes = Set(result.asInstanceOf[RType[PReference[PFunction]]]))
       }
     case MonoType.RecordEmpty() =>
       RReference(RRecordEmpty).asInstanceOf[RType[T]].toMonad

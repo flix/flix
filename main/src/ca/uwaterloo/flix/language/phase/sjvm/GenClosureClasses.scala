@@ -42,7 +42,7 @@ object GenClosureClasses {
       case (macc, closure) =>
         val cloSym = closure.sym
         val cloName = cloSym.cloName
-        val bytecode = genByteCode(root.defs(cloSym), cloName, closure.freeVars, squeezeFunction(squeezeReference(closure.tpe)))
+        val bytecode = genByteCode(root.functions(cloSym), cloName, closure.freeVars, squeezeFunction(squeezeReference(closure.tpe)))
         macc + (cloName -> JvmClass(cloName, bytecode))
     }, _ ++ _)
 

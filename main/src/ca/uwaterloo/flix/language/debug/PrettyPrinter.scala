@@ -490,7 +490,7 @@ object PrettyPrinter {
 
     def fmtRoot(root: Root): VirtualTerminal = {
       val vt = new VirtualTerminal()
-      for ((sym, defn) <- root.defs.toList.sortBy(_._1.loc)) {
+      for ((sym, defn) <- root.functions.toList.sortBy(_._1.loc)) {
         vt << Bold("def") << " " << Blue(sym.toString) << "("
         for (fparam <- defn.formals) {
           fmtParam(fparam, vt)

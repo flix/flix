@@ -45,7 +45,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
 
     implicit val r: Root = root
 
-    val allClasses: Map[JvmName, JvmClass] = flix.subphase("CodeGen") {
+    val (allClasses: Map[JvmName, JvmClass], closureSyms: Set[Symbol.DefnSym]) = flix.subphase("CodeGen") {
 
       if (flix.options.debug) {
         println(PrettyPrinter.Erased.fmtRoot(root).fmt(TerminalContext.AnsiTerminal))
@@ -54,7 +54,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
       if (flix.options.debug) {
         val vt = new VirtualTerminal()
         vt << "All seen expressions (a-z):" << VirtualString.Indent << VirtualString.NewLine
-        val expressionStrings = root.defs.foldLeft(Set[String]()) { case (set, (_, defn)) => set union collectExpressions(defn.exp) }
+        val expressionStrings = root.functions.foldLeft(Set[String]()) { case (set, (_, defn)) => set union collectExpressions(defn.exp) }
         expressionStrings.toList.sorted.zipWithIndex.foreach { case (str, index) =>
           vt << str
           if (index != expressionStrings.size - 1)
@@ -63,6 +63,10 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
         vt << VirtualString.Dedent
         println(vt.fmt(TerminalContext.AnsiTerminal))
       }
+
+      val closureSyms: Set[Symbol.DefnSym] = root.closures.map(ci => ci.sym)
+
+      val nonClosureFunctions: Set[Symbol.DefnSym] = root.functions.keySet.diff(closureSyms)
 
       val functionInterfaces = GenFunctionInterfaces.gen(root.functionTypes)
       val continuationInterfaces = GenContinuationInterfaces.gen()
@@ -73,13 +77,13 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
 
       val refClasses = GenRefClasses.gen()
 
-      val defClasses = GenDefClasses.gen(root.defs)
+      val defClasses = GenDefClasses.gen(root.functions, nonClosureFunctions)
 
       val closureClasses = GenClosureClasses.gen(root.closures)
 
       // val lazyClasses = GenLazyClasses.gen()
 
-      List(
+      val classMap = List(
         mainClass,
         refClasses,
         namespaceClasses,
@@ -89,6 +93,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
         closureClasses
         // lazyClasses
       ).reduce(_ ++ _)
+      (classMap, closureSyms)
     }
 
     //
@@ -114,7 +119,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
       //
       // Loads all the generated classes into the JVM and decorates the AST.
       //
-      Bootstrap.bootstrap(allClasses)
+      Bootstrap.bootstrap(allClasses, closureSyms)
 
       //
       // Return the compilation result.
@@ -221,7 +226,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
    * Optionally returns a reference to main.
    */
   private def getCompiledMain(root: Root)(implicit flix: Flix): Option[Array[String] => Int] = {
-    root.defs.get(Symbol.Main) map { defn =>
+    root.functions.get(Symbol.Main) map { defn =>
       (actualArgs: Array[String]) => {
         val args: Array[AnyRef] = Array(actualArgs)
         val result = link(defn.sym, root).apply(args).getValue
@@ -234,7 +239,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
    * Returns a map from definition symbols to executable functions (backed by JVM backend).
    */
   private def getCompiledDefs(root: Root)(implicit flix: Flix): Map[Symbol.DefnSym, () => ProxyObject] = {
-    root.defs.foldLeft(Map.empty[Symbol.DefnSym, () => ProxyObject]) {
+    root.functions.foldLeft(Map.empty[Symbol.DefnSym, () => ProxyObject]) {
       case (macc, (sym, defn)) =>
         val args: Array[AnyRef] = Array(null)
         macc + (sym -> (() => link(sym, root).apply(args)))
@@ -249,7 +254,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
       ///
       /// Retrieve the definition and its type.
       ///
-      val defn = root.defs(sym)
+      val defn = root.functions(sym)
 
       ///
       /// Construct the arguments array.

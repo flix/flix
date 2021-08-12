@@ -32,11 +32,11 @@ import org.objectweb.asm.Opcodes
 
 object GenDefClasses {
 
-  def gen(defs: Map[Symbol.DefnSym, ErasedAst.Def])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+  def gen(defs: Map[Symbol.DefnSym, ErasedAst.Def], nonClosureFunctions: Set[Symbol.DefnSym])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     // TODO(JLS): check parops for all gens
     ParOps.parAgg(defs, Map[JvmName, JvmClass]())({
       case (macc, (sym, defn)) =>
-        if (SjvmOps.nonLaw(defn)) {
+        if (SjvmOps.nonLaw(defn) && nonClosureFunctions.contains(sym)) {
           val functionType = squeezeFunction(squeezeReference(defn.tpe))
           macc + (sym.defName -> JvmClass(sym.defName, genByteCode(defn, sym.defName, functionType)))
         } else macc
