@@ -1,27 +1,10 @@
-// MATT move to better namespace
-class CStarToStar[a: Type -> Type]
-class CBoolToStar[a: Bool -> Type]
-class CRecordToStar[a: Record -> Type]
-class CSchemaToStar[a: Schema -> Type]
-class CStar[a: Type]
-class CBool[a: Bool]
-class CRecord[a: Record]
-class CSchema[a: Schema]
-enum EStarToStar[a: Type -> Type]
-enum EBoolToStar[a: Bool -> Type]
-enum ERecordToStar[a: Record -> Type]
-enum ESchemaToStar[a: Schema -> Type]
-enum EStar[a: Type]
-enum EBool[a: Bool]
-enum ERecord[a: Record]
-enum ESchema[a: Schema]
-rel R(i: Int)
-
 namespace Test/Class/Kinding {
 
     namespace Implicit {
 
         namespace TypeConstraint {
+            class CStar[a: Type]
+
             class CStar1[a] with CStar[a]
         }
 
@@ -39,12 +22,16 @@ namespace Test/Class/Kinding {
             }
 
             namespace TypeConstraint {
+                class CStar[a: Type]
+
                 lawless class CStar1[a] {
                     pub def star(x: a): Int with CStar[a] = ???
                 }
             }
 
             namespace Enum {
+                enum EStar[a: Type]
+
                 lawless class CStar1[a] {
                     pub def star(x: EStar[a]): Int = ???
                 }
@@ -65,19 +52,23 @@ namespace Test/Class/Kinding {
             }
 
             namespace TypeConstraint {
-                 class CStar1[a] {
+                class CStar[a: Type]
+
+                class CStar1[a] {
                     law star: forall(x: a) with CStar[a] . ???
                 }
             }
 
             namespace Enum {
-                 class CStar1[a] {
+                enum EStar[a: Type]
+
+                class CStar1[a] {
                     law star: forall(x: EStar[a]) . ???
                 }
             }
 
             namespace Exp {
-                 class CStar1[a] {
+                class CStar1[a] {
                     law star: forall(x: a) . { ???: a; ??? }
                 }
             }
@@ -86,6 +77,9 @@ namespace Test/Class/Kinding {
 
     namespace Explicit {
         namespace TypeConstraint {
+            class CStar[a: Type]
+            class CStarToStar[a: Type -> Type]
+
             class CStar1[a: Type] with CStar[a]
 
             class CStarToStar1[a: Type -> Type] with CStarToStar[a]
@@ -113,6 +107,10 @@ namespace Test/Class/Kinding {
             }
 
             namespace TypeConstraint {
+                class CStar[a: Type]
+                class CStarToStar[a: Type -> Type]
+                class CBoolToStar[a: Bool -> Type]
+
                 lawless class CStar1[a: Type] {
                     pub def star(x: a): Int with CStar[a] = ???
                 }
@@ -127,6 +125,9 @@ namespace Test/Class/Kinding {
             }
 
             namespace Enum {
+                enum EStar[a: Type]
+                enum EStarToStar[a: Type -> Type]
+
                 lawless class CStar1[a: Type] {
                     pub def star(x: EStar[a]): Int = ???
                 }
@@ -155,6 +156,10 @@ namespace Test/Class/Kinding {
             }
 
             namespace TypeConstraint {
+                class CStar[a: Type]
+                class CStarToStar[a: Type -> Type]
+                class CBoolToStar[a: Bool -> Type]
+
                 class CStar1[a: Type] {
                     law star: forall(x: a) with CStar[a] . ???
                 }
@@ -169,6 +174,9 @@ namespace Test/Class/Kinding {
             }
 
             namespace Enum {
+                enum EStar[a: Type]
+                enum EStarToStar[a: Type -> Type]
+
                 class CStar1[a: Type] {
                     law star: forall(x: EStar[a]) . ???
                 }
