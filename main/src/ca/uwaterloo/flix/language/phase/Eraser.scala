@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.util.Validation._
 
 object Eraser extends Phase[FinalAst.Root, FinalAst.Root] {
 
-  def run(root: FinalAst.Root)(implicit flix: Flix): Validation[FinalAst.Root, CompilationError] = flix.phase("Eraser") {
+  def run(root: FinalAst.Root)(implicit flix: Flix): Validation[FinalAst.Root, CompilationError] = flix.phase(this) {
     val defns = root.defs.map { case (k, v) => k -> visitDef(v) }
     val enums = root.enums.map {
       case (k, FinalAst.Enum(mod, sym, cases0, _, loc)) =>

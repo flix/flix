@@ -48,7 +48,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Emits a JSON file with information about the definitions of the program.
     */
-  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("Documentor") {
+  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase(this) {
     // Check whether to generate documentation.
     if (flix.options.documentor) {
       // Collect all public definitions and group them by namespace.

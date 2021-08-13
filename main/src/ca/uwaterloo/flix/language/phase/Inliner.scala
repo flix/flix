@@ -30,7 +30,7 @@ object Inliner extends Phase[Root, Root] {
   /**
     * Performs inlining on the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Inliner") {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase(this) {
     // TODO: Implement inliner.
     return root.toSuccess
   }

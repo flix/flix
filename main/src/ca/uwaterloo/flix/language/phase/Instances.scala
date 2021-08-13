@@ -30,7 +30,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Validates instances and classes in the given AST root.
     */
-  override def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("Instances") {
+  override def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase(this) {
     Validation.sequenceX(List(
       visitInstances(root),
       visitClasses(root)

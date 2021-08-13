@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.language.ast.Ast.Input
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.debug.AstConditions
 import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
 import ca.uwaterloo.flix.language.{CompilationError, GenSym}
@@ -233,6 +234,9 @@ class Flix {
     */
   val genSym = new GenSym()
 
+  // MATT docs
+  val visitedPhases: ListBuffer[Phase[_, _]] = ListBuffer.empty
+
   /**
     * Adds the given string `s` to the list of strings to be parsed.
     */
@@ -387,9 +391,9 @@ class Flix {
   /**
     * Enters the phase with the given name.
     */
-  def phase[A](phase: String)(f: => A): A = {
+  def phase[A](phase: Phase[_, _])(f: => A): A = {
     // Initialize the phase time object.
-    currentPhase = PhaseTime(phase, 0, Nil)
+    currentPhase = PhaseTime(phase.getClass.getSimpleName, 0, Nil)
 
     // Measure the execution time.
     val t = System.nanoTime()
@@ -421,6 +425,13 @@ class Flix {
         Console.println(emojiPart + phasePart + timePart)
       }
     }
+
+    // MATT hacky stuff
+    // MATT super slow so I won't make the test runner handle it for now
+//    r match {
+//      case Validation.Success(root: Product) => AstConditions.checkAstAfterPhases(root, visitedPhases.toList)
+//      case _ => ()
+//    }
 
     // Return the result computed by the phase.
     r

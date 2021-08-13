@@ -27,7 +27,7 @@ import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
   */
 object Terminator extends Phase[Root, Root] {
 
-  override def run(root: Root)(implicit flix: Flix): Validation[Root, TerminationError] = flix.phase("Terminator") {
+  override def run(root: Root)(implicit flix: Flix): Validation[Root, TerminationError] = flix.phase(this) {
     val defVal = Validation.traverseX(root.defs.values)(checkDef)
 
     defVal map {

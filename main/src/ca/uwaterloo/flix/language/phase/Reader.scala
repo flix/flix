@@ -34,7 +34,7 @@ object Reader extends Phase[List[Input], List[Source]] {
   /**
     * Reads the given source inputs into memory.
     */
-  def run(input: List[Input])(implicit flix: Flix): Validation[List[Source], CompilationError] = flix.phase("Reader") {
+  def run(input: List[Input])(implicit flix: Flix): Validation[List[Source], CompilationError] = flix.phase(this) {
     // Compute the sources.
     val sources = input flatMap {
 

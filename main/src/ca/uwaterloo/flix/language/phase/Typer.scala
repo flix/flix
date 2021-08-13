@@ -61,7 +61,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
   /**
     * Type checks the given AST root.
     */
-  def run(root: KindedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("Typer") {
+  def run(root: KindedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase(this) {
     val classEnv = mkClassEnv(root.classes, root.instances)
 
     val classesVal = visitClasses(root, classEnv)

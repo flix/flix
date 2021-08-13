@@ -128,7 +128,7 @@ object Lowering extends Phase[Root, Root] {
   /**
     * Translates internal Datalog constraints into Flix Datalog constraints.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Lowering") {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase(this) {
     val defs = ParOps.parMap(root.defs.values, (d: Def) => visitDef(d)(root, flix))
     val sigs = ParOps.parMap(root.sigs.values, (s: Sig) => visitSig(s)(root, flix))
     val instances = ParOps.parMap(root.instances.values, (insts: List[Instance]) => insts.map(i => visitInstance(i)(root, flix)))

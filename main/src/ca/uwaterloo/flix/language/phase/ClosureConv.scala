@@ -30,7 +30,7 @@ object ClosureConv extends Phase[Root, Root] {
   /**
     * Performs closure conversion on the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("ClosureConv") {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase(this) {
 
     // Definitions.
     val definitions = root.defs.map {

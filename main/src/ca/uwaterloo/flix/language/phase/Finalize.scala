@@ -28,7 +28,7 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
 
   private type TopLevel = mutable.Map[Symbol.DefnSym, FinalAst.Def]
 
-  def run(root: LiftedAst.Root)(implicit flix: Flix): Validation[FinalAst.Root, CompilationError] = flix.phase("Finalize") {
+  def run(root: LiftedAst.Root)(implicit flix: Flix): Validation[FinalAst.Root, CompilationError] = flix.phase(this) {
 
     val m: TopLevel = mutable.Map.empty
 

@@ -31,7 +31,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
   type TopLevel = mutable.Map[Symbol.DefnSym, SimplifiedAst.Def]
 
-  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = flix.phase("Simplifier") {
+  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = flix.phase(this) {
     //
     // A mutable map to contain fresh top-level definitions.
     //
