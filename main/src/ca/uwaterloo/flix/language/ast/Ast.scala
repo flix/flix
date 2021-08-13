@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.language.phase.Phase
+
 import java.nio.file.Path
 import java.util.Objects
 
@@ -428,10 +430,14 @@ object Ast {
   case class HoleContext(sym: Symbol.HoleSym, tpe: Type, env: Map[Symbol.VarSym, Type])
 
   /**
-    * Represents that the annotated element is introduced by the class `clazz`.
+    * Represents that the annotated element is introduced by the phase `P`.
     */
-  case class IntroducedBy(clazz: java.lang.Class[_]) extends scala.annotation.StaticAnnotation
+  case class IntroducedBy[P <: Phase[_, _]]() extends scala.annotation.StaticAnnotation
 
+  /**
+    * Represents that the annotated element is eliminated by the phase `P`.
+    */
+  case class EliminatedBy[P <: Phase[_, _]]() extends scala.annotation.StaticAnnotation
 
   /**
     * Represents that the type `arg` must belong to class `sym`.

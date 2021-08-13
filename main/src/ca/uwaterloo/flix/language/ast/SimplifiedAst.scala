@@ -98,16 +98,16 @@ object SimplifiedAst {
 
     case class Apply(exp: SimplifiedAst.Expression, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    @IntroducedBy(ClosureConv.getClass)
+    @IntroducedBy[ClosureConv.type]
     case class LambdaClosure(fparams: List[SimplifiedAst.FormalParam], freeVars: List[FreeVar], exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    @IntroducedBy(LambdaLift.getClass)
+    @IntroducedBy[LambdaLift.type]
     case class Closure(sym: Symbol.DefnSym, freeVars: List[FreeVar], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    @IntroducedBy(ClosureConv.getClass)
+    @IntroducedBy[ClosureConv.type]
     case class ApplyClo(exp: SimplifiedAst.Expression, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    @IntroducedBy(ClosureConv.getClass)
+    @IntroducedBy[ClosureConv.type]
     case class ApplyDef(sym: Symbol.DefnSym, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class Unary(sop: SemanticOperator, op: UnaryOperator, exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
