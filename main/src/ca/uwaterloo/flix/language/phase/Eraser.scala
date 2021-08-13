@@ -26,7 +26,7 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase.EraserMonad.ToMonad
 import ca.uwaterloo.flix.language.phase.sjvm.{ClosureInfo, NamespaceInfo, SjvmOps}
 import ca.uwaterloo.flix.language.phase.{EraserMonad => EM}
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
 object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
@@ -177,19 +177,47 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
       } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.Unary(sop, op, exp, tpe, loc) =>
-      sop match {
-        case SemanticOperator.BoolOp.Not => for {
-          exp0 <- visitExp[PInt32](exp)
-          tpe0 <- visitTpe[PInt32](tpe)
-          expRes = ErasedAst.Expression.BoolNot(exp0, tpe0, loc)
-        } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
-        case _ => for {
-          exp0 <- visitExp[PType](exp)
-          tpe0 <- visitTpe[T](tpe)
-          expRes = ErasedAst.Expression.Unary(sop, op, exp0, tpe0, loc)
-        } yield expRes
-      }
+      def compileUnary
+      [ExpType <: PType, TpeType <: PType]
+      (combinator: (ErasedAst.Expression[ExpType], RType[TpeType]) => ErasedAst.Expression[_ <: PType]):
+      EraserMonad[ErasedAst.Expression[T]] = for {
+        exp0 <- visitExp[ExpType](exp)
+        tpe0 <- visitTpe[TpeType](tpe)
+      } yield combinator(exp0, tpe0).asInstanceOf[ErasedAst.Expression[T]]
 
+      sop match {
+        case SemanticOperator.BoolOp.Not =>
+          compileUnary[PInt32, PInt32]{ (exp0, tpe0) => ErasedAst.Expression.BoolNot(exp0, tpe0, loc)}
+        case SemanticOperator.Float32Op.Neg =>
+          compileUnary[PFloat32, PFloat32]{ (exp0, tpe0) => ErasedAst.Expression.Float32Neg(exp0, tpe0, loc)}
+        case SemanticOperator.Float64Op.Neg =>
+          compileUnary[PFloat64, PFloat64]{ (exp0, tpe0) => ErasedAst.Expression.Float64Neg(exp0, tpe0, loc)}
+        case SemanticOperator.Int8Op.Neg =>
+          compileUnary[PInt8, PInt8]{ (exp0, tpe0) => ErasedAst.Expression.Int8Neg(exp0, tpe0, loc)}
+        case SemanticOperator.Int16Op.Neg =>
+          compileUnary[PInt16, PInt16]{ (exp0, tpe0) => ErasedAst.Expression.Int16Neg(exp0, tpe0, loc)}
+        case SemanticOperator.Int32Op.Neg =>
+          compileUnary[PInt32, PInt32]{ (exp0, tpe0) => ErasedAst.Expression.Int32Neg(exp0, tpe0, loc)}
+        case SemanticOperator.Int64Op.Neg =>
+          compileUnary[PInt64, PInt64]{ (exp0, tpe0) => ErasedAst.Expression.Int64Neg(exp0, tpe0, loc)}
+        case SemanticOperator.BigIntOp.Neg =>
+          compileUnary[PReference[PBigInt], PReference[PBigInt]]{ (exp0, tpe0) => ErasedAst.Expression.BigIntNeg(exp0, tpe0, loc)}
+        case SemanticOperator.Int8Op.Not =>
+          compileUnary[PInt8, PInt8]{ (exp0, tpe0) => ErasedAst.Expression.Int8Not(exp0, tpe0, loc)}
+        case SemanticOperator.Int16Op.Not =>
+          compileUnary[PInt16, PInt16]{ (exp0, tpe0) => ErasedAst.Expression.Int16Not(exp0, tpe0, loc)}
+        case SemanticOperator.Int32Op.Not =>
+          compileUnary[PInt32, PInt32]{ (exp0, tpe0) => ErasedAst.Expression.Int32Not(exp0, tpe0, loc)}
+        case SemanticOperator.Int64Op.Not =>
+          compileUnary[PInt64, PInt64]{ (exp0, tpe0) => ErasedAst.Expression.Int64Not(exp0, tpe0, loc)}
+        case SemanticOperator.BigIntOp.Not =>
+          compileUnary[PReference[PBigInt], PReference[PBigInt]]{ (exp0, tpe0) => ErasedAst.Expression.BigIntNot(exp0, tpe0, loc)}
+        case SemanticOperator.ObjectOp.EqNull =>
+          compileUnary[PReference[PRefType], PInt32]{ (exp0, tpe0) => ErasedAst.Expression.ObjEqNull(exp0, tpe0, loc)}
+        case SemanticOperator.ObjectOp.NeqNull =>
+          compileUnary[PReference[PRefType], PInt32]{ (exp0, tpe0) => ErasedAst.Expression.ObjNeqNull(exp0, tpe0, loc)}
+        case _ => throw InternalCompilerException(s"Unary expression not Implemented ${sop.getClass.getCanonicalName}")
+      }
 
     case FinalAst.Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
       sop match {

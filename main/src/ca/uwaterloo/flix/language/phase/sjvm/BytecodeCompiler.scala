@@ -127,11 +127,25 @@ object BytecodeCompiler {
       WithSource[R](loc) ~
         SELFTAILCALL(actuals, squeezeFunction(squeezeReference(fnTpe)), tagOf[T])
 
-    case Expression.Unary(sop, op, exp, tpe, loc) => /*TODO(JLS): remove*/ println("unary", sop.getClass.getCanonicalName, tpe); ???
     case Expression.BoolNot(exp, tpe, loc) =>
       WithSource[R](loc) ~
         compileExp(exp) ~
         IFNE(START[R] ~ pushBool(false))(START[R] ~ pushBool(true))
+
+    case Expression.Float32Neg(exp, tpe, loc) => ???
+    case Expression.Float64Neg(exp, tpe, loc) => ???
+    case Expression.Int8Neg(exp, tpe, loc) => ???
+    case Expression.Int8Not(exp, tpe, loc) => ???
+    case Expression.Int16Neg(exp, tpe, loc) => ???
+    case Expression.Int16Not(exp, tpe, loc) => ???
+    case Expression.Int32Neg(exp, tpe, loc) => ???
+    case Expression.Int32Not(exp, tpe, loc) => ???
+    case Expression.Int64Neg(exp, tpe, loc) => ???
+    case Expression.Int64Not(exp, tpe, loc) => ???
+    case Expression.BigIntNeg(exp, tpe, loc) => ???
+    case Expression.BigIntNot(exp, tpe, loc) => ???
+    case Expression.ObjEqNull(exp, tpe, loc) => ???
+    case Expression.ObjNeqNull(exp, tpe, loc) => ???
 
     case Expression.Binary(sop, op, exp1, exp2, tpe, loc) => /*TODO(JLS): remove*/ println("binary", sop.getClass.getCanonicalName, tpe); ???
     case Expression.Int16Eq(exp1, exp2, tpe, loc) =>

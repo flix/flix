@@ -510,6 +510,7 @@ object PrettyPrinter {
 
     def fmtExp[T <: PType](exp0: Expression[T], vt: VirtualTerminal): Unit = {
       def visitExp[T0 <: PType](exp: Expression[T0]): Unit = fmtExp(exp, vt)
+
       exp0 match {
         case Expression.Unit(_) => vt.text("Unit")
 
@@ -595,13 +596,67 @@ object PrettyPrinter {
           }
           vt.text(")")
 
-        case Expression.Unary(sop, op, exp, tpe, loc) =>
-          fmtUnaryOp(op, vt)
-          visitExp(exp)
-
         case Expression.BoolNot(exp, _, _) =>
           fmtUnaryOp(UnaryOperator.LogicalNot, vt)
           visitExp(exp)
+
+        case Expression.Float32Neg(exp, _, _) =>
+          fmtUnaryOp(UnaryOperator.Minus, vt)
+          visitExp(exp)
+
+        case Expression.Float64Neg(exp, _, _) =>
+          fmtUnaryOp(UnaryOperator.Minus, vt)
+          visitExp(exp)
+
+        case Expression.Int8Neg(exp, _, _) =>
+          fmtUnaryOp(UnaryOperator.Minus, vt)
+          visitExp(exp)
+
+        case Expression.Int8Not(exp, _, _) =>
+          fmtUnaryOp(UnaryOperator.BitwiseNegate, vt)
+          visitExp(exp)
+
+        case Expression.Int16Neg(exp, _, _) =>
+          fmtUnaryOp(UnaryOperator.Minus, vt)
+          visitExp(exp)
+
+        case Expression.Int16Not(exp, _, _) =>
+          fmtUnaryOp(UnaryOperator.BitwiseNegate, vt)
+          visitExp(exp)
+
+        case Expression.Int32Neg(exp, _, _) =>
+          fmtUnaryOp(UnaryOperator.Minus, vt)
+          visitExp(exp)
+
+        case Expression.Int32Not(exp, _, _) =>
+          fmtUnaryOp(UnaryOperator.BitwiseNegate, vt)
+          visitExp(exp)
+
+        case Expression.Int64Neg(exp, _, _) =>
+          fmtUnaryOp(UnaryOperator.Minus, vt)
+          visitExp(exp)
+
+        case Expression.Int64Not(exp, _, _) =>
+          fmtUnaryOp(UnaryOperator.BitwiseNegate, vt)
+          visitExp(exp)
+
+        case Expression.BigIntNeg(exp, _, _) =>
+          fmtUnaryOp(UnaryOperator.Minus, vt)
+          visitExp(exp)
+
+        case Expression.BigIntNot(exp, _, _) =>
+          fmtUnaryOp(UnaryOperator.BitwiseNegate, vt)
+          visitExp(exp)
+
+        case Expression.ObjEqNull(exp, _, _) =>
+          vt.text("isNull?(")
+          visitExp(exp)
+          vt.text(")")
+
+        case Expression.ObjNeqNull(exp, _, _) =>
+          vt.text("isNotNull?(")
+          visitExp(exp)
+          vt.text(")")
 
         case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
           visitExp(exp1)
