@@ -1205,7 +1205,6 @@ object PrettyPrinter {
         case ArithmeticOp.Mul => vt.text("*")
         case ArithmeticOp.Div => vt.text("/")
         case ArithmeticOp.Rem => vt.text("%")
-        case ArithmeticOp.Exp => vt.text("**")
       }
       case operator: ComparisonOp => operator match {
         case ComparisonOp.Lt => vt.text("<")

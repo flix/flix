@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase.sjvm
 
-import ca.uwaterloo.flix.language.ast.ErasedAst.Expression
+import ca.uwaterloo.flix.language.ast.ErasedAst.{ArithmeticOp, BitwiseOp, Expression}
 import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.PType._
 import ca.uwaterloo.flix.language.ast.RRefType._
@@ -123,26 +123,70 @@ object BytecodeCompiler {
         CREATEDEF(sym.defName) ~
         TAILCALL(args, squeezeFunction(squeezeReference(fnTpe)), tpe.tagOf)
 
-    case Expression.ApplySelfTail(sym, _, actuals, fnTpe, _, loc) =>
+    case Expression.ApplySelfTail(_, _, actuals, fnTpe, _, loc) =>
       WithSource[R](loc) ~
         SELFTAILCALL(actuals, squeezeFunction(squeezeReference(fnTpe)), tagOf[T])
 
-    case Expression.BoolNot(exp, tpe, loc) =>
+    case Expression.BoolNot(exp, _, loc) =>
       WithSource[R](loc) ~
         compileExp(exp) ~
         IFNE(START[R] ~ pushBool(false))(START[R] ~ pushBool(true))
 
     // Unary expressions
-    case Expression.Float32Neg(exp, tpe, loc) => ???
-    case Expression.Float64Neg(exp, tpe, loc) => ???
-    case Expression.Int8Neg(exp, tpe, loc) => ???
-    case Expression.Int8Not(exp, tpe, loc) => ???
-    case Expression.Int16Neg(exp, tpe, loc) => ???
-    case Expression.Int16Not(exp, tpe, loc) => ???
-    case Expression.Int32Neg(exp, tpe, loc) => ???
-    case Expression.Int32Not(exp, tpe, loc) => ???
-    case Expression.Int64Neg(exp, tpe, loc) => ???
-    case Expression.Int64Not(exp, tpe, loc) => ???
+    case Expression.Float32Neg(exp, _, loc) =>
+      WithSource[R](loc) ~
+        compileExp(exp) ~
+        FNEG
+
+    case Expression.Float64Neg(exp, _, loc) =>
+      WithSource[R](loc) ~
+        compileExp(exp) ~
+        DNEG
+
+    case Expression.Int8Neg(exp, _, loc) =>
+      WithSource[R](loc) ~
+        compileExp(exp) ~
+        BNEG
+
+    case Expression.Int8Not(exp, _, loc) =>
+      WithSource[R](loc) ~
+        compileExp(exp) ~
+        pushInt8(-1) ~
+        BXOR
+
+    case Expression.Int16Neg(exp, _, loc) =>
+      WithSource[R](loc) ~
+        compileExp(exp) ~
+        SNEG
+
+    case Expression.Int16Not(exp, _, loc) =>
+      WithSource[R](loc) ~
+        compileExp(exp) ~
+        pushInt16(-1) ~
+        SXOR
+
+    case Expression.Int32Neg(exp, _, loc) =>
+      WithSource[R](loc) ~
+        compileExp(exp) ~
+        INEG
+
+    case Expression.Int32Not(exp, _, loc) =>
+      WithSource[R](loc) ~
+        compileExp(exp) ~
+        pushInt32(-1) ~
+        IXOR
+
+    case Expression.Int64Neg(exp, _, loc) =>
+      WithSource[R](loc) ~
+        compileExp(exp) ~
+        LNEG
+
+    case Expression.Int64Not(exp, _, loc) =>
+      WithSource[R](loc) ~
+        compileExp(exp) ~
+        pushInt64(-1) ~
+        LXOR
+
     case Expression.BigIntNeg(exp, tpe, loc) => ???
     case Expression.BigIntNot(exp, tpe, loc) => ???
     case Expression.ObjEqNull(exp, tpe, loc) => ???
@@ -156,15 +200,103 @@ object BytecodeCompiler {
     case Expression.Float32Comparison(op, exp1, exp2, tpe, loc) => ???
     case Expression.Float64Arithmetic(op, exp1, exp2, tpe, loc) => ???
     case Expression.Float64Comparison(op, exp1, exp2, tpe, loc) => ???
-    case Expression.Int8Arithmetic(op, exp1, exp2, tpe, loc) => ???
-    case Expression.Int16Arithmetic(op, exp1, exp2, tpe, loc) => ???
-    case Expression.Int32Arithmetic(op, exp1, exp2, tpe, loc) => ???
-    case Expression.Int64Arithmetic(op, exp1, exp2, tpe, loc) => ???
+    case Expression.Int8Arithmetic(op, exp1, exp2, tpe, loc) =>
+      WithSource[R](loc) ~
+        compileExp(exp1) ~
+        compileExp(exp2) ~
+        (op match {
+          case ArithmeticOp.Add => BADD
+          case ArithmeticOp.Sub => BSUB
+          case ArithmeticOp.Mul => BMUL
+          case ArithmeticOp.Div => BDIV
+          case ArithmeticOp.Rem => BREM
+        })
+
+    case Expression.Int16Arithmetic(op, exp1, exp2, tpe, loc) =>
+      WithSource[R](loc) ~
+        compileExp(exp1) ~
+        compileExp(exp2) ~
+        (op match {
+          case ArithmeticOp.Add => SADD
+          case ArithmeticOp.Sub => SSUB
+          case ArithmeticOp.Mul => SMUL
+          case ArithmeticOp.Div => SDIV
+          case ArithmeticOp.Rem => SREM
+        })
+
+    case Expression.Int32Arithmetic(op, exp1, exp2, tpe, loc) =>
+      WithSource[R](loc) ~
+        compileExp(exp1) ~
+        compileExp(exp2) ~
+        (op match {
+          case ArithmeticOp.Add => IADD
+          case ArithmeticOp.Sub => ISUB
+          case ArithmeticOp.Mul => IMUL
+          case ArithmeticOp.Div => IDIV
+          case ArithmeticOp.Rem => IREM
+        })
+
+    case Expression.Int64Arithmetic(op, exp1, exp2, tpe, loc) =>
+      WithSource[R](loc) ~
+        compileExp(exp1) ~
+        compileExp(exp2) ~
+        (op match {
+          case ArithmeticOp.Add => LADD
+          case ArithmeticOp.Sub => LSUB
+          case ArithmeticOp.Mul => LMUL
+          case ArithmeticOp.Div => LDIV
+          case ArithmeticOp.Rem => LREM
+        })
+
     case Expression.BigIntArithmetic(op, exp1, exp2, tpe, loc) => ???
-    case Expression.Int8Bitwise(op, exp1, exp2, tpe, loc) => ???
-    case Expression.Int16Bitwise(op, exp1, exp2, tpe, loc) => ???
-    case Expression.Int32Bitwise(op, exp1, exp2, tpe, loc) => ???
-    case Expression.Int64Bitwise(op, exp1, exp2, tpe, loc) => ???
+    case Expression.Int8Bitwise(op, exp1, exp2, tpe, loc) =>
+      WithSource[R](loc) ~
+        compileExp(exp1) ~
+        compileExp(exp2) ~
+        (op match {
+          case BitwiseOp.And => BAND
+          case BitwiseOp.Or => BOR
+          case BitwiseOp.Xor => BXOR
+          case BitwiseOp.Shl => BSHL
+          case BitwiseOp.Shr => BSHR
+        })
+
+    case Expression.Int16Bitwise(op, exp1, exp2, tpe, loc) =>
+      WithSource[R](loc) ~
+        compileExp(exp1) ~
+        compileExp(exp2) ~
+        (op match {
+          case BitwiseOp.And => SAND
+          case BitwiseOp.Or => SOR
+          case BitwiseOp.Xor => SXOR
+          case BitwiseOp.Shl => SSHL
+          case BitwiseOp.Shr => SSHR
+        })
+
+    case Expression.Int32Bitwise(op, exp1, exp2, tpe, loc) =>
+      WithSource[R](loc) ~
+        compileExp(exp1) ~
+        compileExp(exp2) ~
+        (op match {
+          case BitwiseOp.And => IAND
+          case BitwiseOp.Or => IOR
+          case BitwiseOp.Xor => IXOR
+          case BitwiseOp.Shl => ISHL
+          case BitwiseOp.Shr => ISHR
+        })
+
+    case Expression.Int64Bitwise(op, exp1, exp2, tpe, loc) =>
+      WithSource[R](loc) ~
+        compileExp(exp1) ~
+        compileExp(exp2) ~
+        (op match {
+          case BitwiseOp.And => LAND
+          case BitwiseOp.Or => LOR
+          case BitwiseOp.Xor => LXOR
+          case BitwiseOp.Shl => LSHL
+          case BitwiseOp.Shr => LSHR
+        })
+
     case Expression.BigIntBitwise(op, exp1, exp2, tpe, loc) => ???
     case Expression.Int8Comparison(op, exp1, exp2, tpe, loc) => ???
     case Expression.Int16Comparison(op, exp1, exp2, tpe, loc) => ???

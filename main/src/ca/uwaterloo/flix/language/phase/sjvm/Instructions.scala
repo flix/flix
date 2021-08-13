@@ -519,6 +519,370 @@ object Instructions {
     castF(f)
   }
 
+  def I2B
+  [R <: Stack]:
+  F[R ** PInt32] => F[R ** PInt8] = f => {
+    f.visitor.visitInsn(Opcodes.I2B)
+    castF(f)
+  }
+
+  def I2S
+  [R <: Stack]:
+  F[R ** PInt32] => F[R ** PInt8] = f => {
+    f.visitor.visitInsn(Opcodes.I2S)
+    castF(f)
+  }
+
+  def I2L
+  [R <: Stack]:
+  F[R ** PInt32] => F[R ** PInt8] = f => {
+    f.visitor.visitInsn(Opcodes.I2L)
+    castF(f)
+  }
+
+  def I2C
+  [R <: Stack]:
+  F[R ** PInt32] => F[R ** PInt8] = f => {
+    f.visitor.visitInsn(Opcodes.I2C)
+    castF(f)
+  }
+
+  def I2F
+  [R <: Stack]:
+  F[R ** PInt32] => F[R ** PInt8] = f => {
+    f.visitor.visitInsn(Opcodes.I2F)
+    castF(f)
+  }
+
+  def I2D
+  [R <: Stack]:
+  F[R ** PInt32] => F[R ** PInt8] = f => {
+    f.visitor.visitInsn(Opcodes.I2D)
+    castF(f)
+  }
+
+  def BNEG
+  [R <: Stack]:
+  F[R ** PInt8] => F[R ** PInt8] = f => {
+    INEG(f.asInstanceOf[F[R ** PInt32 ** PInt32]])
+    castF(f)
+  }
+
+  def SNEG
+  [R <: Stack]:
+  F[R ** PInt16] => F[R ** PInt16] = f => {
+    INEG(f.asInstanceOf[F[R ** PInt32 ** PInt32]])
+    castF(f)
+  }
+
+  def INEG
+  [R <: Stack]:
+  F[R ** PInt32] => F[R ** PInt32] = f => {
+    f.visitor.visitInsn(Opcodes.INEG)
+    castF(f)
+  }
+
+  def LNEG
+  [R <: Stack]:
+  F[R ** PInt64] => F[R ** PInt64] = f => {
+    f.visitor.visitInsn(Opcodes.LNEG)
+    castF(f)
+  }
+
+  def FNEG
+  [R <: Stack]:
+  F[R ** PFloat32] => F[R ** PFloat32] = f => {
+    f.visitor.visitInsn(Opcodes.FNEG)
+    castF(f)
+  }
+
+  def DNEG
+  [R <: Stack]:
+  F[R ** PFloat64] => F[R ** PFloat64] = f => {
+    f.visitor.visitInsn(Opcodes.DNEG)
+    castF(f)
+  }
+
+  def BSHR
+  [R <: Stack]:
+  F[R ** PInt8 ** PInt8] => F[R ** PInt8] = f => {
+    ISHR(f.asInstanceOf[F[R ** PInt32 ** PInt32]])
+    castF(f)
+  }
+
+  def SSHR
+  [R <: Stack]:
+  F[R ** PInt16 ** PInt16] => F[R ** PInt16] = f => {
+    ISHR(f.asInstanceOf[F[R ** PInt32 ** PInt32]])
+    castF(f)
+  }
+
+  def ISHR
+  [R <: Stack]:
+  F[R ** PInt32 ** PInt32] => F[R ** PInt32] = f => {
+    f.visitor.visitInsn(Opcodes.ISHR)
+    castF(f)
+  }
+
+  def LSHR
+  [R <: Stack]:
+  F[R ** PInt64 ** PInt64] => F[R ** PInt64] = f => {
+    f.visitor.visitInsn(Opcodes.LSHR)
+    castF(f)
+  }
+
+  def BSHL
+  [R <: Stack]:
+  F[R ** PInt8 ** PInt8] => F[R ** PInt8] = f => {
+    ISHL(f.asInstanceOf[F[R ** PInt32 ** PInt32]])
+    castF(f)
+  }
+
+  def SSHL
+  [R <: Stack]:
+  F[R ** PInt16 ** PInt16] => F[R ** PInt16] = f => {
+    ISHL(f.asInstanceOf[F[R ** PInt32 ** PInt32]])
+    castF(f)
+  }
+
+  def ISHL
+  [R <: Stack]:
+  F[R ** PInt32 ** PInt32] => F[R ** PInt32] = f => {
+    f.visitor.visitInsn(Opcodes.ISHL)
+    castF(f)
+  }
+
+  def LSHL
+  [R <: Stack]:
+  F[R ** PInt64 ** PInt64] => F[R ** PInt64] = f => {
+    f.visitor.visitInsn(Opcodes.LSHL)
+    castF(f)
+  }
+
+  def BXOR
+  [R <: Stack]:
+  F[R ** PInt8 ** PInt8] => F[R ** PInt8] = f => {
+    IXOR(f.asInstanceOf[F[R ** PInt32 ** PInt32]])
+    castF(f)
+  }
+
+  def SXOR
+  [R <: Stack]:
+  F[R ** PInt16 ** PInt16] => F[R ** PInt16] = f => {
+    IXOR(f.asInstanceOf[F[R ** PInt32 ** PInt32]])
+    castF(f)
+  }
+
+  def IXOR
+  [R <: Stack]:
+  F[R ** PInt32 ** PInt32] => F[R ** PInt32] = f => {
+    f.visitor.visitInsn(Opcodes.IXOR)
+    castF(f)
+  }
+
+  def LXOR
+  [R <: Stack]:
+  F[R ** PInt64 ** PInt64] => F[R ** PInt64] = f => {
+    f.visitor.visitInsn(Opcodes.LXOR)
+    castF(f)
+  }
+
+  def BOR
+  [R <: Stack]:
+  F[R ** PInt8 ** PInt8] => F[R ** PInt8] = f => {
+    IOR(f.asInstanceOf[F[R ** PInt32 ** PInt32]])
+    castF(f)
+  }
+
+  def SOR
+  [R <: Stack]:
+  F[R ** PInt16 ** PInt16] => F[R ** PInt16] = f => {
+    IOR(f.asInstanceOf[F[R ** PInt32 ** PInt32]])
+    castF(f)
+  }
+
+  def IOR
+  [R <: Stack]:
+  F[R ** PInt32 ** PInt32] => F[R ** PInt32] = f => {
+    f.visitor.visitInsn(Opcodes.IOR)
+    castF(f)
+  }
+
+  def LOR
+  [R <: Stack]:
+  F[R ** PInt64 ** PInt64] => F[R ** PInt64] = f => {
+    f.visitor.visitInsn(Opcodes.LOR)
+    castF(f)
+  }
+
+  def BAND
+  [R <: Stack]:
+  F[R ** PInt8 ** PInt8] => F[R ** PInt8] = f => {
+    IAND(f.asInstanceOf[F[R ** PInt32 ** PInt32]])
+    castF(f)
+  }
+
+  def SAND
+  [R <: Stack]:
+  F[R ** PInt16 ** PInt16] => F[R ** PInt16] = f => {
+    IAND(f.asInstanceOf[F[R ** PInt32 ** PInt32]])
+    castF(f)
+  }
+
+  def IAND
+  [R <: Stack]:
+  F[R ** PInt32 ** PInt32] => F[R ** PInt32] = f => {
+    f.visitor.visitInsn(Opcodes.IAND)
+    castF(f)
+  }
+
+  def LAND
+  [R <: Stack]:
+  F[R ** PInt64 ** PInt64] => F[R ** PInt64] = f => {
+    f.visitor.visitInsn(Opcodes.LAND)
+    castF(f)
+  }
+
+  def BREM
+  [R <: Stack]:
+  F[R ** PInt8 ** PInt8] => F[R ** PInt8] = f => {
+    IREM(f.asInstanceOf[F[R ** PInt32 ** PInt32]])
+    castF(f)
+  }
+
+  def SREM
+  [R <: Stack]:
+  F[R ** PInt16 ** PInt16] => F[R ** PInt16] = f => {
+    IREM(f.asInstanceOf[F[R ** PInt32 ** PInt32]])
+    castF(f)
+  }
+
+  def IREM
+  [R <: Stack]:
+  F[R ** PInt32 ** PInt32] => F[R ** PInt32] = f => {
+    f.visitor.visitInsn(Opcodes.IREM)
+    castF(f)
+  }
+
+  def LREM
+  [R <: Stack]:
+  F[R ** PInt64 ** PInt64] => F[R ** PInt64] = f => {
+    f.visitor.visitInsn(Opcodes.LREM)
+    castF(f)
+  }
+
+  def FREM
+  [R <: Stack]:
+  F[R ** PFloat32 ** PFloat32] => F[R ** PFloat32] = f => {
+    f.visitor.visitInsn(Opcodes.FREM)
+    castF(f)
+  }
+
+  def DREM
+  [R <: Stack]:
+  F[R ** PFloat64 ** PFloat64] => F[R ** PFloat64] = f => {
+    f.visitor.visitInsn(Opcodes.DREM)
+    castF(f)
+  }
+
+  def BDIV
+  [R <: Stack]:
+  F[R ** PInt8 ** PInt8] => F[R ** PInt8] = f => {
+    IDIV(f.asInstanceOf[F[R ** PInt32 ** PInt32]])
+    castF(f)
+  }
+
+  def SDIV
+  [R <: Stack]:
+  F[R ** PInt16 ** PInt16] => F[R ** PInt16] = f => {
+    IDIV(f.asInstanceOf[F[R ** PInt32 ** PInt32]])
+    castF(f)
+  }
+
+  def IDIV
+  [R <: Stack]:
+  F[R ** PInt32 ** PInt32] => F[R ** PInt32] = f => {
+    f.visitor.visitInsn(Opcodes.IDIV)
+    castF(f)
+  }
+
+  def LDIV
+  [R <: Stack]:
+  F[R ** PInt64 ** PInt64] => F[R ** PInt64] = f => {
+    f.visitor.visitInsn(Opcodes.LDIV)
+    castF(f)
+  }
+
+  def FDIV
+  [R <: Stack]:
+  F[R ** PFloat32 ** PFloat32] => F[R ** PFloat32] = f => {
+    f.visitor.visitInsn(Opcodes.FDIV)
+    castF(f)
+  }
+
+  def DDIV
+  [R <: Stack]:
+  F[R ** PFloat64 ** PFloat64] => F[R ** PFloat64] = f => {
+    f.visitor.visitInsn(Opcodes.DDIV)
+    castF(f)
+  }
+
+  def BMUL
+  [R <: Stack]:
+  F[R ** PInt8 ** PInt8] => F[R ** PInt8] = f => {
+    IMUL(f.asInstanceOf[F[R ** PInt32 ** PInt32]])
+    castF(f)
+  }
+
+  def SMUL
+  [R <: Stack]:
+  F[R ** PInt16 ** PInt16] => F[R ** PInt16] = f => {
+    IMUL(f.asInstanceOf[F[R ** PInt32 ** PInt32]])
+    castF(f)
+  }
+
+  def IMUL
+  [R <: Stack]:
+  F[R ** PInt32 ** PInt32] => F[R ** PInt32] = f => {
+    f.visitor.visitInsn(Opcodes.IMUL)
+    castF(f)
+  }
+
+  def LMUL
+  [R <: Stack]:
+  F[R ** PInt64 ** PInt64] => F[R ** PInt64] = f => {
+    f.visitor.visitInsn(Opcodes.LMUL)
+    castF(f)
+  }
+
+  def FMUL
+  [R <: Stack]:
+  F[R ** PFloat32 ** PFloat32] => F[R ** PFloat32] = f => {
+    f.visitor.visitInsn(Opcodes.FMUL)
+    castF(f)
+  }
+
+  def DMUL
+  [R <: Stack]:
+  F[R ** PFloat64 ** PFloat64] => F[R ** PFloat64] = f => {
+    f.visitor.visitInsn(Opcodes.DMUL)
+    castF(f)
+  }
+
+  def BSUB
+  [R <: Stack]:
+  F[R ** PInt8 ** PInt8] => F[R ** PInt8] = f => {
+    ISUB(f.asInstanceOf[F[R ** PInt32 ** PInt32]])
+    castF(f)
+  }
+
+  def SSUB
+  [R <: Stack]:
+  F[R ** PInt16 ** PInt16] => F[R ** PInt16] = f => {
+    ISUB(f.asInstanceOf[F[R ** PInt32 ** PInt32]])
+    castF(f)
+  }
+
   def ISUB
   [R <: Stack]:
   F[R ** PInt32 ** PInt32] => F[R ** PInt32] = f => {
@@ -526,10 +890,66 @@ object Instructions {
     castF(f)
   }
 
+  def LSUB
+  [R <: Stack]:
+  F[R ** PInt64 ** PInt64] => F[R ** PInt64] = f => {
+    f.visitor.visitInsn(Opcodes.LSUB)
+    castF(f)
+  }
+
+  def FSUB
+  [R <: Stack]:
+  F[R ** PFloat32 ** PFloat32] => F[R ** PFloat32] = f => {
+    f.visitor.visitInsn(Opcodes.FSUB)
+    castF(f)
+  }
+
+  def DSUB
+  [R <: Stack]:
+  F[R ** PFloat64 ** PFloat64] => F[R ** PFloat64] = f => {
+    f.visitor.visitInsn(Opcodes.DSUB)
+    castF(f)
+  }
+
+  def BADD
+  [R <: Stack]:
+  F[R ** PInt8 ** PInt8] => F[R ** PInt8] = f => {
+    IADD(f.asInstanceOf[F[R ** PInt32 ** PInt32]])
+    castF(f)
+  }
+
+  def SADD
+  [R <: Stack]:
+  F[R ** PInt16 ** PInt16] => F[R ** PInt16] = f => {
+    IADD(f.asInstanceOf[F[R ** PInt32 ** PInt32]])
+    castF(f)
+  }
+
   def IADD
   [R <: Stack]:
   F[R ** PInt32 ** PInt32] => F[R ** PInt32] = f => {
     f.visitor.visitInsn(Opcodes.IADD)
+    castF(f)
+  }
+
+  def LADD
+  [R <: Stack]:
+  F[R ** PInt64 ** PInt64] => F[R ** PInt64] = f => {
+    f.visitor.visitInsn(Opcodes.LADD)
+    castF(f)
+  }
+
+  def FADD
+  [R <: Stack]:
+  F[R ** PFloat32 ** PFloat32] => F[R ** PFloat32] = f => {
+    f.visitor.visitInsn(Opcodes.FADD)
+    castF(f)
+  }
+
+  def DADD
+  [R <: Stack]:
+  F[R ** PFloat64 ** PFloat64] => F[R ** PFloat64] = f => {
+    f.visitor.visitInsn(Opcodes.DADD)
     castF(f)
   }
 
@@ -562,6 +982,7 @@ object Instructions {
    * the stack and concatenated to form a long.
    */
   private def compileInt(visitor: MethodVisitor, i: Long, isCat2: Boolean = false): Unit = {
+    // TODO(JLS): it should be checked that i.e. pushInt8 does not hit the large cases
     i match {
       case -1 => visitor.visitInsn(Opcodes.ICONST_M1)
       case 0 => if (!isCat2) visitor.visitInsn(Opcodes.ICONST_0) else visitor.visitInsn(Opcodes.LCONST_0)
