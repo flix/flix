@@ -26,12 +26,14 @@ import java.lang.reflect.{Constructor, Field, Method}
 object ErasedAst {
 
   // TODO(JLS): add ast traversal sets/lists/map here
+  // TODO(JLS): add enums like FinalAst i think
   // example: tuples: Set[RType[_ <: PType]]
   case class Root(functions: Map[Symbol.DefnSym, Def[_ <: PType]],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
                   functionTypes: Set[RType[PReference[PFunction[_ <: PType]]]],
                   closures: Set[ClosureInfo[_ <: PType]],
+                  enumSyms: Set[Symbol.EnumSym],
                   namespaces: Set[NamespaceInfo])
 
   case class Def[T <: PType](ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: List[FormalParam], exp: Expression[T], tpe: RType[PReference[PFunction[T]]], loc: SourceLocation) {

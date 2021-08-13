@@ -41,6 +41,8 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
         visitDef[PType](v) map (defn => mapp + (k -> defn))
     }
 
+    // TODO(JLS): add enums to root and collect tags based on it
+
     val closureSyms = defns.closures.map(_.sym)
 
     // TODO(JLS): should maybe be integrated to the other fold
@@ -54,7 +56,7 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
     }.toSet)
 
     // TODO(JLS): the function list should be split into closures and functions (and maybe include nonLaw checking)
-    val result = ErasedAst.Root(defnsResult.value, root.reachable, root.sources, defnsResult.fTypes, defnsResult.closures, defnsResult.namespaces)
+    val result = ErasedAst.Root(defnsResult.value, root.reachable, root.sources, defnsResult.fTypes, defnsResult.closures, defnsResult.enumSyms, defnsResult.namespaces)
     result.toSuccess
   }
 
@@ -770,9 +772,10 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
         expRes = RReference(RTuple(elms0))
       } yield expRes.asInstanceOf[RType[T]]
     case MonoType.Enum(sym, args) =>
-      for {
-        args0 <- EM.traverse(args)(visitTpe[PType])
-      } yield RReference(REnum(sym, args0)).asInstanceOf[RType[T]]
+      EM.traverse(args)(visitTpe[PType]) flatMap (args0 => {
+        val res = RReference(REnum(sym, args0)).asInstanceOf[RType[T]]
+        res.toMonad.setEnumSyms(Set(sym))
+      })
     case MonoType.Arrow(args, result) =>
       EM.flatMapN(
         EM.traverse(args)(visitTpe[PType]),

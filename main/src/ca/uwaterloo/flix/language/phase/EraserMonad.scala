@@ -18,38 +18,41 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.PRefType.PFunction
 import ca.uwaterloo.flix.language.ast.PType.PReference
-import ca.uwaterloo.flix.language.ast.{PType, RType}
+import ca.uwaterloo.flix.language.ast.{PType, RType, Symbol}
 import ca.uwaterloo.flix.language.phase.Eraser.emptyFTypes
 import ca.uwaterloo.flix.language.phase.sjvm.{ClosureInfo, NamespaceInfo}
 
 import scala.collection.mutable
 
 // TODO(JLS): namespaces not really needed
-sealed case class EraserMonad[+T](value: T, fTypes: Set[RType[PReference[PFunction[_ <: PType]]]], closures: Set[ClosureInfo[_ <: PType]], namespaces: Set[NamespaceInfo]) {
+sealed case class EraserMonad[+T](value: T, fTypes: Set[RType[PReference[PFunction[_ <: PType]]]], closures: Set[ClosureInfo[_ <: PType]], enumSyms: Set[Symbol.EnumSym], namespaces: Set[NamespaceInfo]) {
 
   final def map[U](f: T => U): EraserMonad[U] =
-    EraserMonad(f(value), fTypes, closures, namespaces)
+    EraserMonad(f(value), fTypes, closures, enumSyms, namespaces)
 
   final def flatMap[U](f: T => EraserMonad[U]): EraserMonad[U] = {
     val monad0 = f(value)
-    EraserMonad(monad0.value, fTypes union monad0.fTypes, closures union monad0.closures, namespaces union monad0.namespaces)
+    EraserMonad(monad0.value, fTypes union monad0.fTypes, closures union monad0.closures, enumSyms union monad0.enumSyms, namespaces union monad0.namespaces)
   }
 
   final def setFTypes[T0 <: PType](fTypes: Set[RType[PReference[PFunction[T0]]]]): EraserMonad[T] =
-    EraserMonad(value, fTypes.asInstanceOf[Set[RType[PReference[PFunction[_ <: PType]]]]], closures, namespaces)
+    EraserMonad(value, fTypes.asInstanceOf[Set[RType[PReference[PFunction[_ <: PType]]]]], closures, enumSyms, namespaces)
 
   final def setClosures(closures: Set[ClosureInfo[_ <: PType]]): EraserMonad[T] =
-    EraserMonad(value, fTypes, closures, namespaces)
+    EraserMonad(value, fTypes, closures, enumSyms, namespaces)
 
   final def setNamespaces(namespaces: Set[NamespaceInfo]): EraserMonad[T] =
-    EraserMonad(value, fTypes, closures, namespaces)
+    EraserMonad(value, fTypes, closures, enumSyms, namespaces)
+
+  final def setEnumSyms(enumSyms: Set[Symbol.EnumSym]): EraserMonad[T] =
+    EraserMonad(value, fTypes, closures, enumSyms, namespaces)
 
 }
 
 object EraserMonad {
 
   final def toMonad[T](t: T): EraserMonad[T] =
-    EraserMonad(t, emptyFTypes, Set.empty, Set.empty)
+    EraserMonad(t, emptyFTypes, Set.empty, Set.empty, Set.empty)
 
   implicit class ToMonad[+T](val t: T) {
     def toMonad[U >: T]: EraserMonad[U] = EraserMonad.toMonad(t)
@@ -66,18 +69,20 @@ object EraserMonad {
     val values = mutable.ArrayBuffer.empty[S]
     var fTypes: Set[RType[PReference[PFunction[_ <: PType]]]] = emptyFTypes
     var clss: Set[ClosureInfo[_ <: PType]] = Set.empty
+    var ess: Set[Symbol.EnumSym] = Set.empty
     var nss: Set[NamespaceInfo] = Set.empty
 
     // Apply f to each element and collect the results.
     for (x <- xs) {
-      val EraserMonad(v, ft, cls, ns) = f(x)
+      val EraserMonad(v, ft, cls, es, ns) = f(x)
       values += v
       fTypes = fTypes union ft
       clss = clss union cls
+      ess = ess union es
       nss = nss union ns
     }
 
-    EraserMonad(values.toList, fTypes, clss, nss)
+    EraserMonad(values.toList, fTypes, clss, ess, nss)
   }
 
   /**
