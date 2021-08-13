@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.EliminatedBy
+import ca.uwaterloo.flix.language.ast.Ast.{EliminatedBy, IntroducedBy}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
 import ca.uwaterloo.flix.language.phase.Kinder
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -303,6 +303,7 @@ object Type {
   /**
     * A type variable.
     */
+  @IntroducedBy(Kinder.getClass)
   case class Var(id: Int, kind: Kind, rigidity: Rigidity = Rigidity.Flexible, text: Option[String] = None) extends Type with MaybeKindedVar with Ordered[Type.Var] {
     /**
       * Returns `true` if `this` type variable is equal to `o`.

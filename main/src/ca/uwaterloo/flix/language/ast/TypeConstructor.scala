@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.Ast.EliminatedBy
+import ca.uwaterloo.flix.language.ast.Ast.{EliminatedBy, IntroducedBy}
 import ca.uwaterloo.flix.language.phase.Kinder
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -181,6 +181,7 @@ object TypeConstructor {
   /**
     * A type constructor that represent the type of enums.
     */
+  @IntroducedBy(Kinder.getClass)
   case class Enum(sym: Symbol.EnumSym, kind: Kind) extends TypeConstructor
 
   /**
