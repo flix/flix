@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.PType._
 import ca.uwaterloo.flix.language.ast.RRefType._
 import ca.uwaterloo.flix.language.ast.RType._
-import ca.uwaterloo.flix.language.ast.{PRefType, RRefType, Symbol}
+import ca.uwaterloo.flix.language.ast.{PRefType, PType, RRefType, Symbol}
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
 import ca.uwaterloo.flix.language.phase.sjvm.ClassMaker.Mod
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
@@ -45,27 +45,27 @@ object GenMainClass {
   def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = getMain(root) match {
     case None => Map.empty
     case Some(defn) =>
-      def mainTypeMatch[T <: PRefType](m: RRefType[T]): RRefType[PFunction] = m match {
-        case r: RArrow => r // TODO(JLS): maybe match more here on type etc
+      def mainTypeMatch[T <: PRefType](m: RRefType[T]): Unit = m match {
+        case r@RArrow(_, _) => () // TODO(JLS): maybe match more here on type etc
         case _ => throw InternalCompilerException(s"The type of main has to be a function, not ${m.toInternalName}")
       }
 
-      val mainType = defn.tpe match {
-        case RReference(referenceType) => RReference(mainTypeMatch(referenceType))
+      defn.tpe match {
+        case RReference(referenceType) => mainTypeMatch(referenceType)
         case _ => throw InternalCompilerException(s"The type of main cannot be a primitive, ${defn.tpe}")
       }
 
       // TODO(JLS): should get a namespace and a name. maybe its always Ns.m_main(args). just call Ns.m_main(args)
-      val bytecode = genByteCode(defn, mainType)
+      val bytecode = genByteCode(defn)
       Map(mainMethodClassName -> JvmClass(mainMethodClassName, bytecode))
   }
 
-  def genByteCode(defn: Def, mainType: RReference[PFunction])(implicit root: Root, flix: Flix): Array[Byte] = {
+  def genByteCode(defn: Def[_ <: PType])(implicit root: Root, flix: Flix): Array[Byte] = {
     // class writer
     val classMaker = ClassMaker.mkClass(JvmName.main, addSource = true, None)
 
     // Emit the code for the main method
-    classMaker.mkMethod(compileMainMethod(defn, mainType), mainMethod, JvmName.javaMainDescriptor, Mod.isPublic.isStatic)
+    classMaker.mkMethod(compileMainMethod(defn), mainMethod, JvmName.javaMainDescriptor, Mod.isPublic.isStatic)
 
     classMaker.closeClassMaker
   }
@@ -80,7 +80,7 @@ object GenMainClass {
     *
     * Ns.m_main((Object)null);
     */
-  def compileMainMethod(defn: Def, mainType: RReference[PFunction])(implicit root: Root, flix: Flix): F[StackNil] => F[StackEnd] = {
+  def compileMainMethod[T <: PType](defn: Def[T])(implicit root: Root, flix: Flix): F[StackNil] => F[StackEnd] = {
 
     //Get the root namespace in order to get the class type when invoking m_main
     // Call Ns.m_main(args)
@@ -91,13 +91,13 @@ object GenMainClass {
       f.visitor.visitTypeInsn(Opcodes.NEW, defn.sym.defName.toInternalName)
       f.visitor.visitInsn(Opcodes.DUP)
       f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, defn.sym.defName.toInternalName, JvmName.constructorMethod, JvmName.nothingToVoid, false)
-      f.asInstanceOf[F[StackNil ** PReference[PFunction]]]
+      f.asInstanceOf[F[StackNil ** PReference[PFunction[T]]]]
     } ~
       DUP ~
-      ALOAD(0, tagOf[PArray[PReference[PStr]]]) ~ { f: F[StackNil ** PReference[PFunction] ** PReference[PFunction] ** PReference[PArray[PReference[PStr]]]] =>
+      ALOAD(0, tagOf[PArray[PReference[PStr]]]) ~ { f: F[StackNil ** PReference[PFunction[T]] ** PReference[PFunction[T]] ** PReference[PArray[PReference[PStr]]]] =>
       f.visitor.visitFieldInsn(Opcodes.PUTFIELD, defn.sym.defName.toInternalName, GenFunctionInterfaces.argFieldName(0), JvmName.Java.Lang.Object.toDescriptor)
-      f.asInstanceOf[F[StackNil ** PReference[PFunction]]]
-    } ~ { f: F[StackNil ** PReference[PFunction]] =>
+      f.asInstanceOf[F[StackNil ** PReference[PFunction[T]]]]
+    } ~ { f: F[StackNil ** PReference[PFunction[T]]] =>
       f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, RInt32.contName.toInternalName, GenContinuationInterfaces.unwindMethodName, RInt32.nothingToThisMethodDescriptor, false)
       f.asInstanceOf[F[StackNil ** PInt32]]
     } ~ { f: F[StackNil ** PInt32] =>
@@ -119,7 +119,7 @@ object GenMainClass {
   /**
     * Optionally returns the main definition in the given AST `root`.
     */
-  private def getMain(root: Root): Option[Def] = {
+  private def getMain(root: Root): Option[Def[_ <: PType]] = {
     // The main function must be called `main` and occur in the root namespace.
     val sym = Symbol.Main
 

@@ -27,15 +27,14 @@ object ErasedAst {
 
   // TODO(JLS): add ast traversal sets/lists/map here
   // example: tuples: Set[RType[_ <: PType]]
-  case class Root(functions: Map[Symbol.DefnSym, Def],
+  case class Root(functions: Map[Symbol.DefnSym, Def[_ <: PType]],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
-                  functionTypes: Set[RType[PReference[PFunction]]],
-                  closures: Set[ClosureInfo],
+                  functionTypes: Set[RType[PReference[PFunction[_ <: PType]]]],
+                  closures: Set[ClosureInfo[_ <: PType]],
                   namespaces: Set[NamespaceInfo])
 
-  // TODO(JLS): This method, of using T <: PType and the _ <: PType at use is probably better and should be used elsewhere
-  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: List[FormalParam], exp: Expression[_ <: PType], tpe: RType[PReference[PFunction]], loc: SourceLocation) {
+  case class Def[T <: PType](ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: List[FormalParam], exp: Expression[T], tpe: RType[PReference[PFunction[T]]], loc: SourceLocation) {
     var method: Method = _
   }
 
@@ -103,17 +102,17 @@ object ErasedAst {
 
     case class Var[T <: PType](sym: Symbol.VarSym, tpe: RType[T], loc: SourceLocation) extends Expression[T]
 
-    case class Closure(sym: Symbol.DefnSym, freeVars: List[FreeVar], tpe: RType[PReference[PFunction]], loc: SourceLocation) extends Expression[PReference[PFunction]]
+    case class Closure[T <: PType](sym: Symbol.DefnSym, freeVars: List[FreeVar], tpe: RType[PReference[PFunction[T]]], loc: SourceLocation) extends Expression[PReference[PFunction[T]]]
 
-    case class ApplyClo[T <: PType](exp: Expression[PReference[PFunction]], args: List[Expression[_ <: PType]], tpe: RType[T], loc: SourceLocation) extends Expression[T]
+    case class ApplyClo[T <: PType](exp: Expression[PReference[PFunction[T]]], args: List[Expression[_ <: PType]], tpe: RType[T], loc: SourceLocation) extends Expression[T]
 
-    case class ApplyDef[T <: PType](sym: Symbol.DefnSym, args: List[Expression[_ <: PType]], functionType: RType[PReference[PFunction]], tpe: RType[T], loc: SourceLocation) extends Expression[T]
+    case class ApplyDef[T <: PType](sym: Symbol.DefnSym, args: List[Expression[_ <: PType]], functionType: RType[PReference[PFunction[T]]], tpe: RType[T], loc: SourceLocation) extends Expression[T]
 
-    case class ApplyCloTail[T <: PType](exp: Expression[PReference[PFunction]], args: List[Expression[_ <: PType]], tpe: RType[T], loc: SourceLocation) extends Expression[T]
+    case class ApplyCloTail[T <: PType](exp: Expression[PReference[PFunction[T]]], args: List[Expression[_ <: PType]], tpe: RType[T], loc: SourceLocation) extends Expression[T]
 
-    case class ApplyDefTail[T <: PType](sym: Symbol.DefnSym, args: List[Expression[_ <: PType]], functionType: RType[PReference[PFunction]], tpe: RType[T], loc: SourceLocation) extends Expression[T]
+    case class ApplyDefTail[T <: PType](sym: Symbol.DefnSym, args: List[Expression[_ <: PType]], functionType: RType[PReference[PFunction[T]]], tpe: RType[T], loc: SourceLocation) extends Expression[T]
 
-    case class ApplySelfTail[T <: PType](sym: Symbol.DefnSym, formals: List[FormalParam], actuals: List[Expression[_ <: PType]], functionType: RType[PReference[PFunction]], tpe: RType[T], loc: SourceLocation) extends Expression[T]
+    case class ApplySelfTail[T <: PType](sym: Symbol.DefnSym, formals: List[FormalParam], actuals: List[Expression[_ <: PType]], functionType: RType[PReference[PFunction[T]]], tpe: RType[T], loc: SourceLocation) extends Expression[T]
 
     // Unary expressions
     case class BoolNot(exp: Expression[PInt32], tpe: RType[PInt32], loc: SourceLocation) extends Expression[PInt32]

@@ -75,7 +75,6 @@ object PRefType {
 
   sealed trait PAnyObject extends PRefType
 
-  // TODO(JLS): Add result type to this
-  sealed trait PFunction extends PRefType
+  sealed trait PFunction[T <: PType] extends PRefType
 
 }

@@ -504,7 +504,7 @@ object PrettyPrinter {
       vt
     }
 
-    def fmtDef(defn: Def, vt: VirtualTerminal): Unit = {
+    def fmtDef[T <: PType](defn: Def[T], vt: VirtualTerminal): Unit = {
       fmtExp(defn.exp, vt)
     }
 

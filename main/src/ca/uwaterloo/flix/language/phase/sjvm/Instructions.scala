@@ -1085,62 +1085,62 @@ object Instructions {
   // TODO(JLS): This should both return StackEnd (no code should follow) and R ** T (compileExp should push T on stack) (maybe stop flag type on F)
   def TAILCALL
   [R <: Stack, T <: PType]
-  (arguments: List[ErasedAst.Expression[_ <: PType]], fnType: RArrow, returnType: Tag[T] = null):
-  F[R ** PReference[PFunction]] => F[R ** T] = {
-    START[R ** PReference[PFunction]] ~
+  (arguments: List[ErasedAst.Expression[_ <: PType]], fnType: RArrow[T]):
+  F[R ** PReference[PFunction[T]]] => F[R ** T] = {
+    START[R ** PReference[PFunction[T]]] ~
       setArgs(fnType.jvmName, arguments, GenFunctionInterfaces.argFieldName) ~
       AReturnNoEnd(tagOf[T])
   }
 
   private def AReturnNoEnd
-  [R <: Stack, T1 <: PRefType, T2 <: PType]
-  (t2: Tag[T2] = null):
-  F[R ** PReference[T1]] => F[R ** T2] = f => {
+  [R <: Stack, T <: PType]
+  (t: Tag[T] = null):
+  F[R ** PReference[PFunction[T]]] => F[R ** T] = f => {
     f.visitor.visitInsn(Opcodes.ARETURN)
     castF(f)
   }
 
   def unwind
   [R <: Stack, T <: PType]
-  (fnType: RArrow, returnType: RType[T]):
-  F[R ** PReference[PFunction]] => F[R ** T] = f => {
-    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, fnType.toInternalName, GenContinuationInterfaces.unwindMethodName, returnType.erasedNothingToThisMethodDescriptor, false)
-    undoErasure(returnType, f.visitor)
+  (fnType: RArrow[T]):
+  F[R ** PReference[PFunction[T]]] => F[R ** T] = f => {
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, fnType.toInternalName, GenContinuationInterfaces.unwindMethodName, fnType.result.erasedNothingToThisMethodDescriptor, false)
+    undoErasure(fnType.result, f.visitor)
     castF(f)
   }
 
   def SELFTAILCALL
   [R <: Stack, T <: PType]
-  (arguments: List[ErasedAst.Expression[_ <: PType]], fnType: RArrow, returnType: Tag[T] = null):
+  (arguments: List[ErasedAst.Expression[_ <: PType]], fnType: RArrow[T]):
   F[R] => F[R ** T] = {
     START[R] ~
-      THISLOAD(tagOf[PFunction]) ~
+      THISLOAD(tagOf[PFunction[T]]) ~
       setArgs(fnType.jvmName, arguments, GenFunctionInterfaces.argFieldName) ~
-      AReturnNoEnd(returnType)
+      AReturnNoEnd(tagOf[T])
   }
 
   // TODO(JLS): could be made with other instructions
-  def makeAndInitDef[R <: Stack]
-  (className: JvmName):
-  F[R] => F[R ** PReference[PFunction]] = f => {
+  def makeAndInitDef[R <: Stack, T <: PType]
+  (className: JvmName, t: Tag[T] = null):
+  F[R] => F[R ** PReference[PFunction[T]]] = f => {
     f.visitor.visitTypeInsn(Opcodes.NEW, className.toInternalName)
     f.visitor.visitInsn(Opcodes.DUP)
     f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.toInternalName, JvmName.constructorMethod, JvmName.nothingToVoid, false)
     castF(f)
   }
 
-  def setArgs[R <: Stack]
-  (className: JvmName, args: List[ErasedAst.Expression[_ <: PType]], fieldName: Int => String):
-  F[R ** PReference[PFunction]] => F[R ** PReference[PFunction]] =
-    START[R ** PReference[PFunction]] ~
+  def setArgs[R <: Stack, T <: PType]
+  (className: JvmName, args: List[ErasedAst.Expression[_ <: PType]], fieldName: Int => String, t: Tag[T] = null):
+  F[R ** PReference[PFunction[T]]] => F[R ** PReference[PFunction[T]]] =
+    START[R ** PReference[PFunction[T]]] ~
       multiComposition(args.zipWithIndex) {
         case (exp, index) =>
-          START[R ** PReference[PFunction]] ~ DUP ~ compileExp(exp) ~ setArg(className, fieldName(index), exp.tpe.erasedDescriptor)
+          START[R ** PReference[PFunction[T]]] ~ DUP ~ compileExp(exp) ~ setArg(className, fieldName(index), exp.tpe.erasedDescriptor)
       }
 
-  private def setArg[R <: Stack, T <: PType]
-  (className: JvmName, fieldName: String, erasedTpe: String):
-  F[R ** PReference[PFunction] ** T] => F[R] = f => {
+  private def setArg[R <: Stack, T1 <: PType, T2 <: PType]
+  (className: JvmName, fieldName: String, erasedTpe: String, t1: Tag[T1] = null):
+  F[R ** PReference[PFunction[T1]] ** T2] => F[R] = f => {
     f.visitor.visitFieldInsn(Opcodes.PUTFIELD, className.toInternalName, fieldName, erasedTpe)
     castF(f)
   }
@@ -1148,26 +1148,26 @@ object Instructions {
   // TODO(JLS): fnName can be Fn interface or Def class but that is a bit confusing
   def CALL
   [R <: Stack, T <: PType]
-  (arguments: List[ErasedAst.Expression[_ <: PType]], fnType: RArrow, returnType: RType[T]):
-  F[R ** PReference[PFunction]] => F[R ** T] = {
-    START[R ** PReference[PFunction]] ~
+  (arguments: List[ErasedAst.Expression[_ <: PType]], fnType: RArrow[T]):
+  F[R ** PReference[PFunction[T]]] => F[R ** T] = {
+    START[R ** PReference[PFunction[T]]] ~
       setArgs(fnType.jvmName, arguments, GenFunctionInterfaces.argFieldName) ~
-      unwind(fnType, returnType)
+      unwind(fnType)
   }
 
   def CREATEDEF
   [R <: Stack, T <: PType]
-  (defClassName: JvmName):
-  F[R] => F[R ** PReference[PFunction]] = {
-    START[R] ~ makeAndInitDef(defClassName)
+  (defClassName: JvmName, t: Tag[T] = null):
+  F[R] => F[R ** PReference[PFunction[T]]] = {
+    START[R] ~ makeAndInitDef(defClassName, t)
   }
 
   def CREATECLOSURE
   [R <: Stack, T <: PType]
-  (freeVars: List[ErasedAst.FreeVar], cloClassName: JvmName):
-  F[R] => F[R ** PReference[PFunction]] =
+  (freeVars: List[ErasedAst.FreeVar], cloClassName: JvmName, t: Tag[T] = null):
+  F[R] => F[R ** PReference[PFunction[T]]] =
     makeAndInitDef(cloClassName) ~
-      setArgs(cloClassName, freeVars.map(f => ErasedAst.Expression.Var(f.sym, f.tpe, SourceLocation.Unknown)), GenClosureClasses.cloArgFieldName)
+      setArgs(cloClassName, freeVars.map(f => ErasedAst.Expression.Var(f.sym, f.tpe, SourceLocation.Unknown)), GenClosureClasses.cloArgFieldName, t)
   // TODO(JLS): This added exp could maybe cause trouble
 
   def ILOAD

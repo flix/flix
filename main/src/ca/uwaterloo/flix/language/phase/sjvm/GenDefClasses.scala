@@ -32,33 +32,34 @@ import org.objectweb.asm.Opcodes
 
 object GenDefClasses {
 
-  def gen(defs: Map[Symbol.DefnSym, ErasedAst.Def], nonClosureFunctions: Set[Symbol.DefnSym])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+  def gen(defs: Map[Symbol.DefnSym, ErasedAst.Def[_ <: PType]], nonClosureFunctions: Set[Symbol.DefnSym])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     // TODO(JLS): check parops for all gens
     ParOps.parAgg(defs, Map[JvmName, JvmClass]())({
       case (macc, (sym, defn)) =>
         if (SjvmOps.nonLaw(defn) && nonClosureFunctions.contains(sym)) {
           val functionType = squeezeFunction(squeezeReference(defn.tpe))
-          macc + (sym.defName -> JvmClass(sym.defName, genByteCode(defn, sym.defName, functionType)))
+          // TODO(JLS): type var in genByteCode gets set to PType... without casts does not work
+          macc + (sym.defName -> JvmClass(sym.defName, genByteCode(defn.asInstanceOf[ErasedAst.Def[PType]], sym.defName, functionType.asInstanceOf[RArrow[PType]])))
         } else macc
     }, _ ++ _)
   }
 
-  private def genByteCode(defn: ErasedAst.Def, defName: JvmName, functionType: RArrow)(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genByteCode[T <: PType](defn: ErasedAst.Def[T], defName: JvmName, functionType: RArrow[T])(implicit root: Root, flix: Flix): Array[Byte] = {
     val classMaker = ClassMaker.mkClass(defName, addSource = false, Some(functionType.jvmName))
     classMaker.mkSuperConstructor()
-    classMaker.mkMethod(genInvokeFunction(defn, defn.exp, defName), GenContinuationInterfaces.invokeMethodName, functionType.result.nothingToContMethodDescriptor, Mod.isPublic)
+    classMaker.mkMethod(genInvokeFunction(defn, defName), GenContinuationInterfaces.invokeMethodName, functionType.result.nothingToContMethodDescriptor, Mod.isPublic)
     classMaker.closeClassMaker
   }
 
-  def genInvokeFunction[T <: PType](defn: ErasedAst.Def, functionBody: ErasedAst.Expression[T], defName: JvmName): F[StackNil] => F[StackEnd] = {
+  def genInvokeFunction[T <: PType](defn: ErasedAst.Def[T], defName: JvmName): F[StackNil] => F[StackEnd] = {
     START[StackNil] ~
       (multiComposition(defn.formals.zipWithIndex) {
         case (ErasedAst.FormalParam(sym, tpe), index) =>
           magicStoreArg(index, tpe, defName, sym)
       }) ~
-      compileExp(functionBody) ~
+      compileExp(defn.exp) ~
       THISLOAD(tagOf[PAnyObject]) ~
-      magicReversePutField(defName, functionBody.tpe) ~
+      magicReversePutField(defName, defn.exp.tpe) ~
       RETURNNULL
   }
 

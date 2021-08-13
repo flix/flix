@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.ErasedAst.Root
 import ca.uwaterloo.flix.language.ast.PRefType.PFunction
 import ca.uwaterloo.flix.language.ast.PType.PReference
 import ca.uwaterloo.flix.language.ast.RRefType.RArrow
-import ca.uwaterloo.flix.language.ast.RType.RReference
+import ca.uwaterloo.flix.language.ast.RType.{RReference, squeezeFunction, squeezeReference}
 import ca.uwaterloo.flix.language.ast.{PType, RType}
 import ca.uwaterloo.flix.language.phase.sjvm.ClassMaker.Mod
 
@@ -35,21 +35,25 @@ object GenFunctionInterfaces {
   /**
    * Returns the set of function interfaces for the given set of types `ts`.
    */
-  def gen[T <: PType](tpe: Set[RType[PReference[PFunction]]])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+  def gen(tpe: Set[RType[PReference[PFunction[_ <: PType]]]])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     tpe.foldLeft(Map.empty[JvmName, JvmClass]) {
-      case (macc, RReference(functionType@RArrow(_, _))) =>
-        val bytecode = genByteCode(functionType)
-        macc + (functionType.jvmName -> JvmClass(functionType.jvmName, bytecode))
+      case (macc, functionType) => macc + innerFold(functionType.asInstanceOf[RType[PReference[PFunction[PType]]]])
     }
+  }
+
+  private def innerFold[T <: PType](functionType: RType[PReference[PFunction[T]]])(implicit root: Root, flix: Flix): (JvmName, JvmClass) = {
+    val arrow = squeezeFunction(squeezeReference(functionType))
+    val bytecode = genByteCode(arrow)
+    arrow.jvmName -> JvmClass(arrow.jvmName, bytecode)
   }
 
   /**
    * Returns the function interface of the given type `tpe`.
    */
-  private def genByteCode(functionType: RArrow)(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genByteCode[T <: PType](functionType: RArrow[T])(implicit root: Root, flix: Flix): Array[Byte] = {
 
     // Class visitor
-    // TODO(JLS): Add the two super interfaces
+    // TODO(JLS): Add the super interfaces
     //`JvmType` of the continuation interface for `tpe`
     val continuationSuperInterface = functionType.result.contName
     // `JvmType` of the java.util.functions.Function

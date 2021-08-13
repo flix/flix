@@ -32,20 +32,19 @@ import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
-  type FTypes = Set[RType[PReference[PFunction]]]
 
-  def emptyFTypes: FTypes = Set[RType[PReference[PFunction]]]()
+  def emptyFTypes: Set[RType[PReference[PFunction[_ <: PType]]]] = Set[RType[PReference[PFunction[_ <: PType]]]]()
 
   def run(root: FinalAst.Root)(implicit flix: Flix): Validation[ErasedAst.Root, CompilationError] = flix.phase("Eraser") {
-    val defns = EM.foldRight(root.defs)(Map[Symbol.DefnSym, ErasedAst.Def]().toMonad) {
+    val defns = EM.foldRight(root.defs)(Map[Symbol.DefnSym, ErasedAst.Def[_ <: PType]]().toMonad) {
       case ((k, v), mapp) =>
-        visitDef(v) map (defn => mapp + (k -> defn))
+        visitDef[PType](v) map (defn => mapp + (k -> defn))
     }
 
     val closureSyms = defns.closures.map(_.sym)
 
     // TODO(JLS): should maybe be integrated to the other fold
-    val defnsResult = defns.copyWith(namespaces = defns.value.groupBy(_._1.namespace).map {
+    val defnsResult = defns.setNamespaces(defns.value.groupBy(_._1.namespace).map {
       case (ns, defs) =>
         // Collect all non-law definitions.
         val nonLaws = defs filter {
@@ -62,11 +61,11 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
   /**
     * Translates the given definition `def0` to the ErasedAst.
     */
-  private def visitDef(def0: FinalAst.Def): EraserMonad[ErasedAst.Def] = {
+  private def visitDef[T <: PType](def0: FinalAst.Def): EraserMonad[ErasedAst.Def[T]] = {
     for {
       formals0 <- EM.traverse(def0.formals)(visitFormalParam)
-      exp <- visitExp[PReference[PFunction]](def0.exp)
-      tpe <- visitTpe[PReference[PFunction]](def0.tpe)
+      exp <- visitExp[T](def0.exp)
+      tpe <- visitTpe[PReference[PFunction[T]]](def0.tpe)
     } yield ErasedAst.Def(def0.ann, def0.mod, def0.sym, formals0, exp, tpe, def0.loc)
   }
 
@@ -127,19 +126,19 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
       )
       EM.flatMapN(
         freeVarsMonad,
-        visitTpe[PReference[PFunction]](tpe)
+        visitTpe[PReference[PFunction[T]]](tpe)
       ) {
         case (freeVars0, tpe0) =>
           val expRes = ErasedAst.Expression.Closure(sym, freeVars0, tpe0, loc)
           val result = expRes.asInstanceOf[ErasedAst.Expression[T]]
-          result.toMonad.copyWith(closures = Set(ClosureInfo(sym, freeVars0, tpe0)))
+          result.toMonad.setClosures(Set(ClosureInfo(sym, freeVars0, tpe0)))
       }
 
     case FinalAst.Expression.ApplyClo(exp, args, tpe, loc) =>
       for {
         tpe0 <- visitTpe[T](tpe)
         args0 <- EM.traverse(args)(visitExp[PType])
-        exp0 <- visitExp[PReference[PFunction]](exp)
+        exp0 <- visitExp[PReference[PFunction[T]]](exp)
         expRes = ErasedAst.Expression.ApplyClo(exp0, args0, tpe0, loc)
       } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
@@ -147,13 +146,13 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
       for {
         args0 <- EM.traverse(args)(visitExp[PType])
         tpe0 <- visitTpe[T](tpe)
-        fnType <- visitTpe[PReference[PFunction]](MonoType.Arrow(args.map(_.tpe), tpe))
+        fnType <- visitTpe[PReference[PFunction[T]]](MonoType.Arrow(args.map(_.tpe), tpe))
         expRes = ErasedAst.Expression.ApplyDef(sym, args0, fnType, tpe0, loc)
       } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.ApplyCloTail(exp, args, tpe, loc) =>
       for {
-        exp0 <- visitExp[PReference[PFunction]](exp)
+        exp0 <- visitExp[PReference[PFunction[T]]](exp)
         args0 <- EM.traverse(args)(visitExp[PType])
         tpe0 <- visitTpe[T](tpe)
         expRes = ErasedAst.Expression.ApplyCloTail(exp0, args0, tpe0, loc)
@@ -163,7 +162,7 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
       for {
         args0 <- EM.traverse(args)(visitExp[PType])
         tpe0 <- visitTpe[T](tpe)
-        fnType <- visitTpe[PReference[PFunction]](MonoType.Arrow(args.map(_.tpe), tpe))
+        fnType <- visitTpe[PReference[PFunction[T]]](MonoType.Arrow(args.map(_.tpe), tpe))
         expRes = ErasedAst.Expression.ApplyDefTail(sym, args0, fnType, tpe0, loc)
       } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
@@ -174,7 +173,7 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
         )
         actuals0 <- EM.traverse(actuals)(visitExp[PType])
         tpe0 <- visitTpe[T](tpe)
-        fnType <- visitTpe[PReference[PFunction]](MonoType.Arrow(actuals.map(_.tpe), tpe))
+        fnType <- visitTpe[PReference[PFunction[T]]](MonoType.Arrow(actuals.map(_.tpe), tpe))
         expRes = ErasedAst.Expression.ApplySelfTail(sym, formals0, actuals0, fnType, tpe0, loc)
       } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
@@ -782,7 +781,7 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
         case (args0, result0) =>
           val tpeRes = RReference(RArrow(args0, result0))
           val result = tpeRes.asInstanceOf[RType[T]]
-          result.toMonad.copyWith(fTypes = Set(result.asInstanceOf[RType[PReference[PFunction]]]))
+          result.toMonad.setFTypes(Set(result.asInstanceOf[RType[PReference[PFunction[T]]]]))
       }
     case MonoType.RecordEmpty() =>
       RReference(RRecordEmpty).asInstanceOf[RType[T]].toMonad

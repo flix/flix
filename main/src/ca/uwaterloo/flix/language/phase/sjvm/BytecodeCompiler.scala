@@ -106,26 +106,26 @@ object BytecodeCompiler {
     case Expression.ApplyClo(exp, args, tpe, loc) =>
       WithSource[R](loc) ~
         compileExp(exp) ~
-        CALL(args, squeezeFunction(squeezeReference(exp.tpe)), tpe)
+        CALL(args, squeezeFunction(squeezeReference(exp.tpe)))
 
     case Expression.ApplyDef(sym, args, fnTpe, tpe, loc) =>
       WithSource[R](loc) ~
-        CREATEDEF(sym.defName) ~
-        CALL(args, squeezeFunction(squeezeReference(fnTpe)), tpe)
+        CREATEDEF(sym.defName, tpe.tagOf) ~
+        CALL(args, squeezeFunction(squeezeReference(fnTpe)))
 
     case Expression.ApplyCloTail(exp, args, _, loc) =>
       WithSource[R](loc) ~
         compileExp(exp) ~
-        TAILCALL(args, squeezeFunction(squeezeReference(exp.tpe)), tagOf[T])
+        TAILCALL(args, squeezeFunction(squeezeReference(exp.tpe)))
 
     case Expression.ApplyDefTail(sym, args, fnTpe, tpe, loc) =>
       WithSource[R](loc) ~
-        CREATEDEF(sym.defName) ~
-        TAILCALL(args, squeezeFunction(squeezeReference(fnTpe)), tpe.tagOf)
+        CREATEDEF(sym.defName, tpe.tagOf) ~
+        TAILCALL(args, squeezeFunction(squeezeReference(fnTpe)))
 
     case Expression.ApplySelfTail(_, _, actuals, fnTpe, _, loc) =>
       WithSource[R](loc) ~
-        SELFTAILCALL(actuals, squeezeFunction(squeezeReference(fnTpe)), tagOf[T])
+        SELFTAILCALL(actuals, squeezeFunction(squeezeReference(fnTpe)))
 
     case Expression.BoolNot(exp, _, loc) =>
       WithSource[R](loc) ~

@@ -57,7 +57,7 @@ object RType {
     case res@RArray(_) => res
   }
 
-  def squeezeFunction(x: RReference[PFunction]): RArrow = x.referenceType match {
+  def squeezeFunction[T <: PType](x: RReference[PFunction[T]]): RArrow[T] = x.referenceType match {
     case res@RArrow(_, _) => res
   }
 
@@ -238,7 +238,7 @@ object RRefType {
     override lazy val jvmName: JvmName = JvmName.Java.Lang.String
   }
 
-  case class RArrow(args: List[RType[_ <: PType]], result: RType[_ <: PType]) extends RRefType[PFunction] {
+  case class RArrow[T <: PType](args: List[RType[_ <: PType]], result: RType[T]) extends RRefType[PFunction[T]] {
     override lazy val jvmName: JvmName = JvmName(Nil, s"Fn${args.length}${JvmName.reservedDelimiter}${(args ::: result :: Nil).map(_.toErasedString).mkString(JvmName.reservedDelimiter)}")
   }
 

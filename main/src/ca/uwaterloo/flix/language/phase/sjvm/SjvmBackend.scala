@@ -77,6 +77,8 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
 
       val refClasses = GenRefClasses.gen()
 
+      //val tagClasses = GenTagClasses.gen(root.tags)
+
       val defClasses = GenDefClasses.gen(root.functions, nonClosureFunctions)
 
       val closureClasses = GenClosureClasses.gen(root.closures)

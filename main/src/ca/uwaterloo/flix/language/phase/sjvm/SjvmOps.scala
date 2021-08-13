@@ -67,7 +67,7 @@ object SjvmOps {
   /**
    * Returns `true` if the given definition `defn` is a law.
    */
-  def nonLaw(defn: Def): Boolean = !defn.ann.isLaw
+  def nonLaw(defn: Def[_ <: PType]): Boolean = !defn.ann.isLaw
 
   /**
    * Returns the namespace info of the given definition symbol `sym`.

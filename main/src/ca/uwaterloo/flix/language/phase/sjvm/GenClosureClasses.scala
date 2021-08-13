@@ -36,19 +36,21 @@ object GenClosureClasses {
 
   def cloArgFieldName(index: Int): String = s"clo$index"
 
-  def gen(closures: Set[ClosureInfo])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+  def gen(closures: Set[ClosureInfo[_ <: PType]])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
 
     ParOps.parAgg(closures, Map.empty[JvmName, JvmClass])({
       case (macc, closure) =>
         val cloSym = closure.sym
         val cloName = cloSym.cloName
-        val bytecode = genByteCode(root.functions(cloSym), cloName, closure.freeVars, squeezeFunction(squeezeReference(closure.tpe)))
+        val cloDef = root.functions(cloSym)
+        // TODO(JLS): type var in genByteCode gets set to PType... without casts does not work. problem with all gen functions
+        val bytecode = genByteCode(cloDef.asInstanceOf[ErasedAst.Def[PType]], cloName, closure.freeVars, squeezeFunction(squeezeReference(cloDef.tpe)).asInstanceOf[RArrow[PType]])
         macc + (cloName -> JvmClass(cloName, bytecode))
     }, _ ++ _)
 
   }
 
-  private def genByteCode(defn: ErasedAst.Def, cloName: JvmName, freeVars: List[ErasedAst.FreeVar], functionType: RArrow)(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genByteCode[T <: PType](defn: ErasedAst.Def[T], cloName: JvmName, freeVars: List[ErasedAst.FreeVar], functionType: RArrow[T])(implicit root: Root, flix: Flix): Array[Byte] = {
     val classMaker = ClassMaker.mkClass(cloName, addSource = false, Some(functionType.jvmName))
     classMaker.mkSuperConstructor()
     classMaker.mkMethod(genInvokeFunction(defn, defn.exp, cloName, freeVars), GenContinuationInterfaces.invokeMethodName, functionType.result.nothingToContMethodDescriptor, Mod.isPublic)
@@ -58,7 +60,7 @@ object GenClosureClasses {
     classMaker.closeClassMaker
   }
 
-  def genInvokeFunction[T <: PType](defn: ErasedAst.Def, functionBody: ErasedAst.Expression[T], cloName: JvmName, freeVars: List[ErasedAst.FreeVar]): F[StackNil] => F[StackEnd] = {
+  def genInvokeFunction[T <: PType](defn: ErasedAst.Def[T], functionBody: ErasedAst.Expression[T], cloName: JvmName, freeVars: List[ErasedAst.FreeVar]): F[StackNil] => F[StackEnd] = {
     // TODO(JLS): maybe frees should not be in formals?
     // Free variables
     val frees = defn.formals.take(freeVars.length).map(x => ErasedAst.FreeVar(x.sym, x.tpe))
