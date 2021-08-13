@@ -4,7 +4,6 @@ import ca.uwaterloo.flix.util.{FlixTest, Options}
 import org.scalatest.Suites
 
 class LangSuite extends Suites(
-
   //
   // Currying.
   //
@@ -23,7 +22,6 @@ class LangSuite extends Suites(
   //
   // Definitions.
   //
-  new FlixTest("Test.Def.KindInference", "main/test/flix/Test.Def.KindInference.flix"),
   new FlixTest("Test.Def.Scoped", "main/test/flix/Test.Def.Scoped.flix"),
 
   //
@@ -190,6 +188,15 @@ class LangSuite extends Suites(
   new FlixTest("Test.Exp.Jvm.InvokeStaticMethod", "main/test/flix/Test.Exp.Jvm.InvokeStaticMethod.flix"),
   new FlixTest("Test.Exp.Jvm.PutField", "main/test/flix/Test.Exp.Jvm.PutField.flix"),
   new FlixTest("Test.Exp.Jvm.PutStaticField", "main/test/flix/Test.Exp.Jvm.PutStaticField.flix"),
+
+  //
+  // Kind.
+  //
+  new FlixTest("Test.Kind.Class", "main/test/flix/Test.Kind.Class.flix"),
+  new FlixTest("Test.Kind.Def", "main/test/flix/Test.Kind.Def.flix"),
+  new FlixTest("Test.Kind.Enum", "main/test/flix/Test.Kind.Enum.flix"),
+  new FlixTest("Test.Kind.Instance", "main/test/flix/Test.Kind.Instance.flix"),
+  new FlixTest("Test.Kind.TypeAlias", "main/test/flix/Test.Kind.TypeAlias.flix"),
 
   //
   // Lambda.

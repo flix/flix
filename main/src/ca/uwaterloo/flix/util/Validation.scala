@@ -272,6 +272,12 @@ object Validation {
     }
 
   /**
+    * Sequences over t1, t2, and t3.
+    */
+  def sequenceT[T1, T2, T3, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E]): Validation[(T1, T2, T3), E] =
+    mapN(t1, t2, t3)(Function.untupled(identity))
+
+  /**
     * Sequences over t1, t2, t3, and t4.
     */
   def sequenceT[T1, T2, T3, T4, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],

@@ -236,36 +236,6 @@ object NameError {
   }
 
   /**
-    * An error raised to indicate that the kinds of two instances of a type parameter do not match.
-    *
-    * @param name  the name of the type parameter.
-    * @param loc1  the location of the first instance.
-    * @param kind1 the kind of the first instance.
-    * @param loc2  the location of the second instance.
-    * @param kind2 the kind of the second instance.
-    */
-  case class MismatchedTypeParamKinds(name: String, loc1: SourceLocation, kind1: Kind, loc2: SourceLocation, kind2: Kind) extends NameError {
-    def summary: String = "Mismatched type parameter kinds."
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Mismatched kinds for type parameter '" << Red(name) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc1, s"Kind: $kind1") << NewLine
-      vt << NewLine
-      vt << Code(loc2, s"Kind: $kind2") << NewLine
-      vt << NewLine
-      vt << "Possible fixes:" << NewLine
-      vt << NewLine
-      vt << "  (1)  Wrap an occurrence with `{| ... }` to mark it as a record." << NewLine
-      vt << "  (2)  Wrap an occurrence with `#{| ... }` to mark it as a schema." << NewLine
-      vt << "  (3)  Rename one of the occurrences."
-
-    }
-    def loc: SourceLocation = loc1 min loc2
-  }
-
-  /**
     * An error raised to indicate that a signature does not include the class's type parameter.
     *
     * @param name the name of the signature.
