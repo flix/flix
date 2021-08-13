@@ -117,7 +117,7 @@ object ErasedAst {
 
     // Unary expressions
     case class BoolNot(exp: Expression[PInt32], tpe: RType[PInt32], loc: SourceLocation) extends Expression[PInt32]
-    
+
     case class Float32Neg(exp: Expression[PFloat32], tpe: RType[PFloat32], loc: SourceLocation) extends Expression[PFloat32]
 
     case class Float64Neg(exp: Expression[PFloat64], tpe: RType[PFloat64], loc: SourceLocation) extends Expression[PFloat64]
@@ -137,7 +137,7 @@ object ErasedAst {
     case class Int64Neg(exp: Expression[PInt64], tpe: RType[PInt64], loc: SourceLocation) extends Expression[PInt64]
 
     case class Int64Not(exp: Expression[PInt64], tpe: RType[PInt64], loc: SourceLocation) extends Expression[PInt64]
-    
+
     case class BigIntNeg(exp: Expression[PReference[PBigInt]], tpe: RType[PReference[PBigInt]], loc: SourceLocation) extends Expression[PReference[PBigInt]]
 
     case class BigIntNot(exp: Expression[PReference[PBigInt]], tpe: RType[PReference[PBigInt]], loc: SourceLocation) extends Expression[PReference[PBigInt]]
@@ -147,13 +147,53 @@ object ErasedAst {
     case class ObjNeqNull[T <: PRefType](exp: Expression[PReference[T]], tpe: RType[PInt32], loc: SourceLocation) extends Expression[PInt32]
 
     // Binary expressions
-    case class Binary[T <: PType](sop: SemanticOperator, op: BinaryOperator, exp1: Expression[_ <: PType], exp2: Expression[_ <: PType], tpe: RType[T], loc: SourceLocation) extends Expression[T]
+    case class BoolLogicalOp(op: LogicalOp, exp1: Expression[PInt32], exp2: Expression[PInt32], tpe: RType[PInt32], loc: SourceLocation) extends Expression[PInt32]
 
-    case class Int16Eq(exp1: Expression[PInt16], exp2: Expression[PInt16], tpe: RType[PInt32], loc: SourceLocation) extends Expression[PInt32]
+    case class BoolEquality(op: EqualityOp, exp1: Expression[PInt32], exp2: Expression[PInt32], tpe: RType[PInt32], loc: SourceLocation) extends Expression[PInt32]
 
-    case class Int32Eq(exp1: Expression[PInt32], exp2: Expression[PInt32], tpe: RType[PInt32], loc: SourceLocation) extends Expression[PInt32]
+    case class CharComparison(op: ComparisonOp, exp1: Expression[PChar], exp2: Expression[PChar], tpe: RType[PInt32], loc: SourceLocation) extends Expression[PInt32]
 
-    case class Int32Add(exp1: Expression[PInt32], exp2: Expression[PInt32], tpe: RType[PInt32], loc: SourceLocation) extends Expression[PInt32]
+    case class Float32Arithmetic(op: ArithmeticOp, exp1: Expression[PFloat32], exp2: Expression[PFloat32], tpe: RType[PFloat32], loc: SourceLocation) extends Expression[PFloat32]
+
+    case class Float32Comparison(op: ComparisonOp, exp1: Expression[PFloat32], exp2: Expression[PFloat32], tpe: RType[PInt32], loc: SourceLocation) extends Expression[PInt32]
+
+    case class Float64Arithmetic(op: ArithmeticOp, exp1: Expression[PFloat64], exp2: Expression[PFloat64], tpe: RType[PFloat64], loc: SourceLocation) extends Expression[PFloat64]
+
+    case class Float64Comparison(op: ComparisonOp, exp1: Expression[PFloat64], exp2: Expression[PFloat64], tpe: RType[PInt32], loc: SourceLocation) extends Expression[PInt32]
+
+    case class Int8Arithmetic(op: ArithmeticOp, exp1: Expression[PInt8], exp2: Expression[PInt8], tpe: RType[PInt8], loc: SourceLocation) extends Expression[PInt8]
+
+    case class Int16Arithmetic(op: ArithmeticOp, exp1: Expression[PInt16], exp2: Expression[PInt16], tpe: RType[PInt16], loc: SourceLocation) extends Expression[PInt16]
+
+    case class Int32Arithmetic(op: ArithmeticOp, exp1: Expression[PInt32], exp2: Expression[PInt32], tpe: RType[PInt32], loc: SourceLocation) extends Expression[PInt32]
+
+    case class Int64Arithmetic(op: ArithmeticOp, exp1: Expression[PInt64], exp2: Expression[PInt64], tpe: RType[PInt64], loc: SourceLocation) extends Expression[PInt64]
+
+    case class BigIntArithmetic(op: ArithmeticOp, exp1: Expression[PReference[PBigInt]], exp2: Expression[PReference[PBigInt]], tpe: RType[PReference[PBigInt]], loc: SourceLocation) extends Expression[PReference[PBigInt]]
+
+    case class Int8Bitwise(op: BitwiseOp, exp1: Expression[PInt8], exp2: Expression[PInt8], tpe: RType[PInt8], loc: SourceLocation) extends Expression[PInt8]
+
+    case class Int16Bitwise(op: BitwiseOp, exp1: Expression[PInt16], exp2: Expression[PInt16], tpe: RType[PInt16], loc: SourceLocation) extends Expression[PInt16]
+
+    case class Int32Bitwise(op: BitwiseOp, exp1: Expression[PInt32], exp2: Expression[PInt32], tpe: RType[PInt32], loc: SourceLocation) extends Expression[PInt32]
+
+    case class Int64Bitwise(op: BitwiseOp, exp1: Expression[PInt64], exp2: Expression[PInt64], tpe: RType[PInt64], loc: SourceLocation) extends Expression[PInt64]
+
+    case class BigIntBitwise(op: BitwiseOp, exp1: Expression[PReference[PBigInt]], exp2: Expression[PReference[PBigInt]], tpe: RType[PReference[PBigInt]], loc: SourceLocation) extends Expression[PReference[PBigInt]]
+
+    case class Int8Comparison(op: ComparisonOp, exp1: Expression[PInt8], exp2: Expression[PInt8], tpe: RType[PInt32], loc: SourceLocation) extends Expression[PInt32]
+
+    case class Int16Comparison(op: ComparisonOp, exp1: Expression[PInt16], exp2: Expression[PInt16], tpe: RType[PInt32], loc: SourceLocation) extends Expression[PInt32]
+
+    case class Int32Comparison(op: ComparisonOp, exp1: Expression[PInt32], exp2: Expression[PInt32], tpe: RType[PInt32], loc: SourceLocation) extends Expression[PInt32]
+
+    case class Int64Comparison(op: ComparisonOp, exp1: Expression[PInt64], exp2: Expression[PInt64], tpe: RType[PInt32], loc: SourceLocation) extends Expression[PInt32]
+
+    case class BigIntComparison(op: ComparisonOp, exp1: Expression[PReference[PBigInt]], exp2: Expression[PReference[PBigInt]], tpe: RType[PInt32], loc: SourceLocation) extends Expression[PInt32]
+
+    case class StringConcat(exp1: Expression[PReference[PStr]], exp2: Expression[PReference[PStr]], tpe: RType[PReference[PStr]], loc: SourceLocation) extends Expression[PReference[PStr]]
+
+    case class StringEquality(op: EqualityOp, exp1: Expression[PReference[PStr]], exp2: Expression[PReference[PStr]], tpe: RType[PInt32], loc: SourceLocation) extends Expression[PInt32]
 
     case class IfThenElse[T <: PType](exp1: Expression[PInt32], exp2: Expression[T], exp3: Expression[T], tpe: RType[T], loc: SourceLocation) extends Expression[T]
 
@@ -312,6 +352,77 @@ object ErasedAst {
   case class FormalParam(sym: Symbol.VarSym, tpe: RType[_ <: PType])
 
   case class FreeVar(sym: Symbol.VarSym, tpe: RType[_ <: PType])
+
+
+  sealed trait Operator
+
+  sealed trait ArithmeticOp extends Operator
+
+  object ArithmeticOp {
+
+    case object Add extends ArithmeticOp
+
+    case object Sub extends ArithmeticOp
+
+    case object Mul extends ArithmeticOp
+
+    case object Div extends ArithmeticOp
+
+    case object Rem extends ArithmeticOp
+
+    case object Exp extends ArithmeticOp
+
+  }
+
+  sealed trait ComparisonOp extends Operator
+
+  object ComparisonOp {
+
+    case object Lt extends ComparisonOp
+
+    case object Le extends ComparisonOp
+
+    case object Gt extends ComparisonOp
+
+    case object Ge extends ComparisonOp
+
+  }
+
+  sealed trait EqualityOp extends ComparisonOp
+
+  object EqualityOp {
+
+    case object Eq extends EqualityOp
+
+    case object Neq extends EqualityOp
+
+  }
+
+  sealed trait LogicalOp extends Operator
+
+  object LogicalOp {
+
+    case object And extends LogicalOp
+
+    case object Or extends LogicalOp
+
+  }
+
+  sealed trait BitwiseOp extends Operator
+
+  object BitwiseOp {
+
+    case object And extends BitwiseOp
+
+    case object Or extends BitwiseOp
+
+    case object Xor extends BitwiseOp
+
+    case object Shl extends BitwiseOp
+
+    case object Shr extends BitwiseOp
+
+  }
 
 }
 

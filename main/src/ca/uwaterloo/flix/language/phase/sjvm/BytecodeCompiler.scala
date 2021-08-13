@@ -132,6 +132,7 @@ object BytecodeCompiler {
         compileExp(exp) ~
         IFNE(START[R] ~ pushBool(false))(START[R] ~ pushBool(true))
 
+    // Unary expressions
     case Expression.Float32Neg(exp, tpe, loc) => ???
     case Expression.Float64Neg(exp, tpe, loc) => ???
     case Expression.Int8Neg(exp, tpe, loc) => ???
@@ -147,24 +148,31 @@ object BytecodeCompiler {
     case Expression.ObjEqNull(exp, tpe, loc) => ???
     case Expression.ObjNeqNull(exp, tpe, loc) => ???
 
-    case Expression.Binary(sop, op, exp1, exp2, tpe, loc) => /*TODO(JLS): remove*/ println("binary", sop.getClass.getCanonicalName, tpe); ???
-    case Expression.Int16Eq(exp1, exp2, tpe, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp1) ~
-        compileExp(exp2) ~
-        IF_ICMPEQ16(pushBool(true), pushBool(false))
-
-    case Expression.Int32Eq(exp1, exp2, _, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp1) ~
-        compileExp(exp2) ~
-        IF_ICMPEQ32(pushBool(true), pushBool(false))
-
-    case Expression.Int32Add(exp1, exp2, _, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp1) ~
-        compileExp(exp2) ~
-        IADD
+    // Binary expressions
+    case Expression.BoolLogicalOp(op, exp1, exp2, tpe, loc) => ???
+    case Expression.BoolEquality(op, exp1, exp2, tpe, loc) => ???
+    case Expression.CharComparison(op, exp1, exp2, tpe, loc) => ???
+    case Expression.Float32Arithmetic(op, exp1, exp2, tpe, loc) => ???
+    case Expression.Float32Comparison(op, exp1, exp2, tpe, loc) => ???
+    case Expression.Float64Arithmetic(op, exp1, exp2, tpe, loc) => ???
+    case Expression.Float64Comparison(op, exp1, exp2, tpe, loc) => ???
+    case Expression.Int8Arithmetic(op, exp1, exp2, tpe, loc) => ???
+    case Expression.Int16Arithmetic(op, exp1, exp2, tpe, loc) => ???
+    case Expression.Int32Arithmetic(op, exp1, exp2, tpe, loc) => ???
+    case Expression.Int64Arithmetic(op, exp1, exp2, tpe, loc) => ???
+    case Expression.BigIntArithmetic(op, exp1, exp2, tpe, loc) => ???
+    case Expression.Int8Bitwise(op, exp1, exp2, tpe, loc) => ???
+    case Expression.Int16Bitwise(op, exp1, exp2, tpe, loc) => ???
+    case Expression.Int32Bitwise(op, exp1, exp2, tpe, loc) => ???
+    case Expression.Int64Bitwise(op, exp1, exp2, tpe, loc) => ???
+    case Expression.BigIntBitwise(op, exp1, exp2, tpe, loc) => ???
+    case Expression.Int8Comparison(op, exp1, exp2, tpe, loc) => ???
+    case Expression.Int16Comparison(op, exp1, exp2, tpe, loc) => ???
+    case Expression.Int32Comparison(op, exp1, exp2, tpe, loc) => ???
+    case Expression.Int64Comparison(op, exp1, exp2, tpe, loc) => ???
+    case Expression.BigIntComparison(op, exp1, exp2, tpe, loc) => ???
+    case Expression.StringConcat(exp1, exp2, tpe, loc) => ???
+    case Expression.StringEquality(op, exp1, exp2, tpe, loc) => ???
 
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => ???
     case Expression.Branch(exp, branches, tpe, loc) => ???

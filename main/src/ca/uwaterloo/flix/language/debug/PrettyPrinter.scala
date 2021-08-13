@@ -597,55 +597,55 @@ object PrettyPrinter {
           vt.text(")")
 
         case Expression.BoolNot(exp, _, _) =>
-          fmtUnaryOp(UnaryOperator.LogicalNot, vt)
+          vt.text("not")
           visitExp(exp)
 
         case Expression.Float32Neg(exp, _, _) =>
-          fmtUnaryOp(UnaryOperator.Minus, vt)
+          vt.text("-")
           visitExp(exp)
 
         case Expression.Float64Neg(exp, _, _) =>
-          fmtUnaryOp(UnaryOperator.Minus, vt)
+          vt.text("-")
           visitExp(exp)
 
         case Expression.Int8Neg(exp, _, _) =>
-          fmtUnaryOp(UnaryOperator.Minus, vt)
+          vt.text("-")
           visitExp(exp)
 
         case Expression.Int8Not(exp, _, _) =>
-          fmtUnaryOp(UnaryOperator.BitwiseNegate, vt)
+          vt.text("~~~")
           visitExp(exp)
 
         case Expression.Int16Neg(exp, _, _) =>
-          fmtUnaryOp(UnaryOperator.Minus, vt)
+          vt.text("-")
           visitExp(exp)
 
         case Expression.Int16Not(exp, _, _) =>
-          fmtUnaryOp(UnaryOperator.BitwiseNegate, vt)
+          vt.text("~~~")
           visitExp(exp)
 
         case Expression.Int32Neg(exp, _, _) =>
-          fmtUnaryOp(UnaryOperator.Minus, vt)
+          vt.text("-")
           visitExp(exp)
 
         case Expression.Int32Not(exp, _, _) =>
-          fmtUnaryOp(UnaryOperator.BitwiseNegate, vt)
+          vt.text("~~~")
           visitExp(exp)
 
         case Expression.Int64Neg(exp, _, _) =>
-          fmtUnaryOp(UnaryOperator.Minus, vt)
+          vt.text("-")
           visitExp(exp)
 
         case Expression.Int64Not(exp, _, _) =>
-          fmtUnaryOp(UnaryOperator.BitwiseNegate, vt)
+          vt.text("~~~")
           visitExp(exp)
 
         case Expression.BigIntNeg(exp, _, _) =>
-          fmtUnaryOp(UnaryOperator.Minus, vt)
+          vt.text("-")
           visitExp(exp)
 
         case Expression.BigIntNot(exp, _, _) =>
-          fmtUnaryOp(UnaryOperator.BitwiseNegate, vt)
+          vt.text("~~~")
           visitExp(exp)
 
         case Expression.ObjEqNull(exp, _, _) =>
@@ -658,31 +658,169 @@ object PrettyPrinter {
           visitExp(exp)
           vt.text(")")
 
-        case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
+        case Expression.BoolLogicalOp(op, exp1, exp2, tpe, loc) =>
           visitExp(exp1)
           vt.text(" ")
-          fmtBinaryOp(op, vt)
+          fmtOp(op, vt)
           vt.text(" ")
           visitExp(exp2)
 
-        case Expression.Int16Eq(exp1, exp2, tpe, loc) =>
+        case Expression.BoolEquality(op, exp1, exp2, tpe, loc) =>
           visitExp(exp1)
           vt.text(" ")
-          fmtBinaryOp(BinaryOperator.Equal, vt)
+          fmtOp(op, vt)
           vt.text(" ")
           visitExp(exp2)
 
-        case Expression.Int32Eq(exp1, exp2, tpe, loc) =>
+        case Expression.CharComparison(op, exp1, exp2, tpe, loc) =>
           visitExp(exp1)
           vt.text(" ")
-          fmtBinaryOp(BinaryOperator.Equal, vt)
+          fmtOp(op, vt)
           vt.text(" ")
           visitExp(exp2)
 
-        case Expression.Int32Add(exp1, exp2, tpe, loc) =>
+        case Expression.Float32Arithmetic(op, exp1, exp2, tpe, loc) =>
           visitExp(exp1)
           vt.text(" ")
-          fmtBinaryOp(BinaryOperator.Plus, vt)
+          fmtOp(op, vt)
+          vt.text(" ")
+          visitExp(exp2)
+
+        case Expression.Float32Comparison(op, exp1, exp2, tpe, loc) =>
+          visitExp(exp1)
+          vt.text(" ")
+          fmtOp(op, vt)
+          vt.text(" ")
+          visitExp(exp2)
+
+        case Expression.Float64Arithmetic(op, exp1, exp2, tpe, loc) =>
+          visitExp(exp1)
+          vt.text(" ")
+          fmtOp(op, vt)
+          vt.text(" ")
+          visitExp(exp2)
+
+        case Expression.Float64Comparison(op, exp1, exp2, tpe, loc) =>
+          visitExp(exp1)
+          vt.text(" ")
+          fmtOp(op, vt)
+          vt.text(" ")
+          visitExp(exp2)
+
+        case Expression.Int8Arithmetic(op, exp1, exp2, tpe, loc) =>
+          visitExp(exp1)
+          vt.text(" ")
+          fmtOp(op, vt)
+          vt.text(" ")
+          visitExp(exp2)
+
+        case Expression.Int16Arithmetic(op, exp1, exp2, tpe, loc) =>
+          visitExp(exp1)
+          vt.text(" ")
+          fmtOp(op, vt)
+          vt.text(" ")
+          visitExp(exp2)
+
+        case Expression.Int32Arithmetic(op, exp1, exp2, tpe, loc) =>
+          visitExp(exp1)
+          vt.text(" ")
+          fmtOp(op, vt)
+          vt.text(" ")
+          visitExp(exp2)
+
+        case Expression.Int64Arithmetic(op, exp1, exp2, tpe, loc) =>
+          visitExp(exp1)
+          vt.text(" ")
+          fmtOp(op, vt)
+          vt.text(" ")
+          visitExp(exp2)
+
+        case Expression.BigIntArithmetic(op, exp1, exp2, tpe, loc) =>
+          visitExp(exp1)
+          vt.text(" ")
+          fmtOp(op, vt)
+          vt.text(" ")
+          visitExp(exp2)
+
+        case Expression.Int8Bitwise(op, exp1, exp2, tpe, loc) =>
+          visitExp(exp1)
+          vt.text(" ")
+          fmtOp(op, vt)
+          vt.text(" ")
+          visitExp(exp2)
+
+        case Expression.Int16Bitwise(op, exp1, exp2, tpe, loc) =>
+          visitExp(exp1)
+          vt.text(" ")
+          fmtOp(op, vt)
+          vt.text(" ")
+          visitExp(exp2)
+
+        case Expression.Int32Bitwise(op, exp1, exp2, tpe, loc) =>
+          visitExp(exp1)
+          vt.text(" ")
+          fmtOp(op, vt)
+          vt.text(" ")
+          visitExp(exp2)
+
+        case Expression.Int64Bitwise(op, exp1, exp2, tpe, loc) =>
+          visitExp(exp1)
+          vt.text(" ")
+          fmtOp(op, vt)
+          vt.text(" ")
+          visitExp(exp2)
+
+        case Expression.BigIntBitwise(op, exp1, exp2, tpe, loc) =>
+          visitExp(exp1)
+          vt.text(" ")
+          fmtOp(op, vt)
+          vt.text(" ")
+          visitExp(exp2)
+
+        case Expression.Int8Comparison(op, exp1, exp2, tpe, loc) =>
+          visitExp(exp1)
+          vt.text(" ")
+          fmtOp(op, vt)
+          vt.text(" ")
+          visitExp(exp2)
+
+        case Expression.Int16Comparison(op, exp1, exp2, tpe, loc) =>
+          visitExp(exp1)
+          vt.text(" ")
+          fmtOp(op, vt)
+          vt.text(" ")
+          visitExp(exp2)
+
+        case Expression.Int32Comparison(op, exp1, exp2, tpe, loc) =>
+          visitExp(exp1)
+          vt.text(" ")
+          fmtOp(op, vt)
+          vt.text(" ")
+          visitExp(exp2)
+
+        case Expression.Int64Comparison(op, exp1, exp2, tpe, loc) =>
+          visitExp(exp1)
+          vt.text(" ")
+          fmtOp(op, vt)
+          vt.text(" ")
+          visitExp(exp2)
+
+        case Expression.BigIntComparison(op, exp1, exp2, tpe, loc) =>
+          visitExp(exp1)
+          vt.text(" ")
+          fmtOp(op, vt)
+          vt.text(" ")
+          visitExp(exp2)
+
+        case Expression.StringConcat(exp1, exp2, tpe, loc) =>
+          visitExp(exp1)
+          vt.text(" concat ")
+          visitExp(exp2)
+
+        case Expression.StringEquality(op, exp1, exp2, tpe, loc) =>
+          visitExp(exp1)
+          vt.text(" ")
+          fmtOp(op, vt)
           vt.text(" ")
           visitExp(exp2)
 
@@ -1060,34 +1198,36 @@ object PrettyPrinter {
       vt << Magenta(sym.toString)
     }
 
-    def fmtUnaryOp(op: UnaryOperator, vt: VirtualTerminal): Unit = op match {
-      case UnaryOperator.LogicalNot => vt.text("not")
-      case UnaryOperator.Plus => vt.text("+")
-      case UnaryOperator.Minus => vt.text("-")
-      case UnaryOperator.BitwiseNegate => vt.text("~~~")
-    }
-
-    def fmtBinaryOp(op: BinaryOperator, vt: VirtualTerminal): VirtualTerminal = op match {
-      case BinaryOperator.Plus => vt.text("+")
-      case BinaryOperator.Minus => vt.text("-")
-      case BinaryOperator.Times => vt.text("*")
-      case BinaryOperator.Divide => vt.text("/")
-      case BinaryOperator.Modulo => vt.text("%")
-      case BinaryOperator.Exponentiate => vt.text("**")
-      case BinaryOperator.Less => vt.text("<")
-      case BinaryOperator.LessEqual => vt.text("<=")
-      case BinaryOperator.Greater => vt.text(">")
-      case BinaryOperator.GreaterEqual => vt.text(">=")
-      case BinaryOperator.Equal => vt.text("==")
-      case BinaryOperator.NotEqual => vt.text("!=")
-      case BinaryOperator.Spaceship => vt.text("<=>")
-      case BinaryOperator.LogicalAnd => vt.text("and")
-      case BinaryOperator.LogicalOr => vt.text("or")
-      case BinaryOperator.BitwiseAnd => vt.text("&&&")
-      case BinaryOperator.BitwiseOr => vt.text("|||")
-      case BinaryOperator.BitwiseXor => vt.text("^^^")
-      case BinaryOperator.BitwiseLeftShift => vt.text("<<<")
-      case BinaryOperator.BitwiseRightShift => vt.text(">>>")
+    def fmtOp(op: ErasedAst.Operator, vt: VirtualTerminal): VirtualTerminal = op match {
+      case operator: ArithmeticOp => operator match {
+        case ArithmeticOp.Add => vt.text("+")
+        case ArithmeticOp.Sub => vt.text("-")
+        case ArithmeticOp.Mul => vt.text("*")
+        case ArithmeticOp.Div => vt.text("/")
+        case ArithmeticOp.Rem => vt.text("%")
+        case ArithmeticOp.Exp => vt.text("**")
+      }
+      case operator: ComparisonOp => operator match {
+        case ComparisonOp.Lt => vt.text("<")
+        case ComparisonOp.Le => vt.text("<=")
+        case ComparisonOp.Gt => vt.text(">")
+        case ComparisonOp.Ge => vt.text(">=")
+        case operator: EqualityOp => operator match {
+          case EqualityOp.Eq => vt.text("==")
+          case EqualityOp.Neq => vt.text("!=")
+        }
+      }
+      case operator: LogicalOp => operator match {
+        case LogicalOp.And => vt.text("and")
+        case LogicalOp.Or => vt.text("or")
+      }
+      case operator: BitwiseOp => operator match {
+        case BitwiseOp.And => vt.text("&&&")
+        case BitwiseOp.Or => vt.text("|||")
+        case BitwiseOp.Xor => vt.text("^^^")
+        case BitwiseOp.Shl => vt.text("<<<")
+        case BitwiseOp.Shr => vt.text(">>>")
+      }
     }
 
   }
