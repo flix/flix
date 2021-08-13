@@ -101,7 +101,7 @@ object BytecodeCompiler {
 
     case Expression.Closure(sym, freeVars, tpe, loc) =>
       WithSource[R](loc) ~
-        Instructions.CREATECLOSURE(freeVars, sym.cloName, squeezeFunction(squeezeReference(tpe)))
+        Instructions.CREATECLOSURE(freeVars, sym.cloName)
 
     case Expression.ApplyClo(exp, args, tpe, loc) =>
       WithSource[R](loc) ~
@@ -127,8 +127,13 @@ object BytecodeCompiler {
       WithSource[R](loc) ~
         SELFTAILCALL(actuals, squeezeFunction(squeezeReference(fnTpe)), tagOf[T])
 
-    case Expression.Unary(sop, op, exp, tpe, loc) => ???
-    case Expression.Binary(sop, op, exp1, exp2, tpe, loc) => /*TODO(JLS): remove*/ println(sop.getClass.getCanonicalName, tpe); ???
+    case Expression.Unary(sop, op, exp, tpe, loc) => /*TODO(JLS): remove*/ println("unary", sop.getClass.getCanonicalName, tpe); ???
+    case Expression.BoolNot(exp, tpe, loc) =>
+      WithSource[R](loc) ~
+        compileExp(exp) ~
+        IFNE(START[R] ~ pushBool(false))(START[R] ~ pushBool(true))
+
+    case Expression.Binary(sop, op, exp1, exp2, tpe, loc) => /*TODO(JLS): remove*/ println("binary", sop.getClass.getCanonicalName, tpe); ???
     case Expression.Int16Eq(exp1, exp2, tpe, loc) =>
       WithSource[R](loc) ~
         compileExp(exp1) ~
@@ -170,26 +175,14 @@ object BytecodeCompiler {
       def makeAndFillArray[R0 <: Stack, T0 <: PType]
       (elms: List[Expression[T0]], arrayType: RArray[T0]):
       F[R0 ** PReference[PArray[T0]]] => F[R0 ** PReference[PArray[T0]]] = {
-        val elmType = arrayType.tpe
-        elmType match {
-          case RBool => ???
-          case RInt8 => ???
-          case RInt16 => ???
-          case RInt32 =>
+        START[R0 ** PReference[PArray[T0]]] ~
+          multiComposition(elms.zipWithIndex) { case (elm, index) =>
             START[R0 ** PReference[PArray[T0]]] ~
-              multiComposition(elms.zipWithIndex) { case (elm, index) =>
-                START[R0 ** PReference[PArray[T0]]] ~
-                  DUP ~
-                  pushInt32(index) ~
-                  compileExp(elm) ~
-                  XAStore(elmType)
-              }
-          case RInt64 => ???
-          case RChar => ???
-          case RFloat32 => ???
-          case RFloat64 => ???
-          case RReference(_) => ???
-        }
+              DUP ~
+              pushInt32(index) ~
+              compileExp(elm) ~
+              XAStore(arrayType.tpe)
+          }
       }
 
       WithSource[R](loc) ~

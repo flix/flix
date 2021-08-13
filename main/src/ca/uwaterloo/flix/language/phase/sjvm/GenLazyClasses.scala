@@ -108,7 +108,7 @@ object GenLazyClasses {
         START[StackNil ** PReference[PLazy[T]]] ~
           THISLOAD(tagOf[PLazy[T]]) ~
           GetBoolField(lazyType, InitializedFieldName) ~
-          (RUNIFTRUE {
+          (IFNE {
             START[StackNil ** PReference[PLazy[T]]] ~
               THISLOAD(tagOf[PLazy[T]]) ~
               GetObjectField(lazyType, ExpressionFieldName, tagOf[PAnyObject]) ~
@@ -119,7 +119,7 @@ object GenLazyClasses {
               THISLOAD(tagOf[PLazy[T]]) ~
               pushInt32(1) ~
               PUTFIELD(lazyType, InitializedFieldName, RInt32)
-          }) ~
+          } (NOP)) ~
           THISLOAD(tagOf[PLazy[T]]) ~
           XGETFIELD(lazyType, ValueFieldName, valueFieldType)
       }) ~

@@ -83,24 +83,56 @@ object Instructions {
     castF(f)
   }
 
-  def RUNIFTRUE
-  [R <: Stack]
-  (f: F[R] => F[R]):
-  F[R ** PInt32] => F[R] = {
-    val label = new Label()
-    IFNE(label) ~
-      f ~
-      (f0 => {
-        f0.visitor.visitLabel(label)
-        castF(f0)
-      })
+  private def conditional(branchIns: Int, f: F[_], branch1: Unit => _, branch2: Unit => _): Unit = {
+    val b1 = new Label()
+    val end = new Label()
+    f.visitor.visitJumpInsn(branchIns, b1)
+
+    branch2.apply(())
+    f.visitor.visitJumpInsn(Opcodes.GOTO, end)
+
+    f.visitor.visitLabel(b1)
+    branch1.apply(())
+    f.visitor.visitLabel(end)
   }
 
-  private def IFNE
-  [R <: Stack]
-  (label: Label):
-  F[R ** PInt32] => F[R] = f => {
-    f.visitor.visitJumpInsn(Opcodes.IFNE, label)
+  def IFNE
+  [R1 <: Stack, R2 <: Stack]
+  (branch1: F[R1] => F[R2])(branch2: F[R1] => F[R2]):
+  F[R1 ** PInt32] => F[R2] = f => {
+    conditional(Opcodes.IFNE, f, _ => branch1(castF(f)), _ => branch2(castF(f)))
+    castF(f)
+  }
+
+  def IF_ICMPEQ32
+  [R1 <: Stack, R2 <: Stack]
+  (branch1: F[R1] => F[R2], branch2: F[R1] => F[R2]):
+  F[R1 ** PInt32 ** PInt32] => F[R2] = f => {
+    conditional(Opcodes.IF_ICMPEQ, f, _ => branch1(castF(f)), _ => branch2(castF(f)))
+    castF(f)
+  }
+
+  def IF_ICMPNE32
+  [R1 <: Stack, R2 <: Stack]
+  (branch1: F[R1] => F[R2], branch2: F[R1] => F[R2]):
+  F[R1 ** PInt32 ** PInt32] => F[R2] = f => {
+    conditional(Opcodes.IF_ICMPNE, f, _ => branch1(castF(f)), _ => branch2(castF(f)))
+    castF(f)
+  }
+
+  def IF_ICMPEQ16
+  [R1 <: Stack, R2 <: Stack]
+  (branch1: F[R1] => F[R2], branch2: F[R1] => F[R2]):
+  F[R1 ** PInt16 ** PInt16] => F[R2] = f => {
+    IF_ICMPEQ32(branch1, branch2)(castF(f))
+    castF(f)
+  }
+
+  def IF_ICMPNE16
+  [R1 <: Stack, R2 <: Stack]
+  (branch1: F[R1] => F[R2], branch2: F[R1] => F[R2]):
+  F[R1 ** PInt16 ** PInt16] => F[R2] = f => {
+    IF_ICMPNE32(branch1, branch2)(castF(f))
     castF(f)
   }
 
@@ -501,56 +533,6 @@ object Instructions {
     castF(f)
   }
 
-  def IF_ICMPEQ32
-  [R <: Stack, R2 <: Stack]
-  (branch1: F[R] => F[R2], branch2: F[R] => F[R2]):
-  F[R ** PInt32 ** PInt32] => F[R2] = f => {
-    val b1 = new Label()
-    val end = new Label()
-    f.visitor.visitJumpInsn(Opcodes.IF_ICMPEQ, b1)
-
-    branch2(castF(f))
-    f.visitor.visitJumpInsn(Opcodes.GOTO, end)
-
-    f.visitor.visitLabel(b1)
-    branch1(castF(f))
-    f.visitor.visitLabel(end)
-    castF(f)
-  }
-
-  def IF_ICMPNE32
-  [R <: Stack, R2 <: Stack]
-  (branch1: F[R] => F[R2], branch2: F[R] => F[R2]):
-  F[R ** PInt32 ** PInt32] => F[R2] = f => {
-    val b1 = new Label()
-    val end = new Label()
-    f.visitor.visitJumpInsn(Opcodes.IF_ICMPNE, b1)
-
-    branch2(castF(f))
-    f.visitor.visitJumpInsn(Opcodes.GOTO, end)
-
-    f.visitor.visitLabel(b1)
-    branch1(castF(f))
-    f.visitor.visitLabel(end)
-    castF(f)
-  }
-
-  def IF_ICMPEQ16
-  [R <: Stack, R2 <: Stack]
-  (branch1: F[R] => F[R2], branch2: F[R] => F[R2]):
-  F[R ** PInt16 ** PInt16] => F[R2] = f => {
-    IF_ICMPEQ32(branch1, branch2)(castF(f))
-    castF(f)
-  }
-
-  def IF_ICMPNE16
-  [R <: Stack, R2 <: Stack]
-  (branch1: F[R] => F[R2], branch2: F[R] => F[R2]):
-  F[R ** PInt16 ** PInt16] => F[R2] = f => {
-    IF_ICMPNE32(branch1, branch2)(castF(f))
-    castF(f)
-  }
-
   def pushUnit
   [R <: Stack]:
   F[R] => F[R ** PReference[PUnit]] = f => {
@@ -685,7 +667,7 @@ object Instructions {
   (arguments: List[ErasedAst.Expression[_ <: PType]], fnType: RArrow, returnType: Tag[T] = null):
   F[R ** PReference[PFunction]] => F[R ** T] = {
     START[R ** PReference[PFunction]] ~
-      setArgs(fnType, arguments, GenFunctionInterfaces.argFieldName) ~
+      setArgs(fnType.jvmName, arguments, GenFunctionInterfaces.argFieldName) ~
       AReturnNoEnd(tagOf[T])
   }
 
@@ -712,7 +694,7 @@ object Instructions {
   F[R] => F[R ** T] = {
     START[R] ~
       THISLOAD(tagOf[PFunction]) ~
-      setArgs(fnType, arguments, GenFunctionInterfaces.argFieldName) ~
+      setArgs(fnType.jvmName, arguments, GenFunctionInterfaces.argFieldName) ~
       AReturnNoEnd(returnType)
   }
 
@@ -727,18 +709,18 @@ object Instructions {
   }
 
   def setArgs[R <: Stack]
-  (fnType: RArrow, args: List[ErasedAst.Expression[_ <: PType]], fieldName: Int => String):
+  (className: JvmName, args: List[ErasedAst.Expression[_ <: PType]], fieldName: Int => String):
   F[R ** PReference[PFunction]] => F[R ** PReference[PFunction]] =
     START[R ** PReference[PFunction]] ~
       multiComposition(args.zipWithIndex) {
         case (exp, index) =>
-          START[R ** PReference[PFunction]] ~ DUP ~ compileExp(exp) ~ setArg(fnType, fieldName(index), exp.tpe.erasedDescriptor)
+          START[R ** PReference[PFunction]] ~ DUP ~ compileExp(exp) ~ setArg(className, fieldName(index), exp.tpe.erasedDescriptor)
       }
 
   private def setArg[R <: Stack, T <: PType]
-  (fnType: RArrow, fieldName: String, erasedTpe: String):
+  (className: JvmName, fieldName: String, erasedTpe: String):
   F[R ** PReference[PFunction] ** T] => F[R] = f => {
-    f.visitor.visitFieldInsn(Opcodes.PUTFIELD, fnType.toInternalName, fieldName, erasedTpe)
+    f.visitor.visitFieldInsn(Opcodes.PUTFIELD, className.toInternalName, fieldName, erasedTpe)
     castF(f)
   }
 
@@ -748,7 +730,7 @@ object Instructions {
   (arguments: List[ErasedAst.Expression[_ <: PType]], fnType: RArrow, returnType: RType[T]):
   F[R ** PReference[PFunction]] => F[R ** T] = {
     START[R ** PReference[PFunction]] ~
-      setArgs(fnType, arguments, GenFunctionInterfaces.argFieldName) ~
+      setArgs(fnType.jvmName, arguments, GenFunctionInterfaces.argFieldName) ~
       unwind(fnType, returnType)
   }
 
@@ -761,10 +743,10 @@ object Instructions {
 
   def CREATECLOSURE
   [R <: Stack, T <: PType]
-  (freeVars: List[ErasedAst.FreeVar], defClassName: JvmName, fnType: RArrow):
+  (freeVars: List[ErasedAst.FreeVar], cloClassName: JvmName):
   F[R] => F[R ** PReference[PFunction]] =
-    makeAndInitDef(defClassName) ~
-      setArgs(fnType, freeVars.map(f => ErasedAst.Expression.Var(f.sym, f.tpe, SourceLocation.Unknown)), GenClosureClasses.cloArgFieldName)
+    makeAndInitDef(cloClassName) ~
+      setArgs(cloClassName, freeVars.map(f => ErasedAst.Expression.Var(f.sym, f.tpe, SourceLocation.Unknown)), GenClosureClasses.cloArgFieldName)
   // TODO(JLS): This added exp could maybe cause trouble
 
   def ILOAD
@@ -1146,15 +1128,19 @@ object Instructions {
 
   def systemArrayCopy
   [R <: Stack, T <: PType]:
-  F[R ** PReference[PArray[T]] ** PInt32 ** PReference[PArray[T]] ** PInt32 ** PInt32] => F[R] =
-    ???
+  F[R ** PReference[PArray[T]] ** PInt32 ** PReference[PArray[T]] ** PInt32 ** PInt32] => F[R] = f => {
+    val descriptor = JvmName.getMethodDescriptor(RObject :: RInt32 :: RObject :: RInt32 :: RInt32 :: Nil, None)
+    f.visitor.visitMethodInsn(Opcodes.INVOKESTATIC, JvmName.Java.Lang.System.toInternalName, "arraycopy", descriptor, false)
+    castF(f)
+  }
 
   def arraysFill
   [R <: Stack, T <: PType]
   (elementType: RType[T]):
   F[R ** PReference[PArray[T]] ** T] => F[R] = f => {
     //TODO(JLS): where to store the name?
-    f.visitor.visitMethodInsn(Opcodes.INVOKESTATIC, JvmName.Java.Util.Arrays.toInternalName, "fill", JvmName.getMethodDescriptor(RReference(RArray(elementType)) :: elementType :: Nil, None), false)
+    val descriptor = JvmName.getMethodDescriptor(RArray(elementType) :: elementType :: Nil, None)
+    f.visitor.visitMethodInsn(Opcodes.INVOKESTATIC, JvmName.Java.Util.Arrays.toInternalName, "fill", descriptor, false)
     castF(f)
   }
 

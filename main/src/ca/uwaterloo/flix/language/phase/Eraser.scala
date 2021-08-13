@@ -44,13 +44,13 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
 
     // TODO(JLS): should maybe be integrated to the other fold
     val defnsResult = defns.copyWith(namespaces = defns.value.groupBy(_._1.namespace).map {
-          case (ns, defs) =>
-            // Collect all non-law definitions.
-            val nonLaws = defs filter {
-              case (sym, defn) => SjvmOps.nonLaw(defn) && !closureSyms.contains(sym)
-            }
-            NamespaceInfo(ns, nonLaws)
-        }.toSet)
+      case (ns, defs) =>
+        // Collect all non-law definitions.
+        val nonLaws = defs filter {
+          case (sym, defn) => SjvmOps.nonLaw(defn) && !closureSyms.contains(sym)
+        }
+        NamespaceInfo(ns, nonLaws)
+    }.toSet)
 
     // TODO(JLS): the function list should be split into closures and functions (and maybe include nonLaw checking)
     val result = ErasedAst.Root(defnsResult.value, root.reachable, root.sources, defnsResult.fTypes, defnsResult.closures, defnsResult.namespaces)
@@ -58,8 +58,8 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
   }
 
   /**
-   * Translates the given definition `def0` to the ErasedAst.
-   */
+    * Translates the given definition `def0` to the ErasedAst.
+    */
   private def visitDef(def0: FinalAst.Def): EraserMonad[ErasedAst.Def] = {
     for {
       formals0 <- EM.traverse(def0.formals)(visitFormalParam)
@@ -69,8 +69,8 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
   }
 
   /**
-   * Translates the given expression `exp0` to the ErasedAst.
-   */
+    * Translates the given expression `exp0` to the ErasedAst.
+    */
   private def visitExp[T <: PType](baseExp: FinalAst.Expression): EraserMonad[ErasedAst.Expression[T]] = baseExp match {
     case FinalAst.Expression.Unit(loc) =>
       ErasedAst.Expression.Unit(loc).asInstanceOf[ErasedAst.Expression[T]].toMonad
@@ -177,11 +177,19 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
       } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.Unary(sop, op, exp, tpe, loc) =>
-      for {
-        exp0 <- visitExp[PType](exp)
-        tpe0 <- visitTpe[T](tpe)
-        expRes = ErasedAst.Expression.Unary(sop, op, exp0, tpe0, loc)
-      } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
+      sop match {
+        case SemanticOperator.BoolOp.Not => for {
+          exp0 <- visitExp[PInt32](exp)
+          tpe0 <- visitTpe[PInt32](tpe)
+          expRes = ErasedAst.Expression.BoolNot(exp0, tpe0, loc)
+        } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
+        case _ => for {
+          exp0 <- visitExp[PType](exp)
+          tpe0 <- visitTpe[T](tpe)
+          expRes = ErasedAst.Expression.Unary(sop, op, exp0, tpe0, loc)
+        } yield expRes
+      }
+
 
     case FinalAst.Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
       sop match {
@@ -542,16 +550,16 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
   }
 
   /**
-   * Translates the given formal param `p` to the ErasedAst.
-   */
+    * Translates the given formal param `p` to the ErasedAst.
+    */
   private def visitFormalParam(p: FinalAst.FormalParam): EraserMonad[ErasedAst.FormalParam] = {
     visitTpe[PType](p.tpe) map (tpe0 => ErasedAst.FormalParam(p.sym, tpe0))
   }
 
   /**
-   *
-   * Translates the type 'tpe' to the ErasedType.
-   */
+    *
+    * Translates the type 'tpe' to the ErasedType.
+    */
   private def visitTpe[T <: PType](tpe: MonoType): EraserMonad[RType[T]] = tpe match {
     case MonoType.Unit => RReference(RUnit).asInstanceOf[RType[T]].toMonad
     case MonoType.Bool => RBool.asInstanceOf[RType[T]].toMonad

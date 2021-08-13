@@ -18,12 +18,13 @@
 package ca.uwaterloo.flix.language.phase.sjvm
 
 import ca.uwaterloo.flix.language.ast.Describable
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.nio.file.{Path, Paths}
 
 /**
- * Companion object for the [[JvmName]] class.
- */
+  * Companion object for the [[JvmName]] class.
+  */
 object JvmName {
 
   // TODO(JLS): Find better alternative
@@ -46,8 +47,18 @@ object JvmName {
   val objectToVoid: String = getMethodDescriptor(Java.Lang.Object, None)
 
   /**
-   * Returns the descriptor of a method take takes the given `argumentTypes` and returns the given `resultType`.
-   */
+    * Returns the JvmName of the given string `s`.
+    */
+  def fromClass(clazz: Class[_]): JvmName = {
+    val l = clazz.getName.split("\\.")
+    if (l.isEmpty) throw InternalCompilerException(s"class name non existent $clazz")
+    else if (l.size == 1) JvmName(Nil, l.last)
+    else JvmName(l.init.toList, l.last)
+  }
+
+  /**
+    * Returns the descriptor of a method take takes the given `argumentTypes` and returns the given `resultType`.
+    */
   def getMethodDescriptor(arguments: List[Describable], result: Option[Describable]): String = {
     // Descriptor of result
     val resultDescriptor = result.fold(voidDescriptor)(_.toDescriptor)
@@ -85,6 +96,7 @@ object JvmName {
       val Object: JvmName = JvmName(pckage, "Object")
 
       val String: JvmName = JvmName(pckage, "String")
+      val System: JvmName = JvmName(pckage, "System")
     }
 
     object Math {
@@ -119,40 +131,40 @@ object JvmName {
 }
 
 /**
- * Represents the name of a Java class or interface.
- *
- * @param pkg  the package name.
- * @param name the class or interface name.
- */
+  * Represents the name of a Java class or interface.
+  *
+  * @param pkg  the package name.
+  * @param name the class or interface name.
+  */
 case class JvmName(pkg: List[String], name: String) extends Describable {
 
   /**
-   * Returns the type descriptor of `this` Java name.
-   */
+    * Returns the type descriptor of `this` Java name.
+    */
   lazy val toDescriptor: String =
     if (pkg.isEmpty) "L" + name + ";" else "L" + pkg.mkString("/") + "/" + name + ";"
 
   /**
-   * Returns the binary name of `this` Java name.
-   *
-   * The binary name is of the form `java.lang.String`.
-   *
-   * The binary name is rarely used. Mostly likely you need the [[toInternalName]].
-   */
+    * Returns the binary name of `this` Java name.
+    *
+    * The binary name is of the form `java.lang.String`.
+    *
+    * The binary name is rarely used. Mostly likely you need the [[toInternalName]].
+    */
   lazy val toBinaryName: String =
     if (pkg.isEmpty) name else pkg.mkString(".") + "." + name
 
 
   /**
-   * Returns the internal name of `this` Java name.
-   *
-   * The internal name is of the form `java/lang/String`.
-   */
+    * Returns the internal name of `this` Java name.
+    *
+    * The internal name is of the form `java/lang/String`.
+    */
   lazy val toInternalName: String =
     if (pkg.isEmpty) name else pkg.mkString("/") + "/" + name
 
   /**
-   * Returns the relative path of `this` Java name.
-   */
+    * Returns the relative path of `this` Java name.
+    */
   lazy val toPath: Path = Paths.get(pkg.mkString("/"), name + ".class")
 }

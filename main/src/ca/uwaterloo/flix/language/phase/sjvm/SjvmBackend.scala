@@ -151,6 +151,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
       case ErasedAst.Expression.ApplyDefTail(_, args, _, _, _) => args
       case ErasedAst.Expression.ApplySelfTail(_, _, actuals, _, _, _) => actuals
       case ErasedAst.Expression.Unary(_, __, exp, _, _) => exp :: Nil
+      case ErasedAst.Expression.BoolNot(exp, _, _) => exp :: Nil
       case ErasedAst.Expression.Binary(_, _, exp1, exp2, _, _) => exp1 :: exp2 :: Nil
       case ErasedAst.Expression.Int16Eq(exp1, exp2, _, _) => exp1 :: exp2 :: Nil
       case ErasedAst.Expression.Int32Eq(exp1, exp2, _, _) => exp1 :: exp2 :: Nil

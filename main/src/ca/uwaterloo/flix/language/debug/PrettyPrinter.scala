@@ -599,6 +599,10 @@ object PrettyPrinter {
           fmtUnaryOp(op, vt)
           visitExp(exp)
 
+        case Expression.BoolNot(exp, _, _) =>
+          fmtUnaryOp(UnaryOperator.LogicalNot, vt)
+          visitExp(exp)
+
         case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
           visitExp(exp1)
           vt.text(" ")
