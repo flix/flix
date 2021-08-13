@@ -15,4 +15,4 @@
  */
 package ca.uwaterloo.flix.language.ast
 
-object KindedAst2 extends UntypedAst[_, _] // MATT
+object KindedAst2 extends UntypedAst[Type, Type.Var] // MATT

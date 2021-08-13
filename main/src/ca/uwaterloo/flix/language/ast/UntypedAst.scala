@@ -23,7 +23,7 @@ import scala.collection.immutable.List
 
 abstract class UntypedAst[Tpe, TVar <: Tpe] {
 
-  private val ThisAst: UntypedAst[Tpe, TVar] = this
+  val ThisAst: UntypedAst[Tpe, TVar] = this
 
 
   case class Root(classes: Map[Symbol.ClassSym, ThisAst.Class],
@@ -291,9 +291,9 @@ abstract class UntypedAst[Tpe, TVar <: Tpe] {
 
   object TypeParams {
 
-    case class Kinded(tparams: List[ThisAst.TypeParam.Kinded]) extends TypeParams
+    case class Kinded(tparams: List[ThisAst.TypeParam.Kinded]) extends ThisAst.TypeParams
 
-    case class Unkinded(tparams: List[ThisAst.TypeParam.Unkinded]) extends TypeParams
+    case class Unkinded(tparams: List[ThisAst.TypeParam.Unkinded]) extends ThisAst.TypeParams
 
   }
 
