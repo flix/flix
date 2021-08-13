@@ -146,6 +146,8 @@ object FormatType {
 
           case TypeConstructor.Enum(sym, _) => formatApply(sym.toString, args)
 
+          case TypeConstructor.UnkindedEnum(sym) => formatApply(sym.toString, args)
+
           case TypeConstructor.Lattice => formatApply("Lattice", args)
 
           case TypeConstructor.Relation => formatApply("Relation", args)
@@ -372,9 +374,10 @@ object FormatType {
   /**
     * Returns all type variables in the type in the order in which they appear.
     */
-  private def typeVars(tpe0: Type): List[Type.Var] = {
-    def visit(t: Type): List[Type.Var] = t match {
+  private def typeVars(tpe0: Type): List[Type.MaybeKindedVar] = {
+    def visit(t: Type): List[Type.MaybeKindedVar] = t match {
       case tvar: Type.Var => tvar :: Nil
+      case tvar: Type.UnkindedVar => tvar :: Nil
       case Type.Cst(tc, loc) => Nil
       case Type.Lambda(tvar, tpe) => tvar :: visit(tpe)
       case Type.Apply(tpe1, tpe2) => visit(tpe1) ::: visit(tpe2)

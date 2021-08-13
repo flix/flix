@@ -145,7 +145,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def findUnusedTypeParamters(spec: Spec): List[UnusedTypeParam] = {
     spec.tparams.collect {
-      case tparam if deadTypeVar(tparam.tpe, spec.declaredScheme.base.typeVars) => UnusedTypeParam(tparam.name)
+      case tparam if deadTypeVar(tparam.tpe, Type.Kinded.typeVars(spec.declaredScheme.base)) => UnusedTypeParam(tparam.name)
     }
   }
 
@@ -192,7 +192,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     root.enums.foldLeft(Used.empty) {
       case (acc, (_, decl)) =>
         val usedTypeVars = decl.cases.foldLeft(Set.empty[Type.Var]) {
-          case (sacc, (_, Case(_, _, tpe, _, _))) => sacc ++ tpe.typeVars
+          case (sacc, (_, Case(_, _, tpe, _, _))) => sacc ++ Type.Kinded.typeVars(tpe)
         }
         val unusedTypeParams = decl.tparams.filter(tparam => !usedTypeVars.contains(tparam.tpe) && !tparam.name.name.startsWith("_"))
         acc ++ unusedTypeParams.map(tparam => UnusedTypeParam(tparam.name))

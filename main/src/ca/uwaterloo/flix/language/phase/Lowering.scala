@@ -695,7 +695,8 @@ object Lowering extends Phase[Root, Root] {
         val t2 = visitType(tpe2)
         Type.Apply(t1, t2)
 
-      case Type.Lambda(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
+      case _: Type.Lambda => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
+      case _: Type.UnkindedVar => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
     }
 
     if (tpe0.kind == Kind.Schema)

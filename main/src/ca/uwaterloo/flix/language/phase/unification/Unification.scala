@@ -58,7 +58,7 @@ object Unification {
     }
 
     // Check if `x` occurs within `tpe`.
-    if (tpe.typeVars contains x) {
+    if (Type.Kinded.typeVars(tpe) contains x) {
       return Result.Err(UnificationError.OccursCheck(x, tpe))
     }
 
@@ -149,7 +149,7 @@ object Unification {
         }
       case (tvar: Type.Var, Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field1), _), fieldType1), _)) =>
         // Case 2: The row is a type variable.
-        if (staticRow.typeVars contains tvar) {
+        if (Type.Kinded.typeVars(staticRow) contains tvar) {
           Err(UnificationError.OccursCheck(tvar, staticRow))
         } else {
           // Introduce a fresh type variable to represent one more level of the row.
@@ -194,7 +194,7 @@ object Unification {
         }
       case (tvar: Type.Var, Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(label1), _), fieldType1), _)) =>
         // Case 2: The row is a type variable.
-        if (staticRow.typeVars contains tvar) {
+        if (Type.Kinded.typeVars(staticRow) contains tvar) {
           Err(UnificationError.OccursCheck(tvar, staticRow))
         } else {
           // Introduce a fresh type variable to represent one more level of the row.

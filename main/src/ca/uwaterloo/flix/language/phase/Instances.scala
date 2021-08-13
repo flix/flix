@@ -117,6 +117,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
         case _: Type.Cst => ().toSuccess
         case _: Type.Var => InstanceError.ComplexInstanceType(tpe, sym, loc).toFailure
         case _: Type.Lambda => throw InternalCompilerException("Unexpected lambda type.")
+        case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected lambda type.")
         case _: Type.Apply =>
           Validation.fold(tpe.typeArguments, List.empty[Type.Var]) {
             // Case 1: Type variable

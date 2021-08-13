@@ -75,7 +75,8 @@ case class Substitution(m: Map[Type.Var, Type]) {
             case Type.Apply(Type.Cst(TypeConstructor.Or, _), x) => BoolUnification.mkOr(x, y)
             case x => Type.Apply(x, y)
           }
-        case Type.Lambda(tvar, tpe) => throw InternalCompilerException(s"Unexpected type '$tpe0'.")
+        case _: Type.Lambda => throw InternalCompilerException(s"Unexpected type '$tpe0'.")
+        case _: Type.UnkindedVar => throw InternalCompilerException(s"Unexpected type '$tpe0'.")
       }
 
     // Optimization: Return the type if the substitution is empty. Otherwise visit the type.

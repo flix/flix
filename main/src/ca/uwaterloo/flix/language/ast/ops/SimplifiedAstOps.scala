@@ -331,7 +331,7 @@ object SimplifiedAstOps {
       * Checks invariants of the given type `tpe0`.
       */
     def checkType(tpe0: Type): Unit =
-      assert(tpe0.typeVars.isEmpty, "Unexpected type variable.")
+      assert(Type.Kinded.typeVars(tpe0).isEmpty, "Unexpected type variable.")
 
     //
     // Check all definitions in the program.

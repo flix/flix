@@ -72,7 +72,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       *
       * NB: Applies the substitution first, then replaces every type variable with the unit type.
       */
-    def apply(tpe: Type): Type = s(tpe).map {
+    def apply(tpe: Type): Type = Type.Kinded.map(s(tpe)) {
       case Type.Var(_, Kind.Bool, _, _) => Type.True
       case Type.Var(_, Kind.Record, _, _) => Type.RecordEmpty
       case Type.Var(_, Kind.Schema, _, _) => Type.SchemaEmpty

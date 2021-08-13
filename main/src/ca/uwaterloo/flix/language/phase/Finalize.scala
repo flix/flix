@@ -472,6 +472,9 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
 
           case TypeConstructor.Or => MonoType.Unit
 
+          case TypeConstructor.UnkindedEnum(sym) =>
+            throw InternalCompilerException(s"Unexpected type: '$t0'.")
+
           case TypeConstructor.Relation =>
             throw InternalCompilerException(s"Unexpected type: '$t0'.")
 
