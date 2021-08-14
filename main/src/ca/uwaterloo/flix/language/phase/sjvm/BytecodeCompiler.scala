@@ -99,7 +99,10 @@ object BytecodeCompiler {
     case Expression.Int64(lit, loc) =>
       WithSource[R](loc) ~ pushInt64(lit)
 
-    case Expression.BigInt(lit, loc) => ???
+    case Expression.BigInt(lit, loc) =>
+      WithSource[R](loc) ~
+        pushBigInt(lit)
+
     case Expression.Str(lit, loc) =>
       WithSource[R](loc) ~
         pushString(lit)

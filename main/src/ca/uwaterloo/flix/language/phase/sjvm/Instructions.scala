@@ -1185,6 +1185,19 @@ object Instructions {
     castF(f)
   }
 
+  def pushBigInt
+  [R <: Stack]
+  (bi: java.math.BigInteger):
+  F[R] => F[R ** PReference[PBigInt]] = f => {
+    val className = JvmName.Java.Math.BigInteger.toInternalName
+    f.visitor.visitTypeInsn(Opcodes.NEW, className)
+    f.visitor.visitInsn(Opcodes.DUP)
+    f.visitor.visitLdcInsn(bi.toString)
+    f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className, JvmName.constructorMethod,
+      JvmName.getMethodDescriptor(List(JvmName.Java.Lang.String), None), false)
+    castF(f)
+  }
+
   def ALOAD
   [R <: Stack, T <: PRefType]
   (index: Int, tpe: Tag[T] = null):
