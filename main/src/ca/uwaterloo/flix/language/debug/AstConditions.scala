@@ -70,6 +70,9 @@ object AstConditions {
       findFailures(conditions, obj, path, phases)
   }
 
+  /**
+    * Finds failed conditions in the list of conditions.
+    */
   private def findFailures(conditions: List[Condition], obj: Any, path: List[String], phases: List[universe.Type]): List[FailedCondition] = conditions.flatMap {
     case cond@Condition.IntroducedBy(phase) if !phases.exists(p => p =:= phase) => Some(FailedCondition(obj, path, cond))
     case cond@Condition.EliminatedBy(phase) if phases.exists(p => p =:= phase) => Some(FailedCondition(obj, path, cond))

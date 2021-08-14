@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language
 
-import ca.uwaterloo.flix.language.debug.TestFormatType
+import ca.uwaterloo.flix.language.debug.{TestAstConditions, TestFormatType}
 import ca.uwaterloo.flix.language.feature.FeatureSuite
 import ca.uwaterloo.flix.language.phase.PhaseSuite
 import org.scalatest.Suites
@@ -24,5 +24,6 @@ import org.scalatest.Suites
 class LanguageSuite extends Suites(
   new FeatureSuite,
   new PhaseSuite,
-  new TestFormatType
+  new TestFormatType,
+  new TestAstConditions
 )
