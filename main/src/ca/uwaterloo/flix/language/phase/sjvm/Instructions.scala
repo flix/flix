@@ -705,6 +705,69 @@ object Instructions {
     castF(f)
   }
 
+  def D2F
+  [R <: Stack, T <: PType]:
+  F[R ** PFloat64] => F[R ** PFloat32] = f => {
+    f.visitor.visitInsn(Opcodes.D2F)
+    castF(f)
+  }
+
+  def D2I
+  [R <: Stack, T <: PType]:
+  F[R ** PFloat64] => F[R ** PInt32] = f => {
+    f.visitor.visitInsn(Opcodes.D2I)
+    castF(f)
+  }
+
+  def D2L
+  [R <: Stack, T <: PType]:
+  F[R ** PFloat64] => F[R ** PInt64] = f => {
+    f.visitor.visitInsn(Opcodes.D2L)
+    castF(f)
+  }
+
+  def F2D
+  [R <: Stack, T <: PType]:
+  F[R ** PFloat32] => F[R ** PFloat64] = f => {
+    f.visitor.visitInsn(Opcodes.F2D)
+    castF(f)
+  }
+
+  def F2I
+  [R <: Stack, T <: PType]:
+  F[R ** PFloat32] => F[R ** PInt32] = f => {
+    f.visitor.visitInsn(Opcodes.F2I)
+    castF(f)
+  }
+
+  def F2L
+  [R <: Stack, T <: PType]:
+  F[R ** PFloat32] => F[R ** PInt64] = f => {
+    f.visitor.visitInsn(Opcodes.F2L)
+    castF(f)
+  }
+
+  def L2D
+  [R <: Stack, T <: PType]:
+  F[R ** PInt64] => F[R ** PFloat64] = f => {
+    f.visitor.visitInsn(Opcodes.L2D)
+    castF(f)
+  }
+
+  def L2F
+  [R <: Stack, T <: PType]:
+  F[R ** PInt64] => F[R ** PFloat32] = f => {
+    f.visitor.visitInsn(Opcodes.L2F)
+    castF(f)
+  }
+
+  def L2I
+  [R <: Stack, T <: PType]:
+  F[R ** PInt64] => F[R ** PInt32] = f => {
+    f.visitor.visitInsn(Opcodes.L2I)
+    castF(f)
+  }
+
   def INEG
   [R <: Stack, T <: PType]
   (implicit t: T => Int32Usable[T]):
