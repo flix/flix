@@ -40,6 +40,8 @@ class TestAstConditions extends FunSuite with TestUtils {
 
   private case class SomeAstNode(node: AstNode, nodes: List[AstNode]) extends AstNode
 
+  private case class SomeAstNodeWithLambda(lambda: Int => Int) extends AstNode
+
   @IntroducedBy[CondPhase.type]
   private case class ClassIntroducedByCondPhase(x: Int, y: String) extends AstNode
 
@@ -147,6 +149,11 @@ class TestAstConditions extends FunSuite with TestUtils {
 
   test("EliminatedBy.Ok.04") {
     val ast = SomeAstNode(SomeAstLeaf, ObjectEliminatedByCondPhase :: Nil)
+    AstConditions.checkAstAfterPhases(ast, FirstPhase :: Nil)
+  }
+
+  test("Lambda.01") {
+    val ast = SomeAstNodeWithLambda(x => 5)
     AstConditions.checkAstAfterPhases(ast, FirstPhase :: Nil)
   }
 }

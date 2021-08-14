@@ -85,7 +85,12 @@ object AstConditions {
   private def getClassAnnotations(obj: Any): List[universe.Annotation] = {
     val mirror = universe.runtimeMirror(obj.getClass.getClassLoader)
     val reflection = mirror.reflect(obj)
-    reflection.symbol.annotations
+    try {
+      reflection.symbol.annotations
+    } catch {
+      // If this is not actually a class (e.g. a lambda)
+      case _: AssertionError => Nil
+    }
   }
 
   /**
