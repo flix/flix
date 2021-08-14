@@ -358,7 +358,12 @@ object BytecodeCompiler {
 
     case Expression.Int64Comparison(op, exp1, exp2, tpe, loc) => ???
     case Expression.BigIntComparison(op, exp1, exp2, tpe, loc) => ???
-    case Expression.StringConcat(exp1, exp2, tpe, loc) => ???
+    case Expression.StringConcat(exp1, exp2, _, loc) =>
+      WithSource[R](loc) ~
+        compileExp(exp1) ~
+        compileExp(exp2) ~
+        stringConcat
+
     case Expression.StringEquality(op, exp1, exp2, tpe, loc) => ???
     case Expression.IfThenElse(exp1, exp2, exp3, _, loc) =>
       WithSource[R](loc) ~
@@ -434,7 +439,7 @@ object BytecodeCompiler {
         compileExp(index) ~
         XALOAD(tpe)
 
-    case Expression.ArrayStore(base, index, elm, tpe, loc) =>
+    case Expression.ArrayStore(base, index, elm, _, loc) =>
       WithSource[R](loc) ~
         compileExp(base) ~
         compileExp(index) ~
@@ -442,7 +447,7 @@ object BytecodeCompiler {
         XAStore(elm.tpe) ~
         pushUnit
 
-    case Expression.ArrayLength(base, tpe, loc) =>
+    case Expression.ArrayLength(base, _, loc) =>
       WithSource[R](loc) ~
         compileExp(base) ~
         arrayLength(base.tpe)
@@ -634,6 +639,7 @@ object BytecodeCompiler {
 
     case Expression.HoleError(sym, tpe, loc) => ???
     case Expression.MatchError(tpe, loc) => ???
+
     case Expression.BoxInt8(exp, loc) => ???
     case Expression.BoxInt16(exp, loc) => ???
     case Expression.BoxInt32(exp, loc) => ???

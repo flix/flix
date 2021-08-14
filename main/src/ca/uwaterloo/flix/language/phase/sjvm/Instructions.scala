@@ -483,6 +483,14 @@ object Instructions {
   F[R1] => F[R2] =
     ???
 
+  def stringConcat
+  [R <: Stack]:
+  F[R ** PReference[PStr] ** PReference[PStr]] => F[R ** PStr] = f => {
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.Lang.String.toInternalName, "concat",
+      JvmName.getMethodDescriptor(List(RStr), RStr), false)
+    castF(f)
+  }
+
   // TODO(JLS): maybe return Nothing (Nothing <: F[_]). atleast something better than StackEnd
   def RETURN[R <: Stack]: F[StackNil] => F[StackEnd] = f => {
     f.visitor.visitInsn(Opcodes.RETURN)
