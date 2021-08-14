@@ -1,16 +1,26 @@
 package ca.uwaterloo.flix.language.debug
 
 import ca.uwaterloo.flix.language.ast.Ast.{EliminatedBy, IntroducedBy}
-import ca.uwaterloo.flix.language.phase.{Kinder, Phase}
+import ca.uwaterloo.flix.language.phase.Phase
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.reflect.runtime.universe
 
 object AstConditions {
 
+  /**
+    * The type constructor of the [[IntroducedBy]] annotation.
+    */
   private val IntroducedByType = universe.typeOf[IntroducedBy[_]].typeConstructor
+
+  /**
+    * The type constructor of the [[EliminatedBy]] annotation.
+    */
   private val EliminatedBySymbol = universe.typeOf[EliminatedBy[_]].typeConstructor
 
+  /**
+    * Checks that conditions hold on the given `ast`, after having performed the given `phases`.
+    */
   def checkAstAfterPhases(ast: Product, phases: List[Phase[_, _]]): Unit = {
     val failures = visitNode(ast, ast.productPrefix :: Nil, phases.map(phase => typeForClass(phase.getClass)))
     failures match {
@@ -19,6 +29,9 @@ object AstConditions {
     }
   }
 
+  /**
+    * Checks conditions on the given `node`, with the given (reversed) path from root.
+    */
   private def visitNode(node0: Any, path: List[String], phases: List[universe.Type]): List[FailedCondition] = node0 match {
     case iterable: Iterable[_] =>
       iterable.zipWithIndex.flatMap {
@@ -40,26 +53,18 @@ object AstConditions {
     case _ => Nil
   }
 
-  case class TestAnn[T <: Phase[_, _]]() extends scala.annotation.StaticAnnotation
-
-  @TestAnn[Kinder.type]
-  object TestClass
-  def main(args: Array[String]): Unit = {
-    import scala.reflect.runtime.{universe => ru}
-    val thing = TestClass
-    val mirror = ru.runtimeMirror(thing.getClass.getClassLoader)
-    val reflection = mirror.reflect(thing)
-
-    println(processAnnotation(reflection.symbol.annotations.head))
-  }
-
+  /**
+    * Gets the annotations on the class of the given object.
+    */
   private def getClassAnnotations(obj: Any): List[universe.Annotation] = {
     val mirror = universe.runtimeMirror(obj.getClass.getClassLoader)
     val reflection = mirror.reflect(obj)
     reflection.symbol.annotations
   }
 
-
+  /**
+    * Returns a Condition corresponding to the given annotation.
+    */
   private def processAnnotation(ann: universe.Annotation): Option[Condition] = {
     ann.tree.tpe.typeConstructor match {
       case IntroducedByType => Some(Condition.IntroducedBy(getConditionAnnotationType(ann)))
@@ -68,22 +73,46 @@ object AstConditions {
     }
   }
 
+  /**
+    * Gets the type argument of the given condition annotation.
+    * For example, the argument of `@EliminatedBy[Typer]` is `Typer`.
+    */
   private def getConditionAnnotationType(ann: universe.Annotation): universe.Type = {
     ann.tree.tpe.typeArgs.head
   }
 
+  /**
+    * Gets the type for the given class.
+    */
   private def typeForClass(clazz: Class[_]): universe.Type = {
     universe.runtimeMirror(clazz.getClassLoader).classSymbol(clazz).toType
   }
 
+  /**
+    * A common super type for AST conditions.
+    */
   private sealed trait Condition
+
   private object Condition {
+    /**
+      * An AST condition indicating that the annotated class should be introduced by the given `phase`.
+      */
     case class IntroducedBy(phase: universe.Type) extends Condition
+
+    /**
+      * An AST condition indicating that the annotated class should be eliminated by the given `phase`.
+      */
     case class EliminatedBy(phase: universe.Type) extends Condition
   }
 
+  /**
+    * Represents that the given `obj` located at `path` fails the condition `cond`.
+    */
   private case class FailedCondition(obj: Any, path: List[String], cond: Condition)
 
+  /**
+    * Formats the failed condition for printing to the console.
+    */
   private def formatFailedCondition(cond: FailedCondition): String = cond match {
     case FailedCondition(obj, path, Condition.IntroducedBy(phase)) =>
       s"${obj.getClass.getName} should have been introduced by phase $phase, but was present at ${path.reverse.mkString(".")}"
