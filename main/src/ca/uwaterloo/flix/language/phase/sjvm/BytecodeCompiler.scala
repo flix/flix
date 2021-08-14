@@ -360,8 +360,11 @@ object BytecodeCompiler {
     case Expression.BigIntComparison(op, exp1, exp2, tpe, loc) => ???
     case Expression.StringConcat(exp1, exp2, tpe, loc) => ???
     case Expression.StringEquality(op, exp1, exp2, tpe, loc) => ???
+    case Expression.IfThenElse(exp1, exp2, exp3, _, loc) =>
+      WithSource[R](loc) ~
+        compileExp(exp1) ~
+        IFEQ(compileExp(exp2), compileExp(exp3))
 
-    case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => ???
     case Expression.Branch(exp, branches, tpe, loc) => ???
     case Expression.JumpTo(sym, tpe, loc) => ???
     case Expression.Let(sym, exp1, exp2, tpe, loc) =>
