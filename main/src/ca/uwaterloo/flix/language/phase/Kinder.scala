@@ -50,7 +50,7 @@ import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN, mapN, 
   */
 object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
 
-  override def run(root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Root, CompilationError] = flix.phase(this) {
+  override def run(root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Root, CompilationError] = flix.phase("Kinder", this) {
     // Extra type annotations are required due to limitations in Scala's type inference.
     val enumsVal = Validation.sequence(ParOps.parMap(root.enums, {
       pair: (Symbol.EnumSym, ResolvedAst.Enum) =>

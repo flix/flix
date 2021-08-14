@@ -39,7 +39,7 @@ object TreeShaker extends Phase[Root, Root] {
   /**
     * Performs tree shaking on the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase(this) {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("TreeShaker", this) {
     // Compute the symbols that are always reachable.
     val initReach = initReachable(root)
 

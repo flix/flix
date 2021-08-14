@@ -46,7 +46,7 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * Returns a stratified version of the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase(this) {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Stratifier", this) {
     // A cache of stratifications. Only caches successful stratifications.
     val cache: Cache = mutable.Map.empty
 

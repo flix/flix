@@ -18,7 +18,7 @@ object Safety extends Phase[Root, Root] {
   /**
     * Performs safety and well-formedness checks on the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase(this) {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Safety", this) {
     //
     // Collect all errors.
     //

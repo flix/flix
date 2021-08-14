@@ -38,7 +38,7 @@ object VarNumbering extends Phase[Root, Root] {
   /**
     * Assigns a stack offset to each variable symbol in the program.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase(this) {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("VarNumbering", this) {
     // Compute stack offset for each definition.
     for ((sym, defn) <- root.defs) {
       number(defn)

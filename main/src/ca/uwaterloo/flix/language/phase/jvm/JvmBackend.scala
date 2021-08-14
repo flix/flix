@@ -35,7 +35,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
   /**
     * Emits JVM bytecode for the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[CompilationResult, CompilationError] = flix.phase(this) {
+  def run(root: Root)(implicit flix: Flix): Validation[CompilationResult, CompilationError] = flix.phase("JvmBackend", this) {
 
     //
     // Put the AST root into implicit scope.

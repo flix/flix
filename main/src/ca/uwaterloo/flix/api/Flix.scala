@@ -234,7 +234,9 @@ class Flix {
     */
   val genSym = new GenSym()
 
-  // MATT docs
+  /**
+    * The list of phases already visited by this Flix instance.
+    */
   val visitedPhases: ListBuffer[Phase[_, _]] = ListBuffer.empty
 
   /**
@@ -391,9 +393,11 @@ class Flix {
   /**
     * Enters the phase with the given name.
     */
-  def phase[A](phase: Phase[_, _])(f: => A): A = {
+  def phase[A](name: String, phase: Phase[_, _])(f: => A): A = {
     // Initialize the phase time object.
-    currentPhase = PhaseTime(phase.getClass.getSimpleName, 0, Nil)
+    currentPhase = PhaseTime(name, 0, Nil)
+
+    // Add this phase to the list of visited phases.
     visitedPhases.addOne(phase)
 
     // Measure the execution time.

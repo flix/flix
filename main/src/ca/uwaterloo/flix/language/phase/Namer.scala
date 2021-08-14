@@ -34,7 +34,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Introduces unique names for each syntactic entity in the given `program`.
     * */
-  def run(program: WeededAst.Program)(implicit flix: Flix): Validation[NamedAst.Root, NameError] = flix.phase(this) {
+  def run(program: WeededAst.Program)(implicit flix: Flix): Validation[NamedAst.Root, NameError] = flix.phase("Namer", this) {
     // compute all the source locations
     val locations = program.roots.foldLeft(Map.empty[Source, SourceLocation]) {
       case (macc, root) => macc + (root.loc.source -> root.loc)

@@ -33,7 +33,7 @@ object Tailrec extends Phase[Root, Root] {
   /**
     * Identifies tail recursive calls in the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase(this) {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Tailrec", this) {
     //
     // Rewrite tail calls.
     //

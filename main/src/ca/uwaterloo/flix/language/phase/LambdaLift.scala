@@ -35,7 +35,7 @@ object LambdaLift extends Phase[SimplifiedAst.Root, LiftedAst.Root] {
   /**
     * Performs lambda lifting on the given AST `root`.
     */
-  def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[LiftedAst.Root, CompilationError] = flix.phase(this) {
+  def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[LiftedAst.Root, CompilationError] = flix.phase("LambdaLift", this) {
     // A mutable map to hold lambdas that are lifted to the top level.
     val m: TopLevel = mutable.Map.empty
 

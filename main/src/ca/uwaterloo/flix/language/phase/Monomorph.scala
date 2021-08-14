@@ -83,7 +83,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Performs monomorphization of the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase(this) {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Monomorph", this) {
     /**
       * A function-local queue of pending (fresh symbol, function definition, and substitution)-triples.
       *

@@ -46,7 +46,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Checks the given AST `root` for redundancies.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, RedundancyError] = flix.phase(this) {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, RedundancyError] = flix.phase("Redundancy", this) {
     // Return early if the redundancy phase is disabled.
     if (flix.options.xallowredundancies) {
       return root.toSuccess
