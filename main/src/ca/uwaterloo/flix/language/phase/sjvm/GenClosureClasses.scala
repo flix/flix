@@ -36,7 +36,7 @@ object GenClosureClasses {
 
   def cloArgFieldName(index: Int): String = s"clo$index"
 
-  def gen(closures: Set[ClosureInfo[_ <: PType]])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+  def gen(closures: Set[ClosureInfo])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
 
     ParOps.parAgg(closures, Map.empty[JvmName, JvmClass])({
       case (macc, closure) =>

@@ -33,8 +33,6 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
 
-  def emptyFTypes: Set[RType[PReference[PFunction[_ <: PType]]]] = Set[RType[PReference[PFunction[_ <: PType]]]]()
-
   def run(root: FinalAst.Root)(implicit flix: Flix): Validation[ErasedAst.Root, CompilationError] = flix.phase("Eraser") {
     val defns = EM.foldRight(root.defs)(Map[Symbol.DefnSym, ErasedAst.Def[_ <: PType]]().toMonad) {
       case ((k, v), mapp) =>
@@ -56,7 +54,7 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
     }.toSet)
 
     // TODO(JLS): the function list should be split into closures and functions (and maybe include nonLaw checking)
-    val result = ErasedAst.Root(defnsResult.value, root.reachable, root.sources, defnsResult.fTypes, defnsResult.closures, defnsResult.enumSyms, defnsResult.namespaces)
+    val result = ErasedAst.Root(defnsResult.value, root.reachable, root.sources, defnsResult.types, defnsResult.closures, defnsResult.enumSyms, defnsResult.namespaces)
     result.toSuccess
   }
 
@@ -133,7 +131,7 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
         case (freeVars0, tpe0) =>
           val expRes = ErasedAst.Expression.Closure(sym, freeVars0, tpe0, loc)
           val result = expRes.asInstanceOf[ErasedAst.Expression[T]]
-          result.toMonad.setClosures(Set(ClosureInfo(sym, freeVars0, tpe0)))
+          result.toMonad.setClosures(Set(ClosureInfo(sym, freeVars0, tpe0.asInstanceOf[RType[PReference[PFunction[_ <: PType]]]])))
       }
 
     case FinalAst.Expression.ApplyClo(exp, args, tpe, loc) =>
@@ -784,7 +782,7 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
         case (args0, result0) =>
           val tpeRes = RReference(RArrow(args0, result0))
           val result = tpeRes.asInstanceOf[RType[T]]
-          result.toMonad.setFTypes(Set(result.asInstanceOf[RType[PReference[PFunction[T]]]]))
+          result.toMonad.setTypes(Set(result))
       }
     case MonoType.RecordEmpty() =>
       RReference(RRecordEmpty).asInstanceOf[RType[T]].toMonad

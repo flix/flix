@@ -20,7 +20,11 @@ package ca.uwaterloo.flix.language.phase.sjvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.ErasedAst.Root
-import ca.uwaterloo.flix.language.ast.{ErasedAst, PType, Symbol}
+import ca.uwaterloo.flix.language.ast.PRefType._
+import ca.uwaterloo.flix.language.ast.PType._
+import ca.uwaterloo.flix.language.ast.RRefType._
+import ca.uwaterloo.flix.language.ast.RType._
+import ca.uwaterloo.flix.language.ast.{ErasedAst, PRefType, PType, RRefType, RType, Symbol}
 import ca.uwaterloo.flix.language.debug.PrettyPrinter
 import ca.uwaterloo.flix.language.phase.Phase
 import ca.uwaterloo.flix.runtime.CompilationResult
@@ -45,6 +49,18 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
 
     implicit val r: Root = root
 
+    def functionMatch[T <: PRefType](x: RRefType[T], acc: Set[RType[PReference[PFunction[_ <: PType]]]]): Set[RType[PReference[PFunction[_ <: PType]]]] = x match {
+      case res@RArrow(_, _) => acc + RReference(res).asInstanceOf[RType[PReference[PFunction[_ <: PType]]]]
+      case _ => acc
+    }
+
+    val functionTypes: Set[RType[PReference[PFunction[_ <: PType]]]] = root.types.foldLeft(Set[RType[PReference[PFunction[_ <: PType]]]]()) { (set, rType) =>
+      rType match {
+        case RReference(referenceType) => functionMatch(referenceType, set)
+        case _ => set
+      }
+    }
+
     val (allClasses: Map[JvmName, JvmClass], closureSyms: Set[Symbol.DefnSym]) = flix.subphase("CodeGen") {
 
       if (flix.options.debug) {
@@ -68,7 +84,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
 
       val nonClosureFunctions: Set[Symbol.DefnSym] = root.functions.keySet.diff(closureSyms)
 
-      val functionInterfaces = GenFunctionInterfaces.gen(root.functionTypes)
+      val functionInterfaces = GenFunctionInterfaces.gen(functionTypes)
       val continuationInterfaces = GenContinuationInterfaces.gen()
 
       val mainClass = GenMainClass.gen()

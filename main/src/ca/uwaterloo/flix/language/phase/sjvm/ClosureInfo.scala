@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.ast.{PType, RType, Symbol}
 /**
  * Meta information about a closure.
  */
-case class ClosureInfo[T <: PType](sym: Symbol.DefnSym, freeVars: List[FreeVar], tpe: RType[PReference[PFunction[T]]]) {
+case class ClosureInfo(sym: Symbol.DefnSym, freeVars: List[FreeVar], tpe: RType[PReference[PFunction[_ <: PType]]]) {
   /**
    * Returns the hash code of `this` closure info.
    */
@@ -35,7 +35,7 @@ case class ClosureInfo[T <: PType](sym: Symbol.DefnSym, freeVars: List[FreeVar],
    * Returns `true` if the given `obj` is the same closure info as `this`.
    */
   override def equals(obj: scala.Any): Boolean = obj match {
-    case ClosureInfo(s, fv, t) => this.sym == s && this.freeVars == fv
+    case ClosureInfo(s, fv, _) => this.sym == s && this.freeVars == fv
     case _ => false
   }
 }

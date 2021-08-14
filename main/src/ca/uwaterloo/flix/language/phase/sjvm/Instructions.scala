@@ -505,7 +505,7 @@ object Instructions {
   def SCAFFOLD
   [R1 <: Stack, R2 <: Stack]:
   F[R1] => F[R2] =
-    ???
+    null
 
   def stringConcat
   [R <: Stack]:

@@ -31,8 +31,8 @@ object ErasedAst {
   case class Root(functions: Map[Symbol.DefnSym, Def[_ <: PType]],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
-                  functionTypes: Set[RType[PReference[PFunction[_ <: PType]]]],
-                  closures: Set[ClosureInfo[_ <: PType]],
+                  types: Set[RType[_ <: PType]],
+                  closures: Set[ClosureInfo],
                   enumSyms: Set[Symbol.EnumSym],
                   namespaces: Set[NamespaceInfo])
 
