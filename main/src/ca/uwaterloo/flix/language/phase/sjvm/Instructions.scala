@@ -267,7 +267,7 @@ object Instructions {
   [R <: Stack, T1 <: PType, T2 <: PType]
   (implicit t1: T1 => Cat2[T1], t2: T2 => Cat2[T2]):
   F[R ** T2 ** T1] => F[R ** T1 ** T2] =
-    ???
+    START[R ** T2 ** T1] ~ DUP2_X2_cat2_onCat2 ~ POP2_onCat2
 
   def SWAP_cat1_onSomething
   [R <: Stack, T1 <: PType, T2 <: PType]

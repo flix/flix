@@ -404,13 +404,13 @@ object BytecodeCompiler {
         compileExp(exp2) ~
         (op match {
           case EqualityOp.Eq => ObjEquals
-          case EqualityOp.Ne => ObjEquals ~ IFEQ(START[R ** PInt32] ~ pushBool(true))(START[R ** PInt32] ~ pushBool(false))
+          case EqualityOp.Ne => ObjEquals ~ IFEQ(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
         })
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, loc) =>
       WithSource[R](loc) ~
         compileExp(exp1) ~
-        IFEQ(compileExp(exp2))(compileExp(exp3))
+        IFEQ(START[R] ~ compileExp(exp2))(START[R] ~ compileExp(exp3))
 
     case Expression.Branch(exp, branches, tpe, loc) => ???
     case Expression.JumpTo(sym, tpe, loc) => ???
