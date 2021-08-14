@@ -1213,7 +1213,7 @@ object PrettyPrinter {
         case ComparisonOp.Ge => vt.text(">=")
         case operator: EqualityOp => operator match {
           case EqualityOp.Eq => vt.text("==")
-          case EqualityOp.Neq => vt.text("!=")
+          case EqualityOp.Ne => vt.text("!=")
         }
       }
       case operator: LogicalOp => operator match {

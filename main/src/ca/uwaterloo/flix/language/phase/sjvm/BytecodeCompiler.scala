@@ -312,18 +312,47 @@ object BytecodeCompiler {
         compileExp(exp1) ~
         compileExp(exp2) ~
         (op match {
-          case ComparisonOp.Lt => ???
-          case ComparisonOp.Le => ???
-          case ComparisonOp.Gt => ???
-          case ComparisonOp.Ge => ???
+          case ComparisonOp.Lt => IF_ICMPLT(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+          case ComparisonOp.Le => IF_ICMPLE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+          case ComparisonOp.Gt => IF_ICMPGT(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+          case ComparisonOp.Ge => IF_ICMPGE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
           case op: ErasedAst.EqualityOp => op match {
-            case EqualityOp.Eq => ???
-            case EqualityOp.Neq => ???
+            case EqualityOp.Eq => IF_ICMPEQ(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            case EqualityOp.Ne => IF_ICMPNE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
           }
         })
 
-    case Expression.Int16Comparison(op, exp1, exp2, tpe, loc) => ???
-    case Expression.Int32Comparison(op, exp1, exp2, tpe, loc) => ???
+    case Expression.Int16Comparison(op, exp1, exp2, tpe, loc) =>
+      WithSource[R](loc) ~
+        compileExp(exp1) ~
+        compileExp(exp2) ~
+        (op match {
+          case ComparisonOp.Lt => IF_ICMPLT(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+          case ComparisonOp.Le => IF_ICMPLE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+          case ComparisonOp.Gt => IF_ICMPGT(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+          case ComparisonOp.Ge => IF_ICMPGE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+          case op: ErasedAst.EqualityOp => op match {
+            case EqualityOp.Eq => IF_ICMPEQ(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            case EqualityOp.Ne => IF_ICMPNE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+          }
+        })
+
+
+    case Expression.Int32Comparison(op, exp1, exp2, tpe, loc) =>
+      WithSource[R](loc) ~
+        compileExp(exp1) ~
+        compileExp(exp2) ~
+        (op match {
+          case ComparisonOp.Lt => IF_ICMPLT(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+          case ComparisonOp.Le => IF_ICMPLE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+          case ComparisonOp.Gt => IF_ICMPGT(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+          case ComparisonOp.Ge => IF_ICMPGE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+          case op: ErasedAst.EqualityOp => op match {
+            case EqualityOp.Eq => IF_ICMPEQ(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            case EqualityOp.Ne => IF_ICMPNE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+          }
+        })
+
     case Expression.Int64Comparison(op, exp1, exp2, tpe, loc) => ???
     case Expression.BigIntComparison(op, exp1, exp2, tpe, loc) => ???
     case Expression.StringConcat(exp1, exp2, tpe, loc) => ???

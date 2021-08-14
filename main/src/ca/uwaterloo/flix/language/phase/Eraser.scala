@@ -243,11 +243,11 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
           case BoolOp.And => compileBinary[PInt32, PInt32, PInt32] { (exp10, exp20, tpe0) => BoolLogicalOp(LogicalOp.And, exp10, exp20, tpe0, loc) }
           case BoolOp.Or => compileBinary[PInt32, PInt32, PInt32] { (exp10, exp20, tpe0) => BoolLogicalOp(LogicalOp.Or, exp10, exp20, tpe0, loc) }
           case BoolOp.Eq => compileBinary[PInt32, PInt32, PInt32] { (exp10, exp20, tpe0) => BoolEquality(EqualityOp.Eq, exp10, exp20, tpe0, loc) }
-          case BoolOp.Neq => compileBinary[PInt32, PInt32, PInt32] { (exp10, exp20, tpe0) => BoolEquality(EqualityOp.Neq, exp10, exp20, tpe0, loc) }
+          case BoolOp.Neq => compileBinary[PInt32, PInt32, PInt32] { (exp10, exp20, tpe0) => BoolEquality(EqualityOp.Ne, exp10, exp20, tpe0, loc) }
         }
         case op: SemanticOperator.CharOp => op match {
           case CharOp.Eq => compileBinary[PChar, PChar, PInt32] { (exp10, exp20, tpe0) => CharComparison(EqualityOp.Eq, exp10, exp20, tpe0, loc) }
-          case CharOp.Neq => compileBinary[PChar, PChar, PInt32] { (exp10, exp20, tpe0) => CharComparison(EqualityOp.Neq, exp10, exp20, tpe0, loc) }
+          case CharOp.Neq => compileBinary[PChar, PChar, PInt32] { (exp10, exp20, tpe0) => CharComparison(EqualityOp.Ne, exp10, exp20, tpe0, loc) }
           case CharOp.Lt => compileBinary[PChar, PChar, PInt32] { (exp10, exp20, tpe0) => CharComparison(ComparisonOp.Lt, exp10, exp20, tpe0, loc) }
           case CharOp.Le => compileBinary[PChar, PChar, PInt32] { (exp10, exp20, tpe0) => CharComparison(ComparisonOp.Le, exp10, exp20, tpe0, loc) }
           case CharOp.Gt => compileBinary[PChar, PChar, PInt32] { (exp10, exp20, tpe0) => CharComparison(ComparisonOp.Gt, exp10, exp20, tpe0, loc) }
@@ -262,7 +262,7 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
           case Float32Op.Div => compileBinary[PFloat32, PFloat32, PFloat32] { (exp10, exp20, tpe0) => Float32Arithmetic(ArithmeticOp.Div, exp10, exp20, tpe0, loc) }
           case Float32Op.Rem => compileBinary[PFloat32, PFloat32, PFloat32] { (exp10, exp20, tpe0) => Float32Arithmetic(ArithmeticOp.Rem, exp10, exp20, tpe0, loc) }
           case Float32Op.Eq => compileBinary[PFloat32, PFloat32, PInt32] { (exp10, exp20, tpe0) => Float32Comparison(EqualityOp.Eq, exp10, exp20, tpe0, loc) }
-          case Float32Op.Neq => compileBinary[PFloat32, PFloat32, PInt32] { (exp10, exp20, tpe0) => Float32Comparison(EqualityOp.Neq, exp10, exp20, tpe0, loc) }
+          case Float32Op.Neq => compileBinary[PFloat32, PFloat32, PInt32] { (exp10, exp20, tpe0) => Float32Comparison(EqualityOp.Ne, exp10, exp20, tpe0, loc) }
           case Float32Op.Lt => compileBinary[PFloat32, PFloat32, PInt32] { (exp10, exp20, tpe0) => Float32Comparison(ComparisonOp.Lt, exp10, exp20, tpe0, loc) }
           case Float32Op.Le => compileBinary[PFloat32, PFloat32, PInt32] { (exp10, exp20, tpe0) => Float32Comparison(ComparisonOp.Le, exp10, exp20, tpe0, loc) }
           case Float32Op.Gt => compileBinary[PFloat32, PFloat32, PInt32] { (exp10, exp20, tpe0) => Float32Comparison(ComparisonOp.Gt, exp10, exp20, tpe0, loc) }
@@ -277,7 +277,7 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
           case Float64Op.Div => compileBinary[PFloat64, PFloat64, PFloat64] { (exp10, exp20, tpe0) => Float64Arithmetic(ArithmeticOp.Div, exp10, exp20, tpe0, loc) }
           case Float64Op.Rem => compileBinary[PFloat64, PFloat64, PFloat64] { (exp10, exp20, tpe0) => Float64Arithmetic(ArithmeticOp.Rem, exp10, exp20, tpe0, loc) }
           case Float64Op.Eq => compileBinary[PFloat64, PFloat64, PInt32] { (exp10, exp20, tpe0) => Float64Comparison(EqualityOp.Eq, exp10, exp20, tpe0, loc) }
-          case Float64Op.Neq => compileBinary[PFloat64, PFloat64, PInt32] { (exp10, exp20, tpe0) => Float64Comparison(EqualityOp.Neq, exp10, exp20, tpe0, loc) }
+          case Float64Op.Neq => compileBinary[PFloat64, PFloat64, PInt32] { (exp10, exp20, tpe0) => Float64Comparison(EqualityOp.Ne, exp10, exp20, tpe0, loc) }
           case Float64Op.Lt => compileBinary[PFloat64, PFloat64, PInt32] { (exp10, exp20, tpe0) => Float64Comparison(ComparisonOp.Lt, exp10, exp20, tpe0, loc) }
           case Float64Op.Le => compileBinary[PFloat64, PFloat64, PInt32] { (exp10, exp20, tpe0) => Float64Comparison(ComparisonOp.Le, exp10, exp20, tpe0, loc) }
           case Float64Op.Gt => compileBinary[PFloat64, PFloat64, PInt32] { (exp10, exp20, tpe0) => Float64Comparison(ComparisonOp.Gt, exp10, exp20, tpe0, loc) }
@@ -298,7 +298,7 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
           case Int8Op.Shl => compileBinary[PInt8, PInt8, PInt8] { (exp10, exp20, tpe0) => Int8Bitwise(BitwiseOp.Shl, exp10, exp20, tpe0, loc) }
           case Int8Op.Shr => compileBinary[PInt8, PInt8, PInt8] { (exp10, exp20, tpe0) => Int8Bitwise(BitwiseOp.Shr, exp10, exp20, tpe0, loc) }
           case Int8Op.Eq => compileBinary[PInt8, PInt8, PInt32] { (exp10, exp20, tpe0) => Int8Comparison(EqualityOp.Eq, exp10, exp20, tpe0, loc) }
-          case Int8Op.Neq => compileBinary[PInt8, PInt8, PInt32] { (exp10, exp20, tpe0) => Int8Comparison(EqualityOp.Neq, exp10, exp20, tpe0, loc) }
+          case Int8Op.Neq => compileBinary[PInt8, PInt8, PInt32] { (exp10, exp20, tpe0) => Int8Comparison(EqualityOp.Ne, exp10, exp20, tpe0, loc) }
           case Int8Op.Lt => compileBinary[PInt8, PInt8, PInt32] { (exp10, exp20, tpe0) => Int8Comparison(ComparisonOp.Lt, exp10, exp20, tpe0, loc) }
           case Int8Op.Le => compileBinary[PInt8, PInt8, PInt32] { (exp10, exp20, tpe0) => Int8Comparison(ComparisonOp.Le, exp10, exp20, tpe0, loc) }
           case Int8Op.Gt => compileBinary[PInt8, PInt8, PInt32] { (exp10, exp20, tpe0) => Int8Comparison(ComparisonOp.Gt, exp10, exp20, tpe0, loc) }
@@ -319,7 +319,7 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
           case Int16Op.Shl => compileBinary[PInt16, PInt16, PInt16] { (exp10, exp20, tpe0) => Int16Bitwise(BitwiseOp.Shl, exp10, exp20, tpe0, loc) }
           case Int16Op.Shr => compileBinary[PInt16, PInt16, PInt16] { (exp10, exp20, tpe0) => Int16Bitwise(BitwiseOp.Shr, exp10, exp20, tpe0, loc) }
           case Int16Op.Eq => compileBinary[PInt16, PInt16, PInt32] { (exp10, exp20, tpe0) => Int16Comparison(EqualityOp.Eq, exp10, exp20, tpe0, loc) }
-          case Int16Op.Neq => compileBinary[PInt16, PInt16, PInt32] { (exp10, exp20, tpe0) => Int16Comparison(EqualityOp.Neq, exp10, exp20, tpe0, loc) }
+          case Int16Op.Neq => compileBinary[PInt16, PInt16, PInt32] { (exp10, exp20, tpe0) => Int16Comparison(EqualityOp.Ne, exp10, exp20, tpe0, loc) }
           case Int16Op.Lt => compileBinary[PInt16, PInt16, PInt32] { (exp10, exp20, tpe0) => Int16Comparison(ComparisonOp.Lt, exp10, exp20, tpe0, loc) }
           case Int16Op.Le => compileBinary[PInt16, PInt16, PInt32] { (exp10, exp20, tpe0) => Int16Comparison(ComparisonOp.Le, exp10, exp20, tpe0, loc) }
           case Int16Op.Gt => compileBinary[PInt16, PInt16, PInt32] { (exp10, exp20, tpe0) => Int16Comparison(ComparisonOp.Gt, exp10, exp20, tpe0, loc) }
@@ -340,7 +340,7 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
           case Int32Op.Shl => compileBinary[PInt32, PInt32, PInt32] { (exp10, exp20, tpe0) => Int32Bitwise(BitwiseOp.Shl, exp10, exp20, tpe0, loc) }
           case Int32Op.Shr => compileBinary[PInt32, PInt32, PInt32] { (exp10, exp20, tpe0) => Int32Bitwise(BitwiseOp.Shr, exp10, exp20, tpe0, loc) }
           case Int32Op.Eq => compileBinary[PInt32, PInt32, PInt32] { (exp10, exp20, tpe0) => Int32Comparison(EqualityOp.Eq, exp10, exp20, tpe0, loc) }
-          case Int32Op.Neq => compileBinary[PInt32, PInt32, PInt32] { (exp10, exp20, tpe0) => Int32Comparison(EqualityOp.Neq, exp10, exp20, tpe0, loc) }
+          case Int32Op.Neq => compileBinary[PInt32, PInt32, PInt32] { (exp10, exp20, tpe0) => Int32Comparison(EqualityOp.Ne, exp10, exp20, tpe0, loc) }
           case Int32Op.Lt => compileBinary[PInt32, PInt32, PInt32] { (exp10, exp20, tpe0) => Int32Comparison(ComparisonOp.Lt, exp10, exp20, tpe0, loc) }
           case Int32Op.Le => compileBinary[PInt32, PInt32, PInt32] { (exp10, exp20, tpe0) => Int32Comparison(ComparisonOp.Le, exp10, exp20, tpe0, loc) }
           case Int32Op.Gt => compileBinary[PInt32, PInt32, PInt32] { (exp10, exp20, tpe0) => Int32Comparison(ComparisonOp.Gt, exp10, exp20, tpe0, loc) }
@@ -361,7 +361,7 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
           case Int64Op.Shl => compileBinary[PInt64, PInt64, PInt64] { (exp10, exp20, tpe0) => Int64Bitwise(BitwiseOp.Shl, exp10, exp20, tpe0, loc) }
           case Int64Op.Shr => compileBinary[PInt64, PInt64, PInt64] { (exp10, exp20, tpe0) => Int64Bitwise(BitwiseOp.Shr, exp10, exp20, tpe0, loc) }
           case Int64Op.Eq => compileBinary[PInt64, PInt64, PInt32] { (exp10, exp20, tpe0) => Int64Comparison(EqualityOp.Eq, exp10, exp20, tpe0, loc) }
-          case Int64Op.Neq => compileBinary[PInt64, PInt64, PInt32] { (exp10, exp20, tpe0) => Int64Comparison(EqualityOp.Neq, exp10, exp20, tpe0, loc) }
+          case Int64Op.Neq => compileBinary[PInt64, PInt64, PInt32] { (exp10, exp20, tpe0) => Int64Comparison(EqualityOp.Ne, exp10, exp20, tpe0, loc) }
           case Int64Op.Lt => compileBinary[PInt64, PInt64, PInt32] { (exp10, exp20, tpe0) => Int64Comparison(ComparisonOp.Lt, exp10, exp20, tpe0, loc) }
           case Int64Op.Le => compileBinary[PInt64, PInt64, PInt32] { (exp10, exp20, tpe0) => Int64Comparison(ComparisonOp.Le, exp10, exp20, tpe0, loc) }
           case Int64Op.Gt => compileBinary[PInt64, PInt64, PInt32] { (exp10, exp20, tpe0) => Int64Comparison(ComparisonOp.Gt, exp10, exp20, tpe0, loc) }
@@ -382,7 +382,7 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
           case BigIntOp.Shl => compileBinary[PReference[PBigInt], PReference[PBigInt], PReference[PBigInt]] { (exp10, exp20, tpe0) => BigIntBitwise(BitwiseOp.Shl, exp10, exp20, tpe0, loc) }
           case BigIntOp.Shr => compileBinary[PReference[PBigInt], PReference[PBigInt], PReference[PBigInt]] { (exp10, exp20, tpe0) => BigIntBitwise(BitwiseOp.Shr, exp10, exp20, tpe0, loc) }
           case BigIntOp.Eq => compileBinary[PReference[PBigInt], PReference[PBigInt], PInt32] { (exp10, exp20, tpe0) => BigIntComparison(EqualityOp.Eq, exp10, exp20, tpe0, loc) }
-          case BigIntOp.Neq => compileBinary[PReference[PBigInt], PReference[PBigInt], PInt32] { (exp10, exp20, tpe0) => BigIntComparison(EqualityOp.Neq, exp10, exp20, tpe0, loc) }
+          case BigIntOp.Neq => compileBinary[PReference[PBigInt], PReference[PBigInt], PInt32] { (exp10, exp20, tpe0) => BigIntComparison(EqualityOp.Ne, exp10, exp20, tpe0, loc) }
           case BigIntOp.Lt => compileBinary[PReference[PBigInt], PReference[PBigInt], PInt32] { (exp10, exp20, tpe0) => BigIntComparison(ComparisonOp.Lt, exp10, exp20, tpe0, loc) }
           case BigIntOp.Le => compileBinary[PReference[PBigInt], PReference[PBigInt], PInt32] { (exp10, exp20, tpe0) => BigIntComparison(ComparisonOp.Le, exp10, exp20, tpe0, loc) }
           case BigIntOp.Gt => compileBinary[PReference[PBigInt], PReference[PBigInt], PInt32] { (exp10, exp20, tpe0) => BigIntComparison(ComparisonOp.Gt, exp10, exp20, tpe0, loc) }
@@ -395,7 +395,7 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
         case op: SemanticOperator.StringOp => op match {
           case StringOp.Concat => compileBinary[PReference[PStr], PReference[PStr], PReference[PStr]] { (exp10, exp20, tpe0) => StringConcat(exp10, exp20, tpe0, loc) }
           case StringOp.Eq => compileBinary[PReference[PStr], PReference[PStr], PInt32] { (exp10, exp20, tpe0) => StringEquality(EqualityOp.Eq, exp10, exp20, tpe0, loc) }
-          case StringOp.Neq => compileBinary[PReference[PStr], PReference[PStr], PInt32] { (exp10, exp20, tpe0) => StringEquality(EqualityOp.Neq, exp10, exp20, tpe0, loc) }
+          case StringOp.Neq => compileBinary[PReference[PStr], PReference[PStr], PInt32] { (exp10, exp20, tpe0) => StringEquality(EqualityOp.Ne, exp10, exp20, tpe0, loc) }
         }
       }
 

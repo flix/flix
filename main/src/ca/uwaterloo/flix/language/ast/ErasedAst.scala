@@ -393,7 +393,7 @@ object ErasedAst {
 
     case object Eq extends EqualityOp
 
-    case object Neq extends EqualityOp
+    case object Ne extends EqualityOp
 
   }
 

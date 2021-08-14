@@ -90,6 +90,7 @@ object Instructions {
     f.visitor.visitLabel(end)
   }
 
+  // TODO(JLS): maybe tag the starting stack?
   def IF_ACMPEQ
   [R1 <: Stack, R2 <: Stack, T <: PRefType]
   (branch1: F[R1] => F[R2])(branch2: F[R1] => F[R2]):
