@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.KindError
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN, mapN, traverse}
 
 /**
@@ -51,25 +51,36 @@ import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN, mapN, 
 object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
 
   override def run(root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Root, CompilationError] = flix.phase("Kinder") {
-    val enumsVal = Validation.traverse(root.enums) {
-      case (sym, enum) => visitEnum(enum, root).map((sym, _))
-    }
+    // Extra type annotations are required due to limitations in Scala's type inference.
+    val enumsVal = Validation.sequence(ParOps.parMap(root.enums, {
+      pair: (Symbol.EnumSym, ResolvedAst.Enum) =>
+        val (sym, enum) = pair
+        visitEnum(enum, root).map(sym -> _)
+    }))
 
-    val classesVal = Validation.traverse(root.classes) {
-      case (sym, clazz) => visitClass(clazz, root).map((sym, _))
-    }
+    val classesVal = Validation.sequence(ParOps.parMap(root.classes, {
+      pair: (Symbol.ClassSym, ResolvedAst.Class) =>
+        val (sym, clazz) = pair
+        visitClass(clazz, root).map(sym -> _)
+    }))
 
-    val defsVal = Validation.traverse(root.defs) {
-      case (sym, defn) => visitDef(defn, KindEnv.empty, root).map((sym, _))
-    }
+    val defsVal = Validation.sequence(ParOps.parMap(root.defs, {
+      pair: (Symbol.DefnSym, ResolvedAst.Def) =>
+        val (sym, defn) = pair
+        visitDef(defn, KindEnv.empty, root).map(sym -> _)
+    }))
 
-    val instancesVal = Validation.traverse(root.instances) {
-      case (sym, insts0) => traverse(insts0)(visitInstance(_, root)).map((sym, _))
-    }
+    val instancesVal = Validation.sequence(ParOps.parMap(root.instances, {
+      pair: (Symbol.ClassSym, List[ResolvedAst.Instance]) =>
+        val (sym, insts) = pair
+        traverse(insts)(visitInstance(_, root)).map(sym -> _)
+    }))
 
-    val typeAliasesVal = Validation.traverseX(root.typealiases) {
-      case (_, typeAlias) => visitTypeAlias(typeAlias, root)
-    }
+    val typeAliasesVal = Validation.sequenceX(ParOps.parMap(root.typealiases, {
+      pair: (Symbol.TypeAliasSym, ResolvedAst.TypeAlias) =>
+        val (_, typeAlias) = pair
+        visitTypeAlias(typeAlias, root)
+    }))
 
     mapN(enumsVal, classesVal, defsVal, instancesVal, typeAliasesVal) {
       case (enums, classes, defs, instances, _) =>
