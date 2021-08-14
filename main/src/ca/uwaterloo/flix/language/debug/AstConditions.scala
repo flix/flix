@@ -58,17 +58,22 @@ object AstConditions {
     case product: Product =>
       // Check whether there are any conditions on this node type
       val conditions = getClassAnnotations(product).flatMap(processAnnotation)
-      val failedConditions = conditions.flatMap {
-        case cond@Condition.IntroducedBy(phase) if !phases.exists(p => p =:= phase) => Some(FailedCondition(product, path, cond))
-        case cond@Condition.EliminatedBy(phase) if phases.exists(p => p =:= phase) => Some(FailedCondition(product, path, cond))
-        case _ => None
-      }
+      val failedConditions = findFailures(conditions, product, path, phases)
       // Recurse on the nested nodes
       val rest = product.productIterator.zip(product.productElementNames).flatMap {
         case (node, name) => visitNode(node, name :: path, phases)
       }.toList
       failedConditions ++ rest
-    case _ => Nil
+    case obj =>
+      // Check whether there are any conditions on this node type
+      val conditions = getClassAnnotations(obj).flatMap(processAnnotation)
+      findFailures(conditions, obj, path, phases)
+  }
+
+  private def findFailures(conditions: List[Condition], obj: Any, path: List[String], phases: List[universe.Type]): List[FailedCondition] = conditions.flatMap {
+    case cond@Condition.IntroducedBy(phase) if !phases.exists(p => p =:= phase) => Some(FailedCondition(obj, path, cond))
+    case cond@Condition.EliminatedBy(phase) if phases.exists(p => p =:= phase) => Some(FailedCondition(obj, path, cond))
+    case _ => None
   }
 
   /**
