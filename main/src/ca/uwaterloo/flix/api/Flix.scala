@@ -426,12 +426,13 @@ class Flix {
       }
     }
 
-    // MATT hacky stuff
-    // MATT super slow so I won't make the test runner handle it for now
-//    r match {
-//      case Validation.Success(root: Product) => AstConditions.checkAstAfterPhases(root, visitedPhases.toList)
-//      case _ => ()
-//    }
+    // Check the AST conditions if requested.
+    if (options.xastconditions) {
+      r match {
+        case Validation.Success(root: Product) => AstConditions.checkAstAfterPhases(root, visitedPhases.toList)
+        case _ => ()
+      }
+    }
 
     // Return the result computed by the phase.
     r
