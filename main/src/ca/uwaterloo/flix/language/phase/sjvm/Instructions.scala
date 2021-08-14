@@ -50,18 +50,12 @@ object Instructions {
   F[R] => F[R] =
     f => f
 
-  def compileClosureApplication
-  [R <: Stack, T1 <: PRefType, T2 <: PType]
-  (resultType: RType[T2]):
-  F[R ** PReference[PAnyObject]] => F[R ** T2] =
-    ???
-
+  // TODO(JLS): This needs to propagate exceptions gracefully
   def WITHMONITOR
   [R <: Stack, S <: PRefType, T <: PType]
   (e: RType[T])(f: F[R ** PReference[S]] => F[R ** PReference[S] ** T]):
   F[R ** PReference[S]] => F[R ** T] = {
-    // TODO(JLS): why is NOP/the type needed here?
-    NOP ~[R ** PReference[S] ** PReference[S]]
+    START[R ** PReference[S]] ~
       DUP ~
       MONITORENTER ~
       f ~
@@ -96,43 +90,126 @@ object Instructions {
     f.visitor.visitLabel(end)
   }
 
-  def IFNE
-  [R1 <: Stack, R2 <: Stack]
+  def IF_ACMPEQ
+  [R1 <: Stack, R2 <: Stack, T <: PRefType]
   (branch1: F[R1] => F[R2])(branch2: F[R1] => F[R2]):
-  F[R1 ** PInt32] => F[R2] = f => {
-    conditional(Opcodes.IFNE, f, _ => branch1(castF(f)), _ => branch2(castF(f)))
+  F[R1 ** PReference[T] ** PReference[T]] => F[R2] = f => {
+    conditional(Opcodes.IF_ACMPEQ, f, _ => branch1(castF(f)), _ => branch2(castF(f)))
     castF(f)
   }
 
-  def IF_ICMPEQ32
-  [R1 <: Stack, R2 <: Stack]
-  (branch1: F[R1] => F[R2], branch2: F[R1] => F[R2]):
-  F[R1 ** PInt32 ** PInt32] => F[R2] = f => {
+  def IF_ACMPNE
+  [R1 <: Stack, R2 <: Stack, T <: PRefType]
+  (branch1: F[R1] => F[R2])(branch2: F[R1] => F[R2]):
+  F[R1 ** PReference[T]] => F[R2] = f => {
+    conditional(Opcodes.IF_ACMPNE, f, _ => branch1(castF(f)), _ => branch2(castF(f)))
+    castF(f)
+  }
+
+  def IF_ICMPEQ
+  [R1 <: Stack, R2 <: Stack, T1 <: PType, T2 <: PType]
+  (branch1: F[R1] => F[R2])(branch2: F[R1] => F[R2])
+  (implicit t1: T1 => Int32Usable[T1], t2: T2 => Int32Usable[T2]):
+  F[R1 ** T2 ** T1] => F[R2] = f => {
     conditional(Opcodes.IF_ICMPEQ, f, _ => branch1(castF(f)), _ => branch2(castF(f)))
     castF(f)
   }
 
-  def IF_ICMPNE32
-  [R1 <: Stack, R2 <: Stack]
-  (branch1: F[R1] => F[R2], branch2: F[R1] => F[R2]):
-  F[R1 ** PInt32 ** PInt32] => F[R2] = f => {
+  def IF_ICMPNE
+  [R1 <: Stack, R2 <: Stack, T1 <: PType, T2 <: PType]
+  (branch1: F[R1] => F[R2])(branch2: F[R1] => F[R2])
+  (implicit t1: T1 => Int32Usable[T1], t2: T2 => Int32Usable[T2]):
+  F[R1 ** T2 ** T1] => F[R2] = f => {
     conditional(Opcodes.IF_ICMPNE, f, _ => branch1(castF(f)), _ => branch2(castF(f)))
     castF(f)
   }
 
-  def IF_ICMPEQ16
-  [R1 <: Stack, R2 <: Stack]
-  (branch1: F[R1] => F[R2], branch2: F[R1] => F[R2]):
-  F[R1 ** PInt16 ** PInt16] => F[R2] = f => {
-    IF_ICMPEQ32(branch1, branch2)(castF(f))
+  def IF_ICMPLT
+  [R1 <: Stack, R2 <: Stack, T1 <: PType, T2 <: PType]
+  (branch1: F[R1] => F[R2])(branch2: F[R1] => F[R2])
+  (implicit t1: T1 => Int32Usable[T1], t2: T2 => Int32Usable[T2]):
+  F[R1 ** T2 ** T1] => F[R2] = f => {
+    conditional(Opcodes.IF_ICMPLT, f, _ => branch1(castF(f)), _ => branch2(castF(f)))
     castF(f)
   }
 
-  def IF_ICMPNE16
+  def IF_ICMPGE
+  [R1 <: Stack, R2 <: Stack, T1 <: PType, T2 <: PType]
+  (branch1: F[R1] => F[R2])(branch2: F[R1] => F[R2])
+  (implicit t1: T1 => Int32Usable[T1], t2: T2 => Int32Usable[T2]):
+  F[R1 ** T2 ** T1] => F[R2] = f => {
+    conditional(Opcodes.IF_ICMPGE, f, _ => branch1(castF(f)), _ => branch2(castF(f)))
+    castF(f)
+  }
+
+  def IF_ICMPGT
+  [R1 <: Stack, R2 <: Stack, T1 <: PType, T2 <: PType]
+  (branch1: F[R1] => F[R2])(branch2: F[R1] => F[R2])
+  (implicit t1: T1 => Int32Usable[T1], t2: T2 => Int32Usable[T2]):
+  F[R1 ** T2 ** T1] => F[R2] = f => {
+    conditional(Opcodes.IF_ICMPGT, f, _ => branch1(castF(f)), _ => branch2(castF(f)))
+    castF(f)
+  }
+
+  def IF_ICMPLE
+  [R1 <: Stack, R2 <: Stack, T1 <: PType, T2 <: PType]
+  (branch1: F[R1] => F[R2])(branch2: F[R1] => F[R2])
+  (implicit t1: T1 => Int32Usable[T1], t2: T2 => Int32Usable[T2]):
+  F[R1 ** T2 ** T1] => F[R2] = f => {
+    conditional(Opcodes.IF_ICMPLE, f, _ => branch1(castF(f)), _ => branch2(castF(f)))
+    castF(f)
+  }
+
+  def IFEQ
   [R1 <: Stack, R2 <: Stack]
   (branch1: F[R1] => F[R2], branch2: F[R1] => F[R2]):
-  F[R1 ** PInt16 ** PInt16] => F[R2] = f => {
-    IF_ICMPNE32(branch1, branch2)(castF(f))
+  F[R1 ** PInt32] => F[R2] = f => {
+    conditional(Opcodes.IFEQ, f, _ => branch1(castF(f)), _ => branch2(castF(f)))
+    castF(f)
+  }
+
+  def IFNE
+  [R1 <: Stack, R2 <: Stack, T <: PType]
+  (branch1: F[R1] => F[R2])(branch2: F[R1] => F[R2])
+  (implicit t: T => Int32Usable[T]):
+  F[R1 ** T] => F[R2] = f => {
+    conditional(Opcodes.IFNE, f, _ => branch1(castF(f)), _ => branch2(castF(f)))
+    castF(f)
+  }
+
+  def IFLT
+  [R1 <: Stack, R2 <: Stack, T <: PType]
+  (branch1: F[R1] => F[R2])(branch2: F[R1] => F[R2])
+  (implicit t: T => Int32Usable[T]):
+  F[R1 ** T] => F[R2] = f => {
+    conditional(Opcodes.IFLT, f, _ => branch1(castF(f)), _ => branch2(castF(f)))
+    castF(f)
+  }
+
+  def IFGE
+  [R1 <: Stack, R2 <: Stack, T <: PType]
+  (branch1: F[R1] => F[R2])(branch2: F[R1] => F[R2])
+  (implicit t: T => Int32Usable[T]):
+  F[R1 ** T] => F[R2] = f => {
+    conditional(Opcodes.IFGE, f, _ => branch1(castF(f)), _ => branch2(castF(f)))
+    castF(f)
+  }
+
+  def IFGT
+  [R1 <: Stack, R2 <: Stack, T <: PType]
+  (branch1: F[R1] => F[R2])(branch2: F[R1] => F[R2])
+  (implicit t: T => Int32Usable[T]):
+  F[R1 ** T] => F[R2] = f => {
+    conditional(Opcodes.IFGT, f, _ => branch1(castF(f)), _ => branch2(castF(f)))
+    castF(f)
+  }
+
+  def IFLE
+  [R1 <: Stack, R2 <: Stack, T <: PType]
+  (branch1: F[R1] => F[R2])(branch2: F[R1] => F[R2])
+  (implicit t: T => Int32Usable[T]):
+  F[R1 ** T] => F[R2] = f => {
+    conditional(Opcodes.IFLE, f, _ => branch1(castF(f)), _ => branch2(castF(f)))
     castF(f)
   }
 
@@ -144,23 +221,22 @@ object Instructions {
   def SWAP
   [R <: Stack, T1 <: PType, T2 <: PType]
   (implicit t1: T1 => Cat1[T1], t2: T2 => Cat1[T2]):
-  F[R ** T2 ** T1] => F[R ** T1 ** T2] = {
-    f =>
-      f.visitor.visitInsn(Opcodes.SWAP)
-      castF(f)
+  F[R ** T2 ** T1] => F[R ** T1 ** T2] = f => {
+    f.visitor.visitInsn(Opcodes.SWAP)
+    castF(f)
   }
 
   def SWAP_cat1_onCat2
   [R <: Stack, T1 <: PType, T2 <: PType]
   (implicit t1: T1 => Cat1[T1], t2: T2 => Cat2[T2]):
   F[R ** T2 ** T1] => F[R ** T1 ** T2] =
-    ???
+    START[R ** T2 ** T1] ~ DUP_X2_onCat2 ~ POP
 
   def SWAP_cat2_onCat1
   [R <: Stack, T1 <: PType, T2 <: PType]
   (implicit t1: T1 => Cat2[T1], t2: T2 => Cat1[T2]):
   F[R ** T2 ** T1] => F[R ** T1 ** T2] =
-    ???
+    START[R ** T2 ** T1] ~ DUP2_X1_onCat2 ~ POP2_onCat2
 
   def SWAP_cat2_onCat2
   [R <: Stack, T1 <: PType, T2 <: PType]
@@ -301,7 +377,7 @@ object Instructions {
   [R <: Stack, T1 <: PRefType, T2 <: PRefType]
   (classType: RReference[T2], fieldName: String, referenceType: RRefType[T1]):
   F[R ** PReference[T2]] => F[R ** PReference[T1]] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, referenceType.toInternalName)
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, referenceType.toDescriptor)
     castF(f)
   }
 
@@ -313,12 +389,15 @@ object Instructions {
     castF(f)
   }
 
-  //TODO(JLS): Should probably not be used directly (with functions/ref/modelled things)
+  //TODO(JLS): make ref/lazy specific versions
   def PUTFIELD
   [R <: Stack, T1 <: PType, T2 <: PRefType]
-  (classType: RReference[T2], fieldName: String, fieldType: RType[T1]):
-  F[R ** PReference[T2] ** T1] => F[R] =
-    ???
+  (classType: RReference[T2], fieldName: String, fieldType: RType[T1], erasedType: Boolean = false):
+  F[R ** PReference[T2] ** T1] => F[R] = f => {
+    if (erasedType) f.visitor.visitFieldInsn(Opcodes.PUTFIELD, classType.toInternalName, fieldName, fieldType.erasedType.toDescriptor)
+    else f.visitor.visitFieldInsn(Opcodes.PUTFIELD, classType.toInternalName, fieldName, fieldType.toDescriptor)
+    castF(f)
+  }
 
   def CAST
   [R <: Stack, T <: PRefType]
@@ -365,6 +444,17 @@ object Instructions {
     castF(f)
   }
 
+  def FORCE
+  [R <: Stack, T <: PType]
+  (rType: RType[PReference[PLazy[T]]]):
+  F[R ** PReference[PLazy[T]]] => F[R ** T] = f => {
+    val rRefLazy = squeezeReference(rType)
+    val resultType = squeezeLazy(rRefLazy).tpe
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, rRefLazy.toInternalName, GenLazyClasses.forceMethod, resultType.erasedNothingToThisMethodDescriptor, false)
+    undoErasure(resultType, f.visitor)
+    castF(f)
+  }
+
   def INVOKEOBJECTCONSTRUCTOR
   [R <: Stack, T <: PRefType]:
   F[R ** PReference[T]] => F[R] = f => {
@@ -395,17 +485,10 @@ object Instructions {
     castF(f)
   }
 
-  def IRETURN[R <: Stack]: F[StackNil ** PInt32] => F[StackEnd] = f => {
-    f.visitor.visitInsn(Opcodes.IRETURN)
-    castF(f)
-  }
-
-  def BRETURN[R <: Stack]: F[StackNil ** PInt8] => F[StackEnd] = f => {
-    f.visitor.visitInsn(Opcodes.IRETURN)
-    castF(f)
-  }
-
-  def SRETURN[R <: Stack]: F[StackNil ** PInt16] => F[StackEnd] = f => {
+  def IRETURN
+  [R <: Stack, T <: PType]
+  (implicit t: T => Int32Usable[T]):
+  F[StackNil ** T] => F[StackEnd] = f => {
     f.visitor.visitInsn(Opcodes.IRETURN)
     castF(f)
   }
@@ -436,8 +519,8 @@ object Instructions {
   (e: RType[T]):
   F[StackNil ** T] => F[StackEnd] = e match {
     case RBool => IRETURN
-    case RInt8 => BRETURN
-    case RInt16 => SRETURN
+    case RInt8 => IRETURN
+    case RInt16 => IRETURN
     case RInt32 => IRETURN
     case RInt64 => LRETURN
     case RChar => CRETURN
@@ -455,11 +538,43 @@ object Instructions {
     castF(f)
   }
 
+  def POP2_onCat1
+  [R <: Stack, T1 <: PType, T2 <: PType]
+  (implicit t1: T1 => Cat1[T1], t2: T2 => Cat1[T2]):
+  F[R ** T2 ** T1] => F[R] = f => {
+    f.visitor.visitInsn(Opcodes.POP2)
+    castF(f)
+  }
+
+  def POP2_onCat2
+  [R <: Stack, T <: PType]
+  (implicit t: T => Cat2[T]):
+  F[R ** T] => F[R] = f => {
+    f.visitor.visitInsn(Opcodes.POP2)
+    castF(f)
+  }
+
   def DUP_X1
   [R <: Stack, T1 <: PType, T2 <: PType]
   (implicit t1: T1 => Cat1[T1], t2: T2 => Cat1[T2]):
   F[R ** T2 ** T1] => F[R ** T1 ** T2 ** T1] = f => {
     f.visitor.visitInsn(Opcodes.DUP_X1)
+    castF(f)
+  }
+
+  def DUP2_X1_onCat1
+  [R <: Stack, T1 <: PType, T2 <: PType, T3 <: PType]
+  (implicit t1: T1 => Cat1[T1], t2: T2 => Cat1[T2], t3: T3 => Cat1[T3]):
+  F[R ** T3 ** T2 ** T1] => F[R ** T2 ** T1 ** T3 ** T2 ** T1] = f => {
+    f.visitor.visitInsn(Opcodes.DUP2_X1)
+    castF(f)
+  }
+
+  def DUP2_X1_onCat2
+  [R <: Stack, T1 <: PType, T2 <: PType]
+  (implicit t1: T1 => Cat2[T1], t2: T2 => Cat1[T2]):
+  F[R ** T2 ** T1] => F[R ** T1 ** T2 ** T1] = f => {
+    f.visitor.visitInsn(Opcodes.DUP2_X1)
     castF(f)
   }
 
@@ -520,64 +635,57 @@ object Instructions {
   }
 
   def I2B
-  [R <: Stack]:
-  F[R ** PInt32] => F[R ** PInt8] = f => {
+  [R <: Stack, T <: PType]
+  (implicit t: T => Int32Usable[T]):
+  F[R ** T] => F[R ** PInt8] = f => {
     f.visitor.visitInsn(Opcodes.I2B)
     castF(f)
   }
 
   def I2S
-  [R <: Stack]:
-  F[R ** PInt32] => F[R ** PInt8] = f => {
+  [R <: Stack, T <: PType]
+  (implicit t: T => Int32Usable[T]):
+  F[R ** T] => F[R ** PInt8] = f => {
     f.visitor.visitInsn(Opcodes.I2S)
     castF(f)
   }
 
   def I2L
-  [R <: Stack]:
-  F[R ** PInt32] => F[R ** PInt8] = f => {
+  [R <: Stack, T <: PType]
+  (implicit t: T => Int32Usable[T]):
+  F[R ** T] => F[R ** PInt8] = f => {
     f.visitor.visitInsn(Opcodes.I2L)
     castF(f)
   }
 
   def I2C
-  [R <: Stack]:
-  F[R ** PInt32] => F[R ** PInt8] = f => {
+  [R <: Stack, T <: PType]
+  (implicit t: T => Int32Usable[T]):
+  F[R ** T] => F[R ** PInt8] = f => {
     f.visitor.visitInsn(Opcodes.I2C)
     castF(f)
   }
 
   def I2F
-  [R <: Stack]:
-  F[R ** PInt32] => F[R ** PInt8] = f => {
+  [R <: Stack, T <: PType]
+  (implicit t: T => Int32Usable[T]):
+  F[R ** T] => F[R ** PInt8] = f => {
     f.visitor.visitInsn(Opcodes.I2F)
     castF(f)
   }
 
   def I2D
-  [R <: Stack]:
-  F[R ** PInt32] => F[R ** PInt8] = f => {
+  [R <: Stack, T <: PType]
+  (implicit t: T => Int32Usable[T]):
+  F[R ** T] => F[R ** PInt8] = f => {
     f.visitor.visitInsn(Opcodes.I2D)
     castF(f)
   }
 
-  def BNEG
-  [R <: Stack]:
-  F[R ** PInt8] => F[R ** PInt8] = f => {
-    INEG(f.asInstanceOf[F[R ** PInt32 ** PInt32]])
-    castF(f)
-  }
-
-  def SNEG
-  [R <: Stack]:
-  F[R ** PInt16] => F[R ** PInt16] = f => {
-    INEG(f.asInstanceOf[F[R ** PInt32 ** PInt32]])
-    castF(f)
-  }
-
   def INEG
-  [R <: Stack]:
-  F[R ** PInt32] => F[R ** PInt32] = f => {
+  [R <: Stack, T <: PType]
+  (implicit t: T => Int32Usable[T]):
+  F[R ** T] => F[R ** T] = f => {
     f.visitor.visitInsn(Opcodes.INEG)
     castF(f)
   }
@@ -1067,6 +1175,14 @@ object Instructions {
   (c: scala.Char):
   F[R] => F[R ** PChar] =
     f => castF(pushInt16(c)(f))
+
+  def pushString
+  [R <: Stack]
+  (s: String):
+  F[R] => F[R ** PReference[PStr]] = f => {
+    f.visitor.visitLdcInsn(s)
+    castF(f)
+  }
 
   def ALOAD
   [R <: Stack, T <: PRefType]

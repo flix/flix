@@ -18,8 +18,8 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.PType._
-import ca.uwaterloo.flix.language.ast.RRefType.{RArray, RArrow, RObject}
-import ca.uwaterloo.flix.language.phase.sjvm.JvmName
+import ca.uwaterloo.flix.language.ast.RRefType.{RArray, RArrow, RLazy, RObject}
+import ca.uwaterloo.flix.language.phase.sjvm.{GenLazyClasses, JvmName}
 import org.objectweb.asm.{MethodVisitor, Opcodes}
 
 trait Describable {
@@ -42,6 +42,7 @@ sealed trait RType[T <: PType] extends Describable {
   lazy val nothingToContMethodDescriptor: String = JvmName.getMethodDescriptor(Nil, this.contName)
   lazy val erasedNothingToThisMethodDescriptor: String = JvmName.getMethodDescriptor(Nil, this.erasedType)
   lazy val nothingToThisMethodDescriptor: String = JvmName.getMethodDescriptor(Nil, this)
+  lazy val thisToNothingMethodDescriptor: String = JvmName.getMethodDescriptor(this, None)
 }
 
 object RType {
@@ -55,6 +56,10 @@ object RType {
 
   def squeezeArray[T <: PType](x: RReference[PArray[T]]): RArray[T] = x.referenceType match {
     case res@RArray(_) => res
+  }
+
+  def squeezeLazy[T <: PType](x: RReference[PLazy[T]]): RLazy[T] = x.referenceType match {
+    case res@RLazy(_) => res
   }
 
   def squeezeFunction[T <: PType](x: RReference[PFunction[T]]): RArrow[T] = x.referenceType match {
@@ -209,7 +214,7 @@ object RRefType {
   }
 
   case class RLazy[T <: PType](tpe: RType[T]) extends RRefType[PLazy[T]] {
-    override lazy val jvmName: JvmName = JvmName(Nil, "NOT_IMPLEMENTED(RTYPE)")
+    override lazy val jvmName: JvmName = JvmName(Nil, s"Lazy${JvmName.reservedDelimiter}${tpe.toErasedString}")
   }
 
   case class RRef[T <: PType](tpe: RType[T]) extends RRefType[PRef[T]] {

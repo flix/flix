@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.PType._
 import ca.uwaterloo.flix.language.ast.RRefType._
 import ca.uwaterloo.flix.language.ast.RType._
-import ca.uwaterloo.flix.language.ast.{PType, RType}
+import ca.uwaterloo.flix.language.ast.{ErasedAst, PType, RType, SourceLocation}
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
 import ca.uwaterloo.flix.language.phase.sjvm.ClassMaker.Mod
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
@@ -34,13 +34,16 @@ object GenLazyClasses {
 
   // TODO(JLS): Needs to use new call protocol and use type erasure
 
-  val InitializedFieldName: String = "initialized"
-  val InitializedFieldType: RType[PInt32] = RBool
-  val ExpressionFieldName: String = "expression"
-  val ExpressionFieldType: RReference[PAnyObject] = RReference(RObject)
-  val ExpressionToVoid: String = JvmName.objectToVoid
-  val ValueFieldName: String = "value"
-  val ForceMethod: String = "force"
+  val initializedFieldName: String = "initialized"
+  val initializedFieldType: RType[PInt32] = RBool
+  val expressionFieldName: String = "expression"
+  // TODO(JLS): this could be the actual Fn1_Obj_valueType
+  val valueFieldName: String = "value"
+  val forceMethod: String = "force"
+
+  def constructorDescriptor[T <: PType](valueType: RType[T]): String = expressionFieldType(valueType).thisToNothingMethodDescriptor
+
+  def expressionFieldType[T <: PType](valueType: RType[T]): RType[PReference[PFunction[T]]] = RReference(RArrow(RReference(RObject) :: Nil, valueType))
 
   /**
    * Returns the set of lazy classes for the given set of types `ts`.
@@ -71,13 +74,11 @@ object GenLazyClasses {
   private def genByteCode[T <: PType](lazyType: RReference[PLazy[T]], valueFieldType: RType[T])(implicit root: Root, flix: Flix): Array[Byte] = {
     val classMaker = ClassMaker.mkClass(lazyType.jvmName, addSource = false, None)
 
-    classMaker.mkField(InitializedFieldName, InitializedFieldType)
-    classMaker.mkField(ExpressionFieldName, ExpressionFieldType)
-    classMaker.mkField(ValueFieldName, valueFieldType)
-    // TODO(JLS): This is temporary, call method needs to be changed
-    val methodDescriptor = s"(LContext;)${valueFieldType.toDescriptor}"
-    classMaker.mkMethod(compileForceMethod(lazyType, valueFieldType), ForceMethod, methodDescriptor, Mod.isFinal.isPublic)
-    classMaker.mkConstructor(compileLazyConstructor(lazyType, valueFieldType), ExpressionToVoid)
+    classMaker.mkField(initializedFieldName, initializedFieldType)
+    classMaker.mkField(expressionFieldName, expressionFieldType(valueFieldType))
+    classMaker.mkField(valueFieldName, valueFieldType)
+    classMaker.mkMethod(compileForceMethod(lazyType, valueFieldType), forceMethod, valueFieldType.nothingToThisMethodDescriptor, Mod.isFinal.isPublic)
+    classMaker.mkConstructor(compileLazyConstructor(lazyType, valueFieldType), constructorDescriptor(valueFieldType))
     classMaker.closeClassMaker
   }
 
@@ -92,7 +93,7 @@ object GenLazyClasses {
    */
   private def compileForceMethod[T <: PType](lazyType: RReference[PLazy[T]], valueFieldType: RType[T])(implicit root: Root, flix: Flix): F[StackNil] => F[StackEnd] = {
     /*
-    force(context) :=
+    force() :=
 
     lock(this)
     if (!this.initialized) {
@@ -107,21 +108,21 @@ object GenLazyClasses {
       (WITHMONITOR(valueFieldType) {
         START[StackNil ** PReference[PLazy[T]]] ~
           THISLOAD(tagOf[PLazy[T]]) ~
-          GetBoolField(lazyType, InitializedFieldName) ~
+          GetBoolField(lazyType, initializedFieldName) ~
           (IFNE {
             START[StackNil ** PReference[PLazy[T]]] ~
               THISLOAD(tagOf[PLazy[T]]) ~
-              GetObjectField(lazyType, ExpressionFieldName, tagOf[PAnyObject]) ~
-              compileClosureApplication(valueFieldType) ~
+              GetClassField(lazyType, expressionFieldName, squeezeReference(expressionFieldType(valueFieldType)).referenceType) ~
+              CALL(ErasedAst.Expression.Unit(SourceLocation.Unknown) :: Nil, RArrow(RReference(RUnit) :: Nil, valueFieldType)) ~
               THISLOAD(tagOf[PLazy[T]]) ~
               XSWAP(lazyType, valueFieldType) ~
-              PUTFIELD(lazyType, ValueFieldName, valueFieldType) ~
+              PUTFIELD(lazyType, valueFieldName, valueFieldType, erasedType = true) ~
               THISLOAD(tagOf[PLazy[T]]) ~
-              pushInt32(1) ~
-              PUTFIELD(lazyType, InitializedFieldName, RInt32)
+              pushBool(true) ~
+              PUTFIELD(lazyType, initializedFieldName, RInt32)
           } (NOP)) ~
           THISLOAD(tagOf[PLazy[T]]) ~
-          XGETFIELD(lazyType, ValueFieldName, valueFieldType)
+          XGETFIELD(lazyType, valueFieldName, valueFieldType)
       }) ~
       XRETURN(valueFieldType)
   }
@@ -142,10 +143,10 @@ object GenLazyClasses {
       INVOKEOBJECTCONSTRUCTOR ~
       THISLOAD(tagOf[PLazy[T]]) ~
       pushBool(false) ~
-      PUTFIELD(lazyType, InitializedFieldName, InitializedFieldType) ~
+      PUTFIELD(lazyType, initializedFieldName, initializedFieldType) ~
       THISLOAD(tagOf[PLazy[T]]) ~
-      ALOAD(1, tagOf[PAnyObject]) ~
-      PUTFIELD(lazyType, ExpressionFieldName, ExpressionFieldType) ~
+      ALOAD(1, tagOf[PFunction[T]]) ~
+      PUTFIELD(lazyType, expressionFieldName, expressionFieldType(valueFieldType), erasedType = false) ~
       RETURN
   }
 }

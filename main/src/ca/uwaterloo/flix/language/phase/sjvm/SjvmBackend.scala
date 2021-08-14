@@ -34,13 +34,13 @@ import java.nio.file.{Files, LinkOption, Path, Paths}
 
 object SjvmBackend extends Phase[Root, CompilationResult] {
   /**
-   * The directory where to place the generated class files.
-   */
+    * The directory where to place the generated class files.
+    */
   val TargetDirectory: Path = Paths.get("./target/flix/")
 
   /**
-   * Emits JVM bytecode for the given AST `root`.
-   */
+    * Emits JVM bytecode for the given AST `root`.
+    */
   def run(root: Root)(implicit flix: Flix): Validation[CompilationResult, CompilationError] = flix.phase("SjvmBackend") {
 
     implicit val r: Root = root
@@ -83,7 +83,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
 
       val closureClasses = GenClosureClasses.gen(root.closures)
 
-      // val lazyClasses = GenLazyClasses.gen()
+      val lazyClasses = GenLazyClasses.gen()
 
       val classMap = List(
         mainClass,
@@ -92,8 +92,8 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
         functionInterfaces,
         continuationInterfaces,
         defClasses,
-        closureClasses
-        // lazyClasses
+        closureClasses,
+        lazyClasses
       ).reduce(_ ++ _)
       (classMap, closureSyms)
     }
@@ -259,8 +259,8 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
 
 
   /**
-   * Optionally returns a reference to main.
-   */
+    * Optionally returns a reference to main.
+    */
   private def getCompiledMain(root: Root)(implicit flix: Flix): Option[Array[String] => Int] = {
     root.functions.get(Symbol.Main) map { defn =>
       (actualArgs: Array[String]) => {
@@ -272,8 +272,8 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
   }
 
   /**
-   * Returns a map from definition symbols to executable functions (backed by JVM backend).
-   */
+    * Returns a map from definition symbols to executable functions (backed by JVM backend).
+    */
   private def getCompiledDefs(root: Root)(implicit flix: Flix): Map[Symbol.DefnSym, () => ProxyObject] = {
     root.functions.foldLeft(Map.empty[Symbol.DefnSym, () => ProxyObject]) {
       case (macc, (sym, defn)) =>
@@ -283,8 +283,8 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
   }
 
   /**
-   * Returns a function object for the given definition symbol `sym`.
-   */
+    * Returns a function object for the given definition symbol `sym`.
+    */
   private def link(sym: Symbol.DefnSym, root: Root)(implicit flix: Flix): java.util.function.Function[Array[AnyRef], ProxyObject] = {
     (args: Array[AnyRef]) => {
       ///
@@ -318,8 +318,8 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
   }
 
   /**
-   * Returns a proxy object that wraps the given result value.
-   */
+    * Returns a proxy object that wraps the given result value.
+    */
   private def newProxyObj[T <: PType](result: AnyRef)(implicit flix: Flix): ProxyObject = {
     // Lookup the Equality method.
     val eq = null
@@ -335,12 +335,12 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
   }
 
   /**
-   * Writes the given JVM class `clazz` to a sub path under the given `prefixPath`.
-   *
-   * For example, if the prefix path is `/tmp/` and the class name is Foo.Bar.Baz
-   * then the bytecode is written to the path `/tmp/Foo/Bar/Baz.class` provided
-   * that this path either does not exist or is already a JVM class file.
-   */
+    * Writes the given JVM class `clazz` to a sub path under the given `prefixPath`.
+    *
+    * For example, if the prefix path is `/tmp/` and the class name is Foo.Bar.Baz
+    * then the bytecode is written to the path `/tmp/Foo/Bar/Baz.class` provided
+    * that this path either does not exist or is already a JVM class file.
+    */
   private def writeClass(prefixPath: Path, clazz: JvmClass): Unit = {
     // Compute the absolute path of the class file to write.
     val path = prefixPath.resolve(clazz.name.toPath).toAbsolutePath
@@ -371,15 +371,15 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
   }
 
   /**
-   * Returns `true` if the given `path` is non-empty (i.e. contains data).
-   */
+    * Returns `true` if the given `path` is non-empty (i.e. contains data).
+    */
   private def isEmpty(path: Path): Boolean = {
     Files.size(path) == 0L
   }
 
   /**
-   * Returns `true` if the given `path` exists and is a Java Virtual Machine class file.
-   */
+    * Returns `true` if the given `path` exists and is a Java Virtual Machine class file.
+    */
   private def isClassFile(path: Path): Boolean = {
     if (Files.exists(path) && Files.isReadable(path) && Files.isRegularFile(path)) {
       // Read the first four bytes of the file.

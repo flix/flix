@@ -16,12 +16,12 @@
 
 package ca.uwaterloo.flix.language.phase.sjvm
 
-import ca.uwaterloo.flix.language.ast.ErasedAst.{ArithmeticOp, BitwiseOp, Expression}
+import ca.uwaterloo.flix.language.ast.ErasedAst._
 import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.PType._
 import ca.uwaterloo.flix.language.ast.RRefType._
 import ca.uwaterloo.flix.language.ast.RType._
-import ca.uwaterloo.flix.language.ast.{PRefType, PType, RRefType, RType}
+import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 import org.objectweb.asm
 import org.objectweb.asm.{MethodVisitor, Opcodes}
@@ -56,6 +56,12 @@ object BytecodeCompiler {
 
   implicit val int64Cat1: PInt64 => Cat2[PInt64] = null
   implicit val float64Cat1: PFloat64 => Cat2[PFloat64] = null
+
+  trait Int32Usable[T]
+
+  implicit val int8U: PInt8 => Int32Usable[PInt8] = null
+  implicit val int16U: PInt16 => Int32Usable[PInt16] = null
+  implicit val int32U: PInt32 => Int32Usable[PInt32] = null
 
   def compileExp[R <: Stack, T <: PType](exp: Expression[T]): F[R] => F[R ** T] = exp match {
     case Expression.Unit(loc) =>
@@ -94,7 +100,10 @@ object BytecodeCompiler {
       WithSource[R](loc) ~ pushInt64(lit)
 
     case Expression.BigInt(lit, loc) => ???
-    case Expression.Str(lit, loc) => ???
+    case Expression.Str(lit, loc) =>
+      WithSource[R](loc) ~
+        pushString(lit)
+
     case Expression.Var(sym, tpe, loc) =>
       WithSource[R](loc) ~
         XLOAD(tpe, sym.getStackOffset + symOffsetOffset) // TODO(JLS): make this offset exist in F, dependent on static(0)/object function(1)
@@ -146,7 +155,7 @@ object BytecodeCompiler {
     case Expression.Int8Neg(exp, _, loc) =>
       WithSource[R](loc) ~
         compileExp(exp) ~
-        BNEG
+        INEG
 
     case Expression.Int8Not(exp, _, loc) =>
       WithSource[R](loc) ~
@@ -157,7 +166,7 @@ object BytecodeCompiler {
     case Expression.Int16Neg(exp, _, loc) =>
       WithSource[R](loc) ~
         compileExp(exp) ~
-        SNEG
+        INEG
 
     case Expression.Int16Not(exp, _, loc) =>
       WithSource[R](loc) ~
@@ -298,7 +307,21 @@ object BytecodeCompiler {
         })
 
     case Expression.BigIntBitwise(op, exp1, exp2, tpe, loc) => ???
-    case Expression.Int8Comparison(op, exp1, exp2, tpe, loc) => ???
+    case Expression.Int8Comparison(op, exp1, exp2, tpe, loc) =>
+      WithSource[R](loc) ~
+        compileExp(exp1) ~
+        compileExp(exp2) ~
+        (op match {
+          case ComparisonOp.Lt => ???
+          case ComparisonOp.Le => ???
+          case ComparisonOp.Gt => ???
+          case ComparisonOp.Ge => ???
+          case op: ErasedAst.EqualityOp => op match {
+            case EqualityOp.Eq => ???
+            case EqualityOp.Neq => ???
+          }
+        })
+
     case Expression.Int16Comparison(op, exp1, exp2, tpe, loc) => ???
     case Expression.Int32Comparison(op, exp1, exp2, tpe, loc) => ???
     case Expression.Int64Comparison(op, exp1, exp2, tpe, loc) => ???
@@ -415,7 +438,7 @@ object BytecodeCompiler {
         INVOKESPECIAL(tpeRRef, JvmName.nothingToVoid) ~
         DUP ~
         compileExp(exp) ~
-        PUTFIELD(tpeRRef, GenRefClasses.ValueFieldName, exp.tpe)
+        PUTFIELD(tpeRRef, GenRefClasses.ValueFieldName, exp.tpe, erasedType = true)
 
     case Expression.Deref(exp, tpe, loc) =>
       WithSource[R](loc) ~
@@ -426,7 +449,7 @@ object BytecodeCompiler {
       WithSource[R](loc) ~
         compileExp(exp1) ~
         compileExp(exp2) ~
-        PUTFIELD(squeezeReference(exp1.tpe), GenRefClasses.ValueFieldName, exp2.tpe) ~
+        PUTFIELD(squeezeReference(exp1.tpe), GenRefClasses.ValueFieldName, exp2.tpe, erasedType = true) ~
         pushUnit
 
     case Expression.Existential(fparam, exp, loc) => ???
@@ -565,8 +588,18 @@ object BytecodeCompiler {
     case Expression.PutChannel(exp1, exp2, tpe, loc) => ???
     case Expression.SelectChannel(rules, default, tpe, loc) => ???
     case Expression.Spawn(exp, tpe, loc) => ???
-    case Expression.Lazy(exp, tpe, loc) => ???
-    case Expression.Force(exp, tpe, loc) => ???
+    case Expression.Lazy(exp, tpe, loc) =>
+      val lazyRef = squeezeReference(tpe)
+      WithSource[R](loc) ~
+        NEW(lazyRef) ~
+        DUP ~
+        INVOKESPECIAL(lazyRef, GenLazyClasses.constructorDescriptor(exp.tpe))
+
+    case Expression.Force(exp, _, loc) =>
+      WithSource[R](loc) ~
+        compileExp(exp) ~
+        FORCE(exp.tpe)
+
     case Expression.HoleError(sym, tpe, loc) => ???
     case Expression.MatchError(tpe, loc) => ???
     case Expression.BoxInt8(exp, loc) => ???
