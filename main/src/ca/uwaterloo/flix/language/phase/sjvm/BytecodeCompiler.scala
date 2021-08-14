@@ -398,19 +398,19 @@ object BytecodeCompiler {
         compileExp(exp2) ~
         stringConcat
 
-    case Expression.StringEquality(op, exp1, exp2, tpe, loc) =>
+    case Expression.StringEquality(op, exp1, exp2, _, loc) =>
       WithSource[R](loc) ~
         compileExp(exp1) ~
         compileExp(exp2) ~
         (op match {
-          case EqualityOp.Eq => ???
-          case EqualityOp.Ne => ???
+          case EqualityOp.Eq => ObjEquals
+          case EqualityOp.Ne => ObjEquals ~ IFEQ(START[R ** PInt32] ~ pushBool(true))(START[R ** PInt32] ~ pushBool(false))
         })
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, loc) =>
       WithSource[R](loc) ~
         compileExp(exp1) ~
-        IFEQ(compileExp(exp2), compileExp(exp3))
+        IFEQ(compileExp(exp2))(compileExp(exp3))
 
     case Expression.Branch(exp, branches, tpe, loc) => ???
     case Expression.JumpTo(sym, tpe, loc) => ???

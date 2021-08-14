@@ -163,7 +163,7 @@ object Instructions {
 
   def IFEQ
   [R1 <: Stack, R2 <: Stack]
-  (branch1: F[R1] => F[R2], branch2: F[R1] => F[R2]):
+  (branch1: F[R1] => F[R2])(branch2: F[R1] => F[R2]):
   F[R1 ** PInt32] => F[R2] = f => {
     conditional(Opcodes.IFEQ, f, _ => branch1(castF(f)), _ => branch2(castF(f)))
     castF(f)
@@ -227,6 +227,14 @@ object Instructions {
   (branch1: F[R1] => F[R2])(branch2: F[R1] => F[R2]):
   F[R1 ** PReference[T]] => F[R1 ** PInt32] = f => {
     conditional(Opcodes.IFNONNULL, f, _ => branch1(castF(f)), _ => branch2(castF(f)))
+    castF(f)
+  }
+
+  def ObjEquals
+  [R <: Stack, T1 <: PRefType, T2 <: PRefType]:
+  F[R ** PReference[T1] ** PReference[T2]] => F[R ** PInt32] = f => {
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.Lang.Object.toInternalName, "equals",
+      JvmName.getMethodDescriptor(List(RObject), RBool), false)
     castF(f)
   }
 
