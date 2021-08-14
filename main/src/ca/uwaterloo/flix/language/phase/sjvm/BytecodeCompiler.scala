@@ -212,56 +212,81 @@ object BytecodeCompiler {
     case Expression.Float32Comparison(op, exp1, exp2, tpe, loc) => ???
     case Expression.Float64Arithmetic(op, exp1, exp2, tpe, loc) => ???
     case Expression.Float64Comparison(op, exp1, exp2, tpe, loc) => ???
-    case Expression.Int8Arithmetic(op, exp1, exp2, tpe, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp1) ~
-        compileExp(exp2) ~
-        (op match {
-          case ArithmeticOp.Add => BADD
-          case ArithmeticOp.Sub => BSUB
-          case ArithmeticOp.Mul => BMUL
-          case ArithmeticOp.Div => BDIV
-          case ArithmeticOp.Rem => BREM
-        })
+    case Expression.Int8Arithmetic(op, exp1, exp2, _, loc) =>
+      val compileOperands: F[R] => F[R ** PInt8 ** PInt8] =
+        START[R] ~ compileExp(exp1) ~ compileExp(exp2)
+      WithSource[R](loc) ~ (op match {
+        case ArithmeticOp.Add => compileOperands ~ BADD
+        case ArithmeticOp.Sub => compileOperands ~ BSUB
+        case ArithmeticOp.Mul => compileOperands ~ BMUL
+        case ArithmeticOp.Div => compileOperands ~ BDIV
+        case ArithmeticOp.Rem => compileOperands ~ BREM
+        case ArithmeticOp.Exp =>
+          DoublePow[R] {
+            START[StackNil] ~
+              compileExp(exp1) ~ I2D ~
+              compileExp(exp2) ~ I2D
+          } ~
+            D2I ~
+            I2B
+      })
 
-    case Expression.Int16Arithmetic(op, exp1, exp2, tpe, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp1) ~
-        compileExp(exp2) ~
-        (op match {
-          case ArithmeticOp.Add => SADD
-          case ArithmeticOp.Sub => SSUB
-          case ArithmeticOp.Mul => SMUL
-          case ArithmeticOp.Div => SDIV
-          case ArithmeticOp.Rem => SREM
-        })
+    case Expression.Int16Arithmetic(op, exp1, exp2, _, loc) =>
+      val compileOperands: F[R] => F[R ** PInt16 ** PInt16] =
+        START[R] ~ compileExp(exp1) ~ compileExp(exp2)
+      WithSource[R](loc) ~ (op match {
+        case ArithmeticOp.Add => compileOperands ~ SADD
+        case ArithmeticOp.Sub => compileOperands ~ SSUB
+        case ArithmeticOp.Mul => compileOperands ~ SMUL
+        case ArithmeticOp.Div => compileOperands ~ SDIV
+        case ArithmeticOp.Rem => compileOperands ~ SREM
+        case ArithmeticOp.Exp =>
+          DoublePow[R] {
+            START[StackNil] ~
+              compileExp(exp1) ~ I2D ~
+              compileExp(exp2) ~ I2D
+          } ~
+            D2I ~
+            I2S
+      })
 
-    case Expression.Int32Arithmetic(op, exp1, exp2, tpe, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp1) ~
-        compileExp(exp2) ~
-        (op match {
-          case ArithmeticOp.Add => IADD
-          case ArithmeticOp.Sub => ISUB
-          case ArithmeticOp.Mul => IMUL
-          case ArithmeticOp.Div => IDIV
-          case ArithmeticOp.Rem => IREM
-        })
+    case Expression.Int32Arithmetic(op, exp1, exp2, _, loc) =>
+      val compileOperands: F[R] => F[R ** PInt32 ** PInt32] =
+        START[R] ~ compileExp(exp1) ~ compileExp(exp2)
+      WithSource[R](loc) ~ (op match {
+        case ArithmeticOp.Add => compileOperands ~ IADD
+        case ArithmeticOp.Sub => compileOperands ~ ISUB
+        case ArithmeticOp.Mul => compileOperands ~ IMUL
+        case ArithmeticOp.Div => compileOperands ~ IDIV
+        case ArithmeticOp.Rem => compileOperands ~ IREM
+        case ArithmeticOp.Exp =>
+          DoublePow[R] {
+            START[StackNil] ~
+              compileExp(exp1) ~ I2D ~
+              compileExp(exp2) ~ I2D
+          } ~
+            D2I
+      })
 
-    case Expression.Int64Arithmetic(op, exp1, exp2, tpe, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp1) ~
-        compileExp(exp2) ~
-        (op match {
-          case ArithmeticOp.Add => LADD
-          case ArithmeticOp.Sub => LSUB
-          case ArithmeticOp.Mul => LMUL
-          case ArithmeticOp.Div => LDIV
-          case ArithmeticOp.Rem => LREM
-        })
+    case Expression.Int64Arithmetic(op, exp1, exp2, _, loc) =>
+      val compileOperands: F[R] => F[R ** PInt64 ** PInt64] =
+        START[R] ~ compileExp(exp1) ~ compileExp(exp2)
+      WithSource[R](loc) ~ (op match {
+        case ArithmeticOp.Add => compileOperands ~ LADD
+        case ArithmeticOp.Sub => compileOperands ~ LSUB
+        case ArithmeticOp.Mul => compileOperands ~ LMUL
+        case ArithmeticOp.Div => compileOperands ~ LDIV
+        case ArithmeticOp.Rem => compileOperands ~ LREM
+        case ArithmeticOp.Exp =>
+          DoublePow[R] {
+            START[StackNil] ~
+              compileExp(exp1) ~
+              compileExp(exp2)
+          }
+      })
 
     case Expression.BigIntArithmetic(op, exp1, exp2, tpe, loc) => ???
-    case Expression.Int8Bitwise(op, exp1, exp2, tpe, loc) =>
+    case Expression.Int8Bitwise(op, exp1, exp2, _, loc) =>
       WithSource[R](loc) ~
         compileExp(exp1) ~
         compileExp(exp2) ~
@@ -273,7 +298,7 @@ object BytecodeCompiler {
           case BitwiseOp.Shr => BSHR
         })
 
-    case Expression.Int16Bitwise(op, exp1, exp2, tpe, loc) =>
+    case Expression.Int16Bitwise(op, exp1, exp2, _, loc) =>
       WithSource[R](loc) ~
         compileExp(exp1) ~
         compileExp(exp2) ~
@@ -285,7 +310,7 @@ object BytecodeCompiler {
           case BitwiseOp.Shr => SSHR
         })
 
-    case Expression.Int32Bitwise(op, exp1, exp2, tpe, loc) =>
+    case Expression.Int32Bitwise(op, exp1, exp2, _, loc) =>
       WithSource[R](loc) ~
         compileExp(exp1) ~
         compileExp(exp2) ~
@@ -297,7 +322,7 @@ object BytecodeCompiler {
           case BitwiseOp.Shr => ISHR
         })
 
-    case Expression.Int64Bitwise(op, exp1, exp2, tpe, loc) =>
+    case Expression.Int64Bitwise(op, exp1, exp2, _, loc) =>
       WithSource[R](loc) ~
         compileExp(exp1) ~
         compileExp(exp2) ~
@@ -310,7 +335,7 @@ object BytecodeCompiler {
         })
 
     case Expression.BigIntBitwise(op, exp1, exp2, tpe, loc) => ???
-    case Expression.Int8Comparison(op, exp1, exp2, tpe, loc) =>
+    case Expression.Int8Comparison(op, exp1, exp2, _, loc) =>
       WithSource[R](loc) ~
         compileExp(exp1) ~
         compileExp(exp2) ~
@@ -325,7 +350,7 @@ object BytecodeCompiler {
           }
         })
 
-    case Expression.Int16Comparison(op, exp1, exp2, tpe, loc) =>
+    case Expression.Int16Comparison(op, exp1, exp2, _, loc) =>
       WithSource[R](loc) ~
         compileExp(exp1) ~
         compileExp(exp2) ~
@@ -341,7 +366,7 @@ object BytecodeCompiler {
         })
 
 
-    case Expression.Int32Comparison(op, exp1, exp2, tpe, loc) =>
+    case Expression.Int32Comparison(op, exp1, exp2, _, loc) =>
       WithSource[R](loc) ~
         compileExp(exp1) ~
         compileExp(exp2) ~
@@ -364,7 +389,15 @@ object BytecodeCompiler {
         compileExp(exp2) ~
         stringConcat
 
-    case Expression.StringEquality(op, exp1, exp2, tpe, loc) => ???
+    case Expression.StringEquality(op, exp1, exp2, tpe, loc) =>
+      WithSource[R](loc) ~
+        compileExp(exp1) ~
+        compileExp(exp2) ~
+        (op match {
+          case EqualityOp.Eq => ???
+          case EqualityOp.Ne => ???
+        })
+
     case Expression.IfThenElse(exp1, exp2, exp3, _, loc) =>
       WithSource[R](loc) ~
         compileExp(exp1) ~

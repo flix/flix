@@ -128,6 +128,17 @@ object JvmName {
 
   }
 
+  object Scala {
+    val pckage: List[String] = List("scala")
+
+    object Math {
+      val pckage: List[String] = Scala.pckage :+ "math"
+
+      val Package: JvmName = JvmName(pckage, "package$")
+    }
+
+  }
+
 }
 
 /**

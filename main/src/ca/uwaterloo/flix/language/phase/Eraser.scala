@@ -255,12 +255,12 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
         }
         case op: SemanticOperator.Float32Op => op match {
           case Float32Op.Neg => throw InternalCompilerException(s"Binary expression not Implemented ${sop.getClass.getCanonicalName}")
-          case Float32Op.Exp => throw InternalCompilerException(s"Binary expression not Implemented ${sop.getClass.getCanonicalName}")
           case Float32Op.Add => compileBinary[PFloat32, PFloat32, PFloat32] { (exp10, exp20, tpe0) => Float32Arithmetic(ArithmeticOp.Add, exp10, exp20, tpe0, loc) }
           case Float32Op.Sub => compileBinary[PFloat32, PFloat32, PFloat32] { (exp10, exp20, tpe0) => Float32Arithmetic(ArithmeticOp.Sub, exp10, exp20, tpe0, loc) }
           case Float32Op.Mul => compileBinary[PFloat32, PFloat32, PFloat32] { (exp10, exp20, tpe0) => Float32Arithmetic(ArithmeticOp.Mul, exp10, exp20, tpe0, loc) }
           case Float32Op.Div => compileBinary[PFloat32, PFloat32, PFloat32] { (exp10, exp20, tpe0) => Float32Arithmetic(ArithmeticOp.Div, exp10, exp20, tpe0, loc) }
           case Float32Op.Rem => compileBinary[PFloat32, PFloat32, PFloat32] { (exp10, exp20, tpe0) => Float32Arithmetic(ArithmeticOp.Rem, exp10, exp20, tpe0, loc) }
+          case Float32Op.Exp => compileBinary[PFloat32, PFloat32, PFloat32] { (exp10, exp20, tpe0) => Float32Arithmetic(ArithmeticOp.Exp, exp10, exp20, tpe0, loc) }
           case Float32Op.Eq => compileBinary[PFloat32, PFloat32, PInt32] { (exp10, exp20, tpe0) => Float32Comparison(EqualityOp.Eq, exp10, exp20, tpe0, loc) }
           case Float32Op.Neq => compileBinary[PFloat32, PFloat32, PInt32] { (exp10, exp20, tpe0) => Float32Comparison(EqualityOp.Ne, exp10, exp20, tpe0, loc) }
           case Float32Op.Lt => compileBinary[PFloat32, PFloat32, PInt32] { (exp10, exp20, tpe0) => Float32Comparison(ComparisonOp.Lt, exp10, exp20, tpe0, loc) }
@@ -270,12 +270,12 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
         }
         case op: SemanticOperator.Float64Op => op match {
           case Float64Op.Neg => throw InternalCompilerException(s"Binary expression not Implemented ${sop.getClass.getCanonicalName}")
-          case Float64Op.Exp => throw InternalCompilerException(s"Binary expression not Implemented ${sop.getClass.getCanonicalName}")
           case Float64Op.Add => compileBinary[PFloat64, PFloat64, PFloat64] { (exp10, exp20, tpe0) => Float64Arithmetic(ArithmeticOp.Add, exp10, exp20, tpe0, loc) }
           case Float64Op.Sub => compileBinary[PFloat64, PFloat64, PFloat64] { (exp10, exp20, tpe0) => Float64Arithmetic(ArithmeticOp.Sub, exp10, exp20, tpe0, loc) }
           case Float64Op.Mul => compileBinary[PFloat64, PFloat64, PFloat64] { (exp10, exp20, tpe0) => Float64Arithmetic(ArithmeticOp.Mul, exp10, exp20, tpe0, loc) }
           case Float64Op.Div => compileBinary[PFloat64, PFloat64, PFloat64] { (exp10, exp20, tpe0) => Float64Arithmetic(ArithmeticOp.Div, exp10, exp20, tpe0, loc) }
           case Float64Op.Rem => compileBinary[PFloat64, PFloat64, PFloat64] { (exp10, exp20, tpe0) => Float64Arithmetic(ArithmeticOp.Rem, exp10, exp20, tpe0, loc) }
+          case Float64Op.Exp => compileBinary[PFloat64, PFloat64, PFloat64] { (exp10, exp20, tpe0) => Float64Arithmetic(ArithmeticOp.Exp, exp10, exp20, tpe0, loc) }
           case Float64Op.Eq => compileBinary[PFloat64, PFloat64, PInt32] { (exp10, exp20, tpe0) => Float64Comparison(EqualityOp.Eq, exp10, exp20, tpe0, loc) }
           case Float64Op.Neq => compileBinary[PFloat64, PFloat64, PInt32] { (exp10, exp20, tpe0) => Float64Comparison(EqualityOp.Ne, exp10, exp20, tpe0, loc) }
           case Float64Op.Lt => compileBinary[PFloat64, PFloat64, PInt32] { (exp10, exp20, tpe0) => Float64Comparison(ComparisonOp.Lt, exp10, exp20, tpe0, loc) }
@@ -286,12 +286,12 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
         case op: SemanticOperator.Int8Op => op match {
           case Int8Op.Neg => throw InternalCompilerException(s"Binary expression not Implemented ${sop.getClass.getCanonicalName}")
           case Int8Op.Not => throw InternalCompilerException(s"Binary expression not Implemented ${sop.getClass.getCanonicalName}")
-          case Int8Op.Exp => throw InternalCompilerException(s"Binary expression not Implemented ${sop.getClass.getCanonicalName}")
           case Int8Op.Add => compileBinary[PInt8, PInt8, PInt8] { (exp10, exp20, tpe0) => Int8Arithmetic(ArithmeticOp.Add, exp10, exp20, tpe0, loc) }
           case Int8Op.Sub => compileBinary[PInt8, PInt8, PInt8] { (exp10, exp20, tpe0) => Int8Arithmetic(ArithmeticOp.Sub, exp10, exp20, tpe0, loc) }
           case Int8Op.Mul => compileBinary[PInt8, PInt8, PInt8] { (exp10, exp20, tpe0) => Int8Arithmetic(ArithmeticOp.Mul, exp10, exp20, tpe0, loc) }
           case Int8Op.Div => compileBinary[PInt8, PInt8, PInt8] { (exp10, exp20, tpe0) => Int8Arithmetic(ArithmeticOp.Div, exp10, exp20, tpe0, loc) }
           case Int8Op.Rem => compileBinary[PInt8, PInt8, PInt8] { (exp10, exp20, tpe0) => Int8Arithmetic(ArithmeticOp.Rem, exp10, exp20, tpe0, loc) }
+          case Int8Op.Exp => compileBinary[PInt8, PInt8, PInt8] { (exp10, exp20, tpe0) => Int8Arithmetic(ArithmeticOp.Exp, exp10, exp20, tpe0, loc) }
           case Int8Op.And => compileBinary[PInt8, PInt8, PInt8] { (exp10, exp20, tpe0) => Int8Bitwise(BitwiseOp.And, exp10, exp20, tpe0, loc) }
           case Int8Op.Or => compileBinary[PInt8, PInt8, PInt8] { (exp10, exp20, tpe0) => Int8Bitwise(BitwiseOp.Or, exp10, exp20, tpe0, loc) }
           case Int8Op.Xor => compileBinary[PInt8, PInt8, PInt8] { (exp10, exp20, tpe0) => Int8Bitwise(BitwiseOp.Xor, exp10, exp20, tpe0, loc) }
@@ -307,12 +307,12 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
         case op: SemanticOperator.Int16Op => op match {
           case Int16Op.Neg => throw InternalCompilerException(s"Binary expression not Implemented ${sop.getClass.getCanonicalName}")
           case Int16Op.Not => throw InternalCompilerException(s"Binary expression not Implemented ${sop.getClass.getCanonicalName}")
-          case Int16Op.Exp => throw InternalCompilerException(s"Binary expression not Implemented ${sop.getClass.getCanonicalName}")
           case Int16Op.Add => compileBinary[PInt16, PInt16, PInt16] { (exp10, exp20, tpe0) => Int16Arithmetic(ArithmeticOp.Add, exp10, exp20, tpe0, loc) }
           case Int16Op.Sub => compileBinary[PInt16, PInt16, PInt16] { (exp10, exp20, tpe0) => Int16Arithmetic(ArithmeticOp.Sub, exp10, exp20, tpe0, loc) }
           case Int16Op.Mul => compileBinary[PInt16, PInt16, PInt16] { (exp10, exp20, tpe0) => Int16Arithmetic(ArithmeticOp.Mul, exp10, exp20, tpe0, loc) }
           case Int16Op.Div => compileBinary[PInt16, PInt16, PInt16] { (exp10, exp20, tpe0) => Int16Arithmetic(ArithmeticOp.Div, exp10, exp20, tpe0, loc) }
           case Int16Op.Rem => compileBinary[PInt16, PInt16, PInt16] { (exp10, exp20, tpe0) => Int16Arithmetic(ArithmeticOp.Rem, exp10, exp20, tpe0, loc) }
+          case Int16Op.Exp => compileBinary[PInt16, PInt16, PInt16] { (exp10, exp20, tpe0) => Int16Arithmetic(ArithmeticOp.Exp, exp10, exp20, tpe0, loc) }
           case Int16Op.And => compileBinary[PInt16, PInt16, PInt16] { (exp10, exp20, tpe0) => Int16Bitwise(BitwiseOp.And, exp10, exp20, tpe0, loc) }
           case Int16Op.Or => compileBinary[PInt16, PInt16, PInt16] { (exp10, exp20, tpe0) => Int16Bitwise(BitwiseOp.Or, exp10, exp20, tpe0, loc) }
           case Int16Op.Xor => compileBinary[PInt16, PInt16, PInt16] { (exp10, exp20, tpe0) => Int16Bitwise(BitwiseOp.Xor, exp10, exp20, tpe0, loc) }
@@ -328,12 +328,12 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
         case op: SemanticOperator.Int32Op => op match {
           case Int32Op.Neg => throw InternalCompilerException(s"Binary expression not Implemented ${sop.getClass.getCanonicalName}")
           case Int32Op.Not => throw InternalCompilerException(s"Binary expression not Implemented ${sop.getClass.getCanonicalName}")
-          case Int32Op.Exp => throw InternalCompilerException(s"Binary expression not Implemented ${sop.getClass.getCanonicalName}")
           case Int32Op.Add => compileBinary[PInt32, PInt32, PInt32] { (exp10, exp20, tpe0) => Int32Arithmetic(ArithmeticOp.Add, exp10, exp20, tpe0, loc) }
           case Int32Op.Sub => compileBinary[PInt32, PInt32, PInt32] { (exp10, exp20, tpe0) => Int32Arithmetic(ArithmeticOp.Sub, exp10, exp20, tpe0, loc) }
           case Int32Op.Mul => compileBinary[PInt32, PInt32, PInt32] { (exp10, exp20, tpe0) => Int32Arithmetic(ArithmeticOp.Mul, exp10, exp20, tpe0, loc) }
           case Int32Op.Div => compileBinary[PInt32, PInt32, PInt32] { (exp10, exp20, tpe0) => Int32Arithmetic(ArithmeticOp.Div, exp10, exp20, tpe0, loc) }
           case Int32Op.Rem => compileBinary[PInt32, PInt32, PInt32] { (exp10, exp20, tpe0) => Int32Arithmetic(ArithmeticOp.Rem, exp10, exp20, tpe0, loc) }
+          case Int32Op.Exp => compileBinary[PInt32, PInt32, PInt32] { (exp10, exp20, tpe0) => Int32Arithmetic(ArithmeticOp.Exp, exp10, exp20, tpe0, loc) }
           case Int32Op.And => compileBinary[PInt32, PInt32, PInt32] { (exp10, exp20, tpe0) => Int32Bitwise(BitwiseOp.And, exp10, exp20, tpe0, loc) }
           case Int32Op.Or => compileBinary[PInt32, PInt32, PInt32] { (exp10, exp20, tpe0) => Int32Bitwise(BitwiseOp.Or, exp10, exp20, tpe0, loc) }
           case Int32Op.Xor => compileBinary[PInt32, PInt32, PInt32] { (exp10, exp20, tpe0) => Int32Bitwise(BitwiseOp.Xor, exp10, exp20, tpe0, loc) }
@@ -349,12 +349,12 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
         case op: SemanticOperator.Int64Op => op match {
           case Int64Op.Neg => throw InternalCompilerException(s"Binary expression not Implemented ${sop.getClass.getCanonicalName}")
           case Int64Op.Not => throw InternalCompilerException(s"Binary expression not Implemented ${sop.getClass.getCanonicalName}")
-          case Int64Op.Exp => throw InternalCompilerException(s"Binary expression not Implemented ${sop.getClass.getCanonicalName}")
           case Int64Op.Add => compileBinary[PInt64, PInt64, PInt64] { (exp10, exp20, tpe0) => Int64Arithmetic(ArithmeticOp.Add, exp10, exp20, tpe0, loc) }
           case Int64Op.Sub => compileBinary[PInt64, PInt64, PInt64] { (exp10, exp20, tpe0) => Int64Arithmetic(ArithmeticOp.Sub, exp10, exp20, tpe0, loc) }
           case Int64Op.Mul => compileBinary[PInt64, PInt64, PInt64] { (exp10, exp20, tpe0) => Int64Arithmetic(ArithmeticOp.Mul, exp10, exp20, tpe0, loc) }
           case Int64Op.Div => compileBinary[PInt64, PInt64, PInt64] { (exp10, exp20, tpe0) => Int64Arithmetic(ArithmeticOp.Div, exp10, exp20, tpe0, loc) }
           case Int64Op.Rem => compileBinary[PInt64, PInt64, PInt64] { (exp10, exp20, tpe0) => Int64Arithmetic(ArithmeticOp.Rem, exp10, exp20, tpe0, loc) }
+          case Int64Op.Exp => compileBinary[PInt64, PInt64, PInt64] { (exp10, exp20, tpe0) => Int64Arithmetic(ArithmeticOp.Exp, exp10, exp20, tpe0, loc) }
           case Int64Op.And => compileBinary[PInt64, PInt64, PInt64] { (exp10, exp20, tpe0) => Int64Bitwise(BitwiseOp.And, exp10, exp20, tpe0, loc) }
           case Int64Op.Or => compileBinary[PInt64, PInt64, PInt64] { (exp10, exp20, tpe0) => Int64Bitwise(BitwiseOp.Or, exp10, exp20, tpe0, loc) }
           case Int64Op.Xor => compileBinary[PInt64, PInt64, PInt64] { (exp10, exp20, tpe0) => Int64Bitwise(BitwiseOp.Xor, exp10, exp20, tpe0, loc) }
@@ -370,12 +370,12 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
         case op: SemanticOperator.BigIntOp => op match {
           case BigIntOp.Neg => throw InternalCompilerException(s"Binary expression not Implemented ${sop.getClass.getCanonicalName}")
           case BigIntOp.Not => throw InternalCompilerException(s"Binary expression not Implemented ${sop.getClass.getCanonicalName}")
-          case BigIntOp.Exp => throw InternalCompilerException(s"Binary expression not Implemented ${sop.getClass.getCanonicalName}")
           case BigIntOp.Add => compileBinary[PReference[PBigInt], PReference[PBigInt], PReference[PBigInt]] { (exp10, exp20, tpe0) => BigIntArithmetic(ArithmeticOp.Add, exp10, exp20, tpe0, loc) }
           case BigIntOp.Sub => compileBinary[PReference[PBigInt], PReference[PBigInt], PReference[PBigInt]] { (exp10, exp20, tpe0) => BigIntArithmetic(ArithmeticOp.Sub, exp10, exp20, tpe0, loc) }
           case BigIntOp.Mul => compileBinary[PReference[PBigInt], PReference[PBigInt], PReference[PBigInt]] { (exp10, exp20, tpe0) => BigIntArithmetic(ArithmeticOp.Mul, exp10, exp20, tpe0, loc) }
           case BigIntOp.Div => compileBinary[PReference[PBigInt], PReference[PBigInt], PReference[PBigInt]] { (exp10, exp20, tpe0) => BigIntArithmetic(ArithmeticOp.Div, exp10, exp20, tpe0, loc) }
           case BigIntOp.Rem => compileBinary[PReference[PBigInt], PReference[PBigInt], PReference[PBigInt]] { (exp10, exp20, tpe0) => BigIntArithmetic(ArithmeticOp.Rem, exp10, exp20, tpe0, loc) }
+          case BigIntOp.Exp => compileBinary[PReference[PBigInt], PReference[PBigInt], PReference[PBigInt]] { (exp10, exp20, tpe0) => BigIntArithmetic(ArithmeticOp.Exp, exp10, exp20, tpe0, loc) }
           case BigIntOp.And => compileBinary[PReference[PBigInt], PReference[PBigInt], PReference[PBigInt]] { (exp10, exp20, tpe0) => BigIntBitwise(BitwiseOp.And, exp10, exp20, tpe0, loc) }
           case BigIntOp.Or => compileBinary[PReference[PBigInt], PReference[PBigInt], PReference[PBigInt]] { (exp10, exp20, tpe0) => BigIntBitwise(BitwiseOp.Or, exp10, exp20, tpe0, loc) }
           case BigIntOp.Xor => compileBinary[PReference[PBigInt], PReference[PBigInt], PReference[PBigInt]] { (exp10, exp20, tpe0) => BigIntBitwise(BitwiseOp.Xor, exp10, exp20, tpe0, loc) }

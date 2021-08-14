@@ -371,6 +371,8 @@ object ErasedAst {
 
     case object Rem extends ArithmeticOp
 
+    case object Exp extends ArithmeticOp
+
   }
 
   sealed trait ComparisonOp extends Operator

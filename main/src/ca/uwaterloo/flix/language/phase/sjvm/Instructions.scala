@@ -485,7 +485,7 @@ object Instructions {
 
   def stringConcat
   [R <: Stack]:
-  F[R ** PReference[PStr] ** PReference[PStr]] => F[R ** PStr] = f => {
+  F[R ** PReference[PStr] ** PReference[PStr]] => F[R ** PReference[PStr]] = f => {
     f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.Lang.String.toInternalName, "concat",
       JvmName.getMethodDescriptor(List(RStr), RStr), false)
     castF(f)
@@ -668,7 +668,7 @@ object Instructions {
   def I2S
   [R <: Stack, T <: PType]
   (implicit t: T => Int32Usable[T]):
-  F[R ** T] => F[R ** PInt8] = f => {
+  F[R ** T] => F[R ** PInt16] = f => {
     f.visitor.visitInsn(Opcodes.I2S)
     castF(f)
   }
@@ -676,7 +676,7 @@ object Instructions {
   def I2L
   [R <: Stack, T <: PType]
   (implicit t: T => Int32Usable[T]):
-  F[R ** T] => F[R ** PInt8] = f => {
+  F[R ** T] => F[R ** PInt64] = f => {
     f.visitor.visitInsn(Opcodes.I2L)
     castF(f)
   }
@@ -684,7 +684,7 @@ object Instructions {
   def I2C
   [R <: Stack, T <: PType]
   (implicit t: T => Int32Usable[T]):
-  F[R ** T] => F[R ** PInt8] = f => {
+  F[R ** T] => F[R ** PChar] = f => {
     f.visitor.visitInsn(Opcodes.I2C)
     castF(f)
   }
@@ -692,7 +692,7 @@ object Instructions {
   def I2F
   [R <: Stack, T <: PType]
   (implicit t: T => Int32Usable[T]):
-  F[R ** T] => F[R ** PInt8] = f => {
+  F[R ** T] => F[R ** PFloat32] = f => {
     f.visitor.visitInsn(Opcodes.I2F)
     castF(f)
   }
@@ -700,7 +700,7 @@ object Instructions {
   def I2D
   [R <: Stack, T <: PType]
   (implicit t: T => Int32Usable[T]):
-  F[R ** T] => F[R ** PInt8] = f => {
+  F[R ** T] => F[R ** PFloat64] = f => {
     f.visitor.visitInsn(Opcodes.I2D)
     castF(f)
   }
@@ -976,6 +976,19 @@ object Instructions {
   [R <: Stack]:
   F[R ** PFloat64 ** PFloat64] => F[R ** PFloat64] = f => {
     f.visitor.visitInsn(Opcodes.DREM)
+    castF(f)
+  }
+
+  // TODO(JLS): The starting stack of argIns seems unnecessary but should be consistent. should maybe be StackNil
+  def DoublePow
+  [R <: Stack]
+  (argIns: F[StackNil] => F[StackNil ** PFloat64 ** PFloat64]):
+  F[R] => F[R ** PFloat64] = f => {
+    val className = JvmName.Scala.Math.Package
+    f.visitor.visitFieldInsn(Opcodes.GETSTATIC, className.toInternalName, "MODULE$", className.toDescriptor)
+    argIns(castF(f))
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, className.toInternalName, "pow",
+      JvmName.getMethodDescriptor(List(RFloat64, RFloat64), RFloat64), false)
     castF(f)
   }
 
