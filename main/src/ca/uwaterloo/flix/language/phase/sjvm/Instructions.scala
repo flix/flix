@@ -445,6 +445,20 @@ object Instructions {
     castF(f)
   }
 
+  // TODO(JLS): make this for a general case
+  def mkLazy
+  [R <: Stack, T <: PType]
+  (lazyType: RType[PReference[PLazy[T]]], fnType: RType[PReference[PFunction[T]]], argIns: F[R] => F[R ** PReference[PFunction[T]]]):
+  F[R] => F[R ** PReference[PLazy[T]]] = f => {
+    val className = squeezeReference(lazyType).toInternalName
+    // Make a new lazy object and dup it to leave it on the stack.
+    f.visitor.visitTypeInsn(Opcodes.NEW, className)
+    f.visitor.visitInsn(Opcodes.DUP)
+    argIns(castF(f))
+    f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className, JvmName.constructorMethod, JvmName.getMethodDescriptor(List(fnType), None), false)
+    castF(f)
+  }
+
   def FORCE
   [R <: Stack, T <: PType]
   (rType: RType[PReference[PLazy[T]]]):

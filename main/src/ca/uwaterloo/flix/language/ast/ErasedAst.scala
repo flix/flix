@@ -278,7 +278,7 @@ object ErasedAst {
 
     case class Spawn(exp: Expression[PType], tpe: RType[PReference[PUnit]], loc: SourceLocation) extends Expression[PReference[PUnit]]
 
-    case class Lazy[T <: PType](exp: Expression[T], tpe: RType[PReference[PLazy[T]]], loc: SourceLocation) extends Expression[PReference[PLazy[T]]]
+    case class Lazy[T <: PType](exp: Expression[PReference[PFunction[T]]], tpe: RType[PReference[PLazy[T]]], loc: SourceLocation) extends Expression[PReference[PLazy[T]]]
 
     case class Force[T <: PType](exp: Expression[PReference[PLazy[T]]], tpe: RType[T], loc: SourceLocation) extends Expression[T]
 

@@ -624,11 +624,8 @@ object BytecodeCompiler {
     case Expression.SelectChannel(rules, default, tpe, loc) => ???
     case Expression.Spawn(exp, tpe, loc) => ???
     case Expression.Lazy(exp, tpe, loc) =>
-      val lazyRef = squeezeReference(tpe)
       WithSource[R](loc) ~
-        NEW(lazyRef) ~
-        DUP ~
-        INVOKESPECIAL(lazyRef, GenLazyClasses.constructorDescriptor(exp.tpe))
+        mkLazy(tpe, exp.tpe, compileExp(exp))
 
     case Expression.Force(exp, _, loc) =>
       WithSource[R](loc) ~

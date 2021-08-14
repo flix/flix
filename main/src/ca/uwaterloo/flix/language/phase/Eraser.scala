@@ -700,7 +700,7 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
 
     case FinalAst.Expression.Lazy(exp, tpe, loc) =>
       for {
-        exp0 <- visitExp[T](exp)
+        exp0 <- visitExp[PReference[PFunction[T]]](exp)
         tpe0 <- visitTpe[PReference[PLazy[T]]](tpe)
         expRes = ErasedAst.Expression.Lazy(exp0, tpe0, loc)
       } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
