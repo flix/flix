@@ -394,6 +394,7 @@ class Flix {
   def phase[A](phase: Phase[_, _])(f: => A): A = {
     // Initialize the phase time object.
     currentPhase = PhaseTime(phase.getClass.getSimpleName, 0, Nil)
+    visitedPhases.addOne(phase)
 
     // Measure the execution time.
     val t = System.nanoTime()

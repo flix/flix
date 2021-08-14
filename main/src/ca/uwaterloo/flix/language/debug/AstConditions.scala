@@ -43,7 +43,7 @@ object AstConditions {
     val failures = visitNode(ast, ast.productPrefix :: Nil, phases.map(phase => typeForClass(phase.getClass)))
     failures match {
       case Nil => ()
-      case failure :: _ => throw InternalCompilerException(s"AST Condition failure: \n${formatFailedCondition(failure)}")
+      case failure :: _ => throw InternalCompilerException(s"AST Condition failure after phase ${phases.last}: \n${formatFailedCondition(failure)}")
     }
   }
 
