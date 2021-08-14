@@ -214,6 +214,22 @@ object Instructions {
     castF(f)
   }
 
+  def IFNULL
+  [R1 <: Stack, R2 <: Stack, T <: PRefType]
+  (branch1: F[R1] => F[R2])(branch2: F[R1] => F[R2]):
+  F[R1 ** PReference[T]] => F[R1 ** PInt32] = f => {
+    conditional(Opcodes.IFNULL, f, _ => branch1(castF(f)), _ => branch2(castF(f)))
+    castF(f)
+  }
+
+  def IFNONNULL
+  [R1 <: Stack, R2 <: Stack, T <: PRefType]
+  (branch1: F[R1] => F[R2])(branch2: F[R1] => F[R2]):
+  F[R1 ** PReference[T]] => F[R1 ** PInt32] = f => {
+    conditional(Opcodes.IFNONNULL, f, _ => branch1(castF(f)), _ => branch2(castF(f)))
+    castF(f)
+  }
+
   def multiComposition[A, R <: Stack](xs: IterableOnce[A])(generator: A => F[R] => F[R]): F[R] => F[R] = f => {
     xs.iterator.foreach(x => generator(x)(f))
     f
@@ -771,7 +787,7 @@ object Instructions {
   def INEG
   [R <: Stack, T <: PType]
   (implicit t: T => Int32Usable[T]):
-  F[R ** T] => F[R ** T] = f => {
+  F[R ** T] => F[R ** PInt32] = f => {
     f.visitor.visitInsn(Opcodes.INEG)
     castF(f)
   }

@@ -158,7 +158,8 @@ object BytecodeCompiler {
     case Expression.Int8Neg(exp, _, loc) =>
       WithSource[R](loc) ~
         compileExp(exp) ~
-        INEG
+        INEG ~
+        I2B
 
     case Expression.Int8Not(exp, _, loc) =>
       WithSource[R](loc) ~
@@ -169,7 +170,8 @@ object BytecodeCompiler {
     case Expression.Int16Neg(exp, _, loc) =>
       WithSource[R](loc) ~
         compileExp(exp) ~
-        INEG
+        INEG ~
+        I2S
 
     case Expression.Int16Not(exp, _, loc) =>
       WithSource[R](loc) ~
@@ -201,8 +203,15 @@ object BytecodeCompiler {
 
     case Expression.BigIntNeg(exp, tpe, loc) => ???
     case Expression.BigIntNot(exp, tpe, loc) => ???
-    case Expression.ObjEqNull(exp, tpe, loc) => ???
-    case Expression.ObjNeqNull(exp, tpe, loc) => ???
+    case Expression.ObjEqNull(exp, _, loc) =>
+      WithSource[R](loc) ~
+        compileExp(exp) ~
+        IFNULL(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+
+    case Expression.ObjNeqNull(exp, _, loc) =>
+      WithSource[R](loc) ~
+        compileExp(exp) ~
+        IFNONNULL(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
 
     // Binary expressions
     case Expression.BoolLogicalOp(op, exp1, exp2, tpe, loc) => ???
@@ -280,9 +289,9 @@ object BytecodeCompiler {
         case ArithmeticOp.Exp =>
           DoublePow[R] {
             START[StackNil] ~
-              compileExp(exp1) ~
-              compileExp(exp2)
-          }
+              compileExp(exp1) ~ L2D ~
+              compileExp(exp2) ~ L2D
+          } ~ D2L
       })
 
     case Expression.BigIntArithmetic(op, exp1, exp2, tpe, loc) => ???
