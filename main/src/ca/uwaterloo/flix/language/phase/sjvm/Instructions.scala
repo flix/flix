@@ -1154,7 +1154,7 @@ object Instructions {
       case 0f => f.visitor.visitInsn(Opcodes.FCONST_0)
       case 1f => f.visitor.visitInsn(Opcodes.FCONST_1)
       case 2f => f.visitor.visitInsn(Opcodes.FCONST_2)
-      case _ => f.visitor.visitLdcInsn(f)
+      case _ => f.visitor.visitLdcInsn(n)
     }
     castF(f)
   }
