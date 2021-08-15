@@ -411,6 +411,14 @@ object Type {
   }
 
   /**
+    * Returns a fresh unkinded type variable of the given kind `k` and rigidity `r`.
+    */
+  def freshUnkindedVar(r: Rigidity = Rigidity.Flexible, text: Option[String] = None)(implicit flix: Flix): Type.UnkindedVar = {
+    val id = flix.genSym.freshId()
+    Type.UnkindedVar(id, r, text)
+  }
+
+  /**
     * Returns the Unit type with given source location `loc`.
     */
   def mkUnit(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Unit, loc)

@@ -70,21 +70,21 @@ object Symbol {
     * Returns a fresh variable symbol for the given identifier.
     */
   def freshVarSym(ident: Name.Ident)(implicit flix: Flix): VarSym = {
-    new VarSym(flix.genSym.freshId(), ident.name, UnkindedType.freshVar(loc = ident.loc), Scopedness.Unscoped, ident.loc)
+    new VarSym(flix.genSym.freshId(), ident.name, Type.freshUnkindedVar(), Scopedness.Unscoped, ident.loc)
   }
 
   /**
     * Returns a fresh variable symbol for the given identifier and scopedness.
     */
   def freshVarSym(ident: Name.Ident, scopedness: Scopedness)(implicit flix: Flix): VarSym = {
-    new VarSym(flix.genSym.freshId(), ident.name, UnkindedType.freshVar(loc = ident.loc), scopedness, ident.loc)
+    new VarSym(flix.genSym.freshId(), ident.name, Type.freshUnkindedVar(), scopedness, ident.loc)
   }
 
   /**
     * Returns a fresh variable symbol with the given text.
     */
   def freshVarSym(text: String, loc: SourceLocation)(implicit flix: Flix): VarSym = {
-    new VarSym(flix.genSym.freshId(), text, UnkindedType.freshVar(loc = loc), Scopedness.Unscoped, loc)
+    new VarSym(flix.genSym.freshId(), text, Type.freshUnkindedVar(), Scopedness.Unscoped, loc)
   }
 
   /**
@@ -175,7 +175,7 @@ object Symbol {
     * @param tvar the type variable associated with the symbol. This type variable always has kind `Star`.
     * @param loc  the source location associated with the symbol.
     */
-  final class VarSym(val id: Int, val text: String, val tvar: UnkindedType.Var, val scopedness: Scopedness, val loc: SourceLocation) {
+  final class VarSym(val id: Int, val text: String, val tvar: Type.UnkindedVar, val scopedness: Scopedness, val loc: SourceLocation) {
 
     /**
       * The internal stack offset. Computed during variable numbering.
