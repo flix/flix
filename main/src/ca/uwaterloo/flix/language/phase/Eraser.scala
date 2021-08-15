@@ -452,7 +452,7 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
 
     case FinalAst.Expression.Index(base, offset, tpe, loc) =>
       for {
-        base0 <- visitExp[PReference[PAnyObject]](base)
+        base0 <- visitExp[PReference[PTuple]](base)
         tpe0 <- visitTpe[T](tpe)
         // TODO(JLS): maybe add cast
         expRes = ErasedAst.Expression.Index(base0, offset, tpe0, loc)
@@ -461,7 +461,7 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
     case FinalAst.Expression.Tuple(elms, tpe, loc) =>
       for {
         elms0 <- EM.traverse(elms)(visitExp[PType])
-        tpe0 <- visitTpe[PReference[PAnyObject]](tpe)
+        tpe0 <- visitTpe[PReference[PTuple]](tpe)
         expRes = ErasedAst.Expression.Tuple(elms0, tpe0, loc)
       } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 

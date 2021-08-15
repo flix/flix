@@ -87,6 +87,8 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
 
       val tagClasses = GenTagClasses.gen(root.enumSyms)
 
+      val tupleClasses = GenTupleClasses.gen(tupleTypes)
+
       val defClasses = GenDefClasses.gen(root.functions, nonClosureFunctions)
 
       val closureClasses = GenClosureClasses.gen(root.closures)
@@ -99,6 +101,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
         namespaceClasses,
         functionInterfaces,
         continuationInterfaces,
+        tupleClasses,
         defClasses,
         closureClasses,
         lazyClasses
@@ -272,14 +275,12 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
       case _ => acc
     }
 
-    val functionTypes: Set[RType[PReference[PFunction[_ <: PType]]]] = types.foldLeft(Set[RType[PReference[PFunction[_ <: PType]]]]()) { (set, rType) =>
+    types.foldLeft(Set[RType[PReference[PFunction[_ <: PType]]]]()) { (set, rType) =>
       rType match {
         case RReference(referenceType) => innerMatch(referenceType, set)
         case _ => set
       }
     }
-
-    functionTypes
   }
 
   private def getTupleTypes(types: Set[RType[_ <: PType]]): Set[RType[PReference[PTuple]]] = {

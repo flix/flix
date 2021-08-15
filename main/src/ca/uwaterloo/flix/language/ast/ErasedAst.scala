@@ -212,9 +212,9 @@ object ErasedAst {
 
     case class Untag[T <: PType](sym: Symbol.EnumSym, tag: Name.Tag, exp: Expression[PReference[PAnyObject]], tpe: RType[T], loc: SourceLocation) extends Expression[T]
 
-    case class Index[T <: PType](base: Expression[PReference[PAnyObject]], offset: scala.Int, tpe: RType[T], loc: SourceLocation) extends Expression[T]
+    case class Index[T <: PType](base: Expression[PReference[PTuple]], offset: scala.Int, tpe: RType[T], loc: SourceLocation) extends Expression[T]
 
-    case class Tuple(elms: List[Expression[_ <: PType]], tpe: RType[PReference[PAnyObject]], loc: SourceLocation) extends Expression[PReference[PAnyObject]]
+    case class Tuple(elms: List[Expression[_ <: PType]], tpe: RType[PReference[PTuple]], loc: SourceLocation) extends Expression[PReference[PTuple]]
 
     case class RecordEmpty(tpe: RType[PReference[PAnyObject]], loc: SourceLocation) extends Expression[PReference[PAnyObject]]
 

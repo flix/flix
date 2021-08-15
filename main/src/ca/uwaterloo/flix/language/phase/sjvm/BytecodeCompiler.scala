@@ -425,7 +425,18 @@ object BytecodeCompiler {
     case Expression.Tag(sym, tag, exp, tpe, loc) => ???
     case Expression.Untag(sym, tag, exp, tpe, loc) => ???
     case Expression.Index(base, offset, tpe, loc) => ???
-    case Expression.Tuple(elms, tpe, loc) => ???
+    case Expression.Tuple(elms, tpe, loc) =>
+      val tupleRef = squeezeReference(tpe)
+      WithSource[R](loc) ~
+        NEW(tupleRef) ~
+        DUP ~
+        INVOKESPECIAL(tupleRef) ~
+        multiComposition(elms.zipWithIndex){ case (elm, elmIndex) =>
+          START[R ** PReference[PTuple]] ~
+            DUP ~
+            PUTFIELD(tupleRef, GenTupleClasses.indexFieldName(elmIndex), elm, erasedType = true)
+        }
+
     case Expression.RecordEmpty(tpe, loc) => ???
     case Expression.RecordSelect(exp, field, tpe, loc) => ???
     case Expression.RecordExtend(field, value, rest, tpe, loc) => ???
@@ -440,7 +451,7 @@ object BytecodeCompiler {
               DUP ~
               pushInt32(index) ~
               compileExp(elm) ~
-              XAStore(arrayType.tpe)
+              XASTORE(arrayType.tpe)
           }
       }
 
@@ -486,7 +497,7 @@ object BytecodeCompiler {
         compileExp(base) ~
         compileExp(index) ~
         compileExp(elm) ~
-        XAStore(elm.tpe) ~
+        XASTORE(elm.tpe) ~
         pushUnit
 
     case Expression.ArrayLength(base, _, loc) =>
@@ -517,7 +528,7 @@ object BytecodeCompiler {
       WithSource[R](loc) ~
         NEW(tpeRRef) ~
         DUP ~
-        INVOKESPECIAL(tpeRRef, JvmName.nothingToVoid) ~
+        INVOKESPECIAL(tpeRRef) ~
         DUP ~
         compileExp(exp) ~
         PUTFIELD(tpeRRef, GenRefClasses.ValueFieldName, exp.tpe, erasedType = true)

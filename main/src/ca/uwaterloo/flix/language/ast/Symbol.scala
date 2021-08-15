@@ -239,7 +239,7 @@ object Symbol {
       */
     def isMain: Boolean = this == Symbol.Main
 
-    // TODO(JLS): Should maybe mangle here? (+ -> $add)
+    // TODO(JLS): JvmName could handle mangling itself
     lazy val defName: JvmName = JvmName(namespace, s"Def${JvmName.reservedDelimiter}${mangle(name)}")
 
     lazy val cloName: JvmName = JvmName(namespace, s"Clo${JvmName.reservedDelimiter}${mangle(name)}")

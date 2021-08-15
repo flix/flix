@@ -32,12 +32,9 @@ import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
  */
 object GenLazyClasses {
 
-  // TODO(JLS): Needs to use new call protocol and use type erasure
-
   val initializedFieldName: String = "initialized"
   val initializedFieldType: RType[PInt32] = RBool
   val expressionFieldName: String = "expression"
-  // TODO(JLS): this could be the actual Fn1_Obj_valueType
   val valueFieldName: String = "value"
   val forceMethod: String = "force"
 
@@ -119,7 +116,7 @@ object GenLazyClasses {
               PUTFIELD(lazyType, valueFieldName, valueFieldType, erasedType = true) ~
               THISLOAD(tagOf[PLazy[T]]) ~
               pushBool(true) ~
-              PUTFIELD(lazyType, initializedFieldName, RInt32)
+              PUTFIELD(lazyType, initializedFieldName, RInt32, erasedType = false)
           } (NOP)) ~
           THISLOAD(tagOf[PLazy[T]]) ~
           XGETFIELD(lazyType, valueFieldName, valueFieldType)
@@ -143,7 +140,7 @@ object GenLazyClasses {
       INVOKEOBJECTCONSTRUCTOR ~
       THISLOAD(tagOf[PLazy[T]]) ~
       pushBool(false) ~
-      PUTFIELD(lazyType, initializedFieldName, initializedFieldType) ~
+      PUTFIELD(lazyType, initializedFieldName, initializedFieldType, erasedType = false) ~
       THISLOAD(tagOf[PLazy[T]]) ~
       ALOAD(1, tagOf[PFunction[T]]) ~
       PUTFIELD(lazyType, expressionFieldName, expressionFieldType(valueFieldType), erasedType = false) ~

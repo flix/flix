@@ -18,8 +18,8 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.PType._
-import ca.uwaterloo.flix.language.ast.RRefType.{RArray, RArrow, RLazy, RObject}
-import ca.uwaterloo.flix.language.phase.sjvm.{GenLazyClasses, JvmName}
+import ca.uwaterloo.flix.language.ast.RRefType._
+import ca.uwaterloo.flix.language.phase.sjvm.JvmName
 import org.objectweb.asm.{MethodVisitor, Opcodes}
 
 trait Describable {
@@ -60,6 +60,10 @@ object RType {
 
   def squeezeLazy[T <: PType](x: RReference[PLazy[T]]): RLazy[T] = x.referenceType match {
     case res@RLazy(_) => res
+  }
+
+  def squeezeTuple[T <: PType](x: RReference[PTuple]): RTuple = x.referenceType match {
+    case res@RTuple(_) => res
   }
 
   def squeezeFunction[T <: PType](x: RReference[PFunction[T]]): RArrow[T] = x.referenceType match {

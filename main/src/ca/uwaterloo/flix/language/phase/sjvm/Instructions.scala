@@ -28,7 +28,9 @@ import org.objectweb.asm.{Label, MethodVisitor, Opcodes}
 
 object Instructions {
 
-  private def castF[S1 <: Stack, S2 <: Stack](f: F[S1]): F[S2] = f.asInstanceOf[F[S2]]
+  private def castF[R <: Stack](f: F[_]): F[R] = f.asInstanceOf[F[R]]
+
+  private def castOntoF[R <: Stack, T <: PType](f: F[R], tag: Tag[T]): F[R ** T] = f.asInstanceOf[F[R ** T]]
 
   trait Tag[T]
 
@@ -59,7 +61,7 @@ object Instructions {
       DUP ~
       MONITORENTER ~
       f ~
-      XSWAP(e, RReference(null)) ~ // TODO(JLS): fix and make partial automatic swap
+      XSWAP(e, RReference(null)) ~ // TODO(JLS): add aditional SWAP_Something_on_cat1/2
       MONITOREXIT
   }
 
@@ -285,7 +287,7 @@ object Instructions {
     case RReference(_) => SWAP
   }
 
-  //TODO(JLS): note: this doesn't work with clever wildcards
+  //TODO(JLS): note: this doesn't work with "clever" wildcards
   def XSWAP
   [R <: Stack, T1 <: PType, T2 <: PType]
   (t1: RType[T1], t2: RType[T2]):
@@ -320,7 +322,7 @@ object Instructions {
 
   def XGETFIELD
   [R <: Stack, T1 <: PType, T2 <: PRefType]
-  (classType: RReference[T2], fieldName: String, fieldType: RType[T1]):
+  (classType: RReference[T2], fieldName: String, fieldType: RType[T1], undoErasure: Boolean):
   F[R ** PReference[T2]] => F[R ** T1] =
     fieldType match {
       case RBool => GetBoolField(classType, fieldName)
@@ -408,21 +410,30 @@ object Instructions {
 
   def GetObjectField
   [R <: Stack, T1 <: PRefType, T2 <: PRefType]
-  (classType: RReference[T2], fieldName: String, fieldType: Tag[T1] = null):
+  (classType: RReference[T2], fieldName: String, fieldType: RType[PReference[T1]]):
   F[R ** PReference[T2]] => F[R ** PReference[T1]] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, JvmName.Java.Lang.Object.toDescriptor)
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, fieldType.toDescriptor)
     castF(f)
   }
 
-  //TODO(JLS): make ref/lazy specific versions
+  // TODO(JLS): make ref/lazy specific versions
+  // TODO(JLS): erasedType arg is awkward
   def PUTFIELD
   [R <: Stack, T1 <: PType, T2 <: PRefType]
-  (classType: RReference[T2], fieldName: String, fieldType: RType[T1], erasedType: Boolean = false):
+  (classType: RReference[T2], fieldName: String, fieldType: RType[T1], erasedType: Boolean):
   F[R ** PReference[T2] ** T1] => F[R] = f => {
     if (erasedType) f.visitor.visitFieldInsn(Opcodes.PUTFIELD, classType.toInternalName, fieldName, fieldType.erasedType.toDescriptor)
     else f.visitor.visitFieldInsn(Opcodes.PUTFIELD, classType.toInternalName, fieldName, fieldType.toDescriptor)
     castF(f)
   }
+
+  def PUTFIELD
+  [R <: Stack, T1 <: PType, T2 <: PRefType]
+  (classType: RReference[T2], fieldName: String, fieldValue: ErasedAst.Expression[T1], erasedType: Boolean):
+  F[R ** PReference[T2]] => F[R] =
+    START[R ** PReference[T2]] ~
+      compileExp(fieldValue) ~
+      PUTFIELD(classType, fieldName, fieldValue.tpe, erasedType)
 
   def CAST
   [R <: Stack, T <: PRefType]
@@ -432,7 +443,7 @@ object Instructions {
     castF(f)
   }
 
-  // TODO(JLS): What to do here
+  // TODO(JLS): What to do here. is it needed?
 
   //  def CastIfNotPrim
   //  [R <: Stack, T1 <: PType, T2 <: PType]
@@ -456,16 +467,32 @@ object Instructions {
   [R <: Stack, T <: PRefType]
   (classType: RReference[T]):
   F[R] => F[R ** PReference[T]] = f => {
-    f.visitor.visitTypeInsn(Opcodes.NEW, classType.toInternalName)
+    NEW(classType.jvmName)
+    castF(f)
+  }
+
+  def NEW
+  [R <: Stack, T <: PRefType]
+  (className: JvmName, t: Tag[T] = null):
+  F[R] => F[R ** PReference[T]] = f => {
+    f.visitor.visitTypeInsn(Opcodes.NEW, className.toInternalName)
     castF(f)
   }
 
   // TODO(JLS): type should be constructed along with descriptor string
   def INVOKESPECIAL
   [R <: Stack, T <: PRefType]
-  (classType: RReference[T], constructorDescriptor: String):
+  (classType: RReference[T]):
   F[R ** PReference[T]] => F[R] = f => {
-    f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, classType.toInternalName, JvmName.constructorMethod, constructorDescriptor, false)
+    INVOKESPECIAL(classType.jvmName)
+    castF(f)
+  }
+
+  def INVOKESPECIAL
+  [R <: Stack, T <: PRefType]
+  (className: JvmName):
+  F[R ** PReference[T]] => F[R] = f => {
+    f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.toInternalName, JvmName.constructorMethod, JvmName.nothingToVoid, false)
     castF(f)
   }
 
@@ -515,7 +542,7 @@ object Instructions {
     castF(f)
   }
 
-  // TODO(JLS): maybe return Nothing (Nothing <: F[_]). atleast something better than StackEnd
+  // TODO(JLS): maybe return Nothing (Nothing <: F[_]), or add stop tag to F. atleast something better than StackEnd
   def RETURN[R <: Stack]: F[StackNil] => F[StackEnd] = f => {
     f.visitor.visitInsn(Opcodes.RETURN)
     castF(f)
@@ -1003,7 +1030,8 @@ object Instructions {
     castF(f)
   }
 
-  // TODO(JLS): The starting stack of argIns seems unnecessary but should be consistent. should maybe be StackNil
+  // TODO(JLS): The starting stack of the given ins could be many things (stacknil vs actual stack vs
+  //  new stack variable), what is the best option?
   def DoublePow
   [R <: Stack]
   (argIns: F[StackNil] => F[StackNil ** PFloat64 ** PFloat64]):
@@ -1184,6 +1212,128 @@ object Instructions {
     castF(f)
   }
 
+  def BoxInt8
+  [R <: Stack]
+  (valueIns: F[R] => F[R ** PInt8]):
+  F[R] => F[R ** PReference[PBoxedInt8]] = {
+    val className = JvmName.Java.Lang.Byte
+    START[R] ~
+      NEW(className, tagOf[PBoxedInt8]) ~
+      DUP ~
+      (f => valueIns(castF(f))) ~
+      (f => {
+        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.toInternalName, JvmName.constructorMethod, RInt8.thisToNothingMethodDescriptor, false)
+        castF[R ** PReference[PBoxedInt8]](f)
+      })
+  }
+
+  def BoxInt16
+  [R <: Stack]
+  (valueIns: F[R] => F[R ** PInt16]):
+  F[R] => F[R ** PReference[PBoxedInt16]] = {
+    val className = JvmName.Java.Lang.Short
+    START[R] ~
+      NEW(className, tagOf[PBoxedInt16]) ~
+      DUP ~
+      (f => valueIns(castF(f))) ~
+      (f => {
+        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.toInternalName, JvmName.constructorMethod, RInt16.thisToNothingMethodDescriptor, false)
+        castF[R ** PReference[PBoxedInt16]](f)
+      })
+  }
+
+  // TODO(JLS): add boolean
+  def BoxInt32
+  [R <: Stack]
+  (valueIns: F[R] => F[R ** PInt32]):
+  F[R] => F[R ** PReference[PBoxedInt32]] = {
+    val className = JvmName.Java.Lang.Short
+    START[R] ~
+      NEW(className, tagOf[PBoxedInt32]) ~
+      DUP ~
+      (f => valueIns(castF(f))) ~
+      (f => {
+        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.toInternalName, JvmName.constructorMethod, RInt32.thisToNothingMethodDescriptor, false)
+        castF[R ** PReference[PBoxedInt32]](f)
+      })
+  }
+
+  def BoxInt64
+  [R <: Stack]
+  (valueIns: F[R] => F[R ** PInt64]):
+  F[R] => F[R ** PReference[PBoxedInt64]] = {
+    val className = JvmName.Java.Lang.Short
+    START[R] ~
+      NEW(className, tagOf[PBoxedInt64]) ~
+      DUP ~
+      (f => valueIns(castF(f))) ~
+      (f => {
+        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.toInternalName, JvmName.constructorMethod, RInt64.thisToNothingMethodDescriptor, false)
+        castF[R ** PReference[PBoxedInt64]](f)
+      })
+  }
+
+  def BoxChar
+  [R <: Stack]
+  (valueIns: F[R] => F[R ** PChar]):
+  F[R] => F[R ** PReference[PBoxedChar]] = {
+    val className = JvmName.Java.Lang.Short
+    START[R] ~
+      NEW(className, tagOf[PBoxedChar]) ~
+      DUP ~
+      (f => valueIns(castF(f))) ~
+      (f => {
+        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.toInternalName, JvmName.constructorMethod, RChar.thisToNothingMethodDescriptor, false)
+        castF[R ** PReference[PBoxedChar]](f)
+      })
+  }
+
+  def BoxFloat32
+  [R <: Stack]
+  (valueIns: F[R] => F[R ** PFloat32]):
+  F[R] => F[R ** PReference[PBoxedFloat32]] = {
+    val className = JvmName.Java.Lang.Short
+    START[R] ~
+      NEW(className, tagOf[PBoxedFloat32]) ~
+      DUP ~
+      (f => valueIns(castF(f))) ~
+      (f => {
+        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.toInternalName, JvmName.constructorMethod, RFloat32.thisToNothingMethodDescriptor, false)
+        castF[R ** PReference[PBoxedFloat32]](f)
+      })
+  }
+
+  def BoxFloat64
+  [R <: Stack]
+  (valueIns: F[R] => F[R ** PFloat64]):
+  F[R] => F[R ** PReference[PBoxedFloat64]] = {
+    val className = JvmName.Java.Lang.Short
+    START[R] ~
+      NEW(className, tagOf[PBoxedFloat64]) ~
+      DUP ~
+      (f => valueIns(castF(f))) ~
+      (f => {
+        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.toInternalName, JvmName.constructorMethod, RFloat64.thisToNothingMethodDescriptor, false)
+        castF[R ** PReference[PBoxedFloat64]](f)
+      })
+  }
+
+  // TODO(JLS): note: this function seems impossible
+  //  def boxIfNecessary
+  //  [R <: Stack, T <: PType]
+  //  (rType: RType[T], ins: F[R] => F[R ** T]):
+  //  F[R] => F[R ** PReference[_ <: PRefType]] = rType match {
+  //    case RBool => BoxInt32(START[R] ~ ins)
+  //    case RInt8 => BoxInt8(START[R] ~ ins)
+  //    case RInt16 => BoxInt16(START[R] ~ ins)
+  //    case RInt32 => BoxInt32(START[R] ~ ins)
+  //    case RInt64 => BoxInt64(START[R] ~ ins)
+  //    case RChar => BoxChar(START[R] ~ ins)
+  //    case RFloat32 => BoxFloat32(START[R] ~ ins)
+  //    case RFloat64 => BoxFloat64(START[R] ~ ins)
+  //    case RReference(_) => START[R] ~ ins
+  //  }
+
   def pushUnit
   [R <: Stack]:
   F[R] => F[R ** PReference[PUnit]] = f => {
@@ -1334,7 +1484,12 @@ object Instructions {
   F[R] => F[R ** PReference[T]] =
     ALOAD(0)
 
-  // TODO(JLS): This should both return StackEnd (no code should follow) and R ** T (compileExp should push T on stack) (maybe stop flag type on F)
+  def SUBTYPE
+  [R <: Stack, T <: PRefType]:
+  F[R ** PReference[T]] => F[R ** PReference[PAnyObject]] =
+    f => f.asInstanceOf[F[R ** PReference[PAnyObject]]]
+
+  // TODO(JLS): This needs to return both StackEnd (no code should follow) and R ** T (compileExp should push T on stack) (maybe stop flag type on F)
   def TAILCALL
   [R <: Stack, T <: PType]
   (arguments: List[ErasedAst.Expression[_ <: PType]], fnType: RArrow[T]):
@@ -1397,7 +1552,6 @@ object Instructions {
     castF(f)
   }
 
-  // TODO(JLS): fnName can be Fn interface or Def class but that is a bit confusing
   def CALL
   [R <: Stack, T <: PType]
   (arguments: List[ErasedAst.Expression[_ <: PType]], fnType: RArrow[T]):
@@ -1562,75 +1716,75 @@ object Instructions {
     case RReference(_) => AALOAD
   }
 
-  def BAStore
+  def BASTORE
   [R <: Stack]:
   F[R ** PReference[PArray[PInt8]] ** PInt32 ** PInt8] => F[R] = f => {
     f.visitor.visitInsn(Opcodes.BASTORE)
     castF(f)
   }
 
-  def SAStore
+  def SASTORE
   [R <: Stack]:
   F[R ** PReference[PArray[PInt16]] ** PInt32 ** PInt16] => F[R] = f => {
     f.visitor.visitInsn(Opcodes.SASTORE)
     castF(f)
   }
 
-  def IAStore
+  def IASTORE
   [R <: Stack]:
   F[R ** PReference[PArray[PInt32]] ** PInt32 ** PInt32] => F[R] = f => {
     f.visitor.visitInsn(Opcodes.IASTORE)
     castF(f)
   }
 
-  def LAStore
+  def LASTORE
   [R <: Stack]:
   F[R ** PReference[PArray[PInt64]] ** PInt32 ** PInt64] => F[R] = f => {
     f.visitor.visitInsn(Opcodes.LASTORE)
     castF(f)
   }
 
-  def CAStore
+  def CASTORE
   [R <: Stack]:
   F[R ** PReference[PArray[PChar]] ** PInt32 ** PChar] => F[R] = f => {
     f.visitor.visitInsn(Opcodes.CASTORE)
     castF(f)
   }
 
-  def FAStore
+  def FASTORE
   [R <: Stack]:
   F[R ** PReference[PArray[PFloat32]] ** PInt32 ** PFloat32] => F[R] = f => {
     f.visitor.visitInsn(Opcodes.FASTORE)
     castF(f)
   }
 
-  def DAStore
+  def DASTORE
   [R <: Stack]:
   F[R ** PReference[PArray[PFloat64]] ** PInt32 ** PFloat64] => F[R] = f => {
     f.visitor.visitInsn(Opcodes.DASTORE)
     castF(f)
   }
 
-  def AAStore
+  def AASTORE
   [R <: Stack, T <: PRefType]:
   F[R ** PReference[PArray[PReference[T]]] ** PInt32 ** PReference[T]] => F[R] = f => {
     f.visitor.visitInsn(Opcodes.AASTORE)
     castF(f)
   }
 
-  def XAStore
+  def XASTORE
   [R <: Stack, T <: PType]
   (tpe: RType[T]):
   F[R ** PReference[PArray[T]] ** PInt32 ** T] => F[R] =
     tpe match {
-      case RChar => CAStore
-      case RFloat32 => FAStore
-      case RFloat64 => DAStore
-      case RInt8 => BAStore
-      case RInt16 => SAStore
-      case RBool | RInt32 => IAStore
-      case RInt64 => LAStore
-      case RReference(_) => AAStore
+      case RChar => CASTORE
+      case RFloat32 => FASTORE
+      case RFloat64 => DASTORE
+      case RInt8 => BASTORE
+      case RInt16 => SASTORE
+      case RBool | RInt32 => IASTORE
+      case RInt64 => LASTORE
+      case RReference(_) => AASTORE
     }
 
   val symOffsetOffset = 1
@@ -1740,7 +1894,7 @@ object Instructions {
   def INEWARRAY
   [R <: Stack]:
   F[R ** PInt32] => F[R ** PReference[PArray[PInt32]]] = f => {
-    f.visitor.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_INT) //TODO(JLS): Save strings somewhere else
+    f.visitor.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_INT)
     castF(f)
   }
 
@@ -1821,7 +1975,7 @@ object Instructions {
   [R <: Stack, T <: PType]
   (arrayType: RType[PReference[PArray[T]]]):
   F[R ** PReference[PArray[T]]] => F[R ** PInt32] = f => {
-    // TODO(JLS): checkcast needed?
+    // TODO(JLS): checkcast needed? figure out a consistent casting protocol
     f.visitor.visitTypeInsn(Opcodes.CHECKCAST, arrayType.toDescriptor)
     f.visitor.visitInsn(Opcodes.ARRAYLENGTH)
     castF(f)

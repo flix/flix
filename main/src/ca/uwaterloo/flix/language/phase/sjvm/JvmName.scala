@@ -27,7 +27,7 @@ import java.nio.file.{Path, Paths}
   */
 object JvmName {
 
-  // TODO(JLS): Find better alternative
+  // TODO(JLS): Find better alternative that is not allowed in surface syntax
   val reservedDelimiter: String = "_"
 
   val constructorMethod = "<init>"

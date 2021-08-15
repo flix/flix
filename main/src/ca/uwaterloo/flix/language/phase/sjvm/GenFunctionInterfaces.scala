@@ -59,7 +59,7 @@ object GenFunctionInterfaces {
   private def genByteCode[T <: PType](functionType: RArrow[T])(implicit root: Root, flix: Flix): Array[Byte] = {
 
     // Class visitor
-    // TODO(JLS): Add the super interfaces
+    // TODO(JLS): Add the super interface
     //`JvmType` of the continuation interface for `tpe`
     val continuationSuperInterface = functionType.result.contName
     // `JvmType` of the java.util.functions.Function
