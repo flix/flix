@@ -166,6 +166,11 @@ object RRefType {
 
   def toInternalName[T <: PRefType](e: RRefType[T]): String = e.toInternalName
 
+  private def mkName(prefix: String, types: List[String]): JvmName = JvmName(Nil, prefix + JvmName.reservedDelimiter + types.mkString(JvmName.reservedDelimiter))
+
+  private def mkName(prefix: String, tpe: String): JvmName = mkName(prefix, List(tpe))
+
+
   object RBoxedBool extends RRefType[PBoxedBool] {
     override lazy val jvmName: JvmName = JvmName.Java.Lang.Boolean
   }
@@ -214,12 +219,11 @@ object RRefType {
   }
 
   case class RLazy[T <: PType](tpe: RType[T]) extends RRefType[PLazy[T]] {
-    override lazy val jvmName: JvmName = JvmName(Nil, s"Lazy${JvmName.reservedDelimiter}${tpe.toErasedString}")
+    override lazy val jvmName: JvmName = mkName("Lazy", List(tpe.toErasedString))
   }
 
   case class RRef[T <: PType](tpe: RType[T]) extends RRefType[PRef[T]] {
-    private lazy val className = s"Ref${JvmName.reservedDelimiter}${tpe.toErasedString}"
-    override lazy val jvmName: JvmName = JvmName(Nil, className)
+    override lazy val jvmName: JvmName = mkName("Ref", tpe.toErasedString)
   }
 
   // TODO: Should be removed.
@@ -227,8 +231,8 @@ object RRefType {
     override lazy val jvmName: JvmName = JvmName(Nil, "NOT_IMPLEMENTED(RTYPE)")
   }
 
-  case class RTuple(elms: List[RType[_ <: PType]]) extends RRefType[PAnyObject] {
-    override lazy val jvmName: JvmName = JvmName(Nil, "NOT_IMPLEMENTED(RTYPE)")
+  case class RTuple(elms: List[RType[_ <: PType]]) extends RRefType[PTuple] {
+    override lazy val jvmName: JvmName = mkName("Tuple", elms.map(_.toErasedString))
   }
 
   case class REnum(sym: Symbol.EnumSym, args: List[RType[_ <: PType]]) extends RRefType[PAnyObject] {
@@ -244,7 +248,7 @@ object RRefType {
   }
 
   case class RArrow[T <: PType](args: List[RType[_ <: PType]], result: RType[T]) extends RRefType[PFunction[T]] {
-    override lazy val jvmName: JvmName = JvmName(Nil, s"Fn${args.length}${JvmName.reservedDelimiter}${(args ::: result :: Nil).map(_.toErasedString).mkString(JvmName.reservedDelimiter)}")
+    override lazy val jvmName: JvmName = mkName("Fn", args.appended(result).map(_.toErasedString))
   }
 
   object RRecordEmpty extends RRefType[PAnyObject] {

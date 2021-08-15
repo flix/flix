@@ -49,17 +49,9 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
 
     implicit val r: Root = root
 
-    def functionMatch[T <: PRefType](x: RRefType[T], acc: Set[RType[PReference[PFunction[_ <: PType]]]]): Set[RType[PReference[PFunction[_ <: PType]]]] = x match {
-      case res@RArrow(_, _) => acc + RReference(res).asInstanceOf[RType[PReference[PFunction[_ <: PType]]]]
-      case _ => acc
-    }
+    val functionTypes = getFunctionTypes(root.types)
 
-    val functionTypes: Set[RType[PReference[PFunction[_ <: PType]]]] = root.types.foldLeft(Set[RType[PReference[PFunction[_ <: PType]]]]()) { (set, rType) =>
-      rType match {
-        case RReference(referenceType) => functionMatch(referenceType, set)
-        case _ => set
-      }
-    }
+    val tupleTypes = getTupleTypes(root.types)
 
     val (allClasses: Map[JvmName, JvmClass], closureSyms: Set[Symbol.DefnSym]) = flix.subphase("CodeGen") {
 
@@ -274,6 +266,36 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
   }
 
 
+  private def getFunctionTypes(types: Set[RType[_ <: PType]]): Set[RType[PReference[PFunction[_ <: PType]]]] = {
+    def innerMatch[T <: PRefType](x: RRefType[T], acc: Set[RType[PReference[PFunction[_ <: PType]]]]): Set[RType[PReference[PFunction[_ <: PType]]]] = x match {
+      case res@RArrow(_, _) => acc + RReference(res).asInstanceOf[RType[PReference[PFunction[_ <: PType]]]]
+      case _ => acc
+    }
+
+    val functionTypes: Set[RType[PReference[PFunction[_ <: PType]]]] = types.foldLeft(Set[RType[PReference[PFunction[_ <: PType]]]]()) { (set, rType) =>
+      rType match {
+        case RReference(referenceType) => innerMatch(referenceType, set)
+        case _ => set
+      }
+    }
+
+    functionTypes
+  }
+
+  private def getTupleTypes(types: Set[RType[_ <: PType]]): Set[RType[PReference[PTuple]]] = {
+    def innerMatch[T <: PRefType](x: RRefType[T], acc: Set[RType[PReference[PTuple]]]): Set[RType[PReference[PTuple]]] = x match {
+      case res@RTuple(_) => acc + RReference(res).asInstanceOf[RType[PReference[PTuple]]]
+      case _ => acc
+    }
+
+    types.foldLeft(Set[RType[PReference[PTuple]]]()) { (set, rType) =>
+      rType match {
+        case RReference(referenceType) => innerMatch(referenceType, set)
+        case _ => set
+      }
+    }
+  }
+
   /**
     * Optionally returns a reference to main.
     */
@@ -292,7 +314,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
     */
   private def getCompiledDefs(root: Root)(implicit flix: Flix): Map[Symbol.DefnSym, () => ProxyObject] = {
     root.functions.foldLeft(Map.empty[Symbol.DefnSym, () => ProxyObject]) {
-      case (macc, (sym, defn)) =>
+      case (macc, (sym, _)) =>
         val args: Array[AnyRef] = Array(null)
         macc + (sym -> (() => link(sym, root).apply(args)))
     }

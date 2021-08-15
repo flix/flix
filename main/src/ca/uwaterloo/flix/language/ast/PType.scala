@@ -73,6 +73,8 @@ object PRefType {
 
   sealed trait PBigInt extends PRefType
 
+  sealed trait PTuple extends PRefType
+
   sealed trait PAnyObject extends PRefType
 
   sealed trait PFunction[T <: PType] extends PRefType
