@@ -1419,26 +1419,26 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       }
 
     case NamedAst.Type.Enum(sym, loc) =>
-      Type.mkEnum(sym, loc).toSuccess
+      Type.mkUnkindedEnum(sym, loc).toSuccess
 
     case NamedAst.Type.Tuple(elms0, loc) =>
       for {
         elms <- traverse(elms0)(tpe => lookupType(tpe, ns0, root))
-        tup = Type.mkTuple(elms, loc)
+        tup = Type.mkTuple(elms)
       } yield tup
 
     case NamedAst.Type.RecordEmpty(loc) =>
-      Type.mkRecordEmpty(loc).toSuccess
+      Type.RecordEmpty.toSuccess
 
     case NamedAst.Type.RecordExtend(field, value, rest, loc) =>
       for {
         v <- lookupType(value, ns0, root)
         r <- lookupType(rest, ns0, root)
-        rec = Type.mkRecordExtend(field, v, r, loc)
+        rec = Type.mkRecordExtend(field, v, r)
       } yield rec
 
     case NamedAst.Type.SchemaEmpty(loc) =>
-      Type.mkSchemaEmpty(loc).toSuccess
+      Type.SchemaEmpty.toSuccess
 
     case NamedAst.Type.SchemaExtendWithAlias(qname, targs, rest, loc) =>
       // Lookup the type alias.
@@ -1453,8 +1453,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             ts <- traverse(targs)(lookupType(_, ns0, root))
             r <- lookupType(rest, ns0, root)
             app = Type.mkApply(t, ts)
-            tpe = Type.simplify(app)
-            schema = Type.mkSchemaExtend(Name.mkPred(qname.ident), tpe, r, loc)
+            tpe = Type.Unkinded.simplify(app)
+            schema = Type.mkSchemaExtend(Name.mkPred(qname.ident), tpe, r)
           } yield schema
       }
 
@@ -1463,19 +1463,19 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         ts <- traverse(tpes)(lookupType(_, ns0, root))
         r <- lookupType(rest, ns0, root)
         pred = mkPredicate(den, ts, loc)
-        schema = Type.mkSchemaExtend(Name.mkPred(ident), pred, r, loc)
+        schema = Type.mkSchemaExtend(Name.mkPred(ident), pred, r)
       } yield schema
 
     case NamedAst.Type.Relation(tpes, loc) =>
       for {
         ts <- traverse(tpes)(lookupType(_, ns0, root))
-        rel = Type.mkRelation(ts, loc)
+        rel = Type.mkRelation(ts)
       } yield rel
 
     case NamedAst.Type.Lattice(tpes, loc) =>
       for {
         ts <- traverse(tpes)(lookupType(_, ns0, root))
-        lat = Type.mkLattice(ts, loc)
+        lat = Type.mkLattice(ts)
       } yield lat
 
     case NamedAst.Type.Native(fqn, loc) =>
@@ -1492,39 +1492,39 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         tparams <- traverse(tparams0)(lookupType(_, ns0, root))
         tresult <- lookupType(tresult0, ns0, root)
         eff <- lookupType(eff0, ns0, root)
-      } yield Type.mkUncurriedArrowWithEffect(tparams, eff, tresult, loc)
+      } yield Type.mkUncurriedArrowWithEffect(tparams, eff, tresult)
 
     case NamedAst.Type.Apply(base0, targ0, loc) =>
       for {
         tpe1 <- lookupType(base0, ns0, root)
         tpe2 <- lookupType(targ0, ns0, root)
         app = Type.Apply(tpe1, tpe2)
-      } yield Type.simplify(app)
+      } yield Type.Unkinded.simplify(app)
 
     case NamedAst.Type.True(loc) =>
-      Type.mkTrue(loc).toSuccess
+      Type.True.toSuccess
 
     case NamedAst.Type.False(loc) =>
-      Type.mkFalse(loc).toSuccess
+      Type.False.toSuccess
 
     case NamedAst.Type.Not(tpe, loc) =>
       mapN(lookupType(tpe, ns0, root)) {
-        case t => Type.mkNot(t, loc)
+        case t => Type.mkNot(t)
       }
 
     case NamedAst.Type.And(tpe1, tpe2, loc) =>
       mapN(lookupType(tpe1, ns0, root), lookupType(tpe2, ns0, root)) {
-        case (t1, t2) => Type.mkAnd(t1, t2, loc)
+        case (t1, t2) => Type.mkAnd(t1, t2)
       }
 
     case NamedAst.Type.Or(tpe1, tpe2, loc) =>
       mapN(lookupType(tpe1, ns0, root), lookupType(tpe2, ns0, root)) {
-        case (t1, t2) => Type.mkOr(t1, t2, loc)
+        case (t1, t2) => Type.mkOr(t1, t2)
       }
 
     case NamedAst.Type.Ascribe(tpe, kind, loc) =>
       mapN(lookupType(tpe, ns0, root)) {
-        t => Type.Ascribe(t, kind, loc)
+        t => Type.Ascribe(t, kind)
       }
 
   }
@@ -1697,7 +1697,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     */
   def getEnumTypeIfAccessible(enum0: NamedAst.Enum, ns0: Name.NName, loc: SourceLocation): Validation[Type, ResolutionError] =
     getEnumIfAccessible(enum0, ns0, loc) map {
-      case enum => Type.mkEnum(enum.sym, loc)
+      case enum => Type.mkUnkindedEnum(enum.sym, loc)
     }
 
   /**
@@ -1846,7 +1846,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
       case TypeConstructor.Channel => Class.forName("java.lang.Object").toSuccess
 
-      case TypeConstructor.Enum(_) => Class.forName("java.lang.Object").toSuccess
+      case TypeConstructor.Enum(_, _) => Class.forName("java.lang.Object").toSuccess
+
+      case TypeConstructor.UnkindedEnum(_) => Class.forName("java.lang.Object").toSuccess
 
       case TypeConstructor.ScopedRef => Class.forName("java.lang.Object").toSuccess
 
@@ -1898,7 +1900,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     val ts = ts0 match {
       case Nil => Type.mkUnit(loc)
       case x :: Nil => x
-      case xs => Type.mkTuple(xs, loc)
+      case xs => Type.mkTuple(xs)
     }
 
     Type.Apply(tycon, ts)
