@@ -536,7 +536,7 @@ object BytecodeCompiler {
     case Expression.Deref(exp, tpe, loc) =>
       WithSource[R](loc) ~
         compileExp(exp) ~
-        XGETFIELD(squeezeReference(exp.tpe), GenRefClasses.ValueFieldName, tpe)
+        XGETFIELD(squeezeReference(exp.tpe), GenRefClasses.ValueFieldName, tpe, undoErasure = true)
 
     case Expression.Assign(exp1, exp2, tpe, loc) =>
       WithSource[R](loc) ~

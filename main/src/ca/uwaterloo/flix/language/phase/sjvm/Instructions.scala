@@ -333,7 +333,9 @@ object Instructions {
       case RChar => GetCharField(classType, fieldName)
       case RFloat32 => GetFloat32Field(classType, fieldName)
       case RFloat64 => GetFloat64Field(classType, fieldName)
-      case RReference(referenceType) => GetClassField(classType, fieldName, referenceType)
+      case RReference(referenceType) =>
+        if (undoErasure) GetObjectField(classType, fieldName, referenceType, undoErasure)
+        else GetObjectField(classType, fieldName, referenceType, undoErasure)
     }
 
   def GetBoolField
@@ -400,21 +402,21 @@ object Instructions {
     castF(f)
   }
 
-  def GetClassField
+  def GetObjectField
   [R <: Stack, T1 <: PRefType, T2 <: PRefType]
-  (classType: RReference[T2], fieldName: String, referenceType: RRefType[T1]):
+  (classType: RReference[T2], fieldName: String, referenceType: RRefType[T1], undoErasure: Boolean):
   F[R ** PReference[T2]] => F[R ** PReference[T1]] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, referenceType.toDescriptor)
+    val descriptor = if (undoErasure) referenceType.toDescriptor else RObject.toDescriptor
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, descriptor)
+    if (undoErasure) RType.undoErasure(RReference(referenceType), f.visitor)
     castF(f)
   }
 
   def GetObjectField
   [R <: Stack, T1 <: PRefType, T2 <: PRefType]
-  (classType: RReference[T2], fieldName: String, fieldType: RType[PReference[T1]]):
-  F[R ** PReference[T2]] => F[R ** PReference[T1]] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, fieldType.toDescriptor)
-    castF(f)
-  }
+  (classType: RReference[T2], fieldName: String, fieldType: RType[PReference[T1]], undoErasure: Boolean):
+  F[R ** PReference[T2]] => F[R ** PReference[T1]] =
+    GetObjectField(classType, fieldName, squeezeReference(fieldType).referenceType, undoErasure)
 
   // TODO(JLS): make ref/lazy specific versions
   // TODO(JLS): erasedType arg is awkward

@@ -109,17 +109,17 @@ object GenLazyClasses {
           (IFNE {
             START[StackNil ** PReference[PLazy[T]]] ~
               THISLOAD(tagOf[PLazy[T]]) ~
-              GetClassField(lazyType, expressionFieldName, squeezeReference(expressionFieldType(valueFieldType)).referenceType) ~
+              GetObjectField(lazyType, expressionFieldName, expressionFieldType(valueFieldType), undoErasure = true) ~
               CALL(ErasedAst.Expression.Unit(SourceLocation.Unknown) :: Nil, RArrow(RReference(RUnit) :: Nil, valueFieldType)) ~
               THISLOAD(tagOf[PLazy[T]]) ~
               XSWAP(lazyType, valueFieldType) ~
               PUTFIELD(lazyType, valueFieldName, valueFieldType, erasedType = true) ~
               THISLOAD(tagOf[PLazy[T]]) ~
               pushBool(true) ~
-              PUTFIELD(lazyType, initializedFieldName, RInt32, erasedType = false)
+              PUTFIELD(lazyType, initializedFieldName, RInt32, erasedType = false /* does not do anything */)
           } (NOP)) ~
           THISLOAD(tagOf[PLazy[T]]) ~
-          XGETFIELD(lazyType, valueFieldName, valueFieldType)
+          XGETFIELD(lazyType, valueFieldName, valueFieldType, undoErasure = true)
       }) ~
       XRETURN(valueFieldType)
   }

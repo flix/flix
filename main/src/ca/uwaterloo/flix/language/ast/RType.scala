@@ -111,6 +111,7 @@ object RType {
     case RReference(_) => RReference(RObject)
   }
 
+  // TODO(JLS): should probably be in Instructions
   def undoErasure(rType: RType[_ <: PType], methodVisitor: MethodVisitor): Unit =
     rType match {
       case RReference(referenceType) => methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, referenceType.toInternalName)

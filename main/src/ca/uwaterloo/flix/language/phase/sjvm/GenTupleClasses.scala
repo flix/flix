@@ -76,7 +76,7 @@ object GenTupleClasses {
               case RType.RChar => START[StackNil ** PReference[PArray[PReference[PAnyObject]]] ** PReference[PArray[PReference[PAnyObject]]] ** PInt32] ~ BoxChar(THISLOAD(tagOf[PTuple]) ~ GetCharField(RReference(tupleType), indexFieldName(index))) ~ SUBTYPE ~ AASTORE
               case RType.RFloat32 => START[StackNil ** PReference[PArray[PReference[PAnyObject]]] ** PReference[PArray[PReference[PAnyObject]]] ** PInt32] ~ BoxFloat32(THISLOAD(tagOf[PTuple]) ~ GetFloat32Field(RReference(tupleType), indexFieldName(index))) ~ SUBTYPE ~ AASTORE
               case RType.RFloat64 => START[StackNil ** PReference[PArray[PReference[PAnyObject]]] ** PReference[PArray[PReference[PAnyObject]]] ** PInt32] ~ BoxFloat64(THISLOAD(tagOf[PTuple]) ~ GetFloat64Field(RReference(tupleType), indexFieldName(index))) ~ SUBTYPE ~ AASTORE
-              case RReference(_) => START[StackNil ** PReference[PArray[PReference[PAnyObject]]] ** PReference[PArray[PReference[PAnyObject]]] ** PInt32] ~ THISLOAD(tagOf[PTuple]) ~ GetObjectField(RReference(tupleType), indexFieldName(index), RReference(RObject)) ~ SUBTYPE ~ AASTORE
+              case RReference(referenceType) => START[StackNil ** PReference[PArray[PReference[PAnyObject]]] ** PReference[PArray[PReference[PAnyObject]]] ** PInt32] ~ THISLOAD(tagOf[PTuple]) ~ GetObjectField(RReference(tupleType), indexFieldName(index), RObject, undoErasure = false /* does nothing here */) ~ SUBTYPE ~ AASTORE
             })
       } ~
       ARETURN
