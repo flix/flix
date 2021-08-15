@@ -268,7 +268,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         } yield {
           val freeVars = e0.tparams.tparams.map(_.tpe)
           val caseType = t
-          val enumType = Type.mkEnum(e0.sym, freeVars)
+          val enumType = Type.mkUnkindedEnum(e0.sym, freeVars)
           val base = Type.mkTag(e0.sym, tag, caseType, enumType)
           val sc = ResolvedAst.Scheme(freeVars, tconstrs, base)
           name -> ResolvedAst.Case(enum, tag, t, sc)

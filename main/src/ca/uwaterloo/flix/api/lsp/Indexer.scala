@@ -423,6 +423,7 @@ object Indexer {
     }
     case Type.Lambda(_, tpe) => visitType(tpe)
     case Type.Apply(tpe1, tpe2) => visitType(tpe1) ++ visitType(tpe2)
+    case Type.Ascribe(tpe, _) => visitType(tpe)
   }
 
 }

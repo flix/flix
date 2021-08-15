@@ -381,6 +381,7 @@ object FormatType {
       case Type.Cst(tc, loc) => Nil
       case Type.Lambda(tvar, tpe) => tvar :: visit(tpe)
       case Type.Apply(tpe1, tpe2) => visit(tpe1) ::: visit(tpe2)
+      case Type.Ascribe(tpe, _) => typeVars(tpe)
     }
 
     visit(tpe0).distinct

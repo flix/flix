@@ -697,6 +697,7 @@ object Lowering extends Phase[Root, Root] {
 
       case _: Type.Lambda => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
       case _: Type.UnkindedVar => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
+      case _: Type.Ascribe => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
     }
 
     if (tpe0.kind == Kind.Schema)
