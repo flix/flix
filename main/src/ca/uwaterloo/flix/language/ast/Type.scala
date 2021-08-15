@@ -724,60 +724,6 @@ object Type {
     case _ => Type.Apply(Type.Not, tpe0)
   }
 
-  /**
-    * Returns the type `And(tpe1, tpe2)`.
-    */
-  def mkAnd(tpe1: Type, tpe2: Type): Type = (tpe1, tpe2) match {
-    case (Type.Cst(TypeConstructor.True, _), _) => tpe2
-    case (_, Type.Cst(TypeConstructor.True, _)) => tpe1
-    case (Type.Cst(TypeConstructor.False, _), _) => Type.False
-    case (_, Type.Cst(TypeConstructor.False, _)) => Type.False
-    case _ => Type.Apply(Type.Apply(Type.And, tpe1), tpe2)
-  }
-
-  /**
-    * Returns the type `And(tpe1, And(tpe2, tpe3))`.
-    */
-  def mkAnd(tpe1: Type, tpe2: Type, tpe3: Type): Type = mkAnd(tpe1, mkAnd(tpe2, tpe3))
-
-  /**
-    * Returns the type `And(tpe1, And(tpe2, ...))`.
-    */
-  def mkAnd(tpes: List[Type]): Type = tpes match {
-    case Nil => Type.True
-    case x :: xs => mkAnd(x, mkAnd(xs))
-  }
-
-  /**
-    * Returns the type `Or(tpe1, tpe2)`.
-    */
-  def mkOr(tpe1: Type, tpe2: Type): Type = (tpe1, tpe2) match {
-    case (Type.Cst(TypeConstructor.True, _), _) => Type.True
-    case (_, Type.Cst(TypeConstructor.True, _)) => Type.True
-    case (Type.Cst(TypeConstructor.False, _), _) => tpe2
-    case (_, Type.Cst(TypeConstructor.False, _)) => tpe1
-    case _ => Type.Apply(Type.Apply(Type.Or, tpe1), tpe2)
-  }
-
-  /**
-    * Returns the type `Or(tpe1, Or(tpe2, ...))`.
-    */
-  def mkOr(tpes: List[Type]): Type = tpes match {
-    case Nil => Type.False
-    case x :: xs => mkOr(x, mkOr(xs))
-  }
-
-  /**
-    * Returns the type `tpe1 => tpe2`.
-    */
-  def mkImplies(tpe1: Type, tpe2: Type): Type = Type.mkOr(Type.mkNot(tpe1), tpe2)
-
-  /**
-    * Returns a Boolean type that represents the equivalence of `x` and `y`.
-    *
-    * That is, `x == y` iff `(x /\ y) \/ (not x /\ not y)`
-    */
-  def mkEquiv(x: Type, y: Type): Type = Type.mkOr(Type.mkAnd(x, y), Type.mkAnd(Type.mkNot(x), Type.mkNot(y)))
 
   /**
     * Returns a Region type for the given rigid variable `l` with the given source location `loc`.
@@ -816,6 +762,62 @@ object Type {
       case Type.Ascribe(tpe, kind) => Type.Ascribe(map(tpe)(f), kind)
       case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type variable")
     }
+
+
+    /**
+      * Returns the type `And(tpe1, tpe2)`.
+      */
+    def mkAnd(tpe1: Type, tpe2: Type): Type = (tpe1, tpe2) match {
+      case (Type.Cst(TypeConstructor.True, _), _) => tpe2
+      case (_, Type.Cst(TypeConstructor.True, _)) => tpe1
+      case (Type.Cst(TypeConstructor.False, _), _) => Type.False
+      case (_, Type.Cst(TypeConstructor.False, _)) => Type.False
+      case _ => Type.Apply(Type.Apply(Type.And, tpe1), tpe2)
+    }
+
+    /**
+      * Returns the type `And(tpe1, And(tpe2, tpe3))`.
+      */
+    def mkAnd(tpe1: Type, tpe2: Type, tpe3: Type): Type = mkAnd(tpe1, mkAnd(tpe2, tpe3))
+
+    /**
+      * Returns the type `And(tpe1, And(tpe2, ...))`.
+      */
+    def mkAnd(tpes: List[Type]): Type = tpes match {
+      case Nil => Type.True
+      case x :: xs => mkAnd(x, mkAnd(xs))
+    }
+
+    /**
+      * Returns the type `Or(tpe1, tpe2)`.
+      */
+    def mkOr(tpe1: Type, tpe2: Type): Type = (tpe1, tpe2) match {
+      case (Type.Cst(TypeConstructor.True, _), _) => Type.True
+      case (_, Type.Cst(TypeConstructor.True, _)) => Type.True
+      case (Type.Cst(TypeConstructor.False, _), _) => tpe2
+      case (_, Type.Cst(TypeConstructor.False, _)) => tpe1
+      case _ => Type.Apply(Type.Apply(Type.Or, tpe1), tpe2)
+    }
+
+    /**
+      * Returns the type `Or(tpe1, Or(tpe2, ...))`.
+      */
+    def mkOr(tpes: List[Type]): Type = tpes match {
+      case Nil => Type.False
+      case x :: xs => mkOr(x, mkOr(xs))
+    }
+
+    /**
+      * Returns the type `tpe1 => tpe2`.
+      */
+    def mkImplies(tpe1: Type, tpe2: Type): Type = mkOr(Type.mkNot(tpe1), tpe2)
+
+    /**
+      * Returns a Boolean type that represents the equivalence of `x` and `y`.
+      *
+      * That is, `x == y` iff `(x /\ y) \/ (not x /\ not y)`
+      */
+    def mkEquiv(x: Type, y: Type): Type = mkOr(mkAnd(x, y), mkAnd(Type.mkNot(x), Type.mkNot(y)))
   }
 
   // MATT docs
@@ -863,4 +865,14 @@ object Type {
     }
   }
 
+
+  /**
+    * Returns the type `And(tpe1, tpe2)`.
+    */
+  def mkAnd(tpe1: Type, tpe2: Type): Type = Type.Apply(Type.Apply(Type.And, tpe1), tpe2)
+
+  /**
+    * Returns the type `Or(tpe1, tpe2)`.
+    */
+  def mkOr(tpe1: Type, tpe2: Type): Type = Type.Apply(Type.Apply(Type.Or, tpe1), tpe2)
 }
