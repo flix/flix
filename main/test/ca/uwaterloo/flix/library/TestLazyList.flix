@@ -1183,4 +1183,27 @@ namespace TestLazyList {
 
     @test
     def forall10(): Bool = (11 :: 9 :: 31 :: Nil) |> List.toLazy |> LazyList.forall(i -> i > 3) == true
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foreach                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foreach01(): Bool & Impure =
+        let r = ref 21;
+        LazyList.foreach(x -> r := x, ENil);
+        21 == deref r
+
+    @test
+    def foreach02(): Bool & Impure =
+        let r = ref 21;
+        (1 :: 2 :: 3 :: Nil) |> List.toLazy |> LazyList.foreach(x -> r := x);
+        3 == deref r
+
+    @test
+    def foreach03(): Bool & Impure =
+        let r = ref 1000;
+        LazyList.range(0, 100)|> LazyList.foreach(_ -> r := (deref r) - 1);
+        900 == deref r
 }
