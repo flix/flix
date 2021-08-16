@@ -356,5 +356,16 @@ namespace LazyList {
         case ECons(xs, ys) => append(xs, flatten(      ys))
         case LCons(xs, ys) => append(xs, flatten(force ys))
         case LList(xs)     => flatten(force xs)
+    /// Returns `true` if and only if all elements in `l` satisfy the predicate `f`.
+    ///
+    /// Returns `true` if `l` is empty.
+    ///
+    /// The function `f` must be pure.
+    ///
+    pub def forall(f: a -> Bool, l: LazyList[a]): Bool = match l {
+        case ENil         => true
+        case ECons(x, xs) => f(x) and forall(f, xs)
+        case LCons(x, xs) => f(x) and forall(f, force xs)
+        case LList(xs)    => forall(f, force xs)
     }
 }
