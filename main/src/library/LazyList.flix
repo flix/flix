@@ -356,6 +356,22 @@ namespace LazyList {
         case ECons(xs, ys) => append(xs, flatten(      ys))
         case LCons(xs, ys) => append(xs, flatten(force ys))
         case LList(xs)     => flatten(force xs)
+    }
+    
+    /// Returns `true` if and only if at least one element in `l` satisfies the predicate `f`.
+    ///
+    /// Returns `false` if `l` is empty.
+    ///
+    /// The function `f` must be pure.
+    ///
+    pub def exists(f: a -> Bool, l: LazyList[a]): Bool = match l {
+        case ENil         => false
+        case ECons(x, xs) => f(x) or exists(f, xs)
+        case LCons(x, xs) => f(x) or exists(f, force xs)
+        case LList(xs)    => exists(f, force xs)
+    }
+
+    ///
     /// Returns `true` if and only if all elements in `l` satisfy the predicate `f`.
     ///
     /// Returns `true` if `l` is empty.
