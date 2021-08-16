@@ -15,14 +15,26 @@
  */
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.api.Flix
+
 /**
   * Indicates whether a variable is scoped.
   * A scoped value must not escape its scope.
   */
-sealed trait Scopedness
+sealed trait Scopedness { // MATT remove later probably
+  def toType: Type = this match {
+    case Scopedness.Scoped => Type.Scoped
+    case Scopedness.Unscoped => Type.Unscoped
+    case Scopedness.Var(id) => Type.Var(id, Kind.Bool)
+  }
+}
 
 object Scopedness {
   case object Scoped extends Scopedness
 
   case object Unscoped extends Scopedness
+
+  case class Var(id: Int) extends Scopedness
+
+  def freshVar()(implicit flix: Flix): Var = Var(flix.genSym.freshId())
 }

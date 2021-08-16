@@ -63,14 +63,14 @@ object Symbol {
     * Returns a fresh variable symbol based on the given symbol.
     */
   def freshVarSym(sym: VarSym)(implicit flix: Flix): VarSym = {
-    new VarSym(flix.genSym.freshId(), sym.text, sym.tvar, Scopedness.Unscoped, sym.loc)
+    new VarSym(flix.genSym.freshId(), sym.text, sym.tvar, Scopedness.freshVar(), sym.loc)
   }
 
   /**
     * Returns a fresh variable symbol for the given identifier.
     */
   def freshVarSym(ident: Name.Ident)(implicit flix: Flix): VarSym = {
-    new VarSym(flix.genSym.freshId(), ident.name, UnkindedType.freshVar(loc = ident.loc), Scopedness.Unscoped, ident.loc)
+    new VarSym(flix.genSym.freshId(), ident.name, UnkindedType.freshVar(loc = ident.loc), Scopedness.freshVar(), ident.loc)
   }
 
   /**
@@ -84,7 +84,7 @@ object Symbol {
     * Returns a fresh variable symbol with the given text.
     */
   def freshVarSym(text: String, loc: SourceLocation)(implicit flix: Flix): VarSym = {
-    new VarSym(flix.genSym.freshId(), text, UnkindedType.freshVar(loc = loc), Scopedness.Unscoped, loc)
+    new VarSym(flix.genSym.freshId(), text, UnkindedType.freshVar(loc = loc), Scopedness.freshVar(), loc)
   }
 
   /**
