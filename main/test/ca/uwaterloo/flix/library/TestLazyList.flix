@@ -1116,4 +1116,39 @@ namespace TestLazyList {
     @test
     def flatten22(): Bool =
     	LazyList.flatten(ECons(ECons(1, LCons(2, lazy ENil)), ECons(ENil, ECons(ENil, ECons((ECons(3, ECons(4, ENil))), ENil))))) == ECons(1, ECons(2, ECons(3, ECons(4, ENil))))
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // forall                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def forall01(): Bool = LazyList.forall(i -> i > 3, ENil) == true
+
+    @test
+    def forall02(): Bool = (1 :: Nil) |> List.toLazy |> LazyList.forall(i -> i > 3) == false
+
+    @test
+    def forall03(): Bool = (5 :: Nil) |> List.toLazy |> LazyList.forall(i -> i > 3) == true
+
+    @test
+    def forall04(): Bool =  (1 :: 2 :: Nil) |> List.toLazy |> LazyList.forall(i -> i > 3) == false
+
+    @test
+    def forall05(): Bool =  (1 :: 6 :: Nil) |> List.toLazy |> LazyList.forall(i -> i > 3) == false
+
+    @test
+    def forall06(): Bool =  (6 :: 1 :: Nil) |> List.toLazy |> LazyList.forall(i -> i > 3) == false
+
+    @test
+    def forall07(): Bool = (16 :: 6 :: Nil) |> List.toLazy |> LazyList.forall(i -> i > 3) == true
+
+    @test
+    def forall08(): Bool = (1 :: -9 :: 3 :: Nil) |> List.toLazy |> LazyList.forall(i -> i > 3) == false
+
+    @test
+    def forall09(): Bool = (1 :: 9 :: 3 :: Nil) |> List.toLazy |> LazyList.forall(i -> i > 3) == false
+
+    @test
+    def forall10(): Bool = (11 :: 9 :: 31 :: Nil) |> List.toLazy |> LazyList.forall(i -> i > 3) == true
 }
