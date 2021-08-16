@@ -384,4 +384,16 @@ namespace LazyList {
         case LCons(x, xs) => f(x) and forall(f, force xs)
         case LList(xs)    => forall(f, force xs)
     }
+
+    ///
+    /// Applies `f` to every element of `xs`.
+    ///
+    /// The function `f` must be impure.
+    ///
+    pub def foreach(f: a ~> Unit, l: LazyList[a]): Unit & Impure = match l {
+        case ENil         => ()
+        case ECons(x, xs) => f(x); foreach(f, xs)
+        case LCons(x, xs) => f(x); foreach(f, force xs)
+        case LList(xs)    => foreach(f, force xs)
+    }
 }
