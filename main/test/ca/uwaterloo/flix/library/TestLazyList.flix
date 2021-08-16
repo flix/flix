@@ -469,8 +469,7 @@ namespace TestLazyList {
         let l = ref Nil;
         (1 :: 2 :: 3 :: Nil) |> LazyList.toLazy |>
         LazyList.filter(_x -> {l := "a" :: deref l; true}) |>
-        LazyList.filter(_x -> {l := "b" :: deref l; true}) |>
-        LazyList.toList;
+        LazyList.filter(_x -> {l := "b" :: deref l; true});
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
 
     @test
@@ -492,8 +491,7 @@ namespace TestLazyList {
         let l = ref Nil;
         (1 :: 2 :: 3 :: Nil) |> LazyList.toLazy |>
         LazyList.map(    x -> {l := "a" :: deref l; x}) |>
-        LazyList.filter(_x -> {l := "b" :: deref l; true}) |>
-        LazyList.toList;
+        LazyList.filter(_x -> {l := "b" :: deref l; true});
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
 
     @test
@@ -515,8 +513,7 @@ namespace TestLazyList {
         let l = ref Nil;
         (1 :: 2 :: 3 :: Nil) |> LazyList.toLazy |>
         LazyList.filter(_x -> {l := "a" :: deref l; true}) |>
-        LazyList.map(    x -> {l := "b" :: deref l; x}) |>
-        LazyList.toList;
+        LazyList.map(    x -> {l := "b" :: deref l; x});
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
 
     @test
