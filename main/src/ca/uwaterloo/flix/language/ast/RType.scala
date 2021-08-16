@@ -70,10 +70,6 @@ object RType {
     case res@RArrow(_, _) => res
   }
 
-  def internalNameOfReference[T <: PRefType](e: RType[PReference[T]]): String = e match {
-    case RReference(referenceType) => referenceType.toInternalName
-  }
-
   def isCat1(rType: RType[_ <: PType]): Boolean = rType match {
     case RBool | RInt8 | RInt16 | RInt32 | RChar | RFloat32 | RReference(_) => true
     case RInt64 | RFloat64 => false
@@ -114,6 +110,7 @@ object RType {
   // TODO(JLS): should probably be in Instructions
   def undoErasure(rType: RType[_ <: PType], methodVisitor: MethodVisitor): Unit =
     rType match {
+        // TODO(JLS): Should not output ins if referenceType is RObject
       case RReference(referenceType) => methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, referenceType.toInternalName)
       case RBool | RInt8 | RInt16 | RInt32 | RInt64 | RChar | RFloat32 | RFloat64 => ()
     }

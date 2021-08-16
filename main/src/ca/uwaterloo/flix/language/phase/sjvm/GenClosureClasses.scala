@@ -75,7 +75,7 @@ object GenClosureClasses {
         magicStoreArg(index, formalParam.tpe, cloName, formalParam.sym, GenFunctionInterfaces.argFieldName)
       }) ~
       compileExp(functionBody) ~
-      THISLOAD(tagOf[PAnyObject]) ~
+      THISLOAD(RReference(RObject)) ~
       magicReversePutField(cloName, functionBody.tpe) ~
       RETURNNULL
   }

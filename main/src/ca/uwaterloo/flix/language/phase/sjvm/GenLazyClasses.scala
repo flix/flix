@@ -101,24 +101,24 @@ object GenLazyClasses {
     unlock(this)
     return result
      */
-    THISLOAD(tagOf[PLazy[T]]) ~
+    THISLOAD(lazyType) ~
       (WITHMONITOR(valueFieldType) {
         START[StackNil ** PReference[PLazy[T]]] ~
-          THISLOAD(tagOf[PLazy[T]]) ~
+          THISLOAD(lazyType) ~
           GetBoolField(lazyType, initializedFieldName) ~
           (IFNE {
             START[StackNil ** PReference[PLazy[T]]] ~
-              THISLOAD(tagOf[PLazy[T]]) ~
+              THISLOAD(lazyType) ~
               GetObjectField(lazyType, expressionFieldName, expressionFieldType(valueFieldType), undoErasure = true) ~
               CALL(ErasedAst.Expression.Unit(SourceLocation.Unknown) :: Nil, RArrow(RReference(RUnit) :: Nil, valueFieldType)) ~
-              THISLOAD(tagOf[PLazy[T]]) ~
+              THISLOAD(lazyType) ~
               XSWAP(lazyType, valueFieldType) ~
               PUTFIELD(lazyType, valueFieldName, valueFieldType, erasedType = true) ~
-              THISLOAD(tagOf[PLazy[T]]) ~
+              THISLOAD(lazyType) ~
               pushBool(true) ~
               PUTFIELD(lazyType, initializedFieldName, RInt32, erasedType = false /* does not do anything */)
           } (NOP)) ~
-          THISLOAD(tagOf[PLazy[T]]) ~
+          THISLOAD(lazyType) ~
           XGETFIELD(lazyType, valueFieldName, valueFieldType, undoErasure = true)
       }) ~
       XRETURN(valueFieldType)
@@ -136,13 +136,13 @@ object GenLazyClasses {
     this.expression = expression.
      */
     START[StackNil] ~
-      THISLOAD(tagOf[PLazy[T]]) ~
+      THISLOAD(lazyType) ~
       INVOKEOBJECTCONSTRUCTOR ~
-      THISLOAD(tagOf[PLazy[T]]) ~
+      THISLOAD(lazyType) ~
       pushBool(false) ~
       PUTFIELD(lazyType, initializedFieldName, initializedFieldType, erasedType = false) ~
-      THISLOAD(tagOf[PLazy[T]]) ~
-      ALOAD(1, tagOf[PFunction[T]]) ~
+      THISLOAD(lazyType) ~
+      ALOAD(1, expressionFieldType(valueFieldType)) ~
       PUTFIELD(lazyType, expressionFieldName, expressionFieldType(valueFieldType), erasedType = false) ~
       RETURN
   }

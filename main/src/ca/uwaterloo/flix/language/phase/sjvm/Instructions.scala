@@ -163,6 +163,49 @@ object Instructions {
     castF(f)
   }
 
+  def FCMPG
+  [R <: Stack]:
+  F[R ** PFloat32 ** PFloat32] => F[R ** PInt32] = f => {
+    f.visitor.visitInsn(Opcodes.FCMPG)
+    castF(f)
+  }
+
+  def DCMPG
+  [R <: Stack]:
+  F[R ** PFloat64 ** PFloat64] => F[R ** PInt32] = f => {
+    f.visitor.visitInsn(Opcodes.DCMPG)
+    castF(f)
+  }
+
+  def FCMPL
+  [R <: Stack]:
+  F[R ** PFloat32 ** PFloat32] => F[R ** PInt32] = f => {
+    f.visitor.visitInsn(Opcodes.FCMPL)
+    castF(f)
+  }
+
+  def DCMPL
+  [R <: Stack]:
+  F[R ** PFloat64 ** PFloat64] => F[R ** PInt32] = f => {
+    f.visitor.visitInsn(Opcodes.DCMPL)
+    castF(f)
+  }
+
+  def LCMP
+  [R <: Stack]:
+  F[R ** PInt64 ** PInt64] => F[R ** PInt32] = f => {
+    f.visitor.visitInsn(Opcodes.LCMP)
+    castF(f)
+  }
+
+  def BigIntCompareTo
+  [R <: Stack]:
+  F[R ** PReference[PBigInt] ** PReference[PBigInt]] => F[R ** PInt32] = f => {
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.Math.BigInteger.toInternalName, "compareTo",
+      JvmName.getMethodDescriptor(List(JvmName.Java.Math.BigInteger), JvmName.Java.Math.BigInteger), false)
+    castF(f)
+  }
+
   def IFEQ
   [R1 <: Stack, R2 <: Stack]
   (branch1: F[R1] => F[R2])(branch2: F[R1] => F[R2]):
@@ -710,6 +753,7 @@ object Instructions {
     castF(f)
   }
 
+  // TODO(JLS): the Int32Usable doesnt fit perfectly here...
   def I2B
   [R <: Stack, T <: PType]
   (implicit t: T => Int32Usable[T]):
@@ -850,6 +894,22 @@ object Instructions {
     castF(f)
   }
 
+  def BigIntNeg
+  [R <: Stack]:
+  F[R ** PReference[PBigInt]] => F[R ** PReference[PBigInt]] = f => {
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.Math.BigInteger.toInternalName, "negate",
+      JvmName.getMethodDescriptor(Nil, JvmName.Java.Math.BigInteger), false)
+    castF(f)
+  }
+
+  def BigIntNot
+  [R <: Stack]:
+  F[R ** PReference[PBigInt]] => F[R ** PReference[PBigInt]] = f => {
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.Math.BigInteger.toInternalName, "not",
+      JvmName.getMethodDescriptor(Nil, JvmName.Java.Math.BigInteger), false)
+    castF(f)
+  }
+
   def BSHR
   [R <: Stack]:
   F[R ** PInt8 ** PInt8] => F[R ** PInt8] = f => {
@@ -878,23 +938,18 @@ object Instructions {
     castF(f)
   }
 
-  def BSHL
+  def BigIntSHR
   [R <: Stack]:
-  F[R ** PInt8 ** PInt8] => F[R ** PInt8] = f => {
-    ISHL(f.asInstanceOf[F[R ** PInt32 ** PInt32]])
-    castF(f)
-  }
-
-  def SSHL
-  [R <: Stack]:
-  F[R ** PInt16 ** PInt16] => F[R ** PInt16] = f => {
-    ISHL(f.asInstanceOf[F[R ** PInt32 ** PInt32]])
+  F[R ** PReference[PBigInt] ** PReference[PBigInt]] => F[R ** PReference[PBigInt]] = f => {
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.Math.BigInteger.toInternalName, "shr",
+      JvmName.getMethodDescriptor(List(JvmName.Java.Math.BigInteger), JvmName.Java.Math.BigInteger), false)
     castF(f)
   }
 
   def ISHL
-  [R <: Stack]:
-  F[R ** PInt32 ** PInt32] => F[R ** PInt32] = f => {
+  [R <: Stack, T1 <: PType, T2 <: PType]
+  (implicit t1: T1 => Int32Usable[T1], t2: T2 => Int32Usable[T2]):
+  F[R ** T2 ** T1] => F[R ** PInt32] = f => {
     f.visitor.visitInsn(Opcodes.ISHL)
     castF(f)
   }
@@ -903,6 +958,14 @@ object Instructions {
   [R <: Stack]:
   F[R ** PInt64 ** PInt64] => F[R ** PInt64] = f => {
     f.visitor.visitInsn(Opcodes.LSHL)
+    castF(f)
+  }
+
+  def BigIntSHL
+  [R <: Stack]:
+  F[R ** PReference[PBigInt] ** PReference[PBigInt]] => F[R ** PReference[PBigInt]] = f => {
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.Math.BigInteger.toInternalName, "shiftLeft",
+      JvmName.getMethodDescriptor(List(JvmName.Java.Math.BigInteger), JvmName.Java.Math.BigInteger), false)
     castF(f)
   }
 
@@ -934,6 +997,14 @@ object Instructions {
     castF(f)
   }
 
+  def BigIntXOR
+  [R <: Stack]:
+  F[R ** PReference[PBigInt] ** PReference[PBigInt]] => F[R ** PReference[PBigInt]] = f => {
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.Math.BigInteger.toInternalName, "xor",
+      JvmName.getMethodDescriptor(List(JvmName.Java.Math.BigInteger), JvmName.Java.Math.BigInteger), false)
+    castF(f)
+  }
+
   def BOR
   [R <: Stack]:
   F[R ** PInt8 ** PInt8] => F[R ** PInt8] = f => {
@@ -959,6 +1030,14 @@ object Instructions {
   [R <: Stack]:
   F[R ** PInt64 ** PInt64] => F[R ** PInt64] = f => {
     f.visitor.visitInsn(Opcodes.LOR)
+    castF(f)
+  }
+
+  def BigIntOR
+  [R <: Stack]:
+  F[R ** PReference[PBigInt] ** PReference[PBigInt]] => F[R ** PReference[PBigInt]] = f => {
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.Math.BigInteger.toInternalName, "or",
+      JvmName.getMethodDescriptor(List(JvmName.Java.Math.BigInteger), JvmName.Java.Math.BigInteger), false)
     castF(f)
   }
 
@@ -990,23 +1069,18 @@ object Instructions {
     castF(f)
   }
 
-  def BREM
+  def BigIntAND
   [R <: Stack]:
-  F[R ** PInt8 ** PInt8] => F[R ** PInt8] = f => {
-    IREM(f.asInstanceOf[F[R ** PInt32 ** PInt32]])
-    castF(f)
-  }
-
-  def SREM
-  [R <: Stack]:
-  F[R ** PInt16 ** PInt16] => F[R ** PInt16] = f => {
-    IREM(f.asInstanceOf[F[R ** PInt32 ** PInt32]])
+  F[R ** PReference[PBigInt] ** PReference[PBigInt]] => F[R ** PReference[PBigInt]] = f => {
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.Math.BigInteger.toInternalName, "and",
+      JvmName.getMethodDescriptor(List(JvmName.Java.Math.BigInteger), JvmName.Java.Math.BigInteger), false)
     castF(f)
   }
 
   def IREM
-  [R <: Stack]:
-  F[R ** PInt32 ** PInt32] => F[R ** PInt32] = f => {
+  [R <: Stack, T1 <: PType, T2 <: PType]
+  (implicit t1: T1 => Int32Usable[T1], t2: T2 => Int32Usable[T2]):
+  F[R ** T2 ** T1] => F[R ** PInt32] = f => {
     f.visitor.visitInsn(Opcodes.IREM)
     castF(f)
   }
@@ -1032,6 +1106,14 @@ object Instructions {
     castF(f)
   }
 
+  def BigIntREM
+  [R <: Stack]:
+  F[R ** PReference[PBigInt] ** PReference[PBigInt]] => F[R ** PReference[PBigInt]] = f => {
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.Math.BigInteger.toInternalName, "remainder",
+      JvmName.getMethodDescriptor(List(JvmName.Java.Math.BigInteger), JvmName.Java.Math.BigInteger), false)
+    castF(f)
+  }
+
   // TODO(JLS): The starting stack of the given ins could be many things (stacknil vs actual stack vs
   //  new stack variable), what is the best option?
   def DoublePow
@@ -1046,23 +1128,10 @@ object Instructions {
     castF(f)
   }
 
-  def BDIV
-  [R <: Stack]:
-  F[R ** PInt8 ** PInt8] => F[R ** PInt8] = f => {
-    IDIV(f.asInstanceOf[F[R ** PInt32 ** PInt32]])
-    castF(f)
-  }
-
-  def SDIV
-  [R <: Stack]:
-  F[R ** PInt16 ** PInt16] => F[R ** PInt16] = f => {
-    IDIV(f.asInstanceOf[F[R ** PInt32 ** PInt32]])
-    castF(f)
-  }
-
   def IDIV
-  [R <: Stack]:
-  F[R ** PInt32 ** PInt32] => F[R ** PInt32] = f => {
+  [R <: Stack, T1 <: PType, T2 <: PType]
+  (implicit t1: T1 => Int32Usable[T1], t2: T2 => Int32Usable[T2]):
+  F[R ** T2 ** T1] => F[R ** PInt32] = f => {
     f.visitor.visitInsn(Opcodes.IDIV)
     castF(f)
   }
@@ -1088,23 +1157,18 @@ object Instructions {
     castF(f)
   }
 
-  def BMUL
+  def BigIntDIV
   [R <: Stack]:
-  F[R ** PInt8 ** PInt8] => F[R ** PInt8] = f => {
-    IMUL(f.asInstanceOf[F[R ** PInt32 ** PInt32]])
-    castF(f)
-  }
-
-  def SMUL
-  [R <: Stack]:
-  F[R ** PInt16 ** PInt16] => F[R ** PInt16] = f => {
-    IMUL(f.asInstanceOf[F[R ** PInt32 ** PInt32]])
+  F[R ** PReference[PBigInt] ** PReference[PBigInt]] => F[R ** PReference[PBigInt]] = f => {
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.Math.BigInteger.toInternalName, "divide",
+      JvmName.getMethodDescriptor(List(JvmName.Java.Math.BigInteger), JvmName.Java.Math.BigInteger), false)
     castF(f)
   }
 
   def IMUL
-  [R <: Stack]:
-  F[R ** PInt32 ** PInt32] => F[R ** PInt32] = f => {
+  [R <: Stack, T1 <: PType, T2 <: PType]
+  (implicit t1: T1 => Int32Usable[T1], t2: T2 => Int32Usable[T2]):
+  F[R ** T2 ** T1] => F[R ** PInt32] = f => {
     f.visitor.visitInsn(Opcodes.IMUL)
     castF(f)
   }
@@ -1130,23 +1194,18 @@ object Instructions {
     castF(f)
   }
 
-  def BSUB
+  def BigIntMUL
   [R <: Stack]:
-  F[R ** PInt8 ** PInt8] => F[R ** PInt8] = f => {
-    ISUB(f.asInstanceOf[F[R ** PInt32 ** PInt32]])
-    castF(f)
-  }
-
-  def SSUB
-  [R <: Stack]:
-  F[R ** PInt16 ** PInt16] => F[R ** PInt16] = f => {
-    ISUB(f.asInstanceOf[F[R ** PInt32 ** PInt32]])
+  F[R ** PReference[PBigInt] ** PReference[PBigInt]] => F[R ** PReference[PBigInt]] = f => {
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.Math.BigInteger.toInternalName, "multiply",
+      JvmName.getMethodDescriptor(List(JvmName.Java.Math.BigInteger), JvmName.Java.Math.BigInteger), false)
     castF(f)
   }
 
   def ISUB
-  [R <: Stack]:
-  F[R ** PInt32 ** PInt32] => F[R ** PInt32] = f => {
+  [R <: Stack, T1 <: PType, T2 <: PType]
+  (implicit t1: T1 => Int32Usable[T1], t2: T2 => Int32Usable[T2]):
+  F[R ** T2 ** T1] => F[R ** PInt32] = f => {
     f.visitor.visitInsn(Opcodes.ISUB)
     castF(f)
   }
@@ -1172,23 +1231,18 @@ object Instructions {
     castF(f)
   }
 
-  def BADD
+  def BigIntSUB
   [R <: Stack]:
-  F[R ** PInt8 ** PInt8] => F[R ** PInt8] = f => {
-    IADD(f.asInstanceOf[F[R ** PInt32 ** PInt32]])
-    castF(f)
-  }
-
-  def SADD
-  [R <: Stack]:
-  F[R ** PInt16 ** PInt16] => F[R ** PInt16] = f => {
-    IADD(f.asInstanceOf[F[R ** PInt32 ** PInt32]])
+  F[R ** PReference[PBigInt] ** PReference[PBigInt]] => F[R ** PReference[PBigInt]] = f => {
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.Math.BigInteger.toInternalName, "subtract",
+      JvmName.getMethodDescriptor(List(JvmName.Java.Math.BigInteger), JvmName.Java.Math.BigInteger), false)
     castF(f)
   }
 
   def IADD
-  [R <: Stack]:
-  F[R ** PInt32 ** PInt32] => F[R ** PInt32] = f => {
+  [R <: Stack, T1 <: PType, T2 <: PType]
+  (implicit t1: T1 => Int32Usable[T1], t2: T2 => Int32Usable[T2]):
+  F[R ** T2 ** T1] => F[R ** PInt32] = f => {
     f.visitor.visitInsn(Opcodes.IADD)
     castF(f)
   }
@@ -1211,6 +1265,14 @@ object Instructions {
   [R <: Stack]:
   F[R ** PFloat64 ** PFloat64] => F[R ** PFloat64] = f => {
     f.visitor.visitInsn(Opcodes.DADD)
+    castF(f)
+  }
+
+  def BigIntADD
+  [R <: Stack]:
+  F[R ** PReference[PBigInt] ** PReference[PBigInt]] => F[R ** PReference[PBigInt]] = f => {
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.Math.BigInteger.toInternalName, "add",
+      JvmName.getMethodDescriptor(List(JvmName.Java.Math.BigInteger), JvmName.Java.Math.BigInteger), false)
     castF(f)
   }
 
@@ -1350,7 +1412,7 @@ object Instructions {
   (tpe: RType[PReference[T]]):
   F[R] => F[R ** PReference[T]] = f => {
     f.visitor.visitInsn(Opcodes.ACONST_NULL)
-    f.visitor.visitTypeInsn(Opcodes.CHECKCAST, internalNameOfReference(tpe))
+    undoErasure(tpe, f.visitor)
     castF(f)
   }
 
@@ -1448,8 +1510,10 @@ object Instructions {
   def pushChar
   [R <: Stack]
   (c: scala.Char):
-  F[R] => F[R ** PChar] =
-    f => castF(pushInt16(c)(f))
+  F[R] => F[R ** PChar] = f => {
+    compileInt(f.visitor, c)
+    castF(f)
+  }
 
   def pushString
   [R <: Stack]
@@ -1459,6 +1523,7 @@ object Instructions {
     castF(f)
   }
 
+  // TODO(JLS): could be done with general object init method
   def pushBigInt
   [R <: Stack]
   (bi: java.math.BigInteger):
@@ -1474,17 +1539,18 @@ object Instructions {
 
   def ALOAD
   [R <: Stack, T <: PRefType]
-  (index: Int, tpe: Tag[T] = null):
+  (index: Int, tpe: RType[PReference[T]]):
   F[R] => F[R ** PReference[T]] = f => {
     f.visitor.visitVarInsn(Opcodes.ALOAD, index)
+    undoErasure(tpe, f.visitor)
     castF(f)
   }
 
   def THISLOAD
   [R <: Stack, T <: PRefType]
-  (tpe: Tag[T] = null):
+  (tpe: RType[PReference[T]]):
   F[R] => F[R ** PReference[T]] =
-    ALOAD(0)
+    ALOAD(0, tpe)
 
   def SUBTYPE
   [R <: Stack, T <: PRefType]:
@@ -1518,24 +1584,14 @@ object Instructions {
     castF(f)
   }
 
-  def SELFTAILCALL
-  [R <: Stack, T <: PType]
-  (arguments: List[ErasedAst.Expression[_ <: PType]], fnType: RArrow[T]):
-  F[R] => F[R ** T] = {
-    START[R] ~
-      THISLOAD(tagOf[PFunction[T]]) ~
-      setArgs(fnType.jvmName, arguments, GenFunctionInterfaces.argFieldName) ~
-      AReturnNoEnd(tagOf[T])
-  }
-
   // TODO(JLS): could be made with other instructions
   def makeAndInitDef[R <: Stack, T <: PType]
   (className: JvmName, t: Tag[T] = null):
-  F[R] => F[R ** PReference[PFunction[T]]] = f => {
-    f.visitor.visitTypeInsn(Opcodes.NEW, className.toInternalName)
-    f.visitor.visitInsn(Opcodes.DUP)
-    f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.toInternalName, JvmName.constructorMethod, JvmName.nothingToVoid, false)
-    castF(f)
+  F[R] => F[R ** PReference[PFunction[T]]] = {
+    START[R] ~
+      NEW(className, tagOf[PFunction[T]]) ~
+      DUP ~
+      INVOKESPECIAL(className)
   }
 
   def setArgs[R <: Stack, T <: PType]
@@ -1645,7 +1701,7 @@ object Instructions {
     case RChar => CLOAD(index)
     case RFloat32 => FLOAD(index)
     case RFloat64 => DLOAD(index)
-    case RReference(_) => ALOAD(index)
+    case RReference(_) => ALOAD(index, tpe)
   }
 
   def BALOAD
@@ -1932,7 +1988,7 @@ object Instructions {
   [R <: Stack, T <: PRefType]
   (elmType: RType[PReference[T]]):
   F[R ** PInt32] => F[R ** PReference[PArray[PReference[T]]]] = f => {
-    f.visitor.visitTypeInsn(Opcodes.ANEWARRAY, squeezeReference(elmType).referenceType.toInternalName)
+    f.visitor.visitTypeInsn(Opcodes.ANEWARRAY, squeezeReference(elmType).toInternalName)
     castF(f)
   }
 

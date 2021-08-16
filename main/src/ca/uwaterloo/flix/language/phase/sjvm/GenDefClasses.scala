@@ -58,7 +58,7 @@ object GenDefClasses {
           magicStoreArg(index, tpe, defName, sym)
       }) ~
       compileExp(defn.exp) ~
-      THISLOAD(tagOf[PAnyObject]) ~
+      THISLOAD(RReference(RObject)) ~
       magicReversePutField(defName, defn.exp.tpe) ~
       RETURNNULL
   }
