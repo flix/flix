@@ -122,23 +122,6 @@ namespace LazyList {
     }
 
     ///
-    /// Returns `l` as a `List`.
-    ///
-    /// Forces the entire list `l`.
-    ///
-    pub def toList(l: LazyList[a]): List[a] = toListAcc(reverse(l), Nil)
-
-    ///
-    /// Helper function for `toList`.
-    ///
-    def toListAcc(l: LazyList[a], acc: List[a]): List[a] = match l {
-        case ENil         => acc
-        case ECons(x, xs) => toListAcc(xs, x :: acc)
-        case LCons(x, xs) => toListAcc(force xs, x :: acc)
-        case LList(xs)    => toListAcc(force xs, acc)
-    }
-
-    ///
     /// Reverses the list `l`.
     ///
     pub def reverse(l: LazyList[a]): LazyList[a] = reverseAcc(l, ENil)
@@ -240,5 +223,39 @@ namespace LazyList {
         case ECons(x, xs) => if (f(x)) filterEAcc(f, xs, ECons(x, acc))       else filterEAcc(f, xs, acc)
         case LCons(x, xs) => if (f(x)) filterEAcc(f, force xs, ECons(x, acc)) else filterEAcc(f, force xs, acc)
         case LList(xs)    => filterEAcc(f, force xs, acc)
+    /// Returns `l` as a `List`.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    pub def toList(l: LazyList[a]): List[a] = toListAcc(l, Nil) |> List.reverse
+
+    ///
+    /// Helper function for `toList`.
+    ///
+    def toListAcc(l: LazyList[a], acc: List[a]): List[a] = match l {
+        case ENil         => acc
+        case ECons(x, ys) => toListAcc(ys, x :: acc)
+        case LCons(x, ys) => toListAcc(force ys, x :: acc)
+        case LList(ys)    => toListAcc(force ys, acc)
+    }
+
+    ///
+    /// Returns the association list `l` as a map.
+    ///
+    /// If `l` contains multiple mappings with the same key, `toMap` does not
+    /// make any guarantees about which mapping will be in the resulting map.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    pub def toMap(l: LazyList[(a, b)]): Map[a, b] with Order[a] = toMapAcc(l, Map.empty())
+
+    ///
+    /// Helper functions for `toMap`.
+    ///
+    def toMapAcc(l: LazyList[(a, b)], acc: Map[a, b]): Map[a, b] with Order[a] = match l {
+        case ENil              => acc
+        case ECons((k, v), xs) => toMapAcc(xs, Map.insert(k, v, acc))
+        case LCons((k, v), xs) => toMapAcc(force xs, Map.insert(k, v, acc))
+        case LList(xs)         => toMapAcc(force xs, acc)
     }
 }

@@ -242,27 +242,6 @@ namespace TestLazyList {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // toList                                                                  //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    pub def toList01(): Bool =
-        (LazyList.empty()): LazyList[Int32] |> LazyList.toList == Nil
-
-    @test
-    pub def toList02(): Bool =
-        LazyList.range(-1000, 1000000) |> LazyList.toList == List.range(-1000, 1000000)
-
-    @test
-    pub def toList03(): Bool =
-        LazyList.range(-1000, 1000000) |> LazyList.take(1000) |> LazyList.toList == List.range(-1000, 0)
-
-    @test
-    pub def toList04(): Bool =
-        (1 :: 2 :: 3 :: Nil) |> LazyList.toLazy |> LazyList.toList == (1 :: 2 :: 3 :: Nil)
-
-
-    /////////////////////////////////////////////////////////////////////////////
     // reverse                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -524,4 +503,122 @@ namespace TestLazyList {
         LazyList.map(    x -> {l := "b" :: deref l; x}    as & Pure) |>
         LazyList.toList;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
+    // toList                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toList01(): Bool =
+    	LazyList.toList(ENil): List[Unit] == Nil
+
+    @test
+    def toList02(): Bool =
+    	LazyList.toList(LList(lazy ENil)): List[Unit] == Nil
+
+    @test
+    pub def toList03(): Bool =
+        LazyList.range(-1000, 1000000) |> LazyList.toList == List.range(-1000, 1000000)
+
+    @test
+    pub def toList04(): Bool =
+        LazyList.range(-1000, 1000000) |> LazyList.take(1000) |> LazyList.toList == List.range(-1000, 0)
+
+    @test
+    pub def toList05(): Bool =
+        (1 :: 2 :: 3 :: Nil) |> LazyList.toLazy |> LazyList.toList == (1 :: 2 :: 3 :: Nil)
+
+    @test
+    def toList06(): Bool =
+    	LazyList.toList(LCons(1, lazy LCons(2, lazy LList(lazy LCons(3, lazy ENil))))) == 1 :: 2 :: 3 :: Nil
+
+    @test
+    def toList07(): Bool =
+    	LazyList.toList(LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil))))) == 1 :: 2 :: 3 :: Nil
+
+    @test
+    def toList08(): Bool =
+    	LazyList.toList(LCons(1, lazy ECons(2, LList(lazy LCons(3, lazy LList(lazy ENil)))))) == 1 :: 2 :: 3 :: Nil
+
+    @test
+    def toList09(): Bool =
+    	LazyList.toList(LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))) == 1 :: 2 :: 3 :: Nil
+
+    @test
+    def toList10(): Bool =
+    	LazyList.toList(LList(lazy LCons(1, lazy LList(lazy ECons(2, LList(lazy ECons(3, ENil))))))) == 1 :: 2 :: 3 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toMap                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toMap01(): Bool = LazyList.toMap(ENil: LazyList[(Unit, Unit)]) == Map#{}
+
+    @test
+    def toMap02(): Bool = LazyList.toMap(LList(lazy ENil): LazyList[(Unit, Unit)]) == Map#{}
+
+    @test
+    def toMap03(): Bool = LazyList.toMap(ECons((1, true), ENil)) == Map#{1 -> true}
+
+    @test
+    def toMap04(): Bool = LazyList.toMap(LCons((1, true), lazy ENil)) == Map#{1 -> true}
+
+    @test
+    def toMap05(): Bool = LazyList.toMap(LList(lazy ECons((1, true), ENil))) == Map#{1 -> true}
+
+    @test
+    def toMap06(): Bool = LazyList.toMap(LList(lazy LCons((1, true), lazy ENil))) == Map#{1 -> true}
+
+    // ECons / LCons combinations
+    @test
+    def toMap07(): Bool = LazyList.toMap(ECons((1, true), ECons((2, false), ENil))) == Map#{1 -> true, 2 -> false}
+
+    @test
+    def toMap08(): Bool = LazyList.toMap(LCons((1, true), lazy ECons((2, false), ENil))) == Map#{1 -> true, 2 -> false}
+
+    @test
+    def toMap09(): Bool = LazyList.toMap(ECons((1, true), LCons((2, false), lazy ENil))) == Map#{1 -> true, 2 -> false}
+
+    @test
+    def toMap10(): Bool = LazyList.toMap(LCons((1, true), lazy LCons((2, false), lazy ENil))) == Map#{1 -> true, 2 -> false}
+
+    // ECons / LCons variation with LList variations
+    @test
+    def toMap11(): Bool = LazyList.toMap(LList(lazy ECons((1, true), ECons((2, false), ENil)))) == Map#{1 -> true, 2 -> false}
+
+    @test
+    def toMap12(): Bool = LazyList.toMap(LList(lazy LCons((1, true), lazy ECons((2, false), ENil)))) == Map#{1 -> true, 2 -> false}
+
+    @test
+    def toMap13(): Bool = LazyList.toMap(LList(lazy ECons((1, true), LCons((2, false), lazy ENil)))) == Map#{1 -> true, 2 -> false}
+
+    @test
+    def toMap14(): Bool = LazyList.toMap(LList(lazy LCons((1, true), lazy LCons((2, false), lazy ENil)))) == Map#{1 -> true, 2 -> false}
+
+    @test
+    def toMap15(): Bool = LazyList.toMap(ECons((1, true), LList(lazy ECons((2, false), ENil)))) == Map#{1 -> true, 2 -> false}
+
+    @test
+    def toMap16(): Bool = LazyList.toMap(LCons((1, true), lazy LList(lazy ECons((2, false), ENil)))) == Map#{1 -> true, 2 -> false}
+
+    @test
+    def toMap17(): Bool = LazyList.toMap(ECons((1, true), LList(lazy LCons((2, false), lazy ENil)))) == Map#{1 -> true, 2 -> false}
+
+    @test
+    def toMap18(): Bool = LazyList.toMap(LCons((1, true), lazy LList(lazy LCons((2, false), lazy ENil)))) == Map#{1 -> true, 2 -> false}
+
+    @test
+    def toMap19(): Bool = LazyList.toMap(LList(lazy ECons((1, true), LList(lazy ECons((2, false), ENil))))) == Map#{1 -> true, 2 -> false}
+
+    @test
+    def toMap20(): Bool = LazyList.toMap(LList(lazy LCons((1, true), lazy LList(lazy ECons((2, false), ENil))))) == Map#{1 -> true, 2 -> false}
+
+    @test
+    def toMap21(): Bool = LazyList.toMap(LList(lazy ECons((1, true), LList(lazy LCons((2, false), lazy ENil))))) == Map#{1 -> true, 2 -> false}
+
+    @test
+    def toMap22(): Bool = LazyList.toMap(LList(lazy LCons((1, true), lazy LList(lazy LCons((2, false), lazy ENil))))) == Map#{1 -> true, 2 -> false}
+
+    @test
+    def toMap23(): Bool = LazyList.toMap(ECons((1, true), ECons((1, false), ENil))) == Map#{1 -> false}
 }
