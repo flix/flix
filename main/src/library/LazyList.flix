@@ -108,23 +108,6 @@ namespace LazyList {
     }
 
     ///
-    /// Returns `l` as a `List`.
-    ///
-    /// Forces the entire list `l`.
-    ///
-    pub def toList(l: LazyList[a]): List[a] = toListAcc(l, Nil) |> List.reverse
-
-    ///
-    /// Helper function for `toList`.
-    ///
-    def toListAcc(l: LazyList[a], acc: List[a]): List[a] = match l {
-        case ENil         => acc
-        case ECons(x, ys) => toListAcc(ys, x :: acc)
-        case LCons(x, ys) => toListAcc(force ys, x :: acc)
-        case LList(ys)    => toListAcc(force ys, acc)
-    }
-
-    ///
     /// Reverses the list `l`.
     ///
     pub def reverse(l: LazyList[a]): LazyList[a] = reverseAcc(l, ENil)
@@ -180,5 +163,22 @@ namespace LazyList {
         case ECons(x, xs) => mapEAcc(f, xs, ECons(f(x), acc))
         case LCons(x, xs) => mapEAcc(f, force xs, ECons(f(x), acc))
         case LList(xs)    => mapEAcc(f, force xs, acc)
+    }
+
+    ///
+    /// Returns `l` as a `List`.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    pub def toList(l: LazyList[a]): List[a] = toListAcc(l, Nil) |> List.reverse
+
+    ///
+    /// Helper function for `toList`.
+    ///
+    def toListAcc(l: LazyList[a], acc: List[a]): List[a] = match l {
+        case ENil         => acc
+        case ECons(x, ys) => toListAcc(ys, x :: acc)
+        case LCons(x, ys) => toListAcc(force ys, x :: acc)
+        case LList(ys)    => toListAcc(force ys, acc)
     }
 }
