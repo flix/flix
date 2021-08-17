@@ -238,7 +238,7 @@ namespace TestLazyList {
 
     @test
     pub def length02(): Bool =
-        LazyList.range(0, 100000) |> LazyList.length == 100000
+        LazyList.range(0, 1000) |> LazyList.length == 1000
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -515,11 +515,11 @@ namespace TestLazyList {
     	LazyList.toList(LList(lazy ENil)): List[Unit] == Nil
 
     @test
-    pub def toList03(): Bool =
-        LazyList.range(-1000, 1000000) |> LazyList.toList == List.range(-1000, 1000000)
+    def toList03(): Bool =
+        LazyList.range(-1000, 1000) |> LazyList.toList == List.range(-1000, 1000)
 
     @test
-    pub def toList04(): Bool =
+    def toList04(): Bool =
         LazyList.range(-1000, 1000000) |> LazyList.take(1000) |> LazyList.toList == List.range(-1000, 0)
 
     @test
@@ -621,4 +621,49 @@ namespace TestLazyList {
 
     @test
     def toMap23(): Bool = LazyList.toMap(ECons((1, true), ECons((1, false), ENil))) == Map#{1 -> false}
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toSet                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toSet01(): Bool =
+    	LazyList.toSet(ENil): Set[Unit] == Set.empty()
+
+    @test
+    def toSet02(): Bool =
+    	LazyList.toSet(LList(lazy ENil)): Set[Unit] == Set.empty()
+
+    @test
+    def toSet03(): Bool =
+        LazyList.range(-1000, 1000) |> LazyList.toSet == Set.range(-1000, 1000)
+
+    @test
+    def toSet04(): Bool =
+        LazyList.range(-1000, 1000000) |> LazyList.take(1000) |> LazyList.toSet == Set.range(-1000, 0)
+
+    @test
+    def toSet05(): Bool =
+    	LazyList.toSet(LCons(1, lazy LCons(2, lazy LList(lazy LCons(3, lazy ENil))))) == Set#{1, 2, 3}
+
+    @test
+    def toSet06(): Bool =
+    	LazyList.toSet(LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil))))) == Set#{1, 2, 3}
+
+    @test
+    def toSet07(): Bool =
+    	LazyList.toSet(LCons(1, lazy ECons(2, LList(lazy LCons(3, lazy LList(lazy ENil)))))) == Set#{1, 2, 3}
+
+    @test
+    def toSet08(): Bool =
+    	LazyList.toSet(LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))) == Set#{1, 2, 3}
+
+    @test
+    def toSet09(): Bool =
+    	LazyList.toSet(LList(lazy LCons(1, lazy LList(lazy ECons(2, LList(lazy ECons(3, ENil))))))) == Set#{1, 2, 3}
+
+    @test
+    def toSet10(): Bool =
+    	LazyList.toSet(ECons(1, LCons(2, lazy ECons(3, ENil)))) == Set#{1, 2, 3}
 }
