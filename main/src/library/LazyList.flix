@@ -255,6 +255,20 @@ namespace LazyList {
     }
 
     ///
+    /// Returns `l` as an `Array`.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    pub def toArray(l: LazyList[a]): Array[a] & Impure = match head(l) {
+        case None    => []
+        case Some(x) =>
+            let a = Array.new(x, length(l));
+            let f = (i, y) -> { a[i] = y; i + 1 };
+            foldLeft(f, 0, l);
+            a
+    }
+
+    ///
     /// Returns `l` as a `List`.
     ///
     /// Forces the entire list `l`.

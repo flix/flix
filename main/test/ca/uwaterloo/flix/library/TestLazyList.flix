@@ -657,6 +657,55 @@ namespace TestLazyList {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // toArray                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toArray01(): Bool & Impure =
+    	LazyList.toArray(ENil: LazyList[Unit]) == []
+
+    @test
+    def toArray02(): Bool & Impure =
+    	LazyList.toArray(LList(lazy ENil): LazyList[Unit]) == []
+
+    @test
+    def toArray03(): Bool & Impure =
+    	LazyList.range(-100, 1000) |> LazyList.toArray == Array.range(-100, 1000)
+
+    @test
+    def toArray04(): Bool & Impure =
+    	LazyList.toArray(LCons(1, lazy ENil)) == [1]
+
+    @test
+    def toArray05(): Bool & Impure =
+    	LazyList.toArray(LList(lazy ECons(1, LList(lazy ENil)))) == [1]
+
+    @test
+    def toArray06(): Bool & Impure =
+    	LazyList.toArray(ECons(1, LList(lazy ENil))) == [1]
+
+    @test
+    def toArray07(): Bool & Impure =
+    	LazyList.toArray(LCons(1, lazy LList(lazy ENil))) == [1]
+
+    @test
+    def toArray08(): Bool & Impure =
+    	LazyList.toArray(LCons(1, lazy LCons(2, lazy LList(lazy LCons(3, lazy ENil))))) == [1, 2, 3]
+
+    @test
+    def toArray09(): Bool & Impure =
+    	LazyList.toArray(LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil))))) == [1, 2, 3]
+
+    @test
+    def toArray10(): Bool & Impure =
+    	LazyList.toArray(LCons(1, lazy ECons(2, LList(lazy LCons(3, lazy LList(lazy ENil)))))) == [1, 2, 3]
+
+    @test
+    def toArray11(): Bool & Impure =
+    	LazyList.toArray(LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))) == [1, 2, 3]
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
