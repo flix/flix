@@ -117,27 +117,6 @@ namespace TestLazyListOld {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // toList                                                                  //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    pub def toList01(): Bool =
-        (LazyList.empty()): LazyList[Int32] |> LazyList.toList == Nil
-
-    @test
-    pub def toList02(): Bool =
-        LazyList.range(-1000, 1000000) |> LazyList.toList == List.range(-1000, 1000000)
-
-    @test
-    pub def toList03(): Bool =
-        LazyList.range(-1000, 1000000) |> LazyList.take(1000) |> LazyList.toList == List.range(-1000, 0)
-
-    @test
-    pub def toList04(): Bool =
-        (1 :: 2 :: 3 :: Nil) |> LazyList.toLazy |> LazyList.toList == (1 :: 2 :: 3 :: Nil)
-
-
-    /////////////////////////////////////////////////////////////////////////////
     // reverse                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -255,4 +234,24 @@ namespace TestLazyListOld {
         LazyList.toList;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toList                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    pub def toList01(): Bool =
+        (LazyList.empty()): LazyList[Int32] |> LazyList.toList == Nil
+
+    @test
+    pub def toList02(): Bool =
+        LazyList.range(-1000, 1000000) |> LazyList.toList == List.range(-1000, 1000000)
+
+    @test
+    pub def toList03(): Bool =
+        LazyList.range(-1000, 1000000) |> LazyList.take(1000) |> LazyList.toList == List.range(-1000, 0)
+
+    @test
+    pub def toList04(): Bool =
+        (1 :: 2 :: 3 :: Nil) |> LazyList.toLazy |> LazyList.toList == (1 :: 2 :: 3 :: Nil)
 }
