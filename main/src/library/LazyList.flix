@@ -183,7 +183,10 @@ namespace LazyList {
     }
 
     ///
-    /// Returns `l` as a `Map`.
+    /// Returns the association list `l` as a map.
+    ///
+    /// If `l` contains multiple mappings with the same key, `toMap` does not
+    /// make any guarantees about which mapping will be in the resulting map.
     ///
     /// Forces the entire list `l`.
     ///
