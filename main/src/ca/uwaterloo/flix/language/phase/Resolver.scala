@@ -1313,32 +1313,32 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Resolves the given type `tpe0` in the given namespace `ns0`.
     */
-  def lookupType(tpe0: NamedAst.Type, ns0: Name.NName, root: NamedAst.Root)(implicit recursionDepth: Int = 0): Validation[UnkindedType, ResolutionError] = tpe0 match {
-    case NamedAst.Type.Var(tvar, loc) => tvar.toSuccess
+  def lookupType(tpe0: NamedAst.Type, ns0: Name.NName, root: NamedAst.Root)(implicit recursionDepth: Int = 0): Validation[(UnkindedType, ScopeInfo), ResolutionError] = tpe0 match {
+    case NamedAst.Type.Var(tvar, svar, loc) => (tvar, ScopeInfo(Scopedness.Unscoped, svar)).toSuccess
 
-    case NamedAst.Type.Unit(loc) => UnkindedType.mkUnit(loc).toSuccess
+    case NamedAst.Type.Unit(loc) => (UnkindedType.mkUnit(loc), ScopeInfo.UnscopedUnit).toSuccess
 
     case NamedAst.Type.Ambiguous(qname, loc) if qname.isUnqualified => qname.ident.name match {
       // Basic Types
-      case "Unit" => UnkindedType.mkUnit(loc).toSuccess
-      case "Null" => UnkindedType.mkNull(loc).toSuccess
-      case "Bool" => UnkindedType.mkBool(loc).toSuccess
-      case "Char" => UnkindedType.mkChar(loc).toSuccess
-      case "Float" => UnkindedType.mkFloat64(loc).toSuccess
-      case "Float32" => UnkindedType.mkFloat32(loc).toSuccess
-      case "Float64" => UnkindedType.mkFloat64(loc).toSuccess
-      case "Int" => UnkindedType.mkInt32(loc).toSuccess
-      case "Int8" => UnkindedType.mkInt8(loc).toSuccess
-      case "Int16" => UnkindedType.mkInt16(loc).toSuccess
-      case "Int32" => UnkindedType.mkInt32(loc).toSuccess
-      case "Int64" => UnkindedType.mkInt64(loc).toSuccess
-      case "BigInt" => UnkindedType.mkBigInt(loc).toSuccess
-      case "String" => UnkindedType.mkString(loc).toSuccess
-      case "Array" => UnkindedType.mkArray(loc).toSuccess
-      case "Channel" => UnkindedType.mkChannel(loc).toSuccess
-      case "Lazy" => UnkindedType.mkLazy(loc).toSuccess
-      case "ScopedRef" => UnkindedType.Cst(UnkindedType.Constructor.ScopedRef, loc).toSuccess
-      case "Region" => UnkindedType.Cst(UnkindedType.Constructor.Region, loc).toSuccess
+      case "Unit" => (UnkindedType.mkUnit(loc), ScopeInfo.UnscopedUnit).toSuccess
+      case "Null" => (UnkindedType.mkNull(loc), ScopeInfo.UnscopedUnit).toSuccess
+      case "Bool" => (UnkindedType.mkBool(loc), ScopeInfo.UnscopedUnit).toSuccess
+      case "Char" => (UnkindedType.mkChar(loc), ScopeInfo.UnscopedUnit).toSuccess
+      case "Float" => (UnkindedType.mkFloat64(loc), ScopeInfo.UnscopedUnit).toSuccess
+      case "Float32" => (UnkindedType.mkFloat32(loc), ScopeInfo.UnscopedUnit).toSuccess
+      case "Float64" => (UnkindedType.mkFloat64(loc), ScopeInfo.UnscopedUnit).toSuccess
+      case "Int" => (UnkindedType.mkInt32(loc), ScopeInfo.UnscopedUnit).toSuccess
+      case "Int8" => (UnkindedType.mkInt8(loc), ScopeInfo.UnscopedUnit).toSuccess
+      case "Int16" => (UnkindedType.mkInt16(loc), ScopeInfo.UnscopedUnit).toSuccess
+      case "Int32" => (UnkindedType.mkInt32(loc), ScopeInfo.UnscopedUnit).toSuccess
+      case "Int64" => (UnkindedType.mkInt64(loc), ScopeInfo.UnscopedUnit).toSuccess
+      case "BigInt" => (UnkindedType.mkBigInt(loc), ScopeInfo.UnscopedUnit).toSuccess
+      case "String" => (UnkindedType.mkString(loc), ScopeInfo.UnscopedUnit).toSuccess
+      case "Array" => (UnkindedType.mkArray(loc), ScopeInfo.UnscopedUnit).toSuccess
+      case "Channel" => (UnkindedType.mkChannel(loc), ScopeInfo.UnscopedUnit).toSuccess
+      case "Lazy" => (UnkindedType.mkLazy(loc), ScopeInfo.UnscopedUnit).toSuccess
+      case "ScopedRef" => (UnkindedType.Cst(UnkindedType.Constructor.ScopedRef, loc), ScopeInfo.UnscopedUnit).toSuccess
+      case "Region" => (UnkindedType.Cst(UnkindedType.Constructor.Region, loc), ScopeInfo.UnscopedUnit).toSuccess
 
       // Disambiguate type.
       case typeName =>

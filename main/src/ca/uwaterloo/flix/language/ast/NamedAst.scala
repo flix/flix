@@ -298,7 +298,7 @@ object NamedAst {
 
   object Type {
 
-    case class Var(tvar: UnkindedType.Var, loc: SourceLocation) extends NamedAst.Type
+    case class Var(tvar: UnkindedType.Var, svar: ScopeScheme.Var, loc: SourceLocation) extends NamedAst.Type
 
     case class Ambiguous(name: Name.QName, loc: SourceLocation) extends NamedAst.Type
 
@@ -339,6 +339,8 @@ object NamedAst {
     case class Or(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
     case class Ascribe(tpe: NamedAst.Type, kind: Kind, loc: SourceLocation) extends NamedAst.Type
+
+    case class Scoped(tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
   }
 

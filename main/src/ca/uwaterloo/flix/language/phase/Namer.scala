@@ -1166,6 +1166,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       mapN(visitType(tpe, uenv0, tenv0)) {
         t => NamedAst.Type.Ascribe(t, kind, loc)
       }
+
+    case WeededAst.Type.Scoped(tpe, loc) =>
+      mapN(visitType(tpe, uenv0, tenv0)) {
+        t => NamedAst.Type.Scoped(t, loc)
+      }
   }
 
   /**

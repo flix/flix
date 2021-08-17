@@ -1389,6 +1389,15 @@ object ParsedAst {
     case class Or(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
+      * The Scoped type constructor.
+      *
+      * @param sp1 the position of the first character in the type.
+      * @param tpe the scoped type.
+      * @param sp2 the position of the last character in the type.
+      */
+    case class Scoped(sp1: SourcePosition, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
       * Kind Ascription.
       *
       * @param tpe  the ascribed type.

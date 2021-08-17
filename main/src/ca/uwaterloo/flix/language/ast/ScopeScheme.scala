@@ -8,9 +8,11 @@ sealed trait ScopeScheme
 object ScopeScheme {
   case object Unit extends ScopeScheme
 
-  case class Arrow(sc1: ScopeScheme, sc2: ScopeScheme) extends ScopeScheme
+  case class Arrow(sc1: ScopeInfo, sc2: ScopeInfo) extends ScopeScheme
 
-  case class NAry(scs: List[ScopeScheme]) extends ScopeScheme
+  case class Tuple(scs: List[ScopeInfo]) extends ScopeScheme
+
+  case class Record(field: Name.Field, sc: ScopeInfo, rest: ScopeInfo) extends ScopeScheme
 
   case class Var(id: Int) extends ScopeScheme
 

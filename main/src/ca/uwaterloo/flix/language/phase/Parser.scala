@@ -1226,7 +1226,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Type] = rule {
-      Arrow | Tuple | Record | Schema | Native | True | False | Pure | Impure | Not | Var | Ambiguous
+      Arrow | Tuple | Record | Schema | Native | True | False | Pure | Impure | Not | Scoped | Var | Ambiguous
     }
 
     def Arrow: Rule1[ParsedAst.Type] = {
@@ -1311,6 +1311,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def Not: Rule1[ParsedAst.Type] = rule {
       // NB: We must not use Type here because it gives the wrong precedence.
       SP ~ keyword("not") ~ WS ~ Apply ~ SP ~> ParsedAst.Type.Not
+    }
+
+    def Scoped: Rule1[ParsedAst.Type] = rule {
+      // NB: We must not use Type here because it gives the wrong precedence.
+      SP ~ keyword("scoped") ~ WS ~ Apply ~ SP ~> ParsedAst.Type.Scoped
     }
 
     def Var: Rule1[ParsedAst.Type] = rule {

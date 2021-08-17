@@ -2073,6 +2073,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val t2 = visitType(tpe2)
       WeededAst.Type.Or(t1, t2, mkSL(sp1, sp2))
 
+    case ParsedAst.Type.Scoped(sp1, tpe, sp2) => // MATT check for duplicate mod
+      val t = visitType(tpe)
+      WeededAst.Type.Scoped(t, mkSL(sp1, sp2))
+
+
     case ParsedAst.Type.Ascribe(tpe, kind, sp2) =>
       val sp1 = leftMostSourcePosition(tpe)
       val t = visitType(tpe)
