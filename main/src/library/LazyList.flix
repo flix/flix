@@ -181,4 +181,21 @@ namespace LazyList {
         case LCons(x, ys) => toListAcc(force ys, x :: acc)
         case LList(ys)    => toListAcc(force ys, acc)
     }
+
+    ///
+    /// Returns `l` as a `Map`.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    pub def toMap(l: LazyList[(a, b)]): Map[a, b] with Order[a] = toMapAcc(l, Map.empty())
+
+    ///
+    /// Helper functions for `toMap`.
+    ///
+    def toMapAcc(l: LazyList[(a, b)], acc: Map[a, b]): Map[a, b] with Order[a] = match l {
+        case ENil              => acc
+        case ECons((k, v), xs) => toMapAcc(xs, Map.insert(k, v, acc))
+        case LCons((k, v), xs) => toMapAcc(force xs, Map.insert(k, v, acc))
+        case LList(xs)         => toMapAcc(force xs, acc)
+    }
 }
