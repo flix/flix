@@ -240,20 +240,44 @@ namespace TestLazyListOld {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    pub def toList01(): Bool =
-        (LazyList.empty()): LazyList[Int32] |> LazyList.toList == Nil
+    def toList01(): Bool =
+    	LazyList.toList(ENil): List[Unit] == Nil
 
     @test
-    pub def toList02(): Bool =
-        LazyList.range(-1000, 1000000) |> LazyList.toList == List.range(-1000, 1000000)
+    def toList02(): Bool =
+    	LazyList.toList(LList(lazy ENil)): List[Unit] == Nil
 
     @test
     pub def toList03(): Bool =
-        LazyList.range(-1000, 1000000) |> LazyList.take(1000) |> LazyList.toList == List.range(-1000, 0)
+        LazyList.range(-1000, 1000000) |> LazyList.toList == List.range(-1000, 1000000)
 
     @test
     pub def toList04(): Bool =
+        LazyList.range(-1000, 1000000) |> LazyList.take(1000) |> LazyList.toList == List.range(-1000, 0)
+
+    @test
+    pub def toList05(): Bool =
         (1 :: 2 :: 3 :: Nil) |> LazyList.toLazy |> LazyList.toList == (1 :: 2 :: 3 :: Nil)
+
+    @test
+    def toList06(): Bool =
+    	LazyList.toList(LCons(1, lazy LCons(2, lazy LList(lazy LCons(3, lazy ENil))))) == 1 :: 2 :: 3 :: Nil
+
+    @test
+    def toList07(): Bool =
+    	LazyList.toList(LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil))))) == 1 :: 2 :: 3 :: Nil
+
+    @test
+    def toList08(): Bool =
+    	LazyList.toList(LCons(1, lazy ECons(2, LList(lazy LCons(3, lazy LList(lazy ENil)))))) == 1 :: 2 :: 3 :: Nil
+
+    @test
+    def toList09(): Bool =
+    	LazyList.toList(LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))) == 1 :: 2 :: 3 :: Nil
+
+    @test
+    def toList10(): Bool =
+    	LazyList.toList(LList(lazy LCons(1, lazy LList(lazy ECons(2, LList(lazy ECons(3, ENil))))))) == 1 :: 2 :: 3 :: Nil
 
 
     /////////////////////////////////////////////////////////////////////////////
