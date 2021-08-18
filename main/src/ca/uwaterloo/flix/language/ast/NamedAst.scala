@@ -298,7 +298,7 @@ object NamedAst {
 
   object Type {
 
-    case class Var(tvar: UnkindedType.Var, svar: ScopeScheme.Var, loc: SourceLocation) extends NamedAst.Type
+    case class Var(tvar: UnkindedType.Var, svar: ScopeInfo, loc: SourceLocation) extends NamedAst.Type
 
     case class Ambiguous(name: Name.QName, loc: SourceLocation) extends NamedAst.Type
 
@@ -391,14 +391,15 @@ object NamedAst {
   sealed trait TypeParam {
     def name: Name.Ident
     def tpe: ast.UnkindedType.Var
+    def svar: ScopeInfo
     def loc: SourceLocation
   }
 
   object TypeParam {
 
-    case class Kinded(name: Name.Ident, tpe: ast.UnkindedType.Var, kind: Kind, loc: SourceLocation) extends TypeParam
+    case class Kinded(name: Name.Ident, tpe: ast.UnkindedType.Var, kind: Kind, svar: ScopeInfo, loc: SourceLocation) extends TypeParam
 
-    case class Unkinded(name: Name.Ident, tpe: ast.UnkindedType.Var, loc: SourceLocation) extends TypeParam
+    case class Unkinded(name: Name.Ident, tpe: ast.UnkindedType.Var, svar: ScopeInfo, loc: SourceLocation) extends TypeParam
 
   }
 

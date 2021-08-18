@@ -54,6 +54,10 @@ sealed trait Validation[+T, +E] {
     case Validation.Failure(errors) => Validation.Failure(errors)
   }
 
+  // MATT docs
+  @deprecated
+  final def withFilter(f: T => Boolean): Validation[T, E] = this
+
   /**
     * Returns the errors in this [[Validation.Success]] or [[Validation.Failure]] object.
     */

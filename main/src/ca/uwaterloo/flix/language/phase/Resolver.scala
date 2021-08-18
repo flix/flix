@@ -201,7 +201,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     case NamedAst.Instance(doc, mod, clazz0, tpe0, tconstrs0, defs0, loc) =>
       for {
         clazz <- lookupClassForImplementation(clazz0, ns0, root)
-        tpe <- lookupType(tpe0, ns0, root)
+        (tpe, sc) <- lookupType(tpe0, ns0, root)
         tconstrs <- traverse(tconstrs0)(resolveTypeConstraint(_, ns0, root))
         defs <- traverse(defs0)(resolve(_, ns0, root))
       } yield ResolvedAst.Instance(doc, mod, clazz.sym, tpe, tconstrs, defs, ns0, loc)
@@ -215,7 +215,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       val fparam = spec0.fparams.head
 
       for {
-        fparamType <- lookupType(fparam.tpe, ns0, root)
+        (fparamType, fparamSco) <- lookupType(fparam.tpe, ns0, root)
         exp <- traverse(exp0)(Expressions.resolve(_, Map(fparam.sym -> fparamType), ns0, root))
         spec <- resolve(spec0, ns0, root)
       } yield ResolvedAst.Sig(sym, spec, exp.headOption)
@@ -229,7 +229,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       val fparam = spec0.fparams.head
 
       for {
-        fparamType <- lookupType(fparam.tpe, ns0, root)
+        (fparamType, fparamSco) <- lookupType(fparam.tpe, ns0, root)
         exp <- Expressions.resolve(exp0, Map(fparam.sym -> fparamType), ns0, root)
         spec <- resolve(spec0, ns0, root)
       } yield ResolvedAst.Def(sym, spec, exp)
@@ -249,7 +249,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       val effVal = lookupType(eff0, ns0, root)
 
       mapN(fparamsVal, annVal, schemeVal, retTpeVal, effVal) {
-        case (fparams, ann, scheme, retTpe, eff) =>
+        case (fparams, ann, scheme, (retTpe, retSco), (eff, effSco)) =>
+          // MATT retSco irrelevant
+          // MATT effSco irrelevant
           ResolvedAst.Spec(doc, ann, mod, tparams, fparams, scheme, retTpe, eff, loc)
       }
   }
@@ -263,10 +265,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     val casesVal = traverse(e0.cases) {
       case (name, NamedAst.Case(enum, tag, tpe)) =>
         for {
-          t <- lookupType(tpe, ns0, root)
+          (t, sco) <- lookupType(tpe, ns0, root)
         } yield {
           val freeVars = e0.tparams.tparams.map(_.tpe)
           val caseType = t
+          val caseSco = sco // MATT need to use this?
           val enumType = UnkindedType.mkEnum(e0.sym, freeVars)
           val base = UnkindedType.mkTag(e0.sym, tag, caseType, enumType)
           val sc = ResolvedAst.Scheme(freeVars, tconstrs, base)
@@ -275,7 +278,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     }
     for {
       cases <- casesVal
-      tpe <- lookupType(e0.tpe, ns0, root)
+      (tpe, sco) <- lookupType(e0.tpe, ns0, root) // MATT use sco?
     } yield {
       val sc = ResolvedAst.Scheme(tparams.tparams.map(_.tpe), tconstrs, tpe)
       ResolvedAst.Enum(e0.doc, e0.mod, e0.sym, tparams, cases.toMap, tpe, sc, e0.loc)
@@ -289,7 +292,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     case NamedAst.TypeAlias(doc, mod, sym, tparams0, tpe0, loc) =>
       val tparams = resolveTypeParams(tparams0, ns0, root)
       for {
-        tpe <- lookupType(tpe0, ns0, root)
+        (tpe, sco) <- lookupType(tpe0, ns0, root) // MATT use sco?
       } yield ResolvedAst.TypeAlias(doc, mod, sym, tparams, tpe, loc)
   }
 
@@ -298,7 +301,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     */
   private def visitAttribute(a0: NamedAst.Attribute, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Attribute, ResolutionError] = {
     for {
-      tpe <- lookupType(a0.tpe, ns0, root)
+      (tpe, sco) <- lookupType(a0.tpe, ns0, root)
     } yield ResolvedAst.Attribute(a0.ident, tpe, a0.loc)
   }
 
@@ -1314,31 +1317,31 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     * Resolves the given type `tpe0` in the given namespace `ns0`.
     */
   def lookupType(tpe0: NamedAst.Type, ns0: Name.NName, root: NamedAst.Root)(implicit recursionDepth: Int = 0): Validation[(UnkindedType, ScopeInfo), ResolutionError] = tpe0 match {
-    case NamedAst.Type.Var(tvar, svar, loc) => (tvar, ScopeInfo(Scopedness.Unscoped, svar)).toSuccess
+    case NamedAst.Type.Var(tvar, svar, loc) => (tvar, svar).toSuccess
 
-    case NamedAst.Type.Unit(loc) => (UnkindedType.mkUnit(loc), ScopeInfo.UnscopedUnit).toSuccess
+    case NamedAst.Type.Unit(loc) => (UnkindedType.mkUnit(loc), ScopeType.Cst(TypeConstructor.Unit).asUnscoped).toSuccess
 
     case NamedAst.Type.Ambiguous(qname, loc) if qname.isUnqualified => qname.ident.name match {
       // Basic Types
-      case "Unit" => (UnkindedType.mkUnit(loc), ScopeInfo.UnscopedUnit).toSuccess
-      case "Null" => (UnkindedType.mkNull(loc), ScopeInfo.UnscopedUnit).toSuccess
-      case "Bool" => (UnkindedType.mkBool(loc), ScopeInfo.UnscopedUnit).toSuccess
-      case "Char" => (UnkindedType.mkChar(loc), ScopeInfo.UnscopedUnit).toSuccess
-      case "Float" => (UnkindedType.mkFloat64(loc), ScopeInfo.UnscopedUnit).toSuccess
-      case "Float32" => (UnkindedType.mkFloat32(loc), ScopeInfo.UnscopedUnit).toSuccess
-      case "Float64" => (UnkindedType.mkFloat64(loc), ScopeInfo.UnscopedUnit).toSuccess
-      case "Int" => (UnkindedType.mkInt32(loc), ScopeInfo.UnscopedUnit).toSuccess
-      case "Int8" => (UnkindedType.mkInt8(loc), ScopeInfo.UnscopedUnit).toSuccess
-      case "Int16" => (UnkindedType.mkInt16(loc), ScopeInfo.UnscopedUnit).toSuccess
-      case "Int32" => (UnkindedType.mkInt32(loc), ScopeInfo.UnscopedUnit).toSuccess
-      case "Int64" => (UnkindedType.mkInt64(loc), ScopeInfo.UnscopedUnit).toSuccess
-      case "BigInt" => (UnkindedType.mkBigInt(loc), ScopeInfo.UnscopedUnit).toSuccess
-      case "String" => (UnkindedType.mkString(loc), ScopeInfo.UnscopedUnit).toSuccess
-      case "Array" => (UnkindedType.mkArray(loc), ScopeInfo.UnscopedUnit).toSuccess
-      case "Channel" => (UnkindedType.mkChannel(loc), ScopeInfo.UnscopedUnit).toSuccess
-      case "Lazy" => (UnkindedType.mkLazy(loc), ScopeInfo.UnscopedUnit).toSuccess
-      case "ScopedRef" => (UnkindedType.Cst(UnkindedType.Constructor.ScopedRef, loc), ScopeInfo.UnscopedUnit).toSuccess
-      case "Region" => (UnkindedType.Cst(UnkindedType.Constructor.Region, loc), ScopeInfo.UnscopedUnit).toSuccess
+      case "Unit" => (UnkindedType.mkUnit(loc), ScopeType.Cst(TypeConstructor.Unit).asUnscoped).toSuccess
+      case "Null" => (UnkindedType.mkNull(loc), ScopeType.Cst(TypeConstructor.Null).asUnscoped).toSuccess
+      case "Bool" => (UnkindedType.mkBool(loc), ScopeType.Cst(TypeConstructor.Bool).asUnscoped).toSuccess
+      case "Char" => (UnkindedType.mkChar(loc), ScopeType.Cst(TypeConstructor.Char).asUnscoped).toSuccess
+      case "Float" => (UnkindedType.mkFloat64(loc), ScopeType.Cst(TypeConstructor.Float64).asUnscoped).toSuccess
+      case "Float32" => (UnkindedType.mkFloat32(loc), ScopeType.Cst(TypeConstructor.Float32).asUnscoped).toSuccess
+      case "Float64" => (UnkindedType.mkFloat64(loc), ScopeType.Cst(TypeConstructor.Float64).asUnscoped).toSuccess
+      case "Int" => (UnkindedType.mkInt32(loc), ScopeType.Cst(TypeConstructor.Int32).asUnscoped).toSuccess
+      case "Int8" => (UnkindedType.mkInt8(loc), ScopeType.Cst(TypeConstructor.Int8).asUnscoped).toSuccess
+      case "Int16" => (UnkindedType.mkInt16(loc), ScopeType.Cst(TypeConstructor.Int16).asUnscoped).toSuccess
+      case "Int32" => (UnkindedType.mkInt32(loc), ScopeType.Cst(TypeConstructor.Int32).asUnscoped).toSuccess
+      case "Int64" => (UnkindedType.mkInt64(loc), ScopeType.Cst(TypeConstructor.Int64).asUnscoped).toSuccess
+      case "BigInt" => (UnkindedType.mkBigInt(loc), ScopeType.Cst(TypeConstructor.BigInt).asUnscoped).toSuccess
+      case "String" => (UnkindedType.mkString(loc), ScopeType.Cst(TypeConstructor.Str).asUnscoped).toSuccess
+      case "Array" => (UnkindedType.mkArray(loc), ScopeType.Cst(TypeConstructor.Array).asUnscoped).toSuccess
+      case "Channel" => (UnkindedType.mkChannel(loc), ScopeType.Cst(TypeConstructor.Channel).asUnscoped).toSuccess
+      case "Lazy" => (UnkindedType.mkLazy(loc), ScopeType.Cst(TypeConstructor.Lazy).asUnscoped).toSuccess
+      case "ScopedRef" => (UnkindedType.Cst(UnkindedType.Constructor.ScopedRef, loc), ScopeType.Cst(TypeConstructor.ScopedRef).asUnscoped).toSuccess
+      case "Region" => (UnkindedType.Cst(UnkindedType.Constructor.Region, loc), ScopeType.Cst(TypeConstructor.Region).asUnscoped).toSuccess
 
       // Disambiguate type.
       case typeName =>
@@ -1369,21 +1372,22 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       }
 
     case NamedAst.Type.Enum(sym, loc) =>
-      UnkindedType.mkEnum(sym, loc).toSuccess
+      (UnkindedType.mkEnum(sym, loc), ScopeType.Cst(TypeConstructor.Enum(sym, Kind.Wild)).asUnscoped).toSuccess // MATT disregarding kind in scopetype
 
     case NamedAst.Type.Tuple(elms0, loc) =>
       for {
-        elms <- traverse(elms0)(tpe => lookupType(tpe, ns0, root))
+        (elms, scos) <- traverse(elms0)(tpe => lookupType(tpe, ns0, root)).map(_.unzip)
         tup = UnkindedType.mkTuple(elms, loc)
-      } yield tup
+        scoTup = ScopeType.mkApply(ScopeType.Cst(TypeConstructor.Tuple(scos.length)).asUnscoped, scos)
+      } yield (tup, scoTup)
 
     case NamedAst.Type.RecordEmpty(loc) =>
-      UnkindedType.mkRecordEmpty(loc).toSuccess
+      (UnkindedType.mkRecordEmpty(loc), ScopeType.Cst(TypeConstructor.RecordEmpty).asUnscoped).toSuccess
 
     case NamedAst.Type.RecordExtend(field, value, rest, loc) =>
       for {
-        v <- lookupType(value, ns0, root)
-        r <- lookupType(rest, ns0, root)
+        (v, vSco) <- lookupType(value, ns0, root)
+        (r, rSco) <- lookupType(rest, ns0, root)
         rec = UnkindedType.mkRecordExtend(field, v, r, loc)
       } yield rec
 
@@ -1475,6 +1479,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     case NamedAst.Type.Ascribe(tpe, kind, loc) =>
       mapN(lookupType(tpe, ns0, root)) {
         t => UnkindedType.Ascribe(t, kind, loc)
+      }
+
+    case NamedAst.Type.Scoped(tpe, loc) =>
+      mapN(lookupType(tpe, ns0, root)) {
+        case (t, ScopeInfo(_, scopeType)) => (t, scopeType.asScoped)
       }
 
   }
@@ -1645,9 +1654,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     *
     * Otherwise fails with a resolution error.
     */
-  def getEnumTypeIfAccessible(enum0: NamedAst.Enum, ns0: Name.NName, loc: SourceLocation): Validation[UnkindedType, ResolutionError] =
+  def getEnumTypeIfAccessible(enum0: NamedAst.Enum, ns0: Name.NName, loc: SourceLocation): Validation[(UnkindedType, ScopeInfo), ResolutionError] =
     getEnumIfAccessible(enum0, ns0, loc) map {
-      case enum => UnkindedType.mkEnum(enum.sym, loc)
+      case enum => (UnkindedType.mkEnum(enum.sym, loc), ScopeType.Cst(TypeConstructor.Enum(enum.sym, Kind.Wild)).asUnscoped) // MATT disregard kind in ScopeType
     }
 
   /**
@@ -1655,7 +1664,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     *
     * Otherwise fails with a resolution error.
     */
-  private def getTypeAliasIfAccessible(alia0: NamedAst.TypeAlias, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation)(implicit recursionDepth: Int): Validation[UnkindedType, ResolutionError] = {
+  private def getTypeAliasIfAccessible(alia0: NamedAst.TypeAlias, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation)(implicit recursionDepth: Int): Validation[(UnkindedType, ScopeInfo), ResolutionError] = {
     // TODO: We should check if the type alias is accessible.
 
     ///
@@ -1670,7 +1679,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
     // Construct a type lambda for each type parameter.
     mapN(lookupType(alia0.tpe, declNS, root)(recursionDepth + 1)) {
-      case base => mkTypeLambda(alia0.tparams.tparams, base)
+      case (baseTpe, baseSc) => (mkTypeLambda(alia0.tparams.tparams, baseTpe), mkScopeTypeLambda(alia0.tparams.tparams, baseSc))
     }
   }
 
@@ -1680,6 +1689,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   private def mkTypeLambda(tparams: List[NamedAst.TypeParam], tpe: UnkindedType): UnkindedType =
     tparams.foldRight(tpe) {
       case (tparam, acc) => UnkindedType.Lambda(tparam.tpe, acc)
+    }
+
+  private def mkScopeTypeLambda(tparams: List[NamedAst.TypeParam], tpe: ScopeInfo): ScopeInfo =
+    tparams.foldRight(tpe) {
+      case (tparam, acc) => ScopeType.Lambda(tparam.svar, acc).asUnscoped
     }
 
 
