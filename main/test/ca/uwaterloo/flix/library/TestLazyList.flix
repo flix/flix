@@ -907,4 +907,53 @@ namespace TestLazyList {
     @test
     def append16(): Bool =
     	LazyList.append(ECons(4, ENil), LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil))))) == ECons(4, ECons(1, ECons(2, ECons(3, ENil))))
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // count                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def count01(): Bool =
+        LazyList.count(x -> x > 3, ENil) == 0
+
+    @test
+    def count02(): Bool =
+        LazyList.count(x -> x > 3, LList(lazy ENil)) == 0
+
+    @test
+    def count03(): Bool =
+    	LazyList.count(x -> x > 3, LList(lazy LCons(1, lazy LList(lazy LCons(1, lazy LList(lazy LCons(1, lazy ENil))))))) == 0
+
+    @test
+    def count04(): Bool =
+    	LazyList.count(x -> x > 3, LCons(1, lazy LCons(1, lazy LCons(1, lazy ENil)))) == 0
+
+    @test
+    def count05(): Bool =
+    	LazyList.count(x -> x > 3, ECons(4, ENil)) == 1
+
+    @test
+    def count06(): Bool =
+    	LazyList.count(x -> x > 3, LList(lazy LCons(4, lazy ENil))) == 1
+
+    @test
+    def count07(): Bool =
+        LazyList.count(_ -> true, LazyList.range(1000, 2000)) == 1000
+
+    @test
+    def count08(): Bool =
+        LazyList.count(_ -> false, LazyList.range(1000, 2000)) == 0
+
+    @test
+    def count09(): Bool =
+        LazyList.count(x -> x > 3, ECons(1, ECons(2, ENil))) == 0
+
+    @test
+    def count10(): Bool =
+        LazyList.count(x -> x > 3, ECons(1, ECons(8, ENil))) == 1
+
+    @test
+    def count11(): Bool =
+        LazyList.count(x -> x > 3, ECons(8, ECons(1, ENil))) == 1
 }

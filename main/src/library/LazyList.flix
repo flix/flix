@@ -228,6 +228,18 @@ namespace LazyList {
         case ECons(x, xs) => if (f(x)) filterEAcc(f, xs, ECons(x, acc))       else filterEAcc(f, xs, acc)
         case LCons(x, xs) => if (f(x)) filterEAcc(f, force xs, ECons(x, acc)) else filterEAcc(f, force xs, acc)
         case LList(xs)    => filterEAcc(f, force xs, acc)
+    /// Applies `f` to a start value `s` and all elements in `l` going from left to right.
+    ///
+    /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
+    ///
+    pub def foldLeft(f: (b, a) -> b & ef, s: b, l: LazyList[a]): b & ef = match l {
+        case ENil         => s
+        case ECons(x, xs) => foldLeft(f, f(s, x),       xs)
+        case LCons(x, xs) => foldLeft(f, f(s, x), force xs)
+        case LList(xs)    => foldLeft(f, s,       force xs)
+    }
+
+    ///
     /// Returns `k` appended to `l`.
     ///
     pub def append(l: LazyList[a], k: LazyList[a]): LazyList[a] = match l {
@@ -329,4 +341,11 @@ namespace LazyList {
         case LCons(x, xs) => toSetAcc(force xs, Set.insert(x, acc))
         case LList(xs)    => toSetAcc(force xs, acc)
     }
+    ///
+    /// Returns the number of elements in `l` that satisfy the predicate `f`.
+    ///
+    /// The function `f` must be pure.
+    ///
+    pub def count(f: a -> Bool, l: LazyList[a]): Int32 =
+        foldLeft((i, x) -> if (f(x)) i + 1 else i, 0, l)
 }
