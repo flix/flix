@@ -348,4 +348,21 @@ namespace LazyList {
     ///
     pub def count(f: a -> Bool, l: LazyList[a]): Int32 =
         foldLeft((i, x) -> if (f(x)) i + 1 else i, 0, l)
+
+    ///
+    /// Returns `l` without the first `n` elements.
+    ///
+    /// Returns `ENil` if `n > length(l)`.
+    /// Returns `l` if `n < 1`.
+    ///
+    pub def drop(n: Int32, l: LazyList[a]): LazyList[a] =
+        if (n < 1)
+            l
+        else
+            match l {
+                case ENil         => l
+                case ECons(_, xs) => LList(lazy drop(n - 1,       xs))
+                case LCons(_, xs) => LList(lazy drop(n - 1, force xs))
+                case LList(xs)    => LList(lazy drop(n,     force xs))
+            }
 }
