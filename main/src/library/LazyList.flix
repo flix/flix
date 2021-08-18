@@ -365,4 +365,14 @@ namespace LazyList {
                 case LCons(_, xs) => LList(lazy drop(n - 1, force xs))
                 case LList(xs)    => LList(lazy drop(n,     force xs))
             }
+
+    ///
+    /// Returns the concatenation of the elements in `l`.
+    ///
+    pub def flatten(l: LazyList[LazyList[a]]): LazyList[a] = match l {
+        case ENil          => ENil
+        case ECons(xs, ys) => append(xs, flatten(      ys))
+        case LCons(xs, ys) => append(xs, flatten(force ys))
+        case LList(xs)     => flatten(force xs)
+    }
 }
