@@ -228,6 +228,13 @@ namespace LazyList {
         case ECons(x, xs) => if (f(x)) filterEAcc(f, xs, ECons(x, acc))       else filterEAcc(f, xs, acc)
         case LCons(x, xs) => if (f(x)) filterEAcc(f, force xs, ECons(x, acc)) else filterEAcc(f, force xs, acc)
         case LList(xs)    => filterEAcc(f, force xs, acc)
+    /// Returns `k` appended to `l`.
+    ///
+    pub def append(l: LazyList[a], k: LazyList[a]): LazyList[a] = match l {
+        case ENil         => k
+        case ECons(x, xs) => LCons(x, lazy append(      xs, k))
+        case LCons(x, xs) => LCons(x, lazy append(force xs, k))
+        case LList(xs)    => LList(   lazy append(force xs, k))
     }
 
     /// Applies `f` to a start value `s` and all elements in `l` going from left to right.
