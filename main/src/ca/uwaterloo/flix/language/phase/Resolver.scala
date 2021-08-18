@@ -301,7 +301,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     */
   private def visitAttribute(a0: NamedAst.Attribute, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Attribute, ResolutionError] = {
     for {
-      (tpe, sco) <- lookupType(a0.tpe, ns0, root)
+      (tpe, sco) <- lookupType(a0.tpe, ns0, root) // MATT use sco?
     } yield ResolvedAst.Attribute(a0.ident, tpe, a0.loc)
   }
 
@@ -511,7 +511,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         case NamedAst.Expression.Lambda(fparam, exp, loc) =>
           for {
-            paramType <- lookupType(fparam.tpe, ns0, root)
+            (paramType, paramSco) <- lookupType(fparam.tpe, ns0, root) // MATT use sco?
             e <- visit(exp, tenv0 + (fparam.sym -> paramType))
             p <- Params.resolve(fparam, ns0, root)
           } yield ResolvedAst.Expression.Lambda(p, e, loc)
@@ -724,11 +724,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         case NamedAst.Expression.Ascribe(exp, expectedType, expectedEff, loc) =>
           val expectedTypVal = expectedType match {
             case None => (None: Option[UnkindedType]).toSuccess
-            case Some(t) => mapN(lookupType(t, ns0, root))(x => Some(x))
+            case Some(t) => mapN(lookupType(t, ns0, root))(x => Some(x._1)) // MATT use sco? (._2)
           }
           val expectedEffVal = expectedEff match {
             case None => (None: Option[UnkindedType]).toSuccess
-            case Some(f) => mapN(lookupType(f, ns0, root))(x => Some(x))
+            case Some(f) => mapN(lookupType(f, ns0, root))(x => Some(x._1)) // MATT use sco? (._2)
           }
 
           for {
@@ -741,11 +741,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
           val declaredTypVal = declaredType match {
             case None => (None: Option[UnkindedType]).toSuccess
-            case Some(t) => mapN(lookupType(t, ns0, root))(x => Some(x))
+            case Some(t) => mapN(lookupType(t, ns0, root))(x => Some(x._1)) // MATT use sco? (._2)
           }
           val declaredEffVal = declaredEff match {
             case None => (None: Option[UnkindedType]).toSuccess
-            case Some(f) => mapN(lookupType(f, ns0, root))(x => Some(x))
+            case Some(f) => mapN(lookupType(f, ns0, root))(x => Some(x._1)) // MATT use sco? (._2)
           }
 
           for {
@@ -770,9 +770,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         case NamedAst.Expression.InvokeConstructor(className, args, sig, loc) =>
           val argsVal = traverse(args)(visit(_, tenv0))
-          val sigVal = traverse(sig)(lookupType(_, ns0, root))
+          val sigVal = traverse(sig)(lookupType(_, ns0, root)).map(_.unzip)
           flatMapN(sigVal, argsVal) {
-            case (ts, as) =>
+            case ((ts, scos), as) => // MATT use scos?
               mapN(lookupJvmConstructor(className, ts, loc)) {
                 case constructor => ResolvedAst.Expression.InvokeConstructor(constructor, as, loc)
               }
@@ -781,9 +781,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         case NamedAst.Expression.InvokeMethod(className, methodName, exp, args, sig, loc) =>
           val expVal = visit(exp, tenv0)
           val argsVal = traverse(args)(visit(_, tenv0))
-          val sigVal = traverse(sig)(lookupType(_, ns0, root))
+          val sigVal = traverse(sig)(lookupType(_, ns0, root)).map(_.unzip)
           flatMapN(sigVal, expVal, argsVal) {
-            case (ts, e, as) =>
+            case ((ts, scos), e, as) => // MATT use scos?
               mapN(lookupJvmMethod(className, methodName, ts, static = false, loc)) {
                 case method => ResolvedAst.Expression.InvokeMethod(method, e, as, loc)
               }
@@ -791,9 +791,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         case NamedAst.Expression.InvokeStaticMethod(className, methodName, args, sig, loc) =>
           val argsVal = traverse(args)(visit(_, tenv0))
-          val sigVal = traverse(sig)(lookupType(_, ns0, root))
+          val sigVal = traverse(sig)(lookupType(_, ns0, root)).map(_.unzip)
           flatMapN(sigVal, argsVal) {
-            case (ts, as) =>
+            case ((ts, scos), as) => // MATT use scos?
               mapN(lookupJvmMethod(className, methodName, ts, static = true, loc)) {
                 case method => ResolvedAst.Expression.InvokeStaticMethod(method, as, loc)
               }
@@ -821,7 +821,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         case NamedAst.Expression.NewChannel(exp, tpe, loc) =>
           for {
-            t <- lookupType(tpe, ns0, root)
+            (t, sco) <- lookupType(tpe, ns0, root) // MATT use sco?
             e <- visit(exp, tenv0)
           } yield ResolvedAst.Expression.NewChannel(e, t, loc)
 
@@ -1035,7 +1035,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       */
     def resolve(fparam0: NamedAst.FormalParam, ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.FormalParam, ResolutionError] = {
       for {
-        t <- lookupType(fparam0.tpe, ns0, root)
+        (t, sco) <- lookupType(fparam0.tpe, ns0, root) // MATT use sco?
       } yield ResolvedAst.FormalParam(fparam0.sym, fparam0.mod, t, fparam0.loc)
     }
 
@@ -1051,14 +1051,14 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       * Performs name resolution on the given kinded type parameter `tparam0` in the given namespace `ns0`.
       */
     def resolveKindedTparam(tparam0: NamedAst.TypeParam.Kinded): ResolvedAst.TypeParam.Kinded = tparam0 match {
-      case NamedAst.TypeParam.Kinded(name, tpe, kind, loc) => ResolvedAst.TypeParam.Kinded(name, tpe, kind, loc)
+      case NamedAst.TypeParam.Kinded(name, tpe, kind, svar, loc) => ResolvedAst.TypeParam.Kinded(name, tpe, kind, loc) // MATT need svar?
     }
 
     /**
       * Performs name resolution on the given unkinded type parameter `tparam0` in the given namespace `ns0`.
       */
     def resolveUnkindedTparam(tparam0: NamedAst.TypeParam.Unkinded): ResolvedAst.TypeParam.Unkinded = tparam0 match {
-      case NamedAst.TypeParam.Unkinded(name, tpe, loc) => ResolvedAst.TypeParam.Unkinded(name, tpe, loc)
+      case NamedAst.TypeParam.Unkinded(name, tpe, svar, loc) => ResolvedAst.TypeParam.Unkinded(name, tpe, loc) // MATT need svar?
     }
   }
 
@@ -1086,7 +1086,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     */
   def resolveScheme(sc0: NamedAst.Scheme, ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.Scheme, ResolutionError] = {
     for {
-      base <- lookupType(sc0.base, ns0, root)
+      (base, sco) <- lookupType(sc0.base, ns0, root) // MATT use sco?
       tconstrs <- sequence(sc0.tconstrs.map(resolveTypeConstraint(_, ns0, root)))
     } yield ResolvedAst.Scheme(sc0.quantifiers, tconstrs, base)
   }
@@ -1100,7 +1100,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       val tpeVal = lookupType(tpe0, ns0, root)
 
       mapN(classVal, tpeVal) {
-        case (clazz, tpe) => ResolvedAst.TypeConstraint(clazz.sym, tpe, loc)
+        case (clazz, (tpe, sco)) => ResolvedAst.TypeConstraint(clazz.sym, tpe, loc) // MATT use sco?
       }
   }
 
@@ -1113,7 +1113,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       val tpeVal = lookupType(tpe0, ns0, root)
 
       mapN(classVal, tpeVal) {
-        case (clazz, tpe) => ResolvedAst.TypeConstraint(clazz.sym, tpe, loc)
+        case (clazz, (tpe, sco)) => ResolvedAst.TypeConstraint(clazz.sym, tpe, loc)// MATT use sco?
       }
   }
 
@@ -1389,10 +1389,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         (v, vSco) <- lookupType(value, ns0, root)
         (r, rSco) <- lookupType(rest, ns0, root)
         rec = UnkindedType.mkRecordExtend(field, v, r, loc)
-      } yield rec
+      } yield (rec, ScopeType.mkApply(ScopeType.Cst(TypeConstructor.RecordExtend(field)).asUnscoped, List(vSco, rSco)))
 
     case NamedAst.Type.SchemaEmpty(loc) =>
-      UnkindedType.mkSchemaEmpty(loc).toSuccess
+      (UnkindedType.mkSchemaEmpty(loc), ScopeType.Cst(TypeConstructor.SchemaEmpty).asUnscoped).toSuccess
 
     case NamedAst.Type.SchemaExtendWithAlias(qname, targs, rest, loc) =>
       // Lookup the type alias.
@@ -1403,9 +1403,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         case Some(typealias) =>
           // Case 2: The type alias was found. Use it.
           for {
-            t <- getTypeAliasIfAccessible(typealias, ns0, root, loc)
-            ts <- traverse(targs)(lookupType(_, ns0, root))
-            r <- lookupType(rest, ns0, root)
+            (t, tSco) <- getTypeAliasIfAccessible(typealias, ns0, root, loc)
+            (ts, tScos) <- traverse(targs)(lookupType(_, ns0, root)).map(_.unzip)
+            (r, rSco) <- lookupType(rest, ns0, root)
             app = UnkindedType.mkApply(t, ts)
             tpe = UnkindedType.simplify(app)
             schema = UnkindedType.mkSchemaExtend(Name.mkPred(qname.ident), tpe, r, loc)
