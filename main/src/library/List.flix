@@ -64,6 +64,11 @@ instance Functor[List] {
     pub def map(f: a -> b & ef, xs: List[a]): List[b] & ef = List.map(f, xs)
 }
 
+instance Applicative[List] {
+    pub def point(x: a) : List[a] = List.point(x)
+    override pub def ap(f: List[a -> b & e], x: List[a]) : List[b] & e = List.ap(f, x)
+}
+
 instance Foldable[List] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, xs: List[a]): b & ef = List.foldLeft(f, s, xs)
     pub def foldRight(f: (a, b) -> b & ef, s: b, xs: List[a]): b & ef = List.foldRight(f, s, xs)
@@ -320,6 +325,28 @@ namespace List {
         }
     }
 
+    ///
+    /// Return the singleton list with element `x`.
+    ///
+    pub def point(x: a) : List[a] = x :: Nil
+
+    ///
+    /// Apply every function from `f` to every argument from `x` and return a list with all results.
+    /// For `f = f1, f2, ...` and `x = x1, x2, ...` the results appear in the order
+    /// `f1(x1), f1(x2), ..., f2(x1), f2(x2), ...`.
+    ///
+    /// TODO: More efficient implementation creating the result list in one go.
+    pub def ap(f: List[a -> b & e], x: List[a]) : List[b] & e =
+        map(g -> map(g, x), f) |> flatten
+
+    // TODO: Efficient implementation of liftA2.
+    /// When applied to one argument, this lifts a binary function to work on lists of the respective arguments.
+    /// When the lifted function is applied, it returns a list with the original function applied
+    /// to all combinations of arguments.
+    /// For argument lists `xs = x1, x2, ...` and `ys = y1, y2, ...` the results appear in the order
+    /// `f(x1,y1), f(x1,y2), ..., f(x2,y1), f(x2,y2), ...`.
+    ///
+    pub def lift2(f: a -> b -> c & e, xs: List[a], ys: List[b]): List[c] & e = Applicative.liftA2(f, xs, ys)
 
     ///
     /// Returns the result of applying `f` to every element in `xs` along with that element's index.

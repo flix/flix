@@ -353,6 +353,76 @@ def map06(): Bool = List.map(i -> i > 2, 8 :: 1 :: Nil) == true :: false :: Nil
 def map07(): Bool = List.map(i -> i > 2, 7 :: 8 :: Nil) == true :: true :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
+// point                                                                   //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def point01(): Bool = List.point(0) == 0 :: Nil
+
+@test
+def point02(): Bool = List.point(123) == 123 :: Nil
+
+@test
+def point03(): Bool = List.point(true) == true :: Nil
+
+@test
+def point04(): Bool = List.point(Some(0)) == Some(0) :: Nil
+
+@test
+def point05(): Bool = List.point(Nil : List[Bool]) == Nil :: Nil
+
+@test
+def point06(): Bool = List.point(42::Nil) == (42 :: Nil) :: Nil
+
+@test
+def point07(): Bool = List.point(List.point(1)) == (1:: Nil) :: Nil
+
+/////////////////////////////////////////////////////////////////////////////
+// ap                                                                      //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def ap01(): Bool = List.ap(Nil, Nil) == Nil : List[Int32]
+
+@test
+def ap02(): Bool = List.ap((x -> x+1) :: Nil, Nil) == Nil
+
+@test
+def ap03(): Bool = List.ap(Nil, 5 :: Nil) == Nil : List[Int32]
+
+@test
+def ap04(): Bool = List.ap((x -> x+1) :: Nil, 5 :: Nil) == 6 :: Nil
+
+@test
+def ap05(): Bool = List.ap((x -> x+1) :: Nil, 0 :: 5 :: Nil) == 1 :: 6 :: Nil
+
+@test
+def ap06(): Bool = List.ap((x -> x+1) :: (x -> x*2) :: Nil, 0 :: 4 :: Nil) == 1 :: 5 :: 0 :: 8 :: Nil
+
+/////////////////////////////////////////////////////////////////////////////
+// liftA2                                                                  //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def liftA201(): Bool = Applicative.liftA2((x,y) -> x+y, Nil, Nil) == Nil : List[Int32]
+
+@test
+def liftA202(): Bool = Applicative.liftA2((x,y) -> x+y, 10 :: Nil, Nil) == Nil
+
+@test
+def liftA203(): Bool = Applicative.liftA2((x,y) -> x+y, Nil, 1 :: Nil) == Nil
+
+@test
+def liftA204(): Bool = Applicative.liftA2((x,y) -> x+y, 10 :: Nil, 1 :: Nil) == 11 :: Nil
+
+@test
+def liftA205(): Bool = Applicative.liftA2((x,y) -> x+y, 10 :: 20 :: Nil, 1 :: Nil) == 11 :: 21 :: Nil
+
+@test
+def liftA206(): Bool = Applicative.liftA2((x,y) -> x+y, 10 :: 20 :: Nil, 1 :: 2 :: Nil) == 11 :: 12 :: 21 :: 22 :: Nil
+
+@test
+def liftA207(): Bool = Applicative.liftA2((x,y) -> (x+y) :: Nil, 10 :: Nil, 1 :: 2 :: Nil) == (11 :: Nil) :: (12 :: Nil) :: Nil
+
+/////////////////////////////////////////////////////////////////////////////
 // mapWithIndex                                                            //
 /////////////////////////////////////////////////////////////////////////////
 @test
