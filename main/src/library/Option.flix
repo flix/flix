@@ -37,6 +37,13 @@ instance Functor[Option] {
     pub def map(f: a -> b & ef, o: Option[a]): Option[b] & ef = Option.map(f, o)
 }
 
+instance Applicative[Option] {
+    pub def point(x: a) : Option[a] = Option.point(x)
+    override pub def ap(f: Option[a -> b & e], x: Option[a]) : Option[b] & e = Option.ap(f, x)
+    // Same as the default implementation using `map` and `ap` but with less indirection.
+    override pub def liftA2(f: a -> b -> c & e, x: Option[a], y: Option[b]): Option[c] & e = Option.lift2(f, x, y)
+}
+
 instance Foldable[Option] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, o: Option[a]): b & ef = Option.foldLeft(f, s, o)
     pub def foldRight(f: (a, b) -> b & ef, s: b, o: Option[a]): b & ef = Option.foldRight(f, o, s)
@@ -123,6 +130,24 @@ namespace Option {
         case None => None
         case Some(v) => Some(f(v))
     }
+
+    ///
+    /// Returns `Some(x)`.
+    ///
+    pub def point(x: a) : Option[a] = Some(x)
+
+    ///
+    /// If both arguments are `Some`, return a `Some` containing the result of applying the function inside
+    /// `f` to the value inside `x`. Otherwise return `None`.
+    ///
+    pub def ap(f: Option[a -> b & e], x: Option[a]) : Option[b] & e =
+        match f {
+            case None => None
+            case Some(g) => match x {
+                case None => None
+                case Some(y) => Some(g(y))
+            }
+        }
 
     ///
     /// Returns `Some(f(v1, v2))` if `o1` is `Some(v1)` and `o2` is `Some(v2)`. Otherwise returns `None`.
@@ -386,18 +411,6 @@ namespace Option {
     pub def foreach(f: a ~> Unit, o: Option[a]): Unit & Impure = match o {
         case None    => ()
         case Some(v) => f(v)
-    }
-
-    ///
-    /// Applies the function in `o1` to the value in `o2`.
-    ///
-    @Time(time(o1)) @Space(space(o1))
-    pub def ap(o1: Option[t -> u & f], o2: Option[t]): Option[u] & f = match o1 {
-        case None       => None
-        case Some(f)    => match o2 {
-            case None       => None
-            case Some(a)    => Some(f(a))
-        }
     }
 
     ///
