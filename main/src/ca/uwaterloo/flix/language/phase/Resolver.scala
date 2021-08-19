@@ -1409,6 +1409,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             app = UnkindedType.mkApply(t, ts)
             tpe = UnkindedType.simplify(app)
             schema = UnkindedType.mkSchemaExtend(Name.mkPred(qname.ident), tpe, r, loc)
+            appSco = ScopeType.mkApply(tSco, tScos)
+            sco = ScopeType.simplify(appSco)
+
           } yield schema
       }
 
