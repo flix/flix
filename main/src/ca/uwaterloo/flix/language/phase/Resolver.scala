@@ -1410,78 +1410,83 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             tpe = UnkindedType.simplify(app)
             schema = UnkindedType.mkSchemaExtend(Name.mkPred(qname.ident), tpe, r, loc)
             appSco = ScopeType.mkApply(tSco, tScos)
-            sco = ScopeType.simplify(appSco)
-
-          } yield schema
+            tpeSco = ScopeType.simplify(appSco)
+            schemaSco = ScopeType.mkSchemaExtend(Name.mkPred(qname.ident), tpeSco, rSco)
+          } yield (schema, schemaSco)
       }
 
     case NamedAst.Type.SchemaExtendWithTypes(ident, den, tpes, rest, loc) =>
       for {
-        ts <- traverse(tpes)(lookupType(_, ns0, root))
-        r <- lookupType(rest, ns0, root)
+        (ts, tScos) <- traverse(tpes)(lookupType(_, ns0, root)).map(_.unzip)
+        (r, rSco) <- lookupType(rest, ns0, root)
         pred = mkPredicate(den, ts, loc)
         schema = UnkindedType.mkSchemaExtend(Name.mkPred(ident), pred, r, loc)
-      } yield schema
+        predSco = mkPredicateScope(den, tScos)
+        schemaSco = ScopeType.mkSchemaExtend(Name.mkPred(ident), predSco, rSco)
+      } yield (schema, schemaSco)
 
     case NamedAst.Type.Relation(tpes, loc) =>
       for {
-        ts <- traverse(tpes)(lookupType(_, ns0, root))
+        (ts, tScos) <- traverse(tpes)(lookupType(_, ns0, root)).map(_.unzip)
         rel = UnkindedType.mkRelation(ts, loc)
-      } yield rel
+        relSco = ScopeType.mkRelation(tScos)
+      } yield (rel, relSco)
 
     case NamedAst.Type.Lattice(tpes, loc) =>
       for {
-        ts <- traverse(tpes)(lookupType(_, ns0, root))
+        (ts, tScos) <- traverse(tpes)(lookupType(_, ns0, root)).map(_.unzip)
         lat = UnkindedType.mkLattice(ts, loc)
-      } yield lat
+        latSco = ScopeType.mkLattice(tScos)
+      } yield (lat, latSco)
 
     case NamedAst.Type.Native(fqn, loc) =>
       fqn match {
-        case "java.math.BigInteger" => UnkindedType.mkBigInt(loc).toSuccess
-        case "java.lang.String" => UnkindedType.mkString(loc).toSuccess
+        case "java.math.BigInteger" => (UnkindedType.mkBigInt(loc), ScopeType.BigInt.asUnscoped).toSuccess
+        case "java.lang.String" => (UnkindedType.mkString(loc), ScopeType.Str.asUnscoped).toSuccess
         case _ => lookupJvmClass(fqn, loc) map {
-          case clazz => UnkindedType.mkNative(clazz)
+          case clazz => (UnkindedType.mkNative(clazz), ScopeType.mkNative(clazz).asUnscoped)
         }
       }
 
     case NamedAst.Type.Arrow(tparams0, eff0, tresult0, loc) =>
       for {
-        tparams <- traverse(tparams0)(lookupType(_, ns0, root))
-        tresult <- lookupType(tresult0, ns0, root)
-        eff <- lookupType(eff0, ns0, root)
-      } yield UnkindedType.mkUncurriedArrowWithEffect(tparams, eff, tresult, loc)
+        (tparams, tparamScos) <- traverse(tparams0)(lookupType(_, ns0, root)).map(_.unzip)
+        (tresult, resultSco) <- lookupType(tresult0, ns0, root)
+        (eff, effSco) <- lookupType(eff0, ns0, root)
+      } yield (UnkindedType.mkUncurriedArrowWithEffect(tparams, eff, tresult, loc), ScopeType.mkUncurriedArrowWithEffect(tparamScos, effSco, resultSco))
 
     case NamedAst.Type.Apply(base0, targ0, loc) =>
       for {
-        tpe1 <- lookupType(base0, ns0, root)
-        tpe2 <- lookupType(targ0, ns0, root)
+        (tpe1, sco1) <- lookupType(base0, ns0, root)
+        (tpe2, sco2) <- lookupType(targ0, ns0, root)
         app = UnkindedType.Apply(tpe1, tpe2)
-      } yield UnkindedType.simplify(app)
+        appSco = ScopeType.Apply(sco1, sco2).asUnscoped
+      } yield (UnkindedType.simplify(app), ScopeType.simplify(appSco))
 
     case NamedAst.Type.True(loc) =>
-      UnkindedType.mkTrue(loc).toSuccess
+      (UnkindedType.mkTrue(loc), ScopeType.True.asUnscoped).toSuccess
 
     case NamedAst.Type.False(loc) =>
-      UnkindedType.mkFalse(loc).toSuccess
+      (UnkindedType.mkFalse(loc), ScopeType.False.asUnscoped).toSuccess
 
     case NamedAst.Type.Not(tpe, loc) =>
       mapN(lookupType(tpe, ns0, root)) {
-        case t => UnkindedType.mkNot(t, loc)
+        case (t, s) => (UnkindedType.mkNot(t, loc), ScopeType.mkNot(s))
       }
 
     case NamedAst.Type.And(tpe1, tpe2, loc) =>
       mapN(lookupType(tpe1, ns0, root), lookupType(tpe2, ns0, root)) {
-        case (t1, t2) => UnkindedType.mkAnd(t1, t2, loc)
+        case ((t1, s1), (t2, s2)) => (UnkindedType.mkAnd(t1, t2, loc), ScopeType.mkAnd(s1, s2))
       }
 
     case NamedAst.Type.Or(tpe1, tpe2, loc) =>
       mapN(lookupType(tpe1, ns0, root), lookupType(tpe2, ns0, root)) {
-        case (t1, t2) => UnkindedType.mkOr(t1, t2, loc)
+        case ((t1, s1), (t2, s2)) => (UnkindedType.mkOr(t1, t2, loc), ScopeType.mkOr(s1, s2))
       }
 
     case NamedAst.Type.Ascribe(tpe, kind, loc) =>
       mapN(lookupType(tpe, ns0, root)) {
-        t => UnkindedType.Ascribe(t, kind, loc)
+        case (t, s) => (UnkindedType.Ascribe(t, kind, loc), s) // MATT just skipping the ascription...
       }
 
     case NamedAst.Type.Scoped(tpe, loc) =>
@@ -1869,6 +1874,21 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     }
 
     UnkindedType.Apply(tycon, ts)
+  }
+
+  // MATT copypasted ofc
+  private def mkPredicateScope(den: Ast.Denotation, tScos0: List[ScopeInfo]): ScopeInfo = {
+    val tycon = den match {
+      case Denotation.Relational => ScopeType.Relation.asUnscoped
+      case Denotation.Latticenal => ScopeType.Lattice.asUnscoped
+    }
+    val ts = tScos0 match {
+      case Nil => ScopeType.Unit.asUnscoped
+      case x :: Nil => x
+      case xs => ScopeType.mkTuple(xs)
+    }
+
+    ScopeType.Apply(tycon, ts).asUnscoped
   }
 
   /**

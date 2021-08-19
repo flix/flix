@@ -1,5 +1,7 @@
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.api.Flix
+
 sealed trait ScopeType {
   def asScoped: ScopeInfo = this.withScope(Scopedness.Scoped)
 
@@ -19,10 +21,13 @@ object ScopeType {
 
   case class Lambda(svar: ScopeInfo, s: ScopeInfo) extends ScopeType
 
-
-  //  def mkApply(base: ScopeInfo, ts: List[ScopeInfo]): ScopeInfo = ts.foldLeft(base) {
-  //    case (acc, t) => Apply(acc, t).asUnscoped
-  //  }
+  /**
+    * Returns a fresh type variable of the given kind `k` and rigidity `r`.
+    */
+  def freshVar()(implicit flix: Flix): ScopeType.Var = {
+    val id = flix.genSym.freshId()
+    Var(id)
+  }
 
   /**
     * Represents the Unit type.
