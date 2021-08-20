@@ -420,7 +420,8 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     case ResolvedAst.Expression.Ascribe(exp0, expectedType0, expectedEff0, loc) =>
       for {
         exp <- visitExp(exp0, kenv, root)
-        expectedType <- Validation.traverse(expectedType0)(visitType(_, KindMatch.subKindOf(Kind.Star), kenv, root))
+        expectedType <- Validation.traverse(expectedType0)(pair => visitType(pair._1, KindMatch.subKindOf(Kind.Star), kenv, root))
+        expectedSco <-
         expectedEff <- Validation.traverse(expectedEff0)(visitType(_, KindMatch.subKindOf(Kind.Bool), kenv, root))
       } yield KindedAst.Expression.Ascribe(exp, expectedType.headOption, expectedEff.headOption, Type.freshVar(Kind.Star), loc)
 

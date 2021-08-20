@@ -723,12 +723,16 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         case NamedAst.Expression.Ascribe(exp, expectedType, expectedEff, loc) =>
           val expectedTypVal = expectedType match {
-            case None => (None: Option[UnkindedType]).toSuccess
-            case Some(t) => mapN(lookupType(t, ns0, root))(x => Some(x._1)) // MATT use sco? (._2)
+            case None => (None: Option[(UnkindedType, ScopeInfo)]).toSuccess
+            case Some(t) => mapN(lookupType(t, ns0, root))(x => Some(x))
+          }
+          val expectedTypeVal = Validation.traverse(expectedType)(lookupType(_, ns0, root))
+          val expectedScoVal = expectedType match {
+            case None => ()
           }
           val expectedEffVal = expectedEff match {
             case None => (None: Option[UnkindedType]).toSuccess
-            case Some(f) => mapN(lookupType(f, ns0, root))(x => Some(x._1)) // MATT use sco? (._2)
+            case Some(f) => mapN(lookupType(f, ns0, root))(x => Some(x._1)) // MATT ignoring sco of eff
           }
 
           for {
@@ -740,12 +744,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         case NamedAst.Expression.Cast(exp, declaredType, declaredEff, loc) =>
 
           val declaredTypVal = declaredType match {
-            case None => (None: Option[UnkindedType]).toSuccess
-            case Some(t) => mapN(lookupType(t, ns0, root))(x => Some(x._1)) // MATT use sco? (._2)
+            case None => (None: Option[(UnkindedType, ScopeInfo)]).toSuccess
+            case Some(t) => mapN(lookupType(t, ns0, root))(x => Some(x))
           }
           val declaredEffVal = declaredEff match {
             case None => (None: Option[UnkindedType]).toSuccess
-            case Some(f) => mapN(lookupType(f, ns0, root))(x => Some(x._1)) // MATT use sco? (._2)
+            case Some(f) => mapN(lookupType(f, ns0, root))(x => Some(x._1)) // MATT ignoring sco of eff
           }
 
           for {
