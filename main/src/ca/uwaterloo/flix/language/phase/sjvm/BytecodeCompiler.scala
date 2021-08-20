@@ -840,8 +840,24 @@ object BytecodeCompiler {
       f.asInstanceOf[F[R ** T]]
     }
 
-    case Expression.GetField(field, exp, tpe, loc) => ???
-    case Expression.PutField(field, exp1, exp2, tpe, loc) => ???
+    case Expression.GetField(field, exp, tpe, loc) =>
+      WithSource[R](loc) ~
+        compileExp(exp) ~
+        ((f: F[R ** PReference[PAnyObject]]) => {
+          f.visitor.visitFieldInsn(Opcodes.GETFIELD, JvmName.fromClass(field.getDeclaringClass).toInternalName, field.getName, tpe.toDescriptor)
+          f.asInstanceOf[F[R ** T]]
+        })
+
+    case Expression.PutField(field, exp1, exp2, _, loc) =>
+      WithSource[R](loc) ~
+        compileExp(exp1) ~
+        compileExp(exp2) ~
+        (f => {
+          f.visitor.visitFieldInsn(Opcodes.PUTFIELD, JvmName.fromClass(field.getDeclaringClass).toInternalName, field.getName, exp2.tpe.toDescriptor)
+          f.asInstanceOf[F[R]]
+        }) ~
+        pushUnit
+
     case Expression.GetStaticField(field, tpe, loc) =>
       WithSource[R](loc) ~
         getStaticField(field, tpe)
