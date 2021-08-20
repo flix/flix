@@ -45,8 +45,9 @@ object GenDefClasses {
   }
 
   private def genByteCode[T <: PType](defn: ErasedAst.Def[T], defName: JvmName, functionType: RArrow[T])(implicit root: Root, flix: Flix): Array[Byte] = {
-    val classMaker = ClassMaker.mkClass(defName, addSource = false, Some(functionType.jvmName))
-    classMaker.mkSuperConstructor()
+    val superClass = functionType.jvmName
+    val classMaker = ClassMaker.mkClass(defName, addSource = false, Some(superClass))
+    classMaker.mkConstructor(START[StackNil] ~ THISINIT(superClass) ~ RETURN, JvmName.nothingToVoid)
     classMaker.mkMethod(genInvokeFunction(defn, defName), GenContinuationInterfaces.invokeMethodName, functionType.result.nothingToContMethodDescriptor, Mod.isPublic)
     classMaker.closeClassMaker
   }
@@ -58,11 +59,12 @@ object GenDefClasses {
           magicStoreArg(index, tpe, defName, sym)
       }) ~
       compileExp(defn.exp) ~
-      THISLOAD(RReference(RObject)) ~
+      THISLOAD(defName, tagOf[PAnyObject]) ~
       magicReversePutField(defName, defn.exp.tpe) ~
       RETURNNULL
   }
 
+  // TODO(JLS): could be done with other instructions
   def magicReversePutField[R <: Stack, T <: PType](className: JvmName, resultType: RType[T]): F[R ** T ** PReference[PAnyObject]] => F[R] = f => {
     resultType match {
       case RType.RInt64 | RType.RFloat64 =>
@@ -78,8 +80,9 @@ object GenDefClasses {
   def magicStoreArg[R <: Stack, T <: PType](index: Int, tpe: RType[T], defName: JvmName, sym: Symbol.VarSym): F[R] => F[R] = {
     ((f: F[R]) => {
       f.visitor.visitVarInsn(Opcodes.ALOAD, 0)
+      undoErasure(defName, f.visitor)
       f.visitor.visitFieldInsn(Opcodes.GETFIELD, defName.toInternalName, GenFunctionInterfaces.argFieldName(index), tpe.erasedDescriptor)
-      undoErasure(tpe, f.visitor)
+      undoErasure(tpe, f.visitor) // TODO(JLS): this is probably not needed
       f.asInstanceOf[F[R ** T]]
     }) ~ XStore(sym, tpe)
   }

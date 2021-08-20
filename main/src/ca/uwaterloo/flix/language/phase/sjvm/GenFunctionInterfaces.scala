@@ -24,7 +24,9 @@ import ca.uwaterloo.flix.language.ast.PType._
 import ca.uwaterloo.flix.language.ast.RRefType._
 import ca.uwaterloo.flix.language.ast.RType.{RReference, squeezeFunction, squeezeReference}
 import ca.uwaterloo.flix.language.ast.{PType, RType}
+import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
 import ca.uwaterloo.flix.language.phase.sjvm.ClassMaker.Mod
+import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 
 /**
  * Generates bytecode for the function interfaces.
@@ -72,7 +74,7 @@ object GenFunctionInterfaces {
       // `arg$index` field
       classMaker.mkField(argFieldName(index), arg.erasedType, fieldMod)
     }
-    classMaker.mkSuperConstructor()
+    classMaker.mkConstructor(START[StackNil] ~ THISINIT(continuationSuperInterface) ~ RETURN, JvmName.nothingToVoid)
 
     classMaker.closeClassMaker
   }

@@ -53,7 +53,7 @@ object GenNamespaces {
    */
   private def genBytecode(className: JvmName, ns: NamespaceInfo)(implicit root: Root, flix: Flix): Array[Byte] = {
     val classMaker = ClassMaker.mkClass(className, addSource = false, None)
-    classMaker.mkSuperConstructor()
+    classMaker.mkConstructor(START[StackNil] ~ THISINIT(JvmName.Java.Lang.Object) ~ RETURN, JvmName.nothingToVoid)
     for ((sym, defn) <- ns.defs) {
       val arrow = squeezeFunction(squeezeReference(defn.tpe))
       val functionDescriptor = JvmName.getMethodDescriptor(arrow.args, arrow.result)

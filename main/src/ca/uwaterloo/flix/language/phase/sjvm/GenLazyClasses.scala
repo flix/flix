@@ -136,8 +136,7 @@ object GenLazyClasses {
     this.expression = expression.
      */
     START[StackNil] ~
-      THISLOAD(lazyType) ~
-      INVOKEOBJECTCONSTRUCTOR ~
+      THISINIT(JvmName.Java.Lang.Object) ~
       THISLOAD(lazyType) ~
       pushBool(false) ~
       PUTFIELD(lazyType, initializedFieldName, initializedFieldType, erasedType = false) ~
