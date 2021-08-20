@@ -753,6 +753,22 @@ object Instructions {
     castF(f)
   }
 
+  def DUP2_onCat1
+  [R <: Stack, T1 <: PType, T2 <: PType]
+  (implicit t1: T1 => Cat1[T1], t2: T2 => Cat1[T2]):
+  F[R ** T2 ** T1] => F[R ** T2 ** T1 ** T2 ** T1] = f => {
+    f.visitor.visitInsn(Opcodes.DUP2)
+    castF(f)
+  }
+
+  def DUP2_onCat2
+  [R <: Stack, T <: PType]
+  (implicit t: T => Cat2[T]):
+  F[R ** T] => F[R ** T ** T] = f => {
+    f.visitor.visitInsn(Opcodes.DUP2)
+    castF(f)
+  }
+
   // TODO(JLS): the Int32Usable doesnt fit perfectly here...
   def I2B
   [R <: Stack, T <: PType]

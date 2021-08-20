@@ -231,7 +231,7 @@ object BytecodeCompiler {
           // TODO(JLS): this is probaly not optimal when coded with capabilities
           WithSource[R](loc) ~
             compileExp(exp1) ~
-            IFEQ(START[R] ~ pushBool(false)){
+            IFEQ(START[R] ~ pushBool(false)) {
               START[R] ~
                 compileExp(exp2) ~
                 IFEQ(START[R] ~ pushBool(false))(START[R] ~ pushBool(true))
@@ -239,7 +239,7 @@ object BytecodeCompiler {
         case LogicalOp.Or =>
           WithSource[R](loc) ~
             compileExp(exp1) ~
-            IFNE(START[R] ~ pushBool(true)){
+            IFNE(START[R] ~ pushBool(true)) {
               START[R] ~
                 compileExp(exp2) ~
                 IFNE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
@@ -712,7 +712,28 @@ object BytecodeCompiler {
         PUTFIELD(squeezeReference(exp1.tpe), GenRefClasses.ValueFieldName, exp2.tpe, erasedType = true) ~
         pushUnit
 
-    case Expression.Existential(fparam, exp, loc) => ???
+    case Expression.Existential(_, _, loc) =>
+      WithSource[R](loc) ~
+        NEW(JvmName.Flix.Runtime.ReifiedSourceLocation, tagOf[PAnyObject]) ~
+        DUP ~
+        pushString(loc.source.format) ~
+        pushInt32(loc.beginLine) ~
+        pushInt32(loc.beginCol) ~
+        pushInt32(loc.endLine) ~
+        pushInt32(loc.endCol) ~
+        (f => {
+          f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, JvmName.Flix.Runtime.ReifiedSourceLocation.toInternalName, JvmName.constructorMethod, JvmName.getMethodDescriptor(List(RStr, RInt32, RInt32, RInt32, RInt32), None), false)
+          f.asInstanceOf[F[R ** PReference[PAnyObject]]]
+        }) ~
+        NEW(JvmName.Flix.Runtime.NotImplementedError, tagOf[PAnyObject]) ~
+        DUP_X1 ~
+        SWAP ~
+        (f => {
+          f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, JvmName.Flix.Runtime.NotImplementedError.toInternalName, JvmName.constructorMethod, JvmName.getMethodDescriptor(List(JvmName.Flix.Runtime.ReifiedSourceLocation), None), false)
+          f.visitor.visitInsn(Opcodes.ATHROW)
+          f.asInstanceOf[F[R ** T]]
+        })
+
     case Expression.Universal(fparam, exp, loc) => ???
     case Expression.Cast(exp, tpe, loc) => {
       // TODO(JLS): implement Cast

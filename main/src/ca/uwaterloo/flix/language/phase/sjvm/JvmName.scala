@@ -119,6 +119,9 @@ object JvmName {
     object Runtime {
       val pckage: List[String] = Flix.pckage :+ "runtime"
 
+      val NotImplementedError: JvmName = JvmName(pckage, "NotImplementedError")
+      val ReifiedSourceLocation: JvmName = JvmName(pckage, "ReifiedSourceLocation")
+
       object Value {
         val pckage: List[String] = Runtime.pckage :+ "value"
         val Unit: JvmName = JvmName(pckage, "Unit")
