@@ -712,6 +712,7 @@ object BytecodeCompiler {
         PUTFIELD(squeezeReference(exp1.tpe), GenRefClasses.ValueFieldName, exp2.tpe, erasedType = true) ~
         pushUnit
 
+      // TODO(JLS): these should maybe be removed in the eraser
     case Expression.Existential(_, _, loc) =>
       WithSource[R](loc) ~
         throwCompilerError(JvmName.Flix.Runtime.NotImplementedError, loc)
@@ -863,7 +864,10 @@ object BytecodeCompiler {
         compileExp(exp) ~
         FORCE(exp.tpe)
 
-    case Expression.HoleError(sym, tpe, loc) => ???
+    case Expression.HoleError(sym, _, loc) =>
+      WithSource[R](loc) ~
+        throwStringedCompilerError(JvmName.Flix.Runtime.HoleError, sym.toString, loc)
+
     case Expression.MatchError(_, loc) =>
       WithSource[R](loc) ~
         throwCompilerError(JvmName.Flix.Runtime.MatchError, loc)

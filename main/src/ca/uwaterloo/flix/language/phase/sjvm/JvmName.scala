@@ -121,6 +121,7 @@ object JvmName {
 
       val NotImplementedError: JvmName = JvmName(pckage, "NotImplementedError")
       val MatchError: JvmName = JvmName(pckage, "MatchError")
+      val HoleError: JvmName = JvmName(pckage, "HoleError")
       val ReifiedSourceLocation: JvmName = JvmName(pckage, "ReifiedSourceLocation")
 
       object Value {
