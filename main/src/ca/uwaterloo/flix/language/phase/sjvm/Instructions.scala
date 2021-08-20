@@ -512,7 +512,8 @@ object Instructions {
   [R <: Stack, T <: PRefType]
   (classType: RReference[T]):
   F[R] => F[R ** PReference[T]] = f => {
-    NEW(classType.jvmName)
+    // TODO(JLS): note: forgot the (f) here previously, easy mistake to miss
+    NEW(classType.jvmName)(f)
     castF(f)
   }
 
@@ -563,13 +564,6 @@ object Instructions {
     val resultType = squeezeLazy(rRefLazy).tpe
     f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, rRefLazy.toInternalName, GenLazyClasses.forceMethod, resultType.erasedNothingToThisMethodDescriptor, false)
     undoErasure(resultType, f.visitor)
-    castF(f)
-  }
-
-  def INVOKEOBJECTCONSTRUCTOR
-  [R <: Stack, T <: PRefType]:
-  F[R ** PReference[T]] => F[R] = f => {
-    f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, JvmName.Java.Lang.Object.toInternalName, JvmName.constructorMethod, JvmName.nothingToVoid, false)
     castF(f)
   }
 
@@ -1546,11 +1540,41 @@ object Instructions {
     castF(f)
   }
 
+  def ALOAD
+  [R <: Stack, T <: PRefType]
+  (index: Int, name: JvmName, tag: Tag[T] = null):
+  F[R] => F[R ** PReference[T]] = f => {
+    f.visitor.visitVarInsn(Opcodes.ALOAD, index)
+    undoErasure(name, f.visitor)
+    castF(f)
+  }
+
+  /**
+    * Cannot be used for object initialization since the type is casted
+    */
   def THISLOAD
   [R <: Stack, T <: PRefType]
   (tpe: RType[PReference[T]]):
   F[R] => F[R ** PReference[T]] =
     ALOAD(0, tpe)
+
+  /**
+    * Cannot be used for object initialization since the type is casted
+    */
+  def THISLOAD
+  [R <: Stack, T <: PRefType]
+  (name: JvmName, tag: Tag[T] = null):
+  F[R] => F[R ** PReference[T]] =
+    ALOAD(0, name)
+
+  def THISINIT
+  [R <: Stack]
+  (superClass: JvmName):
+  F[R] => F[R] = f => {
+    f.visitor.visitIntInsn(Opcodes.ALOAD, 0)
+    f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, superClass.toInternalName, JvmName.constructorMethod, JvmName.nothingToVoid, false)
+    castF(f)
+  }
 
   def SUBTYPE
   [R <: Stack, T <: PRefType]:

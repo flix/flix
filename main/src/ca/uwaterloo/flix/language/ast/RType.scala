@@ -108,12 +108,14 @@ object RType {
   }
 
   // TODO(JLS): should probably be in Instructions
-  def undoErasure(rType: RType[_ <: PType], methodVisitor: MethodVisitor): Unit =
-    rType match {
+  def undoErasure(rType: RType[_ <: PType], methodVisitor: MethodVisitor): Unit = rType match {
         // TODO(JLS): Should not output ins if referenceType is RObject
-      case RReference(referenceType) => methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, referenceType.toInternalName)
+      case RReference(referenceType) => undoErasure(referenceType.jvmName, methodVisitor)
       case RBool | RInt8 | RInt16 | RInt32 | RInt64 | RChar | RFloat32 | RFloat64 => ()
     }
+
+  def undoErasure(name: JvmName, methodVisitor: MethodVisitor): Unit =
+    methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, name.toInternalName)
 
   def toErasedString[T <: PType](e: RType[T]): String = e match {
     case RBool => "Bool"
@@ -210,7 +212,7 @@ object RRefType {
   }
 
   case class RArray[T <: PType](tpe: RType[T]) extends RRefType[PArray[T]] {
-    private lazy val className: String = s"[${tpe.erasedDescriptor}"
+    private lazy val className: String = s"[${tpe.toDescriptor}"
     override lazy val jvmName: JvmName = new JvmName(Nil, className) {
       override lazy val toDescriptor: String = this.toInternalName
     }

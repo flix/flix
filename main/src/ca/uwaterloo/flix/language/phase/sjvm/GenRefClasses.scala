@@ -22,7 +22,9 @@ import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.RRefType._
 import ca.uwaterloo.flix.language.ast.RType._
 import ca.uwaterloo.flix.language.ast.{PType, RType}
+import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler.StackNil
 import ca.uwaterloo.flix.language.phase.sjvm.ClassMaker.Mod
+import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 
 /**
   * Generates bytecode for the ref classes.
@@ -51,7 +53,7 @@ object GenRefClasses {
     // Generate the instance field
     classMaker.mkField(ValueFieldName, valueFieldType, Mod.isPublic)
 
-    classMaker.mkSuperConstructor()
+    classMaker.mkConstructor(START[StackNil] ~ THISINIT(JvmName.Java.Lang.Object) ~ RETURN, JvmName.nothingToVoid)
 
     classMaker.closeClassMaker
   }

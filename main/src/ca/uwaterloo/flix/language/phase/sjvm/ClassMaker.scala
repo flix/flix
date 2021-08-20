@@ -41,21 +41,6 @@ class ClassMaker(visitor: ClassWriter, superClass: JvmName) {
   def mkConstructor(f: F[StackNil] => F[StackEnd], descriptor: String): Unit =
     mkMethod(f, JvmName.constructorMethod, descriptor, Mod.isPublic)
 
-  def compileSuperConstructor[R <: Stack](): F[R] => F[R] = f => {
-    f.visitor.visitVarInsn(Opcodes.ALOAD, 0)
-    f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, superClass.toInternalName, JvmName.constructorMethod, JvmName.nothingToVoid, false)
-    f
-  }
-
-  def mkSuperConstructor(): Unit = {
-    val f = {
-      START[StackNil] ~
-        compileSuperConstructor() ~
-        RETURN
-    }
-    mkConstructor(f, JvmName.nothingToVoid)
-  }
-
   def mkMethod(f: F[StackNil] => F[StackEnd], methodName: String, descriptor: String, mod: Mod): Unit = {
     val methodVisitor = visitor.visitMethod(mod.getValue, methodName, descriptor, null, null)
     methodVisitor.visitCode()
