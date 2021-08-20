@@ -47,6 +47,32 @@ object Instructions {
     f
   }
 
+  def throwCompilerError
+  [R <: Stack, T <: PType]
+  (exceptionName: JvmName, loc: SourceLocation, tag: Tag[T] = null):
+  F[R] => F[R ** T] = {
+    START[R] ~
+      NEW(JvmName.Flix.Runtime.ReifiedSourceLocation, tagOf[PAnyObject]) ~
+      DUP ~
+      pushString(loc.source.format) ~
+      pushInt32(loc.beginLine) ~
+      pushInt32(loc.beginCol) ~
+      pushInt32(loc.endLine) ~
+      pushInt32(loc.endCol) ~
+      (f => {
+        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, JvmName.Flix.Runtime.ReifiedSourceLocation.toInternalName, JvmName.constructorMethod, JvmName.getMethodDescriptor(List(RStr, RInt32, RInt32, RInt32, RInt32), None), false)
+        f.asInstanceOf[F[R ** PReference[PAnyObject]]]
+      }) ~
+      NEW(exceptionName, tagOf[PAnyObject]) ~
+      DUP_X1 ~
+      SWAP ~
+      (f => {
+        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, exceptionName.toInternalName, JvmName.constructorMethod, JvmName.getMethodDescriptor(List(JvmName.Flix.Runtime.ReifiedSourceLocation), None), false)
+        f.visitor.visitInsn(Opcodes.ATHROW)
+        f.asInstanceOf[F[R ** T]]
+      })
+  }
+
   def START
   [R <: Stack]:
   F[R] => F[R] =

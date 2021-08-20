@@ -714,27 +714,12 @@ object BytecodeCompiler {
 
     case Expression.Existential(_, _, loc) =>
       WithSource[R](loc) ~
-        NEW(JvmName.Flix.Runtime.ReifiedSourceLocation, tagOf[PAnyObject]) ~
-        DUP ~
-        pushString(loc.source.format) ~
-        pushInt32(loc.beginLine) ~
-        pushInt32(loc.beginCol) ~
-        pushInt32(loc.endLine) ~
-        pushInt32(loc.endCol) ~
-        (f => {
-          f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, JvmName.Flix.Runtime.ReifiedSourceLocation.toInternalName, JvmName.constructorMethod, JvmName.getMethodDescriptor(List(RStr, RInt32, RInt32, RInt32, RInt32), None), false)
-          f.asInstanceOf[F[R ** PReference[PAnyObject]]]
-        }) ~
-        NEW(JvmName.Flix.Runtime.NotImplementedError, tagOf[PAnyObject]) ~
-        DUP_X1 ~
-        SWAP ~
-        (f => {
-          f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, JvmName.Flix.Runtime.NotImplementedError.toInternalName, JvmName.constructorMethod, JvmName.getMethodDescriptor(List(JvmName.Flix.Runtime.ReifiedSourceLocation), None), false)
-          f.visitor.visitInsn(Opcodes.ATHROW)
-          f.asInstanceOf[F[R ** T]]
-        })
+        throwCompilerError(JvmName.Flix.Runtime.NotImplementedError, loc)
 
-    case Expression.Universal(fparam, exp, loc) => ???
+    case Expression.Universal(_, _, loc) =>
+      WithSource[R](loc) ~
+        throwCompilerError(JvmName.Flix.Runtime.NotImplementedError, loc)
+
     case Expression.Cast(exp, tpe, loc) => {
       // TODO(JLS): implement Cast
       def fixStack[R <: Stack, T1 <: PType, T2 <: PType]: F[R ** T1] => F[R ** T2] = f => f.asInstanceOf[F[R ** T2]]
@@ -879,7 +864,9 @@ object BytecodeCompiler {
         FORCE(exp.tpe)
 
     case Expression.HoleError(sym, tpe, loc) => ???
-    case Expression.MatchError(tpe, loc) => ???
+    case Expression.MatchError(_, loc) =>
+      WithSource[R](loc) ~
+        throwCompilerError(JvmName.Flix.Runtime.MatchError, loc)
 
     case Expression.BoxInt8(exp, loc) => ???
     case Expression.BoxInt16(exp, loc) => ???
