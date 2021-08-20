@@ -115,7 +115,7 @@ object BytecodeCompiler {
 
     case Expression.Closure(sym, freeVars, tpe, loc) =>
       WithSource[R](loc) ~
-        CREATECLOSURE(freeVars, sym.cloName)
+        CREATECLOSURE(freeVars, sym.cloName, squeezeFunction(squeezeReference(tpe)).jvmName)
 
     case Expression.ApplyClo(exp, args, _, loc) =>
       WithSource[R](loc) ~

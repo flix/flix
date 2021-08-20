@@ -1722,10 +1722,15 @@ object Instructions {
 
   def CREATECLOSURE
   [R <: Stack, T <: PType]
-  (freeVars: List[ErasedAst.FreeVar], cloClassName: JvmName, t: Tag[T] = null):
+  (freeVars: List[ErasedAst.FreeVar], cloClassName: JvmName, fnName: JvmName, t: Tag[T] = null):
   F[R] => F[R ** PReference[PFunction[T]]] =
-    makeAndInitDef(cloClassName) ~
-      setArgs(cloClassName, freeVars.map(f => ErasedAst.Expression.Var(f.sym, f.tpe, SourceLocation.Unknown)), GenClosureClasses.cloArgFieldName, t)
+    START[R] ~
+      makeAndInitDef(cloClassName, tagOf[T]) ~
+      setArgs(cloClassName, freeVars.map(f => ErasedAst.Expression.Var(f.sym, f.tpe, SourceLocation.Unknown)), GenClosureClasses.cloArgFieldName, tagOf[T]) ~
+      ((f: F[R ** PReference[PFunction[T]]]) => {
+        undoErasure(fnName, f.visitor)
+        f
+      })
   // TODO(JLS): This added exp could maybe cause trouble
 
   def ILOAD
