@@ -40,7 +40,7 @@ object ResolvedAst {
 
   case class Def(sym: Symbol.DefnSym, spec: ResolvedAst.Spec, exp: ResolvedAst.Expression)
 
-  case class Spec(doc: Ast.Doc, ann: List[ResolvedAst.Annotation], mod: Ast.Modifiers, tparams: ResolvedAst.TypeParams, fparams: List[ResolvedAst.FormalParam], sc: ResolvedAst.Scheme, tpe: UnkindedType, eff: UnkindedType, loc: SourceLocation)
+  case class Spec(doc: Ast.Doc, ann: List[ResolvedAst.Annotation], mod: Ast.Modifiers, tparams: ResolvedAst.TypeParams, fparams: List[ResolvedAst.FormalParam], sc: ResolvedAst.Scheme, tpe: UnkindedType, eff: UnkindedType, sco: ScopeType, loc: SourceLocation)
 
   case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: ResolvedAst.TypeParams, cases: Map[Name.Tag, ResolvedAst.Case], tpeDeprecated: UnkindedType, sc: ResolvedAst.Scheme, loc: SourceLocation)
 
@@ -54,7 +54,7 @@ object ResolvedAst {
 
     case class Wild(loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Var(sym: Symbol.VarSym, tpe: UnkindedType, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Var(sym: Symbol.VarSym, tpe: UnkindedType, sco: ScopeInfo, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Def(sym: Symbol.DefnSym, loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -312,7 +312,7 @@ object ResolvedAst {
 
   }
 
-  case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: UnkindedType, loc: SourceLocation)
+  case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: UnkindedType, sco: ScopeInfo, loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: ResolvedAst.Expression)
 
@@ -328,9 +328,9 @@ object ResolvedAst {
 
   object TypeParam {
 
-    case class Kinded(name: Name.Ident, tpe: UnkindedType.Var, kind: Kind, loc: SourceLocation) extends TypeParam
+    case class Kinded(name: Name.Ident, tpe: UnkindedType.Var, kind: Kind, sco: ScopeInfo, loc: SourceLocation) extends TypeParam
 
-    case class Unkinded(name: Name.Ident, tpe: UnkindedType.Var, loc: SourceLocation) extends TypeParam
+    case class Unkinded(name: Name.Ident, tpe: UnkindedType.Var, sco: ScopeInfo, loc: SourceLocation) extends TypeParam
 
   }
 

@@ -2,9 +2,10 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
 
-
+@deprecated
 sealed trait ScopeScheme
 
+@deprecated
 object ScopeScheme {
   case object Unit extends ScopeScheme
 

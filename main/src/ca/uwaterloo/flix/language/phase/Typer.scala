@@ -195,12 +195,12 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
     * Performs type inference and reassembly on the given Spec `spec`.
     */
   private def visitSpec(spec: KindedAst.Spec, root: KindedAst.Root, subst: Substitution)(implicit flix: Flix): Validation[TypedAst.Spec, TypeError] = spec match {
-    case KindedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc, tpe, eff, loc) =>
+    case KindedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc, tpe, eff, sco, loc) =>
       val annVal = visitAnnotations(ann0, root)
       val tparams = getTypeParams(tparams0)
       val fparams = getFormalParams(fparams0, subst)
       Validation.mapN(annVal) {
-        ann => TypedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, loc)
+        ann => TypedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, sco, loc)
       }
   }
 
@@ -225,7 +225,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
     * Infers the type of the given definition `defn0`.
     */
   private def typeCheckDecl(spec0: KindedAst.Spec, exp0: KindedAst.Expression, assumedTconstrs: List[Ast.TypeConstraint], root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[(TypedAst.Spec, TypedAst.Impl), TypeError] = spec0 match {
-    case KindedAst.Spec(doc, ann, mod, tparams0, fparams0, sc, tpe, eff, loc) =>
+    case KindedAst.Spec(doc, ann, mod, tparams0, fparams0, sc, tpe, eff, sco, loc) =>
 
       ///
       /// Infer the type of the expression `exp0`.
@@ -377,7 +377,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
       case KindedAst.Expression.Wild(tvar, loc) =>
         liftM(List.empty, tvar, Type.Pure)
 
-      case KindedAst.Expression.Var(sym, tpe, loc) =>
+      case KindedAst.Expression.Var(sym, tpe, _, loc) =>
         for {
           resultTyp <- unifyTypeM(sym.tvar.ascribedWith(Kind.Star), tpe, loc)
         } yield (List.empty, resultTyp, Type.Pure)
@@ -1481,8 +1481,8 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
       case KindedAst.Expression.Wild(tvar, loc) =>
         TypedAst.Expression.Wild(subst0(tvar), loc)
 
-      case KindedAst.Expression.Var(sym, tvar, loc) =>
-        TypedAst.Expression.Var(sym, subst0(sym.tvar.ascribedWith(Kind.Star)), loc)
+      case KindedAst.Expression.Var(sym, tvar, sco, loc) =>
+        TypedAst.Expression.Var(sym, subst0(sym.tvar.ascribedWith(Kind.Star)), sco, loc)
 
       case KindedAst.Expression.Def(sym, tvar, loc) =>
         TypedAst.Expression.Def(sym, subst0(tvar), loc)
@@ -1885,7 +1885,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
       * Applies the substitution to the given list of formal parameters.
       */
     def visitParam(param: KindedAst.FormalParam): TypedAst.FormalParam =
-      TypedAst.FormalParam(param.sym, param.mod, subst0(param.tpe), param.loc)
+      TypedAst.FormalParam(param.sym, param.mod, subst0(param.tpe), param.sco, param.loc)
 
     visitExp(exp0, subst0)
   }
@@ -2149,7 +2149,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
     // Compute the substitution by mapping the symbol of each parameter to its declared type.
     val declaredTypes = params.map(_.tpe)
     (params zip declaredTypes).foldLeft(Substitution.empty) {
-      case (macc, (KindedAst.FormalParam(sym, _, _, _), declaredType)) =>
+      case (macc, (KindedAst.FormalParam(sym, _, _, _, _), declaredType)) =>
         macc ++ Substitution.singleton(sym.tvar.ascribedWith(Kind.Star), declaredType)
     }
   }
@@ -2158,14 +2158,14 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
     * Returns the typed version of the given type parameters `tparams0`.
     */
   private def getTypeParams(tparams0: List[KindedAst.TypeParam]): List[TypedAst.TypeParam] = tparams0.map {
-    case KindedAst.TypeParam(name, tpe, loc) => TypedAst.TypeParam(name, tpe, loc)
+    case KindedAst.TypeParam(name, tpe, sco, loc) => TypedAst.TypeParam(name, tpe, sco, loc)
   }
 
   /**
     * Returns the typed version of the given formal parameters `fparams0`.
     */
   private def getFormalParams(fparams0: List[KindedAst.FormalParam], subst0: Substitution): List[TypedAst.FormalParam] = fparams0.map {
-    case KindedAst.FormalParam(sym, mod, tpe, loc) => TypedAst.FormalParam(sym, mod, subst0(tpe), sym.loc)
+    case KindedAst.FormalParam(sym, mod, tpe, sco, loc) => TypedAst.FormalParam(sym, mod, subst0(tpe), sco, sym.loc)
   }
 
   /**

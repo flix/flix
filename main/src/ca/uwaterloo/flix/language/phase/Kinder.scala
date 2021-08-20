@@ -189,7 +189,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     * Performs kinding on the given spec under the given kind environment.
     */
   private def visitSpec(spec0: ResolvedAst.Spec, kenv: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Spec, KindError] = spec0 match {
-    case ResolvedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc0, tpe0, eff0, loc) =>
+    case ResolvedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc0, tpe0, eff0, sco, loc) =>
       val annVal = Validation.traverse(ann0)(visitAnnotation(_, kenv, root))
       val tparamsVal = Validation.traverse(tparams0.tparams)(visitTypeParam(_, kenv))
       val fparamsVal = Validation.traverse(fparams0)(visitFormalParam(_, kenv, root))
@@ -200,7 +200,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         result <- Validation.sequenceT(annVal, tparamsVal, fparamsVal, tpeVal, effVal)
         (ann, tparams, fparams, tpe, eff) = result
         sc <- scVal // ascribe the scheme separately
-      } yield KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, loc)
+      } yield KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, sco, loc)
   }
 
   /**
@@ -210,9 +210,9 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
 
     case ResolvedAst.Expression.Wild(loc) => KindedAst.Expression.Wild(Type.freshVar(Kind.Star), loc).toSuccess
 
-    case ResolvedAst.Expression.Var(sym, tpe0, loc) =>
+    case ResolvedAst.Expression.Var(sym, tpe0, sco, loc) =>
       mapN(visitType(tpe0, KindMatch.subKindOf(Kind.Star), kenv, root)) {
-        tpe => KindedAst.Expression.Var(sym, tpe, loc)
+        tpe => KindedAst.Expression.Var(sym, tpe, sco, loc)
       }
 
     case ResolvedAst.Expression.Def(sym, loc) => KindedAst.Expression.Def(sym, Type.freshVar(Kind.Star), loc).toSuccess
@@ -831,13 +831,13 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     * Performs kinding on the given type parameter under the given kind environment.
     */
   private def visitTypeParam(tparam: ResolvedAst.TypeParam, kenv: KindEnv): Validation[KindedAst.TypeParam, KindError] = tparam match {
-    case ResolvedAst.TypeParam.Kinded(name, tpe0, _, loc) =>
+    case ResolvedAst.TypeParam.Kinded(name, tpe0, _, sco, loc) =>
       mapN(visitTypeVar(tpe0, KindMatch.Wild, kenv)) {
-        tpe => KindedAst.TypeParam(name, tpe, loc)
+        tpe => KindedAst.TypeParam(name, tpe, sco, loc)
       }
-    case ResolvedAst.TypeParam.Unkinded(name, tpe0, loc) =>
+    case ResolvedAst.TypeParam.Unkinded(name, tpe0, sco, loc) =>
       mapN(visitTypeVar(tpe0, KindMatch.Wild, kenv)) {
-        tpe => KindedAst.TypeParam(name, tpe, loc)
+        tpe => KindedAst.TypeParam(name, tpe, sco, loc)
       }
   }
 
@@ -845,9 +845,9 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     * Performs kinding on the given formal param under the given kind environment.
     */
   private def visitFormalParam(fparam0: ResolvedAst.FormalParam, kenv: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.FormalParam, KindError] = fparam0 match {
-    case ResolvedAst.FormalParam(sym, mod, tpe0, loc) =>
+    case ResolvedAst.FormalParam(sym, mod, tpe0, sco, loc) =>
       mapN(visitType(tpe0, KindMatch.subKindOf(Kind.Star), kenv, root)) {
-        tpe => KindedAst.FormalParam(sym, mod, tpe, loc)
+        tpe => KindedAst.FormalParam(sym, mod, tpe, sco, loc)
       }
   }
 
@@ -867,7 +867,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     * as in the case of a class type parameter used in a sig or law.
     */
   private def inferSpec(spec0: ResolvedAst.Spec, kenv: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = spec0 match {
-    case ResolvedAst.Spec(_, _, _, _, fparams, sc, _, eff, _) =>
+    case ResolvedAst.Spec(_, _, _, _, fparams, sc, _, eff, _, _) =>
       val fparamKenvVal = Validation.fold(fparams, KindEnv.empty) {
         case (acc, fparam) => flatMapN(inferFormalParam(fparam, kenv, root)) {
           fparamKenv => acc ++ fparamKenv
@@ -886,7 +886,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     * Infers a kind environment from the given formal param.
     */
   private def inferFormalParam(fparam0: ResolvedAst.FormalParam, kenv: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = fparam0 match {
-    case ResolvedAst.FormalParam(_, _, tpe0, _) => inferType(tpe0, KindMatch.subKindOf(Kind.Star), kenv, root)
+    case ResolvedAst.FormalParam(_, _, tpe0, _, _) => inferType(tpe0, KindMatch.subKindOf(Kind.Star), kenv, root)
   }
 
   /**
@@ -982,15 +982,15 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     * Gets a kind environment from the type param, defaulting to Star kind if it is unkinded.
     */
   private def getKindEnvFromTypeParamDefaultStar(tparam0: ResolvedAst.TypeParam)(implicit flix: Flix): KindEnv = tparam0 match {
-    case ResolvedAst.TypeParam.Kinded(_, tvar, kind, _) => KindEnv.singleton(tvar -> kind)
-    case ResolvedAst.TypeParam.Unkinded(_, tvar, _) => KindEnv.singleton(tvar -> Kind.Star)
+    case ResolvedAst.TypeParam.Kinded(_, tvar, kind, _, _) => KindEnv.singleton(tvar -> kind)
+    case ResolvedAst.TypeParam.Unkinded(_, tvar, _, _) => KindEnv.singleton(tvar -> Kind.Star)
   }
 
   /**
     * Gets a kind environment from the spec.
     */
   private def getKindEnvFromSpec(spec0: ResolvedAst.Spec, kenv: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = spec0 match {
-    case ResolvedAst.Spec(_, _, _, tparams0, _, _, _, _, _) =>
+    case ResolvedAst.Spec(_, _, _, tparams0, _, _, _, _, _, _) =>
       tparams0 match {
         case tparams: ResolvedAst.TypeParams.Kinded => getKindEnvFromKindedTypeParams(tparams).toSuccess
         case _: ResolvedAst.TypeParams.Unkinded => inferSpec(spec0, kenv, root)
@@ -1004,7 +1004,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     case ResolvedAst.TypeParams.Kinded(tparams) =>
       // no chance of collision
       val map = tparams.foldLeft(Map.empty[UnkindedType.Var, Kind]) {
-        case (acc, ResolvedAst.TypeParam.Kinded(_, tpe, kind, _)) =>
+        case (acc, ResolvedAst.TypeParam.Kinded(_, tpe, kind, _, _)) =>
           acc + (tpe -> kind)
       }
       KindEnv(map)
@@ -1017,7 +1017,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     case ResolvedAst.TypeParams.Unkinded(tparams) =>
       // no chance of collision
       val map = tparams.foldLeft(Map.empty[UnkindedType.Var, Kind]) {
-        case (acc, ResolvedAst.TypeParam.Unkinded(_, tpe, _)) =>
+        case (acc, ResolvedAst.TypeParam.Unkinded(_, tpe, _, _)) =>
           acc + (tpe -> Kind.Star)
       }
       KindEnv(map)
@@ -1038,7 +1038,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     * Gets the kind of the class.
     */
   private def getClassKind(clazz: ResolvedAst.Class): Kind = clazz.tparam match {
-    case ResolvedAst.TypeParam.Kinded(_, _, kind, _) => kind
+    case ResolvedAst.TypeParam.Kinded(_, _, kind, _, _) => kind
     case _: ResolvedAst.TypeParam.Unkinded => Kind.Star
   }
 

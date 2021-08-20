@@ -162,14 +162,14 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     /**
       * Performs name resolution on the given `constraints` in the given namespace `ns0`.
       */
-    def resolve(constraints: List[NamedAst.Constraint], tenv0: Map[Symbol.VarSym, UnkindedType], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[List[ResolvedAst.Constraint], ResolutionError] = {
+    def resolve(constraints: List[NamedAst.Constraint], tenv0: Map[Symbol.VarSym, (UnkindedType, ScopeInfo)], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[List[ResolvedAst.Constraint], ResolutionError] = {
       traverse(constraints)(c => resolve(c, tenv0, ns0, root))
     }
 
     /**
       * Performs name resolution on the given constraint `c0` in the given namespace `ns0`.
       */
-    def resolve(c0: NamedAst.Constraint, tenv0: Map[Symbol.VarSym, UnkindedType], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Constraint, ResolutionError] = {
+    def resolve(c0: NamedAst.Constraint, tenv0: Map[Symbol.VarSym, (UnkindedType, ScopeInfo)], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Constraint, ResolutionError] = {
       for {
         ps <- traverse(c0.cparams)(p => Params.resolve(p, ns0, root))
         h <- Predicates.Head.resolve(c0.head, tenv0, ns0, root)
@@ -216,7 +216,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
       for {
         (fparamType, fparamSco) <- lookupType(fparam.tpe, ns0, root)
-        exp <- traverse(exp0)(Expressions.resolve(_, Map(fparam.sym -> fparamType), ns0, root))
+        exp <- traverse(exp0)(Expressions.resolve(_, Map(fparam.sym -> (fparamType, fparamSco)), ns0, root))
         spec <- resolve(spec0, ns0, root)
       } yield ResolvedAst.Sig(sym, spec, exp.headOption)
   }
@@ -230,7 +230,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
       for {
         (fparamType, fparamSco) <- lookupType(fparam.tpe, ns0, root)
-        exp <- Expressions.resolve(exp0, Map(fparam.sym -> fparamType), ns0, root)
+        exp <- Expressions.resolve(exp0, Map(fparam.sym -> (fparamType, fparamSco)), ns0, root)
         spec <- resolve(spec0, ns0, root)
       } yield ResolvedAst.Def(sym, spec, exp)
   }
@@ -249,10 +249,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       val effVal = lookupType(eff0, ns0, root)
 
       mapN(fparamsVal, annVal, schemeVal, retTpeVal, effVal) {
-        case (fparams, ann, scheme, (retTpe, retSco), (eff, effSco)) =>
+        case (fparams, ann, (scheme, sco), (retTpe, retSco), (eff, effSco)) =>
           // MATT retSco irrelevant
           // MATT effSco irrelevant
-          ResolvedAst.Spec(doc, ann, mod, tparams, fparams, scheme, retTpe, eff, loc)
+          ResolvedAst.Spec(doc, ann, mod, tparams, fparams, scheme, retTpe, eff, sco, loc)
       }
   }
 
@@ -292,7 +292,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     case NamedAst.TypeAlias(doc, mod, sym, tparams0, tpe0, loc) =>
       val tparams = resolveTypeParams(tparams0, ns0, root)
       for {
-        (tpe, sco) <- lookupType(tpe0, ns0, root) // MATT use sco?
+        (tpe, sco) <- lookupType(tpe0, ns0, root) // MATT use sco? // MATT being a little lazy for now since aliases are erased
       } yield ResolvedAst.TypeAlias(doc, mod, sym, tparams, tpe, loc)
   }
 
@@ -320,7 +320,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       * Performs name resolution on the given expression `exp0` in the namespace `ns0`.
       */
     // TODO: Why is this tenv here?
-    def resolve(exp0: NamedAst.Expression, tenv0: Map[Symbol.VarSym, UnkindedType], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Expression, ResolutionError] = {
+    def resolve(exp0: NamedAst.Expression, tenv0: Map[Symbol.VarSym, (UnkindedType, ScopeInfo)], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Expression, ResolutionError] = {
 
       /**
         * Creates `arity` fresh fparams for use in a curried def or sig application.
@@ -330,7 +330,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         val varSyms = (0 until arity).map(i => Symbol.freshVarSym("$" + i, loc)).toList
 
         // Introduce a formal parameter for each variable symbol.
-        varSyms.map(sym => ResolvedAst.FormalParam(sym, Ast.Modifiers.Empty, sym.tvar, loc))
+        varSyms.map(sym => ResolvedAst.FormalParam(sym, Ast.Modifiers.Empty, sym.tvar, sym.sco, loc))
       }
 
       /**
@@ -338,7 +338,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         */
       def mkCurriedLambda(fparams: List[ResolvedAst.FormalParam], baseExp: ResolvedAst.Expression, loc: SourceLocation): ResolvedAst.Expression = {
         // The arguments passed to the definition (i.e. the fresh variable symbols).
-        val argExps = fparams.map(fparam => ResolvedAst.Expression.Var(fparam.sym, fparam.sym.tvar, loc))
+        val argExps = fparams.map(fparam => ResolvedAst.Expression.Var(fparam.sym, fparam.sym.tvar, fparam.sym.sco, loc))
 
         // The apply expression inside the lambda.
         val applyExp = ResolvedAst.Expression.Apply(baseExp, argExps, loc)
@@ -437,14 +437,14 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       /**
         * Local visitor.
         */
-      def visit(e0: NamedAst.Expression, tenv0: Map[Symbol.VarSym, UnkindedType]): Validation[ResolvedAst.Expression, ResolutionError] = e0 match {
+      def visit(e0: NamedAst.Expression, tenv0: Map[Symbol.VarSym, (UnkindedType, ScopeInfo)]): Validation[ResolvedAst.Expression, ResolutionError] = e0 match {
 
         case NamedAst.Expression.Wild(loc) =>
           ResolvedAst.Expression.Wild(loc).toSuccess
 
         case NamedAst.Expression.Var(sym, loc) => tenv0.get(sym) match {
-          case None => ResolvedAst.Expression.Var(sym, sym.tvar, loc).toSuccess
-          case Some(tpe) => ResolvedAst.Expression.Var(sym, tpe, loc).toSuccess
+          case None => ResolvedAst.Expression.Var(sym, sym.tvar, sym.sco, loc).toSuccess
+          case Some((tpe, sco)) => ResolvedAst.Expression.Var(sym, tpe, sco, loc).toSuccess
         }
 
         case NamedAst.Expression.DefOrSig(qname, loc) =>
@@ -511,8 +511,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         case NamedAst.Expression.Lambda(fparam, exp, loc) =>
           for {
-            (paramType, paramSco) <- lookupType(fparam.tpe, ns0, root) // MATT use sco?
-            e <- visit(exp, tenv0 + (fparam.sym -> paramType))
+            (paramType, paramSco) <- lookupType(fparam.tpe, ns0, root)
+            e <- visit(exp, tenv0 + (fparam.sym -> (paramType, paramSco)))
             p <- Params.resolve(fparam, ns0, root)
           } yield ResolvedAst.Expression.Lambda(p, e, loc)
 
@@ -607,10 +607,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
                   val freshVar = Symbol.freshVarSym("x", loc)
 
                   // Construct the formal parameter for the fresh symbol.
-                  val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, UnkindedType.freshVar(loc = loc), loc)
+                  val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, UnkindedType.freshVar(loc = loc), ScopeInfo.freshVar(), loc)
 
                   // Construct a variable expression for the fresh symbol.
-                  val varExp = ResolvedAst.Expression.Var(freshVar, freshVar.tvar, loc)
+                  val varExp = ResolvedAst.Expression.Var(freshVar, freshVar.tvar, freshVar.sco, loc)
 
                   // Construct the tag expression on the fresh symbol expression.
                   val tagExp = ResolvedAst.Expression.Tag(decl.sym, caze.tag, varExp, loc)
@@ -758,7 +758,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           val rulesVal = traverse(rules) {
             case NamedAst.CatchRule(sym, clazz, body) =>
               val exceptionType = UnkindedType.mkNative(clazz)
-              visit(body, tenv0 + (sym -> exceptionType)) map {
+              val exceptionSco = ScopeType.mkNative(clazz).asUnscoped
+              visit(body, tenv0 + (sym -> (exceptionType, exceptionSco))) map {
                 case b => ResolvedAst.CatchRule(sym, clazz, b)
               }
           }
@@ -993,7 +994,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       /**
         * Performs name resolution on the given head predicate `h0` in the given namespace `ns0`.
         */
-      def resolve(h0: NamedAst.Predicate.Head, tenv0: Map[Symbol.VarSym, UnkindedType], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Predicate.Head, ResolutionError] = h0 match {
+      def resolve(h0: NamedAst.Predicate.Head, tenv0: Map[Symbol.VarSym, (UnkindedType, ScopeInfo)], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Predicate.Head, ResolutionError] = h0 match {
         case NamedAst.Predicate.Head.Atom(pred, den, terms, loc) =>
           for {
             ts <- traverse(terms)(t => Expressions.resolve(t, tenv0, ns0, root))
@@ -1005,7 +1006,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       /**
         * Performs name resolution on the given body predicate `b0` in the given namespace `ns0`.
         */
-      def resolve(b0: NamedAst.Predicate.Body, tenv0: Map[Symbol.VarSym, UnkindedType], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Predicate.Body, ResolutionError] = b0 match {
+      def resolve(b0: NamedAst.Predicate.Body, tenv0: Map[Symbol.VarSym, (UnkindedType, ScopeInfo)], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Predicate.Body, ResolutionError] = b0 match {
         case NamedAst.Predicate.Body.Atom(pred, den, polarity, terms, loc) =>
           for {
             ts <- traverse(terms)(t => Patterns.resolve(t, ns0, root))
@@ -1035,8 +1036,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       */
     def resolve(fparam0: NamedAst.FormalParam, ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.FormalParam, ResolutionError] = {
       for {
-        (t, sco) <- lookupType(fparam0.tpe, ns0, root) // MATT use sco?
-      } yield ResolvedAst.FormalParam(fparam0.sym, fparam0.mod, t, fparam0.loc)
+        (t, sco) <- lookupType(fparam0.tpe, ns0, root)
+      } yield ResolvedAst.FormalParam(fparam0.sym, fparam0.mod, t, sco, fparam0.loc)
     }
 
     /**
@@ -1051,14 +1052,14 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       * Performs name resolution on the given kinded type parameter `tparam0` in the given namespace `ns0`.
       */
     def resolveKindedTparam(tparam0: NamedAst.TypeParam.Kinded): ResolvedAst.TypeParam.Kinded = tparam0 match {
-      case NamedAst.TypeParam.Kinded(name, tpe, kind, svar, loc) => ResolvedAst.TypeParam.Kinded(name, tpe, kind, loc) // MATT need svar?
+      case NamedAst.TypeParam.Kinded(name, tpe, kind, svar, loc) => ResolvedAst.TypeParam.Kinded(name, tpe, kind, svar, loc)
     }
 
     /**
       * Performs name resolution on the given unkinded type parameter `tparam0` in the given namespace `ns0`.
       */
     def resolveUnkindedTparam(tparam0: NamedAst.TypeParam.Unkinded): ResolvedAst.TypeParam.Unkinded = tparam0 match {
-      case NamedAst.TypeParam.Unkinded(name, tpe, svar, loc) => ResolvedAst.TypeParam.Unkinded(name, tpe, loc) // MATT need svar?
+      case NamedAst.TypeParam.Unkinded(name, tpe, svar, loc) => ResolvedAst.TypeParam.Unkinded(name, tpe, svar, loc)
     }
   }
 
@@ -1084,11 +1085,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Performs name resolution on the given scheme `sc0`.
     */
-  def resolveScheme(sc0: NamedAst.Scheme, ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.Scheme, ResolutionError] = {
+  def resolveScheme(sc0: NamedAst.Scheme, ns0: Name.NName, root: NamedAst.Root): Validation[(ResolvedAst.Scheme, ScopeType), ResolutionError] = {
     for {
-      (base, sco) <- lookupType(sc0.base, ns0, root) // MATT use sco?
+      (base, sco) <- lookupType(sc0.base, ns0, root)
       tconstrs <- sequence(sc0.tconstrs.map(resolveTypeConstraint(_, ns0, root)))
-    } yield ResolvedAst.Scheme(sc0.quantifiers, tconstrs, base)
+    } yield (ResolvedAst.Scheme(sc0.quantifiers, tconstrs, base), sco.scopeType)
   }
 
   /**
