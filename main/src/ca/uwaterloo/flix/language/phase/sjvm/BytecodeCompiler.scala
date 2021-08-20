@@ -627,7 +627,6 @@ object BytecodeCompiler {
         XNEWARRAY(tpe) ~
         makeAndFillArray(elms, squeezeArray(squeezeReference(tpe)))
 
-
     case Expression.ArrayNew(elm, len, tpe, loc) =>
       def elmArraySwitch
       [R0 <: Stack, T0 <: PType]
@@ -712,7 +711,7 @@ object BytecodeCompiler {
         PUTFIELD(squeezeReference(exp1.tpe), GenRefClasses.ValueFieldName, exp2.tpe, erasedType = true) ~
         pushUnit
 
-      // TODO(JLS): these should maybe be removed in the eraser
+    // TODO(JLS): these should maybe be removed in the eraser
     case Expression.Existential(_, _, loc) =>
       WithSource[R](loc) ~
         throwCompilerError(JvmName.Flix.Runtime.NotImplementedError, loc)
@@ -862,10 +861,16 @@ object BytecodeCompiler {
       WithSource[R](loc) ~
         getStaticField(field, tpe)
 
-    case Expression.PutStaticField(field, exp, tpe, loc) => ???
-    case Expression.NewChannel(exp, tpe, loc) =>
+    case Expression.PutStaticField(field, exp, tpe, loc) =>
       WithSource[R](loc) ~
-        pushNull(tpe)
+        compileExp(exp) ~
+        (f => {
+          f.visitor.visitFieldInsn(Opcodes.PUTSTATIC, JvmName.fromClass(field.getDeclaringClass).toInternalName, field.getName, exp.tpe.toDescriptor)
+          f.asInstanceOf[F[R]]
+        }) ~
+        pushUnit
+
+    case Expression.NewChannel(exp, tpe, loc) =>- ???
 
     case Expression.GetChannel(exp, tpe, loc) => ???
     case Expression.PutChannel(exp1, exp2, tpe, loc) => ???
