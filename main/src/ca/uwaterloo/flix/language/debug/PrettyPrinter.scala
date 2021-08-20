@@ -496,7 +496,9 @@ object PrettyPrinter {
           fmtParam(fparam, vt)
           vt << ", "
         }
-        vt << ") = "
+        vt << "): "
+        vt.text(RType.squeezeFunction(RType.squeezeReference(defn.tpe)).result.toString)
+        vt << "= "
         vt << Indent << NewLine
         fmtDef(defn, vt)
         vt << Dedent << NewLine << NewLine

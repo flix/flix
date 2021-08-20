@@ -78,7 +78,8 @@ object GenClosureClasses {
       compileExp(functionBody) ~
       THISLOAD(cloName, tagOf[PAnyObject]) ~
       magicReversePutField(cloName, functionBody.tpe) ~
-      RETURNNULL
+      pushNull(defn.tpe) ~
+      ARETURN
   }
 
   // TODO(JLS): could be SWAP_cat1_onSomething(..) ~ PUTFIELD(..)

@@ -68,7 +68,9 @@ object GenNamespaces {
   private def compileShimMethod[T <: PType](defName: JvmName, functionType: RArrow[T])(implicit root: Root, flix: Flix): F[StackNil] => F[StackEnd] = {
     //TODO(JLS): largely the same as CALL/TAILCALL except compiling arguments versus the loading of arguments here
     START[StackNil] ~
-      makeAndInitDef(defName, tagOf[T]) ~ { f: F[StackNil ** PReference[PFunction[T]]] =>
+      NEW(defName, tagOf[PFunction[T]]) ~
+      DUP ~
+      INVOKESPECIAL(defName) ~ { f: F[StackNil ** PReference[PFunction[T]]] =>
       var nextIndex = 0
       for ((argType, argIndex) <- functionType.args.zipWithIndex) {
         f.visitor.visitInsn(Opcodes.DUP)

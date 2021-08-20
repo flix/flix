@@ -61,7 +61,8 @@ object GenDefClasses {
       compileExp(defn.exp) ~
       THISLOAD(defName, tagOf[PAnyObject]) ~
       magicReversePutField(defName, defn.exp.tpe) ~
-      RETURNNULL
+      pushNull(defn.tpe) ~
+      ARETURN
   }
 
   // TODO(JLS): could be done with other instructions

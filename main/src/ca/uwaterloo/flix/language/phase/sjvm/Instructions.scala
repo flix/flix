@@ -430,9 +430,7 @@ object Instructions {
       case RChar => GetCharField(classType, fieldName)
       case RFloat32 => GetFloat32Field(classType, fieldName)
       case RFloat64 => GetFloat64Field(classType, fieldName)
-      case RReference(referenceType) =>
-        if (undoErasure) GetObjectField(classType, fieldName, referenceType, undoErasure)
-        else GetObjectField(classType, fieldName, referenceType, undoErasure)
+      case RReference(referenceType) => GetObjectField(classType, fieldName, referenceType, undoErasure)
     }
 
   def GetBoolField
@@ -501,11 +499,11 @@ object Instructions {
 
   def GetObjectField
   [R <: Stack, T1 <: PRefType, T2 <: PRefType]
-  (classType: RReference[T2], fieldName: String, referenceType: RRefType[T1], undoErasure: Boolean):
+  (classType: RReference[T2], fieldName: String, fieldType: RRefType[T1], undoErasure: Boolean):
   F[R ** PReference[T2]] => F[R ** PReference[T1]] = f => {
-    val descriptor = if (undoErasure) referenceType.toDescriptor else RObject.toDescriptor
+    val descriptor = if (undoErasure) RObject.toDescriptor else fieldType.toDescriptor
     f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, descriptor)
-    if (undoErasure) RType.undoErasure(RReference(referenceType), f.visitor)
+    if (undoErasure) RType.undoErasure(fieldType.jvmName, f.visitor)
     castF(f)
   }
 
@@ -521,11 +519,12 @@ object Instructions {
   [R <: Stack, T1 <: PType, T2 <: PRefType]
   (classType: RReference[T2], fieldName: String, fieldType: RType[T1], erasedType: Boolean):
   F[R ** PReference[T2] ** T1] => F[R] = f => {
-    if (erasedType) f.visitor.visitFieldInsn(Opcodes.PUTFIELD, classType.toInternalName, fieldName, fieldType.erasedType.toDescriptor)
-    else f.visitor.visitFieldInsn(Opcodes.PUTFIELD, classType.toInternalName, fieldName, fieldType.toDescriptor)
+    val descriptor = if (erasedType) fieldType.erasedDescriptor else fieldType.toDescriptor
+    f.visitor.visitFieldInsn(Opcodes.PUTFIELD, classType.toInternalName, fieldName, descriptor)
     castF(f)
   }
 
+  // made because of weird inference in tuple code gen
   def PUTFIELD
   [R <: Stack, T1 <: PType, T2 <: PRefType]
   (classType: RReference[T2], fieldName: String, fieldValue: ErasedAst.Expression[T1], erasedType: Boolean):
@@ -541,25 +540,6 @@ object Instructions {
     f.visitor.visitTypeInsn(Opcodes.CHECKCAST, e.toInternalName)
     castF(f)
   }
-
-  // TODO(JLS): What to do here. is it needed?
-
-  //  def CastIfNotPrim
-  //  [R <: Stack, T1 <: PType, T2 <: PType]
-  //  (expType: RType[T1], newType: RType[T2]):
-  //  F[R ** T1] => F[R ** T2] = (expType, newType) match {
-  //    case (RBool, RBool) => NOP
-  //    case (RInt8, RInt8) => NOP
-  //    case (RInt16, RInt16) => NOP
-  //    case (RInt32, RInt32) => NOP
-  //    case (RInt64, RInt64) => NOP
-  //    case (RChar, RChar) => NOP
-  //    case (RFloat32, RFloat32) => NOP
-  //    case (RFloat64, RFloat64) => NOP
-  //    case (RReference(_), castType@RReference(b)) =>
-  //      SCAFFOLD//CAST(b)
-  //    case _ =>
-  //  }
 
   //TODO(JLS): Only use the new+init combo instruction (impl with capability)
   def NEW
@@ -641,12 +621,6 @@ object Instructions {
     castF(f)
   }
 
-  def RETURNNULL[R <: Stack]: F[StackNil] => F[StackEnd] = f => {
-    f.visitor.visitInsn(Opcodes.ACONST_NULL)
-    f.visitor.visitInsn(Opcodes.ARETURN)
-    castF(f)
-  }
-
   def ARETURN[R <: Stack, T <: PRefType]: F[StackNil ** PReference[T]] => F[StackEnd] = f => {
     f.visitor.visitInsn(Opcodes.ARETURN)
     castF(f)
@@ -679,7 +653,6 @@ object Instructions {
     f.visitor.visitInsn(Opcodes.DRETURN)
     castF(f)
   }
-
 
   def XRETURN
   [R <: Stack, T <: PType]
@@ -817,7 +790,7 @@ object Instructions {
     castF(f)
   }
 
-  // TODO(JLS): the Int32Usable doesnt fit perfectly here...
+  // TODO(JLS): the Int32Usable doesnt fit perfectly here... shouldnt allow B2B or B2S, only downwards
   def I2B
   [R <: Stack, T <: PType]
   (implicit t: T => Int32Usable[T]):
@@ -1447,6 +1420,7 @@ object Instructions {
   }
 
   // TODO(JLS): note: this function seems impossible
+
   //  def boxIfNecessary
   //  [R <: Stack, T <: PType]
   //  (rType: RType[T], ins: F[R] => F[R ** T]):
@@ -1620,8 +1594,8 @@ object Instructions {
   }
 
   /**
-    * Cannot be used for object initialization since the type is casted
-    */
+   * Cannot be used for object initialization since the type is casted
+   */
   def THISLOAD
   [R <: Stack, T <: PRefType]
   (tpe: RType[PReference[T]]):
@@ -1629,8 +1603,8 @@ object Instructions {
     ALOAD(0, tpe)
 
   /**
-    * Cannot be used for object initialization since the type is casted
-    */
+   * Cannot be used for object initialization since the type is casted
+   */
   def THISLOAD
   [R <: Stack, T <: PRefType]
   (name: JvmName, tag: Tag[T] = null):
@@ -1673,19 +1647,10 @@ object Instructions {
   [R <: Stack, T <: PType]
   (fnType: RArrow[T]):
   F[R ** PReference[PFunction[T]]] => F[R ** T] = f => {
-    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, fnType.toInternalName, GenContinuationInterfaces.unwindMethodName, fnType.result.erasedNothingToThisMethodDescriptor, false)
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, fnType.toInternalName, GenContinuationInterfaces.unwindMethodName,
+      fnType.result.erasedNothingToThisMethodDescriptor, false)
     undoErasure(fnType.result, f.visitor)
     castF(f)
-  }
-
-  // TODO(JLS): could be made with other instructions
-  def makeAndInitDef[R <: Stack, T <: PType]
-  (className: JvmName, t: Tag[T] = null):
-  F[R] => F[R ** PReference[PFunction[T]]] = {
-    START[R] ~
-      NEW(className, tagOf[PFunction[T]]) ~
-      DUP ~
-      INVOKESPECIAL(className)
   }
 
   def setArgs[R <: Stack, T <: PType]
@@ -1715,18 +1680,27 @@ object Instructions {
 
   def CREATEDEF
   [R <: Stack, T <: PType]
-  (defClassName: JvmName, t: Tag[T] = null):
+  (defName: JvmName, fnName: JvmName, t: Tag[T] = null):
   F[R] => F[R ** PReference[PFunction[T]]] = {
-    START[R] ~ makeAndInitDef(defClassName, t)
+    START[R] ~
+      NEW(defName, tagOf[PFunction[T]]) ~
+      DUP ~
+      INVOKESPECIAL(defName) ~
+      (f => {
+        undoErasure(fnName, f.visitor)
+        f
+      })
   }
 
   def CREATECLOSURE
   [R <: Stack, T <: PType]
-  (freeVars: List[ErasedAst.FreeVar], cloClassName: JvmName, fnName: JvmName, t: Tag[T] = null):
+  (freeVars: List[ErasedAst.FreeVar], cloName: JvmName, fnName: JvmName, t: Tag[T] = null):
   F[R] => F[R ** PReference[PFunction[T]]] =
     START[R] ~
-      makeAndInitDef(cloClassName, tagOf[T]) ~
-      setArgs(cloClassName, freeVars.map(f => ErasedAst.Expression.Var(f.sym, f.tpe, SourceLocation.Unknown)), GenClosureClasses.cloArgFieldName, tagOf[T]) ~
+      NEW(cloName, tagOf[PFunction[T]]) ~
+      DUP ~
+      INVOKESPECIAL(cloName) ~
+      setArgs(cloName, freeVars.map(f => ErasedAst.Expression.Var(f.sym, f.tpe, SourceLocation.Unknown)), GenClosureClasses.cloArgFieldName, tagOf[T]) ~
       ((f: F[R ** PReference[PFunction[T]]]) => {
         undoErasure(fnName, f.visitor)
         f
@@ -1853,9 +1827,11 @@ object Instructions {
   }
 
   def AALOAD
-  [R <: Stack, T <: PRefType]:
+  [R <: Stack, T <: PRefType]
+  (tpe: RType[PReference[T]]):
   F[R ** PReference[PArray[PReference[T]]] ** PInt32] => F[R ** PReference[T]] = f => {
     f.visitor.visitInsn(Opcodes.AALOAD)
+    undoErasure(tpe, f.visitor)
     castF(f)
   }
 
@@ -1870,7 +1846,7 @@ object Instructions {
     case RChar => CALOAD
     case RFloat32 => FALOAD
     case RFloat64 => DALOAD
-    case RReference(_) => AALOAD
+    case RReference(_) => AALOAD(tpe)
   }
 
   def BASTORE
@@ -1948,33 +1924,10 @@ object Instructions {
 
   // I/S/B/C-Store are all just jvm ISTORE
   def IStore
-  [R <: Stack]
-  (sym: Symbol.VarSym):
-  F[R ** PInt32] => F[R] = f => {
-    f.visitor.visitVarInsn(Opcodes.ISTORE, sym.getStackOffset + symOffsetOffset)
-    castF(f)
-  }
-
-  def SStore
-  [R <: Stack]
-  (sym: Symbol.VarSym):
-  F[R ** PInt16] => F[R] = f => {
-    f.visitor.visitVarInsn(Opcodes.ISTORE, sym.getStackOffset + symOffsetOffset)
-    castF(f)
-  }
-
-  def BStore
-  [R <: Stack]
-  (sym: Symbol.VarSym):
-  F[R ** PInt8] => F[R] = f => {
-    f.visitor.visitVarInsn(Opcodes.ISTORE, sym.getStackOffset + symOffsetOffset)
-    castF(f)
-  }
-
-  def CStore
-  [R <: Stack]
-  (sym: Symbol.VarSym):
-  F[R ** PChar] => F[R] = f => {
+  [R <: Stack, T <: PType]
+  (sym: Symbol.VarSym)
+  (implicit t: T => Int32Usable[T]):
+  F[R ** T] => F[R] = f => {
     f.visitor.visitVarInsn(Opcodes.ISTORE, sym.getStackOffset + symOffsetOffset)
     castF(f)
   }
@@ -2016,11 +1969,11 @@ object Instructions {
   (sym: Symbol.VarSym, tpe: RType[T]):
   F[R ** T] => F[R] =
     tpe match {
-      case RChar => CStore(sym)
+      case RChar => IStore(sym)
       case RFloat32 => FStore(sym)
       case RFloat64 => DStore(sym)
-      case RInt8 => BStore(sym)
-      case RInt16 => SStore(sym)
+      case RInt8 => IStore(sym)
+      case RInt16 => IStore(sym)
       case RBool | RInt32 => IStore(sym)
       case RInt64 => LStore(sym)
       case RReference(_) => AStore(sym)
@@ -2091,6 +2044,7 @@ object Instructions {
     castF(f)
   }
 
+  // TODO(JLS): check multi dim arrays
   def XNEWARRAY
   [R <: Stack, T <: PType]
   (arrayType: RType[PReference[PArray[T]]]):
@@ -2122,7 +2076,6 @@ object Instructions {
   [R <: Stack, T <: PType]
   (elementType: RType[T]):
   F[R ** PReference[PArray[T]] ** T] => F[R] = f => {
-    //TODO(JLS): where to store the name?
     val descriptor = JvmName.getMethodDescriptor(RArray(elementType) :: elementType :: Nil, None)
     f.visitor.visitMethodInsn(Opcodes.INVOKESTATIC, JvmName.Java.Util.Arrays.toInternalName, "fill", descriptor, false)
     castF(f)
@@ -2130,10 +2083,8 @@ object Instructions {
 
   def arrayLength
   [R <: Stack, T <: PType]
-  (arrayType: RType[PReference[PArray[T]]]):
+  (tag: Tag[T] = null):
   F[R ** PReference[PArray[T]]] => F[R ** PInt32] = f => {
-    // TODO(JLS): checkcast needed? figure out a consistent casting protocol
-    f.visitor.visitTypeInsn(Opcodes.CHECKCAST, arrayType.toDescriptor)
     f.visitor.visitInsn(Opcodes.ARRAYLENGTH)
     castF(f)
   }
@@ -2142,7 +2093,7 @@ object Instructions {
   [R <: Stack, T <: PType]
   (classType: RReference[PRef[T]], innerType: RType[T]):
   F[R ** PReference[PRef[T]] ** T] => F[R] = f => {
-    f.visitor.visitFieldInsn(Opcodes.PUTFIELD, classType.toInternalName, GenRefClasses.ValueFieldName, innerType.toDescriptor)
+    f.visitor.visitFieldInsn(Opcodes.PUTFIELD, classType.toInternalName, GenRefClasses.ValueFieldName, innerType.erasedDescriptor)
     castF(f)
   }
 

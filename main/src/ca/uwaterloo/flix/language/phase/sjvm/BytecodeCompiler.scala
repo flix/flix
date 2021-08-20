@@ -123,9 +123,10 @@ object BytecodeCompiler {
         CALL(args, squeezeFunction(squeezeReference(exp.tpe)))
 
     case Expression.ApplyDef(sym, args, fnTpe, tpe, loc) =>
+      val arrow = squeezeFunction(squeezeReference(fnTpe))
       WithSource[R](loc) ~
-        CREATEDEF(sym.defName, tpe.tagOf) ~
-        CALL(args, squeezeFunction(squeezeReference(fnTpe)))
+        CREATEDEF(sym.defName, arrow.jvmName, tpe.tagOf) ~
+        CALL(args, arrow)
 
     case Expression.ApplyCloTail(exp, args, _, loc) =>
       WithSource[R](loc) ~
@@ -133,9 +134,10 @@ object BytecodeCompiler {
         TAILCALL(args, squeezeFunction(squeezeReference(exp.tpe)))
 
     case Expression.ApplyDefTail(sym, args, fnTpe, tpe, loc) =>
+      val arrow = squeezeFunction(squeezeReference(fnTpe))
       WithSource[R](loc) ~
-        CREATEDEF(sym.defName, tpe.tagOf) ~
-        TAILCALL(args, squeezeFunction(squeezeReference(fnTpe)))
+        CREATEDEF(sym.defName, arrow.jvmName, tpe.tagOf) ~
+        TAILCALL(args, arrow)
 
     case Expression.ApplySelfTail(_, _, actuals, fnTpe, _, loc) =>
       WithSource[R](loc) ~
@@ -669,7 +671,7 @@ object BytecodeCompiler {
     case Expression.ArrayLength(base, _, loc) =>
       WithSource[R](loc) ~
         compileExp(base) ~
-        arrayLength(base.tpe)
+        arrayLength(squeezeArray(squeezeReference(base.tpe)).tpe.tagOf)
 
     case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
       WithSource[R](loc) ~
