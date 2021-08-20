@@ -720,14 +720,14 @@ object BytecodeCompiler {
       WithSource[R](loc) ~
         throwCompilerError(JvmName.Flix.Runtime.NotImplementedError, loc)
 
-    case Expression.Cast(exp, tpe, loc) => {
-      // TODO(JLS): implement Cast
-      def fixStack[R <: Stack, T1 <: PType, T2 <: PType]: F[R ** T1] => F[R ** T2] = f => f.asInstanceOf[F[R ** T2]]
-
+    case Expression.Cast(exp, tpe, loc) =>
+      // TODO(JLS): When is this used and can it be removed? Should it be a flix error? user or compiler error?
       WithSource[R](loc) ~
         compileExp(exp) ~
-        fixStack
-    }
+        (f => {
+          undoErasure(tpe, f.visitor)
+          f.asInstanceOf[F[R ** T]]
+        })
 
     case Expression.TryCatch(exp, rules, tpe, loc) => ???
     case Expression.InvokeConstructor(constructor, args, tpe, loc) => ???
@@ -870,8 +870,7 @@ object BytecodeCompiler {
         }) ~
         pushUnit
 
-    case Expression.NewChannel(exp, tpe, loc) =>- ???
-
+    case Expression.NewChannel(exp, tpe, loc) => ???
     case Expression.GetChannel(exp, tpe, loc) => ???
     case Expression.PutChannel(exp1, exp2, tpe, loc) => ???
     case Expression.SelectChannel(rules, default, tpe, loc) => ???
