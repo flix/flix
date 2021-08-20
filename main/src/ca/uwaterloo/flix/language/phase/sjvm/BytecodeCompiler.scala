@@ -730,7 +730,23 @@ object BytecodeCompiler {
         })
 
     case Expression.TryCatch(exp, rules, tpe, loc) => ???
-    case Expression.InvokeConstructor(constructor, args, tpe, loc) => ???
+    case Expression.InvokeConstructor(constructor, args, tpe, loc) =>
+      // TODO(JLS): pretty messy
+      val constructorDescriptor = asm.Type.getConstructorDescriptor(constructor)
+      val className = JvmName.fromClass(constructor.getDeclaringClass)
+      WithSource[R](loc) ~
+        NEW(className, tagOf[PAnyObject]) ~
+        DUP ~
+        (f => {
+          // TODO(JLS): cant use multiComposition since there is an effect on the stack each iteration
+          for (arg <- args) {
+            compileExp(arg)(f)
+            // TODO(JLS): maybe undoErasure here? genExpression matches on array types
+          }
+          f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.toInternalName, JvmName.constructorMethod, constructorDescriptor, false)
+          f.asInstanceOf[F[R ** T]]
+        })
+
     case Expression.InvokeMethod(method, exp, args, tpe, loc) => f => {
       // TODO(JLS): fix this
       // Adding source line number for debugging
@@ -738,51 +754,21 @@ object BytecodeCompiler {
 
       // Evaluate the receiver object.
       compileExp(exp)(f)
-      val thisType = asm.Type.getInternalName(method.getDeclaringClass)
-      f.visitor.visitTypeInsn(Opcodes.CHECKCAST, thisType)
-
-      // Retrieve the signature.
-      val signature = method.getParameterTypes
+      val className = JvmName.fromClass(method.getDeclaringClass)
+      f.visitor.visitTypeInsn(Opcodes.CHECKCAST, className.toInternalName)
 
       // Evaluate arguments left-to-right and push them onto the stack.
-      for (((arg, argType), index) <- args.zip(signature).zipWithIndex) {
+      for (arg <- args) {
         compileExp(arg)(f)
-        if (!argType.isPrimitive) {
-          // NB: Really just a hack because the backend does not support array JVM types properly.
-          f.visitor.visitTypeInsn(Opcodes.CHECKCAST, asm.Type.getInternalName(argType))
-        } else {
-          def castArray(tpe: RRefType[_ <: PRefType]): Unit = tpe match {
-            case RArray(arrTpe) =>
-              def castArrayElm[T0 <: PType](arrTpe: RType[T0]): Unit = arrTpe match {
-                // NB: This is not exhaustive. In the new backend we should handle all types, including multidim arrays.
-                case RInt8 => f.visitor.visitTypeInsn(Opcodes.CHECKCAST, "[B")
-                case RInt16 => f.visitor.visitTypeInsn(Opcodes.CHECKCAST, "[S")
-                case RInt32 => f.visitor.visitTypeInsn(Opcodes.CHECKCAST, "[I")
-                case RInt64 => f.visitor.visitTypeInsn(Opcodes.CHECKCAST, "[J")
-                case RFloat32 => f.visitor.visitTypeInsn(Opcodes.CHECKCAST, "[F")
-                case RFloat64 => f.visitor.visitTypeInsn(Opcodes.CHECKCAST, "[D")
-                case _ => // nop
-              }
-
-              castArrayElm(arrTpe)
-            case _ => // nop
-          }
-
-          arg.tpe match {
-            case RReference(referenceType) => castArray(referenceType)
-            case _ => // nop
-          }
-        }
+        // TODO(JLS): maybe undoErasure here? genExpression matches on array types (method.getParameterTypes)
       }
-      val declaration = asm.Type.getInternalName(method.getDeclaringClass)
-      val name = method.getName
       val descriptor = asm.Type.getMethodDescriptor(method)
 
       // Check if we are invoking an interface or class.
       if (method.getDeclaringClass.isInterface) {
-        f.visitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, declaration, name, descriptor, true)
+        f.visitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, className.toInternalName, method.getName, descriptor, true)
       } else {
-        f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, declaration, name, descriptor, false)
+        f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, className.toInternalName, method.getName, descriptor, false)
       }
 
       // If the method is void, put a unit on top of the stack
@@ -795,44 +781,15 @@ object BytecodeCompiler {
       // Adding source line number for debugging
       WithSource(loc)(f)
 
-      // Retrieve the signature.
-      val signature = method.getParameterTypes
-
       // Evaluate arguments left-to-right and push them onto the stack.
-      for (((arg, argType), index) <- args.zip(signature).zipWithIndex) {
+      for (arg <- args) {
         compileExp(arg)(f)
-        if (!argType.isPrimitive) {
-          // NB: Really just a hack because the backend does not support array JVM types properly.
-          f.visitor.visitTypeInsn(Opcodes.CHECKCAST, asm.Type.getInternalName(argType))
-        } else {
-          def castArray(tpe: RRefType[_ <: PRefType]): Unit = tpe match {
-            case RArray(arrTpe) =>
-              def castArrayElm[T0 <: PType](arrTpe: RType[T0]): Unit = arrTpe match {
-                // NB: This is not exhaustive. In the new backend we should handle all types, including multidim arrays.
-                case RInt8 => f.visitor.visitTypeInsn(Opcodes.CHECKCAST, "[B")
-                case RInt16 => f.visitor.visitTypeInsn(Opcodes.CHECKCAST, "[S")
-                case RInt32 => f.visitor.visitTypeInsn(Opcodes.CHECKCAST, "[I")
-                case RInt64 => f.visitor.visitTypeInsn(Opcodes.CHECKCAST, "[J")
-                case RFloat32 => f.visitor.visitTypeInsn(Opcodes.CHECKCAST, "[F")
-                case RFloat64 => f.visitor.visitTypeInsn(Opcodes.CHECKCAST, "[D")
-                case _ => // nop
-              }
-
-              castArrayElm(arrTpe)
-            case _ => // nop
-          }
-
-          arg.tpe match {
-            case RReference(referenceType) => castArray(referenceType)
-            case _ => // nop
-          }
-        }
+        // TODO(JLS): maybe undoErasure here? genExpression matches on array types
       }
-      val declaration = asm.Type.getInternalName(method.getDeclaringClass)
-      val name = method.getName
+      val className = JvmName.fromClass(method.getDeclaringClass)
       val descriptor = asm.Type.getMethodDescriptor(method)
 
-      f.visitor.visitMethodInsn(Opcodes.INVOKESTATIC, declaration, name, descriptor, false)
+      f.visitor.visitMethodInsn(Opcodes.INVOKESTATIC, className.toInternalName, method.getName, descriptor, false)
 
       // If the method is void, put a unit on top of the stack
       if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) pushUnit(f)

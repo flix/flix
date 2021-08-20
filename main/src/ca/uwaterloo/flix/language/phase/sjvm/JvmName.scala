@@ -50,6 +50,7 @@ object JvmName {
     * Returns the JvmName of the given string `s`.
     */
   def fromClass(clazz: Class[_]): JvmName = {
+    // TODO(JLS): why not asm.Type.getInternalName ?
     val l = clazz.getName.split("\\.")
     if (l.isEmpty) throw InternalCompilerException(s"class name non existent $clazz")
     else if (l.size == 1) JvmName(Nil, l.last)

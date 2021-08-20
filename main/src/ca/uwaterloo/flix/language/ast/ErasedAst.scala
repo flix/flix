@@ -254,7 +254,7 @@ object ErasedAst {
 
     case class TryCatch[T <: PType](exp: Expression[T], rules: List[CatchRule[T]], tpe: RType[T], loc: SourceLocation) extends Expression[T]
 
-    case class InvokeConstructor(constructor: Constructor[_], args: List[Expression[_ <: PType]], tpe: RType[PReference[PAnyObject]], loc: SourceLocation) extends Expression[PReference[PAnyObject]]
+    case class InvokeConstructor[T <: PRefType](constructor: Constructor[_], args: List[Expression[_ <: PType]], tpe: RType[PReference[T]], loc: SourceLocation) extends Expression[PReference[T]]
 
     case class InvokeMethod[T1 <: PType, T2 <: PRefType](method: Method, exp: Expression[PReference[T2]], args: List[Expression[_ <: PType]], tpe: RType[T1], loc: SourceLocation) extends Expression[T1]
 
