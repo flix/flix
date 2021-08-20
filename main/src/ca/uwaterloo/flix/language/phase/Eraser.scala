@@ -734,83 +734,85 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
     *
     * Translates the type 'tpe' to the ErasedType.
     */
-  private def visitTpe[T <: PType](tpe: MonoType): EraserMonad[RType[T]] = tpe match {
-    case MonoType.Unit => RReference(RUnit).asInstanceOf[RType[T]].toMonad
-    case MonoType.Bool => RBool.asInstanceOf[RType[T]].toMonad
-    case MonoType.Char => RChar.asInstanceOf[RType[T]].toMonad
-    case MonoType.Float32 => RFloat32.asInstanceOf[RType[T]].toMonad
-    case MonoType.Float64 => RFloat64.asInstanceOf[RType[T]].toMonad
-    case MonoType.Int8 => RInt8.asInstanceOf[RType[T]].toMonad
-    case MonoType.Int16 => RInt16.asInstanceOf[RType[T]].toMonad
-    case MonoType.Int32 => RInt32.asInstanceOf[RType[T]].toMonad
-    case MonoType.Int64 => RInt64.asInstanceOf[RType[T]].toMonad
-    case MonoType.BigInt =>
-      RReference(RBigInt).asInstanceOf[RType[T]].toMonad
-    case MonoType.Str =>
-      RReference(RStr).asInstanceOf[RType[T]].toMonad
-    case MonoType.Array(tpe) =>
-      for {
-        tpe0 <- visitTpe[PType](tpe)
-      } yield RReference(RArray[PType](tpe0)).asInstanceOf[RType[T]]
-    case MonoType.Channel(tpe) =>
-      for {
-        tpe0 <- visitTpe[T](tpe)
-      } yield RReference(RChannel(tpe0)).asInstanceOf[RType[T]]
-    case MonoType.Lazy(tpe) =>
-      for {
-        tpe0 <- visitTpe[T](tpe)
-      } yield RReference(RLazy(tpe0)).asInstanceOf[RType[T]]
-    case MonoType.Ref(tpe) =>
-      for {
-        tpe0 <- visitTpe[T](tpe)
-      } yield RReference(RRef(tpe0)).asInstanceOf[RType[T]]
-    case MonoType.Tuple(elms) =>
-      for {
-        elms0 <- EM.traverse(elms)(visitTpe[PType])
-        expRes = RReference(RTuple(elms0))
-      } yield expRes.asInstanceOf[RType[T]]
-    case MonoType.Enum(sym, args) =>
-      EM.traverse(args)(visitTpe[PType]) flatMap (args0 => {
-        val res = RReference(REnum(sym, args0)).asInstanceOf[RType[T]]
-        res.toMonad.setEnumSyms(Set(sym))
-      })
-    case MonoType.Arrow(args, result) =>
-      EM.flatMapN(
-        EM.traverse(args)(visitTpe[PType]),
-        visitTpe[PType](result)
-      ) {
-        case (args0, result0) =>
-          val tpeRes = RReference(RArrow(args0, result0))
-          val result = tpeRes.asInstanceOf[RType[T]]
-          result.toMonad.setTypes(Set(result))
-      }
-    case MonoType.RecordEmpty() =>
-      RReference(RRecordEmpty).asInstanceOf[RType[T]].toMonad
-    case MonoType.RecordExtend(field, value, rest) =>
-      for {
-        value0 <- visitTpe[PType](value)
-        rest0 <- visitTpe[PReference[PAnyObject]](rest)
-        expRes = RReference(RRecordExtend(field, value0, rest0))
-      } yield expRes.asInstanceOf[RType[T]]
-    case MonoType.SchemaEmpty() =>
-      RReference(RSchemaEmpty).asInstanceOf[RType[T]].toMonad
-    case MonoType.SchemaExtend(name, tpe, rest) =>
-      for {
-        tpe0 <- visitTpe[PType](tpe)
-        rest0 <- visitTpe[PReference[PAnyObject]](rest)
-        expRes = RReference(RSchemaExtend(name, tpe0, rest0))
-      } yield expRes.asInstanceOf[RType[T]]
-    case MonoType.Relation(tpes) =>
-      for {
-        tpes0 <- EM.traverse(tpes)(visitTpe[PType])
-      } yield RReference(RRelation(tpes0)).asInstanceOf[RType[T]]
-    case MonoType.Lattice(tpes) =>
-      for {
-        tpes0 <- EM.traverse(tpes)(visitTpe[PType])
-      } yield RReference(RLattice(tpes0)).asInstanceOf[RType[T]]
-    case MonoType.Native(clazz) =>
-      RReference(RNative(clazz)).asInstanceOf[RType[T]].toMonad
-    case MonoType.Var(id) =>
-      RReference(RVar(id)).asInstanceOf[RType[T]].toMonad
+  private def visitTpe[T <: PType](tpe: MonoType): EraserMonad[RType[T]] = {
+    val mainMonad = tpe match {
+      case MonoType.Unit => RReference(RUnit).asInstanceOf[RType[T]].toMonad
+      case MonoType.Bool => RBool.asInstanceOf[RType[T]].toMonad
+      case MonoType.Char => RChar.asInstanceOf[RType[T]].toMonad
+      case MonoType.Float32 => RFloat32.asInstanceOf[RType[T]].toMonad
+      case MonoType.Float64 => RFloat64.asInstanceOf[RType[T]].toMonad
+      case MonoType.Int8 => RInt8.asInstanceOf[RType[T]].toMonad
+      case MonoType.Int16 => RInt16.asInstanceOf[RType[T]].toMonad
+      case MonoType.Int32 => RInt32.asInstanceOf[RType[T]].toMonad
+      case MonoType.Int64 => RInt64.asInstanceOf[RType[T]].toMonad
+      case MonoType.BigInt =>
+        RReference(RBigInt).asInstanceOf[RType[T]].toMonad
+      case MonoType.Str =>
+        RReference(RStr).asInstanceOf[RType[T]].toMonad
+      case MonoType.Array(tpe) =>
+        for {
+          tpe0 <- visitTpe[PType](tpe)
+        } yield RReference(RArray[PType](tpe0)).asInstanceOf[RType[T]]
+      case MonoType.Channel(tpe) =>
+        for {
+          tpe0 <- visitTpe[T](tpe)
+        } yield RReference(RChannel(tpe0)).asInstanceOf[RType[T]]
+      case MonoType.Lazy(tpe) =>
+        for {
+          tpe0 <- visitTpe[T](tpe)
+        } yield RReference(RLazy(tpe0)).asInstanceOf[RType[T]]
+      case MonoType.Ref(tpe) =>
+        for {
+          tpe0 <- visitTpe[T](tpe)
+        } yield RReference(RRef(tpe0)).asInstanceOf[RType[T]]
+      case MonoType.Tuple(elms) =>
+        for {
+          elms0 <- EM.traverse(elms)(visitTpe[PType])
+          expRes = RReference(RTuple(elms0))
+        } yield expRes.asInstanceOf[RType[T]]
+      case MonoType.Enum(sym, args) =>
+        EM.traverse(args)(visitTpe[PType]) flatMap (args0 => {
+          val res = RReference(REnum(sym, args0)).asInstanceOf[RType[T]]
+          res.toMonad.setEnumSyms(Set(sym))
+        })
+      case MonoType.Arrow(args, result) =>
+        EM.mapN(
+          EM.traverse(args)(visitTpe[PType]),
+          visitTpe[PType](result)
+        ) {
+          case (args0, result0) =>
+            val tpeRes = RReference(RArrow(args0, result0))
+            tpeRes.asInstanceOf[RType[T]]
+        }
+      case MonoType.RecordEmpty() =>
+        RReference(RRecordEmpty).asInstanceOf[RType[T]].toMonad
+      case MonoType.RecordExtend(field, value, rest) =>
+        for {
+          value0 <- visitTpe[PType](value)
+          rest0 <- visitTpe[PReference[PAnyObject]](rest)
+          expRes = RReference(RRecordExtend(field, value0, rest0))
+        } yield expRes.asInstanceOf[RType[T]]
+      case MonoType.SchemaEmpty() =>
+        RReference(RSchemaEmpty).asInstanceOf[RType[T]].toMonad
+      case MonoType.SchemaExtend(name, tpe, rest) =>
+        for {
+          tpe0 <- visitTpe[PType](tpe)
+          rest0 <- visitTpe[PReference[PAnyObject]](rest)
+          expRes = RReference(RSchemaExtend(name, tpe0, rest0))
+        } yield expRes.asInstanceOf[RType[T]]
+      case MonoType.Relation(tpes) =>
+        for {
+          tpes0 <- EM.traverse(tpes)(visitTpe[PType])
+        } yield RReference(RRelation(tpes0)).asInstanceOf[RType[T]]
+      case MonoType.Lattice(tpes) =>
+        for {
+          tpes0 <- EM.traverse(tpes)(visitTpe[PType])
+        } yield RReference(RLattice(tpes0)).asInstanceOf[RType[T]]
+      case MonoType.Native(clazz) =>
+        RReference(RNative(clazz)).asInstanceOf[RType[T]].toMonad
+      case MonoType.Var(id) =>
+        RReference(RVar(id)).asInstanceOf[RType[T]].toMonad
+    }
+    mainMonad.flatMap(tpe => tpe.toMonad.setTypes(Set(tpe)))
   }
 }

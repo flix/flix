@@ -530,7 +530,7 @@ object Instructions {
   [R <: Stack, T <: PRefType]
   (classType: RReference[T]):
   F[R ** PReference[T]] => F[R] = f => {
-    INVOKESPECIAL(classType.jvmName)
+    INVOKESPECIAL(classType.jvmName)(f)
     castF(f)
   }
 
