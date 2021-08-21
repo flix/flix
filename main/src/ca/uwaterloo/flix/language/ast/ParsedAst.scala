@@ -1582,7 +1582,7 @@ object ParsedAst {
       * @param exp the expression.
       * @param sp2 the position of the last character in the expression.
       */
-    case class ExpPart(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends InterpolationPart
+    case class ExpPart(sp1: SourcePosition, exp: Option[ParsedAst.Expression], sp2: SourcePosition) extends InterpolationPart
 
     /**
       * String part of a string interpolation.
