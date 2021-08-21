@@ -219,7 +219,7 @@ object RRefType {
   }
 
   case class RChannel[T <: PType](tpe: RType[T]) extends RRefType[PChan[T]] {
-    override lazy val jvmName: JvmName = JvmName(Nil, "NOT_IMPLEMENTED(RTYPE)")
+    override lazy val jvmName: JvmName = JvmName(Nil, "NOT_IMPLEMENTED(RChannel)")
   }
 
   case class RLazy[T <: PType](tpe: RType[T]) extends RRefType[PLazy[T]] {
@@ -232,7 +232,7 @@ object RRefType {
 
   // TODO: Should be removed.
   case class RVar(id: Int) extends RRefType[PAnyObject] {
-    override lazy val jvmName: JvmName = JvmName(Nil, "NOT_IMPLEMENTED(RTYPE)")
+    override lazy val jvmName: JvmName = JvmName(Nil, "NOT_IMPLEMENTED(RVar)")
   }
 
   case class RTuple(elms: List[RType[_ <: PType]]) extends RRefType[PTuple] {
@@ -240,7 +240,7 @@ object RRefType {
   }
 
   case class REnum(sym: Symbol.EnumSym, args: List[RType[_ <: PType]]) extends RRefType[PAnyObject] {
-    override lazy val jvmName: JvmName = JvmName(Nil, "NOT_IMPLEMENTED(RTYPE)")
+    override lazy val jvmName: JvmName = JvmName(Nil, "NOT_IMPLEMENTED(REnum)")
   }
 
   object RBigInt extends RRefType[PBigInt] {
@@ -256,27 +256,27 @@ object RRefType {
   }
 
   object RRecordEmpty extends RRefType[PAnyObject] {
-    override lazy val jvmName: JvmName = JvmName(Nil, "NOT_IMPLEMENTED(RTYPE)")
+    override lazy val jvmName: JvmName = JvmName(Nil, "NOT_IMPLEMENTED(RRecordEmpty)")
   }
 
   case class RRecordExtend(field: String, value: RType[_ <: PType], rest: RType[_ <: PReference[_ <: PRefType]]) extends RRefType[PAnyObject] {
-    override lazy val jvmName: JvmName = JvmName(Nil, "NOT_IMPLEMENTED(RTYPE)")
+    override lazy val jvmName: JvmName = JvmName(Nil, "NOT_IMPLEMENTED(RRecordExtend)")
   }
 
   object RSchemaEmpty extends RRefType[PAnyObject] {
-    override lazy val jvmName: JvmName = JvmName(Nil, "NOT_IMPLEMENTED(RTYPE)")
+    override lazy val jvmName: JvmName = JvmName(Nil, "NOT_IMPLEMENTED(RSchemaEmpty)")
   }
 
   case class RSchemaExtend(name: String, tpe: RType[_ <: PType], rest: RType[_ <: PReference[_ <: PRefType]]) extends RRefType[PAnyObject] {
-    override lazy val jvmName: JvmName = JvmName(Nil, "NOT_IMPLEMENTED(RTYPE)")
+    override lazy val jvmName: JvmName = JvmName(Nil, "NOT_IMPLEMENTED(RSchemaExtend)")
   }
 
   case class RRelation(tpes: List[RType[_ <: PType]]) extends RRefType[PAnyObject] {
-    override lazy val jvmName: JvmName = JvmName(Nil, "NOT_IMPLEMENTED(RTYPE)")
+    override lazy val jvmName: JvmName = JvmName(Nil, "NOT_IMPLEMENTED(RRelation)")
   }
 
   case class RLattice(tpes: List[RType[_ <: PType]]) extends RRefType[PAnyObject] {
-    override lazy val jvmName: JvmName = JvmName(Nil, "NOT_IMPLEMENTED(RTYPE)")
+    override lazy val jvmName: JvmName = JvmName(Nil, "NOT_IMPLEMENTED(RLattice)")
   }
 
   case class RNative(clazz: Class[_]) extends RRefType[PAnyObject] {

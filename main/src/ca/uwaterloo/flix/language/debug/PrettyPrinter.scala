@@ -17,6 +17,8 @@
 package ca.uwaterloo.flix.language.debug
 
 
+import ca.uwaterloo.flix.language.ast.RType._
+import ca.uwaterloo.flix.language.ast.RRefType._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
@@ -497,8 +499,8 @@ object PrettyPrinter {
           vt << ", "
         }
         vt << "): "
-        vt.text(RType.squeezeFunction(RType.squeezeReference(defn.tpe)).result.toString)
-        vt << "= "
+        fmtTpe(RType.squeezeFunction(RType.squeezeReference(defn.tpe)).result, vt)
+        vt << " = "
         vt << Indent << NewLine
         fmtDef(defn, vt)
         vt << Dedent << NewLine << NewLine
@@ -993,7 +995,7 @@ object PrettyPrinter {
         case Expression.Cast(exp, tpe, loc) =>
           visitExp(exp)
           vt.text(" as ")
-          vt.text(tpe.toString)
+          fmtTpe(tpe, vt)
 
         case Expression.TryCatch(exp, rules, tpe, loc) =>
           vt << "try {" << Indent << NewLine
@@ -1182,10 +1184,62 @@ object PrettyPrinter {
       }
     }
 
+    def fmtTpe[T <: PType](tpe: RType[T], vt: VirtualTerminal): Unit = tpe match {
+        case RBool => vt.text("Bool")
+        case RInt8 => vt.text("Int8")
+        case RInt16 => vt.text("Int16")
+        case RInt32 => vt.text("Int32")
+        case RInt64 => vt.text("Int64")
+        case RChar => vt.text("Char")
+        case RFloat32 => vt.text("Float32")
+        case RFloat64 => vt.text("Float64")
+        case RReference(referenceType) => fmtRefTpe(referenceType, vt)
+      }
+
+    def fmtRefTpe[T <: PRefType](tpe: RRefType[T], vt: VirtualTerminal): Unit = {
+      def visitComp[T0 <: PType](preFix: String, tpe: RType[T0]): Unit = {vt.text(preFix+"["); fmtTpe(tpe, vt); vt.text("]")}
+      tpe match {
+        case RBoxedBool =>  vt.text("BoxedBool")
+        case RBoxedInt8 => vt.text("BoxedInt8")
+        case RBoxedInt16 => vt.text("BoxedInt16")
+        case RBoxedInt32 => vt.text("BoxedInt32")
+        case RBoxedInt64 => vt.text("BoxedInt64")
+        case RBoxedChar => vt.text("BoxedChar")
+        case RBoxedFloat32 => vt.text("BoxedFloat32")
+        case RBoxedFloat64 => vt.text("BoxedFloat64")
+        case RUnit => vt.text("Unit")
+        case RArray(tpe) => visitComp("Array", tpe)
+        case RChannel(tpe) => visitComp("Channel", tpe)
+        case RLazy(tpe) => visitComp("Lazy", tpe)
+        case RRef(tpe) => visitComp("Ref", tpe)
+        case RVar(id) => vt.text("TYPEVAR")
+        case RTuple(elms) => vt.text("Tuple["); vt.text("..."); vt.text("]")
+        case REnum(sym, args) => vt.text(sym.toString+"["); vt.text("..."); vt.text("]")
+        case RBigInt => vt.text("BigInt")
+        case RStr => vt.text("String")
+        case RArrow(args, result) =>
+          vt.text("(")
+          args.foreach(a => {
+            fmtTpe(a, vt)
+            vt.text(", ")
+          })
+          vt.text(") -> ")
+          fmtTpe(result, vt)
+        case RRecordEmpty => vt.text("RecordEmpty")
+        case RRecordExtend(field, value, rest) => vt.text("RecordExtend...")
+        case RSchemaEmpty => vt.text("SchemaEmpty")
+        case RSchemaExtend(name, tpe, rest) => vt.text("SchemaExtend...")
+        case RRelation(tpes) => vt.text("Relation...")
+        case RLattice(tpes) => vt.text("Lattice...")
+        case RNative(clazz) => vt.text("Native("); vt.text(clazz.getSimpleName); vt.text(")")
+        case RObject => vt.text("Object")
+      }
+    }
+
     def fmtParam(p: FormalParam, vt: VirtualTerminal): Unit = {
       fmtSym(p.sym, vt)
       vt.text(": ")
-      vt.text(p.tpe.toString) // TODO(JLS): mabe impl this
+      fmtTpe(p.tpe, vt)
     }
 
     def fmtSym(sym: Symbol.VarSym, vt: VirtualTerminal): Unit = {
