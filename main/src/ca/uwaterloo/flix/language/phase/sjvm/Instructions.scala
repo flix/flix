@@ -2089,6 +2089,23 @@ object Instructions {
     castF(f)
   }
 
+  def getChannelValue
+  [R <: Stack, T <: PRefType]
+  (tpe: RType[PReference[T]]):
+  F[R ** PReference[PChan[T]]] => F[R ** PReference[T]] = f => {
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Flix.Runtime.Channel.toInternalName, "get", RObject.nothingToThisMethodDescriptor, false)
+    undoErasure(tpe, f.visitor)
+    castF(f)
+  }
+
+  def putChannelValue
+  [R <: Stack, T <: PRefType]
+  (tpe: RType[PReference[T]]):
+  F[R ** PReference[PChan[T]] ** PReference[T]] => F[R] = f => {
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Flix.Runtime.Channel.toInternalName, "put", JvmName.getMethodDescriptor(RObject :: Nil, None), false)
+    castF(f)
+  }
+
   def setRefValue
   [R <: Stack, T <: PType]
   (classType: RReference[PRef[T]], innerType: RType[T]):

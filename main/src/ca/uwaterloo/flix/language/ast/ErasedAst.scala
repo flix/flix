@@ -50,6 +50,30 @@ object ErasedAst {
     def loc: SourceLocation
   }
 
+  def boxValue[T <: PType](exp: Expression[T]): Expression[PReference[_ <: PRefType]] = exp.tpe match {
+    case RType.RBool => Expression.BoxBool(exp, exp.loc).asInstanceOf[Expression[PReference[_ <: PRefType]]]
+    case RType.RInt8 => Expression.BoxInt8(exp, exp.loc).asInstanceOf[Expression[PReference[_ <: PRefType]]]
+    case RType.RInt16 => Expression.BoxInt16(exp, exp.loc).asInstanceOf[Expression[PReference[_ <: PRefType]]]
+    case RType.RInt32 => Expression.BoxInt32(exp, exp.loc).asInstanceOf[Expression[PReference[_ <: PRefType]]]
+    case RType.RInt64 => Expression.BoxInt64(exp, exp.loc).asInstanceOf[Expression[PReference[_ <: PRefType]]]
+    case RType.RChar => Expression.BoxChar(exp, exp.loc).asInstanceOf[Expression[PReference[_ <: PRefType]]]
+    case RType.RFloat32 => Expression.BoxFloat32(exp, exp.loc).asInstanceOf[Expression[PReference[_ <: PRefType]]]
+    case RType.RFloat64 => Expression.BoxFloat64(exp, exp.loc).asInstanceOf[Expression[PReference[_ <: PRefType]]]
+    case RType.RReference(referenceType) => exp.asInstanceOf[Expression[PReference[_ <: PRefType]]]
+  }
+
+  def unboxValue[T <: PRefType](exp: Expression[PReference[T]]): Expression[_ <: PType] = RType.squeezeReference(exp.tpe).referenceType match {
+    case RRefType.RBoxedBool => Expression.UnboxBool(exp, exp.loc).asInstanceOf[Expression[_ <: PType]]
+    case RRefType.RBoxedInt8 => Expression.UnboxInt8(exp, exp.loc).asInstanceOf[Expression[_ <: PType]]
+    case RRefType.RBoxedInt16 => Expression.UnboxInt16(exp, exp.loc).asInstanceOf[Expression[_ <: PType]]
+    case RRefType.RBoxedInt32 => Expression.UnboxInt32(exp, exp.loc).asInstanceOf[Expression[_ <: PType]]
+    case RRefType.RBoxedInt64 => Expression.UnboxInt64(exp, exp.loc).asInstanceOf[Expression[_ <: PType]]
+    case RRefType.RBoxedChar => Expression.UnboxChar(exp, exp.loc).asInstanceOf[Expression[_ <: PType]]
+    case RRefType.RBoxedFloat32 => Expression.UnboxFloat32(exp, exp.loc).asInstanceOf[Expression[_ <: PType]]
+    case RRefType.RBoxedFloat64 => Expression.UnboxFloat64(exp, exp.loc).asInstanceOf[Expression[_ <: PType]]
+    case _ => exp.asInstanceOf[Expression[_ <: PType]]
+  }
+
   object Expression {
 
     case class Unit(loc: SourceLocation) extends Expression[PReference[PUnit]] {
@@ -268,13 +292,13 @@ object ErasedAst {
 
     case class PutStaticField(field: Field, exp: Expression[_ <: PType], tpe: RType[PReference[PUnit]], loc: SourceLocation) extends Expression[PReference[PUnit]]
 
-    case class NewChannel[T <: PType](exp: Expression[PInt32], tpe: RType[PReference[PChan[T]]], loc: SourceLocation) extends Expression[PReference[PChan[T]]]
+    case class NewChannel[T <: PRefType](exp: Expression[PInt32], tpe: RType[PReference[PChan[T]]], loc: SourceLocation) extends Expression[PReference[PChan[T]]]
 
-    case class GetChannel[T <: PType](exp: Expression[PReference[PChan[T]]], tpe: RType[T], loc: SourceLocation) extends Expression[T]
+    case class GetChannel[T <: PRefType](exp: Expression[PReference[PChan[T]]], tpe: RType[PReference[T]], loc: SourceLocation) extends Expression[PReference[T]]
 
-    case class PutChannel[T <: PType](exp1: Expression[PReference[PChan[T]]], exp2: Expression[T], tpe: RType[PReference[PChan[T]]], loc: SourceLocation) extends Expression[PReference[PChan[T]]]
+    case class PutChannel[T <: PRefType](exp1: Expression[PReference[PChan[T]]], exp2: Expression[PReference[T]], tpe: RType[PReference[PChan[T]]], loc: SourceLocation) extends Expression[PReference[PChan[T]]]
 
-    case class SelectChannel[T <: PType](rules: List[SelectChannelRule[T]], default: Option[Expression[T]], tpe: RType[T], loc: SourceLocation) extends Expression[T]
+    case class SelectChannel[T <: PType](rules: List[SelectChannelRule[T, _ <: PRefType]], default: Option[Expression[T]], tpe: RType[T], loc: SourceLocation) extends Expression[T]
 
     case class Spawn(exp: Expression[PType], tpe: RType[PReference[PUnit]], loc: SourceLocation) extends Expression[PReference[PUnit]]
 
@@ -285,6 +309,10 @@ object ErasedAst {
     case class HoleError[T <: PType](sym: Symbol.HoleSym, tpe: RType[T], loc: SourceLocation) extends Expression[T]
 
     case class MatchError[T <: PType](tpe: RType[T], loc: SourceLocation) extends Expression[T]
+
+    case class BoxBool(exp: Expression[PInt32], loc: SourceLocation) extends Expression[PReference[PBoxedBool]] {
+      final val tpe = RType.RReference(RRefType.RBoxedBool)
+    }
 
     case class BoxInt8(exp: Expression[PInt8], loc: SourceLocation) extends Expression[PReference[PBoxedInt8]] {
       final val tpe = RType.RReference(RRefType.RBoxedInt8)
@@ -312,6 +340,10 @@ object ErasedAst {
 
     case class BoxFloat64(exp: Expression[PFloat64], loc: SourceLocation) extends Expression[PReference[PBoxedFloat64]] {
       final val tpe = RType.RReference(RRefType.RBoxedFloat64)
+    }
+
+    case class UnboxBool(exp: Expression[PReference[PBoxedBool]], loc: SourceLocation) extends Expression[PInt32] {
+      final val tpe = RType.RBool
     }
 
     case class UnboxInt8(exp: Expression[PReference[PBoxedInt8]], loc: SourceLocation) extends Expression[PInt8] {
@@ -344,7 +376,8 @@ object ErasedAst {
 
   }
 
-  case class SelectChannelRule[T <: PType](sym: Symbol.VarSym, chan: Expression[PReference[PChan[PType]]], exp: Expression[T])
+  // TODO(JLS): this probably needs multiple versions to avoid unsafe casting (making sure the boxed types match the primitives)
+  case class SelectChannelRule[T1 <: PType, T2 <: PRefType](sym: Symbol.VarSym, chan: Expression[PReference[PChan[T2]]], exp: Expression[T1])
 
   case class Case(sym: Symbol.EnumSym, tag: Name.Tag, tpeDeprecated: RType[PType], loc: SourceLocation)
 

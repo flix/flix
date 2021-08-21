@@ -653,23 +653,24 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
     case FinalAst.Expression.NewChannel(exp, tpe, loc) =>
       for {
         exp0 <- visitExp[PInt32](exp)
-        tpe0 <- visitTpe[PReference[PChan[T]]](tpe)
+        tpe0 <- visitTpe[PReference[PChan[PRefType]]](tpe)
         expRes = ErasedAst.Expression.NewChannel(exp0, tpe0, loc)
       } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.GetChannel(exp, tpe, loc) =>
       for {
-        exp0 <- visitExp[PReference[PChan[T]]](exp)
-        tpe0 <- visitTpe[T](tpe)
+        exp0 <- visitExp[PReference[PChan[PRefType]]](exp)
+        tpe0 <- visitTpe[PReference[PRefType]](tpe)
         expRes = ErasedAst.Expression.GetChannel(exp0, tpe0, loc)
-      } yield expRes
+      } yield unboxValue(expRes).asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.PutChannel(exp1, exp2, tpe, loc) =>
       for {
-        exp10 <- visitExp[PReference[PChan[T]]](exp1)
+        exp10 <- visitExp[PReference[PChan[PRefType]]](exp1)
         exp20 <- visitExp[T](exp2)
-        tpe0 <- visitTpe[PReference[PChan[T]]](tpe)
-        expRes = ErasedAst.Expression.PutChannel(exp10, exp20, tpe0, loc)
+        tpe0 <- visitTpe[PReference[PChan[PRefType]]](tpe)
+        boxedExp = boxValue(exp20).asInstanceOf[ErasedAst.Expression[PReference[PRefType]]]
+        expRes = ErasedAst.Expression.PutChannel(exp10, boxedExp, tpe0, loc)
       } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.SelectChannel(rules, default, tpe, loc) =>
@@ -677,7 +678,7 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
         rules0 <- EM.traverse(rules)(rule => {
           for {
             exp0 <- visitExp[T](rule.exp)
-            chan0 <- visitExp[PReference[PChan[PType]]](rule.chan)
+            chan0 <- visitExp[PReference[PChan[PRefType]]](rule.chan)
           } yield ErasedAst.SelectChannelRule(rule.sym, chan0, exp0)
         })
         default0 <- default match {
@@ -756,7 +757,18 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
       case MonoType.Channel(tpe) =>
         for {
           tpe0 <- visitTpe[T](tpe)
-        } yield RReference(RChannel(tpe0)).asInstanceOf[RType[T]]
+          boxedTpe = tpe0 match {
+            case RBool => RBoxedBool.asInstanceOf[RType[PReference[PRefType]]]
+            case RInt8 => RBoxedInt8.asInstanceOf[RType[PReference[PRefType]]]
+            case RInt16 => RBoxedInt16.asInstanceOf[RType[PReference[PRefType]]]
+            case RInt32 => RBoxedInt32.asInstanceOf[RType[PReference[PRefType]]]
+            case RInt64 => RBoxedInt64.asInstanceOf[RType[PReference[PRefType]]]
+            case RChar => RBoxedChar.asInstanceOf[RType[PReference[PRefType]]]
+            case RFloat32 => RBoxedFloat32.asInstanceOf[RType[PReference[PRefType]]]
+            case RFloat64 => RBoxedFloat64.asInstanceOf[RType[PReference[PRefType]]]
+            case res@RReference(_) => res.asInstanceOf[RType[PReference[PRefType]]]
+          }
+        } yield RReference(RChannel(boxedTpe)).asInstanceOf[RType[T]]
       case MonoType.Lazy(tpe) =>
         for {
           tpe0 <- visitTpe[T](tpe)

@@ -1112,6 +1112,11 @@ object PrettyPrinter {
         case Expression.HoleError(sym, tpe, loc) => Red("HoleError")
         case Expression.MatchError(tpe, loc) => vt << Red("MatchError")
 
+        case Expression.BoxBool(exp, loc) =>
+          vt.text("box(")
+          visitExp(exp)
+          vt.text(")")
+
         case Expression.BoxInt8(exp, loc) =>
           vt.text("box(")
           visitExp(exp)
@@ -1144,6 +1149,11 @@ object PrettyPrinter {
 
         case Expression.BoxFloat64(exp, loc) =>
           vt.text("box(")
+          visitExp(exp)
+          vt.text(")")
+
+        case Expression.UnboxBool(exp, loc) =>
+          vt.text("unbox(")
           visitExp(exp)
           vt.text(")")
 

@@ -124,6 +124,11 @@ object JvmName {
       val MatchError: JvmName = JvmName(pckage, "MatchError")
       val HoleError: JvmName = JvmName(pckage, "HoleError")
       val ReifiedSourceLocation: JvmName = JvmName(pckage, "ReifiedSourceLocation")
+      // TODO(JLS): these should be moved
+      val Channel: JvmName = JvmName("ca" :: "uwaterloo" :: "flix" :: "runtime" :: "interpreter" :: Nil, "Channel")
+      val SelectChoice: JvmName = JvmName("ca" :: "uwaterloo" :: "flix" :: "runtime" :: "interpreter" :: Nil, "SelectChoice")
+      val Spawnable: JvmName = JvmName("ca" :: "uwaterloo" :: "flix" :: "runtime" :: "interpreter" :: Nil, "Spawnable")
+
 
       object Value {
         val pckage: List[String] = Runtime.pckage :+ "value"

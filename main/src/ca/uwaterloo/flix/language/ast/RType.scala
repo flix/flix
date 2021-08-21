@@ -58,6 +58,10 @@ object RType {
     case res@RArray(_) => res
   }
 
+  def squeezeChannel[T <: PRefType](x: RReference[PChan[T]]): RChannel[T] = x.referenceType match {
+    case res@RChannel(_) => res
+  }
+
   def squeezeLazy[T <: PType](x: RReference[PLazy[T]]): RLazy[T] = x.referenceType match {
     case res@RLazy(_) => res
   }
@@ -218,8 +222,8 @@ object RRefType {
     }
   }
 
-  case class RChannel[T <: PType](tpe: RType[T]) extends RRefType[PChan[T]] {
-    override lazy val jvmName: JvmName = JvmName(Nil, "NOT_IMPLEMENTED(RChannel)")
+  case class RChannel[T <: PRefType](tpe: RType[PReference[T]]) extends RRefType[PChan[T]] {
+    override lazy val jvmName: JvmName = JvmName.Flix.Runtime.Channel
   }
 
   case class RLazy[T <: PType](tpe: RType[T]) extends RRefType[PLazy[T]] {

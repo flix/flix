@@ -65,7 +65,7 @@ object PRefType {
 
   sealed trait PArray[T <: PType] extends PRefType
 
-  sealed trait PChan[T <: PType] extends PRefType
+  sealed trait PChan[T <: PRefType] extends PRefType
 
   sealed trait PLazy[T <: PType] extends PRefType
 

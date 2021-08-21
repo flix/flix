@@ -240,7 +240,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
       case ErasedAst.Expression.GetChannel(exp, _, _) => exp :: Nil
       case ErasedAst.Expression.PutChannel(exp1, exp2, _, _) => exp1 :: exp2 :: Nil
       case ErasedAst.Expression.SelectChannel(rules, default, _, _) =>
-        val baseList = rules.flatMap(rule => rule.chan :: rule.exp :: Nil)
+        val baseList = rules.flatMap(rule => List[ErasedAst.Expression[_ <: PType]](rule.chan, rule.exp))
         default match {
           case Some(value) => baseList :+ value
           case None => baseList
@@ -250,6 +250,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
       case ErasedAst.Expression.Force(exp, _, _) => exp :: Nil
       case ErasedAst.Expression.HoleError(_, _, _) => Nil
       case ErasedAst.Expression.MatchError(_, _) => Nil
+      case ErasedAst.Expression.BoxBool(exp, loc) => exp :: Nil
       case ErasedAst.Expression.BoxInt8(exp, _) => exp :: Nil
       case ErasedAst.Expression.BoxInt16(exp, _) => exp :: Nil
       case ErasedAst.Expression.BoxInt32(exp, _) => exp :: Nil
@@ -257,6 +258,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
       case ErasedAst.Expression.BoxChar(exp, _) => exp :: Nil
       case ErasedAst.Expression.BoxFloat32(exp, _) => exp :: Nil
       case ErasedAst.Expression.BoxFloat64(exp, _) => exp :: Nil
+      case ErasedAst.Expression.UnboxBool(exp, loc) => exp :: Nil
       case ErasedAst.Expression.UnboxInt8(exp, _) => exp :: Nil
       case ErasedAst.Expression.UnboxInt16(exp, _) => exp :: Nil
       case ErasedAst.Expression.UnboxInt32(exp, _) => exp :: Nil

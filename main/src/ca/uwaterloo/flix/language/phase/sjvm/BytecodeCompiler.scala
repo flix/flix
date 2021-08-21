@@ -829,9 +829,30 @@ object BytecodeCompiler {
         }) ~
         pushUnit
 
-    case Expression.NewChannel(exp, tpe, loc) => ???
-    case Expression.GetChannel(exp, tpe, loc) => ???
-    case Expression.PutChannel(exp1, exp2, tpe, loc) => ???
+    case Expression.NewChannel(exp, tpe, loc) =>
+      val chanRef = squeezeReference(tpe)
+      WithSource[R](loc) ~
+        NEW(chanRef) ~
+        DUP ~
+        compileExp(exp) ~
+        (f => {
+          f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, chanRef.toInternalName, JvmName.constructorMethod,
+            JvmName.getMethodDescriptor(List(RInt32), None), false)
+          f.asInstanceOf[F[R ** T]]
+        })
+
+    case Expression.GetChannel(exp, tpe, loc) =>
+      WithSource[R](loc) ~
+        compileExp(exp) ~
+        getChannelValue(tpe)
+
+    case Expression.PutChannel(exp1, exp2, tpe, loc) =>
+      WithSource[R](loc) ~
+        compileExp(exp1) ~
+        DUP ~
+        compileExp(exp2) ~
+        putChannelValue(exp2.tpe)
+
     case Expression.SelectChannel(rules, default, tpe, loc) => ???
     case Expression.Spawn(exp, tpe, loc) => ???
     case Expression.Lazy(exp, tpe, loc) =>
@@ -851,6 +872,7 @@ object BytecodeCompiler {
       WithSource[R](loc) ~
         throwCompilerError(JvmName.Flix.Runtime.MatchError, loc)
 
+    case Expression.BoxBool(exp, loc) => ???
     case Expression.BoxInt8(exp, loc) => ???
     case Expression.BoxInt16(exp, loc) => ???
     case Expression.BoxInt32(exp, loc) => ???
@@ -858,6 +880,7 @@ object BytecodeCompiler {
     case Expression.BoxChar(exp, loc) => ???
     case Expression.BoxFloat32(exp, loc) => ???
     case Expression.BoxFloat64(exp, loc) => ???
+    case Expression.UnboxBool(exp, loc) => ???
     case Expression.UnboxInt8(exp, loc) => ???
     case Expression.UnboxInt16(exp, loc) => ???
     case Expression.UnboxInt32(exp, loc) => ???
