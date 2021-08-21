@@ -543,4 +543,23 @@ object WeederError {
     }
   }
 
+  /**
+    * An error raised to indicate an empty interpolated expression (`"${}"`)
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class EmptyInterpolatedExpression(loc: SourceLocation) extends WeederError {
+    def summary: String = "Empty interpolated expression."
+
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Empty interpolated expression." << NewLine
+      vt << NewLine
+      vt << Code(loc, "empty interpolated expression") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Add an expression to the interpolation or remove the interpolation."
+    }
+  }
+
 }
