@@ -358,7 +358,8 @@ namespace LazyList {
         case LCons(xs, ys) => append(xs, flatten(force ys))
         case LList(xs)     => flatten(force xs)
     }
-    
+
+    ///
     /// Returns `true` if and only if at least one element in `l` satisfies the predicate `f`.
     ///
     /// Returns `false` if `l` is empty.
