@@ -222,7 +222,7 @@ namespace LazyList {
     }
 
     ///
-    /// Returns `k` appended to `l`.
+    /// Returns `l2` appended to `l1`.
     ///
     pub def append(l1: LazyList[a], l2: LazyList[a]): LazyList[a] = match l1 {
         case ENil         => l2
@@ -323,6 +323,7 @@ namespace LazyList {
         case LCons(x, xs) => toSetAcc(force xs, Set.insert(x, acc))
         case LList(xs)    => toSetAcc(force xs, acc)
     }
+
     ///
     /// Returns the number of elements in `l` that satisfy the predicate `f`.
     ///
@@ -356,5 +357,43 @@ namespace LazyList {
         case ECons(xs, ys) => append(xs, flatten(      ys))
         case LCons(xs, ys) => append(xs, flatten(force ys))
         case LList(xs)     => flatten(force xs)
+    }
+
+    ///
+    /// Returns `true` if and only if at least one element in `l` satisfies the predicate `f`.
+    ///
+    /// Returns `false` if `l` is empty.
+    ///
+    /// The function `f` must be pure.
+    ///
+    pub def exists(f: a -> Bool, l: LazyList[a]): Bool = match l {
+        case ENil         => false
+        case ECons(x, xs) => f(x) or exists(f, xs)
+        case LCons(x, xs) => f(x) or exists(f, force xs)
+        case LList(xs)    => exists(f, force xs)
+    }
+
+    ///
+    /// Returns `true` if and only if all elements in `l` satisfy the predicate `f`.
+    ///
+    /// Returns `true` if `l` is empty.
+    ///
+    /// The function `f` must be pure.
+    ///
+    pub def forall(f: a -> Bool, l: LazyList[a]): Bool = match l {
+        case ENil         => true
+        case ECons(x, xs) => f(x) and forall(f, xs)
+        case LCons(x, xs) => f(x) and forall(f, force xs)
+        case LList(xs)    => forall(f, force xs)
+    }
+
+    ///
+    /// Applies `f` to every element of `xs`.
+    ///
+    pub def foreach(f: a -> Unit & ef, l: LazyList[a]): Unit & ef = match l {
+        case ENil         => ()
+        case ECons(x, xs) => f(x); foreach(f, xs)
+        case LCons(x, xs) => f(x); foreach(f, force xs)
+        case LList(xs)    => foreach(f, force xs)
     }
 }
