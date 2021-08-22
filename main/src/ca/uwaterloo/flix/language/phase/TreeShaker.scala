@@ -31,9 +31,7 @@ import ca.uwaterloo.flix.util.Validation._
   *
   * (a) The main function is always reachable.
   * (b) A function marked with @benchmark or @test is reachable.
-  * (c) A function that appears as a lattice operator.
-  * (d) A function that appears as a special operator.
-  * (e) Appear in a function which itself is reachable.
+  * (c) Appears in a function which itself is reachable.
   *
   */
 object TreeShaker extends Phase[Root, Root] {

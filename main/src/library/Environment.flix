@@ -15,19 +15,6 @@
  */
 namespace Environment {
 
-    def _getEnvHelper(iter: ##java.util.Iterator, m: Map[String, String]): Map[String, String] & Impure =
-        import java.util.Iterator.hasNext();
-        import java.util.Iterator.next();
-        import java.util.Map$Entry.getKey();
-        import java.util.Map$Entry.getValue();
-        if (iter.hasNext())
-            let entry = iter.next() as ##java.util.Map$Entry;
-            let key = entry.getKey() as String;
-            let value = entry.getValue() as String;
-            _getEnvHelper(iter, Map.insert(key, value, m))
-        else
-            m
-
     ///
     /// Returns an map of the current system environment.
     ///
@@ -37,7 +24,7 @@ namespace Environment {
         import java.util.Set.iterator();
         try {
             let iter = getenv().entrySet().iterator();
-            _getEnvHelper(iter, Map.empty())
+            getEnvHelper(iter, Map.empty())
         } catch {
             case _:##java.lang.Exception => Map.empty()
         } as & Pure
@@ -48,8 +35,8 @@ namespace Environment {
     pub def getVar(name: String): Option[String] =
         import java.lang.System:getenv(String);
         try {
-            let ans = getenv(name) as & Pure;
-            if (Object.isNull(ans)) None else Some(ans)
+            let result = getenv(name) as & Pure;
+            Object.toOption(result)
         } catch {
             case _:##java.lang.Exception => None
         }
@@ -60,8 +47,8 @@ namespace Environment {
     pub def getProp(name: String): Option[String] =
         import java.lang.System:getProperty(String);
         try {
-            let ans = getProperty(name) as & Pure;
-            if (Object.isNull(ans)) None else Some(ans)
+            let result = getProperty(name) as & Pure;
+            Object.toOption(result)
         } catch {
             case _:##java.lang.Exception => None
         }
@@ -127,9 +114,22 @@ namespace Environment {
     ///
     /// The returned value is never less than one.
     ///
-    pub def virtualProcessors(): Int32 =
+    pub def getVirtualProcessors(): Int32 =
         import java.lang.Runtime:getRuntime();
         import java.lang.Runtime.availableProcessors();
         getRuntime().availableProcessors() as & Pure
+
+    def getEnvHelper(iter: ##java.util.Iterator, m: Map[String, String]): Map[String, String] & Impure =
+        import java.util.Iterator.hasNext();
+        import java.util.Iterator.next();
+        import java.util.Map$Entry.getKey();
+        import java.util.Map$Entry.getValue();
+        if (iter.hasNext())
+            let entry = iter.next() as ##java.util.Map$Entry;
+            let key = entry.getKey() as String;
+            let value = entry.getValue() as String;
+            getEnvHelper(iter, Map.insert(key, value, m))
+        else
+            m
 
 }

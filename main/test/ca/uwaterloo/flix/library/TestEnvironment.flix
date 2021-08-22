@@ -13,15 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-namespace EnvironmentTest {
+namespace TestEnvironment {
 
     @test
     def testGetEnv01(): Bool =
         not Map.isEmpty(Environment.getEnv())
-
-    @test
-    def testGetEnv02(): Bool =
-        not (Environment.getEnv() |> Map.get("PATH") |> Option.isEmpty)
 
     @test
     def testGetVar01(): Bool =
@@ -32,50 +28,50 @@ namespace EnvironmentTest {
         Option.isEmpty(Environment.getVar("UNKNOWN"))
 
     @test
-    def testgetProp02(): Bool =
+    def testGetProp02(): Bool =
         Option.isEmpty(Environment.getProp("UNKNOWN"))
 
     @test
-    def testgetOsName(): Bool =
+    def testGetOsName(): Bool =
         not Option.isEmpty(Environment.getOsName())
 
     @test
-    def testgetOsArch(): Bool =
+    def testGetOsArch(): Bool =
         not Option.isEmpty(Environment.getOsArch())
 
     @test
-    def testgetOsVersion(): Bool =
+    def testGetOsVersion(): Bool =
         not Option.isEmpty(Environment.getOsVersion())
 
     @test
-    def testgetFileSeparator(): Bool =
+    def testGetFileSeparator(): Bool =
         not String.isEmpty(Environment.getFileSeparator())
 
     @test
-    def testgetPathSeparator(): Bool =
+    def testGetPathSeparator(): Bool =
         not String.isEmpty(Environment.getPathSeparator())
 
     @test
-    def testgetLineSeparator(): Bool =
+    def testGetLineSeparator(): Bool =
         not String.isEmpty(Environment.getLineSeparator())
 
     @test
-    def testgetCurrentWorkingDirectory(): Bool =
+    def testGetCurrentWorkingDirectory(): Bool =
         not Option.isEmpty(Environment.getCurrentWorkingDirectory())
 
     @test
-    def testgetTemporaryDirectory(): Bool =
+    def testGetTemporaryDirectory(): Bool =
         not Option.isEmpty(Environment.getTemporaryDirectory())
 
     @test
-    def testgetUserName(): Bool =
+    def testGetUserName(): Bool =
         not Option.isEmpty(Environment.getUserName())
 
     @test
-    def testgetUserHomeDirectory(): Bool =
+    def testGetUserHomeDirectory(): Bool =
         not Option.isEmpty(Environment.getUserHomeDirectory())
 
     @test
-    def testvirtualProcessors(): Bool =
-        Environment.virtualProcessors() > 0
+    def testgetVirtualProcessors(): Bool =
+        Environment.getVirtualProcessors() > 0
 }
