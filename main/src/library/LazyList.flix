@@ -396,4 +396,9 @@ namespace LazyList {
         case LCons(x, xs) => f(x); foreach(f, force xs)
         case LList(xs)    => foreach(f, force xs)
     }
+
+    ///
+    /// Returns an infinite LazyList of repeating `x`s.
+    ///
+    pub def repeat(x: a): LazyList[a] = LList(lazy LCons(x, lazy repeat(x)))
 }

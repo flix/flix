@@ -1206,4 +1206,37 @@ namespace TestLazyList {
         let r = ref 1000;
         LazyList.range(0, 100)|> LazyList.foreach(_ -> r := (deref r) - 1);
         900 == deref r
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // repeat                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def repeat01(): Bool =
+        LazyList.repeat(1) |> LazyList.take(-1) == ENil
+
+    @test
+    def repeat02(): Bool =
+        LazyList.repeat(1) |> LazyList.take(0) == ENil
+
+    @test
+    def repeat03(): Bool =
+        LazyList.repeat(1) |> LazyList.take(1) == ECons(1, ENil)
+
+    @test
+    def repeat04(): Bool =
+        LazyList.repeat(1) |> LazyList.take(2) == ECons(1, ECons(1, ENil))
+
+    @test
+    def repeat05(): Bool =
+        LazyList.repeat(1) |> LazyList.take(3) == ECons(1, ECons(1, ECons(1, ENil)))
+
+    @test
+    def repeat07(): Bool =
+        LazyList.repeat(3) |> LazyList.take(3) == ECons(3, ECons(3, ECons(3, ENil)))
+
+    @test
+    def repeat08(): Bool =
+        LazyList.repeat("a") |> LazyList.take(3) == ECons("a", ECons("a", ECons("a", ENil)))
 }
