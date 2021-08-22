@@ -19,12 +19,6 @@ use Core/Io/File.File;
 use Result.flatMap;
 use Core/Io/InputStream.{InputStream};
 
-instance Drop[InputStream] {
-    pub def drop(x: InputStream): Unit & Impure =
-        let _ = Core/Io/InputStream.close(x);
-        ()
-}
-
 namespace Core/Io/InputStream {
     pub opaque type InputStream = ##java.io.InputStream
 
