@@ -229,26 +229,15 @@ namespace LazyList {
         case LCons(x, xs) => if (f(x)) filterEAcc(f, force xs, ECons(x, acc)) else filterEAcc(f, force xs, acc)
         case LList(xs)    => filterEAcc(f, force xs, acc)
     }
-    
-    /// Applies `f` to a start value `s` and all elements in `l` going from left to right.
-    ///
-    /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
-    ///
-    pub def foldLeft(f: (b, a) -> b & ef, s: b, l: LazyList[a]): b & ef = match l {
-        case ENil         => s
-        case ECons(x, xs) => foldLeft(f, f(s, x),       xs)
-        case LCons(x, xs) => foldLeft(f, f(s, x), force xs)
-        case LList(xs)    => foldLeft(f, s,       force xs)
-    }
 
     ///
     /// Returns `k` appended to `l`.
     ///
-    pub def append(l: LazyList[a], k: LazyList[a]): LazyList[a] = match l {
-        case ENil         => k
-        case ECons(x, xs) => LCons(x, lazy append(      xs, k))
-        case LCons(x, xs) => LCons(x, lazy append(force xs, k))
-        case LList(xs)    => LList(   lazy append(force xs, k))
+    pub def append(l1: LazyList[a], l2: LazyList[a]): LazyList[a] = match l1 {
+        case ENil         => l2
+        case ECons(x, xs) => LCons(x, lazy append(      xs, l2))
+        case LCons(x, xs) => LCons(x, lazy append(force xs, l2))
+        case LList(xs)    => LList(   lazy append(force xs, l2))
     }
 
     /// Applies `f` to a start value `s` and all elements in `l` going from left to right.
