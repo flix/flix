@@ -35,8 +35,8 @@ namespace Environment {
     pub def getVar(name: String): Option[String] =
         import java.lang.System:getenv(String);
         try {
-            let ans = getenv(name) as & Pure;
-            if (Object.isNull(ans)) None else Some(ans)
+            let result = getenv(name) as & Pure;
+            Object.toOption(result)
         } catch {
             case _:##java.lang.Exception => None
         }
@@ -47,8 +47,8 @@ namespace Environment {
     pub def getProp(name: String): Option[String] =
         import java.lang.System:getProperty(String);
         try {
-            let ans = getProperty(name) as & Pure;
-            if (Object.isNull(ans)) None else Some(ans)
+            let result = getProperty(name) as & Pure;
+            Object.toOption(result)
         } catch {
             case _:##java.lang.Exception => None
         }
