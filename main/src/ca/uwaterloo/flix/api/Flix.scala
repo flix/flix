@@ -153,7 +153,6 @@ class Flix {
     "Monoid.flix" -> LocalResource.get("/src/library/Monoid.flix"),
     "Foldable.flix" -> LocalResource.get("/src/library/Foldable.flix"),
 
-    "Bounded.flix" -> LocalResource.get("/src/library/Bounded.flix"),
     "Validation.flix" -> LocalResource.get("/src/library/Validation.flix"),
 
     "Channel.flix" -> LocalResource.get("/src/library/Channel.flix"),
