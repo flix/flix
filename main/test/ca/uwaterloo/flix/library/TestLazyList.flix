@@ -503,6 +503,8 @@ namespace TestLazyList {
         LazyList.map(    x -> {l := "b" :: deref l; x}    as & Pure) |>
         LazyList.toList;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
+    
+    /////////////////////////////////////////////////////////////////////////////    
     // foldLeft                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -1114,4 +1116,94 @@ namespace TestLazyList {
     @test
     def flatten22(): Bool =
     	LazyList.flatten(ECons(ECons(1, LCons(2, lazy ENil)), ECons(ENil, ECons(ENil, ECons((ECons(3, ECons(4, ENil))), ENil))))) == ECons(1, ECons(2, ECons(3, ECons(4, ENil))))
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // exists                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def exists01(): Bool = LazyList.exists(i -> i > 3, ENil) == false
+
+    @test
+    def exists02(): Bool = (1 :: Nil) |> List.toLazy |> LazyList.exists(i -> i > 3) == false
+
+    @test
+    def exists03(): Bool = (5 :: Nil) |> List.toLazy |> LazyList.exists(i -> i > 3) == true
+
+    @test
+    def exists04(): Bool =  (1 :: 2 :: Nil) |> List.toLazy |> LazyList.exists(i -> i > 3) == false
+
+    @test
+    def exists05(): Bool =  (1 :: 6 :: Nil) |> List.toLazy |> LazyList.exists(i -> i > 3) == true
+
+    @test
+    def exists06(): Bool =  (6 :: 1 :: Nil) |> List.toLazy |> LazyList.exists(i -> i > 3) == true
+
+    @test
+    def exists07(): Bool = (16 :: 6 :: Nil) |> List.toLazy |> LazyList.exists(i -> i > 3) == true
+
+    @test
+    def exists08(): Bool = (1 :: -9 :: 3 :: Nil) |> List.toLazy |> LazyList.exists(i -> i > 3) == false
+
+    @test
+    def exists09(): Bool = (1 :: 9 :: 3 :: Nil) |> List.toLazy |> LazyList.exists(i -> i > 3) == true
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // forall                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def forall01(): Bool = LazyList.forall(i -> i > 3, ENil) == true
+
+    @test
+    def forall02(): Bool = (1 :: Nil) |> List.toLazy |> LazyList.forall(i -> i > 3) == false
+
+    @test
+    def forall03(): Bool = (5 :: Nil) |> List.toLazy |> LazyList.forall(i -> i > 3) == true
+
+    @test
+    def forall04(): Bool =  (1 :: 2 :: Nil) |> List.toLazy |> LazyList.forall(i -> i > 3) == false
+
+    @test
+    def forall05(): Bool =  (1 :: 6 :: Nil) |> List.toLazy |> LazyList.forall(i -> i > 3) == false
+
+    @test
+    def forall06(): Bool =  (6 :: 1 :: Nil) |> List.toLazy |> LazyList.forall(i -> i > 3) == false
+
+    @test
+    def forall07(): Bool = (16 :: 6 :: Nil) |> List.toLazy |> LazyList.forall(i -> i > 3) == true
+
+    @test
+    def forall08(): Bool = (1 :: -9 :: 3 :: Nil) |> List.toLazy |> LazyList.forall(i -> i > 3) == false
+
+    @test
+    def forall09(): Bool = (1 :: 9 :: 3 :: Nil) |> List.toLazy |> LazyList.forall(i -> i > 3) == false
+
+    @test
+    def forall10(): Bool = (11 :: 9 :: 31 :: Nil) |> List.toLazy |> LazyList.forall(i -> i > 3) == true
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foreach                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foreach01(): Bool & Impure =
+        let r = ref 21;
+        LazyList.foreach(x -> r := x, ENil);
+        21 == deref r
+
+    @test
+    def foreach02(): Bool & Impure =
+        let r = ref 21;
+        (1 :: 2 :: 3 :: Nil) |> List.toLazy |> LazyList.foreach(x -> r := x);
+        3 == deref r
+
+    @test
+    def foreach03(): Bool & Impure =
+        let r = ref 1000;
+        LazyList.range(0, 100)|> LazyList.foreach(_ -> r := (deref r) - 1);
+        900 == deref r
 }
