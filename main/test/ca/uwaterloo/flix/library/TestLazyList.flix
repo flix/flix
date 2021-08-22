@@ -727,7 +727,7 @@ namespace TestLazyList {
 
     @test
     pub def toList05(): Bool =
-        (1 :: 2 :: 3 :: Nil) |> LazyList.toLazy |> LazyList.toList == (1 :: 2 :: 3 :: Nil)
+        (1 :: 2 :: 3 :: Nil) |> List.toLazy |> LazyList.toList == (1 :: 2 :: 3 :: Nil)
 
     @test
     def toList06(): Bool =
