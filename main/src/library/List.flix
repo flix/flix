@@ -1136,6 +1136,14 @@ namespace List {
         StringBuilder.toString(sb)
 
     ///
+    /// Returns the elements of `l` as a lazy list.
+    ///
+    pub def toLazy(l: List[a]): LazyList[a] = match l {
+        case Nil     => ENil
+        case x :: xs => LList(lazy LCons(x, lazy toLazy(xs)))
+    }
+
+    ///
     /// Returns `xs` as a mutable list.
     ///
     pub def toMut(xs: List[a]): MutList[a] & Impure = {
