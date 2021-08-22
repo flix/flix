@@ -841,4 +841,277 @@ namespace TestLazyList {
     @test
     def toSet10(): Bool =
     	LazyList.toSet(ECons(1, LCons(2, lazy ECons(3, ENil)))) == Set#{1, 2, 3}
+    // append                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def append01(): Bool =
+    	LazyList.append(ENil: LazyList[Unit], ENil: LazyList[Unit]) == ENil
+
+    @test
+    def append02(): Bool =
+    	LazyList.append(LList(lazy ENil): LazyList[Unit], ENil: LazyList[Unit]) == ENil
+
+    @test
+    def append03(): Bool =
+    	LazyList.append(ENil, LList(lazy ENil): LazyList[Unit]) == ENil
+
+    @test
+    def append04(): Bool =
+    	LazyList.append(LList(lazy ENil), LList(lazy ENil): LazyList[Unit]) == ENil
+
+    @test
+    def append05(): Bool =
+    	LazyList.append(LCons(1, lazy ENil), LList(lazy ENil)) == ECons(1, ENil)
+
+    @test
+    def append06(): Bool =
+    	LazyList.append(LList(lazy ECons(1, LList(lazy ENil))), LList(lazy ENil)) == ECons(1, ENil)
+
+    @test
+    def append07(): Bool =
+    	LazyList.append(ECons(1, LList(lazy ENil)), LList(lazy ENil)) == ECons(1, ENil)
+
+    @test
+    def append08(): Bool =
+    	LazyList.append(LCons(1, lazy ENil), ENil) == ECons(1, ENil)
+
+    @test
+    def append09(): Bool =
+    	LazyList.append(ENil, LCons(1, lazy ENil)) == ECons(1, ENil)
+
+    @test
+    def append10(): Bool =
+    	LazyList.append(ENil, LList(lazy ECons(1, LList(lazy ENil)))) == ECons(1, ENil)
+
+    @test
+    def append11(): Bool =
+    	LazyList.append(LList(lazy ENil), ECons(1, LList(lazy ENil))) == ECons(1, ENil)
+
+    @test
+    def append12(): Bool =
+    	LazyList.append(LList(lazy ENil), LCons(1, lazy LList(lazy ENil))) == ECons(1, ENil)
+
+    @test
+    def append13(): Bool =
+    	LazyList.append(ECons(1, ECons(2, ECons(3, ENil))), ECons(4, LList(lazy ENil))) == ECons(1, ECons(2, ECons(3, ECons(4, ENil))))
+
+    @test
+    def append14(): Bool =
+    	LazyList.append(ECons(1, ECons(2, ECons(3, ENil))), LCons(4, lazy LList(lazy ENil))) == ECons(1, ECons(2, ECons(3, ECons(4, ENil))))
+
+    @test
+    def append15(): Bool =
+    	LazyList.append(ECons(4, ENil), ECons(1, LCons(2, lazy LList(lazy LCons(3, lazy ENil))))) == ECons(4, ECons(1, ECons(2, ECons(3, ENil))))
+
+    @test
+    def append16(): Bool =
+    	LazyList.append(ECons(4, ENil), LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil))))) == ECons(4, ECons(1, ECons(2, ECons(3, ENil))))
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // count                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def count01(): Bool =
+        LazyList.count(x -> x > 3, ENil) == 0
+
+    @test
+    def count02(): Bool =
+        LazyList.count(x -> x > 3, LList(lazy ENil)) == 0
+
+    @test
+    def count03(): Bool =
+    	LazyList.count(x -> x > 3, LList(lazy LCons(1, lazy LList(lazy LCons(1, lazy LList(lazy LCons(1, lazy ENil))))))) == 0
+
+    @test
+    def count04(): Bool =
+    	LazyList.count(x -> x > 3, LCons(1, lazy LCons(1, lazy LCons(1, lazy ENil)))) == 0
+
+    @test
+    def count05(): Bool =
+    	LazyList.count(x -> x > 3, ECons(4, ENil)) == 1
+
+    @test
+    def count06(): Bool =
+    	LazyList.count(x -> x > 3, LList(lazy LCons(4, lazy ENil))) == 1
+
+    @test
+    def count07(): Bool =
+        LazyList.count(_ -> true, LazyList.range(1000, 2000)) == 1000
+
+    @test
+    def count08(): Bool =
+        LazyList.count(_ -> false, LazyList.range(1000, 2000)) == 0
+
+    @test
+    def count09(): Bool =
+        LazyList.count(x -> x > 3, ECons(1, ECons(2, ENil))) == 0
+
+    @test
+    def count10(): Bool =
+        LazyList.count(x -> x > 3, ECons(1, ECons(8, ENil))) == 1
+
+    @test
+    def count11(): Bool =
+        LazyList.count(x -> x > 3, ECons(8, ECons(1, ENil))) == 1
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // drop                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def drop01(): Bool =
+        LazyList.drop(-1, ENil: LazyList[Unit]) == ENil
+
+    @test
+    def drop02(): Bool =
+        LazyList.drop(0, ENil: LazyList[Unit]) == ENil
+
+    @test
+    def drop03(): Bool =
+        LazyList.drop(-1, LList(lazy ENil): LazyList[Unit]) == ENil
+
+    @test
+    def drop04(): Bool =
+        LazyList.drop(0, LList(lazy ENil): LazyList[Unit]) == ENil
+
+    @test
+    def drop05(): Bool =
+        LazyList.drop(1, ENil: LazyList[Unit]) == ENil
+
+    @test
+    def drop06(): Bool =
+        LazyList.drop(1, LList(lazy ENil): LazyList[Unit]) == ENil
+
+    @test
+    def drop07(): Bool =
+        LazyList.drop(-1, ECons(1, ENil)) == ECons(1, ENil)
+
+    @test
+    def drop08(): Bool =
+        LazyList.drop(0, ECons(1, ENil)) == ECons(1, ENil)
+
+    @test
+    def drop09(): Bool =
+        LazyList.drop(1, ECons(1, ENil)) == ENil
+
+    @test
+    def drop10(): Bool =
+    	LazyList.drop(1, LCons(1, lazy ENil)) == ENil
+
+    @test
+    def drop11(): Bool =
+    	LazyList.drop(1, LList(lazy ECons(1, LList(lazy ENil)))) == ENil
+
+    @test
+    def drop12(): Bool =
+        LazyList.drop(2, ECons(1, ENil)) == ENil
+
+    @test
+    def drop13(): Bool =
+    	LazyList.drop(2, LCons(1, lazy ENil)) == ENil
+
+    @test
+    def drop14(): Bool =
+    	LazyList.drop(2, LList(lazy ECons(1, LList(lazy ENil)))) == ENil
+
+    @test
+    def drop15(): Bool =
+    	LazyList.range(0, 1000) |> LazyList.drop(500) == LazyList.range(500, 1000)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // flatten                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def flatten01(): Bool =
+        LazyList.flatten(ENil: LazyList[LazyList[Unit]]) == ENil
+
+    @test
+    def flatten02(): Bool =
+        LazyList.flatten(LList(lazy ENil): LazyList[LazyList[Unit]]) == ENil
+
+    @test
+    def flatten03(): Bool =
+        LazyList.flatten(ECons(ENil, ENil)): LazyList[Unit] == ENil
+
+    @test
+    def flatten04(): Bool =
+        LazyList.flatten(ECons(LList(lazy ENil), ENil)): LazyList[Unit] == ENil
+
+    @test
+    def flatten05(): Bool =
+        LazyList.flatten(LList(lazy ECons(ENil, ENil))): LazyList[Unit] == ENil
+
+    @test
+    def flatten06(): Bool =
+        LazyList.flatten(ECons(ENil, LList(lazy ENil))): LazyList[Unit] == ENil
+
+    @test
+    def flatten07(): Bool =
+        LazyList.flatten(ECons(ENil, ECons(ENil, ENil))): LazyList[Unit] == ENil
+
+    @test
+    def flatten08(): Bool =
+    	LazyList.flatten(ECons(LCons(1, lazy ENil), ENil)) == ECons(1, ENil)
+
+    @test
+    def flatten09(): Bool =
+    	LazyList.flatten(ECons(LList(lazy ECons(1, LList(lazy ENil))), ENil)) == ECons(1, ENil)
+
+    @test
+    def flatten10(): Bool =
+    	LazyList.flatten(ECons(ECons(1, LList(lazy ENil)), ENil)) == ECons(1, ENil)
+
+    @test
+    def flatten11(): Bool =
+    	LazyList.flatten(ECons(LCons(1, lazy LList(lazy ENil)), ENil)) == ECons(1, ENil)
+
+    @test
+    def flatten12(): Bool =
+        LazyList.flatten(ECons((ECons(1, ECons(2, ENil))), ENil)) == ECons(1, ECons(2, ENil))
+
+    @test
+    def flatten13(): Bool =
+    	LazyList.flatten(ECons(LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy ENil)))), ENil)) == ECons(1, ECons(2, ENil))
+
+    @test
+    def flatten14(): Bool =
+    	LazyList.flatten(ECons(ENil, ECons(ECons(1, ECons(2, ENil)), ENil))) == ECons(1, ECons(2, ENil))
+
+    @test
+    def flatten15(): Bool =
+    	LazyList.flatten(ECons(ENil, ECons(LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy ENil)))), ENil))) == ECons(1, ECons(2, ENil))
+
+    @test
+    def flatten16(): Bool =
+    	LazyList.flatten(ECons(ENil, ECons(LList(lazy LCons(1, lazy ECons(2, LList(lazy ENil)))), ENil))) == ECons(1, ECons(2, ENil))
+
+    @test
+    def flatten17(): Bool =
+    	LazyList.flatten(ECons(LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy ENil)))), ECons((ECons(1, ECons(2, ENil))), ENil))) == ECons(1, ECons(2, ECons(1, ECons(2, ENil))))
+
+    @test
+    def flatten18(): Bool =
+    	LazyList.flatten(ECons(LList(lazy LCons(1, lazy ECons(2, LList(lazy ENil)))), ECons((ECons(1, ECons(2, ENil))), ENil))) == ECons(1, ECons(2, ECons(1, ECons(2, ENil))))
+
+    @test
+    def flatten19(): Bool =
+    	LazyList.flatten(ECons((ECons(1, ECons(2, ENil))), ECons(LList(lazy LCons(1, lazy LCons(2, lazy ENil))), ENil))) == ECons(1, ECons(2, ECons(1, ECons(2, ENil))))
+
+    @test
+    def flatten20(): Bool =
+    	LazyList.flatten(ECons(ECons(1, LCons(2, lazy ENil)), ECons((ECons(1, ECons(2, ENil))), ENil))) == ECons(1, ECons(2, ECons(1, ECons(2, ENil))))
+
+    @test
+    def flatten21(): Bool =
+    	LazyList.flatten(ECons((ECons(1, ECons(2, ENil))), ECons(ENil, ECons(ENil, ECons(LList(lazy LCons(3, lazy LCons(4, lazy ENil))), ENil))))) == ECons(1, ECons(2, ECons(3, ECons(4, ENil))))
+
+    @test
+    def flatten22(): Bool =
+    	LazyList.flatten(ECons(ECons(1, LCons(2, lazy ENil)), ECons(ENil, ECons(ENil, ECons((ECons(3, ECons(4, ENil))), ENil))))) == ECons(1, ECons(2, ECons(3, ECons(4, ENil))))
 }
