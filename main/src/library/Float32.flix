@@ -115,13 +115,6 @@ namespace Float32 {
     pub def toString(x: Float32): String = ToString.toString(x)
 
     ///
-    /// Return a decimal representation of `x`.
-    ///
-    // TODO
-//    pub def toDecimalString(decimalPlaces: Int32, x: Float32): String =
-//        Float64.toDecimalString(decimalPlaces, toFloat64(x))
-
-    ///
     /// Parse the string `s` as a Float32, leading or trailing whitespace is trimmed.
     /// A successful parse is wrapped with `OK(x)`, a parse failure is indicated by `Err(_)`.
     ///
