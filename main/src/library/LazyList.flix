@@ -392,7 +392,7 @@ namespace LazyList {
     ///
     /// The function `f` must be impure.
     ///
-    pub def foreach(f: a ~> Unit, l: LazyList[a]): Unit & Impure = match l {
+    pub def foreach(f: a -> Unit & ef, l: LazyList[a]): Unit & ef = match l {
         case ENil         => ()
         case ECons(x, xs) => f(x); foreach(f, xs)
         case LCons(x, xs) => f(x); foreach(f, force xs)
