@@ -251,11 +251,11 @@ namespace LazyList {
     ///
     /// Helper function for `foldRight`.
     ///
-    def foldRightAcc(f: (a, b) -> b & ef, s: b, l: LazyList[a], g: b -> b & ef): b & ef = match l {
-        case ENil         => g(s)
-        case ECons(x, xs) => foldRightAcc(f, s,       xs, s1 -> g(f(x, s1)))
-        case LCons(x, xs) => foldRightAcc(f, s, force xs, s1 -> g(f(x, s1)))
-        case LList(xs)    => foldRightAcc(f, s, force xs, g)
+    def foldRightAcc(f: (a, b) -> b & ef, s: b, l: LazyList[a], k: b -> b & ef): b & ef = match l {
+        case ENil         => k(s)
+        case ECons(x, xs) => foldRightAcc(f, s,       xs, s1 -> k(f(x, s1)))
+        case LCons(x, xs) => foldRightAcc(f, s, force xs, s1 -> k(f(x, s1)))
+        case LList(xs)    => foldRightAcc(f, s, force xs, k)
     }
 
     ///
@@ -263,14 +263,11 @@ namespace LazyList {
     ///
     /// Forces the entire list `l`.
     ///
-    pub def toArray(l: LazyList[a]): Array[a] & Impure = match head(l) {
-        case None    => []
-        case Some(x) =>
-            let a = Array.new(x, length(l));
-            let f = (i, y) -> { a[i] = y; i + 1 };
-            foldLeft(f, 0, l);
-            a
-    }
+    pub def toArray(l: LazyList[a]): Array[a] & Impure =
+        let a = Array.new(default, length(l));
+        let f = (i, y) -> { a[i] = y; i + 1 };
+        foldLeft(f, 0, l);
+        a
 
     ///
     /// Returns `l` as a `List`.
