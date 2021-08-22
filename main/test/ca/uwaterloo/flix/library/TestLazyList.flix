@@ -726,7 +726,7 @@ namespace TestLazyList {
         LazyList.range(-1000, 1000000) |> LazyList.take(1000) |> LazyList.toList == List.range(-1000, 0)
 
     @test
-    pub def toList05(): Bool =
+    def toList05(): Bool =
         (1 :: 2 :: 3 :: Nil) |> List.toLazy |> LazyList.toList == (1 :: 2 :: 3 :: Nil)
 
     @test
