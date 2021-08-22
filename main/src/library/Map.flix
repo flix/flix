@@ -652,19 +652,4 @@ namespace Map {
         let Map(xs) = m;
         RedBlackTree.queryWith(p, f, xs)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // Lints: Use Cases                                                        //
-    /////////////////////////////////////////////////////////////////////////////
-
-///    @lint
-///    def useGetWithDefault(): Bool =
-///        forall [k, v] (k: k, d: v, m: Map[k, v]).
-///            Option.getWithDefault(Map.get(k, m), d) === Map.getWithDefault(k, d, m)
-///
-///    @lint
-///    def useIsSubmapOf(): Bool =
-///        forall [k, v] (m1: Map[k, v], m2: Map[k, v]).
-///            Map.forall((k, v) -> Map.get(k, m1) == Some(v), m2) === Map.isSubmapOf(m1, m2)
-
-
 }
