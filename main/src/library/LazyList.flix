@@ -323,6 +323,7 @@ namespace LazyList {
         case LCons(x, xs) => toSetAcc(force xs, Set.insert(x, acc))
         case LList(xs)    => toSetAcc(force xs, acc)
     }
+
     ///
     /// Returns the number of elements in `l` that satisfy the predicate `f`.
     ///
