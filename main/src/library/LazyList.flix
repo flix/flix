@@ -222,7 +222,7 @@ namespace LazyList {
     }
 
     ///
-    /// Returns `k` appended to `l`.
+    /// Returns `l2` appended to `l1`.
     ///
     pub def append(l1: LazyList[a], l2: LazyList[a]): LazyList[a] = match l1 {
         case ENil         => l2
