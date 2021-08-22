@@ -17,17 +17,17 @@
 ///
 /// A type class for types that form a semigroup.
 ///
-pub lawless class Semigroup[a] {
+pub lawless class SemiGroup[a] {
     ///
     /// An associative binary operation on `a`.
     ///
     pub def combine(x: a, y: a): a
 }
 
-instance Semigroup[Unit] {
+instance SemiGroup[Unit] {
     pub def combine(_: Unit, _: Unit): Unit = ()
 }
 
-instance Semigroup[String] {
+instance SemiGroup[String] {
     pub def combine(x: String, y: String): String = x + y
 }
