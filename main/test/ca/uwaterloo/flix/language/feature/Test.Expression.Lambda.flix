@@ -29,3 +29,10 @@ def testLambda09Helper(): Int -> String = x -> ToString.toString(x)
 @test
 def testLambda10(): Bool = testLambda10Helper()(5) == 5
 def testLambda10Helper(): Int -> Int = x -> x
+
+@test
+def testLambda11(): Bool = testLambda11Helper1() == 4
+def testLambda11Helper1(): Int =
+    let x = (a: Int) -> testLambda11Helper2(a);
+    x(4)
+def testLambda11Helper2(x: a): a = x

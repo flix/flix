@@ -446,8 +446,10 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
 
       case KindedAst.Expression.Lambda(fparam, exp, tvar, loc) =>
         val argType = fparam.tpe
+        val argTypeVar = fparam.sym.tvar.ascribedWith(Kind.Star)
         for {
           (constrs, bodyType, bodyEff) <- visitExp(exp)
+          _ <- unifyTypeM(argType, argTypeVar, loc)
           resultTyp <- unifyTypeM(tvar, Type.mkArrowWithEffect(argType, bodyEff, bodyType), loc)
         } yield (constrs, resultTyp, Type.Pure)
 
