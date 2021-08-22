@@ -34,6 +34,11 @@ instance Eq[LazyList[a]] with Eq[a] {
         case _                            => false
     }
 }
+    
+instance Foldable[LazyList] {
+    pub def foldLeft( f: (b, a) -> b & ef, s: b, l: LazyList[a]): b & ef = LazyList.foldLeft( f, s, l)
+    pub def foldRight(f: (a, b) -> b & ef, s: b, l: LazyList[a]): b & ef = LazyList.foldRight(f, s, l)
+}
 
 namespace LazyList {
     // TODO: Implement functions used in TestExamples
@@ -119,23 +124,6 @@ namespace LazyList {
     pub def toLazy(l: List[a]): LazyList[a] = match l {
         case Nil     => ENil
         case x :: xs => LCons(x, lazy toLazy(xs))
-    }
-
-    ///
-    /// Returns `l` as a `List`.
-    ///
-    /// Forces the entire list `l`.
-    ///
-    pub def toList(l: LazyList[a]): List[a] = toListAcc(reverse(l), Nil)
-
-    ///
-    /// Helper function for `toList`.
-    ///
-    def toListAcc(l: LazyList[a], acc: List[a]): List[a] = match l {
-        case ENil         => acc
-        case ECons(x, xs) => toListAcc(xs, x :: acc)
-        case LCons(x, xs) => toListAcc(force xs, x :: acc)
-        case LList(xs)    => toListAcc(force xs, acc)
     }
 
     ///
@@ -240,5 +228,98 @@ namespace LazyList {
         case ECons(x, xs) => if (f(x)) filterEAcc(f, xs, ECons(x, acc))       else filterEAcc(f, xs, acc)
         case LCons(x, xs) => if (f(x)) filterEAcc(f, force xs, ECons(x, acc)) else filterEAcc(f, force xs, acc)
         case LList(xs)    => filterEAcc(f, force xs, acc)
+    }
+
+    /// Applies `f` to a start value `s` and all elements in `l` going from left to right.
+    ///
+    /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
+    ///
+    pub def foldLeft(f: (b, a) -> b & ef, s: b, l: LazyList[a]): b & ef = match l {
+        case ENil         => s
+        case ECons(x, xs) => foldLeft(f, f(s, x),       xs)
+        case LCons(x, xs) => foldLeft(f, f(s, x), force xs)
+        case LList(xs)    => foldLeft(f, s,       force xs)
+    }
+
+    ///
+    /// Applies `f` to a start value `s` and all elements in `l` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
+    ///
+    pub def foldRight(f: (a, b) -> b & ef, s: b, l: LazyList[a]): b & ef = foldRightAcc(f, s, l, s1 -> s1 as & ef)
+
+    ///
+    /// Helper function for `foldRight`.
+    ///
+    def foldRightAcc(f: (a, b) -> b & ef, s: b, l: LazyList[a], k: b -> b & ef): b & ef = match l {
+        case ENil         => k(s)
+        case ECons(x, xs) => foldRightAcc(f, s,       xs, s1 -> k(f(x, s1)))
+        case LCons(x, xs) => foldRightAcc(f, s, force xs, s1 -> k(f(x, s1)))
+        case LList(xs)    => foldRightAcc(f, s, force xs, k)
+    }
+
+    ///
+    /// Returns `l` as an `Array`.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    pub def toArray(l: LazyList[a]): Array[a] & Impure =
+        let a = Array.new(default, length(l));
+        let f = (i, y) -> { a[i] = y; i + 1 };
+        foldLeft(f, 0, l);
+        a
+
+    ///
+    /// Returns `l` as a `List`.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    pub def toList(l: LazyList[a]): List[a] = toListAcc(l, Nil) |> List.reverse
+
+    ///
+    /// Helper function for `toList`.
+    ///
+    def toListAcc(l: LazyList[a], acc: List[a]): List[a] = match l {
+        case ENil         => acc
+        case ECons(x, ys) => toListAcc(ys, x :: acc)
+        case LCons(x, ys) => toListAcc(force ys, x :: acc)
+        case LList(ys)    => toListAcc(force ys, acc)
+    }
+
+    ///
+    /// Returns the association list `l` as a map.
+    ///
+    /// If `l` contains multiple mappings with the same key, `toMap` does not
+    /// make any guarantees about which mapping will be in the resulting map.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    pub def toMap(l: LazyList[(a, b)]): Map[a, b] with Order[a] = toMapAcc(l, Map.empty())
+
+    ///
+    /// Helper functions for `toMap`.
+    ///
+    def toMapAcc(l: LazyList[(a, b)], acc: Map[a, b]): Map[a, b] with Order[a] = match l {
+        case ENil              => acc
+        case ECons((k, v), xs) => toMapAcc(xs, Map.insert(k, v, acc))
+        case LCons((k, v), xs) => toMapAcc(force xs, Map.insert(k, v, acc))
+        case LList(xs)         => toMapAcc(force xs, acc)
+    }
+
+    ///
+    /// Returns `l` as a `Set`.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    pub def toSet(l: LazyList[a]): Set[a] with Order[a] = toSetAcc(l, Set.empty())
+
+    ///
+    /// Helper functions for `toSet`.
+    ///
+    def toSetAcc(l: LazyList[a], acc: Set[a]): Set[a] with Order[a] = match l {
+        case ENil         => acc
+        case ECons(x, xs) => toSetAcc(xs, Set.insert(x, acc))
+        case LCons(x, xs) => toSetAcc(force xs, Set.insert(x, acc))
+        case LList(xs)    => toSetAcc(force xs, acc)
     }
 }
