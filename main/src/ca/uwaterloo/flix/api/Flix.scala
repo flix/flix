@@ -137,12 +137,7 @@ class Flix {
     "MutSet.flix" -> LocalResource.get("/src/library/MutSet.flix"),
     "MutMap.flix" -> LocalResource.get("/src/library/MutMap.flix"),
 
-    "Core/Io/File.flix" -> LocalResource.get("/src/library/Core/Io/File.flix"),
-    "Core/Io/InputStream.flix" -> LocalResource.get("/src/library/Core/Io/InputStream.flix"),
-    "Core/Io/IOError.flix" -> LocalResource.get("/src/library/Core/Io/IOError.flix"),
-    "Core/Io/OutputStream.flix" -> LocalResource.get("/src/library/Core/Io/OutputStream.flix"),
-    "Core/Io/ZipInput.flix" -> LocalResource.get("/src/library/Core/Io/ZipInput.flix"),
-    "Core/Io/ZipOutput.flix" -> LocalResource.get("/src/library/Core/Io/ZipOutput.flix"),
+    "File.flix" -> LocalResource.get("/src/library/File.flix"),
 
     "Environment.flix" -> LocalResource.get("/src/library/Environment.flix"),
 

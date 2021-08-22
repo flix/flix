@@ -26,6 +26,7 @@ class LibrarySuite extends Suites(
   new FlixTest("TestChar", "main/test/ca/uwaterloo/flix/library/TestChar.flix")(Options.TestWithLibAll),
   new FlixTest("TestChoice", "main/test/ca/uwaterloo/flix/library/TestChoice.flix")(Options.TestWithLibAll),
   new FlixTest("TestChannel", "main/test/ca/uwaterloo/flix/library/TestChannel.flix")(Options.TestWithLibAll),
+  new FlixTest("TestEnvironment", "main/test/ca/uwaterloo/flix/library/TestEnvironment.flix")(Options.TestWithLibAll),
   new FlixTest("TestInt8", "main/test/ca/uwaterloo/flix/library/TestInt8.flix")(Options.TestWithLibAll),
   new FlixTest("TestInt16", "main/test/ca/uwaterloo/flix/library/TestInt16.flix")(Options.TestWithLibAll),
   new FlixTest("TestInt32", "main/test/ca/uwaterloo/flix/library/TestInt32.flix")(Options.TestWithLibAll),
@@ -57,9 +58,4 @@ class LibrarySuite extends Suites(
   new FlixTest("TestLowerBound", "main/test/ca/uwaterloo/flix/library/TestLowerBound.flix")(Options.TestWithLibAll),
   new FlixTest("TestUpperBound", "main/test/ca/uwaterloo/flix/library/TestUpperBound.flix")(Options.TestWithLibAll),
   new FlixTest("TestGetOpt", "main/test/ca/uwaterloo/flix/library/TestGetOpt.flix")(Options.TestWithLibAll),
-
-  new FlixTest("Core/Io/TestFile", "main/test/ca/uwaterloo/flix/library/Core/Io/TestFile.flix")(Options.TestWithLibAll),
-  new FlixTest("Core/Io/TestInputStream", "main/test/ca/uwaterloo/flix/library/Core/Io/TestInputStream.flix")(Options.TestWithLibAll),
-  new FlixTest("Core/Io/TestOutputStream", "main/test/ca/uwaterloo/flix/library/Core/Io/TestOutputStream.flix")(Options.TestWithLibAll),
-  new FlixTest("TestEnvironment", "main/test/ca/uwaterloo/flix/library/TestEnvironment.flix")(Options.TestWithLibAll),
 )
