@@ -1395,24 +1395,4 @@ namespace String {
         else
             Some(dropRight(length(sub), s))
 
-    /////////////////////////////////////////////////////////////////////////////
-    // Lints                                                                   //
-    /////////////////////////////////////////////////////////////////////////////
-
-    ///
-    /// Simplifications.
-    ///
-
-    @lint
-    def leftConcatenateEmptyString(): Bool =
-        forall (s: String). ("" + s) === s
-
-    @lint
-    def rightConcatenateEmptyString(): Bool =
-        forall (s: String). (s + "") === s
-
-    @lint
-    def trimTrim(): Bool =
-        forall (s: String). trim(trim(s)) === trim(s)
-
 }
