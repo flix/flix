@@ -542,4 +542,9 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.NonSingleCharacter](result)
   }
 
+  test("EmptyInterpolatedExpression.01") {
+    val input = "def f(): String = \"${}\""
+    val result = compile(input, DefaultOptions)
+    expectError[WeederError.EmptyInterpolatedExpression](result)
+  }
 }

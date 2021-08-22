@@ -13,6 +13,8 @@ namespace Test/Enum/Kinding {
     }
 
     namespace Explicit {
+        rel R(i: Int)
+
         pub enum EStar[a: Type] {
             case CStar1(a)
             case CStar2(a -> a)
@@ -32,12 +34,13 @@ namespace Test/Enum/Kinding {
             case CRecord1(a)
             case CRecord2({ l: Int | a })
         }
+
+        pub enum ESchema[a: Schema] {
+            case CSchema1(a)
+            case CSchema2(#{ R | a })
+        }
+
         // These pass kinding but cause a crash in the Finalizer.
-//        pub enum ESchema[a: Schema] {
-//            case CSchema1(a)
-//            case CSchema2(#{ R | a })
-//        }
-//
 //        pub enum EStarToStar[a: Type -> Type] {
 //            case CStarToStar1(a[Int])
 //        }

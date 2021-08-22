@@ -1175,18 +1175,23 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           // General Case: Fold the interpolator parts together.
           val init = WeededAst.Expression.Str("", loc)
           Validation.fold(parts, init: WeededAst.Expression) {
-            case (acc, ParsedAst.InterpolationPart.ExpPart(innerSp1, exp, innerSp2)) =>
-              mapN(visitExp(exp)) {
-                case e =>
-                  val e2 = mkApplyToString(e, innerSp1, innerSp2)
-                  mkConcat(acc, e2, mkSL(innerSp1, innerSp2))
-              }
+            // Case 1: string part
             case (acc, ParsedAst.InterpolationPart.StrPart(innerSp1, chars, innerSp2)) =>
               weedCharSequence(chars) map {
                 string =>
                   val e2 = WeededAst.Expression.Str(string, mkSL(innerSp1, innerSp2))
                   mkConcat(acc, e2, loc)
               }
+            // Case 2: interpolated expression
+            case (acc, ParsedAst.InterpolationPart.ExpPart(innerSp1, Some(exp), innerSp2)) =>
+              mapN(visitExp(exp)) {
+                e =>
+                  val e2 = mkApplyToString(e, innerSp1, innerSp2)
+                  mkConcat(acc, e2, mkSL(innerSp1, innerSp2))
+              }
+            // Case 3: empty interpolated expression
+            case (acc, ParsedAst.InterpolationPart.ExpPart(innerSp1, None, innerSp2)) =>
+              WeederError.EmptyInterpolatedExpression(mkSL(innerSp1, innerSp2)).toFailure
           }
       }
 

@@ -457,6 +457,17 @@ class TestKinder extends FunSuite with TestUtils {
     expectError[KindError.UnexpectedKind](result)
   }
 
+  test("KindError.Def.Expression.Ascribe.05") {
+    val input =
+      """
+        |pub def foo(): Int32 =
+        |    let x : Int32 : (Type -> Type) = 123;
+        |    x
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
   test("KindError.Def.Expression.Cast.01") {
     val input =
       """
