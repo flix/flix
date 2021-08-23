@@ -6,21 +6,18 @@ type alias Ref[t] = ScopedRef[t, false]
 ///
 /// The identity function.
 ///
-@Time(1) @Space(1)
 pub def identity(x: a): a = x
 
 ///
 /// Returns the constant function with return value `y`.
 /// That is, returns `f` such that `f(x) = y` for all inputs `x`.
 ///
-@Time(1) @Space(1)
 pub def constant(y: a): b -> a = _ -> y
 
 ///
 /// Returns the function `f` with input arguments swapped.
 /// That is, given the function `f: (a, b) -> c`, returns a function `(b, a) -> c`
 ///
-@Time(1) @Space(1)
 pub def flip(f: (a, b) -> c & e): (b, a) -> c & e = (x, y) -> f(y, x)
 
 ///
@@ -35,20 +32,17 @@ pub def on(f: (b, b) -> c & e1, g: a -> b & e2, x: a, y: a): c & (e1 and e2) = f
 /// Returns the result of currying the function `f`.
 /// That is, given the function `f: (a, b) -> c`, returns a function `a -> b -> c`
 ///
-@Time(1) @Space(1)
 pub def curry(f: (a, b) -> c & e): a -> (b -> c & e) = x -> y -> f(x, y)
 
 ///
 /// Returns the result of uncurrying the function `f`.
 /// That is, given the function `f: a -> b -> c`, returns a function `(a, b) -> c`
 ///
-@Time(1) @Space(1)
 pub def uncurry(f: a -> (b -> c & e1) & e2): ((a, b)) -> c & (e1 and e2) = match (x, y) -> f(x, y)
 
 ///
 /// Returns the first component of `t`.
 ///
-@Time(1) @Space(1)
 pub def fst(p: (a, b)): a =
     let (x, _) = p;
         x
@@ -56,7 +50,6 @@ pub def fst(p: (a, b)): a =
 ///
 /// Returns the second component of `t`.
 ///
-@Time(1) @Space(1)
 pub def snd(p: (a, b)): b =
     let (_, y) = p;
         y
@@ -65,7 +58,6 @@ pub def snd(p: (a, b)): b =
 /// Returns the pair `p` with the components swapped.
 /// That is, returns `(y, x)` if `p = (x, y)`.
 ///
-@Time(1) @Space(1)
 pub def swap(p: (a, b)): (b, a) =
     let (x, y) = p;
         (y, x)
@@ -75,7 +67,6 @@ pub def swap(p: (a, b)): (b, a) =
 ///
 /// Given the functions `f: a -> b` and `g: b -> c` returns a function `a -> c`
 ///
-@Time(1) @Space(1)
 pub def >>(f: a -> b & e1, g: b -> c & e2): a -> c & (e1 and e2) = x -> g(f(x))
 
 ///
@@ -83,7 +74,6 @@ pub def >>(f: a -> b & e1, g: b -> c & e2): a -> c & (e1 and e2) = x -> g(f(x))
 ///
 /// Given a value `x` and a function `f` returns `f(x)`.
 ///
-@Time(1) @Space(1)
 pub def |>(x: a, f: a -> b & e): b & e = f(x)
 
 ///
@@ -91,27 +81,33 @@ pub def |>(x: a, f: a -> b & e): b & e = f(x)
 ///
 /// Given a pair `x` and a function `f` returns `f(x)`.
 ///
-@Time(1) @Space(1)
 pub def ||>(x: (a, b), f: ((a, b)) -> c & e): c & e = f(x)
+
+///
+/// Converts `x` to a string and prints it to standard out.
+///
+pub def print(x: a): Unit & Impure with ToString[a] =
+    import get java.lang.System:out as getOut;
+    import java.io.PrintStream.print(String);
+    x |> ToString.toString |> print(getOut())
+
+///
+/// Converts `x` to a string and prints it to standard out followed by a new line.
+///
+pub def println(x: a): Unit & Impure with ToString[a] =
+    import get java.lang.System:out as getOut;
+    import java.io.PrintStream.println(String);
+    x |> ToString.toString |> println(getOut())
 
 ///
 /// Returns `true` if `x` implies `y` logically holds.
 ///
-@Time(1) @Space(1)
 pub def ==>(x: Bool, y: Bool): Bool = not x or y
 
 ///
 /// Returns true if `x` implies `y` and vise versa.
 ///
-@Time(1) @Space(1)
 pub def <==>(x: Bool, y: Bool): Bool = x == y
-
-///
-/// Unsafely converts `x` to a string using Java's built-in toString.
-///
-pub def unsafeToString(x: a): String =
-    import java.util.Objects:toString(##java.lang.Object);
-    toString(x as ##java.lang.Object) as & Pure
 
 ///
 /// Crashes the current process with the given message `m`.
@@ -140,14 +136,9 @@ pub def unreachable!(): a = bug!("Reached unreachable expression.")
 ///
 /// Meta-programming facility to express the time complexity of a function `f`.
 ///
-pub def time(_f: a -> Int32): Int32 = 1
+pub def time(_: a -> Int32): Int32 = 1
 
 ///
 /// Meta-programming facility to express the space complexity of a function `f`.
 ///
-pub def space(_f: a -> Int32): Int32 = 1
-
-///
-/// Asserts that the expression `x` is contextually equivalent to the expression `y`.
-///
-pub def ===(_x: a, _y: a): Bool = bug!("meta-programming construct")
+pub def space(_: a -> Int32): Int32 = 1
