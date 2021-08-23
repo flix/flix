@@ -352,3 +352,9 @@ pub def impliesWith(x: a, y: b): Bool = ??? // TODO: Add argument
 // TODO MultipMap, MultiSet, EqualityRelation?
 
 // TODO: Add sequence and traverse to Result.
+
+///
+/// Asserts that the expression `x` is contextually equivalent to the expression `y`.
+///
+pub def ===(_x: a, _y: a): Bool = bug!("meta-programming construct")
+
