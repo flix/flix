@@ -324,26 +324,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       }
     }
 
-    /**
-      * Returns a list of code lenses for the unit tests in the program.
-      */
-    def mkCodeLensesForUnitTests(): List[CodeLens] = {
-      // Case 1: No root. Return immediately.
-      if (root == null) {
-        return Nil
-      }
-
-      val result = mutable.ListBuffer.empty[CodeLens]
-      for ((sym, defn) <- root.defs) {
-        if (matchesUri(uri, defn.spec.loc) && defn.spec.ann.exists(_.name.isInstanceOf[Ast.Annotation.Test])) {
-          val loc = defn.sym.loc
-          val cmd = Command("Run All Tests", "flix.cmdRunAllTests", Nil)
-          result.addOne(CodeLens(Range.from(loc), Some(cmd)))
-        }
-      }
-      result.toList
-    }
-
     //
     // Compute all code lenses.
     //
