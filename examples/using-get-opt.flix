@@ -14,7 +14,7 @@ enum Flag {
 }
 
 instance ToString[Flag] {
-    def toString(x: Flag): String = match x {
+    pub def toString(x: Flag): String = match x {
         case Version    => "Version"
         case Help       => "Help"
         case Verbose    => "Verbose"
@@ -46,7 +46,6 @@ def listen(x: String): Option[Flag] = match Int32.fromString(x) {
     case Err(_) => None
 }
 
-
 /// Decode the array `args` supplied to main.
 /// Note in this case we want to allow file names to contain spaces - the initial array `args` has
 /// been split on the Space character, we use `GetOpt.preprocess` to rejoin file names that were enclosed in
@@ -59,4 +58,3 @@ def main(args: Array[String]): Int32 & Impure =
         case Success(opts)   => {Console.printLine("Optionals: ${opts.options}"); Console.printLine("Non-optionals: ${opts.nonOptions}"); 0}
         case Failure(errs)  => {Console.printLine("Errors: ${errs}");  Console.printLine(usageInfo(header, options1)); 1}
     }
-
