@@ -402,4 +402,9 @@ namespace LazyList {
     ///
     pub def repeat(x: a): LazyList[a] = LCons(x, lazy repeat(x))
 
+    ///
+    /// Returns an infinite sequence of integers starting from and including `n`.
+    ///
+    pub def from(n: Int32): LazyList[Int32] = LCons(n, lazy from(n + 1))
+
 }
