@@ -29,7 +29,10 @@ namespace Epoch {
     ///
     /// Returns the number of mili seconds since the Unix epoch.
     ///
-    pub def miliSeconds(): Int64 & Impure = ???
+    pub def miliSeconds(): Int64 & Impure =
+        import java.time.Instant:now();
+        import java.time.Instant.toEpochMilli();
+        now().toEpochMilli()
 
     ///
     /// Returns the number of seconds since the Unix epoch.
