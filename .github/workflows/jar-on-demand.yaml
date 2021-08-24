@@ -63,15 +63,9 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: >
-              github.actions.listWorkflowRunArtifacts({
+              github.issues.createComment({
+                issue_number: context.issue.number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                run_id: context.runId
-              }).then(response =>
-                github.issues.createComment({
-                  issue_number: context.issue.number,
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  body: "The JAR is available [HERE](" + response.data.artifacts[0].url + ")."
-                })
-              )
+                body: "The JAR is available [HERE](" + context.repo.repo + "/actions/runs/" + context.runId + ")."
+              })
