@@ -27,7 +27,7 @@ object CompleteProvider {
     * Returns a list of auto-complete suggestions.
     */
   def autoComplete(uri: String, pos: Position, prefix: Option[String])(implicit index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
-    getKeywordCompletionItems() ++ getSnippetCompletionItems() ++ getSuggestions(uri, pos, prefix)
+    getKeywordCompletionItems() ++ getSnippetCompletionItems() ++ getInstanceSuggestions() ++ getSuggestions(uri, pos, prefix)
   }
 
   /**
@@ -138,6 +138,24 @@ object CompleteProvider {
     CompletionItem("query", "query ${1:db} select ${2:cols} from ${3:preds} ${4:where ${5:cond}}", None, Some("snippet for query"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
     CompletionItem("select", "select {\n\tcase ${1:x} <- ${2:c} =>${3:exp}\n}", None, Some("snippet for select"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
   )
+
+  // TODO: DOC
+  private def getInstanceSuggestions()(implicit index: Index, root: TypedAst.Root): List[CompletionItem] = {
+    def getFormalParams(sig: TypedAst.Sig): String =
+      sig.spec.fparams.map {
+        case fparam => s"${fparam.sym}: ${fparam.tpe}"
+      }.mkString(", ")
+
+    def getSignature(sig: TypedAst.Sig): String =
+      s"  pub def ${sig.sym.name}(): $${1:type} = ???"
+
+    root.classes.map {
+      case (_, clazz) =>
+        val classSym = clazz.sym
+        val body = clazz.signatures.map(getSignature).mkString("\n\n")
+        CompletionItem(s"instance $classSym", s"instance $classSym[$${1:type}] {\n    $body\n}", None, Some("snippet for instance"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil)
+    }.toList
+  }
 
   /**
     * Returns a list of other completion items.
