@@ -3,7 +3,7 @@
 HEAD:
 
 Version 0.18.0:
-- Improved auto-completed.
+- Improved auto-complete.
 - Minor bug fixes.
 
 Version 0.17.0:
