@@ -2,6 +2,10 @@
 
 HEAD:
 
+Version 0.18.0:
+- Improved auto-completed.
+- Minor bug fixes.
+
 Version 0.17.0:
 - Added proper kind checking (thanks Matthew!)
 - Added support for string escapes (thanks Matthew!)
