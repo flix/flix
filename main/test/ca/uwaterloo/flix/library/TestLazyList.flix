@@ -1305,4 +1305,57 @@ namespace TestLazyList {
     def from15(): Bool =
     	LazyList.from(0) |> LazyList.take(2000) == LazyList.range(0, 2000)
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // last                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def last01(): Bool =
+        LazyList.last(ENil: LazyList[Unit]) == None
+
+    @test
+    def last02(): Bool =
+        LazyList.last(LList(lazy ENil): LazyList[Unit]) == None
+
+    @test
+    def last03(): Bool =
+        LazyList.range(0, 1) |> LazyList.last == Some(0)
+
+    @test
+    def last04(): Bool =
+    	LCons(1, lazy ENil) |> LazyList.last == Some(1)
+
+    @test
+    def last05(): Bool =
+    	LList(lazy ECons(1, LList(lazy ENil))) |> LazyList.last == Some(1)
+
+    @test
+    def last06(): Bool =
+    	ECons(1, LList(lazy ENil)) |> LazyList.last == Some(1)
+
+    @test
+    def last07(): Bool =
+    	LCons(1, lazy LList(lazy ENil)) |> LazyList.last == Some(1)
+
+    @test
+    def last08(): Bool =
+    	LCons(1, lazy LCons(2, lazy LList(lazy LCons(3, lazy ENil)))) |> LazyList.last == Some(3)
+
+    @test
+    def last09(): Bool =
+    	LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil)))) |> LazyList.last == Some(3)
+
+    @test
+    def last10(): Bool =
+    	LCons(1, lazy ECons(2, LList(lazy LCons(3, lazy LList(lazy ENil))))) |> LazyList.last == Some(3)
+
+    @test
+    def last11(): Bool =
+    	LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil)))))) |> LazyList.last == Some(3)
+
+    @test
+    def last12(): Bool =
+    	LazyList.range(0, 1000) |> LazyList.last == Some(999)
+
 }

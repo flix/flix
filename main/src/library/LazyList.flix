@@ -407,4 +407,18 @@ namespace LazyList {
     ///
     pub def from(n: Int32): LazyList[Int32] = LCons(n, lazy from(n + 1))
 
+    ///
+    /// Returns `Some(x)` if `x` is the last element of `l`.
+    ///
+    /// Returns `None` if `l` is empty.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    pub def last(l: LazyList[a]): Option[a] = match l {
+        case ENil         => None
+        case ECons(x, xs) => if (isEmpty(      xs)) Some(x) else last(      xs)
+        case LCons(x, xs) => if (isEmpty(force xs)) Some(x) else last(force xs)
+        case LList(xs)    => last(force xs)
+    }
+
 }
