@@ -61,11 +61,11 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 run_id: context.runId
-              }).then(url =>
+              }).then(response =>
                 github.issues.createComment({
                   issue_number: context.issue.number,
                   owner: context.repo.owner,
                   repo: context.repo.repo,
-                  body: "The JAR is available [HERE](" + url + ")."
+                  body: "The JAR is available [HERE](" + response.artifacts[1].url + ")."
                 })
               )
