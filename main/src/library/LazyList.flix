@@ -85,6 +85,16 @@ namespace LazyList {
     }
 
     ///
+    /// Returns `l` without the first element.
+    ///
+    pub def tail(l: LazyList[a]): LazyList[a] = match l {
+        case ENil         => ENil
+        case ECons(_, xs) => xs
+        case LCons(_, xs) => LList(xs)
+        case LList(xs)    => LList(lazy tail(force xs))
+    }
+
+    ///
     /// Returns the first `n` elements of `l`.
     ///
     /// Does not force the tail of `l`.
@@ -271,6 +281,27 @@ namespace LazyList {
         a
 
     ///
+    /// Returns `l` as an `Iterator`.
+    ///
+    /// Does not force any elements of the list.
+    ///
+    pub def toIter(l: LazyList[a]): Iterator[a] & Impure =
+        let cursor = ref l;
+        let done = () -> match head(deref cursor) {
+            case None    => true
+            case Some(_) => false
+        };
+
+        let next = () -> match head(deref cursor) {
+            case None    => bug!("Empty iterator")
+            case Some(x) =>
+                cursor := tail(deref cursor);
+                x
+        };
+
+        Iterator(done, next)
+
+    ///
     /// Returns `l` as a `List`.
     ///
     /// Forces the entire list `l`.
@@ -396,4 +427,29 @@ namespace LazyList {
         case LCons(x, xs) => f(x); foreach(f, force xs)
         case LList(xs)    => foreach(f, force xs)
     }
+
+    ///
+    /// Returns an infinite LazyList of repeating `x`s.
+    ///
+    pub def repeat(x: a): LazyList[a] = LCons(x, lazy repeat(x))
+
+    ///
+    /// Returns an infinite sequence of integers starting from and including `n`.
+    ///
+    pub def from(n: Int32): LazyList[Int32] = LCons(n, lazy from(n + 1))
+
+    ///
+    /// Returns `Some(x)` if `x` is the last element of `l`.
+    ///
+    /// Returns `None` if `l` is empty.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    pub def last(l: LazyList[a]): Option[a] = match l {
+        case ENil         => None
+        case ECons(x, xs) => if (isEmpty(      xs)) Some(x) else last(      xs)
+        case LCons(x, xs) => if (isEmpty(force xs)) Some(x) else last(force xs)
+        case LList(xs)    => last(force xs)
+    }
+
 }
