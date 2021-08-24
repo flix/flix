@@ -188,6 +188,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         NonEmptyBody | EmptyBody
       }
 
+      def Derivations = rule {
+        keyword("with") ~ oneOrMore(Names.Class).separatedBy( optWS ~ "," ~ optWS)
+      }
+
       rule {
         Documentation ~ Modifiers ~ SP ~ keyword("enum") ~ WS ~ Names.Type ~ TypeParams ~ optWS ~ Body ~ SP ~> ParsedAst.Declaration.Enum
       }
