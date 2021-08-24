@@ -37,4 +37,5 @@ namespace Epoch {
     /// Returns the number of seconds since the Unix epoch.
     ///
     pub def seconds(): Int64 & Impure = milliseconds() / 1000i64
+
 }
