@@ -1155,7 +1155,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
           resultTyp <- unifyTypeM(typ, Type.Bool, loc)
         } yield (constrs, resultTyp, Type.Pure)
 
-      case KindedAst.Expression.Ascribe(exp, expectedTyp, expectedEff, tvar, loc) =>
+      case KindedAst.Expression.Ascribe(exp, expectedTyp, expectedSco, expectedEff, tvar, loc) =>
         // An ascribe expression is sound; the type system checks that the declared type matches the inferred type.
         for {
           (constrs, actualTyp, actualEff) <- visitExp(exp)
@@ -1163,7 +1163,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
           resultEff <- unifyBoolM(actualEff, expectedEff.getOrElse(Type.freshVar(Kind.Bool)), loc)
         } yield (constrs, resultTyp, resultEff)
 
-      case KindedAst.Expression.Cast(exp, declaredTyp, declaredEff, tvar, loc) =>
+      case KindedAst.Expression.Cast(exp, declaredTyp, declaredSco, declaredEff, tvar, loc) =>
         // A cast expression is unsound; the type system assumes the declared type is correct.
         for {
           (constrs, actualTyp, actualEff) <- visitExp(exp)
@@ -1699,19 +1699,19 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
         val e = visitExp(exp, subst0)
         TypedAst.Expression.Universal(visitParam(fparam), e, loc)
 
-      case KindedAst.Expression.Ascribe(exp, _, _, tvar, loc) =>
+      case KindedAst.Expression.Ascribe(exp, _, sco, _, tvar, loc) =>
         val e = visitExp(exp, subst0)
         val eff = e.eff
-        TypedAst.Expression.Ascribe(e, subst0(tvar), eff, loc)
+        TypedAst.Expression.Ascribe(e, subst0(tvar), sco, eff, loc)
 
-      case KindedAst.Expression.Cast(KindedAst.Expression.Null(_), _, _, tvar, loc) =>
+      case KindedAst.Expression.Cast(KindedAst.Expression.Null(_), _, sco, _, tvar, loc) =>
         val t = subst0(tvar)
-        TypedAst.Expression.Null(t, loc)
+        TypedAst.Expression.Null(t, loc) // MATT need to do something about scope here
 
-      case KindedAst.Expression.Cast(exp, _, declaredEff, tvar, loc) =>
+      case KindedAst.Expression.Cast(exp, _, sco, declaredEff, tvar, loc) =>
         val e = visitExp(exp, subst0)
         val eff = declaredEff.getOrElse(e.eff)
-        TypedAst.Expression.Cast(e, subst0(tvar), eff, loc)
+        TypedAst.Expression.Cast(e, subst0(tvar), sco, eff, loc)
 
       case KindedAst.Expression.TryCatch(exp, rules, loc) =>
         val e = visitExp(exp, subst0)

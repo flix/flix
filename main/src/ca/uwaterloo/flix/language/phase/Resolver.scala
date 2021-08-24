@@ -723,12 +723,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         case NamedAst.Expression.Ascribe(exp, expectedType, expectedEff, loc) =>
           val expectedTypVal = expectedType match {
-            case None => (None: Option[(UnkindedType, ScopeInfo)]).toSuccess
-            case Some(t) => mapN(lookupType(t, ns0, root))(x => Some(x))
-          }
-          val expectedTypeVal = Validation.traverse(expectedType)(lookupType(_, ns0, root))
-          val expectedScoVal = expectedType match {
-            case None => ()
+            case None => (None: Option[UnkindedType], None: Option[ScopeInfo]).toSuccess
+            case Some(t) => mapN(lookupType(t, ns0, root)) {
+              case (tpe, sco) => (Some(tpe), Some(sco))
+            }
           }
           val expectedEffVal = expectedEff match {
             case None => (None: Option[UnkindedType]).toSuccess
@@ -737,15 +735,17 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
           for {
             e <- visit(exp, tenv0)
-            t <- expectedTypVal
+            (t, s) <- expectedTypVal
             f <- expectedEffVal
-          } yield ResolvedAst.Expression.Ascribe(e, t, f, loc)
+          } yield ResolvedAst.Expression.Ascribe(e, t, s, f, loc)
 
         case NamedAst.Expression.Cast(exp, declaredType, declaredEff, loc) =>
 
           val declaredTypVal = declaredType match {
-            case None => (None: Option[(UnkindedType, ScopeInfo)]).toSuccess
-            case Some(t) => mapN(lookupType(t, ns0, root))(x => Some(x))
+            case None => (None: Option[UnkindedType], None: Option[ScopeInfo]).toSuccess
+            case Some(t) => mapN(lookupType(t, ns0, root)) {
+              case (tpe, sco) => (Some(tpe), Some(sco))
+            }
           }
           val declaredEffVal = declaredEff match {
             case None => (None: Option[UnkindedType]).toSuccess
@@ -754,9 +754,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
           for {
             e <- visit(exp, tenv0)
-            t <- declaredTypVal
+            (t, s) <- declaredTypVal
             f <- declaredEffVal
-          } yield ResolvedAst.Expression.Cast(e, t, f, loc)
+          } yield ResolvedAst.Expression.Cast(e, t, s, f, loc)
 
         case NamedAst.Expression.TryCatch(exp, rules, loc) =>
           val rulesVal = traverse(rules) {

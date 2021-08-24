@@ -143,9 +143,9 @@ object KindedAst {
 
     case class Universal(fparam: KindedAst.FormalParam, exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
-    case class Ascribe(exp: KindedAst.Expression, expectedType: Option[Type], expectedEff: Option[Type], tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class Ascribe(exp: KindedAst.Expression, expectedType: Option[Type], expectedSco: Option[ScopeInfo], expectedEff: Option[Type], tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
-    case class Cast(exp: KindedAst.Expression, declaredType: Option[Type], declaredEff: Option[Type], tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class Cast(exp: KindedAst.Expression, declaredType: Option[Type], declaredSco: Option[ScopeInfo], declaredEff: Option[Type], tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
     case class TryCatch(exp: KindedAst.Expression, rules: List[KindedAst.CatchRule], loc: SourceLocation) extends KindedAst.Expression
 

@@ -366,6 +366,11 @@ object Unification {
     visit(liftM(fs.head), fs.tail)
   }
 
+  // MATT docs
+  def assertM(tpe: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Unit] = {
+    unifyBoolM(tpe, Type.True, loc).map(_ => ())
+  }
+
   /**
     * Removes the given type variable from the substitution.
     *

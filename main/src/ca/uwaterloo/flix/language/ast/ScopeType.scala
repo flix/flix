@@ -3,13 +3,13 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.api.Flix
 
 sealed trait ScopeType {
-  def asScoped: ScopeInfo = this.withScope(Scopedness.Scoped)
+  def asScoped: ScopeInfo = this.withScopedness(Scopedness.Scoped)
 
-  def asUnscoped: ScopeInfo = this.withScope(Scopedness.Unscoped)
+  def asUnscoped: ScopeInfo = this.withScopedness(Scopedness.Unscoped)
 
 //  def scopeIrrelevant(implicit flix: Flix): ScopeInfo = this.withScope(Scopedness.freshVar())
 
-  private def withScope(sc: Scopedness): ScopeInfo = ScopeInfo(sc, this)
+  def withScopedness(sc: Scopedness): ScopeInfo = ScopeInfo(sc, this)
 }
 
 object ScopeType {

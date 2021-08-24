@@ -146,9 +146,9 @@ object ResolvedAst {
 
     case class Universal(fparam: ResolvedAst.FormalParam, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Ascribe(exp: ResolvedAst.Expression, expectedType: Option[(UnkindedType, ScopeInfo)], expectedEff: Option[UnkindedType], loc: SourceLocation) extends ResolvedAst.Expression
+    case class Ascribe(exp: ResolvedAst.Expression, expectedType: Option[UnkindedType], expectedSco: Option[ScopeInfo], expectedEff: Option[UnkindedType], loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Cast(exp: ResolvedAst.Expression, declaredType: Option[(UnkindedType, ScopeInfo)], declaredEff: Option[UnkindedType], loc: SourceLocation) extends ResolvedAst.Expression
+    case class Cast(exp: ResolvedAst.Expression, declaredType: Option[UnkindedType], declaredSco: Option[ScopeInfo], declaredEff: Option[UnkindedType], loc: SourceLocation) extends ResolvedAst.Expression
 
     case class TryCatch(exp: ResolvedAst.Expression, rules: List[ResolvedAst.CatchRule], loc: SourceLocation) extends ResolvedAst.Expression
 

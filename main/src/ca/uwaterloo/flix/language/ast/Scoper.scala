@@ -6,6 +6,7 @@ import ca.uwaterloo.flix.language.errors.ScopeError
 import ca.uwaterloo.flix.language.phase.Phase
 import ca.uwaterloo.flix.language.phase.unification.ScopeInferMonad
 import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.language.phase.unification.Unification.{assertM, unifyTypeM}
 
 object Scoper extends Phase[Root, Root] {
   override def run(input: Root)(implicit flix: Flix): Validation[Root, ScopeError] = flix.phase("Scoper") {
@@ -18,27 +19,39 @@ object Scoper extends Phase[Root, Root] {
     case Def(sym, spec, impl) => ???
   }
 
-  private def inferExp(exp: Expression, root: Root): ScopeInferMonad[ScopeInfo] = exp match {
-    case Expression.Unit(loc) => ScopeInferMonad.point(ScopeType.Unit.asUnscoped)
-    case Expression.Null(tpe, loc) => ScopeInferMonad.point(ScopeType.Null.asUnscoped) // MATT probably need to use the tpe
-    case Expression.True(loc) => ScopeInferMonad.point(ScopeType.True.asUnscoped)
-    case Expression.False(loc) => ScopeInferMonad.point(ScopeType.False.asUnscoped)
-    case Expression.Char(lit, loc) => ScopeInferMonad.point(ScopeType.Char.asUnscoped)
-    case Expression.Float32(lit, loc) => ScopeInferMonad.point(ScopeType.Float32.asUnscoped)
-    case Expression.Float64(lit, loc) => ScopeInferMonad.point(ScopeType.Float64.asUnscoped)
-    case Expression.Int8(lit, loc) => ScopeInferMonad.point(ScopeType.Int8.asUnscoped)
-    case Expression.Int16(lit, loc) => ScopeInferMonad.point(ScopeType.Int16.asUnscoped)
-    case Expression.Int32(lit, loc) => ScopeInferMonad.point(ScopeType.Int32.asUnscoped)
-    case Expression.Int64(lit, loc) => ScopeInferMonad.point(ScopeType.Int64.asUnscoped)
-    case Expression.BigInt(lit, loc) => ScopeInferMonad.point(ScopeType.BigInt.asUnscoped)
-    case Expression.Str(lit, loc) => ScopeInferMonad.point(ScopeType.Str.asUnscoped)
-    case Expression.Default(tpe, loc) => ScopeInferMonad.point(ScopeType.Unit.asUnscoped) // MATT hack
-    case Expression.Wild(tpe, loc) => ??? // MATT needs associated ScopeInfo
-    case Expression.Var(sym, tpe, sco, loc) => ScopeInferMonad.point(sco)
-    case Expression.Def(sym, tpe, loc) => ScopeInferMonad.point(root.defs(sym).spec.sco.asUnscoped)
-    case Expression.Sig(sym, tpe, loc) => ScopeInferMonad.point(root.sigs(sym).spec.sco.asUnscoped)
+  private def inferExp(exp0: Expression, root: Root)(implicit flix: Flix): ScopeInferMonad[(ScopeInfo, Set[Symbol.VarSym])] = exp0 match {
+    case Expression.Unit(loc) => ScopeInferMonad.point((ScopeType.Unit.asUnscoped, Set.empty))
+    case Expression.Null(tpe, loc) => ScopeInferMonad.point((ScopeType.Null.asUnscoped, Set.empty)) // MATT probably need to use the tpe
+    case Expression.True(loc) => ScopeInferMonad.point((ScopeType.True.asUnscoped, Set.empty))
+    case Expression.False(loc) => ScopeInferMonad.point((ScopeType.False.asUnscoped, Set.empty))
+    case Expression.Char(lit, loc) => ScopeInferMonad.point((ScopeType.Char.asUnscoped, Set.empty))
+    case Expression.Float32(lit, loc) => ScopeInferMonad.point((ScopeType.Float32.asUnscoped, Set.empty))
+    case Expression.Float64(lit, loc) => ScopeInferMonad.point((ScopeType.Float64.asUnscoped, Set.empty))
+    case Expression.Int8(lit, loc) => ScopeInferMonad.point((ScopeType.Int8.asUnscoped, Set.empty))
+    case Expression.Int16(lit, loc) => ScopeInferMonad.point((ScopeType.Int16.asUnscoped, Set.empty))
+    case Expression.Int32(lit, loc) => ScopeInferMonad.point((ScopeType.Int32.asUnscoped, Set.empty))
+    case Expression.Int64(lit, loc) => ScopeInferMonad.point((ScopeType.Int64.asUnscoped, Set.empty))
+    case Expression.BigInt(lit, loc) => ScopeInferMonad.point((ScopeType.BigInt.asUnscoped, Set.empty))
+    case Expression.Str(lit, loc) => ScopeInferMonad.point((ScopeType.Str.asUnscoped, Set.empty))
+    case Expression.Default(tpe, loc) => ScopeInferMonad.point((ScopeType.Unit.asUnscoped, Set.empty)) // MATT hack
+    case Expression.Wild(tpe, loc) => ??? // MATT needs associated ScopeInfo (probably var)
+    case Expression.Var(sym, tpe, sco, loc) => ScopeInferMonad.point((sco, Set(sym)))
+    case Expression.Def(sym, tpe, loc) => ScopeInferMonad.point((root.defs(sym).spec.sco.asUnscoped, Set.empty))
+    case Expression.Sig(sym, tpe, loc) => ScopeInferMonad.point((root.sigs(sym).spec.sco.asUnscoped, Set.empty))
     case Expression.Hole(sym, tpe, eff, loc) => ??? // MATT
     case Expression.Lambda(fparam, exp, tpe, loc) => // MATT careful with external/internal scopes
+      val externalParamSco = Scopedness.freshVar()
+      for {
+        (expScopeInfo, expFvars) <- inferExp(exp, root)
+        ScopeInfo(expSco, expScoTpe) = expScopeInfo
+        _ <- unifyTypeM(expSco.toType, Type.Unscoped, loc)
+        _ <- assertM(Type.mkImplies(fparam.sco.scopedness.toType, externalParamSco.toType), loc)
+        fvars = expFvars - fparam.sym
+        resScopedness = if (fvars.isEmpty) Scopedness.Unscoped else Scopedness.Scoped
+        newParamScopeInfo = ScopeInfo(externalParamSco, fparam.sco.scopeType)
+        resScopeType = ScopeType.mkArrowWithEffect(newParamScopeInfo, ScopeInfo.freshVar(), expScopeInfo)
+        // result scopetype is externalParamSco -> expSco
+      } yield (resScopeType.scopeType.withScopedness(resScopedness), fvars)
       // result scope type is fparam.sco -> tpe.sco
       // if exp has scoped free vars:
         // then overall Scoped

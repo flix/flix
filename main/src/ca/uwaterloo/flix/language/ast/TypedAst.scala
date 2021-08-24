@@ -232,9 +232,9 @@ object TypedAst {
       def eff: Type = Type.Pure
     }
 
-    case class Ascribe(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class Ascribe(exp: TypedAst.Expression, tpe: Type, sco: Option[ScopeInfo], eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class Cast(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class Cast(exp: TypedAst.Expression, tpe: Type, sco: Option[ScopeInfo], eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class TryCatch(exp: TypedAst.Expression, rules: List[TypedAst.CatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 

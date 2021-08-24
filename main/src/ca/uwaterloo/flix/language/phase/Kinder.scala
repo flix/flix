@@ -417,20 +417,19 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         exp <- visitExp(exp0, kenv1, root)
       } yield KindedAst.Expression.Universal(fparam, exp, loc)
 
-    case ResolvedAst.Expression.Ascribe(exp0, expectedType0, expectedEff0, loc) =>
+    case ResolvedAst.Expression.Ascribe(exp0, expectedType0, expectedSco, expectedEff0, loc) =>
       for {
         exp <- visitExp(exp0, kenv, root)
-        expectedType <- Validation.traverse(expectedType0)(pair => visitType(pair._1, KindMatch.subKindOf(Kind.Star), kenv, root))
-        expectedSco <-
+        expectedType <- Validation.traverse(expectedType0)(visitType(_, KindMatch.subKindOf(Kind.Star), kenv, root))
         expectedEff <- Validation.traverse(expectedEff0)(visitType(_, KindMatch.subKindOf(Kind.Bool), kenv, root))
-      } yield KindedAst.Expression.Ascribe(exp, expectedType.headOption, expectedEff.headOption, Type.freshVar(Kind.Star), loc)
+      } yield KindedAst.Expression.Ascribe(exp, expectedType.headOption, expectedSco, expectedEff.headOption, Type.freshVar(Kind.Star), loc)
 
-    case ResolvedAst.Expression.Cast(exp0, declaredType0, declaredEff0, loc) =>
+    case ResolvedAst.Expression.Cast(exp0, declaredType0, declaredSco, declaredEff0, loc) =>
       for {
         exp <- visitExp(exp0, kenv, root)
         declaredType <- Validation.traverse(declaredType0)(visitType(_, KindMatch.subKindOf(Kind.Star), kenv, root))
         declaredEff <- Validation.traverse(declaredEff0)(visitType(_, KindMatch.subKindOf(Kind.Bool), kenv, root))
-      } yield KindedAst.Expression.Cast(exp, declaredType.headOption, declaredEff.headOption, Type.freshVar(Kind.Star), loc)
+      } yield KindedAst.Expression.Cast(exp, declaredType.headOption, declaredSco, declaredEff.headOption, Type.freshVar(Kind.Star), loc)
 
     case ResolvedAst.Expression.TryCatch(exp0, rules0, loc) =>
       for {
