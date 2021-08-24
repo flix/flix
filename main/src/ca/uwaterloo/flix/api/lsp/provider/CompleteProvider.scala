@@ -116,7 +116,6 @@ object CompleteProvider {
     CompletionItem("def", "def ${1:name}(${2:arg}:${3:type}): ${4:type} & Impure = \n\t", None, Some("snippet to define Impure function"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
     CompletionItem("def", "def ${1:name}(${2:arg}:${3:type}): ${4:type} & Pure = \n\t", None, Some("snippet to define Pure function"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
     CompletionItem("enum", "enum ${1:Name} {\n\tcase ${2:Name}\n}", None, Some("snippet for enum"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-    CompletionItem("instance", "instance ${1:Name}[${2:type}] {\n    ${3:/* code */}\n}", None, Some("snippet for instance"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
     CompletionItem("law", "law ${1:name}: forall(${2:params}).${3:exp}", None, Some("snippet for law"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
     CompletionItem("main", "def main(_args: Array[String]) : Int32 & Impure = \n    println(\"Hello World!\");\n    0", None, Some("snippet for Hello World Program"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
     CompletionItem("namespace", "namespace ${1:Name} {\n    ${2:/* code */} \n}", None, Some("snippet to create namespace"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
@@ -139,26 +138,37 @@ object CompleteProvider {
     CompletionItem("select", "select {\n\tcase ${1:x} <- ${2:c} =>${3:exp}\n}", None, Some("snippet for select"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
   )
 
-  // TODO: DOC
+  /**
+    * Returns a list of completion items based on type classes.
+    */
   private def getInstanceSuggestions()(implicit index: Index, root: TypedAst.Root): List[CompletionItem] = {
-    def getFormalParams(sig: TypedAst.Sig): String =
-      sig.spec.fparams.map {
-        case fparam => s"${fparam.sym}: ${fparam.tpe}"
+    def fmtType(clazz: TypedAst.Class, tpe: Type, hole: String): String = {
+      if (clazz.tparam.tpe == tpe) hole else FormatType.formatType(tpe)
+    }
+
+    def fmtFormalParams(clazz: TypedAst.Class, spec: TypedAst.Spec, hole: String): String =
+      spec.fparams.map {
+        case fparam => s"${fparam.sym}: ${fmtType(clazz, fparam.tpe, hole)}"
       }.mkString(", ")
 
-    def getSignature(sig: TypedAst.Sig): String =
-      s"  pub def ${sig.sym.name}(): $${1:type} = ???"
+    def getSignature(clazz: TypedAst.Class, sig: TypedAst.Sig, hole: String): String = {
+      val fparams = fmtFormalParams(clazz, sig.spec, hole)
+      val returnType = fmtType(clazz, sig.spec.retTpe, hole)
+      s"  pub def ${sig.sym.name}($fparams): ${returnType} = ???"
+    }
 
     root.classes.map {
       case (_, clazz) =>
+        val hole = "${1:type}"
         val classSym = clazz.sym
-        val body = clazz.signatures.map(getSignature).mkString("\n\n")
-        CompletionItem(s"instance $classSym", s"instance $classSym[$${1:type}] {\n    $body\n}", None, Some("snippet for instance"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil)
+        val signatures = clazz.signatures.filter(_.impl.isEmpty)
+        val body = signatures.map(s => getSignature(clazz, s, hole)).mkString("\n\n")
+        CompletionItem(s"instance $classSym", s"instance $classSym[$hole] {\n\n$body\n\n}", None, Some("snippet for instance"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil)
     }.toList
   }
 
   /**
-    * Returns a list of other completion items.
+    * Returns a list of auto-complete suggestions based on defs and sigs.
     */
   private def getSuggestions(uri: String, pos: Position, prefix: Option[String])(implicit index: Index, root: TypedAst.Root): List[CompletionItem] = {
     ///
