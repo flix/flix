@@ -200,6 +200,59 @@ namespace TestLazyList {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // tail                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def tail01(): Bool =
+        LazyList.tail(ENil: LazyList[Unit]) == ENil
+
+    @test
+    def tail02(): Bool =
+        LazyList.tail(LList(lazy ENil): LazyList[Unit]) == ENil
+
+    @test
+    def tail03(): Bool =
+        LazyList.range(0, 1) |> LazyList.tail == ENil
+
+    @test
+    def tail04(): Bool =
+    	LCons(1, lazy ENil) |> LazyList.tail == ENil
+
+    @test
+    def tail05(): Bool =
+    	LList(lazy ECons(1, LList(lazy ENil))) |> LazyList.tail == ENil
+
+    @test
+    def tail06(): Bool =
+    	ECons(1, LList(lazy ENil)) |> LazyList.tail == ENil
+
+    @test
+    def tail07(): Bool =
+    	LCons(1, lazy LList(lazy ENil)) |> LazyList.tail == ENil
+
+    @test
+    def tail08(): Bool =
+    	LCons(1, lazy LCons(2, lazy LList(lazy LCons(3, lazy ENil)))) |> LazyList.tail == LazyList.range(2, 4)
+
+    @test
+    def tail09(): Bool =
+    	LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil)))) |> LazyList.tail == LazyList.range(2, 4)
+
+    @test
+    def tail10(): Bool =
+    	LCons(1, lazy ECons(2, LList(lazy LCons(3, lazy LList(lazy ENil))))) |> LazyList.tail == LazyList.range(2, 4)
+
+    @test
+    def tail11(): Bool =
+    	LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil)))))) |> LazyList.tail == LazyList.range(2, 4)
+
+    @test
+    def tail12(): Bool =
+    	LazyList.range(0, 1000) |> LazyList.tail == LazyList.range(1, 1000)
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // take                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 

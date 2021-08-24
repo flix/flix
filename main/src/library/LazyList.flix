@@ -85,6 +85,16 @@ namespace LazyList {
     }
 
     ///
+    /// Returns `l` without the first element.
+    ///
+    pub def tail(l: LazyList[a]): LazyList[a] = match l {
+        case ENil         => ENil
+        case ECons(_, xs) => xs
+        case LCons(_, xs) => LList(xs)
+        case LList(xs)    => LList(lazy tail(force xs))
+    }
+
+    ///
     /// Returns the first `n` elements of `l`.
     ///
     /// Does not force the tail of `l`.
