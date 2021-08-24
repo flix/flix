@@ -29,7 +29,7 @@ object CompleteProvider {
   def autoComplete(uri: String, pos: Position, prefix: Option[String])(implicit index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
     getKeywordCompletionItems() ++
       getSnippetCompletionItems() ++
-      getInstanceSuggestions() ++
+      getInstanceSuggestions(uri, pos, prefix) ++
       getDefAndSigSuggestions(uri, pos, prefix)
   }
 
@@ -144,34 +144,47 @@ object CompleteProvider {
   /**
     * Returns a list of completion items based on type classes.
     */
-  private def getInstanceSuggestions()(implicit index: Index, root: TypedAst.Root): List[CompletionItem] = {
-    def replaceText(tvar: Type.Var, tpe: Type, hole: String): Type = tpe match {
-      case Type.Var(id, kind, rigidity, text) if tvar.id == id => Type.Var(id, kind, rigidity, Some(hole))
+  private def getInstanceSuggestions(uri: String, pos: Position, prefix: Option[String])(implicit index: Index, root: TypedAst.Root): List[CompletionItem] = {
+    /**
+      * Replaces the text in the given variable symbol `sym` everywhere in the type `tpe`
+      * with an equivalent variable symbol with the given `newText`.
+      */
+    def replaceText(tvar: Type.Var, tpe: Type, newText: String): Type = tpe match {
+      case Type.Var(id, kind, rigidity, text) if tvar.id == id => Type.Var(id, kind, rigidity, Some(newText))
       case Type.Var(_, _, _, _) => tpe
       case Type.Cst(_, _) => tpe
       case Type.Lambda(tvar2, tpe) if tvar == tvar2 =>
-        val t = replaceText(tvar, tpe, hole)
-        Type.Lambda(tvar2.copy(text = Some(hole)), t)
+        val t = replaceText(tvar, tpe, newText)
+        Type.Lambda(tvar2.copy(text = Some(newText)), t)
 
       case Type.Lambda(tvar2, tpe) =>
-        val t = replaceText(tvar, tpe, hole)
+        val t = replaceText(tvar, tpe, newText)
         Type.Lambda(tvar, t)
 
       case Type.Apply(tpe1, tpe2) =>
-        val t1 = replaceText(tvar, tpe1, hole)
-        val t2 = replaceText(tvar, tpe2, hole)
+        val t1 = replaceText(tvar, tpe1, newText)
+        val t2 = replaceText(tvar, tpe2, newText)
         Type.Apply(t1, t2)
     }
 
+    /**
+      * Formats the given type `tpe`.
+      */
     def fmtType(clazz: TypedAst.Class, tpe: Type, hole: String): String =
       FormatType.formatType(replaceText(clazz.tparam.tpe, tpe, hole))
 
+    /**
+      * Formats the given formal parameters in `spec`.
+      */
     def fmtFormalParams(clazz: TypedAst.Class, spec: TypedAst.Spec, hole: String): String =
       spec.fparams.map {
         case fparam => s"${fparam.sym}: ${fmtType(clazz, fparam.tpe, hole)}"
       }.mkString(", ")
 
-    def getSignature(clazz: TypedAst.Class, sig: TypedAst.Sig, hole: String): String = {
+    /**
+      * Formats the given signature `sig`.
+      */
+    def fmtSignature(clazz: TypedAst.Class, sig: TypedAst.Sig, hole: String): String = {
       val fparams = fmtFormalParams(clazz, sig.spec, hole)
       val retTpe = fmtType(clazz, sig.spec.retTpe, hole)
       val eff = sig.spec.eff match {
@@ -182,13 +195,25 @@ object CompleteProvider {
       s"  pub def ${sig.sym.name}($fparams): $retTpe$eff = ???"
     }
 
+    /**
+      * Formats the given class `clazz`.
+      */
+    def fmtClass(clazz: TypedAst.Class): String = {
+      s"class ${clazz.sym.name}[${clazz.tparam.name.name}]"
+    }
+
     root.classes.map {
       case (_, clazz) =>
         val hole = "${1:type}"
         val classSym = clazz.sym
         val signatures = clazz.signatures.filter(_.impl.isEmpty)
-        val body = signatures.map(s => getSignature(clazz, s, hole)).mkString("\n\n")
-        CompletionItem(s"instance $classSym[...]", s"instance $classSym[$hole] {\n\n$body\n\n}\n", None, Some("snippet for instance"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil)
+        val body = signatures.map(s => fmtSignature(clazz, s, hole)).mkString("\n\n")
+
+        val label = s"instance $classSym[...]"
+        val insertText = s"instance $classSym[$hole] {\n\n$body\n\n}\n"
+        val detail = Some(fmtClass(clazz))
+        val documentation = Some(clazz.doc.text)
+        CompletionItem(label, insertText, detail, documentation, CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil)
     }.toList
   }
 
