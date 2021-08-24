@@ -30,7 +30,7 @@ namespace Epoch {
     ///
     /// Returns the number of micro seconds since the Unix epoch.
     ///
-    pub def microSeconds(): Int64 & Impure = ???
+    pub def microseconds(): Int64 & Impure = nanoseconds() / 1000i64
 
     ///
     /// Returns the number of milli seconds since the Unix epoch.
