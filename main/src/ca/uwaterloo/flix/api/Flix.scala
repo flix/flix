@@ -140,6 +140,7 @@ class Flix {
     "File.flix" -> LocalResource.get("/src/library/File.flix"),
 
     "Environment.flix" -> LocalResource.get("/src/library/Environment.flix"),
+    "Epoch.flix" -> LocalResource.get("/src/library/Epoch.flix"),
 
     "FromString.flix" -> LocalResource.get("/src/library/FromString.flix"),
     "Functor.flix" -> LocalResource.get("/src/library/Functor.flix"),
