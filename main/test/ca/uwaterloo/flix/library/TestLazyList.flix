@@ -1429,4 +1429,94 @@ namespace TestLazyList {
     def toIter09(): Bool & Impure =
     	LazyList.range(-1000, 1000) |> LazyList.toIter |> Iterator.toList == List.range(-1000, 1000)
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // zip                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def zip01(): Bool =
+        LazyList.zip(ENil: LazyList[Int32], ENil: LazyList[String]) == ENil
+
+    @test
+    def zip02(): Bool =
+        LazyList.zip(LList(lazy ENil): LazyList[Int32], ENil: LazyList[String]) == ENil
+
+    @test
+    def zip03(): Bool =
+    	LazyList.zip(ENil: LazyList[Int32], LList(lazy ENil): LazyList[String]) == ENil
+
+    @test
+    def zip04(): Bool =
+    	LazyList.zip(LList(lazy ENil): LazyList[Int32], LList(lazy ENil): LazyList[String]) == ENil
+
+    @test
+    def zip05(): Bool =
+        LazyList.zip(LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy ENil)))), ENil: LazyList[String]) == ENil
+
+    @test
+    def zip06(): Bool =
+        LazyList.zip(LList(lazy LCons(1, lazy ECons(2, LList(lazy ENil)))), LList(lazy ENil): LazyList[String]) == ENil
+
+    @test
+    def zip07(): Bool =
+        LazyList.zip(LList(lazy LCons(1, lazy LCons(2, lazy ENil))), ENil: LazyList[String]) == ENil
+
+    @test
+    def zip08(): Bool =
+    	LazyList.zip(ENil: LazyList[String], LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy ENil))))) == ENil
+
+    @test
+    def zip09(): Bool =
+    	LazyList.zip(LList(lazy ENil): LazyList[String], LList(lazy LCons(1, lazy ECons(2, LList(lazy ENil))))) == ENil
+
+    @test
+    def zip10(): Bool =
+    	LazyList.zip(ENil: LazyList[String], LList(lazy LCons(1, lazy LCons(2, lazy ENil)))) == ENil
+
+    @test
+    def zip11(): Bool =
+    	LazyList.zip(LCons("a", lazy ECons("b", LList(lazy ECons("c", ENil)))), LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy ENil))))) == ECons(("a", 1), ECons(("b", 2), ENil))
+
+    @test
+    def zip12(): Bool =
+    	LazyList.zip(LCons("a", lazy ECons("b", LList(lazy ECons("c", ENil)))), LList(lazy LCons(1, lazy ECons(2, LList(lazy ENil))))) == ECons(("a", 1), ECons(("b", 2), ENil))
+
+    @test
+    def zip13(): Bool =
+    	LazyList.zip(LCons("a", lazy ECons("b", LList(lazy ECons("c", ENil)))), LList(lazy LCons(1, lazy LCons(2, lazy ENil)))) == ECons(("a", 1), ECons(("b", 2), ENil))
+
+    @test
+    def zip14(): Bool =
+    	LazyList.zip(LCons("a", lazy ECons("b", LList(lazy ECons("c", ENil)))), LCons(1, lazy LCons(2, lazy LList(lazy LCons(3, lazy ENil))))) == ECons(("a", 1), ECons(("b", 2), ECons(("c", 3), ENil)))
+
+    @test
+    def zip15(): Bool =
+    	LazyList.zip(LCons("a", lazy ECons("b", LList(lazy ECons("c", ENil)))), LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil))))) == ECons(("a", 1), ECons(("b", 2), ECons(("c", 3), ENil)))
+
+    @test
+    def zip16(): Bool =
+    	LazyList.zip(LCons("a", lazy ECons("b", LList(lazy ECons("c", ENil)))), LCons(1, lazy ECons(2, LList(lazy LCons(3, lazy LList(lazy ENil)))))) == ECons(("a", 1), ECons(("b", 2), ECons(("c", 3), ENil)))
+
+    @test
+    def zip17(): Bool =
+    	LazyList.zip(LCons(1, lazy LCons(2, lazy LList(lazy LCons(3, lazy ENil)))), LCons("a", lazy ECons("b", LList(lazy ECons("c", ENil))))) == ECons((1, "a"), ECons((2, "b"), ECons((3, "c"), ENil)))
+
+    @test
+    def zip18(): Bool =
+    	LazyList.zip(LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil)))), LCons("a", lazy ECons("b", LList(lazy ECons("c", ENil))))) == ECons((1, "a"), ECons((2, "b"), ECons((3, "c"), ENil)))
+
+    @test
+    def zip19(): Bool =
+    	LazyList.zip(LCons(1, lazy ECons(2, LList(lazy LCons(3, lazy LList(lazy ENil))))), LCons("a", lazy ECons("b", LList(lazy ECons("c", ENil))))) == ECons((1, "a"), ECons((2, "b"), ECons((3, "c"), ENil)))
+
+    @test
+    def zip20(): Bool =
+    	LazyList.zip(LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy ENil)))), LCons("a", lazy ECons("b", LList(lazy ECons("c", ENil))))) == ECons((1, "a"), ECons((2, "b"), ENil))
+
+    @test
+    def zip21(): Bool =
+    	LazyList.zip(LList(lazy LCons(1, lazy ECons(2, LList(lazy ENil)))), LCons("a", lazy ECons("b", LList(lazy ECons("c", ENil))))) == ECons((1, "a"), ECons((2, "b"), ENil))
+
+
 }
