@@ -26,7 +26,6 @@ namespace Epoch {
         let n = now();
         (n.getEpochSecond() * 1000000000i64) + Int32.toInt64(n.getNano())
 
-
     ///
     /// Returns the number of micro seconds since the Unix epoch.
     ///
