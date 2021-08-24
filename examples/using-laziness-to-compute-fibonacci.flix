@@ -1,10 +1,7 @@
-use LazyList.LazyList;
-use LazyList.LazyList.{Empty, LazyCons};
-
 /// An infinite sequence of Fibonacci numbers
 def fibs(): LazyList[Int32] =
-    LazyCons(0,
-        lazy LazyCons(1,
+    LCons(0,
+        lazy LCons(1,
             lazy LazyList.zipWith(
                 (x, y) -> x + y, fibs(), LazyList.tail(fibs()))))
 
