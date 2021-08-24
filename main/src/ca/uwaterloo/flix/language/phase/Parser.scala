@@ -189,7 +189,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def Derivations = rule {
-        optWS ~ optional(keyword("with") ~ oneOrMore(Names.QualifiedClass).separatedBy(optWS ~ "," ~ optWS)) ~> ((o: Option[Seq[Name.QName]]) => o.getOrElse(Seq.empty))
+        optWS ~ optional(keyword("with") ~ WS ~ oneOrMore(Names.QualifiedClass).separatedBy(optWS ~ "," ~ optWS)) ~> ((o: Option[Seq[Name.QName]]) => o.getOrElse(Seq.empty))
       }
 
       rule {
