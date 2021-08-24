@@ -27,7 +27,10 @@ object CompleteProvider {
     * Returns a list of auto-complete suggestions.
     */
   def autoComplete(uri: String, pos: Position, prefix: Option[String])(implicit index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
-    getKeywordCompletionItems() ++ getSnippetCompletionItems() ++ getInstanceSuggestions() ++ getSuggestions(uri, pos, prefix)
+    getKeywordCompletionItems() ++
+      getSnippetCompletionItems() ++
+      getInstanceSuggestions() ++
+      getDefAndSigSuggestions(uri, pos, prefix)
   }
 
   /**
@@ -142,9 +145,26 @@ object CompleteProvider {
     * Returns a list of completion items based on type classes.
     */
   private def getInstanceSuggestions()(implicit index: Index, root: TypedAst.Root): List[CompletionItem] = {
-    def fmtType(clazz: TypedAst.Class, tpe: Type, hole: String): String = {
-      if (clazz.tparam.tpe == tpe) hole else FormatType.formatType(tpe)
+    def replaceText(tvar: Type.Var, tpe: Type, hole: String): Type = tpe match {
+      case Type.Var(id, kind, rigidity, text) if tvar.id == id => Type.Var(id, kind, rigidity, Some(hole))
+      case Type.Var(_, _, _, _) => tpe
+      case Type.Cst(_, _) => tpe
+      case Type.Lambda(tvar2, tpe) if tvar == tvar2 =>
+        val t = replaceText(tvar, tpe, hole)
+        Type.Lambda(tvar2.copy(text = Some(hole)), t)
+
+      case Type.Lambda(tvar2, tpe) =>
+        val t = replaceText(tvar, tpe, hole)
+        Type.Lambda(tvar, t)
+
+      case Type.Apply(tpe1, tpe2) =>
+        val t1 = replaceText(tvar, tpe1, hole)
+        val t2 = replaceText(tvar, tpe2, hole)
+        Type.Apply(t1, t2)
     }
+
+    def fmtType(clazz: TypedAst.Class, tpe: Type, hole: String): String =
+      FormatType.formatType(replaceText(clazz.tparam.tpe, tpe, hole))
 
     def fmtFormalParams(clazz: TypedAst.Class, spec: TypedAst.Spec, hole: String): String =
       spec.fparams.map {
@@ -153,8 +173,13 @@ object CompleteProvider {
 
     def getSignature(clazz: TypedAst.Class, sig: TypedAst.Sig, hole: String): String = {
       val fparams = fmtFormalParams(clazz, sig.spec, hole)
-      val returnType = fmtType(clazz, sig.spec.retTpe, hole)
-      s"  pub def ${sig.sym.name}($fparams): ${returnType} = ???"
+      val retTpe = fmtType(clazz, sig.spec.retTpe, hole)
+      val eff = sig.spec.eff match {
+        case Type.Cst(TypeConstructor.True, _) => ""
+        case Type.Cst(TypeConstructor.False, _) => " & Impure"
+        case e => " & " + FormatType.formatType(e)
+      }
+      s"  pub def ${sig.sym.name}($fparams): $retTpe$eff = ???"
     }
 
     root.classes.map {
@@ -163,14 +188,14 @@ object CompleteProvider {
         val classSym = clazz.sym
         val signatures = clazz.signatures.filter(_.impl.isEmpty)
         val body = signatures.map(s => getSignature(clazz, s, hole)).mkString("\n\n")
-        CompletionItem(s"instance $classSym", s"instance $classSym[$hole] {\n\n$body\n\n}", None, Some("snippet for instance"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil)
+        CompletionItem(s"instance $classSym[...]", s"instance $classSym[$hole] {\n\n$body\n\n}\n", None, Some("snippet for instance"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil)
     }.toList
   }
 
   /**
     * Returns a list of auto-complete suggestions based on defs and sigs.
     */
-  private def getSuggestions(uri: String, pos: Position, prefix: Option[String])(implicit index: Index, root: TypedAst.Root): List[CompletionItem] = {
+  private def getDefAndSigSuggestions(uri: String, pos: Position, prefix: Option[String])(implicit index: Index, root: TypedAst.Root): List[CompletionItem] = {
     ///
     /// Return immediately if there is no AST.
     ///
