@@ -27,10 +27,11 @@ object CompleteProvider {
     * Returns a list of auto-complete suggestions.
     */
   def autoComplete(uri: String, pos: Position, line: Option[String], word: Option[String])(implicit index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
-    getKeywordCompletionItems() ++
-      getSnippetCompletionItems() ++
-      getInstanceSuggestions(uri, pos, line) ++
-      getDefAndSigSuggestions(uri, pos, word)
+    // Ordered by priority.
+    getDefAndSigSuggestions(uri, pos, line, word) ++
+      getInstanceSuggestions(uri, pos, line, word) ++
+      getKeywordCompletionItems() ++
+      getSnippetCompletionItems()
   }
 
   /**
@@ -144,7 +145,7 @@ object CompleteProvider {
   /**
     * Returns a list of completion items based on type classes.
     */
-  private def getInstanceSuggestions(uri: String, pos: Position, line: Option[String])(implicit index: Index, root: TypedAst.Root): List[CompletionItem] = {
+  private def getInstanceSuggestions(uri: String, pos: Position, line: Option[String], word: Option[String])(implicit index: Index, root: TypedAst.Root): List[CompletionItem] = {
     ///
     /// Return immediately if there is no AST.
     ///
@@ -209,7 +210,7 @@ object CompleteProvider {
       s"class ${clazz.sym.name}[${clazz.tparam.name.name}]"
     }
 
-    // Return immediately if the instance keyword has not been typed.
+    // Return immediately if the current line does not contain the word "instance".
     if (!line.exists(_.contains("instance"))) {
       return Nil
     }
@@ -218,7 +219,7 @@ object CompleteProvider {
 
     root.classes.map {
       case (_, clazz) =>
-        val hole = "${1:type}"
+        val hole = "${1:t}"
         val classSym = clazz.sym
         val signatures = clazz.signatures.filter(_.impl.isEmpty)
         val body = signatures.map(s => fmtSignature(clazz, s, hole)).mkString("\n\n")
@@ -234,11 +235,19 @@ object CompleteProvider {
   /**
     * Returns a list of auto-complete suggestions based on defs and sigs.
     */
-  private def getDefAndSigSuggestions(uri: String, pos: Position, word: Option[String])(implicit index: Index, root: TypedAst.Root): List[CompletionItem] = {
+  private def getDefAndSigSuggestions(uri: String, pos: Position, line: Option[String], word: Option[String])(implicit index: Index, root: TypedAst.Root): List[CompletionItem] = {
     ///
     /// Return immediately if there is no AST.
     ///
     if (root == null) {
+      return Nil
+    }
+
+    ///
+    /// Return immediately if the line contains one of the mismatched keywords.
+    ///
+    val mismatchedKeywords = List("class", "instance", "namespace")
+    if (mismatchedKeywords.exists(keyword => line.exists(s => s.contains(keyword)))) {
       return Nil
     }
 
