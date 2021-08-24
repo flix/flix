@@ -45,19 +45,13 @@ jobs:
         with:
           repository: ${{ env.feature_repo }}
           ref: ${{ env.feature_ref }}
-#      - name: Build
-#        run: ./gradlew jar
-#      - name: Upload feature phases results
-#        uses: actions/upload-artifact@v1
-#        with:
-#          name: JAR
-#          path: build/libs/flix.jar
-      # MATT hacking this for faster turnaround
+      - name: Build
+        run: ./gradlew jar
       - name: Upload feature phases results
         uses: actions/upload-artifact@v1
         with:
           name: JAR
-          path: README.md
+          path: build/libs/flix.jar
       - name: Comment phase report
         uses: actions/github-script@v4
         with:
