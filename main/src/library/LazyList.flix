@@ -400,5 +400,6 @@ namespace LazyList {
     ///
     /// Returns an infinite LazyList of repeating `x`s.
     ///
-    pub def repeat(x: a): LazyList[a] = LList(lazy LCons(x, lazy repeat(x)))
+    pub def repeat(x: a): LazyList[a] = LCons(x, lazy repeat(x))
+
 }
