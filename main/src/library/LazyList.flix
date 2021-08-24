@@ -461,4 +461,46 @@ namespace LazyList {
         case (LList(xs), ys)              => LList(lazy zip(force xs,       ys))
     }
 
+    ///
+    /// Returns a list where the element at index `i` is `f(a, b)` where
+    /// `a` is the element at index `i` in `l1` and `b` is the element at index `i` in `l2`.
+    ///
+    /// If either `l1` or `l2` becomes depleted, then no further elements are added to the resulting list.
+    ///
+    pub def zipWith(f: (a, b) -> c & ef, l1: LazyList[a], l2: LazyList[b]): LazyList[c] & Impure =
+        matchEff f {
+            case Pure   => zipWithL(f as (a, b) -> c & Pure,   l1, l2)
+            case Impure => zipWithE(f as (a, b) -> c & Impure, l1, l2)
+        }
+
+    ///
+    /// Helper function for `zipWith`. Applies `f` lazily.
+    ///
+    def zipWithL(f: (a, b) -> c, l1: LazyList[a], l2: LazyList[b]): LazyList[c] = match (l1, l2) {
+        case (ENil, _)                    => ENil
+        case (_, ENil)                    => ENil
+        case (ECons(x, xs), ECons(y, ys)) => LCons(f(x, y), lazy zipWithL(f,       xs,       ys))
+        case (ECons(x, xs), LCons(y, ys)) => LCons(f(x, y), lazy zipWithL(f,       xs, force ys))
+        case (LCons(x, xs), ECons(y, ys)) => LCons(f(x, y), lazy zipWithL(f, force xs,       ys))
+        case (LCons(x, xs), LCons(y, ys)) => LCons(f(x, y), lazy zipWithL(f, force xs, force ys))
+        case (LList(xs), LList(ys))       => LList(lazy zipWithL(f, force xs, force ys))
+        case (xs, LList(ys))              => LList(lazy zipWithL(f,       xs, force ys))
+        case (LList(xs), ys)              => LList(lazy zipWithL(f, force xs,       ys))
+    }
+
+    ///
+    /// Helper function for `zipWith`. Applies `f` eagerly.
+    ///
+    def zipWithE(f: (a, b) -> c & Impure, l1: LazyList[a], l2: LazyList[b]): LazyList[c] & Impure = match (l1, l2) {
+        case (ENil, _)                    => ENil
+        case (_, ENil)                    => ENil
+        case (ECons(x, xs), ECons(y, ys)) => ECons(f(x, y), zipWithE(f,       xs,       ys))
+        case (ECons(x, xs), LCons(y, ys)) => ECons(f(x, y), zipWithE(f,       xs, force ys))
+        case (LCons(x, xs), ECons(y, ys)) => ECons(f(x, y), zipWithE(f, force xs,       ys))
+        case (LCons(x, xs), LCons(y, ys)) => ECons(f(x, y), zipWithE(f, force xs, force ys))
+        case (LList(xs), LList(ys))       => zipWithE(f, force xs, force ys)
+        case (xs, LList(ys))              => zipWithE(f,       xs, force ys)
+        case (LList(xs), ys)              => zipWithE(f, force xs,       ys)
+    }
+
 }
