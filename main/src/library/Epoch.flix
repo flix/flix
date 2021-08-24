@@ -20,11 +20,8 @@ namespace Epoch {
     /// Returns the number of nano seconds since the Unix epoch.
     ///
     pub def nanoseconds(): Int64 & Impure =
-        import java.time.Instant:now();
-        import java.time.Instant.getEpochSecond();
-        import java.time.Instant.getNano();
-        let n = now();
-        (n.getEpochSecond() * 1000000000i64) + Int32.toInt64(n.getNano())
+        import java.lang.System:nanoTime();
+        nanoTime()
 
     ///
     /// Returns the number of micro seconds since the Unix epoch.
@@ -34,16 +31,10 @@ namespace Epoch {
     ///
     /// Returns the number of milli seconds since the Unix epoch.
     ///
-    pub def milliseconds(): Int64 & Impure =
-        import java.time.Instant:now();
-        import java.time.Instant.toEpochMilli();
-        now().toEpochMilli()
+    pub def milliseconds(): Int64 & Impure = microseconds() / 1000i64
 
     ///
     /// Returns the number of seconds since the Unix epoch.
     ///
-    pub def seconds(): Int64 & Impure =
-        import java.time.Instant:now();
-        import java.time.Instant.getEpochSecond();
-        now().getEpochSecond()
+    pub def seconds(): Int64 & Impure = milliseconds() / 1000i64
 }
