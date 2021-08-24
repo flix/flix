@@ -72,6 +72,6 @@ jobs:
                   issue_number: context.issue.number,
                   owner: context.repo.owner,
                   repo: context.repo.repo,
-                  body: "The JAR is available [HERE](" + response.artifacts[0].url + ")."
+                  body: "The JAR is available [HERE](" + Object.keys(response) + ")."
                 })
               )
