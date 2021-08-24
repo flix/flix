@@ -26,11 +26,11 @@ object CompleteProvider {
   /**
     * Returns a list of auto-complete suggestions.
     */
-  def autoComplete(uri: String, pos: Position, prefix: Option[String])(implicit index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
+  def autoComplete(uri: String, pos: Position, line: Option[String], word: Option[String])(implicit index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
     getKeywordCompletionItems() ++
       getSnippetCompletionItems() ++
-      getInstanceSuggestions(uri, pos, prefix) ++
-      getDefAndSigSuggestions(uri, pos, prefix)
+      getInstanceSuggestions(uri, pos, line) ++
+      getDefAndSigSuggestions(uri, pos, word)
   }
 
   /**
@@ -58,7 +58,7 @@ object CompleteProvider {
     CompletionItem("get", "get", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
     CompletionItem("if", "if", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
     CompletionItem("import", "import", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
-    CompletionItem("instance", "instance", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
+    CompletionItem("instance", "instance ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
     CompletionItem("inline", "inline", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
     CompletionItem("into", "into", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
     CompletionItem("lat", "lat", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
@@ -144,7 +144,14 @@ object CompleteProvider {
   /**
     * Returns a list of completion items based on type classes.
     */
-  private def getInstanceSuggestions(uri: String, pos: Position, prefix: Option[String])(implicit index: Index, root: TypedAst.Root): List[CompletionItem] = {
+  private def getInstanceSuggestions(uri: String, pos: Position, line: Option[String])(implicit index: Index, root: TypedAst.Root): List[CompletionItem] = {
+    ///
+    /// Return immediately if there is no AST.
+    ///
+    if (root == null) {
+      return Nil
+    }
+
     /**
       * Replaces the text in the given variable symbol `sym` everywhere in the type `tpe`
       * with an equivalent variable symbol with the given `newText`.
@@ -202,6 +209,13 @@ object CompleteProvider {
       s"class ${clazz.sym.name}[${clazz.tparam.name.name}]"
     }
 
+    // Return immediately if the instance keyword has not been typed.
+    if (!line.exists(_.contains("instance"))) {
+      return Nil
+    }
+
+    println(line)
+
     root.classes.map {
       case (_, clazz) =>
         val hole = "${1:type}"
@@ -209,8 +223,8 @@ object CompleteProvider {
         val signatures = clazz.signatures.filter(_.impl.isEmpty)
         val body = signatures.map(s => fmtSignature(clazz, s, hole)).mkString("\n\n")
 
-        val label = s"instance $classSym[...]"
-        val insertText = s"instance $classSym[$hole] {\n\n$body\n\n}\n"
+        val label = s"$classSym[...]"
+        val insertText = s"$classSym[$hole] {\n\n$body\n\n}\n"
         val detail = Some(fmtClass(clazz))
         val documentation = Some(clazz.doc.text)
         CompletionItem(label, insertText, detail, documentation, CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil)
@@ -220,7 +234,7 @@ object CompleteProvider {
   /**
     * Returns a list of auto-complete suggestions based on defs and sigs.
     */
-  private def getDefAndSigSuggestions(uri: String, pos: Position, prefix: Option[String])(implicit index: Index, root: TypedAst.Root): List[CompletionItem] = {
+  private def getDefAndSigSuggestions(uri: String, pos: Position, word: Option[String])(implicit index: Index, root: TypedAst.Root): List[CompletionItem] = {
     ///
     /// Return immediately if there is no AST.
     ///
@@ -231,8 +245,8 @@ object CompleteProvider {
     // TODO: Add support for classes and enums?
     // TODO: Use the current position to determine what to suggest.
 
-    val defSuggestions = root.defs.values.filter(matchesDef(_, prefix, uri)).map(getDefCompletionItem)
-    val sigSuggestions = root.sigs.values.filter(matchesSig(_, prefix, uri)).map(getSigCompletionItem)
+    val defSuggestions = root.defs.values.filter(matchesDef(_, word, uri)).map(getDefCompletionItem)
+    val sigSuggestions = root.sigs.values.filter(matchesSig(_, word, uri)).map(getSigCompletionItem)
     (defSuggestions ++ sigSuggestions).toList.sortBy(_.label)
   }
 
