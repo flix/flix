@@ -1411,4 +1411,45 @@ namespace TestLazyList {
     def last12(): Bool =
     	LazyList.range(0, 1000) |> LazyList.last == Some(999)
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toIter                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toIter01(): Bool & Impure =
+    	LazyList.toIter(ENil: LazyList[Unit]) |> Iterator.toList == Nil
+
+    @test
+    def toIter02(): Bool & Impure =
+    	LazyList.toIter(LList(lazy ENil): LazyList[Unit]) |> Iterator.toList == Nil
+
+    @test
+    def toIter03(): Bool & Impure =
+    	LazyList.toIter(LCons(1, lazy LCons(2, lazy LList(lazy LCons(3, lazy ENil))))) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+
+    @test
+    def toIter04(): Bool & Impure =
+    	LazyList.toIter(LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil))))) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+
+    @test
+    def toIter05(): Bool & Impure =
+    	LazyList.toIter(LCons(1, lazy ECons(2, LList(lazy LCons(3, lazy LList(lazy ENil)))))) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+
+    @test
+    def toIter06(): Bool & Impure =
+    	LazyList.toIter(LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+
+    @test
+    def toIter07(): Bool & Impure =
+    	LazyList.toIter(LList(lazy LCons(1, lazy LList(lazy ECons(2, LList(lazy ECons(3, ENil))))))) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+
+    @test
+    def toIter08(): Bool & Impure =
+    	LazyList.toIter(ECons(1, LCons(2, lazy ECons(3, ENil)))) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+
+    @test
+    def toIter09(): Bool & Impure =
+    	LazyList.range(-1000, 1000) |> LazyList.toIter |> Iterator.toList == List.range(-1000, 1000)
+
 }

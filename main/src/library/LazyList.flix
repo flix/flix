@@ -281,6 +281,27 @@ namespace LazyList {
         a
 
     ///
+    /// Returns `l` as an `Iterator`.
+    ///
+    /// Does not force any elements of the list.
+    ///
+    pub def toIter(l: LazyList[a]): Iterator[a] & Impure =
+        let cursor = ref l;
+        let done = () -> match head(deref cursor) {
+            case None    => true
+            case Some(_) => false
+        };
+
+        let next = () -> match head(deref cursor) {
+            case None    => bug!("Empty iterator")
+            case Some(x) =>
+                cursor := tail(deref cursor);
+                x
+        };
+
+        Iterator(done, next)
+
+    ///
     /// Returns `l` as a `List`.
     ///
     /// Forces the entire list `l`.
