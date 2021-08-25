@@ -1152,10 +1152,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     val eqSym = new Symbol.ClassSym(Nil, "Eq", SourceLocation.Unknown)
     val orderSym = new Symbol.ClassSym(Nil, "Order", SourceLocation.Unknown)
     val toStringSym = new Symbol.ClassSym(Nil, "ToString", SourceLocation.Unknown)
-    if (Set(eqSym, orderSym, toStringSym).contains(sym)) {
+    val legalSyms = List(eqSym, orderSym, toStringSym)
+    if (legalSyms.contains(sym)) {
       ().toSuccess
     } else {
-      ResolutionError.IllegalDerivation(sym, loc).toFailure
+      ResolutionError.IllegalDerivation(sym, legalSyms, loc).toFailure
     }
   }
 
