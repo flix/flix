@@ -15,28 +15,35 @@
  */
 package ca.uwaterloo.flix.language.ast
 
-// MATT docs
+/**
+  * An interface for symbols and names of members of the minimal library.
+  */
 object MinLib {
   trait Class {
     val sym: Symbol.ClassSym
-  }
-
-  trait Sig {
-    val sym: Symbol.SigSym
   }
 
   abstract class TopLevelClass(name: String) extends Class {
     val sym: Symbol.ClassSym = new Symbol.ClassSym(Nil, name, SourceLocation.Unknown)
   }
 
+  abstract class Sig(clazz: Class, name: String) {
+    val sym: Symbol.SigSym = new Symbol.SigSym(clazz.sym, name, SourceLocation.Unknown)
+  }
+
   object Boxable extends TopLevelClass("Boxable")
-  object Eq extends TopLevelClass("Eq")
+  object Eq extends TopLevelClass("Eq") {
+    object Eq extends Sig(this, "eq")
+    object Neq extends Sig(this, "neq")
+  }
   object Foldable extends TopLevelClass("Foldable")
   object JoinLattice extends TopLevelClass("JoinLattice")
   object LowerBound extends TopLevelClass("LowerBound")
   object MeetLattice extends TopLevelClass("MeetLattice")
   object Order extends TopLevelClass("Order")
   object PartialOrder extends TopLevelClass("PartialOrder")
-  object ToString extends TopLevelClass("ToString")
+  object ToString extends TopLevelClass("ToString") {
+    object ToString extends Sig(this, "toString")
+  }
 
 }
