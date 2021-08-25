@@ -41,6 +41,7 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
   }
 
   def getDerivations(enum: ResolvedAst.Enum)(implicit flix: Flix): List[ResolvedAst.Instance] = enum match {
+    // MATT associate location with derives and use that location everywhere for checking duplicate syms and such
     case ResolvedAst.Enum(doc, mod, sym, tparams, derives, cases, tpeDeprecated, sc, loc) =>
       derives.map {
         case MinLib.ToString.sym => createToString(enum)
@@ -94,6 +95,7 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
 
       val guard = ResolvedAst.Expression.True(SourceLocation.Unknown)
 
+      // MATT handle tuples an unit better: currently has extra ( )
       val tagPart = ResolvedAst.Expression.Str(tag.name + "(", SourceLocation.Unknown)
       val valuePart = ResolvedAst.Expression.Apply(
         ResolvedAst.Expression.Sig(MinLib.ToString.ToString.sym, SourceLocation.Unknown),
