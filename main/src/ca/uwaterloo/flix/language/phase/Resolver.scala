@@ -1131,7 +1131,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           case Some((sym, loc1, loc2)) => ResolutionError.DuplicateDerivation(sym, loc1, loc2).toFailure
           case None => derives.toSuccess
         }
-
     }
   }
 
