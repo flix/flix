@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.api.lsp
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, ChoiceRule, Constraint, Def, Enum, Expression, FormalParam, Instance, MatchRule, Pattern, Predicate, Root, SelectChannelRule, Sig, Spec}
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 object Indexer {
 
@@ -415,7 +416,7 @@ object Indexer {
     * Returns a reverse index for the given type `tpe0`.
     */
   private def visitType(tpe0: Type): Index = tpe0 match {
-    case _: Type.Var => Index.empty
+    case _: Type.KindedVar => Index.empty
     case Type.Cst(tc, loc) => tc match {
       case TypeConstructor.RecordExtend(field) => Index.occurrenceOf(tc, loc) ++ Index.useOf(field)
       case TypeConstructor.SchemaExtend(pred) => Index.occurrenceOf(tc, loc) ++ Index.useOf(pred)
@@ -423,7 +424,8 @@ object Indexer {
     }
     case Type.Lambda(_, tpe) => visitType(tpe)
     case Type.Apply(tpe1, tpe2) => visitType(tpe1) ++ visitType(tpe2)
-    case Type.Ascribe(tpe, _) => visitType(tpe)
+    case _: Type.Ascribe => throw InternalCompilerException(s"Unexpected type: $tpe0.")
+    case _: Type.UnkindedVar => throw InternalCompilerException(s"Unexpected type: $tpe0.")
   }
 
 }
