@@ -150,11 +150,11 @@ namespace LazyList {
     /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
-    pub def map(f: a -> b & ef, l: LazyList[a]): LazyList[b] & Impure =
+    pub def map(f: a -> b & ef, l: LazyList[a]): LazyList[b] & ef =
         matchEff f {
             case Pure   => mapL(f as a -> b & Pure,   l)
             case Impure => mapE(f as a -> b & Impure, l)
-        }
+        } as & ef
 
     ///
     /// Returns the result of applying `f` to every element in `l`.
@@ -193,11 +193,11 @@ namespace LazyList {
     /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
-    pub def filter(f: a -> Bool & ef, l: LazyList[a]): LazyList[a] & Impure =
+    pub def filter(f: a -> Bool & ef, l: LazyList[a]): LazyList[a] & ef =
         matchEff f {
             case Pure   => filterL(f as a -> Bool & Pure,   l)
             case Impure => filterE(f as a -> Bool & Impure, l)
-        }
+        } as & ef
 
     ///
     /// Returns a lazy list of every element in `l` that satisfies the predicate `f`.
