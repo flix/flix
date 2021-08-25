@@ -332,19 +332,19 @@ namespace TestLazyList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def mapPure01(): Bool & Impure =
+    def mapPure01(): Bool =
         Nil |> List.toLazy |> LazyList.map(x -> x + 1) |> LazyList.toList == Nil
 
     @test
-    def mapPure02(): Bool & Impure =
+    def mapPure02(): Bool =
         (1 :: Nil) |> List.toLazy |> LazyList.map(x -> x + 1) |> LazyList.toList == 2 :: Nil
 
     @test
-    def mapPure03(): Bool & Impure =
+    def mapPure03(): Bool =
         (1 :: 2 :: Nil) |> List.toLazy |> LazyList.map(x -> x + 1) |> LazyList.toList == 2 :: 3 :: Nil
 
     @test
-    def mapPure04(): Bool & Impure =
+    def mapPure04(): Bool =
         (1 :: 2 :: 3 :: Nil) |> List.toLazy |> LazyList.map(x -> x + 1) |> LazyList.toList == 2 :: 3 :: 4 :: Nil
 
 
@@ -374,7 +374,7 @@ namespace TestLazyList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def mapMap01(): Bool & Impure =
+    def mapMap01(): Bool =
         (1 :: 2 :: 3 :: Nil) |> List.toLazy |> LazyList.map(x -> x + 1) |> LazyList.map(x -> x * 2) |> LazyList.toList == 4 :: 6 :: 8 :: Nil
 
     @test
@@ -409,7 +409,7 @@ namespace TestLazyList {
         (1 :: 2 :: 3 :: Nil) |> List.toLazy |>
         LazyList.map(x -> {l := "a" :: deref l; x} as & Pure) |>
         LazyList.map(x -> {l := "b" :: deref l; x} as & Pure) |>
-        LazyList.toList;
+        LazyList.toList as & Impure;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
 
@@ -418,27 +418,27 @@ namespace TestLazyList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def filterPure01(): Bool & Impure =
+    def filterPure01(): Bool =
         Nil |> List.toLazy |> LazyList.filter(x -> x > 100) |> LazyList.toList == Nil
 
     @test
-    def filterPure02(): Bool & Impure =
+    def filterPure02(): Bool =
         (1 :: 2 :: 3 :: Nil) |> List.toLazy |> LazyList.filter(x -> x > 0) |> LazyList.toList == 1 :: 2 :: 3 :: Nil
 
     @test
-    def filterPure03(): Bool & Impure =
+    def filterPure03(): Bool =
         (1 :: 2 :: 3 :: Nil) |> List.toLazy |> LazyList.filter(x -> x > 1) |> LazyList.toList == 2 :: 3 :: Nil
 
     @test
-    def filterPure04(): Bool & Impure =
+    def filterPure04(): Bool =
         (1 :: 2 :: 3 :: Nil) |> List.toLazy |> LazyList.filter(x -> x > 2) |> LazyList.toList == 3 :: Nil
 
     @test
-    def filterPure05(): Bool & Impure =
+    def filterPure05(): Bool =
         (1 :: 2 :: 3 :: Nil) |> List.toLazy |> LazyList.filter(x -> x > 3) |> LazyList.toList == Nil
 
     @test
-    def filterPure06(): Bool & Impure =
+    def filterPure06(): Bool =
         (1 :: 2 :: 3 :: Nil) |> List.toLazy |> LazyList.filter(x -> x > 100) |> LazyList.toList == Nil
 
 
@@ -476,7 +476,7 @@ namespace TestLazyList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def filterFilter01(): Bool & Impure =
+    def filterFilter01(): Bool =
         (1 :: 2 :: 3 :: Nil) |> List.toLazy |> LazyList.filter(x -> x > 1) |> LazyList.filter(x -> x < 3) |> LazyList.toList == 2 :: Nil
 
     @test
@@ -510,7 +510,7 @@ namespace TestLazyList {
         (1 :: 2 :: 3 :: Nil) |> List.toLazy |>
         LazyList.filter(_x -> {l := "a" :: deref l; true} as & Pure) |>
         LazyList.filter(_x -> {l := "b" :: deref l; true} as & Pure) |>
-        LazyList.toList;
+        LazyList.toList as & Impure;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
 
@@ -532,7 +532,7 @@ namespace TestLazyList {
         (1 :: 2 :: 3 :: Nil) |> List.toLazy |>
         LazyList.map(    x -> {l := "a" :: deref l; x}    as & Pure) |>
         LazyList.filter(_x -> {l := "b" :: deref l; true} as & Pure) |>
-        LazyList.toList;
+        LazyList.toList as & Impure;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
 
@@ -554,7 +554,7 @@ namespace TestLazyList {
         (1 :: 2 :: 3 :: Nil) |> List.toLazy |>
         LazyList.filter(_x -> {l := "a" :: deref l; true} as & Pure) |>
         LazyList.map(    x -> {l := "b" :: deref l; x}    as & Pure) |>
-        LazyList.toList;
+        LazyList.toList as & Impure;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
     
     /////////////////////////////////////////////////////////////////////////////    
