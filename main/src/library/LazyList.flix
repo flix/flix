@@ -467,11 +467,11 @@ namespace LazyList {
     ///
     /// If either `l1` or `l2` becomes depleted, then no further elements are added to the resulting list.
     ///
-    pub def zipWith(f: (a, b) -> c & ef, l1: LazyList[a], l2: LazyList[b]): LazyList[c] & Impure =
+    pub def zipWith(f: (a, b) -> c & ef, l1: LazyList[a], l2: LazyList[b]): LazyList[c] & ef =
         matchEff f {
             case Pure   => zipWithL(f as (a, b) -> c & Pure,   l1, l2)
             case Impure => zipWithE(f as (a, b) -> c & Impure, l1, l2)
-        }
+        } as & ef
 
     ///
     /// Helper function for `zipWith`. Applies `f` lazily.
