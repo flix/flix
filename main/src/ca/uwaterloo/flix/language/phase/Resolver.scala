@@ -1153,10 +1153,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     * Checks that the given class `sym` is derivable.
     */
   def checkDerivable(sym: Symbol.ClassSym, loc: SourceLocation): Validation[Unit, ResolutionError] = {
-    val eqSym = new Symbol.ClassSym(Nil, "Eq", SourceLocation.Unknown)
-    val orderSym = new Symbol.ClassSym(Nil, "Order", SourceLocation.Unknown)
-    val toStringSym = new Symbol.ClassSym(Nil, "ToString", SourceLocation.Unknown)
-    val legalSyms = List(eqSym, orderSym, toStringSym)
+    val legalSyms = List(MinLib.Eq.sym, MinLib.Order.sym, MinLib.ToString.sym)
     if (legalSyms.contains(sym)) {
       ().toSuccess
     } else {
