@@ -495,17 +495,50 @@ object ResolutionError {
     }
   }
 
-  // MATT docs
+  /**
+    * An error raised to indicate a duplicate derivation.
+    *
+    * @param sym  the class symbol of the duplicate derivation.
+    * @param loc1 the location of the first occurrence.
+    * @param loc2 the location of the second occurrence.
+    */
   case class DuplicateDerivation(sym: Symbol.ClassSym, loc1: SourceLocation, loc2: SourceLocation) extends ResolutionError {
-    override def summary: String = "" // MATT
-    override def message: VirtualTerminal = new VirtualTerminal() // MATT
-    override def loc: SourceLocation = SourceLocation.Unknown // MATT
+    override def summary: String = s"Duplicate derivation: ${sym.name}"
+
+    override def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Duplicate derivation '" << Red(sym.name) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc1, "the first occurrence was here.") << NewLine
+      vt << NewLine
+      vt << Code(loc2, "the second occurrence was here.") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Remove one of the occurrences." << NewLine
+    }
+
+    override def loc: SourceLocation = loc1
   }
 
-  // MATT docs
-  case class IllegalDerivation(sym: Symbol.ClassSym, loc: SourceLocation) extends ResolutionError {
-    override def summary: String = "" // MATT
-    override def message: VirtualTerminal = new VirtualTerminal() // MATT
+  /**
+    * An error raised to indicate an illegal derivation.
+    *
+    * @param sym       the class symbol of the illegal derivation.
+    * @param legalSyms the list of class symbols of legal derivations.
+    * @param loc       the location where the error occurred.
+    */
+  case class IllegalDerivation(sym: Symbol.ClassSym, legalSyms: List[Symbol.ClassSym], loc: SourceLocation) extends ResolutionError {
+    override def summary: String = s"Illegal derivation: ${sym.name}"
+
+    override def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Illegal derivation '" << Red(sym.name) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "Illegal derivation.")
+      vt << NewLine
+      vt << Underline("Tip:") << s" Only the following classes may be derived: ${legalSyms.map(_.name).mkString(", ")}."
+    }
   }
 
   /**
