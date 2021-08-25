@@ -243,7 +243,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
                   ))
               }
           } map {
-            case m => List(WeededAst.Declaration.Enum(doc, mod, ident, tparams, m, mkSL(sp1, sp2)))
+            case m => List(WeededAst.Declaration.Enum(doc, mod, ident, tparams, derives.toList, m, mkSL(sp1, sp2)))
           }
       }
   }
@@ -263,7 +263,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       mapN(modVal, tparamsVal) {
         case (mod, tparams) =>
           val cases = Map(Name.mkTag(ident) -> WeededAst.Case(ident, Name.mkTag(ident), visitType(tpe0)))
-          List(WeededAst.Declaration.Enum(doc, mod, ident, tparams, cases, mkSL(sp1, sp2)))
+          List(WeededAst.Declaration.Enum(doc, mod, ident, tparams, Nil, cases, mkSL(sp1, sp2)))
       }
   }
 

@@ -495,6 +495,19 @@ object ResolutionError {
     }
   }
 
+  // MATT docs
+  case class DuplicateDerivation(sym: Symbol.ClassSym, loc1: SourceLocation, loc2: SourceLocation) extends ResolutionError {
+    override def summary: String = "" // MATT
+    override def message: VirtualTerminal = new VirtualTerminal() // MATT
+    override def loc: SourceLocation = SourceLocation.Unknown // MATT
+  }
+
+  // MATT docs
+  case class IllegalDerivation(sym: Symbol.ClassSym, loc: SourceLocation) extends ResolutionError {
+    override def summary: String = "" // MATT
+    override def message: VirtualTerminal = new VirtualTerminal() // MATT
+  }
+
   /**
     * Removes all access modifiers from the given string `s`.
     */

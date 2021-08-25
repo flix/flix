@@ -260,6 +260,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   def resolve(e0: NamedAst.Enum, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Enum, ResolutionError] = {
     val tparams = resolveTypeParams(e0.tparams, ns0, root)
     val tconstrs = Nil
+    val derivesVal = resolveDerivations(e0.derives, ns0, root)
     val casesVal = traverse(e0.cases) {
       case (name, NamedAst.Case(enum, tag, tpe)) =>
         for {
@@ -276,9 +277,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     for {
       cases <- casesVal
       tpe <- lookupType(e0.tpe, ns0, root)
+      derives <- derivesVal
     } yield {
       val sc = ResolvedAst.Scheme(tparams.tparams.map(_.tpe), tconstrs, tpe)
-      ResolvedAst.Enum(e0.doc, e0.mod, e0.sym, tparams, cases.toMap, tpe, sc, e0.loc)
+      ResolvedAst.Enum(e0.doc, e0.mod, e0.sym, tparams, derives, cases.toMap, tpe, sc, e0.loc)
     }
   }
 
@@ -1112,6 +1114,43 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       mapN(classVal, tpeVal) {
         case (clazz, tpe) => ResolvedAst.TypeConstraint(clazz.sym, tpe, loc)
       }
+  }
+
+  // MATT docs
+  def resolveDerivations(derives0: List[Name.QName], ns0: Name.NName, root: NamedAst.Root): Validation[List[Symbol.ClassSym], ResolutionError] = {
+    val derivesVal = Validation.traverse(derives0)(resolveDerivation(_, ns0, root))
+    flatMapN(derivesVal) {
+      derives =>
+        val mapping = derives0.zip(derives)
+        val duplicatePair = mapping.combinations(2).collectFirst {
+          case List((qname1, sym1), (qname2, sym2)) if (sym1 == sym2) => (sym1, qname1.loc, qname2.loc)
+        }
+        duplicatePair match {
+          case Some((sym, loc1, loc2)) => ResolutionError.DuplicateDerivation(sym, loc1, loc2).toFailure
+          case None => derives.toSuccess
+        }
+
+    }
+  }
+
+  // MATT docs
+  def resolveDerivation(derive: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[Symbol.ClassSym, ResolutionError] = {
+    for {
+      clazz <- lookupClass(derive, ns0, root)
+      _ <- checkDerivable(clazz.sym, derive.loc)
+    } yield clazz.sym
+  }
+
+  // MATT docs
+  def checkDerivable(sym: Symbol.ClassSym, loc: SourceLocation): Validation[Unit, ResolutionError] = {
+    val eqSym = new Symbol.ClassSym(Nil, "Eq", SourceLocation.Unknown)
+    val orderSym = new Symbol.ClassSym(Nil, "Order", SourceLocation.Unknown)
+    val toStringSym = new Symbol.ClassSym(Nil, "ToString", SourceLocation.Unknown)
+    if (Set(eqSym, orderSym, toStringSym).contains(sym)) {
+      ().toSuccess
+    } else {
+      ResolutionError.IllegalDerivation(sym, loc).toFailure
+    }
   }
 
   /**
