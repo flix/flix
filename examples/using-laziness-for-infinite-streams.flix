@@ -7,7 +7,7 @@ def isPrime(p: Int32): Bool =
 
 def primes(): LazyList[Int32] =
     LazyList.from(2) |>
-    (LazyList.filter(isPrime) as LazyList[Int32] -> LazyList[Int32] & Pure)
+    (LazyList.filter(isPrime))
 
 /// Alternative definition using sieve
 def primes2(): LazyList[Int32] = sieve(LazyList.from(2))
@@ -15,7 +15,7 @@ def sieve(ps: LazyList[Int32]): LazyList[Int32] = match LazyList.head(ps) {
     case Some(p) =>
         LCons(p,
             lazy sieve(
-                LazyList.filter(x -> x % p != 0, LazyList.tail(ps)) as LazyList[Int32] & Pure
+                LazyList.filter(x -> x % p != 0, LazyList.tail(ps))
                 )
             )
     case None => LazyList.empty()
