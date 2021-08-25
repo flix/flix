@@ -1116,7 +1116,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       }
   }
 
-  // MATT docs
+  /**
+    * Performs name resolution on the given list of derivations `derives0`.
+    */
   def resolveDerivations(derives0: List[Name.QName], ns0: Name.NName, root: NamedAst.Root): Validation[List[Symbol.ClassSym], ResolutionError] = {
     val derivesVal = Validation.traverse(derives0)(resolveDerivation(_, ns0, root))
     flatMapN(derivesVal) {
@@ -1133,15 +1135,19 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     }
   }
 
-  // MATT docs
-  def resolveDerivation(derive: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[Symbol.ClassSym, ResolutionError] = {
+  /**
+    * Performs name resolution on the given of derivation `derive0`.
+    */
+  def resolveDerivation(derive0: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[Symbol.ClassSym, ResolutionError] = {
     for {
-      clazz <- lookupClass(derive, ns0, root)
-      _ <- checkDerivable(clazz.sym, derive.loc)
+      clazz <- lookupClass(derive0, ns0, root)
+      _ <- checkDerivable(clazz.sym, derive0.loc)
     } yield clazz.sym
   }
 
-  // MATT docs
+  /**
+    * Checks that the given class `sym` is derivable.
+    */
   def checkDerivable(sym: Symbol.ClassSym, loc: SourceLocation): Validation[Unit, ResolutionError] = {
     val eqSym = new Symbol.ClassSym(Nil, "Eq", SourceLocation.Unknown)
     val orderSym = new Symbol.ClassSym(Nil, "Order", SourceLocation.Unknown)
