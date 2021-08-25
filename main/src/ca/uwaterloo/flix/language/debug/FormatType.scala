@@ -144,7 +144,7 @@ object FormatType {
 
           case TypeConstructor.Channel => formatApply("Channel", args)
 
-          case TypeConstructor.Enum(sym, _) => formatApply(sym.toString, args)
+          case TypeConstructor.KindedEnum(sym, _) => formatApply(sym.toString, args)
 
           case TypeConstructor.UnkindedEnum(sym) => formatApply(sym.toString, args)
 

@@ -1846,7 +1846,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
       case TypeConstructor.Channel => Class.forName("java.lang.Object").toSuccess
 
-      case TypeConstructor.Enum(_, _) => Class.forName("java.lang.Object").toSuccess
+      case TypeConstructor.KindedEnum(_, _) => Class.forName("java.lang.Object").toSuccess
 
       case TypeConstructor.UnkindedEnum(_) => Class.forName("java.lang.Object").toSuccess
 

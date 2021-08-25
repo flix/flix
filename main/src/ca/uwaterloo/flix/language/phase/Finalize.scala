@@ -443,7 +443,7 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
 
           case TypeConstructor.Lazy => MonoType.Lazy(args.head)
 
-          case TypeConstructor.Enum(sym, _) => MonoType.Enum(sym, args)
+          case TypeConstructor.KindedEnum(sym, _) => MonoType.Enum(sym, args)
 
           case TypeConstructor.Tag(sym, _) =>
             throw InternalCompilerException(s"Unexpected type: '$t0'.")

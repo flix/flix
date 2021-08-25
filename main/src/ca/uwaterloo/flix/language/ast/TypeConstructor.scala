@@ -182,7 +182,7 @@ object TypeConstructor {
     * A type constructor that represent the type of enums.
     */
   @IntroducedBy(Kinder.getClass)
-  case class Enum(sym: Symbol.EnumSym, kind: Kind) extends TypeConstructor
+  case class KindedEnum(sym: Symbol.EnumSym, kind: Kind) extends TypeConstructor
 
   /**
     * An unkinded type constructor that represent the type of enums.

@@ -826,7 +826,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     case TypeConstructor.UnkindedEnum(sym) =>
       // Lookup the enum kind
       val kind = getEnumKind(root.enums(sym))
-      TypeConstructor.Enum(sym, kind)
+      TypeConstructor.KindedEnum(sym, kind)
     case TypeConstructor.Native(clazz) => TypeConstructor.Native(clazz)
     case TypeConstructor.ScopedRef => TypeConstructor.ScopedRef
     case TypeConstructor.Tuple(l) => TypeConstructor.Tuple(l)
@@ -838,7 +838,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     case TypeConstructor.And => TypeConstructor.And
     case TypeConstructor.Or => TypeConstructor.Or
     case TypeConstructor.Region => TypeConstructor.Region
-    case _: TypeConstructor.Enum => throw InternalCompilerException("Unexpected kinded enum.")
+    case _: TypeConstructor.KindedEnum => throw InternalCompilerException("Unexpected kinded enum.")
   }
 
   /**
@@ -1096,7 +1096,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     case TypeConstructor.And => Kind.Bool ->: Kind.Bool ->: Kind.Bool
     case TypeConstructor.Or => Kind.Bool ->: Kind.Bool ->: Kind.Bool
     case TypeConstructor.Region => Kind.Bool ->: Kind.Star
-    case _: TypeConstructor.Enum => throw InternalCompilerException("Unexpected kinded enum.")
+    case _: TypeConstructor.KindedEnum => throw InternalCompilerException("Unexpected kinded enum.")
   }
 
   /**
