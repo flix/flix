@@ -1,0 +1,65 @@
+name: JAR on Demand
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  handle-request:
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '!!!jar')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Acknowledge request
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: >
+              github.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: 'Building JAR...'
+              })
+      - name: Set up JDK 1.11
+        uses: actions/setup-java@v1
+        with:
+          java-version: 1.11
+      - name: Lookup branches
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: >
+            var pull_promise = github.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+            pull_promise.then(pull => {
+              core.exportVariable("feature_repo", pull.data.head.repo.full_name);
+              core.exportVariable("feature_ref", pull.data.head.ref);
+              core.exportVariable("master_repo", pull.data.base.repo.full_name);
+              core.exportVariable("master_ref", pull.data.base.ref);
+            });
+      - name: Check out feature branch
+        uses: actions/checkout@v2
+        with:
+          repository: ${{ env.feature_repo }}
+          ref: ${{ env.feature_ref }}
+      - name: Build
+        run: ./gradlew jar
+      - name: Upload feature phases results
+        uses: actions/upload-artifact@v1
+        with:
+          name: JAR
+          path: build/libs/flix.jar
+      - name: Comment phase report
+        uses: actions/github-script@v4
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: >
+              github.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: "The JAR is available [HERE](" + "https://github.com/" + context.repo.owner + "/" + context.repo.repo + "/actions/runs/" + context.runId + ")."
+              })
