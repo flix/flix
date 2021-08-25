@@ -39,9 +39,9 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
         doc = Ast.Doc(Nil, SourceLocation.Unknown),
         ann = Nil,
         mod = Ast.Modifiers.Empty,
-        tparams = ???, // MATT get these from the type of the enum I guess
+        tparams = tparams, // MATT is this right?
         fparams = List(ResolvedAst.FormalParam(varSym, Ast.Modifiers.Empty, ???, SourceLocation.Unknown)), // MATT use scheme I guess
-        sc = ???, // MATT use sc again
+        sc = sc.copy(base = UnkindedType.mkPureArrow(sc.base, UnkindedType.mkString(SourceLocation.Unknown)), // MATT right?
         tpe = ???, // MATT sc again; is this return tpe?
         eff = UnkindedType.Cst(UnkindedType.Constructor.Pure, SourceLocation.Unknown),
         loc = SourceLocation.Unknown
