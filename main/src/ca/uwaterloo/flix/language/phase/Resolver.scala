@@ -1119,17 +1119,22 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Performs name resolution on the given list of derivations `derives0`.
     */
-  def resolveDerivations(derives0: List[Name.QName], ns0: Name.NName, root: NamedAst.Root): Validation[List[Symbol.ClassSym], ResolutionError] = {
-    val derivesVal = Validation.traverse(derives0)(resolveDerivation(_, ns0, root))
-    flatMapN(derivesVal) {
-      derives =>
-        val mapping = derives0.zip(derives)
-        val duplicatePair = mapping.combinations(2).collectFirst {
-          case List((qname1, sym1), (qname2, sym2)) if (sym1 == sym2) => (sym1, qname1.loc, qname2.loc)
-        }
-        duplicatePair match {
-          case Some((sym, loc1, loc2)) => ResolutionError.DuplicateDerivation(sym, loc1, loc2).toFailure
-          case None => derives.toSuccess
+  def resolveDerivations(qnames: List[Name.QName], ns0: Name.NName, root: NamedAst.Root): Validation[List[Symbol.ClassSym], ResolutionError] = {
+    val classSymsVal = Validation.traverse(qnames)(resolveDerivation(_, ns0, root))
+    flatMapN(classSymsVal) {
+      classSyms =>
+        val derives = qnames.zip(classSyms).zipWithIndex
+        val failures = for {
+          ((qname1, sym1), i1) <- derives
+          ((qname2, sym2), i2) <- derives
+
+          // don't compare a sym against itself
+          if i1 != i2
+          if sym1 == sym2
+        } yield ResolutionError.DuplicateDerivation(sym1, qname1.loc, qname2.loc).toFailure
+
+        Validation.sequenceX(failures) map {
+          _ => classSyms
         }
     }
   }
