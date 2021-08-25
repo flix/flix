@@ -25,6 +25,11 @@ class LangSuite extends Suites(
   new FlixTest("Test.Def.Scoped", "main/test/flix/Test.Def.Scoped.flix"),
 
   //
+  // Derivations.
+  //
+  new FlixTest("Test.Derivation", "main/test/flix/Test.Derivation.flix"),
+
+  //
   // Effects.
   //
   new FlixTest("Test.Eff.Advanced", "main/test/flix/Test.Eff.Advanced.flix"),
