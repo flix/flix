@@ -25,15 +25,18 @@ object MinLib {
     val sym: Symbol.SigSym
   }
 
-  object Eq extends Class {
-    val sym: Symbol.ClassSym = new Symbol.ClassSym(Nil, "Eq", SourceLocation.Unknown)
+  abstract class TopLevelClass(name: String) extends Class {
+    val sym: Symbol.ClassSym = new Symbol.ClassSym(Nil, name, SourceLocation.Unknown)
   }
 
-  object Order extends Class {
-    val sym: Symbol.ClassSym = new Symbol.ClassSym(Nil, "Order", SourceLocation.Unknown)
-  }
+  object Boxable extends TopLevelClass("Boxable")
+  object Eq extends TopLevelClass("Eq")
+  object Foldable extends TopLevelClass("Foldable")
+  object JoinLattice extends TopLevelClass("JoinLattice")
+  object LowerBound extends TopLevelClass("LowerBound")
+  object MeetLattice extends TopLevelClass("MeetLattice")
+  object Order extends TopLevelClass("Order")
+  object PartialOrder extends TopLevelClass("PartialOrder")
+  object ToString extends TopLevelClass("ToString")
 
-  object ToString extends Class {
-    val sym: Symbol.ClassSym = new Symbol.ClassSym(Nil, "ToString", SourceLocation.Unknown)
-  }
 }
