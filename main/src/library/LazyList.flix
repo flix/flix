@@ -241,6 +241,7 @@ namespace LazyList {
         case LList(xs)    => LList(   lazy append(force xs, l2))
     }
 
+    ///
     /// Applies `f` to a start value `s` and all elements in `l` going from left to right.
     ///
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
