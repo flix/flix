@@ -260,6 +260,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   def resolve(e0: NamedAst.Enum, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Enum, ResolutionError] = {
     val tparams = resolveTypeParams(e0.tparams, ns0, root)
     val tconstrs = Nil
+    val derivesVal = resolveDerivations(e0.derives, ns0, root)
     val casesVal = traverse(e0.cases) {
       case (name, NamedAst.Case(enum, tag, tpe)) =>
         for {
@@ -276,9 +277,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     for {
       cases <- casesVal
       tpe <- lookupType(e0.tpe, ns0, root)
+      derives <- derivesVal
     } yield {
       val sc = ResolvedAst.Scheme(tparams.tparams.map(_.tpe), tconstrs, tpe)
-      ResolvedAst.Enum(e0.doc, e0.mod, e0.sym, tparams, cases.toMap, tpe, sc, e0.loc)
+      ResolvedAst.Enum(e0.doc, e0.mod, e0.sym, tparams, derives, cases.toMap, tpe, sc, e0.loc)
     }
   }
 
@@ -1112,6 +1114,54 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       mapN(classVal, tpeVal) {
         case (clazz, tpe) => ResolvedAst.TypeConstraint(clazz.sym, tpe, loc)
       }
+  }
+
+  /**
+    * Performs name resolution on the given list of derivations `derives0`.
+    */
+  def resolveDerivations(qnames: List[Name.QName], ns0: Name.NName, root: NamedAst.Root): Validation[List[Symbol.ClassSym], ResolutionError] = {
+    val classSymsVal = Validation.traverse(qnames)(resolveDerivation(_, ns0, root))
+    flatMapN(classSymsVal) {
+      classSyms =>
+        val derives = qnames.zip(classSyms).zipWithIndex
+        val failures = for {
+          ((qname1, sym1), i1) <- derives
+          ((qname2, sym2), i2) <- derives
+
+          // don't compare a sym against itself
+          if i1 != i2
+          if sym1 == sym2
+        } yield ResolutionError.DuplicateDerivation(sym1, qname1.loc, qname2.loc).toFailure
+
+        Validation.sequenceX(failures) map {
+          _ => classSyms
+        }
+    }
+  }
+
+  /**
+    * Performs name resolution on the given of derivation `derive0`.
+    */
+  def resolveDerivation(derive0: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[Symbol.ClassSym, ResolutionError] = {
+    for {
+      clazz <- lookupClass(derive0, ns0, root)
+      _ <- checkDerivable(clazz.sym, derive0.loc)
+    } yield clazz.sym
+  }
+
+  /**
+    * Checks that the given class `sym` is derivable.
+    */
+  def checkDerivable(sym: Symbol.ClassSym, loc: SourceLocation): Validation[Unit, ResolutionError] = {
+    val eqSym = new Symbol.ClassSym(Nil, "Eq", SourceLocation.Unknown)
+    val orderSym = new Symbol.ClassSym(Nil, "Order", SourceLocation.Unknown)
+    val toStringSym = new Symbol.ClassSym(Nil, "ToString", SourceLocation.Unknown)
+    val legalSyms = List(eqSym, orderSym, toStringSym)
+    if (legalSyms.contains(sym)) {
+      ().toSuccess
+    } else {
+      ResolutionError.IllegalDerivation(sym, legalSyms, loc).toFailure
+    }
   }
 
   /**

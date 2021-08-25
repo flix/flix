@@ -93,7 +93,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     * Performs kinding on the given enum.
     */
   private def visitEnum(enum: ResolvedAst.Enum, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Enum, CompilationError] = enum match {
-    case ResolvedAst.Enum(doc, mod, sym, tparams0, cases0, tpeDeprecated0, sc0, loc) =>
+    case ResolvedAst.Enum(doc, mod, sym, tparams0, derives, cases0, tpeDeprecated0, sc0, loc) =>
       val kenv = getKindEnvFromTypeParamsDefaultStar(tparams0)
 
       val tparamsVal = Validation.traverse(tparams0.tparams)(visitTypeParam(_, kenv))
@@ -1038,7 +1038,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     * Gets the kind of the enum.
     */
   private def getEnumKind(enum: ResolvedAst.Enum)(implicit flix: Flix): Kind = enum match {
-    case ResolvedAst.Enum(_, _, _, tparams, _, _, _, _) =>
+    case ResolvedAst.Enum(_, _, _, tparams, _, _, _, _, _) =>
       val kenv = getKindEnvFromTypeParamsDefaultStar(tparams)
       tparams.tparams.foldRight(Kind.Star: Kind) {
         case (tparam, acc) => kenv.map(tparam.tpe) ->: acc
