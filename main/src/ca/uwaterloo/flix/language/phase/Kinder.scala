@@ -701,7 +701,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   /**
     * Performs kinding on the given type variable under the given kind environment, with `kindMatch` expected from context.
     */
-  private def visitTypeVar(tvar: Type.UnkindedVar, kindMatch: KindMatch, kenv: KindEnv): Validation[Type.Var, KindError] = tvar match {
+  private def visitTypeVar(tvar: Type.UnkindedVar, kindMatch: KindMatch, kenv: KindEnv): Validation[Type.KindedVar, KindError] = tvar match {
     case tvar@Type.UnkindedVar(id, rigidity, text) =>
       kenv.map.get(tvar) match {
         // Case 1: we don't know about this kind, just ascribe it with what the context expects
@@ -709,7 +709,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         // Case 2: we know about this kind, make sure it's behaving as we expect
         case Some(actualKind) =>
           if (kindMatch.matches(actualKind)) {
-            Type.Var(id, actualKind, rigidity, text).toSuccess
+            Type.KindedVar(id, actualKind, rigidity, text).toSuccess
           } else {
             val expectedKind = kindMatch.kind
             KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = actualKind, SourceLocation.Unknown).toFailure // MATT need locs
@@ -721,10 +721,10 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   /**
     * Performs kinding on the given free type variable, with `kindMatch` expected from context.
     */
-  private def visitFreeTypeVar(tvar: Type.UnkindedVar, kindMatch: KindMatch): Type.Var = tvar match {
+  private def visitFreeTypeVar(tvar: Type.UnkindedVar, kindMatch: KindMatch): Type.KindedVar = tvar match {
     case Type.UnkindedVar(id, rigidity, text) =>
       val kind = kindMatch.kind
-      Type.Var(id, kind, rigidity, text)
+      Type.KindedVar(id, kind, rigidity, text)
   }
 
   /**
@@ -772,7 +772,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       } else {
         KindError.UnexpectedKind(expectedKind = expectedKind.kind, actualKind = k, SourceLocation.Unknown).toFailure // MATT loc
       }
-    case _: Type.Var => throw InternalCompilerException("Unexpected kinded type variable.")
+    case _: Type.KindedVar => throw InternalCompilerException("Unexpected kinded type variable.")
   }
 
   /**
@@ -982,7 +982,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
 
     case Type.Ascribe(t, k) => inferType(t, KindMatch.subKindOf(k), kenv0, root)
 
-    case _: Type.Var => throw InternalCompilerException("Unexpected kinded var.")
+    case _: Type.KindedVar => throw InternalCompilerException("Unexpected kinded var.")
   }
 
   /**
@@ -1102,9 +1102,9 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   /**
     * Asserts that the type variable is unkinded.
     */
-  private def assertUnkindedVar(tvar: Type.MaybeKindedVar): Type.UnkindedVar = tvar match {
+  private def assertUnkindedVar(tvar: Type.Var): Type.UnkindedVar = tvar match {
     case unkinded: Type.UnkindedVar => unkinded
-    case kinded: Type.Var => throw InternalCompilerException("Unexpected kinded type variable.")
+    case kinded: Type.KindedVar => throw InternalCompilerException("Unexpected kinded type variable.")
   }
 
   /**

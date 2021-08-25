@@ -26,7 +26,7 @@ object Unification {
   /**
     * Unify the two type variables `x` and `y`.
     */
-  private def unifyVars(x: Type.Var, y: Type.Var)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+  private def unifyVars(x: Type.KindedVar, y: Type.KindedVar)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     // Case 0: types are identical
     if (x.id == y.id) {
       Result.Ok(Substitution.empty)
@@ -47,9 +47,9 @@ object Unification {
   /**
     * Unifies the given variable `x` with the given non-variable type `tpe`.
     */
-  private def unifyVar(x: Type.Var, tpe: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+  private def unifyVar(x: Type.KindedVar, tpe: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     // NB: The `tpe` type must be a non-var.
-    if (tpe.isInstanceOf[Type.Var])
+    if (tpe.isInstanceOf[Type.KindedVar])
       throw InternalCompilerException(s"Unexpected variable type: '$tpe'.")
 
     // Check if `x` is rigid.
@@ -77,15 +77,15 @@ object Unification {
   // NB: The order of cases has been determined by code coverage analysis.
   def unifyTypes(tpe1: Type, tpe2: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     (tpe1, tpe2) match {
-      case (x: Type.Var, y: Type.Var) => unifyVars(x, y)
+      case (x: Type.KindedVar, y: Type.KindedVar) => unifyVars(x, y)
 
-      case (x: Type.Var, _) =>
+      case (x: Type.KindedVar, _) =>
         if (x.kind == Kind.Bool || tpe2.kind == Kind.Bool)
           BoolUnification.unify(x, tpe2)
         else
           unifyVar(x, tpe2)
 
-      case (_, x: Type.Var) =>
+      case (_, x: Type.KindedVar) =>
         if (x.kind == Kind.Bool || tpe1.kind == Kind.Bool)
           BoolUnification.unify(x, tpe1)
         else
@@ -147,7 +147,7 @@ object Unification {
             case (subst, rewrittenRow) => (subst, Type.mkRecordExtend(field2, fieldType2, rewrittenRow))
           }
         }
-      case (tvar: Type.Var, Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field1), _), fieldType1), _)) =>
+      case (tvar: Type.KindedVar, Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field1), _), fieldType1), _)) =>
         // Case 2: The row is a type variable.
         if (Type.Kinded.typeVars(staticRow) contains tvar) {
           Err(UnificationError.OccursCheck(tvar, staticRow))
@@ -192,7 +192,7 @@ object Unification {
             case (subst, rewrittenRow) => (subst, Type.mkSchemaExtend(label2, fieldType2, rewrittenRow))
           }
         }
-      case (tvar: Type.Var, Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(label1), _), fieldType1), _)) =>
+      case (tvar: Type.KindedVar, Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(label1), _), fieldType1), _)) =>
         // Case 2: The row is a type variable.
         if (Type.Kinded.typeVars(staticRow) contains tvar) {
           Err(UnificationError.OccursCheck(tvar, staticRow))
@@ -371,7 +371,7 @@ object Unification {
     *
     * NB: Use with EXTREME CAUTION.
     */
-  def unbindVar(tvar: Type.Var): InferMonad[Unit] =
+  def unbindVar(tvar: Type.KindedVar): InferMonad[Unit] =
     InferMonad(s => {
       Ok((s.unbind(tvar), ()))
     })
@@ -379,7 +379,7 @@ object Unification {
   /**
     * Purifies the given effect `eff` in the type inference monad.
     */
-  def purifyEffM(tvar: Type.Var, eff: Type): InferMonad[Type] =
+  def purifyEffM(tvar: Type.KindedVar, eff: Type): InferMonad[Type] =
     InferMonad(s => {
       val purifiedEff = purify(tvar, s(eff))
       Ok((s, purifiedEff))
@@ -388,9 +388,9 @@ object Unification {
   /**
     * Returns the given Boolean formula `tpe` with the (possibly rigid) type variable `tvar` replaced by `True`.
     */
-  private def purify(tvar: Type.Var, tpe: Type): Type = tpe.typeConstructor match {
+  private def purify(tvar: Type.KindedVar, tpe: Type): Type = tpe.typeConstructor match {
     case None => tpe match {
-      case Type.Var(id, _, _, _) =>
+      case Type.KindedVar(id, _, _, _) =>
         if (tvar.id == id) Type.True else tpe
       case _ => throw InternalCompilerException(s"Unexpected type constructor: '$tpe'.")
     }

@@ -43,7 +43,7 @@ object BoolUnification {
     }
 
     tpe1 match {
-      case x: Type.Var if x.rigidity eq Rigidity.Flexible =>
+      case x: Type.KindedVar if x.rigidity eq Rigidity.Flexible =>
         if (tpe2 eq Type.True)
           return Ok(Substitution.singleton(x, Type.True))
         if (tpe2 eq Type.False)
@@ -52,7 +52,7 @@ object BoolUnification {
     }
 
     tpe2 match {
-      case y: Type.Var if y.rigidity eq Rigidity.Flexible =>
+      case y: Type.KindedVar if y.rigidity eq Rigidity.Flexible =>
         if (tpe1 eq Type.True)
           return Ok(Substitution.singleton(y, Type.True))
         if (tpe1 eq Type.False)
@@ -98,7 +98,7 @@ object BoolUnification {
   /**
     * Performs success variable elimination on the given boolean expression `f`.
     */
-  private def successiveVariableElimination(f: Type, fvs: List[Type.Var])(implicit flix: Flix): Substitution = fvs match {
+  private def successiveVariableElimination(f: Type, fvs: List[Type.KindedVar])(implicit flix: Flix): Substitution = fvs match {
     case Nil =>
       // Determine if f is unsatisfiable when all (rigid) variables are made flexible.
       val (_, q) = Scheme.instantiate(Scheme(Type.Kinded.typeVars(f).toList, List.empty, f), InstantiateMode.Flexible)

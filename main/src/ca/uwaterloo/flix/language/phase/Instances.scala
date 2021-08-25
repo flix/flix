@@ -115,11 +115,11 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
     def checkSimple(inst: TypedAst.Instance): Validation[Unit, InstanceError] = inst match {
       case TypedAst.Instance(_, _, sym, tpe, _, _, _, loc) => tpe match {
         case _: Type.Cst => ().toSuccess
-        case _: Type.Var => InstanceError.ComplexInstanceType(tpe, sym, loc).toFailure
+        case _: Type.KindedVar => InstanceError.ComplexInstanceType(tpe, sym, loc).toFailure
         case _: Type.Apply =>
-          Validation.fold(tpe.typeArguments, List.empty[Type.Var]) {
+          Validation.fold(tpe.typeArguments, List.empty[Type.KindedVar]) {
             // Case 1: Type variable
-            case (seen, tvar: Type.Var) =>
+            case (seen, tvar: Type.KindedVar) =>
               // Case 1.1 We've seen it already. Error.
               if (seen.contains(tvar))
                 InstanceError.DuplicateTypeVariableOccurrence(tvar, sym, loc).toFailure

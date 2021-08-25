@@ -87,7 +87,7 @@ object FormatType {
 
       base match {
         case None => tpe match {
-          case Type.Var(id, kind, rigidity, text) => audience match {
+          case Type.KindedVar(id, kind, rigidity, text) => audience match {
             case Audience.Internal => kind match {
               // TODO: We need a systematic way to print type variables, their kind, and rigidity.
               // TODO: We need to rid ourselves of alpha renaming. Its too brittle. We need something else.
@@ -183,29 +183,29 @@ object FormatType {
               formatApply(tag.name, args)
 
           case TypeConstructor.Not => args match {
-            case (t1: Type.Var) :: Nil => s"¬${visit(t1)}"
+            case (t1: Type.KindedVar) :: Nil => s"¬${visit(t1)}"
             case t1 :: Nil => s"¬(${visit(t1)})"
             case Nil => "¬???"
             case _ => formatApply("¬", args)
           }
 
           case TypeConstructor.And => args match {
-            case (t1: Type.Var) :: (t2: Type.Var) :: Nil => s"${visit(t1)} ∧ ${visit(t2)}"
-            case (t1: Type.Var) :: t2 :: Nil => s"${visit(t1)} ∧ (${visit(t2)})"
-            case t1 :: (t2: Type.Var) :: Nil => s"(${visit(t1)}) ∧ ${visit(t2)}"
+            case (t1: Type.KindedVar) :: (t2: Type.KindedVar) :: Nil => s"${visit(t1)} ∧ ${visit(t2)}"
+            case (t1: Type.KindedVar) :: t2 :: Nil => s"${visit(t1)} ∧ (${visit(t2)})"
+            case t1 :: (t2: Type.KindedVar) :: Nil => s"(${visit(t1)}) ∧ ${visit(t2)}"
             case t1 :: t2 :: Nil => s"(${visit(t1)}) ∧ (${visit(t2)})"
-            case (t1: Type.Var) :: Nil => s"${visit(t1)} ∧ ???"
+            case (t1: Type.KindedVar) :: Nil => s"${visit(t1)} ∧ ???"
             case t1 :: Nil => s"(${visit(t1)}) ∧ ???"
             case Nil => s"??? ∧ ???"
             case _ => formatApply("∧", args)
           }
 
           case TypeConstructor.Or => args match {
-            case (t1: Type.Var) :: (t2: Type.Var) :: Nil => s"${visit(t1)} ∨ ${visit(t2)}"
-            case (t1: Type.Var) :: t2 :: Nil => s"${visit(t1)} ∨ (${visit(t2)})"
-            case t1 :: (t2: Type.Var) :: Nil => s"(${visit(t1)}) ∨ ${visit(t2)}"
+            case (t1: Type.KindedVar) :: (t2: Type.KindedVar) :: Nil => s"${visit(t1)} ∨ ${visit(t2)}"
+            case (t1: Type.KindedVar) :: t2 :: Nil => s"${visit(t1)} ∨ (${visit(t2)})"
+            case t1 :: (t2: Type.KindedVar) :: Nil => s"(${visit(t1)}) ∨ ${visit(t2)}"
             case t1 :: t2 :: Nil => s"(${visit(t1)}) ∨ (${visit(t2)})"
-            case (t1: Type.Var) :: Nil => s"${visit(t1)} ∨ ???"
+            case (t1: Type.KindedVar) :: Nil => s"${visit(t1)} ∨ ???"
             case t1 :: Nil => s"(${visit(t1)}) ∨ ???"
             case Nil => s"??? ∨ ???"
             case _ => formatApply("∨", args)
@@ -234,7 +234,7 @@ object FormatType {
               val effPart = eff match {
                 case Type.Cst(TypeConstructor.True, _) => ""
                 case Type.Cst(TypeConstructor.False, _) => ""
-                case _: Type.Var => s" & ${visit(eff)}"
+                case _: Type.KindedVar => s" & ${visit(eff)}"
                 case _ => " & (" + visit(eff) + ")"
               }
               // Format the result type.
@@ -374,9 +374,9 @@ object FormatType {
   /**
     * Returns all type variables in the type in the order in which they appear.
     */
-  private def typeVars(tpe0: Type): List[Type.MaybeKindedVar] = {
-    def visit(t: Type): List[Type.MaybeKindedVar] = t match {
-      case tvar: Type.Var => tvar :: Nil
+  private def typeVars(tpe0: Type): List[Type.Var] = {
+    def visit(t: Type): List[Type.Var] = t match {
+      case tvar: Type.KindedVar => tvar :: Nil
       case tvar: Type.UnkindedVar => tvar :: Nil
       case Type.Cst(tc, loc) => Nil
       case Type.Lambda(tvar, tpe) => tvar :: visit(tpe)

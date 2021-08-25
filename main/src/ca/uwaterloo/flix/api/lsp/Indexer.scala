@@ -415,7 +415,7 @@ object Indexer {
     * Returns a reverse index for the given type `tpe0`.
     */
   private def visitType(tpe0: Type): Index = tpe0 match {
-    case _: Type.MaybeKindedVar => Index.empty
+    case _: Type.Var => Index.empty
     case Type.Cst(tc, loc) => tc match {
       case TypeConstructor.RecordExtend(field) => Index.occurrenceOf(tc, loc) ++ Index.useOf(field)
       case TypeConstructor.SchemaExtend(pred) => Index.occurrenceOf(tc, loc) ++ Index.useOf(pred)

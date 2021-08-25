@@ -723,8 +723,8 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
           *
           * Returns a pair of lists of the types and effects of the match expressions.
           */
-        def visitMatchExps(exps: List[KindedAst.Expression], isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var]): InferMonad[(List[List[Ast.TypeConstraint]], List[Type], List[Type])] = {
-          def visitMatchExp(exp: KindedAst.Expression, isAbsentVar: Type.Var, isPresentVar: Type.Var): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = {
+        def visitMatchExps(exps: List[KindedAst.Expression], isAbsentVars: List[Type.KindedVar], isPresentVars: List[Type.KindedVar]): InferMonad[(List[List[Ast.TypeConstraint]], List[Type], List[Type])] = {
+          def visitMatchExp(exp: KindedAst.Expression, isAbsentVar: Type.KindedVar, isPresentVar: Type.KindedVar): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = {
             val freshElmVar = Type.freshVar(Kind.Star)
             for {
               (constrs, tpe, eff) <- visitExp(exp)
@@ -755,7 +755,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
           *
           * NB: Requires that the `ts` types are Choice-types.
           */
-        def transformResultTypes(isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var], rs: List[KindedAst.ChoiceRule], ts: List[Type], loc: SourceLocation): InferMonad[Type] = {
+        def transformResultTypes(isAbsentVars: List[Type.KindedVar], isPresentVars: List[Type.KindedVar], rs: List[KindedAst.ChoiceRule], ts: List[Type], loc: SourceLocation): InferMonad[Type] = {
           def visitRuleBody(r: KindedAst.ChoiceRule, resultType: Type): InferMonad[(Type, Type, Type)] = r match {
             case KindedAst.ChoiceRule(r, exp0) =>
               val cond = mkOverApprox(isAbsentVars, isPresentVars, r)
@@ -793,7 +793,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
           * If a pattern is `Absent`  its corresponding `isPresentVar` must be `false` (i.e. to prevent the value from being `Present`).
           * If a pattern is `Present` its corresponding `isAbsentVar`  must be `false` (i.e. to prevent the value from being `Absent`).
           */
-        def mkUnderApprox(isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var], r: List[KindedAst.ChoicePattern]): Type =
+        def mkUnderApprox(isAbsentVars: List[Type.KindedVar], isPresentVars: List[Type.KindedVar], r: List[KindedAst.ChoicePattern]): Type =
           isAbsentVars.zip(isPresentVars).zip(r).foldLeft(Type.True) {
             case (acc, (_, KindedAst.ChoicePattern.Wild(_))) =>
               // Case 1: No constraint is generated for a wildcard.
@@ -813,7 +813,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
           * If a pattern is `Absent` it *may* match if its corresponding `isAbsent` is `true`.
           * If a pattern is `Present` it *may* match if its corresponding `isPresentVar`is `true`.
           */
-        def mkOverApprox(isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var], r: List[KindedAst.ChoicePattern]): Type =
+        def mkOverApprox(isAbsentVars: List[Type.KindedVar], isPresentVars: List[Type.KindedVar], r: List[KindedAst.ChoicePattern]): Type =
           isAbsentVars.zip(isPresentVars).zip(r).foldLeft(Type.True) {
             case (acc, (_, KindedAst.ChoicePattern.Wild(_))) =>
               // Case 1: No constraint is generated for a wildcard.
@@ -829,7 +829,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
         /**
           * Constructs a disjunction of the constraints of each choice rule.
           */
-        def mkOuterDisj(m: List[List[KindedAst.ChoicePattern]], isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var]): Type =
+        def mkOuterDisj(m: List[List[KindedAst.ChoicePattern]], isAbsentVars: List[Type.KindedVar], isPresentVars: List[Type.KindedVar]): Type =
           m.foldLeft(Type.False) {
             case (acc, rule) => BoolUnification.mkOr(acc, mkUnderApprox(isAbsentVars, isPresentVars, rule))
           }

@@ -55,7 +55,7 @@ sealed trait Type {
     * }}}
     */
   def typeConstructor: Option[TypeConstructor] = this match {
-    case Type.Var(_, _, _, _) => None
+    case Type.KindedVar(_, _, _, _) => None
     case Type.UnkindedVar(_, _, _) => None
     case Type.Cst(tc, _) => Some(tc)
     case Type.Apply(t1, _) => t1.typeConstructor
@@ -67,7 +67,7 @@ sealed trait Type {
     * Returns a list of all type constructors in `this` type.
     */
   def typeConstructors: List[TypeConstructor] = this match {
-    case Type.Var(_, _, _, _) => Nil
+    case Type.KindedVar(_, _, _, _) => Nil
     case Type.UnkindedVar(_, _, _) => Nil
     case Type.Cst(tc, _) => tc :: Nil
     case Type.Apply(t1, t2) => t1.typeConstructors ::: t2.typeConstructors
@@ -137,7 +137,7 @@ sealed trait Type {
     * Returns the size of `this` type.
     */
   def size: Int = this match {
-    case Type.Var(_, _, _, _) => 1
+    case Type.KindedVar(_, _, _, _) => 1
     case Type.UnkindedVar(_, _, _) => 1
     case Type.Cst(tc, _) => 1
     case Type.Lambda(_, tpe) => tpe.size + 1
@@ -309,7 +309,7 @@ object Type {
   /**
     * The union of type variables.
     */
-  sealed trait MaybeKindedVar extends Type {
+  sealed trait Var extends Type {
     def id: Int
     def text: Option[String]
   }
@@ -324,12 +324,12 @@ object Type {
     * A type variable.
     */
   @IntroducedBy(Kinder.getClass)
-  case class Var(id: Int, kind: Kind, rigidity: Rigidity = Rigidity.Flexible, text: Option[String] = None) extends Type with MaybeKindedVar with BaseType with Ordered[Type.Var] {
+  case class KindedVar(id: Int, kind: Kind, rigidity: Rigidity = Rigidity.Flexible, text: Option[String] = None) extends Type with Var with BaseType with Ordered[Type.KindedVar] {
     /**
       * Returns `true` if `this` type variable is equal to `o`.
       */
     override def equals(o: scala.Any): Boolean = o match {
-      case that: Var => this.id == that.id
+      case that: KindedVar => this.id == that.id
       case _ => false
     }
 
@@ -341,14 +341,14 @@ object Type {
     /**
       * Compares `this` type variable to `that` type variable.
       */
-    override def compare(that: Type.Var): Int = this.id - that.id
+    override def compare(that: Type.KindedVar): Int = this.id - that.id
   }
 
   /**
     * A type variable without a kind.
     */
   @EliminatedBy(Kinder.getClass)
-  case class UnkindedVar(id: Int, rigidity: Rigidity = Rigidity.Flexible, text: Option[String] = None) extends Type with MaybeKindedVar with BaseType with Ordered[Type.UnkindedVar] {
+  case class UnkindedVar(id: Int, rigidity: Rigidity = Rigidity.Flexible, text: Option[String] = None) extends Type with Var with BaseType with Ordered[Type.UnkindedVar] {
 
     @deprecated("An UnkindedVar has no associated kind.")
     override def kind: Kind = throw InternalCompilerException("Attempt to access kind of unkinded type variable")
@@ -357,7 +357,7 @@ object Type {
       * Returns `true` if `this` type variable is equal to `o`.
       */
     override def equals(o: scala.Any): Boolean = o match {
-      case that: Var => this.id == that.id
+      case that: KindedVar => this.id == that.id
       case _ => false
     }
 
@@ -374,7 +374,7 @@ object Type {
     /**
       * Converts the UnkindedVar to a Var with the given `kind`.
       */
-    def ascribedWith(kind: Kind): Type.Var = Type.Var(id, kind, rigidity, text)
+    def ascribedWith(kind: Kind): Type.KindedVar = Type.KindedVar(id, kind, rigidity, text)
   }
 
   /**
@@ -400,7 +400,7 @@ object Type {
   /**
     * A type expression that represents a type abstraction [x] => tpe.
     */
-  case class Lambda(tvar: Type.MaybeKindedVar, tpe: Type) extends Type with BaseType {
+  case class Lambda(tvar: Type.Var, tpe: Type) extends Type with BaseType {
     def kind: Kind = Kind.Star ->: tpe.kind
   }
 
@@ -436,9 +436,9 @@ object Type {
   /**
     * Returns a fresh type variable of the given kind `k` and rigidity `r`.
     */
-  def freshVar(k: Kind, r: Rigidity = Rigidity.Flexible, text: Option[String] = None)(implicit flix: Flix): Type.Var = {
+  def freshVar(k: Kind, r: Rigidity = Rigidity.Flexible, text: Option[String] = None)(implicit flix: Flix): Type.KindedVar = {
     val id = flix.genSym.freshId()
-    Type.Var(id, k, r, text)
+    Type.KindedVar(id, k, r, text)
   }
 
   /**
@@ -728,7 +728,7 @@ object Type {
   /**
     * Returns a Region type for the given rigid variable `l` with the given source location `loc`.
     */
-  def mkRegion(l: Type.Var, loc: SourceLocation): Type =
+  def mkRegion(l: Type.KindedVar, loc: SourceLocation): Type =
     Type.Apply(Type.Cst(TypeConstructor.Region, loc), l)
 
   // MATT docs
@@ -739,11 +739,11 @@ object Type {
       *
       * Returns a sorted set to ensure that the compiler is deterministic.
       */
-    def typeVars(tpe0: Type): SortedSet[Type.Var] = tpe0 match {
-      case x: Type.Var => SortedSet(x)
+    def typeVars(tpe0: Type): SortedSet[Type.KindedVar] = tpe0 match {
+      case x: Type.KindedVar => SortedSet(x)
       case Type.Cst(tc, _) => SortedSet.empty
       case Type.Lambda(tvar, tpe) => tvar match {
-        case kindedTvar: Var => typeVars(tpe) - kindedTvar
+        case kindedTvar: KindedVar => typeVars(tpe) - kindedTvar
         case _: UnkindedVar => throw InternalCompilerException("Unexpected unkinded type variable")
       }
       case Type.Apply(tpe1, tpe2) => typeVars(tpe1) ++ typeVars(tpe2)
@@ -754,8 +754,8 @@ object Type {
     /**
       * Applies `f` to every type variable in `this` type.
       */
-    def map(tpe0: Type)(f: Type.Var => Type): Type = tpe0 match {
-      case tvar: Type.Var => f(tvar)
+    def map(tpe0: Type)(f: Type.KindedVar => Type): Type = tpe0 match {
+      case tvar: Type.KindedVar => f(tvar)
       case Type.Cst(_, _) => tpe0
       case Type.Lambda(tvar, tpe) => Type.Lambda(tvar, map(tpe)(f))
       case Type.Apply(tpe1, tpe2) => Type.Apply(map(tpe1)(f), map(tpe2)(f))
@@ -849,7 +849,7 @@ object Type {
         // TODO: Does not take variable capture into account.
         case Type.Apply(tpe1, tpe2) => (eval(tpe1, subst), eval(tpe2, subst)) match {
           case (Type.Lambda(tvar, tpe3), t2) => tvar match {
-            case _: Type.Var => throw InternalCompilerException("Unexpected kinded type variable")
+            case _: Type.KindedVar => throw InternalCompilerException("Unexpected kinded type variable")
             case unkindedTvar: Type.UnkindedVar => eval(tpe3, subst + (unkindedTvar -> t2))
           }
 
@@ -858,7 +858,7 @@ object Type {
 
         case Type.Ascribe(tpe, kind) => Type.Ascribe(eval(tpe, subst), kind)
 
-        case _: Type.Var => throw InternalCompilerException("Unexpected kinded type variable")
+        case _: Type.KindedVar => throw InternalCompilerException("Unexpected kinded type variable")
       }
 
       eval(tpe0, Map.empty)
