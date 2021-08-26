@@ -103,11 +103,11 @@ object Scheme {
         }
     }
 
-    val newBase = Type.Kinded.map(baseType)(visitTvar)
+    val newBase = baseType.map(visitTvar)
 
     val newConstrs = sc.constraints.map {
       case Ast.TypeConstraint(sym, tpe0, loc) =>
-        val tpe = Type.Kinded.map(tpe0)(visitTvar)
+        val tpe = tpe0.map(visitTvar)
         Ast.TypeConstraint(sym, tpe, loc)
     }
 
@@ -118,7 +118,7 @@ object Scheme {
     * Generalizes the given type `tpe0` with respect to the empty type environment.
     */
   def generalize(tconstrs: List[Ast.TypeConstraint], tpe0: Type): Scheme = {
-    val quantifiers = Type.Kinded.typeVars(tpe0) ++ tconstrs.flatMap(tconstr => Type.Kinded.typeVars(tconstr.arg))
+    val quantifiers = tpe0.typeVars ++ tconstrs.flatMap(tconstr => tconstr.arg.typeVars)
     Scheme(quantifiers.toList, tconstrs, tpe0)
   }
 

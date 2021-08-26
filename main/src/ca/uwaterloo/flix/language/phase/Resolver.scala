@@ -268,7 +268,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         } yield {
           val freeVars = e0.tparams.tparams.map(_.tpe)
           val caseType = t
-          val enumType = Type.mkUnkindedEnum(e0.sym, freeVars)
+          val enumType = mkUnkindedEnum(e0.sym, freeVars)
           val base = Type.mkTag(e0.sym, tag, caseType, enumType)
           val sc = ResolvedAst.Scheme(freeVars, tconstrs, base)
           name -> ResolvedAst.Case(enum, tag, t, sc)
@@ -1419,7 +1419,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       }
 
     case NamedAst.Type.Enum(sym, loc) =>
-      Type.mkUnkindedEnum(sym, loc).toSuccess
+      mkUnkindedEnum(sym, loc).toSuccess
 
     case NamedAst.Type.Tuple(elms0, loc) =>
       for {
@@ -1453,7 +1453,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             ts <- traverse(targs)(lookupType(_, ns0, root))
             r <- lookupType(rest, ns0, root)
             app = Type.mkApply(t, ts)
-            tpe = Type.Unkinded.simplify(app)
+            tpe = simplify(app)
             schema = Type.mkSchemaExtend(Name.mkPred(qname.ident), tpe, r)
           } yield schema
       }
@@ -1499,7 +1499,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         tpe1 <- lookupType(base0, ns0, root)
         tpe2 <- lookupType(targ0, ns0, root)
         app = Type.Apply(tpe1, tpe2)
-      } yield Type.Unkinded.simplify(app)
+      } yield simplify(app)
 
     case NamedAst.Type.True(loc) =>
       Type.True.toSuccess
@@ -1514,12 +1514,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
     case NamedAst.Type.And(tpe1, tpe2, loc) =>
       mapN(lookupType(tpe1, ns0, root), lookupType(tpe2, ns0, root)) {
-        case (t1, t2) => Type.mkAnd(t1, t2)
+        case (t1, t2) => mkAnd(t1, t2)
       }
 
     case NamedAst.Type.Or(tpe1, tpe2, loc) =>
       mapN(lookupType(tpe1, ns0, root), lookupType(tpe2, ns0, root)) {
-        case (t1, t2) => Type.mkOr(t1, t2)
+        case (t1, t2) => mkOr(t1, t2)
       }
 
     case NamedAst.Type.Ascribe(tpe, kind, loc) =>
@@ -1697,7 +1697,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     */
   def getEnumTypeIfAccessible(enum0: NamedAst.Enum, ns0: Name.NName, loc: SourceLocation): Validation[Type, ResolutionError] =
     getEnumIfAccessible(enum0, ns0, loc) map {
-      case enum => Type.mkUnkindedEnum(enum.sym, loc)
+      case enum => mkUnkindedEnum(enum.sym, loc)
     }
 
   /**
@@ -1915,6 +1915,57 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
     Type.Apply(tycon, ts)
   }
+
+  /**
+    * Returns a simplified (evaluated) form of the given type `tpe0`.
+    *
+    * Performs beta-reduction of type abstractions and applications.
+    */
+  def simplify(tpe0: Type): Type = {
+    def eval(t: Type, subst: Map[Type.UnkindedVar, Type]): Type = t match {
+      case tvar: Type.UnkindedVar => subst.getOrElse(tvar, tvar)
+
+      case Type.Cst(_, _) => t
+
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field), _), tpe), rest) =>
+        val t1 = eval(tpe, subst)
+        val t2 = eval(rest, subst)
+        Type.mkRecordExtend(field, t1, t2)
+
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(pred), _), tpe), rest) =>
+        val t1 = eval(tpe, subst)
+        val t2 = eval(rest, subst)
+        Type.mkSchemaExtend(pred, t1, t2)
+
+      case Type.Lambda(tvar, tpe) => Type.Lambda(tvar, eval(tpe, subst))
+
+      // TODO: Does not take variable capture into account.
+      case Type.Apply(tpe1, tpe2) => (eval(tpe1, subst), eval(tpe2, subst)) match {
+        case (Type.Lambda(tvar, tpe3), t2) => tvar match {
+          case _: Type.KindedVar => throw InternalCompilerException("Unexpected kinded type variable")
+          case unkindedTvar: Type.UnkindedVar => eval(tpe3, subst + (unkindedTvar -> t2))
+        }
+
+        case (t1, t2) => Type.Apply(t1, t2)
+      }
+
+      case Type.Ascribe(tpe, kind) => Type.Ascribe(eval(tpe, subst), kind)
+
+      case _: Type.KindedVar => throw InternalCompilerException("Unexpected kinded type variable")
+    }
+
+    eval(tpe0, Map.empty)
+  }
+
+  /**
+    * Returns the type `And(tpe1, tpe2)`.
+    */
+  def mkAnd(tpe1: Type, tpe2: Type): Type = Type.Apply(Type.Apply(Type.And, tpe1), tpe2)
+
+  /**
+    * Returns the type `Or(tpe1, tpe2)`.
+    */
+  def mkOr(tpe1: Type, tpe2: Type): Type = Type.Apply(Type.Apply(Type.Or, tpe1), tpe2)
 
   /**
     * Enum describing the extent to which a class is accessible.

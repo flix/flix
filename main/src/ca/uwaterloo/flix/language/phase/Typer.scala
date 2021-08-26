@@ -295,7 +295,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
               /// However, we require an even stronger property for the implementation to work. The inferred type scheme used in the rest of the
               /// compiler must *use the same type variables* in the scheme as in the body expression. Otherwise monomorphization et al. will break.
               ///
-              val inferredScheme = Scheme(Type.Kinded.typeVars(inferredType).toList, inferredConstrs, inferredType)
+              val inferredScheme = Scheme(inferredType.typeVars.toList, inferredConstrs, inferredType)
 
               specVal map {
                 spec => (spec, TypedAst.Impl(exp, inferredScheme))
@@ -461,7 +461,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
           (constrs2, tpes, effs) <- seqM(exps.map(visitExp)).map(_.unzip3)
           lambdaType <- unifyTypeM(tpe, Type.mkUncurriedArrowWithEffect(tpes, lambdaBodyEff, lambdaBodyType), loc)
           resultTyp <- unifyTypeM(tvar, lambdaBodyType, loc)
-          resultEff <- unifyBoolM(evar, Type.Kinded.mkAnd(lambdaBodyEff :: eff :: effs), loc)
+          resultEff <- unifyBoolM(evar, Type.mkAnd(lambdaBodyEff :: eff :: effs), loc)
           _ <- unbindVar(lambdaBodyType) // NB: Safe to unbind since the variable is not used elsewhere.
           _ <- unbindVar(lambdaBodyEff) // NB: Safe to unbind since the variable is not used elsewhere.
         } yield (constrs1 ++ constrs2.flatten, resultTyp, resultEff)
@@ -533,7 +533,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
             resultType <- unifyTypeM(tvar, tpe1, tpe2, Type.Bool, loc)
-            resultEff = Type.Kinded.mkAnd(eff1, eff2)
+            resultEff = Type.mkAnd(eff1, eff2)
           } yield (constrs1 ++ constrs2, resultType, resultEff)
 
         case SemanticOperator.Float32Op.Add | SemanticOperator.Float32Op.Sub | SemanticOperator.Float32Op.Mul | SemanticOperator.Float32Op.Div
@@ -542,7 +542,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
             resultTyp <- unifyTypeM(tvar, Type.Float32, tpe1, tpe2, loc)
-            resultEff = Type.Kinded.mkAnd(eff1, eff2)
+            resultEff = Type.mkAnd(eff1, eff2)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
         case SemanticOperator.Float64Op.Add | SemanticOperator.Float64Op.Sub | SemanticOperator.Float64Op.Mul | SemanticOperator.Float64Op.Div
@@ -551,7 +551,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
             resultTyp <- unifyTypeM(tvar, Type.Float64, tpe1, tpe2, loc)
-            resultEff = Type.Kinded.mkAnd(eff1, eff2)
+            resultEff = Type.mkAnd(eff1, eff2)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
         case SemanticOperator.Int8Op.Add | SemanticOperator.Int8Op.Sub | SemanticOperator.Int8Op.Mul | SemanticOperator.Int8Op.Div
@@ -561,7 +561,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
             resultTyp <- unifyTypeM(tvar, Type.Int8, tpe1, tpe2, loc)
-            resultEff = Type.Kinded.mkAnd(eff1, eff2)
+            resultEff = Type.mkAnd(eff1, eff2)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
         case SemanticOperator.Int16Op.Add | SemanticOperator.Int16Op.Sub | SemanticOperator.Int16Op.Mul | SemanticOperator.Int16Op.Div
@@ -571,7 +571,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
             resultTyp <- unifyTypeM(tvar, Type.Int16, tpe1, tpe2, loc)
-            resultEff = Type.Kinded.mkAnd(eff1, eff2)
+            resultEff = Type.mkAnd(eff1, eff2)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
         case SemanticOperator.Int32Op.Add | SemanticOperator.Int32Op.Sub | SemanticOperator.Int32Op.Mul | SemanticOperator.Int32Op.Div
@@ -581,7 +581,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
             resultTyp <- unifyTypeM(tvar, Type.Int32, tpe1, tpe2, loc)
-            resultEff = Type.Kinded.mkAnd(eff1, eff2)
+            resultEff = Type.mkAnd(eff1, eff2)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
         case SemanticOperator.Int64Op.Add | SemanticOperator.Int64Op.Sub | SemanticOperator.Int64Op.Mul | SemanticOperator.Int64Op.Div
@@ -591,7 +591,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
             resultTyp <- unifyTypeM(tvar, Type.Int64, tpe1, tpe2, loc)
-            resultEff = Type.Kinded.mkAnd(eff1, eff2)
+            resultEff = Type.mkAnd(eff1, eff2)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
         case SemanticOperator.BigIntOp.Add | SemanticOperator.BigIntOp.Sub | SemanticOperator.BigIntOp.Mul | SemanticOperator.BigIntOp.Div
@@ -601,7 +601,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
             resultTyp <- unifyTypeM(tvar, Type.BigInt, tpe1, tpe2, loc)
-            resultEff = Type.Kinded.mkAnd(eff1, eff2)
+            resultEff = Type.mkAnd(eff1, eff2)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
         case SemanticOperator.Int8Op.Shl | SemanticOperator.Int8Op.Shr
@@ -614,7 +614,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
             (constrs2, tpe2, eff2) <- visitExp(exp2)
             lhsType <- unifyTypeM(tvar, tpe1, loc)
             rhsType <- unifyTypeM(tpe2, Type.Int32, loc)
-            resultEff = Type.Kinded.mkAnd(eff1, eff2)
+            resultEff = Type.mkAnd(eff1, eff2)
           } yield (constrs1 ++ constrs2, lhsType, resultEff)
 
         case SemanticOperator.BoolOp.Eq | SemanticOperator.BoolOp.Neq
@@ -632,7 +632,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
             (constrs2, tpe2, eff2) <- visitExp(exp2)
             valueType <- unifyTypeM(tpe1, tpe2, loc)
             resultTyp <- unifyTypeM(tvar, Type.Bool, loc)
-            resultEff = Type.Kinded.mkAnd(eff1, eff2)
+            resultEff = Type.mkAnd(eff1, eff2)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
         case SemanticOperator.CharOp.Lt | SemanticOperator.CharOp.Le | SemanticOperator.CharOp.Gt | SemanticOperator.CharOp.Ge
@@ -648,7 +648,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
             (constrs2, tpe2, eff2) <- visitExp(exp2)
             valueType <- unifyTypeM(tpe1, tpe2, loc)
             resultTyp <- unifyTypeM(tvar, Type.Bool, loc)
-            resultEff = Type.Kinded.mkAnd(eff1, eff2)
+            resultEff = Type.mkAnd(eff1, eff2)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
         case SemanticOperator.StringOp.Concat =>
@@ -656,7 +656,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
             resultTyp <- unifyTypeM(tvar, Type.Str, tpe1, tpe2, loc)
-            resultEff = Type.Kinded.mkAnd(eff1, eff2)
+            resultEff = Type.mkAnd(eff1, eff2)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
         case _ => throw InternalCompilerException(s"Unexpected binary operator: '$sop' near ${loc.format}.")
@@ -669,7 +669,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
           (constrs3, tpe3, eff3) <- visitExp(exp3)
           condType <- unifyTypeM(Type.Bool, tpe1, loc)
           resultTyp <- unifyTypeM(tpe2, tpe3, loc)
-          resultEff = Type.Kinded.mkAnd(eff1, eff2, eff3)
+          resultEff = Type.mkAnd(eff1, eff2, eff3)
         } yield (constrs1 ++ constrs2 ++ constrs3, resultTyp, resultEff)
 
       case KindedAst.Expression.Stm(exp1, exp2, loc) =>
@@ -677,7 +677,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
           resultTyp = tpe2
-          resultEff = Type.Kinded.mkAnd(eff1, eff2)
+          resultEff = Type.mkAnd(eff1, eff2)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
       case KindedAst.Expression.Let(sym, mod, exp1, exp2, loc) =>
@@ -686,7 +686,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
           (constrs2, tpe2, eff2) <- visitExp(exp2)
           boundVar <- unifyTypeM(sym.tvar.ascribedWith(Kind.Star), tpe1, loc)
           resultTyp = tpe2
-          resultEff = Type.Kinded.mkAnd(eff1, eff2)
+          resultEff = Type.mkAnd(eff1, eff2)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
       case KindedAst.Expression.LetRegion(sym, exp, evar, loc) =>
@@ -713,7 +713,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
           guardType <- unifyTypeM(Type.Bool :: guardTypes, loc)
           (bodyConstrs, bodyTypes, bodyEffects) <- seqM(bodies map visitExp).map(_.unzip3)
           resultTyp <- unifyTypeM(bodyTypes, loc)
-          resultEff = Type.Kinded.mkAnd(eff :: guardEffects ::: bodyEffects)
+          resultEff = Type.mkAnd(eff :: guardEffects ::: bodyEffects)
         } yield (constrs ++ guardConstrs.flatten ++ bodyConstrs.flatten, resultTyp, resultEff)
 
       case KindedAst.Expression.Choose(star, exps0, rules0, tvar, loc) =>
@@ -764,7 +764,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
               val isPresentVar = Type.freshVar(Kind.Bool)
               for {
                 choiceType <- unifyTypeM(resultType, Type.mkChoice(innerType, isAbsentVar, isPresentVar), loc)
-              } yield (Type.Kinded.mkAnd(cond, isAbsentVar), Type.Kinded.mkAnd(cond, isPresentVar), innerType)
+              } yield (Type.mkAnd(cond, isAbsentVar), Type.mkAnd(cond, isPresentVar), innerType)
           }
 
           ///
@@ -779,8 +779,8 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
           ///
           for {
             (isAbsentConds, isPresentConds, innerTypes) <- seqM(rs.zip(ts).map(p => visitRuleBody(p._1, p._2))).map(_.unzip3)
-            isAbsentCond = Type.Kinded.mkOr(isAbsentConds)
-            isPresentCond = Type.Kinded.mkOr(isPresentConds)
+            isAbsentCond = Type.mkOr(isAbsentConds)
+            isPresentCond = Type.mkOr(isPresentConds)
             innerType <- unifyTypeM(innerTypes, loc)
             resultType = Type.mkChoice(innerType, isAbsentCond, isPresentCond)
           } yield resultType
@@ -800,10 +800,10 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
               acc
             case (acc, ((isAbsentVar, _), KindedAst.ChoicePattern.Present(_, _, _))) =>
               // Case 2: A `Present` pattern forces the `isAbsentVar` to be equal to `false`.
-              BoolUnification.mkAnd(acc, Type.Kinded.mkEquiv(isAbsentVar, Type.False))
+              BoolUnification.mkAnd(acc, Type.mkEquiv(isAbsentVar, Type.False))
             case (acc, ((_, isPresentVar), KindedAst.ChoicePattern.Absent(_))) =>
               // Case 3: An `Absent` pattern forces the `isPresentVar` to be equal to `false`.
-              BoolUnification.mkAnd(acc, Type.Kinded.mkEquiv(isPresentVar, Type.False))
+              BoolUnification.mkAnd(acc, Type.mkEquiv(isPresentVar, Type.False))
           }
 
         /**
@@ -890,7 +890,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
           (ruleBodyConstrs, ruleBodyTyp, ruleBodyEff) <- visitRuleBodies(rules0)
           resultTypes <- transformResultTypes(isAbsentVars, isPresentVars, rules0, ruleBodyTyp, loc)
           resultTyp <- unifyTypeM(tvar, resultTypes, loc)
-          resultEff = Type.Kinded.mkAnd(matchEff ::: ruleBodyEff)
+          resultEff = Type.mkAnd(matchEff ::: ruleBodyEff)
         } yield (matchConstrs.flatten ++ ruleBodyConstrs.flatten, resultTyp, resultEff)
 
       case KindedAst.Expression.Tag(sym, tag, exp, tvar, loc) =>
@@ -950,7 +950,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
       case KindedAst.Expression.Tuple(elms, loc) =>
         for {
           (elementConstrs, elementTypes, elementEffects) <- seqM(elms.map(visitExp)).map(_.unzip3)
-          resultEff = Type.Kinded.mkAnd(elementEffects)
+          resultEff = Type.mkAnd(elementEffects)
         } yield (elementConstrs.flatten, Type.mkTuple(elementTypes), resultEff)
 
       case KindedAst.Expression.RecordEmpty(tvar, loc) =>
@@ -986,7 +986,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
           resultTyp <- unifyTypeM(tvar, Type.mkRecordExtend(field, tpe1, tpe2), loc)
-          resultEff = Type.Kinded.mkAnd(eff1, eff2)
+          resultEff = Type.mkAnd(eff1, eff2)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
       case KindedAst.Expression.RecordRestrict(field, exp, tvar, loc) =>
@@ -1114,7 +1114,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
           (constrs2, regionType, eff2) <- visitExp(exp2)
           _ <- unifyTypeM(regionType, Type.mkRegion(regionVar, loc), loc)
           resultTyp <- unifyTypeM(tvar, Type.mkScopedRef(elmType, regionVar, loc), loc)
-          resultEff <- unifyTypeM(evar, Type.Kinded.mkAnd(eff1, eff2, regionVar), loc)
+          resultEff <- unifyTypeM(evar, Type.mkAnd(eff1, eff2, regionVar), loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
       case KindedAst.Expression.Deref(exp, tvar, evar, loc) =>
@@ -1128,7 +1128,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
           (constrs, tpe, eff) <- visitExp(exp)
           refType <- unifyTypeM(tpe, Type.mkScopedRef(elmTypeVar, regionVar, loc), loc)
           resultTyp <- unifyTypeM(tvar, elmTypeVar, loc)
-          resultEff <- unifyTypeM(evar, Type.Kinded.mkAnd(eff, regionVar), loc)
+          resultEff <- unifyTypeM(evar, Type.mkAnd(eff, regionVar), loc)
         } yield (constrs, resultTyp, resultEff)
 
       case KindedAst.Expression.Assign(exp1, exp2, evar, loc) =>
@@ -1140,7 +1140,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
           (constrs2, tpe2, eff2) <- visitExp(exp2)
           refType <- unifyTypeM(tpe1, Type.mkScopedRef(tpe2, lifetimeVar), loc)
           resultTyp = Type.Unit
-          resultEff <- unifyTypeM(evar, Type.Kinded.mkAnd(eff1 :: eff2 :: lifetimeVar :: Nil), loc)
+          resultEff <- unifyTypeM(evar, Type.mkAnd(eff1 :: eff2 :: lifetimeVar :: Nil), loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
       case KindedAst.Expression.Existential(fparam, exp, loc) =>
@@ -1184,7 +1184,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
           (ruleConstrs, ruleTypes, ruleEffects) <- seqM(rulesType).map(_.unzip3)
           ruleType <- unifyTypeM(ruleTypes, loc)
           resultTyp <- unifyTypeM(tpe, ruleType, loc)
-          resultEff = Type.Kinded.mkAnd(eff :: ruleEffects)
+          resultEff = Type.mkAnd(eff :: ruleEffects)
         } yield (constrs ++ ruleConstrs.flatten, resultTyp, resultEff)
 
       case KindedAst.Expression.InvokeConstructor(constructor, args, loc) =>
@@ -1362,7 +1362,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
           resultTyp <- unifyTypeM(tpe1, tpe2, mkAnySchemaType(), loc)
-          resultEff = Type.Kinded.mkAnd(eff1, eff2)
+          resultEff = Type.mkAnd(eff1, eff2)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
       case KindedAst.Expression.FixpointSolve(exp, loc) =>
@@ -1435,7 +1435,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
           _ <- unifyTypeM(tpe1, Type.mkSchemaExtend(pred, Type.Apply(freshRelOrLat, freshTupleVar), freshRestSchemaVar), loc)
           _ <- unifyTypeM(tpe2, freshRestSchemaVar, loc)
           resultTyp <- unifyTypeM(tvar, Type.mkArray(freshTupleVar), loc)
-          resultEff = Type.Kinded.mkAnd(eff1, eff2)
+          resultEff = Type.mkAnd(eff1, eff2)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
       case KindedAst.Expression.MatchEff(exp1, exp2, exp3, loc) =>
@@ -1445,7 +1445,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
           (constrs2, tpe2, eff2) <- visitExp(exp2)
           (constrs3, tpe3, eff3) <- visitExp(exp3)
           resultTyp <- unifyTypeM(tpe2, tpe3, loc)
-          resultEff = Type.Kinded.mkAnd(eff1, eff2, eff3)
+          resultEff = Type.mkAnd(eff1, eff2, eff3)
         } yield (constrs1 ++ constrs2 ++ constrs3, resultTyp, resultEff)
 
     }
@@ -1542,7 +1542,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
       case KindedAst.Expression.Binary(sop, exp1, exp2, tvar, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
-        val eff = Type.Kinded.mkAnd(e1.eff, e2.eff)
+        val eff = Type.mkAnd(e1.eff, e2.eff)
         TypedAst.Expression.Binary(sop, e1, e2, subst0(tvar), eff, loc)
 
       case KindedAst.Expression.IfThenElse(exp1, exp2, exp3, loc) =>
@@ -1550,21 +1550,21 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
         val e2 = visitExp(exp2, subst0)
         val e3 = visitExp(exp3, subst0)
         val tpe = e2.tpe
-        val eff = Type.Kinded.mkAnd(e1.eff, e2.eff, e3.eff)
+        val eff = Type.mkAnd(e1.eff, e2.eff, e3.eff)
         TypedAst.Expression.IfThenElse(e1, e2, e3, tpe, eff, loc)
 
       case KindedAst.Expression.Stm(exp1, exp2, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val tpe = e2.tpe
-        val eff = Type.Kinded.mkAnd(e1.eff, e2.eff)
+        val eff = Type.mkAnd(e1.eff, e2.eff)
         TypedAst.Expression.Stm(e1, e2, tpe, eff, loc)
 
       case KindedAst.Expression.Let(sym, mod, exp1, exp2, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val tpe = e2.tpe
-        val eff = Type.Kinded.mkAnd(e1.eff, e2.eff)
+        val eff = Type.mkAnd(e1.eff, e2.eff)
         TypedAst.Expression.Let(sym, mod, e1, e2, tpe, eff, loc)
 
       case KindedAst.Expression.LetRegion(sym, exp, evar, loc) =>
@@ -1584,7 +1584,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
         }
         val tpe = rs.head.exp.tpe
         val eff = rs.foldLeft(e1.eff) {
-          case (acc, TypedAst.MatchRule(_, g, b)) => Type.Kinded.mkAnd(g.eff, b.eff, acc)
+          case (acc, TypedAst.MatchRule(_, g, b)) => Type.mkAnd(g.eff, b.eff, acc)
         }
         TypedAst.Expression.Match(e1, rs, tpe, eff, loc)
 
@@ -1600,7 +1600,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
             TypedAst.ChoiceRule(pat, visitExp(exp, subst0))
         }
         val tpe = subst0(tvar)
-        val eff = Type.Kinded.mkAnd(rs.map(_.exp.eff))
+        val eff = Type.mkAnd(rs.map(_.exp.eff))
         TypedAst.Expression.Choose(es, rs, tpe, eff, loc)
 
       case KindedAst.Expression.Tag(sym, tag, exp, tvar, loc) =>
@@ -1611,7 +1611,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
       case KindedAst.Expression.Tuple(elms, loc) =>
         val es = elms.map(visitExp(_, subst0))
         val tpe = Type.mkTuple(es.map(_.tpe))
-        val eff = Type.Kinded.mkAnd(es.map(_.eff))
+        val eff = Type.mkAnd(es.map(_.eff))
         TypedAst.Expression.Tuple(es, tpe, eff, loc)
 
       case KindedAst.Expression.RecordEmpty(tvar, loc) =>
@@ -1625,7 +1625,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
       case KindedAst.Expression.RecordExtend(field, value, rest, tvar, loc) =>
         val v = visitExp(value, subst0)
         val r = visitExp(rest, subst0)
-        val eff = Type.Kinded.mkAnd(v.eff, r.eff)
+        val eff = Type.mkAnd(v.eff, r.eff)
         TypedAst.Expression.RecordExtend(field, v, r, subst0(tvar), eff, loc)
 
       case KindedAst.Expression.RecordRestrict(field, rest, tvar, loc) =>
@@ -1723,7 +1723,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
             TypedAst.CatchRule(sym, clazz, b)
         }
         val tpe = rs.head.exp.tpe
-        val eff = Type.Kinded.mkAnd(rs.map(_.exp.eff))
+        val eff = Type.mkAnd(rs.map(_.exp.eff))
         TypedAst.Expression.TryCatch(e, rs, tpe, eff, loc)
 
       case KindedAst.Expression.InvokeConstructor(constructor, args, loc) =>
@@ -1821,7 +1821,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val tpe = e1.tpe
-        val eff = Type.Kinded.mkAnd(e1.eff, e2.eff)
+        val eff = Type.mkAnd(e1.eff, e2.eff)
         TypedAst.Expression.FixpointMerge(e1, e2, Stratification.Empty, tpe, eff, loc)
 
       case KindedAst.Expression.FixpointSolve(exp, loc) =>
@@ -1845,7 +1845,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
         val e2 = visitExp(exp2, subst0)
         val stf = Stratification.Empty
         val tpe = subst0(tvar)
-        val eff = Type.Kinded.mkAnd(e1.eff, e2.eff)
+        val eff = Type.mkAnd(e1.eff, e2.eff)
 
         val mergeExp = TypedAst.Expression.FixpointMerge(e1, e2, stf, tpe, eff, loc)
         val solveExp = TypedAst.Expression.FixpointSolve(mergeExp, stf, tpe, eff, loc)
@@ -1856,7 +1856,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
         val e2 = visitExp(exp2, subst0)
         val e3 = visitExp(exp3, subst0)
         val tpe = subst0(e2.tpe)
-        val eff = Type.Kinded.mkAnd(e1.eff, e2.eff, e3.eff)
+        val eff = Type.mkAnd(e1.eff, e2.eff, e3.eff)
         TypedAst.Expression.MatchEff(e1, e2, e3, tpe, eff, loc)
     }
 
@@ -2035,7 +2035,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
       val restRow = Type.freshVar(Kind.Schema)
       for {
         (termConstrs, termTypes, termEffects) <- seqM(terms.map(inferExp(_, root))).map(_.unzip3)
-        pureTermEffects <- unifyBoolM(Type.Pure, Type.Kinded.mkAnd(termEffects), loc)
+        pureTermEffects <- unifyBoolM(Type.Pure, Type.mkAnd(termEffects), loc)
         predicateType <- unifyTypeM(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root), loc)
         tconstrs = getTermTypeClassConstraints(den, termTypes, root, loc)
       } yield (termConstrs.flatten ++ tconstrs, Type.mkSchemaExtend(pred, predicateType, restRow))

@@ -35,6 +35,19 @@ sealed trait Type {
   def kind: Kind
 
   /**
+    * Returns the type variables in `this` type.
+    *
+    * Returns a sorted set to ensure that the compiler is deterministic.
+    */
+  def typeVars: SortedSet[Type.KindedVar] = this match {
+    case x: Type.Var => SortedSet(x.asKinded)
+    case Type.Cst(tc, _) => SortedSet.empty
+    case Type.Lambda(tvar, tpe) => tpe.typeVars - tvar.asKinded
+    case Type.Apply(tpe1, tpe2) => tpe1.typeVars ++ tpe2.typeVars
+    case Type.Ascribe(tpe, _) => tpe.typeVars
+  }
+
+  /**
     * Optionally returns the type constructor of `this` type.
     *
     * Return `None` if the type constructor is a variable.
@@ -109,6 +122,17 @@ sealed trait Type {
   def typeArguments: List[Type] = this match {
     case Type.Apply(tpe1, tpe2) => tpe1.typeArguments ::: tpe2 :: Nil
     case _ => Nil
+  }
+
+  /**
+    * Applies `f` to every type variable in `this` type.
+    */
+  def map(f: Type.KindedVar => Type): Type = this match {
+    case tvar: Type.Var => f(tvar.asKinded)
+    case Type.Cst(_, _) => this
+    case Type.Lambda(tvar, tpe) => Type.Lambda(tvar, tpe.map(f))
+    case Type.Apply(tpe1, tpe2) => Type.Apply(tpe1.map(f), tpe2.map(f))
+    case Type.Ascribe(tpe, kind) => Type.Ascribe(tpe.map(f), kind)
   }
 
   /**
@@ -739,155 +763,78 @@ object Type {
     case _ => Type.Apply(Type.Not, tpe0)
   }
 
+  /**
+    * Returns the type `And(tpe1, tpe2)`.
+    *
+    * Must not be used before kinding.
+    */
+  def mkAnd(tpe1: Type, tpe2: Type): Type = (tpe1, tpe2) match {
+    case (Type.Cst(TypeConstructor.True, _), _) => tpe2
+    case (_, Type.Cst(TypeConstructor.True, _)) => tpe1
+    case (Type.Cst(TypeConstructor.False, _), _) => Type.False
+    case (_, Type.Cst(TypeConstructor.False, _)) => Type.False
+    case _ => Type.Apply(Type.Apply(Type.And, tpe1), tpe2)
+  }
+
+  /**
+    * Returns the type `And(tpe1, And(tpe2, tpe3))`.
+    *
+    * Must not be used before kinding.
+    */
+  def mkAnd(tpe1: Type, tpe2: Type, tpe3: Type): Type = mkAnd(tpe1, mkAnd(tpe2, tpe3))
+
+  /**
+    * Returns the type `And(tpe1, And(tpe2, ...))`.
+    *
+    * Must not be used before kinding.
+    */
+  def mkAnd(tpes: List[Type]): Type = tpes match {
+    case Nil => Type.True
+    case x :: xs => mkAnd(x, mkAnd(xs))
+  }
+
+  /**
+    * Returns the type `Or(tpe1, tpe2)`.
+    *
+    * Must not be used before kinding.
+    */
+  def mkOr(tpe1: Type, tpe2: Type): Type = (tpe1, tpe2) match {
+    case (Type.Cst(TypeConstructor.True, _), _) => Type.True
+    case (_, Type.Cst(TypeConstructor.True, _)) => Type.True
+    case (Type.Cst(TypeConstructor.False, _), _) => tpe2
+    case (_, Type.Cst(TypeConstructor.False, _)) => tpe1
+    case _ => Type.Apply(Type.Apply(Type.Or, tpe1), tpe2)
+  }
+
+  /**
+    * Returns the type `Or(tpe1, Or(tpe2, ...))`.
+    *
+    * Must not be used before kinding.
+    */
+  def mkOr(tpes: List[Type]): Type = tpes match {
+    case Nil => Type.False
+    case x :: xs => mkOr(x, mkOr(xs))
+  }
+
+  /**
+    * Returns the type `tpe1 => tpe2`.
+    *
+    * Must not be used before kinding.
+    */
+  def mkImplies(tpe1: Type, tpe2: Type): Type = mkOr(Type.mkNot(tpe1), tpe2)
+
+  /**
+    * Returns a Boolean type that represents the equivalence of `x` and `y`.
+    *
+    * That is, `x == y` iff `(x /\ y) \/ (not x /\ not y)`
+    *
+    * Must not be used before kinding.
+    */
+  def mkEquiv(x: Type, y: Type): Type = mkOr(mkAnd(x, y), mkAnd(Type.mkNot(x), Type.mkNot(y)))
 
   /**
     * Returns a Region type for the given rigid variable `l` with the given source location `loc`.
     */
   def mkRegion(l: Type.KindedVar, loc: SourceLocation): Type =
     Type.Apply(Type.Cst(TypeConstructor.Region, loc), l)
-
-  // MATT docs
-  object Kinded {
-
-    /**
-      * Returns the type variables in `this` type.
-      *
-      * Returns a sorted set to ensure that the compiler is deterministic.
-      */
-    def typeVars(tpe0: Type): SortedSet[Type.KindedVar] = tpe0 match {
-      case x: Type.KindedVar => SortedSet(x)
-      case Type.Cst(tc, _) => SortedSet.empty
-      case Type.Lambda(tvar, tpe) => tvar match {
-        case kindedTvar: KindedVar => typeVars(tpe) - kindedTvar
-        case _: UnkindedVar => throw InternalCompilerException("Unexpected unkinded type variable")
-      }
-      case Type.Apply(tpe1, tpe2) => typeVars(tpe1) ++ typeVars(tpe2)
-      case Type.Ascribe(tpe, _) => typeVars(tpe)
-      case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type variable")
-    }
-
-    /**
-      * Applies `f` to every type variable in `this` type.
-      */
-    def map(tpe0: Type)(f: Type.KindedVar => Type): Type = tpe0 match {
-      case tvar: Type.KindedVar => f(tvar)
-      case Type.Cst(_, _) => tpe0
-      case Type.Lambda(tvar, tpe) => Type.Lambda(tvar, map(tpe)(f))
-      case Type.Apply(tpe1, tpe2) => Type.Apply(map(tpe1)(f), map(tpe2)(f))
-      case Type.Ascribe(tpe, kind) => Type.Ascribe(map(tpe)(f), kind)
-      case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type variable")
-    }
-
-
-    /**
-      * Returns the type `And(tpe1, tpe2)`.
-      */
-    def mkAnd(tpe1: Type, tpe2: Type): Type = (tpe1, tpe2) match {
-      case (Type.Cst(TypeConstructor.True, _), _) => tpe2
-      case (_, Type.Cst(TypeConstructor.True, _)) => tpe1
-      case (Type.Cst(TypeConstructor.False, _), _) => Type.False
-      case (_, Type.Cst(TypeConstructor.False, _)) => Type.False
-      case _ => Type.Apply(Type.Apply(Type.And, tpe1), tpe2)
-    }
-
-    /**
-      * Returns the type `And(tpe1, And(tpe2, tpe3))`.
-      */
-    def mkAnd(tpe1: Type, tpe2: Type, tpe3: Type): Type = mkAnd(tpe1, mkAnd(tpe2, tpe3))
-
-    /**
-      * Returns the type `And(tpe1, And(tpe2, ...))`.
-      */
-    def mkAnd(tpes: List[Type]): Type = tpes match {
-      case Nil => Type.True
-      case x :: xs => mkAnd(x, mkAnd(xs))
-    }
-
-    /**
-      * Returns the type `Or(tpe1, tpe2)`.
-      */
-    def mkOr(tpe1: Type, tpe2: Type): Type = (tpe1, tpe2) match {
-      case (Type.Cst(TypeConstructor.True, _), _) => Type.True
-      case (_, Type.Cst(TypeConstructor.True, _)) => Type.True
-      case (Type.Cst(TypeConstructor.False, _), _) => tpe2
-      case (_, Type.Cst(TypeConstructor.False, _)) => tpe1
-      case _ => Type.Apply(Type.Apply(Type.Or, tpe1), tpe2)
-    }
-
-    /**
-      * Returns the type `Or(tpe1, Or(tpe2, ...))`.
-      */
-    def mkOr(tpes: List[Type]): Type = tpes match {
-      case Nil => Type.False
-      case x :: xs => mkOr(x, mkOr(xs))
-    }
-
-    /**
-      * Returns the type `tpe1 => tpe2`.
-      */
-    def mkImplies(tpe1: Type, tpe2: Type): Type = mkOr(Type.mkNot(tpe1), tpe2)
-
-    /**
-      * Returns a Boolean type that represents the equivalence of `x` and `y`.
-      *
-      * That is, `x == y` iff `(x /\ y) \/ (not x /\ not y)`
-      */
-    def mkEquiv(x: Type, y: Type): Type = mkOr(mkAnd(x, y), mkAnd(Type.mkNot(x), Type.mkNot(y)))
-  }
-
-  // MATT docs
-  object Unkinded {
-
-    /**
-      * Returns a simplified (evaluated) form of the given type `tpe0`.
-      *
-      * Performs beta-reduction of type abstractions and applications.
-      */
-    def simplify(tpe0: Type): Type = {
-      def eval(t: Type, subst: Map[Type.UnkindedVar, Type]): Type = t match {
-        case tvar: Type.UnkindedVar => subst.getOrElse(tvar, tvar)
-
-        case Type.Cst(_, _) => t
-
-        case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field), _), tpe), rest) =>
-          val t1 = eval(tpe, subst)
-          val t2 = eval(rest, subst)
-          Type.mkRecordExtend(field, t1, t2)
-
-        case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(pred), _), tpe), rest) =>
-          val t1 = eval(tpe, subst)
-          val t2 = eval(rest, subst)
-          Type.mkSchemaExtend(pred, t1, t2)
-
-        case Type.Lambda(tvar, tpe) => Type.Lambda(tvar, eval(tpe, subst))
-
-        // TODO: Does not take variable capture into account.
-        case Type.Apply(tpe1, tpe2) => (eval(tpe1, subst), eval(tpe2, subst)) match {
-          case (Type.Lambda(tvar, tpe3), t2) => tvar match {
-            case _: Type.KindedVar => throw InternalCompilerException("Unexpected kinded type variable")
-            case unkindedTvar: Type.UnkindedVar => eval(tpe3, subst + (unkindedTvar -> t2))
-          }
-
-          case (t1, t2) => Type.Apply(t1, t2)
-        }
-
-        case Type.Ascribe(tpe, kind) => Type.Ascribe(eval(tpe, subst), kind)
-
-        case _: Type.KindedVar => throw InternalCompilerException("Unexpected kinded type variable")
-      }
-
-      eval(tpe0, Map.empty)
-    }
-  }
-
-
-  /**
-    * Returns the type `And(tpe1, tpe2)`.
-    */
-  def mkAnd(tpe1: Type, tpe2: Type): Type = Type.Apply(Type.Apply(Type.And, tpe1), tpe2)
-
-  /**
-    * Returns the type `Or(tpe1, tpe2)`.
-    */
-  def mkOr(tpe1: Type, tpe2: Type): Type = Type.Apply(Type.Apply(Type.Or, tpe1), tpe2)
 }
