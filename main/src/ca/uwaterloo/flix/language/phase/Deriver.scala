@@ -62,10 +62,10 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
         doc = Ast.Doc(Nil, SourceLocation.Unknown),
         ann = Nil,
         mod = Ast.Modifiers.Empty,
-        tparams = ResolvedAst.TypeParams.Kinded(Nil),
+        tparams = tparams,
         fparams = List(ResolvedAst.FormalParam(varSym, Ast.Modifiers.Empty, sc.base, SourceLocation.Unknown)),
         sc = ResolvedAst.Scheme(
-          Nil,
+          tparams.tparams.map(_.tpe),
           List(ResolvedAst.TypeConstraint(MinLib.ToString.sym, sc.base, SourceLocation.Unknown)),
           UnkindedType.mkPureArrow(sc.base, UnkindedType.mkString(SourceLocation.Unknown))
         ),
@@ -75,12 +75,20 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
       )
       val defn = ResolvedAst.Def(Symbol.mkDefnSym("ToString.toString"), spec, exp)
 
+      val caseTvars = for {
+        caze <- cases.values
+        tpe <- unpack(caze.sc.base.typeArguments.head) // MATT put into helper because it looks weird here
+        if tpe.isInstanceOf[UnkindedType.Var]
+      } yield tpe
+
+      val tconstrs = caseTvars.toList.distinct.map(ResolvedAst.TypeConstraint(MinLib.ToString.sym, _, SourceLocation.Unknown))
+
       ResolvedAst.Instance(
         doc = Ast.Doc(Nil, SourceLocation.Unknown),
         mod = Ast.Modifiers.Empty,
         sym = MinLib.ToString.sym,
         tpe = sc.base,
-        tconstrs = Nil, // MATT tricky: all tvars used in cases? but only star ones?
+        tconstrs = tconstrs,
         defs = List(defn),
         ns = Name.RootNS,
         loc = SourceLocation.Unknown
@@ -89,26 +97,70 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
 
   def createToStringMatchRule(caze: ResolvedAst.Case, enumSym: Symbol.EnumSym)(implicit flix: Flix): ResolvedAst.MatchRule = caze match {
     case ResolvedAst.Case(enum, tag, tpeDeprecated, sc) =>
-      val varSym = Symbol.freshVarSym()
-      val varPat = ResolvedAst.Pattern.Var(varSym, SourceLocation.Unknown)
-      val pat = ResolvedAst.Pattern.Tag(enumSym, tag, varPat, SourceLocation.Unknown)
+      val (pat, varSyms) = mkPattern(sc.base)
 
       val guard = ResolvedAst.Expression.True(SourceLocation.Unknown)
 
-      // MATT handle tuples an unit better: currently has extra ( )
-      val tagPart = ResolvedAst.Expression.Str(tag.name + "(", SourceLocation.Unknown)
-      val valuePart = ResolvedAst.Expression.Apply(
-        ResolvedAst.Expression.Sig(MinLib.ToString.ToString.sym, SourceLocation.Unknown),
-        List(ResolvedAst.Expression.Var(varSym, varSym.tvar, SourceLocation.Unknown)),
-        SourceLocation.Unknown
-      )
-      val endPart = ResolvedAst.Expression.Str(")", SourceLocation.Unknown)
-      val exp = concat(concat(tagPart, valuePart), endPart)
+      val tagPart = ResolvedAst.Expression.Str(tag.name, SourceLocation.Unknown)
+
+      // MATT lots of inline docs pls
+      val toStrings = varSyms.map {
+        varSym =>
+          ResolvedAst.Expression.Apply(
+            ResolvedAst.Expression.Sig(MinLib.ToString.ToString.sym, SourceLocation.Unknown),
+            List(ResolvedAst.Expression.Var(varSym, varSym.tvar, SourceLocation.Unknown)),
+            SourceLocation.Unknown
+          )
+      }
+      val sep = mkExpr(", ")
+      val valuePart = intersperse(toStrings, sep)
+
+      val exp = valuePart match {
+        case Nil => tagPart
+        case exps => concatAll(tagPart :: mkExpr("(") :: (exps :+ mkExpr(")")))
+      }
 
       ResolvedAst.MatchRule(pat, guard, exp)
   }
 
+  def mkExpr(str: String): ResolvedAst.Expression.Str = ResolvedAst.Expression.Str(str, SourceLocation.Unknown)
+
   def concat(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression): ResolvedAst.Expression = {
     ResolvedAst.Expression.Binary(SemanticOperator.StringOp.Concat, exp1, exp2, SourceLocation.Unknown)
   }
+
+  def concatAll(exps: List[ResolvedAst.Expression]): ResolvedAst.Expression = {
+    exps match {
+      case Nil => ResolvedAst.Expression.Str("", SourceLocation.Unknown)
+      case head :: tail => tail.foldLeft(head)(concat)
+    }
+  }
+
+  def unpack(tpe: UnkindedType): List[UnkindedType] = tpe.typeConstructor match {
+    case Some(UnkindedType.Constructor.Unit) => Nil
+    case Some(UnkindedType.Constructor.Tuple(_)) => tpe.typeArguments
+    case _ => List(tpe)
+  }
+
+  def mkPattern(tpe: UnkindedType)(implicit flix: Flix): (ResolvedAst.Pattern, List[Symbol.VarSym]) = tpe.typeConstructor match {
+    case Some(UnkindedType.Constructor.Tag(sym, tag)) =>
+      unpack(tpe.typeArguments.head) match {
+        case Nil => (ResolvedAst.Pattern.Tag(sym, tag, ResolvedAst.Pattern.Unit(SourceLocation.Unknown), SourceLocation.Unknown), Nil)
+        case _ :: Nil =>
+          val varSym = Symbol.freshVarSym()
+          (ResolvedAst.Pattern.Tag(sym, tag, ResolvedAst.Pattern.Var(varSym, SourceLocation.Unknown), SourceLocation.Unknown), List(varSym))
+        case tpes =>
+          val varSyms = tpes.map(_ => Symbol.freshVarSym())
+          val subPats = varSyms.map(varSym => ResolvedAst.Pattern.Var(varSym, SourceLocation.Unknown))
+          (ResolvedAst.Pattern.Tag(sym, tag, ResolvedAst.Pattern.Tuple(subPats, SourceLocation.Unknown), SourceLocation.Unknown), varSyms)
+      }
+
+  }
+
+  def intersperse[A](list: List[A], sep: A): List[A] = list match {
+    case Nil => Nil
+    case last :: Nil => last :: Nil
+    case head :: neck :: tail => head :: sep :: intersperse(neck :: tail, sep)
+  }
+
 }
