@@ -117,7 +117,11 @@ object ClassEnvironment {
       case tconstrs :: Nil =>
         // apply the base tconstr location to the new tconstrs
         tconstrs.map(_.copy(loc = tconstr.loc)).toSuccess
-      case _ :: _ :: _ => UnificationError.MultipleMatchingInstances(tconstr).toFailure
+      case _ :: _ :: _ =>
+        // Multiple matching instances: This will be caught in the Instances phase.
+        // We return Nil here because there is no canonical set of constraints,
+        // so we stop adding constraints and let the later phase take care of it.
+        Nil.toSuccess
     }
   }
 

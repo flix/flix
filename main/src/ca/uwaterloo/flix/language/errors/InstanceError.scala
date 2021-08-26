@@ -52,7 +52,7 @@ object InstanceError {
       vt << Underline("Tip:") << " Remove or change the type of one of the instances." << NewLine
     }
 
-    def loc: SourceLocation = loc1 min loc2
+    def loc: SourceLocation = loc1
   }
 
   /**
