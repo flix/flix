@@ -114,11 +114,12 @@ object ClassEnvironment {
 
     tconstrGroups match {
       case Nil => UnificationError.NoMatchingInstance(tconstr).toFailure
-      case tconstrs :: _ =>
+      case tconstrs :: Nil =>
         // apply the base tconstr location to the new tconstrs
-        // NB: This allows for the case where there are multiple matches.
-        //     This problem will be later caught by the Instances phase.
         tconstrs.map(_.copy(loc = tconstr.loc)).toSuccess
+      case _ :: _ :: _ =>
+        // Multiple matching instances: this will be caught in a later phase but for now we return Nil
+        Nil.toSuccess
     }
   }
 
