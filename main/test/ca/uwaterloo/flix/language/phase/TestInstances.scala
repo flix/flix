@@ -96,6 +96,27 @@ class TestInstances extends FunSuite with TestUtils {
     expectError[InstanceError.OverlappingInstances](result)
   }
 
+  test("Test.OverlappingInstances.06") {
+    val input =
+      """
+        |lawless class C[a] {
+        |  pub def f(x: a, y: a): Bool
+        |}
+        |
+        |instance C[String] {
+        |  pub def f(_x: String, _y: String): Bool = true
+        |}
+        |
+        |instance C[String] {
+        |  pub def f(_x: String, _y: String): Bool = true
+        |}
+        |
+        |def g(x: String): Bool = C.f(x, x)
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[InstanceError.OverlappingInstances](result)
+  }
+
   test("Test.ComplexInstanceType.01") {
     val input =
       """
