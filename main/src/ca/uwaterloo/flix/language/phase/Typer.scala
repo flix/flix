@@ -34,6 +34,26 @@ import java.io.PrintWriter
 object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
 
   /**
+    * The following classes are assumed to always exist.
+    *
+    * Anything added here must be mentioned in `CoreLibrary` in the Flix class.
+    */
+  object PredefinedClasses {
+
+    /**
+      * Returns the class symbol with the given `name`.
+      */
+    def lookupClassSym(name: String, root: KindedAst.Root): Symbol.ClassSym = {
+      val key = new Symbol.ClassSym(Nil, name, SourceLocation.Unknown)
+      root.classes.get(key) match {
+        case None => throw InternalCompilerException(s"The type class: '$key' is not defined.")
+        case Some(clazz) => clazz.sym
+      }
+    }
+
+  }
+
+  /**
     * The expected scheme of the `main` function.
     */
   private val mainScheme = Scheme(Nil, Nil, Type.mkImpureArrow(Type.mkArray(Type.Str), Type.Int32))
@@ -1386,8 +1406,8 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
         val freshRestSchemaTypeVar = Type.freshVar(Kind.Schema)
 
         // Require Boxable and Foldable instances.
-        val boxableSym = MinLib.Boxable.sym
-        val foldableSym = MinLib.Foldable.sym
+        val boxableSym = PredefinedClasses.lookupClassSym("Boxable", root)
+        val foldableSym = PredefinedClasses.lookupClassSym("Foldable", root)
         val boxable = Ast.TypeConstraint(boxableSym, freshElmTypeVar, loc)
         val foldable = Ast.TypeConstraint(foldableSym, freshTypeConstructorVar, loc)
 
@@ -2092,9 +2112,9 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
     */
   private def mkTypeClassConstraintsForRelationalTerm(tpe: Type, root: KindedAst.Root, loc: SourceLocation): List[Ast.TypeConstraint] = {
     val classes = List(
-      MinLib.Boxable.sym,
-      MinLib.Eq.sym,
-      MinLib.ToString.sym,
+      PredefinedClasses.lookupClassSym("Boxable", root),
+      PredefinedClasses.lookupClassSym("Eq", root),
+      PredefinedClasses.lookupClassSym("ToString", root),
     )
     classes.map(Ast.TypeConstraint(_, tpe, loc))
   }
@@ -2104,13 +2124,13 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
     */
   private def mkTypeClassConstraintsForLatticeTerm(tpe: Type, root: KindedAst.Root, loc: SourceLocation): List[Ast.TypeConstraint] = {
     val classes = List(
-      MinLib.Boxable.sym,
-      MinLib.Eq.sym,
-      MinLib.ToString.sym,
-      MinLib.PartialOrder.sym,
-      MinLib.LowerBound.sym,
-      MinLib.JoinLattice.sym,
-      MinLib.MeetLattice.sym,
+      PredefinedClasses.lookupClassSym("Boxable", root),
+      PredefinedClasses.lookupClassSym("Eq", root),
+      PredefinedClasses.lookupClassSym("ToString", root),
+      PredefinedClasses.lookupClassSym("PartialOrder", root),
+      PredefinedClasses.lookupClassSym("LowerBound", root),
+      PredefinedClasses.lookupClassSym("JoinLattice", root),
+      PredefinedClasses.lookupClassSym("MeetLattice", root),
     )
     classes.map(Ast.TypeConstraint(_, tpe, loc))
   }
