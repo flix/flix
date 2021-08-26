@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.lsp._
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme, FormatType}
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 object CompleteProvider {
 
@@ -187,6 +188,9 @@ object CompleteProvider {
         val t1 = replaceText(tvar, tpe1, newText)
         val t2 = replaceText(tvar, tpe2, newText)
         Type.Apply(t1, t2)
+
+      case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type variable.")
+      case _: Type.Ascribe => throw InternalCompilerException("Unexpected kind ascription.")
     }
 
     /**
