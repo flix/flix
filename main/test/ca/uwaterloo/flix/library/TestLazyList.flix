@@ -2557,4 +2557,219 @@ namespace TestLazyList {
         LazyList.findRight(i -> i > 2, ECons(7, LCons(6, lazy ENil))) == Some(6)
 
 
+    /////////////////////////////////////////////////////////////////////////////
+    // mapWithIndex (pure)                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def mapWithIndexPure01(): Bool =
+    	ENil |> LazyList.mapWithIndex((x, i) -> x + i) == ENil
+
+    @test
+    def mapWithIndexPure02(): Bool =
+    	LList(lazy ENil) |> LazyList.mapWithIndex((x, i) -> x + i) == ENil
+
+    @test
+    def mapWithIndexPure03(): Bool =
+    	LCons(1, lazy ENil) |> LazyList.mapWithIndex((x, i) -> x + i) == ECons(1, ENil)
+
+    @test
+    def mapWithIndexPure04(): Bool =
+    	ECons(1, ENil) |> LazyList.mapWithIndex((x, i) -> x + i) == ECons(1, ENil)
+
+    @test
+    def mapWithIndexPure05(): Bool =
+    	LList(lazy LCons(1, lazy LCons(2, lazy ENil))) |> LazyList.mapWithIndex((x, i) -> x + i) == ECons(1, ECons(3, ENil))
+
+    @test
+    def mapWithIndexPure06(): Bool =
+    	ECons(1, LCons(2, lazy ENil)) |> LazyList.mapWithIndex((x, i) -> x + i) == ECons(1, ECons(3, ENil))
+
+    @test
+    def mapWithIndexPure07(): Bool =
+    	ECons(1, LList(lazy LCons(2, lazy ENil))) |> LazyList.mapWithIndex((x, i) -> x + i) == ECons(1, ECons(3, ENil))
+
+    @test
+    def mapWithIndexPure08(): Bool =
+    	LList(lazy ECons(1, ECons(2, LList(lazy ENil)))) |> LazyList.mapWithIndex((x, i) -> x + i) == ECons(1, ECons(3, ENil))
+
+    @test
+    def mapWithIndexPure09(): Bool =
+    	LCons(1, lazy LCons(2, lazy LList(lazy LCons(3, lazy ENil)))) |> LazyList.mapWithIndex((x, i) -> x + i) == ECons(1, ECons(3, ECons(5, ENil)))
+
+    @test
+    def mapWithIndexPure10(): Bool =
+    	LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil)))) |> LazyList.mapWithIndex((x, i) -> x + i) == ECons(1, ECons(3, ECons(5, ENil)))
+
+    @test
+    def mapWithIndexPure11(): Bool =
+    	LCons(1, lazy ECons(2, LList(lazy LCons(3, lazy LList(lazy ENil))))) |> LazyList.mapWithIndex((x, i) -> x + i) == ECons(1, ECons(3, ECons(5, ENil)))
+
+    @test
+    def mapWithIndexPure12(): Bool =
+    	LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil)))))) |> LazyList.mapWithIndex((x, i) -> x + i) == ECons(1, ECons(3, ECons(5, ENil)))
+
+    @test
+    def mapWithIndexPure13(): Bool =
+    	LList(lazy LCons(1, lazy LList(lazy ECons(2, LList(lazy ECons(3, ENil)))))) |> LazyList.mapWithIndex((x, i) -> x + i) == ECons(1, ECons(3, ECons(5, ENil)))
+
+    @test
+    def mapWithIndexPure14(): Bool =
+    	ECons(1, LCons(2, lazy ECons(3, ENil))) |> LazyList.mapWithIndex((x, i) -> x + i) == ECons(1, ECons(3, ECons(5, ENil)))
+
+    @test
+    def mapWithIndexPure15(): Bool =
+    	LList(lazy ECons(1, LList(lazy LCons(2, lazy LList(lazy ECons(3, ENil)))))) |> LazyList.mapWithIndex((x, i) -> x + i) == ECons(1, ECons(3, ECons(5, ENil)))
+
+    @test
+    def mapWithIndexPure16(): Bool =
+    	LList(lazy ECons(1, LCons(2, lazy LCons(3, lazy ECons(4, ENil))))) |> LazyList.mapWithIndex((x, i) -> x + i) == ECons(1, ECons(3, ECons(5, ECons(7, ENil))))
+
+    @test
+    def mapWithIndexPure17(): Bool =
+    	LList(lazy ECons(1, LCons(2, lazy ECons(3, LList(lazy LCons(4, lazy ENil)))))) |> LazyList.mapWithIndex((x, i) -> x + i) == ECons(1, ECons(3, ECons(5, ECons(7, ENil))))
+
+    @test
+    def mapWithIndexPure18(): Bool =
+    	LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy LList(lazy ECons(3, LList(lazy LCons(4, lazy LList(lazy ENil))))))))) |> LazyList.mapWithIndex((x, i) -> x + i) == ECons(1, ECons(3, ECons(5, ECons(7, ENil))))
+
+    @test
+    def mapWithIndexPure19(): Bool =
+    	ECons(1, LList(lazy LCons(2, lazy ECons(3, ECons(4, LList(lazy ENil)))))) |> LazyList.mapWithIndex((x, i) -> x + i) == ECons(1, ECons(3, ECons(5, ECons(7, ENil))))
+
+    @test
+    def mapWithIndexPure20(): Bool =
+        ECons(1, ECons(2, ECons(3, ECons(4, ENil)))) |> LazyList.mapWithIndex((x, i) -> x + i) == ECons(1, ECons(3, ECons(5, ECons(7, ENil))))
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // mapWithIndex (impure)                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def mapWithIndexImpure01(): Bool & Impure =
+        ENil |> LazyList.mapWithIndex((x, i) -> x + i as & Impure) == ENil
+
+    @test
+    def mapWithIndexImpure02(): Bool & Impure =
+        LList(lazy ENil) |> LazyList.mapWithIndex((x, i) -> x + i as & Impure) == ENil
+
+    @test
+    def mapWithIndexImpure03(): Bool & Impure =
+        LCons(1, lazy ENil) |> LazyList.mapWithIndex((x, i) -> x + i as & Impure) == ECons(1, ENil)
+
+    @test
+    def mapWithIndexImpure04(): Bool & Impure =
+        ECons(1, ENil) |> LazyList.mapWithIndex((x, i) -> x + i as & Impure) == ECons(1, ENil)
+
+    @test
+    def mapWithIndexImpure05(): Bool & Impure =
+        LList(lazy LCons(1, lazy LCons(2, lazy ENil))) |> LazyList.mapWithIndex((x, i) -> x + i as & Impure) == ECons(1, ECons(3, ENil))
+
+    @test
+    def mapWithIndexImpure06(): Bool & Impure =
+        ECons(1, LCons(2, lazy ENil)) |> LazyList.mapWithIndex((x, i) -> x + i as & Impure) == ECons(1, ECons(3, ENil))
+
+    @test
+    def mapWithIndexImpure07(): Bool & Impure =
+        ECons(1, LList(lazy LCons(2, lazy ENil))) |> LazyList.mapWithIndex((x, i) -> x + i as & Impure) == ECons(1, ECons(3, ENil))
+
+    @test
+    def mapWithIndexImpure08(): Bool & Impure =
+        LList(lazy ECons(1, ECons(2, LList(lazy ENil)))) |> LazyList.mapWithIndex((x, i) -> x + i as & Impure) == ECons(1, ECons(3, ENil))
+
+    @test
+    def mapWithIndexImpure09(): Bool & Impure =
+        LCons(1, lazy LCons(2, lazy LList(lazy LCons(3, lazy ENil)))) |> LazyList.mapWithIndex((x, i) -> x + i as & Impure) == ECons(1, ECons(3, ECons(5, ENil)))
+
+    @test
+    def mapWithIndexImpure10(): Bool & Impure =
+        LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil)))) |> LazyList.mapWithIndex((x, i) -> x + i as & Impure) == ECons(1, ECons(3, ECons(5, ENil)))
+
+    @test
+    def mapWithIndexImpure11(): Bool & Impure =
+        LCons(1, lazy ECons(2, LList(lazy LCons(3, lazy LList(lazy ENil))))) |> LazyList.mapWithIndex((x, i) -> x + i as & Impure) == ECons(1, ECons(3, ECons(5, ENil)))
+
+    @test
+    def mapWithIndexImpure12(): Bool & Impure =
+        LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil)))))) |> LazyList.mapWithIndex((x, i) -> x + i as & Impure) == ECons(1, ECons(3, ECons(5, ENil)))
+
+    @test
+    def mapWithIndexImpure13(): Bool & Impure =
+        LList(lazy LCons(1, lazy LList(lazy ECons(2, LList(lazy ECons(3, ENil)))))) |> LazyList.mapWithIndex((x, i) -> x + i as & Impure) == ECons(1, ECons(3, ECons(5, ENil)))
+
+    @test
+    def mapWithIndexImpure14(): Bool & Impure =
+        ECons(1, LCons(2, lazy ECons(3, ENil))) |> LazyList.mapWithIndex((x, i) -> x + i as & Impure) == ECons(1, ECons(3, ECons(5, ENil)))
+
+    @test
+    def mapWithIndexImpure15(): Bool & Impure =
+        LList(lazy ECons(1, LList(lazy LCons(2, lazy LList(lazy ECons(3, ENil)))))) |> LazyList.mapWithIndex((x, i) -> x + i as & Impure) == ECons(1, ECons(3, ECons(5, ENil)))
+
+    @test
+    def mapWithIndexImpure16(): Bool & Impure =
+        LList(lazy ECons(1, LCons(2, lazy LCons(3, lazy ECons(4, ENil))))) |> LazyList.mapWithIndex((x, i) -> x + i as & Impure) == ECons(1, ECons(3, ECons(5, ECons(7, ENil))))
+
+    @test
+    def mapWithIndexImpure17(): Bool & Impure =
+        LList(lazy ECons(1, LCons(2, lazy ECons(3, LList(lazy LCons(4, lazy ENil)))))) |> LazyList.mapWithIndex((x, i) -> x + i as & Impure) == ECons(1, ECons(3, ECons(5, ECons(7, ENil))))
+
+    @test
+    def mapWithIndexImpure18(): Bool & Impure =
+        LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy LList(lazy ECons(3, LList(lazy LCons(4, lazy LList(lazy ENil))))))))) |> LazyList.mapWithIndex((x, i) -> x + i as & Impure) == ECons(1, ECons(3, ECons(5, ECons(7, ENil))))
+
+    @test
+    def mapWithIndexImpure19(): Bool & Impure =
+        ECons(1, LList(lazy LCons(2, lazy ECons(3, ECons(4, LList(lazy ENil)))))) |> LazyList.mapWithIndex((x, i) -> x + i as & Impure) == ECons(1, ECons(3, ECons(5, ECons(7, ENil))))
+
+    @test
+    def mapWithIndexImpure20(): Bool & Impure =
+        ECons(1, ECons(2, ECons(3, ECons(4, ENil)))) |> LazyList.mapWithIndex((x, i) -> x + i as & Impure) == ECons(1, ECons(3, ECons(5, ECons(7, ENil))))
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // mapWithIndex mapWithIndex                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def mapWithIndexMapWithIndex01(): Bool =
+        ECons(1, ECons(2, ECons(3, ENil))) |> LazyList.mapWithIndex((x, i) -> x + i) |> LazyList.mapWithIndex((x, i) -> x * i) == ECons(0, ECons(3, ECons(10, ENil)))
+
+    @test
+    def mapWithIndexMapWithIndex02(): Bool & Impure =
+        ECons(1, ECons(2, ECons(3, ENil))) |> LazyList.mapWithIndex((x, i) -> x + i as & Impure) |> LazyList.mapWithIndex((x, i) -> x * i) == ECons(0, ECons(3, ECons(10, ENil)))
+
+    @test
+    def mapWithIndexMapWithIndex03(): Bool & Impure =
+        ECons(1, ECons(2, ECons(3, ENil))) |> LazyList.mapWithIndex((x, i) -> x + i) |> LazyList.mapWithIndex((x, i) -> x * i as & Impure) == ECons(0, ECons(3, ECons(10, ENil)))
+
+    @test
+    def mapWithIndexMapWithIndex04(): Bool & Impure =
+        ECons(1, ECons(2, ECons(3, ENil))) |> LazyList.mapWithIndex((x, i) -> x + i as & Impure) |> LazyList.mapWithIndex((x, i) -> x * i as & Impure) == ECons(0, ECons(3, ECons(10, ENil)))
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // mapWithIndex mapWithIndex fusion                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def mapWithIndexFusion01(): Bool & Impure =
+        let l = ref Nil;
+        (1 :: 2 :: 3 :: Nil) |> List.toLazy |>
+        LazyList.mapWithIndex((x, _) -> { l := "a" :: deref l; x }) |>
+        LazyList.mapWithIndex((x, _) -> { l := "b" :: deref l; x }) |>
+        LazyList.toList;
+        println(deref l);
+        List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
+
+    @test
+    def mapWithIndexFusion02(): Bool & Impure =
+        let l = ref Nil;
+        (1 :: 2 :: 3 :: Nil) |> List.toLazy |>
+        LazyList.mapWithIndex((x, _) -> { l := "a" :: deref l; x } as & Pure) |>
+        LazyList.mapWithIndex((x, _) -> { l := "b" :: deref l; x } as & Pure) |>
+        LazyList.toList as & Impure;
+        println(deref l);
+        List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
+
 }
