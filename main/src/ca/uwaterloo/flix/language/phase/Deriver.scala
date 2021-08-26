@@ -85,7 +85,7 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
 
       val caseTvars = for {
         caze <- cases.values
-        tpe <- unpack(caze.sc.base.typeArguments.head) // MATT put into helper because it looks weird here
+        tpe <- getTagArguments(caze.sc.base)
         if tpe.isInstanceOf[UnkindedType.Var]
       } yield tpe
 
@@ -157,6 +157,16 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
   }
 
   /**
+    * Extracts the types from the given tag type.
+    */
+  def getTagArguments(tpe: UnkindedType): List[UnkindedType] = {
+    tpe.typeArguments.headOption match {
+      case None => throw InternalCompilerException("Unexpected empty type arguments.")
+      case Some(packedArgs) => unpack(packedArgs)
+    }
+  }
+
+  /**
     * Extracts the types from the given aggregate type.
     * A Unit unpacks to an empty list.
     * A Tuple unpacks to its member types.
@@ -173,7 +183,7 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
     */
   def mkPattern(tpe: UnkindedType)(implicit flix: Flix): (ResolvedAst.Pattern, List[Symbol.VarSym]) = tpe.typeConstructor match {
     case Some(UnkindedType.Constructor.Tag(sym, tag)) =>
-      unpack(tpe.typeArguments.head) match {
+      getTagArguments(tpe) match {
         case Nil => (ResolvedAst.Pattern.Tag(sym, tag, ResolvedAst.Pattern.Unit(SourceLocation.Unknown), SourceLocation.Unknown), Nil)
         case _ :: Nil =>
           val varSym = Symbol.freshVarSym()
@@ -183,8 +193,7 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
           val subPats = varSyms.map(varSym => ResolvedAst.Pattern.Var(varSym, SourceLocation.Unknown))
           (ResolvedAst.Pattern.Tag(sym, tag, ResolvedAst.Pattern.Tuple(subPats, SourceLocation.Unknown), SourceLocation.Unknown), varSyms)
       }
-    case _ => throw InternalCompilerException("") // MATT fill in
-
+    case _ => throw InternalCompilerException("Unexpected non-tag type.")
   }
 
   /**
