@@ -16,17 +16,19 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{Ast, MinLib, Name, ResolvedAst, SemanticOperator, SourceLocation, Symbol, UnkindedType}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
-// MATT docs
+/**
+  * Constructs instances derived from enums.
+  *
+  * No errors are thrown in this phase: constructed instances must be well-formed.
+  * Errors with overlapping instances or unfulfilled type constraints must be caught in later phases.
+  */
 object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
 
-  // MATT maybe change to Nothing if no errors can occur here
-  // MATT or maybe put duplicate derivation and stuff here?
-  override def run(root: ResolvedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Root, CompilationError] = {
+  override def run(root: ResolvedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Root, Nothing] = {
     val derivedInstances = root.enums.values.flatMap {
       enum => getDerivations(enum)
     }
@@ -40,6 +42,9 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
     root.copy(instances = newInstances).toSuccess
   }
 
+  /**
+    * Builds the instances derived from this enum.
+    */
   def getDerivations(enum: ResolvedAst.Enum)(implicit flix: Flix): List[ResolvedAst.Instance] = enum match {
     // MATT associate location with derives and use that location everywhere for checking duplicate syms and such
     case ResolvedAst.Enum(doc, mod, sym, tparams, derives, cases, tpeDeprecated, sc, loc) =>
@@ -49,9 +54,12 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
       }
   }
 
+  /**
+    * Creates a toString instance for the given enum.
+    */
   def createToString(enum: ResolvedAst.Enum)(implicit flix: Flix): ResolvedAst.Instance = enum match {
     case ResolvedAst.Enum(doc, mod, sym, tparams, derives, cases, tpeDeprecated, sc, loc) =>
-      val matchRules = cases.values.map(createToStringMatchRule(_, sym))
+      val matchRules = cases.values.map(createToStringMatchRule)
       val varSym = Symbol.freshVarSym()
       val exp = ResolvedAst.Expression.Match(
         ResolvedAst.Expression.Var(varSym, varSym.tvar, SourceLocation.Unknown),
@@ -95,7 +103,10 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
       )
   }
 
-  def createToStringMatchRule(caze: ResolvedAst.Case, enumSym: Symbol.EnumSym)(implicit flix: Flix): ResolvedAst.MatchRule = caze match {
+  /**
+    * Creates a ToString match rule for the given enum case.
+    */
+  def createToStringMatchRule(caze: ResolvedAst.Case)(implicit flix: Flix): ResolvedAst.MatchRule = caze match {
     case ResolvedAst.Case(enum, tag, tpeDeprecated, sc) =>
       val (pat, varSyms) = mkPattern(sc.base)
 
@@ -123,12 +134,21 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
       ResolvedAst.MatchRule(pat, guard, exp)
   }
 
+  /**
+    * Builds a string expression from the given string.
+    */
   def mkExpr(str: String): ResolvedAst.Expression.Str = ResolvedAst.Expression.Str(str, SourceLocation.Unknown)
 
+  /**
+    * Builds a string concatenation expression from the given expressions.
+    */
   def concat(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression): ResolvedAst.Expression = {
     ResolvedAst.Expression.Binary(SemanticOperator.StringOp.Concat, exp1, exp2, SourceLocation.Unknown)
   }
 
+  /**
+    * Builds a string concatenation expression from the given expressions.
+    */
   def concatAll(exps: List[ResolvedAst.Expression]): ResolvedAst.Expression = {
     exps match {
       case Nil => ResolvedAst.Expression.Str("", SourceLocation.Unknown)
@@ -136,12 +156,21 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
     }
   }
 
+  /**
+    * Extracts the types from the given aggregate type.
+    * A Unit unpacks to an empty list.
+    * A Tuple unpacks to its member types.
+    * Anything else unpacks to the singleton list of itself.
+    */
   def unpack(tpe: UnkindedType): List[UnkindedType] = tpe.typeConstructor match {
     case Some(UnkindedType.Constructor.Unit) => Nil
     case Some(UnkindedType.Constructor.Tuple(_)) => tpe.typeArguments
     case _ => List(tpe)
   }
 
+  /**
+    * Creates a pattern corresponding to the given tag type.
+    */
   def mkPattern(tpe: UnkindedType)(implicit flix: Flix): (ResolvedAst.Pattern, List[Symbol.VarSym]) = tpe.typeConstructor match {
     case Some(UnkindedType.Constructor.Tag(sym, tag)) =>
       unpack(tpe.typeArguments.head) match {
@@ -154,13 +183,16 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
           val subPats = varSyms.map(varSym => ResolvedAst.Pattern.Var(varSym, SourceLocation.Unknown))
           (ResolvedAst.Pattern.Tag(sym, tag, ResolvedAst.Pattern.Tuple(subPats, SourceLocation.Unknown), SourceLocation.Unknown), varSyms)
       }
+    case _ => throw InternalCompilerException("") // MATT fill in
 
   }
 
+  /**
+    * Inserts `sep` between every two elements of `list`.
+    */
   def intersperse[A](list: List[A], sep: A): List[A] = list match {
     case Nil => Nil
     case last :: Nil => last :: Nil
     case head :: neck :: tail => head :: sep :: intersperse(neck :: tail, sep)
   }
-
 }
