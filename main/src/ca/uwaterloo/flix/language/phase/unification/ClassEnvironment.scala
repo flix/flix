@@ -118,7 +118,9 @@ object ClassEnvironment {
         // apply the base tconstr location to the new tconstrs
         tconstrs.map(_.copy(loc = tconstr.loc)).toSuccess
       case _ :: _ :: _ =>
-        // Multiple matching instances: this will be caught in a later phase but for now we return Nil
+        // Multiple matching instances: This will be caught in the Instances phases
+        // We return Nil here because there is no canonical set of constraints,
+        // so we relax the checking and let the later phase take care of it.
         Nil.toSuccess
     }
   }
