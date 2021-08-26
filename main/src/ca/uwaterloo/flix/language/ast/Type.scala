@@ -64,6 +64,22 @@ sealed trait Type {
   }
 
   /**
+    * Returns the base type of a type application.
+    * Similar to [[Type.typeConstructor]] except that here we return the type (rather than the constructor),
+    * which may be a non-[[Type.Cst]] type.
+    *
+    * {{{
+    * Option[Int] => Option
+    * a[Int]      => a
+    * }}}
+    *
+    */
+  def baseType: Type.BaseType = this match {
+    case Type.Apply(t1, _) => t1.baseType
+    case bt: Type.BaseType => bt
+  }
+
+  /**
     * Returns a list of all type constructors in `this` type.
     */
   def typeConstructors: List[TypeConstructor] = this match {
@@ -73,14 +89,6 @@ sealed trait Type {
     case Type.Apply(t1, t2) => t1.typeConstructors ::: t2.typeConstructors
     case Type.Ascribe(tpe, _) => tpe.typeConstructors
     case Type.Lambda(_, _) => throw InternalCompilerException(s"Unexpected type constructor: Lambda.")
-  }
-
-  /**
-    * Returns the base type of a type application.
-    */
-  def baseType: Type.BaseType = this match {
-    case Type.Apply(t1, _) => t1.baseType
-    case bt: Type.BaseType => bt
   }
 
   /**
