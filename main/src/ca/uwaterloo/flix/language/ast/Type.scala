@@ -399,7 +399,6 @@ object Type {
   @EliminatedBy(Kinder.getClass)
   case class UnkindedVar(id: Int, rigidity: Rigidity = Rigidity.Flexible, text: Option[String] = None) extends Type with Var with BaseType with Ordered[Type.UnkindedVar] {
 
-    @deprecated("An UnkindedVar has no associated kind.")
     override def kind: Kind = throw InternalCompilerException("Attempt to access kind of unkinded type variable")
 
     /**
