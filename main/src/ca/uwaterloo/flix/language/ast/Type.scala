@@ -631,19 +631,9 @@ object Type {
   def mkEnum(sym: Symbol.EnumSym, k: Kind, loc: SourceLocation): Type = Type.Cst(TypeConstructor.KindedEnum(sym, k), loc)
 
   /**
-    * Construct the enum type constructor for the given symbol `sym` with the given kind `k`.
-    */
-  def mkUnkindedEnum(sym: Symbol.EnumSym, loc: SourceLocation): Type = Type.Cst(TypeConstructor.UnkindedEnum(sym), loc)
-
-  /**
     * Construct the enum type `Sym[ts]`.
     */
   def mkEnum(sym: Symbol.EnumSym, ts: List[Type]): Type = mkApply(Type.Cst(TypeConstructor.KindedEnum(sym, Kind.mkArrow(ts.length)), SourceLocation.Unknown), ts)
-
-  /**
-    * Construct the enum type `Sym[ts]`.
-    */
-  def mkUnkindedEnum(sym: Symbol.EnumSym, ts: List[Type]): Type = mkApply(Type.Cst(TypeConstructor.UnkindedEnum(sym), SourceLocation.Unknown), ts)
 
   /**
     * Constructs a tag type for the given `sym`, `tag`, `caseType` and `resultType`.
