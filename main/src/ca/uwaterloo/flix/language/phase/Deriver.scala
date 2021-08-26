@@ -56,9 +56,27 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
 
   /**
     * Creates a toString instance for the given enum.
+    *
+    * {{{
+    * enum E[a] with ToString {
+    *   case C1
+    *   case C(a)
+    * }
+    * }}}
+    *
+    * yields
+    *
+    * {{{
+    * instance ToString[E[a]] with ToString[a] {
+    *   pub def toString(x: E[a]): String = x match {
+    *     case C1 => "C1"
+    *     case C(y) => "C" + "(" + ToString.toString(y) + ")"
+    *   }
+    * }}}
     */
   def createToString(enum: ResolvedAst.Enum)(implicit flix: Flix): ResolvedAst.Instance = enum match {
     case ResolvedAst.Enum(doc, mod, sym, tparams, derives, cases, tpeDeprecated, sc, loc) =>
+      // create a match rule for each case and put them in a match expression
       val matchRules = cases.values.map(createToStringMatchRule)
       val varSym = Symbol.freshVarSym()
       val exp = ResolvedAst.Expression.Match(
@@ -66,6 +84,7 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
         matchRules.toList,
         SourceLocation.Unknown
       )
+
       val spec = ResolvedAst.Spec(
         doc = Ast.Doc(Nil, SourceLocation.Unknown),
         ann = Nil,
@@ -83,12 +102,12 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
       )
       val defn = ResolvedAst.Def(Symbol.mkDefnSym("ToString.toString"), spec, exp)
 
+      // Add a type constraint to the instance for any variable used in a case
       val caseTvars = for {
         caze <- cases.values
         tpe <- getTagArguments(caze.sc.base)
         if tpe.isInstanceOf[UnkindedType.Var]
       } yield tpe
-
       val tconstrs = caseTvars.toList.distinct.map(ResolvedAst.TypeConstraint(MinLib.ToString.sym, _, SourceLocation.Unknown))
 
       ResolvedAst.Instance(
@@ -108,13 +127,15 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
     */
   def createToStringMatchRule(caze: ResolvedAst.Case)(implicit flix: Flix): ResolvedAst.MatchRule = caze match {
     case ResolvedAst.Case(enum, tag, tpeDeprecated, sc) =>
+
+      // get a pattern corresponding to this case
       val (pat, varSyms) = mkPattern(sc.base)
 
       val guard = ResolvedAst.Expression.True(SourceLocation.Unknown)
 
       val tagPart = ResolvedAst.Expression.Str(tag.name, SourceLocation.Unknown)
 
-      // MATT lots of inline docs pls
+      // call toString on each variable
       val toStrings = varSyms.map {
         varSym =>
           ResolvedAst.Expression.Apply(
@@ -123,11 +144,16 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
             SourceLocation.Unknown
           )
       }
+
+      // put commas between the arguments
       val sep = mkExpr(", ")
       val valuePart = intersperse(toStrings, sep)
 
+      // put it all together
       val exp = valuePart match {
+        // Case 1: no arguments: just show the tag
         case Nil => tagPart
+        // Case 2: at least one argument: concatenate the tag with the values wrapped in parens
         case exps => concatAll(tagPart :: mkExpr("(") :: (exps :+ mkExpr(")")))
       }
 
