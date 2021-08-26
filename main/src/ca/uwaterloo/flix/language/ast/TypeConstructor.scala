@@ -189,8 +189,6 @@ object TypeConstructor {
     */
   @EliminatedBy(Kinder.getClass)
   case class UnkindedEnum(sym: Symbol.EnumSym) extends TypeConstructor {
-
-    @deprecated("An UnkindedEnum has no associated kind.")
     override def kind: Kind = throw InternalCompilerException("Attempt to access kind of unkinded type constructor")
   }
 
