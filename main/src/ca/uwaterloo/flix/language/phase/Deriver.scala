@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Ast, MinLib, Name, ResolvedAst, SemanticOperator, SourceLocation, Symbol, UnkindedType}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, ResolvedAst, SemanticOperator, SourceLocation, Symbol, UnkindedType}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
@@ -28,9 +28,41 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
   */
 object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
 
+  // TODO copy-pasted from Typer
+  // TODO we need a more universal lookup system
+
+  /**
+    * The following classes are assumed to always exist.
+    *
+    * Anything added here must be mentioned in `CoreLibrary` in the Flix class.
+    */
+  object PredefinedClasses {
+
+    /**
+      * Returns the class symbol with the given `name`.
+      */
+    def lookupClassSym(name: String, root: ResolvedAst.Root): Symbol.ClassSym = {
+      val key = new Symbol.ClassSym(Nil, name, SourceLocation.Unknown)
+      root.classes.get(key) match {
+        case None => throw InternalCompilerException(s"The type class: '$key' is not defined.")
+        case Some(clazz) => clazz.sym
+      }
+    }
+
+    /**
+      * Returns the sig symbol with the given `clazz` and name `sig`.
+      */
+    def lookupSigSym(clazz: String, sig: String, root: ResolvedAst.Root): Symbol.SigSym= {
+      val clazzKey = new Symbol.ClassSym(Nil, clazz, SourceLocation.Unknown)
+      val sigKey = new Symbol.SigSym(clazzKey, sig, SourceLocation.Unknown)
+      root.classes(clazzKey).sigs(sigKey).sym
+    }
+
+  }
+
   override def run(root: ResolvedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Root, Nothing] = {
     val derivedInstances = root.enums.values.flatMap {
-      enum => getDerivations(enum)
+      enum => getDerivations(enum, root)
     }
 
     val newInstances = derivedInstances.foldLeft(root.instances) {
@@ -45,10 +77,10 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
   /**
     * Builds the instances derived from this enum.
     */
-  def getDerivations(enum: ResolvedAst.Enum)(implicit flix: Flix): List[ResolvedAst.Instance] = enum match {
+  def getDerivations(enum: ResolvedAst.Enum, root: ResolvedAst.Root)(implicit flix: Flix): List[ResolvedAst.Instance] = enum match {
     case ResolvedAst.Enum(_, _, _, _, derives, _, _, _, _) =>
       derives.map {
-        case ResolvedAst.Derivation(MinLib.ToString.sym, loc) => createToString(enum, loc)
+        case ResolvedAst.Derivation(sym, loc) if sym == PredefinedClasses.lookupClassSym("ToString", root) => createToString(enum, loc, root)
         case unknownSym => throw InternalCompilerException(s"Unexpected derivation: $unknownSym")
       }
   }
@@ -73,10 +105,10 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
     *   }
     * }}}
     */
-  def createToString(enum: ResolvedAst.Enum, loc: SourceLocation)(implicit flix: Flix): ResolvedAst.Instance = enum match {
+  def createToString(enum: ResolvedAst.Enum, loc: SourceLocation, root: ResolvedAst.Root)(implicit flix: Flix): ResolvedAst.Instance = enum match {
     case ResolvedAst.Enum(_, _, _, tparams, _, cases, _, sc, _) =>
       // create a match rule for each case and put them in a match expression
-      val matchRules = cases.values.map(createToStringMatchRule(_, loc))
+      val matchRules = cases.values.map(createToStringMatchRule(_, loc, root))
       val varSym = Symbol.freshVarSym()
       val exp = ResolvedAst.Expression.Match(
         ResolvedAst.Expression.Var(varSym, varSym.tvar, loc),
@@ -92,7 +124,7 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
         fparams = List(ResolvedAst.FormalParam(varSym, Ast.Modifiers.Empty, sc.base, loc)),
         sc = ResolvedAst.Scheme(
           tparams.tparams.map(_.tpe),
-          List(ResolvedAst.TypeConstraint(MinLib.ToString.sym, sc.base, loc)),
+          List(ResolvedAst.TypeConstraint(PredefinedClasses.lookupClassSym("ToString", root), sc.base, loc)),
           UnkindedType.mkPureArrow(sc.base, UnkindedType.mkString(loc))
         ),
         tpe = UnkindedType.mkString(loc),
@@ -107,12 +139,12 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
         tpe <- getTagArguments(caze.sc.base)
         if tpe.isInstanceOf[UnkindedType.Var]
       } yield tpe
-      val tconstrs = caseTvars.toList.distinct.map(ResolvedAst.TypeConstraint(MinLib.ToString.sym, _, loc))
+      val tconstrs = caseTvars.toList.distinct.map(ResolvedAst.TypeConstraint(PredefinedClasses.lookupClassSym("ToString", root), _, loc))
 
       ResolvedAst.Instance(
         doc = Ast.Doc(Nil, loc),
         mod = Ast.Modifiers.Empty,
-        sym = MinLib.ToString.sym,
+        sym = PredefinedClasses.lookupClassSym("ToString", root),
         tpe = sc.base,
         tconstrs = tconstrs,
         defs = List(defn),
@@ -124,7 +156,7 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
   /**
     * Creates a ToString match rule for the given enum case.
     */
-  def createToStringMatchRule(caze: ResolvedAst.Case, loc: SourceLocation)(implicit flix: Flix): ResolvedAst.MatchRule = caze match {
+  def createToStringMatchRule(caze: ResolvedAst.Case, loc: SourceLocation, root: ResolvedAst.Root)(implicit flix: Flix): ResolvedAst.MatchRule = caze match {
     case ResolvedAst.Case(enum, tag, tpeDeprecated, sc) =>
 
       // get a pattern corresponding to this case
@@ -138,7 +170,7 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
       val toStrings = varSyms.map {
         varSym =>
           ResolvedAst.Expression.Apply(
-            ResolvedAst.Expression.Sig(MinLib.ToString.ToString.sym, loc),
+            ResolvedAst.Expression.Sig(PredefinedClasses.lookupSigSym("ToString", "toString", root), loc),
             List(ResolvedAst.Expression.Var(varSym, varSym.tvar, loc)),
             loc
           )

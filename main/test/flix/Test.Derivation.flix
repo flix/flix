@@ -33,7 +33,7 @@ namespace Test/Derivation {
     def testToString02(): Bool = ToString.toString(EnumWithToString.SingletonCase(123)) == "SingletonCase(123)"
 
     @test
-    def testToString03(): Bool & Impure = println(EnumWithToString.TupleCase(123, true)); ToString.toString(EnumWithToString.TupleCase(123, true)) == "TupleCase(123, true)"
+    def testToString03(): Bool= ToString.toString(EnumWithToString.TupleCase(123, true)) == "TupleCase(123, true)"
 
     @test
     def testToString04(): Bool = ToString.toString(PolyEnumWithToString.EmptyCase: PolyEnumWithToString[Int]) == "EmptyCase"
