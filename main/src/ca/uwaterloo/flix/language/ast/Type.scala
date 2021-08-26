@@ -319,7 +319,24 @@ object Type {
     */
   sealed trait Var extends Type {
     def id: Int
+
     def text: Option[String]
+
+    /**
+      * Casts this type variable to a kinded type variable.
+      */
+    def asKinded: Type.KindedVar = this match {
+      case tvar: KindedVar => tvar
+      case _: UnkindedVar => throw InternalCompilerException("Unexpected unkinded type variable.")
+    }
+
+    /**
+      * Casts this type variable to an unkinded type variable.
+      */
+    def asUnkinded: Type.UnkindedVar = this match {
+      case tvar: UnkindedVar => tvar
+      case _: KindedVar => throw InternalCompilerException("Unexpected kinded type variable.")
+    }
   }
 
   /**

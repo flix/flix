@@ -749,7 +749,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         t1 <- visitType(t10, k1, kenv, root)
       } yield Type.Apply(t1, t2)
     case Type.Lambda(t10, t20) =>
-      val tvar = assertUnkindedVar(t10)
+      val tvar = t10.asUnkinded
       expectedKind match {
         case KindMatch(_, Kind.Arrow(expK1, expK2)) =>
           val t1 = visitFreeTypeVar(tvar, KindMatch.subKindOf(expK1))
