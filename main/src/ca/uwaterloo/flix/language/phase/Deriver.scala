@@ -46,10 +46,9 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
     * Builds the instances derived from this enum.
     */
   def getDerivations(enum: ResolvedAst.Enum)(implicit flix: Flix): List[ResolvedAst.Instance] = enum match {
-    // MATT associate location with derives and use that location everywhere for checking duplicate syms and such
-    case ResolvedAst.Enum(doc, mod, sym, tparams, derives, cases, tpeDeprecated, sc, loc) =>
+    case ResolvedAst.Enum(_, _, _, _, derives, _, _, _, _) =>
       derives.map {
-        case MinLib.ToString.sym => createToString(enum)
+        case ResolvedAst.Derivation(MinLib.ToString.sym, loc) => createToString(enum, loc)
         case unknownSym => throw InternalCompilerException(s"Unexpected derivation: $unknownSym")
       }
   }
@@ -74,31 +73,31 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
     *   }
     * }}}
     */
-  def createToString(enum: ResolvedAst.Enum)(implicit flix: Flix): ResolvedAst.Instance = enum match {
-    case ResolvedAst.Enum(doc, mod, sym, tparams, derives, cases, tpeDeprecated, sc, loc) =>
+  def createToString(enum: ResolvedAst.Enum, loc: SourceLocation)(implicit flix: Flix): ResolvedAst.Instance = enum match {
+    case ResolvedAst.Enum(_, _, _, tparams, _, cases, _, sc, _) =>
       // create a match rule for each case and put them in a match expression
-      val matchRules = cases.values.map(createToStringMatchRule)
+      val matchRules = cases.values.map(createToStringMatchRule(_, loc))
       val varSym = Symbol.freshVarSym()
       val exp = ResolvedAst.Expression.Match(
-        ResolvedAst.Expression.Var(varSym, varSym.tvar, SourceLocation.Unknown),
+        ResolvedAst.Expression.Var(varSym, varSym.tvar, loc),
         matchRules.toList,
-        SourceLocation.Unknown
+        loc
       )
 
       val spec = ResolvedAst.Spec(
-        doc = Ast.Doc(Nil, SourceLocation.Unknown),
+        doc = Ast.Doc(Nil, loc),
         ann = Nil,
         mod = Ast.Modifiers.Empty,
         tparams = tparams,
-        fparams = List(ResolvedAst.FormalParam(varSym, Ast.Modifiers.Empty, sc.base, SourceLocation.Unknown)),
+        fparams = List(ResolvedAst.FormalParam(varSym, Ast.Modifiers.Empty, sc.base, loc)),
         sc = ResolvedAst.Scheme(
           tparams.tparams.map(_.tpe),
-          List(ResolvedAst.TypeConstraint(MinLib.ToString.sym, sc.base, SourceLocation.Unknown)),
-          UnkindedType.mkPureArrow(sc.base, UnkindedType.mkString(SourceLocation.Unknown))
+          List(ResolvedAst.TypeConstraint(MinLib.ToString.sym, sc.base, loc)),
+          UnkindedType.mkPureArrow(sc.base, UnkindedType.mkString(loc))
         ),
-        tpe = UnkindedType.mkString(SourceLocation.Unknown),
-        eff = UnkindedType.Cst(UnkindedType.Constructor.Pure, SourceLocation.Unknown),
-        loc = SourceLocation.Unknown
+        tpe = UnkindedType.mkString(loc),
+        eff = UnkindedType.Cst(UnkindedType.Constructor.Pure, loc),
+        loc = loc
       )
       val defn = ResolvedAst.Def(Symbol.mkDefnSym("ToString.toString"), spec, exp)
 
@@ -108,45 +107,45 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
         tpe <- getTagArguments(caze.sc.base)
         if tpe.isInstanceOf[UnkindedType.Var]
       } yield tpe
-      val tconstrs = caseTvars.toList.distinct.map(ResolvedAst.TypeConstraint(MinLib.ToString.sym, _, SourceLocation.Unknown))
+      val tconstrs = caseTvars.toList.distinct.map(ResolvedAst.TypeConstraint(MinLib.ToString.sym, _, loc))
 
       ResolvedAst.Instance(
-        doc = Ast.Doc(Nil, SourceLocation.Unknown),
+        doc = Ast.Doc(Nil, loc),
         mod = Ast.Modifiers.Empty,
         sym = MinLib.ToString.sym,
         tpe = sc.base,
         tconstrs = tconstrs,
         defs = List(defn),
         ns = Name.RootNS,
-        loc = SourceLocation.Unknown
+        loc = loc
       )
   }
 
   /**
     * Creates a ToString match rule for the given enum case.
     */
-  def createToStringMatchRule(caze: ResolvedAst.Case)(implicit flix: Flix): ResolvedAst.MatchRule = caze match {
+  def createToStringMatchRule(caze: ResolvedAst.Case, loc: SourceLocation)(implicit flix: Flix): ResolvedAst.MatchRule = caze match {
     case ResolvedAst.Case(enum, tag, tpeDeprecated, sc) =>
 
       // get a pattern corresponding to this case
       val (pat, varSyms) = mkPattern(sc.base)
 
-      val guard = ResolvedAst.Expression.True(SourceLocation.Unknown)
+      val guard = ResolvedAst.Expression.True(loc)
 
-      val tagPart = ResolvedAst.Expression.Str(tag.name, SourceLocation.Unknown)
+      val tagPart = ResolvedAst.Expression.Str(tag.name, loc)
 
       // call toString on each variable
       val toStrings = varSyms.map {
         varSym =>
           ResolvedAst.Expression.Apply(
-            ResolvedAst.Expression.Sig(MinLib.ToString.ToString.sym, SourceLocation.Unknown),
-            List(ResolvedAst.Expression.Var(varSym, varSym.tvar, SourceLocation.Unknown)),
-            SourceLocation.Unknown
+            ResolvedAst.Expression.Sig(MinLib.ToString.ToString.sym, loc),
+            List(ResolvedAst.Expression.Var(varSym, varSym.tvar, loc)),
+            loc
           )
       }
 
       // put commas between the arguments
-      val sep = mkExpr(", ")
+      val sep = mkExpr(", ", loc)
       val valuePart = intersperse(toStrings, sep)
 
       // put it all together
@@ -154,7 +153,7 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
         // Case 1: no arguments: just show the tag
         case Nil => tagPart
         // Case 2: at least one argument: concatenate the tag with the values wrapped in parens
-        case exps => concatAll(tagPart :: mkExpr("(") :: (exps :+ mkExpr(")")))
+        case exps => concatAll(tagPart :: mkExpr("(", loc) :: (exps :+ mkExpr(")", loc)), loc)
       }
 
       ResolvedAst.MatchRule(pat, guard, exp)
@@ -163,22 +162,22 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
   /**
     * Builds a string expression from the given string.
     */
-  def mkExpr(str: String): ResolvedAst.Expression.Str = ResolvedAst.Expression.Str(str, SourceLocation.Unknown)
+  def mkExpr(str: String, loc: SourceLocation): ResolvedAst.Expression.Str = ResolvedAst.Expression.Str(str, loc)
 
   /**
     * Builds a string concatenation expression from the given expressions.
     */
-  def concat(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression): ResolvedAst.Expression = {
-    ResolvedAst.Expression.Binary(SemanticOperator.StringOp.Concat, exp1, exp2, SourceLocation.Unknown)
+  def concat(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, loc: SourceLocation): ResolvedAst.Expression = {
+    ResolvedAst.Expression.Binary(SemanticOperator.StringOp.Concat, exp1, exp2, loc)
   }
 
   /**
     * Builds a string concatenation expression from the given expressions.
     */
-  def concatAll(exps: List[ResolvedAst.Expression]): ResolvedAst.Expression = {
+  def concatAll(exps: List[ResolvedAst.Expression], loc: SourceLocation): ResolvedAst.Expression = {
     exps match {
-      case Nil => ResolvedAst.Expression.Str("", SourceLocation.Unknown)
-      case head :: tail => tail.foldLeft(head)(concat)
+      case Nil => ResolvedAst.Expression.Str("", loc)
+      case head :: tail => tail.foldLeft(head)(concat(_, _, loc))
     }
   }
 
