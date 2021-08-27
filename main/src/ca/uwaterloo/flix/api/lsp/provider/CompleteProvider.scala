@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.lsp._
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme, FormatType}
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 object CompleteProvider {
 
@@ -172,12 +173,12 @@ object CompleteProvider {
       * with an equivalent variable symbol with the given `newText`.
       */
     def replaceText(tvar: Type.Var, tpe: Type, newText: String): Type = tpe match {
-      case Type.Var(id, kind, rigidity, text) if tvar.id == id => Type.Var(id, kind, rigidity, Some(newText))
-      case Type.Var(_, _, _, _) => tpe
+      case Type.KindedVar(id, kind, rigidity, text) if tvar.id == id => Type.KindedVar(id, kind, rigidity, Some(newText))
+      case Type.KindedVar(_, _, _, _) => tpe
       case Type.Cst(_, _) => tpe
       case Type.Lambda(tvar2, tpe) if tvar == tvar2 =>
         val t = replaceText(tvar, tpe, newText)
-        Type.Lambda(tvar2.copy(text = Some(newText)), t)
+        Type.Lambda(tvar2.asKinded.copy(text = Some(newText)), t)
 
       case Type.Lambda(tvar2, tpe) =>
         val t = replaceText(tvar, tpe, newText)
@@ -187,6 +188,9 @@ object CompleteProvider {
         val t1 = replaceText(tvar, tpe1, newText)
         val t2 = replaceText(tvar, tpe2, newText)
         Type.Apply(t1, t2)
+
+      case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type variable.")
+      case _: Type.Ascribe => throw InternalCompilerException("Unexpected kind ascription.")
     }
 
     /**

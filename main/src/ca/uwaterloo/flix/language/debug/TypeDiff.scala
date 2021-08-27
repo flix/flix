@@ -95,7 +95,7 @@ object TypeDiff {
         case (TypeConstructor.Tuple(len1), TypeConstructor.Tuple(len2)) if (len1 == len2) =>
           val diffs = (tpe1.typeArguments zip tpe2.typeArguments).map { case (t1, t2) => diff(t1, t2) }
           mkApply(TypeDiff.Tuple, diffs)
-        case (TypeConstructor.Enum(sym1, kind1), TypeConstructor.Enum(sym2, kind2)) if ((sym1 == sym2) && (kind1 == kind2)) =>
+        case (TypeConstructor.KindedEnum(sym1, kind1), TypeConstructor.KindedEnum(sym2, kind2)) if ((sym1 == sym2) && (kind1 == kind2)) =>
           val diffs = (tpe1.typeArguments zip tpe2.typeArguments).map { case (t1, t2) => diff(t1, t2) }
           mkApply(TypeDiff.Enum, diffs)
         case (TypeConstructor.Arrow(len1), TypeConstructor.Arrow(len2)) if (len1 == len2) =>

@@ -64,7 +64,7 @@ object FindReferencesProvider {
         case Entity.TypeCon(tc, loc) => tc match {
           case TypeConstructor.RecordExtend(field) => findFieldUses(field)
           case TypeConstructor.SchemaExtend(pred) => findPredUses(pred)
-          case TypeConstructor.Enum(sym, _) => findEnumUses(sym)
+          case TypeConstructor.KindedEnum(sym, _) => findEnumUses(sym)
           case _ => mkNotFound(uri, pos)
         }
 

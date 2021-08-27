@@ -432,6 +432,10 @@ object Ast {
     */
   case class IntroducedBy(clazz: java.lang.Class[_]) extends scala.annotation.StaticAnnotation
 
+  /**
+    * Represents that the annotated element is eliminated by the class `clazz`.
+  */
+ case class EliminatedBy(clazz: java.lang.Class[_]) extends scala.annotation.StaticAnnotation
 
   /**
     * Represents that the type `arg` must belong to class `sym`.

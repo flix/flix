@@ -60,7 +60,7 @@ object RenameProvider {
         case Entity.TypeCon(tc, _) => tc match {
           case TypeConstructor.RecordExtend(field) => renameField(field, newName)
           case TypeConstructor.SchemaExtend(pred) => renamePred(pred, newName)
-          case TypeConstructor.Enum(sym, _) => renameEnum(sym, newName)
+          case TypeConstructor.KindedEnum(sym, _) => renameEnum(sym, newName)
           case _ => mkNotFound(uri, pos)
         }
 

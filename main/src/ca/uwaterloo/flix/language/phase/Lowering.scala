@@ -683,8 +683,8 @@ object Lowering extends Phase[Root, Root] {
     */
   private def visitType(tpe0: Type)(implicit root: Root, flix: Flix): Type = {
     def visit(tpe: Type): Type = tpe match {
-      case Type.Var(id, kind, rigidity, text) => kind match {
-        case Kind.Schema => Type.Var(id, Kind.Star, rigidity, text)
+      case Type.KindedVar(id, kind, rigidity, text) => kind match {
+        case Kind.Schema => Type.KindedVar(id, Kind.Star, rigidity, text)
         case _ => tpe0
       }
 
@@ -695,7 +695,9 @@ object Lowering extends Phase[Root, Root] {
         val t2 = visitType(tpe2)
         Type.Apply(t1, t2)
 
-      case Type.Lambda(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
+      case _: Type.Lambda => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
+      case _: Type.UnkindedVar => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
+      case _: Type.Ascribe => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
     }
 
     if (tpe0.kind == Kind.Schema)

@@ -51,7 +51,7 @@ object Scheme {
   /**
     * Instantiate one of the variables in the scheme, adding new quantifiers as needed.
     */
-  def partiallyInstantiate(sc: Scheme, quantifier: Type.Var, value: Type)(implicit flix: Flix): Scheme = sc match {
+  def partiallyInstantiate(sc: Scheme, quantifier: Type.KindedVar, value: Type)(implicit flix: Flix): Scheme = sc match {
     case Scheme(quantifiers, constraints, base) =>
       if (!quantifiers.contains(quantifier)) {
         throw InternalCompilerException("Quantifier not in scheme.")
@@ -74,7 +74,7 @@ object Scheme {
     //
     // Compute the fresh variables taking the instantiation mode into account.
     //
-    val freshVars = sc.quantifiers.foldLeft(Map.empty[Int, Type.Var]) {
+    val freshVars = sc.quantifiers.foldLeft(Map.empty[Int, Type.KindedVar]) {
       case (macc, tvar) =>
         // Determine the rigidity of the fresh type variable.
         val rigidity = mode match {
@@ -88,8 +88,8 @@ object Scheme {
     /**
       * Replaces every variable occurrence in the given type using `freeVars`. Updates the rigidity.
       */
-    def visitTvar(t: Type.Var): Type.Var = t match {
-      case Type.Var(x, k, rigidity, text) =>
+    def visitTvar(t: Type.KindedVar): Type.KindedVar = t match {
+      case Type.KindedVar(x, k, rigidity, text) =>
         freshVars.get(x) match {
           case None =>
             // Determine the rigidity of the free type variable.
@@ -98,7 +98,7 @@ object Scheme {
               case InstantiateMode.Rigid => Rigidity.Rigid
               case InstantiateMode.Mixed => Rigidity.Rigid
             }
-            Type.Var(x, k, newRigidity, text)
+            Type.KindedVar(x, k, newRigidity, text)
           case Some(tvar) => tvar
         }
     }
@@ -118,7 +118,7 @@ object Scheme {
     * Generalizes the given type `tpe0` with respect to the empty type environment.
     */
   def generalize(tconstrs: List[Ast.TypeConstraint], tpe0: Type): Scheme = {
-    val quantifiers = tpe0.typeVars ++ tconstrs.flatMap(_.arg.typeVars)
+    val quantifiers = tpe0.typeVars ++ tconstrs.flatMap(tconstr => tconstr.arg.typeVars)
     Scheme(quantifiers.toList, tconstrs, tpe0)
   }
 
@@ -170,7 +170,7 @@ object Scheme {
 /**
   * Representation of polytypes.
   */
-case class Scheme(quantifiers: List[Type.Var], constraints: List[Ast.TypeConstraint], base: Type) {
+case class Scheme(quantifiers: List[Type.KindedVar], constraints: List[Ast.TypeConstraint], base: Type) {
 
   /**
     * Returns a human readable representation of the polytype.
