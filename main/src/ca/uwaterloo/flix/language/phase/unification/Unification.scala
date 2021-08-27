@@ -49,7 +49,7 @@ object Unification {
     */
   private def unifyVar(x: Type.KindedVar, tpe: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     // NB: The `tpe` type must be a non-var.
-    if (tpe.isInstanceOf[Type.KindedVar])
+    if (tpe.isInstanceOf[Type.Var])
       throw InternalCompilerException(s"Unexpected variable type: '$tpe'.")
 
     // Check if `x` is rigid.
@@ -77,19 +77,19 @@ object Unification {
   // NB: The order of cases has been determined by code coverage analysis.
   def unifyTypes(tpe1: Type, tpe2: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     (tpe1, tpe2) match {
-      case (x: Type.KindedVar, y: Type.KindedVar) => unifyVars(x, y)
+      case (x: Type.Var, y: Type.Var) => unifyVars(x.asKinded, y.asKinded)
 
-      case (x: Type.KindedVar, _) =>
+      case (x: Type.Var, _) =>
         if (x.kind == Kind.Bool || tpe2.kind == Kind.Bool)
           BoolUnification.unify(x, tpe2)
         else
-          unifyVar(x, tpe2)
+          unifyVar(x.asKinded, tpe2)
 
-      case (_, x: Type.KindedVar) =>
+      case (_, x: Type.Var) =>
         if (x.kind == Kind.Bool || tpe1.kind == Kind.Bool)
           BoolUnification.unify(x, tpe1)
         else
-          unifyVar(x, tpe1)
+          unifyVar(x.asKinded, tpe1)
 
       case (Type.Cst(c1, _), Type.Cst(c2, _)) if c1 == c2 => Result.Ok(Substitution.empty)
 
@@ -147,15 +147,16 @@ object Unification {
             case (subst, rewrittenRow) => (subst, Type.mkRecordExtend(field2, fieldType2, rewrittenRow))
           }
         }
-      case (tvar: Type.KindedVar, Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field1), _), fieldType1), _)) =>
+      case (tvar: Type.Var, Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field1), _), fieldType1), _)) =>
+        val tv = tvar.asKinded
         // Case 2: The row is a type variable.
-        if (staticRow.typeVars contains tvar) {
-          Err(UnificationError.OccursCheck(tvar, staticRow))
+        if (staticRow.typeVars contains tv) {
+          Err(UnificationError.OccursCheck(tv, staticRow))
         } else {
           // Introduce a fresh type variable to represent one more level of the row.
           val restRow2 = Type.freshVar(Kind.Record)
           val type2 = Type.mkRecordExtend(field1, fieldType1, restRow2)
-          val subst = Substitution.singleton(tvar, type2)
+          val subst = Substitution.singleton(tv, type2)
           Ok((subst, restRow2))
         }
 
@@ -192,15 +193,16 @@ object Unification {
             case (subst, rewrittenRow) => (subst, Type.mkSchemaExtend(label2, fieldType2, rewrittenRow))
           }
         }
-      case (tvar: Type.KindedVar, Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(label1), _), fieldType1), _)) =>
+      case (tvar: Type.Var, Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(label1), _), fieldType1), _)) =>
+        val tv = tvar.asKinded
         // Case 2: The row is a type variable.
-        if (staticRow.typeVars contains tvar) {
-          Err(UnificationError.OccursCheck(tvar, staticRow))
+        if (staticRow.typeVars contains tv) {
+          Err(UnificationError.OccursCheck(tv, staticRow))
         } else {
           // Introduce a fresh type variable to represent one more level of the row.
           val restRow2 = Type.freshVar(Kind.Schema)
           val type2 = Type.mkSchemaExtend(label1, fieldType1, restRow2)
-          val subst = Substitution.singleton(tvar, type2)
+          val subst = Substitution.singleton(tv, type2)
           Ok((subst, restRow2))
         }
 
@@ -390,8 +392,8 @@ object Unification {
     */
   private def purify(tvar: Type.KindedVar, tpe: Type): Type = tpe.typeConstructor match {
     case None => tpe match {
-      case Type.KindedVar(id, _, _, _) =>
-        if (tvar.id == id) Type.True else tpe
+      case t: Type.Var =>
+        if (tvar.id == t.asKinded.id) Type.True else tpe
       case _ => throw InternalCompilerException(s"Unexpected type constructor: '$tpe'.")
     }
 

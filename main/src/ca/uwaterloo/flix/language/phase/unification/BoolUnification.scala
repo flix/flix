@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.util.Result
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 
 import scala.annotation.tailrec
@@ -48,6 +48,8 @@ object BoolUnification {
           return Ok(Substitution.singleton(x, Type.True))
         if (tpe2 eq Type.False)
           return Ok(Substitution.singleton(x, Type.False))
+
+      case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type variable")
       case _ => // nop
     }
 
@@ -57,6 +59,8 @@ object BoolUnification {
           return Ok(Substitution.singleton(y, Type.True))
         if (tpe1 eq Type.False)
           return Ok(Substitution.singleton(y, Type.False))
+
+      case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type variable")
       case _ => // nop
     }
 
