@@ -1927,15 +1927,15 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
       case Type.Cst(_, _) => t
 
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field), _), tpe, _), rest, _) =>
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field), _), tpe, _), rest, loc) =>
         val t1 = eval(tpe, subst)
         val t2 = eval(rest, subst)
-        Type.mkRecordExtend(field, t1, t2)
+        Type.mkRecordExtend(field, t1, t2, loc)
 
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(pred), _), tpe, _), rest, _) =>
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(pred), _), tpe, _), rest, loc) =>
         val t1 = eval(tpe, subst)
         val t2 = eval(rest, subst)
-        Type.mkSchemaExtend(pred, t1, t2)
+        Type.mkSchemaExtend(pred, t1, t2, loc)
 
       case Type.Lambda(tvar, tpe, loc) => Type.Lambda(tvar, eval(tpe, subst), loc)
 
@@ -1960,12 +1960,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Returns the type `And(tpe1, tpe2)`.
     */
-  private def mkAnd(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = Type.Apply(Type.Apply(Type.And, tpe1, loc), tpe2, loc)
+  private def mkAnd(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, loc), tpe1, loc), tpe2, loc)
 
   /**
     * Returns the type `Or(tpe1, tpe2)`.
     */
-  private def mkOr(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = Type.Apply(Type.Apply(Type.Or, tpe1, loc), tpe2, loc)
+  private def mkOr(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, loc), tpe1, loc), tpe2, loc)
 
   /**
     * Enum describing the extent to which a class is accessible.
