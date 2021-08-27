@@ -398,17 +398,16 @@ namespace TestLazyList {
     def mapFusion01(): Bool & Impure =
         let l = ref Nil;
         (1 :: 2 :: 3 :: Nil) |> List.toLazy |>
-        LazyList.map(x -> {l := "a" :: deref l; x}) |>
-        LazyList.map(x -> {l := "b" :: deref l; x}) |>
-        LazyList.toList;
+        LazyList.map(x -> { l := "a" :: deref l; x }) |>
+        LazyList.map(x -> { l := "b" :: deref l; x });
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
 
     @test
     def mapFusion02(): Bool & Impure =
         let l = ref Nil;
         (1 :: 2 :: 3 :: Nil) |> List.toLazy |>
-        LazyList.map(x -> {l := "a" :: deref l; x} as & Pure) |>
-        LazyList.map(x -> {l := "b" :: deref l; x} as & Pure) |>
+        LazyList.map(x -> { l := "a" :: deref l; x } as & Pure) |>
+        LazyList.map(x -> { l := "b" :: deref l; x } as & Pure) |>
         LazyList.toList as & Impure;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
@@ -500,16 +499,16 @@ namespace TestLazyList {
     def filterFusion01(): Bool & Impure =
         let l = ref Nil;
         (1 :: 2 :: 3 :: Nil) |> List.toLazy |>
-        LazyList.filter(_x -> {l := "a" :: deref l; true}) |>
-        LazyList.filter(_x -> {l := "b" :: deref l; true});
+        LazyList.filter(_ -> { l := "a" :: deref l; true }) |>
+        LazyList.filter(_ -> { l := "b" :: deref l; true });
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
 
     @test
     def filterFusion02(): Bool & Impure =
         let l = ref Nil;
         (1 :: 2 :: 3 :: Nil) |> List.toLazy |>
-        LazyList.filter(_x -> {l := "a" :: deref l; true} as & Pure) |>
-        LazyList.filter(_x -> {l := "b" :: deref l; true} as & Pure) |>
+        LazyList.filter(_x -> { l := "a" :: deref l; true } as & Pure) |>
+        LazyList.filter(_x -> { l := "b" :: deref l; true } as & Pure) |>
         LazyList.toList as & Impure;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
@@ -522,16 +521,16 @@ namespace TestLazyList {
     def mapFilterFusion01(): Bool & Impure =
         let l = ref Nil;
         (1 :: 2 :: 3 :: Nil) |> List.toLazy |>
-        LazyList.map(    x -> {l := "a" :: deref l; x}) |>
-        LazyList.filter(_x -> {l := "b" :: deref l; true});
+        LazyList.map(   x -> { l := "a" :: deref l; x }) |>
+        LazyList.filter(_ -> { l := "b" :: deref l; true });
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
 
     @test
     def mapFilterFusion02(): Bool & Impure =
         let l = ref Nil;
         (1 :: 2 :: 3 :: Nil) |> List.toLazy |>
-        LazyList.map(    x -> {l := "a" :: deref l; x}    as & Pure) |>
-        LazyList.filter(_x -> {l := "b" :: deref l; true} as & Pure) |>
+        LazyList.map(   x -> { l := "a" :: deref l; x }    as & Pure) |>
+        LazyList.filter(_ -> { l := "b" :: deref l; true } as & Pure) |>
         LazyList.toList as & Impure;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
@@ -544,16 +543,16 @@ namespace TestLazyList {
     def filterMapFusion01(): Bool & Impure =
         let l = ref Nil;
         (1 :: 2 :: 3 :: Nil) |> List.toLazy |>
-        LazyList.filter(_x -> {l := "a" :: deref l; true}) |>
-        LazyList.map(    x -> {l := "b" :: deref l; x});
+        LazyList.filter(_ -> { l := "a" :: deref l; true }) |>
+        LazyList.map(   x -> { l := "b" :: deref l; x    });
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
 
     @test
     def filterMapFusion02(): Bool & Impure =
         let l = ref Nil;
         (1 :: 2 :: 3 :: Nil) |> List.toLazy |>
-        LazyList.filter(_x -> {l := "a" :: deref l; true} as & Pure) |>
-        LazyList.map(    x -> {l := "b" :: deref l; x}    as & Pure) |>
+        LazyList.filter(_ -> { l := "a" :: deref l; true } as & Pure) |>
+        LazyList.map(   x -> { l := "b" :: deref l; x    } as & Pure) |>
         LazyList.toList as & Impure;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
     
@@ -1427,7 +1426,7 @@ namespace TestLazyList {
 
     @test
     def toIter09(): Bool & Impure =
-    	LazyList.range(-1000, 1000) |> LazyList.toIter |> Iterator.toList == List.range(-1000, 1000)
+    	LazyList.range(-100, 100) |> LazyList.toIter |> Iterator.toList == List.range(-100, 100)
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1741,6 +1740,14 @@ namespace TestLazyList {
     /////////////////////////////////////////////////////////////////////////////
     // zipWith zipWith fusion                                                  //
     /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def zipWithFusion01(): Bool & Impure =
+        let l = ref Nil;
+        (1 :: 2 :: 3 :: Nil) |> List.toLazy |>
+        LazyList.zipWith((x, y) -> { l := "a" :: deref l; (x, y) }, ECons(1, ECons(2, ECons(3, ENil)))) |>
+        LazyList.zipWith((x, y) -> { l := "b" :: deref l; (x, y) }, ECons(1, ECons(2, ECons(3, ENil))));
+        List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
 
     @test
     def zipWithFusion02(): Bool & Impure =
