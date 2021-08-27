@@ -30,9 +30,9 @@ class TestExamples extends Suites(
   new FlixTest("type-aliases", "examples/type-aliases.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("using-channels-and-select", "examples/using-channels-and-select.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("using-get-opt", "examples/using-get-opt.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
-  // new FlixTest("using-laziness-for-infinite-streams", "examples/using-laziness-for-infinite-streams.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
-  // new FlixTest("using-laziness-for-logging", "examples/using-laziness-for-logging.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
-  // new FlixTest("using-laziness-to-compute-fibonacci", "examples/using-laziness-to-compute-fibonacci.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  new FlixTest("using-laziness-for-infinite-streams", "examples/using-laziness-for-infinite-streams.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  new FlixTest("using-laziness-for-logging", "examples/using-laziness-for-logging.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  new FlixTest("using-laziness-to-compute-fibonacci", "examples/using-laziness-to-compute-fibonacci.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
 
   new FlixTest("datalog/delivery-date", "examples/datalog/delivery-date.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
 
