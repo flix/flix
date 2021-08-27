@@ -173,21 +173,21 @@ object CompleteProvider {
       * with an equivalent variable symbol with the given `newText`.
       */
     def replaceText(tvar: Type.Var, tpe: Type, newText: String): Type = tpe match {
-      case Type.KindedVar(id, kind, rigidity, text) if tvar.id == id => Type.KindedVar(id, kind, rigidity, Some(newText))
-      case Type.KindedVar(_, _, _, _) => tpe
+      case Type.KindedVar(id, kind, rigidity, text, loc) if tvar.id == id => Type.KindedVar(id, kind, rigidity, Some(newText), loc)
+      case Type.KindedVar(_, _, _, _, _) => tpe
       case Type.Cst(_, _) => tpe
-      case Type.Lambda(tvar2, tpe) if tvar == tvar2 =>
+      case Type.Lambda(tvar2, tpe, loc) if tvar == tvar2 =>
         val t = replaceText(tvar, tpe, newText)
-        Type.Lambda(tvar2.asKinded.copy(text = Some(newText)), t)
+        Type.Lambda(tvar2.asKinded.copy(text = Some(newText)), t, loc)
 
-      case Type.Lambda(tvar2, tpe) =>
+      case Type.Lambda(tvar2, tpe, loc) =>
         val t = replaceText(tvar, tpe, newText)
-        Type.Lambda(tvar, t)
+        Type.Lambda(tvar, t, loc)
 
-      case Type.Apply(tpe1, tpe2) =>
+      case Type.Apply(tpe1, tpe2, loc) =>
         val t1 = replaceText(tvar, tpe1, newText)
         val t2 = replaceText(tvar, tpe2, newText)
-        Type.Apply(t1, t2)
+        Type.Apply(t1, t2, loc)
 
       case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type variable.")
       case _: Type.Ascribe => throw InternalCompilerException("Unexpected kind ascription.")

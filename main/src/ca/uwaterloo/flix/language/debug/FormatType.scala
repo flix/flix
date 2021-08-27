@@ -87,7 +87,7 @@ object FormatType {
 
       base match {
         case None => tpe match {
-          case Type.KindedVar(id, kind, rigidity, text) => audience match {
+          case Type.KindedVar(id, kind, rigidity, text, loc) => audience match {
             case Audience.Internal => kind match {
               // TODO: We need a systematic way to print type variables, their kind, and rigidity.
               // TODO: We need to rid ourselves of alpha renaming. Its too brittle. We need something else.
@@ -99,11 +99,11 @@ object FormatType {
               case Some(t) => t
             }
           }
-          case Type.Lambda(tvar, tpe) => audience match {
+          case Type.Lambda(tvar, tpe, loc) => audience match {
             case Audience.Internal => s"${tvar.id.toString} => ${visit(tpe)}"
             case Audience.External => s"${tvar.text.getOrElse(renameMap(tvar.id))} => ${visit(tpe)}"
           }
-          case Type.Apply(tpe1, tpe2) => s"${visit(tpe1)}[${visit(tpe2)}]"
+          case Type.Apply(tpe1, tpe2, loc) => s"${visit(tpe1)}[${visit(tpe2)}]"
           case _ => throw InternalCompilerException(s"Unexpected type: '${tpe.getClass}'.") // TODO: This can lead to infinite recursion.
         }
 
@@ -327,7 +327,7 @@ object FormatType {
     * Convert a record to a [[FlatNestable]].
     */
   private def flattenRecord(record: Type): FlatNestable = record match {
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field), _), tpe), rest) =>
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field), _), tpe, _), rest, _) =>
       (field.name, tpe) :: flattenRecord(rest)
     case _ => FlatNestable(Nil, record)
   }
@@ -336,7 +336,7 @@ object FormatType {
     * Convert a schema to a [[FlatNestable]].
     */
   private def flattenSchema(schema: Type): FlatNestable = schema match {
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(pred), _), tpe), rest) =>
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(pred), _), tpe, _), rest, _) =>
       (pred.name, tpe) :: flattenSchema(rest)
     case _ => FlatNestable(Nil, schema)
   }
@@ -379,9 +379,9 @@ object FormatType {
       case tvar: Type.KindedVar => tvar :: Nil
       case tvar: Type.UnkindedVar => tvar :: Nil
       case Type.Cst(tc, loc) => Nil
-      case Type.Lambda(tvar, tpe) => tvar :: visit(tpe)
-      case Type.Apply(tpe1, tpe2) => visit(tpe1) ::: visit(tpe2)
-      case Type.Ascribe(tpe, _) => typeVars(tpe)
+      case Type.Lambda(tvar, tpe, _) => tvar :: visit(tpe)
+      case Type.Apply(tpe1, tpe2, _) => visit(tpe1) ::: visit(tpe2)
+      case Type.Ascribe(tpe, _, _) => typeVars(tpe)
     }
 
     visit(tpe0).distinct

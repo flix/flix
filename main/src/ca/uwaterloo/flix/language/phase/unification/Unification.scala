@@ -96,7 +96,7 @@ object Unification {
       case _ if tpe1.kind == Kind.Bool || tpe2.kind == Kind.Bool =>
         BoolUnification.unify(tpe1, tpe2)
 
-      case (row1@Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(_), _), _), restRow1), row2) =>
+      case (row1@Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(_), _), _, _), restRow1, _), row2) =>
         // Attempt to write the row to match.
         rewriteRecordRow(row2, row1) flatMap {
           case (subst1, restRow2) =>
@@ -105,7 +105,7 @@ object Unification {
             }
         }
 
-      case (row1@Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(_), _), _), restRow1), row2) =>
+      case (row1@Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(_), _), _, _), restRow1, _), row2) =>
         // Attempt to write the row to match.
         rewriteSchemaRow(row2, row1) flatMap {
           case (subst1, restRow2) =>
@@ -114,7 +114,7 @@ object Unification {
             }
         }
 
-      case (Type.Apply(t11, t12), Type.Apply(t21, t22)) =>
+      case (Type.Apply(t11, t12, _), Type.Apply(t21, t22, _)) =>
         unifyTypes(t11, t21) match {
           case Result.Ok(subst1) => unifyTypes(subst1(t12), subst1(t22)) match {
             case Result.Ok(subst2) => Result.Ok(subst2 @@ subst1)
@@ -133,8 +133,8 @@ object Unification {
   private def rewriteRecordRow(rewrittenRow: Type, staticRow: Type)(implicit flix: Flix): Result[(Substitution, Type), UnificationError] = {
 
     def visit(row: Type): Result[(Substitution, Type), UnificationError] = (row, staticRow) match {
-      case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field2), _), fieldType2), restRow2),
-      Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field1), _), fieldType1), _)) =>
+      case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field2), _), fieldType2, _), restRow2, _),
+      Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field1), _), fieldType1, _), _, _)) =>
         // Case 1: The row is of the form %{ field2: fieldType2 | restRow2 }
         if (field1 == field2) {
           // Case 1.1: The fields match, their types must match.
@@ -147,20 +147,20 @@ object Unification {
             case (subst, rewrittenRow) => (subst, Type.mkRecordExtend(field2, fieldType2, rewrittenRow))
           }
         }
-      case (tvar: Type.Var, Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field1), _), fieldType1), _)) =>
+      case (tvar: Type.Var, Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field1), _), fieldType1, _), _, _)) =>
         val tv = tvar.asKinded
         // Case 2: The row is a type variable.
         if (staticRow.typeVars contains tv) {
           Err(UnificationError.OccursCheck(tv, staticRow))
         } else {
           // Introduce a fresh type variable to represent one more level of the row.
-          val restRow2 = Type.freshVar(Kind.Record)
+          val restRow2 = Type.freshVar(Kind.Record, loc = SourceLocation.Unknown)
           val type2 = Type.mkRecordExtend(field1, fieldType1, restRow2)
           val subst = Substitution.singleton(tv, type2)
           Ok((subst, restRow2))
         }
 
-      case (Type.Cst(TypeConstructor.RecordEmpty, _), Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field1), _), fieldType1), _)) =>
+      case (Type.Cst(TypeConstructor.RecordEmpty, _), Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field1), _), fieldType1, _), _, _)) =>
         // Case 3: The `field` does not exist in the record.
         Err(UnificationError.UndefinedField(field1, fieldType1, rewrittenRow))
 
@@ -179,8 +179,8 @@ object Unification {
   private def rewriteSchemaRow(rewrittenRow: Type, staticRow: Type)(implicit flix: Flix): Result[(Substitution, Type), UnificationError] = {
 
     def visit(row: Type): Result[(Substitution, Type), UnificationError] = (row, staticRow) match {
-      case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(label2), _), fieldType2), restRow2),
-      Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(label1), _), fieldType1), _)) =>
+      case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(label2), _), fieldType2, _), restRow2, _),
+      Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(label1), _), fieldType1, _), _, _)) =>
         // Case 1: The row is of the form %{ label2: fieldType2 | restRow2 }
         if (label1 == label2) {
           // Case 1.1: The labels match, their types must match.
@@ -193,20 +193,20 @@ object Unification {
             case (subst, rewrittenRow) => (subst, Type.mkSchemaExtend(label2, fieldType2, rewrittenRow))
           }
         }
-      case (tvar: Type.Var, Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(label1), _), fieldType1), _)) =>
+      case (tvar: Type.Var, Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(label1), _), fieldType1, _), _, _)) =>
         val tv = tvar.asKinded
         // Case 2: The row is a type variable.
         if (staticRow.typeVars contains tv) {
           Err(UnificationError.OccursCheck(tv, staticRow))
         } else {
           // Introduce a fresh type variable to represent one more level of the row.
-          val restRow2 = Type.freshVar(Kind.Schema)
+          val restRow2 = Type.freshVar(Kind.Schema, loc = SourceLocation.Unknown)
           val type2 = Type.mkSchemaExtend(label1, fieldType1, restRow2)
           val subst = Substitution.singleton(tv, type2)
           Ok((subst, restRow2))
         }
 
-      case (Type.Cst(TypeConstructor.SchemaEmpty, _), Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(label1), _), fieldType1), _)) =>
+      case (Type.Cst(TypeConstructor.SchemaEmpty, _), Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(label1), _), fieldType1, _), _, _)) =>
         // Case 3: The `label` does not exist in the record.
         Err(UnificationError.UndefinedPredicate(label1, fieldType1, rewrittenRow))
 
@@ -316,7 +316,7 @@ object Unification {
     */
   def unifyTypeAllowEmptyM(ts: List[Type], loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
     if (ts.isEmpty)
-      liftM(Type.freshVar(Kind.Star))
+      liftM(Type.freshVar(Kind.Star, loc = SourceLocation.Unknown))
     else
       unifyTypeM(ts, loc)
   }

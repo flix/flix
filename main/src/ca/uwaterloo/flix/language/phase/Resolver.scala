@@ -269,7 +269,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           val freeVars = e0.tparams.tparams.map(_.tpe)
           val caseType = t
           val enumType = mkUnkindedEnum(e0.sym, freeVars)
-          val base = Type.mkTag(e0.sym, tag, caseType, enumType)
+          val base = Type.mkTag(e0.sym, tag, caseType, enumType, tag.loc)
           val sc = ResolvedAst.Scheme(freeVars, tconstrs, base)
           name -> ResolvedAst.Case(enum, tag, t, sc)
         }
@@ -606,7 +606,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
                   val freshVar = Symbol.freshVarSym("x", loc)
 
                   // Construct the formal parameter for the fresh symbol.
-                  val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, Type.freshUnkindedVar(), loc)
+                  val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, Type.freshUnkindedVar(loc = loc), loc)
 
                   // Construct a variable expression for the fresh symbol.
                   val varExp = ResolvedAst.Expression.Var(freshVar, freshVar.tvar, loc)
@@ -756,7 +756,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         case NamedAst.Expression.TryCatch(exp, rules, loc) =>
           val rulesVal = traverse(rules) {
             case NamedAst.CatchRule(sym, clazz, body) =>
-              val exceptionType = Type.mkNative(clazz)
+              val exceptionType = Type.mkNative(clazz, loc)
               visit(body, tenv0 + (sym -> exceptionType)) map {
                 case b => ResolvedAst.CatchRule(sym, clazz, b)
               }
@@ -1424,7 +1424,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     case NamedAst.Type.Tuple(elms0, loc) =>
       for {
         elms <- traverse(elms0)(tpe => lookupType(tpe, ns0, root))
-        tup = Type.mkTuple(elms)
+        tup = Type.mkTuple(elms, loc)
       } yield tup
 
     case NamedAst.Type.RecordEmpty(loc) =>
@@ -1434,7 +1434,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       for {
         v <- lookupType(value, ns0, root)
         r <- lookupType(rest, ns0, root)
-        rec = Type.mkRecordExtend(field, v, r)
+        rec = Type.mkRecordExtend(field, v, r, loc)
       } yield rec
 
     case NamedAst.Type.SchemaEmpty(loc) =>
@@ -1452,9 +1452,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             t <- getTypeAliasIfAccessible(typealias, ns0, root, loc)
             ts <- traverse(targs)(lookupType(_, ns0, root))
             r <- lookupType(rest, ns0, root)
-            app = Type.mkApply(t, ts)
+            app = Type.mkApply(t, ts, loc)
             tpe = simplify(app)
-            schema = Type.mkSchemaExtend(Name.mkPred(qname.ident), tpe, r)
+            schema = Type.mkSchemaExtend(Name.mkPred(qname.ident), tpe, r, loc)
           } yield schema
       }
 
@@ -1463,19 +1463,19 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         ts <- traverse(tpes)(lookupType(_, ns0, root))
         r <- lookupType(rest, ns0, root)
         pred = mkPredicate(den, ts, loc)
-        schema = Type.mkSchemaExtend(Name.mkPred(ident), pred, r)
+        schema = Type.mkSchemaExtend(Name.mkPred(ident), pred, r, loc)
       } yield schema
 
     case NamedAst.Type.Relation(tpes, loc) =>
       for {
         ts <- traverse(tpes)(lookupType(_, ns0, root))
-        rel = Type.mkRelation(ts)
+        rel = Type.mkRelation(ts, loc)
       } yield rel
 
     case NamedAst.Type.Lattice(tpes, loc) =>
       for {
         ts <- traverse(tpes)(lookupType(_, ns0, root))
-        lat = Type.mkLattice(ts)
+        lat = Type.mkLattice(ts, loc)
       } yield lat
 
     case NamedAst.Type.Native(fqn, loc) =>
@@ -1483,7 +1483,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         case "java.math.BigInteger" => Type.mkBigInt(loc).toSuccess
         case "java.lang.String" => Type.mkString(loc).toSuccess
         case _ => lookupJvmClass(fqn, loc) map {
-          case clazz => Type.mkNative(clazz)
+          case clazz => Type.mkNative(clazz, loc)
         }
       }
 
@@ -1492,39 +1492,39 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         tparams <- traverse(tparams0)(lookupType(_, ns0, root))
         tresult <- lookupType(tresult0, ns0, root)
         eff <- lookupType(eff0, ns0, root)
-      } yield Type.mkUncurriedArrowWithEffect(tparams, eff, tresult)
+      } yield Type.mkUncurriedArrowWithEffect(tparams, eff, tresult, loc)
 
     case NamedAst.Type.Apply(base0, targ0, loc) =>
       for {
         tpe1 <- lookupType(base0, ns0, root)
         tpe2 <- lookupType(targ0, ns0, root)
-        app = Type.Apply(tpe1, tpe2)
+        app = Type.Apply(tpe1, tpe2, loc)
       } yield simplify(app)
 
     case NamedAst.Type.True(loc) =>
-      Type.True.toSuccess
+      Type.mkTrue(loc).toSuccess
 
     case NamedAst.Type.False(loc) =>
-      Type.False.toSuccess
+      Type.mkFalse(loc).toSuccess
 
     case NamedAst.Type.Not(tpe, loc) =>
       mapN(lookupType(tpe, ns0, root)) {
-        case t => Type.mkNot(t)
+        case t => Type.mkNot(t, loc)
       }
 
     case NamedAst.Type.And(tpe1, tpe2, loc) =>
       mapN(lookupType(tpe1, ns0, root), lookupType(tpe2, ns0, root)) {
-        case (t1, t2) => mkAnd(t1, t2)
+        case (t1, t2) => mkAnd(t1, t2, loc)
       }
 
     case NamedAst.Type.Or(tpe1, tpe2, loc) =>
       mapN(lookupType(tpe1, ns0, root), lookupType(tpe2, ns0, root)) {
-        case (t1, t2) => mkOr(t1, t2)
+        case (t1, t2) => mkOr(t1, t2, loc)
       }
 
     case NamedAst.Type.Ascribe(tpe, kind, loc) =>
       mapN(lookupType(tpe, ns0, root)) {
-        t => Type.Ascribe(t, kind)
+        t => Type.Ascribe(t, kind, loc)
       }
 
   }
@@ -1720,16 +1720,16 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
     // Construct a type lambda for each type parameter.
     mapN(lookupType(alia0.tpe, declNS, root)(recursionDepth + 1)) {
-      case base => mkTypeLambda(alia0.tparams.tparams, base)
+      case base => mkTypeLambda(alia0.tparams.tparams, base, loc)
     }
   }
 
   /**
     * Returns the given type `tpe` wrapped in a type lambda for the given type parameters `tparam`.
     */
-  private def mkTypeLambda(tparams: List[NamedAst.TypeParam], tpe: Type): Type =
+  private def mkTypeLambda(tparams: List[NamedAst.TypeParam], tpe: Type, loc: SourceLocation = SourceLocation.Unknown): Type =
     tparams.foldRight(tpe) {
-      case (tparam, acc) => Type.Lambda(tparam.tpe, acc)
+      case (tparam, acc) => Type.Lambda(tparam.tpe, acc, loc)
     }
 
 
@@ -1910,10 +1910,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     val ts = ts0 match {
       case Nil => Type.mkUnit(loc)
       case x :: Nil => x
-      case xs => Type.mkTuple(xs)
+      case xs => Type.mkTuple(xs, loc)
     }
 
-    Type.Apply(tycon, ts)
+    Type.Apply(tycon, ts, loc)
   }
 
   /**
@@ -1927,29 +1927,29 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
       case Type.Cst(_, _) => t
 
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field), _), tpe), rest) =>
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field), _), tpe, _), rest, _) =>
         val t1 = eval(tpe, subst)
         val t2 = eval(rest, subst)
         Type.mkRecordExtend(field, t1, t2)
 
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(pred), _), tpe), rest) =>
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(pred), _), tpe, _), rest, _) =>
         val t1 = eval(tpe, subst)
         val t2 = eval(rest, subst)
         Type.mkSchemaExtend(pred, t1, t2)
 
-      case Type.Lambda(tvar, tpe) => Type.Lambda(tvar, eval(tpe, subst))
+      case Type.Lambda(tvar, tpe, loc) => Type.Lambda(tvar, eval(tpe, subst), loc)
 
       // TODO: Does not take variable capture into account.
-      case Type.Apply(tpe1, tpe2) => (eval(tpe1, subst), eval(tpe2, subst)) match {
-        case (Type.Lambda(tvar, tpe3), t2) => tvar match {
+      case Type.Apply(tpe1, tpe2, loc) => (eval(tpe1, subst), eval(tpe2, subst)) match {
+        case (Type.Lambda(tvar, tpe3, _), t2) => tvar match {
           case _: Type.KindedVar => throw InternalCompilerException("Unexpected kinded type variable")
           case unkindedTvar: Type.UnkindedVar => eval(tpe3, subst + (unkindedTvar -> t2))
         }
 
-        case (t1, t2) => Type.Apply(t1, t2)
+        case (t1, t2) => Type.Apply(t1, t2, loc)
       }
 
-      case Type.Ascribe(tpe, kind) => Type.Ascribe(eval(tpe, subst), kind)
+      case Type.Ascribe(tpe, kind, loc) => Type.Ascribe(eval(tpe, subst), kind, loc)
 
       case _: Type.KindedVar => throw InternalCompilerException("Unexpected kinded type variable")
     }
@@ -1960,12 +1960,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Returns the type `And(tpe1, tpe2)`.
     */
-  private def mkAnd(tpe1: Type, tpe2: Type): Type = Type.Apply(Type.Apply(Type.And, tpe1), tpe2)
+  private def mkAnd(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = Type.Apply(Type.Apply(Type.And, tpe1, loc), tpe2, loc)
 
   /**
     * Returns the type `Or(tpe1, tpe2)`.
     */
-  private def mkOr(tpe1: Type, tpe2: Type): Type = Type.Apply(Type.Apply(Type.Or, tpe1), tpe2)
+  private def mkOr(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = Type.Apply(Type.Apply(Type.Or, tpe1, loc), tpe2, loc)
 
   /**
     * Enum describing the extent to which a class is accessible.

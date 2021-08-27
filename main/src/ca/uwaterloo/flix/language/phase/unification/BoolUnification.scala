@@ -115,7 +115,7 @@ object BoolUnification {
       val t0 = Substitution.singleton(x, Type.False)(f)
       val t1 = Substitution.singleton(x, Type.True)(f)
       val se = successiveVariableElimination(mkAnd(t0, t1), xs)
-      val st = Substitution.singleton(x, mkOr(se(t0), mkAnd(Type.freshVar(Kind.Bool), mkNot(se(t1)))))
+      val st = Substitution.singleton(x, mkOr(se(t0), mkAnd(Type.freshVar(Kind.Bool, loc = SourceLocation.Unknown), mkNot(se(t1)))))
       st ++ se
   }
 
@@ -168,7 +168,7 @@ object BoolUnification {
     case OR(x, NOT(y)) =>
       mkAnd(mkNot(x), y)
 
-    case _ => Type.Apply(Type.Not, tpe0)
+    case _ => Type.Apply(Type.Not, tpe0, SourceLocation.Unknown)
   }
 
   /**
@@ -263,7 +263,7 @@ object BoolUnification {
       //        println(s.substring(0, Math.min(len, 300)))
       //      }
 
-      Type.Apply(Type.Apply(Type.And, tpe1), tpe2)
+      Type.Apply(Type.Apply(Type.And, tpe1, SourceLocation.Unknown), tpe2, SourceLocation.Unknown)
   }
 
   /**
@@ -330,13 +330,13 @@ object BoolUnification {
       //                println(s.substring(0, Math.min(len, 300)))
       //              }
 
-      Type.Apply(Type.Apply(Type.Or, tpe1), tpe2)
+      Type.Apply(Type.Apply(Type.Or, tpe1, SourceLocation.Unknown), tpe2, SourceLocation.Unknown)
   }
 
   private object NOT {
     @inline
     def unapply(tpe: Type): Option[Type] = tpe match {
-      case Type.Apply(Type.Cst(TypeConstructor.Not, _), x) => Some(x)
+      case Type.Apply(Type.Cst(TypeConstructor.Not, _), x, _) => Some(x)
       case _ => None
     }
   }
@@ -344,7 +344,7 @@ object BoolUnification {
   private object AND {
     @inline
     def unapply(tpe: Type): Option[(Type, Type)] = tpe match {
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, _), x), y) => Some((x, y))
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, _), x, _), y, _) => Some((x, y))
       case _ => None
     }
   }
@@ -352,7 +352,7 @@ object BoolUnification {
   private object OR {
     @inline
     def unapply(tpe: Type): Option[(Type, Type)] = tpe match {
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, _), x), y) => Some((x, y))
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, _), x, _), y, _) => Some((x, y))
       case _ => None
     }
   }
