@@ -1921,7 +1921,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     *
     * Performs beta-reduction of type abstractions and applications.
     */
-  def simplify(tpe0: Type): Type = {
+  private def simplify(tpe0: Type): Type = {
     def eval(t: Type, subst: Map[Type.UnkindedVar, Type]): Type = t match {
       case tvar: Type.UnkindedVar => subst.getOrElse(tvar, tvar)
 
@@ -1960,12 +1960,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Returns the type `And(tpe1, tpe2)`.
     */
-  def mkAnd(tpe1: Type, tpe2: Type): Type = Type.Apply(Type.Apply(Type.And, tpe1), tpe2)
+  private def mkAnd(tpe1: Type, tpe2: Type): Type = Type.Apply(Type.Apply(Type.And, tpe1), tpe2)
 
   /**
     * Returns the type `Or(tpe1, tpe2)`.
     */
-  def mkOr(tpe1: Type, tpe2: Type): Type = Type.Apply(Type.Apply(Type.Or, tpe1), tpe2)
+  private def mkOr(tpe1: Type, tpe2: Type): Type = Type.Apply(Type.Apply(Type.Or, tpe1), tpe2)
 
   /**
     * Enum describing the extent to which a class is accessible.
