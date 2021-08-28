@@ -108,7 +108,8 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
     */
   private def createToString(enum: ResolvedAst.Enum, loc: SourceLocation, root: ResolvedAst.Root)(implicit flix: Flix): ResolvedAst.Instance = enum match {
     case ResolvedAst.Enum(_, _, _, tparams, _, cases, _, sc, _) =>
-      val toStringSym = PredefinedClasses.lookupClassSym("ToString", root)
+      val toStringClassSym = PredefinedClasses.lookupClassSym("ToString", root)
+      val toStringDefSym = Symbol.mkDefnSym("ToString.toString")
 
       // create a match rule for each case and put them in a match expression
       val matchRules = cases.values.map(createToStringMatchRule(_, loc, root))
@@ -127,14 +128,14 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
         fparams = List(ResolvedAst.FormalParam(varSym, Ast.Modifiers.Empty, sc.base, loc)),
         sc = ResolvedAst.Scheme(
           tparams.tparams.map(_.tpe),
-          List(ResolvedAst.TypeConstraint(toStringSym, sc.base, loc)),
+          List(ResolvedAst.TypeConstraint(toStringClassSym, sc.base, loc)),
           Type.mkPureArrow(sc.base, Type.mkString(loc))
         ),
         tpe = Type.mkString(loc),
         eff = Type.Cst(TypeConstructor.True, loc),
         loc = loc
       )
-      val defn = ResolvedAst.Def(Symbol.mkDefnSym("ToString.toString"), spec, exp)
+      val defn = ResolvedAst.Def(toStringDefSym, spec, exp)
 
       // Add a type constraint to the instance for any variable used in a case
       val caseTvars = for {
@@ -142,12 +143,12 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
         tpe <- getTagArguments(caze.sc.base)
         if tpe.isInstanceOf[Type.Var]
       } yield tpe
-      val tconstrs = caseTvars.toList.distinct.map(ResolvedAst.TypeConstraint(toStringSym, _, loc))
+      val tconstrs = caseTvars.toList.distinct.map(ResolvedAst.TypeConstraint(toStringClassSym, _, loc))
 
       ResolvedAst.Instance(
         doc = Ast.Doc(Nil, loc),
         mod = Ast.Modifiers.Empty,
-        sym = toStringSym,
+        sym = toStringClassSym,
         tpe = sc.base,
         tconstrs = tconstrs,
         defs = List(defn),
