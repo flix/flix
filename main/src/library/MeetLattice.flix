@@ -54,6 +54,26 @@ namespace MeetLattice {
 
 }
 
+instance MeetLattice[Int8] {
+    pub def greatestLowerBound(x: Int8, y: Int8): Int8 = Order.min(x, y)
+}
+
+instance MeetLattice[Int16] {
+    pub def greatestLowerBound(x: Int16, y: Int16): Int16 = Order.min(x, y)
+}
+
+instance MeetLattice[Int32] {
+    pub def greatestLowerBound(x: Int32, y: Int32): Int32 = Order.min(x, y)
+}
+
+instance MeetLattice[Int64] {
+    pub def greatestLowerBound(x: Int64, y: Int64): Int64 = Order.min(x, y)
+}
+
+instance MeetLattice[BigInt] {
+    pub def greatestLowerBound(x: BigInt, y: BigInt): BigInt = Order.min(x, y)
+}
+
 instance MeetLattice[(a1, a2)] with MeetLattice[a1], MeetLattice[a2] {
     pub def greatestLowerBound(x: (a1, a2),
                             y: (a1, a2)): (a1, a2) = match (x, y) {
