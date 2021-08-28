@@ -77,7 +77,7 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
   /**
     * Builds the instances derived from this enum.
     */
-  def getDerivations(enum: ResolvedAst.Enum, root: ResolvedAst.Root)(implicit flix: Flix): List[ResolvedAst.Instance] = enum match {
+  private def getDerivations(enum: ResolvedAst.Enum, root: ResolvedAst.Root)(implicit flix: Flix): List[ResolvedAst.Instance] = enum match {
     case ResolvedAst.Enum(_, _, _, _, derives, _, _, _, _) =>
       derives.map {
         case ResolvedAst.Derivation(sym, loc) if sym == PredefinedClasses.lookupClassSym("ToString", root) => createToString(enum, loc, root)
@@ -99,13 +99,13 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
     *
     * {{{
     * instance ToString[E[a]] with ToString[a] {
-    *   pub def toString(x: E[a]): String = x match {
+    *   pub private def toString(x: E[a]): String = x match {
     *     case C1 => "C1"
     *     case C(y) => "C" + "(" + ToString.toString(y) + ")"
     *   }
     * }}}
     */
-  def createToString(enum: ResolvedAst.Enum, loc: SourceLocation, root: ResolvedAst.Root)(implicit flix: Flix): ResolvedAst.Instance = enum match {
+  private def createToString(enum: ResolvedAst.Enum, loc: SourceLocation, root: ResolvedAst.Root)(implicit flix: Flix): ResolvedAst.Instance = enum match {
     case ResolvedAst.Enum(_, _, _, tparams, _, cases, _, sc, _) =>
       // create a match rule for each case and put them in a match expression
       val matchRules = cases.values.map(createToStringMatchRule(_, loc, root))
@@ -156,7 +156,7 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
   /**
     * Creates a ToString match rule for the given enum case.
     */
-  def createToStringMatchRule(caze: ResolvedAst.Case, loc: SourceLocation, root: ResolvedAst.Root)(implicit flix: Flix): ResolvedAst.MatchRule = caze match {
+  private def createToStringMatchRule(caze: ResolvedAst.Case, loc: SourceLocation, root: ResolvedAst.Root)(implicit flix: Flix): ResolvedAst.MatchRule = caze match {
     case ResolvedAst.Case(enum, tag, tpeDeprecated, sc) =>
 
       // get a pattern corresponding to this case
@@ -194,19 +194,19 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
   /**
     * Builds a string expression from the given string.
     */
-  def mkExpr(str: String, loc: SourceLocation): ResolvedAst.Expression.Str = ResolvedAst.Expression.Str(str, loc)
+  private def mkExpr(str: String, loc: SourceLocation): ResolvedAst.Expression.Str = ResolvedAst.Expression.Str(str, loc)
 
   /**
     * Builds a string concatenation expression from the given expressions.
     */
-  def concat(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, loc: SourceLocation): ResolvedAst.Expression = {
+  private def concat(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, loc: SourceLocation): ResolvedAst.Expression = {
     ResolvedAst.Expression.Binary(SemanticOperator.StringOp.Concat, exp1, exp2, loc)
   }
 
   /**
     * Builds a string concatenation expression from the given expressions.
     */
-  def concatAll(exps: List[ResolvedAst.Expression], loc: SourceLocation): ResolvedAst.Expression = {
+  private def concatAll(exps: List[ResolvedAst.Expression], loc: SourceLocation): ResolvedAst.Expression = {
     exps match {
       case Nil => ResolvedAst.Expression.Str("", loc)
       case head :: tail => tail.foldLeft(head)(concat(_, _, loc))
@@ -216,7 +216,7 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
   /**
     * Extracts the types from the given tag type.
     */
-  def getTagArguments(tpe: Type): List[Type] = {
+  private def getTagArguments(tpe: Type): List[Type] = {
     tpe.typeArguments.headOption match {
       case None => throw InternalCompilerException("Unexpected empty type arguments.")
       case Some(packedArgs) => unpack(packedArgs)
@@ -229,7 +229,7 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
     * A Tuple unpacks to its member types.
     * Anything else unpacks to the singleton list of itself.
     */
-  def unpack(tpe: Type): List[Type] = tpe.typeConstructor match {
+  private def unpack(tpe: Type): List[Type] = tpe.typeConstructor match {
     case Some(TypeConstructor.Unit) => Nil
     case Some(TypeConstructor.Tuple(_)) => tpe.typeArguments
     case _ => List(tpe)
@@ -238,7 +238,7 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
   /**
     * Creates a pattern corresponding to the given tag type.
     */
-  def mkPattern(tpe: Type)(implicit flix: Flix): (ResolvedAst.Pattern, List[Symbol.VarSym]) = tpe.typeConstructor match {
+  private def mkPattern(tpe: Type)(implicit flix: Flix): (ResolvedAst.Pattern, List[Symbol.VarSym]) = tpe.typeConstructor match {
     case Some(TypeConstructor.Tag(sym, tag)) =>
       getTagArguments(tpe) match {
         case Nil => (ResolvedAst.Pattern.Tag(sym, tag, ResolvedAst.Pattern.Unit(SourceLocation.Unknown), SourceLocation.Unknown), Nil)
@@ -256,7 +256,7 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
   /**
     * Inserts `sep` between every two elements of `list`.
     */
-  def intersperse[A](list: List[A], sep: A): List[A] = list match {
+  private def intersperse[A](list: List[A], sep: A): List[A] = list match {
     case Nil => Nil
     case last :: Nil => last :: Nil
     case head :: neck :: tail => head :: sep :: intersperse(neck :: tail, sep)
