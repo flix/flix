@@ -79,7 +79,8 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
     */
   private def getDerivations(enum: KindedAst.Enum, root: KindedAst.Root)(implicit flix: Flix): List[KindedAst.Instance] = enum match {
     case KindedAst.Enum(_, _, _, _, derives, _, _, _, _) =>
-      val toStringSym = PredefinedClasses.lookupClassSym("ToString", root)
+      // lazy so that in we don't try a lookup if there are no derivations (important for Nix Lib)
+      lazy val toStringSym = PredefinedClasses.lookupClassSym("ToString", root)
       derives.map {
         case Ast.Derivation(sym, loc) if sym == toStringSym => createToString(enum, loc, root)
         case unknownSym => throw InternalCompilerException(s"Unexpected derivation: $unknownSym")
