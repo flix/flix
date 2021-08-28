@@ -513,6 +513,105 @@ object Instructions {
   F[R ** PReference[T2]] => F[R ** PReference[T1]] =
     GetObjectField(classType, fieldName, squeezeReference(fieldType).referenceType, undoErasure)
 
+
+  def XGETFIELD
+  [R <: Stack, T1 <: PType, T2 <: PRefType]
+  (className: JvmName, fieldName: String, fieldType: RType[T1], undoErasure: Boolean, tag: Tag[T2] = null):
+  F[R ** PReference[T2]] => F[R ** T1] =
+    fieldType match {
+      case RBool => GetBoolField(className, fieldName)
+      case RInt8 => GetInt8Field(className, fieldName)
+      case RInt16 => GetInt16Field(className, fieldName)
+      case RInt32 => GetInt32Field(className, fieldName)
+      case RInt64 => GetInt64Field(className, fieldName)
+      case RChar => GetCharField(className, fieldName)
+      case RFloat32 => GetFloat32Field(className, fieldName)
+      case RFloat64 => GetFloat64Field(className, fieldName)
+      case RReference(referenceType) => GetObjectField(className, fieldName, referenceType, undoErasure)
+    }
+
+  def GetBoolField
+  [R <: Stack, T2 <: PRefType]
+  (className: JvmName, fieldName: String, tag: Tag[T2] = null):
+  F[R ** PReference[T2]] => F[R ** PInt32] = f => {
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className.toInternalName, fieldName, RBool.toDescriptor)
+    castF(f)
+  }
+
+  def GetInt8Field
+  [R <: Stack, T1 <: PType, T2 <: PRefType]
+  (className: JvmName, fieldName: String, tag: Tag[T2] = null):
+  F[R ** PReference[T2]] => F[R ** PInt8] = f => {
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className.toInternalName, fieldName, RInt8.toDescriptor)
+    castF(f)
+  }
+
+  def GetInt16Field
+  [R <: Stack, T1 <: PType, T2 <: PRefType]
+  (className: JvmName, fieldName: String, tag: Tag[T2] = null):
+  F[R ** PReference[T2]] => F[R ** PInt16] = f => {
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className.toInternalName, fieldName, RInt16.toDescriptor)
+    castF(f)
+  }
+
+  def GetInt32Field
+  [R <: Stack, T1 <: PType, T2 <: PRefType]
+  (className: JvmName, fieldName: String, tag: Tag[T2] = null):
+  F[R ** PReference[T2]] => F[R ** PInt32] = f => {
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className.toInternalName, fieldName, RInt32.toDescriptor)
+    castF(f)
+  }
+
+  def GetInt64Field
+  [R <: Stack, T1 <: PType, T2 <: PRefType]
+  (className: JvmName, fieldName: String, tag: Tag[T2] = null):
+  F[R ** PReference[T2]] => F[R ** PInt64] = f => {
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className.toInternalName, fieldName, RInt64.toDescriptor)
+    castF(f)
+  }
+
+  def GetCharField
+  [R <: Stack, T1 <: PType, T2 <: PRefType]
+  (className: JvmName, fieldName: String, tag: Tag[T2] = null):
+  F[R ** PReference[T2]] => F[R ** PChar] = f => {
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className.toInternalName, fieldName, RChar.toDescriptor)
+    castF(f)
+  }
+
+  def GetFloat32Field
+  [R <: Stack, T1 <: PType, T2 <: PRefType]
+  (className: JvmName, fieldName: String, tag: Tag[T2] = null):
+  F[R ** PReference[T2]] => F[R ** PFloat32] = f => {
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className.toInternalName, fieldName, RFloat32.toDescriptor)
+    castF(f)
+  }
+
+  def GetFloat64Field
+  [R <: Stack, T1 <: PType, T2 <: PRefType]
+  (className: JvmName, fieldName: String, tag: Tag[T2] = null):
+  F[R ** PReference[T2]] => F[R ** PFloat64] = f => {
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className.toInternalName, fieldName, RFloat64.toDescriptor)
+    castF(f)
+  }
+
+  def GetObjectField
+  [R <: Stack, T1 <: PRefType, T2 <: PRefType]
+  (className: JvmName, fieldName: String, fieldType: RRefType[T1], undoErasure: Boolean, tag: Tag[T2] = null):
+  F[R ** PReference[T2]] => F[R ** PReference[T1]] = f => {
+    val descriptor = if (undoErasure) RObject.toDescriptor else fieldType.toDescriptor
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className.toInternalName, fieldName, descriptor)
+    if (undoErasure) RType.undoErasure(fieldType.jvmName, f.visitor)
+    castF(f)
+  }
+
+  def GetObjectField
+  [R <: Stack, T1 <: PRefType, T2 <: PRefType]
+  (className: JvmName, fieldName: String, fieldType: RType[PReference[T1]], undoErasure: Boolean):
+  F[R ** PReference[T2]] => F[R ** PReference[T1]] =
+    GetObjectField(className, fieldName, squeezeReference(fieldType).referenceType, undoErasure)
+
+
+
   // TODO(JLS): make ref/lazy specific versions
   // TODO(JLS): erasedType arg is awkward
   def PUTFIELD
@@ -1624,6 +1723,11 @@ object Instructions {
   [R <: Stack, T <: PRefType]:
   F[R ** PReference[T]] => F[R ** PReference[PAnyObject]] =
     f => f.asInstanceOf[F[R ** PReference[PAnyObject]]]
+
+  def ChannelSUBTYPE
+  [R <: Stack, T <: PRefType]:
+  F[R ** PReference[PChan[T]]] => F[R ** PReference[PChan[PAnyObject]]] =
+    f => f.asInstanceOf[F[R ** PReference[PChan[PAnyObject]]]]
 
   // TODO(JLS): This needs to return both StackEnd (no code should follow) and R ** T (compileExp should push T on stack) (maybe stop flag type on F)
   def TAILCALL

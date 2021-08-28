@@ -853,7 +853,50 @@ object BytecodeCompiler {
         compileExp(exp2) ~
         putChannelValue(exp2.tpe)
 
-    case Expression.SelectChannel(rules, default, tpe, loc) => ???
+    case Expression.SelectChannel(rules, default, tpe, loc) =>
+      WithSource[R](loc) ~
+        pushInt32(rules.size) ~
+        ANEWARRAY(RReference(RChannel(RReference(RObject)))) ~
+        multiComposition(rules.zipWithIndex) {
+          case (rule, index) =>
+            START[R ** PReference[PArray[PReference[PChan[PAnyObject]]]]] ~
+              DUP ~
+              pushInt32(index) ~
+              compileExp(rule.chan) ~
+              ChannelSUBTYPE ~
+              AASTORE
+        } ~
+        pushBool(default.isDefined) ~
+        ((f: F[R ** PReference[PArray[PReference[PChan[PAnyObject]]]] ** PInt32]) => {
+          f.visitor.visitMethodInsn(Opcodes.INVOKESTATIC, JvmName.Flix.Runtime.Channel.toInternalName, "select",
+            JvmName.getMethodDescriptor(List(JvmName.Flix.Runtime.Channel, RBool), JvmName.Flix.Runtime.SelectChoice), false)
+          f.asInstanceOf[F[R ** PReference[PAnyObject]]]
+        }) ~
+        DUP ~
+        (f => {
+          f.visitor.visitFieldInsn(Opcodes.GETFIELD, JvmName.Flix.Runtime.SelectChoice.toInternalName, "defaultChoice", RBool.toDescriptor)
+          f.asInstanceOf[F[R ** PReference[PAnyObject] ** PInt32]]
+        }) ~
+        IFNE{
+          START[R ** PReference[PAnyObject]] ~
+            POP ~
+            (if (default.isDefined) {
+              compileExp(default.get)
+            } else {
+              f => {
+                f.visitor.visitInsn(Opcodes.ACONST_NULL)
+                f.visitor.visitInsn(Opcodes.ATHROW)
+                f.asInstanceOf[F[R ** T]]
+              }
+            })
+        } {
+          START[R ** PReference[PAnyObject]] ~
+            DUP ~
+            GetInt32Field(JvmName.Flix.Runtime.SelectChoice, "branchNumber") ~
+            SCAFFOLD
+        }
+
+
     case Expression.Spawn(exp, tpe, loc) => ???
     case Expression.Lazy(exp, tpe, loc) =>
       WithSource[R](loc) ~
