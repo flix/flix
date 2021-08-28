@@ -89,7 +89,7 @@ object Symbol {
 
   def freshVarSym()(implicit flix: Flix): VarSym = {
     val id = flix.genSym.freshId()
-    new VarSym(id, s"var$id", UnkindedType.freshVar(loc = SourceLocation.Unknown), Scopedness.Unscoped, SourceLocation.Unknown)
+    new VarSym(id, s"var$id", Type.freshUnkindedVar(), Scopedness.Unscoped, SourceLocation.Unknown)
   }
 
   /**

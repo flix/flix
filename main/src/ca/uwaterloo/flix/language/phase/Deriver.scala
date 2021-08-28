@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Ast, Name, ResolvedAst, SemanticOperator, SourceLocation, Symbol, UnkindedType}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, ResolvedAst, SemanticOperator, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
@@ -125,10 +125,10 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
         sc = ResolvedAst.Scheme(
           tparams.tparams.map(_.tpe),
           List(ResolvedAst.TypeConstraint(PredefinedClasses.lookupClassSym("ToString", root), sc.base, loc)),
-          UnkindedType.mkPureArrow(sc.base, UnkindedType.mkString(loc))
+          Type.mkPureArrow(sc.base, Type.mkString(loc))
         ),
-        tpe = UnkindedType.mkString(loc),
-        eff = UnkindedType.Cst(UnkindedType.Constructor.Pure, loc),
+        tpe = Type.mkString(loc),
+        eff = Type.Cst(TypeConstructor.True, loc),
         loc = loc
       )
       val defn = ResolvedAst.Def(Symbol.mkDefnSym("ToString.toString"), spec, exp)
@@ -137,7 +137,7 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
       val caseTvars = for {
         caze <- cases.values
         tpe <- getTagArguments(caze.sc.base)
-        if tpe.isInstanceOf[UnkindedType.Var]
+        if tpe.isInstanceOf[Type.Var]
       } yield tpe
       val tconstrs = caseTvars.toList.distinct.map(ResolvedAst.TypeConstraint(PredefinedClasses.lookupClassSym("ToString", root), _, loc))
 
@@ -216,7 +216,7 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
   /**
     * Extracts the types from the given tag type.
     */
-  def getTagArguments(tpe: UnkindedType): List[UnkindedType] = {
+  def getTagArguments(tpe: Type): List[Type] = {
     tpe.typeArguments.headOption match {
       case None => throw InternalCompilerException("Unexpected empty type arguments.")
       case Some(packedArgs) => unpack(packedArgs)
@@ -229,17 +229,17 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
     * A Tuple unpacks to its member types.
     * Anything else unpacks to the singleton list of itself.
     */
-  def unpack(tpe: UnkindedType): List[UnkindedType] = tpe.typeConstructor match {
-    case Some(UnkindedType.Constructor.Unit) => Nil
-    case Some(UnkindedType.Constructor.Tuple(_)) => tpe.typeArguments
+  def unpack(tpe: Type): List[Type] = tpe.typeConstructor match {
+    case Some(TypeConstructor.Unit) => Nil
+    case Some(TypeConstructor.Tuple(_)) => tpe.typeArguments
     case _ => List(tpe)
   }
 
   /**
     * Creates a pattern corresponding to the given tag type.
     */
-  def mkPattern(tpe: UnkindedType)(implicit flix: Flix): (ResolvedAst.Pattern, List[Symbol.VarSym]) = tpe.typeConstructor match {
-    case Some(UnkindedType.Constructor.Tag(sym, tag)) =>
+  def mkPattern(tpe: Type)(implicit flix: Flix): (ResolvedAst.Pattern, List[Symbol.VarSym]) = tpe.typeConstructor match {
+    case Some(TypeConstructor.Tag(sym, tag)) =>
       getTagArguments(tpe) match {
         case Nil => (ResolvedAst.Pattern.Tag(sym, tag, ResolvedAst.Pattern.Unit(SourceLocation.Unknown), SourceLocation.Unknown), Nil)
         case _ :: Nil =>
