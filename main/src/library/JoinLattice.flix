@@ -1,4 +1,5 @@
 /*
+ *  Copyright 2021 Jonathan Lindegaard Starup
  *  Copyright 2020 Magnus Madsen
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,12 +31,150 @@ lawless class JoinLattice[a] {
 }
 
 instance JoinLattice[(a1, a2)] with JoinLattice[a1], JoinLattice[a2] {
-    pub def leastUpperBound(x: (a1, a2), y: (a1, a2)): (a1, a2) = match (x, y) {
-        case ((x1, x2), (y1, y2)) => (JoinLattice.leastUpperBound(x1, y1), JoinLattice.leastUpperBound(x2, y2))
+    pub def leastUpperBound(x: (a1, a2),
+                            y: (a1, a2)): (a1, a2) = match (x, y) {
+        case ((x1, x2), (y1, y2)) => (
+            JoinLattice.leastUpperBound(x1, y1),
+            JoinLattice.leastUpperBound(x2, y2)
+        )
     }
 }
 
-// TODO: Add instances for pairs N = 2 to N = 10.
+instance JoinLattice[(a1, a2, a3)] with JoinLattice[a1], JoinLattice[a2],
+                                        JoinLattice[a3] {
+    pub def leastUpperBound(x: (a1, a2, a3),
+                            y: (a1, a2, a3)): (a1, a2, a3) = match (x, y) {
+        case ((x1, x2, x3), (y1, y2, y3)) => (
+            JoinLattice.leastUpperBound(x1, y1),
+            JoinLattice.leastUpperBound(x2, y2),
+            JoinLattice.leastUpperBound(x3, y3)
+        )
+    }
+}
+
+instance JoinLattice[(a1, a2, a3, a4)] with JoinLattice[a1], JoinLattice[a2],
+                                            JoinLattice[a3], JoinLattice[a4] {
+    pub def leastUpperBound(x: (a1, a2, a3, a4),
+                            y: (a1, a2, a3, a4)): (a1, a2, a3, a4) = match (x, y) {
+        case ((x1, x2, x3, x4), (y1, y2, y3, y4)) => (
+            JoinLattice.leastUpperBound(x1, y1),
+            JoinLattice.leastUpperBound(x2, y2),
+            JoinLattice.leastUpperBound(x3, y3),
+            JoinLattice.leastUpperBound(x4, y4)
+        )
+    }
+}
+
+instance JoinLattice[(a1, a2, a3, a4, a5)] with JoinLattice[a1], JoinLattice[a2],
+                                                JoinLattice[a3], JoinLattice[a4],
+                                                JoinLattice[a5] {
+    pub def leastUpperBound(x: (a1, a2, a3, a4, a5),
+                            y: (a1, a2, a3, a4, a5)): (a1, a2, a3, a4, a5) = match (x, y) {
+        case ((x1, x2, x3, x4, x5), (y1, y2, y3, y4, y5)) => (
+            JoinLattice.leastUpperBound(x1, y1),
+            JoinLattice.leastUpperBound(x2, y2),
+            JoinLattice.leastUpperBound(x3, y3),
+            JoinLattice.leastUpperBound(x4, y4),
+            JoinLattice.leastUpperBound(x5, y5)
+        )
+    }
+}
+
+instance JoinLattice[(a1, a2, a3, a4, a5, a6)] with JoinLattice[a1], JoinLattice[a2],
+                                                    JoinLattice[a3], JoinLattice[a4],
+                                                    JoinLattice[a5], JoinLattice[a6] {
+    pub def leastUpperBound(x: (a1, a2, a3, a4, a5, a6),
+                            y: (a1, a2, a3, a4, a5, a6)): (a1, a2, a3, a4, a5, a6) = match (x, y) {
+        case ((x1, x2, x3, x4, x5, x6), (y1, y2, y3, y4, y5, y6)) => (
+            JoinLattice.leastUpperBound(x1, y1),
+            JoinLattice.leastUpperBound(x2, y2),
+            JoinLattice.leastUpperBound(x3, y3),
+            JoinLattice.leastUpperBound(x4, y4),
+            JoinLattice.leastUpperBound(x5, y5),
+            JoinLattice.leastUpperBound(x6, y6)
+        )
+    }
+}
+
+instance JoinLattice[(a1, a2, a3, a4, a5, a6, a7)] with JoinLattice[a1], JoinLattice[a2],
+                                                        JoinLattice[a3], JoinLattice[a4],
+                                                        JoinLattice[a5], JoinLattice[a6],
+                                                        JoinLattice[a7] {
+    pub def leastUpperBound(x: (a1, a2, a3, a4, a5, a6, a7),
+                            y: (a1, a2, a3, a4, a5, a6, a7)): (a1, a2, a3, a4, a5, a6, a7) = match (x, y) {
+        case ((x1, x2, x3, x4, x5, x6, x7), (y1, y2, y3, y4, y5, y6, y7)) => (
+            JoinLattice.leastUpperBound(x1, y1),
+            JoinLattice.leastUpperBound(x2, y2),
+            JoinLattice.leastUpperBound(x3, y3),
+            JoinLattice.leastUpperBound(x4, y4),
+            JoinLattice.leastUpperBound(x5, y5),
+            JoinLattice.leastUpperBound(x6, y6),
+            JoinLattice.leastUpperBound(x7, y7)
+        )
+    }
+}
+
+instance JoinLattice[(a1, a2, a3, a4, a5, a6, a7, a8)] with JoinLattice[a1], JoinLattice[a2],
+                                                            JoinLattice[a3], JoinLattice[a4],
+                                                            JoinLattice[a5], JoinLattice[a6],
+                                                            JoinLattice[a7], JoinLattice[a8] {
+    pub def leastUpperBound(x: (a1, a2, a3, a4, a5, a6, a7, a8),
+                            y: (a1, a2, a3, a4, a5, a6, a7, a8)): (a1, a2, a3, a4, a5, a6, a7, a8) = match (x, y) {
+        case ((x1, x2, x3, x4, x5, x6, x7, x8), (y1, y2, y3, y4, y5, y6, y7, y8)) => (
+            JoinLattice.leastUpperBound(x1, y1),
+            JoinLattice.leastUpperBound(x2, y2),
+            JoinLattice.leastUpperBound(x3, y3),
+            JoinLattice.leastUpperBound(x4, y4),
+            JoinLattice.leastUpperBound(x5, y5),
+            JoinLattice.leastUpperBound(x6, y6),
+            JoinLattice.leastUpperBound(x7, y7),
+            JoinLattice.leastUpperBound(x8, y8)
+        )
+    }
+}
+
+instance JoinLattice[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with JoinLattice[a1], JoinLattice[a2],
+                                                                JoinLattice[a3], JoinLattice[a4],
+                                                                JoinLattice[a5], JoinLattice[a6],
+                                                                JoinLattice[a7], JoinLattice[a8],
+                                                                JoinLattice[a9] {
+    pub def leastUpperBound(x: (a1, a2, a3, a4, a5, a6, a7, a8, a9),
+                            y: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): (a1, a2, a3, a4, a5, a6, a7, a8, a9) = match (x, y) {
+        case ((x1, x2, x3, x4, x5, x6, x7, x8, x9), (y1, y2, y3, y4, y5, y6, y7, y8, y9)) => (
+            JoinLattice.leastUpperBound(x1, y1),
+            JoinLattice.leastUpperBound(x2, y2),
+            JoinLattice.leastUpperBound(x3, y3),
+            JoinLattice.leastUpperBound(x4, y4),
+            JoinLattice.leastUpperBound(x5, y5),
+            JoinLattice.leastUpperBound(x6, y6),
+            JoinLattice.leastUpperBound(x7, y7),
+            JoinLattice.leastUpperBound(x8, y8),
+            JoinLattice.leastUpperBound(x9, y9)
+        )
+    }
+}
+
+instance JoinLattice[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with JoinLattice[a1], JoinLattice[a2],
+                                                                     JoinLattice[a3], JoinLattice[a4],
+                                                                     JoinLattice[a5], JoinLattice[a6],
+                                                                     JoinLattice[a7], JoinLattice[a8],
+                                                                     JoinLattice[a9], JoinLattice[a10] {
+    pub def leastUpperBound(x: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10),
+                            y: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10) = match (x, y) {
+        case ((x1, x2, x3, x4, x5, x6, x7, x8, x9, x10), (y1, y2, y3, y4, y5, y6, y7, y8, y9, y10)) => (
+            JoinLattice.leastUpperBound(x1, y1),
+            JoinLattice.leastUpperBound(x2, y2),
+            JoinLattice.leastUpperBound(x3, y3),
+            JoinLattice.leastUpperBound(x4, y4),
+            JoinLattice.leastUpperBound(x5, y5),
+            JoinLattice.leastUpperBound(x6, y6),
+            JoinLattice.leastUpperBound(x7, y7),
+            JoinLattice.leastUpperBound(x8, y8),
+            JoinLattice.leastUpperBound(x9, y9),
+            JoinLattice.leastUpperBound(x10, y10)
+        )
+    }
+}
 
 namespace JoinLattice {
 
