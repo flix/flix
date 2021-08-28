@@ -52,7 +52,7 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
     /**
       * Returns the sig symbol with the given `clazz` and name `sig`.
       */
-    def lookupSigSym(clazz: String, sig: String, root: ResolvedAst.Root): Symbol.SigSym= {
+    def lookupSigSym(clazz: String, sig: String, root: ResolvedAst.Root): Symbol.SigSym = {
       val clazzKey = new Symbol.ClassSym(Nil, clazz, SourceLocation.Unknown)
       val sigKey = new Symbol.SigSym(clazzKey, sig, SourceLocation.Unknown)
       root.classes(clazzKey).sigs(sigKey).sym
@@ -79,8 +79,9 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
     */
   private def getDerivations(enum: ResolvedAst.Enum, root: ResolvedAst.Root)(implicit flix: Flix): List[ResolvedAst.Instance] = enum match {
     case ResolvedAst.Enum(_, _, _, _, derives, _, _, _, _) =>
+      val toStringSym = PredefinedClasses.lookupClassSym("ToString", root)
       derives.map {
-        case ResolvedAst.Derivation(sym, loc) if sym == PredefinedClasses.lookupClassSym("ToString", root) => createToString(enum, loc, root)
+        case ResolvedAst.Derivation(sym, loc) if sym == toStringSym => createToString(enum, loc, root)
         case unknownSym => throw InternalCompilerException(s"Unexpected derivation: $unknownSym")
       }
   }
@@ -107,6 +108,8 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
     */
   private def createToString(enum: ResolvedAst.Enum, loc: SourceLocation, root: ResolvedAst.Root)(implicit flix: Flix): ResolvedAst.Instance = enum match {
     case ResolvedAst.Enum(_, _, _, tparams, _, cases, _, sc, _) =>
+      val toStringSym = PredefinedClasses.lookupClassSym("ToString", root)
+
       // create a match rule for each case and put them in a match expression
       val matchRules = cases.values.map(createToStringMatchRule(_, loc, root))
       val varSym = Symbol.freshVarSym()
@@ -124,7 +127,7 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
         fparams = List(ResolvedAst.FormalParam(varSym, Ast.Modifiers.Empty, sc.base, loc)),
         sc = ResolvedAst.Scheme(
           tparams.tparams.map(_.tpe),
-          List(ResolvedAst.TypeConstraint(PredefinedClasses.lookupClassSym("ToString", root), sc.base, loc)),
+          List(ResolvedAst.TypeConstraint(toStringSym, sc.base, loc)),
           Type.mkPureArrow(sc.base, Type.mkString(loc))
         ),
         tpe = Type.mkString(loc),
@@ -139,12 +142,12 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
         tpe <- getTagArguments(caze.sc.base)
         if tpe.isInstanceOf[Type.Var]
       } yield tpe
-      val tconstrs = caseTvars.toList.distinct.map(ResolvedAst.TypeConstraint(PredefinedClasses.lookupClassSym("ToString", root), _, loc))
+      val tconstrs = caseTvars.toList.distinct.map(ResolvedAst.TypeConstraint(toStringSym, _, loc))
 
       ResolvedAst.Instance(
         doc = Ast.Doc(Nil, loc),
         mod = Ast.Modifiers.Empty,
-        sym = PredefinedClasses.lookupClassSym("ToString", root),
+        sym = toStringSym,
         tpe = sc.base,
         tconstrs = tconstrs,
         defs = List(defn),
@@ -166,11 +169,12 @@ object Deriver extends Phase[ResolvedAst.Root, ResolvedAst.Root] {
 
       val tagPart = ResolvedAst.Expression.Str(tag.name, loc)
 
+      val toStringSym = PredefinedClasses.lookupSigSym("ToString", "toString", root)
       // call toString on each variable
       val toStrings = varSyms.map {
         varSym =>
           ResolvedAst.Expression.Apply(
-            ResolvedAst.Expression.Sig(PredefinedClasses.lookupSigSym("ToString", "toString", root), loc),
+            ResolvedAst.Expression.Sig(toStringSym, loc),
             List(ResolvedAst.Expression.Var(varSym, varSym.tvar, loc)),
             loc
           )
