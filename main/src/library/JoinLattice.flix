@@ -30,6 +30,27 @@ lawless class JoinLattice[a] {
 
 }
 
+namespace JoinLattice {
+
+    ///
+    /// The law asserts that the least upper bound operator returns
+    //  an element that is greater than or equal to each of its arguments.
+    ///
+    // TODO change to class law
+//    law leastUpperBound1[e](⊑: (e, e) -> Bool, ⊔: (e, e) -> e): Bool =
+//        ∀(x: e, y: e). (x ⊑ (x ⊔ y)) and (y ⊑ (x ⊔ y))
+
+    ///
+    /// The law asserts that the least upper bound operator returns
+    /// the smallest element that is larger than its two arguments.
+    ///
+    // TODO change to class law
+//    law leastUpperBound2[e](⊑: (e, e) -> Bool, ⊔: (e, e) -> e): Bool =
+//        let implies = (x, y) -> (not x) or y;
+//        ∀(x: e, y: e, z: e). ((x ⊑ z) and (y ⊑ z)) `implies` ((x ⊔ y) ⊑ z)
+
+}
+
 instance JoinLattice[(a1, a2)] with JoinLattice[a1], JoinLattice[a2] {
     pub def leastUpperBound(x: (a1, a2),
                             y: (a1, a2)): (a1, a2) = match (x, y) {
@@ -174,25 +195,4 @@ instance JoinLattice[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with JoinLattice
             JoinLattice.leastUpperBound(x10, y10)
         )
     }
-}
-
-namespace JoinLattice {
-
-    ///
-    /// The law asserts that the least upper bound operator returns
-    //  an element that is greater than or equal to each of its arguments.
-    ///
-    // TODO change to class law
-//    law leastUpperBound1[e](⊑: (e, e) -> Bool, ⊔: (e, e) -> e): Bool =
-//        ∀(x: e, y: e). (x ⊑ (x ⊔ y)) and (y ⊑ (x ⊔ y))
-
-    ///
-    /// The law asserts that the least upper bound operator returns
-    /// the smallest element that is larger than its two arguments.
-    ///
-    // TODO change to class law
-//    law leastUpperBound2[e](⊑: (e, e) -> Bool, ⊔: (e, e) -> e): Bool =
-//        let implies = (x, y) -> (not x) or y;
-//        ∀(x: e, y: e, z: e). ((x ⊑ z) and (y ⊑ z)) `implies` ((x ⊔ y) ⊑ z)
-
 }
