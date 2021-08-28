@@ -17,7 +17,9 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Ast.{EliminatedBy, IntroducedBy}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
+import ca.uwaterloo.flix.language.phase.Kinder
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.immutable.SortedSet
@@ -37,11 +39,12 @@ sealed trait Type {
     *
     * Returns a sorted set to ensure that the compiler is deterministic.
     */
-  def typeVars: SortedSet[Type.Var] = this match {
-    case x: Type.Var => SortedSet(x)
+  def typeVars: SortedSet[Type.KindedVar] = this match {
+    case x: Type.Var => SortedSet(x.asKinded)
     case Type.Cst(tc, _) => SortedSet.empty
-    case Type.Lambda(tvar, tpe) => tpe.typeVars - tvar
+    case Type.Lambda(tvar, tpe) => tpe.typeVars - tvar.asKinded
     case Type.Apply(tpe1, tpe2) => tpe1.typeVars ++ tpe2.typeVars
+    case Type.Ascribe(tpe, _) => tpe.typeVars
   }
 
   /**
@@ -65,19 +68,39 @@ sealed trait Type {
     * }}}
     */
   def typeConstructor: Option[TypeConstructor] = this match {
-    case Type.Var(_, _, _, _) => None
+    case Type.KindedVar(_, _, _, _) => None
+    case Type.UnkindedVar(_, _, _) => None
     case Type.Cst(tc, _) => Some(tc)
     case Type.Apply(t1, _) => t1.typeConstructor
+    case Type.Ascribe(tpe, _) => tpe.typeConstructor
     case Type.Lambda(_, _) => throw InternalCompilerException(s"Unexpected type constructor: Lambda.")
+  }
+
+  /**
+    * Returns the base type of a type application.
+    * Similar to [[Type.typeConstructor]] except that here we return the type (rather than the constructor),
+    * which may be a non-[[Type.Cst]] type.
+    *
+    * {{{
+    * Option[Int] => Option
+    * a[Int]      => a
+    * }}}
+    *
+    */
+  def baseType: Type.BaseType = this match {
+    case Type.Apply(t1, _) => t1.baseType
+    case bt: Type.BaseType => bt
   }
 
   /**
     * Returns a list of all type constructors in `this` type.
     */
   def typeConstructors: List[TypeConstructor] = this match {
-    case Type.Var(_, _, _, _) => Nil
+    case Type.KindedVar(_, _, _, _) => Nil
+    case Type.UnkindedVar(_, _, _) => Nil
     case Type.Cst(tc, _) => tc :: Nil
     case Type.Apply(t1, t2) => t1.typeConstructors ::: t2.typeConstructors
+    case Type.Ascribe(tpe, _) => tpe.typeConstructors
     case Type.Lambda(_, _) => throw InternalCompilerException(s"Unexpected type constructor: Lambda.")
   }
 
@@ -104,11 +127,12 @@ sealed trait Type {
   /**
     * Applies `f` to every type variable in `this` type.
     */
-  def map(f: Type.Var => Type): Type = this match {
-    case tvar: Type.Var => f(tvar)
+  def map(f: Type.KindedVar => Type): Type = this match {
+    case tvar: Type.Var => f(tvar.asKinded)
     case Type.Cst(_, _) => this
     case Type.Lambda(tvar, tpe) => Type.Lambda(tvar, tpe.map(f))
     case Type.Apply(tpe1, tpe2) => Type.Apply(tpe1.map(f), tpe2.map(f))
+    case Type.Ascribe(tpe, kind) => Type.Ascribe(tpe.map(f), kind)
   }
 
   /**
@@ -145,9 +169,11 @@ sealed trait Type {
     * Returns the size of `this` type.
     */
   def size: Int = this match {
-    case Type.Var(_, _, _, _) => 1
+    case Type.KindedVar(_, _, _, _) => 1
+    case Type.UnkindedVar(_, _, _) => 1
     case Type.Cst(tc, _) => 1
     case Type.Lambda(_, tpe) => tpe.size + 1
+    case Type.Ascribe(tpe, _) => tpe.size
     case Type.Apply(tpe1, tpe2) => tpe1.size + tpe2.size + 1
   }
 
@@ -313,14 +339,46 @@ object Type {
   /////////////////////////////////////////////////////////////////////////////
 
   /**
-    * A type variable expression.
+    * The union of type variables.
     */
-  case class Var(id: Int, kind: Kind, rigidity: Rigidity = Rigidity.Flexible, text: Option[String] = None) extends Type with Ordered[Type.Var] {
+  sealed trait Var extends Type {
+    def id: Int
+
+    def text: Option[String]
+
+    /**
+      * Casts this type variable to a kinded type variable.
+      */
+    def asKinded: Type.KindedVar = this match {
+      case tvar: KindedVar => tvar
+      case _: UnkindedVar => throw InternalCompilerException("Unexpected unkinded type variable.")
+    }
+
+    /**
+      * Casts this type variable to an unkinded type variable.
+      */
+    def asUnkinded: Type.UnkindedVar = this match {
+      case tvar: UnkindedVar => tvar
+      case _: KindedVar => throw InternalCompilerException("Unexpected kinded type variable.")
+    }
+  }
+
+  /**
+    * The union of non-Apply types.
+    * Used to restrict the range of return values of [[Type.baseType]].
+    */
+  sealed trait BaseType extends Type
+
+  /**
+    * A type variable.
+    */
+  @IntroducedBy(Kinder.getClass)
+  case class KindedVar(id: Int, kind: Kind, rigidity: Rigidity = Rigidity.Flexible, text: Option[String] = None) extends Type with Var with BaseType with Ordered[Type.KindedVar] {
     /**
       * Returns `true` if `this` type variable is equal to `o`.
       */
     override def equals(o: scala.Any): Boolean = o match {
-      case that: Var => this.id == that.id
+      case that: KindedVar => this.id == that.id
       case _ => false
     }
 
@@ -332,13 +390,51 @@ object Type {
     /**
       * Compares `this` type variable to `that` type variable.
       */
-    override def compare(that: Type.Var): Int = this.id - that.id
+    override def compare(that: Type.KindedVar): Int = this.id - that.id
   }
+
+  /**
+    * A type variable without a kind.
+    */
+  @EliminatedBy(Kinder.getClass)
+  case class UnkindedVar(id: Int, rigidity: Rigidity = Rigidity.Flexible, text: Option[String] = None) extends Type with Var with BaseType with Ordered[Type.UnkindedVar] {
+
+    override def kind: Kind = throw InternalCompilerException("Attempt to access kind of unkinded type variable")
+
+    /**
+      * Returns `true` if `this` type variable is equal to `o`.
+      */
+    override def equals(o: scala.Any): Boolean = o match {
+      case that: KindedVar => this.id == that.id
+      case _ => false
+    }
+
+    /**
+      * Returns the hash code of `this` type variable.
+      */
+    override def hashCode(): Int = id
+
+    /**
+      * Compares `this` type variable to `that` type variable.
+      */
+    override def compare(that: Type.UnkindedVar): Int = this.id - that.id
+
+    /**
+      * Converts the UnkindedVar to a Var with the given `kind`.
+      */
+    def ascribedWith(kind: Kind): Type.KindedVar = Type.KindedVar(id, kind, rigidity, text)
+  }
+
+  /**
+    * Represents a type ascribed with a kind.
+    */
+  @EliminatedBy(Kinder.getClass)
+  case class Ascribe(tpe: Type, kind: Kind) extends Type with BaseType
 
   /**
     * A type represented by the type constructor `tc`.
     */
-  case class Cst(tc: TypeConstructor, loc: SourceLocation) extends Type {
+  case class Cst(tc: TypeConstructor, loc: SourceLocation) extends Type with BaseType {
     def kind: Kind = tc.kind
 
     override def hashCode(): Int = tc.hashCode()
@@ -352,7 +448,7 @@ object Type {
   /**
     * A type expression that represents a type abstraction [x] => tpe.
     */
-  case class Lambda(tvar: Type.Var, tpe: Type) extends Type {
+  case class Lambda(tvar: Type.Var, tpe: Type) extends Type with BaseType {
     def kind: Kind = Kind.Star ->: tpe.kind
   }
 
@@ -365,7 +461,7 @@ object Type {
       *
       * The kind of a type application can unique be determined from the kind of the first type argument `t1`.
       */
-    val kind: Kind = {
+    lazy val kind: Kind = {
       tpe1.kind match {
         case Kind.Arrow(k1, k2) =>
           // TODO: Kind check (but only for boolean formulas for now).
@@ -388,9 +484,17 @@ object Type {
   /**
     * Returns a fresh type variable of the given kind `k` and rigidity `r`.
     */
-  def freshVar(k: Kind, r: Rigidity = Rigidity.Flexible, text: Option[String] = None)(implicit flix: Flix): Type.Var = {
+  def freshVar(k: Kind, r: Rigidity = Rigidity.Flexible, text: Option[String] = None)(implicit flix: Flix): Type.KindedVar = {
     val id = flix.genSym.freshId()
-    Type.Var(id, k, r, text)
+    Type.KindedVar(id, k, r, text)
+  }
+
+  /**
+    * Returns a fresh unkinded type variable of the given kind `k` and rigidity `r`.
+    */
+  def freshUnkindedVar(r: Rigidity = Rigidity.Flexible, text: Option[String] = None)(implicit flix: Flix): Type.UnkindedVar = {
+    val id = flix.genSym.freshId()
+    Type.UnkindedVar(id, r, text)
   }
 
   /**
@@ -557,19 +661,19 @@ object Type {
   def mkChoice(tpe0: Type, isAbsent: Type, isPresent: Type): Type = {
     val sym = Symbol.mkEnumSym("Choice")
     val kind = Kind.Star ->: Kind.Bool ->: Kind.Bool ->: Kind.Star
-    val tc = TypeConstructor.Enum(sym, kind)
+    val tc = TypeConstructor.KindedEnum(sym, kind)
     Apply(Apply(Apply(Cst(tc, SourceLocation.Unknown), tpe0), isAbsent), isPresent)
   }
 
   /**
     * Construct the enum type constructor for the given symbol `sym` with the given kind `k`.
     */
-  def mkEnum(sym: Symbol.EnumSym, k: Kind, loc: SourceLocation): Type = Type.Cst(TypeConstructor.Enum(sym, k), loc)
+  def mkEnum(sym: Symbol.EnumSym, k: Kind, loc: SourceLocation): Type = Type.Cst(TypeConstructor.KindedEnum(sym, k), loc)
 
   /**
     * Construct the enum type `Sym[ts]`.
     */
-  def mkEnum(sym: Symbol.EnumSym, ts: List[Type]): Type = mkApply(Type.Cst(TypeConstructor.Enum(sym, Kind.mkArrow(ts.length)), SourceLocation.Unknown), ts)
+  def mkEnum(sym: Symbol.EnumSym, ts: List[Type]): Type = mkApply(Type.Cst(TypeConstructor.KindedEnum(sym, Kind.mkArrow(ts.length)), SourceLocation.Unknown), ts)
 
   /**
     * Constructs a tag type for the given `sym`, `tag`, `caseType` and `resultType`.
@@ -660,6 +764,8 @@ object Type {
 
   /**
     * Returns the type `And(tpe1, tpe2)`.
+    *
+    * Must not be used before kinding.
     */
   def mkAnd(tpe1: Type, tpe2: Type): Type = (tpe1, tpe2) match {
     case (Type.Cst(TypeConstructor.True, _), _) => tpe2
@@ -671,11 +777,15 @@ object Type {
 
   /**
     * Returns the type `And(tpe1, And(tpe2, tpe3))`.
+    *
+    * Must not be used before kinding.
     */
   def mkAnd(tpe1: Type, tpe2: Type, tpe3: Type): Type = mkAnd(tpe1, mkAnd(tpe2, tpe3))
 
   /**
     * Returns the type `And(tpe1, And(tpe2, ...))`.
+    *
+    * Must not be used before kinding.
     */
   def mkAnd(tpes: List[Type]): Type = tpes match {
     case Nil => Type.True
@@ -684,6 +794,8 @@ object Type {
 
   /**
     * Returns the type `Or(tpe1, tpe2)`.
+    *
+    * Must not be used before kinding.
     */
   def mkOr(tpe1: Type, tpe2: Type): Type = (tpe1, tpe2) match {
     case (Type.Cst(TypeConstructor.True, _), _) => Type.True
@@ -695,6 +807,8 @@ object Type {
 
   /**
     * Returns the type `Or(tpe1, Or(tpe2, ...))`.
+    *
+    * Must not be used before kinding.
     */
   def mkOr(tpes: List[Type]): Type = tpes match {
     case Nil => Type.False
@@ -703,54 +817,23 @@ object Type {
 
   /**
     * Returns the type `tpe1 => tpe2`.
+    *
+    * Must not be used before kinding.
     */
-  def mkImplies(tpe1: Type, tpe2: Type): Type = Type.mkOr(Type.mkNot(tpe1), tpe2)
+  def mkImplies(tpe1: Type, tpe2: Type): Type = mkOr(Type.mkNot(tpe1), tpe2)
 
   /**
     * Returns a Boolean type that represents the equivalence of `x` and `y`.
     *
     * That is, `x == y` iff `(x /\ y) \/ (not x /\ not y)`
+    *
+    * Must not be used before kinding.
     */
-  def mkEquiv(x: Type, y: Type): Type = Type.mkOr(Type.mkAnd(x, y), Type.mkAnd(Type.mkNot(x), Type.mkNot(y)))
+  def mkEquiv(x: Type, y: Type): Type = mkOr(mkAnd(x, y), mkAnd(Type.mkNot(x), Type.mkNot(y)))
 
   /**
     * Returns a Region type for the given rigid variable `l` with the given source location `loc`.
     */
-  def mkRegion(l: Type.Var, loc: SourceLocation): Type =
+  def mkRegion(l: Type.KindedVar, loc: SourceLocation): Type =
     Type.Apply(Type.Cst(TypeConstructor.Region, loc), l)
-
-  /**
-    * Returns a simplified (evaluated) form of the given type `tpe0`.
-    *
-    * Performs beta-reduction of type abstractions and applications.
-    */
-  def simplify(tpe0: Type): Type = {
-    def eval(t: Type, subst: Map[Type.Var, Type]): Type = t match {
-      case tvar: Type.Var => subst.getOrElse(tvar, tvar)
-
-      case Type.Cst(_, _) => t
-
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field), _), tpe), rest) =>
-        val t1 = eval(tpe, subst)
-        val t2 = eval(rest, subst)
-        Type.mkRecordExtend(field, t1, t2)
-
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(pred), _), tpe), rest) =>
-        val t1 = eval(tpe, subst)
-        val t2 = eval(rest, subst)
-        Type.mkSchemaExtend(pred, t1, t2)
-
-      case Type.Lambda(tvar, tpe) => Type.Lambda(tvar, eval(tpe, subst))
-
-      // TODO: Does not take variable capture into account.
-      case Type.Apply(tpe1, tpe2) => (eval(tpe1, subst), eval(tpe2, subst)) match {
-        case (Type.Lambda(tvar, tpe3), t2) => eval(tpe3, subst + (tvar -> t2))
-        case (t1, t2) => Type.Apply(t1, t2)
-      }
-    }
-
-    eval(tpe0, Map.empty)
-  }
-
-
 }

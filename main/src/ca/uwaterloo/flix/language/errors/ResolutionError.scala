@@ -17,8 +17,8 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, UnkindedType}
-import ca.uwaterloo.flix.language.debug.{Audience, FormatKind, FormatType}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
@@ -117,14 +117,14 @@ object ResolutionError {
     * @param tpe the illegal type.
     * @param loc the location where the error occurred.
     */
-  case class IllegalType(tpe: UnkindedType, loc: SourceLocation) extends ResolutionError {
-    private def formatUnkindedType(tpe: UnkindedType): String = tpe.toString // TODO
+  case class IllegalType(tpe: Type, loc: SourceLocation) extends ResolutionError {
 
     def summary: String = "Illegal type."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Illegal type: '" << Red(formatUnkindedType(tpe)) << "'." << NewLine
+      vt << ">> Illegal type: '" << Red(FormatType.formatType(tpe)) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "illegal type.") << NewLine
     }
@@ -492,6 +492,52 @@ object ResolutionError {
         vt << s"$subClass extends $superClass" << NewLine
       }
       vt
+    }
+  }
+
+  /**
+    * An error raised to indicate a duplicate derivation.
+    *
+    * @param sym  the class symbol of the duplicate derivation.
+    * @param loc1 the location of the first occurrence.
+    * @param loc2 the location of the second occurrence.
+    */
+  case class DuplicateDerivation(sym: Symbol.ClassSym, loc1: SourceLocation, loc2: SourceLocation) extends ResolutionError {
+    override def summary: String = s"Duplicate derivation: ${sym.name}"
+
+    override def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Duplicate derivation '" << Red(sym.name) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc1, "the first occurrence was here.") << NewLine
+      vt << NewLine
+      vt << Code(loc2, "the second occurrence was here.") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Remove one of the occurrences." << NewLine
+    }
+
+    override def loc: SourceLocation = loc1
+  }
+
+  /**
+    * An error raised to indicate an illegal derivation.
+    *
+    * @param sym       the class symbol of the illegal derivation.
+    * @param legalSyms the list of class symbols of legal derivations.
+    * @param loc       the location where the error occurred.
+    */
+  case class IllegalDerivation(sym: Symbol.ClassSym, legalSyms: List[Symbol.ClassSym], loc: SourceLocation) extends ResolutionError {
+    override def summary: String = s"Illegal derivation: ${sym.name}"
+
+    override def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Illegal derivation '" << Red(sym.name) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "Illegal derivation.")
+      vt << NewLine
+      vt << Underline("Tip:") << s" Only the following classes may be derived: ${legalSyms.map(_.name).mkString(", ")}."
     }
   }
 

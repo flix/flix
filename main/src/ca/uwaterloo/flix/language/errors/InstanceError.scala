@@ -52,7 +52,7 @@ object InstanceError {
       vt << Underline("Tip:") << " Remove or change the type of one of the instances." << NewLine
     }
 
-    def loc: SourceLocation = loc1 min loc2
+    def loc: SourceLocation = loc1
   }
 
   /**
@@ -128,7 +128,7 @@ object InstanceError {
     * @param sym  the class symbol.
     * @param loc  the location where the error occurred.
     */
-  case class DuplicateTypeVariableOccurrence(tvar: Type.Var, sym: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
+  case class DuplicateTypeVariableOccurrence(tvar: Type.KindedVar, sym: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
     override def summary: String = "Duplicate type variable."
 
     override def message: VirtualTerminal = {

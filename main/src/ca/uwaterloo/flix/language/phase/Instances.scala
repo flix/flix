@@ -99,7 +99,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
     def checkOrphan(inst: TypedAst.Instance): Validation[Unit, InstanceError] = inst match {
       case TypedAst.Instance(_, _, classSym, tpe, _, _, ns, loc) => tpe.typeConstructor match {
         // Case 1: Enum type in the same namespace as the instance: not an orphan
-        case Some(TypeConstructor.Enum(enumSym, _)) if enumSym.namespace == ns.idents.map(_.name) => ().toSuccess
+        case Some(TypeConstructor.KindedEnum(enumSym, _)) if enumSym.namespace == ns.idents.map(_.name) => ().toSuccess
         // Case 2: Any type in the class namespace: not an orphan
         case _ if (classSym.namespace) == ns.idents.map(_.name) => ().toSuccess
         // Case 3: Any type outside the class companion namespace and enum declaration namespace: orphan
@@ -115,12 +115,11 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
     def checkSimple(inst: TypedAst.Instance): Validation[Unit, InstanceError] = inst match {
       case TypedAst.Instance(_, _, sym, tpe, _, _, _, loc) => tpe match {
         case _: Type.Cst => ().toSuccess
-        case _: Type.Var => InstanceError.ComplexInstanceType(tpe, sym, loc).toFailure
-        case _: Type.Lambda => throw InternalCompilerException("Unexpected lambda type.")
+        case _: Type.KindedVar => InstanceError.ComplexInstanceType(tpe, sym, loc).toFailure
         case _: Type.Apply =>
-          Validation.fold(tpe.typeArguments, List.empty[Type.Var]) {
+          Validation.fold(tpe.typeArguments, List.empty[Type.KindedVar]) {
             // Case 1: Type variable
-            case (seen, tvar: Type.Var) =>
+            case (seen, tvar: Type.KindedVar) =>
               // Case 1.1 We've seen it already. Error.
               if (seen.contains(tvar))
                 InstanceError.DuplicateTypeVariableOccurrence(tvar, sym, loc).toFailure
@@ -130,6 +129,9 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
             // Case 2: Non-type variable. Error.
             case (_, _) => InstanceError.ComplexInstanceType(tpe, sym, loc).toFailure
           }.map(_ => ())
+        case _: Type.Lambda => throw InternalCompilerException("Unexpected lambda type.")
+        case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type.")
+        case _: Type.Ascribe => throw InternalCompilerException("Unexpected ascribe type.")
       }
     }
 

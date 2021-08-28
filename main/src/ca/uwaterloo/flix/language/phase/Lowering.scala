@@ -132,16 +132,18 @@ object Lowering extends Phase[Root, Root] {
     val defs = ParOps.parMap(root.defs.values, (d: Def) => visitDef(d)(root, flix))
     val sigs = ParOps.parMap(root.sigs.values, (s: Sig) => visitSig(s)(root, flix))
     val instances = ParOps.parMap(root.instances.values, (insts: List[Instance]) => insts.map(i => visitInstance(i)(root, flix)))
+    val enums = ParOps.parMap(root.enums.values, (e: Enum) => visitEnum(e)(root, flix))
 
     val newDefs = defs.map(kv => kv.sym -> kv).toMap
     val newSigs = sigs.map(kv => kv.sym -> kv).toMap
     val newInstances = instances.map(kv => kv.head.sym -> kv).toMap
+    val newEnums = enums.map(kv => kv.sym -> kv).toMap
 
     // Sigs are shared between the `sigs` field and the `classes` field.
     // Instead of visiting twice, we visit the `sigs` field and then look up the results when visiting classes.
     val classes = ParOps.parMap(root.classes.values, (c: Class) => visitClass(c, newSigs)(root, flix))
     val newClasses = classes.map(kv => kv.sym -> kv).toMap
-    root.copy(defs = newDefs, sigs = newSigs, instances = newInstances, classes = newClasses).toSuccess
+    root.copy(defs = newDefs, sigs = newSigs, instances = newInstances, enums = newEnums, classes = newClasses).toSuccess
   }
 
   /**
@@ -173,6 +175,22 @@ object Lowering extends Phase[Root, Root] {
       val tconstrs = tconstrs0.map(visitTypeConstraint)
       val defs = defs0.map(visitDef)
       Instance(doc, mod, sym, tpe, tconstrs, defs, ns, loc)
+  }
+
+  /**
+    * Lowers the given enum `enum0`.
+    */
+  private def visitEnum(enum0: Enum)(implicit root: Root, flix: Flix): Enum = enum0 match {
+    case Enum(doc, mod, sym, tparams, cases0, tpeDeprecated0, sc0, loc) =>
+      val tpeDeprecated = visitType(tpeDeprecated0)
+      val sc = visitScheme(sc0)
+      val cases = cases0.map {
+        case (_, Case(caseSym, tag, caseTpeDeprecated0, caseSc0, loc)) =>
+          val caseTpeDeprecated = visitType(caseTpeDeprecated0)
+          val caseSc = visitScheme(caseSc0)
+          (tag, Case(caseSym, tag, caseTpeDeprecated, caseSc, loc))
+      }
+      Enum(doc, mod, sym, tparams, cases, tpeDeprecated, sc, loc)
   }
 
   /**
@@ -665,8 +683,8 @@ object Lowering extends Phase[Root, Root] {
     */
   private def visitType(tpe0: Type)(implicit root: Root, flix: Flix): Type = {
     def visit(tpe: Type): Type = tpe match {
-      case Type.Var(id, kind, rigidity, text) => kind match {
-        case Kind.Schema => Type.Var(id, Kind.Star, rigidity, text)
+      case Type.KindedVar(id, kind, rigidity, text) => kind match {
+        case Kind.Schema => Type.KindedVar(id, Kind.Star, rigidity, text)
         case _ => tpe0
       }
 
@@ -677,7 +695,9 @@ object Lowering extends Phase[Root, Root] {
         val t2 = visitType(tpe2)
         Type.Apply(t1, t2)
 
-      case Type.Lambda(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
+      case _: Type.Lambda => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
+      case _: Type.UnkindedVar => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
+      case _: Type.Ascribe => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
     }
 
     if (tpe0.kind == Kind.Schema)

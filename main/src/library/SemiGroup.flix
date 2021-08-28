@@ -15,11 +15,19 @@
  */
 
 ///
-/// A type class for closable types.
+/// A type class for types that form a semigroup.
 ///
-pub lawless class Drop[a] {
+pub lawless class SemiGroup[a] {
     ///
-    /// Drops `x`.
+    /// An associative binary operation on `a`.
     ///
-    pub def drop(x: a): Unit & Impure
+    pub def combine(x: a, y: a): a
+}
+
+instance SemiGroup[Unit] {
+    pub def combine(_: Unit, _: Unit): Unit = ()
+}
+
+instance SemiGroup[String] {
+    pub def combine(x: String, y: String): String = x + y
 }

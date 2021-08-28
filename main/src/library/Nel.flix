@@ -314,8 +314,8 @@ namespace Nel {
     ///
     /// Applies `combine` to all elements in `xs` until a single value is obtained.
     ///
-    pub def reduce(xs: Nel[a]): a with Semigroup[a] = match xs {
-        case Nel(h, l) => Foldable.foldLeft((acc, x) -> Semigroup.combine(acc, x), h, l)
+    pub def reduce(xs: Nel[a]): a with SemiGroup[a] = match xs {
+        case Nel(h, l) => Foldable.foldLeft((acc, x) -> SemiGroup.combine(acc, x), h, l)
     }
 
     ///

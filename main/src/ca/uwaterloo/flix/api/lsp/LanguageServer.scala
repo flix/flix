@@ -324,26 +324,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       }
     }
 
-    /**
-      * Returns a list of code lenses for the unit tests in the program.
-      */
-    def mkCodeLensesForUnitTests(): List[CodeLens] = {
-      // Case 1: No root. Return immediately.
-      if (root == null) {
-        return Nil
-      }
-
-      val result = mutable.ListBuffer.empty[CodeLens]
-      for ((sym, defn) <- root.defs) {
-        if (matchesUri(uri, defn.spec.loc) && defn.spec.ann.exists(_.name.isInstanceOf[Ast.Annotation.Test])) {
-          val loc = defn.sym.loc
-          val cmd = Command("Run All Tests", "flix.cmdRunAllTests", Nil)
-          result.addOne(CodeLens(Range.from(loc), Some(cmd)))
-        }
-      }
-      result.toList
-    }
-
     //
     // Compute all code lenses.
     //
@@ -355,14 +335,12 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     * Processes a complete request.
     */
   private def processComplete(requestId: String, uri: String, pos: Position)(implicit ws: WebSocket): JValue = {
-    val word = for {
-      source <- sources.get(uri)
-      line <- lineAt(source, pos.line - 1)
-      word <- wordAt(line, pos.character - 1)
-    } yield word
+    val source = sources.get(uri)
+    val line = source.flatMap(lineAt(_, pos.line - 1))
+    val word = line.flatMap(wordAt(_, pos.character - 1))
 
     val t = System.nanoTime()
-    val suggestions = CompleteProvider.autoComplete(uri, pos, word)(index, root)
+    val suggestions = CompleteProvider.autoComplete(uri, pos, line, word)(index, root)
     // println(s"Found ${suggestions.size} suggestions for '$word' (elapsed: " + ((System.nanoTime() - t) / 1_000_000) + "ms)")
 
     val result = CompletionList(isIncomplete = true, suggestions)

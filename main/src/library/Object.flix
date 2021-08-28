@@ -22,4 +22,17 @@ namespace Object {
         import java.util.Objects:isNull(##java.lang.Object);
         isNull(x as ##java.lang.Object) as & Pure
 
+    ///
+    /// Returns `None` if the given value `x` is `null`, otherwise returns `Some(x)`.
+    ///
+    pub def toOption(x: a): Option[a] =
+        if (isNull(x)) None else Some(x)
+
+    ///
+    /// Unsafely converts `x` to a string using Java's built-in toString.
+    ///
+    pub def toString(x: a): String =
+        import java.util.Objects:toString(##java.lang.Object);
+        toString(x as ##java.lang.Object) as & Pure
+
 }

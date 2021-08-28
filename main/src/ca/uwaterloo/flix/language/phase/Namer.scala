@@ -164,7 +164,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       /*
      * Enum.
      */
-      case WeededAst.Declaration.Enum(doc, mod, ident, tparams0, cases, loc) =>
+      case WeededAst.Declaration.Enum(doc, mod, ident, tparams0, derives, cases, loc) =>
         val enums0 = prog0.enums.getOrElse(ns0, Map.empty)
         lookupTypeOrClass(ident, ns0, prog0) match {
           case LookupResult.NotDefined =>
@@ -187,7 +187,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
             mapN(casesOf(cases, uenv0, tenv)) {
               case cases =>
-                val enum = NamedAst.Enum(doc, mod, sym, tparams, cases, enumType, loc)
+                val enum = NamedAst.Enum(doc, mod, sym, tparams, derives, cases, enumType, loc)
                 val enums = enums0 + (ident.name -> enum)
                 prog0.copy(enums = prog0.enums + (ns0 -> enums))
             }
@@ -270,7 +270,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Performs naming on the given constraint `c0` under the given environments `env0`, `uenv0`, and `tenv0`.
     */
-  private def visitConstraint(c0: WeededAst.Constraint, outerEnv: Map[String, Symbol.VarSym], uenv0: UseEnv, tenv0: Map[String, UnkindedType.Var])(implicit flix: Flix): Validation[NamedAst.Constraint, NameError] = c0 match {
+  private def visitConstraint(c0: WeededAst.Constraint, outerEnv: Map[String, Symbol.VarSym], uenv0: UseEnv, tenv0: Map[String, Type.UnkindedVar])(implicit flix: Flix): Validation[NamedAst.Constraint, NameError] = c0 match {
     case WeededAst.Constraint(h, bs, loc) =>
       // Find the variables visible in the head and rule scope of the constraint.
       // Remove any variables already in the outer environment.
@@ -312,7 +312,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Performs naming on the given `cases` map.
     */
-  private def casesOf(cases: Map[Name.Tag, WeededAst.Case], uenv0: UseEnv, tenv0: Map[String, UnkindedType.Var])(implicit flix: Flix): Validation[Map[Name.Tag, NamedAst.Case], NameError] = {
+  private def casesOf(cases: Map[Name.Tag, WeededAst.Case], uenv0: UseEnv, tenv0: Map[String, Type.UnkindedVar])(implicit flix: Flix): Validation[Map[Name.Tag, NamedAst.Case], NameError] = {
     val casesVal = cases map {
       case (name, WeededAst.Case(enum, tag, tpe)) =>
         mapN(visitType(tpe, uenv0, tenv0)) {
@@ -325,7 +325,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Performs naming on the given class `clazz`.
     */
-  private def visitClass(clazz: WeededAst.Declaration.Class, uenv0: UseEnv, tenv0: Map[String, UnkindedType.Var], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Class, NameError] = clazz match {
+  private def visitClass(clazz: WeededAst.Declaration.Class, uenv0: UseEnv, tenv0: Map[String, Type.UnkindedVar], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Class, NameError] = clazz match {
     case WeededAst.Declaration.Class(doc, mod, ident, tparams0, superClasses0, signatures, laws0, loc) =>
       val sym = Symbol.mkClassSym(ns0, ident)
       val tparam = getTypeParam(tparams0)
@@ -341,7 +341,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Performs naming on the given instance `instance`.
     */
-  private def visitInstance(instance: WeededAst.Declaration.Instance, uenv0: UseEnv, tenv0: Map[String, UnkindedType.Var], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Instance, NameError] = instance match {
+  private def visitInstance(instance: WeededAst.Declaration.Instance, uenv0: UseEnv, tenv0: Map[String, Type.UnkindedVar], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Instance, NameError] = instance match {
     case WeededAst.Declaration.Instance(doc, mod, clazz, tpe0, tconstrs, defs0, loc) =>
       val tparams = getImplicitTypeParamsFromTypes(List(tpe0))
       val tenv = tenv0 ++ getTypeEnv(tparams.tparams)
@@ -358,7 +358,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Performs naming on the given type constraint `tconstr`.
     */
-  private def visitTypeConstraint(tconstr: WeededAst.TypeConstraint, uenv0: UseEnv, tenv0: Map[String, UnkindedType.Var], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.TypeConstraint, NameError] = tconstr match {
+  private def visitTypeConstraint(tconstr: WeededAst.TypeConstraint, uenv0: UseEnv, tenv0: Map[String, Type.UnkindedVar], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.TypeConstraint, NameError] = tconstr match {
     case WeededAst.TypeConstraint(clazz0, tparam0, loc) =>
       val clazz = getClass(clazz0, uenv0)
       mapN(visitType(tparam0, uenv0, tenv0)) {
@@ -369,7 +369,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Performs naming on the given signature declaration `sig` under the given environments `env0`, `uenv0`, and `tenv0`.
     */
-  private def visitSig(sig: WeededAst.Declaration.Sig, uenv0: UseEnv, tenv0: Map[String, UnkindedType.Var], ns0: Name.NName, classIdent: Name.Ident, classSym: Symbol.ClassSym, classTparam: NamedAst.TypeParam)(implicit flix: Flix): Validation[NamedAst.Sig, NameError] = sig match {
+  private def visitSig(sig: WeededAst.Declaration.Sig, uenv0: UseEnv, tenv0: Map[String, Type.UnkindedVar], ns0: Name.NName, classIdent: Name.Ident, classSym: Symbol.ClassSym, classTparam: NamedAst.TypeParam)(implicit flix: Flix): Validation[NamedAst.Sig, NameError] = sig match {
     case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, exp0, tpe0, retTpe0, eff0, tconstrs0, loc) =>
       val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, allowElision = true, uenv0, tenv0)
       val tenv = tenv0 ++ getTypeEnv(tparams.tparams)
@@ -408,7 +408,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Performs naming on the given definition declaration `decl0` under the given environments `env0`, `uenv0`, and `tenv0`, with type constraints `tconstrs`.
     */
-  private def visitDef(decl0: WeededAst.Declaration.Def, uenv0: UseEnv, tenv0: Map[String, UnkindedType.Var], ns0: Name.NName, addedTconstrs: List[NamedAst.TypeConstraint], addedQuantifiers: List[UnkindedType.Var])(implicit flix: Flix): Validation[NamedAst.Def, NameError] = decl0 match {
+  private def visitDef(decl0: WeededAst.Declaration.Def, uenv0: UseEnv, tenv0: Map[String, Type.UnkindedVar], ns0: Name.NName, addedTconstrs: List[NamedAst.TypeConstraint], addedQuantifiers: List[Type.UnkindedVar])(implicit flix: Flix): Validation[NamedAst.Def, NameError] = decl0 match {
     case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe0, retTpe0, eff0, tconstrs, loc) =>
       // TODO: we use tenv when getting the types from formal params first, before the explicit tparams have a chance to modify it
       // This means that if an explicit type variable is shadowing, the outer scope variable will be used for some parts, and inner for others
@@ -437,7 +437,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Performs naming on the given expression `exp0` under the given environments `env0`, `uenv0`, and `tenv0`.
     */
-  private def visitExp(exp0: WeededAst.Expression, env0: Map[String, Symbol.VarSym], uenv0: UseEnv, tenv0: Map[String, UnkindedType.Var])(implicit flix: Flix): Validation[NamedAst.Expression, NameError] = exp0 match {
+  private def visitExp(exp0: WeededAst.Expression, env0: Map[String, Symbol.VarSym], uenv0: UseEnv, tenv0: Map[String, Type.UnkindedVar])(implicit flix: Flix): Validation[NamedAst.Expression, NameError] = exp0 match {
 
     case WeededAst.Expression.Wild(loc) =>
       NamedAst.Expression.Wild(loc).toSuccess
@@ -1001,7 +1001,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Names the given head predicate `head` under the given environments `env0`, `uenv0`, and `tenv0`.
     */
-  private def visitHeadPredicate(head: WeededAst.Predicate.Head, outerEnv: Map[String, Symbol.VarSym], headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], uenv0: UseEnv, tenv0: Map[String, UnkindedType.Var])(implicit flix: Flix): Validation[NamedAst.Predicate.Head, NameError] = head match {
+  private def visitHeadPredicate(head: WeededAst.Predicate.Head, outerEnv: Map[String, Symbol.VarSym], headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], uenv0: UseEnv, tenv0: Map[String, Type.UnkindedVar])(implicit flix: Flix): Validation[NamedAst.Predicate.Head, NameError] = head match {
     case WeededAst.Predicate.Head.Atom(pred, den, terms, loc) =>
       for {
         ts <- traverse(terms)(t => visitExp(t, outerEnv ++ headEnv0 ++ ruleEnv0, uenv0, tenv0))
@@ -1011,7 +1011,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Names the given body predicate `body` under the given environments `env0`, `uenv0`, and `tenv0`.
     */
-  private def visitBodyPredicate(body: WeededAst.Predicate.Body, outerEnv: Map[String, Symbol.VarSym], headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], uenv0: UseEnv, tenv0: Map[String, UnkindedType.Var])(implicit flix: Flix): Validation[NamedAst.Predicate.Body, NameError] = body match {
+  private def visitBodyPredicate(body: WeededAst.Predicate.Body, outerEnv: Map[String, Symbol.VarSym], headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], uenv0: UseEnv, tenv0: Map[String, Type.UnkindedVar])(implicit flix: Flix): Validation[NamedAst.Predicate.Body, NameError] = body match {
     case WeededAst.Predicate.Body.Atom(pred, den, polarity, terms, loc) =>
       val ts = terms.map(t => visitPattern(t, outerEnv ++ ruleEnv0, uenv0))
       NamedAst.Predicate.Body.Atom(pred, den, polarity, ts, loc).toSuccess
@@ -1041,7 +1041,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Names the given type `tpe` under the given environments `uenv0` and `tenv0`.
     */
-  private def visitType(tpe0: WeededAst.Type, uenv0: UseEnv, tenv0: Map[String, UnkindedType.Var])(implicit flix: Flix): Validation[NamedAst.Type, NameError] = tpe0 match {
+  private def visitType(tpe0: WeededAst.Type, uenv0: UseEnv, tenv0: Map[String, Type.UnkindedVar])(implicit flix: Flix): Validation[NamedAst.Type, NameError] = tpe0 match {
     case WeededAst.Type.Unit(loc) => NamedAst.Type.Unit(loc).toSuccess
 
     case WeededAst.Type.Var(ident, loc) =>
@@ -1052,7 +1052,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         NameError.SuspiciousTypeVarName(ident.name, loc).toFailure
       } else if (ident.isWild) {
         // Wild idents will not be in the environment. Create a tvar instead.
-        NamedAst.Type.Var(UnkindedType.freshVar(loc = loc), loc).toSuccess
+        NamedAst.Type.Var(Type.freshUnkindedVar(), loc).toSuccess
       } else {
         tenv0.get(ident.name) match {
           case None => NameError.UndefinedTypeVar(ident.name, loc).toFailure
@@ -1355,7 +1355,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Returns the free variables under the type environment `tenv`.
     */
-  private def freeVarsInTenv(tpe0: WeededAst.Type, tenv: Map[String, UnkindedType.Var]): List[Name.Ident] = {
+  private def freeVarsInTenv(tpe0: WeededAst.Type, tenv: Map[String, Type.UnkindedVar]): List[Name.Ident] = {
     def visit(tpe0: WeededAst.Type): List[Name.Ident] = tpe0 match {
       case WeededAst.Type.Var(ident, loc) if tenv.contains(ident.name) => Nil
       case WeededAst.Type.Var(ident, loc) => ident :: Nil
@@ -1408,7 +1408,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Translates the given weeded annotation to a named annotation.
     */
-  private def visitAnnotation(ann: WeededAst.Annotation, env0: Map[String, Symbol.VarSym], uenv0: UseEnv, tenv0: Map[String, UnkindedType.Var])(implicit flix: Flix): Validation[NamedAst.Annotation, NameError] = ann match {
+  private def visitAnnotation(ann: WeededAst.Annotation, env0: Map[String, Symbol.VarSym], uenv0: UseEnv, tenv0: Map[String, Type.UnkindedVar])(implicit flix: Flix): Validation[NamedAst.Annotation, NameError] = ann match {
     case WeededAst.Annotation(name, args, loc) =>
       mapN(traverse(args)(visitExp(_, env0, uenv0, tenv0))) {
         case as => NamedAst.Annotation(name, as, loc)
@@ -1418,7 +1418,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Translates the given weeded attribute to a named attribute.
     */
-  private def visitAttribute(attr: WeededAst.Attribute, uenv0: UseEnv, tenv0: Map[String, UnkindedType.Var])(implicit flix: Flix): Validation[NamedAst.Attribute, NameError] = attr match {
+  private def visitAttribute(attr: WeededAst.Attribute, uenv0: UseEnv, tenv0: Map[String, Type.UnkindedVar])(implicit flix: Flix): Validation[NamedAst.Attribute, NameError] = attr match {
     case WeededAst.Attribute(ident, tpe0, loc) =>
       mapN(visitType(tpe0, uenv0, tenv0)) {
         case tpe => NamedAst.Attribute(ident, tpe, loc)
@@ -1428,7 +1428,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Translates the given weeded formal parameter to a named formal parameter.
     */
-  private def visitFormalParam(fparam: WeededAst.FormalParam, uenv0: UseEnv, tenv0: Map[String, UnkindedType.Var])(implicit flix: Flix): Validation[NamedAst.FormalParam, NameError] = fparam match {
+  private def visitFormalParam(fparam: WeededAst.FormalParam, uenv0: UseEnv, tenv0: Map[String, Type.UnkindedVar])(implicit flix: Flix): Validation[NamedAst.FormalParam, NameError] = fparam match {
     case WeededAst.FormalParam(ident, mod, optType, loc) =>
       // Generate a fresh variable symbol for the identifier.
       val scopedness = if (mod.isScoped)
@@ -1482,7 +1482,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Performs naming on the given formal parameters `fparam0` under the given environments `uenv0` and `tenv0`.
     */
-  private def getFormalParams(fparams0: List[WeededAst.FormalParam], uenv0: UseEnv, tenv0: Map[String, UnkindedType.Var])(implicit flix: Flix): Validation[List[NamedAst.FormalParam], NameError] = {
+  private def getFormalParams(fparams0: List[WeededAst.FormalParam], uenv0: UseEnv, tenv0: Map[String, Type.UnkindedVar])(implicit flix: Flix): Validation[List[NamedAst.FormalParam], NameError] = {
     traverse(fparams0)(visitFormalParam(_, uenv0, tenv0))
   }
 
@@ -1492,9 +1492,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def getTypeParam(tparam0: WeededAst.TypeParam)(implicit flix: Flix): NamedAst.TypeParam = tparam0 match {
     case WeededAst.TypeParam.Kinded(ident, kind) =>
-      NamedAst.TypeParam.Kinded(ident, UnkindedType.freshVar(text = Some(ident.name), ident.loc), kind, ident.loc)
+      NamedAst.TypeParam.Kinded(ident, Type.freshUnkindedVar(text = Some(ident.name)), kind, ident.loc)
     case WeededAst.TypeParam.Unkinded(ident) =>
-      NamedAst.TypeParam.Unkinded(ident, UnkindedType.freshVar(text = Some(ident.name), ident.loc), ident.loc)
+      NamedAst.TypeParam.Unkinded(ident, Type.freshUnkindedVar(text = Some(ident.name)), ident.loc)
   }
 
   /**
@@ -1503,7 +1503,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def getTypeParams(tparams0: WeededAst.TypeParams, uenv0: UseEnv)(implicit flix: Flix): NamedAst.TypeParams = {
     tparams0 match {
       case WeededAst.TypeParams.Elided => NamedAst.TypeParams.Kinded(Nil)
-      case WeededAst.TypeParams.Unkinded(tparams) => getExplicitUnkindedTypeParams(tparams, uenv0)
+      case WeededAst.TypeParams.Unkinded(tparams) => getExplicitTypeParams(tparams, uenv0)
       case WeededAst.TypeParams.Kinded(tparams) => getExplicitKindedTypeParams(tparams)
     }
   }
@@ -1512,14 +1512,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Performs naming on the given type parameters `tparams0` from the given formal params `fparams` and overall type `tpe`.
     */
-  private def getTypeParamsFromFormalParams(tparams0: WeededAst.TypeParams, fparams: List[WeededAst.FormalParam], tpe: WeededAst.Type, allowElision: Boolean, uenv: UseEnv, tenv: Map[String, UnkindedType.Var])(implicit flix: Flix): NamedAst.TypeParams = {
+  private def getTypeParamsFromFormalParams(tparams0: WeededAst.TypeParams, fparams: List[WeededAst.FormalParam], tpe: WeededAst.Type, allowElision: Boolean, uenv: UseEnv, tenv: Map[String, Type.UnkindedVar])(implicit flix: Flix): NamedAst.TypeParams = {
     tparams0 match {
       case WeededAst.TypeParams.Elided =>
         if (allowElision)
           getImplicitTypeParamsFromFormalParams(fparams, tpe, tenv)
         else
           NamedAst.TypeParams.Kinded(Nil)
-      case WeededAst.TypeParams.Unkinded(tparams0) => getExplicitUnkindedTypeParams(tparams0, uenv)
+      case WeededAst.TypeParams.Unkinded(tparams0) => getExplicitTypeParams(tparams0, uenv)
       case WeededAst.TypeParams.Kinded(tparams0) => getExplicitKindedTypeParams(tparams0)
 
     }
@@ -1531,7 +1531,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def getExplicitKindedTypeParams(tparams0: List[WeededAst.TypeParam.Kinded])(implicit flix: Flix): NamedAst.TypeParams.Kinded = {
     val tparams = tparams0.map {
       case WeededAst.TypeParam.Kinded(ident, kind) =>
-        val tvar = UnkindedType.freshVar(text = Some(ident.name), ident.loc)
+        val tvar = Type.freshUnkindedVar(text = Some(ident.name))
         NamedAst.TypeParam.Kinded(ident, tvar, kind, ident.loc)
     }
     NamedAst.TypeParams.Kinded(tparams)
@@ -1540,10 +1540,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Returns the explicit unkinded type parameters from the given type parameter names and implicit type parameters.
     */
-  private def getExplicitUnkindedTypeParams(tparams0: List[WeededAst.TypeParam.Unkinded], uenv0: UseEnv)(implicit flix: Flix): NamedAst.TypeParams.Unkinded = {
+  private def getExplicitTypeParams(tparams0: List[WeededAst.TypeParam.Unkinded], uenv0: UseEnv)(implicit flix: Flix): NamedAst.TypeParams.Unkinded = {
     val tparams = tparams0.map {
       case WeededAst.TypeParam.Unkinded(ident) =>
-        val tvar = UnkindedType.freshVar(text = Some(ident.name), ident.loc)
+        val tvar = Type.freshUnkindedVar(text = Some(ident.name))
         NamedAst.TypeParam.Unkinded(ident, tvar, ident.loc)
     }
     NamedAst.TypeParams.Unkinded(tparams)
@@ -1555,7 +1555,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def getImplicitTypeParamsFromTypes(types: List[WeededAst.Type])(implicit flix: Flix): NamedAst.TypeParams.Unkinded = {
     val tvars = types.flatMap(freeVars).distinct
     val tparams = tvars.map {
-      tvar => NamedAst.TypeParam.Unkinded(tvar, UnkindedType.freshVar(text = Some(tvar.name), tvar.loc), tvar.loc)
+      tvar => NamedAst.TypeParam.Unkinded(tvar, Type.freshUnkindedVar(text = Some(tvar.name)), tvar.loc)
     }
     NamedAst.TypeParams.Unkinded(tparams)
   }
@@ -1563,7 +1563,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Returns the implicit type parameters constructed from the given formal parameters and type.
     */
-  private def getImplicitTypeParamsFromFormalParams(fparams: List[WeededAst.FormalParam], tpe: WeededAst.Type, tenv: Map[String, UnkindedType.Var])(implicit flix: Flix): NamedAst.TypeParams = {
+  private def getImplicitTypeParamsFromFormalParams(fparams: List[WeededAst.FormalParam], tpe: WeededAst.Type, tenv: Map[String, Type.UnkindedVar])(implicit flix: Flix): NamedAst.TypeParams = {
     // Compute the type variables that occur in the formal parameters.
     val fparamTvars = fparams.flatMap {
       case WeededAst.FormalParam(_, _, Some(tpe), _) => freeVarsInTenv(tpe, tenv)
@@ -1573,7 +1573,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     val returnTvars = freeVarsInTenv(tpe, tenv)
 
     val tparams = (fparamTvars ++ returnTvars).distinct.map {
-      tvar => NamedAst.TypeParam.Unkinded(tvar, UnkindedType.freshVar(text = Some(tvar.name), tvar.loc), tvar.loc)
+      tvar => NamedAst.TypeParam.Unkinded(tvar, Type.freshUnkindedVar(text = Some(tvar.name)), tvar.loc)
     }
 
     NamedAst.TypeParams.Unkinded(tparams)
@@ -1592,14 +1592,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Returns a type environment constructed from the given type parameters `tparams0`.
     */
-  private def getTypeEnv(tparams0: List[NamedAst.TypeParam]): Map[String, UnkindedType.Var] = {
+  private def getTypeEnv(tparams0: List[NamedAst.TypeParam]): Map[String, Type.UnkindedVar] = {
     tparams0.map(p => p.name.name -> p.tpe).toMap
   }
 
   /**
     * Returns the type scheme for the given type parameters `tparams0` and type `tpe` under the given environments `uenv0` and `tenv0`, with the added type constraints `tconstrs0`.
     */
-  private def getDefOrSigScheme(tparams0: List[NamedAst.TypeParam], tpe: WeededAst.Type, uenv0: UseEnv, tenv0: Map[String, UnkindedType.Var], tconstrs0: List[NamedAst.TypeConstraint], addedQuantifiers: List[UnkindedType.Var])(implicit flix: Flix): Validation[NamedAst.Scheme, NameError] = {
+  private def getDefOrSigScheme(tparams0: List[NamedAst.TypeParam], tpe: WeededAst.Type, uenv0: UseEnv, tenv0: Map[String, Type.UnkindedVar], tconstrs0: List[NamedAst.TypeConstraint], addedQuantifiers: List[Type.UnkindedVar])(implicit flix: Flix): Validation[NamedAst.Scheme, NameError] = {
     for {
       t <- visitType(tpe, uenv0, tenv0)
       tparams = tparams0.map(_.tpe)

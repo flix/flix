@@ -1,5 +1,9 @@
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.language.ast.Ast.{EliminatedBy, IntroducedBy}
+import ca.uwaterloo.flix.language.phase.Kinder
+import ca.uwaterloo.flix.util.InternalCompilerException
+
 /**
   * Representation of type constructors.
   */
@@ -177,7 +181,16 @@ object TypeConstructor {
   /**
     * A type constructor that represent the type of enums.
     */
-  case class Enum(sym: Symbol.EnumSym, kind: Kind) extends TypeConstructor
+  @IntroducedBy(Kinder.getClass)
+  case class KindedEnum(sym: Symbol.EnumSym, kind: Kind) extends TypeConstructor
+
+  /**
+    * An unkinded type constructor that represent the type of enums.
+    */
+  @EliminatedBy(Kinder.getClass)
+  case class UnkindedEnum(sym: Symbol.EnumSym) extends TypeConstructor {
+    override def kind: Kind = throw InternalCompilerException("Attempt to access kind of unkinded type constructor")
+  }
 
   /**
     * A type constructor that represent the type of JVM classes.

@@ -217,7 +217,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Performs weeding on the given enum declaration `d0`.
     */
   private def visitEnum(d0: ParsedAst.Declaration.Enum)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Enum], WeederError] = d0 match {
-    case ParsedAst.Declaration.Enum(doc0, mods, sp1, ident, tparams0, cases, sp2) =>
+    case ParsedAst.Declaration.Enum(doc0, mods, sp1, ident, tparams0, derives, cases, sp2) =>
       val doc = visitDoc(doc0)
       val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Public))
       val tparamsVal = visitTypeParams(tparams0)
@@ -243,7 +243,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
                   ))
               }
           } map {
-            case m => List(WeededAst.Declaration.Enum(doc, mod, ident, tparams, m, mkSL(sp1, sp2)))
+            case m => List(WeededAst.Declaration.Enum(doc, mod, ident, tparams, derives.toList, m, mkSL(sp1, sp2)))
           }
       }
   }
@@ -263,7 +263,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       mapN(modVal, tparamsVal) {
         case (mod, tparams) =>
           val cases = Map(Name.mkTag(ident) -> WeededAst.Case(ident, Name.mkTag(ident), visitType(tpe0)))
-          List(WeededAst.Declaration.Enum(doc, mod, ident, tparams, cases, mkSL(sp1, sp2)))
+          List(WeededAst.Declaration.Enum(doc, mod, ident, tparams, Nil, cases, mkSL(sp1, sp2)))
       }
   }
 
@@ -1175,18 +1175,23 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           // General Case: Fold the interpolator parts together.
           val init = WeededAst.Expression.Str("", loc)
           Validation.fold(parts, init: WeededAst.Expression) {
-            case (acc, ParsedAst.InterpolationPart.ExpPart(innerSp1, exp, innerSp2)) =>
-              mapN(visitExp(exp)) {
-                case e =>
-                  val e2 = mkApplyToString(e, innerSp1, innerSp2)
-                  mkConcat(acc, e2, mkSL(innerSp1, innerSp2))
-              }
+            // Case 1: string part
             case (acc, ParsedAst.InterpolationPart.StrPart(innerSp1, chars, innerSp2)) =>
               weedCharSequence(chars) map {
                 string =>
                   val e2 = WeededAst.Expression.Str(string, mkSL(innerSp1, innerSp2))
                   mkConcat(acc, e2, loc)
               }
+            // Case 2: interpolated expression
+            case (acc, ParsedAst.InterpolationPart.ExpPart(innerSp1, Some(exp), innerSp2)) =>
+              mapN(visitExp(exp)) {
+                e =>
+                  val e2 = mkApplyToString(e, innerSp1, innerSp2)
+                  mkConcat(acc, e2, mkSL(innerSp1, innerSp2))
+              }
+            // Case 3: empty interpolated expression
+            case (acc, ParsedAst.InterpolationPart.ExpPart(innerSp1, None, innerSp2)) =>
+              WeederError.EmptyInterpolatedExpression(mkSL(innerSp1, innerSp2)).toFailure
           }
       }
 

@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.util.Result
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 
 import scala.annotation.tailrec
@@ -43,20 +43,24 @@ object BoolUnification {
     }
 
     tpe1 match {
-      case x: Type.Var if x.rigidity eq Rigidity.Flexible =>
+      case x: Type.KindedVar if x.rigidity eq Rigidity.Flexible =>
         if (tpe2 eq Type.True)
           return Ok(Substitution.singleton(x, Type.True))
         if (tpe2 eq Type.False)
           return Ok(Substitution.singleton(x, Type.False))
+
+      case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type variable")
       case _ => // nop
     }
 
     tpe2 match {
-      case y: Type.Var if y.rigidity eq Rigidity.Flexible =>
+      case y: Type.KindedVar if y.rigidity eq Rigidity.Flexible =>
         if (tpe1 eq Type.True)
           return Ok(Substitution.singleton(y, Type.True))
         if (tpe1 eq Type.False)
           return Ok(Substitution.singleton(y, Type.False))
+
+      case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type variable")
       case _ => // nop
     }
 
@@ -98,7 +102,7 @@ object BoolUnification {
   /**
     * Performs success variable elimination on the given boolean expression `f`.
     */
-  private def successiveVariableElimination(f: Type, fvs: List[Type.Var])(implicit flix: Flix): Substitution = fvs match {
+  private def successiveVariableElimination(f: Type, fvs: List[Type.KindedVar])(implicit flix: Flix): Substitution = fvs match {
     case Nil =>
       // Determine if f is unsatisfiable when all (rigid) variables are made flexible.
       val (_, q) = Scheme.instantiate(Scheme(f.typeVars.toList, List.empty, f), InstantiateMode.Flexible)

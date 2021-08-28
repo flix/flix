@@ -405,7 +405,7 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
 
     base match {
       case None => t0 match {
-        case Type.Var(id, _, _, _) => MonoType.Var(id)
+        case Type.KindedVar(id, _, _, _) => MonoType.Var(id)
         case _ => throw InternalCompilerException(s"Unexpected type: '$t0'.")
       }
 
@@ -443,7 +443,7 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
 
           case TypeConstructor.Lazy => MonoType.Lazy(args.head)
 
-          case TypeConstructor.Enum(sym, _) => MonoType.Enum(sym, args)
+          case TypeConstructor.KindedEnum(sym, _) => MonoType.Enum(sym, args)
 
           case TypeConstructor.Tag(sym, _) =>
             throw InternalCompilerException(s"Unexpected type: '$t0'.")
@@ -471,6 +471,9 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
           case TypeConstructor.And => MonoType.Unit
 
           case TypeConstructor.Or => MonoType.Unit
+
+          case TypeConstructor.UnkindedEnum(sym) =>
+            throw InternalCompilerException(s"Unexpected type: '$t0'.")
 
           case TypeConstructor.Relation =>
             throw InternalCompilerException(s"Unexpected type: '$t0'.")

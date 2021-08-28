@@ -56,7 +56,7 @@ object GotoProvider {
         }
 
         case Entity.TypeCon(tc, loc) => tc match {
-          case TypeConstructor.Enum(sym, _) =>
+          case TypeConstructor.KindedEnum(sym, _) =>
             ("status" -> "success") ~ ("result" -> LocationLink.fromEnumSym(sym, loc)(root).toJSON)
 
           case _ => mkNotFound(uri, pos)

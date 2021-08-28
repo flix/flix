@@ -191,7 +191,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   private def checkUnusedTypeParamsEnums()(implicit root: Root): Used = {
     root.enums.foldLeft(Used.empty) {
       case (acc, (_, decl)) =>
-        val usedTypeVars = decl.cases.foldLeft(Set.empty[Type.Var]) {
+        val usedTypeVars = decl.cases.foldLeft(Set.empty[Type.KindedVar]) {
           case (sacc, (_, Case(_, _, tpe, _, _))) => sacc ++ tpe.typeVars
         }
         val unusedTypeParams = decl.tparams.filter(tparam => !usedTypeVars.contains(tparam.tpe) && !tparam.name.name.startsWith("_"))
@@ -750,7 +750,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Returns `true` if the type variable `tvar` is unused according to the argument `used`.
     */
-  private def deadTypeVar(tvar: Type.Var, used: Set[Type.Var]): Boolean = {
+  private def deadTypeVar(tvar: Type.KindedVar, used: Set[Type.KindedVar]): Boolean = {
     !tvar.text.exists(_.startsWith("_")) &&
       !used.contains(tvar)
   }

@@ -188,8 +188,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         NonEmptyBody | EmptyBody
       }
 
+      def Derivations = rule {
+        optWS ~ optional(keyword("with") ~ WS ~ oneOrMore(Names.QualifiedClass).separatedBy(optWS ~ "," ~ optWS)) ~> ((o: Option[Seq[Name.QName]]) => o.getOrElse(Seq.empty))
+      }
+
       rule {
-        Documentation ~ Modifiers ~ SP ~ keyword("enum") ~ WS ~ Names.Type ~ TypeParams ~ optWS ~ Body ~ SP ~> ParsedAst.Declaration.Enum
+        Documentation ~ Modifiers ~ SP ~ keyword("enum") ~ WS ~ Names.Type ~ TypeParams ~ Derivations ~ optWS ~ Body ~ SP ~> ParsedAst.Declaration.Enum
       }
     }
 
@@ -637,7 +641,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       def RBrace: Rule0 = rule("}")
 
       def ExpPart: Rule1[ParsedAst.InterpolationPart] = rule {
-        SP ~ DollarLBrace ~ optWS ~ Expression ~ optWS ~ RBrace ~ SP ~> ParsedAst.InterpolationPart.ExpPart
+        SP ~ DollarLBrace ~ optWS ~ optional(Expression) ~ optWS ~ RBrace ~ SP ~> ParsedAst.InterpolationPart.ExpPart
       }
 
       def StrPart: Rule1[ParsedAst.InterpolationPart] = rule {
@@ -1336,7 +1340,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   object Kinds {
 
     def SimpleKind: Rule1[ParsedAst.Kind] = rule {
-      Kinds.Star | Kinds.Bool | Kinds.Record | Kinds.Schema
+      Kinds.Star | Kinds.Bool | Kinds.Record | Kinds.Schema | Kinds.Parens
     }
 
     def Arrow: Rule1[ParsedAst.Kind] = rule {
@@ -1357,6 +1361,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Schema: Rule1[ParsedAst.Kind.Schema] = rule {
       SP ~ keyword("Schema") ~ SP ~> ParsedAst.Kind.Schema
+    }
+
+    def Parens: Rule1[ParsedAst.Kind] = rule {
+      "(" ~ Kind ~ ")"
     }
 
   }

@@ -793,4 +793,33 @@ class TestResolver extends FunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     expectError[ResolutionError.CyclicClassHierarchy](result)
   }
+
+  test("DuplicateDerivation.01") {
+    val input =
+      """
+        |enum E with Eq, Eq
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.DuplicateDerivation](result)
+  }
+
+  test("DuplicateDerivation.02") {
+    val input =
+      """
+        |enum E with ToString, Order, ToString
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.DuplicateDerivation](result)
+  }
+
+  test("IllegalDerivation.01") {
+    val input =
+      """
+        |class C[a]
+        |
+        |enum E with C
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[ResolutionError.IllegalDerivation](result)
+  }
 }

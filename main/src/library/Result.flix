@@ -448,23 +448,4 @@ namespace Result {
     pub def lift10(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) -> u & f, r1: Result[t1, e], r2: Result[t2, e], r3: Result[t3, e], r4: Result[t4, e], r5: Result[t5, e], r6: Result[t6, e], r7: Result[t7, e], r8: Result[t8, e], r9: Result[t9, e], r10: Result[t10, e]): Result[u, e] & f =
         ap(lift9(f, r1, r2, r3, r4, r5, r6, r7, r8, r9), r10)
 
-
-    /////////////////////////////////////////////////////////////////////////////
-    // Lints: Simplifications                                                  //
-    /////////////////////////////////////////////////////////////////////////////
-
-    /////////////////////////////////////////////////////////////////////////////
-    // Lints: Use Cases                                                        //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @lint
-    def useExists(): Bool =
-        forall [t, e] (f: t -> Bool, r: Result[t, e]).
-            getWithDefault(map(f, r), false) === exists(f, r)
-
-    @lint
-    def useForall(): Bool =
-        forall [t, e] (f: t -> Bool, r: Result[t, e]).
-            getWithDefault(map(f, r), true) === forall(f, r)
-
 }

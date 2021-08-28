@@ -34,17 +34,17 @@ object ResolvedAst {
   // TODO use ResolvedAst.Law for laws
   case class Class(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: ResolvedAst.TypeParam, superClasses: List[ResolvedAst.TypeConstraint], sigs: Map[Symbol.SigSym, ResolvedAst.Sig], laws: List[ResolvedAst.Def], loc: SourceLocation)
 
-  case class Instance(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, tpe: UnkindedType, tconstrs: List[ResolvedAst.TypeConstraint], defs: List[ResolvedAst.Def], ns: Name.NName, loc: SourceLocation)
+  case class Instance(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, tpe: Type, tconstrs: List[ResolvedAst.TypeConstraint], defs: List[ResolvedAst.Def], ns: Name.NName, loc: SourceLocation)
 
   case class Sig(sym: Symbol.SigSym, spec: ResolvedAst.Spec, exp: Option[ResolvedAst.Expression])
 
   case class Def(sym: Symbol.DefnSym, spec: ResolvedAst.Spec, exp: ResolvedAst.Expression)
 
-  case class Spec(doc: Ast.Doc, ann: List[ResolvedAst.Annotation], mod: Ast.Modifiers, tparams: ResolvedAst.TypeParams, fparams: List[ResolvedAst.FormalParam], sc: ResolvedAst.Scheme, tpe: UnkindedType, eff: UnkindedType, loc: SourceLocation)
+  case class Spec(doc: Ast.Doc, ann: List[ResolvedAst.Annotation], mod: Ast.Modifiers, tparams: ResolvedAst.TypeParams, fparams: List[ResolvedAst.FormalParam], sc: ResolvedAst.Scheme, tpe: Type, eff: Type, loc: SourceLocation)
 
-  case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: ResolvedAst.TypeParams, cases: Map[Name.Tag, ResolvedAst.Case], tpeDeprecated: UnkindedType, sc: ResolvedAst.Scheme, loc: SourceLocation)
+  case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: ResolvedAst.TypeParams, derives: List[Symbol.ClassSym], cases: Map[Name.Tag, ResolvedAst.Case], tpeDeprecated: Type, sc: ResolvedAst.Scheme, loc: SourceLocation)
 
-  case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: ResolvedAst.TypeParams, tpe: UnkindedType, loc: SourceLocation)
+  case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: ResolvedAst.TypeParams, tpe: Type, loc: SourceLocation)
 
   sealed trait Expression {
     def loc: SourceLocation
@@ -54,7 +54,7 @@ object ResolvedAst {
 
     case class Wild(loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Var(sym: Symbol.VarSym, tpe: UnkindedType, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Def(sym: Symbol.DefnSym, loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -146,9 +146,9 @@ object ResolvedAst {
 
     case class Universal(fparam: ResolvedAst.FormalParam, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Ascribe(exp: ResolvedAst.Expression, expectedType: Option[UnkindedType], expectedEff: Option[UnkindedType], loc: SourceLocation) extends ResolvedAst.Expression
+    case class Ascribe(exp: ResolvedAst.Expression, expectedType: Option[Type], expectedEff: Option[Type], loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Cast(exp: ResolvedAst.Expression, declaredType: Option[UnkindedType], declaredEff: Option[UnkindedType], loc: SourceLocation) extends ResolvedAst.Expression
+    case class Cast(exp: ResolvedAst.Expression, declaredType: Option[Type], declaredEff: Option[Type], loc: SourceLocation) extends ResolvedAst.Expression
 
     case class TryCatch(exp: ResolvedAst.Expression, rules: List[ResolvedAst.CatchRule], loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -166,7 +166,7 @@ object ResolvedAst {
 
     case class PutStaticField(field: Field, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class NewChannel(exp: ResolvedAst.Expression, tpe: UnkindedType, loc: SourceLocation) extends ResolvedAst.Expression
+    case class NewChannel(exp: ResolvedAst.Expression, tpe: Type, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class GetChannel(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -280,7 +280,7 @@ object ResolvedAst {
 
   }
 
-  case class Scheme(quantifiers: List[UnkindedType.Var], constraints: List[ResolvedAst.TypeConstraint], base: UnkindedType)
+  case class Scheme(quantifiers: List[Type.UnkindedVar], constraints: List[ResolvedAst.TypeConstraint], base: Type)
 
   sealed trait TypeParams {
     val tparams: List[ResolvedAst.TypeParam]
@@ -296,9 +296,9 @@ object ResolvedAst {
 
   case class Annotation(name: Ast.Annotation, exps: List[ResolvedAst.Expression], loc: SourceLocation)
 
-  case class Attribute(ident: Name.Ident, tpe: UnkindedType, loc: SourceLocation)
+  case class Attribute(ident: Name.Ident, tpe: Type, loc: SourceLocation)
 
-  case class Case(enum: Name.Ident, tag: Name.Tag, tpeDeprecated: UnkindedType, sc: Scheme)
+  case class Case(enum: Name.Ident, tag: Name.Tag, tpeDeprecated: Type, sc: Scheme)
 
   case class Constraint(cparams: List[ResolvedAst.ConstraintParam], head: ResolvedAst.Predicate.Head, body: List[ResolvedAst.Predicate.Body], loc: SourceLocation)
 
@@ -306,13 +306,13 @@ object ResolvedAst {
 
   object ConstraintParam {
 
-    case class HeadParam(sym: Symbol.VarSym, tpe: UnkindedType.Var, loc: SourceLocation) extends ResolvedAst.ConstraintParam
+    case class HeadParam(sym: Symbol.VarSym, tpe: Type.UnkindedVar, loc: SourceLocation) extends ResolvedAst.ConstraintParam
 
-    case class RuleParam(sym: Symbol.VarSym, tpe: UnkindedType.Var, loc: SourceLocation) extends ResolvedAst.ConstraintParam
+    case class RuleParam(sym: Symbol.VarSym, tpe: Type.UnkindedVar, loc: SourceLocation) extends ResolvedAst.ConstraintParam
 
   }
 
-  case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: UnkindedType, loc: SourceLocation)
+  case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: ResolvedAst.Expression)
 
@@ -323,17 +323,17 @@ object ResolvedAst {
   case class SelectChannelRule(sym: Symbol.VarSym, chan: ResolvedAst.Expression, exp: ResolvedAst.Expression)
 
   sealed trait TypeParam {
-    val tpe: UnkindedType.Var
+    val tpe: Type.UnkindedVar
   }
 
   object TypeParam {
 
-    case class Kinded(name: Name.Ident, tpe: UnkindedType.Var, kind: Kind, loc: SourceLocation) extends TypeParam
+    case class Kinded(name: Name.Ident, tpe: Type.UnkindedVar, kind: Kind, loc: SourceLocation) extends TypeParam
 
-    case class Unkinded(name: Name.Ident, tpe: UnkindedType.Var, loc: SourceLocation) extends TypeParam
+    case class Unkinded(name: Name.Ident, tpe: Type.UnkindedVar, loc: SourceLocation) extends TypeParam
 
   }
 
-  case class TypeConstraint(clazz: Symbol.ClassSym, tpe: UnkindedType, loc: SourceLocation)
+  case class TypeConstraint(clazz: Symbol.ClassSym, tpe: Type, loc: SourceLocation)
 
 }

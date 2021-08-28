@@ -2,6 +2,16 @@
 
 HEAD:
 
+Version 0.18.0:
+- Improved auto-complete.
+- Minor bug fixes.
+
+Version 0.17.0:
+- Added proper kind checking (thanks Matthew!)
+- Added support for string escapes (thanks Matthew!)
+- Added environment API (thanks Ramiro!)
+- Fixed numerous bugs.
+
 Version 0.16.1:
 - Minor improvements to LSP.
 

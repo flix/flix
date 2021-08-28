@@ -54,7 +54,7 @@ object UnificationError {
     * @param tvar the type variable.
     * @param tpe  the type.
     */
-  case class RigidVar(tvar: Type.Var, tpe: Type) extends UnificationError
+  case class RigidVar(tvar: Type.KindedVar, tpe: Type) extends UnificationError
 
   /**
     * An unification error due to an occurrence of `tvar` in `tpe`.
@@ -62,7 +62,7 @@ object UnificationError {
     * @param tvar the type variable.
     * @param tpe  the type.
     */
-  case class OccursCheck(tvar: Type.Var, tpe: Type) extends UnificationError
+  case class OccursCheck(tvar: Type.KindedVar, tpe: Type) extends UnificationError
 
   /**
     * An unification error due the field `fieldName` of type `fieldType` missing from the type `recordType`.

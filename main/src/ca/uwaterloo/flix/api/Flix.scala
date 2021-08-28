@@ -86,7 +86,6 @@ class Flix {
     "Eq.flix" -> LocalResource.get("/src/library/Eq.flix"),
     "Hash.flix" -> LocalResource.get("/src/library/Hash.flix"),
     "Order.flix" -> LocalResource.get("/src/library/Order.flix"),
-    "Drop.flix" -> LocalResource.get("/src/library/Drop.flix"),
 
     // Lattices
     "PartialOrder.flix" -> LocalResource.get("/src/library/PartialOrder.flix"),
@@ -138,22 +137,17 @@ class Flix {
     "MutSet.flix" -> LocalResource.get("/src/library/MutSet.flix"),
     "MutMap.flix" -> LocalResource.get("/src/library/MutMap.flix"),
 
-    "Core/Io/File.flix" -> LocalResource.get("/src/library/Core/Io/File.flix"),
-    "Core/Io/InputStream.flix" -> LocalResource.get("/src/library/Core/Io/InputStream.flix"),
-    "Core/Io/IOError.flix" -> LocalResource.get("/src/library/Core/Io/IOError.flix"),
-    "Core/Io/OutputStream.flix" -> LocalResource.get("/src/library/Core/Io/OutputStream.flix"),
-    "Core/Io/ZipInput.flix" -> LocalResource.get("/src/library/Core/Io/ZipInput.flix"),
-    "Core/Io/ZipOutput.flix" -> LocalResource.get("/src/library/Core/Io/ZipOutput.flix"),
+    "File.flix" -> LocalResource.get("/src/library/File.flix"),
 
     "Environment.flix" -> LocalResource.get("/src/library/Environment.flix"),
+    "Epoch.flix" -> LocalResource.get("/src/library/Epoch.flix"),
 
     "FromString.flix" -> LocalResource.get("/src/library/FromString.flix"),
     "Functor.flix" -> LocalResource.get("/src/library/Functor.flix"),
-    "Semigroup.flix" -> LocalResource.get("/src/library/Semigroup.flix"),
+    "SemiGroup.flix" -> LocalResource.get("/src/library/SemiGroup.flix"),
     "Monoid.flix" -> LocalResource.get("/src/library/Monoid.flix"),
     "Foldable.flix" -> LocalResource.get("/src/library/Foldable.flix"),
 
-    "Bounded.flix" -> LocalResource.get("/src/library/Bounded.flix"),
     "Validation.flix" -> LocalResource.get("/src/library/Validation.flix"),
 
     "Channel.flix" -> LocalResource.get("/src/library/Channel.flix"),
