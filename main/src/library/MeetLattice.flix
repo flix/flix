@@ -55,9 +55,147 @@ namespace MeetLattice {
 }
 
 instance MeetLattice[(a1, a2)] with MeetLattice[a1], MeetLattice[a2] {
-    pub def greatestLowerBound(x: (a1, a2), y: (a1, a2)): (a1, a2) = match (x, y) {
-        case ((x1, x2), (y1, y2)) => (MeetLattice.greatestLowerBound(x1, y1), MeetLattice.greatestLowerBound(x2, y2))
+    pub def greatestLowerBound(x: (a1, a2),
+                            y: (a1, a2)): (a1, a2) = match (x, y) {
+        case ((x1, x2), (y1, y2)) => (
+            MeetLattice.greatestLowerBound(x1, y1),
+            MeetLattice.greatestLowerBound(x2, y2)
+        )
     }
 }
 
-// TODO: Add instances for pairs N = 2 to N = 10.
+instance MeetLattice[(a1, a2, a3)] with MeetLattice[a1], MeetLattice[a2],
+                                        MeetLattice[a3] {
+    pub def greatestLowerBound(x: (a1, a2, a3),
+                            y: (a1, a2, a3)): (a1, a2, a3) = match (x, y) {
+        case ((x1, x2, x3), (y1, y2, y3)) => (
+            MeetLattice.greatestLowerBound(x1, y1),
+            MeetLattice.greatestLowerBound(x2, y2),
+            MeetLattice.greatestLowerBound(x3, y3)
+        )
+    }
+}
+
+instance MeetLattice[(a1, a2, a3, a4)] with MeetLattice[a1], MeetLattice[a2],
+                                            MeetLattice[a3], MeetLattice[a4] {
+    pub def greatestLowerBound(x: (a1, a2, a3, a4),
+                            y: (a1, a2, a3, a4)): (a1, a2, a3, a4) = match (x, y) {
+        case ((x1, x2, x3, x4), (y1, y2, y3, y4)) => (
+            MeetLattice.greatestLowerBound(x1, y1),
+            MeetLattice.greatestLowerBound(x2, y2),
+            MeetLattice.greatestLowerBound(x3, y3),
+            MeetLattice.greatestLowerBound(x4, y4)
+        )
+    }
+}
+
+instance MeetLattice[(a1, a2, a3, a4, a5)] with MeetLattice[a1], MeetLattice[a2],
+                                                MeetLattice[a3], MeetLattice[a4],
+                                                MeetLattice[a5] {
+    pub def greatestLowerBound(x: (a1, a2, a3, a4, a5),
+                            y: (a1, a2, a3, a4, a5)): (a1, a2, a3, a4, a5) = match (x, y) {
+        case ((x1, x2, x3, x4, x5), (y1, y2, y3, y4, y5)) => (
+            MeetLattice.greatestLowerBound(x1, y1),
+            MeetLattice.greatestLowerBound(x2, y2),
+            MeetLattice.greatestLowerBound(x3, y3),
+            MeetLattice.greatestLowerBound(x4, y4),
+            MeetLattice.greatestLowerBound(x5, y5)
+        )
+    }
+}
+
+instance MeetLattice[(a1, a2, a3, a4, a5, a6)] with MeetLattice[a1], MeetLattice[a2],
+                                                    MeetLattice[a3], MeetLattice[a4],
+                                                    MeetLattice[a5], MeetLattice[a6] {
+    pub def greatestLowerBound(x: (a1, a2, a3, a4, a5, a6),
+                            y: (a1, a2, a3, a4, a5, a6)): (a1, a2, a3, a4, a5, a6) = match (x, y) {
+        case ((x1, x2, x3, x4, x5, x6), (y1, y2, y3, y4, y5, y6)) => (
+            MeetLattice.greatestLowerBound(x1, y1),
+            MeetLattice.greatestLowerBound(x2, y2),
+            MeetLattice.greatestLowerBound(x3, y3),
+            MeetLattice.greatestLowerBound(x4, y4),
+            MeetLattice.greatestLowerBound(x5, y5),
+            MeetLattice.greatestLowerBound(x6, y6)
+        )
+    }
+}
+
+instance MeetLattice[(a1, a2, a3, a4, a5, a6, a7)] with MeetLattice[a1], MeetLattice[a2],
+                                                        MeetLattice[a3], MeetLattice[a4],
+                                                        MeetLattice[a5], MeetLattice[a6],
+                                                        MeetLattice[a7] {
+    pub def greatestLowerBound(x: (a1, a2, a3, a4, a5, a6, a7),
+                            y: (a1, a2, a3, a4, a5, a6, a7)): (a1, a2, a3, a4, a5, a6, a7) = match (x, y) {
+        case ((x1, x2, x3, x4, x5, x6, x7), (y1, y2, y3, y4, y5, y6, y7)) => (
+            MeetLattice.greatestLowerBound(x1, y1),
+            MeetLattice.greatestLowerBound(x2, y2),
+            MeetLattice.greatestLowerBound(x3, y3),
+            MeetLattice.greatestLowerBound(x4, y4),
+            MeetLattice.greatestLowerBound(x5, y5),
+            MeetLattice.greatestLowerBound(x6, y6),
+            MeetLattice.greatestLowerBound(x7, y7)
+        )
+    }
+}
+
+instance MeetLattice[(a1, a2, a3, a4, a5, a6, a7, a8)] with MeetLattice[a1], MeetLattice[a2],
+                                                            MeetLattice[a3], MeetLattice[a4],
+                                                            MeetLattice[a5], MeetLattice[a6],
+                                                            MeetLattice[a7], MeetLattice[a8] {
+    pub def greatestLowerBound(x: (a1, a2, a3, a4, a5, a6, a7, a8),
+                            y: (a1, a2, a3, a4, a5, a6, a7, a8)): (a1, a2, a3, a4, a5, a6, a7, a8) = match (x, y) {
+        case ((x1, x2, x3, x4, x5, x6, x7, x8), (y1, y2, y3, y4, y5, y6, y7, y8)) => (
+            MeetLattice.greatestLowerBound(x1, y1),
+            MeetLattice.greatestLowerBound(x2, y2),
+            MeetLattice.greatestLowerBound(x3, y3),
+            MeetLattice.greatestLowerBound(x4, y4),
+            MeetLattice.greatestLowerBound(x5, y5),
+            MeetLattice.greatestLowerBound(x6, y6),
+            MeetLattice.greatestLowerBound(x7, y7),
+            MeetLattice.greatestLowerBound(x8, y8)
+        )
+    }
+}
+
+instance MeetLattice[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with MeetLattice[a1], MeetLattice[a2],
+                                                                MeetLattice[a3], MeetLattice[a4],
+                                                                MeetLattice[a5], MeetLattice[a6],
+                                                                MeetLattice[a7], MeetLattice[a8],
+                                                                MeetLattice[a9] {
+    pub def greatestLowerBound(x: (a1, a2, a3, a4, a5, a6, a7, a8, a9),
+                            y: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): (a1, a2, a3, a4, a5, a6, a7, a8, a9) = match (x, y) {
+        case ((x1, x2, x3, x4, x5, x6, x7, x8, x9), (y1, y2, y3, y4, y5, y6, y7, y8, y9)) => (
+            MeetLattice.greatestLowerBound(x1, y1),
+            MeetLattice.greatestLowerBound(x2, y2),
+            MeetLattice.greatestLowerBound(x3, y3),
+            MeetLattice.greatestLowerBound(x4, y4),
+            MeetLattice.greatestLowerBound(x5, y5),
+            MeetLattice.greatestLowerBound(x6, y6),
+            MeetLattice.greatestLowerBound(x7, y7),
+            MeetLattice.greatestLowerBound(x8, y8),
+            MeetLattice.greatestLowerBound(x9, y9)
+        )
+    }
+}
+
+instance MeetLattice[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with MeetLattice[a1], MeetLattice[a2],
+                                                                     MeetLattice[a3], MeetLattice[a4],
+                                                                     MeetLattice[a5], MeetLattice[a6],
+                                                                     MeetLattice[a7], MeetLattice[a8],
+                                                                     MeetLattice[a9], MeetLattice[a10] {
+    pub def greatestLowerBound(x: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10),
+                            y: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10) = match (x, y) {
+        case ((x1, x2, x3, x4, x5, x6, x7, x8, x9, x10), (y1, y2, y3, y4, y5, y6, y7, y8, y9, y10)) => (
+            MeetLattice.greatestLowerBound(x1, y1),
+            MeetLattice.greatestLowerBound(x2, y2),
+            MeetLattice.greatestLowerBound(x3, y3),
+            MeetLattice.greatestLowerBound(x4, y4),
+            MeetLattice.greatestLowerBound(x5, y5),
+            MeetLattice.greatestLowerBound(x6, y6),
+            MeetLattice.greatestLowerBound(x7, y7),
+            MeetLattice.greatestLowerBound(x8, y8),
+            MeetLattice.greatestLowerBound(x9, y9),
+            MeetLattice.greatestLowerBound(x10, y10)
+        )
+    }
+}
