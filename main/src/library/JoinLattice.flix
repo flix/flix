@@ -51,10 +51,24 @@ namespace JoinLattice {
 
 }
 
+instance JoinLattice[Int8] {
+    pub def leastUpperBound(x: Int8, y: Int8): Int8 = Order.max(x, y)
+}
+
+instance JoinLattice[Int16] {
+    pub def leastUpperBound(x: Int16, y: Int16): Int16 = Order.max(x, y)
+}
+
 instance JoinLattice[Int32] {
-    pub def leastUpperBound(x: Int32, y: Int32): Int32 = match (x, y) {
-        case (_, _) => Order.max(x, y)
-    }
+    pub def leastUpperBound(x: Int32, y: Int32): Int32 = Order.max(x, y)
+}
+
+instance JoinLattice[Int64] {
+    pub def leastUpperBound(x: Int64, y: Int64): Int64 = Order.max(x, y)
+}
+
+instance JoinLattice[BigInt] {
+    pub def leastUpperBound(x: BigInt, y: BigInt): BigInt = Order.max(x, y)
 }
 
 instance JoinLattice[(a1, a2)] with JoinLattice[a1], JoinLattice[a2] {
