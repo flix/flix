@@ -29,14 +29,6 @@ lawless class MeetLattice[a] {
 
 }
 
-instance MeetLattice[(a1, a2)] with MeetLattice[a1], MeetLattice[a2] {
-    pub def greatestLowerBound(x: (a1, a2), y: (a1, a2)): (a1, a2) = match (x, y) {
-        case ((x1, x2), (y1, y2)) => (MeetLattice.greatestLowerBound(x1, y1), MeetLattice.greatestLowerBound(x2, y2))
-    }
-}
-
-// TODO: Add instances for pairs N = 2 to N = 10.
-
 ///
 /// A Meet Lattice is pair of functions (⊑, ⊓) where ⊑ is a partial order and ⊓ satisfy two properties:
 /// lower-bound and greatest-lower-bound.
@@ -61,3 +53,11 @@ namespace MeetLattice {
 //        ∀(x: e, y: e, z: e). ((z ⊑ x) and (z ⊑ y)) `implies` (z ⊑ (x ⊓ y))
 
 }
+
+instance MeetLattice[(a1, a2)] with MeetLattice[a1], MeetLattice[a2] {
+    pub def greatestLowerBound(x: (a1, a2), y: (a1, a2)): (a1, a2) = match (x, y) {
+        case ((x1, x2), (y1, y2)) => (MeetLattice.greatestLowerBound(x1, y1), MeetLattice.greatestLowerBound(x2, y2))
+    }
+}
+
+// TODO: Add instances for pairs N = 2 to N = 10.
