@@ -322,8 +322,8 @@ class Flix {
         Weeder |>
         Namer |>
         Resolver |>
-        Deriver |>
         Kinder |>
+        Deriver |>
         Typer |>
         Statistics |>
         Instances |>

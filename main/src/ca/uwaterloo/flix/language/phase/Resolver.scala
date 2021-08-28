@@ -1119,14 +1119,14 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Performs name resolution on the given list of derivations `derives0`.
     */
-  def resolveDerivations(qnames: List[Name.QName], ns0: Name.NName, root: NamedAst.Root): Validation[List[ResolvedAst.Derivation], ResolutionError] = {
+  def resolveDerivations(qnames: List[Name.QName], ns0: Name.NName, root: NamedAst.Root): Validation[List[Ast.Derivation], ResolutionError] = {
     val derivesVal = Validation.traverse(qnames)(resolveDerivation(_, ns0, root))
     flatMapN(derivesVal) {
       derives =>
         val derivesWithIndex = derives.zipWithIndex
         val failures = for {
-          (ResolvedAst.Derivation(sym1, loc1), i1) <- derivesWithIndex
-          (ResolvedAst.Derivation(sym2, loc2), i2) <- derivesWithIndex
+          (Ast.Derivation(sym1, loc1), i1) <- derivesWithIndex
+          (Ast.Derivation(sym2, loc2), i2) <- derivesWithIndex
 
           // don't compare a sym against itself
           if i1 != i2
@@ -1142,11 +1142,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Performs name resolution on the given of derivation `derive0`.
     */
-  def resolveDerivation(derive0: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.Derivation, ResolutionError] = {
+  def resolveDerivation(derive0: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[Ast.Derivation, ResolutionError] = {
     for {
       clazz <- lookupClass(derive0, ns0, root)
       _ <- checkDerivable(clazz.sym, derive0.loc)
-    } yield ResolvedAst.Derivation(clazz.sym, derive0.loc)
+    } yield Ast.Derivation(clazz.sym, derive0.loc)
   }
 
   /**
