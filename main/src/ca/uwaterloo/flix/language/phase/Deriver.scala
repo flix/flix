@@ -116,7 +116,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
       val matchRules = cases.values.map(createToStringMatchRule(_, loc, root))
       val varSym = Symbol.freshVarSym()
       val exp = KindedAst.Expression.Match(
-        KindedAst.Expression.Var(varSym, varSym.tvar, loc),
+        mkExpr(varSym, loc),
         matchRules.toList,
         loc
       )
@@ -177,7 +177,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
         varSym =>
           KindedAst.Expression.Apply(
             KindedAst.Expression.Sig(toStringSym, Type.freshVar(Kind.Star), loc),
-            List(KindedAst.Expression.Var(varSym, varSym.tvar, loc)),
+            List(mkExpr(varSym, loc)),
             Type.freshVar(Kind.Star),
             Type.freshVar(Kind.Bool),
             loc
@@ -203,6 +203,11 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
     * Builds a string expression from the given string.
     */
   private def mkExpr(str: String, loc: SourceLocation): KindedAst.Expression.Str = KindedAst.Expression.Str(str, loc)
+
+  /**
+    * Builds a string expression from the given string.
+    */
+  private def mkExpr(varSym: Symbol.VarSym, loc: SourceLocation): KindedAst.Expression.Var = KindedAst.Expression.Var(varSym, varSym.tvar.ascribedWith(Kind.Star), loc)
 
   /**
     * Builds a string concatenation expression from the given expressions.
