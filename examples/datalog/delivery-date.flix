@@ -37,10 +37,6 @@ def main(_args: Array[String]) : Int32 & Impure =
     // Exit code
     0
 
-instance JoinLattice[Int32] {
-    pub def leastUpperBound(x: Int32, y: Int32): Int32 = Order.max(x, y)
-}
-
 instance MeetLattice[Int32] {
     pub def greatestLowerBound(x: Int32, y: Int32): Int32 = Order.min(x, y)
 }
