@@ -87,11 +87,6 @@ object Symbol {
     new VarSym(flix.genSym.freshId(), text, Type.freshUnkindedVar(), Scopedness.Unscoped, loc)
   }
 
-  def freshVarSym()(implicit flix: Flix): VarSym = {
-    val id = flix.genSym.freshId()
-    new VarSym(id, s"var$id", Type.freshUnkindedVar(), Scopedness.Unscoped, SourceLocation.Unknown)
-  }
-
   /**
     * Returns a label symbol with the given text.
     */

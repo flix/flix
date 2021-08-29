@@ -61,8 +61,9 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
     *
     * {{{
     * enum E[a] with ToString {
-    *   case C1
-    *   case C(a)
+    *   case C0
+    *   case C1(a)
+    *   case C2(a, a)
     * }
     * }}}
     *
@@ -70,9 +71,10 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
     *
     * {{{
     * instance ToString[E[a]] with ToString[a] {
-    *   pub private def toString(x: E[a]): String = x match {
-    *     case C1 => "C1"
-    *     case C(y) => "C" + "(" + ToString.toString(y) + ")"
+    *   pub def toString(x: E[a]): String = match x {
+    *     case C0 => "C0"
+    *     case C1(y) => "C1" + "(" + ToString.toString(y) + ")"
+    *     case C2(y0, y1) => "C2" + "(" + ToString.toString(y0) + ", " + ToString.toString(y1) + ")"
     *   }
     * }}}
     */
@@ -83,7 +85,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
 
       // create a match rule for each case and put them in a match expression
       val matchRules = cases.values.map(createToStringMatchRule(_, loc, root))
-      val varSym = Symbol.freshVarSym()
+      val varSym = Symbol.freshVarSym("x", loc)
       val exp = KindedAst.Expression.Match(
         mkVarExpr(varSym, loc),
         matchRules.toList,
@@ -225,10 +227,10 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
       getTagArguments(tpe) match {
         case Nil => (KindedAst.Pattern.Tag(sym, tag, KindedAst.Pattern.Unit(loc), Type.freshVar(Kind.Star), loc), Nil)
         case _ :: Nil =>
-          val varSym = Symbol.freshVarSym()
+          val varSym = Symbol.freshVarSym("y", loc)
           (KindedAst.Pattern.Tag(sym, tag, mkVarPattern(varSym, loc), Type.freshVar(Kind.Star), loc), List(varSym))
         case tpes =>
-          val varSyms = tpes.map(_ => Symbol.freshVarSym())
+          val varSyms = tpes.zipWithIndex.map { case (_, index) => Symbol.freshVarSym(s"y$index", loc) }
           val subPats = varSyms.map(varSym => mkVarPattern(varSym, loc))
           (KindedAst.Pattern.Tag(sym, tag, KindedAst.Pattern.Tuple(subPats, loc), Type.freshVar(Kind.Star), loc), varSyms)
       }
