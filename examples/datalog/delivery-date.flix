@@ -36,7 +36,3 @@ def main(_args: Array[String]) : Int32 & Impure =
 
     // Exit code
     0
-
-instance MeetLattice[Int32] {
-    pub def greatestLowerBound(x: Int32, y: Int32): Int32 = Order.min(x, y)
-}
