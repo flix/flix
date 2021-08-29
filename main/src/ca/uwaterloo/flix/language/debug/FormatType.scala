@@ -87,7 +87,7 @@ object FormatType {
 
       base match {
         case None => tpe match {
-          case Type.KindedVar(id, kind, rigidity, text, loc) => audience match {
+          case Type.KindedVar(id, kind, loc, rigidity, text) => audience match {
             case Audience.Internal => kind match {
               // TODO: We need a systematic way to print type variables, their kind, and rigidity.
               // TODO: We need to rid ourselves of alpha renaming. Its too brittle. We need something else.

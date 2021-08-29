@@ -379,7 +379,7 @@ object Type {
     * A type variable.
     */
   @IntroducedBy(Kinder.getClass)
-  case class KindedVar(id: Int, kind: Kind, rigidity: Rigidity = Rigidity.Flexible, text: Option[String] = None, loc: SourceLocation) extends Type with Var with BaseType with Ordered[Type.KindedVar] {
+  case class KindedVar(id: Int, kind: Kind, loc: SourceLocation, rigidity: Rigidity = Rigidity.Flexible, text: Option[String] = None) extends Type with Var with BaseType with Ordered[Type.KindedVar] {
     /**
       * Returns `true` if `this` type variable is equal to `o`.
       */
@@ -403,7 +403,7 @@ object Type {
     * A type variable without a kind.
     */
   @EliminatedBy(Kinder.getClass)
-  case class UnkindedVar(id: Int, rigidity: Rigidity = Rigidity.Flexible, text: Option[String] = None, loc: SourceLocation) extends Type with Var with BaseType with Ordered[Type.UnkindedVar] {
+  case class UnkindedVar(id: Int, loc: SourceLocation, rigidity: Rigidity = Rigidity.Flexible, text: Option[String] = None) extends Type with Var with BaseType with Ordered[Type.UnkindedVar] {
 
     override def kind: Kind = throw InternalCompilerException("Attempt to access kind of unkinded type variable")
 
@@ -428,7 +428,7 @@ object Type {
     /**
       * Converts the UnkindedVar to a Var with the given `kind`.
       */
-    def ascribedWith(kind: Kind): Type.KindedVar = Type.KindedVar(id, kind, rigidity, text, loc)
+    def ascribedWith(kind: Kind): Type.KindedVar = Type.KindedVar(id, kind, loc, rigidity, text)
   }
 
   /**
@@ -511,17 +511,17 @@ object Type {
   /**
     * Returns a fresh type variable of the given kind `k` and rigidity `r`.
     */
-  def freshVar(k: Kind, r: Rigidity = Rigidity.Flexible, text: Option[String] = None, loc: SourceLocation)(implicit flix: Flix): Type.KindedVar = {
+  def freshVar(k: Kind, loc: SourceLocation, r: Rigidity = Rigidity.Flexible, text: Option[String] = None)(implicit flix: Flix): Type.KindedVar = {
     val id = flix.genSym.freshId()
-    Type.KindedVar(id, k, r, text, loc)
+    Type.KindedVar(id, k, loc, r, text)
   }
 
   /**
     * Returns a fresh unkinded type variable of the given kind `k` and rigidity `r`.
     */
-  def freshUnkindedVar(r: Rigidity = Rigidity.Flexible, text: Option[String] = None, loc: SourceLocation)(implicit flix: Flix): Type.UnkindedVar = {
+  def freshUnkindedVar(loc: SourceLocation, r: Rigidity = Rigidity.Flexible, text: Option[String] = None)(implicit flix: Flix): Type.UnkindedVar = {
     val id = flix.genSym.freshId()
-    Type.UnkindedVar(id, r, text, loc)
+    Type.UnkindedVar(id, loc, r, text)
   }
 
   /**

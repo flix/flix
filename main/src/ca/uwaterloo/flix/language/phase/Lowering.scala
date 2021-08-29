@@ -683,8 +683,8 @@ object Lowering extends Phase[Root, Root] {
     */
   private def visitType(tpe0: Type)(implicit root: Root, flix: Flix): Type = {
     def visit(tpe: Type): Type = tpe match {
-      case Type.KindedVar(id, kind, rigidity, text, loc) => kind match {
-        case Kind.Schema => Type.KindedVar(id, Kind.Star, rigidity, text, loc)
+      case Type.KindedVar(id, kind, loc, rigidity, text) => kind match {
+        case Kind.Schema => Type.KindedVar(id, Kind.Star, loc, rigidity, text)
         case _ => tpe0
       }
 

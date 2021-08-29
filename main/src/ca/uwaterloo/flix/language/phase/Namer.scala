@@ -1052,7 +1052,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         NameError.SuspiciousTypeVarName(ident.name, loc).toFailure
       } else if (ident.isWild) {
         // Wild idents will not be in the environment. Create a tvar instead.
-        NamedAst.Type.Var(Type.freshUnkindedVar(loc = loc), loc).toSuccess
+        NamedAst.Type.Var(Type.freshUnkindedVar(loc), loc).toSuccess
       } else {
         tenv0.get(ident.name) match {
           case None => NameError.UndefinedTypeVar(ident.name, loc).toFailure

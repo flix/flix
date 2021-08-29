@@ -753,7 +753,7 @@ object JvmOps {
 
   // TODO: Should be removed.
   private def hackMonoType2Type(tpe: MonoType): Type = tpe match {
-    case MonoType.Var(id) => Type.KindedVar(id, Kind.Star, loc = SourceLocation.Unknown)
+    case MonoType.Var(id) => Type.KindedVar(id, Kind.Star, SourceLocation.Unknown)
     case MonoType.Unit => Type.Unit
     case MonoType.Bool => Type.Bool
     case MonoType.Char => Type.Char

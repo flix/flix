@@ -606,7 +606,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
                   val freshVar = Symbol.freshVarSym("x", loc)
 
                   // Construct the formal parameter for the fresh symbol.
-                  val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, Type.freshUnkindedVar(loc = loc), loc)
+                  val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, Type.freshUnkindedVar(loc), loc)
 
                   // Construct a variable expression for the fresh symbol.
                   val varExp = ResolvedAst.Expression.Var(freshVar, freshVar.tvar, loc)

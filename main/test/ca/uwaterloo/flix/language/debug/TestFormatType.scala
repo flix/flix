@@ -35,7 +35,7 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatWellFormedType.Record.External.02") {
-    val rest = Type.KindedVar(0, Kind.Record, Rigidity.Rigid, loc = loc)
+    val rest = Type.KindedVar(0, Kind.Record, loc, Rigidity.Rigid)
     val tpe = Type.mkRecordExtend(Name.Field("x", loc), Type.Int32, rest)
 
     val expected = "{ x: Int32 | '0 }"
@@ -45,7 +45,7 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatWellFormedType.Arrow.External.01") {
-    val paramType = Type.KindedVar(0, Kind.Star, Rigidity.Rigid, loc = loc)
+    val paramType = Type.KindedVar(0, Kind.Star, loc, Rigidity.Rigid)
     val tpe = Type.mkArrowWithEffect(paramType, Type.Pure, paramType)
 
     val expected = "'0 -> '0"
@@ -55,9 +55,9 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatWellFormedType.Arrow.External.02") {
-    val paramType = Type.KindedVar(0, Kind.Star, Rigidity.Rigid, loc = loc)
-    val returnType = Type.KindedVar(1, Kind.Star, Rigidity.Rigid, loc = loc)
-    val effectType = Type.KindedVar(2, Kind.Bool, Rigidity.Rigid, loc = loc)
+    val paramType = Type.KindedVar(0, Kind.Star, loc, Rigidity.Rigid)
+    val returnType = Type.KindedVar(1, Kind.Star, loc, Rigidity.Rigid)
+    val effectType = Type.KindedVar(2, Kind.Bool, loc, Rigidity.Rigid)
     val tpe = Type.mkArrowWithEffect(paramType, effectType, returnType)
 
     val expected = "'0 -> '1 & '2"
@@ -67,8 +67,8 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatWellFormedType.Arrow.External.03") {
-    val paramType = Type.KindedVar(0, Kind.Star, Rigidity.Rigid, loc = loc)
-    val returnType = Type.KindedVar(1, Kind.Star, Rigidity.Rigid, loc = loc)
+    val paramType = Type.KindedVar(0, Kind.Star, loc, Rigidity.Rigid)
+    val returnType = Type.KindedVar(1, Kind.Star, loc, Rigidity.Rigid)
     val tpe = Type.mkArrowWithEffect(paramType, Type.Impure, returnType)
 
     val expected = "'0 ~> '1"
@@ -87,7 +87,7 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatWellFormedType.Arrow.External.05") {
-    val eff = Type.mkAnd(Type.KindedVar(1, Kind.Bool, Rigidity.Flexible, loc = loc), Type.KindedVar(2, Kind.Bool, Rigidity.Flexible, loc = loc))
+    val eff = Type.mkAnd(Type.KindedVar(1, Kind.Bool, loc, Rigidity.Flexible), Type.KindedVar(2, Kind.Bool, loc, Rigidity.Flexible))
     val tpe = Type.mkArrowWithEffect(Type.BigInt, eff, Type.Bool)
 
     val expected = "BigInt -> Bool & ('1 ∧ '2)"
@@ -109,7 +109,7 @@ class TestFormatType extends FunSuite with TestUtils {
   test("FormatWellFormedType.Schema.External.02") {
     val latticeType1 = Type.mkLattice(List(Type.Str))
     val latticeType2 = Type.mkLattice(List(Type.Int32, Type.Str))
-    val restType = Type.KindedVar(5, Kind.Schema, Rigidity.Flexible, loc = loc)
+    val restType = Type.KindedVar(5, Kind.Schema, loc, Rigidity.Flexible)
     val tpe = Type.mkSchemaExtend(Name.Pred("A", loc), latticeType1, Type.mkSchemaExtend(Name.Pred("B", loc), latticeType2, restType))
 
     val expected = "#{ A<>(String), B<>(Int32, String) | '5 }"
@@ -119,9 +119,9 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatWellFormedType.Enum.External.07") {
-    val tvar1 = Type.KindedVar(1, Kind.Star, Rigidity.Flexible, loc = loc)
-    val tvar2 = Type.KindedVar(2, Kind.Star, Rigidity.Flexible, loc = loc)
-    val tvar3 = Type.KindedVar(3, Kind.Star, Rigidity.Flexible, loc = loc)
+    val tvar1 = Type.KindedVar(1, Kind.Star, loc, Rigidity.Flexible)
+    val tvar2 = Type.KindedVar(2, Kind.Star, loc, Rigidity.Flexible)
+    val tvar3 = Type.KindedVar(3, Kind.Star, loc, Rigidity.Flexible)
     val tpe = Type.mkEnum(Symbol.mkEnumSym("Triplet"), List(tvar1, tvar2, tvar3))
 
     val expected = "Triplet['1, '2, '3]"
@@ -140,7 +140,7 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatWellFormedType.Record.Internal.02") {
-    val rest = Type.KindedVar(0, Kind.Record, Rigidity.Rigid, loc = loc)
+    val rest = Type.KindedVar(0, Kind.Record, loc, Rigidity.Rigid)
     val tpe = Type.mkRecordExtend(Name.Field("x", loc), Type.Int32, rest)
 
     val expected = "{ x: Int32 | '0 }"
@@ -150,7 +150,7 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatWellFormedType.Arrow.Internal.01") {
-    val paramType = Type.KindedVar(0, Kind.Star, Rigidity.Rigid, loc = loc)
+    val paramType = Type.KindedVar(0, Kind.Star, loc, Rigidity.Rigid)
     val tpe = Type.mkArrowWithEffect(paramType, Type.Pure, paramType)
 
     val expected = "'0 -> '0"
@@ -160,9 +160,9 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatWellFormedType.Arrow.Internal.02") {
-    val paramType = Type.KindedVar(0, Kind.Star, Rigidity.Rigid, loc = loc)
-    val returnType = Type.KindedVar(1, Kind.Star, Rigidity.Rigid, loc = loc)
-    val effectType = Type.KindedVar(2, Kind.Bool, Rigidity.Rigid, loc = loc)
+    val paramType = Type.KindedVar(0, Kind.Star, loc, Rigidity.Rigid)
+    val returnType = Type.KindedVar(1, Kind.Star, loc, Rigidity.Rigid)
+    val effectType = Type.KindedVar(2, Kind.Bool, loc, Rigidity.Rigid)
     val tpe = Type.mkArrowWithEffect(paramType, effectType, returnType)
 
     val expected = "'0 -> '1 & ''2"
@@ -184,7 +184,7 @@ class TestFormatType extends FunSuite with TestUtils {
   test("FormatWellFormedType.Schema.Internal.02") {
     val latticeType1 = Type.mkLattice(List(Type.Str))
     val latticeType2 = Type.mkLattice(List(Type.Int32, Type.Str))
-    val restType = Type.KindedVar(5, Kind.Schema, Rigidity.Flexible, loc = loc)
+    val restType = Type.KindedVar(5, Kind.Schema, loc, Rigidity.Flexible)
     val tpe = Type.mkSchemaExtend(Name.Pred("A", loc), latticeType1, Type.mkSchemaExtend(Name.Pred("B", loc), latticeType2, restType))
 
     val expected = "#{ A<>(String), B<>(Int32, String) | '5 }"
@@ -194,9 +194,9 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatWellFormedType.Enum.Internal.07") {
-    val tvar1 = Type.KindedVar(1, Kind.Star, Rigidity.Flexible, loc = loc)
-    val tvar2 = Type.KindedVar(2, Kind.Star, Rigidity.Flexible, loc = loc)
-    val tvar3 = Type.KindedVar(3, Kind.Star, Rigidity.Flexible, loc = loc)
+    val tvar1 = Type.KindedVar(1, Kind.Star, loc, Rigidity.Flexible)
+    val tvar2 = Type.KindedVar(2, Kind.Star, loc, Rigidity.Flexible)
+    val tvar3 = Type.KindedVar(3, Kind.Star, loc, Rigidity.Flexible)
     val tpe = Type.mkEnum(Symbol.mkEnumSym("Triplet"), List(tvar1, tvar2, tvar3))
 
     val expected = "Triplet['1, '2, '3]"
