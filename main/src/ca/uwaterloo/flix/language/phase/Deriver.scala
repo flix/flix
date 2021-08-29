@@ -109,13 +109,10 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
       )
       val defn = KindedAst.Def(toStringDefSym, spec, exp)
 
-      // Add a type constraint to the instance for any variable used in a case
-      val caseTvars = for {
-        caze <- cases.values
-        tpe <- getTagArguments(caze.sc.base)
-        if tpe.isInstanceOf[Type.Var]
-      } yield tpe
-      val tconstrs = caseTvars.toList.distinct.map(Ast.TypeConstraint(toStringClassSym, _, loc))
+      // Add a type constraint to the instance for any non-wild param with kind Star
+      val tconstrs = tparams.collect {
+        case tparam if tparam.tpe.kind <:: Kind.Star && !tparam.name.isWild => Ast.TypeConstraint(toStringClassSym, tparam.tpe, loc)
+      }
 
       KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
