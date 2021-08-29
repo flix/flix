@@ -116,7 +116,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
       val matchRules = cases.values.map(createToStringMatchRule(_, loc, root))
       val varSym = Symbol.freshVarSym()
       val exp = KindedAst.Expression.Match(
-        mkExpr(varSym, loc),
+        mkVarExpr(varSym, loc),
         matchRules.toList,
         loc
       )
@@ -165,7 +165,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
     case KindedAst.Case(enum, tag, tpeDeprecated, sc) =>
 
       // get a pattern corresponding to this case
-      val (pat, varSyms) = mkPattern(sc.base)
+      val (pat, varSyms) = mkPattern(sc.base, loc)
 
       val guard = KindedAst.Expression.True(loc)
 
@@ -177,7 +177,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
         varSym =>
           KindedAst.Expression.Apply(
             KindedAst.Expression.Sig(toStringSym, Type.freshVar(Kind.Star), loc),
-            List(mkExpr(varSym, loc)),
+            List(mkVarExpr(varSym, loc)),
             Type.freshVar(Kind.Star),
             Type.freshVar(Kind.Bool),
             loc
@@ -185,7 +185,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
       }
 
       // put commas between the arguments
-      val sep = mkExpr(", ", loc)
+      val sep = mkStrExpr(", ", loc)
       val valuePart = intersperse(toStrings, sep)
 
       // put it all together
@@ -193,7 +193,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
         // Case 1: no arguments: just show the tag
         case Nil => tagPart
         // Case 2: at least one argument: concatenate the tag with the values wrapped in parens
-        case exps => concatAll(tagPart :: mkExpr("(", loc) :: (exps :+ mkExpr(")", loc)), loc)
+        case exps => concatAll(tagPart :: mkStrExpr("(", loc) :: (exps :+ mkStrExpr(")", loc)), loc)
       }
 
       KindedAst.MatchRule(pat, guard, exp)
@@ -202,12 +202,12 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
   /**
     * Builds a string expression from the given string.
     */
-  private def mkExpr(str: String, loc: SourceLocation): KindedAst.Expression.Str = KindedAst.Expression.Str(str, loc)
+  private def mkStrExpr(str: String, loc: SourceLocation): KindedAst.Expression.Str = KindedAst.Expression.Str(str, loc)
 
   /**
     * Builds a string expression from the given string.
     */
-  private def mkExpr(varSym: Symbol.VarSym, loc: SourceLocation): KindedAst.Expression.Var = KindedAst.Expression.Var(varSym, varSym.tvar.ascribedWith(Kind.Star), loc)
+  private def mkVarExpr(varSym: Symbol.VarSym, loc: SourceLocation): KindedAst.Expression.Var = KindedAst.Expression.Var(varSym, varSym.tvar.ascribedWith(Kind.Star), loc)
 
   /**
     * Builds a string concatenation expression from the given expressions.
@@ -251,20 +251,25 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
   /**
     * Creates a pattern corresponding to the given tag type.
     */
-  private def mkPattern(tpe: Type)(implicit flix: Flix): (KindedAst.Pattern, List[Symbol.VarSym]) = tpe.typeConstructor match {
+  private def mkPattern(tpe: Type, loc: SourceLocation)(implicit flix: Flix): (KindedAst.Pattern, List[Symbol.VarSym]) = tpe.typeConstructor match {
     case Some(TypeConstructor.Tag(sym, tag)) =>
       getTagArguments(tpe) match {
-        case Nil => (KindedAst.Pattern.Tag(sym, tag, KindedAst.Pattern.Unit(SourceLocation.Unknown), Type.freshVar(Kind.Star), SourceLocation.Unknown), Nil)
+        case Nil => (KindedAst.Pattern.Tag(sym, tag, KindedAst.Pattern.Unit(loc), Type.freshVar(Kind.Star), loc), Nil)
         case _ :: Nil =>
           val varSym = Symbol.freshVarSym()
-          (KindedAst.Pattern.Tag(sym, tag, KindedAst.Pattern.Var(varSym, varSym.tvar.ascribedWith(Kind.Star), SourceLocation.Unknown), Type.freshVar(Kind.Star), SourceLocation.Unknown), List(varSym))
+          (KindedAst.Pattern.Tag(sym, tag, mkVarPattern(varSym, loc), Type.freshVar(Kind.Star), loc), List(varSym))
         case tpes =>
           val varSyms = tpes.map(_ => Symbol.freshVarSym())
-          val subPats = varSyms.map(varSym => KindedAst.Pattern.Var(varSym, varSym.tvar.ascribedWith(Kind.Star), SourceLocation.Unknown))
-          (KindedAst.Pattern.Tag(sym, tag, KindedAst.Pattern.Tuple(subPats, SourceLocation.Unknown), Type.freshVar(Kind.Star), SourceLocation.Unknown), varSyms)
+          val subPats = varSyms.map(varSym => mkVarPattern(varSym, loc))
+          (KindedAst.Pattern.Tag(sym, tag, KindedAst.Pattern.Tuple(subPats, loc), Type.freshVar(Kind.Star), loc), varSyms)
       }
     case _ => throw InternalCompilerException("Unexpected non-tag type.")
   }
+
+  /**
+    * Creates a variable pattern using the given variable symbol.
+    */
+  private def mkVarPattern(varSym: Symbol.VarSym, loc: SourceLocation): KindedAst.Pattern = KindedAst.Pattern.Var(varSym, varSym.tvar.ascribedWith(Kind.Star), loc)
 
   /**
     * Inserts `sep` between every two elements of `list`.
