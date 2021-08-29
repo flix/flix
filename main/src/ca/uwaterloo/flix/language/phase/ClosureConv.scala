@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.SimplifiedAst._
-import ca.uwaterloo.flix.language.ast.{Ast, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
@@ -111,7 +111,7 @@ object ClosureConv extends Phase[Root, Root] {
 
       // Update the lambda type.
       val argTpes = fvs.map(_._2) ++ targs
-      val newTpe = Type.mkPureUncurriedArrow(argTpes, tresult)
+      val newTpe = Type.mkPureUncurriedArrow(argTpes, tresult, SourceLocation.Unknown)
 
       val newBody = visitExp(replace(body, subst.toMap))
       // We rewrite the lambda with its new arguments list and new body, with any nested lambdas also converted.

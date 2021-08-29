@@ -52,9 +52,9 @@ class TestUnification extends FunSuite with TestUtils {
   }
 
   test("Substitution.Empty.04") {
-    val tpe = Type.mkPureArrow(Type.Bool, Type.Unit)
+    val tpe = Type.mkPureArrow(Type.Bool, Type.Unit, loc)
     val subst = Substitution.empty
-    assertResult(Type.mkPureArrow(Type.Bool, Type.Unit))(subst(tpe))
+    assertResult(Type.mkPureArrow(Type.Bool, Type.Unit, loc))(subst(tpe))
   }
 
   test("Substitution.Singleton.01") {
@@ -103,16 +103,16 @@ class TestUnification extends FunSuite with TestUtils {
     val subst1 = Substitution.singleton(Type.KindedVar(1, Kind.Star, loc), Type.Bool)
     val subst2 = Substitution.singleton(Type.KindedVar(2, Kind.Star, loc), Type.Char)
 
-    val tpe = Type.mkPureArrow(Type.KindedVar(1, Kind.Star, loc), Type.KindedVar(2, Kind.Star, loc))
-    assertResult(Type.mkPureArrow(Type.Bool, Type.Char))((subst1 ++ subst2) (tpe))
+    val tpe = Type.mkPureArrow(Type.KindedVar(1, Kind.Star, loc), Type.KindedVar(2, Kind.Star, loc), loc)
+    assertResult(Type.mkPureArrow(Type.Bool, Type.Char, loc))((subst1 ++ subst2) (tpe))
   }
 
   test("Substitution.@@.01") {
     val subst1 = Substitution.singleton(Type.KindedVar(1, Kind.Star, loc), Type.Bool)
     val subst2 = Substitution.singleton(Type.KindedVar(2, Kind.Star, loc), Type.Char)
 
-    val tpe = Type.mkPureArrow(Type.KindedVar(1, Kind.Star, loc), Type.KindedVar(2, Kind.Star, loc))
-    assertResult(Type.mkPureArrow(Type.Bool, Type.Char))((subst2 @@ subst1) (tpe))
+    val tpe = Type.mkPureArrow(Type.KindedVar(1, Kind.Star, loc), Type.KindedVar(2, Kind.Star, loc), loc)
+    assertResult(Type.mkPureArrow(Type.Bool, Type.Char, loc))((subst2 @@ subst1) (tpe))
   }
 
   test("Substitution.@@.02") {
@@ -231,23 +231,23 @@ class TestUnification extends FunSuite with TestUtils {
 
   test("Unify.03") {
     val A = Type.KindedVar(1, Kind.Star, loc)
-    val tpe1 = Type.mkPureArrow(Type.Bool, Type.Char)
-    val tpe2 = Type.mkPureArrow(Type.Bool, A)
+    val tpe1 = Type.mkPureArrow(Type.Bool, Type.Char, loc)
+    val tpe2 = Type.mkPureArrow(Type.Bool, A, loc)
     val result = Unification.unifyTypes(tpe1, tpe2).get
     assertResult(Type.Char)(result(A))
   }
 
   test("Unify.04") {
     val A = Type.KindedVar(1, Kind.Star, loc)
-    val tpe1 = Type.mkPureArrow(Type.Bool, Type.Char)
-    val tpe2 = Type.mkPureArrow(Type.Bool, A)
+    val tpe1 = Type.mkPureArrow(Type.Bool, Type.Char, loc)
+    val tpe2 = Type.mkPureArrow(Type.Bool, A, loc)
     val result = Unification.unifyTypes(tpe1, tpe2).get
     assertResult(Type.Char)(result(A))
   }
 
   test("Unify.05") {
     val A = Type.KindedVar(1, Kind.Star, loc)
-    val tpe1 = Type.mkPureArrow(Type.Bool, Type.Char)
+    val tpe1 = Type.mkPureArrow(Type.Bool, Type.Char, loc)
     val tpe2 = A
     val result = Unification.unifyTypes(tpe1, tpe2).get
     assertResult(tpe1)(result(A))
@@ -256,15 +256,15 @@ class TestUnification extends FunSuite with TestUtils {
   test("Unify.06") {
     val A = Type.KindedVar(1, Kind.Star, loc)
     val tpe1 = A
-    val tpe2 = Type.mkPureArrow(Type.Bool, Type.Char)
+    val tpe2 = Type.mkPureArrow(Type.Bool, Type.Char, loc)
     val result = Unification.unifyTypes(tpe1, tpe2).get
     assertResult(tpe2)(result(A))
   }
 
   test("Unify.07") {
     val A = Type.KindedVar(1, Kind.Star, loc)
-    val tpe1 = Type.mkPureArrow(A, Type.Bool)
-    val tpe2 = Type.mkPureArrow(Type.Bool, A)
+    val tpe1 = Type.mkPureArrow(A, Type.Bool, loc)
+    val tpe2 = Type.mkPureArrow(Type.Bool, A, loc)
     val result = Unification.unifyTypes(tpe1, tpe2).get
     assertResult(Type.Bool)(result(A))
   }
@@ -272,8 +272,8 @@ class TestUnification extends FunSuite with TestUtils {
   test("Unify.08") {
     val A = Type.KindedVar(1, Kind.Star, loc)
     val B = Type.KindedVar(2, Kind.Star, loc)
-    val tpe1 = Type.mkPureArrow(A, B)
-    val tpe2 = Type.mkPureArrow(Type.Bool, Type.Char)
+    val tpe1 = Type.mkPureArrow(A, B, loc)
+    val tpe2 = Type.mkPureArrow(Type.Bool, Type.Char, loc)
     val result = Unification.unifyTypes(tpe1, tpe2).get
     assertResult(Type.Bool)(result(A))
     assertResult(Type.Char)(result(B))
@@ -282,8 +282,8 @@ class TestUnification extends FunSuite with TestUtils {
   test("Unify.09") {
     val A = Type.KindedVar(1, Kind.Star, loc)
     val B = Type.KindedVar(2, Kind.Star, loc)
-    val tpe1 = Type.mkPureArrow(Type.Bool, Type.Char)
-    val tpe2 = Type.mkPureArrow(A, B)
+    val tpe1 = Type.mkPureArrow(Type.Bool, Type.Char, loc)
+    val tpe2 = Type.mkPureArrow(A, B, loc)
     val result = Unification.unifyTypes(tpe1, tpe2).get
     assertResult(Type.Bool)(result(A))
     assertResult(Type.Char)(result(B))
@@ -292,8 +292,8 @@ class TestUnification extends FunSuite with TestUtils {
   test("Unify.10") {
     val A = Type.KindedVar(1, Kind.Star, loc)
     val B = Type.KindedVar(2, Kind.Star, loc)
-    val tpe1 = Type.mkPureArrow(A, Type.Char)
-    val tpe2 = Type.mkPureArrow(Type.Bool, B)
+    val tpe1 = Type.mkPureArrow(A, Type.Char, loc)
+    val tpe2 = Type.mkPureArrow(Type.Bool, B, loc)
     val result = Unification.unifyTypes(tpe1, tpe2).get
     assertResult(Type.Bool)(result(A))
     assertResult(Type.Char)(result(B))
@@ -303,8 +303,8 @@ class TestUnification extends FunSuite with TestUtils {
     val A = Type.KindedVar(1, Kind.Star, loc)
     val B = Type.KindedVar(2, Kind.Star, loc)
     val C = Type.KindedVar(3, Kind.Star, loc)
-    val tpe1 = Type.mkPureArrow(A, B)
-    val tpe2 = Type.mkPureArrow(C, Type.Bool)
+    val tpe1 = Type.mkPureArrow(A, B, loc)
+    val tpe2 = Type.mkPureArrow(C, Type.Bool, loc)
     val result = Unification.unifyTypes(tpe1, tpe2).get
     assertResult(Type.Bool)(result(B))
     assertResult(C)(result(A))
@@ -314,16 +314,16 @@ class TestUnification extends FunSuite with TestUtils {
     val tpe1 = Type.KindedVar(1, Kind.Record, loc)
     val field = Type.Bool
     val label = Name.Field("x", loc)
-    val tpe2 = Type.mkRecordExtend(label, field, tpe1)
+    val tpe2 = Type.mkRecordExtend(label, field, tpe1, loc)
     val result = Unification.unifyTypes(tpe1, tpe2)
     assert(!isOk(result))
   }
 
   test("Unify.13") {
     val tpe1 = Type.KindedVar(1, Kind.Schema, loc)
-    val field = Type.mkRelation(List(Type.Bool))
+    val field = Type.mkRelation(List(Type.Bool), loc)
     val label = Name.Pred("X", loc)
-    val tpe2 = Type.mkSchemaExtend(label, field, tpe1)
+    val tpe2 = Type.mkSchemaExtend(label, field, tpe1, loc)
     val result = Unification.unifyTypes(tpe1, tpe2)
     assert(!isOk(result))
   }
@@ -399,12 +399,12 @@ class TestUnification extends FunSuite with TestUtils {
     val subst0 = Substitution.empty
     val res1 = Unification.unifyTypeM(Type.KindedVar(1, Kind.Star, loc), Type.Bool, loc)
     val res2 = Unification.unifyTypeM(Type.KindedVar(2, Kind.Star, loc), Type.Char, loc)
-    val res3 = Unification.unifyTypeM(Type.KindedVar(3, Kind.Star, loc), Type.mkTuple(List(Type.KindedVar(1, Kind.Star, loc), Type.KindedVar(2, Kind.Star, loc))), loc)
+    val res3 = Unification.unifyTypeM(Type.KindedVar(3, Kind.Star, loc), Type.mkTuple(List(Type.KindedVar(1, Kind.Star, loc), Type.KindedVar(2, Kind.Star, loc)), loc), loc)
     val result = seqM(List(res1, res2, res3)).run(subst0)
     val (subst, tpe) = result.get
     assertResult(Type.Bool)(subst.m(Type.KindedVar(1, Kind.Star, loc)))
     assertResult(Type.Char)(subst.m(Type.KindedVar(2, Kind.Star, loc)))
-    assertResult(Type.mkTuple(List(Type.Bool, Type.Char)))(subst.m(Type.KindedVar(3, Kind.Star, loc)))
+    assertResult(Type.mkTuple(List(Type.Bool, Type.Char), loc))(subst.m(Type.KindedVar(3, Kind.Star, loc)))
   }
 
   private def isOk[T, E](r: Result[T, E]) = r match {

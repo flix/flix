@@ -602,7 +602,7 @@ object Type {
   /**
     * Returns the type `Array[tpe]` with the given optional source location `loc`.
     */
-  def mkArray(elmType: Type, loc: SourceLocation = SourceLocation.Unknown): Type = Apply(Type.Cst(TypeConstructor.Array, loc), elmType, loc)
+  def mkArray(elmType: Type, loc: SourceLocation): Type = Apply(Type.Cst(TypeConstructor.Array, loc), elmType, loc)
 
   /**
     * Returns the Channel type with the given source location `loc`.
@@ -612,7 +612,7 @@ object Type {
   /**
     * Returns the type `Channel[tpe]` with the given optional source location `loc`.
     */
-  def mkChannel(tpe: Type, loc: SourceLocation = SourceLocation.Unknown): Type = Type.Apply(Type.Cst(TypeConstructor.Channel, loc), tpe, loc)
+  def mkChannel(tpe: Type, loc: SourceLocation): Type = Type.Apply(Type.Cst(TypeConstructor.Channel, loc), tpe, loc)
 
   /**
     * Returns the Lazy type with the given source location `loc`.
@@ -622,43 +622,43 @@ object Type {
   /**
     * Returns the type `Lazy[tpe]` with the given optional source location `loc`.
     */
-  def mkLazy(tpe: Type, loc: SourceLocation = SourceLocation.Unknown): Type = Type.Apply(Type.Cst(TypeConstructor.Lazy, loc), tpe, loc)
+  def mkLazy(tpe: Type, loc: SourceLocation): Type = Type.Apply(Type.Cst(TypeConstructor.Lazy, loc), tpe, loc)
 
   /**
     * Returns the type `ScopedRef[tpe, lifetime]` with the given optional source location `loc`.
     */
-  def mkScopedRef(tpe1: Type, tpe2: Type, loc: SourceLocation = SourceLocation.Unknown): Type =
+  def mkScopedRef(tpe1: Type, tpe2: Type, loc: SourceLocation): Type =
     Type.Apply(Type.Apply(Type.Cst(TypeConstructor.ScopedRef, loc), tpe1, loc), tpe2, loc)
 
   /**
     * Constructs the pure arrow type A -> B.
     */
-  def mkPureArrow(a: Type, b: Type, loc: SourceLocation = SourceLocation.Unknown): Type = mkArrowWithEffect(a, Pure, b, loc)
+  def mkPureArrow(a: Type, b: Type, loc: SourceLocation): Type = mkArrowWithEffect(a, Pure, b, loc)
 
   /**
     * Constructs the impure arrow type A ~> B.
     */
-  def mkImpureArrow(a: Type, b: Type, loc: SourceLocation = SourceLocation.Unknown): Type = mkArrowWithEffect(a, Impure, b, loc)
+  def mkImpureArrow(a: Type, b: Type, loc: SourceLocation): Type = mkArrowWithEffect(a, Impure, b, loc)
 
   /**
     * Constructs the arrow type A -> B & e.
     */
-  def mkArrowWithEffect(a: Type, e: Type, b: Type, loc: SourceLocation = SourceLocation.Unknown): Type = mkApply(Type.Cst(TypeConstructor.Arrow(2), loc), List(e, a, b))
+  def mkArrowWithEffect(a: Type, e: Type, b: Type, loc: SourceLocation): Type = mkApply(Type.Cst(TypeConstructor.Arrow(2), loc), List(e, a, b), loc)
 
   /**
     * Constructs the pure curried arrow type A_1 -> (A_2  -> ... -> A_n) -> B.
     */
-  def mkPureCurriedArrow(as: List[Type], b: Type, loc: SourceLocation = SourceLocation.Unknown): Type = mkCurriedArrowWithEffect(as, Pure, b, loc)
+  def mkPureCurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkCurriedArrowWithEffect(as, Pure, b, loc)
 
   /**
     * Constructs the impure curried arrow type A_1 -> (A_2  -> ... -> A_n) ~> B.
     */
-  def mkImpureCurriedArrow(as: List[Type], b: Type, loc: SourceLocation = SourceLocation.Unknown): Type = mkCurriedArrowWithEffect(as, Impure, b, loc)
+  def mkImpureCurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkCurriedArrowWithEffect(as, Impure, b, loc)
 
   /**
     * Constructs the curried arrow type A_1 -> (A_2  -> ... -> A_n) -> B & e.
     */
-  def mkCurriedArrowWithEffect(as: List[Type], e: Type, b: Type, loc: SourceLocation = SourceLocation.Unknown): Type = {
+  def mkCurriedArrowWithEffect(as: List[Type], e: Type, b: Type, loc: SourceLocation): Type = {
     val a = as.last
     val base = mkArrowWithEffect(a, e, b, loc)
     as.init.foldRight(base)(mkPureArrow(_, _, loc))
@@ -667,17 +667,17 @@ object Type {
   /**
     * Constructs the pure uncurried arrow type (A_1, ..., A_n) -> B.
     */
-  def mkPureUncurriedArrow(as: List[Type], b: Type, loc: SourceLocation = SourceLocation.Unknown): Type = mkUncurriedArrowWithEffect(as, Pure, b, loc)
+  def mkPureUncurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkUncurriedArrowWithEffect(as, Pure, b, loc)
 
   /**
     * Constructs the impure uncurried arrow type (A_1, ..., A_n) ~> B.
     */
-  def mkImpureUncurriedArrow(as: List[Type], b: Type, loc: SourceLocation = SourceLocation.Unknown): Type = mkUncurriedArrowWithEffect(as, Impure, b, loc)
+  def mkImpureUncurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkUncurriedArrowWithEffect(as, Impure, b, loc)
 
   /**
     * Constructs the uncurried arrow type (A_1, ..., A_n) -> B & e.
     */
-  def mkUncurriedArrowWithEffect(as: List[Type], e: Type, b: Type, loc: SourceLocation = SourceLocation.Unknown): Type = {
+  def mkUncurriedArrowWithEffect(as: List[Type], e: Type, b: Type, loc: SourceLocation): Type = {
     val arrow = Type.Apply(Type.Cst(TypeConstructor.Arrow(as.length + 1), loc), e, loc)
     val inner = as.foldLeft(arrow: Type) {
       case (acc, x) => Apply(acc, x, loc)
@@ -688,14 +688,14 @@ object Type {
   /**
     * Constructs the apply type base[t_1, ,..., t_n].
     */
-  def mkApply(base: Type, ts: List[Type], loc: SourceLocation = SourceLocation.Unknown): Type = ts.foldLeft(base) {
+  def mkApply(base: Type, ts: List[Type], loc: SourceLocation): Type = ts.foldLeft(base) {
     case (acc, t) => Apply(acc, t, loc)
   }
 
   /**
     * Returns the type `Choice[tpe, isAbsent, isPresent]`.
     */
-  def mkChoice(tpe0: Type, isAbsent: Type, isPresent: Type, loc: SourceLocation = SourceLocation.Unknown): Type = {
+  def mkChoice(tpe0: Type, isAbsent: Type, isPresent: Type, loc: SourceLocation): Type = {
     val sym = Symbol.mkEnumSym("Choice")
     val kind = Kind.Star ->: Kind.Bool ->: Kind.Bool ->: Kind.Star
     val tc = TypeConstructor.KindedEnum(sym, kind)
@@ -710,12 +710,12 @@ object Type {
   /**
     * Construct the enum type `Sym[ts]`.
     */
-  def mkEnum(sym: Symbol.EnumSym, ts: List[Type], loc: SourceLocation = SourceLocation.Unknown): Type = mkApply(Type.Cst(TypeConstructor.KindedEnum(sym, Kind.mkArrow(ts.length)), loc), ts, loc)
+  def mkEnum(sym: Symbol.EnumSym, ts: List[Type], loc: SourceLocation): Type = mkApply(Type.Cst(TypeConstructor.KindedEnum(sym, Kind.mkArrow(ts.length)), loc), ts, loc)
 
   /**
     * Construct the enum type `Sym[ts]`.
     */
-  def mkUnkindedEnum(sym: Symbol.EnumSym, ts: List[Type], loc: SourceLocation = SourceLocation.Unknown): Type = mkApply(Type.Cst(TypeConstructor.UnkindedEnum(sym), loc), ts, loc)
+  def mkUnkindedEnum(sym: Symbol.EnumSym, ts: List[Type], loc: SourceLocation): Type = mkApply(Type.Cst(TypeConstructor.UnkindedEnum(sym), loc), ts, loc)
 
   /**
     * Constructs a tag type for the given `sym`, `tag`, `caseType` and `resultType`.
@@ -736,14 +736,14 @@ object Type {
     *   Cons: (a, List[a]) -> List[a]   (caseType = (a, List[a]), resultType = List[a])
     * }}}
     */
-  def mkTag(sym: Symbol.EnumSym, tag: Name.Tag, caseType: Type, resultType: Type, loc: SourceLocation = SourceLocation.Unknown): Type = {
+  def mkTag(sym: Symbol.EnumSym, tag: Name.Tag, caseType: Type, resultType: Type, loc: SourceLocation): Type = {
     Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Tag(sym, tag), loc), caseType, loc), resultType, loc)
   }
 
   /**
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
     */
-  def mkTuple(ts: List[Type], loc: SourceLocation = SourceLocation.Unknown): Type = {
+  def mkTuple(ts: List[Type], loc: SourceLocation): Type = {
     val init = Type.Cst(TypeConstructor.Tuple(ts.length), loc)
     ts.foldLeft(init: Type) {
       case (acc, x) => Apply(acc, x, loc)
@@ -753,26 +753,26 @@ object Type {
   /**
     * Constructs the a native type.
     */
-  def mkNative(clazz: Class[_], loc: SourceLocation = SourceLocation.Unknown): Type = Type.Cst(TypeConstructor.Native(clazz), loc)
+  def mkNative(clazz: Class[_], loc: SourceLocation): Type = Type.Cst(TypeConstructor.Native(clazz), loc)
 
   /**
     * Constructs a RecordExtend type.
     */
-  def mkRecordExtend(field: Name.Field, tpe: Type, rest: Type, loc: SourceLocation = SourceLocation.Unknown): Type = {
+  def mkRecordExtend(field: Name.Field, tpe: Type, rest: Type, loc: SourceLocation): Type = {
     mkApply(Type.Cst(TypeConstructor.RecordExtend(field), loc), List(tpe, rest), loc)
   }
 
   /**
     * Constructs a SchemaExtend type.
     */
-  def mkSchemaExtend(pred: Name.Pred, tpe: Type, rest: Type, loc: SourceLocation = SourceLocation.Unknown): Type = {
+  def mkSchemaExtend(pred: Name.Pred, tpe: Type, rest: Type, loc: SourceLocation): Type = {
     mkApply(Type.Cst(TypeConstructor.SchemaExtend(pred), loc), List(tpe, rest), loc)
   }
 
   /**
     * Construct a relation type with the given list of type arguments `ts0`.
     */
-  def mkRelation(ts0: List[Type], loc: SourceLocation = SourceLocation.Unknown): Type = {
+  def mkRelation(ts0: List[Type], loc: SourceLocation): Type = {
     val ts = ts0 match {
       case Nil => Type.Unit
       case x :: Nil => x
@@ -785,7 +785,7 @@ object Type {
   /**
     * Construct a lattice type with the given list of type arguments `ts0`.
     */
-  def mkLattice(ts0: List[Type], loc: SourceLocation = SourceLocation.Unknown): Type = {
+  def mkLattice(ts0: List[Type], loc: SourceLocation): Type = {
     val ts = ts0 match {
       case Nil => Type.Unit
       case x :: Nil => x
@@ -798,7 +798,7 @@ object Type {
   /**
     * Returns the type `Not(tpe0)`.
     */
-  def mkNot(tpe0: Type, loc: SourceLocation = SourceLocation.Unknown): Type = tpe0 match {
+  def mkNot(tpe0: Type, loc: SourceLocation): Type = tpe0 match {
     case Type.True => Type.mkFalse(loc)
     case Type.False => Type.mkTrue(loc)
     case _ => Type.Apply(Type.Cst(TypeConstructor.Not, loc), tpe0, loc)
@@ -809,7 +809,7 @@ object Type {
     *
     * Must not be used before kinding.
     */
-  def mkAnd(tpe1: Type, tpe2: Type, loc: SourceLocation = SourceLocation.Unknown): Type = (tpe1, tpe2) match {
+  def mkAnd(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = (tpe1, tpe2) match {
     case (Type.Cst(TypeConstructor.True, _), _) => tpe2
     case (_, Type.Cst(TypeConstructor.True, _)) => tpe1
     case (Type.Cst(TypeConstructor.False, _), _) => Type.False
@@ -822,16 +822,16 @@ object Type {
     *
     * Must not be used before kinding.
     */
-  def mkAnd(tpe1: Type, tpe2: Type, tpe3: Type): Type = mkAnd(tpe1, mkAnd(tpe2, tpe3))
+  def mkAnd(tpe1: Type, tpe2: Type, tpe3: Type, loc: SourceLocation): Type = mkAnd(tpe1, mkAnd(tpe2, tpe3, loc), loc)
 
   /**
     * Returns the type `And(tpe1, And(tpe2, ...))`.
     *
     * Must not be used before kinding.
     */
-  def mkAnd(tpes: List[Type]): Type = tpes match {
+  def mkAnd(tpes: List[Type], loc: SourceLocation): Type = tpes match {
     case Nil => Type.True
-    case x :: xs => mkAnd(x, mkAnd(xs))
+    case x :: xs => mkAnd(x, mkAnd(xs, loc), loc)
   }
 
   /**
@@ -839,7 +839,7 @@ object Type {
     *
     * Must not be used before kinding.
     */
-  def mkOr(tpe1: Type, tpe2: Type, loc: SourceLocation = SourceLocation.Unknown): Type = (tpe1, tpe2) match {
+  def mkOr(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = (tpe1, tpe2) match {
     case (Type.Cst(TypeConstructor.True, _), _) => Type.True
     case (_, Type.Cst(TypeConstructor.True, _)) => Type.True
     case (Type.Cst(TypeConstructor.False, _), _) => tpe2
@@ -852,9 +852,9 @@ object Type {
     *
     * Must not be used before kinding.
     */
-  def mkOr(tpes: List[Type]): Type = tpes match {
+  def mkOr(tpes: List[Type], loc: SourceLocation): Type = tpes match {
     case Nil => Type.False
-    case x :: xs => mkOr(x, mkOr(xs))
+    case x :: xs => mkOr(x, mkOr(xs, loc), loc)
   }
 
   /**
@@ -866,12 +866,12 @@ object Type {
   /**
     * Returns the type `tpe1 => tpe2`.
     */
-  def mkImplies(tpe1: Type, tpe2: Type): Type = mkOr(Type.mkNot(tpe1), tpe2)
+  def mkImplies(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = mkOr(Type.mkNot(tpe1, loc), tpe2, loc)
 
   /**
     * Returns a Boolean type that represents the equivalence of `x` and `y`.
     *
     * That is, `x == y` iff `(x /\ y) \/ (not x /\ not y)`
     */
-  def mkEquiv(x: Type, y: Type): Type = mkOr(mkAnd(x, y), mkAnd(Type.mkNot(x), Type.mkNot(y)))
+  def mkEquiv(x: Type, y: Type, loc: SourceLocation): Type = mkOr(mkAnd(x, y, loc), mkAnd(Type.mkNot(x, loc), Type.mkNot(y, loc), loc), loc)
 }

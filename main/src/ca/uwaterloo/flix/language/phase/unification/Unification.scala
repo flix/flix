@@ -144,7 +144,7 @@ object Unification {
         } else {
           // Case 1.2: The fields do not match, attempt to match with a field further down.
           visit(restRow2) map {
-            case (subst, rewrittenRow) => (subst, Type.mkRecordExtend(field2, fieldType2, rewrittenRow))
+            case (subst, rewrittenRow) => (subst, Type.mkRecordExtend(field2, fieldType2, rewrittenRow, SourceLocation.Unknown))
           }
         }
       case (tvar: Type.Var, Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field1), _), fieldType1, _), _, _)) =>
@@ -155,7 +155,7 @@ object Unification {
         } else {
           // Introduce a fresh type variable to represent one more level of the row.
           val restRow2 = Type.freshVar(Kind.Record, loc = SourceLocation.Unknown)
-          val type2 = Type.mkRecordExtend(field1, fieldType1, restRow2)
+          val type2 = Type.mkRecordExtend(field1, fieldType1, restRow2, SourceLocation.Unknown)
           val subst = Substitution.singleton(tv, type2)
           Ok((subst, restRow2))
         }
@@ -190,7 +190,7 @@ object Unification {
         } else {
           // Case 1.2: The labels do not match, attempt to match with a label further down.
           visit(restRow2) map {
-            case (subst, rewrittenRow) => (subst, Type.mkSchemaExtend(label2, fieldType2, rewrittenRow))
+            case (subst, rewrittenRow) => (subst, Type.mkSchemaExtend(label2, fieldType2, rewrittenRow, SourceLocation.Unknown))
           }
         }
       case (tvar: Type.Var, Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(label1), _), fieldType1, _), _, _)) =>
@@ -201,7 +201,7 @@ object Unification {
         } else {
           // Introduce a fresh type variable to represent one more level of the row.
           val restRow2 = Type.freshVar(Kind.Schema, loc = SourceLocation.Unknown)
-          val type2 = Type.mkSchemaExtend(label1, fieldType1, restRow2)
+          val type2 = Type.mkSchemaExtend(label1, fieldType1, restRow2, SourceLocation.Unknown)
           val subst = Substitution.singleton(tv, type2)
           Ok((subst, restRow2))
         }

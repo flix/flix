@@ -1897,7 +1897,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Construct the enum type `Sym[ts]`.
     */
-  def mkUnkindedEnum(sym: Symbol.EnumSym, ts: List[Type]): Type = Type.mkApply(Type.Cst(TypeConstructor.UnkindedEnum(sym), SourceLocation.Unknown), ts)
+  def mkUnkindedEnum(sym: Symbol.EnumSym, ts: List[Type]): Type = Type.mkApply(Type.Cst(TypeConstructor.UnkindedEnum(sym), SourceLocation.Unknown), ts, SourceLocation.Unknown)
 
   /**
     * Constructs a predicate type.
