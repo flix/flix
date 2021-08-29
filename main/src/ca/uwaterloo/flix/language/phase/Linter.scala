@@ -297,7 +297,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def unifyVar(sym1: Symbol.VarSym, tpe1: Type, sym2: Symbol.VarSym, tpe2: Type)(implicit flix: Flix): Option[Substitution] = {
     if (isInstance(tpe2, tpe1))
-      Some(Substitution.singleton(sym1, Expression.Var(sym2, tpe2, SourceLocation.Unknown)))
+      Some(Substitution.singleton(sym1, Expression.Var(sym2, tpe2, tpe2.loc)))
     else
       None
   }

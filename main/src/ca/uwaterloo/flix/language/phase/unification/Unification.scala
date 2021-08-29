@@ -133,7 +133,7 @@ object Unification {
   private def rewriteRecordRow(rewrittenRow: Type, staticRow: Type)(implicit flix: Flix): Result[(Substitution, Type), UnificationError] = {
 
     def visit(row: Type): Result[(Substitution, Type), UnificationError] = (row, staticRow) match {
-      case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field2), _), fieldType2, _), restRow2, _),
+      case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field2), _), fieldType2, _), restRow2, loc),
       Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field1), _), fieldType1, _), _, _)) =>
         // Case 1: The row is of the form %{ field2: fieldType2 | restRow2 }
         if (field1 == field2) {
@@ -144,7 +144,7 @@ object Unification {
         } else {
           // Case 1.2: The fields do not match, attempt to match with a field further down.
           visit(restRow2) map {
-            case (subst, rewrittenRow) => (subst, Type.mkRecordExtend(field2, fieldType2, rewrittenRow, SourceLocation.Unknown))
+            case (subst, rewrittenRow) => (subst, Type.mkRecordExtend(field2, fieldType2, rewrittenRow, loc))
           }
         }
       case (tvar: Type.Var, Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field1), _), fieldType1, _), _, _)) =>
@@ -154,8 +154,8 @@ object Unification {
           Err(UnificationError.OccursCheck(tv, staticRow))
         } else {
           // Introduce a fresh type variable to represent one more level of the row.
-          val restRow2 = Type.freshVar(Kind.Record, loc = SourceLocation.Unknown)
-          val type2 = Type.mkRecordExtend(field1, fieldType1, restRow2, SourceLocation.Unknown)
+          val restRow2 = Type.freshVar(Kind.Record, tvar.loc)
+          val type2 = Type.mkRecordExtend(field1, fieldType1, restRow2, tvar.loc)
           val subst = Substitution.singleton(tv, type2)
           Ok((subst, restRow2))
         }
@@ -179,7 +179,7 @@ object Unification {
   private def rewriteSchemaRow(rewrittenRow: Type, staticRow: Type)(implicit flix: Flix): Result[(Substitution, Type), UnificationError] = {
 
     def visit(row: Type): Result[(Substitution, Type), UnificationError] = (row, staticRow) match {
-      case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(label2), _), fieldType2, _), restRow2, _),
+      case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(label2), _), fieldType2, _), restRow2, loc),
       Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(label1), _), fieldType1, _), _, _)) =>
         // Case 1: The row is of the form %{ label2: fieldType2 | restRow2 }
         if (label1 == label2) {
@@ -190,7 +190,7 @@ object Unification {
         } else {
           // Case 1.2: The labels do not match, attempt to match with a label further down.
           visit(restRow2) map {
-            case (subst, rewrittenRow) => (subst, Type.mkSchemaExtend(label2, fieldType2, rewrittenRow, SourceLocation.Unknown))
+            case (subst, rewrittenRow) => (subst, Type.mkSchemaExtend(label2, fieldType2, rewrittenRow, loc))
           }
         }
       case (tvar: Type.Var, Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(label1), _), fieldType1, _), _, _)) =>
@@ -200,8 +200,8 @@ object Unification {
           Err(UnificationError.OccursCheck(tv, staticRow))
         } else {
           // Introduce a fresh type variable to represent one more level of the row.
-          val restRow2 = Type.freshVar(Kind.Schema, loc = SourceLocation.Unknown)
-          val type2 = Type.mkSchemaExtend(label1, fieldType1, restRow2, SourceLocation.Unknown)
+          val restRow2 = Type.freshVar(Kind.Schema, tvar.loc)
+          val type2 = Type.mkSchemaExtend(label1, fieldType1, restRow2, tvar.loc)
           val subst = Substitution.singleton(tv, type2)
           Ok((subst, restRow2))
         }
@@ -316,7 +316,7 @@ object Unification {
     */
   def unifyTypeAllowEmptyM(ts: List[Type], loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
     if (ts.isEmpty)
-      liftM(Type.freshVar(Kind.Star, loc = SourceLocation.Unknown))
+      liftM(Type.freshVar(Kind.Star, loc))
     else
       unifyTypeM(ts, loc)
   }

@@ -268,7 +268,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         } yield {
           val freeVars = e0.tparams.tparams.map(_.tpe)
           val caseType = t
-          val enumType = mkUnkindedEnum(e0.sym, freeVars)
+          val enumType = mkUnkindedEnum(e0.sym, freeVars, e0.loc)
           val base = Type.mkTag(e0.sym, tag, caseType, enumType, tag.loc)
           val sc = ResolvedAst.Scheme(freeVars, tconstrs, base)
           name -> ResolvedAst.Case(enum, tag, t, sc)
@@ -1727,7 +1727,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Returns the given type `tpe` wrapped in a type lambda for the given type parameters `tparam`.
     */
-  private def mkTypeLambda(tparams: List[NamedAst.TypeParam], tpe: Type, loc: SourceLocation = SourceLocation.Unknown): Type =
+  private def mkTypeLambda(tparams: List[NamedAst.TypeParam], tpe: Type, loc: SourceLocation): Type =
     tparams.foldRight(tpe) {
       case (tparam, acc) => Type.Lambda(tparam.tpe, acc, loc)
     }
@@ -1897,7 +1897,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Construct the enum type `Sym[ts]`.
     */
-  def mkUnkindedEnum(sym: Symbol.EnumSym, ts: List[Type]): Type = Type.mkApply(Type.Cst(TypeConstructor.UnkindedEnum(sym), SourceLocation.Unknown), ts, SourceLocation.Unknown)
+  def mkUnkindedEnum(sym: Symbol.EnumSym, ts: List[Type], loc: SourceLocation): Type = Type.mkApply(Type.Cst(TypeConstructor.UnkindedEnum(sym), loc), ts, loc)
 
   /**
     * Constructs a predicate type.

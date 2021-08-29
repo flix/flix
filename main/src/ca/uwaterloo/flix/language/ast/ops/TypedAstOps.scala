@@ -166,7 +166,7 @@ object TypedAstOps {
 
       case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
         rules.foldLeft(visitExp(exp, env0)) {
-          case (macc, CatchRule(sym, clazz, body)) => macc ++ visitExp(body, env0 + (sym -> Type.mkNative(null, SourceLocation.Unknown)))
+          case (macc, CatchRule(sym, clazz, body)) => macc ++ visitExp(body, env0 + (sym -> Type.mkNative(null, loc)))
         }
 
       case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
