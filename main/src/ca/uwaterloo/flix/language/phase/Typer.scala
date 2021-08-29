@@ -25,6 +25,7 @@ import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.seqM
 import ca.uwaterloo.flix.language.phase.unification.Unification._
 import ca.uwaterloo.flix.language.phase.unification._
+import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 import ca.uwaterloo.flix.util._
@@ -32,26 +33,6 @@ import ca.uwaterloo.flix.util._
 import java.io.PrintWriter
 
 object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
-
-  /**
-    * The following classes are assumed to always exist.
-    *
-    * Anything added here must be mentioned in `CoreLibrary` in the Flix class.
-    */
-  object PredefinedClasses {
-
-    /**
-      * Returns the class symbol with the given `name`.
-      */
-    def lookupClassSym(name: String, root: KindedAst.Root): Symbol.ClassSym = {
-      val key = new Symbol.ClassSym(Nil, name, SourceLocation.Unknown)
-      root.classes.get(key) match {
-        case None => throw InternalCompilerException(s"The type class: '$key' is not defined.")
-        case Some(clazz) => clazz.sym
-      }
-    }
-
-  }
 
   /**
     * The expected scheme of the `main` function.

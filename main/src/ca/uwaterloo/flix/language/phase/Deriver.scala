@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Name, Scheme, SemanticOperator, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
@@ -27,38 +28,6 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
   * Errors with overlapping instances or unfulfilled type constraints must be caught in later phases.
   */
 object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
-
-  // TODO copy-pasted from Typer
-  // TODO we need a more universal lookup system
-
-  /**
-    * The following classes are assumed to always exist.
-    *
-    * Anything added here must be mentioned in `CoreLibrary` in the Flix class.
-    */
-  object PredefinedClasses {
-
-    /**
-      * Returns the class symbol with the given `name`.
-      */
-    def lookupClassSym(name: String, root: KindedAst.Root): Symbol.ClassSym = {
-      val key = new Symbol.ClassSym(Nil, name, SourceLocation.Unknown)
-      root.classes.get(key) match {
-        case None => throw InternalCompilerException(s"The type class: '$key' is not defined.")
-        case Some(clazz) => clazz.sym
-      }
-    }
-
-    /**
-      * Returns the sig symbol with the given `clazz` and name `sig`.
-      */
-    def lookupSigSym(clazz: String, sig: String, root: KindedAst.Root): Symbol.SigSym = {
-      val clazzKey = new Symbol.ClassSym(Nil, clazz, SourceLocation.Unknown)
-      val sigKey = new Symbol.SigSym(clazzKey, sig, SourceLocation.Unknown)
-      root.classes(clazzKey).sigs(sigKey).sym
-    }
-
-  }
 
   override def run(root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Root, Nothing] = {
     val derivedInstances = root.enums.values.flatMap {
