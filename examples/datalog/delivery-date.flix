@@ -40,7 +40,3 @@ def main(_args: Array[String]) : Int32 & Impure =
 instance PartialOrder[Int32] {
     pub def partialCompare(x: Int32, y: Int32): Bool = x <= y
 }
-
-instance MeetLattice[Int32] {
-    pub def greatestLowerBound(x: Int32, y: Int32): Int32 = Order.min(x, y)
-}
