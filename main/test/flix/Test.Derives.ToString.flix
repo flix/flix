@@ -17,26 +17,26 @@ namespace Test/Derives/ToString {
     }
 
     @test
-    def testToString01(): Bool = ToString.toString(Enum.EmptyCase) == "EmptyCase"
+    def testToString01(): Bool = "${Enum.EmptyCase}" == "EmptyCase"
 
     @test
-    def testToString02(): Bool = ToString.toString(Enum.SingletonCase(123)) == "SingletonCase(123)"
+    def testToString02(): Bool = "${Enum.SingletonCase(123)}" == "SingletonCase(123)"
 
     @test
-    def testToString03(): Bool = ToString.toString(Enum.TupleCase(123, true)) == "TupleCase(123, true)"
+    def testToString03(): Bool = "${Enum.TupleCase(123, true)}" == "TupleCase(123, true)"
 
     @test
-    def testToString04(): Bool = ToString.toString(PolyEnum.EmptyCase: PolyEnum[Int]) == "EmptyCase"
+    def testToString04(): Bool = "${PolyEnum.EmptyCase: PolyEnum[Int]}" == "EmptyCase"
 
     @test
-    def testToString05(): Bool = ToString.toString(PolyEnum.SingletonCase(123)) == "SingletonCase(123)"
+    def testToString05(): Bool = "${PolyEnum.SingletonCase(123)}" == "SingletonCase(123)"
 
     @test
-    def testToString06(): Bool = ToString.toString(PolyEnum.TupleCase(123, 123)) == "TupleCase(123, 123)"
+    def testToString06(): Bool = "${PolyEnum.TupleCase(123, 123)}" == "TupleCase(123, 123)"
 
     @test
-    def testToString07(): Bool = ToString.toString(RecursiveEnum.EmptyCase) == "EmptyCase"
+    def testToString07(): Bool = "${RecursiveEnum.EmptyCase}" == "EmptyCase"
 
     @test
-    def testToString08(): Bool = ToString.toString(RecursiveEnum.RecursiveCase(RecursiveEnum.EmptyCase)) == "RecursiveCase(EmptyCase)"
+    def testToString08(): Bool = "${RecursiveEnum.RecursiveCase(RecursiveEnum.EmptyCase)}" == "RecursiveCase(EmptyCase)"
 }
