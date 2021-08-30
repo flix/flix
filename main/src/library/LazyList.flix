@@ -104,7 +104,7 @@ namespace LazyList {
         else
             match l {
                 case ENil         => ENil
-                case ECons(x, xs) => ECons(x,      take(n - 1,       xs))
+                case ECons(x, xs) => LCons(x, lazy take(n - 1,       xs))
                 case LCons(x, xs) => LCons(x, lazy take(n - 1, force xs))
                 case LList(xs)    => LList(   lazy take(n,     force xs))
             }
