@@ -46,7 +46,7 @@ object GenUnitClass {
     visitor.visitSource(name.toInternalName, null)
 
     // singleton instance
-    AsmOps.compileField(visitor, instanceFieldName, jvmType, isStatic = true, isPrivate = true)
+    AsmOps.compileField(visitor, instanceFieldName, jvmType, isStatic = true, isPrivate = false)
 
     genStaticConstructor(jvmType, name, visitor)
     genConstructor(jvmType, name, visitor)
