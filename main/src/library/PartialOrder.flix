@@ -23,8 +23,6 @@ lawless class PartialOrder[a] {
 
 }
 
-// TODO: Add instances for tuples.
-
 ///
 /// A Partial Order is a function ⊑ which satisfies three properties: reflexivity, anti-symmetry, and transitivity.
 ///
@@ -70,4 +68,161 @@ namespace PartialOrder {
 //    law safe2[a1, a2, c1, c2](fa: (a1, a1) -> a2, fc: (c1, c1) -> c2, alpha1: c1 -> a1, alpha2: c2 -> a2, leq: (a2, a2) -> Bool): Bool =
 //        ∀(x: c1, y: c1). alpha2(fc(x, y)) `leq` fa(alpha1(x), alpha1(y))
 
+}
+
+instance PartialOrder[Int8] {
+    pub def partialCompare(x: Int8, y: Int8): Bool = $INT8_LE$(x, y)
+}
+
+instance PartialOrder[Int16] {
+    pub def partialCompare(x: Int16, y: Int16): Bool = $INT16_LE$(x, y)
+}
+
+instance PartialOrder[Int32] {
+    pub def partialCompare(x: Int32, y: Int32): Bool = $INT32_LE$(x, y)
+}
+
+instance PartialOrder[Int64] {
+    pub def partialCompare(x: Int64, y: Int64): Bool = $INT64_LE$(x, y)
+}
+
+instance PartialOrder[BigInt] {
+    pub def partialCompare(x: BigInt, y: BigInt): Bool = $BIGINT_LE$(x, y)
+}
+
+instance PartialOrder[(a1, a2)] with PartialOrder[a1], PartialOrder[a2] {
+    pub def partialCompare(x: (a1, a2),
+                           y: (a1, a2)): Bool = match (x, y) {
+        case ((x1, x2), (y1, y2)) =>
+            PartialOrder.partialCompare(x1, y1) and
+            PartialOrder.partialCompare(x2, y2)
+    }
+}
+
+instance PartialOrder[(a1, a2, a3)] with PartialOrder[a1], PartialOrder[a2],
+                                         PartialOrder[a3] {
+    pub def partialCompare(x: (a1, a2, a3),
+                           y: (a1, a2, a3)): Bool = match (x, y) {
+        case ((x1, x2, x3), (y1, y2, y3)) =>
+            PartialOrder.partialCompare(x1, y1) and
+            PartialOrder.partialCompare(x2, y2) and
+            PartialOrder.partialCompare(x3, y3)
+    }
+}
+
+instance PartialOrder[(a1, a2, a3, a4)] with PartialOrder[a1], PartialOrder[a2],
+                                             PartialOrder[a3], PartialOrder[a4] {
+    pub def partialCompare(x: (a1, a2, a3, a4),
+                           y: (a1, a2, a3, a4)): Bool = match (x, y) {
+        case ((x1, x2, x3, x4), (y1, y2, y3, y4)) =>
+            PartialOrder.partialCompare(x1, y1) and
+            PartialOrder.partialCompare(x2, y2) and
+            PartialOrder.partialCompare(x3, y3) and
+            PartialOrder.partialCompare(x4, y4)
+    }
+}
+
+instance PartialOrder[(a1, a2, a3, a4, a5)] with PartialOrder[a1], PartialOrder[a2],
+                                                 PartialOrder[a3], PartialOrder[a4],
+                                                 PartialOrder[a5] {
+    pub def partialCompare(x: (a1, a2, a3, a4, a5),
+                           y: (a1, a2, a3, a4, a5)): Bool = match (x, y) {
+        case ((x1, x2, x3, x4, x5), (y1, y2, y3, y4, y5)) =>
+            PartialOrder.partialCompare(x1, y1) and
+            PartialOrder.partialCompare(x2, y2) and
+            PartialOrder.partialCompare(x3, y3) and
+            PartialOrder.partialCompare(x4, y4) and
+            PartialOrder.partialCompare(x5, y5)
+    }
+}
+
+instance PartialOrder[(a1, a2, a3, a4, a5, a6)] with PartialOrder[a1], PartialOrder[a2],
+                                                     PartialOrder[a3], PartialOrder[a4],
+                                                     PartialOrder[a5], PartialOrder[a6] {
+    pub def partialCompare(x: (a1, a2, a3, a4, a5, a6),
+                           y: (a1, a2, a3, a4, a5, a6)): Bool = match (x, y) {
+        case ((x1, x2, x3, x4, x5, x6), (y1, y2, y3, y4, y5, y6)) =>
+            PartialOrder.partialCompare(x1, y1) and
+            PartialOrder.partialCompare(x2, y2) and
+            PartialOrder.partialCompare(x3, y3) and
+            PartialOrder.partialCompare(x4, y4) and
+            PartialOrder.partialCompare(x5, y5) and
+            PartialOrder.partialCompare(x6, y6)
+    }
+}
+
+instance PartialOrder[(a1, a2, a3, a4, a5, a6, a7)] with PartialOrder[a1], PartialOrder[a2],
+                                                         PartialOrder[a3], PartialOrder[a4],
+                                                         PartialOrder[a5], PartialOrder[a6],
+                                                         PartialOrder[a7] {
+    pub def partialCompare(x: (a1, a2, a3, a4, a5, a6, a7),
+                           y: (a1, a2, a3, a4, a5, a6, a7)): Bool = match (x, y) {
+        case ((x1, x2, x3, x4, x5, x6, x7), (y1, y2, y3, y4, y5, y6, y7)) =>
+            PartialOrder.partialCompare(x1, y1) and
+            PartialOrder.partialCompare(x2, y2) and
+            PartialOrder.partialCompare(x3, y3) and
+            PartialOrder.partialCompare(x4, y4) and
+            PartialOrder.partialCompare(x5, y5) and
+            PartialOrder.partialCompare(x6, y6) and
+            PartialOrder.partialCompare(x7, y7)
+    }
+}
+
+instance PartialOrder[(a1, a2, a3, a4, a5, a6, a7, a8)] with PartialOrder[a1], PartialOrder[a2],
+                                                             PartialOrder[a3], PartialOrder[a4],
+                                                             PartialOrder[a5], PartialOrder[a6],
+                                                             PartialOrder[a7], PartialOrder[a8] {
+    pub def partialCompare(x: (a1, a2, a3, a4, a5, a6, a7, a8),
+                           y: (a1, a2, a3, a4, a5, a6, a7, a8)): Bool = match (x, y) {
+        case ((x1, x2, x3, x4, x5, x6, x7, x8), (y1, y2, y3, y4, y5, y6, y7, y8)) =>
+            PartialOrder.partialCompare(x1, y1) and
+            PartialOrder.partialCompare(x2, y2) and
+            PartialOrder.partialCompare(x3, y3) and
+            PartialOrder.partialCompare(x4, y4) and
+            PartialOrder.partialCompare(x5, y5) and
+            PartialOrder.partialCompare(x6, y6) and
+            PartialOrder.partialCompare(x7, y7) and
+            PartialOrder.partialCompare(x8, y8)
+    }
+}
+
+instance PartialOrder[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with PartialOrder[a1], PartialOrder[a2],
+                                                                 PartialOrder[a3], PartialOrder[a4],
+                                                                 PartialOrder[a5], PartialOrder[a6],
+                                                                 PartialOrder[a7], PartialOrder[a8],
+                                                                 PartialOrder[a9] {
+    pub def partialCompare(x: (a1, a2, a3, a4, a5, a6, a7, a8, a9),
+                           y: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): Bool = match (x, y) {
+        case ((x1, x2, x3, x4, x5, x6, x7, x8, x9), (y1, y2, y3, y4, y5, y6, y7, y8, y9)) =>
+            PartialOrder.partialCompare(x1, y1) and
+            PartialOrder.partialCompare(x2, y2) and
+            PartialOrder.partialCompare(x3, y3) and
+            PartialOrder.partialCompare(x4, y4) and
+            PartialOrder.partialCompare(x5, y5) and
+            PartialOrder.partialCompare(x6, y6) and
+            PartialOrder.partialCompare(x7, y7) and
+            PartialOrder.partialCompare(x8, y8) and
+            PartialOrder.partialCompare(x9, y9)
+    }
+}
+
+instance PartialOrder[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with PartialOrder[a1], PartialOrder[a2],
+                                                                      PartialOrder[a3], PartialOrder[a4],
+                                                                      PartialOrder[a5], PartialOrder[a6],
+                                                                      PartialOrder[a7], PartialOrder[a8],
+                                                                      PartialOrder[a9], PartialOrder[a10] {
+    pub def partialCompare(x: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10),
+                           y: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): Bool = match (x, y) {
+        case ((x1, x2, x3, x4, x5, x6, x7, x8, x9, x10), (y1, y2, y3, y4, y5, y6, y7, y8, y9, y10)) =>
+            PartialOrder.partialCompare(x1, y1) and
+            PartialOrder.partialCompare(x2, y2) and
+            PartialOrder.partialCompare(x3, y3) and
+            PartialOrder.partialCompare(x4, y4) and
+            PartialOrder.partialCompare(x5, y5) and
+            PartialOrder.partialCompare(x6, y6) and
+            PartialOrder.partialCompare(x7, y7) and
+            PartialOrder.partialCompare(x8, y8) and
+            PartialOrder.partialCompare(x9, y9) and
+            PartialOrder.partialCompare(x10, y10)
+    }
 }
