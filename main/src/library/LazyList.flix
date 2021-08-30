@@ -476,4 +476,18 @@ namespace LazyList {
     pub def zipWith(f: (a, b) -> c & ef, l1: LazyList[a], l2: LazyList[b]): LazyList[c] & ef =
         map((x) -> f(fst(x), snd(x)), zip(l1, l2))
 
+    ///
+    /// Applies `f` to all elements in `l` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
+    ///
+    /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
+    ///
+    /// Returns `None` if `l` is empty.
+    ///
+    pub def reduceLeft(f: (a, a) -> a & ef, l: LazyList[a]): Option[a] & ef = match l {
+        case ENil         => None
+        case ECons(x, xs) => Some(foldLeft(f, x,       xs))
+        case LCons(x, xs) => Some(foldLeft(f, x, force xs))
+        case LList(xs)    => reduceLeft(f, force xs)
+    }
+
 }
