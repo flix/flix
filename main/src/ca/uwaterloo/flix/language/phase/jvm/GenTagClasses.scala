@@ -238,7 +238,7 @@ object GenTagClasses {
     method.visitInsn(DUP)
 
     // Getting instance of `UnitClass`
-    method.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
+    method.visitMethodInsn(INVOKESTATIC, JvmName.Unit.toInternalName, GenUnitClass.instanceMethodName,
       AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
 
     // Calling constructor on the object

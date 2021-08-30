@@ -145,6 +145,11 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       val lazyClasses = GenLazyClasses.gen(types)
 
       //
+      // Generate Unit class.
+      //
+      val unitClass = GenUnitClass.gen()
+
+      //
       // Collect all the classes and interfaces together.
       //
       List(
@@ -163,7 +168,8 @@ object JvmBackend extends Phase[Root, CompilationResult] {
         recordEmptyClasses,
         recordExtendClasses,
         refClasses,
-        lazyClasses
+        lazyClasses,
+        unitClass
       ).reduce(_ ++ _)
     }
 
