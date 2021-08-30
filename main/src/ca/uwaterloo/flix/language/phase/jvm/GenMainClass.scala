@@ -96,6 +96,9 @@ object GenMainClass {
     main.visitMethodInsn(INVOKESTATIC, JvmOps.getNamespaceClassType(ns).name.toInternalName, "m_main",
       AsmOps.getMethodDescriptor(List(/* TODO: Should be string array */ JvmType.Object), JvmType.PrimInt), false)
 
+    main.visitMethodInsn(INVOKESTATIC, "java/lang/System", "exit",
+      AsmOps.getMethodDescriptor(List(JvmType.PrimInt), JvmType.Void), false)
+
     main.visitInsn(RETURN)
     main.visitMaxs(1,1)
     main.visitEnd()
