@@ -490,4 +490,41 @@ namespace LazyList {
         case LList(xs)    => reduceLeft(f, force xs)
     }
 
+    ///
+    /// Applies `f` to all elements in `l` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
+    ///
+    /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
+    ///
+    /// Returns `None` if `l` is empty.
+    ///
+    pub def reduceRight(f: (a, a) -> a & ef, l: LazyList[a]): Option[a] & ef = match l {
+        case ENil      => None
+        case LList(xs) => reduceRight(f, force xs)
+        case _         => Some(reduceRightHelper(f, l, ks -> ks as & ef))
+    }
+
+    ///
+    /// Helper function for `reduceRight`.
+    ///
+    def reduceRightHelper(f: (a, a) -> a & ef, l: LazyList[a], k: a -> a & ef): a & ef = match l {
+        case ECons(x, xs) => match xs {
+            case ENil => k(x)
+            case LList(ys) => match force ys {
+                case ENil => k(x)
+                case ys1  => reduceRightHelper(f, ys1, ks -> k(f(x, ks)))
+            }
+            case _    => reduceRightHelper(f, xs, ks -> k(f(x, ks)))
+        }
+        case LCons(x, xs) => match force xs {
+            case ENil      => k(x)
+            case LList(ys) => match force ys {
+                case ENil => k(x)
+                case ys1  => reduceRightHelper(f, ys1, ks -> k(f(x, ks)))
+            }
+            case xs1       => reduceRightHelper(f, xs1, ks -> k(f(x, ks)))
+        }
+        case LList(xs)    => reduceRightHelper(f, force xs, k)
+        case ENil         => bug!("Unreachable code!")
+    }
+
 }
