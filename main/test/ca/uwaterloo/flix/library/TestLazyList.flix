@@ -1621,11 +1621,11 @@ namespace TestLazyList {
 
     @test
     def zipWithImpure02(): Bool & Impure =
-    	LList(lazy ENil: LazyList[Int32]) |> LazyList.zipWith((x, y) -> x + y as & Impure, ENil: LazyList[Int32]) == ENil
+    	LList(lazy (ENil: LazyList[Int32])) |> LazyList.zipWith((x, y) -> x + y as & Impure, ENil: LazyList[Int32]) == ENil
 
     @test
     def zipWithImpure03(): Bool & Impure =
-    	ENil: LazyList[Int32] |> LazyList.zipWith((x, y) -> x + y as & Impure, LList(lazy ENil: LazyList[Int32])) == ENil
+    	ENil: LazyList[Int32] |> LazyList.zipWith((x, y) -> x + y as & Impure, LList(lazy (ENil: LazyList[Int32]))) == ENil
 
     @test
     def zipWithImpure04(): Bool & Impure =

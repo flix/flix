@@ -160,6 +160,12 @@ namespace Test/Exp/Force {
         let x = lazy None;
         None: Poly[Unit, Unit] == force x
 
+    @test
+    def testPrecedenceForce01(): Bool =
+        let x = lazy 2;
+        let y = force x + 1;
+        y == 3 and force x == 2
+
     pub enum Suit {
         case Hearts, Diamonds, Clubs, Spades
     }
