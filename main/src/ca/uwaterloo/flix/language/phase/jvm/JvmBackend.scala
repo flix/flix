@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import java.lang.reflect.InvocationTargetException
-import java.nio.file.{Path, Paths}
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
@@ -138,13 +137,11 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       //
       // Generate references classes.
       //
-
       val refClasses = GenRefClasses.gen()
 
       //
       // Generate lazy classes.
       //
-
       val lazyClasses = GenLazyClasses.gen(types)
 
       //
@@ -176,7 +173,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
     // NB: In interactive and test mode we skip writing the files to disk.
     if (flix.options.writeClassFiles && !flix.options.test) {
       flix.subphase("WriteClasses") {
-        for ((jvmName, jvmClass) <- allClasses) {
+        for ((_, jvmClass) <- allClasses) {
           JvmOps.writeClass(flix.options.targetDirectory, jvmClass)
         }
       }
@@ -206,10 +203,9 @@ object JvmBackend extends Phase[Root, CompilationResult] {
     * Optionally returns a reference to main.
     */
   private def getCompiledMain(root: Root)(implicit flix: Flix): Option[Array[String] => Int] =
-    root.defs.get(Symbol.Main) map {
-      case defn =>
+    root.defs.get(Symbol.Main) map { defn =>
         (actualArgs: Array[String]) => {
-        val args: Array[AnyRef] = Array(actualArgs)
+          val args: Array[AnyRef] = Array(actualArgs)
           val result = link(defn.sym, root).apply(args).getValue
           result.asInstanceOf[Integer].intValue()
         }
@@ -220,7 +216,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
     */
   private def getCompiledDefs(root: Root)(implicit flix: Flix): Map[Symbol.DefnSym, () => ProxyObject] =
     root.defs.foldLeft(Map.empty[Symbol.DefnSym, () => ProxyObject]) {
-      case (macc, (sym, defn)) =>
+      case (macc, (sym, _)) =>
         val args: Array[AnyRef] = Array(null)
         macc + (sym -> (() => link(sym, root).apply(args)))
     }
@@ -234,7 +230,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       /// Retrieve the definition and its type.
       ///
       val defn = root.defs(sym)
-      val MonoType.Arrow(targs, tresult) = defn.tpe
+      val MonoType.Arrow(_, _) = defn.tpe
 
       ///
       /// Construct the arguments array.
@@ -252,7 +248,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
         val result = defn.method.invoke(null, argsArray: _*)
 
         // Construct a fresh proxy object.
-        newProxyObj(result, tresult, root)
+        newProxyObj(result)
       } catch {
         case e: InvocationTargetException =>
           // Rethrow the underlying exception.
@@ -263,7 +259,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
   /**
     * Returns a proxy object that wraps the given result value.
     */
-  private def newProxyObj(result: AnyRef, resultType: MonoType, root: Root)(implicit flix: Flix): ProxyObject = {
+  private def newProxyObj(result: AnyRef)(implicit flix: Flix): ProxyObject = {
     // Lookup the Equality method.
     val eq = null
 
