@@ -106,7 +106,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       val scVal = visitScheme(sc0, kenv, root)
 
       mapN(tparamsVal, casesVal, tpeDeprecatedVal, scVal) {
-        case (tparams, cases, tpeDeprecated, sc) => KindedAst.Enum(doc, mod, sym, tparams, cases.toMap, tpeDeprecated, sc, loc)
+        case (tparams, cases, tpeDeprecated, sc) => KindedAst.Enum(doc, mod, sym, tparams, derives, cases.toMap, tpeDeprecated, sc, loc)
       }
   }
 
