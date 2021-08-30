@@ -61,7 +61,7 @@ instance Eq[Constant] {
 // This is straightforward with pattern matching on the arguments:
 //
 instance PartialOrder[Constant] {
-    pub def partialCompare(e1: Constant, e2: Constant): Bool = match (e1, e2) {
+    pub def lessEqual(e1: Constant, e2: Constant): Bool = match (e1, e2) {
         case (Bot, _)           => true
         case (Cst(n1), Cst(n2)) => n1 == n2
         case (_, Top)           => true
