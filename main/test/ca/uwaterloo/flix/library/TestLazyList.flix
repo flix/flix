@@ -1528,15 +1528,15 @@ namespace TestLazyList {
 
     @test
     def zipWithPure02(): Bool =
-    	LList(lazy ENil: LazyList[Int32]) |> LazyList.zipWith((x, y) -> x + y, ENil: LazyList[Int32]) == ENil
+    	LList(lazy (ENil: LazyList[Int32])) |> LazyList.zipWith((x, y) -> x + y, ENil: LazyList[Int32]) == ENil
 
     @test
     def zipWithPure03(): Bool =
-    	ENil: LazyList[Int32] |> LazyList.zipWith((x, y) -> x + y, LList(lazy ENil: LazyList[Int32])) == ENil
+    	ENil: LazyList[Int32] |> LazyList.zipWith((x, y) -> x + y, LList(lazy (ENil: LazyList[Int32]))) == ENil
 
     @test
     def zipWithPure04(): Bool =
-    	LList(lazy ENil: LazyList[Int32]) |> LazyList.zipWith((x, y) -> x + y, LList(lazy ENil: LazyList[Int32])) == ENil
+    	LList(lazy (ENil: LazyList[Int32])) |> LazyList.zipWith((x, y) -> x + y, LList(lazy (ENil: LazyList[Int32]))) == ENil
 
     @test
     def zipWithPure05(): Bool =
@@ -1629,7 +1629,7 @@ namespace TestLazyList {
 
     @test
     def zipWithImpure04(): Bool & Impure =
-    	LList(lazy ENil: LazyList[Int32]) |> LazyList.zipWith((x, y) -> x + y as & Impure, LList(lazy ENil: LazyList[Int32])) == ENil
+    	LList(lazy (ENil: LazyList[Int32])) |> LazyList.zipWith((x, y) -> x + y as & Impure, LList(lazy (ENil: LazyList[Int32]))) == ENil
 
     @test
     def zipWithImpure05(): Bool & Impure =
