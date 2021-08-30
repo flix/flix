@@ -39,7 +39,7 @@ namespace Fixpoint/Ast {
         // TODO: Why are these type annotations necessary?
         Latticenal(
             LowerBound.minValue() : t,
-            (x: t, y: t) -> PartialOrder.partialCompare(x: t, y: t),
+            (x: t, y: t) -> PartialOrder.lessEqual(x: t, y: t),
             (x: t, y: t) -> JoinLattice.leastUpperBound(x: t, y: t),
             (x: t, y: t) -> MeetLattice.greatestLowerBound(x: t, y:t)
         )

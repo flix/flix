@@ -28,7 +28,7 @@ instance Eq[Dist] {
 }
 
 instance PartialOrder[Dist] {
-    pub def partialCompare(x: Dist, y: Dist): Bool = match (x, y) {
+    pub def lessEqual(x: Dist, y: Dist): Bool = match (x, y) {
         case (_, Top) => true
         case (Bot, _) => true
         case (Dst(n1), Dst(n2)) => n1 >= n2
