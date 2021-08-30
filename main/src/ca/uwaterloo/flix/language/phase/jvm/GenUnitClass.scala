@@ -23,9 +23,7 @@ import org.objectweb.asm.Opcodes._
 
 object GenUnitClass {
 
-  val instanceMethodName: String = "getInstance"
-
-  private val instanceFieldName = "INSTANCE"
+  val instanceFieldName = "INSTANCE"
 
   def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     val jvmType = JvmType.Unit
@@ -50,25 +48,14 @@ object GenUnitClass {
     // singleton instance
     AsmOps.compileField(visitor, instanceFieldName, jvmType, isStatic = true, isPrivate = true)
 
-    genInstanceMethod(jvmType, name, visitor)
-    // TODO: maybe add a toString method?
-    genClassConstructor(jvmType, name, visitor)
+    genStaticConstructor(jvmType, name, visitor)
     genConstructor(jvmType, name, visitor)
 
     visitor.visitEnd()
     visitor.toByteArray
   }
 
-  def genInstanceMethod(jvmType: JvmType, name: JvmName, visitor: ClassWriter): Unit = {
-    val methodVisitor = visitor.visitMethod(ACC_PUBLIC + ACC_STATIC, instanceMethodName, AsmOps.getMethodDescriptor(Nil, jvmType), null, null)
-    methodVisitor.visitCode()
-    methodVisitor.visitFieldInsn(GETSTATIC, name.toInternalName, instanceFieldName, jvmType.toDescriptor)
-    methodVisitor.visitInsn(ARETURN)
-    methodVisitor.visitMaxs(999, 999)
-    methodVisitor.visitEnd()
-  }
-
-  def genClassConstructor(jvmType: JvmType, name: JvmName, visitor: ClassWriter): Unit = {
+  def genStaticConstructor(jvmType: JvmType, name: JvmName, visitor: ClassWriter): Unit = {
     val methodVisitor = visitor.visitMethod(ACC_STATIC, "<clinit>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), null, null)
     methodVisitor.visitCode()
     methodVisitor.visitTypeInsn(NEW, name.toInternalName)
