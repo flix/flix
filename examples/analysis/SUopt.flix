@@ -18,7 +18,7 @@ instance Eq[SULattice] {
 }
 
 instance PartialOrder[SULattice] {
-    pub def partialCompare(x: SULattice, y: SULattice): Bool = match (x, y) {
+    pub def lessEqual(x: SULattice, y: SULattice): Bool = match (x, y) {
         case (SULattice.Bottom, _) => true
         case (_, SULattice.Top) => true
         case (SULattice.Single(s1), SULattice.Single(s2)) => s1 == s2
