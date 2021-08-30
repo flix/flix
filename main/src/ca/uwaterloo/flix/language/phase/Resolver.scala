@@ -1119,22 +1119,22 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Performs name resolution on the given list of derivations `derives0`.
     */
-  def resolveDerivations(qnames: List[Name.QName], ns0: Name.NName, root: NamedAst.Root): Validation[List[Symbol.ClassSym], ResolutionError] = {
-    val classSymsVal = Validation.traverse(qnames)(resolveDerivation(_, ns0, root))
-    flatMapN(classSymsVal) {
-      classSyms =>
-        val derives = qnames.zip(classSyms).zipWithIndex
+  def resolveDerivations(qnames: List[Name.QName], ns0: Name.NName, root: NamedAst.Root): Validation[List[Ast.Derivation], ResolutionError] = {
+    val derivesVal = Validation.traverse(qnames)(resolveDerivation(_, ns0, root))
+    flatMapN(derivesVal) {
+      derives =>
+        val derivesWithIndex = derives.zipWithIndex
         val failures = for {
-          ((qname1, sym1), i1) <- derives
-          ((qname2, sym2), i2) <- derives
+          (Ast.Derivation(sym1, loc1), i1) <- derivesWithIndex
+          (Ast.Derivation(sym2, loc2), i2) <- derivesWithIndex
 
           // don't compare a sym against itself
           if i1 != i2
           if sym1 == sym2
-        } yield ResolutionError.DuplicateDerivation(sym1, qname1.loc, qname2.loc).toFailure
+        } yield ResolutionError.DuplicateDerivation(sym1, loc1, loc2).toFailure
 
         Validation.sequenceX(failures) map {
-          _ => classSyms
+          _ => derives
         }
     }
   }
@@ -1142,11 +1142,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Performs name resolution on the given of derivation `derive0`.
     */
-  def resolveDerivation(derive0: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[Symbol.ClassSym, ResolutionError] = {
+  def resolveDerivation(derive0: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[Ast.Derivation, ResolutionError] = {
     for {
       clazz <- lookupClass(derive0, ns0, root)
       _ <- checkDerivable(clazz.sym, derive0.loc)
-    } yield clazz.sym
+    } yield Ast.Derivation(clazz.sym, derive0.loc)
   }
 
   /**

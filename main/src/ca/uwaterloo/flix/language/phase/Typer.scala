@@ -25,6 +25,7 @@ import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.seqM
 import ca.uwaterloo.flix.language.phase.unification.Unification._
 import ca.uwaterloo.flix.language.phase.unification._
+import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 import ca.uwaterloo.flix.util._
@@ -32,26 +33,6 @@ import ca.uwaterloo.flix.util._
 import java.io.PrintWriter
 
 object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
-
-  /**
-    * The following classes are assumed to always exist.
-    *
-    * Anything added here must be mentioned in `CoreLibrary` in the Flix class.
-    */
-  object PredefinedClasses {
-
-    /**
-      * Returns the class symbol with the given `name`.
-      */
-    def lookupClassSym(name: String, root: KindedAst.Root): Symbol.ClassSym = {
-      val key = new Symbol.ClassSym(Nil, name, SourceLocation.Unknown)
-      root.classes.get(key) match {
-        case None => throw InternalCompilerException(s"The type class: '$key' is not defined.")
-        case Some(clazz) => clazz.sym
-      }
-    }
-
-  }
 
   /**
     * The expected scheme of the `main` function.
@@ -314,7 +295,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
       * Performs type resolution on the given enum and its cases.
       */
     def visitEnum(enum: KindedAst.Enum): Validation[(Symbol.EnumSym, TypedAst.Enum), TypeError] = enum match {
-      case KindedAst.Enum(doc, mod, enumSym, tparams, cases0, tpe, sc, loc) =>
+      case KindedAst.Enum(doc, mod, enumSym, tparams, derives, cases0, tpe, sc, loc) =>
         val tparams = getTypeParams(enum.tparams)
         val cases = cases0 map {
           case (name, KindedAst.Case(_, tagName, tagType, tagScheme)) =>

@@ -30,7 +30,7 @@ instance Eq[Value] {
 }
 
 instance PartialOrder[Value] {
-    pub def partialCompare(e1: Value, e2: Value): Bool = match (e1, e2) {
+    pub def lessEqual(e1: Value, e2: Value): Bool = match (e1, e2) {
         case (Value.Bot, _) => true
         case (Value.Cst(n1), Value.Cst(n2)) => n1 == n2
         case (_, Value.Top) => true
@@ -123,7 +123,7 @@ instance Eq[Transformer] {
 }
 
 instance PartialOrder[Transformer] {
-    pub def partialCompare(e1: Transformer, e2: Transformer): Bool = e2 == JoinLattice.leastUpperBound(e1, e2)
+    pub def lessEqual(e1: Transformer, e2: Transformer): Bool = e2 == JoinLattice.leastUpperBound(e1, e2)
 }
 
 instance JoinLattice[Transformer] {
