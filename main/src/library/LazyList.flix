@@ -505,26 +505,13 @@ namespace LazyList {
 
     ///
     /// Helper function for `reduceRight`.
+    /// `l` must be non-empty.
     ///
     def reduceRightHelper(f: (a, a) -> a & ef, l: LazyList[a], k: a -> a & ef): a & ef = match l {
-        case ECons(x, xs) => match xs {
-            case ENil => k(x)
-            case LList(ys) => match force ys {
-                case ENil => k(x)
-                case ys1  => reduceRightHelper(f, ys1, ks -> k(f(x, ks)))
-            }
-            case _    => reduceRightHelper(f, xs, ks -> k(f(x, ks)))
-        }
-        case LCons(x, xs) => match force xs {
-            case ENil      => k(x)
-            case LList(ys) => match force ys {
-                case ENil => k(x)
-                case ys1  => reduceRightHelper(f, ys1, ks -> k(f(x, ks)))
-            }
-            case xs1       => reduceRightHelper(f, xs1, ks -> k(f(x, ks)))
-        }
+        case ECons(x, xs) => if (isEmpty(      xs)) k(x) else reduceRightHelper(f,       xs, ks -> k(f(x, ks)))
+        case LCons(x, xs) => if (isEmpty(force xs)) k(x) else reduceRightHelper(f, force xs, ks -> k(f(x, ks)))
         case LList(xs)    => reduceRightHelper(f, force xs, k)
-        case ENil         => bug!("Unreachable code!")
+        case _            => bug!("Unreachable code!")
     }
 
 }
