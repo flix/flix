@@ -4,7 +4,7 @@ import ca.uwaterloo.flix.language.ast.Ast.Annotation.{Benchmark, Law, Lint, Test
 import ca.uwaterloo.flix.language.ast.Ast.HoleContext
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 
 object TypedAstOps {
 
