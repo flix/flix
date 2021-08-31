@@ -150,6 +150,11 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       val unitClass = GenUnitClass.gen()
 
       //
+      // Generate the ReifiedSourceLocation class
+      //
+      val RslClass = GenReifiedSourceLocationClass.gen()
+
+      //
       // Collect all the classes and interfaces together.
       //
       List(
@@ -169,7 +174,8 @@ object JvmBackend extends Phase[Root, CompilationResult] {
         recordExtendClasses,
         refClasses,
         lazyClasses,
-        unitClass
+        unitClass,
+        RslClass
       ).reduce(_ ++ _)
     }
 

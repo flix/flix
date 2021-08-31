@@ -42,6 +42,11 @@ object JvmName {
   val Unit: JvmName = JvmName(Nil, "Unit")
 
   /**
+   * The Flix ReifiedSourceLocation class.
+   */
+  val ReifiedSourceLocation: JvmName = JvmName(Nil, "ReifiedSourceLocation")
+
+  /**
     * The `java.math.BigInteger` name.
     */
   val BigInteger: JvmName = JvmName(List("java", "math"), "BigInteger")
@@ -189,8 +194,6 @@ object JvmName {
     val MatchError: JvmName = JvmName(List("flix", "runtime"), "MatchError")
 
     val NotImplementedError: JvmName = JvmName(List("flix", "runtime"), "NotImplementedError")
-
-    val ReifiedSourceLocation: JvmName = JvmName(List("flix", "runtime"), "ReifiedSourceLocation")
   }
 
 }

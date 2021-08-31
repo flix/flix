@@ -353,7 +353,7 @@ object AsmOps {
     mv.visitTypeInsn(NEW, className.toInternalName)
     mv.visitInsn(DUP2)
     mv.visitInsn(SWAP)
-    mv.visitMethodInsn(INVOKESPECIAL, className.toInternalName, "<init>", "(Lflix/runtime/ReifiedSourceLocation;)V", false)
+    mv.visitMethodInsn(INVOKESPECIAL, className.toInternalName, "<init>", "(LReifiedSourceLocation;)V", false)
     mv.visitInsn(ATHROW)
   }
 
@@ -368,7 +368,7 @@ object AsmOps {
     mv.visitInsn(SWAP)
     mv.visitLdcInsn(hole)
     mv.visitInsn(SWAP)
-    mv.visitMethodInsn(INVOKESPECIAL, className.toInternalName, "<init>", "(Ljava/lang/String;Lflix/runtime/ReifiedSourceLocation;)V", false)
+    mv.visitMethodInsn(INVOKESPECIAL, className.toInternalName, "<init>", "(Ljava/lang/String;LReifiedSourceLocation;)V", false)
     mv.visitInsn(ATHROW)
   }
 
@@ -376,14 +376,14 @@ object AsmOps {
     * Generates code which instantiate a reified source location.
     */
   def compileReifiedSourceLocation(mv: MethodVisitor, loc: SourceLocation): Unit = {
-    mv.visitTypeInsn(NEW, JvmName.Runtime.ReifiedSourceLocation.toInternalName)
+    mv.visitTypeInsn(NEW, JvmName.ReifiedSourceLocation.toInternalName)
     mv.visitInsn(DUP)
     mv.visitLdcInsn(loc.source.format)
     mv.visitLdcInsn(loc.beginLine)
     mv.visitLdcInsn(loc.beginCol)
     mv.visitLdcInsn(loc.endLine)
     mv.visitLdcInsn(loc.endCol)
-    mv.visitMethodInsn(INVOKESPECIAL, JvmName.Runtime.ReifiedSourceLocation.toInternalName, "<init>", "(Ljava/lang/String;IIII)V", false)
+    mv.visitMethodInsn(INVOKESPECIAL, JvmName.ReifiedSourceLocation.toInternalName, "<init>", GenReifiedSourceLocationClass.constructorDescriptor, false)
   }
 
   /**
