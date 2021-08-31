@@ -160,6 +160,46 @@ namespace Test/Exp/Force {
         let x = lazy None;
         None: Poly[Unit, Unit] == force x
 
+    @test
+    def testPrecedenceForce01(): Bool =
+        let x = lazy 2;
+        let y = force x + 1;
+        y == 3 and force x == 2
+
+    @test
+    def testPrecedenceForce02(): Bool =
+        let x = {f = 2};
+        let y = lazy x.f;
+        let z = force y;
+        z == 2
+
+    @test
+    def testPrecedenceForce03(): Bool =
+        let x = {l = lazy 2};
+        let y = force x.l;
+        y == 2
+
+    @test
+    def testPrecedenceForce04(): Bool =
+        let x = lazy 1 .testPrecedenceForce04Helper(-2);
+        let y = force x;
+        y == -1
+
+    def testPrecedenceForce04Helper(x: Int, y: Int): Int = x + y
+
+    @test
+    def testPrecedenceForce05(): Bool =
+        let x = force 2 .testPrecedenceForce05Helper(3);
+        x == 5
+
+    def testPrecedenceForce05Helper(x: Int, y: Int): Lazy[Int] = lazy (x + y)
+
+    @test
+    def testPrecedenceForce06(): Bool =
+        let x = lazy 2 : Lazy[Int];
+        let y = force x : Int;
+        y == 2
+
     pub enum Suit {
         case Hearts, Diamonds, Clubs, Spades
     }
