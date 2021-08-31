@@ -21,6 +21,22 @@ lawless class PartialOrder[a] {
     pub def lessEqual(x: a, y: a): Bool
     // TODO This should not return a Boolean, but instead perform a three-way comparison.
 
+    ///
+    /// Returns the minimum of `x` and `y` if they are comparable.
+    ///
+    pub def min(x: a, y: a): Option[a] =
+      if (PartialOrder.lessEqual(x, y)) Some(x)
+      else if (PartialOrder.lessEqual(y, x)) Some(y)
+      else None
+
+    ///
+    /// Returns the maximum of `x` and `y` if they are comparable.
+    ///
+    pub def max(x: a, y: a): Option[a] =
+      if (PartialOrder.lessEqual(x, y)) Some(y)
+      else if (PartialOrder.lessEqual(y, x)) Some(x)
+      else None
+
 }
 
 ///
