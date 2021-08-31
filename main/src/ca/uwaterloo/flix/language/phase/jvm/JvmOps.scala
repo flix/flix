@@ -753,7 +753,7 @@ object JvmOps {
 
   // TODO: Should be removed.
   private def hackMonoType2Type(tpe: MonoType): Type = tpe match {
-    case MonoType.Var(id) => Type.KindedVar(id, Kind.Star)
+    case MonoType.Var(id) => Type.KindedVar(id, Kind.Star, SourceLocation.Unknown)
     case MonoType.Unit => Type.Unit
     case MonoType.Bool => Type.Bool
     case MonoType.Char => Type.Char
@@ -765,20 +765,20 @@ object JvmOps {
     case MonoType.Int64 => Type.Int64
     case MonoType.BigInt => Type.BigInt
     case MonoType.Str => Type.Str
-    case MonoType.Array(elm) => Type.mkArray(hackMonoType2Type(elm))
-    case MonoType.Lazy(tpe) => Type.mkLazy(hackMonoType2Type(tpe))
-    case MonoType.Channel(elm) => Type.mkChannel(hackMonoType2Type(elm))
-    case MonoType.Native(clazz) => Type.mkNative(clazz)
-    case MonoType.Ref(elm) => Type.mkScopedRef(hackMonoType2Type(elm), Type.False)
-    case MonoType.Arrow(targs, tresult) => Type.mkPureCurriedArrow(targs map hackMonoType2Type, hackMonoType2Type(tresult))
-    case MonoType.Enum(sym, args) => Type.mkEnum(sym, args.map(hackMonoType2Type))
-    case MonoType.Relation(attr) => Type.mkRelation(attr.map(hackMonoType2Type))
-    case MonoType.Lattice(attr) => Type.mkLattice(attr.map(hackMonoType2Type))
-    case MonoType.Tuple(length) => Type.mkTuple(Nil) // hack
+    case MonoType.Array(elm) => Type.mkArray(hackMonoType2Type(elm), SourceLocation.Unknown)
+    case MonoType.Lazy(tpe) => Type.mkLazy(hackMonoType2Type(tpe), SourceLocation.Unknown)
+    case MonoType.Channel(elm) => Type.mkChannel(hackMonoType2Type(elm), SourceLocation.Unknown)
+    case MonoType.Native(clazz) => Type.mkNative(clazz, SourceLocation.Unknown)
+    case MonoType.Ref(elm) => Type.mkScopedRef(hackMonoType2Type(elm), Type.False, SourceLocation.Unknown)
+    case MonoType.Arrow(targs, tresult) => Type.mkPureCurriedArrow(targs map hackMonoType2Type, hackMonoType2Type(tresult), SourceLocation.Unknown)
+    case MonoType.Enum(sym, args) => Type.mkEnum(sym, args.map(hackMonoType2Type), SourceLocation.Unknown)
+    case MonoType.Relation(attr) => Type.mkRelation(attr.map(hackMonoType2Type), SourceLocation.Unknown)
+    case MonoType.Lattice(attr) => Type.mkLattice(attr.map(hackMonoType2Type), SourceLocation.Unknown)
+    case MonoType.Tuple(length) => Type.mkTuple(Nil, SourceLocation.Unknown) // hack
     case MonoType.RecordEmpty() => Type.RecordEmpty
-    case MonoType.RecordExtend(field, value, rest) => Type.mkRecordExtend(Name.Field(field, SourceLocation.Unknown), hackMonoType2Type(value), hackMonoType2Type(rest))
+    case MonoType.RecordExtend(field, value, rest) => Type.mkRecordExtend(Name.Field(field, SourceLocation.Unknown), hackMonoType2Type(value), hackMonoType2Type(rest), SourceLocation.Unknown)
     case MonoType.SchemaEmpty() => Type.SchemaEmpty
-    case MonoType.SchemaExtend(sym, t, rest) => Type.mkSchemaExtend(Name.Pred(sym, SourceLocation.Unknown), hackMonoType2Type(t), hackMonoType2Type(rest))
+    case MonoType.SchemaExtend(sym, t, rest) => Type.mkSchemaExtend(Name.Pred(sym, SourceLocation.Unknown), hackMonoType2Type(t), hackMonoType2Type(rest), SourceLocation.Unknown)
   }
 
   // TODO: Remove
