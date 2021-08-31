@@ -18,8 +18,8 @@ package ca.uwaterloo.flix.language.phase.unification
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 import scala.annotation.tailrec
 
@@ -115,7 +115,7 @@ object BoolUnification {
       val t0 = Substitution.singleton(x, Type.False)(f)
       val t1 = Substitution.singleton(x, Type.True)(f)
       val se = successiveVariableElimination(mkAnd(t0, t1), xs)
-      val st = Substitution.singleton(x, mkOr(se(t0), mkAnd(Type.freshVar(Kind.Bool, loc = SourceLocation.Unknown), mkNot(se(t1)))))
+      val st = Substitution.singleton(x, mkOr(se(t0), mkAnd(Type.freshVar(Kind.Bool, f.loc), mkNot(se(t1)))))
       st ++ se
   }
 
@@ -168,7 +168,7 @@ object BoolUnification {
     case OR(x, NOT(y)) =>
       mkAnd(mkNot(x), y)
 
-    case _ => Type.Apply(Type.Not, tpe0, SourceLocation.Unknown)
+    case _ => Type.Apply(Type.Not, tpe0, tpe0.loc)
   }
 
   /**
@@ -263,7 +263,7 @@ object BoolUnification {
       //        println(s.substring(0, Math.min(len, 300)))
       //      }
 
-      Type.Apply(Type.Apply(Type.And, tpe1, SourceLocation.Unknown), tpe2, SourceLocation.Unknown)
+      Type.Apply(Type.Apply(Type.And, tpe1, tpe1.loc), tpe2, tpe1.loc)
   }
 
   /**
@@ -330,7 +330,7 @@ object BoolUnification {
       //                println(s.substring(0, Math.min(len, 300)))
       //              }
 
-      Type.Apply(Type.Apply(Type.Or, tpe1, SourceLocation.Unknown), tpe2, SourceLocation.Unknown)
+      Type.Apply(Type.Apply(Type.Or, tpe1, tpe1.loc), tpe2, tpe1.loc)
   }
 
   private object NOT {
