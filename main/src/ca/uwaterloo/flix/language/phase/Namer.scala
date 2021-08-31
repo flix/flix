@@ -1492,9 +1492,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def getTypeParam(tparam0: WeededAst.TypeParam)(implicit flix: Flix): NamedAst.TypeParam = tparam0 match {
     case WeededAst.TypeParam.Kinded(ident, kind) =>
-      NamedAst.TypeParam.Kinded(ident, Type.freshUnkindedVar(text = Some(ident.name), loc = ident.loc), kind, ident.loc)
+      NamedAst.TypeParam.Kinded(ident, Type.freshUnkindedVar(ident.loc, text = Some(ident.name)), kind, ident.loc)
     case WeededAst.TypeParam.Unkinded(ident) =>
-      NamedAst.TypeParam.Unkinded(ident, Type.freshUnkindedVar(text = Some(ident.name), loc = ident.loc), ident.loc)
+      NamedAst.TypeParam.Unkinded(ident, Type.freshUnkindedVar(ident.loc, text = Some(ident.name)), ident.loc)
   }
 
   /**
@@ -1531,7 +1531,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def getExplicitKindedTypeParams(tparams0: List[WeededAst.TypeParam.Kinded])(implicit flix: Flix): NamedAst.TypeParams.Kinded = {
     val tparams = tparams0.map {
       case WeededAst.TypeParam.Kinded(ident, kind) =>
-        val tvar = Type.freshUnkindedVar(text = Some(ident.name), loc = ident.loc)
+        val tvar = Type.freshUnkindedVar(loc = ident.loc, text = Some(ident.name))
         NamedAst.TypeParam.Kinded(ident, tvar, kind, ident.loc)
     }
     NamedAst.TypeParams.Kinded(tparams)
@@ -1543,7 +1543,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def getExplicitTypeParams(tparams0: List[WeededAst.TypeParam.Unkinded], uenv0: UseEnv)(implicit flix: Flix): NamedAst.TypeParams.Unkinded = {
     val tparams = tparams0.map {
       case WeededAst.TypeParam.Unkinded(ident) =>
-        val tvar = Type.freshUnkindedVar(text = Some(ident.name), loc = ident.loc)
+        val tvar = Type.freshUnkindedVar(ident.loc, text = Some(ident.name))
         NamedAst.TypeParam.Unkinded(ident, tvar, ident.loc)
     }
     NamedAst.TypeParams.Unkinded(tparams)
@@ -1555,7 +1555,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def getImplicitTypeParamsFromTypes(types: List[WeededAst.Type])(implicit flix: Flix): NamedAst.TypeParams.Unkinded = {
     val tvars = types.flatMap(freeVars).distinct
     val tparams = tvars.map {
-      tvar => NamedAst.TypeParam.Unkinded(tvar, Type.freshUnkindedVar(text = Some(tvar.name), loc = tvar.loc), tvar.loc)
+      tvar => NamedAst.TypeParam.Unkinded(tvar, Type.freshUnkindedVar(tvar.loc, text = Some(tvar.name)), tvar.loc)
     }
     NamedAst.TypeParams.Unkinded(tparams)
   }
@@ -1573,7 +1573,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     val returnTvars = freeVarsInTenv(tpe, tenv)
 
     val tparams = (fparamTvars ++ returnTvars).distinct.map {
-      tvar => NamedAst.TypeParam.Unkinded(tvar, Type.freshUnkindedVar(text = Some(tvar.name), loc = tvar.loc), tvar.loc)
+      tvar => NamedAst.TypeParam.Unkinded(tvar, Type.freshUnkindedVar(tvar.loc, text = Some(tvar.name)), tvar.loc)
     }
 
     NamedAst.TypeParams.Unkinded(tparams)

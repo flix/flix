@@ -706,7 +706,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
           */
         def visitMatchExps(exps: List[KindedAst.Expression], isAbsentVars: List[Type.KindedVar], isPresentVars: List[Type.KindedVar]): InferMonad[(List[List[Ast.TypeConstraint]], List[Type], List[Type])] = {
           def visitMatchExp(exp: KindedAst.Expression, isAbsentVar: Type.KindedVar, isPresentVar: Type.KindedVar): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = {
-            val freshElmVar = Type.freshVar(Kind.Star, loc = exp.loc)
+            val freshElmVar = Type.freshVar(Kind.Star, loc)
             for {
               (constrs, tpe, eff) <- visitExp(exp)
               _ <- unifyTypeM(tpe, Type.mkChoice(freshElmVar, isAbsentVar, isPresentVar, loc), loc)
@@ -740,9 +740,9 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
           def visitRuleBody(r: KindedAst.ChoiceRule, resultType: Type): InferMonad[(Type, Type, Type)] = r match {
             case KindedAst.ChoiceRule(r, exp0) =>
               val cond = mkOverApprox(isAbsentVars, isPresentVars, r)
-              val innerType = Type.freshVar(Kind.Star, loc = exp0.loc)
-              val isAbsentVar = Type.freshVar(Kind.Bool, loc = exp0.loc)
-              val isPresentVar = Type.freshVar(Kind.Bool, loc = exp0.loc)
+              val innerType = Type.freshVar(Kind.Star, exp0.loc)
+              val isAbsentVar = Type.freshVar(Kind.Bool, exp0.loc)
+              val isPresentVar = Type.freshVar(Kind.Bool, exp0.loc)
               for {
                 choiceType <- unifyTypeM(resultType, Type.mkChoice(innerType, isAbsentVar, isPresentVar, loc), loc)
               } yield (Type.mkAnd(cond, isAbsentVar, loc), Type.mkAnd(cond, isPresentVar, loc), innerType)
@@ -839,12 +839,12 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
         //
         // Introduce an isAbsent variable for each match expression in `exps`.
         //
-        val isAbsentVars = exps0.map(exp0 => Type.freshVar(Kind.Bool, loc = exp0.loc))
+        val isAbsentVars = exps0.map(exp0 => Type.freshVar(Kind.Bool, exp0.loc))
 
         //
         // Introduce an isPresent variable for each math expression in `exps`.
         //
-        val isPresentVars = exps0.map(exp0 => Type.freshVar(Kind.Bool, loc = exp0.loc))
+        val isPresentVars = exps0.map(exp0 => Type.freshVar(Kind.Bool, exp0.loc))
 
         //
         // Extract the choice pattern match matrix.

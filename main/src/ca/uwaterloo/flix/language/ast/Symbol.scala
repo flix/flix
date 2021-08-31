@@ -70,14 +70,14 @@ object Symbol {
     * Returns a fresh variable symbol for the given identifier.
     */
   def freshVarSym(ident: Name.Ident)(implicit flix: Flix): VarSym = {
-    new VarSym(flix.genSym.freshId(), ident.name, Type.freshUnkindedVar(loc = ident.loc), Scopedness.Unscoped, ident.loc)
+    new VarSym(flix.genSym.freshId(), ident.name, Type.freshUnkindedVar(ident.loc), Scopedness.Unscoped, ident.loc)
   }
 
   /**
     * Returns a fresh variable symbol for the given identifier and scopedness.
     */
   def freshVarSym(ident: Name.Ident, scopedness: Scopedness)(implicit flix: Flix): VarSym = {
-    new VarSym(flix.genSym.freshId(), ident.name, Type.freshUnkindedVar(loc = ident.loc), scopedness, ident.loc)
+    new VarSym(flix.genSym.freshId(), ident.name, Type.freshUnkindedVar(ident.loc), scopedness, ident.loc)
   }
 
   /**
