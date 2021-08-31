@@ -25,18 +25,7 @@ enum Set[t] {
     case Set(RedBlackTree[t, Unit])
 }
 
-instance Boxable[Set[t]] with Order[t], ToString[t] {
-    pub def box(x: Set[t]): Boxed = {
-        let value = x as ##java.lang.Object;
-        let compare = (o1, o2) -> Order.compare(o1 as Set[t], o2 as Set[t]);
-        let toString = o -> ToString.toString(o as Set[t]);
-        BoxedObject(value, compare, toString)
-    }
-    pub def unbox(x: Boxed): Set[t] = match x {
-        case BoxedObject(v, _, _) => v as Set[t]
-        case _                    => ?bug
-    }
-}
+instance Boxable[Set[t]]
 
 instance ToString[Set[a]] with ToString[a] {
     pub def toString(xs: Set[a]): String =

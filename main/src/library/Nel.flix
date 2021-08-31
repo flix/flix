@@ -22,18 +22,7 @@ pub enum Nel[a] {
     case Nel(a, List[a])
 }
 
-instance Boxable[Nel[a]] with Order[a], ToString[a] {
-    pub def box(x: Nel[a]): Boxed = {
-        let value = x as ##java.lang.Object;
-        let compare = (o1, o2) -> Order.compare(o1 as Nel[a], o2 as Nel[a]);
-        let toString = o -> ToString.toString(o as Nel[a]);
-        BoxedObject(value, compare, toString)
-    }
-    pub def unbox(x: Boxed): Nel[a] = match x {
-        case BoxedObject(v, _, _) => v as Nel[a]
-        case _                    => ?bug
-    }
-}
+instance Boxable[Nel[a]]
 
 instance ToString[Nel[a]] with ToString[a] {
     pub def toString(l: Nel[a]): String = match l {
