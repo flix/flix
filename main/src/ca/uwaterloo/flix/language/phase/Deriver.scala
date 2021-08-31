@@ -101,7 +101,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
         sc = Scheme(
           tparams.map(_.tpe),
           List(Ast.TypeConstraint(toStringClassSym, sc.base, loc)),
-          Type.mkPureArrow(sc.base, Type.mkString(loc))
+          Type.mkPureArrow(sc.base, Type.mkString(loc), loc)
         ),
         tpe = Type.mkString(loc),
         eff = Type.Cst(TypeConstructor.True, loc),
@@ -144,10 +144,10 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
       val toStrings = varSyms.map {
         varSym =>
           KindedAst.Expression.Apply(
-            KindedAst.Expression.Sig(toStringSym, Type.freshVar(Kind.Star), loc),
+            KindedAst.Expression.Sig(toStringSym, Type.freshVar(Kind.Star, loc), loc),
             List(mkVarExpr(varSym, loc)),
-            Type.freshVar(Kind.Star),
-            Type.freshVar(Kind.Bool),
+            Type.freshVar(Kind.Star, loc),
+            Type.freshVar(Kind.Bool, loc),
             loc
           )
       }
@@ -181,7 +181,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
     * Builds a string concatenation expression from the given expressions.
     */
   private def concat(exp1: KindedAst.Expression, exp2: KindedAst.Expression, loc: SourceLocation)(implicit flix: Flix): KindedAst.Expression = {
-    KindedAst.Expression.Binary(SemanticOperator.StringOp.Concat, exp1, exp2, Type.freshVar(Kind.Star), loc)
+    KindedAst.Expression.Binary(SemanticOperator.StringOp.Concat, exp1, exp2, Type.freshVar(Kind.Star, loc), loc)
   }
 
   /**
@@ -222,14 +222,14 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
   private def mkPattern(tpe: Type, loc: SourceLocation)(implicit flix: Flix): (KindedAst.Pattern, List[Symbol.VarSym]) = tpe.typeConstructor match {
     case Some(TypeConstructor.Tag(sym, tag)) =>
       getTagArguments(tpe) match {
-        case Nil => (KindedAst.Pattern.Tag(sym, tag, KindedAst.Pattern.Unit(loc), Type.freshVar(Kind.Star), loc), Nil)
+        case Nil => (KindedAst.Pattern.Tag(sym, tag, KindedAst.Pattern.Unit(loc), Type.freshVar(Kind.Star, loc), loc), Nil)
         case _ :: Nil =>
           val varSym = Symbol.freshVarSym("y", loc)
-          (KindedAst.Pattern.Tag(sym, tag, mkVarPattern(varSym, loc), Type.freshVar(Kind.Star), loc), List(varSym))
+          (KindedAst.Pattern.Tag(sym, tag, mkVarPattern(varSym, loc), Type.freshVar(Kind.Star, loc), loc), List(varSym))
         case tpes =>
           val varSyms = tpes.zipWithIndex.map { case (_, index) => Symbol.freshVarSym(s"y$index", loc) }
           val subPats = varSyms.map(varSym => mkVarPattern(varSym, loc))
-          (KindedAst.Pattern.Tag(sym, tag, KindedAst.Pattern.Tuple(subPats, loc), Type.freshVar(Kind.Star), loc), varSyms)
+          (KindedAst.Pattern.Tag(sym, tag, KindedAst.Pattern.Tuple(subPats, loc), Type.freshVar(Kind.Star, loc), loc), varSyms)
       }
     case _ => throw InternalCompilerException("Unexpected non-tag type.")
   }
