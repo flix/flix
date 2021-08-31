@@ -562,7 +562,7 @@ object Lowering extends Phase[Root, Root] {
       val sym = Symbol.mkDefnSym(s"Fixpoint.projectInto$arity")
 
       // The type of the function.
-      val defTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, exp.tpe), Types.Datalog, SourceLocation.Unknown)
+      val defTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, exp.tpe), Types.Datalog, loc)
 
       // Put everything together.
       val defExp = Expression.Def(sym, defTpe, loc)
@@ -585,7 +585,7 @@ object Lowering extends Phase[Root, Root] {
       val sym = Symbol.mkDefnSym(s"Fixpoint.facts$arity")
 
       // The type of the function.
-      val defTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, Types.Datalog), tpe, SourceLocation.Unknown)
+      val defTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, Types.Datalog), tpe, loc)
 
       // Put everything together.
       val defExp = Expression.Def(sym, defTpe, loc)
@@ -968,16 +968,16 @@ object Lowering extends Phase[Root, Root] {
         case None => throw InternalCompilerException("Unexpected nullary lattice predicate.")
         case Some(tpe) =>
           // The type `Denotation[tpe]`.
-          val unboxedDenotationType = Type.mkEnum(Enums.Denotation, tpe :: Nil, SourceLocation.Unknown)
+          val unboxedDenotationType = Type.mkEnum(Enums.Denotation, tpe :: Nil, loc)
 
           // The type `Denotation[Boxed]`.
           val boxedDenotationType = Types.Denotation
 
           val Lattice: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Ast.lattice")
-          val LatticeType: Type = Type.mkPureArrow(Type.Unit, unboxedDenotationType, SourceLocation.Unknown)
+          val LatticeType: Type = Type.mkPureArrow(Type.Unit, unboxedDenotationType, loc)
 
           val Box: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Ast.box")
-          val BoxType: Type = Type.mkPureArrow(unboxedDenotationType, boxedDenotationType, SourceLocation.Unknown)
+          val BoxType: Type = Type.mkPureArrow(unboxedDenotationType, boxedDenotationType, loc)
 
           val innerApply = Expression.Apply(Expression.Def(Lattice, LatticeType, loc), List(Expression.Unit(loc)), unboxedDenotationType, Type.Pure, loc)
           Expression.Apply(Expression.Def(Box, BoxType, loc), List(innerApply), boxedDenotationType, Type.Pure, loc)
@@ -1019,7 +1019,7 @@ object Lowering extends Phase[Root, Root] {
     */
   private def box(exp: Expression)(implicit root: Root, flix: Flix): Expression = {
     val loc = exp.loc
-    val tpe = Type.mkPureArrow(exp.tpe, Types.Boxed, SourceLocation.Unknown)
+    val tpe = Type.mkPureArrow(exp.tpe, Types.Boxed, loc)
     val innerExp = Expression.Sig(Sigs.Box, tpe, loc)
     Expression.Apply(innerExp, List(exp), Types.Boxed, Type.Pure, loc)
   }
@@ -1042,7 +1042,7 @@ object Lowering extends Phase[Root, Root] {
     if (fvs.isEmpty) {
       // Construct a lambda that takes the unit argument.
       val fparam = FormalParam(Symbol.freshVarSym("_unit", loc), Ast.Modifiers.Empty, Type.Unit, loc)
-      val tpe = Type.mkPureArrow(Type.Unit, exp.tpe, SourceLocation.Unknown)
+      val tpe = Type.mkPureArrow(Type.Unit, exp.tpe, loc)
       val lambdaExp = Expression.Lambda(fparam, exp, tpe, loc)
       return mkTag(Enums.BodyPredicate, s"Guard0", lambdaExp, Types.BodyPredicate, loc)
     }
@@ -1060,7 +1060,7 @@ object Lowering extends Phase[Root, Root] {
       case ((oldSym, tpe), acc) =>
         val freshSym = freshVars(oldSym)
         val fparam = FormalParam(freshSym, Ast.Modifiers.Empty, tpe, loc)
-        val lambdaType = Type.mkPureArrow(tpe, acc.tpe, SourceLocation.Unknown)
+        val lambdaType = Type.mkPureArrow(tpe, acc.tpe, loc)
         Expression.Lambda(fparam, acc, lambdaType, loc)
     }
 
@@ -1091,7 +1091,7 @@ object Lowering extends Phase[Root, Root] {
     if (fvs.isEmpty) {
       // Construct a lambda that takes the unit argument.
       val fparam = FormalParam(Symbol.freshVarSym("_unit", loc), Ast.Modifiers.Empty, Type.Unit, loc)
-      val tpe = Type.mkPureArrow(Type.Unit, exp.tpe, SourceLocation.Unknown)
+      val tpe = Type.mkPureArrow(Type.Unit, exp.tpe, loc)
       val lambdaExp = Expression.Lambda(fparam, exp, tpe, loc)
       return mkTag(Enums.HeadTerm, s"App0", lambdaExp, Types.HeadTerm, loc)
     }
@@ -1109,7 +1109,7 @@ object Lowering extends Phase[Root, Root] {
       case ((oldSym, tpe), acc) =>
         val freshSym = freshVars(oldSym)
         val fparam = FormalParam(freshSym, Ast.Modifiers.Empty, tpe, loc)
-        val lambdaType = Type.mkPureArrow(tpe, acc.tpe, SourceLocation.Unknown)
+        val lambdaType = Type.mkPureArrow(tpe, acc.tpe, loc)
         Expression.Lambda(fparam, acc, lambdaType, loc)
     }
 
@@ -1138,13 +1138,13 @@ object Lowering extends Phase[Root, Root] {
     //
 
     // The type of the function argument, i.e. a -> b -> c -> `resultType`.
-    val argType = Type.mkPureCurriedArrow(argTypes, resultType, SourceLocation.Unknown)
+    val argType = Type.mkPureCurriedArrow(argTypes, resultType, exp0.loc)
 
     // The type of the returned function, i.e. Boxed -> Boxed -> Boxed -> Boxed.
-    val returnType = Type.mkPureCurriedArrow(argTypes.map(_ => Types.Boxed), Types.Boxed, SourceLocation.Unknown)
+    val returnType = Type.mkPureCurriedArrow(argTypes.map(_ => Types.Boxed), Types.Boxed, exp0.loc)
 
     // The type of the overall liftX function, i.e. (a -> b -> c -> `resultType`) -> (Boxed -> Boxed -> Boxed -> Boxed).
-    val liftType = Type.mkPureArrow(argType, returnType, SourceLocation.Unknown)
+    val liftType = Type.mkPureArrow(argType, returnType, exp0.loc)
 
     // Construct a call to the liftX function.
     val defn = Expression.Def(sym, liftType, exp0.loc)
@@ -1167,13 +1167,13 @@ object Lowering extends Phase[Root, Root] {
     //
 
     // The type of the function argument, i.e. a -> b -> c -> Bool.
-    val argType = Type.mkPureCurriedArrow(argTypes, Type.Bool, SourceLocation.Unknown)
+    val argType = Type.mkPureCurriedArrow(argTypes, Type.Bool, exp0.loc)
 
     // The type of the returned function, i.e. Boxed -> Boxed -> Boxed -> Bool.
-    val returnType = Type.mkPureCurriedArrow(argTypes.map(_ => Types.Boxed), Type.Bool, SourceLocation.Unknown)
+    val returnType = Type.mkPureCurriedArrow(argTypes.map(_ => Types.Boxed), Type.Bool, exp0.loc)
 
     // The type of the overall liftXb function, i.e. (a -> b -> c -> Bool) -> (Boxed -> Boxed -> Boxed -> Bool).
-    val liftType = Type.mkPureArrow(argType, returnType, SourceLocation.Unknown)
+    val liftType = Type.mkPureArrow(argType, returnType, exp0.loc)
 
     // Construct a call to the liftXb function.
     val defn = Expression.Def(sym, liftType, exp0.loc)
