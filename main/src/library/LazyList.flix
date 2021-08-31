@@ -476,4 +476,42 @@ namespace LazyList {
     pub def zipWith(f: (a, b) -> c & ef, l1: LazyList[a], l2: LazyList[b]): LazyList[c] & ef =
         map((x) -> f(fst(x), snd(x)), zip(l1, l2))
 
+    ///
+    /// Applies `f` to all elements in `l` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
+    ///
+    /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
+    ///
+    /// Returns `None` if `l` is empty.
+    ///
+    pub def reduceLeft(f: (a, a) -> a & ef, l: LazyList[a]): Option[a] & ef = match l {
+        case ENil         => None
+        case ECons(x, xs) => Some(foldLeft(f, x,       xs))
+        case LCons(x, xs) => Some(foldLeft(f, x, force xs))
+        case LList(xs)    => reduceLeft(f, force xs)
+    }
+
+    ///
+    /// Applies `f` to all elements in `l` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
+    ///
+    /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
+    ///
+    /// Returns `None` if `l` is empty.
+    ///
+    pub def reduceRight(f: (a, a) -> a & ef, l: LazyList[a]): Option[a] & ef = match l {
+        case ENil      => None
+        case LList(xs) => reduceRight(f, force xs)
+        case _         => Some(reduceRightHelper(f, l, ks -> ks as & ef))
+    }
+
+    ///
+    /// Helper function for `reduceRight`.
+    /// `l` must be non-empty.
+    ///
+    def reduceRightHelper(f: (a, a) -> a & ef, l: LazyList[a], k: a -> a & ef): a & ef = match l {
+        case ECons(x, xs) => if (isEmpty(      xs)) k(x) else reduceRightHelper(f,       xs, ks -> k(f(x, ks)))
+        case LCons(x, xs) => if (isEmpty(force xs)) k(x) else reduceRightHelper(f, force xs, ks -> k(f(x, ks)))
+        case LList(xs)    => reduceRightHelper(f, force xs, k)
+        case _            => bug!("Unreachable code!")
+    }
+
 }
