@@ -29,7 +29,7 @@ object GenFlixErrorClass {
     Map(jvmName -> JvmClass(jvmName, bytecode))
   }
 
-  def genByteCode(name: JvmName)(implicit flix: Flix): Array[Byte] = {
+  private def genByteCode(name: JvmName)(implicit flix: Flix): Array[Byte] = {
     // class writer
     val visitor = AsmOps.mkClassWriter()
 
@@ -49,7 +49,7 @@ object GenFlixErrorClass {
     visitor.toByteArray
   }
 
-  def genConstructor(visitor: ClassWriter)(implicit flix: Flix): Unit = {
+  private def genConstructor(visitor: ClassWriter)(implicit flix: Flix): Unit = {
     val constructorDescriptor = AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Void)
     val method = visitor.visitMethod(ACC_PUBLIC, "<init>", constructorDescriptor, null, null)
     method.visitCode()

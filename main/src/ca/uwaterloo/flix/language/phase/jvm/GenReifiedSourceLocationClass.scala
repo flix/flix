@@ -35,7 +35,7 @@ object GenReifiedSourceLocationClass {
     Map(jvmName -> JvmClass(jvmName, bytecode))
   }
 
-  def genByteCode(name: JvmName)(implicit flix: Flix): Array[Byte] = {
+  private def genByteCode(name: JvmName)(implicit flix: Flix): Array[Byte] = {
     // class writer
     val visitor = AsmOps.mkClassWriter()
 
@@ -65,7 +65,7 @@ object GenReifiedSourceLocationClass {
     visitor.toByteArray
   }
 
-  def genToString(name: JvmName, visitor: ClassWriter): Unit = {
+  private def genToString(name: JvmName, visitor: ClassWriter): Unit = {
     val stringToBuilderDescriptor = s"(${JvmName.String.toDescriptor})${JvmName.StringBuilder.toDescriptor}"
     val intToBuilderDescriptor = s"(${JvmType.PrimInt.toDescriptor})${JvmName.StringBuilder.toDescriptor}"
     val builderName = JvmName.StringBuilder.toInternalName
@@ -96,7 +96,7 @@ object GenReifiedSourceLocationClass {
     method.visitEnd()
   }
 
-  def genConstructor(name: JvmName, superClass: JvmName, visitor: ClassWriter)(implicit flix: Flix): Unit = {
+  private def genConstructor(name: JvmName, superClass: JvmName, visitor: ClassWriter)(implicit flix: Flix): Unit = {
     val method = visitor.visitMethod(ACC_PUBLIC, "<init>", constructorDescriptor, null, null)
     method.visitCode()
 
@@ -129,7 +129,7 @@ object GenReifiedSourceLocationClass {
     method.visitEnd()
   }
 
-  def genHashCode(name: JvmName, visitor: ClassWriter): Unit = {
+  private def genHashCode(name: JvmName, visitor: ClassWriter): Unit = {
     val method = visitor.visitMethod(ACC_PUBLIC, "hashCode", AsmOps.getMethodDescriptor(Nil, JvmType.PrimInt), null, null)
     method.visitCode()
 
@@ -171,7 +171,7 @@ object GenReifiedSourceLocationClass {
     method.visitEnd()
   }
 
-  def genEquals(name: JvmName, visitor: ClassWriter): Unit = {
+  private def genEquals(name: JvmName, visitor: ClassWriter): Unit = {
     val method = visitor.visitMethod(ACC_PUBLIC, "equals", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.PrimBool), null, null)
     method.visitCode()
 
