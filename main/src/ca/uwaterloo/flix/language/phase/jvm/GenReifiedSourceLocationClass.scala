@@ -83,6 +83,7 @@ object GenReifiedSourceLocationClass {
 
   def genEqualsMethod(visitor: ClassWriter): Unit = {
     val method = visitor.visitMethod(ACC_PUBLIC, "equals", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.PrimBool), null, null)
+    method.visitCode()
     method.visitVarInsn(ALOAD, 0)
     method.visitVarInsn(ALOAD, 1)
     val continue = new Label()
