@@ -25,6 +25,9 @@ namespace TestBoxable {
     @test
     def unitUnbox01(): Bool = unbox(box(())) == ()
 
+    @test
+    def unitCompare01(): Bool = box(()) == box(())
+
     /////////////////////////////////////////////////////////////////////////////
     // Bool                                                                    //
     /////////////////////////////////////////////////////////////////////////////
@@ -34,6 +37,12 @@ namespace TestBoxable {
 
     @test
     def boolUnbox02(): Bool = unbox(box(true)) == true
+
+    @test
+    def boolCompare01(): Bool = box(true) == box(true)
+
+    @test
+    def boolCompare02(): Bool = box(false) < box(true)
 
     /////////////////////////////////////////////////////////////////////////////
     // Char                                                                    //
@@ -51,6 +60,12 @@ namespace TestBoxable {
     @test
     def charUnbox04(): Bool = unbox(box('+')) == '+'
 
+    @test
+    def charCompare01(): Bool = box('a') == box('a')
+
+    @test
+    def charCompare02(): Bool = box('a') < box('b')
+
     /////////////////////////////////////////////////////////////////////////////
     // Float32                                                                 //
     /////////////////////////////////////////////////////////////////////////////
@@ -66,6 +81,12 @@ namespace TestBoxable {
 
     @test
     def float32Unbox04(): Bool = unbox(box(3.14f32)) == 3.14f32
+
+    @test
+    def float32Compare01(): Bool = box(0.0f32) == box(0.0f32)
+
+    @test
+    def float32Compare02(): Bool = box(0.0f32) < box(1.0f32)
 
     /////////////////////////////////////////////////////////////////////////////
     // Float64                                                                 //
@@ -83,6 +104,12 @@ namespace TestBoxable {
     @test
     def float64Unbox04(): Bool = unbox(box(3.14f64)) == 3.14f64
 
+    @test
+    def float64Compare01(): Bool = box(0.0f64) == box(0.0f64)
+
+    @test
+    def float64Compare02(): Bool = box(0.0f64) < box(1.0f64)
+
     /////////////////////////////////////////////////////////////////////////////
     // Int8                                                                    //
     /////////////////////////////////////////////////////////////////////////////
@@ -98,6 +125,12 @@ namespace TestBoxable {
 
     @test
     def int8Unbox04(): Bool = unbox(box(127i8)) == 127i8
+
+    @test
+    def int8Compare01(): Bool = box(0i8) == box(0i8)
+
+    @test
+    def int8Compare02(): Bool = box(0i8) < box(1i8)
 
     /////////////////////////////////////////////////////////////////////////////
     // Int16                                                                   //
@@ -115,6 +148,12 @@ namespace TestBoxable {
     @test
     def int16Unbox04(): Bool = unbox(box(32767i16)) == 32767i16
 
+    @test
+    def int16Compare01(): Bool = box(0i16) == box(0i16)
+
+    @test
+    def int16Compare02(): Bool = box(0i16) < box(1i16)
+
     /////////////////////////////////////////////////////////////////////////////
     // Int32                                                                   //
     /////////////////////////////////////////////////////////////////////////////
@@ -130,6 +169,13 @@ namespace TestBoxable {
 
     @test
     def int32Unbox04(): Bool = unbox(box(2147483647)) == 2147483647i32
+
+    @test
+    def int32Compare01(): Bool = box(0i32) == box(0i32)
+
+    @test
+    def int32Compare02(): Bool = box(0i32) < box(1i32)
+
 
     /////////////////////////////////////////////////////////////////////////////
     // Int64                                                                   //
@@ -147,6 +193,12 @@ namespace TestBoxable {
     @test
     def int64Unbox04(): Bool = unbox(box(9223372036854775807i64)) == 9223372036854775807i64
 
+    @test
+    def int64Compare01(): Bool = box(0i64) == box(0i64)
+
+    @test
+    def int64Compare02(): Bool = box(0i64) < box(1i64)
+
     /////////////////////////////////////////////////////////////////////////////
     // String                                                                  //
     /////////////////////////////////////////////////////////////////////////////
@@ -162,6 +214,12 @@ namespace TestBoxable {
 
     @test
     def stringUnbox04(): Bool = unbox(box(".#)!933")) == ".#)!933"
+
+    @test
+    def stringCompare01(): Bool = box("") == box("")
+
+    @test
+    def stringCompare02(): Bool = box("a") < box("b")
 
     /////////////////////////////////////////////////////////////////////////////
     // BigInt                                                                  //
@@ -179,6 +237,12 @@ namespace TestBoxable {
     @test
     def bigIntUnbox04(): Bool = unbox(box(3498457932459234592873452983453245ii)) == 3498457932459234592873452983453245ii
 
+    @test
+    def bigIntCompare01(): Bool = box(0ii) == box(0ii)
+
+    @test
+    def bigIntCompare02(): Bool = box(0ii) < box(1ii)
+
     /////////////////////////////////////////////////////////////////////////////
     // Tuple2                                                                  //
     /////////////////////////////////////////////////////////////////////////////
@@ -194,6 +258,12 @@ namespace TestBoxable {
 
     @test
     def tuple2Unbox04(): Bool = unbox(box(((1, 2), 91))) == ((1, 2), 91)
+
+    @test
+    def tuple2Compare01(): Bool = box((0, 0)) == box((0, 0))
+
+    @test
+    def tuple2Compare02(): Bool = box((0, 0)) < box((0, 1))
 
     /////////////////////////////////////////////////////////////////////////////
     // Tuple3                                                                  //
@@ -211,4 +281,9 @@ namespace TestBoxable {
     @test
     def tuple3Unbox04(): Bool = unbox(box(((1, 2), 91, true))) == ((1, 2), 91, true)
 
+    @test
+    def tuple3Compare01(): Bool = box((0, 0, 0)) == box((0, 0, 0))
+
+    @test
+    def tuple3Compare02(): Bool = box((0, 0, 0)) < box((0, 0, 1))
 }
