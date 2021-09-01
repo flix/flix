@@ -267,8 +267,6 @@ object GenClosureClasses {
     * Run method for the given `defn` and `classType`.
     */
   private def compileRunMethod(visitor: ClassWriter, defn: Def, resultType: JvmType)(implicit root: Root, flix: Flix): Unit = {
-    // todo cant this just call apply? or unwind through existing functions
-
     // Method header
     val mv = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "run",
       AsmOps.getMethodDescriptor(List(), JvmType.Void), null, null)
