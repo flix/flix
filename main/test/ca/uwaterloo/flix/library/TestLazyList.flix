@@ -1962,4 +1962,31 @@ namespace TestLazyList {
         LazyList.minimum(LazyList.range(0, 99)) == Some(0)
 
 
+    /////////////////////////////////////////////////////////////////////////////
+    // minimumBy                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def minimumBy01(): Bool =
+        LazyList.minimumBy((x, y) -> x <=> y, ENil: LazyList[Int32]) == None
+
+    @test
+    def minimumBy02(): Bool =
+        LazyList.minimumBy((x, y) -> x <=> y, ECons(1, ENil)) == Some(1)
+
+    @test
+    def minimumBy03(): Bool =
+        LazyList.minimumBy((x, y) -> x <=> y, ECons(3, ECons(2, ECons(1, ENil)))) == Some(1)
+
+    @test
+    def minimumBy04(): Bool =
+        LazyList.minimumBy((x, y) -> x <=> y, ECons(0, ECons(3, ECons(2, ECons(1, ENil))))) == Some(0)
+
+    @test
+    def minimumBy05(): Bool =
+        LazyList.minimumBy((_, _) -> LessThan, LazyList.range(0, 99)) == Some(0)
+
+
+
+
 }

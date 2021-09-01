@@ -522,4 +522,12 @@ namespace LazyList {
     pub def minimum(l: LazyList[a]): Option[a] with Order[a] =
         reduceLeft(Order.min, l)
 
+    ///
+    /// Optionally finds the smallest element of `l` according to the given comparator `cmp`.
+    ///
+    /// Returns `None` if `l` is empty.
+    ///
+    pub def minimumBy(cmp: (a, a) -> Comparison, l: LazyList[a]): Option[a] =
+        reduceLeft(Order.minBy(cmp), l)
+
 }
