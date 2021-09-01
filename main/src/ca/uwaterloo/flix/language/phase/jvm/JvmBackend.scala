@@ -145,9 +145,14 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       val lazyClasses = GenLazyClasses.gen(types)
 
       //
-      // Generate Unit class.
+      // Generate the Unit class.
       //
       val unitClass = GenUnitClass.gen()
+
+      //
+      // Generate the FlixError class.
+      //
+      val flixErrorClass = GenFlixErrorClass.gen()
 
       //
       // Collect all the classes and interfaces together.
@@ -169,7 +174,8 @@ object JvmBackend extends Phase[Root, CompilationResult] {
         recordExtendClasses,
         refClasses,
         lazyClasses,
-        unitClass
+        unitClass,
+        flixErrorClass
       ).reduce(_ ++ _)
     }
 
