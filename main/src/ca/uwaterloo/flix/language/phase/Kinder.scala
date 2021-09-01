@@ -1168,13 +1168,26 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     }
   }
 
+  // MATT docs
+  def unifyKinds(k1: Kind, k2: Kind): Option[Kind] = (k1, k2) match {
+    case (Kind.Wild, k) => Some(k)
+    case (k, Kind.Wild) => Some(k)
+    case (Kind.Arrow(k11, k12), Kind.Arrow(k21, k22)) =>
+      for {
+        kind1 <- unifyKinds(k11, k21)
+        kind2 <- unifyKinds(k12, k22)
+      } yield Kind.Arrow(kind1, kind2)
+    case (kind1, kind2) if kind1 == kind2 => Some(kind1)
+    case _ => None
+  }
+
   private case class KindEnv(map: Map[Type.UnkindedVar, Kind]) {
     /**
       * Adds the given mapping to the kind environment.
       */
     def +(pair: (Type.UnkindedVar, Kind)): Validation[KindEnv, KindError] = pair match {
       case (tvar, kind) => map.get(tvar) match {
-        case Some(kind0) => Kind.min(kind0, kind) match { // MATT just check == and maybe handle Wild kind
+        case Some(kind0) => unifyKinds(kind0, kind) match {
           case Some(minKind) => KindEnv(map + (tvar -> minKind)).toSuccess
           case None => KindError.MismatchedKinds(kind0, kind, tvar.loc).toFailure
         }
