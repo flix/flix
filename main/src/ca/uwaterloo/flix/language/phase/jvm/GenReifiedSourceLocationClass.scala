@@ -57,7 +57,7 @@ object GenReifiedSourceLocationClass {
     mkIntField(endColFieldName)
 
     genConstructor(name, superClass, visitor)
-    genEqualsMethod(name, visitor)
+    genEquals(name, visitor)
     genHashCode(name, visitor)
     genToString(name, visitor)
 
@@ -171,7 +171,7 @@ object GenReifiedSourceLocationClass {
     method.visitEnd()
   }
 
-  def genEqualsMethod(name: JvmName, visitor: ClassWriter): Unit = {
+  def genEquals(name: JvmName, visitor: ClassWriter): Unit = {
     val method = visitor.visitMethod(ACC_PUBLIC, "equals", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.PrimBool), null, null)
     method.visitCode()
 
