@@ -966,10 +966,13 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
         // ---------------------------------------------
         // { field = exp1 | exp2 } : { field : tpe | r }
         //
+        // MATT update these derivation things
+        val restRow = Type.freshVar(Kind.RecordRow, loc)
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
-          resultTyp <- unifyTypeM(tvar, Type.Apply(Type.MakeRecord, Type.mkRecordRowExtend(field, tpe1, tpe2, loc), loc), loc)
+          _ <- unifyTypeM(tpe2, Type.Apply(Type.MakeRecord, restRow, loc), loc)
+          resultTyp <- unifyTypeM(tvar, Type.Apply(Type.MakeRecord, Type.mkRecordRowExtend(field, tpe1, restRow, loc), loc), loc)
           resultEff = Type.mkAnd(eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
@@ -983,7 +986,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
         for {
           (constrs, tpe, eff) <- visitExp(exp)
           recordType <- unifyTypeM(tpe, Type.Apply(Type.MakeRecord, Type.mkRecordRowExtend(field, freshFieldType, freshRowVar, loc), loc), loc)
-          resultTyp <- unifyTypeM(tvar, freshRowVar, loc)
+          resultTyp <- unifyTypeM(tvar, Type.Apply(Type.MakeRecord, freshRowVar, loc), loc)
           resultEff = eff
         } yield (constrs, resultTyp, resultEff)
 

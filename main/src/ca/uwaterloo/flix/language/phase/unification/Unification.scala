@@ -31,15 +31,14 @@ object Unification {
     if (x.id == y.id) {
       Result.Ok(Substitution.empty)
     } else {
+      // MATT removed kind checks
       (x.rigidity, y.rigidity) match {
-        // Case 1: x is flexible and a superkind of y // MATT improve this
-        case (Rigidity.Flexible, _) if y.kind == x.kind => Result.Ok(Substitution.singleton(x, y))
-        // Case 2: y is flexible and a superkind of x
-        case (_, Rigidity.Flexible) if x.kind == y.kind => Result.Ok(Substitution.singleton(y, x))
+        // Case 1: x is flexible
+        case (Rigidity.Flexible, _) => Result.Ok(Substitution.singleton(x, y))
+        // Case 2: y is flexible
+        case (_, Rigidity.Flexible) => Result.Ok(Substitution.singleton(y, x))
         // Case 3: both variables are rigid
         case (Rigidity.Rigid, Rigidity.Rigid) => Result.Err(UnificationError.RigidVar(x, y))
-        // Case 4: at least one variable is flexible but not a superkind of the other
-        case _ => Result.Err(UnificationError.MismatchedKinds(x.kind, y.kind))
       }
     }
   }
@@ -62,10 +61,11 @@ object Unification {
       return Result.Err(UnificationError.OccursCheck(x, tpe))
     }
 
-    // Check if the kind of `x` matches the kind of `tpe`.
-    if (!(tpe.kind == x.kind)) {
-      return Result.Err(UnificationError.MismatchedKinds(x.kind, tpe.kind))
-    }
+    // MATT
+//    // Check if the kind of `x` matches the kind of `tpe`.
+//    if (!(tpe.kind == x.kind)) {
+//      return Result.Err(UnificationError.MismatchedKinds(x.kind, tpe.kind))
+//    }
 
     Result.Ok(Substitution.singleton(x, tpe))
   }
