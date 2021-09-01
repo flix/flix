@@ -2011,4 +2011,29 @@ namespace TestLazyList {
     def maximum05(): Bool =
         LazyList.maximum(LazyList.range(0, 99)) == Some(98)
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // maximumBy                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def maximumBy01(): Bool =
+        LazyList.maximumBy((x, y) -> x <=> y, ENil: LazyList[Int32]) == None
+
+    @test
+    def maximumBy02(): Bool =
+        LazyList.maximumBy((x, y) -> x <=> y, ECons(1, ENil)) == Some(1)
+
+    @test
+    def maximumBy03(): Bool =
+        LazyList.maximumBy((x, y) -> x <=> y, ECons(3, ECons(2, ECons(1, ENil)))) == Some(3)
+
+    @test
+    def maximumBy04(): Bool =
+        LazyList.maximumBy((x, y) -> x <=> y, ECons(0, ECons(3, ECons(2, ECons(1, ENil))))) == Some(3)
+
+    @test
+    def maximumBy05(): Bool =
+        LazyList.maximumBy((_, _) -> LessThan, LazyList.range(0, 99)) == Some(98)
+
 }

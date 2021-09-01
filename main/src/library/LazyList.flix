@@ -538,4 +538,12 @@ namespace LazyList {
     pub def maximum(l: LazyList[a]): Option[a] with Order[a] =
         reduceLeft(Order.max, l)
 
+    ///
+    /// Optionally finds the largest element of `l` according to the given comparator `cmp`.
+    ///
+    /// Returns `None` if `l` is empty.
+    ///
+    pub def maximumBy(cmp: (a, a) -> Comparison, l: LazyList[a]): Option[a] =
+        reduceLeft(Order.maxBy(cmp), l)
+
 }
