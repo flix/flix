@@ -150,6 +150,11 @@ object JvmName {
   val HoleError: JvmName = JvmName(devFlixRuntime, "HoleError")
 
   /**
+   * The `dev.flix.runtime.HoleError` name
+   */
+  val MatchError: JvmName = JvmName(devFlixRuntime, "MatchError")
+
+  /**
    * The `dev.flix.runtime.ReifiedSourceLocation` class.
    */
   val ReifiedSourceLocation: JvmName = JvmName(devFlixRuntime, "ReifiedSourceLocation")
@@ -215,8 +220,6 @@ object JvmName {
       }
 
     }
-
-    val MatchError: JvmName = JvmName(List("flix", "runtime"), "MatchError")
 
     val NotImplementedError: JvmName = JvmName(List("flix", "runtime"), "NotImplementedError")
   }

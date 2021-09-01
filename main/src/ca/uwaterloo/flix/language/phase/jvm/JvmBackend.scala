@@ -165,6 +165,11 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       val holeErrorClass = GenHoleErrorClass.gen()
 
       //
+      // Generate the MatchError class.
+      //
+      val matchErrorClass = GenMatchErrorClass.gen()
+
+      //
       // Collect all the classes and interfaces together.
       //
       List(
@@ -187,7 +192,8 @@ object JvmBackend extends Phase[Root, CompilationResult] {
         unitClass,
         flixErrorClass,
         rslClass,
-        holeErrorClass
+        holeErrorClass,
+        matchErrorClass
       ).reduce(_ ++ _)
     }
 
