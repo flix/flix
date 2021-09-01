@@ -1,7 +1,11 @@
 package ca.uwaterloo.flix.runtime.interpreter;
 
-// TODO: Move this to the Flix runtime.
-
+// TODO delete this and use Runnable + gen the below code inline in genexpression
 public interface Spawnable {
-    void spawn();
+    // TODO delete this
+    static void spawn(Runnable s) {
+        // Create a new Thread and evaluate the spawned expression in the new Thread
+        Thread thread = new Thread(s);
+        thread.start();
+    }
 }

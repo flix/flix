@@ -70,12 +70,6 @@ public final class Channel {
     }
   }
 
-  public static void spawn(Spawnable s) {
-    // Create a new Thread and evaluate the spawned expression in the new Thread
-    Thread thread = new Thread(s::spawn);
-    thread.start();
-  }
-
   /**
    * Given a array of channels, returns the first channel that has an element
    * and return the index of that channel and the retrieved element in a
