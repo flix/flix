@@ -33,6 +33,7 @@ object GenReifiedSourceLocationClass {
     visitor.visitSource(name.toInternalName, null)
 
     def mkIntField(name: String): Unit = visitor.visitField(ACC_PUBLIC + ACC_FINAL, name, JvmType.PrimInt.toDescriptor, null, null).visitEnd()
+
     visitor.visitField(ACC_PUBLIC + ACC_FINAL, sourceFieldName, JvmType.String.toDescriptor, null, null).visitEnd()
     mkIntField(beginLineFieldName)
     mkIntField(beginColFieldName)
@@ -40,8 +41,8 @@ object GenReifiedSourceLocationClass {
     mkIntField(endColFieldName)
 
     genConstructor(name, superClass, visitor)
-    genEqualsMethod(visitor)
-    genHashCode(visitor)
+    genEqualsMethod(name, visitor)
+    genHashCode(name, visitor)
 
     visitor.visitEnd()
     visitor.toByteArray
@@ -50,6 +51,7 @@ object GenReifiedSourceLocationClass {
   def genConstructor(name: JvmName, superClass: JvmName, visitor: ClassWriter)(implicit flix: Flix): Unit = {
     val method = visitor.visitMethod(ACC_PUBLIC, "<init>", constructorDescriptor, null, null)
     method.visitCode()
+
     method.visitVarInsn(ALOAD, 0)
     method.visitMethodInsn(INVOKESPECIAL, superClass.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
 
@@ -79,7 +81,7 @@ object GenReifiedSourceLocationClass {
     method.visitEnd()
   }
 
-  def genHashCode(visitor: ClassWriter): Unit = {
+  def genHashCode(name: JvmName, visitor: ClassWriter): Unit = {
     val method = visitor.visitMethod(ACC_PUBLIC, "hashCode", AsmOps.getMethodDescriptor(Nil, JvmType.PrimInt), null, null)
     method.visitCode()
 
@@ -88,30 +90,30 @@ object GenReifiedSourceLocationClass {
     method.visitInsn(DUP)
     method.visitInsn(ICONST_0)
     method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, JvmName.ReifiedSourceLocation.toInternalName, GenReifiedSourceLocationClass.sourceFieldName, JvmType.String.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, sourceFieldName, JvmType.String.toDescriptor)
     method.visitInsn(AASTORE)
     method.visitInsn(DUP)
     method.visitInsn(ICONST_1)
     method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, JvmName.ReifiedSourceLocation.toInternalName, GenReifiedSourceLocationClass.beginLineFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, beginLineFieldName, JvmType.PrimInt.toDescriptor)
     method.visitMethodInsn(INVOKESTATIC, JvmName.Integer.toInternalName, "valueOf", "(I)Ljava/lang/Integer;", false)
     method.visitInsn(AASTORE)
     method.visitInsn(DUP)
     method.visitInsn(ICONST_2)
     method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, JvmName.ReifiedSourceLocation.toInternalName, GenReifiedSourceLocationClass.beginColFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, beginColFieldName, JvmType.PrimInt.toDescriptor)
     method.visitMethodInsn(INVOKESTATIC, JvmName.Integer.toInternalName, "valueOf", "(I)Ljava/lang/Integer;", false)
     method.visitInsn(AASTORE)
     method.visitInsn(DUP)
     method.visitInsn(ICONST_3)
     method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, JvmName.ReifiedSourceLocation.toInternalName, GenReifiedSourceLocationClass.endLineFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, endLineFieldName, JvmType.PrimInt.toDescriptor)
     method.visitMethodInsn(INVOKESTATIC, JvmName.Integer.toInternalName, "valueOf", "(I)Ljava/lang/Integer;", false)
     method.visitInsn(AASTORE)
     method.visitInsn(DUP)
     method.visitInsn(ICONST_4)
     method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, JvmName.ReifiedSourceLocation.toInternalName, GenReifiedSourceLocationClass.endColFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, endColFieldName, JvmType.PrimInt.toDescriptor)
     method.visitMethodInsn(INVOKESTATIC, JvmName.Integer.toInternalName, "valueOf", "(I)Ljava/lang/Integer;", false)
     method.visitInsn(AASTORE)
     method.visitMethodInsn(INVOKESTATIC, JvmName.Objects.toInternalName, "hash", "([Ljava/lang/Object;)I", false)
@@ -121,9 +123,10 @@ object GenReifiedSourceLocationClass {
     method.visitEnd()
   }
 
-  def genEqualsMethod(visitor: ClassWriter): Unit = {
+  def genEqualsMethod(name: JvmName, visitor: ClassWriter): Unit = {
     val method = visitor.visitMethod(ACC_PUBLIC, "equals", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.PrimBool), null, null)
     method.visitCode()
+
     method.visitVarInsn(ALOAD, 0)
     method.visitVarInsn(ALOAD, 1)
     val continue = new Label()
@@ -148,33 +151,33 @@ object GenReifiedSourceLocationClass {
 
     method.visitLabel(compareFields)
     method.visitVarInsn(ALOAD, 1)
-    method.visitTypeInsn(CHECKCAST, JvmName.ReifiedSourceLocation.toInternalName)
+    method.visitTypeInsn(CHECKCAST, name.toInternalName)
     method.visitVarInsn(ASTORE, 2)
     val returnFalse2 = new Label()
     method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, JvmName.ReifiedSourceLocation.toInternalName, GenReifiedSourceLocationClass.beginLineFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, beginLineFieldName, JvmType.PrimInt.toDescriptor)
     method.visitVarInsn(ALOAD, 2)
-    method.visitFieldInsn(GETFIELD, JvmName.ReifiedSourceLocation.toInternalName, GenReifiedSourceLocationClass.beginLineFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, beginLineFieldName, JvmType.PrimInt.toDescriptor)
     method.visitJumpInsn(IF_ICMPNE, returnFalse2)
     method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, JvmName.ReifiedSourceLocation.toInternalName, GenReifiedSourceLocationClass.beginColFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, beginColFieldName, JvmType.PrimInt.toDescriptor)
     method.visitVarInsn(ALOAD, 2)
-    method.visitFieldInsn(GETFIELD, JvmName.ReifiedSourceLocation.toInternalName, GenReifiedSourceLocationClass.beginColFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, beginColFieldName, JvmType.PrimInt.toDescriptor)
     method.visitJumpInsn(IF_ICMPNE, returnFalse2)
     method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, JvmName.ReifiedSourceLocation.toInternalName, GenReifiedSourceLocationClass.endLineFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, endLineFieldName, JvmType.PrimInt.toDescriptor)
     method.visitVarInsn(ALOAD, 2)
-    method.visitFieldInsn(GETFIELD, JvmName.ReifiedSourceLocation.toInternalName, GenReifiedSourceLocationClass.endLineFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, endLineFieldName, JvmType.PrimInt.toDescriptor)
     method.visitJumpInsn(IF_ICMPNE, returnFalse2)
     method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, JvmName.ReifiedSourceLocation.toInternalName, GenReifiedSourceLocationClass.endColFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, endColFieldName, JvmType.PrimInt.toDescriptor)
     method.visitVarInsn(ALOAD, 2)
-    method.visitFieldInsn(GETFIELD, JvmName.ReifiedSourceLocation.toInternalName, GenReifiedSourceLocationClass.endColFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, endColFieldName, JvmType.PrimInt.toDescriptor)
     method.visitJumpInsn(IF_ICMPNE, returnFalse2)
     method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, JvmName.ReifiedSourceLocation.toInternalName, GenReifiedSourceLocationClass.sourceFieldName, JvmType.String.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, sourceFieldName, JvmType.String.toDescriptor)
     method.visitVarInsn(ALOAD, 2)
-    method.visitFieldInsn(GETFIELD, JvmName.ReifiedSourceLocation.toInternalName, GenReifiedSourceLocationClass.sourceFieldName, JvmType.String.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, sourceFieldName, JvmType.String.toDescriptor)
     method.visitMethodInsn(INVOKESTATIC, JvmName.Objects.toInternalName, "equals", AsmOps.getMethodDescriptor(List(JvmType.Object, JvmType.Object), JvmType.PrimBool), false)
     method.visitJumpInsn(IFEQ, returnFalse2)
     method.visitInsn(ICONST_1)
