@@ -514,4 +514,36 @@ namespace LazyList {
         case _            => bug!("Unreachable code!")
     }
 
+    ///
+    /// Optionally finds the smallest element of `l` according to the `Order` on `a`.
+    ///
+    /// Returns `None` if `l` is empty.
+    ///
+    pub def minimum(l: LazyList[a]): Option[a] with Order[a] =
+        reduceLeft(Order.min, l)
+
+    ///
+    /// Optionally finds the smallest element of `l` according to the given comparator `cmp`.
+    ///
+    /// Returns `None` if `l` is empty.
+    ///
+    pub def minimumBy(cmp: (a, a) -> Comparison, l: LazyList[a]): Option[a] =
+        reduceLeft(Order.minBy(cmp), l)
+
+    ///
+    /// Optionally finds the largest element of `l` according to the `Order` on `a`.
+    ///
+    /// Returns `None` if `l` is empty.
+    ///
+    pub def maximum(l: LazyList[a]): Option[a] with Order[a] =
+        reduceLeft(Order.max, l)
+
+    ///
+    /// Optionally finds the largest element of `l` according to the given comparator `cmp`.
+    ///
+    /// Returns `None` if `l` is empty.
+    ///
+    pub def maximumBy(cmp: (a, a) -> Comparison, l: LazyList[a]): Option[a] =
+        reduceLeft(Order.maxBy(cmp), l)
+
 }
