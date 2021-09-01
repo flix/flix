@@ -63,6 +63,8 @@ object Tester {
     */
   case class TestResults(results: List[TestResult]) {
     def output: VirtualTerminal = {
+      var success = 0
+      var failure = 0
       val vt = new VirtualTerminal()
       for ((ns, tests) <- results.groupBy(_.sym.namespace)) {
         val namespace = if (ns.isEmpty) "root" else ns.mkString("/")
@@ -72,11 +74,19 @@ object Tester {
           test match {
             case TestResult.Success(sym, msg) =>
               vt << Green("✓") << " " << sym.name << NewLine
+              success = success + 1
             case TestResult.Failure(sym, msg) =>
               vt << Red("✗") << " " << sym.name << ": " << msg << " (" << Blue(sym.loc.format) << ")" << NewLine
+              failure = failure + 1
           }
         }
         vt << Dedent << NewLine
+      }
+      // Summary
+      if (failure == 0) {
+        vt << Green("  Tests Passed!") << s" ($success / $success)" << NewLine
+      } else {
+        vt << Red(s"  Tests Failed!") << s" ($success / ${success + failure})"
       }
       vt
     }
