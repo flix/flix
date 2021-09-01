@@ -1415,12 +1415,12 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
         val freshRelOrLat = Type.freshVar(Kind.Star ->: Kind.Predicate, loc)
         val freshTupleVar = Type.freshVar(Kind.Star, loc)
         val freshRestSchemaVar = Type.freshVar(Kind.SchemaRow, loc)
-
+        val expectedSchemaType = Type.Apply(Type.MakeSchema, Type.mkSchemaRowExtend(pred, Type.Apply(freshRelOrLat, freshTupleVar, loc), freshRestSchemaVar, loc), loc)
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
-          _ <- unifyTypeM(tpe1, Type.mkSchemaRowExtend(pred, Type.Apply(freshRelOrLat, freshTupleVar, loc), freshRestSchemaVar, loc), loc)
-          _ <- unifyTypeM(tpe2, freshRestSchemaVar, loc)
+          _ <- unifyTypeM(tpe1, expectedSchemaType, loc)
+          _ <- unifyTypeM(tpe2, Type.Apply(Type.MakeSchema, freshRestSchemaVar, loc), loc) // MATT ?
           resultTyp <- unifyTypeM(tvar, Type.mkArray(freshTupleVar, loc), loc)
           resultEff = Type.mkAnd(eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
