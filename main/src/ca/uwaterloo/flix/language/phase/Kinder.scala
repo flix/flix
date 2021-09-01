@@ -795,45 +795,12 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     * Performs kinding on the given type constructor under the given kind environment.
     */
   private def visitTypeConstructor(tycon: TypeConstructor, root: ResolvedAst.Root)(implicit flix: Flix): TypeConstructor = tycon match {
-    case TypeConstructor.Unit => TypeConstructor.Unit
-    case TypeConstructor.Null => TypeConstructor.Null
-    case TypeConstructor.Bool => TypeConstructor.Bool
-    case TypeConstructor.Char => TypeConstructor.Char
-    case TypeConstructor.Float32 => TypeConstructor.Float32
-    case TypeConstructor.Float64 => TypeConstructor.Float64
-    case TypeConstructor.Int8 => TypeConstructor.Int8
-    case TypeConstructor.Int16 => TypeConstructor.Int16
-    case TypeConstructor.Int32 => TypeConstructor.Int32
-    case TypeConstructor.Int64 => TypeConstructor.Int64
-    case TypeConstructor.BigInt => TypeConstructor.BigInt
-    case TypeConstructor.Str => TypeConstructor.Str
-    case TypeConstructor.Arrow(arity) => TypeConstructor.Arrow(arity)
-    case TypeConstructor.RecordRowEmpty => TypeConstructor.RecordRowEmpty // MATT this whole function can be reduced to a few cases
-    case TypeConstructor.RecordRowExtend(field) => TypeConstructor.RecordRowExtend(field)
-    case TypeConstructor.MakeRecord => TypeConstructor.MakeRecord
-    case TypeConstructor.SchemaRowEmpty => TypeConstructor.SchemaRowEmpty
-    case TypeConstructor.SchemaRowExtend(pred) => TypeConstructor.SchemaRowExtend(pred)
-    case TypeConstructor.MakeSchema => TypeConstructor.MakeSchema
-    case TypeConstructor.Array => TypeConstructor.Array
-    case TypeConstructor.Channel => TypeConstructor.Channel
-    case TypeConstructor.Lazy => TypeConstructor.Lazy
-    case TypeConstructor.Tag(sym, tag) => TypeConstructor.Tag(sym, tag)
     case TypeConstructor.UnkindedEnum(sym) =>
       // Lookup the enum kind
       val kind = getEnumKind(root.enums(sym))
       TypeConstructor.KindedEnum(sym, kind)
-    case TypeConstructor.Native(clazz) => TypeConstructor.Native(clazz)
-    case TypeConstructor.ScopedRef => TypeConstructor.ScopedRef
-    case TypeConstructor.Tuple(l) => TypeConstructor.Tuple(l)
-    case TypeConstructor.Relation => TypeConstructor.Relation
-    case TypeConstructor.Lattice => TypeConstructor.Lattice
-    case TypeConstructor.True => TypeConstructor.True
-    case TypeConstructor.False => TypeConstructor.False
-    case TypeConstructor.Not => TypeConstructor.Not
-    case TypeConstructor.And => TypeConstructor.And
-    case TypeConstructor.Or => TypeConstructor.Or
-    case TypeConstructor.Region => TypeConstructor.Region
     case _: TypeConstructor.KindedEnum => throw InternalCompilerException("Unexpected kinded enum.")
+    case t => t
   }
 
   /**
@@ -1058,42 +1025,9 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     * Gets the kind associated with the type constructor.
     */
   private def getTyconKind(tycon: TypeConstructor, root: ResolvedAst.Root)(implicit flix: Flix): Kind = tycon match {
-    case TypeConstructor.Unit => Kind.Star
-    case TypeConstructor.Null => Kind.Star
-    case TypeConstructor.Bool => Kind.Star
-    case TypeConstructor.Char => Kind.Star
-    case TypeConstructor.Float32 => Kind.Star
-    case TypeConstructor.Float64 => Kind.Star
-    case TypeConstructor.Int8 => Kind.Star
-    case TypeConstructor.Int16 => Kind.Star
-    case TypeConstructor.Int32 => Kind.Star
-    case TypeConstructor.Int64 => Kind.Star
-    case TypeConstructor.BigInt => Kind.Star
-    case TypeConstructor.Str => Kind.Star
-    case TypeConstructor.Arrow(arity) => Kind.Bool ->: Kind.mkArrow(arity)
-    case TypeConstructor.RecordRowEmpty => Kind.RecordRow
-    case TypeConstructor.RecordRowExtend(field) => Kind.Star ->: Kind.RecordRow ->: Kind.RecordRow // MATT this whole function can be reduced to a couple cases
-    case TypeConstructor.MakeRecord => Kind.RecordRow ->: Kind.Star
-    case TypeConstructor.SchemaRowEmpty => Kind.SchemaRow
-    case TypeConstructor.SchemaRowExtend(pred) => Kind.Predicate ->: Kind.SchemaRow ->: Kind.SchemaRow
-    case TypeConstructor.MakeSchema => Kind.SchemaRow ->: Kind.Star
-    case TypeConstructor.Array => Kind.Star ->: Kind.Star
-    case TypeConstructor.Channel => Kind.Star ->: Kind.Star
-    case TypeConstructor.Lazy => Kind.Star ->: Kind.Star
-    case TypeConstructor.Tag(sym, tag) => Kind.Star ->: Kind.Star ->: Kind.Star
     case TypeConstructor.UnkindedEnum(sym) => getEnumKind(root.enums(sym))
-    case TypeConstructor.Native(clazz) => Kind.Star
-    case TypeConstructor.ScopedRef => Kind.Star ->: Kind.Bool ->: Kind.Star
-    case TypeConstructor.Tuple(l) => Kind.mkArrow(l)
-    case TypeConstructor.Relation => Kind.Star ->: Kind.Star
-    case TypeConstructor.Lattice => Kind.Star ->: Kind.Star
-    case TypeConstructor.True => Kind.Bool
-    case TypeConstructor.False => Kind.Bool
-    case TypeConstructor.Not => Kind.Bool ->: Kind.Bool
-    case TypeConstructor.And => Kind.Bool ->: Kind.Bool ->: Kind.Bool
-    case TypeConstructor.Or => Kind.Bool ->: Kind.Bool ->: Kind.Bool
-    case TypeConstructor.Region => Kind.Bool ->: Kind.Star
     case _: TypeConstructor.KindedEnum => throw InternalCompilerException("Unexpected kinded enum.")
+    case t => t.kind
   }
 
   /**
@@ -1142,10 +1076,6 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     case (kind1, kind2) if kind1 == kind2 => Some(kind1)
     case _ => None
   }
-
-  // MATT docs
-  // MATT name
-  def doUnify(k1: Kind, k2: Kind): Boolean = unify(k1, k2).isDefined
 
   private case class KindEnv(map: Map[Type.UnkindedVar, Kind]) {
     /**
