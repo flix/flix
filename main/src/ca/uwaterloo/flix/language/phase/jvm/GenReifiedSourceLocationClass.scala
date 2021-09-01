@@ -59,9 +59,37 @@ object GenReifiedSourceLocationClass {
     genConstructor(name, superClass, visitor)
     genEqualsMethod(name, visitor)
     genHashCode(name, visitor)
+    genToString(name, visitor)
 
     visitor.visitEnd()
     visitor.toByteArray
+  }
+
+  def genToString(name: JvmName, visitor: ClassWriter): Unit = {
+    val method = visitor.visitMethod(ACC_PUBLIC, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String), null, null)
+    method.visitCode()
+
+    method.visitTypeInsn(NEW, JvmName.StringBuilder.toInternalName)
+    method.visitInsn(DUP)
+    method.visitMethodInsn(INVOKESPECIAL, JvmName.StringBuilder.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
+    method.visitVarInsn(ALOAD, 0)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, sourceFieldName, JvmName.String.toDescriptor)
+    method.visitMethodInsn(INVOKEVIRTUAL, JvmName.StringBuilder.toInternalName, "append", s"(${JvmName.String.toDescriptor})${JvmName.StringBuilder.toDescriptor}", false)
+    method.visitLdcInsn(":")
+    method.visitMethodInsn(INVOKEVIRTUAL, JvmName.StringBuilder.toInternalName, "append", s"(${JvmName.String.toDescriptor})${JvmName.StringBuilder.toDescriptor}", false)
+    method.visitVarInsn(ALOAD, 0)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, beginLineFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitMethodInsn(INVOKEVIRTUAL, JvmName.StringBuilder.toInternalName, "append", s"(${JvmType.PrimInt.toDescriptor})${JvmName.StringBuilder.toDescriptor}", false)
+    method.visitLdcInsn(":")
+    method.visitMethodInsn(INVOKEVIRTUAL, JvmName.StringBuilder.toInternalName, "append", s"(${JvmName.String.toDescriptor})${JvmName.StringBuilder.toDescriptor}", false)
+    method.visitVarInsn(ALOAD, 0)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, beginColFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitMethodInsn(INVOKEVIRTUAL, JvmName.StringBuilder.toInternalName, "append", s"(${JvmType.PrimInt.toDescriptor})${JvmName.StringBuilder.toDescriptor}", false)
+    method.visitMethodInsn(INVOKEVIRTUAL, JvmName.StringBuilder.toInternalName, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String), false)
+    method.visitInsn(ARETURN)
+
+    method.visitMaxs(999, 999)
+    method.visitEnd()
   }
 
   def genConstructor(name: JvmName, superClass: JvmName, visitor: ClassWriter)(implicit flix: Flix): Unit = {
