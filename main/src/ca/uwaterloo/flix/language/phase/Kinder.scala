@@ -330,7 +330,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         elms <- Validation.traverse(elms0)(visitExp(_, kenv, root))
       } yield KindedAst.Expression.Tuple(elms, loc)
 
-    case ResolvedAst.Expression.RecordEmpty(loc) => KindedAst.Expression.RecordEmpty(Type.freshVar(Kind.Record, loc), loc).toSuccess
+    case ResolvedAst.Expression.RecordEmpty(loc) => KindedAst.Expression.RecordEmpty(Type.freshVar(Kind.Star, loc), loc).toSuccess
 
     case ResolvedAst.Expression.RecordSelect(exp0, field, loc) =>
       for {
@@ -346,12 +346,12 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       for {
         value <- visitExp(value0, kenv, root)
         rest <- visitExp(rest0, kenv, root)
-      } yield KindedAst.Expression.RecordExtend(field, value, rest, Type.freshVar(Kind.Record, loc), loc)
+      } yield KindedAst.Expression.RecordExtend(field, value, rest, Type.freshVar(Kind.Star, loc), loc)
 
     case ResolvedAst.Expression.RecordRestrict(field, rest0, loc) =>
       for {
         rest <- visitExp(rest0, kenv, root)
-      } yield KindedAst.Expression.RecordRestrict(field, rest, Type.freshVar(Kind.Record, loc), loc)
+      } yield KindedAst.Expression.RecordRestrict(field, rest, Type.freshVar(Kind.Star, loc), loc)
 
     case ResolvedAst.Expression.ArrayLit(elms0, loc) =>
       for {
@@ -524,7 +524,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     case ResolvedAst.Expression.FixpointConstraintSet(cs0, loc) =>
       for {
         cs <- Validation.traverse(cs0)(visitConstraint(_, kenv, root))
-      } yield KindedAst.Expression.FixpointConstraintSet(cs, Type.freshVar(Kind.Schema, loc), loc)
+      } yield KindedAst.Expression.FixpointConstraintSet(cs, Type.freshVar(Kind.Star, loc), loc)
 
     case ResolvedAst.Expression.FixpointMerge(exp10, exp20, loc) =>
       for {
@@ -814,10 +814,12 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     case TypeConstructor.BigInt => TypeConstructor.BigInt
     case TypeConstructor.Str => TypeConstructor.Str
     case TypeConstructor.Arrow(arity) => TypeConstructor.Arrow(arity)
-    case TypeConstructor.RecordEmpty => TypeConstructor.RecordEmpty
-    case TypeConstructor.RecordExtend(field) => TypeConstructor.RecordExtend(field)
-    case TypeConstructor.SchemaEmpty => TypeConstructor.SchemaEmpty
-    case TypeConstructor.SchemaExtend(pred) => TypeConstructor.SchemaExtend(pred)
+    case TypeConstructor.RecordRowEmpty => TypeConstructor.RecordRowEmpty // MATT this whole function can be reduced to a few cases
+    case TypeConstructor.RecordRowExtend(field) => TypeConstructor.RecordRowExtend(field)
+    case TypeConstructor.MakeRecord => TypeConstructor.MakeRecord
+    case TypeConstructor.SchemaRowEmpty => TypeConstructor.SchemaRowEmpty
+    case TypeConstructor.SchemaRowExtend(pred) => TypeConstructor.SchemaRowExtend(pred)
+    case TypeConstructor.MakeSchema => TypeConstructor.MakeSchema
     case TypeConstructor.Array => TypeConstructor.Array
     case TypeConstructor.Channel => TypeConstructor.Channel
     case TypeConstructor.Lazy => TypeConstructor.Lazy
@@ -1075,10 +1077,12 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     case TypeConstructor.BigInt => Kind.Star
     case TypeConstructor.Str => Kind.Star
     case TypeConstructor.Arrow(arity) => Kind.Bool ->: Kind.mkArrow(arity)
-    case TypeConstructor.RecordEmpty => Kind.Record
-    case TypeConstructor.RecordExtend(field) => Kind.Star ->: Kind.Record ->: Kind.Record
-    case TypeConstructor.SchemaEmpty => Kind.Schema
-    case TypeConstructor.SchemaExtend(pred) => Kind.Star ->: Kind.Schema ->: Kind.Schema
+    case TypeConstructor.RecordRowEmpty => Kind.RecordRow
+    case TypeConstructor.RecordRowExtend(field) => Kind.Star ->: Kind.RecordRow ->: Kind.RecordRow // MATT this whole function can be reduced to a couple cases
+    case TypeConstructor.MakeRecord => Kind.RecordRow ->: Kind.Star
+    case TypeConstructor.SchemaRowEmpty => Kind.SchemaRow
+    case TypeConstructor.SchemaRowExtend(pred) => Kind.Predicate ->: Kind.SchemaRow ->: Kind.SchemaRow
+    case TypeConstructor.MakeSchema => Kind.SchemaRow ->: Kind.Star
     case TypeConstructor.Array => Kind.Star ->: Kind.Star
     case TypeConstructor.Channel => Kind.Star ->: Kind.Star
     case TypeConstructor.Lazy => Kind.Star ->: Kind.Star
@@ -1109,14 +1113,11 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
   /**
     * Describes a kind bound, a subkind or superkind of some kind.
     */
-  private case class KindMatch(assoc: KindMatch.Association, kind: Kind) {
+  private case class KindMatch(assoc: KindMatch.Association, kind: Kind) { // MATT kill this class
     /**
       * Returns true if the given kind obeys the kind boudn described by this KindMatch.
       */
-    def matches(other: Kind): Boolean = assoc match {
-      case KindMatch.Association.SubKind => other <:: kind
-      case KindMatch.Association.SuperKind => kind <:: other
-    }
+    def matches(other: Kind): Boolean = other == Kind.Wild || kind == Kind.Wild || other == kind
   }
 
   private object KindMatch {
@@ -1173,7 +1174,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       */
     def +(pair: (Type.UnkindedVar, Kind)): Validation[KindEnv, KindError] = pair match {
       case (tvar, kind) => map.get(tvar) match {
-        case Some(kind0) => Kind.min(kind0, kind) match {
+        case Some(kind0) => Kind.min(kind0, kind) match { // MATT just check == and maybe handle Wild kind
           case Some(minKind) => KindEnv(map + (tvar -> minKind)).toSuccess
           case None => KindError.MismatchedKinds(kind0, kind, tvar.loc).toFailure
         }
