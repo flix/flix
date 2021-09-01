@@ -32,7 +32,7 @@ object GenUnitClass {
     Map(jvmName -> JvmClass(jvmName, bytecode))
   }
 
-  def genByteCode(jvmType: JvmType, name: JvmName)(implicit flix: Flix): Array[Byte] = {
+  private def genByteCode(jvmType: JvmType, name: JvmName)(implicit flix: Flix): Array[Byte] = {
     // class writer
     val visitor = AsmOps.mkClassWriter()
 
@@ -49,13 +49,13 @@ object GenUnitClass {
     visitor.visitField(ACC_STATIC + ACC_FINAL + ACC_PUBLIC, instanceFieldName, jvmType.toDescriptor, null, null).visitEnd()
 
     genStaticConstructor(jvmType, name, visitor)
-    genConstructor(jvmType, name, visitor)
+    genConstructor(visitor)
 
     visitor.visitEnd()
     visitor.toByteArray
   }
 
-  def genStaticConstructor(jvmType: JvmType, name: JvmName, visitor: ClassWriter): Unit = {
+  private def genStaticConstructor(jvmType: JvmType, name: JvmName, visitor: ClassWriter): Unit = {
     val methodVisitor = visitor.visitMethod(ACC_STATIC, "<clinit>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), null, null)
     methodVisitor.visitCode()
     methodVisitor.visitTypeInsn(NEW, name.toInternalName)
@@ -67,7 +67,7 @@ object GenUnitClass {
     methodVisitor.visitEnd()
   }
 
-  def genConstructor(jvmType: JvmType, name: JvmName, visitor: ClassWriter): Unit = {
+  private def genConstructor(visitor: ClassWriter): Unit = {
     val methodVisitor = visitor.visitMethod(ACC_PRIVATE, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), null, null)
     methodVisitor.visitCode()
     methodVisitor.visitVarInsn(ALOAD, 0)

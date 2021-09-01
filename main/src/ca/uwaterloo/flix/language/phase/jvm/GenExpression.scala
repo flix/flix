@@ -796,12 +796,12 @@ object GenExpression {
     case Expression.Existential(params, exp, loc) =>
       // TODO: Better exception.
       addSourceLine(visitor, loc)
-      AsmOps.compileThrowFlixError(visitor, JvmName.Runtime.NotImplementedError, loc)
+      AsmOps.compileThrowFlixError(visitor, JvmName.NotImplementedError, loc)
 
     case Expression.Universal(params, exp, loc) =>
       // TODO: Better exception.
       addSourceLine(visitor, loc)
-      AsmOps.compileThrowFlixError(visitor, JvmName.Runtime.NotImplementedError, loc)
+      AsmOps.compileThrowFlixError(visitor, JvmName.NotImplementedError, loc)
 
     case Expression.Cast(exp, tpe, loc) =>
       addSourceLine(visitor, loc)

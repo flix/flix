@@ -20,17 +20,23 @@ import ca.uwaterloo.flix.api.Flix
 import org.objectweb.asm.{ClassWriter, Label}
 import org.objectweb.asm.Opcodes._
 
-object GenMatchErrorClass {
+object GenSimpleLocationErrorClass {
 
   val locationFieldName: String = "location"
 
-  def gen()(implicit flix: Flix): Map[JvmName, JvmClass] = {
-    val jvmName = JvmName.MatchError
-    val bytecode = genByteCode(jvmName)
-    Map(jvmName -> JvmClass(jvmName, bytecode))
+  /**
+   * Creates a subclass of `dev.flix.runtime.FlixError` with a `dev.flix.runtime.ReifiedSourceLocation` and a string prefix o the message.
+   * Includes equals and hashCode methods.
+   *
+   * @param className the jvm name of the class
+   * @param prefix something like `Division by zero at ` which will be followed by the location (remember the trailing space)
+   */
+  def gen(className: JvmName, prefix: String)(implicit flix: Flix): Map[JvmName, JvmClass] = {
+    val bytecode = genByteCode(className, prefix)
+    Map(className -> JvmClass(className, bytecode))
   }
 
-  def genByteCode(name: JvmName)(implicit flix: Flix): Array[Byte] = {
+  private def genByteCode(name: JvmName, prefix: String)(implicit flix: Flix): Array[Byte] = {
     // class writer
     val visitor = AsmOps.mkClassWriter()
 
@@ -43,7 +49,7 @@ object GenMatchErrorClass {
     // Source of the class
     visitor.visitSource(name.toInternalName, null)
 
-    genConstructor(name, superClass, visitor)
+    genConstructor(name, superClass, prefix, visitor)
     genEquals(name, visitor)
     genHashCode(name, visitor)
     visitor.visitField(ACC_PUBLIC + ACC_FINAL, locationFieldName, JvmName.ReifiedSourceLocation.toDescriptor, null, null).visitEnd()
@@ -52,7 +58,7 @@ object GenMatchErrorClass {
     visitor.toByteArray
   }
 
-  def genConstructor(name: JvmName, superClass: JvmName, visitor: ClassWriter): Unit = {
+  private def genConstructor(name: JvmName, superClass: JvmName, prefix: String, visitor: ClassWriter): Unit = {
     val stringToBuilderDescriptor = s"(${JvmName.String.toDescriptor})${JvmName.StringBuilder.toDescriptor}"
     val builderName = JvmName.StringBuilder.toInternalName
 
@@ -63,7 +69,7 @@ object GenMatchErrorClass {
     method.visitTypeInsn(NEW, builderName)
     method.visitInsn(DUP)
     method.visitMethodInsn(INVOKESPECIAL, builderName, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
-    method.visitLdcInsn("Non-exhaustive match at ")
+    method.visitLdcInsn(prefix)
     method.visitMethodInsn(INVOKEVIRTUAL, builderName, "append", stringToBuilderDescriptor, false)
     method.visitVarInsn(ALOAD, 1)
     method.visitMethodInsn(INVOKEVIRTUAL, JvmName.ReifiedSourceLocation.toInternalName, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String), false)
@@ -79,7 +85,7 @@ object GenMatchErrorClass {
     method.visitEnd()
   }
 
-  def genEquals(name: JvmName, visitor: ClassWriter): Unit = {
+  private def genEquals(name: JvmName, visitor: ClassWriter): Unit = {
     val method = visitor.visitMethod(ACC_PUBLIC, "equals", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.PrimBool), null, null)
     method.visitCode()
 
@@ -120,7 +126,7 @@ object GenMatchErrorClass {
     method.visitEnd()
   }
 
-  def genHashCode(name: JvmName, visitor: ClassWriter): Unit = {
+  private def genHashCode(name: JvmName, visitor: ClassWriter): Unit = {
     val method = visitor.visitMethod(ACC_PUBLIC, "hashCode", AsmOps.getMethodDescriptor(Nil, JvmType.PrimInt), null, null)
     method.visitCode()
 
