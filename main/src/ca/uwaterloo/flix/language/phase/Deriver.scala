@@ -29,7 +29,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
   */
 object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
 
-  override def run(root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Root, Nothing] = {
+  override def run(root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Root, Nothing] = flix.phase("Deriver") {
     val derivedInstances = root.enums.values.flatMap {
       enum => getDerivations(enum, root)
     }
@@ -50,8 +50,10 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
     case KindedAst.Enum(_, _, _, _, derives, _, _, _, _) =>
       // lazy so that in we don't try a lookup if there are no derivations (important for Nix Lib)
       lazy val toStringSym = PredefinedClasses.lookupClassSym("ToString", root)
+      lazy val eqSym = PredefinedClasses.lookupClassSym("Eq", root)
       derives.map {
         case Ast.Derivation(sym, loc) if sym == toStringSym => createToString(enum, loc, root)
+        case Ast.Derivation(sym, loc) if sym == eqSym => createEq(enum, loc, root)
         case unknownSym => throw InternalCompilerException(s"Unexpected derivation: $unknownSym")
       }
   }
@@ -73,9 +75,10 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
     * instance ToString[E[a]] with ToString[a] {
     *   pub def toString(x: E[a]): String = match x {
     *     case C0 => "C0"
-    *     case C1(y) => "C1" + "(" + ToString.toString(y) + ")"
-    *     case C2(y0, y1) => "C2" + "(" + ToString.toString(y0) + ", " + ToString.toString(y1) + ")"
+    *     case C1(x0) => "C1" + "(" + ToString.toString(x0) + ")"
+    *     case C2(x0, x1) => "C2" + "(" + ToString.toString(x0) + ", " + ToString.toString(x1) + ")"
     *   }
+    * }
     * }}}
     */
   private def createToString(enum: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum match {
@@ -133,7 +136,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
     case KindedAst.Case(enum, tag, tpeDeprecated, sc) =>
 
       // get a pattern corresponding to this case
-      val (pat, varSyms) = mkPattern(sc.base, loc)
+      val (pat, varSyms) = mkPattern(sc.base, "x", loc)
 
       val guard = KindedAst.Expression.True(loc)
 
@@ -167,6 +170,121 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
       KindedAst.MatchRule(pat, guard, exp)
   }
 
+  /**
+    * Creates a toString instance for the given enum.
+    *
+    * {{{
+    * enum E[a] with Eq {
+    *   case C1
+    *   case C2(a)
+    *   case C3(a, a)
+    * }
+    * }}}
+    *
+    * yields
+    *
+    * {{{
+    * instance Eq[E[a]] with Eq[a] {
+    *   pub def eq(x: E[a], y: E[a]): Bool = (x, y) match {
+    *     case (C0, C0) => true
+    *     case (C1(x0), C1(y0)) => x0 == y0
+    *     case (C2(x0, x1), C2(y0, y1)) => x0 == y0 and x1 == y1
+    *     case _ => false
+    *   }
+    * }
+    * }}}
+    */
+  private def createEq(enum: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum match {
+    case KindedAst.Enum(_, _, _, tparams, _, cases, _, sc, _) =>
+      val eqClassSym = PredefinedClasses.lookupClassSym("Eq", root)
+      val eqDefSym = Symbol.mkDefnSym("Eq.eq")
+
+      // create a match rule for each case and put them in a match expression
+      val mainMatchRules = cases.values.map(createEqMatchRule(_, loc, root))
+      val defaultRule = KindedAst.MatchRule(KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc), KindedAst.Expression.True(loc), KindedAst.Expression.False(loc))
+      val varSym1 = Symbol.freshVarSym("x", loc)
+      val varSym2 = Symbol.freshVarSym("y", loc)
+      val exp = KindedAst.Expression.Match(
+        KindedAst.Expression.Tuple(List(mkVarExpr(varSym1, loc), mkVarExpr(varSym2, loc)), loc),
+        (mainMatchRules ++ List(defaultRule)).toList,
+        loc
+      )
+
+      val spec = KindedAst.Spec(
+        doc = Ast.Doc(Nil, loc),
+        ann = Nil,
+        mod = Ast.Modifiers.Empty,
+        tparams = tparams,
+        fparams = List(KindedAst.FormalParam(varSym1, Ast.Modifiers.Empty, sc.base, loc), KindedAst.FormalParam(varSym2, Ast.Modifiers.Empty, sc.base, loc)),
+        sc = Scheme(
+          tparams.map(_.tpe),
+          List(Ast.TypeConstraint(eqClassSym, sc.base, loc)),
+          Type.mkPureUncurriedArrow(List(sc.base, sc.base), Type.mkBool(loc), loc)
+        ),
+        tpe = Type.mkBool(loc),
+        eff = Type.Cst(TypeConstructor.True, loc),
+        loc = loc
+      )
+      val defn = KindedAst.Def(eqDefSym, spec, exp)
+
+      // Add a type constraint to the instance for any non-wild param with kind Star
+      val tconstrs = tparams.collect {
+        case tparam if tparam.tpe.kind <:: Kind.Star && !tparam.name.isWild => Ast.TypeConstraint(eqClassSym, tparam.tpe, loc)
+      }
+
+      KindedAst.Instance(
+        doc = Ast.Doc(Nil, loc),
+        mod = Ast.Modifiers.Empty,
+        sym = eqClassSym,
+        tpe = sc.base,
+        tconstrs = tconstrs,
+        defs = List(defn),
+        ns = Name.RootNS,
+        loc = loc
+      )
+  }
+
+  /**
+    * Creates a ToString match rule for the given enum case.
+    */
+  private def createEqMatchRule(caze: KindedAst.Case, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
+    case KindedAst.Case(enum, tag, tpeDeprecated, sc) =>
+
+      // get a pattern corresponding to this case
+      val (pat1, varSyms1) = mkPattern(sc.base, "x", loc)
+      val (pat2, varSyms2) = mkPattern(sc.base, "y", loc)
+      val pat = KindedAst.Pattern.Tuple(List(pat1, pat2), loc)
+
+      val guard = KindedAst.Expression.True(loc)
+
+      val eqSym = PredefinedClasses.lookupSigSym("Eq", "eq", root)
+      // call eq on each variable pair
+      val eqs = varSyms1.zip(varSyms2).map {
+        case (varSym1, varSym2) =>
+          KindedAst.Expression.Apply(
+            KindedAst.Expression.Sig(eqSym, Type.freshVar(Kind.Star, loc), loc),
+            List(
+              mkVarExpr(varSym1, loc),
+              mkVarExpr(varSym2, loc)
+            ),
+            Type.freshVar(Kind.Star, loc),
+            Type.freshVar(Kind.Bool, loc),
+            loc
+          )
+      }
+
+      // put it all together
+      val exp = eqs match {
+        // Case 1: no arguments: return true
+        case Nil => KindedAst.Expression.True(loc)
+        // Case 2: at least one argument: join everything with `and`
+        case head :: tail => tail.foldLeft(head: KindedAst.Expression) {
+          case (acc, eq) => KindedAst.Expression.Binary(SemanticOperator.BoolOp.And, acc, eq, Type.freshVar(Kind.Star, loc), loc)
+        }
+      }
+
+      KindedAst.MatchRule(pat, guard, exp)
+  }
   /**
     * Builds a string expression from the given string.
     */
@@ -219,15 +337,15 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
   /**
     * Creates a pattern corresponding to the given tag type.
     */
-  private def mkPattern(tpe: Type, loc: SourceLocation)(implicit flix: Flix): (KindedAst.Pattern, List[Symbol.VarSym]) = tpe.typeConstructor match {
+  private def mkPattern(tpe: Type, varPrefix: String, loc: SourceLocation)(implicit flix: Flix): (KindedAst.Pattern, List[Symbol.VarSym]) = tpe.typeConstructor match {
     case Some(TypeConstructor.Tag(sym, tag)) =>
       getTagArguments(tpe) match {
         case Nil => (KindedAst.Pattern.Tag(sym, tag, KindedAst.Pattern.Unit(loc), Type.freshVar(Kind.Star, loc), loc), Nil)
         case _ :: Nil =>
-          val varSym = Symbol.freshVarSym("y", loc)
+          val varSym = Symbol.freshVarSym(s"${varPrefix}0", loc)
           (KindedAst.Pattern.Tag(sym, tag, mkVarPattern(varSym, loc), Type.freshVar(Kind.Star, loc), loc), List(varSym))
         case tpes =>
-          val varSyms = tpes.zipWithIndex.map { case (_, index) => Symbol.freshVarSym(s"y$index", loc) }
+          val varSyms = tpes.zipWithIndex.map { case (_, index) => Symbol.freshVarSym(s"$varPrefix$index", loc) }
           val subPats = varSyms.map(varSym => mkVarPattern(varSym, loc))
           (KindedAst.Pattern.Tag(sym, tag, KindedAst.Pattern.Tuple(subPats, loc), Type.freshVar(Kind.Star, loc), loc), varSyms)
       }
@@ -247,4 +365,6 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
     case last :: Nil => last :: Nil
     case head :: neck :: tail => head :: sep :: intersperse(neck :: tail, sep)
   }
+
+
 }
