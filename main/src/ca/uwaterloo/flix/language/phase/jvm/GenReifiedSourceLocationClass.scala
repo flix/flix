@@ -41,7 +41,7 @@ object GenReifiedSourceLocationClass {
 
     genConstructor(name, superClass, visitor)
     genEqualsMethod(visitor)
-    genHashCode(name, visitor)
+    genHashCode(visitor)
 
     visitor.visitEnd()
     visitor.toByteArray
@@ -79,7 +79,47 @@ object GenReifiedSourceLocationClass {
     method.visitEnd()
   }
 
-  def genHashCode(name: JvmName, visitor: ClassWriter): Unit = ()
+  def genHashCode(visitor: ClassWriter): Unit = {
+    val method = visitor.visitMethod(ACC_PUBLIC, "hashCode", AsmOps.getMethodDescriptor(Nil, JvmType.PrimInt), null, null)
+    method.visitCode()
+
+    method.visitInsn(ICONST_5)
+    method.visitTypeInsn(ANEWARRAY, JvmName.Objects.toInternalName)
+    method.visitInsn(DUP)
+    method.visitInsn(ICONST_0)
+    method.visitVarInsn(ALOAD, 0)
+    method.visitFieldInsn(GETFIELD, JvmName.ReifiedSourceLocation.toInternalName, GenReifiedSourceLocationClass.sourceFieldName, JvmType.String.toDescriptor)
+    method.visitInsn(AASTORE)
+    method.visitInsn(DUP)
+    method.visitInsn(ICONST_1)
+    method.visitVarInsn(ALOAD, 0)
+    method.visitFieldInsn(GETFIELD, JvmName.ReifiedSourceLocation.toInternalName, GenReifiedSourceLocationClass.beginLineFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitMethodInsn(INVOKESTATIC, JvmName.Integer.toInternalName, "valueOf", "(I)Ljava/lang/Integer;", false)
+    method.visitInsn(AASTORE)
+    method.visitInsn(DUP)
+    method.visitInsn(ICONST_2)
+    method.visitVarInsn(ALOAD, 0)
+    method.visitFieldInsn(GETFIELD, JvmName.ReifiedSourceLocation.toInternalName, GenReifiedSourceLocationClass.beginColFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitMethodInsn(INVOKESTATIC, JvmName.Integer.toInternalName, "valueOf", "(I)Ljava/lang/Integer;", false)
+    method.visitInsn(AASTORE)
+    method.visitInsn(DUP)
+    method.visitInsn(ICONST_3)
+    method.visitVarInsn(ALOAD, 0)
+    method.visitFieldInsn(GETFIELD, JvmName.ReifiedSourceLocation.toInternalName, GenReifiedSourceLocationClass.endLineFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitMethodInsn(INVOKESTATIC, JvmName.Integer.toInternalName, "valueOf", "(I)Ljava/lang/Integer;", false)
+    method.visitInsn(AASTORE)
+    method.visitInsn(DUP)
+    method.visitInsn(ICONST_4)
+    method.visitVarInsn(ALOAD, 0)
+    method.visitFieldInsn(GETFIELD, JvmName.ReifiedSourceLocation.toInternalName, GenReifiedSourceLocationClass.endColFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitMethodInsn(INVOKESTATIC, JvmName.Integer.toInternalName, "valueOf", "(I)Ljava/lang/Integer;", false)
+    method.visitInsn(AASTORE)
+    method.visitMethodInsn(INVOKESTATIC, JvmName.Objects.toInternalName, "hash", "([Ljava/lang/Object;)I", false)
+    method.visitInsn(IRETURN)
+
+    method.visitMaxs(999, 999)
+    method.visitEnd()
+  }
 
   def genEqualsMethod(visitor: ClassWriter): Unit = {
     val method = visitor.visitMethod(ACC_PUBLIC, "equals", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.PrimBool), null, null)
