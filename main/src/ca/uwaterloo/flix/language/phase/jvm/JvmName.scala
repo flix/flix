@@ -216,8 +216,6 @@ object JvmName {
 
     }
 
-    val HoleError: JvmName = JvmName(List("flix", "runtime"), "HoleError")
-
     val MatchError: JvmName = JvmName(List("flix", "runtime"), "MatchError")
 
     val NotImplementedError: JvmName = JvmName(List("flix", "runtime"), "NotImplementedError")

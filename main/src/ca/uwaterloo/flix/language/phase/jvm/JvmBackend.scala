@@ -155,9 +155,14 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       val flixErrorClass = GenFlixErrorClass.gen()
 
       //
-      // Generate the ReifiedSourceLocation class
+      // Generate the ReifiedSourceLocation class.
       //
-      val RslClass = GenReifiedSourceLocationClass.gen()
+      val rslClass = GenReifiedSourceLocationClass.gen()
+
+      //
+      // Generate the HoleError class.
+      //
+      val holeErrorClass = GenHoleErrorClass.gen()
 
       //
       // Collect all the classes and interfaces together.
@@ -181,7 +186,8 @@ object JvmBackend extends Phase[Root, CompilationResult] {
         lazyClasses,
         unitClass,
         flixErrorClass,
-        RslClass
+        rslClass,
+        holeErrorClass
       ).reduce(_ ++ _)
     }
 
