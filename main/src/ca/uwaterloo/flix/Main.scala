@@ -22,7 +22,6 @@ import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools._
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt._
-import flix.runtime.FlixError
 
 import java.io.{File, PrintWriter}
 import java.net.BindException
@@ -203,7 +202,7 @@ object Main {
           System.exit(1)
       }
     } catch {
-      case ex: FlixError =>
+      case ex: Exception => // TODO JLS: Maybe delete this and call Main.main() instead or keep
         Console.err.println(ex.getMessage)
         Console.err.println()
         ex.printStackTrace()

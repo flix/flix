@@ -42,11 +42,6 @@ object JvmName {
   val Unit: JvmName = JvmName(Nil, "Unit")
 
   /**
-   * The Flix ReifiedSourceLocation class.
-   */
-  val ReifiedSourceLocation: JvmName = JvmName(Nil, "ReifiedSourceLocation")
-
-  /**
     * The `java.math.BigInteger` name.
     */
   val BigInteger: JvmName = JvmName(List("java", "math"), "BigInteger")
@@ -135,7 +130,12 @@ object JvmName {
   /**
    * The FlixError name
    */
-  val FlixError: JvmName = JvmName(Nil, "FlixError")
+  val FlixError: JvmName = JvmName(List("dev", "flix", "runtime"), "FlixError")
+
+  /**
+   * The Flix ReifiedSourceLocation class.
+   */
+  val ReifiedSourceLocation: JvmName = JvmName(List("dev", "flix", "runtime"), "ReifiedSourceLocation")
 
   /**
     * The `java.lang.Exception` name

@@ -4,7 +4,7 @@ import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 import ca.uwaterloo.flix.util.vt.VirtualString._
-import flix.runtime.{FlixError, ProxyObject}
+import flix.runtime.ProxyObject
 
 /**
   * Evaluates all tests in a model.
@@ -108,7 +108,7 @@ object Tester {
             case _ => TestResult.Success(sym, "Returned non-boolean value.")
           }
         } catch {
-          case ex: FlixError =>
+          case ex: Exception => // TODO JLS: Maybe delete this and call Main.main() instead or keep
             TestResult.Failure(sym, ex.getMessage)
         }
     }
