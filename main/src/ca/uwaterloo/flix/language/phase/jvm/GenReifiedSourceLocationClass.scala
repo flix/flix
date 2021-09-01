@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.{ClassWriter, Label}
 import org.objectweb.asm.Opcodes._
 
 object GenReifiedSourceLocationClass {
@@ -40,6 +40,8 @@ object GenReifiedSourceLocationClass {
     mkIntField(endColFieldName)
 
     genConstructor(name, superClass, visitor)
+    genEqualsMethod(visitor)
+    genHashCode(name, visitor)
 
     visitor.visitEnd()
     visitor.toByteArray
@@ -72,6 +74,77 @@ object GenReifiedSourceLocationClass {
     method.visitFieldInsn(PUTFIELD, name.toInternalName, endColFieldName, JvmType.PrimInt.toDescriptor)
 
     method.visitInsn(RETURN)
+
+    method.visitMaxs(999, 999)
+    method.visitEnd()
+  }
+
+  def genHashCode(name: JvmName, visitor: ClassWriter): Unit = ()
+
+  def genEqualsMethod(visitor: ClassWriter): Unit = {
+    val method = visitor.visitMethod(ACC_PUBLIC, "equals", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.PrimBool), null, null)
+    method.visitVarInsn(ALOAD, 0)
+    method.visitVarInsn(ALOAD, 1)
+    val continue = new Label()
+    method.visitJumpInsn(IF_ACMPNE, continue)
+    method.visitInsn(ICONST_1)
+    method.visitInsn(IRETURN)
+
+    method.visitLabel(continue)
+    method.visitVarInsn(ALOAD, 1)
+    val returnFalse1 = new Label()
+    method.visitJumpInsn(IFNULL, returnFalse1)
+    method.visitVarInsn(ALOAD, 0)
+    method.visitMethodInsn(INVOKEVIRTUAL, JvmName.Object.toInternalName, "getClass", "()Ljava/lang/Class;", false)
+    method.visitVarInsn(ALOAD, 1)
+    method.visitMethodInsn(INVOKEVIRTUAL, JvmName.Object.toInternalName, "getClass", "()Ljava/lang/Class;", false)
+    val compareFields = new Label()
+    method.visitJumpInsn(IF_ACMPEQ, compareFields)
+
+    method.visitLabel(returnFalse1)
+    method.visitInsn(ICONST_0)
+    method.visitInsn(IRETURN)
+
+    method.visitLabel(compareFields)
+    method.visitVarInsn(ALOAD, 1)
+    method.visitTypeInsn(CHECKCAST, JvmName.ReifiedSourceLocation.toInternalName)
+    method.visitVarInsn(ASTORE, 2)
+    val returnFalse2 = new Label()
+    method.visitVarInsn(ALOAD, 0)
+    method.visitFieldInsn(GETFIELD, JvmName.ReifiedSourceLocation.toInternalName, GenReifiedSourceLocationClass.beginLineFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitVarInsn(ALOAD, 2)
+    method.visitFieldInsn(GETFIELD, JvmName.ReifiedSourceLocation.toInternalName, GenReifiedSourceLocationClass.beginLineFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitJumpInsn(IF_ICMPNE, returnFalse2)
+    method.visitVarInsn(ALOAD, 0)
+    method.visitFieldInsn(GETFIELD, JvmName.ReifiedSourceLocation.toInternalName, GenReifiedSourceLocationClass.beginColFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitVarInsn(ALOAD, 2)
+    method.visitFieldInsn(GETFIELD, JvmName.ReifiedSourceLocation.toInternalName, GenReifiedSourceLocationClass.beginColFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitJumpInsn(IF_ICMPNE, returnFalse2)
+    method.visitVarInsn(ALOAD, 0)
+    method.visitFieldInsn(GETFIELD, JvmName.ReifiedSourceLocation.toInternalName, GenReifiedSourceLocationClass.endLineFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitVarInsn(ALOAD, 2)
+    method.visitFieldInsn(GETFIELD, JvmName.ReifiedSourceLocation.toInternalName, GenReifiedSourceLocationClass.endLineFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitJumpInsn(IF_ICMPNE, returnFalse2)
+    method.visitVarInsn(ALOAD, 0)
+    method.visitFieldInsn(GETFIELD, JvmName.ReifiedSourceLocation.toInternalName, GenReifiedSourceLocationClass.endColFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitVarInsn(ALOAD, 2)
+    method.visitFieldInsn(GETFIELD, JvmName.ReifiedSourceLocation.toInternalName, GenReifiedSourceLocationClass.endColFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitJumpInsn(IF_ICMPNE, returnFalse2)
+    method.visitVarInsn(ALOAD, 0)
+    method.visitFieldInsn(GETFIELD, JvmName.ReifiedSourceLocation.toInternalName, GenReifiedSourceLocationClass.sourceFieldName, JvmType.String.toDescriptor)
+    method.visitVarInsn(ALOAD, 2)
+    method.visitFieldInsn(GETFIELD, JvmName.ReifiedSourceLocation.toInternalName, GenReifiedSourceLocationClass.sourceFieldName, JvmType.String.toDescriptor)
+    method.visitMethodInsn(INVOKESTATIC, JvmName.Objects.toInternalName, "equals", AsmOps.getMethodDescriptor(List(JvmType.Object, JvmType.Object), JvmType.PrimBool), false)
+    method.visitJumpInsn(IFEQ, returnFalse2)
+    method.visitInsn(ICONST_1)
+    val returnInt = new Label()
+    method.visitJumpInsn(GOTO, returnInt)
+
+    method.visitLabel(returnFalse2)
+    method.visitInsn(ICONST_0)
+
+    method.visitLabel(returnInt)
+    method.visitInsn(IRETURN)
 
     method.visitMaxs(999, 999)
     method.visitEnd()

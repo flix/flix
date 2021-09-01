@@ -92,6 +92,11 @@ object JvmName {
   val Object: JvmName = JvmName(List("java", "lang"), "Object")
 
   /**
+   * The `java.lang.Objects` name.
+   */
+  val Objects: JvmName = JvmName(List("java", "lang"), "Objects")
+
+  /**
     * The `java.lang.String` name.
     */
   val String: JvmName = JvmName(List("java", "lang"), "String")
