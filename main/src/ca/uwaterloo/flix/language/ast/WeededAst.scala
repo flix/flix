@@ -308,15 +308,19 @@ object WeededAst {
 
     case class Tuple(elms: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Type
 
-    case class RecordEmpty(loc: SourceLocation) extends WeededAst.Type
+    case class RecordRowEmpty(loc: SourceLocation) extends WeededAst.Type
 
-    case class RecordExtend(field: Name.Field, tpe: WeededAst.Type, rest: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
+    case class RecordRowExtend(field: Name.Field, tpe: WeededAst.Type, rest: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
-    case class SchemaEmpty(loc: SourceLocation) extends WeededAst.Type
+    case class MakeRecord(row: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
-    case class SchemaExtendByAlias(qname: Name.QName, targs: List[WeededAst.Type], rest: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
+    case class SchemaRowEmpty(loc: SourceLocation) extends WeededAst.Type
 
-    case class SchemaExtendByTypes(name: Name.Ident, den: Ast.Denotation, tpes: List[WeededAst.Type], rest: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
+    case class SchemaRowExtendByAlias(qname: Name.QName, targs: List[WeededAst.Type], rest: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
+
+    case class SchemaRowExtendByTypes(name: Name.Ident, den: Ast.Denotation, tpes: List[WeededAst.Type], rest: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
+
+    case class MakeSchema(row: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
     case class Relation(tpes: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Type
 

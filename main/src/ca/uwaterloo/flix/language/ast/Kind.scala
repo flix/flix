@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.debug.FormatKind
 
 import scala.annotation.tailrec
 
+// MATT describe kind system
 /**
   * A kind represents the "type" of a type expression.
   */
@@ -40,29 +41,6 @@ sealed trait Kind {
     */
   override def toString: String = FormatKind.formatKind(this)
 
-  /**
-    * Returns true if `left` is a subkind of `this`.
-    * Right-associative.
-    */
-  def <::(left: Kind): Boolean = (left, this) match {
-    // NB: identities first for performance
-    // identities
-    case (Kind.Star, Kind.Star) => true
-    case (Kind.Bool, Kind.Bool) => true
-    case (Kind.Record, Kind.Record) => true
-    case (Kind.Schema, Kind.Schema) => true
-
-    case (_, Kind.Wild) => true
-    case (Kind.Wild, _) => true
-
-    // subkinds
-    case (Kind.Record, Kind.Star) => true
-    case (Kind.Schema, Kind.Star) => true
-
-    // arrow kinds: the left side is contravariant
-    case (Kind.Arrow(k11, k12), Kind.Arrow(k21, k22)) => (k21 <:: k11) && (k12 <:: k22)
-    case _ => false
-  }
 
 }
 
@@ -86,14 +64,19 @@ object Kind {
   case object Bool extends Kind
 
   /**
-    * Represents the kind of records.
+    * Represents the kind of record rows.
     */
-  case object Record extends Kind
+  case object RecordRow extends Kind
 
   /**
-    * Represents the kind of schemas.
+    * Represents the kind of schema rows.
     */
-  case object Schema extends Kind
+  case object SchemaRow extends Kind
+
+  /**
+    * Represents the kind of predicates.
+    */
+  case object Predicate extends Kind
 
   /**
     * Represents the kind of type expressions `k1 -> k2`.
@@ -137,17 +120,4 @@ object Kind {
     case Arrow(k1, k2) => k1 :: kindArgs(k2)
     case _ => Nil
   }
-
-  /**
-    * Returns the minimum kind, or None if the kinds are incomparable.
-    */
-  def min(k1: Kind, k2: Kind): Option[Kind] = {
-    if (k1 <:: k2)
-      Some(k1)
-    else if (k2 <:: k1)
-      Some(k2)
-    else
-      None
-  }
-
 }

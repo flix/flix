@@ -1424,14 +1424,19 @@ object ParsedAst {
     case class Bool(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
 
     /**
-      * The Record kind.
+      * The Record Row kind.
       */
-    case class Record(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
+    case class RecordRow(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
 
     /**
-      * The Schema kind.
+      * The Schema Row kind.
       */
-    case class Schema(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
+    case class SchemaRow(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
+
+    /**
+      * The Predicate kind.
+      */
+    case class Predicate(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
 
     /**
       * The Arrow kind.
