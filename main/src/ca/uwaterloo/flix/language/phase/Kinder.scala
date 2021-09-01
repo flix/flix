@@ -343,6 +343,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       // Consider: { +name = 5 | id({}) }
       // This is OK, but would be seen as a kind error since id is `(a: *) -> (a: *)`, so `id({}) :: *`
       // This KindError will be caught later in the Typer
+      // MATT readdress this
       for {
         value <- visitExp(value0, kenv, root)
         rest <- visitExp(rest0, kenv, root)
