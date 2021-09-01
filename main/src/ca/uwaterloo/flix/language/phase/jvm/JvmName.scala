@@ -132,15 +132,22 @@ object JvmName {
    */
   val RuntimeException: JvmName = JvmName(List("java", "lang"), "RuntimeException")
 
-  /**
-   * The FlixError name
-   */
-  val FlixError: JvmName = JvmName(List("dev", "flix", "runtime"), "FlixError")
+  private val devFlixRuntime = List("dev", "flix", "runtime")
 
   /**
-   * The Flix ReifiedSourceLocation class.
+   * The `dev.flix.runtime.FlixError` name
    */
-  val ReifiedSourceLocation: JvmName = JvmName(List("dev", "flix", "runtime"), "ReifiedSourceLocation")
+  val FlixError: JvmName = JvmName(devFlixRuntime, "FlixError")
+
+  /**
+   * The `dev.flix.runtime.HoleError` name
+   */
+  val HoleError: JvmName = JvmName(devFlixRuntime, "HoleError")
+
+  /**
+   * The `dev.flix.runtime.ReifiedSourceLocation` class.
+   */
+  val ReifiedSourceLocation: JvmName = JvmName(devFlixRuntime, "ReifiedSourceLocation")
 
   /**
     * The `java.lang.Exception` name
