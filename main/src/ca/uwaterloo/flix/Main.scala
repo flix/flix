@@ -28,13 +28,13 @@ import java.net.BindException
 import java.nio.file.Paths
 
 /**
-  * The main entry point for the Flix compiler and runtime.
-  */
+ * The main entry point for the Flix compiler and runtime.
+ */
 object Main {
 
   /**
-    * The main method.
-    */
+   * The main method.
+   */
   def main(argv: Array[String]): Unit = {
 
     // parse command line options.
@@ -167,53 +167,45 @@ object Main {
     }
 
     // evaluate main.
-    try {
-      val timer = new Timer(flix.compile())
-      timer.getResult match {
-        case Validation.Success(compilationResult) =>
+    val timer = new Timer(flix.compile())
+    timer.getResult match {
+      case Validation.Success(compilationResult) =>
 
-          compilationResult.getMain match {
-            case None => // nop
-            case Some(m) =>
-              // Compute the arguments to be passed to main.
-              val args: Array[String] = cmdOpts.args match {
-                case None => Array.empty
-                case Some(a) => a.split(" ")
-              }
-              // Invoke main with the supplied arguments.
-              val exitCode = m(args)
+        compilationResult.getMain match {
+          case None => // nop
+          case Some(m) =>
+            // Compute the arguments to be passed to main.
+            val args: Array[String] = cmdOpts.args match {
+              case None => Array.empty
+              case Some(a) => a.split(" ")
+            }
+            // Invoke main with the supplied arguments.
+            val exitCode = m(args)
 
-              // Exit with the returned exit code.
-              System.exit(exitCode)
-          }
+            // Exit with the returned exit code.
+            System.exit(exitCode)
+        }
 
-          if (cmdOpts.benchmark) {
-            Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))(options)
-          }
+        if (cmdOpts.benchmark) {
+          Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))(options)
+        }
 
-          if (cmdOpts.test) {
-            val results = Tester.test(compilationResult)
-            Console.println(results.output.fmt)
-          }
-        case Validation.Failure(errors) =>
-          errors.sortBy(_.source.name).foreach(e => println(e.message.fmt))
-          println()
-          println(s"Compilation failed with ${errors.length} error(s).")
-          System.exit(1)
-      }
-    } catch {
-      case ex: Exception => // TODO JLS: Maybe delete this and call Main.main() instead or keep
-        Console.err.println(ex.getMessage)
-        Console.err.println()
-        ex.printStackTrace()
+        if (cmdOpts.test) {
+          val results = Tester.test(compilationResult)
+          Console.println(results.output.fmt)
+        }
+      case Validation.Failure(errors) =>
+        errors.sortBy(_.source.name).foreach(e => println(e.message.fmt))
+        println()
+        println(s"Compilation failed with ${errors.length} error(s).")
         System.exit(1)
     }
 
   }
 
   /**
-    * A case class representing the parsed command line options.
-    */
+   * A case class representing the parsed command line options.
+   */
   case class CmdOpts(command: Command = Command.None,
                      args: Option[String] = None,
                      benchmark: Boolean = false,
@@ -235,8 +227,8 @@ object Main {
                      files: Seq[File] = Seq())
 
   /**
-    * A case class representing possible commands.
-    */
+   * A case class representing possible commands.
+   */
   sealed trait Command
 
   object Command {
@@ -262,10 +254,10 @@ object Main {
   }
 
   /**
-    * Parse command line options.
-    *
-    * @param args the arguments array.
-    */
+   * Parse command line options.
+   *
+   * @param args the arguments array.
+   */
   def parseCmdOpts(args: Array[String]): Option[CmdOpts] = {
     implicit val readInclusion: scopt.Read[LibLevel] = scopt.Read.reads {
       case "nix" => LibLevel.Nix

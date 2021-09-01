@@ -108,7 +108,7 @@ object Tester {
             case _ => TestResult.Success(sym, "Returned non-boolean value.")
           }
         } catch {
-          case ex: Exception => // TODO JLS: Maybe delete this and call Main.main() instead or keep
+          case ex: Exception =>
             TestResult.Failure(sym, ex.getMessage)
         }
     }
