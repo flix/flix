@@ -23,192 +23,192 @@ namespace TestBoxable {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def unitBox01(): Bool = unbox(box(())) == ()
+    def unitUnbox01(): Bool = unbox(box(())) == ()
 
     /////////////////////////////////////////////////////////////////////////////
     // Bool                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def boolBox01(): Bool = unbox(box(false)) == false
+    def boolUnbox01(): Bool = unbox(box(false)) == false
 
     @test
-    def boolBox02(): Bool = unbox(box(true)) == true
+    def boolUnbox02(): Bool = unbox(box(true)) == true
 
     /////////////////////////////////////////////////////////////////////////////
     // Char                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def charBox01(): Bool = unbox(box('a')) == 'a'
+    def charUnbox01(): Bool = unbox(box('a')) == 'a'
 
     @test
-    def charBox02(): Bool = unbox(box('A')) == 'A'
+    def charUnbox02(): Bool = unbox(box('A')) == 'A'
 
     @test
-    def charBox03(): Bool = unbox(box(' ')) == ' '
+    def charUnbox03(): Bool = unbox(box(' ')) == ' '
 
     @test
-    def charBox04(): Bool = unbox(box('+')) == '+'
+    def charUnbox04(): Bool = unbox(box('+')) == '+'
 
     /////////////////////////////////////////////////////////////////////////////
     // Float32                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def float32Box01(): Bool = unbox(box(0.0f32)) == 0.0f32
+    def float32Unbox01(): Bool = unbox(box(0.0f32)) == 0.0f32
 
     @test
-    def float32Box02(): Bool = unbox(box(1.0f32)) == 1.0f32
+    def float32Unbox02(): Bool = unbox(box(1.0f32)) == 1.0f32
 
     @test
-    def float32Box03(): Bool = unbox(box(-1.0f32)) == -1.0f32
+    def float32Unbox03(): Bool = unbox(box(-1.0f32)) == -1.0f32
 
     @test
-    def float32Box04(): Bool = unbox(box(3.14f32)) == 3.14f32
+    def float32Unbox04(): Bool = unbox(box(3.14f32)) == 3.14f32
 
     /////////////////////////////////////////////////////////////////////////////
     // Float64                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def float64Box01(): Bool = unbox(box(0.0f64)) == 0.0f64
+    def float64Unbox01(): Bool = unbox(box(0.0f64)) == 0.0f64
 
     @test
-    def float64Box02(): Bool = unbox(box(1.0f64)) == 1.0f64
+    def float64Unbox02(): Bool = unbox(box(1.0f64)) == 1.0f64
 
     @test
-    def float64Box03(): Bool = unbox(box(-1.0f64)) == -1.0f64
+    def float64Unbox03(): Bool = unbox(box(-1.0f64)) == -1.0f64
 
     @test
-    def float64Box04(): Bool = unbox(box(3.14f64)) == 3.14f64
+    def float64Unbox04(): Bool = unbox(box(3.14f64)) == 3.14f64
 
     /////////////////////////////////////////////////////////////////////////////
     // Int8                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def int8Box01(): Bool = unbox(box(0i8)) == 0i8
+    def int8Unbox01(): Bool = unbox(box(0i8)) == 0i8
 
     @test
-    def int8Box02(): Bool = unbox(box(1i8)) == 1i8
+    def int8Unbox02(): Bool = unbox(box(1i8)) == 1i8
 
     @test
-    def int8Box03(): Bool = unbox(box(-128i8)) == -128i8
+    def int8Unbox03(): Bool = unbox(box(-128i8)) == -128i8
 
     @test
-    def int8Box04(): Bool = unbox(box(127i8)) == 127i8
+    def int8Unbox04(): Bool = unbox(box(127i8)) == 127i8
 
     /////////////////////////////////////////////////////////////////////////////
     // Int16                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def int16Box01(): Bool = unbox(box(0i16)) == 0i16
+    def int16Unbox01(): Bool = unbox(box(0i16)) == 0i16
 
     @test
-    def int16Box02(): Bool = unbox(box(1i16)) == 1i16
+    def int16Unbox02(): Bool = unbox(box(1i16)) == 1i16
 
     @test
-    def int16Box03(): Bool = unbox(box(-32768i16)) == -32768i16
+    def int16Unbox03(): Bool = unbox(box(-32768i16)) == -32768i16
 
     @test
-    def int16Box04(): Bool = unbox(box(32767i16)) == 32767i16
+    def int16Unbox04(): Bool = unbox(box(32767i16)) == 32767i16
 
     /////////////////////////////////////////////////////////////////////////////
     // Int32                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def int32Box01(): Bool = unbox(box(0)) == 0i32
+    def int32Unbox01(): Bool = unbox(box(0)) == 0i32
 
     @test
-    def int32Box02(): Bool = unbox(box(1)) == 1i32
+    def int32Unbox02(): Bool = unbox(box(1)) == 1i32
 
     @test
-    def int32Box03(): Bool = unbox(box(-2147483648)) == -2147483648i32
+    def int32Unbox03(): Bool = unbox(box(-2147483648)) == -2147483648i32
 
     @test
-    def int32Box04(): Bool = unbox(box(2147483647)) == 2147483647i32
+    def int32Unbox04(): Bool = unbox(box(2147483647)) == 2147483647i32
 
     /////////////////////////////////////////////////////////////////////////////
     // Int64                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def int64Box01(): Bool = unbox(box(0i64)) == 0i64
+    def int64Unbox01(): Bool = unbox(box(0i64)) == 0i64
 
     @test
-    def int64Box02(): Bool = unbox(box(1i64)) == 1i64
+    def int64Unbox02(): Bool = unbox(box(1i64)) == 1i64
 
     @test
-    def int64Box03(): Bool = unbox(box(-9223372036854775808i64)) == -9223372036854775808i64
+    def int64Unbox03(): Bool = unbox(box(-9223372036854775808i64)) == -9223372036854775808i64
 
     @test
-    def int64Box04(): Bool = unbox(box(9223372036854775807i64)) == 9223372036854775807i64
+    def int64Unbox04(): Bool = unbox(box(9223372036854775807i64)) == 9223372036854775807i64
 
     /////////////////////////////////////////////////////////////////////////////
     // String                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def stringBox01(): Bool = unbox(box("")) == ""
+    def stringUnbox01(): Bool = unbox(box("")) == ""
 
     @test
-    def stringBox02(): Bool = unbox(box("a")) == "a"
+    def stringUnbox02(): Bool = unbox(box("a")) == "a"
 
     @test
-    def stringBox03(): Bool = unbox(box(".")) == "."
+    def stringUnbox03(): Bool = unbox(box(".")) == "."
 
     @test
-    def stringBox04(): Bool = unbox(box(".#)!933")) == ".#)!933"
+    def stringUnbox04(): Bool = unbox(box(".#)!933")) == ".#)!933"
 
     /////////////////////////////////////////////////////////////////////////////
     // BigInt                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def bigIntBox01(): Bool = unbox(box(0ii)) == 0ii
+    def bigIntUnbox01(): Bool = unbox(box(0ii)) == 0ii
 
     @test
-    def bigIntBox02(): Bool = unbox(box(1ii)) == 1ii
+    def bigIntUnbox02(): Bool = unbox(box(1ii)) == 1ii
 
     @test
-    def bigIntBox03(): Bool = unbox(box(-3498457932459234592873452983453245ii)) == -3498457932459234592873452983453245ii
+    def bigIntUnbox03(): Bool = unbox(box(-3498457932459234592873452983453245ii)) == -3498457932459234592873452983453245ii
 
     @test
-    def bigIntBox04(): Bool = unbox(box(3498457932459234592873452983453245ii)) == 3498457932459234592873452983453245ii
+    def bigIntUnbox04(): Bool = unbox(box(3498457932459234592873452983453245ii)) == 3498457932459234592873452983453245ii
 
     /////////////////////////////////////////////////////////////////////////////
     // Tuple2                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def tuple2Box01(): Bool = unbox(box((1, 1))) == (1, 1)
+    def tuple2Unbox01(): Bool = unbox(box((1, 1))) == (1, 1)
 
     @test
-    def tuple2Box02(): Bool = unbox(box((1, Some(2)))) == (1, Some(2))
+    def tuple2Unbox02(): Bool = unbox(box((1, Some(2)))) == (1, Some(2))
 
     @test
-    def tuple2Box03(): Bool = unbox(box((true, 1))) == (true, 1)
+    def tuple2Unbox03(): Bool = unbox(box((true, 1))) == (true, 1)
 
     @test
-    def tuple2Box04(): Bool = unbox(box(((1, 2), 91))) == ((1, 2), 91)
+    def tuple2Unbox04(): Bool = unbox(box(((1, 2), 91))) == ((1, 2), 91)
 
     /////////////////////////////////////////////////////////////////////////////
     // Tuple3                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def tuple3Box01(): Bool = unbox(box((1, 1, 82))) == (1, 1, 82)
+    def tuple3Unbox01(): Bool = unbox(box((1, 1, 82))) == (1, 1, 82)
 
     @test
-    def tuple3Box02(): Bool = unbox(box((1, Some(2), 3))) == (1, Some(2), 3)
+    def tuple3Unbox02(): Bool = unbox(box((1, Some(2), 3))) == (1, Some(2), 3)
 
     @test
-    def tuple3Box03(): Bool = unbox(box((true, 1, false))) == (true, 1, false)
+    def tuple3Unbox03(): Bool = unbox(box((true, 1, false))) == (true, 1, false)
 
     @test
-    def tuple3Box04(): Bool = unbox(box(((1, 2), 91, true))) == ((1, 2), 91, true)
+    def tuple3Unbox04(): Bool = unbox(box(((1, 2), 91, true))) == ((1, 2), 91, true)
 
 }
