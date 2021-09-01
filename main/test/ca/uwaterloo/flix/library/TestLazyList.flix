@@ -1936,4 +1936,30 @@ namespace TestLazyList {
     def reduceRight21(): Bool =
         LazyList.reduceRight((a, b) -> b - a, ECons(1, ECons(2, ECons(3, ECons(4, ENil))))) == Some(-2)
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // minimum                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def minimum01(): Bool =
+        LazyList.minimum(ENil: LazyList[Int32]) == None
+
+    @test
+    def minimum02(): Bool =
+        LazyList.minimum(ECons(1, ENil)) == Some(1)
+
+    @test
+    def minimum03(): Bool =
+        LazyList.minimum(ECons(3, ECons(2, ECons(1, ENil)))) == Some(1)
+
+    @test
+    def minimum04(): Bool =
+        LazyList.minimum(ECons(0, ECons(3, ECons(2, ECons(1, ENil))))) == Some(0)
+
+    @test
+    def minimum05(): Bool =
+        LazyList.minimum(LazyList.range(0, 99)) == Some(0)
+
+
 }

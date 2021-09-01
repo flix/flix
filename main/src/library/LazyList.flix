@@ -514,4 +514,12 @@ namespace LazyList {
         case _            => bug!("Unreachable code!")
     }
 
+    ///
+    /// Optionally finds the smallest element of `l` according to the `Order` on `a`.
+    ///
+    /// Returns `None` if `l` is empty.
+    ///
+    pub def minimum(l: LazyList[a]): Option[a] with Order[a] =
+        reduceLeft(Order.min, l)
+
 }
