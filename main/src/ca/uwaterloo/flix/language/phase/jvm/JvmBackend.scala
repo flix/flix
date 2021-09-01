@@ -155,6 +155,11 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       val flixErrorClass = GenFlixErrorClass.gen()
 
       //
+      // Generate the ReifiedSourceLocation class
+      //
+      val RslClass = GenReifiedSourceLocationClass.gen()
+
+      //
       // Collect all the classes and interfaces together.
       //
       List(
@@ -175,7 +180,8 @@ object JvmBackend extends Phase[Root, CompilationResult] {
         refClasses,
         lazyClasses,
         unitClass,
-        flixErrorClass
+        flixErrorClass,
+        RslClass
       ).reduce(_ ++ _)
     }
 
