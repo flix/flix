@@ -530,4 +530,12 @@ namespace LazyList {
     pub def minimumBy(cmp: (a, a) -> Comparison, l: LazyList[a]): Option[a] =
         reduceLeft(Order.minBy(cmp), l)
 
+    ///
+    /// Optionally finds the largest element of `l` according to the `Order` on `a`.
+    ///
+    /// Returns `None` if `l` is empty.
+    ///
+    pub def maximum(l: LazyList[a]): Option[a] with Order[a] =
+        reduceLeft(Order.max, l)
+
 }

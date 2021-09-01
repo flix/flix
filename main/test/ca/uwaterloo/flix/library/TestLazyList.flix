@@ -1987,6 +1987,28 @@ namespace TestLazyList {
         LazyList.minimumBy((_, _) -> LessThan, LazyList.range(0, 99)) == Some(0)
 
 
+    /////////////////////////////////////////////////////////////////////////////
+    // maximum                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
 
+    @test
+    def maximum01(): Bool =
+        LazyList.maximum(ENil: LazyList[Int32]) == None
+
+    @test
+    def maximum02(): Bool =
+        LazyList.maximum(ECons(1, ENil)) == Some(1)
+
+    @test
+    def maximum03(): Bool =
+        LazyList.maximum(ECons(3, ECons(2, ECons(1, ENil)))) == Some(3)
+
+    @test
+    def maximum04(): Bool =
+        LazyList.maximum(ECons(0, ECons(3, ECons(2, ECons(1, ENil))))) == Some(3)
+
+    @test
+    def maximum05(): Bool =
+        LazyList.maximum(LazyList.range(0, 99)) == Some(98)
 
 }
