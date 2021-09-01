@@ -28,6 +28,9 @@ namespace TestBoxable {
     @test
     def unitCompare01(): Bool = box(()) == box(())
 
+    @test
+    def unitToString01(): Bool = "${box(())}" == "()"
+
     /////////////////////////////////////////////////////////////////////////////
     // Bool                                                                    //
     /////////////////////////////////////////////////////////////////////////////
@@ -43,6 +46,9 @@ namespace TestBoxable {
 
     @test
     def boolCompare02(): Bool = box(false) < box(true)
+
+    @test
+    def boolToString01(): Bool = "${box(true)}" == "true"
 
     /////////////////////////////////////////////////////////////////////////////
     // Char                                                                    //
@@ -66,6 +72,9 @@ namespace TestBoxable {
     @test
     def charCompare02(): Bool = box('a') < box('b')
 
+    @test
+    def charToString01(): Bool = "${box('a')}" == "a"
+
     /////////////////////////////////////////////////////////////////////////////
     // Float32                                                                 //
     /////////////////////////////////////////////////////////////////////////////
@@ -87,6 +96,9 @@ namespace TestBoxable {
 
     @test
     def float32Compare02(): Bool = box(0.0f32) < box(1.0f32)
+
+    @test
+    def float32ToString01(): Bool = "${box(0.0f32)}" == "0.0"
 
     /////////////////////////////////////////////////////////////////////////////
     // Float64                                                                 //
@@ -110,6 +122,9 @@ namespace TestBoxable {
     @test
     def float64Compare02(): Bool = box(0.0f64) < box(1.0f64)
 
+    @test
+    def float64ToString01(): Bool = "${box(0.0f64)}" == "0.0"
+
     /////////////////////////////////////////////////////////////////////////////
     // Int8                                                                    //
     /////////////////////////////////////////////////////////////////////////////
@@ -131,6 +146,9 @@ namespace TestBoxable {
 
     @test
     def int8Compare02(): Bool = box(0i8) < box(1i8)
+
+    @test
+    def int8ToString01(): Bool = "${box(0i8)}" == "0"
 
     /////////////////////////////////////////////////////////////////////////////
     // Int16                                                                   //
@@ -154,6 +172,9 @@ namespace TestBoxable {
     @test
     def int16Compare02(): Bool = box(0i16) < box(1i16)
 
+    @test
+    def int16ToString01(): Bool = "${box(0i16)}" == "0"
+
     /////////////////////////////////////////////////////////////////////////////
     // Int32                                                                   //
     /////////////////////////////////////////////////////////////////////////////
@@ -176,6 +197,8 @@ namespace TestBoxable {
     @test
     def int32Compare02(): Bool = box(0i32) < box(1i32)
 
+    @test
+    def int32ToString01(): Bool = "${box(0i32)}" == "0"
 
     /////////////////////////////////////////////////////////////////////////////
     // Int64                                                                   //
@@ -199,6 +222,9 @@ namespace TestBoxable {
     @test
     def int64Compare02(): Bool = box(0i64) < box(1i64)
 
+    @test
+    def int64ToString01(): Bool = "${box(0i64)}" == "0"
+
     /////////////////////////////////////////////////////////////////////////////
     // String                                                                  //
     /////////////////////////////////////////////////////////////////////////////
@@ -220,6 +246,9 @@ namespace TestBoxable {
 
     @test
     def stringCompare02(): Bool = box("a") < box("b")
+
+    @test
+    def stringToString01(): Bool = "${box("abc")}" == "abc"
 
     /////////////////////////////////////////////////////////////////////////////
     // BigInt                                                                  //
@@ -243,6 +272,9 @@ namespace TestBoxable {
     @test
     def bigIntCompare02(): Bool = box(0ii) < box(1ii)
 
+    @test
+    def bigIntToString01(): Bool = "${box(0ii)}" == "0"
+
     /////////////////////////////////////////////////////////////////////////////
     // Tuple2                                                                  //
     /////////////////////////////////////////////////////////////////////////////
@@ -265,6 +297,9 @@ namespace TestBoxable {
     @test
     def tuple2Compare02(): Bool = box((0, 0)) < box((0, 1))
 
+    @test
+    def tuple2ToString01(): Bool = "${box((0, 0))}" == "(0, 0)"
+
     /////////////////////////////////////////////////////////////////////////////
     // Tuple3                                                                  //
     /////////////////////////////////////////////////////////////////////////////
@@ -286,4 +321,7 @@ namespace TestBoxable {
 
     @test
     def tuple3Compare02(): Bool = box((0, 0, 0)) < box((0, 0, 1))
+
+    @test
+    def tuple3ToString01(): Bool = "${box((0, 0, 0))}" == "(0, 0, 0)"
 }
