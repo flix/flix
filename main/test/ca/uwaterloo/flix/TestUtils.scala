@@ -17,7 +17,8 @@
 package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.{CompilationError, ast}
+import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.{Options, Validation}
 import org.scalatest.FunSuite
@@ -44,6 +45,8 @@ trait TestUtils {
 
       if (!actuals.exists(expected.isAssignableFrom(_)))
         fail(s"Expected an error of type ${expected.getSimpleName}, but found ${actuals.mkString(", ")}.")
+      else if (errors.exists(e => e.loc == SourceLocation.Unknown))
+        fail("Error contains unknown source location.")
   }
 
   /**
@@ -58,5 +61,4 @@ trait TestUtils {
       if (actuals.exists(rejected.isAssignableFrom(_)))
         fail(s"Unexpected an error of type ${rejected.getSimpleName}.")
   }
-
 }
