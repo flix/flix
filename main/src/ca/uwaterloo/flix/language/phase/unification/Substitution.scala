@@ -66,14 +66,14 @@ case class Substitution(m: Map[Type.KindedVar, Type]) {
           }
         }
         case Type.Cst(tc, _) => t
-        case Type.Apply(t1, t2) =>
+        case Type.Apply(t1, t2, loc) =>
           val y = visit(t2)
           visit(t1) match {
             // Simplify boolean equations.
             case Type.Cst(TypeConstructor.Not, _) => BoolUnification.mkNot(y)
-            case Type.Apply(Type.Cst(TypeConstructor.And, _), x) => BoolUnification.mkAnd(x, y)
-            case Type.Apply(Type.Cst(TypeConstructor.Or, _), x) => BoolUnification.mkOr(x, y)
-            case x => Type.Apply(x, y)
+            case Type.Apply(Type.Cst(TypeConstructor.And, _), x, _) => BoolUnification.mkAnd(x, y)
+            case Type.Apply(Type.Cst(TypeConstructor.Or, _), x, _) => BoolUnification.mkOr(x, y)
+            case x => Type.Apply(x, y, loc)
           }
         case _: Type.Lambda => throw InternalCompilerException(s"Unexpected type '$tpe0'.")
         case _: Type.UnkindedVar => throw InternalCompilerException(s"Unexpected type '$tpe0'.")
