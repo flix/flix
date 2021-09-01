@@ -702,8 +702,10 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Some(TypeConstructor.ScopedRef) => 0
       case Some(TypeConstructor.Relation) => 0
       case Some(TypeConstructor.Lattice) => 0
-      case Some(TypeConstructor.RecordEmpty) => 0
-      case Some(TypeConstructor.SchemaEmpty) => 0
+      case Some(TypeConstructor.RecordRowEmpty) => 0
+      case Some(TypeConstructor.SchemaRowEmpty) => 0
+      case Some(TypeConstructor.MakeRecord) => 0
+      case Some(TypeConstructor.MakeSchema) => 0
       case Some(TypeConstructor.Arrow(length)) => length
       case Some(TypeConstructor.Array) => 1
       case Some(TypeConstructor.Channel) => 1
@@ -712,8 +714,8 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Some(TypeConstructor.Tag(sym, tag)) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
       case Some(TypeConstructor.Native(clazz)) => 0
       case Some(TypeConstructor.Tuple(l)) => l
-      case Some(TypeConstructor.RecordExtend(_)) => 2
-      case Some(TypeConstructor.SchemaExtend(_)) => 2
+      case Some(TypeConstructor.RecordRowExtend(_)) => 2
+      case Some(TypeConstructor.SchemaRowExtend(_)) => 2
       case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
     }
 

@@ -770,10 +770,10 @@ object JvmOps {
     case MonoType.Relation(attr) => Type.mkRelation(attr.map(hackMonoType2Type), SourceLocation.Unknown)
     case MonoType.Lattice(attr) => Type.mkLattice(attr.map(hackMonoType2Type), SourceLocation.Unknown)
     case MonoType.Tuple(length) => Type.mkTuple(Nil, SourceLocation.Unknown) // hack
-    case MonoType.RecordEmpty() => Type.RecordEmpty
-    case MonoType.RecordExtend(field, value, rest) => Type.mkRecordExtend(Name.Field(field, SourceLocation.Unknown), hackMonoType2Type(value), hackMonoType2Type(rest), SourceLocation.Unknown)
-    case MonoType.SchemaEmpty() => Type.SchemaEmpty
-    case MonoType.SchemaExtend(sym, t, rest) => Type.mkSchemaExtend(Name.Pred(sym, SourceLocation.Unknown), hackMonoType2Type(t), hackMonoType2Type(rest), SourceLocation.Unknown)
+    case MonoType.RecordEmpty() => Type.Apply(Type.MakeRecord, Type.RecordRowEmpty, SourceLocation.Unknown)
+    case MonoType.RecordExtend(field, value, rest) => Type.Apply(Type.MakeRecord, Type.mkRecordRowExtend(Name.Field(field, SourceLocation.Unknown), hackMonoType2Type(value), hackMonoType2Type(rest).typeArguments.head, SourceLocation.Unknown), SourceLocation.Unknown)
+    case MonoType.SchemaEmpty() => Type.Apply(Type.MakeSchema, Type.RecordRowEmpty, SourceLocation.Unknown)
+    case MonoType.SchemaExtend(sym, t, rest) => Type.Apply(Type.MakeSchema, Type.mkSchemaRowExtend(Name.Pred(sym, SourceLocation.Unknown), hackMonoType2Type(t), hackMonoType2Type(rest).typeArguments.head, SourceLocation.Unknown), SourceLocation.Unknown)
   }
 
   // TODO: Remove

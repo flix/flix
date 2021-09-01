@@ -28,16 +28,16 @@ object FormatType {
 
     val renameMap = alphaRenameVars(tpe)
 
-    def formatWellFormedRecord(record: Type): String = flattenRecord(record) match {
-      case FlatNestable(fields, Type.Cst(TypeConstructor.RecordEmpty, _)) =>
+    def formatWellFormedRecordRow(row: Type): String = flattenRecordRow(row) match {
+      case FlatNestable(fields, Type.Cst(TypeConstructor.RecordRowEmpty, _)) =>
         fields.map { case (field, tpe) => formatRecordField(field, tpe) }.mkString("{ ", ", ", " }")
       case FlatNestable(fields, rest) =>
         val fieldString = fields.map { case (field, tpe) => formatRecordField(field, tpe) }.mkString(", ")
         s"{ $fieldString | ${visit(rest)} }"
     }
 
-    def formatWellFormedSchema(schema: Type): String = flattenSchema(schema) match {
-      case FlatNestable(fields, Type.Cst(TypeConstructor.SchemaEmpty, _)) =>
+    def formatWellFormedSchemaRow(row: Type): String = flattenSchemaRow(row) match {
+      case FlatNestable(fields, Type.Cst(TypeConstructor.SchemaRowEmpty, _)) =>
         fields.map { case (field, tpe) => formatSchemaField(field, tpe) }.mkString("#{ ", ", ", " }")
       case FlatNestable(fields, rest) =>
         val fieldString = fields.map { case (field, tpe) => formatSchemaField(field, tpe) }.mkString(", ")
@@ -132,9 +132,9 @@ object FormatType {
 
           case TypeConstructor.Str => formatApply("String", args)
 
-          case TypeConstructor.RecordEmpty => formatApply("{ }", args)
+          case TypeConstructor.RecordRowEmpty => formatApply("{ }", args)
 
-          case TypeConstructor.SchemaEmpty => formatApply("#{ }", args)
+          case TypeConstructor.SchemaRowEmpty => formatApply("#{ }", args)
 
           case TypeConstructor.True => formatApply("true", args)
 
@@ -156,19 +156,24 @@ object FormatType {
 
           case TypeConstructor.ScopedRef => formatApply("ScopedRef", args)
 
-          case TypeConstructor.RecordExtend(field) => args.length match {
+          case TypeConstructor.RecordRowExtend(field) => args.length match {
             case 0 => s"{ $field: ??? }"
             case 1 => s"{ $field: ${visit(args.head)} | ??? }"
-            case 2 => formatWellFormedRecord(tpe)
+            case 2 => formatWellFormedRecordRow(tpe)
             case _ => formatApply(s"RecordExtend($field)", args)
           }
 
-          case TypeConstructor.SchemaExtend(pred) => args.length match {
+          case TypeConstructor.SchemaRowExtend(pred) => args.length match {
             case 0 => s"#{ ${pred.name}?(???) }"
             case 1 => s"#{ ${formatSchemaField(pred.name, args.head)} | ??? }"
-            case 2 => formatWellFormedSchema(tpe)
+            case 2 => formatWellFormedSchemaRow(tpe)
             case _ => formatApply(s"SchemaExtend($pred)", args)
           }
+
+          case TypeConstructor.MakeRecord => visit(args.head) // MATT better error handling
+
+          case TypeConstructor.MakeSchema => visit(args.head) // MATT better error handling
+
 
           case TypeConstructor.Tuple(length) =>
             val elements = args.take(length).map(visit)
@@ -326,18 +331,18 @@ object FormatType {
   /**
     * Convert a record to a [[FlatNestable]].
     */
-  private def flattenRecord(record: Type): FlatNestable = record match {
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field), _), tpe, _), rest, _) =>
-      (field.name, tpe) :: flattenRecord(rest)
+  private def flattenRecordRow(record: Type): FlatNestable = record match {
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(field), _), tpe, _), rest, _) =>
+      (field.name, tpe) :: flattenRecordRow(rest)
     case _ => FlatNestable(Nil, record)
   }
 
   /**
     * Convert a schema to a [[FlatNestable]].
     */
-  private def flattenSchema(schema: Type): FlatNestable = schema match {
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(pred), _), tpe, _), rest, _) =>
-      (pred.name, tpe) :: flattenSchema(rest)
+  private def flattenSchemaRow(schema: Type): FlatNestable = schema match {
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), _), tpe, _), rest, _) =>
+      (pred.name, tpe) :: flattenSchemaRow(rest)
     case _ => FlatNestable(Nil, schema)
   }
 

@@ -431,7 +431,7 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
 
           case TypeConstructor.Str => MonoType.Str
 
-          case TypeConstructor.RecordEmpty => MonoType.RecordEmpty()
+          case TypeConstructor.RecordRowEmpty => MonoType.RecordEmpty()
 
           case TypeConstructor.Array => MonoType.Array(args.head)
 
@@ -456,7 +456,9 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
 
           case TypeConstructor.Arrow(l) => MonoType.Arrow(args.drop(1).init, args.last)
 
-          case TypeConstructor.RecordExtend(field) => MonoType.RecordExtend(field.name, args.head, args(1))
+          case TypeConstructor.RecordRowExtend(field) => MonoType.RecordExtend(field.name, args.head, args(1))
+
+          case TypeConstructor.MakeRecord => args.head
 
           case TypeConstructor.True => MonoType.Unit
 
@@ -477,10 +479,14 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
           case TypeConstructor.Lattice =>
             throw InternalCompilerException(s"Unexpected type: '$t0'.")
 
-          case TypeConstructor.SchemaEmpty =>
+          case TypeConstructor.SchemaRowEmpty =>
             throw InternalCompilerException(s"Unexpected type: '$t0'.")
 
-          case TypeConstructor.SchemaExtend(pred) => throw InternalCompilerException(s"Unexpected type: '$t0'.")
+          case TypeConstructor.SchemaRowExtend(pred) =>
+            throw InternalCompilerException(s"Unexpected type: '$t0'.")
+
+          case TypeConstructor.MakeSchema =>
+            throw InternalCompilerException(s"Unexpected type: '$t0'.")
         }
     }
   }
