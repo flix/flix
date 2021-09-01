@@ -365,6 +365,4 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
     case last :: Nil => last :: Nil
     case head :: neck :: tail => head :: sep :: intersperse(neck :: tail, sep)
   }
-
-
 }
