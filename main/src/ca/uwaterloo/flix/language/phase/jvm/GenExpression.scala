@@ -1111,7 +1111,11 @@ object GenExpression {
       // Compile the expression, putting a function implementing the Spawnable interface on the stack
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
       // make a thread and run it
-      ???
+      visitor.visitTypeInsn(NEW, "java/lang/Thread")
+      visitor.visitInsn(DUP_X1)
+      visitor.visitInsn(SWAP)
+      visitor.visitMethodInsn(INVOKESPECIAL, "java/lang/Thread", "<init>", s"(${JvmName.Runnable.toDescriptor})${JvmType.Void.toDescriptor}", false)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Thread", "start", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
       // Put a Unit value on the stack
       visitor.visitFieldInsn(GETSTATIC, JvmName.Unit.toInternalName, GenUnitClass.instanceFieldName, JvmName.Unit.toDescriptor)
 
