@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import org.objectweb.asm.{ClassWriter, Label}
 import org.objectweb.asm.Opcodes._
 
-object GenSimpleLocationErrorClass {
+object GenFlixErrorSubclass {
 
   val LocationFieldName: String = "location"
 
