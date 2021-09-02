@@ -2402,4 +2402,159 @@ namespace TestLazyList {
     def replace16(): Bool =
         LazyList.replace(3, 4, ECons(2, ECons(3, LList(lazy ECons(2, LList(lazy ENil)))))) == ECons(2, ECons(4, ECons(2, ENil)))
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // findLeft                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def findLeft01(): Bool =
+        LazyList.findLeft(i -> i > 2, ENil: LazyList[Int32]) == None
+
+    @test
+    def findLeft02(): Bool =
+        LazyList.findLeft(i -> i > 2, LList(lazy ENil): LazyList[Int32]) == None
+
+    @test
+    def findLeft03(): Bool =
+        LazyList.findLeft(i -> i > 2, LCons(1, lazy ENil)) == None
+
+    @test
+    def findLeft04(): Bool =
+        LazyList.findLeft(i -> i > 2, ECons(1, ENil)) == None
+
+    @test
+    def findLeft05(): Bool =
+        LazyList.findLeft(i -> i > 2, LCons(3, lazy ENil)) == Some(3)
+
+    @test
+    def findLeft06(): Bool =
+        LazyList.findLeft(i -> i > 2, LList(lazy LCons(3, lazy ENil))) == Some(3)
+
+    @test
+    def findLeft07(): Bool =
+        LazyList.findLeft(i -> i > 2, LList(lazy LCons(3, lazy LList(lazy ENil)))) == Some(3)
+
+    @test
+    def findLeft08(): Bool =
+        LazyList.findLeft(i -> i > 2, ECons(3, LList(lazy ENil))) == Some(3)
+
+    @test
+    def findLeft09(): Bool =
+        LazyList.findLeft(i -> i > 2, ECons(3, ENil)) == Some(3)
+
+    @test
+    def findLeft10(): Bool =
+        LazyList.findLeft(i -> i > 2, LList(lazy LCons(1, lazy LCons(2, lazy ENil)))) == None
+
+    @test
+    def findLeft11(): Bool =
+        LazyList.findLeft(i -> i > 2, ECons(1, LCons(2, lazy ENil))) == None
+
+    @test
+    def findLeft12(): Bool =
+        LazyList.findLeft(i -> i > 2, LCons(1, lazy ECons(2, LList(lazy ENil)))) == None
+
+    @test
+    def findLeft13(): Bool =
+        LazyList.findLeft(i -> i > 2, ECons(6, ECons(-6, LList(lazy ENil)))) == Some(6)
+
+    @test
+    def findLeft14(): Bool =
+        LazyList.findLeft(i -> i > 2, ECons(6, LList(lazy ECons(-6, ENil)))) == Some(6)
+
+    @test
+    def findLeft15(): Bool =
+        LazyList.findLeft(i -> i > 2, LCons(6, lazy ECons(-6, ENil))) == Some(6)
+
+    @test
+    def findLeft16(): Bool =
+        LazyList.findLeft(i -> i > 2, ECons(-6, ECons(6, LList(lazy ENil)))) == Some(6)
+
+    @test
+    def findLeft17(): Bool =
+        LazyList.findLeft(i -> i > 2, LCons(6, lazy ECons(7, ENil))) == Some(6)
+
+    @test
+    def findLeft18(): Bool =
+        LazyList.findLeft(i -> i > 2, ECons(7, LCons(6, lazy ENil))) == Some(7)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // findRight                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def findRight01(): Bool =
+        LazyList.findRight(i -> i > 2, ENil: LazyList[Int32]) == None
+
+    @test
+    def findRight02(): Bool =
+        LazyList.findRight(i -> i > 2, LList(lazy ENil): LazyList[Int32]) == None
+
+    @test
+    def findRight03(): Bool =
+        LazyList.findRight(i -> i > 2, LCons(1, lazy ENil)) == None
+
+    @test
+    def findRight04(): Bool =
+        LazyList.findRight(i -> i > 2, ECons(1, ENil)) == None
+
+    @test
+    def findRight05(): Bool =
+        LazyList.findRight(i -> i > 2, LCons(3, lazy ENil)) == Some(3)
+
+    @test
+    def findRight06(): Bool =
+        LazyList.findRight(i -> i > 2, LList(lazy LCons(3, lazy ENil))) == Some(3)
+
+    @test
+    def findRight07(): Bool =
+        LazyList.findRight(i -> i > 2, LList(lazy LCons(3, lazy LList(lazy ENil)))) == Some(3)
+
+    @test
+    def findRight08(): Bool =
+        LazyList.findRight(i -> i > 2, ECons(3, LList(lazy ENil))) == Some(3)
+
+    @test
+    def findRight09(): Bool =
+        LazyList.findRight(i -> i > 2, ECons(3, ENil)) == Some(3)
+
+    @test
+    def findRight10(): Bool =
+        LazyList.findRight(i -> i > 2, LList(lazy LCons(1, lazy LCons(2, lazy ENil)))) == None
+
+    @test
+    def findRight11(): Bool =
+        LazyList.findRight(i -> i > 2, ECons(1, LCons(2, lazy ENil))) == None
+
+    @test
+    def findRight12(): Bool =
+        LazyList.findRight(i -> i > 2, LCons(1, lazy ECons(2, LList(lazy ENil)))) == None
+
+    @test
+    def findRight13(): Bool =
+        LazyList.findRight(i -> i > 2, ECons(6, ECons(-6, LList(lazy ENil)))) == Some(6)
+
+    @test
+    def findRight14(): Bool =
+        LazyList.findRight(i -> i > 2, ECons(6, LList(lazy ECons(-6, ENil)))) == Some(6)
+
+    @test
+    def findRight15(): Bool =
+        LazyList.findRight(i -> i > 2, LCons(6, lazy ECons(-6, ENil))) == Some(6)
+
+    @test
+    def findRight16(): Bool =
+        LazyList.findRight(i -> i > 2, ECons(-6, ECons(6, LList(lazy ENil)))) == Some(6)
+
+    @test
+    def findRight17(): Bool =
+        LazyList.findRight(i -> i > 2, LCons(6, lazy ECons(7, ENil))) == Some(7)
+
+    @test
+    def findRight18(): Bool =
+        LazyList.findRight(i -> i > 2, ECons(7, LCons(6, lazy ENil))) == Some(6)
+
+
 }
