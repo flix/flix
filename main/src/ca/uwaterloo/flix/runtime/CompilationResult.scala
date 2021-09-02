@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.runtime
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast._
-import flix.runtime.ProxyObject
 
 /**
   * A class representing the result of a compilation.
@@ -27,7 +26,7 @@ import flix.runtime.ProxyObject
   * @param root the abstract syntax tree of the program.
   * @param defs the definitions in the program.
   */
-class CompilationResult(root: Root, main: Option[Array[String] => Int], defs: Map[Symbol.DefnSym, () => ProxyObject])(implicit flix: Flix) {
+class CompilationResult(root: Root, main: Option[Array[String] => Int], defs: Map[Symbol.DefnSym, () => AnyRef])(implicit flix: Flix) {
 
   /**
     * Returns the root AST.
