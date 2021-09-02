@@ -29,7 +29,7 @@ object GenRefClasses {
   /**
     * Generating class `classType` with value of type `tpe`
     */
-  def genRefClass(classType: JvmType.Reference, tpe: JvmType)(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genRefClass(classType: JvmType.Reference, tpe: JvmType)(implicit root: Root, flix: Flix): Array[Byte] = {
     // Class visitor
     val visitor = AsmOps.mkClassWriter()
 
@@ -70,7 +70,7 @@ object GenRefClasses {
   /**
     * Generating constructor for the class `classType` with value of type `cellType`
     */
-  def genConstructor(classType: JvmType.Reference, cellType: JvmType, visitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = {
+  private def genConstructor(classType: JvmType.Reference, cellType: JvmType, visitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = {
     val iLoad = AsmOps.getLoadInstruction(cellType)
     val initMethod = visitor.visitMethod(ACC_PUBLIC, "<init>", AsmOps.getMethodDescriptor(List(cellType), JvmType.Void), null, null)
     initMethod.visitCode()
@@ -87,7 +87,7 @@ object GenRefClasses {
   /**
     * Generating `getValue` method for the class `classType` with value of type `cellType`
     */
-  def genGetValue(classType: JvmType.Reference, cellType: JvmType, visitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = {
+  private def genGetValue(classType: JvmType.Reference, cellType: JvmType, visitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = {
     val iRet = AsmOps.getReturnInstruction(cellType)
     val getValue = visitor.visitMethod(ACC_PUBLIC, "getValue", AsmOps.getMethodDescriptor(Nil, cellType), null, null)
     getValue.visitCode()
@@ -101,7 +101,7 @@ object GenRefClasses {
   /**
     * Generating `setValue` method for the class `classType` with value of type `cellType`
     */
-  def genSetValue(classType: JvmType.Reference, cellType: JvmType, visitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = {
+  private def genSetValue(classType: JvmType.Reference, cellType: JvmType, visitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = {
     val iLoad = AsmOps.getLoadInstruction(cellType)
     val setValue = visitor.visitMethod(ACC_PUBLIC, "setValue", AsmOps.getMethodDescriptor(List(cellType), JvmType.Void), null, null)
     setValue.visitCode()
