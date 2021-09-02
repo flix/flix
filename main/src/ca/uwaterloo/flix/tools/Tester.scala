@@ -4,7 +4,6 @@ import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 import ca.uwaterloo.flix.util.vt.VirtualString._
-import flix.runtime.ProxyObject
 
 /**
   * Evaluates all tests in a model.
@@ -111,8 +110,8 @@ object Tester {
     val results = compilationResult.getTests.toList.map {
       case (sym, defn) =>
         try {
-          val result = defn().asInstanceOf[ProxyObject]
-          result.getValue match {
+          val result = defn()
+          result match {
             case java.lang.Boolean.TRUE => TestResult.Success(sym, "Returned true.")
             case java.lang.Boolean.FALSE => TestResult.Failure(sym, "Returned false.")
             case _ => TestResult.Success(sym, "Returned non-boolean value.")

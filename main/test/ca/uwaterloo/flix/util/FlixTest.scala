@@ -20,7 +20,6 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
 import ca.uwaterloo.flix.util.vt.TerminalContext
-import flix.runtime.ProxyObject
 import org.scalatest.FunSuite
 
 class FlixTest(name: String, paths: List[String], options: Options) extends FunSuite {
@@ -84,11 +83,6 @@ class FlixTest(name: String, paths: List[String], options: Options) extends FunS
             // Expect the true value, if boolean.
             if (result.isInstanceOf[java.lang.Boolean]) {
               assertResult(true)(result)
-            }
-            if (result.isInstanceOf[ProxyObject]) {
-              val value = result.asInstanceOf[ProxyObject].getValue
-              if (value.isInstanceOf[java.lang.Boolean])
-                assertResult(expected = true)(value)
             }
           }
         }
