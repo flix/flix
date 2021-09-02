@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
+import ca.uwaterloo.flix.language.ast.ParsedAst.RecordFieldType
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
@@ -1968,114 +1969,18 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.Tuple(sp1, elms, sp2) => WeededAst.Type.Tuple(elms.toList.map(visitType), mkSL(sp1, sp2))
 
     case ParsedAst.Type.Record(sp1, fields, restOpt, sp2) =>
-      // If rest is absent, then it is the empty record row
-      val rest = restOpt match {
-        case None => WeededAst.Type.RecordRowEmpty(mkSL(sp1, sp2))
-        case Some(name) => WeededAst.Type.Var(name, name.loc)
-      }
-
-      val row = fields.foldRight(rest) {
-        case (ParsedAst.RecordFieldType(ssp1, ident, t, ssp2), acc) =>
-          WeededAst.Type.RecordRowExtend(Name.mkField(ident), visitType(t), acc, mkSL(ssp1, ssp2))
-      }
-
+      val row = buildRecordRow(fields, restOpt, mkSL(sp1, sp2))
       WeededAst.Type.MakeRecord(row, mkSL(sp1, sp2))
 
-    case ParsedAst.Type.RecordRow(sp1, fields, restOpt, sp2) => // MATT dedupe
-      // If rest is absent, then it is the empty record row
-      val rest = restOpt match {
-        case None => WeededAst.Type.RecordRowEmpty(mkSL(sp1, sp2))
-        case Some(name) => WeededAst.Type.Var(name, name.loc)
-      }
-
-      val row = fields.foldRight(rest) {
-        case (ParsedAst.RecordFieldType(ssp1, ident, t, ssp2), acc) =>
-          WeededAst.Type.RecordRowExtend(Name.mkField(ident), visitType(t), acc, mkSL(ssp1, ssp2))
-      }
-
-      row
+    case ParsedAst.Type.RecordRow(sp1, fields, restOpt, sp2) =>
+      buildRecordRow(fields, restOpt, mkSL(sp1, sp2))
 
     case ParsedAst.Type.Schema(sp1, predicates, restOpt, sp2) =>
-      def buildSchema(base: WeededAst.Type): WeededAst.Type = {
-        predicates.foldRight(base) {
-          case (ParsedAst.PredicateType.PredicateWithAlias(ssp1, qname, targs, ssp2), acc) =>
-            val ts = targs match {
-              case None => Nil
-              case Some(xs) => xs.map(visitType).toList
-            }
-            WeededAst.Type.SchemaRowExtendByAlias(qname, ts, acc, mkSL(ssp1, ssp2))
-
-          case (ParsedAst.PredicateType.RelPredicateWithTypes(ssp1, name, ts, ssp2), acc) =>
-            WeededAst.Type.SchemaRowExtendByTypes(name, Ast.Denotation.Relational, ts.toList.map(visitType), acc, mkSL(ssp1, ssp2))
-
-          case (ParsedAst.PredicateType.LatPredicateWithTypes(ssp1, name, ts, tpe, ssp2), acc) =>
-            WeededAst.Type.SchemaRowExtendByTypes(name, Ast.Denotation.Latticenal, ts.toList.map(visitType) ::: visitType(tpe) :: Nil, acc, mkSL(ssp1, ssp2))
-        }
-      }
-
-      // If rest is absent, then it is the empty schema row
-      val rest = restOpt match {
-        case None => WeededAst.Type.SchemaRowEmpty(mkSL(sp1, sp2))
-        case Some(name) => WeededAst.Type.Var(name, name.loc)
-      }
-
-      val row = predicates.foldRight(rest) {
-        case (ParsedAst.PredicateType.PredicateWithAlias(ssp1, qname, targs, ssp2), acc) =>
-          val ts = targs match {
-            case None => Nil
-            case Some(xs) => xs.map(visitType).toList
-          }
-          WeededAst.Type.SchemaRowExtendByAlias(qname, ts, acc, mkSL(ssp1, ssp2))
-
-        case (ParsedAst.PredicateType.RelPredicateWithTypes(ssp1, name, ts, ssp2), acc) =>
-          WeededAst.Type.SchemaRowExtendByTypes(name, Ast.Denotation.Relational, ts.toList.map(visitType), acc, mkSL(ssp1, ssp2))
-
-        case (ParsedAst.PredicateType.LatPredicateWithTypes(ssp1, name, ts, tpe, ssp2), acc) =>
-          WeededAst.Type.SchemaRowExtendByTypes(name, Ast.Denotation.Latticenal, ts.toList.map(visitType) ::: visitType(tpe) :: Nil, acc, mkSL(ssp1, ssp2))
-      }
-
+      val row = buildSchemaRow(predicates, restOpt, mkSL(sp1, sp2))
       WeededAst.Type.MakeSchema(row, mkSL(sp1, sp2))
 
     case ParsedAst.Type.SchemaRow(sp1, predicates, restOpt, sp2) =>
-      def buildSchema(base: WeededAst.Type): WeededAst.Type = { // MATT dedupe also remove this func from original
-        predicates.foldRight(base) {
-          case (ParsedAst.PredicateType.PredicateWithAlias(ssp1, qname, targs, ssp2), acc) =>
-            val ts = targs match {
-              case None => Nil
-              case Some(xs) => xs.map(visitType).toList
-            }
-            WeededAst.Type.SchemaRowExtendByAlias(qname, ts, acc, mkSL(ssp1, ssp2))
-
-          case (ParsedAst.PredicateType.RelPredicateWithTypes(ssp1, name, ts, ssp2), acc) =>
-            WeededAst.Type.SchemaRowExtendByTypes(name, Ast.Denotation.Relational, ts.toList.map(visitType), acc, mkSL(ssp1, ssp2))
-
-          case (ParsedAst.PredicateType.LatPredicateWithTypes(ssp1, name, ts, tpe, ssp2), acc) =>
-            WeededAst.Type.SchemaRowExtendByTypes(name, Ast.Denotation.Latticenal, ts.toList.map(visitType) ::: visitType(tpe) :: Nil, acc, mkSL(ssp1, ssp2))
-        }
-      }
-
-      // If rest is absent, then it is the empty schema row
-      val rest = restOpt match {
-        case None => WeededAst.Type.SchemaRowEmpty(mkSL(sp1, sp2))
-        case Some(name) => WeededAst.Type.Var(name, name.loc)
-      }
-
-      val row = predicates.foldRight(rest) {
-        case (ParsedAst.PredicateType.PredicateWithAlias(ssp1, qname, targs, ssp2), acc) =>
-          val ts = targs match {
-            case None => Nil
-            case Some(xs) => xs.map(visitType).toList
-          }
-          WeededAst.Type.SchemaRowExtendByAlias(qname, ts, acc, mkSL(ssp1, ssp2))
-
-        case (ParsedAst.PredicateType.RelPredicateWithTypes(ssp1, name, ts, ssp2), acc) =>
-          WeededAst.Type.SchemaRowExtendByTypes(name, Ast.Denotation.Relational, ts.toList.map(visitType), acc, mkSL(ssp1, ssp2))
-
-        case (ParsedAst.PredicateType.LatPredicateWithTypes(ssp1, name, ts, tpe, ssp2), acc) =>
-          WeededAst.Type.SchemaRowExtendByTypes(name, Ast.Denotation.Latticenal, ts.toList.map(visitType) ::: visitType(tpe) :: Nil, acc, mkSL(ssp1, ssp2))
-      }
-
-      row
+      buildSchemaRow(predicates, restOpt, mkSL(sp1, sp2))
 
     case ParsedAst.Type.UnaryImpureArrow(tpe1, tpe2, sp2) =>
       val loc = mkSL(leftMostSourcePosition(tpe1), sp2)
@@ -2150,6 +2055,48 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val t = visitType(tpe)
       val k = visitKind(kind)
       WeededAst.Type.Ascribe(t, k, mkSL(sp1, sp2))
+  }
+
+  /**
+    * Builds a record row from the given fields and optional rest variable.
+    */
+  private def buildRecordRow(fields: Seq[RecordFieldType], restOpt: Option[Name.Ident], loc: SourceLocation): WeededAst.Type = {
+    // If rest is absent, then it is the empty record row
+    val rest = restOpt match {
+      case None => WeededAst.Type.RecordRowEmpty(loc)
+      case Some(name) => WeededAst.Type.Var(name, name.loc)
+    }
+
+    fields.foldRight(rest) {
+      case (ParsedAst.RecordFieldType(ssp1, ident, t, ssp2), acc) =>
+        WeededAst.Type.RecordRowExtend(Name.mkField(ident), visitType(t), acc, mkSL(ssp1, ssp2))
+    }
+  }
+
+  /**
+    * Builds a schema row from the given predicates and optional rest identifier.
+    */
+  private def buildSchemaRow(predicates: Seq[ParsedAst.PredicateType], restOpt: Option[Name.Ident], loc: SourceLocation): WeededAst.Type = {
+    // If rest is absent, then it is the empty schema row
+    val rest = restOpt match {
+      case None => WeededAst.Type.SchemaRowEmpty(loc)
+      case Some(name) => WeededAst.Type.Var(name, name.loc)
+    }
+
+    predicates.foldRight(rest) {
+      case (ParsedAst.PredicateType.PredicateWithAlias(ssp1, qname, targs, ssp2), acc) =>
+        val ts = targs match {
+          case None => Nil
+          case Some(xs) => xs.map(visitType).toList
+        }
+        WeededAst.Type.SchemaRowExtendByAlias(qname, ts, acc, mkSL(ssp1, ssp2))
+
+      case (ParsedAst.PredicateType.RelPredicateWithTypes(ssp1, name, ts, ssp2), acc) =>
+        WeededAst.Type.SchemaRowExtendByTypes(name, Ast.Denotation.Relational, ts.toList.map(visitType), acc, mkSL(ssp1, ssp2))
+
+      case (ParsedAst.PredicateType.LatPredicateWithTypes(ssp1, name, ts, tpe, ssp2), acc) =>
+        WeededAst.Type.SchemaRowExtendByTypes(name, Ast.Denotation.Latticenal, ts.toList.map(visitType) ::: visitType(tpe) :: Nil, acc, mkSL(ssp1, ssp2))
+    }
   }
 
   /**

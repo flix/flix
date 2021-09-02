@@ -949,7 +949,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
         //
         // r : { field = tpe | row }
         // -------------------------
-        // r.field : tpe
+        //       r.field : tpe
         //
         val freshRowVar = Type.freshVar(Kind.RecordRow, loc)
         val expectedRowType = Type.mkRecordRowExtend(field, tvar, freshRowVar, loc)
@@ -962,11 +962,10 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
 
       case KindedAst.Expression.RecordExtend(field, exp1, exp2, tvar, loc) =>
         //
-        // exp1 : tpe
+        //       exp1 : tpe        exp2 : {| r }
         // ---------------------------------------------
         // { field = exp1 | exp2 } : { field : tpe | r }
         //
-        // MATT update these derivation things
         val restRow = Type.freshVar(Kind.RecordRow, loc)
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
@@ -978,8 +977,9 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
 
       case KindedAst.Expression.RecordRestrict(field, exp, tvar, loc) =>
         //
-        // ----------------------
-        // { -field | r } : { r }
+        //  exp : { field : t | r }
+        // -------------------------
+        // { -field | exp } : {| r }
         //
         val freshFieldType = Type.freshVar(Kind.Star, loc)
         val freshRowVar = Type.freshVar(Kind.RecordRow, loc)

@@ -338,12 +338,6 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       } yield KindedAst.Expression.RecordSelect(exp, field, Type.freshVar(Kind.Star, loc), loc)
 
     case ResolvedAst.Expression.RecordExtend(field, value0, rest0, loc) =>
-      // Ideally, if `rest` is not of record kind, we should throw a kind error.
-      // But because we have subkinding, we can't do this in the Kinder.
-      // Consider: { +name = 5 | id({}) }
-      // This is OK, but would be seen as a kind error since id is `(a: *) -> (a: *)`, so `id({}) :: *`
-      // This KindError will be caught later in the Typer
-      // MATT readdress this
       for {
         value <- visitExp(value0, kenv, root)
         rest <- visitExp(rest0, kenv, root)

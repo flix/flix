@@ -1953,16 +1953,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
       case Type.Cst(_, _) => t
 
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(field), _), tpe, _), rest, loc) => // MATT revisit this
-        val t1 = eval(tpe, subst)
-        val t2 = eval(rest, subst)
-        Type.mkRecordRowExtend(field, t1, t2, loc)
-
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), _), tpe, _), rest, loc) => // MATT revisit this
-        val t1 = eval(tpe, subst)
-        val t2 = eval(rest, subst)
-        Type.mkSchemaRowExtend(pred, t1, t2, loc)
-
       case Type.Lambda(tvar, tpe, loc) => Type.Lambda(tvar, eval(tpe, subst), loc)
 
       // TODO: Does not take variable capture into account.
