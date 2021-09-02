@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.language.phase.Kinder
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
@@ -62,14 +63,13 @@ object Unification {
     }
 
     // MATT
-//    // Check if the kind of `x` matches the kind of `tpe`.
-//    if (!(tpe.kind == x.kind)) {
-//      return Result.Err(UnificationError.MismatchedKinds(x.kind, tpe.kind))
-//    }
+    // Check if the kind of `x` matches the kind of `tpe`.
+    if (Kinder.unify(tpe.kind, x.kind).isEmpty) {
+      return Result.Err(UnificationError.MismatchedKinds(x.kind, tpe.kind))
+    }
 
     Result.Ok(Substitution.singleton(x, tpe))
   }
-
 
   /**
     * Unifies the two given types `tpe1` and `tpe2`.
@@ -314,9 +314,9 @@ object Unification {
   /**
     * Unifies all the types in the given (possibly empty) list `ts`.
     */
-  def unifyTypeAllowEmptyM(ts: List[Type], loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
+  def unifyTypeAllowEmptyM(ts: List[Type], kind: Kind, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
     if (ts.isEmpty)
-      liftM(Type.freshVar(Kind.Star, loc))
+      liftM(Type.freshVar(kind, loc))
     else
       unifyTypeM(ts, loc)
   }

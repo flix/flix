@@ -20,7 +20,6 @@ import ca.uwaterloo.flix.language.debug.FormatKind
 
 import scala.annotation.tailrec
 
-// MATT describe kind system
 /**
   * A kind represents the "type" of a type expression.
   */

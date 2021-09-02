@@ -1336,7 +1336,8 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
       case KindedAst.Expression.FixpointConstraintSet(cs, tvar, loc) =>
         for {
           (constrs, constraintTypes) <- seqM(cs.map(visitConstraint)).map(_.unzip)
-          resultTyp <- unifyTypeAllowEmptyM(tvar :: constraintTypes, loc)
+          aggConstraintType <- unifyTypeAllowEmptyM(constraintTypes, Kind.SchemaRow, loc)
+          resultTyp <- unifyTypeM(tvar, Type.mkSchema(aggConstraintType, loc), loc)
         } yield (constrs.flatten, resultTyp, Type.Pure)
 
       case KindedAst.Expression.FixpointMerge(exp1, exp2, loc) =>
@@ -1348,7 +1349,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
-          resultTyp <- unifyTypeM(tpe1, tpe2, mkAnySchemaType(loc), loc)
+          resultTyp <- unifyTypeM(tpe1, tpe2, Type.mkSchema(mkAnySchemaRowType(loc), loc), loc)
           resultEff = Type.mkAnd(eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
@@ -1360,7 +1361,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
         //
         for {
           (constrs, tpe, eff) <- visitExp(exp)
-          resultTyp <- unifyTypeM(tpe, mkAnySchemaType(loc), loc)
+          resultTyp <- unifyTypeM(tpe, Type.mkSchema(mkAnySchemaRowType(loc), loc), loc)
           resultEff = eff
         } yield (constrs, resultTyp, resultEff)
 
@@ -1370,7 +1371,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
         //  -------------------------------------------
         //  project P exp2 : #{ P : a | c }
         //
-        val freshPredicateTypeVar = Type.freshVar(Kind.Star, loc)
+        val freshPredicateTypeVar = Type.freshVar(Kind.Predicate, loc)
         val freshRestSchemaTypeVar = Type.freshVar(Kind.SchemaRow, loc)
         val freshResultSchemaTypeVar = Type.freshVar(Kind.SchemaRow, loc)
 
@@ -1443,7 +1444,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
       for {
         (constrs1, headPredicateType) <- inferHeadPredicate(head0, root)
         (constrs2, bodyPredicateTypes) <- seqM(body0.map(b => inferBodyPredicate(b, root))).map(_.unzip)
-        bodyPredicateType <- unifyTypeAllowEmptyM(bodyPredicateTypes, loc)
+        bodyPredicateType <- unifyTypeAllowEmptyM(bodyPredicateTypes, Kind.SchemaRow, loc)
         resultType <- unifyTypeM(headPredicateType, bodyPredicateType, loc)
       } yield (constrs1 ++ constrs2.flatten, resultType)
     }
@@ -1935,14 +1936,14 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
       case KindedAst.Pattern.Array(elms, tvar, loc) =>
         for (
           elementTypes <- seqM(elms map visit);
-          elementType <- unifyTypeAllowEmptyM(elementTypes, loc);
+          elementType <- unifyTypeAllowEmptyM(elementTypes, Kind.Star, loc);
           resultType <- unifyTypeM(tvar, Type.mkArray(elementType, loc), loc)
         ) yield resultType
 
       case KindedAst.Pattern.ArrayTailSpread(elms, varSym, tvar, loc) =>
         for (
           elementTypes <- seqM(elms map visit);
-          elementType <- unifyTypeAllowEmptyM(elementTypes, loc);
+          elementType <- unifyTypeAllowEmptyM(elementTypes, Kind.Star, loc);
           arrayType <- unifyTypeM(tvar, Type.mkArray(elementType, loc), loc);
           resultType <- unifyTypeM(varSym.tvar.ascribedWith(Kind.Star), arrayType, loc)
         ) yield resultType
@@ -1950,7 +1951,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
       case KindedAst.Pattern.ArrayHeadSpread(varSym, elms, tvar, loc) =>
         for (
           elementTypes <- seqM(elms map visit);
-          elementType <- unifyTypeAllowEmptyM(elementTypes, loc);
+          elementType <- unifyTypeAllowEmptyM(elementTypes, Kind.Star, loc);
           arrayType <- unifyTypeM(tvar, Type.mkArray(elementType, loc), loc);
           resultType <- unifyTypeM(varSym.tvar.ascribedWith(Kind.Star), arrayType, loc)
         ) yield resultType
@@ -2017,7 +2018,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
         pureTermEffects <- unifyBoolM(Type.Pure, Type.mkAnd(termEffects, loc), loc)
         predicateType <- unifyTypeM(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root, loc), loc)
         tconstrs = getTermTypeClassConstraints(den, termTypes, root, loc)
-      } yield (termConstrs.flatten ++ tconstrs, Type.mkSchema(Type.mkSchemaRowExtend(pred, predicateType, restRow, loc), loc))
+      } yield (termConstrs.flatten ++ tconstrs, Type.mkSchemaRowExtend(pred, predicateType, restRow, loc))
   }
 
   /**
@@ -2039,7 +2040,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
         termTypes <- seqM(terms.map(inferPattern(_, root)))
         predicateType <- unifyTypeM(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root, loc), loc)
         tconstrs = getTermTypeClassConstraints(den, termTypes, root, loc)
-      } yield (tconstrs, Type.mkSchema(Type.mkSchemaRowExtend(pred, predicateType, restRow, loc), loc))
+      } yield (tconstrs, Type.mkSchemaRowExtend(pred, predicateType, restRow, loc))
 
     //
     //  exp : Bool
@@ -2052,7 +2053,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
         (constrs, tpe, eff) <- inferExp(exp, root)
         expEff <- unifyBoolM(Type.Pure, eff, loc)
         expTyp <- unifyTypeM(Type.Bool, tpe, loc)
-      } yield (constrs, mkAnySchemaType(loc))
+      } yield (constrs, mkAnySchemaRowType(loc))
   }
 
   /**
@@ -2152,7 +2153,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
   /**
     * Returns an open schema type.
     */
-  private def mkAnySchemaType(loc: SourceLocation)(implicit flix: Flix): Type = Type.mkSchema(Type.freshVar(Kind.SchemaRow, loc), loc)
+  private def mkAnySchemaRowType(loc: SourceLocation)(implicit flix: Flix): Type = Type.freshVar(Kind.SchemaRow, loc)
 
   /**
     * Returns the Flix Type of a Java Class
