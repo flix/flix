@@ -1421,7 +1421,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
           _ <- unifyTypeM(tpe1, expectedSchemaType, loc)
-          _ <- unifyTypeM(tpe2, Type.mkSchema(freshRestSchemaVar, loc), loc) // MATT ?
+          _ <- unifyTypeM(tpe2, Type.mkSchema(freshRestSchemaVar, loc), loc)
           resultTyp <- unifyTypeM(tvar, Type.mkArray(freshTupleVar, loc), loc)
           resultEff = Type.mkAnd(eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)

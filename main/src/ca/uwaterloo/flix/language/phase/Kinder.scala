@@ -1057,10 +1057,10 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     }
   }
 
-  // MATT docs
-  // MATT name
-  // MATT make everything private probably
-  def unify(k1: Kind, k2: Kind): Option[Kind] = (k1, k2) match {
+  /**
+    * Unifies the kinds, returning the most specific kind if possible.
+    */
+  private def unify(k1: Kind, k2: Kind): Option[Kind] = (k1, k2) match {
     case (Kind.Wild, k) => Some(k)
     case (k, Kind.Wild) => Some(k)
     case (Kind.Arrow(k11, k12), Kind.Arrow(k21, k22)) =>
