@@ -1459,7 +1459,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     case NamedAst.Type.Record(row, loc) =>
       for {
         r <- lookupType(row, ns0, root)
-      } yield Type.Apply(Type.Record, r, loc)
+      } yield Type.mkRecord(r, loc)
 
     case NamedAst.Type.SchemaRowEmpty(loc) =>
       Type.SchemaRowEmpty.toSuccess
@@ -1493,7 +1493,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     case NamedAst.Type.Schema(row, loc) =>
       for {
         r <- lookupType(row, ns0, root)
-      } yield Type.Apply(Type.Schema, r, loc)
+      } yield Type.mkSchema(r, loc)
 
     case NamedAst.Type.Relation(tpes, loc) =>
       for {
