@@ -1981,7 +1981,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
       WeededAst.Type.MakeRecord(row, mkSL(sp1, sp2))
 
-    case ParsedAst.Type.Record(sp1, fields, restOpt, sp2) => // MATT dedupe
+    case ParsedAst.Type.RecordRow(sp1, fields, restOpt, sp2) => // MATT dedupe
       // If rest is absent, then it is the empty record row
       val rest = restOpt match {
         case None => WeededAst.Type.RecordRowEmpty(mkSL(sp1, sp2))
@@ -2036,7 +2036,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
       WeededAst.Type.MakeSchema(row, mkSL(sp1, sp2))
 
-    case ParsedAst.Type.Schema(sp1, predicates, restOpt, sp2) =>
+    case ParsedAst.Type.SchemaRow(sp1, predicates, restOpt, sp2) =>
       def buildSchema(base: WeededAst.Type): WeededAst.Type = { // MATT dedupe also remove this func from original
         predicates.foldRight(base) {
           case (ParsedAst.PredicateType.PredicateWithAlias(ssp1, qname, targs, ssp2), acc) =>
