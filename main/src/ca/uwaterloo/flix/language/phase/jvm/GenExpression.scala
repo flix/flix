@@ -793,16 +793,6 @@ object GenExpression {
       // Since the return type is unit, we put an instance of unit on top of the stack
       visitor.visitFieldInsn(GETSTATIC, JvmName.Unit.toInternalName, GenUnitClass.instanceFieldName, JvmName.Unit.toDescriptor)
 
-    case Expression.Existential(params, exp, loc) =>
-      // TODO: Better exception.
-      addSourceLine(visitor, loc)
-      AsmOps.compileThrowFlixError(visitor, JvmName.Runtime.NotImplementedError, loc)
-
-    case Expression.Universal(params, exp, loc) =>
-      // TODO: Better exception.
-      addSourceLine(visitor, loc)
-      AsmOps.compileThrowFlixError(visitor, JvmName.Runtime.NotImplementedError, loc)
-
     case Expression.Cast(exp, tpe, loc) =>
       addSourceLine(visitor, loc)
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
