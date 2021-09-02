@@ -97,6 +97,11 @@ object JvmName {
   val Objects: JvmName = JvmName(List("java", "lang"), "Objects")
 
   /**
+   * The `java.lang.Runnable` name.
+   */
+  val Runnable: JvmName = JvmName(List("java", "lang"), "Runnable")
+
+  /**
    * The `java.lang.StringBuilder` name.
    */
   val StringBuilder: JvmName = JvmName(List("java", "lang"), "StringBuilder")
@@ -116,11 +121,6 @@ object JvmName {
    * The `ca.uwaterloo.flix.runtime.interpreter.SelectChoice` name.
    */
   val SelectChoice: JvmName = JvmName(List("ca", "uwaterloo", "flix", "runtime", "interpreter"), "SelectChoice")
-
-  /**
-   * The `ca.uwaterloo.flix.runtime.interpreter.Spawnable` name.
-   */
-  val Spawnable: JvmName = JvmName(List("ca", "uwaterloo", "flix", "runtime", "interpreter"), "Spawnable")
 
   /**
    * The `scala.math.package$` name
