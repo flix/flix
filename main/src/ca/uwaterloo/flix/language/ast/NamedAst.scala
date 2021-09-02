@@ -312,7 +312,7 @@ object NamedAst {
 
     case class RecordRowExtend(field: Name.Field, tpe: NamedAst.Type, rest: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
-    case class MakeRecord(row: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+    case class Record(row: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
     case class SchemaRowEmpty(loc: SourceLocation) extends NamedAst.Type
 
@@ -320,7 +320,7 @@ object NamedAst {
 
     case class SchemaRowExtendWithTypes(ident: Name.Ident, den: Ast.Denotation, tpes: List[NamedAst.Type], rest: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
-    case class MakeSchema(row: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+    case class Schema(row: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
     case class Native(fqn: String, loc: SourceLocation) extends NamedAst.Type
 

@@ -1970,14 +1970,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Type.Record(sp1, fields, restOpt, sp2) =>
       val row = buildRecordRow(fields, restOpt, mkSL(sp1, sp2))
-      WeededAst.Type.MakeRecord(row, mkSL(sp1, sp2))
+      WeededAst.Type.Record(row, mkSL(sp1, sp2))
 
     case ParsedAst.Type.RecordRow(sp1, fields, restOpt, sp2) =>
       buildRecordRow(fields, restOpt, mkSL(sp1, sp2))
 
     case ParsedAst.Type.Schema(sp1, predicates, restOpt, sp2) =>
       val row = buildSchemaRow(predicates, restOpt, mkSL(sp1, sp2))
-      WeededAst.Type.MakeSchema(row, mkSL(sp1, sp2))
+      WeededAst.Type.Schema(row, mkSL(sp1, sp2))
 
     case ParsedAst.Type.SchemaRow(sp1, predicates, restOpt, sp2) =>
       buildSchemaRow(predicates, restOpt, mkSL(sp1, sp2))

@@ -458,7 +458,7 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
 
           case TypeConstructor.RecordRowExtend(field) => MonoType.RecordExtend(field.name, args.head, args(1))
 
-          case TypeConstructor.MakeRecord => args.head
+          case TypeConstructor.Record => args.head
 
           case TypeConstructor.True => MonoType.Unit
 
@@ -485,7 +485,7 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
           case TypeConstructor.SchemaRowExtend(pred) =>
             throw InternalCompilerException(s"Unexpected type: '$t0'.")
 
-          case TypeConstructor.MakeSchema =>
+          case TypeConstructor.Schema =>
             throw InternalCompilerException(s"Unexpected type: '$t0'.")
         }
     }

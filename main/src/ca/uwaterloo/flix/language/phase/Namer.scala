@@ -1098,9 +1098,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (t, r) => NamedAst.Type.RecordRowExtend(field, t, r, loc)
       }
 
-    case WeededAst.Type.MakeRecord(row, loc) =>
+    case WeededAst.Type.Record(row, loc) =>
       mapN(visitType(row, uenv0, tenv0)) {
-        r => NamedAst.Type.MakeRecord(r, loc)
+        r => NamedAst.Type.Record(r, loc)
       }
 
     case WeededAst.Type.SchemaRowEmpty(loc) =>
@@ -1123,9 +1123,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (ts, r) => NamedAst.Type.SchemaRowExtendWithTypes(ident, den, ts, r, loc)
       }
 
-    case WeededAst.Type.MakeSchema(row, loc) =>
+    case WeededAst.Type.Schema(row, loc) =>
       mapN(visitType(row, uenv0, tenv0)) {
-        r => NamedAst.Type.MakeSchema(r, loc)
+        r => NamedAst.Type.Schema(r, loc)
       }
 
     case WeededAst.Type.Relation(tpes, loc) =>
@@ -1346,11 +1346,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.Tuple(elms, loc) => elms.flatMap(freeVars)
     case WeededAst.Type.RecordRowEmpty(loc) => Nil
     case WeededAst.Type.RecordRowExtend(l, t, r, loc) => freeVars(t) ::: freeVars(r)
-    case WeededAst.Type.MakeRecord(row, loc) => freeVars(row)
+    case WeededAst.Type.Record(row, loc) => freeVars(row)
     case WeededAst.Type.SchemaRowEmpty(loc) => Nil
     case WeededAst.Type.SchemaRowExtendByTypes(_, _, ts, r, loc) => ts.flatMap(freeVars) ::: freeVars(r)
     case WeededAst.Type.SchemaRowExtendByAlias(_, ts, r, _) => ts.flatMap(freeVars) ::: freeVars(r)
-    case WeededAst.Type.MakeSchema(row, loc) => freeVars(row)
+    case WeededAst.Type.Schema(row, loc) => freeVars(row)
     case WeededAst.Type.Relation(ts, loc) => ts.flatMap(freeVars)
     case WeededAst.Type.Lattice(ts, loc) => ts.flatMap(freeVars)
     case WeededAst.Type.Native(fqm, loc) => Nil
@@ -1376,11 +1376,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       case WeededAst.Type.Tuple(elms, loc) => elms.flatMap(visit)
       case WeededAst.Type.RecordRowEmpty(loc) => Nil
       case WeededAst.Type.RecordRowExtend(l, t, r, loc) => visit(t) ::: visit(r)
-      case WeededAst.Type.MakeRecord(row, loc) => visit(row)
+      case WeededAst.Type.Record(row, loc) => visit(row)
       case WeededAst.Type.SchemaRowEmpty(loc) => Nil
       case WeededAst.Type.SchemaRowExtendByTypes(_, _, ts, r, loc) => ts.flatMap(visit) ::: visit(r)
       case WeededAst.Type.SchemaRowExtendByAlias(_, ts, r, _) => ts.flatMap(visit) ::: visit(r)
-      case WeededAst.Type.MakeSchema(row, loc) => visit(row)
+      case WeededAst.Type.Schema(row, loc) => visit(row)
       case WeededAst.Type.Relation(ts, loc) => ts.flatMap(visit)
       case WeededAst.Type.Lattice(ts, loc) => ts.flatMap(visit)
       case WeededAst.Type.Native(fqm, loc) => Nil

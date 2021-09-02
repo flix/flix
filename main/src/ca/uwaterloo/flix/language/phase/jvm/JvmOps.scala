@@ -770,10 +770,10 @@ object JvmOps {
     case MonoType.Relation(attr) => Type.mkRelation(attr.map(hackMonoType2Type), SourceLocation.Unknown)
     case MonoType.Lattice(attr) => Type.mkLattice(attr.map(hackMonoType2Type), SourceLocation.Unknown)
     case MonoType.Tuple(length) => Type.mkTuple(Nil, SourceLocation.Unknown) // hack
-    case MonoType.RecordEmpty() => Type.Apply(Type.MakeRecord, Type.RecordRowEmpty, SourceLocation.Unknown)
-    case MonoType.RecordExtend(field, value, rest) => Type.Apply(Type.MakeRecord, hackMonoType2RecordRowType(tpe), SourceLocation.Unknown)
-    case MonoType.SchemaEmpty() => Type.Apply(Type.MakeSchema, Type.RecordRowEmpty, SourceLocation.Unknown)
-    case MonoType.SchemaExtend(sym, t, rest) => Type.Apply(Type.MakeSchema, hackMonoType2SchemaRowType(tpe), SourceLocation.Unknown)
+    case MonoType.RecordEmpty() => Type.Apply(Type.Record, Type.RecordRowEmpty, SourceLocation.Unknown)
+    case MonoType.RecordExtend(field, value, rest) => Type.Apply(Type.Record, hackMonoType2RecordRowType(tpe), SourceLocation.Unknown)
+    case MonoType.SchemaEmpty() => Type.Apply(Type.Schema, Type.RecordRowEmpty, SourceLocation.Unknown)
+    case MonoType.SchemaExtend(sym, t, rest) => Type.Apply(Type.Schema, hackMonoType2SchemaRowType(tpe), SourceLocation.Unknown)
   }
 
   // TODO: Remove

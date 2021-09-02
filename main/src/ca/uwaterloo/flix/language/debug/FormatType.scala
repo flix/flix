@@ -170,9 +170,9 @@ object FormatType {
             case _ => formatApply(s"SchemaExtend($pred)", args)
           }
 
-          case TypeConstructor.MakeRecord => visit(args.head) // MATT better error handling
+          case TypeConstructor.Record => visit(args.head) // MATT better error handling
 
-          case TypeConstructor.MakeSchema => visit(args.head) // MATT better error handling
+          case TypeConstructor.Schema => visit(args.head) // MATT better error handling
 
 
           case TypeConstructor.Tuple(length) =>

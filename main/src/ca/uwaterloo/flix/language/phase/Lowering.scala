@@ -698,7 +698,7 @@ object Lowering extends Phase[Root, Root] {
       case _: Type.Ascribe => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
     }
 
-    if (tpe0.typeConstructor.contains(TypeConstructor.MakeSchema))
+    if (tpe0.typeConstructor.contains(TypeConstructor.Schema))
       Types.Datalog
     else
       visit(tpe0)

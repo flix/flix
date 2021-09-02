@@ -312,7 +312,7 @@ object WeededAst {
 
     case class RecordRowExtend(field: Name.Field, tpe: WeededAst.Type, rest: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
-    case class MakeRecord(row: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
+    case class Record(row: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
     case class SchemaRowEmpty(loc: SourceLocation) extends WeededAst.Type
 
@@ -320,7 +320,7 @@ object WeededAst {
 
     case class SchemaRowExtendByTypes(name: Name.Ident, den: Ast.Denotation, tpes: List[WeededAst.Type], rest: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
-    case class MakeSchema(row: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
+    case class Schema(row: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
     case class Relation(tpes: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Type
 

@@ -1456,10 +1456,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         rec = Type.mkRecordRowExtend(field, v, r, loc)
       } yield rec
 
-    case NamedAst.Type.MakeRecord(row, loc) =>
+    case NamedAst.Type.Record(row, loc) =>
       for {
         r <- lookupType(row, ns0, root)
-      } yield Type.Apply(Type.MakeRecord, r, loc)
+      } yield Type.Apply(Type.Record, r, loc)
 
     case NamedAst.Type.SchemaRowEmpty(loc) =>
       Type.SchemaRowEmpty.toSuccess
@@ -1490,10 +1490,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         schema = Type.mkSchemaRowExtend(Name.mkPred(ident), pred, r, loc)
       } yield schema
 
-    case NamedAst.Type.MakeSchema(row, loc) =>
+    case NamedAst.Type.Schema(row, loc) =>
       for {
         r <- lookupType(row, ns0, root)
-      } yield Type.Apply(Type.MakeSchema, r, loc)
+      } yield Type.Apply(Type.Schema, r, loc)
 
     case NamedAst.Type.Relation(tpes, loc) =>
       for {
@@ -1896,9 +1896,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
       case TypeConstructor.Native(clazz) => clazz.toSuccess
 
-      case TypeConstructor.MakeRecord => Class.forName("java.lang.Object").toSuccess
+      case TypeConstructor.Record => Class.forName("java.lang.Object").toSuccess
 
-      case TypeConstructor.MakeSchema => Class.forName("java.lang.Object").toSuccess
+      case TypeConstructor.Schema => Class.forName("java.lang.Object").toSuccess
 
 
       case _ => ResolutionError.IllegalType(tpe, loc).toFailure

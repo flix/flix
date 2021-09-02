@@ -124,9 +124,9 @@ object TypeConstructor {
   /**
     * A type constructor that represents the type of records.
     */
-  case object MakeRecord extends TypeConstructor {
+  case object Record extends TypeConstructor {
     /**
-      * The shape of a record constructor is MakeRecord[row]
+      * The shape of a record constructor is Record[row]
       */
     def kind: Kind = Kind.RecordRow ->: Kind.Star
   }
@@ -151,9 +151,9 @@ object TypeConstructor {
   /**
     * A type constructor that represents the type of schemas.
     */
-  case object MakeSchema extends TypeConstructor {
+  case object Schema extends TypeConstructor {
     /**
-      * The shape of a schema constructor is MakeSchema[row]
+      * The shape of a schema constructor is Schema[row]
       */
     def kind: Kind = Kind.SchemaRow ->: Kind.Star
   }

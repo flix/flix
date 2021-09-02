@@ -297,7 +297,7 @@ object Type {
   /**
     * Represents the record type constructor.
     */
-  val MakeRecord: Type = Type.Cst(TypeConstructor.MakeRecord, SourceLocation.Unknown)
+  val Record: Type = Type.Cst(TypeConstructor.Record, SourceLocation.Unknown)
 
   /**
     * Represents the type of an empty schema.
@@ -307,7 +307,7 @@ object Type {
   /**
     * Represents the schema type constructor.
     */
-  val MakeSchema: Type = Type.Cst(TypeConstructor.MakeSchema, SourceLocation.Unknown)
+  val Schema: Type = Type.Cst(TypeConstructor.Schema, SourceLocation.Unknown)
 
   /**
     * Represents the Boolean True.
