@@ -2403,7 +2403,6 @@ namespace TestLazyList {
     	LazyList.prepend(ECons(4, ENil), LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil))))) == ECons(1, ECons(2, ECons(3, ECons(4, ENil))))
 
 
-
     /////////////////////////////////////////////////////////////////////////////
     // replace                                                                 //
     /////////////////////////////////////////////////////////////////////////////
