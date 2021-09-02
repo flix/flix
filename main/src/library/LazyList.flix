@@ -594,4 +594,17 @@ namespace LazyList {
         case LList(xs)    => flatMapEHelper(f, force xs, k)
     }
 
+    ///
+    /// Returns `true` if and only if `l` contains the element `a`.
+    ///
+    /// Forces elements until `a` is found.
+    ///
+    @Time(length(l)) @Space(1)
+    pub def memberOf(a: a, l: LazyList[a]): Bool with Eq[a] = match l {
+        case ENil         => false
+        case ECons(x, xs) => if (x == a) true else memberOf(a,       xs)
+        case LCons(x, xs) => if (x == a) true else memberOf(a, force xs)
+        case LList(xs)    => memberOf(a, force xs)
+    }
+
 }
