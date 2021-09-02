@@ -76,7 +76,7 @@ class FlixTest(name: String, paths: List[String], options: Options) extends FunS
 
       // Evaluate each tests with a clue of its source location.
       for ((sym, defn) <- testsByName) {
-        test(sym.name) {
+        test(sym.toString) {
           withClue(sym.loc.format) {
             // Evaluate the function.
             val result = defn()
