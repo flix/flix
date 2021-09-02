@@ -23,7 +23,7 @@ import org.objectweb.asm.Opcodes._
 
 object GenUnitClass {
 
-  val instanceFieldName = "INSTANCE"
+  val InstanceFieldName = "INSTANCE"
 
   def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     val jvmType = JvmType.Unit
@@ -46,7 +46,7 @@ object GenUnitClass {
     visitor.visitSource(name.toInternalName, null)
 
     // singleton instance
-    visitor.visitField(ACC_STATIC + ACC_FINAL + ACC_PUBLIC, instanceFieldName, jvmType.toDescriptor, null, null).visitEnd()
+    visitor.visitField(ACC_STATIC + ACC_FINAL + ACC_PUBLIC, InstanceFieldName, jvmType.toDescriptor, null, null).visitEnd()
 
     genStaticConstructor(jvmType, name, visitor)
     genConstructor(visitor)
@@ -61,7 +61,7 @@ object GenUnitClass {
     methodVisitor.visitTypeInsn(NEW, name.toInternalName)
     methodVisitor.visitInsn(DUP)
     methodVisitor.visitMethodInsn(INVOKESPECIAL, name.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
-    methodVisitor.visitFieldInsn(PUTSTATIC, name.toInternalName, instanceFieldName, jvmType.toDescriptor)
+    methodVisitor.visitFieldInsn(PUTSTATIC, name.toInternalName, InstanceFieldName, jvmType.toDescriptor)
     methodVisitor.visitInsn(RETURN)
     methodVisitor.visitMaxs(999, 999)
     methodVisitor.visitEnd()

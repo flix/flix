@@ -22,12 +22,12 @@ import org.objectweb.asm.Opcodes._
 
 object GenReifiedSourceLocationClass {
 
-  val sourceFieldName: String = "source"
-  val beginLineFieldName: String = "beginLine"
-  val beginColFieldName: String = "beginCol"
-  val endLineFieldName: String = "endLine"
-  val endColFieldName: String = "endCol"
-  val constructorDescriptor: String = AsmOps.getMethodDescriptor(List(JvmType.String, JvmType.PrimInt, JvmType.PrimInt, JvmType.PrimInt, JvmType.PrimInt), JvmType.Void)
+  val SourceFieldName: String = "source"
+  val BeginLineFieldName: String = "beginLine"
+  val BeginColFieldName: String = "beginCol"
+  val EndLineFieldName: String = "endLine"
+  val EndColFieldName: String = "endCol"
+  val ConstructorDescriptor: String = AsmOps.getMethodDescriptor(List(JvmType.String, JvmType.PrimInt, JvmType.PrimInt, JvmType.PrimInt, JvmType.PrimInt), JvmType.Void)
 
   def gen()(implicit flix: Flix): Map[JvmName, JvmClass] = {
     val jvmName = JvmName.ReifiedSourceLocation
@@ -50,11 +50,11 @@ object GenReifiedSourceLocationClass {
 
     def mkIntField(name: String): Unit = visitor.visitField(ACC_PUBLIC + ACC_FINAL, name, JvmType.PrimInt.toDescriptor, null, null).visitEnd()
 
-    visitor.visitField(ACC_PUBLIC + ACC_FINAL, sourceFieldName, JvmType.String.toDescriptor, null, null).visitEnd()
-    mkIntField(beginLineFieldName)
-    mkIntField(beginColFieldName)
-    mkIntField(endLineFieldName)
-    mkIntField(endColFieldName)
+    visitor.visitField(ACC_PUBLIC + ACC_FINAL, SourceFieldName, JvmType.String.toDescriptor, null, null).visitEnd()
+    mkIntField(BeginLineFieldName)
+    mkIntField(BeginColFieldName)
+    mkIntField(EndLineFieldName)
+    mkIntField(EndColFieldName)
 
     genConstructor(name, superClass, visitor)
     genEquals(name, visitor)
@@ -77,17 +77,17 @@ object GenReifiedSourceLocationClass {
     method.visitInsn(DUP)
     method.visitMethodInsn(INVOKESPECIAL, builderName, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
     method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, sourceFieldName, JvmName.String.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, SourceFieldName, JvmName.String.toDescriptor)
     method.visitMethodInsn(INVOKEVIRTUAL, builderName, "append", stringToBuilderDescriptor, false)
     method.visitLdcInsn(":")
     method.visitMethodInsn(INVOKEVIRTUAL, builderName, "append", stringToBuilderDescriptor, false)
     method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, beginLineFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, BeginLineFieldName, JvmType.PrimInt.toDescriptor)
     method.visitMethodInsn(INVOKEVIRTUAL, builderName, "append", intToBuilderDescriptor, false)
     method.visitLdcInsn(":")
     method.visitMethodInsn(INVOKEVIRTUAL, builderName, "append", stringToBuilderDescriptor, false)
     method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, beginColFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, BeginColFieldName, JvmType.PrimInt.toDescriptor)
     method.visitMethodInsn(INVOKEVIRTUAL, builderName, "append", intToBuilderDescriptor, false)
     method.visitMethodInsn(INVOKEVIRTUAL, builderName, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String), false)
     method.visitInsn(ARETURN)
@@ -97,7 +97,7 @@ object GenReifiedSourceLocationClass {
   }
 
   private def genConstructor(name: JvmName, superClass: JvmName, visitor: ClassWriter)(implicit flix: Flix): Unit = {
-    val method = visitor.visitMethod(ACC_PUBLIC, "<init>", constructorDescriptor, null, null)
+    val method = visitor.visitMethod(ACC_PUBLIC, "<init>", ConstructorDescriptor, null, null)
     method.visitCode()
 
     method.visitVarInsn(ALOAD, 0)
@@ -105,23 +105,23 @@ object GenReifiedSourceLocationClass {
 
     method.visitVarInsn(ALOAD, 0)
     method.visitVarInsn(ALOAD, 1)
-    method.visitFieldInsn(PUTFIELD, name.toInternalName, sourceFieldName, JvmType.String.toDescriptor)
+    method.visitFieldInsn(PUTFIELD, name.toInternalName, SourceFieldName, JvmType.String.toDescriptor)
 
     method.visitVarInsn(ALOAD, 0)
     method.visitVarInsn(ILOAD, 2)
-    method.visitFieldInsn(PUTFIELD, name.toInternalName, beginLineFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitFieldInsn(PUTFIELD, name.toInternalName, BeginLineFieldName, JvmType.PrimInt.toDescriptor)
 
     method.visitVarInsn(ALOAD, 0)
     method.visitVarInsn(ILOAD, 3)
-    method.visitFieldInsn(PUTFIELD, name.toInternalName, beginColFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitFieldInsn(PUTFIELD, name.toInternalName, BeginColFieldName, JvmType.PrimInt.toDescriptor)
 
     method.visitVarInsn(ALOAD, 0)
     method.visitVarInsn(ILOAD, 4)
-    method.visitFieldInsn(PUTFIELD, name.toInternalName, endLineFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitFieldInsn(PUTFIELD, name.toInternalName, EndLineFieldName, JvmType.PrimInt.toDescriptor)
 
     method.visitVarInsn(ALOAD, 0)
     method.visitVarInsn(ILOAD, 5)
-    method.visitFieldInsn(PUTFIELD, name.toInternalName, endColFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitFieldInsn(PUTFIELD, name.toInternalName, EndColFieldName, JvmType.PrimInt.toDescriptor)
 
     method.visitInsn(RETURN)
 
@@ -138,30 +138,30 @@ object GenReifiedSourceLocationClass {
     method.visitInsn(DUP)
     method.visitInsn(ICONST_0)
     method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, sourceFieldName, JvmType.String.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, SourceFieldName, JvmType.String.toDescriptor)
     method.visitInsn(AASTORE)
     method.visitInsn(DUP)
     method.visitInsn(ICONST_1)
     method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, beginLineFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, BeginLineFieldName, JvmType.PrimInt.toDescriptor)
     method.visitMethodInsn(INVOKESTATIC, JvmName.Integer.toInternalName, "valueOf", s"(${JvmType.PrimInt.toDescriptor})Ljava/lang/Integer;", false)
     method.visitInsn(AASTORE)
     method.visitInsn(DUP)
     method.visitInsn(ICONST_2)
     method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, beginColFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, BeginColFieldName, JvmType.PrimInt.toDescriptor)
     method.visitMethodInsn(INVOKESTATIC, JvmName.Integer.toInternalName, "valueOf", s"(${JvmType.PrimInt.toDescriptor})Ljava/lang/Integer;", false)
     method.visitInsn(AASTORE)
     method.visitInsn(DUP)
     method.visitInsn(ICONST_3)
     method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, endLineFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, EndLineFieldName, JvmType.PrimInt.toDescriptor)
     method.visitMethodInsn(INVOKESTATIC, JvmName.Integer.toInternalName, "valueOf", s"(${JvmType.PrimInt.toDescriptor})Ljava/lang/Integer;", false)
     method.visitInsn(AASTORE)
     method.visitInsn(DUP)
     method.visitInsn(ICONST_4)
     method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, endColFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, EndColFieldName, JvmType.PrimInt.toDescriptor)
     method.visitMethodInsn(INVOKESTATIC, JvmName.Integer.toInternalName, "valueOf", s"(${JvmType.PrimInt.toDescriptor})Ljava/lang/Integer;", false)
     method.visitInsn(AASTORE)
     method.visitMethodInsn(INVOKESTATIC, JvmName.Objects.toInternalName, "hash", s"([${JvmName.Object.toDescriptor})${JvmType.PrimInt.toDescriptor}", false)
@@ -203,29 +203,29 @@ object GenReifiedSourceLocationClass {
     method.visitVarInsn(ASTORE, 2)
     val returnFalse2 = new Label()
     method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, beginLineFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, BeginLineFieldName, JvmType.PrimInt.toDescriptor)
     method.visitVarInsn(ALOAD, 2)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, beginLineFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, BeginLineFieldName, JvmType.PrimInt.toDescriptor)
     method.visitJumpInsn(IF_ICMPNE, returnFalse2)
     method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, beginColFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, BeginColFieldName, JvmType.PrimInt.toDescriptor)
     method.visitVarInsn(ALOAD, 2)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, beginColFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, BeginColFieldName, JvmType.PrimInt.toDescriptor)
     method.visitJumpInsn(IF_ICMPNE, returnFalse2)
     method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, endLineFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, EndLineFieldName, JvmType.PrimInt.toDescriptor)
     method.visitVarInsn(ALOAD, 2)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, endLineFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, EndLineFieldName, JvmType.PrimInt.toDescriptor)
     method.visitJumpInsn(IF_ICMPNE, returnFalse2)
     method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, endColFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, EndColFieldName, JvmType.PrimInt.toDescriptor)
     method.visitVarInsn(ALOAD, 2)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, endColFieldName, JvmType.PrimInt.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, EndColFieldName, JvmType.PrimInt.toDescriptor)
     method.visitJumpInsn(IF_ICMPNE, returnFalse2)
     method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, sourceFieldName, JvmType.String.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, SourceFieldName, JvmType.String.toDescriptor)
     method.visitVarInsn(ALOAD, 2)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, sourceFieldName, JvmType.String.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, SourceFieldName, JvmType.String.toDescriptor)
     method.visitMethodInsn(INVOKESTATIC, JvmName.Objects.toInternalName, "equals", AsmOps.getMethodDescriptor(List(JvmType.Object, JvmType.Object), JvmType.PrimBool), false)
     method.visitJumpInsn(IFEQ, returnFalse2)
     method.visitInsn(ICONST_1)

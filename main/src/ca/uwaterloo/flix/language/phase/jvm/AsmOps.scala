@@ -383,7 +383,7 @@ object AsmOps {
     mv.visitLdcInsn(loc.beginCol)
     mv.visitLdcInsn(loc.endLine)
     mv.visitLdcInsn(loc.endCol)
-    mv.visitMethodInsn(INVOKESPECIAL, JvmName.ReifiedSourceLocation.toInternalName, "<init>", GenReifiedSourceLocationClass.constructorDescriptor, false)
+    mv.visitMethodInsn(INVOKESPECIAL, JvmName.ReifiedSourceLocation.toInternalName, "<init>", GenReifiedSourceLocationClass.ConstructorDescriptor, false)
   }
 
   /**

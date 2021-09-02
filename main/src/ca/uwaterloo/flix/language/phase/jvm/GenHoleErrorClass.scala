@@ -22,8 +22,8 @@ import org.objectweb.asm.Opcodes._
 
 object GenHoleErrorClass {
 
-  val holeFieldName: String = "hole"
-  val locationFieldName: String = "location"
+  val HoleFieldName: String = "hole"
+  val LocationFieldName: String = "location"
 
   def gen()(implicit flix: Flix): Map[JvmName, JvmClass] = {
     val jvmName = JvmName.HoleError
@@ -47,8 +47,8 @@ object GenHoleErrorClass {
     genConstructor(name, superClass, visitor)
     genEquals(name, visitor)
     genHashCode(name, visitor)
-    visitor.visitField(ACC_PUBLIC + ACC_FINAL, holeFieldName, JvmName.String.toDescriptor, null, null).visitEnd()
-    visitor.visitField(ACC_PUBLIC + ACC_FINAL, locationFieldName, JvmName.ReifiedSourceLocation.toDescriptor, null, null).visitEnd()
+    visitor.visitField(ACC_PUBLIC + ACC_FINAL, HoleFieldName, JvmName.String.toDescriptor, null, null).visitEnd()
+    visitor.visitField(ACC_PUBLIC + ACC_FINAL, LocationFieldName, JvmName.ReifiedSourceLocation.toDescriptor, null, null).visitEnd()
 
     visitor.visitEnd()
     visitor.toByteArray
@@ -78,10 +78,10 @@ object GenHoleErrorClass {
     method.visitMethodInsn(INVOKESPECIAL, superClass.toInternalName, "<init>", AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Void), false)
     method.visitVarInsn(ALOAD, 0)
     method.visitVarInsn(ALOAD, 1)
-    method.visitFieldInsn(PUTFIELD, name.toInternalName, holeFieldName, JvmName.String.toDescriptor)
+    method.visitFieldInsn(PUTFIELD, name.toInternalName, HoleFieldName, JvmName.String.toDescriptor)
     method.visitVarInsn(ALOAD, 0)
     method.visitVarInsn(ALOAD, 2)
-    method.visitFieldInsn(PUTFIELD, name.toInternalName, locationFieldName, JvmName.ReifiedSourceLocation.toDescriptor)
+    method.visitFieldInsn(PUTFIELD, name.toInternalName, LocationFieldName, JvmName.ReifiedSourceLocation.toDescriptor)
     method.visitInsn(RETURN)
 
     method.visitMaxs(999, 999)
@@ -119,16 +119,16 @@ object GenHoleErrorClass {
     method.visitTypeInsn(CHECKCAST, name.toInternalName)
     method.visitVarInsn(ASTORE, 2)
     method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, holeFieldName, JvmName.String.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, HoleFieldName, JvmName.String.toDescriptor)
     method.visitVarInsn(ALOAD, 2)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, holeFieldName, JvmName.String.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, HoleFieldName, JvmName.String.toDescriptor)
     method.visitMethodInsn(INVOKESTATIC, JvmName.Objects.toInternalName, "equals", AsmOps.getMethodDescriptor(List(JvmType.Object, JvmType.Object), JvmType.PrimBool), false)
     val returnFalse2 = new Label()
     method.visitJumpInsn(IFEQ, returnFalse2)
     method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, locationFieldName, JvmName.ReifiedSourceLocation.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, LocationFieldName, JvmName.ReifiedSourceLocation.toDescriptor)
     method.visitVarInsn(ALOAD, 2)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, locationFieldName, JvmName.ReifiedSourceLocation.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, LocationFieldName, JvmName.ReifiedSourceLocation.toDescriptor)
     method.visitMethodInsn(INVOKESTATIC, JvmName.Objects.toInternalName, "equals", AsmOps.getMethodDescriptor(List(JvmType.Object, JvmType.Object), JvmType.PrimBool), false)
     method.visitJumpInsn(IFEQ, returnFalse2)
     method.visitInsn(ICONST_1)
@@ -154,12 +154,12 @@ object GenHoleErrorClass {
     method.visitInsn(DUP)
     method.visitInsn(ICONST_0)
     method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, holeFieldName, JvmType.String.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, HoleFieldName, JvmType.String.toDescriptor)
     method.visitInsn(AASTORE)
     method.visitInsn(DUP)
     method.visitInsn(ICONST_1)
     method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, locationFieldName, JvmName.ReifiedSourceLocation.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, LocationFieldName, JvmName.ReifiedSourceLocation.toDescriptor)
     method.visitInsn(AASTORE)
     method.visitMethodInsn(INVOKESTATIC, JvmName.Objects.toInternalName, "hash", s"([${JvmName.Object.toDescriptor})${JvmType.PrimInt.toDescriptor}", false)
     method.visitInsn(IRETURN)

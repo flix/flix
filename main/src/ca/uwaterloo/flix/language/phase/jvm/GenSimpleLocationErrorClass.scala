@@ -22,7 +22,7 @@ import org.objectweb.asm.Opcodes._
 
 object GenSimpleLocationErrorClass {
 
-  val locationFieldName: String = "location"
+  val LocationFieldName: String = "location"
 
   /**
    * Creates a subclass of `dev.flix.runtime.FlixError` with a `dev.flix.runtime.ReifiedSourceLocation` and a string prefix o the message.
@@ -52,7 +52,7 @@ object GenSimpleLocationErrorClass {
     genConstructor(name, superClass, prefix, visitor)
     genEquals(name, visitor)
     genHashCode(name, visitor)
-    visitor.visitField(ACC_PUBLIC + ACC_FINAL, locationFieldName, JvmName.ReifiedSourceLocation.toDescriptor, null, null).visitEnd()
+    visitor.visitField(ACC_PUBLIC + ACC_FINAL, LocationFieldName, JvmName.ReifiedSourceLocation.toDescriptor, null, null).visitEnd()
 
     visitor.visitEnd()
     visitor.toByteArray
@@ -78,7 +78,7 @@ object GenSimpleLocationErrorClass {
     method.visitMethodInsn(INVOKESPECIAL, superClass.toInternalName, "<init>", AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Void), false)
     method.visitVarInsn(ALOAD, 0)
     method.visitVarInsn(ALOAD, 1)
-    method.visitFieldInsn(PUTFIELD, name.toInternalName, locationFieldName, JvmName.ReifiedSourceLocation.toDescriptor)
+    method.visitFieldInsn(PUTFIELD, name.toInternalName, LocationFieldName, JvmName.ReifiedSourceLocation.toDescriptor)
     method.visitInsn(RETURN)
 
     method.visitMaxs(999, 999)
@@ -116,9 +116,9 @@ object GenSimpleLocationErrorClass {
     method.visitTypeInsn(CHECKCAST, name.toInternalName)
     method.visitVarInsn(ASTORE, 2)
     method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, locationFieldName, JvmName.ReifiedSourceLocation.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, LocationFieldName, JvmName.ReifiedSourceLocation.toDescriptor)
     method.visitVarInsn(ALOAD, 2)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, locationFieldName, JvmName.ReifiedSourceLocation.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, LocationFieldName, JvmName.ReifiedSourceLocation.toDescriptor)
     method.visitMethodInsn(INVOKESTATIC, JvmName.Objects.toInternalName, "equals", AsmOps.getMethodDescriptor(List(JvmType.Object, JvmType.Object), JvmType.PrimBool), false)
     method.visitInsn(IRETURN)
 
@@ -135,7 +135,7 @@ object GenSimpleLocationErrorClass {
     method.visitInsn(DUP)
     method.visitInsn(ICONST_0)
     method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, locationFieldName, JvmName.ReifiedSourceLocation.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, LocationFieldName, JvmName.ReifiedSourceLocation.toDescriptor)
     method.visitInsn(AASTORE)
     method.visitMethodInsn(INVOKESTATIC, JvmName.Objects.toInternalName, "hash", s"([${JvmName.Object.toDescriptor})${JvmType.PrimInt.toDescriptor}", false)
     method.visitInsn(IRETURN)
