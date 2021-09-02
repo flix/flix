@@ -32,7 +32,6 @@ object Unification {
     if (x.id == y.id) {
       Result.Ok(Substitution.empty)
     } else {
-      // MATT removed kind checks
       (x.rigidity, y.rigidity) match {
         // Case 1: x is flexible
         case (Rigidity.Flexible, _) => Result.Ok(Substitution.singleton(x, y))
@@ -60,12 +59,6 @@ object Unification {
     // Check if `x` occurs within `tpe`.
     if (tpe.typeVars contains x) {
       return Result.Err(UnificationError.OccursCheck(x, tpe))
-    }
-
-    // MATT
-    // Check if the kind of `x` matches the kind of `tpe`.
-    if (Kinder.unify(tpe.kind, x.kind).isEmpty) {
-      return Result.Err(UnificationError.MismatchedKinds(x.kind, tpe.kind))
     }
 
     Result.Ok(Substitution.singleton(x, tpe))
@@ -273,9 +266,6 @@ object Unification {
 
         case Result.Err(UnificationError.NonSchemaType(tpe)) =>
           Err(TypeError.NonSchemaType(tpe, loc))
-
-        case Result.Err(UnificationError.MismatchedKinds(kind1, kind2)) =>
-          Err(TypeError.MismatchedKinds(type1, type2, kind1, kind2, loc))
 
         case Result.Err(err: UnificationError.NoMatchingInstance) =>
           throw InternalCompilerException(s"Unexpected unification error: $err")
