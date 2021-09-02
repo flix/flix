@@ -2,7 +2,6 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.debug.FormatSourceLocation
-import flix.runtime.ReifiedSourceLocation
 
 
 /**
@@ -54,11 +53,6 @@ case class SourceLocation(source: Source, beginLine: Int, beginCol: Int, endLine
     * Returns a formatted string representation of `this` source location.
     */
   def format: String = s"${source.format}:$beginLine:$beginCol"
-
-  /**
-    * Returns a reified source location.
-    */
-  def reified: ReifiedSourceLocation = new ReifiedSourceLocation(source.format, beginLine, beginCol, endLine, endCol)
 
   /**
     * Returns the smallest (i.e. the first that appears in the source code) of `this` and `that`.

@@ -145,9 +145,34 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       val lazyClasses = GenLazyClasses.gen(types)
 
       //
-      // Generate Unit class.
+      // Generate the Unit class.
       //
       val unitClass = GenUnitClass.gen()
+
+      //
+      // Generate the FlixError class.
+      //
+      val flixErrorClass = GenFlixErrorClass.gen()
+
+      //
+      // Generate the ReifiedSourceLocation class.
+      //
+      val rslClass = GenReifiedSourceLocationClass.gen()
+
+      //
+      // Generate the HoleError class.
+      //
+      val holeErrorClass = GenHoleErrorClass.gen()
+
+      //
+      // Generate the MatchError class.
+      //
+      val matchErrorClass = GenFlixErrorSubclass.gen(JvmName.MatchError, "Non-exhaustive match at ")
+
+      //
+      // Generate the MatchError class.
+      //
+      val notImplementedErrorClass = GenFlixErrorSubclass.gen(JvmName.NotImplementedError, "Implementation missing at ")
 
       //
       // Collect all the classes and interfaces together.
@@ -169,7 +194,12 @@ object JvmBackend extends Phase[Root, CompilationResult] {
         recordExtendClasses,
         refClasses,
         lazyClasses,
-        unitClass
+        unitClass,
+        flixErrorClass,
+        rslClass,
+        holeErrorClass,
+        matchErrorClass,
+        notImplementedErrorClass
       ).reduce(_ ++ _)
     }
 
