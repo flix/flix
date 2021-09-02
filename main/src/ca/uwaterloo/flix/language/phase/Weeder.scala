@@ -2523,7 +2523,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.Ambiguous(sp1, _, _) => sp1
     case ParsedAst.Type.Tuple(sp1, _, _) => sp1
     case ParsedAst.Type.Record(sp1, _, _, _) => sp1
+    case ParsedAst.Type.RecordRow(sp1, _, _, _) => sp1
     case ParsedAst.Type.Schema(sp1, _, _, _) => sp1
+    case ParsedAst.Type.SchemaRow(sp1, _, _, _) => sp1
     case ParsedAst.Type.UnaryImpureArrow(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.UnaryPolymorphicArrow(tpe1, _, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.ImpureArrow(sp1, _, _, _) => sp1
