@@ -613,4 +613,10 @@ namespace LazyList {
     pub def prepend(l1: LazyList[a], l2: LazyList[a]): LazyList[a] =
         append(l2, l1)
 
+    ///
+    /// Returns `l` with every occurrence of `x` replaced by `y`.
+    ///
+    pub def replace(x: a, y: a, l: LazyList[a]): LazyList[a] with Eq[a] =
+        map(e -> if (x == e) y else e, l)
+
 }
