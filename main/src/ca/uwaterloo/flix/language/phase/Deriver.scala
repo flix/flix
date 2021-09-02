@@ -129,6 +129,37 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
       )
   }
 
+  private def mkToStringImpl(enum: KindedAst.Enum, varSym: Symbol.VarSym, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Expression = enum match {
+    case KindedAst.Enum(doc, mod, sym, tparams, derives, cases, tpeDeprecated, sc, loc) =>
+      val matchRules = cases.values.map(mkToStringMatchRule(_, loc, root))
+      KindedAst.Expression.Match(
+        mkVarExpr(varSym, loc),
+        matchRules.toList,
+        loc
+      )
+  }
+
+  private def mkToStringSpec(enum: KindedAst.Enum, varSym: Symbol.VarSym, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Spec = enum match {
+    case KindedAst.Enum(doc, mod, sym, tparams, derives, cases, tpeDeprecated, sc, loc) =>
+      val toStringClassSym = PredefinedClasses.lookupClassSym("ToString", root)
+      KindedAst.Spec(
+        doc = Ast.Doc(Nil, loc),
+        ann = Nil,
+        mod = Ast.Modifiers.Empty,
+        tparams = tparams,
+        fparams = List(KindedAst.FormalParam(varSym, Ast.Modifiers.Empty, sc.base, loc)),
+        sc = Scheme(
+          tparams.map(_.tpe),
+          List(Ast.TypeConstraint(toStringClassSym, sc.base, loc)),
+          Type.mkPureArrow(sc.base, Type.mkString(loc), loc)
+        ),
+        tpe = Type.mkString(loc),
+        eff = Type.Cst(TypeConstructor.True, loc),
+        loc = loc
+      )
+
+  }
+
   /**
     * Creates a ToString match rule for the given enum case.
     */
