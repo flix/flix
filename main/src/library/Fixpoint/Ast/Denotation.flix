@@ -35,7 +35,7 @@ namespace Fixpoint/Ast {
     ///
     /// Returns a latticenal denotation associated with the type `t`.
     ///
-    pub def lattice(): Denotation[t] with LowerBound[t], PartialOrder[t], JoinLattice[t], MeetLattice[t] =
+    pub def lattice(): Denotation[t] with LowerBound[t], JoinLattice[t], MeetLattice[t] =
         // TODO: Why are these type annotations necessary?
         Latticenal(
             LowerBound.minValue() : t,
