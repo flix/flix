@@ -555,8 +555,8 @@ namespace TestLazyList {
         LazyList.map(   x -> { l := "b" :: deref l; x    } as & Pure) |>
         LazyList.toList as & Impure;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
-    
-    /////////////////////////////////////////////////////////////////////////////    
+
+    /////////////////////////////////////////////////////////////////////////////
     // foldLeft                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -895,6 +895,9 @@ namespace TestLazyList {
     @test
     def toSet10(): Bool =
     	LazyList.toSet(ECons(1, LCons(2, lazy ECons(3, ENil)))) == Set#{1, 2, 3}
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // append                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -2036,7 +2039,7 @@ namespace TestLazyList {
     def maximumBy05(): Bool =
         LazyList.maximumBy((_, _) -> LessThan, LazyList.range(0, 99)) == Some(98)
 
-    
+
     /////////////////////////////////////////////////////////////////////////////
     // flatMap (pure)                                                          //
     /////////////////////////////////////////////////////////////////////////////
@@ -2329,5 +2332,75 @@ namespace TestLazyList {
     @test
     def memberOf16(): Bool =
         LazyList.memberOf(-2, ECons(1, ECons(1000, ECons(-2, ECons(1, ENil)))))
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // prepend                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def prepend01(): Bool =
+    	LazyList.prepend(ENil: LazyList[Unit], ENil: LazyList[Unit]) == ENil
+
+    @test
+    def prepend02(): Bool =
+    	LazyList.prepend(LList(lazy ENil): LazyList[Unit], ENil: LazyList[Unit]) == ENil
+
+    @test
+    def prepend03(): Bool =
+    	LazyList.prepend(ENil, LList(lazy ENil): LazyList[Unit]) == ENil
+
+    @test
+    def prepend04(): Bool =
+    	LazyList.prepend(LList(lazy ENil), LList(lazy ENil): LazyList[Unit]) == ENil
+
+    @test
+    def prepend05(): Bool =
+    	LazyList.prepend(LCons(1, lazy ENil), LList(lazy ENil)) == ECons(1, ENil)
+
+    @test
+    def prepend06(): Bool =
+    	LazyList.prepend(LList(lazy ECons(1, LList(lazy ENil))), LList(lazy ENil)) == ECons(1, ENil)
+
+    @test
+    def prepend07(): Bool =
+    	LazyList.prepend(ECons(1, LList(lazy ENil)), LList(lazy ENil)) == ECons(1, ENil)
+
+    @test
+    def prepend08(): Bool =
+    	LazyList.prepend(LCons(1, lazy ENil), ENil) == ECons(1, ENil)
+
+    @test
+    def prepend09(): Bool =
+    	LazyList.prepend(ENil, LCons(1, lazy ENil)) == ECons(1, ENil)
+
+    @test
+    def prepend10(): Bool =
+    	LazyList.prepend(ENil, LList(lazy ECons(1, LList(lazy ENil)))) == ECons(1, ENil)
+
+    @test
+    def prepend11(): Bool =
+    	LazyList.prepend(LList(lazy ENil), ECons(1, LList(lazy ENil))) == ECons(1, ENil)
+
+    @test
+    def prepend12(): Bool =
+    	LazyList.prepend(LList(lazy ENil), LCons(1, lazy LList(lazy ENil))) == ECons(1, ENil)
+
+    @test
+    def prepend13(): Bool =
+    	LazyList.prepend(ECons(1, ECons(2, ECons(3, ENil))), ECons(4, LList(lazy ENil))) == ECons(4, ECons(1, ECons(2, ECons(3, ENil))))
+
+    @test
+    def prepend14(): Bool =
+    	LazyList.prepend(ECons(1, ECons(2, ECons(3, ENil))), LCons(4, lazy LList(lazy ENil))) == ECons(4, ECons(1, ECons(2, ECons(3, ENil))))
+
+    @test
+    def prepend15(): Bool =
+    	LazyList.prepend(ECons(4, ENil), ECons(1, LCons(2, lazy LList(lazy LCons(3, lazy ENil))))) == ECons(1, ECons(2, ECons(3, ECons(4, ENil))))
+
+    @test
+    def prepend16(): Bool =
+    	LazyList.prepend(ECons(4, ENil), LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil))))) == ECons(1, ECons(2, ECons(3, ECons(4, ENil))))
+
 
 }
