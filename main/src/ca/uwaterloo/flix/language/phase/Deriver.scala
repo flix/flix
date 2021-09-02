@@ -52,8 +52,8 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
       lazy val toStringSym = PredefinedClasses.lookupClassSym("ToString", root)
       lazy val eqSym = PredefinedClasses.lookupClassSym("Eq", root)
       derives.map {
-        case Ast.Derivation(sym, loc) if sym == toStringSym => createToString(enum, loc, root)
-        case Ast.Derivation(sym, loc) if sym == eqSym => createEq(enum, loc, root)
+        case Ast.Derivation(sym, loc) if sym == toStringSym => mkToString(enum, loc, root)
+        case Ast.Derivation(sym, loc) if sym == eqSym => mkEq(enum, loc, root)
         case unknownSym => throw InternalCompilerException(s"Unexpected derivation: $unknownSym")
       }
   }
@@ -81,13 +81,13 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
     * }
     * }}}
     */
-  private def createToString(enum: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum match {
+  private def mkToString(enum: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum match {
     case KindedAst.Enum(_, _, _, tparams, _, cases, _, sc, _) =>
       val toStringClassSym = PredefinedClasses.lookupClassSym("ToString", root)
       val toStringDefSym = Symbol.mkDefnSym("ToString.toString")
 
       // create a match rule for each case and put them in a match expression
-      val matchRules = cases.values.map(createToStringMatchRule(_, loc, root))
+      val matchRules = cases.values.map(mkToStringMatchRule(_, loc, root))
       val varSym = Symbol.freshVarSym("x", loc)
       val exp = KindedAst.Expression.Match(
         mkVarExpr(varSym, loc),
@@ -132,7 +132,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
   /**
     * Creates a ToString match rule for the given enum case.
     */
-  private def createToStringMatchRule(caze: KindedAst.Case, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
+  private def mkToStringMatchRule(caze: KindedAst.Case, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
     case KindedAst.Case(enum, tag, tpeDeprecated, sc) =>
 
       // get a pattern corresponding to this case
@@ -194,13 +194,13 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
     * }
     * }}}
     */
-  private def createEq(enum: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum match {
+  private def mkEq(enum: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum match {
     case KindedAst.Enum(_, _, _, tparams, _, cases, _, sc, _) =>
       val eqClassSym = PredefinedClasses.lookupClassSym("Eq", root)
       val eqDefSym = Symbol.mkDefnSym("Eq.eq")
 
       // create a match rule for each case and put them in a match expression
-      val mainMatchRules = cases.values.map(createEqMatchRule(_, loc, root))
+      val mainMatchRules = cases.values.map(mkEqMatchRule(_, loc, root))
       val defaultRule = KindedAst.MatchRule(KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc), KindedAst.Expression.True(loc), KindedAst.Expression.False(loc))
       val varSym1 = Symbol.freshVarSym("x", loc)
       val varSym2 = Symbol.freshVarSym("y", loc)
@@ -247,7 +247,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
   /**
     * Creates an Eq match rule for the given enum case.
     */
-  private def createEqMatchRule(caze: KindedAst.Case, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
+  private def mkEqMatchRule(caze: KindedAst.Case, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
     case KindedAst.Case(enum, tag, tpeDeprecated, sc) =>
 
       // get a pattern corresponding to this case
