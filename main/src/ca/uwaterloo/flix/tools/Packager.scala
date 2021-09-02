@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.tools
 import java.io.PrintWriter
 import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file._
-import java.util.zip.{ZipEntry, ZipFile, ZipInputStream, ZipOutputStream}
+import java.util.zip.{ZipEntry, ZipFile, ZipOutputStream}
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Source
@@ -141,9 +141,6 @@ object Packager {
       loadClassFiles = loadClasses,
       writeClassFiles = true)
     flix.setOptions(newOptions)
-
-    // Copy all class files from the Flix runtime jar.
-    copyRuntimeClassFiles(p)
 
     // Add sources and packages.
     addSourcesAndPackages(p, o, flix)
@@ -323,39 +320,6 @@ object Packager {
     }
 
     result.toList
-  }
-
-  /**
-    * Copies all Flix runtime class files into the build directory.
-    */
-  private def copyRuntimeClassFiles(p: Path): Unit = {
-    // Retrieve the Flix runtime JAR file.
-    val is = LocalResource.getInputStream("/src/resources/runtime/flix-runtime.jar")
-    val zip = new ZipInputStream(is)
-
-    // Iterate through its directories and classes.
-    var entry = zip.getNextEntry
-    while (entry != null) {
-      // Check if the entry is a directory or a file.
-      if (entry.isDirectory) {
-        // Case 1: The entry is a directory. Recreate the directory (and its parent directories) inside the build directory.
-        val directoryPath = getBuildDirectory(p).resolve(entry.getName).normalize()
-        Files.createDirectories(directoryPath)
-      } else {
-        // Case 2: The entry is a file. Verify that it is a class file.
-        val classFilePath = getBuildDirectory(p).resolve(entry.getName).normalize()
-        if (classFilePath.toString.endsWith(".class")) {
-          // The entry is a class file. Write its content to the build directory.
-          StreamOps.writeAll(zip, classFilePath)
-        }
-      }
-
-      // Done with this entry.
-      zip.closeEntry()
-
-      // Ready to process the next entry.
-      entry = zip.getNextEntry
-    }
   }
 
   /**
