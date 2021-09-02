@@ -86,7 +86,7 @@ object Tester {
       if (failure == 0) {
         vt << Green("  Tests Passed!") << s" ($success / $success)" << NewLine
       } else {
-        vt << Red(s"  Tests Failed!") << s" ($success / ${success + failure})"
+        vt << Red(s"  Tests Failed!") << s" (Passed: $success / ${success + failure})"
       }
       vt
     }
