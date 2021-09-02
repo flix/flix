@@ -607,4 +607,10 @@ namespace LazyList {
         case LList(xs)    => memberOf(a, force xs)
     }
 
+    ///
+    /// Returns `l2` prepended to `l1`. This operation is equivalent to `append(l2, l1)`.
+    ///
+    pub def prepend(l1: LazyList[a], l2: LazyList[a]): LazyList[a] =
+        append(l2, l1)
+
 }
