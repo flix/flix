@@ -59,7 +59,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
   }
 
   /**
-    * Creates a toString instance for the given enum.
+    * Creates a ToString instance for the given enum.
     *
     * {{{
     * enum E[a] with ToString {
@@ -171,7 +171,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
   }
 
   /**
-    * Creates a toString instance for the given enum.
+    * Creates an Eq instance for the given enum.
     *
     * {{{
     * enum E[a] with Eq {
@@ -245,7 +245,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
   }
 
   /**
-    * Creates a ToString match rule for the given enum case.
+    * Creates an Eq match rule for the given enum case.
     */
   private def createEqMatchRule(caze: KindedAst.Case, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
     case KindedAst.Case(enum, tag, tpeDeprecated, sc) =>
@@ -285,6 +285,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
 
       KindedAst.MatchRule(pat, guard, exp)
   }
+
   /**
     * Builds a string expression from the given string.
     */
