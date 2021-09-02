@@ -545,6 +545,8 @@ namespace LazyList {
     ///
     pub def maximumBy(cmp: (a, a) -> Comparison, l: LazyList[a]): Option[a] =
         reduceLeft(Order.maxBy(cmp), l)
+
+    ///
     /// Returns the result of applying `f` to every element in `l` and concatenating the results.
     ///
     /// Whether `f` is applied eagerly or lazily depends on its purity:
