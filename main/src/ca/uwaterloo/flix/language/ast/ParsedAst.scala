@@ -1286,13 +1286,34 @@ object ParsedAst {
     case class Record(sp1: SourcePosition, fields: Seq[ParsedAst.RecordFieldType], rest: Option[Name.Ident], sp2: SourcePosition) extends ParsedAst.Type
 
     /**
+      * Record Row type.
+      *
+      * @param sp1    the position of the first character in the type.
+      * @param fields the sequence of field types.
+      * @param rest   the optional row variable.
+      * @param sp2    the position of the last character in the type.
+      */
+    case class RecordRow(sp1: SourcePosition, fields: Seq[ParsedAst.RecordFieldType], rest: Option[Name.Ident], sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
       * Schema Type.
       *
       * @param sp1        the position of the first character in the type.
       * @param predicates the sequence of predicate types.
+      * @param rest       the optional row variable.
       * @param sp2        the position of the last character in the type.
       */
     case class Schema(sp1: SourcePosition, predicates: Seq[ParsedAst.PredicateType], rest: Option[Name.Ident], sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
+      * Schema Row Type.
+      *
+      * @param sp1        the position of the first character in the type.
+      * @param predicates the sequence of predicate types.
+      * @param rest       the optional row variable.
+      * @param sp2        the position of the last character in the type.
+      */
+    case class SchemaRow(sp1: SourcePosition, predicates: Seq[ParsedAst.PredicateType], rest: Option[Name.Ident], sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * Unary Impure Arrow Type.
