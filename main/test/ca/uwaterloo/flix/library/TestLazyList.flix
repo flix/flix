@@ -2268,66 +2268,66 @@ namespace TestLazyList {
 
     @test
     def memberOf01(): Bool =
-        not (LazyList1.memberOf(0, ENil))
+        not (LazyList.memberOf(0, ENil))
 
     @test
     def memberOf02(): Bool =
-        not (LazyList1.memberOf(0, LList(lazy ENil)))
+        not (LazyList.memberOf(0, LList(lazy ENil)))
 
     @test
     def memberOf03(): Bool =
-        not (LazyList1.memberOf(0, LCons(1, lazy ENil)))
+        not (LazyList.memberOf(0, LCons(1, lazy ENil)))
 
     @test
     def memberOf04(): Bool =
-        not (LazyList1.memberOf(0, ECons(1, LList(lazy ENil))))
+        not (LazyList.memberOf(0, ECons(1, LList(lazy ENil))))
 
     @test
     def memberOf05(): Bool =
-        not (LazyList1.memberOf(0, LCons(1, lazy LList(lazy ENil))))
+        not (LazyList.memberOf(0, LCons(1, lazy LList(lazy ENil))))
 
     @test
     def memberOf06(): Bool =
-        not (LazyList1.memberOf(0, ECons(1, ENil)))
+        not (LazyList.memberOf(0, ECons(1, ENil)))
 
     @test
     def memberOf07(): Bool =
-        not (LazyList1.memberOf(0, ECons(1, ECons(2, LList(lazy ECons(3, ENil))))))
+        not (LazyList.memberOf(0, ECons(1, ECons(2, LList(lazy ECons(3, ENil))))))
 
     @test
     def memberOf08(): Bool =
-        not (LazyList1.memberOf(0, LCons(1, lazy ECons(2, LList(lazy ECons(3, ENil))))))
+        not (LazyList.memberOf(0, LCons(1, lazy ECons(2, LList(lazy ECons(3, ENil))))))
 
     @test
     def memberOf09(): Bool =
-        LazyList1.memberOf(0, ECons(1, ECons(2, LList(lazy ECons(3, LCons(0, lazy ENil))))))
+        LazyList.memberOf(0, ECons(1, ECons(2, LList(lazy ECons(3, LCons(0, lazy ENil))))))
 
     @test
     def memberOf10(): Bool =
-        LazyList1.memberOf(0, LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy LCons(3, lazy LCons(0, lazy ENil)))))))
+        LazyList.memberOf(0, LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy LCons(3, lazy LCons(0, lazy ENil)))))))
 
     @test
     def memberOf11(): Bool =
-        LazyList1.memberOf(0, ECons(1, ECons(2, ECons(3, LCons(0, lazy ENil)))))
+        LazyList.memberOf(0, ECons(1, ECons(2, ECons(3, LCons(0, lazy ENil)))))
 
     @test
     def memberOf12(): Bool =
-        LazyList1.memberOf(0, ECons(0, ECons(1, ECons(2, ECons(3, ENil)))))
+        LazyList.memberOf(0, ECons(0, ECons(1, ECons(2, ECons(3, ENil)))))
 
     @test
     def memberOf13(): Bool =
-        LazyList1.memberOf(0, ECons(1, ECons(1, ECons(1, ECons(0, ENil)))))
+        LazyList.memberOf(0, ECons(1, ECons(1, ECons(1, ECons(0, ENil)))))
 
     @test
     def memberOf14(): Bool =
-        LazyList1.memberOf(1, ECons(1, ECons(1, ECons(1, ECons(1, ENil)))))
+        LazyList.memberOf(1, ECons(1, ECons(1, ECons(1, ECons(1, ENil)))))
 
     @test
     def memberOf15(): Bool =
-        LazyList1.memberOf(0, ECons(1, ECons(1, ECons(0, ECons(1, ENil)))))
+        LazyList.memberOf(0, ECons(1, ECons(1, ECons(0, ECons(1, ENil)))))
 
     @test
     def memberOf16(): Bool =
-        LazyList1.memberOf(-2, ECons(1, ECons(1000, ECons(-2, ECons(1, ENil)))))
+        LazyList.memberOf(-2, ECons(1, ECons(1000, ECons(-2, ECons(1, ENil)))))
 
 }
