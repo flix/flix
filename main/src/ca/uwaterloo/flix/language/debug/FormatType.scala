@@ -163,14 +163,14 @@ object FormatType {
           case TypeConstructor.RecordRowExtend(field) => args.length match {
             case 0 => s"< $field: ??? >"
             case 1 => s"< $field: ${visit(args.head)} | ??? >"
-            case 2 => formatWellFormedRecordRow(tpe)
+            case 2 => s"< ${formatWellFormedRecordRow(tpe)} >"
             case _ => formatApply(s"RecordExtend($field)", args)
           }
 
           case TypeConstructor.SchemaRowExtend(pred) => args.length match {
             case 0 => s"#< ${pred.name}?(???) >"
             case 1 => s"#< ${formatSchemaField(pred.name, args.head)} | ??? >"
-            case 2 => formatWellFormedSchemaRow(tpe)
+            case 2 => s"#< ${formatWellFormedSchemaRow(tpe)} >"
             case _ => throw InternalCompilerException("unexpected overapplication")
           }
 

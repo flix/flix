@@ -44,6 +44,25 @@ class TestFormatType extends FunSuite with TestUtils {
     assert(actual == expected)
   }
 
+  test("FormatType.WellFormedType.RecordRow.External.01") {
+    val tpe = Type.mkRecordRowExtend(Name.Field("x", loc), Type.Int32, Type.mkRecordRowExtend(Name.Field("y", loc), Type.Str, Type.RecordRowEmpty, loc), loc)
+
+    val expected = "< x: Int32, y: String >"
+    val actual = FormatType.formatType(tpe)(Audience.External)
+
+    assert(actual == expected)
+  }
+
+  test("FormatWellFormedType.RecordRow.External.02") {
+    val rest = Type.KindedVar(0, Kind.RecordRow, loc, Rigidity.Rigid)
+    val tpe = Type.mkRecordRowExtend(Name.Field("x", loc), Type.Int32, rest, loc)
+
+    val expected = "< x: Int32 | '0 >"
+    val actual = FormatType.formatType(tpe)(Audience.External)
+
+    assert(actual == expected)
+  }
+
   test("FormatWellFormedType.Arrow.External.01") {
     val paramType = Type.KindedVar(0, Kind.Star, loc, Rigidity.Rigid)
     val tpe = Type.mkArrowWithEffect(paramType, Type.Pure, paramType, loc)
@@ -113,6 +132,28 @@ class TestFormatType extends FunSuite with TestUtils {
     val tpe = Type.mkSchema(Type.mkSchemaRowExtend(Name.Pred("A", loc), latticeType1, Type.mkSchemaRowExtend(Name.Pred("B", loc), latticeType2, restType, loc), loc), loc)
 
     val expected = "#{ A<>(String), B<>(Int32, String) | '5 }"
+    val actual = FormatType.formatType(tpe)(Audience.External)
+
+    assert(actual == expected)
+  }
+
+  test("FormatWellFormedType.SchemaRow.External.01") {
+    val relationType = Type.mkRelation(Type.Int32 :: Type.Str :: Nil, loc)
+    val tpe = Type.mkSchemaRowExtend(Name.Pred("S", loc), relationType, Type.SchemaRowEmpty, loc)
+
+    val expected = "#< S(Int32, String) >"
+    val actual = FormatType.formatType(tpe)(Audience.External)
+
+    assert(actual == expected)
+  }
+
+  test("FormatWellFormedType.SchemaRow.External.02") {
+    val latticeType1 = Type.mkLattice(List(Type.Str), loc)
+    val latticeType2 = Type.mkLattice(List(Type.Int32, Type.Str), loc)
+    val restType = Type.KindedVar(5, Kind.SchemaRow, loc, Rigidity.Flexible)
+    val tpe = Type.mkSchemaRowExtend(Name.Pred("A", loc), latticeType1, Type.mkSchemaRowExtend(Name.Pred("B", loc), latticeType2, restType, loc), loc)
+
+    val expected = "#< A<>(String), B<>(Int32, String) | '5 >"
     val actual = FormatType.formatType(tpe)(Audience.External)
 
     assert(actual == expected)
