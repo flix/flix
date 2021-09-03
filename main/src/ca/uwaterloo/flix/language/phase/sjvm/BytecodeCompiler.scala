@@ -158,8 +158,6 @@ object BytecodeCompiler {
         PUTFIELD(className, "value", exp2.tpe) ~
         pushUnit
 
-    case Expression.Existential(fparam, exp, loc) => ???
-    case Expression.Universal(fparam, exp, loc) => ???
     case Expression.Cast(exp, tpe, loc) => ???
     case Expression.TryCatch(exp, rules, tpe, loc) => ???
     case Expression.InvokeConstructor(constructor, args, tpe, loc) => ???
