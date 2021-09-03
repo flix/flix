@@ -25,12 +25,18 @@ object CompleteProvider {
   private implicit val audience: Audience = Audience.External
 
   /**
+    * A list of keywords that block completions.
+    */
+  private val BlockList: List[String] = List("class", "def", "instance", "namespace")
+
+  /**
     * Returns a list of auto-complete suggestions.
     */
   def autoComplete(uri: String, pos: Position, line: Option[String], word: Option[String])(implicit index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
     // Ordered by priority.
     getDefAndSigSuggestions(uri, pos, line, word) ++
       getInstanceSuggestions(uri, pos, line, word) ++
+      getWithSuggestions(uri, pos, line, word) ++
       getKeywordCompletionItems(line, word) ++
       getSnippetCompletionItems(line, word)
   }
@@ -40,7 +46,7 @@ object CompleteProvider {
     */
   private def getKeywordCompletionItems(line: Option[String], word: Option[String]): List[CompletionItem] = {
     /// Return if there is already a keyword on this line.
-    if (matchesOneOf(line, List("class", "instance", "namespace"))) {
+    if (matchesOneOf(line, BlockList)) {
       return Nil
     }
 
@@ -122,7 +128,7 @@ object CompleteProvider {
     */
   private def getSnippetCompletionItems(line: Option[String], word: Option[String]): List[CompletionItem] = {
     /// Return if there is already a keyword on this line.
-    if (matchesOneOf(line, List("class", "instance", "namespace"))) {
+    if (matchesOneOf(line, BlockList)) {
       return Nil
     }
 
@@ -155,6 +161,29 @@ object CompleteProvider {
       CompletionItem("query", "query ${1:db} select ${2:cols} from ${3:preds} ${4:where ${5:cond}}", None, Some("snippet for query"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
       CompletionItem("select", "select {\n\tcase ${1:x} <- ${2:c} =>${3:exp}\n}", None, Some("snippet for select"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
     )
+  }
+
+  /**
+    * Returns a list of completion items based on with type class constraints.
+    */
+  private def getWithSuggestions(uri: String, pos: Position, line: Option[String], word: Option[String])(implicit index: Index, root: TypedAst.Root): List[CompletionItem] = {
+    ///
+    /// Return immediately if there is no AST.
+    ///
+    if (root == null || !line.exists(_.contains("with"))) {
+      return Nil
+    }
+
+    root.classes.map {
+      case (_, clazz) =>
+        val hole = "${1:t}"
+        val classSym = clazz.sym
+        val label = s"$classSym[...]"
+        val insertText = s"$classSym[$hole]"
+        val detail = Some(fmtClass(clazz))
+        val documentation = Some(clazz.doc.text)
+        CompletionItem(label, insertText, detail, documentation, CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil)
+    }.toList
   }
 
   /**
@@ -221,13 +250,6 @@ object CompleteProvider {
       s"  pub def ${sig.sym.name}($fparams): $retTpe$eff = ???"
     }
 
-    /**
-      * Formats the given class `clazz`.
-      */
-    def fmtClass(clazz: TypedAst.Class): String = {
-      s"class ${clazz.sym.name}[${clazz.tparam.name.name}]"
-    }
-
     // Return immediately if the current line does not contain the word "instance".
     if (!line.exists(_.contains("instance"))) {
       return Nil
@@ -249,20 +271,20 @@ object CompleteProvider {
   }
 
   /**
+    * Formats the given class `clazz`.
+    */
+  private def fmtClass(clazz: TypedAst.Class): String = {
+    s"class ${clazz.sym.name}[${clazz.tparam.name.name}]"
+  }
+
+  /**
     * Returns a list of auto-complete suggestions based on defs and sigs.
     */
   private def getDefAndSigSuggestions(uri: String, pos: Position, line: Option[String], word: Option[String])(implicit index: Index, root: TypedAst.Root): List[CompletionItem] = {
     ///
     /// Return immediately if there is no AST.
     ///
-    if (root == null) {
-      return Nil
-    }
-
-    ///
-    /// Return immediately if the line contains one of the mismatched keywords.
-    ///
-    if (matchesOneOf(line, List("class", "instance", "namespace"))) {
+    if (root == null || matchesOneOf(line, BlockList)) {
       return Nil
     }
 
