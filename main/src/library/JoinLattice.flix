@@ -18,36 +18,28 @@
 ///
 /// A type class for join semi lattices.
 ///
-lawless class JoinLattice[a] {
+pub class JoinLattice[a] with PartialOrder[a] {
 
     ///
     /// Returns the least upper bound of `x` and `y`.
     ///
     pub def leastUpperBound(x: a, y: a): a
 
-    // TODO: Add laws
-    // TODO: Add super class.
-
-}
-
-namespace JoinLattice {
-
     ///
     /// The law asserts that the least upper bound operator returns
-    //  an element that is greater than or equal to each of its arguments.
+    /// an element that is greater than or equal to each of its arguments.
     ///
-    // TODO change to class law
-//    law leastUpperBound1[e](⊑: (e, e) -> Bool, ⊔: (e, e) -> e): Bool =
-//        ∀(x: e, y: e). (x ⊑ (x ⊔ y)) and (y ⊑ (x ⊔ y))
+    law leastUpperBound1: forall(x: a, y: a).
+        PartialOrder.lessEqual(x, JoinLattice.leastUpperBound(x, y)) and
+        PartialOrder.lessEqual(y, JoinLattice.leastUpperBound(x, y))
 
     ///
     /// The law asserts that the least upper bound operator returns
     /// the smallest element that is larger than its two arguments.
     ///
-    // TODO change to class law
-//    law leastUpperBound2[e](⊑: (e, e) -> Bool, ⊔: (e, e) -> e): Bool =
-//        let implies = (x, y) -> (not x) or y;
-//        ∀(x: e, y: e, z: e). ((x ⊑ z) and (y ⊑ z)) `implies` ((x ⊔ y) ⊑ z)
+    law leastUpperBound2: forall(x: a, y: a, z: a).
+        (PartialOrder.lessEqual(x, z) and PartialOrder.lessEqual(y, z)) ==>
+        PartialOrder.lessEqual(JoinLattice.leastUpperBound(x, y), z)
 
 }
 
