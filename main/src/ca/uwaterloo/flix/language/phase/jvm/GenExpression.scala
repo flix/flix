@@ -726,7 +726,7 @@ object GenExpression {
       visitor.visitInsn(DUP)
       // Instantiating a new array of type jvmType
       if (jvmType == JvmType.Object) { // Happens if the inner type is an object type
-        visitor.visitTypeInsn(ANEWARRAY, "java/lang/Object")
+        visitor.visitTypeInsn(ANEWARRAY, JvmName.Object.toInternalName)
       } else { // Happens if the inner type is a primitive type
         visitor.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType))
       }
@@ -739,7 +739,7 @@ object GenExpression {
       // Swaps 'length' and 0
       visitor.visitInsn(SWAP)
       // Invoking the method to copy the source array to the destination array
-      visitor.visitMethodInsn(INVOKESTATIC, "java/lang/System", "arraycopy", "(Ljava/lang/Object;ILjava/lang/Object;II)V", false);
+      visitor.visitMethodInsn(INVOKESTATIC, "java/lang/System", "arraycopy", AsmOps.getMethodDescriptor(List(JvmType.Object, JvmType.PrimInt, JvmType.Object, JvmType.PrimInt, JvmType.PrimInt), JvmType.Void), false);
       // Swaps 'new array reference' and 'length'
       visitor.visitInsn(SWAP)
       // Pops the 'length' - leaving 'new array reference' top of stack
@@ -986,7 +986,7 @@ object GenExpression {
       visitor.visitTypeInsn(NEW, JvmName.Channel.toInternalName)
       visitor.visitInsn(DUP)
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-      visitor.visitMethodInsn(INVOKESPECIAL, JvmName.Channel.toInternalName, "<init>", "(I)V", false)
+      visitor.visitMethodInsn(INVOKESPECIAL, JvmName.Channel.toInternalName, "<init>", AsmOps.getMethodDescriptor(List(JvmType.PrimInt), JvmType.Void), false)
 
     case Expression.GetChannel(exp, tpe, loc) =>
       addSourceLine(visitor, loc)
@@ -1002,7 +1002,7 @@ object GenExpression {
       visitor.visitInsn(DUP)
       compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
       AsmOps.boxIfPrim(visitor, JvmOps.getJvmType(exp2.tpe))
-      visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Channel.toInternalName, "put", "(Ljava/lang/Object;)V", false)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Channel.toInternalName, "put", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Void), false)
 
     case Expression.SelectChannel(rules, default, tpe, loc) =>
       addSourceLine(visitor, loc)
@@ -1039,14 +1039,14 @@ object GenExpression {
       // Check if the default case was selected
       val defaultLabel = new Label()
       visitor.visitInsn(DUP)
-      visitor.visitFieldInsn(GETFIELD, JvmName.SelectChoice.toInternalName, "defaultChoice", "Z")
+      visitor.visitFieldInsn(GETFIELD, JvmName.SelectChoice.toInternalName, "defaultChoice", JvmType.PrimBool.toDescriptor)
       // Jump if needed
       visitor.visitJumpInsn(IFNE, defaultLabel)
 
       // Dup since we need to get the element and the relevant index
       visitor.visitInsn(DUP)
       // Get the relevant branchNumber and put it on the stack
-      visitor.visitFieldInsn(GETFIELD, JvmName.SelectChoice.toInternalName, "branchNumber", "I")
+      visitor.visitFieldInsn(GETFIELD, JvmName.SelectChoice.toInternalName, "branchNumber", JvmType.PrimInt.toDescriptor)
 
       val labels: List[Label] = rules.map(_ => new Label())
       val lookupErrorLabel: Label = new Label()
@@ -1057,7 +1057,7 @@ object GenExpression {
       for ((rule, label) <- rules.zip(labels)) {
         visitor.visitLabel(label)
         // The SelectChoice is on top of the stack. We get the element of the channel
-        visitor.visitFieldInsn(GETFIELD, JvmName.SelectChoice.toInternalName, "element", "Ljava/lang/Object;")
+        visitor.visitFieldInsn(GETFIELD, JvmName.SelectChoice.toInternalName, "element", JvmType.Object.toDescriptor)
         // Jvm Type of the elementType
         val channelType = rule.chan.tpe.asInstanceOf[MonoType.Channel].tpe
         val jvmType = JvmOps.getErasedJvmType(channelType)
