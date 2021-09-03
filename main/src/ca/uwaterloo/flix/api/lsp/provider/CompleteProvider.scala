@@ -168,7 +168,7 @@ object CompleteProvider {
     */
   private def getWithSuggestions(uri: String, pos: Position, line: Option[String], word: Option[String])(implicit index: Index, root: TypedAst.Root): List[CompletionItem] = {
     ///
-    /// Return immediately if there is no AST.
+    /// Return immediately if there is no AST or the position is not appropriate.
     ///
     if (root == null || !line.exists(s => s.contains("class") || s.contains("with"))) {
       return Nil
@@ -282,7 +282,7 @@ object CompleteProvider {
     */
   private def getDefAndSigSuggestions(uri: String, pos: Position, line: Option[String], word: Option[String])(implicit index: Index, root: TypedAst.Root): List[CompletionItem] = {
     ///
-    /// Return immediately if there is no AST.
+    /// Return immediately if there is no AST or the position is not appropriate.
     ///
     if (root == null || matchesOneOf(line, BlockList)) {
       return Nil
