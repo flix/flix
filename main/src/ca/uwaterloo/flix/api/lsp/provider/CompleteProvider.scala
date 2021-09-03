@@ -170,7 +170,7 @@ object CompleteProvider {
     ///
     /// Return immediately if there is no AST.
     ///
-    if (root == null || !line.exists(_.contains("with"))) {
+    if (root == null || !line.exists(s => s.contains("class") || s.contains("with"))) {
       return Nil
     }
 
