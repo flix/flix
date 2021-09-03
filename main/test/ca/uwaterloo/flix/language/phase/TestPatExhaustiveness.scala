@@ -25,8 +25,6 @@ import org.scalatest.FunSuite
 
 class TestPatExhaustiveness extends FunSuite with TestUtils {
 
-  val DefaultOptions: Options = Options.TestWithLibMin
-
   test("Pattern.Literal.Char.01") {
     val input =
       """def f(x: Char): Int = match x {
@@ -35,7 +33,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |  case 'c' => 3
         |}
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -47,7 +45,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |  case 3 => 3
         |}
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -59,7 +57,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |  case 3i64 => 3
         |}
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -71,7 +69,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |  case "baz" => 3
         |}
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -87,7 +85,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |  case (_, Color.Blu) => 2
         |}
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -99,7 +97,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |  case (7i8, (_,_)) => 7
         |}
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -114,7 +112,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |  case (1,2,3,4,_) => 1
         |}
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -129,7 +127,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |  case (p, Lst(x, rs)) => x
         |}
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -144,7 +142,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |  case (Lst(x,xs), Lst(y,ys)) => 1
         |}
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -158,7 +156,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |  case Empty => 42
         |}
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -170,7 +168,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |
         |def f(e: E): Int8 = let E.A(true, 'a', i) = e; i
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -178,7 +176,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
     val input =
       """def f(e: (Int8, Int8)): Int8 = let (a,1i8) = e; a
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -193,7 +191,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |  case Evil(_, Evil(_, Evil(_, Evil(_, Evil(_, Evil(_, Evil(_, _))))))) => Evil(Good, Good)
         |}
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -208,7 +206,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |def f(): Option[Int] -> Int = match None -> 42
         |
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -223,7 +221,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |def f(): Option[Int] -> Int = match Some(x) -> x
         |
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -244,7 +242,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |  }
         |}
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -261,7 +259,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |         case Nil => 42
         |     }
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -283,7 +281,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
@@ -301,7 +299,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)
   }
 
