@@ -599,19 +599,12 @@ namespace LazyList {
     ///
     /// Forces elements until `a` is found.
     ///
-    @Time(length(l)) @Space(1)
     pub def memberOf(a: a, l: LazyList[a]): Bool with Eq[a] = match l {
         case ENil         => false
-        case ECons(x, xs) => if (x == a) true else memberOf(a,       xs)
-        case LCons(x, xs) => if (x == a) true else memberOf(a, force xs)
+        case ECons(x, xs) => x == a or memberOf(a,       xs)
+        case LCons(x, xs) => x == a or memberOf(a, force xs)
         case LList(xs)    => memberOf(a, force xs)
     }
-
-    ///
-    /// Returns `l2` prepended to `l1`. This operation is equivalent to `append(l2, l1)`.
-    ///
-    pub def prepend(l1: LazyList[a], l2: LazyList[a]): LazyList[a] =
-        append(l2, l1)
 
     ///
     /// Returns `l` with every occurrence of `x` replaced by `y`.
