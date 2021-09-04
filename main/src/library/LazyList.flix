@@ -594,4 +594,22 @@ namespace LazyList {
         case LList(xs)    => flatMapEHelper(f, force xs, k)
     }
 
+    ///
+    /// Returns `true` if and only if `l` contains the element `a`.
+    ///
+    /// Forces elements until `a` is found.
+    ///
+    pub def memberOf(a: a, l: LazyList[a]): Bool with Eq[a] = match l {
+        case ENil         => false
+        case ECons(x, xs) => x == a or memberOf(a,       xs)
+        case LCons(x, xs) => x == a or memberOf(a, force xs)
+        case LList(xs)    => memberOf(a, force xs)
+    }
+
+    ///
+    /// Returns `l` with every occurrence of `x` replaced by `y`.
+    ///
+    pub def replace(x: a, y: a, l: LazyList[a]): LazyList[a] with Eq[a] =
+        map(e -> if (x == e) y else e, l)
+
 }
