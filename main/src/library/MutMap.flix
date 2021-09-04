@@ -140,7 +140,7 @@ namespace MutMap {
     ///
     /// Otherwise updates the mutable map `m` with the binding `k -> v`.
     ///
-    pub def putWith!(f: (v, v) -> v & e, k: k, v: v, m: mut MutMap[k, v]): Unit & Impure with Order[k] =
+    pub def putWith!(f: (v, v) -> v & ef, k: k, v: v, m: mut MutMap[k, v]): Unit & Impure with Order[k] =
         let MutMap(mm) = m;
         mm := Map.insertWith(f, k, v, deref mm)
 
@@ -149,7 +149,7 @@ namespace MutMap {
     ///
     /// Otherwise leaves the map is unchanged.
     ///
-    pub def adjust!(f: v -> v & e, k: k, m: mut MutMap[k, v]): Unit & Impure with Order[k] =
+    pub def adjust!(f: v -> v & ef, k: k, m: mut MutMap[k, v]): Unit & Impure with Order[k] =
         adjustWithKey!((_, v1) -> f(v1), k, m)
 
     ///
@@ -157,7 +157,7 @@ namespace MutMap {
     ///
     /// Otherwise leaves the map is unchanged.
     ///
-    pub def adjustWithKey!(f: (k, v) -> v & e, k: k, m: mut MutMap[k, v]): Unit & Impure with Order[k] =
+    pub def adjustWithKey!(f: (k, v) -> v & ef, k: k, m: mut MutMap[k, v]): Unit & Impure with Order[k] =
         let MutMap(mm) = m;
         mm := Map.adjustWithKey(f, k, deref mm)
 
@@ -191,13 +191,13 @@ namespace MutMap {
     ///
     /// Merges the mutable map `m1` into the mutable map `m2` where key collisions are resolved with the merge function `f`.
     ///
-    pub def mergeWith!(f: (v, v) -> v & e, m1: MutMap[k, v], m2: mut MutMap[k, v]): Unit & Impure with Order[k] =
+    pub def mergeWith!(f: (v, v) -> v & ef, m1: MutMap[k, v], m2: mut MutMap[k, v]): Unit & Impure with Order[k] =
         mergeWithKey!((_, v1, v2) -> f(v1, v2), m1, m2)
 
     ///
     /// Merges the mutable map `m1` into the mutable map `m2` where key collisions are resolved with the merge function `f`, taking both the key and values.
     ///
-    pub def mergeWithKey!(f: (k, v, v) -> v & e, m1: MutMap[k, v], m2: mut MutMap[k, v]): Unit & Impure with Order[k] =
+    pub def mergeWithKey!(f: (k, v, v) -> v & ef, m1: MutMap[k, v], m2: mut MutMap[k, v]): Unit & Impure with Order[k] =
         let MutMap(mm1) = m1;
         let MutMap(mm2) = m2;
         mm2 := Map.unionWithKey(f, deref mm1, deref mm2)
@@ -231,14 +231,14 @@ namespace MutMap {
     ///
     /// Applies the function `f` to every value in the mutable map `m`.
     ///
-    pub def transform!(f: v -> v & e, m: mut MutMap[k, v]): Unit & Impure with Order[k] =
+    pub def transform!(f: v -> v & ef, m: mut MutMap[k, v]): Unit & Impure with Order[k] =
         let MutMap(mm) = m;
         mm := Map.map(f, deref mm)
 
     ///
     /// Applies the function `f` to every value in the mutable map `m`.
     ///
-    pub def transformWithKey!(f: (k, v) -> v & e, m: mut MutMap[k, v]): Unit & Impure with Order[k] =
+    pub def transformWithKey!(f: (k, v) -> v & ef, m: mut MutMap[k, v]): Unit & Impure with Order[k] =
         let MutMap(mm) = m;
         mm := Map.mapWithKey(f, deref mm)
 
@@ -287,7 +287,7 @@ namespace MutMap {
     ///
     /// Alias for `foldLeftWithKey`.
     ///
-    pub def foldWithKey(f: (b, k, v) -> b & e, i: b, m: MutMap[k, v]): b & Impure  =
+    pub def foldWithKey(f: (b, k, v) -> b & ef, i: b, m: MutMap[k, v]): b & Impure  =
         foldLeftWithKey(f, i, m)
 
     ///
@@ -295,7 +295,7 @@ namespace MutMap {
     ///
     /// That is, the result is of the form: `f(...f(f(i, v1), v2)..., vn)`.
     ///
-    pub def foldLeft(f: (b, v) -> b & e, i: b, m: MutMap[k, v]): b & Impure =
+    pub def foldLeft(f: (b, v) -> b & ef, i: b, m: MutMap[k, v]): b & Impure =
         let MutMap(mm) = m;
         Map.foldLeft(f, i, deref mm)
 
@@ -304,7 +304,7 @@ namespace MutMap {
     ///
     /// That is, the result is of the form: `f(...f(k2, f(k1, i, v1), v2)..., vn)`.
     ///
-    pub def foldLeftWithKey(f: (b, k, v) -> b & e, i: b, m: MutMap[k, v]): b & Impure =
+    pub def foldLeftWithKey(f: (b, k, v) -> b & ef, i: b, m: MutMap[k, v]): b & Impure =
         let MutMap(mm) = m;
         Map.foldLeftWithKey(f, i, deref mm)
 
@@ -313,7 +313,7 @@ namespace MutMap {
     ///
     /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, i)))`.
     ///
-    pub def foldRight(f: (v, b) -> b & e, i: b, m: MutMap[k, v]): b & Impure =
+    pub def foldRight(f: (v, b) -> b & ef, i: b, m: MutMap[k, v]): b & Impure =
         foldRightWithKey((_, v, b) -> f(v, b), i, m)
 
     ///
@@ -321,7 +321,7 @@ namespace MutMap {
     ///
     /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, i)))`.
     ///
-    pub def foldRightWithKey(f: (k, v, b) -> b & e, i: b, m: MutMap[k, v]): b & Impure =
+    pub def foldRightWithKey(f: (k, v, b) -> b & ef, i: b, m: MutMap[k, v]): b & Impure =
         let MutMap(mm) = m;
         Map.foldRightWithKey(f, i, deref mm)
 
@@ -332,7 +332,7 @@ namespace MutMap {
     ///
     /// Returns `None` if `m` is the empty map.
     ///
-    pub def reduceLeft(f: (v, v) -> v & e, m: MutMap[k, v]): Option[v] & Impure =
+    pub def reduceLeft(f: (v, v) -> v & ef, m: MutMap[k, v]): Option[v] & Impure =
         let MutMap(mm) = m;
         Map.reduceLeft(f, deref mm)
 
@@ -343,7 +343,7 @@ namespace MutMap {
     ///
     /// Returns `None` if `m` is the empty map.
     ///
-    pub def reduceLeftWithKey(f: (k, v, k, v) -> (k, v) & e, m: MutMap[k, v]): Option[(k, v)] & Impure =
+    pub def reduceLeftWithKey(f: (k, v, k, v) -> (k, v) & ef, m: MutMap[k, v]): Option[(k, v)] & Impure =
         let MutMap(mm) = m;
         Map.reduceLeftWithKey(f, deref mm)
 
@@ -354,7 +354,7 @@ namespace MutMap {
     ///
     /// Returns `None` if `m` is the empty map.
     ///
-    pub def reduceRight(f: (v, v) -> v & e, m: MutMap[k, v]): Option[v] & Impure =
+    pub def reduceRight(f: (v, v) -> v & ef, m: MutMap[k, v]): Option[v] & Impure =
         let MutMap(mm) = m;
         Map.reduceRight(f, deref mm)
 
@@ -365,7 +365,7 @@ namespace MutMap {
     ///
     /// Returns `None` if `m` is the empty map.
     ///
-    pub def reduceRightWithKey(f: (k, v, k, v) -> (k, v) & e, m: MutMap[k, v]): Option[(k, v)] & Impure =
+    pub def reduceRightWithKey(f: (k, v, k, v) -> (k, v) & ef, m: MutMap[k, v]): Option[(k, v)] & Impure =
         let MutMap(mm) = m;
         Map.reduceRightWithKey(f, deref mm)
 
@@ -451,7 +451,7 @@ namespace MutMap {
     ///
     /// The function `f` must be impure.
     ///
-    pub def queryWith(p: k -> Comparison & e, f: (k, v) ~> Unit, m: MutMap[k, v]): Unit & Impure =
+    pub def queryWith(p: k -> Comparison & ef, f: (k, v) ~> Unit, m: MutMap[k, v]): Unit & Impure =
         let MutMap(mm) = m;
         Map.queryWith(p, f, deref mm)
 

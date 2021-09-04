@@ -542,7 +542,7 @@ namespace Fixpoint {
     ///
     /// Returns an array of facts associated with the given predicate symbol `p` in the given Datalog program `d`.
     ///
-    def factsOf(f: Array[v] -> t & e, p: PredSym, d: Datalog[v]): Array[t] & Impure = match d {
+    def factsOf(f: Array[v] -> t & ef, p: PredSym, d: Datalog[v]): Array[t] & Impure = match d {
         case Datalog(_, cs) =>
             let pFacts = MutList.new();
             Array.foreach(c -> match c {

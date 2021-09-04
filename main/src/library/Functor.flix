@@ -21,14 +21,14 @@ lawless class Functor[m : Type -> Type] {
     ///
     /// Applies the function `f` to `s` preserving its structure.
     ///
-    pub def map(f: a -> b & e, x: m[a]): m[b] & e
+    pub def map(f: a -> b & ef, x: m[a]): m[b] & ef
 }
 
 namespace Functor {
   ///
   /// Lifts the function `f` into the functor.
   ///
-  pub def lift[a: Type, b: Type, e: Bool, m: Type -> Type](f: a -> b & e): m[a] -> m[b] & e with Functor[m] = Functor.map(f)
+  pub def lift[a: Type, b: Type, ef: Bool, m: Type -> Type](f: a -> b & ef): m[a] -> m[b] & ef with Functor[m] = Functor.map(f)
 
   ///
   /// Replaces the value `a` in `s` by the given value `x` preserving the structure of `s`.
