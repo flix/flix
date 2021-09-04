@@ -52,7 +52,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
       lazy val toStringSym = PredefinedClasses.lookupClassSym("ToString", root)
       lazy val eqSym = PredefinedClasses.lookupClassSym("Eq", root)
       derives.map {
-        case Ast.Derivation(sym, loc) if sym == toStringSym => mkToString(enum, loc, root)
+        case Ast.Derivation(sym, loc) if sym == toStringSym => mkToStringInstance(enum, loc, root)
         case Ast.Derivation(sym, loc) if sym == eqSym => mkEqInstance(enum, loc, root)
         case unknownSym => throw InternalCompilerException(s"Unexpected derivation: $unknownSym")
       }
@@ -81,7 +81,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
     * }
     * }}}
     */
-  private def mkToString(enum: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum match {
+  private def mkToStringInstance(enum: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum match {
     case KindedAst.Enum(_, _, _, tparams, _, _, _, sc, _) =>
       val toStringClassSym = PredefinedClasses.lookupClassSym("ToString", root)
       val toStringDefSym = Symbol.mkDefnSym("ToString.toString")
@@ -269,6 +269,17 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
       )
   }
 
+  private def mkEqImpl(enum: KindedAst.Enum, param1: Symbol.VarSym, param2: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Expression = enum match {
+    case KindedAst.Enum(doc, mod, sym, tparams, derives, cases, tpeDeprecated, sc, loc) =>
+      val mainMatchRules = cases.values.map(mkEqMatchRule(_, loc, root))
+      val defaultRule = KindedAst.MatchRule(KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc), KindedAst.Expression.True(loc), KindedAst.Expression.False(loc))
+      // MATT inline docs
+      KindedAst.Expression.Match(
+        KindedAst.Expression.Tuple(List(mkVarExpr(param1, loc), mkVarExpr(param2, loc)), loc),
+        (mainMatchRules ++ List(defaultRule)).toList,
+        loc
+      )
+  }
   /**
     * Creates an Eq match rule for the given enum case.
     */
