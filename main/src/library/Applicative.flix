@@ -25,7 +25,8 @@
 /// latter case a function is applied. A `List[a -> b]` contains a list of functions, which are all to be
 /// applied to all arguments in the arguments list.
 ///
-/// A minimal implementation must define `point` and at least one of `ap` and `liftA2`. If it defines both,
+/// A minimal implementation must define `point` and at least one of `ap` and `liftA2` (if `liftA2` is implemented,
+/// `ap` can be defined based on `liftA2` as shown below). If both `ap` and `liftA2` are defined,
 /// they must be equivalent to their default definitions:
 ///     `ap(f: m[a -> b & e], x: m[a]) : m[b] & e = liftA2(identity, f, x)`
 ///     `liftA2(f: a -> b -> c & e, x: m[a], y: m[b]): m[c] & e = ap(Functor.map(f, x), y)`
@@ -39,7 +40,7 @@ class Applicative[m : Type -> Type] with Functor[m] {
     ///
     /// Apply the function-type applicative `f` to the argument-type applicative `x`.
     ///
-    pub def ap(f: m[a -> b & e], x: m[a]) : m[b] & e = Applicative.liftA2(identity, f, x)
+    pub def ap(f: m[a -> b & e], x: m[a]) : m[b] & e
 
     ///
     /// Lift a binary functions to work on `Applicative`s.

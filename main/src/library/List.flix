@@ -66,7 +66,7 @@ instance Functor[List] {
 
 instance Applicative[List] {
     pub def point(x: a) : List[a] = List.point(x)
-    override pub def ap(f: List[a -> b & e], x: List[a]) : List[b] & e = List.ap(f, x)
+    pub def ap(f: List[a -> b & e], x: List[a]) : List[b] & e = List.ap(f, x)
 }
 
 instance Foldable[List] {

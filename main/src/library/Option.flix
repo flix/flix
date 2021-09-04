@@ -39,7 +39,9 @@ instance Functor[Option] {
 
 instance Applicative[Option] {
     pub def point(x: a) : Option[a] = Option.point(x)
-    override pub def ap(f: Option[a -> b & e], x: Option[a]) : Option[b] & e = Option.ap(f, x)
+
+    pub def ap(f: Option[a -> b & e], x: Option[a]) : Option[b] & e = Option.ap(f, x)
+
     // Same as the default implementation using `map` and `ap` but with less indirection.
     override pub def liftA2(f: a -> b -> c & e, x: Option[a], y: Option[b]): Option[c] & e = Option.lift2(f, x, y)
 }
