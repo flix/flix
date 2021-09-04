@@ -16,14 +16,17 @@
 
 ///
 /// A type class for functors that support application, i.e. allow to:
+///
 /// - Make an applicative value out of a normal value (embed it into a default context), e.g. embed `5` into `Some(5)`.
 /// - Apply a function-type applicative to a matching argument-type applicative, resulting in an applicative of
-/// the function's result type. The meaning of this application is defined by the respective instance.
+/// the function's result type.
+///
+/// The meaning of the application realized by the `ap` function is defined by the respective instance.
 /// Conceptually this can be understood as applying functions "contained" in the first applicative to arguments
 /// in the second applicative, where the possible quantity of functions/arguments depends on the type `m`.
 /// For example, an `Option[a -> b]` can be `None`, or contain a function of type `a -> b`, and only in the
-/// latter case a function is applied. A `List[a -> b]` contains a list of functions, which are all to be
-/// applied to all arguments in the arguments list.
+/// latter case a function is applied. A `List[a -> b]` is an applicative that contains a list of functions,
+/// which are all to be applied to all arguments contained in the arguments list.
 ///
 /// A minimal implementation must define `point` and at least one of `ap` and `liftA2` (if `liftA2` is implemented,
 /// `ap` can be defined based on `liftA2` as shown below). If both `ap` and `liftA2` are defined,
@@ -43,7 +46,7 @@ class Applicative[m : Type -> Type] with Functor[m] {
     pub def ap(f: m[a -> b & e], x: m[a]) : m[b] & e
 
     ///
-    /// Lift a binary functions to work on `Applicative`s.
+    /// Lift a binary function to work on `Applicative`s.
     /// Instances can define more efficient implementations than the default implementation
     /// (which is `Applicative.ap(Functor.map(f, x), y)`).
     ///
