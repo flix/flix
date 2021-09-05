@@ -220,36 +220,15 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
     * }}}
     */
   private def mkEqInstance(enum: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum match {
-    case KindedAst.Enum(_, _, _, tparams, _, cases, _, sc, _) =>
-      val eqClassSym = PredefinedClasses.lookupClassSym("Eq", root)
+    case KindedAst.Enum(_, _, _, tparams, _, _, _, sc, _) =>
       val eqDefSym = Symbol.mkDefnSym("Eq.eq")
+      val eqClassSym = PredefinedClasses.lookupClassSym("Eq", root)
 
-      // create a match rule for each case and put them in a match expression
-      val mainMatchRules = cases.values.map(mkEqMatchRule(_, loc, root))
-      val defaultRule = KindedAst.MatchRule(KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc), KindedAst.Expression.True(loc), KindedAst.Expression.False(loc))
-      val varSym1 = Symbol.freshVarSym("x", loc)
-      val varSym2 = Symbol.freshVarSym("y", loc)
-      val exp = KindedAst.Expression.Match(
-        KindedAst.Expression.Tuple(List(mkVarExpr(varSym1, loc), mkVarExpr(varSym2, loc)), loc),
-        (mainMatchRules ++ List(defaultRule)).toList,
-        loc
-      )
+      val param1 = Symbol.freshVarSym("x", loc)
+      val param2 = Symbol.freshVarSym("y", loc)
+      val exp = mkEqImpl(enum, param1, param2, loc, root)
+      val spec = mkEqSpec(enum, param1, param2, loc, root)
 
-      val spec = KindedAst.Spec(
-        doc = Ast.Doc(Nil, loc),
-        ann = Nil,
-        mod = Ast.Modifiers.Empty,
-        tparams = tparams,
-        fparams = List(KindedAst.FormalParam(varSym1, Ast.Modifiers.Empty, sc.base, loc), KindedAst.FormalParam(varSym2, Ast.Modifiers.Empty, sc.base, loc)),
-        sc = Scheme(
-          tparams.map(_.tpe),
-          List(Ast.TypeConstraint(eqClassSym, sc.base, loc)),
-          Type.mkPureUncurriedArrow(List(sc.base, sc.base), Type.mkBool(loc), loc)
-        ),
-        tpe = Type.mkBool(loc),
-        eff = Type.Cst(TypeConstructor.True, loc),
-        loc = loc
-      )
       val defn = KindedAst.Def(eqDefSym, spec, exp)
 
       // Add a type constraint to the instance for any non-wild param with kind Star
@@ -269,32 +248,66 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
       )
   }
 
+  /**
+    * Creates the eq implementation for the given enum, where `param1` and `param2` are the parameters to the function.
+    */
   private def mkEqImpl(enum: KindedAst.Enum, param1: Symbol.VarSym, param2: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Expression = enum match {
-    case KindedAst.Enum(doc, mod, sym, tparams, derives, cases, tpeDeprecated, sc, loc) =>
+    case KindedAst.Enum(_, _, _, _, _, cases, _, _, _) =>
+      // create a match rule for each case
       val mainMatchRules = cases.values.map(mkEqMatchRule(_, loc, root))
+
+      // create a default rule
+      // `case _ => false`
       val defaultRule = KindedAst.MatchRule(KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc), KindedAst.Expression.True(loc), KindedAst.Expression.False(loc))
-      // MATT inline docs
+
+      // group the match rules in an expression
       KindedAst.Expression.Match(
         KindedAst.Expression.Tuple(List(mkVarExpr(param1, loc), mkVarExpr(param2, loc)), loc),
         (mainMatchRules ++ List(defaultRule)).toList,
         loc
       )
   }
+
+  /**
+    * Creates the eq spec for the given enum, where `param1` and `param2` are the parameters to the function.
+    */
+  private def mkEqSpec(enum: KindedAst.Enum, param1: Symbol.VarSym, param2: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Spec = enum match {
+    case KindedAst.Enum(_, _, _, tparams, _, _, _, sc, _) =>
+      val eqClassSym = PredefinedClasses.lookupClassSym("Eq", root)
+      KindedAst.Spec(
+        doc = Ast.Doc(Nil, loc),
+        ann = Nil,
+        mod = Ast.Modifiers.Empty,
+        tparams = tparams,
+        fparams = List(KindedAst.FormalParam(param1, Ast.Modifiers.Empty, sc.base, loc), KindedAst.FormalParam(param2, Ast.Modifiers.Empty, sc.base, loc)),
+        sc = Scheme(
+          tparams.map(_.tpe),
+          List(Ast.TypeConstraint(eqClassSym, sc.base, loc)),
+          Type.mkPureUncurriedArrow(List(sc.base, sc.base), Type.mkBool(loc), loc)
+        ),
+        tpe = Type.mkBool(loc),
+        eff = Type.Cst(TypeConstructor.True, loc),
+        loc = loc
+      )
+  }
+
   /**
     * Creates an Eq match rule for the given enum case.
     */
   private def mkEqMatchRule(caze: KindedAst.Case, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
     case KindedAst.Case(enum, tag, tpeDeprecated, sc) =>
+      val eqSym = PredefinedClasses.lookupSigSym("Eq", "eq", root)
 
-      // get a pattern corresponding to this case
+      // get a pattern corresponding to this case, e.g.
+      // `case C2(x0, x1)`
       val (pat1, varSyms1) = mkPattern(sc.base, "x", loc)
       val (pat2, varSyms2) = mkPattern(sc.base, "y", loc)
       val pat = KindedAst.Pattern.Tuple(List(pat1, pat2), loc)
 
       val guard = KindedAst.Expression.True(loc)
 
-      val eqSym = PredefinedClasses.lookupSigSym("Eq", "eq", root)
       // call eq on each variable pair
+      // `x0 == y0`, `x1 == y1`
       val eqs = varSyms1.zip(varSyms2).map {
         case (varSym1, varSym2) =>
           KindedAst.Expression.Apply(
@@ -310,6 +323,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
       }
 
       // put it all together
+      // `x0 == y0 and x1 == y1`
       val exp = eqs match {
         // Case 1: no arguments: return true
         case Nil => KindedAst.Expression.True(loc)
