@@ -57,37 +57,55 @@ namespace Test/Derives/Eq {
     def testEq06(): Bool = PolyEnum.TupleCase(123, 123) == PolyEnum.TupleCase(123, 123)
 
     @test
-    def testEq07(): Bool = RecursiveEnum.EmptyCase == RecursiveEnum.EmptyCase
+    def testEq07(): Bool = PolyEnum.EmptyCase: PolyEnum[Enum] == PolyEnum.EmptyCase: PolyEnum[Enum]
 
     @test
-    def testEq08(): Bool = RecursiveEnum.RecursiveCase(RecursiveEnum.EmptyCase) == RecursiveEnum.RecursiveCase(RecursiveEnum.EmptyCase)
+    def testEq08(): Bool = PolyEnum.SingletonCase(Enum.EmptyCase) == PolyEnum.SingletonCase(Enum.EmptyCase)
 
     @test
-    def testEq09(): Bool = PolyMultiEnum.EmptyCase: PolyMultiEnum[Int, Bool] == PolyMultiEnum.EmptyCase: PolyMultiEnum[Int, Bool]
+    def testEq09(): Bool = PolyEnum.SingletonCase(Enum.SingletonCase(123)) == PolyEnum.SingletonCase(Enum.SingletonCase(123))
 
     @test
-    def testEq10(): Bool = PolyMultiEnum.LeftCase(123): PolyMultiEnum[Int, Bool] == PolyMultiEnum.LeftCase(123): PolyMultiEnum[Int, Bool]
+    def testEq10(): Bool = PolyEnum.EmptyCase: PolyEnum[PolyEnum[Int]] == PolyEnum.EmptyCase: PolyEnum[PolyEnum[Int]]
 
     @test
-    def testEq11(): Bool = PolyMultiEnum.RightCase(true): PolyMultiEnum[Int, Bool] == PolyMultiEnum.RightCase(true): PolyMultiEnum[Int, Bool]
+    def testEq11(): Bool = PolyEnum.SingletonCase(PolyEnum.EmptyCase): PolyEnum[PolyEnum[Int]] == PolyEnum.SingletonCase(PolyEnum.EmptyCase): PolyEnum[PolyEnum[Int]]
 
     @test
-    def testEq12(): Bool = PolyMultiEnum.BothCase(123, true) == PolyMultiEnum.BothCase(123, true)
+    def testEq12(): Bool = PolyEnum.SingletonCase(PolyEnum.SingletonCase(123)) == PolyEnum.SingletonCase(PolyEnum.SingletonCase(123))
 
     @test
-    def testEq13(): Bool = PolyBoolEnum.EmptyCase: PolyBoolEnum[Pure] == PolyBoolEnum.EmptyCase: PolyBoolEnum[Pure]
+    def testEq13(): Bool = RecursiveEnum.EmptyCase == RecursiveEnum.EmptyCase
 
     @test
-    def testEq14(): Bool = PolyBoolEnum.RecursiveCase(PolyBoolEnum.EmptyCase): PolyBoolEnum[Pure] == PolyBoolEnum.RecursiveCase(PolyBoolEnum.EmptyCase): PolyBoolEnum[Pure]
+    def testEq14(): Bool = RecursiveEnum.RecursiveCase(RecursiveEnum.EmptyCase) == RecursiveEnum.RecursiveCase(RecursiveEnum.EmptyCase)
 
     @test
-    def testEq15(): Bool = MutRecursiveEnum1.EmptyCase == MutRecursiveEnum1.EmptyCase
+    def testEq15(): Bool = PolyMultiEnum.EmptyCase: PolyMultiEnum[Int, Bool] == PolyMultiEnum.EmptyCase: PolyMultiEnum[Int, Bool]
 
     @test
-    def testEq16(): Bool = MutRecursiveEnum1.RecursiveCase(MutRecursiveEnum2.EmptyCase) == MutRecursiveEnum1.RecursiveCase(MutRecursiveEnum2.EmptyCase)
+    def testEq16(): Bool = PolyMultiEnum.LeftCase(123): PolyMultiEnum[Int, Bool] == PolyMultiEnum.LeftCase(123): PolyMultiEnum[Int, Bool]
 
     @test
-    def testEq17(): Bool = MutRecursiveEnum1.RecursiveCase(MutRecursiveEnum2.RecursiveCase(MutRecursiveEnum1.EmptyCase)) == MutRecursiveEnum1.RecursiveCase(MutRecursiveEnum2.RecursiveCase(MutRecursiveEnum1.EmptyCase))
+    def testEq17(): Bool = PolyMultiEnum.RightCase(true): PolyMultiEnum[Int, Bool] == PolyMultiEnum.RightCase(true): PolyMultiEnum[Int, Bool]
+
+    @test
+    def testEq18(): Bool = PolyMultiEnum.BothCase(123, true) == PolyMultiEnum.BothCase(123, true)
+
+    @test
+    def testEq19(): Bool = PolyBoolEnum.EmptyCase: PolyBoolEnum[Pure] == PolyBoolEnum.EmptyCase: PolyBoolEnum[Pure]
+
+    @test
+    def testEq20(): Bool = PolyBoolEnum.RecursiveCase(PolyBoolEnum.EmptyCase): PolyBoolEnum[Pure] == PolyBoolEnum.RecursiveCase(PolyBoolEnum.EmptyCase): PolyBoolEnum[Pure]
+
+    @test
+    def testEq21(): Bool = MutRecursiveEnum1.EmptyCase == MutRecursiveEnum1.EmptyCase
+
+    @test
+    def testEq22(): Bool = MutRecursiveEnum1.RecursiveCase(MutRecursiveEnum2.EmptyCase) == MutRecursiveEnum1.RecursiveCase(MutRecursiveEnum2.EmptyCase)
+
+    @test
+    def testEq23(): Bool = MutRecursiveEnum1.RecursiveCase(MutRecursiveEnum2.RecursiveCase(MutRecursiveEnum1.EmptyCase)) == MutRecursiveEnum1.RecursiveCase(MutRecursiveEnum2.RecursiveCase(MutRecursiveEnum1.EmptyCase))
 
     @test
     def testNeq01(): Bool = Enum.EmptyCase != Enum.SingletonCase(123)
@@ -100,6 +118,9 @@ namespace Test/Derives/Eq {
 
     @test
     def testNeq04(): Bool = PolyEnum.SingletonCase(123) != PolyEnum.SingletonCase(456)
+
+    @test
+    def testNeq05(): Bool = PolyEnum.SingletonCase(Enum.EmptyCase) != PolyEnum.SingletonCase(Enum.SingletonCase(123))
 
     @test
     def testNeq05(): Bool = RecursiveEnum.RecursiveCase(RecursiveEnum.EmptyCase) != RecursiveEnum.RecursiveCase(RecursiveEnum.RecursiveCase(RecursiveEnum.EmptyCase))
