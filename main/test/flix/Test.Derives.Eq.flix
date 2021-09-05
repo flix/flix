@@ -123,14 +123,14 @@ namespace Test/Derives/Eq {
     def testNeq05(): Bool = PolyEnum.SingletonCase(Enum.EmptyCase) != PolyEnum.SingletonCase(Enum.SingletonCase(123))
 
     @test
-    def testNeq05(): Bool = RecursiveEnum.RecursiveCase(RecursiveEnum.EmptyCase) != RecursiveEnum.RecursiveCase(RecursiveEnum.RecursiveCase(RecursiveEnum.EmptyCase))
+    def testNeq06(): Bool = RecursiveEnum.RecursiveCase(RecursiveEnum.EmptyCase) != RecursiveEnum.RecursiveCase(RecursiveEnum.RecursiveCase(RecursiveEnum.EmptyCase))
 
     @test
-    def testNeq06(): Bool = PolyMultiEnum.LeftCase(123) != PolyMultiEnum.RightCase(123)
+    def testNeq07(): Bool = PolyMultiEnum.LeftCase(123) != PolyMultiEnum.RightCase(123)
 
     @test
-    def testNeq07(): Bool = PolyBoolEnum.EmptyCase: PolyBoolEnum[Pure] != PolyBoolEnum.RecursiveCase(PolyBoolEnum.EmptyCase): PolyBoolEnum[Pure]
+    def testNeq08(): Bool = PolyBoolEnum.EmptyCase: PolyBoolEnum[Pure] != PolyBoolEnum.RecursiveCase(PolyBoolEnum.EmptyCase): PolyBoolEnum[Pure]
 
     @test
-    def testNeq08(): Bool = MutRecursiveEnum1.EmptyCase != MutRecursiveEnum1.RecursiveCase(MutRecursiveEnum2.EmptyCase)
+    def testNeq09(): Bool = MutRecursiveEnum1.EmptyCase != MutRecursiveEnum1.RecursiveCase(MutRecursiveEnum2.EmptyCase)
 }
