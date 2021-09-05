@@ -341,4 +341,22 @@ class TestParser extends FunSuite with TestUtils {
     expectError[ParseError](result)
   }
 
+  test("ParseError.Interpolation.01") {
+    val input =
+      """
+        |def foo(): String = "${"
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("ParseError.Interpolation.02") {
+    val input =
+      """
+        |def foo(): String = "${not an expression}"
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
 }

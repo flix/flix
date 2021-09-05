@@ -323,8 +323,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // Literals                                                                //
   /////////////////////////////////////////////////////////////////////////////
-  def Literal: Rule1[ParsedAst.Literal] = rule {
-    Literals.Null | Literals.Bool | Literals.Char | Literals.Str | Literals.Default | Literals.Float | Literals.Int
+  def Literal: Rule1[ParsedAst.Literal] = rule { // MATT hacking
+    Literals.Null | Literals.Bool | Literals.Char | Literals.Default | Literals.Float | Literals.Int
   }
 
   object Literals {
@@ -1090,7 +1090,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Lit: Rule1[ParsedAst.Pattern.Lit] = rule {
-      SP ~ Parser.this.Literal ~ SP ~> ParsedAst.Pattern.Lit
+      SP ~ (Parser.this.Literal | Parser.this.Literals.Str) ~ SP ~> ParsedAst.Pattern.Lit // MATT hacking
     }
 
     def Tag: Rule1[ParsedAst.Pattern.Tag] = rule {
