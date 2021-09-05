@@ -54,12 +54,12 @@ instance Order[Nel[a]] with Order[a] {
 }
 
 instance Functor[Nel] {
-    pub def map(f: a -> b & e, xs: Nel[a]): Nel[b] & e = Nel.map(f, xs)
+    pub def map(f: a -> b & ef, xs: Nel[a]): Nel[b] & ef = Nel.map(f, xs)
 }
 
 instance Foldable[Nel] {
-    pub def foldLeft(f: (b, a) -> b & e, s: b, xs: Nel[a]): b & e = Nel.foldLeft(f, s, xs)
-    pub def foldRight(f: (a, b) -> b & e, s: b, xs: Nel[a]): b & e = Nel.foldRight(f, s, xs)
+    pub def foldLeft(f: (b, a) -> b & ef, s: b, xs: Nel[a]): b & ef = Nel.foldLeft(f, s, xs)
+    pub def foldRight(f: (a, b) -> b & ef, s: b, xs: Nel[a]): b & ef = Nel.foldRight(f, s, xs)
 }
 
 namespace Nel {
@@ -193,7 +193,7 @@ namespace Nel {
     /// That is, the result is of the form: `f(x1) :: f(x2) :: ...`.
     ///
     @Time(time(f) * length(xs)) @Space(space(f) * length(xs))
-    pub def map(f: a -> b & e, xs: Nel[a]): Nel[b] & e = match xs {
+    pub def map(f: a -> b & ef, xs: Nel[a]): Nel[b] & ef = match xs {
         case Nel(h, l) => Nel(f(h), List.map(f, l))
     }
 
@@ -203,14 +203,14 @@ namespace Nel {
     /// That is, the result is of the form: `f(x1, 0) :: f(x2, 1) :: ...`.
     ///
     @Time(time(f) * length(xs)) @Space(space(f) * length(xs))
-    pub def mapWithIndex(f: (a, Int32) -> b & e, xs: Nel[a]): Nel[b] & e = match xs {
+    pub def mapWithIndex(f: (a, Int32) -> b & ef, xs: Nel[a]): Nel[b] & ef = match xs {
         case Nel(h, l) => Nel(f(h, 0), mapWithIndexHelper(f, l, 1))
     }
 
     ///
     /// Helper function for `mapWithIndex`.
     ///
-    def mapWithIndexHelper(f: (a, Int32) -> b & e, xs: List[a], i: Int32): List[b] & e = match xs {
+    def mapWithIndexHelper(f: (a, Int32) -> b & ef, xs: List[a], i: Int32): List[b] & ef = match xs {
         case Nil     => Nil
         case x :: rs => f(x, i) :: mapWithIndexHelper(f, rs, i + 1)
     }
@@ -219,7 +219,7 @@ namespace Nel {
     /// Returns the result of applying `f` to every element in `xs` and concatenating the results.
     ///
     @Time(time(f) * length(xs)) @Space(time(f) * length(xs))
-    pub def flatMap(f: a -> Nel[b] & e, xs: Nel[a]): Nel[b] & e = match xs {
+    pub def flatMap(f: a -> Nel[b] & ef, xs: Nel[a]): Nel[b] & ef = match xs {
         case Nel(h, l) => match f(h) {
             case Nel(h1, l1) => Nel(h1, l1 ::: List.flatMap(x -> toList(f(x)), l))
         }
@@ -287,7 +287,7 @@ namespace Nel {
     ///
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
     ///
-    pub def foldLeft(f: (b, a) -> b & e, s: b, xs: Nel[a]): b & e = match xs {
+    pub def foldLeft(f: (b, a) -> b & ef, s: b, xs: Nel[a]): b & ef = match xs {
         case Nel(h, l) => List.foldLeft(f, f(s, h), l)
     }
 
@@ -296,7 +296,7 @@ namespace Nel {
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
-    pub def foldRight(f: (a, b) -> b & e, s: b, xs: Nel[a]): b & e = match xs {
+    pub def foldRight(f: (a, b) -> b & ef, s: b, xs: Nel[a]): b & ef = match xs {
         case Nel(h, l) => f(h, List.foldRight(f, s, l))
     }
 
@@ -312,7 +312,7 @@ namespace Nel {
     ///
     /// That is, the result is of the form: `f(...f(f(x1, x2), x3)..., xn)`
     ///
-    pub def reduceLeft(f: (a, a) -> a & e, xs: Nel[a]): a & e = match xs {
+    pub def reduceLeft(f: (a, a) -> a & ef, xs: Nel[a]): a & ef = match xs {
         case Nel(h, l) => List.foldLeft(f, h, l)
     }
 
@@ -321,7 +321,7 @@ namespace Nel {
     ///
     /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
     ///
-    pub def reduceRight(f: (a, a) -> a & e, xs: Nel[a]): a & e = match xs {
+    pub def reduceRight(f: (a, a) -> a & ef, xs: Nel[a]): a & ef = match xs {
         case Nel(h, l) => match List.reduceRight(f, h :: l) {
             case None    => unreachable!()
             case Some(v) => v

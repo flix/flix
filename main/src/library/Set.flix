@@ -51,8 +51,8 @@ instance Order[Set[a]] with Order[a] {
 }
 
 instance Foldable[Set] {
-    pub def foldLeft(f: (b, a) -> b & e, s: b, xs: Set[a]): b & e = Set.foldLeft(f, s, xs)
-    pub def foldRight(f: (a, b) -> b & e, s: b, xs: Set[a]): b & e = Set.foldRight(f, s, xs)
+    pub def foldLeft(f: (b, a) -> b & ef, s: b, xs: Set[a]): b & ef = Set.foldLeft(f, s, xs)
+    pub def foldRight(f: (a, b) -> b & ef, s: b, xs: Set[a]): b & ef = Set.foldRight(f, s, xs)
 }
 
 namespace Set {
@@ -220,7 +220,7 @@ namespace Set {
     ///
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
     ///
-    pub def foldLeft(f: (b, a) -> b & e, s: b, xs: Set[a]): b & e =
+    pub def foldLeft(f: (b, a) -> b & ef, s: b, xs: Set[a]): b & ef =
         let Set(es) = xs;
         RedBlackTree.foldLeft((acc, k, _) -> f(acc, k), s, es)
 
@@ -229,7 +229,7 @@ namespace Set {
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
-    pub def foldRight(f: (a, b) -> b & e, s: b, xs: Set[a]): b & e =
+    pub def foldRight(f: (a, b) -> b & ef, s: b, xs: Set[a]): b & ef =
         let Set(es) = xs;
         RedBlackTree.foldRight((k, _, acc) -> f(k, acc), s, es)
 
@@ -238,7 +238,7 @@ namespace Set {
     /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
     /// Returns `None` if `xs` is the empty set.
     ///
-    pub def reduceLeft(f: (a, a) -> a & e, xs: Set[a]): Option[a] & e =
+    pub def reduceLeft(f: (a, a) -> a & ef, xs: Set[a]): Option[a] & ef =
         let Set(es) = xs;
         RedBlackTree.reduceLeft((x, _, y, _) -> (f(x, y), ()), es) |> Option.map(fst)
 
@@ -247,7 +247,7 @@ namespace Set {
     /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
     /// Returns `None` if `xs` is the empty set.
     ///
-    pub def reduceRight(f: (a, a) -> a & e, xs: Set[a]): Option[a] & e =
+    pub def reduceRight(f: (a, a) -> a & ef, xs: Set[a]): Option[a] & ef =
         let Set(es) = xs;
         RedBlackTree.reduceRight((x, _, y, _) -> (f(x, y), ()), es) |> Option.map(fst)
 
@@ -356,14 +356,14 @@ namespace Set {
     /// Note: The returned set may be smaller than `xs`.
     ///
     @Time(time(f) * size(xs)) @Space(space(f) * size(xs))
-    pub def map(f: a -> b & e, xs: Set[a]): Set[b] & e with Order[b] =
+    pub def map(f: a -> b & ef, xs: Set[a]): Set[b] & ef with Order[b] =
         foldLeft((acc, x) -> insert(f(x), acc), empty(), xs)
 
     ///
     /// Returns the result of applying `f` to every element in `xs` and taking the union.
     ///
     @Time(time(f) * size(xs) * Int32.log2(size(xs))) @Space(space(f) * size(xs) * Int32.log2(size(xs)))
-    pub def flatMap(f: a -> Set[b] & e, xs: Set[a]): Set[b] & e with Order[b] =
+    pub def flatMap(f: a -> Set[b] & ef, xs: Set[a]): Set[b] & ef with Order[b] =
         foldLeft((acc, x) -> union(acc, f(x)), empty(), xs)
 
     ///
@@ -437,12 +437,12 @@ namespace Set {
     ///
     /// `f` should return `None` to signal the end of building the set.
     ///
-    pub def unfold(f: s -> Option[(a, s)] & e, st: s): Set[a] & e with Order[a] = unfoldHelper(f, st, empty())
+    pub def unfold(f: s -> Option[(a, s)] & ef, st: s): Set[a] & ef with Order[a] = unfoldHelper(f, st, empty())
 
     ///
     /// Helper function for `unfold`.
     ///
-    def unfoldHelper(f: s -> Option[(a, s)] & e, st: s, ac: Set[a]): Set[a] & e with Order[a] = match f(st) {
+    def unfoldHelper(f: s -> Option[(a, s)] & ef, st: s, ac: Set[a]): Set[a] & ef with Order[a] = match f(st) {
         case None => ac
         case Some((a, st1)) => unfoldHelper(f, st1, insert(a, ac))
     }
@@ -470,7 +470,7 @@ namespace Set {
     ///
     /// That is, the result is a list of all elements `x` where `p(x)` returns `EqualTo`.
     ///
-    pub def query(p: a -> Comparison & e, xs: Set[a]): List[a] & e =
+    pub def query(p: a -> Comparison & ef, xs: Set[a]): List[a] & ef =
         let Set(es) = xs;
         RedBlackTree.query(p, (k, _) -> k, es)
 
@@ -479,7 +479,7 @@ namespace Set {
     ///
     /// The function `f` must be impure.
     ///
-    pub def queryWith(p: a -> Comparison & e, f: a ~> Unit, xs: Set[a]): Unit & Impure =
+    pub def queryWith(p: a -> Comparison & ef, f: a ~> Unit, xs: Set[a]): Unit & Impure =
         let Set(es) = xs;
         RedBlackTree.queryWith(p, (k, _) -> f(k), es)
 

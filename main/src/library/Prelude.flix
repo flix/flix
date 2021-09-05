@@ -18,7 +18,7 @@ pub def constant(y: a): b -> a = _ -> y
 /// Returns the function `f` with input arguments swapped.
 /// That is, given the function `f: (a, b) -> c`, returns a function `(b, a) -> c`
 ///
-pub def flip(f: (a, b) -> c & e): (b, a) -> c & e = (x, y) -> f(y, x)
+pub def flip(f: (a, b) -> c & ef): (b, a) -> c & ef = (x, y) -> f(y, x)
 
 ///
 /// `on(f, g, x, y) = f(g(x), g(y))`
@@ -26,19 +26,19 @@ pub def flip(f: (a, b) -> c & e): (b, a) -> c & e = (x, y) -> f(y, x)
 /// Partially applying this function in the form ``f `on` g`` lifts the binary function `f` to work on
 /// inputs transformed by `g`.
 ///
-pub def on(f: (b, b) -> c & e1, g: a -> b & e2, x: a, y: a): c & (e1 and e2) = f(g(x), g(y))
+pub def on(f: (b, b) -> c & ef1, g: a -> b & ef2, x: a, y: a): c & (ef1 and ef2) = f(g(x), g(y))
 
 ///
 /// Returns the result of currying the function `f`.
 /// That is, given the function `f: (a, b) -> c`, returns a function `a -> b -> c`
 ///
-pub def curry(f: (a, b) -> c & e): a -> (b -> c & e) = x -> y -> f(x, y)
+pub def curry(f: (a, b) -> c & ef): a -> (b -> c & ef) = x -> y -> f(x, y)
 
 ///
 /// Returns the result of uncurrying the function `f`.
 /// That is, given the function `f: a -> b -> c`, returns a function `(a, b) -> c`
 ///
-pub def uncurry(f: a -> (b -> c & e1) & e2): ((a, b)) -> c & (e1 and e2) = match (x, y) -> f(x, y)
+pub def uncurry(f: a -> (b -> c & ef1) & ef2): ((a, b)) -> c & (ef1 and ef2) = match (x, y) -> f(x, y)
 
 ///
 /// Returns the first component of `t`.
@@ -67,21 +67,21 @@ pub def swap(p: (a, b)): (b, a) =
 ///
 /// Given the functions `f: a -> b` and `g: b -> c` returns a function `a -> c`
 ///
-pub def >>(f: a -> b & e1, g: b -> c & e2): a -> c & (e1 and e2) = x -> g(f(x))
+pub def >>(f: a -> b & ef1, g: b -> c & ef2): a -> c & (ef1 and ef2) = x -> g(f(x))
 
 ///
 /// Pipes the given value `x` into the function `f`.
 ///
 /// Given a value `x` and a function `f` returns `f(x)`.
 ///
-pub def |>(x: a, f: a -> b & e): b & e = f(x)
+pub def |>(x: a, f: a -> b & ef): b & ef = f(x)
 
 ///
 /// Pipes the given pair `x` into the function `f`.
 ///
 /// Given a pair `x` and a function `f` returns `f(x)`.
 ///
-pub def ||>(x: (a, b), f: ((a, b)) -> c & e): c & e = f(x)
+pub def ||>(x: (a, b), f: ((a, b)) -> c & ef): c & ef = f(x)
 
 ///
 /// Converts `x` to a string and prints it to standard out.
