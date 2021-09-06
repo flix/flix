@@ -43,20 +43,6 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
   private def visitClasses(root: TypedAst.Root)(implicit flix: Flix): Validation[Unit, InstanceError] = {
 
     /**
-      * Checks that every super class of `class0` is lawful, unless `class0` is marked `lawless`.
-      */
-    def checkLawfulSuperClasses(class0: TypedAst.Class): Validation[Unit, InstanceError] = class0 match {
-      case TypedAst.Class(_, mod, _, _, _, _, _, _) if mod.isLawless => ().toSuccess
-      case TypedAst.Class(_, _, sym, _, superClasses, _, _, loc) =>
-        val lawlessSuperClasses = superClasses.filter {
-          superClass => root.classes(superClass.sym).mod.isLawless
-        }
-        Validation.traverseX(lawlessSuperClasses) {
-          superClass => InstanceError.LawlessSuperClass(sym, superClass.sym, loc).toFailure
-        }
-    }
-
-    /**
       * Checks that all signatures in `class0` are used in laws, unless `class0` is marked `lawless`.
       */
     def checkLawApplication(class0: TypedAst.Class): Validation[Unit, InstanceError] = class0 match {
@@ -75,10 +61,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
       * Performs validations on a single class.
       */
     def visitClass(class0: TypedAst.Class): Validation[Unit, InstanceError] = {
-      Validation.sequenceX(List(
-        checkLawfulSuperClasses(class0),
-        checkLawApplication(class0)
-      ))
+      checkLawApplication(class0)
     }
 
     val results = ParOps.parMap(root.classes.values, visitClass)

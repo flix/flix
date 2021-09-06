@@ -465,27 +465,6 @@ class TestInstances extends FunSuite with TestUtils {
     expectError[InstanceError.MissingSuperClassInstance](result)
   }
 
-  test("Test.LawlessSuperClass.01") {
-    val input =
-      """
-        |lawless class A[a]
-        |class B[a] with A[a]
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[InstanceError.LawlessSuperClass](result)
-  }
-
-  test("Test.LawlessSuperClass.02") {
-    val input =
-      """
-        |lawless class A[a]
-        |class B[a]
-        |class C[a] with A[a], B[a]
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[InstanceError.LawlessSuperClass](result)
-  }
-
   test("Test.UnlawfulSignature.01") {
     val input =
       """
