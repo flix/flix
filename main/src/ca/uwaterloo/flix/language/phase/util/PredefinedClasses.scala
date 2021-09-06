@@ -45,6 +45,11 @@ object PredefinedClasses {
       .sym
   }
 
+  def lookupDefSym(ns: List[String], name: String, root: KindedAst.Root): Symbol.DefnSym = {
+    val key = new Symbol.DefnSym(None, ns, name, SourceLocation.Unknown)
+    root.defs.getOrElse(key, throw InternalCompilerException(s"The definition '$key' is not defined.")).sym
+  }
+
   def lookupEnum(name: String, root: KindedAst.Root): Symbol.EnumSym = {
     val key = new Symbol.EnumSym(Nil, name, SourceLocation.Unknown)
     root.enums(key).sym // MATT healthier lookup

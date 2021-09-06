@@ -403,6 +403,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
     */
   private def mkCompareImpl(enum: KindedAst.Enum, param1: Symbol.VarSym, param2: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Expression = enum match {
     case KindedAst.Enum(_, _, _, _, _, cases, _, _, _) =>
+      val compareSigSym = PredefinedClasses.lookupSigSym("Order", "compare", root)
 
       val lambdaVarSym = Symbol.freshVarSym("indexOf", loc)
 
@@ -410,7 +411,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
       val lambdaParamVarSym = Symbol.freshVarSym("e", loc)
       val indexMatchRules = cases.values.zipWithIndex.map { case (caze, index) => mkCompareIndexMatchRule(caze, index, loc) }
       val indexMatchExp = KindedAst.Expression.Match(mkVarExpr(lambdaParamVarSym, loc), indexMatchRules.toList, loc)
-      val lambda = KindedAst.Expression.Lambda(KindedAst.FormalParam(lambdaParamVarSym, Ast.Modifiers.Empty, lambdaParamVarSym.tvar, loc), indexMatchExp, Type.freshVar(Kind.Star, loc), loc)
+      val lambda = KindedAst.Expression.Lambda(KindedAst.FormalParam(lambdaParamVarSym, Ast.Modifiers.Empty, lambdaParamVarSym.tvar.ascribedWith(Kind.Star), loc), indexMatchExp, Type.freshVar(Kind.Star, loc), loc)
 
       // Create the main match expression
       val matchRules = cases.values.map(mkComparePairMatchRule(_, loc, root))
@@ -421,8 +422,11 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
         KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc),
         KindedAst.Expression.True(loc),
         KindedAst.Expression.Apply(
-          KindedAst.Expression.Var(lambdaVarSym, lambdaVarSym.tvar, loc),
-          List(mkVarExpr(param1, loc), mkVarExpr(param2, loc)),
+          KindedAst.Expression.Sig(compareSigSym, Type.freshVar(Kind.Star, loc), loc),
+          List(
+            KindedAst.Expression.Apply(mkVarExpr(lambdaVarSym, loc), List(mkVarExpr(param1, loc)), Type.freshVar(Kind.Star, loc), Type.freshVar(Kind.Bool, loc), loc),
+            KindedAst.Expression.Apply(mkVarExpr(lambdaVarSym, loc), List(mkVarExpr(param2, loc)), Type.freshVar(Kind.Star, loc), Type.freshVar(Kind.Bool, loc), loc),
+          ),
           Type.freshVar(Kind.Star, loc),
           Type.freshVar(Kind.Bool, loc),
           loc
@@ -484,8 +488,10 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
     */
   private def mkComparePairMatchRule(caze: KindedAst.Case, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
     case KindedAst.Case(_, _, _, sc) =>
+      val comparisonEnumSym = PredefinedClasses.lookupEnum("Comparison", root)
+      val equalToTag = Name.Tag("EqualTo", loc)
       val compareSigSym = PredefinedClasses.lookupSigSym("Order", "compare", root)
-      val thenCompareSigSym = PredefinedClasses.lookupSigSym("Order", "thenCompare", root)
+      val thenCompareDefSym = PredefinedClasses.lookupDefSym(List("Order"), "thenCompare", root)
 
       // Match on the tuple
       // `case (C2(x0, x1), C2(y0, y1))
@@ -502,8 +508,8 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
           KindedAst.Expression.Apply(
             KindedAst.Expression.Sig(compareSigSym, Type.freshVar(Kind.Star, loc), loc),
             List(
-              KindedAst.Expression.Var(varSym1, varSym1.tvar, loc),
-              KindedAst.Expression.Var(varSym2, varSym2.tvar, loc)
+              mkVarExpr(varSym1, loc),
+              mkVarExpr(varSym2, loc)
             ),
             Type.freshVar(Kind.Star, loc),
             Type.freshVar(Kind.Bool, loc),
@@ -517,7 +523,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
         */
       def thenCompare(exp1: KindedAst.Expression, exp2: KindedAst.Expression): KindedAst.Expression = {
         KindedAst.Expression.Apply(
-          KindedAst.Expression.Sig(thenCompareSigSym, Type.freshVar(Kind.Star, loc), loc),
+          KindedAst.Expression.Def(thenCompareDefSym, Type.freshVar(Kind.Star, loc), loc),
           List(
             exp1,
             KindedAst.Expression.Lazy(exp2, loc)
@@ -532,7 +538,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
       // ```compare(x0, y0) `thenCompare` lazy compare(x1, y1)```
       val exp = compares match {
         // Case 1: no variables to compare; just return true
-        case Nil => KindedAst.Expression.True(loc)
+        case Nil => KindedAst.Expression.Tag(comparisonEnumSym, equalToTag, KindedAst.Expression.Unit(loc), Type.freshVar(Kind.Star, loc), loc)
         // Case 2: multiple comparisons to be done; wrap them in Order.thenCompare
         case cmps => cmps.reduceRight(thenCompare)
       }
