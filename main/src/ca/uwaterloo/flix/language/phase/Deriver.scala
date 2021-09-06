@@ -51,9 +51,11 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
       // lazy so that in we don't try a lookup if there are no derivations (important for Nix Lib)
       lazy val toStringSym = PredefinedClasses.lookupClassSym("ToString", root)
       lazy val eqSym = PredefinedClasses.lookupClassSym("Eq", root)
+      lazy val orderSym = PredefinedClasses.lookupClassSym("Order", root)
       derives.map {
         case Ast.Derivation(sym, loc) if sym == toStringSym => mkToStringInstance(enum, loc, root)
         case Ast.Derivation(sym, loc) if sym == eqSym => mkEqInstance(enum, loc, root)
+        case Ast.Derivation(sym, loc) if sym == orderSym => mkOrderInstance(enum, loc, root)
         case unknownSym => throw InternalCompilerException(s"Unexpected derivation: $unknownSym")
       }
   }
