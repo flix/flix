@@ -369,10 +369,10 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
     */
   private def mkOrderInstance(enum: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum match {
     case KindedAst.Enum(_, _, _, tparams, _, cases, _, sc, _) =>
+
       // VarSyms for the function arguments
       val param1 = Symbol.freshVarSym("x", loc)
       val param2 = Symbol.freshVarSym("y", loc)
-
       val exp = mkCompareImpl(enum, param1, param2, loc, root)
       val spec = mkCompareSpec(enum, param1, param2, loc, root)
 
@@ -398,7 +398,9 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
       )
   }
 
-  // MATT docs
+  /**
+    * Creates the compare implementation for the given enum, where `param1` and `param2` are the parameters to the function.
+    */
   private def mkCompareImpl(enum: KindedAst.Enum, param1: Symbol.VarSym, param2: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Expression = enum match {
     case KindedAst.Enum(_, _, _, _, _, cases, _, _, _) =>
 
@@ -438,7 +440,9 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
       KindedAst.Expression.Let(lambdaVarSym, Ast.Modifiers.Empty, lambda, matchExp, loc)
   }
 
-  // MATT docs
+  /**
+    * Creates the eq spec for the given enum, where `param1` and `param2` are the parameters to the function.
+    */
   private def mkCompareSpec(enum: KindedAst.Enum, param1: Symbol.VarSym, param2: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root): KindedAst.Spec = enum match {
     case KindedAst.Enum(_, _, _, tparams, _, _, _, sc, _) =>
       KindedAst.Spec(
@@ -457,7 +461,11 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
         loc = loc
       )
   }
-  // MATT docs
+
+  /**
+    * Creates an indexing match rule, mapping the given case to the given index, e.g.
+    * `case C2(_) => 2`
+    */
   private def mkCompareIndexMatchRule(caze: KindedAst.Case, index: Int, loc: SourceLocation)(implicit Flix: Flix): KindedAst.MatchRule = caze match {
     case KindedAst.Case(_, _, _, sc) =>
       val TypeConstructor.Tag(sym, tag) = getTagConstructor(sc.base)
@@ -467,10 +475,13 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
       KindedAst.MatchRule(pat, guard, exp)
   }
 
-  // MATT docs
+  /**
+    * Creates a comparison match rule, comparing the elements of two tags of the same type.
+    */
   private def mkComparePairMatchRule(caze: KindedAst.Case, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
     case KindedAst.Case(enum, tag, tpeDeprecated, sc) =>
       // Match on the tuple
+      // `case (C2(x0, x1), C2(y0, y1))
       val (pat1, varSyms1) = mkPattern(sc.base, "x", loc)
       val (pat2, varSyms2) = mkPattern(sc.base, "y", loc)
       val pat = KindedAst.Pattern.Tuple(List(pat1, pat2), loc)
@@ -478,6 +489,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
       val guard = KindedAst.Expression.True(loc)
 
       // Call compare on each variable pair
+      // `compare(x0, y0)`, `compare(x1, y1)`
       val compares = varSyms1.zip(varSyms2).map {
         case (varSym1, varSym2) =>
           KindedAst.Expression.Apply(
@@ -493,6 +505,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
       }
 
       // Put it all together
+      // ```compare(x0, y0) `thenCompare` lazy compare(x1, y1)```
       val exp = compares match {
         // Case 1: no variables to compare; just return true
         case Nil => KindedAst.Expression.True(loc)
