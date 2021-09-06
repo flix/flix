@@ -38,6 +38,18 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   val RecursionLimit: Int = 25
 
   /**
+    * Symbols of classes that are derivable.
+    */
+  object DerivableClassSyms {
+    val Boxable = new Symbol.ClassSym(Nil, "Boxable", SourceLocation.Unknown)
+    val Eq = new Symbol.ClassSym(Nil, "Eq", SourceLocation.Unknown)
+    val Order = new Symbol.ClassSym(Nil, "Order", SourceLocation.Unknown)
+    val ToString = new Symbol.ClassSym(Nil, "ToString", SourceLocation.Unknown)
+
+    val All = List(Boxable, Eq, Order, ToString)
+  }
+
+  /**
     * Performs name resolution on the given program `root`.
     */
   def run(root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Root, ResolutionError] = flix.phase("Resolver") {
@@ -1153,14 +1165,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     * Checks that the given class `sym` is derivable.
     */
   def checkDerivable(sym: Symbol.ClassSym, loc: SourceLocation): Validation[Unit, ResolutionError] = {
-    val eqSym = new Symbol.ClassSym(Nil, "Eq", SourceLocation.Unknown)
-    val orderSym = new Symbol.ClassSym(Nil, "Order", SourceLocation.Unknown)
-    val toStringSym = new Symbol.ClassSym(Nil, "ToString", SourceLocation.Unknown)
-    val legalSyms = List(eqSym, orderSym, toStringSym)
-    if (legalSyms.contains(sym)) {
+    if (DerivableClassSyms.All.contains(sym)) {
       ().toSuccess
     } else {
-      ResolutionError.IllegalDerivation(sym, legalSyms, loc).toFailure
+      ResolutionError.IllegalDerivation(sym, DerivableClassSyms.All, loc).toFailure
     }
   }
 
