@@ -4,20 +4,21 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Polarity
 import ca.uwaterloo.flix.language.ast.TypedAst._
+import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.errors.SafetyError
-import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 /**
-  * Performs safety and well-formedness.
-  */
+ * Performs safety and well-formedness.
+ */
 object Safety extends Phase[Root, Root] {
 
   /**
-    * Performs safety and well-formedness checks on the given AST `root`.
-    */
+   * Performs safety and well-formedness checks on the given AST `root`.
+   */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Safety") {
     //
     // Collect all errors.
@@ -36,13 +37,13 @@ object Safety extends Phase[Root, Root] {
   }
 
   /**
-    * Performs safety and well-formedness checks on the given definition `def0`.
-    */
+   * Performs safety and well-formedness checks on the given definition `def0`.
+   */
   private def visitDef(def0: TypedAst.Def): List[CompilationError] = visitExp(def0.impl.exp)
 
   /**
-    * Performs safety and well-formedness checks on the given expression `exp0`.
-    */
+   * Performs safety and well-formedness checks on the given expression `exp0`.
+   */
   private def visitExp(exp0: Expression): List[CompilationError] = exp0 match {
     case Expression.Unit(loc) => Nil
 
@@ -229,13 +230,23 @@ object Safety extends Phase[Root, Root] {
   }
 
   /**
-    * Performs safety and well-formedness checks on the given constraint `c0`.
-    */
+   * Performs safety and well-formedness checks on the given constraint `c0`.
+   */
   private def checkConstraint(c0: Constraint): List[CompilationError] = {
     //
     // Compute the set of positively defined variable symbols in the constraint.
     //
     val posVars = positivelyDefinedVariables(c0)
+
+    val symMap = TypedAstOps.symOccurrences(c0.head :: c0.body)
+
+    val relevantSymMap = c0.cparams.map(p => (p.sym, symMap.get(p.sym).getOrElse(Set.empty)))
+    val errors = relevantSymMap.flatMap { case (sym, occurrences) =>
+      if (occurrences.isEmpty) throw InternalCompilerException("cannot be empty (error in safety.scala)")
+      else if (occurrences.size == 1) {
+        List(SafetyError.IllegalSingleUseOfVariable(sym, occurrences.iterator.next()))
+      } else Nil
+    }
 
     //
     // Compute the quantified variables in the constraint.
@@ -247,13 +258,13 @@ object Safety extends Phase[Root, Root] {
     //
     // Check that all negative atoms only use positively defined variable symbols.
     //
-    c0.body.flatMap(checkBodyPredicate(_, posVars, quantVars))
+    errors ++ c0.body.flatMap(checkBodyPredicate(_, posVars, quantVars))
   }
 
   /**
-    * Performs safety and well-formedness checks on the given body predicate `p0`
-    * with the given positively defined variable symbols `posVars`.
-    */
+   * Performs safety and well-formedness checks on the given body predicate `p0`
+   * with the given positively defined variable symbols `posVars`.
+   */
   private def checkBodyPredicate(p0: Predicate.Body, posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym]): List[CompilationError] = p0 match {
     case Predicate.Body.Atom(pred, den, polarity, terms, tpe, loc) =>
       checkBodyAtomPredicate(polarity, terms, posVars, quantVars, loc)
@@ -262,8 +273,8 @@ object Safety extends Phase[Root, Root] {
   }
 
   /**
-    * Performs safety and well-formedness checks on an atom with the given polarity, terms, and positive variables.
-    */
+   * Performs safety and well-formedness checks on an atom with the given polarity, terms, and positive variables.
+   */
   private def checkBodyAtomPredicate(polarity: Polarity, terms: List[TypedAst.Pattern], posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym], loc: SourceLocation): List[CompilationError] = {
     polarity match {
       case Polarity.Positive => Nil
@@ -279,13 +290,13 @@ object Safety extends Phase[Root, Root] {
   }
 
   /**
-    * Returns all the positively defined variable symbols in the given constraint `c0`.
-    */
+   * Returns all the positively defined variable symbols in the given constraint `c0`.
+   */
   private def positivelyDefinedVariables(c0: Constraint): Set[Symbol.VarSym] = c0.body.flatMap(positivelyDefinedVariables).toSet
 
   /**
-    * Returns all positively defined variable symbols in the given body predicate `p0`.
-    */
+   * Returns all positively defined variable symbols in the given body predicate `p0`.
+   */
   private def positivelyDefinedVariables(p0: Predicate.Body): Set[Symbol.VarSym] = p0 match {
     case Predicate.Body.Atom(pred, den, polarity, terms, tpe, loc) => polarity match {
       case Polarity.Positive =>
