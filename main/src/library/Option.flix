@@ -43,7 +43,10 @@ instance Applicative[Option] {
     pub def ap(f: Option[a -> b & e], x: Option[a]) : Option[b] & e = Option.ap(f, x)
 
     // Same as the default implementation using `map` and `ap` but with less indirection.
-    override pub def liftA2(f: a -> b -> c & e, x: Option[a], y: Option[b]): Option[c] & e = Option.lift2(f, x, y)
+    override pub def liftA2(f: t1 -> t2 -> r & e, x1: Option[t1], x2: Option[t2]): Option[r] & e = Option.lift2(f, x1, x2)
+    override pub def liftA3(f: t1 -> t2 -> t3 -> r & e, x1: Option[t1], x2: Option[t2], x3: Option[t3]): Option[r] & e = Option.lift3(f, x1, x2, x3)
+    override pub def liftA4(f: t1 -> t2 -> t3 -> t4 -> r & e, x1: Option[t1], x2: Option[t2], x3: Option[t3], x4: Option[t4]): Option[r] & e = Option.lift4(f, x1, x2, x3, x4)
+    override pub def liftA5(f: t1 -> t2 -> t3 -> t4 -> t5 -> r & e, x1: Option[t1], x2: Option[t2], x3: Option[t3], x4: Option[t4], x5: Option[t5]): Option[r] & e = Option.lift5(f, x1, x2, x3, x4, x5)
 }
 
 instance Foldable[Option] {
