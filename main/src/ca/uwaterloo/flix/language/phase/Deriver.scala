@@ -155,7 +155,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
     * Creates a ToString match rule for the given enum case.
     */
   private def mkToStringMatchRule(caze: KindedAst.Case, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
-    case KindedAst.Case(enum, tag, tpeDeprecated, sc) =>
+    case KindedAst.Case(_, tag, _, sc) =>
       val toStringSym = PredefinedClasses.lookupSigSym("ToString", "toString", root)
 
       // get a pattern corresponding to this case, e.g.
@@ -297,7 +297,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
     * Creates an Eq match rule for the given enum case.
     */
   private def mkEqMatchRule(caze: KindedAst.Case, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
-    case KindedAst.Case(enum, tag, tpeDeprecated, sc) =>
+    case KindedAst.Case(_, _, _, sc) =>
       val eqSym = PredefinedClasses.lookupSigSym("Eq", "eq", root)
 
       // get a pattern corresponding to this case, e.g.
@@ -370,7 +370,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
     * }}}
     */
   private def mkOrderInstance(enum: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum match {
-    case KindedAst.Enum(_, _, _, tparams, _, cases, _, sc, _) =>
+    case KindedAst.Enum(_, _, _, _, _, cases, _, sc, _) =>
 
       // VarSyms for the function arguments
       val param1 = Symbol.freshVarSym("x", loc)
@@ -482,7 +482,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
     * ```case (C2(x0, x1), C2(y0, y1)) => compare(x0, y0) `thenCompare` lazy(x1, y1)```
     */
   private def mkComparePairMatchRule(caze: KindedAst.Case, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
-    case KindedAst.Case(enum, tag, tpeDeprecated, sc) =>
+    case KindedAst.Case(_, _, _, sc) =>
       // Match on the tuple
       // `case (C2(x0, x1), C2(y0, y1))
       val (pat1, varSyms1) = mkPattern(sc.base, "x", loc)
