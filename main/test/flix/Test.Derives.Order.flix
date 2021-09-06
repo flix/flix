@@ -109,30 +109,30 @@ namespace Test/Derives/Order {
     @test
     def testEq23(): Bool = compare(MutRecursiveEnum1.RecursiveCase(MutRecursiveEnum2.RecursiveCase(MutRecursiveEnum1.EmptyCase)), MutRecursiveEnum1.RecursiveCase(MutRecursiveEnum2.RecursiveCase(MutRecursiveEnum1.EmptyCase))) == EqualTo
 
-//    @test
-//    def testLt01(): Bool = Enum.EmptyCase != Enum.SingletonCase(123)
-//
-//    @test
-//    def testLt02(): Bool = Enum.SingletonCase(123) != Enum.SingletonCase(456)
-//
-//    @test
-//    def testLt03(): Bool = PolyEnum.EmptyCase != PolyEnum.SingletonCase(123)
-//
-//    @test
-//    def testLt04(): Bool = PolyEnum.SingletonCase(123) != PolyEnum.SingletonCase(456)
-//
-//    @test
-//    def testLt05(): Bool = PolyEnum.SingletonCase(Enum.EmptyCase) != PolyEnum.SingletonCase(Enum.SingletonCase(123))
-//
-//    @test
-//    def testLt06(): Bool = RecursiveEnum.RecursiveCase(RecursiveEnum.EmptyCase) != RecursiveEnum.RecursiveCase(RecursiveEnum.RecursiveCase(RecursiveEnum.EmptyCase))
-//
-//    @test
-//    def testLt07(): Bool = PolyMultiEnum.LeftCase(123) != PolyMultiEnum.RightCase(123)
-//
-//    @test
-//    def testLt08(): Bool = PolyBoolEnum.EmptyCase: PolyBoolEnum[Pure] != PolyBoolEnum.RecursiveCase(PolyBoolEnum.EmptyCase): PolyBoolEnum[Pure]
-//
-//    @test
-//    def testLt09(): Bool = MutRecursiveEnum1.EmptyCase != MutRecursiveEnum1.RecursiveCase(MutRecursiveEnum2.EmptyCase)
+    @test
+    def testLt01(): Bool = Enum.EmptyCase < Enum.SingletonCase(123)
+
+    @test
+    def testLt02(): Bool = Enum.SingletonCase(123) < Enum.SingletonCase(456)
+
+    @test
+    def testLt03(): Bool = PolyEnum.EmptyCase < PolyEnum.SingletonCase(123)
+
+    @test
+    def testLt04(): Bool = PolyEnum.SingletonCase(123) < PolyEnum.SingletonCase(456)
+
+    @test
+    def testLt05(): Bool = PolyEnum.SingletonCase(Enum.EmptyCase) < PolyEnum.SingletonCase(Enum.SingletonCase(123))
+
+    @test
+    def testLt06(): Bool = RecursiveEnum.RecursiveCase(RecursiveEnum.EmptyCase) < RecursiveEnum.RecursiveCase(RecursiveEnum.RecursiveCase(RecursiveEnum.EmptyCase))
+
+    @test
+    def testLt07(): Bool = PolyMultiEnum.LeftCase(123) < PolyMultiEnum.RightCase(123)
+
+    @test
+    def testLt08(): Bool = PolyBoolEnum.EmptyCase: PolyBoolEnum[Pure] < PolyBoolEnum.RecursiveCase(PolyBoolEnum.EmptyCase): PolyBoolEnum[Pure]
+
+    @test
+    def testLt09(): Bool = MutRecursiveEnum1.EmptyCase < MutRecursiveEnum1.RecursiveCase(MutRecursiveEnum2.EmptyCase)
 }
