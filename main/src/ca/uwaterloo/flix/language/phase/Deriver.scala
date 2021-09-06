@@ -507,26 +507,30 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
           )
       }
 
+      /**
+        * Joins the two expressions via `Compare.thenCompare`, making the second expression lazy.
+        * (Cannot be inlined due to issues with Scala's type inference.
+        */
+      def thenCompare(exp1: KindedAst.Expression, exp2: KindedAst.Expression): KindedAst.Expression = {
+        KindedAst.Expression.Apply(
+          KindedAst.Expression.Sig(PredefinedClasses.lookupSigSym("Order", "thenCompare", root), Type.freshVar(Kind.Star, loc), loc),
+          List(
+            exp1,
+            KindedAst.Expression.Lazy(exp2, loc)
+          ),
+          Type.freshVar(Kind.Star, loc),
+          Type.freshVar(Kind.Bool, loc),
+          loc
+        )
+      }
+
       // Put it all together
       // ```compare(x0, y0) `thenCompare` lazy compare(x1, y1)```
       val exp = compares match {
         // Case 1: no variables to compare; just return true
         case Nil => KindedAst.Expression.True(loc)
         // Case 2: multiple comparisons to be done; wrap them in Order.thenCompare
-        case cmps => cmps.reduceRight {
-          // (extra type annotation required because of Scala's limited type inf)
-          case (cmp, acc) =>
-            KindedAst.Expression.Apply(
-              KindedAst.Expression.Sig(PredefinedClasses.lookupSigSym("Order", "thenCompare", root), Type.freshVar(Kind.Star, loc), loc),
-              List(
-                cmp,
-                KindedAst.Expression.Lazy(acc, loc)
-              ),
-              Type.freshVar(Kind.Star, loc),
-              Type.freshVar(Kind.Bool, loc),
-              loc
-            )
-        }
+        case cmps => cmps.reduceRight(thenCompare)
       }
 
       KindedAst.MatchRule(pat, guard, exp)
