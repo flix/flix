@@ -160,14 +160,6 @@ object ErasedAst {
 
     case class Assign[T <: PType](exp1: ErasedAst.Expression[PReference[PRef[T]]], exp2: ErasedAst.Expression[T], className: String, tpe: EType[PReference[PUnit]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PUnit]]
 
-    case class Existential(fparam: ErasedAst.FormalParam, exp: ErasedAst.Expression[PInt32], loc: SourceLocation) extends ErasedAst.Expression[PInt32] {
-      final val tpe = EType.Bool()
-    }
-
-    case class Universal(fparam: ErasedAst.FormalParam, exp: ErasedAst.Expression[PInt32], loc: SourceLocation) extends ErasedAst.Expression[PInt32] {
-      final val tpe = EType.Bool()
-    }
-
     case class Cast[T <: PType](exp: ErasedAst.Expression[PType], tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
     case class TryCatch[T <: PType](exp: ErasedAst.Expression[T], rules: List[ErasedAst.CatchRule[T]], tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
