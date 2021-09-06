@@ -153,11 +153,6 @@ object JvmName {
   val MatchError: JvmName = JvmName(List("dev", "flix", "runtime"), "MatchError")
 
   /**
-   * The `dev.flix.runtime.NotImplementedError` name
-   */
-  val NotImplementedError: JvmName = JvmName(List("dev", "flix", "runtime"), "NotImplementedError")
-
-  /**
    * The `dev.flix.runtime.ReifiedSourceLocation` class.
    */
   val ReifiedSourceLocation: JvmName = JvmName(List("dev", "flix", "runtime"), "ReifiedSourceLocation")

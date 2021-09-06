@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import org.objectweb.asm.{ClassWriter, Label}
 import org.objectweb.asm.Opcodes._
 
-object GenFlixErrorSubclass {
+object GenMatchErrorClass {
 
   val LocationFieldName: String = "location"
 
@@ -31,12 +31,13 @@ object GenFlixErrorSubclass {
    * @param className the jvm name of the class
    * @param prefix something like `Division by zero at ` which will be followed by the location (remember the trailing space)
    */
-  def gen(className: JvmName, prefix: String)(implicit flix: Flix): Map[JvmName, JvmClass] = {
-    val bytecode = genByteCode(className, prefix)
+  def gen()(implicit flix: Flix): Map[JvmName, JvmClass] = {
+    val className = JvmName.MatchError
+    val bytecode = genByteCode(className)
     Map(className -> JvmClass(className, bytecode))
   }
 
-  private def genByteCode(name: JvmName, prefix: String)(implicit flix: Flix): Array[Byte] = {
+  private def genByteCode(name: JvmName)(implicit flix: Flix): Array[Byte] = {
     // class writer
     val visitor = AsmOps.mkClassWriter()
 
@@ -49,7 +50,7 @@ object GenFlixErrorSubclass {
     // Source of the class
     visitor.visitSource(name.toInternalName, null)
 
-    genConstructor(name, superClass, prefix, visitor)
+    genConstructor(name, superClass, visitor)
     genEquals(name, visitor)
     genHashCode(name, visitor)
     visitor.visitField(ACC_PUBLIC + ACC_FINAL, LocationFieldName, JvmName.ReifiedSourceLocation.toDescriptor, null, null).visitEnd()
@@ -58,7 +59,7 @@ object GenFlixErrorSubclass {
     visitor.toByteArray
   }
 
-  private def genConstructor(name: JvmName, superClass: JvmName, prefix: String, visitor: ClassWriter): Unit = {
+  private def genConstructor(name: JvmName, superClass: JvmName, visitor: ClassWriter): Unit = {
     val stringToBuilderDescriptor = s"(${JvmName.String.toDescriptor})${JvmName.StringBuilder.toDescriptor}"
     val builderName = JvmName.StringBuilder.toInternalName
 
@@ -69,7 +70,7 @@ object GenFlixErrorSubclass {
     method.visitTypeInsn(NEW, builderName)
     method.visitInsn(DUP)
     method.visitMethodInsn(INVOKESPECIAL, builderName, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
-    method.visitLdcInsn(prefix)
+    method.visitLdcInsn("Non-exhaustive match at ")
     method.visitMethodInsn(INVOKEVIRTUAL, builderName, "append", stringToBuilderDescriptor, false)
     method.visitVarInsn(ALOAD, 1)
     method.visitMethodInsn(INVOKEVIRTUAL, JvmName.ReifiedSourceLocation.toInternalName, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String), false)
