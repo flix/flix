@@ -169,6 +169,8 @@ namespace LazyList {
             case Impure => mapE(f as a -> b & Impure, l)
         } as & ef
 
+    pub def mapWithIndex(f: (a, Int) -> b & ef, l: LazyList[a]): LazyList[b] & ef = ?temp
+
     ///
     /// Returns the result of applying `f` to every element in `l`.
     ///

@@ -487,6 +487,7 @@ object JvmOps {
     */
   // TODO: Magnus: Use this in appropriate places.
   def mangle(s: String): String = s.
+    replace("|>", "$pipe").
     replace("+", "$plus").
     replace("-", "$minus").
     replace("*", "$times").
