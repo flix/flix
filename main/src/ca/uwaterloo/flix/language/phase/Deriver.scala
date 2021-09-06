@@ -337,6 +337,171 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
   }
 
   /**
+    * Creates an Order instance for the given enum.
+    *
+    * {{{
+    * enum E[a] with Order {
+    *   case C1
+    *   case C2(a)
+    *   case C3(a, a)
+    * }
+    * }}}
+    *
+    * yields
+    *
+    * {{{
+    * instance Order[E[a]] with Order[a] {
+    *   pub def compare(x: E[a], y: E[a]): Comparison = {
+    *     let indexOf = e -> match e {
+    *       case C0(_) -> 0
+    *       case C1(_) -> 1
+    *       case C2(_) -> 2
+    *     };
+    *     match (x, y) {
+    *       case (C0, C0) => Comparison.EqualTo
+    *       case (C1(x0), C1(y0)) => Order.compare(x0, y0)
+    *       case (C2(x0, x1), C2(y0, y1)) => Order.compare(x0, y0) `Order.thenCompare` lazy Order.compare(x1, y1)
+    *       case _ => Order.compare(indexOf(x), indexOf(y))
+    *     }
+    *   }
+    * }
+    * }}}
+    */
+  def createOrder(enum: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum match {
+    case KindedAst.Enum(_, _, _, tparams, _, cases, _, sc, _) =>
+      // VarSyms for the function arguments
+      val varSym1 = Symbol.freshVarSym("x", loc)
+      val varSym2 = Symbol.freshVarSym("x", loc)
+
+      val lambdaVarSym = Symbol.freshVarSym("indexOf", loc)
+
+      // Create the lambda
+      val lambdaParamVarSym = Symbol.freshVarSym("e", loc)
+      val indexMatchRules = cases.values.zipWithIndex.map { case (caze, index) => createOrderIndexMatchRule(caze, index, loc) }
+      val indexMatchExp = KindedAst.Expression.Match(mkVarExpr(lambdaParamVarSym, loc), indexMatchRules.toList, loc)
+      val lambda = KindedAst.Expression.Lambda(KindedAst.FormalParam(lambdaParamVarSym, Ast.Modifiers.Empty, lambdaParamVarSym.tvar, loc), indexMatchExp, Type.freshVar(Kind.Star, loc), loc)
+
+      // Create the main match expression
+      val matchRules = cases.values.map(createOrderMatchRule(_, loc, root))
+      val defaultMatchRule = KindedAst.MatchRule(
+        KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc),
+        KindedAst.Expression.True(loc),
+        KindedAst.Expression.Apply(
+          KindedAst.Expression.Var(lambdaVarSym, lambdaVarSym.tvar, loc),
+          List(mkVarExpr(varSym1, loc), mkVarExpr(varSym2, loc)),
+          Type.freshVar(Kind.Star, loc),
+          Type.freshVar(Kind.Bool, loc),
+          loc
+        )
+      )
+      val matchExp = KindedAst.Expression.Match(
+        KindedAst.Expression.Tuple(List(mkVarExpr(varSym1, loc), mkVarExpr(varSym2, loc)), loc),
+        matchRules.toList :+ defaultMatchRule,
+        loc
+      )
+
+      // Put the expressions together in a let
+      val exp = KindedAst.Expression.Let(lambdaVarSym, Ast.Modifiers.Empty, lambda, matchExp, loc)
+
+      val spec = KindedAst.Spec(
+        doc = Ast.Doc(Nil, loc),
+        ann = Nil,
+        mod = Ast.Modifiers.Empty,
+        tparams = tparams,
+        fparams = List(KindedAst.FormalParam(varSym1, Ast.Modifiers.Empty, sc.base, loc), KindedAst.FormalParam(varSym2, Ast.Modifiers.Empty, sc.base, loc)),
+        sc = Scheme(
+          tparams.map(_.tpe),
+          List(Ast.TypeConstraint(PredefinedClasses.lookupClassSym("Order", root), sc.base, loc)),
+          Type.mkPureUncurriedArrow(List(sc.base, sc.base), Type.mkEnum(PredefinedClasses.lookupEnum("Comparison", root), Kind.Wild, loc), loc) // MATT lookup kind better
+        ),
+        tpe = Type.mkEnum(PredefinedClasses.lookupEnum("Comparison", root), Kind.Wild, loc), // MATT lookup kind
+        eff = Type.Cst(TypeConstructor.True, loc),
+        loc = loc
+      )
+      val defn = KindedAst.Def(Symbol.mkDefnSym("Order.compare"), spec, exp)
+
+      // Add a type constraint to the instance for any variable used in a case
+      val caseTvars = for {
+        caze <- cases.values
+        tpe <- getTagArguments(caze.sc.base)
+        if tpe.isInstanceOf[Type.Var]
+      } yield tpe
+      val tconstrs = caseTvars.toList.distinct.map(Ast.TypeConstraint(PredefinedClasses.lookupClassSym("Order", root), _, loc))
+
+      KindedAst.Instance(
+        doc = Ast.Doc(Nil, loc),
+        mod = Ast.Modifiers.Empty,
+        sym = PredefinedClasses.lookupClassSym("Order", root),
+        tpe = sc.base,
+        tconstrs = tconstrs,
+        defs = List(defn),
+        ns = Name.RootNS,
+        loc = loc
+      )
+
+
+  }
+
+  // MATT docs
+  def createOrderIndexMatchRule(caze: KindedAst.Case, index: Int, loc: SourceLocation)(implicit Flix: Flix): KindedAst.MatchRule = caze match {
+    case KindedAst.Case(_, _, _, sc) =>
+      val TypeConstructor.Tag(sym, tag) = getTagConstructor(sc.base)
+      val pat = KindedAst.Pattern.Tag(sym, tag, KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc), Type.freshVar(Kind.Star, loc), loc)
+      val guard = KindedAst.Expression.True(loc)
+      val exp = KindedAst.Expression.Int32(index, loc)
+      KindedAst.MatchRule(pat, guard, exp)
+  }
+
+  // MATT docs
+  def createOrderMatchRule(caze: KindedAst.Case, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
+    case KindedAst.Case(enum, tag, tpeDeprecated, sc) =>
+      // Match on the tuple
+      val (pat1, varSyms1) = mkPattern(sc.base, "x", loc)
+      val (pat2, varSyms2) = mkPattern(sc.base, "y", loc)
+      val pat = KindedAst.Pattern.Tuple(List(pat1, pat2), loc)
+
+      val guard = KindedAst.Expression.True(loc)
+
+      // Call compare on each variable pair
+      val compares = varSyms1.zip(varSyms2).map {
+        case (varSym1, varSym2) =>
+          KindedAst.Expression.Apply(
+            KindedAst.Expression.Sig(PredefinedClasses.lookupSigSym("Order", "compare", root), Type.freshVar(Kind.Star, loc), loc),
+            List(
+              KindedAst.Expression.Var(varSym1, varSym1.tvar, loc),
+              KindedAst.Expression.Var(varSym2, varSym2.tvar, loc)
+            ),
+            Type.freshVar(Kind.Star, loc),
+            Type.freshVar(Kind.Bool, loc),
+            loc
+          )
+      }
+
+      // Put it all together
+      val exp = compares match {
+        // Case 1: no variables to compare; just return true
+        case Nil => KindedAst.Expression.True(loc)
+        // Case 2: multiple comparisons to be done; wrap them in Order.thenCompare
+        case cmps => cmps.reduceRight {
+          // (extra type annotation required because of Scala's limited type inf)
+          case (cmp, acc) =>
+            KindedAst.Expression.Apply(
+              KindedAst.Expression.Sig(PredefinedClasses.lookupSigSym("Order", "thenCompare", root), Type.freshVar(Kind.Star, loc), loc),
+              List(
+                cmp,
+                KindedAst.Expression.Lazy(acc, loc)
+              ),
+              Type.freshVar(Kind.Star, loc),
+              Type.freshVar(Kind.Bool, loc),
+              loc
+            )
+        }
+      }
+
+      KindedAst.MatchRule(pat, guard, exp)
+  }
+
+  /**
     * Builds a string expression from the given string.
     */
   private def mkStrExpr(str: String, loc: SourceLocation): KindedAst.Expression.Str = KindedAst.Expression.Str(str, loc)
@@ -371,6 +536,14 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
       case None => throw InternalCompilerException("Unexpected empty type arguments.")
       case Some(packedArgs) => unpack(packedArgs)
     }
+  }
+
+  /**
+    * Extracts the enum sym from the given tag type.
+    */
+  def getTagConstructor(tpe: Type): TypeConstructor.Tag = tpe.typeConstructor match {
+    case Some(cst: TypeConstructor.Tag) => cst
+    case _ => throw InternalCompilerException("Unexpected non-tag type.")
   }
 
   /**

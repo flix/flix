@@ -45,4 +45,9 @@ object PredefinedClasses {
       .sym
   }
 
+  def lookupEnum(name: String, root: KindedAst.Root): Symbol.EnumSym = {
+    val key = new Symbol.EnumSym(Nil, name, SourceLocation.Unknown)
+    root.enums(key).sym // MATT healthier lookup
+  }
+
 }
