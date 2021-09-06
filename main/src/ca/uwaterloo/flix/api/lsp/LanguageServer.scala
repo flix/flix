@@ -177,6 +177,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       case JString("lsp/hover") => Request.parseHover(json)
       case JString("lsp/goto") => Request.parseGoto(json)
       case JString("lsp/rename") => Request.parseRename(json)
+      case JString("lsp/documentSymbols") => Request.parseDocumentSymbols(json)
       case JString("lsp/uses") => Request.parseUses(json)
 
       case s => Err(s"Unsupported request: '$s'.")
@@ -241,6 +242,9 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
     case Request.Rename(id, newName, uri, pos) =>
       ("id" -> id) ~ RenameProvider.processRename(newName, uri, pos)(index, root)
+
+    case Request.DocumentSymbols(id, uri) =>
+      ("id" -> id) ~ ("status" -> "success") ~ ("result" -> SymbolProvider.processDocumentSymbols(uri)(index, root).map(_.toJSON))
 
     case Request.Uses(id, uri, pos) =>
       ("id" -> id) ~ FindReferencesProvider.findRefs(uri, pos)(index, root)

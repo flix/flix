@@ -105,6 +105,11 @@ object Request {
   case class Uses(requestId: String, uri: String, pos: Position) extends Request
 
   /**
+    * A request to get document symbols information.
+    */
+  case class DocumentSymbols(requestId: String, uri: String) extends Request
+
+  /**
     * Tries to parse the given `json` value as a [[AddUri]] request.
     */
   def parseAddUri(json: json4s.JValue): Result[Request, String] = {
@@ -265,6 +270,16 @@ object Request {
       uri <- parseUri(json)
       pos <- Position.parse(json \\ "position")
     } yield Request.Uses(id, uri, pos)
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[DocumentSymbols]] request.
+    */
+  def parseDocumentSymbols(v: JValue): Result[Request, String] = {
+    for {
+      id <- parseId(v)
+      uri <- parseUri(v)
+    } yield Request.DocumentSymbols(id, uri)
   }
 
   /**

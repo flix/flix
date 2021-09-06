@@ -26,18 +26,7 @@ enum Option[t] {
     case Some(t)
 }
 
-instance Boxable[Option[t]] with Order[t], ToString[t] {
-    pub def box(x: Option[t]): Boxed = {
-        let value = x as ##java.lang.Object;
-        let compare = (o1, o2) -> Order.compare(o1 as Option[t], o2 as Option[t]);
-        let toString = o -> ToString.toString(o as Option[t]);
-        BoxedObject(value, compare, toString)
-    }
-    pub def unbox(x: Boxed): Option[t] = match x {
-        case BoxedObject(v, _, _) => v as Option[t]
-        case _                    => ?bug
-    }
-}
+instance Boxable[Option[t]]
 
 instance ToString[Option[a]] with ToString[a] {
     pub def toString(o: Option[a]): String = match o {
@@ -80,12 +69,12 @@ instance Order[Option[a]] with Order[a] {
 }
 
 instance Functor[Option] {
-    pub def map(f: a -> b & e, o: Option[a]): Option[b] & e = Option.map(f, o)
+    pub def map(f: a -> b & ef, o: Option[a]): Option[b] & ef = Option.map(f, o)
 }
 
 instance Foldable[Option] {
-    pub def foldLeft(f: (b, a) -> b & e, s: b, o: Option[a]): b & e = Option.foldLeft(f, s, o)
-    pub def foldRight(f: (a, b) -> b & e, s: b, o: Option[a]): b & e = Option.foldRight(f, o, s)
+    pub def foldLeft(f: (b, a) -> b & ef, s: b, o: Option[a]): b & ef = Option.foldLeft(f, s, o)
+    pub def foldRight(f: (a, b) -> b & ef, s: b, o: Option[a]): b & ef = Option.foldRight(f, o, s)
 }
 
 namespace Option {
@@ -165,7 +154,7 @@ namespace Option {
     /// Returns `Some(f(v))` if `o` is `Some(v)`. Otherwise returns `None`.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def map(f: a -> b & e, o: Option[a]): Option[b] & e = match o {
+    pub def map(f: a -> b & ef, o: Option[a]): Option[b] & ef = match o {
         case None => None
         case Some(v) => Some(f(v))
     }
@@ -174,7 +163,7 @@ namespace Option {
     /// Returns `Some(f(v1, v2))` if `o1` is `Some(v1)` and `o2` is `Some(v2)`. Otherwise returns `None`.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def map2(f: (a, b) -> c & e, o1: Option[a], o2: Option[b]): Option[c] & e = match (o1, o2) {
+    pub def map2(f: (a, b) -> c & ef, o1: Option[a], o2: Option[b]): Option[c] & ef = match (o1, o2) {
         case (None, _) => None
         case (_, None) => None
         case (Some(v1), Some(v2)) => Some(f(v1, v2))
@@ -184,7 +173,7 @@ namespace Option {
     /// Returns `f(v)` if `o` is `Some(v)`. Otherwise returns `None`.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def flatMap(f: a -> Option[b] & e, o: Option[a]): Option[b] & e = match o {
+    pub def flatMap(f: a -> Option[b] & ef, o: Option[a]): Option[b] & ef = match o {
         case None => None
         case Some(v) => f(v)
     }
@@ -193,7 +182,7 @@ namespace Option {
     /// Returns `f(v1, v2)` if `o1` is `Some(v1)` and `o2` is `Some(v2)`. Otherwise returns `None`.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def flatMap2(f: (a, b) -> Option[c] & e, o1: Option[a], o2: Option[b]): Option[c] & e = match (o1, o2) {
+    pub def flatMap2(f: (a, b) -> Option[c] & ef, o1: Option[a], o2: Option[b]): Option[c] & ef = match (o1, o2) {
         case (None, _) => None
         case (_, None) => None
         case (Some(v1), Some(v2)) => f(v1, v2)
@@ -238,7 +227,7 @@ namespace Option {
     ///
     /// Returns `f(z, v)` if `o` is `Some(v)`. Otherwise returns `z`.
     ///
-    pub def foldLeft(f: (b, a) -> b & e, z: b, o: Option[a]): b & e = match o {
+    pub def foldLeft(f: (b, a) -> b & ef, z: b, o: Option[a]): b & ef = match o {
         case None => z
         case Some(v) => f(z, v)
     }
@@ -246,7 +235,7 @@ namespace Option {
     ///
     /// Returns `f(v, z)` if `o` is `Some(v)`. Otherwise returns `z`.
     ///
-    pub def foldRight(f: (a, b) -> b & e, o: Option[a], z: b): b & e = match o {
+    pub def foldRight(f: (a, b) -> b & ef, o: Option[a], z: b): b & ef = match o {
         case None => z
         case Some(v) => f(v, z)
     }
@@ -270,7 +259,7 @@ namespace Option {
     ///
     /// Returns `Some(v1 :: v2 :: ... v :: vn)` if each of `f(xs_i)` is `Some(v_i)`. Otherwise returns `None`.
     ///
-    pub def traverse(f: a -> Option[b] & e, xs: List[a]): Option[List[b]] & e =
+    pub def traverse(f: a -> Option[b] & ef, xs: List[a]): Option[List[b]] & ef =
         traverseHelper(f, xs, _ -> None, ys -> Some(ys))
 
     ///
@@ -290,7 +279,7 @@ namespace Option {
     /// This function is the "forgetful" version of `traverse`, use it when the you want the effect
     /// of applying `f` to each element but do not care about collecting the results.
     ///
-    pub def traverseX(f: a -> Option[b] & e, xs: List[a]): Option[Unit] & e = match xs {
+    pub def traverseX(f: a -> Option[b] & ef, xs: List[a]): Option[Unit] & ef = match xs {
         case Nil            => Some()
         case x :: rs        => match f(x) {
             case None    => None

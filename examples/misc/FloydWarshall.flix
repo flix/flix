@@ -62,18 +62,7 @@ instance ToString[Dist] {
     }
 }
 
-instance Boxable[Dist] {
-    pub def box(x: Dist): Boxed = {
-        let value = x as ##java.lang.Object;
-        let compare = (o1, o2) -> Order.compare(o1 as Dist, o2 as Dist);
-        let toString = o -> ToString.toString(o as Dist);
-        BoxedObject(value, compare, toString)
-    }
-    pub def unbox(x: Boxed): Dist = match x {
-        case BoxedObject(v, _, _) => v as Dist
-        case _                    => ?bug
-    }
-}
+instance Boxable[Dist]
 
 instance Order[Dist] {
     pub def compare(x: Dist, y: Dist): Comparison = match (x, y) {

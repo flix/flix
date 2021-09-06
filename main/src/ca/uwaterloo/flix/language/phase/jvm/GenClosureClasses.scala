@@ -69,7 +69,7 @@ object GenClosureClasses {
     val functionInterface = JvmOps.getFunctionInterfaceType(closure.tpe)
 
     // The super interface.
-    val superInterface = Array(functionInterface.name.toInternalName, JvmName.Spawnable.toInternalName)
+    val superInterface = Array(functionInterface.name.toInternalName, JvmName.Runnable.toInternalName)
 
     // `JvmType` of the class for `defn`
     val classType = JvmOps.getClosureClassType(closure)
@@ -114,8 +114,8 @@ object GenClosureClasses {
     // Invoke method of the class
     compileInvokeMethod(visitor, classType, root.defs(closure.sym), closure.freeVars, resultType)
 
-    // Spawn method of the class
-    compileSpawnMethod(visitor, classType, root.defs(closure.sym), resultType)
+    // run method of the class
+    compileRunMethod(visitor, root.defs(closure.sym), resultType)
 
     // Execute method of the class.
     compileApplyMethod(visitor, classType, root.defs(closure.sym), targs, tresult)
@@ -264,14 +264,11 @@ object GenClosureClasses {
   }
 
   /**
-    * Spawn method for the given `defn` and `classType`.
+    * Run method for the given `defn` and `classType`.
     */
-  private def compileSpawnMethod(visitor: ClassWriter,
-                                 classType: JvmType.Reference,
-                                 defn: Def, resultType: JvmType)(implicit root: Root, flix: Flix): Unit = {
-
+  private def compileRunMethod(visitor: ClassWriter, defn: Def, resultType: JvmType)(implicit root: Root, flix: Flix): Unit = {
     // Method header
-    val mv = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "spawn",
+    val mv = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "run",
       AsmOps.getMethodDescriptor(List(), JvmType.Void), null, null)
 
     // Put this on stack

@@ -63,7 +63,11 @@ object HoverProvider {
   }
 
   private def hoverTypAndEff(tpe: Type, eff: Type, loc: SourceLocation)(implicit index: Index, root: Root): JObject = {
-    val markup = formatTypAndEff(tpe, eff)
+    val markup =
+      s"""```flix
+         |${formatTypAndEff(tpe, eff)}
+         |```
+         |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
     val range = Range.from(loc)
     val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
@@ -73,7 +77,9 @@ object HoverProvider {
   private def hoverDef(sym: Symbol.DefnSym, loc: SourceLocation)(implicit index: Index, root: Root): JObject = {
     val defDecl = root.defs(sym)
     val markup =
-      s"""${FormatSignature.asMarkDown(defDecl)}
+      s"""```flix
+         |${FormatSignature.asMarkDown(defDecl)}
+         |```
          |
          |${FormatDoc.asMarkDown(defDecl.spec.doc)}
          |""".stripMargin
@@ -86,7 +92,9 @@ object HoverProvider {
   private def hoverSig(sym: Symbol.SigSym, loc: SourceLocation)(implicit index: Index, root: Root): JObject = {
     val sigDecl = root.sigs(sym)
     val markup =
-      s"""${FormatSignature.asMarkDown(sigDecl)}
+      s"""```flix
+         |${FormatSignature.asMarkDown(sigDecl)}
+         |```
          |
          |${FormatDoc.asMarkDown(sigDecl.spec.doc)}
          |""".stripMargin
@@ -98,7 +106,9 @@ object HoverProvider {
 
   private def hoverFixpoint(tpe: Type, eff: Type, stf: Ast.Stratification, loc: SourceLocation)(implicit index: Index, root: Root): JObject = {
     val markup =
-      s"""${formatTypAndEff(tpe, eff)}
+      s"""```flix
+         |${formatTypAndEff(tpe, eff)}
+         |```
          |
          |${formatStratification(stf)}
          |""".stripMargin
@@ -119,7 +129,11 @@ object HoverProvider {
   }
 
   private def hoverTypeConstructor(tc: TypeConstructor, loc: SourceLocation)(implicit index: Index, root: Root): JObject = {
-    val markup = formatKind(tc)
+    val markup =
+      s"""```flix
+         |${formatKind(tc)}
+         |```
+         |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
     val range = Range.from(loc)
     val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)

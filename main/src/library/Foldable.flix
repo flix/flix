@@ -23,13 +23,13 @@ pub lawless class Foldable[t : Type -> Type] {
     /// Left-associative fold of a structure.
     /// Applies `f` to a start value `s` and all elements in `t` going from left to right.
     ///
-    pub def foldLeft(f: (b, a) -> b & e, s: b, t: t[a]): b & e
+    pub def foldLeft(f: (b, a) -> b & ef, s: b, t: t[a]): b & ef
 
     ///
     /// Right-associative fold of a structure.
     /// Applies `f` to a start value `s` and all elements in `t` going from right to left.
     ///
-    pub def foldRight(f: (a, b) -> b & e, s: b, t: t[a]): b & e
+    pub def foldRight(f: (a, b) -> b & ef, s: b, t: t[a]): b & ef
 
     ///
     /// Returns the number of elements in `t` that satisfy the predicate `f`.
@@ -124,7 +124,7 @@ pub lawless class Foldable[t : Type -> Type] {
     ///
     /// Returns `None` if `t` is empty.
     ///
-    pub def reduceLeft(f: (a, a) -> a & e, t: t[a]): Option[a] & e =
+    pub def reduceLeft(f: (a, a) -> a & ef, t: t[a]): Option[a] & ef =
         Foldable.foldLeft((acc, x) -> Some(Option.foldLeft((z, v) -> f(v, z), x, acc)), None, t)
 
     ///
@@ -132,7 +132,7 @@ pub lawless class Foldable[t : Type -> Type] {
     ///
     /// Returns `None` if `t` is empty.
     ///
-    pub def reduceRight(f: (a, a) -> a & e, t: t[a]): Option[a] & e =
+    pub def reduceRight(f: (a, a) -> a & ef, t: t[a]): Option[a] & ef =
         Foldable.foldRight((x, acc) -> Some(Option.foldLeft((v, z) -> f(v, z), x, acc)), None, t)
 
     ///
