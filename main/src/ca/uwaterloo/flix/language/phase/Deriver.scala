@@ -367,7 +367,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
     * }
     * }}}
     */
-  def createOrder(enum: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum match {
+  def mkOrder(enum: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum match {
     case KindedAst.Enum(_, _, _, tparams, _, cases, _, sc, _) =>
       // VarSyms for the function arguments
       val varSym1 = Symbol.freshVarSym("x", loc)
@@ -377,12 +377,12 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
 
       // Create the lambda
       val lambdaParamVarSym = Symbol.freshVarSym("e", loc)
-      val indexMatchRules = cases.values.zipWithIndex.map { case (caze, index) => createOrderIndexMatchRule(caze, index, loc) }
+      val indexMatchRules = cases.values.zipWithIndex.map { case (caze, index) => mkOrderIndexMatchRule(caze, index, loc) }
       val indexMatchExp = KindedAst.Expression.Match(mkVarExpr(lambdaParamVarSym, loc), indexMatchRules.toList, loc)
       val lambda = KindedAst.Expression.Lambda(KindedAst.FormalParam(lambdaParamVarSym, Ast.Modifiers.Empty, lambdaParamVarSym.tvar, loc), indexMatchExp, Type.freshVar(Kind.Star, loc), loc)
 
       // Create the main match expression
-      val matchRules = cases.values.map(createOrderMatchRule(_, loc, root))
+      val matchRules = cases.values.map(mkOrderCompareMatchRule(_, loc, root))
       val defaultMatchRule = KindedAst.MatchRule(
         KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc),
         KindedAst.Expression.True(loc),
@@ -443,7 +443,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
   }
 
   // MATT docs
-  def createOrderIndexMatchRule(caze: KindedAst.Case, index: Int, loc: SourceLocation)(implicit Flix: Flix): KindedAst.MatchRule = caze match {
+  def mkOrderIndexMatchRule(caze: KindedAst.Case, index: Int, loc: SourceLocation)(implicit Flix: Flix): KindedAst.MatchRule = caze match {
     case KindedAst.Case(_, _, _, sc) =>
       val TypeConstructor.Tag(sym, tag) = getTagConstructor(sc.base)
       val pat = KindedAst.Pattern.Tag(sym, tag, KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc), Type.freshVar(Kind.Star, loc), loc)
@@ -453,7 +453,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
   }
 
   // MATT docs
-  def createOrderMatchRule(caze: KindedAst.Case, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
+  def mkOrderCompareMatchRule(caze: KindedAst.Case, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
     case KindedAst.Case(enum, tag, tpeDeprecated, sc) =>
       // Match on the tuple
       val (pat1, varSyms1) = mkPattern(sc.base, "x", loc)
