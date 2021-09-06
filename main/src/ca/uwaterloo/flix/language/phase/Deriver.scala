@@ -367,7 +367,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
     * }
     * }}}
     */
-  def mkOrderInstance(enum: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum match {
+  private def mkOrderInstance(enum: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum match {
     case KindedAst.Enum(_, _, _, tparams, _, cases, _, sc, _) =>
       // VarSyms for the function arguments
       val param1 = Symbol.freshVarSym("x", loc)
@@ -458,7 +458,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
       )
   }
   // MATT docs
-  def mkCompareIndexMatchRule(caze: KindedAst.Case, index: Int, loc: SourceLocation)(implicit Flix: Flix): KindedAst.MatchRule = caze match {
+  private def mkCompareIndexMatchRule(caze: KindedAst.Case, index: Int, loc: SourceLocation)(implicit Flix: Flix): KindedAst.MatchRule = caze match {
     case KindedAst.Case(_, _, _, sc) =>
       val TypeConstructor.Tag(sym, tag) = getTagConstructor(sc.base)
       val pat = KindedAst.Pattern.Tag(sym, tag, KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc), Type.freshVar(Kind.Star, loc), loc)
@@ -468,7 +468,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
   }
 
   // MATT docs
-  def mkComparePairMatchRule(caze: KindedAst.Case, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
+  private def mkComparePairMatchRule(caze: KindedAst.Case, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
     case KindedAst.Case(enum, tag, tpeDeprecated, sc) =>
       // Match on the tuple
       val (pat1, varSyms1) = mkPattern(sc.base, "x", loc)
@@ -556,7 +556,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
   /**
     * Extracts the enum sym from the given tag type.
     */
-  def getTagConstructor(tpe: Type): TypeConstructor.Tag = tpe.typeConstructor match {
+  private def getTagConstructor(tpe: Type): TypeConstructor.Tag = tpe.typeConstructor match {
     case Some(cst: TypeConstructor.Tag) => cst
     case _ => throw InternalCompilerException("Unexpected non-tag type.")
   }
