@@ -223,8 +223,8 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
     */
   private def mkEqInstance(enum: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum match {
     case KindedAst.Enum(_, _, _, tparams, _, _, _, sc, _) =>
-      val eqDefSym = Symbol.mkDefnSym("Eq.eq")
       val eqClassSym = PredefinedClasses.lookupClassSym("Eq", root)
+      val eqDefSym = Symbol.mkDefnSym("Eq.eq")
 
       val param1 = Symbol.freshVarSym("x", loc)
       val param2 = Symbol.freshVarSym("y", loc)
@@ -370,28 +370,26 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
     * }}}
     */
   private def mkOrderInstance(enum: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum match {
-    case KindedAst.Enum(_, _, _, _, _, cases, _, sc, _) =>
+    case KindedAst.Enum(_, _, _, tparams, _, cases, _, sc, _) =>
+      val orderClassSym = PredefinedClasses.lookupClassSym("Order", root)
+      val compareDefSym = Symbol.mkDefnSym("Order.compare")
 
-      // VarSyms for the function arguments
       val param1 = Symbol.freshVarSym("x", loc)
       val param2 = Symbol.freshVarSym("y", loc)
       val exp = mkCompareImpl(enum, param1, param2, loc, root)
       val spec = mkCompareSpec(enum, param1, param2, loc, root)
 
-      val defn = KindedAst.Def(Symbol.mkDefnSym("Order.compare"), spec, exp)
+      val defn = KindedAst.Def(compareDefSym, spec, exp)
 
-      // Add a type constraint to the instance for any variable used in a case
-      val caseTvars = for {
-        caze <- cases.values
-        tpe <- getTagArguments(caze.sc.base)
-        if tpe.isInstanceOf[Type.Var]
-      } yield tpe
-      val tconstrs = caseTvars.toList.distinct.map(Ast.TypeConstraint(PredefinedClasses.lookupClassSym("Order", root), _, loc))
+      // Add a type constraint to the instance for any non-wild param with kind Star
+      val tconstrs = tparams.collect {
+        case tparam if tparam.tpe.kind <:: Kind.Star && !tparam.name.isWild => Ast.TypeConstraint(orderClassSym, tparam.tpe, loc)
+      }
 
       KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
         mod = Ast.Modifiers.Empty,
-        sym = PredefinedClasses.lookupClassSym("Order", root),
+        sym = orderClassSym,
         tpe = sc.base,
         tconstrs = tconstrs,
         defs = List(defn),
@@ -447,6 +445,9 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
     */
   private def mkCompareSpec(enum: KindedAst.Enum, param1: Symbol.VarSym, param2: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root): KindedAst.Spec = enum match {
     case KindedAst.Enum(_, _, _, tparams, _, _, _, sc, _) =>
+      val orderClassSym = PredefinedClasses.lookupClassSym("Order", root)
+      val comparisonEnumSym = PredefinedClasses.lookupEnum("Comparison", root)
+
       KindedAst.Spec(
         doc = Ast.Doc(Nil, loc),
         ann = Nil,
@@ -455,10 +456,10 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
         fparams = List(KindedAst.FormalParam(param1, Ast.Modifiers.Empty, sc.base, loc), KindedAst.FormalParam(param2, Ast.Modifiers.Empty, sc.base, loc)),
         sc = Scheme(
           tparams.map(_.tpe),
-          List(Ast.TypeConstraint(PredefinedClasses.lookupClassSym("Order", root), sc.base, loc)),
-          Type.mkPureUncurriedArrow(List(sc.base, sc.base), Type.mkEnum(PredefinedClasses.lookupEnum("Comparison", root), Kind.Wild, loc), loc) // MATT lookup kind better
+          List(Ast.TypeConstraint(orderClassSym, sc.base, loc)),
+          Type.mkPureUncurriedArrow(List(sc.base, sc.base), Type.mkEnum(comparisonEnumSym, Kind.Star, loc), loc)
         ),
-        tpe = Type.mkEnum(PredefinedClasses.lookupEnum("Comparison", root), Kind.Wild, loc), // MATT lookup kind
+        tpe = Type.mkEnum(comparisonEnumSym, Kind.Star, loc),
         eff = Type.Cst(TypeConstructor.True, loc),
         loc = loc
       )
@@ -483,6 +484,9 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
     */
   private def mkComparePairMatchRule(caze: KindedAst.Case, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
     case KindedAst.Case(_, _, _, sc) =>
+      val compareSigSym = PredefinedClasses.lookupSigSym("Order", "compare", root)
+      val thenCompareSigSym = PredefinedClasses.lookupSigSym("Order", "thenCompare", root)
+
       // Match on the tuple
       // `case (C2(x0, x1), C2(y0, y1))
       val (pat1, varSyms1) = mkPattern(sc.base, "x", loc)
@@ -496,7 +500,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
       val compares = varSyms1.zip(varSyms2).map {
         case (varSym1, varSym2) =>
           KindedAst.Expression.Apply(
-            KindedAst.Expression.Sig(PredefinedClasses.lookupSigSym("Order", "compare", root), Type.freshVar(Kind.Star, loc), loc),
+            KindedAst.Expression.Sig(compareSigSym, Type.freshVar(Kind.Star, loc), loc),
             List(
               KindedAst.Expression.Var(varSym1, varSym1.tvar, loc),
               KindedAst.Expression.Var(varSym2, varSym2.tvar, loc)
@@ -513,7 +517,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
         */
       def thenCompare(exp1: KindedAst.Expression, exp2: KindedAst.Expression): KindedAst.Expression = {
         KindedAst.Expression.Apply(
-          KindedAst.Expression.Sig(PredefinedClasses.lookupSigSym("Order", "thenCompare", root), Type.freshVar(Kind.Star, loc), loc),
+          KindedAst.Expression.Sig(thenCompareSigSym, Type.freshVar(Kind.Star, loc), loc),
           List(
             exp1,
             KindedAst.Expression.Lazy(exp2, loc)
