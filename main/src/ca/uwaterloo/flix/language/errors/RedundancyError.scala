@@ -248,6 +248,25 @@ object RedundancyError {
     def loc: SourceLocation = sym.loc
   }
 
+  case class IllegalSingleUseOfVariable(sym: Symbol.VarSym, loc: SourceLocation) extends RedundancyError {
+    def summary: String = s"Illegal single use of variable '$sym'."
+
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Illegal single use of variable '" << Red(sym.text) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "the variable occurs here.") << NewLine
+      vt << NewLine
+      vt << "Possible fixes:" << NewLine
+      vt << NewLine
+      vt << "  (1)  Prefix the variable name with underscore." << NewLine
+      vt << "  (2)  Replace the variable name with underscore." << NewLine
+      vt << "  (3)  Correct spelling mistakes." << NewLine
+      vt << NewLine
+    }
+  }
+
   /**
     * An error raised to indicate that an expression is useless.
     *

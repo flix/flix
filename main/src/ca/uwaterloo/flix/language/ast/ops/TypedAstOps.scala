@@ -4,8 +4,7 @@ import ca.uwaterloo.flix.language.ast.Ast.Annotation.{Benchmark, Law, Lint, Test
 import ca.uwaterloo.flix.language.ast.Ast.HoleContext
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
-import ca.uwaterloo.flix.util.collection.ListMap
+import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 
 object TypedAstOps {
 
@@ -435,137 +434,6 @@ object TypedAstOps {
    */
   def isTest(xs: List[Annotation]): Boolean = xs.exists {
     case Annotation(name, _, _) => name.isInstanceOf[Test]
-  }
-
-  def symOccurrences(exp0: Expression): ListMap[Symbol.VarSym, SourceLocation] = {
-    import ca.uwaterloo.flix.util.collection.ListMap._
-    exp0 match {
-      case Expression.Unit(_) => empty
-      case Expression.Null(_, _) => empty
-      case Expression.True(_) => empty
-      case Expression.False(_) => empty
-      case Expression.Char(_, _) => empty
-      case Expression.Float32(_, _) => empty
-      case Expression.Float64(_, _) => empty
-      case Expression.Int8(_, _) => empty
-      case Expression.Int16(_, _) => empty
-      case Expression.Int32(_, _) => empty
-      case Expression.Int64(_, _) => empty
-      case Expression.BigInt(_, _) => empty
-      case Expression.Str(_, _) => empty
-      case Expression.Default(_, _) => empty
-      case Expression.Wild(_, _) => empty
-      case Expression.Var(sym, _, loc) => singleton(sym, loc)
-      case Expression.Def(_, _, _) => empty
-      case Expression.Sig(_, _, _) => empty
-      case Expression.Hole(_, _, _, _) => empty
-      case Expression.Lambda(fparam, exp, _, loc) => singleton(fparam.sym, loc) ++ symOccurrences(exp)
-      case Expression.Apply(exp, exps, _, _, _) => visitMultiple(exp :: exps)(symOccurrences)
-      case Expression.Unary(_, exp, _, _, _) => symOccurrences(exp)
-      case Expression.Binary(_, exp1, exp2, _, _, _) => visitMultiple(List(exp1, exp2))(symOccurrences)
-      case Expression.Let(sym, _, exp1, exp2, _, _, loc) => singleton(sym, loc) ++ visitMultiple(List(exp1, exp2))(symOccurrences)
-      case Expression.LetRegion(sym, exp, _, _, loc) => singleton(sym, loc) ++ symOccurrences(exp)
-      case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) => visitMultiple(List(exp1, exp2, exp3))(symOccurrences)
-      case Expression.Stm(exp1, exp2, _, _, _) => visitMultiple(List(exp1, exp2))(symOccurrences)
-      case Expression.Match(exp, rules, _, _, _) => symOccurrences(exp) ++ visitMultiple(rules)(symOccurrences)
-      case Expression.Choose(exps, rules, _, _, _) => visitMultiple(exps)(symOccurrences) ++ visitMultiple(rules)(symOccurrences)
-      case Expression.Tag(_, _, exp, _, _, _) => symOccurrences(exp)
-      case Expression.Tuple(elms, _, _, _) => visitMultiple(elms)(symOccurrences)
-      case Expression.RecordEmpty(_, _) => empty
-      case Expression.RecordSelect(exp, _, _, _, _) => symOccurrences(exp)
-      case Expression.RecordExtend(_, value, rest, _, _, _) => visitMultiple(List(value, rest))(symOccurrences)
-      case Expression.RecordRestrict(_, rest, _, _, _) => symOccurrences(rest)
-      case Expression.ArrayLit(elms, _, _, _) => visitMultiple(elms)(symOccurrences)
-      case Expression.ArrayNew(elm, len, _, _, _) => visitMultiple(List(elm, len))(symOccurrences)
-      case Expression.ArrayLoad(base, index, _, _, _) => visitMultiple(List(base, index))(symOccurrences)
-      case Expression.ArrayLength(base, _, _) => symOccurrences(base)
-      case Expression.ArrayStore(base, index, elm, _) => visitMultiple(List(base, index, elm))(symOccurrences)
-      case Expression.ArraySlice(base, beginIndex, endIndex, _, _) => visitMultiple(List(base, beginIndex, endIndex))(symOccurrences)
-      case Expression.Ref(exp, _, _, _) => symOccurrences(exp)
-      case Expression.Deref(exp, _, _, _) => symOccurrences(exp)
-      case Expression.Assign(exp1, exp2, _, _, _) => visitMultiple(List(exp1, exp2))(symOccurrences)
-      case Expression.Existential(fparam, exp, loc) => singleton(fparam.sym, loc) ++ symOccurrences(exp)
-      case Expression.Universal(fparam, exp, loc) => singleton(fparam.sym, loc) ++ symOccurrences(exp)
-      case Expression.Ascribe(exp, _, _, _) => symOccurrences(exp)
-      case Expression.Cast(exp, _, _, _) => symOccurrences(exp)
-      case Expression.TryCatch(exp, rules, _, _, _) => symOccurrences(exp) ++ visitMultiple(rules)(symOccurrences)
-      case Expression.InvokeConstructor(_, args, _, _, _) => visitMultiple(args)(symOccurrences)
-      case Expression.InvokeMethod(_, exp, args, _, _, _) => symOccurrences(exp) ++ visitMultiple(args)(symOccurrences)
-      case Expression.InvokeStaticMethod(_, args, _, _, _) => visitMultiple(args)(symOccurrences)
-      case Expression.GetField(_, exp, _, _, _) => symOccurrences(exp)
-      case Expression.PutField(_, exp1, exp2, _, _, _) => visitMultiple(List(exp1, exp2))(symOccurrences)
-      case Expression.GetStaticField(_, _, _, _) => empty
-      case Expression.PutStaticField(_, exp, _, _, _) => symOccurrences(exp)
-      case Expression.NewChannel(exp, _, _, _) => symOccurrences(exp)
-      case Expression.GetChannel(exp, _, _, _) => symOccurrences(exp)
-      case Expression.PutChannel(exp1, exp2, _, _, _) => visitMultiple(List(exp1, exp2))(symOccurrences)
-      case Expression.SelectChannel(rules, default, _, _, _) => visitMultiple(rules)(symOccurrences) ++ default.map(symOccurrences).getOrElse(empty)
-      case Expression.Spawn(exp, _, _, _) => symOccurrences(exp)
-      case Expression.Lazy(exp, _, _) => symOccurrences(exp)
-      case Expression.Force(exp, _, _, _) => symOccurrences(exp)
-      case Expression.FixpointConstraintSet(cs, _, _, _) => visitMultiple(cs)(symOccurrences)
-      case Expression.FixpointMerge(exp1, exp2, _, _, _, _) => visitMultiple(List(exp1, exp2))(symOccurrences)
-      case Expression.FixpointSolve(exp, _, _, _, _) => symOccurrences(exp)
-      case Expression.FixpointFilter(_, exp, _, _, _) => symOccurrences(exp)
-      case Expression.FixpointProjectIn(exp, _, _, _, _) => symOccurrences(exp)
-      case Expression.FixpointProjectOut(_, exp, _, _, _) => symOccurrences(exp)
-      case Expression.MatchEff(exp1, exp2, exp3, _, _, _) => visitMultiple(List(exp1, exp2, exp3))(symOccurrences)
-    }
-  }
-
-  def symOccurrences(predicates: List[Predicate]): ListMap[Symbol.VarSym, SourceLocation] =
-    visitMultiple(predicates)(symOccurrences)
-
-  private def visitMultiple[T](items: List[T])(f: T => ListMap[Symbol.VarSym, SourceLocation]): ListMap[Symbol.VarSym, SourceLocation] =
-    items.foldLeft(ListMap.empty[Symbol.VarSym, SourceLocation])((mm, i) => mm ++ f(i))
-
-  private def symOccurrences(rule: MatchRule): ListMap[Symbol.VarSym, SourceLocation] =
-    symOccurrences(rule.pat) ++ symOccurrences(rule.exp)
-
-  private def symOccurrences(rule: CatchRule): ListMap[Symbol.VarSym, SourceLocation] =
-    ListMap.singleton(rule.sym, rule.sym.loc) ++ symOccurrences(rule.exp)
-
-  private def symOccurrences(rule: SelectChannelRule): ListMap[Symbol.VarSym, SourceLocation] =
-    ListMap.singleton(rule.sym, rule.sym.loc) ++ visitMultiple(List(rule.chan, rule.exp))(symOccurrences)
-
-  private def symOccurrences(rule: ChoiceRule): ListMap[Symbol.VarSym, SourceLocation] =
-    visitMultiple(rule.pat)(symOccurrences) ++ symOccurrences(rule.exp)
-
-  private def symOccurrences(cs: Constraint): ListMap[Symbol.VarSym, SourceLocation] =
-    visitMultiple(cs.head :: cs.body)(symOccurrences)
-
-  private def symOccurrences(pred: Predicate): ListMap[Symbol.VarSym, SourceLocation] = pred match {
-    case Predicate.Head.Atom(_, _, terms, _, _) => visitMultiple(terms)(symOccurrences)
-    case Predicate.Body.Atom(_, _, _, terms, _, _) => visitMultiple(terms)(symOccurrences)
-    case Predicate.Body.Guard(exp, _) => symOccurrences(exp)
-  }
-
-  private def symOccurrences(pattern: Pattern): ListMap[Symbol.VarSym, SourceLocation] = pattern match {
-    case Pattern.Wild(_, _) => ListMap.empty
-    case Pattern.Var(sym, _, loc) => ListMap.singleton(sym, loc)
-    case Pattern.Unit(_) => ListMap.empty
-    case Pattern.True(_) => ListMap.empty
-    case Pattern.False(_) => ListMap.empty
-    case Pattern.Char(_, _) => ListMap.empty
-    case Pattern.Float32(_, _) => ListMap.empty
-    case Pattern.Float64(_, _) => ListMap.empty
-    case Pattern.Int8(_, _) => ListMap.empty
-    case Pattern.Int16(_, _) => ListMap.empty
-    case Pattern.Int32(_, _) => ListMap.empty
-    case Pattern.Int64(_, _) => ListMap.empty
-    case Pattern.BigInt(_, _) => ListMap.empty
-    case Pattern.Str(_, _) => ListMap.empty
-    case Pattern.Tag(_, _, pat, _, _) => symOccurrences(pat)
-    case Pattern.Tuple(elms, _, _) => visitMultiple(elms)(symOccurrences)
-    case Pattern.Array(elms, _, _) => visitMultiple(elms)(symOccurrences)
-    case Pattern.ArrayTailSpread(_, _, _, _) => ??? // TODO
-    case Pattern.ArrayHeadSpread(_, _, _, _) => ??? // TODO
-  }
-
-  private def symOccurrences(pattern: ChoicePattern): ListMap[Symbol.VarSym, SourceLocation] = pattern match {
-    case ChoicePattern.Wild(_) => ListMap.empty
-    case ChoicePattern.Absent(_) => ListMap.empty
-    case ChoicePattern.Present(sym, _, loc) => ListMap.singleton(sym, loc)
   }
 
   /**

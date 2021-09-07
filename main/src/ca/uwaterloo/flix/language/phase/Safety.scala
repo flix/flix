@@ -238,20 +238,6 @@ object Safety extends Phase[Root, Root] {
     //
     val posVars = positivelyDefinedVariables(c0)
 
-    val symMap = TypedAstOps.symOccurrences(c0.head :: c0.body)
-
-    // todo this seems better placed in redundancy
-    // todo list of locations not really needed
-    val relevantSymMap = c0.cparams.map(p => (p.sym, symMap.get(p.sym).getOrElse(Set.empty)))
-    val errors = relevantSymMap.flatMap { case (sym, occurrences) =>
-      if (occurrences.isEmpty) throw InternalCompilerException("cannot be empty (error in safety.scala)")
-      else if (occurrences.size == 1 && !sym.isWild()) {
-        List(SafetyError.IllegalSingleUseOfVariable(sym, sym.loc))
-      } else if (occurrences.size > 1 && sym.isWild()) {
-        throw null // todo make a nice exception
-      } else Nil
-    }
-
     //
     // Compute the quantified variables in the constraint.
     //
@@ -262,7 +248,7 @@ object Safety extends Phase[Root, Root] {
     //
     // Check that all negative atoms only use positively defined variable symbols.
     //
-    errors ++ c0.body.flatMap(checkBodyPredicate(_, posVars, quantVars))
+    c0.body.flatMap(checkBodyPredicate(_, posVars, quantVars))
   }
 
   /**

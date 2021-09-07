@@ -185,7 +185,7 @@ object Symbol {
     /**
       * Returns `true`if `this` symbol is a wildcard.
       */
-    def isWild(): Boolean = text.startsWith("_")
+    def isWild: Boolean = text.startsWith("_")
 
     /**
       * Returns the stack offset of `this` variable symbol.

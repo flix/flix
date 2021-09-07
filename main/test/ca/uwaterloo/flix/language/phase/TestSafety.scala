@@ -41,7 +41,7 @@ class TestSafety extends FunSuite with TestUtils {
     val input =
       """
         |pub def f(): #{ A(Int), B(Int), R(Int) } = solve {
-        |    R(x) :- A(x), not B(y).
+        |    R(x) :- A(x), not B(_y).
         |}
       """.stripMargin
     val result = compile(input, DefaultOptions)
@@ -63,7 +63,7 @@ class TestSafety extends FunSuite with TestUtils {
     val input =
       """
         |pub def f(): #{ A(Int), B(Int), R(Int) } = solve {
-        |    R(1) :- not A(x), not B(y).
+        |    R(1) :- not A(_x), not B(_y).
         |}
       """.stripMargin
     val result = compile(input, DefaultOptions)
