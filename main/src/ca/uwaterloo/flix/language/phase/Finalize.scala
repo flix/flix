@@ -274,14 +274,10 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
         FinalAst.Expression.Assign(e1, e2, t, loc)
 
       case LiftedAst.Expression.Existential(fparam, exp, loc) =>
-        val p = visitFormalParam(fparam)
-        val e = visit(exp)
-        FinalAst.Expression.Existential(p, e, loc)
+        throw InternalCompilerException(s"Unexpected Existential expression, should have been handled earlier")
 
       case LiftedAst.Expression.Universal(fparam, exp, loc) =>
-        val p = visitFormalParam(fparam)
-        val e = visit(exp)
-        FinalAst.Expression.Universal(p, e, loc)
+        throw InternalCompilerException(s"Unexpected Universal expression, should have been handled earlier")
 
       case LiftedAst.Expression.Cast(exp, tpe, loc) =>
         val e = visit(exp)

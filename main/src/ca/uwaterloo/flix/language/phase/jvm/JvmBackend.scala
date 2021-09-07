@@ -165,12 +165,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       //
       // Generate the MatchError class.
       //
-      val matchErrorClass = GenFlixErrorSubclass.gen(JvmName.MatchError, "Non-exhaustive match at ")
-
-      //
-      // Generate the MatchError class.
-      //
-      val notImplementedErrorClass = GenFlixErrorSubclass.gen(JvmName.NotImplementedError, "Implementation missing at ")
+      val matchErrorClass = GenMatchErrorClass.gen()
 
       //
       // Collect all the classes and interfaces together.
@@ -196,8 +191,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
         flixErrorClass,
         rslClass,
         holeErrorClass,
-        matchErrorClass,
-        notImplementedErrorClass
+        matchErrorClass
       ).reduce(_ ++ _)
     }
 
