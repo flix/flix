@@ -248,7 +248,7 @@ object RedundancyError {
     def loc: SourceLocation = sym.loc
   }
 
-  case class IllegalSingleUseOfVariable(sym: Symbol.VarSym, loc: SourceLocation) extends RedundancyError {
+  case class SingleUseOfVariable(sym: Symbol.VarSym, loc: SourceLocation) extends RedundancyError {
     def summary: String = s"Illegal single use of variable '$sym'."
 
     def message: VirtualTerminal = {

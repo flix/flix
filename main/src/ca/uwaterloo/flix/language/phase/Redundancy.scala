@@ -655,10 +655,10 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       val sym = constraintParam.sym
       val occurrences = used.varSyms.apply(sym)
       if (occurrences.isEmpty) throw InternalCompilerException(s"Variable frequency is zero for $sym")
-      else if (occurrences.size == 1 && !sym.isWild()) {
+      else if (occurrences.size == 1 && !sym.isWild) {
         // Check that no variable is only used once
-        List(RedundancyError.IllegalSingleUseOfVariable(sym, occurrences.iterator.next()))
-      } else if (occurrences.size > 1 && sym.isWild()) {
+        List(RedundancyError.SingleUseOfVariable(sym, occurrences.iterator.next()))
+      } else if (occurrences.size > 1 && sym.isWild) {
         // Check that wild variables are not used multiple times
         occurrences.map(loc => RedundancyError.HiddenVarSym(sym, loc))
       } else Nil
@@ -737,7 +737,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       case None =>
         Used.empty
       case Some(shadowingVar) =>
-        if (sym.isWild())
+        if (sym.isWild)
           Used.empty
         else
           Used.empty + ShadowedVar(shadowingVar, sym)
