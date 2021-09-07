@@ -31,7 +31,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
 
   override def run(root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Root, Nothing] = flix.phase("Deriver") {
     val derivedInstances = root.enums.values.flatMap {
-      enum => getDerivations(enum, root)
+      enum => getDerivedInstances(enum, root)
     }
 
     val newInstances = derivedInstances.foldLeft(root.instances) {
@@ -46,7 +46,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
   /**
     * Builds the instances derived from this enum.
     */
-  private def getDerivations(enum: KindedAst.Enum, root: KindedAst.Root)(implicit flix: Flix): List[KindedAst.Instance] = enum match {
+  private def getDerivedInstances(enum: KindedAst.Enum, root: KindedAst.Root)(implicit flix: Flix): List[KindedAst.Instance] = enum match {
     case KindedAst.Enum(_, _, _, _, derives, _, _, _, _) =>
       // lazy so that in we don't try a lookup if there are no derivations (important for Nix Lib)
       lazy val toStringSym = PredefinedClasses.lookupClassSym("ToString", root)
