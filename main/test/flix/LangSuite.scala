@@ -28,6 +28,7 @@ class LangSuite extends Suites(
   // Derivations.
   //
   new FlixTest("Test.Derives.Eq", "main/test/flix/Test.Derives.Eq.flix"),
+  new FlixTest("Test.Derives.Order", "main/test/flix/Test.Derives.Order.flix"),
   new FlixTest("Test.Derives.ToString", "main/test/flix/Test.Derives.ToString.flix"),
 
   //
