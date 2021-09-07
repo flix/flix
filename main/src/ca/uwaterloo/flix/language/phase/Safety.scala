@@ -241,11 +241,14 @@ object Safety extends Phase[Root, Root] {
     val symMap = TypedAstOps.symOccurrences(c0.head :: c0.body)
 
     // todo this seems better placed in redundancy
+    // todo list of locations not really needed
     val relevantSymMap = c0.cparams.map(p => (p.sym, symMap.get(p.sym).getOrElse(Set.empty)))
     val errors = relevantSymMap.flatMap { case (sym, occurrences) =>
       if (occurrences.isEmpty) throw InternalCompilerException("cannot be empty (error in safety.scala)")
-      else if (occurrences.size == 1) {
-        List(SafetyError.IllegalSingleUseOfVariable(sym, occurrences.iterator.next()))
+      else if (occurrences.size == 1 && !sym.isWild()) {
+        List(SafetyError.IllegalSingleUseOfVariable(sym, sym.loc))
+      } else if (occurrences.size > 1 && sym.isWild()) {
+        throw null // todo make a nice exception
       } else Nil
     }
 

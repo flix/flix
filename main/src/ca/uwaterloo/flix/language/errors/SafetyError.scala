@@ -41,7 +41,7 @@ object SafetyError {
       vt << NewLine
       vt << Code(loc, "the variable occurs here.") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << " Replace with '_' or check for spelling errors" << NewLine
+      vt << Underline("Tip:") << " Replace/prefix with underscore or check for spelling errors" << NewLine
     }
   }
 
