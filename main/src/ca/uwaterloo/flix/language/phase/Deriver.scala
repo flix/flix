@@ -94,10 +94,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
 
       val defn = KindedAst.Def(toStringDefSym, spec, exp)
 
-      // Add a type constraint to the instance for any non-wild param with kind Star
-      val tconstrs = tparams.collect {
-        case tparam if tparam.tpe.kind <:: Kind.Star && !tparam.name.isWild => Ast.TypeConstraint(toStringClassSym, tparam.tpe, loc)
-      }
+      val tconstrs = getTypeConstraintsForTypeParams(tparams, toStringClassSym, loc)
 
       KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
@@ -233,10 +230,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
 
       val defn = KindedAst.Def(eqDefSym, spec, exp)
 
-      // Add a type constraint to the instance for any non-wild param with kind Star
-      val tconstrs = tparams.collect {
-        case tparam if tparam.tpe.kind <:: Kind.Star && !tparam.name.isWild => Ast.TypeConstraint(eqClassSym, tparam.tpe, loc)
-      }
+      val tconstrs = getTypeConstraintsForTypeParams(tparams, eqClassSym, loc)
 
       KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
@@ -370,7 +364,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
     * }}}
     */
   private def mkOrderInstance(enum: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum match {
-    case KindedAst.Enum(_, _, _, tparams, _, cases, _, sc, _) =>
+    case KindedAst.Enum(_, _, _, tparams, _, _, _, sc, _) =>
       val orderClassSym = PredefinedClasses.lookupClassSym("Order", root)
       val compareDefSym = Symbol.mkDefnSym("Order.compare")
 
@@ -381,10 +375,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
 
       val defn = KindedAst.Def(compareDefSym, spec, exp)
 
-      // Add a type constraint to the instance for any non-wild param with kind Star
-      val tconstrs = tparams.collect {
-        case tparam if tparam.tpe.kind <:: Kind.Star && !tparam.name.isWild => Ast.TypeConstraint(orderClassSym, tparam.tpe, loc)
-      }
+      val tconstrs = getTypeConstraintsForTypeParams(tparams, orderClassSym, loc)
 
       KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
@@ -544,6 +535,14 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
       }
 
       KindedAst.MatchRule(pat, guard, exp)
+  }
+
+  /**
+    * Creates type constraints for the given type parameters.
+    * Filters out non-star type parameters and wild type parameters.
+    */
+  private def getTypeConstraintsForTypeParams(tparams: List[KindedAst.TypeParam], clazz: Symbol.ClassSym, loc: SourceLocation): List[Ast.TypeConstraint] = tparams.collect {
+    case tparam if tparam.tpe.kind <:: Kind.Star && !tparam.name.isWild => Ast.TypeConstraint(clazz, tparam.tpe, loc)
   }
 
   /**
