@@ -176,7 +176,7 @@ namespace Test/Term/Apply {
 
     pub def ho1(f: Int -> Int): #{A(Int), R(Int) | r} = #{
         A(1). A(2). A(3).
-        R(f(x)) :- A(x), A(y).
+        R(f(x)) :- A(x), A(_y).
     }
 
     pub def ho2(f: (Int, Int) -> Int): #{A(Int), R(Int) | r} = #{

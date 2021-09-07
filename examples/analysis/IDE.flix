@@ -200,7 +200,7 @@ def main(_: Array[String]): Int32 & Impure =
             SummaryFn(n,d2,d3;summary).
 
         JumpFn(d3,start,d3;id()) :-
-            JumpFn(d1,call,d2;nonbottom1),
+            JumpFn(_d1,call,d2;nonbottom1),
             CallGraph(call,target),
             EshCallStart(call,d2,target,d3;nonbottom2),
             StartNode(target,start),
@@ -210,7 +210,7 @@ def main(_: Array[String]): Int32 & Impure =
         // compute summary
         SummaryFn(call,d4,d5;compose(compose(cs,se),er)) :-
             CallGraph(call,target),
-            StartNode(target,start),
+            StartNode(target,_start),
             EndNode(target,end),
             EshCallStart(call,d4,target,d1;cs),
             JumpFn(d1,end,d2;se),

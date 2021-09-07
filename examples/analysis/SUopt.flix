@@ -96,7 +96,7 @@ def main(_: Array[String]): Int32 & Impure =
         // ---------
         SU(l: String, a: String; f(b)) :- Store(l,p,q), Pt(p,a), Pt(q,b).
         //
-        PtH(a: String,b: String) :- Store(l,p,q), Pt(p,a), Pt(q,b).
+        PtH(a: String,b: String) :- Store(_l,p,q), Pt(p,a), Pt(q,b).
         PtH(a,b) :- FIStore(p,q), Pt(p,a), Pt(q,b).
         //
         // Load
@@ -122,7 +122,7 @@ def main(_: Array[String]): Int32 & Impure =
 
         // Kill
         // ---------
-        Kill(l: String; f(b)) :- Store(l,p,q), Pt(p,b).
+        Kill(l: String; f(b)) :- Store(l,p,_q), Pt(p,b).
         Kill(l;Top) :- Phi(l).
     };
     let m = solve p;
