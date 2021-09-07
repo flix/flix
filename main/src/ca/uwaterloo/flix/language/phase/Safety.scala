@@ -240,6 +240,7 @@ object Safety extends Phase[Root, Root] {
 
     val symMap = TypedAstOps.symOccurrences(c0.head :: c0.body)
 
+    // todo this seems better placed in redundancy
     val relevantSymMap = c0.cparams.map(p => (p.sym, symMap.get(p.sym).getOrElse(Set.empty)))
     val errors = relevantSymMap.flatMap { case (sym, occurrences) =>
       if (occurrences.isEmpty) throw InternalCompilerException("cannot be empty (error in safety.scala)")
