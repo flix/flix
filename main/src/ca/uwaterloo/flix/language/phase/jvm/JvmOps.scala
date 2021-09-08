@@ -28,22 +28,22 @@ import java.nio.file.{Files, LinkOption, Path}
 object JvmOps {
 
   /**
-   * The root package name.
-   */
+    * The root package name.
+    */
   val RootPackage: List[String] = Nil
 
   /**
-   * Returns the given Flix type `tpe` as JVM type.
-   *
-   * For example, if the type is:
-   *
-   * Bool                  =>      Boolean
-   * Char                  =>      Char
-   * Option[Int]           =>      Option$Int
-   * Result[Bool, Int]     =>      Result$Bool$Int
-   * Int -> Bool           =>      Fn1$Int$Bool
-   * (Int, Int) -> Bool    =>      Fn2$Int$Int$Bool
-   */
+    * Returns the given Flix type `tpe` as JVM type.
+    *
+    * For example, if the type is:
+    *
+    * Bool                  =>      Boolean
+    * Char                  =>      Char
+    * Option[Int]           =>      Option$Int
+    * Result[Bool, Int]     =>      Result$Bool$Int
+    * Int -> Bool           =>      Fn1$Int$Bool
+    * (Int, Int) -> Bool    =>      Fn2$Int$Int$Bool
+    */
   def getJvmType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType = tpe match {
     // Polymorphic
     case MonoType.Var(_) => JvmType.Unit
@@ -84,14 +84,14 @@ object JvmOps {
 
 
   /**
-   * Returns the erased JvmType of the given Flix type `tpe`.
-   */
+    * Returns the erased JvmType of the given Flix type `tpe`.
+    */
   def getErasedJvmType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType = {
     /**
-     * Returns the erased JvmType of the given JvmType `tpe`.
-     *
-     * Every primitive type is mapped to itself and every other type is mapped to Object.
-     */
+      * Returns the erased JvmType of the given JvmType `tpe`.
+      *
+      * Every primitive type is mapped to itself and every other type is mapped to Object.
+      */
     def erase(tpe: JvmType): JvmType = tpe match {
       case JvmType.Void => JvmType.Void
       case JvmType.PrimBool => JvmType.PrimBool
@@ -109,13 +109,13 @@ object JvmOps {
   }
 
   /**
-   * Returns the continuation interface type `Cont$X` for the given type `tpe`.
-   *
-   * Int -> Int          =>  Cont$Int
-   * (Int, Int) -> Int   =>  Cont$Int
-   *
-   * NB: The given type `tpe` must be an arrow type.
-   */
+    * Returns the continuation interface type `Cont$X` for the given type `tpe`.
+    *
+    * Int -> Int          =>  Cont$Int
+    * (Int, Int) -> Int   =>  Cont$Int
+    *
+    * NB: The given type `tpe` must be an arrow type.
+    */
   def getContinuationInterfaceType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
     case MonoType.Arrow(_, tresult) =>
       // The return type is the last type argument.
@@ -131,15 +131,15 @@ object JvmOps {
   }
 
   /**
-   * Returns the function interface type `FnX$Y$Z` for the given type `tpe`.
-   *
-   * For example:
-   *
-   * Int -> Int          =>  Fn2$Int$Int
-   * (Int, Int) -> Int   =>  Fn3$Int$Int$Int
-   *
-   * NB: The given type `tpe` must be an arrow type.
-   */
+    * Returns the function interface type `FnX$Y$Z` for the given type `tpe`.
+    *
+    * For example:
+    *
+    * Int -> Int          =>  Fn2$Int$Int
+    * (Int, Int) -> Int   =>  Fn3$Int$Int$Int
+    *
+    * NB: The given type `tpe` must be an arrow type.
+    */
   def getFunctionInterfaceType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
     case MonoType.Arrow(targs, tresult) =>
       // Compute the arity of the function interface.
@@ -159,12 +159,12 @@ object JvmOps {
   }
 
   /**
-   * Returns the closure class `Clo$Name` for the given closure.
-   *
-   * String.charAt     =>    String/Clo$charAt
-   * List.length       =>    List/Clo$length
-   * List.map          =>    List/Clo$map
-   */
+    * Returns the closure class `Clo$Name` for the given closure.
+    *
+    * String.charAt     =>    String/Clo$charAt
+    * List.length       =>    List/Clo$length
+    * List.map          =>    List/Clo$map
+    */
   def getClosureClassType(closure: ClosureInfo)(implicit root: Root, flix: Flix): JvmType.Reference = closure.tpe match {
     case MonoType.Arrow(targs, tresult) =>
       // Compute the arity of the function interface.
@@ -187,16 +187,16 @@ object JvmOps {
   }
 
   /**
-   * Returns the enum interface type `Enum$X$Y$Z` for the given type `tpe`.
-   *
-   * For example,
-   *
-   * Color                 =>      IColor
-   * Option[Int]           =>      IOption$Int
-   * Result[Char, Int]     =>      IResult$Char$Int
-   *
-   * NB: The given type `tpe` must be an enum type.
-   */
+    * Returns the enum interface type `Enum$X$Y$Z` for the given type `tpe`.
+    *
+    * For example,
+    *
+    * Color                 =>      IColor
+    * Option[Int]           =>      IOption$Int
+    * Result[Char, Int]     =>      IResult$Char$Int
+    *
+    * NB: The given type `tpe` must be an enum type.
+    */
   def getEnumInterfaceType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
     case MonoType.Enum(sym, elms) =>
       // Compute the stringified erased type of each type argument.
@@ -212,17 +212,17 @@ object JvmOps {
   }
 
   /**
-   * Returns the tag class `Tag$X$Y$Z` for the given tag.
-   *
-   * For example,
-   *
-   * None: Option[Int]         =>    None
-   * Some: Option[Char]        =>    Some$Char
-   * Some: Option[Int]         =>    Some$Int
-   * Some: Option[String]      =>    Some$Obj
-   * Ok: Result[Bool, Char]    =>    Ok$Bool$Char
-   * Err: Result[Bool, Char]   =>    Err$Bool$Char
-   */
+    * Returns the tag class `Tag$X$Y$Z` for the given tag.
+    *
+    * For example,
+    *
+    * None: Option[Int]         =>    None
+    * Some: Option[Char]        =>    Some$Char
+    * Some: Option[Int]         =>    Some$Int
+    * Some: Option[String]      =>    Some$Obj
+    * Ok: Result[Bool, Char]    =>    Ok$Bool$Char
+    * Err: Result[Bool, Char]   =>    Err$Bool$Char
+    */
   // TODO: Magnus: Can we improve the representation w.r.t. unused type variables?
   def getTagClassType(tag: TagInfo)(implicit root: Root, flix: Flix): JvmType.Reference = {
     // Retrieve the tag name.
@@ -239,16 +239,16 @@ object JvmOps {
   }
 
   /**
-   * Returns the tuple interface type `TX$Y$Z` for the given type `tpe`.
-   *
-   * For example,
-   *
-   * (Int, Int)              =>    T2$Int$Int
-   * (Int, Int, Int)         =>    T3$Int$Int$Int
-   * (Bool, Char, Int)       =>    T3$Bool$Char$Int
-   *
-   * NB: The given type `tpe` must be a tuple type.
-   */
+    * Returns the tuple interface type `TX$Y$Z` for the given type `tpe`.
+    *
+    * For example,
+    *
+    * (Int, Int)              =>    T2$Int$Int
+    * (Int, Int, Int)         =>    T3$Int$Int$Int
+    * (Bool, Char, Int)       =>    T3$Bool$Char$Int
+    *
+    * NB: The given type `tpe` must be a tuple type.
+    */
   def getTupleInterfaceType(tpe: MonoType.Tuple)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
     case MonoType.Tuple(elms) =>
       // Compute the arity of the tuple.
@@ -265,18 +265,18 @@ object JvmOps {
   }
 
   /**
-   * Returns the tuple class type `TupleX$Y$Z` for the given type `tpe`.
-   *
-   * For example,
-   *
-   * (Int, Int)              =>    Tuple2$Int$Int
-   * (Int, Int, Int)         =>    Tuple3$Int$Int$Int
-   * (Bool, Char, Int)       =>    Tuple3$Bool$Char$Int
-   * (Bool, List[Int])       =>    Tuple2$Bool$Obj
-   * (Bool, (Int, Int))      =>    Tuple2$Bool$Obj
-   *
-   * NB: The given type `tpe` must be a tuple type.
-   */
+    * Returns the tuple class type `TupleX$Y$Z` for the given type `tpe`.
+    *
+    * For example,
+    *
+    * (Int, Int)              =>    Tuple2$Int$Int
+    * (Int, Int, Int)         =>    Tuple3$Int$Int$Int
+    * (Bool, Char, Int)       =>    Tuple3$Bool$Char$Int
+    * (Bool, List[Int])       =>    Tuple2$Bool$Obj
+    * (Bool, (Int, Int))      =>    Tuple2$Bool$Obj
+    *
+    * NB: The given type `tpe` must be a tuple type.
+    */
   def getTupleClassType(tpe: MonoType.Tuple)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
     case MonoType.Tuple(elms) =>
       // Compute the arity of the tuple.
@@ -300,14 +300,14 @@ object JvmOps {
   }
 
   /**
-   * Returns the record interface type `IRecord`.
-   *
-   * For example,
-   *
-   * {}                  =>    IRecord
-   * {x : Int}           =>    IRecord
-   * {x : Str, y : Int}  =>    IRecord
-   */
+    * Returns the record interface type `IRecord`.
+    *
+    * For example,
+    *
+    * {}                  =>    IRecord
+    * {x : Int}           =>    IRecord
+    * {x : Str, y : Int}  =>    IRecord
+    */
   def getRecordInterfaceType()(implicit root: Root, flix: Flix): JvmType.Reference = {
 
     // The JVM name is of the form IRecord
@@ -318,13 +318,13 @@ object JvmOps {
   }
 
   /**
-   * Returns the empty record class type `RecordEmtpy`
-   *
-   * For example,
-   *
-   * {}         =>    RecordEmpty
-   *
-   */
+    * Returns the empty record class type `RecordEmtpy`
+    *
+    * For example,
+    *
+    * {}         =>    RecordEmpty
+    *
+    */
   def getRecordEmptyClassType()(implicit root: Root, flix: Flix): JvmType.Reference = {
 
     // The JVM name is of the form RecordEmpty
@@ -336,16 +336,16 @@ object JvmOps {
 
 
   /**
-   * Returns the extended record class type `RecordExtend$X` for the given type 'tpe'
-   *
-   * For example,
-   *
-   * {+z : Int  | {}}                =>    RecordExtend$Int
-   * {+y : Char | {z : Int}          =>    RecordExtend$Char
-   * {+x : Str |{y : Char, z : Int}  =>    RecordExtend$Obj
-   *
-   * NB: The given type `tpe` must be a Record type
-   */
+    * Returns the extended record class type `RecordExtend$X` for the given type 'tpe'
+    *
+    * For example,
+    *
+    * {+z : Int  | {}}                =>    RecordExtend$Int
+    * {+y : Char | {z : Int}          =>    RecordExtend$Char
+    * {+x : Str |{y : Char, z : Int}  =>    RecordExtend$Obj
+    *
+    * NB: The given type `tpe` must be a Record type
+    */
   def getRecordExtendClassType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
 
     case MonoType.RecordExtend(_, value, _) =>
@@ -362,15 +362,15 @@ object JvmOps {
 
 
   /**
-   * Returns the extended record class type `RecordExtend$X` which contains the given type 'tpe'
-   *
-   * For example,
-   *
-   * Int                  =>    RecordExtend$Int
-   * Char                 =>    RecordExtend$Char
-   * {x : Char, y : Int}  =>    RecordExtend$Obj
-   *
-   */
+    * Returns the extended record class type `RecordExtend$X` which contains the given type 'tpe'
+    *
+    * For example,
+    *
+    * Int                  =>    RecordExtend$Int
+    * Char                 =>    RecordExtend$Char
+    * {x : Char, y : Int}  =>    RecordExtend$Obj
+    *
+    */
   def getRecordType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = {
 
     // Compute the stringified erased type of 'tpe'.
@@ -384,8 +384,8 @@ object JvmOps {
   }
 
   /**
-   * Returns the Main  `Main`
-   */
+    * Returns the Main  `Main`
+    */
   def getMainClassType()(implicit root: Root, flix: Flix): JvmType.Reference = {
 
     // The JVM name is of the form Main
@@ -396,13 +396,13 @@ object JvmOps {
   }
 
   /**
-   * Returns reference class type for the given type `tpe`.
-   *
-   * Ref[Bool]              =>    Ref$Bool
-   * Ref[List[Int]          =>    Ref$Obj
-   *
-   * NB: The type must be a reference type.
-   */
+    * Returns reference class type for the given type `tpe`.
+    *
+    * Ref[Bool]              =>    Ref$Bool
+    * Ref[List[Int]          =>    Ref$Obj
+    *
+    * NB: The type must be a reference type.
+    */
   def getRefClassType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
     case MonoType.Ref(elmType) =>
       // Compute the stringified erased type of the argument.
@@ -417,13 +417,13 @@ object JvmOps {
   }
 
   /**
-   * Returns the function definition class for the given symbol.
-   *
-   * For example:
-   *
-   * print         =>  Def$print
-   * List.length   =>  List.Def$length
-   */
+    * Returns the function definition class for the given symbol.
+    *
+    * For example:
+    *
+    * print         =>  Def$print
+    * List.length   =>  List.Def$length
+    */
   def getFunctionDefinitionClassType(sym: Symbol.DefnSym)(implicit root: Root, flix: Flix): JvmType.Reference = {
     val pkg = sym.namespace
     val name = "Def$" + mangle(sym.name)
@@ -431,15 +431,15 @@ object JvmOps {
   }
 
   /**
-   * Returns the namespace type for the given namespace `ns`.
-   *
-   * For example:
-   *
-   * <root>      =>  Ns
-   * Foo         =>  Foo.Ns
-   * Foo.Bar     =>  Foo.Bar.Ns
-   * Foo.Bar.Baz =>  Foo.Bar.Baz.Ns
-   */
+    * Returns the namespace type for the given namespace `ns`.
+    *
+    * For example:
+    *
+    * <root>      =>  Ns
+    * Foo         =>  Foo.Ns
+    * Foo.Bar     =>  Foo.Bar.Ns
+    * Foo.Bar.Baz =>  Foo.Bar.Baz.Ns
+    */
   def getNamespaceClassType(ns: NamespaceInfo)(implicit root: Root, flix: Flix): JvmType.Reference = {
     val pkg = ns.ns
     val name = "Ns"
@@ -447,15 +447,15 @@ object JvmOps {
   }
 
   /**
-   * Returns the field name of a namespace as used in the Context class.
-   *
-   * For example:
-   *
-   * <root>      =>  Ns$Root$
-   * Foo         =>  Foo$Ns
-   * Foo.Bar     =>  Foo$Bar$Ns
-   * Foo.Bar.Baz =>  Foo$Bar$Baz$Ns
-   */
+    * Returns the field name of a namespace as used in the Context class.
+    *
+    * For example:
+    *
+    * <root>      =>  Ns$Root$
+    * Foo         =>  Foo$Ns
+    * Foo.Bar     =>  Foo$Bar$Ns
+    * Foo.Bar.Baz =>  Foo$Bar$Baz$Ns
+    */
   def getNamespaceFieldNameInContextClass(ns: NamespaceInfo): String =
     if (ns.isRoot)
       "ns$Root$"
@@ -463,28 +463,28 @@ object JvmOps {
       "ns$" + ns.ns.mkString("$")
 
   /**
-   * Returns the field name of a defn as used in a namespace class.
-   *
-   * For example:
-   *
-   * find      =>  f_find
-   * length    =>  f_length
-   */
+    * Returns the field name of a defn as used in a namespace class.
+    *
+    * For example:
+    *
+    * find      =>  f_find
+    * length    =>  f_length
+    */
   def getDefFieldNameInNamespaceClass(sym: Symbol.DefnSym): String = "f_" + mangle(sym.name)
 
   /**
-   * Returns the method name of a defn as used in a namespace class.
-   *
-   * For example:
-   *
-   * find      =>  m_find
-   * length    =>  m_length
-   */
+    * Returns the method name of a defn as used in a namespace class.
+    *
+    * For example:
+    *
+    * find      =>  m_find
+    * length    =>  m_length
+    */
   def getDefMethodNameInNamespaceClass(sym: Symbol.DefnSym): String = "m_" + mangle(sym.name)
 
   /**
-   * Performs name mangling on the given string `s` to avoid issues with special characters.
-   */
+    * Performs name mangling on the given string `s` to avoid issues with special characters.
+    */
   // TODO: Magnus: Use this in appropriate places.
   def mangle(s: String): String = s.
     replace("+", "$plus").
@@ -507,10 +507,10 @@ object JvmOps {
     replace("@", "$at")
 
   /**
-   * Returns stringified name of the given JvmType `tpe`.
-   *
-   * The stringified name is short hand used for generation of interface and class names.
-   */
+    * Returns stringified name of the given JvmType `tpe`.
+    *
+    * The stringified name is short hand used for generation of interface and class names.
+    */
   def stringify(tpe: JvmType): String = tpe match {
     case JvmType.Void => "Void"
     case JvmType.PrimBool => "Bool"
@@ -525,12 +525,12 @@ object JvmOps {
   }
 
   /**
-   * Returns the set of closures in the given AST `root`.
-   */
+    * Returns the set of closures in the given AST `root`.
+    */
   def closuresOf(root: Root): Set[ClosureInfo] = {
     /**
-     * Returns the set of closures in the given expression `exp0`.
-     */
+      * Returns the set of closures in the given expression `exp0`.
+      */
     def visitExp(exp0: Expression): Set[ClosureInfo] = exp0 match {
       case Expression.Unit(_) => Set.empty
 
@@ -705,15 +705,15 @@ object JvmOps {
   }
 
   /**
-   * Returns the namespace info of the given definition symbol `sym`.
-   */
+    * Returns the namespace info of the given definition symbol `sym`.
+    */
   def getNamespace(sym: Symbol.DefnSym)(implicit root: Root, flix: Flix): NamespaceInfo = {
     NamespaceInfo(sym.namespace, Map.empty) // TODO: Magnus: Empty map.
   }
 
   /**
-   * Returns the set of namespaces in the given AST `root`.
-   */
+    * Returns the set of namespaces in the given AST `root`.
+    */
   def namespacesOf(root: Root): Set[NamespaceInfo] = {
     // Group every symbol by namespace.
     root.defs.groupBy(_._1.namespace).map {
@@ -727,8 +727,8 @@ object JvmOps {
   }
 
   /**
-   * Returns the set of tags associated with the given type.
-   */
+    * Returns the set of tags associated with the given type.
+    */
   def getTagsOf(tpe: MonoType)(implicit root: Root, flix: Flix): Set[TagInfo] = tpe match {
     case enumType@MonoType.Enum(sym, args) =>
       // Retrieve the enum.
@@ -780,8 +780,8 @@ object JvmOps {
   private def hackType2MonoType(tpe: Type): MonoType = Finalize.visitType(tpe)
 
   /**
-   * Returns the tag info for the given `tpe` and `tag`
-   */
+    * Returns the tag info for the given `tpe` and `tag`
+    */
   // TODO: Magnus: Should use getTags and then just find the correct tag.
   def getTagInfo(tpe: MonoType, tag: String)(implicit root: Root, flix: Flix): TagInfo = tpe match {
     case enumType@MonoType.Enum(sym, _) =>
@@ -791,29 +791,29 @@ object JvmOps {
   }
 
   /**
-   * Returns true if the value of the given `tag` is the unit value.
-   */
+    * Returns true if the value of the given `tag` is the unit value.
+    */
   def isUnitTag(tag: TagInfo): Boolean = {
     tag.tagType == MonoType.Unit
   }
 
   /**
-   * Returns the set of tags in the given AST `root`.
-   */
+    * Returns the set of tags in the given AST `root`.
+    */
   def tagsOf(root: Root)(implicit flix: Flix): Set[TagInfo] = {
     typesOf(root).flatMap(tpe => getTagsOf(tpe)(root, flix))
   }
 
   /**
-   * Returns the set of all instantiated types in the given AST `root`.
-   *
-   * This include type components. For example, if the program contains
-   * the type (Bool, (Char, Int)) this includes the type (Char, Int).
-   */
+    * Returns the set of all instantiated types in the given AST `root`.
+    *
+    * This include type components. For example, if the program contains
+    * the type (Bool, (Char, Int)) this includes the type (Char, Int).
+    */
   def typesOf(root: Root)(implicit flix: Flix): Set[MonoType] = {
     /**
-     * Returns the set of types which occur in the given definition `defn0`.
-     */
+      * Returns the set of types which occur in the given definition `defn0`.
+      */
     def visitDefn(defn: Def): Set[MonoType] = {
       // Compute the types in the formal parameters.
       val formalParamTypes = defn.formals.foldLeft(Set.empty[MonoType]) {
@@ -828,8 +828,8 @@ object JvmOps {
     }
 
     /**
-     * Returns the set of types which occur in the given expression `exp0`.
-     */
+      * Returns the set of types which occur in the given expression `exp0`.
+      */
     def visitExp(exp0: Expression): Set[MonoType] = exp0 match {
       case Expression.Unit(_) => Set(MonoType.Unit)
 
@@ -1004,11 +1004,11 @@ object JvmOps {
   }
 
   /**
-   * Returns all the type components of the given type `tpe`.
-   *
-   * For example, if the given type is `Option[(Bool, Char, Int)]`
-   * this returns the set `Bool`, `Char`, `Int`, `(Bool, Char, Int)`, and `Option[(Bool, Char, Int)]`.
-   */
+    * Returns all the type components of the given type `tpe`.
+    *
+    * For example, if the given type is `Option[(Bool, Char, Int)]`
+    * this returns the set `Bool`, `Char`, `Int`, `(Bool, Char, Int)`, and `Option[(Bool, Char, Int)]`.
+    */
   def nestedTypesOf(tpe: MonoType)(implicit root: Root, flix: Flix): Set[MonoType] = {
     //
     // Check if the tag is an enum and if so, extract the types of its tags.
@@ -1056,12 +1056,12 @@ object JvmOps {
   }
 
   /**
-   * Writes the given JVM class `clazz` to a sub path under the given `prefixPath`.
-   *
-   * For example, if the prefix path is `/tmp/` and the class name is Foo.Bar.Baz
-   * then the bytecode is written to the path `/tmp/Foo/Bar/Baz.class` provided
-   * that this path either does not exist or is already a JVM class file.
-   */
+    * Writes the given JVM class `clazz` to a sub path under the given `prefixPath`.
+    *
+    * For example, if the prefix path is `/tmp/` and the class name is Foo.Bar.Baz
+    * then the bytecode is written to the path `/tmp/Foo/Bar/Baz.class` provided
+    * that this path either does not exist or is already a JVM class file.
+    */
   def writeClass(prefixPath: Path, clazz: JvmClass): Unit = {
     // Compute the absolute path of the class file to write.
     val path = prefixPath.resolve(clazz.name.toPath).toAbsolutePath
@@ -1092,13 +1092,13 @@ object JvmOps {
   }
 
   /**
-   * Returns `true` if the given `path` is non-empty (i.e. contains data).
-   */
+    * Returns `true` if the given `path` is non-empty (i.e. contains data).
+    */
   private def isEmpty(path: Path): Boolean = Files.size(path) == 0L
 
   /**
-   * Returns `true` if the given `path` exists and is a Java Virtual Machine class file.
-   */
+    * Returns `true` if the given `path` exists and is a Java Virtual Machine class file.
+    */
   private def isClassFile(path: Path): Boolean = {
     if (Files.exists(path) && Files.isReadable(path) && Files.isRegularFile(path)) {
       // Read the first four bytes of the file.
@@ -1116,8 +1116,8 @@ object JvmOps {
   }
 
   /**
-   * Returns `true` if the given definition `defn` is a law.
-   */
+    * Returns `true` if the given definition `defn` is a law.
+    */
   def nonLaw(defn: Def): Boolean = !defn.ann.isLaw
 
 }
