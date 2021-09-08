@@ -27,14 +27,14 @@ import ca.uwaterloo.flix.language.phase.sjvm.ClassMaker.Mod
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 
 /**
-  * Generates bytecode for the ref classes.
-  */
+ * Generates bytecode for the ref classes.
+ */
 object GenRefClasses {
   val ValueFieldName: String = "value"
 
   /**
-    * Returns the bytecode for the ref classes built-in to the Flix language.
-    */
+   * Returns the bytecode for the ref classes built-in to the Flix language.
+   */
   def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     //Type that we need a cell class for
     RType.baseTypes.foldLeft(Map[JvmName, JvmClass]()) {
@@ -45,15 +45,15 @@ object GenRefClasses {
   }
 
   /**
-    * Generating class `className` with value of type `innerType`
-    */
+   * Generating class `className` with value of type `innerType`
+   */
   private def genByteCode[T <: PType](refType: RReference[PRef[T]], valueFieldType: RType[T])(implicit root: Root, flix: Flix): Array[Byte] = {
     val classMaker = ClassMaker.mkClass(refType.jvmName, addSource = false, None)
 
     // Generate the instance field
     classMaker.mkField(ValueFieldName, valueFieldType, Mod.isPublic)
 
-    classMaker.mkConstructor(START[StackNil] ~ THISINIT(JvmName.Java.Lang.Object) ~ RETURN, JvmName.nothingToVoid)
+    classMaker.mkConstructor(START[StackNil] ~ THISINIT(JvmName.Java.Object) ~ RETURN, JvmName.nothingToVoid)
 
     classMaker.closeClassMaker
   }

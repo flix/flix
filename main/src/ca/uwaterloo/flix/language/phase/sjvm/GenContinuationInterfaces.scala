@@ -25,17 +25,17 @@ import ca.uwaterloo.flix.language.phase.sjvm.ClassMaker.Mod
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 
 /**
-  * Generates bytecode for the continuation interfaces.
-  * TODO(JLS): fix comments in general
-  */
+ * Generates bytecode for the continuation interfaces.
+ * TODO(JLS): fix comments in general
+ */
 object GenContinuationInterfaces {
-  val resultFieldName: String = "result"
-  val invokeMethodName: String = "invoke"
-  val unwindMethodName: String = "unwind"
+  val ResultFieldName: String = "result"
+  val InvokeMethodName: String = "invoke"
+  val UnwindMethodName: String = "unwind"
 
   /**
-    * Returns the set of continuation interfaces for
-    */
+   * Returns the set of continuation interfaces for
+   */
   def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     RType.baseTypes.foldLeft(Map[JvmName, JvmClass]()) {
       case (macc, tpe) =>
@@ -45,8 +45,8 @@ object GenContinuationInterfaces {
   }
 
   /**
-    * Returns the bytecode for the given continuation interface.
-    */
+   * Returns the bytecode for the given continuation interface.
+   */
   private def genByteCode[T <: PType](resultType: RType[T])(implicit root: Root, flix: Flix): Array[Byte] = {
 
     // Pseudo code to generate:
@@ -68,10 +68,10 @@ object GenContinuationInterfaces {
 
     // Class visitor
     val classMaker = ClassMaker.mkAbstractClass(resultType.contName, addSource = false, None)
-    classMaker.mkConstructor(START[StackNil] ~ THISINIT(JvmName.Java.Lang.Object) ~ RETURN, JvmName.nothingToVoid)
-    classMaker.mkField(resultFieldName, resultType, Mod.isPublic.isAbstract)
-    classMaker.mkAbstractMethod(invokeMethodName, resultType.nothingToContMethodDescriptor, Mod.isAbstract.isPublic)
-    classMaker.mkMethod(compileUnwindMethod(resultType), unwindMethodName, resultType.nothingToThisMethodDescriptor, Mod.isPublic)
+    classMaker.mkConstructor(START[StackNil] ~ THISINIT(JvmName.Java.Object) ~ RETURN, JvmName.nothingToVoid)
+    classMaker.mkField(ResultFieldName, resultType, Mod.isPublic.isAbstract)
+    classMaker.mkAbstractMethod(InvokeMethodName, resultType.nothingToContMethodDescriptor, Mod.isAbstract.isPublic)
+    classMaker.mkMethod(compileUnwindMethod(resultType), UnwindMethodName, resultType.nothingToThisMethodDescriptor, Mod.isPublic)
 
     classMaker.closeClassMaker
   }
@@ -91,13 +91,13 @@ object GenContinuationInterfaces {
     f.visitor.visitVarInsn(ALOAD, 1)
     f.visitor.visitVarInsn(ASTORE, 2)
     f.visitor.visitVarInsn(ALOAD, 1)
-    f.visitor.visitMethodInsn(INVOKEVIRTUAL, resultType.contName.toInternalName, invokeMethodName, resultType.nothingToContMethodDescriptor, false)
+    f.visitor.visitMethodInsn(INVOKEVIRTUAL, resultType.contName.toInternalName, InvokeMethodName, resultType.nothingToContMethodDescriptor, false)
     f.visitor.visitVarInsn(ASTORE, 1)
     f.visitor.visitVarInsn(ALOAD, 1)
     f.visitor.visitJumpInsn(IFNONNULL, loopStart)
 
     f.visitor.visitVarInsn(ALOAD, 2)
-    f.visitor.visitFieldInsn(GETFIELD, resultType.contName.toInternalName, resultFieldName, resultType.toDescriptor)
+    f.visitor.visitFieldInsn(GETFIELD, resultType.contName.toInternalName, ResultFieldName, resultType.toDescriptor)
     XRETURN(resultType)(f.asInstanceOf[F[StackNil ** T]])
   }
 

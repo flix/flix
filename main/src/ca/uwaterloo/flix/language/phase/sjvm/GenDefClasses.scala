@@ -48,7 +48,7 @@ object GenDefClasses {
     val superClass = functionType.jvmName
     val classMaker = ClassMaker.mkClass(defName, addSource = false, Some(superClass))
     classMaker.mkConstructor(START[StackNil] ~ THISINIT(superClass) ~ RETURN, JvmName.nothingToVoid)
-    classMaker.mkMethod(genInvokeFunction(defn, defName), GenContinuationInterfaces.invokeMethodName, functionType.result.nothingToContMethodDescriptor, Mod.isPublic)
+    classMaker.mkMethod(genInvokeFunction(defn, defName), GenContinuationInterfaces.InvokeMethodName, functionType.result.nothingToContMethodDescriptor, Mod.isPublic)
     classMaker.closeClassMaker
   }
 
@@ -74,7 +74,7 @@ object GenDefClasses {
       case _ =>
         f.visitor.visitInsn(Opcodes.SWAP)
     }
-    f.visitor.visitFieldInsn(Opcodes.PUTFIELD, className.toInternalName, GenContinuationInterfaces.resultFieldName, resultType.erasedDescriptor)
+    f.visitor.visitFieldInsn(Opcodes.PUTFIELD, className.toInternalName, GenContinuationInterfaces.ResultFieldName, resultType.erasedDescriptor)
     f.asInstanceOf[F[R]]
   }
 

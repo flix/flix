@@ -20,7 +20,6 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{PRefType, PType, RType}
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
 import ca.uwaterloo.flix.language.phase.sjvm.ClassMaker.Mod
-import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 import ca.uwaterloo.flix.util.{InternalCompilerException, JvmTarget}
 import org.objectweb.asm.{ClassWriter, Opcodes}
 
@@ -63,8 +62,8 @@ class ClassMaker(visitor: ClassWriter, superClass: JvmName) {
 object ClassMaker {
 
   /**
-    * Returns the target JVM version.
-    */
+   * Returns the target JVM version.
+   */
   private def JavaVersion(implicit flix: Flix): Int = flix.options.target match {
     case JvmTarget.Version16 => Opcodes.V1_6
     case JvmTarget.Version17 => Opcodes.V1_7
@@ -73,19 +72,19 @@ object ClassMaker {
   }
 
   /**
-    * Returns a freshly created class writer object.
-    *
-    * The object is constructed to compute stack map frames automatically.
-    */
+   * Returns a freshly created class writer object.
+   *
+   * The object is constructed to compute stack map frames automatically.
+   */
   private def makeClassWriter(): ClassWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES) {
     override def getCommonSuperClass(tpe1: String, tpe2: String): String = {
-      JvmName.Java.Lang.Object.name
+      JvmName.Java.Object.name
     }
   }
 
   def mkClassMaker[T <: PRefType](className: JvmName, addSource: Boolean, superClass: Option[JvmName], mod: Mod, interfaces: JvmName*)(implicit flix: Flix): ClassMaker = {
     val visitor = makeClassWriter()
-    val superClassName = superClass.getOrElse(JvmName.Java.Lang.Object)
+    val superClassName = superClass.getOrElse(JvmName.Java.Object)
     visitor.visit(JavaVersion, mod.getValue, className.toInternalName, null, superClassName.toInternalName, interfaces.map(_.toInternalName).toArray)
     if (addSource) visitor.visitSource(className.toInternalName, null)
     new ClassMaker(visitor, superClassName)

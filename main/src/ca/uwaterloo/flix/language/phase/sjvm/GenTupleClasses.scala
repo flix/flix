@@ -33,8 +33,8 @@ import ca.uwaterloo.flix.util.ParOps
 
 object GenTupleClasses {
 
-  val getBoxedArrayMethodName: String = "getBoxedArray"
-  val getBoxedArrayMethodDescriptor: String = JvmName.getMethodDescriptor(Nil, RArray(RReference(RObject)))
+  val GetBoxedArrayMethodName: String = "getBoxedArray"
+  val GetBoxedArrayMethodDescriptor: String = JvmName.getMethodDescriptor(Nil, RArray(RReference(RObject)))
 
   def indexFieldName(index: Int): String = s"index$index"
 
@@ -49,11 +49,11 @@ object GenTupleClasses {
 
   private def genByteCode[T <: PType](className: JvmName, tupleType: RTuple)(implicit root: Root, flix: Flix): Array[Byte] = {
     val classMaker = ClassMaker.mkClass(className, addSource = false, None)
-    classMaker.mkConstructor(START[StackNil] ~ THISINIT(JvmName.Java.Lang.Object) ~ RETURN, JvmName.nothingToVoid)
+    classMaker.mkConstructor(START[StackNil] ~ THISINIT(JvmName.Java.Object) ~ RETURN, JvmName.nothingToVoid)
     tupleType.elms.zipWithIndex.foreach {
       case (indexType, index) => classMaker.mkField(indexFieldName(index), indexType.erasedType, Mod.isPublic)
     }
-    classMaker.mkMethod(genBoxedArrayFunction(tupleType), getBoxedArrayMethodName, getBoxedArrayMethodDescriptor, Mod.isPublic)
+    classMaker.mkMethod(genBoxedArrayFunction(tupleType), GetBoxedArrayMethodName, GetBoxedArrayMethodDescriptor, Mod.isPublic)
     classMaker.closeClassMaker
   }
 

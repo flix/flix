@@ -859,16 +859,16 @@ object BytecodeCompiler {
         } ~
         pushBool(default.isDefined) ~
         ((f: F[R ** PReference[PArray[PReference[PChan[PAnyObject]]]] ** PInt32]) => {
-          f.visitor.visitMethodInsn(Opcodes.INVOKESTATIC, JvmName.Flix.Runtime.Channel.toInternalName, "select",
-            JvmName.getMethodDescriptor(List(JvmName.Flix.Runtime.Channel, RBool), JvmName.Flix.Runtime.SelectChoice), false)
+          f.visitor.visitMethodInsn(Opcodes.INVOKESTATIC, JvmName.Flix.Channel.toInternalName, "select",
+            JvmName.getMethodDescriptor(List(JvmName.Flix.Channel, RBool), JvmName.Flix.SelectChoice), false)
           f.asInstanceOf[F[R ** PReference[PAnyObject]]]
         }) ~
         DUP ~
         (f => {
-          f.visitor.visitFieldInsn(Opcodes.GETFIELD, JvmName.Flix.Runtime.SelectChoice.toInternalName, "defaultChoice", RBool.toDescriptor)
+          f.visitor.visitFieldInsn(Opcodes.GETFIELD, JvmName.Flix.SelectChoice.toInternalName, "defaultChoice", RBool.toDescriptor)
           f.asInstanceOf[F[R ** PReference[PAnyObject] ** PInt32]]
         }) ~
-        IFNE{
+        IFNE {
           START[R ** PReference[PAnyObject]] ~
             POP ~
             (if (default.isDefined) {
@@ -883,7 +883,7 @@ object BytecodeCompiler {
         } {
           START[R ** PReference[PAnyObject]] ~
             DUP ~
-            GetInt32Field(JvmName.Flix.Runtime.SelectChoice, "branchNumber") ~
+            GetInt32Field(JvmName.Flix.SelectChoice, "branchNumber") ~
             SCAFFOLD
         }
 
@@ -900,11 +900,11 @@ object BytecodeCompiler {
 
     case Expression.HoleError(sym, _, loc) =>
       WithSource[R](loc) ~
-        throwStringedCompilerError(JvmName.Flix.Runtime.HoleError, sym.toString, loc)
+        throwStringedCompilerError(JvmName.Flix.HoleError, sym.toString, loc)
 
     case Expression.MatchError(_, loc) =>
       WithSource[R](loc) ~
-        throwCompilerError(JvmName.Flix.Runtime.MatchError, loc)
+        throwCompilerError(JvmName.Flix.MatchError, loc)
 
     case Expression.BoxBool(exp, loc) => ???
     case Expression.BoxInt8(exp, loc) => ???

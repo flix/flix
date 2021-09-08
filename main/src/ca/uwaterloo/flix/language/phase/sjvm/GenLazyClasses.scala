@@ -32,11 +32,11 @@ import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
  */
 object GenLazyClasses {
 
-  val initializedFieldName: String = "initialized"
-  val initializedFieldType: RType[PInt32] = RBool
-  val expressionFieldName: String = "expression"
-  val valueFieldName: String = "value"
-  val forceMethod: String = "force"
+  val InitializedFieldName: String = "initialized"
+  val InitializedFieldType: RType[PInt32] = RBool
+  val ExpressionFieldName: String = "expression"
+  val ValueFieldName: String = "value"
+  val ForceMethod: String = "force"
 
   def constructorDescriptor[T <: PType](valueType: RType[T]): String = expressionFieldType(valueType).thisToNothingMethodDescriptor
 
@@ -71,10 +71,10 @@ object GenLazyClasses {
   private def genByteCode[T <: PType](lazyType: RReference[PLazy[T]], valueFieldType: RType[T])(implicit root: Root, flix: Flix): Array[Byte] = {
     val classMaker = ClassMaker.mkClass(lazyType.jvmName, addSource = false, None)
 
-    classMaker.mkField(initializedFieldName, initializedFieldType)
-    classMaker.mkField(expressionFieldName, expressionFieldType(valueFieldType))
-    classMaker.mkField(valueFieldName, valueFieldType)
-    classMaker.mkMethod(compileForceMethod(lazyType, valueFieldType), forceMethod, valueFieldType.nothingToThisMethodDescriptor, Mod.isFinal.isPublic)
+    classMaker.mkField(InitializedFieldName, InitializedFieldType)
+    classMaker.mkField(ExpressionFieldName, expressionFieldType(valueFieldType))
+    classMaker.mkField(ValueFieldName, valueFieldType)
+    classMaker.mkMethod(compileForceMethod(lazyType, valueFieldType), ForceMethod, valueFieldType.nothingToThisMethodDescriptor, Mod.isFinal.isPublic)
     classMaker.mkConstructor(compileLazyConstructor(lazyType, valueFieldType), constructorDescriptor(valueFieldType))
     classMaker.closeClassMaker
   }
@@ -105,21 +105,21 @@ object GenLazyClasses {
       (WITHMONITOR(valueFieldType) {
         START[StackNil ** PReference[PLazy[T]]] ~
           THISLOAD(lazyType) ~
-          GetBoolField(lazyType, initializedFieldName) ~
+          GetBoolField(lazyType, InitializedFieldName) ~
           (IFNE {
             START[StackNil ** PReference[PLazy[T]]] ~
               THISLOAD(lazyType) ~
-              GetObjectField(lazyType, expressionFieldName, expressionFieldType(valueFieldType), undoErasure = true) ~
+              GetObjectField(lazyType, ExpressionFieldName, expressionFieldType(valueFieldType), undoErasure = true) ~
               CALL(ErasedAst.Expression.Unit(SourceLocation.Unknown) :: Nil, RArrow(RReference(RUnit) :: Nil, valueFieldType)) ~
               THISLOAD(lazyType) ~
               XSWAP(lazyType, valueFieldType) ~
-              PUTFIELD(lazyType, valueFieldName, valueFieldType, erasedType = true) ~
+              PUTFIELD(lazyType, ValueFieldName, valueFieldType, erasedType = true) ~
               THISLOAD(lazyType) ~
               pushBool(true) ~
-              PUTFIELD(lazyType, initializedFieldName, RInt32, erasedType = false /* does not do anything */)
+              PUTFIELD(lazyType, InitializedFieldName, RInt32, erasedType = false /* does not do anything */)
           } (NOP)) ~
           THISLOAD(lazyType) ~
-          XGETFIELD(lazyType, valueFieldName, valueFieldType, undoErasure = true)
+          XGETFIELD(lazyType, ValueFieldName, valueFieldType, undoErasure = true)
       }) ~
       XRETURN(valueFieldType)
   }
@@ -136,13 +136,13 @@ object GenLazyClasses {
     this.expression = expression.
      */
     START[StackNil] ~
-      THISINIT(JvmName.Java.Lang.Object) ~
+      THISINIT(JvmName.Java.Object) ~
       THISLOAD(lazyType) ~
       pushBool(false) ~
-      PUTFIELD(lazyType, initializedFieldName, initializedFieldType, erasedType = false) ~
+      PUTFIELD(lazyType, InitializedFieldName, InitializedFieldType, erasedType = false) ~
       THISLOAD(lazyType) ~
       ALOAD(1, expressionFieldType(valueFieldType)) ~
-      PUTFIELD(lazyType, expressionFieldName, expressionFieldType(valueFieldType), erasedType = false) ~
+      PUTFIELD(lazyType, ExpressionFieldName, expressionFieldType(valueFieldType), erasedType = false) ~
       RETURN
   }
 }

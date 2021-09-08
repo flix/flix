@@ -113,10 +113,10 @@ object RType {
 
   // TODO(JLS): should probably be in Instructions
   def undoErasure(rType: RType[_ <: PType], methodVisitor: MethodVisitor): Unit = rType match {
-        // TODO(JLS): Should not output ins if referenceType is RObject
-      case RReference(referenceType) => undoErasure(referenceType.jvmName, methodVisitor)
-      case RBool | RInt8 | RInt16 | RInt32 | RInt64 | RChar | RFloat32 | RFloat64 => ()
-    }
+    // TODO(JLS): Should not output ins if referenceType is RObject
+    case RReference(referenceType) => undoErasure(referenceType.jvmName, methodVisitor)
+    case RBool | RInt8 | RInt16 | RInt32 | RInt64 | RChar | RFloat32 | RFloat64 => ()
+  }
 
   def undoErasure(name: JvmName, methodVisitor: MethodVisitor): Unit =
     methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, name.toInternalName)
@@ -180,39 +180,39 @@ object RRefType {
 
 
   object RBoxedBool extends RRefType[PBoxedBool] {
-    override lazy val jvmName: JvmName = JvmName.Java.Lang.Boolean
+    override lazy val jvmName: JvmName = JvmName.Java.Boolean
   }
 
   object RBoxedInt8 extends RRefType[PBoxedInt8] {
-    override lazy val jvmName: JvmName = JvmName.Java.Lang.Byte
+    override lazy val jvmName: JvmName = JvmName.Java.Byte
   }
 
   object RBoxedInt16 extends RRefType[PBoxedInt16] {
-    override lazy val jvmName: JvmName = JvmName.Java.Lang.Short
+    override lazy val jvmName: JvmName = JvmName.Java.Short
   }
 
   object RBoxedInt32 extends RRefType[PBoxedInt32] {
-    override lazy val jvmName: JvmName = JvmName.Java.Lang.Integer
+    override lazy val jvmName: JvmName = JvmName.Java.Integer
   }
 
   object RBoxedInt64 extends RRefType[PBoxedInt64] {
-    override lazy val jvmName: JvmName = JvmName.Java.Lang.Long
+    override lazy val jvmName: JvmName = JvmName.Java.Long
   }
 
   object RBoxedChar extends RRefType[PBoxedChar] {
-    override lazy val jvmName: JvmName = JvmName.Java.Lang.Character
+    override lazy val jvmName: JvmName = JvmName.Java.Character
   }
 
   object RBoxedFloat32 extends RRefType[PBoxedFloat32] {
-    override lazy val jvmName: JvmName = JvmName.Java.Lang.Float
+    override lazy val jvmName: JvmName = JvmName.Java.Float
   }
 
   object RBoxedFloat64 extends RRefType[PBoxedFloat64] {
-    override lazy val jvmName: JvmName = JvmName.Java.Lang.Double
+    override lazy val jvmName: JvmName = JvmName.Java.Double
   }
 
   object RUnit extends RRefType[PUnit] {
-    override lazy val jvmName: JvmName = JvmName.Flix.Runtime.Value.Unit
+    override lazy val jvmName: JvmName = JvmName.Flix.Unit
   }
 
   case class RArray[T <: PType](tpe: RType[T]) extends RRefType[PArray[T]] {
@@ -223,7 +223,7 @@ object RRefType {
   }
 
   case class RChannel[T <: PRefType](tpe: RType[PReference[T]]) extends RRefType[PChan[T]] {
-    override lazy val jvmName: JvmName = JvmName.Flix.Runtime.Channel
+    override lazy val jvmName: JvmName = JvmName.Flix.Channel
   }
 
   case class RLazy[T <: PType](tpe: RType[T]) extends RRefType[PLazy[T]] {
@@ -248,11 +248,11 @@ object RRefType {
   }
 
   object RBigInt extends RRefType[PBigInt] {
-    override lazy val jvmName: JvmName = JvmName.Java.Math.BigInteger
+    override lazy val jvmName: JvmName = JvmName.Java.BigInteger
   }
 
   object RStr extends RRefType[PStr] {
-    override lazy val jvmName: JvmName = JvmName.Java.Lang.String
+    override lazy val jvmName: JvmName = JvmName.Java.String
   }
 
   case class RArrow[T <: PType](args: List[RType[_ <: PType]], result: RType[T]) extends RRefType[PFunction[T]] {
@@ -288,7 +288,7 @@ object RRefType {
   }
 
   object RObject extends RRefType[PAnyObject] {
-    override lazy val jvmName: JvmName = JvmName.Java.Lang.Object
+    override lazy val jvmName: JvmName = JvmName.Java.Object
   }
 
 }

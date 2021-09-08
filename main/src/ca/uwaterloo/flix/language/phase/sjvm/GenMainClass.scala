@@ -31,17 +31,17 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm.Opcodes
 
 /**
-  * Generates bytecode for the main class.
-  */
+ * Generates bytecode for the main class.
+ */
 object GenMainClass {
 
-  val mainMethod: String = "main"
+  val MainMethod: String = "main"
 
-  val mainMethodClassName: JvmName = JvmName.main
+  val MainMethodClassName: JvmName = JvmName.main
 
   /**
-    * Returns the main class.
-    */
+   * Returns the main class.
+   */
   def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = getMain(root) match {
     case None => Map.empty
     case Some(defn) =>
@@ -57,7 +57,7 @@ object GenMainClass {
 
       // TODO(JLS): should get a namespace and a name. maybe its always Ns.m_main(args). just call Ns.m_main(args)
       val bytecode = genByteCode(defn)
-      Map(mainMethodClassName -> JvmClass(mainMethodClassName, bytecode))
+      Map(MainMethodClassName -> JvmClass(MainMethodClassName, bytecode))
   }
 
   def genByteCode(defn: Def[_ <: PType])(implicit root: Root, flix: Flix): Array[Byte] = {
@@ -65,21 +65,21 @@ object GenMainClass {
     val classMaker = ClassMaker.mkClass(JvmName.main, addSource = true, None)
 
     // Emit the code for the main method
-    classMaker.mkMethod(compileMainMethod(defn), mainMethod, JvmName.javaMainDescriptor, Mod.isPublic.isStatic)
+    classMaker.mkMethod(compileMainMethod(defn), MainMethod, JvmName.javaMainDescriptor, Mod.isPublic.isStatic)
 
     classMaker.closeClassMaker
   }
 
   /**
-    * Emits code for the main method in the main class. The emitted (byte)code should satisfy the following signature for the method:
-    * public static void main(String[])
-    *
-    * The method itself needs simply invoke the m_main method which is in the root namespace.
-    *
-    * The emitted code for the method should correspond to:
-    *
-    * Ns.m_main((Object)null);
-    */
+   * Emits code for the main method in the main class. The emitted (byte)code should satisfy the following signature for the method:
+   * public static void main(String[])
+   *
+   * The method itself needs simply invoke the m_main method which is in the root namespace.
+   *
+   * The emitted code for the method should correspond to:
+   *
+   * Ns.m_main((Object)null);
+   */
   def compileMainMethod[T <: PType](defn: Def[T])(implicit root: Root, flix: Flix): F[StackNil] => F[StackEnd] = {
 
     //Get the root namespace in order to get the class type when invoking m_main
@@ -95,10 +95,10 @@ object GenMainClass {
     } ~
       DUP ~
       ALOAD(0, RReference(RArray(RReference(RStr)))) ~ { f: F[StackNil ** PReference[PFunction[T]] ** PReference[PFunction[T]] ** PReference[PArray[PReference[PStr]]]] =>
-      f.visitor.visitFieldInsn(Opcodes.PUTFIELD, defn.sym.defName.toInternalName, GenFunctionInterfaces.argFieldName(0), JvmName.Java.Lang.Object.toDescriptor)
+      f.visitor.visitFieldInsn(Opcodes.PUTFIELD, defn.sym.defName.toInternalName, GenFunctionInterfaces.argFieldName(0), JvmName.Java.Object.toDescriptor)
       f.asInstanceOf[F[StackNil ** PReference[PFunction[T]]]]
     } ~ { f: F[StackNil ** PReference[PFunction[T]]] =>
-      f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, RInt32.contName.toInternalName, GenContinuationInterfaces.unwindMethodName, RInt32.nothingToThisMethodDescriptor, false)
+      f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, RInt32.contName.toInternalName, GenContinuationInterfaces.UnwindMethodName, RInt32.nothingToThisMethodDescriptor, false)
       f.asInstanceOf[F[StackNil ** PInt32]]
     } ~ { f: F[StackNil ** PInt32] =>
       f.visitor.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/System", "exit", "(I)V", false);
@@ -117,8 +117,8 @@ object GenMainClass {
   }
 
   /**
-    * Optionally returns the main definition in the given AST `root`.
-    */
+   * Optionally returns the main definition in the given AST `root`.
+   */
   private def getMain(root: Root): Option[Def[_ <: PType]] = {
     // The main function must be called `main` and occur in the root namespace.
     val sym = Symbol.Main
