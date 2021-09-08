@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError._
 import ca.uwaterloo.flix.language.phase.unification.ClassEnvironment
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.collection.{MultiMap, ListMap}
+import ca.uwaterloo.flix.util.collection.{ListMap, MultiMap}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 /**
@@ -646,26 +646,30 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
    * Returns the symbols used in the given constraint `c0` under the given environment `env0`.
    */
   private def visitConstraint(c0: Constraint, env0: Env): Used = {
-    val zero = visitHeadPred(c0.head, env0)
-    val used = c0.body.foldLeft(zero) {
+    val head = visitHeadPred(c0.head, env0)
+    val body = c0.body.foldLeft(Used.empty) {
       case (acc, b) => acc ++ visitBodyPred(b, env0)
     }
+    val total = head ++ body
 
+    // Check that no variable is used only once except if they are wild (_ prefix).
+    // Check additionally that there is only one mention of a wild variable.
+    // This error is already checked in a program like `A(_x) :- B(_x).` but
+    // not for `A(12) :- B(_x), C(_x).`.
     val errors = c0.cparams.flatMap(constraintParam => {
       val sym = constraintParam.sym
-      val occurrences = used.varSyms.apply(sym)
+      val occurrences = total.varSyms.apply(sym)
       if (occurrences.isEmpty) throw InternalCompilerException(s"Variable frequency is zero for $sym")
       else if (occurrences.size == 1 && !sym.isWild) {
         // Check that no variable is only used once
         List(RedundancyError.SingleUseOfVariable(sym, occurrences.iterator.next()))
-      } else if (occurrences.size > 1 && sym.isWild) {
-        // Check that wild variables are not used multiple times
+      } else if (body.varSyms.apply(sym).size > 1 && sym.isWild) {
+        // Check that wild variables are not used multiple times in the body
         occurrences.map(loc => RedundancyError.HiddenVarSym(sym, loc))
       } else Nil
     })
 
-
-    (used -- c0.cparams.map(_.sym)) ++ errors
+    (total -- c0.cparams.map(_.sym)) ++ errors
   }
 
   /**
