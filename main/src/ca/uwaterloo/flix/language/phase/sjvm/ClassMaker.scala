@@ -96,11 +96,11 @@ object ClassMaker {
   }
 
   def mkAbstractClass(className: JvmName, addSource: Boolean, superClass: Option[JvmName], interfaces: JvmName*)(implicit flix: Flix): ClassMaker = {
-    mkClassMaker(className, addSource = addSource, superClass, Mod.isPublic.isAbstract, interfaces: _*)
+    mkClassMaker(className, superClass, Mod.isPublic.isAbstract, interfaces: _*)
   }
 
   def mkInterface(className: JvmName, addSource: Boolean, interfaces: JvmName*)(implicit flix: Flix): ClassMaker = {
-    mkClassMaker(className, addSource = addSource, None, Mod.isPublic.isAbstract.isInterface, interfaces: _*)
+    mkClassMaker(className, None, Mod.isPublic.isAbstract.isInterface, interfaces: _*)
   }
 
   class Mod private {
