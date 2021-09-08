@@ -38,21 +38,6 @@ object ListMap {
 case class ListMap[K, V](m: Map[K, List[V]]) {
 
   /**
-    * Returns `true` is the map is empty, `false` if not.
-    */
-  def isEmpty: Boolean = m.isEmpty
-
-  /**
-    * Returns `true` if the map contains `k`, `false` if not.
-    */
-  def contains(k: K): Boolean = m.contains(k)
-
-  /**
-    * Returns the size of the map.
-    */
-  def size: Int = m.size
-
-  /**
     * Optionally returns the list of values that the key `k` maps to.
     */
   def get(k: K): Option[List[V]] = m.get(k)
@@ -85,22 +70,6 @@ case class ListMap[K, V](m: Map[K, List[V]]) {
     that.m.foldLeft(this) {
       case (macc, (k, vs)) => macc + (k, vs)
     }
-  }
-
-  /**
-    * Returns `this` list map with mappings from `k` removed.
-    */
-  def -(k: K): ListMap[K, V] = {
-    if (m.contains(k)) ListMap(m.removed(k))
-    else this
-  }
-
-  /**
-    * Returns `this` list map with mappings from `ks` removed.
-    */
-  def --(ks: Iterable[K]): ListMap[K, V] = {
-    if (ks.isEmpty) this
-    else ListMap(m.removedAll(ks))
   }
 
 }
