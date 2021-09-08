@@ -82,17 +82,17 @@ object ClassMaker {
     }
   }
 
-  def mkClassMaker[T <: PRefType](className: JvmName, addSource: Boolean, superClass: Option[JvmName], mod: Mod, interfaces: JvmName*)(implicit flix: Flix): ClassMaker = {
+  def mkClassMaker[T <: PRefType](className: JvmName, superClass: Option[JvmName], mod: Mod, interfaces: JvmName*)(implicit flix: Flix): ClassMaker = {
     val visitor = makeClassWriter()
     val superClassName = superClass.getOrElse(JvmName.Java.Object)
     visitor.visit(JavaVersion, mod.getValue, className.toInternalName, null, superClassName.toInternalName, interfaces.map(_.toInternalName).toArray)
-    if (addSource) visitor.visitSource(className.toInternalName, null)
+    visitor.visitSource(className.toInternalName, null)
     new ClassMaker(visitor, superClassName)
   }
 
   // TODO(JLS): maybe individual classes, since interface fields are always abstract etc
-  def mkClass(className: JvmName, addSource: Boolean, superClass: Option[JvmName], interfaces: JvmName*)(implicit flix: Flix): ClassMaker = {
-    mkClassMaker(className, addSource = addSource, superClass, Mod.isPublic.isFinal, interfaces: _*)
+  def mkClass(className: JvmName, superClass: Option[JvmName], interfaces: JvmName*)(implicit flix: Flix): ClassMaker = {
+    mkClassMaker(className, superClass, Mod.isPublic.isFinal, interfaces: _*)
   }
 
   def mkAbstractClass(className: JvmName, addSource: Boolean, superClass: Option[JvmName], interfaces: JvmName*)(implicit flix: Flix): ClassMaker = {
