@@ -67,7 +67,7 @@ object GenContinuationInterfaces {
     //
 
     // Class visitor
-    val classMaker = ClassMaker.mkAbstractClass(resultType.contName, addSource = false, None)
+    val classMaker = ClassMaker.mkAbstractClass(resultType.contName, JvmName.Java.Object)
     classMaker.mkConstructor(START[StackNil] ~ THISINIT(JvmName.Java.Object) ~ RETURN)
     classMaker.mkField(ResultFieldName, resultType, Mod.isPublic.isAbstract)
     classMaker.mkAbstractMethod(InvokeMethodName, resultType.nothingToContMethodDescriptor, Mod.isAbstract.isPublic)

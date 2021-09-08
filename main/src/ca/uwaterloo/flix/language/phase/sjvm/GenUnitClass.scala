@@ -20,10 +20,10 @@ object GenUnitClass {
   }
 
   def genByteCode(unitType: RReference[PUnit])(implicit flix: Flix): Array[Byte] = {
-    val classMaker = ClassMaker.mkClass(unitType.jvmName, superClass = None)
+    val classMaker = ClassMaker.mkClass(unitType.jvmName, JvmName.Java.Object)
     classMaker.mkField(InstanceFieldName, unitType, Mod.isPublic.isStatic.isFinal)
     classMaker.mkStaticConstructor(genStaticConstructor(unitType))
-    classMaker.mkConstructor(START[StackNil] ~ THISINIT(JvmName.Java.Object) ~ RETURN)
+    classMaker.mkConstructor(START[StackNil] ~ THISINIT(JvmName.Java.Object) ~ RETURN , mod = Mod.isPrivate)
     classMaker.closeClassMaker
   }
 

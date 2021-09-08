@@ -62,7 +62,7 @@ object GenMainClass {
 
   def genByteCode(defn: Def[_ <: PType])(implicit root: Root, flix: Flix): Array[Byte] = {
     // class writer
-    val classMaker = ClassMaker.mkClass(JvmName.main, None)
+    val classMaker = ClassMaker.mkClass(JvmName.main, JvmName.Java.Object)
 
     // Emit the code for the main method
     classMaker.mkMethod(compileMainMethod(defn), MainMethod, JvmName.javaMainDescriptor, Mod.isPublic.isStatic)

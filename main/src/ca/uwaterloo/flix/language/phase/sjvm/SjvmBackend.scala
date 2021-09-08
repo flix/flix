@@ -80,6 +80,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
       // TODO JLS: write pseudocode
       // TODO JLS: filter the base type list to the occurring types in ex. refs
       // TODO JLS: ParArgs as much as possible
+      // TODO JLS: Add copyright everywhere
 
       val mainClass = GenMainClass.gen()
 
@@ -111,7 +112,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
 
       val unitClass = GenUnitClass.gen()
 
-      // todo FlixError
+      val flixErrorClass = GenFlixErrorClass.gen()
 
       // todo rslClass
 
@@ -129,8 +130,10 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
         tupleClasses,
         refClasses,
         lazyClasses,
-        unitClass
+        unitClass,
+        flixErrorClass
       ).reduce(_ ++ _)
+
       (classMap, closureSyms)
     }
 

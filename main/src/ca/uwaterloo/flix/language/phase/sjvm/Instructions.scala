@@ -1533,7 +1533,7 @@ object Instructions {
     castF(f)
   }
 
-  def constructorALOAD
+  def preInitALOAD
   [R <: Stack, T <: PRefType]
   (index: Int, tpe: RType[PReference[T]]):
   F[R] => F[R ** PReference[T]] = f => {
@@ -1541,9 +1541,9 @@ object Instructions {
     castF(f)
   }
 
-  def constructorALOAD
+  def preInitALOAD
   [R <: Stack, T <: PRefType]
-  (index: Int, name: JvmName, tag: Tag[T] = null):
+  (index: Int, tag: Tag[T] = null):
   F[R] => F[R ** PReference[T]] = f => {
     f.visitor.visitVarInsn(Opcodes.ALOAD, index)
     castF(f)

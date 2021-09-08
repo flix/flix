@@ -52,7 +52,7 @@ object GenNamespaces {
     * Returns the namespace class for the given namespace `ns`.
     */
   private def genBytecode(className: JvmName, ns: NamespaceInfo)(implicit root: Root, flix: Flix): Array[Byte] = {
-    val classMaker = ClassMaker.mkClass(className, None)
+    val classMaker = ClassMaker.mkClass(className, JvmName.Java.Object)
     classMaker.mkConstructor(START[StackNil] ~ THISINIT(JvmName.Java.Object) ~ RETURN)
     for ((sym, defn) <- ns.defs) {
       val arrow = squeezeFunction(squeezeReference(defn.tpe))

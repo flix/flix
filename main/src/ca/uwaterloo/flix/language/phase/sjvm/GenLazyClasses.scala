@@ -50,7 +50,7 @@ object GenLazyClasses {
   }
 
   private def genByteCode[T <: PType](lazyType: RReference[PLazy[T]], valueFieldType: RType[T])(implicit root: Root, flix: Flix): Array[Byte] = {
-    val classMaker = ClassMaker.mkClass(lazyType.jvmName, None)
+    val classMaker = ClassMaker.mkClass(lazyType.jvmName, JvmName.Java.Object)
 
     classMaker.mkField(InitializedFieldName, InitializedFieldType)
     classMaker.mkField(ExpressionFieldName, expressionFieldType(valueFieldType))
@@ -108,7 +108,7 @@ object GenLazyClasses {
      */
     START[StackNil] ~
       THISINIT(JvmName.Java.Object) ~
-      constructorALOAD(0, lazyType) ~
+      preInitALOAD(0, lazyType) ~
       pushBool(false) ~
       PUTFIELD(lazyType, InitializedFieldName, InitializedFieldType, erasedType = false) ~
       RETURN

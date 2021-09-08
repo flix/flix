@@ -97,7 +97,7 @@ object JvmName {
     val String: JvmName = JvmName(List("java", "lang"), "String")
     val System: JvmName = JvmName(List("java", "lang"), "System")
     val StringBuilder: JvmName = JvmName(List("java", "lang"), "StringBuilder")
-    val runtimeException: JvmName = JvmName(List("java", "lang"), "RuntimeException")
+    val RuntimeException: JvmName = JvmName(List("java", "lang"), "RuntimeException")
 
     val BigInteger: JvmName = JvmName(List("java", "math"), "BigInteger")
 
@@ -111,6 +111,7 @@ object JvmName {
 
     val NotImplementedError: JvmName = JvmName(List("dev", "flix", "runtime"), "NotImplementedError")
     val MatchError: JvmName = JvmName(List("dev", "flix", "runtime"), "MatchError")
+    val FlixError: JvmName = JvmName(List("dev", "flix", "runtime"), "FlixError")
     val HoleError: JvmName = JvmName(List("dev", "flix", "runtime"), "HoleError")
     val ReifiedSourceLocation: JvmName = JvmName(List("dev", "flix", "runtime"), "ReifiedSourceLocation")
 

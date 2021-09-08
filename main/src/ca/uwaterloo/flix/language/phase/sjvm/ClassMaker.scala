@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.phase.sjvm.ClassMaker.Mod
 import ca.uwaterloo.flix.util.{InternalCompilerException, JvmTarget}
 import org.objectweb.asm.{ClassWriter, Opcodes}
 
-class ClassMaker(visitor: ClassWriter, superClass: JvmName) {
+class ClassMaker(visitor: ClassWriter) {
   private def makeField[T <: PType](fieldName: String, fieldType: RType[T], mod: Mod): Unit = {
     val field = visitor.visitField(mod.getValue, fieldName, fieldType.descriptor, null, null)
     field.visitEnd()
@@ -37,8 +37,8 @@ class ClassMaker(visitor: ClassWriter, superClass: JvmName) {
     makeField(fieldName, fieldType, Mod.isStatic)
   }
 
-  def mkConstructor(f: F[StackNil] => F[StackEnd]): Unit =
-    mkMethod(f, JvmName.constructorMethod, JvmName.nothingToVoid, Mod.isPublic)
+  def mkConstructor(f: F[StackNil] => F[StackEnd], descriptor: String = JvmName.nothingToVoid, mod: Mod = Mod.isPublic): Unit =
+    mkMethod(f, JvmName.constructorMethod, descriptor, mod)
 
   def mkStaticConstructor(f: F[StackNil] => F[StackEnd]): Unit =
     mkMethod(f, JvmName.staticConstructorMethod, JvmName.nothingToVoid, Mod.isStatic)
@@ -85,25 +85,24 @@ object ClassMaker {
     }
   }
 
-  def mkClassMaker[T <: PRefType](className: JvmName, superClass: Option[JvmName], mod: Mod, interfaces: JvmName*)(implicit flix: Flix): ClassMaker = {
+  def mkClassMaker[T <: PRefType](className: JvmName, superClass: JvmName, mod: Mod, interfaces: JvmName*)(implicit flix: Flix): ClassMaker = {
     val visitor = makeClassWriter()
-    val superClassName = superClass.getOrElse(JvmName.Java.Object)
-    visitor.visit(JavaVersion, mod.getValue, className.internalName, null, superClassName.internalName, interfaces.map(_.internalName).toArray)
+    visitor.visit(JavaVersion, mod.getValue, className.internalName, null, superClass.internalName, interfaces.map(_.internalName).toArray)
     visitor.visitSource(className.internalName, null)
-    new ClassMaker(visitor, superClassName)
+    new ClassMaker(visitor)
   }
 
-  // TODO(JLS): maybe individual classes, since interface fields are always abstract etc
-  def mkClass(className: JvmName, superClass: Option[JvmName], interfaces: JvmName*)(implicit flix: Flix): ClassMaker = {
+  // TODO(JLS): maybe individual Mod classes, since interface fields are always abstract etc
+  def mkClass(className: JvmName, superClass: JvmName, interfaces: JvmName*)(implicit flix: Flix): ClassMaker = {
     mkClassMaker(className, superClass, Mod.isPublic.isFinal, interfaces: _*)
   }
 
-  def mkAbstractClass(className: JvmName, addSource: Boolean, superClass: Option[JvmName], interfaces: JvmName*)(implicit flix: Flix): ClassMaker = {
+  def mkAbstractClass(className: JvmName, superClass: JvmName, interfaces: JvmName*)(implicit flix: Flix): ClassMaker = {
     mkClassMaker(className, superClass, Mod.isPublic.isAbstract, interfaces: _*)
   }
 
-  def mkInterface(className: JvmName, addSource: Boolean, interfaces: JvmName*)(implicit flix: Flix): ClassMaker = {
-    mkClassMaker(className, None, Mod.isPublic.isAbstract.isInterface, interfaces: _*)
+  def mkInterface(className: JvmName, interfaces: JvmName*)(implicit flix: Flix): ClassMaker = {
+    mkClassMaker(className, JvmName.Java.Object, Mod.isPublic.isAbstract.isInterface, interfaces: _*)
   }
 
   class Mod private {

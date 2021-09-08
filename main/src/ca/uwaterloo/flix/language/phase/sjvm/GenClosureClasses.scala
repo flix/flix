@@ -52,7 +52,7 @@ object GenClosureClasses {
 
   private def genByteCode[T <: PType](defn: ErasedAst.Def[T], cloName: JvmName, freeVars: List[ErasedAst.FreeVar], functionType: RArrow[T])(implicit root: Root, flix: Flix): Array[Byte] = {
     val superClass = functionType.jvmName
-    val classMaker = ClassMaker.mkClass(cloName, Some(superClass))
+    val classMaker = ClassMaker.mkClass(cloName, superClass)
     classMaker.mkConstructor(START[StackNil] ~ THISINIT(superClass) ~ RETURN)
     classMaker.mkMethod(genInvokeFunction(defn, defn.exp, cloName, freeVars), GenContinuationInterfaces.InvokeMethodName, functionType.result.nothingToContMethodDescriptor, Mod.isPublic)
     for ((fv, index) <- freeVars.zipWithIndex) {
