@@ -270,7 +270,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
 
   private def getFunctionTypes(types: Set[RType[_ <: PType]]): Set[RType[PReference[PFunction[_ <: PType]]]] = {
     def innerMatch[T <: PRefType](x: RRefType[T], acc: Set[RType[PReference[PFunction[_ <: PType]]]]): Set[RType[PReference[PFunction[_ <: PType]]]] = x match {
-      case res@RArrow(_, _) => acc + RReference(res).asInstanceOf[RType[PReference[PFunction[_ <: PType]]]]
+      case res@RArrow(_, _) => acc + res.toRType.asInstanceOf[RType[PReference[PFunction[_ <: PType]]]]
       case _ => acc
     }
 
@@ -284,7 +284,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
 
   private def getTupleTypes(types: Set[RType[_ <: PType]]): Set[RType[PReference[PTuple]]] = {
     def innerMatch[T <: PRefType](x: RRefType[T], acc: Set[RType[PReference[PTuple]]]): Set[RType[PReference[PTuple]]] = x match {
-      case res@RTuple(_) => acc + RReference(res).asInstanceOf[RType[PReference[PTuple]]]
+      case res@RTuple(_) => acc + res.toRType.asInstanceOf[RType[PReference[PTuple]]]
       case _ => acc
     }
 

@@ -19,6 +19,8 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.PType._
+import ca.uwaterloo.flix.language.ast.RRefType._
+import ca.uwaterloo.flix.language.ast.RType._
 import ca.uwaterloo.flix.language.phase.sjvm.{ClosureInfo, NamespaceInfo}
 
 import java.lang.reflect.{Constructor, Field, Method}
@@ -51,18 +53,18 @@ object ErasedAst {
   }
 
   def boxValue[T <: PType](exp: Expression[T]): Expression[PReference[_ <: PRefType]] = exp.tpe match {
-    case RType.RBool => Expression.BoxBool(exp, exp.loc).asInstanceOf[Expression[PReference[_ <: PRefType]]]
-    case RType.RInt8 => Expression.BoxInt8(exp, exp.loc).asInstanceOf[Expression[PReference[_ <: PRefType]]]
-    case RType.RInt16 => Expression.BoxInt16(exp, exp.loc).asInstanceOf[Expression[PReference[_ <: PRefType]]]
-    case RType.RInt32 => Expression.BoxInt32(exp, exp.loc).asInstanceOf[Expression[PReference[_ <: PRefType]]]
-    case RType.RInt64 => Expression.BoxInt64(exp, exp.loc).asInstanceOf[Expression[PReference[_ <: PRefType]]]
-    case RType.RChar => Expression.BoxChar(exp, exp.loc).asInstanceOf[Expression[PReference[_ <: PRefType]]]
-    case RType.RFloat32 => Expression.BoxFloat32(exp, exp.loc).asInstanceOf[Expression[PReference[_ <: PRefType]]]
-    case RType.RFloat64 => Expression.BoxFloat64(exp, exp.loc).asInstanceOf[Expression[PReference[_ <: PRefType]]]
-    case RType.RReference(referenceType) => exp.asInstanceOf[Expression[PReference[_ <: PRefType]]]
+    case RBool => Expression.BoxBool(exp, exp.loc).asInstanceOf[Expression[PReference[_ <: PRefType]]]
+    case RInt8 => Expression.BoxInt8(exp, exp.loc).asInstanceOf[Expression[PReference[_ <: PRefType]]]
+    case RInt16 => Expression.BoxInt16(exp, exp.loc).asInstanceOf[Expression[PReference[_ <: PRefType]]]
+    case RInt32 => Expression.BoxInt32(exp, exp.loc).asInstanceOf[Expression[PReference[_ <: PRefType]]]
+    case RInt64 => Expression.BoxInt64(exp, exp.loc).asInstanceOf[Expression[PReference[_ <: PRefType]]]
+    case RChar => Expression.BoxChar(exp, exp.loc).asInstanceOf[Expression[PReference[_ <: PRefType]]]
+    case RFloat32 => Expression.BoxFloat32(exp, exp.loc).asInstanceOf[Expression[PReference[_ <: PRefType]]]
+    case RFloat64 => Expression.BoxFloat64(exp, exp.loc).asInstanceOf[Expression[PReference[_ <: PRefType]]]
+    case RReference(_) => exp.asInstanceOf[Expression[PReference[_ <: PRefType]]]
   }
 
-  def unboxValue[T <: PRefType](exp: Expression[PReference[T]]): Expression[_ <: PType] = RType.squeezeReference(exp.tpe).referenceType match {
+  def unboxValue[T <: PRefType](exp: Expression[PReference[T]]): Expression[_ <: PType] = squeezeReference(exp.tpe).referenceType match {
     case RRefType.RBoxedBool => Expression.UnboxBool(exp, exp.loc).asInstanceOf[Expression[_ <: PType]]
     case RRefType.RBoxedInt8 => Expression.UnboxInt8(exp, exp.loc).asInstanceOf[Expression[_ <: PType]]
     case RRefType.RBoxedInt16 => Expression.UnboxInt16(exp, exp.loc).asInstanceOf[Expression[_ <: PType]]
@@ -77,53 +79,53 @@ object ErasedAst {
   object Expression {
 
     case class Unit(loc: SourceLocation) extends Expression[PReference[PUnit]] {
-      final val tpe = RType.RReference(RRefType.RUnit)
+      final val tpe = RUnit.toRType
     }
 
     case class Null[S <: PRefType](tpe: RType[PReference[S]], loc: SourceLocation) extends Expression[PReference[S]]
 
     case class True(loc: SourceLocation) extends Expression[PInt32] {
-      final val tpe = RType.RBool
+      final val tpe = RBool
     }
 
     case class False(loc: SourceLocation) extends Expression[PInt32] {
-      final val tpe = RType.RBool
+      final val tpe = RBool
     }
 
     case class Char(lit: scala.Char, loc: SourceLocation) extends Expression[PChar] {
-      final val tpe = RType.RChar
+      final val tpe = RChar
     }
 
     case class Float32(lit: scala.Float, loc: SourceLocation) extends Expression[PFloat32] {
-      final val tpe = RType.RFloat32
+      final val tpe = RFloat32
     }
 
     case class Float64(lit: scala.Double, loc: SourceLocation) extends Expression[PFloat64] {
-      final val tpe = RType.RFloat64
+      final val tpe = RFloat64
     }
 
     case class Int8(lit: scala.Byte, loc: SourceLocation) extends Expression[PInt8] {
-      final val tpe = RType.RInt8
+      final val tpe = RInt8
     }
 
     case class Int16(lit: scala.Short, loc: SourceLocation) extends Expression[PInt16] {
-      final val tpe = RType.RInt16
+      final val tpe = RInt16
     }
 
     case class Int32(lit: scala.Int, loc: SourceLocation) extends Expression[PInt32] {
-      final val tpe = RType.RInt32
+      final val tpe = RInt32
     }
 
     case class Int64(lit: scala.Long, loc: SourceLocation) extends Expression[PInt64] {
-      final val tpe = RType.RInt64
+      final val tpe = RInt64
     }
 
     case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends Expression[PReference[PBigInt]] {
-      final val tpe = RType.RReference(RRefType.RBigInt)
+      final val tpe = RBigInt.toRType
     }
 
     case class Str(lit: java.lang.String, loc: SourceLocation) extends Expression[PReference[PStr]] {
-      final val tpe = RType.RReference(RRefType.RStr)
+      final val tpe = RStr.toRType
     }
 
     case class Var[T <: PType](sym: Symbol.VarSym, tpe: RType[T], loc: SourceLocation) extends Expression[T]
@@ -229,7 +231,7 @@ object ErasedAst {
     case class Let[T <: PType](sym: Symbol.VarSym, exp1: Expression[PType], exp2: Expression[T], tpe: RType[T], loc: SourceLocation) extends Expression[T]
 
     case class Is(sym: Symbol.EnumSym, tag: Name.Tag, exp: Expression[PReference[PAnyObject]], loc: SourceLocation) extends Expression[PInt32] {
-      final val tpe: RType[PInt32] = RType.RBool
+      final val tpe: RType[PInt32] = RBool
     }
 
     case class Tag(sym: Symbol.EnumSym, tag: Name.Tag, exp: Expression[_ <: PType], tpe: RType[PReference[PAnyObject]], loc: SourceLocation) extends Expression[PReference[PAnyObject]]
@@ -303,67 +305,67 @@ object ErasedAst {
     case class MatchError[T <: PType](tpe: RType[T], loc: SourceLocation) extends Expression[T]
 
     case class BoxBool(exp: Expression[PInt32], loc: SourceLocation) extends Expression[PReference[PBoxedBool]] {
-      final val tpe = RType.RReference(RRefType.RBoxedBool)
+      final val tpe = RBoxedBool.toRType
     }
 
     case class BoxInt8(exp: Expression[PInt8], loc: SourceLocation) extends Expression[PReference[PBoxedInt8]] {
-      final val tpe = RType.RReference(RRefType.RBoxedInt8)
+      final val tpe = RBoxedInt8.toRType
     }
 
     case class BoxInt16(exp: Expression[PInt16], loc: SourceLocation) extends Expression[PReference[PBoxedInt16]] {
-      final val tpe = RType.RReference(RRefType.RBoxedInt16)
+      final val tpe = RBoxedInt16.toRType
     }
 
     case class BoxInt32(exp: Expression[PInt32], loc: SourceLocation) extends Expression[PReference[PBoxedInt32]] {
-      final val tpe = RType.RReference(RRefType.RBoxedInt32)
+      final val tpe = RBoxedInt32.toRType
     }
 
     case class BoxInt64(exp: Expression[PInt64], loc: SourceLocation) extends Expression[PReference[PBoxedInt64]] {
-      final val tpe = RType.RReference(RRefType.RBoxedInt64)
+      final val tpe = RBoxedInt64.toRType
     }
 
     case class BoxChar(exp: Expression[PChar], loc: SourceLocation) extends Expression[PReference[PBoxedChar]] {
-      final val tpe = RType.RReference(RRefType.RBoxedChar)
+      final val tpe = RBoxedChar.toRType
     }
 
     case class BoxFloat32(exp: Expression[PFloat32], loc: SourceLocation) extends Expression[PReference[PBoxedFloat32]] {
-      final val tpe = RType.RReference(RRefType.RBoxedFloat32)
+      final val tpe = RBoxedFloat32.toRType
     }
 
     case class BoxFloat64(exp: Expression[PFloat64], loc: SourceLocation) extends Expression[PReference[PBoxedFloat64]] {
-      final val tpe = RType.RReference(RRefType.RBoxedFloat64)
+      final val tpe = RBoxedFloat64.toRType
     }
 
     case class UnboxBool(exp: Expression[PReference[PBoxedBool]], loc: SourceLocation) extends Expression[PInt32] {
-      final val tpe = RType.RBool
+      final val tpe = RBool
     }
 
     case class UnboxInt8(exp: Expression[PReference[PBoxedInt8]], loc: SourceLocation) extends Expression[PInt8] {
-      final val tpe = RType.RInt8
+      final val tpe = RInt8
     }
 
     case class UnboxInt16(exp: Expression[PReference[PBoxedInt16]], loc: SourceLocation) extends Expression[PInt16] {
-      final val tpe = RType.RInt16
+      final val tpe = RInt16
     }
 
     case class UnboxInt32(exp: Expression[PReference[PBoxedInt32]], loc: SourceLocation) extends Expression[PInt32] {
-      final val tpe = RType.RInt32
+      final val tpe = RInt32
     }
 
     case class UnboxInt64(exp: Expression[PReference[PBoxedInt64]], loc: SourceLocation) extends Expression[PInt64] {
-      final val tpe = RType.RInt64
+      final val tpe = RInt64
     }
 
     case class UnboxChar(exp: Expression[PReference[PBoxedChar]], loc: SourceLocation) extends Expression[PChar] {
-      final val tpe = RType.RChar
+      final val tpe = RChar
     }
 
     case class UnboxFloat32(exp: Expression[PReference[PBoxedFloat32]], loc: SourceLocation) extends Expression[PFloat32] {
-      final val tpe = RType.RFloat32
+      final val tpe = RFloat32
     }
 
     case class UnboxFloat64(exp: Expression[PReference[PBoxedFloat64]], loc: SourceLocation) extends Expression[PFloat64] {
-      final val tpe = RType.RFloat64
+      final val tpe = RFloat64
     }
 
   }

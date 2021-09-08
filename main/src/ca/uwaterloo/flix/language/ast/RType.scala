@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.PType._
 import ca.uwaterloo.flix.language.ast.RRefType._
+import ca.uwaterloo.flix.language.ast.RType.RReference
 import ca.uwaterloo.flix.language.phase.sjvm.JvmName
 import org.objectweb.asm.{MethodVisitor, Opcodes}
 
@@ -163,6 +164,8 @@ sealed trait RRefType[T <: PRefType] extends Describable {
   def toInternalName: String = jvmName.toInternalName
 
   def toDescriptor: String = jvmName.toDescriptor
+
+  def toRType: RReference[T] = RReference(this)
 
   lazy val erasedNothingToThisMethodDescriptor: String = JvmName.getMethodDescriptor(Nil, RObject) //TODO(JLS): Implicit erased type
   lazy val nothingToThisMethodDescriptor: String = JvmName.getMethodDescriptor(Nil, this)
