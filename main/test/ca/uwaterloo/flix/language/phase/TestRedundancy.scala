@@ -955,7 +955,7 @@ class TestRedundancy extends FunSuite with TestUtils {
          |
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[RedundancyError.SingleUseOfVariable](result)
+    expectError[RedundancyError.IllegalSingleVariable](result)
   }
 
 }

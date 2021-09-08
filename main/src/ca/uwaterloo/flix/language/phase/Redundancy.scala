@@ -661,7 +661,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       val occurrences = total.varSyms.apply(sym)
       if (occurrences.size == 1 && !sym.isWild) {
         // Check that no variable is only used once
-        List(RedundancyError.SingleUseOfVariable(sym, occurrences.iterator.next()))
+        List(RedundancyError.IllegalSingleVariable(sym, occurrences.iterator.next()))
       } else if (body.varSyms.apply(sym).size > 1 && sym.isWild) {
         // Check that wild variables are not used multiple times in the body
         occurrences.map(loc => RedundancyError.HiddenVarSym(sym, loc))
