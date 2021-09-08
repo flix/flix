@@ -21,26 +21,26 @@ import ca.uwaterloo.flix.language.ast.ErasedAst._
 import ca.uwaterloo.flix.language.ast._
 
 /**
- * A class representing the result of a compilation.
- *
- * @param root the abstract syntax tree of the program.
- * @param defs the definitions in the program.
- */
+  * A class representing the result of a compilation.
+  *
+  * @param root the abstract syntax tree of the program.
+  * @param defs the definitions in the program.
+  */
 class CompilationResult(root: Root, main: Option[Array[String] => Int], defs: Map[Symbol.DefnSym, () => AnyRef])(implicit flix: Flix) {
 
   /**
-   * Returns the root AST.
-   */
+    * Returns the root AST.
+    */
   def getRoot: Root = root
 
   /**
-   * Optionally returns the main function.
-   */
+    * Optionally returns the main function.
+    */
   def getMain: Option[Array[String] => Int] = main
 
   /**
-   * Returns all the benchmark functions in the program.
-   */
+    * Returns all the benchmark functions in the program.
+    */
   def getBenchmarks: Map[Symbol.DefnSym, () => AnyRef] = {
     defs filter {
       case (sym, _) => root.functions(sym).ann.isBenchmark
@@ -48,8 +48,8 @@ class CompilationResult(root: Root, main: Option[Array[String] => Int], defs: Ma
   }
 
   /**
-   * Returns all the test functions in the program.
-   */
+    * Returns all the test functions in the program.
+    */
   def getTests: Map[Symbol.DefnSym, () => AnyRef] = {
     defs filter {
       case (sym, _) => root.functions(sym).ann.isTest
@@ -57,15 +57,15 @@ class CompilationResult(root: Root, main: Option[Array[String] => Int], defs: Ma
   }
 
   /**
-   * Returns the total number of lines of compiled code.
-   */
+    * Returns the total number of lines of compiled code.
+    */
   def getTotalLines(): Int = getRoot.sources.foldLeft(0) {
     case (acc, (_, sl)) => acc + sl.endLine
   }
 
   /**
-   * Returns the total compilation time in nanoseconds.
-   */
+    * Returns the total compilation time in nanoseconds.
+    */
   def getTotalTime(): Long = flix.phaseTimers.foldLeft(0L) {
     case (acc, phase) => acc + phase.time
   }
