@@ -4,12 +4,11 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Polarity
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.errors.SafetyError
+import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 /**
   * Performs safety and well-formedness.
