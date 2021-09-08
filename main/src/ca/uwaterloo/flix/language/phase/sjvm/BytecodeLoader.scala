@@ -33,7 +33,7 @@ object BytecodeLoader {
     // Compute a map from binary names (strings) to JvmClasses.
     //
     val m = classes.foldLeft(Map.empty[String, JvmClass]) {
-      case (macc, (jvmName, jvmClass)) => macc + (jvmName.toBinaryName -> jvmClass)
+      case (macc, (jvmName, jvmClass)) => macc + (jvmName.binaryName -> jvmClass)
     }
 
     //
@@ -47,13 +47,13 @@ object BytecodeLoader {
     classes.foldLeft(Map.empty[JvmName, Class[_]]) {
       case (macc, (jvmName, jvmClass)) =>
         // Attempt to load class.
-        val loadedClass = loader.loadClass(jvmName.toBinaryName)
+        val loadedClass = loader.loadClass(jvmName.binaryName)
 
         //
         // Print when a class is loaded, if debugging and verbosity is enabled.
         //
         if (flix.options.debug) {
-          Console.println(s"Loaded: '${jvmName.toBinaryName}'.")
+          Console.println(s"Loaded: '${jvmName.binaryName}'.")
         }
 
         // Update map.
