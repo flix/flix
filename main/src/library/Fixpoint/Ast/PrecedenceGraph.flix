@@ -28,16 +28,4 @@ namespace Fixpoint/Ast {
             case (PrecedenceGraph(xs), PrecedenceGraph(ys)) => PrecedenceGraph(Set.union(xs, ys))
         }
     }
-
-    namespace PrecedenceEdge {
-        use Fixpoint/Ast.PrecedenceEdge;
-        use Fixpoint/Ast.PrecedenceEdge.{PositiveEdge, NegativeEdge};
-
-        pub def compare(a: PrecedenceEdge, b: PrecedenceEdge): Comparison = match (a, b) {
-            case (PositiveEdge(x), PositiveEdge(y)) => x <=> y
-            case (NegativeEdge(x), NegativeEdge(y)) => x <=> y
-            case (NegativeEdge(_), PositiveEdge(_)) => LessThan
-            case (PositiveEdge(_), NegativeEdge(_)) => GreaterThan
-        }
-    }
 }
