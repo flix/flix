@@ -55,20 +55,4 @@ case class MultiMap[K, V](m: Map[K, Set[V]]) {
     }
   }
 
-  /**
-    * Returns `this` multi map with mappings from `k` removed.
-    */
-  def -(k: K): MultiMap[K, V] = {
-    if (m.contains(k)) MultiMap(m.removed(k))
-    else this
-  }
-
-  /**
-    * Returns `this` multi map with mappings from `ks` removed.
-    */
-  def --(ks: Iterable[K]): MultiMap[K, V] = {
-    if (ks.isEmpty) this
-    else MultiMap(m.removedAll(ks))
-  }
-
 }
