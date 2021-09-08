@@ -659,8 +659,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     val errors = c0.cparams.flatMap(constraintParam => {
       val sym = constraintParam.sym
       val occurrences = total.varSyms.apply(sym)
-      if (occurrences.isEmpty) throw InternalCompilerException(s"Variable frequency is zero for $sym")
-      else if (occurrences.size == 1 && !sym.isWild) {
+      if (occurrences.size == 1 && !sym.isWild) {
         // Check that no variable is only used once
         List(RedundancyError.SingleUseOfVariable(sym, occurrences.iterator.next()))
       } else if (body.varSyms.apply(sym).size > 1 && sym.isWild) {
