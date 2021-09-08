@@ -460,4 +460,9 @@ object Ast {
     */
   case class ClassContext(superClasses: List[Symbol.ClassSym], instances: List[Ast.Instance])
 
+  /**
+    * Represents a derivation on an enum (e.g. `enum E with Eq`).
+    */
+  case class Derivation(clazz: Symbol.ClassSym, loc: SourceLocation)
+
 }

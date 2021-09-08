@@ -2,6 +2,11 @@ name: Java CI
 
 on: [push, pull_request]
 
+# Cancel previous runs if the PR is updated
+concurrency:
+  cancel-in-progress: true
+  group: group-${{ github.ref }}
+
 jobs:
   build:
     runs-on: ubuntu-latest

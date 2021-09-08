@@ -323,6 +323,7 @@ class Flix {
         Namer |>
         Resolver |>
         Kinder |>
+        Deriver |>
         Typer |>
         Statistics |>
         Instances |>

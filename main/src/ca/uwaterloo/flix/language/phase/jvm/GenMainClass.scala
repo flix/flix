@@ -41,7 +41,7 @@ object GenMainClass {
       Map(jvmName -> JvmClass(jvmName, bytecode))
   }
 
-  def genByteCode(jvmType: JvmType.Reference, retJvmType: JvmType)(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genByteCode(jvmType: JvmType.Reference, retJvmType: JvmType)(implicit root: Root, flix: Flix): Array[Byte] = {
     // class writer
     val visitor = AsmOps.mkClassWriter()
 
@@ -71,7 +71,7 @@ object GenMainClass {
     *
     * Ns.m_main((Object)null);
     */
-  def compileMainMethod(visitor: ClassWriter, jvmType: JvmType.Reference, retJvmType: JvmType)(implicit root: Root, flix: Flix): Unit = {
+  private def compileMainMethod(visitor: ClassWriter, jvmType: JvmType.Reference, retJvmType: JvmType)(implicit root: Root, flix: Flix): Unit = {
 
     //Get the (argument) descriptor, since the main argument is of type String[], we need to get it's corresponding descriptor
     val argumentDescriptor = AsmOps.getArrayType(JvmType.String)
@@ -95,6 +95,9 @@ object GenMainClass {
     //Invoke m_main
     main.visitMethodInsn(INVOKESTATIC, JvmOps.getNamespaceClassType(ns).name.toInternalName, "m_main",
       AsmOps.getMethodDescriptor(List(/* TODO: Should be string array */ JvmType.Object), JvmType.PrimInt), false)
+
+    main.visitMethodInsn(INVOKESTATIC, "java/lang/System", "exit",
+      AsmOps.getMethodDescriptor(List(JvmType.PrimInt), JvmType.Void), false)
 
     main.visitInsn(RETURN)
     main.visitMaxs(1,1)

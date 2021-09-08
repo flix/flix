@@ -266,14 +266,6 @@ object ErasedAst {
 
     case class Assign[T <: PType](exp1: Expression[PReference[PRef[T]]], exp2: Expression[T], tpe: RType[PReference[PUnit]], loc: SourceLocation) extends Expression[PReference[PUnit]]
 
-    case class Existential(fparam: FormalParam, exp: Expression[PInt32], loc: SourceLocation) extends Expression[PInt32] {
-      final val tpe = RType.RBool
-    }
-
-    case class Universal(fparam: FormalParam, exp: Expression[PInt32], loc: SourceLocation) extends Expression[PInt32] {
-      final val tpe = RType.RBool
-    }
-
     case class Cast[T1 <: PType, T2 <: PType](exp: Expression[T2], tpe: RType[T1], loc: SourceLocation) extends Expression[T1]
 
     case class TryCatch[T <: PType](exp: Expression[T], rules: List[CatchRule[T]], tpe: RType[T], loc: SourceLocation) extends Expression[T]

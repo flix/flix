@@ -25,12 +25,18 @@ object CompleteProvider {
   private implicit val audience: Audience = Audience.External
 
   /**
+    * A list of keywords that block completions.
+    */
+  private val BlockList: List[String] = List("class", "def", "instance", "namespace")
+
+  /**
     * Returns a list of auto-complete suggestions.
     */
   def autoComplete(uri: String, pos: Position, line: Option[String], word: Option[String])(implicit index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
     // Ordered by priority.
     getDefAndSigSuggestions(uri, pos, line, word) ++
       getInstanceSuggestions(uri, pos, line, word) ++
+      getWithSuggestions(uri, pos, line, word) ++
       getKeywordCompletionItems(line, word) ++
       getSnippetCompletionItems(line, word)
   }
@@ -40,7 +46,7 @@ object CompleteProvider {
     */
   private def getKeywordCompletionItems(line: Option[String], word: Option[String]): List[CompletionItem] = {
     /// Return if there is already a keyword on this line.
-    if (matchesOneOf(line, List("class", "instance", "namespace"))) {
+    if (matchesOneOf(line, BlockList)) {
       return Nil
     }
 
@@ -122,7 +128,7 @@ object CompleteProvider {
     */
   private def getSnippetCompletionItems(line: Option[String], word: Option[String]): List[CompletionItem] = {
     /// Return if there is already a keyword on this line.
-    if (matchesOneOf(line, List("class", "instance", "namespace"))) {
+    if (matchesOneOf(line, BlockList)) {
       return Nil
     }
 
@@ -158,6 +164,29 @@ object CompleteProvider {
   }
 
   /**
+    * Returns a list of completion items based on with type class constraints.
+    */
+  private def getWithSuggestions(uri: String, pos: Position, line: Option[String], word: Option[String])(implicit index: Index, root: TypedAst.Root): List[CompletionItem] = {
+    ///
+    /// Return immediately if there is no AST or the position is not appropriate.
+    ///
+    if (root == null || !line.exists(s => s.contains("class") || s.contains("with"))) {
+      return Nil
+    }
+
+    root.classes.map {
+      case (_, clazz) =>
+        val hole = "${1:t}"
+        val classSym = clazz.sym
+        val label = s"$classSym[...]"
+        val insertText = s"$classSym[$hole]"
+        val detail = Some(fmtClass(clazz))
+        val documentation = Some(clazz.doc.text)
+        CompletionItem(label, insertText, detail, documentation, CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil)
+    }.toList
+  }
+
+  /**
     * Returns a list of completion items based on type classes.
     */
   private def getInstanceSuggestions(uri: String, pos: Position, line: Option[String], word: Option[String])(implicit index: Index, root: TypedAst.Root): List[CompletionItem] = {
@@ -173,21 +202,21 @@ object CompleteProvider {
       * with an equivalent variable symbol with the given `newText`.
       */
     def replaceText(tvar: Type.Var, tpe: Type, newText: String): Type = tpe match {
-      case Type.KindedVar(id, kind, rigidity, text) if tvar.id == id => Type.KindedVar(id, kind, rigidity, Some(newText))
-      case Type.KindedVar(_, _, _, _) => tpe
+      case Type.KindedVar(id, kind, loc, rigidity, text) if tvar.id == id => Type.KindedVar(id, kind, loc, rigidity, Some(newText))
+      case Type.KindedVar(_, _, _, _, _) => tpe
       case Type.Cst(_, _) => tpe
-      case Type.Lambda(tvar2, tpe) if tvar == tvar2 =>
+      case Type.Lambda(tvar2, tpe, loc) if tvar == tvar2 =>
         val t = replaceText(tvar, tpe, newText)
-        Type.Lambda(tvar2.asKinded.copy(text = Some(newText)), t)
+        Type.Lambda(tvar2.asKinded.copy(text = Some(newText)), t, loc)
 
-      case Type.Lambda(tvar2, tpe) =>
+      case Type.Lambda(tvar2, tpe, loc) =>
         val t = replaceText(tvar, tpe, newText)
-        Type.Lambda(tvar, t)
+        Type.Lambda(tvar, t, loc)
 
-      case Type.Apply(tpe1, tpe2) =>
+      case Type.Apply(tpe1, tpe2, loc) =>
         val t1 = replaceText(tvar, tpe1, newText)
         val t2 = replaceText(tvar, tpe2, newText)
-        Type.Apply(t1, t2)
+        Type.Apply(t1, t2, loc)
 
       case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type variable.")
       case _: Type.Ascribe => throw InternalCompilerException("Unexpected kind ascription.")
@@ -221,13 +250,6 @@ object CompleteProvider {
       s"  pub def ${sig.sym.name}($fparams): $retTpe$eff = ???"
     }
 
-    /**
-      * Formats the given class `clazz`.
-      */
-    def fmtClass(clazz: TypedAst.Class): String = {
-      s"class ${clazz.sym.name}[${clazz.tparam.name.name}]"
-    }
-
     // Return immediately if the current line does not contain the word "instance".
     if (!line.exists(_.contains("instance"))) {
       return Nil
@@ -249,20 +271,20 @@ object CompleteProvider {
   }
 
   /**
+    * Formats the given class `clazz`.
+    */
+  private def fmtClass(clazz: TypedAst.Class): String = {
+    s"class ${clazz.sym.name}[${clazz.tparam.name.name}]"
+  }
+
+  /**
     * Returns a list of auto-complete suggestions based on defs and sigs.
     */
   private def getDefAndSigSuggestions(uri: String, pos: Position, line: Option[String], word: Option[String])(implicit index: Index, root: TypedAst.Root): List[CompletionItem] = {
     ///
-    /// Return immediately if there is no AST.
+    /// Return immediately if there is no AST or the position is not appropriate.
     ///
-    if (root == null) {
-      return Nil
-    }
-
-    ///
-    /// Return immediately if the line contains one of the mismatched keywords.
-    ///
-    if (matchesOneOf(line, List("class", "instance", "namespace"))) {
+    if (root == null || matchesOneOf(line, BlockList)) {
       return Nil
     }
 

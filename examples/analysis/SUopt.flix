@@ -18,7 +18,7 @@ instance Eq[SULattice] {
 }
 
 instance PartialOrder[SULattice] {
-    pub def partialCompare(x: SULattice, y: SULattice): Bool = match (x, y) {
+    pub def lessEqual(x: SULattice, y: SULattice): Bool = match (x, y) {
         case (SULattice.Bottom, _) => true
         case (_, SULattice.Top) => true
         case (SULattice.Single(s1), SULattice.Single(s2)) => s1 == s2
@@ -52,18 +52,7 @@ instance ToString[SULattice] {
       }
 }
 
-instance Boxable[SULattice] {
-    pub def box(x: SULattice): Boxed = {
-        let value = x as ##java.lang.Object;
-        let compare = (o1, o2) -> Order.compare(o1 as SULattice, o2 as SULattice);
-        let toString = o -> ToString.toString(o as SULattice);
-        BoxedObject(value, compare, toString)
-    }
-    pub def unbox(x: Boxed): SULattice = match x {
-        case BoxedObject(v, _, _) => v as SULattice
-        case _                    => ?bug
-    }
-}
+instance Boxable[SULattice]
 
 instance Order[SULattice] {
     pub def compare(x: SULattice, y: SULattice): Comparison = match (x, y) {

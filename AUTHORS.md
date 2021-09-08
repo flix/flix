@@ -40,3 +40,5 @@ By adding your name to this document, you agree to release all your contribution
 - [Manoj Kumar](https://github.com/manoj2601)
 - [Jakob Schneider Villumsen](https://github.com/jaschdoc)
 - [Ramiro Calle](https://github.com/rrramiro)
+- [Jacob Harris Cryer Kragh](https://github.com/jhckragh)
+- [Nicola Dardanis](https://github.com/nicdard)

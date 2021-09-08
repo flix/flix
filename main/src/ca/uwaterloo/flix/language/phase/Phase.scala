@@ -29,7 +29,7 @@ import ca.uwaterloo.flix.util.Validation
 trait Phase[I, O] {
 
   /**
-    * Runs the p
+    * Runs the phase.
     */
   def run(input: I)(implicit flix: Flix): Validation[O, CompilationError]
 

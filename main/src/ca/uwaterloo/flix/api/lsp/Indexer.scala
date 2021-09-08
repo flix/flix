@@ -422,8 +422,8 @@ object Indexer {
       case TypeConstructor.SchemaExtend(pred) => Index.occurrenceOf(tc, loc) ++ Index.useOf(pred)
       case _ => Index.occurrenceOf(tc, loc)
     }
-    case Type.Lambda(_, tpe) => visitType(tpe)
-    case Type.Apply(tpe1, tpe2) => visitType(tpe1) ++ visitType(tpe2)
+    case Type.Lambda(_, tpe, _) => visitType(tpe)
+    case Type.Apply(tpe1, tpe2, _) => visitType(tpe1) ++ visitType(tpe2)
     case _: Type.Ascribe => throw InternalCompilerException(s"Unexpected type: $tpe0.")
     case _: Type.UnkindedVar => throw InternalCompilerException(s"Unexpected type: $tpe0.")
   }

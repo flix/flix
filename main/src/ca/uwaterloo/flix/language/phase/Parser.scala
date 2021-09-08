@@ -827,11 +827,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Lazy: Rule1[ParsedAst.Expression.Lazy] = rule {
-      SP ~ keyword("lazy") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Lazy
+      SP ~ keyword("lazy") ~ WS ~ RecordSelect ~ SP ~> ParsedAst.Expression.Lazy
     }
 
     def Force: Rule1[ParsedAst.Expression.Force] = rule {
-      SP ~ keyword("force") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Force
+      SP ~ keyword("force") ~ WS ~ RecordSelect ~ SP ~> ParsedAst.Expression.Force
     }
 
     def Intrinsic: Rule1[ParsedAst.Expression.Intrinsic] = rule {

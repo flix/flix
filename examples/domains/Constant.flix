@@ -274,7 +274,7 @@ namespace Domain/Constant {
     }
 
     instance PartialOrder[Constant] {
-        pub def partialCompare(x: Constant, y: Constant): Bool = leq(x, y)
+        pub def lessEqual(x: Constant, y: Constant): Bool = leq(x, y)
     }
 
     instance JoinLattice[Constant] {

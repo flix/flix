@@ -713,15 +713,6 @@ object BytecodeCompiler {
         PUTFIELD(squeezeReference(exp1.tpe), GenRefClasses.ValueFieldName, exp2.tpe, erasedType = true) ~
         pushUnit
 
-    // TODO(JLS): these should maybe be removed in the eraser
-    case Expression.Existential(_, _, loc) =>
-      WithSource[R](loc) ~
-        throwCompilerError(JvmName.Flix.Runtime.NotImplementedError, loc)
-
-    case Expression.Universal(_, _, loc) =>
-      WithSource[R](loc) ~
-        throwCompilerError(JvmName.Flix.Runtime.NotImplementedError, loc)
-
     case Expression.Cast(exp, tpe, loc) =>
       // TODO(JLS): When is this used and can it be removed? Should it be a flix error? user or compiler error?
       WithSource[R](loc) ~

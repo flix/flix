@@ -30,3 +30,8 @@ The Gradle build is used for continuous integration on GitHub.
 ### Out of memory
 
 If you get a `java.lang.OutOfMemoryError: Java heap space` error, find the setting to increase the heap size. For IDEA projects, this is under `Settings -> Build, Execution, Deployment -> Compiler`. Directly on "Compiler" there is a field "Shared build processes heap" and under `Scala Compiler -> Scala Compiler` there is "Maximum heap size". Try out which one you need to increase. 4GB should be enough in each case.
+
+### Problems with imports from libraries
+
+Check that all jar files in the `lib` folder are added as library (see above).
+When a new library is added or an existing one is updated, it has to be added (again) this way.

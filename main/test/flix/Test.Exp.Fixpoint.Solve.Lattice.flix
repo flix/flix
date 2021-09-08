@@ -22,7 +22,7 @@ namespace Test/Exp/Fixpoint/Solve/Lattice {
     }
 
     instance PartialOrder[Constant] {
-        pub def partialCompare(e1: Constant, e2: Constant): Bool = match (e1, e2) {
+        pub def lessEqual(e1: Constant, e2: Constant): Bool = match (e1, e2) {
             case (Bot, _)           => true
             case (Cst(n1), Cst(n2)) => n1 == n2
             case (_, Top)           => true
@@ -62,18 +62,7 @@ namespace Test/Exp/Fixpoint/Solve/Lattice {
         }
     }
 
-    instance Boxable[Constant] {
-        pub def box(x: Constant): Boxed = {
-            let value = x as ##java.lang.Object;
-            let compare = (o1, o2) -> Order.compare(o1 as Constant, o2 as Constant);
-            let toString = o -> ToString.toString(o as Constant);
-            BoxedObject(value, compare, toString)
-        }
-        pub def unbox(x: Boxed): Constant= match x {
-            case BoxedObject(v, _, _) => v as Constant
-            case _                    => ?bug
-        }
-    }
+    instance Boxable[Constant]
 
     instance ToString[Constant] {
         pub def toString(x: Constant): String = match x {

@@ -4,7 +4,6 @@ import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 import ca.uwaterloo.flix.util.vt.VirtualString._
-import flix.runtime.{FlixError, ProxyObject}
 
 /**
   * Evaluates all tests in a model.
@@ -63,6 +62,8 @@ object Tester {
     */
   case class TestResults(results: List[TestResult]) {
     def output: VirtualTerminal = {
+      var success = 0
+      var failure = 0
       val vt = new VirtualTerminal()
       for ((ns, tests) <- results.groupBy(_.sym.namespace)) {
         val namespace = if (ns.isEmpty) "root" else ns.mkString("/")
@@ -72,11 +73,19 @@ object Tester {
           test match {
             case TestResult.Success(sym, msg) =>
               vt << Green("✓") << " " << sym.name << NewLine
+              success = success + 1
             case TestResult.Failure(sym, msg) =>
               vt << Red("✗") << " " << sym.name << ": " << msg << " (" << Blue(sym.loc.format) << ")" << NewLine
+              failure = failure + 1
           }
         }
         vt << Dedent << NewLine
+      }
+      // Summary
+      if (failure == 0) {
+        vt << Green("  Tests Passed!") << s" (Passed: $success / $success)" << NewLine
+      } else {
+        vt << Red(s"  Tests Failed!") << s" (Passed: $success / ${success + failure})"
       }
       vt
     }
@@ -101,14 +110,14 @@ object Tester {
     val results = compilationResult.getTests.toList.map {
       case (sym, defn) =>
         try {
-          val result = defn().asInstanceOf[ProxyObject]
-          result.getValue match {
+          val result = defn()
+          result match {
             case java.lang.Boolean.TRUE => TestResult.Success(sym, "Returned true.")
             case java.lang.Boolean.FALSE => TestResult.Failure(sym, "Returned false.")
             case _ => TestResult.Success(sym, "Returned non-boolean value.")
           }
         } catch {
-          case ex: FlixError =>
+          case ex: Exception =>
             TestResult.Failure(sym, ex.getMessage)
         }
     }

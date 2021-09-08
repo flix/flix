@@ -31,7 +31,6 @@ import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.vt.{TerminalContext, VirtualString, VirtualTerminal}
 import ca.uwaterloo.flix.util.{InternalCompilerException, InternalRuntimeException, Validation}
-import flix.runtime.ProxyObject
 
 import java.lang.reflect.InvocationTargetException
 import java.nio.file.{Files, LinkOption, Path, Paths}
@@ -225,8 +224,6 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
       case ErasedAst.Expression.Ref(exp, _, _) => exp :: Nil
       case ErasedAst.Expression.Deref(exp, _, _) => exp :: Nil
       case ErasedAst.Expression.Assign(exp1, exp2, _, _) => exp1 :: exp2 :: Nil
-      case ErasedAst.Expression.Existential(_, exp, _) => exp :: Nil
-      case ErasedAst.Expression.Universal(_, exp, _) => exp :: Nil
       case ErasedAst.Expression.Cast(exp, _, _) => exp :: Nil
       case ErasedAst.Expression.TryCatch(exp, rules, _, _) => exp :: rules.map(rule => rule.exp)
       case ErasedAst.Expression.InvokeConstructor(_, args, _, _) => args
@@ -306,7 +303,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
     root.functions.get(Symbol.Main) map { defn =>
       (actualArgs: Array[String]) => {
         val args: Array[AnyRef] = Array(actualArgs)
-        val result = link(defn.sym, root).apply(args).getValue
+        val result = link(defn.sym, root).apply(args)
         result.asInstanceOf[Integer].intValue()
       }
     }
@@ -315,8 +312,8 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
   /**
     * Returns a map from definition symbols to executable functions (backed by JVM backend).
     */
-  private def getCompiledDefs(root: Root)(implicit flix: Flix): Map[Symbol.DefnSym, () => ProxyObject] = {
-    root.functions.foldLeft(Map.empty[Symbol.DefnSym, () => ProxyObject]) {
+  private def getCompiledDefs(root: Root)(implicit flix: Flix): Map[Symbol.DefnSym, () => AnyRef] = {
+    root.functions.foldLeft(Map.empty[Symbol.DefnSym, () => AnyRef]) {
       case (macc, (sym, _)) =>
         val args: Array[AnyRef] = Array(null)
         macc + (sym -> (() => link(sym, root).apply(args)))
@@ -326,7 +323,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
   /**
     * Returns a function object for the given definition symbol `sym`.
     */
-  private def link(sym: Symbol.DefnSym, root: Root)(implicit flix: Flix): java.util.function.Function[Array[AnyRef], ProxyObject] = {
+  private def link(sym: Symbol.DefnSym, root: Root)(implicit flix: Flix): java.util.function.Function[Array[AnyRef], AnyRef] = {
     (args: Array[AnyRef]) => {
       ///
       /// Retrieve the definition and its type.
@@ -347,32 +344,13 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
       try {
         // Call the method passing the arguments.
         val result = defn.method.invoke(null, argsArray: _*)
-
-        // Construct a fresh proxy object.
-        newProxyObj(result)
+        result
       } catch {
         case e: InvocationTargetException =>
           // Rethrow the underlying exception.
           throw e.getTargetException
       }
     }
-  }
-
-  /**
-    * Returns a proxy object that wraps the given result value.
-    */
-  private def newProxyObj[T <: PType](result: AnyRef)(implicit flix: Flix): ProxyObject = {
-    // Lookup the Equality method.
-    val eq = null
-
-    // Lookup the HashCode method.
-    val hash = null
-
-    // Lookup the ToString method.
-    val toString = null
-
-    // Create the proxy object.
-    ProxyObject.of(result, eq, hash, toString)
   }
 
   /**

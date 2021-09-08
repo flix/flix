@@ -30,7 +30,7 @@ instance Eq[Value] {
 }
 
 instance PartialOrder[Value] {
-    pub def partialCompare(e1: Value, e2: Value): Bool = match (e1, e2) {
+    pub def lessEqual(e1: Value, e2: Value): Bool = match (e1, e2) {
         case (Value.Bot, _) => true
         case (Value.Cst(n1), Value.Cst(n2)) => n1 == n2
         case (_, Value.Top) => true
@@ -64,18 +64,7 @@ instance ToString[Value] {
     }
 }
 
-instance Boxable[Value] {
-    pub def box(x: Value): Boxed = {
-        let value = x as ##java.lang.Object;
-        let compare = (o1, o2) -> Order.compare(o1 as Value, o2 as Value);
-        let toString = o -> ToString.toString(o as Value);
-        BoxedObject(value, compare, toString)
-    }
-    pub def unbox(x: Boxed): Value = match x {
-        case BoxedObject(v, _, _) => v as Value
-        case _                    => ?bug
-    }
-}
+instance Boxable[Value]
 
 instance Order[Value] {
     pub def compare(x: Value, y: Value): Comparison = match (x, y) {
@@ -123,7 +112,7 @@ instance Eq[Transformer] {
 }
 
 instance PartialOrder[Transformer] {
-    pub def partialCompare(e1: Transformer, e2: Transformer): Bool = e2 == JoinLattice.leastUpperBound(e1, e2)
+    pub def lessEqual(e1: Transformer, e2: Transformer): Bool = e2 == JoinLattice.leastUpperBound(e1, e2)
 }
 
 instance JoinLattice[Transformer] {
@@ -154,18 +143,7 @@ instance ToString[Transformer] {
     }
 }
 
-instance Boxable[Transformer] {
-    pub def box(x: Transformer): Boxed = {
-        let value = x as ##java.lang.Object;
-        let compare = (o1, o2) -> Order.compare(o1 as Transformer, o2 as Transformer);
-        let toString = o -> ToString.toString(o as Transformer);
-        BoxedObject(value, compare, toString)
-    }
-    pub def unbox(x: Boxed): Transformer = match x {
-        case BoxedObject(v, _, _) => v as Transformer
-        case _                    => ?bug
-    }
-}
+instance Boxable[Transformer]
 
 instance Order[Transformer] {
     pub def compare(x: Transformer, y: Transformer): Comparison = match (x, y) {

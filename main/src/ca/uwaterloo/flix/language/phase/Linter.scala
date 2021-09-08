@@ -17,9 +17,9 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.TypedAst.{ConstraintParam, _}
+import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.LinterError
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Validation._
@@ -297,7 +297,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def unifyVar(sym1: Symbol.VarSym, tpe1: Type, sym2: Symbol.VarSym, tpe2: Type)(implicit flix: Flix): Option[Substitution] = {
     if (isInstance(tpe2, tpe1))
-      Some(Substitution.singleton(sym1, Expression.Var(sym2, tpe2, SourceLocation.Unknown)))
+      Some(Substitution.singleton(sym1, Expression.Var(sym2, tpe2, tpe2.loc)))
     else
       None
   }

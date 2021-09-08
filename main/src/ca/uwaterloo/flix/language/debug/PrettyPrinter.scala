@@ -980,18 +980,6 @@ object PrettyPrinter {
           vt.text(" := ")
           visitExp(exp2)
 
-        case Expression.Existential(fparam, exp, loc) =>
-          vt.text("∃(")
-          fmtParam(fparam, vt)
-          vt.text("). ")
-          visitExp(exp)
-
-        case Expression.Universal(fparam, exp, loc) =>
-          vt.text("∀(")
-          fmtParam(fparam, vt)
-          vt.text("). ")
-          visitExp(exp)
-
         case Expression.Cast(exp, tpe, loc) =>
           visitExp(exp)
           vt.text(" as ")
