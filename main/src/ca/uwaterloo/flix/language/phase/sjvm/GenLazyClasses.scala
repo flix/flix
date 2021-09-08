@@ -27,9 +27,6 @@ import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
 import ca.uwaterloo.flix.language.phase.sjvm.ClassMaker.Mod
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 
-/**
-  * Generates bytecode for the lazy classes.
-  */
 object GenLazyClasses {
 
   val InitializedFieldName: String = "initialized"
@@ -42,9 +39,6 @@ object GenLazyClasses {
 
   def expressionFieldType[T <: PType](valueType: RType[T]): RType[PReference[PFunction[T]]] = RReference(RArrow(RReference(RObject) :: Nil, valueType))
 
-  /**
-    * Returns the set of lazy classes for the given set of types `ts`.
-    */
   def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     //Type that we need a cell class for
     RType.baseTypes.foldLeft(Map[JvmName, JvmClass]()) {
@@ -55,19 +49,6 @@ object GenLazyClasses {
     }
   }
 
-  /**
-    * This method creates the class for each lazy value.
-    * The specific lazy class has an associated value type (tpe) which
-    * is either a jvm primitive or object.
-    *
-    * The lazy class has three fields - initialized: bool, expression: () -> tpe,
-    * and value: tpe. These are all private. force(context) is the only public
-    * method, which retuns a value of type tpe given a context to call the
-    * expression closure in.
-    *
-    * force will only evaluate the expression the first time, based on the flag initialized.
-    * After that point it will store the result in value and just return that.
-    */
   private def genByteCode[T <: PType](lazyType: RReference[PLazy[T]], valueFieldType: RType[T])(implicit root: Root, flix: Flix): Array[Byte] = {
     val classMaker = ClassMaker.mkClass(lazyType.jvmName, None)
 
@@ -79,15 +60,6 @@ object GenLazyClasses {
     classMaker.closeClassMaker
   }
 
-  /**
-    * The force method takes a context as argument to call the expression closure in.
-    * The result of the expression given in the constructor is then returned.
-    * This is only actually evaluated the first time, and saved to return directly
-    * afterwards.
-    *
-    * If lazy has associated type of Obj, the returned object needs to be casted
-    * to whatever expected type.
-    */
   private def compileForceMethod[T <: PType](lazyType: RReference[PLazy[T]], valueFieldType: RType[T])(implicit root: Root, flix: Flix): F[StackNil] => F[StackEnd] = {
     /*
     force() :=
@@ -105,11 +77,11 @@ object GenLazyClasses {
       (WITHMONITOR(valueFieldType) {
         START[StackNil ** PReference[PLazy[T]]] ~
           THISLOAD(lazyType) ~
-          GetBoolField(lazyType, InitializedFieldName) ~
+          GETFIELD(lazyType, InitializedFieldName, RBool, undoErasure = false) ~
           (IFNE {
             START[StackNil ** PReference[PLazy[T]]] ~
               THISLOAD(lazyType) ~
-              GetObjectField(lazyType, ExpressionFieldName, expressionFieldType(valueFieldType), undoErasure = true) ~
+              GETFIELD(lazyType, ExpressionFieldName, expressionFieldType(valueFieldType), undoErasure = true) ~
               CALL(ErasedAst.Expression.Unit(SourceLocation.Unknown) :: Nil, RArrow(RReference(RUnit) :: Nil, valueFieldType)) ~
               THISLOAD(lazyType) ~
               XSWAP(lazyType, valueFieldType) ~
@@ -119,7 +91,7 @@ object GenLazyClasses {
               PUTFIELD(lazyType, InitializedFieldName, RInt32, erasedType = false /* does not do anything */)
           }(NOP)) ~
           THISLOAD(lazyType) ~
-          XGETFIELD(lazyType, ValueFieldName, valueFieldType, undoErasure = true)
+          GETFIELD(lazyType, ValueFieldName, valueFieldType, undoErasure = true)
       }) ~
       XRETURN(valueFieldType)
   }
@@ -133,16 +105,12 @@ object GenLazyClasses {
     Lazy$tpe(expression) :=
 
     this.initialized = false
-    this.expression = expression.
      */
     START[StackNil] ~
       THISINIT(JvmName.Java.Object) ~
-      THISLOAD(lazyType) ~
+      constructorALOAD(0, lazyType) ~
       pushBool(false) ~
       PUTFIELD(lazyType, InitializedFieldName, InitializedFieldType, erasedType = false) ~
-      THISLOAD(lazyType) ~
-      ALOAD(1, expressionFieldType(valueFieldType)) ~
-      PUTFIELD(lazyType, ExpressionFieldName, expressionFieldType(valueFieldType), erasedType = false) ~
       RETURN
   }
 }

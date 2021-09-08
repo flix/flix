@@ -74,7 +74,7 @@ object GenDefClasses {
       case _ =>
         f.visitor.visitInsn(Opcodes.SWAP)
     }
-    f.visitor.visitFieldInsn(Opcodes.PUTFIELD, className.toInternalName, GenContinuationInterfaces.ResultFieldName, resultType.erasedDescriptor)
+    f.visitor.visitFieldInsn(Opcodes.PUTFIELD, className.internalName, GenContinuationInterfaces.ResultFieldName, resultType.erasedDescriptor)
     f.asInstanceOf[F[R]]
   }
 
@@ -82,7 +82,7 @@ object GenDefClasses {
     ((f: F[R]) => {
       f.visitor.visitVarInsn(Opcodes.ALOAD, 0)
       undoErasure(defName, f.visitor)
-      f.visitor.visitFieldInsn(Opcodes.GETFIELD, defName.toInternalName, GenFunctionInterfaces.argFieldName(index), tpe.erasedDescriptor)
+      f.visitor.visitFieldInsn(Opcodes.GETFIELD, defName.internalName, GenFunctionInterfaces.argFieldName(index), tpe.erasedDescriptor)
       undoErasure(tpe, f.visitor) // TODO(JLS): this is probably not needed
       f.asInstanceOf[F[R ** T]]
     }) ~ XStore(sym, tpe)

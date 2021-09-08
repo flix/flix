@@ -91,13 +91,13 @@ object GenContinuationInterfaces {
     f.visitor.visitVarInsn(ALOAD, 1)
     f.visitor.visitVarInsn(ASTORE, 2)
     f.visitor.visitVarInsn(ALOAD, 1)
-    f.visitor.visitMethodInsn(INVOKEVIRTUAL, resultType.contName.toInternalName, InvokeMethodName, resultType.nothingToContMethodDescriptor, false)
+    f.visitor.visitMethodInsn(INVOKEVIRTUAL, resultType.contName.internalName, InvokeMethodName, resultType.nothingToContMethodDescriptor, false)
     f.visitor.visitVarInsn(ASTORE, 1)
     f.visitor.visitVarInsn(ALOAD, 1)
     f.visitor.visitJumpInsn(IFNONNULL, loopStart)
 
     f.visitor.visitVarInsn(ALOAD, 2)
-    f.visitor.visitFieldInsn(GETFIELD, resultType.contName.toInternalName, ResultFieldName, resultType.toDescriptor)
+    f.visitor.visitFieldInsn(GETFIELD, resultType.contName.internalName, ResultFieldName, resultType.descriptor)
     XRETURN(resultType)(f.asInstanceOf[F[StackNil ** T]])
   }
 

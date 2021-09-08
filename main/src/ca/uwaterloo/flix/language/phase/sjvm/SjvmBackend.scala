@@ -76,6 +76,10 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
       val nonClosureFunctions: Set[Symbol.DefnSym] = root.functions.keySet.diff(closureSyms)
 
       // Generate Classes
+      // TODO JLS: write documentation
+      // TODO JLS: write pseudocode
+      // TODO JLS: filter the base type list to the occurring types in ex. refs
+      // TODO JLS: ParArgs as much as possible
 
       val mainClass = GenMainClass.gen()
 
@@ -292,7 +296,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
 
   private def getFunctionTypes(types: Set[RType[_ <: PType]]): Set[RType[PReference[PFunction[_ <: PType]]]] = {
     def innerMatch[T <: PRefType](x: RRefType[T], acc: Set[RType[PReference[PFunction[_ <: PType]]]]): Set[RType[PReference[PFunction[_ <: PType]]]] = x match {
-      case res@RArrow(_, _) => acc + res.toRType.asInstanceOf[RType[PReference[PFunction[_ <: PType]]]]
+      case res@RArrow(_, _) => acc + res.rType.asInstanceOf[RType[PReference[PFunction[_ <: PType]]]]
       case _ => acc
     }
 
@@ -306,7 +310,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
 
   private def getTupleTypes(types: Set[RType[_ <: PType]]): Set[RType[PReference[PTuple]]] = {
     def innerMatch[T <: PRefType](x: RRefType[T], acc: Set[RType[PReference[PTuple]]]): Set[RType[PReference[PTuple]]] = x match {
-      case res@RTuple(_) => acc + res.toRType.asInstanceOf[RType[PReference[PTuple]]]
+      case res@RTuple(_) => acc + res.rType.asInstanceOf[RType[PReference[PTuple]]]
       case _ => acc
     }
 
@@ -384,7 +388,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
     */
   private def writeClass(prefixPath: Path, clazz: JvmClass): Unit = {
     // Compute the absolute path of the class file to write.
-    val path = prefixPath.resolve(clazz.name.toPath).toAbsolutePath
+    val path = prefixPath.resolve(clazz.name.path).toAbsolutePath
 
     // Create all parent directories (in case they don't exist).
     Files.createDirectories(path.getParent)

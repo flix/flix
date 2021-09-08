@@ -77,7 +77,7 @@ object GenNamespaces {
         XLOAD(functionType.args(argIndex), nextIndex)(f)
         val inc = if (argType.isCat1) 1 else 2
         nextIndex += inc
-        f.visitor.visitFieldInsn(Opcodes.PUTFIELD, defName.toInternalName, GenFunctionInterfaces.argFieldName(argIndex), functionType.args(argIndex).erasedDescriptor)
+        f.visitor.visitFieldInsn(Opcodes.PUTFIELD, defName.internalName, GenFunctionInterfaces.argFieldName(argIndex), functionType.args(argIndex).erasedDescriptor)
       }
       f.asInstanceOf[F[StackNil ** PReference[PFunction[T]]]]
     } ~

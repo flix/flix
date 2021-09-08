@@ -47,7 +47,7 @@ object GenMainClass {
     case Some(defn) =>
       def mainTypeMatch[T <: PRefType](m: RRefType[T]): Unit = m match {
         case r@RArrow(_, _) => () // TODO(JLS): maybe match more here on type etc
-        case _ => throw InternalCompilerException(s"The type of main has to be a function, not ${m.toInternalName}")
+        case _ => throw InternalCompilerException(s"The type of main has to be a function, not ${m.internalName}")
       }
 
       defn.tpe match {
@@ -88,17 +88,17 @@ object GenMainClass {
     //      main.visitVarInsn(ALOAD, 0)
     // TODO(JLS): This could just call NS.m_main()
     START[StackNil] ~ { f: F[StackNil] =>
-      f.visitor.visitTypeInsn(Opcodes.NEW, defn.sym.defName.toInternalName)
+      f.visitor.visitTypeInsn(Opcodes.NEW, defn.sym.defName.internalName)
       f.visitor.visitInsn(Opcodes.DUP)
-      f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, defn.sym.defName.toInternalName, JvmName.constructorMethod, JvmName.nothingToVoid, false)
+      f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, defn.sym.defName.internalName, JvmName.constructorMethod, JvmName.nothingToVoid, false)
       f.asInstanceOf[F[StackNil ** PReference[PFunction[T]]]]
     } ~
       DUP ~
       ALOAD(0, RReference(RArray(RReference(RStr)))) ~ { f: F[StackNil ** PReference[PFunction[T]] ** PReference[PFunction[T]] ** PReference[PArray[PReference[PStr]]]] =>
-      f.visitor.visitFieldInsn(Opcodes.PUTFIELD, defn.sym.defName.toInternalName, GenFunctionInterfaces.argFieldName(0), JvmName.Java.Object.toDescriptor)
+      f.visitor.visitFieldInsn(Opcodes.PUTFIELD, defn.sym.defName.internalName, GenFunctionInterfaces.argFieldName(0), JvmName.Java.Object.descriptor)
       f.asInstanceOf[F[StackNil ** PReference[PFunction[T]]]]
     } ~ { f: F[StackNil ** PReference[PFunction[T]]] =>
-      f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, RInt32.contName.toInternalName, GenContinuationInterfaces.UnwindMethodName, RInt32.nothingToThisMethodDescriptor, false)
+      f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, RInt32.contName.internalName, GenContinuationInterfaces.UnwindMethodName, RInt32.nothingToThisMethodDescriptor, false)
       f.asInstanceOf[F[StackNil ** PInt32]]
     } ~ { f: F[StackNil ** PInt32] =>
       f.visitor.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/System", "exit", "(I)V", false);

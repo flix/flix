@@ -25,7 +25,7 @@ import org.objectweb.asm.{ClassWriter, Opcodes}
 
 class ClassMaker(visitor: ClassWriter, superClass: JvmName) {
   private def makeField[T <: PType](fieldName: String, fieldType: RType[T], mod: Mod): Unit = {
-    val field = visitor.visitField(mod.getValue, fieldName, fieldType.toDescriptor, null, null)
+    val field = visitor.visitField(mod.getValue, fieldName, fieldType.descriptor, null, null)
     field.visitEnd()
   }
 
@@ -88,8 +88,8 @@ object ClassMaker {
   def mkClassMaker[T <: PRefType](className: JvmName, superClass: Option[JvmName], mod: Mod, interfaces: JvmName*)(implicit flix: Flix): ClassMaker = {
     val visitor = makeClassWriter()
     val superClassName = superClass.getOrElse(JvmName.Java.Object)
-    visitor.visit(JavaVersion, mod.getValue, className.toInternalName, null, superClassName.toInternalName, interfaces.map(_.toInternalName).toArray)
-    visitor.visitSource(className.toInternalName, null)
+    visitor.visit(JavaVersion, mod.getValue, className.internalName, null, superClassName.internalName, interfaces.map(_.internalName).toArray)
+    visitor.visitSource(className.internalName, null)
     new ClassMaker(visitor, superClassName)
   }
 

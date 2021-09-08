@@ -60,14 +60,14 @@ object Instructions {
       pushInt32(loc.endLine) ~
       pushInt32(loc.endCol) ~
       (f => {
-        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, JvmName.Flix.ReifiedSourceLocation.toInternalName, JvmName.constructorMethod, JvmName.getMethodDescriptor(List(RStr, RInt32, RInt32, RInt32, RInt32), None), false)
+        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, JvmName.Flix.ReifiedSourceLocation.internalName, JvmName.constructorMethod, JvmName.getMethodDescriptor(List(RStr, RInt32, RInt32, RInt32, RInt32), None), false)
         f.asInstanceOf[F[R ** PReference[PAnyObject]]]
       }) ~
       NEW(exceptionName, tagOf[PAnyObject]) ~
       DUP_X1 ~
       SWAP ~
       (f => {
-        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, exceptionName.toInternalName, JvmName.constructorMethod, JvmName.getMethodDescriptor(List(JvmName.Flix.ReifiedSourceLocation), None), false)
+        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, exceptionName.internalName, JvmName.constructorMethod, JvmName.getMethodDescriptor(List(JvmName.Flix.ReifiedSourceLocation), None), false)
         f.visitor.visitInsn(Opcodes.ATHROW)
         f.asInstanceOf[F[R ** T]]
       })
@@ -86,7 +86,7 @@ object Instructions {
       pushInt32(loc.endLine) ~
       pushInt32(loc.endCol) ~
       (f => {
-        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, JvmName.Flix.ReifiedSourceLocation.toInternalName, JvmName.constructorMethod, JvmName.getMethodDescriptor(List(RStr, RInt32, RInt32, RInt32, RInt32), None), false)
+        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, JvmName.Flix.ReifiedSourceLocation.internalName, JvmName.constructorMethod, JvmName.getMethodDescriptor(List(RStr, RInt32, RInt32, RInt32, RInt32), None), false)
         f.asInstanceOf[F[R ** PReference[PAnyObject]]]
       }) ~
       NEW(exceptionName, tagOf[PAnyObject]) ~
@@ -95,7 +95,7 @@ object Instructions {
       pushString(string) ~
       SWAP ~
       ((f: F[R ** PReference[PAnyObject] ** PReference[PAnyObject] ** PReference[PStr] ** PReference[PAnyObject]]) => {
-        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, exceptionName.toInternalName, JvmName.constructorMethod, JvmName.getMethodDescriptor(List(RStr, JvmName.Flix.ReifiedSourceLocation), None), false)
+        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, exceptionName.internalName, JvmName.constructorMethod, JvmName.getMethodDescriptor(List(RStr, JvmName.Flix.ReifiedSourceLocation), None), false)
         f.visitor.visitInsn(Opcodes.ATHROW)
         f.asInstanceOf[F[R ** T]]
       })
@@ -255,7 +255,7 @@ object Instructions {
   def BigIntCompareTo
   [R <: Stack]:
   F[R ** PReference[PBigInt] ** PReference[PBigInt]] => F[R ** PInt32] = f => {
-    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.BigInteger.toInternalName, "compareTo",
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.BigInteger.internalName, "compareTo",
       JvmName.getMethodDescriptor(List(JvmName.Java.BigInteger), JvmName.Java.BigInteger), false)
     castF(f)
   }
@@ -332,7 +332,7 @@ object Instructions {
   def ObjEquals
   [R <: Stack, T1 <: PRefType, T2 <: PRefType]:
   F[R ** PReference[T1] ** PReference[T2]] => F[R ** PInt32] = f => {
-    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.Object.toInternalName, "equals",
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.Object.internalName, "equals",
       JvmName.getMethodDescriptor(List(RObject), RBool), false)
     castF(f)
   }
@@ -408,207 +408,43 @@ object Instructions {
   F[R] => F[R] =
     x => x
 
-  def getStaticField
+  def GETSTATIC
   [R <: Stack, T <: PType]
-  (field: java.lang.reflect.Field, tpe: RType[T]):
+  (className: JvmName, fieldName: String, fieldType: RType[T], undoErasure: Boolean):
   F[R] => F[R ** T] = f => {
-    val declaration = asm.Type.getInternalName(field.getDeclaringClass)
-    f.visitor.visitFieldInsn(Opcodes.GETSTATIC, declaration, field.getName, tpe.toDescriptor)
+    val descriptor = if (undoErasure) fieldType.erasedDescriptor else fieldType.descriptor
+    f.visitor.visitFieldInsn(Opcodes.GETSTATIC, className.internalName, fieldName, descriptor)
+    if (undoErasure) RType.undoErasure(fieldType, f.visitor)
     castF(f)
   }
 
-  def XGETFIELD
+  def GETSTATIC
   [R <: Stack, T1 <: PType, T2 <: PRefType]
-  (classType: RReference[T2], fieldName: String, fieldType: RType[T1], undoErasure: Boolean):
-  F[R ** PReference[T2]] => F[R ** T1] =
-    fieldType match {
-      case RBool => GetBoolField(classType, fieldName)
-      case RInt8 => GetInt8Field(classType, fieldName)
-      case RInt16 => GetInt16Field(classType, fieldName)
-      case RInt32 => GetInt32Field(classType, fieldName)
-      case RInt64 => GetInt64Field(classType, fieldName)
-      case RChar => GetCharField(classType, fieldName)
-      case RFloat32 => GetFloat32Field(classType, fieldName)
-      case RFloat64 => GetFloat64Field(classType, fieldName)
-      case RReference(referenceType) => GetObjectField(classType, fieldName, referenceType, undoErasure)
-    }
+  (classType: RType[PReference[T2]], fieldName: String, fieldType: RType[T1], undoErasure: Boolean, tag: Tag[T2] = null):
+  F[R] => F[R ** T1] =
+    GETSTATIC(squeezeReference(classType).jvmName, fieldName, fieldType, undoErasure)
 
-  def GetBoolField
-  [R <: Stack, T2 <: PRefType]
-  (classType: RReference[T2], fieldName: String):
-  F[R ** PReference[T2]] => F[R ** PInt32] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, RBool.toDescriptor)
-    castF(f)
-  }
-
-  def GetInt8Field
-  [R <: Stack, T1 <: PType, T2 <: PRefType]
-  (classType: RReference[T2], fieldName: String):
-  F[R ** PReference[T2]] => F[R ** PInt8] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, RInt8.toDescriptor)
-    castF(f)
-  }
-
-  def GetInt16Field
-  [R <: Stack, T1 <: PType, T2 <: PRefType]
-  (classType: RReference[T2], fieldName: String):
-  F[R ** PReference[T2]] => F[R ** PInt16] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, RInt16.toDescriptor)
-    castF(f)
-  }
-
-  def GetInt32Field
-  [R <: Stack, T1 <: PType, T2 <: PRefType]
-  (classType: RReference[T2], fieldName: String):
-  F[R ** PReference[T2]] => F[R ** PInt32] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, RInt32.toDescriptor)
-    castF(f)
-  }
-
-  def GetInt64Field
-  [R <: Stack, T1 <: PType, T2 <: PRefType]
-  (classType: RReference[T2], fieldName: String):
-  F[R ** PReference[T2]] => F[R ** PInt64] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, RInt64.toDescriptor)
-    castF(f)
-  }
-
-  def GetCharField
-  [R <: Stack, T1 <: PType, T2 <: PRefType]
-  (classType: RReference[T2], fieldName: String):
-  F[R ** PReference[T2]] => F[R ** PChar] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, RChar.toDescriptor)
-    castF(f)
-  }
-
-  def GetFloat32Field
-  [R <: Stack, T1 <: PType, T2 <: PRefType]
-  (classType: RReference[T2], fieldName: String):
-  F[R ** PReference[T2]] => F[R ** PFloat32] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, RFloat32.toDescriptor)
-    castF(f)
-  }
-
-  def GetFloat64Field
-  [R <: Stack, T1 <: PType, T2 <: PRefType]
-  (classType: RReference[T2], fieldName: String):
-  F[R ** PReference[T2]] => F[R ** PFloat64] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, RFloat64.toDescriptor)
-    castF(f)
-  }
-
-  def GetObjectField
-  [R <: Stack, T1 <: PRefType, T2 <: PRefType]
-  (classType: RReference[T2], fieldName: String, fieldType: RRefType[T1], undoErasure: Boolean):
-  F[R ** PReference[T2]] => F[R ** PReference[T1]] = f => {
-    val descriptor = if (undoErasure) RObject.toDescriptor else fieldType.toDescriptor
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, classType.toInternalName, fieldName, descriptor)
-    if (undoErasure) RType.undoErasure(fieldType.jvmName, f.visitor)
-    castF(f)
-  }
-
-  def GetObjectField
-  [R <: Stack, T1 <: PRefType, T2 <: PRefType]
-  (classType: RReference[T2], fieldName: String, fieldType: RType[PReference[T1]], undoErasure: Boolean):
-  F[R ** PReference[T2]] => F[R ** PReference[T1]] =
-    GetObjectField(classType, fieldName, squeezeReference(fieldType).referenceType, undoErasure)
-
-
-  def XGETFIELD
+  /**
+    * @param undoErasure has no effect when `fieldType` is primitive or the `RReference(Object)` type
+    */
+  def GETFIELD
   [R <: Stack, T1 <: PType, T2 <: PRefType]
   (className: JvmName, fieldName: String, fieldType: RType[T1], undoErasure: Boolean, tag: Tag[T2] = null):
+  F[R ** PReference[T2]] => F[R ** T1] = f => {
+    val descriptor = if (undoErasure) fieldType.erasedDescriptor else fieldType.descriptor
+    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className.internalName, fieldName, descriptor)
+    if (undoErasure) RType.undoErasure(fieldType, f.visitor)
+    castF(f)
+  }
+
+  /**
+    * @param undoErasure has no effect when `fieldType` is primitive or the `RReference(Object)` type
+    */
+  def GETFIELD
+  [R <: Stack, T1 <: PType, T2 <: PRefType]
+  (classType: RType[PReference[T2]], fieldName: String, fieldType: RType[T1], undoErasure: Boolean):
   F[R ** PReference[T2]] => F[R ** T1] =
-    fieldType match {
-      case RBool => GetBoolField(className, fieldName)
-      case RInt8 => GetInt8Field(className, fieldName)
-      case RInt16 => GetInt16Field(className, fieldName)
-      case RInt32 => GetInt32Field(className, fieldName)
-      case RInt64 => GetInt64Field(className, fieldName)
-      case RChar => GetCharField(className, fieldName)
-      case RFloat32 => GetFloat32Field(className, fieldName)
-      case RFloat64 => GetFloat64Field(className, fieldName)
-      case RReference(referenceType) => GetObjectField(className, fieldName, referenceType, undoErasure)
-    }
-
-  def GetBoolField
-  [R <: Stack, T2 <: PRefType]
-  (className: JvmName, fieldName: String, tag: Tag[T2] = null):
-  F[R ** PReference[T2]] => F[R ** PInt32] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className.toInternalName, fieldName, RBool.toDescriptor)
-    castF(f)
-  }
-
-  def GetInt8Field
-  [R <: Stack, T1 <: PType, T2 <: PRefType]
-  (className: JvmName, fieldName: String, tag: Tag[T2] = null):
-  F[R ** PReference[T2]] => F[R ** PInt8] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className.toInternalName, fieldName, RInt8.toDescriptor)
-    castF(f)
-  }
-
-  def GetInt16Field
-  [R <: Stack, T1 <: PType, T2 <: PRefType]
-  (className: JvmName, fieldName: String, tag: Tag[T2] = null):
-  F[R ** PReference[T2]] => F[R ** PInt16] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className.toInternalName, fieldName, RInt16.toDescriptor)
-    castF(f)
-  }
-
-  def GetInt32Field
-  [R <: Stack, T1 <: PType, T2 <: PRefType]
-  (className: JvmName, fieldName: String, tag: Tag[T2] = null):
-  F[R ** PReference[T2]] => F[R ** PInt32] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className.toInternalName, fieldName, RInt32.toDescriptor)
-    castF(f)
-  }
-
-  def GetInt64Field
-  [R <: Stack, T1 <: PType, T2 <: PRefType]
-  (className: JvmName, fieldName: String, tag: Tag[T2] = null):
-  F[R ** PReference[T2]] => F[R ** PInt64] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className.toInternalName, fieldName, RInt64.toDescriptor)
-    castF(f)
-  }
-
-  def GetCharField
-  [R <: Stack, T1 <: PType, T2 <: PRefType]
-  (className: JvmName, fieldName: String, tag: Tag[T2] = null):
-  F[R ** PReference[T2]] => F[R ** PChar] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className.toInternalName, fieldName, RChar.toDescriptor)
-    castF(f)
-  }
-
-  def GetFloat32Field
-  [R <: Stack, T1 <: PType, T2 <: PRefType]
-  (className: JvmName, fieldName: String, tag: Tag[T2] = null):
-  F[R ** PReference[T2]] => F[R ** PFloat32] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className.toInternalName, fieldName, RFloat32.toDescriptor)
-    castF(f)
-  }
-
-  def GetFloat64Field
-  [R <: Stack, T1 <: PType, T2 <: PRefType]
-  (className: JvmName, fieldName: String, tag: Tag[T2] = null):
-  F[R ** PReference[T2]] => F[R ** PFloat64] = f => {
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className.toInternalName, fieldName, RFloat64.toDescriptor)
-    castF(f)
-  }
-
-  def GetObjectField
-  [R <: Stack, T1 <: PRefType, T2 <: PRefType]
-  (className: JvmName, fieldName: String, fieldType: RRefType[T1], undoErasure: Boolean, tag: Tag[T2] = null):
-  F[R ** PReference[T2]] => F[R ** PReference[T1]] = f => {
-    val descriptor = if (undoErasure) RObject.toDescriptor else fieldType.toDescriptor
-    f.visitor.visitFieldInsn(Opcodes.GETFIELD, className.toInternalName, fieldName, descriptor)
-    if (undoErasure) RType.undoErasure(fieldType.jvmName, f.visitor)
-    castF(f)
-  }
-
-  def GetObjectField
-  [R <: Stack, T1 <: PRefType, T2 <: PRefType]
-  (className: JvmName, fieldName: String, fieldType: RType[PReference[T1]], undoErasure: Boolean):
-  F[R ** PReference[T2]] => F[R ** PReference[T1]] =
-    GetObjectField(className, fieldName, squeezeReference(fieldType).referenceType, undoErasure)
+    GETFIELD(squeezeReference(classType).jvmName, fieldName, fieldType, undoErasure, tagOf[T2])
 
 
   // TODO(JLS): make ref/lazy specific versions
@@ -617,8 +453,8 @@ object Instructions {
   [R <: Stack, T1 <: PType, T2 <: PRefType]
   (classType: RReference[T2], fieldName: String, fieldType: RType[T1], erasedType: Boolean):
   F[R ** PReference[T2] ** T1] => F[R] = f => {
-    val descriptor = if (erasedType) fieldType.erasedDescriptor else fieldType.toDescriptor
-    f.visitor.visitFieldInsn(Opcodes.PUTFIELD, classType.toInternalName, fieldName, descriptor)
+    val descriptor = if (erasedType) fieldType.erasedDescriptor else fieldType.descriptor
+    f.visitor.visitFieldInsn(Opcodes.PUTFIELD, classType.internalName, fieldName, descriptor)
     castF(f)
   }
 
@@ -635,8 +471,8 @@ object Instructions {
   [R <: Stack, T1 <: PType, T2 <: PRefType]
   (className: JvmName, fieldName: String, fieldType: RType[T1], erasedType: Boolean):
   F[R ** T1] => F[R] = f => {
-    val descriptor = if (erasedType) fieldType.erasedDescriptor else fieldType.toDescriptor
-    f.visitor.visitFieldInsn(Opcodes.PUTSTATIC, className.toInternalName, fieldName, descriptor)
+    val descriptor = if (erasedType) fieldType.erasedDescriptor else fieldType.descriptor
+    f.visitor.visitFieldInsn(Opcodes.PUTSTATIC, className.internalName, fieldName, descriptor)
     castF(f)
   }
 
@@ -644,7 +480,7 @@ object Instructions {
   [R <: Stack, T <: PRefType]
   (e: RRefType[T]):
   F[R ** PReference[_ <: PRefType]] => F[R ** PReference[T]] = f => {
-    f.visitor.visitTypeInsn(Opcodes.CHECKCAST, e.toInternalName)
+    f.visitor.visitTypeInsn(Opcodes.CHECKCAST, e.internalName)
     castF(f)
   }
 
@@ -662,7 +498,7 @@ object Instructions {
   [R <: Stack, T <: PRefType]
   (className: JvmName, t: Tag[T] = null):
   F[R] => F[R ** PReference[T]] = f => {
-    f.visitor.visitTypeInsn(Opcodes.NEW, className.toInternalName)
+    f.visitor.visitTypeInsn(Opcodes.NEW, className.internalName)
     castF(f)
   }
 
@@ -678,7 +514,7 @@ object Instructions {
   [R <: Stack, T <: PRefType]
   (className: JvmName):
   F[R ** PReference[T]] => F[R] = f => {
-    f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.toInternalName, JvmName.constructorMethod, JvmName.nothingToVoid, false)
+    f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.internalName, JvmName.constructorMethod, JvmName.nothingToVoid, false)
     castF(f)
   }
 
@@ -687,7 +523,7 @@ object Instructions {
   [R <: Stack, T <: PType]
   (lazyType: RType[PReference[PLazy[T]]], fnType: RType[PReference[PFunction[T]]], argIns: F[R] => F[R ** PReference[PFunction[T]]]):
   F[R] => F[R ** PReference[PLazy[T]]] = f => {
-    val className = squeezeReference(lazyType).toInternalName
+    val className = squeezeReference(lazyType).internalName
     // Make a new lazy object and dup it to leave it on the stack.
     f.visitor.visitTypeInsn(Opcodes.NEW, className)
     f.visitor.visitInsn(Opcodes.DUP)
@@ -702,7 +538,7 @@ object Instructions {
   F[R ** PReference[PLazy[T]]] => F[R ** T] = f => {
     val rRefLazy = squeezeReference(rType)
     val resultType = squeezeLazy(rRefLazy).tpe
-    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, rRefLazy.toInternalName, GenLazyClasses.ForceMethod, resultType.erasedNothingToThisMethodDescriptor, false)
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, rRefLazy.internalName, GenLazyClasses.ForceMethod, resultType.erasedNothingToThisMethodDescriptor, false)
     undoErasure(resultType, f.visitor)
     castF(f)
   }
@@ -716,7 +552,7 @@ object Instructions {
   def stringConcat
   [R <: Stack]:
   F[R ** PReference[PStr] ** PReference[PStr]] => F[R ** PReference[PStr]] = f => {
-    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.String.toInternalName, "concat",
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.String.internalName, "concat",
       JvmName.getMethodDescriptor(List(RStr), RStr), false)
     castF(f)
   }
@@ -1040,7 +876,7 @@ object Instructions {
   def BigIntNeg
   [R <: Stack]:
   F[R ** PReference[PBigInt]] => F[R ** PReference[PBigInt]] = f => {
-    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.BigInteger.toInternalName, "negate",
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.BigInteger.internalName, "negate",
       JvmName.getMethodDescriptor(Nil, JvmName.Java.BigInteger), false)
     castF(f)
   }
@@ -1048,7 +884,7 @@ object Instructions {
   def BigIntNot
   [R <: Stack]:
   F[R ** PReference[PBigInt]] => F[R ** PReference[PBigInt]] = f => {
-    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.BigInteger.toInternalName, "not",
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.BigInteger.internalName, "not",
       JvmName.getMethodDescriptor(Nil, JvmName.Java.BigInteger), false)
     castF(f)
   }
@@ -1084,7 +920,7 @@ object Instructions {
   def BigIntSHR
   [R <: Stack]:
   F[R ** PReference[PBigInt] ** PReference[PBigInt]] => F[R ** PReference[PBigInt]] = f => {
-    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.BigInteger.toInternalName, "shr",
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.BigInteger.internalName, "shr",
       JvmName.getMethodDescriptor(List(JvmName.Java.BigInteger), JvmName.Java.BigInteger), false)
     castF(f)
   }
@@ -1107,7 +943,7 @@ object Instructions {
   def BigIntSHL
   [R <: Stack]:
   F[R ** PReference[PBigInt] ** PReference[PBigInt]] => F[R ** PReference[PBigInt]] = f => {
-    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.BigInteger.toInternalName, "shiftLeft",
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.BigInteger.internalName, "shiftLeft",
       JvmName.getMethodDescriptor(List(JvmName.Java.BigInteger), JvmName.Java.BigInteger), false)
     castF(f)
   }
@@ -1143,7 +979,7 @@ object Instructions {
   def BigIntXOR
   [R <: Stack]:
   F[R ** PReference[PBigInt] ** PReference[PBigInt]] => F[R ** PReference[PBigInt]] = f => {
-    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.BigInteger.toInternalName, "xor",
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.BigInteger.internalName, "xor",
       JvmName.getMethodDescriptor(List(JvmName.Java.BigInteger), JvmName.Java.BigInteger), false)
     castF(f)
   }
@@ -1179,7 +1015,7 @@ object Instructions {
   def BigIntOR
   [R <: Stack]:
   F[R ** PReference[PBigInt] ** PReference[PBigInt]] => F[R ** PReference[PBigInt]] = f => {
-    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.BigInteger.toInternalName, "or",
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.BigInteger.internalName, "or",
       JvmName.getMethodDescriptor(List(JvmName.Java.BigInteger), JvmName.Java.BigInteger), false)
     castF(f)
   }
@@ -1215,7 +1051,7 @@ object Instructions {
   def BigIntAND
   [R <: Stack]:
   F[R ** PReference[PBigInt] ** PReference[PBigInt]] => F[R ** PReference[PBigInt]] = f => {
-    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.BigInteger.toInternalName, "and",
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.BigInteger.internalName, "and",
       JvmName.getMethodDescriptor(List(JvmName.Java.BigInteger), JvmName.Java.BigInteger), false)
     castF(f)
   }
@@ -1252,7 +1088,7 @@ object Instructions {
   def BigIntREM
   [R <: Stack]:
   F[R ** PReference[PBigInt] ** PReference[PBigInt]] => F[R ** PReference[PBigInt]] = f => {
-    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.BigInteger.toInternalName, "remainder",
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.BigInteger.internalName, "remainder",
       JvmName.getMethodDescriptor(List(JvmName.Java.BigInteger), JvmName.Java.BigInteger), false)
     castF(f)
   }
@@ -1264,9 +1100,9 @@ object Instructions {
   (argIns: F[StackNil] => F[StackNil ** PFloat64 ** PFloat64]):
   F[R] => F[R ** PFloat64] = f => {
     val className = JvmName.Scala.Package
-    f.visitor.visitFieldInsn(Opcodes.GETSTATIC, className.toInternalName, "MODULE$", className.toDescriptor)
+    f.visitor.visitFieldInsn(Opcodes.GETSTATIC, className.internalName, "MODULE$", className.descriptor)
     argIns(castF(f))
-    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, className.toInternalName, "pow",
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, className.internalName, "pow",
       JvmName.getMethodDescriptor(List(RFloat64, RFloat64), RFloat64), false)
     castF(f)
   }
@@ -1303,7 +1139,7 @@ object Instructions {
   def BigIntDIV
   [R <: Stack]:
   F[R ** PReference[PBigInt] ** PReference[PBigInt]] => F[R ** PReference[PBigInt]] = f => {
-    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.BigInteger.toInternalName, "divide",
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.BigInteger.internalName, "divide",
       JvmName.getMethodDescriptor(List(JvmName.Java.BigInteger), JvmName.Java.BigInteger), false)
     castF(f)
   }
@@ -1340,7 +1176,7 @@ object Instructions {
   def BigIntMUL
   [R <: Stack]:
   F[R ** PReference[PBigInt] ** PReference[PBigInt]] => F[R ** PReference[PBigInt]] = f => {
-    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.BigInteger.toInternalName, "multiply",
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.BigInteger.internalName, "multiply",
       JvmName.getMethodDescriptor(List(JvmName.Java.BigInteger), JvmName.Java.BigInteger), false)
     castF(f)
   }
@@ -1377,7 +1213,7 @@ object Instructions {
   def BigIntSUB
   [R <: Stack]:
   F[R ** PReference[PBigInt] ** PReference[PBigInt]] => F[R ** PReference[PBigInt]] = f => {
-    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.BigInteger.toInternalName, "subtract",
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.BigInteger.internalName, "subtract",
       JvmName.getMethodDescriptor(List(JvmName.Java.BigInteger), JvmName.Java.BigInteger), false)
     castF(f)
   }
@@ -1414,7 +1250,7 @@ object Instructions {
   def BigIntADD
   [R <: Stack]:
   F[R ** PReference[PBigInt] ** PReference[PBigInt]] => F[R ** PReference[PBigInt]] = f => {
-    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.BigInteger.toInternalName, "add",
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.BigInteger.internalName, "add",
       JvmName.getMethodDescriptor(List(JvmName.Java.BigInteger), JvmName.Java.BigInteger), false)
     castF(f)
   }
@@ -1429,7 +1265,7 @@ object Instructions {
       DUP ~
       (f => valueIns(castF(f))) ~
       (f => {
-        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.toInternalName, JvmName.constructorMethod, RInt8.thisToNothingMethodDescriptor, false)
+        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.internalName, JvmName.constructorMethod, RInt8.thisToNothingMethodDescriptor, false)
         castF[R ** PReference[PBoxedInt8]](f)
       })
   }
@@ -1444,7 +1280,7 @@ object Instructions {
       DUP ~
       (f => valueIns(castF(f))) ~
       (f => {
-        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.toInternalName, JvmName.constructorMethod, RInt16.thisToNothingMethodDescriptor, false)
+        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.internalName, JvmName.constructorMethod, RInt16.thisToNothingMethodDescriptor, false)
         castF[R ** PReference[PBoxedInt16]](f)
       })
   }
@@ -1460,7 +1296,7 @@ object Instructions {
       DUP ~
       (f => valueIns(castF(f))) ~
       (f => {
-        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.toInternalName, JvmName.constructorMethod, RInt32.thisToNothingMethodDescriptor, false)
+        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.internalName, JvmName.constructorMethod, RInt32.thisToNothingMethodDescriptor, false)
         castF[R ** PReference[PBoxedInt32]](f)
       })
   }
@@ -1475,7 +1311,7 @@ object Instructions {
       DUP ~
       (f => valueIns(castF(f))) ~
       (f => {
-        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.toInternalName, JvmName.constructorMethod, RInt64.thisToNothingMethodDescriptor, false)
+        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.internalName, JvmName.constructorMethod, RInt64.thisToNothingMethodDescriptor, false)
         castF[R ** PReference[PBoxedInt64]](f)
       })
   }
@@ -1490,7 +1326,7 @@ object Instructions {
       DUP ~
       (f => valueIns(castF(f))) ~
       (f => {
-        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.toInternalName, JvmName.constructorMethod, RChar.thisToNothingMethodDescriptor, false)
+        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.internalName, JvmName.constructorMethod, RChar.thisToNothingMethodDescriptor, false)
         castF[R ** PReference[PBoxedChar]](f)
       })
   }
@@ -1505,7 +1341,7 @@ object Instructions {
       DUP ~
       (f => valueIns(castF(f))) ~
       (f => {
-        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.toInternalName, JvmName.constructorMethod, RFloat32.thisToNothingMethodDescriptor, false)
+        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.internalName, JvmName.constructorMethod, RFloat32.thisToNothingMethodDescriptor, false)
         castF[R ** PReference[PBoxedFloat32]](f)
       })
   }
@@ -1520,7 +1356,7 @@ object Instructions {
       DUP ~
       (f => valueIns(castF(f))) ~
       (f => {
-        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.toInternalName, JvmName.constructorMethod, RFloat64.thisToNothingMethodDescriptor, false)
+        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.internalName, JvmName.constructorMethod, RFloat64.thisToNothingMethodDescriptor, false)
         castF[R ** PReference[PBoxedFloat64]](f)
       })
   }
@@ -1544,11 +1380,9 @@ object Instructions {
 
   def pushUnit
   [R <: Stack]:
-  F[R] => F[R ** PReference[PUnit]] = f => {
-    val className = RUnit.toInternalName
-    val classDescriptor = RUnit.nothingToThisMethodDescriptor
-    f.visitor.visitMethodInsn(Opcodes.INVOKESTATIC, className, "getInstance", classDescriptor, false)
-    castF(f)
+  F[R] => F[R ** PReference[PUnit]] = {
+    val unitType = RUnit.rType
+    START[R] ~ GETSTATIC(unitType, GenUnitClass.InstanceFieldName, unitType, undoErasure = false)
   }
 
   def pushNull
@@ -1672,7 +1506,7 @@ object Instructions {
   [R <: Stack]
   (bi: java.math.BigInteger):
   F[R] => F[R ** PReference[PBigInt]] = f => {
-    val className = JvmName.Java.BigInteger.toInternalName
+    val className = JvmName.Java.BigInteger.internalName
     f.visitor.visitTypeInsn(Opcodes.NEW, className)
     f.visitor.visitInsn(Opcodes.DUP)
     f.visitor.visitLdcInsn(bi.toString)
@@ -1699,6 +1533,22 @@ object Instructions {
     castF(f)
   }
 
+  def constructorALOAD
+  [R <: Stack, T <: PRefType]
+  (index: Int, tpe: RType[PReference[T]]):
+  F[R] => F[R ** PReference[T]] = f => {
+    f.visitor.visitVarInsn(Opcodes.ALOAD, index)
+    castF(f)
+  }
+
+  def constructorALOAD
+  [R <: Stack, T <: PRefType]
+  (index: Int, name: JvmName, tag: Tag[T] = null):
+  F[R] => F[R ** PReference[T]] = f => {
+    f.visitor.visitVarInsn(Opcodes.ALOAD, index)
+    castF(f)
+  }
+
   /**
     * Cannot be used for object initialization since the type is casted
     */
@@ -1722,7 +1572,7 @@ object Instructions {
   (superClass: JvmName):
   F[R] => F[R] = f => {
     f.visitor.visitIntInsn(Opcodes.ALOAD, 0)
-    f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, superClass.toInternalName, JvmName.constructorMethod, JvmName.nothingToVoid, false)
+    f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, superClass.internalName, JvmName.constructorMethod, JvmName.nothingToVoid, false)
     castF(f)
   }
 
@@ -1758,7 +1608,7 @@ object Instructions {
   [R <: Stack, T <: PType]
   (fnType: RArrow[T]):
   F[R ** PReference[PFunction[T]]] => F[R ** T] = f => {
-    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, fnType.toInternalName, GenContinuationInterfaces.UnwindMethodName,
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, fnType.internalName, GenContinuationInterfaces.UnwindMethodName,
       fnType.result.erasedNothingToThisMethodDescriptor, false)
     undoErasure(fnType.result, f.visitor)
     castF(f)
@@ -1776,7 +1626,7 @@ object Instructions {
   private def setArg[R <: Stack, T1 <: PType, T2 <: PType]
   (className: JvmName, fieldName: String, erasedTpe: String, t1: Tag[T1] = null):
   F[R ** PReference[PFunction[T1]] ** T2] => F[R] = f => {
-    f.visitor.visitFieldInsn(Opcodes.PUTFIELD, className.toInternalName, fieldName, erasedTpe)
+    f.visitor.visitFieldInsn(Opcodes.PUTFIELD, className.internalName, fieldName, erasedTpe)
     castF(f)
   }
 
@@ -2151,7 +2001,7 @@ object Instructions {
   [R <: Stack, T <: PRefType]
   (elmType: RType[PReference[T]]):
   F[R ** PInt32] => F[R ** PReference[PArray[PReference[T]]]] = f => {
-    f.visitor.visitTypeInsn(Opcodes.ANEWARRAY, squeezeReference(elmType).toInternalName)
+    f.visitor.visitTypeInsn(Opcodes.ANEWARRAY, squeezeReference(elmType).internalName)
     castF(f)
   }
 
@@ -2179,7 +2029,7 @@ object Instructions {
   [R <: Stack, T <: PType]:
   F[R ** PReference[PArray[T]] ** PInt32 ** PReference[PArray[T]] ** PInt32 ** PInt32] => F[R] = f => {
     val descriptor = JvmName.getMethodDescriptor(RObject :: RInt32 :: RObject :: RInt32 :: RInt32 :: Nil, None)
-    f.visitor.visitMethodInsn(Opcodes.INVOKESTATIC, JvmName.Java.System.toInternalName, "arraycopy", descriptor, false)
+    f.visitor.visitMethodInsn(Opcodes.INVOKESTATIC, JvmName.Java.System.internalName, "arraycopy", descriptor, false)
     castF(f)
   }
 
@@ -2188,7 +2038,7 @@ object Instructions {
   (elementType: RType[T]):
   F[R ** PReference[PArray[T]] ** T] => F[R] = f => {
     val descriptor = JvmName.getMethodDescriptor(RArray(elementType) :: elementType :: Nil, None)
-    f.visitor.visitMethodInsn(Opcodes.INVOKESTATIC, JvmName.Java.Arrays.toInternalName, "fill", descriptor, false)
+    f.visitor.visitMethodInsn(Opcodes.INVOKESTATIC, JvmName.Java.Arrays.internalName, "fill", descriptor, false)
     castF(f)
   }
 
@@ -2204,7 +2054,7 @@ object Instructions {
   [R <: Stack, T <: PRefType]
   (tpe: RType[PReference[T]]):
   F[R ** PReference[PChan[T]]] => F[R ** PReference[T]] = f => {
-    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Flix.Channel.toInternalName, "get", RObject.nothingToThisMethodDescriptor, false)
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Flix.Channel.internalName, "get", RObject.nothingToThisMethodDescriptor, false)
     undoErasure(tpe, f.visitor)
     castF(f)
   }
@@ -2213,7 +2063,7 @@ object Instructions {
   [R <: Stack, T <: PRefType]
   (tpe: RType[PReference[T]]):
   F[R ** PReference[PChan[T]] ** PReference[T]] => F[R] = f => {
-    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Flix.Channel.toInternalName, "put", JvmName.getMethodDescriptor(RObject :: Nil, None), false)
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Flix.Channel.internalName, "put", JvmName.getMethodDescriptor(RObject :: Nil, None), false)
     castF(f)
   }
 
@@ -2221,7 +2071,7 @@ object Instructions {
   [R <: Stack, T <: PType]
   (classType: RReference[PRef[T]], innerType: RType[T]):
   F[R ** PReference[PRef[T]] ** T] => F[R] = f => {
-    f.visitor.visitFieldInsn(Opcodes.PUTFIELD, classType.toInternalName, GenRefClasses.ValueFieldName, innerType.erasedDescriptor)
+    f.visitor.visitFieldInsn(Opcodes.PUTFIELD, classType.internalName, GenRefClasses.ValueFieldName, innerType.erasedDescriptor)
     castF(f)
   }
 

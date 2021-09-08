@@ -592,7 +592,7 @@ object BytecodeCompiler {
     case Expression.Index(base, offset, tpe, loc) =>
       WithSource[R](loc) ~
         compileExp(base) ~
-        XGETFIELD(squeezeReference(base.tpe), GenTupleClasses.indexFieldName(offset), tpe, undoErasure = true)
+        GETFIELD(squeezeReference(base.tpe), GenTupleClasses.indexFieldName(offset), tpe, undoErasure = true)
 
     case Expression.Tuple(elms, tpe, loc) =>
       val tupleRef = squeezeReference(tpe)
@@ -704,7 +704,7 @@ object BytecodeCompiler {
     case Expression.Deref(exp, tpe, loc) =>
       WithSource[R](loc) ~
         compileExp(exp) ~
-        XGETFIELD(squeezeReference(exp.tpe), GenRefClasses.ValueFieldName, tpe, undoErasure = true)
+        GETFIELD(squeezeReference(exp.tpe), GenRefClasses.ValueFieldName, tpe, undoErasure = true)
 
     case Expression.Assign(exp1, exp2, tpe, loc) =>
       WithSource[R](loc) ~
@@ -736,7 +736,7 @@ object BytecodeCompiler {
             compileExp(arg)(f)
             // TODO(JLS): maybe undoErasure here? genExpression matches on array types
           }
-          f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.toInternalName, JvmName.constructorMethod, constructorDescriptor, false)
+          f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.internalName, JvmName.constructorMethod, constructorDescriptor, false)
           f.asInstanceOf[F[R ** T]]
         })
 
@@ -748,7 +748,7 @@ object BytecodeCompiler {
       // Evaluate the receiver object.
       compileExp(exp)(f)
       val className = JvmName.fromClass(method.getDeclaringClass)
-      f.visitor.visitTypeInsn(Opcodes.CHECKCAST, className.toInternalName)
+      f.visitor.visitTypeInsn(Opcodes.CHECKCAST, className.internalName)
 
       // Evaluate arguments left-to-right and push them onto the stack.
       for (arg <- args) {
@@ -759,9 +759,9 @@ object BytecodeCompiler {
 
       // Check if we are invoking an interface or class.
       if (method.getDeclaringClass.isInterface) {
-        f.visitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, className.toInternalName, method.getName, descriptor, true)
+        f.visitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, className.internalName, method.getName, descriptor, true)
       } else {
-        f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, className.toInternalName, method.getName, descriptor, false)
+        f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, className.internalName, method.getName, descriptor, false)
       }
 
       // If the method is void, put a unit on top of the stack
@@ -782,7 +782,7 @@ object BytecodeCompiler {
       val className = JvmName.fromClass(method.getDeclaringClass)
       val descriptor = asm.Type.getMethodDescriptor(method)
 
-      f.visitor.visitMethodInsn(Opcodes.INVOKESTATIC, className.toInternalName, method.getName, descriptor, false)
+      f.visitor.visitMethodInsn(Opcodes.INVOKESTATIC, className.internalName, method.getName, descriptor, false)
 
       // If the method is void, put a unit on top of the stack
       if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) pushUnit(f)
@@ -793,7 +793,7 @@ object BytecodeCompiler {
       WithSource[R](loc) ~
         compileExp(exp) ~
         ((f: F[R ** PReference[PAnyObject]]) => {
-          f.visitor.visitFieldInsn(Opcodes.GETFIELD, JvmName.fromClass(field.getDeclaringClass).toInternalName, field.getName, tpe.toDescriptor)
+          f.visitor.visitFieldInsn(Opcodes.GETFIELD, JvmName.fromClass(field.getDeclaringClass).internalName, field.getName, tpe.descriptor)
           f.asInstanceOf[F[R ** T]]
         })
 
@@ -802,20 +802,20 @@ object BytecodeCompiler {
         compileExp(exp1) ~
         compileExp(exp2) ~
         (f => {
-          f.visitor.visitFieldInsn(Opcodes.PUTFIELD, JvmName.fromClass(field.getDeclaringClass).toInternalName, field.getName, exp2.tpe.toDescriptor)
+          f.visitor.visitFieldInsn(Opcodes.PUTFIELD, JvmName.fromClass(field.getDeclaringClass).internalName, field.getName, exp2.tpe.descriptor)
           f.asInstanceOf[F[R]]
         }) ~
         pushUnit
 
     case Expression.GetStaticField(field, tpe, loc) =>
       WithSource[R](loc) ~
-        getStaticField(field, tpe)
+        GETSTATIC(JvmName.fromClass(field.getDeclaringClass), field.getName, tpe, undoErasure = false)
 
     case Expression.PutStaticField(field, exp, tpe, loc) =>
       WithSource[R](loc) ~
         compileExp(exp) ~
         (f => {
-          f.visitor.visitFieldInsn(Opcodes.PUTSTATIC, JvmName.fromClass(field.getDeclaringClass).toInternalName, field.getName, exp.tpe.toDescriptor)
+          f.visitor.visitFieldInsn(Opcodes.PUTSTATIC, JvmName.fromClass(field.getDeclaringClass).internalName, field.getName, exp.tpe.descriptor)
           f.asInstanceOf[F[R]]
         }) ~
         pushUnit
@@ -827,7 +827,7 @@ object BytecodeCompiler {
         DUP ~
         compileExp(exp) ~
         (f => {
-          f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, chanRef.toInternalName, JvmName.constructorMethod,
+          f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, chanRef.internalName, JvmName.constructorMethod,
             JvmName.getMethodDescriptor(List(RInt32), None), false)
           f.asInstanceOf[F[R ** T]]
         })
@@ -859,13 +859,13 @@ object BytecodeCompiler {
         } ~
         pushBool(default.isDefined) ~
         ((f: F[R ** PReference[PArray[PReference[PChan[PAnyObject]]]] ** PInt32]) => {
-          f.visitor.visitMethodInsn(Opcodes.INVOKESTATIC, JvmName.Flix.Channel.toInternalName, "select",
+          f.visitor.visitMethodInsn(Opcodes.INVOKESTATIC, JvmName.Flix.Channel.internalName, "select",
             JvmName.getMethodDescriptor(List(JvmName.Flix.Channel, RBool), JvmName.Flix.SelectChoice), false)
           f.asInstanceOf[F[R ** PReference[PAnyObject]]]
         }) ~
         DUP ~
         (f => {
-          f.visitor.visitFieldInsn(Opcodes.GETFIELD, JvmName.Flix.SelectChoice.toInternalName, "defaultChoice", RBool.toDescriptor)
+          f.visitor.visitFieldInsn(Opcodes.GETFIELD, JvmName.Flix.SelectChoice.internalName, "defaultChoice", RBool.descriptor)
           f.asInstanceOf[F[R ** PReference[PAnyObject] ** PInt32]]
         }) ~
         IFNE {
@@ -883,7 +883,7 @@ object BytecodeCompiler {
         } {
           START[R ** PReference[PAnyObject]] ~
             DUP ~
-            GetInt32Field(JvmName.Flix.SelectChoice, "branchNumber") ~
+            GETFIELD(JvmName.Flix.SelectChoice, "branchNumber", RInt8, undoErasure = false) ~
             SCAFFOLD
         }
 

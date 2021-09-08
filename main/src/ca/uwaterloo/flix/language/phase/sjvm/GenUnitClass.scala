@@ -14,7 +14,7 @@ object GenUnitClass {
   val InstanceFieldName = "INSTANCE"
 
   def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
-    val unitType = RUnit.toRType
+    val unitType = RUnit.rType
     val unitName = unitType.jvmName
     Map() + (unitName -> JvmClass(unitName, genByteCode(unitType)))
   }

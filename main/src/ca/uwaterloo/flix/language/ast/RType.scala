@@ -24,22 +24,21 @@ import ca.uwaterloo.flix.language.phase.sjvm.JvmName
 import org.objectweb.asm.{MethodVisitor, Opcodes}
 
 trait Describable {
-  def toDescriptor: String
+  def descriptor: String
 }
 
-// actual flix types
 sealed trait RType[T <: PType] extends Describable {
-  private lazy val descriptor: String = RType.toDescriptor(this)
+  private lazy val lazyDescriptor: String = RType.descriptorOf(this)
 
-  def toDescriptor: String = descriptor
+  def descriptor: String = lazyDescriptor
 
   def isCat1: Boolean = RType.isCat1(this)
 
-  lazy val toErasedString: String = RType.toErasedString(this)
+  lazy val erasedString: String = RType.erasedStringOf(this)
   lazy val erasedType: RType[_ <: PType] = RType.erasedType(this)
   lazy val erasedDescriptor: String = RType.erasedDescriptor(this)
   // TODO(JLS): add cont and Fn in RRefType maybe?
-  lazy val contName: JvmName = JvmName(Nil, s"Cont${JvmName.reservedDelimiter}${this.toErasedString}")
+  lazy val contName: JvmName = JvmName(Nil, s"Cont${JvmName.reservedDelimiter}${this.erasedString}")
   lazy val nothingToContMethodDescriptor: String = JvmName.getMethodDescriptor(Nil, this.contName)
   lazy val erasedNothingToThisMethodDescriptor: String = JvmName.getMethodDescriptor(Nil, this.erasedType)
   lazy val nothingToThisMethodDescriptor: String = JvmName.getMethodDescriptor(Nil, this)
@@ -80,7 +79,7 @@ object RType {
     case RInt64 | RFloat64 => false
   }
 
-  def toDescriptor[T <: PType](e: RType[T]): String = e match {
+  def descriptorOf[T <: PType](e: RType[T]): String = e match {
     case RBool => "Z"
     case RInt8 => "B"
     case RInt16 => "S"
@@ -89,7 +88,7 @@ object RType {
     case RChar => "C"
     case RFloat32 => "F"
     case RFloat64 => "D"
-    case RReference(referenceType) => referenceType.toDescriptor
+    case RReference(referenceType) => referenceType.descriptor
   }
 
   def erasedType[T <: PType](e: RType[T]): RType[_ <: PType] = {
@@ -100,7 +99,7 @@ object RType {
     //    }
   }
 
-  def erasedDescriptor[T <: PType](e: RType[T]): String = e.erasedType.toDescriptor
+  def erasedDescriptor[T <: PType](e: RType[T]): String = e.erasedType.descriptor
 
   private def getErasedInnerType[T <: PRefType](r: RRefType[T]): RReference[_ <: PRefType] = r match {
     case RArray(tpe) => RReference(RArray(pureErasedType(tpe)))
@@ -120,9 +119,9 @@ object RType {
   }
 
   def undoErasure(name: JvmName, methodVisitor: MethodVisitor): Unit =
-    methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, name.toInternalName)
+    methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, name.internalName)
 
-  def toErasedString[T <: PType](e: RType[T]): String = e match {
+  def erasedStringOf[T <: PType](e: RType[T]): String = e match {
     case RBool => "Bool"
     case RInt8 => "Int8"
     case RInt16 => "Int16"
@@ -151,7 +150,7 @@ object RType {
   object RFloat64 extends RType[PFloat64]
 
   case class RReference[T <: PRefType](referenceType: RRefType[T]) extends RType[PReference[T]] {
-    def toInternalName: String = referenceType.toInternalName
+    def internalName: String = referenceType.internalName
 
     def jvmName: JvmName = referenceType.jvmName
   }
@@ -161,11 +160,11 @@ object RType {
 sealed trait RRefType[T <: PRefType] extends Describable {
   val jvmName: JvmName
 
-  def toInternalName: String = jvmName.toInternalName
+  def internalName: String = jvmName.internalName
 
-  def toDescriptor: String = jvmName.toDescriptor
+  def descriptor: String = jvmName.descriptor
 
-  def toRType: RReference[T] = RReference(this)
+  def rType: RReference[T] = RReference(this)
 
   lazy val erasedNothingToThisMethodDescriptor: String = JvmName.getMethodDescriptor(Nil, RObject) //TODO(JLS): Implicit erased type
   lazy val nothingToThisMethodDescriptor: String = JvmName.getMethodDescriptor(Nil, this)
@@ -173,9 +172,9 @@ sealed trait RRefType[T <: PRefType] extends Describable {
 
 object RRefType {
 
-  def toDescriptor[T <: PRefType](e: RRefType[T]): String = e.toDescriptor
+  def descriptorOf[T <: PRefType](e: RRefType[T]): String = e.descriptor
 
-  def toInternalName[T <: PRefType](e: RRefType[T]): String = e.toInternalName
+  def internalNameOf[T <: PRefType](e: RRefType[T]): String = e.internalName
 
   private def mkName(prefix: String, types: List[String]): JvmName = JvmName(Nil, prefix + JvmName.reservedDelimiter + types.mkString(JvmName.reservedDelimiter))
 
@@ -219,9 +218,9 @@ object RRefType {
   }
 
   case class RArray[T <: PType](tpe: RType[T]) extends RRefType[PArray[T]] {
-    private lazy val className: String = s"[${tpe.toDescriptor}"
+    private lazy val className: String = s"[${tpe.descriptor}"
     override lazy val jvmName: JvmName = new JvmName(Nil, className) {
-      override lazy val toDescriptor: String = this.toInternalName
+      override lazy val descriptor: String = this.internalName
     }
   }
 
@@ -230,11 +229,11 @@ object RRefType {
   }
 
   case class RLazy[T <: PType](tpe: RType[T]) extends RRefType[PLazy[T]] {
-    override lazy val jvmName: JvmName = mkName("Lazy", List(tpe.toErasedString))
+    override lazy val jvmName: JvmName = mkName("Lazy", List(tpe.erasedString))
   }
 
   case class RRef[T <: PType](tpe: RType[T]) extends RRefType[PRef[T]] {
-    override lazy val jvmName: JvmName = mkName("Ref", tpe.toErasedString)
+    override lazy val jvmName: JvmName = mkName("Ref", tpe.erasedString)
   }
 
   // TODO: Should be removed.
@@ -243,7 +242,7 @@ object RRefType {
   }
 
   case class RTuple(elms: List[RType[_ <: PType]]) extends RRefType[PTuple] {
-    override lazy val jvmName: JvmName = mkName("Tuple", elms.map(_.toErasedString))
+    override lazy val jvmName: JvmName = mkName("Tuple", elms.map(_.erasedString))
   }
 
   case class REnum(sym: Symbol.EnumSym, args: List[RType[_ <: PType]]) extends RRefType[PAnyObject] {
@@ -259,7 +258,7 @@ object RRefType {
   }
 
   case class RArrow[T <: PType](args: List[RType[_ <: PType]], result: RType[T]) extends RRefType[PFunction[T]] {
-    override lazy val jvmName: JvmName = mkName("Fn", args.appended(result).map(_.toErasedString))
+    override lazy val jvmName: JvmName = mkName("Fn", args.appended(result).map(_.erasedString))
   }
 
   object RRecordEmpty extends RRefType[PAnyObject] {

@@ -63,10 +63,10 @@ object JvmName {
     */
   def getMethodDescriptor(arguments: List[Describable], result: Option[Describable]): String = {
     // Descriptor of result
-    val resultDescriptor = result.fold(voidDescriptor)(_.toDescriptor)
+    val resultDescriptor = result.fold(voidDescriptor)(_.descriptor)
 
     // Descriptor of arguments
-    val argumentDescriptor = arguments.map(_.toDescriptor).mkString
+    val argumentDescriptor = arguments.map(_.descriptor).mkString
 
     // Descriptor of the method
     s"($argumentDescriptor)$resultDescriptor"
@@ -141,7 +141,7 @@ case class JvmName(pkg: List[String], name: String) extends Describable {
   /**
     * Returns the type descriptor of `this` Java name.
     */
-  lazy val toDescriptor: String =
+  lazy val descriptor: String =
     if (pkg.isEmpty) "L" + name + ";" else "L" + pkg.mkString("/") + "/" + name + ";"
 
   /**
@@ -149,9 +149,9 @@ case class JvmName(pkg: List[String], name: String) extends Describable {
     *
     * The binary name is of the form `java.lang.String`.
     *
-    * The binary name is rarely used. Mostly likely you need the [[toInternalName]].
+    * The binary name is rarely used. Mostly likely you need the [[internalName]].
     */
-  lazy val toBinaryName: String =
+  lazy val binaryName: String =
     if (pkg.isEmpty) name else pkg.mkString(".") + "." + name
 
 
@@ -160,11 +160,11 @@ case class JvmName(pkg: List[String], name: String) extends Describable {
     *
     * The internal name is of the form `java/lang/String`.
     */
-  lazy val toInternalName: String =
+  lazy val internalName: String =
     if (pkg.isEmpty) name else pkg.mkString("/") + "/" + name
 
   /**
     * Returns the relative path of `this` Java name.
     */
-  lazy val toPath: Path = Paths.get(pkg.mkString("/"), name + ".class")
+  lazy val path: Path = Paths.get(pkg.mkString("/"), name + ".class")
 }
