@@ -21,21 +21,6 @@ object MultiMap {
 case class MultiMap[K, V](m: Map[K, Set[V]]) {
 
   /**
-    * Returns `true` is the map is empty, `false` if not.
-    */
-  def isEmpty: Boolean = m.isEmpty
-
-  /**
-    * Returns `true` if the map contains `k`, `false` if not.
-    */
-  def contains(k: K): Boolean = m.contains(k)
-
-  /**
-    * Returns the size of the map.
-    */
-  def size: Int = m.size
-
-  /**
     * Optionally returns the set of values that the key `k` maps to.
     */
   def get(k: K): Option[Set[V]] = m.get(k)
