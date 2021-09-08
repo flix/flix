@@ -17,24 +17,25 @@
 package ca.uwaterloo.flix.util.collection
 
 /**
- * Companion object for the [[MultiMapL]] class.
+ * Companion object for the [[ListMap]] class.
  */
-object MultiMapL {
+object ListMap {
   /**
-   * Returns the empty multi map.
+   * Returns the empty list map.
    */
-  def empty[K, V]: MultiMapL[K, V] = MultiMapL(Map.empty)
+  def empty[K, V]: ListMap[K, V] = ListMap(Map.empty)
 
   /**
-   * Returns a singleton multi map with a mapping from `k` to `v`.
+   * Returns a singleton list map with a mapping from `k` to `v`.
    */
-  def singleton[K, V](k: K, v: V): MultiMapL[K, V] = empty + (k, v)
+  def singleton[K, V](k: K, v: V): ListMap[K, V] = empty + (k, v)
 }
 
 /**
  * Represents a map from keys of type `K` to list of values of type `V`.
+ * When a new mapping from `k` is added, it is prepended onto the list.
  */
-case class MultiMapL[K, V](m: Map[K, List[V]]) {
+case class ListMap[K, V](m: Map[K, List[V]]) {
 
   /**
    * Returns `true` is the map is empty, `false` if not.
@@ -62,44 +63,44 @@ case class MultiMapL[K, V](m: Map[K, List[V]]) {
   def apply(k: K): List[V] = m.getOrElse(k, List.empty)
 
   /**
-   * Returns `this` multi map extended with an additional mapping from `k` to `v`.
+   * Returns `this` list map extended with an additional mapping from `k` to `v`.
    */
-  def +(k: K, v: V): MultiMapL[K, V] = {
-    val s = m.getOrElse(k, List.empty)
-    MultiMapL(m + (k -> s.prepended(v)))
+  def +(k: K, v: V): ListMap[K, V] = {
+    val l = m.getOrElse(k, List.empty)
+    ListMap(m + (k -> (v :: l)))
   }
 
   /**
-   * Returns `this` multi map extended with additional mappings from `k`to the values in `vs`.
+   * Returns `this` list map extended with additional mappings from `k`to the values in `vs`.
    */
-  def +(k: K, vs: List[V]): MultiMapL[K, V] = {
-    val s = m.getOrElse(k, List.empty)
-    MultiMapL(m + (k -> (vs ++ s)))
+  def +(k: K, vs: List[V]): ListMap[K, V] = {
+    val l = m.getOrElse(k, List.empty)
+    ListMap(m + (k -> (vs ++ l)))
   }
 
   /**
-   * Returns `this` multi map extended with all mappings in `that` multi mapping.
+   * Returns `this` list map extended with all mappings in `that` list mapping.
    */
-  def ++(that: MultiMapL[K, V]): MultiMapL[K, V] = {
+  def ++(that: ListMap[K, V]): ListMap[K, V] = {
     that.m.foldLeft(this) {
       case (macc, (k, vs)) => macc + (k, vs)
     }
   }
 
   /**
-   * Returns `this` multi map with mappings from `k` removed.
+   * Returns `this` list map with mappings from `k` removed.
    */
-  def -(k: K): MultiMapL[K, V] = {
-    if (m.contains(k)) MultiMapL(m.removed(k))
+  def -(k: K): ListMap[K, V] = {
+    if (m.contains(k)) ListMap(m.removed(k))
     else this
   }
 
   /**
-   * Returns `this` multi map with mappings from `ks` removed.
+   * Returns `this` list map with mappings from `ks` removed.
    */
-  def --(ks: Iterable[K]): MultiMapL[K, V] = {
+  def --(ks: Iterable[K]): ListMap[K, V] = {
     if (ks.isEmpty) this
-    else MultiMapL(m.removedAll(ks))
+    else ListMap(m.removedAll(ks))
   }
 
 }
