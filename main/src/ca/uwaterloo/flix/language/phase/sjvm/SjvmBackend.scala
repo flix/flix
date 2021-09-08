@@ -75,35 +75,57 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
 
       val nonClosureFunctions: Set[Symbol.DefnSym] = root.functions.keySet.diff(closureSyms)
 
-      val functionInterfaces = GenFunctionInterfaces.gen(functionTypes)
-      val continuationInterfaces = GenContinuationInterfaces.gen()
+      // Generate Classes
 
       val mainClass = GenMainClass.gen()
 
       val namespaceClasses = GenNamespaces.gen(root.namespaces)
 
-      val refClasses = GenRefClasses.gen()
+      val continuationInterfaces = GenContinuationInterfaces.gen()
 
-      //      val tagClasses = GenTagClasses.gen(root.enumSyms)
-
-      val tupleClasses = GenTupleClasses.gen(tupleTypes)
+      val functionInterfaces = GenFunctionInterfaces.gen(functionTypes)
 
       val defClasses = GenDefClasses.gen(root.functions, nonClosureFunctions)
 
       val closureClasses = GenClosureClasses.gen(root.closures)
 
+      // todo enum
+
+      // todo val tagClasses = GenTagClasses.gen(root.enumSyms)
+
+      val tupleClasses = GenTupleClasses.gen(tupleTypes)
+
+      // todo recordInterfaces
+
+      // todo recordEmptyClasses
+
+      // todo recordExtendClasses
+
+      val refClasses = GenRefClasses.gen()
+
       val lazyClasses = GenLazyClasses.gen()
+
+      val unitClass = GenUnitClass.gen()
+
+      // todo FlixError
+
+      // todo rslClass
+
+      // todo holeError
+
+      // todo matchError
 
       val classMap = List(
         mainClass,
-        refClasses,
         namespaceClasses,
-        functionInterfaces,
         continuationInterfaces,
-        tupleClasses,
+        functionInterfaces,
         defClasses,
         closureClasses,
-        lazyClasses
+        tupleClasses,
+        refClasses,
+        lazyClasses,
+        unitClass
       ).reduce(_ ++ _)
       (classMap, closureSyms)
     }
@@ -247,7 +269,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
       case ErasedAst.Expression.Force(exp, _, _) => exp :: Nil
       case ErasedAst.Expression.HoleError(_, _, _) => Nil
       case ErasedAst.Expression.MatchError(_, _) => Nil
-      case ErasedAst.Expression.BoxBool(exp, loc) => exp :: Nil
+      case ErasedAst.Expression.BoxBool(exp, _) => exp :: Nil
       case ErasedAst.Expression.BoxInt8(exp, _) => exp :: Nil
       case ErasedAst.Expression.BoxInt16(exp, _) => exp :: Nil
       case ErasedAst.Expression.BoxInt32(exp, _) => exp :: Nil
@@ -255,7 +277,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
       case ErasedAst.Expression.BoxChar(exp, _) => exp :: Nil
       case ErasedAst.Expression.BoxFloat32(exp, _) => exp :: Nil
       case ErasedAst.Expression.BoxFloat64(exp, _) => exp :: Nil
-      case ErasedAst.Expression.UnboxBool(exp, loc) => exp :: Nil
+      case ErasedAst.Expression.UnboxBool(exp, _) => exp :: Nil
       case ErasedAst.Expression.UnboxInt8(exp, _) => exp :: Nil
       case ErasedAst.Expression.UnboxInt16(exp, _) => exp :: Nil
       case ErasedAst.Expression.UnboxInt32(exp, _) => exp :: Nil
