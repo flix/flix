@@ -29,21 +29,21 @@ import ca.uwaterloo.flix.language.phase.sjvm.ClassMaker.Mod
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 
 /**
- * Generates bytecode for the function interfaces.
- */
+  * Generates bytecode for the function interfaces.
+  */
 object GenFunctionInterfaces {
   def argFieldName(index: Int) = s"arg$index"
 
   /**
-   * Returns the set of function interfaces for the given set of types `ts`.
-   */
+    * Returns the set of function interfaces for the given set of types `ts`.
+    */
   def gen(tpe: Set[RType[PReference[PFunction[_ <: PType]]]])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     val map1 = tpe.foldLeft(Map.empty[JvmName, JvmClass]) {
       case (macc, functionType) => macc + innerFold(functionType.asInstanceOf[RType[PReference[PFunction[PType]]]])
     }
     val lazyFns = RType.baseTypes.foldLeft(Map.empty[JvmName, JvmClass]) {
       case (macc, rType) =>
-        val functionType = RReference(RArrow(RReference(RObject):: Nil, rType))
+        val functionType = RReference(RArrow(RReference(RObject) :: Nil, rType))
         macc + innerFold(functionType.asInstanceOf[RType[PReference[PFunction[PType]]]])
     }
     map1 ++ lazyFns
@@ -56,8 +56,8 @@ object GenFunctionInterfaces {
   }
 
   /**
-   * Returns the function interface of the given type `tpe`.
-   */
+    * Returns the function interface of the given type `tpe`.
+    */
   private def genByteCode[T <: PType](functionType: RArrow[T])(implicit root: Root, flix: Flix): Array[Byte] = {
 
     // Class visitor

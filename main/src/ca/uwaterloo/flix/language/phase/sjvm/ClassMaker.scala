@@ -62,8 +62,8 @@ class ClassMaker(visitor: ClassWriter, superClass: JvmName) {
 object ClassMaker {
 
   /**
-   * Returns the target JVM version.
-   */
+    * Returns the target JVM version.
+    */
   private def JavaVersion(implicit flix: Flix): Int = flix.options.target match {
     case JvmTarget.Version16 => Opcodes.V1_6
     case JvmTarget.Version17 => Opcodes.V1_7
@@ -72,10 +72,10 @@ object ClassMaker {
   }
 
   /**
-   * Returns a freshly created class writer object.
-   *
-   * The object is constructed to compute stack map frames automatically.
-   */
+    * Returns a freshly created class writer object.
+    *
+    * The object is constructed to compute stack map frames automatically.
+    */
   private def makeClassWriter(): ClassWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES) {
     override def getCommonSuperClass(tpe1: String, tpe2: String): String = {
       JvmName.Java.Object.name

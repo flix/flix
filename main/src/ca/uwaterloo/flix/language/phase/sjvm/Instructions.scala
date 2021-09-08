@@ -1692,8 +1692,8 @@ object Instructions {
   }
 
   /**
-   * Cannot be used for object initialization since the type is casted
-   */
+    * Cannot be used for object initialization since the type is casted
+    */
   def THISLOAD
   [R <: Stack, T <: PRefType]
   (tpe: RType[PReference[T]]):
@@ -1701,8 +1701,8 @@ object Instructions {
     ALOAD(0, tpe)
 
   /**
-   * Cannot be used for object initialization since the type is casted
-   */
+    * Cannot be used for object initialization since the type is casted
+    */
   def THISLOAD
   [R <: Stack, T <: PRefType]
   (name: JvmName, tag: Tag[T] = null):

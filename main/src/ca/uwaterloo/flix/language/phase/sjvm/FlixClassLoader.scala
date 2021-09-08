@@ -22,20 +22,20 @@ import ca.uwaterloo.flix.util.InternalRuntimeException
 import scala.collection.mutable
 
 /**
- * A custom class loader to load generated class files.
- *
- * @param classes A map from internal names (strings) to JvmClasses.
- */
+  * A custom class loader to load generated class files.
+  *
+  * @param classes A map from internal names (strings) to JvmClasses.
+  */
 class FlixClassLoader(classes: Map[String, JvmClass]) extends ClassLoader {
 
   /**
-   * An internal cache of already loaded classes.
-   */
+    * An internal cache of already loaded classes.
+    */
   private val cache = mutable.Map.empty[String, Class[_]]
 
   /**
-   * Finds the class with the given binary `name`.
-   */
+    * Finds the class with the given binary `name`.
+    */
   override def findClass(name: String): Class[_] = try {
     // Lookup the internal name in the cache to see if the class was already defined.
     cache.get(name) match {

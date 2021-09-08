@@ -31,8 +31,8 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm.Opcodes
 
 /**
- * Generates bytecode for the main class.
- */
+  * Generates bytecode for the main class.
+  */
 object GenMainClass {
 
   val MainMethod: String = "main"
@@ -40,8 +40,8 @@ object GenMainClass {
   val MainMethodClassName: JvmName = JvmName.main
 
   /**
-   * Returns the main class.
-   */
+    * Returns the main class.
+    */
   def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = getMain(root) match {
     case None => Map.empty
     case Some(defn) =>
@@ -71,15 +71,15 @@ object GenMainClass {
   }
 
   /**
-   * Emits code for the main method in the main class. The emitted (byte)code should satisfy the following signature for the method:
-   * public static void main(String[])
-   *
-   * The method itself needs simply invoke the m_main method which is in the root namespace.
-   *
-   * The emitted code for the method should correspond to:
-   *
-   * Ns.m_main((Object)null);
-   */
+    * Emits code for the main method in the main class. The emitted (byte)code should satisfy the following signature for the method:
+    * public static void main(String[])
+    *
+    * The method itself needs simply invoke the m_main method which is in the root namespace.
+    *
+    * The emitted code for the method should correspond to:
+    *
+    * Ns.m_main((Object)null);
+    */
   def compileMainMethod[T <: PType](defn: Def[T])(implicit root: Root, flix: Flix): F[StackNil] => F[StackEnd] = {
 
     //Get the root namespace in order to get the class type when invoking m_main
@@ -117,8 +117,8 @@ object GenMainClass {
   }
 
   /**
-   * Optionally returns the main definition in the given AST `root`.
-   */
+    * Optionally returns the main definition in the given AST `root`.
+    */
   private def getMain(root: Root): Option[Def[_ <: PType]] = {
     // The main function must be called `main` and occur in the root namespace.
     val sym = Symbol.Main

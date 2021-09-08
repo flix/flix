@@ -25,17 +25,17 @@ import ca.uwaterloo.flix.language.phase.sjvm.ClassMaker.Mod
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 
 /**
- * Generates bytecode for the continuation interfaces.
- * TODO(JLS): fix comments in general
- */
+  * Generates bytecode for the continuation interfaces.
+  * TODO(JLS): fix comments in general
+  */
 object GenContinuationInterfaces {
   val ResultFieldName: String = "result"
   val InvokeMethodName: String = "invoke"
   val UnwindMethodName: String = "unwind"
 
   /**
-   * Returns the set of continuation interfaces for
-   */
+    * Returns the set of continuation interfaces for
+    */
   def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     RType.baseTypes.foldLeft(Map[JvmName, JvmClass]()) {
       case (macc, tpe) =>
@@ -45,8 +45,8 @@ object GenContinuationInterfaces {
   }
 
   /**
-   * Returns the bytecode for the given continuation interface.
-   */
+    * Returns the bytecode for the given continuation interface.
+    */
   private def genByteCode[T <: PType](resultType: RType[T])(implicit root: Root, flix: Flix): Array[Byte] = {
 
     // Pseudo code to generate:

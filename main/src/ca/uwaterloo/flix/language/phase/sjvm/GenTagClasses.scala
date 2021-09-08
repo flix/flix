@@ -32,16 +32,16 @@ import org.objectweb.asm.Opcodes
 
 object GenTagClasses {
 
-    def gen[A](a: A): A = a
-//  def gen(ts: Set[TagInfo])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
-//    // TODO(JLS): impl
-//    ParOps.parAgg(defs, Map[JvmName, JvmClass]())({
-//      case (macc, (sym, defn)) =>
-//        if (SjvmOps.nonLaw(defn) && nonClosureFunctions.contains(sym)) {
-//          val functionType = squeezeFunction(squeezeReference(defn.tpe))
-//          macc + (sym.defName -> JvmClass(sym.defName, genByteCode(defn, sym.defName, functionType)))
-//        } else macc
-//    }, _ ++ _)
-//  }
+  def gen[A](a: A): A = a
+  //  def gen(ts: Set[TagInfo])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+  //    // TODO(JLS): impl
+  //    ParOps.parAgg(defs, Map[JvmName, JvmClass]())({
+  //      case (macc, (sym, defn)) =>
+  //        if (SjvmOps.nonLaw(defn) && nonClosureFunctions.contains(sym)) {
+  //          val functionType = squeezeFunction(squeezeReference(defn.tpe))
+  //          macc + (sym.defName -> JvmClass(sym.defName, genByteCode(defn, sym.defName, functionType)))
+  //        } else macc
+  //    }, _ ++ _)
+  //  }
 
 }
