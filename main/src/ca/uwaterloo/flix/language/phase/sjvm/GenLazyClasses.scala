@@ -75,7 +75,7 @@ object GenLazyClasses {
     classMaker.mkField(ExpressionFieldName, expressionFieldType(valueFieldType))
     classMaker.mkField(ValueFieldName, valueFieldType)
     classMaker.mkMethod(compileForceMethod(lazyType, valueFieldType), ForceMethod, valueFieldType.nothingToThisMethodDescriptor, Mod.isFinal.isPublic)
-    classMaker.mkConstructor(compileLazyConstructor(lazyType, valueFieldType), constructorDescriptor(valueFieldType))
+    classMaker.mkConstructor(compileLazyConstructor(lazyType, valueFieldType))
     classMaker.closeClassMaker
   }
 

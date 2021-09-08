@@ -631,6 +631,15 @@ object Instructions {
       compileExp(fieldValue) ~
       PUTFIELD(classType, fieldName, fieldValue.tpe, erasedType)
 
+  def PUTSTATIC
+  [R <: Stack, T1 <: PType, T2 <: PRefType]
+  (className: JvmName, fieldName: String, fieldType: RType[T1], erasedType: Boolean):
+  F[R ** T1] => F[R] = f => {
+    val descriptor = if (erasedType) fieldType.erasedDescriptor else fieldType.toDescriptor
+    f.visitor.visitFieldInsn(Opcodes.PUTSTATIC, className.toInternalName, fieldName, descriptor)
+    castF(f)
+  }
+
   def CAST
   [R <: Stack, T <: PRefType]
   (e: RRefType[T]):
@@ -657,16 +666,15 @@ object Instructions {
     castF(f)
   }
 
-  // TODO(JLS): type should be constructed along with descriptor string
-  def INVOKESPECIAL
+  def InvokeSimpleConstructor
   [R <: Stack, T <: PRefType]
   (classType: RReference[T]):
   F[R ** PReference[T]] => F[R] = f => {
-    INVOKESPECIAL(classType.jvmName)(f)
+    InvokeSimpleConstructor(classType.jvmName)(f)
     castF(f)
   }
 
-  def INVOKESPECIAL
+  def InvokeSimpleConstructor
   [R <: Stack, T <: PRefType]
   (className: JvmName):
   F[R ** PReference[T]] => F[R] = f => {
@@ -1788,7 +1796,7 @@ object Instructions {
     START[R] ~
       NEW(defName, tagOf[PFunction[T]]) ~
       DUP ~
-      INVOKESPECIAL(defName) ~
+      InvokeSimpleConstructor(defName) ~
       (f => {
         undoErasure(fnName, f.visitor)
         f
@@ -1802,7 +1810,7 @@ object Instructions {
     START[R] ~
       NEW(cloName, tagOf[PFunction[T]]) ~
       DUP ~
-      INVOKESPECIAL(cloName) ~
+      InvokeSimpleConstructor(cloName) ~
       setArgs(cloName, freeVars.map(f => ErasedAst.Expression.Var(f.sym, f.tpe, SourceLocation.Unknown)), GenClosureClasses.cloArgFieldName, tagOf[T]) ~
       ((f: F[R ** PReference[PFunction[T]]]) => {
         undoErasure(fnName, f.visitor)

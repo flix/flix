@@ -31,6 +31,7 @@ object JvmName {
   val reservedDelimiter: String = "_"
 
   val constructorMethod = "<init>"
+  val staticConstructorMethod = "<clinit>"
 
   val voidDescriptor = "V"
   val javaMainDescriptor = "([Ljava/lang/String;)V"

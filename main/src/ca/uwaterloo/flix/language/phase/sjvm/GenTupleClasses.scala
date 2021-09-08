@@ -49,7 +49,7 @@ object GenTupleClasses {
 
   private def genByteCode[T <: PType](className: JvmName, tupleType: RTuple)(implicit root: Root, flix: Flix): Array[Byte] = {
     val classMaker = ClassMaker.mkClass(className, None)
-    classMaker.mkConstructor(START[StackNil] ~ THISINIT(JvmName.Java.Object) ~ RETURN, JvmName.nothingToVoid)
+    classMaker.mkConstructor(START[StackNil] ~ THISINIT(JvmName.Java.Object) ~ RETURN)
     tupleType.elms.zipWithIndex.foreach {
       case (indexType, index) => classMaker.mkField(indexFieldName(index), indexType.erasedType, Mod.isPublic)
     }

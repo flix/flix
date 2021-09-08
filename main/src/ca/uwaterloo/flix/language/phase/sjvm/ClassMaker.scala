@@ -37,8 +37,11 @@ class ClassMaker(visitor: ClassWriter, superClass: JvmName) {
     makeField(fieldName, fieldType, Mod.isStatic)
   }
 
-  def mkConstructor(f: F[StackNil] => F[StackEnd], descriptor: String): Unit =
-    mkMethod(f, JvmName.constructorMethod, descriptor, Mod.isPublic)
+  def mkConstructor(f: F[StackNil] => F[StackEnd]): Unit =
+    mkMethod(f, JvmName.constructorMethod, JvmName.nothingToVoid, Mod.isPublic)
+
+  def mkStaticConstructor(f: F[StackNil] => F[StackEnd]): Unit =
+    mkMethod(f, JvmName.staticConstructorMethod, JvmName.nothingToVoid, Mod.isStatic)
 
   def mkMethod(f: F[StackNil] => F[StackEnd], methodName: String, descriptor: String, mod: Mod): Unit = {
     val methodVisitor = visitor.visitMethod(mod.getValue, methodName, descriptor, null, null)

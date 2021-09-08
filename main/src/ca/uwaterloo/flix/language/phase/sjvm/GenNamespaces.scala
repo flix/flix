@@ -53,7 +53,7 @@ object GenNamespaces {
     */
   private def genBytecode(className: JvmName, ns: NamespaceInfo)(implicit root: Root, flix: Flix): Array[Byte] = {
     val classMaker = ClassMaker.mkClass(className, None)
-    classMaker.mkConstructor(START[StackNil] ~ THISINIT(JvmName.Java.Object) ~ RETURN, JvmName.nothingToVoid)
+    classMaker.mkConstructor(START[StackNil] ~ THISINIT(JvmName.Java.Object) ~ RETURN)
     for ((sym, defn) <- ns.defs) {
       val arrow = squeezeFunction(squeezeReference(defn.tpe))
       val functionDescriptor = JvmName.getMethodDescriptor(arrow.args, arrow.result)
@@ -70,7 +70,7 @@ object GenNamespaces {
     START[StackNil] ~
       NEW(defName, tagOf[PFunction[T]]) ~
       DUP ~
-      INVOKESPECIAL(defName) ~ { f: F[StackNil ** PReference[PFunction[T]]] =>
+      InvokeSimpleConstructor(defName) ~ { f: F[StackNil ** PReference[PFunction[T]]] =>
       var nextIndex = 0
       for ((argType, argIndex) <- functionType.args.zipWithIndex) {
         f.visitor.visitInsn(Opcodes.DUP)

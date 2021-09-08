@@ -599,7 +599,7 @@ object BytecodeCompiler {
       WithSource[R](loc) ~
         NEW(tupleRef) ~
         DUP ~
-        INVOKESPECIAL(tupleRef) ~
+        InvokeSimpleConstructor(tupleRef) ~
         multiComposition(elms.zipWithIndex) { case (elm, elmIndex) =>
           START[R ** PReference[PTuple]] ~
             DUP ~
@@ -696,7 +696,7 @@ object BytecodeCompiler {
       WithSource[R](loc) ~
         NEW(tpeRRef) ~
         DUP ~
-        INVOKESPECIAL(tpeRRef) ~
+        InvokeSimpleConstructor(tpeRRef) ~
         DUP ~
         compileExp(exp) ~
         PUTFIELD(tpeRRef, GenRefClasses.ValueFieldName, exp.tpe, erasedType = true)

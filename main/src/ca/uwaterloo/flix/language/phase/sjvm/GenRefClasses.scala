@@ -53,7 +53,7 @@ object GenRefClasses {
     // Generate the instance field
     classMaker.mkField(ValueFieldName, valueFieldType, Mod.isPublic)
 
-    classMaker.mkConstructor(START[StackNil] ~ THISINIT(JvmName.Java.Object) ~ RETURN, JvmName.nothingToVoid)
+    classMaker.mkConstructor(START[StackNil] ~ THISINIT(JvmName.Java.Object) ~ RETURN)
 
     classMaker.closeClassMaker
   }

@@ -74,7 +74,7 @@ object GenFunctionInterfaces {
       // `arg$index` field
       classMaker.mkField(argFieldName(index), arg.erasedType, fieldMod)
     }
-    classMaker.mkConstructor(START[StackNil] ~ THISINIT(continuationSuperInterface) ~ RETURN, JvmName.nothingToVoid)
+    classMaker.mkConstructor(START[StackNil] ~ THISINIT(continuationSuperInterface) ~ RETURN)
 
     classMaker.closeClassMaker
   }
