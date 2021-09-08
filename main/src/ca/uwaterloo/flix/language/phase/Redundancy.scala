@@ -29,23 +29,23 @@ import ca.uwaterloo.flix.util.collection.{ListMap, MultiMap}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 /**
- * The Redundancy phase checks that declarations and expressions within the AST are used in a meaningful way.
- *
- * For example, the redundancy phase ensures that there are no:
- *
- * - unused local variables.
- * - unused enums, definitions, ...
- * - useless expressions.
- *
- * and so on.
- *
- * The phase performs no AST rewrites; it can be disabled without affecting the runtime semantics.
- */
+  * The Redundancy phase checks that declarations and expressions within the AST are used in a meaningful way.
+  *
+  * For example, the redundancy phase ensures that there are no:
+  *
+  * - unused local variables.
+  * - unused enums, definitions, ...
+  * - useless expressions.
+  *
+  * and so on.
+  *
+  * The phase performs no AST rewrites; it can be disabled without affecting the runtime semantics.
+  */
 object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   /**
-   * Checks the given AST `root` for redundancies.
-   */
+    * Checks the given AST `root` for redundancies.
+    */
   def run(root: Root)(implicit flix: Flix): Validation[Root, RedundancyError] = flix.phase("Redundancy") {
     // Return early if the redundancy phase is disabled.
     if (flix.options.xallowredundancies) {
@@ -80,8 +80,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   /**
-   * Checks for unused symbols in the given signature and returns all used symbols.
-   */
+    * Checks for unused symbols in the given signature and returns all used symbols.
+    */
   private def visitSig(sig: Sig)(implicit root: Root, flix: Flix): Used = {
 
     // Compute the used symbols inside the signature.
@@ -108,8 +108,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   /**
-   * Checks for unused symbols in the given definition and returns all used symbols.
-   */
+    * Checks for unused symbols in the given definition and returns all used symbols.
+    */
   private def visitDef(defn: Def)(implicit root: Root, flix: Flix): Used = {
 
     // Compute the used symbols inside the definition.
@@ -132,8 +132,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   /**
-   * Finds unused formal parameters.
-   */
+    * Finds unused formal parameters.
+    */
   private def findUnusedFormalParameters(spec: Spec, used: Used): List[UnusedFormalParam] = {
     spec.fparams.collect {
       case fparam if deadVarSym(fparam.sym, used) => UnusedFormalParam(fparam.sym)
@@ -141,8 +141,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   /**
-   * Finds unused type parameters.
-   */
+    * Finds unused type parameters.
+    */
   private def findUnusedTypeParameters(spec: Spec): List[UnusedTypeParam] = {
     spec.tparams.collect {
       case tparam if deadTypeVar(tparam.tpe, spec.declaredScheme.base.typeVars) => UnusedTypeParam(tparam.name)
@@ -150,8 +150,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   /**
-   * Checks for unused definition symbols.
-   */
+    * Checks for unused definition symbols.
+    */
   private def checkUnusedDefs(used: Used)(implicit root: Root): Used = {
     root.defs.foldLeft(used) {
       case (acc, (_, decl)) if deadDef(decl, used) => acc + UnusedDefSym(decl.sym)
@@ -160,8 +160,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   /**
-   * Checks for unused enum symbols and tags.
-   */
+    * Checks for unused enum symbols and tags.
+    */
   private def checkUnusedEnumsAndTags(used: Used)(implicit root: Root): Used = {
     root.enums.foldLeft(used) {
       case (acc, (sym, decl)) if decl.mod.isPublic =>
@@ -186,8 +186,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   /**
-   * Checks for unused type parameters in enums.
-   */
+    * Checks for unused type parameters in enums.
+    */
   private def checkUnusedTypeParamsEnums()(implicit root: Root): Used = {
     root.enums.foldLeft(Used.empty) {
       case (acc, (_, decl)) =>
@@ -200,8 +200,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   /**
-   * Checks for redundant type constraints in the given `root`.
-   */
+    * Checks for redundant type constraints in the given `root`.
+    */
   private def checkRedundantTypeConstraints()(implicit root: Root): List[RedundancyError] = {
     def findRedundantTypeConstraints(tconstrs: List[Ast.TypeConstraint]): List[RedundancyError] = {
       for {
@@ -234,8 +234,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
 
   /**
-   * Returns the symbols used in the given expression `e0` under the given environment `env0`.
-   */
+    * Returns the symbols used in the given expression `e0` under the given environment `env0`.
+    */
   private def visitExp(e0: Expression, env0: Env): Used = e0 match {
     case Expression.Unit(_) => Used.empty
 
@@ -603,16 +603,16 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   /**
-   * Returns the symbols used in the given list of expressions `es` under the given environment `env0`.
-   */
+    * Returns the symbols used in the given list of expressions `es` under the given environment `env0`.
+    */
   private def visitExps(es: List[Expression], env0: Env): Used =
     es.foldLeft(Used.empty) {
       case (acc, exp) => acc ++ visitExp(exp, env0)
     }
 
   /**
-   * Returns the symbols used in the given pattern `pat`.
-   */
+    * Returns the symbols used in the given pattern `pat`.
+    */
   private def visitPat(pat0: Pattern): Used = pat0 match {
     case Pattern.Wild(_, _) => Used.empty
     case Pattern.Var(_, _, _) => Used.empty
@@ -636,15 +636,15 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   /**
-   * Returns the symbols used in the given list of pattern `ps`.
-   */
+    * Returns the symbols used in the given list of pattern `ps`.
+    */
   private def visitPats(ps: List[Pattern]): Used = ps.foldLeft(Used.empty) {
     case (acc, pat) => acc ++ visitPat(pat)
   }
 
   /**
-   * Returns the symbols used in the given constraint `c0` under the given environment `env0`.
-   */
+    * Returns the symbols used in the given constraint `c0` under the given environment `env0`.
+    */
   private def visitConstraint(c0: Constraint, env0: Env): Used = {
     val head = visitHeadPred(c0.head, env0)
     val body = c0.body.foldLeft(Used.empty) {
@@ -672,16 +672,16 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   /**
-   * Returns the symbols used in the given head predicate `h0` under the given environment `env0`.
-   */
+    * Returns the symbols used in the given head predicate `h0` under the given environment `env0`.
+    */
   private def visitHeadPred(h0: Predicate.Head, env0: Env): Used = h0 match {
     case Head.Atom(_, _, terms, _, _) =>
       visitExps(terms, env0)
   }
 
   /**
-   * Returns the symbols used in the given body predicate `h0` under the given environment `env0`.
-   */
+    * Returns the symbols used in the given body predicate `h0` under the given environment `env0`.
+    */
   private def visitBodyPred(b0: Predicate.Body, env0: Env): Used = b0 match {
     case Body.Atom(_, _, _, terms, _, _) =>
       terms.foldLeft(Used.empty) {
@@ -693,8 +693,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   /**
-   * Returns the free variables in the pattern `p0`.
-   */
+    * Returns the free variables in the pattern `p0`.
+    */
   private def freeVars(p0: Pattern): Set[Symbol.VarSym] = p0 match {
     case Pattern.Wild(_, _) => Set.empty
     case Pattern.Var(sym, _, _) => Set(sym)
@@ -726,15 +726,15 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   /**
-   * Returns the free variables in the list of choice patterns `ps`.
-   */
+    * Returns the free variables in the list of choice patterns `ps`.
+    */
   private def freeVars(ps: List[ChoicePattern]): Set[Symbol.VarSym] = ps.collect {
     case ChoicePattern.Present(sym, _, _) => sym
   }.toSet
 
   /**
-   * Checks whether the variable symbol `sym` shadows another variable in the environment `env`.
-   */
+    * Checks whether the variable symbol `sym` shadows another variable in the environment `env`.
+    */
   private def shadowing(sym: Symbol.VarSym, env: Env): Used =
     env.varSyms.get(sym.text) match {
       case None =>
@@ -747,8 +747,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
   /**
-   * Returns `true` if the given definition `decl` is unused according to `used`.
-   */
+    * Returns `true` if the given definition `decl` is unused according to `used`.
+    */
   private def deadDef(decl: Def, used: Used)(implicit root: Root): Boolean =
     !isTest(decl.spec.ann) &&
       !isLint(decl.spec.ann) &&
@@ -759,58 +759,58 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       !root.reachable.contains(decl.sym)
 
   /**
-   * Returns `true` if the given `tag` is unused according to the `usedTags`.
-   */
+    * Returns `true` if the given `tag` is unused according to the `usedTags`.
+    */
   private def deadTag(tag: Name.Tag, usedTags: Set[Name.Tag]): Boolean =
     !tag.name.startsWith("_") &&
       !usedTags.contains(tag)
 
   /**
-   * Returns `true` if the type variable `tvar` is unused according to the argument `used`.
-   */
+    * Returns `true` if the type variable `tvar` is unused according to the argument `used`.
+    */
   private def deadTypeVar(tvar: Type.KindedVar, used: Set[Type.KindedVar]): Boolean = {
     !tvar.text.exists(_.startsWith("_")) &&
       !used.contains(tvar)
   }
 
   /**
-   * Returns `true` if the local variable `tvar` is unused according to the argument `used`.
-   */
+    * Returns `true` if the local variable `tvar` is unused according to the argument `used`.
+    */
   private def deadVarSym(sym: Symbol.VarSym, used: Used): Boolean =
     !sym.text.startsWith("_") &&
       !used.varSyms.contains(sym)
 
   /**
-   * Companion object for the [[Env]] class.
-   */
+    * Companion object for the [[Env]] class.
+    */
   private object Env {
     /**
-     * Represents the empty environment.
-     */
+      * Represents the empty environment.
+      */
     val empty: Env = Env(Map.empty)
 
     /**
-     * Returns an environment with the given variable symbols `varSyms` in it.
-     */
+      * Returns an environment with the given variable symbols `varSyms` in it.
+      */
     def of(varSyms: Iterable[Symbol.VarSym]): Env = varSyms.foldLeft(Env.empty) {
       case (acc, sym) => acc + sym
     }
   }
 
   /**
-   * Represents an environment.
-   */
+    * Represents an environment.
+    */
   private case class Env(varSyms: Map[String, Symbol.VarSym]) {
     /**
-     * Updates `this` environment with a new variable symbol `sym`.
-     */
+      * Updates `this` environment with a new variable symbol `sym`.
+      */
     def +(sym: Symbol.VarSym): Env = {
       copy(varSyms = varSyms + (sym.text -> sym))
     }
 
     /**
-     * Updates `this` environment with a set of new variable symbols `varSyms`.
-     */
+      * Updates `this` environment with a set of new variable symbols `varSyms`.
+      */
     def ++(vs: Iterable[Symbol.VarSym]): Env = vs.foldLeft(Env.empty) {
       case (acc, sym) => acc + sym
     }
@@ -819,43 +819,43 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   private object Used {
 
     /**
-     * Represents the empty set of used symbols.
-     */
+      * Represents the empty set of used symbols.
+      */
     val empty: Used = Used(MultiMap.empty, ListMap.empty, ListMap.empty, ListMap.empty, ListMap.empty, Set.empty)
 
     /**
-     * Returns an object where the given enum symbol `sym` and `tag` are marked as used.
-     */
+      * Returns an object where the given enum symbol `sym` and `tag` are marked as used.
+      */
     def of(sym: Symbol.EnumSym, tag: Name.Tag): Used = empty.copy(enumSyms = MultiMap.singleton(sym, tag))
 
     /**
-     * Returns an object where the given defn symbol `sym` is marked as used.
-     */
+      * Returns an object where the given defn symbol `sym` is marked as used.
+      */
     def of(sym: Symbol.DefnSym): Used = empty.copy(defSyms = ListMap.singleton(sym, sym.loc))
 
     /**
-     * Returns an object where the given sig symbol `sym` is marked as used.
-     */
+      * Returns an object where the given sig symbol `sym` is marked as used.
+      */
     def of(sym: Symbol.SigSym): Used = empty.copy(sigSyms = ListMap.singleton(sym, sym.loc))
 
     /**
-     * Returns an object where the given hole symbol `sym` is marked as used.
-     */
+      * Returns an object where the given hole symbol `sym` is marked as used.
+      */
     def of(sym: Symbol.HoleSym): Used = empty.copy(holeSyms = ListMap.singleton(sym, sym.loc))
 
     /**
-     * Returns an object where the given variable symbol `sym` is marked as used.
-     */
+      * Returns an object where the given variable symbol `sym` is marked as used.
+      */
     def of(sym: Symbol.VarSym): Used = empty.copy(varSyms = ListMap.singleton(sym, sym.loc))
 
     /**
-     * Returns an object where the given variable symbols `syms` are marked as used.
-     */
+      * Returns an object where the given variable symbols `syms` are marked as used.
+      */
     def of(syms: ListMap[Symbol.VarSym, SourceLocation]): Used = empty.copy(varSyms = syms)
 
     /**
-     * Returns an object where the given variable symbols `syms` are marked as used.
-     */
+      * Returns an object where the given variable symbols `syms` are marked as used.
+      */
     def of(syms: Set[Symbol.VarSym]): Used = empty.copy(varSyms =
       syms.foldLeft(ListMap.empty[Symbol.VarSym, SourceLocation]) {
         case (mm, sym) => mm + (sym, sym.loc)
@@ -864,8 +864,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   /**
-   * A representation of used symbols.
-   */
+    * A representation of used symbols.
+    */
   private case class Used(enumSyms: MultiMap[Symbol.EnumSym, Name.Tag],
                           defSyms: ListMap[Symbol.DefnSym, SourceLocation],
                           sigSyms: ListMap[Symbol.SigSym, SourceLocation],
@@ -874,8 +874,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
                           errors: Set[RedundancyError]) {
 
     /**
-     * Merges `this` and `that` where one of the two branches is executed
-     */
+      * Merges `this` and `that` where one of the two branches is executed
+      */
     def ++(that: Used): Used =
       if (this eq that) {
         this
@@ -895,30 +895,30 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       }
 
     /**
-     * Adds the given redundancy error `e` to `this` object.
-     */
+      * Adds the given redundancy error `e` to `this` object.
+      */
     def +(e: RedundancyError): Used = copy(errors = errors + e)
 
     /**
-     * Adds the given traversable of redundancy errors `es` to `this` object.
-     */
+      * Adds the given traversable of redundancy errors `es` to `this` object.
+      */
     def ++(es: Iterable[RedundancyError]): Used =
       if (es.isEmpty) this else copy(errors = errors ++ es)
 
     /**
-     * Marks the given variable symbol `sym` as used.
-     */
+      * Marks the given variable symbol `sym` as used.
+      */
     def -(sym: Symbol.VarSym): Used = copy(varSyms = varSyms - sym)
 
     /**
-     * Marks all the given variable symbols `syms` as used.
-     */
+      * Marks all the given variable symbols `syms` as used.
+      */
     def --(syms: Iterable[Symbol.VarSym]): Used =
       if (syms.isEmpty) this else copy(varSyms = varSyms -- syms)
 
     /**
-     * Returns `this` without any unused variable errors.
-     */
+      * Returns `this` without any unused variable errors.
+      */
     def withoutUnusedVars: Used = copy(errors = errors.filter {
       case e: RedundancyError.UnusedFormalParam => false
       case e: RedundancyError.UnusedVarSym => false
@@ -926,8 +926,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     })
 
     /**
-     * Returns Successful(a) unless `this` contains errors.
-     */
+      * Returns Successful(a) unless `this` contains errors.
+      */
     def toValidation[A](a: A): Validation[A, RedundancyError] = if (errors.isEmpty) Success(a) else Failure(errors.to(LazyList))
   }
 }

@@ -17,70 +17,70 @@
 package ca.uwaterloo.flix.util.collection
 
 /**
- * Companion object for the [[ListMap]] class.
- */
+  * Companion object for the [[ListMap]] class.
+  */
 object ListMap {
   /**
-   * Returns the empty list map.
-   */
+    * Returns the empty list map.
+    */
   def empty[K, V]: ListMap[K, V] = ListMap(Map.empty)
 
   /**
-   * Returns a singleton list map with a mapping from `k` to `v`.
-   */
+    * Returns a singleton list map with a mapping from `k` to `v`.
+    */
   def singleton[K, V](k: K, v: V): ListMap[K, V] = empty + (k, v)
 }
 
 /**
- * Represents a map from keys of type `K` to list of values of type `V`.
- * When a new mapping from `k` is added, it is prepended onto the list.
- */
+  * Represents a map from keys of type `K` to list of values of type `V`.
+  * When a new mapping from `k` is added, it is prepended onto the list.
+  */
 case class ListMap[K, V](m: Map[K, List[V]]) {
 
   /**
-   * Returns `true` is the map is empty, `false` if not.
-   */
+    * Returns `true` is the map is empty, `false` if not.
+    */
   def isEmpty: Boolean = m.isEmpty
 
   /**
-   * Returns `true` if the map contains `k`, `false` if not.
-   */
+    * Returns `true` if the map contains `k`, `false` if not.
+    */
   def contains(k: K): Boolean = m.contains(k)
 
   /**
-   * Returns the size of the map.
-   */
+    * Returns the size of the map.
+    */
   def size: Int = m.size
 
   /**
-   * Optionally returns the list of values that the key `k` maps to.
-   */
+    * Optionally returns the list of values that the key `k` maps to.
+    */
   def get(k: K): Option[List[V]] = m.get(k)
 
   /**
-   * Returns the list of values that the key `k` maps to.
-   */
+    * Returns the list of values that the key `k` maps to.
+    */
   def apply(k: K): List[V] = m.getOrElse(k, List.empty)
 
   /**
-   * Returns `this` list map extended with an additional mapping from `k` to `v`.
-   */
+    * Returns `this` list map extended with an additional mapping from `k` to `v`.
+    */
   def +(k: K, v: V): ListMap[K, V] = {
     val l = m.getOrElse(k, List.empty)
     ListMap(m + (k -> (v :: l)))
   }
 
   /**
-   * Returns `this` list map extended with additional mappings from `k`to the values in `vs`.
-   */
+    * Returns `this` list map extended with additional mappings from `k`to the values in `vs`.
+    */
   def +(k: K, vs: List[V]): ListMap[K, V] = {
     val l = m.getOrElse(k, List.empty)
     ListMap(m + (k -> (vs ++ l)))
   }
 
   /**
-   * Returns `this` list map extended with all mappings in `that` list mapping.
-   */
+    * Returns `this` list map extended with all mappings in `that` list mapping.
+    */
   def ++(that: ListMap[K, V]): ListMap[K, V] = {
     that.m.foldLeft(this) {
       case (macc, (k, vs)) => macc + (k, vs)
@@ -88,16 +88,16 @@ case class ListMap[K, V](m: Map[K, List[V]]) {
   }
 
   /**
-   * Returns `this` list map with mappings from `k` removed.
-   */
+    * Returns `this` list map with mappings from `k` removed.
+    */
   def -(k: K): ListMap[K, V] = {
     if (m.contains(k)) ListMap(m.removed(k))
     else this
   }
 
   /**
-   * Returns `this` list map with mappings from `ks` removed.
-   */
+    * Returns `this` list map with mappings from `ks` removed.
+    */
   def --(ks: Iterable[K]): ListMap[K, V] = {
     if (ks.isEmpty) this
     else ListMap(m.removedAll(ks))

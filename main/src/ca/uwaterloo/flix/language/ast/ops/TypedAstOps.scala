@@ -9,12 +9,12 @@ import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 object TypedAstOps {
 
   /**
-   * Returns a map of the holes in the given ast `root`.
-   */
+    * Returns a map of the holes in the given ast `root`.
+    */
   def holesOf(root: Root): Map[Symbol.HoleSym, HoleContext] = {
     /**
-     * Finds the holes and hole contexts in the given expression `exp0`.
-     */
+      * Finds the holes and hole contexts in the given expression `exp0`.
+      */
     def visitExp(exp0: Expression, env0: Map[Symbol.VarSym, Type]): Map[Symbol.HoleSym, HoleContext] = exp0 match {
       case Expression.Wild(tpe, loc) => Map.empty
 
@@ -243,30 +243,30 @@ object TypedAstOps {
     }
 
     /**
-     * Finds the holes and hole contexts in the given constraint `c0`.
-     */
+      * Finds the holes and hole contexts in the given constraint `c0`.
+      */
     def visitConstraint(c0: Constraint, env0: Map[Symbol.VarSym, Type]): Map[Symbol.HoleSym, HoleContext] = c0 match {
       case Constraint(cparams, head, body, loc) => visitHead(head, env0) ++ body.flatMap(visitBody(_, env0))
     }
 
     /**
-     * Finds the holes and hole contexts in the given head predicate `h0`.
-     */
+      * Finds the holes and hole contexts in the given head predicate `h0`.
+      */
     def visitHead(h0: Predicate.Head, env0: Map[Symbol.VarSym, Type]): Map[Symbol.HoleSym, HoleContext] = h0 match {
       case Predicate.Head.Atom(pred, den, terms, tpe, loc) => Map.empty
     }
 
     /**
-     * Finds the holes and hole contexts in the given body predicate `b0`.
-     */
+      * Finds the holes and hole contexts in the given body predicate `b0`.
+      */
     def visitBody(b0: Predicate.Body, env0: Map[Symbol.VarSym, Type]): Map[Symbol.HoleSym, HoleContext] = b0 match {
       case Predicate.Body.Atom(pred, den, polarity, terms, tpe, loc) => Map.empty
       case Predicate.Body.Guard(exp, loc) => visitExp(exp, env0)
     }
 
     /**
-     * Returns the set of variables bound by the given list of formal parameters `fparams`.
-     */
+      * Returns the set of variables bound by the given list of formal parameters `fparams`.
+      */
     def getEnvFromParams(fparams: List[FormalParam]): Map[Symbol.VarSym, Type] =
       fparams.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (macc, FormalParam(sym, mod, tpe, loc)) => macc + (sym -> tpe)
@@ -279,13 +279,13 @@ object TypedAstOps {
   }
 
   /**
-   * Returns the free variables in the given pattern `pat0`.
-   */
+    * Returns the free variables in the given pattern `pat0`.
+    */
   def freeVarsOf(pat0: Pattern): Set[Symbol.VarSym] = binds(pat0).keySet
 
   /**
-   * Returns the set of variable symbols bound by the given pattern `pat0`.
-   */
+    * Returns the set of variable symbols bound by the given pattern `pat0`.
+    */
   def binds(pat0: Pattern): Map[Symbol.VarSym, Type] = pat0 match {
     case Pattern.Wild(tpe, loc) => Map.empty
     case Pattern.Var(sym, tpe, loc) => Map(sym -> tpe)
@@ -322,8 +322,8 @@ object TypedAstOps {
   }
 
   /**
-   * Creates a set of all the sigs used in the given `exp`.
-   */
+    * Creates a set of all the sigs used in the given `exp`.
+    */
   def sigSymsOf(exp: Expression): Set[Symbol.SigSym] = exp match {
     case Expression.Unit(_) => Set.empty
     case Expression.Null(_, _) => Set.empty
@@ -398,8 +398,8 @@ object TypedAstOps {
   }
 
   /**
-   * Creates an iterable over all the instance defs in `root`.
-   */
+    * Creates an iterable over all the instance defs in `root`.
+    */
   def instanceDefsOf(root: Root): Iterable[Def] = {
     for {
       instsPerClass <- root.instances.values
@@ -409,36 +409,36 @@ object TypedAstOps {
   }
 
   /**
-   * Returns `true` if the given annotations contains the [[Benchmark]] annotation.
-   */
+    * Returns `true` if the given annotations contains the [[Benchmark]] annotation.
+    */
   def isBenchmark(xs: List[Annotation]): Boolean = xs.exists {
     case Annotation(name, _, _) => name.isInstanceOf[Benchmark]
   }
 
   /**
-   * Returns `true` if the given annotations contains the [[Law]] annotation.
-   */
+    * Returns `true` if the given annotations contains the [[Law]] annotation.
+    */
   def isLaw(xs: List[Annotation]): Boolean = xs.exists {
     case Annotation(name, _, _) => name.isInstanceOf[Law]
   }
 
   /**
-   * Returns `true` if the given annotations contains the [[Lint]] annotation.
-   */
+    * Returns `true` if the given annotations contains the [[Lint]] annotation.
+    */
   def isLint(xs: List[Annotation]): Boolean = xs.exists {
     case Annotation(name, _, _) => name.isInstanceOf[Lint]
   }
 
   /**
-   * Returns `true` if the given annotations contains the [[Test]] annotation.
-   */
+    * Returns `true` if the given annotations contains the [[Test]] annotation.
+    */
   def isTest(xs: List[Annotation]): Boolean = xs.exists {
     case Annotation(name, _, _) => name.isInstanceOf[Test]
   }
 
   /**
-   * Returns the free variables in the given expression `exp0`.
-   */
+    * Returns the free variables in the given expression `exp0`.
+    */
   def freeVars(exp0: Expression): Map[Symbol.VarSym, Type] = exp0 match {
     case Expression.Unit(_) => Map.empty
 
@@ -660,8 +660,8 @@ object TypedAstOps {
   }
 
   /**
-   * Returns the free variables in the given pattern `pat0`.
-   */
+    * Returns the free variables in the given pattern `pat0`.
+    */
   private def freeVars(pat0: Pattern): Map[Symbol.VarSym, Type] = pat0 match {
     case Pattern.Wild(_, _) => Map.empty
     case Pattern.Var(sym, tpe, _) => Map(sym -> tpe)
@@ -694,8 +694,8 @@ object TypedAstOps {
   }
 
   /**
-   * Returns the free variables in the given pattern `pat0`.
-   */
+    * Returns the free variables in the given pattern `pat0`.
+    */
   private def freeVars(pat0: ChoicePattern): Set[Symbol.VarSym] = pat0 match {
     case ChoicePattern.Wild(_) => Set.empty
     case ChoicePattern.Absent(_) => Set.empty
@@ -703,16 +703,16 @@ object TypedAstOps {
   }
 
   /**
-   * Returns the free variables in the given constraint `constraint0`.
-   */
+    * Returns the free variables in the given constraint `constraint0`.
+    */
   private def freeVars(constraint0: Constraint): Map[Symbol.VarSym, Type] = constraint0 match {
     case Constraint(cparams0, head, body, _) =>
       (freeVars(head) ++ body.flatMap(freeVars)) -- cparams0.map(_.sym)
   }
 
   /**
-   * Returns the free variables in the given head predicate `head0`.
-   */
+    * Returns the free variables in the given head predicate `head0`.
+    */
   private def freeVars(head0: Predicate.Head): Map[Symbol.VarSym, Type] = head0 match {
     case Head.Atom(_, _, terms, _, _) =>
       terms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
@@ -721,8 +721,8 @@ object TypedAstOps {
   }
 
   /**
-   * Returns the free variables in the given body predicate `body0`.
-   */
+    * Returns the free variables in the given body predicate `body0`.
+    */
   private def freeVars(body0: Predicate.Body): Map[Symbol.VarSym, Type] = body0 match {
     case Body.Atom(_, _, _, terms, _, _) =>
       terms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
