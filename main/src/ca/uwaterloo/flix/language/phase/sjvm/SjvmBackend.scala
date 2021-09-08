@@ -81,6 +81,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
       // TODO JLS: filter the base type list to the occurring types in ex. refs
       // TODO JLS: ParArgs as much as possible
       // TODO JLS: Add copyright everywhere
+      // TODO JLS: Check that aux methods are private
 
       val mainClass = GenMainClass.gen()
 
@@ -116,7 +117,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
 
       // todo rslClass
 
-      // todo holeError
+      val holeErrorClass = GenHoleErrorClass.gen()
 
       // todo matchError
 
@@ -131,7 +132,8 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
         refClasses,
         lazyClasses,
         unitClass,
-        flixErrorClass
+        flixErrorClass,
+        holeErrorClass
       ).reduce(_ ++ _)
 
       (classMap, closureSyms)

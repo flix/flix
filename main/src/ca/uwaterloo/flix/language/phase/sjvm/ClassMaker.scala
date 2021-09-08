@@ -17,23 +17,23 @@
 package ca.uwaterloo.flix.language.phase.sjvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{PRefType, PType, RType}
+import ca.uwaterloo.flix.language.ast.{Describable, PRefType, PType, RType}
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
 import ca.uwaterloo.flix.language.phase.sjvm.ClassMaker.Mod
 import ca.uwaterloo.flix.util.{InternalCompilerException, JvmTarget}
 import org.objectweb.asm.{ClassWriter, Opcodes}
 
 class ClassMaker(visitor: ClassWriter) {
-  private def makeField[T <: PType](fieldName: String, fieldType: RType[T], mod: Mod): Unit = {
+  private def makeField[T <: PType](fieldName: String, fieldType: Describable, mod: Mod): Unit = {
     val field = visitor.visitField(mod.getValue, fieldName, fieldType.descriptor, null, null)
     field.visitEnd()
   }
 
-  def mkField[T <: PType](fieldName: String, fieldType: RType[T], mod: Mod = Mod.nothing): Unit = {
+  def mkField[T <: PType](fieldName: String, fieldType: Describable, mod: Mod = Mod.nothing): Unit = {
     makeField(fieldName, fieldType, mod)
   }
 
-  def mkStaticField[T <: PType](fieldName: String, fieldType: RType[T]): Unit = {
+  def mkStaticField[T <: PType](fieldName: String, fieldType: Describable): Unit = {
     makeField(fieldName, fieldType, Mod.isStatic)
   }
 

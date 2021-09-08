@@ -32,6 +32,8 @@ object JvmName {
 
   val constructorMethod = "<init>"
   val staticConstructorMethod = "<clinit>"
+  val equalsMethod = "equals"
+  val hashcodeMethod = "hashCode"
 
   val voidDescriptor = "V"
   val javaMainDescriptor = "([Ljava/lang/String;)V"

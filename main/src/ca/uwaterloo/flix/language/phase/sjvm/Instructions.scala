@@ -532,6 +532,16 @@ object Instructions {
     castF(f)
   }
 
+  def createSimpleObject
+  [R <: Stack, T <: PRefType]
+  (className: JvmName):
+  F[R] => F[R ** PReference[T]] = f => {
+    f.visitor.visitTypeInsn(Opcodes.NEW, className)
+    f.visitor.visitInsn(Opcodes.DUP)
+    f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className, JvmName.constructorMethod, JvmName.nothingToVoid, false)
+    castF(f)
+  }
+
   def FORCE
   [R <: Stack, T <: PType]
   (rType: RType[PReference[PLazy[T]]]):
