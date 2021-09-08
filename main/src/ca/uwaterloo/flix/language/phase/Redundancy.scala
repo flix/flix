@@ -97,7 +97,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     val usedAll = (usedExp ++
       unusedFormalParams ++
-      unusedTypeParams).copy(varSyms = ListMap.empty)
+      unusedTypeParams).copy(varSyms = Set.empty)
 
     // Check if the expression contains holes.
     // If it does, we discard all unused local variable errors.
@@ -121,7 +121,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     // Check for unused parameters and remove all variable symbols.
     val usedAll = (usedExp ++
       unusedFormalParams ++
-      unusedTypeParams).copy(varSyms = ListMap.empty)
+      unusedTypeParams).copy(varSyms = Set.empty)
 
     // Check if the expression contains holes.
     // If it does, we discard all unused local variable errors.
@@ -658,11 +658,11 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     // not for `A(12) :- B(_x), C(_x).`.
     val errors = c0.cparams.flatMap(constraintParam => {
       val sym = constraintParam.sym
-      val occurrences = total.varSyms.apply(sym)
+      val occurrences = total.occurrencesOf.apply(sym)
       if (occurrences.size == 1 && !sym.isWild) {
         // Check that no variable is only used once
         List(RedundancyError.IllegalSingleVariable(sym, occurrences.iterator.next()))
-      } else if (body.varSyms.apply(sym).size > 1 && sym.isWild) {
+      } else if (body.occurrencesOf.apply(sym).size > 1 && sym.isWild) {
         // Check that wild variables are not used multiple times in the body
         occurrences.map(loc => RedundancyError.HiddenVarSym(sym, loc))
       } else Nil
@@ -821,7 +821,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Represents the empty set of used symbols.
       */
-    val empty: Used = Used(MultiMap.empty, ListMap.empty, ListMap.empty, ListMap.empty, ListMap.empty, Set.empty)
+    val empty: Used = Used(MultiMap.empty, Set.empty, Set.empty, Set.empty, Set.empty, ListMap.empty, Set.empty)
 
     /**
       * Returns an object where the given enum symbol `sym` and `tag` are marked as used.
@@ -831,33 +831,29 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Returns an object where the given defn symbol `sym` is marked as used.
       */
-    def of(sym: Symbol.DefnSym): Used = empty.copy(defSyms = ListMap.singleton(sym, sym.loc))
+    def of(sym: Symbol.DefnSym): Used = empty.copy(defSyms = Set(sym))
 
     /**
       * Returns an object where the given sig symbol `sym` is marked as used.
       */
-    def of(sym: Symbol.SigSym): Used = empty.copy(sigSyms = ListMap.singleton(sym, sym.loc))
+    def of(sym: Symbol.SigSym): Used = empty.copy(sigSyms = Set(sym))
 
     /**
       * Returns an object where the given hole symbol `sym` is marked as used.
       */
-    def of(sym: Symbol.HoleSym): Used = empty.copy(holeSyms = ListMap.singleton(sym, sym.loc))
+    def of(sym: Symbol.HoleSym): Used = empty.copy(holeSyms = Set(sym))
 
     /**
       * Returns an object where the given variable symbol `sym` is marked as used.
       */
-    def of(sym: Symbol.VarSym): Used = empty.copy(varSyms = ListMap.singleton(sym, sym.loc))
+    def of(sym: Symbol.VarSym): Used = empty.copy(varSyms = Set(sym), occurrencesOf = ListMap.singleton(sym, sym.loc))
 
     /**
       * Returns an object where the given variable symbols `syms` are marked as used.
       */
-    def of(syms: ListMap[Symbol.VarSym, SourceLocation]): Used = empty.copy(varSyms = syms)
-
-    /**
-      * Returns an object where the given variable symbols `syms` are marked as used.
-      */
-    def of(syms: Set[Symbol.VarSym]): Used = empty.copy(varSyms =
-      syms.foldLeft(ListMap.empty[Symbol.VarSym, SourceLocation]) {
+    def of(syms: Set[Symbol.VarSym]): Used = empty.copy(
+      varSyms = syms,
+      occurrencesOf = syms.foldLeft(ListMap.empty[Symbol.VarSym, SourceLocation]) {
         case (mm, sym) => mm + (sym, sym.loc)
       })
 
@@ -867,10 +863,11 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     * A representation of used symbols.
     */
   private case class Used(enumSyms: MultiMap[Symbol.EnumSym, Name.Tag],
-                          defSyms: ListMap[Symbol.DefnSym, SourceLocation],
-                          sigSyms: ListMap[Symbol.SigSym, SourceLocation],
-                          holeSyms: ListMap[Symbol.HoleSym, SourceLocation],
-                          varSyms: ListMap[Symbol.VarSym, SourceLocation],
+                          defSyms: Set[Symbol.DefnSym],
+                          sigSyms: Set[Symbol.SigSym],
+                          holeSyms: Set[Symbol.HoleSym],
+                          varSyms: Set[Symbol.VarSym],
+                          occurrencesOf: ListMap[Symbol.VarSym, SourceLocation],
                           errors: Set[RedundancyError]) {
 
     /**
@@ -890,6 +887,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
           this.sigSyms ++ that.sigSyms,
           this.holeSyms ++ that.holeSyms,
           this.varSyms ++ that.varSyms,
+          this.occurrencesOf ++ that.occurrencesOf,
           this.errors ++ that.errors
         )
       }
