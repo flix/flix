@@ -15,7 +15,7 @@
  */
 
 namespace Fixpoint/Ram {
-    pub enum RowVar {
+    pub enum RowVar with Eq {
         case Named(String)
         case Index(Int32)
     }
@@ -24,13 +24,6 @@ namespace Fixpoint/Ram {
         pub def toString(var: RowVar): String = match var {
             case Named(name) => name
             case Index(i) => "${i}$"
-        }
-    }
-
-    instance Eq[RowVar] {
-        pub def eq(x: RowVar, y: RowVar): Bool = match x <=> y {
-            case EqualTo => true
-            case _ => false
         }
     }
 
