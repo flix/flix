@@ -20,7 +20,7 @@
 /// A list is either the empty list represented by `Nil`, or
 /// an element `v` followed by a list `vs` represented by `v :: vs`.
 ///
-enum List[t] with Eq, Order {
+enum List[t] {
     case Nil,
     case Cons(t, List[t])
 }
@@ -34,6 +34,30 @@ instance ToString[List[a]] with ToString[a] {
 instance Hash[List[a]] with Hash[a] {
     pub def hash(xs: List[a]): Int =
         List.foldLeft((acc, x) -> acc * 31 + Hash.hash(x), 37199, xs)
+}
+
+instance Eq[List[a]] with Eq[a] {
+    pub def eq(xs: List[a], ys: List[a]): Bool = match (xs, ys) {
+        case (Nil, Nil) => true
+        case (x :: rs, y :: qs) => if (x != y) false else rs == qs
+        case _ => false
+    }
+}
+
+instance Order[List[a]] with Order[a] {
+
+    ///
+    /// Compares `xs` and `ys` lexicographically.
+    ///
+    pub def compare(xs: List[a], ys: List[a]): Comparison = match (xs, ys) {
+        case (_ :: _, Nil) => GreaterThan
+        case (Nil, Nil) => EqualTo
+        case (Nil, _ :: _) => LessThan
+        case (z :: zs, w :: ws) =>
+            let cmp = z <=> w;
+            if (cmp == EqualTo) zs <=> ws else cmp
+    }
+
 }
 
 instance Functor[List] {
