@@ -10,7 +10,7 @@ namespace Domain/Sign {
     ///
     /// Notice that Neg and Pos implicitly includes zero.
     ///
-    enum Sign {
+    enum Sign with Eq {
                   case Top,
 
         case Neg,          case Pos,
@@ -18,17 +18,6 @@ namespace Domain/Sign {
                   case Zer,
 
                   case Bot
-    }
-
-    instance Eq[Sign] {
-        pub def eq(e1: Sign, e2: Sign): Bool = match (e1, e2) {
-            case (Top, Top) => true
-            case (Neg, Neg) => true
-            case (Pos, Pos) => true
-            case (Zer, Zer) => true
-            case (Bot, Bot) => true
-            case _          => false
-        }
     }
 
     ///
