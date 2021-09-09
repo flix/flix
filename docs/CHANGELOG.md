@@ -2,6 +2,15 @@
 
 HEAD:
 
+Version 0.19.0:
+- Added support for derivation of Eq (thanks Matthew!)
+- Added support for derivation of Order (thanks Matthew!)
+- Added support for derivation of ToString (thanks Matthew!)
+- LSP: Use Markdown for hovering (thanks Jacob Kragh!)
+- LSP: Improved autocomplete for with clauses.
+- Added more instances of PartialOrder, JoinLattice, and MeetLattice (thanks Jonathan Starup!)
+- Removed dependency on flix-runtime.jar (thanks Jonathan Starup!)
+
 Version 0.18.0:
 - Improved auto-complete.
 - Minor bug fixes.

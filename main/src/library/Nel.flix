@@ -18,38 +18,15 @@
 /// The NonEmptyList type.
 ///
 
-pub enum Nel[a] {
+pub enum Nel[a] with Eq, Order, ToString {
     case Nel(a, List[a])
 }
 
 instance Boxable[Nel[a]]
 
-instance ToString[Nel[a]] with ToString[a] {
-    pub def toString(l: Nel[a]): String = match l {
-        case Nel(x, xs) => "Nel(${x}, ${xs})"
-    }
-}
-
 instance Hash[Nel[a]] with Hash[a] {
     pub def hash(l: Nel[a]): Int = match l {
         case Nel(x, xs) => 39119 + Hash.hash(xs) + Hash.hash(x)
-    }
-}
-
-instance Eq[Nel[a]] with Eq[a] {
-    pub def eq(xs: Nel[a], ys: Nel[a]): Bool = match (xs, ys) {
-        case (Nel(x, l1), Nel(y, l2)) => x == y and l1 == l2
-    }
-}
-
-instance Order[Nel[a]] with Order[a] {
-    ///
-    /// Compares `xs` and `ys` lexicographically.
-    ///
-    pub def compare(xs: Nel[a], ys: Nel[a]): Comparison = match (xs, ys) {
-        case (Nel(x, l1), Nel(y, l2)) =>
-            let cmp = x <=> y;
-            if (cmp == EqualTo) l1 <=> l2 else cmp
     }
 }
 
