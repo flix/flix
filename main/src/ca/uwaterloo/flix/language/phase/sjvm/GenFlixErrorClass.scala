@@ -28,7 +28,7 @@ object GenFlixErrorClass {
       preInitALOAD(0, tagOf[PAnyObject]) ~
       ALOAD(1, RStr.rType) ~
       ((f: F[StackNil ** PReference[PAnyObject] ** PReference[PStr]]) => {
-        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, superClass.internalName, JvmName.constructorMethod, RStr.thisToNothingDescriptor, false)
+        f.visitMethodInsn(Opcodes.INVOKESPECIAL, superClass.internalName, JvmName.constructorMethod, RStr.thisToNothingDescriptor)
         f.asInstanceOf[F[StackNil]]
       }) ~
       RETURN

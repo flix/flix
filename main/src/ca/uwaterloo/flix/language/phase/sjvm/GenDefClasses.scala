@@ -69,20 +69,20 @@ object GenDefClasses {
   def magicReversePutField[R <: Stack, T <: PType](className: JvmName, resultType: RType[T]): F[R ** T ** PReference[PAnyObject]] => F[R] = f => {
     resultType match {
       case RType.RInt64 | RType.RFloat64 =>
-        f.visitor.visitInsn(Opcodes.DUP_X2)
-        f.visitor.visitInsn(Opcodes.POP)
+        f.visitInsn(Opcodes.DUP_X2)
+        f.visitInsn(Opcodes.POP)
       case _ =>
-        f.visitor.visitInsn(Opcodes.SWAP)
+        f.visitInsn(Opcodes.SWAP)
     }
-    f.visitor.visitFieldInsn(Opcodes.PUTFIELD, className.internalName, GenContinuationInterfaces.ResultFieldName, resultType.erasedDescriptor)
+    f.visitFieldInsn(Opcodes.PUTFIELD, className.internalName, GenContinuationInterfaces.ResultFieldName, resultType.erasedDescriptor)
     f.asInstanceOf[F[R]]
   }
 
   def magicStoreArg[R <: Stack, T <: PType](index: Int, tpe: RType[T], defName: JvmName, sym: Symbol.VarSym): F[R] => F[R] = {
     ((f: F[R]) => {
-      f.visitor.visitVarInsn(Opcodes.ALOAD, 0)
+      f.visitVarInsn(Opcodes.ALOAD, 0)
       undoErasure(defName, f.visitor)
-      f.visitor.visitFieldInsn(Opcodes.GETFIELD, defName.internalName, GenFunctionInterfaces.argFieldName(index), tpe.erasedDescriptor)
+      f.visitFieldInsn(Opcodes.GETFIELD, defName.internalName, GenFunctionInterfaces.argFieldName(index), tpe.erasedDescriptor)
       undoErasure(tpe, f.visitor) // TODO(JLS): this is probably not needed
       f.asInstanceOf[F[R ** T]]
     }) ~ XStore(sym, tpe)

@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm
-import org.objectweb.asm.{MethodVisitor, Opcodes}
+import org.objectweb.asm.{Label, MethodVisitor, Opcodes}
 
 import scala.language.implicitConversions
 
@@ -41,7 +41,35 @@ object BytecodeCompiler {
 
   type **[R <: Stack, T <: PType] = StackCons[R, T]
 
-  sealed case class F[T <: Stack](visitor: MethodVisitor)
+  // TODO(JLS): maybe the methods should take JvmNames? Describable?
+  sealed case class F[T <: Stack](visitor: MethodVisitor) {
+    def visitMethodInsn(opcode: Int, owner: InternalName, name: String, descriptor: Descriptor, isInterface: Boolean = false): Unit =
+      visitor.visitMethodInsn(opcode, owner.toString, name, descriptor.toString, isInterface)
+
+    def visitTypeInsn(opcode: Int, tpe: InternalName): Unit = visitor.visitTypeInsn(opcode, tpe.toString)
+
+    def visitInsn(opcode: Int): Unit = visitor.visitInsn(opcode)
+
+    def visitLabel(label: Label): Unit = visitor.visitLabel(label)
+
+    def visitEnd(): Unit = visitor.visitEnd()
+
+    def visitCode(): Unit = visitor.visitCode()
+
+    def visitFieldInsn(opcode: Int, owner: InternalName, name: String, descriptor: Descriptor): Unit = visitor.visitFieldInsn(opcode, owner.toString, name, descriptor.toString)
+
+    def visitMaxs(maxStack: Int = 999, maxLocals: Int = 999): Unit = visitor.visitMaxs(maxStack, maxLocals)
+
+    def visitVarInsn(opcode: Int, index: Int): Unit = visitor.visitVarInsn(opcode, index)
+
+    def visitJumpInsn(opcode: Int, label: Label): Unit = visitor.visitJumpInsn(opcode, label)
+
+    def visitLineNumber(line: Int, start: Label): Unit = visitor.visitLineNumber(line, start)
+
+    def visitLdcInsn(value: Any): Unit = visitor.visitLdcInsn(value)
+
+    def visitIntInsn(opcode: Int, operand: Int): Unit = visitor.visitIntInsn(opcode, operand)
+  }
 
   trait Cat1[T]
 
@@ -723,9 +751,9 @@ object BytecodeCompiler {
         })
 
     case Expression.TryCatch(exp, rules, tpe, loc) => ???
-    case Expression.InvokeConstructor(constructor, args, tpe, loc) =>
+    case Expression.InvokeConstructor(constructor, args, _, loc) =>
       // TODO(JLS): pretty messy
-      val constructorDescriptor = asm.Type.getConstructorDescriptor(constructor)
+      val constructorDescriptor = Descriptor.of(asm.Type.getConstructorDescriptor(constructor))
       val className = JvmName.fromClass(constructor.getDeclaringClass)
       WithSource[R](loc) ~
         NEW(className, tagOf[PAnyObject]) ~
@@ -736,7 +764,7 @@ object BytecodeCompiler {
             compileExp(arg)(f)
             // TODO(JLS): maybe undoErasure here? genExpression matches on array types
           }
-          f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.internalName, JvmName.constructorMethod, constructorDescriptor, false)
+          f.visitMethodInsn(Opcodes.INVOKESPECIAL, className.internalName, JvmName.constructorMethod, constructorDescriptor)
           f.asInstanceOf[F[R ** T]]
         })
 
@@ -748,20 +776,20 @@ object BytecodeCompiler {
       // Evaluate the receiver object.
       compileExp(exp)(f)
       val className = JvmName.fromClass(method.getDeclaringClass)
-      f.visitor.visitTypeInsn(Opcodes.CHECKCAST, className.internalName)
+      f.visitTypeInsn(Opcodes.CHECKCAST, className.internalName)
 
       // Evaluate arguments left-to-right and push them onto the stack.
       for (arg <- args) {
         compileExp(arg)(f)
         // TODO(JLS): maybe undoErasure here? genExpression matches on array types (method.getParameterTypes)
       }
-      val descriptor = asm.Type.getMethodDescriptor(method)
+      val descriptor = Descriptor.of(asm.Type.getMethodDescriptor(method))
 
       // Check if we are invoking an interface or class.
       if (method.getDeclaringClass.isInterface) {
-        f.visitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, className.internalName, method.getName, descriptor, true)
+        f.visitMethodInsn(Opcodes.INVOKEINTERFACE, className.internalName, method.getName, descriptor, isInterface = true)
       } else {
-        f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, className.internalName, method.getName, descriptor, false)
+        f.visitMethodInsn(Opcodes.INVOKEVIRTUAL, className.internalName, method.getName, descriptor)
       }
 
       // If the method is void, put a unit on top of the stack
@@ -780,9 +808,9 @@ object BytecodeCompiler {
         // TODO(JLS): maybe undoErasure here? genExpression matches on array types
       }
       val className = JvmName.fromClass(method.getDeclaringClass)
-      val descriptor = asm.Type.getMethodDescriptor(method)
+      val descriptor = Descriptor.of(asm.Type.getMethodDescriptor(method))
 
-      f.visitor.visitMethodInsn(Opcodes.INVOKESTATIC, className.internalName, method.getName, descriptor, false)
+      f.visitMethodInsn(Opcodes.INVOKESTATIC, className.internalName, method.getName, descriptor)
 
       // If the method is void, put a unit on top of the stack
       if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) pushUnit(f)
@@ -793,7 +821,7 @@ object BytecodeCompiler {
       WithSource[R](loc) ~
         compileExp(exp) ~
         ((f: F[R ** PReference[PAnyObject]]) => {
-          f.visitor.visitFieldInsn(Opcodes.GETFIELD, JvmName.fromClass(field.getDeclaringClass).internalName, field.getName, tpe.descriptor)
+          f.visitFieldInsn(Opcodes.GETFIELD, JvmName.fromClass(field.getDeclaringClass).internalName, field.getName, tpe.descriptor)
           f.asInstanceOf[F[R ** T]]
         })
 
@@ -802,7 +830,7 @@ object BytecodeCompiler {
         compileExp(exp1) ~
         compileExp(exp2) ~
         (f => {
-          f.visitor.visitFieldInsn(Opcodes.PUTFIELD, JvmName.fromClass(field.getDeclaringClass).internalName, field.getName, exp2.tpe.descriptor)
+          f.visitFieldInsn(Opcodes.PUTFIELD, JvmName.fromClass(field.getDeclaringClass).internalName, field.getName, exp2.tpe.descriptor)
           f.asInstanceOf[F[R]]
         }) ~
         pushUnit
@@ -815,7 +843,7 @@ object BytecodeCompiler {
       WithSource[R](loc) ~
         compileExp(exp) ~
         (f => {
-          f.visitor.visitFieldInsn(Opcodes.PUTSTATIC, JvmName.fromClass(field.getDeclaringClass).internalName, field.getName, exp.tpe.descriptor)
+          f.visitFieldInsn(Opcodes.PUTSTATIC, JvmName.fromClass(field.getDeclaringClass).internalName, field.getName, exp.tpe.descriptor)
           f.asInstanceOf[F[R]]
         }) ~
         pushUnit
@@ -827,7 +855,7 @@ object BytecodeCompiler {
         DUP ~
         compileExp(exp) ~
         (f => {
-          f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, chanRef.internalName, JvmName.constructorMethod,
+          f.visitMethodInsn(Opcodes.INVOKESPECIAL, chanRef.internalName, JvmName.constructorMethod,
             JvmName.getMethodDescriptor(List(RInt32), None), false)
           f.asInstanceOf[F[R ** T]]
         })
@@ -859,13 +887,13 @@ object BytecodeCompiler {
         } ~
         pushBool(default.isDefined) ~
         ((f: F[R ** PReference[PArray[PReference[PChan[PAnyObject]]]] ** PInt32]) => {
-          f.visitor.visitMethodInsn(Opcodes.INVOKESTATIC, JvmName.Flix.Channel.internalName, "select",
+          f.visitMethodInsn(Opcodes.INVOKESTATIC, JvmName.Flix.Channel.internalName, "select",
             JvmName.getMethodDescriptor(List(JvmName.Flix.Channel, RBool), JvmName.Flix.SelectChoice), false)
           f.asInstanceOf[F[R ** PReference[PAnyObject]]]
         }) ~
         DUP ~
         (f => {
-          f.visitor.visitFieldInsn(Opcodes.GETFIELD, JvmName.Flix.SelectChoice.internalName, "defaultChoice", RBool.descriptor)
+          f.visitFieldInsn(Opcodes.GETFIELD, JvmName.Flix.SelectChoice.internalName, "defaultChoice", RBool.descriptor)
           f.asInstanceOf[F[R ** PReference[PAnyObject] ** PInt32]]
         }) ~
         IFNE {
@@ -875,8 +903,8 @@ object BytecodeCompiler {
               compileExp(default.get)
             } else {
               f => {
-                f.visitor.visitInsn(Opcodes.ACONST_NULL)
-                f.visitor.visitInsn(Opcodes.ATHROW)
+                f.visitInsn(Opcodes.ACONST_NULL)
+                f.visitInsn(Opcodes.ATHROW)
                 f.asInstanceOf[F[R ** T]]
               }
             })

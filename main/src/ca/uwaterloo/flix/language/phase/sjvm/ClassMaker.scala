@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.sjvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Describable, PRefType, PType, RType}
+import ca.uwaterloo.flix.language.ast.{PRefType, PType}
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
 import ca.uwaterloo.flix.language.phase.sjvm.ClassMaker.Mod
 import ca.uwaterloo.flix.util.{InternalCompilerException, JvmTarget}
@@ -25,7 +25,7 @@ import org.objectweb.asm.{ClassWriter, Opcodes}
 
 class ClassMaker(visitor: ClassWriter) {
   private def makeField[T <: PType](fieldName: String, fieldType: Describable, mod: Mod): Unit = {
-    val field = visitor.visitField(mod.getValue, fieldName, fieldType.descriptor, null, null)
+    val field = visitor.visitField(mod.getValue, fieldName, fieldType.descriptor.toString, null, null)
     field.visitEnd()
   }
 
@@ -37,14 +37,14 @@ class ClassMaker(visitor: ClassWriter) {
     makeField(fieldName, fieldType, Mod.isStatic)
   }
 
-  def mkConstructor(f: F[StackNil] => F[StackEnd], descriptor: String = JvmName.nothingToVoid, mod: Mod = Mod.isPublic): Unit =
+  def mkConstructor(f: F[StackNil] => F[StackEnd], descriptor: Descriptor = JvmName.nothingToVoid, mod: Mod = Mod.isPublic): Unit =
     mkMethod(f, JvmName.constructorMethod, descriptor, mod)
 
   def mkStaticConstructor(f: F[StackNil] => F[StackEnd]): Unit =
     mkMethod(f, JvmName.staticConstructorMethod, JvmName.nothingToVoid, Mod.isStatic)
 
-  def mkMethod(f: F[StackNil] => F[StackEnd], methodName: String, descriptor: String, mod: Mod): Unit = {
-    val methodVisitor = visitor.visitMethod(mod.getValue, methodName, descriptor, null, null)
+  def mkMethod(f: F[StackNil] => F[StackEnd], methodName: String, descriptor: Descriptor, mod: Mod): Unit = {
+    val methodVisitor = visitor.visitMethod(mod.getValue, methodName, descriptor.toString, null, null)
     methodVisitor.visitCode()
     f(F(methodVisitor))
     methodVisitor.visitMaxs(1, 1)
@@ -52,8 +52,8 @@ class ClassMaker(visitor: ClassWriter) {
   }
 
   // TODO(JLS): make a better interface. Mod doesn't work as an API
-  def mkAbstractMethod(methodName: String, descriptor: String, mod: Mod): Unit = {
-    visitor.visitMethod(mod.getValue, methodName, descriptor, null, null).visitEnd()
+  def mkAbstractMethod(methodName: String, descriptor: Descriptor, mod: Mod): Unit = {
+    visitor.visitMethod(mod.getValue, methodName, descriptor.toString, null, null).visitEnd()
   }
 
   def closeClassMaker: Array[Byte] = {
@@ -87,8 +87,8 @@ object ClassMaker {
 
   def mkClassMaker[T <: PRefType](className: JvmName, superClass: JvmName, mod: Mod, interfaces: JvmName*)(implicit flix: Flix): ClassMaker = {
     val visitor = makeClassWriter()
-    visitor.visit(JavaVersion, mod.getValue, className.internalName, null, superClass.internalName, interfaces.map(_.internalName).toArray)
-    visitor.visitSource(className.internalName, null)
+    visitor.visit(JavaVersion, mod.getValue, className.internalName.toString, null, superClass.internalName.toString, interfaces.map(_.internalName.toString).toArray)
+    visitor.visitSource(className.internalName.toString, null)
     new ClassMaker(visitor)
   }
 

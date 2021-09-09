@@ -17,7 +17,6 @@
 
 package ca.uwaterloo.flix.language.phase.sjvm
 
-import ca.uwaterloo.flix.language.ast.Describable
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.nio.file.{Path, Paths}
@@ -35,19 +34,19 @@ object JvmName {
   val equalsMethod = "equals"
   val hashcodeMethod = "hashCode"
 
-  val voidDescriptor = "V"
-  val javaMainDescriptor = "([Ljava/lang/String;)V"
+  val voidDescriptor = Descriptor.of("V")
+  val javaMainDescriptor = Descriptor.of("([Ljava/lang/String;)V")
 
-  val nothingToVoid: String = getMethodDescriptor(Nil, None)
-  val booleanToVoid: String = getMethodDescriptor(Java.Boolean, None)
-  val byteToVoid: String = getMethodDescriptor(Java.Byte, None)
-  val shortToVoid: String = getMethodDescriptor(Java.Short, None)
-  val integerToVoid: String = getMethodDescriptor(Java.Integer, None)
-  val longToVoid: String = getMethodDescriptor(Java.Long, None)
-  val characterToVoid: String = getMethodDescriptor(Java.Character, None)
-  val floatToVoid: String = getMethodDescriptor(Java.Float, None)
-  val doubleToVoid: String = getMethodDescriptor(Java.Double, None)
-  val objectToVoid: String = getMethodDescriptor(Java.Object, None)
+  val nothingToVoid: Descriptor = getMethodDescriptor(Nil, None)
+  val booleanToVoid: Descriptor = getMethodDescriptor(Java.Boolean, None)
+  val byteToVoid: Descriptor = getMethodDescriptor(Java.Byte, None)
+  val shortToVoid: Descriptor = getMethodDescriptor(Java.Short, None)
+  val integerToVoid: Descriptor = getMethodDescriptor(Java.Integer, None)
+  val longToVoid: Descriptor = getMethodDescriptor(Java.Long, None)
+  val characterToVoid: Descriptor = getMethodDescriptor(Java.Character, None)
+  val floatToVoid: Descriptor = getMethodDescriptor(Java.Float, None)
+  val doubleToVoid: Descriptor = getMethodDescriptor(Java.Double, None)
+  val objectToVoid: Descriptor = getMethodDescriptor(Java.Object, None)
 
   /**
     * Returns the JvmName of the given string `s`.
@@ -63,24 +62,24 @@ object JvmName {
   /**
     * Returns the descriptor of a method take takes the given `argumentTypes` and returns the given `resultType`.
     */
-  def getMethodDescriptor(arguments: List[Describable], result: Option[Describable]): String = {
+  def getMethodDescriptor(arguments: List[Describable], result: Option[Describable]): Descriptor = {
     // Descriptor of result
-    val resultDescriptor = result.fold(voidDescriptor)(_.descriptor)
+    val resultDescriptor = result.map(_.descriptor).getOrElse(voidDescriptor)
 
     // Descriptor of arguments
-    val argumentDescriptor = arguments.map(_.descriptor).mkString
+    val argumentDescriptor = arguments.map(_.descriptor.toString).mkString
 
     // Descriptor of the method
-    s"($argumentDescriptor)$resultDescriptor"
+    Descriptor.of(s"($argumentDescriptor)$resultDescriptor")
   }
 
-  def getMethodDescriptor(arguments: List[Describable], result: Describable): String =
+  def getMethodDescriptor(arguments: List[Describable], result: Describable): Descriptor =
     getMethodDescriptor(arguments, Some(result))
 
-  def getMethodDescriptor(argument: Describable, result: Option[Describable]): String =
+  def getMethodDescriptor(argument: Describable, result: Option[Describable]): Descriptor =
     getMethodDescriptor(List(argument), result)
 
-  def getMethodDescriptor(argument: Describable, result: Describable): String =
+  def getMethodDescriptor(argument: Describable, result: Describable): Descriptor =
     getMethodDescriptor(List(argument), Some(result))
 
   object Java {
@@ -144,8 +143,16 @@ case class JvmName(pkg: List[String], name: String) extends Describable {
   /**
     * Returns the type descriptor of `this` Java name.
     */
-  lazy val descriptor: String =
-    if (pkg.isEmpty) "L" + name + ";" else "L" + pkg.mkString("/") + "/" + name + ";"
+  lazy val descriptor: Descriptor =
+    Descriptor.of(if (pkg.isEmpty) "L" + name + ";" else "L" + pkg.mkString("/") + "/" + name + ";")
+
+  override lazy val erasedDescriptor: Descriptor = JvmName.Java.Object.descriptor
+
+  override val erasedString: String = "Obj"
+
+  override lazy val nothingToThisDescriptor: Descriptor = JvmName.getMethodDescriptor(Nil, this)
+
+  override lazy val thisToNothingDescriptor: Descriptor = JvmName.getMethodDescriptor(this, None)
 
   /**
     * Returns the binary name of `this` Java name.
@@ -163,11 +170,41 @@ case class JvmName(pkg: List[String], name: String) extends Describable {
     *
     * The internal name is of the form `java/lang/String`.
     */
-  lazy val internalName: String =
-    if (pkg.isEmpty) name else pkg.mkString("/") + "/" + name
+  lazy val internalName: InternalName =
+    InternalName.of(if (pkg.isEmpty) name else pkg.mkString("/") + "/" + name)
 
   /**
     * Returns the relative path of `this` Java name.
     */
   lazy val path: Path = Paths.get(pkg.mkString("/"), name + ".class")
 }
+
+trait Describable {
+  def descriptor: Descriptor
+
+  def erasedString: String
+
+  def erasedDescriptor: Descriptor
+
+  def nothingToThisDescriptor: Descriptor
+
+  def thisToNothingDescriptor: Descriptor
+}
+
+object Descriptor {
+  def of(s: String): Descriptor = Descriptor(s)
+}
+
+case class Descriptor(s: String) {
+  override def toString: String = s
+}
+
+object InternalName {
+  def of(s: String): InternalName = InternalName(s)
+}
+
+case class InternalName(s: String) {
+  override def toString: String = s
+}
+
+

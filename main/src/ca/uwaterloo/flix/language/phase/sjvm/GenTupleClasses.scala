@@ -34,7 +34,7 @@ import ca.uwaterloo.flix.util.ParOps
 object GenTupleClasses {
 
   val GetBoxedArrayMethodName: String = "getBoxedArray"
-  val GetBoxedArrayMethodDescriptor: String = JvmName.getMethodDescriptor(Nil, RArray(RReference(RObject)))
+  val GetBoxedArrayMethodDescriptor: Descriptor = JvmName.getMethodDescriptor(Nil, RArray(RReference(RObject)))
 
   def indexFieldName(index: Int): String = s"index$index"
 

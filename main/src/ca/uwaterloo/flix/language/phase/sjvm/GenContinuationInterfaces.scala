@@ -80,24 +80,24 @@ object GenContinuationInterfaces {
     import org.objectweb.asm.Label
     import org.objectweb.asm.Opcodes._
 
-    f.visitor.visitVarInsn(ALOAD, 0)
-    f.visitor.visitVarInsn(ASTORE, 1)
+    f.visitVarInsn(ALOAD, 0)
+    f.visitVarInsn(ASTORE, 1)
 
-    f.visitor.visitInsn(ACONST_NULL)
-    f.visitor.visitVarInsn(ASTORE, 2)
+    f.visitInsn(ACONST_NULL)
+    f.visitVarInsn(ASTORE, 2)
 
     val loopStart = new Label()
-    f.visitor.visitLabel(loopStart)
-    f.visitor.visitVarInsn(ALOAD, 1)
-    f.visitor.visitVarInsn(ASTORE, 2)
-    f.visitor.visitVarInsn(ALOAD, 1)
-    f.visitor.visitMethodInsn(INVOKEVIRTUAL, resultType.contName.internalName, InvokeMethodName, resultType.nothingToContDescriptor, false)
-    f.visitor.visitVarInsn(ASTORE, 1)
-    f.visitor.visitVarInsn(ALOAD, 1)
-    f.visitor.visitJumpInsn(IFNONNULL, loopStart)
+    f.visitLabel(loopStart)
+    f.visitVarInsn(ALOAD, 1)
+    f.visitVarInsn(ASTORE, 2)
+    f.visitVarInsn(ALOAD, 1)
+    f.visitMethodInsn(INVOKEVIRTUAL, resultType.contName.internalName, InvokeMethodName, resultType.nothingToContDescriptor)
+    f.visitVarInsn(ASTORE, 1)
+    f.visitVarInsn(ALOAD, 1)
+    f.visitJumpInsn(IFNONNULL, loopStart)
 
-    f.visitor.visitVarInsn(ALOAD, 2)
-    f.visitor.visitFieldInsn(GETFIELD, resultType.contName.internalName, ResultFieldName, resultType.descriptor)
+    f.visitVarInsn(ALOAD, 2)
+    f.visitFieldInsn(GETFIELD, resultType.contName.internalName, ResultFieldName, resultType.descriptor)
     XRETURN(resultType)(f.asInstanceOf[F[StackNil ** T]])
   }
 

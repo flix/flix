@@ -73,11 +73,11 @@ object GenNamespaces {
       invokeSimpleConstructor(defName) ~ { f: F[StackNil ** PReference[PFunction[T]]] =>
       var nextIndex = 0
       for ((argType, argIndex) <- functionType.args.zipWithIndex) {
-        f.visitor.visitInsn(Opcodes.DUP)
+        f.visitInsn(Opcodes.DUP)
         XLOAD(functionType.args(argIndex), nextIndex)(f)
         val inc = if (argType.isCat1) 1 else 2
         nextIndex += inc
-        f.visitor.visitFieldInsn(Opcodes.PUTFIELD, defName.internalName, GenFunctionInterfaces.argFieldName(argIndex), functionType.args(argIndex).erasedDescriptor)
+        f.visitFieldInsn(Opcodes.PUTFIELD, defName.internalName, GenFunctionInterfaces.argFieldName(argIndex), functionType.args(argIndex).erasedDescriptor)
       }
       f.asInstanceOf[F[StackNil ** PReference[PFunction[T]]]]
     } ~

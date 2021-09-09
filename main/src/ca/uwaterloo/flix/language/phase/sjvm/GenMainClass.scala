@@ -88,20 +88,20 @@ object GenMainClass {
     //      main.visitVarInsn(ALOAD, 0)
     // TODO(JLS): This could just call NS.m_main()
     START[StackNil] ~ { f: F[StackNil] =>
-      f.visitor.visitTypeInsn(Opcodes.NEW, defn.sym.defName.internalName)
-      f.visitor.visitInsn(Opcodes.DUP)
-      f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, defn.sym.defName.internalName, JvmName.constructorMethod, JvmName.nothingToVoid, false)
+      f.visitTypeInsn(Opcodes.NEW, defn.sym.defName.internalName)
+      f.visitInsn(Opcodes.DUP)
+      f.visitMethodInsn(Opcodes.INVOKESPECIAL, defn.sym.defName.internalName, JvmName.constructorMethod, JvmName.nothingToVoid)
       f.asInstanceOf[F[StackNil ** PReference[PFunction[T]]]]
     } ~
       DUP ~
       ALOAD(0, RReference(RArray(RReference(RStr)))) ~ { f: F[StackNil ** PReference[PFunction[T]] ** PReference[PFunction[T]] ** PReference[PArray[PReference[PStr]]]] =>
-      f.visitor.visitFieldInsn(Opcodes.PUTFIELD, defn.sym.defName.internalName, GenFunctionInterfaces.argFieldName(0), JvmName.Java.Object.descriptor)
+      f.visitFieldInsn(Opcodes.PUTFIELD, defn.sym.defName.internalName, GenFunctionInterfaces.argFieldName(0), JvmName.Java.Object.descriptor)
       f.asInstanceOf[F[StackNil ** PReference[PFunction[T]]]]
     } ~ { f: F[StackNil ** PReference[PFunction[T]]] =>
-      f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, RInt32.contName.internalName, GenContinuationInterfaces.UnwindMethodName, RInt32.nothingToThisDescriptor, false)
+      f.visitMethodInsn(Opcodes.INVOKEVIRTUAL, RInt32.contName.internalName, GenContinuationInterfaces.UnwindMethodName, RInt32.nothingToThisDescriptor)
       f.asInstanceOf[F[StackNil ** PInt32]]
     } ~ { f: F[StackNil ** PInt32] =>
-      f.visitor.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/System", "exit", "(I)V", false);
+      f.visitMethodInsn(Opcodes.INVOKESTATIC, JvmName.Java.System.internalName, "exit", RInt32.thisToNothingDescriptor)
       f.asInstanceOf[F[StackNil]]
     } ~
       RETURN

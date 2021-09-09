@@ -35,7 +35,7 @@ object GenLazyClasses {
   val ValueFieldName: String = "value"
   val ForceMethod: String = "force"
 
-  def constructorDescriptor[T <: PType](valueType: RType[T]): String = expressionFieldType(valueType).thisToNothingDescriptor
+  def constructorDescriptor[T <: PType](valueType: RType[T]): Descriptor = expressionFieldType(valueType).thisToNothingDescriptor
 
   def expressionFieldType[T <: PType](valueType: RType[T]): RType[PReference[PFunction[T]]] = RReference(RArrow(RReference(RObject) :: Nil, valueType))
 
