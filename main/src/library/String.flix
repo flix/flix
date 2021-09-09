@@ -1093,7 +1093,7 @@ namespace String {
         }
 
     ///
-    /// Return the common prefix of strings `s` and `s2`.
+    /// Return the common prefix of strings `s1` and `s2`.
     ///
     /// Returns the empty string if `s1` and `s2` do not share a common prefix.
     ///
@@ -1117,7 +1117,7 @@ namespace String {
         }
 
     ///
-    /// Return the common suffix of strings `s` and `s2`.
+    /// Return the common suffix of strings `s1` and `s2`.
     ///
     /// Returns the empty string if `s1` and `s2` do not share a common suffix.
     ///

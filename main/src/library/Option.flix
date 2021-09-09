@@ -21,51 +21,18 @@
 /// The constructor `None` represents an absent value,
 /// whereas the constructor `Some(v)` represents the value `v`.
 ///
-enum Option[t] {
+enum Option[t] with Eq, Order, ToString {
     case None,
     case Some(t)
 }
 
 instance Boxable[Option[t]]
 
-instance ToString[Option[a]] with ToString[a] {
-    pub def toString(o: Option[a]): String = match o {
-        case None => "None"
-        case Some(y) => "Some(${y})"
-    }
-}
-
 instance Hash[Option[a]] with Hash[a] {
     pub def hash(o: Option[a]): Int = match o {
         case Some(y) => 919 * Hash.hash(y)
         case None => 1046527
     }
-}
-
-instance Eq[Option[a]] with Eq[a] {
-    pub def eq(o1: Option[a], o2: Option[a]): Bool = match (o1, o2) {
-        case (None, None) => true
-        case (Some(v1), Some(v2)) => v1 == v2
-        case _ => false
-    }
-}
-
-instance Order[Option[a]] with Order[a] {
-
-    ///
-    /// Returns the result of a three-way comparison between `o1` and `o2`.
-    ///
-    /// Returns LessThan if `o1` is smaller than `o2`.
-    /// Returns EqualTo if `o1` is equal to `o2`.
-    /// Returns GreaterThan if `o1` is greater than `o2`.
-    ///
-    pub def compare(o1: Option[a], o2: Option[a]): Comparison = match (o1, o2) {
-        case (None, None)           => EqualTo
-        case (None, _)              => LessThan
-        case (Some(v1), Some(v2))   => v1 <=> v2
-        case _                      => GreaterThan
-    }
-
 }
 
 instance Functor[Option] {

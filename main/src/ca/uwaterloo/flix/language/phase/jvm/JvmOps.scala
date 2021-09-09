@@ -16,14 +16,14 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import java.nio.file.{Files, LinkOption, Path}
-
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst._
-import ca.uwaterloo.flix.language.ast.{Kind, MonoType, Name, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, MonoType, Name, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.phase.Finalize
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.InternalCompilerException
+
+import java.nio.file.{Files, LinkOption, Path}
 
 object JvmOps {
 
@@ -102,7 +102,7 @@ object JvmOps {
       case JvmType.PrimLong => JvmType.PrimLong
       case JvmType.PrimFloat => JvmType.PrimFloat
       case JvmType.PrimDouble => JvmType.PrimDouble
-      case JvmType.Reference(jvmName) => JvmType.Object
+      case JvmType.Reference(_) => JvmType.Object
     }
 
     erase(getJvmType(tpe))
@@ -117,7 +117,7 @@ object JvmOps {
     * NB: The given type `tpe` must be an arrow type.
     */
   def getContinuationInterfaceType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
-    case MonoType.Arrow(targs, tresult) =>
+    case MonoType.Arrow(_, tresult) =>
       // The return type is the last type argument.
       val returnType = JvmOps.getErasedJvmType(tresult)
 
@@ -489,23 +489,22 @@ object JvmOps {
   def mangle(s: String): String = s.
     replace("+", "$plus").
     replace("-", "$minus").
-    replace("*", "$times").
-    replace("/", "$divide").
-    replace("%", "$modulo").
-    replace("**", "$exponentiate").
-    replace("<", "$lt").
-    replace("<=", "$le").
-    replace(">", "$gt").
-    replace(">=", "$ge").
-    replace("==", "$eq").
-    replace("!=", "$neq").
-    replace("&&", "$land").
-    replace("||", "$lor").
-    replace("&", "$band").
-    replace("|", "$bor").
-    replace("^", "$bxor").
-    replace("<<", "$lshift").
-    replace(">>", "$rshift")
+    replace("*", "$asterisk").
+    replace("/", "$fslash").
+    replace("\\", "$bslash").
+    replace("%", "$percent").
+    replace("<", "$less").
+    replace(">", "$greater").
+    replace("=", "$eq").
+    replace("&", "$ampersand").
+    replace("|", "$bar").
+    replace("^", "$caret").
+    replace("~", "$tilde").
+    replace("!", "$exclamation").
+    replace("#", "$hashtag").
+    replace(":", "$colon").
+    replace("?", "$question").
+    replace("@", "$at")
 
   /**
     * Returns stringified name of the given JvmType `tpe`.
@@ -522,7 +521,7 @@ object JvmOps {
     case JvmType.PrimShort => "Int16"
     case JvmType.PrimInt => "Int32"
     case JvmType.PrimLong => "Int64"
-    case JvmType.Reference(jvmName) => "Obj"
+    case JvmType.Reference(_) => "Obj"
   }
 
   /**

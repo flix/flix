@@ -463,7 +463,7 @@ namespace LazyList {
     /// Helper function for `from`.
     ///
     def fromHelper(n: Int32): LazyList[Int32] =
-        LCons(n, lazy from(n + 1))
+        LCons(n, lazy fromHelper(n + 1))
 
     ///
     /// Returns `Some(x)` if `x` is the last element of `l`.
@@ -502,6 +502,11 @@ namespace LazyList {
     /// `a` is the element at index `i` in `l1` and `b` is the element at index `i` in `l2`.
     ///
     /// If either `l1` or `l2` becomes depleted, then no further elements are added to the resulting list.
+    ///
+    /// Whether `f` is applied eagerly or lazily depends on its purity:
+    ///
+    /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
+    /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
     pub def zipWith(f: (a, b) -> c & ef, l1: LazyList[a], l2: LazyList[b]): LazyList[c] & ef =
         map((x) -> f(fst(x), snd(x)), zip(l1, l2))
@@ -657,5 +662,62 @@ namespace LazyList {
     ///
     pub def findRight(f: a -> Bool & ef, l: LazyList[a]): Option[a] & ef =
         reverse(l) |> findLeft(f)
+
+    ///
+    /// Returns the result of applying `f` to every element in `l` along with that element's index.
+    ///
+    /// That is, the result is of the form: `f(x1, 0) :: f(x2, 1) :: ...`.
+    ///
+    /// Whether `f` is applied eagerly or lazily depends on its purity:
+    ///
+    /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
+    /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
+    ///
+    pub def mapWithIndex(f: (a, Int32) -> b & ef, l: LazyList[a]): LazyList[b] & ef =
+        let g = match (r) -> f(r.x, r.i);
+        matchEff g {
+            case Pure   => mapWithIndexL(f as (a, Int32) -> b & Pure,   l)
+            case Impure => mapWithIndexE(f as (a, Int32) -> b & Impure, l)
+        } as & ef
+
+    ///
+    /// Returns the result of applying `f` to every element in `l` along with the element's index.
+    ///
+    /// Applies `f` lazily (i.e. the tail is not forced).
+    ///
+    def mapWithIndexL(f: (a, Int32) -> b, l: LazyList[a]): LazyList[b] =
+        mapWithIndexLAcc(f, l, 0)
+
+    ///
+    /// Helper function for `mapWithIndexL`.
+    ///
+    def mapWithIndexLAcc(f: (a, Int32) -> b, l: LazyList[a], i: Int32): LazyList[b] = match l {
+        case ENil         => ENil
+        case ECons(x, xs) => LList(lazy LCons(f(x, i), lazy mapWithIndexLAcc(f,       xs, i + 1)))
+        case LCons(x, xs) => LList(lazy LCons(f(x, i), lazy mapWithIndexLAcc(f, force xs, i + 1)))
+        case LList(xs)    => LList(                    lazy mapWithIndexLAcc(f, force xs, i    ))
+    }
+
+    ///
+    /// Returns the result of applying `f` to every element in `l` along with the element's index.
+    ///
+    /// Applies `f` eagerly (i.e. the entire list `l` is forced).
+    ///
+    def mapWithIndexE(f: (a, Int32) -> b & Impure, l: LazyList[a]): LazyList[b] & Impure =
+        mapWithIndexEAcc(f, l, 0, ks -> ks)
+
+    ///
+    /// Helper function for `mapWithIndexE`.
+    ///
+    def mapWithIndexEAcc(f: (a, Int32) -> b & Impure, l: LazyList[a], i: Int32, k: LazyList[b] -> LazyList[b]): LazyList[b] & Impure = match l {
+        case ENil         => k(ENil)
+        case ECons(x, xs) =>
+            let x1 = f(x, i);
+            mapWithIndexEAcc(f,       xs, i + 1, ks -> k(ECons(x1, ks)))
+        case LCons(x, xs) =>
+            let x1 = f(x, i);
+            mapWithIndexEAcc(f, force xs, i + 1, ks -> k(ECons(x1, ks)))
+        case LList(xs)    => mapWithIndexEAcc(f, force xs, i, k)
+    }
 
 }
