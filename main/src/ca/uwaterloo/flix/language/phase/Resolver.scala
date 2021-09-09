@@ -40,14 +40,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Symbols of classes that are derivable.
     */
-  private object DerivableClassSyms {
-    val Boxable = new Symbol.ClassSym(Nil, "Boxable", SourceLocation.Unknown)
-    val Eq = new Symbol.ClassSym(Nil, "Eq", SourceLocation.Unknown)
-    val Order = new Symbol.ClassSym(Nil, "Order", SourceLocation.Unknown)
-    val ToString = new Symbol.ClassSym(Nil, "ToString", SourceLocation.Unknown)
+  private val BoxableSym = new Symbol.ClassSym(Nil, "Boxable", SourceLocation.Unknown)
+  private val EqSym = new Symbol.ClassSym(Nil, "Eq", SourceLocation.Unknown)
+  private val OrderSym = new Symbol.ClassSym(Nil, "Order", SourceLocation.Unknown)
+  private val ToStringSym = new Symbol.ClassSym(Nil, "ToString", SourceLocation.Unknown)
 
-    val All = List(Boxable, Eq, Order, ToString)
-  }
+  private val DerivableSyms = List(BoxableSym, EqSym, OrderSym, ToStringSym)
 
   /**
     * Performs name resolution on the given program `root`.
@@ -1151,11 +1149,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             // AND it does not already derive Boxable
             // then add Boxable to its derivations
             // otherwise just use the given list of derivations
-            val classesImplyingBoxable = Set(DerivableClassSyms.Eq, DerivableClassSyms.Order, DerivableClassSyms.ToString)
+            val classesImplyingBoxable = List(EqSym, OrderSym, ToStringSym)
             val deriveSyms = derives.map(_.clazz)
-            if (classesImplyingBoxable.forall(deriveSyms.contains) && !deriveSyms.contains(DerivableClassSyms.Boxable)) {
+            if (classesImplyingBoxable.forall(deriveSyms.contains) && !deriveSyms.contains(BoxableSym)) {
               val loc = derives.map(_.loc).min
-              Ast.Derivation(DerivableClassSyms.Boxable, loc) :: derives
+              Ast.Derivation(BoxableSym, loc) :: derives
             } else {
               derives
             }
@@ -1177,10 +1175,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     * Checks that the given class `sym` is derivable.
     */
   def checkDerivable(sym: Symbol.ClassSym, loc: SourceLocation): Validation[Unit, ResolutionError] = {
-    if (DerivableClassSyms.All.contains(sym)) {
+    if (DerivableSyms.contains(sym)) {
       ().toSuccess
     } else {
-      ResolutionError.IllegalDerivation(sym, DerivableClassSyms.All, loc).toFailure
+      ResolutionError.IllegalDerivation(sym, DerivableSyms, loc).toFailure
     }
   }
 
