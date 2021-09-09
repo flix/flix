@@ -2772,4 +2772,61 @@ namespace TestLazyList {
         println(deref l);
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // intercalate                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def intercalate01(): Bool =
+        LazyList.intercalate(ECons(1, ECons(2, ENil)), ENil) == ENil
+
+    @test
+    def intercalate02(): Bool =
+        LazyList.intercalate(ECons(1, ECons(2, ENil)), LList(lazy ENil)) == ENil
+
+    @test
+    def intercalate03(): Bool =
+        LazyList.intercalate(ECons(10, ECons(11, ECons(12, ENil))), ECons(LCons(1, lazy ENil), ENil)) == ECons(1, ENil)
+
+    @test
+    def intercalate04(): Bool =
+        LazyList.intercalate(ECons(10, ECons(11, ECons(12, ENil))), ECons(LList(lazy ECons(1, LList(lazy ENil))), ENil)) == ECons(1, ENil)
+
+    @test
+    def intercalate05(): Bool =
+        LazyList.intercalate(ECons(10, ECons(11, ECons(12, ENil))), ECons(ECons(1, LList(lazy ENil)), ENil)) == ECons(1, ENil)
+
+    @test
+    def intercalate06(): Bool =
+        LazyList.intercalate(ECons(10, ECons(11, ECons(12, ENil))), LCons(LCons(1, lazy LCons(2, lazy LList(lazy LCons(3, lazy ENil)))), lazy ECons(ECons(100, ECons(101, ECons(102, ENil))), ENil))) == ECons(1, ECons(2, ECons(3, ECons(10, ECons(11, ECons(12, ECons(100, ECons(101, ECons(102, ENil)))))))))
+
+    @test
+    def intercalate07(): Bool =
+        LazyList.intercalate(ECons(10, ECons(11, ECons(12, ENil))), LCons(LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil)))), lazy ECons(ECons(100, ECons(101, ECons(102, ENil))), ENil))) == ECons(1, ECons(2, ECons(3, ECons(10, ECons(11, ECons(12, ECons(100, ECons(101, ECons(102, ENil)))))))))
+
+    @test
+    def intercalate08(): Bool =
+        LazyList.intercalate(ECons(10, ECons(11, ECons(12, ENil))), LCons(LCons(1, lazy ECons(2, LList(lazy LCons(3, lazy LList(lazy ENil))))), lazy ECons(ECons(100, ECons(101, ECons(102, ENil))), ENil))) == ECons(1, ECons(2, ECons(3, ECons(10, ECons(11, ECons(12, ECons(100, ECons(101, ECons(102, ENil)))))))))
+
+    @test
+    def intercalate09(): Bool =
+        LazyList.intercalate(ECons(10, ECons(11, ECons(12, ENil))), LCons(LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil)))))), lazy ECons(ECons(100, ECons(101, ECons(102, ENil))), ENil))) == ECons(1, ECons(2, ECons(3, ECons(10, ECons(11, ECons(12, ECons(100, ECons(101, ECons(102, ENil)))))))))
+
+    @test
+    def intercalate10(): Bool =
+        LazyList.intercalate(ECons(10, ECons(11, ECons(12, ENil))), LCons(LList(lazy LCons(1, lazy LList(lazy ECons(2, LList(lazy ECons(3, ENil)))))), lazy ECons(ECons(100, ECons(101, ECons(102, ENil))), ENil))) == ECons(1, ECons(2, ECons(3, ECons(10, ECons(11, ECons(12, ECons(100, ECons(101, ECons(102, ENil)))))))))
+
+    @test
+    def intercalate11(): Bool =
+        LazyList.intercalate(ECons(10, ECons(11, ECons(12, ENil))), ECons(ECons(1, ECons(2, ECons(3, ENil))), ECons(ECons(100, ECons(101, ECons(102, ENil))), ECons(ECons(200, ECons(201, ECons(202, ENil))), ENil)))) == ECons(1, ECons(2, ECons(3, ECons(10, ECons(11, ECons(12, ECons(100, ECons(101, ECons(102, ECons(10, ECons(11, ECons(12, ECons(200, ECons(201, ECons(202, ENil)))))))))))))))
+
+    @test
+    def intercalate12(): Bool =
+        LazyList.intercalate(ECons(12, ECons(11, ECons(10, ENil))), ECons(ECons(1, ECons(2, ECons(3, ENil))), ECons(ECons(100, ECons(101, ECons(102, ENil))), ECons(ECons(200, ECons(201, ECons(202, ENil))), ENil)))) == ECons(1, ECons(2, ECons(3, ECons(12, ECons(11, ECons(10, ECons(100, ECons(101, ECons(102, ECons(12, ECons(11, ECons(10, ECons(200, ECons(201, ECons(202, ENil)))))))))))))))
+
+    @test
+    def intercalate13(): Bool =
+        LazyList.intercalate(ECons(-1, ECons(-2, ECons(0, ENil))), ECons(ECons(1, ECons(2, ECons(3, ENil))), ECons(ECons(100, ECons(101, ECons(102, ENil))), ECons(ECons(200, ECons(201, ECons(202, ENil))), ENil)))) == ECons(1, ECons(2, ECons(3, ECons(-1, ECons(-2, ECons(0, ECons(100, ECons(101, ECons(102, ECons(-1, ECons(-2, ECons(0, ECons(200, ECons(201, ECons(202, ENil)))))))))))))))
+
 }

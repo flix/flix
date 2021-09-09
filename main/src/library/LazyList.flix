@@ -720,4 +720,18 @@ namespace LazyList {
         case LList(xs)    => mapWithIndexEAcc(f, force xs, i, k)
     }
 
+    ///
+    /// Returns the concatenation of the elements in `l2` with the elements of `l1` inserted between every two adjacent elements.
+    ///
+    /// That is, returns `l2.1 :: l1.1 ... l1.n :: l2.2 :: ... :: l2.n-1 :: l1.1 :: ... :: l1.n :: l2.n :: ENil`.
+    ///
+    /// Forces the tail of `l2` unless it is an unevaluated LazyList.
+    ///
+    pub def intercalate(l1: LazyList[a], l2: LazyList[LazyList[a]]): LazyList[a] = match l2 {
+        case ENil           => ENil
+        case ECons(x, xs)   => if (isEmpty(xs)) x else LList(lazy append(append(x, l1), intercalate(l1,       xs)))
+        case LCons(x, xs)   => if (isEmpty(force xs)) x else LList(lazy append(append(x, l1), intercalate(l1, force xs)))
+        case LList(xs)      => LList(lazy intercalate(l1, force xs))
+    }
+
 }
