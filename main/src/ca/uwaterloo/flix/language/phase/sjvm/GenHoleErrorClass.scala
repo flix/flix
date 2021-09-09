@@ -2,6 +2,7 @@ package ca.uwaterloo.flix.language.phase.sjvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst.Root
+import ca.uwaterloo.flix.language.ast.PRefType
 import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.PType.PReference
 import ca.uwaterloo.flix.language.ast.RRefType._
@@ -27,7 +28,7 @@ object GenHoleErrorClass {
   def genByteCode(className: JvmName, superClass: JvmName)(implicit flix: Flix): Array[Byte] = {
     val classMaker = ClassMaker.mkClass(className, superClass)
     classMaker.mkConstructor(genConstructor(className, superClass), descriptor = JvmName.getMethodDescriptor(List(RStr, LocationFieldType), None))
-    classMaker.mkMethod(???, JvmName.equalsMethod, JvmName.getMethodDescriptor(RObject, RBool), Mod.isPublic)
+    classMaker.mkMethod(genEqualsMethod(className), JvmName.equalsMethod, JvmName.getMethodDescriptor(RObject, RBool), Mod.isPublic)
     classMaker.mkMethod(???, JvmName.hashcodeMethod, RInt32.nothingToThisDescriptor, Mod.isPublic)
     classMaker.mkField(HoleFieldName, HoleFieldType, Mod.isPublic.isFinal)
     classMaker.mkField(LocationFieldName, LocationFieldType, Mod.isPublic.isFinal)
@@ -63,7 +64,7 @@ object GenHoleErrorClass {
       }) ~
       (f => {
         f.visitMethodInsn(Opcodes.INVOKESPECIAL, superClass.internalName, JvmName.constructorMethod, RStr.thisToNothingDescriptor)
-        f.asInstanceOf[F[StackNil]]
+        F.pop(tagOf[PReference[PAnyObject]])(F.pop(tagOf[PReference[PStr]])(f))
       }) ~
       THISLOAD(name, tagOf[PAnyObject]) ~
       ALOAD(1, HoleFieldType) ~
@@ -71,7 +72,48 @@ object GenHoleErrorClass {
       THISLOAD(name, tagOf[PAnyObject]) ~
       ALOAD(2, LocationFieldType, tagOf[PAnyObject]) ~
       PUTFIELD(name, LocationFieldName, LocationFieldType, erasedType = false)
-      RETURN
+    RETURN
+  }
+
+  private def getClass
+  [R <: Stack, T <: PRefType]:
+  F[R ** PReference[T]] => F[R ** PReference[PAnyObject]] = f => {
+    f.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.Object.internalName, "getClass", JvmName.Java.Class.nothingToThisDescriptor)
+    f.asInstanceOf[F[R ** PReference[PAnyObject]]]
+  }
+
+  def genEqualsMethod(name: JvmName): F[StackNil] => F[StackEnd] = {
+    START[StackNil] ~
+      THISLOAD(name, tagOf[PAnyObject]) ~
+      ALOAD(1, RObject.rType) ~
+      IF_ACMPNE() { // objects are not same reference
+        ALOAD(1, RObject.rType) ~
+          IFNULL { // other object is null
+            pushBool(false) ~ IRETURN
+          } { // other object is not null
+            START[StackNil] ~
+              THISLOAD(name, tagOf[PAnyObject]) ~
+              getClass ~
+              ALOAD(1, RObject.rType) ~
+              getClass ~
+              IF_ACMPEQ { // objects are both HoleErrors
+                START[StackNil] ~
+                  ALOAD(1, RObject.rType) ~
+                  CAST(name, tagOf[PAnyObject]) ~
+                  ASTORE(2) ~
+                  THISLOAD(name, tagOf[PAnyObject]) ~
+                  GETFIELD(name, HoleFieldName, RStr.rType, undoErasure = false) ~
+                  ALOAD(2, name, tagOf[PAnyObject]) ~
+                  GETFIELD(name, HoleFieldName, RStr.rType, undoErasure = false) ~
+                  objectsEquals ~
+                  IRETURN
+              } { // objects are of different classes
+                pushBool(false) ~ IRETURN
+              }
+          }
+      } { // objects are the same reference
+        pushBool(true) ~ IRETURN
+      }
   }
 
 }

@@ -85,7 +85,7 @@ object GenDefClasses {
       f.visitFieldInsn(Opcodes.GETFIELD, defName.internalName, GenFunctionInterfaces.argFieldName(index), tpe.erasedDescriptor)
       undoErasure(tpe, f.visitor) // TODO(JLS): this is probably not needed
       f.asInstanceOf[F[R ** T]]
-    }) ~ XStore(sym, tpe)
+    }) ~ XSTORE(sym, tpe)
   }
 
 }

@@ -37,12 +37,21 @@ object BytecodeCompiler {
 
   sealed trait StackCons[R <: Stack, T <: PType] extends Stack
 
+  // TODO(JLS): not optimal right now. It can be continued on
+  // TODO(JLS): IRETURN and RETURN can both reach StackEnd, but they shouldn't be equivalent states
   sealed trait StackEnd extends Stack
 
   type **[R <: Stack, T <: PType] = StackCons[R, T]
 
+  // TODO(JLS): experiment with this
+  object F {
+    def push[R <: Stack, T <: PType](f: F[R]): F[R ** T] = f.push[T]
+
+    def pop[R <: Stack, T <: PType](tag: Tag[T])(f: F[R ** T]): F[R] = f.asInstanceOf[F[R]]
+  }
+
   // TODO(JLS): maybe the methods should take JvmNames? Describable?
-  sealed case class F[T <: Stack](visitor: MethodVisitor) {
+  sealed case class F[R <: Stack](visitor: MethodVisitor) {
     def visitMethodInsn(opcode: Int, owner: InternalName, name: String, descriptor: Descriptor, isInterface: Boolean = false): Unit =
       visitor.visitMethodInsn(opcode, owner.toString, name, descriptor.toString, isInterface)
 
@@ -69,6 +78,8 @@ object BytecodeCompiler {
     def visitLdcInsn(value: Any): Unit = visitor.visitLdcInsn(value)
 
     def visitIntInsn(opcode: Int, operand: Int): Unit = visitor.visitIntInsn(opcode, operand)
+
+    def push[T <: PType]: F[R ** T] = this.asInstanceOf[F[R ** T]]
   }
 
   trait Cat1[T]
@@ -611,7 +622,7 @@ object BytecodeCompiler {
       //TODO(JLS): sym is unsafe. localvar stack + reg as types?
       WithSource[R](loc) ~
         compileExp(exp1) ~
-        XStore(sym, exp1.tpe) ~
+        XSTORE(sym, exp1.tpe) ~
         compileExp(exp2)
 
     case Expression.Is(sym, tag, exp, loc) => ???

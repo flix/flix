@@ -103,6 +103,7 @@ object JvmName {
     val BigInteger: JvmName = JvmName(List("java", "math"), "BigInteger")
 
     val Arrays: JvmName = JvmName(List("java", "util"), "Arrays")
+    val Class: JvmName = JvmName(List("java", "lang"), "Class")
 
   }
 

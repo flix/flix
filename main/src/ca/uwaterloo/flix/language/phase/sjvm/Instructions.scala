@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.PType._
 import ca.uwaterloo.flix.language.ast.RRefType._
 import ca.uwaterloo.flix.language.ast.RType._
-import ca.uwaterloo.flix.language.ast.{ErasedAst, PRefType, PType, RRefType, RType, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{ErasedAst, PRefType, PType, RType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm.{Label, MethodVisitor, Opcodes}
@@ -155,9 +155,9 @@ object Instructions {
   }
 
   def IF_ACMPNE
-  [R1 <: Stack, R2 <: Stack, T <: PRefType]
-  (branch1: F[R1] => F[R2])(branch2: F[R1] => F[R2]):
-  F[R1 ** PReference[T]] => F[R2] = f => {
+  [R1 <: Stack, R2 <: Stack, T1 <: PRefType, T2 <: PRefType]
+  (tag: Tag[R2] = null)(branch1: F[R1] => F[R2])(branch2: F[R1] => F[R2]):
+  F[R1 ** PReference[T1] ** PReference[T2]] => F[R2] = f => {
     conditional(Opcodes.IF_ACMPNE, f, _ => branch1(castF(f)), _ => branch2(castF(f)))
     castF(f)
   }
@@ -315,7 +315,7 @@ object Instructions {
   def IFNULL
   [R1 <: Stack, R2 <: Stack, T <: PRefType]
   (branch1: F[R1] => F[R2])(branch2: F[R1] => F[R2]):
-  F[R1 ** PReference[T]] => F[R1 ** PInt32] = f => {
+  F[R1 ** PReference[T]] => F[R2] = f => {
     conditional(Opcodes.IFNULL, f, _ => branch1(castF(f)), _ => branch2(castF(f)))
     castF(f)
   }
@@ -323,7 +323,7 @@ object Instructions {
   def IFNONNULL
   [R1 <: Stack, R2 <: Stack, T <: PRefType]
   (branch1: F[R1] => F[R2])(branch2: F[R1] => F[R2]):
-  F[R1 ** PReference[T]] => F[R1 ** PInt32] = f => {
+  F[R1 ** PReference[T]] => F[R2] = f => {
     conditional(Opcodes.IFNONNULL, f, _ => branch1(castF(f)), _ => branch2(castF(f)))
     castF(f)
   }
@@ -497,10 +497,15 @@ object Instructions {
   }
 
   def CAST
-  [R <: Stack, T <: PRefType]
-  (e: RRefType[T]):
-  F[R ** PReference[_ <: PRefType]] => F[R ** PReference[T]] = f => {
-    f.visitTypeInsn(Opcodes.CHECKCAST, e.internalName)
+  [R <: Stack, T1 <: PRefType, T2 <: PRefType]
+  (castType: RType[PReference[T1]]):
+  F[R ** PReference[T2]] => F[R ** PReference[T1]] = CAST(squeezeReference(castType).jvmName)
+
+  def CAST
+  [R <: Stack, T1 <: PRefType, T2 <: PRefType]
+  (castType: JvmName, tag: Tag[T1] = null):
+  F[R ** PReference[T2]] => F[R ** PReference[T1]] = f => {
+    f.visitTypeInsn(Opcodes.CHECKCAST, castType.internalName)
     castF(f)
   }
 
@@ -1913,61 +1918,106 @@ object Instructions {
 
   val symOffsetOffset = 1
 
-  // I/S/B/C-Store are all just jvm ISTORE
-  def IStore
+  def ISTORE
   [R <: Stack, T <: PType]
   (sym: Symbol.VarSym)
   (implicit t: T => Int32Usable[T]):
+  F[R ** T] => F[R] =
+    ISTORE(sym.getStackOffset + symOffsetOffset)
+
+  def ISTORE
+  [R <: Stack, T <: PType]
+  (index: Int)
+  (implicit t: T => Int32Usable[T]):
   F[R ** T] => F[R] = f => {
-    f.visitVarInsn(Opcodes.ISTORE, sym.getStackOffset + symOffsetOffset)
+    f.visitVarInsn(Opcodes.ISTORE, index)
     castF(f)
   }
 
-  def LStore
+  def LSTORE
   [R <: Stack]
   (sym: Symbol.VarSym):
+  F[R ** PInt64] => F[R] =
+    LSTORE(sym.getStackOffset + symOffsetOffset)
+
+  def LSTORE
+  [R <: Stack]
+  (index: Int):
   F[R ** PInt64] => F[R] = f => {
-    f.visitVarInsn(Opcodes.LSTORE, sym.getStackOffset + symOffsetOffset)
+    f.visitVarInsn(Opcodes.LSTORE, index)
     castF(f)
   }
 
-  def FStore
+  def FSTORE
   [R <: Stack]
   (sym: Symbol.VarSym):
+  F[R ** PFloat32] => F[R] =
+    FSTORE(sym.getStackOffset + symOffsetOffset)
+
+  def FSTORE
+  [R <: Stack]
+  (index: Int):
   F[R ** PFloat32] => F[R] = f => {
-    f.visitVarInsn(Opcodes.FSTORE, sym.getStackOffset + symOffsetOffset)
+    f.visitVarInsn(Opcodes.FSTORE, index)
     castF(f)
   }
 
-  def DStore
+  def DSTORE
   [R <: Stack]
   (sym: Symbol.VarSym):
+  F[R ** PFloat64] => F[R] =
+    DSTORE(sym.getStackOffset + symOffsetOffset)
+
+  def DSTORE
+  [R <: Stack]
+  (index: Int):
   F[R ** PFloat64] => F[R] = f => {
-    f.visitVarInsn(Opcodes.DSTORE, sym.getStackOffset + symOffsetOffset)
+    f.visitVarInsn(Opcodes.DSTORE, index)
     castF(f)
   }
 
-  def AStore
+  def ASTORE
   [R <: Stack, T <: PRefType]
   (sym: Symbol.VarSym):
+  F[R ** PReference[T]] => F[R] =
+    ASTORE(sym.getStackOffset + symOffsetOffset)
+
+  def ASTORE
+  [R <: Stack, T <: PRefType]
+  (index: Int):
   F[R ** PReference[T]] => F[R] = f => {
-    f.visitVarInsn(Opcodes.ASTORE, sym.getStackOffset + symOffsetOffset)
+    f.visitVarInsn(Opcodes.ASTORE, index)
     castF(f)
   }
 
-  def XStore
+  def XSTORE
   [R <: Stack, T <: PType]
   (sym: Symbol.VarSym, tpe: RType[T]):
   F[R ** T] => F[R] =
     tpe match {
-      case RChar => IStore(sym)
-      case RFloat32 => FStore(sym)
-      case RFloat64 => DStore(sym)
-      case RInt8 => IStore(sym)
-      case RInt16 => IStore(sym)
-      case RBool | RInt32 => IStore(sym)
-      case RInt64 => LStore(sym)
-      case RReference(_) => AStore(sym)
+      case RChar => ISTORE(sym)
+      case RFloat32 => FSTORE(sym)
+      case RFloat64 => DSTORE(sym)
+      case RInt8 => ISTORE(sym)
+      case RInt16 => ISTORE(sym)
+      case RBool | RInt32 => ISTORE(sym)
+      case RInt64 => LSTORE(sym)
+      case RReference(_) => ASTORE(sym)
+    }
+
+  def XSTORE
+  [R <: Stack, T <: PType]
+  (index: Int, tpe: RType[T]):
+  F[R ** T] => F[R] =
+    tpe match {
+      case RChar => ISTORE(index)
+      case RFloat32 => FSTORE(index)
+      case RFloat64 => DSTORE(index)
+      case RInt8 => ISTORE(index)
+      case RInt16 => ISTORE(index)
+      case RBool | RInt32 => ISTORE(index)
+      case RInt64 => LSTORE(index)
+      case RReference(_) => ASTORE(index)
     }
 
   // TODO(JLS): bools are awkward with no PType, PBool
@@ -2069,6 +2119,13 @@ object Instructions {
   F[R ** PReference[PArray[T]] ** T] => F[R] = f => {
     val descriptor = JvmName.getMethodDescriptor(RArray(elementType) :: elementType :: Nil, None)
     f.visitMethodInsn(Opcodes.INVOKESTATIC, JvmName.Java.Arrays.internalName, "fill", descriptor)
+    castF(f)
+  }
+
+  def objectsEquals
+  [R <: Stack, T1 <: PRefType, T2 <: PRefType]:
+  F[R ** PReference[T2] ** PReference[T1]] => F[R ** PInt32] = f => {
+    f.visitMethodInsn(Opcodes.INVOKESTATIC, JvmName.Java.Objects.internalName, "equals", JvmName.getMethodDescriptor(List(RObject, RObject), RBool))
     castF(f)
   }
 

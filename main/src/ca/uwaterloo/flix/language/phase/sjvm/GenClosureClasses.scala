@@ -102,7 +102,7 @@ object GenClosureClasses {
       f.visitFieldInsn(Opcodes.GETFIELD, defName.internalName, fieldName(index), tpe.erasedDescriptor)
       undoErasure(tpe, f.visitor) // TODO(JLS): this is probably not needed
       f.asInstanceOf[F[R ** T]]
-    }) ~ XStore(sym, tpe)
+    }) ~ XSTORE(sym, tpe)
   }
 
 }
