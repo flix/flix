@@ -40,7 +40,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Symbols of classes that are derivable.
     */
-  object DerivableClassSyms {
+  private object DerivableClassSyms {
     val Boxable = new Symbol.ClassSym(Nil, "Boxable", SourceLocation.Unknown)
     val Eq = new Symbol.ClassSym(Nil, "Eq", SourceLocation.Unknown)
     val Order = new Symbol.ClassSym(Nil, "Order", SourceLocation.Unknown)
@@ -1146,7 +1146,19 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         } yield ResolutionError.DuplicateDerivation(sym1, loc1, loc2).toFailure
 
         Validation.sequenceX(failures) map {
-          _ => derives
+          _ =>
+            // if the enum derives Eq, Order, and ToString
+            // AND it does not already derive Boxable
+            // then add Boxable to its derivations
+            // otherwise just use the given list of derivations
+            val classesImplyingBoxable = Set(DerivableClassSyms.Eq, DerivableClassSyms.Order, DerivableClassSyms.ToString)
+            val deriveSyms = derives.map(_.clazz)
+            if (classesImplyingBoxable.forall(deriveSyms.contains) && !deriveSyms.contains(DerivableClassSyms.Boxable)) {
+              val loc = derives.map(_.loc).min
+              Ast.Derivation(DerivableClassSyms.Boxable, loc) :: derives
+            } else {
+              derives
+            }
         }
     }
   }

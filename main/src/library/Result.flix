@@ -26,8 +26,6 @@ enum Result[t, e] with Eq, Order, ToString {
     case Err(e)
 }
 
-instance Boxable[Result[t, e]]
-
 instance Hash[Result[t, e]] with Hash[t], Hash[e] {
     pub def hash(r: Result[t, e]): Int = match r {
         case Ok(v)  => 5381 + 113 * Hash.hash(v)

@@ -26,8 +26,6 @@ enum Option[t] with Eq, Order, ToString {
     case Some(t)
 }
 
-instance Boxable[Option[t]]
-
 instance Hash[Option[a]] with Hash[a] {
     pub def hash(o: Option[a]): Int = match o {
         case Some(y) => 919 * Hash.hash(y)
