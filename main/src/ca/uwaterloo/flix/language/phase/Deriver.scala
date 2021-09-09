@@ -543,7 +543,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
     * Creates a Boxable instance for the given enum.
     *
     * {{{
-    * enum E[a] with ToString {
+    * enum E[a] with Boxable {
     *   case C0
     *   case C1(a)
     *   case C2(a, a)
