@@ -2817,4 +2817,16 @@ namespace TestLazyList {
     def intercalate10(): Bool =
         LazyList.intercalate(ECons(10, ECons(11, ECons(12, ENil))), LCons(LList(lazy LCons(1, lazy LList(lazy ECons(2, LList(lazy ECons(3, ENil)))))), lazy ECons(ECons(100, ECons(101, ECons(102, ENil))), ENil))) == ECons(1, ECons(2, ECons(3, ECons(10, ECons(11, ECons(12, ECons(100, ECons(101, ECons(102, ENil)))))))))
 
+    @test
+    def intercalate11(): Bool =
+        LazyList.intercalate(ECons(10, ECons(11, ECons(12, ENil))), ECons(ECons(1, ECons(2, ECons(3, ENil))), ECons(ECons(100, ECons(101, ECons(102, ENil))), ECons(ECons(200, ECons(201, ECons(202, ENil))), ENil)))) == ECons(1, ECons(2, ECons(3, ECons(10, ECons(11, ECons(12, ECons(100, ECons(101, ECons(102, ECons(10, ECons(11, ECons(12, ECons(200, ECons(201, ECons(202, ENil)))))))))))))))
+
+    @test
+    def intercalate12(): Bool =
+        LazyList.intercalate(ECons(12, ECons(11, ECons(10, ENil))), ECons(ECons(1, ECons(2, ECons(3, ENil))), ECons(ECons(100, ECons(101, ECons(102, ENil))), ECons(ECons(200, ECons(201, ECons(202, ENil))), ENil)))) == ECons(1, ECons(2, ECons(3, ECons(12, ECons(11, ECons(10, ECons(100, ECons(101, ECons(102, ECons(12, ECons(11, ECons(10, ECons(200, ECons(201, ECons(202, ENil)))))))))))))))
+
+    @test
+    def intercalate13(): Bool =
+        LazyList.intercalate(ECons(-1, ECons(-2, ECons(0, ENil))), ECons(ECons(1, ECons(2, ECons(3, ENil))), ECons(ECons(100, ECons(101, ECons(102, ENil))), ECons(ECons(200, ECons(201, ECons(202, ENil))), ENil)))) == ECons(1, ECons(2, ECons(3, ECons(-1, ECons(-2, ECons(0, ECons(100, ECons(101, ECons(102, ECons(-1, ECons(-2, ECons(0, ECons(200, ECons(201, ECons(202, ENil)))))))))))))))
+
 }
