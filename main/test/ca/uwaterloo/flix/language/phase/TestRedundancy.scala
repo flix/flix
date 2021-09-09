@@ -944,7 +944,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.UnusedFormalParam](result)
   }
 
-  test("SingleUseOfVariable.Predicate.01") {
+  test("IllegalSingleVariable.Predicate.01") {
     val input =
       s"""
          |def f(): Bool =
