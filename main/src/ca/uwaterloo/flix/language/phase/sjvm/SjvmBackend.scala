@@ -76,12 +76,12 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
       val nonClosureFunctions: Set[Symbol.DefnSym] = root.functions.keySet.diff(closureSyms)
 
       // Generate Classes
-      // TODO JLS: write documentation
-      // TODO JLS: write pseudocode
-      // TODO JLS: filter the base type list to the occurring types in ex. refs
-      // TODO JLS: ParArgs as much as possible
-      // TODO JLS: Add copyright everywhere
-      // TODO JLS: Check that aux methods are private
+      // TODO(JLS): write documentation
+      // TODO(JLS): write pseudocode
+      // TODO(JLS): filter the base type list to the occurring types in ex. refs
+      // TODO(JLS): ParArgs as much as possible
+      // TODO(JLS): Add copyright everywhere
+      // TODO(JLS): Check that aux methods are private
 
       val mainClass = GenMainClass.gen()
 

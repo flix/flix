@@ -98,7 +98,7 @@ object GenMainClass {
       f.visitor.visitFieldInsn(Opcodes.PUTFIELD, defn.sym.defName.internalName, GenFunctionInterfaces.argFieldName(0), JvmName.Java.Object.descriptor)
       f.asInstanceOf[F[StackNil ** PReference[PFunction[T]]]]
     } ~ { f: F[StackNil ** PReference[PFunction[T]]] =>
-      f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, RInt32.contName.internalName, GenContinuationInterfaces.UnwindMethodName, RInt32.nothingToThisMethodDescriptor, false)
+      f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, RInt32.contName.internalName, GenContinuationInterfaces.UnwindMethodName, RInt32.nothingToThisDescriptor, false)
       f.asInstanceOf[F[StackNil ** PInt32]]
     } ~ { f: F[StackNil ** PInt32] =>
       f.visitor.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/System", "exit", "(I)V", false);

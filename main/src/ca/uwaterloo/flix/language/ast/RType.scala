@@ -27,6 +27,7 @@ trait Describable {
   def descriptor: String
 }
 
+// TODO(JLS): move nothingToThis etc. into Describable
 sealed trait RType[T <: PType] extends Describable {
   private lazy val lazyDescriptor: String = RType.descriptorOf(this)
 
@@ -39,10 +40,10 @@ sealed trait RType[T <: PType] extends Describable {
   lazy val erasedDescriptor: String = RType.erasedDescriptor(this)
   // TODO(JLS): add cont and Fn in RRefType maybe?
   lazy val contName: JvmName = JvmName(Nil, s"Cont${JvmName.reservedDelimiter}${this.erasedString}")
-  lazy val nothingToContMethodDescriptor: String = JvmName.getMethodDescriptor(Nil, this.contName)
-  lazy val erasedNothingToThisMethodDescriptor: String = JvmName.getMethodDescriptor(Nil, this.erasedType)
-  lazy val nothingToThisMethodDescriptor: String = JvmName.getMethodDescriptor(Nil, this)
-  lazy val thisToNothingMethodDescriptor: String = JvmName.getMethodDescriptor(this, None)
+  lazy val nothingToContDescriptor: String = JvmName.getMethodDescriptor(Nil, this.contName)
+  lazy val erasedNothingToThisDescriptor: String = JvmName.getMethodDescriptor(Nil, this.erasedType)
+  lazy val nothingToThisDescriptor: String = JvmName.getMethodDescriptor(Nil, this)
+  lazy val thisToNothingDescriptor: String = JvmName.getMethodDescriptor(this, None)
 }
 
 object RType {
@@ -166,8 +167,9 @@ sealed trait RRefType[T <: PRefType] extends Describable {
 
   def rType: RReference[T] = RReference(this)
 
-  lazy val erasedNothingToThisMethodDescriptor: String = JvmName.getMethodDescriptor(Nil, RObject) //TODO(JLS): Implicit erased type
-  lazy val nothingToThisMethodDescriptor: String = JvmName.getMethodDescriptor(Nil, this)
+  lazy val erasedNothingToThisDescriptor: String = JvmName.getMethodDescriptor(Nil, RObject) //TODO(JLS): Implicit erased type
+  lazy val nothingToThisDescriptor: String = JvmName.getMethodDescriptor(Nil, this)
+  lazy val thisToNothingDescriptor: String = JvmName.getMethodDescriptor(this, None)
 }
 
 object RRefType {

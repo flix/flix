@@ -31,7 +31,7 @@ object GenUnitClass {
     START[StackNil] ~
       NEW(unitType) ~
       DUP ~
-      InvokeSimpleConstructor(unitType) ~
+      invokeSimpleConstructor(unitType) ~
       PUTSTATIC(unitType.jvmName, InstanceFieldName, unitType, erasedType = false) ~
       RETURN
   }

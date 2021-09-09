@@ -70,8 +70,8 @@ object GenContinuationInterfaces {
     val classMaker = ClassMaker.mkAbstractClass(resultType.contName, JvmName.Java.Object)
     classMaker.mkConstructor(START[StackNil] ~ THISINIT(JvmName.Java.Object) ~ RETURN)
     classMaker.mkField(ResultFieldName, resultType, Mod.isPublic.isAbstract)
-    classMaker.mkAbstractMethod(InvokeMethodName, resultType.nothingToContMethodDescriptor, Mod.isAbstract.isPublic)
-    classMaker.mkMethod(compileUnwindMethod(resultType), UnwindMethodName, resultType.nothingToThisMethodDescriptor, Mod.isPublic)
+    classMaker.mkAbstractMethod(InvokeMethodName, resultType.nothingToContDescriptor, Mod.isAbstract.isPublic)
+    classMaker.mkMethod(compileUnwindMethod(resultType), UnwindMethodName, resultType.nothingToThisDescriptor, Mod.isPublic)
 
     classMaker.closeClassMaker
   }
@@ -91,7 +91,7 @@ object GenContinuationInterfaces {
     f.visitor.visitVarInsn(ALOAD, 1)
     f.visitor.visitVarInsn(ASTORE, 2)
     f.visitor.visitVarInsn(ALOAD, 1)
-    f.visitor.visitMethodInsn(INVOKEVIRTUAL, resultType.contName.internalName, InvokeMethodName, resultType.nothingToContMethodDescriptor, false)
+    f.visitor.visitMethodInsn(INVOKEVIRTUAL, resultType.contName.internalName, InvokeMethodName, resultType.nothingToContDescriptor, false)
     f.visitor.visitVarInsn(ASTORE, 1)
     f.visitor.visitVarInsn(ALOAD, 1)
     f.visitor.visitJumpInsn(IFNONNULL, loopStart)

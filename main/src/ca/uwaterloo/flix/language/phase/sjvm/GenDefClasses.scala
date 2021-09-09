@@ -48,7 +48,7 @@ object GenDefClasses {
     val superClass = functionType.jvmName
     val classMaker = ClassMaker.mkClass(defName, superClass)
     classMaker.mkConstructor(START[StackNil] ~ THISINIT(superClass) ~ RETURN)
-    classMaker.mkMethod(genInvokeFunction(defn, defName), GenContinuationInterfaces.InvokeMethodName, functionType.result.nothingToContMethodDescriptor, Mod.isPublic)
+    classMaker.mkMethod(genInvokeFunction(defn, defName), GenContinuationInterfaces.InvokeMethodName, functionType.result.nothingToContDescriptor, Mod.isPublic)
     classMaker.closeClassMaker
   }
 

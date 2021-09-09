@@ -13,21 +13,22 @@ object GenFlixErrorClass {
 
   def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     val className = JvmName.Flix.FlixError
-    Map() + (className -> JvmClass(className, genByteCode(className)))
+    val superClass = JvmName.Java.RuntimeException
+    Map() + (className -> JvmClass(className, genByteCode(className, superClass)))
   }
 
-  def genByteCode(className: JvmName)(implicit flix: Flix): Array[Byte] = {
-    val classMaker = ClassMaker.mkAbstractClass(className, JvmName.Java.RuntimeException)
-    classMaker.mkConstructor(genConstructor(className), descriptor = RStr.rType.thisToNothingMethodDescriptor)
+  def genByteCode(className: JvmName, superClass: JvmName)(implicit flix: Flix): Array[Byte] = {
+    val classMaker = ClassMaker.mkAbstractClass(className, superClass)
+    classMaker.mkConstructor(genConstructor(superClass), descriptor = RStr.thisToNothingDescriptor)
     classMaker.closeClassMaker
   }
 
-  def genConstructor(name: JvmName): F[StackNil] => F[StackEnd] = {
+  def genConstructor(superClass: JvmName): F[StackNil] => F[StackEnd] = {
     START[StackNil] ~
       preInitALOAD(0, tagOf[PAnyObject]) ~
       ALOAD(1, RStr.rType) ~
       ((f: F[StackNil ** PReference[PAnyObject] ** PReference[PStr]]) => {
-        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, JvmName.Java.RuntimeException.internalName, JvmName.constructorMethod, RStr.rType.thisToNothingMethodDescriptor, false)
+        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, superClass.internalName, JvmName.constructorMethod, RStr.thisToNothingDescriptor, false)
         f.asInstanceOf[F[StackNil]]
       }) ~
       RETURN

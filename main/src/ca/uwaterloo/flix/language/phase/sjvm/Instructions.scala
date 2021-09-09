@@ -452,9 +452,15 @@ object Instructions {
   def PUTFIELD
   [R <: Stack, T1 <: PType, T2 <: PRefType]
   (classType: RReference[T2], fieldName: String, fieldType: RType[T1], erasedType: Boolean):
+  F[R ** PReference[T2] ** T1] => F[R] =
+    PUTFIELD(classType.jvmName, fieldName, fieldType, erasedType)
+
+  def PUTFIELD
+  [R <: Stack, T1 <: PType, T2 <: PRefType]
+  (className: JvmName, fieldName: String, fieldType: RType[T1], erasedType: Boolean, tag: Tag[T2] = null):
   F[R ** PReference[T2] ** T1] => F[R] = f => {
     val descriptor = if (erasedType) fieldType.erasedDescriptor else fieldType.descriptor
-    f.visitor.visitFieldInsn(Opcodes.PUTFIELD, classType.internalName, fieldName, descriptor)
+    f.visitor.visitFieldInsn(Opcodes.PUTFIELD, className.internalName, fieldName, descriptor)
     castF(f)
   }
 
@@ -502,15 +508,15 @@ object Instructions {
     castF(f)
   }
 
-  def InvokeSimpleConstructor
+  def invokeSimpleConstructor
   [R <: Stack, T <: PRefType]
   (classType: RReference[T]):
   F[R ** PReference[T]] => F[R] = f => {
-    InvokeSimpleConstructor(classType.jvmName)(f)
+    invokeSimpleConstructor(classType.jvmName)(f)
     castF(f)
   }
 
-  def InvokeSimpleConstructor
+  def invokeSimpleConstructor
   [R <: Stack, T <: PRefType]
   (className: JvmName):
   F[R ** PReference[T]] => F[R] = f => {
@@ -534,11 +540,11 @@ object Instructions {
 
   def createSimpleObject
   [R <: Stack, T <: PRefType]
-  (className: JvmName):
+  (className: JvmName, tag: Tag[T] = null):
   F[R] => F[R ** PReference[T]] = f => {
-    f.visitor.visitTypeInsn(Opcodes.NEW, className)
+    f.visitor.visitTypeInsn(Opcodes.NEW, className.internalName)
     f.visitor.visitInsn(Opcodes.DUP)
-    f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className, JvmName.constructorMethod, JvmName.nothingToVoid, false)
+    f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.internalName, JvmName.constructorMethod, JvmName.nothingToVoid, false)
     castF(f)
   }
 
@@ -548,7 +554,7 @@ object Instructions {
   F[R ** PReference[PLazy[T]]] => F[R ** T] = f => {
     val rRefLazy = squeezeReference(rType)
     val resultType = squeezeLazy(rRefLazy).tpe
-    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, rRefLazy.internalName, GenLazyClasses.ForceMethod, resultType.erasedNothingToThisMethodDescriptor, false)
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, rRefLazy.internalName, GenLazyClasses.ForceMethod, resultType.erasedNothingToThisDescriptor, false)
     undoErasure(resultType, f.visitor)
     castF(f)
   }
@@ -1275,7 +1281,7 @@ object Instructions {
       DUP ~
       (f => valueIns(castF(f))) ~
       (f => {
-        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.internalName, JvmName.constructorMethod, RInt8.thisToNothingMethodDescriptor, false)
+        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.internalName, JvmName.constructorMethod, RInt8.thisToNothingDescriptor, false)
         castF[R ** PReference[PBoxedInt8]](f)
       })
   }
@@ -1290,7 +1296,7 @@ object Instructions {
       DUP ~
       (f => valueIns(castF(f))) ~
       (f => {
-        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.internalName, JvmName.constructorMethod, RInt16.thisToNothingMethodDescriptor, false)
+        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.internalName, JvmName.constructorMethod, RInt16.thisToNothingDescriptor, false)
         castF[R ** PReference[PBoxedInt16]](f)
       })
   }
@@ -1306,7 +1312,7 @@ object Instructions {
       DUP ~
       (f => valueIns(castF(f))) ~
       (f => {
-        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.internalName, JvmName.constructorMethod, RInt32.thisToNothingMethodDescriptor, false)
+        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.internalName, JvmName.constructorMethod, RInt32.thisToNothingDescriptor, false)
         castF[R ** PReference[PBoxedInt32]](f)
       })
   }
@@ -1321,7 +1327,7 @@ object Instructions {
       DUP ~
       (f => valueIns(castF(f))) ~
       (f => {
-        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.internalName, JvmName.constructorMethod, RInt64.thisToNothingMethodDescriptor, false)
+        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.internalName, JvmName.constructorMethod, RInt64.thisToNothingDescriptor, false)
         castF[R ** PReference[PBoxedInt64]](f)
       })
   }
@@ -1336,7 +1342,7 @@ object Instructions {
       DUP ~
       (f => valueIns(castF(f))) ~
       (f => {
-        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.internalName, JvmName.constructorMethod, RChar.thisToNothingMethodDescriptor, false)
+        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.internalName, JvmName.constructorMethod, RChar.thisToNothingDescriptor, false)
         castF[R ** PReference[PBoxedChar]](f)
       })
   }
@@ -1351,7 +1357,7 @@ object Instructions {
       DUP ~
       (f => valueIns(castF(f))) ~
       (f => {
-        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.internalName, JvmName.constructorMethod, RFloat32.thisToNothingMethodDescriptor, false)
+        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.internalName, JvmName.constructorMethod, RFloat32.thisToNothingDescriptor, false)
         castF[R ** PReference[PBoxedFloat32]](f)
       })
   }
@@ -1366,7 +1372,7 @@ object Instructions {
       DUP ~
       (f => valueIns(castF(f))) ~
       (f => {
-        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.internalName, JvmName.constructorMethod, RFloat64.thisToNothingMethodDescriptor, false)
+        f.visitor.visitMethodInsn(Opcodes.INVOKESPECIAL, className.internalName, JvmName.constructorMethod, RFloat64.thisToNothingDescriptor, false)
         castF[R ** PReference[PBoxedFloat64]](f)
       })
   }
@@ -1619,7 +1625,7 @@ object Instructions {
   (fnType: RArrow[T]):
   F[R ** PReference[PFunction[T]]] => F[R ** T] = f => {
     f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, fnType.internalName, GenContinuationInterfaces.UnwindMethodName,
-      fnType.result.erasedNothingToThisMethodDescriptor, false)
+      fnType.result.erasedNothingToThisDescriptor, false)
     undoErasure(fnType.result, f.visitor)
     castF(f)
   }
@@ -1656,7 +1662,7 @@ object Instructions {
     START[R] ~
       NEW(defName, tagOf[PFunction[T]]) ~
       DUP ~
-      InvokeSimpleConstructor(defName) ~
+      invokeSimpleConstructor(defName) ~
       (f => {
         undoErasure(fnName, f.visitor)
         f
@@ -1670,7 +1676,7 @@ object Instructions {
     START[R] ~
       NEW(cloName, tagOf[PFunction[T]]) ~
       DUP ~
-      InvokeSimpleConstructor(cloName) ~
+      invokeSimpleConstructor(cloName) ~
       setArgs(cloName, freeVars.map(f => ErasedAst.Expression.Var(f.sym, f.tpe, SourceLocation.Unknown)), GenClosureClasses.cloArgFieldName, tagOf[T]) ~
       ((f: F[R ** PReference[PFunction[T]]]) => {
         undoErasure(fnName, f.visitor)
@@ -2064,7 +2070,7 @@ object Instructions {
   [R <: Stack, T <: PRefType]
   (tpe: RType[PReference[T]]):
   F[R ** PReference[PChan[T]]] => F[R ** PReference[T]] = f => {
-    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Flix.Channel.internalName, "get", RObject.nothingToThisMethodDescriptor, false)
+    f.visitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Flix.Channel.internalName, "get", RObject.nothingToThisDescriptor, false)
     undoErasure(tpe, f.visitor)
     castF(f)
   }

@@ -54,7 +54,7 @@ object GenClosureClasses {
     val superClass = functionType.jvmName
     val classMaker = ClassMaker.mkClass(cloName, superClass)
     classMaker.mkConstructor(START[StackNil] ~ THISINIT(superClass) ~ RETURN)
-    classMaker.mkMethod(genInvokeFunction(defn, defn.exp, cloName, freeVars), GenContinuationInterfaces.InvokeMethodName, functionType.result.nothingToContMethodDescriptor, Mod.isPublic)
+    classMaker.mkMethod(genInvokeFunction(defn, defn.exp, cloName, freeVars), GenContinuationInterfaces.InvokeMethodName, functionType.result.nothingToContDescriptor, Mod.isPublic)
     for ((fv, index) <- freeVars.zipWithIndex) {
       classMaker.mkField(GenClosureClasses.cloArgFieldName(index), fv.tpe.erasedType, Mod.isPublic)
     }

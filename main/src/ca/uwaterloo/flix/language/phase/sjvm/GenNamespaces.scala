@@ -70,7 +70,7 @@ object GenNamespaces {
     START[StackNil] ~
       NEW(defName, tagOf[PFunction[T]]) ~
       DUP ~
-      InvokeSimpleConstructor(defName) ~ { f: F[StackNil ** PReference[PFunction[T]]] =>
+      invokeSimpleConstructor(defName) ~ { f: F[StackNil ** PReference[PFunction[T]]] =>
       var nextIndex = 0
       for ((argType, argIndex) <- functionType.args.zipWithIndex) {
         f.visitor.visitInsn(Opcodes.DUP)

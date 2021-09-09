@@ -35,7 +35,7 @@ object GenLazyClasses {
   val ValueFieldName: String = "value"
   val ForceMethod: String = "force"
 
-  def constructorDescriptor[T <: PType](valueType: RType[T]): String = expressionFieldType(valueType).thisToNothingMethodDescriptor
+  def constructorDescriptor[T <: PType](valueType: RType[T]): String = expressionFieldType(valueType).thisToNothingDescriptor
 
   def expressionFieldType[T <: PType](valueType: RType[T]): RType[PReference[PFunction[T]]] = RReference(RArrow(RReference(RObject) :: Nil, valueType))
 
@@ -55,7 +55,7 @@ object GenLazyClasses {
     classMaker.mkField(InitializedFieldName, InitializedFieldType)
     classMaker.mkField(ExpressionFieldName, expressionFieldType(valueFieldType))
     classMaker.mkField(ValueFieldName, valueFieldType)
-    classMaker.mkMethod(compileForceMethod(lazyType, valueFieldType), ForceMethod, valueFieldType.nothingToThisMethodDescriptor, Mod.isFinal.isPublic)
+    classMaker.mkMethod(compileForceMethod(lazyType, valueFieldType), ForceMethod, valueFieldType.nothingToThisDescriptor, Mod.isFinal.isPublic)
     classMaker.mkConstructor(compileLazyConstructor(lazyType, valueFieldType))
     classMaker.closeClassMaker
   }
