@@ -78,6 +78,34 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.HiddenVarSym](result)
   }
 
+  test("HiddenVarSym.Predicate.01") {
+    val input =
+      s"""
+         |def f(): Bool =
+         |  let _x = #{
+         |    A(_x) :- B(_x).
+         |  };
+         |  true
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[RedundancyError.HiddenVarSym](result)
+  }
+
+  test("HiddenVarSym.Predicate.02") {
+    val input =
+      s"""
+         |def f(): Bool =
+         |  let _x = #{
+         |    A(2) :- B(_x), C(_x).
+         |  };
+         |  true
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[RedundancyError.HiddenVarSym](result)
+  }
+
   test("ShadowedVar.Def.01") {
     val input =
       """
@@ -914,6 +942,20 @@ class TestRedundancy extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.UnusedFormalParam](result)
+  }
+
+  test("IllegalSingleVariable.Predicate.01") {
+    val input =
+      s"""
+         |def f(): Bool =
+         |  let _x = #{
+         |    A(x) :- B(x), C(y).
+         |  };
+         |  true
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[RedundancyError.IllegalSingleVariable](result)
   }
 
 }
