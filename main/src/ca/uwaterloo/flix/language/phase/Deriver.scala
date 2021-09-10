@@ -53,11 +53,13 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
       lazy val orderSym = PredefinedClasses.lookupClassSym("Order", root)
       lazy val toStringSym = PredefinedClasses.lookupClassSym("ToString", root)
       lazy val boxableSym = PredefinedClasses.lookupClassSym("Boxable", root)
+      lazy val hashSym = PredefinedClasses.lookupClassSym("Hash", root)
       derives.map {
         case Ast.Derivation(sym, loc) if sym == eqSym => mkEqInstance(enum, loc, root)
         case Ast.Derivation(sym, loc) if sym == orderSym => mkOrderInstance(enum, loc, root)
         case Ast.Derivation(sym, loc) if sym == toStringSym => mkToStringInstance(enum, loc, root)
         case Ast.Derivation(sym, loc) if sym == boxableSym => mkBoxableInstance(enum, loc, root)
+        case Ast.Derivation(sym, loc) if sym == hashSym => mkHashInstance(enum, loc, root)
         case unknownSym => throw InternalCompilerException(s"Unexpected derivation: $unknownSym")
       }
   }
@@ -538,6 +540,29 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
       KindedAst.MatchRule(pat, guard, exp)
   }
 
+  /**
+    * Creates a Hash instance for the given enum.
+    *
+    * {{{
+    * enum E[a] with Hash {
+    *   case C0
+    *   case C1(a)
+    *   case C2(a, a)
+    * }
+    * }}}
+    *
+    * yields
+    *
+    * {{{
+    * instance Hash[E[a]] with Hash[a] {
+    *   pub def hash(x: E[a]): Int = match x {
+    *     case C0 => 0
+    *     case C1(x0) => 1 * 31 + hash(x0)
+    *     case C2(x0, x1) => (2 * 31 + hash(x0)) * 31 + hash(x1)
+    *   }
+    * }
+    * }}}
+    */
   private def mkHashInstance(enum: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum match {
     case KindedAst.Enum(_, _, _, tparams, _, _, _, sc, _) =>
       val hashClassSym = PredefinedClasses.lookupClassSym("Hash", root)
@@ -563,6 +588,9 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
       )
   }
 
+  /**
+    * Creates the hash implementation for the given enum, where `param` is the parameter to the function.
+    */
   private def mkHashImpl(enum: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Expression = enum match {
     case KindedAst.Enum(_, _, _, _, _, cases, _, _, _) =>
       // create a match rule for each case
@@ -578,6 +606,9 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
       )
   }
 
+  /**
+    * Creates the hash spec for the given enum, where `param` is the parameter to the function.
+    */
   private def mkHashSpec(enum: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Spec = enum match {
     case KindedAst.Enum(_, _, _, tparams, _, _, _, sc, _) =>
       val hashClassSym = PredefinedClasses.lookupClassSym("Hash", root)
@@ -598,9 +629,12 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
       )
   }
 
+  /**
+    * Creates a ToString match rule for the given enum case.
+    */
   private def mkHashMatchRule(caze: KindedAst.Case, index: Int, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
     case KindedAst.Case(_, _, _, sc) =>
-      // C2(x0, x1) => ((2 * 31) + hash(x0)) * 31 + hash(y0)
+      val hashSigSym = PredefinedClasses.lookupSigSym("Hash", "hash", root)
 
       // get a pattern corresponding to this case, e.g.
       // `case C2(x0, x1)`
@@ -612,7 +646,27 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
       // the first hash is the index
       // `((2 * 31) + hash(x0)) * 31 + hash(y0)`
       val exp = varSyms.foldLeft(KindedAst.Expression.Int32(index, loc): KindedAst.Expression) {
-        case (acc, varSym) => KindedAst.Expression.Binary(SemanticOperator.Int32Op.Add, acc, mkVarExpr(varSym, loc), Type.freshVar(Kind.Star, loc), loc)
+        case (acc, varSym) =>
+          // `(acc * 31) + hash(varSym)
+          KindedAst.Expression.Binary(
+            SemanticOperator.Int32Op.Add,
+            KindedAst.Expression.Binary(
+              SemanticOperator.Int32Op.Mul,
+              acc,
+              KindedAst.Expression.Int32(31, loc),
+              Type.freshVar(Kind.Star, loc),
+              loc
+            ),
+            KindedAst.Expression.Apply(
+              KindedAst.Expression.Sig(hashSigSym, Type.freshVar(Kind.Star, loc), loc),
+              List(mkVarExpr(varSym, loc)),
+              Type.freshVar(Kind.Star, loc),
+              Type.freshVar(Kind.Bool, loc),
+              loc
+            ),
+            Type.freshVar(Kind.Star, loc),
+            loc
+          )
       }
 
       KindedAst.MatchRule(pat, guard, exp)
@@ -666,7 +720,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
   private def mkStrExpr(str: String, loc: SourceLocation): KindedAst.Expression.Str = KindedAst.Expression.Str(str, loc)
 
   /**
-    * Builds a string expression from the given string.
+    * Builds a var expression from the given var sym.
     */
   private def mkVarExpr(varSym: Symbol.VarSym, loc: SourceLocation): KindedAst.Expression.Var = KindedAst.Expression.Var(varSym, varSym.tvar.ascribedWith(Kind.Star), loc)
 
