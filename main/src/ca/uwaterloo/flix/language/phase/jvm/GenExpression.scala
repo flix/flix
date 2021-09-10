@@ -838,6 +838,7 @@ object GenExpression {
 
         // Emit code for the handler body expression.
         compileExpression(body, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitJumpInsn(GOTO, afterTryAndCatch)
       }
 
       // Add the label after both the try and catch rules.
