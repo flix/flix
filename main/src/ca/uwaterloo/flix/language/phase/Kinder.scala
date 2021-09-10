@@ -376,11 +376,6 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         elm <- visitExp(elm0, kenv, root)
       } yield KindedAst.Expression.ArrayStore(base, index, elm, loc)
 
-    case ResolvedAst.Expression.ArrayLength(base0, loc) =>
-      for {
-        base <- visitExp(base0, kenv, root)
-      } yield KindedAst.Expression.ArrayLength(base, loc)
-
     case ResolvedAst.Expression.ArraySlice(base0, beginIndex0, endIndex0, loc) =>
       for {
         base <- visitExp(base0, kenv, root)

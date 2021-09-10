@@ -191,7 +191,7 @@ instance ToString[Array[a]] with ToString[a] {
 
 namespace ToStringOps {
     pub def arrayToStringHelper(a: Array[a], i: Int32, acc: String): String with ToString[a] =
-        if (i < a.length) {
+        if (i < Array.length(a)) {
             if (i == 0) arrayToStringHelper(a, i + 1, "${a[i]}") as & Pure
             else arrayToStringHelper(a, i + 1, "${acc}, ${a[i]}") as & Pure
         } else {

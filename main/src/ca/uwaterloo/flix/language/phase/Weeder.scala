@@ -527,6 +527,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           case ("STRING_EQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.StringOp.Eq, e1, e2, loc).toSuccess
           case ("STRING_NEQ", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.StringOp.Neq, e1, e2, loc).toSuccess
 
+          case ("ARRAY_LEN", e1 :: Nil) => WeededAst.Expression.Unary(SemanticOperator.ArrayOp.Length, e1, loc).toSuccess
+
           case _ => WeederError.IllegalIntrinsic(loc).toFailure
         }
       }
@@ -962,11 +964,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val fieldsVal = traverse(fields) {
         case ParsedAst.RecordField(fsp1, ident, exp, fsp2) =>
           flatMapN(visitExp(exp)) {
-            case e =>
-              if (ident.name == "length")
-                WeederError.IllegalFieldName(ident.loc).toFailure
-              else
-                (ident -> e).toSuccess
+            case e => (ident -> e).toSuccess
           }
       }
 
@@ -982,12 +980,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.RecordSelect(exp, ident, sp2) =>
       val sp1 = leftMostSourcePosition(exp)
       mapN(visitExp(exp)) {
-        case e =>
-          // Special Case: Array Length
-          if (ident.name == "length")
-            WeededAst.Expression.ArrayLength(e, mkSL(sp1, sp2))
-          else
-            WeededAst.Expression.RecordSelect(e, Name.mkField(ident), mkSL(sp1, sp2))
+        case e => WeededAst.Expression.RecordSelect(e, Name.mkField(ident), mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.RecordSelectLambda(sp1, ident, sp2) =>
@@ -1003,29 +996,17 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       foldRight(ops)(visitExp(rest)) {
         case (ParsedAst.RecordOp.Extend(sp1, ident, exp, sp2), acc) =>
           flatMapN(visitExp(exp)) {
-            case e =>
-              if (ident.name == "length")
-                WeederError.IllegalFieldName(ident.loc).toFailure
-              else
-                WeededAst.Expression.RecordExtend(Name.mkField(ident), e, acc, mkSL(sp1, sp2)).toSuccess
+            case e => WeededAst.Expression.RecordExtend(Name.mkField(ident), e, acc, mkSL(sp1, sp2)).toSuccess
           }
 
-        case (ParsedAst.RecordOp.Restrict(sp1, ident, sp2), acc) =>
-          if (ident.name == "length")
-            WeederError.IllegalFieldName(ident.loc).toFailure
-          else
-            WeededAst.Expression.RecordRestrict(Name.mkField(ident), acc, mkSL(sp1, sp2)).toSuccess
+        case (ParsedAst.RecordOp.Restrict(sp1, ident, sp2), acc) => WeededAst.Expression.RecordRestrict(Name.mkField(ident), acc, mkSL(sp1, sp2)).toSuccess
 
         case (ParsedAst.RecordOp.Update(sp1, ident, exp, sp2), acc) =>
           flatMapN(visitExp(exp)) {
             case e =>
-              if (ident.name == "length")
-                WeederError.IllegalFieldName(ident.loc).toFailure
-              else {
-                // An update is a restrict followed by an extension.
-                val inner = WeededAst.Expression.RecordRestrict(Name.mkField(ident), acc, mkSL(sp1, sp2))
-                WeededAst.Expression.RecordExtend(Name.mkField(ident), e, inner, mkSL(sp1, sp2)).toSuccess
-              }
+              // An update is a restrict followed by an extension.
+              val inner = WeededAst.Expression.RecordRestrict(Name.mkField(ident), acc, mkSL(sp1, sp2))
+              WeededAst.Expression.RecordExtend(Name.mkField(ident), e, inner, mkSL(sp1, sp2)).toSuccess
           }
       }
 
@@ -1066,11 +1047,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       (optStartIndex, optEndIndex) match {
         case (None, None) =>
           visitExp(base) map {
-            case b => WeededAst.Expression.ArraySlice(b, WeededAst.Expression.Int32(0, loc), WeededAst.Expression.ArrayLength(b, loc), loc)
+            case b => WeededAst.Expression.ArraySlice(b, WeededAst.Expression.Int32(0, loc), WeededAst.Expression.Unary(SemanticOperator.ArrayOp.Length, b, loc), loc)
           }
         case (Some(startIndex), None) =>
           mapN(visitExp(base), visitExp(startIndex)) {
-            case (b, i1) => WeededAst.Expression.ArraySlice(b, i1, WeededAst.Expression.ArrayLength(b, loc), loc)
+            case (b, i1) => WeededAst.Expression.ArraySlice(b, i1, WeededAst.Expression.Unary(SemanticOperator.ArrayOp.Length, b, loc), loc)
           }
         case (None, Some(endIndex)) =>
           mapN(visitExp(base), visitExp(endIndex)) {

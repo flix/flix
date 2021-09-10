@@ -85,13 +85,13 @@ namespace Array {
     /// Returns `true` if the given array `a` is empty.
     ///
     @Time(1) @Space(1)
-    pub def isEmpty(a: Array[a]): Bool = a.length == 0
+    pub def isEmpty(a: Array[a]): Bool = length(a) == 0
 
     ///
     /// Returns the length of the array `a`.
     ///
     @Time(1) @Space(1)
-    pub def length(a: Array[a]): Int32 = a.length
+    pub def length(a: Array[a]): Int32 = $ARRAY_LEN$(a)
 
     ///
     /// Returns a fresh array with the elements from the array `a` from index `b` (inclusive) until index `e` (exclusive).

@@ -58,7 +58,7 @@ namespace Benchmark {
     /// Runs all benchmarks in `bs`. Attempts to spend no more than `budget` time.
     ///
     pub def runWithBudget(bs: Array[Benchmark], budget: Int64): Int32 & Impure =
-        if (bs.length == 0) {
+        if (Array.length(bs) == 0) {
             println("No benchmarks");
             1
         } else {
@@ -93,7 +93,7 @@ namespace Benchmark {
     /// Runs all the given benchmarks with estimates `bs` and the given time `budget`.
     ///
     def runAll(bs: Array[(Benchmark, Int64)], budget: Int64): Unit & Impure = {
-        let budgetPerBenchmark = budget / (Int32.toInt64(bs.length));
+        let budgetPerBenchmark = budget / (Int32.toInt64(Array.length(bs)));
         bs |> Array.foreach(match (b, cost) ->
             let iters = iterations(cost, budgetPerBenchmark);
             runBenchmark(b, iters) |> printRow

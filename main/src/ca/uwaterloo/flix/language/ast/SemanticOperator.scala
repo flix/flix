@@ -806,6 +806,13 @@ object SemanticOperator {
 
   }
 
+  sealed trait ArrayOp extends SemanticOperator
+
+  // MATT docs
+  object ArrayOp {
+    case object Length extends ArrayOp
+  }
+
 }
 
 object SemanticOperatorOps {

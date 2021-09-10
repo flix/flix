@@ -95,6 +95,11 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val es = exps.map(visitExp)
         SimplifiedAst.Expression.Apply(e, es, tpe, loc)
 
+      case TypedAst.Expression.Unary(SemanticOperator.ArrayOp.Length, e, tpe, eff, loc) =>
+        // translate to a dedicated ArrayLength expression for the backend
+        val b = visitExp(e)
+        SimplifiedAst.Expression.ArrayLength(b, Type.Int32, loc)
+
       case TypedAst.Expression.Unary(sop, e, tpe, eff, loc) =>
         // TODO: Remove when we have the new backend
         val op = SemanticOperatorOps.toUnaryOp(sop)

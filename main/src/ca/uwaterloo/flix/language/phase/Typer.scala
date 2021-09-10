@@ -504,6 +504,15 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
             resultEff = eff
           } yield (constrs, resultTyp, resultEff)
 
+        case SemanticOperator.ArrayOp.Length =>
+          val elmTypeVar = Type.freshVar(Kind.Star, loc)
+          for {
+            (constrs, tpe, eff) <- visitExp(exp)
+            arrayType <- unifyTypeM(tpe, Type.mkArray(elmTypeVar, loc), loc)
+            resultEff = eff
+            _ <- unbindVar(elmTypeVar)
+          } yield (constrs, Type.Int32, resultEff)
+
         case _ => throw InternalCompilerException(s"Unexpected unary operator: '$sop' near ${loc.format}.")
       }
 
@@ -1033,20 +1042,6 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
           indexType <- unifyTypeM(tpe2, Type.Int32, loc)
           resultEff = Type.Impure
         } yield (constrs1 ++ constrs2, tvar, resultEff)
-
-      case KindedAst.Expression.ArrayLength(exp, loc) =>
-        //
-        //  exp : Array[t] @ e
-        //  --------------------
-        //  exp.length : Int @ e
-        //
-        val elmTypeVar = Type.freshVar(Kind.Star, loc)
-        for {
-          (constrs, tpe, eff) <- visitExp(exp)
-          arrayType <- unifyTypeM(tpe, Type.mkArray(elmTypeVar, loc), loc)
-          resultEff = eff
-          _ <- unbindVar(elmTypeVar)
-        } yield (constrs, Type.Int32, resultEff)
 
       case KindedAst.Expression.ArrayStore(exp1, exp2, exp3, loc) =>
         //
@@ -1636,11 +1631,6 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
         val e2 = visitExp(exp2, subst0)
         val e3 = visitExp(exp3, subst0)
         TypedAst.Expression.ArrayStore(e1, e2, e3, loc)
-
-      case KindedAst.Expression.ArrayLength(exp, loc) =>
-        val e = visitExp(exp, subst0)
-        val eff = e.eff
-        TypedAst.Expression.ArrayLength(e, eff, loc)
 
       case KindedAst.Expression.ArraySlice(exp1, exp2, exp3, loc) =>
         val e1 = visitExp(exp1, subst0)

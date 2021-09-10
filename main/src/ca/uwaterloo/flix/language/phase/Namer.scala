@@ -665,11 +665,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (b, i, e) => NamedAst.Expression.ArrayStore(b, i, e, loc)
       }
 
-    case WeededAst.Expression.ArrayLength(base, loc) =>
-      visitExp(base, env0, uenv0, tenv0) map {
-        case b => NamedAst.Expression.ArrayLength(b, loc)
-      }
-
     case WeededAst.Expression.ArraySlice(base, startIndex, endIndex, loc) =>
       mapN(visitExp(base, env0, uenv0, tenv0), visitExp(startIndex, env0, uenv0, tenv0), visitExp(endIndex, env0, uenv0, tenv0)) {
         case (b, i1, i2) => NamedAst.Expression.ArraySlice(b, i1, i2, loc)
@@ -1239,7 +1234,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.ArrayNew(elm, len, loc) => freeVars(elm) ++ freeVars(len)
     case WeededAst.Expression.ArrayLoad(base, index, loc) => freeVars(base) ++ freeVars(index)
     case WeededAst.Expression.ArrayStore(base, index, elm, loc) => freeVars(base) ++ freeVars(index) ++ freeVars(elm)
-    case WeededAst.Expression.ArrayLength(base, loc) => freeVars(base)
     case WeededAst.Expression.ArraySlice(base, startIndex, endIndex, loc) => freeVars(base) ++ freeVars(startIndex) ++ freeVars(endIndex)
     case WeededAst.Expression.Ref(exp, loc) => freeVars(exp)
     case WeededAst.Expression.RefWithRegion(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)

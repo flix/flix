@@ -684,11 +684,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e <- visit(elm, tenv0)
           } yield ResolvedAst.Expression.ArrayStore(b, i, e, loc)
 
-        case NamedAst.Expression.ArrayLength(base, loc) =>
-          for {
-            b <- visit(base, tenv0)
-          } yield ResolvedAst.Expression.ArrayLength(b, loc)
-
         case NamedAst.Expression.ArraySlice(base, startIndex, endIndex, loc) =>
           for {
             b <- visit(base, tenv0)

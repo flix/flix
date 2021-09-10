@@ -127,8 +127,6 @@ object KindedAst {
 
     case class ArrayStore(base: KindedAst.Expression, index: KindedAst.Expression, elm: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
-    case class ArrayLength(base: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
-
     case class ArraySlice(base: KindedAst.Expression, beginIndex: KindedAst.Expression, endIndex: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
     case class Ref(exp: KindedAst.Expression, tvar: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
