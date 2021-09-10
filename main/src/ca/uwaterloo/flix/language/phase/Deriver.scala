@@ -490,7 +490,6 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
         eff = Type.Cst(TypeConstructor.True, loc),
         loc = loc
       )
-
   }
 
   /**
@@ -534,6 +533,86 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
         case Nil => tagPart
         // Case 2: at least one argument: concatenate the tag with the values wrapped in parens
         case exps => concatAll(tagPart :: mkStrExpr("(", loc) :: (exps :+ mkStrExpr(")", loc)), loc)
+      }
+
+      KindedAst.MatchRule(pat, guard, exp)
+  }
+
+  private def mkHashInstance(enum: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum match {
+    case KindedAst.Enum(_, _, _, tparams, _, _, _, sc, _) =>
+      val hashClassSym = PredefinedClasses.lookupClassSym("Hash", root)
+      val hashDefSym = Symbol.mkDefnSym("Hash.hash")
+
+      val param = Symbol.freshVarSym("x", loc)
+      val exp = mkHashImpl(enum, param, loc, root)
+      val spec = mkHashSpec(enum, param, loc, root)
+
+      val defn = KindedAst.Def(hashDefSym, spec, exp)
+
+      val tconstrs = getTypeConstraintsForTypeParams(tparams, hashClassSym, loc)
+
+      KindedAst.Instance(
+        doc = Ast.Doc(Nil, loc),
+        mod = Ast.Modifiers.Empty,
+        sym = hashClassSym,
+        tpe = sc.base,
+        tconstrs = tconstrs,
+        defs = List(defn),
+        ns = Name.RootNS,
+        loc = loc
+      )
+  }
+
+  private def mkHashImpl(enum: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Expression = enum match {
+    case KindedAst.Enum(_, _, _, _, _, cases, _, _, _) =>
+      // create a match rule for each case
+      val matchRules = cases.values.zipWithIndex.map {
+        case (caze, index) => mkHashMatchRule(caze, index, loc, root)
+      }
+
+      // group the match rules in an expression
+      KindedAst.Expression.Match(
+        mkVarExpr(param, loc),
+        matchRules.toList,
+        loc
+      )
+  }
+
+  private def mkHashSpec(enum: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Spec = enum match {
+    case KindedAst.Enum(_, _, _, tparams, _, _, _, sc, _) =>
+      val hashClassSym = PredefinedClasses.lookupClassSym("Hash", root)
+      KindedAst.Spec(
+        doc = Ast.Doc(Nil, loc),
+        ann = Nil,
+        mod = Ast.Modifiers.Empty,
+        tparams = tparams,
+        fparams = List(KindedAst.FormalParam(param, Ast.Modifiers.Empty, sc.base, loc)),
+        sc = Scheme(
+          tparams.map(_.tpe),
+          List(Ast.TypeConstraint(hashClassSym, sc.base, loc)),
+          Type.mkPureArrow(sc.base, Type.mkInt32(loc), loc)
+        ),
+        tpe = Type.mkInt32(loc),
+        eff = Type.Cst(TypeConstructor.True, loc),
+        loc = loc
+      )
+  }
+
+  private def mkHashMatchRule(caze: KindedAst.Case, index: Int, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
+    case KindedAst.Case(_, _, _, sc) =>
+      // C2(x0, x1) => ((2 * 31) + hash(x0)) * 31 + hash(y0)
+
+      // get a pattern corresponding to this case, e.g.
+      // `case C2(x0, x1)`
+      val (pat, varSyms) = mkPattern(sc.base, "x", loc)
+
+      val guard = KindedAst.Expression.True(loc)
+
+      // build a hash code by repeatedly adding the next hash and multiplying by 31
+      // the first hash is the index
+      // `((2 * 31) + hash(x0)) * 31 + hash(y0)`
+      val exp = varSyms.foldLeft(KindedAst.Expression.Int32(index, loc): KindedAst.Expression) {
+        case (acc, varSym) => KindedAst.Expression.Binary(SemanticOperator.Int32Op.Add, acc, mkVarExpr(varSym, loc), Type.freshVar(Kind.Star, loc), loc)
       }
 
       KindedAst.MatchRule(pat, guard, exp)
