@@ -52,10 +52,12 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
       lazy val eqSym = PredefinedClasses.lookupClassSym("Eq", root)
       lazy val orderSym = PredefinedClasses.lookupClassSym("Order", root)
       lazy val toStringSym = PredefinedClasses.lookupClassSym("ToString", root)
+      lazy val boxableSym = PredefinedClasses.lookupClassSym("Boxable", root)
       derives.map {
         case Ast.Derivation(sym, loc) if sym == eqSym => mkEqInstance(enum, loc, root)
         case Ast.Derivation(sym, loc) if sym == orderSym => mkOrderInstance(enum, loc, root)
         case Ast.Derivation(sym, loc) if sym == toStringSym => mkToStringInstance(enum, loc, root)
+        case Ast.Derivation(sym, loc) if sym == boxableSym => mkBoxableInstance(enum, loc, root)
         case unknownSym => throw InternalCompilerException(s"Unexpected derivation: $unknownSym")
       }
   }
@@ -535,6 +537,40 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
       }
 
       KindedAst.MatchRule(pat, guard, exp)
+  }
+
+  /**
+    * Creates a Boxable instance for the given enum.
+    *
+    * {{{
+    * enum E[a] with Boxable {
+    *   case C0
+    *   case C1(a)
+    *   case C2(a, a)
+    * }
+    * }}}
+    *
+    * yields
+    *
+    * {{{
+    * instance Boxable[E[a]]
+    * }}}
+    *
+    * The instance is empty because the class has default definitions.
+    */
+  private def mkBoxableInstance(enum: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root): KindedAst.Instance = enum match {
+    case KindedAst.Enum(_, _, _, _, _, _, _, sc, _) =>
+      val boxableClassSym = PredefinedClasses.lookupClassSym("Boxable", root)
+      KindedAst.Instance(
+        doc = Ast.Doc(Nil, loc),
+        mod = Ast.Modifiers.Empty,
+        sym = boxableClassSym,
+        tpe = sc.base,
+        tconstrs = Nil,
+        defs = Nil,
+        ns = Name.RootNS,
+        loc = loc
+      )
   }
 
   /**
