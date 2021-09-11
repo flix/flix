@@ -2829,4 +2829,69 @@ namespace TestLazyList {
     def intercalate13(): Bool =
         LazyList.intercalate(ECons(-1, ECons(-2, ECons(0, ENil))), ECons(ECons(1, ECons(2, ECons(3, ENil))), ECons(ECons(100, ECons(101, ECons(102, ENil))), ECons(ECons(200, ECons(201, ECons(202, ENil))), ENil)))) == ECons(1, ECons(2, ECons(3, ECons(-1, ECons(-2, ECons(0, ECons(100, ECons(101, ECons(102, ECons(-1, ECons(-2, ECons(0, ECons(200, ECons(201, ECons(202, ENil)))))))))))))))
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // intersperse                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def intersperse01(): Bool =
+        LazyList.intersperse(-11, ENil) == ENil
+
+    @test
+    def intersperse02(): Bool =
+        LazyList.intersperse(-11, LList(lazy ENil)) == ENil
+
+    @test
+    def intersperse03(): Bool =
+        LazyList.intersperse(-11, ECons(1, ENil)) == ECons(1, ENil)
+
+    @test
+    def intersperse04(): Bool =
+        LazyList.intersperse(-11, LList(lazy ECons(1, LList(lazy ENil)))) == ECons(1, ENil)
+
+    @test
+    def intersperse05(): Bool =
+        LazyList.intersperse(-11, LCons(1, lazy LCons(2, lazy LList(lazy LCons(3, lazy ENil))))) == ECons(1, ECons(-11, ECons(2, ECons(-11, ECons(3, ENil)))))
+
+    @test
+    def intersperse06(): Bool =
+        LazyList.intersperse(-11, LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil))))) == ECons(1, ECons(-11, ECons(2, ECons(-11, ECons(3, ENil)))))
+
+    @test
+    def intersperse07(): Bool =
+        LazyList.intersperse(-11, LCons(1, lazy ECons(2, LList(lazy LCons(3, lazy LList(lazy ENil)))))) == ECons(1, ECons(-11, ECons(2, ECons(-11, ECons(3, ENil)))))
+
+    @test
+    def intersperse08(): Bool =
+        LazyList.intersperse(-11, LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))) == ECons(1, ECons(-11, ECons(2, ECons(-11, ECons(3, ENil)))))
+
+    @test
+    def intersperse09(): Bool =
+        LazyList.intersperse(-11, LList(lazy LCons(1, lazy LList(lazy ECons(2, LList(lazy ECons(3, ENil))))))) == ECons(1, ECons(-11, ECons(2, ECons(-11, ECons(3, ENil)))))
+
+    @test
+    def intersperse10(): Bool =
+        LazyList.intersperse(-11, ECons(1, LCons(2, lazy ECons(3, ENil)))) == ECons(1, ECons(-11, ECons(2, ECons(-11, ECons(3, ENil)))))
+
+    @test
+    def intersperse11(): Bool =
+        LazyList.intersperse(-11, LList(lazy ECons(1, LCons(2, lazy LCons(3, lazy ECons(4, ENil)))))) == ECons(1, ECons(-11, ECons(2, ECons(-11, ECons(3, ECons(-11, ECons(4, ENil)))))))
+
+    @test
+    def intersperse12(): Bool =
+        LazyList.intersperse(-11, LList(lazy ECons(1, LCons(2, lazy ECons(3, LList(lazy LCons(4, lazy ENil))))))) == ECons(1, ECons(-11, ECons(2, ECons(-11, ECons(3, ECons(-11, ECons(4, ENil)))))))
+
+    @test
+    def intersperse13(): Bool =
+        LazyList.intersperse(-11, LCons(1, lazy LCons(2, lazy LCons(3, lazy ECons(4, LList(lazy ENil)))))) == ECons(1, ECons(-11, ECons(2, ECons(-11, ECons(3, ECons(-11, ECons(4, ENil)))))))
+
+    @test
+    def intersperse14(): Bool =
+        LazyList.intersperse(-11, ECons(1, LList(lazy ECons(2, LList(lazy ECons(3, LList(lazy LCons(4, lazy ENil)))))))) == ECons(1, ECons(-11, ECons(2, ECons(-11, ECons(3, ECons(-11, ECons(4, ENil)))))))
+
+    @test
+    def intersperse15(): Bool =
+        LazyList.intersperse(-11, LList(lazy ECons(1, ECons(2, ECons(3, LCons(4, lazy ENil)))))) == ECons(1, ECons(-11, ECons(2, ECons(-11, ECons(3, ECons(-11, ECons(4, ENil)))))))
+
 }
