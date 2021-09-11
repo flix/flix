@@ -729,9 +729,21 @@ namespace LazyList {
     ///
     pub def intercalate(l1: LazyList[a], l2: LazyList[LazyList[a]]): LazyList[a] = match l2 {
         case ENil           => ENil
-        case ECons(x, xs)   => if (isEmpty(xs)) x else LList(lazy append(append(x, l1), intercalate(l1,       xs)))
+        case ECons(x, xs)   => if (isEmpty(      xs)) x else LList(lazy append(append(x, l1), intercalate(l1,       xs)))
         case LCons(x, xs)   => if (isEmpty(force xs)) x else LList(lazy append(append(x, l1), intercalate(l1, force xs)))
         case LList(xs)      => LList(lazy intercalate(l1, force xs))
+    }
+
+    ///
+    /// Returns `xs` with `a` inserted between every two adjacent elements.
+    ///
+    /// Forces the tail of `l` unless it is an unevaluated LazyList.
+    ///
+    pub def intersperse(x: a, l: LazyList[a]): LazyList[a] = match l {
+        case ENil           => ENil
+        case ECons(x1, xs)  => if (isEmpty(      xs)) l else LCons(x1, lazy LCons(x, lazy intersperse(x,       xs)))
+        case LCons(x1, xs)  => if (isEmpty(force xs)) l else LCons(x1, lazy LCons(x, lazy intersperse(x, force xs)))
+        case LList(xs)      => LList(lazy intersperse(x, force xs))
     }
 
 }
