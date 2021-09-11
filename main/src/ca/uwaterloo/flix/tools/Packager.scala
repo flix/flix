@@ -11,12 +11,41 @@ import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.vt.TerminalContext
 import ca.uwaterloo.flix.util._
 
+import org.json4s.JsonAST.{JArray, JString, JValue}
+import org.json4s.JsonDSL._
+import org.json4s.ParserUtil.ParseException
+import org.json4s._
+import org.json4s.native.JsonMethods
+import org.json4s.native.JsonMethods.parse
+
+import java.net.URL
 import scala.collection.mutable
 
 /**
   * An interface to manage flix packages.
   */
 object Packager {
+
+  def main(args: Array[String]): Unit = {
+    println("test")
+
+    try {
+      val u = "https://api.github.com/repos/magnus-madsen/helloworld/releases"
+      val url = new URL(u)
+      val is = url.openStream()
+      val json = StreamOps.readAll(is)
+
+      val releases = parse(json).asInstanceOf[JArray]
+      for(release <- releases.arr) {
+        val tagName = release \\ "tag_name"
+        val ass = release \\ "assets" \\ "browser_download_url"
+        println(s"tag = ${tagName}, url = $ass")
+      }
+
+    } catch {
+      case ex: RuntimeException => ex.printStackTrace()
+    }
+  }
 
   /**
     * Initializes a new flix project at the given path `p`.
