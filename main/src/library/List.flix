@@ -339,14 +339,36 @@ namespace List {
     pub def ap(f: List[a -> b & e], x: List[a]) : List[b] & e =
         map(g -> map(g, x), f) |> flatten
 
-    // TODO: Efficient implementation of liftA2.
-    /// When applied to one argument, this lifts a binary function to work on lists of the respective arguments.
-    /// When the lifted function is applied, it returns a list with the original function applied
-    /// to all combinations of arguments.
+    // TODO: Efficient implementations of lift2,...,lift5, redirect liftA2,...,liftA5 to those.
+    ///
+    /// Lift a binary function to work on lists of its original arguments, returning a list
+    /// of applying all combinations of arguments.
     /// For argument lists `xs = x1, x2, ...` and `ys = y1, y2, ...` the results appear in the order
     /// `f(x1,y1), f(x1,y2), ..., f(x2,y1), f(x2,y2), ...`.
     ///
-    pub def lift2(f: a -> b -> c & e, xs: List[a], ys: List[b]): List[c] & e = Applicative.liftA2(f, xs, ys)
+    pub def lift2(f: t1 -> t2 -> r & e, l1: List[t1], l2: List[t2]): List[r] & e = Applicative.liftA2(f, l1, l2)
+
+    ///
+    /// Lift a ternary function to work on lists of its original arguments, returning a list
+    /// of applying all combinations of arguments.
+    /// For argument lists `xs = x1, x2, ...`, `ys = y1, y2, ...` and `zs = z1, z2, ...` the results appear
+    /// in the following order:
+    ///
+    /// ```
+    /// f(x1,y1,z1), f(x1,y1,z2), ..., f(x1,y2,z1), f(x1,y2,z2), ...,
+    /// f(x2,y1,z1), f(x2,y1,z2), ..., f(x2,y2,z1), f(x2,y2,z2), ...`
+    /// ...
+    /// ```
+    ///
+    pub def lift3(f: t1 -> t2 -> t3 -> r & e, l1: List[t1], l2: List[t2], l3: List[t3]): List[r] & e = Applicative.liftA3(f, l1, l2, l3)
+
+    /// Lift a 4-ary function to work on lists of its original arguments, returning a list
+    /// of applying all combinations of arguments. The results appear in the order extending the pattern from `lift3`.
+    pub def lift4(f: t1 -> t2 -> t3 -> t4 -> r & e, l1: List[t1], l2: List[t2], l3: List[t3], l4: List[t4]): List[r] & e = Applicative.liftA4(f, l1, l2, l3, l4)
+
+    /// Lift a 5-ary function to work on lists of its original arguments, returning a list
+    /// of applying all combinations of arguments. The results appear in the order extending the pattern from `lift3`.
+    pub def lift5(f: t1 -> t2 -> t3 -> t4 -> t5 -> r & e, l1: List[t1], l2: List[t2], l3: List[t3], l4: List[t4], l5: List[t5]): List[r] & e = Applicative.liftA5(f, l1, l2, l3, l4, l5)
 
     ///
     /// Returns the result of applying `f` to every element in `xs` along with that element's index.
