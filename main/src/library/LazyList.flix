@@ -729,9 +729,71 @@ namespace LazyList {
     ///
     pub def intercalate(l1: LazyList[a], l2: LazyList[LazyList[a]]): LazyList[a] = match l2 {
         case ENil           => ENil
-        case ECons(x, xs)   => if (isEmpty(xs)) x else LList(lazy append(append(x, l1), intercalate(l1,       xs)))
+        case ECons(x, xs)   => if (isEmpty(      xs)) x else LList(lazy append(append(x, l1), intercalate(l1,       xs)))
         case LCons(x, xs)   => if (isEmpty(force xs)) x else LList(lazy append(append(x, l1), intercalate(l1, force xs)))
         case LList(xs)      => LList(lazy intercalate(l1, force xs))
+    }
+
+    ///
+    /// Returns `xs` with `a` inserted between every two adjacent elements.
+    ///
+    /// Forces the tail of `l` unless it is an unevaluated LazyList.
+    ///
+    pub def intersperse(x: a, l: LazyList[a]): LazyList[a] = match l {
+        case ENil           => ENil
+        case ECons(x1, xs)  => if (isEmpty(      xs)) l else LCons(x1, lazy LCons(x, lazy intersperse(x,       xs)))
+        case LCons(x1, xs)  => if (isEmpty(force xs)) l else LCons(x1, lazy LCons(x, lazy intersperse(x, force xs)))
+        case LList(xs)      => LList(lazy intersperse(x, force xs))
+    }
+
+    ///
+    /// Returns the longest prefix of `l` that satisfies the predicate `f`.
+    ///
+    /// Whether `f` is applied eagerly or lazily depends on its purity:
+    ///
+    /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
+    /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
+    ///
+    pub def takeWhile(f: a -> Bool & ef, l: LazyList[a]): LazyList[a] & ef =
+        matchEff f {
+            case Pure   => takeWhileL(f as a -> Bool & Pure,   l)
+            case Impure => takeWhileE(f as a -> Bool & Impure, l)
+        } as & ef
+
+    ///
+    /// Returns the longest prefix of `l` that satisfies the predicate `f`.
+    ///
+    /// Applies `f` lazily (i.e. the tail is not forced).
+    ///
+    def takeWhileL(f: a -> Bool, l: LazyList[a]): LazyList[a] =
+        LList(lazy takeWhileLHelper(f, l))
+
+    ///
+    /// Helper function for `takeWhileL`.
+    ///
+    def takeWhileLHelper(f: a -> Bool, l: LazyList[a]): LazyList[a] = match l {
+        case ENil         => ENil
+        case ECons(x, xs) => if (f(x)) LCons(x, lazy takeWhileL(f,       xs)) else ENil
+        case LCons(x, xs) => if (f(x)) LCons(x, lazy takeWhileL(f, force xs)) else ENil
+        case LList(xs)    => LList(lazy takeWhileL(f, force xs))
+    }
+
+    ///
+    /// Returns the longest prefix of `l` that satisfies the predicate `f`.
+    ///
+    /// Applies `f` eagerly (i.e. the entire list `l` is forced).
+    ///
+    def takeWhileE(f: a -> Bool & Impure, l: LazyList[a]): LazyList[a] & Impure =
+        takeWhileEAcc(f, l, ks -> ks)
+
+    ///
+    /// Helper function for `takeWhileE`.
+    ///
+    def takeWhileEAcc(f: a -> Bool & Impure, l: LazyList[a], k: LazyList[a] -> LazyList[a]): LazyList[a] & Impure = match l {
+        case ENil         => k(ENil)
+        case ECons(x, xs) => if (f(x)) takeWhileEAcc(f,       xs, ks -> k(ECons(x, ks))) else k(ENil)
+        case LCons(x, xs) => if (f(x)) takeWhileEAcc(f, force xs, ks -> k(ECons(x, ks))) else k(ENil)
+        case LList(xs)    => takeWhileEAcc(f, force xs, k)
     }
 
 }
