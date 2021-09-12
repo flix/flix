@@ -179,6 +179,12 @@ case class Index(m: Map[(String, Int), List[Entity]],
   }
 
   /**
+   * Returns all entities in the document at the given `uri`.
+   */
+  def query(uri: String): List[Entity] =
+    m.view.filterKeys { case (s, _) => s == uri }.values.flatten.toList
+
+  /**
     * Returns all uses of the given symbol `sym`.
     */
   def usesOf(sym: Symbol.ClassSym): Set[SourceLocation] = classUses(sym)
