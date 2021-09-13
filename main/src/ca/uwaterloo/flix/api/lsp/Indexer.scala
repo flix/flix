@@ -332,6 +332,8 @@ object Indexer {
     case Expression.MatchEff(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ Index.occurrenceOf(exp0)
 
+    case Expression.IfThenElseStar(cond, exp1, exp2, _, _, _) =>
+      visitType(cond) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
   }
 
   /**

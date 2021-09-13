@@ -1498,6 +1498,11 @@ object Lowering extends Phase[Root, Root] {
       val e3 = substExp(exp3, subst)
       Expression.MatchEff(e1, e2, e3, tpe, eff, loc)
 
+    case Expression.IfThenElseStar(cond, exp1, exp2, tpe, eff, loc) =>
+      val e1 = substExp(exp1, subst)
+      val e2 = substExp(exp2, subst)
+      Expression.IfThenElseStar(cond, e1, e2, tpe, eff, loc)
+
     case Expression.FixpointConstraintSet(cs, stf, tpe, loc) => throw InternalCompilerException(s"Unexpected expression near ${loc.format}.")
   }
 
