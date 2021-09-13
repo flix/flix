@@ -49,7 +49,6 @@ object FormatExpression {
     case TypedAst.Expression.ArrayLit(elms, tpe, eff, loc) => s"ArrayLit(${elms.mkString(", ")})"
     case TypedAst.Expression.ArrayNew(elm, len, tpe, eff, loc) => s"ArrayNew($elm, $len)"
     case TypedAst.Expression.ArrayLoad(base, index, tpe, eff, loc) => s"ArrayLoad($base, $index)"
-    case TypedAst.Expression.ArrayLength(base, eff, loc) => s"ArrayLength($base)"
     case TypedAst.Expression.ArrayStore(base, index, elm, loc) => s"ArrayStore($base, $index, $elm)"
     case TypedAst.Expression.ArraySlice(base, begin, end, tpe, loc) => s"ArraySlice($base, $begin, $end)"
     case TypedAst.Expression.Ref(exp, tpe, eff, loc) => s"Ref($exp)"

@@ -118,7 +118,6 @@ object Statistics extends Phase[Root, Root] {
       case Expression.ArrayLit(elms, tpe, eff, loc) => Counter.merge(elms.map(visitExp))
       case Expression.ArrayNew(elm, len, tpe, eff, loc) => visitExp(elm) ++ visitExp(len)
       case Expression.ArrayLoad(base, index, tpe, eff, loc) => visitExp(base) ++ visitExp(index)
-      case Expression.ArrayLength(base, eff, loc) => visitExp(base)
       case Expression.ArrayStore(base, index, elm, loc) => visitExp(base) ++ visitExp(index) ++ visitExp(elm)
       case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) => visitExp(base) ++ visitExp(beginIndex) ++ visitExp(endIndex)
       case Expression.Ref(exp, tpe, eff, loc) => visitExp(exp)

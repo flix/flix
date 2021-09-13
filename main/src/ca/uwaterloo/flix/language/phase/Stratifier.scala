@@ -228,11 +228,6 @@ object Stratifier extends Phase[Root, Root] {
         case (b, i) => Expression.ArrayLoad(b, i, tpe, eff, loc)
       }
 
-    case Expression.ArrayLength(base, eff, loc) =>
-      mapN(visitExp(base)) {
-        case b => Expression.ArrayLength(b, eff, loc)
-      }
-
     case Expression.ArrayStore(base, index, elm, loc) =>
       mapN(visitExp(base), visitExp(index), visitExp(elm)) {
         case (b, i, e) => Expression.ArrayStore(b, i, e, loc)
@@ -534,9 +529,6 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.ArrayLoad(base, index, _, _, _) =>
       dependencyGraphOfExp(base) + dependencyGraphOfExp(index)
-
-    case Expression.ArrayLength(base, _, _) =>
-      dependencyGraphOfExp(base)
 
     case Expression.ArrayStore(base, index, elm, _) =>
       dependencyGraphOfExp(base) + dependencyGraphOfExp(index) + dependencyGraphOfExp(elm)

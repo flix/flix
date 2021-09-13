@@ -94,7 +94,6 @@ object Terminator extends Phase[Root, Root] {
       case Expression.ArrayLit(elms, _, _, _) => elms.exists(visit)
       case Expression.ArrayNew(elm, len, _, _, _) => visit(elm) || visit(len)
       case Expression.ArrayLoad(base, index, _, _, _) => visit(base) || visit(index)
-      case Expression.ArrayLength(base, _, _) => visit(base)
       case Expression.ArrayStore(base, index, elm, _) => visit(base) || visit(index) || visit(elm)
       case Expression.ArraySlice(base, beginIndex, endIndex, _, _) => visit(base) || visit(beginIndex) || visit(endIndex)
       case Expression.Ref(exp, _, _, _) => visit(exp)

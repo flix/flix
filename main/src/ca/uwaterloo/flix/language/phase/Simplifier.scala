@@ -170,10 +170,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val e = visitExp(elm)
         SimplifiedAst.Expression.ArrayStore(b, i, e, Type.Unit, loc)
 
-      case TypedAst.Expression.ArrayLength(base, eff, loc) =>
-        val b = visitExp(base)
-        SimplifiedAst.Expression.ArrayLength(b, Type.Int32, loc)
-
       case TypedAst.Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
         val b = visitExp(base)
         val i1 = visitExp(beginIndex)

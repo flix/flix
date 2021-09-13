@@ -200,10 +200,6 @@ object TypedAst {
 
     case class ArrayLoad(base: TypedAst.Expression, index: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class ArrayLength(base: TypedAst.Expression, eff: Type, loc: SourceLocation) extends TypedAst.Expression {
-      def tpe: Type = Type.Int32
-    }
-
     case class ArrayStore(base: TypedAst.Expression, index: TypedAst.Expression, elm: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {
       def tpe: Type = Type.Unit
 

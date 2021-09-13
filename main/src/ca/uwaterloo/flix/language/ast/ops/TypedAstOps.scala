@@ -137,9 +137,6 @@ object TypedAstOps {
       case Expression.ArrayStore(base, index, elm, loc) =>
         visitExp(base, env0) ++ visitExp(index, env0) ++ visitExp(elm, env0)
 
-      case Expression.ArrayLength(base, eff, loc) =>
-        visitExp(base, env0)
-
       case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
         visitExp(base, env0) ++ visitExp(beginIndex, env0) ++ visitExp(endIndex, env0)
 
@@ -363,7 +360,6 @@ object TypedAstOps {
     case Expression.ArrayLit(elms, _, _, _) => elms.flatMap(sigSymsOf).toSet
     case Expression.ArrayNew(elm, len, _, _, _) => sigSymsOf(elm) ++ sigSymsOf(len)
     case Expression.ArrayLoad(base, index, _, _, _) => sigSymsOf(base) ++ sigSymsOf(index)
-    case Expression.ArrayLength(base, _, _) => sigSymsOf(base)
     case Expression.ArrayStore(base, index, elm, _) => sigSymsOf(base) ++ sigSymsOf(index) ++ sigSymsOf(elm)
     case Expression.ArraySlice(base, beginIndex, endIndex, _, _) => sigSymsOf(base) ++ sigSymsOf(beginIndex) ++ sigSymsOf(endIndex)
     case Expression.Ref(exp, _, _, _) => sigSymsOf(exp)
@@ -547,9 +543,6 @@ object TypedAstOps {
 
     case Expression.ArrayLoad(base, index, _, _, _) =>
       freeVars(base) ++ freeVars(index)
-
-    case Expression.ArrayLength(base, _, _) =>
-      freeVars(base)
 
     case Expression.ArrayStore(base, index, elm, _) =>
       freeVars(base) ++ freeVars(index) ++ freeVars(elm)
