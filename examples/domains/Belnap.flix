@@ -8,22 +8,12 @@ namespace Belnap {
     ///
     /// The elements of the boolean lattice.
     ///
-    pub enum Belnap {
+    pub enum Belnap with Eq {
                   case Top,
 
         case True,         case False,
 
                   case Bot
-    }
-
-    instance Eq[Belnap] {
-        pub def eq(e1: Belnap, e2: Belnap): Bool = match (e1, e2) {
-            case (Top, Top)     => true
-            case (True, True)   => true
-            case (False, False) => true
-            case (Bot, Bot)     => true
-            case _              => false
-        }
     }
 
     ///

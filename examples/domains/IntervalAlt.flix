@@ -12,7 +12,7 @@ namespace Domain/IntervalAlt {
     ///
     /// The elements of the IntervalAlt lattice.
     ///
-    enum IntervalAlt {
+    enum IntervalAlt with Eq {
                   case Top,
 
         case Range(BigInt, BigInt),
@@ -38,10 +38,6 @@ namespace Domain/IntervalAlt {
     /// Returns `true` iff `e1` is equal to `e2`.
     ///
     pub def equ(e1: IntervalAlt, e2: IntervalAlt): Bool = e1 == e2
-
-    instance Eq[IntervalAlt] {
-        pub def eq(e1: IntervalAlt, e2: IntervalAlt): Bool = equ(e1, e2)
-    }
 
     ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.

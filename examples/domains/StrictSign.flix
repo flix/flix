@@ -6,23 +6,12 @@ namespace Domain/StrictSign {
     ///
     /// The elements of the strict sign lattice.
     ///
-    enum Sign {
+    enum Sign with Eq {
                   case Top,
 
         case Neg, case Zer, case Pos,
 
                   case Bot
-    }
-
-    instance Eq[Sign] {
-        pub def eq(e1: Sign, e2: Sign): Bool = match (e1, e2) {
-            case (Top, Top) => true
-            case (Neg, Neg) => true
-            case (Zer, Zer) => true
-            case (Pos, Pos) => true
-            case (Bot, Bot) => true
-            case _          => false
-        }
     }
 
     ///
