@@ -47,9 +47,13 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
 
   private def visitDef(def0: LiftedAst.Def, m: TopLevel)(implicit flix: Flix): FinalAst.Def = {
     val fs = def0.fparams.map(visitFormalParam)
-    val e = visitExp(def0.exp, m)
+    val HeaderMonad(exp, headers) = visitExp(def0.exp, m)
+    val resExp = headers.foldLeft(exp) {
+      case (expAcc, (startOfTry, endOfTry, catchCases)) =>
+        FinalAst.Expression.TryCatchHeader(expAcc, startOfTry, endOfTry, catchCases, expAcc.tpe, expAcc.loc)
+    }
     val tpe = visitType(def0.tpe)
-    FinalAst.Def(def0.ann, def0.mod, def0.sym, fs, e.x, tpe, def0.loc)
+    FinalAst.Def(def0.ann, def0.mod, def0.sym, fs, resExp, tpe, def0.loc)
   }
 
   private def visitEnum(enum0: LiftedAst.Enum, m: TopLevel)(implicit flix: Flix): FinalAst.Enum = enum0 match {
@@ -66,11 +70,11 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
   private object HeaderMonad {
     def capture[X](x: X): HeaderMonad[X] = HeaderMonad(x, List.empty)
 
-    def traverse[X, B](f: X => HeaderMonad[B], list: List[X]): HeaderMonad[List[B]] =
+    def traverse[X, B](list: List[X])(f: X => HeaderMonad[B]): HeaderMonad[List[B]] =
       list.reverse.foldLeft(HeaderMonad.capture(List.empty[B]))((monad, x) => monad.flatMap(y => f(x).map(z => z :: y)))
   }
 
-  private case class HeaderMonad[+X](x: X, headers: List[FinalAst.Expression.TryCatchHeader]) {
+  private case class HeaderMonad[+X](x: X, headers: List[(Symbol.LabelSym, Symbol.LabelSym, List[(Symbol.LabelSym, Class[_])])]) {
     def map[B](f: X => B): HeaderMonad[B] = HeaderMonad(f(x), headers)
 
     def flatMap[B](f: X => HeaderMonad[B]): HeaderMonad[B] = {
@@ -138,33 +142,33 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
 
       case LiftedAst.Expression.ApplyClo(exp, args, tpe, loc) =>
         for {
-          as <- HeaderMonad.traverse(visit, args)
+          as <- HeaderMonad.traverse(args)(visit)
           t = visitType(tpe)
           exp1 <- visit(exp)
         } yield FinalAst.Expression.ApplyClo(exp1, as, t, loc)
 
       case LiftedAst.Expression.ApplyDef(name, args, tpe, loc) =>
         for {
-          as <- HeaderMonad.traverse(visit, args)
+          as <- HeaderMonad.traverse(args)(visit)
           t = visitType(tpe)
         } yield FinalAst.Expression.ApplyDef(name, as, t, loc)
 
       case LiftedAst.Expression.ApplyCloTail(exp, args, tpe, loc) =>
         for {
           e <- visit(exp)
-          rs <- HeaderMonad.traverse(visit, args)
+          rs <- HeaderMonad.traverse(args)(visit)
           t = visitType(tpe)
         } yield FinalAst.Expression.ApplyCloTail(e, rs, t, loc)
 
       case LiftedAst.Expression.ApplyDefTail(sym, args, tpe, loc) =>
         for {
-          as <- HeaderMonad.traverse(visit, args)
+          as <- HeaderMonad.traverse(args)(visit)
           t = visitType(tpe)
         } yield FinalAst.Expression.ApplyDefTail(sym, as, t, loc)
 
       case LiftedAst.Expression.ApplySelfTail(name, formals, actuals, tpe, loc) =>
         for {
-          as <- HeaderMonad.traverse(visit, actuals)
+          as <- HeaderMonad.traverse(actuals)(visit)
           fs = formals.map(visitFormalParam)
           t = visitType(tpe)
         } yield FinalAst.Expression.ApplySelfTail(name, fs, as, t, loc)
@@ -172,14 +176,14 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
       case LiftedAst.Expression.Unary(sop, op, exp, tpe, loc) =>
         for {
           e <- visit(exp)
-          val t = visitType(tpe)
+          t = visitType(tpe)
         } yield FinalAst.Expression.Unary(sop, op, e, t, loc)
 
       case LiftedAst.Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
         for {
           e1 <- visit(exp1)
           e2 <- visit(exp2)
-          val t = visitType(tpe)
+          t = visitType(tpe)
         } yield FinalAst.Expression.Binary(sop, op, e1, e2, t, loc)
 
       case LiftedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
@@ -187,28 +191,30 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
           e1 <- visit(exp1)
           e2 <- visit(exp2)
           v3 <- visit(exp3)
-          val t = visitType(tpe)
+          t = visitType(tpe)
         } yield FinalAst.Expression.IfThenElse(e1, e2, v3, t, loc)
 
       case LiftedAst.Expression.Branch(exp, branches, tpe, loc) =>
         for {
           e <- visit(exp)
-          val bs = branches map {
-            case (sym, br) => sym -> visit(br)
+          bs <- branches.foldLeft(Map.empty[Symbol.LabelSym, FinalAst.Expression].toHeader) {
+            case (monad, (sym, br)) => for {
+              map <- monad
+              br <- visit(br)
+            } yield map + (sym -> br)
           }
-          val t = visitType(tpe)
+          t = visitType(tpe)
         } yield FinalAst.Expression.Branch(e, bs, t, loc)
 
       case LiftedAst.Expression.JumpTo(sym, tpe, loc) =>
         val t = visitType(tpe)
-        FinalAst.Expression.JumpTo(sym, t, loc)
+        FinalAst.Expression.JumpTo(sym, t, loc).toHeader
 
       case LiftedAst.Expression.Let(sym, exp1, exp2, tpe, loc) =>
         for {
-
           e1 <- visit(exp1)
           e2 <- visit(exp2)
-          val t = visitType(tpe)
+          t = visitType(tpe)
         } yield FinalAst.Expression.Let(sym, e1, e2, t, loc)
 
       case LiftedAst.Expression.Is(sym, tag, exp, loc) =>
@@ -219,68 +225,68 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
       case LiftedAst.Expression.Tag(enum, tag, exp, tpe, loc) =>
         for {
           e <- visit(exp)
-          val t = visitType(tpe)
+          t = visitType(tpe)
         } yield FinalAst.Expression.Tag(enum, tag, e, t, loc)
 
       case LiftedAst.Expression.Untag(sym, tag, exp, tpe, loc) =>
         for {
           e <- visit(exp)
-          val t = visitType(tpe)
+          t = visitType(tpe)
         } yield FinalAst.Expression.Untag(sym, tag, e, t, loc)
 
       case LiftedAst.Expression.Index(base, offset, tpe, loc) =>
         for {
           b <- visit(base)
-          val t = visitType(tpe)
+          t = visitType(tpe)
         } yield FinalAst.Expression.Index(b, offset, t, loc)
 
       case LiftedAst.Expression.Tuple(elms, tpe, loc) =>
         for {
-          es <- HeaderMonad.traverse(visit, elms)
-          val t = visitType(tpe)
+          es <- HeaderMonad.traverse(elms)(visit)
+          t = visitType(tpe)
         } yield FinalAst.Expression.Tuple(es, t, loc)
 
       case LiftedAst.Expression.RecordEmpty(tpe, loc) =>
         val t = visitType(tpe)
-        FinalAst.Expression.RecordEmpty(t, loc)
+        FinalAst.Expression.RecordEmpty(t, loc).toHeader
 
       case LiftedAst.Expression.RecordSelect(exp, field, tpe, loc) =>
         for {
           e <- visit(exp)
-          val t = visitType(tpe)
+          t = visitType(tpe)
         } yield FinalAst.Expression.RecordSelect(e, field, t, loc)
 
       case LiftedAst.Expression.RecordExtend(field, value, rest, tpe, loc) =>
         for {
           v <- visit(value)
           r <- visit(rest)
-          val t = visitType(tpe)
+          t = visitType(tpe)
         } yield FinalAst.Expression.RecordExtend(field, v, r, t, loc)
 
       case LiftedAst.Expression.RecordRestrict(field, rest, tpe, loc) =>
         for {
           r <- visit(rest)
-          val t = visitType(tpe)
+          t = visitType(tpe)
         } yield FinalAst.Expression.RecordRestrict(field, r, t, loc)
 
       case LiftedAst.Expression.ArrayLit(elms, tpe, loc) =>
         for {
-          es <- HeaderMonad.traverse(visit, elms)
-          val t = visitType(tpe)
+          es <- HeaderMonad.traverse(elms)(visit)
+          t = visitType(tpe)
         } yield FinalAst.Expression.ArrayLit(es, t, loc)
 
       case LiftedAst.Expression.ArrayNew(elm, len, tpe, loc) =>
         for {
           e <- visit(elm)
           l <- visit(len)
-          val t = visitType(tpe)
+          t = visitType(tpe)
         } yield FinalAst.Expression.ArrayNew(e, l, t, loc)
 
       case LiftedAst.Expression.ArrayLoad(base, index, tpe, loc) =>
         for {
           b <- visit(base)
           i <- visit(index)
-          val t = visitType(tpe)
+          t = visitType(tpe)
         } yield FinalAst.Expression.ArrayLoad(b, i, t, loc)
 
       case LiftedAst.Expression.ArrayStore(base, index, elm, tpe, loc) =>
@@ -288,13 +294,13 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
           b <- visit(base)
           i <- visit(index)
           e <- visit(elm)
-          val t = visitType(tpe)
+          t = visitType(tpe)
         } yield FinalAst.Expression.ArrayStore(b, i, e, t, loc)
 
       case LiftedAst.Expression.ArrayLength(base, tpe, loc) =>
         for {
           b <- visit(base)
-          val t = visitType(tpe)
+          t = visitType(tpe)
         } yield FinalAst.Expression.ArrayLength(b, t, loc)
 
       case LiftedAst.Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) =>
@@ -302,26 +308,26 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
           b <- visit(base)
           i1 <- visit(startIndex)
           i2 <- visit(endIndex)
-          val t = visitType(tpe)
+          t = visitType(tpe)
         } yield FinalAst.Expression.ArraySlice(b, i1, i2, t, loc)
 
       case LiftedAst.Expression.Ref(exp, tpe, loc) =>
         for {
           e <- visit(exp)
-          val t = visitType(tpe)
+          t = visitType(tpe)
         } yield FinalAst.Expression.Ref(e, t, loc)
 
       case LiftedAst.Expression.Deref(exp, tpe, loc) =>
         for {
           e <- visit(exp)
-          val t = visitType(tpe)
+          t = visitType(tpe)
         } yield FinalAst.Expression.Deref(e, t, loc)
 
       case LiftedAst.Expression.Assign(exp1, exp2, tpe, loc) =>
         for {
           e1 <- visit(exp1)
           e2 <- visit(exp2)
-          val t = visitType(tpe)
+          t = visitType(tpe)
         } yield FinalAst.Expression.Assign(e1, e2, t, loc)
 
       case LiftedAst.Expression.Existential(_, _, _) =>
@@ -333,120 +339,132 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
       case LiftedAst.Expression.Cast(exp, tpe, loc) =>
         for {
           e <- visit(exp)
-          val t = visitType(tpe)
+          t = visitType(tpe)
         } yield FinalAst.Expression.Cast(e, t, loc)
 
       case LiftedAst.Expression.TryCatch(exp, rules, tpe, loc) =>
         for {
           e <- visit(exp)
-          val rs = rules map {
-            case LiftedAst.CatchRule(sym, clazz, body) =>
-              val b = visit(body)
+          rulesAndLabels = rules.map((_, Symbol.freshLabel("catch")))
+          rs <- rulesAndLabels.foldLeft(List.empty[FinalAst.CatchRule].toHeader) {
+            case (monad, (LiftedAst.CatchRule(sym, clazz, body), label)) => for {
+              lst <- monad
+              b <- visit(body)
               // TODO maybe these could be generated earlier to align with Branch (in simplifier)
-              FinalAst.CatchRule(sym, clazz, Symbol.freshLabel("catch"), b)
+            } yield FinalAst.CatchRule(sym, clazz, label, b) :: lst
           }
-          val t = visitType(tpe)
-        } yield FinalAst.Expression.TryCatch(e, Symbol.freshLabel("tryStart"), Symbol.freshLabel("tryEnd"), rs, t, loc)
+          t = visitType(tpe)
+          tryStartLabel = Symbol.freshLabel("tryStart")
+          tryEndLabel = Symbol.freshLabel("tryEnd")
+          res = FinalAst.Expression.TryCatch(e, tryStartLabel, tryEndLabel, rs.reverse, t, loc).toHeader
+          labelClassMap = rulesAndLabels.map {
+            case (rule, label) => (label, rule.clazz)
+          }
+          addedHeaders <- res.flatMap(HeaderMonad(_, (tryStartLabel, tryEndLabel, labelClassMap) :: Nil))
+        } yield addedHeaders
 
       case LiftedAst.Expression.InvokeConstructor(constructor, args, tpe, loc) =>
         for {
-          as <- HeaderMonad.traverse(visit, args)
-          val t = visitType(tpe)
+          as <- HeaderMonad.traverse(args)(visit)
+          t = visitType(tpe)
         } yield FinalAst.Expression.InvokeConstructor(constructor, as, t, loc)
 
       case LiftedAst.Expression.InvokeMethod(method, exp, args, tpe, loc) =>
         for {
           e <- visit(exp)
-          val as = args.map(visit)
-          val t = visitType(tpe)
+          as <- HeaderMonad.traverse(args)(visit)
+          t = visitType(tpe)
         } yield FinalAst.Expression.InvokeMethod(method, e, as, t, loc)
 
       case LiftedAst.Expression.InvokeStaticMethod(method, args, tpe, loc) =>
         for {
-          as <- HeaderMonad.traverse(visit, args)
-          val t = visitType(tpe)
+          as <- HeaderMonad.traverse(args)(visit)
+          t = visitType(tpe)
         } yield FinalAst.Expression.InvokeStaticMethod(method, as, t, loc)
 
       case LiftedAst.Expression.GetField(field, exp, tpe, loc) =>
         for {
           e <- visit(exp)
-          val t = visitType(tpe)
+          t = visitType(tpe)
         } yield FinalAst.Expression.GetField(field, e, t, loc)
 
       case LiftedAst.Expression.PutField(field, exp1, exp2, tpe, loc) =>
         for {
           e1 <- visit(exp1)
           e2 <- visit(exp2)
-          val t = visitType(tpe)
+          t = visitType(tpe)
         } yield FinalAst.Expression.PutField(field, e1, e2, t, loc)
 
       case LiftedAst.Expression.GetStaticField(field, tpe, loc) =>
         val t = visitType(tpe)
-        FinalAst.Expression.GetStaticField(field, t, loc)
+        FinalAst.Expression.GetStaticField(field, t, loc).toHeader
 
       case LiftedAst.Expression.PutStaticField(field, exp, tpe, loc) =>
         for {
           e <- visit(exp)
-          val t = visitType(tpe)
+          t = visitType(tpe)
         } yield FinalAst.Expression.PutStaticField(field, e, t, loc)
 
       case LiftedAst.Expression.NewChannel(exp, tpe, loc) =>
         for {
           e <- visit(exp)
-          val t = visitType(tpe)
+          t = visitType(tpe)
         } yield FinalAst.Expression.NewChannel(e, t, loc)
 
       case LiftedAst.Expression.GetChannel(exp, tpe, loc) =>
         for {
           e <- visit(exp)
-          val t = visitType(tpe)
+          t = visitType(tpe)
         } yield FinalAst.Expression.GetChannel(e, t, loc)
 
       case LiftedAst.Expression.PutChannel(exp1, exp2, tpe, loc) =>
         for {
           e1 <- visit(exp1)
           e2 <- visit(exp2)
-          val t = visitType(tpe)
+          t = visitType(tpe)
         } yield FinalAst.Expression.PutChannel(e1, e2, t, loc)
 
       case LiftedAst.Expression.SelectChannel(rules, default, tpe, loc) =>
         for {
-          rs <- HeaderMonad.traverse(rules, {
+          rs <- HeaderMonad.traverse(rules) {
             case LiftedAst.SelectChannelRule(sym, chan, exp) =>
               for {
                 c <- visit(chan)
                 e <- visit(exp)
               } yield FinalAst.SelectChannelRule(sym, c, e)
-          })
-          val d = default.map(exp => visit(exp))
-          val t = visitType(tpe)
+          }
+          d <- default match {
+            case Some(value) => visit(value).map(Some(_))
+            case None => None.toHeader
+          }
+          t = visitType(tpe)
         } yield FinalAst.Expression.SelectChannel(rs, d, t, loc)
 
       case LiftedAst.Expression.Spawn(exp, tpe, loc) =>
         for {
           e <- visit(exp)
-          val t = visitType(tpe)
+          t = visitType(tpe)
         } yield FinalAst.Expression.Spawn(e, t, loc)
 
       case LiftedAst.Expression.Lazy(exp, tpe, loc) =>
         for {
           e <- visit(exp)
-          val t = visitType(tpe)
+          t = visitType(tpe)
         } yield FinalAst.Expression.Lazy(e, t, loc)
 
       case LiftedAst.Expression.Force(exp, tpe, loc) =>
         for {
           e <- visit(exp)
-          val t = visitType(tpe)
+          t = visitType(tpe)
         } yield FinalAst.Expression.Force(e, t, loc)
 
       case LiftedAst.Expression.HoleError(sym, tpe, loc) =>
         val t = visitType(tpe)
-        FinalAst.Expression.HoleError(sym, t, loc)
+        FinalAst.Expression.HoleError(sym, t, loc).toHeader
 
       case LiftedAst.Expression.MatchError(tpe, loc) =>
         val t = visitType(tpe)
-        FinalAst.Expression.MatchError(t, loc)
+        FinalAst.Expression.MatchError(t, loc).toHeader
     }
 
     visit(exp0)
