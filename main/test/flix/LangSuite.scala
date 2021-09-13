@@ -178,7 +178,7 @@ class LangSuite extends Suites(
   new FlixTest("Test.Exp.Int64", "main/test/flix/Test.Exp.Int64.flix"),
 
   //
-  // Try-catch.
+  // Interpolation.
   //
   new FlixTest("Test.Exp.Interpolation", "main/test/flix/Test.Exp.Interpolation.flix"),
 
@@ -283,6 +283,11 @@ class LangSuite extends Suites(
   //
   new FlixTest("Test.Exp.Tag", "main/test/flix/Test.Exp.Tag.flix"),
   new FlixTest("Test.Exp.Tag.Lambda", "main/test/flix/Test.Exp.Tag.Lambda.flix")(Options.TestWithLibAll),
+
+  //
+  // Try-Catch.
+  //
+  new FlixTest("test.Exp.TryCatch", "main/test/flix/Test.Exp.TryCatch.flix"),
 
   //
   // Tuple.
