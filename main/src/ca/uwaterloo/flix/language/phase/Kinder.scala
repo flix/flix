@@ -559,6 +559,13 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         exp3 <- visitExp(exp30, kenv, root)
       } yield KindedAst.Expression.MatchEff(exp1, exp2, exp3, loc)
 
+    case ResolvedAst.Expression.IfThenElseStar(tpe, exp1, exp2, loc) =>
+      for {
+        t0 <- visitType(tpe, KindMatch.subKindOf(Kind.Bool), kenv, root)
+        e1 <- visitExp(exp1, kenv, root)
+        e2 <- visitExp(exp2, kenv, root)
+      } yield KindedAst.Expression.IfThenElseStar(t0, e1, e2, loc)
+
   }
 
   /**

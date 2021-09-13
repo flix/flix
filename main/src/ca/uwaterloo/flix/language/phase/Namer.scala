@@ -889,6 +889,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (e1, e2, e3) => NamedAst.Expression.MatchEff(e1, e2, e3, loc)
       }
 
+    case WeededAst.Expression.IfThenElseStar(tpe, exp1, exp2, loc) =>
+      mapN(visitType(tpe, uenv0, tenv0), visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0)) {
+        case (t, e1, e2) => NamedAst.Expression.IfThenElseStar(t, e1, e2, loc)
+      }
+
   }
 
   /**

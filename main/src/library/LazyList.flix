@@ -590,10 +590,10 @@ namespace LazyList {
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
     pub def flatMap(f: a -> LazyList[b] & ef, l: LazyList[a]): LazyList[b] & ef =
-        matchEff f {
-            case Pure   => flatMapL(f as a -> LazyList[b] & Pure,   l)
-            case Impure => flatMapE(f as a -> LazyList[b] & Impure, l)
-        } as & ef
+        if* (ef)
+            flatMapL(f as a -> LazyList[b] & Pure,   l)
+        else
+            flatMapE(f as a -> LazyList[b] & Impure, l) as & ef
 
     ///
     /// Returns the result of applying `f` to every element in `l` and concatenating the results.

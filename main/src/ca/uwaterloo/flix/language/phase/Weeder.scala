@@ -1481,6 +1481,13 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (e1, e2, e3) => WeededAst.Expression.MatchEff(e1, e2, e3, mkSL(sp1, sp2))
       }
 
+    case ParsedAst.Expression.IfThenElseStar(sp1, tpe, exp1, exp2, sp2) =>
+      mapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) =>
+          val t = visitType(tpe)
+          WeededAst.Expression.IfThenElseStar(t, e1, e2, mkSL(sp1, sp2))
+      }
+
   }
 
   /**

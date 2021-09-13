@@ -922,6 +922,13 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e3 <- visit(exp3, tenv0)
           } yield ResolvedAst.Expression.MatchEff(e1, e2, e3, loc)
 
+        case NamedAst.Expression.IfThenElseStar(tpe, exp1, exp2, loc) =>
+          for {
+            t0 <- lookupType(tpe, ns0, root)
+            e1 <- visit(exp1, tenv0)
+            e2 <- visit(exp2, tenv0)
+          } yield ResolvedAst.Expression.IfThenElseStar(t0, e1, e2, loc)
+
       }
 
       visit(exp0, Map.empty)
