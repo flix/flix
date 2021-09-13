@@ -208,10 +208,10 @@ namespace LazyList {
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
     pub def filter(f: a -> Bool & ef, l: LazyList[a]): LazyList[a] & ef =
-        matchEff f {
-            case Pure   => filterL(f as a -> Bool & Pure,   l)
-            case Impure => filterE(f as a -> Bool & Impure, l)
-        } as & ef
+        if* (ef)
+            filterL(f as a -> Bool & Pure,   l)
+        else
+            filterE(f as a -> Bool & Impure, l) as & ef
 
     ///
     /// Returns a lazy list of every element in `l` that satisfies the predicate `f`.
@@ -674,11 +674,10 @@ namespace LazyList {
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
     pub def mapWithIndex(f: (a, Int32) -> b & ef, l: LazyList[a]): LazyList[b] & ef =
-        let g = match (r) -> f(r.x, r.i);
-        matchEff g {
-            case Pure   => mapWithIndexL(f as (a, Int32) -> b & Pure,   l)
-            case Impure => mapWithIndexE(f as (a, Int32) -> b & Impure, l)
-        } as & ef
+        if* (ef)
+            mapWithIndexL(f as (a, Int32) -> b & Pure,   l)
+        else
+            mapWithIndexE(f as (a, Int32) -> b & Impure, l) as & ef
 
     ///
     /// Returns the result of applying `f` to every element in `l` along with the element's index.
@@ -755,10 +754,10 @@ namespace LazyList {
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
     pub def takeWhile(f: a -> Bool & ef, l: LazyList[a]): LazyList[a] & ef =
-        matchEff f {
-            case Pure   => takeWhileL(f as a -> Bool & Pure,   l)
-            case Impure => takeWhileE(f as a -> Bool & Impure, l)
-        } as & ef
+        if* (ef)
+            takeWhileL(f as a -> Bool & Pure,   l)
+        else
+            takeWhileE(f as a -> Bool & Impure, l) as & ef
 
     ///
     /// Returns the longest prefix of `l` that satisfies the predicate `f`.
