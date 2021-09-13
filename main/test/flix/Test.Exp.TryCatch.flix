@@ -90,4 +90,17 @@ namespace TestTryCatch {
             case _: ##java.lang.Exception => false
         }
 
+    @test
+    def testPriority03(): Bool & Impure =
+        try {
+            try {
+                exception();
+                false
+            } catch {
+                case _: ##java.lang.Exception => true
+            }
+        } catch {
+            case _: ##java.lang.Exception => false
+        }
+
 }
