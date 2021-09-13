@@ -5,22 +5,12 @@ use GetOpt.ArgOrder.{RequireOrder, Permute, ReturnInOrder};
 use GetOpt.{getOpt, usageInfo};
 
 /// Define a datatype representing all flags and options.
-enum Flag {
+enum Flag with ToString {
     case Version
     case Help
     case Verbose
     case Threads(Int32)
     case Listen(Int32)
-}
-
-instance ToString[Flag] {
-    pub def toString(x: Flag): String = match x {
-        case Version    => "Version"
-        case Help       => "Help"
-        case Verbose    => "Verbose"
-        case Threads(i) => "Threads(${i})"
-        case Listen(i)  => "Listen(${i})"
-    }
 }
 
 /// Define a list of containing an option descriptors for each flag or option.

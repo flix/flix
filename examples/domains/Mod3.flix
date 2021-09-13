@@ -8,23 +8,12 @@ namespace Domain/Mod3 {
     ///
     /// The elements of the modulo three lattice.
     ///
-    enum Mod3 {
+    enum Mod3 with Eq {
                    case Top,
 
         case Zer,  case One,  case Two,
 
                    case Bot
-    }
-
-    instance Eq[Mod3] {
-        pub def eq(e1: Mod3, e2: Mod3): Bool = match (e1, e2) {
-            case (Top, Top) => true
-            case (Zer, Zer) => true
-            case (One, One) => true
-            case (Two, Two) => true
-            case (Bot, Bot) => true
-            case _          => false
-        }
     }
 
     ///

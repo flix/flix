@@ -6,21 +6,12 @@ namespace Domain/Constant {
     ///
     /// The elements of the constant propagation lattice.
     ///
-    enum Constant {
+    enum Constant with Eq, ToString {
           case Top,
 
         case Cst(Int),
 
           case Bot
-    }
-
-    instance Eq[Constant] {
-        pub def eq(e1: Constant, e2: Constant): Bool = match (e1, e2) {
-            case (Top, Top)         => true
-            case (Cst(x), Cst(y))   => x == y
-            case (Bot, Bot)         => true
-            case _                  => false
-        }
     }
 
     ///
@@ -283,14 +274,6 @@ namespace Domain/Constant {
 
     instance MeetLattice[Constant] {
         pub def greatestLowerBound(x: Constant, y: Constant): Constant = glb(x, y)
-    }
-
-    instance ToString[Constant] {
-        pub def toString(x: Constant): String = match x {
-            case Top    => "Top"
-            case Cst(n) => "Cst(${n})"
-            case Bot    => "Bot"
-        }
     }
 
     //
