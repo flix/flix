@@ -30,36 +30,32 @@ import org.objectweb.asm._
  */
 object GenExpression {
 
-  def compileExpression(exp0: Expression, visitor: MethodVisitor, currentClass: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)(implicit root: Root, flix: Flix): Unit = {
-    compileExp(exp0, visitor, currentClass, lenv0, entryPoint).apply()
-  }
-
   /**
    * Emits code for the given expression `exp0` to the given method `visitor` in the `currentClass`.
    */
-  private def compileExp(exp0: Expression, visitor: MethodVisitor, currentClass: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)(implicit root: Root, flix: Flix): () => Unit = exp0 match {
-    case Expression.Unit(loc) => () =>
+  def compileExpression(exp0: Expression, visitor: MethodVisitor, currentClass: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)(implicit root: Root, flix: Flix): Unit = exp0 match {
+    case Expression.Unit(loc) =>
       addSourceLine(visitor, loc)
       visitor.visitFieldInsn(GETSTATIC, JvmName.Unit.toInternalName, GenUnitClass.InstanceFieldName, JvmName.Unit.toDescriptor)
 
-    case Expression.Null(tpe, loc) => () =>
+    case Expression.Null(tpe, loc) =>
       addSourceLine(visitor, loc)
       visitor.visitInsn(ACONST_NULL)
       AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
-    case Expression.True(loc) => () =>
+    case Expression.True(loc) =>
       addSourceLine(visitor, loc)
       visitor.visitInsn(ICONST_1)
 
-    case Expression.False(loc) => () =>
+    case Expression.False(loc) =>
       addSourceLine(visitor, loc)
       visitor.visitInsn(ICONST_0)
 
-    case Expression.Char(c, loc) => () =>
+    case Expression.Char(c, loc) =>
       addSourceLine(visitor, loc)
       compileInt(visitor, c)
 
-    case Expression.Float32(f, loc) => () =>
+    case Expression.Float32(f, loc) =>
       addSourceLine(visitor, loc)
       f match {
         case 0f => visitor.visitInsn(FCONST_0)
@@ -68,7 +64,7 @@ object GenExpression {
         case _ => visitor.visitLdcInsn(f)
       }
 
-    case Expression.Float64(d, loc) => () =>
+    case Expression.Float64(d, loc) =>
       addSourceLine(visitor, loc)
       d match {
         case 0d => visitor.visitInsn(DCONST_0)
@@ -76,23 +72,23 @@ object GenExpression {
         case _ => visitor.visitLdcInsn(d)
       }
 
-    case Expression.Int8(b, loc) => () =>
+    case Expression.Int8(b, loc) =>
       addSourceLine(visitor, loc)
       compileInt(visitor, b)
 
-    case Expression.Int16(s, loc) => () =>
+    case Expression.Int16(s, loc) =>
       addSourceLine(visitor, loc)
       compileInt(visitor, s)
 
-    case Expression.Int32(i, loc) => () =>
+    case Expression.Int32(i, loc) =>
       addSourceLine(visitor, loc)
       compileInt(visitor, i)
 
-    case Expression.Int64(l, loc) => () =>
+    case Expression.Int64(l, loc) =>
       addSourceLine(visitor, loc)
       compileInt(visitor, l, isLong = true)
 
-    case Expression.BigInt(ii, loc) => () =>
+    case Expression.BigInt(ii, loc) =>
       addSourceLine(visitor, loc)
       visitor.visitTypeInsn(NEW, JvmName.BigInteger.toInternalName)
       visitor.visitInsn(DUP)
@@ -100,14 +96,14 @@ object GenExpression {
       visitor.visitMethodInsn(INVOKESPECIAL, JvmName.BigInteger.toInternalName, "<init>",
         AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Void), false)
 
-    case Expression.Str(s, loc) => () =>
+    case Expression.Str(s, loc) =>
       addSourceLine(visitor, loc)
       visitor.visitLdcInsn(s)
 
-    case Expression.Var(sym, tpe, _) => () =>
+    case Expression.Var(sym, tpe, _) =>
       readVar(sym, tpe, visitor)
 
-    case Expression.Closure(sym, freeVars, fnType, tpe, loc) => () =>
+    case Expression.Closure(sym, freeVars, fnType, tpe, loc) =>
       // ClosureInfo
       val closure = ClosureInfo(sym, freeVars, fnType)
       // JvmType of the closure
@@ -121,18 +117,18 @@ object GenExpression {
       // Capturing free args
       for (f <- freeVars) {
         val v = Expression.Var(f.sym, f.tpe, loc)
-        compileExp(v, visitor, currentClass, lenv0, entryPoint).apply()
+        compileExpression(v, visitor, currentClass, lenv0, entryPoint)
       }
       // Calling the constructor
       val varTypes = freeVars.map(_.tpe).map(JvmOps.getErasedJvmType)
       visitor.visitMethodInsn(INVOKESPECIAL, jvmType.name.toInternalName, "<init>", AsmOps.getMethodDescriptor(JvmType.Object +: varTypes, JvmType.Void), false)
 
-    case Expression.ApplyClo(exp, args, tpe, loc) => () =>
+    case Expression.ApplyClo(exp, args, tpe, loc) =>
       // Type of the function interface
       val functionInterface = JvmOps.getFunctionInterfaceType(exp.tpe)
       // Put the closure on `continuation` field of `Context`
       visitor.visitVarInsn(ALOAD, 1)
-      compileExp(exp, visitor, currentClass, lenv0, entryPoint).apply()
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
       // Casting to JvmType of FunctionInterface
       visitor.visitTypeInsn(CHECKCAST, functionInterface.name.toInternalName)
       // Saving the continuation so we don't have to use calculate this again
@@ -144,7 +140,7 @@ object GenExpression {
         // Erased Type
         val argErasedType = JvmOps.getErasedJvmType(arg.tpe)
         // Evaluating the expression
-        compileExp(arg, visitor, currentClass, lenv0, entryPoint).apply()
+        compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
         if (AsmOps.getStackSize(argErasedType) == 1) {
           visitor.visitInsn(SWAP)
         } else {
@@ -155,7 +151,7 @@ object GenExpression {
       visitor.visitInsn(POP)
       AsmOps.compileClosureApplication(visitor, exp.tpe, args.map(_.tpe), tpe)
 
-    case Expression.ApplyDef(name, args, tpe, loc) => () =>
+    case Expression.ApplyDef(name, args, tpe, loc) =>
       // Namespace of the Def
       val ns = JvmOps.getNamespace(name)
       // JvmType of `ns`
@@ -188,7 +184,7 @@ object GenExpression {
         // Erased Type
         val argErasedType = JvmOps.getErasedJvmType(arg.tpe)
         // Evaluating the expression
-        compileExp(arg, visitor, currentClass, lenv0, entryPoint).apply()
+        compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
         if (AsmOps.getStackSize(argErasedType) == 1) {
           visitor.visitInsn(SWAP)
         } else {
@@ -199,7 +195,7 @@ object GenExpression {
       visitor.visitInsn(POP)
       AsmOps.compileClosureApplication(visitor, fnType, args.map(_.tpe), tpe)
 
-    case Expression.ApplyCloTail(exp, args, tpe, loc) => () =>
+    case Expression.ApplyCloTail(exp, args, tpe, loc) =>
       // Type of the function interface
       val functionInterface = JvmOps.getFunctionInterfaceType(exp.tpe)
       // Result type
@@ -207,7 +203,7 @@ object GenExpression {
       // Loading `Context`
       visitor.visitVarInsn(ALOAD, 1)
       // Evaluating the closure
-      compileExp(exp, visitor, currentClass, lenv0, entryPoint).apply()
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
       // Casting to JvmType of FunctionInterface
       visitor.visitTypeInsn(CHECKCAST, functionInterface.name.toInternalName)
       // Saving the continuation so we don't have to use calculate this again
@@ -219,7 +215,7 @@ object GenExpression {
         // Erased Type
         val argErasedType = JvmOps.getErasedJvmType(arg.tpe)
         // Evaluating the expression
-        compileExp(arg, visitor, currentClass, lenv0, entryPoint).apply()
+        compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
         if (AsmOps.getStackSize(argErasedType) == 1) {
           visitor.visitInsn(SWAP)
         } else {
@@ -240,7 +236,7 @@ object GenExpression {
       // Dummy value, since we have to put a result on top of the arg, this will be thrown away
       pushDummyValue(visitor, tpe)
 
-    case Expression.ApplyDefTail(name, args, tpe, loc) => () =>
+    case Expression.ApplyDefTail(name, args, tpe, loc) =>
       // Namespace of the Def
       val ns = JvmOps.getNamespace(name)
       // JvmType of `ns`
@@ -277,7 +273,7 @@ object GenExpression {
         // Erased Type
         val argErasedType = JvmOps.getErasedJvmType(arg.tpe)
         // Evaluating the expression
-        compileExp(arg, visitor, currentClass, lenv0, entryPoint).apply()
+        compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
         if (AsmOps.getStackSize(argErasedType) == 1) {
           visitor.visitInsn(SWAP)
         } else {
@@ -297,12 +293,12 @@ object GenExpression {
       // Dummy value, since we have to put a result on top of the arg, this will be thrown away
       pushDummyValue(visitor, tpe)
 
-    case Expression.ApplySelfTail(name, formals, actuals, tpe, loc) => () =>
+    case Expression.ApplySelfTail(name, formals, actuals, tpe, loc) =>
       // Evaluate each argument and push the result on the stack.
       for (arg <- actuals) {
         visitor.visitVarInsn(ALOAD, 0)
         // Evaluate the argument and push the result on the stack.
-        compileExp(arg, visitor, currentClass, lenv0, entryPoint).apply()
+        compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
       }
       // The values are on the stack in reverse order, so we must iterate over the arguments in reverse order.
       for ((arg, ind) <- actuals.zipWithIndex.reverse) {
@@ -313,10 +309,10 @@ object GenExpression {
       // Jump to the entry point of the method.
       visitor.visitJumpInsn(GOTO, entryPoint)
 
-    case Expression.Unary(sop, op, exp, _, _) => () =>
+    case Expression.Unary(sop, op, exp, _, _) =>
       sop match {
         case SemanticOperator.ObjectOp.EqNull =>
-          compileExp(exp, visitor, currentClass, lenv0, entryPoint).apply()
+          compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
           val condElse = new Label()
           val condEnd = new Label()
           visitor.visitJumpInsn(IFNULL, condElse)
@@ -326,7 +322,7 @@ object GenExpression {
           visitor.visitInsn(ICONST_1)
           visitor.visitLabel(condEnd)
         case SemanticOperator.ObjectOp.NeqNull =>
-          compileExp(exp, visitor, currentClass, lenv0, entryPoint).apply()
+          compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
           val condElse = new Label()
           val condEnd = new Label()
           visitor.visitJumpInsn(IFNULL, condElse)
@@ -337,7 +333,7 @@ object GenExpression {
           visitor.visitLabel(condEnd)
         case _ =>
           // TODO: Ramin: Must not use `op`, should only use `sop`.
-          compileUnaryExpr(exp, currentClass, visitor, lenv0, entryPoint, op, sop).apply()
+          compileUnaryExpr(exp, currentClass, visitor, lenv0, entryPoint, op, sop)
       }
 
     case Expression.Binary(sop, op, exp1, exp2, _, _) =>
@@ -350,26 +346,26 @@ object GenExpression {
         case o: BitwiseOperator => compileBitwiseExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, o, sop)
       }
 
-    case Expression.IfThenElse(exp1, exp2, exp3, _, loc) => () =>
+    case Expression.IfThenElse(exp1, exp2, exp3, _, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       val ifElse = new Label()
       val ifEnd = new Label()
-      compileExp(exp1, visitor, currentClass, lenv0, entryPoint).apply()
+      compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
       visitor.visitJumpInsn(IFEQ, ifElse)
-      compileExp(exp2, visitor, currentClass, lenv0, entryPoint).apply()
+      compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
       visitor.visitJumpInsn(GOTO, ifEnd)
       visitor.visitLabel(ifElse)
-      compileExp(exp3, visitor, currentClass, lenv0, entryPoint).apply()
+      compileExpression(exp3, visitor, currentClass, lenv0, entryPoint)
       visitor.visitLabel(ifEnd)
 
-    case Expression.Branch(exp, branches, tpe, loc) => () =>
+    case Expression.Branch(exp, branches, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // Calculating the updated jumpLabels map
       val updatedJumpLabels = branches.foldLeft(lenv0)((map, branch) => map + (branch._1 -> new Label()))
       // Compiling the exp
-      compileExp(exp, visitor, currentClass, updatedJumpLabels, entryPoint).apply()
+      compileExpression(exp, visitor, currentClass, updatedJumpLabels, entryPoint)
       // Label for the end of all branches
       val endLabel = new Label()
       // Skip branches if `exp` does not jump
@@ -379,31 +375,31 @@ object GenExpression {
         // Label for the start of the branch
         visitor.visitLabel(updatedJumpLabels(sym))
         // evaluating the expression for the branch
-        compileExp(branchExp, visitor, currentClass, updatedJumpLabels, entryPoint).apply()
+        compileExpression(branchExp, visitor, currentClass, updatedJumpLabels, entryPoint)
         // Skip the rest of the branches
         visitor.visitJumpInsn(GOTO, endLabel)
       }
       // label for the end of branches
       visitor.visitLabel(endLabel)
 
-    case Expression.JumpTo(sym, tpe, loc) => () =>
+    case Expression.JumpTo(sym, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // Jumping to the label
       visitor.visitJumpInsn(GOTO, lenv0(sym))
 
-    case Expression.Let(sym, exp1, exp2, _, loc) => () =>
+    case Expression.Let(sym, exp1, exp2, _, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
-      compileExp(exp1, visitor, currentClass, lenv0, entryPoint).apply()
+      compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
       // Jvm Type of the `exp1`
       val jvmType = JvmOps.getJvmType(exp1.tpe)
       // Store instruction for `jvmType`
       val iStore = AsmOps.getStoreInstruction(jvmType)
       visitor.visitVarInsn(iStore, sym.getStackOffset + 3)
-      compileExp(exp2, visitor, currentClass, lenv0, entryPoint).apply()
+      compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
 
-    case Expression.Is(enum, tag, exp, loc) => () =>
+    case Expression.Is(enum, tag, exp, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // We get the `TagInfo` for the tag
@@ -412,12 +408,12 @@ object GenExpression {
       val classType = JvmOps.getTagClassType(tagInfo)
 
       // First we compile the `exp`
-      compileExp(exp, visitor, currentClass, lenv0, entryPoint).apply()
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
       // We check if the enum is `instanceof` the class
       visitor.visitTypeInsn(INSTANCEOF, classType.name.toInternalName)
 
     // Normal Tag
-    case Expression.Tag(enum, tag, exp, tpe, loc) => () =>
+    case Expression.Tag(enum, tag, exp, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // Get the tag info.
@@ -452,7 +448,7 @@ object GenExpression {
           visitor.visitFieldInsn(GETSTATIC, JvmName.Unit.toInternalName, GenUnitClass.InstanceFieldName, JvmName.Unit.toDescriptor)
         } else {
           // Evaluating the single argument of the class constructor
-          compileExp(exp, visitor, currentClass, lenv0, entryPoint).apply()
+          compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
         }
         // Descriptor of the constructor
         val constructorDescriptor = AsmOps.getMethodDescriptor(List(JvmOps.getErasedJvmType(tagInfo.tagType)), JvmType.Void)
@@ -460,7 +456,7 @@ object GenExpression {
         visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
       }
 
-    case Expression.Untag(enum, tag, exp, tpe, loc) => () =>
+    case Expression.Untag(enum, tag, exp, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
 
@@ -469,7 +465,7 @@ object GenExpression {
       // We get the JvmType of the class for the tag
       val classType = JvmOps.getTagClassType(tagInfo)
       // Evaluate the exp
-      compileExp(exp, visitor, currentClass, lenv0, entryPoint).apply()
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
       // Cast the exp to the type of the tag
       visitor.visitTypeInsn(CHECKCAST, classType.name.toInternalName)
       // Descriptor of the method
@@ -479,11 +475,11 @@ object GenExpression {
       // Cast the object to it's type if it's not a primitive
       AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
-    case Expression.Index(base, offset, tpe, _) => () =>
+    case Expression.Index(base, offset, tpe, _) =>
       // We get the JvmType of the class for the tuple
       val classType = JvmOps.getTupleInterfaceType(base.tpe.asInstanceOf[MonoType.Tuple])
       // evaluating the `base`
-      compileExp(base, visitor, currentClass, lenv0, entryPoint).apply()
+      compileExpression(base, visitor, currentClass, lenv0, entryPoint)
       // Descriptor of the method
       val methodDescriptor = AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe))
       // Invoking `getField${offset}()` method for fetching the field
@@ -491,7 +487,7 @@ object GenExpression {
       // Cast the object to it's type if it's not a primitive
       AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
-    case Expression.Tuple(elms, tpe, loc) => () =>
+    case Expression.Tuple(elms, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // We get the JvmType of the class for the tuple
@@ -501,7 +497,7 @@ object GenExpression {
       // Duplicating the class
       visitor.visitInsn(DUP)
       // Evaluating all the elements to be stored in the tuple class
-      elms.foreach(compileExp(_, visitor, currentClass, lenv0, entryPoint).apply())
+      elms.foreach(compileExpression(_, visitor, currentClass, lenv0, entryPoint))
       // Erased type of `elms`
       val erasedElmTypes = elms.map(_.tpe).map(JvmOps.getErasedJvmType).toList
       // Descriptor of constructor
@@ -509,7 +505,7 @@ object GenExpression {
       // Invoking the constructor
       visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
 
-    case Expression.RecordEmpty(tpe, loc) => () =>
+    case Expression.RecordEmpty(tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // We get the JvmType of the class for the RecordEmpty
@@ -524,7 +520,7 @@ object GenExpression {
       // Invoking the constructor
       visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
 
-    case Expression.RecordSelect(exp, field, tpe, loc) => () =>
+    case Expression.RecordSelect(exp, field, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
 
@@ -537,7 +533,7 @@ object GenExpression {
 
       //Compile the expression exp (which should be a record), as we need to have on the stack a record in order to call
       //lookupField
-      compileExp(exp, visitor, currentClass, lenv0, entryPoint).apply()
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
 
       //Push the desired label of the field we want get of the record onto the stack
       visitor.visitLdcInsn(field.name)
@@ -556,7 +552,7 @@ object GenExpression {
       // Cast the field value to the expected type.
       AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
-    case Expression.RecordExtend(field, value, rest, tpe, loc) => () =>
+    case Expression.RecordExtend(field, value, rest, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // We get the JvmType of the class for the record extend
@@ -576,10 +572,10 @@ object GenExpression {
       visitor.visitLdcInsn(field.name)
 
       //Push the value of the field onto the stack, since it is an expression we first need to compile it.
-      compileExp(value, visitor, currentClass, lenv0, entryPoint).apply()
+      compileExpression(value, visitor, currentClass, lenv0, entryPoint)
 
       //Push the value of the rest of the record onto the stack, since it's an expression we need to compile it first.
-      compileExp(rest, visitor, currentClass, lenv0, entryPoint).apply()
+      compileExpression(rest, visitor, currentClass, lenv0, entryPoint)
 
       // Descriptor of constructor
       val constructorDescriptor = AsmOps.getMethodDescriptor(List(JvmType.String, JvmOps.getErasedJvmType(value.tpe),
@@ -587,14 +583,14 @@ object GenExpression {
       // Invoking the constructor
       visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
 
-    case Expression.RecordRestrict(field, rest, tpe, loc) => () =>
+    case Expression.RecordRestrict(field, rest, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // We get the JvmType of the record interface
       val interfaceType = JvmOps.getRecordInterfaceType()
 
       //Push the value of the rest of the record onto the stack, since it's an expression we need to compile it first.
-      compileExp(rest, visitor, currentClass, lenv0, entryPoint).apply()
+      compileExpression(rest, visitor, currentClass, lenv0, entryPoint)
       //Push the label of field (which is going to be the removed/restricted).
       visitor.visitLdcInsn(field.name)
 
@@ -603,7 +599,7 @@ object GenExpression {
         AsmOps.getMethodDescriptor(List(JvmType.String), interfaceType), true)
 
 
-    case Expression.ArrayLit(elms, tpe, loc) => () =>
+    case Expression.ArrayLit(elms, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // We push the 'length' of the array on top of stack
@@ -624,21 +620,21 @@ object GenExpression {
         // We push the 'index' of the current element on top of stack
         compileInt(visitor, i, isLong = false)
         // Evaluating the 'element' to be stored
-        compileExp(elms(i), visitor, currentClass, lenv0, entryPoint).apply()
+        compileExpression(elms(i), visitor, currentClass, lenv0, entryPoint)
         // Stores the 'element' at the given 'index' in the 'array'
         // with the store instruction corresponding to the stored element
         visitor.visitInsn(AsmOps.getArrayStoreInstruction(jvmType))
       }
 
-    case Expression.ArrayNew(elm, len, tpe, loc) => () =>
+    case Expression.ArrayNew(elm, len, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // We get the inner type of the array
       val jvmType = JvmOps.getErasedJvmType(tpe.asInstanceOf[MonoType.Array].tpe)
       // Evaluating the value of the 'default element'
-      compileExp(elm, visitor, currentClass, lenv0, entryPoint).apply()
+      compileExpression(elm, visitor, currentClass, lenv0, entryPoint)
       // Evaluating the 'length' of the array
-      compileExp(len, visitor, currentClass, lenv0, entryPoint).apply()
+      compileExpression(len, visitor, currentClass, lenv0, entryPoint)
       // Instantiating a new array of type jvmType
       if (jvmType == JvmType.Object) { // Happens if the inner type is an object type
         visitor.visitTypeInsn(ANEWARRAY, "java/lang/Object")
@@ -663,63 +659,63 @@ object GenExpression {
       // Invoking the method to fill the array with the default element
       visitor.visitMethodInsn(Opcodes.INVOKESTATIC, "java/util/Arrays", "fill", arrayFillType, false);
 
-    case Expression.ArrayLoad(base, index, tpe, loc) => () =>
+    case Expression.ArrayLoad(base, index, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // We get the jvmType of the element to be loaded
       val jvmType = JvmOps.getErasedJvmType(tpe)
       // Evaluating the 'base'
-      compileExp(base, visitor, currentClass, lenv0, entryPoint).apply()
+      compileExpression(base, visitor, currentClass, lenv0, entryPoint)
       // Cast the object to Array
       visitor.visitTypeInsn(CHECKCAST, AsmOps.getArrayType(jvmType))
       // Evaluating the 'index' to load from
-      compileExp(index, visitor, currentClass, lenv0, entryPoint).apply()
+      compileExpression(index, visitor, currentClass, lenv0, entryPoint)
       // Loads the 'element' at the given 'index' from the 'array'
       // with the load instruction corresponding to the loaded element
       visitor.visitInsn(AsmOps.getArrayLoadInstruction(jvmType))
 
-    case Expression.ArrayStore(base, index, elm, tpe, loc) => () =>
+    case Expression.ArrayStore(base, index, elm, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // We get the jvmType of the element to be stored
       val jvmType = JvmOps.getErasedJvmType(elm.tpe)
       // Evaluating the 'base'
-      compileExp(base, visitor, currentClass, lenv0, entryPoint).apply()
+      compileExpression(base, visitor, currentClass, lenv0, entryPoint)
       // Cast the object to Array
       visitor.visitTypeInsn(CHECKCAST, AsmOps.getArrayType(jvmType))
       // Evaluating the 'index' to be stored in
-      compileExp(index, visitor, currentClass, lenv0, entryPoint).apply()
+      compileExpression(index, visitor, currentClass, lenv0, entryPoint)
       // Evaluating the 'element' to be stored
-      compileExp(elm, visitor, currentClass, lenv0, entryPoint).apply()
+      compileExpression(elm, visitor, currentClass, lenv0, entryPoint)
       // Stores the 'element' at the given 'index' in the 'array'
       // with the store instruction corresponding to the stored element
       visitor.visitInsn(AsmOps.getArrayStoreInstruction(jvmType))
       // Since the return type is 'unit', we put an instance of 'unit' on top of the stack
       visitor.visitFieldInsn(GETSTATIC, JvmName.Unit.toInternalName, GenUnitClass.InstanceFieldName, JvmName.Unit.toDescriptor)
 
-    case Expression.ArrayLength(base, tpe, loc) => () =>
+    case Expression.ArrayLength(base, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // We get the inner type of the array
       val jvmType = JvmOps.getErasedJvmType(base.tpe.asInstanceOf[MonoType.Array].tpe)
       // Evaluating the 'base'
-      compileExp(base, visitor, currentClass, lenv0, entryPoint).apply()
+      compileExpression(base, visitor, currentClass, lenv0, entryPoint)
       // Cast the object to array
       visitor.visitTypeInsn(CHECKCAST, AsmOps.getArrayType(jvmType))
       // Pushes the 'length' of the array on top of stack
       visitor.visitInsn(ARRAYLENGTH)
 
-    case Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) => () =>
+    case Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // We get the inner type of the array
       val jvmType = JvmOps.getErasedJvmType(base.tpe.asInstanceOf[MonoType.Array].tpe)
       // Evaluating the 'base'
-      compileExp(base, visitor, currentClass, lenv0, entryPoint).apply()
+      compileExpression(base, visitor, currentClass, lenv0, entryPoint)
       // Evaluating the 'startIndex'
-      compileExp(startIndex, visitor, currentClass, lenv0, entryPoint).apply()
+      compileExpression(startIndex, visitor, currentClass, lenv0, entryPoint)
       // Evaluating the 'endIndex'
-      compileExp(endIndex, visitor, currentClass, lenv0, entryPoint).apply()
+      compileExpression(endIndex, visitor, currentClass, lenv0, entryPoint)
       // Swaps the startIndex and 'endIndex'
       visitor.visitInsn(SWAP)
       // Duplicates the 'startIndex' two places down the stack
@@ -749,7 +745,7 @@ object GenExpression {
       // Pops the 'length' - leaving 'new array reference' top of stack
       visitor.visitInsn(POP)
 
-    case Expression.Ref(exp, tpe, loc) => () =>
+    case Expression.Ref(exp, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // JvmType of the reference class
@@ -759,7 +755,7 @@ object GenExpression {
       // Duplicate it since one instance will get consumed by constructor
       visitor.visitInsn(DUP)
       // Evaluate the underlying expression
-      compileExp(exp, visitor, currentClass, lenv0, entryPoint).apply()
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
       // Erased type of the value of the reference
       val valueErasedType = JvmOps.getErasedJvmType(tpe.asInstanceOf[MonoType.Ref].tpe)
       // Constructor descriptor
@@ -767,11 +763,11 @@ object GenExpression {
       // Call the constructor
       visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
 
-    case Expression.Deref(exp, tpe, loc) => () =>
+    case Expression.Deref(exp, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // Evaluate the exp
-      compileExp(exp, visitor, currentClass, lenv0, entryPoint).apply()
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
       // JvmType of the reference class
       val classType = JvmOps.getRefClassType(exp.tpe)
       // Get descriptor of `getValue` method
@@ -781,13 +777,13 @@ object GenExpression {
       // Cast underlying value to the correct type if the underlying type is Object
       AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
-    case Expression.Assign(exp1, exp2, tpe, loc) => () =>
+    case Expression.Assign(exp1, exp2, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // Evaluate the reference address
-      compileExp(exp1, visitor, currentClass, lenv0, entryPoint).apply()
+      compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
       // Evaluating the value to be assigned to the reference
-      compileExp(exp2, visitor, currentClass, lenv0, entryPoint).apply()
+      compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
       // JvmType of the reference class
       val classType = JvmOps.getRefClassType(exp1.tpe)
       // Get descriptor of `setValue` method
@@ -797,15 +793,14 @@ object GenExpression {
       // Since the return type is unit, we put an instance of unit on top of the stack
       visitor.visitFieldInsn(GETSTATIC, JvmName.Unit.toInternalName, GenUnitClass.InstanceFieldName, JvmName.Unit.toDescriptor)
 
-    case Expression.Cast(exp, tpe, loc) => () =>
+    case Expression.Cast(exp, tpe, loc) =>
       addSourceLine(visitor, loc)
-      compileExp(exp, visitor, currentClass, lenv0, entryPoint).apply()
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
       AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
     case Expression.TryCatch(exp, rules, tpe, loc) =>
-
-      // make sure inner handlers are added first
-      val innerCode = compileExp(exp, visitor, currentClass, lenv0, entryPoint)
+      // Add source line number for debugging.
+      addSourceLine(visitor, loc)
 
       // Introduce a label for before the try block.
       val beforeTryBlock = new Label()
@@ -826,34 +821,30 @@ object GenExpression {
         visitor.visitTryCatchBlock(beforeTryBlock, afterTryBlock, handlerLabel, asm.Type.getInternalName(clazz))
       }
 
-      () =>
-        // Add source line number for debugging.
-        addSourceLine(visitor, loc)
+      // Emit code for the try block.
+      visitor.visitLabel(beforeTryBlock)
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      visitor.visitLabel(afterTryBlock)
+      visitor.visitJumpInsn(GOTO, afterTryAndCatch)
 
-        // Emit code for the try block.
-        visitor.visitLabel(beforeTryBlock)
-        innerCode.apply()
-        visitor.visitLabel(afterTryBlock)
+      // Emit code for each catch rule.
+      for ((CatchRule(sym, clazz, body), handlerLabel) <- rulesAndLabels) {
+        // Emit the label.
+        visitor.visitLabel(handlerLabel)
+
+        // Store the exception in a local variable.
+        val istore = AsmOps.getStoreInstruction(JvmType.Object)
+        visitor.visitVarInsn(istore, sym.getStackOffset + 3)
+
+        // Emit code for the handler body expression.
+        compileExpression(body, visitor, currentClass, lenv0, entryPoint)
         visitor.visitJumpInsn(GOTO, afterTryAndCatch)
+      }
 
-        // Emit code for each catch rule.
-        for ((CatchRule(sym, clazz, body), handlerLabel) <- rulesAndLabels) {
-          // Emit the label.
-          visitor.visitLabel(handlerLabel)
+      // Add the label after both the try and catch rules.
+      visitor.visitLabel(afterTryAndCatch)
 
-          // Store the exception in a local variable.
-          val istore = AsmOps.getStoreInstruction(JvmType.Object)
-          visitor.visitVarInsn(istore, sym.getStackOffset + 3)
-
-          // Emit code for the handler body expression.
-          compileExp(body, visitor, currentClass, lenv0, entryPoint).apply()
-          visitor.visitJumpInsn(GOTO, afterTryAndCatch)
-        }
-
-        // Add the label after both the try and catch rules.
-        visitor.visitLabel(afterTryAndCatch)
-
-    case Expression.InvokeConstructor(constructor, args, tpe, loc) => () =>
+    case Expression.InvokeConstructor(constructor, args, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       val descriptor = asm.Type.getConstructorDescriptor(constructor)
@@ -864,7 +855,7 @@ object GenExpression {
       visitor.visitInsn(DUP)
       // Evaluate arguments left-to-right and push them onto the stack.
       for (arg <- args) {
-        compileExp(arg, visitor, currentClass, lenv0, entryPoint).apply()
+        compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
         // Cast the argument to the right type.
         arg.tpe match {
           // NB: This is not exhaustive. In the new backend we should handle all types, including multidim arrays.
@@ -883,12 +874,12 @@ object GenExpression {
       // Call the constructor
       visitor.visitMethodInsn(INVOKESPECIAL, declaration, "<init>", descriptor, false)
 
-    case Expression.InvokeMethod(method, exp, args, tpe, loc) => () =>
+    case Expression.InvokeMethod(method, exp, args, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
 
       // Evaluate the receiver object.
-      compileExp(exp, visitor, currentClass, lenv0, entryPoint).apply()
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
       val thisType = asm.Type.getInternalName(method.getDeclaringClass)
       visitor.visitTypeInsn(CHECKCAST, thisType)
 
@@ -897,7 +888,7 @@ object GenExpression {
 
       // Evaluate arguments left-to-right and push them onto the stack.
       for (((arg, argType), index) <- args.zip(signature).zipWithIndex) {
-        compileExp(arg, visitor, currentClass, lenv0, entryPoint).apply()
+        compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
         if (!argType.isPrimitive) {
           // NB: Really just a hack because the backend does not support array JVM types properly.
           visitor.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
@@ -930,11 +921,11 @@ object GenExpression {
         visitor.visitFieldInsn(GETSTATIC, JvmName.Unit.toInternalName, GenUnitClass.InstanceFieldName, JvmName.Unit.toDescriptor)
       }
 
-    case Expression.InvokeStaticMethod(method, args, tpe, loc) => () =>
+    case Expression.InvokeStaticMethod(method, args, tpe, loc) =>
       addSourceLine(visitor, loc)
       val signature = method.getParameterTypes
       for (((arg, argType), index) <- args.zip(signature).zipWithIndex) {
-        compileExp(arg, visitor, currentClass, lenv0, entryPoint).apply()
+        compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
         if (!argType.isPrimitive) {
           // NB: Really just a hack because the backend does not support array JVM types properly.
           visitor.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
@@ -959,60 +950,60 @@ object GenExpression {
         visitor.visitFieldInsn(GETSTATIC, JvmName.Unit.toInternalName, GenUnitClass.InstanceFieldName, JvmName.Unit.toDescriptor)
       }
 
-    case Expression.GetField(field, exp, tpe, loc) => () =>
+    case Expression.GetField(field, exp, tpe, loc) =>
       addSourceLine(visitor, loc)
-      compileExp(exp, visitor, currentClass, lenv0, entryPoint).apply()
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
       val declaration = asm.Type.getInternalName(field.getDeclaringClass)
       visitor.visitFieldInsn(GETFIELD, declaration, field.getName, JvmOps.getJvmType(tpe).toDescriptor)
 
-    case Expression.PutField(field, exp1, exp2, tpe, loc) => () =>
+    case Expression.PutField(field, exp1, exp2, tpe, loc) =>
       addSourceLine(visitor, loc)
-      compileExp(exp1, visitor, currentClass, lenv0, entryPoint).apply()
-      compileExp(exp2, visitor, currentClass, lenv0, entryPoint).apply()
+      compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+      compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
       val declaration = asm.Type.getInternalName(field.getDeclaringClass)
       visitor.visitFieldInsn(PUTFIELD, declaration, field.getName, JvmOps.getJvmType(exp2.tpe).toDescriptor)
 
       // Push Unit on the stack.
       visitor.visitFieldInsn(GETSTATIC, JvmName.Unit.toInternalName, GenUnitClass.InstanceFieldName, JvmName.Unit.toDescriptor)
 
-    case Expression.GetStaticField(field, tpe, loc) => () =>
+    case Expression.GetStaticField(field, tpe, loc) =>
       addSourceLine(visitor, loc)
       val declaration = asm.Type.getInternalName(field.getDeclaringClass)
       visitor.visitFieldInsn(GETSTATIC, declaration, field.getName, JvmOps.getJvmType(tpe).toDescriptor)
 
-    case Expression.PutStaticField(field, exp, tpe, loc) => () =>
+    case Expression.PutStaticField(field, exp, tpe, loc) =>
       addSourceLine(visitor, loc)
-      compileExp(exp, visitor, currentClass, lenv0, entryPoint).apply()
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
       val declaration = asm.Type.getInternalName(field.getDeclaringClass)
       visitor.visitFieldInsn(PUTSTATIC, declaration, field.getName, JvmOps.getJvmType(exp.tpe).toDescriptor)
 
       // Push Unit on the stack.
       visitor.visitFieldInsn(GETSTATIC, JvmName.Unit.toInternalName, GenUnitClass.InstanceFieldName, JvmName.Unit.toDescriptor)
 
-    case Expression.NewChannel(exp, tpe, loc) => () =>
+    case Expression.NewChannel(exp, tpe, loc) =>
       addSourceLine(visitor, loc)
       visitor.visitTypeInsn(NEW, JvmName.Channel.toInternalName)
       visitor.visitInsn(DUP)
-      compileExp(exp, visitor, currentClass, lenv0, entryPoint).apply()
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
       visitor.visitMethodInsn(INVOKESPECIAL, JvmName.Channel.toInternalName, "<init>", AsmOps.getMethodDescriptor(List(JvmType.PrimInt), JvmType.Void), false)
 
-    case Expression.GetChannel(exp, tpe, loc) => () =>
+    case Expression.GetChannel(exp, tpe, loc) =>
       addSourceLine(visitor, loc)
-      compileExp(exp, visitor, currentClass, lenv0, entryPoint).apply()
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
       visitor.visitTypeInsn(CHECKCAST, JvmName.Channel.toInternalName)
       visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Channel.toInternalName, "get", AsmOps.getMethodDescriptor(Nil, JvmType.Object), false)
       AsmOps.castIfNotPrimAndUnbox(visitor, JvmOps.getJvmType(tpe))
 
-    case Expression.PutChannel(exp1, exp2, tpe, loc) => () =>
+    case Expression.PutChannel(exp1, exp2, tpe, loc) =>
       addSourceLine(visitor, loc)
-      compileExp(exp1, visitor, currentClass, lenv0, entryPoint).apply()
+      compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
       visitor.visitTypeInsn(CHECKCAST, JvmName.Channel.toInternalName)
       visitor.visitInsn(DUP)
-      compileExp(exp2, visitor, currentClass, lenv0, entryPoint).apply()
+      compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
       AsmOps.boxIfPrim(visitor, JvmOps.getJvmType(exp2.tpe))
       visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Channel.toInternalName, "put", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Void), false)
 
-    case Expression.SelectChannel(rules, default, tpe, loc) => () =>
+    case Expression.SelectChannel(rules, default, tpe, loc) =>
       addSourceLine(visitor, loc)
       // Make a new Channel[] containing all channel expressions
 
@@ -1025,7 +1016,7 @@ object GenExpression {
         // Compile the index
         compileInt(visitor, index)
         // Compile the chan expression 100
-        compileExp(rule.chan, visitor, currentClass, lenv0, entryPoint).apply()
+        compileExpression(rule.chan, visitor, currentClass, lenv0, entryPoint)
         // Cast the type from Object to Channel
         visitor.visitTypeInsn(CHECKCAST, JvmName.Channel.toInternalName)
         // Store the expression in the array
@@ -1076,7 +1067,7 @@ object GenExpression {
         // Extend the environment with the element from the channel
         visitor.visitVarInsn(iStore, rule.sym.getStackOffset + 3)
         // Finally compile the body of the selected rule
-        compileExp(rule.exp, visitor, currentClass, lenv0, entryPoint).apply()
+        compileExpression(rule.exp, visitor, currentClass, lenv0, entryPoint)
         // Jump out of the cases so we do not fall through to the next one
         visitor.visitJumpInsn(GOTO, completedLabel)
       }
@@ -1095,7 +1086,7 @@ object GenExpression {
       // If we have a default case we can compile that, otherwise we write
       // an error we will never hit to satisfy the jvm
       if (default.isDefined) {
-        compileExp(default.get, visitor, currentClass, lenv0, entryPoint).apply()
+        compileExpression(default.get, visitor, currentClass, lenv0, entryPoint)
       } else {
         visitor.visitInsn(ACONST_NULL)
         visitor.visitInsn(ATHROW)
@@ -1104,10 +1095,10 @@ object GenExpression {
       // Jump here if the correct rule has been evaluated
       visitor.visitLabel(completedLabel)
 
-    case Expression.Spawn(exp, _, loc) => () =>
+    case Expression.Spawn(exp, _, loc) =>
       addSourceLine(visitor, loc)
       // Compile the expression, putting a function implementing the Spawnable interface on the stack
-      compileExp(exp, visitor, currentClass, lenv0, entryPoint).apply()
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
       // make a thread and run it
       visitor.visitTypeInsn(NEW, "java/lang/Thread")
       visitor.visitInsn(DUP_X1)
@@ -1117,7 +1108,7 @@ object GenExpression {
       // Put a Unit value on the stack
       visitor.visitFieldInsn(GETSTATIC, JvmName.Unit.toInternalName, GenUnitClass.InstanceFieldName, JvmName.Unit.toDescriptor)
 
-    case Expression.Lazy(exp, tpe, loc) => () =>
+    case Expression.Lazy(exp, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
 
@@ -1129,10 +1120,10 @@ object GenExpression {
       visitor.visitInsn(DUP)
 
       // Compile the thunked expression and call new Lazy$erased_tpe(expression).
-      compileExp(exp, visitor, currentClass, lenv0, entryPoint).apply()
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
       visitor.visitMethodInsn(INVOKESPECIAL, classType, "<init>", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Void), false)
 
-    case Expression.Force(exp, tpe, loc) => () =>
+    case Expression.Force(exp, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
 
@@ -1143,7 +1134,7 @@ object GenExpression {
       val MonoType.Lazy(tpe) = classMonoType
 
       // Emit code for the lazy expression.
-      compileExp(exp, visitor, currentClass, lenv0, entryPoint).apply()
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
 
       // Lazy$tpe is expected.
       visitor.visitTypeInsn(CHECKCAST, internalClassType)
@@ -1155,11 +1146,11 @@ object GenExpression {
       // The result of force is a generic object so a cast is needed.
       AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
-    case Expression.HoleError(sym, _, loc) => () =>
+    case Expression.HoleError(sym, _, loc) =>
       addSourceLine(visitor, loc)
       AsmOps.compileThrowHoleError(visitor, sym.toString, loc)
 
-    case Expression.MatchError(_, loc) => () =>
+    case Expression.MatchError(_, loc) =>
       addSourceLine(visitor, loc)
       AsmOps.compileThrowFlixError(visitor, JvmName.MatchError, loc)
   }
@@ -1218,11 +1209,11 @@ object GenExpression {
                                jumpLabels: Map[Symbol.LabelSym, Label],
                                entryPoint: Label,
                                op: UnaryOperator,
-                               sop: SemanticOperator)(implicit root: Root, flix: Flix): () => Unit = () => {
+                               sop: SemanticOperator)(implicit root: Root, flix: Flix): Unit = {
     // Adding source line number for debugging
     addSourceLine(visitor, e.loc)
 
-    compileExp(e, visitor, currentClassType, jumpLabels, entryPoint).apply()
+    compileExpression(e, visitor, currentClassType, jumpLabels, entryPoint)
     op match {
       case UnaryOperator.LogicalNot =>
         val condElse = new Label()
@@ -1334,7 +1325,7 @@ object GenExpression {
                                     jumpLabels: Map[Symbol.LabelSym, Label],
                                     entryPoint: Label,
                                     o: ArithmeticOperator,
-                                    sop: SemanticOperator)(implicit root: Root, flix: Flix): () => Unit = () => {
+                                    sop: SemanticOperator)(implicit root: Root, flix: Flix): Unit = {
     if (o == BinaryOperator.Exponentiate) {
       val (castToDouble, castFromDouble) = sop match {
         case Float32Op.Exp => (F2D, D2F)
@@ -1344,9 +1335,9 @@ object GenExpression {
         case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.")
       }
       visitor.visitFieldInsn(GETSTATIC, JvmName.ScalaMathPkg.toInternalName, "MODULE$", JvmType.ScalaMathPkg.toDescriptor)
-      compileExp(e1, visitor, currentClassType, jumpLabels, entryPoint).apply()
+      compileExpression(e1, visitor, currentClassType, jumpLabels, entryPoint)
       visitor.visitInsn(castToDouble)
-      compileExp(e2, visitor, currentClassType, jumpLabels, entryPoint).apply()
+      compileExpression(e2, visitor, currentClassType, jumpLabels, entryPoint)
       visitor.visitInsn(castToDouble)
       visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.ScalaMathPkg.toInternalName, "pow",
         AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
@@ -1358,8 +1349,8 @@ object GenExpression {
         case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.")
       }
     } else {
-      compileExp(e1, visitor, currentClassType, jumpLabels, entryPoint).apply()
-      compileExp(e2, visitor, currentClassType, jumpLabels, entryPoint).apply()
+      compileExpression(e1, visitor, currentClassType, jumpLabels, entryPoint)
+      compileExpression(e2, visitor, currentClassType, jumpLabels, entryPoint)
       val (intOp, longOp, floatOp, doubleOp, bigIntOp) = o match {
         case BinaryOperator.Plus => (IADD, LADD, FADD, DADD, "add")
         case BinaryOperator.Minus => (ISUB, LSUB, FSUB, DSUB, "subtract")
@@ -1439,9 +1430,9 @@ object GenExpression {
                                     jumpLabels: Map[Symbol.LabelSym, Label],
                                     entryPoint: Label,
                                     o: ComparisonOperator,
-                                    sop: SemanticOperator)(implicit root: Root, flix: Flix): () => Unit = () => {
-    compileExp(e1, visitor, currentClassType, jumpLabels, entryPoint).apply()
-    compileExp(e2, visitor, currentClassType, jumpLabels, entryPoint).apply()
+                                    sop: SemanticOperator)(implicit root: Root, flix: Flix): Unit = {
+    compileExpression(e1, visitor, currentClassType, jumpLabels, entryPoint)
+    compileExpression(e2, visitor, currentClassType, jumpLabels, entryPoint)
     val condElse = new Label()
     val condEnd = new Label()
     val (intOp, floatOp, doubleOp, cmp) = o match {
@@ -1500,13 +1491,13 @@ object GenExpression {
                                  visitor: MethodVisitor,
                                  jumpLabels: Map[Symbol.LabelSym, Label],
                                  entryPoint: Label,
-                                 o: LogicalOperator)(implicit root: Root, flix: Flix): () => Unit = () => o match {
+                                 o: LogicalOperator)(implicit root: Root, flix: Flix): Unit = o match {
     case BinaryOperator.LogicalAnd =>
       val andFalseBranch = new Label()
       val andEnd = new Label()
-      compileExp(e1, visitor, currentClassType, jumpLabels, entryPoint).apply()
+      compileExpression(e1, visitor, currentClassType, jumpLabels, entryPoint)
       visitor.visitJumpInsn(IFEQ, andFalseBranch)
-      compileExp(e2, visitor, currentClassType, jumpLabels, entryPoint).apply()
+      compileExpression(e2, visitor, currentClassType, jumpLabels, entryPoint)
       visitor.visitJumpInsn(IFEQ, andFalseBranch)
       visitor.visitInsn(ICONST_1)
       visitor.visitJumpInsn(GOTO, andEnd)
@@ -1517,9 +1508,9 @@ object GenExpression {
       val orTrueBranch = new Label()
       val orFalseBranch = new Label()
       val orEnd = new Label()
-      compileExp(e1, visitor, currentClassType, jumpLabels, entryPoint).apply()
+      compileExpression(e1, visitor, currentClassType, jumpLabels, entryPoint)
       visitor.visitJumpInsn(IFNE, orTrueBranch)
-      compileExp(e2, visitor, currentClassType, jumpLabels, entryPoint).apply()
+      compileExpression(e2, visitor, currentClassType, jumpLabels, entryPoint)
       visitor.visitJumpInsn(IFEQ, orFalseBranch)
       visitor.visitLabel(orTrueBranch)
       visitor.visitInsn(ICONST_1)
@@ -1579,9 +1570,9 @@ object GenExpression {
                                  jumpLabels: Map[Symbol.LabelSym, Label],
                                  entryPoint: Label,
                                  o: BitwiseOperator,
-                                 sop: SemanticOperator)(implicit root: Root, flix: Flix): () => Unit = () => {
-    compileExp(e1, visitor, currentClassType, jumpLabels, entryPoint).apply()
-    compileExp(e2, visitor, currentClassType, jumpLabels, entryPoint).apply()
+                                 sop: SemanticOperator)(implicit root: Root, flix: Flix): Unit = {
+    compileExpression(e1, visitor, currentClassType, jumpLabels, entryPoint)
+    compileExpression(e2, visitor, currentClassType, jumpLabels, entryPoint)
     val (intOp, longOp, bigintOp) = o match {
       case BinaryOperator.BitwiseAnd => (IAND, LAND, "and")
       case BinaryOperator.BitwiseOr => (IOR, LOR, "or")
