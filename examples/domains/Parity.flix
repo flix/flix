@@ -6,22 +6,12 @@ namespace Domain/Parity {
     ///
     /// The elements of the parity lattice.
     ///
-    enum Parity {
+    enum Parity with Eq {
                   case Top,
 
         case Odd,          case Even,
 
                   case Bot
-    }
-
-    instance Eq[Parity] {
-        pub def eq(e1: Parity, e2: Parity): Bool = match (e1, e2) {
-            case (Top, Top)     => true
-            case (Odd, Odd)     => true
-            case (Even, Even)   => true
-            case (Bot, Bot)     => true
-            case _              => false
-        }
     }
 
     ///

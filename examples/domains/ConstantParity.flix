@@ -6,7 +6,7 @@ namespace Domain/ConstantParity {
     ///
     /// The elements of the constant-parity lattice.
     ///
-    enum ConstantParity {
+    enum ConstantParity with Eq {
                   case Top,
 
         case Odd,          case Even,
@@ -14,17 +14,6 @@ namespace Domain/ConstantParity {
                 case Cst(BigInt),
 
                   case Bot
-    }
-
-    instance Eq[ConstantParity] {
-        pub def eq(e1: ConstantParity, e2: ConstantParity): Bool = match (e1, e2) {
-            case (Top, Top)         => true
-            case (Odd, Odd)         => true
-            case (Even, Even)       => true
-            case (Cst(n1), Cst(n2)) => n1 == n2
-            case (Bot, Bot)         => true
-            case _                  => false
-        }
     }
 
     ///

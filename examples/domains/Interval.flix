@@ -12,21 +12,12 @@ namespace Domain/Interval {
     ///
     /// The elements of the interval lattice.
     ///
-    enum Interval {
+    enum Interval with Eq {
                   case Top,
 
         case Range(BigInt, BigInt),
 
                   case Bot
-    }
-
-    instance Eq[Interval] {
-        pub def eq(e1: Interval, e2: Interval): Bool = match (e1, e2) {
-            case (Top, Top)                     => true
-            case (Range(x1, y1), Range(x2, y2)) => x1 == x2 and y1 == y2
-            case (Bot, Bot)                     => true
-            case _                              => false
-        }
     }
 
     ///

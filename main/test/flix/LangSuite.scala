@@ -178,7 +178,7 @@ class LangSuite extends Suites(
   new FlixTest("Test.Exp.Int64", "main/test/flix/Test.Exp.Int64.flix"),
 
   //
-  // Interpolation.
+  // Try-catch.
   //
   new FlixTest("Test.Exp.Interpolation", "main/test/flix/Test.Exp.Interpolation.flix"),
 
