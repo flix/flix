@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.sjvm
 
 import ca.uwaterloo.flix.language.ast.ErasedAst.Expression
-import ca.uwaterloo.flix.language.ast.{Cat1, Cat2, EType, ErasedAst, PType}
+import ca.uwaterloo.flix.language.ast.{Cat1, ErasedAst, PType}
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
 
 object BytecodeCompiler {
@@ -159,7 +159,8 @@ object BytecodeCompiler {
         pushUnit
 
     case Expression.Cast(exp, tpe, loc) => ???
-    case Expression.TryCatch(exp, rules, tpe, loc) => ???
+    case Expression.TryCatchHeader(exp, startOftry, endOfTry, catchCases, tpe, loc) => ???
+    case Expression.TryCatch(exp, startOftry, endOfTry, rules, tpe, loc) => ???
     case Expression.InvokeConstructor(constructor, args, tpe, loc) => ???
     case Expression.InvokeMethod(method, exp, args, tpe, loc) => ???
     case Expression.InvokeStaticMethod(method, args, tpe, loc) => ???

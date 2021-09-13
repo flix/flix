@@ -49,7 +49,7 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
     val fs = def0.fparams.map(visitFormalParam)
     val e = visitExp(def0.exp, m)
     val tpe = visitType(def0.tpe)
-    FinalAst.Def(def0.ann, def0.mod, def0.sym, fs, e, tpe, def0.loc)
+    FinalAst.Def(def0.ann, def0.mod, def0.sym, fs, e._1, tpe, def0.loc)
   }
 
   private def visitEnum(enum0: LiftedAst.Enum, m: TopLevel)(implicit flix: Flix): FinalAst.Enum = enum0 match {
@@ -63,77 +63,96 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
       FinalAst.Enum(mod, sym, cases, tpe, loc)
   }
 
-  private def visitExp(exp0: LiftedAst.Expression, m: TopLevel)(implicit flix: Flix): FinalAst.Expression = {
+  private object HeaderMonad {
+    def capture[X](x: X): HeaderMonad[X] = HeaderMonad(x, List.empty)
+  }
 
-    def visit(e0: LiftedAst.Expression): FinalAst.Expression = e0 match {
+  private case class HeaderMonad[X](x: X, headers: List[FinalAst.Expression.TryCatchHeader]) {
+    def map[B](f: X => B): HeaderMonad[B] = HeaderMonad(f(x), headers)
+    def flatMap[B](f: X => HeaderMonad[B]): HeaderMonad[B] = {
+      val HeaderMonad(x1, headers1) = f(x)
+      HeaderMonad(x1, headers1 ++ headers)
+    }
+    def traverse[B](f: X => HeaderMonad[B], list: List[X]): HeaderMonad[List[B]] = HeaderMonad(list.map(f), headers)
+  }
+
+  implicit class Converter[C](x: C) {
+    def toHeader: HeaderMonad[C] = HeaderMonad.capture(x)
+  }
+
+
+  private def visitExp(exp0: LiftedAst.Expression, m: TopLevel)(implicit flix: Flix): HeaderMonad[FinalAst.Expression] = {
+
+    def visit(e0: LiftedAst.Expression): HeaderMonad[FinalAst.Expression] = e0 match {
       case LiftedAst.Expression.Unit(loc) =>
         FinalAst.Expression.Unit(loc)
+        FinalAst.Expression.Unit(loc).toHeader
 
       case LiftedAst.Expression.Null(tpe, loc) =>
         FinalAst.Expression.Null(visitType(tpe), loc)
 
       case LiftedAst.Expression.True(loc) =>
-        FinalAst.Expression.True(loc)
+        FinalAst.Expression.True(loc).toHeader
 
       case LiftedAst.Expression.False(loc) =>
-        FinalAst.Expression.False(loc)
+        FinalAst.Expression.False(loc).toHeader
 
       case LiftedAst.Expression.Char(lit, loc) =>
-        FinalAst.Expression.Char(lit, loc)
+        FinalAst.Expression.Char(lit, loc).toHeader
 
       case LiftedAst.Expression.Float32(lit, loc) =>
-        FinalAst.Expression.Float32(lit, loc)
+        FinalAst.Expression.Float32(lit, loc).toHeader
 
       case LiftedAst.Expression.Float64(lit, loc) =>
-        FinalAst.Expression.Float64(lit, loc)
+        FinalAst.Expression.Float64(lit, loc).toHeader
 
       case LiftedAst.Expression.Int8(lit, loc) =>
-        FinalAst.Expression.Int8(lit, loc)
+        FinalAst.Expression.Int8(lit, loc).toHeader
 
       case LiftedAst.Expression.Int16(lit, loc) =>
-        FinalAst.Expression.Int16(lit, loc)
+        FinalAst.Expression.Int16(lit, loc).toHeader
 
       case LiftedAst.Expression.Int32(lit, loc) =>
-        FinalAst.Expression.Int32(lit, loc)
+        FinalAst.Expression.Int32(lit, loc).toHeader
 
       case LiftedAst.Expression.Int64(lit, loc) =>
-        FinalAst.Expression.Int64(lit, loc)
+        FinalAst.Expression.Int64(lit, loc).toHeader
 
       case LiftedAst.Expression.BigInt(lit, loc) =>
-        FinalAst.Expression.BigInt(lit, loc)
+        FinalAst.Expression.BigInt(lit, loc).toHeader
 
       case LiftedAst.Expression.Str(lit, loc) =>
-        FinalAst.Expression.Str(lit, loc)
+        FinalAst.Expression.Str(lit, loc).toHeader
 
       case LiftedAst.Expression.Var(sym, tpe, loc) =>
         val t = visitType(tpe)
-        FinalAst.Expression.Var(sym, t, loc)
+        FinalAst.Expression.Var(sym, t, loc).toHeader
 
       case LiftedAst.Expression.Closure(sym, freeVars, tpe, loc) =>
         val fvs = freeVars.map(visitFreeVar)
         val t = visitType(tpe)
-        FinalAst.Expression.Closure(sym, fvs, getFunctionTypeTemporaryToBeRemoved(fvs, t), t, loc)
+        FinalAst.Expression.Closure(sym, fvs, getFunctionTypeTemporaryToBeRemoved(fvs, t), t, loc).toHeader
 
       case LiftedAst.Expression.ApplyClo(exp, args, tpe, loc) =>
         val as = args map visit
         val t = visitType(tpe)
-        FinalAst.Expression.ApplyClo(visit(exp), as, t, loc)
+        FinalAst.Expression.ApplyClo(visit(exp), as, t, loc).toHeader
 
       case LiftedAst.Expression.ApplyDef(name, args, tpe, loc) =>
         val as = args map visit
         val t = visitType(tpe)
-        FinalAst.Expression.ApplyDef(name, as, t, loc)
+        FinalAst.Expression.ApplyDef(name, as, t, loc).toHeader
 
       case LiftedAst.Expression.ApplyCloTail(exp, args, tpe, loc) =>
         val e = visit(exp)
         val rs = args map visit
         val t = visitType(tpe)
-        FinalAst.Expression.ApplyCloTail(e, rs, t, loc)
+        FinalAst.Expression.ApplyCloTail(e, rs, t, loc).toHeader
 
       case LiftedAst.Expression.ApplyDefTail(sym, args, tpe, loc) =>
         val as = args map visit
         val t = visitType(tpe)
-        FinalAst.Expression.ApplyDefTail(sym, as, t, loc)
+        FinalAst.Expression.ApplyDefTail(sym, as, t, loc).toHeader
 
       case LiftedAst.Expression.ApplySelfTail(name, formals, actuals, tpe, loc) =>
         val fs = formals.map(visitFormalParam)
@@ -273,10 +292,10 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
         val t = visitType(tpe)
         FinalAst.Expression.Assign(e1, e2, t, loc)
 
-      case LiftedAst.Expression.Existential(fparam, exp, loc) =>
+      case LiftedAst.Expression.Existential(_, _, _) =>
         throw InternalCompilerException(s"Unexpected Existential expression, should have been handled earlier")
 
-      case LiftedAst.Expression.Universal(fparam, exp, loc) =>
+      case LiftedAst.Expression.Universal(_, _, _) =>
         throw InternalCompilerException(s"Unexpected Universal expression, should have been handled earlier")
 
       case LiftedAst.Expression.Cast(exp, tpe, loc) =>
@@ -289,10 +308,11 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
         val rs = rules map {
           case LiftedAst.CatchRule(sym, clazz, body) =>
             val b = visit(body)
-            FinalAst.CatchRule(sym, clazz, b)
+            // TODO maybe these could be generated earlier to align with Branch (in simplifier)
+            FinalAst.CatchRule(sym, clazz, Symbol.freshLabel("catch"), b)
         }
         val t = visitType(tpe)
-        FinalAst.Expression.TryCatch(e, rs, t, loc)
+        FinalAst.Expression.TryCatch(e, Symbol.freshLabel("tryStart"), Symbol.freshLabel("tryEnd"), rs, t, loc)
 
       case LiftedAst.Expression.InvokeConstructor(constructor, args, tpe, loc) =>
         val as = args.map(visit)
@@ -441,7 +461,7 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
 
           case TypeConstructor.KindedEnum(sym, _) => MonoType.Enum(sym, args)
 
-          case TypeConstructor.Tag(sym, _) =>
+          case TypeConstructor.Tag(_, _) =>
             throw InternalCompilerException(s"Unexpected type: '$t0'.")
 
           case TypeConstructor.Native(clazz) => MonoType.Native(clazz)
@@ -491,24 +511,6 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
       val freeArgs = fvs.map(_.tpe)
       MonoType.Arrow(freeArgs ::: targs, tresult)
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
-  }
-
-  // TODO: Deprecated
-  // TODO: This should be done in a prior phase, perhaps during lambda lifting, or not done at all...
-  private def lit2symTemporaryToBeRemoved(exp0: LiftedAst.Expression, loc: SourceLocation, m: TopLevel)(implicit flix: Flix): Symbol.DefnSym = {
-    // Generate a top-level function for the constant.
-    val sym = Symbol.freshDefnSym("lit", loc)
-    val lit = visitExp(exp0, m)
-    val ann = Ast.Annotations.Empty
-    val mod = Ast.Modifiers(List(Ast.Modifier.Synthetic))
-    val varX = Symbol.freshVarSym("_unit", loc)
-    varX.setStackOffset(0)
-    val fparam = FinalAst.FormalParam(varX, MonoType.Unit)
-    val fs = List(fparam)
-    val tpe = MonoType.Arrow(MonoType.Unit :: Nil, visitType(exp0.tpe))
-    val defn = FinalAst.Def(ann, mod, sym, fs, lit, tpe, exp0.loc)
-    m += (sym -> defn)
-    sym
   }
 
 }

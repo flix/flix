@@ -162,7 +162,9 @@ object ErasedAst {
 
     case class Cast[T <: PType](exp: ErasedAst.Expression[PType], tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
-    case class TryCatch[T <: PType](exp: ErasedAst.Expression[T], rules: List[ErasedAst.CatchRule[T]], tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
+    case class TryCatchHeader[T <: PType](exp: ErasedAst.Expression[T], startOftry: Symbol.LabelSym, endOfTry: Symbol.LabelSym, catchCases: List[(Symbol.LabelSym, Class[_])], tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
+
+    case class TryCatch[T <: PType](exp: ErasedAst.Expression[T], startOftry: Symbol.LabelSym, endOfTry: Symbol.LabelSym, rules: List[ErasedAst.CatchRule[T]], tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
     case class InvokeConstructor(constructor: Constructor[_], args: List[ErasedAst.Expression[PType]], tpe: EType[PReference[PAnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PAnyObject]]
 
@@ -278,7 +280,7 @@ object ErasedAst {
 
   case class Case(sym: Symbol.EnumSym, tag: Name.Tag, tpeDeprecated: EType[PType], loc: SourceLocation)
 
-  case class CatchRule[T <: PType](sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: ErasedAst.Expression[T])
+  case class CatchRule[T <: PType](sym: Symbol.VarSym, clazz: java.lang.Class[_], label: Symbol.LabelSym, exp: ErasedAst.Expression[T])
 
   case class Constraint(cparams: List[ConstraintParam], head: Predicate.Head, body: List[Predicate.Body], loc: SourceLocation)
 

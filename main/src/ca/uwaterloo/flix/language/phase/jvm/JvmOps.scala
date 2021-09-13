@@ -642,9 +642,12 @@ object JvmOps {
 
       case Expression.Cast(exp, tpe, loc) => visitExp(exp)
 
-      case Expression.TryCatch(exp, rules, tpe, loc) =>
+      case Expression.TryCatchHeader(exp, startOfTry, endOfTry, catchCases, tpe, loc) =>
+        visitExp(exp)
+
+      case Expression.TryCatch(exp, startOfTry, endOfTry, rules, tpe, loc) =>
         rules.foldLeft(visitExp(exp)) {
-          case (sacc, CatchRule(sym, clazz, body)) => sacc ++ visitExp(body)
+          case (sacc, CatchRule(sym, clazz, label, body)) => sacc ++ visitExp(body)
         }
 
       case Expression.InvokeConstructor(constructor, args, tpe, loc) => args.foldLeft(Set.empty[ClosureInfo]) {
@@ -922,15 +925,15 @@ object JvmOps {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
-      case Expression.ArrayNew(elm, len, tpe, loc) => visitExp(elm) ++ visitExp(len)
+      case Expression.ArrayNew(elm, len, tpe, loc) => visitExp(elm) ++ visitExp(len) + tpe
 
-      case Expression.ArrayLoad(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
+      case Expression.ArrayLoad(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
 
-      case Expression.ArrayStore(exp1, exp2, exp3, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+      case Expression.ArrayStore(exp1, exp2, exp3, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) + tpe
 
-      case Expression.ArrayLength(exp, tpe, loc) => visitExp(exp)
+      case Expression.ArrayLength(exp, tpe, loc) => visitExp(exp) + tpe
 
-      case Expression.ArraySlice(exp1, exp2, exp3, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+      case Expression.ArraySlice(exp1, exp2, exp3, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) + tpe
 
       case Expression.Ref(exp, tpe, loc) => visitExp(exp) + tpe
 
@@ -940,9 +943,12 @@ object JvmOps {
 
       case Expression.Cast(exp, tpe, loc) => visitExp(exp) + tpe
 
-      case Expression.TryCatch(exp, rules, tpe, loc) =>
-        rules.foldLeft(visitExp(exp)) {
-          case (sacc, CatchRule(sym, clazz, body)) => sacc ++ visitExp(body)
+      case Expression.TryCatchHeader(exp, startOfTry, endOfTry, catchCases, tpe, loc) =>
+        visitExp(exp) + tpe
+
+      case Expression.TryCatch(exp, startOfTry, endOfTry, rules, tpe, loc) =>
+        rules.foldLeft(visitExp(exp) + tpe) {
+          case (sacc, CatchRule(sym, clazz, label, body)) => sacc ++ visitExp(body)
         }
 
       case Expression.InvokeConstructor(constructor, args, tpe, loc) => args.foldLeft(Set(tpe)) {

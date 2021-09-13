@@ -26,8 +26,8 @@ import org.objectweb.asm.Opcodes._
 import org.objectweb.asm._
 
 /**
- * Generate expression
- */
+  * Generate expression
+  */
 object GenExpression {
 
   def compileExpression(exp0: Expression, visitor: MethodVisitor, currentClass: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)(implicit root: Root, flix: Flix): Unit = {
@@ -35,8 +35,8 @@ object GenExpression {
   }
 
   /**
-   * Emits code for the given expression `exp0` to the given method `visitor` in the `currentClass`.
-   */
+    * Emits code for the given expression `exp0` to the given method `visitor` in the `currentClass`.
+    */
   private def compileExp(exp0: Expression, visitor: MethodVisitor, currentClass: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)(implicit root: Root, flix: Flix): () => Unit = exp0 match {
     case Expression.Unit(loc) => () =>
       addSourceLine(visitor, loc)
@@ -802,44 +802,34 @@ object GenExpression {
       compileExp(exp, visitor, currentClass, lenv0, entryPoint).apply()
       AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
-    case Expression.TryCatch(exp, rules, tpe, loc) =>
+    case Expression.TryCatchHeader(exp, startOfTry, endOfTry, catchCases, tpe, loc) =>
+      val initNewLabelEnv = lenv0 + (startOfTry -> new Label()) + (endOfTry -> new Label())
+      val newLabelEnv = catchCases.foldLeft(initNewLabelEnv) { case (env, (label, _)) => env + (label -> new Label()) }
+      catchCases.foreach { case (label, clazz) => visitor.visitTryCatchBlock(newLabelEnv(startOfTry), newLabelEnv(endOfTry), newLabelEnv(label), asm.Type.getInternalName(clazz)) }
+      compileExp(exp, visitor, currentClass, newLabelEnv, entryPoint)
+
+    case Expression.TryCatch(exp, startOfBody, endOfBody, rules, _, loc) =>
 
       // make sure inner handlers are added first
       val innerCode = compileExp(exp, visitor, currentClass, lenv0, entryPoint)
 
-      // Introduce a label for before the try block.
-      val beforeTryBlock = new Label()
-
-      // Introduce a label for after the try block.
-      val afterTryBlock = new Label()
-
       // Introduce a label after the try block and after all catch rules.
       val afterTryAndCatch = new Label()
-
-      // Introduce a label for each catch rule.
-      val rulesAndLabels = rules map {
-        case rule => rule -> new Label()
-      }
-
-      // Emit a try catch block for each catch rule.
-      for ((CatchRule(sym, clazz, body), handlerLabel) <- rulesAndLabels) {
-        visitor.visitTryCatchBlock(beforeTryBlock, afterTryBlock, handlerLabel, asm.Type.getInternalName(clazz))
-      }
 
       () =>
         // Add source line number for debugging.
         addSourceLine(visitor, loc)
 
         // Emit code for the try block.
-        visitor.visitLabel(beforeTryBlock)
+        visitor.visitLabel(lenv0(startOfBody))
         innerCode.apply()
-        visitor.visitLabel(afterTryBlock)
+        visitor.visitLabel(lenv0(endOfBody))
         visitor.visitJumpInsn(GOTO, afterTryAndCatch)
 
         // Emit code for each catch rule.
-        for ((CatchRule(sym, clazz, body), handlerLabel) <- rulesAndLabels) {
+        for (CatchRule(sym, _, label, body) <- rules) {
           // Emit the label.
-          visitor.visitLabel(handlerLabel)
+          visitor.visitLabel(lenv0(label))
 
           // Store the exception in a local variable.
           val istore = AsmOps.getStoreInstruction(JvmType.Object)
@@ -1606,8 +1596,8 @@ object GenExpression {
   }
 
   /**
-   * Generates code to read the given variable symbol and put it on top of the stack.
-   */
+    * Generates code to read the given variable symbol and put it on top of the stack.
+    */
   private def readVar(sym: Symbol.VarSym, tpe: MonoType, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
     val jvmType = JvmOps.getErasedJvmType(tpe)
     val iLOAD = AsmOps.getLoadInstruction(jvmType)

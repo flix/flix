@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.ERefType._
 import ca.uwaterloo.flix.language.ast.EType._
 import ca.uwaterloo.flix.language.ast.PRefType._
 import ca.uwaterloo.flix.language.ast.PType._
-import ca.uwaterloo.flix.language.ast.{EType, ErasedAst, FinalAst, MonoType, PType, Symbol}
+import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
@@ -199,11 +199,14 @@ object Eraser extends Phase[FinalAst.Root, FinalAst.Root] {
     case FinalAst.Expression.Cast(exp, tpe, loc) =>
       ErasedAst.Expression.Cast(visitExp(exp), visitTpe(tpe), loc)
 
-    case FinalAst.Expression.TryCatch(exp, rules, tpe, loc) =>
-      val newRules = rules.map { case FinalAst.CatchRule(sym, clazz, exp) =>
-        ErasedAst.CatchRule[T](sym, clazz, visitExp(exp))
+    case FinalAst.Expression.TryCatchHeader(exp, startOfTry, endOfTry, catchCases, tpe, loc) =>
+      ErasedAst.Expression.TryCatchHeader(visitExp(exp), startOfTry, endOfTry, catchCases, visitTpe(tpe), loc)
+
+    case FinalAst.Expression.TryCatch(exp, startOftry, endOfTry, rules, tpe, loc) =>
+      val newRules = rules.map { case FinalAst.CatchRule(sym, clazz, label, exp) =>
+        ErasedAst.CatchRule[T](sym, clazz, label, visitExp(exp))
       }
-      ErasedAst.Expression.TryCatch(visitExp(exp), newRules, visitTpe(tpe), loc)
+      ErasedAst.Expression.TryCatch(visitExp(exp), startOftry, endOfTry, newRules, visitTpe(tpe), loc)
 
     case FinalAst.Expression.InvokeConstructor(constructor, args, tpe, loc) =>
       ErasedAst.Expression.InvokeConstructor(constructor, args.map(visitExp), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]

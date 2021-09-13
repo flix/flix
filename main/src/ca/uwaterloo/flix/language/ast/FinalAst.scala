@@ -16,9 +16,9 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import java.lang.reflect.{Constructor, Field, Method}
+import ca.uwaterloo.flix.language.ast.Ast.Source
 
-import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
+import java.lang.reflect.{Constructor, Field, Method}
 
 object FinalAst {
 
@@ -158,7 +158,9 @@ object FinalAst {
 
     case class Cast(exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
-    case class TryCatch(exp: FinalAst.Expression, rules: List[FinalAst.CatchRule], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
+    case class TryCatchHeader(exp: FinalAst.Expression, startOfTry: Symbol.LabelSym, endOfTry: Symbol.LabelSym, catchCases: List[(Symbol.LabelSym, Class[_])], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
+
+    case class TryCatch(exp: FinalAst.Expression, startOfTry: Symbol.LabelSym, endOfTry: Symbol.LabelSym, rules: List[FinalAst.CatchRule], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
     case class InvokeConstructor(constructor: Constructor[_], args: List[FinalAst.Expression], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
@@ -198,7 +200,7 @@ object FinalAst {
 
   case class Case(sym: Symbol.EnumSym, tag: Name.Tag, tpeDeprecated: MonoType, loc: SourceLocation)
 
-  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: FinalAst.Expression)
+  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], label: Symbol.LabelSym, exp: FinalAst.Expression)
 
   case class FormalParam(sym: Symbol.VarSym, tpe: MonoType)
 

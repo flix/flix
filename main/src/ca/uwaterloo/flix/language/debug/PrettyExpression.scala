@@ -8,6 +8,7 @@ import ca.uwaterloo.flix.language.ast.{BinaryOperator, SemanticOperator, Semanti
   */
 object PrettyExpression {
 
+  // TODO move to PrettyPrinter?
   /**
     * TypedAst.
     */
