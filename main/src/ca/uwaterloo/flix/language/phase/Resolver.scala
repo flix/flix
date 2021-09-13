@@ -44,8 +44,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   private val EqSym = new Symbol.ClassSym(Nil, "Eq", SourceLocation.Unknown)
   private val OrderSym = new Symbol.ClassSym(Nil, "Order", SourceLocation.Unknown)
   private val ToStringSym = new Symbol.ClassSym(Nil, "ToString", SourceLocation.Unknown)
+  private val HashSym = new Symbol.ClassSym(Nil, "Hash", SourceLocation.Unknown)
 
-  private val DerivableSyms = List(BoxableSym, EqSym, OrderSym, ToStringSym)
+  private val DerivableSyms = List(BoxableSym, EqSym, OrderSym, ToStringSym, HashSym)
 
   /**
     * Performs name resolution on the given program `root`.
