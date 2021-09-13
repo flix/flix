@@ -19,6 +19,8 @@ import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
+import scala.collection.mutable.ArrayBuffer
+
 object Index {
   /**
     * Represents the empty reverse index.
@@ -181,8 +183,15 @@ case class Index(m: Map[(String, Int), List[Entity]],
   /**
    * Returns all entities in the document at the given `uri`.
    */
-  def query(uri: String): List[Entity] =
-    m.view.filterKeys { case (s, _) => s == uri }.values.flatten.toList
+  def query(uri: String): Iterable[Entity] = {
+    val res = new ArrayBuffer[Entity]()
+    for (((entitiesUri, _), entities) <- m) {
+      if (entitiesUri == uri) {
+        res.addAll(entities)
+      }
+    }
+    res
+  }
 
   /**
     * Returns all uses of the given symbol `sym`.

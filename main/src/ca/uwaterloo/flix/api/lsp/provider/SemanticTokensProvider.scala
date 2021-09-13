@@ -1,46 +1,34 @@
+/*
+ * Copyright 2021 Jacob Harris Cryer Kragh
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ca.uwaterloo.flix.api.lsp.provider
 
-import ca.uwaterloo.flix.api.lsp.{Entity, Index}
-import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.api.lsp.SemanticTokenModifier.SemanticTokenModifier
+import ca.uwaterloo.flix.api.lsp.{Entity, Index, SemanticToken, SemanticTokenType}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Root}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 
+import scala.collection.immutable.SortedSet
 import scala.collection.mutable.ArrayBuffer
 
 object SemanticTokensProvider {
-  /**
-   * The token types currently supported by the provider.
-   *
-   * Note: The intermediate TypeScript server is responsible for communicating the legend
-   * to the client. The TS server must list the token types in the same order as is used
-   * here in the Scala code. The reason for this is that the response is encoded as a
-   * sequence of integers, and the integer representing a token type is the type's
-   * index in the legend.
-   */
-  private object TokenType extends Enumeration {
-    type TokenType = Value
-
-    val Number, Str = Value
-  }
 
   /**
-   * The token modifiers currently supported by the provider.
-   *
-   * Note: See the remark in the documentation for SemanticTokenType; the same
-   * constraint applies to modifiers: The TS server must list the modifiers
-   * in the same order as is used here in the Scala code.
+   * Processes a request for (full) semantic tokens.
    */
-  private object TokenModifier extends Enumeration {
-    type TokenModifier = Value
-
-    val Declaration, Definition = Value
-  }
-
-  private case class SemanticToken(loc: SourceLocation,
-                                   tokenType: SemanticTokensProvider.TokenType.TokenType,
-                                   tokenModifiers: List[SemanticTokensProvider.TokenModifier.TokenModifier])
-
   def provideSemanticTokens(uri: String)(implicit index: Index, root: Root): JObject = {
     val entities = index.query(uri)
     val semanticTokens = entities.flatMap(getSemanticTokens)
@@ -49,6 +37,9 @@ object SemanticTokensProvider {
     ("status" -> "success") ~ ("result" -> result)
   }
 
+  /**
+   * Returns the semantic tokens in the given Entity.
+   */
   private def getSemanticTokens(entity: Entity): List[SemanticToken] = entity match {
     case Entity.Exp(e) => e match {
       case Expression.Int8(_, _)
@@ -56,21 +47,22 @@ object SemanticTokensProvider {
            | Expression.Int32(_, _)
            | Expression.Float32(_, _)
            | Expression.Float64(_, _)
-           | Expression.BigInt(_, _) => List(SemanticToken(e.loc, TokenType.Number, List()))
-      case Expression.Str(_, loc) => List(SemanticToken(loc, TokenType.Str, List()))
+           | Expression.BigInt(_, _) => List(SemanticToken(e.loc, SemanticTokenType.Number, List()))
+      case Expression.Str(_, loc) => List(SemanticToken(loc, SemanticTokenType.Str, List()))
       case _ => List() // TODO: Handle other kinds of expressions
     }
     case _ => List() // TODO: Handle other kinds of entities
   }
 
   // Inspired by https://github.com/microsoft/vscode-languageserver-node/blob/f425af9de46a0187adb78ec8a46b9b2ce80c5412/server/src/sematicTokens.proposed.ts#L45
-  private def encodeSemanticTokens(tokens: List[SemanticToken]): List[Int] = {
+  private def encodeSemanticTokens(tokens: Iterable[SemanticToken]): List[Int] = {
     val encoding = new ArrayBuffer[Int](initialSize = 5 * tokens.size)
 
     var prevLine = 0
     var prevCol = 0
 
-    for (token <- tokens.sortBy(_.loc)) {
+    implicit val tokenOrdering: Ordering[SemanticToken] = Ordering.by(_.loc)
+    for (token <- SortedSet.empty.concat(tokens)) {
       var relLine = token.loc.beginLine - 1
       var relCol = token.loc.beginCol - 1
 
@@ -94,6 +86,9 @@ object SemanticTokensProvider {
     encoding.toList
   }
 
-  def encodeModifiers(modifiers: List[SemanticTokensProvider.TokenModifier.TokenModifier]): Int =
+  /**
+   * Encodes a list of modifiers as a bitset (as per the LSP spec).
+   */
+  def encodeModifiers(modifiers: List[SemanticTokenModifier]): Int =
     modifiers.foldLeft(0)((bitset, modifier) => bitset | (1 << modifier.id))
 }
