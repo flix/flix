@@ -115,4 +115,24 @@ namespace Test/Exp/Jvm/TestTryCatch {
             case _: ##java.lang.Exception => false
         }
 
+    @test
+    def testPriority04(): Bool & Impure =
+        try {
+            if(try {
+                exception();
+                false
+            } catch {
+                case _: ##java.lang.Exception => true
+            }) {
+                try {
+                    exception();
+                    false
+                } catch {
+                    case _: ##java.lang.Exception => true
+                }
+            } else false
+        } catch {
+            case _: ##java.lang.Exception => false
+        }
+
 }
