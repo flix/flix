@@ -15,8 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
-import ca.uwaterloo.flix.api.lsp.SemanticTokenModifier.SemanticTokenModifier
-import ca.uwaterloo.flix.api.lsp.{Entity, Index, SemanticToken, SemanticTokenType}
+import ca.uwaterloo.flix.api.lsp._
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Root}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
@@ -76,7 +75,7 @@ object SemanticTokensProvider {
       encoding += relLine
       encoding += relCol
       encoding += token.loc.endCol - token.loc.beginCol
-      encoding += token.tokenType.id
+      encoding += token.tokenType.toInt
       encoding += encodeModifiers(token.tokenModifiers)
 
       prevLine = token.loc.beginLine - 1
@@ -90,5 +89,5 @@ object SemanticTokensProvider {
    * Encodes a list of modifiers as a bitset (as per the LSP spec).
    */
   def encodeModifiers(modifiers: List[SemanticTokenModifier]): Int =
-    modifiers.foldLeft(0)((bitset, modifier) => bitset | (1 << modifier.id))
+    modifiers.foldLeft(0)((bitset, modifier) => bitset | (1 << modifier.toInt))
 }

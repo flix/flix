@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 /**
- * The semantic token types that are currently supported.
+ * Represents a semantic token type in LSP.
  *
  * Note: The intermediate TypeScript server is responsible for communicating the legend
  * to the client. The TS server must list the token types in the same order as is used
@@ -24,8 +24,15 @@ package ca.uwaterloo.flix.api.lsp
  * sequence of integers, and the integer representing a token type is the type's
  * index in the legend.
  */
-object SemanticTokenType extends Enumeration {
-  type SemanticTokenType = Value
+sealed trait SemanticTokenType {
+  def toInt: Int = this match {
+    case SemanticTokenType.Number => 0
+    case SemanticTokenType.Str => 1
+  }
+}
 
-  val Number, Str = Value
+object SemanticTokenType {
+  case object Number extends SemanticTokenType
+
+  case object Str extends SemanticTokenType
 }

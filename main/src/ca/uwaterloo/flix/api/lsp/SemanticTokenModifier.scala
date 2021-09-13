@@ -16,15 +16,23 @@
 package ca.uwaterloo.flix.api.lsp
 
 /**
- * The semantic token modifiers that are currently supported.
+ * Represents a semantic token modifier in LSP.
  *
  * Note: The intermediate TypeScript server is responsible for communicating the legend
  * to the client. The TS server must list the token modifiers in the same order as is used
  * here in the Scala code. The reason for this is that the response is encoded as a
  * sequence of integers, and a modifier is represented by its index in the legend.
  */
-object SemanticTokenModifier extends Enumeration {
-  type SemanticTokenModifier = Value
-
-  val Declaration, Definition = Value
+sealed trait SemanticTokenModifier {
+  def toInt: Int = this match {
+    case SemanticTokenModifier.Declaration => 0
+    case SemanticTokenModifier.Definition => 1
+  }
 }
+
+object SemanticTokenModifier {
+  case object Declaration extends SemanticTokenModifier
+
+  case object Definition extends SemanticTokenModifier
+}
+

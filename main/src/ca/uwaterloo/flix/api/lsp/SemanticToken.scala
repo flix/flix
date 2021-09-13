@@ -15,8 +15,6 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.api.lsp.SemanticTokenModifier.SemanticTokenModifier
-import ca.uwaterloo.flix.api.lsp.SemanticTokenType.SemanticTokenType
 import ca.uwaterloo.flix.language.ast.SourceLocation
 
 /**
