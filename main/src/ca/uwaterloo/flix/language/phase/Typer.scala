@@ -1429,8 +1429,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
           resultEff = Type.mkAnd(eff1, eff2, eff3, loc)
         } yield (constrs1 ++ constrs2 ++ constrs3, resultTyp, resultEff)
 
-      case KindedAst.Expression.IfThenElseStar(tpe, exp1, exp2, loc) =>
-        // TODO: Enforce function type.
+      case KindedAst.Expression.IfThenElseStar(cond, exp1, exp2, loc) =>
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
