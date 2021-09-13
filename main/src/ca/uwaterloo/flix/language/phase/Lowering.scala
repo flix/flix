@@ -599,6 +599,13 @@ object Lowering extends Phase[Root, Root] {
       val t = visitType(tpe)
       Expression.MatchEff(e1, e2, e3, t, eff, loc)
 
+    case Expression.IfThenElseStar(cond, exp1, exp2, tpe, eff, loc) =>
+      val c = visitType(cond)
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val t = visitType(tpe)
+      Expression.IfThenElseStar(c, e1, e2, t, eff, loc)
+
   }
 
   /**
