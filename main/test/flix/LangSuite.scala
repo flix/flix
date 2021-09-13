@@ -287,7 +287,7 @@ class LangSuite extends Suites(
   //
   // Try-Catch.
   //
-  new FlixTest("test.Exp.TryCatch", "main/test/flix/Test.Exp.TryCatch.flix"),
+  new FlixTest("test.Exp.TryCatch", "main/test/flix/Test.Exp.Jvm.TryCatch.flix"),
 
   //
   // Tuple.
