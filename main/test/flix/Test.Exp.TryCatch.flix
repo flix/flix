@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-namespace Test/Exp/Jvm/TestTryCatch {
+namespace TestTryCatch {
 
     def exception(): Unit & Impure =
         import java.lang.Math:floorDiv(Int, Int);
@@ -67,18 +67,6 @@ namespace Test/Exp/Jvm/TestTryCatch {
             false
         } catch {
             case e: ##java.lang.ArithmeticException => if (e.toString().isEmpty()) false else true
-            case _: ##java.lang.Exception => false
-        }
-
-    @test
-    def testBinding02(): Bool & Impure =
-        import java.lang.String.isEmpty();
-        import java.lang.Throwable.getMessage();
-        try {
-            exception();
-            false
-        } catch {
-            case e: ##java.lang.ArithmeticException => if (e.getMessage().isEmpty()) false else true
             case _: ##java.lang.Exception => false
         }
 
