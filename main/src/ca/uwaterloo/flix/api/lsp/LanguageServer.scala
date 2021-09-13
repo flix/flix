@@ -179,6 +179,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       case JString("lsp/rename") => Request.parseRename(json)
       case JString("lsp/documentSymbols") => Request.parseDocumentSymbols(json)
       case JString("lsp/uses") => Request.parseUses(json)
+      case JString("lsp/semanticTokens") => Request.parseSemanticTokens(json)
 
       case s => Err(s"Unsupported request: '$s'.")
     }
@@ -248,6 +249,9 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
     case Request.Uses(id, uri, pos) =>
       ("id" -> id) ~ FindReferencesProvider.findRefs(uri, pos)(index, root)
+
+    case Request.SemanticTokens(id, uri) =>
+      ("id" -> id) ~ SemanticTokensProvider.provideSemanticTokens(uri)(index, root)
 
   }
 

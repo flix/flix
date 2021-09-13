@@ -110,6 +110,11 @@ object Request {
   case class DocumentSymbols(requestId: String, uri: String) extends Request
 
   /**
+   * A request to get semantic tokens for a file.
+   */
+  case class SemanticTokens(requestId: String, uri: String) extends Request
+
+  /**
     * Tries to parse the given `json` value as a [[AddUri]] request.
     */
   def parseAddUri(json: json4s.JValue): Result[Request, String] = {
@@ -280,6 +285,16 @@ object Request {
       id <- parseId(v)
       uri <- parseUri(v)
     } yield Request.DocumentSymbols(id, uri)
+  }
+
+  /**
+   * Tries to parse the given `json` value as a [[SemanticTokens]] request.
+   */
+  def parseSemanticTokens(json: JValue): Result[Request, String] = {
+    for {
+      id <- parseId(json)
+      uri <- parseUri(json)
+    } yield Request.SemanticTokens(id, uri)
   }
 
   /**
