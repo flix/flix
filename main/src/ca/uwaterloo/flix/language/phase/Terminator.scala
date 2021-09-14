@@ -128,6 +128,7 @@ object Terminator extends Phase[Root, Root] {
       case Expression.FixpointProjectIn(exp, _, _, _, _) => visit(exp)
       case Expression.FixpointProjectOut(_, exp, _, _, _) => visit(exp)
       case Expression.MatchEff(exp1, exp2, exp3, _, _, _) => visit(exp1) || (visit(exp2) || visit(exp3))
+      case Expression.IfThenElseStar(_, exp1, exp2, _, _, _) => visit(exp1) || visit(exp2)
     }
 
     visit(exp0)

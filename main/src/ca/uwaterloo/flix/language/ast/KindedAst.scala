@@ -191,6 +191,8 @@ object KindedAst {
 
     case class MatchEff(exp1: KindedAst.Expression, exp2: KindedAst.Expression, exp3: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
+    case class IfThenElseStar(cond: Type, exp1: KindedAst.Expression, exp2: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
+
   }
 
   sealed trait Pattern {
