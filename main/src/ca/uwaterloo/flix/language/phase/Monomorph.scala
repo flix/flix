@@ -443,45 +443,18 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) =>
           throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
 
-        case Expression.MatchEff(exp1, exp2, exp3, _, _, _) =>
-          // TODO: Magic!
-
-          // The match expression must be a function type.
-          val arrowType = subst0(exp1.tpe)
-
-          // Its type arguments are the effect followed by the argument and return types.
-          val targs = arrowType.typeArguments
-
-          // The effect is the first type argument.
-          val eff = targs.head
-
-          // Determine if the function is pure.
-          val isPure = eff match {
-            case Type.Cst(TypeConstructor.True, _) => true
-            case Type.Cst(TypeConstructor.False, _) => false
-            case other => throw InternalCompilerException(s"Unexpected non-Boolean type: '$other'.")
-          }
-
-          if (isPure)
-            visitExp(exp2, env0)
-          else
-            visitExp(exp3, env0)
-
-
-        case Expression.IfThenElseStar(cond, exp1, exp2, _, _, _) =>
-          // TODO: Magic!
-
-          // Determine if the function is pure.
-          val isTrue = subst0(cond) match {
+        case Expression.Reify(t, _, _, loc) =>
+          // Magic!
+          val isTrue = subst0(t) match {
             case Type.Cst(TypeConstructor.True, _) => true
             case Type.Cst(TypeConstructor.False, _) => false
             case other => throw InternalCompilerException(s"Unexpected non-Boolean type: '$other'.")
           }
 
           if (isTrue)
-            visitExp(exp1, env0)
+            Expression.True(loc)
           else
-            visitExp(exp2, env0)
+            Expression.False(loc)
       }
 
       /**

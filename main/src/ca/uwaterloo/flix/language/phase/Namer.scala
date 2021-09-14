@@ -882,14 +882,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (e1, e2) => NamedAst.Expression.FixpointProjectOut(pred, e1, e2, loc)
       }
 
-    case WeededAst.Expression.MatchEff(exp1, exp2, exp3, loc) =>
-      mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0), visitExp(exp3, env0, uenv0, tenv0)) {
-        case (e1, e2, e3) => NamedAst.Expression.MatchEff(e1, e2, e3, loc)
-      }
-
-    case WeededAst.Expression.IfThenElseStar(cond, exp1, exp2, loc) =>
-      mapN(visitType(cond, uenv0, tenv0), visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0)) {
-        case (c, e1, e2) => NamedAst.Expression.IfThenElseStar(c, e1, e2, loc)
+    case WeededAst.Expression.Reify(t0, loc) =>
+      mapN(visitType(t0, uenv0, tenv0)) {
+        case t => NamedAst.Expression.Reify(t, loc)
       }
 
   }
@@ -1282,8 +1277,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.FixpointFilter(qname, exp, loc) => freeVars(exp)
     case WeededAst.Expression.FixpointProjectIn(exp, pred, loc) => freeVars(exp)
     case WeededAst.Expression.FixpointProjectOut(pred, exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
-    case WeededAst.Expression.MatchEff(exp1, exp2, exp3, loc) => freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
-    case WeededAst.Expression.IfThenElseStar(cond, exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
+    case WeededAst.Expression.Reify(t, loc) => Nil
   }
 
   /**

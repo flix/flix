@@ -408,15 +408,8 @@ object Stratifier extends Phase[Root, Root] {
         case e => Expression.FixpointProjectOut(pred, e, tpe, eff, loc)
       }
 
-    case Expression.MatchEff(exp1, exp2, exp3, tpe, eff, loc) =>
-      mapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
-        case (e1, e2, e3) => Expression.MatchEff(e1, e2, e3, tpe, eff, loc)
-      }
-
-    case Expression.IfThenElseStar(cond, exp1, exp2, tpe, eff, loc) =>
-      mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => Expression.IfThenElseStar(cond, e1, e2, tpe, eff, loc)
-      }
+    case Expression.Reify(t, tpe, eff, loc) =>
+      Expression.Reify(t, tpe, eff, loc).toSuccess
 
   }
 
@@ -650,11 +643,8 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.FixpointProjectOut(_, exp, _, _, _) =>
       dependencyGraphOfExp(exp)
 
-    case Expression.MatchEff(exp1, exp2, exp3, _, _, _) =>
-      dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2) + dependencyGraphOfExp(exp3)
-
-    case Expression.IfThenElseStar(_, exp1, exp2, _, _, _) =>
-      dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2)
+    case Expression.Reify(_, _, _, _) =>
+      DependencyGraph.empty
 
   }
 

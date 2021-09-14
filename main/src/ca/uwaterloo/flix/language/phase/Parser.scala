@@ -621,7 +621,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetRegion | LetMatch | LetMatchStar | LetUse | LetImport | IfThenElse | IfThenElseStar | Choose | Match | MatchEff | LambdaMatch | TryCatch | Lambda | Tuple |
+      LetRegion | LetMatch | LetMatchStar | LetUse | LetImport | IfThenElse | Reify | Choose | Match | LambdaMatch | TryCatch | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | Spawn | Lazy | Force | Intrinsic | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointProject | FixpointSolveWithProject | FixpointQueryWithSelect |
@@ -661,8 +661,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ keyword("if") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ optWS ~ Expression ~ WS ~ keyword("else") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.IfThenElse
     }
 
-    def IfThenElseStar: Rule1[ParsedAst.Expression.IfThenElseStar] = rule {
-      SP ~ keyword("if*") ~ optWS ~ "(" ~ optWS ~ Type ~ optWS ~ ")" ~ optWS ~ Expression ~ WS ~ keyword("else") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.IfThenElseStar
+    def Reify: Rule1[ParsedAst.Expression.Reify] = rule {
+      SP ~ keyword("reify") ~ WS ~ Type ~ SP ~> ParsedAst.Expression.Reify
     }
 
     def LetMatch: Rule1[ParsedAst.Expression.LetMatch] = rule {
@@ -735,20 +735,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       rule {
         SP ~ keyword("match") ~ WS ~ Expression ~ optWS ~ "{" ~ optWS ~ oneOrMore(Rule).separatedBy(CaseSeparator) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Match
-      }
-    }
-
-    def MatchEff: Rule1[ParsedAst.Expression.MatchEff] = {
-      def CasePure: Rule1[ParsedAst.Expression] = rule {
-        keyword("case") ~ WS ~ keyword("Pure") ~ WS ~ atomic("=>") ~ optWS ~ Stm
-      }
-
-      def CaseImpure: Rule1[ParsedAst.Expression] = rule {
-        keyword("case") ~ WS ~ keyword("Impure") ~ WS ~ atomic("=>") ~ optWS ~ Stm
-      }
-
-      rule {
-        SP ~ keyword("matchEff") ~ WS ~ Expression ~ optWS ~ "{" ~ optWS ~ CasePure ~ CaseSeparator ~ CaseImpure ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.MatchEff
       }
     }
 

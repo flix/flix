@@ -164,10 +164,10 @@ namespace LazyList {
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
     pub def map(f: a -> b & ef, l: LazyList[a]): LazyList[b] & ef =
-        matchEff f {
-            case Pure   => mapL(f as a -> b & Pure,   l)
-            case Impure => mapE(f as a -> b & Impure, l)
-        } as & ef
+        if (reify ef)
+            mapL(f as a -> b & Pure,   l)
+        else
+            mapE(f as a -> b & Impure, l) as & ef
 
     ///
     /// Returns the result of applying `f` to every element in `l`.
@@ -208,7 +208,7 @@ namespace LazyList {
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
     pub def filter(f: a -> Bool & ef, l: LazyList[a]): LazyList[a] & ef =
-        if* (ef)
+        if (reify ef)
             filterL(f as a -> Bool & Pure,   l)
         else
             filterE(f as a -> Bool & Impure, l) as & ef
@@ -590,7 +590,7 @@ namespace LazyList {
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
     pub def flatMap(f: a -> LazyList[b] & ef, l: LazyList[a]): LazyList[b] & ef =
-        if* (ef)
+        if (reify ef)
             flatMapL(f as a -> LazyList[b] & Pure,   l)
         else
             flatMapE(f as a -> LazyList[b] & Impure, l) as & ef
@@ -674,7 +674,7 @@ namespace LazyList {
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
     pub def mapWithIndex(f: (a, Int32) -> b & ef, l: LazyList[a]): LazyList[b] & ef =
-        if* (ef)
+        if (reify ef)
             mapWithIndexL(f as (a, Int32) -> b & Pure,   l)
         else
             mapWithIndexE(f as (a, Int32) -> b & Impure, l) as & ef
@@ -754,7 +754,7 @@ namespace LazyList {
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
     pub def takeWhile(f: a -> Bool & ef, l: LazyList[a]): LazyList[a] & ef =
-        if* (ef)
+        if (reify ef)
             takeWhileL(f as a -> Bool & Pure,   l)
         else
             takeWhileE(f as a -> Bool & Impure, l) as & ef
