@@ -804,8 +804,8 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
         } yield RReference(RLattice(tpes0)).asInstanceOf[RType[T]]
       case MonoType.Native(clazz) =>
         RReference(RNative(clazz)).asInstanceOf[RType[T]].toMonad
-      case MonoType.Var(id) =>
-        RReference(RVar(id)).asInstanceOf[RType[T]].toMonad
+      case MonoType.Var(_) =>
+        throw InternalCompilerException("Var should be removed before eraser")
     }
     mainMonad.flatMap(tpe => tpe.toMonad.setTypes(Set(tpe)))
   }

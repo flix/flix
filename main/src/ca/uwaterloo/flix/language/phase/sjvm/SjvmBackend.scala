@@ -48,11 +48,22 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
 
     implicit val r: Root = root
 
-    val functionTypes = getFunctionTypes(root.types)
+    val lazyTypes = getLazyTypes(root.types)
+
+    val refTypes = getRefTypes(root.types)
+
+    val functionTypes = getFunctionTypes(root.types) union lazyNeededFunctions(lazyTypes)
+    functionTypes.foreach(println)
+
+    val closureSyms: Set[Symbol.DefnSym] = root.closures.map(ci => ci.sym)
+
+    val nonClosureFunctions: Set[Symbol.DefnSym] = root.functions.keySet.diff(closureSyms)
+
+    val defs = getDefs(root.functions, nonClosureFunctions)
 
     val tupleTypes = getTupleTypes(root.types)
 
-    val (allClasses: Map[JvmName, JvmClass], closureSyms: Set[Symbol.DefnSym]) = flix.subphase("CodeGen") {
+    val allClasses: Map[JvmName, JvmClass] = flix.subphase("CodeGen") {
 
       if (flix.options.debug) {
         println(PrettyPrinter.Erased.fmtRoot(root).fmt(TerminalContext.AnsiTerminal))
@@ -71,10 +82,6 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
         println(vt.fmt(TerminalContext.AnsiTerminal))
       }
 
-      val closureSyms: Set[Symbol.DefnSym] = root.closures.map(ci => ci.sym)
-
-      val nonClosureFunctions: Set[Symbol.DefnSym] = root.functions.keySet.diff(closureSyms)
-
       // Generate Classes
       // TODO(JLS): write documentation
       // TODO(JLS): write pseudocode
@@ -87,11 +94,11 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
 
       val namespaceClasses = GenNamespaces.gen(root.namespaces)
 
-      val continuationInterfaces = GenContinuationInterfaces.gen()
+      val continuationInterfaces = GenContinuationInterfaces.gen(functionTypes)
 
       val functionInterfaces = GenFunctionInterfaces.gen(functionTypes)
 
-      val defClasses = GenDefClasses.gen(root.functions, nonClosureFunctions)
+      val defClasses = GenDefClasses.gen(defs)
 
       val closureClasses = GenClosureClasses.gen(root.closures)
 
@@ -107,9 +114,9 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
 
       // todo recordExtendClasses
 
-      val refClasses = GenRefClasses.gen()
+      val refClasses = GenRefClasses.gen(refTypes)
 
-      val lazyClasses = GenLazyClasses.gen()
+      val lazyClasses = GenLazyClasses.gen(lazyTypes)
 
       val unitClass = GenUnitClass.gen()
 
@@ -121,7 +128,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
 
       // todo matchError
 
-      val classMap = List(
+      List(
         mainClass,
         namespaceClasses,
         continuationInterfaces,
@@ -136,8 +143,6 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
         rslClass,
         holeErrorClass
       ).reduce(_ ++ _)
-
-      (classMap, closureSyms)
     }
 
     //
@@ -299,31 +304,80 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
     recursiveCalls.foldLeft(Set[String](exp.getClass.getSimpleName))((set, exp) => set union collectExpressions(exp))
   }
 
-
+  // all function types of the program
   private def getFunctionTypes(types: Set[RType[_ <: PType]]): Set[RType[PReference[PFunction[_ <: PType]]]] = {
-    def innerMatch[T <: PRefType](x: RRefType[T], acc: Set[RType[PReference[PFunction[_ <: PType]]]]): Set[RType[PReference[PFunction[_ <: PType]]]] = x match {
-      case res@RArrow(_, _) => acc + res.rType.asInstanceOf[RType[PReference[PFunction[_ <: PType]]]]
-      case _ => acc
+    def innerMatch[T <: PRefType](tpe: RRefType[T], setAcc: Set[RType[PReference[PFunction[_ <: PType]]]]): Set[RType[PReference[PFunction[_ <: PType]]]] = tpe match {
+      case res@RArrow(_, _) => setAcc + res.rType.asInstanceOf[RType[PReference[PFunction[_ <: PType]]]]
+      case _ => setAcc
     }
 
-    types.foldLeft(Set[RType[PReference[PFunction[_ <: PType]]]]()) { (set, rType) =>
+    val init = Set.empty[RType[PReference[PFunction[_ <: PType]]]]
+    types.foldLeft(init) { (setAcc, rType) =>
       rType match {
-        case RReference(referenceType) => innerMatch(referenceType, set)
-        case _ => set
+        case RReference(referenceType) => innerMatch(referenceType, setAcc)
+        case _ => setAcc
       }
     }
   }
 
-  private def getTupleTypes(types: Set[RType[_ <: PType]]): Set[RType[PReference[PTuple]]] = {
-    def innerMatch[T <: PRefType](x: RRefType[T], acc: Set[RType[PReference[PTuple]]]): Set[RType[PReference[PTuple]]] = x match {
-      case res@RTuple(_) => acc + res.rType.asInstanceOf[RType[PReference[PTuple]]]
-      case _ => acc
+  // definitions that are not laws and not closures
+  private def getDefs(value: Map[Symbol.DefnSym, ErasedAst.Def[_ <: PType]], nonClosureFunctions: Set[Symbol.DefnSym]): Map[Symbol.DefnSym, ErasedAst.Def[_ <: PType]] = {
+    value.filter {
+      case (defnSym, defn) => SjvmOps.nonLaw(defn) && nonClosureFunctions.contains(defnSym)
+    }
+  }
+
+  // erased element types in lazy values
+  private def getLazyTypes(tpes: Set[RType[_ <: PType]]): Set[RType[_ <: PType]] = {
+    def innerMatch[T <: PRefType](tpe: RRefType[T], setAcc: Set[RType[_ <: PType]]): Set[RType[_ <: PType]] = tpe match {
+      case RLazy(elmType) => setAcc + elmType.erasedType
+      case _ => setAcc
     }
 
-    types.foldLeft(Set[RType[PReference[PTuple]]]()) { (set, rType) =>
-      rType match {
-        case RReference(referenceType) => innerMatch(referenceType, set)
-        case _ => set
+    val init = Set.empty[RType[_ <: PType]]
+    tpes.foldLeft(init) {
+      case (setAcc, tpe) => tpe match {
+        case RReference(referenceType) => innerMatch(referenceType, setAcc)
+        case _ => setAcc
+      }
+    }
+  }
+
+  // erased element types in ref values
+  private def getRefTypes(tpes: Set[RType[_ <: PType]]): Set[RType[_ <: PType]] = {
+    def innerMatch[T <: PRefType](tpe: RRefType[T], setAcc: Set[RType[_ <: PType]]): Set[RType[_ <: PType]] = tpe match {
+      case RRef(elmType) => setAcc + elmType.erasedType
+      case _ => setAcc
+    }
+
+    val init = Set.empty[RType[_ <: PType]]
+    tpes.foldLeft(init) {
+      case (setAcc, tpe) => tpe match {
+        case RReference(referenceType) => innerMatch(referenceType, setAcc)
+        case _ => setAcc
+      }
+    }
+  }
+
+  // function types needed in the lazy classes
+  private def lazyNeededFunctions(tpes: Set[RType[_ <: PType]]): Set[RType[PReference[PFunction[_ <: PType]]]] = {
+    tpes.map(tpe => RArrow(List(RObject.rType), tpe).rType.asInstanceOf[RType[PReference[PFunction[_ <: PType]]]])
+  }
+
+  // erased tuples in the program
+  private def getTupleTypes(types: Set[RType[_ <: PType]]): Set[RType[PReference[PTuple]]] = {
+    def erase(lst: List[RType[_ <: PType]]): List[RType[_ <: PType]] =
+      lst.map(tpe => tpe.erasedType)
+
+    def innerMatch[T <: PRefType](tpe: RRefType[T], setAcc: Set[RType[PReference[PTuple]]]): Set[RType[PReference[PTuple]]] = tpe match {
+      case RTuple(elms) => setAcc + RTuple(erase(elms)).rType.erasedType.asInstanceOf[RType[PReference[PTuple]]]
+      case _ => setAcc
+    }
+
+    types.foldLeft(Set[RType[PReference[PTuple]]]()) {
+      case (setAcc, tpe) => tpe match {
+        case RReference(referenceType) => innerMatch(referenceType, setAcc)
+        case _ => setAcc
       }
     }
   }

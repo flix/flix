@@ -65,7 +65,7 @@ object SjvmOps {
   }
 
   /**
-    * Returns `true` if the given definition `defn` is a law.
+    * @return `true` if the given definition `defn` is not a law.
     */
   def nonLaw(defn: Def[_ <: PType]): Boolean = !defn.ann.isLaw
 

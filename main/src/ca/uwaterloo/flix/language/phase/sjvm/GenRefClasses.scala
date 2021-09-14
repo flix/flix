@@ -35,9 +35,9 @@ object GenRefClasses {
   /**
     * Returns the bytecode for the ref classes built-in to the Flix language.
     */
-  def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+  def gen(refTypes: Set[RType[_ <: PType]])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     //Type that we need a cell class for
-    RType.baseTypes.foldLeft(Map[JvmName, JvmClass]()) {
+    refTypes.foldLeft(Map[JvmName, JvmClass]()) {
       case (macc, tpe) =>
         val refType = RReference(RRef(tpe))
         macc + (refType.jvmName -> JvmClass(refType.jvmName, genByteCode(refType, tpe)))

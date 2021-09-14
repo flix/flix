@@ -234,11 +234,6 @@ object RRefType {
     override lazy val jvmName: JvmName = mkName("Ref", tpe.erasedString)
   }
 
-  // TODO: Should be removed.
-  case class RVar(id: Int) extends RRefType[PAnyObject] {
-    override lazy val jvmName: JvmName = JvmName(Nil, "NOT_IMPLEMENTED(RVar)")
-  }
-
   case class RTuple(elms: List[RType[_ <: PType]]) extends RRefType[PTuple] {
     override lazy val jvmName: JvmName = mkName("Tuple", elms.map(_.erasedString))
   }

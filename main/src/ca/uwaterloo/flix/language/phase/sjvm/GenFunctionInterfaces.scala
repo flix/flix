@@ -37,16 +37,12 @@ object GenFunctionInterfaces {
   /**
     * Returns the set of function interfaces for the given set of types `ts`.
     */
-  def gen(tpe: Set[RType[PReference[PFunction[_ <: PType]]]])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
-    val map1 = tpe.foldLeft(Map.empty[JvmName, JvmClass]) {
-      case (macc, functionType) => macc + innerFold(functionType.asInstanceOf[RType[PReference[PFunction[PType]]]])
-    }
-    val lazyFns = RType.baseTypes.foldLeft(Map.empty[JvmName, JvmClass]) {
-      case (macc, rType) =>
-        val functionType = RReference(RArrow(RReference(RObject) :: Nil, rType))
+  def gen(functionTypes: Set[RType[PReference[PFunction[_ <: PType]]]])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+    val init = Map.empty[JvmName, JvmClass]
+    functionTypes.foldLeft(init) {
+      case (macc, functionType) =>
         macc + innerFold(functionType.asInstanceOf[RType[PReference[PFunction[PType]]]])
     }
-    map1 ++ lazyFns
   }
 
   private def innerFold[T <: PType](functionType: RType[PReference[PFunction[T]]])(implicit root: Root, flix: Flix): (JvmName, JvmClass) = {
@@ -61,7 +57,7 @@ object GenFunctionInterfaces {
   private def genByteCode[T <: PType](functionType: RArrow[T])(implicit root: Root, flix: Flix): Array[Byte] = {
 
     // Class visitor
-    // TODO(JLS): Add the super interface
+    // TODO(JLS): Add the super interface maybe
     //`JvmType` of the continuation interface for `tpe`
     val continuationSuperInterface = functionType.result.contName
     // `JvmType` of the java.util.functions.Function

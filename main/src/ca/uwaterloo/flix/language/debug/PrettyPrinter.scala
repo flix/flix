@@ -1210,7 +1210,6 @@ object PrettyPrinter {
         case RChannel(tpe) => visitComp("Channel", tpe)
         case RLazy(tpe) => visitComp("Lazy", tpe)
         case RRef(tpe) => visitComp("Ref", tpe)
-        case RVar(id) => vt.text("TYPEVAR")
         case RTuple(elms) => vt.text("Tuple["); vt.text("..."); vt.text("]")
         case REnum(sym, args) => vt.text(sym.toString+"["); vt.text("..."); vt.text("]")
         case RBigInt => vt.text("BigInt")

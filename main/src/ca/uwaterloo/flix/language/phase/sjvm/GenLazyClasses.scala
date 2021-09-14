@@ -39,9 +39,9 @@ object GenLazyClasses {
 
   def expressionFieldType[T <: PType](valueType: RType[T]): RType[PReference[PFunction[T]]] = RReference(RArrow(RReference(RObject) :: Nil, valueType))
 
-  def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+  def gen(lazyTypes: Set[RType[_ <: PType]])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     //Type that we need a cell class for
-    RType.baseTypes.foldLeft(Map[JvmName, JvmClass]()) {
+    lazyTypes.foldLeft(Map[JvmName, JvmClass]()) {
       case (macc, tpe) =>
         val lazyType = RReference(RLazy(tpe))
         val bytecode = genByteCode(lazyType, tpe)

@@ -32,15 +32,14 @@ import org.objectweb.asm.Opcodes
 
 object GenDefClasses {
 
-  def gen(defs: Map[Symbol.DefnSym, ErasedAst.Def[_ <: PType]], nonClosureFunctions: Set[Symbol.DefnSym])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+  def gen(defs: Map[Symbol.DefnSym, ErasedAst.Def[_ <: PType]])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     // TODO(JLS): check parops for all gens
     ParOps.parAgg(defs, Map[JvmName, JvmClass]())({
       case (macc, (sym, defn)) =>
-        if (SjvmOps.nonLaw(defn) && nonClosureFunctions.contains(sym)) {
-          val functionType = squeezeFunction(squeezeReference(defn.tpe))
-          // TODO(JLS): type var in genByteCode gets set to PType... without casts does not work
-          macc + (sym.defName -> JvmClass(sym.defName, genByteCode(defn.asInstanceOf[ErasedAst.Def[PType]], sym.defName, functionType.asInstanceOf[RArrow[PType]])))
-        } else macc
+        val functionType = squeezeFunction(squeezeReference(defn.tpe)).asInstanceOf[RArrow[PType]]
+        // TODO(JLS): type var in genByteCode gets set to PType... without casts does not work
+        val defnCasted = defn.asInstanceOf[ErasedAst.Def[PType]]
+        macc + (sym.defName -> JvmClass(sym.defName, genByteCode(defnCasted, sym.defName, functionType)))
     }, _ ++ _)
   }
 

@@ -19,7 +19,11 @@ package ca.uwaterloo.flix.language.phase.sjvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst.Root
-import ca.uwaterloo.flix.language.ast.{PType, RType}
+import ca.uwaterloo.flix.language.ast.PRefType._
+import ca.uwaterloo.flix.language.ast.PType._
+import ca.uwaterloo.flix.language.ast.RRefType._
+import ca.uwaterloo.flix.language.ast.RType._
+import ca.uwaterloo.flix.language.ast.{PType, RRefType, RType}
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler.{**, F, StackEnd, StackNil}
 import ca.uwaterloo.flix.language.phase.sjvm.ClassMaker.Mod
 import ca.uwaterloo.flix.language.phase.sjvm.Instructions._
@@ -36,11 +40,26 @@ object GenContinuationInterfaces {
   /**
     * Returns the set of continuation interfaces for
     */
-  def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
-    RType.baseTypes.foldLeft(Map[JvmName, JvmClass]()) {
+  def gen(functionTypes: Set[RType[PReference[PFunction[_ <: PType]]]])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+    getReturnTypes(functionTypes).foldLeft(Map[JvmName, JvmClass]()) {
       case (macc, tpe) =>
         val contName = tpe.contName
         macc + (contName -> JvmClass(contName, genByteCode(tpe)))
+    }
+  }
+
+  private def getReturnTypes(types: Set[RType[PReference[PFunction[_ <: PType]]]]): Set[RType[_ <: PType]] = {
+    def innerMatch[T <: PType](tpe: RRefType[PFunction[T]], setAcc: Set[RType[_ <: PType]]): Set[RType[_ <: PType]] = tpe match {
+      case RArrow(_, result) => setAcc + result.erasedType
+      case _ => setAcc
+    }
+
+    val init = Set.empty[RType[_ <: PType]]
+    types.foldLeft(init) { (setAcc, rType) =>
+      rType match {
+        case RReference(referenceType) => innerMatch(referenceType.asInstanceOf[RRefType[PFunction[PType]]], setAcc)
+        case _ => setAcc
+      }
     }
   }
 
