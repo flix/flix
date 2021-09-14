@@ -419,7 +419,7 @@ object Instructions {
 
   def GETSTATIC
   [R <: Stack, T1 <: PType, T2 <: PRefType]
-  (classType: RType[PReference[T2]], fieldName: String, fieldType: RType[T1], undoErasure: Boolean, tag: Tag[T2] = null):
+  (classType: RType[PReference[T2]], fieldName: String, fieldType: RType[T1], undoErasure: Boolean):
   F[R] => F[R ** T1] =
     GETSTATIC(squeezeReference(classType).jvmName, fieldName, fieldType, undoErasure)
 
@@ -428,7 +428,7 @@ object Instructions {
     */
   def GETFIELD
   [R <: Stack, T1 <: PType, T2 <: PRefType]
-  (className: JvmName, fieldName: String, fieldType: RType[T1], undoErasure: Boolean, tag: Tag[T2] = null):
+  (className: JvmName, fieldName: String, fieldType: RType[T1], undoErasure: Boolean):
   F[R ** PReference[T2]] => F[R ** T1] = f => {
     val descriptor = if (undoErasure) fieldType.erasedDescriptor else fieldType.descriptor
     f.visitFieldInsn(Opcodes.GETFIELD, className.internalName, fieldName, descriptor)
@@ -443,8 +443,20 @@ object Instructions {
   [R <: Stack, T1 <: PType, T2 <: PRefType]
   (classType: RType[PReference[T2]], fieldName: String, fieldType: RType[T1], undoErasure: Boolean):
   F[R ** PReference[T2]] => F[R ** T1] =
-    GETFIELD(squeezeReference(classType).jvmName, fieldName, fieldType, undoErasure, tagOf[T2])
+    GETFIELD(squeezeReference(classType).jvmName, fieldName, fieldType, undoErasure)
 
+  /**
+    * @param undoErasure has no effect when `fieldType` is primitive or the `RReference(Object)` type
+    */
+  def GETFIELD
+  [R <: Stack, T1 <: PType, T2 <: PRefType]
+  (className: JvmName, fieldName: String, fieldType: JvmName, undoErasure: Boolean, tag: Tag[T1] = null):
+  F[R ** PReference[T2]] => F[R ** T1] = f => {
+    val descriptor = if (undoErasure) fieldType.erasedDescriptor else fieldType.descriptor
+    f.visitFieldInsn(Opcodes.GETFIELD, className.internalName, fieldName, descriptor)
+    if (undoErasure) RType.undoErasure(fieldType, f.visitor)
+    castF(f)
+  }
 
   // TODO(JLS): make ref/lazy specific versions
   // TODO(JLS): erasedType arg is awkward
@@ -1613,8 +1625,10 @@ object Instructions {
 
   def SUBTYPE
   [R <: Stack, T <: PRefType]:
-  F[R ** PReference[T]] => F[R ** PReference[PAnyObject]] =
-    f => f.asInstanceOf[F[R ** PReference[PAnyObject]]]
+  F[R ** PReference[T]] => F[R ** PReference[PAnyObject]] = f => {
+    f.visitTypeInsn(Opcodes.CHECKCAST, RObject.internalName)
+    f.asInstanceOf[F[R ** PReference[PAnyObject]]]
+  }
 
   def ChannelSUBTYPE
   [R <: Stack, T <: PRefType]:
@@ -2126,6 +2140,13 @@ object Instructions {
   [R <: Stack, T1 <: PRefType, T2 <: PRefType]:
   F[R ** PReference[T2] ** PReference[T1]] => F[R ** PInt32] = f => {
     f.visitMethodInsn(Opcodes.INVOKESTATIC, JvmName.Java.Objects.internalName, "equals", JvmName.getMethodDescriptor(List(RObject, RObject), RBool))
+    castF(f)
+  }
+
+  def objectsHash
+  [R <: Stack, T <: PRefType]:
+  F[R ** PReference[PArray[PReference[T]]]] => F[R ** PInt32] = f => {
+    f.visitMethodInsn(Opcodes.INVOKESTATIC, JvmName.Java.Objects.internalName, "hash", JvmName.getMethodDescriptor(List(RArray(RReference(RObject))), RInt32))
     castF(f)
   }
 

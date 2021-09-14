@@ -25,11 +25,11 @@ object GenHoleErrorClass {
     Map() + (className -> JvmClass(className, genByteCode(className, superClass)))
   }
 
-  def genByteCode(className: JvmName, superClass: JvmName)(implicit flix: Flix): Array[Byte] = {
+  private def genByteCode(className: JvmName, superClass: JvmName)(implicit flix: Flix): Array[Byte] = {
     val classMaker = ClassMaker.mkClass(className, superClass)
     classMaker.mkConstructor(genConstructor(className, superClass), descriptor = JvmName.getMethodDescriptor(List(RStr, LocationFieldType), None))
-    classMaker.mkMethod(genEqualsMethod(className), JvmName.equalsMethod, JvmName.getMethodDescriptor(RObject, RBool), Mod.isPublic)
-    classMaker.mkMethod(???, JvmName.hashcodeMethod, RInt32.nothingToThisDescriptor, Mod.isPublic)
+    classMaker.mkMethod(genEquals(className), JvmName.equalsMethod, JvmName.getMethodDescriptor(RObject, RBool), Mod.isPublic)
+    classMaker.mkMethod(genHashCode(className), JvmName.hashcodeMethod, RInt32.nothingToThisDescriptor, Mod.isPublic)
     classMaker.mkField(HoleFieldName, HoleFieldType, Mod.isPublic.isFinal)
     classMaker.mkField(LocationFieldName, LocationFieldType, Mod.isPublic.isFinal)
 
@@ -42,7 +42,7 @@ object GenHoleErrorClass {
     f.asInstanceOf[F[R ** PReference[PAnyObject]]]
   }
 
-  def genConstructor(name: JvmName, superClass: JvmName): F[StackNil] => F[StackEnd] = {
+  private def genConstructor(name: JvmName, superClass: JvmName): F[StackNil] => F[StackEnd] = {
     START[StackNil] ~
       preInitALOAD(0, tagOf[PAnyObject]) ~
       createSimpleObject(JvmName.Java.StringBuilder, tagOf[PAnyObject]) ~
@@ -71,8 +71,8 @@ object GenHoleErrorClass {
       PUTFIELD(name, HoleFieldName, HoleFieldType, erasedType = false) ~
       THISLOAD(name, tagOf[PAnyObject]) ~
       ALOAD(2, LocationFieldType, tagOf[PAnyObject]) ~
-      PUTFIELD(name, LocationFieldName, LocationFieldType, erasedType = false)
-    RETURN
+      PUTFIELD(name, LocationFieldName, LocationFieldType, erasedType = false) ~
+      RETURN
   }
 
   private def getClass
@@ -82,7 +82,7 @@ object GenHoleErrorClass {
     f.asInstanceOf[F[R ** PReference[PAnyObject]]]
   }
 
-  def genEqualsMethod(name: JvmName): F[StackNil] => F[StackEnd] = {
+  private def genEquals(name: JvmName): F[StackNil] => F[StackEnd] = {
     START[StackNil] ~
       THISLOAD(name, tagOf[PAnyObject]) ~
       ALOAD(1, RObject.rType) ~
@@ -114,6 +114,26 @@ object GenHoleErrorClass {
       } { // objects are the same reference
         pushBool(true) ~ IRETURN
       }
+  }
+
+  private def genHashCode(name: JvmName): F[StackNil] => F[StackEnd] = {
+    START[StackNil] ~
+      pushInt32(2) ~
+      ANEWARRAY(RObject.rType) ~
+      DUP ~
+      pushInt32(0) ~
+      THISLOAD(name, tagOf[PAnyObject]) ~
+      GETFIELD(name, HoleFieldName, HoleFieldType, undoErasure = false) ~
+      SUBTYPE ~
+      AASTORE ~
+      DUP ~
+      pushInt32(1) ~
+      THISLOAD(name, tagOf[PAnyObject]) ~
+      GETFIELD(name, HoleFieldName, LocationFieldType, undoErasure = false, tagOf[PReference[PAnyObject]]) ~
+      SUBTYPE ~
+      AASTORE ~
+      objectsHash ~
+      IRETURN
   }
 
 }
