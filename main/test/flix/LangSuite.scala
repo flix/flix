@@ -280,6 +280,11 @@ class LangSuite extends Suites(
   ), Options.TestWithLibAll),
 
   //
+  // Reify.
+  //
+  new FlixTest("Test.Exp.Reify", "main/test/flix/Test.Exp.Reify.flix"),
+
+  //
   // Tag.
   //
   new FlixTest("Test.Exp.Tag", "main/test/flix/Test.Exp.Tag.flix"),
