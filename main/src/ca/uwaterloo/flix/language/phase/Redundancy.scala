@@ -600,10 +600,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       val us3 = visitExp(exp3, env0)
       us1 ++ us2 ++ us3
 
-    case Expression.IfThenElseStar(_, exp1, exp2, _, _, _) =>
-      val us1 = visitExp(exp1, env0)
-      val us2 = visitExp(exp2, env0)
-      us1 ++ us2
+    case Expression.Reify(_, _, _, _) =>
+      Used.empty
   }
 
   /**

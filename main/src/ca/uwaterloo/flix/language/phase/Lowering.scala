@@ -599,12 +599,10 @@ object Lowering extends Phase[Root, Root] {
       val t = visitType(tpe)
       Expression.MatchEff(e1, e2, e3, t, eff, loc)
 
-    case Expression.IfThenElseStar(cond, exp1, exp2, tpe, eff, loc) =>
-      val c = visitType(cond)
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val t = visitType(tpe)
-      Expression.IfThenElseStar(c, e1, e2, t, eff, loc)
+    case Expression.Reify(t0, tpe0, eff, loc) =>
+      val t = visitType(t0)
+      val tpe = visitType(tpe0)
+      Expression.Reify(t, tpe, eff, loc)
 
   }
 
@@ -1498,10 +1496,8 @@ object Lowering extends Phase[Root, Root] {
       val e3 = substExp(exp3, subst)
       Expression.MatchEff(e1, e2, e3, tpe, eff, loc)
 
-    case Expression.IfThenElseStar(cond, exp1, exp2, tpe, eff, loc) =>
-      val e1 = substExp(exp1, subst)
-      val e2 = substExp(exp2, subst)
-      Expression.IfThenElseStar(cond, e1, e2, tpe, eff, loc)
+    case Expression.Reify(t, tpe, eff, loc) =>
+      Expression.Reify(t, tpe, eff, loc)
 
     case Expression.FixpointConstraintSet(cs, stf, tpe, loc) => throw InternalCompilerException(s"Unexpected expression near ${loc.format}.")
   }

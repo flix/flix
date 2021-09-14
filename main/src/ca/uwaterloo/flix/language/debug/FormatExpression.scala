@@ -81,7 +81,7 @@ object FormatExpression {
     case TypedAst.Expression.FixpointProjectIn(exp, pred, tpe, eff, loc) => s"FixpointProjectIn($exp, $pred)"
     case TypedAst.Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) => s"FixpointProjectOut($pred, $exp)"
     case TypedAst.Expression.MatchEff(exp1, exp2, exp3, tpe, eff, loc) => s"MatchEff($exp1, $exp2, $exp3)"
-    case TypedAst.Expression.IfThenElseStar(cond, exp1, exp2, tpe, eff, loc) => s"IfThenElseStar($cond, $exp1, $exp2)"
+    case TypedAst.Expression.Reify(t, tpe, eff, loc) => s"IfThenElseStar($t)"
   }
 
 }

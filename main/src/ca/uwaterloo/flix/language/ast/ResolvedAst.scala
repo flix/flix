@@ -194,7 +194,7 @@ object ResolvedAst {
 
     case class MatchEff(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, exp3: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class IfThenElseStar(cond: Type, exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Reify(t: Type, loc: SourceLocation) extends ResolvedAst.Expression
 
   }
 

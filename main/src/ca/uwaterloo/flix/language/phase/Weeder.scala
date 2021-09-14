@@ -1481,12 +1481,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (e1, e2, e3) => WeededAst.Expression.MatchEff(e1, e2, e3, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.IfThenElseStar(sp1, cond, exp1, exp2, sp2) =>
-      mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) =>
-          val c = visitType(cond)
-          WeededAst.Expression.IfThenElseStar(c, e1, e2, mkSL(sp1, sp2))
-      }
+    case ParsedAst.Expression.Reify(sp1, t0, sp2) =>
+      val t = visitType(t0)
+      WeededAst.Expression.Reify(t, mkSL(sp1, sp2)).toSuccess
 
   }
 
@@ -2450,7 +2447,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.FixpointSolveWithProject(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointQueryWithSelect(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.MatchEff(sp1, _, _, _, _) => sp1
-    case ParsedAst.Expression.IfThenElseStar(sp1, _, _, _, _) => sp1
+    case ParsedAst.Expression.Reify(sp1, _, _) => sp1
   }
 
   /**

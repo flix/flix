@@ -1024,7 +1024,7 @@ object ParsedAst {
     // TODO: DOC
     case class MatchEff(sp1: SourcePosition, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, exp3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
-    case class IfThenElseStar(sp1: SourcePosition, cond: ParsedAst.Type, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class Reify(sp1: SourcePosition, t: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Expression
 
   }
 

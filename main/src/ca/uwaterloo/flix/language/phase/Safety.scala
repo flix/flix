@@ -226,7 +226,7 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.MatchEff(exp1, exp2, exp3, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2) ::: visitExp(exp3)
 
-    case Expression.IfThenElseStar(cond, exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
+    case Expression.Reify(t, tpe, eff, loc) => Nil
 
   }
 

@@ -922,12 +922,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e3 <- visit(exp3, tenv0)
           } yield ResolvedAst.Expression.MatchEff(e1, e2, e3, loc)
 
-        case NamedAst.Expression.IfThenElseStar(cond, exp1, exp2, loc) =>
+        case NamedAst.Expression.Reify(t0, loc) =>
           for {
-            c <- lookupType(cond, ns0, root)
-            e1 <- visit(exp1, tenv0)
-            e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.IfThenElseStar(c, e1, e2, loc)
+            t <- lookupType(t0, ns0, root)
+          } yield ResolvedAst.Expression.Reify(t, loc)
 
       }
 
