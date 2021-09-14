@@ -115,7 +115,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
 
       val flixErrorClass = GenFlixErrorClass.gen()
 
-      // todo rslClass
+      val rslClass = GenReifiedSourceLocationClass.gen()
 
       val holeErrorClass = GenHoleErrorClass.gen()
 
@@ -133,6 +133,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
         lazyClasses,
         unitClass,
         flixErrorClass,
+        rslClass,
         holeErrorClass
       ).reduce(_ ++ _)
 
