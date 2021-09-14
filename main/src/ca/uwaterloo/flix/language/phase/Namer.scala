@@ -749,9 +749,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case WeededAst.CatchRule(ident, className, body) =>
           val sym = Symbol.freshVarSym(ident)
           val classVal = lookupClass(className, loc)
-          // TODO: Currently the bound name is not available due to bug in code gen.
-          // val bodyVal = namer(body, env0 + (ident.name -> sym), tenv0)
-          val bodyVal = visitExp(body, env0, uenv0, tenv0)
+          val bodyVal = visitExp(body, env0 + (ident.name -> sym), uenv0, tenv0)
           mapN(classVal, bodyVal) {
             case (c, b) => NamedAst.CatchRule(sym, c, b)
           }

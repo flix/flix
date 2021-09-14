@@ -834,12 +834,11 @@ object GenExpression {
 
         // Store the exception in a local variable.
         val istore = AsmOps.getStoreInstruction(JvmType.Object)
-        // TODO: We must store the exception in a local variable, but currently that does not work.
-        //visitor.visitVarInsn(istore, sym.getIndex + 3)
-        visitor.visitInsn(POP)
+        visitor.visitVarInsn(istore, sym.getStackOffset + 3)
 
         // Emit code for the handler body expression.
         compileExpression(body, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitJumpInsn(GOTO, afterTryAndCatch)
       }
 
       // Add the label after both the try and catch rules.
