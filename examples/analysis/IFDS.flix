@@ -36,7 +36,7 @@ def main(_: Array[String]): Int32 & Impure =
 
         // call-to-start
         PathEdge(d3,start,d3) :-
-            PathEdge(d1,call,d2),
+            PathEdge(_d1,call,d2),
             CallGraph(call,target),
             EshCallStart(call,d2,target,d3),
             StartNode(target,start).
@@ -44,7 +44,7 @@ def main(_: Array[String]): Int32 & Impure =
         // compute summary
         SummaryEdge(call, d4, d5s) :-
             CallGraph(call,target),
-            StartNode(target,start),
+            StartNode(target,_start),
             EndNode(target,end),
             EshCallStart(call,d4,target,d1),
             PathEdge(d1,end,d2),

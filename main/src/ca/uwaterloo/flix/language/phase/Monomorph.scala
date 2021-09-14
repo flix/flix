@@ -466,6 +466,22 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
             visitExp(exp2, env0)
           else
             visitExp(exp3, env0)
+
+
+        case Expression.IfThenElseStar(cond, exp1, exp2, _, _, _) =>
+          // TODO: Magic!
+
+          // Determine if the function is pure.
+          val isTrue = subst0(cond) match {
+            case Type.Cst(TypeConstructor.True, _) => true
+            case Type.Cst(TypeConstructor.False, _) => false
+            case other => throw InternalCompilerException(s"Unexpected non-Boolean type: '$other'.")
+          }
+
+          if (isTrue)
+            visitExp(exp1, env0)
+          else
+            visitExp(exp2, env0)
       }
 
       /**

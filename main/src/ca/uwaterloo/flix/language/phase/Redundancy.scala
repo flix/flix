@@ -20,12 +20,12 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.{Ast, Name, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError._
 import ca.uwaterloo.flix.language.phase.unification.ClassEnvironment
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.collection.MultiMap
+import ca.uwaterloo.flix.util.collection.{ListMap, MultiMap}
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 /**
@@ -73,7 +73,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       checkUnusedDefs(usedAll)(root) ++
         checkUnusedEnumsAndTags(usedAll)(root) ++
         checkUnusedTypeParamsEnums()(root) ++
-          checkRedundantTypeConstraints()(root)
+        checkRedundantTypeConstraints()(root)
 
     // Return the root if successful, otherwise returns all redundancy errors.
     usedRes.toValidation(root)
@@ -93,7 +93,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     // Check for unused parameters and remove all variable symbols.
     val unusedFormalParams = sig.impl.toList.flatMap(_ => findUnusedFormalParameters(sig.spec, usedExp))
-    val unusedTypeParams = findUnusedTypeParamters(sig.spec)
+    val unusedTypeParams = findUnusedTypeParameters(sig.spec)
 
     val usedAll = (usedExp ++
       unusedFormalParams ++
@@ -116,7 +116,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     val usedExp = visitExp(defn.impl.exp, Env.empty ++ defn.spec.fparams.map(_.sym))
 
     val unusedFormalParams = findUnusedFormalParameters(defn.spec, usedExp)
-    val unusedTypeParams = findUnusedTypeParamters(defn.spec)
+    val unusedTypeParams = findUnusedTypeParameters(defn.spec)
 
     // Check for unused parameters and remove all variable symbols.
     val usedAll = (usedExp ++
@@ -143,7 +143,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Finds unused type parameters.
     */
-  private def findUnusedTypeParamters(spec: Spec): List[UnusedTypeParam] = {
+  private def findUnusedTypeParameters(spec: Spec): List[UnusedTypeParam] = {
     spec.tparams.collect {
       case tparam if deadTypeVar(tparam.tpe, spec.declaredScheme.base.typeVars) => UnusedTypeParam(tparam.name)
     }
@@ -268,7 +268,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case Expression.Wild(_, _) => Used.empty
 
     case Expression.Var(sym, _, loc) =>
-      if (!sym.isWild())
+      if (!sym.isWild)
         Used.of(sym)
       else
         Used.empty + HiddenVarSym(sym, loc)
@@ -600,6 +600,10 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       val us3 = visitExp(exp3, env0)
       us1 ++ us2 ++ us3
 
+    case Expression.IfThenElseStar(_, exp1, exp2, _, _, _) =>
+      val us1 = visitExp(exp1, env0)
+      val us2 = visitExp(exp2, env0)
+      us1 ++ us2
   }
 
   /**
@@ -646,11 +650,29 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns the symbols used in the given constraint `c0` under the given environment `env0`.
     */
   private def visitConstraint(c0: Constraint, env0: Env): Used = {
-    val zero = visitHeadPred(c0.head, env0)
-    val used = c0.body.foldLeft(zero) {
+    val head = visitHeadPred(c0.head, env0)
+    val body = c0.body.foldLeft(Used.empty) {
       case (acc, b) => acc ++ visitBodyPred(b, env0)
     }
-    used -- c0.cparams.map(_.sym)
+    val total = head ++ body
+
+    // Check that no variable is used only once except if they are wild (_ prefix).
+    // Check additionally that there is only one mention of a wild variable.
+    // This error is already checked in a program like `A(_x) :- B(_x).` but
+    // not for `A(12) :- B(_x), C(_x).`.
+    val errors = c0.cparams.flatMap(constraintParam => {
+      val sym = constraintParam.sym
+      val occurrences = total.occurrencesOf.apply(sym)
+      if (occurrences.size == 1 && !sym.isWild) {
+        // Check that no variable is only used once
+        List(RedundancyError.IllegalSingleVariable(sym, occurrences.iterator.next()))
+      } else if (body.occurrencesOf.apply(sym).size > 1 && sym.isWild) {
+        // Check that wild variables are not used multiple times in the body
+        occurrences.map(loc => RedundancyError.HiddenVarSym(sym, loc))
+      } else Nil
+    })
+
+    (total -- c0.cparams.map(_.sym)) ++ errors
   }
 
   /**
@@ -680,9 +702,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   private def freeVars(p0: Pattern): Set[Symbol.VarSym] = p0 match {
     case Pattern.Wild(_, _) => Set.empty
     case Pattern.Var(sym, _, _) => Set(sym)
-    case Pattern.Unit(loc) => Set.empty
-    case Pattern.True(loc) => Set.empty
-    case Pattern.False(loc) => Set.empty
+    case Pattern.Unit(_) => Set.empty
+    case Pattern.True(_) => Set.empty
+    case Pattern.False(_) => Set.empty
     case Pattern.Char(_, _) => Set.empty
     case Pattern.Float32(_, _) => Set.empty
     case Pattern.Float64(_, _) => Set.empty
@@ -722,7 +744,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       case None =>
         Used.empty
       case Some(shadowingVar) =>
-        if (sym.isWild())
+        if (sym.isWild)
           Used.empty
         else
           Used.empty + ShadowedVar(shadowingVar, sym)
@@ -803,12 +825,12 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Represents the empty set of used symbols.
       */
-    val empty: Used = Used(MultiMap.empty, Set.empty, Set.empty, Set.empty, Set.empty, Set.empty)
+    val empty: Used = Used(MultiMap.empty, Set.empty, Set.empty, Set.empty, Set.empty, ListMap.empty, Set.empty)
 
     /**
       * Returns an object where the given enum symbol `sym` and `tag` are marked as used.
       */
-    def of(sym: Symbol.EnumSym, tag: Name.Tag): Used = empty.copy(enumSyms = MultiMap.empty + (sym, tag))
+    def of(sym: Symbol.EnumSym, tag: Name.Tag): Used = empty.copy(enumSyms = MultiMap.singleton(sym, tag))
 
     /**
       * Returns an object where the given defn symbol `sym` is marked as used.
@@ -828,12 +850,16 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Returns an object where the given variable symbol `sym` is marked as used.
       */
-    def of(sym: Symbol.VarSym): Used = empty.copy(varSyms = Set(sym))
+    def of(sym: Symbol.VarSym): Used = empty.copy(varSyms = Set(sym), occurrencesOf = ListMap.singleton(sym, sym.loc))
 
     /**
       * Returns an object where the given variable symbols `syms` are marked as used.
       */
-    def of(syms: Set[Symbol.VarSym]): Used = empty.copy(varSyms = syms)
+    def of(syms: Set[Symbol.VarSym]): Used = empty.copy(
+      varSyms = syms,
+      occurrencesOf = syms.foldLeft(ListMap.empty[Symbol.VarSym, SourceLocation]) {
+        case (mm, sym) => mm + (sym, sym.loc)
+      })
 
   }
 
@@ -845,6 +871,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
                           sigSyms: Set[Symbol.SigSym],
                           holeSyms: Set[Symbol.HoleSym],
                           varSyms: Set[Symbol.VarSym],
+                          occurrencesOf: ListMap[Symbol.VarSym, SourceLocation],
                           errors: Set[RedundancyError]) {
 
     /**
@@ -864,6 +891,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
           this.sigSyms ++ that.sigSyms,
           this.holeSyms ++ that.holeSyms,
           this.varSyms ++ that.varSyms,
+          this.occurrencesOf ++ that.occurrencesOf,
           this.errors ++ that.errors
         )
       }

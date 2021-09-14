@@ -20,7 +20,7 @@
 /// A list is either the empty list represented by `Nil`, or
 /// an element `v` followed by a list `vs` represented by `v :: vs`.
 ///
-enum List[t] with Eq, Order {
+enum List[t] {
     case Nil,
     case Cons(t, List[t])
 }
@@ -36,8 +36,37 @@ instance Hash[List[a]] with Hash[a] {
         List.foldLeft((acc, x) -> acc * 31 + Hash.hash(x), 37199, xs)
 }
 
+instance Eq[List[a]] with Eq[a] {
+    pub def eq(xs: List[a], ys: List[a]): Bool = match (xs, ys) {
+        case (Nil, Nil) => true
+        case (x :: rs, y :: qs) => if (x != y) false else rs == qs
+        case _ => false
+    }
+}
+
+instance Order[List[a]] with Order[a] {
+
+    ///
+    /// Compares `xs` and `ys` lexicographically.
+    ///
+    pub def compare(xs: List[a], ys: List[a]): Comparison = match (xs, ys) {
+        case (_ :: _, Nil) => GreaterThan
+        case (Nil, Nil) => EqualTo
+        case (Nil, _ :: _) => LessThan
+        case (z :: zs, w :: ws) =>
+            let cmp = z <=> w;
+            if (cmp == EqualTo) zs <=> ws else cmp
+    }
+
+}
+
 instance Functor[List] {
     pub def map(f: a -> b & ef, xs: List[a]): List[b] & ef = List.map(f, xs)
+}
+
+instance Applicative[List] {
+    pub def point(x: a) : List[a] = List.point(x)
+    pub def ap(f: List[a -> b & e], x: List[a]) : List[b] & e = List.ap(f, x)
 }
 
 instance Foldable[List] {
@@ -296,6 +325,50 @@ namespace List {
         }
     }
 
+    ///
+    /// Return the singleton list with element `x`.
+    ///
+    pub def point(x: a) : List[a] = x :: Nil
+
+    ///
+    /// Apply every function from `f` to every argument from `x` and return a list with all results.
+    /// For `f = f1, f2, ...` and `x = x1, x2, ...` the results appear in the order
+    /// `f1(x1), f1(x2), ..., f2(x1), f2(x2), ...`.
+    ///
+    /// TODO: More efficient implementation creating the result list in one go.
+    pub def ap(f: List[a -> b & e], x: List[a]) : List[b] & e =
+        map(g -> map(g, x), f) |> flatten
+
+    // TODO: Efficient implementations of lift2,...,lift5, redirect liftA2,...,liftA5 to those.
+    ///
+    /// Lift a binary function to work on lists of its original arguments, returning a list
+    /// of applying all combinations of arguments.
+    /// For argument lists `xs = x1, x2, ...` and `ys = y1, y2, ...` the results appear in the order
+    /// `f(x1,y1), f(x1,y2), ..., f(x2,y1), f(x2,y2), ...`.
+    ///
+    pub def lift2(f: t1 -> t2 -> r & e, l1: List[t1], l2: List[t2]): List[r] & e = Applicative.liftA2(f, l1, l2)
+
+    ///
+    /// Lift a ternary function to work on lists of its original arguments, returning a list
+    /// of applying all combinations of arguments.
+    /// For argument lists `xs = x1, x2, ...`, `ys = y1, y2, ...` and `zs = z1, z2, ...` the results appear
+    /// in the following order:
+    ///
+    /// ```
+    /// f(x1,y1,z1), f(x1,y1,z2), ..., f(x1,y2,z1), f(x1,y2,z2), ...,
+    /// f(x2,y1,z1), f(x2,y1,z2), ..., f(x2,y2,z1), f(x2,y2,z2), ...`
+    /// ...
+    /// ```
+    ///
+    pub def lift3(f: t1 -> t2 -> t3 -> r & e, l1: List[t1], l2: List[t2], l3: List[t3]): List[r] & e = Applicative.liftA3(f, l1, l2, l3)
+
+    /// Lift a 4-ary function to work on lists of its original arguments, returning a list
+    /// of applying all combinations of arguments. The results appear in the order extending the pattern from `lift3`.
+    pub def lift4(f: t1 -> t2 -> t3 -> t4 -> r & e, l1: List[t1], l2: List[t2], l3: List[t3], l4: List[t4]): List[r] & e = Applicative.liftA4(f, l1, l2, l3, l4)
+
+    /// Lift a 5-ary function to work on lists of its original arguments, returning a list
+    /// of applying all combinations of arguments. The results appear in the order extending the pattern from `lift3`.
+    pub def lift5(f: t1 -> t2 -> t3 -> t4 -> t5 -> r & e, l1: List[t1], l2: List[t2], l3: List[t3], l4: List[t4], l5: List[t5]): List[r] & e = Applicative.liftA5(f, l1, l2, l3, l4, l5)
 
     ///
     /// Returns the result of applying `f` to every element in `xs` along with that element's index.

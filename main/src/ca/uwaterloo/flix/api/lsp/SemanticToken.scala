@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Benjamin Dahse
+ * Copyright 2021 Jacob Harris Cryer Kragh
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,23 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-namespace Fixpoint/Ast {
-    pub enum VarSym with Eq, Order {
-        case VarSym(String)
-    }
+package ca.uwaterloo.flix.api.lsp
 
-    instance ToString[VarSym] {
-        pub def toString(varSym: VarSym): String = match varSym {
-            case VarSym(name) => name
-        }
-    }
+import ca.uwaterloo.flix.language.ast.SourceLocation
 
-    namespace VarSym {
-        use Fixpoint/Ast.VarSym;
-        use Fixpoint/Ast.VarSym.VarSym;
-
-        pub def compare(a: VarSym, b: VarSym): Comparison = match (a, b) {
-            case (VarSym(s1), VarSym(s2)) => s1 <=> s2
-        }
-    }
-}
+/**
+ * Represents a semantic token in LSP.
+ *
+ * @param loc The location of the token.
+ * @param tokenType What kind of token this is ("number" or "string" or "function" or ...).
+ * @param tokenModifiers A list of modifiers that apply to this token (e.g. "declaration" or "static").
+ */
+case class SemanticToken(loc: SourceLocation, tokenType: SemanticTokenType, tokenModifiers: List[SemanticTokenModifier])

@@ -249,6 +249,31 @@ object RedundancyError {
   }
 
   /**
+    * An error raised to indicate that the given variable symbol `sym` is only used once in a constraint.
+    *
+    * @param sym the variable only used once
+    * @param loc the location of the error
+    */
+  case class IllegalSingleVariable(sym: Symbol.VarSym, loc: SourceLocation) extends RedundancyError {
+    def summary: String = s"Single use of variable '$sym'."
+
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> This variable is named, but only used once '" << Red(sym.text) << "'. Use a wildcard instead?" << NewLine
+      vt << NewLine
+      vt << Code(loc, "the variable occurs here.") << NewLine
+      vt << NewLine
+      vt << "Possible fixes:" << NewLine
+      vt << NewLine
+      vt << "  (1)  Prefix the variable name with a wildcard." << NewLine
+      vt << "  (2)  Replace the variable name with a wildcard." << NewLine
+      vt << "  (3)  Check for any spelling mistakes." << NewLine
+      vt << NewLine
+    }
+  }
+
+  /**
     * An error raised to indicate that an expression is useless.
     *
     * @param loc the location of the expression.

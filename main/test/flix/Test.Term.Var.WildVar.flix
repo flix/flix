@@ -223,7 +223,7 @@ namespace Test/Term/Var/WildVar {
             A(1, 2, 3).
             B(1, 2, 3).
             C(1, 2, 3).
-            T() :- A(x, _, z), B(x, y, z), C(x, _, z).
+            T() :- A(x, _, z), B(x, _y, z), C(x, _, z).
             F() :- A(x, _, z), B(x, y, z), C(x, _, z), D(x, y, z).
         };
         let m = query p select 42 from T(), not F();
@@ -235,7 +235,7 @@ namespace Test/Term/Var/WildVar {
             A(1, 2, 3).
             B(1, 2, 3).
             C(1, 2, 3).
-            T() :- A(x, _, _), B(_, y, _), C(_, _, z).
+            T() :- A(_x, _, _), B(_, _y, _), C(_, _, _z).
             F() :- A(x, _, _), B(_, y, _), C(_, _, z), D(x, y, z).
         };
         let m = query p select 42 from T(), not F();

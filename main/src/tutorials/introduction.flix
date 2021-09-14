@@ -211,7 +211,7 @@ pub def main(_: Array[String]): Int32 & Impure =
         // function then we infer a possible error for `r`.
         //
         ArithmeticError(r) :- isMaybeZero(y),
-                              DivStm(r, n, d),
+                              DivStm(r, _n, d),
                               LocalVar(d; y).
 
         //

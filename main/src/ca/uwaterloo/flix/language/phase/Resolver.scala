@@ -38,6 +38,17 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   val RecursionLimit: Int = 25
 
   /**
+    * Symbols of classes that are derivable.
+    */
+  private val BoxableSym = new Symbol.ClassSym(Nil, "Boxable", SourceLocation.Unknown)
+  private val EqSym = new Symbol.ClassSym(Nil, "Eq", SourceLocation.Unknown)
+  private val OrderSym = new Symbol.ClassSym(Nil, "Order", SourceLocation.Unknown)
+  private val ToStringSym = new Symbol.ClassSym(Nil, "ToString", SourceLocation.Unknown)
+  private val HashSym = new Symbol.ClassSym(Nil, "Hash", SourceLocation.Unknown)
+
+  private val DerivableSyms = List(BoxableSym, EqSym, OrderSym, ToStringSym, HashSym)
+
+  /**
     * Performs name resolution on the given program `root`.
     */
   def run(root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Root, ResolutionError] = flix.phase("Resolver") {
@@ -911,6 +922,13 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e3 <- visit(exp3, tenv0)
           } yield ResolvedAst.Expression.MatchEff(e1, e2, e3, loc)
 
+        case NamedAst.Expression.IfThenElseStar(cond, exp1, exp2, loc) =>
+          for {
+            c <- lookupType(cond, ns0, root)
+            e1 <- visit(exp1, tenv0)
+            e2 <- visit(exp2, tenv0)
+          } yield ResolvedAst.Expression.IfThenElseStar(c, e1, e2, loc)
+
       }
 
       visit(exp0, Map.empty)
@@ -1134,7 +1152,19 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         } yield ResolutionError.DuplicateDerivation(sym1, loc1, loc2).toFailure
 
         Validation.sequenceX(failures) map {
-          _ => derives
+          _ =>
+            // if the enum derives Eq, Order, and ToString
+            // AND it does not already derive Boxable
+            // then add Boxable to its derivations
+            // otherwise just use the given list of derivations
+            val classesImplyingBoxable = List(EqSym, OrderSym, ToStringSym)
+            val deriveSyms = derives.map(_.clazz)
+            if (classesImplyingBoxable.forall(deriveSyms.contains) && !deriveSyms.contains(BoxableSym)) {
+              val loc = derives.map(_.loc).min
+              Ast.Derivation(BoxableSym, loc) :: derives
+            } else {
+              derives
+            }
         }
     }
   }
@@ -1153,14 +1183,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     * Checks that the given class `sym` is derivable.
     */
   def checkDerivable(sym: Symbol.ClassSym, loc: SourceLocation): Validation[Unit, ResolutionError] = {
-    val eqSym = new Symbol.ClassSym(Nil, "Eq", SourceLocation.Unknown)
-    val orderSym = new Symbol.ClassSym(Nil, "Order", SourceLocation.Unknown)
-    val toStringSym = new Symbol.ClassSym(Nil, "ToString", SourceLocation.Unknown)
-    val legalSyms = List(eqSym, orderSym, toStringSym)
-    if (legalSyms.contains(sym)) {
+    if (DerivableSyms.contains(sym)) {
       ().toSuccess
     } else {
-      ResolutionError.IllegalDerivation(sym, legalSyms, loc).toFailure
+      ResolutionError.IllegalDerivation(sym, DerivableSyms, loc).toFailure
     }
   }
 

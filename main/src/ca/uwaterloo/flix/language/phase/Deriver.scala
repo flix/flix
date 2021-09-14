@@ -52,10 +52,14 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
       lazy val eqSym = PredefinedClasses.lookupClassSym("Eq", root)
       lazy val orderSym = PredefinedClasses.lookupClassSym("Order", root)
       lazy val toStringSym = PredefinedClasses.lookupClassSym("ToString", root)
+      lazy val boxableSym = PredefinedClasses.lookupClassSym("Boxable", root)
+      lazy val hashSym = PredefinedClasses.lookupClassSym("Hash", root)
       derives.map {
         case Ast.Derivation(sym, loc) if sym == eqSym => mkEqInstance(enum, loc, root)
         case Ast.Derivation(sym, loc) if sym == orderSym => mkOrderInstance(enum, loc, root)
         case Ast.Derivation(sym, loc) if sym == toStringSym => mkToStringInstance(enum, loc, root)
+        case Ast.Derivation(sym, loc) if sym == boxableSym => mkBoxableInstance(enum, loc, root)
+        case Ast.Derivation(sym, loc) if sym == hashSym => mkHashInstance(enum, loc, root)
         case unknownSym => throw InternalCompilerException(s"Unexpected derivation: $unknownSym")
       }
   }
@@ -488,7 +492,6 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
         eff = Type.Cst(TypeConstructor.True, loc),
         loc = loc
       )
-
   }
 
   /**
@@ -538,6 +541,172 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
   }
 
   /**
+    * Creates a Hash instance for the given enum.
+    *
+    * {{{
+    * enum E[a] with Hash {
+    *   case C0
+    *   case C1(a)
+    *   case C2(a, a)
+    * }
+    * }}}
+    *
+    * yields
+    *
+    * {{{
+    * instance Hash[E[a]] with Hash[a] {
+    *   pub def hash(x: E[a]): Int = match x {
+    *     case C0 => 0
+    *     case C1(x0) => 1 * 31 + hash(x0)
+    *     case C2(x0, x1) => (2 * 31 + hash(x0)) * 31 + hash(x1)
+    *   }
+    * }
+    * }}}
+    */
+  private def mkHashInstance(enum: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum match {
+    case KindedAst.Enum(_, _, _, tparams, _, _, _, sc, _) =>
+      val hashClassSym = PredefinedClasses.lookupClassSym("Hash", root)
+      val hashDefSym = Symbol.mkDefnSym("Hash.hash")
+
+      val param = Symbol.freshVarSym("x", loc)
+      val exp = mkHashImpl(enum, param, loc, root)
+      val spec = mkHashSpec(enum, param, loc, root)
+
+      val defn = KindedAst.Def(hashDefSym, spec, exp)
+
+      val tconstrs = getTypeConstraintsForTypeParams(tparams, hashClassSym, loc)
+
+      KindedAst.Instance(
+        doc = Ast.Doc(Nil, loc),
+        mod = Ast.Modifiers.Empty,
+        sym = hashClassSym,
+        tpe = sc.base,
+        tconstrs = tconstrs,
+        defs = List(defn),
+        ns = Name.RootNS,
+        loc = loc
+      )
+  }
+
+  /**
+    * Creates the hash implementation for the given enum, where `param` is the parameter to the function.
+    */
+  private def mkHashImpl(enum: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Expression = enum match {
+    case KindedAst.Enum(_, _, _, _, _, cases, _, _, _) =>
+      // create a match rule for each case
+      val matchRules = cases.values.zipWithIndex.map {
+        case (caze, index) => mkHashMatchRule(caze, index, loc, root)
+      }
+
+      // group the match rules in an expression
+      KindedAst.Expression.Match(
+        mkVarExpr(param, loc),
+        matchRules.toList,
+        loc
+      )
+  }
+
+  /**
+    * Creates the hash spec for the given enum, where `param` is the parameter to the function.
+    */
+  private def mkHashSpec(enum: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Spec = enum match {
+    case KindedAst.Enum(_, _, _, tparams, _, _, _, sc, _) =>
+      val hashClassSym = PredefinedClasses.lookupClassSym("Hash", root)
+      KindedAst.Spec(
+        doc = Ast.Doc(Nil, loc),
+        ann = Nil,
+        mod = Ast.Modifiers.Empty,
+        tparams = tparams,
+        fparams = List(KindedAst.FormalParam(param, Ast.Modifiers.Empty, sc.base, loc)),
+        sc = Scheme(
+          tparams.map(_.tpe),
+          List(Ast.TypeConstraint(hashClassSym, sc.base, loc)),
+          Type.mkPureArrow(sc.base, Type.mkInt32(loc), loc)
+        ),
+        tpe = Type.mkInt32(loc),
+        eff = Type.Cst(TypeConstructor.True, loc),
+        loc = loc
+      )
+  }
+
+  /**
+    * Creates a ToString match rule for the given enum case.
+    */
+  private def mkHashMatchRule(caze: KindedAst.Case, index: Int, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
+    case KindedAst.Case(_, _, _, sc) =>
+      val hashSigSym = PredefinedClasses.lookupSigSym("Hash", "hash", root)
+
+      // get a pattern corresponding to this case, e.g.
+      // `case C2(x0, x1)`
+      val (pat, varSyms) = mkPattern(sc.base, "x", loc)
+
+      val guard = KindedAst.Expression.True(loc)
+
+      // build a hash code by repeatedly adding the next hash and multiplying by 31
+      // the first hash is the index
+      // `((2 * 31) + hash(x0)) * 31 + hash(y0)`
+      val exp = varSyms.foldLeft(KindedAst.Expression.Int32(index, loc): KindedAst.Expression) {
+        case (acc, varSym) =>
+          // `(acc * 31) + hash(varSym)
+          KindedAst.Expression.Binary(
+            SemanticOperator.Int32Op.Add,
+            KindedAst.Expression.Binary(
+              SemanticOperator.Int32Op.Mul,
+              acc,
+              KindedAst.Expression.Int32(31, loc),
+              Type.freshVar(Kind.Star, loc),
+              loc
+            ),
+            KindedAst.Expression.Apply(
+              KindedAst.Expression.Sig(hashSigSym, Type.freshVar(Kind.Star, loc), loc),
+              List(mkVarExpr(varSym, loc)),
+              Type.freshVar(Kind.Star, loc),
+              Type.freshVar(Kind.Bool, loc),
+              loc
+            ),
+            Type.freshVar(Kind.Star, loc),
+            loc
+          )
+      }
+
+      KindedAst.MatchRule(pat, guard, exp)
+  }
+
+  /**
+    * Creates a Boxable instance for the given enum.
+    *
+    * {{{
+    * enum E[a] with Boxable {
+    *   case C0
+    *   case C1(a)
+    *   case C2(a, a)
+    * }
+    * }}}
+    *
+    * yields
+    *
+    * {{{
+    * instance Boxable[E[a]]
+    * }}}
+    *
+    * The instance is empty because the class has default definitions.
+    */
+  private def mkBoxableInstance(enum: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root): KindedAst.Instance = enum match {
+    case KindedAst.Enum(_, _, _, _, _, _, _, sc, _) =>
+      val boxableClassSym = PredefinedClasses.lookupClassSym("Boxable", root)
+      KindedAst.Instance(
+        doc = Ast.Doc(Nil, loc),
+        mod = Ast.Modifiers.Empty,
+        sym = boxableClassSym,
+        tpe = sc.base,
+        tconstrs = Nil,
+        defs = Nil,
+        ns = Name.RootNS,
+        loc = loc
+      )
+  }
+
+  /**
     * Creates type constraints for the given type parameters.
     * Filters out non-star type parameters and wild type parameters.
     */
@@ -551,7 +720,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
   private def mkStrExpr(str: String, loc: SourceLocation): KindedAst.Expression.Str = KindedAst.Expression.Str(str, loc)
 
   /**
-    * Builds a string expression from the given string.
+    * Builds a var expression from the given var sym.
     */
   private def mkVarExpr(varSym: Symbol.VarSym, loc: SourceLocation): KindedAst.Expression.Var = KindedAst.Expression.Var(varSym, varSym.tvar.ascribedWith(Kind.Star), loc)
 
