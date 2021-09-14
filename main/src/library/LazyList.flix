@@ -164,10 +164,10 @@ namespace LazyList {
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
     pub def map(f: a -> b & ef, l: LazyList[a]): LazyList[b] & ef =
-        matchEff f {
-            case Pure   => mapL(f as a -> b & Pure,   l)
-            case Impure => mapE(f as a -> b & Impure, l)
-        } as & ef
+        if (reify ef)
+            mapL(f as a -> b & Pure,   l)
+        else
+            mapE(f as a -> b & Impure, l) as & ef
 
     ///
     /// Returns the result of applying `f` to every element in `l`.

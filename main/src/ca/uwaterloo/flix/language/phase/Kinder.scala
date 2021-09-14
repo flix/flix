@@ -552,13 +552,6 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         exp2 <- visitExp(exp20, kenv, root)
       } yield KindedAst.Expression.FixpointProjectOut(pred, exp1, exp2, Type.freshVar(Kind.Star, loc), loc)
 
-    case ResolvedAst.Expression.MatchEff(exp10, exp20, exp30, loc) =>
-      for {
-        exp1 <- visitExp(exp10, kenv, root)
-        exp2 <- visitExp(exp20, kenv, root)
-        exp3 <- visitExp(exp30, kenv, root)
-      } yield KindedAst.Expression.MatchEff(exp1, exp2, exp3, loc)
-
     case ResolvedAst.Expression.Reify(t0, loc) =>
       for {
         t <- visitType(t0, KindMatch.subKindOf(Kind.Bool), kenv, root)

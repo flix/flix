@@ -208,8 +208,6 @@ object NamedAst {
 
     case class FixpointProjectOut(pred: Name.Pred, exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
-    case class MatchEff(exp1: NamedAst.Expression, exp2: NamedAst.Expression, exp3: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
-
     case class Reify(t: NamedAst.Type, loc: SourceLocation) extends NamedAst.Expression
 
   }

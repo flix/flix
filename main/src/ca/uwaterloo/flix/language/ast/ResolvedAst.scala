@@ -192,8 +192,6 @@ object ResolvedAst {
 
     case class FixpointProjectOut(pred: Name.Pred, exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class MatchEff(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, exp3: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
-
     case class Reify(t: Type, loc: SourceLocation) extends ResolvedAst.Expression
 
   }

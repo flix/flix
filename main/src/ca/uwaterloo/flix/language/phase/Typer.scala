@@ -1419,16 +1419,6 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
           resultEff = Type.mkAnd(eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
-      case KindedAst.Expression.MatchEff(exp1, exp2, exp3, loc) =>
-        // TODO: Enforce function type.
-        for {
-          (constrs1, tpe1, eff1) <- visitExp(exp1)
-          (constrs2, tpe2, eff2) <- visitExp(exp2)
-          (constrs3, tpe3, eff3) <- visitExp(exp3)
-          resultTyp <- unifyTypeM(tpe2, tpe3, loc)
-          resultEff = Type.mkAnd(eff1, eff2, eff3, loc)
-        } yield (constrs1 ++ constrs2 ++ constrs3, resultTyp, resultEff)
-
       case KindedAst.Expression.Reify(t, loc) =>
         liftM(Nil, Type.Bool, Type.Pure)
 
@@ -1834,14 +1824,6 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
         val mergeExp = TypedAst.Expression.FixpointMerge(e1, e2, stf, tpe, eff, loc)
         val solveExp = TypedAst.Expression.FixpointSolve(mergeExp, stf, tpe, eff, loc)
         TypedAst.Expression.FixpointProjectOut(pred, solveExp, tpe, eff, loc)
-
-      case KindedAst.Expression.MatchEff(exp1, exp2, exp3, loc) =>
-        val e1 = visitExp(exp1, subst0)
-        val e2 = visitExp(exp2, subst0)
-        val e3 = visitExp(exp3, subst0)
-        val tpe = subst0(e2.tpe)
-        val eff = Type.mkAnd(e1.eff, e2.eff, e3.eff, loc)
-        TypedAst.Expression.MatchEff(e1, e2, e3, tpe, eff, loc)
 
       case KindedAst.Expression.Reify(t0, loc) =>
         val t = subst0(t0)

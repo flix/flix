@@ -334,9 +334,9 @@ object ParsedAst {
     /**
       * Char Literal.
       *
-      * @param sp1 the position of the first character in the literal.
+      * @param sp1   the position of the first character in the literal.
       * @param chars the char codes.
-      * @param sp2 the position of the last character in the literal.
+      * @param sp2   the position of the last character in the literal.
       */
     case class Char(sp1: SourcePosition, chars: Seq[ParsedAst.CharCode], sp2: SourcePosition) extends ParsedAst.Literal
 
@@ -1021,9 +1021,13 @@ object ParsedAst {
       */
     case class FixpointQueryWithSelect(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], selects: ParsedAst.SelectFragment, from: Seq[ParsedAst.Predicate.Body.Atom], whereExp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
-    // TODO: DOC
-    case class MatchEff(sp1: SourcePosition, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, exp3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
+    /**
+      * Reify Expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param t   the type to reify.
+      * @param sp2 the position of the last character in the expression.
+      */
     case class Reify(sp1: SourcePosition, t: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Expression
 
   }
