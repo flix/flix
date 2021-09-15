@@ -532,10 +532,10 @@ object Instructions {
   // made because of weird inference in tuple code gen
   def PUTFIELD
   [R <: Stack, T1 <: PType, T2 <: PRefType]
-  (classType: RReference[T2], fieldName: String, fieldValue: ErasedAst.Expression[T1], erasedType: Boolean):
+  (classType: RReference[T2], fieldName: String, fieldValue: ErasedAst.Expression[T1], lenv0: Map[Symbol.LabelSym, Label], erasedType: Boolean):
   F[R ** PReference[T2]] => F[R] =
     START[R ** PReference[T2]] ~
-      compileExp(fieldValue) ~
+      compileExp(fieldValue, lenv0) ~
       PUTFIELD(classType, fieldName, fieldValue.tpe, erasedType)
 
   def PUTSTATIC
@@ -1677,10 +1677,10 @@ object Instructions {
   // TODO(JLS): This needs to return both StackEnd (no code should follow) and R ** T (compileExp should push T on stack) (maybe stop flag type on F)
   def TAILCALL
   [R <: Stack, T <: PType]
-  (arguments: List[ErasedAst.Expression[_ <: PType]], fnType: RArrow[T]):
+  (arguments: List[ErasedAst.Expression[_ <: PType]], fnType: RArrow[T], lenv0: Map[Symbol.LabelSym, Label]):
   F[R ** PReference[PFunction[T]]] => F[R ** T] = {
     START[R ** PReference[PFunction[T]]] ~
-      setArgs(fnType.jvmName, arguments, GenFunctionInterfaces.argFieldName) ~
+      setArgs(fnType.jvmName, arguments, GenFunctionInterfaces.argFieldName, lenv0) ~
       AReturnNoEnd(tagOf[T])
   }
 
@@ -1697,18 +1697,18 @@ object Instructions {
   (fnType: RArrow[T]):
   F[R ** PReference[PFunction[T]]] => F[R ** T] = f => {
     f.visitMethodInsn(Opcodes.INVOKEVIRTUAL, fnType.internalName, GenContinuationInterfaces.UnwindMethodName,
-      fnType.result.erasedType.nothingToThisDescriptor, false)
+      fnType.result.erasedType.nothingToThisDescriptor)
     undoErasure(fnType.result, f.visitor)
     castF(f)
   }
 
   def setArgs[R <: Stack, T <: PType]
-  (className: JvmName, args: List[ErasedAst.Expression[_ <: PType]], fieldName: Int => String, t: Tag[T] = null):
+  (className: JvmName, args: List[ErasedAst.Expression[_ <: PType]], fieldName: Int => String, lenv0: Map[Symbol.LabelSym, Label], t: Tag[T] = null):
   F[R ** PReference[PFunction[T]]] => F[R ** PReference[PFunction[T]]] =
     START[R ** PReference[PFunction[T]]] ~
       multiComposition(args.zipWithIndex) {
         case (exp, index) =>
-          START[R ** PReference[PFunction[T]]] ~ DUP ~ compileExp(exp) ~ setArg(className, fieldName(index), exp.tpe.erasedDescriptor)
+          START[R ** PReference[PFunction[T]]] ~ DUP ~ compileExp(exp, lenv0) ~ setArg(className, fieldName(index), exp.tpe.erasedDescriptor)
       }
 
   private def setArg[R <: Stack, T1 <: PType, T2 <: PType]
@@ -1720,10 +1720,10 @@ object Instructions {
 
   def CALL
   [R <: Stack, T <: PType]
-  (arguments: List[ErasedAst.Expression[_ <: PType]], fnType: RArrow[T]):
+  (arguments: List[ErasedAst.Expression[_ <: PType]], fnType: RArrow[T], lenv0: Map[Symbol.LabelSym, Label]):
   F[R ** PReference[PFunction[T]]] => F[R ** T] = {
     START[R ** PReference[PFunction[T]]] ~
-      setArgs(fnType.jvmName, arguments, GenFunctionInterfaces.argFieldName) ~
+      setArgs(fnType.jvmName, arguments, GenFunctionInterfaces.argFieldName, lenv0) ~
       unwind(fnType)
   }
 
@@ -1743,13 +1743,13 @@ object Instructions {
 
   def CREATECLOSURE
   [R <: Stack, T <: PType]
-  (freeVars: List[ErasedAst.FreeVar], cloName: JvmName, fnName: JvmName, t: Tag[T] = null):
+  (freeVars: List[ErasedAst.FreeVar], cloName: JvmName, fnName: JvmName, lenv0: Map[Symbol.LabelSym, Label], t: Tag[T] = null):
   F[R] => F[R ** PReference[PFunction[T]]] =
     START[R] ~
       NEW(cloName, tagOf[PFunction[T]]) ~
       DUP ~
       invokeSimpleConstructor(cloName) ~
-      setArgs(cloName, freeVars.map(f => ErasedAst.Expression.Var(f.sym, f.tpe, SourceLocation.Unknown)), GenClosureClasses.cloArgFieldName, tagOf[T]) ~
+      setArgs(cloName, freeVars.map(f => ErasedAst.Expression.Var(f.sym, f.tpe, SourceLocation.Unknown)), GenClosureClasses.cloArgFieldName, lenv0, tagOf[T]) ~
       ((f: F[R ** PReference[PFunction[T]]]) => {
         undoErasure(fnName, f.visitor)
         f

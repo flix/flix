@@ -106,873 +106,903 @@ object BytecodeCompiler {
   implicit val int32U: PInt32 => Int32Usable[PInt32] = null
   implicit val charU: PChar => Int32Usable[PChar] = null
 
-  def compileExp[R <: Stack, T <: PType](exp: Expression[T]): F[R] => F[R ** T] = exp match {
-    case Expression.Unit(loc) =>
-      WithSource[R](loc) ~
-        pushUnit
-
-    case Expression.Null(tpe, loc) =>
-      WithSource[R](loc) ~ pushNull(tpe)
-
-    case Expression.True(loc) =>
-      WithSource[R](loc) ~ pushBool(true)
-
-    case Expression.False(loc) =>
-      WithSource[R](loc) ~ pushBool(false)
-
-    case Expression.Char(lit, loc) =>
-      WithSource[R](loc) ~
-        pushChar(lit)
-
-    case Expression.Float32(lit, loc) =>
-      WithSource[R](loc) ~ pushFloat32(lit)
-
-    case Expression.Float64(lit, loc) =>
-      WithSource[R](loc) ~ pushFloat64(lit)
-
-    case Expression.Int8(lit, loc) =>
-      WithSource[R](loc) ~ pushInt8(lit)
-
-    case Expression.Int16(lit, loc) =>
-      WithSource[R](loc) ~ pushInt16(lit)
-
-    case Expression.Int32(lit, loc) =>
-      WithSource[R](loc) ~ pushInt32(lit)
-
-    case Expression.Int64(lit, loc) =>
-      WithSource[R](loc) ~ pushInt64(lit)
-
-    case Expression.BigInt(lit, loc) =>
-      WithSource[R](loc) ~
-        pushBigInt(lit)
-
-    case Expression.Str(lit, loc) =>
-      WithSource[R](loc) ~
-        pushString(lit)
-
-    case Expression.Var(sym, tpe, loc) =>
-      WithSource[R](loc) ~
-        XLOAD(tpe, sym.getStackOffset + symOffsetOffset) // TODO(JLS): make this offset exist in F, dependent on static(0)/object function(1)
-
-    case Expression.Closure(sym, freeVars, tpe, loc) =>
-      WithSource[R](loc) ~
-        CREATECLOSURE(freeVars, sym.cloName, squeezeFunction(squeezeReference(tpe)).jvmName)
-
-    case Expression.ApplyClo(exp, args, _, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp) ~
-        CALL(args, squeezeFunction(squeezeReference(exp.tpe)))
-
-    case Expression.ApplyDef(sym, args, fnTpe, tpe, loc) =>
-      val arrow = squeezeFunction(squeezeReference(fnTpe))
-      WithSource[R](loc) ~
-        CREATEDEF(sym.defName, arrow.jvmName, tpe.tagOf) ~
-        CALL(args, arrow)
-
-    case Expression.ApplyCloTail(exp, args, _, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp) ~
-        TAILCALL(args, squeezeFunction(squeezeReference(exp.tpe)))
-
-    case Expression.ApplyDefTail(sym, args, fnTpe, tpe, loc) =>
-      val arrow = squeezeFunction(squeezeReference(fnTpe))
-      WithSource[R](loc) ~
-        CREATEDEF(sym.defName, arrow.jvmName, tpe.tagOf) ~
-        TAILCALL(args, arrow)
-
-    case Expression.ApplySelfTail(_, _, actuals, fnTpe, _, loc) =>
-      WithSource[R](loc) ~
-        THISLOAD(fnTpe) ~
-        TAILCALL(actuals, squeezeFunction(squeezeReference(fnTpe)))
-
-    case Expression.BoolNot(exp, _, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp) ~
-        IFNE(START[R] ~ pushBool(false))(START[R] ~ pushBool(true))
-
-    // Unary expressions
-    case Expression.Float32Neg(exp, _, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp) ~
-        FNEG
-
-    case Expression.Float64Neg(exp, _, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp) ~
-        DNEG
-
-    case Expression.Int8Neg(exp, _, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp) ~
-        INEG ~
-        I2B
-
-    case Expression.Int8Not(exp, _, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp) ~
-        pushInt8(-1) ~
-        BXOR
-
-    case Expression.Int16Neg(exp, _, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp) ~
-        INEG ~
-        I2S
-
-    case Expression.Int16Not(exp, _, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp) ~
-        pushInt16(-1) ~
-        SXOR
-
-    case Expression.Int32Neg(exp, _, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp) ~
-        INEG
-
-    case Expression.Int32Not(exp, _, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp) ~
-        pushInt32(-1) ~
-        IXOR
-
-    case Expression.Int64Neg(exp, _, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp) ~
-        LNEG
-
-    case Expression.Int64Not(exp, _, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp) ~
-        pushInt64(-1) ~
-        LXOR
-
-    case Expression.BigIntNeg(exp, _, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp) ~
-        BigIntNeg
-
-    case Expression.BigIntNot(exp, _, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp) ~
-        BigIntNot
-
-    case Expression.ObjEqNull(exp, _, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp) ~
-        IFNULL(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-
-    case Expression.ObjNeqNull(exp, _, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp) ~
-        IFNONNULL(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-
-    // Binary expressions
-    case Expression.BoolLogicalOp(op, exp1, exp2, _, loc) =>
-      op match {
-        case LogicalOp.And =>
-          // TODO(JLS): this is probaly not optimal when coded with capabilities
-          WithSource[R](loc) ~
-            compileExp(exp1) ~
-            IFEQ(START[R] ~ pushBool(false)) {
-              START[R] ~
-                compileExp(exp2) ~
-                IFEQ(START[R] ~ pushBool(false))(START[R] ~ pushBool(true))
-            }
-        case LogicalOp.Or =>
-          WithSource[R](loc) ~
-            compileExp(exp1) ~
-            IFNE(START[R] ~ pushBool(true)) {
-              START[R] ~
-                compileExp(exp2) ~
-                IFNE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-            }
-      }
-
-    case Expression.BoolEquality(op, exp1, exp2, _, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp1) ~
-        compileExp(exp2) ~
-        (op match {
-          case EqualityOp.Eq => IF_ICMPEQ(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-          case EqualityOp.Ne => IF_ICMPNE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-        })
-
-    case Expression.CharComparison(op, exp1, exp2, _, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp1) ~
-        compileExp(exp2) ~
-        (op match {
-          case ComparisonOp.Lt => IF_ICMPLT(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-          case ComparisonOp.Le => IF_ICMPLE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-          case ComparisonOp.Gt => IF_ICMPGT(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-          case ComparisonOp.Ge => IF_ICMPGE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-          case op: ErasedAst.EqualityOp => op match {
-            case EqualityOp.Eq => IF_ICMPEQ(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-            case EqualityOp.Ne => IF_ICMPNE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-          }
-        })
-
-    case Expression.Float32Arithmetic(op, exp1, exp2, _, loc) =>
-      val compileOperands: F[R] => F[R ** PFloat32 ** PFloat32] =
-        START[R] ~ compileExp(exp1) ~ compileExp(exp2)
-      WithSource[R](loc) ~ (op match {
-        case ArithmeticOp.Add => compileOperands ~ FADD
-        case ArithmeticOp.Sub => compileOperands ~ FSUB
-        case ArithmeticOp.Mul => compileOperands ~ FMUL
-        case ArithmeticOp.Div => compileOperands ~ FDIV
-        case ArithmeticOp.Rem => compileOperands ~ FREM
-        case ArithmeticOp.Exp =>
-          DoublePow[R] {
-            START[StackNil] ~
-              compileExp(exp1) ~ F2D ~
-              compileExp(exp2) ~ F2D
-          } ~ D2F
-      })
-
-    case Expression.Float32Comparison(op, exp1, exp2, _, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp1) ~
-        compileExp(exp2) ~
-        (op match {
-          case ComparisonOp.Lt => FCMPG ~ IFLT(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-          case ComparisonOp.Le => FCMPG ~ IFLE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-          case ComparisonOp.Gt => FCMPL ~ IFGT(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-          case ComparisonOp.Ge => FCMPL ~ IFGE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-          case op: EqualityOp => op match {
-            case EqualityOp.Eq => FCMPG ~ IFEQ(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-            case EqualityOp.Ne => FCMPG ~ IFNE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-          }
-        })
-
-    case Expression.Float64Arithmetic(op, exp1, exp2, _, loc) =>
-      val compileOperands: F[R] => F[R ** PFloat64 ** PFloat64] =
-        START[R] ~ compileExp(exp1) ~ compileExp(exp2)
-      WithSource[R](loc) ~ (op match {
-        case ArithmeticOp.Add => compileOperands ~ DADD
-        case ArithmeticOp.Sub => compileOperands ~ DSUB
-        case ArithmeticOp.Mul => compileOperands ~ DMUL
-        case ArithmeticOp.Div => compileOperands ~ DDIV
-        case ArithmeticOp.Rem => compileOperands ~ DREM
-        case ArithmeticOp.Exp =>
-          DoublePow[R] {
-            START[StackNil] ~
-              compileExp(exp1) ~
-              compileExp(exp2)
-          }
-      })
-
-    case Expression.Float64Comparison(op, exp1, exp2, _, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp1) ~
-        compileExp(exp2) ~
-        (op match {
-          case ComparisonOp.Lt => DCMPG ~ IFLT(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-          case ComparisonOp.Le => DCMPG ~ IFLE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-          case ComparisonOp.Gt => DCMPL ~ IFGT(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-          case ComparisonOp.Ge => DCMPL ~ IFGE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-          case op: EqualityOp => op match {
-            case EqualityOp.Eq => DCMPG ~ IFEQ(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-            case EqualityOp.Ne => DCMPG ~ IFNE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-          }
-        })
-
-    case Expression.Int8Arithmetic(op, exp1, exp2, _, loc) =>
-      val compileOperands: F[R] => F[R ** PInt8 ** PInt8] =
-        START[R] ~ compileExp(exp1) ~ compileExp(exp2)
-      WithSource[R](loc) ~ (op match {
-        case ArithmeticOp.Add => compileOperands ~ IADD ~ I2B
-        case ArithmeticOp.Sub => compileOperands ~ ISUB ~ I2B
-        case ArithmeticOp.Mul => compileOperands ~ IMUL ~ I2B
-        case ArithmeticOp.Div => compileOperands ~ IDIV ~ I2B
-        case ArithmeticOp.Rem => compileOperands ~ IREM ~ I2B
-        case ArithmeticOp.Exp =>
-          DoublePow[R] {
-            START[StackNil] ~
-              compileExp(exp1) ~ I2D ~
-              compileExp(exp2) ~ I2D
-          } ~
-            D2I ~
-            I2B
-      })
-
-    case Expression.Int16Arithmetic(op, exp1, exp2, _, loc) =>
-      val compileOperands: F[R] => F[R ** PInt16 ** PInt16] =
-        START[R] ~ compileExp(exp1) ~ compileExp(exp2)
-      WithSource[R](loc) ~ (op match {
-        case ArithmeticOp.Add => compileOperands ~ IADD ~ I2S
-        case ArithmeticOp.Sub => compileOperands ~ ISUB ~ I2S
-        case ArithmeticOp.Mul => compileOperands ~ IMUL ~ I2S
-        case ArithmeticOp.Div => compileOperands ~ IDIV ~ I2S
-        case ArithmeticOp.Rem => compileOperands ~ IREM ~ I2S
-        case ArithmeticOp.Exp =>
-          DoublePow[R] {
-            START[StackNil] ~
-              compileExp(exp1) ~ I2D ~
-              compileExp(exp2) ~ I2D
-          } ~
-            D2I ~
-            I2S
-      })
-
-    case Expression.Int32Arithmetic(op, exp1, exp2, _, loc) =>
-      val compileOperands: F[R] => F[R ** PInt32 ** PInt32] =
-        START[R] ~ compileExp(exp1) ~ compileExp(exp2)
-      WithSource[R](loc) ~ (op match {
-        case ArithmeticOp.Add => compileOperands ~ IADD
-        case ArithmeticOp.Sub => compileOperands ~ ISUB
-        case ArithmeticOp.Mul => compileOperands ~ IMUL
-        case ArithmeticOp.Div => compileOperands ~ IDIV
-        case ArithmeticOp.Rem => compileOperands ~ IREM
-        case ArithmeticOp.Exp =>
-          DoublePow[R] {
-            START[StackNil] ~
-              compileExp(exp1) ~ I2D ~
-              compileExp(exp2) ~ I2D
-          } ~
-            D2I
-      })
-
-    case Expression.Int64Arithmetic(op, exp1, exp2, _, loc) =>
-      val compileOperands: F[R] => F[R ** PInt64 ** PInt64] =
-        START[R] ~ compileExp(exp1) ~ compileExp(exp2)
-      WithSource[R](loc) ~ (op match {
-        case ArithmeticOp.Add => compileOperands ~ LADD
-        case ArithmeticOp.Sub => compileOperands ~ LSUB
-        case ArithmeticOp.Mul => compileOperands ~ LMUL
-        case ArithmeticOp.Div => compileOperands ~ LDIV
-        case ArithmeticOp.Rem => compileOperands ~ LREM
-        case ArithmeticOp.Exp =>
-          DoublePow[R] {
-            START[StackNil] ~
-              compileExp(exp1) ~ L2D ~
-              compileExp(exp2) ~ L2D
-          } ~ D2L
-      })
-
-    case Expression.BigIntArithmetic(op, exp1, exp2, _, loc) =>
-      val compileOperands: F[R] => F[R ** PReference[PBigInt] ** PReference[PBigInt]] =
-        START[R] ~ compileExp(exp1) ~ compileExp(exp2)
-      WithSource[R](loc) ~ (op match {
-        case ArithmeticOp.Add => compileOperands ~ BigIntADD
-        case ArithmeticOp.Sub => compileOperands ~ BigIntSUB
-        case ArithmeticOp.Mul => compileOperands ~ BigIntMUL
-        case ArithmeticOp.Div => compileOperands ~ BigIntDIV
-        case ArithmeticOp.Rem => compileOperands ~ BigIntREM
-        case ArithmeticOp.Exp => throw InternalCompilerException("exponentiation on big integers not implemented in backend")
-      })
-
-    case Expression.Int8Bitwise(op, exp1, exp2, _, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp1) ~
-        compileExp(exp2) ~
-        (op match {
-          case BitwiseOp.And => BAND
-          case BitwiseOp.Or => BOR
-          case BitwiseOp.Xor => BXOR
-          case BitwiseOp.Shl => START[R ** PInt8 ** PInt8] ~ ISHL ~ I2B
-          case BitwiseOp.Shr => BSHR
-        })
-
-    case Expression.Int16Bitwise(op, exp1, exp2, _, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp1) ~
-        compileExp(exp2) ~
-        (op match {
-          case BitwiseOp.And => SAND
-          case BitwiseOp.Or => SOR
-          case BitwiseOp.Xor => SXOR
-          case BitwiseOp.Shl => START[R ** PInt16 ** PInt16] ~ ISHL ~ I2S
-          case BitwiseOp.Shr => SSHR
-        })
-
-    case Expression.Int32Bitwise(op, exp1, exp2, _, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp1) ~
-        compileExp(exp2) ~
-        (op match {
-          case BitwiseOp.And => IAND
-          case BitwiseOp.Or => IOR
-          case BitwiseOp.Xor => IXOR
-          case BitwiseOp.Shl => START[R ** PInt32 ** PInt32] ~ ISHL
-          case BitwiseOp.Shr => ISHR
-        })
-
-    case Expression.Int64Bitwise(op, exp1, exp2, _, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp1) ~
-        compileExp(exp2) ~
-        (op match {
-          case BitwiseOp.And => LAND
-          case BitwiseOp.Or => LOR
-          case BitwiseOp.Xor => LXOR
-          case BitwiseOp.Shl => LSHL
-          case BitwiseOp.Shr => LSHR
-        })
-
-    case Expression.BigIntBitwise(op, exp1, exp2, _, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp1) ~
-        compileExp(exp2) ~
-        (op match {
-          case BitwiseOp.And => BigIntAND
-          case BitwiseOp.Or => BigIntOR
-          case BitwiseOp.Xor => BigIntXOR
-          case BitwiseOp.Shl => BigIntSHL
-          case BitwiseOp.Shr => BigIntSHR
-        })
-
-    case Expression.Int8Comparison(op, exp1, exp2, _, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp1) ~
-        compileExp(exp2) ~
-        (op match {
-          case ComparisonOp.Lt => IF_ICMPLT(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-          case ComparisonOp.Le => IF_ICMPLE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-          case ComparisonOp.Gt => IF_ICMPGT(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-          case ComparisonOp.Ge => IF_ICMPGE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-          case op: ErasedAst.EqualityOp => op match {
-            case EqualityOp.Eq => IF_ICMPEQ(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-            case EqualityOp.Ne => IF_ICMPNE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-          }
-        })
-
-    case Expression.Int16Comparison(op, exp1, exp2, _, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp1) ~
-        compileExp(exp2) ~
-        (op match {
-          case ComparisonOp.Lt => IF_ICMPLT(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-          case ComparisonOp.Le => IF_ICMPLE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-          case ComparisonOp.Gt => IF_ICMPGT(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-          case ComparisonOp.Ge => IF_ICMPGE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-          case op: ErasedAst.EqualityOp => op match {
-            case EqualityOp.Eq => IF_ICMPEQ(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-            case EqualityOp.Ne => IF_ICMPNE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-          }
-        })
-
-
-    case Expression.Int32Comparison(op, exp1, exp2, _, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp1) ~
-        compileExp(exp2) ~
-        (op match {
-          case ComparisonOp.Lt => IF_ICMPLT(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-          case ComparisonOp.Le => IF_ICMPLE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-          case ComparisonOp.Gt => IF_ICMPGT(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-          case ComparisonOp.Ge => IF_ICMPGE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-          case op: ErasedAst.EqualityOp => op match {
-            case EqualityOp.Eq => IF_ICMPEQ(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-            case EqualityOp.Ne => IF_ICMPNE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-          }
-        })
-
-    case Expression.Int64Comparison(op, exp1, exp2, tpe, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp1) ~
-        compileExp(exp2) ~
-        (op match {
-          case ComparisonOp.Lt => LCMP ~ IFLT(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-          case ComparisonOp.Le => LCMP ~ IFLE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-          case ComparisonOp.Gt => LCMP ~ IFGT(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-          case ComparisonOp.Ge => LCMP ~ IFGE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-          case op: EqualityOp => op match {
-            case EqualityOp.Eq => LCMP ~ IFEQ(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-            case EqualityOp.Ne => LCMP ~ IFNE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-          }
-        })
-
-    case Expression.BigIntComparison(op, exp1, exp2, _, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp1) ~
-        compileExp(exp2) ~
-        (op match {
-          case ComparisonOp.Lt => BigIntCompareTo ~ IFLT(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-          case ComparisonOp.Le => BigIntCompareTo ~ IFLE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-          case ComparisonOp.Gt => BigIntCompareTo ~ IFGT(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-          case ComparisonOp.Ge => BigIntCompareTo ~ IFGE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-          case op: EqualityOp => op match {
-            case EqualityOp.Eq => BigIntCompareTo ~ IFEQ(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-            case EqualityOp.Ne => BigIntCompareTo ~ IFNE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-          }
-        })
-
-    case Expression.StringConcat(exp1, exp2, _, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp1) ~
-        compileExp(exp2) ~
-        stringConcat
-
-    case Expression.StringEquality(op, exp1, exp2, _, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp1) ~
-        compileExp(exp2) ~
-        (op match {
-          case EqualityOp.Eq => ObjEquals
-          case EqualityOp.Ne => ObjEquals ~ IFEQ(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
-        })
-
-    case Expression.IfThenElse(exp1, exp2, exp3, _, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp1) ~
-        IFEQ(START[R] ~ compileExp(exp3))(START[R] ~ compileExp(exp2))
-
-    case Expression.Branch(exp, branches, tpe, loc) => ???
-    case Expression.JumpTo(sym, tpe, loc) => ???
-    case Expression.Let(sym, exp1, exp2, tpe, loc) =>
-      //TODO(JLS): sym is unsafe. localvar stack + reg as types?
-      WithSource[R](loc) ~
-        compileExp(exp1) ~
-        XSTORE(sym, exp1.tpe) ~
-        compileExp(exp2)
-
-    case Expression.Is(sym, tag, exp, loc) => ???
-    case Expression.Tag(sym, tag, exp, tpe, loc) => ???
-    case Expression.Untag(sym, tag, exp, tpe, loc) => ???
-    case Expression.Index(base, offset, tpe, loc) =>
-      WithSource[R](loc) ~
-        compileExp(base) ~
-        GETFIELD(squeezeReference(base.tpe), GenTupleClasses.indexFieldName(offset), tpe, undoErasure = true)
-
-    case Expression.Tuple(elms, tpe, loc) =>
-      val tupleRef = squeezeReference(tpe)
-      WithSource[R](loc) ~
-        NEW(tupleRef) ~
-        DUP ~
-        invokeSimpleConstructor(tupleRef) ~
-        multiComposition(elms.zipWithIndex) { case (elm, elmIndex) =>
-          START[R ** PReference[PTuple]] ~
-            DUP ~
-            PUTFIELD(tupleRef, GenTupleClasses.indexFieldName(elmIndex), elm, erasedType = true)
-        }
-
-    case Expression.RecordEmpty(tpe, loc) => ???
-    case Expression.RecordSelect(exp, field, tpe, loc) => ???
-    case Expression.RecordExtend(field, value, rest, tpe, loc) => ???
-    case Expression.RecordRestrict(field, rest, tpe, loc) => ???
-    case Expression.ArrayLit(elms, tpe, loc) =>
-      def makeAndFillArray[R0 <: Stack, T0 <: PType]
-      (elms: List[Expression[T0]], arrayType: RArray[T0]):
-      F[R0 ** PReference[PArray[T0]]] => F[R0 ** PReference[PArray[T0]]] = {
-        START[R0 ** PReference[PArray[T0]]] ~
-          multiComposition(elms.zipWithIndex) { case (elm, index) =>
-            START[R0 ** PReference[PArray[T0]]] ~
-              DUP ~
-              pushInt32(index) ~
-              compileExp(elm) ~
-              XASTORE(arrayType.tpe)
-          }
-      }
-
-      WithSource[R](loc) ~
-        pushInt32(elms.length) ~
-        XNEWARRAY(tpe) ~
-        makeAndFillArray(elms, squeezeArray(squeezeReference(tpe)))
-
-    case Expression.ArrayNew(elm, len, tpe, loc) =>
-      def elmArraySwitch
-      [R0 <: Stack, T0 <: PType]
-      (elmType: RType[T0]):
-      F[R0 ** T0 ** PReference[PArray[T0]]] => F[R0 ** PReference[PArray[T0]] ** PReference[PArray[T0]] ** T0] =
-        elmType match {
-          case RBool | RInt8 | RInt16 | RInt32 | RChar | RFloat32 | RReference(_) => // Cat1
-            //TODO(JLS): note: start here is needed because of some implicit overshadowing
-            START[R0 ** T0 ** PReference[PArray[T0]]] ~
-              DUP_X1 ~
-              SWAP
-          case RInt64 | RFloat64 => // Cat2
-            START[R0 ** T0 ** PReference[PArray[T0]]] ~
-              DUP_X2_onCat2 ~
-              DUP_X2_onCat2 ~
-              POP
-        }
-
-      WithSource[R](loc) ~
-        compileExp(elm) ~
-        compileExp(len) ~
-        XNEWARRAY(tpe) ~
-        elmArraySwitch(elm.tpe) ~
-        arraysFill(elm.tpe)
-
-    case Expression.ArrayLoad(base, index, tpe, loc) =>
-      WithSource[R](loc) ~
-        compileExp(base) ~
-        compileExp(index) ~
-        XALOAD(tpe)
-
-    case Expression.ArrayStore(base, index, elm, _, loc) =>
-      WithSource[R](loc) ~
-        compileExp(base) ~
-        compileExp(index) ~
-        compileExp(elm) ~
-        XASTORE(elm.tpe) ~
-        pushUnit
-
-    case Expression.ArrayLength(base, _, loc) =>
-      WithSource[R](loc) ~
-        compileExp(base) ~
-        arrayLength(squeezeArray(squeezeReference(base.tpe)).tpe.tagOf)
-
-    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
-      WithSource[R](loc) ~
-        compileExp(base) ~
-        compileExp(beginIndex) ~
-        compileExp(endIndex) ~
-        SWAP ~
-        DUP_X1 ~
-        ISUB ~
-        DUP ~
-        XNEWARRAY(tpe) ~
-        DUP2_X2_cat1_onCat1 ~
-        SWAP ~
-        pushInt32(0) ~
-        SWAP ~
-        systemArrayCopy ~
-        SWAP ~
-        POP
-
-    case Expression.Ref(exp, tpe, loc) =>
-      val tpeRRef = squeezeReference(tpe)
-      WithSource[R](loc) ~
-        NEW(tpeRRef) ~
-        DUP ~
-        invokeSimpleConstructor(tpeRRef) ~
-        DUP ~
-        compileExp(exp) ~
-        PUTFIELD(tpeRRef, GenRefClasses.ValueFieldName, exp.tpe, erasedType = true)
-
-    case Expression.Deref(exp, tpe, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp) ~
-        GETFIELD(squeezeReference(exp.tpe), GenRefClasses.ValueFieldName, tpe, undoErasure = true)
-
-    case Expression.Assign(exp1, exp2, tpe, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp1) ~
-        compileExp(exp2) ~
-        PUTFIELD(squeezeReference(exp1.tpe), GenRefClasses.ValueFieldName, exp2.tpe, erasedType = true) ~
-        pushUnit
-
-    case Expression.Cast(exp, tpe, loc) =>
-      // TODO(JLS): When is this used and can it be removed? Should it be a flix error? user or compiler error?
-      WithSource[R](loc) ~
-        compileExp(exp) ~
-        (f => {
-          undoErasure(tpe, f.visitor)
-          f.asInstanceOf[F[R ** T]]
-        })
-
-    case Expression.TryCatch(exp, rules, tpe, loc) =>
-      val catchCases = rules.map {
-        case CatchRule(sym, clazz, exp) =>
-          val ins = START[R ** PReference[PAnyObject]] ~
-            ASTORE(sym) ~
-            compileExp(exp)
-          (new Label(), clazz, ins)
-      }
-      WithSource[R](loc) ~
-        tryCatch(compileExp(exp), catchCases)
-
-    case Expression.InvokeConstructor(constructor, args, _, loc) =>
-      // TODO(JLS): pretty messy
-      val constructorDescriptor = Descriptor.of(asm.Type.getConstructorDescriptor(constructor))
-      val className = JvmName.fromClass(constructor.getDeclaringClass)
-      WithSource[R](loc) ~
-        NEW(className, tagOf[PAnyObject]) ~
-        DUP ~
-        (f => {
-          // TODO(JLS): cant use multiComposition since there is an effect on the stack each iteration
-          for (arg <- args) {
-            compileExp(arg)(f)
-            // TODO(JLS): maybe undoErasure here? genExpression matches on array types
-          }
-          f.visitMethodInsn(Opcodes.INVOKESPECIAL, className.internalName, JvmName.constructorMethod, constructorDescriptor)
-          f.asInstanceOf[F[R ** T]]
-        })
-
-    case Expression.InvokeMethod(method, exp, args, tpe, loc) => f => {
-      // TODO(JLS): fix this
-      // Adding source line number for debugging
-      WithSource(loc)(f)
-
-      // Evaluate the receiver object.
-      compileExp(exp)(f)
-      val className = JvmName.fromClass(method.getDeclaringClass)
-      f.visitTypeInsn(Opcodes.CHECKCAST, className.internalName)
-
-      // Evaluate arguments left-to-right and push them onto the stack.
-      for (arg <- args) {
-        compileExp(arg)(f)
-        // TODO(JLS): maybe undoErasure here? genExpression matches on array types (method.getParameterTypes)
-      }
-      val descriptor = Descriptor.of(asm.Type.getMethodDescriptor(method))
-
-      // Check if we are invoking an interface or class.
-      if (method.getDeclaringClass.isInterface) {
-        f.visitMethodInsn(Opcodes.INVOKEINTERFACE, className.internalName, method.getName, descriptor, isInterface = true)
-      } else {
-        f.visitMethodInsn(Opcodes.INVOKEVIRTUAL, className.internalName, method.getName, descriptor)
-      }
-
-      // If the method is void, put a unit on top of the stack
-      if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) pushUnit(f)
-      f.asInstanceOf[F[R ** T]]
-    }
-
-    case Expression.InvokeStaticMethod(method, args, tpe, loc) => f => {
-      // TODO(JLS): fix this
-      // Adding source line number for debugging
-      WithSource(loc)(f)
-
-      // Evaluate arguments left-to-right and push them onto the stack.
-      for (arg <- args) {
-        compileExp(arg)(f)
-        // TODO(JLS): maybe undoErasure here? genExpression matches on array types
-      }
-      val className = JvmName.fromClass(method.getDeclaringClass)
-      val descriptor = Descriptor.of(asm.Type.getMethodDescriptor(method))
-
-      f.visitMethodInsn(Opcodes.INVOKESTATIC, className.internalName, method.getName, descriptor)
-
-      // If the method is void, put a unit on top of the stack
-      if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) pushUnit(f)
-      f.asInstanceOf[F[R ** T]]
-    }
-
-    case Expression.GetField(field, exp, tpe, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp) ~
-        ((f: F[R ** PReference[PAnyObject]]) => {
-          f.visitFieldInsn(Opcodes.GETFIELD, JvmName.fromClass(field.getDeclaringClass).internalName, field.getName, tpe.descriptor)
-          f.asInstanceOf[F[R ** T]]
-        })
-
-    case Expression.PutField(field, exp1, exp2, _, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp1) ~
-        compileExp(exp2) ~
-        (f => {
-          f.visitFieldInsn(Opcodes.PUTFIELD, JvmName.fromClass(field.getDeclaringClass).internalName, field.getName, exp2.tpe.descriptor)
-          f.asInstanceOf[F[R]]
-        }) ~
-        pushUnit
-
-    case Expression.GetStaticField(field, tpe, loc) =>
-      WithSource[R](loc) ~
-        GETSTATIC(JvmName.fromClass(field.getDeclaringClass), field.getName, tpe, undoErasure = false)
-
-    case Expression.PutStaticField(field, exp, tpe, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp) ~
-        (f => {
-          f.visitFieldInsn(Opcodes.PUTSTATIC, JvmName.fromClass(field.getDeclaringClass).internalName, field.getName, exp.tpe.descriptor)
-          f.asInstanceOf[F[R]]
-        }) ~
-        pushUnit
-
-    case Expression.NewChannel(exp, tpe, loc) =>
-      val chanRef = squeezeReference(tpe)
-      WithSource[R](loc) ~
-        NEW(chanRef) ~
-        DUP ~
-        compileExp(exp) ~
-        (f => {
-          f.visitMethodInsn(Opcodes.INVOKESPECIAL, chanRef.internalName, JvmName.constructorMethod,
-            JvmName.getMethodDescriptor(List(RInt32), None), false)
-          f.asInstanceOf[F[R ** T]]
-        })
-
-    case Expression.GetChannel(exp, tpe, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp) ~
-        getChannelValue(tpe)
-
-    case Expression.PutChannel(exp1, exp2, tpe, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp1) ~
-        DUP ~
-        compileExp(exp2) ~
-        putChannelValue(exp2.tpe)
-
-    case Expression.SelectChannel(rules, default, tpe, loc) =>
-      WithSource[R](loc) ~
-        pushInt32(rules.size) ~
-        ANEWARRAY(RReference(RChannel(RReference(RObject)))) ~
-        multiComposition(rules.zipWithIndex) {
-          case (rule, index) =>
-            START[R ** PReference[PArray[PReference[PChan[PAnyObject]]]]] ~
-              DUP ~
-              pushInt32(index) ~
-              compileExp(rule.chan) ~
-              ChannelSUBTYPE ~
-              AASTORE
-        } ~
-        pushBool(default.isDefined) ~
-        ((f: F[R ** PReference[PArray[PReference[PChan[PAnyObject]]]] ** PInt32]) => {
-          f.visitMethodInsn(Opcodes.INVOKESTATIC, JvmName.Flix.Channel.internalName, "select",
-            JvmName.getMethodDescriptor(List(JvmName.Flix.Channel, RBool), JvmName.Flix.SelectChoice), false)
-          f.asInstanceOf[F[R ** PReference[PAnyObject]]]
-        }) ~
-        DUP ~
-        (f => {
-          f.visitFieldInsn(Opcodes.GETFIELD, JvmName.Flix.SelectChoice.internalName, "defaultChoice", RBool.descriptor)
-          f.asInstanceOf[F[R ** PReference[PAnyObject] ** PInt32]]
-        }) ~
-        IFNE {
-          START[R ** PReference[PAnyObject]] ~
-            POP ~
-            (if (default.isDefined) {
-              compileExp(default.get)
-            } else {
-              f => {
-                f.visitInsn(Opcodes.ACONST_NULL)
-                f.visitInsn(Opcodes.ATHROW)
-                f.asInstanceOf[F[R ** T]]
+  def compileExp[R <: Stack, T <: PType](exp: Expression[T], lenv0: Map[Symbol.LabelSym, Label]): F[R] => F[R ** T] = {
+    def recurse[R0 <: Stack, T0 <: PType](exp0: Expression[T0]): F[R0] => F[R0 ** T0] = compileExp(exp0, lenv0)
+
+    exp match {
+      case Expression.Unit(loc) =>
+        WithSource[R](loc) ~
+          pushUnit
+
+      case Expression.Null(tpe, loc) =>
+        WithSource[R](loc) ~ pushNull(tpe)
+
+      case Expression.True(loc) =>
+        WithSource[R](loc) ~ pushBool(true)
+
+      case Expression.False(loc) =>
+        WithSource[R](loc) ~ pushBool(false)
+
+      case Expression.Char(lit, loc) =>
+        WithSource[R](loc) ~
+          pushChar(lit)
+
+      case Expression.Float32(lit, loc) =>
+        WithSource[R](loc) ~ pushFloat32(lit)
+
+      case Expression.Float64(lit, loc) =>
+        WithSource[R](loc) ~ pushFloat64(lit)
+
+      case Expression.Int8(lit, loc) =>
+        WithSource[R](loc) ~ pushInt8(lit)
+
+      case Expression.Int16(lit, loc) =>
+        WithSource[R](loc) ~ pushInt16(lit)
+
+      case Expression.Int32(lit, loc) =>
+        WithSource[R](loc) ~ pushInt32(lit)
+
+      case Expression.Int64(lit, loc) =>
+        WithSource[R](loc) ~ pushInt64(lit)
+
+      case Expression.BigInt(lit, loc) =>
+        WithSource[R](loc) ~
+          pushBigInt(lit)
+
+      case Expression.Str(lit, loc) =>
+        WithSource[R](loc) ~
+          pushString(lit)
+
+      case Expression.Var(sym, tpe, loc) =>
+        WithSource[R](loc) ~
+          XLOAD(tpe, sym.getStackOffset + symOffsetOffset) // TODO(JLS): make this offset exist in F, dependent on static(0)/object function(1)
+
+      case Expression.Closure(sym, freeVars, tpe, loc) =>
+        WithSource[R](loc) ~
+          CREATECLOSURE(freeVars, sym.cloName, squeezeFunction(squeezeReference(tpe)).jvmName, lenv0)
+
+      case Expression.ApplyClo(exp, args, _, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp) ~
+          CALL(args, squeezeFunction(squeezeReference(exp.tpe)), lenv0)
+
+      case Expression.ApplyDef(sym, args, fnTpe, tpe, loc) =>
+        val arrow = squeezeFunction(squeezeReference(fnTpe))
+        WithSource[R](loc) ~
+          CREATEDEF(sym.defName, arrow.jvmName, tpe.tagOf) ~
+          CALL(args, arrow, lenv0)
+
+      case Expression.ApplyCloTail(exp, args, _, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp) ~
+          TAILCALL(args, squeezeFunction(squeezeReference(exp.tpe)), lenv0)
+
+      case Expression.ApplyDefTail(sym, args, fnTpe, tpe, loc) =>
+        val arrow = squeezeFunction(squeezeReference(fnTpe))
+        WithSource[R](loc) ~
+          CREATEDEF(sym.defName, arrow.jvmName, tpe.tagOf) ~
+          TAILCALL(args, arrow, lenv0)
+
+      case Expression.ApplySelfTail(_, _, actuals, fnTpe, _, loc) =>
+        WithSource[R](loc) ~
+          THISLOAD(fnTpe) ~
+          TAILCALL(actuals, squeezeFunction(squeezeReference(fnTpe)), lenv0)
+
+      case Expression.BoolNot(exp, _, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp) ~
+          IFNE(START[R] ~ pushBool(false))(START[R] ~ pushBool(true))
+
+      // Unary expressions
+      case Expression.Float32Neg(exp, _, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp) ~
+          FNEG
+
+      case Expression.Float64Neg(exp, _, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp) ~
+          DNEG
+
+      case Expression.Int8Neg(exp, _, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp) ~
+          INEG ~
+          I2B
+
+      case Expression.Int8Not(exp, _, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp) ~
+          pushInt8(-1) ~
+          BXOR
+
+      case Expression.Int16Neg(exp, _, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp) ~
+          INEG ~
+          I2S
+
+      case Expression.Int16Not(exp, _, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp) ~
+          pushInt16(-1) ~
+          SXOR
+
+      case Expression.Int32Neg(exp, _, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp) ~
+          INEG
+
+      case Expression.Int32Not(exp, _, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp) ~
+          pushInt32(-1) ~
+          IXOR
+
+      case Expression.Int64Neg(exp, _, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp) ~
+          LNEG
+
+      case Expression.Int64Not(exp, _, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp) ~
+          pushInt64(-1) ~
+          LXOR
+
+      case Expression.BigIntNeg(exp, _, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp) ~
+          BigIntNeg
+
+      case Expression.BigIntNot(exp, _, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp) ~
+          BigIntNot
+
+      case Expression.ObjEqNull(exp, _, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp) ~
+          IFNULL(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+
+      case Expression.ObjNeqNull(exp, _, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp) ~
+          IFNONNULL(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+
+      // Binary expressions
+      case Expression.BoolLogicalOp(op, exp1, exp2, _, loc) =>
+        op match {
+          case LogicalOp.And =>
+            // TODO(JLS): this is probaly not optimal when coded with capabilities
+            WithSource[R](loc) ~
+              recurse(exp1) ~
+              IFEQ(START[R] ~ pushBool(false)) {
+                START[R] ~
+                  recurse(exp2) ~
+                  IFEQ(START[R] ~ pushBool(false))(START[R] ~ pushBool(true))
               }
-            })
-        } {
-          START[R ** PReference[PAnyObject]] ~
-            DUP ~
-            GETFIELD(JvmName.Flix.SelectChoice, "branchNumber", RInt8, undoErasure = false) ~
-            SCAFFOLD
+          case LogicalOp.Or =>
+            WithSource[R](loc) ~
+              recurse(exp1) ~
+              IFNE(START[R] ~ pushBool(true)) {
+                START[R] ~
+                  recurse(exp2) ~
+                  IFNE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+              }
         }
 
+      case Expression.BoolEquality(op, exp1, exp2, _, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp1) ~
+          recurse(exp2) ~
+          (op match {
+            case EqualityOp.Eq => IF_ICMPEQ(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            case EqualityOp.Ne => IF_ICMPNE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+          })
 
-    case Expression.Spawn(exp, tpe, loc) => ???
-    case Expression.Lazy(exp, tpe, loc) =>
-      WithSource[R](loc) ~
-        mkLazy(tpe, exp.tpe, compileExp(exp))
+      case Expression.CharComparison(op, exp1, exp2, _, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp1) ~
+          recurse(exp2) ~
+          (op match {
+            case ComparisonOp.Lt => IF_ICMPLT(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            case ComparisonOp.Le => IF_ICMPLE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            case ComparisonOp.Gt => IF_ICMPGT(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            case ComparisonOp.Ge => IF_ICMPGE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            case op: ErasedAst.EqualityOp => op match {
+              case EqualityOp.Eq => IF_ICMPEQ(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+              case EqualityOp.Ne => IF_ICMPNE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            }
+          })
 
-    case Expression.Force(exp, _, loc) =>
-      WithSource[R](loc) ~
-        compileExp(exp) ~
-        FORCE(exp.tpe)
+      case Expression.Float32Arithmetic(op, exp1, exp2, _, loc) =>
+        val compileOperands: F[R] => F[R ** PFloat32 ** PFloat32] =
+          START[R] ~ recurse(exp1) ~ recurse(exp2)
+        WithSource[R](loc) ~ (op match {
+          case ArithmeticOp.Add => compileOperands ~ FADD
+          case ArithmeticOp.Sub => compileOperands ~ FSUB
+          case ArithmeticOp.Mul => compileOperands ~ FMUL
+          case ArithmeticOp.Div => compileOperands ~ FDIV
+          case ArithmeticOp.Rem => compileOperands ~ FREM
+          case ArithmeticOp.Exp =>
+            DoublePow[R] {
+              START[StackNil] ~
+                recurse(exp1) ~ F2D ~
+                recurse(exp2) ~ F2D
+            } ~ D2F
+        })
 
-    case Expression.HoleError(sym, _, loc) =>
-      WithSource[R](loc) ~
-        throwStringedCompilerError(JvmName.Flix.HoleError, sym.toString, loc)
+      case Expression.Float32Comparison(op, exp1, exp2, _, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp1) ~
+          recurse(exp2) ~
+          (op match {
+            case ComparisonOp.Lt => FCMPG ~ IFLT(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            case ComparisonOp.Le => FCMPG ~ IFLE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            case ComparisonOp.Gt => FCMPL ~ IFGT(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            case ComparisonOp.Ge => FCMPL ~ IFGE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            case op: EqualityOp => op match {
+              case EqualityOp.Eq => FCMPG ~ IFEQ(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+              case EqualityOp.Ne => FCMPG ~ IFNE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            }
+          })
 
-    case Expression.MatchError(_, loc) =>
-      WithSource[R](loc) ~
-        throwCompilerError(JvmName.Flix.MatchError, loc)
+      case Expression.Float64Arithmetic(op, exp1, exp2, _, loc) =>
+        val compileOperands: F[R] => F[R ** PFloat64 ** PFloat64] =
+          START[R] ~ recurse(exp1) ~ recurse(exp2)
+        WithSource[R](loc) ~ (op match {
+          case ArithmeticOp.Add => compileOperands ~ DADD
+          case ArithmeticOp.Sub => compileOperands ~ DSUB
+          case ArithmeticOp.Mul => compileOperands ~ DMUL
+          case ArithmeticOp.Div => compileOperands ~ DDIV
+          case ArithmeticOp.Rem => compileOperands ~ DREM
+          case ArithmeticOp.Exp =>
+            DoublePow[R] {
+              START[StackNil] ~
+                recurse(exp1) ~
+                recurse(exp2)
+            }
+        })
 
-    case Expression.BoxBool(exp, loc) => ???
-    case Expression.BoxInt8(exp, loc) => ???
-    case Expression.BoxInt16(exp, loc) => ???
-    case Expression.BoxInt32(exp, loc) => ???
-    case Expression.BoxInt64(exp, loc) => ???
-    case Expression.BoxChar(exp, loc) => ???
-    case Expression.BoxFloat32(exp, loc) => ???
-    case Expression.BoxFloat64(exp, loc) => ???
-    case Expression.UnboxBool(exp, loc) => ???
-    case Expression.UnboxInt8(exp, loc) => ???
-    case Expression.UnboxInt16(exp, loc) => ???
-    case Expression.UnboxInt32(exp, loc) => ???
-    case Expression.UnboxInt64(exp, loc) => ???
-    case Expression.UnboxChar(exp, loc) => ???
-    case Expression.UnboxFloat32(exp, loc) => ???
-    case Expression.UnboxFloat64(exp, loc) => ???
+      case Expression.Float64Comparison(op, exp1, exp2, _, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp1) ~
+          recurse(exp2) ~
+          (op match {
+            case ComparisonOp.Lt => DCMPG ~ IFLT(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            case ComparisonOp.Le => DCMPG ~ IFLE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            case ComparisonOp.Gt => DCMPL ~ IFGT(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            case ComparisonOp.Ge => DCMPL ~ IFGE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            case op: EqualityOp => op match {
+              case EqualityOp.Eq => DCMPG ~ IFEQ(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+              case EqualityOp.Ne => DCMPG ~ IFNE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            }
+          })
+
+      case Expression.Int8Arithmetic(op, exp1, exp2, _, loc) =>
+        val compileOperands: F[R] => F[R ** PInt8 ** PInt8] =
+          START[R] ~ recurse(exp1) ~ recurse(exp2)
+        WithSource[R](loc) ~ (op match {
+          case ArithmeticOp.Add => compileOperands ~ IADD ~ I2B
+          case ArithmeticOp.Sub => compileOperands ~ ISUB ~ I2B
+          case ArithmeticOp.Mul => compileOperands ~ IMUL ~ I2B
+          case ArithmeticOp.Div => compileOperands ~ IDIV ~ I2B
+          case ArithmeticOp.Rem => compileOperands ~ IREM ~ I2B
+          case ArithmeticOp.Exp =>
+            DoublePow[R] {
+              START[StackNil] ~
+                recurse(exp1) ~ I2D ~
+                recurse(exp2) ~ I2D
+            } ~
+              D2I ~
+              I2B
+        })
+
+      case Expression.Int16Arithmetic(op, exp1, exp2, _, loc) =>
+        val compileOperands: F[R] => F[R ** PInt16 ** PInt16] =
+          START[R] ~ recurse(exp1) ~ recurse(exp2)
+        WithSource[R](loc) ~ (op match {
+          case ArithmeticOp.Add => compileOperands ~ IADD ~ I2S
+          case ArithmeticOp.Sub => compileOperands ~ ISUB ~ I2S
+          case ArithmeticOp.Mul => compileOperands ~ IMUL ~ I2S
+          case ArithmeticOp.Div => compileOperands ~ IDIV ~ I2S
+          case ArithmeticOp.Rem => compileOperands ~ IREM ~ I2S
+          case ArithmeticOp.Exp =>
+            DoublePow[R] {
+              START[StackNil] ~
+                recurse(exp1) ~ I2D ~
+                recurse(exp2) ~ I2D
+            } ~
+              D2I ~
+              I2S
+        })
+
+      case Expression.Int32Arithmetic(op, exp1, exp2, _, loc) =>
+        val compileOperands: F[R] => F[R ** PInt32 ** PInt32] =
+          START[R] ~ recurse(exp1) ~ recurse(exp2)
+        WithSource[R](loc) ~ (op match {
+          case ArithmeticOp.Add => compileOperands ~ IADD
+          case ArithmeticOp.Sub => compileOperands ~ ISUB
+          case ArithmeticOp.Mul => compileOperands ~ IMUL
+          case ArithmeticOp.Div => compileOperands ~ IDIV
+          case ArithmeticOp.Rem => compileOperands ~ IREM
+          case ArithmeticOp.Exp =>
+            DoublePow[R] {
+              START[StackNil] ~
+                recurse(exp1) ~ I2D ~
+                recurse(exp2) ~ I2D
+            } ~
+              D2I
+        })
+
+      case Expression.Int64Arithmetic(op, exp1, exp2, _, loc) =>
+        val compileOperands: F[R] => F[R ** PInt64 ** PInt64] =
+          START[R] ~ recurse(exp1) ~ recurse(exp2)
+        WithSource[R](loc) ~ (op match {
+          case ArithmeticOp.Add => compileOperands ~ LADD
+          case ArithmeticOp.Sub => compileOperands ~ LSUB
+          case ArithmeticOp.Mul => compileOperands ~ LMUL
+          case ArithmeticOp.Div => compileOperands ~ LDIV
+          case ArithmeticOp.Rem => compileOperands ~ LREM
+          case ArithmeticOp.Exp =>
+            DoublePow[R] {
+              START[StackNil] ~
+                recurse(exp1) ~ L2D ~
+                recurse(exp2) ~ L2D
+            } ~ D2L
+        })
+
+      case Expression.BigIntArithmetic(op, exp1, exp2, _, loc) =>
+        val compileOperands: F[R] => F[R ** PReference[PBigInt] ** PReference[PBigInt]] =
+          START[R] ~ recurse(exp1) ~ recurse(exp2)
+        WithSource[R](loc) ~ (op match {
+          case ArithmeticOp.Add => compileOperands ~ BigIntADD
+          case ArithmeticOp.Sub => compileOperands ~ BigIntSUB
+          case ArithmeticOp.Mul => compileOperands ~ BigIntMUL
+          case ArithmeticOp.Div => compileOperands ~ BigIntDIV
+          case ArithmeticOp.Rem => compileOperands ~ BigIntREM
+          case ArithmeticOp.Exp => throw InternalCompilerException("exponentiation on big integers not implemented in backend")
+        })
+
+      case Expression.Int8Bitwise(op, exp1, exp2, _, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp1) ~
+          recurse(exp2) ~
+          (op match {
+            case BitwiseOp.And => BAND
+            case BitwiseOp.Or => BOR
+            case BitwiseOp.Xor => BXOR
+            case BitwiseOp.Shl => START[R ** PInt8 ** PInt8] ~ ISHL ~ I2B
+            case BitwiseOp.Shr => BSHR
+          })
+
+      case Expression.Int16Bitwise(op, exp1, exp2, _, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp1) ~
+          recurse(exp2) ~
+          (op match {
+            case BitwiseOp.And => SAND
+            case BitwiseOp.Or => SOR
+            case BitwiseOp.Xor => SXOR
+            case BitwiseOp.Shl => START[R ** PInt16 ** PInt16] ~ ISHL ~ I2S
+            case BitwiseOp.Shr => SSHR
+          })
+
+      case Expression.Int32Bitwise(op, exp1, exp2, _, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp1) ~
+          recurse(exp2) ~
+          (op match {
+            case BitwiseOp.And => IAND
+            case BitwiseOp.Or => IOR
+            case BitwiseOp.Xor => IXOR
+            case BitwiseOp.Shl => START[R ** PInt32 ** PInt32] ~ ISHL
+            case BitwiseOp.Shr => ISHR
+          })
+
+      case Expression.Int64Bitwise(op, exp1, exp2, _, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp1) ~
+          recurse(exp2) ~
+          (op match {
+            case BitwiseOp.And => LAND
+            case BitwiseOp.Or => LOR
+            case BitwiseOp.Xor => LXOR
+            case BitwiseOp.Shl => LSHL
+            case BitwiseOp.Shr => LSHR
+          })
+
+      case Expression.BigIntBitwise(op, exp1, exp2, _, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp1) ~
+          recurse(exp2) ~
+          (op match {
+            case BitwiseOp.And => BigIntAND
+            case BitwiseOp.Or => BigIntOR
+            case BitwiseOp.Xor => BigIntXOR
+            case BitwiseOp.Shl => BigIntSHL
+            case BitwiseOp.Shr => BigIntSHR
+          })
+
+      case Expression.Int8Comparison(op, exp1, exp2, _, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp1) ~
+          recurse(exp2) ~
+          (op match {
+            case ComparisonOp.Lt => IF_ICMPLT(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            case ComparisonOp.Le => IF_ICMPLE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            case ComparisonOp.Gt => IF_ICMPGT(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            case ComparisonOp.Ge => IF_ICMPGE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            case op: ErasedAst.EqualityOp => op match {
+              case EqualityOp.Eq => IF_ICMPEQ(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+              case EqualityOp.Ne => IF_ICMPNE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            }
+          })
+
+      case Expression.Int16Comparison(op, exp1, exp2, _, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp1) ~
+          recurse(exp2) ~
+          (op match {
+            case ComparisonOp.Lt => IF_ICMPLT(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            case ComparisonOp.Le => IF_ICMPLE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            case ComparisonOp.Gt => IF_ICMPGT(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            case ComparisonOp.Ge => IF_ICMPGE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            case op: ErasedAst.EqualityOp => op match {
+              case EqualityOp.Eq => IF_ICMPEQ(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+              case EqualityOp.Ne => IF_ICMPNE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            }
+          })
+
+
+      case Expression.Int32Comparison(op, exp1, exp2, _, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp1) ~
+          recurse(exp2) ~
+          (op match {
+            case ComparisonOp.Lt => IF_ICMPLT(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            case ComparisonOp.Le => IF_ICMPLE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            case ComparisonOp.Gt => IF_ICMPGT(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            case ComparisonOp.Ge => IF_ICMPGE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            case op: ErasedAst.EqualityOp => op match {
+              case EqualityOp.Eq => IF_ICMPEQ(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+              case EqualityOp.Ne => IF_ICMPNE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            }
+          })
+
+      case Expression.Int64Comparison(op, exp1, exp2, tpe, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp1) ~
+          recurse(exp2) ~
+          (op match {
+            case ComparisonOp.Lt => LCMP ~ IFLT(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            case ComparisonOp.Le => LCMP ~ IFLE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            case ComparisonOp.Gt => LCMP ~ IFGT(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            case ComparisonOp.Ge => LCMP ~ IFGE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            case op: EqualityOp => op match {
+              case EqualityOp.Eq => LCMP ~ IFEQ(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+              case EqualityOp.Ne => LCMP ~ IFNE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            }
+          })
+
+      case Expression.BigIntComparison(op, exp1, exp2, _, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp1) ~
+          recurse(exp2) ~
+          (op match {
+            case ComparisonOp.Lt => BigIntCompareTo ~ IFLT(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            case ComparisonOp.Le => BigIntCompareTo ~ IFLE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            case ComparisonOp.Gt => BigIntCompareTo ~ IFGT(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            case ComparisonOp.Ge => BigIntCompareTo ~ IFGE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            case op: EqualityOp => op match {
+              case EqualityOp.Eq => BigIntCompareTo ~ IFEQ(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+              case EqualityOp.Ne => BigIntCompareTo ~ IFNE(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+            }
+          })
+
+      case Expression.StringConcat(exp1, exp2, _, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp1) ~
+          recurse(exp2) ~
+          stringConcat
+
+      case Expression.StringEquality(op, exp1, exp2, _, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp1) ~
+          recurse(exp2) ~
+          (op match {
+            case EqualityOp.Eq => ObjEquals
+            case EqualityOp.Ne => ObjEquals ~ IFEQ(START[R] ~ pushBool(true))(START[R] ~ pushBool(false))
+          })
+
+      case Expression.IfThenElse(exp1, exp2, exp3, _, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp1) ~
+          IFEQ(START[R] ~ recurse(exp3))(START[R] ~ recurse(exp2))
+
+      case Expression.Branch(exp, branches, _, loc) =>
+        // TODO(JLS): Labels could probably be typed
+        f => {
+          // Adding source line number for debugging
+          WithSource(loc)(f)
+          // Calculating the updated jumpLabels map
+          val updatedJumpLabels = branches.foldLeft(lenv0)((map, branch) => map + (branch._1 -> new Label()))
+          // Compiling the exp
+          compileExp(exp, updatedJumpLabels)(f)
+          // Label for the end of all branches
+          val endLabel = new Label()
+          // Skip branches if `exp` does not jump
+          f.visitJumpInsn(Opcodes.GOTO, endLabel)
+          // Compiling branches
+          branches.foreach { case (sym, branchExp) =>
+            // Label for the start of the branch
+            f.visitLabel(updatedJumpLabels(sym))
+            // evaluating the expression for the branch
+            compileExp(branchExp, updatedJumpLabels)(f)
+            // Skip the rest of the branches
+            f.visitJumpInsn(Opcodes.GOTO, endLabel)
+          }
+          // label for the end of branches
+          f.visitLabel(endLabel)
+          f.asInstanceOf[F[R ** T]]
+        }
+
+      case Expression.JumpTo(sym, tpe, loc) => ???
+      case Expression.Let(sym, exp1, exp2, tpe, loc) =>
+        //TODO(JLS): sym is unsafe. localvar stack + reg as types?
+        WithSource[R](loc) ~
+          recurse(exp1) ~
+          XSTORE(sym, exp1.tpe) ~
+          recurse(exp2)
+
+      case Expression.Is(sym, tag, exp, loc) => ???
+      case Expression.Tag(sym, tag, exp, tpe, loc) => ???
+      case Expression.Untag(sym, tag, exp, tpe, loc) => ???
+      case Expression.Index(base, offset, tpe, loc) =>
+        WithSource[R](loc) ~
+          recurse(base) ~
+          GETFIELD(squeezeReference(base.tpe), GenTupleClasses.indexFieldName(offset), tpe, undoErasure = true)
+
+      case Expression.Tuple(elms, tpe, loc) =>
+        val tupleRef = squeezeReference(tpe)
+        WithSource[R](loc) ~
+          NEW(tupleRef) ~
+          DUP ~
+          invokeSimpleConstructor(tupleRef) ~
+          multiComposition(elms.zipWithIndex) { case (elm, elmIndex) =>
+            START[R ** PReference[PTuple]] ~
+              DUP ~
+              PUTFIELD(tupleRef, GenTupleClasses.indexFieldName(elmIndex), elm, lenv0, erasedType = true)
+          }
+
+      case Expression.RecordEmpty(tpe, loc) => ???
+      case Expression.RecordSelect(exp, field, tpe, loc) => ???
+      case Expression.RecordExtend(field, value, rest, tpe, loc) => ???
+      case Expression.RecordRestrict(field, rest, tpe, loc) => ???
+      case Expression.ArrayLit(elms, tpe, loc) =>
+        def makeAndFillArray[R0 <: Stack, T0 <: PType]
+        (elms: List[Expression[T0]], arrayType: RArray[T0]):
+        F[R0 ** PReference[PArray[T0]]] => F[R0 ** PReference[PArray[T0]]] = {
+          START[R0 ** PReference[PArray[T0]]] ~
+            multiComposition(elms.zipWithIndex) { case (elm, index) =>
+              START[R0 ** PReference[PArray[T0]]] ~
+                DUP ~
+                pushInt32(index) ~
+                recurse(elm) ~
+                XASTORE(arrayType.tpe)
+            }
+        }
+
+        WithSource[R](loc) ~
+          pushInt32(elms.length) ~
+          XNEWARRAY(tpe) ~
+          makeAndFillArray(elms, squeezeArray(squeezeReference(tpe)))
+
+      case Expression.ArrayNew(elm, len, tpe, loc) =>
+        def elmArraySwitch
+        [R0 <: Stack, T0 <: PType]
+        (elmType: RType[T0]):
+        F[R0 ** T0 ** PReference[PArray[T0]]] => F[R0 ** PReference[PArray[T0]] ** PReference[PArray[T0]] ** T0] =
+          elmType match {
+            case RBool | RInt8 | RInt16 | RInt32 | RChar | RFloat32 | RReference(_) => // Cat1
+              //TODO(JLS): note: start here is needed because of some implicit overshadowing
+              START[R0 ** T0 ** PReference[PArray[T0]]] ~
+                DUP_X1 ~
+                SWAP
+            case RInt64 | RFloat64 => // Cat2
+              START[R0 ** T0 ** PReference[PArray[T0]]] ~
+                DUP_X2_onCat2 ~
+                DUP_X2_onCat2 ~
+                POP
+          }
+
+        WithSource[R](loc) ~
+          recurse(elm) ~
+          recurse(len) ~
+          XNEWARRAY(tpe) ~
+          elmArraySwitch(elm.tpe) ~
+          arraysFill(elm.tpe)
+
+      case Expression.ArrayLoad(base, index, tpe, loc) =>
+        WithSource[R](loc) ~
+          recurse(base) ~
+          recurse(index) ~
+          XALOAD(tpe)
+
+      case Expression.ArrayStore(base, index, elm, _, loc) =>
+        WithSource[R](loc) ~
+          recurse(base) ~
+          recurse(index) ~
+          recurse(elm) ~
+          XASTORE(elm.tpe) ~
+          pushUnit
+
+      case Expression.ArrayLength(base, _, loc) =>
+        WithSource[R](loc) ~
+          recurse(base) ~
+          arrayLength(squeezeArray(squeezeReference(base.tpe)).tpe.tagOf)
+
+      case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
+        WithSource[R](loc) ~
+          recurse(base) ~
+          recurse(beginIndex) ~
+          recurse(endIndex) ~
+          SWAP ~
+          DUP_X1 ~
+          ISUB ~
+          DUP ~
+          XNEWARRAY(tpe) ~
+          DUP2_X2_cat1_onCat1 ~
+          SWAP ~
+          pushInt32(0) ~
+          SWAP ~
+          systemArrayCopy ~
+          SWAP ~
+          POP
+
+      case Expression.Ref(exp, tpe, loc) =>
+        val tpeRRef = squeezeReference(tpe)
+        WithSource[R](loc) ~
+          NEW(tpeRRef) ~
+          DUP ~
+          invokeSimpleConstructor(tpeRRef) ~
+          DUP ~
+          recurse(exp) ~
+          PUTFIELD(tpeRRef, GenRefClasses.ValueFieldName, exp.tpe, erasedType = true)
+
+      case Expression.Deref(exp, tpe, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp) ~
+          GETFIELD(squeezeReference(exp.tpe), GenRefClasses.ValueFieldName, tpe, undoErasure = true)
+
+      case Expression.Assign(exp1, exp2, tpe, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp1) ~
+          recurse(exp2) ~
+          PUTFIELD(squeezeReference(exp1.tpe), GenRefClasses.ValueFieldName, exp2.tpe, erasedType = true) ~
+          pushUnit
+
+      case Expression.Cast(exp, tpe, loc) =>
+        // TODO(JLS): When is this used and can it be removed? Should it be a flix error? user or compiler error?
+        WithSource[R](loc) ~
+          recurse(exp) ~
+          (f => {
+            undoErasure(tpe, f.visitor)
+            f.asInstanceOf[F[R ** T]]
+          })
+
+      case Expression.TryCatch(exp, rules, tpe, loc) =>
+        val catchCases = rules.map {
+          case CatchRule(sym, clazz, exp) =>
+            val ins = START[R ** PReference[PAnyObject]] ~
+              ASTORE(sym) ~
+              recurse(exp)
+            (new Label(), clazz, ins)
+        }
+        WithSource[R](loc) ~
+          tryCatch(recurse(exp), catchCases)
+
+      case Expression.InvokeConstructor(constructor, args, _, loc) =>
+        // TODO(JLS): pretty messy
+        val constructorDescriptor = Descriptor.of(asm.Type.getConstructorDescriptor(constructor))
+        val className = JvmName.fromClass(constructor.getDeclaringClass)
+        WithSource[R](loc) ~
+          NEW(className, tagOf[PAnyObject]) ~
+          DUP ~
+          (f => {
+            // TODO(JLS): cant use multiComposition since there is an effect on the stack each iteration
+            for (arg <- args) {
+              recurse(arg)(f)
+              // TODO(JLS): maybe undoErasure here? genExpression matches on array types
+            }
+            f.visitMethodInsn(Opcodes.INVOKESPECIAL, className.internalName, JvmName.constructorMethod, constructorDescriptor)
+            f.asInstanceOf[F[R ** T]]
+          })
+
+      case Expression.InvokeMethod(method, exp, args, tpe, loc) => f => {
+        // TODO(JLS): fix this
+        // Adding source line number for debugging
+        WithSource(loc)(f)
+
+        // Evaluate the receiver object.
+        recurse(exp)(f)
+        val className = JvmName.fromClass(method.getDeclaringClass)
+        f.visitTypeInsn(Opcodes.CHECKCAST, className.internalName)
+
+        // Evaluate arguments left-to-right and push them onto the stack.
+        for (arg <- args) {
+          recurse(arg)(f)
+          // TODO(JLS): maybe undoErasure here? genExpression matches on array types (method.getParameterTypes)
+        }
+        val descriptor = Descriptor.of(asm.Type.getMethodDescriptor(method))
+
+        // Check if we are invoking an interface or class.
+        if (method.getDeclaringClass.isInterface) {
+          f.visitMethodInsn(Opcodes.INVOKEINTERFACE, className.internalName, method.getName, descriptor, isInterface = true)
+        } else {
+          f.visitMethodInsn(Opcodes.INVOKEVIRTUAL, className.internalName, method.getName, descriptor)
+        }
+
+        // If the method is void, put a unit on top of the stack
+        if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) pushUnit(f)
+        f.asInstanceOf[F[R ** T]]
+      }
+
+      case Expression.InvokeStaticMethod(method, args, tpe, loc) => f => {
+        // TODO(JLS): fix this
+        // Adding source line number for debugging
+        WithSource(loc)(f)
+
+        // Evaluate arguments left-to-right and push them onto the stack.
+        for (arg <- args) {
+          recurse(arg)(f)
+          // TODO(JLS): maybe undoErasure here? genExpression matches on array types
+        }
+        val className = JvmName.fromClass(method.getDeclaringClass)
+        val descriptor = Descriptor.of(asm.Type.getMethodDescriptor(method))
+
+        f.visitMethodInsn(Opcodes.INVOKESTATIC, className.internalName, method.getName, descriptor)
+
+        // If the method is void, put a unit on top of the stack
+        if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) pushUnit(f)
+        f.asInstanceOf[F[R ** T]]
+      }
+
+      case Expression.GetField(field, exp, tpe, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp) ~
+          ((f: F[R ** PReference[PAnyObject]]) => {
+            f.visitFieldInsn(Opcodes.GETFIELD, JvmName.fromClass(field.getDeclaringClass).internalName, field.getName, tpe.descriptor)
+            f.asInstanceOf[F[R ** T]]
+          })
+
+      case Expression.PutField(field, exp1, exp2, _, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp1) ~
+          recurse(exp2) ~
+          (f => {
+            f.visitFieldInsn(Opcodes.PUTFIELD, JvmName.fromClass(field.getDeclaringClass).internalName, field.getName, exp2.tpe.descriptor)
+            f.asInstanceOf[F[R]]
+          }) ~
+          pushUnit
+
+      case Expression.GetStaticField(field, tpe, loc) =>
+        WithSource[R](loc) ~
+          GETSTATIC(JvmName.fromClass(field.getDeclaringClass), field.getName, tpe, undoErasure = false)
+
+      case Expression.PutStaticField(field, exp, tpe, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp) ~
+          (f => {
+            f.visitFieldInsn(Opcodes.PUTSTATIC, JvmName.fromClass(field.getDeclaringClass).internalName, field.getName, exp.tpe.descriptor)
+            f.asInstanceOf[F[R]]
+          }) ~
+          pushUnit
+
+      case Expression.NewChannel(exp, tpe, loc) =>
+        val chanRef = squeezeReference(tpe)
+        WithSource[R](loc) ~
+          NEW(chanRef) ~
+          DUP ~
+          recurse(exp) ~
+          (f => {
+            f.visitMethodInsn(Opcodes.INVOKESPECIAL, chanRef.internalName, JvmName.constructorMethod,
+              JvmName.getMethodDescriptor(List(RInt32), None), false)
+            f.asInstanceOf[F[R ** T]]
+          })
+
+      case Expression.GetChannel(exp, tpe, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp) ~
+          getChannelValue(tpe)
+
+      case Expression.PutChannel(exp1, exp2, tpe, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp1) ~
+          DUP ~
+          recurse(exp2) ~
+          putChannelValue(exp2.tpe)
+
+      case Expression.SelectChannel(rules, default, tpe, loc) =>
+        WithSource[R](loc) ~
+          pushInt32(rules.size) ~
+          ANEWARRAY(RReference(RChannel(RReference(RObject)))) ~
+          multiComposition(rules.zipWithIndex) {
+            case (rule, index) =>
+              START[R ** PReference[PArray[PReference[PChan[PAnyObject]]]]] ~
+                DUP ~
+                pushInt32(index) ~
+                recurse(rule.chan) ~
+                ChannelSUBTYPE ~
+                AASTORE
+          } ~
+          pushBool(default.isDefined) ~
+          ((f: F[R ** PReference[PArray[PReference[PChan[PAnyObject]]]] ** PInt32]) => {
+            f.visitMethodInsn(Opcodes.INVOKESTATIC, JvmName.Flix.Channel.internalName, "select",
+              JvmName.getMethodDescriptor(List(JvmName.Flix.Channel, RBool), JvmName.Flix.SelectChoice), false)
+            f.asInstanceOf[F[R ** PReference[PAnyObject]]]
+          }) ~
+          DUP ~
+          (f => {
+            f.visitFieldInsn(Opcodes.GETFIELD, JvmName.Flix.SelectChoice.internalName, "defaultChoice", RBool.descriptor)
+            f.asInstanceOf[F[R ** PReference[PAnyObject] ** PInt32]]
+          }) ~
+          IFNE {
+            START[R ** PReference[PAnyObject]] ~
+              POP ~
+              (if (default.isDefined) {
+                recurse(default.get)
+              } else {
+                f => {
+                  f.visitInsn(Opcodes.ACONST_NULL)
+                  f.visitInsn(Opcodes.ATHROW)
+                  f.asInstanceOf[F[R ** T]]
+                }
+              })
+          } {
+            START[R ** PReference[PAnyObject]] ~
+              DUP ~
+              GETFIELD(JvmName.Flix.SelectChoice, "branchNumber", RInt8, undoErasure = false) ~
+              SCAFFOLD
+          }
+
+
+      case Expression.Spawn(exp, tpe, loc) => ???
+      case Expression.Lazy(exp, tpe, loc) =>
+        WithSource[R](loc) ~
+          mkLazy(tpe, exp.tpe, recurse(exp))
+
+      case Expression.Force(exp, _, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp) ~
+          FORCE(exp.tpe)
+
+      case Expression.HoleError(sym, _, loc) =>
+        WithSource[R](loc) ~
+          throwStringedCompilerError(JvmName.Flix.HoleError, sym.toString, loc)
+
+      case Expression.MatchError(_, loc) =>
+        WithSource[R](loc) ~
+          throwCompilerError(JvmName.Flix.MatchError, loc)
+
+      case Expression.BoxBool(exp, loc) => ???
+      case Expression.BoxInt8(exp, loc) => ???
+      case Expression.BoxInt16(exp, loc) => ???
+      case Expression.BoxInt32(exp, loc) => ???
+      case Expression.BoxInt64(exp, loc) => ???
+      case Expression.BoxChar(exp, loc) => ???
+      case Expression.BoxFloat32(exp, loc) => ???
+      case Expression.BoxFloat64(exp, loc) => ???
+      case Expression.UnboxBool(exp, loc) => ???
+      case Expression.UnboxInt8(exp, loc) => ???
+      case Expression.UnboxInt16(exp, loc) => ???
+      case Expression.UnboxInt32(exp, loc) => ???
+      case Expression.UnboxInt64(exp, loc) => ???
+      case Expression.UnboxChar(exp, loc) => ???
+      case Expression.UnboxFloat32(exp, loc) => ???
+      case Expression.UnboxFloat64(exp, loc) => ???
+    }
   }
 
 }

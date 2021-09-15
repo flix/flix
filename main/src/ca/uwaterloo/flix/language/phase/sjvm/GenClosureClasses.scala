@@ -75,7 +75,7 @@ object GenClosureClasses {
       (multiComposition(params.zipWithIndex) { case (formalParam, index) =>
         magicStoreArg(index, formalParam.tpe, cloName, formalParam.sym, GenFunctionInterfaces.argFieldName)
       }) ~
-      compileExp(functionBody) ~
+      compileExp(functionBody, Map.empty) ~
       THISLOAD(cloName, tagOf[PAnyObject]) ~
       magicReversePutField(cloName, functionBody.tpe) ~
       pushNull(defn.tpe) ~

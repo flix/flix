@@ -82,7 +82,7 @@ object GenLazyClasses {
             START[StackNil ** PReference[PLazy[T]]] ~
               THISLOAD(lazyType) ~
               GETFIELD(lazyType, ExpressionFieldName, expressionFieldType(valueFieldType), undoErasure = true) ~
-              CALL(ErasedAst.Expression.Unit(SourceLocation.Unknown) :: Nil, RArrow(RReference(RUnit) :: Nil, valueFieldType)) ~
+              CALL(ErasedAst.Expression.Unit(SourceLocation.Unknown) :: Nil, RArrow(RReference(RUnit) :: Nil, valueFieldType), Map.empty) ~
               THISLOAD(lazyType) ~
               XSWAP(lazyType, valueFieldType) ~
               PUTFIELD(lazyType, ValueFieldName, valueFieldType, erasedType = true) ~

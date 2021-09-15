@@ -57,7 +57,7 @@ object GenDefClasses {
         case (ErasedAst.FormalParam(sym, tpe), index) =>
           magicStoreArg(index, tpe, defName, sym)
       }) ~
-      compileExp(defn.exp) ~
+      compileExp(defn.exp, Map.empty) ~
       THISLOAD(defName, tagOf[PAnyObject]) ~
       magicReversePutField(defName, defn.exp.tpe) ~
       pushNull(defn.tpe) ~
