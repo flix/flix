@@ -457,7 +457,7 @@ class Flix {
     * A callback to indicate that work has started on the given subtask.
     */
   def notifyStartSubtask(subtask: String, sample: Boolean = false): Unit = {
-    progressBar.observe(currentPhase.phase, subtask.toString, sample)
+    progressBar.observe(currentPhase.phase, subtask, sample)
   }
 
   /**

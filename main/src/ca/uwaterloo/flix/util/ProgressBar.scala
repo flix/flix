@@ -45,6 +45,7 @@ class ProgressBar {
     if (!sample || sampleTick == 0) {
       print(phase, msg)
     }
+
     sampleTick = (sampleTick + 1) % SampleRate
   }
 
