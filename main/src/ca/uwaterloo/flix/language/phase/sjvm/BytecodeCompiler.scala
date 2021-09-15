@@ -648,8 +648,13 @@ object BytecodeCompiler {
           f.asInstanceOf[F[R ** T]]
         }
 
-      case Expression.JumpTo(sym, tpe, loc) => ???
-      case Expression.Let(sym, exp1, exp2, tpe, loc) =>
+      case Expression.JumpTo(sym, _, loc) =>
+        WithSource[R](loc) ~ (f => {
+          f.visitJumpInsn(Opcodes.GOTO, lenv0(sym))
+          F.push(tagOf[T])(f)
+        })
+
+      case Expression.Let(sym, exp1, exp2, _, loc) =>
         //TODO(JLS): sym is unsafe. localvar stack + reg as types?
         WithSource[R](loc) ~
           recurse(exp1) ~
