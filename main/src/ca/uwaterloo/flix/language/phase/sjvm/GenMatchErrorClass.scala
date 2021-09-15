@@ -98,42 +98,42 @@ object GenMatchErrorClass {
   [R <: Stack, T <: PRefType]:
   F[R ** PReference[T]] => F[R ** PReference[PAnyObject]] = f => {
     f.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.Object.internalName, "getClass", JvmName.Java.Class.nothingToThisDescriptor)
-    f.asInstanceOf[F[R ** PReference[PAnyObject]]]
+    val f1 = F.pop(tagOf[PReference[T]])(f)
+    F.push(tagOf[PReference[PAnyObject]])(f1)
   }
 
-  private def genEquals(name: JvmName): F[StackNil] => F[StackEnd] = {
-    //    START[StackNil] ~
-    //      THISLOAD(name, tagOf[PAnyObject]) ~
-    //      ALOAD(1, RObject.rType) ~
-    //      IF_ACMPNE() { // objects are not same reference
-    //        ALOAD(1, RObject.rType) ~
-    //          IFNULL { // other object is null
-    //            pushBool(false) ~ IRETURN
-    //          } { // other object is not null
-    //            START[StackNil] ~
-    //              THISLOAD(name, tagOf[PAnyObject]) ~
-    //              getClass ~
-    //              ALOAD(1, RObject.rType) ~
-    //              getClass ~
-    //              IF_ACMPEQ { // objects are both HoleErrors
-    //                START[StackNil] ~
-    //                  ALOAD(1, RObject.rType) ~
-    //                  CAST(name, tagOf[PAnyObject]) ~
-    //                  ASTORE(2) ~
-    //                  THISLOAD(name, tagOf[PAnyObject]) ~
-    //                  GETFIELD(name, HoleFieldName, RStr.rType, undoErasure = false) ~
-    //                  ALOAD(2, name, tagOf[PAnyObject]) ~
-    //                  GETFIELD(name, HoleFieldName, RStr.rType, undoErasure = false) ~
-    //                  objectsEquals ~
-    //                  IRETURN
-    //              } { // objects are of different classes
-    //                pushBool(false) ~ IRETURN
-    //              }
-    //          }
-    //      } { // objects are the same reference
-    //        pushBool(true) ~ IRETURN
-    //      }
-    ???
+  private def genEquals(matchError: JvmName): F[StackNil] => F[StackEnd] = {
+    START[StackNil] ~
+      THISLOAD(matchError, tagOf[PAnyObject]) ~
+      ALOAD(1, RObject.rType) ~
+      IF_ACMPNE() { // objects are not same reference
+        ALOAD(1, RObject.rType) ~
+          IFNULL { // other object is null
+            pushBool(false) ~ IRETURN
+          } { // other object is not null
+            START[StackNil] ~
+              THISLOAD(matchError, tagOf[PAnyObject]) ~
+              getClass ~
+              ALOAD(1, RObject.rType) ~
+              getClass ~
+              IF_ACMPEQ { // objects are both HoleErrors
+                START[StackNil] ~
+                  ALOAD(1, RObject.rType) ~
+                  CAST(matchError, tagOf[PAnyObject]) ~
+                  ASTORE(2) ~
+                  THISLOAD(matchError, tagOf[PAnyObject]) ~
+                  GETFIELD(matchError, LocationFieldName, LocationFieldType, undoErasure = false, tagOf[PReference[PAnyObject]]) ~
+                  ALOAD(2, matchError, tagOf[PAnyObject]) ~
+                  GETFIELD(matchError, LocationFieldName, LocationFieldType, undoErasure = false, tagOf[PReference[PAnyObject]]) ~
+                  objectsEquals ~
+                  IRETURN
+              } { // objects are of different classes
+                pushBool(false) ~ IRETURN
+              }
+          }
+      } { // objects are the same reference
+        pushBool(true) ~ IRETURN
+      }
   }
 
   private def genHashCode(name: JvmName): F[StackNil] => F[StackEnd] = {
