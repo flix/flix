@@ -34,6 +34,7 @@ class ProgressBar {
   /**
     * An internal counter used for sampling.
     */
+  @volatile
   private var sampleTick = 0
 
   /**

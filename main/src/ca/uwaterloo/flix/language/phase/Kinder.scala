@@ -177,6 +177,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     */
   private def visitDef(def0: ResolvedAst.Def, kenv0: KindEnv, root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Def, KindError] = def0 match {
     case ResolvedAst.Def(sym, spec0, exp0) =>
+      flix.notifyStartSubtask(sym.toString, sample = true)
       for {
         kenv <- getKindEnvFromSpec(spec0, kenv0, root)
         spec <- visitSpec(spec0, kenv, root)

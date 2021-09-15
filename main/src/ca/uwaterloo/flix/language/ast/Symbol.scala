@@ -261,7 +261,7 @@ object Symbol {
     /**
       * Human readable representation.
       */
-    override def toString: String = if (namespace.isEmpty) name else namespace.mkString("/") + "." + name
+    override val toString: String = if (namespace.isEmpty) name else namespace.mkString("/") + "." + name
   }
 
   /**

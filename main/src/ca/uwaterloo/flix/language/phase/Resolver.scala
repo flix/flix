@@ -237,6 +237,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     */
   def resolve(d0: NamedAst.Def, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Def, ResolutionError] = d0 match {
     case NamedAst.Def(sym, spec0, exp0) =>
+      flix.notifyStartSubtask(sym.toString, sample = true)
+
       val fparam = spec0.fparams.head
 
       for {
