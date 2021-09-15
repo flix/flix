@@ -614,7 +614,7 @@ object BytecodeCompiler {
     case Expression.IfThenElse(exp1, exp2, exp3, _, loc) =>
       WithSource[R](loc) ~
         compileExp(exp1) ~
-        IFEQ(START[R] ~ compileExp(exp2))(START[R] ~ compileExp(exp3))
+        IFEQ(START[R] ~ compileExp(exp3))(START[R] ~ compileExp(exp2))
 
     case Expression.Branch(exp, branches, tpe, loc) => ???
     case Expression.JumpTo(sym, tpe, loc) => ???
