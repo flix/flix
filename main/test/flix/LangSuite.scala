@@ -195,6 +195,7 @@ class LangSuite extends Suites(
   new FlixTest("Test.Exp.Jvm.InvokeStaticMethod", "main/test/flix/Test.Exp.Jvm.InvokeStaticMethod.flix"),
   new FlixTest("Test.Exp.Jvm.PutField", "main/test/flix/Test.Exp.Jvm.PutField.flix"),
   new FlixTest("Test.Exp.Jvm.PutStaticField", "main/test/flix/Test.Exp.Jvm.PutStaticField.flix"),
+  new FlixTest("test.Exp.Jvm.TryCatch", "main/test/flix/Test.Exp.Jvm.TryCatch.flix")(Options.TestWithLibNix),
 
   //
   // Kind.
@@ -277,6 +278,11 @@ class LangSuite extends Suites(
     "main/test/flix/Test.Exp.Reference.Precedence.flix",
     "main/test/flix/Test.Exp.ScopedReference.flix"
   ), Options.TestWithLibAll),
+
+  //
+  // Reify.
+  //
+  new FlixTest("Test.Exp.Reify", "main/test/flix/Test.Exp.Reify.flix"),
 
   //
   // Tag.
