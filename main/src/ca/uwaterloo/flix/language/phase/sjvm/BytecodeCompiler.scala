@@ -571,7 +571,7 @@ object BytecodeCompiler {
             }
           })
 
-      case Expression.Int64Comparison(op, exp1, exp2, tpe, loc) =>
+      case Expression.Int64Comparison(op, exp1, exp2, _, loc) =>
         WithSource[R](loc) ~
           recurse(exp1) ~
           recurse(exp2) ~
@@ -781,7 +781,7 @@ object BytecodeCompiler {
           recurse(exp) ~
           GETFIELD(squeezeReference(exp.tpe), GenRefClasses.ValueFieldName, tpe, undoErasure = true)
 
-      case Expression.Assign(exp1, exp2, tpe, loc) =>
+      case Expression.Assign(exp1, exp2, _, loc) =>
         WithSource[R](loc) ~
           recurse(exp1) ~
           recurse(exp2) ~
@@ -797,7 +797,7 @@ object BytecodeCompiler {
             f.asInstanceOf[F[R ** T]]
           })
 
-      case Expression.TryCatch(exp, rules, tpe, loc) =>
+      case Expression.TryCatch(exp, rules, _, loc) =>
         val catchCases = rules.map {
           case CatchRule(sym, clazz, exp) =>
             val ins = START[R ** PReference[PAnyObject]] ~
@@ -825,7 +825,7 @@ object BytecodeCompiler {
             f.asInstanceOf[F[R ** T]]
           })
 
-      case Expression.InvokeMethod(method, exp, args, tpe, loc) => f => {
+      case Expression.InvokeMethod(method, exp, args, _, loc) => f => {
         // TODO(JLS): fix this
         // Adding source line number for debugging
         WithSource(loc)(f)
@@ -854,7 +854,7 @@ object BytecodeCompiler {
         f.asInstanceOf[F[R ** T]]
       }
 
-      case Expression.InvokeStaticMethod(method, args, tpe, loc) => f => {
+      case Expression.InvokeStaticMethod(method, args, _, loc) => f => {
         // TODO(JLS): fix this
         // Adding source line number for debugging
         WithSource(loc)(f)
@@ -896,7 +896,7 @@ object BytecodeCompiler {
         WithSource[R](loc) ~
           GETSTATIC(JvmName.fromClass(field.getDeclaringClass), field.getName, tpe, undoErasure = false)
 
-      case Expression.PutStaticField(field, exp, tpe, loc) =>
+      case Expression.PutStaticField(field, exp, _, loc) =>
         WithSource[R](loc) ~
           recurse(exp) ~
           (f => {
@@ -913,7 +913,7 @@ object BytecodeCompiler {
           recurse(exp) ~
           (f => {
             f.visitMethodInsn(Opcodes.INVOKESPECIAL, chanRef.internalName, JvmName.constructorMethod,
-              JvmName.getMethodDescriptor(List(RInt32), None), false)
+              JvmName.getMethodDescriptor(List(RInt32), None))
             f.asInstanceOf[F[R ** T]]
           })
 
@@ -922,14 +922,14 @@ object BytecodeCompiler {
           recurse(exp) ~
           getChannelValue(tpe)
 
-      case Expression.PutChannel(exp1, exp2, tpe, loc) =>
+      case Expression.PutChannel(exp1, exp2, _, loc) =>
         WithSource[R](loc) ~
           recurse(exp1) ~
           DUP ~
           recurse(exp2) ~
           putChannelValue(exp2.tpe)
 
-      case Expression.SelectChannel(rules, default, tpe, loc) =>
+      case Expression.SelectChannel(rules, default, _, loc) =>
         WithSource[R](loc) ~
           pushInt32(rules.size) ~
           ANEWARRAY(RReference(RChannel(RReference(RObject)))) ~
@@ -945,7 +945,7 @@ object BytecodeCompiler {
           pushBool(default.isDefined) ~
           ((f: F[R ** PReference[PArray[PReference[PChan[PAnyObject]]]] ** PInt32]) => {
             f.visitMethodInsn(Opcodes.INVOKESTATIC, JvmName.Flix.Channel.internalName, "select",
-              JvmName.getMethodDescriptor(List(JvmName.Flix.Channel, RBool), JvmName.Flix.SelectChoice), false)
+              JvmName.getMethodDescriptor(List(JvmName.Flix.Channel, RBool), JvmName.Flix.SelectChoice))
             f.asInstanceOf[F[R ** PReference[PAnyObject]]]
           }) ~
           DUP ~
