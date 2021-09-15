@@ -88,6 +88,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
       // TODO(JLS): ParArgs as much as possible
       // TODO(JLS): Add copyright everywhere
       // TODO(JLS): Check that aux methods are private
+      // TODO(JLS): final/private as much as possible in generated classes
 
       val mainClass = GenMainClass.gen()
 

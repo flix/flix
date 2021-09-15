@@ -34,8 +34,8 @@ object JvmName {
   val equalsMethod = "equals"
   val hashcodeMethod = "hashCode"
 
-  val voidDescriptor = Descriptor.of("V")
-  val javaMainDescriptor = Descriptor.of("([Ljava/lang/String;)V")
+  val voidDescriptor: Descriptor = Descriptor.of("V")
+  val javaMainDescriptor: Descriptor = Descriptor.of("([Ljava/lang/String;)V")
 
   val nothingToVoid: Descriptor = getMethodDescriptor(Nil, None)
   val booleanToVoid: Descriptor = getMethodDescriptor(Java.Boolean, None)
@@ -98,12 +98,13 @@ object JvmName {
     val String: JvmName = JvmName(List("java", "lang"), "String")
     val System: JvmName = JvmName(List("java", "lang"), "System")
     val StringBuilder: JvmName = JvmName(List("java", "lang"), "StringBuilder")
+    val Class: JvmName = JvmName(List("java", "lang"), "Class")
     val RuntimeException: JvmName = JvmName(List("java", "lang"), "RuntimeException")
+    val Thread: JvmName = JvmName(List("java", "lang"), "Thread")
 
     val BigInteger: JvmName = JvmName(List("java", "math"), "BigInteger")
 
     val Arrays: JvmName = JvmName(List("java", "util"), "Arrays")
-    val Class: JvmName = JvmName(List("java", "lang"), "Class")
 
   }
 
@@ -116,12 +117,11 @@ object JvmName {
     val FlixError: JvmName = JvmName(List("dev", "flix", "runtime"), "FlixError")
     val HoleError: JvmName = JvmName(List("dev", "flix", "runtime"), "HoleError")
     val ReifiedSourceLocation: JvmName = JvmName(List("dev", "flix", "runtime"), "ReifiedSourceLocation")
+    val Unit: JvmName = JvmName(List("dev", "flix", "runtime"), "Unit")
 
     // TODO(JLS): these should be moved
     val Channel: JvmName = JvmName("ca" :: "uwaterloo" :: "flix" :: "runtime" :: "interpreter" :: Nil, "Channel")
     val SelectChoice: JvmName = JvmName("ca" :: "uwaterloo" :: "flix" :: "runtime" :: "interpreter" :: Nil, "SelectChoice")
-
-    val Unit: JvmName = JvmName(List("dev", "flix", "runtime"), "Unit")
 
   }
 

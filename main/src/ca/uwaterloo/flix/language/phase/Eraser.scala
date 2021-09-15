@@ -674,7 +674,7 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
 
     case FinalAst.Expression.Spawn(exp, tpe, loc) =>
       for {
-        exp0 <- visitExp[PType](exp)
+        exp0 <- visitExp[PReference[PFunction[PType]]](exp)
         tpe0 <- visitTpe[PReference[PUnit]](tpe)
         expRes = ErasedAst.Expression.Spawn(exp0, tpe0, loc)
       } yield expRes.asInstanceOf[ErasedAst.Expression[T]]

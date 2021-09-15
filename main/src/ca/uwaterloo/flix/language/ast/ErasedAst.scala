@@ -294,7 +294,7 @@ object ErasedAst {
 
     case class SelectChannel[T <: PType](rules: List[SelectChannelRule[T, _ <: PRefType]], default: Option[Expression[T]], tpe: RType[T], loc: SourceLocation) extends Expression[T]
 
-    case class Spawn(exp: Expression[PType], tpe: RType[PReference[PUnit]], loc: SourceLocation) extends Expression[PReference[PUnit]]
+    case class Spawn[T <: PType](exp: Expression[PReference[PFunction[T]]], tpe: RType[PReference[PUnit]], loc: SourceLocation) extends Expression[PReference[PUnit]]
 
     case class Lazy[T <: PType](exp: Expression[PReference[PFunction[T]]], tpe: RType[PReference[PLazy[T]]], loc: SourceLocation) extends Expression[PReference[PLazy[T]]]
 

@@ -973,7 +973,25 @@ object BytecodeCompiler {
           }
 
 
-      case Expression.Spawn(exp, tpe, loc) => ???
+      case Expression.Spawn(exp, _, loc) =>
+        def initThread[R0 <: Stack, T0 <: PType]: F[R0 ** PReference[PAnyObject] ** PReference[PFunction[T0]]] => F[R0] = f => {
+          f.visitMethodInsn(Opcodes.INVOKESPECIAL, JvmName.Java.Thread.internalName, JvmName.constructorMethod, JvmName.Java.Runnable.thisToNothingDescriptor)
+          f.asInstanceOf[F[R0]]
+        }
+
+        def startThread[R0 <: Stack]: F[R0 ** PReference[PAnyObject]] => F[R0] = f => {
+          f.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JvmName.Java.Thread.internalName, "start", JvmName.nothingToVoid)
+          f.asInstanceOf[F[R0]]
+        }
+
+        WithSource[R](loc) ~
+          NEW(JvmName.Java.Thread, tagOf[PAnyObject]) ~
+          DUP ~
+          recurse(exp) ~
+          initThread ~
+          startThread ~
+          pushUnit
+
       case Expression.Lazy(exp, tpe, loc) =>
         WithSource[R](loc) ~
           mkLazy(tpe, exp.tpe, recurse(exp))

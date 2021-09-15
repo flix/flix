@@ -37,14 +37,19 @@ object GenContinuationInterfaces {
   val InvokeMethodName: String = "invoke"
   val UnwindMethodName: String = "unwind"
 
+  private val runName: String = "run"
+  private val runDescriptor: Descriptor = JvmName.nothingToVoid
+
   /**
     * Returns the set of continuation interfaces for
     */
   def gen(functionTypes: Set[RType[PReference[PFunction[_ <: PType]]]])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     getReturnTypes(functionTypes).foldLeft(Map[JvmName, JvmClass]()) {
-      case (macc, tpe) =>
-        val contName = tpe.contName
-        macc + (contName -> JvmClass(contName, genByteCode(tpe)))
+      case (macc, resultType) =>
+        val contName = resultType.contName
+        val superClass = JvmName.Java.Object
+        val interface = JvmName.Java.Runnable
+        macc + (contName -> JvmClass(contName, genByteCode(resultType, contName, superClass, interface)))
     }
   }
 
@@ -66,7 +71,7 @@ object GenContinuationInterfaces {
   /**
     * Returns the bytecode for the given continuation interface.
     */
-  private def genByteCode[T <: PType](resultType: RType[T])(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genByteCode[T <: PType](resultType: RType[T], contName: JvmName, superClass: JvmName, interface: JvmName)(implicit root: Root, flix: Flix): Array[Byte] = {
 
     // Pseudo code to generate:
     //
@@ -86,19 +91,21 @@ object GenContinuationInterfaces {
     //
 
     // Class visitor
-    val classMaker = ClassMaker.mkAbstractClass(resultType.contName, JvmName.Java.Object)
-    classMaker.mkConstructor(START[StackNil] ~ THISINIT(JvmName.Java.Object) ~ RETURN)
+    val classMaker = ClassMaker.mkAbstractClass(contName, superClass, interface)
+    classMaker.mkConstructor(START[StackNil] ~ THISINIT(superClass) ~ RETURN)
     classMaker.mkField(ResultFieldName, resultType, Mod.isPublic.isAbstract)
     classMaker.mkAbstractMethod(InvokeMethodName, resultType.nothingToContDescriptor, Mod.isAbstract.isPublic)
-    classMaker.mkMethod(compileUnwindMethod(resultType), UnwindMethodName, resultType.nothingToThisDescriptor, Mod.isPublic)
+    classMaker.mkMethod(genUnwindMethod(resultType), UnwindMethodName, resultType.nothingToThisDescriptor, Mod.isPublic.isFinal)
+    classMaker.mkMethod(genRunMethod(resultType, contName), runName, runDescriptor, Mod.isPublic.isFinal)
 
     classMaker.closeClassMaker
   }
 
-  def compileUnwindMethod[T <: PType](resultType: RType[T]): F[StackNil] => F[StackEnd] = f => {
+  private def genUnwindMethod[T <: PType](resultType: RType[T]): F[StackNil] => F[StackEnd] = f => {
     import org.objectweb.asm.Label
     import org.objectweb.asm.Opcodes._
 
+    // TODO(JLS): write this with Instructions
     f.visitVarInsn(ALOAD, 0)
     f.visitVarInsn(ASTORE, 1)
 
@@ -118,6 +125,14 @@ object GenContinuationInterfaces {
     f.visitVarInsn(ALOAD, 2)
     f.visitFieldInsn(GETFIELD, resultType.contName.internalName, ResultFieldName, resultType.descriptor)
     XRETURN(resultType)(f.asInstanceOf[F[StackNil ** T]])
+  }
+
+  private def genRunMethod[T <: PType](resultType: RType[T], contName: JvmName): F[StackNil] => F[StackEnd] = {
+    START[StackNil] ~
+      THISLOAD(contName, tagOf[PFunction[T]]) ~
+      unwindCont(resultType) ~
+      XPOP(resultType) ~
+      RETURN
   }
 
 }

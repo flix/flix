@@ -722,6 +722,14 @@ object Instructions {
     castF(f)
   }
 
+  def XPOP
+  [R <: Stack, T <: PType]
+  (tpe: RType[T]):
+  F[R ** T] => F[R] = tpe match {
+    case RBool | RInt8 | RInt16 | RInt32 | RChar | RFloat32 | RReference(_) => POP
+    case RInt64 | RFloat64 => POP2_onCat2
+  }
+
   def DUP_X1
   [R <: Stack, T1 <: PType, T2 <: PType]
   (implicit t1: T1 => Cat1[T1], t2: T2 => Cat1[T2]):
@@ -1695,10 +1703,16 @@ object Instructions {
   def unwind
   [R <: Stack, T <: PType]
   (fnType: RArrow[T]):
+  F[R ** PReference[PFunction[T]]] => F[R ** T] =
+    unwindCont(fnType.result)
+
+  def unwindCont
+  [R <: Stack, T <: PType]
+  (resultType: RType[T]):
   F[R ** PReference[PFunction[T]]] => F[R ** T] = f => {
-    f.visitMethodInsn(Opcodes.INVOKEVIRTUAL, fnType.internalName, GenContinuationInterfaces.UnwindMethodName,
-      fnType.result.erasedType.nothingToThisDescriptor)
-    undoErasure(fnType.result, f.visitor)
+    f.visitMethodInsn(Opcodes.INVOKEVIRTUAL, resultType.contName.internalName, GenContinuationInterfaces.UnwindMethodName,
+      resultType.erasedType.nothingToThisDescriptor)
+    undoErasure(resultType, f.visitor)
     castF(f)
   }
 
