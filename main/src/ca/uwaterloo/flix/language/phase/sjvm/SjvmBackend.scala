@@ -53,7 +53,6 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
     val refTypes = getRefTypes(root.types)
 
     val functionTypes = getFunctionTypes(root.types) union lazyNeededFunctions(lazyTypes)
-    functionTypes.foreach(println)
 
     val closureSyms: Set[Symbol.DefnSym] = root.closures.map(ci => ci.sym)
 
