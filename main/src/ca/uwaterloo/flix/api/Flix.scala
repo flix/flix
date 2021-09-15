@@ -394,6 +394,8 @@ class Flix {
     // Initialize the phase time object.
     currentPhase = PhaseTime(phase, 0, Nil)
 
+    Observer.observe(phase, "")
+
     // Measure the execution time.
     val t = System.nanoTime()
     val r = f

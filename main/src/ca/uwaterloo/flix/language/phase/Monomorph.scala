@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{Flix, Observer}
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Kind, Name, Scheme, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
@@ -725,6 +725,8 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
         // Save the specialized function.
         specializedDefns.put(freshSym, specializedDefn)
+
+        Observer.observe("Monomorph", freshSym)
       }
 
     }
