@@ -29,8 +29,6 @@ object Instructions {
 
   private def castF[R <: Stack](f: F[_]): F[R] = f.asInstanceOf[F[R]]
 
-  private def castOntoF[R <: Stack, T <: PType](f: F[R], tag: Tag[T]): F[R ** T] = f.asInstanceOf[F[R ** T]]
-
   trait Tag[T]
 
   def tagOf[T]: Tag[T] = null
