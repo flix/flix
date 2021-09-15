@@ -28,25 +28,24 @@ object SjvmOps {
     */
   // TODO(JLS): missing |> i think, check for others
   def mangle(s: String): String = s.
-    replace("+", JvmName.reservedDelimiter + "plus").
-    replace("-", JvmName.reservedDelimiter + "minus").
-    replace("*", JvmName.reservedDelimiter + "times").
-    replace("/", JvmName.reservedDelimiter + "divide").
-    replace("%", JvmName.reservedDelimiter + "modulo").
-    replace("**", JvmName.reservedDelimiter + "exponentiate").
-    replace("<", JvmName.reservedDelimiter + "lt").
-    replace("<=", JvmName.reservedDelimiter + "le").
-    replace(">", JvmName.reservedDelimiter + "gt").
-    replace(">=", JvmName.reservedDelimiter + "ge").
-    replace("==", JvmName.reservedDelimiter + "eq").
-    replace("!=", JvmName.reservedDelimiter + "neq").
-    replace("&&", JvmName.reservedDelimiter + "land").
-    replace("||", JvmName.reservedDelimiter + "lor").
-    replace("&", JvmName.reservedDelimiter + "band").
-    replace("|", JvmName.reservedDelimiter + "bor").
-    replace("^", JvmName.reservedDelimiter + "bxor").
-    replace("<<", JvmName.reservedDelimiter + "lshift").
-    replace(">>", JvmName.reservedDelimiter + "rshift")
+    replace("+", "$plus").
+    replace("-", "$minus").
+    replace("*", "$asterisk").
+    replace("/", "$fslash").
+    replace("\\", "$bslash").
+    replace("%", "$percent").
+    replace("<", "$less").
+    replace(">", "$greater").
+    replace("=", "$eq").
+    replace("&", "$ampersand").
+    replace("|", "$bar").
+    replace("^", "$caret").
+    replace("~", "$tilde").
+    replace("!", "$exclamation").
+    replace("#", "$hashtag").
+    replace(":", "$colon").
+    replace("?", "$question").
+    replace("@", "$at")
 
   /**
     * Returns the namespace type for the given namespace `ns`.
