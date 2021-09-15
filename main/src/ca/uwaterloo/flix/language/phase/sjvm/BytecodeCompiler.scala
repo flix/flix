@@ -79,6 +79,8 @@ object BytecodeCompiler {
 
     def visitIntInsn(opcode: Int, operand: Int): Unit = visitor.visitIntInsn(opcode, operand)
 
+    def visitTryCatchBlock(start: Label, end: Label, handler: Label, tpe: Class[_]): Unit = visitor.visitTryCatchBlock(start, end, handler, asm.Type.getInternalName(tpe))
+
     def push[T <: PType]: F[R ** T] = this.asInstanceOf[F[R ** T]]
   }
 
@@ -761,7 +763,17 @@ object BytecodeCompiler {
           f.asInstanceOf[F[R ** T]]
         })
 
-    case Expression.TryCatch(exp, rules, tpe, loc) => ???
+    case Expression.TryCatch(exp, rules, tpe, loc) =>
+      val catchCases = rules.map {
+        case CatchRule(sym, clazz, exp) =>
+          val ins = START[R ** PReference[PAnyObject]] ~
+            ASTORE(sym) ~
+            compileExp(exp)
+          (new Label(), clazz, ins)
+      }
+      WithSource[R](loc) ~
+        tryCatch(compileExp(exp), catchCases)
+
     case Expression.InvokeConstructor(constructor, args, _, loc) =>
       // TODO(JLS): pretty messy
       val constructorDescriptor = Descriptor.of(asm.Type.getConstructorDescriptor(constructor))

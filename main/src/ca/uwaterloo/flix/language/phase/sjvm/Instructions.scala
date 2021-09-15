@@ -46,6 +46,47 @@ object Instructions {
     f
   }
 
+  def placeLabel[R <: Stack](label: Label): F[R] => F[R] = f => {
+    f.visitLabel(label)
+    f
+  }
+
+  def tryCatch[R <: Stack, Res <: Stack](body: F[R] => F[Res], catchCases: List[(Label, Class[_], F[R ** PReference[PAnyObject]] => F[Res])]): F[R] => F[Res] = f => {
+    // Introduce a label for before the try block.
+    val beforeTryBlock = new Label()
+
+    // Introduce a label for after the try block.
+    val afterTryBlock = new Label()
+
+    // Introduce a label after the try block and after all catch rules.
+    val afterTryAndCatch = new Label()
+
+    // Emit a try catch block for each catch rule.
+    for ((handlerLabel, clazz, _) <- catchCases) {
+      f.visitTryCatchBlock(beforeTryBlock, afterTryBlock, handlerLabel, clazz)
+    }
+
+    // Emit code for the try block.
+    f.visitLabel(beforeTryBlock)
+    body(f)
+    f.visitLabel(afterTryBlock)
+    f.visitJumpInsn(Opcodes.GOTO, afterTryAndCatch)
+
+    // Emit code for each catch rule.
+    for ((handlerLabel, _, handleIns) <- catchCases) {
+      // Emit the label.
+      f.visitLabel(handlerLabel)
+
+      // Emit code for the handler body expression.
+      handleIns(f.asInstanceOf[F[R ** PReference[PAnyObject]]])
+      f.visitJumpInsn(Opcodes.GOTO, afterTryAndCatch)
+    }
+
+    // Add the label after both the try and catch rules.
+    f.visitLabel(afterTryAndCatch)
+    f.asInstanceOf[F[Res]]
+  }
+
   def throwCompilerError
   [R <: Stack, T <: PType]
   (exceptionName: JvmName, loc: SourceLocation, tag: Tag[T] = null):
