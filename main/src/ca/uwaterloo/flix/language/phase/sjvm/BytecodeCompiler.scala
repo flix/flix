@@ -972,7 +972,6 @@ object BytecodeCompiler {
               SCAFFOLD
           }
 
-
       case Expression.Spawn(exp, _, loc) =>
         def initThread[R0 <: Stack, T0 <: PType]: F[R0 ** PReference[PAnyObject] ** PReference[PFunction[T0]]] => F[R0] = f => {
           f.visitMethodInsn(Opcodes.INVOKESPECIAL, JvmName.Java.Thread.internalName, JvmName.constructorMethod, JvmName.Java.Runnable.thisToNothingDescriptor)
