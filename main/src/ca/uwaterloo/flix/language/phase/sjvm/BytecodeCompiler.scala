@@ -45,7 +45,7 @@ object BytecodeCompiler {
 
   // TODO(JLS): experiment with this
   object F {
-    def push[R <: Stack, T <: PType](f: F[R]): F[R ** T] = f.push[T]
+    def push[R <: Stack, T <: PType](tag: Tag[T])(f: F[R]): F[R ** T] = f.push[T]
 
     def pop[R <: Stack, T <: PType](tag: Tag[T])(f: F[R ** T]): F[R] = f.asInstanceOf[F[R]]
   }

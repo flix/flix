@@ -1,10 +1,26 @@
+/*
+ * Copyright 2021 Jonathan Lindegaard Starup
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package ca.uwaterloo.flix.language.phase.sjvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst.Root
 import ca.uwaterloo.flix.language.ast.PRefType
 import ca.uwaterloo.flix.language.ast.PRefType._
-import ca.uwaterloo.flix.language.ast.PType.PReference
+import ca.uwaterloo.flix.language.ast.PType._
 import ca.uwaterloo.flix.language.ast.RRefType._
 import ca.uwaterloo.flix.language.ast.RType._
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
@@ -36,10 +52,11 @@ object GenHoleErrorClass {
     classMaker.closeClassMaker
   }
 
-  private def builderAppend[R <: Stack]: F[R ** PReference[PStr]] => F[R ** PReference[PAnyObject]] = f => {
+  private def builderAppend[R <: Stack]: F[R ** PReference[PAnyObject] ** PReference[PStr]] => F[R ** PReference[PAnyObject]] = f => {
     val builder = JvmName.Java.StringBuilder
     f.visitMethodInsn(Opcodes.INVOKEVIRTUAL, builder.internalName, "append", JvmName.getMethodDescriptor(RStr, builder))
     f.asInstanceOf[F[R ** PReference[PAnyObject]]]
+    F.pop(tagOf[PReference[PStr]])(f)
   }
 
   private def genConstructor(name: JvmName, superClass: JvmName): F[StackNil] => F[StackEnd] = {
