@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.api.{Flix, Observer}
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.{Polarity, Source}
 import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
@@ -47,8 +47,8 @@ object Parser extends Phase[List[Source], ParsedAst.Program] {
   /**
     * Attempts to parse the given `source` as a root.
     */
-  def parseRoot(source: Source): Validation[ParsedAst.Root, CompilationError] = {
-    Observer.observe("Parser", source.name)
+  def parseRoot(source: Source)(implicit flix: Flix): Validation[ParsedAst.Root, CompilationError] = {
+    flix.notifyStartSubtask(source.name)
 
     val parser = new Parser(source)
     parser.Root.run() match {

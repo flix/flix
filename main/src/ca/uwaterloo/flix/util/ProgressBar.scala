@@ -22,11 +22,31 @@ class ProgressBar {
   private val SpinnerChars = Array("|", "/", "-", "\\")
 
   /**
+    * The sample rate.
+    */
+  private val SampleRate: Int = 100
+
+  /**
     * An internal counter used to print the spinner.
     */
   private var tick = 0
 
-  def observe(phase: String, o: AnyRef): Unit = print(phase, o.toString)
+  /**
+    * An internal counter used for sampling.
+    */
+  private var sampleTick = 0
+
+  /**
+    * Updates the progress with the given message `msg` in the given `phase`.
+    *
+    * If sample is `true` then
+    */
+  def observe(phase: String, msg: String, sample: Boolean): Unit = {
+    if (!sample || sampleTick == 0) {
+      print(phase, msg)
+    }
+    sampleTick = (sampleTick + 1) % SampleRate
+  }
 
   /**
     * Prints the given string `msg` from the given `phase` to the terminal.

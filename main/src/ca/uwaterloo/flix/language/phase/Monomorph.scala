@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.api.{Flix, Observer}
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Kind, Name, Scheme, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
@@ -713,6 +713,8 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         // Extract a function from the queue and specializes it w.r.t. its substitution.
         val (freshSym, defn, subst) = defQueue.dequeue()
 
+        flix.notifyStartSubtask(freshSym.toString)
+
         // Specialize the formal parameters and introduce fresh local variable symbols.
         val (fparams, env0) = specializeFormalParams(defn.spec.fparams, subst)
 
@@ -725,8 +727,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
         // Save the specialized function.
         specializedDefns.put(freshSym, specializedDefn)
-
-        Observer.observe("Monomorph", freshSym)
       }
 
     }
