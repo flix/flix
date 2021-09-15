@@ -468,6 +468,31 @@ class TestKinder extends FunSuite with TestUtils {
     expectError[KindError.UnexpectedKind](result)
   }
 
+  test("KindError.Def.Expression.Ascribe.06") {
+    val input =
+      """
+        |enum E
+        |
+        |pub def foo(): Int =
+        |    let x: E[Int] = ???; 0
+        |
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
+  test("KindError.Def.Expression.Ascribe.07") {
+    val input =
+      """
+        |enum E[a, b]
+        |
+        |pub def foo(): Int =
+        |    let x: E[Int] = ???; 0
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
   test("KindError.Def.Expression.Cast.01") {
     val input =
       """
@@ -486,6 +511,27 @@ class TestKinder extends FunSuite with TestUtils {
     expectError[KindError.UnexpectedKind](result)
   }
 
+  test("KindError.Def.Expression.Cast.03") {
+    val input =
+      """
+        |enum E
+        |
+        |pub def foo(): Int = 0 as E[Int]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
+  test("KindError.Def.Expression.Cast.04") {
+    val input =
+      """
+        |enum E[a, b]
+        |
+        |pub def foo(): Int = 0 as E[Int]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
   test("KindError.Def.Type.01") {
     val input =
       """
