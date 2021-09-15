@@ -136,25 +136,18 @@ object GenMatchErrorClass {
       }
   }
 
-  private def genHashCode(name: JvmName): F[StackNil] => F[StackEnd] = {
-    //    START[StackNil] ~
-    //      pushInt32(2) ~
-    //      ANEWARRAY(RObject.rType) ~
-    //      DUP ~
-    //      pushInt32(0) ~
-    //      THISLOAD(name, tagOf[PAnyObject]) ~
-    //      GETFIELD(name, HoleFieldName, HoleFieldType, undoErasure = false) ~
-    //      SUBTYPE ~
-    //      AASTORE ~
-    //      DUP ~
-    //      pushInt32(1) ~
-    //      THISLOAD(name, tagOf[PAnyObject]) ~
-    //      GETFIELD(name, HoleFieldName, LocationFieldType, undoErasure = false, tagOf[PReference[PAnyObject]]) ~
-    //      SUBTYPE ~
-    //      AASTORE ~
-    //      objectsHash ~
-    //      IRETURNf
-    ???
+  private def genHashCode(matchError: JvmName): F[StackNil] => F[StackEnd] = {
+    START[StackNil] ~
+      pushInt32(1) ~
+      ANEWARRAY(RObject.rType) ~
+      DUP ~
+      pushInt32(0) ~
+      THISLOAD(matchError, tagOf[PAnyObject]) ~
+      GETFIELD(matchError, LocationFieldName, LocationFieldType, undoErasure = false, tagOf[PReference[PAnyObject]]) ~
+      SUBTYPE ~
+      AASTORE ~
+      objectsHash ~
+      IRETURN
   }
 
 }
