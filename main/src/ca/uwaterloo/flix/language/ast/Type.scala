@@ -48,7 +48,6 @@ sealed trait Type {
   def typeVars: SortedSet[Type.KindedVar] = this match {
     case x: Type.Var => SortedSet(x.asKinded)
     case Type.Cst(tc, _) => SortedSet.empty
-    case Type.Lambda(tvar, tpe, _) => tpe.typeVars - tvar.asKinded
     case Type.Apply(tpe1, tpe2, _) => tpe1.typeVars ++ tpe2.typeVars
     case Type.Ascribe(tpe, _, _) => tpe.typeVars
   }
@@ -79,7 +78,6 @@ sealed trait Type {
     case Type.Cst(tc, _) => Some(tc)
     case Type.Apply(t1, _, _) => t1.typeConstructor
     case Type.Ascribe(tpe, _, _) => tpe.typeConstructor
-    case Type.Lambda(_, _, _) => throw InternalCompilerException(s"Unexpected type constructor: Lambda.")
   }
 
   /**
@@ -107,7 +105,6 @@ sealed trait Type {
     case Type.Cst(tc, _) => tc :: Nil
     case Type.Apply(t1, t2, _) => t1.typeConstructors ::: t2.typeConstructors
     case Type.Ascribe(tpe, _, _) => tpe.typeConstructors
-    case Type.Lambda(_, _, _) => throw InternalCompilerException(s"Unexpected type constructor: Lambda.")
   }
 
   /**
@@ -136,7 +133,6 @@ sealed trait Type {
   def map(f: Type.KindedVar => Type): Type = this match {
     case tvar: Type.Var => f(tvar.asKinded)
     case Type.Cst(_, _) => this
-    case Type.Lambda(tvar, tpe, loc) => Type.Lambda(tvar, tpe.map(f), loc)
     case Type.Apply(tpe1, tpe2, loc) => Type.Apply(tpe1.map(f), tpe2.map(f), loc)
     case Type.Ascribe(tpe, kind, loc) => Type.Ascribe(tpe.map(f), kind, loc)
   }
@@ -178,7 +174,6 @@ sealed trait Type {
     case Type.KindedVar(_, _, _, _, _) => 1
     case Type.UnkindedVar(_, _, _, _) => 1
     case Type.Cst(tc, _) => 1
-    case Type.Lambda(_, tpe, _) => tpe.size + 1
     case Type.Ascribe(tpe, _, _) => tpe.size
     case Type.Apply(tpe1, tpe2, _) => tpe1.size + tpe2.size + 1
   }
@@ -454,20 +449,6 @@ object Type {
 
     override def equals(o: Any): Boolean = o match {
       case that: Cst => this.tc == that.tc
-      case _ => false
-    }
-  }
-
-  /**
-    * A type expression that represents a type abstraction [x] => tpe.
-    */
-  case class Lambda(tvar: Type.Var, tpe: Type, loc: SourceLocation) extends Type with BaseType {
-    def kind: Kind = Kind.Star ->: tpe.kind
-
-    override def hashCode(): Int = Objects.hash(tvar, tpe)
-
-    override def equals(o: Any): Boolean = o match {
-      case that: Lambda => this.tvar == that.tvar && this.tpe == that.tpe
       case _ => false
     }
   }

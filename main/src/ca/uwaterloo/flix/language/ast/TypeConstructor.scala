@@ -199,16 +199,30 @@ object TypeConstructor {
   }
 
   /**
-    * A type constructor that represent the type of enums.
+    * A type constructor that represents the type of enums.
     */
   @IntroducedBy(Kinder.getClass)
   case class KindedEnum(sym: Symbol.EnumSym, kind: Kind) extends TypeConstructor
 
   /**
-    * An unkinded type constructor that represent the type of enums.
+    * An unkinded type constructor that represents the type of enums.
     */
   @EliminatedBy(Kinder.getClass)
   case class UnkindedEnum(sym: Symbol.EnumSym) extends TypeConstructor {
+    override def kind: Kind = throw InternalCompilerException("Attempt to access kind of unkinded type constructor")
+  }
+
+  /**
+    * A type constructor that represents the type of type aliases.
+    */
+  @IntroducedBy(Kinder.getClass)
+  case class KindedAlias(sym: Symbol.TypeAliasSym, kind: Kind) extends TypeConstructor
+
+  /**
+    * An unkinded type constructor that represents the type of type aliases.
+    */
+  @EliminatedBy(Kinder.getClass)
+  case class UnkindedAlias(sym: Symbol.TypeAliasSym) extends TypeConstructor {
     override def kind: Kind = throw InternalCompilerException("Attempt to access kind of unkinded type constructor")
   }
 

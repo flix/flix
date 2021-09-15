@@ -742,24 +742,6 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         k1 = Kind.Arrow(t2.kind, expectedKind)
         t1 <- visitType(t10, k1, kenv, root)
       } yield Type.Apply(t1, t2, loc)
-    case Type.Lambda(t10, t20, loc) =>
-      val tvar = t10.asUnkinded
-      expectedKind match {
-        case Kind.Arrow(expK1, expK2) =>
-          val t1 = visitFreeTypeVar(tvar, expK1)
-          for {
-            newKenv <- kenv + (tvar -> t1.kind)
-            t2 <- visitType(t20, expK2, newKenv, root)
-          } yield Type.Lambda(t1, t2, loc)
-        case Kind.Wild =>
-          val t1 = visitFreeTypeVar(tvar, Kind.Wild)
-          for {
-            newKenv <- kenv + (tvar -> t1.kind)
-            t2 <- visitType(t20, Kind.Wild, newKenv, root)
-          } yield Type.Lambda(t1, t2, loc)
-        case _ =>
-          KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = Kind.Wild ->: Kind.Wild, loc).toFailure
-      }
     case Type.Ascribe(t, k, loc) =>
       unify(k, expectedKind) match {
         case Some(kind) => visitType(t, kind, kenv, root)
@@ -799,7 +781,12 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       // Lookup the enum kind
       val kind = getEnumKind(root.enums(sym))
       TypeConstructor.KindedEnum(sym, kind)
+    case TypeConstructor.UnkindedAlias(sym) =>
+      // Lookup the type alias kind
+      val kind = getTypeAliasKind(root.typealiases(sym))
+      TypeConstructor.KindedAlias(sym, kind)
     case _: TypeConstructor.KindedEnum => throw InternalCompilerException("Unexpected kinded enum.")
+    case _: TypeConstructor.KindedAlias => throw InternalCompilerException("Unexpected kinded type alias.")
     case t => t
   }
 
@@ -922,25 +909,6 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
           kenv => acc ++ kenv
         }
       }
-    case Type.Lambda(t1, t2, loc) =>
-      val tyconKind = tpe.typeArguments.foldLeft(expectedKind) {
-        case (acc, _) => Kind.Star ->: acc
-      }
-
-      tyconKind match {
-        case Kind.Arrow(argKind, retKind) =>
-          val argKenvVal = inferType(t1, argKind, kenv0, root)
-          val retKenvVal = inferType(t2, retKind, kenv0, root)
-
-          val args = Kind.kindArgs(tyconKind)
-          val targsKenvVal = Validation.traverse(tpe.typeArguments.zip(args)) {
-            case (targ, kind) => inferType(targ, kind, kenv0, root)
-          }
-          flatMapN(argKenvVal, retKenvVal, targsKenvVal) {
-            case (kenv1, kenv2, kenv3) => KindEnv.merge(kenv1 :: kenv2 :: kenv3: _*)
-          }
-        case _ => KindError.UnexpectedKind(actualKind = Kind.Wild ->: Kind.Wild, expectedKind = tyconKind, loc = loc).toFailure
-      }
 
     case Type.Ascribe(t, k, loc) => inferType(t, k, kenv0, root)
 
@@ -1011,6 +979,14 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       tparams.tparams.foldRight(Kind.Star: Kind) {
         case (tparam, acc) => kenv.map(tparam.tpe) ->: acc
       }
+  }
+
+  private def getTypeAliasKind(alias: ResolvedAst.TypeAlias)(implicit flix: Flix): Kind = alias match {
+    case ResolvedAst.TypeAlias(_, _, sym, tparams, tpe, loc) =>
+      val kenv = getKindEnvFromTypeParamsDefaultStar(tparams)
+      // MATT need to get tpe kind
+      // MATT but tpe is unkinded
+      // MATT idea: topological sort in resolver, then can fold over this list to do Kinding
   }
 
   /**

@@ -1425,7 +1425,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           case (Some(enum), None) => getEnumTypeIfAccessible(enum, ns0, loc)
 
           // Case 3: TypeAlias.
-          case (None, Some(typealias)) => getTypeAliasIfAccessible(typealias, ns0, root, loc)
+          case (None, Some(typealias)) => getTypeAliasTypeIfAccessible(typealias, ns0, root, loc)
 
           // Case 4: Errors.
           case (_, _) => throw InternalCompilerException("Unexpected ambiguity: Duplicate types / classes should have been resolved.")
@@ -1437,7 +1437,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       (lookupEnum(qname, ns0, root), lookupTypeAlias(qname, ns0, root)) match {
         case (None, None) => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
         case (Some(enumDecl), None) => getEnumTypeIfAccessible(enumDecl, ns0, loc)
-        case (None, Some(typeAliasDecl)) => getTypeAliasIfAccessible(typeAliasDecl, ns0, root, loc)
+        case (None, Some(typeAliasDecl)) => getTypeAliasTypeIfAccessible(typeAliasDecl, ns0, root, loc)
         case (Some(enumDecl), Some(typeAliasDecl)) =>
           val locs = enumDecl.loc :: typeAliasDecl.loc :: Nil
           ResolutionError.AmbiguousType(qname.ident.name, ns0, locs, loc).toFailure
@@ -1479,12 +1479,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         case Some(typealias) =>
           // Case 2: The type alias was found. Use it.
           for {
-            t <- getTypeAliasIfAccessible(typealias, ns0, root, loc)
+            t <- getTypeAliasTypeIfAccessible(typealias, ns0, root, loc)
             ts <- traverse(targs)(lookupType(_, ns0, root))
             r <- lookupType(rest, ns0, root)
             app = Type.mkApply(t, ts, loc)
-            tpe = simplify(app)
-            schema = Type.mkSchemaRowExtend(Name.mkPred(qname.ident), tpe, r, loc)
+            schema = Type.mkSchemaRowExtend(Name.mkPred(qname.ident), app, r, loc)
           } yield schema
       }
 
@@ -1534,7 +1533,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         tpe1 <- lookupType(base0, ns0, root)
         tpe2 <- lookupType(targ0, ns0, root)
         app = Type.Apply(tpe1, tpe2, loc)
-      } yield simplify(app)
+      } yield app
 
     case NamedAst.Type.True(loc) =>
       Type.mkTrue(loc).toSuccess
@@ -1730,43 +1729,51 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     *
     * Otherwise fails with a resolution error.
     */
-  def getEnumTypeIfAccessible(enum0: NamedAst.Enum, ns0: Name.NName, loc: SourceLocation): Validation[Type, ResolutionError] =
+  private def getEnumTypeIfAccessible(enum0: NamedAst.Enum, ns0: Name.NName, loc: SourceLocation): Validation[Type, ResolutionError] =
     getEnumIfAccessible(enum0, ns0, loc) map {
       case enum => mkUnkindedEnum(enum.sym, loc)
     }
 
   /**
+    * Successfully returns the given `enum0` if it is accessible from the given namespace `ns0`.
+    *
+    * Otherwise fails with a resolution error.
+    *
+    * An enum is accessible from a namespace `ns0` if:
+    *
+    * (a) the definition is marked public, or
+    * (b) the definition is defined in the namespace `ns0` itself or in a parent of `ns0`.
+    */
+  private def getTypeAliasIfAccessible(alia0: NamedAst.TypeAlias, ns0: Name.NName, loc: SourceLocation): Validation[NamedAst.TypeAlias, ResolutionError] = {
+    //
+    // Check if the definition is marked public.
+    //
+    if (alia0.mod.isPublic)
+      return alia0.toSuccess
+
+    //
+    // Check if the type alias is defined in `ns0` or in a parent of `ns0`.
+    //
+    val prefixNs = alia0.sym.namespace
+    val targetNs = ns0.idents.map(_.name)
+    if (targetNs.startsWith(prefixNs))
+      return alia0.toSuccess
+
+    //
+    // The type alias is not accessible.
+    //
+    ResolutionError.InaccessibleTypeAlias(alia0.sym, ns0, loc).toFailure
+  }
+  /**
     * Successfully returns the type of the given type alias `alia0` if it is accessible from the given namespace `ns0`.
     *
     * Otherwise fails with a resolution error.
     */
-  private def getTypeAliasIfAccessible(alia0: NamedAst.TypeAlias, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation)(implicit recursionDepth: Int): Validation[Type, ResolutionError] = {
-    // TODO: We should check if the type alias is accessible.
-
-    ///
-    /// Check whether we have hit the recursion limit while unfolding the type alias.
-    ///
-    if (recursionDepth == RecursionLimit) {
-      return ResolutionError.RecursionLimit(alia0.sym, RecursionLimit, alia0.loc).toFailure
-    }
-
-    // Retrieve the declaring namespace.
-    val declNS = getNS(alia0.sym.namespace)
-
-    // Construct a type lambda for each type parameter.
-    mapN(lookupType(alia0.tpe, declNS, root)(recursionDepth + 1)) {
-      case base => mkTypeLambda(alia0.tparams.tparams, base, loc)
+  private def getTypeAliasTypeIfAccessible(alia0: NamedAst.TypeAlias, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation): Validation[Type, ResolutionError] = {
+    getTypeAliasIfAccessible(alia0, ns0, loc) map {
+      case enum => mkUnkindedTypeAlias(enum.sym, loc)
     }
   }
-
-  /**
-    * Returns the given type `tpe` wrapped in a type lambda for the given type parameters `tparam`.
-    */
-  private def mkTypeLambda(tparams: List[NamedAst.TypeParam], tpe: Type, loc: SourceLocation): Type =
-    tparams.foldRight(tpe) {
-      case (tparam, acc) => Type.Lambda(tparam.tpe, acc, loc)
-    }
-
 
   /**
     * Returns the class reflection object for the given `className`.
@@ -1932,6 +1939,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   def mkUnkindedEnum(sym: Symbol.EnumSym, ts: List[Type], loc: SourceLocation): Type = Type.mkApply(Type.Cst(TypeConstructor.UnkindedEnum(sym), loc), ts, loc)
 
   /**
+    * Construct the type alias type constructor for the given symbol `sym` with the given kind `k`.
+    */
+  def mkUnkindedTypeAlias(sym: Symbol.TypeAliasSym, loc: SourceLocation): Type = Type.Cst(TypeConstructor.UnkindedAlias(sym), loc)
+
+  /**
     * Constructs a predicate type.
     */
   private def mkPredicate(den: Ast.Denotation, ts0: List[Type], loc: SourceLocation): Type = {
@@ -1946,37 +1958,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     }
 
     Type.Apply(tycon, ts, loc)
-  }
-
-  /**
-    * Returns a simplified (evaluated) form of the given type `tpe0`.
-    *
-    * Performs beta-reduction of type abstractions and applications.
-    */
-  private def simplify(tpe0: Type): Type = {
-    def eval(t: Type, subst: Map[Type.UnkindedVar, Type]): Type = t match {
-      case tvar: Type.UnkindedVar => subst.getOrElse(tvar, tvar)
-
-      case Type.Cst(_, _) => t
-
-      case Type.Lambda(tvar, tpe, loc) => Type.Lambda(tvar, eval(tpe, subst), loc)
-
-      // TODO: Does not take variable capture into account.
-      case Type.Apply(tpe1, tpe2, loc) => (eval(tpe1, subst), eval(tpe2, subst)) match {
-        case (Type.Lambda(tvar, tpe3, _), t2) => tvar match {
-          case _: Type.KindedVar => throw InternalCompilerException("Unexpected kinded type variable")
-          case unkindedTvar: Type.UnkindedVar => eval(tpe3, subst + (unkindedTvar -> t2))
-        }
-
-        case (t1, t2) => Type.Apply(t1, t2, loc)
-      }
-
-      case Type.Ascribe(tpe, kind, loc) => Type.Ascribe(eval(tpe, subst), kind, loc)
-
-      case _: Type.KindedVar => throw InternalCompilerException("Unexpected kinded type variable")
-    }
-
-    eval(tpe0, Map.empty)
   }
 
   /**

@@ -205,13 +205,6 @@ object CompleteProvider {
       case Type.KindedVar(id, kind, loc, rigidity, text) if tvar.id == id => Type.KindedVar(id, kind, loc, rigidity, Some(newText))
       case Type.KindedVar(_, _, _, _, _) => tpe
       case Type.Cst(_, _) => tpe
-      case Type.Lambda(tvar2, tpe, loc) if tvar == tvar2 =>
-        val t = replaceText(tvar, tpe, newText)
-        Type.Lambda(tvar2.asKinded.copy(text = Some(newText)), t, loc)
-
-      case Type.Lambda(tvar2, tpe, loc) =>
-        val t = replaceText(tvar, tpe, newText)
-        Type.Lambda(tvar, t, loc)
 
       case Type.Apply(tpe1, tpe2, loc) =>
         val t1 = replaceText(tvar, tpe1, newText)

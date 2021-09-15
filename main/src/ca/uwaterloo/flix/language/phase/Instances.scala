@@ -112,7 +112,6 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
             // Case 2: Non-type variable. Error.
             case (_, _) => InstanceError.ComplexInstanceType(tpe, sym, loc).toFailure
           }.map(_ => ())
-        case _: Type.Lambda => throw InternalCompilerException("Unexpected lambda type.")
         case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type.")
         case _: Type.Ascribe => throw InternalCompilerException("Unexpected ascribe type.")
       }

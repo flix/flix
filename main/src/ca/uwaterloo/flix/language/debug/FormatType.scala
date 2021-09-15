@@ -103,10 +103,6 @@ object FormatType {
               case Some(t) => t
             }
           }
-          case Type.Lambda(tvar, tpe, loc) => audience match {
-            case Audience.Internal => s"${tvar.id.toString} => ${visit(tpe)}"
-            case Audience.External => s"${tvar.text.getOrElse(renameMap(tvar.id))} => ${visit(tpe)}"
-          }
           case Type.Apply(tpe1, tpe2, loc) => s"${visit(tpe1)}[${visit(tpe2)}]"
           case _ => throw InternalCompilerException(s"Unexpected type: '${tpe.getClass}'.") // TODO: This can lead to infinite recursion.
         }
@@ -399,7 +395,6 @@ object FormatType {
       case tvar: Type.KindedVar => tvar :: Nil
       case tvar: Type.UnkindedVar => tvar :: Nil
       case Type.Cst(tc, loc) => Nil
-      case Type.Lambda(tvar, tpe, _) => tvar :: visit(tpe)
       case Type.Apply(tpe1, tpe2, _) => visit(tpe1) ::: visit(tpe2)
       case Type.Ascribe(tpe, _, _) => typeVars(tpe)
     }

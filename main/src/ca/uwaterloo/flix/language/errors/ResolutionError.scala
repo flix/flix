@@ -230,6 +230,27 @@ object ResolutionError {
     }
   }
 
+  // MATT test
+  /**
+    * Inaccessible Type Alias Error.
+    *
+    * @param sym the type alias symbol.
+    * @param ns  the namespace where the symbol is not accessible.
+    * @param loc the location where the error occurred.
+    */
+  case class InaccessibleTypeAlias(sym: Symbol.TypeAliasSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+    def summary: String = "Inaccessible."
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Type alias '" << Red(sym.toString) << s"' is not accessible from the namespace '" << Cyan(ns.toString) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "inaccessible type alias.") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Mark the definition as public." << NewLine
+    }
+  }
+
   /**
     * Recursion Limit Error.
     *
