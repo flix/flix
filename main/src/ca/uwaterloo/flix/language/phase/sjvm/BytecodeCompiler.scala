@@ -1008,14 +1008,46 @@ object BytecodeCompiler {
         WithSource[R](loc) ~
           throwCompilerError(JvmName.Flix.MatchError, loc)
 
-      case Expression.BoxBool(exp, loc) => ???
-      case Expression.BoxInt8(exp, loc) => ???
-      case Expression.BoxInt16(exp, loc) => ???
-      case Expression.BoxInt32(exp, loc) => ???
-      case Expression.BoxInt64(exp, loc) => ???
-      case Expression.BoxChar(exp, loc) => ???
-      case Expression.BoxFloat32(exp, loc) => ???
-      case Expression.BoxFloat64(exp, loc) => ???
+      case Expression.BoxBool(exp, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp) ~
+          BoxBool
+
+      case Expression.BoxInt8(exp, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp) ~
+          BoxInt8
+
+      case Expression.BoxInt16(exp, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp) ~
+          BoxInt16
+
+      case Expression.BoxInt32(exp, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp) ~
+          BoxInt32
+
+      case Expression.BoxInt64(exp, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp) ~
+          BoxInt64
+
+      case Expression.BoxChar(exp, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp) ~
+          BoxChar
+
+      case Expression.BoxFloat32(exp, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp) ~
+          BoxFloat32
+
+      case Expression.BoxFloat64(exp, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp) ~
+          BoxFloat64
+
       case Expression.UnboxBool(exp, loc) => ???
       case Expression.UnboxInt8(exp, loc) => ???
       case Expression.UnboxInt16(exp, loc) => ???

@@ -1350,127 +1350,68 @@ object Instructions {
   }
 
   def BoxInt8
-  [R <: Stack]
-  (valueIns: F[R] => F[R ** PInt8]):
-  F[R] => F[R ** PReference[PBoxedInt8]] = {
+  [R <: Stack]:
+  F[R ** PInt8] => F[R ** PReference[PBoxedInt8]] = f => {
     val className = JvmName.Java.Byte
-    START[R] ~
-      NEW(className, tagOf[PBoxedInt8]) ~
-      DUP ~
-      (f => valueIns(castF(f))) ~
-      (f => {
-        f.visitMethodInsn(Opcodes.INVOKESPECIAL, className.internalName, JvmName.constructorMethod, RInt8.thisToNothingDescriptor)
-        castF[R ** PReference[PBoxedInt8]](f)
-      })
+    f.visitMethodInsn(Opcodes.INVOKESTATIC, className.internalName, "valueOf", JvmName.getMethodDescriptor(RInt8, className))
+    castF[R ** PReference[PBoxedInt8]](f)
   }
 
   def BoxInt16
-  [R <: Stack]
-  (valueIns: F[R] => F[R ** PInt16]):
-  F[R] => F[R ** PReference[PBoxedInt16]] = {
+  [R <: Stack]:
+  F[R ** PInt16] => F[R ** PReference[PBoxedInt16]] = f => {
     val className = JvmName.Java.Short
-    START[R] ~
-      NEW(className, tagOf[PBoxedInt16]) ~
-      DUP ~
-      (f => valueIns(castF(f))) ~
-      (f => {
-        f.visitMethodInsn(Opcodes.INVOKESPECIAL, className.internalName, JvmName.constructorMethod, RInt16.thisToNothingDescriptor)
-        castF[R ** PReference[PBoxedInt16]](f)
-      })
+    f.visitMethodInsn(Opcodes.INVOKESPECIAL, className.internalName, "valueOf", JvmName.getMethodDescriptor(RInt16, className))
+    castF[R ** PReference[PBoxedInt16]](f)
   }
 
-  // TODO(JLS): add boolean
   def BoxInt32
-  [R <: Stack]
-  (valueIns: F[R] => F[R ** PInt32]):
-  F[R] => F[R ** PReference[PBoxedInt32]] = {
+  [R <: Stack]:
+  F[R ** PInt32] => F[R ** PReference[PBoxedInt32]] = f => {
     val className = JvmName.Java.Short
-    START[R] ~
-      NEW(className, tagOf[PBoxedInt32]) ~
-      DUP ~
-      (f => valueIns(castF(f))) ~
-      (f => {
-        f.visitMethodInsn(Opcodes.INVOKESPECIAL, className.internalName, JvmName.constructorMethod, RInt32.thisToNothingDescriptor)
-        castF[R ** PReference[PBoxedInt32]](f)
-      })
+    f.visitMethodInsn(Opcodes.INVOKESPECIAL, className.internalName, "valueOf", JvmName.getMethodDescriptor(RInt32, className))
+    castF[R ** PReference[PBoxedInt32]](f)
+  }
+
+  def BoxBool
+  [R <: Stack]:
+  F[R ** PInt32] => F[R ** PReference[PBoxedBool]] = f => {
+    val className = JvmName.Java.Boolean
+    f.visitMethodInsn(Opcodes.INVOKESPECIAL, className.internalName, "valueOf", JvmName.getMethodDescriptor(RBool, className))
+    castF[R ** PReference[PBoxedBool]](f)
   }
 
   def BoxInt64
-  [R <: Stack]
-  (valueIns: F[R] => F[R ** PInt64]):
-  F[R] => F[R ** PReference[PBoxedInt64]] = {
+  [R <: Stack]:
+  F[R ** PInt64] => F[R ** PReference[PBoxedInt64]] = f => {
     val className = JvmName.Java.Short
-    START[R] ~
-      NEW(className, tagOf[PBoxedInt64]) ~
-      DUP ~
-      (f => valueIns(castF(f))) ~
-      (f => {
-        f.visitMethodInsn(Opcodes.INVOKESPECIAL, className.internalName, JvmName.constructorMethod, RInt64.thisToNothingDescriptor)
-        castF[R ** PReference[PBoxedInt64]](f)
-      })
+    f.visitMethodInsn(Opcodes.INVOKESPECIAL, className.internalName, "valueOf", JvmName.getMethodDescriptor(RInt64, className))
+    castF[R ** PReference[PBoxedInt64]](f)
   }
 
   def BoxChar
-  [R <: Stack]
-  (valueIns: F[R] => F[R ** PChar]):
-  F[R] => F[R ** PReference[PBoxedChar]] = {
+  [R <: Stack]:
+  F[R ** PChar] => F[R ** PReference[PBoxedChar]] = f => {
     val className = JvmName.Java.Short
-    START[R] ~
-      NEW(className, tagOf[PBoxedChar]) ~
-      DUP ~
-      (f => valueIns(castF(f))) ~
-      (f => {
-        f.visitMethodInsn(Opcodes.INVOKESPECIAL, className.internalName, JvmName.constructorMethod, RChar.thisToNothingDescriptor)
-        castF[R ** PReference[PBoxedChar]](f)
-      })
+    f.visitMethodInsn(Opcodes.INVOKESPECIAL, className.internalName, "valueOf", JvmName.getMethodDescriptor(RChar, className))
+    castF[R ** PReference[PBoxedChar]](f)
   }
 
   def BoxFloat32
-  [R <: Stack]
-  (valueIns: F[R] => F[R ** PFloat32]):
-  F[R] => F[R ** PReference[PBoxedFloat32]] = {
+  [R <: Stack]:
+  F[R ** PFloat32] => F[R ** PReference[PBoxedFloat32]] = f => {
     val className = JvmName.Java.Short
-    START[R] ~
-      NEW(className, tagOf[PBoxedFloat32]) ~
-      DUP ~
-      (f => valueIns(castF(f))) ~
-      (f => {
-        f.visitMethodInsn(Opcodes.INVOKESPECIAL, className.internalName, JvmName.constructorMethod, RFloat32.thisToNothingDescriptor)
-        castF[R ** PReference[PBoxedFloat32]](f)
-      })
+    f.visitMethodInsn(Opcodes.INVOKESPECIAL, className.internalName, "valueOf", JvmName.getMethodDescriptor(RFloat32, className))
+    castF[R ** PReference[PBoxedFloat32]](f)
   }
 
   def BoxFloat64
-  [R <: Stack]
-  (valueIns: F[R] => F[R ** PFloat64]):
-  F[R] => F[R ** PReference[PBoxedFloat64]] = {
-    val className = JvmName.Java.Short
-    START[R] ~
-      NEW(className, tagOf[PBoxedFloat64]) ~
-      DUP ~
-      (f => valueIns(castF(f))) ~
-      (f => {
-        f.visitMethodInsn(Opcodes.INVOKESPECIAL, className.internalName, JvmName.constructorMethod, RFloat64.thisToNothingDescriptor)
-        castF[R ** PReference[PBoxedFloat64]](f)
-      })
+  [R <: Stack]:
+  F[R ** PFloat64] => F[R ** PReference[PBoxedFloat64]] = f => {
+    val className = JvmName.Java.Double
+    f.visitMethodInsn(Opcodes.INVOKESPECIAL, className.internalName, "valueOf", JvmName.getMethodDescriptor(RFloat64, className))
+    castF[R ** PReference[PBoxedFloat64]](f)
   }
-
-  // TODO(JLS): note: this function seems impossible
-
-  //  def boxIfNecessary
-  //  [R <: Stack, T <: PType]
-  //  (rType: RType[T], ins: F[R] => F[R ** T]):
-  //  F[R] => F[R ** PReference[_ <: PRefType]] = rType match {
-  //    case RBool => BoxInt32(START[R] ~ ins)
-  //    case RInt8 => BoxInt8(START[R] ~ ins)
-  //    case RInt16 => BoxInt16(START[R] ~ ins)
-  //    case RInt32 => BoxInt32(START[R] ~ ins)
-  //    case RInt64 => BoxInt64(START[R] ~ ins)
-  //    case RChar => BoxChar(START[R] ~ ins)
-  //    case RFloat32 => BoxFloat32(START[R] ~ ins)
-  //    case RFloat64 => BoxFloat64(START[R] ~ ins)
-  //    case RReference(_) => START[R] ~ ins
-  //  }
 
   def pushUnit
   [R <: Stack]:
