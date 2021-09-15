@@ -2,6 +2,12 @@
 
 HEAD:
 
+Version 0.20.0:
+- Added support for derivation of Hash (thanks Matthew!)
+- Added support for derivation of Boxable (thanks Matthew!)
+- Added support for reification of type-level Booleans.
+- Fixed a bug related to try-catch (thanks Jonathan!) 
+
 Version 0.19.0:
 - Added support for derivation of Eq (thanks Matthew!)
 - Added support for derivation of Order (thanks Matthew!)
