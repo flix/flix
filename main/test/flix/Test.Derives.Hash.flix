@@ -40,6 +40,8 @@ namespace Test/Derives/Hash {
         case RecursiveCase(MutRecursiveEnum1)
     }
 
+    pub opaque type OpaqueType with Hash = Int
+
     @test
     def testHashEq01(): Bool = hash(Enum.EmptyCase) == hash(Enum.EmptyCase)
 
@@ -110,6 +112,9 @@ namespace Test/Derives/Hash {
     def testHashEq23(): Bool = hash(MutRecursiveEnum1.RecursiveCase(MutRecursiveEnum2.RecursiveCase(MutRecursiveEnum1.EmptyCase))) == hash(MutRecursiveEnum1.RecursiveCase(MutRecursiveEnum2.RecursiveCase(MutRecursiveEnum1.EmptyCase)))
 
     @test
+    def testHashEq24(): Bool = hash(OpaqueType(123)) == hash(OpaqueType(123))
+
+    @test
     def testHashNeq01(): Bool = hash(Enum.EmptyCase) != hash(Enum.SingletonCase(123))
 
     @test
@@ -135,4 +140,7 @@ namespace Test/Derives/Hash {
 
     @test
     def testHashNeq09(): Bool = hash(MutRecursiveEnum1.EmptyCase) != hash(MutRecursiveEnum1.RecursiveCase(MutRecursiveEnum2.EmptyCase))
+
+    @test
+    def testHashNeq10(): Bool = hash(OpaqueType(123)) != hash(OpaqueType(456))
 }
