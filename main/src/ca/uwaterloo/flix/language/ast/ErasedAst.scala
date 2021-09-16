@@ -38,11 +38,11 @@ object ErasedAst {
                   enumSyms: Set[Symbol.EnumSym],
                   namespaces: Set[NamespaceInfo])
 
-  case class Def[T <: PType](ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: List[FormalParam], exp: Expression[T], tpe: RType[PReference[PFunction[T]]], loc: SourceLocation) {
+  case class Def[T <: PType](ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: List[FormalParam[_ <: PType]], exp: Expression[T], tpe: RType[PReference[PFunction[T]]], loc: SourceLocation) {
     var method: Method = _
   }
 
-  case class Enum(mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Name.Tag, Case], loc: SourceLocation)
+  case class Enum(mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Name.Tag, Case[_ <: PType]], loc: SourceLocation)
 
   case class LatticeOps(tpe: RType[PType], bot: Symbol.DefnSym, equ: Symbol.DefnSym, leq: Symbol.DefnSym, lub: Symbol.DefnSym, glb: Symbol.DefnSym)
 
@@ -155,7 +155,7 @@ object ErasedAst {
 
     case class Var[T <: PType](sym: Symbol.VarSym, tpe: RType[T], loc: SourceLocation) extends Expression[T]
 
-    case class Closure[T <: PType](sym: Symbol.DefnSym, freeVars: List[FreeVar], tpe: RType[PReference[PFunction[T]]], loc: SourceLocation) extends Expression[PReference[PFunction[T]]]
+    case class Closure[T <: PType](sym: Symbol.DefnSym, freeVars: List[FreeVar[_ <: PType]], tpe: RType[PReference[PFunction[T]]], loc: SourceLocation) extends Expression[PReference[PFunction[T]]]
 
     case class ApplyClo[T <: PType](exp: Expression[PReference[PFunction[T]]], args: List[Expression[_ <: PType]], tpe: RType[T], loc: SourceLocation) extends Expression[T]
 
@@ -165,7 +165,7 @@ object ErasedAst {
 
     case class ApplyDefTail[T <: PType](sym: Symbol.DefnSym, args: List[Expression[_ <: PType]], functionType: RType[PReference[PFunction[T]]], tpe: RType[T], loc: SourceLocation) extends Expression[T]
 
-    case class ApplySelfTail[T <: PType](sym: Symbol.DefnSym, formals: List[FormalParam], actuals: List[Expression[_ <: PType]], functionType: RType[PReference[PFunction[T]]], tpe: RType[T], loc: SourceLocation) extends Expression[T]
+    case class ApplySelfTail[T <: PType](sym: Symbol.DefnSym, formals: List[FormalParam[_ <: PType]], actuals: List[Expression[_ <: PType]], functionType: RType[PReference[PFunction[T]]], tpe: RType[T], loc: SourceLocation) extends Expression[T]
 
     // Unary expressions
     case class BoolNot(exp: Expression[PInt32], tpe: RType[PInt32], loc: SourceLocation) extends Expression[PInt32]
@@ -243,6 +243,7 @@ object ErasedAst {
 
     case class BigIntComparison(op: ComparisonOp, exp1: Expression[PReference[PBigInt]], exp2: Expression[PReference[PBigInt]], tpe: RType[PInt32], loc: SourceLocation) extends Expression[PInt32]
 
+
     case class StringConcat(exp1: Expression[PReference[PStr]], exp2: Expression[PReference[PStr]], tpe: RType[PReference[PStr]], loc: SourceLocation) extends Expression[PReference[PStr]]
 
     case class StringEquality(op: EqualityOp, exp1: Expression[PReference[PStr]], exp2: Expression[PReference[PStr]], tpe: RType[PInt32], loc: SourceLocation) extends Expression[PInt32]
@@ -255,13 +256,13 @@ object ErasedAst {
 
     case class Let[T <: PType](sym: Symbol.VarSym, exp1: Expression[PType], exp2: Expression[T], tpe: RType[T], loc: SourceLocation) extends Expression[T]
 
-    case class Is(sym: Symbol.EnumSym, tag: Name.Tag, exp: Expression[PReference[PAnyObject]], loc: SourceLocation) extends Expression[PInt32] {
+    case class Is(sym: Symbol.EnumSym, tag: Name.Tag, exp: Expression[PReference[PEnum]], loc: SourceLocation) extends Expression[PInt32] {
       final val tpe: RType[PInt32] = RBool
     }
 
-    case class Tag(sym: Symbol.EnumSym, tag: Name.Tag, exp: Expression[_ <: PType], tpe: RType[PReference[PAnyObject]], loc: SourceLocation) extends Expression[PReference[PAnyObject]]
+    case class Tag[T <: PType](sym: Symbol.EnumSym, tag: Name.Tag, exp: Expression[T], tpe: RType[PReference[PEnum]], loc: SourceLocation) extends Expression[PReference[PEnum]]
 
-    case class Untag[T <: PType](sym: Symbol.EnumSym, tag: Name.Tag, exp: Expression[PReference[PAnyObject]], tpe: RType[T], loc: SourceLocation) extends Expression[T]
+    case class Untag[T <: PType](sym: Symbol.EnumSym, tag: Name.Tag, exp: Expression[PReference[PEnum]], tpe: RType[T], loc: SourceLocation) extends Expression[T]
 
     case class Index[T <: PType](base: Expression[PReference[PTuple]], offset: scala.Int, tpe: RType[T], loc: SourceLocation) extends Expression[T]
 
@@ -398,13 +399,13 @@ object ErasedAst {
   // TODO(JLS): this probably needs multiple versions to avoid unsafe casting (making sure the boxed types match the primitives)
   case class SelectChannelRule[T1 <: PType, T2 <: PRefType](sym: Symbol.VarSym, chan: Expression[PReference[PChan[T2]]], exp: Expression[T1])
 
-  case class Case(sym: Symbol.EnumSym, tag: Name.Tag, tpeDeprecated: RType[PType], loc: SourceLocation)
+  case class Case[T <: PType](sym: Symbol.EnumSym, tag: Name.Tag, tpeDeprecated: RType[T], loc: SourceLocation)
 
   case class CatchRule[T <: PType](sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: Expression[T])
 
-  case class FormalParam(sym: Symbol.VarSym, tpe: RType[_ <: PType])
+  case class FormalParam[T <: PType](sym: Symbol.VarSym, tpe: RType[T])
 
-  case class FreeVar(sym: Symbol.VarSym, tpe: RType[_ <: PType])
+  case class FreeVar[T <: PType](sym: Symbol.VarSym, tpe: RType[T])
 
 
   sealed trait Operator

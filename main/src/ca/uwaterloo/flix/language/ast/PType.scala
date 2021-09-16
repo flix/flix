@@ -75,6 +75,8 @@ object PRefType {
 
   sealed trait PTuple extends PRefType
 
+  sealed trait PEnum extends PRefType
+
   // TODO(JLS): could be fun to add arbitrary indexed type to allow ad-hoc object types
   sealed trait PAnyObject extends PRefType
 

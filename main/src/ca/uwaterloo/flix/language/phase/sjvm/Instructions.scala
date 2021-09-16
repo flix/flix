@@ -1762,7 +1762,7 @@ object Instructions {
 
   def CREATECLOSURE
   [R <: Stack, T <: PType]
-  (freeVars: List[ErasedAst.FreeVar], cloName: JvmName, fnName: JvmName, lenv0: Map[Symbol.LabelSym, Label], t: Tag[T] = null):
+  (freeVars: List[ErasedAst.FreeVar[_ <: PType]], cloName: JvmName, fnName: JvmName, lenv0: Map[Symbol.LabelSym, Label], t: Tag[T] = null):
   F[R] => F[R ** PReference[PFunction[T]]] =
     START[R] ~
       NEW(cloName, tagOf[PFunction[T]]) ~

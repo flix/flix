@@ -50,7 +50,7 @@ object GenClosureClasses {
 
   }
 
-  private def genByteCode[T <: PType](defn: ErasedAst.Def[T], cloName: JvmName, freeVars: List[ErasedAst.FreeVar], functionType: RArrow[T])(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genByteCode[T <: PType](defn: ErasedAst.Def[T], cloName: JvmName, freeVars: List[ErasedAst.FreeVar[_ <: PType]], functionType: RArrow[T])(implicit root: Root, flix: Flix): Array[Byte] = {
     val superClass = functionType.jvmName
     val classMaker = ClassMaker.mkClass(cloName, superClass)
     classMaker.mkConstructor(START[StackNil] ~ THISINIT(superClass) ~ RETURN)
@@ -61,7 +61,7 @@ object GenClosureClasses {
     classMaker.closeClassMaker
   }
 
-  def genInvokeFunction[T <: PType](defn: ErasedAst.Def[T], functionBody: ErasedAst.Expression[T], cloName: JvmName, freeVars: List[ErasedAst.FreeVar]): F[StackNil] => F[StackEnd] = {
+  def genInvokeFunction[T <: PType](defn: ErasedAst.Def[T], functionBody: ErasedAst.Expression[T], cloName: JvmName, freeVars: List[ErasedAst.FreeVar[_ <: PType]]): F[StackNil] => F[StackEnd] = {
     // TODO(JLS): maybe frees should not be in formals?
     // Free variables
     val frees = defn.formals.take(freeVars.length).map(x => ErasedAst.FreeVar(x.sym, x.tpe))

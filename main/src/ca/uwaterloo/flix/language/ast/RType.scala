@@ -174,6 +174,7 @@ object RRefType {
 
   def internalNameOf[T <: PRefType](e: RRefType[T]): InternalName = e.internalName
 
+  // TODO(JLS): skip delimiter if list is empty
   private def mkName(prefix: String, types: List[String]): JvmName = JvmName(Nil, prefix + JvmName.reservedDelimiter + types.mkString(JvmName.reservedDelimiter))
 
   private def mkName(prefix: String, tpe: String): JvmName = mkName(prefix, List(tpe))
@@ -238,8 +239,8 @@ object RRefType {
     override lazy val jvmName: JvmName = mkName("Tuple", elms.map(_.erasedString))
   }
 
-  case class REnum(sym: Symbol.EnumSym, args: List[RType[_ <: PType]]) extends RRefType[PAnyObject] {
-    override lazy val jvmName: JvmName = JvmName(Nil, "NOT_IMPLEMENTED(REnum)")
+  case class REnum(sym: Symbol.EnumSym, args: List[RType[_ <: PType]]) extends RRefType[PEnum] {
+    override lazy val jvmName: JvmName = mkName(s"I${sym.name}", args.map(_.erasedString))
   }
 
   object RBigInt extends RRefType[PBigInt] {

@@ -62,6 +62,8 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
 
     val tupleTypes = getTupleTypes(root.types)
 
+    val enumTypes = getEnumTypes(root.types)
+
     val allClasses: Map[JvmName, JvmClass] = flix.subphase("CodeGen") {
 
       if (flix.options.debug) {
@@ -86,7 +88,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
       // TODO(JLS): write pseudocode
       // TODO(JLS): filter the base type list to the occurring types in ex. refs
       // TODO(JLS): ParArgs as much as possible
-      // TODO(JLS): Add copyright everywhere
+      // TODO(JLS): Add copyright everywhere (copy over old authors from copied files
       // TODO(JLS): Check that aux methods are private
       // TODO(JLS): final/private as much as possible in generated classes
 
@@ -102,7 +104,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
 
       val closureClasses = GenClosureClasses.gen(root.closures)
 
-      // todo enum
+      val enumInterfaces = GenEnumInterfaces.gen(enumTypes)
 
       // todo val tagClasses = GenTagClasses.gen(root.enumSyms)
 
@@ -135,6 +137,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
         functionInterfaces,
         defClasses,
         closureClasses,
+        enumInterfaces,
         tupleClasses,
         refClasses,
         lazyClasses,
@@ -382,6 +385,8 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
       }
     }
   }
+
+  private def getEnumTypes(types: Set[RType[_ <: PType]]): Set[RType[PReference[PEnum]]] = ???
 
   /**
     * Optionally returns a reference to main.

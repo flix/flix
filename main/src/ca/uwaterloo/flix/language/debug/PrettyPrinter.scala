@@ -17,8 +17,8 @@
 package ca.uwaterloo.flix.language.debug
 
 
-import ca.uwaterloo.flix.language.ast.RType._
 import ca.uwaterloo.flix.language.ast.RRefType._
+import ca.uwaterloo.flix.language.ast.RType._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
@@ -873,13 +873,10 @@ object PrettyPrinter {
           vt.text(" is ")
           vt.text(tag.name)
 
-        case Expression.Tag(sym, tag, exp, tpe, loc) => exp match {
-          case Expression.Unit(_) => vt.text(tag.name)
-          case _ =>
-            vt.text(tag.name).text("(")
-            visitExp(exp)
-            vt.text(")")
-        }
+        case Expression.Tag(sym, tag, exp, tpe, loc) =>
+          vt.text(tag.name).text("(")
+          visitExp(exp)
+          vt.text(")")
 
         case Expression.Untag(sym, tag, exp, tpe, loc) =>
           vt.text("Untag(")
@@ -1183,21 +1180,24 @@ object PrettyPrinter {
     }
 
     def fmtTpe[T <: PType](tpe: RType[T], vt: VirtualTerminal): Unit = tpe match {
-        case RBool => vt.text("Bool")
-        case RInt8 => vt.text("Int8")
-        case RInt16 => vt.text("Int16")
-        case RInt32 => vt.text("Int32")
-        case RInt64 => vt.text("Int64")
-        case RChar => vt.text("Char")
-        case RFloat32 => vt.text("Float32")
-        case RFloat64 => vt.text("Float64")
-        case RReference(referenceType) => fmtRefTpe(referenceType, vt)
-      }
+      case RBool => vt.text("Bool")
+      case RInt8 => vt.text("Int8")
+      case RInt16 => vt.text("Int16")
+      case RInt32 => vt.text("Int32")
+      case RInt64 => vt.text("Int64")
+      case RChar => vt.text("Char")
+      case RFloat32 => vt.text("Float32")
+      case RFloat64 => vt.text("Float64")
+      case RReference(referenceType) => fmtRefTpe(referenceType, vt)
+    }
 
     def fmtRefTpe[T <: PRefType](tpe: RRefType[T], vt: VirtualTerminal): Unit = {
-      def visitComp[T0 <: PType](preFix: String, tpe: RType[T0]): Unit = {vt.text(preFix+"["); fmtTpe(tpe, vt); vt.text("]")}
+      def visitComp[T0 <: PType](preFix: String, tpe: RType[T0]): Unit = {
+        vt.text(preFix + "["); fmtTpe(tpe, vt); vt.text("]")
+      }
+
       tpe match {
-        case RBoxedBool =>  vt.text("BoxedBool")
+        case RBoxedBool => vt.text("BoxedBool")
         case RBoxedInt8 => vt.text("BoxedInt8")
         case RBoxedInt16 => vt.text("BoxedInt16")
         case RBoxedInt32 => vt.text("BoxedInt32")
@@ -1210,8 +1210,8 @@ object PrettyPrinter {
         case RChannel(tpe) => visitComp("Channel", tpe)
         case RLazy(tpe) => visitComp("Lazy", tpe)
         case RRef(tpe) => visitComp("Ref", tpe)
-        case RTuple(elms) => vt.text("Tuple["); vt.text("..."); vt.text("]")
-        case REnum(sym, args) => vt.text(sym.toString+"["); vt.text("..."); vt.text("]")
+        case RTuple(_) => vt.text("Tuple["); vt.text("..."); vt.text("]")
+        case REnum(sym, _) => vt.text(sym.toString + "["); vt.text("..."); vt.text("]")
         case RBigInt => vt.text("BigInt")
         case RStr => vt.text("String")
         case RArrow(args, result) =>
@@ -1223,17 +1223,17 @@ object PrettyPrinter {
           vt.text(") -> ")
           fmtTpe(result, vt)
         case RRecordEmpty => vt.text("RecordEmpty")
-        case RRecordExtend(field, value, rest) => vt.text("RecordExtend...")
+        case RRecordExtend(_, _, _) => vt.text("RecordExtend...")
         case RSchemaEmpty => vt.text("SchemaEmpty")
-        case RSchemaExtend(name, tpe, rest) => vt.text("SchemaExtend...")
-        case RRelation(tpes) => vt.text("Relation...")
-        case RLattice(tpes) => vt.text("Lattice...")
+        case RSchemaExtend(_, _, _) => vt.text("SchemaExtend...")
+        case RRelation(_) => vt.text("Relation...")
+        case RLattice(_) => vt.text("Lattice...")
         case RNative(clazz) => vt.text("Native("); vt.text(clazz.getSimpleName); vt.text(")")
         case RObject => vt.text("Object")
       }
     }
 
-    def fmtParam(p: FormalParam, vt: VirtualTerminal): Unit = {
+    def fmtParam[T <: PType](p: FormalParam[T], vt: VirtualTerminal): Unit = {
       fmtSym(p.sym, vt)
       vt.text(": ")
       fmtTpe(p.tpe, vt)

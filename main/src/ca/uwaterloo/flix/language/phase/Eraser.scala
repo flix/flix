@@ -432,20 +432,20 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
 
     case FinalAst.Expression.Is(sym, tag, exp, loc) =>
       for {
-        exp0 <- visitExp[PReference[PAnyObject]](exp)
+        exp0 <- visitExp[PReference[PEnum]](exp)
         expRes = ErasedAst.Expression.Is(sym, tag, exp0, loc)
       } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.Tag(sym, tag, exp, tpe, loc) =>
       for {
         exp0 <- visitExp[PType](exp)
-        tpe0 <- visitTpe[PReference[PAnyObject]](tpe)
+        tpe0 <- visitTpe[PReference[PEnum]](tpe)
         expRes = ErasedAst.Expression.Tag(sym, tag, exp0, tpe0, loc)
       } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.Untag(sym, tag, exp, tpe, loc) =>
       for {
-        exp0 <- visitExp[PReference[PAnyObject]](exp)
+        exp0 <- visitExp[PReference[PEnum]](exp)
         tpe0 <- visitTpe[T](tpe)
         expRes = ErasedAst.Expression.Untag(sym, tag, exp0, tpe0, loc)
       } yield expRes
@@ -712,8 +712,8 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
   /**
     * Translates the given formal param `p` to the ErasedAst.
     */
-  private def visitFormalParam(p: FinalAst.FormalParam): EraserMonad[ErasedAst.FormalParam] = {
-    visitTpe[PType](p.tpe) map (tpe0 => ErasedAst.FormalParam(p.sym, tpe0))
+  private def visitFormalParam[T <: PType](p: FinalAst.FormalParam): EraserMonad[ErasedAst.FormalParam[T]] = {
+    visitTpe[T](p.tpe) map (tpe0 => ErasedAst.FormalParam(p.sym, tpe0))
   }
 
   /**
