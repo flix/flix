@@ -254,7 +254,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Performs weeding on the given opaque type declaration `d0`.
     */
   private def visitOpaqueType(d0: ParsedAst.Declaration.OpaqueType)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Enum], WeederError] = d0 match {
-    case ParsedAst.Declaration.OpaqueType(doc0, mod0, sp1, ident, tparams0, tpe0, sp2) =>
+    case ParsedAst.Declaration.OpaqueType(doc0, mod0, sp1, ident, tparams0, derives, tpe0, sp2) =>
       /*
        * Rewrites an opaque type to an enum declaration.
        */
@@ -265,7 +265,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       mapN(modVal, tparamsVal) {
         case (mod, tparams) =>
           val cases = Map(Name.mkTag(ident) -> WeededAst.Case(ident, Name.mkTag(ident), visitType(tpe0)))
-          List(WeededAst.Declaration.Enum(doc, mod, ident, tparams, Nil, cases, mkSL(sp1, sp2)))
+          List(WeededAst.Declaration.Enum(doc, mod, ident, tparams, derives.toList, cases, mkSL(sp1, sp2)))
       }
   }
 
