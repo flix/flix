@@ -74,20 +74,19 @@ class ProgressBar {
     *
     * This function flushes the output and should not be called too often.
     */
-  private def print(phase: String, msg: String): Unit = synchronized {
+  private def print(phase: String, msg: String): Unit = {
     // Compute the next character in the spinner.
     val index = spinnerTick.getAndIncrement() % SpinnerChars.length
     val spinner = SpinnerChars(index)
 
     // Build the string to print and pad it.
-    val s = s"$spinner [$phase] $msg"
-    val r = s + " " * Math.max(80 - s.length, 0)
+    val s = s"$spinner [$phase] $msg".padTo(80, ' ')
 
     // Print the string followed by carriage return.
     // NB: We do *NOT* print a newline because then
     // we would not be able to overwrite the current
     // line in the iteration.
-    System.out.print(s"$r\r")
+    System.out.print(s"$s\r")
 
     // Flush to ensure that the string is printed.
     System.out.flush()
