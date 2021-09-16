@@ -53,7 +53,8 @@ object GenTupleClasses {
     tupleType.elms.zipWithIndex.foreach {
       case (indexType, index) => classMaker.mkField(indexFieldName(index), indexType.erasedType, Mod.isPublic)
     }
-    classMaker.mkMethod(genBoxedArrayFunction(tupleType), GetBoxedArrayMethodName, GetBoxedArrayMethodDescriptor, Mod.isPublic)
+    // TODO(JLS): does not seem to be used
+    //classMaker.mkMethod(genBoxedArrayFunction(tupleType), GetBoxedArrayMethodName, GetBoxedArrayMethodDescriptor, Mod.isPublic)
     classMaker.closeClassMaker
   }
 
