@@ -15,6 +15,8 @@
  */
 package ca.uwaterloo.flix.util
 
+import ca.uwaterloo.flix.util.vt.TerminalContext
+
 import java.util.concurrent.atomic.AtomicInteger
 
 class ProgressBar {
@@ -41,6 +43,11 @@ class ProgressBar {
     * Monotonically increasing.
     */
   private val sampleTick = new AtomicInteger(0)
+
+  /**
+    * A Boolean that represents whether the terminal is believed to support color.
+    */
+  private val supportsColors: Boolean = TerminalContext.hasColorSupport()
 
   /**
     * Updates the progress with the given message `msg` in the given `phase`.
@@ -79,17 +86,36 @@ class ProgressBar {
     val index = spinnerTick.getAndIncrement() % SpinnerChars.length
     val spinner = SpinnerChars(index)
 
-    // Build the string to print and pad it.
-    val s = s"$spinner [$phase] $msg".padTo(80, ' ')
+    // Build and pad the string.
+    val s = s" [${colorGreen(spinner)}] [${colorBlue(phase)}] $msg"
+    val r = s.padTo(80, ' ') // NB: This is not really correct because of escape chars.
 
     // Print the string followed by carriage return.
     // NB: We do *NOT* print a newline because then
     // we would not be able to overwrite the current
     // line in the iteration.
-    System.out.print(s"$s\r")
+    System.out.print(s"$r\r")
 
     // Flush to ensure that the string is printed.
     System.out.flush()
   }
+
+  /**
+    * Colors the given string `s` green (if supported).
+    */
+  private def colorGreen(s: String): String =
+    if (supportsColors)
+      Console.GREEN + s + Console.RESET
+    else
+      s
+
+  /**
+    * Colors the given string `s` blue (if supported).
+    */
+  private def colorBlue(s: String): String =
+    if (supportsColors)
+      Console.BLUE + s + Console.RESET
+    else
+      s
 
 }
