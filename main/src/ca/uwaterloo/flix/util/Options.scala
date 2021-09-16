@@ -27,7 +27,7 @@ object Options {
     debug = false,
     documentor = false,
     json = false,
-    progress = true,
+    progress = false,
     test = false,
     target = JvmTarget.Version18,
     targetDirectory = Paths.get("./target/flix/"),

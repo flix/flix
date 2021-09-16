@@ -374,6 +374,9 @@ class Flix {
       JvmBackend |>
       Finish
 
+    // Reset progress bar.
+    progressBar.complete()
+
     // Apply the pipeline to the parsed AST.
     val result = pipeline.run(typedAst)(this)
 
@@ -399,7 +402,9 @@ class Flix {
     // Initialize the phase time object.
     currentPhase = PhaseTime(phase, 0, Nil)
 
-    progressBar.observe(currentPhase.phase, "", false)
+    if (options.progress) {
+      progressBar.observe(currentPhase.phase, "", sample = false)
+    }
 
     // Measure the execution time.
     val t = System.nanoTime()
@@ -457,7 +462,9 @@ class Flix {
     * A callback to indicate that work has started on the given subtask.
     */
   def subtask(subtask: String, sample: Boolean = false): Unit = {
-    progressBar.observe(currentPhase.phase, subtask, sample)
+    if (options.progress) {
+      progressBar.observe(currentPhase.phase, subtask, sample)
+    }
   }
 
   /**

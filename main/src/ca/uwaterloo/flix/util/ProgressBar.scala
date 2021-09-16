@@ -60,6 +60,16 @@ class ProgressBar {
   }
 
   /**
+    * Indicates that no further events will be observed.
+    *
+    * Used to properly reset the current line.
+    */
+  def complete(): Unit = {
+    System.out.print(" " * 80 + s"\r")
+    System.out.flush()
+  }
+
+  /**
     * Prints the given string `msg` from the given `phase` to the terminal.
     *
     * This function flushes the output and should not be called too often.
