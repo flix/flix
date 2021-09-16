@@ -639,13 +639,16 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
         expRes = ErasedAst.Expression.NewChannel(exp0, tpe0, loc)
       } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
+      // unbox the value before retrieving it
     case FinalAst.Expression.GetChannel(exp, tpe, loc) =>
       for {
         exp0 <- visitExp[PReference[PChan[PRefType]]](exp)
-        tpe0 <- visitTpe[PReference[PRefType]](tpe)
-        expRes = ErasedAst.Expression.GetChannel(exp0, tpe0, loc)
+        unboxedType <- visitTpe[PReference[PRefType]](tpe)
+        boxedType = boxType(unboxedType).asInstanceOf[RType[PReference[PRefType]]]
+        expRes = ErasedAst.Expression.GetChannel(exp0, boxedType, loc)
       } yield unboxValue(expRes).asInstanceOf[ErasedAst.Expression[T]]
 
+      // box the value before inserting it
     case FinalAst.Expression.PutChannel(exp1, exp2, tpe, loc) =>
       for {
         exp10 <- visitExp[PReference[PChan[PRefType]]](exp1)
@@ -739,17 +742,7 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
       case MonoType.Channel(tpe) =>
         for {
           tpe0 <- visitTpe[T](tpe)
-          boxedTpe = tpe0 match {
-            case RBool => RBoxedBool.asInstanceOf[RType[PReference[PRefType]]]
-            case RInt8 => RBoxedInt8.asInstanceOf[RType[PReference[PRefType]]]
-            case RInt16 => RBoxedInt16.asInstanceOf[RType[PReference[PRefType]]]
-            case RInt32 => RBoxedInt32.asInstanceOf[RType[PReference[PRefType]]]
-            case RInt64 => RBoxedInt64.asInstanceOf[RType[PReference[PRefType]]]
-            case RChar => RBoxedChar.asInstanceOf[RType[PReference[PRefType]]]
-            case RFloat32 => RBoxedFloat32.asInstanceOf[RType[PReference[PRefType]]]
-            case RFloat64 => RBoxedFloat64.asInstanceOf[RType[PReference[PRefType]]]
-            case res@RReference(_) => res.asInstanceOf[RType[PReference[PRefType]]]
-          }
+          boxedTpe = boxType(tpe0).asInstanceOf[RType[PReference[PRefType]]]
         } yield RReference(RChannel(boxedTpe)).asInstanceOf[RType[T]]
       case MonoType.Lazy(tpe) =>
         for {

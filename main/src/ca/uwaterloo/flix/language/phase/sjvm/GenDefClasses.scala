@@ -51,7 +51,7 @@ object GenDefClasses {
     classMaker.closeClassMaker
   }
 
-  def genInvokeFunction[T <: PType](defn: ErasedAst.Def[T], defName: JvmName): F[StackNil] => F[StackEnd] = {
+  def genInvokeFunction[T <: PType](defn: ErasedAst.Def[T], defName: JvmName): F[StackNil] => F[StackEnd] =
     START[StackNil] ~
       (multiComposition(defn.formals.zipWithIndex) {
         case (ErasedAst.FormalParam(sym, tpe), index) =>
@@ -62,7 +62,6 @@ object GenDefClasses {
       magicReversePutField(defName, defn.exp.tpe) ~
       pushNull(defn.tpe) ~
       ARETURN
-  }
 
   // TODO(JLS): could be done with other instructions
   def magicReversePutField[R <: Stack, T <: PType](className: JvmName, resultType: RType[T]): F[R ** T ** PReference[PAnyObject]] => F[R] = f => {

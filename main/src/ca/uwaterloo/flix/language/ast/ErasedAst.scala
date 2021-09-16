@@ -65,15 +65,40 @@ object ErasedAst {
   }
 
   def unboxValue[T <: PRefType](exp: Expression[PReference[T]]): Expression[_ <: PType] = squeezeReference(exp.tpe).referenceType match {
-    case RRefType.RBoxedBool => Expression.UnboxBool(exp, exp.loc).asInstanceOf[Expression[_ <: PType]]
-    case RRefType.RBoxedInt8 => Expression.UnboxInt8(exp, exp.loc).asInstanceOf[Expression[_ <: PType]]
-    case RRefType.RBoxedInt16 => Expression.UnboxInt16(exp, exp.loc).asInstanceOf[Expression[_ <: PType]]
-    case RRefType.RBoxedInt32 => Expression.UnboxInt32(exp, exp.loc).asInstanceOf[Expression[_ <: PType]]
-    case RRefType.RBoxedInt64 => Expression.UnboxInt64(exp, exp.loc).asInstanceOf[Expression[_ <: PType]]
-    case RRefType.RBoxedChar => Expression.UnboxChar(exp, exp.loc).asInstanceOf[Expression[_ <: PType]]
-    case RRefType.RBoxedFloat32 => Expression.UnboxFloat32(exp, exp.loc).asInstanceOf[Expression[_ <: PType]]
-    case RRefType.RBoxedFloat64 => Expression.UnboxFloat64(exp, exp.loc).asInstanceOf[Expression[_ <: PType]]
+    case RBoxedBool => Expression.UnboxBool(exp, exp.loc).asInstanceOf[Expression[_ <: PType]]
+    case RBoxedInt8 => Expression.UnboxInt8(exp, exp.loc).asInstanceOf[Expression[_ <: PType]]
+    case RBoxedInt16 => Expression.UnboxInt16(exp, exp.loc).asInstanceOf[Expression[_ <: PType]]
+    case RBoxedInt32 => Expression.UnboxInt32(exp, exp.loc).asInstanceOf[Expression[_ <: PType]]
+    case RBoxedInt64 => Expression.UnboxInt64(exp, exp.loc).asInstanceOf[Expression[_ <: PType]]
+    case RBoxedChar => Expression.UnboxChar(exp, exp.loc).asInstanceOf[Expression[_ <: PType]]
+    case RBoxedFloat32 => Expression.UnboxFloat32(exp, exp.loc).asInstanceOf[Expression[_ <: PType]]
+    case RBoxedFloat64 => Expression.UnboxFloat64(exp, exp.loc).asInstanceOf[Expression[_ <: PType]]
     case _ => exp.asInstanceOf[Expression[_ <: PType]]
+  }
+
+  def boxType[T <: PType](tpe: RType[T]): RType[PReference[_ <: PRefType]] = tpe match {
+    case RBool => RBoxedBool.rType.asInstanceOf[RType[PReference[_ <: PRefType]]]
+    case RInt8 => RBoxedInt8.rType.asInstanceOf[RType[PReference[_ <: PRefType]]]
+    case RInt16 => RBoxedInt16.rType.asInstanceOf[RType[PReference[_ <: PRefType]]]
+    case RInt32 => RBoxedInt32.rType.asInstanceOf[RType[PReference[_ <: PRefType]]]
+    case RInt64 => RBoxedInt64.rType.asInstanceOf[RType[PReference[_ <: PRefType]]]
+    case RChar => RBoxedChar.rType.asInstanceOf[RType[PReference[_ <: PRefType]]]
+    case RFloat32 => RBoxedFloat32.rType.asInstanceOf[RType[PReference[_ <: PRefType]]]
+    case RFloat64 => RBoxedFloat64.rType.asInstanceOf[RType[PReference[_ <: PRefType]]]
+    case tpe => tpe.asInstanceOf[RType[PReference[_ <: PRefType]]]
+  }
+
+  def unboxType[T <: PRefType](tpe: RType[PReference[T]]): RType[_ <: PType] = squeezeReference(tpe).referenceType match {
+    case RBoxedBool => RBool
+    case RBoxedInt8 => RInt8
+    case RBoxedInt16 => RInt16
+    case RBoxedInt32 => RInt32
+    case RBoxedInt64 => RInt64
+    case RBoxedChar => RChar
+    case RBoxedFloat32 => RFloat32
+    case RBoxedFloat64 => RFloat64
+    case RUnit => RBool
+    case _ => tpe
   }
 
   object Expression {

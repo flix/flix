@@ -927,7 +927,7 @@ object BytecodeCompiler {
           recurse(exp1) ~
           DUP ~
           recurse(exp2) ~
-          putChannelValue(exp2.tpe)
+          putChannelValue()
 
       case Expression.SelectChannel(rules, default, _, loc) =>
         WithSource[R](loc) ~
@@ -1048,15 +1048,48 @@ object BytecodeCompiler {
           recurse(exp) ~
           BoxFloat64
 
-      case Expression.UnboxBool(exp, loc) => ???
-      case Expression.UnboxInt8(exp, loc) => ???
-      case Expression.UnboxInt16(exp, loc) => ???
-      case Expression.UnboxInt32(exp, loc) => ???
-      case Expression.UnboxInt64(exp, loc) => ???
-      case Expression.UnboxChar(exp, loc) => ???
-      case Expression.UnboxFloat32(exp, loc) => ???
-      case Expression.UnboxFloat64(exp, loc) => ???
+      case Expression.UnboxBool(exp, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp) ~
+          UnboxBool
+
+      case Expression.UnboxInt8(exp, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp) ~
+          UnboxInt8
+
+      case Expression.UnboxInt16(exp, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp) ~
+          UnboxInt16
+
+      case Expression.UnboxInt32(exp, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp) ~
+          UnboxInt32
+
+      case Expression.UnboxInt64(exp, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp) ~
+          UnboxInt64
+
+      case Expression.UnboxChar(exp, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp) ~
+          UnboxChar
+
+      case Expression.UnboxFloat32(exp, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp) ~
+          UnboxFloat32
+
+      case Expression.UnboxFloat64(exp, loc) =>
+        WithSource[R](loc) ~
+          recurse(exp) ~
+          UnboxFloat64
+
     }
+
   }
 
 }
