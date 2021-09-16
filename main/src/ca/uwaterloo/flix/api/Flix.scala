@@ -346,6 +346,9 @@ class Flix {
     // Shutdown fork join pool.
     shutdownForkJoin()
 
+    // Reset the progress bar.
+    progressBar.complete()
+
     // Return the result.
     result
   }
@@ -380,7 +383,7 @@ class Flix {
     // Shutdown fork join pool.
     shutdownForkJoin()
 
-    // Reset progress bar.
+    // Reset the progress bar.
     progressBar.complete()
 
     // Return the result.
