@@ -374,14 +374,14 @@ class Flix {
       JvmBackend |>
       Finish
 
-    // Reset progress bar.
-    progressBar.complete()
-
     // Apply the pipeline to the parsed AST.
     val result = pipeline.run(typedAst)(this)
 
     // Shutdown fork join pool.
     shutdownForkJoin()
+
+    // Reset progress bar.
+    progressBar.complete()
 
     // Return the result.
     result
