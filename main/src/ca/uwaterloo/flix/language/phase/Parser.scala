@@ -48,7 +48,7 @@ object Parser extends Phase[List[Source], ParsedAst.Program] {
     * Attempts to parse the given `source` as a root.
     */
   def parseRoot(source: Source)(implicit flix: Flix): Validation[ParsedAst.Root, CompilationError] = {
-    flix.notifyStartSubtask(source.name)
+    flix.subtask(source.name)
 
     val parser = new Parser(source)
     parser.Root.run() match {

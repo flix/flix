@@ -15,6 +15,8 @@
  */
 package ca.uwaterloo.flix.util
 
+import java.util.concurrent.atomic.AtomicInteger
+
 class ProgressBar {
   /**
     * The characters in the spinner.
@@ -28,14 +30,17 @@ class ProgressBar {
 
   /**
     * An internal counter used to print the spinner.
+    *
+    * Monotonically increasing.
     */
-  private var tick = 0
+  private val spinnerTick = new AtomicInteger(0)
 
   /**
     * An internal counter used for sampling.
+    *
+    * Monotonically increasing.
     */
-  @volatile
-  private var sampleTick = 0
+  private val sampleTick = new AtomicInteger(0)
 
   /**
     * Updates the progress with the given message `msg` in the given `phase`.
@@ -43,11 +48,15 @@ class ProgressBar {
     * If sample is `true` then
     */
   def observe(phase: String, msg: String, sample: Boolean): Unit = {
-    if (!sample || sampleTick == 0) {
+    // Always print if `sample` is `false`.
+    if (!sample) {
       print(phase, msg)
+    } else {
+      // Print if `sample` is `true` and we have passed `SampleRate` ticks.
+      if (sampleTick.getAndIncrement() % SampleRate == 0) {
+        print(phase, msg)
+      }
     }
-
-    sampleTick = (sampleTick + 1) % SampleRate
   }
 
   /**
@@ -57,14 +66,17 @@ class ProgressBar {
     */
   private def print(phase: String, msg: String): Unit = synchronized {
     // Compute the next character in the spinner.
-    tick = (tick + 1) % SpinnerChars.length
-    val spinner = SpinnerChars(tick)
+    val index = spinnerTick.getAndIncrement() % SpinnerChars.length
+    val spinner = SpinnerChars(index)
 
     // Build the string to print and pad it.
     val s = s"$spinner [$phase] $msg"
-    val r = s + " " * (80 - s.length)
+    val r = s + " " * Math.max(80 - s.length, 0)
 
     // Print the string followed by carriage return.
+    // NB: We do *NOT* print a newline because then
+    // we would not be able to overwrite the current
+    // line in the iteration.
     System.out.print(s"$r\r")
 
     // Flush to ensure that the string is printed.

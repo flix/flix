@@ -39,7 +39,7 @@ object GenFunctionClasses {
     //
     ParOps.parAgg(defs, Map.empty[JvmName, JvmClass])({
       case (macc, (sym, defn)) if JvmOps.nonLaw(defn) =>
-        flix.notifyStartSubtask(sym.toString, sample = true)
+        flix.subtask(sym.toString, sample = true)
 
         // `JvmType` of the interface for `def.tpe`
         val functionInterface = JvmOps.getFunctionInterfaceType(defn.tpe)

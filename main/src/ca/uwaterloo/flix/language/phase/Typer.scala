@@ -135,7 +135,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
     */
   private def visitDefn(defn: KindedAst.Def, assumedTconstrs: List[Ast.TypeConstraint], root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[TypedAst.Def, TypeError] = defn match {
     case KindedAst.Def(sym, spec0, exp0) =>
-      flix.notifyStartSubtask(sym.toString, sample = true)
+      flix.subtask(sym.toString, sample = true)
 
       for {
         // check the main signature before typechecking the def
