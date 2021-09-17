@@ -47,7 +47,9 @@ object Parser extends Phase[List[Source], ParsedAst.Program] {
   /**
     * Attempts to parse the given `source` as a root.
     */
-  def parseRoot(source: Source): Validation[ParsedAst.Root, CompilationError] = {
+  def parseRoot(source: Source)(implicit flix: Flix): Validation[ParsedAst.Root, CompilationError] = {
+    flix.subtask(source.name)
+
     val parser = new Parser(source)
     parser.Root.run() match {
       case scala.util.Success(ast) =>

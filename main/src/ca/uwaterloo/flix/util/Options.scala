@@ -27,6 +27,7 @@ object Options {
     debug = false,
     documentor = false,
     json = false,
+    progress = false,
     test = false,
     target = JvmTarget.Version18,
     targetDirectory = Paths.get("./target/flix/"),
@@ -43,7 +44,7 @@ object Options {
   /**
     * Default test options.
     */
-  val DefaultTest: Options = Default.copy(lib = LibLevel.All, test = true)
+  val DefaultTest: Options = Default.copy(lib = LibLevel.All, progress = false, test = true)
 
   /**
     * Default test options with the standard library.
@@ -67,7 +68,8 @@ object Options {
   * @param lib                selects the level of libraries to include.
   * @param debug              enables the emission of debugging information.
   * @param documentor         enables generation of flixdoc.
-  * @param json               enable json output
+  * @param json               enable json output.
+  * @param progress           print progress during compilation.
   * @param test               enables test mode.
   * @param target             the target JVM.
   * @param targetDirectory    the target directory for compiled code.
@@ -83,6 +85,7 @@ case class Options(lib: LibLevel,
                    debug: Boolean,
                    documentor: Boolean,
                    json: Boolean,
+                   progress: Boolean,
                    target: JvmTarget,
                    targetDirectory: Path,
                    test: Boolean,

@@ -83,6 +83,7 @@ object Main {
       debug = cmdOpts.xdebug,
       documentor = cmdOpts.documentor,
       json = cmdOpts.json,
+      progress = true,
       threads = cmdOpts.threads.getOrElse(Runtime.getRuntime.availableProcessors()),
       writeClassFiles = !cmdOpts.interactive,
       xlinter = cmdOpts.xlinter,

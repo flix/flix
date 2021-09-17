@@ -713,6 +713,8 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         // Extract a function from the queue and specializes it w.r.t. its substitution.
         val (freshSym, defn, subst) = defQueue.dequeue()
 
+        flix.subtask(freshSym.toString, sample = true)
+
         // Specialize the formal parameters and introduce fresh local variable symbols.
         val (fparams, env0) = specializeFormalParams(defn.spec.fparams, subst)
 
