@@ -81,18 +81,6 @@ object GenLazyClasses {
     // Emit the code for the constructor
     compileLazyConstructor(visitor, classType)
 
-    // Generate `toString` method
-    AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String),
-      "toString method shouldn't be called")
-
-    // Generate `hashCode` method
-    AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "hashCode", AsmOps.getMethodDescriptor(Nil, JvmType.PrimInt),
-      "hashCode method shouldn't be called")
-
-    // Generate `equals` method
-    AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "equals", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Void),
-      "equals method shouldn't be called")
-
     visitor.visitEnd()
     visitor.toByteArray
   }
@@ -103,7 +91,7 @@ object GenLazyClasses {
    * Emits code to call a closure (not in tail position). fType is the type of the called
    * closure. argsType is the type of its arguments, and resultType is the type of its result.
    */
-  private def compileClosureApplication(visitor: MethodVisitor, valueType: MonoType)(implicit root: Root, flix: Flix) = {
+  private def compileClosureApplication(visitor: MethodVisitor, valueType: MonoType)(implicit root: Root, flix: Flix): Unit = {
     val fType = MonoType.Arrow(List(MonoType.Unit), valueType)
     // Type of the continuation interface
     val cont = JvmOps.getContinuationInterfaceType(fType)
