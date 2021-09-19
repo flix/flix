@@ -78,7 +78,7 @@ object Main {
     implicit val terminal: TerminalContext = TerminalContext.AnsiTerminal
 
     // construct flix options.
-    val options = Options.Default.copy(
+    var options = Options.Default.copy(
       lib = cmdOpts.xlib,
       debug = cmdOpts.xdebug,
       documentor = cmdOpts.documentor,
@@ -91,6 +91,11 @@ object Main {
       xnostratifier = cmdOpts.xnostratifier,
       xstatistics = cmdOpts.xstatistics
     )
+
+    // Don't use progress bar if benchmarking.
+    if (cmdOpts.benchmark || cmdOpts.xbenchmarkPhases || cmdOpts.xbenchmarkThroughput) {
+      options = options.copy(progress = false)
+    }
 
     // check if command was passed.
     try {
@@ -144,15 +149,13 @@ object Main {
 
     // check if the -Xbenchmark-phases flag was passed.
     if (cmdOpts.xbenchmarkPhases) {
-      val o = options.copy(progress = false)
-      BenchmarkCompiler.benchmarkPhases(o)
+      BenchmarkCompiler.benchmarkPhases(options)
       System.exit(0)
     }
 
     // check if the -Xbenchmark-throughput flag was passed.
     if (cmdOpts.xbenchmarkThroughput) {
-      val o = options.copy(progress = false)
-      BenchmarkCompiler.benchmarkThroughput(o)
+      BenchmarkCompiler.benchmarkThroughput(options)
       System.exit(0)
     }
 
@@ -192,8 +195,7 @@ object Main {
         }
 
         if (cmdOpts.benchmark) {
-          val o = options.copy(progress = false)
-          Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))(o)
+          Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))(options)
         }
 
         if (cmdOpts.test) {
