@@ -28,13 +28,13 @@ import java.net.BindException
 import java.nio.file.Paths
 
 /**
- * The main entry point for the Flix compiler and runtime.
- */
+  * The main entry point for the Flix compiler and runtime.
+  */
 object Main {
 
   /**
-   * The main method.
-   */
+    * The main method.
+    */
   def main(argv: Array[String]): Unit = {
 
     // parse command line options.
@@ -78,11 +78,12 @@ object Main {
     implicit val terminal: TerminalContext = TerminalContext.AnsiTerminal
 
     // construct flix options.
-    val options = Options.Default.copy(
+    var options = Options.Default.copy(
       lib = cmdOpts.xlib,
       debug = cmdOpts.xdebug,
       documentor = cmdOpts.documentor,
       json = cmdOpts.json,
+      progress = true,
       threads = cmdOpts.threads.getOrElse(Runtime.getRuntime.availableProcessors()),
       writeClassFiles = !cmdOpts.interactive,
       xlinter = cmdOpts.xlinter,
@@ -90,6 +91,11 @@ object Main {
       xnostratifier = cmdOpts.xnostratifier,
       xstatistics = cmdOpts.xstatistics
     )
+
+    // Don't use progress bar if benchmarking.
+    if (cmdOpts.benchmark || cmdOpts.xbenchmarkPhases || cmdOpts.xbenchmarkThroughput) {
+      options = options.copy(progress = false)
+    }
 
     // check if command was passed.
     try {
@@ -124,11 +130,13 @@ object Main {
           System.exit(0)
 
         case Command.Benchmark =>
-          Packager.benchmark(cwd, options)
+          val o = options.copy(progress = false)
+          Packager.benchmark(cwd, o)
           System.exit(0)
 
         case Command.Test =>
-          Packager.test(cwd, options) match {
+          val o = options.copy(progress = false)
+          Packager.test(cwd, o) match {
             case Tester.OverallTestResult.NoTests | Tester.OverallTestResult.Success => System.exit(0)
             case Tester.OverallTestResult.Failure => System.exit(1)
           }
@@ -204,8 +212,8 @@ object Main {
   }
 
   /**
-   * A case class representing the parsed command line options.
-   */
+    * A case class representing the parsed command line options.
+    */
   case class CmdOpts(command: Command = Command.None,
                      args: Option[String] = None,
                      benchmark: Boolean = false,
@@ -227,8 +235,8 @@ object Main {
                      files: Seq[File] = Seq())
 
   /**
-   * A case class representing possible commands.
-   */
+    * A case class representing possible commands.
+    */
   sealed trait Command
 
   object Command {
@@ -254,10 +262,10 @@ object Main {
   }
 
   /**
-   * Parse command line options.
-   *
-   * @param args the arguments array.
-   */
+    * Parse command line options.
+    *
+    * @param args the arguments array.
+    */
   def parseCmdOpts(args: Array[String]): Option[CmdOpts] = {
     implicit val readInclusion: scopt.Read[LibLevel] = scopt.Read.reads {
       case "nix" => LibLevel.Nix

@@ -164,10 +164,10 @@ namespace LazyList {
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
     pub def map(f: a -> b & ef, l: LazyList[a]): LazyList[b] & ef =
-        matchEff f {
-            case Pure   => mapL(f as a -> b & Pure,   l)
-            case Impure => mapE(f as a -> b & Impure, l)
-        } as & ef
+        if (reify ef)
+            mapL(f as a -> b & Pure,   l)
+        else
+            mapE(f as a -> b & Impure, l) as & ef
 
     ///
     /// Returns the result of applying `f` to every element in `l`.
@@ -208,7 +208,7 @@ namespace LazyList {
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
     pub def filter(f: a -> Bool & ef, l: LazyList[a]): LazyList[a] & ef =
-        if* (ef)
+        if (reify ef)
             filterL(f as a -> Bool & Pure,   l)
         else
             filterE(f as a -> Bool & Impure, l) as & ef
@@ -590,7 +590,7 @@ namespace LazyList {
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
     pub def flatMap(f: a -> LazyList[b] & ef, l: LazyList[a]): LazyList[b] & ef =
-        if* (ef)
+        if (reify ef)
             flatMapL(f as a -> LazyList[b] & Pure,   l)
         else
             flatMapE(f as a -> LazyList[b] & Impure, l) as & ef
@@ -674,7 +674,7 @@ namespace LazyList {
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
     pub def mapWithIndex(f: (a, Int32) -> b & ef, l: LazyList[a]): LazyList[b] & ef =
-        if* (ef)
+        if (reify ef)
             mapWithIndexL(f as (a, Int32) -> b & Pure,   l)
         else
             mapWithIndexE(f as (a, Int32) -> b & Impure, l) as & ef
@@ -754,7 +754,7 @@ namespace LazyList {
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
     pub def takeWhile(f: a -> Bool & ef, l: LazyList[a]): LazyList[a] & ef =
-        if* (ef)
+        if (reify ef)
             takeWhileL(f as a -> Bool & Pure,   l)
         else
             takeWhileE(f as a -> Bool & Impure, l) as & ef
@@ -793,6 +793,50 @@ namespace LazyList {
         case ECons(x, xs) => if (f(x)) takeWhileEAcc(f,       xs, ks -> k(ECons(x, ks))) else k(ENil)
         case LCons(x, xs) => if (f(x)) takeWhileEAcc(f, force xs, ks -> k(ECons(x, ks))) else k(ENil)
         case LList(xs)    => takeWhileEAcc(f, force xs, k)
+    }
+
+    ///
+    /// Returns `l` without the longest prefix that satisfies the predicate `f`.
+    ///
+    /// Whether `f` is applied eagerly or lazily depends on its purity:
+    ///
+    /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
+    /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
+    ///
+    pub def dropWhile(f: a -> Bool & ef, l: LazyList[a]): LazyList[a] & ef =
+        if (reify ef)
+            dropWhileL(f as a -> Bool & Pure,   l)
+        else
+            dropWhileE(f as a -> Bool & Impure, l) as & ef
+
+    ///
+    /// Returns `l` without the longest prefix that satisfies the predicate `f`.
+    ///
+    /// Applies `f` lazily (i.e. the tail is not forced).
+    ///
+    def dropWhileL(f: a -> Bool, l: LazyList[a]): LazyList[a] =
+        LList(lazy dropWhileLHelper(f, l))
+
+    ///
+    /// Helper function for `dropWhileL`.
+    ///
+    def dropWhileLHelper(f: a -> Bool, l: LazyList[a]): LazyList[a] = match l {
+        case ENil         => ENil
+        case ECons(x, xs) => if (f(x)) LList(lazy dropWhileL(f,       xs)) else l
+        case LCons(x, xs) => if (f(x)) LList(lazy dropWhileL(f, force xs)) else l
+        case LList(xs)    => LList(lazy dropWhileL(f, force xs))
+    }
+
+    ///
+    /// Returns `l` without the longest prefix that satisfies the predicate `f`.
+    ///
+    /// Applies `f` eagerly (i.e. the entire list `l` is forced).
+    ///
+    def dropWhileE(f: a -> Bool & Impure, l: LazyList[a]): LazyList[a] & Impure = match l {
+        case ENil         => ENil
+        case ECons(x, xs) => if (f(x)) dropWhileE(f,       xs) else l
+        case LCons(x, xs) => if (f(x)) dropWhileE(f, force xs) else l
+        case LList(xs)    => dropWhileE(f, force xs)
     }
 
 }

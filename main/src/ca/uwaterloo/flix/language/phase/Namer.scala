@@ -410,6 +410,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def visitDef(decl0: WeededAst.Declaration.Def, uenv0: UseEnv, tenv0: Map[String, Type.UnkindedVar], ns0: Name.NName, addedTconstrs: List[NamedAst.TypeConstraint], addedQuantifiers: List[Type.UnkindedVar])(implicit flix: Flix): Validation[NamedAst.Def, NameError] = decl0 match {
     case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe0, retTpe0, eff0, tconstrs, loc) =>
+      flix.subtask(ident.name, sample = true)
+
       // TODO: we use tenv when getting the types from formal params first, before the explicit tparams have a chance to modify it
       // This means that if an explicit type variable is shadowing, the outer scope variable will be used for some parts, and inner for others
       // Resulting in a type error rather than a redundancy error (as redundancy checking happens later)
@@ -882,14 +884,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (e1, e2) => NamedAst.Expression.FixpointProjectOut(pred, e1, e2, loc)
       }
 
-    case WeededAst.Expression.MatchEff(exp1, exp2, exp3, loc) =>
-      mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0), visitExp(exp3, env0, uenv0, tenv0)) {
-        case (e1, e2, e3) => NamedAst.Expression.MatchEff(e1, e2, e3, loc)
-      }
-
-    case WeededAst.Expression.IfThenElseStar(cond, exp1, exp2, loc) =>
-      mapN(visitType(cond, uenv0, tenv0), visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0)) {
-        case (c, e1, e2) => NamedAst.Expression.IfThenElseStar(c, e1, e2, loc)
+    case WeededAst.Expression.Reify(t0, loc) =>
+      mapN(visitType(t0, uenv0, tenv0)) {
+        case t => NamedAst.Expression.Reify(t, loc)
       }
 
   }
@@ -1282,8 +1279,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.FixpointFilter(qname, exp, loc) => freeVars(exp)
     case WeededAst.Expression.FixpointProjectIn(exp, pred, loc) => freeVars(exp)
     case WeededAst.Expression.FixpointProjectOut(pred, exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
-    case WeededAst.Expression.MatchEff(exp1, exp2, exp3, loc) => freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
-    case WeededAst.Expression.IfThenElseStar(cond, exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
+    case WeededAst.Expression.Reify(t, loc) => Nil
   }
 
   /**

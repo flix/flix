@@ -237,6 +237,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     */
   def resolve(d0: NamedAst.Def, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Def, ResolutionError] = d0 match {
     case NamedAst.Def(sym, spec0, exp0) =>
+      flix.subtask(sym.toString, sample = true)
+
       val fparam = spec0.fparams.head
 
       for {
@@ -915,19 +917,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.FixpointProjectOut(pred, e1, e2, loc)
 
-        case NamedAst.Expression.MatchEff(exp1, exp2, exp3, loc) =>
+        case NamedAst.Expression.Reify(t0, loc) =>
           for {
-            e1 <- visit(exp1, tenv0)
-            e2 <- visit(exp2, tenv0)
-            e3 <- visit(exp3, tenv0)
-          } yield ResolvedAst.Expression.MatchEff(e1, e2, e3, loc)
-
-        case NamedAst.Expression.IfThenElseStar(cond, exp1, exp2, loc) =>
-          for {
-            c <- lookupType(cond, ns0, root)
-            e1 <- visit(exp1, tenv0)
-            e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.IfThenElseStar(c, e1, e2, loc)
+            t <- lookupType(t0, ns0, root)
+          } yield ResolvedAst.Expression.Reify(t, loc)
 
       }
 

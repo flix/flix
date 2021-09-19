@@ -160,7 +160,7 @@ class Flix {
     "StringBuilder.flix" -> LocalResource.get("/src/library/StringBuilder.flix"),
     "RedBlackTree.flix" -> LocalResource.get("/src/library/RedBlackTree.flix"),
     "GetOpt.flix" -> LocalResource.get("/src/library/GetOpt.flix"),
-    
+
     "Fixpoint/Compiler.flix" -> LocalResource.get("/src/library/Fixpoint/Compiler.flix"),
     "Fixpoint/Debugging.flix" -> LocalResource.get("/src/library/Fixpoint/Debugging.flix"),
     "Fixpoint/IndexSelection.flix" -> LocalResource.get("/src/library/Fixpoint/IndexSelection.flix"),
@@ -209,6 +209,11 @@ class Flix {
     * The current phase we are in. Initially null.
     */
   var currentPhase: PhaseTime = _
+
+  /**
+    * The progress bar.
+    */
+  val progressBar: ProgressBar = new ProgressBar
 
   /**
     * The default assumed charset.
@@ -341,6 +346,9 @@ class Flix {
     // Shutdown fork join pool.
     shutdownForkJoin()
 
+    // Reset the progress bar.
+    progressBar.complete()
+
     // Return the result.
     result
   }
@@ -375,6 +383,9 @@ class Flix {
     // Shutdown fork join pool.
     shutdownForkJoin()
 
+    // Reset the progress bar.
+    progressBar.complete()
+
     // Return the result.
     result
   }
@@ -393,6 +404,10 @@ class Flix {
   def phase[A](phase: String)(f: => A): A = {
     // Initialize the phase time object.
     currentPhase = PhaseTime(phase, 0, Nil)
+
+    if (options.progress) {
+      progressBar.observe(currentPhase.phase, "", sample = false)
+    }
 
     // Measure the execution time.
     val t = System.nanoTime()
@@ -444,6 +459,15 @@ class Flix {
 
     // Return the result computed by the subphase.
     r
+  }
+
+  /**
+    * A callback to indicate that work has started on the given subtask.
+    */
+  def subtask(subtask: String, sample: Boolean = false): Unit = {
+    if (options.progress) {
+      progressBar.observe(currentPhase.phase, subtask, sample)
+    }
   }
 
   /**
