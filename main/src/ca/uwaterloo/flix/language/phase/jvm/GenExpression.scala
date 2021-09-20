@@ -1123,7 +1123,7 @@ object GenExpression {
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
       visitor.visitMethodInsn(INVOKESPECIAL, classType, "<init>", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Void), false)
 
-    case Expression.Force(exp, tpe, loc) =>
+    case Expression.Force(exp, _, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
 
@@ -1132,6 +1132,7 @@ object GenExpression {
       val classType = JvmOps.getLazyClassType(classMonoType)
       val internalClassType = classType.name.toInternalName
       val MonoType.Lazy(tpe) = classMonoType
+      val erasedType = JvmOps.getErasedJvmType(tpe)
 
       // Emit code for the lazy expression.
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
@@ -1139,10 +1140,26 @@ object GenExpression {
       // Lazy$tpe is expected.
       visitor.visitTypeInsn(CHECKCAST, internalClassType)
 
+      // Dup for later lazy.value or lazy.force(context)
+      visitor.visitInsn(DUP)
+      // Get expression
+      visitor.visitFieldInsn(GETFIELD, internalClassType, "expression", JvmType.Object.toDescriptor)
+      val alreadyInit = new Label()
+      val end = new Label()
+      // If expression == null the we just use lazy.value, otherwise lazy.force(context)
+      visitor.visitJumpInsn(IFNULL, alreadyInit)
+
       // Call force(context).
       visitor.visitVarInsn(ALOAD, 1)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, internalClassType, "force", AsmOps.getMethodDescriptor(List(JvmType.Context), JvmOps.getErasedJvmType(tpe)), false)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, internalClassType, "force", AsmOps.getMethodDescriptor(List(JvmType.Context), erasedType), false)
+      // goto the cast to undo erasure
+      visitor.visitJumpInsn(GOTO, end)
 
+      visitor.visitLabel(alreadyInit)
+      // Retrieve the erased value
+      visitor.visitFieldInsn(GETFIELD, internalClassType, "value", erasedType.toDescriptor)
+
+      visitor.visitLabel(end)
       // The result of force is a generic object so a cast is needed.
       AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
