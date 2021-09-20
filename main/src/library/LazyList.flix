@@ -855,6 +855,7 @@ namespace LazyList {
             case Some(v) => Some(v)
         }
         case LList(xs)    => findMap(f, force xs)
+    }
 
     ///
     /// Collects the results of applying the partial function `f` to every element in `l`.

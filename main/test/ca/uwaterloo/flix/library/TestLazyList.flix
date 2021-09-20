@@ -2775,7 +2775,6 @@ namespace TestLazyList {
         LazyList.mapWithIndex((x, _) -> { l := "a" :: deref l; x }) |>
         LazyList.mapWithIndex((x, _) -> { l := "b" :: deref l; x }) |>
         LazyList.toList;
-        println(deref l);
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
 
     @test
@@ -2785,7 +2784,6 @@ namespace TestLazyList {
         LazyList.mapWithIndex((x, _) -> { l := "a" :: deref l; x } as & Pure) |>
         LazyList.mapWithIndex((x, _) -> { l := "b" :: deref l; x } as & Pure) |>
         LazyList.toList as & Impure;
-        println(deref l);
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
 
