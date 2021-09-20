@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.LiftedAst._
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import ca.uwaterloo.flix.language.debug.PrettyPrinter
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
@@ -31,7 +31,8 @@ import ca.uwaterloo.flix.util.vt._
   * Specifically,
   *
   * - Elimination of dead branches (e.g. if (true) e1 else e2).
-  * - Copy propagation (e.g. let z = w; let y = z; let x = y; x -> w)
+  * - Copy propagation (e.g. let z = w; let y = z; let x = y; x -> w).
+  * - Simplification of computations with Unit.
   */
 object Optimizer extends Phase[Root, Root] {
 
@@ -73,7 +74,13 @@ object Optimizer extends Phase[Root, Root] {
       case Expression.Var(sym, tpe, loc) =>
         // Lookup to see if the variable should be replaced by a copy.
         env0.get(sym) match {
-          case None => Expression.Var(sym, tpe, loc)
+          case None =>
+            // Check if the expression has type unit.
+            if (tpe == Type.Unit) {
+              Expression.Unit(loc)
+            } else {
+              Expression.Var(sym, tpe, loc)
+            }
           case Some(srcSym) => Expression.Var(srcSym, tpe, loc)
         }
 
@@ -145,6 +152,9 @@ object Optimizer extends Phase[Root, Root] {
             // The srcSym might itself originate from some other symbol.
             val originalSym = env0.getOrElse(srcSym, srcSym)
             visitExp(exp2, env0 + (sym -> originalSym))
+          case Expression.Untag(_, _, Expression.Var(_, _, _), innerTpe, _) if innerTpe == Type.Unit =>
+            // Check for Untag that results in Unit. Omit exp1.
+            visitExp(exp2, env0)
           case _ =>
             val e2 = visitExp(exp2, env0)
             Expression.Let(sym, e1, e2, tpe, loc)
