@@ -38,6 +38,8 @@ namespace Test/Derives/ToString {
         case RecursiveCase(MutRecursiveEnum1)
     }
 
+    pub opaque type OpaqueType with ToString = Int
+
     @test
     def testToString01(): Bool = "${Enum.EmptyCase}" == "EmptyCase"
 
@@ -106,4 +108,7 @@ namespace Test/Derives/ToString {
 
     @test
     def testToString23(): Bool = "${MutRecursiveEnum1.RecursiveCase(MutRecursiveEnum2.RecursiveCase(MutRecursiveEnum1.EmptyCase))}" == "RecursiveCase(RecursiveCase(EmptyCase))"
+
+    @test
+    def testToString24(): Bool = "${OpaqueType(123)}" == "OpaqueType(123)"
 }

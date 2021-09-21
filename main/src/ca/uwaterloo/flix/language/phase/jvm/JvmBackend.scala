@@ -205,6 +205,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
     if (flix.options.writeClassFiles && !flix.options.test) {
       flix.subphase("WriteClasses") {
         for ((_, jvmClass) <- allClasses) {
+          flix.subtask(jvmClass.name.toBinaryName, sample = true)
           JvmOps.writeClass(flix.options.targetDirectory, jvmClass)
         }
       }

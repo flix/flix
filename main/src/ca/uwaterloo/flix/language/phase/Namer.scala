@@ -410,6 +410,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def visitDef(decl0: WeededAst.Declaration.Def, uenv0: UseEnv, tenv0: Map[String, Type.UnkindedVar], ns0: Name.NName, addedTconstrs: List[NamedAst.TypeConstraint], addedQuantifiers: List[Type.UnkindedVar])(implicit flix: Flix): Validation[NamedAst.Def, NameError] = decl0 match {
     case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe0, retTpe0, eff0, tconstrs, loc) =>
+      flix.subtask(ident.name, sample = true)
+
       // TODO: we use tenv when getting the types from formal params first, before the explicit tparams have a chance to modify it
       // This means that if an explicit type variable is shadowing, the outer scope variable will be used for some parts, and inner for others
       // Resulting in a type error rather than a redundancy error (as redundancy checking happens later)

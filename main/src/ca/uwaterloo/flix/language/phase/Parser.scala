@@ -47,7 +47,9 @@ object Parser extends Phase[List[Source], ParsedAst.Program] {
   /**
     * Attempts to parse the given `source` as a root.
     */
-  def parseRoot(source: Source): Validation[ParsedAst.Root, CompilationError] = {
+  def parseRoot(source: Source)(implicit flix: Flix): Validation[ParsedAst.Root, CompilationError] = {
+    flix.subtask(source.name)
+
     val parser = new Parser(source)
     parser.Root.run() match {
       case scala.util.Success(ast) =>
@@ -188,17 +190,13 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         NonEmptyBody | EmptyBody
       }
 
-      def Derivations = rule {
-        optWS ~ optional(keyword("with") ~ WS ~ oneOrMore(Names.QualifiedClass).separatedBy(optWS ~ "," ~ optWS)) ~> ((o: Option[Seq[Name.QName]]) => o.getOrElse(Seq.empty))
-      }
-
       rule {
         Documentation ~ Modifiers ~ SP ~ keyword("enum") ~ WS ~ Names.Type ~ TypeParams ~ Derivations ~ optWS ~ Body ~ SP ~> ParsedAst.Declaration.Enum
       }
     }
 
     def OpaqueType: Rule1[ParsedAst.Declaration.OpaqueType] = rule {
-      Documentation ~ Modifiers ~ SP ~ keyword("opaque") ~ WS ~ keyword("type") ~ WS ~ Names.Type ~ optWS ~ TypeParams ~ optWS ~ "=" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.OpaqueType
+      Documentation ~ Modifiers ~ SP ~ keyword("opaque") ~ WS ~ keyword("type") ~ WS ~ Names.Type ~ optWS ~ TypeParams ~ Derivations ~ optWS ~ "=" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.OpaqueType
     }
 
     def TypeAlias: Rule1[ParsedAst.Declaration.TypeAlias] = rule {
@@ -269,6 +267,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         })
       }
     }
+
+    def Derivations: Rule1[Seq[Name.QName]] = rule {
+      optWS ~ optional(keyword("with") ~ WS ~ oneOrMore(Names.QualifiedClass).separatedBy(optWS ~ "," ~ optWS)) ~> ((o: Option[Seq[Name.QName]]) => o.getOrElse(Seq.empty))
+    }
+
   }
 
   def Attribute: Rule1[ParsedAst.Attribute] = rule {

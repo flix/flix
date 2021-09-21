@@ -136,7 +136,7 @@ object ParsedAst {
       * @param tpe     the type of the opaque type.
       * @param sp2     the position of the last character in the declaration.
       */
-    case class OpaqueType(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Declaration
+    case class OpaqueType(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, derives: Seq[Name.QName], tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Type Alias Declaration.
