@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.ErasedAst.Root
 import ca.uwaterloo.flix.language.ast.PRefType.PFunction
 import ca.uwaterloo.flix.language.ast.PType._
 import ca.uwaterloo.flix.language.ast.RRefType._
-import ca.uwaterloo.flix.language.ast.RType.{RReference, squeezeFunction, squeezeReference}
+import ca.uwaterloo.flix.language.ast.RType.{squeezeFunction, squeezeReference}
 import ca.uwaterloo.flix.language.ast.{PType, RType}
 import ca.uwaterloo.flix.language.phase.sjvm.BytecodeCompiler._
 import ca.uwaterloo.flix.language.phase.sjvm.ClassMaker.Mod
@@ -55,7 +55,6 @@ object GenFunctionInterfaces {
     * Returns the function interface of the given type `tpe`.
     */
   private def genByteCode[T <: PType](functionType: RArrow[T])(implicit root: Root, flix: Flix): Array[Byte] = {
-
     // Class visitor
     // TODO(JLS): Add the super interface maybe
     //`JvmType` of the continuation interface for `tpe`

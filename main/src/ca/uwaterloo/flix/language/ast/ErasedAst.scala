@@ -35,13 +35,13 @@ object ErasedAst {
                   sources: Map[Source, SourceLocation],
                   types: Set[RType[_ <: PType]],
                   closures: Set[ClosureInfo],
-                  enums: Map[Symbol.EnumSym, Enum[_ <: PType]])
+                  enums: Map[Symbol.EnumSym, Enum])
 
   case class Def[T <: PType](ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: List[FormalParam[_ <: PType]], exp: Expression[T], tpe: RType[PReference[PFunction[T]]], loc: SourceLocation) {
     var method: Method = _
   }
 
-  case class Enum[T <: PType](mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Name.Tag, Case[_ <: PType]], tpeDeprecated: RType[T], loc: SourceLocation)
+  case class Enum(mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Name.Tag, Case[_ <: PType]], tpeDeprecated: RType[PReference[PEnum]], loc: SourceLocation)
 
   case class LatticeOps(tpe: RType[PType], bot: Symbol.DefnSym, equ: Symbol.DefnSym, leq: Symbol.DefnSym, lub: Symbol.DefnSym, glb: Symbol.DefnSym)
 

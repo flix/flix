@@ -18,22 +18,22 @@ package ca.uwaterloo.flix.language.phase.sjvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst.Root
-import ca.uwaterloo.flix.language.ast.RRefType._
 import ca.uwaterloo.flix.language.ast.RType._
-import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.language.ast.{ErasedAst, PType}
+import ca.uwaterloo.flix.language.ast.{ErasedAst, Symbol}
 import ca.uwaterloo.flix.util.ParOps
 
 object GenEnumInterfaces {
 
-  def gen(enums: Map[Symbol.EnumSym, ErasedAst.Enum[_ <: PType]])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
-//    ParOps.parAgg(defs, Map[JvmName, JvmClass]())({
-//      case (macc, (sym, defn)) =>
-//        val functionType = squeezeFunction(squeezeReference(defn.tpe)).asInstanceOf[RArrow[PType]]
-//        val defnCasted = defn.asInstanceOf[ErasedAst.Def[PType]]
-//        macc + (sym.defName -> JvmClass(sym.defName, genByteCode(defnCasted, sym.defName, functionType)))
-//    }, _ ++ _)
-    ???
+  def gen(enums: Map[Symbol.EnumSym, ErasedAst.Enum])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+    ParOps.parAgg(enums, Map[JvmName, JvmClass]())({
+      case (macc, (_, enum)) =>
+        val name = squeezeReference(enum.tpeDeprecated).jvmName
+        macc + (name -> JvmClass(name, genByteCode(name)))
+    }, _ ++ _)
+  }
+
+  private def genByteCode(name: JvmName)(implicit root: Root, flix: Flix): Array[Byte] = {
+    ClassMaker.mkInterface(name).closeClassMaker
   }
 
 }

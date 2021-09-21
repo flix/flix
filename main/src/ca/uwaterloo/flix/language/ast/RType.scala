@@ -174,11 +174,10 @@ object RRefType {
 
   def internalNameOf[T <: PRefType](e: RRefType[T]): InternalName = e.internalName
 
-  // TODO(JLS): skip delimiter if list is empty
-  private def mkName(prefix: String, types: List[String]): JvmName = JvmName(Nil, prefix + JvmName.reservedDelimiter + types.mkString(JvmName.reservedDelimiter))
-
-  private def mkName(prefix: String, tpe: String): JvmName = mkName(prefix, List(tpe))
-
+  private def mkName(prefix: String, types: List[String], namespace: List[String] = Nil): JvmName = {
+    val suffix = if (types.isEmpty) "" else JvmName.reservedDelimiter + types.mkString(JvmName.reservedDelimiter)
+    JvmName(Nil, prefix + suffix)
+  }
 
   object RBoxedBool extends RRefType[PBoxedBool] {
     override lazy val jvmName: JvmName = JvmName.Java.Boolean
@@ -232,7 +231,7 @@ object RRefType {
   }
 
   case class RRef[T <: PType](tpe: RType[T]) extends RRefType[PRef[T]] {
-    override lazy val jvmName: JvmName = mkName("Ref", tpe.erasedString)
+    override lazy val jvmName: JvmName = mkName("Ref", List(tpe.erasedString))
   }
 
   case class RTuple(elms: List[RType[_ <: PType]]) extends RRefType[PTuple] {
@@ -240,7 +239,7 @@ object RRefType {
   }
 
   case class REnum(sym: Symbol.EnumSym, args: List[RType[_ <: PType]]) extends RRefType[PEnum] {
-    override lazy val jvmName: JvmName = mkName(s"I${sym.name}", args.map(_.erasedString))
+    override lazy val jvmName: JvmName = mkName(s"I${sym.name}", args.map(_.erasedString), namespace = sym.namespace)
   }
 
   object RBigInt extends RRefType[PBigInt] {

@@ -40,8 +40,8 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
           visitDef[PType](v) map (defn => mapp + (k -> defn))
       }
 
-      enums <- EM.foldRight(root.enums)(Map[Symbol.EnumSym, ErasedAst.Enum[_ <: PType]]().toMonad){
-        case ((sym, enum), mapAcc) => visitEnum[PType](enum) map (e => mapAcc + (sym -> e))
+      enums <- EM.foldRight(root.enums)(Map[Symbol.EnumSym, ErasedAst.Enum]().toMonad){
+        case ((sym, enum), mapAcc) => visitEnum(enum) map (e => mapAcc + (sym -> e))
       }
 
     } yield (defns, enums)
@@ -703,14 +703,14 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
       } yield expRes
   }
 
-  private def visitEnum[T <: PType](enum: FinalAst.Enum): EraserMonad[ErasedAst.Enum[T]] = {
+  private def visitEnum(enum: FinalAst.Enum): EraserMonad[ErasedAst.Enum] = {
     val FinalAst.Enum(mod, sym, cases, tpeDescprecated, loc) = enum
     for {
       newCases <- EM.foldRight(cases)(Map.empty[Name.Tag, ErasedAst.Case[_ <: PType]].toMonad) {
         case ((tag, FinalAst.Case(caseSym, caseTag, caseTpeDeprecated, caseLoc)), mapAcc) =>
         visitTpe[PType](caseTpeDeprecated) map (t => mapAcc + (tag -> ErasedAst.Case(caseSym, caseTag, t, caseLoc)))
       }
-      tpe0 <- visitTpe[T](tpeDescprecated)
+      tpe0 <- visitTpe[PReference[PEnum]](tpeDescprecated)
       expRes = ErasedAst.Enum(mod, sym, newCases, tpe0, loc)
     } yield expRes
   }
@@ -804,7 +804,8 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
       case MonoType.Native(clazz) =>
         RReference(RNative(clazz)).asInstanceOf[RType[T]].toMonad
       case MonoType.Var(_) =>
-        throw InternalCompilerException("Var should be removed before eraser")
+        println("Var should be removed before eraser")
+        RObject.rType.asInstanceOf[RType[T]].toMonad
     }
     mainMonad.flatMap(tpe => tpe.toMonad.setTypes(Set(tpe)))
   }
