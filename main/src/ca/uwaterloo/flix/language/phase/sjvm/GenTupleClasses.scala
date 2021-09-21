@@ -33,9 +33,6 @@ import ca.uwaterloo.flix.util.ParOps
 
 object GenTupleClasses {
 
-  val GetBoxedArrayMethodName: String = "getBoxedArray"
-  val GetBoxedArrayMethodDescriptor: Descriptor = JvmName.getMethodDescriptor(Nil, RArray(RReference(RObject)))
-
   def indexFieldName(index: Int): String = s"index$index"
 
   def gen(tuples: Set[RType[PReference[PTuple]]])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {

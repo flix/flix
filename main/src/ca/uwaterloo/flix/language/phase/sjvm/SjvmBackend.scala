@@ -113,7 +113,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
 
       val enumInterfaces = GenEnumInterfaces.gen(root.enums)
 
-      // todo val tagClasses = GenTagClasses.gen(root.enumSyms)
+      // todo val tagClasses = GenTagClasses.gen(root.enums)
 
       val tupleClasses = GenTupleClasses.gen(tupleTypes)
 
