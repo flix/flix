@@ -40,7 +40,28 @@ instance Foldable[LazyList] {
     pub def foldRight(f: (a, b) -> b & ef, s: b, l: LazyList[a]): b & ef = LazyList.foldRight(f, s, l)
 }
 
+instance ToString[LazyList[a]] with ToString[a] {
+    pub def toString(l: LazyList[a]): String = LazyList.toString(l)
+}
+
 namespace LazyList {
+
+    ///
+    /// Converts the list `l` into a String.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    pub def toString(l: LazyList[a]): String with ToString[a] =
+        toStringHelper(l) as & Pure
+
+    ///
+    /// Helper function for `toString`.
+    ///
+    def toStringHelper(l: LazyList[a]): String & Impure with ToString[a] =
+        let sb = StringBuilder.new();
+        map(x -> StringBuilder.appendString!(sb, "${x} :: "), l);
+        StringBuilder.appendString!(sb, "ENil");
+        StringBuilder.toString(sb)
 
     ///
     /// Returns an empty LazyList.
