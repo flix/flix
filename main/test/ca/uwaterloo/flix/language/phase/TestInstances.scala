@@ -131,7 +131,7 @@ class TestInstances extends FunSuite with TestUtils {
       """
         |class C[a]
         |
-        |instance C[() -> a]
+        |instance C[Unit -> a]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[InstanceError.ComplexInstanceType](result)

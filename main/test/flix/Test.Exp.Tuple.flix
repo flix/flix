@@ -1,7 +1,7 @@
 namespace Test/Exp/Tuple {
 
     @test
-    def testUnitTuple01(): () = ()
+    def testUnitTuple01(): Unit = ()
 
     @test
     def testBoolTuple01(): (Bool, Bool) = (true, false)

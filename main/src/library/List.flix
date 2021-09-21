@@ -1284,12 +1284,12 @@ namespace List {
     ///
     /// `next` should return `None` to signal the end of building the list.
     ///
-    pub def unfoldWithIter(next: () ~> Option[a]): List[a] & Impure = unfoldWithIterHelper(next, xs -> xs)
+    pub def unfoldWithIter(next: Unit ~> Option[a]): List[a] & Impure = unfoldWithIterHelper(next, xs -> xs)
 
     ///
     /// Helper function for `unfoldWithIter`.
     ///
-    def unfoldWithIterHelper(next: () ~> Option[a], k: List[a] -> List[a]): List[a] & Impure = match next() {
+    def unfoldWithIterHelper(next: Unit ~> Option[a], k: List[a] -> List[a]): List[a] & Impure = match next() {
         case None => k(Nil)
         case Some(a) => unfoldWithIterHelper(next, xs -> k(a :: xs))
     }
