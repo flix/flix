@@ -613,12 +613,12 @@ namespace Map {
     ///
     /// `next` should return `None` to signal the end of building the map.
     ///
-    pub def unfoldWithIter(next: () ~> Option[(k, v)]): Map[k, v] & Impure with Order[k] = unfoldWithIterHelper(next, empty())
+    pub def unfoldWithIter(next: Unit ~> Option[(k, v)]): Map[k, v] & Impure with Order[k] = unfoldWithIterHelper(next, empty())
 
     ///
     /// Helper function for `unfoldWithIter`.
     ///
-    def unfoldWithIterHelper(next: () ~> Option[(k, v)], ac: Map[k, v]): Map[k, v] & Impure with Order[k] = match next() {
+    def unfoldWithIterHelper(next: Unit ~> Option[(k, v)], ac: Map[k, v]): Map[k, v] & Impure with Order[k] = match next() {
         case None => ac
         case Some(k, v) => unfoldWithIterHelper(next, insert(k, v, ac))
     }
