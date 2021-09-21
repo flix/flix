@@ -1240,10 +1240,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Tuple: Rule1[ParsedAst.Type] = {
-      def Unit: Rule1[ParsedAst.Type] = rule {
-        SP ~ atomic("()") ~ SP ~> ParsedAst.Type.Unit
-      }
-
       def Singleton: Rule1[ParsedAst.Type] = rule {
         "(" ~ optWS ~ Type ~ optWS ~ ")"
       }
@@ -1253,7 +1249,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        Unit | Singleton | Tuple
+        Singleton | Tuple
       }
     }
 
