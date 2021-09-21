@@ -34,28 +34,22 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
 
   def run(root: FinalAst.Root)(implicit flix: Flix): Validation[ErasedAst.Root, CompilationError] = flix.phase("Eraser") {
-    val defns = EM.foldRight(root.defs)(Map[Symbol.DefnSym, ErasedAst.Def[_ <: PType]]().toMonad) {
-      case ((k, v), mapp) =>
-        visitDef[PType](v) map (defn => mapp + (k -> defn))
-    }
+    val EraserMonad((defns, enums), types, closures) = for {
+      defns <- EM.foldRight(root.defs)(Map[Symbol.DefnSym, ErasedAst.Def[_ <: PType]]().toMonad) {
+        case ((k, v), mapp) =>
+          visitDef[PType](v) map (defn => mapp + (k -> defn))
+      }
 
-    // TODO(JLS): add enums to root and collect tags based on it
+      enums <- EM.foldRight(root.enums)(Map[Symbol.EnumSym, ErasedAst.Enum[_ <: PType]]().toMonad){
+        case ((sym, enum), mapAcc) => visitEnum[PType](enum) map (e => mapAcc + (sym -> e))
+      }
 
-    val closureSyms = defns.closures.map(_.sym)
+    } yield (defns, enums)
 
-    // TODO(JLS): should maybe be integrated to the other fold
-    val defnsResult = defns.setNamespaces(defns.value.groupBy(_._1.namespace).map {
-      case (ns, defs) =>
-        // Collect all non-law definitions.
-        val nonLaws = defs filter {
-          case (sym, defn) => SjvmOps.nonLaw(defn) && !closureSyms.contains(sym)
-        }
-        NamespaceInfo(ns, nonLaws)
-    }.toSet)
+    val res = ErasedAst.Root(defns, root.reachable, root.sources, types, closures, enums)
 
     // TODO(JLS): the function list should be split into closures and functions (and maybe include nonLaw checking)
-    val result = ErasedAst.Root(defnsResult.value, root.reachable, root.sources, defnsResult.types, defnsResult.closures, defnsResult.enumSyms, defnsResult.namespaces)
-    result.toSuccess
+    res.toSuccess
   }
 
   /**
@@ -639,7 +633,7 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
         expRes = ErasedAst.Expression.NewChannel(exp0, tpe0, loc)
       } yield expRes.asInstanceOf[ErasedAst.Expression[T]]
 
-      // unbox the value before retrieving it
+    // unbox the value before retrieving it
     case FinalAst.Expression.GetChannel(exp, tpe, loc) =>
       for {
         exp0 <- visitExp[PReference[PChan[PRefType]]](exp)
@@ -648,7 +642,7 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
         expRes = ErasedAst.Expression.GetChannel(exp0, boxedType, loc)
       } yield unboxValue(expRes).asInstanceOf[ErasedAst.Expression[T]]
 
-      // box the value before inserting it
+    // box the value before inserting it
     case FinalAst.Expression.PutChannel(exp1, exp2, tpe, loc) =>
       for {
         exp10 <- visitExp[PReference[PChan[PRefType]]](exp1)
@@ -709,6 +703,18 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
       } yield expRes
   }
 
+  private def visitEnum[T <: PType](enum: FinalAst.Enum): EraserMonad[ErasedAst.Enum[T]] = {
+    val FinalAst.Enum(mod, sym, cases, tpeDescprecated, loc) = enum
+    for {
+      newCases <- EM.foldRight(cases)(Map.empty[Name.Tag, ErasedAst.Case[_ <: PType]].toMonad) {
+        case ((tag, FinalAst.Case(caseSym, caseTag, caseTpeDeprecated, caseLoc)), mapAcc) =>
+        visitTpe[PType](caseTpeDeprecated) map (t => mapAcc + (tag -> ErasedAst.Case(caseSym, caseTag, t, caseLoc)))
+      }
+      tpe0 <- visitTpe[T](tpeDescprecated)
+      expRes = ErasedAst.Enum(mod, sym, newCases, tpe0, loc)
+    } yield expRes
+  }
+
   /**
     * Translates the given formal param `p` to the ErasedAst.
     */
@@ -758,10 +764,10 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
           expRes = RReference(RTuple(elms0))
         } yield expRes.asInstanceOf[RType[T]]
       case MonoType.Enum(sym, args) =>
-        EM.traverse(args)(visitTpe[PType]) flatMap (args0 => {
-          val res = RReference(REnum(sym, args0)).asInstanceOf[RType[T]]
-          res.toMonad.setEnumSyms(Set(sym))
-        })
+        for {
+          args0 <- EM.traverse(args)(visitTpe[PType])
+          expRes = RReference(REnum(sym, args0))
+        } yield expRes.asInstanceOf[RType[T]]
       case MonoType.Arrow(args, result) =>
         EM.mapN(
           EM.traverse(args)(visitTpe[PType]),

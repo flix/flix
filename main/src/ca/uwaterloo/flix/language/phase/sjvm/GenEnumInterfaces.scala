@@ -26,7 +26,7 @@ import ca.uwaterloo.flix.util.ParOps
 
 object GenEnumInterfaces {
 
-  def gen(defs: Set[Symbol.EnumSym])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+  def gen(enums: Map[Symbol.EnumSym, ErasedAst.Enum[_ <: PType]])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
 //    ParOps.parAgg(defs, Map[JvmName, JvmClass]())({
 //      case (macc, (sym, defn)) =>
 //        val functionType = squeezeFunction(squeezeReference(defn.tpe)).asInstanceOf[RArrow[PType]]

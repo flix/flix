@@ -58,11 +58,18 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
 
     val nonClosureFunctions: Set[Symbol.DefnSym] = root.functions.keySet.diff(closureSyms)
 
+    val namespaces = root.functions.groupBy(_._1.namespace).map {
+      case (ns, defs) =>
+        // Collect all non-law definitions.
+        val nonLaws = defs filter {
+          case (sym, defn) => SjvmOps.nonLaw(defn) && !closureSyms.contains(sym)
+        }
+        NamespaceInfo(ns, nonLaws)
+    }.toSet
+
     val defs = getDefs(root.functions, nonClosureFunctions)
 
     val tupleTypes = getTupleTypes(root.types)
-
-    val enumTypes = getEnumTypes(root.types)
 
     val allClasses: Map[JvmName, JvmClass] = flix.subphase("CodeGen") {
 
@@ -94,7 +101,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
 
       val mainClass = GenMainClass.gen()
 
-      val namespaceClasses = GenNamespaces.gen(root.namespaces)
+      val namespaceClasses = GenNamespaces.gen(namespaces)
 
       val continuationInterfaces = GenContinuationInterfaces.gen(functionTypes)
 
@@ -104,7 +111,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
 
       val closureClasses = GenClosureClasses.gen(root.closures)
 
-      val enumInterfaces = GenEnumInterfaces.gen(enumTypes)
+      val enumInterfaces = GenEnumInterfaces.gen(root.enums)
 
       // todo val tagClasses = GenTagClasses.gen(root.enumSyms)
 
@@ -385,8 +392,6 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
       }
     }
   }
-
-  private def getEnumTypes(types: Set[RType[_ <: PType]]): Set[RType[PReference[PEnum]]] = ???
 
   /**
     * Optionally returns a reference to main.
