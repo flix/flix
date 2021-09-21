@@ -381,7 +381,7 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
       lst.map(tpe => tpe.erasedType)
 
     def innerMatch[T <: PRefType](tpe: RRefType[T], setAcc: Set[RType[PReference[PTuple]]]): Set[RType[PReference[PTuple]]] = tpe match {
-      case RTuple(elms) => setAcc + RTuple(erase(elms)).rType.erasedType.asInstanceOf[RType[PReference[PTuple]]]
+      case RTuple(elms) => setAcc + RTuple(erase(elms)).rType.asInstanceOf[RType[PReference[PTuple]]]
       case _ => setAcc
     }
 
