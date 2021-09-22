@@ -147,6 +147,30 @@ pub def filterMapLengthLazyList(l: List[Int32]): Benchmark =
         LazyList.length
     })
 
+
+///////////////////////////////////////////////////////////////////////////////
+/// flatMap take sum                                                        ///
+///////////////////////////////////////////////////////////////////////////////
+pub def flatMapTakeSumList(l: List[Int32]): Benchmark =
+    let l2 = List.range(1, 10);
+    defBenchmark("flatMapTakeSum (List)", () -> {
+        l |>
+        List.flatMap(x -> List.map(y -> x * y, l2)) |>
+        List.take(100_000) |>  // TODO
+        List.foldLeft((x, y) -> x + y, 0)
+    })
+
+pub def flatMapTakeSumLazyList(l: List[Int32]): Benchmark =
+    let l1 = List.toLazy(l);
+    let l2 = LazyList.range(1, 10);
+    defBenchmark("flatMapTakeSumLazy (List)", () -> {
+        l1 |>
+        LazyList.flatMap(x -> LazyList.map(y -> x * y, l2)) |>
+        LazyList.take(100_000) |>  // TODO
+        LazyList.foldLeft((x, y) -> x + y, 0)
+    })
+
+
 ///////////////////////////////////////////////////////////////////////////////
 /// reduce                                                                  ///
 ///////////////////////////////////////////////////////////////////////////////
@@ -229,7 +253,9 @@ pub def biboudisSuite(n: Int32): Array[Benchmark] & Impure =
         filterLengthList(l),
         filterLengthLazyList(l),
         filterMapLengthList(l),
-        filterMapLengthLazyList(l)
+        filterMapLengthLazyList(l),
+        flatMapTakeSumList(l),
+        flatMapTakeSumLazyList(l)
         //reduceList(l)
         //reduceLazyList(l),
         //filterReduceList(l),
