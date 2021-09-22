@@ -103,6 +103,24 @@ pub def lengthLazyList(l: List[Int32]): Benchmark =
     })
 
 ///////////////////////////////////////////////////////////////////////////////
+/// filter length                                                           ///
+///////////////////////////////////////////////////////////////////////////////
+pub def filterLengthList(l: List[Int32]): Benchmark =
+    defBenchmark("filter length (List)", () -> {
+        l |>
+        List.filter(x -> x % 2 == 0) |>
+        List.length
+    })
+
+pub def filterLengthLazyList(l: List[Int32]): Benchmark =
+    let l1 = List.toLazy(l);
+    defBenchmark("filter length (LazyList)", () -> {
+        l1 |>
+        LazyList.filter(x -> x % 2 == 0) |>
+        LazyList.length
+    })
+
+///////////////////////////////////////////////////////////////////////////////
 /// reduce                                                                  ///
 ///////////////////////////////////////////////////////////////////////////////
 pub def reduceList(l: List[Int32]): Benchmark =
@@ -181,7 +199,9 @@ pub def biboudisSuite(n: Int32): Array[Benchmark] & Impure =
         //map8WithLazyList(l),
         lengthList(l),
         lengthLazyList(l),
-        reduceList(l)
+        filterLengthList(l),
+        filterLengthLazyList(l)
+        //reduceList(l)
         //reduceLazyList(l),
         //filterReduceList(l),
         //filterReduceLazyList(l),
