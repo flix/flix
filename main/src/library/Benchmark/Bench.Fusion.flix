@@ -65,6 +65,7 @@ pub def map8WithLazyList(l: List[Int32]): Benchmark =
         LazyList.length
     })
 
+
 ///////////////////////////////////////////////////////////////////////////////
 /// cartesian_reduce                                                        ///
 ///////////////////////////////////////////////////////////////////////////////
@@ -82,6 +83,60 @@ pub def cartesianReduceLazyList(l: List[Int32]): Benchmark =
     defBenchmark("cartesian_reduce (LazyList)", () -> {
         l1 |>
         LazyList.flatMap(x -> LazyList.map(y -> x * y, l2)) |>
+        LazyList.foldLeft((x, y) -> x + y, 0)
+    })
+
+///////////////////////////////////////////////////////////////////////////////
+/// reduce                                                                  ///
+///////////////////////////////////////////////////////////////////////////////
+pub def reduceList(l: List[Int32]): Benchmark =
+    defBenchmark("reduce (List)", () -> {
+        l |>
+        List.foldLeft((x, y) -> x + y, 0)
+    })
+
+pub def reduceLazyList(l: List[Int32]): Benchmark =
+    let l1 = List.toLazy(l);
+    defBenchmark("reduce (LazyList)", () -> {
+        l1 |>
+        LazyList.foldLeft((x, y) -> x + y, 0)
+    })
+
+///////////////////////////////////////////////////////////////////////////////
+/// filter_reduce                                                           ///
+///////////////////////////////////////////////////////////////////////////////
+pub def filterReduceList(l: List[Int32]): Benchmark =
+    defBenchmark("filterReduce (List)", () -> {
+        l |>
+        List.filter(x -> x % 2 == 0) |>
+        List.foldLeft((x, y) -> x + y, 0)
+    })
+
+pub def filterReduceLazyList(l: List[Int32]): Benchmark =
+    let l1 = List.toLazy(l);
+    defBenchmark("filterReduce (LazyList)", () -> {
+        l1 |>
+        LazyList.filter(x -> x % 2 == 0) |>
+        LazyList.foldLeft((x, y) -> x + y, 0)
+    })
+
+///////////////////////////////////////////////////////////////////////////////
+/// filter_map_reduce                                                       ///
+///////////////////////////////////////////////////////////////////////////////
+pub def filterMapReduceList(l: List[Int32]): Benchmark =
+    defBenchmark("filterMapReduce (List)", () -> {
+        l |>
+        List.filter(x -> x % 2 == 0) |>
+        List.map(x -> x * x) |>
+        List.foldLeft((x, y) -> x + y, 0)
+    })
+
+pub def filterMapReduceLazyList(l: List[Int32]): Benchmark =
+    let l1 = List.toLazy(l);
+    defBenchmark("filterMapReduce (LazyList)", () -> {
+        l1 |>
+        LazyList.filter(x -> x % 2 == 0) |>
+        LazyList.map(x -> x * x) |>
         LazyList.foldLeft((x, y) -> x + y, 0)
     })
 
@@ -106,8 +161,14 @@ pub def biboudisSuite(n: Int32): Array[Benchmark] & Impure =
         //filter8WithLazyList(l),
         //map8WithList(l),
         //map8WithLazyList(l),
-        cartesianReduceList(l),
-        cartesianReduceLazyList(l)
+        //cartesianReduceList(l),
+        //cartesianReduceLazyList(l),
+        reduceList(l),
+        reduceLazyList(l),
+        filterReduceList(l),
+        filterReduceLazyList(l),
+        filterMapReduceList(l),
+        filterMapReduceLazyList(l)
     ]
 
 def main(_args: Array[String]) : Int32 & Impure =
