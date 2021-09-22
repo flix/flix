@@ -1,6 +1,13 @@
 use Benchmark.Benchmark;
 use Benchmark.defBenchmark;
 
+///
+/// References:
+///
+/// https://github.com/cs-au-dk/streamliner/blob/master/src/main/java/dk/casa/streamliner/jmh/
+/// https://github.com/biboudis/streamalg/blob/master/src/main/java/benchmarks/
+///
+
 ///////////////////////////////////////////////////////////////////////////////
 /// filter8                                                                 ///
 ///////////////////////////////////////////////////////////////////////////////
@@ -121,6 +128,26 @@ pub def filterLengthLazyList(l: List[Int32]): Benchmark =
     })
 
 ///////////////////////////////////////////////////////////////////////////////
+/// filter map length                                                       ///
+///////////////////////////////////////////////////////////////////////////////
+pub def filterMapLengthList(l: List[Int32]): Benchmark =
+    defBenchmark("filter map length (List)", () -> {
+        l |>
+        List.filter(x -> x % 2 == 0) |>
+        List.map(x -> x * x) |>
+        List.length
+    })
+
+pub def filterMapLengthLazyList(l: List[Int32]): Benchmark =
+    let l1 = List.toLazy(l);
+    defBenchmark("filter Map length (LazyList)", () -> {
+        l1 |>
+        LazyList.filter(x -> x % 2 == 0) |>
+        LazyList.map(x -> x * x) |>
+        LazyList.length
+    })
+
+///////////////////////////////////////////////////////////////////////////////
 /// reduce                                                                  ///
 ///////////////////////////////////////////////////////////////////////////////
 pub def reduceList(l: List[Int32]): Benchmark =
@@ -200,7 +227,9 @@ pub def biboudisSuite(n: Int32): Array[Benchmark] & Impure =
         lengthList(l),
         lengthLazyList(l),
         filterLengthList(l),
-        filterLengthLazyList(l)
+        filterLengthLazyList(l),
+        filterMapLengthList(l),
+        filterMapLengthLazyList(l)
         //reduceList(l)
         //reduceLazyList(l),
         //filterReduceList(l),
