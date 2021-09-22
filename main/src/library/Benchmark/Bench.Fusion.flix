@@ -9,71 +9,6 @@ use Benchmark.defBenchmark;
 ///
 
 ///////////////////////////////////////////////////////////////////////////////
-/// filter8                                                                 ///
-///////////////////////////////////////////////////////////////////////////////
-pub def filter8WithList(l: List[Int32]): Benchmark =
-    defBenchmark("filter8 (List)", () -> {
-        l |>
-        List.filter(x -> x > 1) |>
-        List.filter(x -> x > 2) |>
-        List.filter(x -> x > 3) |>
-        List.filter(x -> x > 4) |>
-        List.filter(x -> x > 5) |>
-        List.filter(x -> x > 6) |>
-        List.filter(x -> x > 7) |>
-        List.filter(x -> x > 8) |>
-        List.length
-    })
-
-pub def filter8WithLazyList(l: List[Int32]): Benchmark =
-    let l1 = List.toLazy(l);
-    defBenchmark("filter8 (LazyList)", () -> {
-        l1 |>
-        LazyList.filter(x -> x > 1) |>
-        LazyList.filter(x -> x > 2) |>
-        LazyList.filter(x -> x > 3) |>
-        LazyList.filter(x -> x > 4) |>
-        LazyList.filter(x -> x > 5) |>
-        LazyList.filter(x -> x > 6) |>
-        LazyList.filter(x -> x > 7) |>
-        LazyList.filter(x -> x > 8) |>
-        LazyList.length
-    })
-
-///////////////////////////////////////////////////////////////////////////////
-/// map8                                                                    ///
-///////////////////////////////////////////////////////////////////////////////
-pub def map8WithList(l: List[Int32]): Benchmark =
-    defBenchmark("map8 (List)", () -> {
-        l |>
-        List.map(x -> x + 1) |>
-        List.map(x -> x + 2) |>
-        List.map(x -> x + 3) |>
-        List.map(x -> x + 4) |>
-        List.map(x -> x + 5) |>
-        List.map(x -> x + 6) |>
-        List.map(x -> x + 7) |>
-        List.map(x -> x + 8) |>
-        List.length
-    })
-
-pub def map8WithLazyList(l: List[Int32]): Benchmark =
-    let l1 = List.toLazy(l);
-    defBenchmark("map8 (LazyList)", () -> {
-        l1 |>
-        LazyList.map(x -> x + 1) |>
-        LazyList.map(x -> x + 2) |>
-        LazyList.map(x -> x + 3) |>
-        LazyList.map(x -> x + 4) |>
-        LazyList.map(x -> x + 5) |>
-        LazyList.map(x -> x + 6) |>
-        LazyList.map(x -> x + 7) |>
-        LazyList.map(x -> x + 8) |>
-        LazyList.length
-    })
-
-
-///////////////////////////////////////////////////////////////////////////////
 /// cartesian_reduce                                                        ///
 ///////////////////////////////////////////////////////////////////////////////
 pub def cartesianReduceList(l: List[Int32]): Benchmark =
@@ -224,6 +159,70 @@ pub def lazyListFilterMapSum(l: List[Int32]): Benchmark =
     })
 
 ///////////////////////////////////////////////////////////////////////////////
+/// filter8                                                                 ///
+///////////////////////////////////////////////////////////////////////////////
+pub def listFilter8(l: List[Int32]): Benchmark =
+    defBenchmark("List.filter8", () -> {
+        l |>
+        List.filter(x -> x > 1) |>
+        List.filter(x -> x > 2) |>
+        List.filter(x -> x > 3) |>
+        List.filter(x -> x > 4) |>
+        List.filter(x -> x > 5) |>
+        List.filter(x -> x > 6) |>
+        List.filter(x -> x > 7) |>
+        List.filter(x -> x > 8) |>
+        List.length
+    })
+
+pub def lazyListFilter8(l: List[Int32]): Benchmark =
+    let l1 = List.toLazy(l);
+    defBenchmark("LazyList.filter8", () -> {
+        l1 |>
+        LazyList.filter(x -> x > 1) |>
+        LazyList.filter(x -> x > 2) |>
+        LazyList.filter(x -> x > 3) |>
+        LazyList.filter(x -> x > 4) |>
+        LazyList.filter(x -> x > 5) |>
+        LazyList.filter(x -> x > 6) |>
+        LazyList.filter(x -> x > 7) |>
+        LazyList.filter(x -> x > 8) |>
+        LazyList.length
+    })
+
+///////////////////////////////////////////////////////////////////////////////
+/// map8                                                                    ///
+///////////////////////////////////////////////////////////////////////////////
+pub def listMap8(l: List[Int32]): Benchmark =
+    defBenchmark("List.map8", () -> {
+        l |>
+        List.map(x -> x + 1) |>
+        List.map(x -> x + 2) |>
+        List.map(x -> x + 3) |>
+        List.map(x -> x + 4) |>
+        List.map(x -> x + 5) |>
+        List.map(x -> x + 6) |>
+        List.map(x -> x + 7) |>
+        List.map(x -> x + 8) |>
+        List.length
+    })
+
+pub def lazyListMap8(l: List[Int32]): Benchmark =
+    let l1 = List.toLazy(l);
+    defBenchmark("LazyList.map8", () -> {
+        l1 |>
+        LazyList.map(x -> x + 1) |>
+        LazyList.map(x -> x + 2) |>
+        LazyList.map(x -> x + 3) |>
+        LazyList.map(x -> x + 4) |>
+        LazyList.map(x -> x + 5) |>
+        LazyList.map(x -> x + 6) |>
+        LazyList.map(x -> x + 7) |>
+        LazyList.map(x -> x + 8) |>
+        LazyList.length
+    })
+
+///////////////////////////////////////////////////////////////////////////////
 /// Initial Input                                                           ///
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -247,9 +246,9 @@ pub def biboudisSuite(n: Int32): Array[Benchmark] & Impure =
         listSum(l),
         listFilterSum(l),
         listFilterMapSum(l),
+        listFilter8(l),
+        listMap8(l),
 
-        //filter8WithList(l),
-        //map8WithList(l),
         //cartesianReduceList(l),
         //flatMapTakeSumList(l),
 
@@ -259,10 +258,10 @@ pub def biboudisSuite(n: Int32): Array[Benchmark] & Impure =
         lazyListFilterMapLength(l),
         lazyListSum(l),
         lazyListFilterSum(l),
-        lazyListFilterMapSum(l)
+        lazyListFilterMapSum(l),
+        lazyListFilter8(l),
+        lazyListMap8(l)
 
-        //filter8WithLazyList(l),
-        //map8WithLazyList(l),
         //flatMapTakeSumLazyList(l),
         //cartesianReduceLazyList(l),
     ]
