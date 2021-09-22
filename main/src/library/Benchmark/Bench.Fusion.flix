@@ -4,8 +4,7 @@ use Benchmark.defBenchmark;
 ///////////////////////////////////////////////////////////////////////////////
 /// filter8                                                                 ///
 ///////////////////////////////////////////////////////////////////////////////
-pub def filter8WithList(n: Int32): Benchmark =
-    let l = input(n);
+pub def filter8WithList(l: List[Int32]): Benchmark =
     defBenchmark("filter8 (List)", () -> {
         l |>
         List.filter(x -> x > 1) |>
@@ -19,10 +18,10 @@ pub def filter8WithList(n: Int32): Benchmark =
         List.length
     })
 
-pub def filter8WithLazyList(n: Int32): Benchmark =
-    let l = List.toLazy(input(n));
+pub def filter8WithLazyList(l: List[Int32]): Benchmark =
+    let l2 = List.toLazy(l);
     defBenchmark("filter8 (LazyList)", () -> {
-        l |>
+        l2 |>
         LazyList.filter(x -> x > 1) |>
         LazyList.filter(x -> x > 2) |>
         LazyList.filter(x -> x > 3) |>
@@ -37,8 +36,7 @@ pub def filter8WithLazyList(n: Int32): Benchmark =
 ///////////////////////////////////////////////////////////////////////////////
 /// map8                                                                    ///
 ///////////////////////////////////////////////////////////////////////////////
-pub def map8WithList(n: Int32): Benchmark =
-    let l = input(n);
+pub def map8WithList(l: List[Int32]): Benchmark =
     defBenchmark("map8 (List)", () -> {
         l |>
         List.map(x -> x + 1) |>
@@ -52,10 +50,10 @@ pub def map8WithList(n: Int32): Benchmark =
         List.length
     })
 
-pub def map8WithLazyList(n: Int32): Benchmark =
-    let l = List.toLazy(input(n));
+pub def map8WithLazyList(l: List[Int32]): Benchmark =
+    let l2 = List.toLazy(l);
     defBenchmark("map8 (LazyList)", () -> {
-        l |>
+        l2 |>
         LazyList.map(x -> x + 1) |>
         LazyList.map(x -> x + 2) |>
         LazyList.map(x -> x + 3) |>
@@ -78,15 +76,16 @@ pub def input(n: Int32): List[Int32] =
     List.range(1, n) |>
     List.flatMap(_ -> List.range(1, 1_000))
 
-
 ///////////////////////////////////////////////////////////////////////////////
 /// Biboudis Suite                                                          ///
 ///////////////////////////////////////////////////////////////////////////////
-pub def biboudisSuite(n: Int32): Array[Benchmark] & Impure = [
-        filter8WithList(n),
-        filter8WithLazyList(n),
-        map8WithList(n),
-        map8WithLazyList(n)
+pub def biboudisSuite(n: Int32): Array[Benchmark] & Impure =
+    let l = input(n);
+    [
+        filter8WithList(l),
+        filter8WithLazyList(l),
+        map8WithList(l),
+        map8WithLazyList(l)
     ]
 
 def main(_args: Array[String]) : Int32 & Impure =
