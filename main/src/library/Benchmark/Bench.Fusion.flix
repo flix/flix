@@ -1,10 +1,9 @@
 use Benchmark.Benchmark;
 use Benchmark.defBenchmark;
 
-pub def input(n: Int32): List[Int32] =
-    List.range(1, n) |>
-    List.flatMap(_ -> List.range(1, 1_000))
-
+///////////////////////////////////////////////////////////////////////////////
+/// filter8                                                                 ///
+///////////////////////////////////////////////////////////////////////////////
 pub def filter8WithList(n: Int32): Benchmark =
     let l = input(n);
     defBenchmark("filter8 (List)", () -> {
@@ -35,6 +34,9 @@ pub def filter8WithLazyList(n: Int32): Benchmark =
         LazyList.length
     })
 
+///////////////////////////////////////////////////////////////////////////////
+/// map8                                                                    ///
+///////////////////////////////////////////////////////////////////////////////
 pub def map8WithList(n: Int32): Benchmark =
     let l = input(n);
     defBenchmark("map8 (List)", () -> {
@@ -65,12 +67,29 @@ pub def map8WithLazyList(n: Int32): Benchmark =
         LazyList.length
     })
 
+///////////////////////////////////////////////////////////////////////////////
+/// Initial Input                                                           ///
+///////////////////////////////////////////////////////////////////////////////
+
+///
+/// Returns a list of `n` concatenated lists with elements from `1` to `1_000`.
+///
+pub def input(n: Int32): List[Int32] =
+    List.range(1, n) |>
+    List.flatMap(_ -> List.range(1, 1_000))
+
+
+///////////////////////////////////////////////////////////////////////////////
+/// Biboudis Suite                                                          ///
+///////////////////////////////////////////////////////////////////////////////
+pub def biboudisSuite(n: Int32): Array[Benchmark] & Impure = [
+        filter8WithList(n),
+        filter8WithLazyList(n),
+        map8WithList(n),
+        map8WithLazyList(n)
+    ]
+
 def main(_args: Array[String]) : Int32 & Impure =
-    let bs = [
-        filter8WithList(100),
-        filter8WithLazyList(100),
-        map8WithList(100),
-        map8WithLazyList(100)
-    ];
-    Benchmark.runWithBudget(bs, 50_000_000_000i64);
+    let s1 = biboudisSuite(100);
+    Benchmark.runWithBudget(s1, 50_000_000_000i64);
     0
