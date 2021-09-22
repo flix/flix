@@ -130,23 +130,22 @@ pub def lazyListFilterLength(l: List[Int32]): Benchmark =
 ///////////////////////////////////////////////////////////////////////////////
 /// filter map length                                                       ///
 ///////////////////////////////////////////////////////////////////////////////
-pub def filterMapLengthList(l: List[Int32]): Benchmark =
-    defBenchmark("filter map length (List)", () -> {
+pub def listFilterMapLength(l: List[Int32]): Benchmark =
+    defBenchmark("List.filterMapLength", () -> {
         l |>
         List.filter(x -> x % 2 == 0) |>
         List.map(x -> x * x) |>
         List.length
     })
 
-pub def filterMapLengthLazyList(l: List[Int32]): Benchmark =
+pub def lazyListFilterMapLength(l: List[Int32]): Benchmark =
     let l1 = List.toLazy(l);
-    defBenchmark("filter Map length (LazyList)", () -> {
+    defBenchmark("LazyList.filterMapLength", () -> {
         l1 |>
         LazyList.filter(x -> x % 2 == 0) |>
         LazyList.map(x -> x * x) |>
         LazyList.length
     })
-
 
 ///////////////////////////////////////////////////////////////////////////////
 /// flatMap take sum                                                        ///
@@ -245,28 +244,28 @@ pub def biboudisSuite(n: Int32): Array[Benchmark] & Impure =
         // List
         listLength(l),
         listFilterLength(l),
+        listFilterMapLength(l),
 
-        filterMapLengthList(l),
-        reduceList(l),
-        filterReduceList(l),
-        filterMapReduceList(l),
-        filter8WithList(l),
-        map8WithList(l),
-        cartesianReduceList(l),
-        flatMapTakeSumList(l),
+        //reduceList(l),
+        //filterReduceList(l),
+        //filterMapReduceList(l),
+        //filter8WithList(l),
+        //map8WithList(l),
+        //cartesianReduceList(l),
+        //flatMapTakeSumList(l),
 
         // LazyList
         lazyListLength(l),
         lazyListFilterLength(l),
+        lazyListFilterMapLength(l)
 
-        filter8WithLazyList(l),
-        map8WithLazyList(l),
-        filterMapLengthLazyList(l),
-        flatMapTakeSumLazyList(l),
-        reduceLazyList(l),
-        filterReduceLazyList(l),
-        cartesianReduceLazyList(l),
-        filterMapReduceLazyList(l)
+        //filter8WithLazyList(l),
+        //map8WithLazyList(l),
+        //flatMapTakeSumLazyList(l),
+        //reduceLazyList(l),
+        //filterReduceLazyList(l),
+        //cartesianReduceLazyList(l),
+        //filterMapReduceLazyList(l)
     ]
 
 def main(_args: Array[String]) : Int32 & Impure =
