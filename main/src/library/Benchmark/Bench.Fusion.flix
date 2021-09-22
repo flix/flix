@@ -169,55 +169,54 @@ pub def flatMapTakeSumLazyList(l: List[Int32]): Benchmark =
         LazyList.foldLeft((x, y) -> x + y, 0)
     })
 
-
 ///////////////////////////////////////////////////////////////////////////////
-/// reduce                                                                  ///
+/// sum                                                                     ///
 ///////////////////////////////////////////////////////////////////////////////
-pub def reduceList(l: List[Int32]): Benchmark =
-    defBenchmark("reduce (List)", () -> {
+pub def listSum(l: List[Int32]): Benchmark =
+    defBenchmark("List.sum", () -> {
         l |>
         List.foldLeft((x, y) -> x + y, 0)
     })
 
-pub def reduceLazyList(l: List[Int32]): Benchmark =
+pub def lazyListSum(l: List[Int32]): Benchmark =
     let l1 = List.toLazy(l);
-    defBenchmark("reduce (LazyList)", () -> {
+    defBenchmark("LazyList.sum", () -> {
         l1 |>
         LazyList.foldLeft((x, y) -> x + y, 0)
     })
 
 ///////////////////////////////////////////////////////////////////////////////
-/// filter_reduce                                                           ///
+/// filter sum                                                              ///
 ///////////////////////////////////////////////////////////////////////////////
-pub def filterReduceList(l: List[Int32]): Benchmark =
-    defBenchmark("filterReduce (List)", () -> {
+pub def listFilterSum(l: List[Int32]): Benchmark =
+    defBenchmark("List.filterSum", () -> {
         l |>
         List.filter(x -> x % 2 == 0) |>
         List.foldLeft((x, y) -> x + y, 0)
     })
 
-pub def filterReduceLazyList(l: List[Int32]): Benchmark =
+pub def lazyListFilterSum(l: List[Int32]): Benchmark =
     let l1 = List.toLazy(l);
-    defBenchmark("filterReduce (LazyList)", () -> {
+    defBenchmark("LazyList.filterSum", () -> {
         l1 |>
         LazyList.filter(x -> x % 2 == 0) |>
         LazyList.foldLeft((x, y) -> x + y, 0)
     })
 
 ///////////////////////////////////////////////////////////////////////////////
-/// filter_map_reduce                                                       ///
+/// filter map sum                                                          ///
 ///////////////////////////////////////////////////////////////////////////////
-pub def filterMapReduceList(l: List[Int32]): Benchmark =
-    defBenchmark("filterMapReduce (List)", () -> {
+pub def listFilterMapSum(l: List[Int32]): Benchmark =
+    defBenchmark("List.filterMapSum", () -> {
         l |>
         List.filter(x -> x % 2 == 0) |>
         List.map(x -> x * x) |>
         List.foldLeft((x, y) -> x + y, 0)
     })
 
-pub def filterMapReduceLazyList(l: List[Int32]): Benchmark =
+pub def lazyListFilterMapSum(l: List[Int32]): Benchmark =
     let l1 = List.toLazy(l);
-    defBenchmark("filterMapReduce (LazyList)", () -> {
+    defBenchmark("LazyList.filterMapSum", () -> {
         l1 |>
         LazyList.filter(x -> x % 2 == 0) |>
         LazyList.map(x -> x * x) |>
@@ -245,10 +244,10 @@ pub def biboudisSuite(n: Int32): Array[Benchmark] & Impure =
         listLength(l),
         listFilterLength(l),
         listFilterMapLength(l),
+        listSum(l),
+        listFilterSum(l),
+        listFilterMapSum(l),
 
-        //reduceList(l),
-        //filterReduceList(l),
-        //filterMapReduceList(l),
         //filter8WithList(l),
         //map8WithList(l),
         //cartesianReduceList(l),
@@ -257,18 +256,18 @@ pub def biboudisSuite(n: Int32): Array[Benchmark] & Impure =
         // LazyList
         lazyListLength(l),
         lazyListFilterLength(l),
-        lazyListFilterMapLength(l)
+        lazyListFilterMapLength(l),
+        lazyListSum(l),
+        lazyListFilterSum(l),
+        lazyListFilterMapSum(l)
 
         //filter8WithLazyList(l),
         //map8WithLazyList(l),
         //flatMapTakeSumLazyList(l),
-        //reduceLazyList(l),
-        //filterReduceLazyList(l),
         //cartesianReduceLazyList(l),
-        //filterMapReduceLazyList(l)
     ]
 
 def main(_args: Array[String]) : Int32 & Impure =
     let s1 = biboudisSuite(100);
-    Benchmark.runWithBudget(s1, 25_000_000_000i64);
+    Benchmark.runWithBudget(s1, 250_000_000_000i64);
     0
