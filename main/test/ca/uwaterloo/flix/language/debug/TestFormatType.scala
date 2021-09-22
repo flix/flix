@@ -47,7 +47,7 @@ class TestFormatType extends FunSuite with TestUtils {
   test("FormatType.WellFormedType.RecordRow.External.01") {
     val tpe = Type.mkRecordRowExtend(Name.Field("x", loc), Type.Int32, Type.mkRecordRowExtend(Name.Field("y", loc), Type.Str, Type.RecordRowEmpty, loc), loc)
 
-    val expected = "< x: Int32, y: String >"
+    val expected = "( x :: Int32, y :: String )"
     val actual = FormatType.formatType(tpe)(Audience.External)
 
     assert(actual == expected)
@@ -57,7 +57,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val rest = Type.KindedVar(0, Kind.RecordRow, loc, Rigidity.Rigid)
     val tpe = Type.mkRecordRowExtend(Name.Field("x", loc), Type.Int32, rest, loc)
 
-    val expected = "< x: Int32 | '0 >"
+    val expected = "( x :: Int32 | '0 )"
     val actual = FormatType.formatType(tpe)(Audience.External)
 
     assert(actual == expected)
@@ -141,7 +141,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val relationType = Type.mkRelation(Type.Int32 :: Type.Str :: Nil, loc)
     val tpe = Type.mkSchemaRowExtend(Name.Pred("S", loc), relationType, Type.SchemaRowEmpty, loc)
 
-    val expected = "#< S(Int32, String) >"
+    val expected = "#( S(Int32, String) )"
     val actual = FormatType.formatType(tpe)(Audience.External)
 
     assert(actual == expected)
@@ -153,7 +153,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val restType = Type.KindedVar(5, Kind.SchemaRow, loc, Rigidity.Flexible)
     val tpe = Type.mkSchemaRowExtend(Name.Pred("A", loc), latticeType1, Type.mkSchemaRowExtend(Name.Pred("B", loc), latticeType2, restType, loc), loc)
 
-    val expected = "#< A<>(String), B<>(Int32, String) | '5 >"
+    val expected = "#( A<>(String), B<>(Int32, String) | '5 )"
     val actual = FormatType.formatType(tpe)(Audience.External)
 
     assert(actual == expected)

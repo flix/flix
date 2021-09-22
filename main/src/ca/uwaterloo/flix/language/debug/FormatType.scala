@@ -32,11 +32,11 @@ object FormatType {
 
     val renameMap = alphaRenameVars(tpe)
 
-    def formatWellFormedRecordRow(row: Type): String = flattenRecordRow(row) match {
+    def formatWellFormedRecordRow(row: Type, sep: String): String = flattenRecordRow(row) match {
       case FlatNestable(fields, Type.Cst(TypeConstructor.RecordRowEmpty, _)) =>
-        fields.map { case (field, tpe) => formatRecordField(field, tpe) }.mkString(", ")
+        fields.map { case (field, tpe) => formatRecordField(field, tpe, sep) }.mkString(", ")
       case FlatNestable(fields, rest) =>
-        val fieldString = fields.map { case (field, tpe) => formatRecordField(field, tpe) }.mkString(", ")
+        val fieldString = fields.map { case (field, tpe) => formatRecordField(field, tpe, sep) }.mkString(", ")
         s"$fieldString | ${visit(rest)}"
     }
 
@@ -48,8 +48,8 @@ object FormatType {
         s"$fieldString | ${visit(rest)}"
     }
 
-    def formatRecordField(field: String, tpe: Type): String = {
-      s"$field: ${visit(tpe)}"
+    def formatRecordField(field: String, tpe: Type, sep: String): String = {
+      s"$field$sep${visit(tpe)}"
     }
 
     def formatSchemaField(name: String, tpe: Type): String = {
@@ -136,9 +136,9 @@ object FormatType {
 
           case TypeConstructor.Str => formatApply("String", args)
 
-          case TypeConstructor.RecordRowEmpty => formatApply("{ }", args)
+          case TypeConstructor.RecordRowEmpty => formatApply("()", args)
 
-          case TypeConstructor.SchemaRowEmpty => formatApply("#{ }", args)
+          case TypeConstructor.SchemaRowEmpty => formatApply("#()", args)
 
           case TypeConstructor.True => formatApply("true", args)
 
@@ -161,23 +161,23 @@ object FormatType {
           case TypeConstructor.ScopedRef => formatApply("ScopedRef", args)
 
           case TypeConstructor.RecordRowExtend(field) => args.length match {
-            case 0 => s"< $field: ??? >"
-            case 1 => s"< $field: ${visit(args.head)} | ??? >"
-            case 2 => s"< ${formatWellFormedRecordRow(tpe)} >"
+            case 0 => s"( $field :: ??? )"
+            case 1 => s"( $field :: ${visit(args.head)} | ??? )"
+            case 2 => s"( ${formatWellFormedRecordRow(tpe, " :: ")} )"
             case _ => formatApply(s"RecordExtend($field)", args)
           }
 
           case TypeConstructor.SchemaRowExtend(pred) => args.length match {
-            case 0 => s"#< ${pred.name}?(???) >"
-            case 1 => s"#< ${formatSchemaField(pred.name, args.head)} | ??? >"
-            case 2 => s"#< ${formatWellFormedSchemaRow(tpe)} >"
+            case 0 => s"#( ${pred.name}?(???) )"
+            case 1 => s"#( ${formatSchemaField(pred.name, args.head)} | ??? )"
+            case 2 => s"#( ${formatWellFormedSchemaRow(tpe)} )"
             case _ => throw InternalCompilerException("unexpected overapplication")
           }
 
           case TypeConstructor.Record => args.length match {
             case 0 => s"{ ??? }"
             case 1 =>
-              val contents = formatWellFormedRecordRow(args.head)
+              val contents = formatWellFormedRecordRow(args.head, ": ")
               s"{ $contents }"
             case _ => throw InternalCompilerException("unexpected overapplication")
           }

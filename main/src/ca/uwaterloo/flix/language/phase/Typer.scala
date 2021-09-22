@@ -1336,8 +1336,8 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
       case KindedAst.Expression.FixpointConstraintSet(cs, tvar, loc) =>
         for {
           (constrs, constraintTypes) <- seqM(cs.map(visitConstraint)).map(_.unzip)
-          aggConstraintType <- unifyTypeAllowEmptyM(constraintTypes, Kind.SchemaRow, loc)
-          resultTyp <- unifyTypeM(tvar, Type.mkSchema(aggConstraintType, loc), loc)
+          schemaRow <- unifyTypeAllowEmptyM(constraintTypes, Kind.SchemaRow, loc)
+          resultTyp <- unifyTypeM(tvar, Type.mkSchema(schemaRow, loc), loc)
         } yield (constrs.flatten, resultTyp, Type.Pure)
 
       case KindedAst.Expression.FixpointMerge(exp1, exp2, loc) =>
