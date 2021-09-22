@@ -87,6 +87,22 @@ pub def cartesianReduceLazyList(l: List[Int32]): Benchmark =
     })
 
 ///////////////////////////////////////////////////////////////////////////////
+/// length                                                                  ///
+///////////////////////////////////////////////////////////////////////////////
+pub def lengthList(l: List[Int32]): Benchmark =
+    defBenchmark("length (List)", () -> {
+        l |>
+        List.length
+    })
+
+pub def lengthLazyList(l: List[Int32]): Benchmark =
+    let l1 = List.toLazy(l);
+    defBenchmark("length (LazyList)", () -> {
+        l1 |>
+        LazyList.length
+    })
+
+///////////////////////////////////////////////////////////////////////////////
 /// reduce                                                                  ///
 ///////////////////////////////////////////////////////////////////////////////
 pub def reduceList(l: List[Int32]): Benchmark =
@@ -157,18 +173,20 @@ pub def input(n: Int32): List[Int32] =
 pub def biboudisSuite(n: Int32): Array[Benchmark] & Impure =
     let l = input(n);
     [
+        //cartesianReduceList(l),
+        //cartesianReduceLazyList(l),
         //filter8WithList(l),
         //filter8WithLazyList(l),
         //map8WithList(l),
         //map8WithLazyList(l),
-        //cartesianReduceList(l),
-        //cartesianReduceLazyList(l),
-        reduceList(l),
-        reduceLazyList(l),
-        filterReduceList(l),
-        filterReduceLazyList(l),
-        filterMapReduceList(l),
-        filterMapReduceLazyList(l)
+        lengthList(l),
+        lengthLazyList(l),
+        reduceList(l)
+        //reduceLazyList(l),
+        //filterReduceList(l),
+        //filterReduceLazyList(l),
+        //filterMapReduceList(l),
+        //filterMapReduceLazyList(l)
     ]
 
 def main(_args: Array[String]) : Int32 & Impure =
