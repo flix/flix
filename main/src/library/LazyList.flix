@@ -959,6 +959,8 @@ namespace LazyList {
     /// `l1` is the longest prefix of `l` that satisfies the predicate `f`.
     /// `l2` is the remainder of `l`.
     ///
+    /// Forces elements in the list until the first element (inclusive) that does not satisfy the predicate `f`.
+    ///
     pub def span(f: a -> Bool & ef, l: LazyList[a]): (LazyList[a], LazyList[a]) & ef =
         spanAcc(f, l, (ks, ls) -> (ks, ls))
 
