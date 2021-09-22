@@ -9,26 +9,6 @@ use Benchmark.defBenchmark;
 ///
 
 ///////////////////////////////////////////////////////////////////////////////
-/// cartesian_reduce                                                        ///
-///////////////////////////////////////////////////////////////////////////////
-pub def cartesianReduceList(l: List[Int32]): Benchmark =
-    let l2 = List.range(1, 10);
-    defBenchmark("cartesian_reduce (List)", () -> {
-        l |>
-        List.flatMap(x -> List.map(y -> x * y, l2)) |>
-        List.foldLeft((x, y) -> x + y, 0)
-    })
-
-pub def cartesianReduceLazyList(l: List[Int32]): Benchmark =
-    let l1 = List.toLazy(l);
-    let l2 = LazyList.range(1, 10);
-    defBenchmark("cartesian_reduce (LazyList)", () -> {
-        l1 |>
-        LazyList.flatMap(x -> LazyList.map(y -> x * y, l2)) |>
-        LazyList.foldLeft((x, y) -> x + y, 0)
-    })
-
-///////////////////////////////////////////////////////////////////////////////
 /// length                                                                  ///
 ///////////////////////////////////////////////////////////////////////////////
 pub def listLength(l: List[Int32]): Benchmark =
@@ -80,28 +60,6 @@ pub def lazyListFilterMapLength(l: List[Int32]): Benchmark =
         LazyList.filter(x -> x % 2 == 0) |>
         LazyList.map(x -> x * x) |>
         LazyList.length
-    })
-
-///////////////////////////////////////////////////////////////////////////////
-/// flatMap take sum                                                        ///
-///////////////////////////////////////////////////////////////////////////////
-pub def flatMapTakeSumList(l: List[Int32]): Benchmark =
-    let l2 = List.range(1, 10);
-    defBenchmark("flatMapTakeSum (List)", () -> {
-        l |>
-        List.flatMap(x -> List.map(y -> x * y, l2)) |>
-        List.take(100_000) |>  // TODO
-        List.foldLeft((x, y) -> x + y, 0)
-    })
-
-pub def flatMapTakeSumLazyList(l: List[Int32]): Benchmark =
-    let l1 = List.toLazy(l);
-    let l2 = LazyList.range(1, 10);
-    defBenchmark("flatMapTakeSumLazy (List)", () -> {
-        l1 |>
-        LazyList.flatMap(x -> LazyList.map(y -> x * y, l2)) |>
-        LazyList.take(100_000) |>  // TODO
-        LazyList.foldLeft((x, y) -> x + y, 0)
     })
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -223,6 +181,49 @@ pub def lazyListMap8(l: List[Int32]): Benchmark =
     })
 
 ///////////////////////////////////////////////////////////////////////////////
+/// flatMap take sum                                                        ///
+///////////////////////////////////////////////////////////////////////////////
+pub def listFlatMapTakeSum(l: List[Int32]): Benchmark =
+    let l2 = List.range(1, 10);
+    defBenchmark("List.flatMapTakeSum", () -> {
+        l |>
+        List.flatMap(x -> List.map(y -> x * y, l2)) |>
+        List.take(100_000) |>  // TODO
+        List.foldLeft((x, y) -> x + y, 0)
+    })
+
+pub def lazyListFlatMapTakeSum(l: List[Int32]): Benchmark =
+    let l1 = List.toLazy(l);
+    let l2 = LazyList.range(1, 10);
+    defBenchmark("LazyList.flatMapTakeSum", () -> {
+        l1 |>
+        LazyList.flatMap(x -> LazyList.map(y -> x * y, l2)) |>
+        LazyList.take(100_000) |>  // TODO
+        LazyList.foldLeft((x, y) -> x + y, 0)
+    })
+
+
+///////////////////////////////////////////////////////////////////////////////
+/// cartesian                                                               ///
+///////////////////////////////////////////////////////////////////////////////
+pub def listCartesian(l: List[Int32]): Benchmark =
+    let l2 = List.range(1, 10);
+    defBenchmark("List.cartesian", () -> {
+        l |>
+        List.flatMap(x -> List.map(y -> x * y, l2)) |>
+        List.foldLeft((x, y) -> x + y, 0)
+    })
+
+pub def lazyListCartesian(l: List[Int32]): Benchmark =
+    let l1 = List.toLazy(l);
+    let l2 = LazyList.range(1, 10);
+    defBenchmark("LazyList.cartesian", () -> {
+        l1 |>
+        LazyList.flatMap(x -> LazyList.map(y -> x * y, l2)) |>
+        LazyList.foldLeft((x, y) -> x + y, 0)
+    })
+
+///////////////////////////////////////////////////////////////////////////////
 /// Initial Input                                                           ///
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -248,9 +249,8 @@ pub def biboudisSuite(n: Int32): Array[Benchmark] & Impure =
         listFilterMapSum(l),
         listFilter8(l),
         listMap8(l),
-
-        //cartesianReduceList(l),
-        //flatMapTakeSumList(l),
+        listFlatMapTakeSum(l),
+        listCartesian(l),
 
         // LazyList
         lazyListLength(l),
@@ -260,10 +260,9 @@ pub def biboudisSuite(n: Int32): Array[Benchmark] & Impure =
         lazyListFilterSum(l),
         lazyListFilterMapSum(l),
         lazyListFilter8(l),
-        lazyListMap8(l)
-
-        //flatMapTakeSumLazyList(l),
-        //cartesianReduceLazyList(l),
+        lazyListMap8(l),
+        lazyListFlatMapTakeSum(l),
+        lazyListCartesian(l)
     ]
 
 def main(_args: Array[String]) : Int32 & Impure =
