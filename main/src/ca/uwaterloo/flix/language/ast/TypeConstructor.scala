@@ -216,13 +216,13 @@ object TypeConstructor {
     * A type constructor that represents the type of type aliases.
     */
   @IntroducedBy(Kinder.getClass)
-  case class KindedAlias(sym: Symbol.TypeAliasSym, kind: Kind) extends TypeConstructor
+  case class KindedAlias(sym: Symbol.TypeAliasSym, kind: Kind, tpe: Type) extends TypeConstructor
 
   /**
     * An unkinded type constructor that represents the type of type aliases.
     */
   @EliminatedBy(Kinder.getClass)
-  case class UnkindedAlias(sym: Symbol.TypeAliasSym) extends TypeConstructor {
+  case class UnkindedAlias(sym: Symbol.TypeAliasSym, tpe: Type) extends TypeConstructor {
     override def kind: Kind = throw InternalCompilerException("Attempt to access kind of unkinded type constructor")
   }
 

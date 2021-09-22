@@ -18,13 +18,14 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
-import ca.uwaterloo.flix.language.ast.NamedAst.TypeParams
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.ResolutionError
+import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import java.lang.reflect.{Constructor, Field, Method, Modifier}
+import scala.annotation.tailrec
 import scala.collection.mutable
 
 /**
@@ -306,6 +307,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       for {
         tpe <- lookupType(tpe0, ns0, root)
       } yield ResolvedAst.TypeAlias(doc, mod, sym, tparams, tpe, loc)
+  }
+
+  private def orderTypeAliases(aliases: Iterable[NamedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[List[ResolvedAst.TypeAlias], ResolutionError] = {
+    ??? // MATT !!! we can't really order them before RESOLVING them
   }
 
   /**
@@ -1089,10 +1094,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     * Performs name resolution on the given type parameters `tparams0`.
     */
   def resolveTypeParams(tparams0: NamedAst.TypeParams, ns0: Name.NName, root: NamedAst.Root): ResolvedAst.TypeParams = tparams0 match {
-    case TypeParams.Kinded(tparams1) =>
+    case NamedAst.TypeParams.Kinded(tparams1) =>
       val tparams2 = tparams1.map(Params.resolveKindedTparam)
       ResolvedAst.TypeParams.Kinded(tparams2)
-    case TypeParams.Unkinded(tparams1) =>
+    case NamedAst.TypeParams.Unkinded(tparams1) =>
       val tparams2 = tparams1.map(Params.resolveUnkindedTparam)
       ResolvedAst.TypeParams.Unkinded(tparams2)
   }
@@ -1383,6 +1388,87 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   def isUnitType(tpe: NamedAst.Type): Boolean = tpe match {
     case NamedAst.Type.Unit(loc) => true
     case _ => false
+  }
+
+  private def resolveType(tpe0: NamedAst.Type, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], root: NamedAst.Root): Validation[Type, ResolutionError] = {
+    // MATT how do we handle (Option: Type -> Type)[Int] ?
+
+    // Case 1: Base type is a type alias
+    // Case 2: Base type is not a type alias, proceed as normal
+
+    val baseTpe = getBaseType(tpe0)
+    val tpeArgs = getTypeArgs(tpe0)
+    val fullLoc = tpe0.loc
+
+    traverse(tpeArgs)(resolveType(_, ns0, taenv, root)) flatMap {
+      targs =>
+
+        baseTpe match {
+          case NamedAst.Type.Ambiguous(qname, loc) if qname.isUnqualified => qname.ident.name match {
+            // Basic Types
+            case "Unit" => Type.mkApply(Type.mkUnit(loc), targs, fullLoc).toSuccess
+            case "Null" => Type.mkApply(Type.mkNull(loc), targs, fullLoc).toSuccess
+            case "Bool" => Type.mkApply(Type.mkBool(loc), targs, fullLoc).toSuccess
+            case "Char" => Type.mkApply(Type.mkChar(loc), targs, fullLoc).toSuccess
+            case "Float" => Type.mkApply(Type.mkFloat64(loc), targs, fullLoc).toSuccess
+            case "Float32" => Type.mkApply(Type.mkFloat32(loc), targs, fullLoc).toSuccess
+            case "Float64" => Type.mkApply(Type.mkFloat64(loc), targs, fullLoc).toSuccess
+            case "Int" => Type.mkApply(Type.mkInt32(loc), targs, fullLoc).toSuccess
+            case "Int8" => Type.mkApply(Type.mkInt8(loc), targs, fullLoc).toSuccess
+            case "Int16" => Type.mkApply(Type.mkInt16(loc), targs, fullLoc).toSuccess
+            case "Int32" => Type.mkApply(Type.mkInt32(loc), targs, fullLoc).toSuccess
+            case "Int64" => Type.mkApply(Type.mkInt64(loc), targs, fullLoc).toSuccess
+            case "BigInt" => Type.mkApply(Type.mkBigInt(loc), targs, fullLoc).toSuccess
+            case "String" => Type.mkApply(Type.mkString(loc), targs, fullLoc).toSuccess
+            case "Array" => Type.mkApply(Type.mkArray(loc), targs, fullLoc).toSuccess
+            case "Channel" => Type.mkApply(Type.mkChannel(loc), targs, fullLoc).toSuccess
+            case "Lazy" => Type.mkApply(Type.mkLazy(loc), targs, fullLoc).toSuccess
+            case "ScopedRef" => Type.mkApply(Type.Cst(TypeConstructor.ScopedRef, loc), targs, fullLoc).toSuccess
+            case "Region" => Type.mkApply(Type.Cst(TypeConstructor.Region, loc), targs, fullLoc).toSuccess
+
+            // Disambiguate type.
+            case typeName =>
+              (lookupEnum(qname, ns0, root), lookupTypeAlias(qname, ns0, root)) match {
+                // Case 1: Not Found.
+                case (None, None) => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
+
+                // Case 2: Enum.
+                case (Some(enum), None) => getEnumTypeIfAccessible(enum, ns0, loc) map {
+                  enumType => Type.mkApply(enumType, targs, fullLoc)
+                }
+
+                // Case 3: TypeAlias.
+                case (None, Some(typealias)) => getTypeAliasTypeIfAccessible(typealias, targs, ns0, taenv, root, loc)
+
+                // Case 4: Errors.
+                case (_, _) => throw InternalCompilerException("Unexpected ambiguity: Duplicate types / classes should have been resolved.")
+              }
+          }
+
+          case NamedAst.Type.Ambiguous(qname, loc) =>
+            // Disambiguate type.
+            (lookupEnum(qname, ns0, root), lookupTypeAlias(qname, ns0, root)) match {
+              case (None, None) => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
+              case (Some(enumDecl), None) => getEnumTypeIfAccessible(enumDecl, ns0, loc)
+              case (None, Some(typeAliasDecl)) => getTypeAliasTypeIfAccessible(typeAliasDecl, targs, ns0, taenv, root, loc)
+              case (Some(enumDecl), Some(typeAliasDecl)) =>
+                val locs = enumDecl.loc :: typeAliasDecl.loc :: Nil
+                ResolutionError.AmbiguousType(qname.ident.name, ns0, locs, loc).toFailure // MATT dedupe and remove ambig tag error (impossible)
+            }
+        }
+    }
+  }
+
+  // MATT docs
+  @tailrec
+  private def getBaseType(tpe0: NamedAst.Type): NamedAst.Type = tpe0 match {
+    case NamedAst.Type.Apply(tpe1, _, _) => getBaseType(tpe1)
+    case NamedAst.Type.Ascribe(tpe, _, _) => getBaseType(tpe)
+  }
+
+  // MATT docs
+  private def getTypeArgs(tpe0: NamedAst.Type): List[NamedAst.Type] = tpe0 match {
+    case NamedAst.Type.Apply(tpe1, tpe2, _) => getTypeArgs(tpe1) ::: tpe2 :: Nil
   }
 
   /**
@@ -1764,14 +1850,30 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     //
     ResolutionError.InaccessibleTypeAlias(alia0.sym, ns0, loc).toFailure
   }
+
   /**
     * Successfully returns the type of the given type alias `alia0` if it is accessible from the given namespace `ns0`.
     *
     * Otherwise fails with a resolution error.
     */
-  private def getTypeAliasTypeIfAccessible(alia0: NamedAst.TypeAlias, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation): Validation[Type, ResolutionError] = {
+  private def getTypeAliasTypeIfAccessible(alia0: NamedAst.TypeAlias, targs: List[Type], ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], root: NamedAst.Root, loc: SourceLocation): Validation[Type, ResolutionError] = {
     getTypeAliasIfAccessible(alia0, ns0, loc) map {
-      case enum => mkUnkindedTypeAlias(enum.sym, loc)
+      namedAlias =>
+//        val alias = taenv(namedAlias.sym)
+        val tparams = namedAlias.tparams.tparams
+        val tpe0 = resolveType(namedAlias.tpe, ns0, taenv, root).get // MATT !!!!!!
+        val nParams = tparams.length
+        if (targs.length < nParams) {
+          ??? // MATT non-fully-applied alias
+        } else {
+          val (directArgs, extraArgs) = targs.splitAt(nParams)
+          val map: Map[Type.Var, Type] = tparams.map(_.tpe)
+            .zip(directArgs)
+            .toMap
+          val subst = Substitution(map)
+          val tpe = subst(tpe0)
+          Type.mkApply(tpe, extraArgs, loc)
+        }
     }
   }
 
@@ -1941,7 +2043,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Construct the type alias type constructor for the given symbol `sym` with the given kind `k`.
     */
-  def mkUnkindedTypeAlias(sym: Symbol.TypeAliasSym, loc: SourceLocation): Type = Type.Cst(TypeConstructor.UnkindedAlias(sym), loc)
+  def mkUnkindedTypeAlias(sym: Symbol.TypeAliasSym, tpe: Type, loc: SourceLocation): Type = Type.Cst(TypeConstructor.UnkindedAlias(sym, tpe), loc)
 
   /**
     * Constructs a predicate type.
