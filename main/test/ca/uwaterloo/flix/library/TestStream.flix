@@ -17,6 +17,32 @@
 namespace TestStream {
 
     /////////////////////////////////////////////////////////////////////////////
+    // empty                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def empty01(): Bool =
+        Stream.empty(): Stream[Unit, Unit] |> Stream.toList == Nil
+
+    @test
+    def empty02(): Bool =
+        not (Stream.empty(): Stream[Int32, Int32] |> Stream.toList == 1 :: Nil)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // isEmpty                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def isEmpty01(): Bool =
+        Stream.empty(): Stream[Int32, Unit] |> Stream.isEmpty
+
+    @test
+    def isEmpty02(): Bool =
+        not (List.toStream(1 :: Nil) |> Stream.isEmpty)
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // toStream & toList                                                       //
     /////////////////////////////////////////////////////////////////////////////
 
