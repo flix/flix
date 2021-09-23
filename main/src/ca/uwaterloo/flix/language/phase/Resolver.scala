@@ -21,8 +21,9 @@ import ca.uwaterloo.flix.language.ast.Ast.Denotation
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.phase.unification.Substitution
+import ca.uwaterloo.flix.util.Graph.TopSortResult
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.{Graph, InternalCompilerException, Validation}
 
 import java.lang.reflect.{Constructor, Field, Method, Modifier}
 import scala.annotation.tailrec
@@ -121,35 +122,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     */
   private def checkSuperClassDag(classes: Map[Symbol.ClassSym, ResolvedAst.Class]): Validation[Unit, ResolutionError] = {
 
-    // Set of classes known to be acyclic
-    val acyclic = mutable.Set.empty[Symbol.ClassSym]
-
-    /**
-      * Checks the class for super class cycles, where `path` is a list visited nodes.
-      */
-    def findCycle(clazz: ResolvedAst.Class, path: List[Symbol.ClassSym]): Option[List[Symbol.ClassSym]] = {
-      if (acyclic.contains(clazz.sym)) {
-        // Case 1: We already know this class is acyclic.
-        None
-      } else if (path.contains(clazz.sym)) {
-        // Case 2: This class is in our path. There's a cycle.
-        val cycle = clazz.sym :: path.takeWhile(_ != clazz.sym) ++ List(clazz.sym)
-        Some(cycle)
-      } else {
-        // Case 3: Check each superclass for cycles.
-        val result = clazz.superClasses.flatMap {
-          superClass => findCycle(classes(superClass.clazz), clazz.sym :: path)
-        }.headOption
-
-        if (result.isEmpty) {
-          // mark this class as acyclic if there's no cycle
-          acyclic += clazz.sym
-        }
-
-        result
-      }
-    }
-
     /**
       * Create a list of CyclicClassHierarchy errors, one for each class.
       */
@@ -160,12 +132,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       Validation.Failure(LazyList.from(errors))
     }
 
-    // Check each class for cycles
-    fold(classes.values, ()) {
-      case ((), clazz) => findCycle(clazz, Nil) match {
-        case Some(cycle) => mkCycleErrors(cycle)
-        case None => ().toSuccess
-      }
+    val classSyms = classes.values.map(_.sym)
+    val getSuperClasses = (clazz: Symbol.ClassSym) => classes(clazz).superClasses.map(_.clazz)
+    Graph.topSort(classSyms, getSuperClasses) match {
+      case Graph.TopSortResult.Cycle(path) => mkCycleErrors(path)
+      case Graph.TopSortResult.Sorted(_) => ().toSuccess
     }
   }
 
