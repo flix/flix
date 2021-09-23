@@ -282,7 +282,7 @@ namespace TestStream {
         Stream.toList as & Impure;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
-
+/*
     /////////////////////////////////////////////////////////////////////////////
     // map filter fusion                                                       //
     /////////////////////////////////////////////////////////////////////////////
@@ -325,5 +325,5 @@ namespace TestStream {
         Stream.map(   x -> { l := "b" :: deref l; x    } as & Pure) |>
         Stream.toList as & Impure;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
-
+*/
 }
