@@ -124,6 +124,53 @@ namespace Stream {
         case Done         => k(Nil)
         case Skip(s1)     => filterEAcc(f, next, s1, k)
         case Yield(x, s1) => if (f(x)) filterEAcc(f, next, s1, ks -> k(x :: ks)) else filterEAcc(f, next, s1, k)
+
+    ///
+    /// Returns the result of applying `f` to every element in `s`.
+    ///
+    /// Whether `f` is applied eagerly or lazily depends on its purity:
+    ///
+    /// - If `f` is pure then it is applied lazily.
+    /// - If `f` is impure then it is applied eagerly.
+    ///
+    pub def map(f: a -> b & ef, s: Stream[a, s]): Stream[b, s] & ef =
+        if (reify ef)
+             mapL(f as a -> b & Pure,   s)
+        else
+             mapE(f as a -> b & Impure, s) as & ef
+
+    ///
+    /// Returns the result of applying `f` to every element in `s`.
+    ///
+    /// Applies `f` lazily.
+    ///
+    def mapL(f: a -> b, s: Stream[a, s]): Stream[b, s] =
+        let Stream(next0, s0) = s;
+        let next1 = s1 -> match next0(s1) {
+            case Done         => Done
+            case Skip(s2)     => Skip(s2)
+            case Yield(x, s2) => Yield(f(x), s2)
+        };
+        Stream(next1, s0)
+
+    ///
+    /// Returns the result of applying `f` to every element in `s`.
+    ///
+    /// Applies `f` eagerly.
+    ///
+    def mapE(f: a -> b & Impure, s: Stream[a, s]): Stream[b, s] & Impure =
+        let Stream(next, s0) = s;
+        (mapEAcc(f, next, s0, ks -> ks) |> List.toStream) as Stream[b, s]
+
+    ///
+    /// Helper function for `mapE`.
+    ///
+    def mapEAcc(f: a -> b & Impure, next: s -> Step[a, s], s0: s, k: List[b] -> List[b]): List[b] & Impure = match next(s0) {
+        case Done         => k(Nil)
+        case Skip(s1)     => mapEAcc(f, next, s1, k)
+        case Yield(x, s1) =>
+            let x1 = f(x);
+            mapEAcc(f, next, s1, ks -> k(x1 :: ks))
     }
 
 }
