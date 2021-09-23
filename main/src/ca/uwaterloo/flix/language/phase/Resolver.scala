@@ -151,27 +151,41 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         }
     }
 
-    def getAliasUses(tpe: Type): List[Type] = tpe match {
-      case value: Type.Var =>
-      case baseType: Type.BaseType =>
-      case Type.KindedVar(id, kind, loc, rigidity, text) =>
-      case Type.UnkindedVar(id, loc, rigidity, text) =>
-      case Type.Ascribe(tpe, kind, loc) =>
-      case Type.Cst(tc, loc) =>
-      case Type.Apply(tpe1, tpe2, loc) =>
+    // MATT
+    def getAliasUses(tpe0: Type): List[Symbol.TypeAliasSym] = tpe0 match {
+      case tvar: Type.Var => tvar.asUnkinded; Nil
+      case Type.Ascribe(tpe, _, _) => getAliasUses(tpe)
+      case Type.Cst(TypeConstructor.UnappliedAlias(sym), _) => sym :: Nil
+      case Type.Cst(_, _) => Nil
+      case Type.Apply(tpe1, tpe2, _) => getAliasUses(tpe1) ::: getAliasUses(tpe2)
 
     }
 
-    def findResolutionOrder(aliases: Iterable[NamedAst.TypeAlias]): Validation[List[ResolvedAst.TypeAlias], ResolutionError] = {
+    def findResolutionOrder(aliases: Iterable[ResolvedAst.TypeAlias]): Validation[List[Symbol.TypeAliasSym], ResolutionError] = {
       val aliasSyms = aliases.map(_.sym)
-      val getUses =
+      val aliasLookup = aliases.map(alias => alias.sym -> alias).toMap
+      val getUses = (sym: Symbol.TypeAliasSym) => getAliasUses(aliasLookup(sym).tpe)
+
+      Graph.topSort(aliasSyms, getUses) match {
+        case Graph.TopSortResult.Sorted(sorted) => sorted.toSuccess
+        case Graph.TopSortResult.Cycle(path) => ??? // MATT mkErrors
+      }
     }
 
-    // Step 1: partially resolve each type alias
+    def finishResolveTypeAliases(aliases: List[ResolvedAst.TypeAlias]): Validation[Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ResolutionError] = {
+      Validation.fold(aliases, Map.empty[Symbol.TypeAliasSym, ResolvedAst.TypeAlias]) {
+        case (taenv, ResolvedAst.TypeAlias(doc, mod, sym, tparams, tpe0, loc)) =>
+          finishResolveType(tpe0, taenv, ns0, root) map {
+            tpe => ResolvedAst.TypeAlias(doc, mod, sym, tparams, tpe0, loc)
+          }
+
+      }
+    }
 
     for {
       aliases <- traverse(aliases0)(semiResolveTypeAlias)
-      sorted <- ???
+      sorted <- findResolutionOrder(aliases)
+
     } yield ()
     val map = Validation.fold(aliases, Map.empty[Symbol.TypeAliasSym, ResolvedAst.TypeAlias]) {
       case (acc, NamedAst.TypeAlias(doc, mod, sym, tparams0, tpe0, loc)) =>
@@ -1592,6 +1606,24 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         t => Type.Ascribe(t, kind, loc)
       }
 
+  }
+
+  private def finishResolveType(tpe0: Type, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias]): Validation[Type, ResolutionError] = {
+    val baseType = tpe0.baseType
+    val targs = tpe0.typeArguments
+
+    baseType match {
+      case Type.Cst(TypeConstructor.UnappliedAlias(sym), loc) =>
+        val alias = taenv(sym)
+        val tparams = alias.tparams.tparams
+        val numParams = tparams.length
+        if (targs.length < numParams) {
+          ??? // MATT error: unapplied alias
+        } else {
+          val (usedArgs, extraArgs) = targs.splitAt(numParams)
+
+        }
+    }
   }
 
   /**
