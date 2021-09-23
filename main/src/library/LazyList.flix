@@ -197,9 +197,17 @@ namespace LazyList {
     ///
     def mapL(f: a -> b, l: LazyList[a]): LazyList[b] = match l {
         case ENil         => ENil
-        case ECons(x, xs) => LList(lazy LCons(f(x), lazy mapL(f,       xs)))
-        case LCons(x, xs) => LList(lazy LCons(f(x), lazy mapL(f, force xs)))
-        case LList(xs)    => LList(                 lazy mapL(f, force xs))
+        case ECons(x, xs) => LList(lazy LCons(f(x), lazy mapL1(f,       xs)))
+        case LCons(x, xs) => LList(lazy LCons(f(x), lazy mapL1(f, force xs)))
+        case LList(xs)    => LList(                 lazy mapL1(f, force xs))
+    }
+
+    // TODO: DOC
+    def mapL1(f: a -> b, l: LazyList[a]): LazyList[b] = match l {
+        case ENil         => ENil
+        case ECons(x, xs) => LCons(f(x), lazy mapL1(f,       xs))
+        case LCons(x, xs) => LCons(f(x), lazy mapL1(f, force xs))
+        case LList(xs)    => LList(      lazy mapL1(f, force xs))
     }
 
     ///
