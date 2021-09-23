@@ -169,6 +169,23 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     }
   }
 
+  private def resolveTypeAliases(aliases: Iterable[NamedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root): Validation[List[ResolvedAst.TypeAlias], ResolutionError] = {
+    // MATT Khan's algo
+    def topSort(aliases: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias]): Unit = {
+    }
+    val map = Validation.fold(aliases, Map.empty[Symbol.TypeAliasSym, ResolvedAst.TypeAlias]) {
+      case (acc, NamedAst.TypeAlias(doc, mod, sym, tparams0, tpe0, loc)) =>
+        semiResolveType(tpe0, ns0, root) map {
+          tpe =>
+            val tparams = resolveTypeParams(tparams0, ns0, root)
+            acc + (sym -> ResolvedAst.TypeAlias(doc, mod, sym, tparams, tpe, loc))
+        }
+    }
+    ??? // MATT
+  }
+
+
+
   object Constraints {
 
     /**
@@ -1390,75 +1407,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     case _ => false
   }
 
-  private def resolveType(tpe0: NamedAst.Type, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], root: NamedAst.Root): Validation[Type, ResolutionError] = {
-    // MATT how do we handle (Option: Type -> Type)[Int] ?
-
-    // Case 1: Base type is a type alias
-    // Case 2: Base type is not a type alias, proceed as normal
-
-    val baseTpe = getBaseType(tpe0)
-    val tpeArgs = getTypeArgs(tpe0)
-    val fullLoc = tpe0.loc
-
-    traverse(tpeArgs)(resolveType(_, ns0, taenv, root)) flatMap {
-      targs =>
-
-        baseTpe match {
-          case NamedAst.Type.Ambiguous(qname, loc) if qname.isUnqualified => qname.ident.name match {
-            // Basic Types
-            case "Unit" => Type.mkApply(Type.mkUnit(loc), targs, fullLoc).toSuccess
-            case "Null" => Type.mkApply(Type.mkNull(loc), targs, fullLoc).toSuccess
-            case "Bool" => Type.mkApply(Type.mkBool(loc), targs, fullLoc).toSuccess
-            case "Char" => Type.mkApply(Type.mkChar(loc), targs, fullLoc).toSuccess
-            case "Float" => Type.mkApply(Type.mkFloat64(loc), targs, fullLoc).toSuccess
-            case "Float32" => Type.mkApply(Type.mkFloat32(loc), targs, fullLoc).toSuccess
-            case "Float64" => Type.mkApply(Type.mkFloat64(loc), targs, fullLoc).toSuccess
-            case "Int" => Type.mkApply(Type.mkInt32(loc), targs, fullLoc).toSuccess
-            case "Int8" => Type.mkApply(Type.mkInt8(loc), targs, fullLoc).toSuccess
-            case "Int16" => Type.mkApply(Type.mkInt16(loc), targs, fullLoc).toSuccess
-            case "Int32" => Type.mkApply(Type.mkInt32(loc), targs, fullLoc).toSuccess
-            case "Int64" => Type.mkApply(Type.mkInt64(loc), targs, fullLoc).toSuccess
-            case "BigInt" => Type.mkApply(Type.mkBigInt(loc), targs, fullLoc).toSuccess
-            case "String" => Type.mkApply(Type.mkString(loc), targs, fullLoc).toSuccess
-            case "Array" => Type.mkApply(Type.mkArray(loc), targs, fullLoc).toSuccess
-            case "Channel" => Type.mkApply(Type.mkChannel(loc), targs, fullLoc).toSuccess
-            case "Lazy" => Type.mkApply(Type.mkLazy(loc), targs, fullLoc).toSuccess
-            case "ScopedRef" => Type.mkApply(Type.Cst(TypeConstructor.ScopedRef, loc), targs, fullLoc).toSuccess
-            case "Region" => Type.mkApply(Type.Cst(TypeConstructor.Region, loc), targs, fullLoc).toSuccess
-
-            // Disambiguate type.
-            case typeName =>
-              (lookupEnum(qname, ns0, root), lookupTypeAlias(qname, ns0, root)) match {
-                // Case 1: Not Found.
-                case (None, None) => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
-
-                // Case 2: Enum.
-                case (Some(enum), None) => getEnumTypeIfAccessible(enum, ns0, loc) map {
-                  enumType => Type.mkApply(enumType, targs, fullLoc)
-                }
-
-                // Case 3: TypeAlias.
-                case (None, Some(typealias)) => getTypeAliasTypeIfAccessible(typealias, targs, ns0, taenv, root, loc)
-
-                // Case 4: Errors.
-                case (_, _) => throw InternalCompilerException("Unexpected ambiguity: Duplicate types / classes should have been resolved.")
-              }
-          }
-
-          case NamedAst.Type.Ambiguous(qname, loc) =>
-            // Disambiguate type.
-            (lookupEnum(qname, ns0, root), lookupTypeAlias(qname, ns0, root)) match {
-              case (None, None) => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
-              case (Some(enumDecl), None) => getEnumTypeIfAccessible(enumDecl, ns0, loc)
-              case (None, Some(typeAliasDecl)) => getTypeAliasTypeIfAccessible(typeAliasDecl, targs, ns0, taenv, root, loc)
-              case (Some(enumDecl), Some(typeAliasDecl)) =>
-                val locs = enumDecl.loc :: typeAliasDecl.loc :: Nil
-                ResolutionError.AmbiguousType(qname.ident.name, ns0, locs, loc).toFailure // MATT dedupe and remove ambig tag error (impossible)
-            }
-        }
-    }
-  }
-
   // MATT docs
   @tailrec
   private def getBaseType(tpe0: NamedAst.Type): NamedAst.Type = tpe0 match {
@@ -1469,6 +1417,176 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   // MATT docs
   private def getTypeArgs(tpe0: NamedAst.Type): List[NamedAst.Type] = tpe0 match {
     case NamedAst.Type.Apply(tpe1, tpe2, _) => getTypeArgs(tpe1) ::: tpe2 :: Nil
+  }
+
+  /**
+    * Partially resolves the given type `tpe0` in the given namespace `ns0`.
+    *
+    * Type aliases are given temporary placeholders.
+    */
+  private def semiResolveType(tpe0: NamedAst.Type, ns0: Name.NName, root: NamedAst.Root): Validation[Type, ResolutionError] = tpe0 match {
+    case NamedAst.Type.Var(tvar, loc) => tvar.toSuccess
+
+    case NamedAst.Type.Unit(loc) => Type.mkUnit(loc).toSuccess
+
+    case NamedAst.Type.Ambiguous(qname, loc) if qname.isUnqualified => qname.ident.name match {
+      // Basic Types
+      case "Unit" => Type.mkUnit(loc).toSuccess
+      case "Null" => Type.mkNull(loc).toSuccess
+      case "Bool" => Type.mkBool(loc).toSuccess
+      case "Char" => Type.mkChar(loc).toSuccess
+      case "Float" => Type.mkFloat64(loc).toSuccess
+      case "Float32" => Type.mkFloat32(loc).toSuccess
+      case "Float64" => Type.mkFloat64(loc).toSuccess
+      case "Int" => Type.mkInt32(loc).toSuccess
+      case "Int8" => Type.mkInt8(loc).toSuccess
+      case "Int16" => Type.mkInt16(loc).toSuccess
+      case "Int32" => Type.mkInt32(loc).toSuccess
+      case "Int64" => Type.mkInt64(loc).toSuccess
+      case "BigInt" => Type.mkBigInt(loc).toSuccess
+      case "String" => Type.mkString(loc).toSuccess
+      case "Array" => Type.mkArray(loc).toSuccess
+      case "Channel" => Type.mkChannel(loc).toSuccess
+      case "Lazy" => Type.mkLazy(loc).toSuccess
+      case "ScopedRef" => Type.Cst(TypeConstructor.ScopedRef, loc).toSuccess
+      case "Region" => Type.Cst(TypeConstructor.Region, loc).toSuccess
+
+      // Disambiguate type.
+      case typeName =>
+        (lookupEnum(qname, ns0, root), lookupTypeAlias(qname, ns0, root)) match {
+          // Case 1: Not Found.
+          case (None, None) => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
+
+          // Case 2: Enum.
+          case (Some(enum), None) => getEnumTypeIfAccessible(enum, ns0, loc)
+
+          // Case 3: TypeAlias.
+          case (None, Some(typealias)) => getTypeAliasTypeIfAccessible(typealias, ns0, root, loc)
+
+          // Case 4: Errors.
+          case (_, _) => throw InternalCompilerException("Unexpected ambiguity: Duplicate types / classes should have been resolved.")
+        }
+    }
+
+    case NamedAst.Type.Ambiguous(qname, loc) =>
+      // Disambiguate type.
+      (lookupEnum(qname, ns0, root), lookupTypeAlias(qname, ns0, root)) match {
+        case (None, None) => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
+        case (Some(enumDecl), None) => getEnumTypeIfAccessible(enumDecl, ns0, loc)
+        case (None, Some(typeAliasDecl)) => getTypeAliasTypeIfAccessible(typeAliasDecl, ns0, root, loc)
+        case (Some(enumDecl), Some(typeAliasDecl)) =>
+          val locs = enumDecl.loc :: typeAliasDecl.loc :: Nil
+          ResolutionError.AmbiguousType(qname.ident.name, ns0, locs, loc).toFailure
+      }
+
+    case NamedAst.Type.Enum(sym, loc) =>
+      mkUnkindedEnum(sym, loc).toSuccess
+
+    case NamedAst.Type.Tuple(elms0, loc) =>
+      for {
+        elms <- traverse(elms0)(tpe => lookupType(tpe, ns0, root))
+        tup = Type.mkTuple(elms, loc)
+      } yield tup
+
+    case NamedAst.Type.RecordEmpty(loc) =>
+      Type.RecordEmpty.toSuccess
+
+    case NamedAst.Type.RecordExtend(field, value, rest, loc) =>
+      for {
+        v <- lookupType(value, ns0, root)
+        r <- lookupType(rest, ns0, root)
+        rec = Type.mkRecordExtend(field, v, r, loc)
+      } yield rec
+
+    case NamedAst.Type.SchemaEmpty(loc) =>
+      Type.SchemaEmpty.toSuccess
+
+    case NamedAst.Type.SchemaExtendWithAlias(qname, targs, rest, loc) =>
+      // Lookup the type alias.
+      lookupTypeAlias(qname, ns0, root) match {
+        case None =>
+          // Case 1: The type alias was not found. Report an error.
+          ResolutionError.UndefinedName(qname, ns0, loc).toFailure
+        case Some(typealias) =>
+          // Case 2: The type alias was found. Use it.
+          for {
+            t <- getTypeAliasTypeIfAccessible(typealias, ns0, root, loc)
+            ts <- traverse(targs)(lookupType(_, ns0, root))
+            r <- lookupType(rest, ns0, root)
+            app = Type.mkApply(t, ts, loc)
+            schema = Type.mkSchemaExtend(Name.mkPred(qname.ident), app, r, loc)
+          } yield schema
+      }
+
+    case NamedAst.Type.SchemaExtendWithTypes(ident, den, tpes, rest, loc) =>
+      for {
+        ts <- traverse(tpes)(lookupType(_, ns0, root))
+        r <- lookupType(rest, ns0, root)
+        pred = mkPredicate(den, ts, loc)
+        schema = Type.mkSchemaExtend(Name.mkPred(ident), pred, r, loc)
+      } yield schema
+
+    case NamedAst.Type.Relation(tpes, loc) =>
+      for {
+        ts <- traverse(tpes)(lookupType(_, ns0, root))
+        rel = Type.mkRelation(ts, loc)
+      } yield rel
+
+    case NamedAst.Type.Lattice(tpes, loc) =>
+      for {
+        ts <- traverse(tpes)(lookupType(_, ns0, root))
+        lat = Type.mkLattice(ts, loc)
+      } yield lat
+
+    case NamedAst.Type.Native(fqn, loc) =>
+      fqn match {
+        case "java.math.BigInteger" => Type.mkBigInt(loc).toSuccess
+        case "java.lang.String" => Type.mkString(loc).toSuccess
+        case _ => lookupJvmClass(fqn, loc) map {
+          case clazz => Type.mkNative(clazz, loc)
+        }
+      }
+
+    case NamedAst.Type.Arrow(tparams0, eff0, tresult0, loc) =>
+      for {
+        tparams <- traverse(tparams0)(lookupType(_, ns0, root))
+        tresult <- lookupType(tresult0, ns0, root)
+        eff <- lookupType(eff0, ns0, root)
+      } yield Type.mkUncurriedArrowWithEffect(tparams, eff, tresult, loc)
+
+    case NamedAst.Type.Apply(base0, targ0, loc) =>
+      for {
+        tpe1 <- lookupType(base0, ns0, root)
+        tpe2 <- lookupType(targ0, ns0, root)
+        app = Type.Apply(tpe1, tpe2, loc)
+      } yield app
+
+    case NamedAst.Type.True(loc) =>
+      Type.mkTrue(loc).toSuccess
+
+    case NamedAst.Type.False(loc) =>
+      Type.mkFalse(loc).toSuccess
+
+    case NamedAst.Type.Not(tpe, loc) =>
+      mapN(lookupType(tpe, ns0, root)) {
+        case t => Type.mkNot(t, loc)
+      }
+
+    case NamedAst.Type.And(tpe1, tpe2, loc) =>
+      mapN(lookupType(tpe1, ns0, root), lookupType(tpe2, ns0, root)) {
+        case (t1, t2) => mkAnd(t1, t2, loc)
+      }
+
+    case NamedAst.Type.Or(tpe1, tpe2, loc) =>
+      mapN(lookupType(tpe1, ns0, root), lookupType(tpe2, ns0, root)) {
+        case (t1, t2) => mkOr(t1, t2, loc)
+      }
+
+    case NamedAst.Type.Ascribe(tpe, kind, loc) =>
+      mapN(lookupType(tpe, ns0, root)) {
+        t => Type.Ascribe(t, kind, loc)
+      }
+
   }
 
   /**
@@ -1856,24 +1974,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     *
     * Otherwise fails with a resolution error.
     */
-  private def getTypeAliasTypeIfAccessible(alia0: NamedAst.TypeAlias, targs: List[Type], ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], root: NamedAst.Root, loc: SourceLocation): Validation[Type, ResolutionError] = {
+  private def getTypeAliasTypeIfAccessible(alia0: NamedAst.TypeAlias, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation): Validation[Type, ResolutionError] = {
     getTypeAliasIfAccessible(alia0, ns0, loc) map {
-      namedAlias =>
-//        val alias = taenv(namedAlias.sym)
-        val tparams = namedAlias.tparams.tparams
-        val tpe0 = resolveType(namedAlias.tpe, ns0, taenv, root).get // MATT !!!!!!
-        val nParams = tparams.length
-        if (targs.length < nParams) {
-          ??? // MATT non-fully-applied alias
-        } else {
-          val (directArgs, extraArgs) = targs.splitAt(nParams)
-          val map: Map[Type.Var, Type] = tparams.map(_.tpe)
-            .zip(directArgs)
-            .toMap
-          val subst = Substitution(map)
-          val tpe = subst(tpe0)
-          Type.mkApply(tpe, extraArgs, loc)
-        }
+      alias => mkUnappliedTypeAlias(alias.sym, loc)
     }
   }
 
@@ -2043,7 +2146,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Construct the type alias type constructor for the given symbol `sym` with the given kind `k`.
     */
-  def mkUnkindedTypeAlias(sym: Symbol.TypeAliasSym, tpe: Type, loc: SourceLocation): Type = Type.Cst(TypeConstructor.UnkindedAlias(sym, tpe), loc)
+  def mkUnappliedTypeAlias(sym: Symbol.TypeAliasSym, loc: SourceLocation): Type = Type.Cst(TypeConstructor.UnappliedAlias(sym), loc)
 
   /**
     * Constructs a predicate type.

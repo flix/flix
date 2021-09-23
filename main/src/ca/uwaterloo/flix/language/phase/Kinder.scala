@@ -781,10 +781,11 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       // Lookup the enum kind
       val kind = getEnumKind(root.enums(sym))
       TypeConstructor.KindedEnum(sym, kind)
-    case TypeConstructor.UnkindedAlias(sym) =>
+    case TypeConstructor.UnkindedAlias(sym, tpe) =>
       // Lookup the type alias kind
       val kind = getTypeAliasKind(root.typealiases(sym))
-      TypeConstructor.KindedAlias(sym, kind)
+      // MATT also visit type
+      TypeConstructor.KindedAlias(sym, kind, tpe)
     case _: TypeConstructor.KindedEnum => throw InternalCompilerException("Unexpected kinded enum.")
     case _: TypeConstructor.KindedAlias => throw InternalCompilerException("Unexpected kinded type alias.")
     case t => t
@@ -987,6 +988,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       // MATT need to get tpe kind
       // MATT but tpe is unkinded
       // MATT idea: topological sort in resolver, then can fold over this list to do Kinding
+    ???
   }
 
   /**

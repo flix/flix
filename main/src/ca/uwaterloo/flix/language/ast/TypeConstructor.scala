@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.{EliminatedBy, IntroducedBy}
-import ca.uwaterloo.flix.language.phase.Kinder
+import ca.uwaterloo.flix.language.phase.{Kinder, Resolver}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
@@ -223,6 +223,12 @@ object TypeConstructor {
     */
   @EliminatedBy(Kinder.getClass)
   case class UnkindedAlias(sym: Symbol.TypeAliasSym, tpe: Type) extends TypeConstructor {
+    override def kind: Kind = throw InternalCompilerException("Attempt to access kind of unkinded type constructor")
+  }
+
+  // MATT docs
+  @EliminatedBy(Resolver.getClass)
+  case class UnappliedAlias(sym: Symbol.TypeAliasSym) extends TypeConstructor {
     override def kind: Kind = throw InternalCompilerException("Attempt to access kind of unkinded type constructor")
   }
 
