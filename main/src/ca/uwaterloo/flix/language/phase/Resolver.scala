@@ -140,10 +140,39 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     }
   }
 
-  private def resolveTypeAliases(aliases: Iterable[NamedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root): Validation[List[ResolvedAst.TypeAlias], ResolutionError] = {
-    // MATT Khan's algo
-    def topSort(aliases: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias]): Unit = {
+  private def resolveTypeAliases(aliases0: Iterable[NamedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root): Validation[List[ResolvedAst.TypeAlias], ResolutionError] = {
+
+    // MATT docs
+    def semiResolveTypeAlias(alias: NamedAst.TypeAlias): Validation[ResolvedAst.TypeAlias, ResolutionError] = alias match {
+      case NamedAst.TypeAlias(doc, mod, sym, tparams0, tpe0, loc) =>
+        val tparams = resolveTypeParams(tparams0, ns0, root)
+        semiResolveType(tpe0, ns0, root) map {
+          tpe => ResolvedAst.TypeAlias(doc, mod, sym, tparams, tpe, loc)
+        }
     }
+
+    def getAliasUses(tpe: Type): List[Type] = tpe match {
+      case value: Type.Var =>
+      case baseType: Type.BaseType =>
+      case Type.KindedVar(id, kind, loc, rigidity, text) =>
+      case Type.UnkindedVar(id, loc, rigidity, text) =>
+      case Type.Ascribe(tpe, kind, loc) =>
+      case Type.Cst(tc, loc) =>
+      case Type.Apply(tpe1, tpe2, loc) =>
+
+    }
+
+    def findResolutionOrder(aliases: Iterable[NamedAst.TypeAlias]): Validation[List[ResolvedAst.TypeAlias], ResolutionError] = {
+      val aliasSyms = aliases.map(_.sym)
+      val getUses =
+    }
+
+    // Step 1: partially resolve each type alias
+
+    for {
+      aliases <- traverse(aliases0)(semiResolveTypeAlias)
+      sorted <- ???
+    } yield ()
     val map = Validation.fold(aliases, Map.empty[Symbol.TypeAliasSym, ResolvedAst.TypeAlias]) {
       case (acc, NamedAst.TypeAlias(doc, mod, sym, tparams0, tpe0, loc)) =>
         semiResolveType(tpe0, ns0, root) map {
@@ -152,6 +181,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             acc + (sym -> ResolvedAst.TypeAlias(doc, mod, sym, tparams, tpe, loc))
         }
     }
+
+    // Step 2: topologically sort them
+
+
+
     ??? // MATT
   }
 
