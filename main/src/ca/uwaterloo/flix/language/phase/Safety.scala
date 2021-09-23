@@ -10,6 +10,8 @@ import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
+import scala.annotation.tailrec
+
 /**
   * Performs safety and well-formedness.
   */
@@ -270,12 +272,38 @@ object Safety extends Phase[Root, Root] {
       case Polarity.Negative =>
         // Compute the free variables in the terms which are *not* bound by the lexical scope.
         val freeVars = terms.flatMap(freeVarsOf).toSet intersect quantVars
+        val errors = checkNegativeWildcards(terms)
 
         // Check if any free variables are not positively bound.
-        ((freeVars -- posVars) map {
-          case unboundVar => SafetyError.IllegalNonPositivelyBoundVariable(unboundVar, loc)
-        }).toList
+        errors ++ ((freeVars -- posVars) map (unboundVar => SafetyError.IllegalNonPositivelyBoundVariable(unboundVar, loc))).toList
     }
+  }
+
+  private def checkNegativeWildcards(terms: List[TypedAst.Pattern]): List[CompilationError] = {
+    terms.flatMap(checkNegativeWildcards)
+  }
+
+  @tailrec
+  private def checkNegativeWildcards(term: TypedAst.Pattern): List[CompilationError] = term match {
+    case Pattern.Wild(_, loc) => List(SafetyError.IllegalNonPositivelyBoundWildcard(loc))
+    case Pattern.Var(_, _, _) => Nil
+    case Pattern.Unit(_) => Nil
+    case Pattern.True(_) => Nil
+    case Pattern.False(_) => Nil
+    case Pattern.Char(_, _) => Nil
+    case Pattern.Float32(_, _) => Nil
+    case Pattern.Float64(_, _) => Nil
+    case Pattern.Int8(_, _) => Nil
+    case Pattern.Int16(_, _) => Nil
+    case Pattern.Int32(_, _) => Nil
+    case Pattern.Int64(_, _) => Nil
+    case Pattern.BigInt(_, _) => Nil
+    case Pattern.Str(_, _) => Nil
+    case Pattern.Tag(_, _, pat, _, _) => checkNegativeWildcards(pat)
+    case Pattern.Tuple(elms, _, _) => checkNegativeWildcards(elms)
+    case Pattern.Array(elms, _, _) => checkNegativeWildcards(elms)
+    case Pattern.ArrayTailSpread(elms, _, _, _) => checkNegativeWildcards(elms)
+    case Pattern.ArrayHeadSpread(_, elms, _, _) => checkNegativeWildcards(elms)
   }
 
   /**
