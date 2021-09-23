@@ -58,4 +58,11 @@ namespace Stream {
         case Yield(x, s1) => toListAcc(next, s1, ks -> k(x :: ks))
     }
 
+    ///
+    /// Returns a stream of all integers between `b` (inclusive) and `e` (exclusive).
+    ///
+    pub def range(b: Int32, e: Int32): Stream[Int32, Int32] =
+        let next = x -> if (x >= e) Done else Yield(x, x + 1);
+        Stream(next, b)
+
 }
