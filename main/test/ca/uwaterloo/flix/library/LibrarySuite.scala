@@ -46,6 +46,7 @@ class LibrarySuite extends Suites(
       "main/test/ca/uwaterloo/flix/library/TestLazyList.flix",
       "main/test/ca/uwaterloo/flix/library/TestList.flix",
       "main/test/ca/uwaterloo/flix/library/TestSet.flix",
+      "main/test/ca/uwaterloo/flix/library/TestStream.flix",
       "main/test/ca/uwaterloo/flix/library/TestMap.flix",
       "main/test/ca/uwaterloo/flix/library/TestNel.flix",
       "main/test/ca/uwaterloo/flix/library/TestString.flix",
