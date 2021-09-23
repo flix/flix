@@ -1254,37 +1254,41 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Record: Rule1[ParsedAst.Type] = {
+      def RecordFieldType: Rule1[ParsedAst.RecordFieldType] = rule {
+        SP ~ Names.Field ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.RecordFieldType
+      }
+
       rule {
         SP ~ atomic("{") ~ optWS ~ zeroOrMore(RecordFieldType).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ optional(optWS ~ "|" ~ optWS ~ Names.Variable) ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.Record
       }
     }
 
-    def RecordRow: Rule1[ParsedAst.Type] = rule {
-      SP ~ atomic("(") ~ optWS ~ zeroOrMore(RecordRowFieldType).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ optional(optWS ~ "|" ~ optWS ~ Names.Variable) ~ optWS ~ ")" ~ SP ~> ParsedAst.Type.RecordRow
+    def RecordRow: Rule1[ParsedAst.Type] = {
+      def RecordRowFieldType: Rule1[ParsedAst.RecordFieldType] = rule {
+        SP ~ Names.Field ~ optWS ~ "::" ~ optWS ~ Type ~ SP ~> ParsedAst.RecordFieldType
+      }
+
+      rule {
+        SP ~ atomic("(") ~ optWS ~ zeroOrMore(RecordRowFieldType).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ optional(optWS ~ "|" ~ optWS ~ Names.Variable) ~ optWS ~ ")" ~ SP ~> ParsedAst.Type.RecordRow
+      }
     }
 
-    private def RecordFieldType: Rule1[ParsedAst.RecordFieldType] = rule {
-      SP ~ Names.Field ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.RecordFieldType
-    }
+    def Schema: Rule1[ParsedAst.Type] = {
+      def PredicateWithAlias: Rule1[ParsedAst.PredicateType.PredicateWithAlias] = rule {
+        SP ~ Names.QualifiedPredicate ~ optional(TypeArguments) ~ SP ~> ParsedAst.PredicateType.PredicateWithAlias
+      }
 
-    private def RecordRowFieldType: Rule1[ParsedAst.RecordFieldType] = rule {
-      SP ~ Names.Field ~ optWS ~ "::" ~ optWS ~ Type ~ SP ~> ParsedAst.RecordFieldType
-    }
+      def RelPredicateWithTypes: Rule1[ParsedAst.PredicateType.RelPredicateWithTypes] = rule {
+        SP ~ Names.Predicate ~ optWS ~ "(" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.PredicateType.RelPredicateWithTypes
+      }
 
-    def Schema: Rule1[ParsedAst.Type] = rule {
-      SP ~ atomic("#{") ~ optWS ~ zeroOrMore(RelPredicateWithTypes | LatPredicateWithTypes | PredicateWithAlias).separatedBy(optWS ~ "," ~ optWS) ~ optional(optWS ~ "|" ~ optWS ~ Names.Variable) ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.Schema
-    }
+      def LatPredicateWithTypes: Rule1[ParsedAst.PredicateType.LatPredicateWithTypes] = rule {
+        SP ~ Names.Predicate ~ optWS ~ "(" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ";" ~ optWS ~ Type ~ optWS ~ ")" ~ SP ~> ParsedAst.PredicateType.LatPredicateWithTypes
+      }
 
-    private def PredicateWithAlias: Rule1[ParsedAst.PredicateType.PredicateWithAlias] = rule {
-      SP ~ Names.QualifiedPredicate ~ optional(TypeArguments) ~ SP ~> ParsedAst.PredicateType.PredicateWithAlias
-    }
-
-    private def RelPredicateWithTypes: Rule1[ParsedAst.PredicateType.RelPredicateWithTypes] = rule {
-      SP ~ Names.Predicate ~ optWS ~ "(" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.PredicateType.RelPredicateWithTypes
-    }
-
-    private def LatPredicateWithTypes: Rule1[ParsedAst.PredicateType.LatPredicateWithTypes] = rule {
-      SP ~ Names.Predicate ~ optWS ~ "(" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ";" ~ optWS ~ Type ~ optWS ~ ")" ~ SP ~> ParsedAst.PredicateType.LatPredicateWithTypes
+      rule {
+        SP ~ atomic("#{") ~ optWS ~ zeroOrMore(RelPredicateWithTypes | LatPredicateWithTypes | PredicateWithAlias).separatedBy(optWS ~ "," ~ optWS) ~ optional(optWS ~ "|" ~ optWS ~ Names.Variable) ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.Schema
+      }
     }
 
     def Native: Rule1[ParsedAst.Type] = rule {
