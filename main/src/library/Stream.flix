@@ -58,4 +58,57 @@ namespace Stream {
         case Yield(x, s1) => toListAcc(next, s1, ks -> k(x :: ks))
     }
 
+    ///
+    /// Returns a stream of all integers between `b` (inclusive) and `e` (exclusive).
+    ///
+    pub def range(b: Int32, e: Int32): Stream[Int32, Int32] =
+        let next = x -> if (x >= e) Done else Yield(x, x + 1);
+        Stream(next, b)
+
+    ///
+    /// Returns a stream of every element in `s` that satisfies the predicate `f`.
+    ///
+    /// Whether `f` is applied eagerly or lazily depends on its purity:
+    ///
+    /// - If `f` is pure then it is applied lazily.
+    /// - If `f` is impure then it is applied eagerly.
+    ///
+    pub def filter(f: a -> Bool & ef, s: Stream[a, s]): Stream[a, s] & ef =
+        if (reify ef)
+            filterL(f as a -> Bool & Pure,   s)
+        else
+            filterE(f as a -> Bool & Impure, s) as & ef
+
+    ///
+    /// Returns a stream of every element in `s` that satisfies the predicate `f`.
+    ///
+    /// Applies `f` lazily.
+    ///
+    def filterL(f: a -> Bool, s: Stream[a, s]): Stream[a, s] =
+        let Stream(next0, s0) = s;
+        let next1 = s1 -> match next0(s1) {
+            case Done         => Done
+            case Skip(s2)     => Skip(s2)
+            case Yield(x, s2) => if (f(x)) Yield(x, s2) else Skip(s2)
+        };
+        Stream(next1, s0)
+
+    ///
+    /// Returns a stream of every element in `s` that satisfies the predicate `f`.
+    ///
+    /// Applies `f` eagerly.
+    ///
+    def filterE(f: a -> Bool & Impure, s: Stream[a, s]): Stream[a, s] & Impure =
+        let Stream(next, s1) = s;
+        (filterEAcc(f, next, s1, ks -> ks) |> List.toStream) as Stream[a, s]
+
+    ///
+    /// Helper function for `filterE`.
+    ///
+    def filterEAcc(f: a -> Bool & Impure, next: s -> Step[a, s], s0: s, k: List[a] -> List[a]): List[a] & Impure = match next(s0) {
+        case Done         => k(Nil)
+        case Skip(s1)     => filterEAcc(f, next, s1, k)
+        case Yield(x, s1) => if (f(x)) filterEAcc(f, next, s1, ks -> k(x :: ks)) else filterEAcc(f, next, s1, k)
+    }
+
 }
