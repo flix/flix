@@ -34,9 +34,9 @@ object FormatType {
 
     def formatWellFormedRecordRow(row: Type, sep: String): String = flattenRecordRow(row) match {
       case FlatNestable(fields, Type.Cst(TypeConstructor.RecordRowEmpty, _)) =>
-        fields.map { case (field, tpe) => formatRecordField(field, tpe, sep) }.mkString(", ")
+        fields.map { case (field, tpe) => formatRecordField(field, tpe) }.mkString(", ")
       case FlatNestable(fields, rest) =>
-        val fieldString = fields.map { case (field, tpe) => formatRecordField(field, tpe, sep) }.mkString(", ")
+        val fieldString = fields.map { case (field, tpe) => formatRecordField(field, tpe) }.mkString(", ")
         s"$fieldString | ${visit(rest)}"
     }
 
@@ -48,8 +48,8 @@ object FormatType {
         s"$fieldString | ${visit(rest)}"
     }
 
-    def formatRecordField(field: String, tpe: Type, sep: String): String = {
-      s"$field$sep${visit(tpe)}"
+    def formatRecordField(field: String, tpe: Type): String = {
+      s"$field :: ${visit(tpe)}"
     }
 
     def formatSchemaField(name: String, tpe: Type): String = {
