@@ -4221,7 +4221,7 @@ def sortBy08(): Bool & Impure = testSortByVsSort([5,3,0,4,1,2])
 def sortBy09(): Bool & Impure = testSortByVsSort([2,3,0,4,1,2])
 
 enum R {
-    case R({i: Int32, s: String})
+    case R({i :: Int32, s :: String})
 }
 
 instance Eq[R] {

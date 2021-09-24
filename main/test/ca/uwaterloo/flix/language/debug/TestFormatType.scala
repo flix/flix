@@ -28,7 +28,7 @@ class TestFormatType extends FunSuite with TestUtils {
   test("FormatType.WellFormedType.Record.External.01") {
     val tpe = Type.mkRecord(Type.mkRecordRowExtend(Name.Field("x", loc), Type.Int32, Type.mkRecordRowExtend(Name.Field("y", loc), Type.Str, Type.RecordRowEmpty, loc), loc), loc)
 
-    val expected = "{ x: Int32, y: String }"
+    val expected = "{ x :: Int32, y :: String }"
     val actual = FormatType.formatType(tpe)(Audience.External)
 
     assert(actual == expected)
@@ -38,7 +38,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val rest = Type.KindedVar(0, Kind.RecordRow, loc, Rigidity.Rigid)
     val tpe = Type.mkRecord(Type.mkRecordRowExtend(Name.Field("x", loc), Type.Int32, rest, loc), loc)
 
-    val expected = "{ x: Int32 | '0 }"
+    val expected = "{ x :: Int32 | '0 }"
     val actual = FormatType.formatType(tpe)(Audience.External)
 
     assert(actual == expected)
@@ -174,7 +174,7 @@ class TestFormatType extends FunSuite with TestUtils {
   test("FormatType.WellFormedType.Record.Internal.01") {
     val tpe = Type.mkRecord(Type.mkRecordRowExtend(Name.Field("x", loc), Type.Int32, Type.mkRecordRowExtend(Name.Field("y", loc), Type.Str, Type.RecordRowEmpty, loc), loc), loc)
 
-    val expected = "{ x: Int32, y: String }"
+    val expected = "{ x :: Int32, y :: String }"
     val actual = FormatType.formatType(tpe)(Audience.Internal)
 
     assert(actual == expected)
@@ -184,7 +184,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val rest = Type.KindedVar(0, Kind.RecordRow, loc, Rigidity.Rigid)
     val tpe = Type.mkRecord(Type.mkRecordRowExtend(Name.Field("x", loc), Type.Int32, rest, loc), loc)
 
-    val expected = "{ x: Int32 | '0 }"
+    val expected = "{ x :: Int32 | '0 }"
     val actual = FormatType.formatType(tpe)(Audience.Internal)
 
     assert(actual == expected)

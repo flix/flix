@@ -334,8 +334,8 @@ object FormatType {
     * A flat representation of a schema or record.
     *
     * Contains the fields and their types as a list at the top level.
-    * This better mirrors the structure of records and schemas as they are displayed (e.g. `{ x: Int8, y: Bool | r }`)
-    * rather than their true underlying shape (e.g. `{ x: Int8 | { y: Bool | r } }`).
+    * This better mirrors the structure of records and schemas as they are displayed (e.g. `{ x :: Int8, y :: Bool | r }`)
+    * rather than their true underlying shape (e.g. `{ x :: Int8 | { y :: Bool | r } }`).
     */
   private case class FlatNestable(fields: List[(String, Type)], rest: Type) {
     def ::(head: (String, Type)): FlatNestable = {
