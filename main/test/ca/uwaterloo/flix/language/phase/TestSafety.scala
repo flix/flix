@@ -118,7 +118,7 @@ class TestSafety extends FunSuite with TestUtils {
     val input =
       """
         |pub def f(): #{ A(Int), B(Int) } = #{
-        |    A(1) :- not B(z), A(z), B(_).
+        |    A(1) :- not B(z), A(z), not B(_).
         |}
       """.stripMargin
     val result = compile(input, DefaultOptions)
