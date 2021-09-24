@@ -1446,20 +1446,25 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         tup = Type.mkTuple(elms, loc)
       } yield tup
 
-    case NamedAst.Type.RecordEmpty(loc) =>
-      Type.RecordEmpty.toSuccess
+    case NamedAst.Type.RecordRowEmpty(loc) =>
+      Type.RecordRowEmpty.toSuccess
 
-    case NamedAst.Type.RecordExtend(field, value, rest, loc) =>
+    case NamedAst.Type.RecordRowExtend(field, value, rest, loc) =>
       for {
         v <- lookupType(value, ns0, root)
         r <- lookupType(rest, ns0, root)
-        rec = Type.mkRecordExtend(field, v, r, loc)
+        rec = Type.mkRecordRowExtend(field, v, r, loc)
       } yield rec
 
-    case NamedAst.Type.SchemaEmpty(loc) =>
-      Type.SchemaEmpty.toSuccess
+    case NamedAst.Type.Record(row, loc) =>
+      for {
+        r <- lookupType(row, ns0, root)
+      } yield Type.mkRecord(r, loc)
 
-    case NamedAst.Type.SchemaExtendWithAlias(qname, targs, rest, loc) =>
+    case NamedAst.Type.SchemaRowEmpty(loc) =>
+      Type.SchemaRowEmpty.toSuccess
+
+    case NamedAst.Type.SchemaRowExtendWithAlias(qname, targs, rest, loc) =>
       // Lookup the type alias.
       lookupTypeAlias(qname, ns0, root) match {
         case None =>
@@ -1473,17 +1478,22 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             r <- lookupType(rest, ns0, root)
             app = Type.mkApply(t, ts, loc)
             tpe = simplify(app)
-            schema = Type.mkSchemaExtend(Name.mkPred(qname.ident), tpe, r, loc)
+            schema = Type.mkSchemaRowExtend(Name.mkPred(qname.ident), tpe, r, loc)
           } yield schema
       }
 
-    case NamedAst.Type.SchemaExtendWithTypes(ident, den, tpes, rest, loc) =>
+    case NamedAst.Type.SchemaRowExtendWithTypes(ident, den, tpes, rest, loc) =>
       for {
         ts <- traverse(tpes)(lookupType(_, ns0, root))
         r <- lookupType(rest, ns0, root)
         pred = mkPredicate(den, ts, loc)
-        schema = Type.mkSchemaExtend(Name.mkPred(ident), pred, r, loc)
+        schema = Type.mkSchemaRowExtend(Name.mkPred(ident), pred, r, loc)
       } yield schema
+
+    case NamedAst.Type.Schema(row, loc) =>
+      for {
+        r <- lookupType(row, ns0, root)
+      } yield Type.mkSchema(r, loc)
 
     case NamedAst.Type.Relation(tpes, loc) =>
       for {
@@ -1886,13 +1896,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
       case TypeConstructor.Native(clazz) => clazz.toSuccess
 
-      case TypeConstructor.RecordEmpty => Class.forName("java.lang.Object").toSuccess
+      case TypeConstructor.Record => Class.forName("java.lang.Object").toSuccess
 
-      case TypeConstructor.RecordExtend(_) => Class.forName("java.lang.Object").toSuccess
+      case TypeConstructor.Schema => Class.forName("java.lang.Object").toSuccess
 
-      case TypeConstructor.SchemaEmpty => Class.forName("java.lang.Object").toSuccess
-
-      case TypeConstructor.SchemaExtend(_) => Class.forName("java.lang.Object").toSuccess
 
       case _ => ResolutionError.IllegalType(tpe, loc).toFailure
     }
@@ -1945,16 +1952,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       case tvar: Type.UnkindedVar => subst.getOrElse(tvar, tvar)
 
       case Type.Cst(_, _) => t
-
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field), _), tpe, _), rest, loc) =>
-        val t1 = eval(tpe, subst)
-        val t2 = eval(rest, subst)
-        Type.mkRecordExtend(field, t1, t2, loc)
-
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(pred), _), tpe, _), rest, loc) =>
-        val t1 = eval(tpe, subst)
-        val t2 = eval(rest, subst)
-        Type.mkSchemaExtend(pred, t1, t2, loc)
 
       case Type.Lambda(tvar, tpe, loc) => Type.Lambda(tvar, eval(tpe, subst), loc)
 

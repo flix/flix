@@ -769,9 +769,9 @@ namespace List {
     /// The function `f` must be pure.
     ///
     @Time(time(f) * length(xs)) @Space(space(f) * length(xs))
-    pub def filter(f: a -> Bool, xs: List[a]): List[a] = filterAcc(f, xs, Nil) |> List.reverse
+    pub def filter(f: a -> Bool & ef, xs: List[a]): List[a] & ef = filterAcc(f, xs, Nil) |> List.reverse
 
-    pub def filterAcc(f: a -> Bool, l: List[a], rs: List[a]): List[a] = match l {
+    pub def filterAcc(f: a -> Bool & ef, l: List[a], rs: List[a]): List[a] & ef = match l {
         case Nil => rs
         case x :: xs =>
             if (f(x)) filterAcc(f, xs, x :: rs) else filterAcc(f, xs, rs)
@@ -1284,12 +1284,12 @@ namespace List {
     ///
     /// `next` should return `None` to signal the end of building the list.
     ///
-    pub def unfoldWithIter(next: () ~> Option[a]): List[a] & Impure = unfoldWithIterHelper(next, xs -> xs)
+    pub def unfoldWithIter(next: Unit ~> Option[a]): List[a] & Impure = unfoldWithIterHelper(next, xs -> xs)
 
     ///
     /// Helper function for `unfoldWithIter`.
     ///
-    def unfoldWithIterHelper(next: () ~> Option[a], k: List[a] -> List[a]): List[a] & Impure = match next() {
+    def unfoldWithIterHelper(next: Unit ~> Option[a], k: List[a] -> List[a]): List[a] & Impure = match next() {
         case None => k(Nil)
         case Some(a) => unfoldWithIterHelper(next, xs -> k(a :: xs))
     }
@@ -1372,5 +1372,15 @@ namespace List {
             else
                 memberOfWith(f, x, rs)
     }
+
+    ///
+    /// Converts the list `l` to a `Stream`.
+    ///
+    pub def toStream(l: List[a]): Stream[a, List[a]] =
+        let next = s -> match s {
+            case Nil     => Done
+            case x :: xs => Yield(x, xs)
+        };
+        Stream(next, l)
 
 }

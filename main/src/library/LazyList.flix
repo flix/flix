@@ -40,7 +40,28 @@ instance Foldable[LazyList] {
     pub def foldRight(f: (a, b) -> b & ef, s: b, l: LazyList[a]): b & ef = LazyList.foldRight(f, s, l)
 }
 
+instance ToString[LazyList[a]] with ToString[a] {
+    pub def toString(l: LazyList[a]): String = LazyList.toString(l)
+}
+
 namespace LazyList {
+
+    ///
+    /// Converts the list `l` into a String.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    pub def toString(l: LazyList[a]): String with ToString[a] =
+        toStringHelper(l) as & Pure
+
+    ///
+    /// Helper function for `toString`.
+    ///
+    def toStringHelper(l: LazyList[a]): String & Impure with ToString[a] =
+        let sb = StringBuilder.new();
+        map(x -> StringBuilder.appendString!(sb, "${x} :: "), l);
+        StringBuilder.appendString!(sb, "ENil");
+        StringBuilder.toString(sb)
 
     ///
     /// Returns an empty LazyList.
@@ -176,9 +197,17 @@ namespace LazyList {
     ///
     def mapL(f: a -> b, l: LazyList[a]): LazyList[b] = match l {
         case ENil         => ENil
-        case ECons(x, xs) => LList(lazy LCons(f(x), lazy mapL(f,       xs)))
-        case LCons(x, xs) => LList(lazy LCons(f(x), lazy mapL(f, force xs)))
-        case LList(xs)    => LList(                 lazy mapL(f, force xs))
+        case ECons(x, xs) => LList(lazy LCons(f(x), lazy mapL1(f,       xs)))
+        case LCons(x, xs) => LList(lazy LCons(f(x), lazy mapL1(f, force xs)))
+        case LList(xs)    => LList(                 lazy mapL1(f, force xs))
+    }
+
+    // TODO: DOC
+    def mapL1(f: a -> b, l: LazyList[a]): LazyList[b] = match l {
+        case ENil         => ENil
+        case ECons(x, xs) => LCons(f(x), lazy mapL1(f,       xs))
+        case LCons(x, xs) => LCons(f(x), lazy mapL1(f, force xs))
+        case LList(xs)    => LList(      lazy mapL1(f, force xs))
     }
 
     ///
@@ -837,6 +866,128 @@ namespace LazyList {
         case ECons(x, xs) => if (f(x)) dropWhileE(f,       xs) else l
         case LCons(x, xs) => if (f(x)) dropWhileE(f, force xs) else l
         case LList(xs)    => dropWhileE(f, force xs)
+    }
+
+    ///
+    /// Returns the first non-None result of applying the partial function `f` to each element of `l`.
+    ///
+    /// Returns `None` if every element `f(x)` of `l` is `None`.
+    ///
+    pub def findMap(f: a -> Option[b] & ef, l: LazyList[a]): Option[b] & ef = match l {
+        case ENil         => None
+        case ECons(x, xs) => match f(x) {
+            case None    => findMap(f, xs)
+            case Some(v) => Some(v)
+        }
+        case LCons(x, xs) => match f(x) {
+            case None    => findMap(f, force xs)
+            case Some(v) => Some(v)
+        }
+        case LList(xs)    => findMap(f, force xs)
+    }
+
+    ///
+    /// Collects the results of applying the partial function `f` to every element in `l`.
+    ///
+    /// Whether `f` is applied eagerly or lazily depends on its purity:
+    ///
+    /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
+    /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
+    ///
+    pub def filterMap(f: a -> Option[b] & ef, l: LazyList[a]): LazyList[b] & ef =
+        if (reify ef)
+            filterMapL(f as a -> Option[b] & Pure,   l)
+        else
+            filterMapE(f as a -> Option[b] & Impure, l) as & ef
+
+    ///
+    /// Collects the results of applying the partial function `f` to every element in `l`.
+    ///
+    /// Applies `f` lazily (i.e. the tail is not forced).
+    ///
+    def filterMapL(f: a -> Option[b], l: LazyList[a]): LazyList[b] = match l {
+        case ENil         => ENil
+        case ECons(x, xs) =>
+            LList(lazy match f(x) {
+                case None    => filterMapL(f, xs)
+                case Some(v) => LCons(v, lazy filterMapL(f, xs))
+            })
+        case LCons(x, xs) =>
+            LList(lazy match f(x) {
+                case None    => filterMapL(f, force xs)
+                case Some(v) => LCons(v, lazy filterMapL(f, force xs))
+            })
+        case LList(xs)    => LList(lazy filterMapL(f, force xs))
+    }
+
+    ///
+    /// Collects the results of applying the partial function `f` to every element in `l`.
+    ///
+    /// Applies `f` eagerly (i.e. the entire list `l` is forced).
+    ///
+    def filterMapE(f: a -> Option[b] & Impure, l: LazyList[a]): LazyList[b] & Impure =
+        filterMapEAcc(f, l, ks -> ks)
+
+    ///
+    /// Helper function for `filterMapE`.
+    ///
+    def filterMapEAcc(f: a -> Option[b] & Impure, l: LazyList[a], k: LazyList[b] -> LazyList[b]): LazyList[b] & Impure = match l {
+        case ENil         => k(ENil)
+        case ECons(x, xs) => match f(x) {
+            case None    => filterMapEAcc(f, xs, k)
+            case Some(v) => filterMapEAcc(f, xs, ks -> k(ECons(v, ks)))
+        }
+        case LCons(x, xs) => match f(x) {
+            case None    => filterMapEAcc(f, force xs, k)
+            case Some(v) => filterMapEAcc(f, force xs, ks -> k(ECons(v, ks)))
+        }
+        case LList(xs)    => filterMapEAcc(f, force xs, k)
+    }
+
+    ///
+    /// Returns a pair of lists `(l1, l2)`.
+    ///
+    /// `l1` contains all elements of `l` that satisfy the predicate `f`.
+    /// `l2` contains all elements of `l` that DO NOT satisfy the predicate `f`.
+    ///
+    pub def partition(f: a -> Bool & ef, l: LazyList[a]): (LazyList[a], LazyList[a]) & ef =
+        partitionAcc(f, l, (ks, ls) -> (ks, ls))
+
+    ///
+    /// Helper function for `partition`.
+    ///
+    def partitionAcc(f: a -> Bool & ef, l: LazyList[a], k: (LazyList[a], LazyList[a]) -> (LazyList[a], LazyList[a])): (LazyList[a], LazyList[a]) & ef = match l {
+        case ENil         => k(ENil, ENil)
+        case ECons(x, xs) => if (f(x)) partitionAcc(f,       xs, (ks, ls) -> k(ECons(x, ks), ls)) else partitionAcc(f,       xs, (ks, ls) -> k(ks, ECons(x, ls)))
+        case LCons(x, xs) => if (f(x)) partitionAcc(f, force xs, (ks, ls) -> k(ECons(x, ks), ls)) else partitionAcc(f, force xs, (ks, ls) -> k(ks, ECons(x, ls)))
+        case LList(xs)    => partitionAcc(f, force xs, k)
+    }
+
+    ///
+    /// `l1` is the longest prefix of `l` that satisfies the predicate `f`.
+    /// `l2` is the remainder of `l`.
+    ///
+    /// Forces elements in the list until the first element (inclusive) that does not satisfy the predicate `f`.
+    ///
+    pub def span(f: a -> Bool & ef, l: LazyList[a]): (LazyList[a], LazyList[a]) & ef =
+        spanAcc(f, l, (ks, ls) -> (ks, ls))
+
+    ///
+    /// Helper function for `span`.
+    ///
+    def spanAcc(f: a -> Bool & ef, l: LazyList[a], k: (LazyList[a], LazyList[a]) -> (LazyList[a], LazyList[a])): (LazyList[a], LazyList[a]) & ef = match l {
+        case ENil         => k(ENil, ENil)
+        case ECons(x, xs) =>
+            if (f(x))
+                spanAcc(f, xs, (ks, ls) -> k(ECons(x, ks), ls))
+            else
+                k(ENil, l)
+        case LCons(x, xs) =>
+            if (f(x))
+                spanAcc(f, force xs, (ks, ls) -> k(ECons(x, ks), ls))
+            else
+                k(ENil, l)
+        case LList(xs)    => spanAcc(f, force xs, k)
     }
 
 }

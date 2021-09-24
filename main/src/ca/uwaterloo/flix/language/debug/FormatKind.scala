@@ -11,8 +11,9 @@ object FormatKind {
     case Kind.Wild => "???"
     case Kind.Star => "Type"
     case Kind.Bool => "Bool"
-    case Kind.Record => "Record"
-    case Kind.Schema => "Schema"
+    case Kind.RecordRow => "RecordRow"
+    case Kind.SchemaRow => "SchemaRow"
+    case Kind.Predicate => "Predicate"
     // parenthesize the left because `->` is right-associative
     case Kind.Arrow(k1: Kind.Arrow, k2) => s"(${formatKind(k1)}) -> ${formatKind(k2)}"
     case Kind.Arrow(k1, k2) => s"${formatKind(k1)} -> ${formatKind(k2)}"

@@ -30,14 +30,12 @@ namespace Test/Enum/Kinding {
             case CBool1(Int -> Int & a)
         }
 
-        pub enum ERecord[a: Record] {
-            case CRecord1(a)
-            case CRecord2({ l: Int | a })
+        pub enum ERecordRow[a: RecordRow] {
+            case CRecordRow1({ l: Int | a })
         }
 
-        pub enum ESchema[a: Schema] {
-            case CSchema1(a)
-            case CSchema2(#{ R | a })
+        pub enum ESchemaRow[a: SchemaRow] {
+            case CSchemaRow1(#{ R | a })
         }
 
         // These pass kinding but cause a crash in the Finalizer.

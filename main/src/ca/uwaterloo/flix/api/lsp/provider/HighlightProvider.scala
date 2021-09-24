@@ -59,8 +59,8 @@ object HighlightProvider {
         case Entity.LocalVar(sym, _) => highlightVar(sym)
 
         case Entity.TypeCon(tc, loc) => tc match {
-          case TypeConstructor.RecordExtend(field) => highlightField(field)
-          case TypeConstructor.SchemaExtend(pred) => highlightPred(pred)
+          case TypeConstructor.RecordRowExtend(field) => highlightField(field)
+          case TypeConstructor.SchemaRowExtend(pred) => highlightPred(pred)
           case TypeConstructor.KindedEnum(sym, _) => highlightEnum(sym)
           case _ => mkNotFound(uri, pos)
         }

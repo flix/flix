@@ -308,15 +308,19 @@ object NamedAst {
 
     case class Tuple(elms: List[NamedAst.Type], loc: SourceLocation) extends NamedAst.Type
 
-    case class RecordEmpty(loc: SourceLocation) extends NamedAst.Type
+    case class RecordRowEmpty(loc: SourceLocation) extends NamedAst.Type
 
-    case class RecordExtend(field: Name.Field, tpe: NamedAst.Type, rest: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+    case class RecordRowExtend(field: Name.Field, tpe: NamedAst.Type, rest: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
-    case class SchemaEmpty(loc: SourceLocation) extends NamedAst.Type
+    case class Record(row: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
-    case class SchemaExtendWithAlias(qname: Name.QName, targs: List[NamedAst.Type], rest: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+    case class SchemaRowEmpty(loc: SourceLocation) extends NamedAst.Type
 
-    case class SchemaExtendWithTypes(ident: Name.Ident, den: Ast.Denotation, tpes: List[NamedAst.Type], rest: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+    case class SchemaRowExtendWithAlias(qname: Name.QName, targs: List[NamedAst.Type], rest: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+
+    case class SchemaRowExtendWithTypes(ident: Name.Ident, den: Ast.Denotation, tpes: List[NamedAst.Type], rest: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+
+    case class Schema(row: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
     case class Native(fqn: String, loc: SourceLocation) extends NamedAst.Type
 

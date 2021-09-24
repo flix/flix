@@ -1090,18 +1090,23 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case ts => NamedAst.Type.Tuple(ts, loc)
       }
 
-    case WeededAst.Type.RecordEmpty(loc) =>
-      NamedAst.Type.RecordEmpty(loc).toSuccess
+    case WeededAst.Type.RecordRowEmpty(loc) =>
+      NamedAst.Type.RecordRowEmpty(loc).toSuccess
 
-    case WeededAst.Type.RecordExtend(field, value, rest, loc) =>
+    case WeededAst.Type.RecordRowExtend(field, value, rest, loc) =>
       mapN(visitType(value, uenv0, tenv0), visitType(rest, uenv0, tenv0)) {
-        case (t, r) => NamedAst.Type.RecordExtend(field, t, r, loc)
+        case (t, r) => NamedAst.Type.RecordRowExtend(field, t, r, loc)
       }
 
-    case WeededAst.Type.SchemaEmpty(loc) =>
-      NamedAst.Type.SchemaEmpty(loc).toSuccess
+    case WeededAst.Type.Record(row, loc) =>
+      mapN(visitType(row, uenv0, tenv0)) {
+        r => NamedAst.Type.Record(r, loc)
+      }
 
-    case WeededAst.Type.SchemaExtendByAlias(qname, targs, rest, loc) =>
+    case WeededAst.Type.SchemaRowEmpty(loc) =>
+      NamedAst.Type.SchemaRowEmpty(loc).toSuccess
+
+    case WeededAst.Type.SchemaRowExtendByAlias(qname, targs, rest, loc) =>
       // Disambiguate the qname.
       val name = if (qname.isUnqualified) {
         uenv0.typesAndClasses.getOrElse(qname.ident.name, qname)
@@ -1110,12 +1115,17 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
       mapN(traverse(targs)(visitType(_, uenv0, tenv0)), visitType(rest, uenv0, tenv0)) {
-        case (ts, r) => NamedAst.Type.SchemaExtendWithAlias(name, ts, r, loc)
+        case (ts, r) => NamedAst.Type.SchemaRowExtendWithAlias(name, ts, r, loc)
       }
 
-    case WeededAst.Type.SchemaExtendByTypes(ident, den, tpes, rest, loc) =>
+    case WeededAst.Type.SchemaRowExtendByTypes(ident, den, tpes, rest, loc) =>
       mapN(traverse(tpes)(visitType(_, uenv0, tenv0)), visitType(rest, uenv0, tenv0)) {
-        case (ts, r) => NamedAst.Type.SchemaExtendWithTypes(ident, den, ts, r, loc)
+        case (ts, r) => NamedAst.Type.SchemaRowExtendWithTypes(ident, den, ts, r, loc)
+      }
+
+    case WeededAst.Type.Schema(row, loc) =>
+      mapN(visitType(row, uenv0, tenv0)) {
+        r => NamedAst.Type.Schema(r, loc)
       }
 
     case WeededAst.Type.Relation(tpes, loc) =>
@@ -1334,11 +1344,13 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.Ambiguous(qname, loc) => Nil
     case WeededAst.Type.Unit(loc) => Nil
     case WeededAst.Type.Tuple(elms, loc) => elms.flatMap(freeVars)
-    case WeededAst.Type.RecordEmpty(loc) => Nil
-    case WeededAst.Type.RecordExtend(l, t, r, loc) => freeVars(t) ::: freeVars(r)
-    case WeededAst.Type.SchemaEmpty(loc) => Nil
-    case WeededAst.Type.SchemaExtendByTypes(_, _, ts, r, loc) => ts.flatMap(freeVars) ::: freeVars(r)
-    case WeededAst.Type.SchemaExtendByAlias(_, ts, r, _) => ts.flatMap(freeVars) ::: freeVars(r)
+    case WeededAst.Type.RecordRowEmpty(loc) => Nil
+    case WeededAst.Type.RecordRowExtend(l, t, r, loc) => freeVars(t) ::: freeVars(r)
+    case WeededAst.Type.Record(row, loc) => freeVars(row)
+    case WeededAst.Type.SchemaRowEmpty(loc) => Nil
+    case WeededAst.Type.SchemaRowExtendByTypes(_, _, ts, r, loc) => ts.flatMap(freeVars) ::: freeVars(r)
+    case WeededAst.Type.SchemaRowExtendByAlias(_, ts, r, _) => ts.flatMap(freeVars) ::: freeVars(r)
+    case WeededAst.Type.Schema(row, loc) => freeVars(row)
     case WeededAst.Type.Relation(ts, loc) => ts.flatMap(freeVars)
     case WeededAst.Type.Lattice(ts, loc) => ts.flatMap(freeVars)
     case WeededAst.Type.Native(fqm, loc) => Nil
@@ -1362,11 +1374,13 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       case WeededAst.Type.Ambiguous(qname, loc) => Nil
       case WeededAst.Type.Unit(loc) => Nil
       case WeededAst.Type.Tuple(elms, loc) => elms.flatMap(visit)
-      case WeededAst.Type.RecordEmpty(loc) => Nil
-      case WeededAst.Type.RecordExtend(l, t, r, loc) => visit(t) ::: visit(r)
-      case WeededAst.Type.SchemaEmpty(loc) => Nil
-      case WeededAst.Type.SchemaExtendByTypes(_, _, ts, r, loc) => ts.flatMap(visit) ::: visit(r)
-      case WeededAst.Type.SchemaExtendByAlias(_, ts, r, _) => ts.flatMap(visit) ::: visit(r)
+      case WeededAst.Type.RecordRowEmpty(loc) => Nil
+      case WeededAst.Type.RecordRowExtend(l, t, r, loc) => visit(t) ::: visit(r)
+      case WeededAst.Type.Record(row, loc) => visit(row)
+      case WeededAst.Type.SchemaRowEmpty(loc) => Nil
+      case WeededAst.Type.SchemaRowExtendByTypes(_, _, ts, r, loc) => ts.flatMap(visit) ::: visit(r)
+      case WeededAst.Type.SchemaRowExtendByAlias(_, ts, r, _) => ts.flatMap(visit) ::: visit(r)
+      case WeededAst.Type.Schema(row, loc) => visit(row)
       case WeededAst.Type.Relation(ts, loc) => ts.flatMap(visit)
       case WeededAst.Type.Lattice(ts, loc) => ts.flatMap(visit)
       case WeededAst.Type.Native(fqm, loc) => Nil
