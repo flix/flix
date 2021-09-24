@@ -1621,18 +1621,18 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     val targs = tpe0.typeArguments
 
     baseType match {
-      case Type.Cst(TypeConstructor.UnappliedAlias(sym), loc) =>
+      case Type.Cst(TypeConstructor.UnappliedAlias(sym), _) =>
         val alias = taenv(sym)
         val tparams = alias.tparams.tparams
         val numParams = tparams.length
         if (targs.length < numParams) {
           ??? // MATT error: unapplied alias
         } else {
+          // MATT add docs
           traverse(targs)(finishResolveType(_, taenv)) map {
             resolvedArgs =>
               val (usedArgs, extraArgs) = resolvedArgs.splitAt(numParams)
-
-
+              Type.mkApply(applyAlias(alias, usedArgs, tpe0.loc), extraArgs, tpe0.loc)
           }
         }
     }
