@@ -175,7 +175,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     def finishResolveTypeAliases(aliases: List[ResolvedAst.TypeAlias]): Validation[Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ResolutionError] = {
       Validation.fold(aliases, Map.empty[Symbol.TypeAliasSym, ResolvedAst.TypeAlias]) {
         case (taenv, ResolvedAst.TypeAlias(doc, mod, sym, tparams, tpe0, loc)) =>
-          finishResolveType(tpe0, taenv, ns0, root) map {
+          finishResolveType(tpe0, taenv) map {
             tpe => ResolvedAst.TypeAlias(doc, mod, sym, tparams, tpe0, loc)
           }
 
@@ -1609,6 +1609,14 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   }
 
   private def finishResolveType(tpe0: Type, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias]): Validation[Type, ResolutionError] = {
+
+    def applyAlias(alias: ResolvedAst.TypeAlias, args: List[Type], loc: SourceLocation): Type = {
+      val map = alias.tparams.tparams.map(_.tpe).zip(args).toMap[Type.Var, Type]
+      val subst = Substitution(map)
+      val tpe = subst(alias.tpe)
+      Type.Cst(TypeConstructor.UnkindedAlias(alias.sym, tpe), loc)
+    }
+
     val baseType = tpe0.baseType
     val targs = tpe0.typeArguments
 
@@ -1620,8 +1628,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         if (targs.length < numParams) {
           ??? // MATT error: unapplied alias
         } else {
-          val (usedArgs, extraArgs) = targs.splitAt(numParams)
+          traverse(targs)(finishResolveType(_, taenv)) map {
+            resolvedArgs =>
+              val (usedArgs, extraArgs) = resolvedArgs.splitAt(numParams)
 
+
+          }
         }
     }
   }
