@@ -1223,7 +1223,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Type] = rule {
-      Arrow | Tuple | Record | Schema | Native | True | False | Pure | Impure | Not | Var | Ambiguous
+      Arrow | Tuple | Record | RecordRow | Schema | Native | True | False | Pure | Impure | Not | Var | Ambiguous
     }
 
     def Arrow: Rule1[ParsedAst.Type] = {
@@ -1260,6 +1260,16 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       rule {
         SP ~ atomic("{") ~ optWS ~ zeroOrMore(RecordFieldType).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ optional(optWS ~ "|" ~ optWS ~ Names.Variable) ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.Record
+      }
+    }
+
+    def RecordRow: Rule1[ParsedAst.Type] = {
+      def RecordRowFieldType: Rule1[ParsedAst.RecordFieldType] = rule {
+        SP ~ Names.Field ~ optWS ~ "::" ~ optWS ~ Type ~ SP ~> ParsedAst.RecordFieldType
+      }
+
+      rule {
+        SP ~ atomic("(") ~ optWS ~ zeroOrMore(RecordRowFieldType).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ optional(optWS ~ "|" ~ optWS ~ Names.Variable) ~ optWS ~ ")" ~ SP ~> ParsedAst.Type.RecordRow
       }
     }
 
@@ -1314,9 +1324,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ Names.QualifiedType ~ SP ~> ParsedAst.Type.Ambiguous
     }
 
-    def TypeArguments: Rule1[Seq[ParsedAst.Type]] = rule {
+    private def TypeArguments: Rule1[Seq[ParsedAst.Type]] = rule {
       "[" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]"
     }
+
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -1344,12 +1355,16 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ keyword("Bool") ~ SP ~> ParsedAst.Kind.Bool
     }
 
-    def Record: Rule1[ParsedAst.Kind.Record] = rule {
-      SP ~ keyword("Record") ~ SP ~> ParsedAst.Kind.Record
+    def Record: Rule1[ParsedAst.Kind.RecordRow] = rule {
+      SP ~ keyword("RecordRow") ~ SP ~> ParsedAst.Kind.RecordRow
     }
 
-    def Schema: Rule1[ParsedAst.Kind.Schema] = rule {
-      SP ~ keyword("Schema") ~ SP ~> ParsedAst.Kind.Schema
+    def Schema: Rule1[ParsedAst.Kind.SchemaRow] = rule {
+      SP ~ keyword("SchemaRow") ~ SP ~> ParsedAst.Kind.SchemaRow
+    }
+
+    def Predicate: Rule1[ParsedAst.Kind.Predicate] = rule {
+      SP ~ keyword("Predicate") ~ SP ~> ParsedAst.Kind.Predicate
     }
 
     def Parens: Rule1[ParsedAst.Kind] = rule {

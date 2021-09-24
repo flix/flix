@@ -292,12 +292,12 @@ object Type {
   /**
     * Represents the type of an empty record.
     */
-  val RecordEmpty: Type = Type.Cst(TypeConstructor.RecordEmpty, SourceLocation.Unknown)
+  val RecordRowEmpty: Type = Type.Cst(TypeConstructor.RecordRowEmpty, SourceLocation.Unknown)
 
   /**
     * Represents the type of an empty schema.
     */
-  val SchemaEmpty: Type = Type.Cst(TypeConstructor.SchemaEmpty, SourceLocation.Unknown)
+  val SchemaRowEmpty: Type = Type.Cst(TypeConstructor.SchemaRowEmpty, SourceLocation.Unknown)
 
   /**
     * Represents the Boolean True.
@@ -758,15 +758,29 @@ object Type {
   /**
     * Constructs a RecordExtend type.
     */
-  def mkRecordExtend(field: Name.Field, tpe: Type, rest: Type, loc: SourceLocation): Type = {
-    mkApply(Type.Cst(TypeConstructor.RecordExtend(field), loc), List(tpe, rest), loc)
+  def mkRecordRowExtend(field: Name.Field, tpe: Type, rest: Type, loc: SourceLocation): Type = {
+    mkApply(Type.Cst(TypeConstructor.RecordRowExtend(field), loc), List(tpe, rest), loc)
   }
 
   /**
     * Constructs a SchemaExtend type.
     */
-  def mkSchemaExtend(pred: Name.Pred, tpe: Type, rest: Type, loc: SourceLocation): Type = {
-    mkApply(Type.Cst(TypeConstructor.SchemaExtend(pred), loc), List(tpe, rest), loc)
+  def mkSchemaRowExtend(pred: Name.Pred, tpe: Type, rest: Type, loc: SourceLocation): Type = {
+    mkApply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), loc), List(tpe, rest), loc)
+  }
+
+  /**
+    * Constructs a Record type.
+    */
+  def mkRecord(tpe: Type, loc: SourceLocation): Type = {
+    Apply(Type.Cst(TypeConstructor.Record, loc), tpe, loc)
+  }
+
+  /**
+    * Constructs a Schema type.
+    */
+  def mkSchema(tpe: Type, loc: SourceLocation): Type = {
+    Apply(Type.Cst(TypeConstructor.Schema, loc), tpe, loc)
   }
 
   /**

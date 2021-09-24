@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
+import ca.uwaterloo.flix.language.ast.ParsedAst.RecordFieldType
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
@@ -1968,48 +1969,18 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.Tuple(sp1, elms, sp2) => WeededAst.Type.Tuple(elms.toList.map(visitType), mkSL(sp1, sp2))
 
     case ParsedAst.Type.Record(sp1, fields, restOpt, sp2) =>
-      def buildRecord(base: WeededAst.Type): WeededAst.Type = {
-        fields.foldRight(base) {
-          case (ParsedAst.RecordFieldType(ssp1, ident, t, ssp2), acc) =>
-            WeededAst.Type.RecordExtend(Name.mkField(ident), visitType(t), acc, mkSL(ssp1, ssp2))
-        }
-      }
+      val row = buildRecordRow(fields, restOpt, mkSL(sp1, sp2))
+      WeededAst.Type.Record(row, mkSL(sp1, sp2))
 
-      (fields, restOpt) match {
-        // Case 1: `{| r}` Polymorphic record with no fields. `r` must be a `Record` variable.
-        case (Nil, Some(ident)) => WeededAst.Type.Ascribe(WeededAst.Type.Var(ident, ident.loc), Kind.Record, mkSL(sp1, sp2))
-        // Case 2: `{x: Int}` Nonpolymorphic record. Base must be an empty record.
-        case (_, None) => buildRecord(WeededAst.Type.RecordEmpty(mkSL(sp1, sp2)))
-        // Case 3: `{x: Int | r}` Polymorphic record with field. `r` must be a `Record` variable.
-        case (_, Some(base)) => buildRecord(WeededAst.Type.Var(base, base.loc))
-      }
+    case ParsedAst.Type.RecordRow(sp1, fields, restOpt, sp2) =>
+      buildRecordRow(fields, restOpt, mkSL(sp1, sp2))
 
     case ParsedAst.Type.Schema(sp1, predicates, restOpt, sp2) =>
-      def buildSchema(base: WeededAst.Type): WeededAst.Type = {
-        predicates.foldRight(base) {
-          case (ParsedAst.PredicateType.PredicateWithAlias(ssp1, qname, targs, ssp2), acc) =>
-            val ts = targs match {
-              case None => Nil
-              case Some(xs) => xs.map(visitType).toList
-            }
-            WeededAst.Type.SchemaExtendByAlias(qname, ts, acc, mkSL(ssp1, ssp2))
+      val row = buildSchemaRow(predicates, restOpt, mkSL(sp1, sp2))
+      WeededAst.Type.Schema(row, mkSL(sp1, sp2))
 
-          case (ParsedAst.PredicateType.RelPredicateWithTypes(ssp1, name, ts, ssp2), acc) =>
-            WeededAst.Type.SchemaExtendByTypes(name, Ast.Denotation.Relational, ts.toList.map(visitType), acc, mkSL(ssp1, ssp2))
-
-          case (ParsedAst.PredicateType.LatPredicateWithTypes(ssp1, name, ts, tpe, ssp2), acc) =>
-            WeededAst.Type.SchemaExtendByTypes(name, Ast.Denotation.Latticenal, ts.toList.map(visitType) ::: visitType(tpe) :: Nil, acc, mkSL(ssp1, ssp2))
-        }
-      }
-
-      (predicates, restOpt) match {
-        // Case 1: `#{| r}` Polymorphic schema with no fields. `r` must be a `Schema` variable.
-        case (Nil, Some(ident)) => WeededAst.Type.Ascribe(WeededAst.Type.Var(ident, ident.loc), Kind.Schema, mkSL(sp1, sp2))
-        // Case 2: `#{X(Int)}` Nonpolymorphic schema. Base must be an empty schema.
-        case (_, None) => buildSchema(WeededAst.Type.SchemaEmpty(mkSL(sp1, sp2)))
-        // Case 3: `#{X(Int) | r}` Polymorphic schema with field. `r` must be a `Schema` variable.
-        case (_, Some(ident)) => buildSchema(WeededAst.Type.Var(ident, mkSL(sp1, sp2)))
-      }
+    case ParsedAst.Type.SchemaRow(sp1, predicates, restOpt, sp2) =>
+      buildSchemaRow(predicates, restOpt, mkSL(sp1, sp2))
 
     case ParsedAst.Type.UnaryImpureArrow(tpe1, tpe2, sp2) =>
       val loc = mkSL(leftMostSourcePosition(tpe1), sp2)
@@ -2084,6 +2055,48 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val t = visitType(tpe)
       val k = visitKind(kind)
       WeededAst.Type.Ascribe(t, k, mkSL(sp1, sp2))
+  }
+
+  /**
+    * Builds a record row from the given fields and optional rest variable.
+    */
+  private def buildRecordRow(fields: Seq[RecordFieldType], restOpt: Option[Name.Ident], loc: SourceLocation): WeededAst.Type = {
+    // If rest is absent, then it is the empty record row
+    val rest = restOpt match {
+      case None => WeededAst.Type.RecordRowEmpty(loc)
+      case Some(name) => WeededAst.Type.Var(name, name.loc)
+    }
+
+    fields.foldRight(rest) {
+      case (ParsedAst.RecordFieldType(ssp1, ident, t, ssp2), acc) =>
+        WeededAst.Type.RecordRowExtend(Name.mkField(ident), visitType(t), acc, mkSL(ssp1, ssp2))
+    }
+  }
+
+  /**
+    * Builds a schema row from the given predicates and optional rest identifier.
+    */
+  private def buildSchemaRow(predicates: Seq[ParsedAst.PredicateType], restOpt: Option[Name.Ident], loc: SourceLocation): WeededAst.Type = {
+    // If rest is absent, then it is the empty schema row
+    val rest = restOpt match {
+      case None => WeededAst.Type.SchemaRowEmpty(loc)
+      case Some(name) => WeededAst.Type.Var(name, name.loc)
+    }
+
+    predicates.foldRight(rest) {
+      case (ParsedAst.PredicateType.PredicateWithAlias(ssp1, qname, targs, ssp2), acc) =>
+        val ts = targs match {
+          case None => Nil
+          case Some(xs) => xs.map(visitType).toList
+        }
+        WeededAst.Type.SchemaRowExtendByAlias(qname, ts, acc, mkSL(ssp1, ssp2))
+
+      case (ParsedAst.PredicateType.RelPredicateWithTypes(ssp1, name, ts, ssp2), acc) =>
+        WeededAst.Type.SchemaRowExtendByTypes(name, Ast.Denotation.Relational, ts.toList.map(visitType), acc, mkSL(ssp1, ssp2))
+
+      case (ParsedAst.PredicateType.LatPredicateWithTypes(ssp1, name, ts, tpe, ssp2), acc) =>
+        WeededAst.Type.SchemaRowExtendByTypes(name, Ast.Denotation.Latticenal, ts.toList.map(visitType) ::: visitType(tpe) :: Nil, acc, mkSL(ssp1, ssp2))
+    }
   }
 
   /**
@@ -2226,8 +2239,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   private def visitKind(kind: ParsedAst.Kind): Kind = kind match {
     case ParsedAst.Kind.Star(sp1, sp2) => Kind.Star
     case ParsedAst.Kind.Bool(sp1, sp2) => Kind.Bool
-    case ParsedAst.Kind.Record(sp1, sp2) => Kind.Record
-    case ParsedAst.Kind.Schema(sp1, sp2) => Kind.Schema
+    case ParsedAst.Kind.RecordRow(sp1, sp2) => Kind.RecordRow
+    case ParsedAst.Kind.SchemaRow(sp1, sp2) => Kind.SchemaRow
+    case ParsedAst.Kind.Predicate(sp1, sp2) => Kind.Predicate
     case ParsedAst.Kind.Arrow(k1, k2, sp2) => Kind.Arrow(visitKind(k1), visitKind(k2))
   }
 
@@ -2456,7 +2470,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.Ambiguous(sp1, _, _) => sp1
     case ParsedAst.Type.Tuple(sp1, _, _) => sp1
     case ParsedAst.Type.Record(sp1, _, _, _) => sp1
+    case ParsedAst.Type.RecordRow(sp1, _, _, _) => sp1
     case ParsedAst.Type.Schema(sp1, _, _, _) => sp1
+    case ParsedAst.Type.SchemaRow(sp1, _, _, _) => sp1
     case ParsedAst.Type.UnaryImpureArrow(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.UnaryPolymorphicArrow(tpe1, _, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.ImpureArrow(sp1, _, _, _) => sp1
@@ -2478,8 +2494,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   private def leftMostSourcePosition(kind: ParsedAst.Kind): SourcePosition = kind match {
     case ParsedAst.Kind.Star(sp1, _) => sp1
     case ParsedAst.Kind.Bool(sp1, _) => sp1
-    case ParsedAst.Kind.Record(sp1, _) => sp1
-    case ParsedAst.Kind.Schema(sp1, _) => sp1
+    case ParsedAst.Kind.RecordRow(sp1, _) => sp1
+    case ParsedAst.Kind.SchemaRow(sp1, _) => sp1
+    case ParsedAst.Kind.Predicate(sp1, _) => sp1
     case ParsedAst.Kind.Arrow(k1, _, _) => leftMostSourcePosition(k1)
   }
 

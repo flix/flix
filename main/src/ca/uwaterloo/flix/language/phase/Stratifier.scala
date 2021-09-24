@@ -872,7 +872,7 @@ object Stratifier extends Phase[Root, Root] {
     * Returns the set of predicates that appears in the given row type `tpe`.
     */
   private def predicateSymbolsOf(tpe: Type): Set[Name.Pred] = tpe.typeConstructors.foldLeft(Set.empty[Name.Pred]) {
-    case (acc, TypeConstructor.SchemaExtend(pred)) => acc + pred
+    case (acc, TypeConstructor.SchemaRowExtend(pred)) => acc + pred
     case (acc, _) => acc
   }
 
