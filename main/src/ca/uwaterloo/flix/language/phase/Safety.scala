@@ -7,6 +7,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.errors.SafetyError
+import ca.uwaterloo.flix.language.errors.SafetyError._
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
@@ -110,11 +111,11 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.Match(exp, rules, _, _, _) =>
       visitExp(exp) :::
-        rules.flatMap{case MatchRule(_, g, e) => visitExp(g) ::: visitExp(e)}
+        rules.flatMap { case MatchRule(_, g, e) => visitExp(g) ::: visitExp(e) }
 
     case Expression.Choose(exps, rules, _, _, _) =>
       exps.flatMap(visitExp) :::
-        rules.flatMap{case ChoiceRule(_, exp) => visitExp(exp)}
+        rules.flatMap { case ChoiceRule(_, exp) => visitExp(exp) }
 
     case Expression.Tag(_, _, exp, _, _, _) =>
       visitExp(exp)
@@ -174,7 +175,7 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.TryCatch(exp, rules, _, _, _) =>
       visitExp(exp) :::
-        rules.flatMap{case CatchRule(_, _, e) => visitExp(e)}
+        rules.flatMap { case CatchRule(_, _, e) => visitExp(e) }
 
     case Expression.InvokeConstructor(_, args, _, _, _) =>
       args.flatMap(visitExp)
@@ -207,8 +208,9 @@ object Safety extends Phase[Root, Root] {
       visitExp(exp1) ::: visitExp(exp2)
 
     case Expression.SelectChannel(rules, default, _, _, _) =>
-      rules.flatMap{case SelectChannelRule(_, chan, body) => visitExp(chan) :::
-        visitExp(body)} :::
+      rules.flatMap { case SelectChannelRule(_, chan, body) => visitExp(chan) :::
+        visitExp(body)
+      } :::
         default.map(visitExp).getOrElse(Nil)
 
     case Expression.Spawn(exp, _, _, _) =>
@@ -276,6 +278,14 @@ object Safety extends Phase[Root, Root] {
   }
 
   /**
+    * Creates an error for a non-positively bound variable, dependent on `sym.isWild`.
+    *
+    * @param loc the location of the atom containing the terms.
+    */
+  private def makeIllegalNonPositivelyBoundVariableError(sym: Symbol.VarSym, loc: SourceLocation): SafetyError =
+    if (sym.isWild) IllegalNegativelyBoundWildVariable(sym, loc) else IllegalNonPositivelyBoundVariable(sym, loc)
+
+  /**
     * Performs safety and well-formedness checks on an atom with the given polarity, terms, and positive variables.
     */
   private def checkBodyAtomPredicate(polarity: Polarity, terms: List[TypedAst.Pattern], posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym], loc: SourceLocation): List[CompilationError] = {
@@ -284,44 +294,12 @@ object Safety extends Phase[Root, Root] {
       case Polarity.Negative =>
         // Compute the free variables in the terms which are *not* bound by the lexical scope.
         val freeVars = terms.flatMap(freeVarsOf).toSet intersect quantVars
-        val errors = checkNegativeWildcards(terms, loc)
+        val wildcardNegErrors = visitPats(terms, loc)
 
         // Check if any free variables are not positively bound.
-        errors ++ ((freeVars -- posVars) map (unboundVar => SafetyError.makeIllegalNonPositivelyBoundVariableError(unboundVar, loc))).toList
+        val variableNegErrors = ((freeVars -- posVars) map (makeIllegalNonPositivelyBoundVariableError(_, loc))).toList
+        wildcardNegErrors ++ variableNegErrors
     }
-  }
-
-  /**
-    * @param loc the location of the atom containing the terms.
-    */
-  private def checkNegativeWildcards(terms: List[TypedAst.Pattern], loc: SourceLocation): List[CompilationError] = {
-    terms.flatMap(checkNegativeWildcards(_, loc))
-  }
-
-  /**
-    * @param loc the location of the atom containing the term.
-    */
-  @tailrec
-  private def checkNegativeWildcards(term: TypedAst.Pattern, loc: SourceLocation): List[CompilationError] = term match {
-    case Pattern.Wild(_, _) => List(SafetyError.IllegalNegativelyBoundWildcard(loc))
-    case Pattern.Var(_, _, _) => Nil
-    case Pattern.Unit(_) => Nil
-    case Pattern.True(_) => Nil
-    case Pattern.False(_) => Nil
-    case Pattern.Char(_, _) => Nil
-    case Pattern.Float32(_, _) => Nil
-    case Pattern.Float64(_, _) => Nil
-    case Pattern.Int8(_, _) => Nil
-    case Pattern.Int16(_, _) => Nil
-    case Pattern.Int32(_, _) => Nil
-    case Pattern.Int64(_, _) => Nil
-    case Pattern.BigInt(_, _) => Nil
-    case Pattern.Str(_, _) => Nil
-    case Pattern.Tag(_, _, pat, _, _) => checkNegativeWildcards(pat, loc)
-    case Pattern.Tuple(elms, _, _) => checkNegativeWildcards(elms, loc)
-    case Pattern.Array(elms, _, _) => checkNegativeWildcards(elms, loc)
-    case Pattern.ArrayTailSpread(elms, _, _, _) => checkNegativeWildcards(elms, loc)
-    case Pattern.ArrayHeadSpread(_, elms, _, _) => checkNegativeWildcards(elms, loc)
   }
 
   /**
@@ -343,6 +321,43 @@ object Safety extends Phase[Root, Root] {
     }
 
     case Predicate.Body.Guard(_, _) => Set.empty
+  }
+
+  /**
+    * Returns an error for each occurrence of wildcards in each term.
+    *
+    * @param loc the location of the atom containing the terms.
+    */
+  private def visitPats(terms: List[TypedAst.Pattern], loc: SourceLocation): List[CompilationError] = {
+    terms.flatMap(visitPat(_, loc))
+  }
+
+  /**
+    * Returns an error for each occurrence of wildcards.
+    *
+    * @param loc the location of the atom containing the term.
+    */
+  @tailrec
+  private def visitPat(term: TypedAst.Pattern, loc: SourceLocation): List[CompilationError] = term match {
+    case Pattern.Wild(_, _) => List(IllegalNegativelyBoundWildcard(loc))
+    case Pattern.Var(_, _, _) => Nil
+    case Pattern.Unit(_) => Nil
+    case Pattern.True(_) => Nil
+    case Pattern.False(_) => Nil
+    case Pattern.Char(_, _) => Nil
+    case Pattern.Float32(_, _) => Nil
+    case Pattern.Float64(_, _) => Nil
+    case Pattern.Int8(_, _) => Nil
+    case Pattern.Int16(_, _) => Nil
+    case Pattern.Int32(_, _) => Nil
+    case Pattern.Int64(_, _) => Nil
+    case Pattern.BigInt(_, _) => Nil
+    case Pattern.Str(_, _) => Nil
+    case Pattern.Tag(_, _, pat, _, _) => visitPat(pat, loc)
+    case Pattern.Tuple(elms, _, _) => visitPats(elms, loc)
+    case Pattern.Array(elms, _, _) => visitPats(elms, loc)
+    case Pattern.ArrayTailSpread(elms, _, _, _) => visitPats(elms, loc)
+    case Pattern.ArrayHeadSpread(_, elms, _, _) => visitPats(elms, loc)
   }
 
 }

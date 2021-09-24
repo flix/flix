@@ -15,18 +15,7 @@ sealed trait SafetyError extends CompilationError {
 object SafetyError {
 
   /**
-    * Creates an IllegalNonPositivelyBoundVariable or IllegalNegativelyBoundWildVariable error
-    * depending on `sym.isWild`.
-    *
-    * @param loc the position of the body atom containing the illegal variable.
-    */
-  def makeIllegalNonPositivelyBoundVariableError(sym: Symbol.VarSym, loc: SourceLocation): SafetyError =
-    if (sym.isWild) IllegalNegativelyBoundWildVariable(sym, loc) else IllegalNonPositivelyBoundVariable(sym, loc)
-
-  /**
     * An error raised to indicate an illegal use of a non-positively bound variable in a negative atom.
-    * The symbol must not be wild.
-    * Use makeIllegalNonPositivelyBoundVariableError instead of creating this object directly.
     *
     * @param loc the position of the body atom containing the illegal variable.
     */
@@ -49,8 +38,6 @@ object SafetyError {
 
   /**
     * An error raised to indicate an illegal use of a wild variable in a negative atom.
-    * The symbol must be wild.
-    * Use makeIllegalNonPositivelyBoundVariableError instead of creating this object directly.
     *
     * @param loc the position of the body atom containing the illegal variable.
     */

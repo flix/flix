@@ -28,7 +28,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("NonPositivelyBoundVariable.01") {
     val input =
       """
-        |pub def f(): #{ A(Int), B(Int) } = solve {
+        |pub def f(): #{ A(Int), B(Int) } = #{
         |    A(x) :- not B(x).
         |}
       """.stripMargin
@@ -47,10 +47,21 @@ class TestSafety extends FunSuite with TestUtils {
     expectError[IllegalNonPositivelyBoundVariable](result)
   }
 
+  test("NonPositivelyBoundVariable.03") {
+    val input =
+      """
+        |pub def f(): #{ A(Int), B(Int), R(Int) } = #{
+        |    R(x) :- not A(x), B(12), if x > 5.
+        |}
+    """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[IllegalNonPositivelyBoundVariable](result)
+  }
+
   test("NegativelyBoundWildVariable.01") {
     val input =
       """
-        |pub def f(): #{ A(Int), B(Int), R(Int) } = solve {
+        |pub def f(): #{ A(Int), B(Int), R(Int) } = #{
         |    R(x) :- A(x), not B(_y).
         |}
       """.stripMargin
@@ -70,10 +81,21 @@ class TestSafety extends FunSuite with TestUtils {
     expectError[IllegalNegativelyBoundWildVariable](result)
   }
 
+  test("NegativelyBoundWildVariable.03") {
+    val input =
+      """
+        |pub def f(): #{ A(Int), B(Int), R(Int) } = #{
+        |    R(1) :- A(y), not A(_y), not B(y).
+        |}
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[IllegalNegativelyBoundWildVariable](result)
+  }
+
   test("NegativelyBoundWildcard.01") {
     val input =
       """
-        |pub def f(): #{ A(Int), B(Int) } = solve {
+        |pub def f(): #{ A(Int), B(Int) } = #{
         |    A(1) :- not B(_).
         |}
       """.stripMargin
@@ -86,6 +108,17 @@ class TestSafety extends FunSuite with TestUtils {
       """
         |pub def f(): #{ A(Int), B(Int) } = solve {
         |    A(1) :- not B(_), A(_).
+        |}
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[IllegalNegativelyBoundWildcard](result)
+  }
+
+  test("NegativelyBoundWildcard.03") {
+    val input =
+      """
+        |pub def f(): #{ A(Int), B(Int) } = #{
+        |    A(1) :- not B(z), A(z), B(_).
         |}
       """.stripMargin
     val result = compile(input, DefaultOptions)
