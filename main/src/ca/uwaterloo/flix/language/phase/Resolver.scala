@@ -18,10 +18,9 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
-import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.{Symbol, _}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.phase.unification.Substitution
-import ca.uwaterloo.flix.util.Graph.TopSortResult
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{Graph, InternalCompilerException, Validation}
 
@@ -140,7 +139,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     }
   }
 
-  private def resolveTypeAliases(aliases0: Iterable[NamedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root): Validation[List[ResolvedAst.TypeAlias], ResolutionError] = {
+  private def resolveTypeAliases(aliases0: Iterable[NamedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root): Validation[Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ResolutionError] = {
+    // MATT each TA may have a different NName
 
     // MATT docs
     def semiResolveTypeAlias(alias: NamedAst.TypeAlias): Validation[ResolvedAst.TypeAlias, ResolutionError] = alias match {
@@ -161,6 +161,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
     }
 
+    // MATT docs
     def findResolutionOrder(aliases: Iterable[ResolvedAst.TypeAlias]): Validation[List[Symbol.TypeAliasSym], ResolutionError] = {
       val aliasSyms = aliases.map(_.sym)
       val aliasLookup = aliases.map(alias => alias.sym -> alias).toMap
@@ -172,35 +173,25 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       }
     }
 
-    def finishResolveTypeAliases(aliases: List[ResolvedAst.TypeAlias]): Validation[Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ResolutionError] = {
-      Validation.fold(aliases, Map.empty[Symbol.TypeAliasSym, ResolvedAst.TypeAlias]) {
+    // MATT docs
+    def finishResolveTypeAliases(aliases0: List[ResolvedAst.TypeAlias]): Validation[Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ResolutionError] = {
+      Validation.fold(aliases0, Map.empty[Symbol.TypeAliasSym, ResolvedAst.TypeAlias]) {
         case (taenv, ResolvedAst.TypeAlias(doc, mod, sym, tparams, tpe0, loc)) =>
           finishResolveType(tpe0, taenv) map {
-            tpe => ResolvedAst.TypeAlias(doc, mod, sym, tparams, tpe0, loc)
+            tpe =>
+              val alias = ResolvedAst.TypeAlias(doc, mod, sym, tparams, tpe, loc)
+              taenv + (sym -> alias)
           }
-
       }
     }
 
     for {
-      aliases <- traverse(aliases0)(semiResolveTypeAlias)
-      sorted <- findResolutionOrder(aliases)
-
-    } yield ()
-    val map = Validation.fold(aliases, Map.empty[Symbol.TypeAliasSym, ResolvedAst.TypeAlias]) {
-      case (acc, NamedAst.TypeAlias(doc, mod, sym, tparams0, tpe0, loc)) =>
-        semiResolveType(tpe0, ns0, root) map {
-          tpe =>
-            val tparams = resolveTypeParams(tparams0, ns0, root)
-            acc + (sym -> ResolvedAst.TypeAlias(doc, mod, sym, tparams, tpe, loc))
-        }
-    }
-
-    // Step 2: topologically sort them
-
-
-
-    ??? // MATT
+      aliases1 <- traverse(aliases0)(semiResolveTypeAlias)
+      sortedSyms <- findResolutionOrder(aliases1)
+      semiAliasEnv = aliases1.map(alias => alias.sym -> alias).toMap
+      sortedAliases = sortedSyms.map(semiAliasEnv)
+      aliases <- finishResolveTypeAliases(sortedAliases)
+    } yield aliases
   }
 
 
