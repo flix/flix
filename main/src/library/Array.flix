@@ -119,6 +119,23 @@ namespace Array {
         }
 
     ///
+    /// Returns the array `a` as a lazy list.
+    ///
+    pub def toLazyList(a: Array[a]): LazyList[a] =
+        LList(lazy toLazyListHelper(a, 0))
+
+    ///
+    /// Helper function for `toList`.
+    ///
+    def toLazyListHelper(a: Array[a], i: Int32): LazyList[a] =
+        if (i == a.length) {
+            ENil
+        } else {
+            let x = a[i] as & Pure; // TODO: Unsafe cast.
+            LCons(x, lazy toLazyListHelper(a, i + 1))
+        }
+
+    ///
     /// Returns `Some(x)` if `x` is the first element of `a`.
     ///
     /// Returns `None` if `a` is empty.
