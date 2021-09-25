@@ -136,6 +136,20 @@ namespace Array {
         }
 
     ///
+    /// Returns the array `a` as a stream.
+    ///
+    pub def toStream(a: Array[a]): Stream[a, Int32] =
+        let next = i -> {
+            if (i == a.length)
+                Done
+            else {
+                let x = a[i] as & Pure; // TODO: Unsound cast.
+                Yield(x, i + 1)
+            }
+        };
+        Stream(next, 0)
+
+    ///
     /// Returns `Some(x)` if `x` is the first element of `a`.
     ///
     /// Returns `None` if `a` is empty.
