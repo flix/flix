@@ -139,14 +139,14 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     }
   }
 
-  private def resolveTypeAliases(aliases0: Iterable[NamedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root): Validation[Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ResolutionError] = {
-    // MATT each TA may have a different NName
+  // MATT docs
+  private def resolveTypeAliases(aliases0: Map[Name.NName, Map[String, NamedAst.TypeAlias]], root: NamedAst.Root): Validation[Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ResolutionError] = {
 
     // MATT docs
-    def semiResolveTypeAlias(alias: NamedAst.TypeAlias): Validation[ResolvedAst.TypeAlias, ResolutionError] = alias match {
+    def semiResolveTypeAlias(alias: NamedAst.TypeAlias, ns: Name.NName): Validation[ResolvedAst.TypeAlias, ResolutionError] = alias match {
       case NamedAst.TypeAlias(doc, mod, sym, tparams0, tpe0, loc) =>
-        val tparams = resolveTypeParams(tparams0, ns0, root)
-        semiResolveType(tpe0, ns0, root) map {
+        val tparams = resolveTypeParams(tparams0, ns, root)
+        semiResolveType(tpe0, ns, root) map {
           tpe => ResolvedAst.TypeAlias(doc, mod, sym, tparams, tpe, loc)
         }
     }
@@ -185,8 +185,16 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       }
     }
 
+    // MATT inline docs
+    val aliases1 = for {
+      (ns, aliasesInNs) <- aliases0
+      (_, alias) <- aliasesInNs
+    } yield (alias, ns)
+
     for {
-      aliases1 <- traverse(aliases0)(semiResolveTypeAlias)
+      aliases1 <- traverse(aliases1) {
+        case (alias, ns) => semiResolveTypeAlias(alias, ns)
+      }
       sortedSyms <- findResolutionOrder(aliases1)
       semiAliasEnv = aliases1.map(alias => alias.sym -> alias).toMap
       sortedAliases = sortedSyms.map(semiAliasEnv)
