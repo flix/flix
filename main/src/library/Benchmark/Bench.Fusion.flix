@@ -24,6 +24,13 @@ pub def lazyListLength(l: List[Int32]): Benchmark =
         LazyList.length
     })
 
+pub def streamLength(l: List[Int32]): Benchmark =
+    let l1 = fromList(l);
+    defBenchmark("Stream.length", () -> {
+        l1 |>
+        Stream.length
+    })
+
 ///////////////////////////////////////////////////////////////////////////////
 /// filter length                                                           ///
 ///////////////////////////////////////////////////////////////////////////////
@@ -40,6 +47,14 @@ pub def lazyListFilterLength(l: List[Int32]): Benchmark =
         l1 |>
         LazyList.filter(x -> x % 2 == 0) |>
         LazyList.length
+    })
+
+pub def streamFilterLength(l: List[Int32]): Benchmark =
+    let l1 = fromList(l);
+    defBenchmark("Stream.filterLength", () -> {
+        l1 |>
+        Stream.filter(x -> x % 2 == 0) |>
+        Stream.length
     })
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -146,6 +161,21 @@ pub def lazyListFilter8(l: List[Int32]): Benchmark =
         LazyList.filter(x -> x > 7) |>
         LazyList.filter(x -> x > 8) |>
         LazyList.length
+    })
+
+pub def streamFilter8(l: List[Int32]): Benchmark =
+    let l1 = fromList(l);
+    defBenchmark("Stream.filter8", () -> {
+        l1 |>
+        Stream.filter(x -> x > 1) |>
+        Stream.filter(x -> x > 2) |>
+        Stream.filter(x -> x > 3) |>
+        Stream.filter(x -> x > 4) |>
+        Stream.filter(x -> x > 5) |>
+        Stream.filter(x -> x > 6) |>
+        Stream.filter(x -> x > 7) |>
+        Stream.filter(x -> x > 8) |>
+        Stream.length
     })
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -262,10 +292,24 @@ pub def biboudisSuite(n: Int32): Array[Benchmark] & Impure =
         lazyListFilter8(l),
         lazyListMap8(l),
         lazyListFlatMapTakeSum(l),
-        lazyListCartesian(l)
+        lazyListCartesian(l),
+
+        // Stream
+        streamLength(l),
+        streamFilterLength(l),
+        streamFilter8(l)
     ]
 
 def main(_args: Array[String]) : Int32 & Impure =
     let s1 = biboudisSuite(100);
-    Benchmark.runWithBudget(s1, 250_000_000_000i64);
+    Benchmark.runWithBudget(s1, 5000_000_000_000i64);
     0
+
+
+// TODO: Remove
+pub def fromList(l: List[a]): Stream[a, List[a]] =
+    let next = s -> match s {
+        case Nil     => Done
+        case x :: xs => Yield(x, xs)
+    };
+    Stream(next, l)

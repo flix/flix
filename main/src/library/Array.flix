@@ -105,17 +105,17 @@ namespace Array {
     /// Returns the array `a` as a list.
     ///
     @Time(length(a)) @Space(length(a))
-    pub def toList(a: Array[a]): List[a] & Impure = toListHelper(a, length(a), 0, Nil)
+    pub def toList(a: Array[a]): List[a] & Impure = toListHelper(a, a.length, Nil)
 
     ///
     /// Helper function for `toList`.
     ///
-    def toListHelper(a: Array[a], len: Int32, i: Int32, ac: List[a]): List[a] & Impure =
-        if (i == len)
-            List.reverse(ac)
-        else {
-            let x = a[i];
-            toListHelper(a, len, i + 1, x :: ac)
+    def toListHelper(a: Array[a], i: Int32, acc: List[a]): List[a] & Impure =
+        if (i == 0) {
+            acc
+        } else {
+            let x = a[i - 1];
+            toListHelper(a, i - 1, x :: acc)
         }
 
     ///
