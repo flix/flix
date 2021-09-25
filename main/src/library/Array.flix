@@ -121,8 +121,8 @@ namespace Array {
     ///
     /// Returns the array `a` as a lazy list.
     ///
-    pub def toLazyList(a: Array[a]): LazyList[a] =
-        LList(lazy toLazyListHelper(a, 0))
+    pub def toLazyList(a: Array[a]): LazyList[a] & Impure =
+        LList(lazy toLazyListHelper(a, 0)) as & Impure
 
     ///
     /// Helper function for `toList`.
