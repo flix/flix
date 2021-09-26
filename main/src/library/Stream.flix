@@ -124,6 +124,7 @@ namespace Stream {
         case Done         => k(Nil)
         case Skip(s1)     => filterEAcc(f, next, s1, k)
         case Yield(x, s1) => if (f(x)) filterEAcc(f, next, s1, ks -> k(x :: ks)) else filterEAcc(f, next, s1, k)
+    }
 
     ///
     /// Returns the result of applying `f` to every element in `s`.
