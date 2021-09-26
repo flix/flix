@@ -121,6 +121,7 @@ namespace Array {
     ///
     /// Returns the array `a` as a lazy list.
     ///
+    // TODO: Add tests
     pub def toLazyList(a: Array[a]): LazyList[a] & Impure =
         LList(lazy toLazyListHelper(a, 0)) as & Impure
 
@@ -138,6 +139,7 @@ namespace Array {
     ///
     /// Returns the array `a` as a stream.
     ///
+    // TODO: Add tests
     pub def toStream(a: Array[a]): Stream[a, Int32] =
         let next = i -> {
             if (i == a.length)
