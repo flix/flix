@@ -43,6 +43,21 @@ namespace Stream {
         }
 
     ///
+    /// Returns the length of `s`.
+    ///
+    // TODO: Add tests
+    pub def length(s: Stream[a, s]): Int32 =
+        let Stream(next0, s0) = s;
+        lengthAcc(next0, s0, 0)
+
+    pub def lengthAcc(next0: s -> Step[a, s], s0: s, acc: Int32): Int32 =
+        match next0(s0) {
+            case Done           => acc
+            case Skip(s1)       => lengthAcc(next0, s1, acc)
+            case Yield(_, s1)   => lengthAcc(next0, s1, acc + 1)
+        }
+
+    ///
     /// Returns `s` as a `List`.
     ///
     pub def toList(s: Stream[a, s]): List[a] =
