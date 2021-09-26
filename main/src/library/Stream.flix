@@ -45,6 +45,7 @@ namespace Stream {
     ///
     /// Returns the length of `s`.
     ///
+    // TODO: Add tests
     pub def length(s: Stream[a, s]): Int32 =
         let Stream(next0, s0) = s;
         lengthAcc(next0, s0, 0)
