@@ -311,45 +311,31 @@ class TestUnification extends FunSuite with TestUtils {
   }
 
   test("Unify.12") {
-    val tpe1 = Type.KindedVar(1, Kind.Record, loc)
+    val tpe1 = Type.KindedVar(1, Kind.RecordRow, loc)
     val field = Type.Bool
     val label = Name.Field("x", loc)
-    val tpe2 = Type.mkRecordExtend(label, field, tpe1, loc)
+    val tpe2 = Type.mkRecord(Type.mkRecordRowExtend(label, field, tpe1, loc), loc)
     val result = Unification.unifyTypes(tpe1, tpe2)
     assert(!isOk(result))
   }
 
   test("Unify.13") {
-    val tpe1 = Type.KindedVar(1, Kind.Schema, loc)
+    val tpe1 = Type.KindedVar(1, Kind.SchemaRow, loc)
     val field = Type.mkRelation(List(Type.Bool), loc)
     val label = Name.Pred("X", loc)
-    val tpe2 = Type.mkSchemaExtend(label, field, tpe1, loc)
-    val result = Unification.unifyTypes(tpe1, tpe2)
-    assert(!isOk(result))
-  }
-
-  test("Unify.14") {
-    val tpe1 = Type.KindedVar(1, Kind.Schema, loc)
-    val tpe2 = Type.KindedVar(2, Kind.Record, loc)
+    val tpe2 = Type.mkRecord(Type.mkSchemaRowExtend(label, field, tpe1, loc), loc)
     val result = Unification.unifyTypes(tpe1, tpe2)
     assert(!isOk(result))
   }
 
   test("Unify.15") {
-    val tpe1 = Type.KindedVar(1, Kind.Star, loc, Rigidity.Rigid)
-    val tpe2 = Type.KindedVar(2, Kind.Record, loc, Rigidity.Flexible)
-    val result = Unification.unifyTypes(tpe1, tpe2)
-    assert(!isOk(result))
-  }
-
-  test("Unify.16") {
     val tpe1 = Type.KindedVar(1, Kind.Star, loc, Rigidity.Flexible)
-    val tpe2 = Type.KindedVar(2, Kind.Record, loc, Rigidity.Rigid)
+    val tpe2 = Type.KindedVar(2, Kind.RecordRow, loc, Rigidity.Rigid)
     val result = Unification.unifyTypes(tpe1, tpe2)
     assert(isOk(result))
   }
 
-  test("Unify.17") {
+  test("Unify.16") {
     val tpe1 = Type.KindedVar(1, Kind.Star, loc, Rigidity.Rigid)
     val tpe2 = Type.KindedVar(2, Kind.Star, loc, Rigidity.Rigid)
     val result = Unification.unifyTypes(tpe1, tpe2)

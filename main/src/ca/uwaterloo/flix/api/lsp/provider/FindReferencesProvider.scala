@@ -62,8 +62,8 @@ object FindReferencesProvider {
         case Entity.LocalVar(sym, _) => findVarUses(sym)
 
         case Entity.TypeCon(tc, loc) => tc match {
-          case TypeConstructor.RecordExtend(field) => findFieldUses(field)
-          case TypeConstructor.SchemaExtend(pred) => findPredUses(pred)
+          case TypeConstructor.RecordRowExtend(field) => findFieldUses(field)
+          case TypeConstructor.SchemaRowExtend(pred) => findPredUses(pred)
           case TypeConstructor.KindedEnum(sym, _) => findEnumUses(sym)
           case _ => mkNotFound(uri, pos)
         }

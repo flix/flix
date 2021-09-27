@@ -74,8 +74,8 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       */
     def apply(tpe: Type): Type = s(tpe).map {
       case Type.KindedVar(_, Kind.Bool, _, _, _) => Type.True
-      case Type.KindedVar(_, Kind.Record, _, _, _) => Type.RecordEmpty
-      case Type.KindedVar(_, Kind.Schema, _, _, _) => Type.SchemaEmpty
+      case Type.KindedVar(_, Kind.RecordRow, _, _, _) => Type.RecordRowEmpty
+      case Type.KindedVar(_, Kind.SchemaRow, _, _, _) => Type.SchemaRowEmpty
       case _ => Type.Unit
     }
   }

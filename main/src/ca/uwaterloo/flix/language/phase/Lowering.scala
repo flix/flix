@@ -682,7 +682,7 @@ object Lowering extends Phase[Root, Root] {
   private def visitType(tpe0: Type)(implicit root: Root, flix: Flix): Type = {
     def visit(tpe: Type): Type = tpe match {
       case Type.KindedVar(id, kind, loc, rigidity, text) => kind match {
-        case Kind.Schema => Type.KindedVar(id, Kind.Star, loc, rigidity, text)
+        case Kind.SchemaRow => Type.KindedVar(id, Kind.Star, loc, rigidity, text)
         case _ => tpe0
       }
 
@@ -698,7 +698,7 @@ object Lowering extends Phase[Root, Root] {
       case _: Type.Ascribe => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
     }
 
-    if (tpe0.kind == Kind.Schema)
+    if (tpe0.typeConstructor.contains(TypeConstructor.Schema))
       Types.Datalog
     else
       visit(tpe0)

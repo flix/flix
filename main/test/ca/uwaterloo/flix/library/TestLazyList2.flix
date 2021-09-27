@@ -341,4 +341,200 @@ namespace TestLazyList2 {
     def toString09(): Bool =
         LazyList.toString(ECons(1, ECons(2, ECons(3, ENil)))) == "1 :: 2 :: 3 :: ENil"
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // partition                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def partition01(): Bool =
+        LazyList.partition(i -> i > 3, ENil) == (ENil, ENil)
+
+    @test
+    def partition02(): Bool =
+        LazyList.partition(i -> i > 3, LList(lazy ENil)) == (ENil, ENil)
+
+    @test
+    def partition03(): Bool =
+        LazyList.partition(i -> i > 3, LCons(1, lazy ENil)) == (ENil, ECons(1, ENil))
+
+    @test
+    def partition04(): Bool =
+        LazyList.partition(i -> i > 3, LList(lazy ECons(1, LList(lazy ENil)))) == (ENil, ECons(1, ENil))
+
+    @test
+    def partition05(): Bool =
+        LazyList.partition(i -> i > 3, ECons(1, LList(lazy ENil))) == (ENil, ECons(1, ENil))
+
+    @test
+    def partition06(): Bool =
+        LazyList.partition(i -> i > 3, LCons(1, lazy LList(lazy ENil))) == (ENil, ECons(1, ENil))
+
+    @test
+    def partition07(): Bool =
+        LazyList.partition(i -> i > 3, ECons(1, ENil)) == (ENil, ECons(1, ENil))
+
+    @test
+    def partition08(): Bool =
+        LazyList.partition(i -> i > 3, ECons(4, LList(lazy ENil))) == (ECons(4, ENil), ENil)
+
+    @test
+    def partition09(): Bool =
+        LazyList.partition(i -> i > 3, LCons(4, lazy LList(lazy ENil))) == (ECons(4, ENil), ENil)
+
+    @test
+    def partition10(): Bool =
+        LazyList.partition(i -> i > 3, ECons(4, ENil)) == (ECons(4, ENil), ENil)
+
+    @test
+    def partition11(): Bool =
+        LazyList.partition(i -> i > 3, ECons(1, ECons(2, ENil))) == (ENil, ECons(1, ECons(2, ENil)))
+
+    @test
+    def partition12(): Bool =
+        LazyList.partition(i -> i > 3, LCons(1, lazy LCons(2, lazy ENil))) == (ENil, ECons(1, ECons(2, ENil)))
+
+    @test
+    def partition13(): Bool =
+        LazyList.partition(i -> i > 3, LCons(1, lazy LCons(2, lazy LList(lazy ENil)))) == (ENil, ECons(1, ECons(2, ENil)))
+
+    @test
+    def partition14(): Bool =
+        LazyList.partition(i -> i > 3, LList(lazy LCons(1, lazy LCons(5, lazy ENil)))) == (ECons(5, ENil), ECons(1, ENil))
+
+    @test
+    def partition15(): Bool =
+        LazyList.partition(i -> i > 3, LList(lazy ECons(1, ECons(5, ENil)))) == (ECons(5, ENil), ECons(1, ENil))
+
+    @test
+    def partition16(): Bool =
+        LazyList.partition(i -> i > 3, ECons(1, ECons(5, ENil))) == (ECons(5, ENil), ECons(1, ENil))
+
+    @test
+    def partition17(): Bool =
+        LazyList.partition(i -> i > 3, ECons(5, ECons(1, ENil))) == (ECons(5, ENil), ECons(1, ENil))
+
+    @test
+    def partition18(): Bool =
+        LazyList.partition(i -> i > 3, LCons(5, lazy ECons(1, ENil))) == (ECons(5, ENil), ECons(1, ENil))
+
+    @test
+    def partition19(): Bool =
+	    LazyList.partition(i -> i > 3, LList(lazy LCons(5, lazy ECons(1, ENil)))) == (ECons(5, ENil), ECons(1, ENil))
+
+    @test
+    def partition20(): Bool =
+        LazyList.partition(i -> i > 3, ECons(5, LList(lazy ECons(1, ENil)))) == (ECons(5, ENil), ECons(1, ENil))
+
+    @test
+    def partition21(): Bool =
+        LazyList.partition(i -> i > 3, ECons(5, ECons(8, ENil))) == (ECons(5, ECons(8, ENil)), ENil)
+
+    @test
+    def partition22(): Bool =
+        LazyList.partition(i -> i > 3, ECons(5, LCons(8, lazy ENil))) == (ECons(5, ECons(8, ENil)), ENil)
+
+    @test
+    def partition23(): Bool =
+        LazyList.partition(i -> i > 3, (ECons(4, ECons(6, ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil)))))))))))))
+            == (ECons(4, ECons(6, ECons(11, ECons(16, ECons(7, ECons(7, ENil)))))), ECons(-3, ECons(-5, ECons(1, ECons(2, ECons(1, ENil))))))
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // span                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def span01(): Bool =
+        LazyList.span(i -> i > 3, ENil) == (ENil, ENil)
+
+    @test
+    def span02(): Bool =
+        LazyList.span(i -> i > 3, LList(lazy ENil)) == (ENil, ENil)
+
+    @test
+    def span03(): Bool =
+        LazyList.span(i -> i > 3, LCons(1, lazy ENil)) == (ENil, ECons(1, ENil))
+
+    @test
+    def span04(): Bool =
+        LazyList.span(i -> i > 3, LList(lazy ECons(1, LList(lazy ENil)))) == (ENil, ECons(1, ENil))
+
+    @test
+    def span05(): Bool =
+        LazyList.span(i -> i > 3, ECons(1, LList(lazy ENil))) == (ENil, ECons(1, ENil))
+
+    @test
+    def span06(): Bool =
+        LazyList.span(i -> i > 3, LCons(1, lazy LList(lazy ENil))) == (ENil, ECons(1, ENil))
+
+    @test
+    def span07(): Bool =
+        LazyList.span(i -> i > 3, ECons(1, ENil)) == (ENil, ECons(1, ENil))
+
+    @test
+    def span08(): Bool =
+        LazyList.span(i -> i > 3, ECons(4, LList(lazy ENil))) == (ECons(4, ENil), ENil)
+
+    @test
+    def span09(): Bool =
+        LazyList.span(i -> i > 3, LCons(4, lazy LList(lazy ENil))) == (ECons(4, ENil), ENil)
+
+    @test
+    def span10(): Bool =
+        LazyList.span(i -> i > 3, ECons(4, ENil)) == (ECons(4, ENil), ENil)
+
+    @test
+    def span11(): Bool =
+        LazyList.span(i -> i > 3, ECons(1, ECons(2, ENil))) == (ENil, ECons(1, ECons(2, ENil)))
+
+    @test
+    def span12(): Bool =
+        LazyList.span(i -> i > 3, LCons(1, lazy LCons(2, lazy ENil))) == (ENil, ECons(1, ECons(2, ENil)))
+
+    @test
+    def span13(): Bool =
+        LazyList.span(i -> i > 3, LCons(1, lazy LCons(2, lazy LList(lazy ENil)))) == (ENil, ECons(1, ECons(2, ENil)))
+
+    @test
+    def span14(): Bool =
+        LazyList.span(i -> i > 3, LList(lazy LCons(1, lazy LCons(5, lazy ENil)))) == (ENil, ECons(1, ECons(5, ENil)))
+
+    @test
+    def span15(): Bool =
+        LazyList.span(i -> i > 3, LList(lazy ECons(1, ECons(5, ENil)))) == (ENil, ECons(1, ECons(5, ENil)))
+
+    @test
+    def span16(): Bool =
+        LazyList.span(i -> i > 3, ECons(1, ECons(5, ENil))) == (ENil, ECons(1, ECons(5, ENil)))
+
+    @test
+    def span17(): Bool =
+        LazyList.span(i -> i > 3, ECons(5, ECons(1, ENil))) == (ECons(5, ENil), ECons(1, ENil))
+
+    @test
+    def span18(): Bool =
+        LazyList.span(i -> i > 3, LCons(5, lazy ECons(1, ENil))) == (ECons(5, ENil), ECons(1, ENil))
+
+    @test
+    def span19(): Bool =
+	    LazyList.span(i -> i > 3, LList(lazy LCons(5, lazy ECons(1, ENil)))) == (ECons(5, ENil), ECons(1, ENil))
+
+    @test
+    def span20(): Bool =
+        LazyList.span(i -> i > 3, ECons(5, LList(lazy ECons(1, ENil)))) == (ECons(5, ENil), ECons(1, ENil))
+
+    @test
+    def span21(): Bool =
+        LazyList.span(i -> i > 3, ECons(5, ECons(8, ENil))) == (ECons(5, ECons(8, ENil)), ENil)
+
+    @test
+    def span22(): Bool =
+        LazyList.span(i -> i > 3, ECons(5, LCons(8, lazy ENil))) == (ECons(5, ECons(8, ENil)), ENil)
+
+    @test
+    def span23(): Bool =
+        LazyList.span(i -> i > 3, (ECons(4, ECons(6, ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil))))))))))))) == (ECons(4, ECons(6, ENil)), ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil))))))))))
+
+
 }

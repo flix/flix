@@ -131,6 +131,7 @@ class Flix {
     "Random.flix" -> LocalResource.get("/src/library/Random.flix"),
     "Result.flix" -> LocalResource.get("/src/library/Result.flix"),
     "Set.flix" -> LocalResource.get("/src/library/Set.flix"),
+    "Stream.flix" -> LocalResource.get("/src/library/Stream.flix"),
     "String.flix" -> LocalResource.get("/src/library/String.flix"),
 
     "MutList.flix" -> LocalResource.get("/src/library/MutList.flix"),

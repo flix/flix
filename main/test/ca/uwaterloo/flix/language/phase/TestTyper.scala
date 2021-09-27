@@ -122,28 +122,28 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.OccursCheckError](result)
   }
 
-  test("TestMismatchedKinds.01") {
+  test("TestMismatchedTypes.01") {
     val input = "def foo(): {| x} = {a = 2} <+> {a = 2}"
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedKinds](result)
+    expectError[TypeError.MismatchedTypes](result)
   }
 
-  test("TestMismatchedKinds.02") {
+  test("TestMismatchedTypes.02") {
     val input = "def foo(): #{| x} = {a = 2} <+> {a = 2}"
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedKinds](result)
+    expectError[TypeError.MismatchedTypes](result)
   }
 
-  test("TestMismatchedKinds.03") {
+  test("TestMismatchedTypes.03") {
     val input = "def foo(): {a: Int} = {a = 2} <+> {a = 2}"
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedKinds](result)
+    expectError[TypeError.MismatchedTypes](result)
   }
 
-  test("TestMismatchedKinds.04") {
+  test("TestMismatchedTypes.04") {
     val input = "def foo(): String = solve \"hello\""
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedKinds](result)
+    expectError[TypeError.MismatchedTypes](result)
   }
 
   test("TestLeq.Wildcard.01") {
