@@ -198,4 +198,133 @@ namespace TestStream {
         Stream.toList as & Impure;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // map (pure)                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def mapPure01(): Bool =
+        Nil |> List.toStream |> Stream.map(x -> x + 1) |> Stream.toList == Nil
+
+    @test
+    def mapPure02(): Bool =
+        (1 :: Nil) |> List.toStream |> Stream.map(x -> x + 1) |> Stream.toList == 2 :: Nil
+
+    @test
+    def mapPure03(): Bool =
+        (1 :: 2 :: Nil) |> List.toStream |> Stream.map(x -> x + 1) |> Stream.toList == 2 :: 3 :: Nil
+
+    @test
+    def mapPure04(): Bool =
+        (1 :: 2 :: 3 :: Nil) |> List.toStream |> Stream.map(x -> x + 1) |> Stream.toList == 2 :: 3 :: 4 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // map (impure)                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def mapImpure01(): Bool & Impure =
+        Nil |> List.toStream |> Stream.map(x -> x + 1 as & Impure) |> Stream.toList == Nil
+
+    @test
+    def mapImpure02(): Bool & Impure =
+        (1 :: Nil) |> List.toStream |> Stream.map(x -> x + 1 as & Impure) |> Stream.toList == 2 :: Nil
+
+    @test
+    def mapImpure03(): Bool & Impure =
+        (1 :: 2 :: Nil) |> List.toStream |> Stream.map(x -> x + 1 as & Impure) |> Stream.toList == 2 :: 3 :: Nil
+
+    @test
+    def mapImpure04(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> List.toStream |> Stream.map(x -> x + 1 as & Impure) |> Stream.toList == 2 :: 3 :: 4 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // map map                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def mapMap01(): Bool =
+        (1 :: 2 :: 3 :: Nil) |> List.toStream |> Stream.map(x -> x + 1) |> Stream.map(x -> x * 2) |> Stream.toList == 4 :: 6 :: 8 :: Nil
+
+    @test
+    def mapMap02(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> List.toStream |> Stream.map(x -> x + 1 as & Impure) |> Stream.map(x -> x * 2) |> Stream.toList == 4 :: 6 :: 8 :: Nil
+
+    @test
+    def mapMap03(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> List.toStream |> Stream.map(x -> x + 1) |> Stream.map(x -> x * 2 as & Impure) |> Stream.toList == 4 :: 6 :: 8 :: Nil
+
+    @test
+    def mapMap04(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> List.toStream |> Stream.map(x -> x + 1 as & Impure) |> Stream.map(x -> x * 2 as & Impure) |> Stream.toList == 4 :: 6 :: 8 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // map map fusion                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def mapFusion01(): Bool & Impure =
+        let l = ref Nil;
+        (1 :: 2 :: 3 :: Nil) |> List.toStream |>
+        Stream.map(x -> { l := "a" :: deref l; x }) |>
+        Stream.map(x -> { l := "b" :: deref l; x });
+        List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
+
+    @test
+    def mapFusion02(): Bool & Impure =
+        let l = ref Nil;
+        (1 :: 2 :: 3 :: Nil) |> List.toStream |>
+        Stream.map(x -> { l := "a" :: deref l; x } as & Pure) |>
+        Stream.map(x -> { l := "b" :: deref l; x } as & Pure) |>
+        Stream.toList as & Impure;
+        List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // map filter fusion                                                       //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def mapFilterFusion01(): Bool & Impure =
+        let l = ref Nil;
+        (1 :: 2 :: 3 :: Nil) |> List.toStream |>
+        Stream.map(   x -> { l := "a" :: deref l; x }) |>
+        Stream.filter(_ -> { l := "b" :: deref l; true });
+        List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
+
+    @test
+    def mapFilterFusion02(): Bool & Impure =
+        let l = ref Nil;
+        (1 :: 2 :: 3 :: Nil) |> List.toStream |>
+        Stream.map(   x -> { l := "a" :: deref l; x }    as & Pure) |>
+        Stream.filter(_ -> { l := "b" :: deref l; true } as & Pure) |>
+        Stream.toList as & Impure;
+        List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // filter map fusion                                                       //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def filterMapFusion01(): Bool & Impure =
+        let l = ref Nil;
+        (1 :: 2 :: 3 :: Nil) |> List.toStream |>
+        Stream.filter(_ -> { l := "a" :: deref l; true }) |>
+        Stream.map(   x -> { l := "b" :: deref l; x    });
+        List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
+
+    @test
+    def filterMapFusion02(): Bool & Impure =
+        let l = ref Nil;
+        (1 :: 2 :: 3 :: Nil) |> List.toStream |>
+        Stream.filter(_ -> { l := "a" :: deref l; true } as & Pure) |>
+        Stream.map(   x -> { l := "b" :: deref l; x    } as & Pure) |>
+        Stream.toList as & Impure;
+        List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
+
 }

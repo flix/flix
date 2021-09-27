@@ -80,6 +80,15 @@ pub def lazyListFilterMapLength(l: Array[Int32]): Benchmark =
         LazyList.length
     } as & Pure)
 
+pub def streamFilterMapLength(l: Array[Int32]): Benchmark =
+    defBenchmark("Stream.filterMapLength", () -> {
+        l |>
+        Array.toStream |>
+        Stream.filter(x -> x % 2 == 0) |>
+        Stream.map(x -> x * x) |>
+        Stream.length
+    } as & Pure)
+
 ///////////////////////////////////////////////////////////////////////////////
 /// sum                                                                     ///
 ///////////////////////////////////////////////////////////////////////////////
@@ -218,6 +227,21 @@ pub def lazyListMap8(l: Array[Int32]): Benchmark =
         LazyList.length
     } as & Pure)
 
+pub def streamMap8(l: Array[Int32]): Benchmark =
+    defBenchmark("Stream.map8", () -> {
+        l |>
+        Array.toStream |>
+        Stream.map(x -> x + 1) |>
+        Stream.map(x -> x + 2) |>
+        Stream.map(x -> x + 3) |>
+        Stream.map(x -> x + 4) |>
+        Stream.map(x -> x + 5) |>
+        Stream.map(x -> x + 6) |>
+        Stream.map(x -> x + 7) |>
+        Stream.map(x -> x + 8) |>
+        Stream.length
+    } as & Pure)
+
 ///////////////////////////////////////////////////////////////////////////////
 /// flatMap take sum                                                        ///
 ///////////////////////////////////////////////////////////////////////////////
@@ -307,12 +331,15 @@ pub def biboudisSuite(n: Int32): Array[Benchmark] & Impure =
         // Stream
         streamLength(l),
         streamFilterLength(l),
-        streamFilter8(l)
+        streamFilterMapLength(l),
+        streamFilter8(l),
+        streamMap8(l)
+
     ]
 
 def main(_args: Array[String]) : Int32 & Impure =
     let s1 = biboudisSuite(100);
-    Benchmark.runWithBudget(s1, 5000_000_000_000i64);
+    Benchmark.runWithBudget(s1, 250_000_000_000i64);
     0
 
 
