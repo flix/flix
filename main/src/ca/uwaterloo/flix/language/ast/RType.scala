@@ -174,10 +174,13 @@ object RRefType {
 
   def internalNameOf[T <: PRefType](e: RRefType[T]): InternalName = e.internalName
 
-  private def mkName(prefix: String, types: List[String], namespace: List[String] = Nil): JvmName = {
+  private def mkName(namespace: List[String], prefix: String, types: List[String]): JvmName = {
     val suffix = if (types.isEmpty) "" else JvmName.reservedDelimiter + types.mkString(JvmName.reservedDelimiter)
-    JvmName(Nil, prefix + suffix)
+    JvmName(namespace, prefix + suffix)
   }
+
+  private def mkName(prefix: String, types: List[String]): JvmName =
+    mkName(Nil, prefix, types)
 
   object RBoxedBool extends RRefType[PBoxedBool] {
     override lazy val jvmName: JvmName = JvmName.Java.Boolean
@@ -239,7 +242,7 @@ object RRefType {
   }
 
   case class REnum(sym: Symbol.EnumSym, args: List[RType[_ <: PType]]) extends RRefType[PEnum] {
-    override lazy val jvmName: JvmName = mkName(s"I${sym.name}", args.map(_.erasedString), namespace = sym.namespace)
+    override lazy val jvmName: JvmName = mkName(sym.namespace, s"I${sym.name}", args.map(_.erasedString))
   }
 
   object RBigInt extends RRefType[PBigInt] {
