@@ -1487,20 +1487,20 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         tup = Type.mkTuple(elms, loc)
       } yield tup
 
-    case NamedAst.Type.RecordEmpty(loc) =>
-      Type.RecordEmpty.toSuccess
+    case NamedAst.Type.RecordRowEmpty(loc) =>
+      Type.RecordRowEmpty.toSuccess
 
-    case NamedAst.Type.RecordExtend(field, value, rest, loc) =>
+    case NamedAst.Type.RecordRowExtend(field, value, rest, loc) =>
       for {
         v <- semiResolveType(value, ns0, root)
         r <- semiResolveType(rest, ns0, root)
-        rec = Type.mkRecordExtend(field, v, r, loc)
+        rec = Type.mkRecordRowExtend(field, v, r, loc)
       } yield rec
 
-    case NamedAst.Type.SchemaEmpty(loc) =>
-      Type.SchemaEmpty.toSuccess
+    case NamedAst.Type.SchemaRowEmpty(loc) =>
+      Type.SchemaRowEmpty.toSuccess
 
-    case NamedAst.Type.SchemaExtendWithAlias(qname, targs, rest, loc) =>
+    case NamedAst.Type.SchemaRowExtendWithAlias(qname, targs, rest, loc) =>
       // Lookup the type alias.
       lookupTypeAlias(qname, ns0, root) match {
         case None =>
@@ -1510,19 +1510,19 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           // Case 2: The type alias was found. Use it.
           for {
             t <- getTypeAliasTypeIfAccessible(typealias, ns0, root, loc)
-            ts <- traverse(targs)(lookupType(_, ns0, root))
+            ts <- traverse(targs)(semiResolveType(_, ns0, root))
             r <- semiResolveType(rest, ns0, root)
             app = Type.mkApply(t, ts, loc)
-            schema = Type.mkSchemaExtend(Name.mkPred(qname.ident), app, r, loc)
+            schema = Type.mkSchemaRowExtend(Name.mkPred(qname.ident), app, r, loc)
           } yield schema
       }
 
-    case NamedAst.Type.SchemaExtendWithTypes(ident, den, tpes, rest, loc) =>
+    case NamedAst.Type.SchemaRowExtendWithTypes(ident, den, tpes, rest, loc) =>
       for {
         ts <- traverse(tpes)(semiResolveType(_, ns0, root))
         r <- semiResolveType(rest, ns0, root)
         pred = mkPredicate(den, ts, loc)
-        schema = Type.mkSchemaExtend(Name.mkPred(ident), pred, r, loc)
+        schema = Type.mkSchemaRowExtend(Name.mkPred(ident), pred, r, loc)
       } yield schema
 
     case NamedAst.Type.Relation(tpes, loc) =>
