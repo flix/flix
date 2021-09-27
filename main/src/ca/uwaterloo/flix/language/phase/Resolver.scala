@@ -1608,6 +1608,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
   }
 
+  /**
+    * Finishes resolving the partially resolved type `tpe0`.
+    *
+    * Replaces type alias placeholders with the real type aliases.
+    */
   private def finishResolveType(tpe0: Type, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias]): Validation[Type, ResolutionError] = {
 
     def applyAlias(alias: ResolvedAst.TypeAlias, args: List[Type], loc: SourceLocation): Type = {
@@ -1638,7 +1643,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     }
   }
 
-  // MATT
+  /**
+    * Performs name resolution on the given type `tpe0` in the given namespace `ns0`.
+    */
   def resolveType(tpe0: NamedAst.Type, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root): Validation[Type, ResolutionError] = {
     for {
       t <- semiResolveType(tpe0, ns0, root)
