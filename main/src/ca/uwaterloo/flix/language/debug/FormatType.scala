@@ -148,6 +148,12 @@ object FormatType {
 
           case TypeConstructor.UnkindedEnum(sym) => formatApply(sym.toString, args)
 
+          case TypeConstructor.KindedAlias(sym, _, _) => formatApply(sym.toString, args)
+
+          case TypeConstructor.UnkindedAlias(sym, _) => formatApply(sym.toString, args)
+
+          case TypeConstructor.UnappliedAlias(sym) => formatApply(sym.toString, args)
+
           case TypeConstructor.Lattice => formatApply("Lattice", args)
 
           case TypeConstructor.Relation => formatApply("Relation", args)
