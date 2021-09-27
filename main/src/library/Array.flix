@@ -105,18 +105,51 @@ namespace Array {
     /// Returns the array `a` as a list.
     ///
     @Time(length(a)) @Space(length(a))
-    pub def toList(a: Array[a]): List[a] & Impure = toListHelper(a, length(a), 0, Nil)
+    pub def toList(a: Array[a]): List[a] & Impure = toListHelper(a, a.length, Nil)
 
     ///
     /// Helper function for `toList`.
     ///
-    def toListHelper(a: Array[a], len: Int32, i: Int32, ac: List[a]): List[a] & Impure =
-        if (i == len)
-            List.reverse(ac)
-        else {
-            let x = a[i];
-            toListHelper(a, len, i + 1, x :: ac)
+    def toListHelper(a: Array[a], i: Int32, acc: List[a]): List[a] & Impure =
+        if (i == 0) {
+            acc
+        } else {
+            let x = a[i - 1];
+            toListHelper(a, i - 1, x :: acc)
         }
+
+    ///
+    /// Returns the array `a` as a lazy list.
+    ///
+    // TODO: Add tests
+    pub def toLazyList(a: Array[a]): LazyList[a] & Impure =
+        LList(lazy toLazyListHelper(a, 0)) as & Impure
+
+    ///
+    /// Helper function for `toList`.
+    ///
+    def toLazyListHelper(a: Array[a], i: Int32): LazyList[a] =
+        if (i == a.length) {
+            ENil
+        } else {
+            let x = a[i] as & Pure; // TODO: Unsafe cast.
+            LCons(x, lazy toLazyListHelper(a, i + 1))
+        }
+
+    ///
+    /// Returns the array `a` as a stream.
+    ///
+    // TODO: Add tests
+    pub def toStream(a: Array[a]): Stream[a, Int32] =
+        let next = i -> {
+            if (i == a.length)
+                Done
+            else {
+                let x = a[i] as & Pure; // TODO: Unsound cast.
+                Yield(x, i + 1)
+            }
+        };
+        Stream(next, 0)
 
     ///
     /// Returns `Some(x)` if `x` is the first element of `a`.
