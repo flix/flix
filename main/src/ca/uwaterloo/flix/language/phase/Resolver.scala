@@ -55,7 +55,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   def run(root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Root, ResolutionError] = flix.phase("Resolver") {
 
     resolveTypeAliases(root.typealiases, root) flatMap {
-      taenv =>
+      case (taenv, taOrder) =>
 
         val classesVal = root.classes.flatMap {
           case (ns0, classes) => classes.map {
@@ -97,7 +97,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           enums <- sequence(enumsVal)
           _ <- checkSuperClassDag(classes.toMap)
         } yield ResolvedAst.Root(
-          classes.toMap, combine(instances), definitions.toMap, enums.toMap, taenv, root.reachable, root.sources
+          classes.toMap, combine(instances), definitions.toMap, enums.toMap, taenv, taOrder, root.reachable, root.sources
         )
     }
 
@@ -135,10 +135,21 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     }
   }
 
-  // MATT docs
-  private def resolveTypeAliases(aliases0: Map[Name.NName, Map[String, NamedAst.TypeAlias]], root: NamedAst.Root): Validation[Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ResolutionError] = {
+  /**
+    * Resolves the type aliases in the given root.
+    *
+    * Returns a pair:
+    *   - a map of type alias symbols to their AST nodes
+    *   - a list of the aliases in a processing order,
+    *       such that any alias only depends on those earlier in the list
+    */
+  private def resolveTypeAliases(aliases0: Map[Name.NName, Map[String, NamedAst.TypeAlias]], root: NamedAst.Root): Validation[(Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], List[Symbol.TypeAliasSym]), ResolutionError] = {
 
-    // MATT docs
+    /**
+      * Partially resolves the type alias.
+      *
+      * Type aliases within the type are given temporary placeholders.
+      */
     def semiResolveTypeAlias(alias: NamedAst.TypeAlias, ns: Name.NName): Validation[ResolvedAst.TypeAlias, ResolutionError] = alias match {
       case NamedAst.TypeAlias(doc, mod, sym, tparams0, tpe0, loc) =>
         val tparams = resolveTypeParams(tparams0, ns, root)
@@ -147,7 +158,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         }
     }
 
-    // MATT
+    /**
+      * Gets a list of all type aliases used in the partially resolved type tpe0.
+      */
     def getAliasUses(tpe0: Type): List[Symbol.TypeAliasSym] = tpe0 match {
       case tvar: Type.Var => tvar.asUnkinded; Nil
       case Type.Ascribe(tpe, _, _) => getAliasUses(tpe)
@@ -157,7 +170,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
     }
 
-    // MATT docs
+    /**
+      * Gets the resolution order for the aliases.
+      *
+      * Any alias only depends on those earlier in the list
+      */
     def findResolutionOrder(aliases: Iterable[ResolvedAst.TypeAlias]): Validation[List[Symbol.TypeAliasSym], ResolutionError] = {
       val aliasSyms = aliases.map(_.sym)
       val aliasLookup = aliases.map(alias => alias.sym -> alias).toMap
@@ -169,7 +186,13 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       }
     }
 
-    // MATT docs
+    /**
+      * Finishes the resolution of the given type aliases.
+      *
+      * Replaces placeholder type alias constructors with the real type aliases.
+      *
+      * The given aliases must be in resolution order.
+      */
     def finishResolveTypeAliases(aliases0: List[ResolvedAst.TypeAlias]): Validation[Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ResolutionError] = {
       Validation.fold(aliases0, Map.empty[Symbol.TypeAliasSym, ResolvedAst.TypeAlias]) {
         case (taenv, ResolvedAst.TypeAlias(doc, mod, sym, tparams, tpe0, loc)) =>
@@ -181,21 +204,30 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       }
     }
 
-    // MATT inline docs
+    // Extract all the aliases and namespaces from the map.
     val aliases1 = for {
       (ns, aliasesInNs) <- aliases0
       (_, alias) <- aliasesInNs
     } yield (alias, ns)
 
     for {
+      // Partially resolve the aliases
       aliases1 <- traverse(aliases1) {
         case (alias, ns) => semiResolveTypeAlias(alias, ns)
       }
+
+      // Get the resolution order
       sortedSyms <- findResolutionOrder(aliases1)
+
+      // Create mapping for the partially resolved aliases
       semiAliasEnv = aliases1.map(alias => alias.sym -> alias).toMap
+
+      // Get the sorted aliases from the mapping
       sortedAliases = sortedSyms.map(semiAliasEnv)
+
+      // Resolve the sorted aliases
       aliases <- finishResolveTypeAliases(sortedAliases)
-    } yield aliases
+    } yield (aliases, sortedSyms)
   }
 
 
