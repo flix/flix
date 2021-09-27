@@ -1406,18 +1406,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     case _ => false
   }
 
-  // MATT docs
-  @tailrec
-  private def getBaseType(tpe0: NamedAst.Type): NamedAst.Type = tpe0 match {
-    case NamedAst.Type.Apply(tpe1, _, _) => getBaseType(tpe1)
-    case NamedAst.Type.Ascribe(tpe, _, _) => getBaseType(tpe)
-  }
-
-  // MATT docs
-  private def getTypeArgs(tpe0: NamedAst.Type): List[NamedAst.Type] = tpe0 match {
-    case NamedAst.Type.Apply(tpe1, tpe2, _) => getTypeArgs(tpe1) ::: tpe2 :: Nil
-  }
-
   /**
     * Partially resolves the given type `tpe0` in the given namespace `ns0`.
     *
