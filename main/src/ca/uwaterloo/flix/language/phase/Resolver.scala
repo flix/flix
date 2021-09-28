@@ -25,7 +25,6 @@ import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{Graph, InternalCompilerException, Validation}
 
 import java.lang.reflect.{Constructor, Field, Method, Modifier}
-import scala.annotation.tailrec
 import scala.collection.mutable
 
 /**
@@ -1517,6 +1516,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         rec = Type.mkRecordRowExtend(field, v, r, loc)
       } yield rec
 
+    case NamedAst.Type.Record(row, loc) =>
+      for {
+        r <- semiResolveType(row, ns0, root)
+      } yield Type.mkRecord(r, loc)
+
     case NamedAst.Type.SchemaRowEmpty(loc) =>
       Type.SchemaRowEmpty.toSuccess
 
@@ -1544,6 +1548,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         pred = mkPredicate(den, ts, loc)
         schema = Type.mkSchemaRowExtend(Name.mkPred(ident), pred, r, loc)
       } yield schema
+
+    case NamedAst.Type.Schema(row, loc) =>
+      for {
+        r <- semiResolveType(row, ns0, root)
+      } yield Type.mkSchema(r, loc)
 
     case NamedAst.Type.Relation(tpes, loc) =>
       for {
@@ -1640,6 +1649,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
               Type.mkApply(applyAlias(alias, usedArgs, tpe0.loc), extraArgs, tpe0.loc)
           }
         }
+      case _ =>
+        traverse(targs)(finishResolveType(_, taenv)) map {
+          resolvedArgs => Type.mkApply(baseType, resolvedArgs, tpe0.loc)
+        }
+      // MATT how to handle ascribe?
     }
   }
 

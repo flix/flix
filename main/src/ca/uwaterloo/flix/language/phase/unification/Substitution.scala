@@ -61,7 +61,8 @@ case class Substitution(m: Map[Type.Var, Type]) {
           case None => x
           case Some(t0) => t0 match {
             // NB: This small trick is used to propagate variable names.
-            case tr: Type.Var => tr.asKinded.copy(text = x.text)
+            case tr: Type.KindedVar => tr.copy(text = x.text)
+            case tr: Type.UnkindedVar => tr.copy(text = x.text)
             case tr => tr
           }
         }
