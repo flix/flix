@@ -18,7 +18,8 @@ package ca.uwaterloo.flix.language.phase.extra
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Expression, MatchRule, SelectChannelRule}
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.errors.Severity
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Line, NewLine}
@@ -38,18 +39,20 @@ object CodeQuality {
   // TODO: DOC
   sealed trait CodeQualityError extends CompilationError {
     def kind: String = "CodeQuality Hint"
+
+    override def severity: Severity = Severity.Hint
   }
 
   // TODO: DOC
   case class InhibitsLaziness(loc: SourceLocation) extends CodeQualityError {
-    override def summary: String = s"Prevents stream fision"
+    override def summary: String = s"Use of impure function prevents laziness / fusion."
 
     override def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Prevents stream fusion" << NewLine
+      vt << Line(kind, source.format) << NewLine // TODO
+      vt << ">> TODO" << NewLine
       vt << NewLine
-      vt << Code(loc, "prevents stream fusion") << NewLine
+      vt << Code(loc, "TODO") << NewLine // TODO
     }
   }
 
@@ -80,11 +83,7 @@ object CodeQuality {
 
     case Expression.Var(_, _, _) => Nil
 
-    case Expression.Def(sym, _, loc) =>
-      if (WantsPureArg.contains(sym))
-        InhibitsLaziness(loc) :: Nil
-      else
-        Nil
+    case Expression.Def(_, _, loc) => Nil
 
     case Expression.Sig(_, _, _) => Nil
 
@@ -121,8 +120,17 @@ object CodeQuality {
     case Expression.Lambda(_, exp, _, _) =>
       visitExp(exp)
 
-    case Expression.Apply(exp, exps, tpe, eff, loc) =>
-      visitExp(exp) ++ visitExps(exps)
+    case Expression.Apply(exp, exps, _, _, _) =>
+      val hints0 = (exp, exps) match {
+        case (Expression.Def(sym, _, _), lambda :: _) =>
+          if (WantsPureArg.contains(sym) && isImpure(lambda.tpe))
+            InhibitsLaziness(lambda.loc) :: Nil
+          else
+            Nil
+        case _ => Nil
+      }
+
+      visitExp(exp) ++ visitExps(exps) ++ hints0
 
     case Expression.Unary(sop, exp, tpe, eff, loc) =>
       visitExp(exp)
@@ -284,5 +292,10 @@ object CodeQuality {
     */
   private def visitExps(exps: List[Expression]): List[CodeQualityError] =
     exps.flatMap(visitExp)
+
+  /**
+    * Returns `true` if the given type `tpe` is an impure function.
+    */
+  private def isImpure(tpe: Type): Boolean = true // TODO
 
 }
