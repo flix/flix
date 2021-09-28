@@ -43,6 +43,8 @@ object KindedAst {
 
   case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[KindedAst.TypeParam], derives: List[Ast.Derivation], cases: Map[Name.Tag, KindedAst.Case], tpeDeprecated: Type, sc: Scheme, loc: SourceLocation)
 
+  case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: List[KindedAst.TypeParam], tpe: Type, loc: SourceLocation)
+
   sealed trait Expression {
     def loc: SourceLocation
   }
