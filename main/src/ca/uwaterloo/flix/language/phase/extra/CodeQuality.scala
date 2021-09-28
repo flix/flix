@@ -44,7 +44,7 @@ object CodeQuality {
   }
 
   // TODO: DOC
-  case class InhibitsLaziness(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeQualityError {
+  case class UsePureFunction(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeQualityError {
     override def summary: String = s"Use of impure function prevents laziness / fusion."
 
     override def message: VirtualTerminal = {
@@ -124,7 +124,7 @@ object CodeQuality {
       val hints0 = (exp, exps) match {
         case (Expression.Def(sym, _, _), lambda :: _) =>
           if (WantsPureArg.contains(sym) && !isPure(lambda.tpe))
-            InhibitsLaziness(sym, lambda.loc) :: Nil
+            UsePureFunction(sym, sym.loc) :: Nil
           else
             Nil
         case _ => Nil
@@ -132,10 +132,10 @@ object CodeQuality {
 
       visitExp(exp) ++ visitExps(exps) ++ hints0
 
-    case Expression.Unary(sop, exp, tpe, eff, loc) =>
+    case Expression.Unary(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) =>
+    case Expression.Binary(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.Let(_, _, exp1, exp2, _, _, _) =>
@@ -144,13 +144,13 @@ object CodeQuality {
     case Expression.LetRegion(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
+    case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-    case Expression.Stm(exp1, exp2, tpe, eff, loc) =>
+    case Expression.Stm(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Match(matchExp, rules, tpe, eff, loc) =>
+    case Expression.Match(matchExp, rules, _, _, _) =>
       val m = visitExp(matchExp)
       rules.foldLeft(m) {
         case (macc, MatchRule(pat, guard, exp)) =>
