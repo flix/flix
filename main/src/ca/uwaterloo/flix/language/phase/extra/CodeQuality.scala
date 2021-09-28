@@ -17,8 +17,8 @@ package ca.uwaterloo.flix.language.phase.extra
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Expression, MatchRule, SelectChannelRule}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Line, NewLine}
@@ -26,9 +26,13 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 object CodeQuality {
 
-  private val Syms = List(
+  /**
+    * A list of operations that supports fusion or laziness when given pure function arguments.
+    */
+  private val WantsPureArg = List(
     Symbol.mkDefnSym("Stream.filter"),
     Symbol.mkDefnSym("Stream.map"),
+    Symbol.mkDefnSym("Stream.flatMap")
   )
 
   // TODO: DOC
@@ -49,11 +53,11 @@ object CodeQuality {
     }
   }
 
-  // TODO: DOC
+  /**
+    * Returns a collection of code quality hints for the given AST `root`.
+    */
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CodeQualityError] = flix.phase("CodeQuality") {
     val results = root.defs.values.flatMap(visitDef).toList
-
-    println("Results = " + results)
 
     if (results.isEmpty)
       root.toSuccess
@@ -77,7 +81,7 @@ object CodeQuality {
     case Expression.Var(_, _, _) => Nil
 
     case Expression.Def(sym, _, loc) =>
-      if (Syms.contains(sym))
+      if (WantsPureArg.contains(sym))
         InhibitsLaziness(loc) :: Nil
       else
         Nil
