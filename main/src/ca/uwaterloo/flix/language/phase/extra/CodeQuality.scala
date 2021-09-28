@@ -163,37 +163,37 @@ object CodeQuality {
     case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
       visitExp(exp)
 
-    case Expression.Tuple(elms, tpe, eff, loc) =>
-      visitExps(elms)
+    case Expression.Tuple(exps, tpe, eff, loc) =>
+      visitExps(exps)
 
     case Expression.RecordEmpty(tpe, loc) => Nil
 
-    case Expression.RecordSelect(base, _, tpe, eff, loc) =>
-      visitExp(base)
+    case Expression.RecordSelect(exp, _, _, _, _) =>
+      visitExp(exp)
 
-    case Expression.RecordExtend(_, value, rest, tpe, eff, loc) =>
-      visitExp(rest) ++ visitExp(value)
+    case Expression.RecordExtend(_, exp1, exp2, _, _, _) =>
+      visitExp(exp2) ++ visitExp(exp1)
 
-    case Expression.RecordRestrict(_, rest, tpe, eff, loc) =>
-      visitExp(rest)
+    case Expression.RecordRestrict(_, exp, _, _, _) =>
+      visitExp(exp)
 
-    case Expression.ArrayLit(elms, tpe, eff, loc) =>
-      visitExps(elms)
+    case Expression.ArrayLit(exps, _, _, _) =>
+      visitExps(exps)
 
-    case Expression.ArrayNew(elm, len, tpe, eff, loc) =>
-      visitExp(elm)
+    case Expression.ArrayNew(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.ArrayLoad(base, index, tpe, eff, loc) =>
-      visitExp(base) ++ visitExp(index)
+    case Expression.ArrayLoad(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.ArrayStore(base, index, elm, loc) =>
-      visitExp(base) ++ visitExp(index) ++ visitExp(elm)
+    case Expression.ArrayStore(exp1, exp2, exp3, _) =>
+      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-    case Expression.ArrayLength(base, _, _) =>
-      visitExp(base)
+    case Expression.ArrayLength(exp, _, _) =>
+      visitExp(exp)
 
-    case Expression.ArraySlice(base, beginIndex, endIndex, _, _) =>
-      visitExp(base) ++ visitExp(beginIndex) ++ visitExp(endIndex)
+    case Expression.ArraySlice(exp1, exp2, exp3, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
     case Expression.Ref(exp, _, _, _) =>
       visitExp(exp)
