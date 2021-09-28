@@ -378,4 +378,89 @@ namespace TestStream {
     	(1 :: 2 :: 3 :: Nil) |> List.toStream |> Stream.foldRight((x, acc) -> x :: acc, Nil) == 1 :: 2 :: 3 :: Nil
 
 
+    /////////////////////////////////////////////////////////////////////////////
+    // exists                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def exists01(): Bool =
+        not (Stream.exists(i -> i > 3, Stream.empty()))
+
+    @test
+    def exists02(): Bool =
+        not ((1 :: Nil) |> List.toStream |> Stream.exists(i -> i > 3))
+
+    @test
+    def exists03(): Bool =
+        (5 :: Nil) |> List.toStream |> Stream.exists(i -> i > 3)
+
+    @test
+    def exists04(): Bool =
+        not ((1 :: 2 :: Nil) |> List.toStream |> Stream.exists(i -> i > 3))
+
+    @test
+    def exists05(): Bool =
+        (1 :: 6 :: Nil) |> List.toStream |> Stream.exists(i -> i > 3)
+
+    @test
+    def exists06(): Bool =
+        (6 :: 1 :: Nil) |> List.toStream |> Stream.exists(i -> i > 3)
+
+    @test
+    def exists07(): Bool =
+        (16 :: 6 :: Nil) |> List.toStream |> Stream.exists(i -> i > 3)
+
+    @test
+    def exists08(): Bool =
+        not ((1 :: -9 :: 3 :: Nil) |> List.toStream |> Stream.exists(i -> i > 3))
+
+    @test
+    def exists09(): Bool =
+        (1 :: 9 :: 3 :: Nil) |> List.toStream |> Stream.exists(i -> i > 3)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // forall                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def forall01(): Bool =
+        Stream.forall(i -> i > 3, Stream.empty())
+
+    @test
+    def forall02(): Bool =
+        not ((1 :: Nil) |> List.toStream |> Stream.forall(i -> i > 3))
+
+    @test
+    def forall03(): Bool =
+        (5 :: Nil) |> List.toStream |> Stream.forall(i -> i > 3)
+
+    @test
+    def forall04(): Bool =
+        not ((1 :: 2 :: Nil) |> List.toStream |> Stream.forall(i -> i > 3))
+
+    @test
+    def forall05(): Bool =
+        not ((1 :: 6 :: Nil) |> List.toStream |> Stream.forall(i -> i > 3))
+
+    @test
+    def forall06(): Bool =
+        not ((6 :: 1 :: Nil) |> List.toStream |> Stream.forall(i -> i > 3))
+
+    @test
+    def forall07(): Bool =
+        (16 :: 6 :: Nil) |> List.toStream |> Stream.forall(i -> i > 3)
+
+    @test
+    def forall08(): Bool =
+        not ((1 :: -9 :: 3 :: Nil) |> List.toStream |> Stream.forall(i -> i > 3))
+
+    @test
+    def forall09(): Bool =
+        not ((1 :: 9 :: 3 :: Nil) |> List.toStream |> Stream.forall(i -> i > 3))
+
+    @test
+    def forall10(): Bool =
+        (11 :: 9 :: 31 :: Nil) |> List.toStream |> Stream.forall(i -> i > 3)
+
 }
