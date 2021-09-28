@@ -17,7 +17,8 @@ package ca.uwaterloo.flix.language.phase.extra
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Expression, MatchRule, SelectChannelRule}
+import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
+import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, ChoiceRule, Constraint, Expression, MatchRule, SelectChannelRule}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.Severity
 import ca.uwaterloo.flix.util.Validation
@@ -109,13 +110,13 @@ object CodeQuality {
 
     case Expression.Int32(_, _) => Nil
 
-    case Expression.Int64(lit, loc) => Nil
+    case Expression.Int64(_, _) => Nil
 
-    case Expression.BigInt(lit, loc) => Nil
+    case Expression.BigInt(_, _) => Nil
 
-    case Expression.Str(lit, loc) => Nil
+    case Expression.Str(_, _) => Nil
 
-    case Expression.Default(tpe, loc) => Nil
+    case Expression.Default(_, _) => Nil
 
     case Expression.Lambda(_, exp, _, _) =>
       visitExp(exp)
@@ -151,22 +152,22 @@ object CodeQuality {
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.Match(matchExp, rules, _, _, _) =>
-      val m = visitExp(matchExp)
-      rules.foldLeft(m) {
-        case (macc, MatchRule(pat, guard, exp)) =>
-          macc ++ visitExp(guard) ++ visitExp(exp)
+      visitExp(matchExp) ++ rules.flatMap {
+        case MatchRule(_, guard, exp) => visitExp(guard) ++ visitExp(exp)
       }
 
-    case Expression.Choose(exps, rules, tpe, eff, loc) =>
-      visitExps(exps) // TODO
+    case Expression.Choose(exps, rules, _, _, _) =>
+      visitExps(exps) ++ rules.flatMap {
+        case ChoiceRule(_, exp) => visitExp(exp)
+      }
 
-    case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
+    case Expression.Tag(_, _, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Tuple(exps, tpe, eff, loc) =>
+    case Expression.Tuple(exps, _, _, _) =>
       visitExps(exps)
 
-    case Expression.RecordEmpty(tpe, loc) => Nil
+    case Expression.RecordEmpty(_, _) => Nil
 
     case Expression.RecordSelect(exp, _, _, _, _) =>
       visitExp(exp)
@@ -266,7 +267,7 @@ object CodeQuality {
       visitExp(exp)
 
     case Expression.FixpointConstraintSet(cs, _, _, _) =>
-      Nil // TODO
+      cs.flatMap(visitConstraint)
 
     case Expression.FixpointMerge(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
@@ -285,7 +286,27 @@ object CodeQuality {
 
     case Expression.Reify(_, _, _, _) =>
       Nil
+  }
 
+  /**
+    * Computes code quality hints for the given constraint `c`.
+    */
+  private def visitConstraint(c: Constraint): List[CodeQualityError] =
+    visitHeadPredicate(c.head) ++ c.body.flatMap(visitBodyPredicate)
+
+  /**
+    * Computes code quality hints for the given head predicate `p`.
+    */
+  private def visitHeadPredicate(p: TypedAst.Predicate.Head): List[CodeQualityError] = p match {
+    case Head.Atom(_, _, terms, _, _) => visitExps(terms)
+  }
+
+  /**
+    * Computes code quality hints for the given body predicate `p`.
+    */
+  private def visitBodyPredicate(p: TypedAst.Predicate.Body): List[CodeQualityError] = p match {
+    case Body.Atom(_, _, _, _, _, _) => Nil
+    case Body.Guard(exp, _) => visitExp(exp)
   }
 
   /**
