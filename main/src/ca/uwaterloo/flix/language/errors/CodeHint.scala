@@ -16,6 +16,9 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
+import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Line, NewLine}
+import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
   * A common super-type for code hints.
@@ -24,4 +27,22 @@ trait CodeHint extends CompilationError {
   def kind: String = "Code Hint"
 
   override def severity: Severity = Severity.Hint
+}
+
+object CodeHint {
+
+  // TODO: DOC
+  case class UsePureFunction(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
+    override def summary: String = s"Use of impure function prevents laziness / fusion."
+
+    override def message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine // TODO
+      vt << ">> TODO" << NewLine
+      vt << NewLine
+      vt << Code(loc, "TODO") << NewLine // TODO
+    }
+  }
+
+
 }

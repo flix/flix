@@ -18,36 +18,21 @@ package ca.uwaterloo.flix.language.phase.extra
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, ChoiceRule, Constraint, Expression, MatchRule, SelectChannelRule}
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.CodeHint
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Line, NewLine}
-import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 object CodeQuality {
 
   /**
     * A list of operations that supports fusion or laziness when given pure function arguments.
     */
-  private val WantsPureArg = List(
+  val WantsPureArg: List[Symbol.DefnSym] = List(
     Symbol.mkDefnSym("Stream.filter"),
     Symbol.mkDefnSym("Stream.map"),
     Symbol.mkDefnSym("Stream.flatMap")
   )
-
-  // TODO: DOC
-  case class UsePureFunction(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
-    override def summary: String = s"Use of impure function prevents laziness / fusion."
-
-    override def message: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      vt << Line(kind, source.format) << NewLine // TODO
-      vt << ">> TODO" << NewLine
-      vt << NewLine
-      vt << Code(loc, "TODO") << NewLine // TODO
-    }
-  }
 
   /**
     * Returns a collection of code quality hints for the given AST `root`.
@@ -117,7 +102,7 @@ object CodeQuality {
       val hints0 = (exp, exps) match {
         case (Expression.Def(sym, _, _), lambda :: _) =>
           if (WantsPureArg.contains(sym) && !isPure(lambda.tpe))
-            UsePureFunction(sym, sym.loc) :: Nil
+            CodeHint.UsePureFunction(sym, sym.loc) :: Nil
           else
             Nil
         case _ => Nil
