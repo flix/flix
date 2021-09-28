@@ -19,10 +19,9 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Expression, MatchRule, SelectChannelRule}
-import ca.uwaterloo.flix.language.debug.FormatKind.formatKind
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Cyan, Line, Magenta, NewLine, Red}
+import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Line, NewLine}
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 object CodeQuality {
@@ -52,29 +51,36 @@ object CodeQuality {
 
   // TODO: DOC
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CodeQualityError] = flix.phase("CodeQuality") {
-    val results = ParOps.parMap(root.defs.values, visitDef)
+    val results = root.defs.values.flatMap(visitDef).toList
+
+    println("Results = " + results)
 
     if (results.isEmpty)
       root.toSuccess
     else
-      Failure(results.flatten.to(LazyList))
+      Failure(results.to(LazyList))
   }
 
+  /**
+    * Computes code quality hints for the given definition `def0`.
+    */
   private def visitDef(def0: TypedAst.Def): List[CodeQualityError] = {
     visitExp(def0.impl.exp)
   }
 
-
+  /**
+    * Computes code quality hints for the given expression `exp0`.
+    */
   private def visitExp(exp0: Expression): List[CodeQualityError] = exp0 match {
-    case Expression.Wild(tpe, loc) => Nil
+    case Expression.Wild(_, _) => Nil
 
-    case Expression.Var(sym, tpe, loc) => Nil
+    case Expression.Var(_, _, _) => Nil
 
-    case Expression.Def(sym, tpe, loc) =>
-      if (Syms.contains(sym))
-        InhibitsLaziness(loc) :: Nil
-      else
-        Nil
+    case Expression.Def(sym, _, loc) =>
+      // if (Syms.contains(sym))
+      InhibitsLaziness(loc) :: Nil
+    // else
+    //  Nil
 
     case Expression.Sig(sym, tpe, loc) => Nil
 
@@ -112,7 +118,7 @@ object CodeQuality {
       visitExp(exp)
 
     case Expression.Apply(exp, exps, tpe, eff, loc) =>
-      visitExp(exp) ++ visitExps(exps)
+      visitExp(exp) ++ visitExps(exps) ++ (InhibitsLaziness(loc) :: Nil)
 
     case Expression.Unary(sop, exp, tpe, eff, loc) =>
       visitExp(exp)
@@ -269,8 +275,10 @@ object CodeQuality {
 
   }
 
+  /**
+    * Computes code quality hints for the given list of expressions `exps`.
+    */
   private def visitExps(exps: List[Expression]): List[CodeQualityError] =
     exps.flatMap(visitExp)
-
 
 }
