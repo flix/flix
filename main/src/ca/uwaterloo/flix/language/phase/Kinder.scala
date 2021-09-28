@@ -760,7 +760,11 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = k, loc).toFailure
       }
     case Type.Alias(sym, args0, t0, loc) =>
-      // MATT have to check that the args match the expected kinds of the alias
+      // MATT get KindedAst.TypeAlias from taenv
+      // MATT assert each arg matches
+      // MATT check t0 with kind from taenv
+      // MATT and yield result
+      ???
     case _: Type.KindedVar => throw InternalCompilerException("Unexpected kinded type variable.")
   }
 
