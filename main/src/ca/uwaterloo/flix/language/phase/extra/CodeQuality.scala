@@ -108,14 +108,11 @@ object CodeQuality {
 
     case Expression.Default(tpe, loc) => Nil
 
-    case Expression.Lambda(fparam, exp, tpe, loc) =>
+    case Expression.Lambda(_, exp, _, _) =>
       visitExp(exp)
 
     case Expression.Apply(exp, exps, tpe, eff, loc) =>
-      val init = visitExp(exp)
-      exps.foldLeft(init) {
-        case (acc, exp) => acc ++ visitExp(exp)
-      }
+      visitExp(exp) ++ visitExps(exps)
 
     case Expression.Unary(sop, exp, tpe, eff, loc) =>
       visitExp(exp)
@@ -123,7 +120,7 @@ object CodeQuality {
     case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Let(sym, _, exp1, exp2, _, _, _) =>
+    case Expression.Let(_, _, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.LetRegion(_, exp, _, _, _) =>
