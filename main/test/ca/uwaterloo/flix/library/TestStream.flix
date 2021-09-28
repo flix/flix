@@ -327,4 +327,55 @@ namespace TestStream {
         Stream.toList as & Impure;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldLeft                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldLeft01(): Bool =
+    	Stream.foldLeft((i, e) -> (i - e) * (e % 2 + 1), 100, Stream.empty(): Stream[Int32, Int32]) == 100
+
+    @test
+    def foldLeft02(): Bool =
+    	(1 :: Nil) |> List.toStream |> Stream.foldLeft((i, e) -> (i - e) * (e % 2 + 1), 100) == 198
+
+    @test
+    def foldLeft03(): Bool =
+    	(1 :: 2 :: Nil) |> List.toStream |> Stream.foldLeft((i, e) -> (i - e) * (e % 2 + 1), 100) == 196
+
+    @test
+    def foldLeft04(): Bool =
+    	(1 :: 2 :: 3 :: Nil) |> List.toStream |> Stream.foldLeft((i, e) -> (i - e) * (e % 2 + 1), 100) == 386
+
+    @test
+    def foldLeft05(): Bool =
+    	(1 :: 2 :: 3 :: Nil) |> List.toStream |> Stream.foldLeft((acc, x) -> x :: acc, Nil) == 3 :: 2 :: 1 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldRight                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldRight01(): Bool =
+    	Stream.foldRight((e, i) -> (i - e) * (e % 2 + 1), 100, Stream.empty(): Stream[Int32, Int32]) == 100
+
+    @test
+    def foldRight02(): Bool =
+    	(1 :: Nil) |> List.toStream |> Stream.foldRight((e, i) -> (i - e) * (e % 2 + 1), 100) == 198
+
+    @test
+    def foldRight03(): Bool =
+    	(1 :: 2 :: Nil) |> List.toStream |> Stream.foldRight((e, i) -> (i - e) * (e % 2 + 1), 100) == 194
+
+    @test
+    def foldRight04(): Bool =
+    	(1 :: 2 :: 3 :: Nil) |> List.toStream |> Stream.foldRight((e, i) -> (i - e) * (e % 2 + 1), 100) == 382
+
+    @test
+    def foldRight05(): Bool =
+    	(1 :: 2 :: 3 :: Nil) |> List.toStream |> Stream.foldRight((x, acc) -> x :: acc, Nil) == 1 :: 2 :: 3 :: Nil
+
+
 }

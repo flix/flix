@@ -245,7 +245,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       ("id" -> id) ~ RenameProvider.processRename(newName, uri, pos)(index, root)
 
     case Request.DocumentSymbols(id, uri) =>
-      ("id" -> id) ~ ("status" -> "success") ~ ("result" -> SymbolProvider.processDocumentSymbols(uri)(index, root).map(_.toJSON))
+      ("id" -> id) ~ ("status" -> "success") ~ ("result" -> SymbolProvider.processDocumentSymbols(uri)(root).map(_.toJSON))
 
     case Request.Uses(id, uri, pos) =>
       ("id" -> id) ~ FindReferencesProvider.findRefs(uri, pos)(index, root)
