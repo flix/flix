@@ -16,26 +16,35 @@
 package ca.uwaterloo.flix.language.phase.extra
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.TypedAst
-import ca.uwaterloo.flix.language.ast.TypedAst.Expression
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
+import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Expression, MatchRule, SelectChannelRule}
+import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
 object CodeQuality {
 
+  // TODO: DOC
   sealed trait CodeQualityError
 
-  /**
-    * Type checks the given AST root.
-    */
+  // TODO: DOC
+  case class InhibitsLaziness(name: String, loc: SourceLocation) extends CodeQualityError
+
+  // TODO: DOC
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CodeQualityError] = flix.phase("CodeQuality") {
-    root.toSuccess
+    val results = ParOps.parMap(root.defs.values, visitDef)
+
+    if (results.isEmpty)
+      root.toSuccess
+    else
+      Failure(results.flatten.to(LazyList))
   }
 
-  /**
-    * Finds the holes and hole contexts in the given expression `exp0`.
-    */
-  def visitExp(exp0: Expression): List[CodeQualityError] = exp0 match {
+  private def visitDef(def0: TypedAst.Def): List[CodeQualityError] = {
+    visitExp(def0.impl.exp)
+  }
+
+
+  private def visitExp(exp0: Expression): List[CodeQualityError] = exp0 match {
     case Expression.Wild(tpe, loc) => Nil
 
     case Expression.Var(sym, tpe, loc) => Nil
@@ -44,7 +53,7 @@ object CodeQuality {
 
     case Expression.Sig(sym, tpe, loc) => Nil
 
-    case Expression.Hole(sym, tpe, eff, loc) => Map(sym -> HoleContext(sym, tpe))
+    case Expression.Hole(sym, tpe, eff, loc) => Nil
 
     case Expression.Unit(loc) => Nil
 
@@ -75,8 +84,7 @@ object CodeQuality {
     case Expression.Default(tpe, loc) => Nil
 
     case Expression.Lambda(fparam, exp, tpe, loc) =>
-      val env1 = Map(fparam.sym -> fparam.tpe)
-      visitExp(exp ++ env1)
+      visitExp(exp)
 
     case Expression.Apply(exp, exps, tpe, eff, loc) =>
       val init = visitExp(exp)
@@ -90,8 +98,8 @@ object CodeQuality {
     case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Let(sym, _, exp1, exp2, tpe, eff, loc) =>
-      visitExp(exp1) ++ visitExp(exp2 + (sym -> exp1.tpe))
+    case Expression.Let(sym, _, exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.LetRegion(_, exp, _, _, _) =>
       visitExp(exp)
@@ -106,31 +114,17 @@ object CodeQuality {
       val m = visitExp(matchExp)
       rules.foldLeft(m) {
         case (macc, MatchRule(pat, guard, exp)) =>
-          macc ++ visitExp(guard) ++ visitExp(exp, binds(pat) ++ env0)
+          macc ++ visitExp(guard) ++ visitExp(exp)
       }
 
     case Expression.Choose(exps, rules, tpe, eff, loc) =>
-      val m1 = exps.foldLeft(Nil[Symbol.HoleSym, HoleContext]) {
-        case (acc, exp) => acc ++ visitExp(exp)
-      }
-      val m2 = rules.foldLeft(Nil[Symbol.HoleSym, HoleContext]) {
-        case (acc, ChoiceRule(pat, exp)) =>
-          val env1 = pat.zip(exps).foldLeft(Nil[Symbol.VarSym, Type]) {
-            case (acc, (ChoicePattern.Wild(_), exp)) => acc
-            case (acc, (ChoicePattern.Absent(_), exp)) => acc
-            case (acc, (ChoicePattern.Present(sym, _, _), exp)) => acc + (sym -> exp.tpe)
-          }
-          acc ++ visitExp(exp ++ env1)
-      }
-      m1 ++ m2
+      visitExps(exps) // TODO
 
     case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
       visitExp(exp)
 
     case Expression.Tuple(elms, tpe, eff, loc) =>
-      elms.foldLeft(Nil[Symbol.HoleSym, HoleContext]) {
-        case (macc, elm) => macc ++ visitExp(elm)
-      }
+      visitExps(elms)
 
     case Expression.RecordEmpty(tpe, loc) => Nil
 
@@ -144,9 +138,7 @@ object CodeQuality {
       visitExp(rest)
 
     case Expression.ArrayLit(elms, tpe, eff, loc) =>
-      elms.foldLeft(Nil[Symbol.HoleSym, HoleContext]) {
-        case (macc, elm) => macc ++ visitExp(elm)
-      }
+      visitExps(elms)
 
     case Expression.ArrayNew(elm, len, tpe, eff, loc) =>
       visitExp(elm)
@@ -173,10 +165,10 @@ object CodeQuality {
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.Existential(fparam, exp, loc) =>
-      visitExp(exp + (fparam.sym -> fparam.tpe))
+      visitExp(exp)
 
     case Expression.Universal(fparam, exp, loc) =>
-      visitExp(exp + (fparam.sym -> fparam.tpe))
+      visitExp(exp)
 
     case Expression.Ascribe(exp, tpe, eff, loc) =>
       visitExp(exp)
@@ -185,14 +177,12 @@ object CodeQuality {
       visitExp(exp)
 
     case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
-      rules.foldLeft(visitExp(exp)) {
-        case (macc, CatchRule(sym, clazz, body)) => macc ++ visitExp(body + (sym -> Type.mkNative(null, loc)))
+      visitExp(exp) ++ rules.flatMap {
+        case CatchRule(_, _, exp) => visitExp(exp)
       }
 
     case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
-      args.foldLeft(Nil[Symbol.HoleSym, HoleContext]) {
-        case (macc, arg) => macc ++ visitExp(arg)
-      }
+      visitExps(args)
 
     case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) =>
       args.foldLeft(visitExp(exp)) {
@@ -200,9 +190,7 @@ object CodeQuality {
       }
 
     case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) =>
-      args.foldLeft(Nil[Symbol.HoleSym, HoleContext]) {
-        case (macc, arg) => macc ++ visitExp(arg)
-      }
+      visitExps(args)
 
     case Expression.GetField(field, exp, tpe, eff, loc) =>
       visitExp(exp)
@@ -222,45 +210,45 @@ object CodeQuality {
 
     case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.SelectChannel(rules, default, tpe, eff, loc) =>
-      val rs = rules.foldLeft(Nil[Symbol.HoleSym, HoleContext]) {
-        case (macc, SelectChannelRule(sym, chan, exp)) => macc ++ visitExp(chan) ++ visitExp(exp)
-      }
+    case Expression.SelectChannel(rules, default, _, _, _) =>
+      rules.flatMap {
+        case SelectChannelRule(_, chan, exp) => visitExp(chan) ++ visitExp(exp)
+      } ++ default.map(visitExp).getOrElse(Nil)
 
-      val d = default.map(visitExp(_)).getOrElse(Nil)
+    case Expression.Spawn(exp, _, _, _) =>
+      visitExp(exp)
 
-      rs ++ d
+    case Expression.Lazy(exp, _, _) =>
+      visitExp(exp)
 
-    case Expression.Spawn(exp, tpe, eff, loc) => visitExp(exp)
+    case Expression.Force(exp, _, _, _) =>
+      visitExp(exp)
 
-    case Expression.Lazy(exp, tpe, loc) => visitExp(exp)
+    case Expression.FixpointConstraintSet(cs, _, _, _) =>
+      Nil // TODO
 
-    case Expression.Force(exp, tpe, eff, loc) => visitExp(exp)
-
-    case Expression.FixpointConstraintSet(cs, stf, tpe, loc) =>
-      cs.foldLeft(Nil[Symbol.HoleSym, HoleContext]) {
-        case (macc, c) => macc ++ visitConstraint(c)
-      }
-
-    case Expression.FixpointMerge(exp1, exp2, stf, tpe, eff, loc) =>
+    case Expression.FixpointMerge(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.FixpointSolve(exp, stf, tpe, eff, loc) =>
+    case Expression.FixpointSolve(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.FixpointFilter(_, exp, tpe, eff, loc) =>
+    case Expression.FixpointFilter(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.FixpointProjectIn(exp, _, tpe, eff, loc) =>
+    case Expression.FixpointProjectIn(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.FixpointProjectOut(_, exp, tpe, eff, loc) =>
+    case Expression.FixpointProjectOut(_, exp, _, _, _) =>
       visitExp(exp)
 
     case Expression.Reify(_, _, _, _) =>
       Nil
 
   }
+
+  private def visitExps(exps: List[Expression]): List[CodeQualityError] =
+    exps.flatMap(visitExp)
 
 
 }
