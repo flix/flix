@@ -98,11 +98,11 @@ object CodeQuality {
     case Expression.Lambda(_, exp, _, _) =>
       visitExp(exp)
 
-    case Expression.Apply(exp, exps, _, _, _) =>
+    case Expression.Apply(exp, exps, _, _, loc) =>
       val hints0 = (exp, exps) match {
         case (Expression.Def(sym, _, _), lambda :: _) =>
           if (WantsPureArg.contains(sym) && !isPure(lambda.tpe))
-            CodeHint.UsePureFunction(sym, sym.loc) :: Nil
+            CodeHint.UsePureFunction(sym, loc) :: Nil
           else
             Nil
         case _ => Nil
