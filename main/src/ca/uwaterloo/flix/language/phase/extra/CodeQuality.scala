@@ -44,7 +44,7 @@ object CodeQuality {
   }
 
   // TODO: DOC
-  case class InhibitsLaziness(loc: SourceLocation) extends CodeQualityError {
+  case class InhibitsLaziness(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeQualityError {
     override def summary: String = s"Use of impure function prevents laziness / fusion."
 
     override def message: VirtualTerminal = {
@@ -123,8 +123,8 @@ object CodeQuality {
     case Expression.Apply(exp, exps, _, _, _) =>
       val hints0 = (exp, exps) match {
         case (Expression.Def(sym, _, _), lambda :: _) =>
-          if (WantsPureArg.contains(sym) && isImpure(lambda.tpe))
-            InhibitsLaziness(lambda.loc) :: Nil
+          if (WantsPureArg.contains(sym) && !isPure(lambda.tpe))
+            InhibitsLaziness(sym, lambda.loc) :: Nil
           else
             Nil
         case _ => Nil
@@ -294,8 +294,8 @@ object CodeQuality {
     exps.flatMap(visitExp)
 
   /**
-    * Returns `true` if the given type `tpe` is an impure function.
+    * Returns `true` if the given type `tpe` is a pure function type.
     */
-  private def isImpure(tpe: Type): Boolean = true // TODO
+  private def isPure(tpe: Type): Boolean = tpe.arrowEffectType == Type.Pure
 
 }
