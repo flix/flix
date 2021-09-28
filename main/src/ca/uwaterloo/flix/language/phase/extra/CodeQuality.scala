@@ -16,18 +16,39 @@
 package ca.uwaterloo.flix.language.phase.extra
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
+import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Expression, MatchRule, SelectChannelRule}
+import ca.uwaterloo.flix.language.debug.FormatKind.formatKind
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Cyan, Line, Magenta, NewLine, Red}
+import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 object CodeQuality {
 
-  // TODO: DOC
-  sealed trait CodeQualityError
+  private val Syms = List(
+    Symbol.mkDefnSym("Stream.filter"),
+    Symbol.mkDefnSym("Stream.map"),
+  )
 
   // TODO: DOC
-  case class InhibitsLaziness(name: String, loc: SourceLocation) extends CodeQualityError
+  sealed trait CodeQualityError extends CompilationError {
+    def kind: String = "CodeQuality Hint"
+  }
+
+  // TODO: DOC
+  case class InhibitsLaziness(loc: SourceLocation) extends CodeQualityError {
+    override def summary: String = s"Prevents stream fision"
+
+    override def message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Prevents stream fusion" << NewLine
+      vt << NewLine
+      vt << Code(loc, "prevents stream fusion") << NewLine
+    }
+  }
 
   // TODO: DOC
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CodeQualityError] = flix.phase("CodeQuality") {
@@ -49,7 +70,11 @@ object CodeQuality {
 
     case Expression.Var(sym, tpe, loc) => Nil
 
-    case Expression.Def(sym, tpe, loc) => Nil
+    case Expression.Def(sym, tpe, loc) =>
+      if (Syms.contains(sym))
+        InhibitsLaziness(loc) :: Nil
+      else
+        Nil
 
     case Expression.Sig(sym, tpe, loc) => Nil
 

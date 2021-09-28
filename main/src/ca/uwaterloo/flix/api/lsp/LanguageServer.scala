@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.debug._
+import ca.uwaterloo.flix.language.phase.extra.CodeQuality
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
 import ca.uwaterloo.flix.util.vt.TerminalContext
@@ -287,8 +288,18 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
           // Compute elapsed time.
           val e = System.nanoTime() - t
 
-          // Send back a status message.
-          ("id" -> requestId) ~ ("status" -> "success") ~ ("time" -> e)
+          // Compute Code Quality hints.
+          val hints = CodeQuality.run(root)(flix)
+
+          hints match {
+            case Success(_) =>
+              // Case 1: No hints.
+              ("id" -> requestId) ~ ("status" -> "success") ~ ("time" -> e)
+            case Failure(errors) =>
+              // Case 2: Hints available.
+              val results = PublishDiagnosticsParams.from(errors)
+              ("id" -> requestId) ~ ("status" -> "failure") ~ ("result" -> results.map(_.toJSON))
+          }
 
         case Failure(errors) =>
           // Case 2: Compilation failed. Send back the error messages.
