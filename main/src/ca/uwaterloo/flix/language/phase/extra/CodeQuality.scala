@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Expression, MatchRule, SelectChannelRule}
-import ca.uwaterloo.flix.util.{ParOps, Validation}
+import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Line, NewLine}
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
@@ -77,34 +77,34 @@ object CodeQuality {
     case Expression.Var(_, _, _) => Nil
 
     case Expression.Def(sym, _, loc) =>
-      // if (Syms.contains(sym))
-      InhibitsLaziness(loc) :: Nil
-    // else
-    //  Nil
+      if (Syms.contains(sym))
+        InhibitsLaziness(loc) :: Nil
+      else
+        Nil
 
-    case Expression.Sig(sym, tpe, loc) => Nil
+    case Expression.Sig(_, _, _) => Nil
 
-    case Expression.Hole(sym, tpe, eff, loc) => Nil
+    case Expression.Hole(_, _, _, _) => Nil
 
-    case Expression.Unit(loc) => Nil
+    case Expression.Unit(_) => Nil
 
-    case Expression.Null(tpe, loc) => Nil
+    case Expression.Null(_, _) => Nil
 
-    case Expression.True(loc) => Nil
+    case Expression.True(_) => Nil
 
-    case Expression.False(loc) => Nil
+    case Expression.False(_) => Nil
 
-    case Expression.Char(lit, loc) => Nil
+    case Expression.Char(_, _) => Nil
 
-    case Expression.Float32(lit, loc) => Nil
+    case Expression.Float32(_, _) => Nil
 
-    case Expression.Float64(lit, loc) => Nil
+    case Expression.Float64(_, _) => Nil
 
-    case Expression.Int8(lit, loc) => Nil
+    case Expression.Int8(_, _) => Nil
 
-    case Expression.Int16(lit, loc) => Nil
+    case Expression.Int16(_, _) => Nil
 
-    case Expression.Int32(lit, loc) => Nil
+    case Expression.Int32(_, _) => Nil
 
     case Expression.Int64(lit, loc) => Nil
 
@@ -118,7 +118,7 @@ object CodeQuality {
       visitExp(exp)
 
     case Expression.Apply(exp, exps, tpe, eff, loc) =>
-      visitExp(exp) ++ visitExps(exps) ++ (InhibitsLaziness(loc) :: Nil)
+      visitExp(exp) ++ visitExps(exps)
 
     case Expression.Unary(sop, exp, tpe, eff, loc) =>
       visitExp(exp)
