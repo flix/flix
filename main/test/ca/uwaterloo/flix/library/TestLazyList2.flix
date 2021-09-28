@@ -537,4 +537,36 @@ namespace TestLazyList2 {
         LazyList.span(i -> i > 3, (ECons(4, ECons(6, ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil))))))))))))) == (ECons(4, ECons(6, ENil)), ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil))))))))))
 
 
+    /////////////////////////////////////////////////////////////////////////////
+    // sum                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sum01(): Bool =
+        List.toLazy(Nil) |> LazyList.sum == 0
+
+    @test
+    def sum02(): Bool =
+        List.toLazy(1 :: Nil) |> LazyList.sum == 1
+
+    @test
+    def sum03(): Bool =
+        List.toLazy(1 :: 2 :: 3 :: Nil) |> LazyList.sum == 6
+
+    @test
+    def sum04(): Bool =
+        List.toLazy(1 :: 2 :: 3 :: -3 :: Nil) |> LazyList.sum == 3
+
+    @test
+    def sum05(): Bool =
+        List.toLazy(-1 :: -2 :: -3 :: -4 :: Nil) |> LazyList.sum == -10
+
+    @test
+    def sum06(): Bool =
+        List.toLazy(10 :: -10 :: Nil) |> LazyList.sum == 0
+
+    @test
+    def sum07(): Bool =
+        List.range(1, 101) |> List.toLazy |> LazyList.sum == 5050
+
 }
