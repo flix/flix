@@ -174,4 +174,36 @@ namespace Stream {
             mapEAcc(f, next, s1, ks -> k(x1 :: ks))
     }
 
+    ///
+    /// Applies `f` to a start value `s` and all elements in `st` going from left to right.
+    ///
+    /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
+    ///
+    pub def foldLeft(f: (b, a) -> b & ef, s: b, st: Stream[a, state]): b & ef =
+        let Stream(next, st0) = st;
+        match next(st0) {
+            case Done          => s
+            case Skip(st1)     => foldLeft(f, s,       Stream(next, st1))
+            case Yield(x, st1) => foldLeft(f, f(s, x), Stream(next, st1))
+        }
+
+    ///
+    /// Applies `f` to a start value `s` and all elements in `l` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
+    ///
+    pub def foldRight(f: (a, b) -> b & ef, s: b, st: Stream[a, st]): b & ef =
+        foldRightAcc(f, s, st, ks -> ks as & ef)
+
+    ///
+    /// Helper function for `foldRight`.
+    ///
+    def foldRightAcc(f: (a, b) -> b & ef, s: b, st: Stream[a, st], k: b -> b & ef): b & ef =
+        let Stream(next, st0) = st;
+        match next(st0) {
+            case Done          => k(s)
+            case Skip(st1)     => foldRightAcc(f, s, Stream(next, st1), k)
+            case Yield(x, st1) => foldRightAcc(f, s, Stream(next, st1), ks -> k(f(x, ks)))
+        }
+
 }
