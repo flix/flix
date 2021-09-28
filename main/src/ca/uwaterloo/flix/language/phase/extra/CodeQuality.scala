@@ -189,19 +189,19 @@ object CodeQuality {
     case Expression.ArrayStore(base, index, elm, loc) =>
       visitExp(base) ++ visitExp(index) ++ visitExp(elm)
 
-    case Expression.ArrayLength(base, eff, loc) =>
+    case Expression.ArrayLength(base, _, _) =>
       visitExp(base)
 
-    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
+    case Expression.ArraySlice(base, beginIndex, endIndex, _, _) =>
       visitExp(base) ++ visitExp(beginIndex) ++ visitExp(endIndex)
 
-    case Expression.Ref(exp, tpe, eff, loc) =>
+    case Expression.Ref(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Deref(exp, tpe, eff, loc) =>
+    case Expression.Deref(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Assign(exp1, exp2, tpe, eff, loc) =>
+    case Expression.Assign(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.Existential(_, exp, _) =>
