@@ -66,8 +66,6 @@ case class Substitution(m: Map[Type.Var, Type]) {
             case tr => tr
           }
         }
-        case Type.Cst(TypeConstructor.KindedAlias(sym, kind, tpe), loc) => Type.Cst(TypeConstructor.KindedAlias(sym, kind, visit(tpe)), loc)
-        case Type.Cst(TypeConstructor.UnkindedAlias(sym, tpe), loc) => Type.Cst(TypeConstructor.UnkindedAlias(sym, visit(tpe)), loc)
         case Type.Cst(tc, _) => t
         case Type.Apply(t1, t2, loc) =>
           val y = visit(t2)

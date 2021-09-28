@@ -1624,11 +1624,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     */
   private def finishResolveType(tpe0: Type, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias]): Validation[Type, ResolutionError] = {
 
+    // MATT docs
     def applyAlias(alias: ResolvedAst.TypeAlias, args: List[Type], loc: SourceLocation): Type = {
       val map = alias.tparams.tparams.map(_.tpe).zip(args).toMap[Type.Var, Type]
       val subst = Substitution(map)
       val tpe = subst(alias.tpe)
-      Type.Cst(TypeConstructor.UnkindedAlias(alias.sym, tpe), loc)
+      Type.Alias(alias.sym, args, tpe, loc)
     }
 
     val baseType = tpe0.baseType

@@ -148,10 +148,6 @@ object FormatType {
 
           case TypeConstructor.UnkindedEnum(sym) => formatApply(sym.toString, args)
 
-          case TypeConstructor.KindedAlias(sym, _, _) => formatApply(sym.toString, args)
-
-          case TypeConstructor.UnkindedAlias(sym, _) => formatApply(sym.toString, args)
-
           case TypeConstructor.UnappliedAlias(sym) => formatApply(sym.toString, args)
 
           case TypeConstructor.Lattice => formatApply("Lattice", args)
@@ -403,6 +399,7 @@ object FormatType {
       case Type.Cst(tc, loc) => Nil
       case Type.Apply(tpe1, tpe2, _) => visit(tpe1) ::: visit(tpe2)
       case Type.Ascribe(tpe, _, _) => typeVars(tpe)
+      case Type.Alias(_, _, tpe, _) => typeVars(tpe)
     }
 
     visit(tpe0).distinct

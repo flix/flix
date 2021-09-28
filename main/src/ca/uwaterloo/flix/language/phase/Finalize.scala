@@ -441,8 +441,6 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
 
           case TypeConstructor.KindedEnum(sym, _) => MonoType.Enum(sym, args)
 
-          case TypeConstructor.KindedAlias(sym, _, tpe) => visitType(tpe) // MATT have to handle args
-
           case TypeConstructor.Tag(sym, _) =>
             throw InternalCompilerException(s"Unexpected type: '$t0'.")
 
@@ -473,9 +471,6 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
           case TypeConstructor.Or => MonoType.Unit
 
           case TypeConstructor.UnkindedEnum(_) =>
-            throw InternalCompilerException(s"Unexpected type: '$t0'.")
-
-          case TypeConstructor.UnkindedAlias(_, _) =>
             throw InternalCompilerException(s"Unexpected type: '$t0'.")
 
           case TypeConstructor.UnappliedAlias(_) =>

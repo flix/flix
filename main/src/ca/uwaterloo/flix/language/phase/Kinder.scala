@@ -759,6 +759,8 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         case Some(kind) => visitType(t, kind, kenv, taenv, root)
         case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = k, loc).toFailure
       }
+    case Type.Alias(sym, args0, t0, loc) =>
+      // MATT have to check that the args match the expected kinds of the alias
     case _: Type.KindedVar => throw InternalCompilerException("Unexpected kinded type variable.")
   }
 
@@ -793,14 +795,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       // Lookup the enum kind
       val kind = getEnumKind(root.enums(sym))
       TypeConstructor.KindedEnum(sym, kind).toSuccess
-    case TypeConstructor.UnkindedAlias(sym, tpe0) =>
-      // Lookup the type alias kind
-      val kind = taenv(sym)
-      visitType(tpe0, kind, kenv, taenv, root) map {
-        tpe => TypeConstructor.KindedAlias(sym, kind, tpe)
-      }
     case _: TypeConstructor.KindedEnum => throw InternalCompilerException("Unexpected kinded enum.")
-    case _: TypeConstructor.KindedAlias => throw InternalCompilerException("Unexpected kinded type alias.")
     case _: TypeConstructor.UnappliedAlias => throw InternalCompilerException("Unexpected unapplied type alias.")
     case t => t.toSuccess
   }
@@ -1009,9 +1004,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     */
   private def getTyconKind(tycon: TypeConstructor, taenv: Map[Symbol.TypeAliasSym, Kind], root: ResolvedAst.Root)(implicit flix: Flix): Kind = tycon match {
     case TypeConstructor.UnkindedEnum(sym) => getEnumKind(root.enums(sym))
-    case TypeConstructor.UnkindedAlias(sym, tpe) => taenv(sym)
     case _: TypeConstructor.KindedEnum => throw InternalCompilerException("Unexpected kinded enum.")
-    case _: TypeConstructor.KindedAlias => throw InternalCompilerException("Unexpected kinded type alias.")
     case _: TypeConstructor.UnappliedAlias => throw InternalCompilerException("Unexpected unapplied type alias.")
     case t => t.kind
   }

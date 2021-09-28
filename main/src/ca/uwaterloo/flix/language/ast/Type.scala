@@ -47,11 +47,10 @@ sealed trait Type {
     */
   def typeVars: SortedSet[Type.KindedVar] = this match {
     case x: Type.Var => SortedSet(x.asKinded)
-    case Type.Cst(TypeConstructor.KindedAlias(_, _, tpe), _) => tpe.typeVars
-    case Type.Cst(TypeConstructor.UnkindedAlias(_, tpe), _) => throw InternalCompilerException("MATT") // MATT
     case Type.Cst(tc, _) => SortedSet.empty
     case Type.Apply(tpe1, tpe2, _) => tpe1.typeVars ++ tpe2.typeVars
     case Type.Ascribe(tpe, _, _) => tpe.typeVars
+    case Type.Alias(_, _, tpe, _) => tpe.typeVars
   }
 
   /**
@@ -80,6 +79,7 @@ sealed trait Type {
     case Type.Cst(tc, _) => Some(tc)
     case Type.Apply(t1, _, _) => t1.typeConstructor
     case Type.Ascribe(tpe, _, _) => tpe.typeConstructor
+    case Type.Alias(_, _, tpe, _) => tpe.typeConstructor // MATT ???
   }
 
   /**
@@ -107,6 +107,7 @@ sealed trait Type {
     case Type.Cst(tc, _) => tc :: Nil
     case Type.Apply(t1, t2, _) => t1.typeConstructors ::: t2.typeConstructors
     case Type.Ascribe(tpe, _, _) => tpe.typeConstructors
+    case Type.Alias(_, _, tpe, _) => tpe.typeConstructors // MATT ?
   }
 
   /**
@@ -134,13 +135,10 @@ sealed trait Type {
     */
   def map(f: Type.KindedVar => Type): Type = this match {
     case tvar: Type.Var => f(tvar.asKinded)
-    case Type.Cst(TypeConstructor.KindedAlias(sym, kind, tpe), loc) =>
-      println("debug")
-      Type.Cst(TypeConstructor.KindedAlias(sym, kind, tpe.map(f)), loc)
-    case Type.Cst(TypeConstructor.UnkindedAlias(sym, tpe), loc) => throw InternalCompilerException("MATT") // MATT
     case Type.Cst(_, _) => this
     case Type.Apply(tpe1, tpe2, loc) => Type.Apply(tpe1.map(f), tpe2.map(f), loc)
     case Type.Ascribe(tpe, kind, loc) => Type.Ascribe(tpe.map(f), kind, loc)
+    case Type.Alias(sym, args, tpe, loc) => Type.Alias(sym, args.map(_.map(f)), tpe.map(f), loc)
   }
 
   /**
@@ -182,6 +180,7 @@ sealed trait Type {
     case Type.Cst(tc, _) => 1
     case Type.Ascribe(tpe, _, _) => tpe.size
     case Type.Apply(tpe1, tpe2, _) => tpe1.size + tpe2.size + 1
+    case Type.Alias(_, _, tpe, _) => tpe.size
   }
 
   /**
@@ -489,6 +488,11 @@ object Type {
     }
 
     override def hashCode(): Int = Objects.hash(tpe1, tpe2)
+  }
+
+  // MATT docs
+  case class Alias(sym: Symbol.TypeAliasSym, args: List[Type], tpe: Type, loc: SourceLocation) extends Type with BaseType {
+    override def kind: Kind = tpe.kind
   }
 
   /////////////////////////////////////////////////////////////////////////////
