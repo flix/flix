@@ -47,6 +47,8 @@ sealed trait Type {
     */
   def typeVars: SortedSet[Type.KindedVar] = this match {
     case x: Type.Var => SortedSet(x.asKinded)
+    case Type.Cst(TypeConstructor.KindedAlias(_, _, tpe), _) => tpe.typeVars
+    case Type.Cst(TypeConstructor.UnkindedAlias(_, tpe), _) => throw InternalCompilerException("MATT") // MATT
     case Type.Cst(tc, _) => SortedSet.empty
     case Type.Apply(tpe1, tpe2, _) => tpe1.typeVars ++ tpe2.typeVars
     case Type.Ascribe(tpe, _, _) => tpe.typeVars
@@ -132,6 +134,10 @@ sealed trait Type {
     */
   def map(f: Type.KindedVar => Type): Type = this match {
     case tvar: Type.Var => f(tvar.asKinded)
+    case Type.Cst(TypeConstructor.KindedAlias(sym, kind, tpe), loc) =>
+      println("debug")
+      Type.Cst(TypeConstructor.KindedAlias(sym, kind, tpe.map(f)), loc)
+    case Type.Cst(TypeConstructor.UnkindedAlias(sym, tpe), loc) => throw InternalCompilerException("MATT") // MATT
     case Type.Cst(_, _) => this
     case Type.Apply(tpe1, tpe2, loc) => Type.Apply(tpe1.map(f), tpe2.map(f), loc)
     case Type.Ascribe(tpe, kind, loc) => Type.Ascribe(tpe.map(f), kind, loc)
