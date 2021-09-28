@@ -29,9 +29,20 @@ object CodeQuality {
     * A list of operations that supports fusion or laziness when given pure function arguments.
     */
   val WantsPureArg: List[Symbol.DefnSym] = List(
+    Symbol.mkDefnSym("LazyList.filter"),
+    Symbol.mkDefnSym("LazyList.filterMap"),
+    Symbol.mkDefnSym("LazyList.map"),
+    Symbol.mkDefnSym("LazyList.flatMap"),
+    Symbol.mkDefnSym("LazyList.mapWithIndex"),
+    Symbol.mkDefnSym("LazyList.dropWhile"),
+    Symbol.mkDefnSym("LazyList.takeWhile"),
     Symbol.mkDefnSym("Stream.filter"),
+    Symbol.mkDefnSym("Stream.filterMap"),
     Symbol.mkDefnSym("Stream.map"),
-    Symbol.mkDefnSym("Stream.flatMap")
+    Symbol.mkDefnSym("Stream.flatMap"),
+    Symbol.mkDefnSym("Stream.mapWithIndex"),
+    Symbol.mkDefnSym("Stream.dropWhile"),
+    Symbol.mkDefnSym("Stream.takeWhile")
   )
 
   /**
