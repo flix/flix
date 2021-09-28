@@ -990,4 +990,20 @@ namespace LazyList {
         case LList(xs)    => spanAcc(f, force xs, k)
     }
 
+    ///
+    /// Returns the sum of all elements in the list `l`.
+    ///
+    pub def sum(l: LazyList[Int32]): Int32 =
+        sumAcc(l, 0)
+
+    ///
+    /// Helper function for `sum`.
+    ///
+    def sumAcc(l: LazyList[Int32], acc: Int32): Int32 = match l {
+        case ENil         => acc
+        case ECons(x, xs) => sumAcc(      xs, x + acc)
+        case LCons(x, xs) => sumAcc(force xs, x + acc)
+        case LList(xs)    => sumAcc(force xs,     acc)
+    }
+
 }
