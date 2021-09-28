@@ -49,12 +49,11 @@ object CodeQuality {
     * Returns a collection of code quality hints for the given AST `root`.
     */
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CodeHint] = flix.phase("CodeQuality") {
-    val results = root.defs.values.flatMap(visitDef).toList
-
-    if (results.isEmpty)
+    val hints = root.defs.values.flatMap(visitDef).toList
+    if (hints.isEmpty)
       root.toSuccess
     else
-      Failure(results.to(LazyList))
+      Failure(hints.to(LazyList))
   }
 
   /**
@@ -113,7 +112,7 @@ object CodeQuality {
       val hints0 = (exp, exps) match {
         case (Expression.Def(sym, _, _), lambda :: _) =>
           if (WantsPureArg.contains(sym) && !isPure(lambda.tpe))
-            CodeHint.UsePureFunction(sym, loc) :: Nil
+            CodeHint.SuggestPureFunction(sym, loc) :: Nil
           else
             Nil
         case _ => Nil

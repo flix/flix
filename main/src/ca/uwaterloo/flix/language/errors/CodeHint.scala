@@ -31,18 +31,16 @@ trait CodeHint extends CompilationError {
 
 object CodeHint {
 
-  // TODO: DOC
-  case class UsePureFunction(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
+  case class SuggestPureFunction(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
     override def summary: String = s"Use of impure function prevents laziness / fusion."
 
     override def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
-      vt << Line(kind, source.format) << NewLine // TODO
-      vt << ">> TODO" << NewLine
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Use of impure function prevents laziness / fusion." << NewLine
       vt << NewLine
-      vt << Code(loc, "TODO") << NewLine // TODO
+      vt << Code(loc, "use of impure function.") << NewLine
     }
   }
-
 
 }
