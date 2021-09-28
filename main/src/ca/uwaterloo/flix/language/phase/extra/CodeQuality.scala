@@ -204,51 +204,52 @@ object CodeQuality {
     case Expression.Assign(exp1, exp2, tpe, eff, loc) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Existential(fparam, exp, loc) =>
+    case Expression.Existential(_, exp, _) =>
       visitExp(exp)
 
-    case Expression.Universal(fparam, exp, loc) =>
+    case Expression.Universal(_, exp, _) =>
       visitExp(exp)
 
-    case Expression.Ascribe(exp, tpe, eff, loc) =>
+    case Expression.Ascribe(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Cast(exp, tpe, eff, loc) =>
+    case Expression.Cast(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+    case Expression.TryCatch(exp, rules, _, _, _) =>
       visitExp(exp) ++ rules.flatMap {
         case CatchRule(_, _, exp) => visitExp(exp)
       }
 
-    case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
+    case Expression.InvokeConstructor(_, args, _, _, _) =>
       visitExps(args)
 
-    case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) =>
-      args.foldLeft(visitExp(exp)) {
-        case (macc, arg) => macc ++ visitExp(arg)
-      }
+    case Expression.InvokeMethod(_, exp, args, _, _, _) =>
+      visitExp(exp) ++ visitExps(args)
 
-    case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) =>
+    case Expression.InvokeStaticMethod(_, args, _, _, _) =>
       visitExps(args)
 
-    case Expression.GetField(field, exp, tpe, eff, loc) =>
+    case Expression.GetField(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.PutField(field, exp1, exp2, tpe, eff, loc) =>
+    case Expression.PutField(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.GetStaticField(field, tpe, eff, loc) =>
+    case Expression.GetStaticField(_, _, _, _) =>
       Nil
 
-    case Expression.PutStaticField(field, exp, tpe, eff, loc) =>
+    case Expression.PutStaticField(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.NewChannel(exp, tpe, eff, loc) => visitExp(exp)
+    case Expression.NewChannel(exp, _, _, _) =>
+      visitExp(exp)
 
-    case Expression.GetChannel(exp, tpe, eff, loc) => visitExp(exp)
+    case Expression.GetChannel(exp, _, _, _) =>
+      visitExp(exp)
 
-    case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
+    case Expression.PutChannel(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.SelectChannel(rules, default, _, _, _) =>
       rules.flatMap {
