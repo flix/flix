@@ -304,9 +304,9 @@ object JvmOps {
     *
     * For example,
     *
-    * {}                  =>    IRecord
-    * {x : Int}           =>    IRecord
-    * {x : Str, y : Int}  =>    IRecord
+    * {}                    =>  IRecord
+    * {x :: Int}            =>  IRecord
+    * {x :: Str, y :: Int}  =>  IRecord
     */
   def getRecordInterfaceType()(implicit root: Root, flix: Flix): JvmType.Reference = {
 
@@ -340,9 +340,9 @@ object JvmOps {
     *
     * For example,
     *
-    * {+z : Int  | {}}                =>    RecordExtend$Int
-    * {+y : Char | {z : Int}          =>    RecordExtend$Char
-    * {+x : Str |{y : Char, z : Int}  =>    RecordExtend$Obj
+    * {+z :: Int  | {}}                   =>    RecordExtend$Int
+    * {+y :: Char | {z :: Int}            =>    RecordExtend$Char
+    * {+x :: Str | {y :: Char, z :: Int}  =>    RecordExtend$Obj
     *
     * NB: The given type `tpe` must be a Record type
     */
@@ -366,9 +366,9 @@ object JvmOps {
     *
     * For example,
     *
-    * Int                  =>    RecordExtend$Int
-    * Char                 =>    RecordExtend$Char
-    * {x : Char, y : Int}  =>    RecordExtend$Obj
+    * Int                   =>  RecordExtend$Int
+    * Char                  =>  RecordExtend$Char
+    * {x :: Char, y :: Int} =>  RecordExtend$Obj
     *
     */
   def getRecordType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = {

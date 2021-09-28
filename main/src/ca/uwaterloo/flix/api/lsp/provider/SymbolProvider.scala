@@ -15,29 +15,35 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
-import ca.uwaterloo.flix.api.lsp.{DocumentSymbol, Index, Position, Range, SymbolKind, SymbolTag}
+import ca.uwaterloo.flix.api.lsp.{DocumentSymbol, Position, Range, SymbolKind}
+import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.debug.Audience
 
 object SymbolProvider {
 
-  private implicit val audience: Audience = Audience.External
+  def processDocumentSymbols(uri: String)(implicit root: Root): List[DocumentSymbol] = root.enums.filter {
+    case (_, enum) => enum.loc.source.name == uri }.map {
+      case (_, enum) => enumToDocumentSymbol(enum)
+    }.toList
 
-  def processDocumentSymbols(uri: String)(implicit index: Index, root: Root): List[DocumentSymbol] =
-    List(DocumentSymbol("name",
-      Some("description"),
-      SymbolKind.Interface,
-      Range(Position(1, 1), Position(2, 5)),
-      Range(Position(1, 1), Position(2, 5)),
-      List(SymbolTag.Deprecated),
-      List(DocumentSymbol(
-        "parent",
-        Some("parentDescription"),
-        SymbolKind.Interface,
-        Range(Position(0, 4), Position(0, 10)),
-        Range(Position(0, 4), Position(0, 10)),
-        List(),
-        List()
-      ))
-    ))
+  /**
+    * Returns an Enum DocumentSymbol from an Enum node.
+    * It navigates the AST and adds Cases of enum as children DocumentSymbols.
+    */
+  private def enumToDocumentSymbol(enum: TypedAst.Enum): DocumentSymbol = DocumentSymbol(
+    enum.sym.name,
+    Some(enum.doc.lines.mkString(" ")),
+    SymbolKind.Enum,
+    Range.from(enum.loc),
+    Range.from(enum.loc),
+    List(),
+    enum.cases.map { case (_, value) => value }.map(mkCaseDocumentSymbol).toList
+  )
+
+  /**
+    * Returns an EnumMember DocumentSymbol from a Case node.
+    */
+  private def mkCaseDocumentSymbol(c: TypedAst.Case): DocumentSymbol = DocumentSymbol(
+    c.tag.name, None, SymbolKind.EnumMember, Range.from(c.loc), Range.from(c.loc), List(), List()
+  )
 }

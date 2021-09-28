@@ -128,7 +128,7 @@ object Unification {
     def visit(row: Type): Result[(Substitution, Type), UnificationError] = (row, staticRow) match {
       case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(field2), _), fieldType2, _), restRow2, loc),
       Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(field1), _), fieldType1, _), _, _)) =>
-        // Case 1: The row is of the form %{ field2: fieldType2 | restRow2 }
+        // Case 1: The row is of the form { field2 :: fieldType2 | restRow2 }
         if (field1 == field2) {
           // Case 1.1: The fields match, their types must match.
           for {
@@ -174,7 +174,7 @@ object Unification {
     def visit(row: Type): Result[(Substitution, Type), UnificationError] = (row, staticRow) match {
       case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(label2), _), fieldType2, _), restRow2, loc),
       Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(label1), _), fieldType1, _), _, _)) =>
-        // Case 1: The row is of the form %{ label2: fieldType2 | restRow2 }
+        // Case 1: The row is of the form { label2 :: fieldType2 | restRow2 }
         if (label1 == label2) {
           // Case 1.1: The labels match, their types must match.
           for {

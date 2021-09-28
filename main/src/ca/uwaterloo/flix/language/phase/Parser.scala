@@ -1253,24 +1253,16 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def Record: Rule1[ParsedAst.Type] = {
-      def RecordFieldType: Rule1[ParsedAst.RecordFieldType] = rule {
-        SP ~ Names.Field ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.RecordFieldType
-      }
-
-      rule {
-        SP ~ atomic("{") ~ optWS ~ zeroOrMore(RecordFieldType).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ optional(optWS ~ "|" ~ optWS ~ Names.Variable) ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.Record
-      }
+    def Record: Rule1[ParsedAst.Type] = rule {
+      SP ~ atomic("{") ~ optWS ~ zeroOrMore(RecordFieldType).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ optional(optWS ~ "|" ~ optWS ~ Names.Variable) ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.Record
     }
 
-    def RecordRow: Rule1[ParsedAst.Type] = {
-      def RecordRowFieldType: Rule1[ParsedAst.RecordFieldType] = rule {
-        SP ~ Names.Field ~ optWS ~ "::" ~ optWS ~ Type ~ SP ~> ParsedAst.RecordFieldType
-      }
+    def RecordRow: Rule1[ParsedAst.Type] = rule {
+      SP ~ atomic("(") ~ optWS ~ zeroOrMore(RecordFieldType).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ optional(optWS ~ "|" ~ optWS ~ Names.Variable) ~ optWS ~ ")" ~ SP ~> ParsedAst.Type.RecordRow
+    }
 
-      rule {
-        SP ~ atomic("(") ~ optWS ~ zeroOrMore(RecordRowFieldType).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ optional(optWS ~ "|" ~ optWS ~ Names.Variable) ~ optWS ~ ")" ~ SP ~> ParsedAst.Type.RecordRow
-      }
+    private def RecordFieldType: Rule1[ParsedAst.RecordFieldType] = rule {
+      SP ~ Names.Field ~ optWS ~ "::" ~ optWS ~ Type ~ SP ~> ParsedAst.RecordFieldType
     }
 
     def Schema: Rule1[ParsedAst.Type] = {
