@@ -32,7 +32,7 @@ trait CodeHint extends CompilationError {
 object CodeHint {
 
   case class SuggestPureFunction(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
-    override def summary: String = s"Use of impure function prevents laziness / fusion."
+    override def summary: String = s"The use of an impure function inhibits lazy evaluation and/or stream fusion."
 
     override def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
