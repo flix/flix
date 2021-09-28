@@ -16,11 +16,10 @@
 package ca.uwaterloo.flix.language.phase.extra
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, ChoiceRule, Constraint, Expression, MatchRule, SelectChannelRule}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypedAst}
-import ca.uwaterloo.flix.language.errors.Severity
+import ca.uwaterloo.flix.language.errors.CodeHint
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Line, NewLine}
@@ -38,14 +37,7 @@ object CodeQuality {
   )
 
   // TODO: DOC
-  sealed trait CodeQualityError extends CompilationError {
-    def kind: String = "CodeQuality Hint"
-
-    override def severity: Severity = Severity.Hint
-  }
-
-  // TODO: DOC
-  case class UsePureFunction(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeQualityError {
+  case class UsePureFunction(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
     override def summary: String = s"Use of impure function prevents laziness / fusion."
 
     override def message: VirtualTerminal = {
@@ -60,7 +52,7 @@ object CodeQuality {
   /**
     * Returns a collection of code quality hints for the given AST `root`.
     */
-  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CodeQualityError] = flix.phase("CodeQuality") {
+  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CodeHint] = flix.phase("CodeQuality") {
     val results = root.defs.values.flatMap(visitDef).toList
 
     if (results.isEmpty)
@@ -72,14 +64,14 @@ object CodeQuality {
   /**
     * Computes code quality hints for the given definition `def0`.
     */
-  private def visitDef(def0: TypedAst.Def): List[CodeQualityError] = {
+  private def visitDef(def0: TypedAst.Def): List[CodeHint] = {
     visitExp(def0.impl.exp)
   }
 
   /**
     * Computes code quality hints for the given expression `exp0`.
     */
-  private def visitExp(exp0: Expression): List[CodeQualityError] = exp0 match {
+  private def visitExp(exp0: Expression): List[CodeHint] = exp0 match {
     case Expression.Wild(_, _) => Nil
 
     case Expression.Var(_, _, _) => Nil
@@ -291,20 +283,20 @@ object CodeQuality {
   /**
     * Computes code quality hints for the given constraint `c`.
     */
-  private def visitConstraint(c: Constraint): List[CodeQualityError] =
+  private def visitConstraint(c: Constraint): List[CodeHint] =
     visitHeadPredicate(c.head) ++ c.body.flatMap(visitBodyPredicate)
 
   /**
     * Computes code quality hints for the given head predicate `p`.
     */
-  private def visitHeadPredicate(p: TypedAst.Predicate.Head): List[CodeQualityError] = p match {
+  private def visitHeadPredicate(p: TypedAst.Predicate.Head): List[CodeHint] = p match {
     case Head.Atom(_, _, terms, _, _) => visitExps(terms)
   }
 
   /**
     * Computes code quality hints for the given body predicate `p`.
     */
-  private def visitBodyPredicate(p: TypedAst.Predicate.Body): List[CodeQualityError] = p match {
+  private def visitBodyPredicate(p: TypedAst.Predicate.Body): List[CodeHint] = p match {
     case Body.Atom(_, _, _, _, _, _) => Nil
     case Body.Guard(exp, _) => visitExp(exp)
   }
@@ -312,7 +304,7 @@ object CodeQuality {
   /**
     * Computes code quality hints for the given list of expressions `exps`.
     */
-  private def visitExps(exps: List[Expression]): List[CodeQualityError] =
+  private def visitExps(exps: List[Expression]): List[CodeHint] =
     exps.flatMap(visitExp)
 
   /**
