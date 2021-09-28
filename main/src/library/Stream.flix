@@ -206,4 +206,20 @@ namespace Stream {
             case Yield(x, st1) => foldRightAcc(f, s, Stream(next, st1), ks -> k(f(x, ks)))
         }
 
+    ///
+    /// Returns `true` if and only if at least one element in `s` satisfies the predicate `f`.
+    ///
+    /// Returns `false` if `s` is empty.
+    ///
+    pub def exists(f: a -> Bool & ef, s: Stream[a, s]): Bool & ef =
+        foldLeft((acc, x) -> f(x) or acc, false, s)
+
+    ///
+    /// Returns `true` if and only if all elements in `s` satisfy the predicate `f`.
+    ///
+    /// Returns `true` if `s` is empty.
+    ///
+    pub def forall(f: a -> Bool & ef, s: Stream[a, s]): Bool & ef =
+        foldLeft((acc, x) -> f(x) and acc, true, s)
+
 }
