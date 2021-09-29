@@ -222,4 +222,20 @@ namespace Stream {
     pub def forall(f: a -> Bool & ef, s: Stream[a, s]): Bool & ef =
         foldLeft((acc, x) -> f(x) and acc, true, s)
 
+    ///
+    /// Returns the first `n` elements of `s`.
+    ///
+    pub def take(n: Int32, s: Stream[a, s]): Stream[a, (Int32, s)] =
+        let Stream(next0, s0) = s;
+        let next1 = (t: (Int32, s)) -> {
+            if (fst(t) <= 0)
+                Done
+            else
+                match next0(snd(t)) {
+                    case Done          => Done
+                    case Skip(st1)     => Skip (   (fst(t)    , st1))
+                    case Yield(x, st1) => Yield(x, (fst(t) - 1, st1))
+                }};
+        Stream(next1, (n, s0))
+
 }
