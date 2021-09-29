@@ -2,6 +2,9 @@
 
 HEAD:
 
+Version 0.21.1:
+- Fixed a NPE.
+
 Version 0.21.0:
 - Added support for derivations for opaque types (thanks Matthew!)
 - Added safety checks for wildcards in Datalog constraints (thanks Jonathan!)
