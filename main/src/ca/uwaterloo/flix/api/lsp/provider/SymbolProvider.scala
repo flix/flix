@@ -15,16 +15,24 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
-import ca.uwaterloo.flix.api.lsp.{DocumentSymbol, Position, Range, SymbolKind}
+import ca.uwaterloo.flix.api.lsp.{DocumentSymbol, Range, SymbolKind}
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 
 object SymbolProvider {
 
-  def processDocumentSymbols(uri: String)(implicit root: Root): List[DocumentSymbol] = root.enums.filter {
-    case (_, enum) => enum.loc.source.name == uri }.map {
+  def processDocumentSymbols(uri: String)(implicit root: Root): List[DocumentSymbol] = {
+    if (root == null) {
+      // No AST available.
+      return Nil
+    }
+
+    root.enums.filter {
+      case (_, enum) => enum.loc.source.name == uri
+    }.map {
       case (_, enum) => enumToDocumentSymbol(enum)
     }.toList
+  }
 
   /**
     * Returns an Enum DocumentSymbol from an Enum node.
