@@ -38,7 +38,6 @@ namespace ReentrantLock {
     pub def isFair(lock: ReentrantLock): Bool & Impure =
         import java.util.concurrent.locks.ReentrantLock.isFair();
         let ReentrantLock(l) = lock;
-        // unnecessary
         l.isFair()
 
     ///
