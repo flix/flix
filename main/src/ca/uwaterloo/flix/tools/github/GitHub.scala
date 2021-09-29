@@ -48,7 +48,7 @@ object GitHub {
 
   private def parseSemVer(string: String): SemVer = string.split('.') match {
     case Array(major, minor, patch) =>
-      SemVer(major.toInt, minor.toInt, patch.toInt)
+      SemVer(major.tail.toInt, minor.toInt, patch.toInt) // MATT super hacky to parse around v
     case _ => throw new RuntimeException(s"bad semver: $string") // MATT use monadic stuff
   }
 
