@@ -4,13 +4,12 @@ import java.io.PrintWriter
 import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file._
 import java.util.zip.{ZipEntry, ZipFile, ZipOutputStream}
-
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.runtime.CompilationResult
+import ca.uwaterloo.flix.tools.github.GitHub
 import ca.uwaterloo.flix.util.vt.TerminalContext
 import ca.uwaterloo.flix.util._
-
 import org.json4s.JsonAST.{JArray, JString, JValue}
 import org.json4s.JsonDSL._
 import org.json4s.ParserUtil.ParseException
@@ -45,6 +44,23 @@ object Packager {
     } catch {
       case ex: RuntimeException => ex.printStackTrace()
     }
+  }
+
+  // MATT docs
+  // MATT move below other stuff
+  def install(project: String, p: Path, o: Options)(implicit tc: TerminalContext): Unit = {
+    val Array(owner, repo) = project.split('/') // MATT monadic
+    val proj = GitHub.Project(owner, repo)
+    val release = GitHub.getLatestRelease(proj)
+    val assets = release.get.assets.filter(_.name.endsWith(".fpkg"))
+    val lib = getLibraryDirectory(p)
+    for (asset <- assets) {
+      val path = lib.resolve(asset.name)
+      val stream = GitHub.downloadAsset(asset)
+      StreamOps.writeAll(stream, path)
+    }
+    // MATT more error handling
+    // MATT progress reporting probably
   }
 
   /**
