@@ -33,86 +33,13 @@ namespace ReentrantLock {
         ReentrantLock(reentrantLock(fair))
 
     ///
-    /// Queries the number of holds on this lock by the current thread.
-    ///
-    pub def getHoldCount(lock: ReentrantLock): Int & Impure =
-        import java.util.concurrent.locks.ReentrantLock.getHoldCount();
-        let ReentrantLock(l) = lock;
-        let x = Instant(???);
-        l.getHoldCount()
-
-    ///
-    /// Returns an estimate of the number of threads waiting to acquire this lock.
-    ///
-    pub def getQueueLength(lock: ReentrantLock): Int & Impure =
-        import java.util.concurrent.locks.ReentrantLock.getQueueLength();
-        let ReentrantLock(l) = lock;
-        l.getQueueLength()
-
-    ///
-    /// Returns an estimate of the number of threads waiting on the given condition associated with this lock.
-    ///
-    pub def getWaitQueueLength(lock: ReentrantLock, condition: Condition): Result[Int, ##java.lang.Exception] & Impure =
-        import java.util.concurrent.locks.ReentrantLock.getWaitQueueLength(##java.util.concurrent.locks.Condition);
-        let ReentrantLock(l) = lock;
-        let Condition(c) = condition;
-        try {
-            Ok(l.getWaitQueueLength(c))
-        } catch {
-            case e: ##java.lang.IllegalMonitorStateException => Err(e as ##java.lang.Exception)
-            case e: ##java.lang.IllegalArgumentException => Err(e as ##java.lang.Exception)
-            case e: ##java.lang.NullPointerException => Err(e as ##java.lang.Exception)
-        }
-
-    // TODO: should this be skipped?
-    // public final boolean hasQueuedThread​(Thread thread)
-
-    ///
-    /// Queries whether the given thread is waiting to acquire this lock.
-    ///
-    pub def hasQueuedThreads(lock: ReentrantLock): Bool & Impure =
-        import java.util.concurrent.locks.ReentrantLock.hasQueuedThreads();
-        let ReentrantLock(l) = lock;
-        l.hasQueuedThreads()
-
-    ///
-    /// Queries whether any threads are waiting to acquire this lock.
-    ///
-    pub def hasWaiters(lock: ReentrantLock, condition: Condition): Result[Bool, ##java.lang.Exception] & Impure =
-        import java.util.concurrent.locks.ReentrantLock.hasWaiters(##java.util.concurrent.locks.Condition);
-        let ReentrantLock(l) = lock;
-        let Condition(c) = condition;
-        try {
-            Ok(l.hasWaiters(c))
-        } catch {
-            case e: ##java.lang.IllegalMonitorStateException => Err(e as ##java.lang.Exception)
-            case e: ##java.lang.IllegalArgumentException => Err(e as ##java.lang.Exception)
-            case e: ##java.lang.NullPointerException => Err(e as ##java.lang.Exception)
-        }
-
-    ///
     /// Returns true if this lock has fairness set true.
     ///
     pub def isFair(lock: ReentrantLock): Bool & Impure =
         import java.util.concurrent.locks.ReentrantLock.isFair();
         let ReentrantLock(l) = lock;
+        // unnecessary
         l.isFair()
-
-    ///
-    /// Queries if this lock is held by the current thread.
-    ///
-    pub def isHeldByCurrentThread(lock: ReentrantLock): Bool & Impure =
-        import java.util.concurrent.locks.ReentrantLock.isHeldByCurrentThread();
-        let ReentrantLock(l) = lock;
-        l.isHeldByCurrentThread()
-
-    ///
-    /// Queries if this lock is held by any thread.
-    ///
-    pub def isLocked(lock: ReentrantLock): Bool & Impure =
-        import java.util.concurrent.locks.ReentrantLock.isLocked();
-        let ReentrantLock(l) = lock;
-        l.isLocked()
 
     ///
     /// Acquires the lock.
