@@ -463,4 +463,35 @@ namespace TestStream {
     def forall10(): Bool =
         (11 :: 9 :: 31 :: Nil) |> List.toStream |> Stream.forall(i -> i > 3)
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // take                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def take01(): Bool =
+        (Stream1.empty()): Stream[Int32, Unit] |> Stream1.take(1000) |> Stream1.isEmpty
+
+    @test
+    def take02(): Bool =
+        (Stream1.empty()): Stream[Int32, Unit] |> Stream1.take(0) |> Stream1.isEmpty
+
+    @test
+    def take03(): Bool =
+        List.range(0, 1000) |> List.toStream |> Stream1.take(0) |> Stream1.isEmpty
+
+    @test
+    def take04(): Bool =
+        List.range(0, 1000)
+            |> List.toStream
+            |> Stream1.take(500)
+            |> Stream1.toList == List.range(0, 500)
+
+    @test
+    def take05(): Bool =
+        List.range(0, 1000)
+            |> List.toStream
+            |> Stream1.take(1)
+            |> Stream1.toList == List.range(0, 1)
+
 }
