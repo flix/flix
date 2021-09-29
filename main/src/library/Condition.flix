@@ -43,13 +43,13 @@ namespace Condition {
     // boolean await(long time, TimeUnit unit) throws InterruptedException
 
     ///
-    /// Causes the current thread to wait until it is signalled or interrupted, or the specified waiting time elapses.
+    /// Causes the current thread to wait until it is signalled or interrupted, or the specified waiting time (nanos) elapses.
     ///
-    pub def awaitNanos(condition: Condition, nanosTimeout: Int64): Result[Int64, ConditionError] & Impure =
+    pub def awaitTimeout(condition: Condition, timeout: Int64): Result[Int64, ConditionError] & Impure =
         import java.util.concurrent.locks.Condition.awaitNanos(Int64);
         let Condition(c) = condition;
         try {
-            Ok(c.awaitNanos(nanosTimeout))
+            Ok(c.awaitNanos(timeout))
         } catch {
             case e: ##java.lang.InterruptedException => Err(InterruptedError(e))
             case e: ##java.lang.IllegalMonitorStateException => Err(MonitorStateError(e))
