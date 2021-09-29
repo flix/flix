@@ -470,28 +470,28 @@ namespace TestStream {
 
     @test
     def take01(): Bool =
-        (Stream1.empty()): Stream[Int32, Unit] |> Stream1.take(1000) |> Stream1.isEmpty
+        (Stream.empty()): Stream[Int32, Unit] |> Stream.take(1000) |> Stream.isEmpty
 
     @test
     def take02(): Bool =
-        (Stream1.empty()): Stream[Int32, Unit] |> Stream1.take(0) |> Stream1.isEmpty
+        (Stream.empty()): Stream[Int32, Unit] |> Stream.take(0) |> Stream.isEmpty
 
     @test
     def take03(): Bool =
-        List.range(0, 1000) |> List.toStream |> Stream1.take(0) |> Stream1.isEmpty
+        List.range(0, 1000) |> List.toStream |> Stream.take(0) |> Stream.isEmpty
 
     @test
     def take04(): Bool =
         List.range(0, 1000)
             |> List.toStream
-            |> Stream1.take(500)
-            |> Stream1.toList == List.range(0, 500)
+            |> Stream.take(500)
+            |> Stream.toList == List.range(0, 500)
 
     @test
     def take05(): Bool =
         List.range(0, 1000)
             |> List.toStream
-            |> Stream1.take(1)
-            |> Stream1.toList == List.range(0, 1)
+            |> Stream.take(1)
+            |> Stream.toList == List.range(0, 1)
 
 }
