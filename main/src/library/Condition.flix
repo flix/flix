@@ -39,9 +39,6 @@ namespace Condition {
             case e: ##java.lang.IllegalMonitorStateException => Err(MonitorStateError(e))
         }
 
-    // TODO: Should this just be skipped?
-    // boolean await(long time, TimeUnit unit) throws InterruptedException
-
     ///
     /// Causes the current thread to wait until it is signalled or interrupted, or the specified waiting time (nanos) elapses.
     ///
@@ -66,9 +63,6 @@ namespace Condition {
         } catch {
             case e: ##java.lang.IllegalMonitorStateException => Err(e)
         }
-
-    // TODO: Should this just be skipped?
-    // boolean awaitUntil(Date deadline) throws InterruptedException
 
     ///
     /// Wakes up one waiting thread.
