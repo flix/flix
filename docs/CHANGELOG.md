@@ -2,6 +2,15 @@
 
 HEAD:
 
+Version 0.21.0:
+- Added support for derivations for opaque types (thanks Matthew!)
+- Added safety checks for wildcards in Datalog constraints (thanks Jonathan!)
+- Added SymbolProvider for enums (thanks Nicola!)
+- Improved code generation for Lazy (thanks Jonathan!)
+- Improved inference of kinds (thanks Matthew!)
+- Updated record syntax (thanks Matthew!)
+- Removed () syntax for the Unit type (thanks Matthew!)
+
 Version 0.20.0:
 - Added support for derivation of Hash (thanks Matthew!)
 - Added support for derivation of Boxable (thanks Matthew!)
