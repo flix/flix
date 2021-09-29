@@ -40,6 +40,10 @@ instance Foldable[LazyList] {
     pub def foldRight(f: (a, b) -> b & ef, s: b, l: LazyList[a]): b & ef = LazyList.foldRight(f, s, l)
 }
 
+instance Functor[LazyList] {
+    pub def map(f: a -> b & ef, l: LazyList[a]): LazyList[b] & ef = LazyList.map(f, l)
+}
+
 instance ToString[LazyList[a]] with ToString[a] {
     pub def toString(l: LazyList[a]): String = LazyList.toString(l)
 }
