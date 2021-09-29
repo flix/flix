@@ -232,9 +232,9 @@ namespace Stream {
                 Done
             else
                 match next0(snd(t)) {
-                    case Done          => Done
-                    case Skip(st1)     => Skip (   (fst(t)    , st1))
-                    case Yield(x, st1) => Yield(x, (fst(t) - 1, st1))
+                    case Done         => Done
+                    case Skip(xs)     => Skip (   (fst(t)    , xs))
+                    case Yield(x, xs) => Yield(x, (fst(t) - 1, xs))
                 }};
         Stream(next1, (n, s0))
 
