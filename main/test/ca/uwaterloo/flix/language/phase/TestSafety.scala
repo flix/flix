@@ -17,8 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.errors.SafetyError.IllegalNonPositivelyBoundVariable
+import ca.uwaterloo.flix.language.errors.SafetyError.{IllegalNegativelyBoundWildVariable, IllegalNegativelyBoundWildcard, IllegalNonPositivelyBoundVariable}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
@@ -29,7 +28,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("NonPositivelyBoundVariable.01") {
     val input =
       """
-        |pub def f(): #{ A(Int), B(Int) } = solve {
+        |pub def f(): #{ A(Int), B(Int) } = #{
         |    A(x) :- not B(x).
         |}
       """.stripMargin
@@ -41,9 +40,9 @@ class TestSafety extends FunSuite with TestUtils {
     val input =
       """
         |pub def f(): #{ A(Int), B(Int), R(Int) } = solve {
-        |    R(x) :- A(x), not B(_y).
+        |    R(x) :- not A(x), not B(x).
         |}
-      """.stripMargin
+    """.stripMargin
     val result = compile(input, DefaultOptions)
     expectError[IllegalNonPositivelyBoundVariable](result)
   }
@@ -51,15 +50,27 @@ class TestSafety extends FunSuite with TestUtils {
   test("NonPositivelyBoundVariable.03") {
     val input =
       """
-        |pub def f(): #{ A(Int), B(Int), R(Int) } = solve {
-        |    R(x) :- not A(x), not B(x).
+        |pub def f(): #{ A(Int), B(Int), R(Int) } = #{
+        |    R(x) :- not A(x), B(12), if x > 5.
         |}
-      """.stripMargin
+    """.stripMargin
     val result = compile(input, DefaultOptions)
     expectError[IllegalNonPositivelyBoundVariable](result)
   }
 
-  test("NonPositivelyBoundVariable.04") {
+  test("NegativelyBoundWildVariable.01") {
+    val input =
+      """
+        |pub def f(): #{ A(Int), B(Int), R(Int) } = #{
+        |    R(x) :- A(x), not B(_y).
+        |}
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[IllegalNegativelyBoundWildVariable](result)
+  }
+
+
+  test("NegativelyBoundWildVariable.02") {
     val input =
       """
         |pub def f(): #{ A(Int), B(Int), R(Int) } = solve {
@@ -67,7 +78,51 @@ class TestSafety extends FunSuite with TestUtils {
         |}
       """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[IllegalNonPositivelyBoundVariable](result)
+    expectError[IllegalNegativelyBoundWildVariable](result)
+  }
+
+  test("NegativelyBoundWildVariable.03") {
+    val input =
+      """
+        |pub def f(): #{ A(Int), B(Int), R(Int) } = #{
+        |    R(1) :- A(y), not A(_y), not B(y).
+        |}
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[IllegalNegativelyBoundWildVariable](result)
+  }
+
+  test("NegativelyBoundWildcard.01") {
+    val input =
+      """
+        |pub def f(): #{ A(Int), B(Int) } = #{
+        |    A(1) :- not B(_).
+        |}
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[IllegalNegativelyBoundWildcard](result)
+  }
+
+  test("NegativelyBoundWildcard.02") {
+    val input =
+      """
+        |pub def f(): #{ A(Int), B(Int) } = solve {
+        |    A(1) :- not B(_), A(_).
+        |}
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[IllegalNegativelyBoundWildcard](result)
+  }
+
+  test("NegativelyBoundWildcard.03") {
+    val input =
+      """
+        |pub def f(): #{ A(Int), B(Int) } = #{
+        |    A(1) :- not B(z), A(z), not B(_).
+        |}
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[IllegalNegativelyBoundWildcard](result)
   }
 
 }

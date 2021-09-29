@@ -198,4 +198,269 @@ namespace TestStream {
         Stream.toList as & Impure;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // map (pure)                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def mapPure01(): Bool =
+        Nil |> List.toStream |> Stream.map(x -> x + 1) |> Stream.toList == Nil
+
+    @test
+    def mapPure02(): Bool =
+        (1 :: Nil) |> List.toStream |> Stream.map(x -> x + 1) |> Stream.toList == 2 :: Nil
+
+    @test
+    def mapPure03(): Bool =
+        (1 :: 2 :: Nil) |> List.toStream |> Stream.map(x -> x + 1) |> Stream.toList == 2 :: 3 :: Nil
+
+    @test
+    def mapPure04(): Bool =
+        (1 :: 2 :: 3 :: Nil) |> List.toStream |> Stream.map(x -> x + 1) |> Stream.toList == 2 :: 3 :: 4 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // map (impure)                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def mapImpure01(): Bool & Impure =
+        Nil |> List.toStream |> Stream.map(x -> x + 1 as & Impure) |> Stream.toList == Nil
+
+    @test
+    def mapImpure02(): Bool & Impure =
+        (1 :: Nil) |> List.toStream |> Stream.map(x -> x + 1 as & Impure) |> Stream.toList == 2 :: Nil
+
+    @test
+    def mapImpure03(): Bool & Impure =
+        (1 :: 2 :: Nil) |> List.toStream |> Stream.map(x -> x + 1 as & Impure) |> Stream.toList == 2 :: 3 :: Nil
+
+    @test
+    def mapImpure04(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> List.toStream |> Stream.map(x -> x + 1 as & Impure) |> Stream.toList == 2 :: 3 :: 4 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // map map                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def mapMap01(): Bool =
+        (1 :: 2 :: 3 :: Nil) |> List.toStream |> Stream.map(x -> x + 1) |> Stream.map(x -> x * 2) |> Stream.toList == 4 :: 6 :: 8 :: Nil
+
+    @test
+    def mapMap02(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> List.toStream |> Stream.map(x -> x + 1 as & Impure) |> Stream.map(x -> x * 2) |> Stream.toList == 4 :: 6 :: 8 :: Nil
+
+    @test
+    def mapMap03(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> List.toStream |> Stream.map(x -> x + 1) |> Stream.map(x -> x * 2 as & Impure) |> Stream.toList == 4 :: 6 :: 8 :: Nil
+
+    @test
+    def mapMap04(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> List.toStream |> Stream.map(x -> x + 1 as & Impure) |> Stream.map(x -> x * 2 as & Impure) |> Stream.toList == 4 :: 6 :: 8 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // map map fusion                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def mapFusion01(): Bool & Impure =
+        let l = ref Nil;
+        (1 :: 2 :: 3 :: Nil) |> List.toStream |>
+        Stream.map(x -> { l := "a" :: deref l; x }) |>
+        Stream.map(x -> { l := "b" :: deref l; x });
+        List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
+
+    @test
+    def mapFusion02(): Bool & Impure =
+        let l = ref Nil;
+        (1 :: 2 :: 3 :: Nil) |> List.toStream |>
+        Stream.map(x -> { l := "a" :: deref l; x } as & Pure) |>
+        Stream.map(x -> { l := "b" :: deref l; x } as & Pure) |>
+        Stream.toList as & Impure;
+        List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // map filter fusion                                                       //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def mapFilterFusion01(): Bool & Impure =
+        let l = ref Nil;
+        (1 :: 2 :: 3 :: Nil) |> List.toStream |>
+        Stream.map(   x -> { l := "a" :: deref l; x }) |>
+        Stream.filter(_ -> { l := "b" :: deref l; true });
+        List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
+
+    @test
+    def mapFilterFusion02(): Bool & Impure =
+        let l = ref Nil;
+        (1 :: 2 :: 3 :: Nil) |> List.toStream |>
+        Stream.map(   x -> { l := "a" :: deref l; x }    as & Pure) |>
+        Stream.filter(_ -> { l := "b" :: deref l; true } as & Pure) |>
+        Stream.toList as & Impure;
+        List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // filter map fusion                                                       //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def filterMapFusion01(): Bool & Impure =
+        let l = ref Nil;
+        (1 :: 2 :: 3 :: Nil) |> List.toStream |>
+        Stream.filter(_ -> { l := "a" :: deref l; true }) |>
+        Stream.map(   x -> { l := "b" :: deref l; x    });
+        List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
+
+    @test
+    def filterMapFusion02(): Bool & Impure =
+        let l = ref Nil;
+        (1 :: 2 :: 3 :: Nil) |> List.toStream |>
+        Stream.filter(_ -> { l := "a" :: deref l; true } as & Pure) |>
+        Stream.map(   x -> { l := "b" :: deref l; x    } as & Pure) |>
+        Stream.toList as & Impure;
+        List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldLeft                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldLeft01(): Bool =
+    	Stream.foldLeft((i, e) -> (i - e) * (e % 2 + 1), 100, Stream.empty(): Stream[Int32, Int32]) == 100
+
+    @test
+    def foldLeft02(): Bool =
+    	(1 :: Nil) |> List.toStream |> Stream.foldLeft((i, e) -> (i - e) * (e % 2 + 1), 100) == 198
+
+    @test
+    def foldLeft03(): Bool =
+    	(1 :: 2 :: Nil) |> List.toStream |> Stream.foldLeft((i, e) -> (i - e) * (e % 2 + 1), 100) == 196
+
+    @test
+    def foldLeft04(): Bool =
+    	(1 :: 2 :: 3 :: Nil) |> List.toStream |> Stream.foldLeft((i, e) -> (i - e) * (e % 2 + 1), 100) == 386
+
+    @test
+    def foldLeft05(): Bool =
+    	(1 :: 2 :: 3 :: Nil) |> List.toStream |> Stream.foldLeft((acc, x) -> x :: acc, Nil) == 3 :: 2 :: 1 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldRight                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldRight01(): Bool =
+    	Stream.foldRight((e, i) -> (i - e) * (e % 2 + 1), 100, Stream.empty(): Stream[Int32, Int32]) == 100
+
+    @test
+    def foldRight02(): Bool =
+    	(1 :: Nil) |> List.toStream |> Stream.foldRight((e, i) -> (i - e) * (e % 2 + 1), 100) == 198
+
+    @test
+    def foldRight03(): Bool =
+    	(1 :: 2 :: Nil) |> List.toStream |> Stream.foldRight((e, i) -> (i - e) * (e % 2 + 1), 100) == 194
+
+    @test
+    def foldRight04(): Bool =
+    	(1 :: 2 :: 3 :: Nil) |> List.toStream |> Stream.foldRight((e, i) -> (i - e) * (e % 2 + 1), 100) == 382
+
+    @test
+    def foldRight05(): Bool =
+    	(1 :: 2 :: 3 :: Nil) |> List.toStream |> Stream.foldRight((x, acc) -> x :: acc, Nil) == 1 :: 2 :: 3 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // exists                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def exists01(): Bool =
+        not (Stream.exists(i -> i > 3, Stream.empty()))
+
+    @test
+    def exists02(): Bool =
+        not ((1 :: Nil) |> List.toStream |> Stream.exists(i -> i > 3))
+
+    @test
+    def exists03(): Bool =
+        (5 :: Nil) |> List.toStream |> Stream.exists(i -> i > 3)
+
+    @test
+    def exists04(): Bool =
+        not ((1 :: 2 :: Nil) |> List.toStream |> Stream.exists(i -> i > 3))
+
+    @test
+    def exists05(): Bool =
+        (1 :: 6 :: Nil) |> List.toStream |> Stream.exists(i -> i > 3)
+
+    @test
+    def exists06(): Bool =
+        (6 :: 1 :: Nil) |> List.toStream |> Stream.exists(i -> i > 3)
+
+    @test
+    def exists07(): Bool =
+        (16 :: 6 :: Nil) |> List.toStream |> Stream.exists(i -> i > 3)
+
+    @test
+    def exists08(): Bool =
+        not ((1 :: -9 :: 3 :: Nil) |> List.toStream |> Stream.exists(i -> i > 3))
+
+    @test
+    def exists09(): Bool =
+        (1 :: 9 :: 3 :: Nil) |> List.toStream |> Stream.exists(i -> i > 3)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // forall                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def forall01(): Bool =
+        Stream.forall(i -> i > 3, Stream.empty())
+
+    @test
+    def forall02(): Bool =
+        not ((1 :: Nil) |> List.toStream |> Stream.forall(i -> i > 3))
+
+    @test
+    def forall03(): Bool =
+        (5 :: Nil) |> List.toStream |> Stream.forall(i -> i > 3)
+
+    @test
+    def forall04(): Bool =
+        not ((1 :: 2 :: Nil) |> List.toStream |> Stream.forall(i -> i > 3))
+
+    @test
+    def forall05(): Bool =
+        not ((1 :: 6 :: Nil) |> List.toStream |> Stream.forall(i -> i > 3))
+
+    @test
+    def forall06(): Bool =
+        not ((6 :: 1 :: Nil) |> List.toStream |> Stream.forall(i -> i > 3))
+
+    @test
+    def forall07(): Bool =
+        (16 :: 6 :: Nil) |> List.toStream |> Stream.forall(i -> i > 3)
+
+    @test
+    def forall08(): Bool =
+        not ((1 :: -9 :: 3 :: Nil) |> List.toStream |> Stream.forall(i -> i > 3))
+
+    @test
+    def forall09(): Bool =
+        not ((1 :: 9 :: 3 :: Nil) |> List.toStream |> Stream.forall(i -> i > 3))
+
+    @test
+    def forall10(): Bool =
+        (11 :: 9 :: 31 :: Nil) |> List.toStream |> Stream.forall(i -> i > 3)
+
 }

@@ -43,6 +43,21 @@ namespace Stream {
         }
 
     ///
+    /// Returns the length of `s`.
+    ///
+    // TODO: Add tests
+    pub def length(s: Stream[a, s]): Int32 =
+        let Stream(next0, s0) = s;
+        lengthAcc(next0, s0, 0)
+
+    pub def lengthAcc(next0: s -> Step[a, s], s0: s, acc: Int32): Int32 =
+        match next0(s0) {
+            case Done           => acc
+            case Skip(s1)       => lengthAcc(next0, s1, acc)
+            case Yield(_, s1)   => lengthAcc(next0, s1, acc + 1)
+        }
+
+    ///
     /// Returns `s` as a `List`.
     ///
     pub def toList(s: Stream[a, s]): List[a] =
@@ -110,5 +125,101 @@ namespace Stream {
         case Skip(s1)     => filterEAcc(f, next, s1, k)
         case Yield(x, s1) => if (f(x)) filterEAcc(f, next, s1, ks -> k(x :: ks)) else filterEAcc(f, next, s1, k)
     }
+
+    ///
+    /// Returns the result of applying `f` to every element in `s`.
+    ///
+    /// Whether `f` is applied eagerly or lazily depends on its purity:
+    ///
+    /// - If `f` is pure then it is applied lazily.
+    /// - If `f` is impure then it is applied eagerly.
+    ///
+    pub def map(f: a -> b & ef, s: Stream[a, s]): Stream[b, s] & ef =
+        if (reify ef)
+             mapL(f as a -> b & Pure,   s)
+        else
+             mapE(f as a -> b & Impure, s) as & ef
+
+    ///
+    /// Returns the result of applying `f` to every element in `s`.
+    ///
+    /// Applies `f` lazily.
+    ///
+    def mapL(f: a -> b, s: Stream[a, s]): Stream[b, s] =
+        let Stream(next0, s0) = s;
+        let next1 = s1 -> match next0(s1) {
+            case Done         => Done
+            case Skip(s2)     => Skip(s2)
+            case Yield(x, s2) => Yield(f(x), s2)
+        };
+        Stream(next1, s0)
+
+    ///
+    /// Returns the result of applying `f` to every element in `s`.
+    ///
+    /// Applies `f` eagerly.
+    ///
+    def mapE(f: a -> b & Impure, s: Stream[a, s]): Stream[b, s] & Impure =
+        let Stream(next, s0) = s;
+        (mapEAcc(f, next, s0, ks -> ks) |> List.toStream) as Stream[b, s]
+
+    ///
+    /// Helper function for `mapE`.
+    ///
+    def mapEAcc(f: a -> b & Impure, next: s -> Step[a, s], s0: s, k: List[b] -> List[b]): List[b] & Impure = match next(s0) {
+        case Done         => k(Nil)
+        case Skip(s1)     => mapEAcc(f, next, s1, k)
+        case Yield(x, s1) =>
+            let x1 = f(x);
+            mapEAcc(f, next, s1, ks -> k(x1 :: ks))
+    }
+
+    ///
+    /// Applies `f` to a start value `s` and all elements in `st` going from left to right.
+    ///
+    /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
+    ///
+    pub def foldLeft(f: (b, a) -> b & ef, s: b, st: Stream[a, state]): b & ef =
+        let Stream(next, st0) = st;
+        match next(st0) {
+            case Done          => s
+            case Skip(st1)     => foldLeft(f, s,       Stream(next, st1))
+            case Yield(x, st1) => foldLeft(f, f(s, x), Stream(next, st1))
+        }
+
+    ///
+    /// Applies `f` to a start value `s` and all elements in `l` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
+    ///
+    pub def foldRight(f: (a, b) -> b & ef, s: b, st: Stream[a, st]): b & ef =
+        foldRightAcc(f, s, st, ks -> ks as & ef)
+
+    ///
+    /// Helper function for `foldRight`.
+    ///
+    def foldRightAcc(f: (a, b) -> b & ef, s: b, st: Stream[a, st], k: b -> b & ef): b & ef =
+        let Stream(next, st0) = st;
+        match next(st0) {
+            case Done          => k(s)
+            case Skip(st1)     => foldRightAcc(f, s, Stream(next, st1), k)
+            case Yield(x, st1) => foldRightAcc(f, s, Stream(next, st1), ks -> k(f(x, ks)))
+        }
+
+    ///
+    /// Returns `true` if and only if at least one element in `s` satisfies the predicate `f`.
+    ///
+    /// Returns `false` if `s` is empty.
+    ///
+    pub def exists(f: a -> Bool & ef, s: Stream[a, s]): Bool & ef =
+        foldLeft((acc, x) -> f(x) or acc, false, s)
+
+    ///
+    /// Returns `true` if and only if all elements in `s` satisfy the predicate `f`.
+    ///
+    /// Returns `true` if `s` is empty.
+    ///
+    pub def forall(f: a -> Bool & ef, s: Stream[a, s]): Bool & ef =
+        foldLeft((acc, x) -> f(x) and acc, true, s)
 
 }

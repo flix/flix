@@ -19,7 +19,7 @@ namespace Benchmark {
     /// A benchmark has a name and a function to execute.
     ///
     pub enum Benchmark {
-        case Benchmark({name: String, f: Unit -> Unit})
+        case Benchmark({name :: String, f :: Unit -> Unit})
     }
 
     ///
@@ -51,7 +51,7 @@ namespace Benchmark {
         Benchmark({name = name, f = fn})
 
     pub enum BenchmarkResult {
-        case Success({name: String, rounds: Int32, total: Int64})
+        case Success({name :: String, rounds :: Int32, total :: Int64})
     }
 
     ///

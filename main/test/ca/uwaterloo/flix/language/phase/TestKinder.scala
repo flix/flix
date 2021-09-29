@@ -43,7 +43,7 @@ class TestKinder extends FunSuite with TestUtils {
   }
 
   test("MismatchedTypeParamKind.Implicit.04") {
-    val input = "def f(s: #{X(Int) | a}, r: {x: Int | a}): Int = 123"
+    val input = "def f(s: #{X(Int) | a}, r: {x :: Int | a}): Int = 123"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
@@ -105,7 +105,7 @@ class TestKinder extends FunSuite with TestUtils {
     val input =
       """
         |enum E[a] {
-        |    case A(#{X(Int) | a}, {x: Int | a})
+        |    case A(#{X(Int) | a}, {x :: Int | a})
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -156,7 +156,7 @@ class TestKinder extends FunSuite with TestUtils {
   }
 
   test("MismatchedTypeParamKind.TypeAlias.04") {
-    val input = "type alias T[a] = (#{X(Int) | a}, {x: Int | a})"
+    val input = "type alias T[a] = (#{X(Int) | a}, {x :: Int | a})"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
@@ -348,7 +348,7 @@ class TestKinder extends FunSuite with TestUtils {
   test("IllegalTypeApplication.02") {
     val input =
       """
-        |type alias R = {x: Int}
+        |type alias R = {x :: Int}
         |
         |def f(p: R[Int]): Int = 123
         |""".stripMargin
@@ -516,7 +516,7 @@ class TestKinder extends FunSuite with TestUtils {
   test("KindError.Def.Type.04") {
     val input =
       """
-        |def f[r: Type](x: {name: Int | r} ): Int = ???
+        |def f[r: Type](x: {name :: Int | r} ): Int = ???
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
@@ -674,7 +674,7 @@ class TestKinder extends FunSuite with TestUtils {
     val input =
       """
         |enum E[a] {
-        |  case C({i: Int | a})
+        |  case C({i :: Int | a})
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -803,7 +803,7 @@ class TestKinder extends FunSuite with TestUtils {
     val input =
       """
         |class C[a] {
-        |  pub def f(x: {l:  Int | a}): Int = ???
+        |  pub def f(x: {l ::  Int | a}): Int = ???
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
