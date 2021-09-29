@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.tools.github
 
 import ca.uwaterloo.flix.util.StreamOps
-import org.json4s.JsonAST.{JArray, JValue}
+import org.json4s.JsonAST.{JArray, JString, JValue}
 import org.json4s.native.JsonMethods.parse
 
 import java.io.InputStream
@@ -34,7 +34,7 @@ object GitHub {
   }
 
   private def parseRelease(json: JValue): Release = {
-    val version = parseSemVer((json \\ "tag_name").toString)
+    val version = parseSemVer((json \\ "tag_name").values.toString)
     val assetJsons = (json \\ "assets").asInstanceOf[JArray]
     val assets = assetJsons.arr.map(parseAsset)
     Release(version, assets)
@@ -43,7 +43,7 @@ object GitHub {
   private def parseAsset(asset: JValue): Asset = {
     val url = asset \\ "url"
     val name = asset \\ "name"
-    Asset(name.toString, new URL(url.toString))
+    Asset(name.values.toString, new URL(url.values.toString))
   }
 
   private def parseSemVer(string: String): SemVer = string.split('.') match {
