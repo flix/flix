@@ -58,7 +58,8 @@ object Packager {
     for (asset <- assets) {
       val path = lib.resolve(asset.name)
       val stream = GitHub.downloadAsset(asset)
-      StreamOps.writeAll(stream, path)
+      Files.copy(stream, path, StandardCopyOption.REPLACE_EXISTING) // MATT handle overwriting, etc.
+//      StreamOps.writeAll(stream, path)
     }
     // MATT more error handling
     // MATT progress reporting probably

@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.tools.github
 
 import ca.uwaterloo.flix.util.StreamOps
-import org.json4s.JsonAST.{JArray, JString, JValue}
+import org.json4s.JsonAST.{JArray, JValue}
 import org.json4s.native.JsonMethods.parse
 
 import java.io.InputStream
