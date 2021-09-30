@@ -261,4 +261,9 @@ namespace Stream {
             case Yield(y, ys) => Yield(y, Right(ys))
         }
     }
+
+    enum Either[a, b] {
+        case Left(a)
+        case Right(b)
+    }
 }
