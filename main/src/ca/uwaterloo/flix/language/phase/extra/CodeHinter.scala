@@ -124,8 +124,7 @@ object CodeHinter {
         case (Expression.Def(sym, _, _), lambda :: _) => checkPurity(sym, lambda.tpe, loc)
         case _ => Nil
       }
-
-      checkEffect(eff, loc) ++ hints0 ++ visitExp(exp) ++ visitExps(exps)
+      hints0 ++ visitExp(exp) ++ visitExps(exps)
 
     case Expression.Unary(_, exp, _, _, _) =>
       visitExp(exp)
