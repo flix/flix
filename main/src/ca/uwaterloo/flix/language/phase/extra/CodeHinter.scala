@@ -28,7 +28,7 @@ object CodeHinter {
   /**
     * A list of operations that are support lazy evaluation when given a pure function.
     */
-  val LazyWhenPure: List[Symbol.DefnSym] = List(
+  private val LazyWhenPure: List[Symbol.DefnSym] = List(
     Symbol.mkDefnSym("LazyList.filter"),
     Symbol.mkDefnSym("LazyList.filterMap"),
     Symbol.mkDefnSym("LazyList.map"),
@@ -48,7 +48,7 @@ object CodeHinter {
   /**
     * A list of operations that are support parallel evaluation when given a pure function.
     */
-  val ParallelWhenPure: List[Symbol.DefnSym] = List(
+  private val ParallelWhenPure: List[Symbol.DefnSym] = List(
     Symbol.mkDefnSym("Set.count"),
     Symbol.mkDefnSym("Set.exists"),
     Symbol.mkDefnSym("Set.forall"),
@@ -82,7 +82,7 @@ object CodeHinter {
 
     case Expression.Var(_, _, _) => Nil
 
-    case Expression.Def(_, _, loc) => Nil
+    case Expression.Def(_, _, _) => Nil
 
     case Expression.Sig(_, _, _) => Nil
 
