@@ -115,6 +115,11 @@ object Request {
   case class SemanticTokens(requestId: String, uri: String) extends Request
 
   /**
+    * A request to get workspace symbols information.
+    */
+  case class WorkspaceSymbols(requestId: String, query: String) extends Request
+
+  /**
     * Tries to parse the given `json` value as a [[AddUri]] request.
     */
   def parseAddUri(json: json4s.JValue): Result[Request, String] = {
@@ -285,6 +290,16 @@ object Request {
       id <- parseId(v)
       uri <- parseUri(v)
     } yield Request.DocumentSymbols(id, uri)
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[WorkspaceSymbols]] request.
+    */
+  def parseWorkspaceSymbols(v: JValue): Result[Request, String] = {
+    for {
+      id <- parseId(v)
+      query <- parseString("query", v)
+    } yield Request.WorkspaceSymbols(id, query)
   }
 
   /**
