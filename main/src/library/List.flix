@@ -1383,4 +1383,18 @@ namespace List {
         };
         Stream(next, l)
 
+    ///
+    /// Returns the sum of all elements in the list `l`.
+    ///
+    pub def sum(l: List[Int32]): Int32 =
+        sumAcc(l, 0)
+
+    ///
+    /// Helper function for `sum`.
+    ///
+    def sumAcc(l: List[Int32], acc: Int32): Int32 = match l {
+        case Nil     => acc
+        case x :: xs => sumAcc(xs, x + acc)
+    }
+
 }
