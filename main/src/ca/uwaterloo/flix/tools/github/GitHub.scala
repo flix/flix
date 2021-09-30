@@ -41,7 +41,7 @@ object GitHub {
   }
 
   private def parseAsset(asset: JValue): Asset = {
-    val url = asset \ "url"
+    val url = asset \ "browser_download_url"
     val name = asset \ "name"
     Asset(name.values.toString, new URL(url.values.toString))
   }
