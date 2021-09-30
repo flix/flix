@@ -17,8 +17,8 @@ package ca.uwaterloo.flix.language.phase.extra
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, ChoiceRule, Constraint, Expression, MatchRule, SelectChannelRule}
-import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.TypedAst._
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.CodeHint
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
@@ -26,9 +26,9 @@ import ca.uwaterloo.flix.util.Validation._
 object CodeHinter {
 
   /**
-    * A list of operations that supports fusion or laziness when given pure function arguments.
+    * A list of operations that are support lazy evaluation when given a pure function.
     */
-  val WantsPureArg: List[Symbol.DefnSym] = List(
+  val LazyWhenPure: List[Symbol.DefnSym] = List(
     Symbol.mkDefnSym("LazyList.filter"),
     Symbol.mkDefnSym("LazyList.filterMap"),
     Symbol.mkDefnSym("LazyList.map"),
@@ -43,6 +43,17 @@ object CodeHinter {
     Symbol.mkDefnSym("Stream.mapWithIndex"),
     Symbol.mkDefnSym("Stream.dropWhile"),
     Symbol.mkDefnSym("Stream.takeWhile")
+  )
+
+  /**
+    * A list of operations that are support parallel evaluation when given a pure function.
+    */
+  val ParallelWhenPure: List[Symbol.DefnSym] = List(
+    Symbol.mkDefnSym("Set.count"),
+    Symbol.mkDefnSym("Set.exists"),
+    Symbol.mkDefnSym("Set.forall"),
+    Symbol.mkDefnSym("Set.maximumBy"),
+    Symbol.mkDefnSym("Set.minimumBy"),
   )
 
   /**
@@ -110,11 +121,7 @@ object CodeHinter {
 
     case Expression.Apply(exp, exps, _, _, loc) =>
       val hints0 = (exp, exps) match {
-        case (Expression.Def(sym, _, _), lambda :: _) =>
-          if (WantsPureArg.contains(sym) && !isPure(lambda.tpe))
-            CodeHint.LazyWhenPure(sym, loc) :: Nil
-          else
-            Nil
+        case (Expression.Def(sym, _, _), lambda :: _) => checkPurity(sym, lambda.tpe, loc)
         case _ => Nil
       }
 
@@ -303,8 +310,21 @@ object CodeHinter {
     exps.flatMap(visitExp)
 
   /**
+    * Checks whether `sym` would benefit from `tpe` being pure.
+    */
+  private def checkPurity(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation): List[CodeHint] = {
+    if (LazyWhenPure.contains(sym) && !isPureFunction(tpe)) {
+      CodeHint.LazyWhenPure(sym, loc) :: Nil
+    } else if (ParallelWhenPure.contains(sym) && !isPureFunction(tpe)) {
+      CodeHint.ParallelWhenPure(sym, loc) :: Nil
+    } else {
+      Nil
+    }
+  }
+
+  /**
     * Returns `true` if the given type `tpe` is a pure function type.
     */
-  private def isPure(tpe: Type): Boolean = tpe.arrowEffectType == Type.Pure
+  private def isPureFunction(tpe: Type): Boolean = tpe.arrowEffectType == Type.Pure
 
 }
