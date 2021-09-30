@@ -25,8 +25,8 @@ object Severity {
   case object Error extends Severity
 
   /**
-    * A severity that represents a code quality hint.
+    * A severity that represents a code hint.
     */
-  case object Hint extends Severity
+  case object CodeHint extends Severity
 
 }

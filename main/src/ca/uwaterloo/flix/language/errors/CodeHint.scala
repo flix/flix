@@ -26,18 +26,43 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
 trait CodeHint extends CompilationError {
   def kind: String = "Code Hint"
 
-  override def severity: Severity = Severity.Hint
+  override def severity: Severity = Severity.CodeHint
 }
 
 object CodeHint {
 
-  case class SuggestPureFunction(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
-    override def summary: String = s"The use of an impure function inhibits lazy evaluation and/or stream fusion."
+  /**
+    * A code hint that indicates that an operation could be lazy if given a pure function.
+    *
+    * @param sym the symbol of the operation that could be lazy.
+    * @param loc the location associated with the code hint.
+    */
+  case class LazyWhenPure(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
+    override def summary: String = s"Use of impure function prevents lazy evaluation."
 
     override def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Use of impure function prevents laziness / fusion." << NewLine
+      vt << ">> Use of impure function prevents lazy evaluation." << NewLine
+      vt << NewLine
+      vt << Code(loc, "use of impure function.") << NewLine
+    }
+  }
+
+
+  /**
+    * A code hint that indicates that an operation could be parallel if given a pure function.
+    *
+    * @param sym the symbol of the operation that could be parallel.
+    * @param loc the location associated with the code hint.
+    */
+  case class ParallelWhenPure(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
+    override def summary: String = s"Use of impure function prevents parallel evaluation."
+
+    override def message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Use of impure function prevents parallel evaluation." << NewLine
       vt << NewLine
       vt << Code(loc, "use of impure function.") << NewLine
     }

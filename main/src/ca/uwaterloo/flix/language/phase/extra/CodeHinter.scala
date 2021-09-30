@@ -112,7 +112,7 @@ object CodeHinter {
       val hints0 = (exp, exps) match {
         case (Expression.Def(sym, _, _), lambda :: _) =>
           if (WantsPureArg.contains(sym) && !isPure(lambda.tpe))
-            CodeHint.SuggestPureFunction(sym, loc) :: Nil
+            CodeHint.LazyWhenPure(sym, loc) :: Nil
           else
             Nil
         case _ => Nil
