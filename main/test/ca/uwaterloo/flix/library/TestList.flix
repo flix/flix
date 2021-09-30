@@ -2373,4 +2373,38 @@ def distinctWith09(): Bool =
     @test
     def toLazy03(): Bool = List.range(-1000, 1000) |> List.toLazy |> LazyList.toList == List.range(-1000, 1000)
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sum                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sum01(): Bool =
+        List.sum(Nil) == 0
+
+    @test
+    def sum02(): Bool =
+        List.sum(1 :: Nil) == 1
+
+    @test
+    def sum03(): Bool =
+        List.sum(1 :: 2 :: 3 :: Nil) == 6
+
+    @test
+    def sum04(): Bool =
+        List.sum(1 :: 2 :: 3 :: -3 :: Nil) == 3
+
+    @test
+    def sum05(): Bool =
+        List.sum(-1 :: -2 :: -3 :: -4 :: Nil) == -10
+
+    @test
+    def sum06(): Bool =
+        List.sum(10 :: -10 :: Nil) == 0
+
+    @test
+    def sum07(): Bool =
+        List.range(1, 101) |> List.sum == 5050
+
+
 }
