@@ -119,13 +119,13 @@ object CodeHinter {
     case Expression.Lambda(_, exp, _, _) =>
       visitExp(exp)
 
-    case Expression.Apply(exp, exps, _, _, loc) =>
+    case Expression.Apply(exp, exps, _, eff, loc) =>
       val hints0 = (exp, exps) match {
         case (Expression.Def(sym, _, _), lambda :: _) => checkPurity(sym, lambda.tpe, loc)
         case _ => Nil
       }
 
-      visitExp(exp) ++ visitExps(exps) ++ hints0
+      checkEffect(eff, loc) ++ hints0 ++ visitExp(exp) ++ visitExps(exps)
 
     case Expression.Unary(_, exp, _, _, _) =>
       visitExp(exp)
@@ -134,10 +134,7 @@ object CodeHinter {
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.Let(_, _, exp1, exp2, _, eff, loc) =>
-      if (nonTrivialEffect(eff))
-        CodeHint.NonTrivialEffect(loc) :: visitExp(exp1) ++ visitExp(exp2)
-      else
-        visitExp(exp1) ++ visitExp(exp2)
+      checkEffect(eff, loc) ++ visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.LetRegion(_, exp, _, _, _) =>
       visitExp(exp)
@@ -146,10 +143,7 @@ object CodeHinter {
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
     case Expression.Stm(exp1, exp2, _, eff, loc) =>
-      if (nonTrivialEffect(eff))
-        CodeHint.NonTrivialEffect(loc) :: visitExp(exp1) ++ visitExp(exp2)
-      else
-        visitExp(exp1) ++ visitExp(exp2)
+      checkEffect(eff, loc) ++ visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.Match(matchExp, rules, _, _, _) =>
       visitExp(matchExp) ++ rules.flatMap {
@@ -329,12 +323,25 @@ object CodeHinter {
   }
 
   /**
+    * Checks whether `tpe` is a non-trivial effect.
+    */
+  private def checkEffect(tpe: Type, loc: SourceLocation): List[CodeHint] = {
+    if (nonTrivialEffect(tpe)) {
+      CodeHint.NonTrivialEffect(loc) :: Nil
+    } else {
+      Nil
+    }
+  }
+
+  /**
     * Returns `true` if the given function type `tpe` is non-pure (impure or polymorphic).
     */
   private def nonPureFunction(tpe: Type): Boolean = tpe.arrowEffectType != Type.Pure
 
   /**
     * Returns `true` if the given effect `tpe` is non-trivial.
+    *
+    * NB: Not currently checked for every expression.
     */
   private def nonTrivialEffect(tpe: Type): Boolean = tpe match {
     case Type.KindedVar(_, _, _, _, _) => false

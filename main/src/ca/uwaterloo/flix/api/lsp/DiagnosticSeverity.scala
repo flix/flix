@@ -36,7 +36,7 @@ object DiagnosticSeverity {
     */
   def from(s: Severity): DiagnosticSeverity = s match {
     case Severity.Error => Error
-    case Severity.CodeHint => Hint
+    case Severity.Hint => Hint
   }
 
   /**

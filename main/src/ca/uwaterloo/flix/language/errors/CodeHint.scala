@@ -25,8 +25,6 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
   */
 trait CodeHint extends CompilationError {
   def kind: String = "Code Hint"
-
-  override def severity: Severity = Severity.CodeHint
 }
 
 object CodeHint {
@@ -39,6 +37,8 @@ object CodeHint {
     */
   case class LazyWhenPure(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
     override def summary: String = s"Use of impure function prevents lazy evaluation."
+
+    override def severity: Severity = Severity.Hint
 
     override def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
@@ -58,6 +58,8 @@ object CodeHint {
   case class ParallelWhenPure(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
     override def summary: String = s"Use of impure function prevents parallel evaluation."
 
+    override def severity: Severity = Severity.Hint
+
     override def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
@@ -74,6 +76,8 @@ object CodeHint {
     */
   case class NonTrivialEffect(loc: SourceLocation) extends CodeHint {
     override def summary: String = s"Expression has a non-trivial effect."
+
+    override def severity: Severity = Severity.Info
 
     override def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
