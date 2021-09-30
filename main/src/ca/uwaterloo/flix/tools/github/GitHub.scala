@@ -34,15 +34,15 @@ object GitHub {
   }
 
   private def parseRelease(json: JValue): Release = {
-    val version = parseSemVer((json \\ "tag_name").values.toString)
-    val assetJsons = (json \\ "assets").asInstanceOf[JArray]
+    val version = parseSemVer((json \ "tag_name").values.toString)
+    val assetJsons = (json \ "assets").asInstanceOf[JArray]
     val assets = assetJsons.arr.map(parseAsset)
     Release(version, assets)
   }
 
   private def parseAsset(asset: JValue): Asset = {
-    val url = asset \\ "url"
-    val name = asset \\ "name"
+    val url = asset \ "url"
+    val name = asset \ "name"
     Asset(name.values.toString, new URL(url.values.toString))
   }
 
