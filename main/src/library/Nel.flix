@@ -472,5 +472,21 @@ namespace Nel {
             case h :: l => Nel(h, l)
             case _      => unreachable!()
         }
+
+    ///
+    /// Returns the sum of all elements in the list `l`.
+    ///
+    pub def sum(l: Nel[Int32]): Int32 = match l {
+        case Nel(x, xs) => sumAcc(x :: xs, 0)
+    }
+
+    ///
+    /// Helper function for `sum`.
+    ///
+    def sumAcc(l: List[Int32], acc: Int32): Int32 = match l {
+        case Nil     => acc
+        case x :: xs => sumAcc(xs, x + acc)
+    }
+
 }
 
