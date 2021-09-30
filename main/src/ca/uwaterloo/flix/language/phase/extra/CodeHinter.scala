@@ -133,8 +133,8 @@ object CodeHinter {
     case Expression.Binary(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Let(_, _, exp1, exp2, _, _, loc) =>
-      if (nonTrivialEffect(exp2.eff))
+    case Expression.Let(_, _, exp1, exp2, _, eff, loc) =>
+      if (nonTrivialEffect(eff))
         CodeHint.NonTrivialEffect(loc) :: visitExp(exp1) ++ visitExp(exp2)
       else
         visitExp(exp1) ++ visitExp(exp2)
@@ -145,8 +145,11 @@ object CodeHinter {
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-    case Expression.Stm(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
+    case Expression.Stm(exp1, exp2, _, eff, loc) =>
+      if (nonTrivialEffect(eff))
+        CodeHint.NonTrivialEffect(loc) :: visitExp(exp1) ++ visitExp(exp2)
+      else
+        visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.Match(matchExp, rules, _, _, _) =>
       visitExp(matchExp) ++ rules.flatMap {
