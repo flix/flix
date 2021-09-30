@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.lsp.{DocumentSymbol, Range, SymbolKind}
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.debug.FormatKind.formatKind
 
 object SymbolProvider {
 
@@ -27,31 +28,77 @@ object SymbolProvider {
       return Nil
     }
 
-    root.enums.filter {
-      case (_, enum) => enum.loc.source.name == uri
-    }.map {
-      case (_, enum) => enumToDocumentSymbol(enum)
-    }.toList
+    val enums = root.enums.values.collect { case enum if enum.loc.source.name == uri => mkEnumDocumentSymbol(enum) }
+    val defs = root.defs.values.collect { case d if d.sym.loc.source.name == uri => mkDefDocumentSymbol(d) }
+    val classes = root.classes.values.collect { case c if c.sym.loc.source.name == uri => mkClassDocumentSymbol(c) }
+    (classes ++ defs ++ enums).toList
+  }
+
+  /**
+    * Returns an Interface DocumentSymbol from a Class node.
+    * It navigates the AST and adds Sig and TypeParam of c and as children DocumentSymbols.
+    */
+  private def mkClassDocumentSymbol(c: TypedAst.Class): DocumentSymbol = c match {
+    case TypedAst.Class(doc, _, sym, tparam, _, signatures, _, loc) => DocumentSymbol(
+      sym.name,
+      Some(doc.text),
+      SymbolKind.Interface,
+      Range.from(loc),
+      Range.from(loc),
+      Nil,
+      signatures.map(mkSigDocumentSymbol) :+ mkTypeParamDocumentSymbol(tparam),
+    )
+  }
+
+  /**
+    * Returns a TypeParameter DocumentSymbol from a TypeParam node.
+    */
+  private def mkTypeParamDocumentSymbol(t: TypedAst.TypeParam) = t match {
+    case TypedAst.TypeParam(name, tpe, loc) => DocumentSymbol(
+      name.name, Some(formatKind(tpe.kind)), SymbolKind.TypeParameter, Range.from(loc), Range.from(loc), Nil, Nil,
+    )
+  }
+
+  /**
+    * Returns a Method DocumentSymbol from a Sig node.
+    */
+  private def mkSigDocumentSymbol(s: TypedAst.Sig): DocumentSymbol = s match {
+    case TypedAst.Sig(sym, spec, _) => DocumentSymbol(
+      sym.name, Some(spec.doc.text), SymbolKind.Method, Range.from(sym.loc), Range.from(sym.loc), Nil, Nil,
+    )
+  }
+
+  /**
+    * Returns a Function DocumentSymbol from a Def node.
+    */
+  private def mkDefDocumentSymbol(d: TypedAst.Def): DocumentSymbol = d match {
+    case TypedAst.Def(sym, spec, _) => DocumentSymbol(
+      sym.name, Some(spec.doc.text), SymbolKind.Function, Range.from(sym.loc), Range.from(sym.loc), Nil, Nil,
+    )
   }
 
   /**
     * Returns an Enum DocumentSymbol from an Enum node.
     * It navigates the AST and adds Cases of enum as children DocumentSymbols.
     */
-  private def enumToDocumentSymbol(enum: TypedAst.Enum): DocumentSymbol = DocumentSymbol(
-    enum.sym.name,
-    Some(enum.doc.lines.mkString(" ")),
-    SymbolKind.Enum,
-    Range.from(enum.loc),
-    Range.from(enum.loc),
-    List(),
-    enum.cases.map { case (_, value) => value }.map(mkCaseDocumentSymbol).toList
-  )
+  private def mkEnumDocumentSymbol(enum: TypedAst.Enum): DocumentSymbol = enum match {
+    case TypedAst.Enum(doc, _, sym, tparams, cases, _, _, loc) => DocumentSymbol(
+      sym.name,
+      Some(doc.text),
+      SymbolKind.Enum,
+      Range.from(loc),
+      Range.from(loc),
+      Nil,
+      cases.values.map(mkCaseDocumentSymbol).toList ++ tparams.map(mkTypeParamDocumentSymbol),
+    )
+  }
 
   /**
     * Returns an EnumMember DocumentSymbol from a Case node.
     */
-  private def mkCaseDocumentSymbol(c: TypedAst.Case): DocumentSymbol = DocumentSymbol(
-    c.tag.name, None, SymbolKind.EnumMember, Range.from(c.loc), Range.from(c.loc), List(), List()
-  )
+  private def mkCaseDocumentSymbol(c: TypedAst.Case): DocumentSymbol = c match {
+    case TypedAst.Case(_, tag, _, _, loc) => DocumentSymbol(
+      tag.name, None, SymbolKind.EnumMember, Range.from(loc), Range.from(loc), Nil, Nil,
+    )
+  }
 }

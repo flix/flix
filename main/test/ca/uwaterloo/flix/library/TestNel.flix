@@ -712,4 +712,38 @@ def sortBy08(): Bool = testSortByVsSort(Nel(5, 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
 @test
 def sortBy09(): Bool = testSortByVsSort(Nel(2, 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
 
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sum                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sum01(): Bool =
+        Nel.sum(Nel(0, Nil)) == 0
+
+    @test
+    def sum02(): Bool =
+        Nel.sum(Nel(1, Nil)) == 1
+
+    @test
+    def sum03(): Bool =
+        Nel.sum(Nel(1, 2 :: 3 :: Nil)) == 6
+
+    @test
+    def sum04(): Bool =
+        Nel.sum(Nel(1, 2 :: 3 :: -3 :: Nil)) == 3
+
+    @test
+    def sum05(): Bool =
+        Nel.sum(Nel(-1, -2 :: -3 :: -4 :: Nil)) == -10
+
+    @test
+    def sum06(): Bool =
+        Nel.sum(Nel(10, -10 :: Nil)) == 0
+
+    @test
+    def sum07(): Bool =
+        Nel(1, List.range(2, 101)) |> Nel.sum == 5050
+
 }
