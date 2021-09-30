@@ -53,6 +53,7 @@ object Packager {
     val proj = GitHub.Project(owner, repo)
     val release = GitHub.getLatestRelease(proj)
     val assets = release.get.assets.filter(_.name.endsWith(".fpkg"))
+    println(s"all assets: ${release.get.assets}") // MATT
     val lib = getLibraryDirectory(p)
     for (asset <- assets) {
       val path = lib.resolve(asset.name)
