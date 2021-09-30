@@ -49,7 +49,6 @@ object CodeHint {
     }
   }
 
-
   /**
     * A code hint that indicates that an operation could be parallel if given a pure function.
     *
@@ -65,6 +64,23 @@ object CodeHint {
       vt << ">> Use of impure function prevents parallel evaluation." << NewLine
       vt << NewLine
       vt << Code(loc, "use of impure function.") << NewLine
+    }
+  }
+
+  /**
+    * A code hint that indicates an expression has a non-trivial effect.
+    *
+    * @param loc the location of the expression.
+    */
+  case class NonTrivialEffect(loc: SourceLocation) extends CodeHint {
+    override def summary: String = s"Expression has a non-trivial effect."
+
+    override def message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Expression has a non-trivial effect." << NewLine
+      vt << NewLine
+      vt << Code(loc, "non-trivial effect.") << NewLine
     }
   }
 

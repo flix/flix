@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.extra
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.CodeHint
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
@@ -133,8 +133,11 @@ object CodeHinter {
     case Expression.Binary(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Let(_, _, exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
+    case Expression.Let(_, _, exp1, exp2, _, _, loc) =>
+      if (nonTrivialEffect(exp2.eff))
+        CodeHint.NonTrivialEffect(loc) :: visitExp(exp1) ++ visitExp(exp2)
+      else
+        visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.LetRegion(_, exp, _, _, _) =>
       visitExp(exp)
@@ -313,9 +316,9 @@ object CodeHinter {
     * Checks whether `sym` would benefit from `tpe` being pure.
     */
   private def checkPurity(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation): List[CodeHint] = {
-    if (LazyWhenPure.contains(sym) && !isPureFunction(tpe)) {
+    if (LazyWhenPure.contains(sym) && nonPureFunction(tpe)) {
       CodeHint.LazyWhenPure(sym, loc) :: Nil
-    } else if (ParallelWhenPure.contains(sym) && !isPureFunction(tpe)) {
+    } else if (ParallelWhenPure.contains(sym) && nonPureFunction(tpe)) {
       CodeHint.ParallelWhenPure(sym, loc) :: Nil
     } else {
       Nil
@@ -323,8 +326,18 @@ object CodeHinter {
   }
 
   /**
-    * Returns `true` if the given type `tpe` is a pure function type.
+    * Returns `true` if the given function type `tpe` is non-pure (impure or polymorphic).
     */
-  private def isPureFunction(tpe: Type): Boolean = tpe.arrowEffectType == Type.Pure
+  private def nonPureFunction(tpe: Type): Boolean = tpe.arrowEffectType != Type.Pure
+
+  /**
+    * Returns `true` if the given effect `tpe` is non-trivial.
+    */
+  private def nonTrivialEffect(tpe: Type): Boolean = tpe match {
+    case Type.KindedVar(_, _, _, _, _) => false
+    case Type.Cst(TypeConstructor.True, _) => false
+    case Type.Cst(TypeConstructor.False, _) => false
+    case _ => true
+  }
 
 }
