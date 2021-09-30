@@ -1676,31 +1676,31 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy(Array.toMutList([2,3,0,4,1,
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def sum01(): Bool =
-        MutList.sum(MutList.empty()) == 0
+    def sum01(): Bool & Impure =
+        MutList.sum(MutList.new()) == 0
 
     @test
-    def sum02(): Bool =
+    def sum02(): Bool & Impure =
         (1 :: Nil) |> List.toMut |> MutList.sum == 1
 
     @test
-    def sum03(): Bool =
+    def sum03(): Bool & Impure =
         (1 :: 2 :: 3 :: Nil) |> List.toMut |> MutList.sum == 6
 
     @test
-    def sum04(): Bool =
+    def sum04(): Bool & Impure =
         (1 :: 2 :: 3 :: -3 :: Nil) |> List.toMut |> MutList.sum == 3
 
     @test
-    def sum05(): Bool =
+    def sum05(): Bool & Impure =
         (-1 :: -2 :: -3 :: -4 :: Nil) |> List.toMut |> MutList.sum == -10
 
     @test
-    def sum06(): Bool =
+    def sum06(): Bool & Impure =
         (10 :: -10 :: Nil) |> List.toMut |> MutList.sum == 0
 
     @test
-    def sum07(): Bool =
+    def sum07(): Bool & Impure =
         List.range(1, 101) |> List.toMut |> MutList.sum == 5050
 
 }
