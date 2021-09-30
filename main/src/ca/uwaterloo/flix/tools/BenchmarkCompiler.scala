@@ -185,6 +185,7 @@ object BenchmarkCompiler {
     flix.addInput("TestSet.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestSet.flix"))
     flix.addInput("TestString.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestString.flix"))
     flix.addInput("TestValidation.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestValidation.flix"))
+    // TODO: add Condition.flix and ReentrantLock.flix here?
 
     flix
   }

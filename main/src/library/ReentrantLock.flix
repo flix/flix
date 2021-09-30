@@ -17,10 +17,7 @@
 ///
 /// A wrapper around a Java ReentrantLock.
 ///
-pub opaque type ReentrantLock = ##java.util.concurrent.locks.ReentrantLock
-
-// TODO: waiting for Condition.flix to be merged into master
-opaque type Condition = ##java.util.concurrent.locks.Condition
+opaque type ReentrantLock = ##java.util.concurrent.locks.ReentrantLock
 
 namespace ReentrantLock {
 
@@ -28,7 +25,7 @@ namespace ReentrantLock {
     /// Creates an instance of ReentrantLock with the given fairness policy.
     /// `fair = False` is the default for Java.
     ///
-    pub def makeLock(fair: Bool): ReentrantLock & Impure =
+    pub def new(fair: Bool): ReentrantLock & Impure =
         import new java.util.concurrent.locks.ReentrantLock(Bool) as reentrantLock;
         ReentrantLock(reentrantLock(fair))
 

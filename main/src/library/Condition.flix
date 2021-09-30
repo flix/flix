@@ -19,7 +19,11 @@
 ///
 opaque type Condition = ##java.util.concurrent.locks.Condition
 
-pub enum ConditionError {
+
+///
+/// An enum reflecting the two exceptions occurring in condition methods, lock state errors and thread interruptions.
+///
+enum ConditionError {
     case MonitorStateError(##java.lang.IllegalMonitorStateException)
     case InterruptedError(##java.lang.InterruptedException)
 }
@@ -40,7 +44,9 @@ namespace Condition {
         }
 
     ///
-    /// Causes the current thread to wait until it is signalled or interrupted, or the specified waiting time (nanos) elapses.
+    /// Causes the current thread to wait until it is signalled or interrupted, or the specified waiting
+    /// time(nanos) elapses. The method returns an estimate of the number of nanoseconds remaining to wait
+    /// given the supplied nanosTimeout value upon return, or a value less than or equal to zero if it timed out.
     ///
     pub def awaitTimeout(condition: Condition, timeout: Int64): Result[Int64, ConditionError] & Impure =
         import java.util.concurrent.locks.Condition.awaitNanos(Int64);
