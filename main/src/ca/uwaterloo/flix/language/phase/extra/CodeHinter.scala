@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.errors.CodeHint
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
-object CodeQuality {
+object CodeHinter {
 
   /**
     * A list of operations that supports fusion or laziness when given pure function arguments.

@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.debug._
-import ca.uwaterloo.flix.language.phase.extra.CodeQuality
+import ca.uwaterloo.flix.language.phase.extra.CodeHinter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
 import ca.uwaterloo.flix.util.vt.TerminalContext
@@ -289,7 +289,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
           val e = System.nanoTime() - t
 
           // Compute Code Quality hints.
-          val hints = CodeQuality.run(root)(flix)
+          val hints = CodeHinter.run(root)(flix)
 
           hints match {
             case Success(_) =>
