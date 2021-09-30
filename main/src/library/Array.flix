@@ -1741,7 +1741,7 @@ namespace Array {
         }
 
     ///
-    /// Returns the sum of all elements in the list `l`.
+    /// Returns the sum of all elements in the list `a`.
     ///
     pub def sum(a: Array[Int32]): Int32 & Impure =
         sumAcc(a, 0, 0)
