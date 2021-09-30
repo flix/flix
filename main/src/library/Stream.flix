@@ -244,23 +244,21 @@ namespace Stream {
     pub def append(s1: Stream[a, s], s2: Stream[a, t]): Stream[a, Either[s, t]] =
         let Stream(next1, st1) = s1;
         let Stream(next2, st2) = s2;
-        Stream(s -> appendNextHelper(s, next1, next2, st1, st2), Left(st1))
-
-    ///
-    /// Defines the `next` function for `append`.
-    ///
-    def appendNextHelper(s3: Either[s, t], next1: s -> Step[a, s], next2: t -> Step[a, t], st1: s, st2: t): Step[a, Either[s, t]] = match s3 {
-        case Left(st3)  => match next1(st3) {
-            case Done         => appendNextHelper(Right(st2), next1, next2, st1, st2)
-            case Skip(xs)     => Skip (   Left(xs))
-            case Yield(x, xs) => Yield(x, Left(xs))
-        }
-        case Right(st3) => match next2(st3) {
+        let nextRight = s -> match next2(s) {
             case Done         => Done
             case Skip(ys)     => Skip (   Right(ys))
             case Yield(y, ys) => Yield(y, Right(ys))
-        }
-    }
+        };
+        let nextLeft = s -> match next1(s) {
+            case Done         => nextRight(st2)
+            case Skip(xs)     => Skip (   Left(xs))
+            case Yield(x, xs) => Yield(x, Left(xs))
+        };
+        let appendNext = s -> match s {
+            case Left (st) => nextLeft(st)
+            case Right(st) => nextRight(st)
+        };
+        Stream(appendNext, Left(st1))
 
     enum Either[a, b] {
         case Left(a)
