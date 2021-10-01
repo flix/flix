@@ -989,9 +989,9 @@ class TestNamer extends FunSuite with TestUtils {
     val input =
       """
         |class C[a] {
-        |    pub def f(x: {y : a}): {y : Bool}
+        |    pub def f(x: {y :: a}): {y :: Bool}
         |
-        |    pub def g(x: {y : Bool}): Bool
+        |    pub def g(x: {y :: Bool}): Bool
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)

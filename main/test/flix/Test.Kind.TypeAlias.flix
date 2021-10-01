@@ -14,7 +14,7 @@ namespace Test/Enum/Kinding {
 
         type alias TBool[a: Bool] = Int -> Int & a
 
-        type alias TRecordRow[a: RecordRow] = { l: Int | a }
+        type alias TRecordRow[a: RecordRow] = { l :: Int | a }
 
         type alias TSchemaRow[a: SchemaRow] = #{ R | a }
 

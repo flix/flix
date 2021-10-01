@@ -27,10 +27,10 @@ namespace Test/Def/Generalization {
     def testGen07(): Result[t, e] -> Result[t, e] = x -> x
 
     @test
-    def testGen09(): {f: a} -> {f: a} = x -> x
+    def testGen09(): {f :: a} -> {f :: a} = x -> x
 
     @test
-    def testGen10(): {f: a | r} -> {f: a | r} = x -> x
+    def testGen10(): {f :: a | r} -> {f :: a | r} = x -> x
 
     @test
     def testGen11(): #{Edge(Int, Int)} -> #{Edge(Int, Int)} = x -> x
@@ -51,13 +51,13 @@ namespace Test/Def/Generalization {
     def testGen16(): a -> (b -> a) = x -> (_ -> x)
 
     @test
-    def testGen17(): r -> {x: Int | r} = r -> {+x = 21 | r}
+    def testGen17(): r -> {x :: Int | r} = r -> {+x = 21 | r}
 
     @test
-    def testGen18(): {x: Int | r} -> r = r -> { -x | r}
+    def testGen18(): {x :: Int | r} -> r = r -> { -x | r}
 
     @test
-    def testGen19(): {x: Int | r} -> {x: Int | r}  = r -> { x = 21 | r}
+    def testGen19(): {x :: Int | r} -> {x :: Int | r}  = r -> { x = 21 | r}
 
     @test
     def testGen20(): #{A(Int)} = #{}
@@ -144,13 +144,13 @@ namespace Test/Def/Generalization {
     def testLeq21(): Int -> (Int -> Int) = x -> (_ -> x)
 
     @test
-    def testLeq22(): {} -> {x: Int} = r -> {+x = 21 | r}
+    def testLeq22(): {} -> {x :: Int} = r -> {+x = 21 | r}
 
     @test
-    def testLeq23(): {x: Int} -> {} = r -> {-x | r}
+    def testLeq23(): {x :: Int} -> {} = r -> {-x | r}
 
     @test
-    def testLeq24(): {x: Int} -> {x: Int} = r -> {x = 21 | r}
+    def testLeq24(): {x :: Int} -> {x :: Int} = r -> {x = 21 | r}
 
     @test
     def testLeq25(): (Unit -> b & e) -> b & e = f -> f()
