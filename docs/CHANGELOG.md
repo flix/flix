@@ -2,6 +2,10 @@
 
 HEAD:
 
+Version 0.22.0:
+- Added support for Workspace Symbols (thanks Nicola!)
+- Added support for Code Hints (thanks Magnus!)
+
 Version 0.21.1:
 - Fixed a NPE.
 
