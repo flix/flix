@@ -22,43 +22,32 @@ import scala.collection.mutable
   */
 object Packager {
 
-  def main(args: Array[String]): Unit = {
-    println("test")
-
-    try {
-      val u = "https://api.github.com/repos/magnus-madsen/helloworld/releases"
-      val url = new URL(u)
-      val is = url.openStream()
-      val json = StreamOps.readAll(is)
-
-      val releases = parse(json).asInstanceOf[JArray]
-      for(release <- releases.arr) {
-        val tagName = release \\ "tag_name"
-        val ass = release \\ "assets" \\ "browser_download_url"
-        println(s"tag = ${tagName}, url = $ass")
-      }
-
-    } catch {
-      case ex: RuntimeException => ex.printStackTrace()
-    }
-  }
-
-  // MATT docs
-  // MATT move below other stuff
+  /**
+    * Installs a flix package from the Github `project`.
+    *
+    * `project` must be of the form `<owner>/<repo>`
+    *
+    * The package is installed at `lib/<owner>/<repo>`
+    */
   def install(project: String, p: Path, o: Options)(implicit tc: TerminalContext): Unit = {
     val proj = GitHub.parseProject(project)
     val release = GitHub.getLatestRelease(proj)
     val assets = release.assets.filter(_.name.endsWith(".fpkg"))
     val lib = getLibraryDirectory(p)
-    for (asset <- assets) {
-      val path = lib.resolve(asset.name)
-      val stream = GitHub.downloadAsset(asset)
-      Files.copy(stream, path, StandardCopyOption.REPLACE_EXISTING) // MATT handle overwriting, etc.
-    }
-    // MATT instead of putting directly under lib, put in lib/owner/repo/
+    val assetFolder = lib.resolve(proj.owner).resolve(proj.repo)
 
-    // MATT more error handling
-    // MATT progress reporting probably
+    // create the asset directory if it doesn't exist
+    Files.createDirectories(assetFolder)
+
+    // clear the asset folder
+    assetFolder.toFile.listFiles.foreach(_.delete())
+
+    // download each asset to the folder
+    for (asset <- assets) {
+      val path = assetFolder.resolve(asset.name)
+      val stream = GitHub.downloadAsset(asset)
+      Files.copy(stream, path, StandardCopyOption.REPLACE_EXISTING)
+    }
   }
 
   /**
