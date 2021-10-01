@@ -6,16 +6,20 @@ import org.json4s.native.JsonMethods.parse
 
 import java.io.InputStream
 import java.net.URL
+import scala.util.matching.Regex
 
 object GitHub {
 
   case class SemVer(major: Int, minor: Int, patch: Int)
+
   implicit def ordering: Ordering[SemVer] =
     Ordering.by((_: SemVer).major)
       .orElseBy(_.minor)
       .orElseBy(_.patch)
 
-  case class Project(owner: String, repo: String)
+  case class Project(owner: String, repo: String) {
+    override def toString: String = s"$owner/$repo"
+  }
 
   case class Release(version: SemVer, assets: List[Asset])
 
@@ -46,14 +50,23 @@ object GitHub {
     Asset(name.values.toString, new URL(url.values.toString))
   }
 
-  private def parseSemVer(string: String): SemVer = string.split('.') match {
-    case Array(major, minor, patch) =>
-      SemVer(major.tail.toInt, minor.toInt, patch.toInt) // MATT super hacky to parse around v
-    case _ => throw new RuntimeException(s"bad semver: $string") // MATT use monadic stuff
+  private def parseSemVer(string: String): SemVer = {
+    val semVer = """v?(\d+)\.(\d+)\.(\d+)""".r
+    string match {
+      case semVer(major, minor, patch) => SemVer(major.toInt, minor.toInt, patch.toInt)
+      case _ => throw new RuntimeException(s"Invalid semantic version: $string")
+    }
   }
 
-  def getLatestRelease(project: Project): Option[Release] = {
-    getReleases(project).maxByOption(_.version)
+  def parseProject(string: String): Project = string.split('/') match {
+    case Array(owner, repo) => Project(owner, repo)
+    case _ => throw new RuntimeException(s"Invalid project name: ${string}")
+  }
+
+  def getLatestRelease(project: Project): Release = {
+    getReleases(project)
+      .maxByOption(_.version)
+      .getOrElse(throw new RuntimeException(s"No releases available for project ${project}"))
   }
 
   def downloadAsset(asset: Asset): InputStream =

@@ -49,17 +49,14 @@ object Packager {
   // MATT docs
   // MATT move below other stuff
   def install(project: String, p: Path, o: Options)(implicit tc: TerminalContext): Unit = {
-    val Array(owner, repo) = project.split('/') // MATT monadic
-    val proj = GitHub.Project(owner, repo)
+    val proj = GitHub.parseProject(project)
     val release = GitHub.getLatestRelease(proj)
-    val assets = release.get.assets.filter(_.name.endsWith(".fpkg"))
-    println(s"all assets: ${release.get.assets}") // MATT
+    val assets = release.assets.filter(_.name.endsWith(".fpkg"))
     val lib = getLibraryDirectory(p)
     for (asset <- assets) {
       val path = lib.resolve(asset.name)
       val stream = GitHub.downloadAsset(asset)
       Files.copy(stream, path, StandardCopyOption.REPLACE_EXISTING) // MATT handle overwriting, etc.
-//      StreamOps.writeAll(stream, path)
     }
     // MATT more error handling
     // MATT progress reporting probably
