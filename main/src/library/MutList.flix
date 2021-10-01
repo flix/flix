@@ -669,7 +669,7 @@ namespace MutList {
     ///
     /// Returns `v` as an immutable list.
     ///
-    pub def toImm(v: MutList[a]): List[a] & Impure =
+    pub def toList(v: MutList[a]): List[a] & Impure =
         foldRight((x, acc) -> x :: acc, Nil, v)
 
     ///
