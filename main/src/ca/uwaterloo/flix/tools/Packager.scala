@@ -248,12 +248,6 @@ object Packager {
       addToZip(zip, name, sourceFile)
     }
 
-    // Add all test files.
-    for (testFile <- getAllFiles(getTestDirectory(p))) {
-      val name = p.relativize(testFile).toString
-      addToZip(zip, name, testFile)
-    }
-
     // Close the zip file.
     zip.finish()
   }
