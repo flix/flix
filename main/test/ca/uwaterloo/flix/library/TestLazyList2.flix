@@ -569,4 +569,37 @@ namespace TestLazyList2 {
     def sum07(): Bool =
         List.range(1, 101) |> List.toLazy |> LazyList.sum == 5050
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // order                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def order01(): Bool =
+        ENil: LazyList[Unit] <=> ENil: LazyList[Unit] == EqualTo
+
+    @test
+    def order02(): Bool =
+        ((1 :: Nil) |> List.toLazy) <=> ENil: LazyList[Int32] == GreaterThan
+
+    @test
+    def order03(): Bool =
+        ENil: LazyList[Int32] <=> ((1 :: Nil) |> List.toLazy) == LessThan
+
+    @test
+    def order04(): Bool =
+        ((1 :: Nil) |> List.toLazy) <=> ((1 :: Nil) |> List.toLazy) == EqualTo
+
+    @test
+    def order05(): Bool =
+        ((2 :: 1 :: Nil) |> List.toLazy) <=> ((1 :: 1 :: Nil) |> List.toLazy) == GreaterThan
+
+    @test
+    def order06(): Bool =
+        ((1 :: 1 :: Nil) |> List.toLazy) <=> ((2 :: 1 :: Nil) |> List.toLazy) == LessThan
+
+    @test
+    def order07(): Bool =
+        ((1 :: Nil) |> List.toLazy) <=> ((1 :: 1 :: Nil) |> List.toLazy) == LessThan
+
 }

@@ -26,10 +26,11 @@ import org.json4s._
 object Diagnostic {
   def from(compilationError: CompilationError): Diagnostic = {
     val range = Range.from(compilationError.loc)
+    val severity = Some(DiagnosticSeverity.from(compilationError.severity))
     val code = compilationError.kind
     val message = compilationError.summary
     val fullMessage = compilationError.message.fmt(TerminalContext.NoTerminal)
-    Diagnostic(range, Some(DiagnosticSeverity.Error), Some(code), None, message, fullMessage, Nil)
+    Diagnostic(range, severity, Some(code), None, message, fullMessage, Nil)
   }
 }
 
