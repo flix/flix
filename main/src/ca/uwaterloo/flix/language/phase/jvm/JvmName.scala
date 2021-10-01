@@ -123,42 +123,52 @@ object JvmName {
   val SelectChoice: JvmName = JvmName(List("ca", "uwaterloo", "flix", "runtime", "interpreter"), "SelectChoice")
 
   /**
-   * The `scala.math.package$` name
+   * The `scala.math.package$` name.
    */
   val ScalaMathPkg: JvmName = JvmName(List("scala", "math"), "package$")
 
   /**
-   * The `java.lang.Exception` name
+   * The `java.lang.Exception` name.
    */
   val Exception: JvmName = JvmName(List("java", "lang"), "Exception")
 
   /**
-   * The `java.lang.RuntimeException` name
+   * The `java.lang.RuntimeException` name.
    */
   val RuntimeException: JvmName = JvmName(List("java", "lang"), "RuntimeException")
 
   /**
-   * The `dev.flix.runtime.FlixError` name
+   * The `dev.flix.runtime.FlixError` name.
    */
   val FlixError: JvmName = JvmName(List("dev", "flix", "runtime"), "FlixError")
 
   /**
-   * The `dev.flix.runtime.HoleError` name
+   * The `dev.flix.runtime.HoleError` name.
    */
   val HoleError: JvmName = JvmName(List("dev", "flix", "runtime"), "HoleError")
 
   /**
-   * The `dev.flix.runtime.MatchError` name
+   * The `dev.flix.runtime.MatchError` name.
    */
   val MatchError: JvmName = JvmName(List("dev", "flix", "runtime"), "MatchError")
 
   /**
-   * The `dev.flix.runtime.ReifiedSourceLocation` class.
+   * The `dev.flix.runtime.ReifiedSourceLocation` name.
    */
   val ReifiedSourceLocation: JvmName = JvmName(List("dev", "flix", "runtime"), "ReifiedSourceLocation")
 
   /**
-   * The `java.lang.Exception` name
+    * The `dev.flix.runtime.GlobalCounter` name.
+    */
+  val GlobalCounter: JvmName = JvmName(List("dev", "flix", "runtime"), "GlobalCounter")
+
+  /**
+    * The `java.util.concurrent.atomic.AtomicLong` name.
+    */
+  val AtomicLong: JvmName = JvmName(List("java", "util", "concurrent", "atomic"), "AtomicLong")
+
+  /**
+   * The `java.lang.Exception` name.
    */
   val UnsupportedOperationException: JvmName = JvmName(List("java", "lang"), "UnsupportedOperationException")
 

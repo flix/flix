@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Magnus Madsen
+ * Copyright 2021 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package ca.uwaterloo.flix.language.errors
 
-package ca.uwaterloo.flix.api
+sealed trait Severity
 
-object Version {
+object Severity {
+
   /**
-    * Represents the current version of Flix.
+    * A severity that represents a program error.
     */
-  val CurrentVersion: Version = Version(major = 0, minor = 22, revision = 0)
-}
+  case object Error extends Severity
 
-/**
-  * A case class to represent versions.
-  */
-case class Version(major: Int, minor: Int, revision: Int) {
-  override val toString: String = s"v$major.$minor.$revision"
+  /**
+    * A severity that represents information.
+    */
+  case object Info extends Severity
+
+  /**
+    * A severity that represents a code hint.
+    */
+  case object Hint extends Severity
+
 }

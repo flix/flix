@@ -1184,7 +1184,7 @@ namespace List {
     ///
     /// Returns `xs` as a mutable list.
     ///
-    pub def toMut(xs: List[a]): MutList[a] & Impure = {
+    pub def toMutList(xs: List[a]): MutList[a] & Impure = {
         let v = MutList.new();
         xs |> foreach(x -> MutList.push!(x, v));
         v
@@ -1382,5 +1382,19 @@ namespace List {
             case x :: xs => Yield(x, xs)
         };
         Stream(next, l)
+
+    ///
+    /// Returns the sum of all elements in the list `l`.
+    ///
+    pub def sum(l: List[Int32]): Int32 =
+        sumAcc(l, 0)
+
+    ///
+    /// Helper function for `sum`.
+    ///
+    def sumAcc(l: List[Int32], acc: Int32): Int32 = match l {
+        case Nil     => acc
+        case x :: xs => sumAcc(xs, x + acc)
+    }
 
 }
