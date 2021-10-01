@@ -6,12 +6,8 @@ import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.github.GitHub
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt.TerminalContext
-import org.json4s.JsonAST.JArray
-import org.json4s._
-import org.json4s.native.JsonMethods.parse
 
 import java.io.PrintWriter
-import java.net.URL
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.zip.{ZipEntry, ZipFile, ZipOutputStream}
