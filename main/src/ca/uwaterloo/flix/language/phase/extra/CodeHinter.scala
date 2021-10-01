@@ -26,7 +26,7 @@ import ca.uwaterloo.flix.util.Validation._
 object CodeHinter {
 
   /**
-    * A list of operations that are support lazy evaluation when given a pure function.
+    * A list of operations that support lazy evaluation when given a pure function.
     */
   private val LazyWhenPure: List[Symbol.DefnSym] = List(
     Symbol.mkDefnSym("LazyList.filter"),
@@ -46,7 +46,7 @@ object CodeHinter {
   )
 
   /**
-    * A list of operations that are support parallel evaluation when given a pure function.
+    * A list of operations that support parallel evaluation when given a pure function.
     */
   private val ParallelWhenPure: List[Symbol.DefnSym] = List(
     Symbol.mkDefnSym("Set.count"),
@@ -323,6 +323,8 @@ object CodeHinter {
 
   /**
     * Checks whether `tpe` is a non-trivial effect.
+    *
+    * NB: Not currently checked for every expression.
     */
   private def checkEffect(tpe: Type, loc: SourceLocation): List[CodeHint] = {
     if (nonTrivialEffect(tpe)) {
@@ -339,8 +341,6 @@ object CodeHinter {
 
   /**
     * Returns `true` if the given effect `tpe` is non-trivial.
-    *
-    * NB: Not currently checked for every expression.
     */
   private def nonTrivialEffect(tpe: Type): Boolean = tpe match {
     case Type.KindedVar(_, _, _, _, _) => false
