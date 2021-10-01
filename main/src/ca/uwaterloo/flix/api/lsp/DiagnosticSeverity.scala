@@ -15,6 +15,8 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
+import ca.uwaterloo.flix.language.errors.Severity
+
 /**
   * Represents a `DiagnosticSeverity` in LSP.
   */
@@ -28,6 +30,15 @@ sealed trait DiagnosticSeverity {
 }
 
 object DiagnosticSeverity {
+
+  /**
+    * Returns the [[DiagnosticSeverity]] corresponding to the given [[Severity]].
+    */
+  def from(s: Severity): DiagnosticSeverity = s match {
+    case Severity.Error => Error
+    case Severity.Info => Information
+    case Severity.Hint => Hint
+  }
 
   /**
     * Reports an error.
