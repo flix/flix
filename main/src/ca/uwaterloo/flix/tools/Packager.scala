@@ -55,6 +55,8 @@ object Packager {
       val stream = GitHub.downloadAsset(asset)
       Files.copy(stream, path, StandardCopyOption.REPLACE_EXISTING) // MATT handle overwriting, etc.
     }
+    // MATT instead of putting directly under lib, put in lib/owner/repo/
+
     // MATT more error handling
     // MATT progress reporting probably
   }
