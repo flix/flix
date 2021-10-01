@@ -410,7 +410,7 @@ namespace MutMap {
     ///
     /// Returns the mutable map `m` as an immutable map.
     ///
-    pub def toImm(m: MutMap[k, v]): Map[k, v] & Impure =
+    pub def toMap(m: MutMap[k, v]): Map[k, v] & Impure =
         let MutMap(mm) = m;
         deref mm
 
