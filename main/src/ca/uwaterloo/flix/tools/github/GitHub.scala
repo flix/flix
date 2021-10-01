@@ -6,7 +6,6 @@ import org.json4s.native.JsonMethods.parse
 
 import java.io.InputStream
 import java.net.URL
-import scala.util.matching.Regex
 
 object GitHub {
 

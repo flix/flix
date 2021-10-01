@@ -1,23 +1,20 @@
 package ca.uwaterloo.flix.tools
 
-import java.io.PrintWriter
-import java.nio.file.attribute.BasicFileAttributes
-import java.nio.file._
-import java.util.zip.{ZipEntry, ZipFile, ZipOutputStream}
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.github.GitHub
-import ca.uwaterloo.flix.util.vt.TerminalContext
 import ca.uwaterloo.flix.util._
-import org.json4s.JsonAST.{JArray, JString, JValue}
-import org.json4s.JsonDSL._
-import org.json4s.ParserUtil.ParseException
+import ca.uwaterloo.flix.util.vt.TerminalContext
+import org.json4s.JsonAST.JArray
 import org.json4s._
-import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods.parse
 
+import java.io.PrintWriter
 import java.net.URL
+import java.nio.file._
+import java.nio.file.attribute.BasicFileAttributes
+import java.util.zip.{ZipEntry, ZipFile, ZipOutputStream}
 import scala.collection.mutable
 
 /**
