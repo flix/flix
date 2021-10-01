@@ -337,14 +337,14 @@ namespace TestIterator {
 //        let l: List[Int32] = Nil;
 //        let ml: MutList[Int32] = MutList.new();
 //        l |> Iterator.toIter |> Iterator.foreach(x -> ml |> MutList.push!(x));
-//        ml |> MutList.toImm == l
+//        ml |> MutList.toList == l
 //
 //    @test
 //    def foreach02(): Bool & Impure =
 //        let iter = Iterator.range(0, 10000);
 //        let ml: MutList[Int32] = MutList.new();
 //        iter |> Iterator.foreach(x -> ml |> MutList.push!(x));
-//        ml |> MutList.toImm == List.range(0, 10000) and
+//        ml |> MutList.toList == List.range(0, 10000) and
 //        iter |> Iterator.isEmpty
 //
 //    @test

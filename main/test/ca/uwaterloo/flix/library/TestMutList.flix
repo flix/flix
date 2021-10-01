@@ -1312,18 +1312,18 @@ namespace TestMutList {
 
     @test
     def toImm01(): Bool & Impure =
-        MutList.new(): MutList[Int32] |> MutList.toImm == Nil: List[Int32]
+        MutList.new(): MutList[Int32] |> MutList.toList == Nil: List[Int32]
 
     @test
     def toImm02(): Bool & Impure =
         let ml = MutList.range(0, 1000);
-        ml |> MutList.toImm == List.range(0, 1000) and
+        ml |> MutList.toList == List.range(0, 1000) and
             not (MutList.isEmpty(ml))
 
     @test
     def toImm03(): Bool & Impure =
         let ml = MutList.range(0, 1000);
-        ml |> MutList.toImm == List.range(0, 1000) and
+        ml |> MutList.toList == List.range(0, 1000) and
            ml == MutList.range(0, 1000)
 
 
@@ -1668,7 +1668,7 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy(Array.toMutList([2,3,0,4,1,
 
     @test
     def range03(): Bool & Impure =
-        MutList.range(0, 1000) |> MutList.toImm == List.range(0, 1000)
+        MutList.range(0, 1000) |> MutList.toList == List.range(0, 1000)
 
 
     /////////////////////////////////////////////////////////////////////////////
