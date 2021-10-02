@@ -61,13 +61,6 @@ object GitHub {
   case class Asset(name: String, url: URL)
 
   /**
-    * Returns the URL that returns data related to the project's releases.
-    */
-  private def releasesUrl(project: Project): URL = {
-    new URL(s"https://api.github.com/repos/${project.owner}/${project.repo}/releases")
-  }
-
-  /**
     * Lists the project's releases.
     */
   def getReleases(project: Project): List[Release] = {
@@ -76,6 +69,36 @@ object GitHub {
     val json = StreamOps.readAll(stream)
     val releaseJsons = parse(json).asInstanceOf[JArray]
     releaseJsons.arr.map(parseRelease)
+  }
+
+  /**
+    * Parses a GitHub project from an `<owner>/<repo>` string.
+    */
+  def parseProject(string: String): Project = string.split('/') match {
+    case Array(owner, repo) => Project(owner, repo)
+    case _ => throw new RuntimeException(s"Invalid project name: ${string}")
+  }
+
+  /**
+    * Gets the project release with the highest semantic version.
+    */
+  def getLatestRelease(project: Project): Release = {
+    getReleases(project)
+      .maxByOption(_.version)
+      .getOrElse(throw new RuntimeException(s"No releases available for project ${project}"))
+  }
+
+  /**
+    * Downloads the given asset.
+    */
+  def downloadAsset(asset: Asset): InputStream =
+    asset.url.openStream()
+
+  /**
+    * Returns the URL that returns data related to the project's releases.
+    */
+  private def releasesUrl(project: Project): URL = {
+    new URL(s"https://api.github.com/repos/${project.owner}/${project.repo}/releases")
   }
 
   /**
@@ -109,28 +132,4 @@ object GitHub {
       case _ => throw new RuntimeException(s"Invalid semantic version: $string")
     }
   }
-
-  /**
-    * Parses a GitHub project from an `<owner>/<repo>` string.
-    */
-  def parseProject(string: String): Project = string.split('/') match {
-    case Array(owner, repo) => Project(owner, repo)
-    case _ => throw new RuntimeException(s"Invalid project name: ${string}")
-  }
-
-  /**
-    * Gets the project release with the highest semantic version.
-    */
-  def getLatestRelease(project: Project): Release = {
-    getReleases(project)
-      .maxByOption(_.version)
-      .getOrElse(throw new RuntimeException(s"No releases available for project ${project}"))
-  }
-
-  /**
-    * Downloads the given asset.
-    */
-  def downloadAsset(asset: Asset): InputStream =
-    asset.url.openStream()
-
 }
