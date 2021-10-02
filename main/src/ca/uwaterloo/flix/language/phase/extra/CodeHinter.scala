@@ -346,7 +346,13 @@ object CodeHinter {
     case Type.KindedVar(_, _, _, _, _) => false
     case Type.Cst(TypeConstructor.True, _) => false
     case Type.Cst(TypeConstructor.False, _) => false
-    case _ => true
+    case _ => tpe.typeConstructor match {
+      case Some(TypeConstructor.And) => tpe.typeArguments match {
+        case List(_: Type.KindedVar, _: Type.KindedVar) => false
+        case _ => true
+      }
+      case _ => true
+    }
   }
 
 }
