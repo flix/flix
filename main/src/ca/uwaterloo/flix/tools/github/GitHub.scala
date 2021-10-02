@@ -98,13 +98,12 @@ object GitHub {
   }
 
   /**
-    * Parses a semantic version, optionally starting with v, e.g.
+    * Parses a semantic version, starting with v, e.g.
     *
-    * * `0.1.2`
     * * `v2.3.4`
     */
   private def parseSemVer(string: String): SemVer = {
-    val semVer = """v?(\d+)\.(\d+)\.(\d+)""".r
+    val semVer = """v(\d+)\.(\d+)\.(\d+)""".r
     string match {
       case semVer(major, minor, patch) => SemVer(major.toInt, minor.toInt, patch.toInt)
       case _ => throw new RuntimeException(s"Invalid semantic version: $string")
