@@ -85,6 +85,11 @@ object Request {
   case class Goto(requestId: String, uri: String, pos: Position) extends Request
 
   /**
+    * A request to find implementations.
+    */
+  case class Implementation(requestId: String, uri: String, pos: Position) extends Request
+
+  /**
     * A request to get highlight information.
     */
   case class Highlight(requestId: String, uri: String, pos: Position) extends Request
@@ -235,6 +240,17 @@ object Request {
       uri <- parseUri(json)
       pos <- Position.parse(json \\ "position")
     } yield Request.Goto(id, uri, pos)
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[Implementation]] request.
+    */
+  def parseImplementation(json: JValue): Result[Request, String] = {
+    for {
+      id <- parseId(json)
+      uri <- parseUri(json)
+      pos <- Position.parse(json \\ "position")
+    } yield Request.Implementation(id, uri, pos)
   }
 
   /**
