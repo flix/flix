@@ -52,6 +52,12 @@ object Position {
   * @param line      Line position in a document (zero-based).
   * @param character Character offset on a line in a document (zero-based).
   */
-case class Position(line: Int, character: Int) {
+case class Position(line: Int, character: Int) extends Ordered[Position] {
   def toJSON: JValue = ("line" -> line) ~ ("character" -> character)
+
+  override def compare(that: Position): Int =
+    line - that.line match {
+      case 0 => character - that.character
+      case n => n
+    }
 }

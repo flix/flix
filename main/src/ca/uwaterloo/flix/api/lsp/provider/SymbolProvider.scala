@@ -94,9 +94,21 @@ object SymbolProvider {
     * Returns a Method DocumentSymbol from a Sig node.
     */
   private def mkSigDocumentSymbol(s: TypedAst.Sig): DocumentSymbol = s match {
-    case TypedAst.Sig(sym, spec, _) => DocumentSymbol(
-      sym.name, Some(spec.doc.text), SymbolKind.Method, Range.from(sym.loc), Range.from(sym.loc), Nil, Nil,
-    )
+    case TypedAst.Sig(sym, spec, impl) =>
+      val selectionRange = Range.from(sym.loc)
+      val range = impl match {
+        case None => selectionRange
+        case Some(i) => Range.merge(selectionRange, Range.from(i.exp.loc))
+      }
+      DocumentSymbol(
+        sym.name,
+        Some(spec.doc.text),
+        SymbolKind.Method,
+        range,
+        selectionRange,
+        Nil,
+        Nil,
+      )
   }
 
   /**
@@ -112,8 +124,8 @@ object SymbolProvider {
     * Returns a Function DocumentSymbol from a Def node.
     */
   private def mkDefDocumentSymbol(d: TypedAst.Def): DocumentSymbol = d match {
-    case TypedAst.Def(sym, spec, _) => DocumentSymbol(
-      sym.name, Some(spec.doc.text), SymbolKind.Function, Range.from(sym.loc), Range.from(sym.loc), Nil, Nil,
+    case TypedAst.Def(sym, spec, impl) => DocumentSymbol(
+      sym.name, Some(spec.doc.text), SymbolKind.Function, Range.merge(Range.from(sym.loc), Range.from(impl.exp.loc)), Range.from(sym.loc), Nil, Nil,
     )
   }
 

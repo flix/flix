@@ -33,6 +33,11 @@ object Range {
     Range(Position(loc.beginLine - 1, loc.beginCol - 1), Position(loc.endLine - 1, loc.endCol - 1))
   }
 
+  def merge(r1: Range, r2: Range): Range = {
+    val Range(start, _) = if (r1.start < r2.start) r1 else r2
+    val Range(_, end) = if (r2.end > r1.end) r2 else r1
+    Range(start, end)
+  }
 }
 
 /**
