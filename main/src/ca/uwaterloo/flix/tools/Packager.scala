@@ -7,7 +7,7 @@ import ca.uwaterloo.flix.tools.github.GitHub
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt.TerminalContext
 
-import java.io.PrintWriter
+import java.io.{File, PrintWriter}
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.zip.{ZipEntry, ZipFile, ZipOutputStream}
@@ -37,7 +37,7 @@ object Packager {
     Files.createDirectories(assetFolder)
 
     // clear the asset folder
-    assetFolder.toFile.listFiles.foreach(_.delete())
+    assetFolder.toFile.listFiles.foreach(deletePackage)
 
     // download each asset to the folder
     for (asset <- assets) {
@@ -474,14 +474,25 @@ object Packager {
   }
 
   /**
+    * Deletes the file if it is a Flix package.
+    */
+  private def deletePackage(file: File): Unit = {
+    if (isPkgFile(file.toPath)) {
+      file.delete()
+    } else {
+      throw new RuntimeException(s"Refusing to delete non-Flix package file: ${file.getAbsolutePath}")
+    }
+  }
+
+  /**
     * Returns `true` if the given path `p` is a jar-file.
     */
-  private def isJarFile(p: Path): Boolean = isZipArchive(p)
+  private def isJarFile(p: Path): Boolean = p.endsWith(".jar") && isZipArchive(p)
 
   /**
     * Returns `true` if the given path `p` is a fpkg-file.
     */
-  private def isPkgFile(p: Path): Boolean = isZipArchive(p)
+  private def isPkgFile(p: Path): Boolean = p.endsWith(".fpkg") && isZipArchive(p)
 
   /**
     * Returns `true` if the given path `p` is a zip-archive.
