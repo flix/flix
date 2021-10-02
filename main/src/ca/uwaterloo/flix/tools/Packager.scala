@@ -12,6 +12,7 @@ import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.zip.{ZipEntry, ZipFile, ZipOutputStream}
 import scala.collection.mutable
+import scala.util.Using
 
 /**
   * An interface to manage flix packages.
@@ -41,8 +42,9 @@ object Packager {
     // download each asset to the folder
     for (asset <- assets) {
       val path = assetFolder.resolve(asset.name)
-      val stream = GitHub.downloadAsset(asset)
-      Files.copy(stream, path, StandardCopyOption.REPLACE_EXISTING)
+      Using(GitHub.downloadAsset(asset)) {
+        stream => Files.copy(stream, path, StandardCopyOption.REPLACE_EXISTING)
+      }
     }
   }
 
