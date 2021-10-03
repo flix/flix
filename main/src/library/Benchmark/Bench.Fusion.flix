@@ -96,14 +96,14 @@ pub def listSum(l: Array[Int32]): Benchmark =
     defBenchmark("List.sum", () -> {
         l |>
         Array.toList |>
-        List.foldLeft((x, y) -> x + y, 0)
+        List.sum
     } as & Pure)
 
 pub def lazyListSum(l: Array[Int32]): Benchmark =
     defBenchmark("LazyList.sum", () -> {
         l |>
         Array.toLazyList |>
-        LazyList.foldLeft((x, y) -> x + y, 0)
+        LazyList.sum
     } as & Pure)
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -114,7 +114,7 @@ pub def listFilterSum(l: Array[Int32]): Benchmark =
         l |>
         Array.toList |>
         List.filter(x -> x % 2 == 0) |>
-        List.foldLeft((x, y) -> x + y, 0)
+        List.sum
     } as & Pure)
 
 pub def lazyListFilterSum(l: Array[Int32]): Benchmark =
@@ -122,7 +122,7 @@ pub def lazyListFilterSum(l: Array[Int32]): Benchmark =
         l |>
         Array.toLazyList |>
         LazyList.filter(x -> x % 2 == 0) |>
-        LazyList.foldLeft((x, y) -> x + y, 0)
+        LazyList.sum
     } as & Pure)
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -134,7 +134,7 @@ pub def listFilterMapSum(l: Array[Int32]): Benchmark =
         Array.toList |>
         List.filter(x -> x % 2 == 0) |>
         List.map(x -> x * x) |>
-        List.foldLeft((x, y) -> x + y, 0)
+        List.sum
     } as & Pure)
 
 pub def lazyListFilterMapSum(l: Array[Int32]): Benchmark =
@@ -143,7 +143,7 @@ pub def lazyListFilterMapSum(l: Array[Int32]): Benchmark =
         Array.toLazyList |>
         LazyList.filter(x -> x % 2 == 0) |>
         LazyList.map(x -> x * x) |>
-        LazyList.foldLeft((x, y) -> x + y, 0)
+        LazyList.sum
     } as & Pure)
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -252,7 +252,7 @@ pub def listFlatMapTakeSum(l: Array[Int32]): Benchmark =
         Array.toList |>
         List.flatMap(x -> List.map(y -> x * y, l2)) |>
         List.take(100_000) |>  // TODO
-        List.foldLeft((x, y) -> x + y, 0)
+        List.sum
     } as & Pure)
 
 pub def lazyListFlatMapTakeSum(l: Array[Int32]): Benchmark =
@@ -262,7 +262,7 @@ pub def lazyListFlatMapTakeSum(l: Array[Int32]): Benchmark =
         Array.toLazyList |>
         LazyList.flatMap(x -> LazyList.map(y -> x * y, l2)) |>
         LazyList.take(100_000) |>  // TODO
-        LazyList.foldLeft((x, y) -> x + y, 0)
+        LazyList.sum
     } as & Pure)
 
 
@@ -275,7 +275,7 @@ pub def listCartesian(l: Array[Int32]): Benchmark =
         l |>
         Array.toList |>
         List.flatMap(x -> List.map(y -> x * y, l2)) |>
-        List.foldLeft((x, y) -> x + y, 0)
+        List.sum
     } as & Pure)
 
 pub def lazyListCartesian(l: Array[Int32]): Benchmark =
@@ -284,7 +284,7 @@ pub def lazyListCartesian(l: Array[Int32]): Benchmark =
         l |>
         Array.toLazyList |>
         LazyList.flatMap(x -> LazyList.map(y -> x * y, l2)) |>
-        LazyList.foldLeft((x, y) -> x + y, 0)
+        LazyList.sum
     } as & Pure)
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -339,14 +339,5 @@ pub def biboudisSuite(n: Int32): Array[Benchmark] & Impure =
 
 def main(_args: Array[String]) : Int32 & Impure =
     let s1 = biboudisSuite(100);
-    Benchmark.runWithBudget(s1, 250_000_000_000i64);
+    Benchmark.runWithBudget(s1, 10_000_000_000i64);
     0
-
-
-// TODO: Remove
-pub def fromList(l: List[a]): Stream[a, List[a]] =
-    let next = s -> match s {
-        case Nil     => Done
-        case x :: xs => Yield(x, xs)
-    };
-    Stream(next, l)
