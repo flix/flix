@@ -289,6 +289,15 @@ pub def lazyListFlatMapTakeSum(l: Array[Int32]): Benchmark =
         LazyList.sum
     } as & Pure)
 
+pub def streamFlatMapTakeSum(l: Array[Int32]): Benchmark =
+    let l2 = Stream.range(1, 10);
+    defBenchmark("Stream.flatMapTakeSum", () -> {
+        l |>
+        Array.toStream |>
+        Stream.flatMapL(x -> Stream.map(y -> x * y, l2)) |>
+        Stream.take(100_000) |>  // TODO
+        Stream.sum
+    } as & Pure)
 
 ///////////////////////////////////////////////////////////////////////////////
 /// cartesian                                                               ///
@@ -309,6 +318,15 @@ pub def lazyListCartesian(l: Array[Int32]): Benchmark =
         Array.toLazyList |>
         LazyList.flatMap(x -> LazyList.map(y -> x * y, l2)) |>
         LazyList.sum
+    } as & Pure)
+
+pub def streamCartesian(l: Array[Int32]): Benchmark =
+    let l2 = Stream.range(1, 10);
+    defBenchmark("Stream.cartesian", () -> {
+        l |>
+        Array.toStream |>
+        Stream.flatMapL(x -> Stream.map(y -> x * y, l2)) |>
+        Stream.sum
     } as & Pure)
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -360,7 +378,9 @@ pub def biboudisSuite(n: Int32): Array[Benchmark] & Impure =
         streamFilterSum(l),
         streamFilterMapSum(l),
         streamFilter8(l),
-        streamMap8(l)
+        streamMap8(l),
+        streamFlatMapTakeSum(l),
+        streamCartesian(l)
 
     ]
 
@@ -383,5 +403,22 @@ namespace Stream {
             case Skip(s1)       => sumAcc(next0, s1, acc)
             case Yield(_, s1)   => sumAcc(next0, s1, acc + 1)
         }
+
+    pub def flatMapL(f: a -> Stream[a, sb], s0: Stream[a, sa]): Stream[a, (sa, Option[Stream[a, sb]])] =
+        let Stream(nexta, sa0) = s0;
+        let next = s -> match s {
+            case (sa, None) => match nexta(sa) {
+                case Done           => Done
+                case Skip(sa1)      => Skip((sa1, None))
+                case Yield(a, sa1)  => Skip((sa1, Some(f(a))))
+            }
+            case (sa, Some(Stream(nextb, sb))) => match nextb(sb) {
+                case Done           => Skip(    (sa, None))
+                case Skip(sb1)      => Skip(    (sa, Some(Stream(nextb, sb1))))
+                case Yield(b, sb1)  => Yield(b, (sa, Some(Stream(nextb, sb1))))
+            }
+        };
+        Stream(next, (sa0, None))
+
 
 }
