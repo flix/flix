@@ -174,4 +174,68 @@ namespace Stream {
             mapEAcc(f, next, s1, ks -> k(x1 :: ks))
     }
 
+    ///
+    /// Applies `f` to a start value `s` and all elements in `st` going from left to right.
+    ///
+    /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
+    ///
+    pub def foldLeft(f: (b, a) -> b & ef, s: b, st: Stream[a, state]): b & ef =
+        let Stream(next, st0) = st;
+        match next(st0) {
+            case Done          => s
+            case Skip(st1)     => foldLeft(f, s,       Stream(next, st1))
+            case Yield(x, st1) => foldLeft(f, f(s, x), Stream(next, st1))
+        }
+
+    ///
+    /// Applies `f` to a start value `s` and all elements in `l` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
+    ///
+    pub def foldRight(f: (a, b) -> b & ef, s: b, st: Stream[a, st]): b & ef =
+        foldRightAcc(f, s, st, ks -> ks as & ef)
+
+    ///
+    /// Helper function for `foldRight`.
+    ///
+    def foldRightAcc(f: (a, b) -> b & ef, s: b, st: Stream[a, st], k: b -> b & ef): b & ef =
+        let Stream(next, st0) = st;
+        match next(st0) {
+            case Done          => k(s)
+            case Skip(st1)     => foldRightAcc(f, s, Stream(next, st1), k)
+            case Yield(x, st1) => foldRightAcc(f, s, Stream(next, st1), ks -> k(f(x, ks)))
+        }
+
+    ///
+    /// Returns `true` if and only if at least one element in `s` satisfies the predicate `f`.
+    ///
+    /// Returns `false` if `s` is empty.
+    ///
+    pub def exists(f: a -> Bool & ef, s: Stream[a, s]): Bool & ef =
+        foldLeft((acc, x) -> f(x) or acc, false, s)
+
+    ///
+    /// Returns `true` if and only if all elements in `s` satisfy the predicate `f`.
+    ///
+    /// Returns `true` if `s` is empty.
+    ///
+    pub def forall(f: a -> Bool & ef, s: Stream[a, s]): Bool & ef =
+        foldLeft((acc, x) -> f(x) and acc, true, s)
+
+    ///
+    /// Returns the first `n` elements of `s`.
+    ///
+    pub def take(n: Int32, s: Stream[a, s]): Stream[a, (Int32, s)] =
+        let Stream(next0, s0) = s;
+        let next1 = (t: (Int32, s)) -> {
+            if (fst(t) <= 0)
+                Done
+            else
+                match next0(snd(t)) {
+                    case Done         => Done
+                    case Skip(xs)     => Skip (   (fst(t)    , xs))
+                    case Yield(x, xs) => Yield(x, (fst(t) - 1, xs))
+                }};
+        Stream(next1, (n, s0))
+
 }

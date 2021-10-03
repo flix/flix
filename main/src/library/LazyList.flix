@@ -40,9 +40,41 @@ instance Foldable[LazyList] {
     pub def foldRight(f: (a, b) -> b & ef, s: b, l: LazyList[a]): b & ef = LazyList.foldRight(f, s, l)
 }
 
+instance Functor[LazyList] {
+    pub def map(f: a -> b & ef, l: LazyList[a]): LazyList[b] & ef = LazyList.map(f, l)
+}
+
 instance ToString[LazyList[a]] with ToString[a] {
     pub def toString(l: LazyList[a]): String = LazyList.toString(l)
 }
+
+instance Order[LazyList[a]] with Order[a] {
+
+    ///
+    /// Compares `l1` and `l2` lexicographically.
+    ///
+    pub def compare(l1: LazyList[a], l2: LazyList[a]): Comparison = match (l1, l2) {
+        case (ENil        ,         ENil) => EqualTo
+        case (_           ,         ENil) => GreaterThan
+        case (ENil        ,            _) => LessThan
+        case (LList(xs)   ,    LList(ys)) => (force xs) <=> (force ys)
+        case (_           ,    LList(ys)) =>         l1 <=> (force ys)
+        case (LList(xs)   ,            _) => (force xs) <=>        l2
+        case (ECons(x, xs), ECons(y, ys)) =>
+            let cmp = x <=> y;
+            if (cmp == EqualTo)         xs <=> ys         else cmp
+        case (ECons(x, xs), LCons(y, ys)) =>
+            let cmp = x <=> y;
+            if (cmp == EqualTo)         xs <=> (force ys) else cmp
+        case (LCons(x, xs), ECons(y, ys)) =>
+            let cmp = x <=> y;
+            if (cmp == EqualTo) (force xs) <=>        ys  else cmp
+        case (LCons(x, xs), LCons(y, ys)) =>
+            let cmp = x <=> y;
+            if (cmp == EqualTo) (force xs) <=> (force ys) else cmp
+    }
+}
+
 
 namespace LazyList {
 
@@ -988,6 +1020,22 @@ namespace LazyList {
             else
                 k(ENil, l)
         case LList(xs)    => spanAcc(f, force xs, k)
+    }
+
+    ///
+    /// Returns the sum of all elements in the list `l`.
+    ///
+    pub def sum(l: LazyList[Int32]): Int32 =
+        sumAcc(l, 0)
+
+    ///
+    /// Helper function for `sum`.
+    ///
+    def sumAcc(l: LazyList[Int32], acc: Int32): Int32 = match l {
+        case ENil         => acc
+        case ECons(x, xs) => sumAcc(      xs, x + acc)
+        case LCons(x, xs) => sumAcc(force xs, x + acc)
+        case LList(xs)    => sumAcc(force xs,     acc)
     }
 
 }

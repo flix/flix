@@ -964,7 +964,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
         //
         //       exp1 : tpe        exp2 : {| r }
         // ---------------------------------------------
-        // { field = exp1 | exp2 } : { field : tpe | r }
+        // { field = exp1 | exp2 } : { field  :: tpe | r }
         //
         val restRow = Type.freshVar(Kind.RecordRow, loc)
         for {
@@ -977,7 +977,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
 
       case KindedAst.Expression.RecordRestrict(field, exp, tvar, loc) =>
         //
-        //  exp : { field : t | r }
+        //  exp : { field  :: t | r }
         // -------------------------
         // { -field | exp } : {| r }
         //

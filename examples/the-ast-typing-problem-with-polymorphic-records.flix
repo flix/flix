@@ -6,9 +6,9 @@
 enum Expr[r: RecordRow] {
     case True,
     case False,
-    case Cst({value: Int | r}),
-    case Add({exp1: Expr[r], exp2: Expr[r] | r}),
-    case Ite({exp1: Expr[r], exp2: Expr[r], exp3: Expr[r] | r})
+    case Cst({value :: Int | r}),
+    case Add({exp1 :: Expr[r], exp2 :: Expr[r] | r}),
+    case Ite({exp1 :: Expr[r], exp2 :: Expr[r], exp3 :: Expr[r] | r})
 }
 
 /// Next, we define a grammar of types:

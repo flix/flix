@@ -1740,4 +1740,18 @@ namespace Array {
             forWithAccum(lo+1, hi, ac1, f)
         }
 
+    ///
+    /// Returns the sum of all elements in the list `a`.
+    ///
+    pub def sum(a: Array[Int32]): Int32 & Impure =
+        sumAcc(a, 0, 0)
+
+    ///
+    /// Helper function for `sum`.
+    ///
+    def sumAcc(a: Array[Int32], i: Int32, acc: Int32): Int32 & Impure =
+        if (i < length(a))
+            sumAcc(a, i + 1, a[i] + acc)
+        else
+            acc
 }

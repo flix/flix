@@ -10,7 +10,7 @@ namespace Test/Exp/Record/Polymorphism {
         let _p6 = withZ(p3, 84);
         ()
 
-    def withZ(rec: { x: Int, y: Int }, z: Int): { x: Int, y: Int, z: Int } =
+    def withZ(rec: { x :: Int, y :: Int }, z: Int): { x :: Int, y :: Int, z :: Int } =
         { +z = z | rec }
 
     @test
@@ -23,7 +23,7 @@ namespace Test/Exp/Record/Polymorphism {
         let _p6 = withAge(p3, 84);
         ()
 
-    def withAge(rec: { fstName: String, lstName: String }, age: Int): { fstName: String, lstName: String, age: Int } =
+    def withAge(rec: { fstName :: String, lstName :: String }, age: Int): { fstName :: String, lstName :: String, age :: Int } =
         { +age = age | rec }
 
     @test
@@ -38,7 +38,7 @@ namespace Test/Exp/Record/Polymorphism {
         let _p8 = withColor(p4, "Black");
         ()
 
-    def withColor(rec: {| r}, col: String): { color: String | r } =
+    def withColor(rec: {| r}, col: String): { color :: String | r } =
         { +color = col | rec }
 
     @test
@@ -53,7 +53,7 @@ namespace Test/Exp/Record/Polymorphism {
         let _p8 = withAgeAndSex(42, "f", p4);
         ()
 
-    def withAgeAndSex(age: Int, sex: String, rec: {| r}): { age: Int, sex: String | r } =
+    def withAgeAndSex(age: Int, sex: String, rec: {| r}): { age :: Int, sex :: String | r } =
         { +age = age, +sex = sex | rec }
 
     @test

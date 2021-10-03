@@ -19,16 +19,16 @@ namespace Test/Exp/Null {
     def testNullRecord01(): {} = null as {}
 
     @test
-    def testNullRecord02(): {name: String} = null as {name: String}
+    def testNullRecord02(): {name :: String} = null as {name :: String}
 
     @test
-    def testNullRecord03(): {name: String} = {name = null as String}
+    def testNullRecord03(): {name :: String} = {name = null as String}
 
     @test
-    def testNullRecord04(): {fstName: String, lstName: String} = null as {fstName: String, lstName: String}
+    def testNullRecord04(): {fstName :: String, lstName :: String} = null as {fstName :: String, lstName :: String}
 
     @test
-    def testNullRecord05(): {fstName: String, lstName: String} = {fstName = null as String, lstName = null as String}
+    def testNullRecord05(): {fstName :: String, lstName :: String} = {fstName = null as String, lstName = null as String}
 
     @test
     def testNullRef01(): Ref[String] = null as Ref[String]

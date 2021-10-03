@@ -669,7 +669,7 @@ namespace MutList {
     ///
     /// Returns `v` as an immutable list.
     ///
-    pub def toImm(v: MutList[a]): List[a] & Impure =
+    pub def toList(v: MutList[a]): List[a] & Impure =
         foldRight((x, acc) -> x :: acc, Nil, v)
 
     ///
@@ -847,4 +847,19 @@ namespace MutList {
         let MutList(a, l) = v;
         Array.sortWithin!(cmp, deref a, 0, (deref l) - 1)
 
+    ///
+    /// Returns the sum of all elements in the list `v`.
+    ///
+    pub def sum(v: MutList[Int32]): Int32 & Impure =
+        let MutList(a, l) = v;
+        sumAcc(deref a, deref l, 0, 0)
+
+    ///
+    /// Helper function for `sum`.
+    ///
+    def sumAcc(a: Array[Int32], l: Int32, i: Int32, acc: Int32): Int32 & Impure =
+        if (i < l)
+            sumAcc(a, l, i + 1, a[i] + acc)
+        else
+            acc
 }
