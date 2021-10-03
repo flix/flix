@@ -106,6 +106,13 @@ pub def lazyListSum(l: Array[Int32]): Benchmark =
         LazyList.sum
     } as & Pure)
 
+pub def streamSum(l: Array[Int32]): Benchmark =
+    defBenchmark("Stream.sum", () -> {
+        l |>
+        Array.toStream |>
+        Stream.sum
+    } as & Pure)
+
 ///////////////////////////////////////////////////////////////////////////////
 /// filter sum                                                              ///
 ///////////////////////////////////////////////////////////////////////////////
@@ -123,6 +130,14 @@ pub def lazyListFilterSum(l: Array[Int32]): Benchmark =
         Array.toLazyList |>
         LazyList.filter(x -> x % 2 == 0) |>
         LazyList.sum
+    } as & Pure)
+
+pub def streamFilterSum(l: Array[Int32]): Benchmark =
+    defBenchmark("Stream.filterSum", () -> {
+        l |>
+        Array.toStream |>
+        Stream.filter(x -> x % 2 == 0) |>
+        Stream.sum
     } as & Pure)
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -144,6 +159,15 @@ pub def lazyListFilterMapSum(l: Array[Int32]): Benchmark =
         LazyList.filter(x -> x % 2 == 0) |>
         LazyList.map(x -> x * x) |>
         LazyList.sum
+    } as & Pure)
+
+pub def streamFilterMapSum(l: Array[Int32]): Benchmark =
+    defBenchmark("Stream.filterMapSum", () -> {
+        l |>
+        Array.toStream |>
+        Stream.filter(x -> x % 2 == 0) |>
+        Stream.map(x -> x * x) |>
+        Stream.sum
     } as & Pure)
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -332,6 +356,9 @@ pub def biboudisSuite(n: Int32): Array[Benchmark] & Impure =
         streamLength(l),
         streamFilterLength(l),
         streamFilterMapLength(l),
+        streamSum(l),
+        streamFilterSum(l),
+        streamFilterMapSum(l),
         streamFilter8(l),
         streamMap8(l)
 
@@ -341,3 +368,20 @@ def main(_args: Array[String]) : Int32 & Impure =
     let s1 = biboudisSuite(100);
     Benchmark.runWithBudget(s1, 10_000_000_000i64);
     0
+
+
+// TODO: Remove
+namespace Stream {
+
+    pub def sum(s: Stream[a, s]): Int32 =
+        let Stream(next0, s0) = s;
+        sumAcc(next0, s0, 0)
+
+    def sumAcc(next0: s -> Step[a, s], s0: s, acc: Int32): Int32 =
+        match next0(s0) {
+            case Done           => acc
+            case Skip(s1)       => sumAcc(next0, s1, acc)
+            case Yield(_, s1)   => sumAcc(next0, s1, acc + 1)
+        }
+
+}
