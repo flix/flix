@@ -455,6 +455,26 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
             Expression.True(loc)
           else
             Expression.False(loc)
+
+        case Expression.ReifyType(t, _, _, loc) =>
+          // Magic!
+          val sym = Symbol.mkEnumSym("ReifiedType")
+          val innerExp = Expression.Unit(loc)
+          val tpe = Type.mkEnum(sym, Kind.Star, loc)
+          val eff = Type.Pure
+
+          subst0(t) match {
+            // TODO
+            case Type.Cst(TypeConstructor.Int32, _) =>
+              val tag = Name.Tag("ReifiedInt32", loc)
+              Expression.Tag(sym, tag, innerExp, tpe, eff, loc)
+
+            case Type.Cst(TypeConstructor.Int64, _) =>
+              val tag = Name.Tag("ReifiedInt64", loc)
+              Expression.Tag(sym, tag, innerExp, tpe, eff, loc)
+
+            case other => throw InternalCompilerException(s"Unexpected non-Boolean type: '$other'.")
+          }
       }
 
       /**

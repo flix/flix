@@ -4,6 +4,15 @@
 type alias Ref[t] = ScopedRef[t, false]
 
 ///
+/// The ReifiedTypes
+///
+pub enum ReifiedType {
+    // TODO
+    case ReifiedInt32
+    case ReifiedInt64
+}
+
+///
 /// The identity function.
 ///
 pub def identity(x: a): a = x

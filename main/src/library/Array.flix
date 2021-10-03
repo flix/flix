@@ -1754,4 +1754,12 @@ namespace Array {
             sumAcc(a, i + 1, a[i] + acc)
         else
             acc
+
+    // TODO: Add documentation.
+    // TODO: Add tests
+    pub def copyRange(a: Array[a]): Array[a] = match (reifyType a) {
+        case ReifiedInt32 => ???
+        case ReifiedInt64 => ???
+    }
+
 }

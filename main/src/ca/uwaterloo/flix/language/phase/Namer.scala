@@ -889,6 +889,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case t => NamedAst.Expression.Reify(t, loc)
       }
 
+    case WeededAst.Expression.ReifyType(t0, loc) =>
+      mapN(visitType(t0, uenv0, tenv0)) {
+        case t => NamedAst.Expression.ReifyType(t, loc)
+      }
+
   }
 
   /**
