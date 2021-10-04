@@ -82,7 +82,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
 
         mapN(enumsVal, classesVal, defsVal, instancesVal) {
           case (enums, classes, defs, instances) =>
-            KindedAst.Root(classes.toMap, instances.toMap, defs.toMap, enums.toMap, root.reachable, root.sources)
+            KindedAst.Root(classes.toMap, instances.toMap, defs.toMap, enums.toMap, taenv, root.reachable, root.sources)
         }
     }
 

@@ -76,6 +76,10 @@ case class Substitution(m: Map[Type.Var, Type]) {
             case Type.Apply(Type.Cst(TypeConstructor.Or, _), x, _) => BoolUnification.mkOr(x, y)
             case x => Type.Apply(x, y, loc)
           }
+        case Type.Alias(sym, args0, tpe0, loc) =>
+          val args = args0.map(visit)
+          val tpe = visit(tpe0)
+          Type.Alias(sym, args, tpe, loc)
         case _: Type.Ascribe => throw InternalCompilerException(s"Unexpected type '$tpe0'.")
       }
 

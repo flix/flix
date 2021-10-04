@@ -50,10 +50,12 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
     val defsVal = visitDefs(root, classEnv)
     val enumsVal = visitEnums(root)
 
+    val typeAliases = visitTypeAliases(root)
+
     Validation.mapN(classesVal, instancesVal, defsVal, enumsVal) {
       case (classes, instances, defs, enums) =>
         val sigs = classes.values.flatMap(_.signatures).map(sig => sig.sym -> sig).toMap
-        TypedAst.Root(classes, instances, sigs, defs, enums, root.reachable, root.sources, classEnv)
+        TypedAst.Root(classes, instances, sigs, defs, enums, typeAliases, root.reachable, root.sources, classEnv)
     }
   }
 
@@ -314,6 +316,16 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
 
     // Sequence the results and convert them back to a map.
     Validation.sequence(result).map(_.toMap)
+  }
+
+  // MATT docs
+  private def visitTypeAliases(root: KindedAst.Root)(implicit flix: Flix): Map[Symbol.TypeAliasSym, TypedAst.TypeAlias] = {
+    def visitTypeAlias(alias: KindedAst.TypeAlias): (Symbol.TypeAliasSym, TypedAst.TypeAlias) = alias match {
+      case KindedAst.TypeAlias(doc, mod, sym, tparams0, tpe, loc) =>
+        val tparams = getTypeParams(tparams0)
+        sym -> TypedAst.TypeAlias(doc, mod, sym, tparams, tpe, loc)
+    }
+    root.typeAliases.values.map(visitTypeAlias).toMap
   }
 
   /**

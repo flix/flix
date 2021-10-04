@@ -166,6 +166,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       case Type.Cst(TypeConstructor.UnappliedAlias(sym), _) => sym :: Nil
       case Type.Cst(_, _) => Nil
       case Type.Apply(tpe1, tpe2, _) => getAliasUses(tpe1) ::: getAliasUses(tpe2)
+      case _: Type.Alias => throw InternalCompilerException("unexpected applied alias")
 
     }
 

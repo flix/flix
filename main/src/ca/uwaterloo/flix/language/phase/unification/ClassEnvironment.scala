@@ -95,6 +95,7 @@ object ClassEnvironment {
     case tpe: Type.Cst => tpe
     case Type.Apply(tpe1, tpe2, loc) => Type.Apply(flattenAliases(tpe1), flattenAliases(tpe2), loc)
     case Type.UnkindedVar(id, loc, rigidity, text) => ??? // MATT error
+    case Type.Alias(_, _, tpe, _) => flattenAliases(tpe)
   }
 
   /**

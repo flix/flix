@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{EliminatedBy, IntroducedBy}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
-import ca.uwaterloo.flix.language.phase.Kinder
+import ca.uwaterloo.flix.language.phase.{Kinder, Monomorph}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.util.Objects
@@ -491,6 +491,7 @@ object Type {
   }
 
   // MATT docs
+  @EliminatedBy(Monomorph.getClass)
   case class Alias(sym: Symbol.TypeAliasSym, args: List[Type], tpe: Type, loc: SourceLocation) extends Type with BaseType {
     override def kind: Kind = tpe.kind
   }
@@ -888,8 +889,8 @@ object Type {
     case UnkindedVar(_, _, _, _) => 1
     case Ascribe(tpe, _, _) => 1 + size(tpe)
     case Cst(_, _) => 1
-    case Lambda(_, tpe, _) => 1 + size(tpe)
     case Apply(tpe1, tpe2, _) => size(tpe1) + size(tpe2)
+    case Alias(sym, args, tpe, loc) => size(tpe)
   }
 
 }
