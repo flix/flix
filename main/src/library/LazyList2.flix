@@ -19,6 +19,21 @@
 
 namespace LazyList2 {
 
+    pub def example1(): Int32 =
+        let l1 = range(1, 10);
+        let l2 = filter(x -> x > 5, l1);
+        sum(l2)
+
+    pub def example2(): Option[Int32] =
+        let l1 = range(1, 10);
+        let l2 = filter(x -> x > 5, l1);
+        head(l2)
+
+    pub def example3(): Option[Int32] & Impure =
+        let l1 = range(1, 10);
+        let l2 = filter(x -> x > 5 as & Impure, l1);
+        head(l2)
+
     ///
     /// Represents a lazy list.
     ///
@@ -32,6 +47,20 @@ namespace LazyList2 {
     }
 
     type alias Forced = true
+
+    ///
+    /// Returns `Some(x)` if `x` is the first element of `l`.
+    ///
+    /// Returns `None` if `l` is empty.
+    ///
+    /// Does not force the tail of `l`.
+    ///
+    pub def head(l: LazyList[a, _]): Option[a] = match l {
+        case ENil        => None
+        case ECons(x, _) => Some(x)
+        case LCons(x, _) => Some(x)
+        case LList(xs)   => head(force xs)
+    }
 
     ///
     /// Returns a lazy list of all integers between `b` (inclusive) and `e` (exclusive).
@@ -93,11 +122,11 @@ namespace LazyList2 {
     /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
-    pub def filter(f: a -> Bool & ef, l: LazyList[a, f]): LazyList[a, not ef] & ef =
+    pub def filter(f: a -> Bool & ef, l: LazyList[a, not ef]): LazyList[a, not ef or u] & ef =
         if (reify ef)
-            filterL(f as a -> Bool & Pure,   l) as LazyList[a, not ef] & ef
+            filterL(f as a -> Bool & Pure,   l) as LazyList[a, not ef or u] & ef
         else
-            filterE(f as a -> Bool & Impure, l) as LazyList[a, not ef] & ef
+            filterE(f as a -> Bool & Impure, l) as LazyList[a, not ef or u] & ef
 
     ///
     /// Returns a lazy list of every element in `l` that satisfies the predicate `f`.
