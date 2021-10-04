@@ -122,11 +122,11 @@ namespace LazyList2 {
     /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
-    pub def filter(f: a -> Bool & ef, l: LazyList[a, not ef]): LazyList[a, not ef or u] & ef =
+    pub def filter(f: a -> Bool & ef, l: LazyList[a, f]): LazyList[a, f] & ef =
         if (reify ef)
-            filterL(f as a -> Bool & Pure,   l) as LazyList[a, not ef or u] & ef
+            filterL(f as a -> Bool & Pure,   l) as LazyList[a, f] & ef
         else
-            filterE(f as a -> Bool & Impure, l) as LazyList[a, not ef or u] & ef
+            filterE(f as a -> Bool & Impure, l) as LazyList[a, f] & ef
 
     ///
     /// Returns a lazy list of every element in `l` that satisfies the predicate `f`.
