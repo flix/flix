@@ -367,7 +367,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       /*
        * Special Case 1: Unit
        */
-      (e1.tpe.typeConstructor, e2.tpe.typeConstructor) match {
+      (e1.tpe.typeConstructorDeprecated, e2.tpe.typeConstructorDeprecated) match {
         case (Some(TypeConstructor.Unit), Some(TypeConstructor.Unit)) =>
           // Unit is always equal to itself.
           return SimplifiedAst.Expression.True(loc)
@@ -377,7 +377,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       /*
        * Compute the semantic operator.
        */
-      val sop = e1.tpe.typeConstructor match {
+      val sop = e1.tpe.typeConstructorDeprecated match {
         case Some(TypeConstructor.Bool) => SemanticOperator.BoolOp.Eq
         case Some(TypeConstructor.Char) => SemanticOperator.CharOp.Eq
         case Some(TypeConstructor.Float32) => SemanticOperator.Float32Op.Eq

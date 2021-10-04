@@ -100,7 +100,7 @@ object PrettyExpression {
     //    case class Match(exp: TypedAst.Expression, rules: List[TypedAst.MatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
     //
 
-    case Expression.Tag(_, tag, exp, _, _, _) => exp.tpe.typeConstructor match {
+    case Expression.Tag(_, tag, exp, _, _, _) => exp.tpe.typeConstructorDeprecated match {
       case Some(TypeConstructor.Unit) => tag.name
       case _ => s"${tag.name}${pretty(exp)}"
     }

@@ -551,7 +551,7 @@ object Lowering extends Phase[Root, Root] {
     case Expression.FixpointProjectIn(exp, pred, tpe, eff, loc) =>
       // Compute the arity of the functor F[(a, b, c)] or F[a].
       val arity = exp.tpe match {
-        case Type.Apply(_, innerType, _) => innerType.typeConstructor match {
+        case Type.Apply(_, innerType, _) => innerType.typeConstructorDeprecated match {
           case Some(TypeConstructor.Tuple(l)) => l
           case _ => 1
         }
@@ -573,7 +573,7 @@ object Lowering extends Phase[Root, Root] {
       // Compute the arity of the predicate symbol.
       // The type is either of the form `Array[(a, b, c)]` or `Array[a]`.
       val arity = tpe match {
-        case Type.Apply(Type.Cst(TypeConstructor.Array, _), innerType, _) => innerType.typeConstructor match {
+        case Type.Apply(Type.Cst(TypeConstructor.Array, _), innerType, _) => innerType.typeConstructorDeprecated match {
           case Some(TypeConstructor.Tuple(_)) => innerType.typeArguments.length
           case Some(TypeConstructor.Unit) => 0
           case _ => 1
@@ -698,12 +698,13 @@ object Lowering extends Phase[Root, Root] {
         val t2 = visitType(tpe2)
         Type.Apply(t1, t2, loc)
 
-      case _: Type.Alias => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
+      case Type.Alias(sym, args, t, loc) => Type.Alias(sym, args.map(visit), visit(t), loc)
+
       case _: Type.UnkindedVar => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
       case _: Type.Ascribe => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
     }
 
-    if (tpe0.typeConstructor.contains(TypeConstructor.Schema))
+    if (tpe0.typeConstructorDeprecated.contains(TypeConstructor.Schema))
       Types.Datalog
     else
       visit(tpe0)

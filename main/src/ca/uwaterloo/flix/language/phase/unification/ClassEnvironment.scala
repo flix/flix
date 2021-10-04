@@ -167,6 +167,6 @@ object ClassEnvironment {
     * Returns true iff this type is in head-normal form.
     */
   private def isHeadNormalForm(tpe: Type): Boolean = {
-    tpe.typeConstructor.isEmpty
+    tpe.typeConstructorDeprecated.isEmpty
   }
 }

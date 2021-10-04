@@ -34,7 +34,7 @@ object HoverProvider {
 
         case Entity.Case(caze) => hoverTypAndEff(caze.sc.base, Type.Pure, caze.tag.loc)
 
-        case Entity.Enum(enu) => hoverTypeConstructor(enu.sc.base.typeConstructor.getOrElse(TypeConstructor.Unit), enu.sym.loc)
+        case Entity.Enum(enu) => hoverTypeConstructor(enu.sc.base.typeConstructorDeprecated.getOrElse(TypeConstructor.Unit), enu.sym.loc)
 
         case Entity.Exp(exp) =>
           exp match {

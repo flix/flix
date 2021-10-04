@@ -396,16 +396,18 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
 
   // TODO: Should be private
   def visitType(t0: Type): MonoType = {
-    val base = t0.typeConstructor
+    val base = t0.baseType
     val args = t0.typeArguments.map(visitType)
 
     base match {
-      case None => t0 match {
-        case Type.KindedVar(id, _, _, _, _) => MonoType.Var(id)
-        case _ => throw InternalCompilerException(s"Unexpected type: '$t0'.")
-      }
+      case Type.KindedVar(id, _, _, _, _) =>
+        if (args.isEmpty) {
+          MonoType.Var(id)
+        } else {
+          throw InternalCompilerException(s"Unexpected type: $t0")
+        }
 
-      case Some(tc) =>
+      case Type.Cst(tc, loc) =>
         tc match {
           case TypeConstructor.Unit => MonoType.Unit
 
@@ -491,6 +493,8 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
           case TypeConstructor.Schema =>
             throw InternalCompilerException(s"Unexpected type: '$t0'.")
         }
+
+      case Type.Alias(_, _, tpe, loc) =>
     }
   }
 

@@ -73,18 +73,19 @@ sealed trait Type {
     * Option[Result[Bool, Int]]     =>      Some(Option)
     * }}}
     */
-  def typeConstructor: Option[TypeConstructor] = this match {
+    // TODO remove; use baseType instead
+  def typeConstructorDeprecated: Option[TypeConstructor] = this match {
     case Type.KindedVar(_, _, _, _, _) => None
     case Type.UnkindedVar(_, _, _, _) => None
     case Type.Cst(tc, _) => Some(tc)
-    case Type.Apply(t1, _, _) => t1.typeConstructor
-    case Type.Ascribe(tpe, _, _) => tpe.typeConstructor
-    case Type.Alias(_, _, tpe, _) => tpe.typeConstructor // MATT ???
+    case Type.Apply(t1, _, _) => t1.typeConstructorDeprecated
+    case Type.Ascribe(tpe, _, _) => tpe.typeConstructorDeprecated
+    case Type.Alias(_, _, _, _) => None
   }
 
   /**
     * Returns the base type of a type application.
-    * Similar to [[Type.typeConstructor]] except that here we return the type (rather than the constructor),
+    * Similar to [[Type.typeConstructorDeprecated]] except that here we return the type (rather than the constructor),
     * which may be a non-[[Type.Cst]] type.
     *
     * {{{
@@ -146,7 +147,7 @@ sealed trait Type {
     *
     * NB: Assumes that `this` type is an arrow.
     */
-  def arrowArgTypes: List[Type] = typeConstructor match {
+  def arrowArgTypes: List[Type] = typeConstructorDeprecated match {
     case Some(TypeConstructor.Arrow(n)) => typeArguments.drop(1).dropRight(1)
     case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.")
   }
@@ -156,7 +157,7 @@ sealed trait Type {
     *
     * NB: Assumes that `this` type is an arrow.
     */
-  def arrowResultType: Type = typeConstructor match {
+  def arrowResultType: Type = typeConstructorDeprecated match {
     case Some(TypeConstructor.Arrow(n)) => typeArguments.last
     case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.")
   }
@@ -166,7 +167,7 @@ sealed trait Type {
     *
     * NB: Assumes that `this` type is an arrow.
     */
-  def arrowEffectType: Type = typeConstructor match {
+  def arrowEffectType: Type = typeConstructorDeprecated match {
     case Some(TypeConstructor.Arrow(n)) => typeArguments.head
     case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.")
   }
@@ -491,7 +492,6 @@ object Type {
   }
 
   // MATT docs
-  @EliminatedBy(Monomorph.getClass)
   case class Alias(sym: Symbol.TypeAliasSym, args: List[Type], tpe: Type, loc: SourceLocation) extends Type with BaseType {
     override def kind: Kind = tpe.kind
   }

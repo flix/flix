@@ -214,7 +214,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           //
           // Replace a default literal by the actual default value based on its type.
           //
-          subst0(tpe).typeConstructor match {
+          subst0(tpe).typeConstructorDeprecated match {
             case None =>
               throw ReifyTypeException(tpe, loc)
 
