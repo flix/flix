@@ -9,7 +9,7 @@
 
 ## Flix-specific
 
-- Variable names are typical one letter; `o` for Option, l` for `List`.
+- Variable names are typical one letter; `o` for Option, `l` for `List`.
 - Type variable names are typically `a`, `b`, `c`.
 - Effect variables are called `ef` or `ef1`, `ef2`...
 - Type class instances declarations should appear just below a type declaration.
