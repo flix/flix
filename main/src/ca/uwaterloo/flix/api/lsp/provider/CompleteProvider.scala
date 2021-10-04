@@ -211,6 +211,11 @@ object CompleteProvider {
         val t2 = replaceText(tvar, tpe2, newText)
         Type.Apply(t1, t2, loc)
 
+      case Type.Alias(sym, args0, tpe0, loc) =>
+        val args = args0.map(replaceText(tvar, _, newText))
+        val t = replaceText(tvar, tpe0, newText)
+        Type.Alias(sym, args, t, loc)
+
       case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type variable.")
       case _: Type.Ascribe => throw InternalCompilerException("Unexpected kind ascription.")
     }
