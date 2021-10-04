@@ -2619,31 +2619,31 @@ def startsWith12(): Bool = String.startsWith("Hello World!", "HELLO") == false
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def contains01(): Bool = String.contains("", "") == true
+def contains01(): Bool = String.contains({needle = ""}, "") == true
 
 @test
-def contains02(): Bool = String.contains("a", "") == true
+def contains02(): Bool = String.contains({needle = ""}, "a") == true
 
 @test
-def contains03(): Bool = String.contains("abc", "") == true
+def contains03(): Bool = String.contains({needle = ""}, "abc") == true
 
 @test
-def contains04(): Bool = String.contains("", "a") == false
+def contains04(): Bool = String.contains({needle = "a"}, "") == false
 
 @test
-def contains05(): Bool = String.contains("a", "a") == true
+def contains05(): Bool = String.contains({needle = "a"}, "a") == true
 
 @test
-def contains06(): Bool = String.contains("b", "a") == false
+def contains06(): Bool = String.contains({needle = "a"}, "b") == false
 
 @test
-def contains07(): Bool = String.contains("aa", "a") == true
+def contains07(): Bool = String.contains({needle = "a"}, "aa") == true
 
 @test
-def contains08(): Bool = String.contains("ab", "ab") == true
+def contains08(): Bool = String.contains({needle = "ab"}, "ab") == true
 
 @test
-def contains09(): Bool = String.contains("abc", "bc") == true
+def contains09(): Bool = String.contains({needle = "ab"}, "abc") == true
 
 /////////////////////////////////////////////////////////////////////////////
 // endsWith                                                              //

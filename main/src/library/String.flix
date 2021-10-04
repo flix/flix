@@ -1081,14 +1081,14 @@ namespace String {
         }
 
     ///
-    /// Returns `true` if and only if `sub` is an infix of `s`.
+    /// Returns `true` if and only if `needle` is an infix of `haystack`.
     ///
-    @Time(length(sub) * length(s)) @Space(length(s))
-    pub def contains(s: String, sub: String): Bool =
-        if (isEmpty(sub))
+    @Time(length(n.needle) * length(haystack)) @Space(length(haystack))
+    pub def contains(n:{needle:: String}, haystack: String): Bool =
+        if (isEmpty(n.needle))
             true
         else {
-            let a = indexOfLeft(sub, s);
+            let a = indexOfLeft(n.needle, haystack);
             not Option.isEmpty(a)
         }
 
