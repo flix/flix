@@ -113,6 +113,7 @@ class Flix {
     "Bool.flix" -> LocalResource.get("/src/library/Bool.flix"),
     "BigInt.flix" -> LocalResource.get("/src/library/BigInt.flix"),
     "Char.flix" -> LocalResource.get("/src/library/Char.flix"),
+    "ChannelImpl.flix" -> LocalResource.get("/src/library/ChannelImpl.flix"),
     "Choice.flix" -> LocalResource.get("/src/library/Choice.flix"),
     "Condition.flix" -> LocalResource.get("/src/library/Condition.flix"),
     "Console.flix" -> LocalResource.get("/src/library/Console.flix"),
