@@ -176,6 +176,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       case JString("lsp/highlight") => Request.parseHighlight(json)
       case JString("lsp/hover") => Request.parseHover(json)
       case JString("lsp/goto") => Request.parseGoto(json)
+      case JString("lsp/implementation") => Request.parseImplementation(json)
       case JString("lsp/rename") => Request.parseRename(json)
       case JString("lsp/documentSymbols") => Request.parseDocumentSymbols(json)
       case JString("lsp/workspaceSymbols") => Request.parseWorkspaceSymbols(json)
@@ -241,6 +242,9 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
     case Request.Goto(id, uri, pos) =>
       ("id" -> id) ~ GotoProvider.processGoto(uri, pos)(index, root)
+
+    case Request.Implementation(id, uri, pos) =>
+      ("id" -> id) ~ ("status" -> "success") ~ ("result" -> ImplementationProvider.processImplementation(uri, pos)(root).map(_.toJSON))
 
     case Request.Rename(id, newName, uri, pos) =>
       ("id" -> id) ~ RenameProvider.processRename(newName, uri, pos)(index, root)
