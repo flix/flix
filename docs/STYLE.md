@@ -1,16 +1,24 @@
 # Style Guide
 
-## Both
+## Flix and Scala
 
+- Every file must start with a copyright header.
 - Prefer functional to imperative programming.
-- Use private functions/methods.
+  - Use of local mutability is okay.
+- If a function or method can be private, make it private.
 
-## Flix
+## Flix-specific
 
 - Variable names are typical one letter; `o` for Option, l` for `List`.
+- Type variable names are typically `a`, `b`, `c`.
 - Effect variables are called `ef` or `ef1`, `ef2`...
+- Type class instances declarations should appear just below a type declaration.
+  - Instances should appear in the order: Eq, Order, ToString.
+- Avoids casts.
+  - If necessary, effect casts are OK.
+  - Only in extreme cases are type casts OK.
 
-## Scala
+## Scala-specific
 
 - No shadowed variables.
 - No unused local variables.
