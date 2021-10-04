@@ -932,9 +932,14 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     case Type.Ascribe(t, k, loc) => inferType(t, k, kenv0, taenv, root)
 
     case Type.Alias(sym, args, tpe, loc) =>
-      // MATT infer args from env
-      // MATT merge with inference from tpe
-      ???
+      val alias = taenv(sym)
+      val tparamKinds = alias.tparams.map(_.tpe.kind)
+
+      Validation.fold(args.zip(tparamKinds), KindEnv.empty) {
+        case (acc, (targ, kind)) => flatMapN(inferType(targ, kind, kenv0, taenv, root)) {
+          kenv => acc ++ kenv
+        }
+      }
 
     case _: Type.KindedVar => throw InternalCompilerException("Unexpected kinded var.")
   }
