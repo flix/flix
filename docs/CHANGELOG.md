@@ -2,6 +2,11 @@
 
 HEAD:
 
+Version 0.23.0:
+- Added support for go to implementation (thanks Nicola!)
+- Added code hint for complex effects (thanks Magnus!)
+- Added support for `install` package (thanks Matthew!)
+
 Version 0.22.0:
 - Added support for Workspace Symbols (thanks Nicola!)
 - Added support for Code Hints (thanks Magnus!)

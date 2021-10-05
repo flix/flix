@@ -888,4 +888,17 @@ object Type {
     * That is, `x == y` iff `(x /\ y) \/ (not x /\ not y)`
     */
   def mkEquiv(x: Type, y: Type, loc: SourceLocation): Type = mkOr(mkAnd(x, y, loc), mkAnd(Type.mkNot(x, loc), Type.mkNot(y, loc), loc), loc)
+
+  /**
+    * Returns the size of the given type `tpe`.
+    */
+  def size(tpe: Type): Int = tpe match {
+    case KindedVar(_, _, _, _, _) => 1
+    case UnkindedVar(_, _, _, _) => 1
+    case Ascribe(tpe, _, _) => 1 + size(tpe)
+    case Cst(_, _) => 1
+    case Lambda(_, tpe, _) => 1 + size(tpe)
+    case Apply(tpe1, tpe2, _) => size(tpe1) + size(tpe2)
+  }
+
 }
