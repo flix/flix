@@ -164,6 +164,27 @@ object InstanceError {
   }
 
   /**
+    * Error indicating a type alias in an instance type.
+    *
+    * @param alias the type alias.
+    * @param clazz the class symbol.
+    * @param loc   the location where the error occurred.
+    */
+  case class TypeAliasInstance(alias: Symbol.TypeAliasSym, clazz: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
+    override def summary: String = "Type alias in instance type."
+
+    override def message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Type alias '" << Red(alias.name) << "' in instance for '" << Red(clazz.name) << "'."
+      vt << NewLine
+      vt << Code(loc, s"type alias  in instance type")
+      vt << NewLine
+      vt << Underline("Tip:") << " An instance type must not contain a type alias. Use the explicit type."
+    }
+  }
+
+  /**
     * Error indicating an orphan instance.
     *
     * @param tpe the instance type.

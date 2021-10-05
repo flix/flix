@@ -112,8 +112,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
             // Case 2: Non-type variable. Error.
             case (_, _) => InstanceError.ComplexInstanceType(tpe, sym, loc).toFailure
           }.map(_ => ())
-          // MATT do we not check that the first is a constructor?
-        case _: Type.Alias => ??? // MATT complex instance (or specific)
+        case Type.Alias(alias, _, _, _) => InstanceError.TypeAliasInstance(alias, sym, loc).toFailure
         case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type.")
         case _: Type.Ascribe => throw InternalCompilerException("Unexpected ascribe type.")
       }
