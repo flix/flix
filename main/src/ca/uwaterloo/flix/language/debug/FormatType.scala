@@ -105,6 +105,9 @@ object FormatType {
           }
           case Type.Apply(tpe1, tpe2, loc) => s"${visit(tpe1)}[${visit(tpe2)}]"
           case Type.Alias(sym, aliasArgs, _, _) => formatApply(sym.name, aliasArgs ++ args)
+          case _: Type.Cst => throw InternalCompilerException("Unexpected type.")
+          case _: Type.Ascribe => throw InternalCompilerException("Unexpected type.")
+          case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected type.")
         }
 
         case Some(tc) => tc match {
