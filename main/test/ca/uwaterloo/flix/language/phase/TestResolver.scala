@@ -159,6 +159,36 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleEnum](result)
   }
 
+  test("InaccessibleTypeAlias.01") {
+    val input =
+      s"""
+         |namespace A {
+         |  type alias Color = Int
+         |}
+         |
+         |namespace B {
+         |  def g(): A.Color = 123
+         |}
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleTypeAlias](result)
+  }
+
+  test("InaccessibleTypeAlias.02") {
+    val input =
+      s"""
+         |namespace A {
+         |  def f(): A/B/C.Color = 123
+         |
+         |  namespace B/C {
+         |    type alias Color = Int
+         |  }
+         |}
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleTypeAlias](result)
+  }
+
   test("InaccessibleClass.01") {
     val input =
       s"""
