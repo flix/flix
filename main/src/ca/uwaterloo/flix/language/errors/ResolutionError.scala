@@ -271,10 +271,32 @@ object ResolutionError {
     }
   }
 
-  // MATT docs
+  /**
+    * An error raise to indicate a cycle in type aliases.
+    *
+    * @param path the type reference path from a type alias to itself.
+    * @param loc  the location where the error occurred.
+    */
   case class CyclicTypeAliases(path: List[Symbol.TypeAliasSym], loc: SourceLocation) extends ResolutionError {
-    def summary: String = "" // MATT
-    def message: VirtualTerminal = new VirtualTerminal // MATT
+    private val fullCycle = path.last :: path
+
+    def summary: String = {
+      val pathString = fullCycle.map(alias => s"'${alias.name}'").mkString(" references ")
+      "Cyclic type aliases: " + pathString
+    }
+
+    override def message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << NewLine
+      vt << Code(loc, "Cyclic type aliases.") << NewLine
+      vt << NewLine
+      vt << "The following type aliases are in the cycle:" << NewLine
+      for (List(subClass, superClass) <- fullCycle.sliding(2)) {
+        vt << s"$subClass references $superClass" << NewLine
+      }
+      vt
+    }
   }
 
   /**
@@ -503,8 +525,9 @@ object ResolutionError {
     * @param loc  the location where the error occurred.
     */
   case class CyclicClassHierarchy(path: List[Symbol.ClassSym], loc: SourceLocation) extends ResolutionError {
+    private val fullCycle = path.last :: path
+
     override def summary: String = {
-      val fullCycle = path.last :: path
       val pathString = fullCycle.map(clazz => s"'${clazz.name}'").mkString(" extends ")
       "Cyclic inheritance: " + pathString
     }
@@ -516,7 +539,7 @@ object ResolutionError {
       vt << Code(loc, "Cyclic inheritance.") << NewLine
       vt << NewLine
       vt << "The following classes are in the cycle:" << NewLine
-      for (List(subClass, superClass) <- path.reverse.sliding(2)) {
+      for (List(subClass, superClass) <- fullCycle.sliding(2)) {
         vt << s"$subClass extends $superClass" << NewLine
       }
       vt
