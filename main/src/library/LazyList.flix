@@ -252,16 +252,21 @@ namespace LazyList {
     ///
     // TODO: Use k function as acc.
     def mapE(f: a -> b & Impure, l: LazyList[a]): LazyList[b] & Impure =
-        mapEAcc(f, l, ENil) |> reverse
+        mapEAcc(f, l, ks -> ks)
 
     ///
     /// Helper function for `mapE`.
     ///
-    def mapEAcc(f: a -> b & Impure, l: LazyList[a], acc: LazyList[b]): LazyList[b] & Impure = match l {
-        case ENil         => acc
-        case ECons(x, xs) => mapEAcc(f,       xs, ECons(f(x), acc))
-        case LCons(x, xs) => mapEAcc(f, force xs, ECons(f(x), acc))
-        case LList(xs)    => mapEAcc(f, force xs,             acc)
+    def mapEAcc(f: a -> b & Impure, l: LazyList[a], k: LazyList[b] -> LazyList[b]): LazyList[b] & Impure = match l {
+        case ENil         => k(ENil)
+        case ECons(x, xs) =>
+            let x1 = f(x);
+            mapEAcc(f, xs, ks -> k(ECons(x1, ks)))
+        case LCons(x, xs) =>
+            let x1 = f(x);
+            mapEAcc(f, force xs, ks -> k(ECons(x1, ks)))
+        case LList(xs)    =>
+            mapEAcc(f, force xs, k)
     }
 
     ///
