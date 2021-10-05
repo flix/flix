@@ -737,11 +737,15 @@ namespace LazyList {
     ///
     /// Returns `l` with every occurrence of `x` replaced by `y`.
     ///
+    /// Does not force the tail of `l`.
+    ///
     pub def replace(x: a, y: a, l: LazyList[a]): LazyList[a] with Eq[a] =
         map(e -> if (x == e) y else e, l)
 
     ///
     /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from left to right.
+    ///
+    /// Forces elements of `l` until the predicate `f` is satisfied.
     ///
     pub def findLeft(f: a -> Bool & ef, l: LazyList[a]): Option[a] & ef = match l {
         case ENil         => None
@@ -753,6 +757,7 @@ namespace LazyList {
     ///
     /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from right to left.
     ///
+    // TODO: Use native / own implementation
     pub def findRight(f: a -> Bool & ef, l: LazyList[a]): Option[a] & ef =
         reverse(l) |> findLeft(f)
 
