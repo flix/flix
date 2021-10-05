@@ -496,7 +496,7 @@ namespace LazyList {
     ///
     /// Returns `false` if `l` is empty.
     ///
-    /// The function `f` must be pure.
+    /// Forces elements of `l` until the predicate `f` is satisfied.
     ///
     pub def exists(f: a -> Bool & ef, l: LazyList[a]): Bool & ef = match l {
         case ENil         => false
@@ -510,7 +510,7 @@ namespace LazyList {
     ///
     /// Returns `true` if `l` is empty.
     ///
-    /// The function `f` must be pure.
+    /// Forces elements of `l` until the predicate `f` is satisfied.
     ///
     pub def forall(f: a -> Bool & ef, l: LazyList[a]): Bool & ef = match l {
         case ENil         => true
@@ -562,6 +562,8 @@ namespace LazyList {
     /// `a` is the element at index `i` in `l1` and `b` is the element at index `i` in `l2`.
     ///
     /// If either `l1` or `l2` becomes depleted, then no further elements are added to the resulting list.
+    ///
+    /// Does not force the tail of either `l1` or `l2`.
     ///
     pub def zip(l1: LazyList[a], l2: LazyList[b]): LazyList[(a, b)] = match (l1, l2) {
         case (ENil, _)                    => ENil
