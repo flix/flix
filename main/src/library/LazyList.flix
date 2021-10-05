@@ -822,7 +822,7 @@ namespace LazyList {
     ///
     /// That is, returns `l2.1 :: l1.1 ... l1.n :: l2.2 :: ... :: l2.n-1 :: l1.1 :: ... :: l1.n :: l2.n :: ENil`.
     ///
-    /// Forces the tail of `l2` unless it is an unevaluated LazyList.
+    /// Forces the first element of the tail of `l2` unless that tail is an `LList`.
     ///
     pub def intercalate(l1: LazyList[a], l2: LazyList[LazyList[a]]): LazyList[a] = match l2 {
         case ENil           => ENil
