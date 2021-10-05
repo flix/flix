@@ -754,7 +754,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
   /**
     * Extracts the enum sym from the given tag type.
     */
-  private def getTagConstructor(tpe: Type): TypeConstructor.Tag = tpe.typeConstructorDeprecated match {
+  private def getTagConstructor(tpe: Type): TypeConstructor.Tag = tpe.typeConstructor match {
     case Some(cst: TypeConstructor.Tag) => cst
     case _ => throw InternalCompilerException("Unexpected non-tag type.")
   }
@@ -765,7 +765,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
     * A Tuple unpacks to its member types.
     * Anything else unpacks to the singleton list of itself.
     */
-  private def unpack(tpe: Type): List[Type] = tpe.typeConstructorDeprecated match {
+  private def unpack(tpe: Type): List[Type] = tpe.typeConstructor match {
     case Some(TypeConstructor.Unit) => Nil
     case Some(TypeConstructor.Tuple(_)) => tpe.typeArguments
     case _ => List(tpe)
@@ -774,7 +774,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
   /**
     * Creates a pattern corresponding to the given tag type.
     */
-  private def mkPattern(tpe: Type, varPrefix: String, loc: SourceLocation)(implicit flix: Flix): (KindedAst.Pattern, List[Symbol.VarSym]) = tpe.typeConstructorDeprecated match {
+  private def mkPattern(tpe: Type, varPrefix: String, loc: SourceLocation)(implicit flix: Flix): (KindedAst.Pattern, List[Symbol.VarSym]) = tpe.typeConstructor match {
     case Some(TypeConstructor.Tag(sym, tag)) =>
       getTagArguments(tpe) match {
         case Nil => (KindedAst.Pattern.Tag(sym, tag, KindedAst.Pattern.Unit(loc), Type.freshVar(Kind.Star, loc), loc), Nil)

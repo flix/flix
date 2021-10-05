@@ -384,7 +384,7 @@ object Unification {
   /**
     * Returns the given Boolean formula `tpe` with the (possibly rigid) type variable `tvar` replaced by `True`.
     */
-  private def purify(tvar: Type.KindedVar, tpe: Type): Type = tpe.typeConstructorDeprecated match {
+  private def purify(tvar: Type.KindedVar, tpe: Type): Type = tpe.typeConstructor match {
     case None => tpe match {
       case t: Type.Var =>
         if (tvar.id == t.asKinded.id) Type.True else tpe

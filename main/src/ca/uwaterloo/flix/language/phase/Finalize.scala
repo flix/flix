@@ -394,108 +394,123 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
     FinalAst.FreeVar(v0.sym, tpe)
   }
 
+  // MATT docs
+  private def eraseAliases(t: Type): Type = t match {
+    case tvar: Type.Var => tvar.asKinded
+    case Type.Cst(_, _) => t
+    case Type.Apply(tpe1, tpe2, loc) => Type.Apply(eraseAliases(tpe1), eraseAliases(tpe2), loc)
+    case Type.Alias(_, _, tpe, _) => eraseAliases(tpe)
+    case Type.Ascribe(tpe, kind, loc) => throw InternalCompilerException("Unexpected type ascription.")
+  }
+
   // TODO: Should be private
-  def visitType(t0: Type): MonoType = {
-    val base = t0.baseType
-    val args = t0.typeArguments.map(visitType)
 
-    base match {
-      case Type.KindedVar(id, _, _, _, _) =>
-        if (args.isEmpty) {
-          MonoType.Var(id)
-        } else {
-          throw InternalCompilerException(s"Unexpected type: $t0")
+  /**
+    * Finalizes the given type.
+    */
+  def visitType(tpe0: Type): MonoType = {
+
+    def visit(t0: Type): MonoType = {
+
+      val base = t0.typeConstructor
+      val args = t0.typeArguments.map(visit)
+
+      base match {
+        case None => t0 match {
+          case Type.KindedVar(id, _, _, _, _) => MonoType.Var(id)
+          case _ => throw InternalCompilerException(s"Unexpected type: $t0")
         }
 
-      case Type.Cst(tc, loc) =>
-        tc match {
-          case TypeConstructor.Unit => MonoType.Unit
+        case Some(tc) =>
+          tc match {
+            case TypeConstructor.Unit => MonoType.Unit
 
-          case TypeConstructor.Null => MonoType.Unit
+            case TypeConstructor.Null => MonoType.Unit
 
-          case TypeConstructor.Bool => MonoType.Bool
+            case TypeConstructor.Bool => MonoType.Bool
 
-          case TypeConstructor.Char => MonoType.Char
+            case TypeConstructor.Char => MonoType.Char
 
-          case TypeConstructor.Float32 => MonoType.Float32
+            case TypeConstructor.Float32 => MonoType.Float32
 
-          case TypeConstructor.Float64 => MonoType.Float64
+            case TypeConstructor.Float64 => MonoType.Float64
 
-          case TypeConstructor.Int8 => MonoType.Int8
+            case TypeConstructor.Int8 => MonoType.Int8
 
-          case TypeConstructor.Int16 => MonoType.Int16
+            case TypeConstructor.Int16 => MonoType.Int16
 
-          case TypeConstructor.Int32 => MonoType.Int32
+            case TypeConstructor.Int32 => MonoType.Int32
 
-          case TypeConstructor.Int64 => MonoType.Int64
+            case TypeConstructor.Int64 => MonoType.Int64
 
-          case TypeConstructor.BigInt => MonoType.BigInt
+            case TypeConstructor.BigInt => MonoType.BigInt
 
-          case TypeConstructor.Str => MonoType.Str
+            case TypeConstructor.Str => MonoType.Str
 
-          case TypeConstructor.RecordRowEmpty => MonoType.RecordEmpty()
+            case TypeConstructor.RecordRowEmpty => MonoType.RecordEmpty()
 
-          case TypeConstructor.Array => MonoType.Array(args.head)
+            case TypeConstructor.Array => MonoType.Array(args.head)
 
-          case TypeConstructor.Channel => MonoType.Channel(args.head)
+            case TypeConstructor.Channel => MonoType.Channel(args.head)
 
-          case TypeConstructor.Lazy => MonoType.Lazy(args.head)
+            case TypeConstructor.Lazy => MonoType.Lazy(args.head)
 
-          case TypeConstructor.KindedEnum(sym, _) => MonoType.Enum(sym, args)
+            case TypeConstructor.KindedEnum(sym, _) => MonoType.Enum(sym, args)
 
-          case TypeConstructor.Tag(sym, _) =>
-            throw InternalCompilerException(s"Unexpected type: '$t0'.")
+            case TypeConstructor.Tag(sym, _) =>
+              throw InternalCompilerException(s"Unexpected type: '$t0'.")
 
-          case TypeConstructor.Native(clazz) => MonoType.Native(clazz)
+            case TypeConstructor.Native(clazz) => MonoType.Native(clazz)
 
-          case TypeConstructor.ScopedRef =>
-            MonoType.Ref(args.head)
+            case TypeConstructor.ScopedRef =>
+              MonoType.Ref(args.head)
 
-          case TypeConstructor.Region =>
-            MonoType.Unit // TODO: Should be erased?
+            case TypeConstructor.Region =>
+              MonoType.Unit // TODO: Should be erased?
 
-          case TypeConstructor.Tuple(l) => MonoType.Tuple(args)
+            case TypeConstructor.Tuple(l) => MonoType.Tuple(args)
 
-          case TypeConstructor.Arrow(l) => MonoType.Arrow(args.drop(1).init, args.last)
+            case TypeConstructor.Arrow(l) => MonoType.Arrow(args.drop(1).init, args.last)
 
-          case TypeConstructor.RecordRowExtend(field) => MonoType.RecordExtend(field.name, args.head, args(1))
+            case TypeConstructor.RecordRowExtend(field) => MonoType.RecordExtend(field.name, args.head, args(1))
 
-          case TypeConstructor.Record => args.head
+            case TypeConstructor.Record => args.head
 
-          case TypeConstructor.True => MonoType.Unit
+            case TypeConstructor.True => MonoType.Unit
 
-          case TypeConstructor.False => MonoType.Unit
+            case TypeConstructor.False => MonoType.Unit
 
-          case TypeConstructor.Not => MonoType.Unit
+            case TypeConstructor.Not => MonoType.Unit
 
-          case TypeConstructor.And => MonoType.Unit
+            case TypeConstructor.And => MonoType.Unit
 
-          case TypeConstructor.Or => MonoType.Unit
+            case TypeConstructor.Or => MonoType.Unit
 
-          case TypeConstructor.UnkindedEnum(_) =>
-            throw InternalCompilerException(s"Unexpected type: '$t0'.")
+            case TypeConstructor.UnkindedEnum(_) =>
+              throw InternalCompilerException(s"Unexpected type: '$t0'.")
 
-          case TypeConstructor.UnappliedAlias(_) =>
-            throw InternalCompilerException(s"Unexpected type: '$t0'.")
+            case TypeConstructor.UnappliedAlias(_) =>
+              throw InternalCompilerException(s"Unexpected type: '$t0'.")
 
-          case TypeConstructor.Relation =>
-            throw InternalCompilerException(s"Unexpected type: '$t0'.")
+            case TypeConstructor.Relation =>
+              throw InternalCompilerException(s"Unexpected type: '$t0'.")
 
-          case TypeConstructor.Lattice =>
-            throw InternalCompilerException(s"Unexpected type: '$t0'.")
+            case TypeConstructor.Lattice =>
+              throw InternalCompilerException(s"Unexpected type: '$t0'.")
 
-          case TypeConstructor.SchemaRowEmpty =>
-            throw InternalCompilerException(s"Unexpected type: '$t0'.")
+            case TypeConstructor.SchemaRowEmpty =>
+              throw InternalCompilerException(s"Unexpected type: '$t0'.")
 
-          case TypeConstructor.SchemaRowExtend(pred) =>
-            throw InternalCompilerException(s"Unexpected type: '$t0'.")
+            case TypeConstructor.SchemaRowExtend(pred) =>
+              throw InternalCompilerException(s"Unexpected type: '$t0'.")
 
-          case TypeConstructor.Schema =>
-            throw InternalCompilerException(s"Unexpected type: '$t0'.")
-        }
-
-      case Type.Alias(_, _, tpe, loc) =>
+            case TypeConstructor.Schema =>
+              throw InternalCompilerException(s"Unexpected type: '$t0'.")
+          }
+      }
     }
+
+    visit(eraseAliases(tpe0))
   }
 
   // TODO: Deprecated

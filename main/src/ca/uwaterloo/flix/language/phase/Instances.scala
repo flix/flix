@@ -80,7 +80,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
       * * The same namespace as its type.
       */
     def checkOrphan(inst: TypedAst.Instance): Validation[Unit, InstanceError] = inst match {
-      case TypedAst.Instance(_, _, classSym, tpe, _, _, ns, loc) => tpe.typeConstructorDeprecated match {
+      case TypedAst.Instance(_, _, classSym, tpe, _, _, ns, loc) => tpe.typeConstructor match {
         // Case 1: Enum type in the same namespace as the instance: not an orphan
         case Some(TypeConstructor.KindedEnum(enumSym, _)) if enumSym.namespace == ns.idents.map(_.name) => ().toSuccess
         // Case 2: Any type in the class namespace: not an orphan

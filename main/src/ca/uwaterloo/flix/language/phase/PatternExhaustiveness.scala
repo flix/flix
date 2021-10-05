@@ -689,7 +689,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       * @param tpe the type to count
       * @return the number of arguments a type constructor expects
       */
-    def countTypeArgs(tpe: Type): Int = tpe.typeConstructorDeprecated match {
+    def countTypeArgs(tpe: Type): Int = tpe.typeConstructor match {
       case None => 0
       case Some(TypeConstructor.Unit) => 0
       case Some(TypeConstructor.Bool) => 0
