@@ -49,12 +49,12 @@ namespace String {
         s.length() as & Pure
 
     ///
-    /// Returns `true` if the string `s1` starts with the string `s2`.
+    /// Returns `true` if the string `s` starts with the string `prefix`.
     ///
-    @Time(length(s2)) @Space(1)
-    pub def startsWith(s1: String, s2: String): Bool =
+    @Time(length(p.prefix)) @Space(1)
+    pub def startsWith(p: {prefix:: String}, s: String): Bool =
         import java.lang.String.startsWith(String);
-        s1.startsWith(s2) as & Pure
+        s.startsWith(p.prefix) as & Pure
 
     ///
     /// Returns `true` if the string `s1` ends with the string `s2`.

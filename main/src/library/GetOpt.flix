@@ -206,8 +206,8 @@ namespace GetOpt {
                 optDescrs: List[OptionDescr[a]],
                 tokens: List[String]): (OptionKind[a], List[String]) = match arg {
         case "--"                                                       => (EndOfOpts, tokens)
-        case s if String.startsWith(s, "--")                            => longOpt(String.dropLeft(2, s), optDescrs, tokens)
-        case s if String.startsWith(s, "-") and String.length(s) >= 2   => shortOpt(String.charAt(1, s), String.dropLeft(2, s), optDescrs, tokens)
+        case s if String.startsWith({prefix = "--"}, s)                            => longOpt(String.dropLeft(2, s), optDescrs, tokens)
+        case s if String.startsWith({prefix = "-"}, s) and String.length(s) >= 2   => shortOpt(String.charAt(1, s), String.dropLeft(2, s), optDescrs, tokens)
         case s                                                          => (NonOpt(s), tokens)
     }
 
@@ -300,7 +300,7 @@ namespace GetOpt {
         /// Exact match of `optname` ...
         let exact       = getWith((x,y) -> x == y): List[OptionDescr[a]];
         /// Otherwise use `optname` as a prefix...
-        let options     = if (List.isEmpty(exact)) getWith((sub, s1) -> String.startsWith(s1, sub)) else exact;
+        let options     = if (List.isEmpty(exact)) getWith((sub, s1) -> String.startsWith({prefix = sub}, s1)) else exact;
         match options {
             case optd :: Nil    => Ok(optd)
             case x :: xs        => Err(Ambiguous(Nel(x, xs)))

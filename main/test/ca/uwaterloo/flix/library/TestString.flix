@@ -2579,40 +2579,40 @@ def indexOfRight09(): Bool = String.indexOfRight("bc", "abc") == Some(1)
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def startsWith01(): Bool = String.startsWith("", "") == true
+def startsWith01(): Bool = String.startsWith({prefix = ""}, "") == true
 
 @test
-def startsWith02(): Bool = String.startsWith("a", "") == true
+def startsWith02(): Bool = String.startsWith({prefix = ""}, "a") == true
 
 @test
-def startsWith03(): Bool = String.startsWith("abc", "") == true
+def startsWith03(): Bool = String.startsWith({prefix = ""}, "abc") == true
+
+@testb
+def startsWith04(): Bool = String.startsWith({prefix = "a"}, "") == false
 
 @test
-def startsWith04(): Bool = String.startsWith("", "a") == false
+def startsWith05(): Bool = String.startsWith({prefix = "a"}, "a") == true
 
 @test
-def startsWith05(): Bool = String.startsWith("a", "a") == true
+def startsWith06(): Bool = String.startsWith({prefix = "a"}, "b") == false
 
 @test
-def startsWith06(): Bool = String.startsWith("b", "a") == false
+def startsWith07(): Bool = String.startsWith({prefix = "a"}, "aa") == true
 
 @test
-def startsWith07(): Bool = String.startsWith("aa", "a") == true
+def startsWith08(): Bool = String.startsWith({prefix = "ab"}, "ab") == true
 
 @test
-def startsWith08(): Bool = String.startsWith("ab", "ab") == true
+def startsWith09(): Bool = String.startsWith({prefix = "bs"}, "abc") == false
 
 @test
-def startsWith09(): Bool = String.startsWith("abc", "bc") == false
+def startsWith10(): Bool = String.startsWith({prefix = ""}, "Hello World!") == true
 
 @test
-def startsWith10(): Bool = String.startsWith("Hello World!", "") == true
+def startsWith11(): Bool = String.startsWith({prefix = "Hello"}, "Hello World!") == true
 
 @test
-def startsWith11(): Bool = String.startsWith("Hello World!", "Hello") == true
-
-@test
-def startsWith12(): Bool = String.startsWith("Hello World!", "HELLO") == false
+def startsWith12(): Bool = String.startsWith({prefix = HELLO"}, "Hello World!") == false
 
 /////////////////////////////////////////////////////////////////////////////
 // contains                                                                //
