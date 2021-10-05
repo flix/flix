@@ -183,10 +183,11 @@ sealed trait Type {
     case Type.Alias(_, _, tpe, _) => tpe.size
   }
 
-  /**
-    * Returns a human readable string representation of `this` type.
-    */
-  override def toString: String = FormatType.formatType(this)(Audience.Internal)
+  // MATT
+//  /**
+//    * Returns a human readable string representation of `this` type.
+//    */
+//  override def toString: String = FormatType.formatType(this)(Audience.Internal)
 
 }
 
@@ -411,7 +412,7 @@ object Type {
       * Returns `true` if `this` type variable is equal to `o`.
       */
     override def equals(o: scala.Any): Boolean = o match {
-      case that: KindedVar => this.id == that.id
+      case that: UnkindedVar => this.id == that.id
       case _ => false
     }
 
