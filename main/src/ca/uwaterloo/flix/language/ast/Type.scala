@@ -183,21 +183,10 @@ sealed trait Type {
     case Type.Alias(_, _, tpe, _) => tpe.size
   }
 
-  // MATT
-//  /**
-//    * Returns a human readable string representation of `this` type.
-//    */
-//  override def toString: String = FormatType.formatType(this)(Audience.Internal)
-
-  override def toString: String = this match {
-    case Type.KindedVar(id, kind, loc, rigidity, text) => s"$id"
-    case Type.UnkindedVar(id, loc, rigidity, text) => s"$id"
-    case Type.Ascribe(tpe, kind, loc) => s"$tpe : $kind"
-    case Type.Cst(tc, loc) => s"$tc"
-    case Type.Apply(tpe1, tpe2, loc) => s"Apply($tpe1, $tpe2)"
-    case Type.Alias(sym, args, tpe, loc) => s"$sym${if (args.isEmpty) "" else args.mkString("[", ", ", "]")}"
-  }
-
+  /**
+    * Returns a human readable string representation of `this` type.
+    */
+  override def toString: String = FormatType.formatType(this)(Audience.Internal)
 }
 
 object Type {
@@ -500,7 +489,9 @@ object Type {
     override def hashCode(): Int = Objects.hash(tpe1, tpe2)
   }
 
-  // MATT docs
+  /**
+    * A type alias, including the arguments passed to it and the type it represents.
+    */
   case class Alias(sym: Symbol.TypeAliasSym, args: List[Type], tpe: Type, loc: SourceLocation) extends Type with BaseType {
     override def kind: Kind = tpe.kind
   }
@@ -901,5 +892,17 @@ object Type {
     case Apply(tpe1, tpe2, _) => size(tpe1) + size(tpe2)
     case Alias(sym, args, tpe, loc) => size(tpe)
   }
+
+  /**
+    * Replace type aliases with the types they represent.
+    */
+  def eraseAliases(t: Type): Type = t match {
+    case tvar: Type.Var => tvar.asKinded
+    case Type.Cst(_, _) => t
+    case Type.Apply(tpe1, tpe2, loc) => Type.Apply(eraseAliases(tpe1), eraseAliases(tpe2), loc)
+    case Type.Alias(_, _, tpe, _) => eraseAliases(tpe)
+    case Type.Ascribe(tpe, kind, loc) => throw InternalCompilerException("Unexpected type ascription.")
+  }
+
 
 }

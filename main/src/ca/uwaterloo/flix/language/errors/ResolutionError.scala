@@ -230,7 +230,6 @@ object ResolutionError {
     }
   }
 
-  // MATT test
   /**
     * Inaccessible Type Alias Error.
     *

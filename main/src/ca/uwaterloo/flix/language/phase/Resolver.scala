@@ -1635,7 +1635,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     */
   private def finishResolveType(tpe0: Type, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias]): Validation[Type, ResolutionError] = {
 
-    // MATT docs
+    /**
+      * Performs beta-reduction on the given type alias.
+      * The list of arguments must be the same length as the alias's parameters.
+      */
     def applyAlias(alias: ResolvedAst.TypeAlias, args: List[Type], loc: SourceLocation): Type = {
       val map = alias.tparams.tparams.map(_.tpe).zip(args).toMap[Type.Var, Type]
       val subst = Substitution(map)

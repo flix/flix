@@ -81,21 +81,11 @@ object ClassEnvironment {
     */
   def reduce(tconstrs0: List[Ast.TypeConstraint], classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[List[Ast.TypeConstraint], UnificationError] = {
     val tconstrs1 = tconstrs0.map {
-      case Ast.TypeConstraint(clazz, tpe, loc) => Ast.TypeConstraint(clazz, flattenAliases(tpe), loc)
+      case Ast.TypeConstraint(clazz, tpe, loc) => Ast.TypeConstraint(clazz, Type.eraseAliases(tpe), loc)
     }
     for {
       tconstrs <- Validation.sequence(tconstrs1.map(toHeadNormalForm(_, classEnv)))
     } yield simplify(tconstrs.flatten, classEnv)
-  }
-
-  // MATT
-  private def flattenAliases(tpe0: Type): Type = tpe0 match {
-    case tpe: Type.KindedVar => tpe
-    case Type.Ascribe(tpe, kind, loc) => Type.Ascribe(flattenAliases(tpe), kind, loc)
-    case tpe: Type.Cst => tpe
-    case Type.Apply(tpe1, tpe2, loc) => Type.Apply(flattenAliases(tpe1), flattenAliases(tpe2), loc)
-    case Type.UnkindedVar(id, loc, rigidity, text) => ??? // MATT error
-    case Type.Alias(_, _, tpe, _) => flattenAliases(tpe)
   }
 
   /**

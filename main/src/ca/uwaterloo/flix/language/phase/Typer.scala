@@ -318,7 +318,9 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
     Validation.sequence(result).map(_.toMap)
   }
 
-  // MATT docs
+  /**
+    * Performs typing on the type aliases in the given `root`.
+    */
   private def visitTypeAliases(root: KindedAst.Root)(implicit flix: Flix): Map[Symbol.TypeAliasSym, TypedAst.TypeAlias] = {
     def visitTypeAlias(alias: KindedAst.TypeAlias): (Symbol.TypeAliasSym, TypedAst.TypeAlias) = alias match {
       case KindedAst.TypeAlias(doc, mod, sym, tparams0, tpe, loc) =>

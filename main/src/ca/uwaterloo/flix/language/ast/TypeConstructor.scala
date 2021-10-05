@@ -212,7 +212,11 @@ object TypeConstructor {
     override def kind: Kind = throw InternalCompilerException("Attempt to access kind of unkinded type constructor")
   }
 
-  // MATT docs
+  /**
+    * A type alias that has not yet been applied.
+    *
+    * Only exists temporarily in the Resolver.
+    */
   @EliminatedBy(Resolver.getClass)
   case class UnappliedAlias(sym: Symbol.TypeAliasSym) extends TypeConstructor {
     override def kind: Kind = throw InternalCompilerException("Attempt to access kind of unkinded type constructor")

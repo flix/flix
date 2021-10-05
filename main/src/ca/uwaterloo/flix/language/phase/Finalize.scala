@@ -394,17 +394,7 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
     FinalAst.FreeVar(v0.sym, tpe)
   }
 
-  // MATT docs
-  private def eraseAliases(t: Type): Type = t match {
-    case tvar: Type.Var => tvar.asKinded
-    case Type.Cst(_, _) => t
-    case Type.Apply(tpe1, tpe2, loc) => Type.Apply(eraseAliases(tpe1), eraseAliases(tpe2), loc)
-    case Type.Alias(_, _, tpe, _) => eraseAliases(tpe)
-    case Type.Ascribe(tpe, kind, loc) => throw InternalCompilerException("Unexpected type ascription.")
-  }
-
   // TODO: Should be private
-
   /**
     * Finalizes the given type.
     */
@@ -510,7 +500,7 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
       }
     }
 
-    visit(eraseAliases(tpe0))
+    visit(Type.eraseAliases(tpe0))
   }
 
   // TODO: Deprecated
