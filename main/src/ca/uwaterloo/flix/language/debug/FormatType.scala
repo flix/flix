@@ -18,7 +18,7 @@
 package ca.uwaterloo.flix.language.debug
 
 import ca.uwaterloo.flix.language.ast.Kind.Bool
-import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.vt.{VirtualString, VirtualTerminal}
 
@@ -104,7 +104,7 @@ object FormatType {
             }
           }
           case Type.Apply(tpe1, tpe2, loc) => s"${visit(tpe1)}[${visit(tpe2)}]"
-          case _ => throw InternalCompilerException(s"Unexpected type: '${tpe.getClass}'.") // TODO: This can lead to infinite recursion.
+          case Type.Alias(sym, aliasArgs, _, _) => formatApply(sym.name, aliasArgs ++ args)
         }
 
         case Some(tc) => tc match {
