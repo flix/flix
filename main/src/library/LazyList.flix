@@ -585,8 +585,8 @@ namespace LazyList {
     ///
     /// Whether `f` is applied eagerly or lazily depends on its purity:
     ///
-    /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
-    /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
+    /// - If `f` is pure then it is applied lazily (i.e. the tails are not forced).
+    /// - If `f` is impure then it is applied eagerly (i.e. both lists `l1` and `l2` are forced).
     ///
     pub def zipWith(f: (a, b) -> c & ef, l1: LazyList[a], l2: LazyList[b]): LazyList[c] & ef =
         map((x) -> f(fst(x), snd(x)), zip(l1, l2))
@@ -597,6 +597,8 @@ namespace LazyList {
     /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
     ///
     /// Returns `None` if `l` is empty.
+    ///
+    /// Forces the entire list `l`.
     ///
     pub def reduceLeft(f: (a, a) -> a & ef, l: LazyList[a]): Option[a] & ef = match l {
         case ENil         => None
@@ -612,6 +614,8 @@ namespace LazyList {
     ///
     /// Returns `None` if `l` is empty.
     ///
+    /// Forces the entire list `l`.
+    ///
     pub def reduceRight(f: (a, a) -> a & ef, l: LazyList[a]): Option[a] & ef = match l {
         case ENil      => None
         case LList(xs) => reduceRight(f, force xs)
@@ -620,6 +624,7 @@ namespace LazyList {
 
     ///
     /// Helper function for `reduceRight`.
+    ///
     /// `l` must be non-empty.
     ///
     def reduceRightHelper(f: (a, a) -> a & ef, l: LazyList[a], k: a -> a & ef): a & ef = match l {
@@ -634,6 +639,8 @@ namespace LazyList {
     ///
     /// Returns `None` if `l` is empty.
     ///
+    /// Forces the entire list `l`.
+    ///
     pub def minimum(l: LazyList[a]): Option[a] with Order[a] =
         reduceLeft(Order.min, l)
 
@@ -641,6 +648,8 @@ namespace LazyList {
     /// Optionally finds the smallest element of `l` according to the given comparator `cmp`.
     ///
     /// Returns `None` if `l` is empty.
+    ///
+    /// Forces the entire list `l`.
     ///
     pub def minimumBy(cmp: (a, a) -> Comparison, l: LazyList[a]): Option[a] =
         reduceLeft(Order.minBy(cmp), l)
@@ -650,6 +659,8 @@ namespace LazyList {
     ///
     /// Returns `None` if `l` is empty.
     ///
+    /// Forces the entire list `l`.
+    ///
     pub def maximum(l: LazyList[a]): Option[a] with Order[a] =
         reduceLeft(Order.max, l)
 
@@ -657,6 +668,8 @@ namespace LazyList {
     /// Optionally finds the largest element of `l` according to the given comparator `cmp`.
     ///
     /// Returns `None` if `l` is empty.
+    ///
+    /// Forces the entire list `l`.
     ///
     pub def maximumBy(cmp: (a, a) -> Comparison, l: LazyList[a]): Option[a] =
         reduceLeft(Order.maxBy(cmp), l)
