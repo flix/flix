@@ -38,9 +38,9 @@ instance Hash[Set[a]] with Hash[a] {
         Set.foldLeft((acc, x) -> acc * 37 + Hash.hash(x), 7793, xs)
 }
 
-instance Eq[Set[a]] with Order[a] {
+instance Eq[Set[a]] with Eq[a] {
     pub def eq(xs: Set[a], ys: Set[a]): Bool =
-        Set.isSubsetOf(xs, ys) and Set.isSubsetOf(ys, xs)
+        Set.toList(xs) == Set.toList(ys)
 }
 
 instance Order[Set[a]] with Order[a] {
