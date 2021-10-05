@@ -834,7 +834,7 @@ namespace LazyList {
     ///
     /// Returns `xs` with `a` inserted between every two adjacent elements.
     ///
-    /// Forces the tail of `l` unless it is an unevaluated LazyList.
+    /// Forces the first element of the tail of `l2` unless that tail is an `LList`.
     ///
     pub def intersperse(x: a, l: LazyList[a]): LazyList[a] = match l {
         case ENil           => ENil
@@ -849,7 +849,7 @@ namespace LazyList {
     /// Whether `f` is applied eagerly or lazily depends on its purity:
     ///
     /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
-    /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
+    /// - If `f` is impure then it is applied eagerly (i.e. the tail is forced until the first element that satisfies `f`).
     ///
     pub def takeWhile(f: a -> Bool & ef, l: LazyList[a]): LazyList[a] & ef =
         if (reify ef)
@@ -878,7 +878,7 @@ namespace LazyList {
     ///
     /// Returns the longest prefix of `l` that satisfies the predicate `f`.
     ///
-    /// Applies `f` eagerly (i.e. the entire list `l` is forced).
+    /// Applies `f` eagerly (i.e. the tail is forced until the first element that satisfies `f`).
     ///
     def takeWhileE(f: a -> Bool & Impure, l: LazyList[a]): LazyList[a] & Impure =
         takeWhileEAcc(f, l, ks -> ks)
@@ -899,7 +899,7 @@ namespace LazyList {
     /// Whether `f` is applied eagerly or lazily depends on its purity:
     ///
     /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
-    /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
+    /// - If `f` is impure then it is applied eagerly (i.e. the tail is forced until the first element that satisfies `f`).
     ///
     pub def dropWhile(f: a -> Bool & ef, l: LazyList[a]): LazyList[a] & ef =
         if (reify ef)
@@ -928,7 +928,7 @@ namespace LazyList {
     ///
     /// Returns `l` without the longest prefix that satisfies the predicate `f`.
     ///
-    /// Applies `f` eagerly (i.e. the entire list `l` is forced).
+    /// Applies `f` eagerly (i.e. the tail is forced until the first element that satisfies `f`).
     ///
     def dropWhileE(f: a -> Bool & Impure, l: LazyList[a]): LazyList[a] & Impure = match l {
         case ENil         => ENil
@@ -941,6 +941,8 @@ namespace LazyList {
     /// Returns the first non-None result of applying the partial function `f` to each element of `l`.
     ///
     /// Returns `None` if every element `f(x)` of `l` is `None`.
+    ///
+    /// Forces elements of `l` until `f(x)` returns `Some(v)`.
     ///
     pub def findMap(f: a -> Option[b] & ef, l: LazyList[a]): Option[b] & ef = match l {
         case ENil         => None
@@ -1019,6 +1021,8 @@ namespace LazyList {
     /// `l1` contains all elements of `l` that satisfy the predicate `f`.
     /// `l2` contains all elements of `l` that DO NOT satisfy the predicate `f`.
     ///
+    /// Forces the entire list `l`.
+    ///
     pub def partition(f: a -> Bool & ef, l: LazyList[a]): (LazyList[a], LazyList[a]) & ef =
         partitionAcc(f, l, (ks, ls) -> (ks, ls))
 
@@ -1061,6 +1065,8 @@ namespace LazyList {
 
     ///
     /// Returns the sum of all elements in the list `l`.
+    ///
+    /// Forces the entire list `l`.
     ///
     pub def sum(l: LazyList[Int32]): Int32 =
         sumAcc(l, 0)
