@@ -137,6 +137,8 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
 
       val matchErrorClass = GenMatchErrorClass.gen()
 
+      val globalCounterClass = GenGlobalCounterClass.gen()
+
       List(
         mainClass,
         namespaceClasses,
@@ -152,7 +154,8 @@ object SjvmBackend extends Phase[Root, CompilationResult] {
         flixErrorClass,
         rslClass,
         holeErrorClass,
-        matchErrorClass
+        matchErrorClass,
+        globalCounterClass
       ).reduce(_ ++ _)
     }
 

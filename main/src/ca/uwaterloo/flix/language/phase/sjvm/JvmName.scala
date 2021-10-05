@@ -101,6 +101,7 @@ object JvmName {
     val Class: JvmName = JvmName(List("java", "lang"), "Class")
     val RuntimeException: JvmName = JvmName(List("java", "lang"), "RuntimeException")
     val Thread: JvmName = JvmName(List("java", "lang"), "Thread")
+    val AtomicLong: JvmName = JvmName(List("java", "util", "concurrent", "atomic"), "AtomicLong")
 
     val BigInteger: JvmName = JvmName(List("java", "math"), "BigInteger")
 
@@ -118,6 +119,7 @@ object JvmName {
     val HoleError: JvmName = JvmName(List("dev", "flix", "runtime"), "HoleError")
     val ReifiedSourceLocation: JvmName = JvmName(List("dev", "flix", "runtime"), "ReifiedSourceLocation")
     val Unit: JvmName = JvmName(List("dev", "flix", "runtime"), "Unit")
+    val GlobalCounter: JvmName = JvmName(List("dev", "flix", "runtime"), "GlobalCounter")
 
     // TODO(JLS): these should be moved
     val Channel: JvmName = JvmName("ca" :: "uwaterloo" :: "flix" :: "runtime" :: "interpreter" :: Nil, "Channel")

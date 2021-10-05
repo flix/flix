@@ -457,6 +457,16 @@ object Instructions {
   }
 
   def GETSTATIC
+  [R <: Stack, T <: PRefType]
+  (className: JvmName, fieldName: String, fieldType: JvmName, undoErasure: Boolean, tag: Tag[T] = null):
+  F[R] => F[R ** PReference[T]] = f => {
+    val descriptor = if (undoErasure) fieldType.erasedDescriptor else fieldType.descriptor
+    f.visitFieldInsn(Opcodes.GETSTATIC, className.internalName, fieldName, descriptor)
+    if (undoErasure) RType.undoErasure(fieldType, f.visitor)
+    castF(f)
+  }
+
+  def GETSTATIC
   [R <: Stack, T1 <: PType, T2 <: PRefType]
   (classType: RType[PReference[T2]], fieldName: String, fieldType: RType[T1], undoErasure: Boolean):
   F[R] => F[R ** T1] =
@@ -541,6 +551,15 @@ object Instructions {
   def PUTSTATIC
   [R <: Stack, T1 <: PType, T2 <: PRefType]
   (className: JvmName, fieldName: String, fieldType: RType[T1], erasedType: Boolean):
+  F[R ** T1] => F[R] = f => {
+    val descriptor = if (erasedType) fieldType.erasedDescriptor else fieldType.descriptor
+    f.visitFieldInsn(Opcodes.PUTSTATIC, className.internalName, fieldName, descriptor)
+    castF(f)
+  }
+
+  def PUTSTATIC
+  [R <: Stack, T1 <: PType, T2 <: PRefType]
+  (className: JvmName, fieldName: String, fieldType: JvmName, erasedType: Boolean):
   F[R ** T1] => F[R] = f => {
     val descriptor = if (erasedType) fieldType.erasedDescriptor else fieldType.descriptor
     f.visitFieldInsn(Opcodes.PUTSTATIC, className.internalName, fieldName, descriptor)
