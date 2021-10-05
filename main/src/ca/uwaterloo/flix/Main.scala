@@ -140,6 +140,12 @@ object Main {
             case Tester.OverallTestResult.NoTests | Tester.OverallTestResult.Success => System.exit(0)
             case Tester.OverallTestResult.Failure => System.exit(1)
           }
+
+        case Command.Install(project) =>
+          val o = options.copy(progress = false)
+          Packager.install(project, cwd, o)
+          System.exit(0)
+
       }
     } catch {
       case ex: RuntimeException =>
@@ -259,6 +265,8 @@ object Main {
 
     case object Test extends Command
 
+    case class Install(project: String) extends Command
+
   }
 
   /**
@@ -295,6 +303,12 @@ object Main {
       cmd("benchmark").action((_, c) => c.copy(command = Command.Benchmark)).text("  runs the benchmarks for the current project.")
 
       cmd("test").action((_, c) => c.copy(command = Command.Test)).text("  runs the tests for the current project.")
+
+      cmd("install").text("  installs the Flix package from the given GitHub <owner>/<repo>")
+        .children(
+          arg[String]("project").action((project, c) => c.copy(command = Command.Install(project)))
+            .required()
+        )
 
       note("")
 

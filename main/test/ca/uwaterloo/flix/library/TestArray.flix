@@ -4313,4 +4313,36 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
         a[5] = 42;
         Array.maximumBy((x, y) -> x <=> y, a) == Some(42)
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sum                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sum01(): Bool & Impure =
+        Array.sum([]) == 0
+
+    @test
+    def sum02(): Bool & Impure =
+        Array.sum([1]) == 1
+
+    @test
+    def sum03(): Bool & Impure =
+        Array.sum([1, 2, 3]) == 6
+
+    @test
+    def sum04(): Bool & Impure =
+        Array.sum([1, 2, 3, -3]) == 3
+
+    @test
+    def sum05(): Bool & Impure =
+        Array.sum([-1, -2, -3, -4]) == -10
+    @test
+    def sum06(): Bool & Impure =
+        Array.sum([10, -10]) == 0
+
+    @test
+    def sum07(): Bool & Impure =
+        Array.range(1, 101) |> Array.sum == 5050
+
 }

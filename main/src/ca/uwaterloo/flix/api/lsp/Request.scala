@@ -85,6 +85,11 @@ object Request {
   case class Goto(requestId: String, uri: String, pos: Position) extends Request
 
   /**
+    * A request to find implementations.
+    */
+  case class Implementation(requestId: String, uri: String, pos: Position) extends Request
+
+  /**
     * A request to get highlight information.
     */
   case class Highlight(requestId: String, uri: String, pos: Position) extends Request
@@ -113,6 +118,11 @@ object Request {
    * A request to get semantic tokens for a file.
    */
   case class SemanticTokens(requestId: String, uri: String) extends Request
+
+  /**
+    * A request to get workspace symbols information.
+    */
+  case class WorkspaceSymbols(requestId: String, query: String) extends Request
 
   /**
     * Tries to parse the given `json` value as a [[AddUri]] request.
@@ -233,6 +243,17 @@ object Request {
   }
 
   /**
+    * Tries to parse the given `json` value as a [[Implementation]] request.
+    */
+  def parseImplementation(json: JValue): Result[Request, String] = {
+    for {
+      id <- parseId(json)
+      uri <- parseUri(json)
+      pos <- Position.parse(json \\ "position")
+    } yield Request.Implementation(id, uri, pos)
+  }
+
+  /**
     * Tries to parse the given `json` value as a [[Highlight]] request.
     */
   def parseHighlight(json: json4s.JValue): Result[Request, String] = {
@@ -285,6 +306,16 @@ object Request {
       id <- parseId(v)
       uri <- parseUri(v)
     } yield Request.DocumentSymbols(id, uri)
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[WorkspaceSymbols]] request.
+    */
+  def parseWorkspaceSymbols(v: JValue): Result[Request, String] = {
+    for {
+      id <- parseId(v)
+      query <- parseString("query", v)
+    } yield Request.WorkspaceSymbols(id, query)
   }
 
   /**

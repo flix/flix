@@ -1184,7 +1184,7 @@ namespace List {
     ///
     /// Returns `xs` as a mutable list.
     ///
-    pub def toMut(xs: List[a]): MutList[a] & Impure = {
+    pub def toMutList(xs: List[a]): MutList[a] & Impure = {
         let v = MutList.new();
         xs |> foreach(x -> MutList.push!(x, v));
         v
