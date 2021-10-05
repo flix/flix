@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Jakob Schneider Villumsen, Magnus Madsen
+ * Copyright 2021 Magnus Madsen, Jakob Schneider Villumsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,25 +15,32 @@
  */
 
 
-
-
 namespace DemandList {
 
-/*
-    pub def example1(): Int32 =
-        let l1 = range(1, 10);
-        let l2 = filter(x -> x > 5, l1);
+
+/* turn into test cases
+
+    pub def ex1(): Int32 =
+        let l1 = range(1, 10);              // l1 must be eager
+        let l2 = filter(x -> x > 5, l1);    // l2 must be eager
         sum(l2)
 
-    pub def example2(): Option[Int32] =
-        let l1 = range(1, 10);
-        let l2 = filter(x -> x > 5, l1);
+    pub def ex2(): Int32 & Impure =
+        let l1 = range(1, 10);                          // l1 must be eager
+        let l2 = filter(x -> x > 5 as & Impure, l1);    // l2 must be eager
+        sum(l2)
+
+    pub def ex3(): Option[Int32] =
+        let l1 = range(1, 10);                          // l1 must be lazy (i.e. a free variable and not true).
+        let l2 = filter(x -> x > 5, l1);                // l2 must be lazy (i.e. a free variable and not true).
         head(l2)
 
-    pub def example3(): Option[Int32] & Impure =
-        let l1 = range(1, 10);
-        let l2 = filter(x -> x > 5 as & Impure, l1);
+    pub def ex4(): Option[Int32] & Impure =
+        let l1 = range(1, 10);                            // l1 must be eager
+        let l2 = filter(x -> x > 5 as & Impure, l1);      // l2 must be eager
         head(l2)
+
+
 */
 
     ///
@@ -115,27 +122,21 @@ namespace DemandList {
         case LList(xs)    => sumAcc(force xs,     acc)
     }
 
-
     ///
     /// Returns a lazy list of every element in `l` that satisfies the predicate `f`.
     ///
-    /// Whether `f` is applied eagerly or lazily depends on its purity:
-    ///
-    /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
-    /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
-    ///
-    pub def filter(f: a -> Bool & ef, l: DemandList[a, d]): DemandList[a, ef and d] & ef =
+    pub def filter(f: a -> Bool & ef, l: DemandList[a, not ef or d]): DemandList[a, not ef or d] & ef =
         if (reify ef)
-            filterL(f as a -> Bool & Pure,   l) as DemandList[a, ef and d] & ef
+            filterL(f as a -> Bool & Pure,   l as DemandList[a, false]) as DemandList[a, not ef or d] & ef
         else
-            filterE(f as a -> Bool & Impure, l) as DemandList[a, ef and d] & ef
+            filterE(f as a -> Bool & Impure, l as DemandList[a, true])  as DemandList[a, not ef or d] & ef
 
     ///
     /// Returns a lazy list of every element in `l` that satisfies the predicate `f`.
     ///
     /// Applies `f` lazily (i.e. the tail is not forced).
     ///
-    def filterL(f: a -> Bool, l: DemandList[a, f]): DemandList[a, f] = match l {
+    def filterL(f: a -> Bool, l: DemandList[a, false]): DemandList[a, false] = match l {
         case ENil                 => ENil
         case ECons(x, xs) if f(x) => LCons(x, lazy filterL(f,       xs))
         case LCons(x, xs) if f(x) => LCons(x, lazy filterL(f, force xs))
@@ -149,7 +150,7 @@ namespace DemandList {
     ///
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
-    def filterE(f: a -> Bool & Impure, l: DemandList[a, f]): DemandList[a, f] & Impure =
+    def filterE(f: a -> Bool & Impure, l: DemandList[a, true]): DemandList[a, true] & Impure =
         filterEAcc(f, l as DemandList[a, Forced], ENil) |> reverse
 
     ///
@@ -165,6 +166,7 @@ namespace DemandList {
     ///
     /// Reverses the list `l`.
     ///
+    // TODO: Use optimized implementation from LazyList.
     pub def reverse(l: DemandList[a, Forced]): DemandList[a, _] =
         reverseAcc(l, ENil)
 
