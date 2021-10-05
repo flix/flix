@@ -510,7 +510,7 @@ namespace LazyList {
     ///
     /// Returns `true` if `l` is empty.
     ///
-    /// Forces elements of `l` until the predicate `f` is satisfied.
+    /// Forces the entire list `l`.
     ///
     pub def forall(f: a -> Bool & ef, l: LazyList[a]): Bool & ef = match l {
         case ENil         => true
