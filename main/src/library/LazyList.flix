@@ -44,10 +44,6 @@ instance Functor[LazyList] {
     pub def map(f: a -> b & ef, l: LazyList[a]): LazyList[b] & ef = LazyList.map(f, l)
 }
 
-instance ToString[LazyList[a]] with ToString[a] {
-    pub def toString(l: LazyList[a]): String = LazyList.toString(l)
-}
-
 instance Order[LazyList[a]] with Order[a] {
 
     ///
@@ -75,6 +71,9 @@ instance Order[LazyList[a]] with Order[a] {
     }
 }
 
+instance ToString[LazyList[a]] with ToString[a] {
+    pub def toString(l: LazyList[a]): String = LazyList.toString(l)
+}
 
 namespace LazyList {
 
