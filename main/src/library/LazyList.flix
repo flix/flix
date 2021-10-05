@@ -619,7 +619,7 @@ namespace LazyList {
     pub def reduceRight(f: (a, a) -> a & ef, l: LazyList[a]): Option[a] & ef = match l {
         case ENil      => None
         case LList(xs) => reduceRight(f, force xs)
-        case _         => Some(reduceRightHelper(f, l, ks -> ks as & ef))
+        case _         => Some(reduceRightAcc(f, l, ks -> ks as & ef))
     }
 
     ///
@@ -627,10 +627,10 @@ namespace LazyList {
     ///
     /// `l` must be non-empty.
     ///
-    def reduceRightHelper(f: (a, a) -> a & ef, l: LazyList[a], k: a -> a & ef): a & ef = match l {
-        case ECons(x, xs) => if (isEmpty(      xs)) k(x) else reduceRightHelper(f,       xs, ks -> k(f(x, ks)))
-        case LCons(x, xs) => if (isEmpty(force xs)) k(x) else reduceRightHelper(f, force xs, ks -> k(f(x, ks)))
-        case LList(xs)    => reduceRightHelper(f, force xs, k)
+    def reduceRightAcc(f: (a, a) -> a & ef, l: LazyList[a], k: a -> a & ef): a & ef = match l {
+        case ECons(x, xs) => if (isEmpty(      xs)) k(x) else reduceRightAcc(f,       xs, ks -> k(f(x, ks)))
+        case LCons(x, xs) => if (isEmpty(force xs)) k(x) else reduceRightAcc(f, force xs, ks -> k(f(x, ks)))
+        case LList(xs)    => reduceRightAcc(f, force xs, k)
         case _            => bug!("Unreachable code!")
     }
 
@@ -706,20 +706,20 @@ namespace LazyList {
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
     def flatMapE(f: a -> LazyList[b] & Impure, l: LazyList[a]): LazyList[b] & Impure =
-        flatMapEHelper(f, l, ks -> ks)
+        flatMapEAcc(f, l, ks -> ks)
 
     ///
     /// Helper function for `flatMapE`.
     ///
-    def flatMapEHelper(f: a -> LazyList[b] & Impure, l: LazyList[a], k: LazyList[b] -> LazyList[b]): LazyList[b] & Impure = match l {
+    def flatMapEAcc(f: a -> LazyList[b] & Impure, l: LazyList[a], k: LazyList[b] -> LazyList[b]): LazyList[b] & Impure = match l {
         case ENil         => k(ENil)
         case ECons(x, xs) =>
             let xs1 = f(x);
-            flatMapEHelper(f,       xs, ks -> k(append(xs1, ks)))
+            flatMapEAcc(f,       xs, ks -> k(append(xs1, ks)))
         case LCons(x, xs) =>
             let xs1 = f(x);
-            flatMapEHelper(f, force xs, ks -> k(append(xs1, ks)))
-        case LList(xs)    => flatMapEHelper(f, force xs, k)
+            flatMapEAcc(f, force xs, ks -> k(append(xs1, ks)))
+        case LList(xs)    => flatMapEAcc(f, force xs, k)
     }
 
     ///
