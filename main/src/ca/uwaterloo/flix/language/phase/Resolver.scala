@@ -1670,7 +1670,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         traverse(targs)(finishResolveType(_, taenv)) map {
           resolvedArgs => Type.mkApply(baseType, resolvedArgs, tpe0.loc)
         }
-      // MATT how to handle ascribe?
     }
   }
 

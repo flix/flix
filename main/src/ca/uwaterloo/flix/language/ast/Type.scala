@@ -79,7 +79,7 @@ sealed trait Type {
     case Type.Cst(tc, _) => Some(tc)
     case Type.Apply(t1, _, _) => t1.typeConstructor
     case Type.Ascribe(tpe, _, _) => tpe.typeConstructor
-    case Type.Alias(_, _, tpe, _) => tpe.typeConstructor // MATT ??? probably deprecate this function
+    case Type.Alias(_, _, tpe, _) => tpe.typeConstructor
   }
 
   /**
@@ -107,7 +107,7 @@ sealed trait Type {
     case Type.Cst(tc, _) => tc :: Nil
     case Type.Apply(t1, t2, _) => t1.typeConstructors ::: t2.typeConstructors
     case Type.Ascribe(tpe, _, _) => tpe.typeConstructors
-    case Type.Alias(_, _, tpe, _) => tpe.typeConstructors // MATT ?
+    case Type.Alias(_, _, tpe, _) => tpe.typeConstructors
   }
 
   /**
