@@ -2587,7 +2587,7 @@ def startsWith02(): Bool = String.startsWith({prefix = ""}, "a") == true
 @test
 def startsWith03(): Bool = String.startsWith({prefix = ""}, "abc") == true
 
-@testb
+@test
 def startsWith04(): Bool = String.startsWith({prefix = "a"}, "") == false
 
 @test
@@ -2612,7 +2612,7 @@ def startsWith10(): Bool = String.startsWith({prefix = ""}, "Hello World!") == t
 def startsWith11(): Bool = String.startsWith({prefix = "Hello"}, "Hello World!") == true
 
 @test
-def startsWith12(): Bool = String.startsWith({prefix = HELLO"}, "Hello World!") == false
+def startsWith12(): Bool = String.startsWith({prefix = "HELLO"}, "Hello World!") == false
 
 /////////////////////////////////////////////////////////////////////////////
 // contains                                                                //

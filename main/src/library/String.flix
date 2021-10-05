@@ -1380,7 +1380,7 @@ namespace String {
     ///
     @Time(length(s) - length(sub)) @Space(length(s) - length(sub))
     pub def stripPrefix(sub: String, s: String): Option[String] =
-        if (not startsWith(s, sub))
+        if (not startsWith({prefix = sub}, s))
             None
         else
             Some(dropLeft(length(sub), s))
