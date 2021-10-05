@@ -147,7 +147,7 @@ namespace LazyList {
     pub def tail(l: LazyList[a]): LazyList[a] = match l {
         case ENil         => ENil
         case ECons(_, xs) => xs
-        case LCons(_, xs) => LList(                xs)
+        case LCons(_, xs) => LList(                xs )
         case LList(xs)    => LList(lazy tail(force xs))
     }
 
@@ -182,7 +182,7 @@ namespace LazyList {
         lengthAcc(l, 0)
 
     ///
-    /// Helper function for `length`
+    /// Helper function for `length`.
     ///
     def lengthAcc(l: LazyList[a], acc: Int32): Int32 = match l {
         case ENil         => acc
@@ -233,7 +233,11 @@ namespace LazyList {
         case LList(xs)    => LList(                 lazy mapL1(f, force xs))
     }
 
-    // TODO: DOC
+    ///
+    /// Returns the result of applying `f` to every element in `l`.
+    ///
+    /// Applies `f` lazily (i.e. the tail is not forced).
+    ///
     def mapL1(f: a -> b, l: LazyList[a]): LazyList[b] = match l {
         case ENil         => ENil
         case ECons(x, xs) => LCons(f(x), lazy mapL1(f,       xs))
@@ -246,6 +250,7 @@ namespace LazyList {
     ///
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
+    // TODO: Use k function as acc.
     def mapE(f: a -> b & Impure, l: LazyList[a]): LazyList[b] & Impure =
         mapEAcc(f, l, ENil) |> reverse
 
@@ -278,6 +283,7 @@ namespace LazyList {
     ///
     /// Applies `f` lazily (i.e. the tail is not forced).
     ///
+    // TODO: Collect f(x) and not f(x) cases into if-else exp.
     def filterL(f: a -> Bool, l: LazyList[a]): LazyList[a] = match l {
         case ENil                 => ENil
         case ECons(x, xs) if f(x) => LCons(x, lazy filterL(f,       xs))
@@ -292,6 +298,7 @@ namespace LazyList {
     ///
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
+    // TODO: Use k function as acc.
     def filterE(f: a -> Bool & Impure, l: LazyList[a]): LazyList[a] & Impure =
         filterEAcc(f, l, ENil) |> reverse
 
@@ -308,6 +315,8 @@ namespace LazyList {
     ///
     /// Returns `l2` appended to `l1`.
     ///
+    /// Does not force the tail of `l`.
+    ///
     pub def append(l1: LazyList[a], l2: LazyList[a]): LazyList[a] = match l1 {
         case ENil         => l2
         case ECons(x, xs) => LCons(x, lazy append(      xs, l2))
@@ -319,6 +328,8 @@ namespace LazyList {
     /// Applies `f` to a start value `s` and all elements in `l` going from left to right.
     ///
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
+    ///
+    /// Forces the entire list `l`.
     ///
     pub def foldLeft(f: (b, a) -> b & ef, s: b, l: LazyList[a]): b & ef = match l {
         case ENil         => s
