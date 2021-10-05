@@ -343,6 +343,8 @@ namespace LazyList {
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
+    /// Forces the entire list `l`.
+    ///
     pub def foldRight(f: (a, b) -> b & ef, s: b, l: LazyList[a]): b & ef =
         foldRightAcc(f, s, l, s1 -> s1 as & ef)
 
@@ -391,6 +393,7 @@ namespace LazyList {
     ///
     /// Forces the entire list `l`.
     ///
+    // TODO: Use k function as acc.
     pub def toList(l: LazyList[a]): List[a] =
         toListAcc(l, Nil) |> List.reverse
 
@@ -446,9 +449,9 @@ namespace LazyList {
     ///
     /// Returns the number of elements in `l` that satisfy the predicate `f`.
     ///
-    /// The function `f` must be pure.
+    /// Forces the entire list `l`.
     ///
-    pub def count(f: a -> Bool, l: LazyList[a]): Int32 =
+    pub def count(f: a -> Bool & ef, l: LazyList[a]): Int32 & ef =
         foldLeft((i, x) -> if (f(x)) i + 1 else i, 0, l)
 
     ///
@@ -456,6 +459,8 @@ namespace LazyList {
     ///
     /// Returns `ENil` if `n > length(l)`.
     /// Returns `l` if `n < 1`.
+    ///
+    /// Does not force the tail of `l`.
     ///
     pub def drop(n: Int32, l: LazyList[a]): LazyList[a] =
         LList(lazy dropHelper(n, l))
@@ -476,6 +481,8 @@ namespace LazyList {
 
     ///
     /// Returns the concatenation of the elements in `l`.
+    ///
+    /// Does not force the tail of `l`.
     ///
     pub def flatten(l: LazyList[LazyList[a]]): LazyList[a] = match l {
         case ENil          => ENil
