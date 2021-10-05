@@ -22,6 +22,8 @@ namespace ChannelImpl {
 
     pub def newWithId(bufferSize: Int): ChannelImpl[a] & Impure =
         //import dev.flix.runtime.GlobalCounter:newId();
+        import new java.util.Random() as newRandom;
+        import java.util.Random.nextLong();
         let bufSize =
             if (bufferSize < 0) {
                 bug!("Channel's buffer size must be non-negative.")
@@ -32,7 +34,8 @@ namespace ChannelImpl {
 
         let reentrantLock = ReentrantLock.new(false);
 
-        let id = ?newId();
+        // temporary solution
+        let id = newRandom().nextLong();
 
         Mpmc(
             id,
