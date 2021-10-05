@@ -168,7 +168,16 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       case Type.Cst(_, _) => Nil
       case Type.Apply(tpe1, tpe2, _) => getAliasUses(tpe1) ::: getAliasUses(tpe2)
       case _: Type.Alias => throw InternalCompilerException("unexpected applied alias")
+    }
 
+    /**
+      * Create a list of CyclicTypeAliases errors, one for each type alias.
+      */
+    def mkCycleErrors[T](cycle: List[Symbol.TypeAliasSym]): Validation.Failure[T, ResolutionError] = {
+      val errors = cycle.map {
+        sym => ResolutionError.CyclicTypeAliases(cycle, sym.loc)
+      }
+      Validation.Failure(LazyList.from(errors))
     }
 
     /**
@@ -183,7 +192,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
       Graph.topSort(aliasSyms, getUses) match {
         case Graph.TopSortResult.Sorted(sorted) => sorted.toSuccess
-        case Graph.TopSortResult.Cycle(path) => CyclicTypeAliases(path, SourceLocation.Unknown).toFailure // MATT real loc, make error at each alias
+        case Graph.TopSortResult.Cycle(path) => mkCycleErrors(path)
       }
     }
 
