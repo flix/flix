@@ -17,8 +17,9 @@
 
 
 
-namespace LazyList2 {
+namespace DemandList {
 
+/*
     pub def example1(): Int32 =
         let l1 = range(1, 10);
         let l2 = filter(x -> x > 5, l1);
@@ -33,17 +34,18 @@ namespace LazyList2 {
         let l1 = range(1, 10);
         let l2 = filter(x -> x > 5 as & Impure, l1);
         head(l2)
+*/
 
     ///
     /// Represents a lazy list.
     ///
     /// If the Boolean type `f` is equiv. to true then all elements are forced.
     ///
-    pub enum LazyList[a: Type, f: Bool] {
+    pub enum DemandList[a: Type, f: Bool] {
         case ENil,
-        case ECons(a, LazyList[a, f]),
-        case LCons(a, Lazy[LazyList[a, f]]),
-        case LList(Lazy[LazyList[a, f]])
+        case ECons(a, DemandList[a, f]),
+        case LCons(a, Lazy[DemandList[a, f]]),
+        case LList(Lazy[DemandList[a, f]])
     }
 
     type alias Forced = true
@@ -55,7 +57,7 @@ namespace LazyList2 {
     ///
     /// Does not force the tail of `l`.
     ///
-    pub def head(l: LazyList[a, _]): Option[a] = match l {
+    pub def head(l: DemandList[a, _]): Option[a] = match l {
         case ENil        => None
         case ECons(x, _) => Some(x)
         case LCons(x, _) => Some(x)
@@ -67,13 +69,13 @@ namespace LazyList2 {
     ///
     /// Returns an empty lazy list if `b >= e`.
     ///
-    pub def range(b: Int32, e: Int32): LazyList[Int32, _] =
+    pub def range(b: Int32, e: Int32): DemandList[Int32, _] =
         LList(lazy rangeHelper(b, e))
 
     ///
     /// Helper function for `range`.
     ///
-    def rangeHelper(b: Int32, e:Int32): LazyList[Int32, _] =
+    def rangeHelper(b: Int32, e:Int32): DemandList[Int32, _] =
         if (b >= e)
             ENil
         else
@@ -84,13 +86,13 @@ namespace LazyList2 {
     ///
     /// Forces the entire list `l`.
     ///
-    pub def length(l: LazyList[a, Forced]): Int32 =
+    pub def length(l: DemandList[a, Forced]): Int32 =
         lengthAcc(l, 0)
 
     ///
     /// Helper function for `length`
     ///
-    def lengthAcc(l: LazyList[a, Forced], acc: Int32): Int32 = match l {
+    def lengthAcc(l: DemandList[a, Forced], acc: Int32): Int32 = match l {
         case ENil         => acc
         case ECons(_, xs) => lengthAcc(      xs, acc + 1)
         case LCons(_, xs) => lengthAcc(force xs, acc + 1)
@@ -100,13 +102,13 @@ namespace LazyList2 {
     ///
     /// Returns the sum of all elements in the list `l`.
     ///
-    pub def sum(l: LazyList[Int32, Forced]): Int32 =
+    pub def sum(l: DemandList[Int32, Forced]): Int32 =
         sumAcc(l, 0)
 
     ///
     /// Helper function for `sum`.
     ///
-    def sumAcc(l: LazyList[Int32, Forced], acc: Int32): Int32 = match l {
+    def sumAcc(l: DemandList[Int32, Forced], acc: Int32): Int32 = match l {
         case ENil         => acc
         case ECons(x, xs) => sumAcc(      xs, x + acc)
         case LCons(x, xs) => sumAcc(force xs, x + acc)
@@ -122,18 +124,18 @@ namespace LazyList2 {
     /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
-    pub def filter(f: a -> Bool & ef, l: LazyList[a, f]): LazyList[a, f] & ef =
+    pub def filter(f: a -> Bool & ef, l: DemandList[a, d]): DemandList[a, ef and d] & ef =
         if (reify ef)
-            filterL(f as a -> Bool & Pure,   l) as LazyList[a, f] & ef
+            filterL(f as a -> Bool & Pure,   l) as DemandList[a, ef and d] & ef
         else
-            filterE(f as a -> Bool & Impure, l) as LazyList[a, f] & ef
+            filterE(f as a -> Bool & Impure, l) as DemandList[a, ef and d] & ef
 
     ///
     /// Returns a lazy list of every element in `l` that satisfies the predicate `f`.
     ///
     /// Applies `f` lazily (i.e. the tail is not forced).
     ///
-    def filterL(f: a -> Bool, l: LazyList[a, f]): LazyList[a, f] = match l {
+    def filterL(f: a -> Bool, l: DemandList[a, f]): DemandList[a, f] = match l {
         case ENil                 => ENil
         case ECons(x, xs) if f(x) => LCons(x, lazy filterL(f,       xs))
         case LCons(x, xs) if f(x) => LCons(x, lazy filterL(f, force xs))
@@ -147,13 +149,13 @@ namespace LazyList2 {
     ///
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
-    def filterE(f: a -> Bool & Impure, l: LazyList[a, f]): LazyList[a, f] & Impure =
-        filterEAcc(f, l as LazyList[a, Forced], ENil) |> reverse
+    def filterE(f: a -> Bool & Impure, l: DemandList[a, f]): DemandList[a, f] & Impure =
+        filterEAcc(f, l as DemandList[a, Forced], ENil) |> reverse
 
     ///
     /// Helper function for `filterE`
     ///
-    def filterEAcc(f: a -> Bool & Impure, l: LazyList[a, f], acc: LazyList[a, f]): LazyList[a, f] & Impure = match l {
+    def filterEAcc(f: a -> Bool & Impure, l: DemandList[a, f], acc: DemandList[a, f]): DemandList[a, f] & Impure = match l {
         case ENil         => acc
         case ECons(x, xs) => if (f(x)) filterEAcc(f,       xs, ECons(x, acc)) else filterEAcc(f,       xs, acc)
         case LCons(x, xs) => if (f(x)) filterEAcc(f, force xs, ECons(x, acc)) else filterEAcc(f, force xs, acc)
@@ -163,13 +165,13 @@ namespace LazyList2 {
     ///
     /// Reverses the list `l`.
     ///
-    pub def reverse(l: LazyList[a, Forced]): LazyList[a, _] =
+    pub def reverse(l: DemandList[a, Forced]): DemandList[a, _] =
         reverseAcc(l, ENil)
 
     ///
     /// Helper function for `reverse`.
     ///
-    def reverseAcc(l: LazyList[a, Forced], acc: LazyList[a, f]): LazyList[a, f] = match l {
+    def reverseAcc(l: DemandList[a, Forced], acc: DemandList[a, f]): DemandList[a, f] = match l {
         case ENil         => acc
         case ECons(x, xs) => LList(lazy reverseAcc(      xs, ECons(x, acc)))
         case LCons(x, xs) => LList(lazy reverseAcc(force xs, ECons(x, acc)))
