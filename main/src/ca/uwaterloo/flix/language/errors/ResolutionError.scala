@@ -570,6 +570,26 @@ object ResolutionError {
   }
 
   /**
+    * An error raised to indicate an under-applied type alias.
+    *
+    * @param sym the type alias.
+    * @param loc the location where the error occurred.
+    */
+  case class UnderAppliedTypeAlias(sym: Symbol.TypeAliasSym, loc: SourceLocation) extends ResolutionError {
+    override def summary: String = s"Under-applied type alias: ${sym.name}"
+
+    override def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Under-applied type alias '" << Red(sym.name) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "Under-applied type alias.")
+      vt << NewLine
+      vt << Underline("Tip:") << " Type aliases must be fully applied."
+    }
+  }
+
+  /**
     * Removes all access modifiers from the given string `s`.
     */
   private def stripAccessModifier(s: String): String =
