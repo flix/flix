@@ -766,8 +766,11 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
             case (tparam, arg) => visitType(arg, tparam.tpe.kind, kenv, taenv, root)
           }
           val tpeVal = visitType(t0, tpe.kind, kenv, taenv, root)
-          mapN(argsVal, tpeVal) {
-            case (args, t) => Type.Alias(sym, args, t, loc)
+          flatMapN(argsVal, tpeVal) {
+            case (args, t) => unify(t.kind, expectedKind) match {
+              case Some(_) => Type.Alias(sym, args, t, loc).toSuccess
+              case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = t.kind, loc).toFailure
+            }
           }
       }
     case _: Type.KindedVar => throw InternalCompilerException("Unexpected kinded type variable.")

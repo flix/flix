@@ -271,6 +271,12 @@ object ResolutionError {
     }
   }
 
+  // MATT docs
+  case class CyclicTypeAliases(path: List[Symbol.TypeAliasSym], loc: SourceLocation) extends ResolutionError {
+    def summary: String = "" // MATT
+    def message: VirtualTerminal = new VirtualTerminal // MATT
+  }
+
   /**
     * Undefined Name Error.
     *

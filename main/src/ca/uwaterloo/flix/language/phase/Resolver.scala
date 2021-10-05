@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
 import ca.uwaterloo.flix.language.ast.{Symbol, _}
 import ca.uwaterloo.flix.language.errors.ResolutionError
+import ca.uwaterloo.flix.language.errors.ResolutionError.CyclicTypeAliases
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{Graph, InternalCompilerException, Validation}
@@ -182,7 +183,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
       Graph.topSort(aliasSyms, getUses) match {
         case Graph.TopSortResult.Sorted(sorted) => sorted.toSuccess
-        case Graph.TopSortResult.Cycle(path) => ??? // MATT mkErrors
+        case Graph.TopSortResult.Cycle(path) => CyclicTypeAliases(path, SourceLocation.Unknown).toFailure // MATT real loc, make error at each alias
       }
     }
 

@@ -268,7 +268,7 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.SealedClass](result)
   }
 
-  test("RecursionLimit.01") {
+  test("CyclicTypeAliases.01") {
     val input =
       s"""
          |type alias Foo = Foo
@@ -277,10 +277,10 @@ class TestResolver extends FunSuite with TestUtils {
          |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.RecursionLimit](result)
+    expectError[ResolutionError.CyclicTypeAliases](result)
   }
 
-  test("RecursionLimit.02") {
+  test("CyclicTypeAliases.02") {
     val input =
       s"""
          |type alias Foo = Bar
@@ -290,10 +290,10 @@ class TestResolver extends FunSuite with TestUtils {
          |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.RecursionLimit](result)
+    expectError[ResolutionError.CyclicTypeAliases](result)
   }
 
-  test("RecursionLimit.03") {
+  test("CyclicTypeAliases.03") {
     val input =
       s"""
          |type alias Foo = Bar
@@ -304,10 +304,10 @@ class TestResolver extends FunSuite with TestUtils {
          |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.RecursionLimit](result)
+    expectError[ResolutionError.CyclicTypeAliases](result)
   }
 
-  test("RecursionLimit.04") {
+  test("CyclicTypeAliases.04") {
     val input =
       s"""
          |enum Option[t] {
@@ -321,10 +321,10 @@ class TestResolver extends FunSuite with TestUtils {
          |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.RecursionLimit](result)
+    expectError[ResolutionError.CyclicTypeAliases](result)
   }
 
-  test("RecursionLimit.05") {
+  test("CyclicTypeAliases.05") {
     val input =
       s"""
          |enum Option[t] {
@@ -339,7 +339,7 @@ class TestResolver extends FunSuite with TestUtils {
          |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.RecursionLimit](result)
+    expectError[ResolutionError.CyclicTypeAliases](result)
   }
 
   test("UndefinedName.01") {
