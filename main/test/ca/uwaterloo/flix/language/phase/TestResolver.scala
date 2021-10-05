@@ -810,6 +810,38 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.DuplicateDerivation](result)
   }
 
+  test("UnderAppliedTypeAlias.01") {
+    val input =
+      """
+        |type alias T[a] = a
+        |type alias S = T
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[ResolutionError.UnderAppliedTypeAlias](result)
+  }
+
+  test("UnderAppliedTypeAlias.02") {
+    val input =
+      """
+        |type alias T[a, b] = (a, b)
+        |type alias S = T[Int]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[ResolutionError.UnderAppliedTypeAlias](result)
+  }
+
+  test("UnderAppliedTypeAlias.03") {
+    val input =
+      """
+        |type alias T[a] = a
+        |enum E[f: Type -> Type]
+        |
+        |def f(x: E[T]): Int = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[ResolutionError.UnderAppliedTypeAlias](result)
+  }
+
   test("IllegalDerivation.01") {
     val input =
       """
