@@ -171,6 +171,11 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       val matchErrorClass = GenMatchErrorClass.gen()
 
       //
+      // Generate the GlobalCounter class.
+      //
+      val globalCounterClass = GenGlobalCounterClass.gen()
+
+      //
       // Collect all the classes and interfaces together.
       //
       List(
@@ -194,7 +199,8 @@ object JvmBackend extends Phase[Root, CompilationResult] {
         flixErrorClass,
         rslClass,
         holeErrorClass,
-        matchErrorClass
+        matchErrorClass,
+        globalCounterClass
       ).reduce(_ ++ _)
     }
 

@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language
 
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.language.errors.Severity
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
@@ -29,6 +30,11 @@ trait CompilationError {
     * Returns the kind of error message, e.g. "Syntax Error" or "Type Error".
     */
   def kind: String
+
+  /**
+    * Returns the severity of the error.
+    */
+  def severity: Severity = Severity.Error
 
   /**
     * Returns the input source of the error message.

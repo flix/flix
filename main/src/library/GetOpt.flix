@@ -78,10 +78,10 @@ namespace GetOpt {
     /// * `explanation` is the description of the option printed to the user by the function `usageInfo`
     ///
     type alias OptionDescr[a] =
-        { optionIds: List[Char]
-        , optionNames: List[String]
-        , argDescriptor: ArgDescr[a]
-        , explanation: String
+        { optionIds :: List[Char]
+        , optionNames :: List[String]
+        , argDescriptor :: ArgDescr[a]
+        , explanation :: String
         }
 
 
@@ -151,7 +151,7 @@ namespace GetOpt {
     ///
     pub def getOpt(ordering: ArgOrder[a],
                    optDescriptors: List[OptionDescr[a]],
-                   sourceArgs: Array[String]): Validation[{options: List[a], nonOptions: List[String]}, String] & Impure =
+                   sourceArgs: Array[String]): Validation[{options :: List[a], nonOptions :: List[String]}, String] & Impure =
         let answers = getOpt1(ordering, optDescriptors, sourceArgs);
         match answers.errors ::: List.map(errUnrec, answers.unknowns) {
             case Nil => Success({options = answers.options, nonOptions = answers.nonOptions})
@@ -167,7 +167,7 @@ namespace GetOpt {
     ///
     pub def getOpt1(ordering: ArgOrder[a],
                     optDescriptors: List[OptionDescr[a]],
-                    sourceArgs: Array[String]): {options: List[a], nonOptions: List[String], unknowns: List[String], errors: List[String]} & Impure =
+                    sourceArgs: Array[String]): {options :: List[a], nonOptions :: List[String], unknowns :: List[String], errors :: List[String]} & Impure =
         let (os, xs, us, es) = getOpt1Helper(ordering, optDescriptors, Array.toList(sourceArgs));
         {options = os, nonOptions = xs, unknowns = us, errors = es}
 
@@ -369,7 +369,7 @@ namespace GetOpt {
     /// joined by "quotation marks" in the user supplied string (quotations marks are configurable and do not
     /// have to be double quotes).
     ///
-    pub def preprocess(options: {quoteOpen: String, quoteClose: String, stripQuoteMarks: Bool}, args: Array[String]): Array[String] & Impure =
+    pub def preprocess(options: {quoteOpen :: String, quoteClose :: String, stripQuoteMarks :: Bool}, args: Array[String]): Array[String] & Impure =
         let args1 = groupWhenQuoted(options.quoteOpen, options.quoteClose, args);
         if (options.stripQuoteMarks)
             removeQuoteMarks(options.quoteOpen, options.quoteClose, args1)

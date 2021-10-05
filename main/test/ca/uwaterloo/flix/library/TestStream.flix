@@ -327,4 +327,171 @@ namespace TestStream {
         Stream.toList as & Impure;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldLeft                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldLeft01(): Bool =
+    	Stream.foldLeft((i, e) -> (i - e) * (e % 2 + 1), 100, Stream.empty(): Stream[Int32, Int32]) == 100
+
+    @test
+    def foldLeft02(): Bool =
+    	(1 :: Nil) |> List.toStream |> Stream.foldLeft((i, e) -> (i - e) * (e % 2 + 1), 100) == 198
+
+    @test
+    def foldLeft03(): Bool =
+    	(1 :: 2 :: Nil) |> List.toStream |> Stream.foldLeft((i, e) -> (i - e) * (e % 2 + 1), 100) == 196
+
+    @test
+    def foldLeft04(): Bool =
+    	(1 :: 2 :: 3 :: Nil) |> List.toStream |> Stream.foldLeft((i, e) -> (i - e) * (e % 2 + 1), 100) == 386
+
+    @test
+    def foldLeft05(): Bool =
+    	(1 :: 2 :: 3 :: Nil) |> List.toStream |> Stream.foldLeft((acc, x) -> x :: acc, Nil) == 3 :: 2 :: 1 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldRight                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldRight01(): Bool =
+    	Stream.foldRight((e, i) -> (i - e) * (e % 2 + 1), 100, Stream.empty(): Stream[Int32, Int32]) == 100
+
+    @test
+    def foldRight02(): Bool =
+    	(1 :: Nil) |> List.toStream |> Stream.foldRight((e, i) -> (i - e) * (e % 2 + 1), 100) == 198
+
+    @test
+    def foldRight03(): Bool =
+    	(1 :: 2 :: Nil) |> List.toStream |> Stream.foldRight((e, i) -> (i - e) * (e % 2 + 1), 100) == 194
+
+    @test
+    def foldRight04(): Bool =
+    	(1 :: 2 :: 3 :: Nil) |> List.toStream |> Stream.foldRight((e, i) -> (i - e) * (e % 2 + 1), 100) == 382
+
+    @test
+    def foldRight05(): Bool =
+    	(1 :: 2 :: 3 :: Nil) |> List.toStream |> Stream.foldRight((x, acc) -> x :: acc, Nil) == 1 :: 2 :: 3 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // exists                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def exists01(): Bool =
+        not (Stream.exists(i -> i > 3, Stream.empty()))
+
+    @test
+    def exists02(): Bool =
+        not ((1 :: Nil) |> List.toStream |> Stream.exists(i -> i > 3))
+
+    @test
+    def exists03(): Bool =
+        (5 :: Nil) |> List.toStream |> Stream.exists(i -> i > 3)
+
+    @test
+    def exists04(): Bool =
+        not ((1 :: 2 :: Nil) |> List.toStream |> Stream.exists(i -> i > 3))
+
+    @test
+    def exists05(): Bool =
+        (1 :: 6 :: Nil) |> List.toStream |> Stream.exists(i -> i > 3)
+
+    @test
+    def exists06(): Bool =
+        (6 :: 1 :: Nil) |> List.toStream |> Stream.exists(i -> i > 3)
+
+    @test
+    def exists07(): Bool =
+        (16 :: 6 :: Nil) |> List.toStream |> Stream.exists(i -> i > 3)
+
+    @test
+    def exists08(): Bool =
+        not ((1 :: -9 :: 3 :: Nil) |> List.toStream |> Stream.exists(i -> i > 3))
+
+    @test
+    def exists09(): Bool =
+        (1 :: 9 :: 3 :: Nil) |> List.toStream |> Stream.exists(i -> i > 3)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // forall                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def forall01(): Bool =
+        Stream.forall(i -> i > 3, Stream.empty())
+
+    @test
+    def forall02(): Bool =
+        not ((1 :: Nil) |> List.toStream |> Stream.forall(i -> i > 3))
+
+    @test
+    def forall03(): Bool =
+        (5 :: Nil) |> List.toStream |> Stream.forall(i -> i > 3)
+
+    @test
+    def forall04(): Bool =
+        not ((1 :: 2 :: Nil) |> List.toStream |> Stream.forall(i -> i > 3))
+
+    @test
+    def forall05(): Bool =
+        not ((1 :: 6 :: Nil) |> List.toStream |> Stream.forall(i -> i > 3))
+
+    @test
+    def forall06(): Bool =
+        not ((6 :: 1 :: Nil) |> List.toStream |> Stream.forall(i -> i > 3))
+
+    @test
+    def forall07(): Bool =
+        (16 :: 6 :: Nil) |> List.toStream |> Stream.forall(i -> i > 3)
+
+    @test
+    def forall08(): Bool =
+        not ((1 :: -9 :: 3 :: Nil) |> List.toStream |> Stream.forall(i -> i > 3))
+
+    @test
+    def forall09(): Bool =
+        not ((1 :: 9 :: 3 :: Nil) |> List.toStream |> Stream.forall(i -> i > 3))
+
+    @test
+    def forall10(): Bool =
+        (11 :: 9 :: 31 :: Nil) |> List.toStream |> Stream.forall(i -> i > 3)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // take                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def take01(): Bool =
+        (Stream.empty()): Stream[Int32, Unit] |> Stream.take(1000) |> Stream.isEmpty
+
+    @test
+    def take02(): Bool =
+        (Stream.empty()): Stream[Int32, Unit] |> Stream.take(0) |> Stream.isEmpty
+
+    @test
+    def take03(): Bool =
+        List.range(0, 1000) |> List.toStream |> Stream.take(0) |> Stream.isEmpty
+
+    @test
+    def take04(): Bool =
+        List.range(0, 1000)
+            |> List.toStream
+            |> Stream.take(500)
+            |> Stream.toList == List.range(0, 500)
+
+    @test
+    def take05(): Bool =
+        List.range(0, 1000)
+            |> List.toStream
+            |> Stream.take(1)
+            |> Stream.toList == List.range(0, 1)
+
 }

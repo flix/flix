@@ -80,6 +80,15 @@ pub def lazyListFilterMapLength(l: Array[Int32]): Benchmark =
         LazyList.length
     } as & Pure)
 
+pub def streamFilterMapLength(l: Array[Int32]): Benchmark =
+    defBenchmark("Stream.filterMapLength", () -> {
+        l |>
+        Array.toStream |>
+        Stream.filter(x -> x % 2 == 0) |>
+        Stream.map(x -> x * x) |>
+        Stream.length
+    } as & Pure)
+
 ///////////////////////////////////////////////////////////////////////////////
 /// sum                                                                     ///
 ///////////////////////////////////////////////////////////////////////////////
@@ -87,14 +96,21 @@ pub def listSum(l: Array[Int32]): Benchmark =
     defBenchmark("List.sum", () -> {
         l |>
         Array.toList |>
-        List.foldLeft((x, y) -> x + y, 0)
+        List.sum
     } as & Pure)
 
 pub def lazyListSum(l: Array[Int32]): Benchmark =
     defBenchmark("LazyList.sum", () -> {
         l |>
         Array.toLazyList |>
-        LazyList.foldLeft((x, y) -> x + y, 0)
+        LazyList.sum
+    } as & Pure)
+
+pub def streamSum(l: Array[Int32]): Benchmark =
+    defBenchmark("Stream.sum", () -> {
+        l |>
+        Array.toStream |>
+        Stream.sum
     } as & Pure)
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -105,7 +121,7 @@ pub def listFilterSum(l: Array[Int32]): Benchmark =
         l |>
         Array.toList |>
         List.filter(x -> x % 2 == 0) |>
-        List.foldLeft((x, y) -> x + y, 0)
+        List.sum
     } as & Pure)
 
 pub def lazyListFilterSum(l: Array[Int32]): Benchmark =
@@ -113,7 +129,15 @@ pub def lazyListFilterSum(l: Array[Int32]): Benchmark =
         l |>
         Array.toLazyList |>
         LazyList.filter(x -> x % 2 == 0) |>
-        LazyList.foldLeft((x, y) -> x + y, 0)
+        LazyList.sum
+    } as & Pure)
+
+pub def streamFilterSum(l: Array[Int32]): Benchmark =
+    defBenchmark("Stream.filterSum", () -> {
+        l |>
+        Array.toStream |>
+        Stream.filter(x -> x % 2 == 0) |>
+        Stream.sum
     } as & Pure)
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -125,7 +149,7 @@ pub def listFilterMapSum(l: Array[Int32]): Benchmark =
         Array.toList |>
         List.filter(x -> x % 2 == 0) |>
         List.map(x -> x * x) |>
-        List.foldLeft((x, y) -> x + y, 0)
+        List.sum
     } as & Pure)
 
 pub def lazyListFilterMapSum(l: Array[Int32]): Benchmark =
@@ -134,7 +158,16 @@ pub def lazyListFilterMapSum(l: Array[Int32]): Benchmark =
         Array.toLazyList |>
         LazyList.filter(x -> x % 2 == 0) |>
         LazyList.map(x -> x * x) |>
-        LazyList.foldLeft((x, y) -> x + y, 0)
+        LazyList.sum
+    } as & Pure)
+
+pub def streamFilterMapSum(l: Array[Int32]): Benchmark =
+    defBenchmark("Stream.filterMapSum", () -> {
+        l |>
+        Array.toStream |>
+        Stream.filter(x -> x % 2 == 0) |>
+        Stream.map(x -> x * x) |>
+        Stream.sum
     } as & Pure)
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -218,6 +251,21 @@ pub def lazyListMap8(l: Array[Int32]): Benchmark =
         LazyList.length
     } as & Pure)
 
+pub def streamMap8(l: Array[Int32]): Benchmark =
+    defBenchmark("Stream.map8", () -> {
+        l |>
+        Array.toStream |>
+        Stream.map(x -> x + 1) |>
+        Stream.map(x -> x + 2) |>
+        Stream.map(x -> x + 3) |>
+        Stream.map(x -> x + 4) |>
+        Stream.map(x -> x + 5) |>
+        Stream.map(x -> x + 6) |>
+        Stream.map(x -> x + 7) |>
+        Stream.map(x -> x + 8) |>
+        Stream.length
+    } as & Pure)
+
 ///////////////////////////////////////////////////////////////////////////////
 /// flatMap take sum                                                        ///
 ///////////////////////////////////////////////////////////////////////////////
@@ -228,7 +276,7 @@ pub def listFlatMapTakeSum(l: Array[Int32]): Benchmark =
         Array.toList |>
         List.flatMap(x -> List.map(y -> x * y, l2)) |>
         List.take(100_000) |>  // TODO
-        List.foldLeft((x, y) -> x + y, 0)
+        List.sum
     } as & Pure)
 
 pub def lazyListFlatMapTakeSum(l: Array[Int32]): Benchmark =
@@ -238,9 +286,18 @@ pub def lazyListFlatMapTakeSum(l: Array[Int32]): Benchmark =
         Array.toLazyList |>
         LazyList.flatMap(x -> LazyList.map(y -> x * y, l2)) |>
         LazyList.take(100_000) |>  // TODO
-        LazyList.foldLeft((x, y) -> x + y, 0)
+        LazyList.sum
     } as & Pure)
 
+pub def streamFlatMapTakeSum(l: Array[Int32]): Benchmark =
+    let l2 = Stream.range(1, 10);
+    defBenchmark("Stream.flatMapTakeSum", () -> {
+        l |>
+        Array.toStream |>
+        Stream.flatMapL(x -> Stream.map(y -> x * y, l2)) |>
+        Stream.take(100_000) |>  // TODO
+        Stream.sum
+    } as & Pure)
 
 ///////////////////////////////////////////////////////////////////////////////
 /// cartesian                                                               ///
@@ -251,7 +308,7 @@ pub def listCartesian(l: Array[Int32]): Benchmark =
         l |>
         Array.toList |>
         List.flatMap(x -> List.map(y -> x * y, l2)) |>
-        List.foldLeft((x, y) -> x + y, 0)
+        List.sum
     } as & Pure)
 
 pub def lazyListCartesian(l: Array[Int32]): Benchmark =
@@ -260,7 +317,16 @@ pub def lazyListCartesian(l: Array[Int32]): Benchmark =
         l |>
         Array.toLazyList |>
         LazyList.flatMap(x -> LazyList.map(y -> x * y, l2)) |>
-        LazyList.foldLeft((x, y) -> x + y, 0)
+        LazyList.sum
+    } as & Pure)
+
+pub def streamCartesian(l: Array[Int32]): Benchmark =
+    let l2 = Stream.range(1, 10);
+    defBenchmark("Stream.cartesian", () -> {
+        l |>
+        Array.toStream |>
+        Stream.flatMapL(x -> Stream.map(y -> x * y, l2)) |>
+        Stream.sum
     } as & Pure)
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -307,19 +373,52 @@ pub def biboudisSuite(n: Int32): Array[Benchmark] & Impure =
         // Stream
         streamLength(l),
         streamFilterLength(l),
-        streamFilter8(l)
+        streamFilterMapLength(l),
+        streamSum(l),
+        streamFilterSum(l),
+        streamFilterMapSum(l),
+        streamFilter8(l),
+        streamMap8(l),
+        streamFlatMapTakeSum(l),
+        streamCartesian(l)
+
     ]
 
 def main(_args: Array[String]) : Int32 & Impure =
     let s1 = biboudisSuite(100);
-    Benchmark.runWithBudget(s1, 5000_000_000_000i64);
+    Benchmark.runWithBudget(s1, 10_000_000_000i64);
     0
 
 
 // TODO: Remove
-pub def fromList(l: List[a]): Stream[a, List[a]] =
-    let next = s -> match s {
-        case Nil     => Done
-        case x :: xs => Yield(x, xs)
-    };
-    Stream(next, l)
+namespace Stream {
+
+    pub def sum(s: Stream[a, s]): Int32 =
+        let Stream(next0, s0) = s;
+        sumAcc(next0, s0, 0)
+
+    def sumAcc(next0: s -> Step[a, s], s0: s, acc: Int32): Int32 =
+        match next0(s0) {
+            case Done           => acc
+            case Skip(s1)       => sumAcc(next0, s1, acc)
+            case Yield(_, s1)   => sumAcc(next0, s1, acc + 1)
+        }
+
+    pub def flatMapL(f: a -> Stream[a, sb], s0: Stream[a, sa]): Stream[a, (sa, Option[Stream[a, sb]])] =
+        let Stream(nexta, sa0) = s0;
+        let next = s -> match s {
+            case (sa, None) => match nexta(sa) {
+                case Done           => Done
+                case Skip(sa1)      => Skip((sa1, None))
+                case Yield(a, sa1)  => Skip((sa1, Some(f(a))))
+            }
+            case (sa, Some(Stream(nextb, sb))) => match nextb(sb) {
+                case Done           => Skip(    (sa, None))
+                case Skip(sb1)      => Skip(    (sa, Some(Stream(nextb, sb1))))
+                case Yield(b, sb1)  => Yield(b, (sa, Some(Stream(nextb, sb1))))
+            }
+        };
+        Stream(next, (sa0, None))
+
+
+}
