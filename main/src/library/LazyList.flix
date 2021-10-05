@@ -920,9 +920,9 @@ namespace LazyList {
     ///
     def dropWhileLHelper(f: a -> Bool, l: LazyList[a]): LazyList[a] = match l {
         case ENil         => ENil
-        case ECons(x, xs) => if (f(x)) LList(lazy dropWhileL(f,       xs)) else l
-        case LCons(x, xs) => if (f(x)) LList(lazy dropWhileL(f, force xs)) else l
-        case LList(xs)    => LList(lazy dropWhileL(f, force xs))
+        case ECons(x, xs) => if (f(x)) LList(lazy dropWhileLHelper(f,       xs)) else l
+        case LCons(x, xs) => if (f(x)) LList(lazy dropWhileLHelper(f, force xs)) else l
+        case LList(xs)    => LList(lazy dropWhileLHelper(f, force xs))
     }
 
     ///
