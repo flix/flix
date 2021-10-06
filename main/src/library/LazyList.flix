@@ -395,16 +395,16 @@ namespace LazyList {
     ///
     // TODO: Use k function as acc.
     pub def toList(l: LazyList[a]): List[a] =
-        toListAcc(l, Nil) |> List.reverse
+        toListAcc(l, ks -> ks)
 
     ///
     /// Helper function for `toList`.
     ///
-    def toListAcc(l: LazyList[a], acc: List[a]): List[a] = match l {
-        case ENil         => acc
-        case ECons(x, ys) => toListAcc(      ys, x :: acc)
-        case LCons(x, ys) => toListAcc(force ys, x :: acc)
-        case LList(ys)    => toListAcc(force ys,      acc)
+    def toListAcc(l: LazyList[a], k: List[a] -> List[a]): List[a] = match l {
+        case ENil         => k(Nil)
+        case ECons(x, xs) => toListAcc(      xs, ks -> k(x :: ks))
+        case LCons(x, xs) => toListAcc(force xs, ks -> k(x :: ks))
+        case LList(xs)    => toListAcc(force xs,       k)
     }
 
     ///
