@@ -497,7 +497,7 @@ object ParsedAst {
       * @param exps the arguments.
       * @param sp2  the position of the last character in the expression.
       */
-    case class Intrinsic(sp1: SourcePosition, op: Name.Ident, exps: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+    case class Intrinsic(sp1: SourcePosition, op: Name.Ident, exps: Seq[ParsedAst.Argument], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Apply Expression (function call).
@@ -506,7 +506,7 @@ object ParsedAst {
       * @param args   the arguments.
       * @param sp2    the position of the last character in the expression.
       */
-    case class Apply(lambda: ParsedAst.Expression, args: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+    case class Apply(lambda: ParsedAst.Expression, args: Seq[ParsedAst.Argument], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Infix Apply.
@@ -530,7 +530,7 @@ object ParsedAst {
       * @param es   the the remaining arguments.
       * @param sp2  the position of the last character in the expression.
       */
-    case class Postfix(e: ParsedAst.Expression, name: Name.Ident, es: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+    case class Postfix(e: ParsedAst.Expression, name: Name.Ident, es: Seq[ParsedAst.Argument], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Lambda Expression.
@@ -1467,6 +1467,14 @@ object ParsedAst {
   }
 
   /**
+    * Argument to a function application.
+    *
+    * @param name the optional argument name.
+    * @param exp  the value of the argument.
+    */
+  case class Argument(name: Option[Name.Ident], exp: ParsedAst.Expression, sp2: SourcePosition)
+
+  /**
     * Attribute.
     *
     * @param sp1   the position of the first character in the attribute.
@@ -1599,7 +1607,7 @@ object ParsedAst {
     * @param args  the arguments passed to the annotation.
     * @param sp2   the position of the last character in the annotation.
     */
-  case class Annotation(sp1: SourcePosition, ident: Name.Ident, args: Option[Seq[ParsedAst.Expression]], sp2: SourcePosition)
+  case class Annotation(sp1: SourcePosition, ident: Name.Ident, args: Option[Seq[ParsedAst.Argument]], sp2: SourcePosition)
 
   /**
     * String Interpolation Part.

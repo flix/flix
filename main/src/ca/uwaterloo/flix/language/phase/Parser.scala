@@ -1377,11 +1377,15 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     "(" ~ optWS ~ zeroOrMore(FormalParam).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
   }
 
-  def ArgumentList: Rule1[Seq[ParsedAst.Expression]] = rule {
+  def Argument: Rule1[ParsedAst.Argument] = rule {
+    optional(Names.Field ~ optWS ~ "=" ~ optWS) ~ Expression ~ SP ~> ParsedAst.Argument
+  }
+
+  def ArgumentList: Rule1[Seq[ParsedAst.Argument]] = rule {
     "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
   }
 
-  def OptArgumentList: Rule1[Option[Seq[ParsedAst.Expression]]] = rule {
+  def OptArgumentList: Rule1[Option[Seq[ParsedAst.Argument]]] = rule {
     optional(ArgumentList)
   }
 
