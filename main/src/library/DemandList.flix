@@ -17,32 +17,6 @@
 
 namespace DemandList {
 
-
-/* turn into test cases
-
-    pub def ex1(): Int32 =
-        let l1 = range(1, 10);              // l1 must be eager
-        let l2 = filter(x -> x > 5, l1);    // l2 must be eager
-        sum(l2)
-
-    pub def ex2(): Int32 & Impure =
-        let l1 = range(1, 10);                          // l1 must be eager
-        let l2 = filter(x -> x > 5 as & Impure, l1);    // l2 must be eager
-        sum(l2)
-
-    pub def ex3(): Option[Int32] =
-        let l1 = range(1, 10);                          // l1 must be lazy (i.e. a free variable and not true).
-        let l2 = filter(x -> x > 5, l1);                // l2 must be lazy (i.e. a free variable and not true).
-        head(l2)
-
-    pub def ex4(): Option[Int32] & Impure =
-        let l1 = range(1, 10);                            // l1 must be eager
-        let l2 = filter(x -> x > 5 as & Impure, l1);      // l2 must be eager
-        head(l2)
-
-
-*/
-
     ///
     /// Represents a lazy list.
     ///
@@ -56,6 +30,11 @@ namespace DemandList {
     }
 
     type alias Forced = true
+
+    ///
+    /// Returns an empty `DemandList`.
+    ///
+    pub def empty(): DemandList[a, d] = ENil
 
     ///
     /// Returns `Some(x)` if `x` is the first element of `l`.
@@ -166,18 +145,99 @@ namespace DemandList {
     ///
     /// Reverses the list `l`.
     ///
-    // TODO: Use optimized implementation from LazyList.
-    pub def reverse(l: DemandList[a, Forced]): DemandList[a, _] =
-        reverseAcc(l, ENil)
+    pub def reverse(l: DemandList[a, Forced]): DemandList[a, Forced] =
+        LList(lazy reverseAcc(l, ENil))
 
     ///
     /// Helper function for `reverse`.
     ///
-    def reverseAcc(l: DemandList[a, Forced], acc: DemandList[a, f]): DemandList[a, f] = match l {
+    def reverseAcc(l: DemandList[a, Forced], acc: DemandList[a, Forced]): DemandList[a, Forced] = match l {
         case ENil         => acc
-        case ECons(x, xs) => LList(lazy reverseAcc(      xs, ECons(x, acc)))
-        case LCons(x, xs) => LList(lazy reverseAcc(force xs, ECons(x, acc)))
-        case LList(xs)    => LList(lazy reverseAcc(force xs,          acc))
+        case ECons(x, xs) => reverseAcc(      xs, ECons(x, acc))
+        case LCons(x, xs) => reverseAcc(force xs, ECons(x, acc))
+        case LList(xs)    => reverseAcc(force xs,          acc)
+    }
+
+    ///
+    /// Returns true if and only if `l` is the empty LazyList, i.e. `ENil`.
+    ///
+    /// Does not force the tail of `l`.
+    ///
+    pub def isEmpty(l: DemandList[a, d]): Bool = match l {
+        case ENil      => true
+        case LList(xs) => isEmpty(force xs)
+        case _         => false
+    }
+
+    ///
+    /// Returns the result of applying `f` to every element in `l`.
+    ///
+    pub def map(f: a -> b & ef, l: DemandList[a, not ef or d]): DemandList[b, not ef or d] & ef =
+        if (reify ef)
+            mapL(f as a -> b & Pure,   l as DemandList[a, false]) as DemandList[b, not ef or d] & ef
+        else
+            mapE(f as a -> b & Impure, l as DemandList[a, true])  as DemandList[b, not ef or d] & ef
+
+    ///
+    /// Returns the result of applying `f` to every element in `l`.
+    ///
+    /// Applies `f` lazily (i.e. the tail is not forced).
+    ///
+    def mapL(f: a -> b, l: DemandList[a, false]): DemandList[b, false] = match l {
+        case ENil         => ENil
+        case ECons(x, xs) => LList(lazy LCons(f(x), lazy mapL1(f,       xs)))
+        case LCons(x, xs) => LList(lazy LCons(f(x), lazy mapL1(f, force xs)))
+        case LList(xs)    => LList(                 lazy mapL1(f, force xs))
+    }
+
+    ///
+    /// Helper function for `mapL`.
+    ///
+    def mapL1(f: a -> b, l: DemandList[a, false]): DemandList[b, false] = match l {
+        case ENil         => ENil
+        case ECons(x, xs) => LCons(f(x), lazy mapL1(f,       xs))
+        case LCons(x, xs) => LCons(f(x), lazy mapL1(f, force xs))
+        case LList(xs)    => LList(      lazy mapL1(f, force xs))
+    }
+
+    ///
+    /// Returns the result of applying `f` to every element in `l`.
+    ///
+    /// Applies `f` eagerly (i.e. the entire list `l` is forced).
+    ///
+    def mapE(f: a -> b & Impure, l: DemandList[a, Forced]): DemandList[b, Forced] & Impure =
+        mapEAcc(f, l, ks -> ks)
+
+    ///
+    /// Helper function for `mapE`.
+    ///
+    def mapEAcc(f: a -> b & Impure, l: DemandList[a, Forced], k: DemandList[b, Forced] -> DemandList[b, Forced]): DemandList[b, Forced] & Impure = match l {
+        case ENil         => k(ENil)
+        case ECons(x, xs) =>
+            let x1 = f(x);
+            mapEAcc(f, xs, ks -> k(ECons(x1, ks)))
+        case LCons(x, xs) =>
+            let x1 = f(x);
+            mapEAcc(f, force xs, ks -> k(ECons(x1, ks)))
+        case LList(xs)    => mapEAcc(f, force xs, k)
+    }
+
+    ///
+    /// Returns `l` as a `List`.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    pub def toList(l: DemandList[a, d]): List[a] =
+        toListAcc(l, ks -> ks)
+
+    ///
+    /// Helper function for `toList`.
+    ///
+    def toListAcc(l: DemandList[a, d], k: List[a] -> List[a]): List[a] = match l {
+        case ENil         => k(Nil)
+        case ECons(x, xs) => toListAcc(      xs, ks -> k(x :: ks))
+        case LCons(x, xs) => toListAcc(force xs, ks -> k(x :: ks))
+        case LList(xs)    => toListAcc(force xs,       k)
     }
 
 }
