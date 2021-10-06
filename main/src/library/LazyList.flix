@@ -351,15 +351,15 @@ namespace LazyList {
     /// Forces the entire list `l`.
     ///
     pub def foldRight(f: (a, b) -> b & ef, s: b, l: LazyList[a]): b & ef =
-        foldRightAcc(f, s, l, s1 -> s1 as & ef)
+        foldRightAcc(f, s, l, ks -> ks as & ef)
 
     ///
     /// Helper function for `foldRight`.
     ///
     def foldRightAcc(f: (a, b) -> b & ef, s: b, l: LazyList[a], k: b -> b & ef): b & ef = match l {
         case ENil         => k(s)
-        case ECons(x, xs) => foldRightAcc(f, s,       xs, s1 -> k(f(x, s1)))
-        case LCons(x, xs) => foldRightAcc(f, s, force xs, s1 -> k(f(x, s1)))
+        case ECons(x, xs) => foldRightAcc(f, s,       xs, ks -> k(f(x, ks)))
+        case LCons(x, xs) => foldRightAcc(f, s, force xs, ks -> k(f(x, ks)))
         case LList(xs)    => foldRightAcc(f, s, force xs, k)
     }
 
