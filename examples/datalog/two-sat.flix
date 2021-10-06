@@ -19,7 +19,13 @@ def main(_args: Array[String]): Int & Impure =
         Clause("Neg", "x6", "Neg", "x2").
     };
 
-    let twoSatSolver = #{
+    let lp = #{
+
+        // Added for Flix
+        AnyIncon() :- Incon(_).
+
+        // Original Program
+
         Not("Pos", "Neg").
         Not("Neg", "Pos").
 
@@ -30,17 +36,15 @@ def main(_args: Array[String]): Int & Impure =
 
         Incon(u) :- Impl("Pos", u, "Neg", u), Impl("Neg", u, "Pos", u).
 
+        Satisfiable("Yes") :- not AnyIncon().
+        Satisfiable("No") :- AnyIncon().
+
         // Original Form
         //Satisfiable("Yes") :- not Incon(_).
         //Satisfiable("No") :- Incon(_).
 
-        // Fix for Flix
-        Satisfiable("Yes") :- not AnyIncon().
-        Satisfiable("No") :- AnyIncon().
-        AnyIncon() :- Incon(_).
-
     };
 
-    query twoSatSolver <+> clauses select x from Satisfiable(x) |> println;
+    query lp <+> clauses select x from Satisfiable(x) |> println;
 
     0

@@ -14,6 +14,13 @@ def main(_args: Array[String]): Int32 & Impure =
 
     let lp = #{
 
+        // Added for Flix
+        IndicesPlusOne(x, i+1) :- Indices(x, i).
+        EdgeSecond(x) :- Edge(_, x).
+        EdgeFirst(x) :- Edge(x, _).
+
+        // Original Program
+
         Vertex(v) :- Edge(v,_).
         Vertex(v) :- Edge(_,v).
 
@@ -45,11 +52,6 @@ def main(_args: Array[String]): Int32 & Impure =
             not IsBefore(x, y),
             IsAfter(x, y),
             Indices(y, i).
-
-        // Added for Flix
-        IndicesPlusOne(x, i+1) :- Indices(x, i).
-        EdgeSecond(x) :- Edge(_, x).
-        EdgeFirst(x) :- Edge(x, _).
 
         Index(x, i) :-
             Indices(x, i),

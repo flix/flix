@@ -17,18 +17,21 @@ def main(_args: Array[String]): Int32 & Impure =
     let ddefault = #{Default(0).};
 
     let lp = #{
+
+        // Added for Flix
+        ValuesFirst(i) :- Values(i, _).
+        ElementFirst(i) :- Element(i, _).
+        ElementMinusOne(i-1, x) :- Element(i, x).
+        ElementPlusOne(i+1, x) :- Element(i, x).
+
+        // Original Program
+
         Indices(0).
         Indices(i+1) :- Indices(i), Parameters(l), if i >= 0 and i+1 < l.
 
         // The elements of the array, referenced by an index, and having a specified value. Note that if a value is not specified an element takes the default value.
         Element(i, d) :- Indices(i), not ValuesFirst(i), Default(d).
         Element(i, x) :- Indices(i), Values(i, x).
-
-        // added for Flix
-        ValuesFirst(i) :- Values(i, _).
-        ElementFirst(i) :- Element(i, _).
-        ElementMinusOne(i-1, x) :- Element(i, x).
-        ElementPlusOne(i+1, x) :- Element(i, x).
 
         // The value of the element to the left of the element specified by the index, or the default value if it is out of the array bounds.
         Left(i+1, d) :- not ElementFirst(i), ElementMinusOne(i, _), Default(d).
