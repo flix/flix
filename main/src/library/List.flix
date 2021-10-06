@@ -1397,4 +1397,14 @@ namespace List {
         case x :: xs => sumAcc(xs, x + acc)
     }
 
+    ///
+    /// Returns the elements of `l` as a `DemandList`.
+    ///
+    pub def toDemandList(l: List[a]): DemandList1.DemandList[a, d] =
+        use DemandList1.{DemandList};
+        match l {
+            case Nil     => DemandList.ENil
+            case x :: xs => DemandList.LList(lazy DemandList.LCons(x, lazy toDemandList(xs)))
+        }
+
 }
