@@ -1400,8 +1400,8 @@ namespace List {
     ///
     /// Returns the elements of `l` as a `DemandList`.
     ///
-    pub def toDemandList(l: List[a]): DemandList1.DemandList[a, d] =
-        use DemandList1.{DemandList};
+    pub def toDemandList(l: List[a]): DemandList.DemandList[a, d] =
+        use DemandList.{DemandList};
         match l {
             case Nil     => DemandList.ENil
             case x :: xs => DemandList.LList(lazy DemandList.LCons(x, lazy toDemandList(xs)))
