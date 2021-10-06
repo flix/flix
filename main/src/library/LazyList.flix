@@ -195,16 +195,16 @@ namespace LazyList {
     /// Reverses the list `l`.
     ///
     pub def reverse(l: LazyList[a]): LazyList[a] =
-        reverseAcc(l, ENil)
+        LList(lazy reverseAcc(l, ENil))
 
     ///
     /// Helper function for `reverse`.
     ///
     def reverseAcc(l: LazyList[a], acc: LazyList[a]): LazyList[a] = match l {
         case ENil         => acc
-        case ECons(x, xs) => LList(lazy reverseAcc(      xs, ECons(x, acc)))
-        case LCons(x, xs) => LList(lazy reverseAcc(force xs, ECons(x, acc)))
-        case LList(xs)    => LList(lazy reverseAcc(force xs,          acc))
+        case ECons(x, xs) => reverseAcc(      xs, ECons(x, acc))
+        case LCons(x, xs) => reverseAcc(force xs, ECons(x, acc))
+        case LList(xs)    => reverseAcc(force xs,          acc)
     }
 
     ///
