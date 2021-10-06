@@ -166,18 +166,17 @@ namespace DemandList {
     ///
     /// Reverses the list `l`.
     ///
-    // TODO: Use optimized implementation from LazyList.
-    pub def reverse(l: DemandList[a, Forced]): DemandList[a, _] =
-        reverseAcc(l, ENil)
+    pub def reverse(l: DemandList[a, Forced]): DemandList[a, Forced] =
+        LList(lazy reverseAcc(l, ENil))
 
     ///
     /// Helper function for `reverse`.
     ///
-    def reverseAcc(l: DemandList[a, Forced], acc: DemandList[a, f]): DemandList[a, f] = match l {
+    def reverseAcc(l: DemandList[a, Forced], acc: DemandList[a, Forced]): DemandList[a, Forced] = match l {
         case ENil         => acc
-        case ECons(x, xs) => LList(lazy reverseAcc(      xs, ECons(x, acc)))
-        case LCons(x, xs) => LList(lazy reverseAcc(force xs, ECons(x, acc)))
-        case LList(xs)    => LList(lazy reverseAcc(force xs,          acc))
+        case ECons(x, xs) => reverseAcc(      xs, ECons(x, acc))
+        case LCons(x, xs) => reverseAcc(force xs, ECons(x, acc))
+        case LList(xs)    => reverseAcc(force xs,          acc)
     }
 
     ///
