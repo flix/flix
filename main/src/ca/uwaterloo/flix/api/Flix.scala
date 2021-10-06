@@ -125,6 +125,7 @@ class Flix {
     "Int64.flix" -> LocalResource.get("/src/library/Int64.flix"),
     "Iterator.flix" -> LocalResource.get("/src/library/Iterator.flix"),
     "LazyList.flix" -> LocalResource.get("/src/library/LazyList.flix"),
+    "DemandList.flix" -> LocalResource.get("/src/library/DemandList.flix"),
     "List.flix" -> LocalResource.get("/src/library/List.flix"),
     "Map.flix" -> LocalResource.get("/src/library/Map.flix"),
     "Nel.flix" -> LocalResource.get("/src/library/Nel.flix"),
