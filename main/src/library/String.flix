@@ -1247,19 +1247,18 @@ namespace String {
         init(i -> f(charAt(i, a), charAt(i, b)), len)
 
     ///
-    /// Split the string `s` on matches of `sub`.
+    /// Split the string `s` on matches of `substr`.
     ///
-    @Time(length(s) + length(sub)) @Space(length(s) + length(sub))
-    pub def splitOn(s: String, sub: String): List[String] =
+    pub def splitOn(substr: {substr :: String}, s: String): List[String] =
         let maxlen = length(s);
-        let sublen = length(sub);
+        let sublen = length(substr.substr);
         let step = ix ->
             // Note - to stop we have to be greater than maxlen.
-            // We want to return a final empty string if `s` terminates with `sub`.
+            // We want to return a final empty string if `s` terminates with `substr`.
             if (ix > maxlen)
                 None
             else {
-                match indexOfLeftWithOffset(sub, ix, s) {
+                match indexOfLeftWithOffset(substr.substr, ix, s) {
                     case None => {
                         let s1 = sliceRight(s, ix);
                         Some(s1, maxlen + 1)
@@ -1271,7 +1270,6 @@ namespace String {
                 }
             };
         List.unfold(step, 0)
-
 
     ///
     /// This is `indexOfLeft` with a start offset.

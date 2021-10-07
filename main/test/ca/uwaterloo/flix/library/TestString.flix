@@ -3033,37 +3033,37 @@ def zipWith08(): Bool =
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def splitOn01(): Bool = String.splitOn("", "") == "" :: Nil
+def splitOn01(): Bool = String.splitOn({substr = ""}, "") == "" :: Nil
 
 @test
-def splitOn02(): Bool = String.splitOn("a::b", "") == "a::b" :: Nil
+def splitOn02(): Bool = String.splitOn({substr = ""}, "a::b") == "a::b" :: Nil
 
 @test
-def splitOn03(): Bool = String.splitOn("", "::") == "" :: Nil
+def splitOn03(): Bool = String.splitOn({substr = "::"}, "") == "" :: Nil
 
 @test
-def splitOn04(): Bool = String.splitOn("a", "::") == "a" :: Nil
+def splitOn04(): Bool = String.splitOn({substr = "::"}, "a") == "a" :: Nil
 
 @test
-def splitOn05(): Bool = String.splitOn("a:b", "::") == "a:b" :: Nil
+def splitOn05(): Bool = String.splitOn({substr = "::"}, "a:b") == "a:b" :: Nil
 
 @test
-def splitOn06(): Bool = String.splitOn("a::b", "::") == "a" :: "b" :: Nil
+def splitOn06(): Bool = String.splitOn({substr = "::"}, "a::b") == "a" :: "b" :: Nil
 
 @test
-def splitOn07(): Bool = String.splitOn("::a::b", "::") == "" :: "a" :: "b" :: Nil
+def splitOn07(): Bool = String.splitOn({substr = "::"}, "::a::b") == "" :: "a" :: "b" :: Nil
 
 @test
-def splitOn08(): Bool = String.splitOn("a::b::", "::") == "a" :: "b" :: "" :: Nil
+def splitOn08(): Bool = String.splitOn({substr = "::"}, "a::b::") == "a" :: "b" :: "" :: Nil
 
 @test
-def splitOn09(): Bool = String.splitOn("::a::b::", "::") == "" :: "a" :: "b" :: "" :: Nil
+def splitOn09(): Bool = String.splitOn({substr = "::"}, "::a::b::") == "" :: "a" :: "b" :: "" :: Nil
 
 @test
-def splitOn10(): Bool = String.splitOn("a:b::c", "::") == "a:b" :: "c" :: Nil
+def splitOn10(): Bool = String.splitOn({substr = "::"}, "a:b::c") == "a:b" :: "c" :: Nil
 
 @test
-def splitOn11(): Bool = String.splitOn("a::b:c", "::") == "a" :: "b:c" :: Nil
+def splitOn11(): Bool = String.splitOn({substr = "::"}, "a::b:c") == "a" :: "b:c" :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
 // indexOfLeftWithOffset                                                   //
