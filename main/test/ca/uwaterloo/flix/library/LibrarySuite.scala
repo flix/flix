@@ -28,8 +28,8 @@ class LibrarySuite extends Suites(
       "main/test/ca/uwaterloo/flix/library/TestBool.flix",
       "main/test/ca/uwaterloo/flix/library/TestBoxable.flix",
       "main/test/ca/uwaterloo/flix/library/TestChar.flix",
-      "main/test/ca/uwaterloo/flix/library/TestChoice.flix",
-      "main/test/ca/uwaterloo/flix/library/TestDemandList.flix",
+      //"main/test/ca/uwaterloo/flix/library/TestChoice.flix", TODO
+      // "main/test/ca/uwaterloo/flix/library/TestDemandList.flix", TODO
       "main/test/ca/uwaterloo/flix/library/TestChannel.flix",
       "main/test/ca/uwaterloo/flix/library/TestEnvironment.flix",
       "main/test/ca/uwaterloo/flix/library/TestInt8.flix",
