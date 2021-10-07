@@ -51,7 +51,6 @@ namespace String {
     ///
     /// Returns `true` if the string `s` starts with the string `prefix`.
     ///
-    @Time(length(p.prefix)) @Space(1)
     pub def startsWith(p: {prefix:: String}, s: String): Bool =
         import java.lang.String.startsWith(String);
         s.startsWith(p.prefix) as & Pure
