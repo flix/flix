@@ -1757,7 +1757,8 @@ namespace Array {
 
     // TODO: Add documentation.
     // TODO: Add tests
-    pub def copyOfRange(b: Int32, e: Int32, a: Array[a]): Array[a] & Impure =
+    // TODO: Rename to slice?
+    def _copyOfRange(b: Int32, e: Int32, a: Array[a]): Array[a] & Impure =
         match (reifyType a) {
             case ReifiedInt32 =>
                 let arr = a as Array[Int32];
@@ -1767,6 +1768,7 @@ namespace Array {
                 let arr = a as Array[Int64];
                 import java.util.Arrays:copyOfRange(Array[Int64], Int32, Int32) as copy;
                 copy(arr, b, e) as Array[a]
+            case _ => ??? // TODO
         }
 
 }

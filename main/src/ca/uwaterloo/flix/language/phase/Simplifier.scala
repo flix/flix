@@ -310,6 +310,8 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Reify(_, _, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
+      case TypedAst.Expression.ReifyType(_, _, _, _) =>
+        throw InternalCompilerException(s"Unexpected expression: $exp0.")
     }
 
     /**

@@ -7,9 +7,14 @@ type alias Ref[t] = ScopedRef[t, false]
 /// The ReifiedTypes
 ///
 pub enum ReifiedType {
-    // TODO
-    case ReifiedInt32
-    case ReifiedInt64
+    case ReifiedBool,
+    case ReifiedChar,
+    case ReifiedInt8,
+    case ReifiedInt16,
+    case ReifiedInt32,
+    case ReifiedInt64,
+    case ReifiedFloat32,
+    case ReifiedFloat64
 }
 
 ///
