@@ -56,12 +56,11 @@ namespace String {
         s.startsWith(p.prefix) as & Pure
 
     ///
-    /// Returns `true` if the string `s1` ends with the string `s2`.
+    /// Returns `true` if the string `s` ends with the string `suffix`.
     ///
-    @Time(length(s2)) @Space(1)
-    pub def endsWith(s1: String, s2: String): Bool =
+    pub def endsWith(suffix: {suffix:: String}, s: String): Bool =
         import java.lang.String.endsWith(String);
-        s1.endsWith(s2) as & Pure
+        s.endsWith(suffix.suffix) as & Pure
 
     ///
     /// Splits the string `s` around matches of the regular expression `r`.
@@ -1388,7 +1387,7 @@ namespace String {
     ///
     @Time(length(s) - length(sub)) @Space(length(s) - length(sub))
     pub def stripSuffix(sub: String, s: String): Option[String] =
-        if (not endsWith(s, sub))
+        if (not endsWith({suffix = sub}, s))
             None
         else
             Some(dropRight(length(sub), s))

@@ -2650,43 +2650,43 @@ def contains09(): Bool = String.contains({substr = "ab"}, "abc") == true
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def endsWith01(): Bool = String.endsWith("", "") == true
+def endsWith01(): Bool = String.endsWith({suffix = ""}, "") == true
 
 @test
-def endsWith02(): Bool = String.endsWith("a", "") == true
+def endsWith02(): Bool = String.endsWith({suffix = ""}, "a") == true
 
 @test
-def endsWith03(): Bool = String.endsWith("abc", "") == true
+def endsWith03(): Bool = String.endsWith({suffix = ""}, "abc") == true
 
 @test
-def endsWith04(): Bool = String.endsWith("", "a") == false
+def endsWith04(): Bool = String.endsWith({suffix = "a"}, "") == false
 
 @test
-def endsWith05(): Bool = String.endsWith("a", "a") == true
+def endsWith05(): Bool = String.endsWith({suffix = "a"}, "a") == true
 
 @test
-def endsWith06(): Bool = String.endsWith("b", "a") == false
+def endsWith06(): Bool = String.endsWith({suffix = "a"}, "b") == false
 
 @test
-def endsWith07(): Bool = String.endsWith("aa", "a") == true
+def endsWith07(): Bool = String.endsWith({suffix = "a"}, "aa") == true
 
 @test
-def endsWith08(): Bool = String.endsWith("ab", "ab") == true
+def endsWith08(): Bool = String.endsWith({suffix = "ab"}, "ab") == true
 
 @test
-def endsWith09(): Bool = String.endsWith("abc", "bc") == true
+def endsWith09(): Bool = String.endsWith({suffix = "bc"}, "abc") == true
 
 @test
-def endsWith10(): Bool = String.endsWith("abc", "ab") == false
+def endsWith10(): Bool = String.endsWith({suffix = "ab"}, "abc") == false
 
 @test
-def endsWith11(): Bool = String.endsWith("Hello World!", "") == true
+def endsWith11(): Bool = String.endsWith({suffix = ""}, "Hello World!") == true
 
 @test
-def endsWith12(): Bool = String.endsWith("Hello World!", "World!") == true
+def endsWith12(): Bool = String.endsWith({suffix = "World!"}, "Hello World!") == true
 
 @test
-def endsWith13(): Bool = String.endsWith("Hello World!", "WORLD!") == false
+def endsWith13(): Bool = String.endsWith({suffix = "WORLD!"}, "Hello World!") == false
 
 /////////////////////////////////////////////////////////////////////////////
 // commonPrefix                                                            //
