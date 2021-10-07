@@ -1492,19 +1492,15 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * `f(arg: x)` becomes `f({arg = x})`
     */
   private def visitArgument(arg: ParsedAst.Argument)(implicit flix: Flix): Validation[WeededAst.Expression, WeederError] = arg match {
-    case ParsedAst.Argument(nameOpt, exp0, sp2) =>
+    // Case 1: Named parameter. Turn it into a record.
+    case ParsedAst.Argument.Named(name, exp0, sp2) =>
       visitExp(exp0) map {
         exp =>
-          nameOpt match {
-            case Some(name) =>
-              // Case 1: Named parameter. Turn it into a record.
-              val loc = mkSL(name.sp1, sp2)
-              WeededAst.Expression.RecordExtend(Name.mkField(name), exp, WeededAst.Expression.RecordEmpty(loc), loc)
-            case None =>
-              // Case 2: Unnamed parameter. Just return it.
-              exp
-          }
+          val loc = mkSL(name.sp1, sp2)
+          WeededAst.Expression.RecordExtend(Name.mkField(name), exp, WeededAst.Expression.RecordEmpty(loc), loc)
       }
+    // Case 2: Unnamed parameter. Just return it.
+    case ParsedAst.Argument.Unnamed(exp) => visitExp(exp)
   }
 
   /**

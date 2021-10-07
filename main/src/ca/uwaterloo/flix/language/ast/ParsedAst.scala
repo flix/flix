@@ -1467,12 +1467,28 @@ object ParsedAst {
   }
 
   /**
-    * Argument to a function application.
-    *
-    * @param name the optional argument name.
-    * @param exp  the value of the argument.
+    * An argument to a function application.
     */
-  case class Argument(name: Option[Name.Ident], exp: ParsedAst.Expression, sp2: SourcePosition)
+  sealed trait Argument
+
+  object Argument {
+
+    /**
+      * A named argument.
+      *
+      * @param name the optional argument name.
+      * @param exp  the value of the argument.
+      * @param sp2  the position of the last character in the argument.
+      */
+    case class Named(name: Name.Ident, exp: ParsedAst.Expression, sp2: SourcePosition) extends Argument
+
+    /**
+      * An unnamed argument.
+      *
+      * @param exp  the value of the argument.
+      */
+    case class Unnamed(exp: ParsedAst.Expression) extends Argument
+  }
 
   /**
     * Attribute.
