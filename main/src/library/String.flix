@@ -63,12 +63,11 @@ namespace String {
         s.endsWith(suffix.suffix) as & Pure
 
     ///
-    /// Splits the string `s` around matches of the regular expression `r`.
+    /// Splits the string `s` around matches of the regular expression `regex`.
     ///
-    @Time(length(s) + length(r)) @Space(length(s))
-    pub def split(s: String, r: String): Array[String] & Impure =
+    pub def split(regex: {regex:: String}, s: String): List[String] & Impure =
         import java.lang.String.split(String);
-        s.split(r)
+        Array.toList(s.split(regex.regex))
 
     ///
     /// Returns the lower case version of the string `s`.
@@ -987,7 +986,7 @@ namespace String {
         if (isEmpty(s))
             Nil
         else
-            Array.toList(split(s, "\\R")) as & Pure
+            split({regex = "\\R"}, s) as & Pure
 
     ///
     /// Join the array of strings `a` separating each pair of strings and
@@ -1011,7 +1010,7 @@ namespace String {
     @Time(length(s)) @Space(length(s))
     pub def words(s: String): List[String] = match trim(s) {
         case s1 if isEmpty(s1) => Nil
-        case s1 => Array.toList(split(s1, "\\s+")) as & Pure
+        case s1 => split({regex = "\\s+"}, s1) as & Pure
     }
 
     ///

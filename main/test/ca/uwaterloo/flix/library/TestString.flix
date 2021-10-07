@@ -98,11 +98,11 @@ def length02(): Bool = String.length("0123456789") == 10
 
 @test
 def split01(): Bool & Impure =
-    Array.toList(String.split("", "\\s+")) == "" :: Nil
+   String.split({regex = "\\s+"}, "") == "" :: Nil
 
 @test
 def split02(): Bool & Impure =
-    Array.length(String.split("1 3", "\\s+")) == 2
+    List.length(String.split({regex = "\\s+"}, "1 3")) == 2
 
 /////////////////////////////////////////////////////////////////////////////
 // toLowerCase                                                             //
