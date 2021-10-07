@@ -505,7 +505,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
               Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
 
             case TypeConstructor.Str =>
-              val tag = Name.Tag("ReifiedString", loc)
+              val tag = Name.Tag("ErasedType", loc)
               Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
 
             case TypeConstructor.Array =>
