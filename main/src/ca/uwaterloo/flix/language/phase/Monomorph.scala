@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Kind, Name, Scheme, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, Scheme, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, Unification}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
@@ -456,48 +456,69 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           else
             Expression.False(loc)
 
-        case Expression.ReifyType(t, _, _, loc) =>
-          // Magic!
-          val sym = Symbol.mkEnumSym("ReifiedType")
-          val innerExp = Expression.Unit(loc)
-          val tpe = Type.mkEnum(sym, Kind.Star, loc)
-          val eff = Type.Pure
+        case Expression.ReifyType(t, _, _, loc) => reifyType(subst0(t), loc)
+      }
 
-          subst0(t) match {
-            case Type.Cst(TypeConstructor.Bool, _) =>
+      /**
+        * Returns an expression that evaluates to a ReifiedType for the given type `tpe`.
+        */
+      def reifyType(tpe: Type, loc: SourceLocation): Expression = {
+        val sym = Symbol.mkEnumSym("ReifiedType")
+        val resultTpe = Type.mkEnum(sym, Kind.Star, loc)
+        val resultEff = Type.Pure
+
+        def visit(t0: Type): Expression = t0.typeConstructor match {
+          case None =>
+            throw InternalCompilerException(s"Unexpected type: '$t0'.")
+
+          case Some(tc) => tc match {
+            case TypeConstructor.Bool =>
               val tag = Name.Tag("ReifiedBool", loc)
-              Expression.Tag(sym, tag, innerExp, tpe, eff, loc)
+              Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
 
-            case Type.Cst(TypeConstructor.Char, _) =>
+            case TypeConstructor.Char =>
               val tag = Name.Tag("ReifiedChar", loc)
-              Expression.Tag(sym, tag, innerExp, tpe, eff, loc)
+              Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
 
-            case Type.Cst(TypeConstructor.Float32, _) =>
+            case TypeConstructor.Float32 =>
               val tag = Name.Tag("ReifiedFloat32", loc)
-              Expression.Tag(sym, tag, innerExp, tpe, eff, loc)
+              Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
 
-            case Type.Cst(TypeConstructor.Float64, _) =>
+            case TypeConstructor.Float64 =>
               val tag = Name.Tag("ReifiedFloat64", loc)
-              Expression.Tag(sym, tag, innerExp, tpe, eff, loc)
+              Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
 
-            case Type.Cst(TypeConstructor.Int8, _) =>
+            case TypeConstructor.Int8 =>
               val tag = Name.Tag("ReifiedInt8", loc)
-              Expression.Tag(sym, tag, innerExp, tpe, eff, loc)
+              Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
 
-            case Type.Cst(TypeConstructor.Int16, _) =>
+            case TypeConstructor.Int16 =>
               val tag = Name.Tag("ReifiedInt16", loc)
-              Expression.Tag(sym, tag, innerExp, tpe, eff, loc)
+              Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
 
-            case Type.Cst(TypeConstructor.Int32, _) =>
+            case TypeConstructor.Int32 =>
               val tag = Name.Tag("ReifiedInt32", loc)
-              Expression.Tag(sym, tag, innerExp, tpe, eff, loc)
+              Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
 
-            case Type.Cst(TypeConstructor.Int64, _) =>
+            case TypeConstructor.Int64 =>
               val tag = Name.Tag("ReifiedInt64", loc)
-              Expression.Tag(sym, tag, innerExp, tpe, eff, loc)
+              Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+
+            case TypeConstructor.Str =>
+              val tag = Name.Tag("ReifiedString", loc)
+              Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+
+            case TypeConstructor.Array =>
+              val tag = Name.Tag("ReifiedArray", loc)
+              val innerTpe = t0.typeArguments.head
+              val innerExp = visit(innerTpe)
+              Expression.Tag(sym, tag, innerExp, resultTpe, resultEff, loc)
 
             case other => throw InternalCompilerException(s"Unexpected type: '$other'.")
           }
+        }
+
+        visit(tpe)
       }
 
       /**

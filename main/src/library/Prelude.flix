@@ -4,9 +4,9 @@
 type alias Ref[t] = ScopedRef[t, false]
 
 ///
-/// The ReifiedTypes
+/// The Reified Flix Types.
 ///
-pub enum ReifiedType {
+pub enum ReifiedType with Eq, Order, ToString {
     case ReifiedBool,
     case ReifiedChar,
     case ReifiedFloat32,
@@ -14,7 +14,9 @@ pub enum ReifiedType {
     case ReifiedInt8,
     case ReifiedInt16,
     case ReifiedInt32,
-    case ReifiedInt64
+    case ReifiedInt64,
+    case ReifiedString,
+    case ReifiedArray(ReifiedType)
 }
 
 ///
