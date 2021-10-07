@@ -1382,7 +1382,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   def ArgumentList: Rule1[Seq[ParsedAst.Argument]] = rule {
-    "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
+    "(" ~ optWS ~ zeroOrMore(Argument).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
   }
 
   def OptArgumentList: Rule1[Option[Seq[ParsedAst.Argument]]] = rule {

@@ -1851,7 +1851,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Predicate.Body.Filter(sp1, qname, terms, sp2) =>
       val loc = mkSL(sp1, sp2)
-      traverse(terms)(visitExp) map {
+      traverse(terms)(visitArgument) map {
         case ts =>
           // Check if the argument list is empty. If so, invoke the function with the Unit value.
           val as = if (ts.isEmpty) List(WeededAst.Expression.Unit(loc)) else ts
