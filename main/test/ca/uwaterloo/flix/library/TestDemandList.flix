@@ -723,4 +723,307 @@ namespace TestDemandList {
     def forall10(): Bool =
         (11 :: 9 :: 31 :: Nil) |> List.toDemandList |> DemandList.forall(i -> i > 3)
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // zip                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def zip01(): Bool =
+        DemandList.zip(List.toDemandList(Nil: List[Unit]), List.toDemandList(Nil: List[Unit])) |> DemandList.toList == Nil
+
+    @test
+    def zip02(): Bool =
+        DemandList.zip(List.toDemandList(1 :: Nil), List.toDemandList(Nil: List[Unit])) |> DemandList.toList == Nil
+
+    @test
+    def zip03(): Bool =
+        DemandList.zip(List.toDemandList(Nil: List[Unit]), List.toDemandList(2 :: Nil)) |> DemandList.toList == Nil
+
+    @test
+    def zip04(): Bool =
+        DemandList.zip(List.toDemandList(1 :: Nil), List.toDemandList(2 :: Nil)) |> DemandList.toList == (1, 2) :: Nil
+
+    @test
+    def zip05(): Bool =
+        DemandList.zip(List.toDemandList(1 :: 3 :: Nil), List.toDemandList(2 :: 4 :: Nil)) |> DemandList.toList == (1, 2) :: (3, 4) :: Nil
+
+    @test
+    def zip06(): Bool =
+        DemandList.zip(List.toDemandList(1 :: 3 :: 5 :: Nil), List.toDemandList(2 :: 4 :: 6 :: Nil)) |> DemandList.toList == (1, 2) :: (3, 4) :: (5, 6) :: Nil
+
+    @test
+    def zip07(): Bool =
+        DemandList.zip(List.toDemandList(1 :: 3 :: 5 :: 7 :: Nil), List.toDemandList(2 :: 4 :: 6 :: 8 :: Nil)) |> DemandList.toList == (1, 2) :: (3, 4) :: (5, 6) :: (7, 8) :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // takeWhile (pure)                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def takeWhilePure01(): Bool =
+        DemandList.takeWhile(i -> i > 3, List.toDemandList(Nil: List[Int32])) |> DemandList.toList == Nil
+
+    @test
+    def takeWhilePure02(): Bool =
+        DemandList.takeWhile(i -> i > 3, List.toDemandList(1 :: Nil)) |> DemandList.toList == Nil
+
+    @test
+    def takeWhilePure03(): Bool =
+        DemandList.takeWhile(i -> i > 3, List.toDemandList(4 :: Nil)) |> DemandList.toList == 4 :: Nil
+
+    @test
+    def takeWhilePure04(): Bool =
+        DemandList.takeWhile(i -> i > 3, List.toDemandList(1 :: 2 :: Nil)) |> DemandList.toList == Nil
+
+    @test
+    def takeWhilePure05(): Bool =
+        DemandList.takeWhile(i -> i > 3, List.toDemandList(1 :: 5 :: Nil)) |> DemandList.toList == Nil
+
+    @test
+    def takeWhilePure06(): Bool =
+        DemandList.takeWhile(i -> i > 3, List.toDemandList(5 :: 1 :: Nil)) |> DemandList.toList == 5 :: Nil
+
+    @test
+    def takeWhilePure07(): Bool =
+        DemandList.takeWhile(i -> i > 3, List.toDemandList(5 :: 8 :: Nil)) |> DemandList.toList == 5 :: 8 :: Nil
+
+    @test
+    def takeWhilePure08(): Bool =
+        DemandList.takeWhile(i -> i > 3, List.toDemandList(4 :: 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil)) |> DemandList.toList == 4 :: 6 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // takeWhile (impure)                                                      //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def takeWhileImpure01(): Bool & Impure =
+        DemandList.takeWhile(i -> i > 3 as & Impure, List.toDemandList(Nil: List[Int32])) |> DemandList.toList == Nil
+
+    @test
+    def takeWhileImpure02(): Bool & Impure =
+        DemandList.takeWhile(i -> i > 3 as & Impure, List.toDemandList(1 :: Nil)) |> DemandList.toList == Nil
+
+    @test
+    def takeWhileImpure03(): Bool & Impure =
+        DemandList.takeWhile(i -> i > 3 as & Impure, List.toDemandList(4 :: Nil)) |> DemandList.toList == 4 :: Nil
+
+    @test
+    def takeWhileImpure04(): Bool & Impure =
+        DemandList.takeWhile(i -> i > 3 as & Impure, List.toDemandList(1 :: 2 :: Nil)) |> DemandList.toList == Nil
+
+    @test
+    def takeWhileImpure05(): Bool & Impure =
+        DemandList.takeWhile(i -> i > 3 as & Impure, List.toDemandList(1 :: 5 :: Nil)) |> DemandList.toList == Nil
+
+    @test
+    def takeWhileImpure06(): Bool & Impure =
+        DemandList.takeWhile(i -> i > 3 as & Impure, List.toDemandList(5 :: 1 :: Nil)) |> DemandList.toList == 5 :: Nil
+
+    @test
+    def takeWhileImpure07(): Bool & Impure =
+        DemandList.takeWhile(i -> i > 3 as & Impure, List.toDemandList(5 :: 8 :: Nil)) |> DemandList.toList == 5 :: 8 :: Nil
+
+    @test
+    def takeWhileImpure08(): Bool & Impure =
+        DemandList.takeWhile(i -> i > 3 as & Impure, List.toDemandList(4 :: 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil)) |> DemandList.toList == 4 :: 6 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // takeWhile takeWhile                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def takeWhileTakeWhile01(): Bool =
+        List.toDemandList(4 :: 5 :: 1 :: Nil) |> DemandList.takeWhile(i -> i > 3) |> DemandList.takeWhile(i -> i < 5) |> DemandList.toList == 4 :: Nil
+
+    @test
+    def takeWhileTakeWhile02(): Bool & Impure =
+        List.toDemandList(4 :: 5 :: 1 :: Nil) |> DemandList.takeWhile(i -> i > 3 as & Impure) |> DemandList.takeWhile(i -> i < 5) |> DemandList.toList == 4 :: Nil
+
+    @test
+    def takeWhileTakeWhile03(): Bool & Impure =
+        List.toDemandList(4 :: 5 :: 1 :: Nil) |> DemandList.takeWhile(i -> i > 3) |> DemandList.takeWhile(i -> i < 5 as & Impure) |> DemandList.toList == 4 :: Nil
+
+    @test
+    def takeWhileTakeWhile04(): Bool & Impure =
+        List.toDemandList(4 :: 5 :: 1 :: Nil) |> DemandList.takeWhile(i -> i > 3 as & Impure) |> DemandList.takeWhile(i -> i < 5 as & Impure) |> DemandList.toList == 4 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // takeWhile takeWhile fusion                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def takeWhileTakeWhileFusion01(): Bool & Impure =
+        let l = ref Nil;
+        (1 :: 2 :: 3 :: Nil) |> List.toDemandList |>
+        DemandList.takeWhile(i -> { l := "a" :: deref l; i < 4 }) |>
+        DemandList.takeWhile(i -> { l := "b" :: deref l; i < 4 });
+        List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
+
+    @test
+    def takeWhileTakeWhileFusion02(): Bool & Impure =
+        let l = ref Nil;
+        (1 :: 2 :: 3 :: Nil) |> List.toDemandList |>
+        DemandList.takeWhile(i -> { l := "a" :: deref l; i < 4 } as & Pure) |>
+        DemandList.takeWhile(i -> { l := "b" :: deref l; i < 4 } as & Pure) |>
+        DemandList.toList as & Impure;
+        List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
+
+    @test
+    def takeWhileTakeWhileFusion03(): Bool & Impure =
+        let l = ref Nil;
+        (1 :: 2 :: 3 :: Nil) |> List.toDemandList |>
+        DemandList.takeWhile(i -> { l := "a" :: deref l; i < 3 } as & Pure) |>
+        DemandList.takeWhile(i -> { l := "b" :: deref l; i < 2 } as & Pure) |>
+        DemandList.toList as & Impure;
+        List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: Nil)
+
+    @test
+    def takeWhileTakeWhileFusion04(): Bool & Impure =
+        let l = ref Nil;
+        (1 :: 2 :: 3 :: Nil) |> List.toDemandList |>
+        DemandList.takeWhile(i -> { l := "a" :: deref l; i < 3 } as & Pure) |>
+        DemandList.takeWhile(i -> { l := "b" :: deref l; i < 3 } as & Pure) |>
+        DemandList.toList as & Impure;
+        List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: Nil)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // dropWhile (pure)                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def dropWhilePure01(): Bool =
+        DemandList.dropWhile(i -> i > 3, List.toDemandList(Nil)) |> DemandList.toList == Nil
+
+    @test
+    def dropWhilePure02(): Bool =
+        DemandList.dropWhile(i -> i > 3, List.toDemandList(1 :: Nil)) |> DemandList.toList == 1 :: Nil
+
+    @test
+    def dropWhilePure03(): Bool =
+        DemandList.dropWhile(i -> i > 3, List.toDemandList(4 :: Nil)) |> DemandList.toList == Nil
+
+    @test
+    def dropWhilePure04(): Bool =
+        DemandList.dropWhile(i -> i > 3, List.toDemandList(1 :: 2 :: Nil)) |> DemandList.toList == 1 :: 2 :: Nil
+
+    @test
+    def dropWhilePure05(): Bool =
+        DemandList.dropWhile(i -> i > 3, List.toDemandList(1 :: 5 :: Nil)) |> DemandList.toList == 1 :: 5 :: Nil
+
+    @test
+    def dropWhilePure06(): Bool =
+        DemandList.dropWhile(i -> i > 3, List.toDemandList(5 :: 1 :: Nil)) |> DemandList.toList == 1 :: Nil
+
+    @test
+    def dropWhilePure07(): Bool =
+        DemandList.dropWhile(i -> i > 3, List.toDemandList(5 :: 8 :: Nil)) |> DemandList.toList == Nil
+
+    @test
+    def dropWhilePure08(): Bool =
+        DemandList.dropWhile(i -> i > 3, List.toDemandList(4 :: 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil)) |> DemandList.toList == -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // dropWhile (impure)                                                      //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def dropWhileImpure01(): Bool & Impure =
+        DemandList.dropWhile(i -> i > 3 as & Impure, List.toDemandList(Nil)) |> DemandList.toList == Nil
+
+    @test
+    def dropWhileImpure02(): Bool & Impure =
+        DemandList.dropWhile(i -> i > 3 as & Impure, List.toDemandList(1 :: Nil)) |> DemandList.toList == 1 :: Nil
+
+    @test
+    def dropWhileImpure03(): Bool & Impure =
+        DemandList.dropWhile(i -> i > 3 as & Impure, List.toDemandList(4 :: Nil)) |> DemandList.toList == Nil
+
+    @test
+    def dropWhileImpure04(): Bool & Impure =
+        DemandList.dropWhile(i -> i > 3 as & Impure, List.toDemandList(1 :: 2 :: Nil)) |> DemandList.toList == 1 :: 2 :: Nil
+
+    @test
+    def dropWhileImpure05(): Bool & Impure =
+        DemandList.dropWhile(i -> i > 3 as & Impure, List.toDemandList(1 :: 5 :: Nil)) |> DemandList.toList == 1 :: 5 :: Nil
+
+    @test
+    def dropWhileImpure06(): Bool & Impure =
+        DemandList.dropWhile(i -> i > 3 as & Impure, List.toDemandList(5 :: 1 :: Nil)) |> DemandList.toList == 1 :: Nil
+
+    @test
+    def dropWhileImpure07(): Bool & Impure =
+        DemandList.dropWhile(i -> i > 3 as & Impure, List.toDemandList(5 :: 8 :: Nil)) |> DemandList.toList == Nil
+
+    @test
+    def dropWhileImpure08(): Bool & Impure =
+        DemandList.dropWhile(i -> i > 3 as & Impure, List.toDemandList(4 :: 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil)) |> DemandList.toList == -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // dropWhile dropWhile                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def dropWhileDropWhile01(): Bool =
+        List.toDemandList(4 :: 5 :: 1 :: Nil) |> DemandList.dropWhile(i -> i < 5) |> DemandList.dropWhile(i -> i > 1) |> DemandList.toList == 1 :: Nil
+
+    @test
+    def dropWhileDropWhile02(): Bool & Impure =
+        List.toDemandList(4 :: 5 :: 1 :: Nil) |> DemandList.dropWhile(i -> i < 5 as & Impure) |> DemandList.dropWhile(i -> i > 1) |> DemandList.toList == 1 :: Nil
+
+    @test
+    def dropWhileDropWhile03(): Bool & Impure =
+        List.toDemandList(4 :: 5 :: 1 :: Nil) |> DemandList.dropWhile(i -> i < 5) |> DemandList.dropWhile(i -> i > 1 as & Impure) |> DemandList.toList == 1 :: Nil
+
+    @test
+    def dropWhileDropWhile04(): Bool & Impure =
+         List.toDemandList(4 :: 5 :: 1 :: Nil) |> DemandList.dropWhile(i -> i < 5 as & Impure) |> DemandList.dropWhile(i -> i > 1 as & Impure) |> DemandList.toList == 1 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // dropWhile dropWhile fusion                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def dropWhileDropWhileFusion01(): Bool & Impure =
+        let l = ref Nil;
+        (1 :: 2 :: 3 :: Nil) |> List.toDemandList |>
+        DemandList.dropWhile(i -> { l := "a" :: deref l; i < 3 }) |>
+        DemandList.dropWhile(i -> { l := "b" :: deref l; i < 4 });
+        List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: Nil)
+
+    @test
+    def dropWhileDropWhileFusion02(): Bool & Impure =
+        let l = ref Nil;
+        (1 :: 2 :: 3 :: Nil) |> List.toDemandList |>
+        DemandList.dropWhile(i -> { l := "a" :: deref l; i < 3 } as & Pure) |>
+        DemandList.dropWhile(i -> { l := "b" :: deref l; i < 4 } as & Pure) |>
+        DemandList.toList as & Impure;
+        List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: Nil)
+
+    @test
+    def dropWhileDropWhileFusion03(): Bool & Impure =
+        let l = ref Nil;
+        (1 :: 2 :: 3 :: Nil) |> List.toDemandList |>
+        DemandList.dropWhile(i -> { l := "a" :: deref l; i < 1 } as & Pure) |>
+        DemandList.dropWhile(i -> { l := "b" :: deref l; i < 3 } as & Pure) |>
+        DemandList.toList as & Impure;
+        List.reverse(deref l) == ("a" :: "b" :: "b" :: "b" :: Nil)
+
+    @test
+    def dropWhileDropWhileFusion04(): Bool & Impure =
+        let l = ref Nil;
+        (1 :: 2 :: 3 :: Nil) |> List.toDemandList |>
+        DemandList.dropWhile(i -> { l := "a" :: deref l; i < 2 } as & Pure) |>
+        DemandList.dropWhile(i -> { l := "b" :: deref l; i < 3 } as & Pure) |>
+        DemandList.toList as & Impure;
+        List.reverse(deref l) == ("a" :: "a" :: "b" :: "b" :: Nil)
+
 }
