@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import org.objectweb.asm
 
 import scala.collection.mutable
 
@@ -297,38 +298,78 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
       case LiftedAst.Expression.InvokeConstructor(constructor, args, tpe, loc) =>
         val as = args.map(visit)
         val t = visitType(tpe)
-        FinalAst.Expression.InvokeConstructor(constructor, as, t, loc)
+
+        // Temporary work that will come directly from the previous ast later
+        val className = asm.Type.getInternalName(constructor.getDeclaringClass)
+        val constructorType = asm.Type.getConstructorDescriptor(constructor)
+
+        FinalAst.Expression.InvokeConstructor(className, constructorType, as, t, loc)
 
       case LiftedAst.Expression.InvokeMethod(method, exp, args, tpe, loc) =>
         val e = visit(exp)
         val as = args.map(visit)
         val t = visitType(tpe)
-        FinalAst.Expression.InvokeMethod(method, e, as, t, loc)
+
+        // Temporary work that will come directly from the previous ast later
+        val className = asm.Type.getInternalName(method.getDeclaringClass)
+        val interfaceMethod = method.getDeclaringClass.isInterface
+        val methodName = method.getName
+        val methodType = method.getParameterTypes
+        val methodDescriptor = asm.Type.getMethodDescriptor(method)
+
+        FinalAst.Expression.InvokeMethod(className, interfaceMethod, methodName, methodType, methodDescriptor, e, as, t, loc)
 
       case LiftedAst.Expression.InvokeStaticMethod(method, args, tpe, loc) =>
         val as = args.map(visit)
         val t = visitType(tpe)
-        FinalAst.Expression.InvokeStaticMethod(method, as, t, loc)
+
+        // Temporary work that will come directly from the previous ast later
+        val className = asm.Type.getInternalName(method.getDeclaringClass)
+        val methodName = method.getName
+        val methodType = method.getParameterTypes
+        val methodDescriptor = asm.Type.getMethodDescriptor(method)
+
+        FinalAst.Expression.InvokeStaticMethod(className, methodName, methodType, methodDescriptor, as, t, loc)
 
       case LiftedAst.Expression.GetField(field, exp, tpe, loc) =>
         val e = visit(exp)
         val t = visitType(tpe)
-        FinalAst.Expression.GetField(field, e, t, loc)
+
+        // Temporary work that will come directly from the previous ast later
+        val className = asm.Type.getInternalName(field.getDeclaringClass)
+        val fieldName = field.getName
+
+        FinalAst.Expression.GetField(className, fieldName, e, t, loc)
 
       case LiftedAst.Expression.PutField(field, exp1, exp2, tpe, loc) =>
         val e1 = visit(exp1)
         val e2 = visit(exp2)
         val t = visitType(tpe)
-        FinalAst.Expression.PutField(field, e1, e2, t, loc)
+
+        // Temporary work that will come directly from the previous ast later
+        val className = asm.Type.getInternalName(field.getDeclaringClass)
+        val fieldName = field.getName
+
+        FinalAst.Expression.PutField(className, fieldName, e1, e2, t, loc)
 
       case LiftedAst.Expression.GetStaticField(field, tpe, loc) =>
         val t = visitType(tpe)
-        FinalAst.Expression.GetStaticField(field, t, loc)
+
+        // Temporary work that will come directly from the previous ast later
+        val className = asm.Type.getInternalName(field.getDeclaringClass)
+        val fieldName = field.getName
+
+        FinalAst.Expression.GetStaticField(className, fieldName, t, loc)
 
       case LiftedAst.Expression.PutStaticField(field, exp, tpe, loc) =>
         val e = visit(exp)
         val t = visitType(tpe)
-        FinalAst.Expression.PutStaticField(field, e, t, loc)
+
+        // Temporary work that will come directly from the previous ast later
+        val className = asm.Type.getInternalName(field.getDeclaringClass)
+        val fieldName = field.getName
+
+        FinalAst.Expression.PutStaticField(className, fieldName, e, t, loc)
 
       case LiftedAst.Expression.NewChannel(exp, tpe, loc) =>
         val e = visit(exp)

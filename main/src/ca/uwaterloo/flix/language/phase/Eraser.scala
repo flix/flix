@@ -205,26 +205,26 @@ object Eraser extends Phase[FinalAst.Root, FinalAst.Root] {
       }
       ErasedAst.Expression.TryCatch(visitExp(exp), newRules, visitTpe(tpe), loc)
 
-    case FinalAst.Expression.InvokeConstructor(constructor, args, tpe, loc) =>
-      ErasedAst.Expression.InvokeConstructor(constructor, args.map(visitExp), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
+    case FinalAst.Expression.InvokeConstructor(className, constructorType, args, tpe, loc) =>
+      ErasedAst.Expression.InvokeConstructor(className, constructorType, args.map(visitExp), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
 
-    case FinalAst.Expression.InvokeMethod(method, exp, args, tpe, loc) =>
-      ErasedAst.Expression.InvokeMethod(method, visitExp(exp), args.map(visitExp), visitTpe(tpe), loc)
+    case FinalAst.Expression.InvokeMethod(className, methodName, methodType, methodDescriptor, exp, args, tpe, loc) =>
+      ErasedAst.Expression.InvokeMethod(className, methodName, methodType, methodDescriptor, visitExp(exp), args.map(visitExp), visitTpe(tpe), loc)
 
-    case FinalAst.Expression.InvokeStaticMethod(method, args, tpe, loc) =>
-      ErasedAst.Expression.InvokeStaticMethod(method, args.map(visitExp), visitTpe(tpe), loc)
+    case FinalAst.Expression.InvokeStaticMethod(className, methodName, methodType, methodDescriptor, args, tpe, loc) =>
+      ErasedAst.Expression.InvokeStaticMethod(className, methodName, methodType, methodDescriptor, args.map(visitExp), visitTpe(tpe), loc)
 
-    case FinalAst.Expression.GetField(field, exp, tpe, loc) =>
-      ErasedAst.Expression.GetField(field, visitExp(exp), visitTpe(tpe), loc)
+    case FinalAst.Expression.GetField(className, fieldName, exp, tpe, loc) =>
+      ErasedAst.Expression.GetField(className, fieldName, visitExp(exp), visitTpe(tpe), loc)
 
-    case FinalAst.Expression.PutField(field, exp1, exp2, tpe, loc) =>
-      ErasedAst.Expression.PutField(field, visitExp(exp1), visitExp(exp2), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
+    case FinalAst.Expression.PutField(className, fieldName, exp1, exp2, tpe, loc) =>
+      ErasedAst.Expression.PutField(className, fieldName, visitExp(exp1), visitExp(exp2), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
 
-    case FinalAst.Expression.GetStaticField(field, tpe, loc) =>
-      ErasedAst.Expression.GetStaticField(field, visitTpe(tpe), loc)
+    case FinalAst.Expression.GetStaticField(className, fieldName, tpe, loc) =>
+      ErasedAst.Expression.GetStaticField(className, fieldName, visitTpe(tpe), loc)
 
-    case FinalAst.Expression.PutStaticField(field, exp, tpe, loc) =>
-      ErasedAst.Expression.PutStaticField(field, visitExp(exp), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
+    case FinalAst.Expression.PutStaticField(className, fieldName, exp, tpe, loc) =>
+      ErasedAst.Expression.PutStaticField(className, fieldName, visitExp(exp), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
 
     case FinalAst.Expression.NewChannel(exp, tpe, loc) =>
       ErasedAst.Expression.NewChannel(visitExp(exp), visitTpe[PReference[PChan[T]]](tpe), loc).asInstanceOf[ErasedAst.Expression[T]]

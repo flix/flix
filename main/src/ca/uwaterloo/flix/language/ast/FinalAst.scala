@@ -16,9 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import java.lang.reflect.{Constructor, Field, Method}
-
-import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
+import ca.uwaterloo.flix.language.ast.Ast.Source
 
 object FinalAst {
 
@@ -28,7 +26,7 @@ object FinalAst {
                   sources: Map[Source, SourceLocation])
 
   case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: List[FinalAst.FormalParam], exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) {
-    var method: Method = _
+    var method: java.lang.reflect.Method = _
   }
 
   case class Enum(mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Name.Tag, FinalAst.Case], tpeDeprecated: MonoType, loc: SourceLocation)
@@ -160,19 +158,22 @@ object FinalAst {
 
     case class TryCatch(exp: FinalAst.Expression, rules: List[FinalAst.CatchRule], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
-    case class InvokeConstructor(constructor: Constructor[_], args: List[FinalAst.Expression], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
+    // constructorType will be monotype once information is maintained through the compiler (i dont want to parse jvm types)
+    case class InvokeConstructor(className: String, constructorType: String, args: List[FinalAst.Expression], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
-    case class InvokeMethod(method: Method, exp: FinalAst.Expression, args: List[FinalAst.Expression], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
+    // methodType/methodDescriptor will be monotype once information is maintained through the compiler
+    case class InvokeMethod(className: String, interfaceMethod: Boolean, methodName: String, methodType: Array[Class[_]], methodDescriptor: String, exp: FinalAst.Expression, args: List[FinalAst.Expression], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
-    case class InvokeStaticMethod(method: Method, args: List[FinalAst.Expression], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
+    // methodType/methodDescriptor will be monotype once information is maintained through the compiler
+    case class InvokeStaticMethod(className: String, methodName: String, methodType: Array[Class[_]], methodDescriptor: String, args: List[FinalAst.Expression], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
-    case class GetField(field: Field, exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
+    case class GetField(className: String, fieldName: String, exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
-    case class PutField(field: Field, exp1: FinalAst.Expression, exp2: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
+    case class PutField(className: String, fieldName: String, exp1: FinalAst.Expression, exp2: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
-    case class GetStaticField(field: Field, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
+    case class GetStaticField(className: String, fieldName: String, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
-    case class PutStaticField(field: Field, exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
+    case class PutStaticField(className: String, fieldName: String, exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
     case class NewChannel(exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 

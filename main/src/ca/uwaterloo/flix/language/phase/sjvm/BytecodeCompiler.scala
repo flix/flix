@@ -158,46 +158,7 @@ object BytecodeCompiler {
         PUTFIELD(className, "value", exp2.tpe) ~
         pushUnit
 
-    case Expression.Cast(exp, tpe, loc) => ???
-    case Expression.TryCatch(exp, rules, tpe, loc) => ???
-    case Expression.InvokeConstructor(constructor, args, tpe, loc) => ???
-    case Expression.InvokeMethod(method, exp, args, tpe, loc) => ???
-    case Expression.InvokeStaticMethod(method, args, tpe, loc) => ???
-    case Expression.GetField(field, exp, tpe, loc) => ???
-    case Expression.PutField(field, exp1, exp2, tpe, loc) => ???
-    case Expression.GetStaticField(field, tpe, loc) => ???
-    case Expression.PutStaticField(field, exp, tpe, loc) => ???
-    case Expression.NewChannel(exp, tpe, loc) =>
-      WithSource[R](loc) ~
-        pushNull
-
-    case Expression.GetChannel(exp, tpe, loc) => ???
-    case Expression.PutChannel(exp1, exp2, tpe, loc) => ???
-    case Expression.SelectChannel(rules, default, tpe, loc) => ???
-    case Expression.Spawn(exp, tpe, loc) => ???
-    case Expression.Lazy(exp, tpe, loc) => ???
-    case Expression.Force(exp, tpe, loc) => ???
-    case Expression.FixpointConstraintSet(cs, tpe, loc) => ???
-    case Expression.FixpointCompose(exp1, exp2, tpe, loc) => ???
-    case Expression.FixpointSolve(exp, stf, tpe, loc) => ???
-    case Expression.FixpointProject(pred, exp, tpe, loc) => ???
-    case Expression.FixpointFold(pred, init, f, constraints, tpe, loc) => ???
-    case Expression.HoleError(sym, tpe, loc) => ???
-    case Expression.MatchError(tpe, loc) => ???
-    case ErasedAst.BoxInt8(exp, loc) => ???
-    case ErasedAst.BoxInt16(exp, loc) => ???
-    case ErasedAst.BoxInt32(exp, loc) => ???
-    case ErasedAst.BoxInt64(exp, loc) => ???
-    case ErasedAst.BoxChar(exp, loc) => ???
-    case ErasedAst.BoxFloat32(exp, loc) => ???
-    case ErasedAst.BoxFloat64(exp, loc) => ???
-    case ErasedAst.UnboxInt8(exp, loc) => ???
-    case ErasedAst.UnboxInt16(exp, loc) => ???
-    case ErasedAst.UnboxInt32(exp, loc) => ???
-    case ErasedAst.UnboxInt64(exp, loc) => ???
-    case ErasedAst.UnboxChar(exp, loc) => ???
-    case ErasedAst.UnboxFloat32(exp, loc) => ???
-    case ErasedAst.UnboxFloat64(exp, loc) => ???
+    case _ => ???
   }
 
 }

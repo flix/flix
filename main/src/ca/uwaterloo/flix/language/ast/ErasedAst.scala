@@ -164,19 +164,19 @@ object ErasedAst {
 
     case class TryCatch[T <: PType](exp: ErasedAst.Expression[T], rules: List[ErasedAst.CatchRule[T]], tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
-    case class InvokeConstructor(constructor: Constructor[_], args: List[ErasedAst.Expression[PType]], tpe: EType[PReference[PAnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PAnyObject]]
+    case class InvokeConstructor(className: String, constructorType: String, args: List[ErasedAst.Expression[PType]], tpe: EType[PReference[PAnyObject]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PAnyObject]]
 
-    case class InvokeMethod[T <: PType](method: Method, exp: ErasedAst.Expression[PReference[PAnyObject]], args: List[ErasedAst.Expression[PType]], tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
+    case class InvokeMethod[T <: PType](className: String, methodName: String, methodType: Array[Class[_]], methodDescriptor: String, exp: ErasedAst.Expression[PReference[PAnyObject]], args: List[ErasedAst.Expression[PType]], tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
-    case class InvokeStaticMethod[T <: PType](method: Method, args: List[ErasedAst.Expression[PType]], tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
+    case class InvokeStaticMethod[T <: PType](className: String, methodName: String, methodType: Array[Class[_]], methodDescriptor: String, args: List[ErasedAst.Expression[PType]], tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
-    case class GetField[T <: PType](field: Field, exp: ErasedAst.Expression[PReference[PAnyObject]], tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
+    case class GetField[T <: PType](className: String, fieldName: String, exp: ErasedAst.Expression[PReference[PAnyObject]], tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
-    case class PutField(field: Field, exp1: ErasedAst.Expression[PReference[PAnyObject]], exp2: ErasedAst.Expression[PType], tpe: EType[PReference[PUnit]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PUnit]]
+    case class PutField[T <: PType](className: String, fieldName: String, exp1: ErasedAst.Expression[PReference[PAnyObject]], exp2: ErasedAst.Expression[PType], tpe: EType[PReference[PUnit]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PUnit]]
 
-    case class GetStaticField[T <: PType](field: Field, tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
+    case class GetStaticField[T <: PType](className: String, fieldName: String, tpe: EType[T], loc: SourceLocation) extends ErasedAst.Expression[T]
 
-    case class PutStaticField(field: Field, exp: ErasedAst.Expression[PType], tpe: EType[PReference[PUnit]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PUnit]]
+    case class PutStaticField[T <: PType](className: String, fieldName: String, exp: ErasedAst.Expression[PType], tpe: EType[PReference[PUnit]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PUnit]]
 
     case class NewChannel[T <: PType](exp: ErasedAst.Expression[PInt32], tpe: EType[PReference[PChan[T]]], loc: SourceLocation) extends ErasedAst.Expression[PReference[PChan[T]]]
 
