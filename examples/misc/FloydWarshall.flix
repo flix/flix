@@ -8,23 +8,14 @@ rel Edge(a: String, b: String, d: Int)
 lat ShortestDist(a: String, b: String, d: Dist)
 
 // Elements of the distance lattice
-enum Dist {
-  case Top,      // Reachable from a negative-cost cycle
+enum Dist with Eq, Order, ToString {
+  case Bot,      // Not reachable
   case Dst(Int), // Reachable with some minimum distance
-  case Bot       // Not reachable
+  case Top       // Reachable from a negative-cost cycle
 }
 
 instance LowerBound[Dist] {
     pub def minValue(): Dist = Dist.Bot
-}
-
-instance Eq[Dist] {
-    pub def eq(x: Dist, y: Dist): Bool = match (x, y) {
-        case (Top, Top) => true
-        case (Dst(a), Dst(b)) => a == b
-        case (Bot, Bot) => true
-        case _ => false
-    }
 }
 
 instance PartialOrder[Dist] {
@@ -51,38 +42,6 @@ instance MeetLattice[Dist] {
         case (z, Top) => z
         case (Dst(n1), Dst(n2)) => Dst(Int32.max(n1, n2))
         case _ => Bot
-    }
-}
-
-instance ToString[Dist] {
-    pub def toString(x: Dist): String = match x {
-        case Top    => "Top"
-        case Dst(n) => "Dst(${n})"
-        case Bot    => "Bot"
-    }
-}
-
-instance Boxable[Dist] {
-    pub def box(x: Dist): Boxed = {
-        let value = x as ##java.lang.Object;
-        let compare = (o1, o2) -> Order.compare(o1 as Dist, o2 as Dist);
-        let toString = o -> ToString.toString(o as Dist);
-        BoxedObject(value, compare, toString)
-    }
-    pub def unbox(x: Boxed): Dist = match x {
-        case BoxedObject(v, _, _) => v as Dist
-        case _                    => ?bug
-    }
-}
-
-instance Order[Dist] {
-    pub def compare(x: Dist, y: Dist): Comparison = match (x, y) {
-        case (Bot, Bot)         => EqualTo
-        case (Dst(n1), Dst(n2)) => n1 <=> n2
-        case (Top, Top)         => EqualTo
-        case (Bot, _)           => LessThan
-        case (Dst(_), _)        => LessThan
-        case _                  => GreaterThan
     }
 }
 

@@ -23,56 +23,54 @@ import org.scalatest.FunSuite
 
 class TestWeeder extends FunSuite with TestUtils {
 
-  val DefaultOptions: Options = Options.TestWithLibMin
-
   test("DuplicateAnnotation.01") {
     val input =
       """@test @test
         |def foo(x: Int): Int = 42
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.DuplicateAnnotation](result)
   }
 
   test("DuplicateFormal.01") {
     val input = "def f(x: Int, x: Int): Int = 42"
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.DuplicateFormalParam](result)
   }
 
   test("DuplicateFormal.02") {
     val input = "def f(x: Int, y: Int, x: Int): Int = 42"
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.DuplicateFormalParam](result)
   }
 
   test("DuplicateFormal.03") {
     val input = "def f(x: Bool, x: Int, x: Str): Int = 42"
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.DuplicateFormalParam](result)
   }
 
   test("DuplicateFormal.04") {
     val input = "def f(): (Int, Int) -> Int = (x, x) -> x"
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.DuplicateFormalParam](result)
   }
 
   test("DuplicateFormal.05") {
     val input = "def f(): (Int, Int, Int) -> Int = (x, y, x) -> x"
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.DuplicateFormalParam](result)
   }
 
   test("DuplicateFormal.06") {
     val input = "def f(): Bool = ∀(x: E, x: E). true"
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.DuplicateFormalParam](result)
   }
 
   test("DuplicateFormal.07") {
     val input = "def f(): Bool = ∃(x: E, x: E). true"
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.DuplicateFormalParam](result)
   }
 
@@ -83,7 +81,7 @@ class TestWeeder extends FunSuite with TestUtils {
         |  case Red
         |}
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.DuplicateTag](result)
   }
 
@@ -95,91 +93,91 @@ class TestWeeder extends FunSuite with TestUtils {
         |  case Red
         |}
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.DuplicateTag](result)
   }
 
   test("IllegalFieldName.01") {
-    val input = "def f(): { length: Int } = { length = 123 }"
-    val result = compile(input, DefaultOptions)
+    val input = "def f(): { length :: Int } = { length = 123 }"
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalFieldName](result)
   }
 
   test("IllegalFieldName.02") {
-    val input = "def f(): { length: Int } = { +length = 123 | {} }"
-    val result = compile(input, DefaultOptions)
+    val input = "def f(): { length :: Int } = { +length = 123 | {} }"
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalFieldName](result)
   }
 
   test("IllegalFieldName.03") {
-    val input = "def f(): { length: Int } = { -length | {} }"
-    val result = compile(input, DefaultOptions)
+    val input = "def f(): { length :: Int } = { -length | {} }"
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalFieldName](result)
   }
 
   test("IllegalFieldName.04") {
-    val input = "def f(): { length: Int } = { length = 123 | {} }"
-    val result = compile(input, DefaultOptions)
+    val input = "def f(): { length :: Int } = { length = 123 | {} }"
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalFieldName](result)
   }
 
   test("IllegalExistential.01") {
     val input = "def f(): Bool = ∃(). true"
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalExistential](result)
   }
 
   test("IllegalInt8.01") {
     val input = "def f(): Int8 = -1000i8"
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalInt](result)
   }
 
   test("IllegalInt8.02") {
     val input = "def f(): Int8 = 1000i8"
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalInt](result)
   }
 
   test("IllegalInt16.01") {
     val input = "def f(): Int16 = -100000i16"
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalInt](result)
   }
 
   test("IllegalInt16.02") {
     val input = "def f(): Int16 = 100000i16"
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalInt](result)
   }
 
   test("IllegalInt32.01") {
     val input = "def f(): Int32 = -10000000000i32"
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalInt](result)
   }
 
   test("IllegalInt32.02") {
     val input = "def f(): Int32 = 10000000000i32"
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalInt](result)
   }
 
   test("IllegalInt64.01") {
     val input = "def f(): Int64 = -100000000000000000000i64"
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalInt](result)
   }
 
   test("IllegalInt64.02") {
     val input = "def f(): Int64 = 100000000000000000000i64"
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalInt](result)
   }
 
   test("IllegalUniversal.01") {
     val input = "def f(): Prop = ∀(). true"
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalUniversal](result)
   }
 
@@ -191,7 +189,7 @@ class TestWeeder extends FunSuite with TestUtils {
          |    case _    => 456
          |}
          |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalNullPattern](result)
   }
 
@@ -202,7 +200,7 @@ class TestWeeder extends FunSuite with TestUtils {
          |    import foo() as bar;
          |    ()
          |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalJvmFieldOrMethodName](result)
   }
 
@@ -213,7 +211,7 @@ class TestWeeder extends FunSuite with TestUtils {
         |        case (Present(x), Present(y)) => x == y
         |    }
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.MismatchedArity](result)
   }
 
@@ -224,7 +222,7 @@ class TestWeeder extends FunSuite with TestUtils {
         |        case Present(x) => x == x
         |    }
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.MismatchedArity](result)
   }
 
@@ -234,7 +232,7 @@ class TestWeeder extends FunSuite with TestUtils {
         |  case (x, x) => true
         |}
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.NonLinearPattern](result)
   }
 
@@ -244,7 +242,7 @@ class TestWeeder extends FunSuite with TestUtils {
         |  case (x, x, x) => true
         |}
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.NonLinearPattern](result)
   }
 
@@ -254,7 +252,7 @@ class TestWeeder extends FunSuite with TestUtils {
         |  case (x, (y, (z, x))) => true
         |}
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.NonLinearPattern](result)
   }
 
@@ -263,7 +261,7 @@ class TestWeeder extends FunSuite with TestUtils {
       """@abc
         |def foo(x: Int): Int = 42
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.UndefinedAnnotation](result)
   }
 
@@ -272,7 +270,7 @@ class TestWeeder extends FunSuite with TestUtils {
       """@foobarbaz
         |def foo(x: Int): Int = 42
       """.stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.UndefinedAnnotation](result)
   }
 
@@ -283,7 +281,7 @@ class TestWeeder extends FunSuite with TestUtils {
         |    def f(): a
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalPrivateDeclaration](result)
   }
 
@@ -294,7 +292,7 @@ class TestWeeder extends FunSuite with TestUtils {
         |    def f(): Int = 1
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalPrivateDeclaration](result)
   }
 
@@ -303,7 +301,7 @@ class TestWeeder extends FunSuite with TestUtils {
       """
         |class C[a] with D[Int]
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalTypeConstraintParameter](result)
   }
 
@@ -312,7 +310,7 @@ class TestWeeder extends FunSuite with TestUtils {
       """
         |instance C[a] with D[Some[a]]
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalTypeConstraintParameter](result)
   }
 
@@ -323,7 +321,7 @@ class TestWeeder extends FunSuite with TestUtils {
         |    case E1
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.InconsistentTypeParameters](result)
   }
 
@@ -332,7 +330,7 @@ class TestWeeder extends FunSuite with TestUtils {
       """
         |type alias T[a, b: Bool] = Int
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.InconsistentTypeParameters](result)
   }
 
@@ -341,7 +339,7 @@ class TestWeeder extends FunSuite with TestUtils {
       """
         |opaque type T[a, b: Bool] = Int
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.InconsistentTypeParameters](result)
   }
 
@@ -350,7 +348,7 @@ class TestWeeder extends FunSuite with TestUtils {
       """
         |def f[a](x: a): a = ???
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.UnkindedTypeParameters](result)
   }
 
@@ -361,7 +359,7 @@ class TestWeeder extends FunSuite with TestUtils {
         |    def f[b](x: b): a = ???
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.UnkindedTypeParameters](result)
   }
 
@@ -373,7 +371,7 @@ class TestWeeder extends FunSuite with TestUtils {
     """
       |def f(): String = "BSuINVALID"
       |""".stripMargin.replace("BS", "\\")
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.MalformedUnicodeEscapeSequence](result)
   }
 
@@ -382,7 +380,7 @@ class TestWeeder extends FunSuite with TestUtils {
       """
         |def f(): String = "BSu000"
         |""".stripMargin.replace("BS", "\\")
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.MalformedUnicodeEscapeSequence](result)
   }
 
@@ -391,7 +389,7 @@ class TestWeeder extends FunSuite with TestUtils {
       """
         |def f(): Char = 'BSuINVALID'
         |""".stripMargin.replace("BS", "\\")
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.MalformedUnicodeEscapeSequence](result)
   }
 
@@ -400,7 +398,7 @@ class TestWeeder extends FunSuite with TestUtils {
       """
         |def f(): Char = 'BSu000'
         |""".stripMargin.replace("BS", "\\")
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.MalformedUnicodeEscapeSequence](result)
   }
 
@@ -409,7 +407,7 @@ class TestWeeder extends FunSuite with TestUtils {
       """
         |def f(): String = '${25}BSuINVALID'
         |""".stripMargin.replace("BS", "\\")
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.MalformedUnicodeEscapeSequence](result)
   }
 
@@ -418,7 +416,7 @@ class TestWeeder extends FunSuite with TestUtils {
       """
         |def f(): String = '${25}BSu000'
         |""".stripMargin.replace("BS", "\\")
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.MalformedUnicodeEscapeSequence](result)
   }
 
@@ -430,7 +428,7 @@ class TestWeeder extends FunSuite with TestUtils {
          |  case _ => false
          |}
          |""".stripMargin.replace("BS", "\\")
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.MalformedUnicodeEscapeSequence](result)
   }
 
@@ -442,7 +440,7 @@ class TestWeeder extends FunSuite with TestUtils {
         |  case _ => false
         |}
         |""".stripMargin.replace("BS", "\\")
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.MalformedUnicodeEscapeSequence](result)
   }
 
@@ -454,7 +452,7 @@ class TestWeeder extends FunSuite with TestUtils {
         |  case _ => false
         |}
         |""".stripMargin.replace("BS", "\\")
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.MalformedUnicodeEscapeSequence](result)
   }
 
@@ -466,7 +464,7 @@ class TestWeeder extends FunSuite with TestUtils {
         |  case _ => false
         |}
         |""".stripMargin.replace("BS", "\\")
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.MalformedUnicodeEscapeSequence](result)
   }
 
@@ -475,7 +473,7 @@ class TestWeeder extends FunSuite with TestUtils {
       """
         |def f(): String = "\Q"
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.InvalidEscapeSequence](result)
   }
 
@@ -484,7 +482,7 @@ class TestWeeder extends FunSuite with TestUtils {
       """
         |def f(): Char = '\Q'
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.InvalidEscapeSequence](result)
   }
 
@@ -493,7 +491,7 @@ class TestWeeder extends FunSuite with TestUtils {
       """
         |def f(): String = '${25}\Q'
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.InvalidEscapeSequence](result)
   }
 
@@ -505,7 +503,7 @@ class TestWeeder extends FunSuite with TestUtils {
         |  case _ => false
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.InvalidEscapeSequence](result)
   }
 
@@ -517,7 +515,7 @@ class TestWeeder extends FunSuite with TestUtils {
         |  case _ => false
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.InvalidEscapeSequence](result)
   }
 
@@ -526,7 +524,7 @@ class TestWeeder extends FunSuite with TestUtils {
       """
         |def f(): Char = 'ab'
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.NonSingleCharacter](result)
   }
 
@@ -538,13 +536,13 @@ class TestWeeder extends FunSuite with TestUtils {
         |  case _ => false
         |}
         |""".stripMargin
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.NonSingleCharacter](result)
   }
 
   test("EmptyInterpolatedExpression.01") {
     val input = "def f(): String = \"${}\""
-    val result = compile(input, DefaultOptions)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.EmptyInterpolatedExpression](result)
   }
 }

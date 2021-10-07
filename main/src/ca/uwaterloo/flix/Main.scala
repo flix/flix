@@ -22,7 +22,6 @@ import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools._
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt._
-import flix.runtime.FlixError
 
 import java.io.{File, PrintWriter}
 import java.net.BindException
@@ -79,11 +78,12 @@ object Main {
     implicit val terminal: TerminalContext = TerminalContext.AnsiTerminal
 
     // construct flix options.
-    val options = Options.Default.copy(
+    var options = Options.Default.copy(
       lib = cmdOpts.xlib,
       debug = cmdOpts.xdebug,
       documentor = cmdOpts.documentor,
       json = cmdOpts.json,
+      progress = true,
       threads = cmdOpts.threads.getOrElse(Runtime.getRuntime.availableProcessors()),
       writeClassFiles = !cmdOpts.interactive,
       xlinter = cmdOpts.xlinter,
@@ -91,6 +91,11 @@ object Main {
       xnostratifier = cmdOpts.xnostratifier,
       xstatistics = cmdOpts.xstatistics
     )
+
+    // Don't use progress bar if benchmarking.
+    if (cmdOpts.benchmark || cmdOpts.xbenchmarkPhases || cmdOpts.xbenchmarkThroughput) {
+      options = options.copy(progress = false)
+    }
 
     // check if command was passed.
     try {
@@ -125,14 +130,22 @@ object Main {
           System.exit(0)
 
         case Command.Benchmark =>
-          Packager.benchmark(cwd, options)
+          val o = options.copy(progress = false)
+          Packager.benchmark(cwd, o)
           System.exit(0)
 
         case Command.Test =>
-          Packager.test(cwd, options) match {
+          val o = options.copy(progress = false)
+          Packager.test(cwd, o) match {
             case Tester.OverallTestResult.NoTests | Tester.OverallTestResult.Success => System.exit(0)
             case Tester.OverallTestResult.Failure => System.exit(1)
           }
+
+        case Command.Install(project) =>
+          val o = options.copy(progress = false)
+          Packager.install(project, cwd, o)
+          System.exit(0)
+
       }
     } catch {
       case ex: RuntimeException =>
@@ -168,45 +181,37 @@ object Main {
     }
 
     // evaluate main.
-    try {
-      val timer = new Timer(flix.compile())
-      timer.getResult match {
-        case Validation.Success(compilationResult) =>
+    val timer = new Timer(flix.compile())
+    timer.getResult match {
+      case Validation.Success(compilationResult) =>
 
-          compilationResult.getMain match {
-            case None => // nop
-            case Some(m) =>
-              // Compute the arguments to be passed to main.
-              val args: Array[String] = cmdOpts.args match {
-                case None => Array.empty
-                case Some(a) => a.split(" ")
-              }
-              // Invoke main with the supplied arguments.
-              val exitCode = m(args)
+        compilationResult.getMain match {
+          case None => // nop
+          case Some(m) =>
+            // Compute the arguments to be passed to main.
+            val args: Array[String] = cmdOpts.args match {
+              case None => Array.empty
+              case Some(a) => a.split(" ")
+            }
+            // Invoke main with the supplied arguments.
+            val exitCode = m(args)
 
-              // Exit with the returned exit code.
-              System.exit(exitCode)
-          }
+            // Exit with the returned exit code.
+            System.exit(exitCode)
+        }
 
-          if (cmdOpts.benchmark) {
-            Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))(options)
-          }
+        if (cmdOpts.benchmark) {
+          Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))(options)
+        }
 
-          if (cmdOpts.test) {
-            val results = Tester.test(compilationResult)
-            Console.println(results.output.fmt)
-          }
-        case Validation.Failure(errors) =>
-          errors.sortBy(_.source.name).foreach(e => println(e.message.fmt))
-          println()
-          println(s"Compilation failed with ${errors.length} error(s).")
-          System.exit(1)
-      }
-    } catch {
-      case ex: FlixError =>
-        Console.err.println(ex.getMessage)
-        Console.err.println()
-        ex.printStackTrace()
+        if (cmdOpts.test) {
+          val results = Tester.test(compilationResult)
+          Console.println(results.output.fmt)
+        }
+      case Validation.Failure(errors) =>
+        errors.sortBy(_.source.name).foreach(e => println(e.message.fmt))
+        println()
+        println(s"Compilation failed with ${errors.length} error(s).")
         System.exit(1)
     }
 
@@ -260,6 +265,8 @@ object Main {
 
     case object Test extends Command
 
+    case class Install(project: String) extends Command
+
   }
 
   /**
@@ -296,6 +303,12 @@ object Main {
       cmd("benchmark").action((_, c) => c.copy(command = Command.Benchmark)).text("  runs the benchmarks for the current project.")
 
       cmd("test").action((_, c) => c.copy(command = Command.Test)).text("  runs the tests for the current project.")
+
+      cmd("install").text("  installs the Flix package from the given GitHub <owner>/<repo>")
+        .children(
+          arg[String]("project").action((project, c) => c.copy(command = Command.Install(project)))
+            .required()
+        )
 
       note("")
 

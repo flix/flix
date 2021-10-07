@@ -26,8 +26,6 @@ import ca.uwaterloo.flix.language.phase.Phase
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalRuntimeException, Validation}
-import flix.runtime.ProxyObject
-
 
 object JvmBackend extends Phase[Root, CompilationResult] {
 
@@ -145,9 +143,34 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       val lazyClasses = GenLazyClasses.gen(types)
 
       //
-      // Generate Unit class.
+      // Generate the Unit class.
       //
       val unitClass = GenUnitClass.gen()
+
+      //
+      // Generate the FlixError class.
+      //
+      val flixErrorClass = GenFlixErrorClass.gen()
+
+      //
+      // Generate the ReifiedSourceLocation class.
+      //
+      val rslClass = GenReifiedSourceLocationClass.gen()
+
+      //
+      // Generate the HoleError class.
+      //
+      val holeErrorClass = GenHoleErrorClass.gen()
+
+      //
+      // Generate the MatchError class.
+      //
+      val matchErrorClass = GenMatchErrorClass.gen()
+
+      //
+      // Generate the GlobalCounter class.
+      //
+      val globalCounterClass = GenGlobalCounterClass.gen()
 
       //
       // Collect all the classes and interfaces together.
@@ -169,7 +192,12 @@ object JvmBackend extends Phase[Root, CompilationResult] {
         recordExtendClasses,
         refClasses,
         lazyClasses,
-        unitClass
+        unitClass,
+        flixErrorClass,
+        rslClass,
+        holeErrorClass,
+        matchErrorClass,
+        globalCounterClass
       ).reduce(_ ++ _)
     }
 
@@ -180,6 +208,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
     if (flix.options.writeClassFiles && !flix.options.test) {
       flix.subphase("WriteClasses") {
         for ((_, jvmClass) <- allClasses) {
+          flix.subtask(jvmClass.name.toBinaryName, sample = true)
           JvmOps.writeClass(flix.options.targetDirectory, jvmClass)
         }
       }
@@ -210,18 +239,18 @@ object JvmBackend extends Phase[Root, CompilationResult] {
     */
   private def getCompiledMain(root: Root)(implicit flix: Flix): Option[Array[String] => Int] =
     root.defs.get(Symbol.Main) map { defn =>
-        (actualArgs: Array[String]) => {
-          val args: Array[AnyRef] = Array(actualArgs)
-          val result = link(defn.sym, root).apply(args).getValue
-          result.asInstanceOf[Integer].intValue()
-        }
+      (actualArgs: Array[String]) => {
+        val args: Array[AnyRef] = Array(actualArgs)
+        val result = link(defn.sym, root).apply(args)
+        result.asInstanceOf[Integer].intValue()
+      }
     }
 
   /**
     * Returns a map from definition symbols to executable functions (backed by JVM backend).
     */
-  private def getCompiledDefs(root: Root)(implicit flix: Flix): Map[Symbol.DefnSym, () => ProxyObject] =
-    root.defs.foldLeft(Map.empty[Symbol.DefnSym, () => ProxyObject]) {
+  private def getCompiledDefs(root: Root)(implicit flix: Flix): Map[Symbol.DefnSym, () => AnyRef] =
+    root.defs.foldLeft(Map.empty[Symbol.DefnSym, () => AnyRef]) {
       case (macc, (sym, _)) =>
         val args: Array[AnyRef] = Array(null)
         macc + (sym -> (() => link(sym, root).apply(args)))
@@ -230,7 +259,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
   /**
     * Returns a function object for the given definition symbol `sym`.
     */
-  private def link(sym: Symbol.DefnSym, root: Root)(implicit flix: Flix): java.util.function.Function[Array[AnyRef], ProxyObject] =
+  private def link(sym: Symbol.DefnSym, root: Root)(implicit flix: Flix): java.util.function.Function[Array[AnyRef], AnyRef] =
     (args: Array[AnyRef]) => {
       ///
       /// Retrieve the definition and its type.
@@ -252,31 +281,12 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       try {
         // Call the method passing the arguments.
         val result = defn.method.invoke(null, argsArray: _*)
-
-        // Construct a fresh proxy object.
-        newProxyObj(result)
+        result
       } catch {
         case e: InvocationTargetException =>
           // Rethrow the underlying exception.
           throw e.getTargetException
       }
     }
-
-  /**
-    * Returns a proxy object that wraps the given result value.
-    */
-  private def newProxyObj(result: AnyRef)(implicit flix: Flix): ProxyObject = {
-    // Lookup the Equality method.
-    val eq = null
-
-    // Lookup the HashCode method.
-    val hash = null
-
-    // Lookup the ToString method.
-    val toString = null
-
-    // Create the proxy object.
-    ProxyObject.of(result, eq, hash, toString)
-  }
 
 }

@@ -9,7 +9,7 @@ namespace Domain/ParitySign {
     /// NB: This figure is slightly misleading, because ONeg !<= ENeg and OPos !<= EPos.
     ///
     // TODO: Consider how to re-implement this.
-    enum ParitySign {
+    enum ParitySign with Eq {
                               case Top,
             // TODO: Introduce Odd/Even and Pos/Neg?
                        case ENeg,    case EPos,
@@ -23,10 +23,6 @@ namespace Domain/ParitySign {
     /// Returns `true` iff `e1` is equal to `e2`.
     ///
     pub def equ(e1: ParitySign, e2: ParitySign): Bool = e1 == e2
-
-    instance Eq[ParitySign] {
-        pub def eq(e1: ParitySign, e2: ParitySign): Bool = equ(e1, e2)
-    }
 
     ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.

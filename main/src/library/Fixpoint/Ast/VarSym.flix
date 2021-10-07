@@ -14,16 +14,8 @@
  * limitations under the License.
  */
 namespace Fixpoint/Ast {
-    pub enum VarSym {
+    pub enum VarSym with Eq, Order {
         case VarSym(String)
-    }
-
-    instance Eq[VarSym] {
-        pub def eq(a: VarSym, b: VarSym): Bool = Fixpoint/Ast/VarSym.compare(a, b) == EqualTo
-    }
-
-    instance Order[VarSym] {
-        pub def compare(a: VarSym, b: VarSym): Comparison = Fixpoint/Ast/VarSym.compare(a, b)
     }
 
     instance ToString[VarSym] {

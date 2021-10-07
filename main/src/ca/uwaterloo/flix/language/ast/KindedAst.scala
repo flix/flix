@@ -189,7 +189,7 @@ object KindedAst {
 
     case class FixpointProjectOut(pred: Name.Pred, exp1: KindedAst.Expression, exp2: KindedAst.Expression, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
-    case class MatchEff(exp1: KindedAst.Expression, exp2: KindedAst.Expression, exp3: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
+    case class Reify(t: Type, loc: SourceLocation) extends KindedAst.Expression
 
   }
 

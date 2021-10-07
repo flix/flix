@@ -241,10 +241,10 @@ namespace Iterator {
     /// The original iterators `iterA` and `iterB` should not be reused.
     ///
     pub def zipWith(f: (a, b) -> c & ef, iterA: Iterator[a], iterB: Iterator[b]): Iterator[c] & Impure =
-        matchEff f {
-            case Pure   => zipWithL(f as (a, b) -> c & Pure,   iterA, iterB)
-            case Impure => zipWithE(f as (a, b) -> c & Impure, iterA, iterB)
-        }
+        if (reify ef)
+            zipWithL(f as (a, b) -> c & Pure,   iterA, iterB)
+        else
+            zipWithE(f as (a, b) -> c & Impure, iterA, iterB)
 
     ///
     /// Returns an iterator where the element at index `i` is `f(a, b)` where
@@ -396,10 +396,10 @@ namespace Iterator {
     /// The original iterator `iter` should not be reused.
     ///
     pub def map(f: a -> b & ef, iter: Iterator[a]): Iterator[b] & Impure =
-        matchEff f {
-            case Pure   => mapL(f as a -> b, iter)
-            case Impure => mapE(f as a -> b & Impure, iter)
-        }
+        if (reify ef)
+            mapL(f as a -> b, iter)
+        else
+            mapE(f as a -> b & Impure, iter)
 
     ///
 	/// Returns an iterator with the pure function `f` applied *lazily* to every
@@ -437,10 +437,10 @@ namespace Iterator {
     /// The original iterator `iter` should not be reused.
     ///
     pub def filter(f: a -> Bool & ef, iter: Iterator[a]): Iterator[a] & Impure =
-        matchEff f {
-            case Pure   => filterL(f as a -> Bool, iter)
-            case Impure => filterE(f as a -> Bool & Impure, iter)
-        }
+        if (reify ef)
+            filterL(f as a -> Bool, iter)
+        else
+            filterE(f as a -> Bool & Impure, iter)
 
     ///
     /// Returns an iterator with every element of the iterator `iter` that

@@ -410,6 +410,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def visitDef(decl0: WeededAst.Declaration.Def, uenv0: UseEnv, tenv0: Map[String, Type.UnkindedVar], ns0: Name.NName, addedTconstrs: List[NamedAst.TypeConstraint], addedQuantifiers: List[Type.UnkindedVar])(implicit flix: Flix): Validation[NamedAst.Def, NameError] = decl0 match {
     case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe0, retTpe0, eff0, tconstrs, loc) =>
+      flix.subtask(ident.name, sample = true)
+
       // TODO: we use tenv when getting the types from formal params first, before the explicit tparams have a chance to modify it
       // This means that if an explicit type variable is shadowing, the outer scope variable will be used for some parts, and inner for others
       // Resulting in a type error rather than a redundancy error (as redundancy checking happens later)
@@ -749,9 +751,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case WeededAst.CatchRule(ident, className, body) =>
           val sym = Symbol.freshVarSym(ident)
           val classVal = lookupClass(className, loc)
-          // TODO: Currently the bound name is not available due to bug in code gen.
-          // val bodyVal = namer(body, env0 + (ident.name -> sym), tenv0)
-          val bodyVal = visitExp(body, env0, uenv0, tenv0)
+          val bodyVal = visitExp(body, env0 + (ident.name -> sym), uenv0, tenv0)
           mapN(classVal, bodyVal) {
             case (c, b) => NamedAst.CatchRule(sym, c, b)
           }
@@ -884,9 +884,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (e1, e2) => NamedAst.Expression.FixpointProjectOut(pred, e1, e2, loc)
       }
 
-    case WeededAst.Expression.MatchEff(exp1, exp2, exp3, loc) =>
-      mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0), visitExp(exp3, env0, uenv0, tenv0)) {
-        case (e1, e2, e3) => NamedAst.Expression.MatchEff(e1, e2, e3, loc)
+    case WeededAst.Expression.Reify(t0, loc) =>
+      mapN(visitType(t0, uenv0, tenv0)) {
+        case t => NamedAst.Expression.Reify(t, loc)
       }
 
   }
@@ -1090,18 +1090,23 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case ts => NamedAst.Type.Tuple(ts, loc)
       }
 
-    case WeededAst.Type.RecordEmpty(loc) =>
-      NamedAst.Type.RecordEmpty(loc).toSuccess
+    case WeededAst.Type.RecordRowEmpty(loc) =>
+      NamedAst.Type.RecordRowEmpty(loc).toSuccess
 
-    case WeededAst.Type.RecordExtend(field, value, rest, loc) =>
+    case WeededAst.Type.RecordRowExtend(field, value, rest, loc) =>
       mapN(visitType(value, uenv0, tenv0), visitType(rest, uenv0, tenv0)) {
-        case (t, r) => NamedAst.Type.RecordExtend(field, t, r, loc)
+        case (t, r) => NamedAst.Type.RecordRowExtend(field, t, r, loc)
       }
 
-    case WeededAst.Type.SchemaEmpty(loc) =>
-      NamedAst.Type.SchemaEmpty(loc).toSuccess
+    case WeededAst.Type.Record(row, loc) =>
+      mapN(visitType(row, uenv0, tenv0)) {
+        r => NamedAst.Type.Record(r, loc)
+      }
 
-    case WeededAst.Type.SchemaExtendByAlias(qname, targs, rest, loc) =>
+    case WeededAst.Type.SchemaRowEmpty(loc) =>
+      NamedAst.Type.SchemaRowEmpty(loc).toSuccess
+
+    case WeededAst.Type.SchemaRowExtendByAlias(qname, targs, rest, loc) =>
       // Disambiguate the qname.
       val name = if (qname.isUnqualified) {
         uenv0.typesAndClasses.getOrElse(qname.ident.name, qname)
@@ -1110,12 +1115,17 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
       mapN(traverse(targs)(visitType(_, uenv0, tenv0)), visitType(rest, uenv0, tenv0)) {
-        case (ts, r) => NamedAst.Type.SchemaExtendWithAlias(name, ts, r, loc)
+        case (ts, r) => NamedAst.Type.SchemaRowExtendWithAlias(name, ts, r, loc)
       }
 
-    case WeededAst.Type.SchemaExtendByTypes(ident, den, tpes, rest, loc) =>
+    case WeededAst.Type.SchemaRowExtendByTypes(ident, den, tpes, rest, loc) =>
       mapN(traverse(tpes)(visitType(_, uenv0, tenv0)), visitType(rest, uenv0, tenv0)) {
-        case (ts, r) => NamedAst.Type.SchemaExtendWithTypes(ident, den, ts, r, loc)
+        case (ts, r) => NamedAst.Type.SchemaRowExtendWithTypes(ident, den, ts, r, loc)
+      }
+
+    case WeededAst.Type.Schema(row, loc) =>
+      mapN(visitType(row, uenv0, tenv0)) {
+        r => NamedAst.Type.Schema(r, loc)
       }
 
     case WeededAst.Type.Relation(tpes, loc) =>
@@ -1279,7 +1289,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.FixpointFilter(qname, exp, loc) => freeVars(exp)
     case WeededAst.Expression.FixpointProjectIn(exp, pred, loc) => freeVars(exp)
     case WeededAst.Expression.FixpointProjectOut(pred, exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
-    case WeededAst.Expression.MatchEff(exp1, exp2, exp3, loc) => freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
+    case WeededAst.Expression.Reify(t, loc) => Nil
   }
 
   /**
@@ -1334,11 +1344,13 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.Ambiguous(qname, loc) => Nil
     case WeededAst.Type.Unit(loc) => Nil
     case WeededAst.Type.Tuple(elms, loc) => elms.flatMap(freeVars)
-    case WeededAst.Type.RecordEmpty(loc) => Nil
-    case WeededAst.Type.RecordExtend(l, t, r, loc) => freeVars(t) ::: freeVars(r)
-    case WeededAst.Type.SchemaEmpty(loc) => Nil
-    case WeededAst.Type.SchemaExtendByTypes(_, _, ts, r, loc) => ts.flatMap(freeVars) ::: freeVars(r)
-    case WeededAst.Type.SchemaExtendByAlias(_, ts, r, _) => ts.flatMap(freeVars) ::: freeVars(r)
+    case WeededAst.Type.RecordRowEmpty(loc) => Nil
+    case WeededAst.Type.RecordRowExtend(l, t, r, loc) => freeVars(t) ::: freeVars(r)
+    case WeededAst.Type.Record(row, loc) => freeVars(row)
+    case WeededAst.Type.SchemaRowEmpty(loc) => Nil
+    case WeededAst.Type.SchemaRowExtendByTypes(_, _, ts, r, loc) => ts.flatMap(freeVars) ::: freeVars(r)
+    case WeededAst.Type.SchemaRowExtendByAlias(_, ts, r, _) => ts.flatMap(freeVars) ::: freeVars(r)
+    case WeededAst.Type.Schema(row, loc) => freeVars(row)
     case WeededAst.Type.Relation(ts, loc) => ts.flatMap(freeVars)
     case WeededAst.Type.Lattice(ts, loc) => ts.flatMap(freeVars)
     case WeededAst.Type.Native(fqm, loc) => Nil
@@ -1362,11 +1374,13 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       case WeededAst.Type.Ambiguous(qname, loc) => Nil
       case WeededAst.Type.Unit(loc) => Nil
       case WeededAst.Type.Tuple(elms, loc) => elms.flatMap(visit)
-      case WeededAst.Type.RecordEmpty(loc) => Nil
-      case WeededAst.Type.RecordExtend(l, t, r, loc) => visit(t) ::: visit(r)
-      case WeededAst.Type.SchemaEmpty(loc) => Nil
-      case WeededAst.Type.SchemaExtendByTypes(_, _, ts, r, loc) => ts.flatMap(visit) ::: visit(r)
-      case WeededAst.Type.SchemaExtendByAlias(_, ts, r, _) => ts.flatMap(visit) ::: visit(r)
+      case WeededAst.Type.RecordRowEmpty(loc) => Nil
+      case WeededAst.Type.RecordRowExtend(l, t, r, loc) => visit(t) ::: visit(r)
+      case WeededAst.Type.Record(row, loc) => visit(row)
+      case WeededAst.Type.SchemaRowEmpty(loc) => Nil
+      case WeededAst.Type.SchemaRowExtendByTypes(_, _, ts, r, loc) => ts.flatMap(visit) ::: visit(r)
+      case WeededAst.Type.SchemaRowExtendByAlias(_, ts, r, _) => ts.flatMap(visit) ::: visit(r)
+      case WeededAst.Type.Schema(row, loc) => visit(row)
       case WeededAst.Type.Relation(ts, loc) => ts.flatMap(visit)
       case WeededAst.Type.Lattice(ts, loc) => ts.flatMap(visit)
       case WeededAst.Type.Native(fqm, loc) => Nil
@@ -1585,7 +1599,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def getVarEnv(fparams0: List[NamedAst.FormalParam]): Map[String, Symbol.VarSym] = {
     fparams0.foldLeft(Map.empty[String, Symbol.VarSym]) {
       case (macc, NamedAst.FormalParam(sym, mod, tpe, loc)) =>
-        if (sym.isWild()) macc else macc + (sym.text -> sym)
+        if (sym.isWild) macc else macc + (sym.text -> sym)
     }
   }
 

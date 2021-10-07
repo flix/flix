@@ -1,7 +1,7 @@
-enum Value {
-    case Top,
+enum Value with Eq, Order, ToString {
+    case Bot,
     case Cst(Int),
-    case Bot
+    case Top
 }
 
 def sum(e1: Value, e2: Int): Value = match e1 {
@@ -18,15 +18,6 @@ def prod(e1: Value, e2: Int): Value = match (e1, e2) {
 
 instance LowerBound[Value] {
     pub def minValue(): Value = Value.Bot
-}
-
-instance Eq[Value] {
-    pub def eq(x: Value, y: Value): Bool = match (x, y) {
-        case (Top, Top) => true
-        case (Cst(a), Cst(b)) => a == b
-        case (Bot, Bot) => true
-        case _ => false
-    }
 }
 
 instance PartialOrder[Value] {
@@ -56,38 +47,7 @@ instance MeetLattice[Value] {
     }
 }
 
-instance ToString[Value] {
-    pub def toString(x: Value): String = match x {
-        case Top    => "Top"
-        case Cst(n) => "Cst(${n})"
-        case Bot    => "Bot"
-    }
-}
-
-instance Boxable[Value] {
-    pub def box(x: Value): Boxed = {
-        let value = x as ##java.lang.Object;
-        let compare = (o1, o2) -> Order.compare(o1 as Value, o2 as Value);
-        let toString = o -> ToString.toString(o as Value);
-        BoxedObject(value, compare, toString)
-    }
-    pub def unbox(x: Boxed): Value = match x {
-        case BoxedObject(v, _, _) => v as Value
-        case _                    => ?bug
-    }
-}
-
-instance Order[Value] {
-    pub def compare(x: Value, y: Value): Comparison = match (x, y) {
-        case (Bot, Bot)         => EqualTo
-        case (Cst(n1), Cst(n2)) => n1 <=> n2
-        case (Top, Top)         => EqualTo
-        case (Bot, _)           => LessThan
-        case _                  => GreaterThan
-    }
-}
-
-enum Transformer {
+enum Transformer with Eq, Order, ToString {
     case BotTrans,
     case NonBotTrans(Int,Int,Value)
 }
@@ -114,14 +74,6 @@ instance LowerBound[Transformer] {
     pub def minValue(): Transformer = Transformer.BotTrans
 }
 
-instance Eq[Transformer] {
-    pub def eq(x: Transformer, y: Transformer): Bool = match (x, y) {
-        case (BotTrans, BotTrans) => true
-        case (NonBotTrans(a1, b1, v1), NonBotTrans(a2, b2, v2)) => a1 == a2 and b1 == b2 and v1 == v2
-        case _ => false
-    }
-}
-
 instance PartialOrder[Transformer] {
     pub def lessEqual(e1: Transformer, e2: Transformer): Bool = e2 == JoinLattice.leastUpperBound(e1, e2)
 }
@@ -145,35 +97,6 @@ instance JoinLattice[Transformer] {
 
 instance MeetLattice[Transformer] {
     pub def greatestLowerBound(x: Transformer, y: Transformer): Transformer = ???
-}
-
-instance ToString[Transformer] {
-    pub def toString(x: Transformer): String = match x {
-        case BotTrans               => "BotTrans"
-        case NonBotTrans(n, m, v)   => "NonBotTrans(${n}, ${m}, ${v})"
-    }
-}
-
-instance Boxable[Transformer] {
-    pub def box(x: Transformer): Boxed = {
-        let value = x as ##java.lang.Object;
-        let compare = (o1, o2) -> Order.compare(o1 as Transformer, o2 as Transformer);
-        let toString = o -> ToString.toString(o as Transformer);
-        BoxedObject(value, compare, toString)
-    }
-    pub def unbox(x: Boxed): Transformer = match x {
-        case BoxedObject(v, _, _) => v as Transformer
-        case _                    => ?bug
-    }
-}
-
-instance Order[Transformer] {
-    pub def compare(x: Transformer, y: Transformer): Comparison = match (x, y) {
-        case (BotTrans, BotTrans)                   => EqualTo
-        case (NonBotTrans(t1), NonBotTrans(t2))     => t1 <=> t2
-        case (BotTrans, _)                          => LessThan
-        case _                                      => GreaterThan
-    }
 }
 
 // Inputs
@@ -222,7 +145,7 @@ def main(_: Array[String]): Int32 & Impure =
             SummaryFn(n,d2,d3;summary).
 
         JumpFn(d3,start,d3;id()) :-
-            JumpFn(d1,call,d2;nonbottom1),
+            JumpFn(_d1,call,d2;nonbottom1),
             CallGraph(call,target),
             EshCallStart(call,d2,target,d3;nonbottom2),
             StartNode(target,start),
@@ -232,7 +155,7 @@ def main(_: Array[String]): Int32 & Impure =
         // compute summary
         SummaryFn(call,d4,d5;compose(compose(cs,se),er)) :-
             CallGraph(call,target),
-            StartNode(target,start),
+            StartNode(target,_start),
             EndNode(target,end),
             EshCallStart(call,d4,target,d1;cs),
             JumpFn(d1,end,d2;se),

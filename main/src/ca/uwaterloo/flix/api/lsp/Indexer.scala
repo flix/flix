@@ -329,9 +329,8 @@ object Indexer {
     case Expression.FixpointProjectOut(_, exp, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
-    case Expression.MatchEff(exp1, exp2, exp3, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ Index.occurrenceOf(exp0)
-
+    case Expression.Reify(t, _, _, _) =>
+      visitType(t) ++ Index.occurrenceOf(exp0)
   }
 
   /**
@@ -418,8 +417,8 @@ object Indexer {
   private def visitType(tpe0: Type): Index = tpe0 match {
     case _: Type.KindedVar => Index.empty
     case Type.Cst(tc, loc) => tc match {
-      case TypeConstructor.RecordExtend(field) => Index.occurrenceOf(tc, loc) ++ Index.useOf(field)
-      case TypeConstructor.SchemaExtend(pred) => Index.occurrenceOf(tc, loc) ++ Index.useOf(pred)
+      case TypeConstructor.RecordRowExtend(field) => Index.occurrenceOf(tc, loc) ++ Index.useOf(field)
+      case TypeConstructor.SchemaRowExtend(pred) => Index.occurrenceOf(tc, loc) ++ Index.useOf(pred)
       case _ => Index.occurrenceOf(tc, loc)
     }
     case Type.Lambda(_, tpe, _) => visitType(tpe)

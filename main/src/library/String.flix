@@ -123,12 +123,12 @@ namespace String {
     /// Build a string of length `len` by applying `f` to the successive indices.
     ///
     @Time(time(f) * len) @Space(space(f) * len)
-    pub def init(f: Int32 -> Char & e, len: Int32): String & e = initHelper(f, len) as & e
+    pub def init(f: Int32 -> Char & ef, len: Int32): String & ef = initHelper(f, len) as & ef
 
     ///
     /// Helper function for `init`.
     ///
-    def initHelper(f: Int32 -> Char & e, len: Int32): String & Impure =
+    def initHelper(f: Int32 -> Char & ef, len: Int32): String & Impure =
         if (len <= 0)
             ""
         else {
@@ -140,11 +140,11 @@ namespace String {
     ///
     /// Helper function for `init`.
     ///
-    def initWorker(sb: StringBuilder, f: Int32 -> Char & e, len: Int32, i: Int32): Unit & Impure =
+    def initWorker(sb: StringBuilder, f: Int32 -> Char & ef, len: Int32, i: Int32): Unit & Impure =
         if (i >= len)
             ()
         else {
-            let c = f(i) as & e;
+            let c = f(i) as & ef;
             StringBuilder.appendChar!(sb, c);
             initWorker(sb, f, len, i+1)
         }
@@ -205,7 +205,7 @@ namespace String {
     /// Returns the result of applying `f` to every character in `s`.
     ///
     @Time(time(f) * length(s)) @Space(space(f) * length(s))
-    pub def map(f: Char -> Char & e, s: String): String & e =
+    pub def map(f: Char -> Char & ef, s: String): String & ef =
         let len = length(s);
         init(i -> f(charAt(i, s)), len)
 
@@ -213,7 +213,7 @@ namespace String {
     /// Returns the result of applying `f` to every character in `s` along with that character's index.
     ///
     @Time(time(f) * length(s)) @Space(space(f) * length(s))
-    pub def mapWithIndex(f: (Char, Int32) -> Char & e, s: String): String & e =
+    pub def mapWithIndex(f: (Char, Int32) -> Char & ef, s: String): String & ef =
         let len = length(s);
         init(i -> f(charAt(i, s), i), len)
 
@@ -225,7 +225,7 @@ namespace String {
     /// Functionally equivalent to zipWith.
     ///
     @Time(time(f) * Int32.min(length(s), length(t))) @Space(space(f) * Int32.min(length(s), length(t)))
-    pub def map2(f: (Char, Char) -> Char & e, s: String, t: String): String & e =
+    pub def map2(f: (Char, Char) -> Char & ef, s: String, t: String): String & ef =
         let len = Int32.min(length(s), length(t));
         init(i -> f(charAt(i, s), charAt(i, t)), len)
 
@@ -595,14 +595,14 @@ namespace String {
     ///
     /// Applies `f` to a start value `x` and all elements in `s` going from left to right.
     ///
-    pub def foldLeft(f: (b, Char) -> b & e, x: b, s: String): b & e =
+    pub def foldLeft(f: (b, Char) -> b & ef, x: b, s: String): b & ef =
         let len = length(s);
         foldLeftHelper(f, x, len, s, 0)
 
     ///
     /// Helper function for `foldLeft`.
     ///
-    def foldLeftHelper(f: (b, Char) -> b & e, x: b, len: Int32, s: String, i: Int32): b & e =
+    def foldLeftHelper(f: (b, Char) -> b & ef, x: b, len: Int32, s: String, i: Int32): b & ef =
         if (i >= len)
             x
         else {
@@ -613,14 +613,14 @@ namespace String {
     ///
     /// Applies `f` to a start value `x and all elements in `s` going from right to left.
     ///
-    pub def foldRight(f: (Char, b) -> b & e, x: b, s: String): b & e=
+    pub def foldRight(f: (Char, b) -> b & ef, x: b, s: String): b &  ef =
         let end = length(s) - 1;
         foldRightHelper(f, x, s, end)
 
     ///
     /// Helper function for `foldRight`.
     ///
-    def foldRightHelper(f: (Char, b) -> b & e, x: b, s: String, i: Int32): b & e =
+    def foldRightHelper(f: (Char, b) -> b & ef, x: b, s: String, i: Int32): b & ef =
         if (i < 0)
             x
         else {
@@ -632,14 +632,14 @@ namespace String {
     /// Accumulates the result of applying `f` pairwise to the elements of `s` and `t`
     /// starting with the initial value `x` and going from left to right.
     ///
-    pub def foldLeft2(f: (b, Char, Char) -> b & e, x: b, s: String, t: String): b & e =
+    pub def foldLeft2(f: (b, Char, Char) -> b & ef, x: b, s: String, t: String): b & ef =
         let len = Int32.min(length(s), length(t));
         foldLeft2Helper(f, x, len, s, t, 0)
 
     ///
     /// Helper function for `foldLeft2`.
     ///
-    def foldLeft2Helper(f: (b, Char, Char) -> b & e, x: b, len: Int32, s: String, t: String, i: Int32): b & e =
+    def foldLeft2Helper(f: (b, Char, Char) -> b & ef, x: b, len: Int32, s: String, t: String, i: Int32): b & ef =
         if (i >= len)
             x
         else {
@@ -651,7 +651,7 @@ namespace String {
     /// Accumulates the result of applying `f` pairwise to the elements of `s` and `t`
     /// starting with the initial value `x` and going from right to left.
     ///
-    pub def foldRight2(f: (Char, Char, b) -> b & e, x: b, s: String, t: String): b & e=
+    pub def foldRight2(f: (Char, Char, b) -> b & ef, x: b, s: String, t: String): b &  ef =
         let sn = length(s) - 1;
         let tn = length(t) - 1;
         foldRight2Helper(f, x, s, t, sn, tn)
@@ -659,7 +659,7 @@ namespace String {
     ///
     /// Helper function for `foldRight2`.
     ///
-    def foldRight2Helper(f: (Char, Char, b) -> b & e, x: b, s: String, t: String, i: Int32, j: Int32) : b & e=
+    def foldRight2Helper(f: (Char, Char, b) -> b & ef, x: b, s: String, t: String, i: Int32, j: Int32) : b & ef =
         if (i < 0 or j < 0 )
             x
         else {
@@ -670,14 +670,14 @@ namespace String {
     ///
     /// Build a string from the seed value `x` applying the function `f` until `f` returns `None`.
     ///
-    pub def unfold(f: b -> Option[(Char, b)] & e, x: b) : String & e =
-        let sb = StringBuilder.new() as & e;
-        unfoldHelper(f, sb, x) as & e
+    pub def unfold(f: b -> Option[(Char, b)] & ef, x: b) : String & ef =
+        let sb = StringBuilder.new() as & ef;
+        unfoldHelper(f, sb, x) as & ef
 
     ///
     /// Helper function for `unfold`.
     ///
-    def unfoldHelper(f: b -> Option[(Char, b)] & e, sb: StringBuilder, x: b) : String & Impure =
+    def unfoldHelper(f: b -> Option[(Char, b)] & ef, sb: StringBuilder, x: b) : String & Impure =
         let a1 = f(x) as & Impure;
         match a1 {
             case None => StringBuilder.toString(sb)
@@ -715,14 +715,14 @@ namespace String {
     ///
     /// This is a version of `unfold` where `f` generates substrings rather than chars.
     ///
-    pub def unfoldString(f: b -> Option[(String, b)] & e, x: b) : String & e =
-        let sb = StringBuilder.new() as & e;
-        unfoldStringHelper(f, sb, x) as & e
+    pub def unfoldString(f: b -> Option[(String, b)] & ef, x: b) : String & ef =
+        let sb = StringBuilder.new() as & ef;
+        unfoldStringHelper(f, sb, x) as & ef
 
     ///
     /// Helper function for `unfoldString`.
     ///
-    def unfoldStringHelper(f: b -> Option[(String, b)] & e, sb: StringBuilder, x: b) : String & Impure =
+    def unfoldStringHelper(f: b -> Option[(String, b)] & ef, sb: StringBuilder, x: b) : String & Impure =
         let a = f(x) as & Impure;
         match a {
             case None => StringBuilder.toString(sb)
@@ -1093,7 +1093,7 @@ namespace String {
         }
 
     ///
-    /// Return the common prefix of strings `s` and `s2`.
+    /// Return the common prefix of strings `s1` and `s2`.
     ///
     /// Returns the empty string if `s1` and `s2` do not share a common prefix.
     ///
@@ -1117,7 +1117,7 @@ namespace String {
         }
 
     ///
-    /// Return the common suffix of strings `s` and `s2`.
+    /// Return the common suffix of strings `s1` and `s2`.
     ///
     /// Returns the empty string if `s1` and `s2` do not share a common suffix.
     ///
@@ -1245,7 +1245,7 @@ namespace String {
     /// If either `a` or `b` becomes depleted, then no further elements are added to the resulting array.
     ///
     @Time(Int32.min(length(a), length(b))) @Space(Int32.min(length(a), length(b)))
-    pub def zipWith(f: (Char, Char) -> Char & e, a: String, b: String): String & e =
+    pub def zipWith(f: (Char, Char) -> Char & ef, a: String, b: String): String & ef =
         let len = Int32.min(length(a), length(b));
         init(i -> f(charAt(i, a), charAt(i, b)), len)
 

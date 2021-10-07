@@ -22,23 +22,42 @@ import ca.uwaterloo.flix.util.vt.{TerminalContext, VirtualString}
 import org.scalatest.FunSuite
 
 class TestFormatType extends FunSuite with TestUtils {
-  
-  val loc: SourceLocation = SourceLocation.Unknown
-  
-  test("FormatType.WellFormedType.Record.External.01") {
-    val tpe = Type.mkRecordExtend(Name.Field("x", loc), Type.Int32, Type.mkRecordExtend(Name.Field("y", loc), Type.Str, Type.RecordEmpty, loc), loc)
 
-    val expected = "{ x: Int32, y: String }"
+  val loc: SourceLocation = SourceLocation.Unknown
+
+  test("FormatType.WellFormedType.Record.External.01") {
+    val tpe = Type.mkRecord(Type.mkRecordRowExtend(Name.Field("x", loc), Type.Int32, Type.mkRecordRowExtend(Name.Field("y", loc), Type.Str, Type.RecordRowEmpty, loc), loc), loc)
+
+    val expected = "{ x :: Int32, y :: String }"
     val actual = FormatType.formatType(tpe)(Audience.External)
 
     assert(actual == expected)
   }
 
   test("FormatWellFormedType.Record.External.02") {
-    val rest = Type.KindedVar(0, Kind.Record, loc, Rigidity.Rigid)
-    val tpe = Type.mkRecordExtend(Name.Field("x", loc), Type.Int32, rest, loc)
+    val rest = Type.KindedVar(0, Kind.RecordRow, loc, Rigidity.Rigid)
+    val tpe = Type.mkRecord(Type.mkRecordRowExtend(Name.Field("x", loc), Type.Int32, rest, loc), loc)
 
-    val expected = "{ x: Int32 | '0 }"
+    val expected = "{ x :: Int32 | '0 }"
+    val actual = FormatType.formatType(tpe)(Audience.External)
+
+    assert(actual == expected)
+  }
+
+  test("FormatType.WellFormedType.RecordRow.External.01") {
+    val tpe = Type.mkRecordRowExtend(Name.Field("x", loc), Type.Int32, Type.mkRecordRowExtend(Name.Field("y", loc), Type.Str, Type.RecordRowEmpty, loc), loc)
+
+    val expected = "( x :: Int32, y :: String )"
+    val actual = FormatType.formatType(tpe)(Audience.External)
+
+    assert(actual == expected)
+  }
+
+  test("FormatWellFormedType.RecordRow.External.02") {
+    val rest = Type.KindedVar(0, Kind.RecordRow, loc, Rigidity.Rigid)
+    val tpe = Type.mkRecordRowExtend(Name.Field("x", loc), Type.Int32, rest, loc)
+
+    val expected = "( x :: Int32 | '0 )"
     val actual = FormatType.formatType(tpe)(Audience.External)
 
     assert(actual == expected)
@@ -98,7 +117,7 @@ class TestFormatType extends FunSuite with TestUtils {
 
   test("FormatWellFormedType.Schema.External.01") {
     val relationType = Type.mkRelation(Type.Int32 :: Type.Str :: Nil, loc)
-    val tpe = Type.mkSchemaExtend(Name.Pred("S", loc), relationType, Type.SchemaEmpty, loc)
+    val tpe = Type.mkSchema(Type.mkSchemaRowExtend(Name.Pred("S", loc), relationType, Type.SchemaRowEmpty, loc), loc)
 
     val expected = "#{ S(Int32, String) }"
     val actual = FormatType.formatType(tpe)(Audience.External)
@@ -109,10 +128,32 @@ class TestFormatType extends FunSuite with TestUtils {
   test("FormatWellFormedType.Schema.External.02") {
     val latticeType1 = Type.mkLattice(List(Type.Str), loc)
     val latticeType2 = Type.mkLattice(List(Type.Int32, Type.Str), loc)
-    val restType = Type.KindedVar(5, Kind.Schema, loc, Rigidity.Flexible)
-    val tpe = Type.mkSchemaExtend(Name.Pred("A", loc), latticeType1, Type.mkSchemaExtend(Name.Pred("B", loc), latticeType2, restType, loc), loc)
+    val restType = Type.KindedVar(5, Kind.SchemaRow, loc, Rigidity.Flexible)
+    val tpe = Type.mkSchema(Type.mkSchemaRowExtend(Name.Pred("A", loc), latticeType1, Type.mkSchemaRowExtend(Name.Pred("B", loc), latticeType2, restType, loc), loc), loc)
 
     val expected = "#{ A<>(String), B<>(Int32, String) | '5 }"
+    val actual = FormatType.formatType(tpe)(Audience.External)
+
+    assert(actual == expected)
+  }
+
+  test("FormatWellFormedType.SchemaRow.External.01") {
+    val relationType = Type.mkRelation(Type.Int32 :: Type.Str :: Nil, loc)
+    val tpe = Type.mkSchemaRowExtend(Name.Pred("S", loc), relationType, Type.SchemaRowEmpty, loc)
+
+    val expected = "#( S(Int32, String) )"
+    val actual = FormatType.formatType(tpe)(Audience.External)
+
+    assert(actual == expected)
+  }
+
+  test("FormatWellFormedType.SchemaRow.External.02") {
+    val latticeType1 = Type.mkLattice(List(Type.Str), loc)
+    val latticeType2 = Type.mkLattice(List(Type.Int32, Type.Str), loc)
+    val restType = Type.KindedVar(5, Kind.SchemaRow, loc, Rigidity.Flexible)
+    val tpe = Type.mkSchemaRowExtend(Name.Pred("A", loc), latticeType1, Type.mkSchemaRowExtend(Name.Pred("B", loc), latticeType2, restType, loc), loc)
+
+    val expected = "#( A<>(String), B<>(Int32, String) | '5 )"
     val actual = FormatType.formatType(tpe)(Audience.External)
 
     assert(actual == expected)
@@ -131,19 +172,19 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatType.WellFormedType.Record.Internal.01") {
-    val tpe = Type.mkRecordExtend(Name.Field("x", loc), Type.Int32, Type.mkRecordExtend(Name.Field("y", loc), Type.Str, Type.RecordEmpty, loc), loc)
+    val tpe = Type.mkRecord(Type.mkRecordRowExtend(Name.Field("x", loc), Type.Int32, Type.mkRecordRowExtend(Name.Field("y", loc), Type.Str, Type.RecordRowEmpty, loc), loc), loc)
 
-    val expected = "{ x: Int32, y: String }"
+    val expected = "{ x :: Int32, y :: String }"
     val actual = FormatType.formatType(tpe)(Audience.Internal)
 
     assert(actual == expected)
   }
 
   test("FormatWellFormedType.Record.Internal.02") {
-    val rest = Type.KindedVar(0, Kind.Record, loc, Rigidity.Rigid)
-    val tpe = Type.mkRecordExtend(Name.Field("x", loc), Type.Int32, rest, loc)
+    val rest = Type.KindedVar(0, Kind.RecordRow, loc, Rigidity.Rigid)
+    val tpe = Type.mkRecord(Type.mkRecordRowExtend(Name.Field("x", loc), Type.Int32, rest, loc), loc)
 
-    val expected = "{ x: Int32 | '0 }"
+    val expected = "{ x :: Int32 | '0 }"
     val actual = FormatType.formatType(tpe)(Audience.Internal)
 
     assert(actual == expected)
@@ -173,7 +214,7 @@ class TestFormatType extends FunSuite with TestUtils {
 
   test("FormatWellFormedType.Schema.Internal.01") {
     val relationType = Type.mkRelation(List(Type.Int32, Type.Str), loc)
-    val tpe = Type.mkSchemaExtend(Name.Pred("S", loc), relationType, Type.SchemaEmpty, loc)
+    val tpe = Type.mkSchema(Type.mkSchemaRowExtend(Name.Pred("S", loc), relationType, Type.SchemaRowEmpty, loc), loc)
 
     val expected = "#{ S(Int32, String) }"
     val actual = FormatType.formatType(tpe)(Audience.Internal)
@@ -184,8 +225,8 @@ class TestFormatType extends FunSuite with TestUtils {
   test("FormatWellFormedType.Schema.Internal.02") {
     val latticeType1 = Type.mkLattice(List(Type.Str), loc)
     val latticeType2 = Type.mkLattice(List(Type.Int32, Type.Str), loc)
-    val restType = Type.KindedVar(5, Kind.Schema, loc, Rigidity.Flexible)
-    val tpe = Type.mkSchemaExtend(Name.Pred("A", loc), latticeType1, Type.mkSchemaExtend(Name.Pred("B", loc), latticeType2, restType, loc), loc)
+    val restType = Type.KindedVar(5, Kind.SchemaRow, loc, Rigidity.Flexible)
+    val tpe = Type.mkSchema(Type.mkSchemaRowExtend(Name.Pred("A", loc), latticeType1, Type.mkSchemaRowExtend(Name.Pred("B", loc), latticeType2, restType, loc), loc), loc)
 
     val expected = "#{ A<>(String), B<>(Int32, String) | '5 }"
     val actual = FormatType.formatType(tpe)(Audience.Internal)
@@ -201,42 +242,6 @@ class TestFormatType extends FunSuite with TestUtils {
 
     val expected = "Triplet['1, '2, '3]"
     val actual = FormatType.formatType(tpe)(Audience.Internal)
-
-    assert(actual == expected)
-  }
-
-  test("FormatIllFormedType.Record.External.01") {
-    val tpe = Type.Cst(TypeConstructor.RecordExtend(Name.Field("x", loc)), loc)
-
-    val expected = "{ x: ??? }"
-    val actual = FormatType.formatType(tpe)(Audience.External)
-
-    assert(actual == expected)
-  }
-
-  test("FormatIllFormedType.Record.External.02") {
-    val tpe = Type.Apply(Type.Cst(TypeConstructor.RecordExtend(Name.Field("x", loc)), loc), Type.Int32, loc)
-
-    val expected = "{ x: Int32 | ??? }"
-    val actual = FormatType.formatType(tpe)(Audience.External)
-
-    assert(actual == expected)
-  }
-
-  test("FormatIllFormedType.Schema.External.01") {
-    val tpe = Type.Cst(TypeConstructor.SchemaExtend(Name.Pred("X", loc)), loc)
-
-    val expected = "#{ X?(???) }"
-    val actual = FormatType.formatType(tpe)(Audience.External)
-
-    assert(actual == expected)
-  }
-
-  test("FormatIllFormedType.Schema.External.02") {
-    val tpe = Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(Name.Pred("X", loc)), loc), Type.Int32, loc)
-
-    val expected = "#{ X?(Int32) | ??? }"
-    val actual = FormatType.formatType(tpe)(Audience.External)
 
     assert(actual == expected)
   }

@@ -292,12 +292,12 @@ object Type {
   /**
     * Represents the type of an empty record.
     */
-  val RecordEmpty: Type = Type.Cst(TypeConstructor.RecordEmpty, SourceLocation.Unknown)
+  val RecordRowEmpty: Type = Type.Cst(TypeConstructor.RecordRowEmpty, SourceLocation.Unknown)
 
   /**
     * Represents the type of an empty schema.
     */
-  val SchemaEmpty: Type = Type.Cst(TypeConstructor.SchemaEmpty, SourceLocation.Unknown)
+  val SchemaRowEmpty: Type = Type.Cst(TypeConstructor.SchemaRowEmpty, SourceLocation.Unknown)
 
   /**
     * Represents the Boolean True.
@@ -758,15 +758,29 @@ object Type {
   /**
     * Constructs a RecordExtend type.
     */
-  def mkRecordExtend(field: Name.Field, tpe: Type, rest: Type, loc: SourceLocation): Type = {
-    mkApply(Type.Cst(TypeConstructor.RecordExtend(field), loc), List(tpe, rest), loc)
+  def mkRecordRowExtend(field: Name.Field, tpe: Type, rest: Type, loc: SourceLocation): Type = {
+    mkApply(Type.Cst(TypeConstructor.RecordRowExtend(field), loc), List(tpe, rest), loc)
   }
 
   /**
     * Constructs a SchemaExtend type.
     */
-  def mkSchemaExtend(pred: Name.Pred, tpe: Type, rest: Type, loc: SourceLocation): Type = {
-    mkApply(Type.Cst(TypeConstructor.SchemaExtend(pred), loc), List(tpe, rest), loc)
+  def mkSchemaRowExtend(pred: Name.Pred, tpe: Type, rest: Type, loc: SourceLocation): Type = {
+    mkApply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), loc), List(tpe, rest), loc)
+  }
+
+  /**
+    * Constructs a Record type.
+    */
+  def mkRecord(tpe: Type, loc: SourceLocation): Type = {
+    Apply(Type.Cst(TypeConstructor.Record, loc), tpe, loc)
+  }
+
+  /**
+    * Constructs a Schema type.
+    */
+  def mkSchema(tpe: Type, loc: SourceLocation): Type = {
+    Apply(Type.Cst(TypeConstructor.Schema, loc), tpe, loc)
   }
 
   /**
@@ -874,4 +888,17 @@ object Type {
     * That is, `x == y` iff `(x /\ y) \/ (not x /\ not y)`
     */
   def mkEquiv(x: Type, y: Type, loc: SourceLocation): Type = mkOr(mkAnd(x, y, loc), mkAnd(Type.mkNot(x, loc), Type.mkNot(y, loc), loc), loc)
+
+  /**
+    * Returns the size of the given type `tpe`.
+    */
+  def size(tpe: Type): Int = tpe match {
+    case KindedVar(_, _, _, _, _) => 1
+    case UnkindedVar(_, _, _, _) => 1
+    case Ascribe(tpe, _, _) => 1 + size(tpe)
+    case Cst(_, _) => 1
+    case Lambda(_, tpe, _) => 1 + size(tpe)
+    case Apply(tpe1, tpe2, _) => size(tpe1) + size(tpe2)
+  }
+
 }

@@ -237,8 +237,8 @@ object TypedAstOps {
       case Expression.FixpointProjectOut(_, exp, tpe, eff, loc) =>
         visitExp(exp, env0)
 
-      case Expression.MatchEff(exp1, exp2, exp3, _, _, _) =>
-        visitExp(exp1, env0) ++ visitExp(exp2, env0) ++ visitExp(exp3, env0)
+      case Expression.Reify(_, _, _, _) =>
+        Map.empty
 
     }
 
@@ -394,7 +394,7 @@ object TypedAstOps {
     case Expression.FixpointFilter(_, exp, _, _, _) => sigSymsOf(exp)
     case Expression.FixpointProjectIn(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.FixpointProjectOut(_, exp, _, _, _) => sigSymsOf(exp)
-    case Expression.MatchEff(exp1, exp2, exp3, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
+    case Expression.Reify(_, _, _, _) => Set.empty
   }
 
   /**
@@ -654,8 +654,8 @@ object TypedAstOps {
     case Expression.FixpointProjectOut(_, exp, _, _, _) =>
       freeVars(exp)
 
-    case Expression.MatchEff(exp1, exp2, exp3, _, _, _) =>
-      freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
+    case Expression.Reify(_, _, _, _) =>
+      Map.empty
 
   }
 

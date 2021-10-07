@@ -38,6 +38,17 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   val RecursionLimit: Int = 25
 
   /**
+    * Symbols of classes that are derivable.
+    */
+  private val BoxableSym = new Symbol.ClassSym(Nil, "Boxable", SourceLocation.Unknown)
+  private val EqSym = new Symbol.ClassSym(Nil, "Eq", SourceLocation.Unknown)
+  private val OrderSym = new Symbol.ClassSym(Nil, "Order", SourceLocation.Unknown)
+  private val ToStringSym = new Symbol.ClassSym(Nil, "ToString", SourceLocation.Unknown)
+  private val HashSym = new Symbol.ClassSym(Nil, "Hash", SourceLocation.Unknown)
+
+  private val DerivableSyms = List(BoxableSym, EqSym, OrderSym, ToStringSym, HashSym)
+
+  /**
     * Performs name resolution on the given program `root`.
     */
   def run(root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Root, ResolutionError] = flix.phase("Resolver") {
@@ -226,6 +237,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     */
   def resolve(d0: NamedAst.Def, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Def, ResolutionError] = d0 match {
     case NamedAst.Def(sym, spec0, exp0) =>
+      flix.subtask(sym.toString, sample = true)
+
       val fparam = spec0.fparams.head
 
       for {
@@ -904,12 +917,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.FixpointProjectOut(pred, e1, e2, loc)
 
-        case NamedAst.Expression.MatchEff(exp1, exp2, exp3, loc) =>
+        case NamedAst.Expression.Reify(t0, loc) =>
           for {
-            e1 <- visit(exp1, tenv0)
-            e2 <- visit(exp2, tenv0)
-            e3 <- visit(exp3, tenv0)
-          } yield ResolvedAst.Expression.MatchEff(e1, e2, e3, loc)
+            t <- lookupType(t0, ns0, root)
+          } yield ResolvedAst.Expression.Reify(t, loc)
 
       }
 
@@ -1134,7 +1145,19 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         } yield ResolutionError.DuplicateDerivation(sym1, loc1, loc2).toFailure
 
         Validation.sequenceX(failures) map {
-          _ => derives
+          _ =>
+            // if the enum derives Eq, Order, and ToString
+            // AND it does not already derive Boxable
+            // then add Boxable to its derivations
+            // otherwise just use the given list of derivations
+            val classesImplyingBoxable = List(EqSym, OrderSym, ToStringSym)
+            val deriveSyms = derives.map(_.clazz)
+            if (classesImplyingBoxable.forall(deriveSyms.contains) && !deriveSyms.contains(BoxableSym)) {
+              val loc = derives.map(_.loc).min
+              Ast.Derivation(BoxableSym, loc) :: derives
+            } else {
+              derives
+            }
         }
     }
   }
@@ -1153,14 +1176,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     * Checks that the given class `sym` is derivable.
     */
   def checkDerivable(sym: Symbol.ClassSym, loc: SourceLocation): Validation[Unit, ResolutionError] = {
-    val eqSym = new Symbol.ClassSym(Nil, "Eq", SourceLocation.Unknown)
-    val orderSym = new Symbol.ClassSym(Nil, "Order", SourceLocation.Unknown)
-    val toStringSym = new Symbol.ClassSym(Nil, "ToString", SourceLocation.Unknown)
-    val legalSyms = List(eqSym, orderSym, toStringSym)
-    if (legalSyms.contains(sym)) {
+    if (DerivableSyms.contains(sym)) {
       ().toSuccess
     } else {
-      ResolutionError.IllegalDerivation(sym, legalSyms, loc).toFailure
+      ResolutionError.IllegalDerivation(sym, DerivableSyms, loc).toFailure
     }
   }
 
@@ -1427,20 +1446,25 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         tup = Type.mkTuple(elms, loc)
       } yield tup
 
-    case NamedAst.Type.RecordEmpty(loc) =>
-      Type.RecordEmpty.toSuccess
+    case NamedAst.Type.RecordRowEmpty(loc) =>
+      Type.RecordRowEmpty.toSuccess
 
-    case NamedAst.Type.RecordExtend(field, value, rest, loc) =>
+    case NamedAst.Type.RecordRowExtend(field, value, rest, loc) =>
       for {
         v <- lookupType(value, ns0, root)
         r <- lookupType(rest, ns0, root)
-        rec = Type.mkRecordExtend(field, v, r, loc)
+        rec = Type.mkRecordRowExtend(field, v, r, loc)
       } yield rec
 
-    case NamedAst.Type.SchemaEmpty(loc) =>
-      Type.SchemaEmpty.toSuccess
+    case NamedAst.Type.Record(row, loc) =>
+      for {
+        r <- lookupType(row, ns0, root)
+      } yield Type.mkRecord(r, loc)
 
-    case NamedAst.Type.SchemaExtendWithAlias(qname, targs, rest, loc) =>
+    case NamedAst.Type.SchemaRowEmpty(loc) =>
+      Type.SchemaRowEmpty.toSuccess
+
+    case NamedAst.Type.SchemaRowExtendWithAlias(qname, targs, rest, loc) =>
       // Lookup the type alias.
       lookupTypeAlias(qname, ns0, root) match {
         case None =>
@@ -1454,17 +1478,22 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             r <- lookupType(rest, ns0, root)
             app = Type.mkApply(t, ts, loc)
             tpe = simplify(app)
-            schema = Type.mkSchemaExtend(Name.mkPred(qname.ident), tpe, r, loc)
+            schema = Type.mkSchemaRowExtend(Name.mkPred(qname.ident), tpe, r, loc)
           } yield schema
       }
 
-    case NamedAst.Type.SchemaExtendWithTypes(ident, den, tpes, rest, loc) =>
+    case NamedAst.Type.SchemaRowExtendWithTypes(ident, den, tpes, rest, loc) =>
       for {
         ts <- traverse(tpes)(lookupType(_, ns0, root))
         r <- lookupType(rest, ns0, root)
         pred = mkPredicate(den, ts, loc)
-        schema = Type.mkSchemaExtend(Name.mkPred(ident), pred, r, loc)
+        schema = Type.mkSchemaRowExtend(Name.mkPred(ident), pred, r, loc)
       } yield schema
+
+    case NamedAst.Type.Schema(row, loc) =>
+      for {
+        r <- lookupType(row, ns0, root)
+      } yield Type.mkSchema(r, loc)
 
     case NamedAst.Type.Relation(tpes, loc) =>
       for {
@@ -1867,13 +1896,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
       case TypeConstructor.Native(clazz) => clazz.toSuccess
 
-      case TypeConstructor.RecordEmpty => Class.forName("java.lang.Object").toSuccess
+      case TypeConstructor.Record => Class.forName("java.lang.Object").toSuccess
 
-      case TypeConstructor.RecordExtend(_) => Class.forName("java.lang.Object").toSuccess
+      case TypeConstructor.Schema => Class.forName("java.lang.Object").toSuccess
 
-      case TypeConstructor.SchemaEmpty => Class.forName("java.lang.Object").toSuccess
-
-      case TypeConstructor.SchemaExtend(_) => Class.forName("java.lang.Object").toSuccess
 
       case _ => ResolutionError.IllegalType(tpe, loc).toFailure
     }
@@ -1926,16 +1952,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       case tvar: Type.UnkindedVar => subst.getOrElse(tvar, tvar)
 
       case Type.Cst(_, _) => t
-
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordExtend(field), _), tpe, _), rest, loc) =>
-        val t1 = eval(tpe, subst)
-        val t2 = eval(rest, subst)
-        Type.mkRecordExtend(field, t1, t2, loc)
-
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaExtend(pred), _), tpe, _), rest, loc) =>
-        val t1 = eval(tpe, subst)
-        val t2 = eval(rest, subst)
-        Type.mkSchemaExtend(pred, t1, t2, loc)
 
       case Type.Lambda(tvar, tpe, loc) => Type.Lambda(tvar, eval(tpe, subst), loc)
 

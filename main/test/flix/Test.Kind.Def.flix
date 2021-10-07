@@ -7,27 +7,19 @@ namespace Test/Def/Kinding {
 
             pub def star(x: a): Int = ???
 
-            pub def record(x: { l: Int | a }): Int = ???
+            pub def recordRow(x: { l :: Int | a }): Int = ???
 
-            pub def schema(x: #{ R | a }): Int = ???
+            pub def schemaRow(x: #{ R | a }): Int = ???
 
             pub def bool(x: Int -> Int & a): Int = ???
 
             pub def starToStar(x: a[Int]): Int = ???
-
-            pub def starRecord(x: a, y: { l: Int | a }): Int = ???
-
-            pub def starSchema(x: a, y: #{ R | a }): Int = ???
         }
 
         namespace Return {
             rel R(i: Int)
 
             pub def star(): a = ???
-
-            pub def recordStar(x: { l: Int | a }): a = ???
-
-            pub def schemaStar(x: #{ R | a }): a = ???
         }
 
         namespace TypeConstraint {
@@ -42,22 +34,18 @@ namespace Test/Def/Kinding {
         namespace Enum {
             pub enum EStar[_a: Type]
             pub enum EBool[_a: Bool]
-            pub enum ERecord[_a: Record]
-            pub enum ESchema[_a: Schema]
+            pub enum ERecordRow[_a: RecordRow]
+            pub enum ESchemaRow[_a: SchemaRow]
 
             pub def star(x: EStar[a]): Int = ???
 
             pub def bool(x: EBool[a]): Int = ???
 
-            pub def record(x: ERecord[a]): Int = ???
+            pub def record(x: ERecordRow[a]): Int = ???
 
-            pub def schema(x: ESchema[a]): Int = ???
+            pub def schema(x: ESchemaRow[a]): Int = ???
 
             pub def starStar(x: a, y: EStar[a]): Int = ???
-
-            pub def starRecord(x: a, y: ERecord[a]): Int = ???
-
-            pub def starSchema(x: a, y: ESchema[a]): Int = ???
         }
 
         namespace Effect {
@@ -74,10 +62,6 @@ namespace Test/Def/Kinding {
             rel R(i: Int)
 
             pub def star(x: a): Int = ???: a; ???
-
-            pub def record(x: { l: Int | a }): Int = ???: a; ???
-
-            pub def schema(x: #{ R | a }): Int = ???: a; ???
         }
     }
 
@@ -88,27 +72,19 @@ namespace Test/Def/Kinding {
 
             pub def star[a: Type](x: a): Int = ???
 
-            pub def record[a: Record](x: { l: Int | a }): Int = ???
+            pub def recordRow[a: RecordRow](x: { l :: Int | a }): Int = ???
 
-            pub def schema[a: Schema](x: #{ R | a }): Int = ???
+            pub def schemaRow[a: SchemaRow](x: #{ R | a }): Int = ???
 
             pub def bool[a: Bool](x: Int -> Int & a): Int = ???
 
             pub def starToStar[a: Type -> Type](x: a[Int]): Int = ???
-
-            pub def starRecord[a: Record](x: a, y: { l: Int | a }): Int = ???
-
-            pub def starSchema[a: Schema](x: a, y: #{ R | a }): Int = ???
         }
 
         namespace Return {
             rel R(i: Int)
 
             pub def star[a: Type](): a = ???
-
-            pub def recordStar[a: Record](x: { l: Int | a }): a = ???
-
-            pub def schemaStar[a: Schema](x: #{ R | a }): a = ???
         }
 
         namespace TypeConstraint {
@@ -127,22 +103,18 @@ namespace Test/Def/Kinding {
         namespace Enum {
             pub enum EStar[_a: Type]
             pub enum EBool[_a: Bool]
-            pub enum ERecord[_a: Record]
-            pub enum ESchema[_a: Schema]
+            pub enum ERecordRow[_a: RecordRow]
+            pub enum ESchemaRow[_a: SchemaRow]
 
             pub def star[a: Type](x: EStar[a]): Int = ???
 
             pub def bool[a: Bool](x: EBool[a]): Int = ???
 
-            pub def record[a: Record](x: ERecord[a]): Int = ???
+            pub def recordRow[a: RecordRow](x: ERecordRow[a]): Int = ???
 
-            pub def schema[a: Schema](x: ESchema[a]): Int = ???
+            pub def schemaRow[a: SchemaRow](x: ESchemaRow[a]): Int = ???
 
             pub def starStar[a: Type](x: a, y: EStar[a]): Int = ???
-
-            pub def starRecord[a: Record](x: a, y: ERecord[a]): Int = ???
-
-            pub def starSchema[a: Schema](x: a, y: ESchema[a]): Int = ???
         }
 
         namespace Effect {
@@ -159,10 +131,6 @@ namespace Test/Def/Kinding {
             rel R(i: Int)
 
             pub def star[a: Type](x: a): Int = ???: a; ???
-
-            pub def record[a: Record](x: { l: Int | a }): Int = ???: a; ???
-
-            pub def schema[a: Schema](x: #{ R | a }): Int = ???: a; ???
         }
     }
 
@@ -181,12 +149,6 @@ namespace Test/Def/Kinding {
             pub class Boxable[a]
             pub enum Datalog[_a]
             pub class Foldable[a: Type -> Type]
-        }
-
-        namespace Test03 {
-            pub enum E[a: Record] {
-                case C(a)
-            }
         }
     }
 

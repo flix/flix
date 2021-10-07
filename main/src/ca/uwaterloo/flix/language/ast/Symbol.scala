@@ -185,7 +185,7 @@ object Symbol {
     /**
       * Returns `true`if `this` symbol is a wildcard.
       */
-    def isWild(): Boolean = text.startsWith("_")
+    def isWild: Boolean = text.startsWith("_")
 
     /**
       * Returns the stack offset of `this` variable symbol.
@@ -261,7 +261,7 @@ object Symbol {
     /**
       * Human readable representation.
       */
-    override def toString: String = if (namespace.isEmpty) name else namespace.mkString("/") + "." + name
+    override val toString: String = if (namespace.isEmpty) name else namespace.mkString("/") + "." + name
   }
 
   /**

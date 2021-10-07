@@ -272,7 +272,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val e = visitExp(exp)
         val lambdaTyp = Type.mkArrowWithEffect(Type.Unit, eff, e.tpe, loc)
         val lambdaExp = SimplifiedAst.Expression.Lambda(List(), e, lambdaTyp, loc)
-        SimplifiedAst.Expression.Spawn(lambdaExp, lambdaTyp, loc)
+        SimplifiedAst.Expression.Spawn(lambdaExp, tpe, loc)
 
       case TypedAst.Expression.Lazy(exp, tpe, loc) =>
         // Wrap the expression in a closure: () -> tpe & Pure
@@ -307,7 +307,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.FixpointProjectOut(_, _, _, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
-      case TypedAst.Expression.MatchEff(_, _, _, _, _, _) =>
+      case TypedAst.Expression.Reify(_, _, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
     }

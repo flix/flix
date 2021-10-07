@@ -240,7 +240,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.FixpointProjectOut(_, exp, _, _, _) => visitExp(exp, lint0)
 
-      case Expression.MatchEff(exp1, exp2, exp3, _, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0) ::: visitExp(exp3, lint0)
+      case Expression.Reify(_, _, _, _) => Nil
 
     }
 
@@ -955,11 +955,8 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         val e = apply(exp)
         Expression.FixpointProjectOut(pred, e, tpe, eff, loc)
 
-      case Expression.MatchEff(exp1, exp2, exp3, tpe, eff, loc) =>
-        val e1 = apply(exp1)
-        val e2 = apply(exp2)
-        val e3 = apply(exp3)
-        Expression.MatchEff(e1, e2, e3, tpe, eff, loc)
+      case Expression.Reify(t0, tpe, eff, loc) =>
+        Expression.Reify(t0, tpe, eff, loc)
 
       case Expression.Existential(_, _, _) => throw InternalCompilerException(s"Unexpected expression: $exp0.")
 

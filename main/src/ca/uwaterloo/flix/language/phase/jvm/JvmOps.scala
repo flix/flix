@@ -16,14 +16,14 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import java.nio.file.{Files, LinkOption, Path}
-
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst._
-import ca.uwaterloo.flix.language.ast.{Kind, MonoType, Name, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, MonoType, Name, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.phase.Finalize
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.InternalCompilerException
+
+import java.nio.file.{Files, LinkOption, Path}
 
 object JvmOps {
 
@@ -102,7 +102,7 @@ object JvmOps {
       case JvmType.PrimLong => JvmType.PrimLong
       case JvmType.PrimFloat => JvmType.PrimFloat
       case JvmType.PrimDouble => JvmType.PrimDouble
-      case JvmType.Reference(jvmName) => JvmType.Object
+      case JvmType.Reference(_) => JvmType.Object
     }
 
     erase(getJvmType(tpe))
@@ -117,7 +117,7 @@ object JvmOps {
     * NB: The given type `tpe` must be an arrow type.
     */
   def getContinuationInterfaceType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
-    case MonoType.Arrow(targs, tresult) =>
+    case MonoType.Arrow(_, tresult) =>
       // The return type is the last type argument.
       val returnType = JvmOps.getErasedJvmType(tresult)
 
@@ -304,9 +304,9 @@ object JvmOps {
     *
     * For example,
     *
-    * {}                  =>    IRecord
-    * {x : Int}           =>    IRecord
-    * {x : Str, y : Int}  =>    IRecord
+    * {}                    =>  IRecord
+    * {x :: Int}            =>  IRecord
+    * {x :: Str, y :: Int}  =>  IRecord
     */
   def getRecordInterfaceType()(implicit root: Root, flix: Flix): JvmType.Reference = {
 
@@ -340,9 +340,9 @@ object JvmOps {
     *
     * For example,
     *
-    * {+z : Int  | {}}                =>    RecordExtend$Int
-    * {+y : Char | {z : Int}          =>    RecordExtend$Char
-    * {+x : Str |{y : Char, z : Int}  =>    RecordExtend$Obj
+    * {+z :: Int  | {}}                   =>    RecordExtend$Int
+    * {+y :: Char | {z :: Int}            =>    RecordExtend$Char
+    * {+x :: Str | {y :: Char, z :: Int}  =>    RecordExtend$Obj
     *
     * NB: The given type `tpe` must be a Record type
     */
@@ -366,9 +366,9 @@ object JvmOps {
     *
     * For example,
     *
-    * Int                  =>    RecordExtend$Int
-    * Char                 =>    RecordExtend$Char
-    * {x : Char, y : Int}  =>    RecordExtend$Obj
+    * Int                   =>  RecordExtend$Int
+    * Char                  =>  RecordExtend$Char
+    * {x :: Char, y :: Int} =>  RecordExtend$Obj
     *
     */
   def getRecordType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = {
@@ -489,23 +489,22 @@ object JvmOps {
   def mangle(s: String): String = s.
     replace("+", "$plus").
     replace("-", "$minus").
-    replace("*", "$times").
-    replace("/", "$divide").
-    replace("%", "$modulo").
-    replace("**", "$exponentiate").
-    replace("<", "$lt").
-    replace("<=", "$le").
-    replace(">", "$gt").
-    replace(">=", "$ge").
-    replace("==", "$eq").
-    replace("!=", "$neq").
-    replace("&&", "$land").
-    replace("||", "$lor").
-    replace("&", "$band").
-    replace("|", "$bor").
-    replace("^", "$bxor").
-    replace("<<", "$lshift").
-    replace(">>", "$rshift")
+    replace("*", "$asterisk").
+    replace("/", "$fslash").
+    replace("\\", "$bslash").
+    replace("%", "$percent").
+    replace("<", "$less").
+    replace(">", "$greater").
+    replace("=", "$eq").
+    replace("&", "$ampersand").
+    replace("|", "$bar").
+    replace("^", "$caret").
+    replace("~", "$tilde").
+    replace("!", "$exclamation").
+    replace("#", "$hashtag").
+    replace(":", "$colon").
+    replace("?", "$question").
+    replace("@", "$at")
 
   /**
     * Returns stringified name of the given JvmType `tpe`.
@@ -522,7 +521,7 @@ object JvmOps {
     case JvmType.PrimShort => "Int16"
     case JvmType.PrimInt => "Int32"
     case JvmType.PrimLong => "Int64"
-    case JvmType.Reference(jvmName) => "Obj"
+    case JvmType.Reference(_) => "Obj"
   }
 
   /**
@@ -640,10 +639,6 @@ object JvmOps {
       case Expression.Deref(exp, tpe, loc) => visitExp(exp)
 
       case Expression.Assign(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
-
-      case Expression.Existential(fparam, exp, loc) => visitExp(exp)
-
-      case Expression.Universal(fparam, exp, loc) => visitExp(exp)
 
       case Expression.Cast(exp, tpe, loc) => visitExp(exp)
 
@@ -775,10 +770,26 @@ object JvmOps {
     case MonoType.Relation(attr) => Type.mkRelation(attr.map(hackMonoType2Type), SourceLocation.Unknown)
     case MonoType.Lattice(attr) => Type.mkLattice(attr.map(hackMonoType2Type), SourceLocation.Unknown)
     case MonoType.Tuple(length) => Type.mkTuple(Nil, SourceLocation.Unknown) // hack
-    case MonoType.RecordEmpty() => Type.RecordEmpty
-    case MonoType.RecordExtend(field, value, rest) => Type.mkRecordExtend(Name.Field(field, SourceLocation.Unknown), hackMonoType2Type(value), hackMonoType2Type(rest), SourceLocation.Unknown)
-    case MonoType.SchemaEmpty() => Type.SchemaEmpty
-    case MonoType.SchemaExtend(sym, t, rest) => Type.mkSchemaExtend(Name.Pred(sym, SourceLocation.Unknown), hackMonoType2Type(t), hackMonoType2Type(rest), SourceLocation.Unknown)
+    case MonoType.RecordEmpty() => Type.mkRecord(Type.RecordRowEmpty, SourceLocation.Unknown)
+    case MonoType.RecordExtend(field, value, rest) => Type.mkRecord(hackMonoType2RecordRowType(tpe), SourceLocation.Unknown)
+    case MonoType.SchemaEmpty() => Type.mkSchema(Type.RecordRowEmpty, SourceLocation.Unknown)
+    case MonoType.SchemaExtend(sym, t, rest) => Type.mkSchema(hackMonoType2SchemaRowType(tpe), SourceLocation.Unknown)
+  }
+
+  // TODO: Remove
+  private def hackMonoType2RecordRowType(tpe: MonoType): Type = tpe match {
+    case MonoType.RecordExtend(field, value, rest) => Type.mkRecordRowExtend(Name.Field(field, SourceLocation.Unknown), hackMonoType2Type(value), hackMonoType2RecordRowType(rest), SourceLocation.Unknown)
+    case MonoType.RecordEmpty() => Type.RecordRowEmpty
+    case MonoType.Var(id) => Type.KindedVar(id, Kind.RecordRow, SourceLocation.Unknown)
+    case _ => throw InternalCompilerException("Unexpected non-row type.")
+  }
+
+  // TODO: Remove
+  private def hackMonoType2SchemaRowType(tpe: MonoType): Type = tpe match {
+    case MonoType.SchemaExtend(sym, t, rest) => Type.mkSchemaRowExtend(Name.Pred(sym, SourceLocation.Unknown), hackMonoType2Type(t), hackMonoType2SchemaRowType(rest), SourceLocation.Unknown)
+    case MonoType.SchemaEmpty() => Type.SchemaRowEmpty
+    case MonoType.Var(id) => Type.KindedVar(id, Kind.RecordRow, SourceLocation.Unknown)
+    case _ => throw InternalCompilerException("Unexpected non-row type.")
   }
 
   // TODO: Remove
@@ -942,10 +953,6 @@ object JvmOps {
       case Expression.Deref(exp, tpe, loc) => visitExp(exp) + tpe
 
       case Expression.Assign(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
-
-      case Expression.Existential(fparam, exp, loc) => visitExp(exp) + fparam.tpe
-
-      case Expression.Universal(fparam, exp, loc) => visitExp(exp) + fparam.tpe
 
       case Expression.Cast(exp, tpe, loc) => visitExp(exp) + tpe
 

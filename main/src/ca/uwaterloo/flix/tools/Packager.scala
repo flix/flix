@@ -1,22 +1,67 @@
+/*
+ * Copyright 2021 Magnus Madsen, Matthew Lutze
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ca.uwaterloo.flix.tools
-
-import java.io.PrintWriter
-import java.nio.file.attribute.BasicFileAttributes
-import java.nio.file._
-import java.util.zip.{ZipEntry, ZipFile, ZipInputStream, ZipOutputStream}
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.runtime.CompilationResult
-import ca.uwaterloo.flix.util.vt.TerminalContext
+import ca.uwaterloo.flix.tools.github.GitHub
 import ca.uwaterloo.flix.util._
+import ca.uwaterloo.flix.util.vt.TerminalContext
 
+import java.io.{File, PrintWriter}
+import java.nio.file._
+import java.nio.file.attribute.BasicFileAttributes
+import java.util.zip.{ZipEntry, ZipFile, ZipOutputStream}
 import scala.collection.mutable
+import scala.util.Using
 
 /**
   * An interface to manage flix packages.
   */
 object Packager {
+
+  /**
+    * Installs a flix package from the Github `project`.
+    *
+    * `project` must be of the form `<owner>/<repo>`
+    *
+    * The package is installed at `lib/<owner>/<repo>`
+    */
+  def install(project: String, p: Path, o: Options)(implicit tc: TerminalContext): Unit = {
+    val proj = GitHub.parseProject(project)
+    val release = GitHub.getLatestRelease(proj)
+    val assets = release.assets.filter(_.name.endsWith(".fpkg"))
+    val lib = getLibraryDirectory(p)
+    val assetFolder = lib.resolve(proj.owner).resolve(proj.repo)
+
+    // create the asset directory if it doesn't exist
+    Files.createDirectories(assetFolder)
+
+    // clear the asset folder
+    assetFolder.toFile.listFiles.foreach(deletePackage)
+
+    // download each asset to the folder
+    for (asset <- assets) {
+      val path = assetFolder.resolve(asset.name)
+      Using(GitHub.downloadAsset(asset)) {
+        stream => Files.copy(stream, path, StandardCopyOption.REPLACE_EXISTING)
+      }
+    }
+  }
 
   /**
     * Initializes a new flix project at the given path `p`.
@@ -141,9 +186,6 @@ object Packager {
       loadClassFiles = loadClasses,
       writeClassFiles = true)
     flix.setOptions(newOptions)
-
-    // Copy all class files from the Flix runtime jar.
-    copyRuntimeClassFiles(p)
 
     // Add sources and packages.
     addSourcesAndPackages(p, o, flix)
@@ -326,39 +368,6 @@ object Packager {
   }
 
   /**
-    * Copies all Flix runtime class files into the build directory.
-    */
-  private def copyRuntimeClassFiles(p: Path): Unit = {
-    // Retrieve the Flix runtime JAR file.
-    val is = LocalResource.getInputStream("/src/resources/runtime/flix-runtime.jar")
-    val zip = new ZipInputStream(is)
-
-    // Iterate through its directories and classes.
-    var entry = zip.getNextEntry
-    while (entry != null) {
-      // Check if the entry is a directory or a file.
-      if (entry.isDirectory) {
-        // Case 1: The entry is a directory. Recreate the directory (and its parent directories) inside the build directory.
-        val directoryPath = getBuildDirectory(p).resolve(entry.getName).normalize()
-        Files.createDirectories(directoryPath)
-      } else {
-        // Case 2: The entry is a file. Verify that it is a class file.
-        val classFilePath = getBuildDirectory(p).resolve(entry.getName).normalize()
-        if (classFilePath.toString.endsWith(".class")) {
-          // The entry is a class file. Write its content to the build directory.
-          StreamOps.writeAll(zip, classFilePath)
-        }
-      }
-
-      // Done with this entry.
-      zip.closeEntry()
-
-      // Ready to process the next entry.
-      entry = zip.getNextEntry
-    }
-  }
-
-  /**
     * Returns `true` if the given path `p` appears to be a flix project path.
     */
   private def isProjectPath(p: Path): Boolean =
@@ -480,14 +489,25 @@ object Packager {
   }
 
   /**
+    * Deletes the file if it is a Flix package.
+    */
+  private def deletePackage(file: File): Unit = {
+    if (isPkgFile(file.toPath)) {
+      file.delete()
+    } else {
+      throw new RuntimeException(s"Refusing to delete non-Flix package file: ${file.getAbsolutePath}")
+    }
+  }
+
+  /**
     * Returns `true` if the given path `p` is a jar-file.
     */
-  private def isJarFile(p: Path): Boolean = isZipArchive(p)
+  private def isJarFile(p: Path): Boolean = p.getFileName.toString.endsWith(".jar") && isZipArchive(p)
 
   /**
     * Returns `true` if the given path `p` is a fpkg-file.
     */
-  private def isPkgFile(p: Path): Boolean = isZipArchive(p)
+  private def isPkgFile(p: Path): Boolean = p.getFileName.toString.endsWith(".fpkg") && isZipArchive(p)
 
   /**
     * Returns `true` if the given path `p` is a zip-archive.

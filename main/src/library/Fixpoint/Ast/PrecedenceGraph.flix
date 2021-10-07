@@ -16,9 +16,9 @@
 namespace Fixpoint/Ast {
     pub opaque type PrecedenceGraph = Set[PrecedenceEdge]
 
-    pub enum PrecedenceEdge {
-        case PositiveEdge(PredSym, PredSym)
+    pub enum PrecedenceEdge with Eq, Order {
         case NegativeEdge(PredSym, PredSym)
+        case PositiveEdge(PredSym, PredSym)
     }
 
     instance Monoid[PrecedenceGraph] {
@@ -26,26 +26,6 @@ namespace Fixpoint/Ast {
 
         pub def combine(x: PrecedenceGraph, y: PrecedenceGraph): PrecedenceGraph = match (x, y) {
             case (PrecedenceGraph(xs), PrecedenceGraph(ys)) => PrecedenceGraph(Set.union(xs, ys))
-        }
-    }
-
-    instance Eq[PrecedenceEdge] {
-        pub def eq(a: PrecedenceEdge, b: PrecedenceEdge): Bool = Fixpoint/Ast/PrecedenceEdge.compare(a, b) == EqualTo
-    }
-
-    instance Order[PrecedenceEdge] {
-        pub def compare(a: PrecedenceEdge, b: PrecedenceEdge): Comparison = Fixpoint/Ast/PrecedenceEdge.compare(a, b)
-    }
-
-    namespace PrecedenceEdge {
-        use Fixpoint/Ast.PrecedenceEdge;
-        use Fixpoint/Ast.PrecedenceEdge.{PositiveEdge, NegativeEdge};
-
-        pub def compare(a: PrecedenceEdge, b: PrecedenceEdge): Comparison = match (a, b) {
-            case (PositiveEdge(x), PositiveEdge(y)) => x <=> y
-            case (NegativeEdge(x), NegativeEdge(y)) => x <=> y
-            case (NegativeEdge(_), PositiveEdge(_)) => LessThan
-            case (PositiveEdge(_), NegativeEdge(_)) => GreaterThan
         }
     }
 }

@@ -125,4 +125,37 @@ object TerminalContext {
 
   }
 
+  /**
+    * Returns `true` if the terminal appears to support at least 256 colors.
+    */
+  def hasColorSupport(): Boolean = isAnsiTerminal || isTrueColorTerminal || isWindowsTerminal
+
+  /**
+    * Returns `true` if the terminal appears to be an ANSI terminal.
+    */
+  private def isAnsiTerminal: Boolean = {
+    val term = System.getenv("TERM")
+    term != null && (
+      term.contains("256") ||
+        term.contains("ansi") ||
+        term.contains("xterm") ||
+        term.contains("screen"))
+  }
+
+  /**
+    * Returns `true` if the terminal appears to support 24bit colors.
+    */
+  private def isTrueColorTerminal: Boolean = {
+    val colorTerm = System.getenv("COLORTERM")
+    colorTerm != null && colorTerm.contains("truecolor")
+  }
+
+  /**
+    * Returns `true` if the terminal appears to be a Windows Terminal.
+    */
+  private def isWindowsTerminal: Boolean = {
+    val wtSession = System.getenv("WT_SESSION")
+    wtSession != null
+  }
+
 }

@@ -48,12 +48,12 @@ instance Order[MutList[v]] with Order[v] {
 }
 
 instance Functor[MutList] {
-    pub def map(f: a -> b & e, v: MutList[a]): MutList[b] & e = MutList.map(f, v) as & e
+    pub def map(f: a -> b & ef, v: MutList[a]): MutList[b] & ef = MutList.map(f, v) as & ef
 }
 
 instance Foldable[MutList] {
-    pub def foldLeft(f: (b, a) -> b & e, s: b, v: MutList[a]): b & e = MutList.foldLeft(f, s, v) as & e
-    pub def foldRight(f: (a, b) -> b & e, s: b, v: MutList[a]): b & e = MutList.foldRight(f, s, v) as & e
+    pub def foldLeft(f: (b, a) -> b & ef, s: b, v: MutList[a]): b & ef = MutList.foldLeft(f, s, v) as & ef
+    pub def foldRight(f: (a, b) -> b & ef, s: b, v: MutList[a]): b & ef = MutList.foldRight(f, s, v) as & ef
 }
 
 namespace MutList {
@@ -291,12 +291,12 @@ namespace MutList {
     ///
     /// Alias for `scanLeft`.
     ///
-    pub def scan(f: (b, a) ->b & e, s: b, v: MutList[a]): MutList[b] & Impure = scanLeft(f, s, v)
+    pub def scan(f: (b, a) ->b & ef, s: b, v: MutList[a]): MutList[b] & Impure = scanLeft(f, s, v)
 
     ///
     /// Accumulates the result of applying `f` to `v` going left to right.
     ///
-    pub def scanLeft(f: (b, a) -> b & e, s: b, v: MutList[a]): MutList[b] & Impure =
+    pub def scanLeft(f: (b, a) -> b & ef, s: b, v: MutList[a]): MutList[b] & Impure =
         let MutList(a, l) = v;
         let len = deref l;
         let b = [s; len + 1];
@@ -306,7 +306,7 @@ namespace MutList {
     ///
     /// Helper function for `scanLeft`.
     ///
-    def scanLeftHelper(f: (b, a) -> b & e, s: b, a: Array[a], b: Array[b], i: Int32, n: Int32): Unit & Impure =
+    def scanLeftHelper(f: (b, a) -> b & ef, s: b, a: Array[a], b: Array[b], i: Int32, n: Int32): Unit & Impure =
         if (i >= n)
             ()
         else {
@@ -318,7 +318,7 @@ namespace MutList {
     ///
     /// Accumulates the result of applying `f` to `v` going right to left.
     ///
-    pub def scanRight(f: (a, b) -> b & e, s: b, v: MutList[a]): MutList[b] & Impure =
+    pub def scanRight(f: (a, b) -> b & ef, s: b, v: MutList[a]): MutList[b] & Impure =
         let MutList(a, l) = v;
         let len = deref l;
         let b = [s; len + 1];
@@ -328,7 +328,7 @@ namespace MutList {
     ///
     /// Helper function for `scanRight`.
     ///
-    def scanRightHelper(f: (a, b) -> b & e, s: b, a: Array[a], b: Array[b], i: Int32): Unit & Impure =
+    def scanRightHelper(f: (a, b) -> b & ef, s: b, a: Array[a], b: Array[b], i: Int32): Unit & Impure =
         if (i < 0)
             ()
         else {
@@ -342,7 +342,7 @@ namespace MutList {
     ///
     /// The result is a new mutable list.
     ///
-    pub def map(f: a -> b & e, v: MutList[a]): MutList[b] & Impure =
+    pub def map(f: a -> b & ef, v: MutList[a]): MutList[b] & Impure =
         let MutList(a, l) = v;
         let len = deref l;
         MutList(ref Array.init(i -> f((deref a)[i]), len), ref len)
@@ -368,7 +368,7 @@ namespace MutList {
     ///
     /// Returns the result of applying `f` to every element in `v` along with that element's index.
     ///
-    pub def mapWithIndex(f: (a, Int32) -> b & e, v: MutList[a]): MutList[b] & Impure =
+    pub def mapWithIndex(f: (a, Int32) -> b & ef, v: MutList[a]): MutList[b] & Impure =
         let MutList(a, l) = v;
         let len = deref l;
         MutList(ref Array.init(i -> f((deref a)[i], i), len), ref len)
@@ -401,14 +401,14 @@ namespace MutList {
     ///
     /// That is, the result is of the form: `f(...f(f(s, a[0]), a[1])..., xn)`.
     ///
-    pub def foldLeft(f: (b, a) -> b & e, s: b, v: MutList[a]): b & Impure =
+    pub def foldLeft(f: (b, a) -> b & ef, s: b, v: MutList[a]): b & Impure =
         let len = length(v);
         foldLeftHelper(f, s, v, len, 0)
 
     ///
     /// Helper function for `foldLeft`.
     ///
-    def foldLeftHelper(f: (b, a) -> b & e, s: b, v: MutList[a], len: Int32, i: Int32): b & Impure =
+    def foldLeftHelper(f: (b, a) -> b & ef, s: b, v: MutList[a], len: Int32, i: Int32): b & Impure =
         if (i < len)
             let s1 = f(s, get(i, v)) as & Impure;
             foldLeftHelper(f, s1, v, len, i + 1)
@@ -422,14 +422,14 @@ namespace MutList {
     ///
     /// The implementation is tail recursive.
     ///
-    pub def foldRight(f: (a, b) -> b & e, s: b, v: MutList[a]): b & Impure =
+    pub def foldRight(f: (a, b) -> b & ef, s: b, v: MutList[a]): b & Impure =
         let len = length(v);
         foldRightHelper(f, s, v, len - 1)
 
     ///
     /// Helper function for `foldRight`.
     ///
-    def foldRightHelper(f: (a, b) -> b & e, s: b, v: MutList[a], i: Int32): b & Impure =
+    def foldRightHelper(f: (a, b) -> b & ef, s: b, v: MutList[a], i: Int32): b & Impure =
         if (i < 0)
             s
         else
@@ -441,7 +441,7 @@ namespace MutList {
     ///
     /// Returns `None` if `v` is empty.
     ///
-    pub def reduceLeft(f: (a, a) -> a & e, v: MutList[a]): Option[a] & Impure = foldLeft((acc, x) -> match acc {
+    pub def reduceLeft(f: (a, a) -> a & ef, v: MutList[a]): Option[a] & Impure = foldLeft((acc, x) -> match acc {
         case Some(y) => Some(f(y, x))
         case None => Some(x)
     }, None, v)
@@ -451,7 +451,7 @@ namespace MutList {
     ///
     /// Returns `None` if `v` is empty.
     ///
-    pub def reduceRight(f: (a, a) -> a & e, v: MutList[a]): Option[a] & Impure = foldRight((x, acc) -> match acc {
+    pub def reduceRight(f: (a, a) -> a & ef, v: MutList[a]): Option[a] & Impure = foldRight((x, acc) -> match acc {
         case Some(y) => Some(f(x, y))
         case None => Some(x)
     }, None, v)
@@ -669,7 +669,7 @@ namespace MutList {
     ///
     /// Returns `v` as an immutable list.
     ///
-    pub def toImm(v: MutList[a]): List[a] & Impure =
+    pub def toList(v: MutList[a]): List[a] & Impure =
         foldRight((x, acc) -> x :: acc, Nil, v)
 
     ///
@@ -847,4 +847,19 @@ namespace MutList {
         let MutList(a, l) = v;
         Array.sortWithin!(cmp, deref a, 0, (deref l) - 1)
 
+    ///
+    /// Returns the sum of all elements in the list `v`.
+    ///
+    pub def sum(v: MutList[Int32]): Int32 & Impure =
+        let MutList(a, l) = v;
+        sumAcc(deref a, deref l, 0, 0)
+
+    ///
+    /// Helper function for `sum`.
+    ///
+    def sumAcc(a: Array[Int32], l: Int32, i: Int32, acc: Int32): Int32 & Impure =
+        if (i < l)
+            sumAcc(a, l, i + 1, a[i] + acc)
+        else
+            acc
 }

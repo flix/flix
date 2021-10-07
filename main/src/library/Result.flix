@@ -21,29 +21,9 @@
 /// The constructor `Ok(v)` represents the successful value `v`,
 /// whereas the constructor `Err(v)` represents the error value `v`.
 ///
-enum Result[t, e] {
+enum Result[t, e] with Eq, Order, ToString {
     case Ok(t),
     case Err(e)
-}
-
-instance Boxable[Result[t, e]] with Order[t], ToString[t], Order[e], ToString[e] {
-    pub def box(x: Result[t, e]): Boxed = {
-        let value = x as ##java.lang.Object;
-        let compare = (o1, o2) -> Order.compare(o1 as Result[t, e], o2 as Result[t, e]);
-        let toString = o -> ToString.toString(o as Result[t, e]);
-        BoxedObject(value, compare, toString)
-    }
-    pub def unbox(x: Boxed): Result[t, e] = match x {
-        case BoxedObject(v, _, _) => v as Result[t, e]
-        case _                    => ?bug
-    }
-}
-
-instance ToString[Result[t, e]] with ToString[t], ToString[e] {
-    pub def toString(r: Result[t, e]): String = match r {
-        case Ok(t)  => "Ok(${t})"
-        case Err(e) => "Err(${e})"
-    }
 }
 
 instance Hash[Result[t, e]] with Hash[t], Hash[e] {
@@ -51,32 +31,6 @@ instance Hash[Result[t, e]] with Hash[t], Hash[e] {
         case Ok(v)  => 5381 + 113 * Hash.hash(v)
         case Err(v) => 5351 + 97 * Hash.hash(v)
     }
-}
-
-instance Eq[Result[t, e]] with Eq[t], Eq[e] {
-    pub def eq(r1: Result[t, e], r2: Result[t, e]): Bool = match (r1, r2) {
-        case (Ok(v1), Ok(v2)) => v1 == v2
-        case (Err(w1), Err(w2)) => w1 == w2
-        case _ => false
-    }
-}
-
-instance Order[Result[t, e]] with Order[t], Order[e] {
-
-    ///
-    /// Returns the result of a three-way comparison between `r1` and `r2`.
-    ///
-    /// Returns LessThan if `r1` is smaller than `r2`.
-    /// Returns EqualTo if `r1` is equal to `r2`.
-    /// Returns GreaterThan if `r1` is greater than `r2`.
-    ///
-    pub def compare(r1: Result[t, e], r2: Result[t, e]): Comparison = match (r1, r2) {
-        case (Ok(v1), Ok(v2))   =>  v1 <=> v2
-        case (Err(v1), Err(v2)) =>  v1 <=> v2
-        case (Ok(_), Err(_))    =>  LessThan
-        case (Err(_), Ok(_))    =>  GreaterThan
-    }
-
 }
 
 namespace Result {

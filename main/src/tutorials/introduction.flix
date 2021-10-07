@@ -107,18 +107,7 @@ instance Order[Constant] {
     }
 }
 
-instance Boxable[Constant] {
-    pub def box(x: Constant): Boxed = {
-        let value = x as ##java.lang.Object;
-        let compare = (o1, o2) -> Order.compare(o1 as Constant, o2 as Constant);
-        let toString = o -> ToString.toString(o as Constant);
-        BoxedObject(value, compare, toString)
-    }
-    pub def unbox(x: Boxed): Constant= match x {
-        case BoxedObject(v, _, _) => v as Constant
-        case _                    => ?bug
-    }
-}
+instance Boxable[Constant]
 
 //
 // We need an instance of ToString for pretty printing:
@@ -222,7 +211,7 @@ pub def main(_: Array[String]): Int32 & Impure =
         // function then we infer a possible error for `r`.
         //
         ArithmeticError(r) :- isMaybeZero(y),
-                              DivStm(r, n, d),
+                              DivStm(r, _n, d),
                               LocalVar(d; y).
 
         //

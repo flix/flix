@@ -136,7 +136,7 @@ object ParsedAst {
       * @param tpe     the type of the opaque type.
       * @param sp2     the position of the last character in the declaration.
       */
-    case class OpaqueType(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Declaration
+    case class OpaqueType(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, derives: Seq[Name.QName], tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Type Alias Declaration.
@@ -334,9 +334,9 @@ object ParsedAst {
     /**
       * Char Literal.
       *
-      * @param sp1 the position of the first character in the literal.
+      * @param sp1   the position of the first character in the literal.
       * @param chars the char codes.
-      * @param sp2 the position of the last character in the literal.
+      * @param sp2   the position of the last character in the literal.
       */
     case class Char(sp1: SourcePosition, chars: Seq[ParsedAst.CharCode], sp2: SourcePosition) extends ParsedAst.Literal
 
@@ -1021,8 +1021,14 @@ object ParsedAst {
       */
     case class FixpointQueryWithSelect(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], selects: ParsedAst.SelectFragment, from: Seq[ParsedAst.Predicate.Body.Atom], whereExp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
-    // TODO: DOC
-    case class MatchEff(sp1: SourcePosition, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, exp3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    /**
+      * Reify Expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param t   the type to reify.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class Reify(sp1: SourcePosition, t: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Expression
 
   }
 
@@ -1280,13 +1286,34 @@ object ParsedAst {
     case class Record(sp1: SourcePosition, fields: Seq[ParsedAst.RecordFieldType], rest: Option[Name.Ident], sp2: SourcePosition) extends ParsedAst.Type
 
     /**
+      * Record Row type.
+      *
+      * @param sp1    the position of the first character in the type.
+      * @param fields the sequence of field types.
+      * @param rest   the optional row variable.
+      * @param sp2    the position of the last character in the type.
+      */
+    case class RecordRow(sp1: SourcePosition, fields: Seq[ParsedAst.RecordFieldType], rest: Option[Name.Ident], sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
       * Schema Type.
       *
       * @param sp1        the position of the first character in the type.
       * @param predicates the sequence of predicate types.
+      * @param rest       the optional row variable.
       * @param sp2        the position of the last character in the type.
       */
     case class Schema(sp1: SourcePosition, predicates: Seq[ParsedAst.PredicateType], rest: Option[Name.Ident], sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
+      * Schema Row Type.
+      *
+      * @param sp1        the position of the first character in the type.
+      * @param predicates the sequence of predicate types.
+      * @param rest       the optional row variable.
+      * @param sp2        the position of the last character in the type.
+      */
+    case class SchemaRow(sp1: SourcePosition, predicates: Seq[ParsedAst.PredicateType], rest: Option[Name.Ident], sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * Unary Impure Arrow Type.
@@ -1418,14 +1445,19 @@ object ParsedAst {
     case class Bool(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
 
     /**
-      * The Record kind.
+      * The Record Row kind.
       */
-    case class Record(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
+    case class RecordRow(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
 
     /**
-      * The Schema kind.
+      * The Schema Row kind.
       */
-    case class Schema(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
+    case class SchemaRow(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
+
+    /**
+      * The Predicate kind.
+      */
+    case class Predicate(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
 
     /**
       * The Arrow kind.

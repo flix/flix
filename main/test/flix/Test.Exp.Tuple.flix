@@ -1,7 +1,7 @@
 namespace Test/Exp/Tuple {
 
     @test
-    def testUnitTuple01(): () = ()
+    def testUnitTuple01(): Unit = ()
 
     @test
     def testBoolTuple01(): (Bool, Bool) = (true, false)
@@ -64,10 +64,10 @@ namespace Test/Exp/Tuple {
     def testStringTuple02(): (String, String, String) = ("abc", "def", "geh")
 
     @test
-    def testRecordTuple01(): ({x: Int}, {x: Int}) = ({x = 1}, {x = 2})
+    def testRecordTuple01(): ({x :: Int}, {x :: Int}) = ({x = 1}, {x = 2})
 
     @test
-    def testRecordTuple02(): ({x: Int}, {x: Int}, {x: Int}) = ({x = 1}, {x = 2}, {x = 3})
+    def testRecordTuple02(): ({x :: Int}, {x :: Int}, {x :: Int}) = ({x = 1}, {x = 2}, {x = 3})
 
     @test
     def testTupleTuple01(): (Int, (Int, Int)) = (1, (2, 3))

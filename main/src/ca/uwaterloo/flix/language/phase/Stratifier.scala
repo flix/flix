@@ -408,10 +408,8 @@ object Stratifier extends Phase[Root, Root] {
         case e => Expression.FixpointProjectOut(pred, e, tpe, eff, loc)
       }
 
-    case Expression.MatchEff(exp1, exp2, exp3, tpe, eff, loc) =>
-      mapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
-        case (e1, e2, e3) => Expression.MatchEff(e1, e2, e3, tpe, eff, loc)
-      }
+    case Expression.Reify(t, tpe, eff, loc) =>
+      Expression.Reify(t, tpe, eff, loc).toSuccess
 
   }
 
@@ -645,8 +643,8 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.FixpointProjectOut(_, exp, _, _, _) =>
       dependencyGraphOfExp(exp)
 
-    case Expression.MatchEff(exp1, exp2, exp3, _, _, _) =>
-      dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2) + dependencyGraphOfExp(exp3)
+    case Expression.Reify(_, _, _, _) =>
+      DependencyGraph.empty
 
   }
 
@@ -874,7 +872,7 @@ object Stratifier extends Phase[Root, Root] {
     * Returns the set of predicates that appears in the given row type `tpe`.
     */
   private def predicateSymbolsOf(tpe: Type): Set[Name.Pred] = tpe.typeConstructors.foldLeft(Set.empty[Name.Pred]) {
-    case (acc, TypeConstructor.SchemaExtend(pred)) => acc + pred
+    case (acc, TypeConstructor.SchemaRowExtend(pred)) => acc + pred
     case (acc, _) => acc
   }
 

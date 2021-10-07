@@ -302,7 +302,7 @@ object AsmOps {
     * For example, the class of `Tuple[Int32, Int32]` has the following `setField0` method:
     *
     * public final void setField0(int var) {
-    *   this.field0 = var;
+    * this.field0 = var;
     * }
     */
   def compileSetFieldMethod(visitor: ClassWriter, classType: JvmName, fieldName: String, methodName: String, fieldType: JvmType): Unit = {
@@ -353,7 +353,7 @@ object AsmOps {
     mv.visitTypeInsn(NEW, className.toInternalName)
     mv.visitInsn(DUP2)
     mv.visitInsn(SWAP)
-    mv.visitMethodInsn(INVOKESPECIAL, className.toInternalName, "<init>", "(Lflix/runtime/ReifiedSourceLocation;)V", false)
+    mv.visitMethodInsn(INVOKESPECIAL, className.toInternalName, "<init>", s"(${JvmName.ReifiedSourceLocation.toDescriptor})${JvmType.Void.toDescriptor}", false)
     mv.visitInsn(ATHROW)
   }
 
@@ -362,13 +362,13 @@ object AsmOps {
     */
   def compileThrowHoleError(mv: MethodVisitor, hole: String, loc: SourceLocation): Unit = {
     compileReifiedSourceLocation(mv, loc)
-    val className = JvmName.Runtime.HoleError
+    val className = JvmName.HoleError
     mv.visitTypeInsn(NEW, className.toInternalName)
     mv.visitInsn(DUP2)
     mv.visitInsn(SWAP)
     mv.visitLdcInsn(hole)
     mv.visitInsn(SWAP)
-    mv.visitMethodInsn(INVOKESPECIAL, className.toInternalName, "<init>", "(Ljava/lang/String;Lflix/runtime/ReifiedSourceLocation;)V", false)
+    mv.visitMethodInsn(INVOKESPECIAL, className.toInternalName, "<init>", s"(${JvmName.String.toDescriptor}${JvmName.ReifiedSourceLocation.toDescriptor})${JvmType.Void.toDescriptor}", false)
     mv.visitInsn(ATHROW)
   }
 
@@ -376,14 +376,14 @@ object AsmOps {
     * Generates code which instantiate a reified source location.
     */
   def compileReifiedSourceLocation(mv: MethodVisitor, loc: SourceLocation): Unit = {
-    mv.visitTypeInsn(NEW, JvmName.Runtime.ReifiedSourceLocation.toInternalName)
+    mv.visitTypeInsn(NEW, JvmName.ReifiedSourceLocation.toInternalName)
     mv.visitInsn(DUP)
     mv.visitLdcInsn(loc.source.format)
     mv.visitLdcInsn(loc.beginLine)
     mv.visitLdcInsn(loc.beginCol)
     mv.visitLdcInsn(loc.endLine)
     mv.visitLdcInsn(loc.endCol)
-    mv.visitMethodInsn(INVOKESPECIAL, JvmName.Runtime.ReifiedSourceLocation.toInternalName, "<init>", "(Ljava/lang/String;IIII)V", false)
+    mv.visitMethodInsn(INVOKESPECIAL, JvmName.ReifiedSourceLocation.toInternalName, "<init>", GenReifiedSourceLocationClass.ConstructorDescriptor, false)
   }
 
   /**
@@ -640,7 +640,7 @@ object AsmOps {
   /**
     * Emits code to call a closure (not in tail position). fType is the type of the called closure. argsType is the type of its arguments, and resultType is the type of its result.
     */
-  def compileClosureApplication(visitor: MethodVisitor, fType: MonoType, argsTypes: List[MonoType], resultType: MonoType)(implicit root: Root, flix: Flix) = {
+  def compileClosureApplication(visitor: MethodVisitor, fType: MonoType, argsTypes: List[MonoType], resultType: MonoType, castFinalValue: Boolean = true)(implicit root: Root, flix: Flix): Unit = {
     // Type of the continuation interface
     val cont = JvmOps.getContinuationInterfaceType(fType)
     // Type of the function interface
@@ -679,6 +679,6 @@ object AsmOps {
     // Load IFO from local variable and invoke `getResult` on it
     visitor.visitVarInsn(ALOAD, 2)
     visitor.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "getResult", AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(resultType)), true)
-    AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(resultType))
+    if (castFinalValue) AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(resultType))
   }
 }

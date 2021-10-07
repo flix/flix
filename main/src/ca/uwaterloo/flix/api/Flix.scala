@@ -114,6 +114,7 @@ class Flix {
     "BigInt.flix" -> LocalResource.get("/src/library/BigInt.flix"),
     "Char.flix" -> LocalResource.get("/src/library/Char.flix"),
     "Choice.flix" -> LocalResource.get("/src/library/Choice.flix"),
+    "Condition.flix" -> LocalResource.get("/src/library/Condition.flix"),
     "Console.flix" -> LocalResource.get("/src/library/Console.flix"),
     "Float32.flix" -> LocalResource.get("/src/library/Float32.flix"),
     "Float64.flix" -> LocalResource.get("/src/library/Float64.flix"),
@@ -123,14 +124,17 @@ class Flix {
     "Int64.flix" -> LocalResource.get("/src/library/Int64.flix"),
     "Iterator.flix" -> LocalResource.get("/src/library/Iterator.flix"),
     "LazyList.flix" -> LocalResource.get("/src/library/LazyList.flix"),
+    "DemandList.flix" -> LocalResource.get("/src/library/DemandList.flix"),
     "List.flix" -> LocalResource.get("/src/library/List.flix"),
     "Map.flix" -> LocalResource.get("/src/library/Map.flix"),
     "Nel.flix" -> LocalResource.get("/src/library/Nel.flix"),
     "Object.flix" -> LocalResource.get("/src/library/Object.flix"),
     "Option.flix" -> LocalResource.get("/src/library/Option.flix"),
     "Random.flix" -> LocalResource.get("/src/library/Random.flix"),
+    "ReentrantLock.flix" -> LocalResource.get("/src/library/ReentrantLock.flix"),
     "Result.flix" -> LocalResource.get("/src/library/Result.flix"),
     "Set.flix" -> LocalResource.get("/src/library/Set.flix"),
+    "Stream.flix" -> LocalResource.get("/src/library/Stream.flix"),
     "String.flix" -> LocalResource.get("/src/library/String.flix"),
 
     "MutList.flix" -> LocalResource.get("/src/library/MutList.flix"),
@@ -144,6 +148,7 @@ class Flix {
 
     "FromString.flix" -> LocalResource.get("/src/library/FromString.flix"),
     "Functor.flix" -> LocalResource.get("/src/library/Functor.flix"),
+    "Applicative.flix" -> LocalResource.get("/src/library/Applicative.flix"),
     "SemiGroup.flix" -> LocalResource.get("/src/library/SemiGroup.flix"),
     "Monoid.flix" -> LocalResource.get("/src/library/Monoid.flix"),
     "Foldable.flix" -> LocalResource.get("/src/library/Foldable.flix"),
@@ -159,7 +164,7 @@ class Flix {
     "StringBuilder.flix" -> LocalResource.get("/src/library/StringBuilder.flix"),
     "RedBlackTree.flix" -> LocalResource.get("/src/library/RedBlackTree.flix"),
     "GetOpt.flix" -> LocalResource.get("/src/library/GetOpt.flix"),
-    
+
     "Fixpoint/Compiler.flix" -> LocalResource.get("/src/library/Fixpoint/Compiler.flix"),
     "Fixpoint/Debugging.flix" -> LocalResource.get("/src/library/Fixpoint/Debugging.flix"),
     "Fixpoint/IndexSelection.flix" -> LocalResource.get("/src/library/Fixpoint/IndexSelection.flix"),
@@ -208,6 +213,11 @@ class Flix {
     * The current phase we are in. Initially null.
     */
   var currentPhase: PhaseTime = _
+
+  /**
+    * The progress bar.
+    */
+  val progressBar: ProgressBar = new ProgressBar
 
   /**
     * The default assumed charset.
@@ -340,6 +350,9 @@ class Flix {
     // Shutdown fork join pool.
     shutdownForkJoin()
 
+    // Reset the progress bar.
+    progressBar.complete()
+
     // Return the result.
     result
   }
@@ -374,6 +387,9 @@ class Flix {
     // Shutdown fork join pool.
     shutdownForkJoin()
 
+    // Reset the progress bar.
+    progressBar.complete()
+
     // Return the result.
     result
   }
@@ -392,6 +408,10 @@ class Flix {
   def phase[A](phase: String)(f: => A): A = {
     // Initialize the phase time object.
     currentPhase = PhaseTime(phase, 0, Nil)
+
+    if (options.progress) {
+      progressBar.observe(currentPhase.phase, "", sample = false)
+    }
 
     // Measure the execution time.
     val t = System.nanoTime()
@@ -443,6 +463,15 @@ class Flix {
 
     // Return the result computed by the subphase.
     r
+  }
+
+  /**
+    * A callback to indicate that work has started on the given subtask.
+    */
+  def subtask(subtask: String, sample: Boolean = false): Unit = {
+    if (options.progress) {
+      progressBar.observe(currentPhase.phase, subtask, sample)
+    }
   }
 
   /**

@@ -274,14 +274,10 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
         FinalAst.Expression.Assign(e1, e2, t, loc)
 
       case LiftedAst.Expression.Existential(fparam, exp, loc) =>
-        val p = visitFormalParam(fparam)
-        val e = visit(exp)
-        FinalAst.Expression.Existential(p, e, loc)
+        throw InternalCompilerException(s"Unexpected Existential expression, should have been handled earlier")
 
       case LiftedAst.Expression.Universal(fparam, exp, loc) =>
-        val p = visitFormalParam(fparam)
-        val e = visit(exp)
-        FinalAst.Expression.Universal(p, e, loc)
+        throw InternalCompilerException(s"Unexpected Universal expression, should have been handled earlier")
 
       case LiftedAst.Expression.Cast(exp, tpe, loc) =>
         val e = visit(exp)
@@ -435,7 +431,7 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
 
           case TypeConstructor.Str => MonoType.Str
 
-          case TypeConstructor.RecordEmpty => MonoType.RecordEmpty()
+          case TypeConstructor.RecordRowEmpty => MonoType.RecordEmpty()
 
           case TypeConstructor.Array => MonoType.Array(args.head)
 
@@ -460,7 +456,9 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
 
           case TypeConstructor.Arrow(l) => MonoType.Arrow(args.drop(1).init, args.last)
 
-          case TypeConstructor.RecordExtend(field) => MonoType.RecordExtend(field.name, args.head, args(1))
+          case TypeConstructor.RecordRowExtend(field) => MonoType.RecordExtend(field.name, args.head, args(1))
+
+          case TypeConstructor.Record => args.head
 
           case TypeConstructor.True => MonoType.Unit
 
@@ -481,10 +479,14 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
           case TypeConstructor.Lattice =>
             throw InternalCompilerException(s"Unexpected type: '$t0'.")
 
-          case TypeConstructor.SchemaEmpty =>
+          case TypeConstructor.SchemaRowEmpty =>
             throw InternalCompilerException(s"Unexpected type: '$t0'.")
 
-          case TypeConstructor.SchemaExtend(pred) => throw InternalCompilerException(s"Unexpected type: '$t0'.")
+          case TypeConstructor.SchemaRowExtend(pred) =>
+            throw InternalCompilerException(s"Unexpected type: '$t0'.")
+
+          case TypeConstructor.Schema =>
+            throw InternalCompilerException(s"Unexpected type: '$t0'.")
         }
     }
   }

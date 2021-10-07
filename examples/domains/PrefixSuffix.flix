@@ -6,7 +6,7 @@ namespace Domain/PrefixSuffix {
     ///
     /// The elements of the prefix-suffix lattice.
     ///
-    enum PrefixSuffix {
+    enum PrefixSuffix with Eq {
                    case Top,
 
         case Pre(Int), case Suf(Int),
@@ -20,10 +20,6 @@ namespace Domain/PrefixSuffix {
     /// Returns `true` iff `e1` is equal to `e2`.
     ///
     pub def equ(e1: PrefixSuffix, e2: PrefixSuffix): Bool = e1 == e2
-
-    instance Eq[PrefixSuffix] {
-        pub def eq(e1: PrefixSuffix, e2: PrefixSuffix): Bool = equ(e1, e2)
-    }
 
     ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.

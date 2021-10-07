@@ -592,12 +592,10 @@ object Lowering extends Phase[Root, Root] {
       val argExps = mkPredSym(pred) :: visitExp(exp) :: Nil
       Expression.Apply(defExp, argExps, tpe, eff, loc)
 
-    case Expression.MatchEff(exp1, exp2, exp3, tpe, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val e3 = visitExp(exp3)
-      val t = visitType(tpe)
-      Expression.MatchEff(e1, e2, e3, t, eff, loc)
+    case Expression.Reify(t0, tpe0, eff, loc) =>
+      val t = visitType(t0)
+      val tpe = visitType(tpe0)
+      Expression.Reify(t, tpe, eff, loc)
 
   }
 
@@ -684,7 +682,7 @@ object Lowering extends Phase[Root, Root] {
   private def visitType(tpe0: Type)(implicit root: Root, flix: Flix): Type = {
     def visit(tpe: Type): Type = tpe match {
       case Type.KindedVar(id, kind, loc, rigidity, text) => kind match {
-        case Kind.Schema => Type.KindedVar(id, Kind.Star, loc, rigidity, text)
+        case Kind.SchemaRow => Type.KindedVar(id, Kind.Star, loc, rigidity, text)
         case _ => tpe0
       }
 
@@ -700,7 +698,7 @@ object Lowering extends Phase[Root, Root] {
       case _: Type.Ascribe => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
     }
 
-    if (tpe0.kind == Kind.Schema)
+    if (tpe0.typeConstructor.contains(TypeConstructor.Schema))
       Types.Datalog
     else
       visit(tpe0)
@@ -1485,11 +1483,8 @@ object Lowering extends Phase[Root, Root] {
       val e = substExp(exp, subst)
       Expression.FixpointProjectOut(pred, e, tpe, eff, loc)
 
-    case Expression.MatchEff(exp1, exp2, exp3, tpe, eff, loc) =>
-      val e1 = substExp(exp1, subst)
-      val e2 = substExp(exp2, subst)
-      val e3 = substExp(exp3, subst)
-      Expression.MatchEff(e1, e2, e3, tpe, eff, loc)
+    case Expression.Reify(t, tpe, eff, loc) =>
+      Expression.Reify(t, tpe, eff, loc)
 
     case Expression.FixpointConstraintSet(cs, stf, tpe, loc) => throw InternalCompilerException(s"Unexpected expression near ${loc.format}.")
   }

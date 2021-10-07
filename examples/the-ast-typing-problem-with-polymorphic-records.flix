@@ -3,12 +3,12 @@
 /// We begin with a grammar for expressions.
 /// The definition of Exp is polymorphic in a record type that
 /// allows the AST to be decorated with additional fields.
-enum Expr[r: Record] {
+enum Expr[r: RecordRow] {
     case True,
     case False,
-    case Cst({value: Int | r}),
-    case Add({exp1: Expr[{| r}], exp2: Expr[{| r}] | r}),
-    case Ite({exp1: Expr[{| r}], exp2: Expr[{| r}], exp3: Expr[{| r}] | r})
+    case Cst({value :: Int | r}),
+    case Add({exp1 :: Expr[r], exp2 :: Expr[r] | r}),
+    case Ite({exp1 :: Expr[r], exp2 :: Expr[r], exp3 :: Expr[r] | r})
 }
 
 /// Next, we define a grammar of types:
@@ -19,7 +19,7 @@ enum Type {
 
 /// We can now write a function that given an expression extended
 /// with a tpe: Type field returns its type!
-def typeOf(e: Expr[{tpe: Type | r}]): Type = match e {
+def typeOf(e: Expr[(tpe :: Type | r)]): Type = match e {
     case True   => TBool
     case False  => TBool
     case Cst(_) => TInt
@@ -30,7 +30,7 @@ def typeOf(e: Expr[{tpe: Type | r}]): Type = match e {
 /// We can write a function that takes an untyped expression
 /// and returns a typed expression decorated with the type.
 /// For simplicity, the actual checks have been omitted.
-def typeCheck(e: Expr[{}]): Expr[{tpe: Type}] = match e {
+def typeCheck(e: Expr[()]): Expr[(tpe :: Type)] = match e {
     case True   => True
     case False  => False
     case Cst(i) => Cst({value = i.value, tpe = TInt})
@@ -55,7 +55,7 @@ def main(_args: Array[String]): Int32 & Impure =
 
 /// We can extend the function above to be one that is polymorphic
 /// in whatever other fields an expression may be decorated with:
-def typeCheck2(e: Expr[{| r}]): Expr[{tpe: Type | r}] = match e {
+def typeCheck2(e: Expr[r]): Expr[(tpe :: Type | r)] = match e {
     case True   => True
     case False  => False
     case Cst(i) => Cst({ +tpe = TInt | { value = i.value | i}})

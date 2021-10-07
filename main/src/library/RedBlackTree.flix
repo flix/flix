@@ -105,7 +105,7 @@ namespace RedBlackTree {
     /// Otherwise, updates `tree` with `k -> v`.
     ///
     @Time(time(f) + Int32.log2(size(tree))) @Space(space(f) + Int32.log2(size(tree)))
-    pub def insertWith(f: (k, v, v) -> v & e, k: k, v: v, tree: RedBlackTree[k, v]): RedBlackTree[k, v] & e with Order[k] =
+    pub def insertWith(f: (k, v, v) -> v & ef, k: k, v: v, tree: RedBlackTree[k, v]): RedBlackTree[k, v] & ef with Order[k] =
         blacken(insertWithHelper(f, k, v, tree))
 
     ///
@@ -114,7 +114,7 @@ namespace RedBlackTree {
     /// Otherwise, returns `tree`.
     ///
     @Time(time(f) + Int32.log2(size(tree))) @Space(space(f) + Int32.log2(size(tree)))
-    pub def updateWith(f: (k, v) -> Option[v] & e, k: k, tree: RedBlackTree[k, v]): RedBlackTree[k, v] & e with Order[k] =
+    pub def updateWith(f: (k, v) -> Option[v] & ef, k: k, tree: RedBlackTree[k, v]): RedBlackTree[k, v] & ef with Order[k] =
         blacken(updateWithHelper(f, k, tree))
 
     ///
@@ -188,7 +188,7 @@ namespace RedBlackTree {
     ///
     /// That is, the result is of the form: `f(...f(f(s, k1, v1), k2, v2)..., vn)`.
     ///
-    pub def foldLeft(f: (b, k, v) -> b & e, s: b, tree: RedBlackTree[k, v]): b & e = match tree {
+    pub def foldLeft(f: (b, k, v) -> b & ef, s: b, tree: RedBlackTree[k, v]): b & ef = match tree {
         case Node(_, a, k, v, b) => foldLeft(f, f(foldLeft(f, s, a), k, v), b)
         case _ => s
     }
@@ -198,7 +198,7 @@ namespace RedBlackTree {
     ///
     /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
     ///
-    pub def foldRight(f: (k, v, b) -> b & e, s: b, tree: RedBlackTree[k, v]): b & e = match tree {
+    pub def foldRight(f: (k, v, b) -> b & ef, s: b, tree: RedBlackTree[k, v]): b & ef = match tree {
         case Node(_, a, k, v, b) => foldRight(f, f(k, v, foldRight(f, s, b)), a)
         case _ => s
     }
@@ -209,7 +209,7 @@ namespace RedBlackTree {
     ///
     /// Returns `None` if `tree` is the empty tree.
     ///
-    pub def reduceLeft(f: (k, v, k, v) -> (k, v) & e, tree: RedBlackTree[k, v]): Option[(k, v)] & e =
+    pub def reduceLeft(f: (k, v, k, v) -> (k, v) & ef, tree: RedBlackTree[k, v]): Option[(k, v)] & ef =
         foldLeft((x, k1, v1) -> match x {
             case Some((k2, v2)) => Some(f(k2, v2, k1, v1))
             case None => Some(k1, v1)
@@ -222,7 +222,7 @@ namespace RedBlackTree {
     ///
     /// Returns `None` if `tree` is the empty tree.
     ///
-    pub def reduceRight(f: (k, v, k, v) -> (k, v) & e, tree: RedBlackTree[k, v]): Option[(k, v)] & e =
+    pub def reduceRight(f: (k, v, k, v) -> (k, v) & ef, tree: RedBlackTree[k, v]): Option[(k, v)] & ef =
         foldRight((k1, v1, x) -> match x {
             case Some((k2, v2)) => Some(f(k1, v1, k2, v2))
             case None => Some(k1, v1)
@@ -312,7 +312,7 @@ namespace RedBlackTree {
     ///
     /// Helper function for `insertWith`.
     ///
-    def insertWithHelper(f: (k, v, v) -> v & e, k: k, v: v, tree: RedBlackTree[k, v]): RedBlackTree[k, v] & e with Order[k] = match tree {
+    def insertWithHelper(f: (k, v, v) -> v & ef, k: k, v: v, tree: RedBlackTree[k, v]): RedBlackTree[k, v] & ef with Order[k] = match tree {
         case Leaf => Node(Red, Leaf, k, v, Leaf)
         case Node(color, a, k1, v1, b) =>
             match k <=> k1 {
@@ -326,7 +326,7 @@ namespace RedBlackTree {
     ///
     /// Helper function for `updateWith`.
     ///
-    def updateWithHelper(f: (k, v) -> Option[v] & e, k: k, tree: RedBlackTree[k, v]): RedBlackTree[k, v] & e with Order[k] = match tree {
+    def updateWithHelper(f: (k, v) -> Option[v] & ef, k: k, tree: RedBlackTree[k, v]): RedBlackTree[k, v] & ef with Order[k] = match tree {
         case Leaf => tree
         case Node(color, a, k1, v1, b) =>
             match k <=> k1 {
@@ -423,7 +423,7 @@ namespace RedBlackTree {
     ///
     /// The function `f` must be impure.
     ///
-    pub def queryWith(p: k -> Comparison & e, f: (k, v) ~> Unit, tree: RedBlackTree[k, v]): Unit & Impure = match tree {
+    pub def queryWith(p: k -> Comparison & ef, f: (k, v) ~> Unit, tree: RedBlackTree[k, v]): Unit & Impure = match tree {
         case Node(_, a, k, v, b) =>
             match p(k) {
                 case LessThan => queryWith(p, f, b)
@@ -442,11 +442,12 @@ namespace RedBlackTree {
     ///
     /// That is, the result is a list of all pairs `f(k, v)` where `p(k)` returns `Equal`.
     ///
-    pub def query(p: k -> Comparison & e, f: (k, v) -> a, tree: RedBlackTree[k, v]): List[a] & e =
-        let buffer = MutList.new() as & e;
+    pub def query(p: k -> Comparison & ef, f: (k, v) -> a, tree: RedBlackTree[k, v]): List[a] & ef = {
+        let buffer = MutList.new();
         let g = k -> v -> MutList.push!(f(k, v), buffer);
-        queryWith(p, g, tree) as & e;
-        MutList.toImm(buffer) as & e
+        queryWith(p, g, tree);
+        MutList.toList(buffer)
+    } as & ef
 
     ///
     /// Extracts `k -> v` where `k` is the leftmost (i.e. smallest) key in the tree.

@@ -25,18 +25,7 @@ enum List[t] {
     case Cons(t, List[t])
 }
 
-instance Boxable[List[t]] with Order[t], ToString[t] {
-    pub def box(x: List[t]): Boxed = {
-        let value = x as ##java.lang.Object;
-        let compare = (o1, o2) -> Order.compare(o1 as List[t], o2 as List[t]);
-        let toString = o -> ToString.toString(o as List[t]);
-        BoxedObject(value, compare, toString)
-    }
-    pub def unbox(x: Boxed): List[t] = match x {
-        case BoxedObject(v, _, _) => v as List[t]
-        case _                    => ?bug
-    }
-}
+instance Boxable[List[t]]
 
 instance ToString[List[a]] with ToString[a] {
     pub def toString(xs: List[a]): String = List.toString(xs)
@@ -72,12 +61,17 @@ instance Order[List[a]] with Order[a] {
 }
 
 instance Functor[List] {
-    pub def map(f: a -> b & e, xs: List[a]): List[b] & e = List.map(f, xs)
+    pub def map(f: a -> b & ef, xs: List[a]): List[b] & ef = List.map(f, xs)
+}
+
+instance Applicative[List] {
+    pub def point(x: a) : List[a] = List.point(x)
+    pub def ap(f: List[a -> b & e], x: List[a]) : List[b] & e = List.ap(f, x)
 }
 
 instance Foldable[List] {
-    pub def foldLeft(f: (b, a) -> b & e, s: b, xs: List[a]): b & e = List.foldLeft(f, s, xs)
-    pub def foldRight(f: (a, b) -> b & e, s: b, xs: List[a]): b & e = List.foldRight(f, s, xs)
+    pub def foldLeft(f: (b, a) -> b & ef, s: b, xs: List[a]): b & ef = List.foldLeft(f, s, xs)
+    pub def foldRight(f: (a, b) -> b & ef, s: b, xs: List[a]): b & ef = List.foldRight(f, s, xs)
 }
 
 namespace List {
@@ -276,19 +270,19 @@ namespace List {
     ///
     /// Alias for `scanLeft`.
     ///
-    pub def scan(f: (b, a) -> b & e, s: b, xs: List[a]): List[b] & e = scanLeft(f, s, xs)
+    pub def scan(f: (b, a) -> b & ef, s: b, xs: List[a]): List[b] & ef = scanLeft(f, s, xs)
 
     ///
     /// Accumulates the result of applying `f` to `xs` going left to right.
     ///
     /// That is, the result is of the form: `s :: f(s, x1) :: f(f(s, x1), x2)  ...`.
     ///
-    pub def scanLeft(f: (b, a) -> b & e, s: b, xs: List[a]): List[b] & e = s :: scanLeftHelper(f, s, xs)
+    pub def scanLeft(f: (b, a) -> b & ef, s: b, xs: List[a]): List[b] & ef = s :: scanLeftHelper(f, s, xs)
 
     ///
     /// Helper function for `scanLeft`.
     ///
-    def scanLeftHelper(f: (b, a) -> b & e, s: b, xs: List[a]): List[b] & e = match xs {
+    def scanLeftHelper(f: (b, a) -> b & ef, s: b, xs: List[a]): List[b] & ef = match xs {
         case Nil => Nil
         case x :: rs => f(s, x) :: scanLeftHelper(f, f(s, x), rs)
     }
@@ -298,7 +292,7 @@ namespace List {
     ///
     /// That is, the result is of the form: `... f(xn-1, f(xn, s)) :: f(xn, s) :: s`.
     ///
-    pub def scanRight(f: (a, b) -> b & e, s: b, xs: List[a]): List[b] & e = match xs {
+    pub def scanRight(f: (a, b) -> b & ef, s: b, xs: List[a]): List[b] & ef = match xs {
         case Nil => s :: Nil
         case x :: rs => match scanRight(f, s, rs) {
             case y :: ys => f(x, y) :: y :: ys
@@ -317,13 +311,13 @@ namespace List {
     /// That is, the result is of the form: `f(x1) :: f(x2) :: ...`.
     ///
     @Time(time(f) * length(xs)) @Space(space(f) * length(xs))
-    pub def map(f: a -> b & e, xs: List[a]): List[b] & e =
+    pub def map(f: a -> b & ef, xs: List[a]): List[b] & ef =
         mapHelper(f, xs, ys -> ys)
 
     ///
     /// Helper function for `map`.
     ///
-    def mapHelper(f: a -> b & e, xs: List[a], k: List[b] -> List[b]): List[b] & e = match xs {
+    def mapHelper(f: a -> b & ef, xs: List[a], k: List[b] -> List[b]): List[b] & ef = match xs {
         case Nil => k(Nil)
         case x :: rs => {
             let a = f(x);
@@ -331,6 +325,50 @@ namespace List {
         }
     }
 
+    ///
+    /// Return the singleton list with element `x`.
+    ///
+    pub def point(x: a) : List[a] = x :: Nil
+
+    ///
+    /// Apply every function from `f` to every argument from `x` and return a list with all results.
+    /// For `f = f1, f2, ...` and `x = x1, x2, ...` the results appear in the order
+    /// `f1(x1), f1(x2), ..., f2(x1), f2(x2), ...`.
+    ///
+    /// TODO: More efficient implementation creating the result list in one go.
+    pub def ap(f: List[a -> b & e], x: List[a]) : List[b] & e =
+        map(g -> map(g, x), f) |> flatten
+
+    // TODO: Efficient implementations of lift2,...,lift5, redirect liftA2,...,liftA5 to those.
+    ///
+    /// Lift a binary function to work on lists of its original arguments, returning a list
+    /// of applying all combinations of arguments.
+    /// For argument lists `xs = x1, x2, ...` and `ys = y1, y2, ...` the results appear in the order
+    /// `f(x1,y1), f(x1,y2), ..., f(x2,y1), f(x2,y2), ...`.
+    ///
+    pub def lift2(f: t1 -> t2 -> r & e, l1: List[t1], l2: List[t2]): List[r] & e = Applicative.liftA2(f, l1, l2)
+
+    ///
+    /// Lift a ternary function to work on lists of its original arguments, returning a list
+    /// of applying all combinations of arguments.
+    /// For argument lists `xs = x1, x2, ...`, `ys = y1, y2, ...` and `zs = z1, z2, ...` the results appear
+    /// in the following order:
+    ///
+    /// ```
+    /// f(x1,y1,z1), f(x1,y1,z2), ..., f(x1,y2,z1), f(x1,y2,z2), ...,
+    /// f(x2,y1,z1), f(x2,y1,z2), ..., f(x2,y2,z1), f(x2,y2,z2), ...`
+    /// ...
+    /// ```
+    ///
+    pub def lift3(f: t1 -> t2 -> t3 -> r & e, l1: List[t1], l2: List[t2], l3: List[t3]): List[r] & e = Applicative.liftA3(f, l1, l2, l3)
+
+    /// Lift a 4-ary function to work on lists of its original arguments, returning a list
+    /// of applying all combinations of arguments. The results appear in the order extending the pattern from `lift3`.
+    pub def lift4(f: t1 -> t2 -> t3 -> t4 -> r & e, l1: List[t1], l2: List[t2], l3: List[t3], l4: List[t4]): List[r] & e = Applicative.liftA4(f, l1, l2, l3, l4)
+
+    /// Lift a 5-ary function to work on lists of its original arguments, returning a list
+    /// of applying all combinations of arguments. The results appear in the order extending the pattern from `lift3`.
+    pub def lift5(f: t1 -> t2 -> t3 -> t4 -> t5 -> r & e, l1: List[t1], l2: List[t2], l3: List[t3], l4: List[t4], l5: List[t5]): List[r] & e = Applicative.liftA5(f, l1, l2, l3, l4, l5)
 
     ///
     /// Returns the result of applying `f` to every element in `xs` along with that element's index.
@@ -338,12 +376,12 @@ namespace List {
     /// That is, the result is of the form: `f(x1, 0) :: f(x2, 1) :: ...`.
     ///
     @Time(time(f) * length(xs)) @Space(space(f) * length(xs))
-    pub def mapWithIndex(f: (a, Int32) -> b & e, xs: List[a]): List[b] & e = mapWithIndexHelper(f, xs, 0, ks -> ks)
+    pub def mapWithIndex(f: (a, Int32) -> b & ef, xs: List[a]): List[b] & ef = mapWithIndexHelper(f, xs, 0, ks -> ks)
 
     ///
     /// Helper function for `mapWithIndex`.
     ///
-    def mapWithIndexHelper(f: (a, Int32) -> b & e, xs: List[a], i: Int32, k: List[b] -> List[b]): List[b] & e = match xs {
+    def mapWithIndexHelper(f: (a, Int32) -> b & ef, xs: List[a], i: Int32, k: List[b] -> List[b]): List[b] & ef = match xs {
         case Nil => k(Nil)
         case x :: rs => {
             let x1 = f(x, i);
@@ -355,12 +393,12 @@ namespace List {
     /// Returns the result of applying `f` to every element in `xs` and concatenating the results.
     ///
     @Time(time(f) * length(xs)) @Space(time(f) * length(xs))
-    pub def flatMap(f: a -> List[b] & e, xs: List[a]): List[b] & e = flatMapHelper(f, xs, ks -> ks)
+    pub def flatMap(f: a -> List[b] & ef, xs: List[a]): List[b] & ef = flatMapHelper(f, xs, ks -> ks)
 
     ///
     /// Helper function for `flatMap`.
     ///
-    def flatMapHelper(f: a -> List[b] & e, xs: List[a], k: List[b] -> List[b]): List[b] & e = match xs {
+    def flatMapHelper(f: a -> List[b] & ef, xs: List[a], k: List[b] -> List[b]): List[b] & ef = match xs {
         case Nil => k(Nil)
         case x :: rs => {
             let xs1 = f(x);
@@ -624,7 +662,7 @@ namespace List {
     ///
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
     ///
-    pub def foldLeft(f: (b, a) -> b & e, s: b, xs: List[a]): b & e = match xs {
+    pub def foldLeft(f: (b, a) -> b & ef, s: b, xs: List[a]): b & ef = match xs {
         case Nil => s
         case x :: rs => foldLeft(f, f(s, x), rs)
     }
@@ -634,12 +672,12 @@ namespace List {
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
-    pub def foldRight(f: (a, b) -> b & e, s: b, xs: List[a]): b & e = foldRightHelper(f, s, xs, s1 -> s1 as & e)
+    pub def foldRight(f: (a, b) -> b & ef, s: b, xs: List[a]): b & ef = foldRightHelper(f, s, xs, s1 -> s1 as & ef)
 
     ///
     /// Helper function for `foldRight`.
     ///
-    def foldRightHelper(f: (a, b) -> b & e, s: b, xs: List[a], k: b -> b & e): b & e = match xs {
+    def foldRightHelper(f: (a, b) -> b & ef, s: b, xs: List[a], k: b -> b & ef): b & ef = match xs {
         case Nil => k(s)
         case x :: rs => foldRightHelper(f, s, rs, s1 -> k(f(x, s1)))
     }
@@ -651,7 +689,7 @@ namespace List {
     ///
     /// Returns `None` if `xs` is empty.
     ///
-    pub def reduceLeft(f: (a, a) -> a & e, xs: List[a]): Option[a] & e = match xs {
+    pub def reduceLeft(f: (a, a) -> a & ef, xs: List[a]): Option[a] & ef = match xs {
         case Nil => None
         case x :: rs => Some(foldLeft(f, x, rs))
     }
@@ -663,7 +701,7 @@ namespace List {
     ///
     /// Returns `None` if `xs` is empty.
     ///
-    pub def reduceRight(f: (a, a) -> a & e, xs: List[a]): Option[a] & e = match xs {
+    pub def reduceRight(f: (a, a) -> a & ef, xs: List[a]): Option[a] & ef = match xs {
         case Nil => None
         case x :: rs => match reduceRight(f, rs) {
             case None => Some(x)
@@ -731,9 +769,9 @@ namespace List {
     /// The function `f` must be pure.
     ///
     @Time(time(f) * length(xs)) @Space(space(f) * length(xs))
-    pub def filter(f: a -> Bool, xs: List[a]): List[a] = filterAcc(f, xs, Nil) |> List.reverse
+    pub def filter(f: a -> Bool & ef, xs: List[a]): List[a] & ef = filterAcc(f, xs, Nil) |> List.reverse
 
-    pub def filterAcc(f: a -> Bool, l: List[a], rs: List[a]): List[a] = match l {
+    pub def filterAcc(f: a -> Bool & ef, l: List[a], rs: List[a]): List[a] & ef = match l {
         case Nil => rs
         case x :: xs =>
             if (f(x)) filterAcc(f, xs, x :: rs) else filterAcc(f, xs, rs)
@@ -946,12 +984,12 @@ namespace List {
     /// If either `xs` or `ys` becomes depleted, then no further elements are added to the resulting list.
     ///
     @Time(time(f) * Int32.min(length(xs), length(ys))) @Space(space(f) * Int32.min(length(xs), length(ys)))
-    pub def zipWith(f: (a, b) -> c & e, xs: List[a], ys: List[b]): List[c] & e = zipWithHelper(f, xs, ys, ks -> ks)
+    pub def zipWith(f: (a, b) -> c & ef, xs: List[a], ys: List[b]): List[c] & ef = zipWithHelper(f, xs, ys, ks -> ks)
 
     ///
     /// Helper function for `zipWith`.
     ///
-    def zipWithHelper(f: (a, b) -> c & e, xs: List[a], ys: List[b], k: List[c] -> List[c]): List[c] & e = match (xs, ys) {
+    def zipWithHelper(f: (a, b) -> c & ef, xs: List[a], ys: List[b], k: List[c] -> List[c]): List[c] & ef = match (xs, ys) {
         case (x :: rs, y :: qs) => {
             let a = f(x, y);
             zipWithHelper(f, rs, qs, ks -> k(a :: ks))
@@ -1029,18 +1067,18 @@ namespace List {
     /// Functionally equivalent to zipWith.
     ///
     @Time(time(f) * Int32.min(length(xs), length(ys))) @Space(space(f) * Int32.min(length(xs), length(ys)))
-    pub def map2(f: (a, b) -> c & e, xs: List[a], ys: List[b]): List[c] & e = zipWith(f, xs, ys)
+    pub def map2(f: (a, b) -> c & ef, xs: List[a], ys: List[b]): List[c] & ef = zipWith(f, xs, ys)
 
     ///
     /// Concatenates the results of applying `f` pairwise to the elements of `xs` and `ys`.
     ///
     @Time(time(f) * Int32.min(length(xs), length(ys))) @Space(space(f) * Int32.min(length(xs), length(ys)))
-    pub def flatMap2(f: (a, b) -> List[c] & e, xs: List[a], ys: List[b]): List[c] & e = flatMap2Helper(f, xs, ys, ks -> ks)
+    pub def flatMap2(f: (a, b) -> List[c] & ef, xs: List[a], ys: List[b]): List[c] & ef = flatMap2Helper(f, xs, ys, ks -> ks)
 
     ///
     /// Helper function for `flatMap2`.
     ///
-    def flatMap2Helper(f: (a, b) -> List[c] & e, xs: List[a], ys: List[b], k: List[c] -> List[c]): List[c] & e = match (xs, ys) {
+    def flatMap2Helper(f: (a, b) -> List[c] & ef, xs: List[a], ys: List[b], k: List[c] -> List[c]): List[c] & ef = match (xs, ys) {
         case (x :: rs, y :: qs) => {
             let xs1 = f(x, y);
             flatMap2Helper(f, rs, qs, ks -> k(xs1 ::: ks))
@@ -1052,14 +1090,14 @@ namespace List {
     /// Alias for `foldLeft2`.
     ///
     @Time(time(f) * Int32.min(length(xs), length(ys))) @Space(space(f) * Int32.min(length(xs), length(ys)))
-    pub def fold2(f: (c, a, b) -> c & e, c: c, xs: List[a], ys: List[b]): c & e = foldLeft2(f, c, xs, ys)
+    pub def fold2(f: (c, a, b) -> c & ef, c: c, xs: List[a], ys: List[b]): c & ef = foldLeft2(f, c, xs, ys)
 
     ///
     /// Accumulates the result of applying `f` pairwise to the elements of `xs` and `ys`
     /// starting with the initial value `c` and going from left to right.
     ///
     @Time(time(f) * Int32.min(length(xs), length(ys))) @Space(space(f) * Int32.min(length(xs), length(ys)))
-    pub def foldLeft2(f: (c, a, b) -> c & e, c: c, xs: List[a], ys: List[b]): c & e = match (xs, ys) {
+    pub def foldLeft2(f: (c, a, b) -> c & ef, c: c, xs: List[a], ys: List[b]): c & ef = match (xs, ys) {
         case (x :: rs, y :: qs) => foldLeft2(f, f(c, x, y), rs, qs)
         case _ => c
     }
@@ -1069,7 +1107,7 @@ namespace List {
     /// starting with the initial value `c` and going from right to left.
     ///
     @Time(time(f) * Int32.min(length(xs), length(ys))) @Space(space(f) * Int32.min(length(xs), length(ys)))
-    pub def foldRight2(f: (a, b, c) -> c & e, c: c, xs: List[a], ys: List[b]): c & e =
+    pub def foldRight2(f: (a, b, c) -> c & ef, c: c, xs: List[a], ys: List[b]): c & ef =
         let len1 = length(xs);
         let len2 = length(ys);
             foldRight2Helper(f, c, drop(len1-len2, xs), drop(len2-len1, ys))
@@ -1077,7 +1115,7 @@ namespace List {
     ///
     /// Helper function for `foldRight2`.
     ///
-    def foldRight2Helper(f: (a, b, c) -> c & e, c: c, xs: List[a], ys: List[b]): c & e = match (xs, ys) {
+    def foldRight2Helper(f: (a, b, c) -> c & ef, c: c, xs: List[a], ys: List[b]): c & ef = match (xs, ys) {
         case (x :: rs, y :: qs) => f(x, y, foldRight2(f, c, rs, qs))
         case _ => c
     }
@@ -1086,13 +1124,13 @@ namespace List {
     /// Collects the results of applying the partial function `f` to every element in `xs`.
     ///
     @Time(time(f) * length(xs)) @Space(space(f) * length(xs))
-    pub def filterMap(f: a -> Option[b] & e, xs: List[a]): List[b] & e =
+    pub def filterMap(f: a -> Option[b] & ef, xs: List[a]): List[b] & ef =
         filterMapHelper(f, xs, ks -> ks)
 
     ///
     /// Helper function for `filterMap`.
     ///
-    def filterMapHelper(f: a -> Option[b] & e, xs: List[a], k: List[b] -> List[b]): List[b] & e = match xs {
+    def filterMapHelper(f: a -> Option[b] & ef, xs: List[a], k: List[b] -> List[b]): List[b] & ef = match xs {
         case Nil => k(Nil)
         case x :: rs => match f(x) {
                             case None => filterMapHelper(f, rs, k)
@@ -1105,7 +1143,7 @@ namespace List {
     /// Returns `None` if every element of `xs` is `None`.
     ///
     @Time(time(f) * length(xs)) @Space(space(f))
-    pub def findMap(f: a -> Option[b] & e, xs: List[a]): Option[b] & e = match xs {
+    pub def findMap(f: a -> Option[b] & ef, xs: List[a]): Option[b] & ef = match xs {
         case Nil => None
         case x :: rs => match f(x) {
                             case None => findMap(f, rs)
@@ -1146,7 +1184,7 @@ namespace List {
     ///
     /// Returns `xs` as a mutable list.
     ///
-    pub def toMut(xs: List[a]): MutList[a] & Impure = {
+    pub def toMutList(xs: List[a]): MutList[a] & Impure = {
         let v = MutList.new();
         xs |> foreach(x -> MutList.push!(x, v));
         v
@@ -1228,12 +1266,12 @@ namespace List {
     ///
     /// `f` should return `None` to signal the end of building the list.
     ///
-    pub def unfold(f: s -> Option[(a, s)] & e, st: s): List[a] & e = unfoldHelper(f, st, xs -> xs)
+    pub def unfold(f: s -> Option[(a, s)] & ef, st: s): List[a] & ef = unfoldHelper(f, st, xs -> xs)
 
     ///
     /// Helper function for `unfold`.
     ///
-    def unfoldHelper(f: s -> Option[(a, s)] & e, st: s, k: List[a] -> List[a]): List[a] & e = match f(st) {
+    def unfoldHelper(f: s -> Option[(a, s)] & ef, st: s, k: List[a] -> List[a]): List[a] & ef = match f(st) {
         case None => k(Nil)
         case Some(a, st1) => unfoldHelper(f, st1, xs -> k(a :: xs))
     }
@@ -1246,12 +1284,12 @@ namespace List {
     ///
     /// `next` should return `None` to signal the end of building the list.
     ///
-    pub def unfoldWithIter(next: () ~> Option[a]): List[a] & Impure = unfoldWithIterHelper(next, xs -> xs)
+    pub def unfoldWithIter(next: Unit ~> Option[a]): List[a] & Impure = unfoldWithIterHelper(next, xs -> xs)
 
     ///
     /// Helper function for `unfoldWithIter`.
     ///
-    def unfoldWithIterHelper(next: () ~> Option[a], k: List[a] -> List[a]): List[a] & Impure = match next() {
+    def unfoldWithIterHelper(next: Unit ~> Option[a], k: List[a] -> List[a]): List[a] & Impure = match next() {
         case None => k(Nil)
         case Some(a) => unfoldWithIterHelper(next, xs -> k(a :: xs))
     }
@@ -1334,5 +1372,39 @@ namespace List {
             else
                 memberOfWith(f, x, rs)
     }
+
+    ///
+    /// Converts the list `l` to a `Stream`.
+    ///
+    pub def toStream(l: List[a]): Stream[a, List[a]] =
+        let next = s -> match s {
+            case Nil     => Done
+            case x :: xs => Yield(x, xs)
+        };
+        Stream(next, l)
+
+    ///
+    /// Returns the sum of all elements in the list `l`.
+    ///
+    pub def sum(l: List[Int32]): Int32 =
+        sumAcc(l, 0)
+
+    ///
+    /// Helper function for `sum`.
+    ///
+    def sumAcc(l: List[Int32], acc: Int32): Int32 = match l {
+        case Nil     => acc
+        case x :: xs => sumAcc(xs, x + acc)
+    }
+
+    ///
+    /// Returns the elements of `l` as a `DemandList`.
+    ///
+    pub def toDemandList(l: List[a]): DemandList.DemandList[a, d] =
+        use DemandList.{DemandList};
+        match l {
+            case Nil     => DemandList.ENil
+            case x :: xs => DemandList.LList(lazy DemandList.LCons(x, lazy toDemandList(xs)))
+        }
 
 }

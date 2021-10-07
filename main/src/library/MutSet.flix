@@ -26,8 +26,8 @@ instance ToString[MutSet[a]] with ToString[a] {
 }
 
 instance Foldable[MutSet] {
-    pub def foldLeft(f: (b, a) -> b & e, i: b, s: MutSet[a]): b & e = MutSet.foldLeft(f, i, s) as & e
-    pub def foldRight(f: (a, b) -> b & e, i: b, s: MutSet[a]): b & e = MutSet.foldRight(f, i, s) as & e
+    pub def foldLeft(f: (b, a) -> b & ef, i: b, s: MutSet[a]): b & ef = MutSet.foldLeft(f, i, s) as & ef
+    pub def foldRight(f: (a, b) -> b & ef, i: b, s: MutSet[a]): b & ef = MutSet.foldRight(f, i, s) as & ef
 }
 
 namespace MutSet {
@@ -110,7 +110,7 @@ namespace MutSet {
     ///
     /// Applies the function `f` to every element in the mutable set `s`.
     ///
-    pub def transform!(f: a -> a & e, s: mut MutSet[a]): Unit & Impure with Order[a] =
+    pub def transform!(f: a -> a & ef, s: mut MutSet[a]): Unit & Impure with Order[a] =
         let MutSet(ms) = s;
         ms := Set.map(f, deref ms)
 
@@ -222,7 +222,7 @@ namespace MutSet {
     ///
     /// That is, the result is of the form: `f(...f(f(i, x1), x2)..., xn)`.
     ///
-    pub def foldLeft(f: (b, a) -> b & e, i: b, s: MutSet[a]): b & Impure =
+    pub def foldLeft(f: (b, a) -> b & ef, i: b, s: MutSet[a]): b & Impure =
         let MutSet(ms) = s;
         Set.foldLeft(f, i, deref ms)
 
@@ -231,7 +231,7 @@ namespace MutSet {
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, i))...)`.
     ///
-    pub def foldRight(f: (a, b) -> b & e, i: b, s: MutSet[a]): b & Impure =
+    pub def foldRight(f: (a, b) -> b & ef, i: b, s: MutSet[a]): b & Impure =
         let MutSet(ms) = s;
         Set.foldRight(f, i, deref ms)
 
@@ -242,7 +242,7 @@ namespace MutSet {
     ///
     /// Returns `None` if `s` is the empty set.
     ///
-    pub def reduceLeft(f: (a, a) -> a & e, s: MutSet[a]): Option[a] & Impure =
+    pub def reduceLeft(f: (a, a) -> a & ef, s: MutSet[a]): Option[a] & Impure =
         let MutSet(ms) = s;
         Set.reduceLeft(f, deref ms)
 
@@ -253,7 +253,7 @@ namespace MutSet {
     ///
     /// Returns `None` if `s` is the empty set.
     ///
-    pub def reduceRight(f: (a, a) -> a & e, s: MutSet[a]): Option[a] & Impure =
+    pub def reduceRight(f: (a, a) -> a & ef, s: MutSet[a]): Option[a] & Impure =
         let MutSet(ms) = s;
         Set.reduceRight(f, deref ms)
 
@@ -311,7 +311,7 @@ namespace MutSet {
     ///
     /// Returns the mutable set `s` as an immutable set.
     ///
-    pub def toImm(s: MutSet[a]): Set[a] & Impure =
+    pub def toSet(s: MutSet[a]): Set[a] & Impure =
         let MutSet(ms) = s;
         deref ms
 
@@ -346,7 +346,7 @@ namespace MutSet {
     ///
     /// That is, the result is a list of all elements `x` where `p(x)` returns `Equal`.
     ///
-    pub def query(p: a -> Comparison & e, s: MutSet[a]): List[a] & Impure =
+    pub def query(p: a -> Comparison & ef, s: MutSet[a]): List[a] & Impure =
         let MutSet(ms) = s;
         Set.query(p, deref ms)
 
@@ -355,7 +355,7 @@ namespace MutSet {
     ///
     /// The function `f` must be impure.
     ///
-    pub def queryWith(p: a -> Comparison & e, f: a ~> Unit, s: MutSet[a]): Unit & Impure =
+    pub def queryWith(p: a -> Comparison & ef, f: a ~> Unit, s: MutSet[a]): Unit & Impure =
         let MutSet(ms) = s;
         Set.queryWith(p, f, deref ms)
 
