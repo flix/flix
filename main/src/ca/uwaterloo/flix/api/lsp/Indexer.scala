@@ -331,6 +331,9 @@ object Indexer {
 
     case Expression.Reify(t, _, _, _) =>
       visitType(t) ++ Index.occurrenceOf(exp0)
+
+    case Expression.ReifyType(t, _, _, _) =>
+      visitType(t) ++ Index.occurrenceOf(exp0)
   }
 
   /**

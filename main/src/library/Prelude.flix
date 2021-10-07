@@ -4,6 +4,25 @@
 type alias Ref[t] = ScopedRef[t, false]
 
 ///
+/// The Reified Flix Types.
+///
+
+// TODO: Decide what types should be here.
+
+pub enum ReifiedType with Eq, Order, ToString {
+    case ErasedType,
+    case ReifiedBool,
+    case ReifiedChar,
+    case ReifiedFloat32,
+    case ReifiedFloat64,
+    case ReifiedInt8,
+    case ReifiedInt16,
+    case ReifiedInt32,
+    case ReifiedInt64,
+    case ReifiedArray(ReifiedType)
+}
+
+///
 /// The identity function.
 ///
 pub def identity(x: a): a = x

@@ -361,6 +361,9 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.Reify(_, _, _, _) =>
           tast.toSuccess
 
+        case Expression.ReifyType(_, _, _, _) =>
+          tast.toSuccess
+
       }
     }
 

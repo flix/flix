@@ -240,6 +240,9 @@ object TypedAstOps {
       case Expression.Reify(_, _, _, _) =>
         Map.empty
 
+      case Expression.ReifyType(_, _, _, _) =>
+        Map.empty
+
     }
 
     /**
@@ -395,6 +398,7 @@ object TypedAstOps {
     case Expression.FixpointProjectIn(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.FixpointProjectOut(_, exp, _, _, _) => sigSymsOf(exp)
     case Expression.Reify(_, _, _, _) => Set.empty
+    case Expression.ReifyType(_, _, _, _) => Set.empty
   }
 
   /**
@@ -655,6 +659,9 @@ object TypedAstOps {
       freeVars(exp)
 
     case Expression.Reify(_, _, _, _) =>
+      Map.empty
+
+    case Expression.ReifyType(_, _, _, _) =>
       Map.empty
 
   }
