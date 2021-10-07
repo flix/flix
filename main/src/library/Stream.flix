@@ -238,4 +238,30 @@ namespace Stream {
                 }};
         Stream(next1, (n, s0))
 
+    ///
+    /// Returns `s2` appended to `s1`.
+    ///
+    pub def append(s1: Stream[a, s], s2: Stream[a, t]): Stream[a, Either[s, t]] =
+        let Stream(next1, st1) = s1;
+        let Stream(next2, st2) = s2;
+        let nextRight = s -> match next2(s) {
+            case Done         => Done
+            case Skip(ys)     => Skip (   Right(ys))
+            case Yield(y, ys) => Yield(y, Right(ys))
+        };
+        let nextLeft = s -> match next1(s) {
+            case Done         => nextRight(st2)
+            case Skip(xs)     => Skip (   Left(xs))
+            case Yield(x, xs) => Yield(x, Left(xs))
+        };
+        let appendNext = s -> match s {
+            case Left (st) => nextLeft(st)
+            case Right(st) => nextRight(st)
+        };
+        Stream(appendNext, Left(st1))
+
+    enum Either[a, b] {
+        case Left(a)
+        case Right(b)
+    }
 }
