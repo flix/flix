@@ -320,4 +320,173 @@ namespace TestDemandList {
         DemandList.toList as & Impure;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldLeft                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldLeft01(): Bool =
+    	DemandList.foldLeft((i, e) -> (i - e) * (e % 2 + 1), 100, DemandList.empty()) == 100
+
+    @test
+    def foldLeft02(): Bool =
+    	(1 :: Nil) |> List.toDemandList |> DemandList.foldLeft((i, e) -> (i - e) * (e % 2 + 1), 100) == 198
+
+    @test
+    def foldLeft03(): Bool =
+    	(1 :: 2 :: Nil) |> List.toDemandList |> DemandList.foldLeft((i, e) -> (i - e) * (e % 2 + 1), 100) == 196
+
+    @test
+    def foldLeft04(): Bool =
+    	(1 :: 2 :: 3 :: Nil) |> List.toDemandList |> DemandList.foldLeft((i, e) -> (i - e) * (e % 2 + 1), 100) == 386
+
+    @test
+    def foldLeft05(): Bool =
+    	(1 :: 2 :: 3 :: Nil) |> List.toDemandList |> DemandList.foldLeft((acc, x) -> x :: acc, Nil) == 3 :: 2 :: 1 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldRight                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldRight01(): Bool =
+    	DemandList.foldRight((e, i) -> (i - e) * (e % 2 + 1), 100, DemandList.empty()) == 100
+
+    @test
+    def foldRight02(): Bool =
+    	(1 :: Nil) |> List.toDemandList |> DemandList.foldRight((e, i) -> (i - e) * (e % 2 + 1), 100) == 198
+
+    @test
+    def foldRight03(): Bool =
+    	(1 :: 2 :: Nil) |> List.toDemandList |> DemandList.foldRight((e, i) -> (i - e) * (e % 2 + 1), 100) == 194
+
+    @test
+    def foldRight04(): Bool =
+    	(1 :: 2 :: 3 :: Nil) |> List.toDemandList |> DemandList.foldRight((e, i) -> (i - e) * (e % 2 + 1), 100) == 382
+
+    @test
+    def foldRight05(): Bool =
+    	(1 :: 2 :: 3 :: Nil) |> List.toDemandList |> DemandList.foldRight((x, acc) -> x :: acc, Nil) == 1 :: 2 :: 3 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // take                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def take01(): Bool =
+        (DemandList.empty()) |> DemandList.take(1000) |> DemandList.isEmpty
+
+    @test
+    def take02(): Bool =
+        (DemandList.empty()) |> DemandList.take(0) |> DemandList.isEmpty
+
+    @test
+    def take03(): Bool =
+        (DemandList.range(0, 1000)) |> DemandList.take(0) |> DemandList.isEmpty
+
+    @test
+    def take04(): Bool =
+        (DemandList.range(0, 1000))
+            |> DemandList.take(500)
+            |> DemandList.toList == List.range(0, 500)
+
+    @test
+    def take05(): Bool =
+        (DemandList.range(0, 1000))
+            |> DemandList.take(1)
+            |> DemandList.toList == List.range(0, 1)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // drop                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def drop01(): Bool =
+        Nil |> List.toDemandList |> DemandList.drop(-1) |> DemandList.toList == Nil
+
+    @test
+    def drop02(): Bool =
+        Nil |> List.toDemandList |> DemandList.drop(0) |> DemandList.toList == Nil
+
+    @test
+    def drop03(): Bool =
+        Nil |> List.toDemandList |> DemandList.drop(1) |> DemandList.toList == Nil
+
+    @test
+    def drop04(): Bool =
+        (1 :: Nil) |> List.toDemandList |> DemandList.drop(-1) |>  DemandList.toList == 1 :: Nil
+
+    @test
+    def drop05(): Bool =
+        (1 :: Nil) |> List.toDemandList |> DemandList.drop(0) |>  DemandList.toList == 1 :: Nil
+
+    @test
+    def drop06(): Bool =
+        (1 :: Nil) |> List.toDemandList |> DemandList.drop(1) |>  DemandList.toList == Nil
+
+    @test
+    def drop07(): Bool =
+        (1 :: Nil) |> List.toDemandList |> DemandList.drop(2) |>  DemandList.toList == Nil
+
+    @test
+    def drop08(): Bool =
+        (1 :: 2 :: Nil) |> List.toDemandList |> DemandList.drop(0) |>  DemandList.toList == 1 :: 2 :: Nil
+
+    @test
+    def drop09(): Bool =
+        (1 :: 2 :: Nil) |> List.toDemandList |> DemandList.drop(1) |>  DemandList.toList == 2 :: Nil
+
+    @test
+    def drop10(): Bool =
+        (1 :: 2 :: Nil) |> List.toDemandList |> DemandList.drop(2) |>  DemandList.toList == Nil
+
+    @test
+    def drop11(): Bool =
+        (1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil) |> List.toDemandList |> DemandList.drop(2) |>  DemandList.toList == 3 :: 4 :: 5 :: 6 :: Nil
+
+    @test
+    def drop12(): Bool =
+        (1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil) |> List.toDemandList |> DemandList.drop(4) |>  DemandList.toList == 5 :: 6 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // append                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def append01(): Bool =
+        DemandList.append(List.toDemandList(Nil: List[Unit]), List.toDemandList(Nil)) |> DemandList.toList == Nil
+
+    @test
+    def append02(): Bool =
+        DemandList.append(List.toDemandList(Nil), List.toDemandList(1 :: Nil)) |> DemandList.toList == 1 :: Nil
+
+    @test
+    def append03(): Bool =
+        DemandList.append(List.toDemandList(Nil), List.toDemandList(1 :: 2 :: Nil)) |> DemandList.toList == 1 :: 2 :: Nil
+
+    @test
+    def append04(): Bool =
+        DemandList.append(List.toDemandList(1 :: Nil), List.toDemandList(Nil)) |> DemandList.toList == 1 :: Nil
+
+    @test
+    def append05(): Bool =
+        DemandList.append(List.toDemandList(1 :: 2 :: Nil), List.toDemandList(Nil)) |> DemandList.toList == 1 :: 2 :: Nil
+
+    @test
+    def append06(): Bool =
+        DemandList.append(List.toDemandList(1 :: Nil), List.toDemandList(2 :: Nil)) |> DemandList.toList == 1 :: 2 :: Nil
+
+    @test
+    def append07(): Bool =
+        DemandList.append(List.toDemandList(1 :: 2 :: Nil), List.toDemandList(3 :: Nil)) |> DemandList.toList == 1 :: 2 :: 3 :: Nil
+
+    @test
+    def append08(): Bool =
+        DemandList.append(List.toDemandList(1 :: Nil), List.toDemandList(2 :: 3 :: Nil)) |> DemandList.toList == 1 :: 2 :: 3 :: Nil
+
 }
