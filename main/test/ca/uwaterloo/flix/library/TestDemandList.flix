@@ -637,4 +637,90 @@ namespace TestDemandList {
         DemandList.toList as & Impure;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // exists                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def exists01(): Bool =
+        not (DemandList.exists(i -> i > 3, DemandList.empty()))
+
+    @test
+    def exists02(): Bool =
+        not ((1 :: Nil) |> List.toDemandList |> DemandList.exists(i -> i > 3))
+
+    @test
+    def exists03(): Bool =
+        (5 :: Nil) |> List.toDemandList |> DemandList.exists(i -> i > 3)
+
+    @test
+    def exists04(): Bool =
+        not ((1 :: 2 :: Nil) |> List.toDemandList |> DemandList.exists(i -> i > 3))
+
+    @test
+    def exists05(): Bool =
+        (1 :: 6 :: Nil) |> List.toDemandList |> DemandList.exists(i -> i > 3)
+
+    @test
+    def exists06(): Bool =
+        (6 :: 1 :: Nil) |> List.toDemandList |> DemandList.exists(i -> i > 3)
+
+    @test
+    def exists07(): Bool =
+        (16 :: 6 :: Nil) |> List.toDemandList |> DemandList.exists(i -> i > 3)
+
+    @test
+    def exists08(): Bool =
+        not ((1 :: -9 :: 3 :: Nil) |> List.toDemandList |> DemandList.exists(i -> i > 3))
+
+    @test
+    def exists09(): Bool =
+        (1 :: 9 :: 3 :: Nil) |> List.toDemandList |> DemandList.exists(i -> i > 3)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // forall                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def forall01(): Bool =
+        DemandList.forall(i -> i > 3, DemandList.empty())
+
+    @test
+    def forall02(): Bool =
+        not ((1 :: Nil) |> List.toDemandList |> DemandList.forall(i -> i > 3))
+
+    @test
+    def forall03(): Bool =
+        (5 :: Nil) |> List.toDemandList |> DemandList.forall(i -> i > 3)
+
+    @test
+    def forall04(): Bool =
+        not ((1 :: 2 :: Nil) |> List.toDemandList |> DemandList.forall(i -> i > 3))
+
+    @test
+    def forall05(): Bool =
+        not ((1 :: 6 :: Nil) |> List.toDemandList |> DemandList.forall(i -> i > 3))
+
+    @test
+    def forall06(): Bool =
+        not ((6 :: 1 :: Nil) |> List.toDemandList |> DemandList.forall(i -> i > 3))
+
+    @test
+    def forall07(): Bool =
+        (16 :: 6 :: Nil) |> List.toDemandList |> DemandList.forall(i -> i > 3)
+
+    @test
+    def forall08(): Bool =
+        not ((1 :: -9 :: 3 :: Nil) |> List.toDemandList |> DemandList.forall(i -> i > 3))
+
+    @test
+    def forall09(): Bool =
+        not ((1 :: 9 :: 3 :: Nil) |> List.toDemandList |> DemandList.forall(i -> i > 3))
+
+    @test
+    def forall10(): Bool =
+        (11 :: 9 :: 31 :: Nil) |> List.toDemandList |> DemandList.forall(i -> i > 3)
+
 }
