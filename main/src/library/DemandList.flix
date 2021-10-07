@@ -379,4 +379,28 @@ namespace DemandList {
             flatMapEHelper(f, force xs, ks -> k(append(xs1, ks)))
         case LList(xs)    => flatMapEHelper(f, force xs, k)
     }
+
+    ///
+    /// Returns `true` if and only if at least one element in `l` satisfies the predicate `f`.
+    ///
+    /// Returns `false` if `l` is empty.
+    ///
+    pub def exists(f: a -> Bool & ef, l: DemandList[a, true]): Bool & ef = match l {
+        case ENil         => false
+        case ECons(x, xs) => f(x) or exists(f, xs)
+        case LCons(x, xs) => f(x) or exists(f, force xs)
+        case LList(xs)    => exists(f, force xs)
+    }
+
+    ///
+    /// Returns `true` if and only if all elements in `l` satisfy the predicate `f`.
+    ///
+    /// Returns `true` if `l` is empty.
+    ///
+    pub def forall(f: a -> Bool & ef, l: DemandList[a, true]): Bool & ef = match l {
+        case ENil         => true
+        case ECons(x, xs) => f(x) and forall(f, xs)
+        case LCons(x, xs) => f(x) and forall(f, force xs)
+        case LList(xs)    => forall(f, force xs)
+    }
 }
