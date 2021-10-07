@@ -72,12 +72,15 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       *
       * NB: Applies the substitution first, then replaces every type variable with the unit type.
       */
-    def apply(tpe: Type): Type = s(tpe).map {
-      case Type.KindedVar(_, Kind.Bool, loc, _, _) =>
-        throw InternalCompilerException(s"Unexpected Boolean variable near '${loc.format}'.")
-      case Type.KindedVar(_, Kind.RecordRow, _, _, _) => Type.RecordRowEmpty
-      case Type.KindedVar(_, Kind.SchemaRow, _, _, _) => Type.SchemaRowEmpty
-      case _ => Type.Unit
+    def apply(tpe0: Type): Type = {
+      val t = s(tpe0)
+
+      t.map {
+        case Type.KindedVar(_, Kind.Bool, _, _, _) => t
+        case Type.KindedVar(_, Kind.RecordRow, _, _, _) => Type.RecordRowEmpty
+        case Type.KindedVar(_, Kind.SchemaRow, _, _, _) => Type.SchemaRowEmpty
+        case _ => Type.Unit
+      }
     }
   }
 
