@@ -392,8 +392,8 @@ namespace GetOpt {
     def groupWhenQuotedHelper(quoteOpen: String, quoteClose: String, tokens: List[String], k: List[String] ~> Array[String]): Array[String] & Impure =
         match tokens {
             case Nil => k(Nil)
-            case x :: rest if String.contains({needle = quoteOpen}, x) and String.endsWith(x, quoteClose) => groupWhenQuotedHelper(quoteOpen, quoteClose, rest, ks -> k(x :: ks))
-            case x :: rest if String.contains({needle = quoteOpen}, x) => groupWhenQuotedHelperInner(quoteOpen, quoteClose, rest, x, ks -> k(ks))
+            case x :: rest if String.contains({substr = quoteOpen}, x) and String.endsWith(x, quoteClose) => groupWhenQuotedHelper(quoteOpen, quoteClose, rest, ks -> k(x :: ks))
+            case x :: rest if String.contains({substr = quoteOpen}, x) => groupWhenQuotedHelperInner(quoteOpen, quoteClose, rest, x, ks -> k(ks))
             case x :: rest => groupWhenQuotedHelper(quoteOpen, quoteClose, rest, ks -> k(x :: ks))
         }
 
@@ -405,7 +405,7 @@ namespace GetOpt {
     def groupWhenQuotedHelperInner(quoteOpen: String, quoteClose: String, tokens: List[String], acc: String, k: List[String] ~> Array[String]): Array[String] & Impure =
         match tokens {
             case Nil => k(acc :: Nil)
-            case x :: rest if String.contains({needle = quoteClose}, x) => groupWhenQuotedHelper(quoteOpen, quoteClose, rest, ks -> k((acc + " " +  x) :: ks))
+            case x :: rest if String.contains({substr = quoteClose}, x) => groupWhenQuotedHelper(quoteOpen, quoteClose, rest, ks -> k((acc + " " +  x) :: ks))
             case x :: rest => groupWhenQuotedHelperInner(quoteOpen, quoteClose, rest, (acc + " " +  x), k)
         }
 
