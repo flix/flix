@@ -464,7 +464,30 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val eff = Type.Pure
 
           subst0(t) match {
-            // TODO
+            case Type.Cst(TypeConstructor.Bool, _) =>
+              val tag = Name.Tag("ReifiedBool", loc)
+              Expression.Tag(sym, tag, innerExp, tpe, eff, loc)
+
+            case Type.Cst(TypeConstructor.Char, _) =>
+              val tag = Name.Tag("ReifiedChar", loc)
+              Expression.Tag(sym, tag, innerExp, tpe, eff, loc)
+
+            case Type.Cst(TypeConstructor.Float32, _) =>
+              val tag = Name.Tag("ReifiedFloat32", loc)
+              Expression.Tag(sym, tag, innerExp, tpe, eff, loc)
+
+            case Type.Cst(TypeConstructor.Float64, _) =>
+              val tag = Name.Tag("ReifiedFloat64", loc)
+              Expression.Tag(sym, tag, innerExp, tpe, eff, loc)
+
+            case Type.Cst(TypeConstructor.Int8, _) =>
+              val tag = Name.Tag("ReifiedInt8", loc)
+              Expression.Tag(sym, tag, innerExp, tpe, eff, loc)
+
+            case Type.Cst(TypeConstructor.Int16, _) =>
+              val tag = Name.Tag("ReifiedInt16", loc)
+              Expression.Tag(sym, tag, innerExp, tpe, eff, loc)
+
             case Type.Cst(TypeConstructor.Int32, _) =>
               val tag = Name.Tag("ReifiedInt32", loc)
               Expression.Tag(sym, tag, innerExp, tpe, eff, loc)
@@ -473,7 +496,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
               val tag = Name.Tag("ReifiedInt64", loc)
               Expression.Tag(sym, tag, innerExp, tpe, eff, loc)
 
-            case other => throw InternalCompilerException(s"Unexpected non-Boolean type: '$other'.")
+            case other => throw InternalCompilerException(s"Unexpected type: '$other'.")
           }
       }
 
