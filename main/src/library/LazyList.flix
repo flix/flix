@@ -486,8 +486,8 @@ namespace LazyList {
     ///
     pub def flatten(l: LazyList[LazyList[a]]): LazyList[a] = match l {
         case ENil          => ENil
-        case ECons(xs, xs) => LList(lazy append(xs, flatten(      xs)))
-        case LCons(xs, xs) => LList(lazy append(xs, flatten(force xs)))
+        case ECons(xs, ys) => LList(lazy append(xs, flatten(      ys)))
+        case LCons(xs, ys) => LList(lazy append(xs, flatten(force ys)))
         case LList(xs)     => LList(lazy flatten(force xs))
     }
 
