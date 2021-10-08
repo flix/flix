@@ -419,15 +419,14 @@ namespace String {
         }
 
     ///
-    /// Returns the positions of the all the occurences of `sub` in `s`.
+    /// Returns the positions of the all the occurences of `substr` in `s`.
     ///
-    /// Returns `Nil` if `sub` is the empty string.
+    /// Returns `Nil` if `substr` is the empty string.
     ///
-    @Time(length(sub) * length(s)) @Space(length(s))
-    pub def indices(sub: String, s: String): List[Int32] =
-        let sublen = length(sub);
+    pub def indices(substr: {substr:: String}, s: String): List[Int32] =
+        let sublen = length(substr.substr);
         let step = ix ->
-            match indexOfLeftWithOffset(sub, ix, s) {
+            match indexOfLeftWithOffset(substr.substr, ix, s) {
                 case None => None
                 case Some(ix2) => Some(ix2, ix2 + sublen)
             };

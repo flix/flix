@@ -827,43 +827,43 @@ def findIndices07(): Bool = String.findIndices(Char.isDigit, "12") == 0 :: 1 :: 
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def indices01(): Bool = String.indices("", "") == Nil
+def indices01(): Bool = String.indices({substr = ""}, "") == Nil
 
 @test
-def indices02(): Bool = String.indices("", "a::b::c") == Nil
+def indices02(): Bool = String.indices({substr = ""}, "a::b::c") == Nil
 
 @test
-def indices03(): Bool = String.indices("::", "") == Nil
+def indices03(): Bool = String.indices({substr = "::"}, "") == Nil
 
 @test
-def indices04(): Bool = String.indices("::", "a") == Nil
+def indices04(): Bool = String.indices({substr = "::"}, "a") == Nil
 
 @test
-def indices05(): Bool = String.indices("::", "::") == 0 :: Nil
+def indices05(): Bool = String.indices({substr = "::"}, "::") == 0 :: Nil
 
 @test
-def indices06(): Bool = String.indices("::", "ab") == Nil
+def indices06(): Bool = String.indices({substr = "::"}, "ab") == Nil
 
 @test
-def indices07(): Bool = String.indices("::", "::a") == 0 :: Nil
+def indices07(): Bool = String.indices({substr = "::"}, "::a") == 0 :: Nil
 
 @test
-def indices08(): Bool = String.indices("::", "a::") == 1 :: Nil
+def indices08(): Bool = String.indices({substr = "::"}, "a::") == 1 :: Nil
 
 @test
-def indices09(): Bool = String.indices("::", "a::b::") == 1 :: 4 :: Nil
+def indices09(): Bool = String.indices({substr = "::"}, "a::b::") == 1 :: 4 :: Nil
 
 @test
-def indices10(): Bool = String.indices("::", "a::b::c") == 1 :: 4 :: Nil
+def indices10(): Bool = String.indices({substr = "::"}, "a::b::c") == 1 :: 4 :: Nil
 
 @test
-def indices11(): Bool = String.indices("::", "a::b::c:") == 1 :: 4 :: Nil
+def indices11(): Bool = String.indices({substr = "::"}, "a::b::c:") == 1 :: 4 :: Nil
 
 @test
-def indices12(): Bool = String.indices("::", ":a::b::c") == 2 :: 5 :: Nil
+def indices12(): Bool = String.indices({substr = "::"}, ":a::b::c") == 2 :: 5 :: Nil
 
 @test
-def indices13(): Bool = String.indices("::", "::::") == 0 :: 2 :: Nil
+def indices13(): Bool = String.indices({substr = "::"}, "::::") == 0 :: 2 :: Nil
 
 
 /////////////////////////////////////////////////////////////////////////////
