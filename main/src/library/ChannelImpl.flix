@@ -16,7 +16,7 @@ namespace ChannelImpl {
                 ReentrantLock,
                 Bool,
                 Int,
-                MutDeque[a],
+                MutDeque.MutDeque[a],
                 MutList[(ReentrantLock, Condition)],
                 Condition
             )
@@ -28,10 +28,9 @@ namespace ChannelImpl {
 
     pub def uncheckedNew(bufferSize: Int): ChannelImpl[a] & Impure =
         import dev.flix.runtime.GlobalCounter:newId();
+        //let newId = () -> ???;
 
         let buffered = bufferSize == 0;
-
-        let maxQueueSize = if (buffered) 1 else bufferSize;
 
         let reentrantLock = ReentrantLock.new(false);
 
@@ -39,8 +38,8 @@ namespace ChannelImpl {
             newId(),
             reentrantLock,
             buffered,
-            maxQueueSize,
-            MutDeque.new(maxQueueSize),
+            if (buffered) 1 else bufferSize,
+            MutDeque.new(),
             MutList.new(),
             ReentrantLock.newCondition(reentrantLock)
         )
@@ -151,7 +150,7 @@ namespace ChannelImpl {
             case Some(e) => e
         }
 
-    pub def tryGet(chan: ChannelImpl[a]): Option[a] & Impure =
+    def tryGet(chan: ChannelImpl[a]): Option[a] & Impure =
         let Mpmc(_, channelLock, _, _, queue, _, waitingSetters) = chan;
         ReentrantLock.lock(channelLock);
 
@@ -241,7 +240,7 @@ namespace ChannelImpl {
                         let addGetterToChannel = c -> {
                             let pair = (selectLock, selectCondition);
                             let Mpmc(_, _, _, _, _, waitingGetters, _) = c;
-                            
+
                             // Add LockConditionPair to the channel
                             MutList.push!(pair, waitingGetters)
                         };
@@ -322,16 +321,36 @@ namespace ChannelImpl {
 
 }
 
-pub opaque type MutDeque[_a] = Unit
-
 namespace MutDeque {
 
-    pub def new(capacity: Int): MutDeque[a] & Impure = ???
+    pub enum MutDeque[a] {
+        case L(Ref[List[a]])
+    }
 
-    pub def size(md: MutDeque[a]): Int = ???
+    pub def new(): MutDeque[a] & Impure =
+        L(ref Nil)
 
-    pub def pushBack!(x: a, md: mut MutDeque[a]): Unit & Impure = ???
+    pub def size(md: MutDeque[a]): Int & Impure = match md {
+        case L(lst) => List.length(deref lst)
+    }
 
-    pub def popFront!(md: mut MutDeque[a]): Option[a] & Impure = ???
+    pub def pushBack!(x: a, md: mut MutDeque[a]): Unit & Impure = match md {
+        case L(lst) => lst := (x :: deref lst)
+    }
+
+    pub def popFront!(md: mut MutDeque[a]): Option[a] & Impure = match md {
+        case L(lst) =>
+            match List.last(deref lst) {
+                case None => None
+                case Some(v) =>
+                lst := removeLast(deref lst);
+                Some(v)
+            }
+    }
+
+    def removeLast(lst: List[a]): List[a] = match List.reverse(lst) {
+        case Nil => bug!("mutdeque bug")
+        case _h :: t => List.reverse(t)
+    }
 
 }
