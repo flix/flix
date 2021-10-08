@@ -1288,7 +1288,8 @@ def query07(): Bool =
     def tester40(): Bool & Impure =
         println(Set.foldLeft((acc, x) -> x :: acc, Nil, Set.empty(): Set[Int32]));
         println(Set.foldLeft((acc, x) -> ECons(x, acc), ENil, Set.empty(): Set[Int32]));
-        println(Set.foldLeft((acc, x) -> ECons(x, acc), ENil, Set#{1, 2, 3}: Set[Int32]));
+        println(Set.foldLeft((acc, x) -> ECons(x, acc), ENil, Set#{1, 2, 3}));
+        println(Set.foldLeft((acc, x) -> ECons(x, acc), ENil, Set.range(0, 3)));
         false
 
 
