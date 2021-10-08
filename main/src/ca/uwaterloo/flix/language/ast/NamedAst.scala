@@ -210,6 +210,8 @@ object NamedAst {
 
     case class Reify(t: NamedAst.Type, loc: SourceLocation) extends NamedAst.Expression
 
+    case class ReifyType(t: NamedAst.Type, loc: SourceLocation) extends NamedAst.Expression
+
   }
 
   sealed trait Pattern {

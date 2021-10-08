@@ -80,7 +80,8 @@ object FormatExpression {
     case TypedAst.Expression.FixpointFilter(pred, exp, tpe, eff, loc) => s"FixpointFilter($pred, $exp)"
     case TypedAst.Expression.FixpointProjectIn(exp, pred, tpe, eff, loc) => s"FixpointProjectIn($exp, $pred)"
     case TypedAst.Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) => s"FixpointProjectOut($pred, $exp)"
-    case TypedAst.Expression.Reify(t, tpe, eff, loc) => s"Reify($t)"
+    case TypedAst.Expression.Reify(t, _, _, _) => s"Reify($t)"
+    case TypedAst.Expression.ReifyType(t, _, _, _) => s"ReifyType($t)"
   }
 
 }
