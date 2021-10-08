@@ -743,59 +743,19 @@ namespace TestLazyList {
 
     @test
     def append03(): Bool =
-    	LazyList.append(ENil, LList(lazy ENil): LazyList[Unit]) == ENil
+    	LazyList.append(ECons(1, ENil), ENil) == ECons(1, ENil)
 
     @test
     def append04(): Bool =
-    	LazyList.append(LList(lazy ENil), LList(lazy ENil): LazyList[Unit]) == ENil
-
-    @test
-    def append05(): Bool =
-    	LazyList.append(LCons(1, lazy ENil), LList(lazy ENil)) == ECons(1, ENil)
-
-    @test
-    def append06(): Bool =
-    	LazyList.append(LList(lazy ECons(1, LList(lazy ENil))), LList(lazy ENil)) == ECons(1, ENil)
-
-    @test
-    def append07(): Bool =
-    	LazyList.append(ECons(1, LList(lazy ENil)), LList(lazy ENil)) == ECons(1, ENil)
-
-    @test
-    def append08(): Bool =
-    	LazyList.append(LCons(1, lazy ENil), ENil) == ECons(1, ENil)
-
-    @test
-    def append09(): Bool =
     	LazyList.append(ENil, LCons(1, lazy ENil)) == ECons(1, ENil)
 
     @test
-    def append10(): Bool =
-    	LazyList.append(ENil, LList(lazy ECons(1, LList(lazy ENil)))) == ECons(1, ENil)
-
-    @test
-    def append11(): Bool =
-    	LazyList.append(LList(lazy ENil), ECons(1, LList(lazy ENil))) == ECons(1, ENil)
-
-    @test
-    def append12(): Bool =
-    	LazyList.append(LList(lazy ENil), LCons(1, lazy LList(lazy ENil))) == ECons(1, ENil)
-
-    @test
-    def append13(): Bool =
+    def append05(): Bool =
     	LazyList.append(ECons(1, ECons(2, ECons(3, ENil))), ECons(4, LList(lazy ENil))) == ECons(1, ECons(2, ECons(3, ECons(4, ENil))))
 
     @test
-    def append14(): Bool =
-    	LazyList.append(ECons(1, ECons(2, ECons(3, ENil))), LCons(4, lazy LList(lazy ENil))) == ECons(1, ECons(2, ECons(3, ECons(4, ENil))))
-
-    @test
-    def append15(): Bool =
+    def append06(): Bool =
     	LazyList.append(ECons(4, ENil), ECons(1, LCons(2, lazy LList(lazy LCons(3, lazy ENil))))) == ECons(4, ECons(1, ECons(2, ECons(3, ENil))))
-
-    @test
-    def append16(): Bool =
-    	LazyList.append(ECons(4, ENil), LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil))))) == ECons(4, ECons(1, ECons(2, ECons(3, ENil))))
 
 
     /////////////////////////////////////////////////////////////////////////////
