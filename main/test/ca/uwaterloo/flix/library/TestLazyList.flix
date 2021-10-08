@@ -809,54 +809,30 @@ namespace TestLazyList {
 
     @test
     def drop03(): Bool =
-        LazyList.drop(-1, LList(lazy ENil): LazyList[Unit]) == ENil
-
-    @test
-    def drop04(): Bool =
-        LazyList.drop(0, LList(lazy ENil): LazyList[Unit]) == ENil
-
-    @test
-    def drop05(): Bool =
         LazyList.drop(1, ENil: LazyList[Unit]) == ENil
 
     @test
-    def drop06(): Bool =
-        LazyList.drop(1, LList(lazy ENil): LazyList[Unit]) == ENil
-
-    @test
-    def drop07(): Bool =
+    def drop04(): Bool =
         LazyList.drop(-1, ECons(1, ENil)) == ECons(1, ENil)
 
     @test
-    def drop08(): Bool =
+    def drop05(): Bool =
         LazyList.drop(0, ECons(1, ENil)) == ECons(1, ENil)
 
     @test
-    def drop09(): Bool =
+    def drop06(): Bool =
         LazyList.drop(1, ECons(1, ENil)) == ENil
 
     @test
-    def drop10(): Bool =
-    	LazyList.drop(1, LCons(1, lazy ENil)) == ENil
-
-    @test
-    def drop11(): Bool =
+    def drop07(): Bool =
     	LazyList.drop(1, LList(lazy ECons(1, LList(lazy ENil)))) == ENil
 
     @test
-    def drop12(): Bool =
+    def drop08(): Bool =
         LazyList.drop(2, ECons(1, ENil)) == ENil
 
     @test
-    def drop13(): Bool =
-    	LazyList.drop(2, LCons(1, lazy ENil)) == ENil
-
-    @test
-    def drop14(): Bool =
-    	LazyList.drop(2, LList(lazy ECons(1, LList(lazy ENil)))) == ENil
-
-    @test
-    def drop15(): Bool =
+    def drop09(): Bool =
     	LazyList.range(0, 1000) |> LazyList.drop(500) == LazyList.range(500, 1000)
 
 
