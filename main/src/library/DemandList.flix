@@ -240,4 +240,143 @@ namespace DemandList {
         case LList(xs)    => toListAcc(force xs,       k)
     }
 
+    ///
+    /// Applies `f` to a start value `s` and all elements in `l` going from left to right.
+    ///
+    /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
+    ///
+    pub def foldLeft(f: (b, a) -> b & ef, s: b, l: DemandList[a, Forced]): b & ef = match l {
+        case ENil         => s
+        case ECons(x, xs) => foldLeft(f, f(s, x),       xs)
+        case LCons(x, xs) => foldLeft(f, f(s, x), force xs)
+        case LList(xs)    => foldLeft(f, s,       force xs)
+    }
+
+    ///
+    /// Applies `f` to a start value `s` and all elements in `l` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
+    ///
+    pub def foldRight(f: (a, b) -> b & ef, s: b, l: DemandList[a, Forced]): b & ef =
+        foldRightAcc(f, s, l, ks -> ks as & ef)
+
+    ///
+    /// Helper function for `foldRight`.
+    ///
+    def foldRightAcc(f: (a, b) -> b & ef, s: b, l: DemandList[a, Forced], k: b -> b & ef): b & ef = match l {
+        case ENil         => k(s)
+        case ECons(x, xs) => foldRightAcc(f, s,       xs, ks -> k(f(x, ks)))
+        case LCons(x, xs) => foldRightAcc(f, s, force xs, ks -> k(f(x, ks)))
+        case LList(xs)    => foldRightAcc(f, s, force xs, k)
+    }
+
+    ///
+    /// Returns the first `n` elements of `l`.
+    ///
+    /// Does not force the tail of `l`.
+    ///
+    pub def take(n: Int32, l: DemandList[a, d]): DemandList[a, d] =
+        LList(lazy takeHelper(n, l))
+
+    ///
+    /// Helper function for `take`.
+    ///
+    def takeHelper(n: Int32, l: DemandList[a, d]): DemandList[a, d] =
+        if (n <= 0)
+            ENil
+        else
+            match l {
+                case ENil         => ENil
+                case ECons(x, xs) => LCons(x, lazy takeHelper(n - 1,       xs))
+                case LCons(x, xs) => LCons(x, lazy takeHelper(n - 1, force xs))
+                case LList(xs)    => LList(   lazy takeHelper(n,     force xs))
+            }
+
+    ///
+    /// Returns `l` without the first `n` elements.
+    ///
+    /// Returns `ENil` if `n > length(l)`.
+    /// Returns `l` if `n < 1`.
+    ///
+    pub def drop(n: Int32, l: DemandList[a, d]): DemandList[a, d] =
+        LList(lazy dropHelper(n, l))
+
+    ///
+    /// Helper function for `drop`.
+    ///
+    def dropHelper(n: Int32, l: DemandList[a, d]): DemandList[a, d] =
+        if (n < 1)
+            l
+        else
+            match l {
+                case ENil         => l
+                case ECons(_, xs) => LList(lazy dropHelper(n - 1,       xs))
+                case LCons(_, xs) => LList(lazy dropHelper(n - 1, force xs))
+                case LList(xs)    => LList(lazy dropHelper(n,     force xs))
+            }
+
+    ///
+    /// Returns `l2` appended to `l1`.
+    ///
+    pub def append(l1: DemandList[a, d], l2: DemandList[a, d]): DemandList[a, d] = match l1 {
+        case ENil         => l2
+        case ECons(x, xs) => LCons(x, lazy append(      xs, l2))
+        case LCons(x, xs) => LCons(x, lazy append(force xs, l2))
+        case LList(xs)    => LList(   lazy append(force xs, l2))
+    }
+
+    ///
+    /// Returns an infinite `DemandList` of repeating `x`s.
+    ///
+    pub def repeat(x: a): DemandList[a, d] =
+        LList(lazy repeatHelper(x))
+
+    ///
+    /// Helper function for `repeat`.
+    ///
+    def repeatHelper(x: a): DemandList[a, d] =
+        LCons(x, lazy repeatHelper(x))
+
+    ///
+    /// Returns the result of applying `f` to every element in `l` and concatenating the results.
+    ///
+    pub def flatMap(f: a -> DemandList[b, false] & ef, l: DemandList[a, not ef or d]): DemandList[b, not ef or d] & ef =
+        if (reify ef)
+            flatMapL(f as a -> DemandList[b, false] & Pure,  l as DemandList[a, false]) as DemandList[b, not ef or d] & ef
+        else
+            flatMapE(f as a -> DemandList[b, true] & Impure, l as DemandList[a, true]) as DemandList[b, not ef or d] & ef
+
+    ///
+    /// Returns the result of applying `f` to every element in `l` and concatenating the results.
+    ///
+    /// Applies `f` lazily (i.e. the tail is not forced).
+    ///
+    def flatMapL(f: a -> DemandList[b, false], l: DemandList[a, false]): DemandList[b, false] = match l {
+        case ENil         => ENil
+        case ECons(x, xs) => LList(lazy append(f(x), LList(lazy flatMapL(f,       xs))))
+        case LCons(x, xs) => LList(lazy append(f(x), LList(lazy flatMapL(f, force xs))))
+        case LList(xs)    => LList(lazy flatMapL(f, force xs))
+    }
+
+    ///
+    /// Returns the result of applying `f` to every element in `l` and concatenating the results.
+    ///
+    /// Applies `f` eagerly (i.e. the entire list `l` is forced).
+    ///
+    def flatMapE(f: a -> DemandList[b, true] & Impure, l: DemandList[a, Forced]): DemandList[b, Forced] & Impure =
+        flatMapEHelper(f, l, ks -> ks)
+
+    ///
+    /// Helper function for `flatMapE`.
+    ///
+    def flatMapEHelper(f: a -> DemandList[b, true] & Impure, l: DemandList[a, true], k: DemandList[b, true] -> DemandList[b, true]): DemandList[b, true] & Impure = match l {
+        case ENil         => k(ENil)
+        case ECons(x, xs) =>
+            let xs1 = f(x);
+            flatMapEHelper(f,       xs, ks -> k(append(xs1, ks)))
+        case LCons(x, xs) =>
+            let xs1 = f(x);
+            flatMapEHelper(f, force xs, ks -> k(append(xs1, ks)))
+        case LList(xs)    => flatMapEHelper(f, force xs, k)
+    }
 }
