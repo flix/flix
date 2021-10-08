@@ -27,11 +27,7 @@ namespace ChannelImpl {
         else Ok(newWithIdAux(bufferSize))
 
     def newWithIdAux(bufferSize: Int): ChannelImpl[a] & Impure =
-        // import dev.flix.runtime.GlobalCounter:newId();
-        // temporary solution
-        import new java.util.Random() as newRandom;
-        import java.util.Random.nextLong();
-        let newId = () -> newRandom().nextLong();
+        import dev.flix.runtime.GlobalCounter:newId();
 
         let buffered = bufferSize == 0;
 
