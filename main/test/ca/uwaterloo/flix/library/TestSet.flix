@@ -1260,4 +1260,37 @@ def query07(): Bool =
     @test
     def maximumBy04(): Bool = Set.maximumBy((x, y) -> x <=> y, Set.range(5, 55)) == Some(54)
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toLazyList                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toLazyList01(): Bool =
+        Set.empty(): Set[Unit] |> Set.toLazyList == LazyList.empty()
+
+/////////////////////////
+// BUGS HERE           //
+/////////////////////////
+    @test
+    def toLazyList02(): Bool =
+        // `Set.range(-1000, 1000) |> Set.toLazyList` includes 1000 for some reason???
+        Set.range(-1000, 1000) |> Set.toLazyList == LazyList.range(-1000, 1000)
+
+    @test
+    def toLazyList03(): Bool =
+        Set.range(-1000, 1000) |> Set.toLazyList |> LazyList.toSet == Set.range(-1000, 1000)
+
+
+
+
+    @test
+    def tester40(): Bool & Impure =
+        println(Set.foldLeft((acc, x) -> x :: acc, Nil, Set.empty(): Set[Int32]));
+        println(Set.foldLeft((acc, x) -> ECons(x, acc), ENil, Set.empty(): Set[Int32]));
+        println(Set.foldLeft((acc, x) -> ECons(x, acc), ENil, Set#{1, 2, 3}: Set[Int32]));
+        false
+
+
+
 }

@@ -489,4 +489,10 @@ namespace Set {
     def rangeHelper(b: Int32, n: Int32, acc: Set[Int32]): Set[Int32] =
         if (n < b) acc else rangeHelper(b, n - 1, insert(n, acc))
 
+    ///
+    /// Returns the set `s` as a `LazyList`.
+    ///
+    pub def toLazyList(s: Set[a]): LazyList[a] =
+        foldLeft((acc, x) -> ECons(x, acc), ENil, s)
+
 }
