@@ -280,6 +280,9 @@ object CodeHinter {
 
     case Expression.Reify(_, _, _, _) =>
       Nil
+
+    case Expression.ReifyType(_, _, _, _) =>
+      Nil
   }
 
   /**
