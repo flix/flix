@@ -77,8 +77,10 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       val t = s(tpe0)
 
       t.map {
-        case Type.KindedVar(_, Kind.Bool, _, _, _) =>
+        case Type.KindedVar(_, Kind.Bool, loc, _, _) =>
+          // TODO: Maybe we need a flag while we experiment.
           // TODO: Monomorph: Preserve Boolean variables.
+          throw UnexpectedNonConstBool(tpe0, loc)
           Type.True
         case Type.KindedVar(_, Kind.RecordRow, _, _, _) => Type.RecordRowEmpty
         case Type.KindedVar(_, Kind.SchemaRow, _, _, _) => Type.SchemaRowEmpty
@@ -103,7 +105,15 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   case class ReifyTypeException(tpe: Type, loc: SourceLocation) extends RuntimeException
 
-  // TODO: Monomorph: Decide whether to introduce three exception classes: One additional for Bools and one for Default.
+  /**
+    * An exception raised to indicate that the Monomorpher encountered an unexpected non-constant Boolean.
+    *
+    * @param tpe the non-constant Boolean type.
+    * @param loc the location of the type.
+    */
+  // TODO: Possibly this one should be removed.
+  case class UnexpectedNonConstBool(tpe: Type, loc: SourceLocation) extends RuntimeException
+
 
   // TODO: Monomorph: We use exceptions here as a temporary stop-gap. We should consider to restructure and use Validation.
 
@@ -825,6 +835,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     } catch {
       case ReifyBoolException(tpe, loc) => ReificationError.IllegalReifiedBool(tpe, loc).toFailure
       case ReifyTypeException(tpe, loc) => ReificationError.IllegalReifiedType(tpe, loc).toFailure
+      case UnexpectedNonConstBool(tpe, loc) => ReificationError.UnexpectedNonConstBool(tpe, loc).toFailure
     }
   }
 

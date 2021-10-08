@@ -16,7 +16,8 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Type}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
 import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Line, NewLine, Red}
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
@@ -24,7 +25,7 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
 /**
   * A common super-type for reification errors.
   */
-sealed trait ReificationError {
+sealed trait ReificationError extends CompilationError {
   def kind: String = "Monomorph Error"
 }
 
@@ -38,7 +39,7 @@ object ReificationError {
     * @param tpe the Boolean type that cannot be reified.
     * @param loc the location of the Boolean type.
     */
-  case class IllegalReifiedBool(tpe: Type, loc: SourceLocation) extends RedundancyError {
+  case class IllegalReifiedBool(tpe: Type, loc: SourceLocation) extends ReificationError {
     def summary: String = "Type cannot be reified."
 
     def message: VirtualTerminal = {
@@ -57,7 +58,7 @@ object ReificationError {
     * @param tpe the type that cannot be reified.
     * @param loc the location of the type.
     */
-  case class IllegalReifiedType(tpe: Type, loc: SourceLocation) extends RedundancyError {
+  case class IllegalReifiedType(tpe: Type, loc: SourceLocation) extends ReificationError {
     def summary: String = "Type cannot be reified."
 
     def message: VirtualTerminal = {
@@ -66,6 +67,25 @@ object ReificationError {
       vt << ">> Unable to reify the type '" << Red(FormatType.formatType(tpe)) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "unable to reify type.") << NewLine
+      vt
+    }
+  }
+
+  /**
+    * An error raised to indicate an internal error in the Monomorpher.
+    *
+    * @param tpe the problematic Boolean type.
+    * @param loc the location of the Boolean type.
+    */
+  case class UnexpectedNonConstBool(tpe: Type, loc: SourceLocation) extends ReificationError {
+    def summary: String = "Unexpected type."
+
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Unexpected Boolean type: '" << Red(FormatType.formatType(tpe)) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "unexpected Boolean type.") << NewLine
       vt
     }
   }
