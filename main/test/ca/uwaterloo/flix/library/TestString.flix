@@ -565,37 +565,37 @@ def isMatch11(): Bool = String.isMatch({regex = "[b]+"}, "aabbbc") == false
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def isSubmatch01(): Bool = String.isSubmatch(".*", "") == true
+def isSubmatch01(): Bool = String.isSubmatch({regex = ".*"}, "") == true
 
 @test
-def isSubmatch02(): Bool = String.isSubmatch(".+", "") == false
+def isSubmatch02(): Bool = String.isSubmatch({regex = ".+"}, "") == false
 
 @test
-def isSubmatch03(): Bool = String.isSubmatch("[a]*", "") == true
+def isSubmatch03(): Bool = String.isSubmatch({regex = "[a]*"}, "") == true
 
 @test
-def isSubmatch04(): Bool = String.isSubmatch("[a]+", "") == false
+def isSubmatch04(): Bool = String.isSubmatch({regex = "[a]+"}, "") == false
 
 @test
-def isSubmatch05(): Bool = String.isSubmatch("[a]*", "a") == true
+def isSubmatch05(): Bool = String.isSubmatch({regex = "[a]*"}, "a") == true
 
 @test
-def isSubmatch06(): Bool = String.isSubmatch("[a]*", "aa") == true
+def isSubmatch06(): Bool = String.isSubmatch({regex = "[a]*"}, "aa") == true
 
 @test
-def isSubmatch07(): Bool = String.isSubmatch("[a]*", "aab") == true
+def isSubmatch07(): Bool = String.isSubmatch({regex = "[a]*"}, "aab") == true
 
 @test
-def isSubmatch08(): Bool = String.isSubmatch("[a]*b", "aab") == true
+def isSubmatch08(): Bool = String.isSubmatch({regex = "[a]*b"}, "aab") == true
 
 @test
-def isSubmatch09(): Bool = String.isSubmatch("[b]+", "aab") == true
+def isSubmatch09(): Bool = String.isSubmatch({regex = "[b]+"}, "aab") == true
 
 @test
-def isSubmatch10(): Bool = String.isSubmatch("[b]+", "bbbc") == true
+def isSubmatch10(): Bool = String.isSubmatch({regex = "[b]+"}, "bbbc") == true
 
 @test
-def isSubmatch11(): Bool = String.isSubmatch("[b]+", "aabbbc") == true
+def isSubmatch11(): Bool = String.isSubmatch({regex = "[b]+"}, "aabbbc") == true
 
 /////////////////////////////////////////////////////////////////////////////
 // slice                                                                   //

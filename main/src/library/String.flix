@@ -293,11 +293,10 @@ namespace String {
         }
 
     ///
-    /// Returns `true` if the string `s` is matched by the regular expression `pattern` at any point.
+    /// Returns `true` if the string `s` is matched by the regular expression `regex` at any point.
     ///
-    @Time(length(s)) @Space(1)
-    pub def isSubmatch(pattern: String, s: String): Bool =
-        isSubmatchHelper(pattern, s) as & Pure
+    pub def isSubmatch(regex: {regex:: String}, s: String): Bool =
+        isSubmatchHelper(regex.regex, s) as & Pure
 
     ///
     /// Helper function for `isSubmatch`.
