@@ -51,9 +51,9 @@ namespace String {
     ///
     /// Returns `true` if the string `s` starts with the string `prefix`.
     ///
-    pub def startsWith(p: {prefix:: String}, s: String): Bool =
+    pub def startsWith(prefix: {prefix:: String}, s: String): Bool =
         import java.lang.String.startsWith(String);
-        s.startsWith(p.prefix) as & Pure
+        s.startsWith(prefix.prefix) as & Pure
 
     ///
     /// Returns `true` if the string `s` ends with the string `suffix`.
