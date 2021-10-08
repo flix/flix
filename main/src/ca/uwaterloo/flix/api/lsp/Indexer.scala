@@ -161,7 +161,7 @@ object Indexer {
     case Expression.Sig(sym, _, loc) =>
       Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc) ++ Index.useOf(sym.clazz, loc)
 
-    case Expression.Hole(_, _, _, _) =>
+    case Expression.Hole(_, _, _) =>
       Index.occurrenceOf(exp0)
 
     case Expression.Lambda(fparam, exp, _, _) =>
@@ -330,6 +330,9 @@ object Indexer {
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expression.Reify(t, _, _, _) =>
+      visitType(t) ++ Index.occurrenceOf(exp0)
+
+    case Expression.ReifyType(t, _, _, _) =>
       visitType(t) ++ Index.occurrenceOf(exp0)
   }
 
