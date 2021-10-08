@@ -726,27 +726,7 @@ namespace TestLazyList {
 
     @test
     def toSet05(): Bool =
-    	LazyList.toSet(LCons(1, lazy LCons(2, lazy LList(lazy LCons(3, lazy ENil))))) == Set#{1, 2, 3}
-
-    @test
-    def toSet06(): Bool =
-    	LazyList.toSet(LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil))))) == Set#{1, 2, 3}
-
-    @test
-    def toSet07(): Bool =
-    	LazyList.toSet(LCons(1, lazy ECons(2, LList(lazy LCons(3, lazy LList(lazy ENil)))))) == Set#{1, 2, 3}
-
-    @test
-    def toSet08(): Bool =
-    	LazyList.toSet(LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))) == Set#{1, 2, 3}
-
-    @test
-    def toSet09(): Bool =
     	LazyList.toSet(LList(lazy LCons(1, lazy LList(lazy ECons(2, LList(lazy ECons(3, ENil))))))) == Set#{1, 2, 3}
-
-    @test
-    def toSet10(): Bool =
-    	LazyList.toSet(ECons(1, LCons(2, lazy ECons(3, ENil)))) == Set#{1, 2, 3}
 
 
     /////////////////////////////////////////////////////////////////////////////
