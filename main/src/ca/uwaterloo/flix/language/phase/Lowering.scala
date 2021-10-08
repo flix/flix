@@ -283,9 +283,9 @@ object Lowering extends Phase[Root, Root] {
       val t = visitType(tpe)
       Expression.Sig(sym, t, loc)
 
-    case Expression.Hole(sym, tpe, eff, loc) =>
+    case Expression.Hole(sym, tpe, loc) =>
       val t = visitType(tpe)
-      Expression.Hole(sym, t, eff, loc)
+      Expression.Hole(sym, t, loc)
 
     case Expression.Lambda(fparam, exp, tpe, loc) =>
       val p = visitFormalParam(fparam)
@@ -1273,7 +1273,7 @@ object Lowering extends Phase[Root, Root] {
 
     case Expression.Sig(_, _, _) => exp0
 
-    case Expression.Hole(_, _, _, _) => exp0
+    case Expression.Hole(_, _, _) => exp0
 
     case Expression.Lambda(fparam, exp, tpe, loc) =>
       val p = substFormalParam(fparam, subst)

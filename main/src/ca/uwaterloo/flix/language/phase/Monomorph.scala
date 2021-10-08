@@ -76,7 +76,9 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       val t = s(tpe0)
 
       t.map {
-        case Type.KindedVar(_, Kind.Bool, _, _, _) => t
+        case Type.KindedVar(_, Kind.Bool, _, _, _) =>
+          // TODO: We should preserve the variable and not substitute it for true.
+          Type.True
         case Type.KindedVar(_, Kind.RecordRow, _, _, _) => Type.RecordRowEmpty
         case Type.KindedVar(_, Kind.SchemaRow, _, _, _) => Type.SchemaRowEmpty
         case _ => Type.Unit
@@ -142,7 +144,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val newSym = specializeSigSym(sym, subst0(tpe))
           Expression.Def(newSym, subst0(tpe), loc)
 
-        case Expression.Hole(sym, tpe, eff, loc) => Expression.Hole(sym, subst0(tpe), eff, loc)
+        case Expression.Hole(sym, tpe, loc) => Expression.Hole(sym, subst0(tpe), loc)
 
         case Expression.Unit(loc) => Expression.Unit(loc)
 

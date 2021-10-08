@@ -114,9 +114,8 @@ class LangSuite extends Suites(
   //
   // Choose.
   //
-  // TODO
-  //new FlixTest("Test.Exp.Choose", "main/test/flix/Test.Exp.Choose.flix")(Options.TestWithLibAll),
-  //new FlixTest("Test.Exp.ChooseStar", "main/test/flix/Test.Exp.ChooseStar.flix")(Options.TestWithLibAll),
+  new FlixTest("Test.Exp.Choose", "main/test/flix/Test.Exp.Choose.flix")(Options.TestWithLibAll),
+  new FlixTest("Test.Exp.ChooseStar", "main/test/flix/Test.Exp.ChooseStar.flix")(Options.TestWithLibAll),
 
   //
   // Concurrency.
