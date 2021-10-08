@@ -528,37 +528,37 @@ def rotateRight11(): Bool = String.rotateRight(2, "abc") == "bca"
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def isMatch01(): Bool = String.isMatch(".*", "") == true
+def isMatch01(): Bool = String.isMatch({regex = ".*"}, "") == true
 
 @test
-def isMatch02(): Bool = String.isMatch(".+", "") == false
+def isMatch02(): Bool = String.isMatch({regex = ".+"}, "") == false
 
 @test
-def isMatch03(): Bool = String.isMatch("[a]*", "") == true
+def isMatch03(): Bool = String.isMatch({regex = "[a]*"}, "") == true
 
 @test
-def isMatch04(): Bool = String.isMatch("[a]+", "") == false
+def isMatch04(): Bool = String.isMatch({regex = "[a]+"}, "") == false
 
 @test
-def isMatch05(): Bool = String.isMatch("[a]*", "a") == true
+def isMatch05(): Bool = String.isMatch({regex = "[a]*"}, "a") == true
 
 @test
-def isMatch06(): Bool = String.isMatch("[a]*", "aa") == true
+def isMatch06(): Bool = String.isMatch({regex = "[a]*"}, "aa") == true
 
 @test
-def isMatch07(): Bool = String.isMatch("[a]*", "aab") == false
+def isMatch07(): Bool = String.isMatch({regex = "[a]*"}, "aab") == false
 
 @test
-def isMatch08(): Bool = String.isMatch("[a]*b", "aab") == true
+def isMatch08(): Bool = String.isMatch({regex = "[a]*b"}, "aab") == true
 
 @test
-def isSMatch09(): Bool = String.isMatch("[b]+", "aab") == false
+def isSMatch09(): Bool = String.isMatch({regex = "[b]+"}, "aab") == false
 
 @test
-def isMatch10(): Bool = String.isMatch("[b]+", "bbbc") == false
+def isMatch10(): Bool = String.isMatch({regex = "[b]+"}, "bbbc") == false
 
 @test
-def isMatch11(): Bool = String.isMatch("[b]+", "aabbbc") == false
+def isMatch11(): Bool = String.isMatch({regex = "[b]+"}, "aabbbc") == false
 
 /////////////////////////////////////////////////////////////////////////////
 // isSubmatch                                                              //
