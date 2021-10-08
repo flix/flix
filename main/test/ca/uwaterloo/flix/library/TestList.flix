@@ -2365,13 +2365,13 @@ def distinctWith09(): Bool =
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toLazy01(): Bool = Nil: List[Unit] |> List.toLazy == LazyList.empty()
+    def toLazy01(): Bool = Nil: List[Unit] |> List.toLazyList == LazyList.empty()
 
     @test
-    def toLazy02(): Bool = List.range(-1000, 1000) |> List.toLazy == LazyList.range(-1000, 1000)
+    def toLazy02(): Bool = List.range(-1000, 1000) |> List.toLazyList == LazyList.range(-1000, 1000)
 
     @test
-    def toLazy03(): Bool = List.range(-1000, 1000) |> List.toLazy |> LazyList.toList == List.range(-1000, 1000)
+    def toLazy03(): Bool = List.range(-1000, 1000) |> List.toLazyList |> LazyList.toList == List.range(-1000, 1000)
 
 
     /////////////////////////////////////////////////////////////////////////////
