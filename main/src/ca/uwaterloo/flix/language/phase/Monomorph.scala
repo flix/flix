@@ -740,17 +740,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         (ConstraintParam.RuleParam(freshSym, subst0(tpe), loc), Map(sym -> freshSym))
     }
 
-    /**
-      * Returns the symbol of the given signature identified by the given `className` and `sigName` specialized to the given type `tpe`.
-      */
-    def getSigSym(className: String, sigName: String, tpe: Type): Symbol.DefnSym = {
-      val sp1 = SourcePosition.Unknown
-      val sp2 = SourcePosition.Unknown
-      val classSym = Symbol.mkClassSym(Name.RootNS, Name.Ident(sp1, className, sp2))
-      val sigSym = Symbol.mkSigSym(classSym, Name.Ident(sp1, sigName, sp2))
-      specializeSigSym(sigSym, tpe)
-    }
-
     /*
      * We can now use these helper functions to perform specialization of the whole program.
      */
