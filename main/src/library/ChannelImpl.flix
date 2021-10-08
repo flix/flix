@@ -22,11 +22,11 @@ namespace ChannelImpl {
             )
     }
 
-    pub def newWithId(bufferSize: Int): Result[ChannelImpl[a], String] & Impure =
+    pub def new(bufferSize: Int): Result[ChannelImpl[a], String] & Impure =
         if (bufferSize < 0) Err("Channel's buffer size must be non-negative.")
-        else Ok(newWithIdAux(bufferSize))
+        else Ok(uncheckedNew(bufferSize))
 
-    def newWithIdAux(bufferSize: Int): ChannelImpl[a] & Impure =
+    pub def uncheckedNew(bufferSize: Int): ChannelImpl[a] & Impure =
         import dev.flix.runtime.GlobalCounter:newId();
 
         let buffered = bufferSize == 0;
