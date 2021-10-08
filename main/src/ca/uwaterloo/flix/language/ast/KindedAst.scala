@@ -57,7 +57,7 @@ object KindedAst {
 
     case class Sig(sym: Symbol.SigSym, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
-    case class Hole(sym: Symbol.HoleSym, tpe: Type.KindedVar, eff: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
+    case class Hole(sym: Symbol.HoleSym, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
     case class Unit(loc: SourceLocation) extends KindedAst.Expression
 

@@ -161,7 +161,7 @@ object Indexer {
     case Expression.Sig(sym, _, loc) =>
       Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc) ++ Index.useOf(sym.clazz, loc)
 
-    case Expression.Hole(_, _, _, _) =>
+    case Expression.Hole(_, _, _) =>
       Index.occurrenceOf(exp0)
 
     case Expression.Lambda(fparam, exp, _, _) =>

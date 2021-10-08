@@ -39,7 +39,7 @@ namespace Test/Class/Kinding {
 
             namespace Exp {
                 lawless class CStar1[a] {
-                    pub def star(x: a): Int = ???: a; ???
+                    pub def star(x: a): Int = let _: a = ???; ???
                 }
             }
         }
@@ -139,7 +139,7 @@ namespace Test/Class/Kinding {
 
             namespace Exp {
                 lawless class CStar1[a: Type] {
-                    pub def star(x: a): Int = ???: a; ???
+                    pub def star(x: a): Int = let _: a = ???; ???
                 }
             }
         }

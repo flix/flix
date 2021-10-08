@@ -98,7 +98,7 @@ object Statistics extends Phase[Root, Root] {
       case Expression.Var(sym, tpe, loc) => Counter.empty
       case Expression.Def(sym, tpe, loc) => Counter.empty
       case Expression.Sig(sym, tpe, loc) => Counter.empty
-      case Expression.Hole(sym, tpe, eff, loc) => Counter.empty
+      case Expression.Hole(sym, tpe, loc) => Counter.empty
       case Expression.Lambda(fparam, exp, tpe, loc) => visitExp(exp)
       case Expression.Apply(exp, exps, tpe, eff, loc) => visitExp(exp) ++ Counter.merge(exps.map(visitExp))
       case Expression.Unary(sop, exp, tpe, eff, loc) => visitExp(exp)

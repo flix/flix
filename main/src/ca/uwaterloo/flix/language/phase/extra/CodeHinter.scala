@@ -86,7 +86,7 @@ object CodeHinter {
 
     case Expression.Sig(_, _, _) => Nil
 
-    case Expression.Hole(_, _, _, _) => Nil
+    case Expression.Hole(_, _, _) => Nil
 
     case Expression.Unit(_) => Nil
 

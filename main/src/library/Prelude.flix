@@ -6,9 +6,6 @@ type alias Ref[t] = ScopedRef[t, false]
 ///
 /// The Reified Flix Types.
 ///
-
-// TODO: Decide what types should be here.
-
 pub enum ReifiedType with Eq, Order, ToString {
     case ErasedType,
     case ReifiedBool,
