@@ -837,13 +837,13 @@ namespace String {
             s + repeat(Char.toString(c), w - len)
 
     ///
-    /// Returns `s` with every match of the substring `target` replaced by the string `rep`.
+    /// Returns `s` with every match of the substring `from` replaced by the string `to`.
     ///
-    @Time(length(s) * length(target)) @Space(length(s) * length(target))
-    pub def replace(target: String, rep: String, s: String): String =
+    pub def replace(from: {from:: String}, to: {to:: String}, s: String): String =
+        //pub def replace(target: String, rep: String, s: String): String =
         import java.lang.String.replace(##java.lang.CharSequence, ##java.lang.CharSequence);
-        let t = target as ##java.lang.CharSequence;
-        let r = rep as ##java.lang.CharSequence;
+        let t = from.from as ##java.lang.CharSequence;
+        let r = to.to as ##java.lang.CharSequence;
         s.replace(t, r) as & Pure
 
     ///

@@ -414,6 +414,6 @@ namespace GetOpt {
     /// Remove all quote marks from the array of tokens.
     ///
     def removeQuoteMarks(quoteOpen: String, quoteClose: String, args: Array[String]): Array[String] & Impure =
-        args |> Array.map(String.replace(quoteOpen, "") >> String.replace(quoteClose, ""))
+        args |> Array.map(String.replace({from = quoteOpen}, {to = ""}) >> String.replace({from = quoteClose}, {to = ""}))
 
 }

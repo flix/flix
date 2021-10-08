@@ -2060,28 +2060,28 @@ def padRight15(): Bool = String.padRight(3, '_', "abc") == "abc"
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def replace01(): Bool = String.replace("c", "d", "") == ""
+def replace01(): Bool = String.replace({from = "c"}, {to = "d"}, "") == ""
 
 @test
-def replace02(): Bool = String.replace("c", "d", "a") == "a"
+def replace02(): Bool = String.replace({from = "c"}, {to = "d"}, "a") == "a"
 
 @test
-def replace03(): Bool = String.replace("c", "d", "c") == "d"
+def replace03(): Bool = String.replace({from = "c"}, {to = "d"}, "c") == "d"
 
 @test
-def replace04(): Bool = String.replace("c", "d", "d") == "d"
+def replace04(): Bool = String.replace({from = "c"}, {to = "d"}, "d") == "d"
 
 @test
-def replace05(): Bool = String.replace("c", "d", "ab") == "ab"
+def replace05(): Bool = String.replace({from = "c"}, {to = "d"}, "ab") == "ab"
 
 @test
-def replace06(): Bool = String.replace("c", "d", "abc") == "abd"
+def replace06(): Bool = String.replace({from = "c"}, {to = "d"}, "abc") == "abd"
 
 @test
-def replace07(): Bool = String.replace("c", "d", "cd") == "dd"
+def replace07(): Bool = String.replace({from = "c"}, {to = "d"}, "cd") == "dd"
 
 @test
-def replace08(): Bool = String.replace("c", "d", "cc") == "dd"
+def replace08(): Bool = String.replace({from = "c"}, {to = "d"}, "cc") == "dd"
 
 /////////////////////////////////////////////////////////////////////////////
 // replaceChar                                                             //
