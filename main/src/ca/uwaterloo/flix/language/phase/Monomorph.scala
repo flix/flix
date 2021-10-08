@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Kind, Name, Scheme, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.ReificationError
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, Unification}
 import ca.uwaterloo.flix.util.Validation._
@@ -88,16 +88,24 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   /**
-    * An exception raised by the Monomorpher to indicates that an unexpected type was encountered.
+    * An exception raised to indicate that a Boolean type cannot be reified.
     *
     * @param tpe the type that cannot be reified.
-    * @param loc the location of the type that cannot be reified.
+    * @param loc the location of the type.
     */
-  case class ReifyException(tpe: Type, loc: SourceLocation) extends RuntimeException
+  case class ReifyBoolException(tpe: Type, loc: SourceLocation) extends RuntimeException
+
+  /**
+    * An exception raised to indicate that a regular type cannot be reified.
+    *
+    * @param tpe the type that cannot be reified.
+    * @param loc the location of the type.
+    */
+  case class ReifyTypeException(tpe: Type, loc: SourceLocation) extends RuntimeException
 
   // TODO: Monomorph: Decide whether to introduce three exception classes: One additional for Bools and one for Default.
 
-  // TODO: We use exceptions here as a temporary stop-gap. We should consider to restructure and use Validation.
+  // TODO: Monomorph: We use exceptions here as a temporary stop-gap. We should consider to restructure and use Validation.
 
   /**
     * Performs monomorphization of the given AST `root`.
@@ -196,7 +204,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           //
           subst0(tpe).typeConstructor match {
             case None =>
-              throw ReifyException(tpe, loc)
+              throw ReifyTypeException(tpe, loc)
 
             case Some(tc) => tc match {
               case TypeConstructor.Unit => Expression.Unit(loc)
@@ -474,7 +482,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val isTrue = subst0(t) match {
             case Type.Cst(TypeConstructor.True, _) => true
             case Type.Cst(TypeConstructor.False, _) => false
-            case other => throw ReifyException(other, loc)
+            case other => throw ReifyBoolException(other, loc)
           }
 
           if (isTrue)
@@ -495,7 +503,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
         def visit(t0: Type): Expression = t0.typeConstructor match {
           case None =>
-            throw ReifyException(tpe, loc)
+            throw ReifyTypeException(tpe, loc)
 
           case Some(tc) => tc match {
             case TypeConstructor.Bool =>
@@ -540,7 +548,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
               val innerExp = visit(innerTpe)
               Expression.Tag(sym, tag, innerExp, resultTpe, resultEff, loc)
 
-            case other => throw ReifyException(tpe, loc)
+            case other => throw ReifyTypeException(tpe, loc)
           }
         }
 
@@ -815,8 +823,8 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         defs = specializedDefns.toMap
       ).toSuccess
     } catch {
-      case ReifyException(tpe, loc) =>
-        ReificationError.IllegalReifiedType(tpe, loc).toFailure
+      case ReifyBoolException(tpe, loc) => ReificationError.IllegalReifiedBool(tpe, loc).toFailure
+      case ReifyTypeException(tpe, loc) => ReificationError.IllegalReifiedType(tpe, loc).toFailure
     }
   }
 

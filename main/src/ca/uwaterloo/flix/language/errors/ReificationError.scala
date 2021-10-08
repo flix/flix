@@ -33,10 +33,29 @@ object ReificationError {
   private implicit val audience: Audience = Audience.External
 
   /**
+    * An error raised to indicate that the Boolean type cannot be reified.
+    *
+    * @param tpe the Boolean type that cannot be reified.
+    * @param loc the location of the Boolean type.
+    */
+  case class IllegalReifiedBool(tpe: Type, loc: SourceLocation) extends RedundancyError {
+    def summary: String = "Type cannot be reified."
+
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Unable to reify the non-constant Bool '" << Red(FormatType.formatType(tpe)) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "unable to reify type.") << NewLine
+      vt
+    }
+  }
+
+  /**
     * An error raised to indicate that the type cannot be reified.
     *
     * @param tpe the type that cannot be reified.
-    * @param loc the location of the type that cannot be reified.
+    * @param loc the location of the type.
     */
   case class IllegalReifiedType(tpe: Type, loc: SourceLocation) extends RedundancyError {
     def summary: String = "Type cannot be reified."
