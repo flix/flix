@@ -1184,7 +1184,7 @@ namespace List {
     ///
     /// Returns `xs` as a mutable list.
     ///
-    pub def toMut(xs: List[a]): MutList[a] & Impure = {
+    pub def toMutList(xs: List[a]): MutList[a] & Impure = {
         let v = MutList.new();
         xs |> foreach(x -> MutList.push!(x, v));
         v
@@ -1396,5 +1396,15 @@ namespace List {
         case Nil     => acc
         case x :: xs => sumAcc(xs, x + acc)
     }
+
+    ///
+    /// Returns the elements of `l` as a `DemandList`.
+    ///
+    pub def toDemandList(l: List[a]): DemandList.DemandList[a, d] =
+        use DemandList.{DemandList};
+        match l {
+            case Nil     => DemandList.ENil
+            case x :: xs => DemandList.LList(lazy DemandList.LCons(x, lazy toDemandList(xs)))
+        }
 
 }

@@ -43,7 +43,7 @@ object PrettyExpression {
 
     case Expression.Def(sym, _, _) => sym.toString
 
-    case Expression.Hole(sym, _, _, _) => s"?${sym.name}"
+    case Expression.Hole(sym, _, _) => s"?${sym.name}"
 
     case Expression.Lambda(fparam, exp, _, _) =>
       s"${fparam.sym.text} -> ${pretty(exp)}"

@@ -754,7 +754,7 @@ namespace TestMutList {
         MutList.insert!(40, 1, v);
         MutList.insert!(55, 0, v);
         MutList.insert!(33, 1, v);
-        MutList.sameElements(v, List.toMut(55 :: 33 :: 0 :: 40 :: 1 :: 41 :: 2 :: 42 :: 3 :: Nil))
+        MutList.sameElements(v, List.toMutList(55 :: 33 :: 0 :: 40 :: 1 :: 41 :: 2 :: 42 :: 3 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // remove!                                                                 //
@@ -862,13 +862,13 @@ namespace TestMutList {
     def retain!01(): Bool & Impure =
         let v = MutList.range(0, 10);
         MutList.retain!(x -> x % 2 == 0, v);
-        MutList.sameElements(List.toMut(0 :: 2 :: 4 :: 6 :: 8 :: Nil), v)
+        MutList.sameElements(List.toMutList(0 :: 2 :: 4 :: 6 :: 8 :: Nil), v)
 
     @test
     def retain!02(): Bool & Impure =
         let v = MutList.range(0, 10);
         MutList.retain!(x -> x % 2 == 1, v);
-        MutList.sameElements(List.toMut(1 :: 3 :: 5 :: 7 :: 9 :: Nil), v)
+        MutList.sameElements(List.toMutList(1 :: 3 :: 5 :: 7 :: 9 :: Nil), v)
 
     @test
     def retain!03(): Bool & Impure =
@@ -895,31 +895,31 @@ namespace TestMutList {
         MutList.push!(1, v);
         MutList.push!(1, v);
         MutList.replace!(1, 42, v);
-        MutList.sameElements(List.toMut(42 :: 2 :: 2 :: 42 :: 42 :: Nil), v)
+        MutList.sameElements(List.toMutList(42 :: 2 :: 2 :: 42 :: 42 :: Nil), v)
 
     @test
     def replace!02(): Bool & Impure =
         let v = MutList.range(4, 7);
         MutList.replace!(4, 0, v);
-        MutList.sameElements(List.toMut(0 :: 5 :: 6 :: Nil), v)
+        MutList.sameElements(List.toMutList(0 :: 5 :: 6 :: Nil), v)
 
     @test
     def replace!03(): Bool & Impure =
         let v = MutList.range(4, 7);
         MutList.replace!(5, 0, v);
-        MutList.sameElements(List.toMut(4 :: 0 :: 6 :: Nil), v)
+        MutList.sameElements(List.toMutList(4 :: 0 :: 6 :: Nil), v)
 
     @test
     def replace!04(): Bool & Impure =
         let v = MutList.range(4, 7);
         MutList.replace!(6, 0, v);
-        MutList.sameElements(List.toMut(4 :: 5 :: 0 :: Nil), v)
+        MutList.sameElements(List.toMutList(4 :: 5 :: 0 :: Nil), v)
 
     @test
     def replace!05(): Bool & Impure =
-        let v = List.toMut(List.repeat('a', 97));
+        let v = List.toMutList(List.repeat('a', 97));
         MutList.replace!('a', 'z', v);
-        MutList.sameElements(List.toMut(List.repeat('z', 97)), v)
+        MutList.sameElements(List.toMutList(List.repeat('z', 97)), v)
 
     /////////////////////////////////////////////////////////////////////////////
     // reverse!                                                                //
@@ -941,17 +941,17 @@ namespace TestMutList {
     def reverse03!(): Bool & Impure =
         let v = MutList.range(0, 5);
         MutList.reverse!(v);
-        MutList.sameElements(v, List.toMut(4 :: 3 :: 2 :: 1 :: 0 :: Nil))
+        MutList.sameElements(v, List.toMutList(4 :: 3 :: 2 :: 1 :: 0 :: Nil))
 
     @test
     def reverse04!(): Bool & Impure =
         let v = MutList.range(0, 6);
         MutList.reverse!(v);
-        MutList.sameElements(v, List.toMut(5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil))
+        MutList.sameElements(v, List.toMutList(5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil))
 
     @test
     def reverse05!(): Bool & Impure =
-        let v = List.toMut(7 :: 6 :: 5 :: 4 :: 3 :: 2 :: Nil);
+        let v = List.toMutList(7 :: 6 :: 5 :: 4 :: 3 :: 2 :: Nil);
         MutList.reverse!(v);
         MutList.sameElements(v, MutList.range(2, 8))
 
@@ -1139,7 +1139,7 @@ namespace TestMutList {
         let v1 = MutList.range(0, 100);
         let v2 = MutList.new();
         MutList.foreachWithIndex((x, i) -> if (x % 2 == 0 and i < 10) MutList.push!(x, v2) else (), v1);
-        MutList.sameElements(v2, List.toMut(0 :: 2 :: 4 :: 6 :: 8 :: Nil))
+        MutList.sameElements(v2, List.toMutList(0 :: 2 :: 4 :: 6 :: 8 :: Nil))
 
     @test
     def foreachWithIndex02(): Bool & Impure =
@@ -1307,23 +1307,23 @@ namespace TestMutList {
         Array.length(MutList.toArray(v)) == 1
 
     /////////////////////////////////////////////////////////////////////////////
-    // toImm                                                                   //
+    // toList                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toImm01(): Bool & Impure =
-        MutList.new(): MutList[Int32] |> MutList.toImm == Nil: List[Int32]
+    def toList01(): Bool & Impure =
+        MutList.new(): MutList[Int32] |> MutList.toList == Nil: List[Int32]
 
     @test
-    def toImm02(): Bool & Impure =
+    def toList02(): Bool & Impure =
         let ml = MutList.range(0, 1000);
-        ml |> MutList.toImm == List.range(0, 1000) and
+        ml |> MutList.toList == List.range(0, 1000) and
             not (MutList.isEmpty(ml))
 
     @test
-    def toImm03(): Bool & Impure =
+    def toList03(): Bool & Impure =
         let ml = MutList.range(0, 1000);
-        ml |> MutList.toImm == List.range(0, 1000) and
+        ml |> MutList.toList == List.range(0, 1000) and
            ml == MutList.range(0, 1000)
 
 
@@ -1668,7 +1668,7 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy(Array.toMutList([2,3,0,4,1,
 
     @test
     def range03(): Bool & Impure =
-        MutList.range(0, 1000) |> MutList.toImm == List.range(0, 1000)
+        MutList.range(0, 1000) |> MutList.toList == List.range(0, 1000)
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1681,26 +1681,26 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy(Array.toMutList([2,3,0,4,1,
 
     @test
     def sum02(): Bool & Impure =
-        (1 :: Nil) |> List.toMut |> MutList.sum == 1
+        (1 :: Nil) |> List.toMutList |> MutList.sum == 1
 
     @test
     def sum03(): Bool & Impure =
-        (1 :: 2 :: 3 :: Nil) |> List.toMut |> MutList.sum == 6
+        (1 :: 2 :: 3 :: Nil) |> List.toMutList |> MutList.sum == 6
 
     @test
     def sum04(): Bool & Impure =
-        (1 :: 2 :: 3 :: -3 :: Nil) |> List.toMut |> MutList.sum == 3
+        (1 :: 2 :: 3 :: -3 :: Nil) |> List.toMutList |> MutList.sum == 3
 
     @test
     def sum05(): Bool & Impure =
-        (-1 :: -2 :: -3 :: -4 :: Nil) |> List.toMut |> MutList.sum == -10
+        (-1 :: -2 :: -3 :: -4 :: Nil) |> List.toMutList |> MutList.sum == -10
 
     @test
     def sum06(): Bool & Impure =
-        (10 :: -10 :: Nil) |> List.toMut |> MutList.sum == 0
+        (10 :: -10 :: Nil) |> List.toMutList |> MutList.sum == 0
 
     @test
     def sum07(): Bool & Impure =
-        List.range(1, 101) |> List.toMut |> MutList.sum == 5050
+        List.range(1, 101) |> List.toMutList |> MutList.sum == 5050
 
 }

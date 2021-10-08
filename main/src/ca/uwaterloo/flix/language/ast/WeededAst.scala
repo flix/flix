@@ -211,6 +211,8 @@ object WeededAst {
 
     case class Reify(t: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
 
+    case class ReifyType(t: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
+
   }
 
   sealed trait Pattern {

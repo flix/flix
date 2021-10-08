@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.extra
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.CodeHint
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
@@ -86,7 +86,7 @@ object CodeHinter {
 
     case Expression.Sig(_, _, _) => Nil
 
-    case Expression.Hole(_, _, _, _) => Nil
+    case Expression.Hole(_, _, _) => Nil
 
     case Expression.Unit(_) => Nil
 
@@ -117,14 +117,15 @@ object CodeHinter {
     case Expression.Default(_, _) => Nil
 
     case Expression.Lambda(_, exp, _, _) =>
-      visitExp(exp)
+      checkEffect(exp.eff, exp.loc) ++ visitExp(exp)
 
     case Expression.Apply(exp, exps, _, eff, loc) =>
       val hints0 = (exp, exps) match {
         case (Expression.Def(sym, _, _), lambda :: _) => checkPurity(sym, lambda.tpe, loc)
         case _ => Nil
       }
-      hints0 ++ visitExp(exp) ++ visitExps(exps)
+      val hints1 = checkEffect(eff, loc)
+      hints0 ++ hints1 ++ visitExp(exp) ++ visitExps(exps)
 
     case Expression.Unary(_, exp, _, _, _) =>
       visitExp(exp)
@@ -279,6 +280,9 @@ object CodeHinter {
 
     case Expression.Reify(_, _, _, _) =>
       Nil
+
+    case Expression.ReifyType(_, _, _, _) =>
+      Nil
   }
 
   /**
@@ -342,11 +346,6 @@ object CodeHinter {
   /**
     * Returns `true` if the given effect `tpe` is non-trivial.
     */
-  private def nonTrivialEffect(tpe: Type): Boolean = tpe match {
-    case Type.KindedVar(_, _, _, _, _) => false
-    case Type.Cst(TypeConstructor.True, _) => false
-    case Type.Cst(TypeConstructor.False, _) => false
-    case _ => true
-  }
+  private def nonTrivialEffect(tpe: Type): Boolean = Type.size(tpe) > 5
 
 }

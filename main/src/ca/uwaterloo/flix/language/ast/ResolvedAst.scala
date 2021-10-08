@@ -194,6 +194,8 @@ object ResolvedAst {
 
     case class Reify(t: Type, loc: SourceLocation) extends ResolvedAst.Expression
 
+    case class ReifyType(t: Type, loc: SourceLocation) extends ResolvedAst.Expression
+
   }
 
   sealed trait Pattern {
