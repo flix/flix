@@ -89,7 +89,8 @@ object Main {
       xlinter = cmdOpts.xlinter,
       xnoboolunification = cmdOpts.xnoboolunification,
       xnostratifier = cmdOpts.xnostratifier,
-      xstatistics = cmdOpts.xstatistics
+      xstatistics = cmdOpts.xstatistics,
+      xstrictmono = cmdOpts.xstrictmono
     )
 
     // Don't use progress bar if benchmarking.
@@ -238,6 +239,7 @@ object Main {
                      xlinter: Boolean = false,
                      xnostratifier: Boolean = false,
                      xstatistics: Boolean = false,
+                     xstrictmono: Boolean = false,
                      files: Seq[File] = Seq())
 
   /**
@@ -390,6 +392,9 @@ object Main {
 
       opt[Unit]("Xstatistics").action((_, c) => c.copy(xstatistics = true)).
         text("[experimental] prints compilation statistics.")
+
+      opt[Unit]("Xstrictmono").action((_, c) => c.copy(xstrictmono = true)).
+        text("[experimental] enable strict monomorphization.")
 
       note("")
 

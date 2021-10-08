@@ -62,7 +62,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     * Unit type. In other words, when performing a type substitution if there is no requirement on a polymorphic type
     * we assume it to be Unit. This is safe since otherwise the type would not be polymorphic after type-inference.
     */
-  case class StrictSubstitution(s: Substitution) {
+  case class StrictSubstitution(s: Substitution)(implicit flix: Flix) {
     /**
       * Returns `true` if this substitution is empty.
       */
@@ -78,10 +78,12 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
       t.map {
         case Type.KindedVar(_, Kind.Bool, loc, _, _) =>
-          // TODO: Maybe we need a flag while we experiment.
-          // TODO: Monomorph: Preserve Boolean variables.
-          throw UnexpectedNonConstBool(tpe0, loc)
-          Type.True
+          // TODO: In strict mode we demand that there are no free (uninstantiated) Boolean variables.
+          // In the future we need to decide what should actually happen if such variables occur.
+          if (flix.options.xstrictmono)
+            throw UnexpectedNonConstBool(tpe0, loc)
+          else
+            Type.True
         case Type.KindedVar(_, Kind.RecordRow, _, _, _) => Type.RecordRowEmpty
         case Type.KindedVar(_, Kind.SchemaRow, _, _, _) => Type.SchemaRowEmpty
         case _ => Type.Unit
