@@ -1489,7 +1489,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Performs weeding on the given argument.
     *
     * Named arguments are transformed into records.
-    * `f(arg: x)` becomes `f({arg = x})`
+    * `f(arg = x)` becomes `f({arg = x})`
     */
   private def visitArgument(arg: ParsedAst.Argument)(implicit flix: Flix): Validation[WeededAst.Expression, WeederError] = arg match {
     // Case 1: Named parameter. Turn it into a record.
