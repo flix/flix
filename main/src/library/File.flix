@@ -52,6 +52,18 @@ namespace File {
         }
 
     ///
+    /// Returns `true` if the given file `file` is writable.
+    ///
+    pub def isWritable(file: String): Result[Bool, String] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import java.io.File.canWrite();
+            Ok(canWrite(newFile(file)))
+        } catch {
+            case _: ##java.io.IOException => Err("I/O Error")
+        }
+
+    ///
     /// Returns a list of all the lines in the given file `f`.
     ///
     pub def readLines(f: String): Result[List[String], String] & Impure = try {
