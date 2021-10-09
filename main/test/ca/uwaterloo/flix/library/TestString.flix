@@ -2486,62 +2486,62 @@ def unwords08(): Bool = String.unwords(String.lineSeparator() :: "b" :: Nil) == 
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def indexOf01(): Bool = String.indexOf("a", "") == None
+def indexOf01(): Bool = String.indexOf({substr = "a"}, "") == None
 
 @test
-def indexOf02(): Bool = String.indexOf("a", "A") == None
+def indexOf02(): Bool = String.indexOf({substr = "a"}, "A") == None
 
 @test
-def indexOf03(): Bool = String.indexOf("a", "a") == Some(0)
+def indexOf03(): Bool = String.indexOf({substr = "a"}, "a") == Some(0)
 
 @test
-def indexOf04(): Bool = String.indexOf("a", "AB") == None
+def indexOf04(): Bool = String.indexOf({substr = "a"}, "AB") == None
 
 @test
-def indexOf05(): Bool = String.indexOf("a", "ab") == Some(0)
+def indexOf05(): Bool = String.indexOf({substr = "a"}, "ab") == Some(0)
 
 @test
-def indexOf06(): Bool = String.indexOf("b", "ab") == Some(1)
+def indexOf06(): Bool = String.indexOf({substr = "b"}, "ab") == Some(1)
 
 @test
-def indexOf07(): Bool = String.indexOf("a", "aa") == Some(0)
+def indexOf07(): Bool = String.indexOf({substr = "a"}, "aa") == Some(0)
 
 @test
-def indexOf08(): Bool = String.indexOf("ab", "ab") == Some(0)
+def indexOf08(): Bool = String.indexOf({substr = "ab"}, "ab") == Some(0)
 
 @test
-def indexOf09(): Bool = String.indexOf("bc", "abc") == Some(1)
+def indexOf09(): Bool = String.indexOf({substr = "bc"}, "abc") == Some(1)
 
 /////////////////////////////////////////////////////////////////////////////
 // indexOfLeft                                                             //
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def indexOfLeft01(): Bool = String.indexOfLeft("a", "") == None
+def indexOfLeft01(): Bool = String.indexOfLeft({substr = "a"}, "") == None
 
 @test
-def indexOfLeft02(): Bool = String.indexOfLeft("a", "A") == None
+def indexOfLeft02(): Bool = String.indexOfLeft({substr = "a"}, "A") == None
 
 @test
-def indexOfLeft03(): Bool = String.indexOfLeft("a", "a") == Some(0)
+def indexOfLeft03(): Bool = String.indexOfLeft({substr = "a"}, "a") == Some(0)
 
 @test
-def indexOfLeft04(): Bool = String.indexOfLeft("a", "AB") == None
+def indexOfLeft04(): Bool = String.indexOfLeft({substr = "a"}, "AB") == None
 
 @test
-def indexOfLeft05(): Bool = String.indexOfLeft("a", "ab") == Some(0)
+def indexOfLeft05(): Bool = String.indexOfLeft({substr = "a"}, "ab") == Some(0)
 
 @test
-def indexOfLeft06(): Bool = String.indexOfLeft("b", "ab") == Some(1)
+def indexOfLeft06(): Bool = String.indexOfLeft({substr = "b"}, "ab") == Some(1)
 
 @test
-def indexOfLeft07(): Bool = String.indexOfLeft("a", "aa") == Some(0)
+def indexOfLeft07(): Bool = String.indexOfLeft({substr = "a"}, "aa") == Some(0)
 
 @test
-def indexOfLeft08(): Bool = String.indexOfLeft("ab", "ab") == Some(0)
+def indexOfLeft08(): Bool = String.indexOfLeft({substr = "ab"}, "ab") == Some(0)
 
 @test
-def indexOfLeft09(): Bool = String.indexOfLeft("bc", "abc") == Some(1)
+def indexOfLeft09(): Bool = String.indexOfLeft({substr = "bc"}, "abc") == Some(1)
 
 /////////////////////////////////////////////////////////////////////////////
 // indexOfRight                                                            //

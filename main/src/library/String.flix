@@ -1036,23 +1036,21 @@ namespace String {
     ///
     /// Alias for `indexOfLeft`.
     ///
-    @Time(length(sub) * length(s)) @Space(length(s))
-    pub def indexOf(sub: String, s: String): Option[Int32] = indexOfLeft(sub, s)
+    pub def indexOf(substr: {substr:: String}, s: String): Option[Int32] = indexOfLeft({substr = substr.substr}, s)
 
     ///
-    /// Return the index of the first occurence of `sub` in `s` from the left.
+    /// Return the index of the first occurence of `substr` in `s` from the left.
     ///
-    /// If `sub` is not present in `s` return None.
+    /// If `substr` is not present in `s` return None.
     ///
-    /// If `sub` is the empty string return None.
+    /// If `substr` is the empty string return None.
     ///
-    @Time(length(sub) * length(s)) @Space(length(s))
-    pub def indexOfLeft(sub: String, s: String): Option[Int32] =
+    pub def indexOfLeft(substr: {substr:: String}, s: String): Option[Int32] =
         import java.lang.String.indexOf(String);
-        if (isEmpty(sub))
+        if (isEmpty(substr.substr))
             None
         else {
-            let i = s.indexOf(sub) as & Pure;
+            let i = s.indexOf(substr.substr) as & Pure;
             if (i < 0) None else Some(i)
         }
 
