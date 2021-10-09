@@ -2144,28 +2144,28 @@ def replaceMatches08(): Bool = String.replaceMatches({regex = "[c]{1}"}, {to = "
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def replaceFirstMatch01(): Bool = String.replaceFirstMatch("[c]{1}", "d", "") == ""
+def replaceFirstMatch01(): Bool = String.replaceFirstMatch({regex = "[c]{1}"}, {to = "d"}, "") == ""
 
 @test
-def replaceFirstMatch02(): Bool = String.replaceFirstMatch("[c]{1}", "d", "a") == "a"
+def replaceFirstMatch02(): Bool = String.replaceFirstMatch({regex = "[c]{1}"}, {to = "d"}, "a") == "a"
 
 @test
-def replaceFirstMatch03(): Bool = String.replaceFirstMatch("[c]{1}", "d", "c") == "d"
+def replaceFirstMatch03(): Bool = String.replaceFirstMatch({regex = "[c]{1}"}, {to = "d"}, "c") == "d"
 
 @test
-def replaceFirstMatch04(): Bool = String.replaceFirstMatch("[c]{1}", "d", "d") == "d"
+def replaceFirstMatch04(): Bool = String.replaceFirstMatch({regex = "[c]{1}"}, {to = "d"}, "d") == "d"
 
 @test
-def replaceFirstMatch05(): Bool = String.replaceFirstMatch("[c]{1}", "d", "ab") == "ab"
+def replaceFirstMatch05(): Bool = String.replaceFirstMatch({regex = "[c]{1}"}, {to = "d"}, "ab") == "ab"
 
 @test
-def replaceFirstMatch06(): Bool = String.replaceFirstMatch("[c]{1}", "d", "abc") == "abd"
+def replaceFirstMatch06(): Bool = String.replaceFirstMatch({regex = "[c]{1}"}, {to = "d"}, "abc") == "abd"
 
 @test
-def replaceFirstMatch07(): Bool = String.replaceFirstMatch("[c]{1}", "d", "cd") == "dd"
+def replaceFirstMatch07(): Bool = String.replaceFirstMatch({regex = "[c]{1}"}, {to = "d"}, "cd") == "dd"
 
 @test
-def replaceFirstMatch08(): Bool = String.replaceFirstMatch("[c]{1}", "d", "cc") == "dc"
+def replaceFirstMatch08(): Bool = String.replaceFirstMatch({regex = "[c]{1}"}, {to = "d"}, "cc") == "dc"
 
 /////////////////////////////////////////////////////////////////////////////
 // update                                                                  //

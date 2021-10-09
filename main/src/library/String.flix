@@ -855,19 +855,19 @@ namespace String {
         s.replace(target, rep) as & Pure
 
     ///
-    /// Returns `s` with every match of the regular expression `regex` replaced by the string `to`.
+    /// Returns `s` with every match of the regular expression `patt` replaced by the string `rep`.
     ///
-    pub def replaceMatches(regex: {regex:: String}, to: {to:: String}, s: String): String =
+    @Time(length(s) * length(rep)) @Space(length(s) * length(rep))
+    pub def replaceMatches(patt: String, rep: String, s: String): String =
         import java.lang.String.replaceAll(String, String);
-        s.replaceAll(regex.regex, to.to) as & Pure
+        s.replaceAll(patt, rep) as & Pure
 
     ///
-    /// Returns `s` with the first match of the regular expression `patt` replaced by the string `rep`.
+    /// Returns `s` with the first match of the regular expression `regex` replaced by the string `to`.
     ///
-    @Time(length(s) + length(rep)) @Space(length(s) + length(rep))
-    pub def replaceFirstMatch(patt: String, rep: String, s: String): String =
+    pub def replaceFirstMatch(regex: {regex:: String}, to: {to:: String}, s: String): String =
         import java.lang.String.replaceFirst(String, String);
-        s.replaceFirst(patt, rep) as & Pure
+        s.replaceFirst(regex.regex, to.to) as & Pure
 
     ///
     /// Returns `s` with the element at index `i` replaced by `a`.
