@@ -1055,19 +1055,18 @@ namespace String {
         }
 
     ///
-    /// Return the index of the first occurence of `sub` in `s` from the right.
+    /// Return the index of the first occurence of `substr` in `s` from the right.
     ///
-    /// If `sub` is not present in `s` return None.
+    /// If `substr` is not present in `s` return None.
     ///
-    /// If `sub` is the empty string return None.
+    /// If `substr` is the empty string return None.
     ///
-    @Time(length(sub) * length(s)) @Space(length(s))
-    pub def indexOfRight(sub: String, s: String): Option[Int32] =
+    pub def indexOfRight(substr: {substr:: String}, s: String): Option[Int32] =
         import java.lang.String.lastIndexOf(String);
-        if (isEmpty(sub))
+        if (isEmpty(substr.substr))
             None
         else {
-            let i = s.lastIndexOf(sub) as & Pure;
+            let i = s.lastIndexOf(substr.substr) as & Pure;
             if (i < 0) None else Some(i)
         }
 
@@ -1078,7 +1077,7 @@ namespace String {
         if (isEmpty(substr.substr))
             true
         else {
-            let a = indexOfLeft(substr.substr, s);
+            let a = indexOfLeft({substr = substr.substr}, s);
             not Option.isEmpty(a)
         }
 

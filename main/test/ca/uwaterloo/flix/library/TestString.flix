@@ -712,13 +712,13 @@ def sliceRight01(): Bool = String.sliceRight("", 0) == ""
 def sliceRight02(): Bool = String.sliceRight("", 1) == ""
 
 @test
-def sliceRight03(): Bool = String.sliceRight("a", 1) == ""
+def sliceRight03(): Bool = String.sliceRight({substr = "a"}, 1) == ""
 
 @test
-def sliceRight04(): Bool = String.sliceRight("a", 0) == "a"
+def sliceRight04(): Bool = String.sliceRight({substr = "a"}, 0) == "a"
 
 @test
-def sliceRight05(): Bool = String.sliceRight("a", 1) == ""
+def sliceRight05(): Bool = String.sliceRight({substr = "a"}, 1) == ""
 
 @test
 def sliceRight06(): Bool = String.sliceRight("ab", 0) == "ab"
@@ -1897,7 +1897,7 @@ def trimRight01(): Bool = String.trimRight("") == ""
 def trimRight02(): Bool = String.trimRight(" ") == ""
 
 @test
-def trimRight03(): Bool = String.trimRight("a") == "a"
+def trimRight03(): Bool = String.trimRight({substr = "a"}) == "a"
 
 @test
 def trimRight04(): Bool = String.trimRight(" a") == " a"
@@ -2548,31 +2548,31 @@ def indexOfLeft09(): Bool = String.indexOfLeft({substr = "bc"}, "abc") == Some(1
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def indexOfRight01(): Bool = String.indexOfRight("a", "") == None
+def indexOfRight01(): Bool = String.indexOfRight({substr = "a"}, "") == None
 
 @test
-def indexOfRight02(): Bool = String.indexOfRight("a", "A") == None
+def indexOfRight02(): Bool = String.indexOfRight({substr = "a"}, "A") == None
 
 @test
-def indexOfRight03(): Bool = String.indexOfRight("a", "a") == Some(0)
+def indexOfRight03(): Bool = String.indexOfRight({substr = "a"}, "a") == Some(0)
 
 @test
-def indexOfRight04(): Bool = String.indexOfRight("a", "AB") == None
+def indexOfRight04(): Bool = String.indexOfRight({substr = "a"}, "AB") == None
 
 @test
-def indexOfRight05(): Bool = String.indexOfRight("a", "ab") == Some(0)
+def indexOfRight05(): Bool = String.indexOfRight({substr = "a"}, "ab") == Some(0)
 
 @test
-def indexOfRight06(): Bool = String.indexOfRight("b", "ab") == Some(1)
+def indexOfRight06(): Bool = String.indexOfRight({substr = "b"}, "ab") == Some(1)
 
 @test
-def indexOfRight07(): Bool = String.indexOfRight("a", "aa") == Some(1)
+def indexOfRight07(): Bool = String.indexOfRight({substr = "a"}, "aa") == Some(1)
 
 @test
-def indexOfRight08(): Bool = String.indexOfRight("ab", "ab") == Some(0)
+def indexOfRight08(): Bool = String.indexOfRight({substr = "ab"}, "ab") == Some(0)
 
 @test
-def indexOfRight09(): Bool = String.indexOfRight("bc", "abc") == Some(1)
+def indexOfRight09(): Bool = String.indexOfRight({substr = "bc"}, "abc") == Some(1)
 
 /////////////////////////////////////////////////////////////////////////////
 // startsWith                                                              //
