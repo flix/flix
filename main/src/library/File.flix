@@ -28,6 +28,18 @@ namespace File {
         }
 
     ///
+    /// Return `true` is the given file `file` is a directory.
+    ///
+    pub def isDirectory(file: String): Result[Bool, String] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import java.io.File.isDirectory();
+            Ok(isDirectory(newFile(file)))
+        } catch {
+            case _: ##java.io.IOException => Err("I/O Error")
+        }
+
+    ///
     /// Returns `true` if the given file `f` is readable.
     ///
     pub def isReadable(f: String): Result[Bool, String] & Impure =
