@@ -712,13 +712,13 @@ def sliceRight01(): Bool = String.sliceRight("", 0) == ""
 def sliceRight02(): Bool = String.sliceRight("", 1) == ""
 
 @test
-def sliceRight03(): Bool = String.sliceRight({substr = "a"}, 1) == ""
+def sliceRight03(): Bool = String.sliceRight("a", 1) == ""
 
 @test
-def sliceRight04(): Bool = String.sliceRight({substr = "a"}, 0) == "a"
+def sliceRight04(): Bool = String.sliceRight("a", 0) == "a"
 
 @test
-def sliceRight05(): Bool = String.sliceRight({substr = "a"}, 1) == ""
+def sliceRight05(): Bool = String.sliceRight("a", 1) == ""
 
 @test
 def sliceRight06(): Bool = String.sliceRight("ab", 0) == "ab"
@@ -1897,7 +1897,7 @@ def trimRight01(): Bool = String.trimRight("") == ""
 def trimRight02(): Bool = String.trimRight(" ") == ""
 
 @test
-def trimRight03(): Bool = String.trimRight({substr = "a"}) == "a"
+def trimRight03(): Bool = String.trimRight("a") == "a"
 
 @test
 def trimRight04(): Bool = String.trimRight(" a") == " a"

@@ -855,12 +855,11 @@ namespace String {
         s.replace(target, rep) as & Pure
 
     ///
-    /// Returns `s` with every match of the regular expression `patt` replaced by the string `rep`.
+    /// Returns `s` with every match of the regular expression `regex` replaced by the string `to`.
     ///
-    @Time(length(s) * length(rep)) @Space(length(s) * length(rep))
-    pub def replaceMatches(patt: String, rep: String, s: String): String =
+    pub def replaceMatches(regex: {regex:: String}, to: {to:: String}, s: String): String =
         import java.lang.String.replaceAll(String, String);
-        s.replaceAll(patt, rep) as & Pure
+        s.replaceAll(regex.regex, to.to) as & Pure
 
     ///
     /// Returns `s` with the first match of the regular expression `regex` replaced by the string `to`.
@@ -1325,7 +1324,7 @@ namespace String {
     ///
     @Time(length(sub) * length(s)) @Space(length(sub) * length(s))
     pub def breakOnLeft(sub: String, s: String): (String, String) =
-        match indexOfLeft(sub, s) {
+        match indexOfLeft({substr = sub}, s) {
             case None => (s, "")
             case Some(i) => (sliceLeft(s, i), sliceRight(s, i))
         }
@@ -1337,7 +1336,7 @@ namespace String {
     @Time(length(sub) * length(s)) @Space(length(sub) * length(s))
     pub def breakOnRight(sub: String, s: String): (String, String) =
         let sublen = length(sub);
-        match indexOfRight(sub, s) {
+        match indexOfRight({substr = sub}, s) {
             case None => (s, "")
             case Some(i) => (sliceLeft(s, i + sublen), sliceRight(s, i + sublen))
         }
