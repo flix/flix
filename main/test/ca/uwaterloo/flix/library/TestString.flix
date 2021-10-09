@@ -2116,28 +2116,28 @@ def replaceChar08(): Bool = String.replaceChar('c', 'd', "cc") == "dd"
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def replaceMatches01(): Bool = String.replaceMatches("[c]{1}", "d", "") == ""
+def replaceMatches01(): Bool = String.replaceMatches({regex = "[c]{1}"}, {to = "d"}, "") == ""
 
 @test
-def replaceMatches02(): Bool = String.replaceMatches("[c]{1}", "d", "a") == "a"
+def replaceMatches02(): Bool = String.replaceMatches({regex = "[c]{1}"}, {to = "d"}, "a") == "a"
 
 @test
-def replaceMatches03(): Bool = String.replaceMatches("[c]{1}", "d", "c") == "d"
+def replaceMatches03(): Bool = String.replaceMatches({regex = "[c]{1}"}, {to = "d"}, "c") == "d"
 
 @test
-def replaceMatches04(): Bool = String.replaceMatches("[c]{1}", "d", "d") == "d"
+def replaceMatches04(): Bool = String.replaceMatches({regex = "[c]{1}"}, {to = "d"}, "d") == "d"
 
 @test
-def replaceMatches05(): Bool = String.replaceMatches("[c]{1}", "d", "ab") == "ab"
+def replaceMatches05(): Bool = String.replaceMatches({regex = "[c]{1}"}, {to = "d"}, "ab") == "ab"
 
 @test
-def replaceMatches06(): Bool = String.replaceMatches("[c]{1}", "d", "abc") == "abd"
+def replaceMatches06(): Bool = String.replaceMatches({regex = "[c]{1}"}, {to = "d"}, "abc") == "abd"
 
 @test
-def replaceMatches07(): Bool = String.replaceMatches("[c]{1}", "d", "cd") == "dd"
+def replaceMatches07(): Bool = String.replaceMatches({regex = "[c]{1}"}, {to = "d"}, "cd") == "dd"
 
 @test
-def replaceMatches08(): Bool = String.replaceMatches("[c]{1}", "d", "cc") == "dd"
+def replaceMatches08(): Bool = String.replaceMatches({regex = "[c]{1}"}, {to = "d"}, "cc") == "dd"
 
 /////////////////////////////////////////////////////////////////////////////
 // replaceFirstMatch                                                       //
