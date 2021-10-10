@@ -250,7 +250,6 @@ namespace LazyList {
     ///
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
-    // TODO: Use k function as acc.
     def mapE(f: a -> b & Impure, l: LazyList[a]): LazyList[b] & Impure =
         mapEAcc(f, l, ks -> ks)
 
@@ -288,14 +287,11 @@ namespace LazyList {
     ///
     /// Applies `f` lazily (i.e. the tail is not forced).
     ///
-    // TODO: Collect f(x) and not f(x) cases into if-else exp.
     def filterL(f: a -> Bool, l: LazyList[a]): LazyList[a] = match l {
-        case ENil                 => ENil
-        case ECons(x, xs) if f(x) => LCons(x, lazy filterL(f,       xs))
-        case LCons(x, xs) if f(x) => LCons(x, lazy filterL(f, force xs))
-        case ECons(_, xs)         => LList(   lazy filterL(f,       xs))
-        case LCons(_, xs)         => LList(   lazy filterL(f, force xs))
-        case LList(xs)            => LList(   lazy filterL(f, force xs))
+        case ENil         => ENil
+        case ECons(x, xs) => if (f(x)) LCons(x, lazy filterL(f,       xs)) else LList(lazy filterL(f,       xs))
+        case LCons(x, xs) => if (f(x)) LCons(x, lazy filterL(f, force xs)) else LList(lazy filterL(f, force xs))
+        case LList(xs)    => LList(   lazy filterL(f, force xs))
     }
 
     ///
