@@ -1269,29 +1269,12 @@ def query07(): Bool =
     def toLazyList01(): Bool =
         Set.empty(): Set[Unit] |> Set.toLazyList == LazyList.empty()
 
-/////////////////////////
-// BUGS HERE           //
-/////////////////////////
     @test
     def toLazyList02(): Bool =
-        // `Set.range(-1000, 1000) |> Set.toLazyList` includes 1000 for some reason???
         Set.range(-1000, 1000) |> Set.toLazyList == LazyList.range(-1000, 1000)
 
     @test
     def toLazyList03(): Bool =
         Set.range(-1000, 1000) |> Set.toLazyList |> LazyList.toSet == Set.range(-1000, 1000)
-
-
-
-
-    @test
-    def tester40(): Bool & Impure =
-        println(Set.foldLeft((acc, x) -> x :: acc, Nil, Set.empty(): Set[Int32]));
-        println(Set.foldLeft((acc, x) -> ECons(x, acc), ENil, Set.empty(): Set[Int32]));
-        println(Set.foldLeft((acc, x) -> ECons(x, acc), ENil, Set#{1, 2, 3}));
-        println(Set.foldLeft((acc, x) -> ECons(x, acc), ENil, Set.range(0, 3)));
-        false
-
-
 
 }

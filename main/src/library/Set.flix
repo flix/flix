@@ -493,6 +493,6 @@ namespace Set {
     /// Returns the set `s` as a `LazyList`.
     ///
     pub def toLazyList(s: Set[a]): LazyList[a] =
-        foldLeft((acc, x) -> ECons(x, acc), ENil, s)
+        foldRight((x, acc) -> ECons(x, acc), ENil, s)
 
 }
