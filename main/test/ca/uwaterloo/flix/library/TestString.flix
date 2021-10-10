@@ -3070,37 +3070,37 @@ def splitOn11(): Bool = String.splitOn({substr = "::"}, "a::b:c") == "a" :: "b:c
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def indexOfLeftWithOffset01(): Bool = String.indexOfLeftWithOffset("", 0, "") == None
+def indexOfLeftWithOffset01(): Bool = String.indexOfLeftWithOffset({substr = ""}, {offset = 0}, "") == None
 
 @test
-def indexOfLeftWithOffset02(): Bool = String.indexOfLeftWithOffset("", 0, "a") == None
+def indexOfLeftWithOffset02(): Bool = String.indexOfLeftWithOffset({substr = ""}, {offset = 0}, "a") == None
 
 @test
-def indexOfLeftWithOffset03(): Bool = String.indexOfLeftWithOffset("a", 0, "a") == Some(0)
+def indexOfLeftWithOffset03(): Bool = String.indexOfLeftWithOffset({substr = "a"}, {offset = 0}, "a") == Some(0)
 
 @test
-def indexOfLeftWithOffset04(): Bool = String.indexOfLeftWithOffset("a", 1, "a") == None
+def indexOfLeftWithOffset04(): Bool = String.indexOfLeftWithOffset({substr = "a"}, {offset = 1}, "a") == None
 
 @test
-def indexOfLeftWithOffset05(): Bool = String.indexOfLeftWithOffset("a", 0, "ab") == Some(0)
+def indexOfLeftWithOffset05(): Bool = String.indexOfLeftWithOffset({substr = "a"}, {offset = 0}, "ab") == Some(0)
 
 @test
-def indexOfLeftWithOffset06(): Bool = String.indexOfLeftWithOffset("a", 1, "aa") == Some(1)
+def indexOfLeftWithOffset06(): Bool = String.indexOfLeftWithOffset({substr = "a"}, {offset = 1}, "aa") == Some(1)
 
 @test
-def indexOfLeftWithOffset07(): Bool = String.indexOfLeftWithOffset("ab", 0, "ab") == Some(0)
+def indexOfLeftWithOffset07(): Bool = String.indexOfLeftWithOffset({substr = "ab"}, {offset = 0}, "ab") == Some(0)
 
 @test
-def indexOfLeftWithOffset08(): Bool = String.indexOfLeftWithOffset("ab", 0, "abab") == Some(0)
+def indexOfLeftWithOffset08(): Bool = String.indexOfLeftWithOffset({substr = "ab"}, {offset = 0}, "abab") == Some(0)
 
 @test
-def indexOfLeftWithOffset09(): Bool = String.indexOfLeftWithOffset("ab", 1, "abab") == Some(2)
+def indexOfLeftWithOffset09(): Bool = String.indexOfLeftWithOffset({substr = "ab"}, {offset = 1}, "abab") == Some(2)
 
 @test
-def indexOfLeftWithOffset10(): Bool = String.indexOfLeftWithOffset("ab", 2, "abab") == Some(2)
+def indexOfLeftWithOffset10(): Bool = String.indexOfLeftWithOffset({substr = "ab"}, {offset = 2}, "abab") == Some(2)
 
 @test
-def indexOfLeftWithOffset11(): Bool = String.indexOfLeftWithOffset("ab", 3, "abab") == None
+def indexOfLeftWithOffset11(): Bool = String.indexOfLeftWithOffset({substr = "ab"}, {offset = 3}, "abab") == None
 
 /////////////////////////////////////////////////////////////////////////////
 // indexOfRightWithOffset                                                  //

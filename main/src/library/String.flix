@@ -426,7 +426,7 @@ namespace String {
     pub def indices(substr: {substr :: String}, s: String): List[Int32] =
         let sublen = length(substr.substr);
         let step = ix ->
-            match indexOfLeftWithOffset(substr.substr, ix, s) {
+            match indexOfLeftWithOffset({substr = substr.substr}, {offset = ix}, s) {
                 case None => None
                 case Some(ix2) => Some(ix2, ix2 + sublen)
             };
@@ -1249,7 +1249,7 @@ namespace String {
             if (ix > maxlen)
                 None
             else {
-                match indexOfLeftWithOffset(substr.substr, ix, s) {
+                match indexOfLeftWithOffset({substr = substr.substr}, {offset = ix}, s) {
                     case None => {
                         let s1 = sliceRight(s, ix);
                         Some(s1, maxlen + 1)
@@ -1265,15 +1265,14 @@ namespace String {
     ///
     /// This is `indexOfLeft` with a start offset.
     ///
-    /// Returns `None` if `sub` is the empty string.
+    /// Returns `None` if `substr` is the empty string.
     ///
-    @Time(length(sub) * length(s)) @Space(length(s))
-    pub def indexOfLeftWithOffset(sub: String, offset: Int32, s: String): Option[Int32] =
+    pub def indexOfLeftWithOffset(substr: {substr :: String}, offset: {offset :: Int32}, s: String): Option[Int32] =
         import java.lang.String.indexOf(String, Int32);
-        if (isEmpty(sub))
+        if (isEmpty(substr.substr))
             None
         else {
-            let ix = s.indexOf(sub, offset) as & Pure;
+            let ix = s.indexOf(substr.substr, offset.offset) as & Pure;
             if (ix < 0) None else Some(ix)
         }
 
@@ -1356,7 +1355,7 @@ namespace String {
     /// Helper function for `count``.
     ///
     def countSubstringHelper(sub: String, sublen: Int32, s: String, offset: Int32, count: Int32): Int32 =
-        match indexOfLeftWithOffset(sub, offset, s) {
+        match indexOfLeftWithOffset({substr = sub}, {offset = offset}, s) {
             case None => count
             case Some(i) => countSubstringHelper(sub, sublen, s, i + sublen, count + 1)
         }
