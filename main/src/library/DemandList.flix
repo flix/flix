@@ -387,8 +387,8 @@ namespace DemandList {
     ///
     pub def exists(f: a -> Bool & ef, l: DemandList[a, true]): Bool & ef = match l {
         case ENil         => false
-        case ECons(x, xs) => f(x) or exists(f, xs)
-        case LCons(x, xs) => f(x) or exists(f, force xs)
+        case ECons(x, xs) => if (f(x)) true else exists(f,       xs)
+        case LCons(x, xs) => if (f(x)) true else exists(f, force xs)
         case LList(xs)    => exists(f, force xs)
     }
 
