@@ -397,10 +397,21 @@ namespace DemandList {
     ///
     /// Returns `true` if `l` is empty.
     ///
-    pub def forall(f: a -> Bool & ef, l: DemandList[a, true]): Bool & ef = match l {
-        case ENil         => true
-        case ECons(x, xs) => f(x) and forall(f, xs)
-        case LCons(x, xs) => f(x) and forall(f, force xs)
-        case LList(xs)    => forall(f, force xs)
-    }
+    pub def forall(f: a -> Bool & ef, l: DemandList[a, true]): Bool & ef =
+        forallAcc(f, l, true)
+
+    ///
+    /// Helper function for `forall`.
+    ///
+    def forallAcc(f: a -> Bool & ef, l: DemandList[a, true], acc: Bool): Bool & ef =
+        if (acc)
+            match l {
+                case ENil         => true
+                case ECons(x, xs) => forallAcc(f,       xs, f(x))
+                case LCons(x, xs) => forallAcc(f, force xs, f(x))
+                case LList(xs)    => forallAcc(f, force xs, acc )
+            }
+        else
+            false
+
 }
