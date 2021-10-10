@@ -581,7 +581,8 @@ namespace Map {
     ///
     /// Returns the map `m` as a `LazyList` of key-value pairs.
     ///
-    pub def toLazyList(m: Map[k, v]): LazyList[(k, v)] = ???
+    pub def toLazyList(m: Map[k, v]): LazyList[(k, v)] =
+        foldRightWithKey((k, v, acc) -> ECons((k, v), acc), ENil, m)
 
     ///
     /// Applies `f` to every element of `xs`.
