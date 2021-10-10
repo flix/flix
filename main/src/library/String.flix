@@ -51,21 +51,21 @@ namespace String {
     ///
     /// Returns `true` if the string `s` starts with the string `prefix`.
     ///
-    pub def startsWith(prefix: {prefix:: String}, s: String): Bool =
+    pub def startsWith(prefix: {prefix :: String}, s: String): Bool =
         import java.lang.String.startsWith(String);
         s.startsWith(prefix.prefix) as & Pure
 
     ///
     /// Returns `true` if the string `s` ends with the string `suffix`.
     ///
-    pub def endsWith(suffix: {suffix:: String}, s: String): Bool =
+    pub def endsWith(suffix: {suffix :: String}, s: String): Bool =
         import java.lang.String.endsWith(String);
         s.endsWith(suffix.suffix) as & Pure
 
     ///
     /// Splits the string `s` around matches of the regular expression `regex`.
     ///
-    pub def split(regex: {regex:: String}, s: String): List[String] & Impure =
+    pub def split(regex: {regex :: String}, s: String): List[String] & Impure =
         import java.lang.String.split(String);
         Array.toList(s.split(regex.regex))
 
@@ -284,7 +284,7 @@ namespace String {
     ///
     /// Note - use `isSubmatch` to search for a substring.
     ///
-    pub def isMatch(regex: {regex:: String}, s: String): Bool =
+    pub def isMatch(regex: {regex :: String}, s: String): Bool =
         try {
             import java.lang.String.matches(String);
             s.matches(regex.regex) as & Pure
@@ -295,7 +295,7 @@ namespace String {
     ///
     /// Returns `true` if the string `s` is matched by the regular expression `regex` at any point.
     ///
-    pub def isSubmatch(regex: {regex:: String}, s: String): Bool =
+    pub def isSubmatch(regex: {regex :: String}, s: String): Bool =
         isSubmatchHelper(regex.regex, s) as & Pure
 
     ///
@@ -423,7 +423,7 @@ namespace String {
     ///
     /// Returns `Nil` if `substr` is the empty string.
     ///
-    pub def indices(substr: {substr:: String}, s: String): List[Int32] =
+    pub def indices(substr: {substr :: String}, s: String): List[Int32] =
         let sublen = length(substr.substr);
         let step = ix ->
             match indexOfLeftWithOffset(substr.substr, ix, s) {
@@ -857,14 +857,14 @@ namespace String {
     ///
     /// Returns `s` with every match of the regular expression `regex` replaced by the string `to`.
     ///
-    pub def replaceMatches(regex: {regex:: String}, to: {to:: String}, s: String): String =
+    pub def replaceMatches(regex: {regex :: String}, to: {to :: String}, s: String): String =
         import java.lang.String.replaceAll(String, String);
         s.replaceAll(regex.regex, to.to) as & Pure
 
     ///
     /// Returns `s` with the first match of the regular expression `regex` replaced by the string `to`.
     ///
-    pub def replaceFirstMatch(regex: {regex:: String}, to: {to:: String}, s: String): String =
+    pub def replaceFirstMatch(regex: {regex :: String}, to: {to :: String}, s: String): String =
         import java.lang.String.replaceFirst(String, String);
         s.replaceFirst(regex.regex, to.to) as & Pure
 
@@ -1035,7 +1035,7 @@ namespace String {
     ///
     /// Alias for `indexOfLeft`.
     ///
-    pub def indexOf(substr: {substr:: String}, s: String): Option[Int32] = indexOfLeft({substr = substr.substr}, s)
+    pub def indexOf(substr: {substr :: String}, s: String): Option[Int32] = indexOfLeft({substr = substr.substr}, s)
 
     ///
     /// Return the index of the first occurence of `substr` in `s` from the left.
@@ -1044,7 +1044,7 @@ namespace String {
     ///
     /// If `substr` is the empty string return None.
     ///
-    pub def indexOfLeft(substr: {substr:: String}, s: String): Option[Int32] =
+    pub def indexOfLeft(substr: {substr :: String}, s: String): Option[Int32] =
         import java.lang.String.indexOf(String);
         if (isEmpty(substr.substr))
             None
@@ -1060,7 +1060,7 @@ namespace String {
     ///
     /// If `substr` is the empty string return None.
     ///
-    pub def indexOfRight(substr: {substr:: String}, s: String): Option[Int32] =
+    pub def indexOfRight(substr: {substr :: String}, s: String): Option[Int32] =
         import java.lang.String.lastIndexOf(String);
         if (isEmpty(substr.substr))
             None
@@ -1072,7 +1072,7 @@ namespace String {
     ///
     /// Returns `true` if and only if `substr` is an infix of `s`.
     ///
-    pub def contains(substr: {substr:: String}, s: String): Bool =
+    pub def contains(substr: {substr :: String}, s: String): Bool =
         if (isEmpty(substr.substr))
             true
         else {
