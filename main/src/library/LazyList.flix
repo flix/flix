@@ -499,10 +499,10 @@ namespace LazyList {
     /// Forces elements of `l` until the predicate `f` is satisfied.
     ///
     pub def exists(f: a -> Bool & ef, l: LazyList[a]): Bool & ef = match l {
-       case ENil         => false
-       case ECons(x, xs) => if (f(x)) true else exists(f,       xs)
-       case LCons(x, xs) => if (f(x)) true else exists(f, force xs)
-       case LList(xs)    => exists(f, force xs)
+        case ENil         => false
+        case ECons(x, xs) => if (f(x)) true else exists(f,       xs)
+        case LCons(x, xs) => if (f(x)) true else exists(f, force xs)
+        case LList(xs)    => exists(f, force xs)
    }
 
     ///
