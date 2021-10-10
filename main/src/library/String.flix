@@ -1279,15 +1279,14 @@ namespace String {
     ///
     /// This is `indexOfRight` with a start offset.
     ///
-    /// Returns `None` if `sub` is the empty string.
+    /// Returns `None` if `substr` is the empty string.
     ///
-    @Time(length(sub) * length(s)) @Space(length(s))
-    pub def indexOfRightWithOffset(sub: String, offset: Int32, s: String): Option[Int32] =
+    pub def indexOfRightWithOffset(substr: {substr :: String}, offset: {offset :: Int32}, s: String): Option[Int32] =
         import java.lang.String.lastIndexOf(String, Int32);
-        if (isEmpty(sub))
+        if (isEmpty(substr.substr))
             None
         else {
-            let ix = s.lastIndexOf(sub, offset) as & Pure;
+            let ix = s.lastIndexOf(substr.substr, offset.offset) as & Pure;
             if (ix < 0) None else Some(ix)
         }
 

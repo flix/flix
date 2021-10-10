@@ -3107,40 +3107,40 @@ def indexOfLeftWithOffset11(): Bool = String.indexOfLeftWithOffset({substr = "ab
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def indexOfRightWithOffset01(): Bool = String.indexOfRightWithOffset("", 0, "") == None
+def indexOfRightWithOffset01(): Bool = String.indexOfRightWithOffset({substr = ""}, {offset = 0}, "") == None
 
 @test
-def indexOfRightWithOffset02(): Bool = String.indexOfRightWithOffset("", 0, "a") == None
+def indexOfRightWithOffset02(): Bool = String.indexOfRightWithOffset({substr = ""}, {offset = 0}, "a") == None
 
 @test
-def indexOfRightWithOffset03(): Bool = String.indexOfRightWithOffset("a", 0, "a") == Some(0)
+def indexOfRightWithOffset03(): Bool = String.indexOfRightWithOffset({substr = "a"}, {offset = 0}, "a") == Some(0)
 
 @test
-def indexOfRightWithOffset04(): Bool = String.indexOfRightWithOffset("a", 1, "a") == Some(0)
+def indexOfRightWithOffset04(): Bool = String.indexOfRightWithOffset({substr = "a"}, {offset = 1}, "a") == Some(0)
 
 @test
-def indexOfRightWithOffset05(): Bool = String.indexOfRightWithOffset("a", 2, "ab") == Some(0)
+def indexOfRightWithOffset05(): Bool = String.indexOfRightWithOffset({substr = "a"}, {offset = 2}, "ab") == Some(0)
 
 @test
-def indexOfRightWithOffset06(): Bool = String.indexOfRightWithOffset("a", 2, "aa") == Some(1)
+def indexOfRightWithOffset06(): Bool = String.indexOfRightWithOffset({substr = "a"}, {offset = 2}, "aa") == Some(1)
 
 @test
-def indexOfRightWithOffset07(): Bool = String.indexOfRightWithOffset("ab", 2, "ab") == Some(0)
+def indexOfRightWithOffset07(): Bool = String.indexOfRightWithOffset({substr = "ab"}, {offset = 2}, "ab") == Some(0)
 
 @test
-def indexOfRightWithOffset08(): Bool = String.indexOfRightWithOffset("ab", 3, "abab") == Some(2)
+def indexOfRightWithOffset08(): Bool = String.indexOfRightWithOffset({substr = "ab"}, {offset = 3}, "abab") == Some(2)
 
 @test
-def indexOfRightWithOffset09(): Bool = String.indexOfRightWithOffset("ab", 2, "abab") == Some(2)
+def indexOfRightWithOffset09(): Bool = String.indexOfRightWithOffset({substr = "ab"}, {offset = 2}, "abab") == Some(2)
 
 @test
-def indexOfRightWithOffset10(): Bool = String.indexOfRightWithOffset("ab", 1, "abab") == Some(0)
+def indexOfRightWithOffset10(): Bool = String.indexOfRightWithOffset({substr = "ab"}, {offset = 1}, "abab") == Some(0)
 
 @test
-def indexOfRightWithOffset11(): Bool = String.indexOfRightWithOffset("ab", 0, "abab") == Some(0)
+def indexOfRightWithOffset11(): Bool = String.indexOfRightWithOffset({substr = "ab"}, {offset = 0}, "abab") == Some(0)
 
 @test
-def indexOfRightWithOffset12(): Bool = String.indexOfRightWithOffset("ab", -1, "abab") == None
+def indexOfRightWithOffset12(): Bool = String.indexOfRightWithOffset({substr = "ab"}, {offset = -1}, "abab") == None
 
 /////////////////////////////////////////////////////////////////////////////
 // toChunks                                                                //
