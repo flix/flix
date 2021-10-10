@@ -108,7 +108,7 @@ namespace DemandList {
         if (reify ef)
             filterL(f as a -> Bool & Pure,   l as DemandList[a, false]) as DemandList[a, not ef or d] & ef
         else
-            filterE(f as a -> Bool & Impure, l as DemandList[a, true])  as DemandList[a, not ef or d] & ef
+            filterE(f as a -> Bool & Impure, l as DemandList[a, Forced])  as DemandList[a, not ef or d] & ef
 
     ///
     /// Returns a lazy list of every element in `l` that satisfies the predicate `f`.
@@ -129,7 +129,7 @@ namespace DemandList {
     ///
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
-    def filterE(f: a -> Bool & Impure, l: DemandList[a, true]): DemandList[a, true] & Impure =
+    def filterE(f: a -> Bool & Impure, l: DemandList[a, Forced]): DemandList[a, Forced] & Impure =
         filterEAcc(f, l as DemandList[a, Forced], ENil) |> reverse
 
     ///
@@ -176,7 +176,7 @@ namespace DemandList {
         if (reify ef)
             mapL(f as a -> b & Pure,   l as DemandList[a, false]) as DemandList[b, not ef or d] & ef
         else
-            mapE(f as a -> b & Impure, l as DemandList[a, true])  as DemandList[b, not ef or d] & ef
+            mapE(f as a -> b & Impure, l as DemandList[a, Forced])  as DemandList[b, not ef or d] & ef
 
     ///
     /// Returns the result of applying `f` to every element in `l`.
@@ -344,7 +344,7 @@ namespace DemandList {
         if (reify ef)
             flatMapL(f as a -> DemandList[b, false] & Pure,  l as DemandList[a, false]) as DemandList[b, not ef or d] & ef
         else
-            flatMapE(f as a -> DemandList[b, true] & Impure, l as DemandList[a, true]) as DemandList[b, not ef or d] & ef
+            flatMapE(f as a -> DemandList[b, Forced] & Impure, l as DemandList[a, Forced]) as DemandList[b, not ef or d] & ef
 
     ///
     /// Returns the result of applying `f` to every element in `l` and concatenating the results.
@@ -363,13 +363,13 @@ namespace DemandList {
     ///
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
-    def flatMapE(f: a -> DemandList[b, true] & Impure, l: DemandList[a, Forced]): DemandList[b, Forced] & Impure =
+    def flatMapE(f: a -> DemandList[b, Forced] & Impure, l: DemandList[a, Forced]): DemandList[b, Forced] & Impure =
         flatMapEHelper(f, l, ks -> ks)
 
     ///
     /// Helper function for `flatMapE`.
     ///
-    def flatMapEHelper(f: a -> DemandList[b, true] & Impure, l: DemandList[a, true], k: DemandList[b, true] -> DemandList[b, true]): DemandList[b, true] & Impure = match l {
+    def flatMapEHelper(f: a -> DemandList[b, Forced] & Impure, l: DemandList[a, Forced], k: DemandList[b, Forced] -> DemandList[b, Forced]): DemandList[b, Forced] & Impure = match l {
         case ENil         => k(ENil)
         case ECons(x, xs) =>
             let xs1 = f(x);
@@ -385,7 +385,7 @@ namespace DemandList {
     ///
     /// Returns `false` if `l` is empty.
     ///
-    pub def exists(f: a -> Bool & ef, l: DemandList[a, true]): Bool & ef = match l {
+    pub def exists(f: a -> Bool & ef, l: DemandList[a, Forced]): Bool & ef = match l {
         case ENil         => false
         case ECons(x, xs) => if (f(x)) true else exists(f,       xs)
         case LCons(x, xs) => if (f(x)) true else exists(f, force xs)
@@ -397,13 +397,13 @@ namespace DemandList {
     ///
     /// Returns `true` if `l` is empty.
     ///
-    pub def forall(f: a -> Bool & ef, l: DemandList[a, true]): Bool & ef =
+    pub def forall(f: a -> Bool & ef, l: DemandList[a, Forced]): Bool & ef =
         forallAcc(f, l, true)
 
     ///
     /// Helper function for `forall`.
     ///
-    def forallAcc(f: a -> Bool & ef, l: DemandList[a, true], acc: Bool): Bool & ef =
+    def forallAcc(f: a -> Bool & ef, l: DemandList[a, Forced], acc: Bool): Bool & ef =
         if (acc)
             match l {
                 case ENil         => true
