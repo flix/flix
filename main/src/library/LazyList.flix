@@ -499,11 +499,11 @@ namespace LazyList {
     /// Forces elements of `l` until the predicate `f` is satisfied.
     ///
     pub def exists(f: a -> Bool & ef, l: LazyList[a]): Bool & ef = match l {
-        case ENil         => false
-        case ECons(x, xs) => f(x) or exists(f, xs)
-        case LCons(x, xs) => f(x) or exists(f, force xs)
-        case LList(xs)    => exists(f, force xs)
-    }
+       case ENil         => false
+       case ECons(x, xs) => if (f(x)) true else exists(f,       xs)
+       case LCons(x, xs) => if (f(x)) true else exists(f, force xs)
+       case LList(xs)    => exists(f, force xs)
+   }
 
     ///
     /// Returns `true` if and only if all elements in `l` satisfy the predicate `f`.
@@ -512,12 +512,22 @@ namespace LazyList {
     ///
     /// Forces the entire list `l`.
     ///
-    pub def forall(f: a -> Bool & ef, l: LazyList[a]): Bool & ef = match l {
-        case ENil         => true
-        case ECons(x, xs) => f(x) and forall(f, xs)
-        case LCons(x, xs) => f(x) and forall(f, force xs)
-        case LList(xs)    => forall(f, force xs)
-    }
+    pub def forall(f: a -> Bool & ef, l: LazyList[a]): Bool & ef =
+        forallAcc(f, l, true)
+
+    ///
+    /// Helper function for `forall`.
+    ///
+    def forallAcc(f: a -> Bool & ef, l: LazyList[a], acc: Bool): Bool & ef =
+        if (acc)
+            match l {
+                case ENil         => true
+                case ECons(x, xs) => forallAcc(f,       xs, f(x))
+                case LCons(x, xs) => forallAcc(f, force xs, f(x))
+                case LList(xs)    => forallAcc(f, force xs, acc )
+            }
+        else
+            false
 
     ///
     /// Returns an infinite LazyList of repeating `x`s.
