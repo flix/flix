@@ -24,7 +24,9 @@ namespace File {
             import java.io.File.exists();
             Ok(exists(newFile(file)))
         } catch {
-            case _: ##java.io.IOException => Err("I/O Error")
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
         }
 
     ///
@@ -36,7 +38,9 @@ namespace File {
             import java.io.File.isDirectory();
             Ok(isDirectory(newFile(file)))
         } catch {
-            case _: ##java.io.IOException => Err("I/O Error")
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
         }
 
     ///
@@ -48,7 +52,9 @@ namespace File {
             import java.io.File.canRead();
             Ok(canRead(newFile(f)))
         } catch {
-            case _: ##java.io.IOException => Err("I/O Error")
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
         }
 
     ///
@@ -60,7 +66,9 @@ namespace File {
             import java.io.File.canWrite();
             Ok(canWrite(newFile(file)))
         } catch {
-            case _: ##java.io.IOException => Err("I/O Error")
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
         }
 
     ///
@@ -72,7 +80,9 @@ namespace File {
             import java.io.File.canExecute();
             Ok(canExecute(newFile(file)))
         } catch {
-            case _: ##java.io.IOException => Err("I/O Error")
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
         }
 
     ///
@@ -87,7 +97,9 @@ namespace File {
             let reader = javaPath.newBufferedReader();
             Ok(readAll(reader))
         } catch {
-            case _: ##java.io.IOException => Err("I/O Error")
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
         }
 
     ///
