@@ -579,6 +579,11 @@ namespace Map {
         foldLeftWithKey((acc, k, v) -> Set.insert((k, v), acc), Set.empty(), m)
 
     ///
+    /// Returns the map `m` as a `LazyList` of key-value pairs.
+    ///
+    pub def toLazyList(m: Map[k, v]): LazyList[(k, v)] = ???
+
+    ///
     /// Applies `f` to every element of `xs`.
     ///
     /// The function `f` must be impure.
