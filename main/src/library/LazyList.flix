@@ -757,9 +757,18 @@ namespace LazyList {
     ///
     /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from right to left.
     ///
-    // TODO: Use native / own implementation
     pub def findRight(f: a -> Bool & ef, l: LazyList[a]): Option[a] & ef =
-        reverse(l) |> findLeft(f)
+        findRightAcc(f, l, (o, _) -> o as & ef)
+
+    ///
+    /// Helper function for `findRight`.
+    ///
+    def findRightAcc(f: a -> Bool & ef, l: LazyList[a], k: (Option[a], LazyList[a]) -> Option[a] & ef): Option[a] & ef = match l {
+        case ENil         => k(None, ENil)
+        case ECons(x, xs) => findRightAcc(f,       xs, (o, ks) -> if (Option.isEmpty(o)) k(if (f(x)) Some(x) else None, ECons(x, ks)) else o)
+        case LCons(x, xs) => findRightAcc(f, force xs, (o, ks) -> if (Option.isEmpty(o)) k(if (f(x)) Some(x) else None, ECons(x, ks)) else o)
+        case LList(xs)    => findRightAcc(f, force xs, k)
+    }
 
     ///
     /// Returns the result of applying `f` to every element in `l` along with that element's index.
