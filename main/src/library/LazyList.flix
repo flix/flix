@@ -299,18 +299,17 @@ namespace LazyList {
     ///
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
-    // TODO: Use k function as acc.
     def filterE(f: a -> Bool & Impure, l: LazyList[a]): LazyList[a] & Impure =
-        filterEAcc(f, l, ENil) |> reverse
+        filterEAcc(f, l, ks -> ks)
 
     ///
     /// Helper function for `filterE`
     ///
-    def filterEAcc(f: a -> Bool & Impure, l: LazyList[a], acc: LazyList[a]): LazyList[a] & Impure = match l {
-        case ENil         => acc
-        case ECons(x, xs) => if (f(x)) filterEAcc(f,       xs, ECons(x, acc)) else filterEAcc(f,       xs, acc)
-        case LCons(x, xs) => if (f(x)) filterEAcc(f, force xs, ECons(x, acc)) else filterEAcc(f, force xs, acc)
-        case LList(xs)    => filterEAcc(f, force xs, acc)
+    def filterEAcc(f: a -> Bool & Impure, l: LazyList[a], k: LazyList[a] -> LazyList[a]): LazyList[a] & Impure = match l {
+        case ENil         => k(ENil)
+        case ECons(x, xs) => if (f(x)) filterEAcc(f,       xs, ks -> k(ECons(x, ks))) else filterEAcc(f,       xs, k)
+        case LCons(x, xs) => if (f(x)) filterEAcc(f, force xs, ks -> k(ECons(x, ks))) else filterEAcc(f, force xs, k)
+        case LList(xs)    => filterEAcc(f, force xs, k)
     }
 
     ///
