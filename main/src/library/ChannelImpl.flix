@@ -1,3 +1,16 @@
+
+enum ChannelResult {
+    case Int8Result(Int8)
+    case Int16Result(Int16)
+    case Int32Result(Int32)
+    case Int64Result(Int64)
+    case Float32Result(Float32)
+    case Float64Result(Float64)
+    case BoolResult(Bool)
+    case CharResult(Char)
+    case ObjResult(##java.lang.Object)
+}
+
 namespace ChannelImpl {
 
     /**
@@ -6,58 +19,181 @@ namespace ChannelImpl {
     *   - channelLock is the channelLock of this channel.
     *   - buffered indicates whether a handoff is needed or not. If you try to put an element in a channel that's full, you wait until there's space.
     *   - maxQueueSize is the max elements allowed in the queue. This is max(1, channel size).
-    *   - elementQueue is a circular buffer of elements in the list, if bufferSize is 0 the the queue is size 1.
+    *   - typedDeque is a circular buffer of elements in the list, if bufferSize is 0 the the queue is size 1.
     *   - waitingGetters is a set of conditions that is waiting for get. This set is cleared after each new element.
     *   - waitingSetters is a condition that can notify threads of available space in the elementQueue.
     */
-    pub enum ChannelImpl[a] {
+    pub enum ChannelImpl {
         case Mpmc(
                 Int64,
                 ReentrantLock,
                 Bool,
                 Int,
-                MutDeque.MutDeque[a],
+                TypedDeque,
                 MutList[(ReentrantLock, Condition)],
                 Condition
             )
     }
 
-    pub def new(bufferSize: Int): Result[ChannelImpl[a], String] & Impure =
+    enum TypedDeque {
+        case EQI8(MutDeque.MutDeque[Int8])
+        case EQI16(MutDeque.MutDeque[Int16])
+        case EQI32(MutDeque.MutDeque[Int32])
+        case EQI64(MutDeque.MutDeque[Int64])
+        case EQF32(MutDeque.MutDeque[Float32])
+        case EQF64(MutDeque.MutDeque[Float64])
+        case EQBool(MutDeque.MutDeque[Bool])
+        case EQChar(MutDeque.MutDeque[Char])
+        case EQObj(MutDeque.MutDeque[##java.lang.Object])
+    }
+
+    pub def newInt8(bufferSize: Int): Result[ChannelImpl, String] & Impure =
         if (bufferSize < 0) Err("Channel's buffer size must be non-negative.")
-        else Ok(uncheckedNew(bufferSize))
+        else Ok(uncheckedNewInt8(bufferSize))
 
-    pub def uncheckedNew(bufferSize: Int): ChannelImpl[a] & Impure =
+    pub def newInt16(bufferSize: Int): Result[ChannelImpl, String] & Impure =
+        if (bufferSize < 0) Err("Channel's buffer size must be non-negative.")
+        else Ok(uncheckedNewInt16(bufferSize))
+    
+    pub def newInt32(bufferSize: Int): Result[ChannelImpl, String] & Impure =
+        if (bufferSize < 0) Err("Channel's buffer size must be non-negative.")
+        else Ok(uncheckedNewInt32(bufferSize))
+    
+    pub def newInt64(bufferSize: Int): Result[ChannelImpl, String] & Impure =
+        if (bufferSize < 0) Err("Channel's buffer size must be non-negative.")
+        else Ok(uncheckedNewInt64(bufferSize))
+
+    pub def newFloat32(bufferSize: Int): Result[ChannelImpl, String] & Impure =
+        if (bufferSize < 0) Err("Channel's buffer size must be non-negative.")
+        else Ok(uncheckedNewFloat32(bufferSize))
+    
+    pub def newFloat64(bufferSize: Int): Result[ChannelImpl, String] & Impure =
+        if (bufferSize < 0) Err("Channel's buffer size must be non-negative.")
+        else Ok(uncheckedNewFloat64(bufferSize))
+    
+    pub def newBool(bufferSize: Int): Result[ChannelImpl, String] & Impure =
+        if (bufferSize < 0) Err("Channel's buffer size must be non-negative.")
+        else Ok(uncheckedNewBool(bufferSize))
+    
+    pub def newChar(bufferSize: Int): Result[ChannelImpl, String] & Impure =
+        if (bufferSize < 0) Err("Channel's buffer size must be non-negative.")
+        else Ok(uncheckedNewChar(bufferSize))
+    
+    pub def newObj(bufferSize: Int): Result[ChannelImpl, String] & Impure =
+        if (bufferSize < 0) Err("Channel's buffer size must be non-negative.")
+        else Ok(uncheckedNewObj(bufferSize))
+
+    pub def uncheckedNewInt8(bufferSize: Int): ChannelImpl & Impure =
+        newChannelWithQueue(bufferSize, EQI8(MutDeque.new()))
+
+    pub def uncheckedNewInt16(bufferSize: Int): ChannelImpl & Impure =
+        newChannelWithQueue(bufferSize, EQI16(MutDeque.new()))
+    
+    pub def uncheckedNewInt32(bufferSize: Int): ChannelImpl & Impure =
+        newChannelWithQueue(bufferSize, EQI32(MutDeque.new()))
+    
+    pub def uncheckedNewInt64(bufferSize: Int): ChannelImpl & Impure =
+        newChannelWithQueue(bufferSize, EQI64(MutDeque.new()))
+    
+    pub def uncheckedNewFloat32(bufferSize: Int): ChannelImpl & Impure =
+        newChannelWithQueue(bufferSize, EQF32(MutDeque.new()))
+    
+    pub def uncheckedNewFloat64(bufferSize: Int): ChannelImpl & Impure =
+        newChannelWithQueue(bufferSize, EQF64(MutDeque.new()))
+    
+    pub def uncheckedNewBool(bufferSize: Int): ChannelImpl & Impure =
+        newChannelWithQueue(bufferSize, EQBool(MutDeque.new()))
+    
+    pub def uncheckedNewChar(bufferSize: Int): ChannelImpl & Impure =
+        newChannelWithQueue(bufferSize, EQChar(MutDeque.new()))
+    
+    pub def uncheckedNewObj(bufferSize: Int): ChannelImpl & Impure =
+        newChannelWithQueue(bufferSize, EQObj(MutDeque.new()))
+
+    def newChannelWithQueue(bufferSize: Int, typedDeque: TypedDeque): ChannelImpl & Impure =
         import dev.flix.runtime.GlobalCounter:newId();
-        //let newId = () -> ???;
-
         let buffered = bufferSize == 0;
-
         let reentrantLock = ReentrantLock.new(false);
-
         Mpmc(
             newId(),
             reentrantLock,
             buffered,
             if (buffered) 1 else bufferSize,
-            MutDeque.new(),
+            typedDeque,
             MutList.new(),
             ReentrantLock.newCondition(reentrantLock)
         )
+
+    pub def putInt8(channel: ChannelImpl, element: Int8): ChannelImpl & Impure =
+        match channel {
+            case Mpmc(_, _, _, _, EQI8(deque), _, _) => put(channel, element, deque)
+            case _ => bug!("wrong type")
+        }
+
+    pub def putInt16(channel: ChannelImpl, element: Int16): ChannelImpl & Impure =
+        match channel {
+            case Mpmc(_, _, _, _, EQI16(deque), _, _) => put(channel, element, deque)
+            case _ => bug!("wrong type")
+        }
+
+    pub def putInt32(channel: ChannelImpl, element: Int32): ChannelImpl & Impure =
+        match channel {
+            case Mpmc(_, _, _, _, EQI32(deque), _, _) => put(channel, element, deque)
+            case _ => bug!("wrong type")
+        }
+    
+    pub def putInt64(channel: ChannelImpl, element: Int64): ChannelImpl & Impure =
+        match channel {
+            case Mpmc(_, _, _, _, EQI64(deque), _, _) => put(channel, element, deque)
+            case _ => bug!("wrong type")
+        }
+    
+    pub def putFloat32(channel: ChannelImpl, element: Float32): ChannelImpl & Impure =
+        match channel {
+            case Mpmc(_, _, _, _, EQF32(deque), _, _) => put(channel, element, deque)
+            case _ => bug!("wrong type")
+        }
+    
+    pub def putFloat64(channel: ChannelImpl, element: Float64): ChannelImpl & Impure =
+        match channel {
+            case Mpmc(_, _, _, _, EQF64(deque), _, _) => put(channel, element, deque)
+            case _ => bug!("wrong type")
+        }
+    
+    pub def putBool(channel: ChannelImpl, element: Bool): ChannelImpl & Impure =
+        match channel {
+            case Mpmc(_, _, _, _, EQBool(deque), _, _) => put(channel, element, deque)
+            case _ => bug!("wrong type")
+        }
+    
+    pub def putChar(channel: ChannelImpl, element: Char): ChannelImpl & Impure =
+        match channel {
+            case Mpmc(_, _, _, _, EQChar(deque), _, _) => put(channel, element, deque)
+            case _ => bug!("wrong type")
+        }
+
+    pub def putObj(channel: ChannelImpl, element: a): ChannelImpl & Impure = {
+        let Mpmc(_, _, _, _, typedDeque, _, _) = channel;
+        match typedDeque {
+            case EQObj(deque) => put(channel, element as ##java.lang.Object, deque)
+            case _ => bug!("wrong type")
+        }
+    }
 
     ///
     /// Sends the element `x` on the channel `c`.
     ///
     /// Implements the expression `c <- x`.
     ///
-    pub def put(c: ChannelImpl[a], x: a): ChannelImpl[a] & Impure =
-        let Mpmc(_, channelLock, buffered, _, queue, waitingGetters, waitingSetters) = c;
+    def put(channel: ChannelImpl, element: a, deque: MutDeque.MutDeque[a]): ChannelImpl & Impure =
+        let Mpmc(_, channelLock, buffered, _, _, waitingGetters, waitingSetters) = channel;
         ReentrantLock.lock(channelLock);
 
         // Block until the channel is not full
-        awaitAvailableSpace(c);
+        awaitAvailableSpace(channel);
 
         // Insert the new element
-        MutDeque.pushBack!(x, queue);
+        MutDeque.pushBack!(element, deque);
 
         // Signal waitingGetters that there is an element available
         let signalLockConditionPair = lockConditionPair -> {
@@ -79,19 +215,83 @@ namespace ChannelImpl {
         else ();
 
         unlockLock(channelLock);
-        c
+        channel
 
     ///
     /// The channel lock is expected to be held.
     ///
-    def awaitAvailableSpace(c: ChannelImpl[a]): Unit & Impure =
-        let Mpmc(_, _, _, maxQueueSize, queue, _, waitingSetters) = c;
-        
-        if (MutDeque.size(queue) == maxQueueSize) {
+    def awaitAvailableSpace(channel: ChannelImpl): Unit & Impure =
+        let Mpmc(_, _, _, maxQueueSize, typedDeque, _, waitingSetters) = channel;
+        let size = match typedDeque {
+            case EQI8(deque) => MutDeque.size(deque)
+            case EQI16(deque) => MutDeque.size(deque)
+            case EQI32(deque) => MutDeque.size(deque)
+            case EQI64(deque) => MutDeque.size(deque)
+            case EQF32(deque) => MutDeque.size(deque)
+            case EQF64(deque) => MutDeque.size(deque)
+            case EQBool(deque) => MutDeque.size(deque)
+            case EQChar(deque) => MutDeque.size(deque)
+            case EQObj(deque) => MutDeque.size(deque)
+        };
+        if (size == maxQueueSize) {
             awaitCondition(waitingSetters);
-            awaitAvailableSpace(c)
+            awaitAvailableSpace(channel)
         } else {
             ()
+        }
+    
+    pub def getInt8(channel: ChannelImpl): Int8 & Impure =
+        match channel {
+            case Mpmc(_, _, _, _, EQI8(deque), _, _) => get(channel, deque)
+            case _ => bug!("wrong type")
+        }
+
+    pub def getInt16(channel: ChannelImpl): Int16 & Impure =
+        match channel {
+            case Mpmc(_, _, _, _, EQI16(deque), _, _) => get(channel, deque)
+            case _ => bug!("wrong type")
+        }
+    
+    pub def getInt32(channel: ChannelImpl): Int32 & Impure =
+        match channel {
+            case Mpmc(_, _, _, _, EQI32(deque), _, _) => get(channel, deque)
+            case _ => bug!("wrong type")
+        }
+    
+    pub def getInt64(channel: ChannelImpl): Int64 & Impure =
+        match channel {
+            case Mpmc(_, _, _, _, EQI64(deque), _, _) => get(channel, deque)
+            case _ => bug!("wrong type")
+        }
+    
+    pub def getFloat32(channel: ChannelImpl): Float32 & Impure =
+        match channel {
+            case Mpmc(_, _, _, _, EQF32(deque), _, _) => get(channel, deque)
+            case _ => bug!("wrong type")
+        }
+    
+    pub def getFloat64(channel: ChannelImpl): Float64 & Impure =
+        match channel {
+            case Mpmc(_, _, _, _, EQF64(deque), _, _) => get(channel, deque)
+            case _ => bug!("wrong type")
+        }
+    
+    pub def getBool(channel: ChannelImpl): Bool & Impure =
+        match channel {
+            case Mpmc(_, _, _, _, EQBool(deque), _, _) => get(channel, deque)
+            case _ => bug!("wrong type")
+        }
+    
+    pub def getChar(channel: ChannelImpl): Char & Impure =
+        match channel {
+            case Mpmc(_, _, _, _, EQChar(deque), _, _) => get(channel, deque)
+            case _ => bug!("wrong type")
+        }
+    
+    pub def getObj(channel: ChannelImpl): a & Impure =
+        match channel {
+            case Mpmc(_, _, _, _, EQObj(deque), _, _) => get(channel, deque) as a
+            case _ => bug!("wrong type")
         }
 
     ///
@@ -99,12 +299,12 @@ namespace ChannelImpl {
     ///
     /// Implements to the expression `<- c`.
     ///
-    pub def get(chan: ChannelImpl[a]): a & Impure =
-        let Mpmc(_, channelLock, _, _, queue, _, waitingSetters) = chan;
+    def get(channel: ChannelImpl, deque: MutDeque.MutDeque[a]): a & Impure =
+        let Mpmc(_, channelLock, _, _, _, _, waitingSetters) = channel;
         ReentrantLock.lock(channelLock);
         // Pop the next element
-        let optionalElement = MutDeque.popFront!(queue);
-        let element = getHelper(chan, optionalElement);
+        let optionalElement = MutDeque.popFront!(deque);
+        let element = getHelper(channel, optionalElement, deque);
 
         // Signal waiting setters that the channel has space
         signalCondition(waitingSetters);
@@ -116,10 +316,10 @@ namespace ChannelImpl {
     /// Recursive helper function for get, loops and awaits on empty channel.
     /// The channel lock is expected to be held.
     ///
-    def getHelper(chan: ChannelImpl[a], element: Option[a]): a & Impure =
+    def getHelper(channel: ChannelImpl, element: Option[a], deque: MutDeque.MutDeque[a]): a & Impure =
         match element {
             case None => {
-                let Mpmc(_, channelLock, _, _, queue, waitingGetters, _) = chan;
+                let Mpmc(_, channelLock, _, _, _, waitingGetters, _) = channel;
                 // No element was found
 
                 // Create a new Lock and Condition
@@ -141,21 +341,31 @@ namespace ChannelImpl {
 
                 // Someone signalled that an element was put in the channel.
                 // Try to get the element (which could already be taken by someone else)
-                let optionalElement = MutDeque.popFront!(queue);
+                let optionalElement = MutDeque.popFront!(deque);
 
                 unlockLock(conditionLock);
 
-                getHelper(chan, optionalElement)
+                getHelper(channel, optionalElement, deque)
             }
             case Some(e) => e
         }
 
-    def tryGet(chan: ChannelImpl[a]): Option[a] & Impure =
-        let Mpmc(_, channelLock, _, _, queue, _, waitingSetters) = chan;
+    def tryGet(channel: ChannelImpl): Option[ChannelResult] & Impure =
+        let Mpmc(_, channelLock, _, _, typedDeque, _, waitingSetters) = channel;
         ReentrantLock.lock(channelLock);
 
         // Try to get an element from the channel
-        let element = MutDeque.popFront!(queue);
+        let element = match typedDeque {
+            case EQI8(deque) => Option.map(Int8Result, MutDeque.popFront!(deque))
+            case EQI16(deque) => Option.map(Int16Result, MutDeque.popFront!(deque))
+            case EQI32(deque) => Option.map(Int32Result, MutDeque.popFront!(deque))
+            case EQI64(deque) => Option.map(Int64Result, MutDeque.popFront!(deque))
+            case EQF32(deque) => Option.map(Float32Result, MutDeque.popFront!(deque))
+            case EQF64(deque) => Option.map(Float64Result, MutDeque.popFront!(deque))
+            case EQBool(deque) => Option.map(BoolResult, MutDeque.popFront!(deque))
+            case EQChar(deque) => Option.map(CharResult, MutDeque.popFront!(deque))
+            case EQObj(deque) => Option.map(ObjResult, MutDeque.popFront!(deque))
+        };
 
         // If there was an element, signal waiting setters
         match element {
@@ -167,7 +377,7 @@ namespace ChannelImpl {
         // Return the element from the channel, or None if channel was empty
         element
 
-    def cmp(a: ChannelImpl[a], b: ChannelImpl[a]): Comparison =
+    def cmp(a: ChannelImpl, b: ChannelImpl): Comparison =
         let Mpmc(a_id, _, _, _, _, _, _) = a;
         let Mpmc(b_id, _, _, _, _, _, _) = b;
         a_id <=> b_id
@@ -180,7 +390,7 @@ namespace ChannelImpl {
     * @param channels the channels to select on
     * @return the channel index of the channel with an element and the element
     */
-    pub def selectImpl(channels: Array[ChannelImpl[a]], hasDefault: Bool): Option[(Int, a)] & Impure =
+    pub def selectImpl(channels: Array[ChannelImpl], hasDefault: Bool): Option[(Int, ChannelResult)] & Impure =
         // Create new Condition and channelLock the current thread
         let selectLock = ReentrantLock.new(false);
         let selectCondition = ReentrantLock.newCondition(selectLock);
@@ -193,7 +403,7 @@ namespace ChannelImpl {
         import java.lang.Thread:interrupted();
         interrupted()
 
-    def selectHelper(channels: Array[ChannelImpl[a]], sortedChannels: Array[ChannelImpl[a]], selectLock: ReentrantLock, selectCondition: Condition, hasDefault: Bool): Option[(Int, a)] & Impure =
+    def selectHelper(channels: Array[ChannelImpl], sortedChannels: Array[ChannelImpl], selectLock: ReentrantLock, selectCondition: Condition, hasDefault: Bool): Option[(Int, ChannelResult)] & Impure =
         if (not threadInterrupted()) {
             // Lock all channels in sorted order
             let lockChannel = c -> {
@@ -264,7 +474,7 @@ namespace ChannelImpl {
             bug!("Thread is interrupted")
         }
 
-    def firstAvailableElement(index: Int, channels: Array[ChannelImpl[a]]): Option[(Int, a)] & Impure =
+    def firstAvailableElement(index: Int, channels: Array[ChannelImpl]): Option[(Int, ChannelResult)] & Impure =
         if (index < 0) {
             // Passed `index` less than 0
             bug!("Std lib error in ChannelImpl.flix")
