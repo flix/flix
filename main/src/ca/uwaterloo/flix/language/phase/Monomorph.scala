@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Kind, Name, Scheme, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.ReificationError
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, Unification}
 import ca.uwaterloo.flix.util.Validation._
@@ -62,7 +62,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     * Unit type. In other words, when performing a type substitution if there is no requirement on a polymorphic type
     * we assume it to be Unit. This is safe since otherwise the type would not be polymorphic after type-inference.
     */
-  case class StrictSubstitution(s: Substitution) {
+  case class StrictSubstitution(s: Substitution)(implicit flix: Flix) {
     /**
       * Returns `true` if this substitution is empty.
       */
@@ -77,9 +77,13 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       val t = s(tpe0)
 
       t.map {
-        case Type.KindedVar(_, Kind.Bool, _, _, _) =>
-          // TODO: Monomorph: Preserve Boolean variables.
-          Type.True
+        case Type.KindedVar(_, Kind.Bool, loc, _, _) =>
+          // TODO: In strict mode we demand that there are no free (uninstantiated) Boolean variables.
+          // In the future we need to decide what should actually happen if such variables occur.
+          if (flix.options.xstrictmono)
+            throw UnexpectedNonConstBool(tpe0, loc)
+          else
+            Type.True
         case Type.KindedVar(_, Kind.RecordRow, _, _, _) => Type.RecordRowEmpty
         case Type.KindedVar(_, Kind.SchemaRow, _, _, _) => Type.SchemaRowEmpty
         case _ => Type.Unit
@@ -88,16 +92,32 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   /**
-    * An exception raised by the Monomorpher to indicates that an unexpected type was encountered.
+    * An exception raised to indicate that a Boolean type cannot be reified.
     *
     * @param tpe the type that cannot be reified.
-    * @param loc the location of the type that cannot be reified.
+    * @param loc the location of the type.
     */
-  case class ReifyException(tpe: Type, loc: SourceLocation) extends RuntimeException
+  case class ReifyBoolException(tpe: Type, loc: SourceLocation) extends RuntimeException
 
-  // TODO: Monomorph: Decide whether to introduce three exception classes: One additional for Bools and one for Default.
+  /**
+    * An exception raised to indicate that a regular type cannot be reified.
+    *
+    * @param tpe the type that cannot be reified.
+    * @param loc the location of the type.
+    */
+  case class ReifyTypeException(tpe: Type, loc: SourceLocation) extends RuntimeException
 
-  // TODO: We use exceptions here as a temporary stop-gap. We should consider to restructure and use Validation.
+  /**
+    * An exception raised to indicate that the Monomorpher encountered an unexpected non-constant Boolean.
+    *
+    * @param tpe the non-constant Boolean type.
+    * @param loc the location of the type.
+    */
+  // TODO: Possibly this one should be removed.
+  case class UnexpectedNonConstBool(tpe: Type, loc: SourceLocation) extends RuntimeException
+
+
+  // TODO: Monomorph: We use exceptions here as a temporary stop-gap. We should consider to restructure and use Validation.
 
   /**
     * Performs monomorphization of the given AST `root`.
@@ -196,7 +216,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           //
           subst0(tpe).typeConstructor match {
             case None =>
-              throw ReifyException(tpe, loc)
+              throw ReifyTypeException(tpe, loc)
 
             case Some(tc) => tc match {
               case TypeConstructor.Unit => Expression.Unit(loc)
@@ -474,7 +494,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val isTrue = subst0(t) match {
             case Type.Cst(TypeConstructor.True, _) => true
             case Type.Cst(TypeConstructor.False, _) => false
-            case other => throw ReifyException(other, loc)
+            case other => throw ReifyBoolException(other, loc)
           }
 
           if (isTrue)
@@ -485,67 +505,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.ReifyType(t, _, _, loc) => reifyType(subst0(t), loc)
       }
 
-      /**
-        * Returns an expression that evaluates to a ReifiedType for the given type `tpe`.
-        */
-      def reifyType(tpe: Type, loc: SourceLocation): Expression = {
-        val sym = Symbol.mkEnumSym("ReifiedType")
-        val resultTpe = Type.mkEnum(sym, Kind.Star, loc)
-        val resultEff = Type.Pure
-
-        def visit(t0: Type): Expression = t0.typeConstructor match {
-          case None =>
-            throw ReifyException(tpe, loc)
-
-          case Some(tc) => tc match {
-            case TypeConstructor.Bool =>
-              val tag = Name.Tag("ReifiedBool", loc)
-              Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
-
-            case TypeConstructor.Char =>
-              val tag = Name.Tag("ReifiedChar", loc)
-              Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
-
-            case TypeConstructor.Float32 =>
-              val tag = Name.Tag("ReifiedFloat32", loc)
-              Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
-
-            case TypeConstructor.Float64 =>
-              val tag = Name.Tag("ReifiedFloat64", loc)
-              Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
-
-            case TypeConstructor.Int8 =>
-              val tag = Name.Tag("ReifiedInt8", loc)
-              Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
-
-            case TypeConstructor.Int16 =>
-              val tag = Name.Tag("ReifiedInt16", loc)
-              Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
-
-            case TypeConstructor.Int32 =>
-              val tag = Name.Tag("ReifiedInt32", loc)
-              Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
-
-            case TypeConstructor.Int64 =>
-              val tag = Name.Tag("ReifiedInt64", loc)
-              Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
-
-            case TypeConstructor.Str =>
-              val tag = Name.Tag("ErasedType", loc)
-              Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
-
-            case TypeConstructor.Array =>
-              val tag = Name.Tag("ReifiedArray", loc)
-              val innerTpe = t0.typeArguments.head
-              val innerExp = visit(innerTpe)
-              Expression.Tag(sym, tag, innerExp, resultTpe, resultEff, loc)
-
-            case other => throw ReifyException(tpe, loc)
-          }
-        }
-
-        visit(tpe)
-      }
 
       /**
         * Specializes the given pattern `p0` w.r.t. the current substitution.
@@ -815,9 +774,72 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         defs = specializedDefns.toMap
       ).toSuccess
     } catch {
-      case ReifyException(tpe, loc) =>
-        ReificationError.IllegalReifiedType(tpe, loc).toFailure
+      case ReifyBoolException(tpe, loc) => ReificationError.IllegalReifiedBool(tpe, loc).toFailure
+      case ReifyTypeException(tpe, loc) => ReificationError.IllegalReifiedType(tpe, loc).toFailure
+      case UnexpectedNonConstBool(tpe, loc) => ReificationError.UnexpectedNonConstBool(tpe, loc).toFailure
     }
+  }
+
+  /**
+    * Returns an expression that evaluates to a ReifiedType for the given type `tpe`.
+    */
+  private def reifyType(tpe: Type, loc: SourceLocation): Expression = {
+    val sym = Symbol.mkEnumSym("ReifiedType")
+    val resultTpe = Type.mkEnum(sym, Kind.Star, loc)
+    val resultEff = Type.Pure
+
+    def visit(t0: Type): Expression = t0.typeConstructor match {
+      case None =>
+        throw ReifyTypeException(tpe, loc)
+
+      case Some(tc) => tc match {
+        case TypeConstructor.Bool =>
+          val tag = Name.Tag("ReifiedBool", loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+
+        case TypeConstructor.Char =>
+          val tag = Name.Tag("ReifiedChar", loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+
+        case TypeConstructor.Float32 =>
+          val tag = Name.Tag("ReifiedFloat32", loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+
+        case TypeConstructor.Float64 =>
+          val tag = Name.Tag("ReifiedFloat64", loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+
+        case TypeConstructor.Int8 =>
+          val tag = Name.Tag("ReifiedInt8", loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+
+        case TypeConstructor.Int16 =>
+          val tag = Name.Tag("ReifiedInt16", loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+
+        case TypeConstructor.Int32 =>
+          val tag = Name.Tag("ReifiedInt32", loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+
+        case TypeConstructor.Int64 =>
+          val tag = Name.Tag("ReifiedInt64", loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+
+        case TypeConstructor.Str =>
+          val tag = Name.Tag("ErasedType", loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+
+        case TypeConstructor.Array =>
+          val tag = Name.Tag("ReifiedArray", loc)
+          val innerTpe = t0.typeArguments.head
+          val innerExp = visit(innerTpe)
+          Expression.Tag(sym, tag, innerExp, resultTpe, resultEff, loc)
+
+        case other => throw ReifyTypeException(tpe, loc)
+      }
+    }
+
+    visit(tpe)
   }
 
 }
