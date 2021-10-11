@@ -24,7 +24,7 @@ object TypedAstOps {
 
       case Expression.Sig(sym, tpe, loc) => Map.empty
 
-      case Expression.Hole(sym, tpe, eff, loc) => Map(sym -> HoleContext(sym, tpe, env0))
+      case Expression.Hole(sym, tpe, loc) => Map(sym -> HoleContext(sym, tpe, env0))
 
       case Expression.Unit(loc) => Map.empty
 
@@ -240,6 +240,9 @@ object TypedAstOps {
       case Expression.Reify(_, _, _, _) =>
         Map.empty
 
+      case Expression.ReifyType(_, _, _, _) =>
+        Map.empty
+
     }
 
     /**
@@ -343,7 +346,7 @@ object TypedAstOps {
     case Expression.Var(_, _, _) => Set.empty
     case Expression.Def(_, _, _) => Set.empty
     case Expression.Sig(sym, _, _) => Set(sym)
-    case Expression.Hole(_, _, _, _) => Set.empty
+    case Expression.Hole(_, _, _) => Set.empty
     case Expression.Lambda(_, exp, _, _) => sigSymsOf(exp)
     case Expression.Apply(exp, exps, _, _, _) => sigSymsOf(exp) ++ exps.flatMap(sigSymsOf)
     case Expression.Unary(_, exp, _, _, _) => sigSymsOf(exp)
@@ -395,6 +398,7 @@ object TypedAstOps {
     case Expression.FixpointProjectIn(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.FixpointProjectOut(_, exp, _, _, _) => sigSymsOf(exp)
     case Expression.Reify(_, _, _, _) => Set.empty
+    case Expression.ReifyType(_, _, _, _) => Set.empty
   }
 
   /**
@@ -476,7 +480,7 @@ object TypedAstOps {
 
     case Expression.Sig(_, _, _) => Map.empty
 
-    case Expression.Hole(_, _, _, _) => Map.empty
+    case Expression.Hole(_, _, _) => Map.empty
 
     case Expression.Lambda(fparam, exp, _, _) =>
       freeVars(exp) - fparam.sym
@@ -655,6 +659,9 @@ object TypedAstOps {
       freeVars(exp)
 
     case Expression.Reify(_, _, _, _) =>
+      Map.empty
+
+    case Expression.ReifyType(_, _, _, _) =>
       Map.empty
 
   }

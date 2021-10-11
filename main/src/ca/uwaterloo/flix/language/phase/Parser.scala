@@ -624,7 +624,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetRegion | LetMatch | LetMatchStar | LetUse | LetImport | IfThenElse | Reify | Choose | Match | LambdaMatch | TryCatch | Lambda | Tuple |
+      LetRegion | LetMatch | LetMatchStar | LetUse | LetImport | IfThenElse | Reify | ReifyType | Choose | Match | LambdaMatch | TryCatch | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | Spawn | Lazy | Force | Intrinsic | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointProject | FixpointSolveWithProject | FixpointQueryWithSelect |
@@ -666,6 +666,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Reify: Rule1[ParsedAst.Expression.Reify] = rule {
       SP ~ keyword("reify") ~ WS ~ Type ~ SP ~> ParsedAst.Expression.Reify
+    }
+
+    def ReifyType: Rule1[ParsedAst.Expression.ReifyType] = rule {
+      SP ~ keyword("reifyType") ~ WS ~ Type ~ SP ~> ParsedAst.Expression.ReifyType
     }
 
     def LetMatch: Rule1[ParsedAst.Expression.LetMatch] = rule {

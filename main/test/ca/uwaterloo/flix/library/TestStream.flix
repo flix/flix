@@ -494,4 +494,55 @@ namespace TestStream {
             |> Stream.take(1)
             |> Stream.toList == List.range(0, 1)
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // append                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def append01(): Bool =
+        Stream.append(Stream.empty(), Stream.empty()) |> Stream.toList == Nil
+
+    @test
+    def append02(): Bool =
+        Stream.append(
+            Stream.empty(),
+            List.toStream(1 :: Nil)) |> Stream.toList == 1 :: Nil
+
+    @test
+    def append03(): Bool =
+        Stream.append(
+            Stream.empty(),
+            List.toStream(1 :: 2 :: Nil)) |> Stream.toList == 1 :: 2 :: Nil
+
+    @test
+    def append04(): Bool =
+        Stream.append(
+            List.toStream(1 :: Nil),
+            Stream.empty()) |> Stream.toList == 1 :: Nil
+
+    @test
+    def append05(): Bool =
+        Stream.append(
+            List.toStream(1 :: 2 :: Nil),
+            Stream.empty()) |> Stream.toList == 1 :: 2 :: Nil
+
+    @test
+    def append06(): Bool =
+        Stream.append(
+            List.toStream(1 :: Nil),
+            List.toStream(2 :: Nil)) |> Stream.toList == 1 :: 2 :: Nil
+
+    @test
+    def append07(): Bool =
+        Stream.append(
+            List.toStream(1 :: 2 :: Nil),
+            List.toStream(3 :: Nil)) |> Stream.toList == 1 :: 2 :: 3 :: Nil
+
+    @test
+    def append08(): Bool =
+        Stream.append(
+            List.toStream(1 :: Nil),
+            List.toStream(2 :: 3 :: Nil)) |> Stream.toList == 1 :: 2 :: 3 :: Nil
+
 }
