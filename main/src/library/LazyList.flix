@@ -512,22 +512,12 @@ namespace LazyList {
     ///
     /// Forces the entire list `l`.
     ///
-    pub def forall(f: a -> Bool & ef, l: LazyList[a]): Bool & ef =
-        forallAcc(f, l, true)
-
-    ///
-    /// Helper function for `forall`.
-    ///
-    def forallAcc(f: a -> Bool & ef, l: LazyList[a], acc: Bool): Bool & ef =
-        if (acc)
-            match l {
-                case ENil         => true
-                case ECons(x, xs) => forallAcc(f,       xs, f(x))
-                case LCons(x, xs) => forallAcc(f, force xs, f(x))
-                case LList(xs)    => forallAcc(f, force xs, acc )
-            }
-        else
-            false
+    pub def forall(f: a -> Bool & ef, l: LazyList[a]): Bool & ef = match l {
+        case ENil         => true
+        case ECons(x, xs) => if (f(x)) forall(f,       xs) else false
+        case LCons(x, xs) => if (f(x)) forall(f, force xs) else false
+        case LList(xs)    => forall(f, force xs)
+    }
 
     ///
     /// Returns an infinite LazyList of repeating `x`s.
