@@ -3193,28 +3193,28 @@ def toChunks14(): Bool = String.toChunks(10, "aaabbbc") == "aaabbbc" :: Nil
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def breakOnLeft01(): Bool = String.breakOnLeft("", "") == ("", "")
+def breakOnLeft01(): Bool = String.breakOnLeft({substr = ""}, "") == ("", "")
 
 @test
-def breakOnLeft02(): Bool = String.breakOnLeft("", "aaa") == ("aaa", "")
+def breakOnLeft02(): Bool = String.breakOnLeft({substr = ""}, "aaa") == ("aaa", "")
 
 @test
-def breakOnLeft03(): Bool = String.breakOnLeft("::", "") == ("", "")
+def breakOnLeft03(): Bool = String.breakOnLeft({substr = "::"}, "") == ("", "")
 
 @test
-def breakOnLeft04(): Bool = String.breakOnLeft("::", "aaa") == ("aaa", "")
+def breakOnLeft04(): Bool = String.breakOnLeft({substr = "::"}, "aaa") == ("aaa", "")
 
 @test
-def breakOnLeft05(): Bool = String.breakOnLeft("::", "aaa:") == ("aaa:", "")
+def breakOnLeft05(): Bool = String.breakOnLeft({substr = "::"}, "aaa:") == ("aaa:", "")
 
 @test
-def breakOnLeft06(): Bool = String.breakOnLeft("::", "aaa::") == ("aaa", "::")
+def breakOnLeft06(): Bool = String.breakOnLeft({substr = "::"}, "aaa::") == ("aaa", "::")
 
 @test
-def breakOnLeft07(): Bool = String.breakOnLeft("::", "aaa::bbb") == ("aaa", "::bbb")
+def breakOnLeft07(): Bool = String.breakOnLeft({substr = "::"}, "aaa::bbb") == ("aaa", "::bbb")
 
 @test
-def breakOnLeft08(): Bool = String.breakOnLeft("::", "aaa::bbb::ccc") == ("aaa", "::bbb::ccc")
+def breakOnLeft08(): Bool = String.breakOnLeft({substr = "::"}, "aaa::bbb::ccc") == ("aaa", "::bbb::ccc")
 
 /////////////////////////////////////////////////////////////////////////////
 // breakOnRight                                                            //

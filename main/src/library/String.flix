@@ -1317,12 +1317,11 @@ namespace String {
         List.unfold(step, 0)
 
     ///
-    /// Find the first instance of `sub` in string `s`, return a pair of the
-    /// prefix of string `s` up to `sub` and the rest of string `s` including `sub`.
+    /// Find the first instance of `substr` in string `s`, return a pair of the
+    /// prefix of string `s` up to `substr` and the rest of string `s` including `substr`.
     ///
-    @Time(length(sub) * length(s)) @Space(length(sub) * length(s))
-    pub def breakOnLeft(sub: String, s: String): (String, String) =
-        match indexOfLeft({substr = sub}, s) {
+    pub def breakOnLeft(substr: {substr :: String}, s: String): (String, String) =
+        match indexOfLeft({substr = substr.substr}, s) {
             case None => (s, "")
             case Some(i) => (sliceLeft(s, i), sliceRight(s, i))
         }

@@ -214,7 +214,7 @@ namespace GetOpt {
     /// "--" has been parsed
     /// `xstr` is the rest of the current token
     def longOpt(xstr: String, optDescrs: List[OptionDescr[a]], tokens: List[String]): (OptionKind[a], List[String]) =
-        let (optname, arg)  = String.breakOnLeft("=", xstr);
+        let (optname, arg)  = String.breakOnLeft({substr = "="}, xstr);
         let optStr      = "--${optname}";
         match findOptionByName(optname, optDescrs) {
             case Ok(opt) => match (opt.argDescriptor, deconsLeft(arg), tokens) {
