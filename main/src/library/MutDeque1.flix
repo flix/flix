@@ -22,9 +22,9 @@ pub enum MutDeque[a] {
 
 namespace MutDeque {
 
-    def minSize(): Int32 = 8
+    def minCapacity(): Int32 = 8
 
-    pub def new(): MutDeque[a] & Impure = MutDeque(ref Array.new(default, minSize()), ref 0, ref 0)
+    pub def new(): MutDeque[a] & Impure = MutDeque(ref Array.new(default, minCapacity()), ref 0, ref 0)
 
     pub def size(d: MutDeque[a]): Int32 & Impure =
         let MutDeque(_, f, b) = d;
@@ -38,12 +38,26 @@ namespace MutDeque {
         let b1 = deref b;
         f1 == b1
 
-    pub def popFront(d: MutDeque[a]): Unit & Impure = ???
+    // TODO: Collapse array if load factor < threshold
+    pub def popFront(d: MutDeque[a]): a & Impure =
+        let MutDeque(a, f, _) = d;
+        let x = (deref a)[deref f];
+        let c = Array.length(deref a);
+        f := (deref f + 1) % c;
+        x
 
-    pub def popBack(d: MutDeque[a]): Unit & Impure = ???
+    // TODO: Collapse array if load factor < threshold
+    pub def popBack(d: MutDeque[a]): a & Impure =
+        let MutDeque(a, _, b) = d;
+        let x = (deref a)[deref b];
+        let c = Array.length(deref a);
+        f := (deref b - 1) % c;
+        x
 
+    // TODO: Expand array if elements > capacity / 2
     pub def pushFront(d: MutDeque[a]): Unit & Impure = ???
 
+    // TODO: Expand array if elements > capacity / 2
     pub def pushBack(d: MutDeque[a]): Unit & Impure = ???
 
 }
