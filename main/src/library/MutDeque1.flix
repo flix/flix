@@ -51,9 +51,9 @@ namespace MutDeque {
     // TODO: Collapse array if load factor < threshold
     pub def popBack(d: MutDeque[a]): a & Impure =
         let MutDeque(a, _, b) = d;
+        b := (deref b - 1) % c;
         let x = (deref a)[deref b];
         let c = Array.length(deref a);
-        f := (deref b - 1) % c;
         x
 
     // TODO: Expand array if elements > capacity / 2
