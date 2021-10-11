@@ -119,4 +119,29 @@ namespace File {
         else
             readAllHelper(r, line :: acc)
 
+    ///
+    /// Returns a string containing the given file `f`.
+    ///
+    pub def read(file: String): Result[String, String] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import java.io.File.toPath();
+            import java.nio.file.Files:newBufferedReader(##java.nio.file.Path);
+            let javaFile = newFile(file);
+            let javaPath = javaFile.toPath();
+            let reader = javaPath.newBufferedReader();
+            Ok(readHelper(readAll(reader)))
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Helper function for read.
+    /// Converts a list of strings to a string
+    ///
+    def readHelper(list: List[String]): String & Pure =
+        List.foldLeft((x, y) -> x + "\n" + y, "", list)
+
 }
