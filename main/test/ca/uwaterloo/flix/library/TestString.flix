@@ -3221,28 +3221,28 @@ def breakOnLeft08(): Bool = String.breakOnLeft({substr = "::"}, "aaa::bbb::ccc")
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def breakOnRight01(): Bool = String.breakOnRight("", "") == ("", "")
+def breakOnRight01(): Bool = String.breakOnRight({substr = ""}, "") == ("", "")
 
 @test
-def breakOnRight02(): Bool = String.breakOnRight("", "aaa") == ("aaa", "")
+def breakOnRight02(): Bool = String.breakOnRight({substr = ""}, "aaa") == ("aaa", "")
 
 @test
-def breakOnRight03(): Bool = String.breakOnRight("::", "") == ("", "")
+def breakOnRight03(): Bool = String.breakOnRight({substr = "::"}, "") == ("", "")
 
 @test
-def breakOnRight04(): Bool = String.breakOnRight("::", "aaa") == ("aaa", "")
+def breakOnRight04(): Bool = String.breakOnRight({substr = "::"}, "aaa") == ("aaa", "")
 
 @test
-def breakOnRight05(): Bool = String.breakOnRight("::", "aaa:") == ("aaa:", "")
+def breakOnRight05(): Bool = String.breakOnRight({substr = "::"}, "aaa:") == ("aaa:", "")
 
 @test
-def breakOnRight06(): Bool = String.breakOnRight("::", "aaa::") == ("aaa::", "")
+def breakOnRight06(): Bool = String.breakOnRight({substr = "::"}, "aaa::") == ("aaa::", "")
 
 @test
-def breakOnRight07(): Bool = String.breakOnRight("::", "aaa::bbb") == ("aaa::", "bbb")
+def breakOnRight07(): Bool = String.breakOnRight({substr = "::"}, "aaa::bbb") == ("aaa::", "bbb")
 
 @test
-def breakOnRight08(): Bool = String.breakOnRight("::", "aaa::bbb::ccc") == ("aaa::bbb::", "ccc")
+def breakOnRight08(): Bool = String.breakOnRight({substr = "::"}, "aaa::bbb::ccc") == ("aaa::bbb::", "ccc")
 
 /////////////////////////////////////////////////////////////////////////////
 // countSubstring                                                          //

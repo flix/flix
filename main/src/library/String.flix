@@ -1327,13 +1327,12 @@ namespace String {
         }
 
     ///
-    /// Find the last instance of `sub` in string `s`, return a pair of the
-    /// initial string including `sub` and suffix from `sub`.
+    /// Find the last instance of `substr` in string `s`, return a pair of the
+    /// initial string including `substr` and suffix from `substr`.
     ///
-    @Time(length(sub) * length(s)) @Space(length(sub) * length(s))
-    pub def breakOnRight(sub: String, s: String): (String, String) =
-        let sublen = length(sub);
-        match indexOfRight({substr = sub}, s) {
+    pub def breakOnRight(substr: {substr :: String}, s: String): (String, String) =
+        let sublen = length(substr.substr);
+        match indexOfRight({substr = substr.substr}, s) {
             case None => (s, "")
             case Some(i) => (sliceLeft(s, i + sublen), sliceRight(s, i + sublen))
         }
