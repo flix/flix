@@ -21,6 +21,8 @@ pub enum MutDeque[a] {
 }
 
 namespace MutDeque {
+// TODO: Add Doc
+// TODO: Add tests
 
     def minCapacity(): Int32 = 8
 
