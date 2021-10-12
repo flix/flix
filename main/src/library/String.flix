@@ -1338,15 +1338,14 @@ namespace String {
         }
 
     ///
-    /// Count the occurences of `sub` in string `s`.
+    /// Count the occurences of `substr` in string `s`.
     ///
-    @Time(length(sub) * length(s)) @Space(length(sub) * length(s))
-    pub def countSubstring(sub: String, s: String): Int32 =
-        let sublen = length(sub);
+    pub def countSubstring(substr: {substr :: String}, s: String): Int32 =
+        let sublen = length(substr.substr);
         if (sublen <= 0)
             0
         else
-            countSubstringHelper(sub, sublen, s, 0, 0)
+            countSubstringHelper(substr.substr, sublen, s, 0, 0)
 
     ///
     /// Helper function for `count``.
