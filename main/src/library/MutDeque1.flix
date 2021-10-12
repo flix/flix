@@ -41,21 +41,23 @@ namespace MutDeque {
         f1 == b1
 
     // TODO: Collapse array if load factor < threshold
-    // TODO: Save derefs in vars
     pub def popFront(d: MutDeque[a]): a & Impure =
         let MutDeque(a, f, _) = d;
-        let x = (deref a)[deref f];
-        let c = Array.length(deref a);
-        f := (deref f + 1) % c;
+        let a1 = deref a;
+        let f1 = deref f;
+        let x = a1[f1];
+        let c = Array.length(a1);
+        f := (f1 + 1) % c;
         x
 
     // TODO: Collapse array if load factor < threshold
-    // TODO: Save derefs in vars
     pub def popBack(d: MutDeque[a]): a & Impure =
         let MutDeque(a, _, b) = d;
-        let c = Array.length(deref a);
-        b := (deref b - 1) % c;
-        let x = (deref a)[deref b];
+        let a1 = deref a;
+        let c = Array.length(a1);
+        let b1 = (deref b - 1) % c;
+        let x = a1[b1];
+        b := b1;
         x
 
     // TODO: Expand array if elements > capacity / 2
@@ -63,12 +65,22 @@ namespace MutDeque {
         let MutDeque(a, f, _) = d;
         let a1 = deref a;
         let c = Array.length(a1);
-        f := (deref f - 1) % c;
-        a1[deref f] = x;
+        let f1 = (deref f - 1) % c;
+        a1[f1] = x;
         a := a1;
+        f := f1;
         ()
 
     // TODO: Expand array if elements > capacity / 2
-    // pub def pushBack(x: a, d: MutDeque[a]): Unit & Impure = ???
+    pub def pushBack(x: a, d: MutDeque[a]): Unit & Impure =
+        let MutDeque(a, _, b) = d;
+        let a1 = deref a;
+        let c = Array.length(a1);
+        let b1 = deref b;
+        a1[b1] = x;
+        a := a1;
+        b := (b1 + 1) % c;
+        ()
+
 
 }

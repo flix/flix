@@ -20,6 +20,7 @@ namespace TestMutDeque {
     // size                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
+    @test
     def size01(): Bool & Impure =
         MutDeque.size(MutDeque.new()) == 0
 
