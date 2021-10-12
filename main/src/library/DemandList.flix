@@ -436,7 +436,7 @@ namespace DemandList {
         case (xs, LList(ys))              => LList(lazy zipHelper(      xs, force ys))
         case (LList(xs), ys)              => LList(lazy zipHelper(force xs,       ys))
     }
-
+*/
     ///
     /// Returns the longest prefix of `l` that satisfies the predicate `f`.
     ///
@@ -483,7 +483,7 @@ namespace DemandList {
         case LCons(x, xs) => if (f(x)) takeWhileEAcc(f, force xs, ks -> k(ECons(x, ks))) else k(ENil)
         case LList(xs)    => takeWhileEAcc(f, force xs, k)
     }
-*/
+
     ///
     /// Returns `l` without the longest prefix that satisfies the predicate `f`.
     ///

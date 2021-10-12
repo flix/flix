@@ -756,7 +756,7 @@ namespace TestDemandList {
     def zip07(): Bool =
         DemandList.zip(List.toDemandList(1 :: 3 :: 5 :: 7 :: Nil), List.toDemandList(2 :: 4 :: 6 :: 8 :: Nil)) |> DemandList.toList == (1, 2) :: (3, 4) :: (5, 6) :: (7, 8) :: Nil
 
-
+*/
     /////////////////////////////////////////////////////////////////////////////
     // takeWhile (pure)                                                        //
     /////////////////////////////////////////////////////////////////////////////
@@ -890,7 +890,7 @@ namespace TestDemandList {
         DemandList.takeWhile(i -> { l := "b" :: deref l; i < 3 } as & Pure) |>
         DemandList.toList as & Impure;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: Nil)
-*/
+
 
     /////////////////////////////////////////////////////////////////////////////
     // dropWhile (pure)                                                        //
