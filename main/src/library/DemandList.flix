@@ -483,7 +483,7 @@ namespace DemandList {
         case LCons(x, xs) => if (f(x)) takeWhileEAcc(f, force xs, ks -> k(ECons(x, ks))) else k(ENil)
         case LList(xs)    => takeWhileEAcc(f, force xs, k)
     }
-
+*/
     ///
     /// Returns `l` without the longest prefix that satisfies the predicate `f`.
     ///
@@ -524,5 +524,4 @@ namespace DemandList {
         case LCons(x, xs) => if (f(x)) dropWhileE(f, force xs) else l
         case LList(xs)    => dropWhileE(f, force xs)
     }
-    */
 }

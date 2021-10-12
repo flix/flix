@@ -890,7 +890,7 @@ namespace TestDemandList {
         DemandList.takeWhile(i -> { l := "b" :: deref l; i < 3 } as & Pure) |>
         DemandList.toList as & Impure;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: Nil)
-
+*/
 
     /////////////////////////////////////////////////////////////////////////////
     // dropWhile (pure)                                                        //
@@ -1025,7 +1025,7 @@ namespace TestDemandList {
         DemandList.dropWhile(i -> { l := "b" :: deref l; i < 3 } as & Pure) |>
         DemandList.toList as & Impure;
         List.reverse(deref l) == ("a" :: "a" :: "b" :: "b" :: Nil)
-*/
+
 
     /////////////////////////////////////////////////////////////////////////////
     // sum                                                                     //
