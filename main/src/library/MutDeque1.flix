@@ -68,8 +68,7 @@ namespace MutDeque {
         let f1 = (deref f - 1) % c;
         a1[f1] = x;
         a := a1;
-        f := f1;
-        ()
+        f := f1
 
     // TODO: Expand array if elements > capacity / 2
     pub def pushBack(x: a, d: MutDeque[a]): Unit & Impure =
@@ -79,8 +78,6 @@ namespace MutDeque {
         let b1 = deref b;
         a1[b1] = x;
         a := a1;
-        b := (b1 + 1) % c;
-        ()
-
+        b := (b1 + 1) % c
 
 }
