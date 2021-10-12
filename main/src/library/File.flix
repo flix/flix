@@ -30,7 +30,7 @@ namespace File {
         }
 
     ///
-    /// Return `true` is the given file `file` is a directory.
+    /// Returns `true` if the given file `file` is a directory.
     ///
     pub def isDirectory(file: String): Result[Bool, String] & Impure =
         try {
