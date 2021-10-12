@@ -723,7 +723,7 @@ namespace TestDemandList {
     def forall10(): Bool =
         (11 :: 9 :: 31 :: Nil) |> List.toDemandList |> DemandList.forall(i -> i > 3)
 
-
+/*
     /////////////////////////////////////////////////////////////////////////////
     // zip                                                                     //
     /////////////////////////////////////////////////////////////////////////////
@@ -1025,7 +1025,7 @@ namespace TestDemandList {
         DemandList.dropWhile(i -> { l := "b" :: deref l; i < 3 } as & Pure) |>
         DemandList.toList as & Impure;
         List.reverse(deref l) == ("a" :: "a" :: "b" :: "b" :: Nil)
-
+*/
 
     /////////////////////////////////////////////////////////////////////////////
     // sum                                                                     //

@@ -403,7 +403,7 @@ namespace DemandList {
         case LCons(x, xs) => if (f(x)) forall(f, force xs) else false
         case LList(xs)    => forall(f, force xs)
     }
-
+/*
     ///
     /// Returns a list where the element at index `i` is `(a, b)` where
     /// `a` is the element at index `i` in `l1` and `b` is the element at index `i` in `l2`.
@@ -413,13 +413,28 @@ namespace DemandList {
     pub def zip(l1: DemandList[a, d], l2: DemandList[b, e]): DemandList[(a, b), d or e] = match (l1, l2) {
         case (ENil, _)                    => ENil
         case (_, ENil)                    => ENil
-        case (ECons(x, xs), ECons(y, ys)) => LList(lazy LCons((x, y), lazy zip(      xs,       ys)))
-        case (ECons(x, xs), LCons(y, ys)) => LList(lazy LCons((x, y), lazy zip(      xs, force ys)))
-        case (LCons(x, xs), ECons(y, ys)) => LList(lazy LCons((x, y), lazy zip(force xs,       ys)))
-        case (LCons(x, xs), LCons(y, ys)) => LList(lazy LCons((x, y), lazy zip(force xs, force ys)))
-        case (LList(xs), LList(ys))       => LList(                   lazy zip(force xs, force ys))
-        case (xs, LList(ys))              => LList(                   lazy zip(      xs, force ys))
-        case (LList(xs), ys)              => LList(                   lazy zip(force xs,       ys))
+        case (ECons(x, xs), ECons(y, ys)) => LList(lazy LCons((x, y), lazy zipHelper(      xs,       ys)))
+        case (ECons(x, xs), LCons(y, ys)) => LList(lazy LCons((x, y), lazy zipHelper(      xs, force ys)))
+        case (LCons(x, xs), ECons(y, ys)) => LList(lazy LCons((x, y), lazy zipHelper(force xs,       ys)))
+        case (LCons(x, xs), LCons(y, ys)) => LList(lazy LCons((x, y), lazy zipHelper(force xs, force ys)))
+        case (LList(xs), LList(ys))       => LList(                   lazy zipHelper(force xs, force ys))
+        case (xs, LList(ys))              => LList(                   lazy zipHelper(      xs, force ys))
+        case (LList(xs), ys)              => LList(                   lazy zipHelper(force xs,       ys))
+    }
+
+    ///
+    /// Helper function for `zip`.
+    ///
+    def zipHelper(l1: DemandList[a, d], l2: DemandList[b, e]): DemandList[(a, b), d or e] = match (l1, l2) {
+        case (ENil, _)                    => ENil
+        case (_, ENil)                    => ENil
+        case (ECons(x, xs), ECons(y, ys)) => LCons((x, y), lazy zipHelper(      xs,       ys))
+        case (ECons(x, xs), LCons(y, ys)) => LCons((x, y), lazy zipHelper(      xs, force ys))
+        case (LCons(x, xs), ECons(y, ys)) => LCons((x, y), lazy zipHelper(force xs,       ys))
+        case (LCons(x, xs), LCons(y, ys)) => LCons((x, y), lazy zipHelper(force xs, force ys))
+        case (LList(xs), LList(ys))       => LList(lazy zipHelper(force xs, force ys))
+        case (xs, LList(ys))              => LList(lazy zipHelper(      xs, force ys))
+        case (LList(xs), ys)              => LList(lazy zipHelper(force xs,       ys))
     }
 
     ///
@@ -509,4 +524,5 @@ namespace DemandList {
         case LCons(x, xs) => if (f(x)) dropWhileE(f, force xs) else l
         case LList(xs)    => dropWhileE(f, force xs)
     }
+    */
 }
