@@ -1877,4 +1877,21 @@ def query18(): Bool =
     @test
     def maximumBy04(): Bool = Map.maximumBy((x, _, y, _) -> x <=> y, Map#{1 -> 2, 2 -> 3, 107 -> -107, 5 -> 5, 0 -> 2}) == Some((107, -107))
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toLazyList                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toLazyList01(): Bool =
+        Map.empty(): Map[Unit, Unit] |> Map.toLazyList == LazyList.empty()
+
+    @test
+    def toLazyList02(): Bool =
+        Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0) |> Map.toLazyList == LazyList.repeat("a") |> LazyList.zip(LazyList.range(0, 1000))
+
+    @test
+    def toLazyList03(): Bool =
+        Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0) |> Map.toLazyList |> LazyList.toMap == Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0)
+
 }

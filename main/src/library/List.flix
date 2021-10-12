@@ -1176,9 +1176,9 @@ namespace List {
     ///
     /// Returns the elements of `l` as a lazy list.
     ///
-    pub def toLazy(l: List[a]): LazyList[a] = match l {
+    pub def toLazyList(l: List[a]): LazyList[a] = match l {
         case Nil     => ENil
-        case x :: xs => LList(lazy LCons(x, lazy toLazy(xs)))
+        case x :: xs => LCons(x, lazy toLazyList(xs))
     }
 
     ///

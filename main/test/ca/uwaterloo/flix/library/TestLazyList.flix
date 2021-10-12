@@ -320,23 +320,23 @@ namespace TestLazyList {
 
     @test
     def reverse02(): Bool =
-        (1 :: Nil) |> List.toLazy |> LazyList.reverse |> LazyList.toList == 1 :: Nil
+        (1 :: Nil) |> List.toLazyList |> LazyList.reverse |> LazyList.toList == 1 :: Nil
 
     @test
     def reverse03(): Bool =
-        (1 :: 2 :: Nil) |> List.toLazy |> LazyList.reverse |> LazyList.toList == 2 :: 1 :: Nil
+        (1 :: 2 :: Nil) |> List.toLazyList |> LazyList.reverse |> LazyList.toList == 2 :: 1 :: Nil
 
     @test
     def reverse04(): Bool =
-        (1 :: 1 :: Nil) |> List.toLazy |> LazyList.reverse |> LazyList.toList == 1 :: 1 :: Nil
+        (1 :: 1 :: Nil) |> List.toLazyList |> LazyList.reverse |> LazyList.toList == 1 :: 1 :: Nil
 
     @test
     def reverse05(): Bool =
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |> LazyList.reverse |> LazyList.toList == 3 :: 2 :: 1 :: Nil
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |> LazyList.reverse |> LazyList.toList == 3 :: 2 :: 1 :: Nil
 
     @test
     def reverse06(): Bool =
-        (1 :: 2 :: 3 :: 4 :: Nil) |> List.toLazy |> LazyList.reverse |> LazyList.toList == 4 :: 3 :: 2 :: 1 :: Nil
+        (1 :: 2 :: 3 :: 4 :: Nil) |> List.toLazyList |> LazyList.reverse |> LazyList.toList == 4 :: 3 :: 2 :: 1 :: Nil
 
     @test
     def reverse07(): Bool =
@@ -349,19 +349,19 @@ namespace TestLazyList {
 
     @test
     def mapPure01(): Bool =
-        Nil |> List.toLazy |> LazyList.map(x -> x + 1) |> LazyList.toList == Nil
+        Nil |> List.toLazyList |> LazyList.map(x -> x + 1) |> LazyList.toList == Nil
 
     @test
     def mapPure02(): Bool =
-        (1 :: Nil) |> List.toLazy |> LazyList.map(x -> x + 1) |> LazyList.toList == 2 :: Nil
+        (1 :: Nil) |> List.toLazyList |> LazyList.map(x -> x + 1) |> LazyList.toList == 2 :: Nil
 
     @test
     def mapPure03(): Bool =
-        (1 :: 2 :: Nil) |> List.toLazy |> LazyList.map(x -> x + 1) |> LazyList.toList == 2 :: 3 :: Nil
+        (1 :: 2 :: Nil) |> List.toLazyList |> LazyList.map(x -> x + 1) |> LazyList.toList == 2 :: 3 :: Nil
 
     @test
     def mapPure04(): Bool =
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |> LazyList.map(x -> x + 1) |> LazyList.toList == 2 :: 3 :: 4 :: Nil
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |> LazyList.map(x -> x + 1) |> LazyList.toList == 2 :: 3 :: 4 :: Nil
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -370,19 +370,19 @@ namespace TestLazyList {
 
     @test
     def mapImpure01(): Bool & Impure =
-        Nil |> List.toLazy |> LazyList.map(x -> x + 1 as & Impure) |> LazyList.toList == Nil
+        Nil |> List.toLazyList |> LazyList.map(x -> x + 1 as & Impure) |> LazyList.toList == Nil
 
     @test
     def mapImpure02(): Bool & Impure =
-        (1 :: Nil) |> List.toLazy |> LazyList.map(x -> x + 1 as & Impure) |> LazyList.toList == 2 :: Nil
+        (1 :: Nil) |> List.toLazyList |> LazyList.map(x -> x + 1 as & Impure) |> LazyList.toList == 2 :: Nil
 
     @test
     def mapImpure03(): Bool & Impure =
-        (1 :: 2 :: Nil) |> List.toLazy |> LazyList.map(x -> x + 1 as & Impure) |> LazyList.toList == 2 :: 3 :: Nil
+        (1 :: 2 :: Nil) |> List.toLazyList |> LazyList.map(x -> x + 1 as & Impure) |> LazyList.toList == 2 :: 3 :: Nil
 
     @test
     def mapImpure04(): Bool & Impure =
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |> LazyList.map(x -> x + 1 as & Impure) |> LazyList.toList == 2 :: 3 :: 4 :: Nil
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |> LazyList.map(x -> x + 1 as & Impure) |> LazyList.toList == 2 :: 3 :: 4 :: Nil
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -391,19 +391,19 @@ namespace TestLazyList {
 
     @test
     def mapMap01(): Bool =
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |> LazyList.map(x -> x + 1) |> LazyList.map(x -> x * 2) |> LazyList.toList == 4 :: 6 :: 8 :: Nil
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |> LazyList.map(x -> x + 1) |> LazyList.map(x -> x * 2) |> LazyList.toList == 4 :: 6 :: 8 :: Nil
 
     @test
     def mapMap02(): Bool & Impure =
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |> LazyList.map(x -> x + 1 as & Impure) |> LazyList.map(x -> x * 2) |> LazyList.toList == 4 :: 6 :: 8 :: Nil
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |> LazyList.map(x -> x + 1 as & Impure) |> LazyList.map(x -> x * 2) |> LazyList.toList == 4 :: 6 :: 8 :: Nil
 
     @test
     def mapMap03(): Bool & Impure =
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |> LazyList.map(x -> x + 1) |> LazyList.map(x -> x * 2 as & Impure) |> LazyList.toList == 4 :: 6 :: 8 :: Nil
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |> LazyList.map(x -> x + 1) |> LazyList.map(x -> x * 2 as & Impure) |> LazyList.toList == 4 :: 6 :: 8 :: Nil
 
     @test
     def mapMap04(): Bool & Impure =
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |> LazyList.map(x -> x + 1 as & Impure) |> LazyList.map(x -> x * 2 as & Impure) |> LazyList.toList == 4 :: 6 :: 8 :: Nil
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |> LazyList.map(x -> x + 1 as & Impure) |> LazyList.map(x -> x * 2 as & Impure) |> LazyList.toList == 4 :: 6 :: 8 :: Nil
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -413,7 +413,7 @@ namespace TestLazyList {
     @test
     def mapFusion01(): Bool & Impure =
         let l = ref Nil;
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |>
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.map(x -> { l := "a" :: deref l; x }) |>
         LazyList.map(x -> { l := "b" :: deref l; x });
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
@@ -421,7 +421,7 @@ namespace TestLazyList {
     @test
     def mapFusion02(): Bool & Impure =
         let l = ref Nil;
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |>
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.map(x -> { l := "a" :: deref l; x } as & Pure) |>
         LazyList.map(x -> { l := "b" :: deref l; x } as & Pure) |>
         LazyList.toList as & Impure;
@@ -434,27 +434,27 @@ namespace TestLazyList {
 
     @test
     def filterPure01(): Bool =
-        Nil |> List.toLazy |> LazyList.filter(x -> x > 100) |> LazyList.toList == Nil
+        Nil |> List.toLazyList |> LazyList.filter(x -> x > 100) |> LazyList.toList == Nil
 
     @test
     def filterPure02(): Bool =
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |> LazyList.filter(x -> x > 0) |> LazyList.toList == 1 :: 2 :: 3 :: Nil
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |> LazyList.filter(x -> x > 0) |> LazyList.toList == 1 :: 2 :: 3 :: Nil
 
     @test
     def filterPure03(): Bool =
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |> LazyList.filter(x -> x > 1) |> LazyList.toList == 2 :: 3 :: Nil
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |> LazyList.filter(x -> x > 1) |> LazyList.toList == 2 :: 3 :: Nil
 
     @test
     def filterPure04(): Bool =
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |> LazyList.filter(x -> x > 2) |> LazyList.toList == 3 :: Nil
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |> LazyList.filter(x -> x > 2) |> LazyList.toList == 3 :: Nil
 
     @test
     def filterPure05(): Bool =
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |> LazyList.filter(x -> x > 3) |> LazyList.toList == Nil
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |> LazyList.filter(x -> x > 3) |> LazyList.toList == Nil
 
     @test
     def filterPure06(): Bool =
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |> LazyList.filter(x -> x > 100) |> LazyList.toList == Nil
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |> LazyList.filter(x -> x > 100) |> LazyList.toList == Nil
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -463,27 +463,27 @@ namespace TestLazyList {
 
     @test
     def filterImpure01(): Bool & Impure =
-        Nil |> List.toLazy |> LazyList.filter(x -> x > 100 as & Impure) |> LazyList.toList == Nil
+        Nil |> List.toLazyList |> LazyList.filter(x -> x > 100 as & Impure) |> LazyList.toList == Nil
 
     @test
     def filterImpure02(): Bool & Impure =
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |> LazyList.filter(x -> x > 0 as & Impure) |> LazyList.toList == 1 :: 2 :: 3 :: Nil
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |> LazyList.filter(x -> x > 0 as & Impure) |> LazyList.toList == 1 :: 2 :: 3 :: Nil
 
     @test
     def filterImpure03(): Bool & Impure =
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |> LazyList.filter(x -> x > 1 as & Impure) |> LazyList.toList == 2 :: 3 :: Nil
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |> LazyList.filter(x -> x > 1 as & Impure) |> LazyList.toList == 2 :: 3 :: Nil
 
     @test
     def filterImpure04(): Bool & Impure =
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |> LazyList.filter(x -> x > 2 as & Impure) |> LazyList.toList == 3 :: Nil
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |> LazyList.filter(x -> x > 2 as & Impure) |> LazyList.toList == 3 :: Nil
 
     @test
     def filterImpure05(): Bool & Impure =
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |> LazyList.filter(x -> x > 3 as & Impure) |> LazyList.toList == Nil
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |> LazyList.filter(x -> x > 3 as & Impure) |> LazyList.toList == Nil
 
     @test
     def filterImpure06(): Bool & Impure =
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |> LazyList.filter(x -> x > 100 as & Impure) |> LazyList.toList == Nil
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |> LazyList.filter(x -> x > 100 as & Impure) |> LazyList.toList == Nil
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -492,19 +492,19 @@ namespace TestLazyList {
 
     @test
     def filterFilter01(): Bool =
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |> LazyList.filter(x -> x > 1) |> LazyList.filter(x -> x < 3) |> LazyList.toList == 2 :: Nil
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |> LazyList.filter(x -> x > 1) |> LazyList.filter(x -> x < 3) |> LazyList.toList == 2 :: Nil
 
     @test
     def filterFilter02(): Bool & Impure =
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |> LazyList.filter(x -> x > 1 as & Impure) |> LazyList.filter(x -> x < 3) |> LazyList.toList == 2 :: Nil
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |> LazyList.filter(x -> x > 1 as & Impure) |> LazyList.filter(x -> x < 3) |> LazyList.toList == 2 :: Nil
 
     @test
     def filterFilter03(): Bool & Impure =
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |> LazyList.filter(x -> x > 1) |> LazyList.filter(x -> x < 3 as & Impure) |> LazyList.toList == 2 :: Nil
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |> LazyList.filter(x -> x > 1) |> LazyList.filter(x -> x < 3 as & Impure) |> LazyList.toList == 2 :: Nil
 
     @test
     def filterFilter04(): Bool & Impure =
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |> LazyList.filter(x -> x > 1 as & Impure) |> LazyList.filter(x -> x < 3 as & Impure) |> LazyList.toList == 2 :: Nil
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |> LazyList.filter(x -> x > 1 as & Impure) |> LazyList.filter(x -> x < 3 as & Impure) |> LazyList.toList == 2 :: Nil
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -514,7 +514,7 @@ namespace TestLazyList {
     @test
     def filterFusion01(): Bool & Impure =
         let l = ref Nil;
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |>
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.filter(_ -> { l := "a" :: deref l; true }) |>
         LazyList.filter(_ -> { l := "b" :: deref l; true });
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
@@ -522,7 +522,7 @@ namespace TestLazyList {
     @test
     def filterFusion02(): Bool & Impure =
         let l = ref Nil;
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |>
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.filter(_x -> { l := "a" :: deref l; true } as & Pure) |>
         LazyList.filter(_x -> { l := "b" :: deref l; true } as & Pure) |>
         LazyList.toList as & Impure;
@@ -536,7 +536,7 @@ namespace TestLazyList {
     @test
     def mapFilterFusion01(): Bool & Impure =
         let l = ref Nil;
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |>
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.map(   x -> { l := "a" :: deref l; x }) |>
         LazyList.filter(_ -> { l := "b" :: deref l; true });
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
@@ -544,7 +544,7 @@ namespace TestLazyList {
     @test
     def mapFilterFusion02(): Bool & Impure =
         let l = ref Nil;
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |>
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.map(   x -> { l := "a" :: deref l; x }    as & Pure) |>
         LazyList.filter(_ -> { l := "b" :: deref l; true } as & Pure) |>
         LazyList.toList as & Impure;
@@ -558,7 +558,7 @@ namespace TestLazyList {
     @test
     def filterMapFusion01(): Bool & Impure =
         let l = ref Nil;
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |>
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.filter(_ -> { l := "a" :: deref l; true }) |>
         LazyList.map(   x -> { l := "b" :: deref l; x    });
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
@@ -566,7 +566,7 @@ namespace TestLazyList {
     @test
     def filterMapFusion02(): Bool & Impure =
         let l = ref Nil;
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |>
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.filter(_ -> { l := "a" :: deref l; true } as & Pure) |>
         LazyList.map(   x -> { l := "b" :: deref l; x    } as & Pure) |>
         LazyList.toList as & Impure;
@@ -797,7 +797,7 @@ namespace TestLazyList {
 
     @test
     def toList05(): Bool =
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |> LazyList.toList == (1 :: 2 :: 3 :: Nil)
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |> LazyList.toList == (1 :: 2 :: 3 :: Nil)
 
     @test
     def toList06(): Bool =
@@ -1197,28 +1197,28 @@ namespace TestLazyList {
     def exists01(): Bool = LazyList.exists(i -> i > 3, ENil) == false
 
     @test
-    def exists02(): Bool = (1 :: Nil) |> List.toLazy |> LazyList.exists(i -> i > 3) == false
+    def exists02(): Bool = (1 :: Nil) |> List.toLazyList |> LazyList.exists(i -> i > 3) == false
 
     @test
-    def exists03(): Bool = (5 :: Nil) |> List.toLazy |> LazyList.exists(i -> i > 3) == true
+    def exists03(): Bool = (5 :: Nil) |> List.toLazyList |> LazyList.exists(i -> i > 3) == true
 
     @test
-    def exists04(): Bool =  (1 :: 2 :: Nil) |> List.toLazy |> LazyList.exists(i -> i > 3) == false
+    def exists04(): Bool =  (1 :: 2 :: Nil) |> List.toLazyList |> LazyList.exists(i -> i > 3) == false
 
     @test
-    def exists05(): Bool =  (1 :: 6 :: Nil) |> List.toLazy |> LazyList.exists(i -> i > 3) == true
+    def exists05(): Bool =  (1 :: 6 :: Nil) |> List.toLazyList |> LazyList.exists(i -> i > 3) == true
 
     @test
-    def exists06(): Bool =  (6 :: 1 :: Nil) |> List.toLazy |> LazyList.exists(i -> i > 3) == true
+    def exists06(): Bool =  (6 :: 1 :: Nil) |> List.toLazyList |> LazyList.exists(i -> i > 3) == true
 
     @test
-    def exists07(): Bool = (16 :: 6 :: Nil) |> List.toLazy |> LazyList.exists(i -> i > 3) == true
+    def exists07(): Bool = (16 :: 6 :: Nil) |> List.toLazyList |> LazyList.exists(i -> i > 3) == true
 
     @test
-    def exists08(): Bool = (1 :: -9 :: 3 :: Nil) |> List.toLazy |> LazyList.exists(i -> i > 3) == false
+    def exists08(): Bool = (1 :: -9 :: 3 :: Nil) |> List.toLazyList |> LazyList.exists(i -> i > 3) == false
 
     @test
-    def exists09(): Bool = (1 :: 9 :: 3 :: Nil) |> List.toLazy |> LazyList.exists(i -> i > 3) == true
+    def exists09(): Bool = (1 :: 9 :: 3 :: Nil) |> List.toLazyList |> LazyList.exists(i -> i > 3) == true
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1229,31 +1229,31 @@ namespace TestLazyList {
     def forall01(): Bool = LazyList.forall(i -> i > 3, ENil) == true
 
     @test
-    def forall02(): Bool = (1 :: Nil) |> List.toLazy |> LazyList.forall(i -> i > 3) == false
+    def forall02(): Bool = (1 :: Nil) |> List.toLazyList |> LazyList.forall(i -> i > 3) == false
 
     @test
-    def forall03(): Bool = (5 :: Nil) |> List.toLazy |> LazyList.forall(i -> i > 3) == true
+    def forall03(): Bool = (5 :: Nil) |> List.toLazyList |> LazyList.forall(i -> i > 3) == true
 
     @test
-    def forall04(): Bool =  (1 :: 2 :: Nil) |> List.toLazy |> LazyList.forall(i -> i > 3) == false
+    def forall04(): Bool =  (1 :: 2 :: Nil) |> List.toLazyList |> LazyList.forall(i -> i > 3) == false
 
     @test
-    def forall05(): Bool =  (1 :: 6 :: Nil) |> List.toLazy |> LazyList.forall(i -> i > 3) == false
+    def forall05(): Bool =  (1 :: 6 :: Nil) |> List.toLazyList |> LazyList.forall(i -> i > 3) == false
 
     @test
-    def forall06(): Bool =  (6 :: 1 :: Nil) |> List.toLazy |> LazyList.forall(i -> i > 3) == false
+    def forall06(): Bool =  (6 :: 1 :: Nil) |> List.toLazyList |> LazyList.forall(i -> i > 3) == false
 
     @test
-    def forall07(): Bool = (16 :: 6 :: Nil) |> List.toLazy |> LazyList.forall(i -> i > 3) == true
+    def forall07(): Bool = (16 :: 6 :: Nil) |> List.toLazyList |> LazyList.forall(i -> i > 3) == true
 
     @test
-    def forall08(): Bool = (1 :: -9 :: 3 :: Nil) |> List.toLazy |> LazyList.forall(i -> i > 3) == false
+    def forall08(): Bool = (1 :: -9 :: 3 :: Nil) |> List.toLazyList |> LazyList.forall(i -> i > 3) == false
 
     @test
-    def forall09(): Bool = (1 :: 9 :: 3 :: Nil) |> List.toLazy |> LazyList.forall(i -> i > 3) == false
+    def forall09(): Bool = (1 :: 9 :: 3 :: Nil) |> List.toLazyList |> LazyList.forall(i -> i > 3) == false
 
     @test
-    def forall10(): Bool = (11 :: 9 :: 31 :: Nil) |> List.toLazy |> LazyList.forall(i -> i > 3) == true
+    def forall10(): Bool = (11 :: 9 :: 31 :: Nil) |> List.toLazyList |> LazyList.forall(i -> i > 3) == true
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1763,7 +1763,7 @@ namespace TestLazyList {
     @test
     def zipWithFusion01(): Bool & Impure =
         let l = ref Nil;
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |>
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.zipWith((x, y) -> { l := "a" :: deref l; (x, y) }, ECons(1, ECons(2, ECons(3, ENil)))) |>
         LazyList.zipWith((x, y) -> { l := "b" :: deref l; (x, y) }, ECons(1, ECons(2, ECons(3, ENil))));
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
@@ -1771,7 +1771,7 @@ namespace TestLazyList {
     @test
     def zipWithFusion02(): Bool & Impure =
         let l = ref Nil;
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |>
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.zipWith((x, y) -> { l := "a" :: deref l; (x, y) } as & Pure, ECons(1, ECons(2, ECons(3, ENil)))) |>
         LazyList.zipWith((x, y) -> { l := "b" :: deref l; (x, y) } as & Pure, ECons(1, ECons(2, ECons(3, ENil)))) |>
         LazyList.toList as & Impure;
@@ -2266,7 +2266,7 @@ namespace TestLazyList {
     @test
     def flatMapFusion01(): Bool & Impure =
         let l = ref Nil;
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |>
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.flatMap(i -> { l := "a" :: deref l; ECons(i, ENil) }) |>
         LazyList.flatMap(i -> { l := "b" :: deref l; ECons(i, ENil) });
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
@@ -2274,7 +2274,7 @@ namespace TestLazyList {
     @test
     def flatMapFusion02(): Bool & Impure =
         let l = ref Nil;
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |>
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.flatMap(i -> { l := "a" :: deref l; ECons(i, ENil) } as & Pure) |>
         LazyList.flatMap(i -> { l := "b" :: deref l; ECons(i, ENil) } as & Pure) |>
         LazyList.toList as & Impure;
@@ -2771,7 +2771,7 @@ namespace TestLazyList {
     @test
     def mapWithIndexFusion01(): Bool & Impure =
         let l = ref Nil;
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |>
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.mapWithIndex((x, _) -> { l := "a" :: deref l; x }) |>
         LazyList.mapWithIndex((x, _) -> { l := "b" :: deref l; x }) |>
         LazyList.toList;
@@ -2780,7 +2780,7 @@ namespace TestLazyList {
     @test
     def mapWithIndexFusion02(): Bool & Impure =
         let l = ref Nil;
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |>
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.mapWithIndex((x, _) -> { l := "a" :: deref l; x } as & Pure) |>
         LazyList.mapWithIndex((x, _) -> { l := "b" :: deref l; x } as & Pure) |>
         LazyList.toList as & Impure;
@@ -3171,7 +3171,7 @@ namespace TestLazyList {
     @test
     def takeWhileTakeWhileFusion01(): Bool & Impure =
         let l = ref Nil;
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |>
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.takeWhile(i -> { l := "a" :: deref l; i < 4 }) |>
         LazyList.takeWhile(i -> { l := "b" :: deref l; i < 4 });
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
@@ -3179,7 +3179,7 @@ namespace TestLazyList {
     @test
     def takeWhileTakeWhileFusion02(): Bool & Impure =
         let l = ref Nil;
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |>
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.takeWhile(i -> { l := "a" :: deref l; i < 4 } as & Pure) |>
         LazyList.takeWhile(i -> { l := "b" :: deref l; i < 4 } as & Pure) |>
         LazyList.toList as & Impure;
@@ -3188,7 +3188,7 @@ namespace TestLazyList {
     @test
     def takeWhileTakeWhileFusion03(): Bool & Impure =
         let l = ref Nil;
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |>
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.takeWhile(i -> { l := "a" :: deref l; i < 3 } as & Pure) |>
         LazyList.takeWhile(i -> { l := "b" :: deref l; i < 2 } as & Pure) |>
         LazyList.toList as & Impure;
@@ -3197,7 +3197,7 @@ namespace TestLazyList {
     @test
     def takeWhileTakeWhileFusion04(): Bool & Impure =
         let l = ref Nil;
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |>
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.takeWhile(i -> { l := "a" :: deref l; i < 3 } as & Pure) |>
         LazyList.takeWhile(i -> { l := "b" :: deref l; i < 3 } as & Pure) |>
         LazyList.toList as & Impure;
@@ -3466,7 +3466,7 @@ namespace TestLazyList {
     @test
     def dropWhileDropWhileFusion01(): Bool & Impure =
         let l = ref Nil;
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |>
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.dropWhile(i -> { l := "a" :: deref l; i < 3 }) |>
         LazyList.dropWhile(i -> { l := "b" :: deref l; i < 4 });
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: Nil)
@@ -3474,7 +3474,7 @@ namespace TestLazyList {
     @test
     def dropWhileDropWhileFusion02(): Bool & Impure =
         let l = ref Nil;
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |>
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.dropWhile(i -> { l := "a" :: deref l; i < 3 } as & Pure) |>
         LazyList.dropWhile(i -> { l := "b" :: deref l; i < 4 } as & Pure) |>
         LazyList.toList as & Impure;
@@ -3483,7 +3483,7 @@ namespace TestLazyList {
     @test
     def dropWhileDropWhileFusion03(): Bool & Impure =
         let l = ref Nil;
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |>
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.dropWhile(i -> { l := "a" :: deref l; i < 1 } as & Pure) |>
         LazyList.dropWhile(i -> { l := "b" :: deref l; i < 3 } as & Pure) |>
         LazyList.toList as & Impure;
@@ -3492,7 +3492,7 @@ namespace TestLazyList {
     @test
     def dropWhileDropWhileFusion04(): Bool & Impure =
         let l = ref Nil;
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |>
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.dropWhile(i -> { l := "a" :: deref l; i < 2 } as & Pure) |>
         LazyList.dropWhile(i -> { l := "b" :: deref l; i < 3 } as & Pure) |>
         LazyList.toList as & Impure;

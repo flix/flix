@@ -250,7 +250,6 @@ namespace LazyList {
     ///
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
-    // TODO: Use k function as acc.
     def mapE(f: a -> b & Impure, l: LazyList[a]): LazyList[b] & Impure =
         mapEAcc(f, l, ks -> ks)
 
@@ -288,14 +287,11 @@ namespace LazyList {
     ///
     /// Applies `f` lazily (i.e. the tail is not forced).
     ///
-    // TODO: Collect f(x) and not f(x) cases into if-else exp.
     def filterL(f: a -> Bool, l: LazyList[a]): LazyList[a] = match l {
-        case ENil                 => ENil
-        case ECons(x, xs) if f(x) => LCons(x, lazy filterL(f,       xs))
-        case LCons(x, xs) if f(x) => LCons(x, lazy filterL(f, force xs))
-        case ECons(_, xs)         => LList(   lazy filterL(f,       xs))
-        case LCons(_, xs)         => LList(   lazy filterL(f, force xs))
-        case LList(xs)            => LList(   lazy filterL(f, force xs))
+        case ENil         => ENil
+        case ECons(x, xs) => if (f(x)) LCons(x, lazy filterL(f,       xs)) else LList(lazy filterL(f,       xs))
+        case LCons(x, xs) => if (f(x)) LCons(x, lazy filterL(f, force xs)) else LList(lazy filterL(f, force xs))
+        case LList(xs)    => LList(   lazy filterL(f, force xs))
     }
 
     ///
@@ -303,18 +299,17 @@ namespace LazyList {
     ///
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
-    // TODO: Use k function as acc.
     def filterE(f: a -> Bool & Impure, l: LazyList[a]): LazyList[a] & Impure =
-        filterEAcc(f, l, ENil) |> reverse
+        filterEAcc(f, l, ks -> ks)
 
     ///
     /// Helper function for `filterE`
     ///
-    def filterEAcc(f: a -> Bool & Impure, l: LazyList[a], acc: LazyList[a]): LazyList[a] & Impure = match l {
-        case ENil         => acc
-        case ECons(x, xs) => if (f(x)) filterEAcc(f,       xs, ECons(x, acc)) else filterEAcc(f,       xs, acc)
-        case LCons(x, xs) => if (f(x)) filterEAcc(f, force xs, ECons(x, acc)) else filterEAcc(f, force xs, acc)
-        case LList(xs)    => filterEAcc(f, force xs, acc)
+    def filterEAcc(f: a -> Bool & Impure, l: LazyList[a], k: LazyList[a] -> LazyList[a]): LazyList[a] & Impure = match l {
+        case ENil         => k(ENil)
+        case ECons(x, xs) => if (f(x)) filterEAcc(f,       xs, ks -> k(ECons(x, ks))) else filterEAcc(f,       xs, k)
+        case LCons(x, xs) => if (f(x)) filterEAcc(f, force xs, ks -> k(ECons(x, ks))) else filterEAcc(f, force xs, k)
+        case LList(xs)    => filterEAcc(f, force xs, k)
     }
 
     ///
@@ -505,10 +500,10 @@ namespace LazyList {
     ///
     pub def exists(f: a -> Bool & ef, l: LazyList[a]): Bool & ef = match l {
         case ENil         => false
-        case ECons(x, xs) => f(x) or exists(f, xs)
-        case LCons(x, xs) => f(x) or exists(f, force xs)
+        case ECons(x, xs) => if (f(x)) true else exists(f,       xs)
+        case LCons(x, xs) => if (f(x)) true else exists(f, force xs)
         case LList(xs)    => exists(f, force xs)
-    }
+   }
 
     ///
     /// Returns `true` if and only if all elements in `l` satisfy the predicate `f`.
@@ -519,8 +514,8 @@ namespace LazyList {
     ///
     pub def forall(f: a -> Bool & ef, l: LazyList[a]): Bool & ef = match l {
         case ENil         => true
-        case ECons(x, xs) => f(x) and forall(f, xs)
-        case LCons(x, xs) => f(x) and forall(f, force xs)
+        case ECons(x, xs) => if (f(x)) forall(f,       xs) else false
+        case LCons(x, xs) => if (f(x)) forall(f, force xs) else false
         case LList(xs)    => forall(f, force xs)
     }
 
@@ -762,9 +757,18 @@ namespace LazyList {
     ///
     /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from right to left.
     ///
-    // TODO: Use native / own implementation
     pub def findRight(f: a -> Bool & ef, l: LazyList[a]): Option[a] & ef =
-        reverse(l) |> findLeft(f)
+        findRightAcc(x -> if (f(x)) Some(x) else None, l, (o, _) -> o as & ef)
+
+    ///
+    /// Helper function for `findRight`.
+    ///
+    def findRightAcc(f: a -> Option[a] & ef, l: LazyList[a], k: (Option[a], LazyList[a]) -> Option[a] & ef): Option[a] & ef = match l {
+        case ENil         => k(None, ENil)
+        case ECons(x, xs) => findRightAcc(f,       xs, (o, ks) -> if (Option.isEmpty(o)) k(f(x), ECons(x, ks)) else o)
+        case LCons(x, xs) => findRightAcc(f, force xs, (o, ks) -> if (Option.isEmpty(o)) k(f(x), ECons(x, ks)) else o)
+        case LList(xs)    => findRightAcc(f, force xs, k)
+    }
 
     ///
     /// Returns the result of applying `f` to every element in `l` along with that element's index.
