@@ -296,7 +296,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       namedRule("MultipleUse") {
-        SP ~ Names.Namespace ~ "." ~ "{" ~ zeroOrMore(NameAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Use.UseMany
+        SP ~ Names.Namespace ~ atomic(".{") ~ zeroOrMore(NameAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Use.UseMany
       }
     }
 
@@ -310,7 +310,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       namedRule("MultipleTagUse") {
-        SP ~ Names.QualifiedType ~ "." ~ "{" ~ zeroOrMore(TagAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Use.UseManyTag
+        SP ~ Names.QualifiedType ~ atomic(".{") ~ zeroOrMore(TagAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Use.UseManyTag
       }
     }
 
@@ -1225,7 +1225,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
       }
 
-      namedRule("FunctionType") {
+      namedRule("Type") {
         SP ~ TypeList ~ optWS ~ (
           (atomic("~>") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.ImpureArrow) |
             (atomic("->") ~ optWS ~ Type ~ optional(WS ~ "&" ~ WS ~ Type) ~ SP ~> ParsedAst.Type.PolymorphicArrow)
@@ -1234,24 +1234,24 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Tuple: Rule1[ParsedAst.Type] = {
-      def Singleton: Rule1[ParsedAst.Type] = namedRule("TupleType") {
+      def Singleton: Rule1[ParsedAst.Type] = namedRule("Type") {
         "(" ~ optWS ~ Type ~ optWS ~ ")"
       }
 
-      def Tuple: Rule1[ParsedAst.Type] = namedRule("TupleType") {
+      def Tuple: Rule1[ParsedAst.Type] = namedRule("Type") {
         SP ~ "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Type.Tuple
       }
 
-      namedRule("TupleType") {
+      namedRule("Type") {
         Singleton | Tuple
       }
     }
 
-    def Record: Rule1[ParsedAst.Type] = namedRule("RecordType") {
+    def Record: Rule1[ParsedAst.Type] = namedRule("Type") {
       SP ~ "{" ~ optWS ~ zeroOrMore(RecordFieldType).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ optional(optWS ~ "|" ~ optWS ~ Names.Variable) ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.Record
     }
 
-    def RecordRow: Rule1[ParsedAst.Type] = namedRule("RecordRowType") {
+    def RecordRow: Rule1[ParsedAst.Type] = namedRule("Type") {
       SP ~ "(" ~ optWS ~ zeroOrMore(RecordFieldType).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ optional(optWS ~ "|" ~ optWS ~ Names.Variable) ~ optWS ~ ")" ~ SP ~> ParsedAst.Type.RecordRow
     }
 
@@ -1272,41 +1272,41 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         SP ~ Names.Predicate ~ optWS ~ "(" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ";" ~ optWS ~ Type ~ optWS ~ ")" ~ SP ~> ParsedAst.PredicateType.LatPredicateWithTypes
       }
 
-      rule {
+      namedRule("Type") {
         SP ~ atomic("#{") ~ optWS ~ zeroOrMore(RelPredicateWithTypes | LatPredicateWithTypes | PredicateWithAlias).separatedBy(optWS ~ "," ~ optWS) ~ optional(optWS ~ "|" ~ optWS ~ Names.Variable) ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.Schema
       }
     }
 
-    def Native: Rule1[ParsedAst.Type] = namedRule("NativeType") {
+    def Native: Rule1[ParsedAst.Type] = namedRule("Type") {
       SP ~ atomic("##") ~ Names.JavaName ~ SP ~> ParsedAst.Type.Native
     }
 
-    def True: Rule1[ParsedAst.Type] = rule {
+    def True: Rule1[ParsedAst.Type] = namedRule("Type") {
       SP ~ keyword("true") ~ SP ~> ParsedAst.Type.True
     }
 
-    def False: Rule1[ParsedAst.Type] = rule {
+    def False: Rule1[ParsedAst.Type] = namedRule("Type") {
       SP ~ keyword("false") ~ SP ~> ParsedAst.Type.False
     }
 
-    def Pure: Rule1[ParsedAst.Type] = rule {
+    def Pure: Rule1[ParsedAst.Type] = namedRule("Type") {
       SP ~ keyword("Pure") ~ SP ~> ParsedAst.Type.True
     }
 
-    def Impure: Rule1[ParsedAst.Type] = rule {
+    def Impure: Rule1[ParsedAst.Type] = namedRule("Type") {
       SP ~ keyword("Impure") ~ SP ~> ParsedAst.Type.False
     }
 
-    def Not: Rule1[ParsedAst.Type] = rule {
+    def Not: Rule1[ParsedAst.Type] = namedRule("Type") {
       // NB: We must not use Type here because it gives the wrong precedence.
       SP ~ keyword("not") ~ WS ~ Apply ~ SP ~> ParsedAst.Type.Not
     }
 
-    def Var: Rule1[ParsedAst.Type] = namedRule("TypeVariable") {
+    def Var: Rule1[ParsedAst.Type] = namedRule("Type") {
       SP ~ atomic(Names.Variable.named("TypeVariable")) ~ SP ~> ParsedAst.Type.Var
     }
 
-    def Ambiguous: Rule1[ParsedAst.Type] = namedRule("AmbiguousType") {
+    def Ambiguous: Rule1[ParsedAst.Type] = namedRule("Type") {
       SP ~ Names.QualifiedType ~ SP ~> ParsedAst.Type.Ambiguous
     }
 
@@ -1540,7 +1540,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       * Namespaces are lower or uppercase.
       */
     def Namespace: Rule1[Name.NName] = rule {
-      SP ~ oneOrMore(atomic(UpperCaseName.named("Namespace"))).separatedBy("/") ~ SP ~>
+      SP ~ oneOrMore(atomic(UpperCaseName.named("NamespaceName"))).separatedBy("/") ~ SP ~>
         ((sp1: SourcePosition, parts: Seq[Name.Ident], sp2: SourcePosition) => Name.NName(sp1, parts.toList, sp2))
     }
 
@@ -1580,7 +1580,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def QualifiedType: Rule1[Name.QName] = namedRule("QualifiedType")(atomic(UpperCaseQName.named("QualifiedType")))
 
-    def Variable: Rule1[Name.Ident] = rule {
+    def Variable: Rule1[Name.Ident] = namedRule("VariableName") {
       atomic((LowerCaseName | Wildcard | GreekName | MathName).named("VariableName"))
     }
 
@@ -1615,7 +1615,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Whitespace                                                              //
   /////////////////////////////////////////////////////////////////////////////
   def WS: Rule0 = namedRule("Whitespace") {
-    atomic((oneOrMore(" " | "\t" | NewLine | Comment)).named("Whitespace"))
+    quiet(atomic((oneOrMore(" " | "\t" | NewLine | Comment)).named("Whitespace")))
   }
 
   def optWS: Rule0 = namedRule("OptionalWhitespace") {
