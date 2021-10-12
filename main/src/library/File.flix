@@ -141,7 +141,7 @@ namespace File {
     /// Helper function for read.
     /// Converts a list of strings to a string
     ///
-    def readHelper(list: List[String]): String & Pure =
+    def readHelper(list: List[String]): String & Impure =
         List.foldLeft((x, y) -> x + "\n" + y, "", list)
 
 }
