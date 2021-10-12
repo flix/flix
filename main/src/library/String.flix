@@ -1357,23 +1357,21 @@ namespace String {
         }
 
     ///
-    /// Returns `Some(suffix)` of string `s` if its prefix matches `sub`.
+    /// Returns `Some(suffix)` of string `s` if its prefix matches `substr`.
     ///
-    @Time(length(s) - length(sub)) @Space(length(s) - length(sub))
-    pub def stripPrefix(sub: String, s: String): Option[String] =
-        if (not startsWith({prefix = sub}, s))
+    pub def stripPrefix(substr: {substr :: String}, s: String): Option[String] =
+        if (not startsWith(s, substr.substr))
             None
         else
-            Some(dropLeft(length(sub), s))
+            Some(dropLeft(length(substr.substr), s))
 
     ///
-    /// Returns `Some(prefix)` of string `s` if its suffix matches `sub`.
+    /// Returns `Some(prefix)` of string `s` if its suffix matches `substr`.
     ///
-    @Time(length(s) - length(sub)) @Space(length(s) - length(sub))
-    pub def stripSuffix(sub: String, s: String): Option[String] =
-        if (not endsWith({suffix = sub}, s))
+    pub def stripSuffix(substr: {substr :: String}, s: String): Option[String] =
+        if (not endsWith({suffix = substr.substr}, s))
             None
         else
-            Some(dropRight(length(sub), s))
+            Some(dropRight(length(substr.substr), s))
 
 }

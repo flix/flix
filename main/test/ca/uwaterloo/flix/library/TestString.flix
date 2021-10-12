@@ -3289,50 +3289,50 @@ def countSubstring12(): Bool = String.countSubstring({substr = "abc"}, "aBC::abc
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def stripPrefix01(): Bool = String.stripPrefix("", "") == Some("")
+def stripPrefix01(): Bool = String.stripPrefix({substr = ""}, "") == Some("")
 
 @test
-def stripPrefix02(): Bool = String.stripPrefix("", "abc") == Some("abc")
+def stripPrefix02(): Bool = String.stripPrefix({substr = ""}, "abc") == Some("abc")
 
 @test
-def stripPrefix03(): Bool = String.stripPrefix("abc", "") == None
+def stripPrefix03(): Bool = String.stripPrefix({substr = "abc"}, "") == None
 
 @test
-def stripPrefix04(): Bool = String.stripPrefix("abc", "abc") == Some("")
+def stripPrefix04(): Bool = String.stripPrefix({substr = "abc"}, "abc") == Some("")
 
 @test
-def stripPrefix05(): Bool = String.stripPrefix("abc", "abcdef") == Some("def")
+def stripPrefix05(): Bool = String.stripPrefix({substr = "abc"}, "abcdef") == Some("def")
 
 @test
-def stripPrefix06(): Bool = String.stripPrefix("def", "abcdef") == None
+def stripPrefix06(): Bool = String.stripPrefix({substr = "def"}, "abcdef") == None
 
 @test
-def stripPrefix07(): Bool = String.stripPrefix("abc", "ABCDEF") == None
+def stripPrefix07(): Bool = String.stripPrefix({substr = "abc"}, "ABCDEF") == None
 
 /////////////////////////////////////////////////////////////////////////////
 // stripSuffix                                                            //
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def stripSuffix01(): Bool = String.stripSuffix("", "") == Some("")
+def stripSuffix01(): Bool = String.stripSuffix({substr = ""}, "") == Some("")
 
 @test
-def stripSuffix02(): Bool = String.stripSuffix("", "abc") == Some("abc")
+def stripSuffix02(): Bool = String.stripSuffix({substr = ""}, "abc") == Some("abc")
 
 @test
-def stripSuffix03(): Bool = String.stripSuffix("abc", "") == None
+def stripSuffix03(): Bool = String.stripSuffix({substr = "abc"}, "") == None
 
 @test
-def stripSuffix04(): Bool = String.stripSuffix("abc", "abc") == Some("")
+def stripSuffix04(): Bool = String.stripSuffix({substr = "abc"}, "abc") == Some("")
 
 @test
-def stripSuffix05(): Bool = String.stripSuffix("abc", "abcdef") == None
+def stripSuffix05(): Bool = String.stripSuffix({substr = "abc"}, "abcdef") == None
 
 @test
-def stripSuffix06(): Bool = String.stripSuffix("def", "abcdef") == Some("abc")
+def stripSuffix06(): Bool = String.stripSuffix({substr = "def"}, "abcdef") == Some("abc")
 
 @test
-def stripSuffix07(): Bool = String.stripPrefix("abc", "ABCDEF") == None
+def stripSuffix07(): Bool = String.stripPrefix({substr = "abc"}, "ABCDEF") == None
 
 }
 
