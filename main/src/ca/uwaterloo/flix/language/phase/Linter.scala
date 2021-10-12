@@ -126,7 +126,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.Sig(_, _, _) => Nil
 
-      case Expression.Hole(_, _, _, _) => Nil
+      case Expression.Hole(_, _, _) => Nil
 
       case Expression.Lambda(_, exp, _, _) => visitExp(exp, lint0)
 
@@ -241,6 +241,8 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       case Expression.FixpointProjectOut(_, exp, _, _, _) => visitExp(exp, lint0)
 
       case Expression.Reify(_, _, _, _) => Nil
+
+      case Expression.ReifyType(_, _, _, _) => Nil
 
     }
 
@@ -373,7 +375,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case (Expression.Def(sym1, _, _), Expression.Def(sym2, _, _)) if sym1 == sym2 => Some(Substitution.empty)
 
-    case (Expression.Hole(sym1, _, _, _), Expression.Hole(sym2, _, _, _)) if sym1 == sym2 => Some(Substitution.empty)
+    case (Expression.Hole(sym1, _, _), Expression.Hole(sym2, _, _)) if sym1 == sym2 => Some(Substitution.empty)
 
     case (Expression.Lambda(fparam1, exp1, _, _), Expression.Lambda(fparam2, exp2, _, _)) =>
       for {
@@ -734,7 +736,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.Sig(_, _, _) => exp0
 
-      case Expression.Hole(_, _, _, _) => exp0
+      case Expression.Hole(_, _, _) => exp0
 
       case Expression.Lambda(fparam, exp, tpe, loc) =>
         val f = apply(fparam)
@@ -957,6 +959,9 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.Reify(t0, tpe, eff, loc) =>
         Expression.Reify(t0, tpe, eff, loc)
+
+      case Expression.ReifyType(t0, tpe, eff, loc) =>
+        Expression.ReifyType(t0, tpe, eff, loc)
 
       case Expression.Existential(_, _, _) => throw InternalCompilerException(s"Unexpected expression: $exp0.")
 

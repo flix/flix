@@ -1740,4 +1740,35 @@ namespace Array {
             forWithAccum(lo+1, hi, ac1, f)
         }
 
+    ///
+    /// Returns the sum of all elements in the list `a`.
+    ///
+    pub def sum(a: Array[Int32]): Int32 & Impure =
+        sumAcc(a, 0, 0)
+
+    ///
+    /// Helper function for `sum`.
+    ///
+    def sumAcc(a: Array[Int32], i: Int32, acc: Int32): Int32 & Impure =
+        if (i < length(a))
+            sumAcc(a, i + 1, a[i] + acc)
+        else
+            acc
+
+    // TODO: Add documentation.
+    // TODO: Add tests
+    // TODO: Rename to slice?
+    def _copyOfRange(b: Int32, e: Int32, a: Array[a]): Array[a] & Impure =
+        match (reifyType a) {
+            case ReifiedInt32 =>
+                let arr = a as Array[Int32];
+                import java.util.Arrays:copyOfRange(Array[Int32], Int32, Int32) as copy;
+                copy(arr, b, e) as Array[a]
+            case ReifiedInt64 =>
+                let arr = a as Array[Int64];
+                import java.util.Arrays:copyOfRange(Array[Int64], Int32, Int32) as copy;
+                copy(arr, b, e) as Array[a]
+            case _ => ??? // TODO
+        }
+
 }

@@ -400,7 +400,7 @@ namespace Set {
     /// Returns `xs` as a mutable set.
     ///
     @Time(1) @Space(1)
-    pub def toMut(xs: Set[a]): MutSet[a] & Impure =
+    pub def toMutSet(xs: Set[a]): MutSet[a] & Impure =
         MutSet(ref xs)
 
     ///
@@ -488,5 +488,11 @@ namespace Set {
     ///
     def rangeHelper(b: Int32, n: Int32, acc: Set[Int32]): Set[Int32] =
         if (n < b) acc else rangeHelper(b, n - 1, insert(n, acc))
+
+    ///
+    /// Returns the set `s` as a `LazyList`.
+    ///
+    pub def toLazyList(s: Set[a]): LazyList[a] =
+        foldRight((x, acc) -> ECons(x, acc), ENil, s)
 
 }

@@ -231,7 +231,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
 
     case ResolvedAst.Expression.Sig(sym, loc) => KindedAst.Expression.Sig(sym, Type.freshVar(Kind.Star, loc), loc).toSuccess
 
-    case ResolvedAst.Expression.Hole(sym, loc) => KindedAst.Expression.Hole(sym, Type.freshVar(Kind.Star, loc), Type.freshVar(Kind.Bool, loc), loc).toSuccess
+    case ResolvedAst.Expression.Hole(sym, loc) => KindedAst.Expression.Hole(sym, Type.freshVar(Kind.Star, loc), loc).toSuccess
 
     case ResolvedAst.Expression.Unit(loc) => KindedAst.Expression.Unit(loc).toSuccess
 
@@ -552,6 +552,11 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       for {
         t <- visitType(t0, Kind.Bool, kenv, root)
       } yield KindedAst.Expression.Reify(t, loc)
+
+    case ResolvedAst.Expression.ReifyType(t0, loc) =>
+      for {
+        t <- visitType(t0, Kind.Star, kenv, root)
+      } yield KindedAst.Expression.ReifyType(t, loc)
 
   }
 

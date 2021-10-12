@@ -1260,4 +1260,21 @@ def query07(): Bool =
     @test
     def maximumBy04(): Bool = Set.maximumBy((x, y) -> x <=> y, Set.range(5, 55)) == Some(54)
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toLazyList                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toLazyList01(): Bool =
+        Set.empty(): Set[Unit] |> Set.toLazyList == LazyList.empty()
+
+    @test
+    def toLazyList02(): Bool =
+        Set.range(-1000, 1000) |> Set.toLazyList == LazyList.range(-1000, 1000)
+
+    @test
+    def toLazyList03(): Bool =
+        Set.range(-1000, 1000) |> Set.toLazyList |> LazyList.toSet == Set.range(-1000, 1000)
+
 }

@@ -286,7 +286,7 @@ namespace TestLazyList2 {
     @test
     def filterMapFusion01(): Bool & Impure =
         let l = ref Nil;
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |>
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.filterMap(x -> { l := "a" :: deref l; Some(x) }) |>
         LazyList.filterMap(x -> { l := "b" :: deref l; Some(x) });
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
@@ -294,7 +294,7 @@ namespace TestLazyList2 {
     @test
     def filterMapFusion02(): Bool & Impure =
         let l = ref Nil;
-        (1 :: 2 :: 3 :: Nil) |> List.toLazy |>
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.filterMap(x -> { l := "a" :: deref l; Some(x) } as & Pure) |>
         LazyList.filterMap(x -> { l := "b" :: deref l; Some(x) } as & Pure) |>
         LazyList.toList as & Impure;
@@ -536,5 +536,70 @@ namespace TestLazyList2 {
     def span23(): Bool =
         LazyList.span(i -> i > 3, (ECons(4, ECons(6, ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil))))))))))))) == (ECons(4, ECons(6, ENil)), ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil))))))))))
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sum                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sum01(): Bool =
+        List.toLazyList(Nil) |> LazyList.sum == 0
+
+    @test
+    def sum02(): Bool =
+        List.toLazyList(1 :: Nil) |> LazyList.sum == 1
+
+    @test
+    def sum03(): Bool =
+        List.toLazyList(1 :: 2 :: 3 :: Nil) |> LazyList.sum == 6
+
+    @test
+    def sum04(): Bool =
+        List.toLazyList(1 :: 2 :: 3 :: -3 :: Nil) |> LazyList.sum == 3
+
+    @test
+    def sum05(): Bool =
+        List.toLazyList(-1 :: -2 :: -3 :: -4 :: Nil) |> LazyList.sum == -10
+
+    @test
+    def sum06(): Bool =
+        List.toLazyList(10 :: -10 :: Nil) |> LazyList.sum == 0
+
+    @test
+    def sum07(): Bool =
+        List.range(1, 101) |> List.toLazyList |> LazyList.sum == 5050
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // order                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def order01(): Bool =
+        ENil: LazyList[Unit] <=> ENil: LazyList[Unit] == EqualTo
+
+    @test
+    def order02(): Bool =
+        ((1 :: Nil) |> List.toLazyList) <=> ENil: LazyList[Int32] == GreaterThan
+
+    @test
+    def order03(): Bool =
+        ENil: LazyList[Int32] <=> ((1 :: Nil) |> List.toLazyList) == LessThan
+
+    @test
+    def order04(): Bool =
+        ((1 :: Nil) |> List.toLazyList) <=> ((1 :: Nil) |> List.toLazyList) == EqualTo
+
+    @test
+    def order05(): Bool =
+        ((2 :: 1 :: Nil) |> List.toLazyList) <=> ((1 :: 1 :: Nil) |> List.toLazyList) == GreaterThan
+
+    @test
+    def order06(): Bool =
+        ((1 :: 1 :: Nil) |> List.toLazyList) <=> ((2 :: 1 :: Nil) |> List.toLazyList) == LessThan
+
+    @test
+    def order07(): Bool =
+        ((1 :: Nil) |> List.toLazyList) <=> ((1 :: 1 :: Nil) |> List.toLazyList) == LessThan
 
 }

@@ -561,7 +561,7 @@ namespace Map {
     /// Returns `m` as a mutable set.
     ///
     @Time(1) @Space(1)
-    pub def toMut(m: Map[k, v]): MutMap[k, v] & Impure =
+    pub def toMutMap(m: Map[k, v]): MutMap[k, v] & Impure =
         MutMap(ref m)
 
     ///
@@ -577,6 +577,12 @@ namespace Map {
     @Time(size(m)) @Space(size(m))
     pub def toSet(m: Map[k, v]): Set[(k, v)] with Order[k], Order[v] =
         foldLeftWithKey((acc, k, v) -> Set.insert((k, v), acc), Set.empty(), m)
+
+    ///
+    /// Returns the map `m` as a `LazyList` of key-value pairs.
+    ///
+    pub def toLazyList(m: Map[k, v]): LazyList[(k, v)] =
+        foldRightWithKey((k, v, acc) -> ECons((k, v), acc), ENil, m)
 
     ///
     /// Applies `f` to every element of `xs`.

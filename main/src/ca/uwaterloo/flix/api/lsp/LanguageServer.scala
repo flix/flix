@@ -17,10 +17,10 @@ package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.provider._
 import ca.uwaterloo.flix.api.{Flix, Version}
-import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.debug._
+import ca.uwaterloo.flix.language.phase.extra.CodeHinter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
 import ca.uwaterloo.flix.util.vt.TerminalContext
@@ -176,8 +176,10 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       case JString("lsp/highlight") => Request.parseHighlight(json)
       case JString("lsp/hover") => Request.parseHover(json)
       case JString("lsp/goto") => Request.parseGoto(json)
+      case JString("lsp/implementation") => Request.parseImplementation(json)
       case JString("lsp/rename") => Request.parseRename(json)
       case JString("lsp/documentSymbols") => Request.parseDocumentSymbols(json)
+      case JString("lsp/workspaceSymbols") => Request.parseWorkspaceSymbols(json)
       case JString("lsp/uses") => Request.parseUses(json)
       case JString("lsp/semanticTokens") => Request.parseSemanticTokens(json)
 
@@ -241,11 +243,17 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     case Request.Goto(id, uri, pos) =>
       ("id" -> id) ~ GotoProvider.processGoto(uri, pos)(index, root)
 
+    case Request.Implementation(id, uri, pos) =>
+      ("id" -> id) ~ ("status" -> "success") ~ ("result" -> ImplementationProvider.processImplementation(uri, pos)(root).map(_.toJSON))
+
     case Request.Rename(id, newName, uri, pos) =>
       ("id" -> id) ~ RenameProvider.processRename(newName, uri, pos)(index, root)
 
     case Request.DocumentSymbols(id, uri) =>
       ("id" -> id) ~ ("status" -> "success") ~ ("result" -> SymbolProvider.processDocumentSymbols(uri)(root).map(_.toJSON))
+
+    case Request.WorkspaceSymbols(id, query) =>
+      ("id" -> id) ~ ("status" -> "success") ~ ("result" -> SymbolProvider.processWorkspaceSymbols(query)(root).map(_.toJSON))
 
     case Request.Uses(id, uri, pos) =>
       ("id" -> id) ~ FindReferencesProvider.findRefs(uri, pos)(index, root)
@@ -287,8 +295,18 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
           // Compute elapsed time.
           val e = System.nanoTime() - t
 
-          // Send back a status message.
-          ("id" -> requestId) ~ ("status" -> "success") ~ ("time" -> e)
+          // Compute Code Quality hints.
+          val hints = CodeHinter.run(root)(flix)
+
+          hints match {
+            case Success(_) =>
+              // Case 1: No code hints.
+              ("id" -> requestId) ~ ("status" -> "success") ~ ("time" -> e)
+            case Failure(errors) =>
+              // Case 2: Code hints are available.
+              val results = PublishDiagnosticsParams.from(errors)
+              ("id" -> requestId) ~ ("status" -> "failure") ~ ("result" -> results.map(_.toJSON))
+          }
 
         case Failure(errors) =>
           // Case 2: Compilation failed. Send back the error messages.

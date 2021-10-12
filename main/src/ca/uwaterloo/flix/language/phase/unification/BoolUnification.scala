@@ -115,7 +115,10 @@ object BoolUnification {
       val t0 = Substitution.singleton(x, Type.False)(f)
       val t1 = Substitution.singleton(x, Type.True)(f)
       val se = successiveVariableElimination(mkAnd(t0, t1), xs)
-      val st = Substitution.singleton(x, mkOr(se(t0), mkAnd(Type.freshVar(Kind.Bool, f.loc), mkNot(se(t1)))))
+
+      // Investigate impact on Monomorph semantics:
+      val st = Substitution.singleton(x, mkOr(se(t0), mkAnd(x, mkNot(se(t1)))))
+      //val st = Substitution.singleton(x, mkOr(se(t0), mkAnd(Type.freshVar(Kind.Bool, f.loc), mkNot(se(t1)))))
       st ++ se
   }
 

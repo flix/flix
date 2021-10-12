@@ -497,7 +497,7 @@ object ParsedAst {
       * @param exps the arguments.
       * @param sp2  the position of the last character in the expression.
       */
-    case class Intrinsic(sp1: SourcePosition, op: Name.Ident, exps: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+    case class Intrinsic(sp1: SourcePosition, op: Name.Ident, exps: Seq[ParsedAst.Argument], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Apply Expression (function call).
@@ -506,7 +506,7 @@ object ParsedAst {
       * @param args   the arguments.
       * @param sp2    the position of the last character in the expression.
       */
-    case class Apply(lambda: ParsedAst.Expression, args: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+    case class Apply(lambda: ParsedAst.Expression, args: Seq[ParsedAst.Argument], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Infix Apply.
@@ -530,7 +530,7 @@ object ParsedAst {
       * @param es   the the remaining arguments.
       * @param sp2  the position of the last character in the expression.
       */
-    case class Postfix(e: ParsedAst.Expression, name: Name.Ident, es: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+    case class Postfix(e: ParsedAst.Expression, name: Name.Ident, es: Seq[ParsedAst.Argument], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Lambda Expression.
@@ -1030,6 +1030,15 @@ object ParsedAst {
       */
     case class Reify(sp1: SourcePosition, t: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Expression
 
+    /**
+      * ReifyType Expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param t   the type to reify.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class ReifyType(sp1: SourcePosition, t: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Expression
+
   }
 
   /**
@@ -1219,7 +1228,7 @@ object ParsedAst {
         * @param terms the terms of the predicate.
         * @param sp2   the position of the last character in the predicate.
         */
-      case class Filter(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate.Body
+      case class Filter(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Argument], sp2: SourcePosition) extends ParsedAst.Predicate.Body
 
     }
 
@@ -1467,6 +1476,30 @@ object ParsedAst {
   }
 
   /**
+    * An argument to a function application.
+    */
+  sealed trait Argument
+
+  object Argument {
+
+    /**
+      * A named argument.
+      *
+      * @param name the optional argument name.
+      * @param exp  the value of the argument.
+      * @param sp2  the position of the last character in the argument.
+      */
+    case class Named(name: Name.Ident, exp: ParsedAst.Expression, sp2: SourcePosition) extends Argument
+
+    /**
+      * An unnamed argument.
+      *
+      * @param exp  the value of the argument.
+      */
+    case class Unnamed(exp: ParsedAst.Expression) extends Argument
+  }
+
+  /**
     * Attribute.
     *
     * @param sp1   the position of the first character in the attribute.
@@ -1599,7 +1632,7 @@ object ParsedAst {
     * @param args  the arguments passed to the annotation.
     * @param sp2   the position of the last character in the annotation.
     */
-  case class Annotation(sp1: SourcePosition, ident: Name.Ident, args: Option[Seq[ParsedAst.Expression]], sp2: SourcePosition)
+  case class Annotation(sp1: SourcePosition, ident: Name.Ident, args: Option[Seq[ParsedAst.Argument]], sp2: SourcePosition)
 
   /**
     * String Interpolation Part.

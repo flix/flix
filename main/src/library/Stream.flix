@@ -222,4 +222,46 @@ namespace Stream {
     pub def forall(f: a -> Bool & ef, s: Stream[a, s]): Bool & ef =
         foldLeft((acc, x) -> f(x) and acc, true, s)
 
+    ///
+    /// Returns the first `n` elements of `s`.
+    ///
+    pub def take(n: Int32, s: Stream[a, s]): Stream[a, (Int32, s)] =
+        let Stream(next0, s0) = s;
+        let next1 = (t: (Int32, s)) -> {
+            if (fst(t) <= 0)
+                Done
+            else
+                match next0(snd(t)) {
+                    case Done         => Done
+                    case Skip(xs)     => Skip (   (fst(t)    , xs))
+                    case Yield(x, xs) => Yield(x, (fst(t) - 1, xs))
+                }};
+        Stream(next1, (n, s0))
+
+    ///
+    /// Returns `s2` appended to `s1`.
+    ///
+    pub def append(s1: Stream[a, s], s2: Stream[a, t]): Stream[a, Either[s, t]] =
+        let Stream(next1, st1) = s1;
+        let Stream(next2, st2) = s2;
+        let nextRight = s -> match next2(s) {
+            case Done         => Done
+            case Skip(ys)     => Skip (   Right(ys))
+            case Yield(y, ys) => Yield(y, Right(ys))
+        };
+        let nextLeft = s -> match next1(s) {
+            case Done         => nextRight(st2)
+            case Skip(xs)     => Skip (   Left(xs))
+            case Yield(x, xs) => Yield(x, Left(xs))
+        };
+        let appendNext = s -> match s {
+            case Left (st) => nextLeft(st)
+            case Right(st) => nextRight(st)
+        };
+        Stream(appendNext, Left(st1))
+
+    enum Either[a, b] {
+        case Left(a)
+        case Right(b)
+    }
 }
