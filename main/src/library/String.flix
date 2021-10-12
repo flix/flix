@@ -1360,7 +1360,7 @@ namespace String {
     /// Returns `Some(suffix)` of string `s` if its prefix matches `substr`.
     ///
     pub def stripPrefix(substr: {substr :: String}, s: String): Option[String] =
-        if (not startsWith(s, substr.substr))
+        if (not startsWith({prefix = substr.substr}, s))
             None
         else
             Some(dropLeft(length(substr.substr), s))
