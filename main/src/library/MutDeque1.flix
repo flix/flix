@@ -32,7 +32,7 @@ namespace MutDeque {
         let MutDeque(a, f, b) = d;
         let f1 = deref f;
         let b1 = deref b;
-        if (f1 < b1) b1 - f1 else Array.size(deref a) - (f1 - b1)
+        if (f1 < b1) b1 - f1 else Array.length(deref a) - (f1 - b1)
 
     pub def isEmpty(d: MutDeque[a]): Bool & Impure =
         let MutDeque(_, f, b) = d;
@@ -53,9 +53,9 @@ namespace MutDeque {
     // TODO: Save derefs in vars
     pub def popBack(d: MutDeque[a]): a & Impure =
         let MutDeque(a, _, b) = d;
+        let c = Array.length(deref a);
         b := (deref b - 1) % c;
         let x = (deref a)[deref b];
-        let c = Array.length(deref a);
         x
 
     // TODO: Expand array if elements > capacity / 2
@@ -66,8 +66,9 @@ namespace MutDeque {
         f := (deref f - 1) % c;
         a1[deref f] = x;
         a := a1;
+        ()
 
     // TODO: Expand array if elements > capacity / 2
-    pub def pushBack(x: a, d: MutDeque[a]): Unit & Impure = ???
+   // pub def pushBack(x: a, d: MutDeque[a]): Unit & Impure = ???
 
 }
