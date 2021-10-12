@@ -24,4 +24,79 @@ namespace TestMutDeque {
     def size01(): Bool & Impure =
         MutDeque.size(MutDeque.new()) == 0
 
+    @test
+    def size02(): Bool & Impure =
+        let m = MutDeque.new();
+
+        MutDeque.pushBack(1, m);
+        MutDeque.pushBack(1, m);
+        MutDeque.pushBack(1, m);
+        MutDeque.pushBack(1, m);
+
+        MutDeque.size(m) == 4
+
+    @test
+    def size03(): Bool & Impure =
+        let m = MutDeque.new();
+
+        MutDeque.pushBack(1, m);
+        MutDeque.pushBack(1, m);
+        MutDeque.pushBack(1, m);
+        MutDeque.pushBack(1, m);
+
+        MutDeque.pushBack(1, m);
+        MutDeque.pushBack(1, m);
+        MutDeque.pushBack(1, m);
+        MutDeque.pushBack(1, m);
+
+        MutDeque.size(m) == 8
+
+    @test
+    def size04(): Bool & Impure =
+        let m = MutDeque.new();
+
+        MutDeque.pushFront(1, m);
+        MutDeque.pushFront(1, m);
+        MutDeque.pushFront(1, m);
+        MutDeque.pushFront(1, m);
+
+        MutDeque.pushFront(1, m);
+        MutDeque.pushFront(1, m);
+        MutDeque.pushFront(1, m);
+        MutDeque.pushFront(1, m);
+
+        MutDeque.size(m) == 8
+
+    @test
+    def size05(): Bool & Impure =
+        let m = MutDeque.new();
+
+        MutDeque.pushFront(1, m);
+        MutDeque.pushFront(1, m);
+        MutDeque.pushFront(1, m);
+        MutDeque.pushFront(1, m);
+
+        MutDeque.popFront(m);
+        MutDeque.popFront(m);
+
+        MutDeque.size(m) == 2
+
+
+    @test
+    def size06(): Bool & Impure =
+        let m = MutDeque.new();
+
+        MutDeque.pushFront(1, m);
+        MutDeque.pushFront(1, m);
+        MutDeque.pushFront(1, m);
+        MutDeque.pushFront(1, m);
+
+        MutDeque.popFront(m);
+        MutDeque.popFront(m);
+        MutDeque.popFront(m);
+        MutDeque.popFront(m);
+
+        MutDeque.size(m) == 0
+
+    // TODO: Add Test for wrap-around (i.e. when back < front)
 }
