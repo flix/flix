@@ -35,7 +35,13 @@ object SimpleType {
 
   case class ImpureArrow(args: List[SimpleType], ret: SimpleType) extends SimpleType
 
-  case class
+  case class Record(fields: List[RecordFieldType], rest: Option[SimpleType.Var]) extends SimpleType
+
+  case object RecordConstructor extends SimpleType
+
+  case class RecordHead(field: RecordFieldType) extends SimpleType
+
+  case class RecordFieldType(name: String, tpe: SimpleType)
 
   def fromWellKindedType(t: Type): SimpleType = t match {
     case Type.KindedVar(id, kind, loc, rigidity, text) => Var(id, text.get) // MATT how to handle vars? alpha-renaming, etc.
