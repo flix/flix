@@ -723,40 +723,7 @@ namespace TestDemandList {
     def forall10(): Bool =
         (11 :: 9 :: 31 :: Nil) |> List.toDemandList |> DemandList.forall(i -> i > 3)
 
-/*
-    /////////////////////////////////////////////////////////////////////////////
-    // zip                                                                     //
-    /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def zip01(): Bool =
-        DemandList.zip(List.toDemandList(Nil: List[Unit]), List.toDemandList(Nil: List[Unit])) |> DemandList.toList == Nil
-
-    @test
-    def zip02(): Bool =
-        DemandList.zip(List.toDemandList(1 :: Nil), List.toDemandList(Nil: List[Unit])) |> DemandList.toList == Nil
-
-    @test
-    def zip03(): Bool =
-        DemandList.zip(List.toDemandList(Nil: List[Unit]), List.toDemandList(2 :: Nil)) |> DemandList.toList == Nil
-
-    @test
-    def zip04(): Bool =
-        DemandList.zip(List.toDemandList(1 :: Nil), List.toDemandList(2 :: Nil)) |> DemandList.toList == (1, 2) :: Nil
-
-    @test
-    def zip05(): Bool =
-        DemandList.zip(List.toDemandList(1 :: 3 :: Nil), List.toDemandList(2 :: 4 :: Nil)) |> DemandList.toList == (1, 2) :: (3, 4) :: Nil
-
-    @test
-    def zip06(): Bool =
-        DemandList.zip(List.toDemandList(1 :: 3 :: 5 :: Nil), List.toDemandList(2 :: 4 :: 6 :: Nil)) |> DemandList.toList == (1, 2) :: (3, 4) :: (5, 6) :: Nil
-
-    @test
-    def zip07(): Bool =
-        DemandList.zip(List.toDemandList(1 :: 3 :: 5 :: 7 :: Nil), List.toDemandList(2 :: 4 :: 6 :: 8 :: Nil)) |> DemandList.toList == (1, 2) :: (3, 4) :: (5, 6) :: (7, 8) :: Nil
-
-*/
     /////////////////////////////////////////////////////////////////////////////
     // takeWhile (pure)                                                        //
     /////////////////////////////////////////////////////////////////////////////
