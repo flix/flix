@@ -47,7 +47,7 @@ namespace MutDeque {
         let f1 = deref f;
         let x = a1[f1];
         let c = Array.length(a1);
-        f := (f1 + 1) % c;
+        f := mod(f1 + 1, c);
         x
 
     // TODO: Collapse array if load factor < threshold
@@ -55,7 +55,7 @@ namespace MutDeque {
         let MutDeque(a, _, b) = d;
         let a1 = deref a;
         let c = Array.length(a1);
-        let b1 = (deref b - 1) % c;
+        let b1 = mod(deref b - 1, c);
         let x = a1[b1];
         b := b1;
         x
@@ -65,7 +65,7 @@ namespace MutDeque {
         let MutDeque(a, f, _) = d;
         let a1 = deref a;
         let c = Array.length(a1);
-        let f1 = (deref f - 1) % c;
+        let f1 = mod(deref f - 1, c);
         a1[f1] = x;
         a := a1;
         f := f1
@@ -78,6 +78,11 @@ namespace MutDeque {
         let b1 = deref b;
         a1[b1] = x;
         a := a1;
-        b := (b1 + 1) % c
+        b := mod(b1 + 1, c)
+
+    ///
+    /// Returns `a` mod `b`.
+    ///
+    def mod(a: Int32, _b: Int32): Int32 = a
 
 }
