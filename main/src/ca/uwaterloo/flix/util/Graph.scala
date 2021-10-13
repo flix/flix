@@ -49,9 +49,11 @@ object Graph {
         Some(cycle)
       } else {
         // Case 3: New node. Check all its adjacent nodes.
-        val result = getAdj(node).flatMap {
-          adj => visit(adj, node :: path)
-        }.headOption
+        val cycles = for {
+          adj <- getAdj(node)
+          cycle <- visit(adj, node :: path)
+        } yield cycle
+        val result = cycles.headOption
 
         if (result.isEmpty) {
           // Add this node to the list of sorted nodes if there is no cycle.
