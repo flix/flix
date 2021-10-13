@@ -27,15 +27,46 @@ object SimpleType {
 
   // Tycons
 
-  case object Unit
-  // MATT ... primitives
-  // MATT other stuff
+  case object Unit extends SimpleType
+
+  case object Bool extends SimpleType
+
+  case object Char extends SimpleType
+
+  case object Float32 extends SimpleType
+
+  case object Float64 extends SimpleType
+
+  case object Int8 extends SimpleType
+
+  case object Int16 extends SimpleType
+
+  case object Int32 extends SimpleType
+
+  case object Int64 extends SimpleType
+
+  case object BigInt extends SimpleType
+
+  case object Str extends SimpleType
+
+  case object Array extends SimpleType
+
+  case object Ref extends SimpleType
+
+  case object Channel extends SimpleType
+
+  case object Lazy extends SimpleType
 
   case object True extends SimpleType
 
   case object False extends SimpleType
 
+  ///
+  /// Compound Types.
+  ///
   case object RecordRowEmpty extends SimpleType
+
+  case object RecordEmpty extends SimpleType
 
   case object RecordConstructor extends SimpleType
 
@@ -61,7 +92,7 @@ object SimpleType {
   case class RecordRowHead(name: String, tpe: SimpleType) extends SimpleType
 
   // MATT change class name
-  case class Name(name: String) extends SimpleType
+  case class Name(name: String) extends SimpleType // MATT use only for non-builtins
 
   case class RecordFieldType(name: String, tpe: SimpleType)
 
@@ -95,10 +126,24 @@ object SimpleType {
         }
       case TypeConstructor.RecordRowEmpty => RecordRowEmpty
       case TypeConstructor.RecordRowExtend(field) =>
-        // MATT flatten somehow
-        // MATT then go by case
-        // MATT alphabetize fields
+        val args = t.typeArguments.map(fromWellKindedType)
+        args match {
+          case Nil => RecordRowConstructor(field.name)
+          case tpe :: Nil => RecordRowHead(field.name, tpe)
+          case _ :: _ :: Nil => fromRecordRow(t)
+          case _ => ??? // MATT ICE
+        }
       case TypeConstructor.Record =>
+        val args = t.typeArguments.map(fromWellKindedType)
+        args match {
+          case Nil => RecordConstructor
+          case tpe :: Nil => tpe match {
+            case RecordRowEmpty => RecordEmpty
+            case RecordRow(fields, rest) => Record(fields, rest)
+            case tvar: Var => Record(Nil, Some(tvar))
+            case _ => ??? // MATT ICE
+          }
+        }
       case TypeConstructor.SchemaRowEmpty =>
       case TypeConstructor.SchemaRowExtend(pred) =>
       case TypeConstructor.Schema =>
@@ -127,5 +172,30 @@ object SimpleType {
   private def mkApply(base: SimpleType, args: List[SimpleType]): SimpleType = args match {
     case Nil => base
     case _ :: _ => Apply(base, args)
+  }
+
+  // MATT docs
+  private def fromRecordRow(row0: Type): SimpleType = {
+    def visit(row: Type): SimpleType = row match {
+      // MATT case docs
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(name), _), tpe, _), rest, _) =>
+        val fieldType = RecordFieldType(name.name, fromWellKindedType(tpe))
+        fromRecordRow(rest) match {
+          case SimpleType.RecordRowEmpty => SimpleType.RecordRow(fieldType :: Nil, None)
+          case SimpleType.RecordRow(fields, rest) => SimpleType.RecordRow(fieldType :: fields, rest) // MATT shadow
+          case tvar: SimpleType.Var => SimpleType.RecordRow(fieldType :: Nil, Some(tvar))
+          case _ => ??? // MATT ICE
+        }
+      case Type.Cst(TypeConstructor.RecordRowEmpty, _) => SimpleType.RecordRowEmpty
+      case Type.KindedVar(id, kind, loc, rigidity, text) => SimpleType.Var(id, text.get) // MATT handle no text
+      case _ => ??? // MATT ICE
+    }
+
+    // sort the fields after converting
+    visit(row0) match {
+      case RecordRowEmpty => RecordRowEmpty
+      case RecordRow(fields, rest) => RecordRow(fields.sortBy(_.name), rest)
+      case _ => ??? // MATT ICE (do I need var here?)
+    }
   }
 }
