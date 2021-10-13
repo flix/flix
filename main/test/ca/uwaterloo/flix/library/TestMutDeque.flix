@@ -65,7 +65,11 @@ namespace TestMutDeque {
         MutDeque.pushFront(1, m);
         MutDeque.pushFront(1, m);
 
-        MutDeque.size(m) == 8
+        MutDeque.pushFront(1, m);
+        MutDeque.pushFront(1, m);
+        MutDeque.pushFront(1, m);
+
+        MutDeque.size(m) == 11
 
     @test
     def size05(): Bool & Impure =
@@ -98,5 +102,4 @@ namespace TestMutDeque {
 
         MutDeque.size(m) == 0
 
-    // TODO: Add Test for wrap-around (i.e. when back < front)
 }
