@@ -7,7 +7,7 @@ object Graph {
   /**
     * A result of a topological sort.
     */
-  sealed trait TopSortResult[Node]
+  sealed trait TopSortResult[N]
   object TopSortResult {
 
     /**
@@ -16,7 +16,7 @@ object Graph {
       * Adjacency is from left to right:
       * `[n1, n2, n3]` indicates a cycle `n1 -> n2 -> n3 -> n1`
       */
-    case class Cycle[Node](path: List[Node]) extends TopSortResult[Node]
+    case class Cycle[N](path: List[N]) extends TopSortResult[N]
 
     /**
       * A topologically sorted result.
@@ -24,20 +24,20 @@ object Graph {
       * Fewest neighbors on the left.
       * The node at the head of the list has no neighbors.
       */
-    case class Sorted[Node](sorted: List[Node]) extends TopSortResult[Node]
+    case class Sorted[N](sorted: List[N]) extends TopSortResult[N]
   }
 
   /**
     * Topologically sort the nodes, using the `getAdj` function to find adjacent nodes.
     */
-  def topSort[Node](nodes: Iterable[Node], getAdj: (Node => List[Node])): TopSortResult[Node] = {
-    val sorted = mutable.LinkedHashSet.empty[Node]
+  def topSort[N](nodes: Iterable[N], getAdj: (N => List[N])): TopSortResult[N] = {
+    val sorted = mutable.LinkedHashSet.empty[N]
 
 
     /**
       * Optionally returns a list of nodes forming a cycle.
       */
-    def visit(node: Node, path: List[Node]): Option[List[Node]] = {
+    def visit(node: N, path: List[N]): Option[List[N]] = {
       if (sorted.contains(node)) {
         // Case 1: We've visited this node and it's acyclic.
         None
