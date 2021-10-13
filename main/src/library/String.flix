@@ -839,8 +839,7 @@ namespace String {
     ///
     /// Returns `s` with every match of the substring `from` replaced by the string `to`.
     ///
-    pub def replace(from: {from:: String}, to: {to:: String}, s: String): String =
-        //pub def replace(target: String, rep: String, s: String): String =
+    pub def replace(from: {from :: String}, to: {to :: String}, s: String): String =
         import java.lang.String.replace(##java.lang.CharSequence, ##java.lang.CharSequence);
         let t = from.from as ##java.lang.CharSequence;
         let r = to.to as ##java.lang.CharSequence;
