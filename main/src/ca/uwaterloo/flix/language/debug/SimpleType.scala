@@ -115,6 +115,14 @@ object SimpleType {
 
   case class SchemaRowHead(name: String, tpe: SimpleType) extends SimpleType
 
+  case object RelationConstructor extends SimpleType
+
+  case object LatticeConstructor extends SimpleType
+
+  case class Relation(tpes: List[SimpleType]) extends SimpleType
+
+  case class Lattice(tpes: List[SimpleType]) extends SimpleType
+
   // MATT organize above
 
   // MATT change class name
