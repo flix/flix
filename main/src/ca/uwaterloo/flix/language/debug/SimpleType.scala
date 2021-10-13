@@ -74,6 +74,14 @@ object SimpleType {
 
   case class RecordRowConstructor(field: String) extends SimpleType
 
+  case object SchemaRowEmpty extends SimpleType
+
+  case object SchemaEmpty extends SimpleType
+
+  case object SchemaConstructor extends SimpleType
+
+  case class SchemaRowConstructor(field: String) extends SimpleType
+
   // Fully-applied stuff
   case class Apply(tpe: SimpleType, tpes: List[SimpleType]) extends SimpleType
 
@@ -85,18 +93,34 @@ object SimpleType {
 
   case class ImpureArrow(args: List[SimpleType], ret: SimpleType) extends SimpleType
 
-  case class Record(fields: List[RecordFieldType], rest: Option[SimpleType.Var]) extends SimpleType
+  case class Record(fields: List[FieldType], rest: Option[SimpleType.Var]) extends SimpleType
 
-  case class RecordRow(fields: List[RecordFieldType], rest: Option[SimpleType.Var]) extends SimpleType
+  case class RecordRow(fields: List[FieldType], rest: Option[SimpleType.Var]) extends SimpleType
+
+  case class Schema(fields: List[FieldType], rest: Option[SimpleType.Var]) extends SimpleType
+
+  case class SchemaRow(fields: List[FieldType], rest: Option[SimpleType.Var]) extends SimpleType
+
+  case class Not(tpe: Option[SimpleType]) extends SimpleType
+
+  case class And(tpes: List[SimpleType]) extends SimpleType
+
+  case class Or(tpes: List[SimpleType]) extends SimpleType
+
+  case class Region()
 
   // Partially-applied stuff
 
   case class RecordRowHead(name: String, tpe: SimpleType) extends SimpleType
 
+  case class SchemaRowHead(name: String, tpe: SimpleType) extends SimpleType
+
+  // MATT organize above
+
   // MATT change class name
   case class Name(name: String) extends SimpleType // MATT use only for non-builtins
 
-  case class RecordFieldType(name: String, tpe: SimpleType)
+  case class FieldType(name: String, tpe: SimpleType)
 
   def fromWellKindedType(t: Type): SimpleType = t.baseType match {
     case Type.KindedVar(id, kind, loc, rigidity, text) => Var(id, text.get) // MATT how to handle vars? alpha-renaming, etc.
@@ -146,29 +170,46 @@ object SimpleType {
             case _ => ??? // MATT ICE
           }
         }
-      case TypeConstructor.SchemaRowEmpty =>
+      case TypeConstructor.SchemaRowEmpty => SchemaRowEmpty
       case TypeConstructor.SchemaRowExtend(pred) =>
+        val args = t.typeArguments.map(fromWellKindedType)
+        args match {
+          case Nil => SchemaRowConstructor(pred.name)
+          case tpe :: Nil => SchemaRowHead(pred.name, tpe)
+          case _ :: _ :: Nil => fromSchemaRow(t)
+          case _ => ??? // MATT ICE
+        }
       case TypeConstructor.Schema =>
+        val args = t.typeArguments.map(fromWellKindedType)
+        args match {
+          case Nil => SchemaConstructor
+          case tpe :: Nil => tpe match {
+            case SchemaRowEmpty => SchemaEmpty
+            case SchemaRow(fields, rest) => Schema(fields, rest)
+            case tvar: Var => Schema(Nil, Some(tvar))
+            case _ => ??? // MATT ICE
+          }
+        }
       case TypeConstructor.Array => mkApply(Array, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Channel => mkApply(Channel, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Lazy => mkApply(Lazy, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Tag(sym, tag) => ??? // MATT ?
       case TypeConstructor.KindedEnum(sym, kind) => mkApply(Name(sym.name), t.typeArguments.map(fromWellKindedType))
-      case TypeConstructor.UnkindedEnum(sym) => // MATT ICE
+      case TypeConstructor.UnkindedEnum(sym) => ??? // MATT ICE
       case TypeConstructor.Native(clazz) => ??? // MATT ?
       case TypeConstructor.ScopedRef => mkApply(ScopedRef, t.typeArguments.map(fromWellKindedType))
-      case TypeConstructor.Tuple(l) =>
-      case TypeConstructor.Relation =>
-      case TypeConstructor.Lattice =>
-      case TypeConstructor.True =>
-      case TypeConstructor.False =>
-      case TypeConstructor.Not =>
-      case TypeConstructor.And =>
-      case TypeConstructor.Or =>
-      case TypeConstructor.Region =>
+      case TypeConstructor.Tuple(l) => Tuple(l, t.typeArguments.map(fromWellKindedType))
+      case TypeConstructor.Relation => ??? // MATT ?
+      case TypeConstructor.Lattice => ??? // MATT ?
+      case TypeConstructor.True => True
+      case TypeConstructor.False => False
+      case TypeConstructor.Not => Not(t.typeArguments.headOption.map(fromWellKindedType))
+      case TypeConstructor.And => And(t.typeArguments.map(fromWellKindedType))
+      case TypeConstructor.Or => Or(t.typeArguments.map(fromWellKindedType))
+      case TypeConstructor.Region => ??? // MATT ?
     }
 
-    case Type.Lambda(tvar, tpe, loc) =>
+    case Type.Lambda(tvar, tpe, loc) => ??? // MATT hopefully gone forever soon!
   }
 
   private def mkApply(base: SimpleType, args: List[SimpleType]): SimpleType = args match {
@@ -181,7 +222,7 @@ object SimpleType {
     def visit(row: Type): SimpleType = row match {
       // MATT case docs
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(name), _), tpe, _), rest, _) =>
-        val fieldType = RecordFieldType(name.name, fromWellKindedType(tpe))
+        val fieldType = FieldType(name.name, fromWellKindedType(tpe))
         fromRecordRow(rest) match {
           case SimpleType.RecordRowEmpty => SimpleType.RecordRow(fieldType :: Nil, None)
           case SimpleType.RecordRow(fields, rest) => SimpleType.RecordRow(fieldType :: fields, rest) // MATT shadow
@@ -197,6 +238,31 @@ object SimpleType {
     visit(row0) match {
       case RecordRowEmpty => RecordRowEmpty
       case RecordRow(fields, rest) => RecordRow(fields.sortBy(_.name), rest)
+      case _ => ??? // MATT ICE (do I need var here?)
+    }
+  }
+
+  // MATT docs
+  private def fromSchemaRow(row0: Type): SimpleType = {
+    def visit(row: Type): SimpleType = row match {
+      // MATT case docs
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(name), _), tpe, _), rest, _) =>
+        val fieldType = FieldType(name.name, fromWellKindedType(tpe))
+        fromSchemaRow(rest) match {
+          case SimpleType.SchemaRowEmpty => SimpleType.SchemaRow(fieldType :: Nil, None)
+          case SimpleType.SchemaRow(fields, rest) => SimpleType.SchemaRow(fieldType :: fields, rest) // MATT shadow
+          case tvar: SimpleType.Var => SimpleType.SchemaRow(fieldType :: Nil, Some(tvar))
+          case _ => ??? // MATT ICE
+        }
+      case Type.Cst(TypeConstructor.SchemaRowEmpty, _) => SimpleType.SchemaRowEmpty
+      case Type.KindedVar(id, kind, loc, rigidity, text) => SimpleType.Var(id, text.get) // MATT handle no text
+      case _ => ??? // MATT ICE
+    }
+
+    // sort the fields after converting
+    visit(row0) match {
+      case SchemaRowEmpty => SchemaRowEmpty
+      case SchemaRow(fields, rest) => SchemaRow(fields.sortBy(_.name), rest)
       case _ => ??? // MATT ICE (do I need var here?)
     }
   }
