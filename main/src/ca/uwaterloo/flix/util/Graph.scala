@@ -21,8 +21,8 @@ object Graph {
     /**
       * A topologically sorted result.
       *
-      * Fewest neighbors on the left.
-      * The node at the head of the list has no neighbors.
+      * Fewest incoming edges on the left.
+      * The node at the head of the list has no incoming edges.
       */
     case class Sorted[N](sorted: List[N]) extends TopSortResult[N]
   }
