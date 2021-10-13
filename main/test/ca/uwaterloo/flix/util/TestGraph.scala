@@ -7,7 +7,7 @@ class TestGraph extends FunSuite {
   test("topSort.Cycle.01") {
     val graph = Map(1 -> List(1))
     val result = Graph.topSort(graph.keys, graph.apply)
-    val expected = Graph.TopSortResult.Cycle(List(1))
+    val expected = Graph.TopologicalSort.Cycle(List(1))
 
     assert(result == expected)
   }
@@ -18,7 +18,7 @@ class TestGraph extends FunSuite {
       2 -> List(1)
     )
     val result = Graph.topSort(graph.keys, graph.apply)
-    val expected = Graph.TopSortResult.Cycle(List(1, 2))
+    val expected = Graph.TopologicalSort.Cycle(List(1, 2))
 
     assert(result == expected)
   }
@@ -30,7 +30,7 @@ class TestGraph extends FunSuite {
       3 -> List(1),
     )
     val result = Graph.topSort(graph.keys, graph.apply)
-    val expected = Graph.TopSortResult.Cycle(List(1, 2, 3))
+    val expected = Graph.TopologicalSort.Cycle(List(1, 2, 3))
 
     assert(result == expected)
   }
@@ -41,7 +41,7 @@ class TestGraph extends FunSuite {
       2 -> List(2)
     )
     val result = Graph.topSort(graph.keys, graph.apply)
-    val expected = Graph.TopSortResult.Cycle(List(2))
+    val expected = Graph.TopologicalSort.Cycle(List(2))
 
     assert(result == expected)
   }
@@ -52,7 +52,7 @@ class TestGraph extends FunSuite {
       2 -> List(1)
     )
     val result = Graph.topSort(graph.keys, graph.apply)
-    val expected = Graph.TopSortResult.Sorted(List(1, 2))
+    val expected = Graph.TopologicalSort.Sorted(List(1, 2))
 
     assert(result == expected)
   }
@@ -64,7 +64,7 @@ class TestGraph extends FunSuite {
       3 -> List(2)
     )
     val result = Graph.topSort(graph.keys, graph.apply)
-    val expected = Graph.TopSortResult.Sorted(List(1, 2, 3))
+    val expected = Graph.TopologicalSort.Sorted(List(1, 2, 3))
 
     assert(result == expected)
   }
@@ -76,7 +76,7 @@ class TestGraph extends FunSuite {
       3 -> List(1)
     )
     val result = Graph.topSort(graph.keys, graph.apply)
-    val expected = Graph.TopSortResult.Sorted(List(1, 2, 3))
+    val expected = Graph.TopologicalSort.Sorted(List(1, 2, 3))
 
     assert(result == expected)
   }

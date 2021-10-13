@@ -7,8 +7,8 @@ object Graph {
   /**
     * A result of a topological sort.
     */
-  sealed trait TopSortResult[N]
-  object TopSortResult {
+  sealed trait TopologicalSort[N]
+  object TopologicalSort {
 
     /**
       * A cycle found during topological sorting.
@@ -16,7 +16,7 @@ object Graph {
       * Adjacency is from left to right:
       * `[n1, n2, n3]` indicates a cycle `n1 -> n2 -> n3 -> n1`
       */
-    case class Cycle[N](path: List[N]) extends TopSortResult[N]
+    case class Cycle[N](path: List[N]) extends TopologicalSort[N]
 
     /**
       * A topologically sorted result.
@@ -24,13 +24,13 @@ object Graph {
       * Fewest incoming edges on the left.
       * The node at the head of the list has no incoming edges.
       */
-    case class Sorted[N](sorted: List[N]) extends TopSortResult[N]
+    case class Sorted[N](sorted: List[N]) extends TopologicalSort[N]
   }
 
   /**
     * Topologically sort the nodes, using the `getAdj` function to find adjacent nodes.
     */
-  def topSort[N](nodes: Iterable[N], getAdj: (N => List[N])): TopSortResult[N] = {
+  def topSort[N](nodes: Iterable[N], getAdj: (N => List[N])): TopologicalSort[N] = {
     val sorted = mutable.LinkedHashSet.empty[N]
 
 
@@ -62,8 +62,8 @@ object Graph {
     // Visit all the nodes, and report if there is a cycle.
     // Otherwise return the sorted list.
     nodes.map(visit(_, Nil)).collectFirst {
-      case Some(cycle) => TopSortResult.Cycle(cycle)
-    }.getOrElse(TopSortResult.Sorted(sorted.toList))
+      case Some(cycle) => TopologicalSort.Cycle(cycle)
+    }.getOrElse(TopologicalSort.Sorted(sorted.toList))
   }
 
 }

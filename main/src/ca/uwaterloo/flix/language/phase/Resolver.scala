@@ -130,8 +130,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     val classSyms = classes.values.map(_.sym)
     val getSuperClasses = (clazz: Symbol.ClassSym) => classes(clazz).superClasses.map(_.clazz)
     Graph.topSort(classSyms, getSuperClasses) match {
-      case Graph.TopSortResult.Cycle(path) => mkCycleErrors(path)
-      case Graph.TopSortResult.Sorted(_) => ().toSuccess
+      case Graph.TopologicalSort.Cycle(path) => mkCycleErrors(path)
+      case Graph.TopologicalSort.Sorted(_) => ().toSuccess
     }
   }
 
@@ -191,8 +191,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       val getUses = (sym: Symbol.TypeAliasSym) => getAliasUses(aliasLookup(sym).tpe)
 
       Graph.topSort(aliasSyms, getUses) match {
-        case Graph.TopSortResult.Sorted(sorted) => sorted.toSuccess
-        case Graph.TopSortResult.Cycle(path) => mkCycleErrors(path)
+        case Graph.TopologicalSort.Sorted(sorted) => sorted.toSuccess
+        case Graph.TopologicalSort.Cycle(path) => mkCycleErrors(path)
       }
     }
 
