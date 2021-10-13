@@ -4345,4 +4345,25 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
     def sum07(): Bool & Impure =
         Array.range(1, 101) |> Array.sum == 5050
 
+    /////////////////////////////////////////////////////////////////////////////
+    // toLazyList                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toLazyList01(): Bool & Impure =
+        []: Array[Unit] |> Array.toLazyList == LazyList.empty()
+
+    @test
+    def toLazyList02(): Bool & Impure =
+        Array.new(0, 0) |> Array.toLazyList == LazyList.empty()
+
+    @test
+    def toLazyList03(): Bool & Impure =
+        Array.range(-1000, 1000) |> Array.toLazyList == LazyList.range(-1000, 1000)
+
+    @test
+    def toLazyList04(): Bool & Impure =
+        Array.range(-1000, 1000) |> Array.toLazyList |> LazyList.toArray == Array.range(-1000, 1000)
+
+
 }

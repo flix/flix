@@ -403,4 +403,92 @@ namespace DemandList {
         case LCons(x, xs) => if (f(x)) forall(f, force xs) else false
         case LList(xs)    => forall(f, force xs)
     }
+
+    ///
+    /// Returns the longest prefix of `l` that satisfies the predicate `f`.
+    ///
+    /// Whether `f` is applied eagerly or lazily depends on its purity:
+    ///
+    pub def takeWhile(f: a -> Bool & ef, l: DemandList[a, not ef or d]): DemandList[a, not ef or d] & ef =
+        if (reify ef)
+            takeWhileL(f as a -> Bool & Pure,   l as DemandList[a, false]) as DemandList[a, not ef or d] & ef
+        else
+            takeWhileE(f as a -> Bool & Impure, l as DemandList[a, Forced]) as DemandList[a, not ef or d] & ef
+
+    ///
+    /// Returns the longest prefix of `l` that satisfies the predicate `f`.
+    ///
+    /// Applies `f` lazily (i.e. the tail is not forced).
+    ///
+    def takeWhileL(f: a -> Bool, l: DemandList[a, false]): DemandList[a, false] =
+        LList(lazy takeWhileLHelper(f, l))
+
+    ///
+    /// Helper function for `takeWhileL`.
+    ///
+    def takeWhileLHelper(f: a -> Bool, l: DemandList[a, false]): DemandList[a, false] = match l {
+        case ENil         => ENil
+        case ECons(x, xs) => if (f(x)) LCons(x, lazy takeWhileL(f,       xs)) else ENil
+        case LCons(x, xs) => if (f(x)) LCons(x, lazy takeWhileL(f, force xs)) else ENil
+        case LList(xs)    => LList(lazy takeWhileL(f, force xs))
+    }
+
+    ///
+    /// Returns the longest prefix of `l` that satisfies the predicate `f`.
+    ///
+    /// Applies `f` eagerly (i.e. the entire list `l` is forced).
+    ///
+    def takeWhileE(f: a -> Bool & Impure, l: DemandList[a, Forced]): DemandList[a, Forced] & Impure =
+        takeWhileEAcc(f, l, ks -> ks)
+
+    ///
+    /// Helper function for `takeWhileE`.
+    ///
+    def takeWhileEAcc(f: a -> Bool & Impure, l: DemandList[a, d], k: DemandList[a, d] -> DemandList[a, d]): DemandList[a, d] & Impure = match l {
+        case ENil         => k(ENil)
+        case ECons(x, xs) => if (f(x)) takeWhileEAcc(f,       xs, ks -> k(ECons(x, ks))) else k(ENil)
+        case LCons(x, xs) => if (f(x)) takeWhileEAcc(f, force xs, ks -> k(ECons(x, ks))) else k(ENil)
+        case LList(xs)    => takeWhileEAcc(f, force xs, k)
+    }
+
+    ///
+    /// Returns `l` without the longest prefix that satisfies the predicate `f`.
+    ///
+    /// Whether `f` is applied eagerly or lazily depends on its purity:
+    ///
+    pub def dropWhile(f: a -> Bool & ef, l: DemandList[a, not ef or d]): DemandList[a, not ef or d] & ef =
+        if (reify ef)
+            dropWhileL(f as a -> Bool & Pure,   l as DemandList[a, false]) as DemandList[a, not ef or d] & ef
+        else
+            dropWhileE(f as a -> Bool & Impure, l as DemandList[a, Forced]) as DemandList[a, not ef or d] & ef
+
+    ///
+    /// Returns `l` without the longest prefix that satisfies the predicate `f`.
+    ///
+    /// Applies `f` lazily (i.e. the tail is not forced).
+    ///
+    def dropWhileL(f: a -> Bool, l: DemandList[a, false]): DemandList[a, false] =
+        LList(lazy dropWhileLHelper(f, l))
+
+    ///
+    /// Helper function for `dropWhileL`.
+    ///
+    def dropWhileLHelper(f: a -> Bool, l: DemandList[a, false]): DemandList[a, false] = match l {
+        case ENil         => ENil
+        case ECons(x, xs) => if (f(x)) LList(lazy dropWhileL(f,       xs)) else l
+        case LCons(x, xs) => if (f(x)) LList(lazy dropWhileL(f, force xs)) else l
+        case LList(xs)    => LList(lazy dropWhileL(f, force xs))
+    }
+
+    ///
+    /// Returns `l` without the longest prefix that satisfies the predicate `f`.
+    ///
+    /// Applies `f` eagerly (i.e. the entire list `l` is forced).
+    ///
+    def dropWhileE(f: a -> Bool & Impure, l: DemandList[a, Forced]): DemandList[a, Forced] & Impure = match l {
+        case ENil         => ENil
+        case ECons(x, xs) => if (f(x)) dropWhileE(f,       xs) else l
+        case LCons(x, xs) => if (f(x)) dropWhileE(f, force xs) else l
+        case LList(xs)    => dropWhileE(f, force xs)
+    }
 }
