@@ -69,7 +69,7 @@ object Terminator extends Phase[Root, Root] {
       case Expression.Var(_, _, _) => false
       case Expression.Def(_, _, _) => false
       case Expression.Sig(_, _, _) => false
-      case Expression.Hole(_, _, _, _) => false
+      case Expression.Hole(_, _, _) => false
       case Expression.Lambda(_, _, _, _) => false
 
       // If the Apply is a recursive call, then return true
@@ -128,6 +128,7 @@ object Terminator extends Phase[Root, Root] {
       case Expression.FixpointProjectIn(exp, _, _, _, _) => visit(exp)
       case Expression.FixpointProjectOut(_, exp, _, _, _) => visit(exp)
       case Expression.Reify(_, _, _, _) => false // reify expressions always terminate.
+      case Expression.ReifyType(_, _, _, _) => false // reify expressions always terminate.
     }
 
     visit(exp0)

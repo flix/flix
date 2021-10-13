@@ -29,7 +29,7 @@ object FormatExpression {
     case TypedAst.Expression.Var(sym, _, _) => s"Sym($sym)"
     case TypedAst.Expression.Def(sym, _, _) => s"Def($sym)"
     case TypedAst.Expression.Sig(sym, _, _) => s"Sig($sym)"
-    case TypedAst.Expression.Hole(sym, tpe, eff, loc) => s"Hole($sym)"
+    case TypedAst.Expression.Hole(sym, tpe, loc) => s"Hole($sym)"
     case TypedAst.Expression.Lambda(fparam, exp, tpe, loc) => s"Lambda(${FormatFormalParam.format(fparam)}, $exp)"
     case TypedAst.Expression.Apply(exp1, exp2, tpe, eff, loc) => s"Apply($exp1, $exp2)"
     case TypedAst.Expression.Unary(sop, exp, tpe, eff, loc) => s"Unary($sop, $exp)"
@@ -80,7 +80,8 @@ object FormatExpression {
     case TypedAst.Expression.FixpointFilter(pred, exp, tpe, eff, loc) => s"FixpointFilter($pred, $exp)"
     case TypedAst.Expression.FixpointProjectIn(exp, pred, tpe, eff, loc) => s"FixpointProjectIn($exp, $pred)"
     case TypedAst.Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) => s"FixpointProjectOut($pred, $exp)"
-    case TypedAst.Expression.Reify(t, tpe, eff, loc) => s"Reify($t)"
+    case TypedAst.Expression.Reify(t, _, _, _) => s"Reify($t)"
+    case TypedAst.Expression.ReifyType(t, _, _, _) => s"ReifyType($t)"
   }
 
 }

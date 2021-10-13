@@ -922,6 +922,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             t <- lookupType(t0, ns0, root)
           } yield ResolvedAst.Expression.Reify(t, loc)
 
+        case NamedAst.Expression.ReifyType(t0, loc) =>
+          for {
+            t <- lookupType(t0, ns0, root)
+          } yield ResolvedAst.Expression.ReifyType(t, loc)
+
+
       }
 
       visit(exp0, Map.empty)
