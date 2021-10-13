@@ -29,6 +29,8 @@ object SimpleType {
 
   case object Unit extends SimpleType
 
+  case object Null extends SimpleType
+
   case object Bool extends SimpleType
 
   case object Char extends SimpleType
@@ -51,7 +53,7 @@ object SimpleType {
 
   case object Array extends SimpleType
 
-  case object Ref extends SimpleType
+  case object ScopedRef extends SimpleType
 
   case object Channel extends SimpleType
 
@@ -101,18 +103,18 @@ object SimpleType {
     case _: Type.UnkindedVar => throw InternalCompilerException("") // MATT
     case _: Type.Ascribe => throw InternalCompilerException("") // MATT
     case Type.Cst(tc, loc) => tc match {
-      case TypeConstructor.Unit => Name("Unit")
-      case TypeConstructor.Null => Name("Null")
-      case TypeConstructor.Bool => Name("Bool")
-      case TypeConstructor.Char => Name("Char")
-      case TypeConstructor.Float32 => Name("Float32")
-      case TypeConstructor.Float64 => Name("Float64")
-      case TypeConstructor.Int8 => Name("Int8")
-      case TypeConstructor.Int16 => Name("Int16")
-      case TypeConstructor.Int32 => Name("Int32")
-      case TypeConstructor.Int64 => Name("Int64")
-      case TypeConstructor.BigInt => Name("BigInt")
-      case TypeConstructor.Str => Name("String")
+      case TypeConstructor.Unit => Unit
+      case TypeConstructor.Null => Null
+      case TypeConstructor.Bool => Bool
+      case TypeConstructor.Char => Char
+      case TypeConstructor.Float32 => Float32
+      case TypeConstructor.Float64 => Float64
+      case TypeConstructor.Int8 => Int8
+      case TypeConstructor.Int16 => Int16
+      case TypeConstructor.Int32 => Int32
+      case TypeConstructor.Int64 => Int64
+      case TypeConstructor.BigInt => BigInt
+      case TypeConstructor.Str => Str
       case TypeConstructor.Arrow(arity) =>
         val args = t.typeArguments.map(fromWellKindedType)
         args match {
@@ -147,14 +149,14 @@ object SimpleType {
       case TypeConstructor.SchemaRowEmpty =>
       case TypeConstructor.SchemaRowExtend(pred) =>
       case TypeConstructor.Schema =>
-      case TypeConstructor.Array =>
-      case TypeConstructor.Channel =>
-      case TypeConstructor.Lazy =>
-      case TypeConstructor.Tag(sym, tag) =>
-      case TypeConstructor.KindedEnum(sym, kind) =>
-      case TypeConstructor.UnkindedEnum(sym) =>
-      case TypeConstructor.Native(clazz) =>
-      case TypeConstructor.ScopedRef =>
+      case TypeConstructor.Array => mkApply(Array, t.typeArguments.map(fromWellKindedType))
+      case TypeConstructor.Channel => mkApply(Channel, t.typeArguments.map(fromWellKindedType))
+      case TypeConstructor.Lazy => mkApply(Lazy, t.typeArguments.map(fromWellKindedType))
+      case TypeConstructor.Tag(sym, tag) => ??? // MATT ?
+      case TypeConstructor.KindedEnum(sym, kind) => mkApply(Name(sym.name), t.typeArguments.map(fromWellKindedType))
+      case TypeConstructor.UnkindedEnum(sym) => // MATT ICE
+      case TypeConstructor.Native(clazz) => ??? // MATT ?
+      case TypeConstructor.ScopedRef => mkApply(ScopedRef, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Tuple(l) =>
       case TypeConstructor.Relation =>
       case TypeConstructor.Lattice =>
