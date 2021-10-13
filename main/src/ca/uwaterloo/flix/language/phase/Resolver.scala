@@ -129,7 +129,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
     val classSyms = classes.values.map(_.sym)
     val getSuperClasses = (clazz: Symbol.ClassSym) => classes(clazz).superClasses.map(_.clazz)
-    Graph.topSort(classSyms, getSuperClasses) match {
+    Graph.topologicalSort(classSyms, getSuperClasses) match {
       case Graph.TopologicalSort.Cycle(path) => mkCycleErrors(path)
       case Graph.TopologicalSort.Sorted(_) => ().toSuccess
     }
@@ -190,7 +190,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       val aliasLookup = aliases.map(alias => alias.sym -> alias).toMap
       val getUses = (sym: Symbol.TypeAliasSym) => getAliasUses(aliasLookup(sym).tpe)
 
-      Graph.topSort(aliasSyms, getUses) match {
+      Graph.topologicalSort(aliasSyms, getUses) match {
         case Graph.TopologicalSort.Sorted(sorted) => sorted.toSuccess
         case Graph.TopologicalSort.Cycle(path) => mkCycleErrors(path)
       }

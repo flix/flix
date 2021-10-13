@@ -6,7 +6,7 @@ class TestGraph extends FunSuite {
 
   test("topSort.Cycle.01") {
     val graph = Map(1 -> List(1))
-    val result = Graph.topSort(graph.keys, graph.apply)
+    val result = Graph.topologicalSort(graph.keys, graph.apply)
     val expected = Graph.TopologicalSort.Cycle(List(1))
 
     assert(result == expected)
@@ -17,7 +17,7 @@ class TestGraph extends FunSuite {
       1 -> List(2),
       2 -> List(1)
     )
-    val result = Graph.topSort(graph.keys, graph.apply)
+    val result = Graph.topologicalSort(graph.keys, graph.apply)
     val expected = Graph.TopologicalSort.Cycle(List(1, 2))
 
     assert(result == expected)
@@ -29,7 +29,7 @@ class TestGraph extends FunSuite {
       2 -> List(3),
       3 -> List(1),
     )
-    val result = Graph.topSort(graph.keys, graph.apply)
+    val result = Graph.topologicalSort(graph.keys, graph.apply)
     val expected = Graph.TopologicalSort.Cycle(List(1, 2, 3))
 
     assert(result == expected)
@@ -40,7 +40,7 @@ class TestGraph extends FunSuite {
       1 -> List(2),
       2 -> List(2)
     )
-    val result = Graph.topSort(graph.keys, graph.apply)
+    val result = Graph.topologicalSort(graph.keys, graph.apply)
     val expected = Graph.TopologicalSort.Cycle(List(2))
 
     assert(result == expected)
@@ -51,7 +51,7 @@ class TestGraph extends FunSuite {
       1 -> List(),
       2 -> List(1)
     )
-    val result = Graph.topSort(graph.keys, graph.apply)
+    val result = Graph.topologicalSort(graph.keys, graph.apply)
     val expected = Graph.TopologicalSort.Sorted(List(1, 2))
 
     assert(result == expected)
@@ -63,7 +63,7 @@ class TestGraph extends FunSuite {
       2 -> List(1),
       3 -> List(2)
     )
-    val result = Graph.topSort(graph.keys, graph.apply)
+    val result = Graph.topologicalSort(graph.keys, graph.apply)
     val expected = Graph.TopologicalSort.Sorted(List(1, 2, 3))
 
     assert(result == expected)
@@ -75,7 +75,7 @@ class TestGraph extends FunSuite {
       2 -> List(1),
       3 -> List(1)
     )
-    val result = Graph.topSort(graph.keys, graph.apply)
+    val result = Graph.topologicalSort(graph.keys, graph.apply)
     val expected = Graph.TopologicalSort.Sorted(List(1, 2, 3))
 
     assert(result == expected)

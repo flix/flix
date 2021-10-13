@@ -32,7 +32,7 @@ object Graph {
     *
     * `N` must have a well-defined equality and hashcode.
     */
-  def topSort[N](nodes: Iterable[N], getAdj: (N => List[N])): TopologicalSort[N] = {
+  def topologicalSort[N](nodes: Iterable[N], getAdj: (N => List[N])): TopologicalSort[N] = {
     val sorted = mutable.LinkedHashSet.empty[N]
 
 
