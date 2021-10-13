@@ -26,13 +26,20 @@ namespace MutDeque {
 
     def minCapacity(): Int32 = 8
 
-    pub def new(): MutDeque[a] & Impure = MutDeque(ref Array.new(default, minCapacity()), ref 0, ref 0)
+    pub def new(): MutDeque[a] & Impure = MutDeque(ref [default; minCapacity()], ref 0, ref 0)
 
     pub def size(d: MutDeque[a]): Int32 & Impure =
         let MutDeque(a, f, b) = d;
-        let f1 = deref f;
-        let b1 = deref b;
-        if (f1 <= b1) b1 - f1 else Array.length(deref a) - (f1 - b1)
+        computeSize(Array.length(deref a), deref f, deref b)
+
+    ///
+    /// Returns the size of a MutDeque, where `l` = array length, `f` = front index, `b` = back index.
+    ///
+    def computeSize(l: Int32, f: Int32, b: Int32): Int32 =
+        if (f <= b)
+            b - f
+        else
+            l - (f - b)
 
     pub def isEmpty(d: MutDeque[a]): Bool & Impure =
         let MutDeque(_, f, b) = d;
@@ -47,7 +54,7 @@ namespace MutDeque {
         let f1 = deref f;
         let x = a1[f1];
         let c = Array.length(a1);
-        f := mod(f1 + 1, c);
+        f := (f1 + 1) `mod` c;
         x
 
     // TODO: Collapse array if load factor < threshold
@@ -55,34 +62,74 @@ namespace MutDeque {
         let MutDeque(a, _, b) = d;
         let a1 = deref a;
         let c = Array.length(a1);
-        let b1 = mod(deref b - 1, c);
+        let b1 = (deref b - 1) `mod` c;
         let x = a1[b1];
         b := b1;
         x
 
     // TODO: Expand array if elements > capacity / 2
     pub def pushFront(x: a, d: MutDeque[a]): Unit & Impure =
-        let MutDeque(a, f, _) = d;
+        let MutDeque(a, f, b) = d;
         let a1 = deref a;
-        let c = Array.length(a1);
-        let f1 = mod(deref f - 1, c);
+        let l = Array.length(a1);
+        let f1 = (deref f - 1) `mod` l;
         a1[f1] = x;
-        a := a1;
-        f := f1
+        let b1 = deref b;
+        println("front: ${f1}"); // DEBUG
+        if (computeSize(l, f1, b1) >= l / 2)
+            expand(a1, f1, b1, d)
+        else
+            a := a1;
+            f := f1
 
-    // TODO: Expand array if elements > capacity / 2
     pub def pushBack(x: a, d: MutDeque[a]): Unit & Impure =
-        let MutDeque(a, _, b) = d;
+        let MutDeque(a, f, b) = d;
         let a1 = deref a;
-        let c = Array.length(a1);
+        let l = Array.length(a1);
         let b1 = deref b;
         a1[b1] = x;
-        a := a1;
-        b := mod(b1 + 1, c)
+        let b2 = (b1 + 1) `mod` l;
+        let f1 = deref f;
+        if (computeSize(l, f1, b2) >= l / 2)
+            expand(a1, f1, b2, d)
+        else
+            a := a1;
+            b := b2
+
+    ///
+    /// Expands `d` to double its length.
+    ///
+    def expand(arr: Array[a], f: Int32, b: Int32, d: MutDeque[a]): Unit & Impure =
+        println("Expanding:${f}, ${b}"); // DEBUG
+        let MutDeque(a1, f1, b1) = d;
+        let l = Array.length(arr);
+        let arr1 = [default; 2 * l];
+        if (f <= b)
+            Array.patch!(0, b - f, arr[f .. b], arr1)
+        else {
+            Array.patch!(0, b,     arr[0 .. b], arr1);
+            Array.patch!(b, l - f, arr[f .. l], arr1);
+            ()
+        };
+        f1 := 0;
+        b1 := computeSize(l, f, b);
+        a1 := arr1
 
     ///
     /// Returns `a` mod `b`.
     ///
-    def mod(a: Int32, _b: Int32): Int32 = a
+    def mod(a: Int32, b: Int32): Int32 =
+        let r = a % b;
+        if (r < 0)
+            let r1 = abs(b) - abs(r);
+            if (a < 0) r1 else -r1
+        else
+            r
+
+    ///
+    /// Returns the absolute value of `x`.
+    ///
+    def abs(x: Int32): Int32 =
+        if (x < 0) -x else x
 
 }
