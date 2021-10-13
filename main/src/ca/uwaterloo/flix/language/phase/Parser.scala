@@ -45,7 +45,7 @@ object Parser extends Phase[List[Source], ParsedAst.Program] {
   }
 
   private def reduceLiteralWhitespaceChars(s: String): String =
-    s.replaceAll("\\\\n|\\\\r|\\\\t"," ").replaceAll(" +", " ")
+    s.replaceAll("\\\\n|\\\\r|\\\\t"," ")
 
   /**
     * Attempts to parse the given `source` as a root.
