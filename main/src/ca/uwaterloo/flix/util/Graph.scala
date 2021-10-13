@@ -29,6 +29,8 @@ object Graph {
 
   /**
     * Topologically sort the nodes, using the `getAdj` function to find adjacent nodes.
+    *
+    * `N` must have a well-defined equality and hashcode.
     */
   def topSort[N](nodes: Iterable[N], getAdj: (N => List[N])): TopologicalSort[N] = {
     val sorted = mutable.LinkedHashSet.empty[N]
