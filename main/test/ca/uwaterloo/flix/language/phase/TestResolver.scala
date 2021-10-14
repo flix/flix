@@ -864,6 +864,17 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       """
         |type alias T[a] = a
+        |
+        |def f(x: T): Int = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[ResolutionError.UnderAppliedTypeAlias](result)
+  }
+
+  test("UnderAppliedTypeAlias.04") {
+    val input =
+      """
+        |type alias T[a] = a
         |enum E[f: Type -> Type]
         |
         |def f(x: E[T]): Int = ???
