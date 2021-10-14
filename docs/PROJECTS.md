@@ -2,27 +2,6 @@
 
 This is a list of projects that are currently open for exploration.
 
-## Package Management
-Today, programs are rarely written from scratch, but rather build on a large collection of external libraries.
-Different languages have different package ecosystems: Java has Maven, JavaScript has NPM, Rust has Cargo, and so forth.
-All of these languages offer some form of package manager that is used to download, install, upgrade, and keep track
-of the dependencies of a software project. The problem is non-trivial: For example, how should we handle the 
-situation where a project depends on package A and package B, and A depends on C (version 1.0), but B depends on C
-(version 2.0)?
-
-The aim of this project is to (1) explore the design space of package managers for programming languages, and to
-(2) design and implement a package manager for the Flix programming language. 
-The work will include reading papers, language design, and implementation in a real-world programming language
-being developed at Aarhus University (see flix.dev).
-
-### Literature
-- Michael Hanus: Semantic Versioning Checking in a Declarative Package Manager
-- https://medium.com/@sdboyer/so-you-want-to-write-a-package-manager-4ae9c17d9527 
-
-Contact: Magnus Madsen <magnusm@cs.au.dk>
-
-
-
 ## Auto-Completion and Program Synthesis
 Integrated development environments (IDEs), such as Intellij IDEA, aid programmers by providing auto-completion for 
 field and method names. Dependently-typed programming languages such as Agda and Idris take
