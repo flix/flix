@@ -176,11 +176,11 @@ object InstanceError {
     override def message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Type alias '" << Red(alias.name) << "' in instance for '" << Red(clazz.name) << "'."
+      vt << ">> Illegal use of type alias '" << Red(alias.name) << "' in instance declaration for '" << Red(clazz.name) << "'."
       vt << NewLine
-      vt << Code(loc, s"type alias in instance type")
+      vt << Code(loc, s"illegal use of type alias")
       vt << NewLine
-      vt << Underline("Tip:") << " An instance type must not contain a type alias. Use the explicit type."
+      vt << Underline("Tip:") << " A type class instance cannot use a type alias. Use the full type."
     }
   }
 
