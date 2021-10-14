@@ -1,6 +1,8 @@
-# Bachelor Project Proposals
+# Project Proposals
 
-# Package Management
+This is a list of projects that are currently open for exploration.
+
+## Package Management
 Today, programs are rarely written from scratch, but rather build on a large collection of external libraries.
 Different languages have different package ecosystems: Java has Maven, JavaScript has NPM, Rust has Cargo, and so forth.
 All of these languages offer some form of package manager that is used to download, install, upgrade, and keep track
@@ -21,7 +23,7 @@ Contact: Magnus Madsen <magnusm@cs.au.dk>
 
 
 
-# Auto-Completion and Program Synthesis
+## Auto-Completion and Program Synthesis
 Integrated development environments (IDEs), such as Intellij IDEA, aid programmers by providing auto-completion for 
 field and method names. Dependently-typed programming languages such as Agda and Idris take
 this a step further by allowing the programmer to have the compiler fill in entire expressions based on the
@@ -40,7 +42,7 @@ being developed at Aarhus University (see flix.dev).
 
 
 
-# Fixpoint Engine
+## Fixpoint Engine
 Datalog is a simple, yet powerful, declarative logic programming language. A Datalog program consists of a 
 collection of constraints; each constrain is either a fact or rule. Together, the facts and rules imply a minimal
 model, a unique solution to any Datalog program. The "fixpoint engine" is the software responsible for computing
@@ -55,7 +57,7 @@ The aim of this project is to: (1) understand how the semi-naive evaluation algo
 
 
 
-# Termination Analysis
+## Termination Analysis
 A common programming mistake is to unintentional write an infinite loop. 
 Most contemporary programming languages such as C, C++, C#, Java, Kotlin, Scala, etc. do not help programmers avoid such issues.
 Termination analysis or termination checkers describe a wide-range of techniques that can be used to verify that a program 
