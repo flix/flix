@@ -44,6 +44,24 @@ namespace File {
         }
 
     ///
+    /// Returns `true` if the given file `file` is a regular file.
+    ///
+    pub def isRegularFile(file: String): Result[Bool, String] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import java.io.File.toPath();
+            import java.nio.file.Files:isRegularFile(##java.nio.file.Path, Array[##java.nio.file.LinkOption]);
+            let javaFile = newFile(file);
+            let javaPath = javaFile.toPath();
+            let isRegular = isRegularFile(javaPath, []);
+            Ok(isRegular)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
+    ///
     /// Returns `true` if the given file `f` is readable.
     ///
     pub def isReadable(f: String): Result[Bool, String] & Impure =
