@@ -19,7 +19,8 @@ being developed at Aarhus University (see flix.dev).
 ### Literature
 - Edwin Brady: Type Driven Development with Idris
 
-
+## Fuzzing
+TODO
 
 ## Fixpoint Engine
 Datalog is a simple, yet powerful, declarative logic programming language. A Datalog program consists of a 
