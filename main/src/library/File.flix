@@ -180,4 +180,37 @@ namespace File {
     def readHelper(list: List[String]): String & Impure =
         List.foldLeft((x, y) -> x + "\n" + y, "", list)
 
+    ///
+    /// Returns an iterator of the given `file`
+    ///
+    pub def readLinesIter(file: String): Iterator[Result[String, String]] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import java.io.File.toPath();
+            import java.nio.file.Files:newBufferedReader(##java.nio.file.Path);
+            import java.io.BufferedReader.readLine();
+
+            let javaFile = newFile(file);
+            let javaPath = javaFile.toPath();
+            let reader = javaPath.newBufferedReader();
+            let line = ref reader.readLine();
+
+            let done = () -> Object.isNull(deref line);
+            let next = () -> {
+                let l = deref line;
+                line := reader.readLine();
+                Ok(l)
+            };
+            Iterator(done, next)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                let err = ref getMessage(ex);
+                let done = () -> Object.isNull(deref err);
+                let next = () -> {
+                    Err(deref err)
+                };
+                Iterator(done, next)
+        }
+
 }
