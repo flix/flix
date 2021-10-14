@@ -569,7 +569,7 @@ class TestInstances extends FunSuite with TestUtils {
         |instance C[T]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[InstanceError.TypeAliasInstance](result)
+    expectError[InstanceError.IllegalTypeAliasInstance](result)
   }
 
   test("Test.TypeAliasInstance.02") {
@@ -580,6 +580,6 @@ class TestInstances extends FunSuite with TestUtils {
         |instance C[T[a]]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[InstanceError.TypeAliasInstance](result)
+    expectError[InstanceError.IllegalTypeAliasInstance](result)
   }
 }
