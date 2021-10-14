@@ -54,6 +54,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     */
   def run(root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Root, ResolutionError] = flix.phase("Resolver") {
 
+    // Type aliases must be processed first in order to provide a `taenv` for looking up type alias symbols.
     resolveTypeAliases(root.typealiases, root) flatMap {
       case (taenv, taOrder) =>
 
@@ -987,7 +988,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         case NamedAst.Expression.ReifyType(t0, loc) =>
           for {
-            t <- lookupType(t0, ns0, root)
+            t <- resolveType(t0, taenv, ns0, root)
           } yield ResolvedAst.Expression.ReifyType(t, loc)
 
 

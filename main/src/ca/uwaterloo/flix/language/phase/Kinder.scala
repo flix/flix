@@ -52,6 +52,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
 
   override def run(root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Root, CompilationError] = flix.phase("Kinder") {
 
+    // Type aliases must be processed first in order to provide a `taenv` for looking up type alias symbols.
     visitTypeAliases(root.taOrder, root) flatMap {
       taenv =>
 
@@ -568,7 +569,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
 
     case ResolvedAst.Expression.ReifyType(t0, loc) =>
       for {
-        t <- visitType(t0, Kind.Star, kenv, root)
+        t <- visitType(t0, Kind.Star, kenv, taenv, root)
       } yield KindedAst.Expression.ReifyType(t, loc)
 
   }
