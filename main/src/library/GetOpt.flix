@@ -206,15 +206,15 @@ namespace GetOpt {
                 optDescrs: List[OptionDescr[a]],
                 tokens: List[String]): (OptionKind[a], List[String]) = match arg {
         case "--"                                                       => (EndOfOpts, tokens)
-        case s if String.startsWith(s, "--")                            => longOpt(String.dropLeft(2, s), optDescrs, tokens)
-        case s if String.startsWith(s, "-") and String.length(s) >= 2   => shortOpt(String.charAt(1, s), String.dropLeft(2, s), optDescrs, tokens)
+        case s if String.startsWith({prefix = "--"}, s)                            => longOpt(String.dropLeft(2, s), optDescrs, tokens)
+        case s if String.startsWith({prefix = "-"}, s) and String.length(s) >= 2   => shortOpt(String.charAt(1, s), String.dropLeft(2, s), optDescrs, tokens)
         case s                                                          => (NonOpt(s), tokens)
     }
 
     /// "--" has been parsed
     /// `xstr` is the rest of the current token
     def longOpt(xstr: String, optDescrs: List[OptionDescr[a]], tokens: List[String]): (OptionKind[a], List[String]) =
-        let (optname, arg)  = String.breakOnLeft("=", xstr);
+        let (optname, arg)  = String.breakOnLeft({substr = "="}, xstr);
         let optStr      = "--${optname}";
         match findOptionByName(optname, optDescrs) {
             case Ok(opt) => match (opt.argDescriptor, deconsLeft(arg), tokens) {
@@ -300,7 +300,7 @@ namespace GetOpt {
         /// Exact match of `optname` ...
         let exact       = getWith((x,y) -> x == y): List[OptionDescr[a]];
         /// Otherwise use `optname` as a prefix...
-        let options     = if (List.isEmpty(exact)) getWith((sub, s1) -> String.startsWith(s1, sub)) else exact;
+        let options     = if (List.isEmpty(exact)) getWith((sub, s1) -> String.startsWith({prefix = sub}, s1)) else exact;
         match options {
             case optd :: Nil    => Ok(optd)
             case x :: xs        => Err(Ambiguous(Nel(x, xs)))
@@ -392,8 +392,8 @@ namespace GetOpt {
     def groupWhenQuotedHelper(quoteOpen: String, quoteClose: String, tokens: List[String], k: List[String] ~> Array[String]): Array[String] & Impure =
         match tokens {
             case Nil => k(Nil)
-            case x :: rest if String.contains(x, quoteOpen) and String.endsWith(x, quoteClose) => groupWhenQuotedHelper(quoteOpen, quoteClose, rest, ks -> k(x :: ks))
-            case x :: rest if String.contains(x, quoteOpen) => groupWhenQuotedHelperInner(quoteOpen, quoteClose, rest, x, ks -> k(ks))
+            case x :: rest if String.contains({substr = quoteOpen}, x) and String.endsWith({suffix = quoteClose}, x) => groupWhenQuotedHelper(quoteOpen, quoteClose, rest, ks -> k(x :: ks))
+            case x :: rest if String.contains({substr = quoteOpen}, x) => groupWhenQuotedHelperInner(quoteOpen, quoteClose, rest, x, ks -> k(ks))
             case x :: rest => groupWhenQuotedHelper(quoteOpen, quoteClose, rest, ks -> k(x :: ks))
         }
 
@@ -405,7 +405,7 @@ namespace GetOpt {
     def groupWhenQuotedHelperInner(quoteOpen: String, quoteClose: String, tokens: List[String], acc: String, k: List[String] ~> Array[String]): Array[String] & Impure =
         match tokens {
             case Nil => k(acc :: Nil)
-            case x :: rest if String.contains(x, quoteClose) => groupWhenQuotedHelper(quoteOpen, quoteClose, rest, ks -> k((acc + " " +  x) :: ks))
+            case x :: rest if String.contains({substr = quoteClose}, x) => groupWhenQuotedHelper(quoteOpen, quoteClose, rest, ks -> k((acc + " " +  x) :: ks))
             case x :: rest => groupWhenQuotedHelperInner(quoteOpen, quoteClose, rest, (acc + " " +  x), k)
         }
 
@@ -413,6 +413,6 @@ namespace GetOpt {
     /// Remove all quote marks from the array of tokens.
     ///
     def removeQuoteMarks(quoteOpen: String, quoteClose: String, args: Array[String]): Array[String] & Impure =
-        args |> Array.map(String.replace(quoteOpen, "") >> String.replace(quoteClose, ""))
+        args |> Array.map(String.replace({from = quoteOpen}, {to = ""}) >> String.replace({from = quoteClose}, {to = ""}))
 
 }
