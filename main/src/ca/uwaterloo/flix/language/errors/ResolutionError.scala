@@ -238,7 +238,7 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class InaccessibleTypeAlias(sym: Symbol.TypeAliasSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    def summary: String = "Inaccessible."
+    def summary: String = s"Inaccessible type alias ${sym.name}"
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
