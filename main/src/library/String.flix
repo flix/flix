@@ -49,28 +49,25 @@ namespace String {
         s.length() as & Pure
 
     ///
-    /// Returns `true` if the string `s1` starts with the string `s2`.
+    /// Returns `true` if the string `s` starts with the string `prefix`.
     ///
-    @Time(length(s2)) @Space(1)
-    pub def startsWith(s1: String, s2: String): Bool =
+    pub def startsWith(prefix: {prefix :: String}, s: String): Bool =
         import java.lang.String.startsWith(String);
-        s1.startsWith(s2) as & Pure
+        s.startsWith(prefix.prefix) as & Pure
 
     ///
-    /// Returns `true` if the string `s1` ends with the string `s2`.
+    /// Returns `true` if the string `s` ends with the string `suffix`.
     ///
-    @Time(length(s2)) @Space(1)
-    pub def endsWith(s1: String, s2: String): Bool =
+    pub def endsWith(suffix: {suffix :: String}, s: String): Bool =
         import java.lang.String.endsWith(String);
-        s1.endsWith(s2) as & Pure
+        s.endsWith(suffix.suffix) as & Pure
 
     ///
-    /// Splits the string `s` around matches of the regular expression `r`.
+    /// Splits the string `s` around matches of the regular expression `regex`.
     ///
-    @Time(length(s) + length(r)) @Space(length(s))
-    pub def split(s: String, r: String): Array[String] & Impure =
+    pub def split(regex: {regex :: String}, s: String): List[String] & Impure =
         import java.lang.String.split(String);
-        s.split(r)
+        Array.toList(s.split(regex.regex))
 
     ///
     /// Returns the lower case version of the string `s`.
@@ -283,25 +280,23 @@ namespace String {
         init(f, len)
 
     ///
-    /// Returns `true` if the entire string `s` is matched by the regular expression `pattern`.
+    /// Returns `true` if the entire string `s` is matched by the regular expression `regex`.
     ///
     /// Note - use `isSubmatch` to search for a substring.
     ///
-    @Time(length(s)) @Space(1)
-    pub def isMatch(pattern: String, s: String): Bool =
+    pub def isMatch(regex: {regex :: String}, s: String): Bool =
         try {
             import java.lang.String.matches(String);
-            s.matches(pattern) as & Pure
+            s.matches(regex.regex) as & Pure
         } catch {
             case _: ##java.util.regex.PatternSyntaxException => false
         }
 
     ///
-    /// Returns `true` if the string `s` is matched by the regular expression `pattern` at any point.
+    /// Returns `true` if the string `s` is matched by the regular expression `regex` at any point.
     ///
-    @Time(length(s)) @Space(1)
-    pub def isSubmatch(pattern: String, s: String): Bool =
-        isSubmatchHelper(pattern, s) as & Pure
+    pub def isSubmatch(regex: {regex :: String}, s: String): Bool =
+        isSubmatchHelper(regex.regex, s) as & Pure
 
     ///
     /// Helper function for `isSubmatch`.
@@ -424,15 +419,14 @@ namespace String {
         }
 
     ///
-    /// Returns the positions of the all the occurences of `sub` in `s`.
+    /// Returns the positions of the all the occurences of `substr` in `s`.
     ///
-    /// Returns `Nil` if `sub` is the empty string.
+    /// Returns `Nil` if `substr` is the empty string.
     ///
-    @Time(length(sub) * length(s)) @Space(length(s))
-    pub def indices(sub: String, s: String): List[Int32] =
-        let sublen = length(sub);
+    pub def indices(substr: {substr :: String}, s: String): List[Int32] =
+        let sublen = length(substr.substr);
         let step = ix ->
-            match indexOfLeftWithOffset(sub, ix, s) {
+            match indexOfLeftWithOffset({substr = substr.substr}, {offset = ix}, s) {
                 case None => None
                 case Some(ix2) => Some(ix2, ix2 + sublen)
             };
@@ -843,13 +837,12 @@ namespace String {
             s + repeat(Char.toString(c), w - len)
 
     ///
-    /// Returns `s` with every match of the substring `target` replaced by the string `rep`.
+    /// Returns `s` with every match of the substring `from` replaced by the string `to`.
     ///
-    @Time(length(s) * length(target)) @Space(length(s) * length(target))
-    pub def replace(target: String, rep: String, s: String): String =
+    pub def replace(from: {from :: String}, to: {to :: String}, s: String): String =
         import java.lang.String.replace(##java.lang.CharSequence, ##java.lang.CharSequence);
-        let t = target as ##java.lang.CharSequence;
-        let r = rep as ##java.lang.CharSequence;
+        let t = from.from as ##java.lang.CharSequence;
+        let r = to.to as ##java.lang.CharSequence;
         s.replace(t, r) as & Pure
 
     ///
@@ -861,20 +854,18 @@ namespace String {
         s.replace(target, rep) as & Pure
 
     ///
-    /// Returns `s` with every match of the regular expression `patt` replaced by the string `rep`.
+    /// Returns `s` with every match of the regular expression `regex` replaced by the string `to`.
     ///
-    @Time(length(s) * length(rep)) @Space(length(s) * length(rep))
-    pub def replaceMatches(patt: String, rep: String, s: String): String =
+    pub def replaceMatches(regex: {regex :: String}, to: {to :: String}, s: String): String =
         import java.lang.String.replaceAll(String, String);
-        s.replaceAll(patt, rep) as & Pure
+        s.replaceAll(regex.regex, to.to) as & Pure
 
     ///
-    /// Returns `s` with the first match of the regular expression `patt` replaced by the string `rep`.
+    /// Returns `s` with the first match of the regular expression `regex` replaced by the string `to`.
     ///
-    @Time(length(s) + length(rep)) @Space(length(s) + length(rep))
-    pub def replaceFirstMatch(patt: String, rep: String, s: String): String =
+    pub def replaceFirstMatch(regex: {regex :: String}, to: {to :: String}, s: String): String =
         import java.lang.String.replaceFirst(String, String);
-        s.replaceFirst(patt, rep) as & Pure
+        s.replaceFirst(regex.regex, to.to) as & Pure
 
     ///
     /// Returns `s` with the element at index `i` replaced by `a`.
@@ -989,7 +980,7 @@ namespace String {
         if (isEmpty(s))
             Nil
         else
-            Array.toList(split(s, "\\R")) as & Pure
+            split({regex = "\\R"}, s) as & Pure
 
     ///
     /// Join the array of strings `a` separating each pair of strings and
@@ -1013,7 +1004,7 @@ namespace String {
     @Time(length(s)) @Space(length(s))
     pub def words(s: String): List[String] = match trim(s) {
         case s1 if isEmpty(s1) => Nil
-        case s1 => Array.toList(split(s1, "\\s+")) as & Pure
+        case s1 => split({regex = "\\s+"}, s1) as & Pure
     }
 
     ///
@@ -1043,52 +1034,48 @@ namespace String {
     ///
     /// Alias for `indexOfLeft`.
     ///
-    @Time(length(sub) * length(s)) @Space(length(s))
-    pub def indexOf(sub: String, s: String): Option[Int32] = indexOfLeft(sub, s)
+    pub def indexOf(substr: {substr :: String}, s: String): Option[Int32] = indexOfLeft({substr = substr.substr}, s)
 
     ///
-    /// Return the index of the first occurence of `sub` in `s` from the left.
+    /// Return the index of the first occurence of `substr` in `s` from the left.
     ///
-    /// If `sub` is not present in `s` return None.
+    /// If `substr` is not present in `s` return None.
     ///
-    /// If `sub` is the empty string return None.
+    /// If `substr` is the empty string return None.
     ///
-    @Time(length(sub) * length(s)) @Space(length(s))
-    pub def indexOfLeft(sub: String, s: String): Option[Int32] =
+    pub def indexOfLeft(substr: {substr :: String}, s: String): Option[Int32] =
         import java.lang.String.indexOf(String);
-        if (isEmpty(sub))
+        if (isEmpty(substr.substr))
             None
         else {
-            let i = s.indexOf(sub) as & Pure;
+            let i = s.indexOf(substr.substr) as & Pure;
             if (i < 0) None else Some(i)
         }
 
     ///
-    /// Return the index of the first occurence of `sub` in `s` from the right.
+    /// Return the index of the first occurence of `substr` in `s` from the right.
     ///
-    /// If `sub` is not present in `s` return None.
+    /// If `substr` is not present in `s` return None.
     ///
-    /// If `sub` is the empty string return None.
+    /// If `substr` is the empty string return None.
     ///
-    @Time(length(sub) * length(s)) @Space(length(s))
-    pub def indexOfRight(sub: String, s: String): Option[Int32] =
+    pub def indexOfRight(substr: {substr :: String}, s: String): Option[Int32] =
         import java.lang.String.lastIndexOf(String);
-        if (isEmpty(sub))
+        if (isEmpty(substr.substr))
             None
         else {
-            let i = s.lastIndexOf(sub) as & Pure;
+            let i = s.lastIndexOf(substr.substr) as & Pure;
             if (i < 0) None else Some(i)
         }
 
     ///
-    /// Returns `true` if and only if `sub` is an infix of `s`.
+    /// Returns `true` if and only if `substr` is an infix of `s`.
     ///
-    @Time(length(sub) * length(s)) @Space(length(s))
-    pub def contains(s: String, sub: String): Bool =
-        if (isEmpty(sub))
+    pub def contains(substr: {substr :: String}, s: String): Bool =
+        if (isEmpty(substr.substr))
             true
         else {
-            let a = indexOfLeft(sub, s);
+            let a = indexOfLeft({substr = substr.substr}, s);
             not Option.isEmpty(a)
         }
 
@@ -1250,19 +1237,18 @@ namespace String {
         init(i -> f(charAt(i, a), charAt(i, b)), len)
 
     ///
-    /// Split the string `s` on matches of `sub`.
+    /// Split the string `s` on matches of `substr`.
     ///
-    @Time(length(s) + length(sub)) @Space(length(s) + length(sub))
-    pub def splitOn(s: String, sub: String): List[String] =
+    pub def splitOn(substr: {substr :: String}, s: String): List[String] =
         let maxlen = length(s);
-        let sublen = length(sub);
+        let sublen = length(substr.substr);
         let step = ix ->
             // Note - to stop we have to be greater than maxlen.
-            // We want to return a final empty string if `s` terminates with `sub`.
+            // We want to return a final empty string if `s` terminates with `substr`.
             if (ix > maxlen)
                 None
             else {
-                match indexOfLeftWithOffset(sub, ix, s) {
+                match indexOfLeftWithOffset({substr = substr.substr}, {offset = ix}, s) {
                     case None => {
                         let s1 = sliceRight(s, ix);
                         Some(s1, maxlen + 1)
@@ -1275,34 +1261,31 @@ namespace String {
             };
         List.unfold(step, 0)
 
-
     ///
     /// This is `indexOfLeft` with a start offset.
     ///
-    /// Returns `None` if `sub` is the empty string.
+    /// Returns `None` if `substr` is the empty string.
     ///
-    @Time(length(sub) * length(s)) @Space(length(s))
-    pub def indexOfLeftWithOffset(sub: String, offset: Int32, s: String): Option[Int32] =
+    pub def indexOfLeftWithOffset(substr: {substr :: String}, offset: {offset :: Int32}, s: String): Option[Int32] =
         import java.lang.String.indexOf(String, Int32);
-        if (isEmpty(sub))
+        if (isEmpty(substr.substr))
             None
         else {
-            let ix = s.indexOf(sub, offset) as & Pure;
+            let ix = s.indexOf(substr.substr, offset.offset) as & Pure;
             if (ix < 0) None else Some(ix)
         }
 
     ///
     /// This is `indexOfRight` with a start offset.
     ///
-    /// Returns `None` if `sub` is the empty string.
+    /// Returns `None` if `substr` is the empty string.
     ///
-    @Time(length(sub) * length(s)) @Space(length(s))
-    pub def indexOfRightWithOffset(sub: String, offset: Int32, s: String): Option[Int32] =
+    pub def indexOfRightWithOffset(substr: {substr :: String}, offset: {offset :: Int32}, s: String): Option[Int32] =
         import java.lang.String.lastIndexOf(String, Int32);
-        if (isEmpty(sub))
+        if (isEmpty(substr.substr))
             None
         else {
-            let ix = s.lastIndexOf(sub, offset) as & Pure;
+            let ix = s.lastIndexOf(substr.substr, offset.offset) as & Pure;
             if (ix < 0) None else Some(ix)
         }
 
@@ -1333,66 +1316,61 @@ namespace String {
         List.unfold(step, 0)
 
     ///
-    /// Find the first instance of `sub` in string `s`, return a pair of the
-    /// prefix of string `s` up to `sub` and the rest of string `s` including `sub`.
+    /// Find the first instance of `substr` in string `s`, return a pair of the
+    /// prefix of string `s` up to `substr` and the rest of string `s` including `substr`.
     ///
-    @Time(length(sub) * length(s)) @Space(length(sub) * length(s))
-    pub def breakOnLeft(sub: String, s: String): (String, String) =
-        match indexOfLeft(sub, s) {
+    pub def breakOnLeft(substr: {substr :: String}, s: String): (String, String) =
+        match indexOfLeft({substr = substr.substr}, s) {
             case None => (s, "")
             case Some(i) => (sliceLeft(s, i), sliceRight(s, i))
         }
 
     ///
-    /// Find the last instance of `sub` in string `s`, return a pair of the
-    /// initial string including `sub` and suffix from `sub`.
+    /// Find the last instance of `substr` in string `s`, return a pair of the
+    /// initial string including `substr` and suffix from `substr`.
     ///
-    @Time(length(sub) * length(s)) @Space(length(sub) * length(s))
-    pub def breakOnRight(sub: String, s: String): (String, String) =
-        let sublen = length(sub);
-        match indexOfRight(sub, s) {
+    pub def breakOnRight(substr: {substr :: String}, s: String): (String, String) =
+        let sublen = length(substr.substr);
+        match indexOfRight({substr = substr.substr}, s) {
             case None => (s, "")
             case Some(i) => (sliceLeft(s, i + sublen), sliceRight(s, i + sublen))
         }
 
     ///
-    /// Count the occurences of `sub` in string `s`.
+    /// Count the occurences of `substr` in string `s`.
     ///
-    @Time(length(sub) * length(s)) @Space(length(sub) * length(s))
-    pub def countSubstring(sub: String, s: String): Int32 =
-        let sublen = length(sub);
+    pub def countSubstring(substr: {substr :: String}, s: String): Int32 =
+        let sublen = length(substr.substr);
         if (sublen <= 0)
             0
         else
-            countSubstringHelper(sub, sublen, s, 0, 0)
+            countSubstringHelper(substr.substr, sublen, s, 0, 0)
 
     ///
     /// Helper function for `count``.
     ///
     def countSubstringHelper(sub: String, sublen: Int32, s: String, offset: Int32, count: Int32): Int32 =
-        match indexOfLeftWithOffset(sub, offset, s) {
+        match indexOfLeftWithOffset({substr = sub}, {offset = offset}, s) {
             case None => count
             case Some(i) => countSubstringHelper(sub, sublen, s, i + sublen, count + 1)
         }
 
     ///
-    /// Returns `Some(suffix)` of string `s` if its prefix matches `sub`.
+    /// Returns `Some(suffix)` of string `s` if its prefix matches `substr`.
     ///
-    @Time(length(s) - length(sub)) @Space(length(s) - length(sub))
-    pub def stripPrefix(sub: String, s: String): Option[String] =
-        if (not startsWith(s, sub))
+    pub def stripPrefix(substr: {substr :: String}, s: String): Option[String] =
+        if (not startsWith({prefix = substr.substr}, s))
             None
         else
-            Some(dropLeft(length(sub), s))
+            Some(dropLeft(length(substr.substr), s))
 
     ///
-    /// Returns `Some(prefix)` of string `s` if its suffix matches `sub`.
+    /// Returns `Some(prefix)` of string `s` if its suffix matches `substr`.
     ///
-    @Time(length(s) - length(sub)) @Space(length(s) - length(sub))
-    pub def stripSuffix(sub: String, s: String): Option[String] =
-        if (not endsWith(s, sub))
+    pub def stripSuffix(substr: {substr :: String}, s: String): Option[String] =
+        if (not endsWith({suffix = substr.substr}, s))
             None
         else
-            Some(dropRight(length(sub), s))
+            Some(dropRight(length(substr.substr), s))
 
 }
