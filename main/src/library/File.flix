@@ -62,6 +62,24 @@ namespace File {
         }
 
     ///
+    /// Returns `true` if the given file `f` is a symbolic link.
+    ///
+    pub def isSymbolicLink(file: String): Result[Bool, String] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import java.io.File.toPath();
+            import java.nio.file.Files:isSymbolicLink(##java.nio.file.Path);
+            let javaFile = newFile(file);
+            let javaPath = javaFile.toPath();
+            let isSymbolic = javaPath.isSymbolicLink();
+            Ok(isSymbolic)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
+    ///
     /// Returns `true` if the given file `f` is readable.
     ///
     pub def isReadable(f: String): Result[Bool, String] & Impure =
