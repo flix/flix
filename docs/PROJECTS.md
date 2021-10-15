@@ -45,9 +45,32 @@ University (see flix.dev).
 ### Literature
 - Skeletal program enumeration for rigorous compiler testing - Zhang et al.
 
-## Inliner - Serious Compiler Optimizations
 
-## Contro effects, etc.
+## Inlining - The Holy Grail of Compiler Optimizations
+
+A compiler checks an input program for well-formedness and outputs a typically
+lower-level program, e.g. JVM bytecode, machine code, etc. An *optimizing*
+compiler aims to not just translate a program, but to eliminate the overhead of
+abstractions used in the source program. Inlining is one of the most powerful
+techniques; simply put during inlining a function definition is replaced by its
+body which often enables further optimizations. However, inlining also increases
+the size of the generated code (and can lead to non-termination if not applied
+carefully). 
+
+The aim of this project is to: (1) explore the design space of compiler
+optimization strategies for functional and imperative programming languages and
+to (2) design and implement such optimizations for the Flix programming
+language. This includes looking into techniques such as monomorphization,
+closure elimination, case-of-case optimizations, partial evaluation, and more. 
+
+## Literature 
+
+
+
+
+## Delimited Continuations
+
+
 
 
 ## GADTS - Extensible Variants -- MLSub
@@ -81,9 +104,10 @@ the case of functional programming, such termination checkers may try to ensure
 termination by verifying that recursion is always on structurally smaller
 elements. 
 
-The aim of this project is to explore the design space of termination analysis for a functional language.
-The work will include reading papers, language design, and implementation in a real-world programming language
-being developed at Aarhus University (see flix.dev).
+The aim of this project is to explore the design space of termination analysis
+for a functional language. The work will include reading papers, language
+design, and implementation in a real-world programming language being developed
+at Aarhus University (see flix.dev).
 
 ### Literature
 - Andreas Abel: Termination Checker for Simple Functional Programs
