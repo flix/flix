@@ -6,18 +6,22 @@ If you are interested in working on any of these projects, you can reach out to 
 
 ## Auto-Completion and Program Synthesis
 
-Integrated development environments (IDEs), such as Intellij IDEA, aid programmers by providing auto-completion for 
-field and method names. Dependently-typed programming languages such as Agda and Idris take
-this a step further by allowing the programmer to have the compiler fill in entire expressions based on the
-types of the program. Effectively, the compiler searches for expressions that satisfy the requirements (e.g. types)
-of a "hole" in the program. If there are multiple candidates, the compiler uses heuristics (e.g. Machine Learning) to 
-rank the different choices.
+Integrated development environments (IDEs), such as Intellij IDEA, aid
+programmers by providing auto-completion for field and method names.
+Dependently-typed programming languages such as Agda and Idris take this a step
+further by allowing the programmer to have the compiler fill in entire
+expressions based on the types of the program. Effectively, the compiler
+searches for expressions that satisfy the requirements (e.g. types) of a "hole"
+in the program. If there are multiple candidates, the compiler uses heuristics
+(e.g. Machine Learning) to rank the different choices.
 
-The aim of this project is to: (1) explore the design space of such program completions, and to 
-(2) design and implement such a system for the Flix programming language.
+The aim of this project is to: (1) explore the design space of such program
+completions, and to (2) design and implement such a system for the Flix
+programming language.
 
-The work will include reading papers, language design, and implementation in a real-world programming language
-being developed at Aarhus University (see flix.dev).
+The work will include reading papers, language design, and implementation in a
+real-world programming language being developed at Aarhus University (see
+flix.dev).
 
 ### Literature
 - Type Driven Development with Idris - Edwin Brady
@@ -69,9 +73,19 @@ closure elimination, case-of-case optimizations, partial evaluation, and more.
 
 
 ## Delimited Continuations
+Most programming languages support a notion of a exceptions. An exception is a
+special control-flow construct that allows a function to abort execution and to
+transfer control to an exception handler. Exceptions are typically implemented
+as an intrinsic part of the programming language. However, it is possible and
+useful to offer more powerful features that users or library authors to
+implement their own control-structures. Delimited continuations is one such
+feature. In a programming language with delimited continuations, exceptions can
+be implemented entirely as a library. Moreover, delimited continuations can
+enable resumable exceptions and other interesting control-flow constructs.
 
-
-
+The aim of this project is to: (1) explore the design space of delimited
+continuations and to (2) design and implement a notion of delimited
+continuations for the Flix programming language. 
 
 ## GADTS - Extensible Variants -- MLSub
 
