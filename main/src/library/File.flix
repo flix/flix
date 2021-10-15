@@ -214,7 +214,7 @@ namespace File {
         }
 
     ///
-    /// Returns an array of all the bytes in the given file `f`.
+    /// Returns an array of all the bytes in the given file `file`.
     ///
     pub def readBytes(file: String): Result[Array[Int8], String] & Impure =
         try {
