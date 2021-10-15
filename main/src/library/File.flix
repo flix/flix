@@ -213,4 +213,24 @@ namespace File {
                 Iterator(done, next)
         }
 
+    ///
+    /// Returns an array of all the bytes in the given file `f`.
+    ///
+    pub def readBytes(file: String): Result[Array[Int8], String] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import java.io.File.toPath();
+            import java.nio.file.Files:readAllBytes(##java.nio.file.Path);
+
+            let javaFile = newFile(file);
+            let javaPath = javaFile.toPath();
+            let bytes = readAllBytes(javaPath);
+
+            Ok(bytes)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
 }
