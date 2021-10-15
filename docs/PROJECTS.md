@@ -2,7 +2,9 @@
 
 This is a list of projects that are currently open for exploration.
 
-If you are interested in working on any of these projects, you can reach out to us on Gitter.
+If you are interested in working on any of these projects, you can reach out to
+us on Gitter. If you are a bachelor or master student at Aarhus University you
+can reach out to Magnus directly. 
 
 ## Auto-Completion and Program Synthesis
 
@@ -23,8 +25,6 @@ The work will include reading papers, language design, and implementation in a
 real-world programming language being developed at Aarhus University (see
 flix.dev).
 
-### Literature
-- Type Driven Development with Idris - Edwin Brady
 
 
 ## Compiler Fuzzing
@@ -46,8 +46,6 @@ programming language. The work will include reading papers, language design, and
 implementation in a real-world programming language being developed at Aarhus
 University (see flix.dev).
 
-### Literature
-- Skeletal program enumeration for rigorous compiler testing - Zhang et al.
 
 
 ## Inlining - The Holy Grail of Compiler Optimizations
@@ -67,9 +65,6 @@ to (2) design and implement such optimizations for the Flix programming
 language. This includes looking into techniques such as monomorphization,
 closure elimination, case-of-case optimizations, partial evaluation, and more. 
 
-## Literature 
-
-
 
 
 ## Delimited Continuations
@@ -87,7 +82,6 @@ The aim of this project is to: (1) explore the design space of delimited
 continuations and to (2) design and implement a notion of delimited
 continuations for the Flix programming language. 
 
-## GADTS - Extensible Variants -- MLSub
 
 
 ## "Flixdoc" - A Web Programming Project
@@ -101,9 +95,6 @@ examples that can be run in the browser.
 
 The aim of this project is to learn about modern web technologies and to
 implement a online API documentation website for Flix, a "Flixdoc". 
-
-### Literature
-- https://reactjs.org/
 
 
 
@@ -122,6 +113,3 @@ The aim of this project is to explore the design space of termination analysis
 for a functional language. The work will include reading papers, language
 design, and implementation in a real-world programming language being developed
 at Aarhus University (see flix.dev).
-
-### Literature
-- Andreas Abel: Termination Checker for Simple Functional Programs
