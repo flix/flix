@@ -233,4 +233,44 @@ namespace File {
                 Err(getMessage(ex))
         }
 
+    ///
+    /// Returns an iterator of the bytes in the given `file` in chunks of size `chunkSize`.
+    ///
+    pub def readChunks(file: String, chunkSize: Int32): Iterator[Result[Array[Int8], String]] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import java.io.File.toPath();
+            import java.nio.file.Files:readAllBytes(##java.nio.file.Path);
+
+            let javaFile = newFile(file);
+            let javaPath = javaFile.toPath();
+            let bytes = readAllBytes(javaPath);
+            let byteCount = Array.length(bytes);
+            let i = ref 0;
+
+            let done = () -> deref i >= byteCount;
+            let next = () -> {
+                let j = deref i;
+                if(j < byteCount) {
+                    let end = {
+                        if(j+chunkSize >= byteCount) byteCount-1
+                        else j+chunkSize-1
+                    };
+                    let byteOfChuckSize = Array.slice(bytes, j, end);
+                    i := j+chunkSize;
+                    Ok(byteOfChuckSize)
+                } else bug!("Empty Iterator!")
+            };
+            Iterator(done, next)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                let err = ref getMessage(ex);
+                let done = () -> Object.isNull(deref err);
+                let next = () -> {
+                    Err(deref err)
+                };
+                Iterator(done, next)
+        }
+
 }
