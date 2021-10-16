@@ -145,35 +145,35 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     // Perform specialization of all non-parametric function definitions.
-    for ((sym, defn) <- nonParametricDefns) {
-      // Get a substitution from the inferred scheme to the declared scheme.
-      // This is necessary because the inferred scheme may be more generic than the declared scheme.
-      val subst = Unification.unifyTypes(defn.spec.declaredScheme.base, defn.impl.inferredScheme.base) match {
-        case Result.Ok(subst1) => subst1
-        // This should not happen, since the Typer guarantees that the schemes unify
-        case Result.Err(_) => throw InternalCompilerException("Failed to unify declared and inferred schemes.")
-      }
-      val subst0 = StrictSubstitution(subst)
+    traverse(nonParametricDefns) {
+      case (sym, defn) =>
+        // Get a substitution from the inferred scheme to the declared scheme.
+        // This is necessary because the inferred scheme may be more generic than the declared scheme.
+        val subst = Unification.unifyTypes(defn.spec.declaredScheme.base, defn.impl.inferredScheme.base) match {
+          case Result.Ok(subst1) => subst1
+          // This should not happen, since the Typer guarantees that the schemes unify
+          case Result.Err(_) => throw InternalCompilerException("Failed to unify declared and inferred schemes.")
+        }
+        val subst0 = StrictSubstitution(subst)
 
-      // Specialize the formal parameters to obtain fresh local variable symbols for them.
-      val (fparams, env0) = specializeFormalParams(defn.spec.fparams, subst0) match {
-        case Success(t) => t
-        case Failure(errors) => return Failure(errors)
-      }
-
-      // Specialize the body expression.
-      val body = specialize(defn.impl.exp, env0, subst0) match {
-        case Success(t) => t
-        case Failure(errors) => return Failure(errors)
-      }
-
-      // Reassemble the definition.
-      specializedDefns.put(sym, defn.copy(spec = defn.spec.copy(fparams = fparams), impl = defn.impl.copy(exp = body)))
+        for {
+          // Specialize the formal parameters to obtain fresh local variable symbols for them.
+          pair <- specializeFormalParams(defn.spec.fparams, subst0)
+          (fparams, env0) = pair
+          // Specialize the body expression.
+          body <- specialize(defn.impl.exp, env0, subst0)
+        } yield
+          // Reassemble the definition.
+          specializedDefns.put(sym, defn.copy(spec = defn.spec.copy(fparams = fparams), impl = defn.impl.copy(exp = body)))
+    } match {
+      case Success(_) => ()
+      case Failure(errors) => return Failure(errors)
     }
+
+    // Validations fail fast from here on out
 
     // Performs function specialization until both queues are empty.
     while (defQueue.nonEmpty) {
-
       // Performs function specialization until the queue is empty.
       while (defQueue.nonEmpty) {
         // Extract a function from the queue and specializes it w.r.t. its substitution.
@@ -206,9 +206,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
             // Save the specialized function.
             specializedDefns.put(freshSym, specializedDefn)
         }
-
       }
-
     }
 
     // Reassemble the AST.
@@ -840,7 +838,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         // Simply refer to the already existing specialized symbol.
         specializedSym
     }
-
   }
 
   /**
@@ -857,7 +854,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     traverse(fparams0)(p => specializeFormalParam(p, subst0)).map(_.unzip).map {
       case (params, envs) => (params, envs.reduce(_ ++ _))
     }
-
   }
 
   /**
@@ -885,7 +881,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     traverse(cparams0)(p => specializeConstraintParam(p, subst0)).map(_.unzip).map {
       case (params, envs) => (params, envs.reduce(_ ++ _))
     }
-
   }
 
   /**
@@ -962,5 +957,4 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
     visit(tpe)
   }
-
 }
