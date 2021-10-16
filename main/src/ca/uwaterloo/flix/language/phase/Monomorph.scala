@@ -225,6 +225,8 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   def specialize(exp0: Expression, env0: Map[Symbol.VarSym, Symbol.VarSym], subst0: StrictSubstitution)(implicit root: Root, flix: Flix): Validation[Expression, CompilationError] = {
 
+    // TODO subst eff
+
     /**
       * Specializes the given expression `e0` under the environment `env0`. w.r.t. the current substitution.
       */
@@ -310,14 +312,14 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           es <- traverse(exps)(visitExp(_, env0))
           t <- subst0(tpe)
           ef <- subst0(eff)
-        } yield Expression.Apply(e, es, t, ef, loc)
+        } yield Expression.Apply(e, es, t, eff, loc)
 
       case Expression.Unary(sop, exp, tpe, eff, loc) =>
         for {
           e1 <- visitExp(exp, env0)
           t <- subst0(tpe)
           ef <- subst0(eff)
-        } yield Expression.Unary(sop, e1, t, ef, loc)
+        } yield Expression.Unary(sop, e1, t, eff, loc)
 
       // Other Binary Expression.
       case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) =>
@@ -326,7 +328,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           e2 <- visitExp(exp2, env0)
           t <- subst0(tpe)
           ef <- subst0(eff)
-        } yield Expression.Binary(sop, e1, e2, t, ef, loc)
+        } yield Expression.Binary(sop, e1, e2, t, eff, loc)
 
       case Expression.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
         // Generate a fresh symbol for the let-bound variable.
@@ -337,14 +339,14 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           e2 <- visitExp(exp2, env1)
           t <- subst0(tpe)
           ef <- subst0(eff)
-        } yield Expression.Let(freshSym, mod, e1, e2, t, ef, loc)
+        } yield Expression.Let(freshSym, mod, e1, e2, t, eff, loc)
 
       case Expression.LetRegion(sym, exp, tpe, eff, loc) =>
         for {
           e <- visitExp(exp, env0)
           t <- subst0(tpe)
           ef <- subst0(eff)
-        } yield Expression.LetRegion(sym, e, t, ef, loc)
+        } yield Expression.LetRegion(sym, e, t, eff, loc)
 
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
         for {
@@ -353,7 +355,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           e3 <- visitExp(exp3, env0)
           t <- subst0(tpe)
           ef <- subst0(eff)
-        } yield Expression.IfThenElse(e1, e2, e3, t, ef, loc)
+        } yield Expression.IfThenElse(e1, e2, e3, t, eff, loc)
 
       case Expression.Stm(exp1, exp2, tpe, eff, loc) =>
         for {
@@ -361,7 +363,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           e2 <- visitExp(exp2, env0)
           t <- subst0(tpe)
           ef <- subst0(eff)
-        } yield Expression.Stm(e1, e2, t, ef, loc)
+        } yield Expression.Stm(e1, e2, t, eff, loc)
 
       case Expression.Match(exp, rules, tpe, eff, loc) =>
         for {
@@ -378,7 +380,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           e <- visitExp(exp, env0)
           t <- subst0(tpe)
           ef <- subst0(eff)
-        } yield Expression.Match(e, rs, t, ef, loc)
+        } yield Expression.Match(e, rs, t, eff, loc)
 
       case Expression.Choose(exps, rules, tpe, eff, loc) =>
         for {
@@ -410,14 +412,14 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           e <- visitExp(exp, env0)
           t <- subst0(tpe)
           ef <- subst0(eff)
-        } yield Expression.Tag(sym, tag, e, t, ef, loc)
+        } yield Expression.Tag(sym, tag, e, t, eff, loc)
 
       case Expression.Tuple(elms, tpe, eff, loc) =>
         for {
           es <- traverse(elms)(visitExp(_, env0))
           t <- subst0(tpe)
           ef <- subst0(eff)
-        } yield Expression.Tuple(es, t, ef, loc)
+        } yield Expression.Tuple(es, t, eff, loc)
 
       case Expression.RecordEmpty(tpe, loc) =>
         subst0(tpe).map(Expression.RecordEmpty(_, loc))
@@ -427,7 +429,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           b <- visitExp(base, env0)
           t <- subst0(tpe)
           ef <- subst0(eff)
-        } yield Expression.RecordSelect(b, field, t, ef, loc)
+        } yield Expression.RecordSelect(b, field, t, eff, loc)
 
       case Expression.RecordExtend(field, value, rest, tpe, eff, loc) =>
         for {
@@ -435,21 +437,21 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           r <- visitExp(rest, env0)
           t <- subst0(tpe)
           ef <- subst0(eff)
-        } yield Expression.RecordExtend(field, v, r, t, ef, loc)
+        } yield Expression.RecordExtend(field, v, r, t, eff, loc)
 
       case Expression.RecordRestrict(field, rest, tpe, eff, loc) =>
         for {
           r <- visitExp(rest, env0)
           t <- subst0(tpe)
           ef <- subst0(eff)
-        } yield Expression.RecordRestrict(field, r, t, ef, loc)
+        } yield Expression.RecordRestrict(field, r, t, eff, loc)
 
       case Expression.ArrayLit(elms, tpe, eff, loc) =>
         for {
           es <- traverse(elms)(visitExp(_, env0))
           t <- subst0(tpe)
           ef <- subst0(eff)
-        } yield Expression.ArrayLit(es, t, ef, loc)
+        } yield Expression.ArrayLit(es, t, eff, loc)
 
       case Expression.ArrayNew(elm, len, tpe, eff, loc) =>
         for {
@@ -457,7 +459,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           ln <- visitExp(len, env0)
           t <- subst0(tpe)
           ef <- subst0(eff)
-        } yield Expression.ArrayNew(e, ln, t, ef, loc)
+        } yield Expression.ArrayNew(e, ln, t, eff, loc)
 
       case Expression.ArrayLoad(base, index, tpe, eff, loc) =>
         for {
@@ -465,7 +467,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           i <- visitExp(index, env0)
           t <- subst0(tpe)
           ef <- subst0(eff)
-        } yield Expression.ArrayLoad(b, i, t, ef, loc)
+        } yield Expression.ArrayLoad(b, i, t, eff, loc)
 
       case Expression.ArrayStore(base, index, elm, loc) =>
         for {
@@ -478,7 +480,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         for {
           b <- visitExp(base, env0)
           ef <- subst0(eff)
-        } yield Expression.ArrayLength(b, ef, loc)
+        } yield Expression.ArrayLength(b, eff, loc)
 
       case Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) =>
         for {
@@ -493,14 +495,14 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           e <- visitExp(exp, env0)
           t <- subst0(tpe)
           ef <- subst0(eff)
-        } yield Expression.Ref(e, t, ef, loc)
+        } yield Expression.Ref(e, t, eff, loc)
 
       case Expression.Deref(exp, tpe, eff, loc) =>
         for {
           e <- visitExp(exp, env0)
           t <- subst0(tpe)
           ef <- subst0(eff)
-        } yield Expression.Deref(e, t, ef, loc)
+        } yield Expression.Deref(e, t, eff, loc)
 
       case Expression.Assign(exp1, exp2, tpe, eff, loc) =>
         for {
@@ -508,7 +510,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           e2 <- visitExp(exp2, env0)
           t <- subst0(tpe)
           ef <- subst0(eff)
-        } yield Expression.Assign(e1, e2, t, ef, loc)
+        } yield Expression.Assign(e1, e2, t, eff, loc)
 
       case Expression.Existential(fparam, exp, loc) =>
         for {
@@ -529,14 +531,14 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           e <- visitExp(exp, env0)
           t <- subst0(tpe)
           ef <- subst0(eff)
-        } yield Expression.Ascribe(e, t, ef, loc)
+        } yield Expression.Ascribe(e, t, eff, loc)
 
       case Expression.Cast(exp, tpe, eff, loc) =>
         for {
           e <- visitExp(exp, env0)
           t <- subst0(tpe)
           ef <- subst0(eff)
-        } yield Expression.Cast(e, t, ef, loc)
+        } yield Expression.Cast(e, t, eff, loc)
 
       case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
         for {
@@ -552,14 +554,14 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           }
           t <- subst0(tpe)
           ef <- subst0(eff)
-        } yield Expression.TryCatch(e, rs, t, ef, loc)
+        } yield Expression.TryCatch(e, rs, t, eff, loc)
 
       case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
         for {
           as <- traverse(args)(visitExp(_, env0))
           t <- subst0(tpe)
           ef <- subst0(eff)
-        } yield Expression.InvokeConstructor(constructor, as, t, ef, loc)
+        } yield Expression.InvokeConstructor(constructor, as, t, eff, loc)
 
       case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) =>
         for {
@@ -615,14 +617,14 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           e <- visitExp(exp, env0)
           t <- subst0(tpe)
           ef <- subst0(eff)
-        } yield Expression.NewChannel(e, t, ef, loc)
+        } yield Expression.NewChannel(e, t, eff, loc)
 
       case Expression.GetChannel(exp, tpe, eff, loc) =>
         for {
           e <- visitExp(exp, env0)
           t <- subst0(tpe)
           ef <- subst0(eff)
-        } yield Expression.GetChannel(e, t, ef, loc)
+        } yield Expression.GetChannel(e, t, eff, loc)
 
       case Expression.PutChannel(exp1, exp2, tpe, eff, loc) =>
         for {
@@ -630,7 +632,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           e2 <- visitExp(exp2, env0)
           t <- subst0(tpe)
           ef <- subst0(eff)
-        } yield Expression.PutChannel(e1, e2, t, ef, loc)
+        } yield Expression.PutChannel(e1, e2, t, eff, loc)
 
       case Expression.SelectChannel(rules, default, tpe, eff, loc) =>
         for {
@@ -649,14 +651,14 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           }
           t <- subst0(tpe)
           ef <- subst0(eff)
-        } yield Expression.SelectChannel(rs, d, t, ef, loc)
+        } yield Expression.SelectChannel(rs, d, t, eff, loc)
 
       case Expression.Spawn(exp, tpe, eff, loc) =>
         for {
           e <- visitExp(exp, env0)
           t <- subst0(tpe)
           ef <- subst0(eff)
-        } yield Expression.Spawn(e, t, ef, loc)
+        } yield Expression.Spawn(e, t, eff, loc)
 
       case Expression.Lazy(exp, tpe, loc) =>
         for {
@@ -669,7 +671,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           e <- visitExp(exp, env0)
           t <- subst0(tpe)
           ef <- subst0(eff)
-        } yield Expression.Force(e, t, ef, loc)
+        } yield Expression.Force(e, t, eff, loc)
 
       case Expression.FixpointConstraintSet(_, _, _, loc) =>
         throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
