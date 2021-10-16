@@ -106,118 +106,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
   private type Def2Def = mutable.Map[(Symbol.DefnSym, Type), Symbol.DefnSym]
 
   /**
-    * Performs monomorphization of the given AST `root`.
-    */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Monomorph") {
-
-    /**
-      * A function-local queue of pending (fresh symbol, function definition, and substitution)-triples.
-      *
-      * For example, if the queue contains the entry:
-      *
-      * -   (f$1, f, [a -> Int])
-      *
-      * it means that the function definition f should be specialized w.r.t. the map [a -> Int] under the fresh name f$1.
-      */
-    implicit val defQueue: DefQueue = mutable.Queue.empty
-
-    /**
-      * A function-local map from a symbol and a concrete type to the fresh symbol for the specialized version of that function.
-      *
-      * For example, if the function:
-      *
-      * -   def fst[a, b](x: a, y: b): a = ...
-      *
-      * has been specialized w.r.t. to `Int` and `Str` then this map will contain an entry:
-      *
-      * -   (fst, (Int, Str) -> Int) -> fst$1
-      */
-    implicit val def2def: Def2Def = mutable.Map.empty
-
-    implicit val r: Root = root
-
-    // A map used to collect specialized definitions, etc.
-    val specializedDefns: mutable.Map[Symbol.DefnSym, TypedAst.Def] = mutable.Map.empty
-
-    // Collect all non-parametric function definitions.
-    val nonParametricDefns = root.defs.filter {
-      case (_, defn) => defn.spec.tparams.isEmpty
-    }
-
-    // Perform specialization of all non-parametric function definitions.
-    for ((sym, defn) <- nonParametricDefns) {
-      // Get a substitution from the inferred scheme to the declared scheme.
-      // This is necessary because the inferred scheme may be more generic than the declared scheme.
-      val subst = Unification.unifyTypes(defn.spec.declaredScheme.base, defn.impl.inferredScheme.base) match {
-        case Result.Ok(subst1) => subst1
-        // This should not happen, since the Typer guarantees that the schemes unify
-        case Result.Err(_) => throw InternalCompilerException("Failed to unify declared and inferred schemes.")
-      }
-      val subst0 = StrictSubstitution(subst)
-
-      // Specialize the formal parameters to obtain fresh local variable symbols for them.
-      val (fparams, env0) = specializeFormalParams(defn.spec.fparams, subst0) match {
-        case Success(t) => t
-        case Failure(errors) => return Failure(errors)
-      }
-
-      // Specialize the body expression.
-      val body = specialize(defn.impl.exp, env0, subst0) match {
-        case Success(t) => t
-        case Failure(errors) => return Failure(errors)
-      }
-
-      // Reassemble the definition.
-      specializedDefns.put(sym, defn.copy(spec = defn.spec.copy(fparams = fparams), impl = defn.impl.copy(exp = body)))
-    }
-
-    // Performs function specialization until both queues are empty.
-    while (defQueue.nonEmpty) {
-
-      // Performs function specialization until the queue is empty.
-      while (defQueue.nonEmpty) {
-        // Extract a function from the queue and specializes it w.r.t. its substitution.
-        val (freshSym, defn, subst) = defQueue.dequeue()
-
-        flix.subtask(freshSym.toString, sample = true)
-
-        // Specialize the formal parameters and introduce fresh local variable symbols.
-        val (fparams, env0) = specializeFormalParams(defn.spec.fparams, subst) match {
-          case Success(t) => t
-          case Failure(errors) => return Failure(errors)
-        }
-
-        // Specialize the body expression.
-        val specializedExp = specialize(defn.impl.exp, env0, subst) match {
-          case Success(t) => t
-          case Failure(errors) => return Failure(errors)
-        }
-
-        subst(defn.impl.inferredScheme.base) match {
-          case Failure(errors) => Failure(errors)
-          case Success(base) =>
-            // Reassemble the definition.
-            // NB: Removes the type parameters as the function is now monomorphic.
-            val specializedDefn = defn.copy(
-              sym = freshSym,
-              spec = defn.spec.copy(fparams = fparams, tparams = Nil),
-              impl = TypedAst.Impl(specializedExp, Scheme(Nil, List.empty, base)))
-
-            // Save the specialized function.
-            specializedDefns.put(freshSym, specializedDefn)
-        }
-
-      }
-
-    }
-
-    // Reassemble the AST.
-    root.copy(
-      defs = specializedDefns.toMap
-    ).toSuccess
-  }
-
-  /**
     * Performs specialization of the given expression `exp0` under the environment `env0` w.r.t. the given substitution `subst0`.
     *
     * Replaces every reference to a parametric function with a reference to its specialized version.
@@ -857,7 +745,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     traverse(fparams0)(p => specializeFormalParam(p, subst0)).map(_.unzip).map {
       case (params, envs) => (params, envs.reduce(_ ++ _))
     }
-
   }
 
   /**
@@ -901,6 +788,119 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       val freshSym = Symbol.freshVarSym(sym)
       subst0(tpe).map(t => (ConstraintParam.RuleParam(freshSym, t, loc), Map(sym -> freshSym)))
   }
+
+  /**
+    * Performs monomorphization of the given AST `root`.
+    */
+  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Monomorph") {
+
+    /**
+      * A function-local queue of pending (fresh symbol, function definition, and substitution)-triples.
+      *
+      * For example, if the queue contains the entry:
+      *
+      * -   (f$1, f, [a -> Int])
+      *
+      * it means that the function definition f should be specialized w.r.t. the map [a -> Int] under the fresh name f$1.
+      */
+    implicit val defQueue: DefQueue = mutable.Queue.empty
+
+    /**
+      * A function-local map from a symbol and a concrete type to the fresh symbol for the specialized version of that function.
+      *
+      * For example, if the function:
+      *
+      * -   def fst[a, b](x: a, y: b): a = ...
+      *
+      * has been specialized w.r.t. to `Int` and `Str` then this map will contain an entry:
+      *
+      * -   (fst, (Int, Str) -> Int) -> fst$1
+      */
+    implicit val def2def: Def2Def = mutable.Map.empty
+
+    implicit val r: Root = root
+
+    // A map used to collect specialized definitions, etc.
+    val specializedDefns: mutable.Map[Symbol.DefnSym, TypedAst.Def] = mutable.Map.empty
+
+    // Collect all non-parametric function definitions.
+    val nonParametricDefns = root.defs.filter {
+      case (_, defn) => defn.spec.tparams.isEmpty
+    }
+
+    // Perform specialization of all non-parametric function definitions.
+    for ((sym, defn) <- nonParametricDefns) {
+      // Get a substitution from the inferred scheme to the declared scheme.
+      // This is necessary because the inferred scheme may be more generic than the declared scheme.
+      val subst = Unification.unifyTypes(defn.spec.declaredScheme.base, defn.impl.inferredScheme.base) match {
+        case Result.Ok(subst1) => subst1
+        // This should not happen, since the Typer guarantees that the schemes unify
+        case Result.Err(_) => throw InternalCompilerException("Failed to unify declared and inferred schemes.")
+      }
+      val subst0 = StrictSubstitution(subst)
+
+      // Specialize the formal parameters to obtain fresh local variable symbols for them.
+      val (fparams, env0) = specializeFormalParams(defn.spec.fparams, subst0) match {
+        case Success(t) => t
+        case Failure(errors) => return Failure(errors)
+      }
+
+      // Specialize the body expression.
+      val body = specialize(defn.impl.exp, env0, subst0) match {
+        case Success(t) => t
+        case Failure(errors) => return Failure(errors)
+      }
+
+      // Reassemble the definition.
+      specializedDefns.put(sym, defn.copy(spec = defn.spec.copy(fparams = fparams), impl = defn.impl.copy(exp = body)))
+    }
+
+    // Performs function specialization until both queues are empty.
+    while (defQueue.nonEmpty) {
+
+      // Performs function specialization until the queue is empty.
+      while (defQueue.nonEmpty) {
+        // Extract a function from the queue and specializes it w.r.t. its substitution.
+        val (freshSym, defn, subst) = defQueue.dequeue()
+
+        flix.subtask(freshSym.toString, sample = true)
+
+        // Specialize the formal parameters and introduce fresh local variable symbols.
+        val (fparams, env0) = specializeFormalParams(defn.spec.fparams, subst) match {
+          case Success(t) => t
+          case Failure(errors) => return Failure(errors)
+        }
+
+        // Specialize the body expression.
+        val specializedExp = specialize(defn.impl.exp, env0, subst) match {
+          case Success(t) => t
+          case Failure(errors) => return Failure(errors)
+        }
+
+        subst(defn.impl.inferredScheme.base) match {
+          case Failure(errors) => Failure(errors)
+          case Success(base) =>
+            // Reassemble the definition.
+            // NB: Removes the type parameters as the function is now monomorphic.
+            val specializedDefn = defn.copy(
+              sym = freshSym,
+              spec = defn.spec.copy(fparams = fparams, tparams = Nil),
+              impl = TypedAst.Impl(specializedExp, Scheme(Nil, List.empty, base)))
+
+            // Save the specialized function.
+            specializedDefns.put(freshSym, specializedDefn)
+        }
+
+      }
+
+    }
+
+    // Reassemble the AST.
+    root.copy(
+      defs = specializedDefns.toMap
+    ).toSuccess
+  }
+
 
   /**
     * Returns an expression that evaluates to a ReifiedType for the given type `tpe`.
