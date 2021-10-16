@@ -101,29 +101,121 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     }
   }
 
-  /**
-    * A function-local queue of pending (fresh symbol, function definition, and substitution)-triples.
-    *
-    * For example, if the queue contains the entry:
-    *
-    * -   (f$1, f, [a -> Int])
-    *
-    * it means that the function definition f should be specialized w.r.t. the map [a -> Int] under the fresh name f$1.
-    */
-  val defQueue: mutable.Queue[(Symbol.DefnSym, Def, StrictSubstitution)] = mutable.Queue.empty
+  private type DefQueue = mutable.Queue[(Symbol.DefnSym, Def, StrictSubstitution)]
+
+  private type Def2Def = mutable.Map[(Symbol.DefnSym, Type), Symbol.DefnSym]
 
   /**
-    * A function-local map from a symbol and a concrete type to the fresh symbol for the specialized version of that function.
-    *
-    * For example, if the function:
-    *
-    * -   def fst[a, b](x: a, y: b): a = ...
-    *
-    * has been specialized w.r.t. to `Int` and `Str` then this map will contain an entry:
-    *
-    * -   (fst, (Int, Str) -> Int) -> fst$1
+    * Performs monomorphization of the given AST `root`.
     */
-  val def2def: mutable.Map[(Symbol.DefnSym, Type), Symbol.DefnSym] = mutable.Map.empty
+  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Monomorph") {
+
+    /**
+      * A function-local queue of pending (fresh symbol, function definition, and substitution)-triples.
+      *
+      * For example, if the queue contains the entry:
+      *
+      * -   (f$1, f, [a -> Int])
+      *
+      * it means that the function definition f should be specialized w.r.t. the map [a -> Int] under the fresh name f$1.
+      */
+    implicit val defQueue: DefQueue = mutable.Queue.empty
+
+    /**
+      * A function-local map from a symbol and a concrete type to the fresh symbol for the specialized version of that function.
+      *
+      * For example, if the function:
+      *
+      * -   def fst[a, b](x: a, y: b): a = ...
+      *
+      * has been specialized w.r.t. to `Int` and `Str` then this map will contain an entry:
+      *
+      * -   (fst, (Int, Str) -> Int) -> fst$1
+      */
+    implicit val def2def: Def2Def = mutable.Map.empty
+
+    implicit val r: Root = root
+
+    // A map used to collect specialized definitions, etc.
+    val specializedDefns: mutable.Map[Symbol.DefnSym, TypedAst.Def] = mutable.Map.empty
+
+    // Collect all non-parametric function definitions.
+    val nonParametricDefns = root.defs.filter {
+      case (_, defn) => defn.spec.tparams.isEmpty
+    }
+
+    // Perform specialization of all non-parametric function definitions.
+    for ((sym, defn) <- nonParametricDefns) {
+      // Get a substitution from the inferred scheme to the declared scheme.
+      // This is necessary because the inferred scheme may be more generic than the declared scheme.
+      val subst = Unification.unifyTypes(defn.spec.declaredScheme.base, defn.impl.inferredScheme.base) match {
+        case Result.Ok(subst1) => subst1
+        // This should not happen, since the Typer guarantees that the schemes unify
+        case Result.Err(_) => throw InternalCompilerException("Failed to unify declared and inferred schemes.")
+      }
+      val subst0 = StrictSubstitution(subst)
+
+      // Specialize the formal parameters to obtain fresh local variable symbols for them.
+      val (fparams, env0) = specializeFormalParams(defn.spec.fparams, subst0) match {
+        case Success(t) => t
+        case Failure(errors) => return Failure(errors)
+      }
+
+      // Specialize the body expression.
+      val body = specialize(defn.impl.exp, env0, subst0) match {
+        case Success(t) => t
+        case Failure(errors) => return Failure(errors)
+      }
+
+      // Reassemble the definition.
+      specializedDefns.put(sym, defn.copy(spec = defn.spec.copy(fparams = fparams), impl = defn.impl.copy(exp = body)))
+    }
+
+    // Performs function specialization until both queues are empty.
+    while (defQueue.nonEmpty) {
+
+      // Performs function specialization until the queue is empty.
+      while (defQueue.nonEmpty) {
+        // Extract a function from the queue and specializes it w.r.t. its substitution.
+        val (freshSym, defn, subst) = defQueue.dequeue()
+
+        flix.subtask(freshSym.toString, sample = true)
+
+        // Specialize the formal parameters and introduce fresh local variable symbols.
+        val (fparams, env0) = specializeFormalParams(defn.spec.fparams, subst) match {
+          case Success(t) => t
+          case Failure(errors) => return Failure(errors)
+        }
+
+        // Specialize the body expression.
+        val specializedExp = specialize(defn.impl.exp, env0, subst) match {
+          case Success(t) => t
+          case Failure(errors) => return Failure(errors)
+        }
+
+        subst(defn.impl.inferredScheme.base) match {
+          case Failure(errors) => Failure(errors)
+          case Success(base) =>
+            // Reassemble the definition.
+            // NB: Removes the type parameters as the function is now monomorphic.
+            val specializedDefn = defn.copy(
+              sym = freshSym,
+              spec = defn.spec.copy(fparams = fparams, tparams = Nil),
+              impl = TypedAst.Impl(specializedExp, Scheme(Nil, List.empty, base)))
+
+            // Save the specialized function.
+            specializedDefns.put(freshSym, specializedDefn)
+        }
+
+      }
+
+    }
+
+    // Reassemble the AST.
+    root.copy(
+      defs = specializedDefns.toMap
+    ).toSuccess
+  }
 
   /**
     * Performs specialization of the given expression `exp0` under the environment `env0` w.r.t. the given substitution `subst0`.
@@ -135,9 +227,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     * If a specialized version of a function does not yet exists, a fresh symbol is created for it, and the
     * definition and substitution is enqueued.
     */
-  def specialize(exp0: Expression, env0: Map[Symbol.VarSym, Symbol.VarSym], subst0: StrictSubstitution)(implicit root: Root, flix: Flix): Validation[Expression, CompilationError] = {
-
-    // TODO subst eff
+  def specialize(exp0: Expression, env0: Map[Symbol.VarSym, Symbol.VarSym], subst0: StrictSubstitution)(implicit root: Root, flix: Flix, def2def: Def2Def, defQueue: DefQueue): Validation[Expression, CompilationError] = {
 
     /**
       * Specializes the given expression `e0` under the environment `env0`. w.r.t. the current substitution.
@@ -217,13 +307,15 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           e <- visitExp(exp, env0)
           es <- traverse(exps)(visitExp(_, env0))
           t <- subst0(tpe)
-        } yield Expression.Apply(e, es, t, eff, loc)
+          ef <- subst0(eff)
+        } yield Expression.Apply(e, es, t, ef, loc)
 
       case Expression.Unary(sop, exp, tpe, eff, loc) =>
         for {
           e1 <- visitExp(exp, env0)
           t <- subst0(tpe)
-        } yield Expression.Unary(sop, e1, t, eff, loc)
+          ef <- subst0(eff)
+        } yield Expression.Unary(sop, e1, t, ef, loc)
 
       // Other Binary Expression.
       case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) =>
@@ -231,7 +323,8 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           e1 <- visitExp(exp1, env0)
           e2 <- visitExp(exp2, env0)
           t <- subst0(tpe)
-        } yield Expression.Binary(sop, e1, e2, t, eff, loc)
+          ef <- subst0(eff)
+        } yield Expression.Binary(sop, e1, e2, t, ef, loc)
 
       case Expression.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
         // Generate a fresh symbol for the let-bound variable.
@@ -241,13 +334,15 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           e1 <- visitExp(exp1, env1)
           e2 <- visitExp(exp2, env1)
           t <- subst0(tpe)
-        } yield Expression.Let(freshSym, mod, e1, e2, t, eff, loc)
+          ef <- subst0(eff)
+        } yield Expression.Let(freshSym, mod, e1, e2, t, ef, loc)
 
       case Expression.LetRegion(sym, exp, tpe, eff, loc) =>
         for {
           e <- visitExp(exp, env0)
           t <- subst0(tpe)
-        } yield Expression.LetRegion(sym, e, t, eff, loc)
+          ef <- subst0(eff)
+        } yield Expression.LetRegion(sym, e, t, ef, loc)
 
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
         for {
@@ -255,14 +350,16 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           e2 <- visitExp(exp2, env0)
           e3 <- visitExp(exp3, env0)
           t <- subst0(tpe)
-        } yield Expression.IfThenElse(e1, e2, e3, t, eff, loc)
+          ef <- subst0(eff)
+        } yield Expression.IfThenElse(e1, e2, e3, t, ef, loc)
 
       case Expression.Stm(exp1, exp2, tpe, eff, loc) =>
         for {
           e1 <- visitExp(exp1, env0)
           e2 <- visitExp(exp2, env0)
           t <- subst0(tpe)
-        } yield Expression.Stm(e1, e2, t, eff, loc)
+          ef <- subst0(eff)
+        } yield Expression.Stm(e1, e2, t, ef, loc)
 
       case Expression.Match(exp, rules, tpe, eff, loc) =>
         for {
@@ -278,7 +375,8 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           }
           e <- visitExp(exp, env0)
           t <- subst0(tpe)
-        } yield Expression.Match(e, rs, t, eff, loc)
+          ef <- subst0(eff)
+        } yield Expression.Match(e, rs, t, ef, loc)
 
       case Expression.Choose(exps, rules, tpe, eff, loc) =>
         for {
@@ -307,13 +405,15 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         for {
           e <- visitExp(exp, env0)
           t <- subst0(tpe)
-        } yield Expression.Tag(sym, tag, e, t, eff, loc)
+          ef <- subst0(eff)
+        } yield Expression.Tag(sym, tag, e, t, ef, loc)
 
       case Expression.Tuple(elms, tpe, eff, loc) =>
         for {
           es <- traverse(elms)(visitExp(_, env0))
           t <- subst0(tpe)
-        } yield Expression.Tuple(es, t, eff, loc)
+          ef <- subst0(eff)
+        } yield Expression.Tuple(es, t, ef, loc)
 
       case Expression.RecordEmpty(tpe, loc) =>
         subst0(tpe).map(Expression.RecordEmpty(_, loc))
@@ -322,40 +422,46 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         for {
           b <- visitExp(base, env0)
           t <- subst0(tpe)
-        } yield Expression.RecordSelect(b, field, t, eff, loc)
+          ef <- subst0(eff)
+        } yield Expression.RecordSelect(b, field, t, ef, loc)
 
       case Expression.RecordExtend(field, value, rest, tpe, eff, loc) =>
         for {
           v <- visitExp(value, env0)
           r <- visitExp(rest, env0)
           t <- subst0(tpe)
-        } yield Expression.RecordExtend(field, v, r, t, eff, loc)
+          ef <- subst0(eff)
+        } yield Expression.RecordExtend(field, v, r, t, ef, loc)
 
       case Expression.RecordRestrict(field, rest, tpe, eff, loc) =>
         for {
           r <- visitExp(rest, env0)
           t <- subst0(tpe)
-        } yield Expression.RecordRestrict(field, r, t, eff, loc)
+          ef <- subst0(eff)
+        } yield Expression.RecordRestrict(field, r, t, ef, loc)
 
       case Expression.ArrayLit(elms, tpe, eff, loc) =>
         for {
           es <- traverse(elms)(visitExp(_, env0))
           t <- subst0(tpe)
-        } yield Expression.ArrayLit(es, t, eff, loc)
+          ef <- subst0(eff)
+        } yield Expression.ArrayLit(es, t, ef, loc)
 
       case Expression.ArrayNew(elm, len, tpe, eff, loc) =>
         for {
           e <- visitExp(elm, env0)
           ln <- visitExp(len, env0)
           t <- subst0(tpe)
-        } yield Expression.ArrayNew(e, ln, t, eff, loc)
+          ef <- subst0(eff)
+        } yield Expression.ArrayNew(e, ln, t, ef, loc)
 
       case Expression.ArrayLoad(base, index, tpe, eff, loc) =>
         for {
           b <- visitExp(base, env0)
           i <- visitExp(index, env0)
           t <- subst0(tpe)
-        } yield Expression.ArrayLoad(b, i, t, eff, loc)
+          ef <- subst0(eff)
+        } yield Expression.ArrayLoad(b, i, t, ef, loc)
 
       case Expression.ArrayStore(base, index, elm, loc) =>
         for {
@@ -367,7 +473,8 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       case Expression.ArrayLength(base, eff, loc) =>
         for {
           b <- visitExp(base, env0)
-        } yield Expression.ArrayLength(b, eff, loc)
+          ef <- subst0(eff)
+        } yield Expression.ArrayLength(b, ef, loc)
 
       case Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) =>
         for {
@@ -381,20 +488,23 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         for {
           e <- visitExp(exp, env0)
           t <- subst0(tpe)
-        } yield Expression.Ref(e, t, eff, loc)
+          ef <- subst0(eff)
+        } yield Expression.Ref(e, t, ef, loc)
 
       case Expression.Deref(exp, tpe, eff, loc) =>
         for {
           e <- visitExp(exp, env0)
           t <- subst0(tpe)
-        } yield Expression.Deref(e, t, eff, loc)
+          ef <- subst0(eff)
+        } yield Expression.Deref(e, t, ef, loc)
 
       case Expression.Assign(exp1, exp2, tpe, eff, loc) =>
         for {
           e1 <- visitExp(exp1, env0)
           e2 <- visitExp(exp2, env0)
           t <- subst0(tpe)
-        } yield Expression.Assign(e1, e2, t, eff, loc)
+          ef <- subst0(eff)
+        } yield Expression.Assign(e1, e2, t, ef, loc)
 
       case Expression.Existential(fparam, exp, loc) =>
         for {
@@ -414,13 +524,15 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         for {
           e <- visitExp(exp, env0)
           t <- subst0(tpe)
-        } yield Expression.Ascribe(e, t, eff, loc)
+          ef <- subst0(eff)
+        } yield Expression.Ascribe(e, t, ef, loc)
 
       case Expression.Cast(exp, tpe, eff, loc) =>
         for {
           e <- visitExp(exp, env0)
           t <- subst0(tpe)
-        } yield Expression.Cast(e, t, eff, loc)
+          ef <- subst0(eff)
+        } yield Expression.Cast(e, t, ef, loc)
 
       case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
         for {
@@ -435,13 +547,15 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
               )
           }
           t <- subst0(tpe)
-        } yield Expression.TryCatch(e, rs, t, eff, loc)
+          ef <- subst0(eff)
+        } yield Expression.TryCatch(e, rs, t, ef, loc)
 
       case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
         for {
           as <- traverse(args)(visitExp(_, env0))
           t <- subst0(tpe)
-        } yield Expression.InvokeConstructor(constructor, as, t, eff, loc)
+          ef <- subst0(eff)
+        } yield Expression.InvokeConstructor(constructor, as, t, ef, loc)
 
       case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) =>
         for {
@@ -483,20 +597,23 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         for {
           e <- visitExp(exp, env0)
           t <- subst0(tpe)
-        } yield Expression.NewChannel(e, t, eff, loc)
+          ef <- subst0(eff)
+        } yield Expression.NewChannel(e, t, ef, loc)
 
       case Expression.GetChannel(exp, tpe, eff, loc) =>
         for {
           e <- visitExp(exp, env0)
           t <- subst0(tpe)
-        } yield Expression.GetChannel(e, t, eff, loc)
+          ef <- subst0(eff)
+        } yield Expression.GetChannel(e, t, ef, loc)
 
       case Expression.PutChannel(exp1, exp2, tpe, eff, loc) =>
         for {
           e1 <- visitExp(exp1, env0)
           e2 <- visitExp(exp2, env0)
           t <- subst0(tpe)
-        } yield Expression.PutChannel(e1, e2, t, eff, loc)
+          ef <- subst0(eff)
+        } yield Expression.PutChannel(e1, e2, t, ef, loc)
 
       case Expression.SelectChannel(rules, default, tpe, eff, loc) =>
         for {
@@ -514,13 +631,15 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
             case None => None.toSuccess
           }
           t <- subst0(tpe)
-        } yield Expression.SelectChannel(rs, d, t, eff, loc)
+          ef <- subst0(eff)
+        } yield Expression.SelectChannel(rs, d, t, ef, loc)
 
       case Expression.Spawn(exp, tpe, eff, loc) =>
         for {
           e <- visitExp(exp, env0)
           t <- subst0(tpe)
-        } yield Expression.Spawn(e, t, eff, loc)
+          ef <- subst0(eff)
+        } yield Expression.Spawn(e, t, ef, loc)
 
       case Expression.Lazy(exp, tpe, loc) =>
         for {
@@ -532,7 +651,8 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         for {
           e <- visitExp(exp, env0)
           t <- subst0(tpe)
-        } yield Expression.Force(e, t, eff, loc)
+          ef <- subst0(eff)
+        } yield Expression.Force(e, t, ef, loc)
 
       case Expression.FixpointConstraintSet(_, _, _, loc) =>
         throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
@@ -573,26 +693,24 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       * Returns the new pattern and a mapping from variable symbols to fresh variable symbols.
       */
     def visitPat(p0: Pattern): Validation[(Pattern, Map[Symbol.VarSym, Symbol.VarSym]), CompilationError] = {
-      def emptyMap = Map.empty[Symbol.VarSym, Symbol.VarSym]
-
       p0 match {
-        case Pattern.Wild(tpe, loc) => subst0(tpe).map(t => (Pattern.Wild(t, loc), emptyMap))
+        case Pattern.Wild(tpe, loc) => subst0(tpe).map(t => (Pattern.Wild(t, loc), Map.empty[Symbol.VarSym, Symbol.VarSym]))
         case Pattern.Var(sym, tpe, loc) =>
           // Generate a fresh variable symbol for the pattern-bound variable.
           val freshSym = Symbol.freshVarSym(sym)
           subst0(tpe).map(t => (Pattern.Var(freshSym, t, loc), Map(sym -> freshSym)))
-        case Pattern.Unit(loc) => (Pattern.Unit(loc), emptyMap).toSuccess
-        case Pattern.True(loc) => (Pattern.True(loc), emptyMap).toSuccess
-        case Pattern.False(loc) => (Pattern.False(loc), emptyMap).toSuccess
-        case Pattern.Char(lit, loc) => (Pattern.Char(lit, loc), emptyMap).toSuccess
-        case Pattern.Float32(lit, loc) => (Pattern.Float32(lit, loc), emptyMap).toSuccess
-        case Pattern.Float64(lit, loc) => (Pattern.Float64(lit, loc), emptyMap).toSuccess
-        case Pattern.Int8(lit, loc) => (Pattern.Int8(lit, loc), emptyMap).toSuccess
-        case Pattern.Int16(lit, loc) => (Pattern.Int16(lit, loc), emptyMap).toSuccess
-        case Pattern.Int32(lit, loc) => (Pattern.Int32(lit, loc), emptyMap).toSuccess
-        case Pattern.Int64(lit, loc) => (Pattern.Int64(lit, loc), emptyMap).toSuccess
-        case Pattern.BigInt(lit, loc) => (Pattern.BigInt(lit, loc), emptyMap).toSuccess
-        case Pattern.Str(lit, loc) => (Pattern.Str(lit, loc), emptyMap).toSuccess
+        case Pattern.Unit(loc) => (Pattern.Unit(loc), Map.empty[Symbol.VarSym, Symbol.VarSym]).toSuccess
+        case Pattern.True(loc) => (Pattern.True(loc), Map.empty[Symbol.VarSym, Symbol.VarSym]).toSuccess
+        case Pattern.False(loc) => (Pattern.False(loc), Map.empty[Symbol.VarSym, Symbol.VarSym]).toSuccess
+        case Pattern.Char(lit, loc) => (Pattern.Char(lit, loc), Map.empty[Symbol.VarSym, Symbol.VarSym]).toSuccess
+        case Pattern.Float32(lit, loc) => (Pattern.Float32(lit, loc), Map.empty[Symbol.VarSym, Symbol.VarSym]).toSuccess
+        case Pattern.Float64(lit, loc) => (Pattern.Float64(lit, loc), Map.empty[Symbol.VarSym, Symbol.VarSym]).toSuccess
+        case Pattern.Int8(lit, loc) => (Pattern.Int8(lit, loc), Map.empty[Symbol.VarSym, Symbol.VarSym]).toSuccess
+        case Pattern.Int16(lit, loc) => (Pattern.Int16(lit, loc), Map.empty[Symbol.VarSym, Symbol.VarSym]).toSuccess
+        case Pattern.Int32(lit, loc) => (Pattern.Int32(lit, loc), Map.empty[Symbol.VarSym, Symbol.VarSym]).toSuccess
+        case Pattern.Int64(lit, loc) => (Pattern.Int64(lit, loc), Map.empty[Symbol.VarSym, Symbol.VarSym]).toSuccess
+        case Pattern.BigInt(lit, loc) => (Pattern.BigInt(lit, loc), Map.empty[Symbol.VarSym, Symbol.VarSym]).toSuccess
+        case Pattern.Str(lit, loc) => (Pattern.Str(lit, loc), Map.empty[Symbol.VarSym, Symbol.VarSym]).toSuccess
         case Pattern.Tag(sym, tag, pat, tpe, loc) =>
           for {
             pair <- visitPat(pat)
@@ -610,7 +728,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
             pair <- traverse(elms)(visitPat).map(_.unzip)
             (ps, envs) = pair
             t <- subst0(tpe)
-          } yield (Pattern.Array(ps, t, loc), if (envs.isEmpty) emptyMap else envs.reduce(_ ++ _))
+          } yield (Pattern.Array(ps, t, loc), if (envs.isEmpty) Map.empty[Symbol.VarSym, Symbol.VarSym] else envs.reduce(_ ++ _))
         case Pattern.ArrayTailSpread(elms, sym, tpe, loc) =>
           val freshSym = Symbol.freshVarSym(sym)
           for {
@@ -639,7 +757,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Returns the def symbol corresponding to the specialized symbol `sym` w.r.t. to the type `tpe`.
     */
-  def specializeDefSym(sym: Symbol.DefnSym, tpe: Type)(implicit root: Root, flix: Flix): Symbol.DefnSym = {
+  def specializeDefSym(sym: Symbol.DefnSym, tpe: Type)(implicit root: Root, flix: Flix, def2def: Def2Def, defQueue: DefQueue): Symbol.DefnSym = {
     // Lookup the definition and its declared type.
     val defn = root.defs(sym)
 
@@ -654,7 +772,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Returns the def symbol corresponding to the specialized symbol `sym` w.r.t. to the type `tpe`.
     */
-  def specializeSigSym(sym: Symbol.SigSym, tpe: Type)(implicit root: Root, flix: Flix): Symbol.DefnSym = {
+  def specializeSigSym(sym: Symbol.SigSym, tpe: Type)(implicit root: Root, flix: Flix, def2def: Def2Def, defQueue: DefQueue): Symbol.DefnSym = {
     val sig = root.sigs(sym)
 
     // lookup the instance corresponding to this type
@@ -698,7 +816,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Returns the def symbol corresponding to the specialized def `defn` w.r.t. to the type `tpe`.
     */
-  def specializeDef(defn: TypedAst.Def, tpe: Type)(implicit flix: Flix): Symbol.DefnSym = {
+  def specializeDef(defn: TypedAst.Def, tpe: Type)(implicit flix: Flix, def2def: Def2Def, defQueue: DefQueue): Symbol.DefnSym = {
     // Unify the declared and actual type to obtain the substitution map.
     val subst = StrictSubstitution(Unification.unifyTypes(defn.impl.inferredScheme.base, tpe).get)
 
@@ -782,94 +900,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     case ConstraintParam.RuleParam(sym, tpe, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
       subst0(tpe).map(t => (ConstraintParam.RuleParam(freshSym, t, loc), Map(sym -> freshSym)))
-  }
-
-  /**
-    * Performs monomorphization of the given AST `root`.
-    */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Monomorph") {
-
-    implicit val r: Root = root
-
-    // A map used to collect specialized definitions, etc.
-    val specializedDefns: mutable.Map[Symbol.DefnSym, TypedAst.Def] = mutable.Map.empty
-
-    // Collect all non-parametric function definitions.
-    val nonParametricDefns = root.defs.filter {
-      case (_, defn) => defn.spec.tparams.isEmpty
-    }
-
-    // Perform specialization of all non-parametric function definitions.
-    for ((sym, defn) <- nonParametricDefns) {
-      // Get a substitution from the inferred scheme to the declared scheme.
-      // This is necessary because the inferred scheme may be more generic than the declared scheme.
-      val subst = Unification.unifyTypes(defn.spec.declaredScheme.base, defn.impl.inferredScheme.base) match {
-        case Result.Ok(subst1) => subst1
-        // This should not happen, since the Typer guarantees that the schemes unify
-        case Result.Err(_) => throw InternalCompilerException("Failed to unify declared and inferred schemes.")
-      }
-      val subst0 = StrictSubstitution(subst)
-
-      // Specialize the formal parameters to obtain fresh local variable symbols for them.
-      val (fparams, env0) = specializeFormalParams(defn.spec.fparams, subst0) match {
-        case Success(t) => t
-        case Failure(errors) => return Failure(errors)
-      }
-
-      // Specialize the body expression.
-      val body = specialize(defn.impl.exp, env0, subst0) match {
-        case Success(t) => t
-        case Failure(errors) => return Failure(errors)
-      }
-
-      // Reassemble the definition.
-      specializedDefns.put(sym, defn.copy(spec = defn.spec.copy(fparams = fparams), impl = defn.impl.copy(exp = body)))
-    }
-
-    // Performs function specialization until both queues are empty.
-    while (defQueue.nonEmpty) {
-
-      // Performs function specialization until the queue is empty.
-      while (defQueue.nonEmpty) {
-        // Extract a function from the queue and specializes it w.r.t. its substitution.
-        val (freshSym, defn, subst) = defQueue.dequeue()
-
-        flix.subtask(freshSym.toString, sample = true)
-
-        // Specialize the formal parameters and introduce fresh local variable symbols.
-        val (fparams, env0) = specializeFormalParams(defn.spec.fparams, subst) match {
-          case Success(t) => t
-          case Failure(errors) => return Failure(errors)
-        }
-
-        // Specialize the body expression.
-        val specializedExp = specialize(defn.impl.exp, env0, subst) match {
-          case Success(t) => t
-          case Failure(errors) => return Failure(errors)
-        }
-
-        subst(defn.impl.inferredScheme.base) match {
-          case Failure(errors) => Failure(errors)
-          case Success(base) =>
-            // Reassemble the definition.
-            // NB: Removes the type parameters as the function is now monomorphic.
-            val specializedDefn = defn.copy(
-              sym = freshSym,
-              spec = defn.spec.copy(fparams = fparams, tparams = Nil),
-              impl = TypedAst.Impl(specializedExp, Scheme(Nil, List.empty, base)))
-
-            // Save the specialized function.
-            specializedDefns.put(freshSym, specializedDefn)
-        }
-
-      }
-
-    }
-
-    // Reassemble the AST.
-    root.copy(
-      defs = specializedDefns.toMap
-    ).toSuccess
   }
 
   /**
