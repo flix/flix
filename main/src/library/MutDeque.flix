@@ -108,7 +108,7 @@ namespace MutDeque {
         expand!(d)
 
     ///
-    /// Doubles the capacity of `d` if the capacity is full.
+    /// Doubles the capacity of `d` if the load factor is greater than or equal to `maxLoadFactor`.
     ///
     def expand!(d: MutDeque[a]): Unit & Impure =
         if (shouldExpand(d)) grow!(d) else ()
@@ -122,17 +122,15 @@ namespace MutDeque {
     ///
     /// Doubles the capacity of `d`.
     ///
-    def grow!(d: MutDeque[a]): Unit & Impure =
-        let MutDeque(a0, f0, b0) = d;
-        let a = deref a0;
-        let f = deref f0;
-        let b = deref b0;
+    def grow!(d: MutDeque[a]): Unit & Impure = {
+        let MutDeque(a, f, b) = d;
         let c = capacity(d);
         let arr = [default; 2 * c];
-        copyElements!(f, b, a, arr);
-        a0 := arr;
-        f0 := 0;
-        b0 := computeSize(c, f, b)
+        copyElements!(deref f, deref b, deref a, arr);
+        a := arr;
+        b := computeSize(c, deref f, deref b);
+        f := 0
+    }
 
     ///
     /// Compresses MutDeque `d` if the load factor is below `minLoadFactor`.
@@ -144,18 +142,15 @@ namespace MutDeque {
     /// Shrinks MutDeque `d` to half its size unless it's than the minimum capacity.
     ///
     def shrink!(d: MutDeque[a]): Unit & Impure =
-        let MutDeque(a0, f0, b0) = d;
+        let MutDeque(a, f, b) = d;
         let mc = minCapacity();
         let c = capacity(d);
         if (c > mc) {
-            let a = deref a0;
-            let f = deref f0;
-            let b = deref b0;
             let arr = [default; c / 2];
-            copyElements!(f, b, a, arr);
-            a0 := arr;
-            f0 := 0;
-            b0 := computeSize(c, f, b)
+            copyElements!(deref f, deref b, deref a, arr);
+            a := arr;
+            b := computeSize(c, deref f, deref b);
+            f := 0
         } else {
             ()
         }
@@ -166,10 +161,10 @@ namespace MutDeque {
     def copyElements!(f: Int32, b: Int32, a: Array[a], a1: Array[a]): Unit & Impure =
         let c = Array.length(a);
         if (f < b) {
-            Array.updateSequence!(0, a[f .. b], a1)
+            Array.updateSequence!(0,     a[f .. b], a1)
         } else {
-            Array.updateSequence!(0, a[0 .. b], a1);
-            Array.updateSequence!(b, a[f .. c], a1)
+            Array.updateSequence!(0,     a[f .. c], a1);
+            Array.updateSequence!(c - f, a[0 .. b], a1)
         }
 
     ///
