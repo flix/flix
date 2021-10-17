@@ -882,31 +882,40 @@ namespace TestLazyList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def exists01(): Bool = LazyList.exists(i -> i > 3, ENil) == false
+    def exists01(): Bool =
+        LazyList.exists(i -> i > 3, ENil) == false
 
     @test
-    def exists02(): Bool = (1 :: Nil) |> List.toLazyList |> LazyList.exists(i -> i > 3) == false
+    def exists02(): Bool =
+        (1 :: Nil) |> List.toLazyList |> LazyList.exists(i -> i > 3) == false
 
     @test
-    def exists03(): Bool = (5 :: Nil) |> List.toLazyList |> LazyList.exists(i -> i > 3) == true
+    def exists03(): Bool =
+        (5 :: Nil) |> List.toLazyList |> LazyList.exists(i -> i > 3) == true
 
     @test
-    def exists04(): Bool =  (1 :: 2 :: Nil) |> List.toLazyList |> LazyList.exists(i -> i > 3) == false
+    def exists04(): Bool =
+        (1 :: 2 :: Nil) |> List.toLazyList |> LazyList.exists(i -> i > 3) == false
 
     @test
-    def exists05(): Bool =  (1 :: 6 :: Nil) |> List.toLazyList |> LazyList.exists(i -> i > 3) == true
+    def exists05(): Bool =
+        (1 :: 6 :: Nil) |> List.toLazyList |> LazyList.exists(i -> i > 3) == true
 
     @test
-    def exists06(): Bool =  (6 :: 1 :: Nil) |> List.toLazyList |> LazyList.exists(i -> i > 3) == true
+    def exists06(): Bool =
+        (6 :: 1 :: Nil) |> List.toLazyList |> LazyList.exists(i -> i > 3) == true
 
     @test
-    def exists07(): Bool = (16 :: 6 :: Nil) |> List.toLazyList |> LazyList.exists(i -> i > 3) == true
+    def exists07(): Bool =
+        (16 :: 6 :: Nil) |> List.toLazyList |> LazyList.exists(i -> i > 3) == true
 
     @test
-    def exists08(): Bool = (1 :: -9 :: 3 :: Nil) |> List.toLazyList |> LazyList.exists(i -> i > 3) == false
+    def exists08(): Bool =
+        (1 :: -9 :: 3 :: Nil) |> List.toLazyList |> LazyList.exists(i -> i > 3) == false
 
     @test
-    def exists09(): Bool = (1 :: 9 :: 3 :: Nil) |> List.toLazyList |> LazyList.exists(i -> i > 3) == true
+    def exists09(): Bool =
+        (1 :: 9 :: 3 :: Nil) |> List.toLazyList |> LazyList.exists(i -> i > 3) == true
 
 
     /////////////////////////////////////////////////////////////////////////////
