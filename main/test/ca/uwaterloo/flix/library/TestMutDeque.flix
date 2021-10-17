@@ -293,7 +293,7 @@ namespace TestMutDeque {
         MutDeque.pushBack(2, d);
         // [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
 
-        let res = MutDeque.popBack(d) == Some(2) and
+        MutDeque.popBack(d) == Some(2) and
         MutDeque.popFront(d) == Some(1) and
         MutDeque.popBack(d) == Some(2) and
         MutDeque.popBack(d) == Some(2) and
@@ -302,11 +302,9 @@ namespace TestMutDeque {
         MutDeque.popBack(d) == Some(2) and
         MutDeque.popBack(d) == Some(2) and
         MutDeque.popBack(d) == Some(2) and
-        MutDeque.popBack(d) == Some(2);
-        println(MutDeque.popBack(d)); // Returns Some(1) but should be Some(2)
-        res
-
-        /*
+        MutDeque.popBack(d) == Some(2) and
+        MutDeque.popBack(d) == Some(2) and
+        MutDeque.popBack(d) == Some(1) and
         MutDeque.popBack(d) == Some(1) and
         MutDeque.popBack(d) == Some(1) and
         MutDeque.popBack(d) == Some(1) and
@@ -317,6 +315,5 @@ namespace TestMutDeque {
         MutDeque.popBack(d) == Some(1) and
         MutDeque.popBack(d) == None and
         MutDeque.popFront(d) == None
-*/
 
 }
