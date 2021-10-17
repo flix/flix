@@ -303,7 +303,7 @@ namespace TestMutDeque {
         MutDeque.popBack(d) == Some(2) and
         MutDeque.popBack(d) == Some(2) and
         MutDeque.popBack(d) == Some(2);
-        println(MutDeque.popBack(d));
+        println(MutDeque.popBack(d)); // Returns Some(1) but should be Some(2)
         res
 
         /*
