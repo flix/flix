@@ -1755,10 +1755,10 @@ namespace Array {
         else
             acc
 
-    // TODO: Add documentation.
-    // TODO: Add tests
-    // TODO: Rename to slice?
-    def _copyOfRange(b: Int32, e: Int32, a: Array[a]): Array[a] & Impure =
+    ///
+    /// Copies the range between `b` (inclusive) and `e` (exclusive) of a into a new array.
+    ///
+    def copyOfRange(b: Int32, e: Int32, a: Array[a]): Array[a] & Impure =
         match (reifyType a) {
             case ReifiedInt8 =>
                 let arr = a as Array[Int8];
