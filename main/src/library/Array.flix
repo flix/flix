@@ -1759,9 +1759,6 @@ namespace Array {
     // TODO: Add tests
     // TODO: Rename to slice?
     def _copyOfRange(b: Int32, e: Int32, a: Array[a]): Array[a] & Impure =
-        copyOfRangeHelper(b, e, a, reifyType a)
-
-    def copyOfRangeHelper(b: Int32, e: Int32, a: Array[a], t: ReifiedType): Array[a] & Impure =
         match (reifyType a) {
             case ReifiedInt8 =>
                 let arr = a as Array[Int8];
@@ -1795,22 +1792,13 @@ namespace Array {
                 let arr = a as Array[Char];
                 import java.util.Arrays:copyOfRange(Array[Char], Int32, Int32) as copy;
                 copy(arr, b, e) as Array[a]
-            case ReifiedArray(t1) =>
-                 copyOfRangeHelper(b, e, a, t1)
-            case ErasedType => ???
-            /*case ReifiedString =>
-                let arr = a as Array[String];
-                import java.util.Arrays:copyOfRange(Array[String], Int32, Int32) as copy;
+            case ReifiedArray(_) =>
+                let arr = a as Array[##java.lang.Object];
+                import java.util.Arrays:copyOfRange(Array[##java.lang.Object], Int32, Int32) as copy;
                 copy(arr, b, e) as Array[a]
-            case ReifiedBigInt =>
-                let arr = a as Array[BigInt];
-                import java.util.Arrays:copyOfRange(Array[BigInt], Int32, Int32) as copy;
+            case ErasedType =>
+                let arr = a as Array[##java.lang.Object];
+                import java.util.Arrays:copyOfRange(Array[##java.lang.Object], Int32, Int32) as copy;
                 copy(arr, b, e) as Array[a]
-            case ReifiedUnit =>
-                let arr = a as Array[Unit];
-                import java.util.Arrays:copyOfRange(Array[Unit], Int32, Int32) as copy;
-                copy(arr, b, e) as Array[a]
-                */
         }
-
 }
