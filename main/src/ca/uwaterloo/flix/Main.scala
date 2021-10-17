@@ -82,6 +82,7 @@ object Main {
       lib = cmdOpts.xlib,
       debug = cmdOpts.xdebug,
       documentor = cmdOpts.documentor,
+      hints = cmdOpts.hints,
       json = cmdOpts.json,
       progress = true,
       threads = cmdOpts.threads.getOrElse(Runtime.getRuntime.availableProcessors()),
@@ -147,6 +148,9 @@ object Main {
           Packager.install(project, cwd, o)
           System.exit(0)
 
+        case Command.Hints =>
+          println("hints enabled")
+          System.exit(0)
       }
     } catch {
       case ex: RuntimeException =>
@@ -225,6 +229,7 @@ object Main {
                      args: Option[String] = None,
                      benchmark: Boolean = false,
                      documentor: Boolean = false,
+                     hints: Boolean = false,
                      interactive: Boolean = false,
                      json: Boolean = false,
                      listen: Option[Int] = None,
@@ -269,6 +274,8 @@ object Main {
 
     case class Install(project: String) extends Command
 
+    case object Hints extends Command
+
   }
 
   /**
@@ -306,9 +313,11 @@ object Main {
 
       cmd("test").action((_, c) => c.copy(command = Command.Test)).text("  runs the tests for the current project.")
 
+      cmd("hints").text("  enables code hints phase.")
+
       cmd("install").text("  installs the Flix package from the given GitHub <owner>/<repo>")
         .children(
-          arg[String]("project").action((project, c) => c.copy(command = Command.Install(project)))
+            arg[String]("project").action((project, c) => c.copy(command = Command.Install(project)))
             .required()
         )
 
@@ -329,6 +338,10 @@ object Main {
 
       // Help.
       help("help").text("prints this usage information.")
+
+      // Code Hints.
+      opt[Unit]("hints").action((_, c) => c.copy(hints = true)).
+        text("enables code hints phase.")
 
       // Interactive.
       opt[Unit]("interactive").action((f, c) => c.copy(interactive = true)).
