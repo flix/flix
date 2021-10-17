@@ -1263,7 +1263,7 @@ namespace TestLazyList {
 
     @test
     def reduceLeft03(): Bool =
-    	LazyList.reduceLeft((a, b) -> a + b, ECons(1, ECons(3, ENil))) == Some(4)
+    	LazyList.reduceLeft((a, b) -> a + b, ECons(1, ECons(2, ENil))) == Some(3)
 
     @test
     def reduceLeft04(): Bool =
@@ -1292,79 +1292,23 @@ namespace TestLazyList {
 
     @test
     def reduceRight03(): Bool =
-    	LazyList.reduceRight((a, b) -> a + b, LCons(1, lazy ENil)) == Some(1)
-
-    @test
-    def reduceRight04(): Bool =
-    	LazyList.reduceRight((a, b) -> a + b, LList(lazy ECons(1, LList(lazy ENil)))) == Some(1)
-
-    @test
-    def reduceRight05(): Bool =
-    	LazyList.reduceRight((a, b) -> a + b, ECons(1, LList(lazy ENil))) == Some(1)
-
-    @test
-    def reduceRight06(): Bool =
-    	LazyList.reduceRight((a, b) -> a + b, LCons(1, lazy LList(lazy ENil))) == Some(1)
-
-    @test
-    def reduceRight07(): Bool =
     	LazyList.reduceRight((a, b) -> a + b, ECons(1, ENil)) == Some(1)
 
     @test
-    def reduceRight08(): Bool =
-    	LazyList.reduceRight((a, b) -> a + b, LList(lazy LCons(1, lazy ENil))) == Some(1)
+    def reduceRight04(): Bool =
+    	LazyList.reduceRight((a, b) -> a + b, ECons(1, ECons(2, ENil))) == Some(3)
 
     @test
-    def reduceRight09(): Bool =
-    	LazyList.reduceRight((a, b) -> a + b, LList(lazy LCons(1, lazy LList(lazy ENil)))) == Some(1)
+    def reduceRight05(): Bool =
+    	LazyList.reduceRight((a, b) -> a + b, ECons(1, ECons(2, ECons(3, ENil)))) == Some(6)
 
     @test
-    def reduceRight10(): Bool =
-    	LazyList.reduceRight((a, b) -> a + b, LList(lazy ECons(1, ENil))) == Some(1)
-
-    @test
-    def reduceRight11(): Bool =
-    	LazyList.reduceRight((a, b) -> a + b, LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy ENil))))) == Some(3)
-
-    @test
-    def reduceRight12(): Bool =
-    	LazyList.reduceRight((a, b) -> a + b, LList(lazy LCons(1, lazy ECons(2, LList(lazy ENil))))) == Some(3)
-
-    @test
-    def reduceRight13(): Bool =
-    	LazyList.reduceRight((a, b) -> a + b, ECons(1, LCons(2, lazy ENil))) == Some(3)
-
-    @test
-    def reduceRight14(): Bool =
-    	LazyList.reduceRight((a, b) -> a + b, LCons(1, lazy LCons(2, lazy LList(lazy LCons(3, lazy ENil))))) == Some(6)
-
-    @test
-    def reduceRight15(): Bool =
-    	LazyList.reduceRight((a, b) -> a + b, LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil))))) == Some(6)
-
-    @test
-    def reduceRight16(): Bool =
-    	LazyList.reduceRight((a, b) -> a + b, LList(lazy LCons(1, lazy LList(lazy ECons(2, LList(lazy ECons(3, ENil))))))) == Some(6)
-
-    @test
-    def reduceRight17(): Bool =
-    	LazyList.reduceRight((a, b) -> a + b, ECons(1, LCons(2, lazy ECons(3, ENil)))) == Some(6)
-
-    @test
-    def reduceRight18(): Bool =
-    	LazyList.reduceRight((a, b) -> a - b, LList(lazy ECons(1, LCons(2, lazy LCons(3, lazy ECons(4, ENil)))))) == Some(-2)
-
-    @test
-    def reduceRight19(): Bool =
-    	LazyList.reduceRight((a, b) -> a - b, LList(lazy ECons(1, LCons(2, lazy ECons(3, LList(lazy LCons(4, lazy ENil))))))) == Some(-2)
-
-    @test
-    def reduceRight20(): Bool =
-    	LazyList.reduceRight((a, b) -> a - b, ECons(1, LList(lazy LCons(2, lazy ECons(3, ECons(4, LList(lazy ENil))))))) == Some(-2)
-
-    @test
-    def reduceRight21(): Bool =
+    def reduceRight06(): Bool =
         LazyList.reduceRight((a, b) -> b - a, ECons(1, ECons(2, ECons(3, ECons(4, ENil))))) == Some(-2)
+
+    @test
+    def reduceRight07(): Bool =
+    	LazyList.reduceRight((a, b) -> a - b, LList(lazy ECons(1, LCons(2, lazy ECons(3, LList(lazy LCons(4, lazy ENil))))))) == Some(-2)
 
 
     /////////////////////////////////////////////////////////////////////////////
