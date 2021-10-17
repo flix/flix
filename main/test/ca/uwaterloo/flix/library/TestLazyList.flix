@@ -923,34 +923,44 @@ namespace TestLazyList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def forall01(): Bool = LazyList.forall(i -> i > 3, ENil) == true
+    def forall01(): Bool =
+        LazyList.forall(i -> i > 3, ENil) == true
 
     @test
-    def forall02(): Bool = (1 :: Nil) |> List.toLazyList |> LazyList.forall(i -> i > 3) == false
+    def forall02(): Bool =
+        (1 :: Nil) |> List.toLazyList |> LazyList.forall(i -> i > 3) == false
 
     @test
-    def forall03(): Bool = (5 :: Nil) |> List.toLazyList |> LazyList.forall(i -> i > 3) == true
+    def forall03(): Bool =
+        (5 :: Nil) |> List.toLazyList |> LazyList.forall(i -> i > 3) == true
 
     @test
-    def forall04(): Bool =  (1 :: 2 :: Nil) |> List.toLazyList |> LazyList.forall(i -> i > 3) == false
+    def forall04(): Bool =
+        (1 :: 2 :: Nil) |> List.toLazyList |> LazyList.forall(i -> i > 3) == false
 
     @test
-    def forall05(): Bool =  (1 :: 6 :: Nil) |> List.toLazyList |> LazyList.forall(i -> i > 3) == false
+    def forall05(): Bool =
+        (1 :: 6 :: Nil) |> List.toLazyList |> LazyList.forall(i -> i > 3) == false
 
     @test
-    def forall06(): Bool =  (6 :: 1 :: Nil) |> List.toLazyList |> LazyList.forall(i -> i > 3) == false
+    def forall06(): Bool =
+        (6 :: 1 :: Nil) |> List.toLazyList |> LazyList.forall(i -> i > 3) == false
 
     @test
-    def forall07(): Bool = (16 :: 6 :: Nil) |> List.toLazyList |> LazyList.forall(i -> i > 3) == true
+    def forall07(): Bool =
+        (16 :: 6 :: Nil) |> List.toLazyList |> LazyList.forall(i -> i > 3) == true
 
     @test
-    def forall08(): Bool = (1 :: -9 :: 3 :: Nil) |> List.toLazyList |> LazyList.forall(i -> i > 3) == false
+    def forall08(): Bool =
+        (1 :: -9 :: 3 :: Nil) |> List.toLazyList |> LazyList.forall(i -> i > 3) == false
 
     @test
-    def forall09(): Bool = (1 :: 9 :: 3 :: Nil) |> List.toLazyList |> LazyList.forall(i -> i > 3) == false
+    def forall09(): Bool =
+        (1 :: 9 :: 3 :: Nil) |> List.toLazyList |> LazyList.forall(i -> i > 3) == false
 
     @test
-    def forall10(): Bool = (11 :: 9 :: 31 :: Nil) |> List.toLazyList |> LazyList.forall(i -> i > 3) == true
+    def forall10(): Bool =
+        (11 :: 9 :: 31 :: Nil) |> List.toLazyList |> LazyList.forall(i -> i > 3) == true
 
 
     /////////////////////////////////////////////////////////////////////////////
