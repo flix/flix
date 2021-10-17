@@ -742,7 +742,7 @@ namespace Console {
         Environment.getVar("TERM") |>
         Option.exists(p ->
             let keywords = "256" :: "ansi" :: "xterm" :: "screen" :: Nil;
-            List.exists(s -> String.contains(p, s), keywords)
+            List.exists(s -> String.contains({substr = s}, p), keywords)
         )
 
     ///
