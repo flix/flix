@@ -1054,32 +1054,8 @@ namespace TestLazyList {
         LazyList.range(0, 1) |> LazyList.last == Some(0)
 
     @test
-    def last04(): Bool =
-    	LCons(1, lazy ENil) |> LazyList.last == Some(1)
-
-    @test
-    def last05(): Bool =
-    	LList(lazy ECons(1, LList(lazy ENil))) |> LazyList.last == Some(1)
-
-    @test
     def last06(): Bool =
-    	ECons(1, LList(lazy ENil)) |> LazyList.last == Some(1)
-
-    @test
-    def last07(): Bool =
-    	LCons(1, lazy LList(lazy ENil)) |> LazyList.last == Some(1)
-
-    @test
-    def last08(): Bool =
-    	LCons(1, lazy LCons(2, lazy LList(lazy LCons(3, lazy ENil)))) |> LazyList.last == Some(3)
-
-    @test
-    def last09(): Bool =
-    	LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil)))) |> LazyList.last == Some(3)
-
-    @test
-    def last10(): Bool =
-    	LCons(1, lazy ECons(2, LList(lazy LCons(3, lazy LList(lazy ENil))))) |> LazyList.last == Some(3)
+    	ECons(1, ENil) |> LazyList.last == Some(1)
 
     @test
     def last11(): Bool =
