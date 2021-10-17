@@ -4382,4 +4382,16 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
     def copyOfRange03(): Bool & Impure =
         Array.copyOfRange(2, 3, [1, 2, 3])[0] == 3
 
+    @test
+    def copyOfRange04(): Bool & Impure =
+        Array.copyOfRange(-1, 2, [1, 2, 3])[0] == 3
+
+    @test
+    def copyOfRange05(): Bool & Impure =
+        Array.copyOfRange(4, 4, [1, 2, 3])[0] == 3
+
+    @test
+    def copyOfRange06(): Bool & Impure =
+        Array.copyOfRange(1, 0, [1, 2, 3])[0] == 3
+
 }
