@@ -30,7 +30,8 @@ namespace MutDeque {
     ///
     /// Returns an empty MutDeque.
     ///
-    pub def new(): MutDeque[a] & Impure = MutDeque(ref [default; minCapacity()], ref 0, ref 0)
+    pub def new(): MutDeque[a] & Impure =
+        MutDeque(ref [default; minCapacity()], ref 0, ref 0)
 
     ///
     /// Returns the number of elements in the MutDeque `d`.
@@ -53,9 +54,7 @@ namespace MutDeque {
     ///
     pub def isEmpty(d: MutDeque[a]): Bool & Impure =
         let MutDeque(_, f, b) = d;
-        let f1 = deref f;
-        let b1 = deref b;
-        f1 == b1
+        deref f == deref b
 
     ///
     /// Returns `Some(x)` where `x` is the element at the front. Returns `None` if `d` is empty.
@@ -64,8 +63,9 @@ namespace MutDeque {
         let MutDeque(a, f, _) = d;
         let a1 = deref a;
         let f1 = deref f;
-        if (isEmpty(d))
+        if (isEmpty(d)) {
             None
+        }
         else {
             let x = a1[f1];
             let c = capacity(d);
@@ -82,8 +82,9 @@ namespace MutDeque {
         let a1 = deref a;
         let c = capacity(d);
         let b1 = (deref b - 1) `mod` c;
-        if (isEmpty(d))
+        if (isEmpty(d)) {
             None
+        }
         else {
             let x = a1[b1];
             b := b1;
@@ -113,30 +114,21 @@ namespace MutDeque {
         let c = capacity(d);
         let b1 = deref b;
         a1[b1] = x;
-        let b2 = (b1 + 1) `mod` c;
         a := a1;
-        b := b2;
+        b := (b1 + 1) `mod` c;
         expand!(d)
 
     ///
     /// Expands `d` to double its length.
     ///
     def expand!(d: MutDeque[a]): Unit & Impure =
-        if (shouldExpand(d)) {
-            grow!(d)
-        } else
-            ()
+        if (shouldExpand(d)) grow!(d) else ()
 
     ///
     /// Returns `true` if the load factor is greater or equal to 1 / 2.
     ///
     def shouldExpand(d: MutDeque[a]): Bool & Impure =
-        let s = size(d);
-        let c = capacity(d);
-        let loadFactor = loadFactorOf(s, c);
-        let a: Float32 = 1.0f32;
-        let b: Float32 = 2.0f32;
-        loadFactor > a / b and s > 0
+        loadFactorOf(size(d), capacity(d)) >= 3.0f32 / 4.0f32
 
     ///
     /// Expands the MutDeque `d` to double its size.
@@ -163,10 +155,7 @@ namespace MutDeque {
     /// Compresses MutDeque `d` if the load factor is below 1 / 2.
     ///
     def compress!(d: MutDeque[a]): Unit & Impure =
-        if (shouldCompress(d)) {
-            shrink!(d)
-        } else
-            ()
+        if (shouldCompress(d)) shrink!(d) else ()
 
     ///
     /// Shrinks MutDeque `d` to half its size unless it's than the minimum capacity.
@@ -190,19 +179,15 @@ namespace MutDeque {
             a0 := arr;
             f0 := 0;
             b0 := s
-        } else
+        } else {
             ()
+        }
 
     ///
     /// Returns `true` if the load factor is less than 1 / 2.
     ///
     def shouldCompress(d: MutDeque[a]): Bool & Impure =
-        let s = size(d);
-        let c = capacity(d);
-        let loadFactor = loadFactorOf(s, c);
-        let a: Float32 = 1.0f32;
-        let b: Float32 = 2.0f32;
-        loadFactor < a / b and s > 0
+        loadFactorOf(size(d), capacity(d)) <= 1.0f32 / 4.0f32
 
     ///
     /// Returns the load factor, given size `s` and capacity `c`.
@@ -221,6 +206,6 @@ namespace MutDeque {
     /// Returns `a` mod `b`.
     ///
     def mod(a: Int32, b: Int32): Int32 =
-        ((a % b) + b) % b
+        (a + b) % b
 
 }
