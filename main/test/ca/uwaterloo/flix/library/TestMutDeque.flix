@@ -263,4 +263,60 @@ namespace TestMutDeque {
             MutDeque.popBack(d) == Some(1) and
             MutDeque.popBack(d) == None
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // pushFrontPushBack (expansion)                                           //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def pushFrontPushBack01(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushFront(1, d);
+        MutDeque.pushFront(1, d);
+        MutDeque.pushFront(1, d);
+        MutDeque.pushBack(2, d);
+        MutDeque.pushBack(2, d);
+        MutDeque.pushBack(2, d);
+        MutDeque.pushBack(2, d);
+        MutDeque.pushFront(1, d);
+        MutDeque.pushFront(1, d);
+        MutDeque.pushBack(2, d);
+        MutDeque.pushFront(1, d);
+        MutDeque.pushFront(1, d);
+        MutDeque.pushBack(2, d);
+        MutDeque.pushFront(1, d);
+        MutDeque.pushBack(2, d);
+        MutDeque.pushFront(1, d);
+        MutDeque.pushFront(1, d);
+        MutDeque.pushBack(2, d);
+        MutDeque.pushBack(2, d);
+        MutDeque.pushBack(2, d);
+        // [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
+
+        let res = MutDeque.popBack(d) == Some(2) and
+        MutDeque.popFront(d) == Some(1) and
+        MutDeque.popBack(d) == Some(2) and
+        MutDeque.popBack(d) == Some(2) and
+        MutDeque.popBack(d) == Some(2) and
+        MutDeque.popBack(d) == Some(2) and
+        MutDeque.popBack(d) == Some(2) and
+        MutDeque.popBack(d) == Some(2) and
+        MutDeque.popBack(d) == Some(2) and
+        MutDeque.popBack(d) == Some(2);
+        println(MutDeque.popBack(d));
+        res
+
+        /*
+        MutDeque.popBack(d) == Some(1) and
+        MutDeque.popBack(d) == Some(1) and
+        MutDeque.popBack(d) == Some(1) and
+        MutDeque.popBack(d) == Some(1) and
+        MutDeque.popBack(d) == Some(1) and
+        MutDeque.popBack(d) == Some(1) and
+        MutDeque.popBack(d) == Some(1) and
+        MutDeque.popBack(d) == Some(1) and
+        MutDeque.popBack(d) == None and
+        MutDeque.popFront(d) == None
+*/
+
 }
