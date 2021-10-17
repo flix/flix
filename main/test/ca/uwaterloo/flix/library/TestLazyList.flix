@@ -1009,55 +1009,31 @@ namespace TestLazyList {
         LazyList.from(0) |> LazyList.take(0) == ENil
 
     @test
-    def from03(): Bool =
-        LazyList.from(-1) |> LazyList.take(0) == LList(lazy ENil)
-
-    @test
     def from04(): Bool =
-        LazyList.from(0) |> LazyList.take(0) == LList(lazy ENil)
-
-    @test
-    def from05(): Bool =
         LazyList.from(100) |> LazyList.take(-1) == ENil
 
     @test
-    def from06(): Bool =
-        LazyList.from(100) |> LazyList.take(-1) == LList(lazy ENil)
-
-    @test
-    def from07(): Bool =
+    def from05(): Bool =
     	LazyList.from(-1) |> LazyList.take(1) == ECons(-1, ENil)
 
     @test
+    def from06(): Bool =
+    	LazyList.from(5) |> LazyList.take(1) == ECons(5, ENil)
+
+    @test
+    def from07(): Bool =
+    	LazyList.from(1) |> LazyList.take(3) == ECons(1, ECons(2, ECons(3, ENil)))
+
+    @test
     def from08(): Bool =
-    	LazyList.from(-1) |> LazyList.take(1) == LCons(-1, lazy ENil)
-
-    @test
-    def from09(): Bool =
-    	LazyList.from(5) |> LazyList.take(1) == LList(lazy ECons(5, ENil))
-
-    @test
-    def from10(): Bool =
-    	LazyList.from(5) |> LazyList.take(1) == LList(lazy LCons(5, lazy LList(lazy ENil)))
-
-    @test
-    def from11(): Bool =
-    	LazyList.from(1) |> LazyList.take(3) == LCons(1, lazy LCons(2, lazy LList(lazy LCons(3, lazy ENil))))
-
-    @test
-    def from12(): Bool =
-    	LazyList.from(1) |> LazyList.take(3) == LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil))))
-
-    @test
-    def from13(): Bool =
     	LazyList.from(-1000) |> LazyList.take(1000) == LazyList.range(-1000, 0)
 
     @test
-    def from14(): Bool =
+    def from09(): Bool =
     	LazyList.from(-1000) |> LazyList.take(2000) == LazyList.range(-1000, 1000)
 
     @test
-    def from15(): Bool =
+    def from10(): Bool =
     	LazyList.from(0) |> LazyList.take(2000) == LazyList.range(0, 2000)
 
 
