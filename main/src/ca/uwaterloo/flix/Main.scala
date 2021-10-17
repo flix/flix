@@ -18,6 +18,8 @@ package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.api.lsp.LanguageServer
 import ca.uwaterloo.flix.api.{Flix, Version}
+import ca.uwaterloo.flix.language.errors.CodeHint
+import ca.uwaterloo.flix.language.phase.extra.CodeHinter
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools._
 import ca.uwaterloo.flix.util._
@@ -150,6 +152,7 @@ object Main {
 
         case Command.Hints =>
           println("hints enabled")
+          Packager.run(cwd, options)
           System.exit(0)
       }
     } catch {
@@ -207,6 +210,10 @@ object Main {
 
         if (cmdOpts.benchmark) {
           Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))(options)
+        }
+
+        if (cmdOpts.hints) {
+          CodeHinter.run(???)(flix) // TODO: Get TypedAst.root from FinalAst.root
         }
 
         if (cmdOpts.test) {
