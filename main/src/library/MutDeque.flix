@@ -23,11 +23,6 @@ pub enum MutDeque[a] {
 namespace MutDeque {
 
     ///
-    /// Constant denoting the minimum allowed length of the backing array.
-    ///
-    def minCapacity(): Int32 = 8
-
-    ///
     /// Returns an empty MutDeque.
     ///
     pub def new(): MutDeque[a] & Impure =
@@ -101,7 +96,6 @@ namespace MutDeque {
         let c = capacity(d);
         let f1 = (deref f - 1) `mod` c;
         a1[f1] = x;
-        a := a1;
         f := f1;
         expand!(d)
 
@@ -114,24 +108,23 @@ namespace MutDeque {
         let c = capacity(d);
         let b1 = deref b;
         a1[b1] = x;
-        a := a1;
         b := (b1 + 1) `mod` c;
         expand!(d)
 
     ///
-    /// Expands `d` to double its length.
+    /// Doubles the capacity of `d` if the capacity is full.
     ///
     def expand!(d: MutDeque[a]): Unit & Impure =
         if (shouldExpand(d)) grow!(d) else ()
 
     ///
-    /// Returns `true` if the load factor is greater or equal to 1 / 2.
+    /// Returns `true` if the load factor is equal to `maxLoadFactor`.
     ///
     def shouldExpand(d: MutDeque[a]): Bool & Impure =
-        loadFactorOf(size(d), capacity(d)) >= 3.0f32 / 4.0f32
+        loadFactorOf(size(d), capacity(d)) >= maxLoadFactor()
 
     ///
-    /// Expands the MutDeque `d` to double its size.
+    /// Doubles the capacity of `d`.
     ///
     def grow!(d: MutDeque[a]): Unit & Impure =
         let MutDeque(a0, f0, b0) = d;
@@ -152,7 +145,7 @@ namespace MutDeque {
         b0 := computeSize(c, f, b)
 
     ///
-    /// Compresses MutDeque `d` if the load factor is below 1 / 2.
+    /// Compresses MutDeque `d` if the load factor is below `minLoadFactor`.
     ///
     def compress!(d: MutDeque[a]): Unit & Impure =
         if (shouldCompress(d)) shrink!(d) else ()
@@ -184,10 +177,10 @@ namespace MutDeque {
         }
 
     ///
-    /// Returns `true` if the load factor is less than 1 / 2.
+    /// Returns `true` if the load factor is less than 1 / 4.
     ///
     def shouldCompress(d: MutDeque[a]): Bool & Impure =
-        loadFactorOf(size(d), capacity(d)) <= 1.0f32 / 4.0f32
+        loadFactorOf(size(d), capacity(d)) <= minLoadFactor()
 
     ///
     /// Returns the load factor, given size `s` and capacity `c`.
@@ -207,5 +200,20 @@ namespace MutDeque {
     ///
     def mod(a: Int32, b: Int32): Int32 =
         (a + b) % b
+
+    ///
+    /// Constant denoting the minimum capacity of the backing array.
+    ///
+    def minCapacity(): Int32 = 8
+
+    ///
+    /// Constant denoting the smallest valid load factor.
+    ///
+    def minLoadFactor(): Float32 = 1.0f32 / 4.0f32
+
+    ///
+    /// Constant denoting the largest valid load factor.
+    ///
+    def maxLoadFactor(): Float32 = 3.0f32 / 4.0f32
 
 }
