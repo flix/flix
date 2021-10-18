@@ -4412,7 +4412,11 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
 
     @test
     def copyOfRange11(): Bool & Impure =
-        Array.copyOfRange(2, 4, [['a', 'b', 'c'], ['d', 'e', 'f'], ['g', 'h', 'i']]) == [['d', 'e', 'f'], ['g', 'h', 'i'], default]
+        Array.copyOfRange(1, 4, [['a', 'b', 'c'], ['d', 'e', 'f', 'g'], ['h', 'i', 'j']]) == [['d', 'e', 'f', 'g'], ['h', 'i', 'j'], default]
+
+    @test
+    def copyOfRange12(): Bool & Impure =
+        Array.copyOfRange(2, 5, [-1ii, -2ii, -3ii]) == [-3ii, default, default]
 
 
 }
