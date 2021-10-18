@@ -77,7 +77,7 @@ namespace GetOpt {
     /// * `argDescriptor` defines the format of the option
     /// * `explanation` is the description of the option printed to the user by the function `usageInfo`
     ///
-    type alias OptionDescr[a] =
+    pub type alias OptionDescr[a] =
         { optionIds :: List[Char]
         , optionNames :: List[String]
         , argDescriptor :: ArgDescr[a]

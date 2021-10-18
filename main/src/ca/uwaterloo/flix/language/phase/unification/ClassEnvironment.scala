@@ -80,8 +80,11 @@ object ClassEnvironment {
     * Normalizes a list of type constraints, converting to head-normal form and removing semantic duplicates.
     */
   def reduce(tconstrs0: List[Ast.TypeConstraint], classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[List[Ast.TypeConstraint], UnificationError] = {
+    val tconstrs1 = tconstrs0.map {
+      case Ast.TypeConstraint(clazz, tpe, loc) => Ast.TypeConstraint(clazz, Type.eraseAliases(tpe), loc)
+    }
     for {
-      tconstrs <- Validation.sequence(tconstrs0.map(toHeadNormalForm(_, classEnv)))
+      tconstrs <- Validation.sequence(tconstrs1.map(toHeadNormalForm(_, classEnv)))
     } yield simplify(tconstrs.flatten, classEnv)
   }
 
