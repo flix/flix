@@ -283,9 +283,9 @@ object Lowering extends Phase[Root, Root] {
       val t = visitType(tpe)
       Expression.Sig(sym, t, loc)
 
-    case Expression.Hole(sym, tpe, eff, loc) =>
+    case Expression.Hole(sym, tpe, loc) =>
       val t = visitType(tpe)
-      Expression.Hole(sym, t, eff, loc)
+      Expression.Hole(sym, t, loc)
 
     case Expression.Lambda(fparam, exp, tpe, loc) =>
       val p = visitFormalParam(fparam)
@@ -698,7 +698,8 @@ object Lowering extends Phase[Root, Root] {
         val t2 = visitType(tpe2)
         Type.Apply(t1, t2, loc)
 
-      case _: Type.Lambda => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
+      case Type.Alias(sym, args, t, loc) => Type.Alias(sym, args.map(visit), visit(t), loc)
+
       case _: Type.UnkindedVar => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
       case _: Type.Ascribe => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
     }
@@ -1273,7 +1274,7 @@ object Lowering extends Phase[Root, Root] {
 
     case Expression.Sig(_, _, _) => exp0
 
-    case Expression.Hole(_, _, _, _) => exp0
+    case Expression.Hole(_, _, _) => exp0
 
     case Expression.Lambda(fparam, exp, tpe, loc) =>
       val p = substFormalParam(fparam, subst)

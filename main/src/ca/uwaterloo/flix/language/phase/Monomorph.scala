@@ -19,7 +19,8 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Kind, Name, Scheme, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.errors.ReificationError
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, Unification}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
@@ -61,7 +62,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     * Unit type. In other words, when performing a type substitution if there is no requirement on a polymorphic type
     * we assume it to be Unit. This is safe since otherwise the type would not be polymorphic after type-inference.
     */
-  case class StrictSubstitution(s: Substitution) {
+  case class StrictSubstitution(s: Substitution)(implicit flix: Flix) {
     /**
       * Returns `true` if this substitution is empty.
       */
@@ -72,18 +73,59 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       *
       * NB: Applies the substitution first, then replaces every type variable with the unit type.
       */
-    def apply(tpe: Type): Type = s(tpe).map {
-      case Type.KindedVar(_, Kind.Bool, _, _, _) => Type.True
-      case Type.KindedVar(_, Kind.RecordRow, _, _, _) => Type.RecordRowEmpty
-      case Type.KindedVar(_, Kind.SchemaRow, _, _, _) => Type.SchemaRowEmpty
-      case _ => Type.Unit
+    def apply(tpe0: Type): Type = {
+      val t = s(tpe0)
+
+      t.map {
+        case Type.KindedVar(_, Kind.Bool, loc, _, _) =>
+          // TODO: In strict mode we demand that there are no free (uninstantiated) Boolean variables.
+          // In the future we need to decide what should actually happen if such variables occur.
+          if (flix.options.xstrictmono)
+            throw UnexpectedNonConstBool(tpe0, loc)
+          else
+            Type.True
+        case Type.KindedVar(_, Kind.RecordRow, _, _, _) => Type.RecordRowEmpty
+        case Type.KindedVar(_, Kind.SchemaRow, _, _, _) => Type.SchemaRowEmpty
+        case _ => Type.Unit
+      }
     }
   }
+
+  /**
+    * An exception raised to indicate that a Boolean type cannot be reified.
+    *
+    * @param tpe the type that cannot be reified.
+    * @param loc the location of the type.
+    */
+  case class ReifyBoolException(tpe: Type, loc: SourceLocation) extends RuntimeException
+
+  /**
+    * An exception raised to indicate that a regular type cannot be reified.
+    *
+    * @param tpe the type that cannot be reified.
+    * @param loc the location of the type.
+    */
+  case class ReifyTypeException(tpe: Type, loc: SourceLocation) extends RuntimeException
+
+  /**
+    * An exception raised to indicate that the Monomorpher encountered an unexpected non-constant Boolean.
+    *
+    * @param tpe the non-constant Boolean type.
+    * @param loc the location of the type.
+    */
+  // TODO: Possibly this one should be removed.
+  case class UnexpectedNonConstBool(tpe: Type, loc: SourceLocation) extends RuntimeException
+
+
+  // TODO: Monomorph: We use exceptions here as a temporary stop-gap. We should consider to restructure and use Validation.
 
   /**
     * Performs monomorphization of the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Monomorph") {
+
+    // TODO: Monomorph: Un-nest these.
+
     /**
       * A function-local queue of pending (fresh symbol, function definition, and substitution)-triples.
       *
@@ -120,6 +162,8 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       */
     def specialize(exp0: Expression, env0: Map[Symbol.VarSym, Symbol.VarSym], subst0: StrictSubstitution): Expression = {
 
+      // TODO: Monomorph: Must apply subst to all effects.
+
       /**
         * Specializes the given expression `e0` under the environment `env0`. w.r.t. the current substitution.
         */
@@ -138,7 +182,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val newSym = specializeSigSym(sym, subst0(tpe))
           Expression.Def(newSym, subst0(tpe), loc)
 
-        case Expression.Hole(sym, tpe, eff, loc) => Expression.Hole(sym, subst0(tpe), eff, loc)
+        case Expression.Hole(sym, tpe, loc) => Expression.Hole(sym, subst0(tpe), loc)
 
         case Expression.Unit(loc) => Expression.Unit(loc)
 
@@ -171,7 +215,9 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           // Replace a default literal by the actual default value based on its type.
           //
           subst0(tpe).typeConstructor match {
-            case None => throw InternalCompilerException(s"Unexpected type variable near: ${loc.format}")
+            case None =>
+              throw ReifyTypeException(tpe, loc)
+
             case Some(tc) => tc match {
               case TypeConstructor.Unit => Expression.Unit(loc)
               case TypeConstructor.Bool => Expression.False(loc)
@@ -448,7 +494,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val isTrue = subst0(t) match {
             case Type.Cst(TypeConstructor.True, _) => true
             case Type.Cst(TypeConstructor.False, _) => false
-            case other => throw InternalCompilerException(s"Unexpected non-Boolean type: '$other'.")
+            case other => throw ReifyBoolException(other, loc)
           }
 
           if (isTrue)
@@ -459,67 +505,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.ReifyType(t, _, _, loc) => reifyType(subst0(t), loc)
       }
 
-      /**
-        * Returns an expression that evaluates to a ReifiedType for the given type `tpe`.
-        */
-      def reifyType(tpe: Type, loc: SourceLocation): Expression = {
-        val sym = Symbol.mkEnumSym("ReifiedType")
-        val resultTpe = Type.mkEnum(sym, Kind.Star, loc)
-        val resultEff = Type.Pure
-
-        def visit(t0: Type): Expression = t0.typeConstructor match {
-          case None =>
-            throw InternalCompilerException(s"Unexpected type: '$t0'.")
-
-          case Some(tc) => tc match {
-            case TypeConstructor.Bool =>
-              val tag = Name.Tag("ReifiedBool", loc)
-              Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
-
-            case TypeConstructor.Char =>
-              val tag = Name.Tag("ReifiedChar", loc)
-              Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
-
-            case TypeConstructor.Float32 =>
-              val tag = Name.Tag("ReifiedFloat32", loc)
-              Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
-
-            case TypeConstructor.Float64 =>
-              val tag = Name.Tag("ReifiedFloat64", loc)
-              Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
-
-            case TypeConstructor.Int8 =>
-              val tag = Name.Tag("ReifiedInt8", loc)
-              Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
-
-            case TypeConstructor.Int16 =>
-              val tag = Name.Tag("ReifiedInt16", loc)
-              Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
-
-            case TypeConstructor.Int32 =>
-              val tag = Name.Tag("ReifiedInt32", loc)
-              Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
-
-            case TypeConstructor.Int64 =>
-              val tag = Name.Tag("ReifiedInt64", loc)
-              Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
-
-            case TypeConstructor.Str =>
-              val tag = Name.Tag("ErasedType", loc)
-              Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
-
-            case TypeConstructor.Array =>
-              val tag = Name.Tag("ReifiedArray", loc)
-              val innerTpe = t0.typeArguments.head
-              val innerExp = visit(innerTpe)
-              Expression.Tag(sym, tag, innerExp, resultTpe, resultEff, loc)
-
-            case other => throw InternalCompilerException(s"Unexpected type: '$other'.")
-          }
-        }
-
-        visit(tpe)
-      }
 
       /**
         * Specializes the given pattern `p0` w.r.t. the current substitution.
@@ -714,17 +699,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         (ConstraintParam.RuleParam(freshSym, subst0(tpe), loc), Map(sym -> freshSym))
     }
 
-    /**
-      * Returns the symbol of the given signature identified by the given `className` and `sigName` specialized to the given type `tpe`.
-      */
-    def getSigSym(className: String, sigName: String, tpe: Type): Symbol.DefnSym = {
-      val sp1 = SourcePosition.Unknown
-      val sp2 = SourcePosition.Unknown
-      val classSym = Symbol.mkClassSym(Name.RootNS, Name.Ident(sp1, className, sp2))
-      val sigSym = Symbol.mkSigSym(classSym, Name.Ident(sp1, sigName, sp2))
-      specializeSigSym(sigSym, tpe)
-    }
-
     /*
      * We can now use these helper functions to perform specialization of the whole program.
      */
@@ -741,64 +715,131 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       case (_, defn) => defn.spec.tparams.isEmpty
     }
 
-    /*
-     * Perform specialization of all non-parametric function definitions.
-     */
-    for ((sym, defn) <- nonParametricDefns) {
-
-      // Get a substitution from the inferred scheme to the declared scheme.
-      // This is necessary because the inferred scheme may be more generic than the declared scheme.
-      val subst = Unification.unifyTypes(defn.spec.declaredScheme.base, defn.impl.inferredScheme.base) match {
-        case Result.Ok(subst1) => subst1
-        // This should not happen, since the Typer guarantees that the schemes unify
-        case Result.Err(_) => throw InternalCompilerException("Failed to unify declared and inferred schemes.")
-      }
-      val subst0 = StrictSubstitution(subst)
-
-      // Specialize the formal parameters to obtain fresh local variable symbols for them.
-      val (fparams, env0) = specializeFormalParams(defn.spec.fparams, subst0)
-
-      // Specialize the body expression.
-      val body = specialize(defn.impl.exp, env0, subst0)
-
-      // Reassemble the definition.
-      specializedDefns.put(sym, defn.copy(spec = defn.spec.copy(fparams = fparams), impl = defn.impl.copy(exp = body)))
-    }
-
-    /*
-     * Performs function specialization until both queues are empty.
-     */
-    while (defQueue.nonEmpty) {
-
+    try {
       /*
-       * Performs function specialization until the queue is empty.
+       * Perform specialization of all non-parametric function definitions.
        */
-      while (defQueue.nonEmpty) {
-        // Extract a function from the queue and specializes it w.r.t. its substitution.
-        val (freshSym, defn, subst) = defQueue.dequeue()
+      for ((sym, defn) <- nonParametricDefns) {
+        // Get a substitution from the inferred scheme to the declared scheme.
+        // This is necessary because the inferred scheme may be more generic than the declared scheme.
+        val subst = Unification.unifyTypes(defn.spec.declaredScheme.base, defn.impl.inferredScheme.base) match {
+          case Result.Ok(subst1) => subst1
+          // This should not happen, since the Typer guarantees that the schemes unify
+          case Result.Err(_) => throw InternalCompilerException("Failed to unify declared and inferred schemes.")
+        }
+        val subst0 = StrictSubstitution(subst)
 
-        flix.subtask(freshSym.toString, sample = true)
-
-        // Specialize the formal parameters and introduce fresh local variable symbols.
-        val (fparams, env0) = specializeFormalParams(defn.spec.fparams, subst)
+        // Specialize the formal parameters to obtain fresh local variable symbols for them.
+        val (fparams, env0) = specializeFormalParams(defn.spec.fparams, subst0)
 
         // Specialize the body expression.
-        val specializedExp = specialize(defn.impl.exp, env0, subst)
+        val body = specialize(defn.impl.exp, env0, subst0)
 
         // Reassemble the definition.
-        // NB: Removes the type parameters as the function is now monomorphic.
-        val specializedDefn = defn.copy(sym = freshSym, spec = defn.spec.copy(fparams = fparams, tparams = Nil), impl = TypedAst.Impl(specializedExp, Scheme(Nil, List.empty, subst(defn.impl.inferredScheme.base))))
-
-        // Save the specialized function.
-        specializedDefns.put(freshSym, specializedDefn)
+        specializedDefns.put(sym, defn.copy(spec = defn.spec.copy(fparams = fparams), impl = defn.impl.copy(exp = body)))
       }
 
+      /*
+       * Performs function specialization until both queues are empty.
+       */
+      while (defQueue.nonEmpty) {
+
+        /*
+         * Performs function specialization until the queue is empty.
+         */
+        while (defQueue.nonEmpty) {
+          // Extract a function from the queue and specializes it w.r.t. its substitution.
+          val (freshSym, defn, subst) = defQueue.dequeue()
+
+          flix.subtask(freshSym.toString, sample = true)
+
+          // Specialize the formal parameters and introduce fresh local variable symbols.
+          val (fparams, env0) = specializeFormalParams(defn.spec.fparams, subst)
+
+          // Specialize the body expression.
+          val specializedExp = specialize(defn.impl.exp, env0, subst)
+
+          // Reassemble the definition.
+          // NB: Removes the type parameters as the function is now monomorphic.
+          val specializedDefn = defn.copy(sym = freshSym, spec = defn.spec.copy(fparams = fparams, tparams = Nil), impl = TypedAst.Impl(specializedExp, Scheme(Nil, List.empty, subst(defn.impl.inferredScheme.base))))
+
+          // Save the specialized function.
+          specializedDefns.put(freshSym, specializedDefn)
+        }
+
+      }
+
+      // Reassemble the AST.
+      root.copy(
+        defs = specializedDefns.toMap
+      ).toSuccess
+    } catch {
+      case ReifyBoolException(tpe, loc) => ReificationError.IllegalReifiedBool(tpe, loc).toFailure
+      case ReifyTypeException(tpe, loc) => ReificationError.IllegalReifiedType(tpe, loc).toFailure
+      case UnexpectedNonConstBool(tpe, loc) => ReificationError.UnexpectedNonConstBool(tpe, loc).toFailure
+    }
+  }
+
+  /**
+    * Returns an expression that evaluates to a ReifiedType for the given type `tpe`.
+    */
+  private def reifyType(tpe: Type, loc: SourceLocation): Expression = {
+    val sym = Symbol.mkEnumSym("ReifiedType")
+    val resultTpe = Type.mkEnum(sym, Kind.Star, loc)
+    val resultEff = Type.Pure
+
+    def visit(t0: Type): Expression = t0.typeConstructor match {
+      case None =>
+        throw ReifyTypeException(tpe, loc)
+
+      case Some(tc) => tc match {
+        case TypeConstructor.Bool =>
+          val tag = Name.Tag("ReifiedBool", loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+
+        case TypeConstructor.Char =>
+          val tag = Name.Tag("ReifiedChar", loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+
+        case TypeConstructor.Float32 =>
+          val tag = Name.Tag("ReifiedFloat32", loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+
+        case TypeConstructor.Float64 =>
+          val tag = Name.Tag("ReifiedFloat64", loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+
+        case TypeConstructor.Int8 =>
+          val tag = Name.Tag("ReifiedInt8", loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+
+        case TypeConstructor.Int16 =>
+          val tag = Name.Tag("ReifiedInt16", loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+
+        case TypeConstructor.Int32 =>
+          val tag = Name.Tag("ReifiedInt32", loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+
+        case TypeConstructor.Int64 =>
+          val tag = Name.Tag("ReifiedInt64", loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+
+        case TypeConstructor.Str =>
+          val tag = Name.Tag("ErasedType", loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+
+        case TypeConstructor.Array =>
+          val tag = Name.Tag("ReifiedArray", loc)
+          val innerTpe = t0.typeArguments.head
+          val innerExp = visit(innerTpe)
+          Expression.Tag(sym, tag, innerExp, resultTpe, resultEff, loc)
+
+        case other => throw ReifyTypeException(tpe, loc)
+      }
     }
 
-    // Reassemble the AST.
-    root.copy(
-      defs = specializedDefns.toMap
-    ).toSuccess
+    visit(tpe)
   }
 
 }

@@ -29,6 +29,7 @@ object TypedAst {
                   sigs: Map[Symbol.SigSym, TypedAst.Sig],
                   defs: Map[Symbol.DefnSym, TypedAst.Def],
                   enums: Map[Symbol.EnumSym, TypedAst.Enum],
+                  typealiases: Map[Symbol.TypeAliasSym, TypedAst.TypeAlias],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
                   classEnv: Map[Symbol.ClassSym, Ast.ClassContext])
@@ -47,6 +48,8 @@ object TypedAst {
   case class Impl(exp: TypedAst.Expression, inferredScheme: Scheme)
 
   case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[TypedAst.TypeParam], cases: Map[Name.Tag, TypedAst.Case], tpeDeprecated: Type, sc: Scheme, loc: SourceLocation)
+
+  case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: List[TypedAst.TypeParam], tpe: Type, loc: SourceLocation)
 
   sealed trait Expression extends Product {
     def tpe: Type
@@ -156,7 +159,9 @@ object TypedAst {
       def eff: Type = Type.Pure
     }
 
-    case class Hole(sym: Symbol.HoleSym, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class Hole(sym: Symbol.HoleSym, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
+      def eff: Type = Type.Pure
+    }
 
     case class Lambda(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
       def eff: Type = Type.Pure

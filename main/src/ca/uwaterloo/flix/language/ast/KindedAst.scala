@@ -28,6 +28,7 @@ object KindedAst {
                   instances: Map[Symbol.ClassSym, List[KindedAst.Instance]],
                   defs: Map[Symbol.DefnSym, KindedAst.Def],
                   enums: Map[Symbol.EnumSym, KindedAst.Enum],
+                  typeAliases: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
@@ -43,6 +44,8 @@ object KindedAst {
 
   case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[KindedAst.TypeParam], derives: List[Ast.Derivation], cases: Map[Name.Tag, KindedAst.Case], tpeDeprecated: Type, sc: Scheme, loc: SourceLocation)
 
+  case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: List[KindedAst.TypeParam], tpe: Type, loc: SourceLocation)
+
   sealed trait Expression {
     def loc: SourceLocation
   }
@@ -57,7 +60,7 @@ object KindedAst {
 
     case class Sig(sym: Symbol.SigSym, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
-    case class Hole(sym: Symbol.HoleSym, tpe: Type.KindedVar, eff: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
+    case class Hole(sym: Symbol.HoleSym, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
     case class Unit(loc: SourceLocation) extends KindedAst.Expression
 

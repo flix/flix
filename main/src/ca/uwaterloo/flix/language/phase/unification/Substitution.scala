@@ -43,7 +43,7 @@ object Substitution {
 /**
   * A substitution is a map from type variables to types.
   */
-case class Substitution(m: Map[Type.KindedVar, Type]) {
+case class Substitution(m: Map[Type.Var, Type]) {
 
   /**
     * Returns `true` if `this` is the empty substitution.
@@ -57,11 +57,12 @@ case class Substitution(m: Map[Type.KindedVar, Type]) {
     // NB: The order of cases has been determined by code coverage analysis.
     def visit(t: Type): Type =
       t match {
-        case x: Type.KindedVar => m.get(x) match {
+        case x: Type.Var => m.get(x) match {
           case None => x
           case Some(t0) => t0 match {
             // NB: This small trick is used to propagate variable names.
-            case tr: Type.Var => tr.asKinded.copy(text = x.text)
+            case tr: Type.KindedVar => tr.copy(text = x.text)
+            case tr: Type.UnkindedVar => tr.copy(text = x.text)
             case tr => tr
           }
         }
@@ -75,8 +76,10 @@ case class Substitution(m: Map[Type.KindedVar, Type]) {
             case Type.Apply(Type.Cst(TypeConstructor.Or, _), x, _) => BoolUnification.mkOr(x, y)
             case x => Type.Apply(x, y, loc)
           }
-        case _: Type.Lambda => throw InternalCompilerException(s"Unexpected type '$tpe0'.")
-        case _: Type.UnkindedVar => throw InternalCompilerException(s"Unexpected type '$tpe0'.")
+        case Type.Alias(sym, args0, tpe0, loc) =>
+          val args = args0.map(visit)
+          val tpe = visit(tpe0)
+          Type.Alias(sym, args, tpe, loc)
         case _: Type.Ascribe => throw InternalCompilerException(s"Unexpected type '$tpe0'.")
       }
 
@@ -145,7 +148,7 @@ case class Substitution(m: Map[Type.KindedVar, Type]) {
 
     // NB: Use of mutability improve performance.
     import scala.collection.mutable
-    val newTypeMap = mutable.Map.empty[Type.KindedVar, Type]
+    val newTypeMap = mutable.Map.empty[Type.Var, Type]
 
     // Add all bindings in `that`. (Applying the current substitution).
     for ((x, t) <- that.m) {

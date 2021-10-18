@@ -83,7 +83,7 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.Sig(_, _, _) => Nil
 
-    case Expression.Hole(_, _, _, _) => Nil
+    case Expression.Hole(_, _, _) => Nil
 
     case Expression.Lambda(_, exp, _, _) =>
       visitExp(exp)

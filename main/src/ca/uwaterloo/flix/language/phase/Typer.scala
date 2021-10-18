@@ -50,10 +50,12 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
     val defsVal = visitDefs(root, classEnv)
     val enumsVal = visitEnums(root)
 
+    val typeAliases = visitTypeAliases(root)
+
     Validation.mapN(classesVal, instancesVal, defsVal, enumsVal) {
       case (classes, instances, defs, enums) =>
         val sigs = classes.values.flatMap(_.signatures).map(sig => sig.sym -> sig).toMap
-        TypedAst.Root(classes, instances, sigs, defs, enums, root.reachable, root.sources, classEnv)
+        TypedAst.Root(classes, instances, sigs, defs, enums, typeAliases, root.reachable, root.sources, classEnv)
     }
   }
 
@@ -317,6 +319,18 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
   }
 
   /**
+    * Performs typing on the type aliases in the given `root`.
+    */
+  private def visitTypeAliases(root: KindedAst.Root)(implicit flix: Flix): Map[Symbol.TypeAliasSym, TypedAst.TypeAlias] = {
+    def visitTypeAlias(alias: KindedAst.TypeAlias): (Symbol.TypeAliasSym, TypedAst.TypeAlias) = alias match {
+      case KindedAst.TypeAlias(doc, mod, sym, tparams0, tpe, loc) =>
+        val tparams = getTypeParams(tparams0)
+        sym -> TypedAst.TypeAlias(doc, mod, sym, tparams, tpe, loc)
+    }
+    root.typeAliases.values.map(visitTypeAlias).toMap
+  }
+
+  /**
     * Visits all annotations.
     */
   private def visitAnnotations(ann: List[KindedAst.Annotation], root: KindedAst.Root)(implicit flix: Flix): Validation[List[TypedAst.Annotation], TypeError] = {
@@ -382,8 +396,8 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
           tconstrs = tconstrs0.map(_.copy(loc = loc))
         } yield (tconstrs, resultTyp, Type.Pure)
 
-      case KindedAst.Expression.Hole(sym, tvar, evar, loc) =>
-        liftM(List.empty, tvar, evar)
+      case KindedAst.Expression.Hole(sym, tvar, loc) =>
+        liftM(List.empty, tvar, Type.Pure)
 
       case KindedAst.Expression.Unit(loc) =>
         liftM(List.empty, Type.Unit, Type.Pure)
@@ -1478,8 +1492,8 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
       case KindedAst.Expression.Sig(sym, tvar, loc) =>
         TypedAst.Expression.Sig(sym, subst0(tvar), loc)
 
-      case KindedAst.Expression.Hole(sym, tpe, evar, loc) =>
-        TypedAst.Expression.Hole(sym, subst0(tpe), subst0(evar), loc)
+      case KindedAst.Expression.Hole(sym, tpe, loc) =>
+        TypedAst.Expression.Hole(sym, subst0(tpe), loc)
 
       case KindedAst.Expression.Unit(loc) => TypedAst.Expression.Unit(loc)
 
