@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
-import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Line, NewLine}
+import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Line, NewLine, Yellow}
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
@@ -45,7 +45,7 @@ object CodeHint {
       vt << Line(kind, source.format) << NewLine
       vt << ">> Use of impure function prevents lazy evaluation." << NewLine
       vt << NewLine
-      vt << Code(loc, "use of impure function.") << NewLine
+      vt << Code(loc, "use of impure function.", s => Yellow(s)) << NewLine
     }
   }
 
@@ -65,7 +65,7 @@ object CodeHint {
       vt << Line(kind, source.format) << NewLine
       vt << ">> Use of impure function prevents parallel evaluation." << NewLine
       vt << NewLine
-      vt << Code(loc, "use of impure function.") << NewLine
+      vt << Code(loc, "use of impure function.", s => Yellow(s)) << NewLine
     }
   }
 
@@ -84,7 +84,7 @@ object CodeHint {
       vt << Line(kind, source.format) << NewLine
       vt << ">> Expression has a non-trivial effect." << NewLine
       vt << NewLine
-      vt << Code(loc, "non-trivial effect.") << NewLine
+      vt << Code(loc, "non-trivial effect.", s => Yellow(s)) << NewLine
     }
   }
 

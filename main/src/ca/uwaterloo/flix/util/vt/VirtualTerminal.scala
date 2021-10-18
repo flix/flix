@@ -48,7 +48,7 @@ class VirtualTerminal() {
     * Appends the given virtual string to this terminal.
     */
   def <<(s: VirtualString): VirtualTerminal = s match {
-    case VirtualString.Code(loc, msg) => highlight(loc, Text(msg)); this
+    case VirtualString.Code(loc, msg, underlineClr) => highlight(loc, Text(msg), underlineClr); this
     case _ => buffer = s :: buffer; this
   }
 
@@ -90,7 +90,7 @@ class VirtualTerminal() {
 
         // Macros
         case Line(l, r) => sb.append(ctx.emitBlue(s"-- $l -------------------------------------------------- $r\n"))
-        case Code(l, m) => // NB: Already de-sugared.
+        case Code(l, m, c) => // NB: Already de-sugared.
       }
     }
     sb.toString()
@@ -102,7 +102,7 @@ class VirtualTerminal() {
   /**
     * Highlights the given source location `loc` with the given message `msg`.
     */
-  private def highlight(loc: SourceLocation, msg: VirtualString): Unit = {
+  private def highlight(loc: SourceLocation, msg: VirtualString, clr: String => VirtualString): Unit = {
     val beginLine = loc.beginLine
     val beginCol = loc.beginCol
     val endLine = loc.endLine
@@ -113,7 +113,7 @@ class VirtualTerminal() {
       val lineNo = beginLine.toString + " | "
 
       this << lineNo << lineAt(beginLine) << NewLine
-      this << " " * (beginCol + lineNo.length - 1) << Red("^" * (endCol - beginCol)) << NewLine
+      this << " " * (beginCol + lineNo.length - 1) << clr("^" * (endCol - beginCol)) << NewLine
       this << " " * (beginCol + lineNo.length - 1)
       this << msg
       this << NewLine

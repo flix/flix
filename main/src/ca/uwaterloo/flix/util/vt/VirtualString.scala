@@ -32,7 +32,7 @@ object VirtualString {
 
   case class Line(left: String, right: String) extends VirtualString
 
-  case class Code(loc: SourceLocation, text: String) extends VirtualString
+  case class Code(loc: SourceLocation, text: String, underlineClr: String => VirtualString = s => Red(s)) extends VirtualString
 
   case class Text(s: String) extends VirtualString
 
