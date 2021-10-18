@@ -25,7 +25,7 @@ sealed trait SimpleType
 
 object SimpleType {
 
-  // Tycons
+  // Primitives
 
   case object Unit extends SimpleType
 
@@ -63,9 +63,14 @@ object SimpleType {
 
   case object False extends SimpleType
 
-  ///
-  /// Compound Types.
-  ///
+  case object Region extends SimpleType
+
+  // Records
+
+  case class Record(fields: List[FieldType], rest: Option[SimpleType.Var]) extends SimpleType
+
+  case class RecordRow(fields: List[FieldType], rest: Option[SimpleType.Var]) extends SimpleType
+
   case object RecordRowEmpty extends SimpleType
 
   case object RecordEmpty extends SimpleType
@@ -73,6 +78,14 @@ object SimpleType {
   case object RecordConstructor extends SimpleType
 
   case class RecordRowConstructor(field: String) extends SimpleType
+
+  case class RecordRowHead(name: String, tpe: SimpleType) extends SimpleType
+
+  // Schemas
+
+  case class Schema(fields: List[FieldType], rest: Option[SimpleType.Var]) extends SimpleType
+
+  case class SchemaRow(fields: List[FieldType], rest: Option[SimpleType.Var]) extends SimpleType
 
   case object SchemaRowEmpty extends SimpleType
 
@@ -82,24 +95,9 @@ object SimpleType {
 
   case class SchemaRowConstructor(field: String) extends SimpleType
 
-  // Fully-applied stuff
-  case class Apply(tpe: SimpleType, tpes: List[SimpleType]) extends SimpleType
+  case class SchemaRowHead(name: String, tpe: SimpleType) extends SimpleType
 
-  case class Var(id: Int, text: String) extends SimpleType
-
-  case class Tuple(length: Int, fields: List[SimpleType]) extends SimpleType
-
-  case class PureArrow(args: List[SimpleType], ret: SimpleType) extends SimpleType
-
-  case class ImpureArrow(args: List[SimpleType], ret: SimpleType) extends SimpleType
-
-  case class Record(fields: List[FieldType], rest: Option[SimpleType.Var]) extends SimpleType
-
-  case class RecordRow(fields: List[FieldType], rest: Option[SimpleType.Var]) extends SimpleType
-
-  case class Schema(fields: List[FieldType], rest: Option[SimpleType.Var]) extends SimpleType
-
-  case class SchemaRow(fields: List[FieldType], rest: Option[SimpleType.Var]) extends SimpleType
+  // Boolean Operators
 
   case class Not(tpe: Option[SimpleType]) extends SimpleType
 
@@ -107,28 +105,52 @@ object SimpleType {
 
   case class Or(tpes: List[SimpleType]) extends SimpleType
 
-  case class Region()
-
-  // Partially-applied stuff
-
-  case class RecordRowHead(name: String, tpe: SimpleType) extends SimpleType
-
-  case class SchemaRowHead(name: String, tpe: SimpleType) extends SimpleType
+  // Relations and Lattices
 
   case object RelationConstructor extends SimpleType
 
-  case object LatticeConstructor extends SimpleType
-
   case class Relation(tpes: List[SimpleType]) extends SimpleType
+
+  case object LatticeConstructor extends SimpleType
 
   case class Lattice(tpes: List[SimpleType]) extends SimpleType
 
-  // MATT organize above
+  // Arrow Stuff
 
-  // MATT change class name
-  case class Name(name: String) extends SimpleType // MATT use only for non-builtins
+  case class ArrowConstructor(arity: Int) extends SimpleType
+
+  case class PartialPureArrow(arity: Int, tpes: List[SimpleType]) extends SimpleType
+
+  case class PartialImpureArrow(arity: Int, tpes: List[SimpleType]) extends SimpleType
+
+  case class PartialPolyArrow(arity: Int, tpes: List[SimpleType], eff: SimpleType) extends SimpleType
+
+  case class PureArrow(args: List[SimpleType], ret: SimpleType) extends SimpleType
+
+  case class ImpureArrow(args: List[SimpleType], ret: SimpleType) extends SimpleType
+
+  case class PolyArrow(args: List[SimpleType], ret: SimpleType, eff: SimpleType) extends SimpleType
+
+  // Tag Stuff
+
+  case class TagConstructor(name: String) extends SimpleType
+
+  case class PartialTag(name: String, args: List[SimpleType]) extends SimpleType
+
+  case class Tag(name: String, args: List[SimpleType], ret: SimpleType) extends SimpleType
+
+  // Auxiliary Types
+
+  case class Name(name: String) extends SimpleType
 
   case class FieldType(name: String, tpe: SimpleType)
+
+  case class Apply(tpe: SimpleType, tpes: List[SimpleType]) extends SimpleType
+
+  case class Var(id: Int, text: String) extends SimpleType
+
+  case class Tuple(length: Int, fields: List[SimpleType]) extends SimpleType
+
 
   def fromWellKindedType(t: Type): SimpleType = t.baseType match {
     case Type.KindedVar(id, kind, loc, rigidity, text) => Var(id, text.get) // MATT how to handle vars? alpha-renaming, etc.
@@ -150,13 +172,13 @@ object SimpleType {
       case TypeConstructor.Arrow(arity) =>
         val args = t.typeArguments.map(fromWellKindedType)
         args match {
-          case Nil => ??? // unapplied arrow: ??? -> ??? & ???
-          case True :: tpes if tpes.length == arity => ??? // fully-applied pure arrow
-          case False :: tpes if tpes.length == arity => ??? // fully-applied impure arrow
-          case eff :: tpes if tpes.length == arity => ??? // fully applied poly arrow
-          case True :: tpes => ??? // partially applied pure arrow
-          case False :: tpes => ??? // partially applied impure arrow
-          case eff :: tpes => ??? // partially applied poly arrow
+          case Nil => ArrowConstructor(arity)
+          case True :: tpes if tpes.length == arity => PureArrow(tpes.init, tpes.last)
+          case False :: tpes if tpes.length == arity => ImpureArrow(tpes.init, tpes.last)
+          case eff :: tpes if tpes.length == arity => PolyArrow(tpes.init, tpes.last, eff)
+          case True :: tpes => PartialPureArrow(arity, tpes)
+          case False :: tpes => PartialImpureArrow(arity, tpes)
+          case eff :: tpes => PartialPolyArrow(arity, tpes, eff)
         }
       case TypeConstructor.RecordRowEmpty => RecordRowEmpty
       case TypeConstructor.RecordRowExtend(field) =>
@@ -201,28 +223,51 @@ object SimpleType {
       case TypeConstructor.Array => mkApply(Array, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Channel => mkApply(Channel, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Lazy => mkApply(Lazy, t.typeArguments.map(fromWellKindedType))
-      case TypeConstructor.Tag(sym, tag) => ??? // MATT ?
+      case TypeConstructor.Tag(sym, tag) =>
+        val args = t.typeArguments.map(fromWellKindedType)
+        args match {
+          case Nil => TagConstructor(tag.name)
+          case tpe :: Nil => PartialTag(tag.name, destructTuple(tpe))
+          case tpe :: ret :: Nil => Tag(tag.name, destructTuple(tpe), ret)
+          case _ => ??? // MATT ICE
+        }
       case TypeConstructor.KindedEnum(sym, kind) => mkApply(Name(sym.name), t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.UnkindedEnum(sym) => ??? // MATT ICE
-      case TypeConstructor.Native(clazz) => ??? // MATT ?
+      case TypeConstructor.Native(clazz) => Name(clazz.getSimpleName) // MATT do we need generics?
       case TypeConstructor.ScopedRef => mkApply(ScopedRef, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Tuple(l) => Tuple(l, t.typeArguments.map(fromWellKindedType))
-      case TypeConstructor.Relation => ??? // MATT ?
-      case TypeConstructor.Lattice => ??? // MATT ?
+      case TypeConstructor.Relation =>
+        val args = t.typeArguments.map(fromWellKindedType)
+        args match {
+          case Nil => RelationConstructor
+          case tpe :: Nil => Relation(destructTuple(tpe))
+          case _ => ??? // MATT ICE
+        }
+      case TypeConstructor.Lattice =>
+        val args = t.typeArguments.map(fromWellKindedType)
+        args match {
+          case Nil => LatticeConstructor
+          case tpe :: Nil => Lattice(destructTuple(tpe))
+          case _ => ??? // MATT ICE
+        }
       case TypeConstructor.True => True
       case TypeConstructor.False => False
       case TypeConstructor.Not => Not(t.typeArguments.headOption.map(fromWellKindedType))
       case TypeConstructor.And => And(t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Or => Or(t.typeArguments.map(fromWellKindedType))
-      case TypeConstructor.Region => ??? // MATT ?
+      case TypeConstructor.Region => mkApply(Region, t.typeArguments.map(fromWellKindedType))
     }
-
-    case Type.Lambda(tvar, tpe, loc) => ??? // MATT hopefully gone forever soon!
   }
 
   private def mkApply(base: SimpleType, args: List[SimpleType]): SimpleType = args match {
     case Nil => base
     case _ :: _ => Apply(base, args)
+  }
+
+  private def destructTuple(tpe: SimpleType): List[SimpleType] = tpe match {
+    case Tuple(_, fields) => fields
+    case Unit => Nil
+    case t => t :: Nil
   }
 
   // MATT docs
