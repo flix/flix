@@ -4398,5 +4398,9 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
     def copyOfRange07(): Bool & Impure =
         Array.copyOfRange(0, 2, [["a", "b", "c"], ["a", "b", "c"], ["a", "b", "c"]]) == [["a", "b", "c"], ["a", "b", "c"]]
 
+    @test
+    def copyOfRange08(): Bool & Impure =
+        Array.copyOfRange(0, 2, [[true, false, true], [true, true, true], [false, false, false]]) == [[true, false, true], [true, true, true]]
+
 
 }
