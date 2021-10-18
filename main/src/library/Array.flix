@@ -1757,6 +1757,12 @@ namespace Array {
     ///
     /// Copies the range between `b` (inclusive) and `e` (exclusive) of a into a new array.
     ///
+    /// A valid range starts has the following properties:
+    ///   - `b` is greater than or equal to 0.
+    ///   - `e` is larger than `b`.
+    /// If the range is valid and greater than the length of `a`, the resulting array with have the length of the range
+    /// and include the specified range of `a`.
+    ///
     pub def copyOfRange(b: Int32, e: Int32, a: Array[a]): Array[a] & Impure =
         match (reifyType a) {
             case ReifiedInt8 =>
