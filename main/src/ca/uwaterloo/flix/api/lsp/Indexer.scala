@@ -161,7 +161,7 @@ object Indexer {
     case Expression.Sig(sym, _, loc) =>
       Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc) ++ Index.useOf(sym.clazz, loc)
 
-    case Expression.Hole(_, _, _, _) =>
+    case Expression.Hole(_, _, _) =>
       Index.occurrenceOf(exp0)
 
     case Expression.Lambda(fparam, exp, _, _) =>
@@ -331,6 +331,9 @@ object Indexer {
 
     case Expression.Reify(t, _, _, _) =>
       visitType(t) ++ Index.occurrenceOf(exp0)
+
+    case Expression.ReifyType(t, _, _, _) =>
+      visitType(t) ++ Index.occurrenceOf(exp0)
   }
 
   /**
@@ -421,8 +424,8 @@ object Indexer {
       case TypeConstructor.SchemaRowExtend(pred) => Index.occurrenceOf(tc, loc) ++ Index.useOf(pred)
       case _ => Index.occurrenceOf(tc, loc)
     }
-    case Type.Lambda(_, tpe, _) => visitType(tpe)
     case Type.Apply(tpe1, tpe2, _) => visitType(tpe1) ++ visitType(tpe2)
+    case Type.Alias(_, _, tpe, _) => visitType(tpe) // TODO index TypeAlias
     case _: Type.Ascribe => throw InternalCompilerException(s"Unexpected type: $tpe0.")
     case _: Type.UnkindedVar => throw InternalCompilerException(s"Unexpected type: $tpe0.")
   }

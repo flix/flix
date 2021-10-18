@@ -277,7 +277,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.Sig(sym, _, _) => Used.of(sym)
 
-    case Expression.Hole(sym, _, _, _) => Used.of(sym)
+    case Expression.Hole(sym, _, _) => Used.of(sym)
 
     case Expression.Lambda(fparam, exp, _, _) =>
       // Extend the environment with the variable symbol.
@@ -595,6 +595,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       visitExp(exp, env0)
 
     case Expression.Reify(_, _, _, _) =>
+      Used.empty
+
+    case Expression.ReifyType(_, _, _, _) =>
       Used.empty
   }
 

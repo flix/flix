@@ -86,7 +86,7 @@ object CodeHinter {
 
     case Expression.Sig(_, _, _) => Nil
 
-    case Expression.Hole(_, _, _, _) => Nil
+    case Expression.Hole(_, _, _) => Nil
 
     case Expression.Unit(_) => Nil
 
@@ -279,6 +279,9 @@ object CodeHinter {
       visitExp(exp)
 
     case Expression.Reify(_, _, _, _) =>
+      Nil
+
+    case Expression.ReifyType(_, _, _, _) =>
       Nil
   }
 

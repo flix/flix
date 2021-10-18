@@ -1176,9 +1176,9 @@ namespace List {
     ///
     /// Returns the elements of `l` as a lazy list.
     ///
-    pub def toLazy(l: List[a]): LazyList[a] = match l {
+    pub def toLazyList(l: List[a]): LazyList[a] = match l {
         case Nil     => ENil
-        case x :: xs => LList(lazy LCons(x, lazy toLazy(xs)))
+        case x :: xs => LCons(x, lazy toLazyList(xs))
     }
 
     ///
@@ -1396,5 +1396,15 @@ namespace List {
         case Nil     => acc
         case x :: xs => sumAcc(xs, x + acc)
     }
+
+    ///
+    /// Returns the elements of `l` as a `DemandList`.
+    ///
+    pub def toDemandList(l: List[a]): DemandList.DemandList[a, d] =
+        use DemandList.{DemandList};
+        match l {
+            case Nil     => DemandList.ENil
+            case x :: xs => DemandList.LList(lazy DemandList.LCons(x, lazy toDemandList(xs)))
+        }
 
 }
