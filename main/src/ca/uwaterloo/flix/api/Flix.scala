@@ -343,14 +343,11 @@ class Flix {
         Redundancy |>
         Terminator |>
         Linter |>
+        CodeHinter |>
         Safety
 
     // Apply the pipeline to the parsed AST.
     val result = pipeline.run(getInputs)(this)
-
-    if (options.hints) {
-      val codeHints = CodeHinter.run(result.get)(this)
-    }
 
     // Shutdown fork join pool.
     shutdownForkJoin()

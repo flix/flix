@@ -20,10 +20,11 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.CodeHint
+import ca.uwaterloo.flix.language.phase.Phase
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
-object CodeHinter {
+object CodeHinter extends Phase[TypedAst.Root, TypedAst.Root] {
 
   /**
     * A list of operations that support lazy evaluation when given a pure function.
