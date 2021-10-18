@@ -2016,7 +2016,7 @@ namespace TestLazyList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def takeWhileTakeWhileFusion01(): Bool & Impure =
+    def takeWhileFusion01(): Bool & Impure =
         let l = ref Nil;
         (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.takeWhile(i -> { l := "a" :: deref l; i < 4 }) |>
@@ -2024,7 +2024,7 @@ namespace TestLazyList {
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
 
     @test
-    def takeWhileTakeWhileFusion02(): Bool & Impure =
+    def takeWhileFusion02(): Bool & Impure =
         let l = ref Nil;
         (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.takeWhile(i -> { l := "a" :: deref l; i < 4 } as & Pure) |>
@@ -2033,7 +2033,7 @@ namespace TestLazyList {
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
     @test
-    def takeWhileTakeWhileFusion03(): Bool & Impure =
+    def takeWhileFusion03(): Bool & Impure =
         let l = ref Nil;
         (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.takeWhile(i -> { l := "a" :: deref l; i < 3 } as & Pure) |>
@@ -2042,7 +2042,7 @@ namespace TestLazyList {
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: Nil)
 
     @test
-    def takeWhileTakeWhileFusion04(): Bool & Impure =
+    def takeWhileFusion04(): Bool & Impure =
         let l = ref Nil;
         (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.takeWhile(i -> { l := "a" :: deref l; i < 3 } as & Pure) |>
@@ -2167,7 +2167,7 @@ namespace TestLazyList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def dropWhileDropWhileFusion01(): Bool & Impure =
+    def dropWhileFusion01(): Bool & Impure =
         let l = ref Nil;
         (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.dropWhile(i -> { l := "a" :: deref l; i < 3 }) |>
@@ -2175,7 +2175,7 @@ namespace TestLazyList {
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: Nil)
 
     @test
-    def dropWhileDropWhileFusion02(): Bool & Impure =
+    def dropWhileFusion02(): Bool & Impure =
         let l = ref Nil;
         (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.dropWhile(i -> { l := "a" :: deref l; i < 3 } as & Pure) |>
@@ -2184,7 +2184,7 @@ namespace TestLazyList {
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: Nil)
 
     @test
-    def dropWhileDropWhileFusion03(): Bool & Impure =
+    def dropWhileFusion03(): Bool & Impure =
         let l = ref Nil;
         (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.dropWhile(i -> { l := "a" :: deref l; i < 1 } as & Pure) |>
@@ -2193,7 +2193,7 @@ namespace TestLazyList {
         List.reverse(deref l) == ("a" :: "b" :: "b" :: "b" :: Nil)
 
     @test
-    def dropWhileDropWhileFusion04(): Bool & Impure =
+    def dropWhileFusion04(): Bool & Impure =
         let l = ref Nil;
         (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.dropWhile(i -> { l := "a" :: deref l; i < 2 } as & Pure) |>
