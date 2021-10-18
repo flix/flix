@@ -164,6 +164,27 @@ object InstanceError {
   }
 
   /**
+    * Error indicating a type alias in an instance type.
+    *
+    * @param alias the type alias.
+    * @param clazz the class symbol.
+    * @param loc   the location where the error occurred.
+    */
+  case class IllegalTypeAliasInstance(alias: Symbol.TypeAliasSym, clazz: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
+    override def summary: String = "Type alias in instance type."
+
+    override def message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Illegal use of type alias '" << Red(alias.name) << "' in instance declaration for '" << Red(clazz.name) << "'."
+      vt << NewLine
+      vt << Code(loc, s"illegal use of type alias")
+      vt << NewLine
+      vt << Underline("Tip:") << " A type class instance cannot use a type alias. Use the full type."
+    }
+  }
+
+  /**
     * Error indicating an orphan instance.
     *
     * @param tpe the instance type.

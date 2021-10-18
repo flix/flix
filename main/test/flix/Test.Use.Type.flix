@@ -38,11 +38,11 @@ namespace A {
             case CAD
         }
         pub opaque type Kelvin = Int
-        type alias Meter = Int
+        pub type alias Meter = Int
     }
 }
 
 namespace B {
     pub opaque type Kilogram = Int
-    type alias Acre = Int
+    pub type alias Acre = Int
 }

@@ -231,6 +231,26 @@ object ResolutionError {
   }
 
   /**
+    * Inaccessible Type Alias Error.
+    *
+    * @param sym the type alias symbol.
+    * @param ns  the namespace where the symbol is not accessible.
+    * @param loc the location where the error occurred.
+    */
+  case class InaccessibleTypeAlias(sym: Symbol.TypeAliasSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+    def summary: String = s"Inaccessible type alias ${sym.name}"
+    def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Type alias '" << Red(sym.toString) << s"' is not accessible from the namespace '" << Cyan(ns.toString) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "inaccessible type alias.") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Mark the definition as public." << NewLine
+    }
+  }
+
+  /**
     * Recursion Limit Error.
     *
     * @param ident the type alias symbol.
@@ -247,6 +267,34 @@ object ResolutionError {
       vt << Code(loc, "recursion limit reached.") << NewLine
       vt << NewLine
       vt << "Ensure that there is no cyclic definition of type aliases."
+    }
+  }
+
+  /**
+    * An error raise to indicate a cycle in type aliases.
+    *
+    * @param path the type reference path from a type alias to itself.
+    * @param loc  the location where the error occurred.
+    */
+  case class CyclicTypeAliases(path: List[Symbol.TypeAliasSym], loc: SourceLocation) extends ResolutionError {
+    private val fullCycle = path.last :: path
+
+    def summary: String = {
+      val pathString = fullCycle.map(alias => s"'${alias.name}'").mkString(" references ")
+      "Cyclic type aliases: " + pathString
+    }
+
+    override def message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << NewLine
+      vt << Code(loc, "Cyclic type aliases.") << NewLine
+      vt << NewLine
+      vt << "The following type aliases are in the cycle:" << NewLine
+      for (List(subClass, superClass) <- fullCycle.sliding(2)) {
+        vt << s"$subClass references $superClass" << NewLine
+      }
+      vt
     }
   }
 
@@ -476,8 +524,10 @@ object ResolutionError {
     * @param loc  the location where the error occurred.
     */
   case class CyclicClassHierarchy(path: List[Symbol.ClassSym], loc: SourceLocation) extends ResolutionError {
+    private val fullCycle = path.last :: path
+
     override def summary: String = {
-      val pathString = path.reverse.map(clazz => s"'${clazz.name}'").mkString(" extends ")
+      val pathString = fullCycle.map(clazz => s"'${clazz.name}'").mkString(" extends ")
       "Cyclic inheritance: " + pathString
     }
 
@@ -487,8 +537,8 @@ object ResolutionError {
       vt << NewLine
       vt << Code(loc, "Cyclic inheritance.") << NewLine
       vt << NewLine
-      vt << "The following classes are in the cycle:"
-      for (List(subClass, superClass) <- path.reverse.sliding(2)) {
+      vt << "The following classes are in the cycle:" << NewLine
+      for (List(subClass, superClass) <- fullCycle.sliding(2)) {
         vt << s"$subClass extends $superClass" << NewLine
       }
       vt
@@ -538,6 +588,26 @@ object ResolutionError {
       vt << Code(loc, "Illegal derivation.")
       vt << NewLine
       vt << Underline("Tip:") << s" Only the following classes may be derived: ${legalSyms.map(_.name).mkString(", ")}."
+    }
+  }
+
+  /**
+    * An error raised to indicate an under-applied type alias.
+    *
+    * @param sym the type alias.
+    * @param loc the location where the error occurred.
+    */
+  case class UnderAppliedTypeAlias(sym: Symbol.TypeAliasSym, loc: SourceLocation) extends ResolutionError {
+    override def summary: String = s"Under-applied type alias: ${sym.name}"
+
+    override def message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Under-applied type alias '" << Red(sym.name) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "Under-applied type alias.")
+      vt << NewLine
+      vt << Underline("Tip:") << " Type aliases must be fully applied."
     }
   }
 
