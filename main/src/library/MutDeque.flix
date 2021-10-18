@@ -202,7 +202,7 @@ namespace MutDeque {
     ///
     def copyElements!(f: Int32, b: Int32, a: Array[a], a1: Array[a]): Unit & Impure =
         let c = Array.length(a);
-        if (f < b) { // If this predicate is true the elements do not "wrap around" in the array, i.e. the elements are laid out linearly.
+        if (f < b) { // If this predicate is true the elements do not "wrap around" in the array, i.e. the elements are laid out sequentially from [0 .. b].
             Array.updateSequence!(0,     a[f .. b], a1)
         } else {
             Array.updateSequence!(0,     a[f .. c], a1); // Copy the front elements of `a` to a1[0 .. (c - f)].
