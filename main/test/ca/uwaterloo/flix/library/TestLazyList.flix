@@ -639,23 +639,23 @@ namespace TestLazyList {
 
     @test
     def foldRight01(): Bool =
-    	LazyList.foldRight((e, i) -> (i - e)*(e % 2 + 1), 100, ENil) == 100
+    	LazyList.foldRight((e, i) -> (i - e) * (e % 2 + 1), 100, ENil) == 100
 
     @test
     def foldRight02(): Bool =
-    	LazyList.foldRight((e, i) -> (i - e)*(e % 2 + 1), 100, LList(lazy ENil)) == 100
+    	LazyList.foldRight((e, i) -> (i - e) * (e % 2 + 1), 100, LList(lazy ENil)) == 100
 
     @test
     def foldRight03(): Bool =
-    	LazyList.foldRight((e, i) -> (i - e)*(e % 2 + 1), 100, LCons(1, lazy LList(lazy ENil))) == 198
+    	LazyList.foldRight((e, i) -> (i - e) * (e % 2 + 1), 100, LCons(1, lazy LList(lazy ENil))) == 198
 
     @test
     def foldRight04(): Bool =
-    	LazyList.foldRight((e, i) -> (i - e)*(e % 2 + 1), 100, ECons(1, LCons(2, lazy ENil))) == 194
+    	LazyList.foldRight((e, i) -> (i - e) * (e % 2 + 1), 100, ECons(1, LCons(2, lazy ENil))) == 194
 
     @test
     def foldRight05(): Bool =
-    	LazyList.foldRight((e, i) -> (i - e)*(e % 2 + 1), 100, LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil))))) == 382
+    	LazyList.foldRight((e, i) -> (i - e) * (e % 2 + 1), 100, LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil))))) == 382
 
     @test
     def foldRight06(): Bool =
