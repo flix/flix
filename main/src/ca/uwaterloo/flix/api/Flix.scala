@@ -327,6 +327,11 @@ class Flix {
     phaseTimers = ListBuffer.empty
 
     // Construct the compiler pipeline.
+
+
+    if (options.hints)
+      CodeHinter.enabled = true
+
     val pipeline =
       Reader |>
         Parser |>

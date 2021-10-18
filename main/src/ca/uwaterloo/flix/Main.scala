@@ -149,11 +149,6 @@ object Main {
           val o = options.copy(progress = false)
           Packager.install(project, cwd, o)
           System.exit(0)
-
-        case Command.Hints =>
-          println("hints enabled")
-          Packager.run(cwd, options)
-          System.exit(0)
       }
     } catch {
       case ex: RuntimeException =>
@@ -210,10 +205,6 @@ object Main {
 
         if (cmdOpts.benchmark) {
           Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))(options)
-        }
-
-        if (cmdOpts.hints) {
-          CodeHinter.run(???)(flix) // TODO: Get TypedAst.root from FinalAst.root
         }
 
         if (cmdOpts.test) {
@@ -281,8 +272,6 @@ object Main {
 
     case class Install(project: String) extends Command
 
-    case object Hints extends Command
-
   }
 
   /**
@@ -320,7 +309,7 @@ object Main {
 
       cmd("test").action((_, c) => c.copy(command = Command.Test)).text("  runs the tests for the current project.")
 
-      cmd("hints").text("  enables code hints phase.")
+      cmd("hints").text("  enables code hints.")
 
       cmd("install").text("  installs the Flix package from the given GitHub <owner>/<repo>")
         .children(
@@ -348,7 +337,7 @@ object Main {
 
       // Code Hints.
       opt[Unit]("hints").action((_, c) => c.copy(hints = true)).
-        text("enables code hints phase.")
+        text("enables code hints.")
 
       // Interactive.
       opt[Unit]("interactive").action((f, c) => c.copy(interactive = true)).

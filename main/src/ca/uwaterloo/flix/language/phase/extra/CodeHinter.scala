@@ -26,6 +26,8 @@ import ca.uwaterloo.flix.util.Validation._
 
 object CodeHinter extends Phase[TypedAst.Root, TypedAst.Root] {
 
+  var enabled = false
+
   /**
     * A list of operations that support lazy evaluation when given a pure function.
     */
@@ -61,11 +63,16 @@ object CodeHinter extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns a collection of code quality hints for the given AST `root`.
     */
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CodeHint] = flix.phase("CodeQuality") {
-    val hints = root.defs.values.flatMap(visitDef).toList
-    if (hints.isEmpty)
-      root.toSuccess
-    else
-      Failure(hints.to(LazyList))
+    if (enabled) {
+      val hints = root.defs.values.flatMap(visitDef).toList
+      if (hints.isEmpty)
+        root.toSuccess
+      else
+        Failure(hints.to(LazyList))
+    }
+    else {
+      root.toSuccess // Unsound???
+    }
   }
 
   /**
