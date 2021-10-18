@@ -4416,7 +4416,20 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
 
     @test
     def copyOfRange12(): Bool & Impure =
-        Array.copyOfRange(2, 5, [-1ii, -2ii, -3ii]) == [-3ii, default, default]
+        Array.copyOfRange(2, 5, [-1i64, -2i64, -3i64]) == [-3i64, default, default]
 
+    /*
+     * UNABLE TO REIFY `Unit`!
+    @test
+    def copyOfRange13(): Bool & Impure =
+        Array.copyOfRange(0, 10, [(), (), (), (), ()]) == [(), (), (), (), (), (), (), (), (), ()]
+    */
+
+    /*
+     * UNABLE TO REIFY `BigInt`!
+    @test
+    def copyOfRange14(): Bool & Impure =
+        Array.copyOfRange(2, 5, [-1ii, -2ii, -3ii]) == [-3ii, default, default]
+    */
 
 }
