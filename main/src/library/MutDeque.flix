@@ -40,15 +40,21 @@ namespace MutDeque {
 
     ///
     /// Constant denoting the smallest valid load factor.
-    /// The load factor is the ratio between number of elemnts in the array and its total capacity.
+    ///
+    /// The load factor is the ratio between number of elements in the array and its total capacity.
     /// I.e. `(number of elements) / capacity`.
+    ///
+    /// If the load factor falls below or is equal to `minLoadFactor` the array should be compressed.
     ///
     def minLoadFactor(): Float32 = 1.0f32 / 4.0f32
 
     ///
     /// Constant denoting the largest valid load factor.
-    /// The load factor is the ratio between number of elemnts in the array and its total capacity.
+    ///
+    /// The load factor is the ratio between number of elements in the array and its total capacity.
     /// I.e. `(number of elements) / capacity`.
+    ///
+    /// If the load factor exceeds or is equal to `maxLoadFactor` the array should be expanded.
     ///
     def maxLoadFactor(): Float32 = 3.0f32 / 4.0f32
 
