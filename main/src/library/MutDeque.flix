@@ -34,7 +34,7 @@ pub enum MutDeque[a] {
 namespace MutDeque {
 
     ///
-    /// Constant denoting the minimum capacity of the backing array.
+    /// Constant denoting the minimum allowed capacity of the backing array.
     ///
     def minCapacity(): Int32 = 8
 
@@ -65,7 +65,7 @@ namespace MutDeque {
         MutDeque(ref [default; minCapacity()], ref 0, ref 0)
 
     ///
-    /// Returns the number of elements in the MutDeque `d`.
+    /// Returns the number of elements in `d`.
     ///
     pub def size(d: MutDeque[a]): Int32 & Impure =
         let MutDeque(_, f, b) = d;
@@ -81,7 +81,7 @@ namespace MutDeque {
             c - (f - b) // Subtract the complement of number of elements from the capacity
 
     ///
-    /// Returns `true` if the MutDeque `d` is empty.
+    /// Returns `true` if `d` is empty.
     ///
     pub def isEmpty(d: MutDeque[a]): Bool & Impure =
         let MutDeque(_, f, b) = d;
@@ -150,7 +150,7 @@ namespace MutDeque {
         if (shouldExpand(d)) grow!(d) else ()
 
     ///
-    /// Returns `true` if the load factor is equal to `maxLoadFactor`.
+    /// Returns `true` if the load factor is greater than or equal to `maxLoadFactor`.
     ///
     def shouldExpand(d: MutDeque[a]): Bool & Impure =
         loadFactorOf(size(d), capacity(d)) >= maxLoadFactor()
@@ -169,10 +169,16 @@ namespace MutDeque {
     }
 
     ///
-    /// Compresses MutDeque `d` if the load factor is below `minLoadFactor`.
+    /// Compresses MutDeque `d` if the load factor is less than or equal to `minLoadFactor`.
     ///
     def compress!(d: MutDeque[a]): Unit & Impure =
         if (shouldCompress(d)) shrink!(d) else ()
+
+    ///
+    /// Returns `true` if the load factor is less than or equal to 1 / 4.
+    ///
+    def shouldCompress(d: MutDeque[a]): Bool & Impure =
+        loadFactorOf(size(d), capacity(d)) <= minLoadFactor()
 
     ///
     /// Shrinks MutDeque `d` to half its size but never below `minCapacity`.
@@ -196,18 +202,12 @@ namespace MutDeque {
     ///
     def copyElements!(f: Int32, b: Int32, a: Array[a], a1: Array[a]): Unit & Impure =
         let c = Array.length(a);
-        if (f < b) { // If this predicate is true the elements do not "wrap around" in the array, i.e. the are laid out linearly.
+        if (f < b) { // If this predicate is true the elements do not "wrap around" in the array, i.e. the elements are laid out linearly.
             Array.updateSequence!(0,     a[f .. b], a1)
         } else {
             Array.updateSequence!(0,     a[f .. c], a1); // Copy the front elements of `a` to a1[0 .. (c - f)].
             Array.updateSequence!(c - f, a[0 .. b], a1)  // Copy the back  elements of `a` to a1[(c - f) .. b].
         }
-
-    ///
-    /// Returns `true` if the load factor is less than 1 / 4.
-    ///
-    def shouldCompress(d: MutDeque[a]): Bool & Impure =
-        loadFactorOf(size(d), capacity(d)) <= minLoadFactor()
 
     ///
     /// Returns the load factor, given size `s` and capacity `c`.
