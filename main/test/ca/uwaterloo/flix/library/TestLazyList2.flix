@@ -213,39 +213,11 @@ namespace TestLazyList2 {
 
     @test
     def toString01(): Bool =
-        LazyList.toString(LCons(1, lazy LCons(2, lazy LList(lazy LCons(3, lazy ENil))))) == "1 :: 2 :: 3 :: ENil"
-
-    @test
-    def toString02(): Bool =
-        LazyList.toString(LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil))))) == "1 :: 2 :: 3 :: ENil"
-
-    @test
-    def toString03(): Bool =
-        LazyList.toString(LCons(1, lazy ECons(2, LList(lazy LCons(3, lazy LList(lazy ENil)))))) == "1 :: 2 :: 3 :: ENil"
+        LazyList.toString(ECons(1, ECons(2, ECons(3, ENil)))) == "1 :: 2 :: 3 :: ENil"
 
     @test
     def toString04(): Bool =
         LazyList.toString(LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))) == "1 :: 2 :: 3 :: ENil"
-
-    @test
-    def toString05(): Bool =
-        LazyList.toString(LList(lazy LCons(1, lazy LList(lazy ECons(2, LList(lazy ECons(3, ENil))))))) == "1 :: 2 :: 3 :: ENil"
-
-    @test
-    def toString06(): Bool =
-        LazyList.toString(LCons(1, lazy ECons(2, ECons(3, LList(lazy ENil))))) == "1 :: 2 :: 3 :: ENil"
-
-    @test
-    def toString07(): Bool =
-        LazyList.toString(ECons(1, ECons(2, LList(lazy LCons(3, lazy ENil))))) == "1 :: 2 :: 3 :: ENil"
-
-    @test
-    def toString08(): Bool =
-        LazyList.toString(ECons(1, LCons(2, lazy LCons(3, lazy LList(lazy ENil))))) == "1 :: 2 :: 3 :: ENil"
-
-    @test
-    def toString09(): Bool =
-        LazyList.toString(ECons(1, ECons(2, ECons(3, ENil)))) == "1 :: 2 :: 3 :: ENil"
 
 
     /////////////////////////////////////////////////////////////////////////////
