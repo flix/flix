@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.api
 import ca.uwaterloo.flix.language.ast.Ast.Input
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase._
+import ca.uwaterloo.flix.language.phase.extra.CodeHinter
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
 import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult
@@ -346,6 +347,10 @@ class Flix {
 
     // Apply the pipeline to the parsed AST.
     val result = pipeline.run(getInputs)(this)
+
+    if (options.hints) {
+      val codeHints = CodeHinter.run(result.get)(this)
+    }
 
     // Shutdown fork join pool.
     shutdownForkJoin()
