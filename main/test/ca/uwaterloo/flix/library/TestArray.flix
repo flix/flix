@@ -4418,30 +4418,30 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
     def copyOfRange12(): Bool & Impure =
         Array.copyOfRange(2, 5, [-1i64, -2i64, -3i64]) == [-3i64, default, default]
 
+    @test
+    def copyOfRange13(): Bool & Impure =
+        Array.copyOfRange(10, 12, [1i64, 2i64, 3i64]) == [default, default] // `arraycopy: length -7 is negative` exception is thrown here
+
 
     /////////////////////////////////
     // UNABLE TO REIFY TYPES BELOW //
     /////////////////////////////////
 
     @test
-    def copyOfRange13(): Bool & Impure =
-        Array.copyOfRange(2, 5, [(-1i64, -2i64), (-3i64, -4i64)]) == [(-3i64, -4i64), default, default]
-
-    @test
     def copyOfRange14(): Bool & Impure =
-        Array.copyOfRange(0, 2, [(-1i64, -2i64), (-3i64, -4i64), (-5i64, -6i64)]) == [(-1i64, -2i64), (-3i64, -4i64)]
+        Array.copyOfRange(2, 5, [(1i64, 2i64), (3i64, 4i64)]) == [(3i64, 4i64), default, default] // what is `default` value for tuples?
 
     @test
     def copyOfRange15(): Bool & Impure =
-        Array.copyOfRange(0, 3, [[Some(1), None, Some(2)], [Some(3)], [Some(4), Some(5), None, Some(6), None]]) == [[Some(1), None, Some(2)], [Some(3)], [Some(4), Some(5), None, Some(6), None]]
+        Array.copyOfRange(0, 2, [(-1i64, -2i64), (-3i64, -4i64), (-5i64, -6i64)]) == [(-1i64, -2i64), (-3i64, -4i64)]
 
     @test
     def copyOfRange16(): Bool & Impure =
-        Array.copyOfRange(0, 2, [[Some(1), None, Some(2)], [Some(3)], [Some(4), Some(5), None, Some(6), None]]) == [[Some(1), None, Some(2)], [Some(3)]]
+        Array.copyOfRange(0, 3, [[Some(1), None, Some(2)], [Some(3)], [Some(4), Some(5), None, Some(6), None]]) == [[Some(1), None, Some(2)], [Some(3)], [Some(4), Some(5), None, Some(6), None]]
 
     @test
     def copyOfRange17(): Bool & Impure =
-        Array.copyOfRange(2, 5, [[Some(1), None, Some(2)], [Some(3)], [Some(4), Some(5), None, Some(6), None]]) == [[Some(4), Some(5), None, Some(6), None], [None], [None]] // What is the expected value?
+        Array.copyOfRange(0, 2, [[Some(1), None, Some(2)], [Some(3)], [Some(4), Some(5), None, Some(6), None]]) == [[Some(1), None, Some(2)], [Some(3)]]
 
     @test
     def copyOfRange18(): Bool & Impure =
