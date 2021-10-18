@@ -86,6 +86,10 @@ object Unification {
 
       case (Type.Cst(c1, _), Type.Cst(c2, _)) if c1 == c2 => Result.Ok(Substitution.empty)
 
+      case (Type.Alias(_, _, tpe, _), _) => unifyTypes(tpe, tpe2)
+
+      case (_, Type.Alias(_, _, tpe, _)) => unifyTypes(tpe1, tpe)
+
       case _ if tpe1.kind == Kind.Bool || tpe2.kind == Kind.Bool =>
         BoolUnification.unify(tpe1, tpe2)
 
