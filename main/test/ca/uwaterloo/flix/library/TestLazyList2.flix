@@ -29,71 +29,39 @@ namespace TestLazyList2 {
 
     @test
     def findMap02(): Bool =
-        LazyList.findMap(i -> if (i % 2 == 0) Some(i / 2) else None, LList(lazy ENil)) == None
-
-    @test
-    def findMap03(): Bool =
-        LazyList.findMap(i -> if (i % 2 == 0) Some(i / 2) else None, LCons(1, lazy ENil)) == None
-
-    @test
-    def findMap04(): Bool =
-        LazyList.findMap(i -> if (i % 2 == 0) Some(i / 2) else None, ECons(1, LList(lazy ENil))) == None
-
-    @test
-    def findMap05(): Bool =
-        LazyList.findMap(i -> if (i % 2 == 0) Some(i / 2) else None, LCons(1, lazy LList(lazy ENil))) == None
-
-    @test
-    def findMap06(): Bool =
         LazyList.findMap(i -> if (i % 2 == 0) Some(i / 2) else None, ECons(1, ENil)) == None
 
     @test
-    def findMap07(): Bool =
-        LazyList.findMap(i -> if (i % 2 == 0) Some(i / 2) else None, LList(lazy ECons(2, LList(lazy ENil)))) == Some(1)
-
-    @test
-    def findMap08(): Bool =
-        LazyList.findMap(i -> if (i % 2 == 0) Some(i / 2) else None, LCons(2, lazy ENil)) == Some(1)
-
-    @test
-    def findMap09(): Bool =
-        LazyList.findMap(i -> if (i % 2 == 0) Some(i / 2) else None, ECons(2, LList(lazy ENil))) == Some(1)
-
-    @test
-    def findMap10(): Bool =
-        LazyList.findMap(i -> if (i % 2 == 0) Some(i / 2) else None, LList(lazy ECons(2, ENil))) == Some(1)
+    def findMap03(): Bool =
+        LazyList.findMap(i -> if (i % 2 == 0) Some(i / 2) else None, ECons(2, ENil)) == Some(1)
 
 	@test
-	def findMap11(): Bool =
-		LazyList.findMap(i -> if (i % 2 == 0) Some(i / 2) else None, LList(lazy ECons(1, ECons(3, ENil)))) == None
+	def findMap04(): Bool =
+		LazyList.findMap(i -> if (i % 2 == 0) Some(i / 2) else None, ECons(1, ECons(3, ENil))) == None
 
 	@test
-	def findMap12(): Bool =
-		LazyList.findMap(i -> if (i % 2 == 0) Some(i / 2) else None, LList(lazy LCons(1, lazy LCons(3, lazy LList(lazy ENil))))) == None
-
-	@test
-	def findMap13(): Bool =
-		LazyList.findMap(i -> if (i % 2 == 0) Some(i / 2) else None, LList(lazy ECons(1, LCons(3, lazy LList(lazy ENil))))) == None
-
-	@test
-	def findMap14(): Bool =
-		LazyList.findMap(i -> if (i % 2 == 0) Some(i / 2) else None, ECons(1, ECons(3, LList(lazy ENil)))) == None
-
-	@test
-	def findMap15(): Bool =
+	def findMap05(): Bool =
 		LazyList.findMap(i -> if (i % 2 == 0) Some(i / 2) else None, ECons(1, ECons(4, ENil))) == Some(2)
 
 	@test
-	def findMap16(): Bool =
+	def findMap06(): Bool =
 		LazyList.findMap(i -> if (i % 2 == 0) Some(i / 2) else None, ECons(6, ECons(-1, ENil))) == Some(3)
 
 	@test
-	def findMap17(): Bool =
+	def findMap07(): Bool =
 		LazyList.findMap(i -> if (i % 2 == 0) Some(i / 2) else None, ECons(8, ECons(6, ENil))) == Some(4)
 
     @test
-	def findMap18(): Bool =
+	def findMap08(): Bool =
 		LazyList.findMap(i -> if (i % 2 == 0) Some(i / 2) else None, ECons(0, ECons(1, ECons(2, ECons(3, ECons(4, ECons(5, ECons(10, ENil)))))))) == Some(0)
+
+    @test
+	def findMap09(): Bool =
+		LazyList.findMap(i -> if (i % 2 == 0) Some(i / 2) else None,
+		    LList(lazy LCons(-1, lazy LList(lazy LCons(1, lazy
+		    LList(lazy LCons(9, lazy LList(lazy LCons(3, lazy
+		    LList(lazy LCons(5, lazy LList(lazy LCons(5, lazy
+		    LList(lazy LCons(10, lazy LList(lazy ENil)))))))))))))))) == Some(5)
 
 
     /////////////////////////////////////////////////////////////////////////////
