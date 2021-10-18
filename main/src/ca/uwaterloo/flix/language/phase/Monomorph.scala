@@ -93,7 +93,10 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     private def transformType[E](tpe: Type)(f: Type.KindedVar => Validation[Type, E]): Validation[Type, E] = tpe match {
       case tvar: Type.Var => f(tvar.asKinded)
       case Type.Cst(_, _) => tpe.toSuccess
-      case Type.Lambda(tvar, tpe, loc) => transformType(tpe)(f).map(Type.Lambda(tvar, _, loc))
+      case Type.Alias(sym, args, tpe, loc) =>
+        mapN(traverse(args)(transformType(_)(f)), transformType(tpe)(f)) {
+          case (aes, t) => Type.Alias(sym, aes, t, loc)
+        }
       case Type.Apply(tpe1, tpe2, loc) => mapN(transformType(tpe1)(f), transformType(tpe2)(f)) {
         (ntpe1, ntpe2) => Type.Apply(ntpe1, ntpe2, loc)
       }
