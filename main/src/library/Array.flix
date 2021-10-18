@@ -121,7 +121,6 @@ namespace Array {
     ///
     /// Returns the array `a` as a lazy list.
     ///
-    // TODO: Add tests
     pub def toLazyList(a: Array[a]): LazyList[a] & Impure =
         LList(lazy toLazyListHelper(a, 0)) as & Impure
 
