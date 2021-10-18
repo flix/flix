@@ -296,7 +296,9 @@ object NamedAst {
 
   }
 
-  sealed trait Type
+  sealed trait Type {
+    val loc: SourceLocation
+  }
 
   object Type {
 
