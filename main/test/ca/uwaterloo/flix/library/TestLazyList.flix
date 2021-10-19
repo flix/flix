@@ -588,7 +588,7 @@ namespace TestLazyList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def filterMapFusion01(): Bool & Impure =
+    def filterThenMapFusion01(): Bool & Impure =
         let l = ref Nil;
         (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.filter(_ -> { l := "a" :: deref l; true }) |>
@@ -596,7 +596,7 @@ namespace TestLazyList {
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
 
     @test
-    def filterMapFusion02(): Bool & Impure =
+    def filterThenMapFusion02(): Bool & Impure =
         let l = ref Nil;
         (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.filter(_ -> { l := "a" :: deref l; true } as & Pure) |>
