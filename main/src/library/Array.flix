@@ -71,7 +71,7 @@ namespace Array {
     /// Equivalent to the expression `a[i]`.
     ///
     @Time(1) @Space(1)
-    pub def get(a: Array[a], i: Int32): a & Impure = a[i]
+    pub def get(i: Int32, a: Array[a]): a & Impure = a[i]
 
     ///
     /// Stores the value `x` at position `i` in the array `a`.

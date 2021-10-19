@@ -34,13 +34,13 @@ def testNew03(): Bool & Impure = Array.new(42, 10)[9] == 42
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def testGet01(): Bool & Impure = Array.get([1, 2, 3], 0) == 1
+def testGet01(): Bool & Impure = Array.get(0, [1, 2, 3]) == 1
 
 @test
-def testGet02(): Bool & Impure = Array.get([1, 2, 3], 1) == 2
+def testGet02(): Bool & Impure = Array.get(1, [1, 2, 3]) == 2
 
 @test
-def testGet03(): Bool & Impure = Array.get([1, 2, 3], 2) == 3
+def testGet03(): Bool & Impure = Array.get(2, [1, 2, 3]) == 3
 
 /////////////////////////////////////////////////////////////////////////////
 // put                                                                     //

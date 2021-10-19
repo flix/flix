@@ -89,7 +89,7 @@ namespace MutList {
         if (i >= deref l)
             bug!("Invalid argument ${i}")
         else
-            Array.get(deref a, i)
+            Array.get(i, deref a)
 
     ///
     /// Returns the number of elements in the given mutable list `v`.
