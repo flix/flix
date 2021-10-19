@@ -193,15 +193,14 @@ object RedundancyError {
       vt << ">> Unused formal parameter '" << Red(sym.text) << "'. The parameter is not used within its scope." << NewLine
       vt << NewLine
       vt << Code(sym.loc, "unused formal parameter.") << NewLine
-      vt << NewLine
-      vt << "Possible fixes:" << NewLine
-      vt << NewLine
     }
 
     def loc: SourceLocation = sym.loc
 
     override def explain: VirtualTerminal = {
       val vt = new VirtualTerminal()
+      vt << NewLine
+      vt << "Possible fixes:" << NewLine
       vt << "  (1)  Use the formal parameter." << NewLine
       vt << "  (2)  Remove the formal parameter." << NewLine
       vt << "  (3)  Prefix the formal parameter name with an underscore." << NewLine
