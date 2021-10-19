@@ -4420,7 +4420,7 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
 
     @test
     def copyOfRange13(): Bool & Impure =
-        Array.copyOfRange(3, 10, [1i64, 2i64, 3i64]) |> Array.length == 7 // `arraycopy: length -7 is negative` exception is thrown here
+        Array.copyOfRange(3, 10, [1i64, 2i64, 3i64]) |> Array.length == 7
 
 
     /////////////////////////////////
@@ -4446,10 +4446,11 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
 
     @test
     def copyOfRange18(): Bool & Impure =
-        Array.copyOfRange(0, 10, [(), (), (), (), ()]) == [(), (), (), (), (), (), (), (), (), ()]
+        Array.copyOfRange(0, 10, [(), (), (), (), ()]) |> Array.length == 10
 
     @test
     def copyOfRange19(): Bool & Impure =
-        Array.copyOfRange(2, 5, [-1ii, -2ii, -3ii]) == [-3ii, default, default]
+        let a = Array.copyOfRange(2, 5, [-1ii, -2ii, -3ii]);
+        Array.length(a) == 3 and Array.memberOf(-3ii, a)
 
 }
