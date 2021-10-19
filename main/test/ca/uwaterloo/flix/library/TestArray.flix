@@ -4487,10 +4487,6 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
         let a = Array.copyOfRange(2, 5, [['a', 'b', 'c'], ['d', 'e', 'f', 'g'], ['h']]);
         Array.length(a) == 3 and Array.memberOf(['h'], a)
 
-    ///////////////////////////////////////////////
-    // UNABLE TO REIFY NON-PRIMITIVE TYPES BELOW //
-    ///////////////////////////////////////////////
-
     @test
     def copyOfRange28(): Bool & Impure =
         Array.copyOfRange(0, 3, [Some(1), Some(2), None]) == [Some(1), Some(2), None]
