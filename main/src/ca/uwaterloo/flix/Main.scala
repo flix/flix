@@ -82,6 +82,7 @@ object Main {
       lib = cmdOpts.xlib,
       debug = cmdOpts.xdebug,
       documentor = cmdOpts.documentor,
+      explain = cmdOpts.explain,
       json = cmdOpts.json,
       progress = true,
       threads = cmdOpts.threads.getOrElse(Runtime.getRuntime.availableProcessors()),
