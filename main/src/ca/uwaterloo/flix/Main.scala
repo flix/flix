@@ -225,6 +225,7 @@ object Main {
                      args: Option[String] = None,
                      benchmark: Boolean = false,
                      documentor: Boolean = false,
+                     explain: Boolean = false,
                      interactive: Boolean = false,
                      json: Boolean = false,
                      listen: Option[Int] = None,
