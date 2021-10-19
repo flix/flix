@@ -48,13 +48,13 @@ object RedundancyError {
       vt << ">> Hidden variable symbol '" << Red(sym.text) << "'. The symbol is marked as unused." << NewLine
       vt << NewLine
       vt << Code(loc, "hidden symbol.") << NewLine
-      vt << NewLine
-      vt << "Possible fixes:" << NewLine
-      vt << NewLine
     }
 
     override def explain: VirtualTerminal = {
       val vt = new VirtualTerminal()
+      vt << NewLine
+      vt << "Possible fixes:" << NewLine
+      vt << NewLine
       vt << "  (1)  Don't use the variable symbol." << NewLine
       vt << "  (2)  Rename the underscore prefix from the variable symbol name." << NewLine
       vt << NewLine
@@ -100,15 +100,15 @@ object RedundancyError {
       vt << ">> Unused definition '" << Red(sym.name) << "'. The definition is never referenced." << NewLine
       vt << NewLine
       vt << Code(sym.loc, "unused definition.") << NewLine
-      vt << NewLine
-      vt << "Possible fixes:" << NewLine
-      vt << NewLine
     }
 
     def loc: SourceLocation = sym.loc
 
     override def explain: VirtualTerminal = {
       val vt = new VirtualTerminal()
+      vt << NewLine
+      vt << "Possible fixes:" << NewLine
+      vt << NewLine
       vt << "  (1)  Use the definition." << NewLine
       vt << "  (2)  Remove the definition." << NewLine
       vt << "  (3)  Mark the definition as public." << NewLine
@@ -131,15 +131,15 @@ object RedundancyError {
       vt << ">> Unused enum '" << Red(sym.name) << "'. Neither the enum nor its cases are ever used." << NewLine
       vt << NewLine
       vt << Code(sym.loc, "unused enum.") << NewLine
-      vt << NewLine
-      vt << "Possible fixes:" << NewLine
-      vt << NewLine
     }
 
     def loc: SourceLocation = sym.loc
 
     override def explain: VirtualTerminal = {
       val vt = new VirtualTerminal()
+      vt << NewLine
+      vt << "Possible fixes:" << NewLine
+      vt << NewLine
       vt << "  (1)  Use the enum." << NewLine
       vt << "  (2)  Remove the enum." << NewLine
       vt << "  (3)  Mark the enum as public." << NewLine
@@ -163,15 +163,15 @@ object RedundancyError {
       vt << ">> Unused case '" << Red(tag.name) << "' in enum '" << Cyan(sym.name) << "'." << NewLine
       vt << NewLine
       vt << Code(tag.loc, "unused tag.") << NewLine
-      vt << NewLine
-      vt << "Possible fixes:" << NewLine
-      vt << NewLine
     }
 
     def loc: SourceLocation = sym.loc
 
     override def explain: VirtualTerminal = {
       val vt = new VirtualTerminal()
+      vt << NewLine
+      vt << "Possible fixes:" << NewLine
+      vt << NewLine
       vt << "  (1)  Use the case." << NewLine
       vt << "  (2)  Remove the case." << NewLine
       vt << "  (3)  Prefix the case with an underscore." << NewLine
@@ -201,6 +201,7 @@ object RedundancyError {
       val vt = new VirtualTerminal()
       vt << NewLine
       vt << "Possible fixes:" << NewLine
+      vt << NewLine
       vt << "  (1)  Use the formal parameter." << NewLine
       vt << "  (2)  Remove the formal parameter." << NewLine
       vt << "  (3)  Prefix the formal parameter name with an underscore." << NewLine
@@ -222,15 +223,15 @@ object RedundancyError {
       vt << ">> Unused type parameter '" << Red(ident.name) << "'. The parameter is not referenced anywhere." << NewLine
       vt << NewLine
       vt << Code(ident.loc, "unused type parameter.") << NewLine
-      vt << NewLine
-      vt << "Possible fixes:" << NewLine
-      vt << NewLine
     }
 
     def loc: SourceLocation = SourceLocation.mk(ident.sp1, ident.sp2)
 
     override def explain: VirtualTerminal = {
       val vt = new VirtualTerminal()
+      vt << NewLine
+      vt << "Possible fixes:" << NewLine
+      vt << NewLine
       vt << "  (1)  Use the type parameter." << NewLine
       vt << "  (2)  Remove type parameter." << NewLine
       vt << "  (3)  Prefix the type parameter name with an underscore." << NewLine
@@ -252,15 +253,15 @@ object RedundancyError {
       vt << ">> Unused local variable '" << Red(sym.text) << "'. The variable is not referenced within its scope." << NewLine
       vt << NewLine
       vt << Code(sym.loc, "unused local variable.") << NewLine
-      vt << NewLine
-      vt << "Possible fixes:" << NewLine
-      vt << NewLine
     }
 
     def loc: SourceLocation = sym.loc
 
     override def explain: VirtualTerminal = {
       val vt = new VirtualTerminal()
+      vt << NewLine
+      vt << "Possible fixes:" << NewLine
+      vt << NewLine
       vt << "  (1)  Use the local variable." << NewLine
       vt << "  (2)  Remove local variable declaration." << NewLine
       vt << "  (3)  Prefix the variable name with an underscore." << NewLine
@@ -283,13 +284,13 @@ object RedundancyError {
       vt << ">> This variable is named, but only used once '" << Red(sym.text) << "'. Use a wildcard instead?" << NewLine
       vt << NewLine
       vt << Code(loc, "the variable occurs here.") << NewLine
-      vt << NewLine
-      vt << "Possible fixes:" << NewLine
-      vt << NewLine
     }
 
     override def explain: VirtualTerminal = {
       val vt = new VirtualTerminal()
+      vt << NewLine
+      vt << "Possible fixes:" << NewLine
+      vt << NewLine
       vt << "  (1)  Prefix the variable name with a wildcard." << NewLine
       vt << "  (2)  Replace the variable name with a wildcard." << NewLine
       vt << "  (3)  Check for any spelling mistakes." << NewLine
@@ -311,13 +312,13 @@ object RedundancyError {
       vt << ">> Useless expression: It has no side-effect(s) and its result is discarded." << NewLine
       vt << NewLine
       vt << Code(loc, "useless expression.") << NewLine
-      vt << NewLine
-      vt << "Possible fixes:" << NewLine
-      vt << NewLine
     }
 
     override def explain: VirtualTerminal = {
       val vt = new VirtualTerminal()
+      vt << NewLine
+      vt << "Possible fixes:" << NewLine
+      vt << NewLine
       vt << "  (1)  Use the result computed by the expression." << NewLine
       vt << "  (2)  Remove the expression statement." << NewLine
       vt << "  (3)  Introduce a let-binding with a wildcard name." << NewLine
@@ -341,13 +342,13 @@ object RedundancyError {
       vt << ">> Type constraint '" << Red(FormatTypeConstraint.formatTypeConstraint(redundantTconstr)) << "' is entailed by type constraint '" << Green(FormatTypeConstraint.formatTypeConstraint(redundantTconstr)) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "redundant type constraint.") << NewLine
-      vt << NewLine
-      vt << "Possible fixes:" << NewLine
-      vt << NewLine
     }
 
     override def explain: VirtualTerminal = {
       val vt = new VirtualTerminal()
+      vt << NewLine
+      vt << "Possible fixes:" << NewLine
+      vt << NewLine
       vt << "  (1)  Remove the type constraint." << NewLine
       vt << NewLine
     }
