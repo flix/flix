@@ -73,9 +73,12 @@ object NameError {
       vt << NewLine
       vt << Code(loc2, "the second occurrence was here.") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << " Remove or rename one of the occurrences." << NewLine
     }
     def loc: SourceLocation = loc1
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << " Remove or rename one of the occurrences." << NewLine
+    }
   }
 
   /**
@@ -160,9 +163,12 @@ object NameError {
       vt << NewLine
       vt << Code(loc2, "the second occurrence was here.") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << " Remove or rename one of the occurrences." << NewLine
     }
     def loc: SourceLocation = loc1
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << " Remove or rename one of the occurrences." << NewLine
+    }
   }
 
   /**
@@ -180,7 +186,10 @@ object NameError {
       vt << NewLine
       vt << Code(loc, "Suspicious type variable.") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << " Type variables are always lowercase. Named types are uppercase." << NewLine
+    }
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << " Type variables are always lowercase. Named types are uppercase." << NewLine
     }
   }
 
@@ -251,7 +260,10 @@ object NameError {
       vt << NewLine
       vt << Code(loc, "Illegal signature.")
       vt << NewLine
-      vt << Underline("Tip:") << " Change the signature to include the class type parameter, or remove the signature."
+    }
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << " Change the signature to include the class type parameter, or remove the signature."
     }
   }
 
