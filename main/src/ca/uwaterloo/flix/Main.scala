@@ -328,6 +328,9 @@ object Main {
       opt[Unit]("doc").action((_, c) => c.copy(documentor = true)).
         text("generates HTML documentation.")
 
+      opt[Unit]("explain").action((_, c) => c.copy(explain = true)).
+        text("provides suggestions on how to solve a problem")
+
       // Help.
       help("help").text("prints this usage information.")
 
