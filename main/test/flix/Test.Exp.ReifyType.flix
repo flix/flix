@@ -52,14 +52,8 @@ namespace Test/Exp/ReifyType {
     def reify17(): Bool = reifyType Array[Int32] == ReifiedArray(ReifiedInt32)
 
     @test
-    def reify18(): Bool = reflect([1]) == ReifiedArray(ReifiedInt32)
+    def reify18(): Bool & Impure = reflect([1]) == ReifiedArray(ReifiedInt32)
 
-    @test
-    def reify19(): Bool = reifyType Array[a] == ReifiedArray(ErasedType)
-
-    @test
-    def reify20(): Bool = reflect([]: Array[a]) == ReifiedArray(ErasedType)
-
-    def reflect(x: a): ReifiedType = reifyType a
+    def reflect(_: a): ReifiedType = reifyType a
 
 }
