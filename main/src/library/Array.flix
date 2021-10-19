@@ -79,7 +79,7 @@ namespace Array {
     /// Equivalent to the expression `a[i] = x`.
     ///
     @Time(1) @Space(1)
-    pub def put(a: Array[a], i: Int32, x: a): Array[a] & Impure = a[i] = x; a
+    pub def put(x: a, i: Int32, a: Array[a]): Array[a] & Impure = a[i] = x; a
 
     ///
     /// Returns `true` if the given array `a` is empty.
@@ -485,8 +485,8 @@ namespace Array {
         else {
             let x = a[i];
             let y = a[j];
-            put(a, i, y);
-            put(a, j, x);
+            put(y, i, a);
+            put(x, j, a);
             reverseHelper!(a, halflen, i+1, j-1)
         }
 

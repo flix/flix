@@ -485,7 +485,7 @@ namespace MutList {
         if (len > 0)
             let last = (deref a)[len - 1];
             l := len - 1;
-            Array.put(deref a, len - 1, default);
+            Array.put(default, len - 1, deref a);
             compress!(v);
             Some(last)
         else
@@ -601,8 +601,8 @@ namespace MutList {
         else {
             let x = a[i];
             let y = a[j];
-            Array.put(a, i, y);
-            Array.put(a, j, x);
+            Array.put(y, i, a);
+            Array.put(x, j, a);
             reverseHelper!(a, halflen, i + 1, j - 1)
         }
 
