@@ -49,10 +49,13 @@ object WeederError {
       vt << NewLine
       vt << Code(loc2, "the second occurrence was here.") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << " Remove one of the two annotations." << NewLine
     }
 
     def loc: SourceLocation = loc1
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << " Remove one of the two annotations." << NewLine
+    }
   }
 
   /**
@@ -74,10 +77,13 @@ object WeederError {
       vt << NewLine
       vt << Code(loc2, "the second declaration was here.") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << " Remove or rename one of the formal parameters to avoid the name clash." << NewLine
     }
 
     def loc: SourceLocation = loc1
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << " Remove or rename one of the formal parameters to avoid the name clash." << NewLine
+    }
   }
 
   /**
@@ -123,10 +129,13 @@ object WeederError {
       vt << NewLine
       vt << Code(loc2, "the second declaration was here.") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << " Remove or rename one of the tags to avoid the name clash." << NewLine
     }
 
     def loc: SourceLocation = loc1
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << " Remove or rename one of the tags to avoid the name clash." << NewLine
+    }
   }
 
   /**
@@ -179,7 +188,10 @@ object WeederError {
       vt << NewLine
       vt << Code(loc, "has no declared type.") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << " Explicitly declare the type of the formal parameter." << NewLine
+    }
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << " Explicitly declare the type of the formal parameter." << NewLine
     }
   }
 
@@ -198,7 +210,10 @@ object WeederError {
       vt << NewLine
       vt << Code(loc, "quantifier must declare at least one parameter.") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << " Add a formal parameter or remove the quantifier." << NewLine
+    }
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << " Add a formal parameter or remove the quantifier." << NewLine
     }
   }
 
@@ -217,7 +232,10 @@ object WeederError {
       vt << NewLine
       vt << Code(loc, "quantifier must declare at least one parameter.") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << " Add a formal parameter or remove the quantifier." << NewLine
+    }
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << " Add a formal parameter or remove the quantifier." << NewLine
     }
   }
 
@@ -236,7 +254,10 @@ object WeederError {
       vt << NewLine
       vt << Code(loc, "illegal float.") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << " Ensure that the literal is within bounds." << NewLine
+    }
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << " Ensure that the literal is within bounds." << NewLine
     }
   }
 
@@ -255,7 +276,10 @@ object WeederError {
       vt << NewLine
       vt << Code(loc, "illegal int.") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << " Ensure that the literal is within bounds." << NewLine
+    }
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << " Ensure that the literal is within bounds." << NewLine
     }
   }
 
@@ -382,10 +406,13 @@ object WeederError {
       vt << NewLine
       vt << Code(loc2, "the second occurrence was here.") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << " A variable may only occur once in a pattern." << NewLine
     }
 
     def loc: SourceLocation = loc1 min loc2
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << " A variable may only occur once in a pattern." << NewLine
+    }
   }
 
   /**
@@ -422,7 +449,10 @@ object WeederError {
       vt << NewLine
       vt << Code(loc, "illegal private declaration") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << s" Mark the declaration as 'pub'."
+    }
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << s" Mark the declaration as 'pub'." << NewLine
     }
   }
 
@@ -441,7 +471,10 @@ object WeederError {
       vt << NewLine
       vt << Code(loc, "illegal type constraint parameter") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << s" Type constraint parameters must be composed only of type variables."
+    }
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << s" Type constraint parameters must be composed only of type variables." << NewLine
     }
   }
 
@@ -460,7 +493,10 @@ object WeederError {
       vt << NewLine
       vt << Code(loc, "inconsistent type parameters") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << s" Either all or none of the type parameters must be annotated with a kind."
+    }
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << s" Either all or none of the type parameters must be annotated with a kind." << NewLine
     }
   }
 
@@ -479,7 +515,10 @@ object WeederError {
       vt << NewLine
       vt << Code(loc, "unkinded type parameters") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << s" Type parameters here must be annotated with a kind."
+    }
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << s" Type parameters here must be annotated with a kind." << NewLine
     }
   }
 
@@ -499,7 +538,10 @@ object WeederError {
       vt << NewLine
       vt << Code(loc, "malformed unicode escape sequence") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << " A Unicode escape sequence must be of the form \\uXXXX where X is a hexadecimal."
+    }
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << " A Unicode escape sequence must be of the form \\uXXXX where X is a hexadecimal." << NewLine
     }
   }
 
@@ -519,7 +561,10 @@ object WeederError {
       vt << NewLine
       vt << Code(loc, "invalid escape sequence") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << " The valid escape sequences are '\\t', '\\\\', '\\\'', '\\\"', '\\n', and '\\r'."
+    }
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << " The valid escape sequences are '\\t', '\\\\', '\\\'', '\\\"', '\\n', and '\\r'." << NewLine
     }
   }
 
@@ -539,7 +584,10 @@ object WeederError {
       vt << NewLine
       vt << Code(loc, "non-single-character literal") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << " A character literal must consist of a single character."
+    }
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << " A character literal must consist of a single character." << NewLine
     }
   }
 
@@ -558,7 +606,10 @@ object WeederError {
       vt << NewLine
       vt << Code(loc, "empty interpolated expression") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << " Add an expression to the interpolation or remove the interpolation."
+    }
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << " Add an expression to the interpolation or remove the interpolation." << NewLine
     }
   }
 
