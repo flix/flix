@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.errors.Severity
+import ca.uwaterloo.flix.util.vt.VirtualString.NewLine
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
@@ -55,5 +56,13 @@ trait CompilationError {
     * Returns the formatted error message.
     */
   def message: VirtualTerminal
+
+  /**
+   * Returns a formatted string with helpful suggestions.
+   */
+  def explain: VirtualTerminal = {
+    val vt = new VirtualTerminal()
+    vt << "" << NewLine
+  }
 
 }
