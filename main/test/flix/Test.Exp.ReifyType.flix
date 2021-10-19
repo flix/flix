@@ -7,13 +7,13 @@ namespace Test/Exp/ReifyType {
     def reify02(): Bool = reflect(true) == ReifiedBool
 
     @test
-    def reify03(): Bool = reifyType Char== ReifiedBool
+    def reify03(): Bool = reifyType Char == ReifiedChar
 
     @test
-    def reify04(): Bool = reflect('a')== ReifiedBool
+    def reify04(): Bool = reflect('a') == ReifiedChar
 
     // Look into `Prelude.flix` for the full types available in `ReifiedType`.
 
-    def reflect(x: a): ReifiedType = reifyType a
+    //def reflect(x: a): ReifiedType = reifyType a
 
 }
