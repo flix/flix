@@ -99,7 +99,7 @@ namespace Array {
     /// Equivalent to the expression `a[b..e]`.
     ///
     @Time(e - b) @Space(e - b)
-    pub def slice(a: Array[a], b: Int32, e: Int32): Array[a] & Impure = a[b..e]
+    pub def slice(b: Int32, e: Int32, a: Array[a]): Array[a] & Impure = a[b..e]
 
     ///
     /// Returns the array `a` as a list.
@@ -183,7 +183,7 @@ namespace Array {
         let len1 = length(a);
         let len2 = length(b);
         if (len1 == 0)
-            slice(b, 0, len2)
+            slice(0, len2, b)
         else {
             let out = new(a[0], len1 + len2);
             updateSequence!(0, a, out);
@@ -347,7 +347,7 @@ namespace Array {
     ///
     /// Alias for `scanLeft`.
     ///
-    pub def scan(f: (b, a) ->b & ef, s: b, xs: Array[a]): Array[b] & Impure = scanLeft(f, s, xs)
+    pub def scan(f: (b, a) -> b & ef, s: b, xs: Array[a]): Array[b] & Impure = scanLeft(f, s, xs)
 
     ///
     /// Accumulates the result of applying `f` to `a` going left to right.
@@ -573,7 +573,7 @@ namespace Array {
     pub def patch(i: Int32, n: Int32, a: Array[a], b: Array[a]): Array[a] & Impure =
         let len1 = length(a);
         let size = if (n > len1) len1 else n;
-        let sub = slice(a, 0, size);
+        let sub = slice(0, size, a);
         updateSequence(i, sub, b)
 
     ///
@@ -587,7 +587,7 @@ namespace Array {
     pub def patch!(i: Int32, n: Int32, a: Array[a], b: mut Array[a]): Unit & Impure =
         let len1 = length(a);
         let size = if (n > len1) len1 else n;
-        let sub = slice(a, 0, size);
+        let sub = slice(0, size, a);
         updateSequence!(i, sub, b)
 
     ///
@@ -962,7 +962,7 @@ namespace Array {
         } else {
             let out = new(a[0], len);
             let endPos = filterHelper(f, 0, a, 0, out);
-            slice(out, 0, endPos)
+            slice(0, endPos, out)
         }
 
     ///
@@ -1033,7 +1033,7 @@ namespace Array {
             []
         else {
             let start = if (n < 0) 0 else n;
-            slice(a, start, len)
+            slice(start, len, a)
         }
 
     ///
@@ -1048,7 +1048,7 @@ namespace Array {
             []
         else {
             let end = if (n < 0) len else len - n;
-            slice(a, 0, end)
+            slice(0, end, a)
         }
 
     ///
@@ -1081,7 +1081,7 @@ namespace Array {
     pub def dropWhileRight(f: a -> Bool, a: Array[a]): Array[a] & Impure =
         match findIndexOfRight(x -> not (f(x)), a) {
             case None => []
-            case Some(i) => slice(a, 0, i+1)
+            case Some(i) => slice(0, i + 1, a)
         }
 
     ///
@@ -1102,7 +1102,7 @@ namespace Array {
         else {
             let len = length(a);
             let end = if (n > len) len else n;
-            slice(a, 0, end)
+            slice(0, end, a)
         }
 
     ///
@@ -1117,7 +1117,7 @@ namespace Array {
         else {
             let len = length(a);
             let start = if (n > len) 0 else len - n;
-            slice(a, start, len)
+            slice(start, len, a)
         }
 
     ///
@@ -1148,8 +1148,8 @@ namespace Array {
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def takeWhileRight(f: a -> Bool, a: Array[a]): Array[a] & Impure =
         match findIndexOfRight(x -> not (f(x)), a) {
-            case None => slice(a, 0, length(a))
-            case Some(i) => slice(a, i+1, length(a))
+            case None => slice(0, length(a), a)
+            case Some(i) => slice(i + 1, length(a), a)
         }
 
     ///
@@ -1646,7 +1646,7 @@ namespace Array {
     ///
     pub def sortWith(cmp: (a,a) -> Comparison, a: Array[a]): Array[a] & Impure =
         let len = length(a);
-        let b = slice(a, 0, len);
+        let b = slice(0, len, a);
         sortWith!(cmp, b);
         b
 
