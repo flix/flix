@@ -28,6 +28,10 @@ object SafetyError {
       vt << ">> Illegal non-positively bound variable '" << Red(sym.text) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "the variable occurs in this negated atom.") << NewLine
+    }
+
+    override def explain: VirtualTerminal = {
+      val vt = new VirtualTerminal()
       if (!sym.isWild) {
         vt << NewLine
         vt << Underline("Tip:") << " Ensure that the variable occurs in at least one positive atom." << NewLine
@@ -50,7 +54,6 @@ object SafetyError {
       vt << ">> Illegal negatively bound variable '" << Red(sym.text) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "the variable occurs in this negated atom.") << NewLine
-      vt
     }
   }
 
