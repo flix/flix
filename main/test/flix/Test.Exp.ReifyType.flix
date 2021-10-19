@@ -62,18 +62,4 @@ namespace Test/Exp/ReifyType {
 
     def reflect(x: a): ReifiedType = reifyType a
 
-/*
-
-case ErasedType,
-case ReifiedBool,
-case ReifiedChar,
-case ReifiedFloat32,
-case ReifiedFloat64,
-case ReifiedInt8,
-case ReifiedInt16,
-case ReifiedInt32,
-case ReifiedInt64,
-case ReifiedArray(ReifiedType)
-
-*/
 }
