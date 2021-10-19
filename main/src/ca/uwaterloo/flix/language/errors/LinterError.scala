@@ -39,6 +39,10 @@ object LinterError {
       vt << ">> The " << Red(sym.name) << " lint applies to the code at: " << NewLine
       vt << NewLine
       vt << Code(loc, s"matches ${sym.name}.") << NewLine
+    }
+
+    override def explain: VirtualTerminal = {
+      val vt = new VirtualTerminal()
       vt << "The lint suggests that this code can be replaced by: " << NewLine
       vt << NewLine
       vt << "  " << Magenta(PrettyExpression.pretty(replacement)) << NewLine
