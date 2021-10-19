@@ -4487,6 +4487,10 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
         let a = Array.copyOfRange(2, 5, [['a', 'b', 'c'], ['d', 'e', 'f', 'g'], ['h']]);
         Array.length(a) == 3 and Array.memberOf(['h'], a)
 
+    ///////////////////////////////////////////////
+    // UNABLE TO REIFY NON-PRIMITIVE TYPES BELOW //
+    ///////////////////////////////////////////////
+
     @test
     def copyOfRange28(): Bool & Impure =
         Array.copyOfRange(0, 3, [Some(1), Some(2), None]) == [Some(1), Some(2), None]
@@ -4499,7 +4503,7 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
     def copyOfRange30(): Bool & Impure =
         let a = Array.copyOfRange(2, 5, [Some(1), Some(2), None]);
         Array.length(a) == 3 and Array.memberOf(None, a)
-/*
+
     @test
     def copyOfRange31(): Bool & Impure =
         Array.copyOfRange(0, 3, [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]]) == [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]]
@@ -4512,75 +4516,5 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
     def copyOfRange33(): Bool & Impure =
         let a = Array.copyOfRange(2, 5, [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]]);
         Array.length(a) == 3 and Array.memberOf([None], a)
-*/
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/*
-    @test
-    def copyOfRange05(): Bool & Impure =
-        Array.copyOfRange(0, 2, [1.0f32, 2.0f32, 3.0f32]) == [1.0f32, 2.0f32]
-
-    @test
-    def copyOfRange06(): Bool & Impure =
-        Array.copyOfRange(0, 2, [1.0f64, 2.0f64, 3.0f64]) == [1.0f64, 2.0f64]
-
-    @test
-    def copyOfRange07(): Bool & Impure =
-        Array.copyOfRange(0, 2, ["a", "b", "c"]) == ["a", "b"]
-
-    @test
-    def copyOfRange08(): Bool & Impure =
-        Array.copyOfRange(0, 2, [["a", "b", "c"], ["a", "b", "c"], ["a", "b", "c"]]) == [["a", "b", "c"], ["a", "b", "c"]]
-
-    @test
-    def copyOfRange09(): Bool & Impure =
-        Array.copyOfRange(0, 2, [[true, false, true], [true, true, true], [false, false, false]]) == [[true, false, true], [true, true, true]]
-
-    @test
-    def copyOfRange10(): Bool & Impure =
-        Array.copyOfRange(1, 2, [[1i8, 2i8, 3i8], [-4i8, -5i8, -6i8], [7i8, 8i8, 9i8]]) == [[-4i8, -5i8, -6i8]]
-
-    @test
-    def copyOfRange11(): Bool & Impure =
-        Array.copyOfRange(1, 3, [['a', 'b', 'c'], ['d', 'e', 'f', 'g'], ['h', 'i', 'j']]) == [['d', 'e', 'f', 'g'], ['h', 'i', 'j']]
-
-    @test
-    def copyOfRange12(): Bool & Impure =
-        Array.copyOfRange(2, 5, [-1i64, -2i64, -3i64]) == [-3i64, 0i64, 0i64]
-
-    @test
-    def copyOfRange13(): Bool & Impure =
-        Array.copyOfRange(3, 10, [1i64, 2i64, 3i64]) |> Array.length == 7
-
-
-    /////////////////////////////////
-    // UNABLE TO REIFY TYPES BELOW //
-    /////////////////////////////////
-
-    @test
-    def copyOfRange14(): Bool & Impure =
-        let a = Array.copyOfRange(2, 5, [(1i64, 2i64), (3i64, 4i64)]);
-        Array.length(a) == 3 and Array.memberOf((3i64, 4i64), a)
-
-    @test
-    def copyOfRange15(): Bool & Impure =
-        Array.copyOfRange(0, 2, [(-1i64, -2i64), (-3i64, -4i64), (-5i64, -6i64)]) == [(-1i64, -2i64), (-3i64, -4i64)]
-
-    @test
-    def copyOfRange16(): Bool & Impure =
-        Array.copyOfRange(0, 3, [[Some(1), None, Some(2)], [Some(3)], [Some(4), Some(5), None, Some(6), None]]) == [[Some(1), None, Some(2)], [Some(3)], [Some(4), Some(5), None, Some(6), None]]
-
-    @test
-    def copyOfRange17(): Bool & Impure =
-        Array.copyOfRange(0, 2, [[Some(1), None, Some(2)], [Some(3)], [Some(4), Some(5), None, Some(6), None]]) == [[Some(1), None, Some(2)], [Some(3)]]
-
-    @test
-    def copyOfRange18(): Bool & Impure =
-        Array.copyOfRange(0, 10, [(), (), (), (), ()]) |> Array.length == 10
-
-    @test
-    def copyOfRange19(): Bool & Impure =
-        let a = Array.copyOfRange(2, 5, [-1ii, -2ii, -3ii]);
-        Array.length(a) == 3 and Array.memberOf(-3ii, a)
-*/
 }
