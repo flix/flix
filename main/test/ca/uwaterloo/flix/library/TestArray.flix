@@ -4429,7 +4429,8 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
 
     @test
     def copyOfRange14(): Bool & Impure =
-        Array.copyOfRange(2, 5, [(1i64, 2i64), (3i64, 4i64)]) == [(3i64, 4i64), default, default] // what is `default` value for tuples?
+        let a = Array.copyOfRange(2, 5, [(1i64, 2i64), (3i64, 4i64)]);
+        Array.length(a) == 3 and Array.memberOf((3i64, 4i64), a)
 
     @test
     def copyOfRange15(): Bool & Impure =
