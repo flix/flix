@@ -4416,17 +4416,17 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
 
     @test
     def copyOfRange12(): Bool & Impure =
-        Array.copyOfRange(2, 5, [-1i64, -2i64, -3i64]) == [-3i64, default, default]
+        Array.copyOfRange(2, 5, [-1i64, -2i64, -3i64]) == [-3i64, 0i64, 0i64]
 
     @test
     def copyOfRange13(): Bool & Impure =
-        Array.copyOfRange(10, 12, [1i64, 2i64, 3i64]) |> Array.length == 2 // `arraycopy: length -7 is negative` exception is thrown here
+        Array.copyOfRange(3, 10, [1i64, 2i64, 3i64]) |> Array.length == 7 // `arraycopy: length -7 is negative` exception is thrown here
 
 
     /////////////////////////////////
     // UNABLE TO REIFY TYPES BELOW //
     /////////////////////////////////
-/*
+
     @test
     def copyOfRange14(): Bool & Impure =
         Array.copyOfRange(2, 5, [(1i64, 2i64), (3i64, 4i64)]) == [(3i64, 4i64), default, default] // what is `default` value for tuples?
@@ -4450,5 +4450,5 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
     @test
     def copyOfRange19(): Bool & Impure =
         Array.copyOfRange(2, 5, [-1ii, -2ii, -3ii]) == [-3ii, default, default]
-*/
+
 }
