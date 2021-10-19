@@ -588,7 +588,7 @@ namespace TestLazyList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def filterMapFusion01(): Bool & Impure =
+    def filterThenMapFusion01(): Bool & Impure =
         let l = ref Nil;
         (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.filter(_ -> { l := "a" :: deref l; true }) |>
@@ -596,7 +596,7 @@ namespace TestLazyList {
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
 
     @test
-    def filterMapFusion02(): Bool & Impure =
+    def filterThenMapFusion02(): Bool & Impure =
         let l = ref Nil;
         (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.filter(_ -> { l := "a" :: deref l; true } as & Pure) |>
@@ -639,23 +639,23 @@ namespace TestLazyList {
 
     @test
     def foldRight01(): Bool =
-    	LazyList.foldRight((e, i) -> (i - e)*(e % 2 + 1), 100, ENil) == 100
+    	LazyList.foldRight((e, i) -> (i - e) * (e % 2 + 1), 100, ENil) == 100
 
     @test
     def foldRight02(): Bool =
-    	LazyList.foldRight((e, i) -> (i - e)*(e % 2 + 1), 100, LList(lazy ENil)) == 100
+    	LazyList.foldRight((e, i) -> (i - e) * (e % 2 + 1), 100, LList(lazy ENil)) == 100
 
     @test
     def foldRight03(): Bool =
-    	LazyList.foldRight((e, i) -> (i - e)*(e % 2 + 1), 100, LCons(1, lazy LList(lazy ENil))) == 198
+    	LazyList.foldRight((e, i) -> (i - e) * (e % 2 + 1), 100, LCons(1, lazy LList(lazy ENil))) == 198
 
     @test
     def foldRight04(): Bool =
-    	LazyList.foldRight((e, i) -> (i - e)*(e % 2 + 1), 100, ECons(1, LCons(2, lazy ENil))) == 194
+    	LazyList.foldRight((e, i) -> (i - e) * (e % 2 + 1), 100, ECons(1, LCons(2, lazy ENil))) == 194
 
     @test
     def foldRight05(): Bool =
-    	LazyList.foldRight((e, i) -> (i - e)*(e % 2 + 1), 100, LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil))))) == 382
+    	LazyList.foldRight((e, i) -> (i - e) * (e % 2 + 1), 100, LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil))))) == 382
 
     @test
     def foldRight06(): Bool =
@@ -1910,110 +1910,34 @@ namespace TestLazyList {
 
     @test
     def takeWhilePure02(): Bool =
-        LazyList.takeWhile(i -> i > 3, LList(lazy ENil)) == ENil
+        LazyList.takeWhile(i -> i > 3, ECons(1, ENil)) == ENil
 
     @test
     def takeWhilePure03(): Bool =
-        LazyList.takeWhile(i -> i > 3, LCons(1, lazy ENil)) == ENil
-
-    @test
-    def takeWhilePure04(): Bool =
-        LazyList.takeWhile(i -> i > 3, LList(lazy ECons(1, LList(lazy ENil)))) == ENil
-
-    @test
-    def takeWhilePure05(): Bool =
-        LazyList.takeWhile(i -> i > 3, ECons(1, LList(lazy ENil))) == ENil
-
-    @test
-    def takeWhilePure06(): Bool =
-        LazyList.takeWhile(i -> i > 3, ECons(4, LList(lazy ENil))) == ECons(4, ENil)
-
-    @test
-    def takeWhilePure07(): Bool =
-        LazyList.takeWhile(i -> i > 3, LCons(4, lazy LList(lazy ENil))) == ECons(4, ENil)
-
-    @test
-    def takeWhilePure08(): Bool =
         LazyList.takeWhile(i -> i > 3, ECons(4, ENil)) == ECons(4, ENil)
 
     @test
-    def takeWhilePure09(): Bool =
-        LazyList.takeWhile(i -> i > 3, LList(lazy LCons(4, lazy ENil))) == ECons(4, ENil)
+    def takeWhilePure04(): Bool =
+        LazyList.takeWhile(i -> i > 3, ECons(1, ECons(2, ENil))) == ENil
 
     @test
-    def takeWhilePure10(): Bool =
-        LazyList.takeWhile(i -> i > 3, LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy ENil))))) == ENil
+    def takeWhilePure05(): Bool =
+        LazyList.takeWhile(i -> i > 3, ECons(1, ECons(5, ENil))) == ENil
 
     @test
-    def takeWhilePure11(): Bool =
-        LazyList.takeWhile(i -> i > 3, LList(lazy LCons(1, lazy ECons(2, LList(lazy ENil))))) == ENil
+    def takeWhilePure06(): Bool =
+        LazyList.takeWhile(i -> i > 3, ECons(5, ECons(1, ENil))) == ECons(5, ENil)
 
     @test
-    def takeWhilePure12(): Bool =
-        LazyList.takeWhile(i -> i > 3, LList(lazy LCons(1, lazy LCons(2, lazy ENil)))) == ENil
+    def takeWhilePure07(): Bool =
+        LazyList.takeWhile(i -> i > 3, ECons(5, ECons(8, ENil))) == ECons(5, ECons(8, ENil))
 
     @test
-    def takeWhilePure13(): Bool =
-        LazyList.takeWhile(i -> i > 3, ECons(1, LCons(2, lazy ENil))) == ENil
-
-    @test
-    def takeWhilePure14(): Bool =
-        LazyList.takeWhile(i -> i > 3, LCons(1, lazy ECons(5, LList(lazy ENil)))) == ENil
-
-    @test
-    def takeWhilePure15(): Bool =
-        LazyList.takeWhile(i -> i > 3, LCons(1, lazy LList(lazy ECons(5, ENil)))) == ENil
-
-    @test
-    def takeWhilePure16(): Bool =
-        LazyList.takeWhile(i -> i > 3, LList(lazy ECons(1, LCons(5, lazy ENil)))) == ENil
-
-    @test
-    def takeWhilePure17(): Bool =
-        LazyList.takeWhile(i -> i > 3, LList(lazy ECons(1, LList(lazy ECons(5, LList(lazy ENil)))))) == ENil
-
-    @test
-    def takeWhilePure18(): Bool =
-        LazyList.takeWhile(i -> i > 3, LList(lazy LCons(1, lazy LList(lazy LCons(5, lazy ENil))))) == ENil
-
-    @test
-    def takeWhilePure19(): Bool =
-        LazyList.takeWhile(i -> i > 3, ECons(5, LList(lazy ECons(1, LList(lazy ENil))))) == ECons(5, ENil)
-
-    @test
-    def takeWhilePure20(): Bool =
-        LazyList.takeWhile(i -> i > 3, LCons(5, lazy LList(lazy ECons(1, LList(lazy ENil))))) == ECons(5, ENil)
-
-    @test
-    def takeWhilePure21(): Bool =
-        LazyList.takeWhile(i -> i > 3, LList(lazy LCons(5, lazy ECons(1, ENil)))) == ECons(5, ENil)
-
-    @test
-    def takeWhilePure22(): Bool =
-        LazyList.takeWhile(i -> i > 3, ECons(5, LList(lazy ECons(1, ENil)))) == ECons(5, ENil)
-
-    @test
-    def takeWhilePure23(): Bool =
-        LazyList.takeWhile(i -> i > 3, LList(lazy ECons(5, ECons(8, ENil)))) == ECons(5, ECons(8, ENil))
-
-    @test
-    def takeWhilePure24(): Bool =
-        LazyList.takeWhile(i -> i > 3, LCons(5, lazy LList(lazy ECons(8, LList(lazy ENil))))) == ECons(5, ECons(8, ENil))
-
-    @test
-    def takeWhilePure25(): Bool =
-        LazyList.takeWhile(i -> i > 3, ECons(5, ECons(8, LList(lazy ENil)))) == ECons(5, ECons(8, ENil))
-
-    @test
-    def takeWhilePure26(): Bool =
+    def takeWhilePure08(): Bool =
         LazyList.takeWhile(i -> i > 3, LList(lazy ECons(5, LList(lazy LCons(8, lazy ENil))))) == ECons(5, ECons(8, ENil))
 
     @test
-    def takeWhilePure27(): Bool =
-        LazyList.takeWhile(i -> i > 3, ECons(5, LList(lazy ECons(8, ENil)))) == ECons(5, ECons(8, ENil))
-
-    @test
-    def takeWhilePure28(): Bool =
+    def takeWhilePure09(): Bool =
         LazyList.takeWhile(i -> i > 3, ECons(4, ECons(6, ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil)))))))))))) == ECons(4, ECons(6, ENil))
 
 
@@ -2027,110 +1951,34 @@ namespace TestLazyList {
 
     @test
     def takeWhileImpure02(): Bool & Impure =
-        LazyList.takeWhile(i -> i > 3 as & Impure, LList(lazy ENil)) == ENil
+        LazyList.takeWhile(i -> i > 3 as & Impure, ECons(1, ENil)) == ENil
 
     @test
     def takeWhileImpure03(): Bool & Impure =
-        LazyList.takeWhile(i -> i > 3 as & Impure, LCons(1, lazy ENil)) == ENil
-
-    @test
-    def takeWhileImpure04(): Bool & Impure =
-        LazyList.takeWhile(i -> i > 3 as & Impure, LList(lazy ECons(1, LList(lazy ENil)))) == ENil
-
-    @test
-    def takeWhileImpure05(): Bool & Impure =
-        LazyList.takeWhile(i -> i > 3 as & Impure, ECons(1, LList(lazy ENil))) == ENil
-
-    @test
-    def takeWhileImpure06(): Bool & Impure =
-        LazyList.takeWhile(i -> i > 3 as & Impure, ECons(4, LList(lazy ENil))) == ECons(4, ENil)
-
-    @test
-    def takeWhileImpure07(): Bool & Impure =
-        LazyList.takeWhile(i -> i > 3 as & Impure, LCons(4, lazy LList(lazy ENil))) == ECons(4, ENil)
-
-    @test
-    def takeWhileImpure08(): Bool & Impure =
         LazyList.takeWhile(i -> i > 3 as & Impure, ECons(4, ENil)) == ECons(4, ENil)
 
     @test
-    def takeWhileImpure09(): Bool & Impure =
-        LazyList.takeWhile(i -> i > 3 as & Impure, LList(lazy LCons(4, lazy ENil))) == ECons(4, ENil)
+    def takeWhileImpure04(): Bool & Impure =
+        LazyList.takeWhile(i -> i > 3 as & Impure, ECons(1, ECons(2, ENil))) == ENil
 
     @test
-    def takeWhileImpure10(): Bool & Impure =
-        LazyList.takeWhile(i -> i > 3 as & Impure, LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy ENil))))) == ENil
+    def takeWhileImpure05(): Bool & Impure =
+        LazyList.takeWhile(i -> i > 3 as & Impure, ECons(1, ECons(5, ENil))) == ENil
 
     @test
-    def takeWhileImpure11(): Bool & Impure =
-        LazyList.takeWhile(i -> i > 3 as & Impure, LList(lazy LCons(1, lazy ECons(2, LList(lazy ENil))))) == ENil
+    def takeWhileImpure06(): Bool & Impure =
+        LazyList.takeWhile(i -> i > 3 as & Impure, ECons(5, ECons(1, ENil))) == ECons(5, ENil)
 
     @test
-    def takeWhileImpure12(): Bool & Impure =
-        LazyList.takeWhile(i -> i > 3 as & Impure, LList(lazy LCons(1, lazy LCons(2, lazy ENil)))) == ENil
+    def takeWhileImpure07(): Bool & Impure =
+        LazyList.takeWhile(i -> i > 3 as & Impure, ECons(5, ECons(8, ENil))) == ECons(5, ECons(8, ENil))
 
     @test
-    def takeWhileImpure13(): Bool & Impure =
-        LazyList.takeWhile(i -> i > 3 as & Impure, ECons(1, LCons(2, lazy ENil))) == ENil
-
-    @test
-    def takeWhileImpure14(): Bool & Impure =
-        LazyList.takeWhile(i -> i > 3 as & Impure, LCons(1, lazy ECons(5, LList(lazy ENil)))) == ENil
-
-    @test
-    def takeWhileImpure15(): Bool & Impure =
-        LazyList.takeWhile(i -> i > 3 as & Impure, LCons(1, lazy LList(lazy ECons(5, ENil)))) == ENil
-
-    @test
-    def takeWhileImpure16(): Bool & Impure =
-        LazyList.takeWhile(i -> i > 3 as & Impure, LList(lazy ECons(1, LCons(5, lazy ENil)))) == ENil
-
-    @test
-    def takeWhileImpure17(): Bool & Impure =
-        LazyList.takeWhile(i -> i > 3 as & Impure, LList(lazy ECons(1, LList(lazy ECons(5, LList(lazy ENil)))))) == ENil
-
-    @test
-    def takeWhileImpure18(): Bool & Impure =
-        LazyList.takeWhile(i -> i > 3 as & Impure, LList(lazy LCons(1, lazy LList(lazy LCons(5, lazy ENil))))) == ENil
-
-    @test
-    def takeWhileImpure19(): Bool & Impure =
-        LazyList.takeWhile(i -> i > 3 as & Impure, ECons(5, LList(lazy ECons(1, LList(lazy ENil))))) == ECons(5, ENil)
-
-    @test
-    def takeWhileImpure20(): Bool & Impure =
-        LazyList.takeWhile(i -> i > 3 as & Impure, LCons(5, lazy LList(lazy ECons(1, LList(lazy ENil))))) == ECons(5, ENil)
-
-    @test
-    def takeWhileImpure21(): Bool & Impure =
-        LazyList.takeWhile(i -> i > 3 as & Impure, LList(lazy LCons(5, lazy ECons(1, ENil)))) == ECons(5, ENil)
-
-    @test
-    def takeWhileImpure22(): Bool & Impure =
-        LazyList.takeWhile(i -> i > 3 as & Impure, ECons(5, LList(lazy ECons(1, ENil)))) == ECons(5, ENil)
-
-    @test
-    def takeWhileImpure23(): Bool & Impure =
-        LazyList.takeWhile(i -> i > 3 as & Impure, LList(lazy ECons(5, ECons(8, ENil)))) == ECons(5, ECons(8, ENil))
-
-    @test
-    def takeWhileImpure24(): Bool & Impure =
-        LazyList.takeWhile(i -> i > 3 as & Impure, LCons(5, lazy LList(lazy ECons(8, LList(lazy ENil))))) == ECons(5, ECons(8, ENil))
-
-    @test
-    def takeWhileImpure25(): Bool & Impure =
-        LazyList.takeWhile(i -> i > 3 as & Impure, ECons(5, ECons(8, LList(lazy ENil)))) == ECons(5, ECons(8, ENil))
-
-    @test
-    def takeWhileImpure26(): Bool & Impure =
+    def takeWhileImpure08(): Bool & Impure =
         LazyList.takeWhile(i -> i > 3 as & Impure, LList(lazy ECons(5, LList(lazy LCons(8, lazy ENil))))) == ECons(5, ECons(8, ENil))
 
     @test
-    def takeWhileImpure27(): Bool & Impure =
-        LazyList.takeWhile(i -> i > 3 as & Impure, ECons(5, LList(lazy ECons(8, ENil)))) == ECons(5, ECons(8, ENil))
-
-    @test
-    def takeWhileImpure28(): Bool & Impure =
+    def takeWhileImpure09(): Bool & Impure =
         LazyList.takeWhile(i -> i > 3 as & Impure, ECons(4, ECons(6, ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil)))))))))))) == ECons(4, ECons(6, ENil))
 
 
@@ -2168,7 +2016,7 @@ namespace TestLazyList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def takeWhileTakeWhileFusion01(): Bool & Impure =
+    def takeWhileFusion01(): Bool & Impure =
         let l = ref Nil;
         (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.takeWhile(i -> { l := "a" :: deref l; i < 4 }) |>
@@ -2176,7 +2024,7 @@ namespace TestLazyList {
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
 
     @test
-    def takeWhileTakeWhileFusion02(): Bool & Impure =
+    def takeWhileFusion02(): Bool & Impure =
         let l = ref Nil;
         (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.takeWhile(i -> { l := "a" :: deref l; i < 4 } as & Pure) |>
@@ -2185,7 +2033,7 @@ namespace TestLazyList {
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
     @test
-    def takeWhileTakeWhileFusion03(): Bool & Impure =
+    def takeWhileFusion03(): Bool & Impure =
         let l = ref Nil;
         (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.takeWhile(i -> { l := "a" :: deref l; i < 3 } as & Pure) |>
@@ -2194,7 +2042,7 @@ namespace TestLazyList {
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: Nil)
 
     @test
-    def takeWhileTakeWhileFusion04(): Bool & Impure =
+    def takeWhileFusion04(): Bool & Impure =
         let l = ref Nil;
         (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.takeWhile(i -> { l := "a" :: deref l; i < 3 } as & Pure) |>
@@ -2213,110 +2061,34 @@ namespace TestLazyList {
 
     @test
     def dropWhilePure02(): Bool =
-        LazyList.dropWhile(i -> i > 3, LList(lazy ENil)) == ENil
+        LazyList.dropWhile(i -> i > 3, ECons(1, ENil)) == ECons(1, ENil)
 
     @test
     def dropWhilePure03(): Bool =
-        LazyList.dropWhile(i -> i > 3, LCons(1, lazy ENil)) == ECons(1, ENil)
-
-    @test
-    def dropWhilePure04(): Bool =
-        LazyList.dropWhile(i -> i > 3, LList(lazy ECons(1, LList(lazy ENil)))) == ECons(1, ENil)
-
-    @test
-    def dropWhilePure05(): Bool =
-        LazyList.dropWhile(i -> i > 3, ECons(1, LList(lazy ENil))) == ECons(1, ENil)
-
-    @test
-    def dropWhilePure06(): Bool =
-        LazyList.dropWhile(i -> i > 3, ECons(4, LList(lazy ENil))) == ENil
-
-    @test
-    def dropWhilePure07(): Bool =
-        LazyList.dropWhile(i -> i > 3, LCons(4, lazy LList(lazy ENil))) == ENil
-
-    @test
-    def dropWhilePure08(): Bool =
         LazyList.dropWhile(i -> i > 3, ECons(4, ENil)) == ENil
 
     @test
+    def dropWhilePure04(): Bool =
+        LazyList.dropWhile(i -> i > 3, ECons(1, ECons(2, ENil))) == ECons(1, ECons(2, ENil))
+
+    @test
+    def dropWhilePure05(): Bool =
+        LazyList.dropWhile(i -> i > 3, ECons(1, ECons(5, ENil))) == ECons(1, ECons(5, ENil))
+
+    @test
+    def dropWhilePure06(): Bool =
+        LazyList.dropWhile(i -> i > 3, ECons(5, ECons(1, ENil))) == ECons(1, ENil)
+
+    @test
+    def dropWhilePure07(): Bool =
+        LazyList.dropWhile(i -> i > 3, ECons(5, ECons(8, ENil))) == ENil
+
+    @test
+    def dropWhilePure08(): Bool =
+        LazyList.dropWhile(i -> i > 3, LList(lazy ECons(5, LCons(8, lazy LList(lazy LCons(9, lazy LList(lazy ECons(10, LList(lazy LCons(1, lazy ECons(2, LList(lazy ENil)))))))))))) == ECons(1, ECons(2, ENil))
+
+    @test
     def dropWhilePure09(): Bool =
-        LazyList.dropWhile(i -> i > 3, LList(lazy LCons(4, lazy ENil))) == ENil
-
-    @test
-    def dropWhilePure10(): Bool =
-        LazyList.dropWhile(i -> i > 3, LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy ENil))))) == ECons(1, ECons(2, ENil))
-
-    @test
-    def dropWhilePure11(): Bool =
-        LazyList.dropWhile(i -> i > 3, LList(lazy LCons(1, lazy ECons(2, LList(lazy ENil))))) == ECons(1, ECons(2, ENil))
-
-    @test
-    def dropWhilePure12(): Bool =
-        LazyList.dropWhile(i -> i > 3, LList(lazy LCons(1, lazy LCons(2, lazy ENil)))) == ECons(1, ECons(2, ENil))
-
-    @test
-    def dropWhilePure13(): Bool =
-        LazyList.dropWhile(i -> i > 3, ECons(1, LCons(2, lazy ENil))) == ECons(1, ECons(2, ENil))
-
-    @test
-    def dropWhilePure14(): Bool =
-        LazyList.dropWhile(i -> i > 3, LCons(1, lazy ECons(5, LList(lazy ENil)))) == ECons(1, ECons(5, ENil))
-
-    @test
-    def dropWhilePure15(): Bool =
-        LazyList.dropWhile(i -> i > 3, LCons(1, lazy LList(lazy ECons(5, ENil)))) == ECons(1, ECons(5, ENil))
-
-    @test
-    def dropWhilePure16(): Bool =
-        LazyList.dropWhile(i -> i > 3, LList(lazy ECons(1, LCons(5, lazy ENil)))) == ECons(1, ECons(5, ENil))
-
-    @test
-    def dropWhilePure17(): Bool =
-        LazyList.dropWhile(i -> i > 3, LList(lazy ECons(1, LList(lazy ECons(5, LList(lazy ENil)))))) == ECons(1, ECons(5, ENil))
-
-    @test
-    def dropWhilePure18(): Bool =
-        LazyList.dropWhile(i -> i > 3, LList(lazy LCons(1, lazy LList(lazy LCons(5, lazy ENil))))) == ECons(1, ECons(5, ENil))
-
-    @test
-    def dropWhilePure19(): Bool =
-        LazyList.dropWhile(i -> i > 3, ECons(5, LList(lazy ECons(1, LList(lazy ENil))))) == ECons(1, ENil)
-
-    @test
-    def dropWhilePure20(): Bool =
-        LazyList.dropWhile(i -> i > 3, LCons(5, lazy LList(lazy ECons(1, LList(lazy ENil))))) == ECons(1, ENil)
-
-    @test
-    def dropWhilePure21(): Bool =
-        LazyList.dropWhile(i -> i > 3, LList(lazy LCons(5, lazy ECons(1, ENil)))) == ECons(1, ENil)
-
-    @test
-    def dropWhilePure22(): Bool =
-        LazyList.dropWhile(i -> i > 3, ECons(5, LList(lazy ECons(1, ENil)))) == ECons(1, ENil)
-
-    @test
-    def dropWhilePure23(): Bool =
-        LazyList.dropWhile(i -> i > 3, LList(lazy ECons(5, ECons(8, ENil)))) == ENil
-
-    @test
-    def dropWhilePure24(): Bool =
-        LazyList.dropWhile(i -> i > 3, LCons(5, lazy LList(lazy ECons(8, LList(lazy ENil))))) == ENil
-
-    @test
-    def dropWhilePure25(): Bool =
-        LazyList.dropWhile(i -> i > 3, ECons(5, ECons(8, LList(lazy ENil)))) == ENil
-
-    @test
-    def dropWhilePure26(): Bool =
-        LazyList.dropWhile(i -> i > 3, LList(lazy ECons(5, LList(lazy LCons(8, lazy ENil))))) == ENil
-
-    @test
-    def dropWhilePure27(): Bool =
-        LazyList.dropWhile(i -> i > 3, ECons(5, LList(lazy ECons(8, ENil)))) == ENil
-
-    @test
-    def dropWhilePure28(): Bool =
         LazyList.dropWhile(i -> i > 3, ECons(4, ECons(6, ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil)))))))))))) == ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil)))))))))
 
 
@@ -2330,110 +2102,34 @@ namespace TestLazyList {
 
     @test
     def dropWhileImpure02(): Bool & Impure =
-        LazyList.dropWhile(i -> i > 3 as & Impure, LList(lazy ENil)) == ENil
+        LazyList.dropWhile(i -> i > 3 as & Impure, ECons(1, ENil)) == ECons(1, ENil)
 
     @test
     def dropWhileImpure03(): Bool & Impure =
-        LazyList.dropWhile(i -> i > 3 as & Impure, LCons(1, lazy ENil)) == ECons(1, ENil)
-
-    @test
-    def dropWhileImpure04(): Bool & Impure =
-        LazyList.dropWhile(i -> i > 3 as & Impure, LList(lazy ECons(1, LList(lazy ENil)))) == ECons(1, ENil)
-
-    @test
-    def dropWhileImpure05(): Bool & Impure =
-        LazyList.dropWhile(i -> i > 3 as & Impure, ECons(1, LList(lazy ENil))) == ECons(1, ENil)
-
-    @test
-    def dropWhileImpure06(): Bool & Impure =
-        LazyList.dropWhile(i -> i > 3 as & Impure, ECons(4, LList(lazy ENil))) == ENil
-
-    @test
-    def dropWhileImpure07(): Bool & Impure =
-        LazyList.dropWhile(i -> i > 3 as & Impure, LCons(4, lazy LList(lazy ENil))) == ENil
-
-    @test
-    def dropWhileImpure08(): Bool & Impure =
         LazyList.dropWhile(i -> i > 3 as & Impure, ECons(4, ENil)) == ENil
 
     @test
+    def dropWhileImpure04(): Bool & Impure =
+        LazyList.dropWhile(i -> i > 3 as & Impure, ECons(1, ECons(2, ENil))) == ECons(1, ECons(2, ENil))
+
+    @test
+    def dropWhileImpure05(): Bool & Impure =
+        LazyList.dropWhile(i -> i > 3 as & Impure, ECons(1, ECons(5, ENil))) == ECons(1, ECons(5, ENil))
+
+    @test
+    def dropWhileImpure06(): Bool & Impure =
+        LazyList.dropWhile(i -> i > 3 as & Impure, ECons(5, ECons(1, ENil))) == ECons(1, ENil)
+
+    @test
+    def dropWhileImpure07(): Bool & Impure =
+        LazyList.dropWhile(i -> i > 3 as & Impure, ECons(5, ECons(8, ENil))) == ENil
+
+    @test
+    def dropWhileImpure08(): Bool & Impure =
+        LazyList.dropWhile(i -> i > 3 as & Impure, LList(lazy ECons(5, LCons(8, lazy LList(lazy LCons(9, lazy LList(lazy ECons(10, LList(lazy LCons(1, lazy ECons(2, LList(lazy ENil)))))))))))) == ECons(1, ECons(2, ENil))
+
+    @test
     def dropWhileImpure09(): Bool & Impure =
-        LazyList.dropWhile(i -> i > 3 as & Impure, LList(lazy LCons(4, lazy ENil))) == ENil
-
-    @test
-    def dropWhileImpure10(): Bool & Impure =
-        LazyList.dropWhile(i -> i > 3 as & Impure, LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy ENil))))) == ECons(1, ECons(2, ENil))
-
-    @test
-    def dropWhileImpure11(): Bool & Impure =
-        LazyList.dropWhile(i -> i > 3 as & Impure, LList(lazy LCons(1, lazy ECons(2, LList(lazy ENil))))) == ECons(1, ECons(2, ENil))
-
-    @test
-    def dropWhileImpure12(): Bool & Impure =
-        LazyList.dropWhile(i -> i > 3 as & Impure, LList(lazy LCons(1, lazy LCons(2, lazy ENil)))) == ECons(1, ECons(2, ENil))
-
-    @test
-    def dropWhileImpure13(): Bool & Impure =
-        LazyList.dropWhile(i -> i > 3 as & Impure, ECons(1, LCons(2, lazy ENil))) == ECons(1, ECons(2, ENil))
-
-    @test
-    def dropWhileImpure14(): Bool & Impure =
-        LazyList.dropWhile(i -> i > 3 as & Impure, LCons(1, lazy ECons(5, LList(lazy ENil)))) == ECons(1, ECons(5, ENil))
-
-    @test
-    def dropWhileImpure15(): Bool & Impure =
-        LazyList.dropWhile(i -> i > 3 as & Impure, LCons(1, lazy LList(lazy ECons(5, ENil)))) == ECons(1, ECons(5, ENil))
-
-    @test
-    def dropWhileImpure16(): Bool & Impure =
-        LazyList.dropWhile(i -> i > 3 as & Impure, LList(lazy ECons(1, LCons(5, lazy ENil)))) == ECons(1, ECons(5, ENil))
-
-    @test
-    def dropWhileImpure17(): Bool & Impure =
-        LazyList.dropWhile(i -> i > 3 as & Impure, LList(lazy ECons(1, LList(lazy ECons(5, LList(lazy ENil)))))) == ECons(1, ECons(5, ENil))
-
-    @test
-    def dropWhileImpure18(): Bool & Impure =
-        LazyList.dropWhile(i -> i > 3 as & Impure, LList(lazy LCons(1, lazy LList(lazy LCons(5, lazy ENil))))) == ECons(1, ECons(5, ENil))
-
-    @test
-    def dropWhileImpure19(): Bool & Impure =
-        LazyList.dropWhile(i -> i > 3 as & Impure, ECons(5, LList(lazy ECons(1, LList(lazy ENil))))) == ECons(1, ENil)
-
-    @test
-    def dropWhileImpure20(): Bool & Impure =
-        LazyList.dropWhile(i -> i > 3 as & Impure, LCons(5, lazy LList(lazy ECons(1, LList(lazy ENil))))) == ECons(1, ENil)
-
-    @test
-    def dropWhileImpure21(): Bool & Impure =
-        LazyList.dropWhile(i -> i > 3 as & Impure, LList(lazy LCons(5, lazy ECons(1, ENil)))) == ECons(1, ENil)
-
-    @test
-    def dropWhileImpure22(): Bool & Impure =
-        LazyList.dropWhile(i -> i > 3 as & Impure, ECons(5, LList(lazy ECons(1, ENil)))) == ECons(1, ENil)
-
-    @test
-    def dropWhileImpure23(): Bool & Impure =
-        LazyList.dropWhile(i -> i > 3 as & Impure, LList(lazy ECons(5, ECons(8, ENil)))) == ENil
-
-    @test
-    def dropWhileImpure24(): Bool & Impure =
-        LazyList.dropWhile(i -> i > 3 as & Impure, LCons(5, lazy LList(lazy ECons(8, LList(lazy ENil))))) == ENil
-
-    @test
-    def dropWhileImpure25(): Bool & Impure =
-        LazyList.dropWhile(i -> i > 3 as & Impure, ECons(5, ECons(8, LList(lazy ENil)))) == ENil
-
-    @test
-    def dropWhileImpure26(): Bool & Impure =
-        LazyList.dropWhile(i -> i > 3 as & Impure, LList(lazy ECons(5, LList(lazy LCons(8, lazy ENil))))) == ENil
-
-    @test
-    def dropWhileImpure27(): Bool & Impure =
-        LazyList.dropWhile(i -> i > 3 as & Impure, ECons(5, LList(lazy ECons(8, ENil)))) == ENil
-
-    @test
-    def dropWhileImpure28(): Bool & Impure =
         LazyList.dropWhile(i -> i > 3 as & Impure, ECons(4, ECons(6, ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil)))))))))))) == ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil)))))))))
 
 
@@ -2471,7 +2167,7 @@ namespace TestLazyList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def dropWhileDropWhileFusion01(): Bool & Impure =
+    def dropWhileFusion01(): Bool & Impure =
         let l = ref Nil;
         (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.dropWhile(i -> { l := "a" :: deref l; i < 3 }) |>
@@ -2479,7 +2175,7 @@ namespace TestLazyList {
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: Nil)
 
     @test
-    def dropWhileDropWhileFusion02(): Bool & Impure =
+    def dropWhileFusion02(): Bool & Impure =
         let l = ref Nil;
         (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.dropWhile(i -> { l := "a" :: deref l; i < 3 } as & Pure) |>
@@ -2488,7 +2184,7 @@ namespace TestLazyList {
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: Nil)
 
     @test
-    def dropWhileDropWhileFusion03(): Bool & Impure =
+    def dropWhileFusion03(): Bool & Impure =
         let l = ref Nil;
         (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.dropWhile(i -> { l := "a" :: deref l; i < 1 } as & Pure) |>
@@ -2497,12 +2193,381 @@ namespace TestLazyList {
         List.reverse(deref l) == ("a" :: "b" :: "b" :: "b" :: Nil)
 
     @test
-    def dropWhileDropWhileFusion04(): Bool & Impure =
+    def dropWhileFusion04(): Bool & Impure =
         let l = ref Nil;
         (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
         LazyList.dropWhile(i -> { l := "a" :: deref l; i < 2 } as & Pure) |>
         LazyList.dropWhile(i -> { l := "b" :: deref l; i < 3 } as & Pure) |>
         LazyList.toList as & Impure;
         List.reverse(deref l) == ("a" :: "a" :: "b" :: "b" :: Nil)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // findMap                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def findMap01(): Bool =
+        LazyList.findMap(i -> if (i % 2 == 0) Some(i / 2) else None, ENil) == None
+
+    @test
+    def findMap02(): Bool =
+        LazyList.findMap(i -> if (i % 2 == 0) Some(i / 2) else None, ECons(1, ENil)) == None
+
+    @test
+    def findMap03(): Bool =
+        LazyList.findMap(i -> if (i % 2 == 0) Some(i / 2) else None, ECons(2, ENil)) == Some(1)
+
+	@test
+	def findMap04(): Bool =
+		LazyList.findMap(i -> if (i % 2 == 0) Some(i / 2) else None, ECons(1, ECons(3, ENil))) == None
+
+	@test
+	def findMap05(): Bool =
+		LazyList.findMap(i -> if (i % 2 == 0) Some(i / 2) else None, ECons(1, ECons(4, ENil))) == Some(2)
+
+	@test
+	def findMap06(): Bool =
+		LazyList.findMap(i -> if (i % 2 == 0) Some(i / 2) else None, ECons(6, ECons(-1, ENil))) == Some(3)
+
+	@test
+	def findMap07(): Bool =
+		LazyList.findMap(i -> if (i % 2 == 0) Some(i / 2) else None, ECons(8, ECons(6, ENil))) == Some(4)
+
+    @test
+	def findMap08(): Bool =
+		LazyList.findMap(i -> if (i % 2 == 0) Some(i / 2) else None, ECons(0, ECons(1, ECons(2, ECons(3, ECons(4, ECons(5, ECons(10, ENil)))))))) == Some(0)
+
+    @test
+	def findMap09(): Bool =
+		LazyList.findMap(i -> if (i % 2 == 0) Some(i / 2) else None,
+		    LList(lazy LCons(-1, lazy LList(lazy LCons(1, lazy
+		    LList(lazy LCons(9, lazy LList(lazy LCons(3, lazy
+		    LList(lazy LCons(5, lazy LList(lazy LCons(5, lazy
+		    LList(lazy LCons(10, lazy LList(lazy ENil)))))))))))))))) == Some(5)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // filterMap (pure)                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def filterMapPure01(): Bool =
+        LazyList.filterMap(i -> if (i % 2 == 0) Some(i / 2) else None, ENil) == ENil
+
+    @test
+    def filterMapPure02(): Bool =
+        LazyList.filterMap(i -> if (i % 2 == 0) Some(i / 2) else None, ECons(1, ENil)) == ENil
+
+    @test
+    def filterMapPure03(): Bool =
+        LazyList.filterMap(i -> if (i % 2 == 0) Some(i / 2) else None, ECons(2, ENil)) == ECons(1, ENil)
+
+	@test
+	def filterMapPure04(): Bool =
+		LazyList.filterMap(i -> if (i % 2 == 0) Some(i / 2) else None, ECons(1, ECons(3, ENil))) == ENil
+
+	@test
+	def filterMapPure05(): Bool =
+		LazyList.filterMap(i -> if (i % 2 == 0) Some(i / 2) else None, ECons(1, ECons(4, ENil))) == ECons(2, ENil)
+
+	@test
+	def filterMapPure06(): Bool =
+		LazyList.filterMap(i -> if (i % 2 == 0) Some(i / 2) else None, ECons(6, ECons(-1, ENil))) == ECons(3, ENil)
+
+	@test
+	def filterMapPure07(): Bool =
+		LazyList.filterMap(i -> if (i % 2 == 0) Some(i / 2) else None, ECons(8, ECons(6, ENil))) == ECons(4, ECons(3, ENil))
+
+    @test
+	def filterMapPure08(): Bool =
+		LazyList.filterMap(i -> if (i % 2 == 0) Some(i / 2) else None, ECons(0, ECons(1, ECons(2, ECons(3, ECons(4, ECons(5, ECons(10, ENil)))))))) == ECons(0, ECons(1, ECons(2, ECons(5, ENil))))
+
+    @test
+	def filterMapPure09(): Bool =
+		LazyList.filterMap(i -> if (i % 2 == 0) Some(i / 2) else None,
+		    LList(lazy LCons(0, lazy LList(lazy
+		    LCons(1, lazy LList(lazy LCons(2, lazy
+		    LList(lazy LCons(3, lazy LList(lazy
+		    LCons(4, lazy LList(lazy LCons(5, lazy
+		    LList(lazy LCons(10, lazy LList(lazy ENil)))))))))))))))) == ECons(0, ECons(1, ECons(2, ECons(5, ENil))))
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // filterMap (impure)                                                      //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def filterMapImpure01(): Bool & Impure =
+        LazyList.filterMap(i -> if (i % 2 == 0) Some(i / 2) else None as & Impure, ENil) == ENil
+
+    @test
+    def filterMapImpure02(): Bool & Impure =
+        LazyList.filterMap(i -> if (i % 2 == 0) Some(i / 2) else None as & Impure, ECons(1, ENil)) == ENil
+
+    @test
+    def filterMapImpure03(): Bool & Impure =
+        LazyList.filterMap(i -> if (i % 2 == 0) Some(i / 2) else None as & Impure, ECons(2, ENil)) == ECons(1, ENil)
+
+	@test
+	def filterMapImpure04(): Bool & Impure =
+		LazyList.filterMap(i -> if (i % 2 == 0) Some(i / 2) else None as & Impure, ECons(1, ECons(3, ENil))) == ENil
+
+	@test
+	def filterMapImpure05(): Bool & Impure =
+		LazyList.filterMap(i -> if (i % 2 == 0) Some(i / 2) else None as & Impure, ECons(1, ECons(4, ENil))) == ECons(2, ENil)
+
+	@test
+	def filterMapImpure06(): Bool & Impure =
+		LazyList.filterMap(i -> if (i % 2 == 0) Some(i / 2) else None as & Impure, ECons(6, ECons(-1, ENil))) == ECons(3, ENil)
+
+	@test
+	def filterMapImpure07(): Bool & Impure =
+		LazyList.filterMap(i -> if (i % 2 == 0) Some(i / 2) else None as & Impure, ECons(8, ECons(6, ENil))) == ECons(4, ECons(3, ENil))
+
+    @test
+	def filterMapImpure08(): Bool & Impure =
+		LazyList.filterMap(i -> if (i % 2 == 0) Some(i / 2) else None as & Impure, ECons(0, ECons(1, ECons(2, ECons(3, ECons(4, ECons(5, ECons(10, ENil)))))))) == ECons(0, ECons(1, ECons(2, ECons(5, ENil))))
+
+    @test
+	def filterMapImpure09(): Bool & Impure =
+		LazyList.filterMap(i -> if (i % 2 == 0) Some(i / 2) else None as & Impure,
+		    LList(lazy LCons(0, lazy LList(lazy
+		    LCons(1, lazy LList(lazy LCons(2, lazy
+		    LList(lazy LCons(3, lazy LList(lazy
+		    LCons(4, lazy LList(lazy LCons(5, lazy
+		    LList(lazy LCons(10, lazy LList(lazy ENil)))))))))))))))) == ECons(0, ECons(1, ECons(2, ECons(5, ENil))))
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // filterMap filterMap                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def filterMapFilterMap01(): Bool =
+        ECons(2, ECons(4, ECons(6, ECons(7, ENil)))) |>
+            LazyList.filterMap(i -> if (i % 2 == 0) Some(i / 2) else None) |>
+            LazyList.filterMap(i -> if (i > 1)      Some(i * 3) else None) == ECons(6, ECons(9, ENil))
+
+    @test
+    def filterMapFilterMap02(): Bool & Impure =
+        ECons(2, ECons(4, ECons(6, ECons(7, ENil)))) |>
+            LazyList.filterMap(i -> if (i % 2 == 0) Some(i / 2) else None as & Impure) |>
+            LazyList.filterMap(i -> if (i > 1)      Some(i * 3) else None) == ECons(6, ECons(9, ENil))
+
+    @test
+    def filterMapFilterMap03(): Bool & Impure =
+        ECons(2, ECons(4, ECons(6, ECons(7, ENil)))) |>
+            LazyList.filterMap(i -> if (i % 2 == 0) Some(i / 2) else None) |>
+            LazyList.filterMap(i -> if (i > 1)      Some(i * 3) else None as & Impure) == ECons(6, ECons(9, ENil))
+
+    @test
+    def filterMapFilterMap04(): Bool & Impure =
+        ECons(2, ECons(4, ECons(6, ECons(7, ENil)))) |>
+            LazyList.filterMap(i -> if (i % 2 == 0) Some(i / 2) else None as & Impure) |>
+            LazyList.filterMap(i -> if (i > 1)      Some(i * 3) else None as & Impure) == ECons(6, ECons(9, ENil))
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // filterMap filterMap fusion                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def filterMapFusion01(): Bool & Impure =
+        let l = ref Nil;
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
+        LazyList.filterMap(x -> { l := "a" :: deref l; Some(x) }) |>
+        LazyList.filterMap(x -> { l := "b" :: deref l; Some(x) });
+        List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
+
+    @test
+    def filterMapFusion02(): Bool & Impure =
+        let l = ref Nil;
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
+        LazyList.filterMap(x -> { l := "a" :: deref l; Some(x) } as & Pure) |>
+        LazyList.filterMap(x -> { l := "b" :: deref l; Some(x) } as & Pure) |>
+        LazyList.toList as & Impure;
+        List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toString                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toString01(): Bool =
+        LazyList.toString(ECons(1, ECons(2, ECons(3, ENil)))) == "1 :: 2 :: 3 :: ENil"
+
+    @test
+    def toString04(): Bool =
+        LazyList.toString(LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))) == "1 :: 2 :: 3 :: ENil"
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // partition                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def partition01(): Bool =
+        LazyList.partition(i -> i > 3, ENil) == (ENil, ENil)
+
+    @test
+    def partition02(): Bool =
+        LazyList.partition(i -> i > 3, ECons(1, ENil)) == (ENil, ECons(1, ENil))
+
+    @test
+    def partition03(): Bool =
+        LazyList.partition(i -> i > 3, ECons(4, ENil)) == (ECons(4, ENil), ENil)
+
+    @test
+    def partition04(): Bool =
+        LazyList.partition(i -> i > 3, ECons(1, ECons(2, ENil))) == (ENil, ECons(1, ECons(2, ENil)))
+
+    @test
+    def partition05(): Bool =
+        LazyList.partition(i -> i > 3, ECons(1, ECons(5, ENil))) == (ECons(5, ENil), ECons(1, ENil))
+
+    @test
+    def partition06(): Bool =
+        LazyList.partition(i -> i > 3, ECons(5, ECons(1, ENil))) == (ECons(5, ENil), ECons(1, ENil))
+
+    @test
+    def partition07(): Bool =
+        LazyList.partition(i -> i > 3, ECons(5, ECons(8, ENil))) == (ECons(5, ECons(8, ENil)), ENil)
+
+    @test
+    def partition08(): Bool =
+        LazyList.partition(i -> i > 3, ECons(4, ECons(6, ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil))))))))))))
+            == (ECons(4, ECons(6, ECons(11, ECons(16, ECons(7, ECons(7, ENil)))))), ECons(-3, ECons(-5, ECons(1, ECons(2, ECons(1, ENil))))))
+
+    @test
+    def partition09(): Bool =
+        LazyList.partition(i -> i > 3,
+            LList(lazy LCons(4, lazy LList(lazy
+                ECons(6, LCons(-3, lazy LList(lazy
+                LCons(11, lazy LList(lazy LCons(-5, lazy
+                LList(lazy LCons(1, lazy LList(lazy
+                LCons(2, lazy LList(lazy LCons(16, lazy
+                LList(lazy LCons(7, lazy LList(lazy
+                LCons(1, lazy LList(lazy LCons(7, lazy LList(lazy ENil)))))))))))))))))))))))
+            == (ECons(4, ECons(6, ECons(11, ECons(16, ECons(7, ECons(7, ENil)))))),
+                    ECons(-3, ECons(-5, ECons(1, ECons(2, ECons(1, ENil))))))
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // span                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def span01(): Bool =
+        LazyList.span(i -> i > 3, ENil) == (ENil, ENil)
+
+    @test
+    def span02(): Bool =
+        LazyList.span(i -> i > 3, ECons(1, ENil)) == (ENil, ECons(1, ENil))
+
+    @test
+    def span03(): Bool =
+        LazyList.span(i -> i > 3, ECons(4, ENil)) == (ECons(4, ENil), ENil)
+
+    @test
+    def span04(): Bool =
+        LazyList.span(i -> i > 3, ECons(1, ECons(2, ENil))) == (ENil, ECons(1, ECons(2, ENil)))
+
+    @test
+    def span05(): Bool =
+        LazyList.span(i -> i > 3, ECons(1, ECons(5, ENil))) == (ENil, ECons(1, ECons(5, ENil)))
+
+    @test
+    def span06(): Bool =
+        LazyList.span(i -> i > 3, ECons(5, ECons(1, ENil))) == (ECons(5, ENil), ECons(1, ENil))
+
+    @test
+    def span07(): Bool =
+        LazyList.span(i -> i > 3, ECons(5, ECons(8, ENil))) == (ECons(5, ECons(8, ENil)), ENil)
+
+    @test
+    def span08(): Bool =
+        LazyList.span(i -> i > 3, ECons(4, ECons(6, ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil)))))))))))) == (ECons(4, ECons(6, ENil)), ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil))))))))))
+
+    @test
+    def span09(): Bool =
+        LazyList.span(i -> i > 3,
+            LList(lazy LCons(4, lazy LList(lazy
+                LCons(6, lazy LList(lazy LCons(-3, lazy
+                LList(lazy LCons(11, lazy LList(lazy
+                LCons(-5, lazy LList(lazy LCons(1, lazy
+                LList(lazy LCons(2, lazy LList(lazy
+                LCons(16, lazy LList(lazy LCons(7, lazy
+                LList(lazy LCons(1, lazy LList(lazy
+                LCons(7, lazy LList(lazy ENil))))))))))))))))))))))))
+            == (ECons(4, ECons(6, ENil)),
+                    ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil))))))))))
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sum                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sum01(): Bool =
+        List.toLazyList(Nil) |> LazyList.sum == 0
+
+    @test
+    def sum02(): Bool =
+        List.toLazyList(1 :: Nil) |> LazyList.sum == 1
+
+    @test
+    def sum03(): Bool =
+        List.toLazyList(1 :: 2 :: 3 :: Nil) |> LazyList.sum == 6
+
+    @test
+    def sum04(): Bool =
+        List.toLazyList(1 :: 2 :: 3 :: -3 :: Nil) |> LazyList.sum == 3
+
+    @test
+    def sum05(): Bool =
+        List.toLazyList(-1 :: -2 :: -3 :: -4 :: Nil) |> LazyList.sum == -10
+
+    @test
+    def sum06(): Bool =
+        List.toLazyList(10 :: -10 :: Nil) |> LazyList.sum == 0
+
+    @test
+    def sum07(): Bool =
+        List.range(1, 101) |> List.toLazyList |> LazyList.sum == 5050
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // order                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def order01(): Bool =
+        ENil: LazyList[Unit] <=> ENil: LazyList[Unit] == EqualTo
+
+    @test
+    def order02(): Bool =
+        ((1 :: Nil) |> List.toLazyList) <=> ENil: LazyList[Int32] == GreaterThan
+
+    @test
+    def order03(): Bool =
+        ENil: LazyList[Int32] <=> ((1 :: Nil) |> List.toLazyList) == LessThan
+
+    @test
+    def order04(): Bool =
+        ((1 :: Nil) |> List.toLazyList) <=> ((1 :: Nil) |> List.toLazyList) == EqualTo
+
+    @test
+    def order05(): Bool =
+        ((2 :: 1 :: Nil) |> List.toLazyList) <=> ((1 :: 1 :: Nil) |> List.toLazyList) == GreaterThan
+
+    @test
+    def order06(): Bool =
+        ((1 :: 1 :: Nil) |> List.toLazyList) <=> ((2 :: 1 :: Nil) |> List.toLazyList) == LessThan
+
+    @test
+    def order07(): Bool =
+        ((1 :: Nil) |> List.toLazyList) <=> ((1 :: 1 :: Nil) |> List.toLazyList) == LessThan
 
 }
