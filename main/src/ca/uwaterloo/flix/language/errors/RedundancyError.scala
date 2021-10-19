@@ -51,10 +51,13 @@ object RedundancyError {
       vt << NewLine
       vt << "Possible fixes:" << NewLine
       vt << NewLine
+    }
+
+    override def explain: VirtualTerminal = {
+      val vt = new VirtualTerminal()
       vt << "  (1)  Don't use the variable symbol." << NewLine
       vt << "  (2)  Rename the underscore prefix from the variable symbol name." << NewLine
       vt << NewLine
-      vt
     }
   }
 
@@ -100,15 +103,18 @@ object RedundancyError {
       vt << NewLine
       vt << "Possible fixes:" << NewLine
       vt << NewLine
+    }
+
+    def loc: SourceLocation = sym.loc
+
+    override def explain: VirtualTerminal = {
+      val vt = new VirtualTerminal()
       vt << "  (1)  Use the definition." << NewLine
       vt << "  (2)  Remove the definition." << NewLine
       vt << "  (3)  Mark the definition as public." << NewLine
       vt << "  (4)  Prefix the definition name with an underscore." << NewLine
       vt << NewLine
-      vt
     }
-
-    def loc: SourceLocation = sym.loc
   }
 
   /**
@@ -128,15 +134,18 @@ object RedundancyError {
       vt << NewLine
       vt << "Possible fixes:" << NewLine
       vt << NewLine
+    }
+
+    def loc: SourceLocation = sym.loc
+
+    override def explain: VirtualTerminal = {
+      val vt = new VirtualTerminal()
       vt << "  (1)  Use the enum." << NewLine
       vt << "  (2)  Remove the enum." << NewLine
       vt << "  (3)  Mark the enum as public." << NewLine
       vt << "  (4)  Prefix the enum name with an underscore." << NewLine
       vt << NewLine
-      vt
     }
-
-    def loc: SourceLocation = sym.loc
   }
 
   /**
@@ -157,14 +166,17 @@ object RedundancyError {
       vt << NewLine
       vt << "Possible fixes:" << NewLine
       vt << NewLine
+    }
+
+    def loc: SourceLocation = sym.loc
+
+    override def explain: VirtualTerminal = {
+      val vt = new VirtualTerminal()
       vt << "  (1)  Use the case." << NewLine
       vt << "  (2)  Remove the case." << NewLine
       vt << "  (3)  Prefix the case with an underscore." << NewLine
       vt << NewLine
-      vt
     }
-
-    def loc: SourceLocation = sym.loc
   }
 
   /**
@@ -184,14 +196,17 @@ object RedundancyError {
       vt << NewLine
       vt << "Possible fixes:" << NewLine
       vt << NewLine
+    }
+
+    def loc: SourceLocation = sym.loc
+
+    override def explain: VirtualTerminal = {
+      val vt = new VirtualTerminal()
       vt << "  (1)  Use the formal parameter." << NewLine
       vt << "  (2)  Remove the formal parameter." << NewLine
       vt << "  (3)  Prefix the formal parameter name with an underscore." << NewLine
       vt << NewLine
-      vt
     }
-
-    def loc: SourceLocation = sym.loc
   }
 
   /**
@@ -211,14 +226,17 @@ object RedundancyError {
       vt << NewLine
       vt << "Possible fixes:" << NewLine
       vt << NewLine
+    }
+
+    def loc: SourceLocation = SourceLocation.mk(ident.sp1, ident.sp2)
+
+    override def explain: VirtualTerminal = {
+      val vt = new VirtualTerminal()
       vt << "  (1)  Use the type parameter." << NewLine
       vt << "  (2)  Remove type parameter." << NewLine
       vt << "  (3)  Prefix the type parameter name with an underscore." << NewLine
       vt << NewLine
-      vt
     }
-
-    def loc: SourceLocation = SourceLocation.mk(ident.sp1, ident.sp2)
   }
 
   /**
@@ -238,14 +256,17 @@ object RedundancyError {
       vt << NewLine
       vt << "Possible fixes:" << NewLine
       vt << NewLine
+    }
+
+    def loc: SourceLocation = sym.loc
+
+    override def explain: VirtualTerminal = {
+      val vt = new VirtualTerminal()
       vt << "  (1)  Use the local variable." << NewLine
       vt << "  (2)  Remove local variable declaration." << NewLine
       vt << "  (3)  Prefix the variable name with an underscore." << NewLine
       vt << NewLine
-      vt
     }
-
-    def loc: SourceLocation = sym.loc
   }
 
   /**
@@ -266,6 +287,10 @@ object RedundancyError {
       vt << NewLine
       vt << "Possible fixes:" << NewLine
       vt << NewLine
+    }
+
+    override def explain: VirtualTerminal = {
+      val vt = new VirtualTerminal()
       vt << "  (1)  Prefix the variable name with a wildcard." << NewLine
       vt << "  (2)  Replace the variable name with a wildcard." << NewLine
       vt << "  (3)  Check for any spelling mistakes." << NewLine
@@ -290,11 +315,14 @@ object RedundancyError {
       vt << NewLine
       vt << "Possible fixes:" << NewLine
       vt << NewLine
+    }
+
+    override def explain: VirtualTerminal = {
+      val vt = new VirtualTerminal()
       vt << "  (1)  Use the result computed by the expression." << NewLine
       vt << "  (2)  Remove the expression statement." << NewLine
       vt << "  (3)  Introduce a let-binding with a wildcard name." << NewLine
       vt << NewLine
-      vt
     }
   }
 
@@ -317,9 +345,12 @@ object RedundancyError {
       vt << NewLine
       vt << "Possible fixes:" << NewLine
       vt << NewLine
+    }
+
+    override def explain: VirtualTerminal = {
+      val vt = new VirtualTerminal()
       vt << "  (1)  Remove the type constraint." << NewLine
       vt << NewLine
-      vt
     }
   }
 }
