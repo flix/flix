@@ -845,7 +845,7 @@ namespace MutList {
     ///
     pub def sortWith!(cmp: (a,a) -> Comparison, v: mut MutList[a]): Unit & Impure =
         let MutList(a, l) = v;
-        Array.sortWithin!(cmp, deref a, 0, (deref l) - 1)
+        Array.sortWithin!(cmp, 0, (deref l) - 1, deref a)
 
     ///
     /// Returns the sum of all elements in the list `v`.

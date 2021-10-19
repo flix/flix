@@ -1678,7 +1678,7 @@ namespace Array {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith!(cmp: (a,a) -> Comparison, a: mut Array[a]): Unit & Impure = sortWithin!(cmp, a, 0, length(a)-1)
+    pub def sortWith!(cmp: (a,a) -> Comparison, a: mut Array[a]): Unit & Impure = sortWithin!(cmp, 0, length(a) - 1, a)
 
     ///
     /// Sort array `a` between the indices `lo` and `hi` (both inclusive) so that elements in that range are ordered
@@ -1689,13 +1689,13 @@ namespace Array {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWithin!(cmp: (a,a) -> Comparison, a: mut Array[a], lo: Int32, hi: Int32): Unit & Impure =
+    pub def sortWithin!(cmp: (a,a) -> Comparison, lo: Int32, hi: Int32, a: mut Array[a]): Unit & Impure =
         if (lo >= hi)
             ()
         else {
             let p = quicksortPartition(cmp, a, lo, hi);
-            sortWithin!(cmp, a, lo, p-1);
-            sortWithin!(cmp, a, p+1, hi)
+            sortWithin!(cmp, lo, p - 1, a);
+            sortWithin!(cmp, p + 1, hi, a)
         }
 
     ///
