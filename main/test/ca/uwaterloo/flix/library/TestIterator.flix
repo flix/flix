@@ -40,4 +40,47 @@ namespace TestIterator {
     def range05(): Bool & Impure =
         Iterator.range(-100, 200) |> Iterator.toList == List.range(-100, 200)
 
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // repeat                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def repeat01(): Bool & Impure =
+        Iterator.repeat(10, 0) |> Iterator.toList == Nil
+
+    @test
+    def repeat02(): Bool & Impure =
+        Iterator.repeat(2, -100) |> Iterator.toList == Nil
+
+    @test
+    def repeat03(): Bool & Impure =
+        Iterator.repeat(2, 100) |> Iterator.toList == List.repeat(2, 100)
+
+    @test
+    def repeat04(): Bool & Impure =
+        Iterator.repeat(1, 3) |> Iterator.toList == 1 :: 1 :: 1 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toArray                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toArray01(): Bool & Impure =
+        (Nil: List[Int32] |> List1.toIterator |> Iterator.toArray) == []
+
+    @test
+    def toArray02(): Bool & Impure =
+        Iterator.range(-10, -5) |> Iterator.toArray == [-10, -9, -8, -7, -6]
+
+    @test
+    def toArray03(): Bool & Impure =
+        Iterator.repeat(1, 3) |> Iterator.toArray == [1, 1, 1]
+
+    @test
+    def toArray04(): Bool & Impure =
+        Iterator.range(-100, 200) |> Iterator.toArray == Array.range(-100, 200)
+
 }
