@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.util.vt.VirtualString.NewLine
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
-  * A common super-type for compilation errors.
+  * A common super-type for compilation messages.
   */
 trait CompilationMessage {
 
