@@ -226,6 +226,6 @@ namespace MutDeque {
     /// Returns `a` mod `b`.
     ///
     def mod(a: Int32, b: Int32): Int32 =
-        (a + b) % b
+        (a + b) rem b
 
 }
