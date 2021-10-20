@@ -45,13 +45,16 @@ object TerminationError {
       vt << NewLine
       vt << Code(sym.loc, "unconditional recursion.") << NewLine
       vt << NewLine
+    }
+
+    def loc: SourceLocation = sym.loc
+
+    override def explain: VirtualTerminal = {
+      val vt = new VirtualTerminal()
       vt << "Possible fixes:" << NewLine
       vt << NewLine
       vt << "  (1)  Add a non-recursive branch to the definition." << NewLine
       vt << NewLine
-      vt
     }
-
-    def loc: SourceLocation = sym.loc
   }
 }
