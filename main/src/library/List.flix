@@ -1407,4 +1407,22 @@ namespace List {
             case x :: xs => DemandList.LList(lazy DemandList.LCons(x, lazy toDemandList(xs)))
         }
 
+
+    ///
+    /// Returns an iterator over `l`.
+    ///
+    pub def toIterator(l: List[a]): Iterator[a] & Impure =
+        let cursor = ref l;
+        let done = () -> match (deref cursor) {
+            case Nil => true
+            case _   => false
+        };
+        let next = () -> match (deref cursor) {
+            case Nil     => bug!("Empty Iterator!")
+            case x :: xs => {
+                cursor := xs;
+                x
+            }
+        };
+        Iterator(done, next)
 }
