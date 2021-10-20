@@ -15,11 +15,11 @@
  */
 
 ///
-/// A type class for modulo (i.e. remainder).
+/// A type class for remainder.
 ///
 pub lawless class Rem[a] {
     ///
-    /// Returns `x` modulo `n`.
+    /// Returns the remainder of `x / n`.
     ///
     pub def rem(x: a, n: a): a
 }
