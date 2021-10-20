@@ -23,9 +23,9 @@ import ca.uwaterloo.flix.util.vt.VirtualString.NewLine
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
-  * A common super-type for compilation errors.
+  * A common super-type for compilation messages.
   */
-trait CompilationError {
+trait CompilationMessage {
 
   /**
     * Returns the kind of error message, e.g. "Syntax Error" or "Type Error".

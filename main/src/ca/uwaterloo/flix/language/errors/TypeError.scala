@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme, FormatType, TypeDiff}
 import ca.uwaterloo.flix.util.vt.VirtualString._
@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.util.vt._
 /**
   * A common super-type for type errors.
   */
-sealed trait TypeError extends CompilationError {
+sealed trait TypeError extends CompilationMessage {
   def kind: String = "Type Error"
 }
 
