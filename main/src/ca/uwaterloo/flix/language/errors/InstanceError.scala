@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme, FormatType}
 import ca.uwaterloo.flix.util.vt.VirtualString._
@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
 /**
   * A common super-type for instance errors.
   */
-sealed trait InstanceError extends CompilationError {
+sealed trait InstanceError extends CompilationMessage {
   def kind: String = "Instance Error"
 }
 

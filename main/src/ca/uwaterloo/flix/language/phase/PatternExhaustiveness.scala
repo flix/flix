@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
@@ -107,7 +107,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Returns an error message if a pattern match is not exhaustive
     */
-  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("PatternExhaustiveness") {
+  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationMessage] = flix.phase("PatternExhaustiveness") {
     val defsVal = traverseX(root.defs.values)(defn => checkPats(defn.impl, root))
     val instanceDefsVal = traverseX(TypedAstOps.instanceDefsOf(root))(defn => checkPats(defn.impl, root))
     // Only need to check sigs with implementations
@@ -124,7 +124,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
     * @param impl The implementation to check
     * @param root The AST root
     */
-  def checkPats(impl: TypedAst.Impl, root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Impl, CompilationError] = for {
+  def checkPats(impl: TypedAst.Impl, root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Impl, CompilationMessage] = for {
     _ <- Expressions.checkPats(impl.exp, root)
   } yield impl
 
@@ -135,7 +135,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       * @param tast The expression to check
       * @param root The AST root
       */
-    def checkPats(tast: TypedAst.Expression, root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Expression, CompilationError] = {
+    def checkPats(tast: TypedAst.Expression, root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Expression, CompilationMessage] = {
       tast match {
         case Expression.Wild(_, _) => tast.toSuccess
         case Expression.Var(_, _, _) => tast.toSuccess
@@ -370,7 +370,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Performs exhaustive checking on the given constraint `c`.
       */
-    def visitConstraint(c0: TypedAst.Constraint, root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Constraint, CompilationError] = c0 match {
+    def visitConstraint(c0: TypedAst.Constraint, root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Constraint, CompilationMessage] = c0 match {
       case TypedAst.Constraint(cparams, head0, body0, loc) =>
         for {
           head <- visitHeadPred(head0, root)
@@ -379,14 +379,14 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
 
     }
 
-    def visitHeadPred(h0: TypedAst.Predicate.Head, root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Predicate.Head, CompilationError] = h0 match {
+    def visitHeadPred(h0: TypedAst.Predicate.Head, root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Predicate.Head, CompilationMessage] = h0 match {
       case TypedAst.Predicate.Head.Atom(_, _, terms, tpe, loc) =>
         for {
           ts <- traverse(terms)(checkPats(_, root))
         } yield h0
     }
 
-    def visitBodyPred(b0: TypedAst.Predicate.Body, root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Predicate.Body, CompilationError] = b0 match {
+    def visitBodyPred(b0: TypedAst.Predicate.Body, root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Predicate.Body, CompilationMessage] = b0 match {
       case TypedAst.Predicate.Body.Atom(_, _, polarity, terms, tpe, loc) => b0.toSuccess
 
       case TypedAst.Predicate.Body.Guard(exp, loc) =>
@@ -403,9 +403,9 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       * @param rules The rules to check
       * @return
       */
-    def checkRules(exp: TypedAst.Expression, rules: List[TypedAst.MatchRule], root: TypedAst.Root): Validation[TypedAst.Root, CompilationError] = {
+    def checkRules(exp: TypedAst.Expression, rules: List[TypedAst.MatchRule], root: TypedAst.Root): Validation[TypedAst.Root, CompilationMessage] = {
       findNonMatchingPat(rules.map(r => List(r.pat)), 1, root) match {
-        case Exhaustive => root.toSuccess[TypedAst.Root, CompilationError]
+        case Exhaustive => root.toSuccess[TypedAst.Root, CompilationMessage]
         case NonExhaustive(ctors) => NonExhaustiveMatchError(rules, prettyPrintCtor(ctors.head), exp.loc).toFailure
       }
     }

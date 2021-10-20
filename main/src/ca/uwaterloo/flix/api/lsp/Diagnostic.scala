@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.util.vt.TerminalContext
 import org.json4s.JsonDSL._
 import org.json4s._
@@ -24,7 +24,7 @@ import org.json4s._
   * Companion object for [[Diagnostic]].
   */
 object Diagnostic {
-  def from(compilationError: CompilationError): Diagnostic = {
+  def from(compilationError: CompilationMessage): Diagnostic = {
     val range = Range.from(compilationError.loc)
     val severity = Some(DiagnosticSeverity.from(compilationError.severity))
     val code = compilationError.kind

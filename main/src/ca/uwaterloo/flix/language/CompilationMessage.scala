@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
 /**
   * A common super-type for compilation errors.
   */
-trait CompilationError {
+trait CompilationMessage {
 
   /**
     * Returns the kind of error message, e.g. "Syntax Error" or "Type Error".

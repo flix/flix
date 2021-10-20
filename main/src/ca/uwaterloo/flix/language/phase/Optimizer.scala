@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.LiftedAst._
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.debug.PrettyPrinter
@@ -38,7 +38,7 @@ object Optimizer extends Phase[Root, Root] {
   /**
     * Returns an optimized version of the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Optimizer") {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("Optimizer") {
 
     /**
       * Performs intra-procedural optimization on the given expression `exp0` and substitution map `env0`.

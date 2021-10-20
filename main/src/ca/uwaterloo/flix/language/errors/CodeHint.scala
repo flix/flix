@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Line, NewLine}
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
 /**
   * A common super-type for code hints.
   */
-trait CodeHint extends CompilationError {
+trait CodeHint extends CompilationMessage {
   def kind: String = "Code Hint"
 }
 

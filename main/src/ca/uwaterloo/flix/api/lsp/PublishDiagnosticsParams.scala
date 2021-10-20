@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.util.vt.TerminalContext
 import ca.uwaterloo.flix.util.vt.TerminalContext.NoTerminal
 import org.json4s.JsonDSL._
@@ -25,7 +25,7 @@ import org.json4s._
   * Companion object of [[PublishDiagnosticsParams]].
   */
 object PublishDiagnosticsParams {
-  def from(errors: LazyList[CompilationError]): List[PublishDiagnosticsParams] = {
+  def from(errors: LazyList[CompilationMessage]): List[PublishDiagnosticsParams] = {
     implicit val ctx: TerminalContext = NoTerminal
 
     // Group the error messages by source.
