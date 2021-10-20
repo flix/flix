@@ -3,13 +3,12 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.Expression
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
-import ca.uwaterloo.flix.language.debug.PrettyExpression
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
-  * A common super-type for trivial errors.
-  */
+ * A common super-type for trivial errors.
+ */
 sealed trait LinterError extends CompilationMessage {
   val kind = "Lint"
 }
@@ -17,13 +16,14 @@ sealed trait LinterError extends CompilationMessage {
 object LinterError {
 
   /**
-    * An error raised to indicate that an expression can be simplified.
-    *
-    * @param sym the symbol of the lint.
-    * @param loc the location of the expression.
-    */
+   * An error raised to indicate that an expression can be simplified.
+   *
+   * @param sym the symbol of the lint.
+   * @param loc the location of the expression.
+   */
   case class Lint(sym: Symbol.DefnSym, replacement: Expression, loc: SourceLocation) extends LinterError {
     def summary: String = s"The expression matches the '$sym' lint."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format)
@@ -41,14 +41,13 @@ object LinterError {
       vt << Code(loc, s"matches ${sym.name}.") << NewLine
     }
 
-    override def explain: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      vt << "The lint suggests that this code can be replaced by: " << NewLine
-      vt << NewLine
-      vt << "  " << Magenta(PrettyExpression.pretty(replacement)) << NewLine
-      vt << NewLine
-      vt << "The lint was declared at: '" << Cyan(sym.loc.format) << "'." << NewLine
+    override def explain: String = {
+      s"""The lint suggests that this code can be replaced by:
+         |
+         |  <Magenta><PrettyExpression>$replacement</PrettyExpression></Magenta>
+         |
+         |The lint was declared at: '"<Cyan>${sym.loc.format}</Cyan>'.
+         |""".stripMargin
     }
   }
-
 }

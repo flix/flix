@@ -60,9 +60,6 @@ trait CompilationMessage {
   /**
    * Returns a formatted string with helpful suggestions.
    */
-  def explain: VirtualTerminal = {
-    val vt = new VirtualTerminal()
-    vt << "" << NewLine
-  }
+  def explain: String = ""
 
 }
