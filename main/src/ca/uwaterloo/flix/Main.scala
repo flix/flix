@@ -169,7 +169,7 @@ object Main {
     }
 
     // check if running in interactive mode.
-    val interactive = cmdOpts.interactive || (cmdOpts.command == Command.None && cmdOpts.files.isEmpty)
+    val interactive = cmdOpts.interactive || (cmdOpts.command == Command.None && cmdOpts.files.isEmpty && !cmdOpts.hints)
     if (interactive) {
       val shell = new Shell(cmdOpts.files.toList.map(_.toPath), options)
       shell.loop()
@@ -181,6 +181,15 @@ object Main {
     flix.setOptions(options)
     for (file <- cmdOpts.files) {
       flix.addPath(file.toPath)
+    }
+
+    // Check if the --hints flag was passed.
+    if (cmdOpts.hints) {
+      flix.check() match {
+        case Validation.Success(t) => println()
+        case Validation.Failure(errors) => errors.foreach(e => println(e.message.fmt))
+      }
+      System.exit(0)
     }
 
     // evaluate main.
