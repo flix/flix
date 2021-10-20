@@ -32,7 +32,6 @@ pub enum Iterator[a] {
     case Iterator(Done, Next[a])
 }
 
-
 namespace Iterator {
 
     ///
@@ -74,6 +73,22 @@ namespace Iterator {
               }
             };
         Iterator(done, next)
+
+    ///
+    /// Returns an array with the elements of `iter`.
+    ///
+    pub def toArray(iter: Iterator[a]): Array[a] & Impure =
+        let Iterator(done, next) = iter;
+        toArrayAcc(done, next, MutList.new())
+
+    ///
+    /// Helper function for `toArray`.
+    ///
+    def toArrayAcc(done: Done, next: Next[a], v: MutList[a]): Array[a] & Impure =
+        if (done())
+            MutList.toArray(v)
+        else
+            toArrayAcc(done, next, MutList.push!(next(), v))
 
     ///
     /// Returns the contents of `iter` as a list. Consumes the entire iterator.
