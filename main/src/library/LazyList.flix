@@ -369,6 +369,7 @@ namespace LazyList {
         foldLeft(f, 0, l);
         a
 
+/*
     ///
     /// Returns `l` as an `Iterator`.
     ///
@@ -387,6 +388,7 @@ namespace LazyList {
                 x
         };
         Iterator(done, next)
+*/
 
     ///
     /// Returns `l` as a `List`.
