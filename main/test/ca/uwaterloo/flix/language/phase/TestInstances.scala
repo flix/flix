@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.errors.InstanceError
 import ca.uwaterloo.flix.util.{Options, Validation}
 import org.scalatest.FunSuite
@@ -307,7 +307,7 @@ class TestInstances extends FunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[CompilationError](result) // TODO should be MismatchedSignature
+    expectError[CompilationMessage](result) // TODO should be MismatchedSignature
   }
 
   test("Test.MismatchedSignatures.04") {
