@@ -80,18 +80,17 @@ namespace Iterator {
     ///
     pub def toList(iter: Iterator[a]): List[a] & ef =
         let Iterator(done, next) = iter;
-        toListAcc(done, next, ks -> ks as & ef)
+        (toListAcc(done, next, Nil) |> List.reverse) as & ef
 
     ///
     /// Helper function for `toList`.
     ///
-    def toListAcc(done: Done, next: Next[a], k: List[a] -> List[a] & ef): List[a] & ef =
+    def toListAcc(done: Done, next: Next[a], acc: List[a]): List[a] & Impure =
         if (done()) {
-            k(Nil)
+            acc
         }
         else {
-            let x = next();
-            toListAcc(done, next, ks -> k(x :: ks))
+            toListAcc(done, next, next() :: acc)
         }
 
 }
