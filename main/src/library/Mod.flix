@@ -29,7 +29,7 @@ instance Mod[Float32] {
 }
 
 instance Mod[Float64] {
-    pub def rem(x: Float64, n: Float64): Float64 = $FLOAT32_REM$($FLOAT64_REM$(x, n) + n, n)
+    pub def mod(x: Float64, n: Float64): Float64 = $FLOAT64_REM$($FLOAT64_REM$(x, n) + n, n)
 }
 
 instance Mod[Int8] {
