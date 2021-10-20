@@ -36,11 +36,15 @@ object FormatSimpleType {
     case SimpleType.SchemaRowConstructor(field) => s"#( $field :: ? | ? )"
     case SimpleType.SchemaRowHead(name, tpe) => s"#( $name :: ${format(tpe)} | ? )"
     case SimpleType.Not(tpe) => s"not ${tpe.map(format).getOrElse("?")}" // MATT handle parens
-    case SimpleType.And(tpes) => ???
-    case SimpleType.Or(tpes) => ???
-    case SimpleType.RelationConstructor => ???
+    case SimpleType.And(tpes) =>
+      val strings = tpes.map(format).padTo(2, "?")
+      strings.mkString(" and ")
+    case SimpleType.Or(tpes) =>
+      val strings = tpes.map(format).padTo(2, "?")
+      strings.mkString(" or ")
+    case SimpleType.RelationConstructor => "Relation" // MATT ?
     case SimpleType.Relation(tpes) => ???
-    case SimpleType.LatticeConstructor => ???
+    case SimpleType.LatticeConstructor => "Lattice" // MATT ?
     case SimpleType.Lattice(tpes) => ???
     case SimpleType.ArrowConstructor(arity) => ???
     case SimpleType.PartialPureArrow(arity, tpes) => ???
@@ -53,9 +57,14 @@ object FormatSimpleType {
     case SimpleType.PartialTag(name, args) => ???
     case SimpleType.Tag(name, args, ret) => ???
     case SimpleType.Name(name) => ???
-    case SimpleType.Apply(tpe, tpes) => ???
-    case SimpleType.Var(id, text) => ???
-    case SimpleType.Tuple(length, fields) => ???
+    case SimpleType.Apply(tpe, tpes) =>
+      val string = format(tpe)
+      val strings = tpes.map(format)
+      string + strings.mkString("[", ", ", "]")
+    case SimpleType.Var(id, text) => ??? // MATT have to handle text and stuff
+    case SimpleType.Tuple(length, fields) =>
+      val strings = fields.map(format).padTo(length, "?")
+      strings.mkString("(", ", ", ")")
   }
 
 }
