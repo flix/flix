@@ -15,7 +15,7 @@
  */
 
 namespace TestLazyList {
-
+/*
     /////////////////////////////////////////////////////////////////////////////
     // Eq                                                                      //
     /////////////////////////////////////////////////////////////////////////////
@@ -1101,7 +1101,7 @@ namespace TestLazyList {
     /////////////////////////////////////////////////////////////////////////////
     // toIter                                                                  //
     /////////////////////////////////////////////////////////////////////////////
-    /*
+
     @test
     def toIter01(): Bool & Impure =
     	LazyList.toIter(ENil: LazyList[Unit]) |> Iterator.toList == Nil
@@ -1117,7 +1117,7 @@ namespace TestLazyList {
     @test
     def toIter09(): Bool & Impure =
     	LazyList.range(-100, 100) |> LazyList.toIter |> Iterator.toList == List.range(-100, 100)
-    */
+
 
     /////////////////////////////////////////////////////////////////////////////
     // zip                                                                     //
@@ -2569,5 +2569,5 @@ namespace TestLazyList {
     @test
     def order07(): Bool =
         ((1 :: Nil) |> List.toLazyList) <=> ((1 :: 1 :: Nil) |> List.toLazyList) == LessThan
-
+*/
 }
