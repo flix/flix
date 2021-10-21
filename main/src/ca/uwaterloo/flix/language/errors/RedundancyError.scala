@@ -23,8 +23,8 @@ import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
-  * A common super-type for redundancy errors.
-  */
+ * A common super-type for redundancy errors.
+ */
 trait RedundancyError extends CompilationMessage {
   def kind: String = "Redundancy Error"
 }
@@ -34,11 +34,11 @@ object RedundancyError {
   private implicit val audience: Audience = Audience.External
 
   /**
-    * An error raised to indicate that the variable symbol `sym` is hidden.
-    *
-    * @param sym the hidden variable symbol.
-    * @param loc the source location of the use.
-    */
+   * An error raised to indicate that the variable symbol `sym` is hidden.
+   *
+   * @param sym the hidden variable symbol.
+   * @param loc the source location of the use.
+   */
   case class HiddenVarSym(sym: Symbol.VarSym, loc: SourceLocation) extends RedundancyError {
     def summary: String = "Hidden variable symbol."
 
@@ -50,23 +50,21 @@ object RedundancyError {
       vt << Code(loc, "hidden symbol.") << NewLine
     }
 
-    override def explain: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      vt << NewLine
-      vt << "Possible fixes:" << NewLine
-      vt << NewLine
-      vt << "  (1)  Don't use the variable symbol." << NewLine
-      vt << "  (2)  Rename the underscore prefix from the variable symbol name." << NewLine
-      vt << NewLine
-    }
+    override def explain: String =
+      """Possible fixes:
+        |
+        |  (1)  Don't use the variable symbol.
+        |  (2)  Rename the underscore prefix from the variable symbol name.
+        |
+        |""".stripMargin
   }
 
   /**
-    * An error raised to indicate that a variable has been shadowed.
-    *
-    * @param sym1 the shadowed variable.
-    * @param sym2 the shadowing variable.
-    */
+   * An error raised to indicate that a variable has been shadowed.
+   *
+   * @param sym1 the shadowed variable.
+   * @param sym2 the shadowing variable.
+   */
   case class ShadowedVar(sym1: Symbol.VarSym, sym2: Symbol.VarSym) extends RedundancyError {
     def summary: String = "Shadowed variable."
 
@@ -87,10 +85,10 @@ object RedundancyError {
   }
 
   /**
-    * An error raised to indicate that the def with the symbol `sym` is not used.
-    *
-    * @param sym the unused enum symbol.
-    */
+   * An error raised to indicate that the def with the symbol `sym` is not used.
+   *
+   * @param sym the unused enum symbol.
+   */
   case class UnusedDefSym(sym: Symbol.DefnSym) extends RedundancyError {
     def summary: String = "Unused definition."
 
@@ -104,24 +102,24 @@ object RedundancyError {
 
     def loc: SourceLocation = sym.loc
 
-    override def explain: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      vt << NewLine
-      vt << "Possible fixes:" << NewLine
-      vt << NewLine
-      vt << "  (1)  Use the definition." << NewLine
-      vt << "  (2)  Remove the definition." << NewLine
-      vt << "  (3)  Mark the definition as public." << NewLine
-      vt << "  (4)  Prefix the definition name with an underscore." << NewLine
-      vt << NewLine
+    override def explain: String = {
+      """
+        |Possible fixes:
+        |
+        |  (1)  Use the definition.
+        |  (2)  Remove the definition.
+        |  (3)  Mark the definition as public.
+        |  (4)  Prefix the definition name with an underscore.
+        |
+        |""".stripMargin
     }
   }
 
   /**
-    * An error raised to indicate that the enum with the symbol `sym` is not used.
-    *
-    * @param sym the unused enum symbol.
-    */
+   * An error raised to indicate that the enum with the symbol `sym` is not used.
+   *
+   * @param sym the unused enum symbol.
+   */
   case class UnusedEnumSym(sym: Symbol.EnumSym) extends RedundancyError {
     def summary: String = "Unused enum."
 
@@ -135,25 +133,25 @@ object RedundancyError {
 
     def loc: SourceLocation = sym.loc
 
-    override def explain: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      vt << NewLine
-      vt << "Possible fixes:" << NewLine
-      vt << NewLine
-      vt << "  (1)  Use the enum." << NewLine
-      vt << "  (2)  Remove the enum." << NewLine
-      vt << "  (3)  Mark the enum as public." << NewLine
-      vt << "  (4)  Prefix the enum name with an underscore." << NewLine
-      vt << NewLine
+    override def explain: String = {
+      """
+        |Possible fixes:
+        |
+        |  (1)  Use the enum.
+        |  (2)  Remove the enum.
+        |  (3)  Mark the enum as public.
+        |  (4)  Prefix the enum name with an underscore.
+        |
+        |""".stripMargin
     }
   }
 
   /**
-    * An error raised to indicate that in the enum with symbol `sym` the case `tag` is not used.
-    *
-    * @param sym the enum symbol.
-    * @param tag the unused tag.
-    */
+   * An error raised to indicate that in the enum with symbol `sym` the case `tag` is not used.
+   *
+   * @param sym the enum symbol.
+   * @param tag the unused tag.
+   */
   case class UnusedEnumTag(sym: Symbol.EnumSym, tag: Name.Tag) extends RedundancyError {
     def summary: String = s"Unused case '${tag.name}'."
 
@@ -167,23 +165,23 @@ object RedundancyError {
 
     def loc: SourceLocation = sym.loc
 
-    override def explain: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      vt << NewLine
-      vt << "Possible fixes:" << NewLine
-      vt << NewLine
-      vt << "  (1)  Use the case." << NewLine
-      vt << "  (2)  Remove the case." << NewLine
-      vt << "  (3)  Prefix the case with an underscore." << NewLine
-      vt << NewLine
+    override def explain: String = {
+      """
+        |Possible fixes:
+        |
+        |  (1)  Use the case.
+        |  (2)  Remove the case.
+        |  (3)  Prefix the case with an underscore.
+        |
+        |""".stripMargin
     }
   }
 
   /**
-    * An error raised to indicate that the given formal parameter symbol `sym` is not used.
-    *
-    * @param sym the unused variable symbol.
-    */
+   * An error raised to indicate that the given formal parameter symbol `sym` is not used.
+   *
+   * @param sym the unused variable symbol.
+   */
   case class UnusedFormalParam(sym: Symbol.VarSym) extends RedundancyError {
     def summary: String = "Unused formal parameter."
 
@@ -197,23 +195,23 @@ object RedundancyError {
 
     def loc: SourceLocation = sym.loc
 
-    override def explain: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      vt << NewLine
-      vt << "Possible fixes:" << NewLine
-      vt << NewLine
-      vt << "  (1)  Use the formal parameter." << NewLine
-      vt << "  (2)  Remove the formal parameter." << NewLine
-      vt << "  (3)  Prefix the formal parameter name with an underscore." << NewLine
-      vt << NewLine
+    override def explain: String = {
+      """
+        |Possible fixes:
+        |
+        |  (1)  Use the formal parameter.
+        |  (2)  Remove the formal parameter.
+        |  (3)  Prefix the formal parameter name with an underscore.
+        |
+        |""".stripMargin
     }
   }
 
   /**
-    * An error raised to indicate that the given type parameter `ident` is not used.
-    *
-    * @param ident the unused type variable.
-    */
+   * An error raised to indicate that the given type parameter `ident` is not used.
+   *
+   * @param ident the unused type variable.
+   */
   case class UnusedTypeParam(ident: Name.Ident) extends RedundancyError {
     def summary: String = "Unused type parameter."
 
@@ -227,23 +225,23 @@ object RedundancyError {
 
     def loc: SourceLocation = SourceLocation.mk(ident.sp1, ident.sp2)
 
-    override def explain: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      vt << NewLine
-      vt << "Possible fixes:" << NewLine
-      vt << NewLine
-      vt << "  (1)  Use the type parameter." << NewLine
-      vt << "  (2)  Remove type parameter." << NewLine
-      vt << "  (3)  Prefix the type parameter name with an underscore." << NewLine
-      vt << NewLine
+    override def explain: String = {
+      """
+        |Possible fixes:
+        |
+        |  (1)  Use the type parameter.
+        |  (2)  Remove type parameter.
+        |  (3)  Prefix the type parameter name with an underscore.
+        |
+        |""".stripMargin
     }
   }
 
   /**
-    * An error raised to indicate that the given variable symbol `sym` is not used.
-    *
-    * @param sym the unused variable symbol.
-    */
+   * An error raised to indicate that the given variable symbol `sym` is not used.
+   *
+   * @param sym the unused variable symbol.
+   */
   case class UnusedVarSym(sym: Symbol.VarSym) extends RedundancyError {
     def summary: String = "Unused local variable."
 
@@ -257,24 +255,24 @@ object RedundancyError {
 
     def loc: SourceLocation = sym.loc
 
-    override def explain: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      vt << NewLine
-      vt << "Possible fixes:" << NewLine
-      vt << NewLine
-      vt << "  (1)  Use the local variable." << NewLine
-      vt << "  (2)  Remove local variable declaration." << NewLine
-      vt << "  (3)  Prefix the variable name with an underscore." << NewLine
-      vt << NewLine
+    override def explain: String = {
+      """
+        |Possible fixes:
+        |
+        |  (1)  Use the local variable.
+        |  (2)  Remove local variable declaration.
+        |  (3)  Prefix the variable name with an underscore.
+        |
+        |""".stripMargin
     }
   }
 
   /**
-    * An error raised to indicate that the given variable symbol `sym` is only used once in a constraint.
-    *
-    * @param sym the variable only used once
-    * @param loc the location of the error
-    */
+   * An error raised to indicate that the given variable symbol `sym` is only used once in a constraint.
+   *
+   * @param sym the variable only used once
+   * @param loc the location of the error
+   */
   case class IllegalSingleVariable(sym: Symbol.VarSym, loc: SourceLocation) extends RedundancyError {
     def summary: String = s"Single use of variable '$sym'."
 
@@ -286,23 +284,23 @@ object RedundancyError {
       vt << Code(loc, "the variable occurs here.") << NewLine
     }
 
-    override def explain: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      vt << NewLine
-      vt << "Possible fixes:" << NewLine
-      vt << NewLine
-      vt << "  (1)  Prefix the variable name with a wildcard." << NewLine
-      vt << "  (2)  Replace the variable name with a wildcard." << NewLine
-      vt << "  (3)  Check for any spelling mistakes." << NewLine
-      vt << NewLine
+    override def explain: String = {
+      """
+        |Possible fixes:
+        |
+        |  (1)  Prefix the variable name with a wildcard.
+        |  (2)  Replace the variable name with a wildcard.
+        |  (3)  Check for any spelling mistakes.
+        |
+        |""".stripMargin
     }
   }
 
   /**
-    * An error raised to indicate that an expression is useless.
-    *
-    * @param loc the location of the expression.
-    */
+   * An error raised to indicate that an expression is useless.
+   *
+   * @param loc the location of the expression.
+   */
   case class UselessExpression(loc: SourceLocation) extends RedundancyError {
     def summary: String = "Useless expression."
 
@@ -314,25 +312,25 @@ object RedundancyError {
       vt << Code(loc, "useless expression.") << NewLine
     }
 
-    override def explain: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      vt << NewLine
-      vt << "Possible fixes:" << NewLine
-      vt << NewLine
-      vt << "  (1)  Use the result computed by the expression." << NewLine
-      vt << "  (2)  Remove the expression statement." << NewLine
-      vt << "  (3)  Introduce a let-binding with a wildcard name." << NewLine
-      vt << NewLine
+    override def explain: String = {
+      """
+        |Possible fixes:
+        |
+        |  (1)  Use the result computed by the expression.
+        |  (2)  Remove the expression statement.
+        |  (3)  Introduce a let-binding with a wildcard name.
+        |
+        |""".stripMargin
     }
   }
 
   /**
-    * An error raised to indicate a redundant type constraint.
-    *
-    * @param entailingTconstr the tconstr that entails the other.
-    * @param redundantTconstr the tconstr that is made redundant by the other.
-    * @param loc              the location where the error occured.
-    */
+   * An error raised to indicate a redundant type constraint.
+   *
+   * @param entailingTconstr the tconstr that entails the other.
+   * @param redundantTconstr the tconstr that is made redundant by the other.
+   * @param loc              the location where the error occured.
+   */
   case class RedundantTypeConstraint(entailingTconstr: Ast.TypeConstraint, redundantTconstr: Ast.TypeConstraint, loc: SourceLocation) extends RedundancyError {
     def summary: String = "Redundant type constraint."
 
@@ -344,13 +342,13 @@ object RedundancyError {
       vt << Code(loc, "redundant type constraint.") << NewLine
     }
 
-    override def explain: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      vt << NewLine
-      vt << "Possible fixes:" << NewLine
-      vt << NewLine
-      vt << "  (1)  Remove the type constraint." << NewLine
-      vt << NewLine
+    override def explain: String = {
+      """
+        |Possible fixes:
+        |
+        |  (1)  Remove the type constraint.
+        |
+        |""".stripMargin
     }
   }
 }

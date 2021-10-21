@@ -49,12 +49,12 @@ object TerminationError {
 
     def loc: SourceLocation = sym.loc
 
-    override def explain: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      vt << "Possible fixes:" << NewLine
-      vt << NewLine
-      vt << "  (1)  Add a non-recursive branch to the definition." << NewLine
-      vt << NewLine
+    override def explain: String = {
+    """Possible fixes:
+        |
+        |  (1)  Add a non-recursive branch to the definition.
+        |
+        |""".stripMargin
     }
   }
 }

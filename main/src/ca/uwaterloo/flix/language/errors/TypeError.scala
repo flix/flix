@@ -23,8 +23,8 @@ import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt._
 
 /**
-  * A common super-type for type errors.
-  */
+ * A common super-type for type errors.
+ */
 sealed trait TypeError extends CompilationMessage {
   def kind: String = "Type Error"
 }
@@ -33,12 +33,12 @@ object TypeError {
   implicit val audience: Audience = Audience.External
 
   /**
-    * Generalization Error.
-    *
-    * @param declared the declared type scheme.
-    * @param inferred the inferred type scheme.
-    * @param loc      the location where the error occurred.
-    */
+   * Generalization Error.
+   *
+   * @param declared the declared type scheme.
+   * @param inferred the inferred type scheme.
+   * @param loc      the location where the error occurred.
+   */
   case class GeneralizationError(declared: Scheme, inferred: Scheme, loc: SourceLocation) extends TypeError {
     def summary: String = s"The type scheme '${FormatScheme.formatSchemeWithoutConstraints(inferred)}' cannot be generalized to '${FormatScheme.formatSchemeWithoutConstraints(declared)}'."
 
@@ -56,14 +56,14 @@ object TypeError {
   }
 
   /**
-    * Mismatched Types.
-    *
-    * @param baseType1 the first base type.
-    * @param baseType2 the second base type.
-    * @param fullType1 the first full type.
-    * @param fullType2 the second full type.
-    * @param loc       the location where the error occurred.
-    */
+   * Mismatched Types.
+   *
+   * @param baseType1 the first base type.
+   * @param baseType2 the second base type.
+   * @param fullType1 the first full type.
+   * @param fullType2 the second full type.
+   * @param loc       the location where the error occurred.
+   */
   case class MismatchedTypes(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
     def summary: String = s"Unable to unify the types '$fullType1' and '$fullType2'."
 
@@ -80,14 +80,14 @@ object TypeError {
   }
 
   /**
-    * Mismatched Boolean Formulas.
-    *
-    * @param baseType1 the first boolean formula.
-    * @param baseType2 the second boolean formula.
-    * @param fullType1 the first optional full type in which the first boolean formula occurs.
-    * @param fullType2 the second optional full type in which the second boolean formula occurs.
-    * @param loc       the location where the error occurred.
-    */
+   * Mismatched Boolean Formulas.
+   *
+   * @param baseType1 the first boolean formula.
+   * @param baseType2 the second boolean formula.
+   * @param fullType1 the first optional full type in which the first boolean formula occurs.
+   * @param fullType2 the second optional full type in which the second boolean formula occurs.
+   * @param loc       the location where the error occurred.
+   */
   case class MismatchedBools(baseType1: Type, baseType2: Type, fullType1: Option[Type], fullType2: Option[Type], loc: SourceLocation) extends TypeError {
     def summary: String = s"Unable to unify the Boolean formulas '$baseType1' and '$baseType2'."
 
@@ -106,28 +106,27 @@ object TypeError {
       vt << NewLine
     }
 
-    override def explain: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      vt << "If the Boolean formula describes purity:" << NewLine
-      vt << NewLine
-      vt << "  (1) Did you forget to mark the function as impure?" << NewLine
-      vt << "  (2) Are you trying to pass a pure function where an impure is required?" << NewLine
-      vt << "  (3) Are you trying to pass an impure function where a pure is required?" << NewLine
-      vt << NewLine
-      vt << "If the Boolean formula describes nullability:" << NewLine
-      vt << NewLine
-      vt << "  (1) Are you trying to pass null where a non-null value is required?" << NewLine
-      vt << NewLine
-    }
+    override def explain: String =
+      """If the Boolean formula describes purity:
+        |
+        |  (1) Did you forget to mark the function as impure?
+        |  (2) Are you trying to pass a pure function where an impure is required?
+        |  (3) Are you trying to pass an impure function where a pure is required?
+        |
+        |If the Boolean formula describes nullability:
+        |
+        |  (1) Are you trying to pass null where a non-null value is required?
+        |
+        |""".stripMargin
   }
 
   /**
-    * Mismatched Arity.
-    *
-    * @param tpe1 the first type.
-    * @param tpe2 the second type.
-    * @param loc  the location where the error occurred.
-    */
+   * Mismatched Arity.
+   *
+   * @param tpe1 the first type.
+   * @param tpe2 the second type.
+   * @param loc  the location where the error occurred.
+   */
   case class MismatchedArity(tpe1: Type, tpe2: Type, loc: SourceLocation) extends TypeError {
     def summary: String = s"Unable to unify the types '$tpe1' and '$tpe2'."
 
@@ -141,14 +140,14 @@ object TypeError {
   }
 
   /**
-    * Occurs Check.
-    *
-    * @param baseVar   the base type variable.
-    * @param baseType  the base type.
-    * @param fullType1 the first full type.
-    * @param fullType2 the second full type.
-    * @param loc       the location where the error occurred.
-    */
+   * Occurs Check.
+   *
+   * @param baseVar   the base type variable.
+   * @param baseType  the base type.
+   * @param fullType1 the first full type.
+   * @param fullType2 the second full type.
+   * @param loc       the location where the error occurred.
+   */
   case class OccursCheckError(baseVar: Type.KindedVar, baseType: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
     def summary: String = s"Unable to unify the type variable '$baseVar' with the type '$baseType'."
 
@@ -166,13 +165,13 @@ object TypeError {
   }
 
   /**
-    * Undefined field error.
-    *
-    * @param field      the name of the missing field.
-    * @param fieldType  the type of the missing field.
-    * @param recordType the record type where the field is missing.
-    * @param loc        the location where the error occurred.
-    */
+   * Undefined field error.
+   *
+   * @param field      the name of the missing field.
+   * @param fieldType  the type of the missing field.
+   * @param recordType the record type where the field is missing.
+   * @param loc        the location where the error occurred.
+   */
   case class UndefinedField(field: Name.Field, fieldType: Type, recordType: Type, loc: SourceLocation) extends TypeError {
     def summary: String = s"Missing field '$field' of type '$fieldType'."
 
@@ -191,13 +190,13 @@ object TypeError {
   }
 
   /**
-    * Undefined predicate error.
-    *
-    * @param pred       the missing predicate.
-    * @param predType   the type of the missing predicate.
-    * @param schemaType the schema type where the predicate is missing.
-    * @param loc        the location where the error occurred.
-    */
+   * Undefined predicate error.
+   *
+   * @param pred       the missing predicate.
+   * @param predType   the type of the missing predicate.
+   * @param schemaType the schema type where the predicate is missing.
+   * @param loc        the location where the error occurred.
+   */
   case class UndefinedPredicate(pred: Name.Pred, predType: Type, schemaType: Type, loc: SourceLocation) extends TypeError {
     def summary: String = s"Missing predicate '${pred.name}' of type '$predType'."
 
@@ -216,11 +215,11 @@ object TypeError {
   }
 
   /**
-    * Unexpected non-record type error.
-    *
-    * @param tpe the unexpected non-record type.
-    * @param loc the location where the error occurred.
-    */
+   * Unexpected non-record type error.
+   *
+   * @param tpe the unexpected non-record type.
+   * @param loc the location where the error occurred.
+   */
   case class NonRecordType(tpe: Type, loc: SourceLocation) extends TypeError {
     def summary: String = s"Unexpected non-record type '$tpe'."
 
@@ -234,11 +233,11 @@ object TypeError {
   }
 
   /**
-    * Unexpected non-schema type error.
-    *
-    * @param tpe the unexpected non-schema type.
-    * @param loc the location where the error occurred.
-    */
+   * Unexpected non-schema type error.
+   *
+   * @param tpe the unexpected non-schema type.
+   * @param loc the location where the error occurred.
+   */
   case class NonSchemaType(tpe: Type, loc: SourceLocation) extends TypeError {
     def summary: String = s"Unexpected non-schema type '$tpe'."
 
@@ -252,12 +251,12 @@ object TypeError {
   }
 
   /**
-    * No matching instance error.
-    *
-    * @param clazz the class of the instance.
-    * @param tpe   the type of the instance.
-    * @param loc   the location where the error occurred.
-    */
+   * No matching instance error.
+   *
+   * @param clazz the class of the instance.
+   * @param tpe   the type of the instance.
+   * @param loc   the location where the error occurred.
+   */
   case class NoMatchingInstance(clazz: Symbol.ClassSym, tpe: Type, loc: SourceLocation) extends TypeError {
     def summary: String = s"No instance of class '$clazz' for type '${FormatType.formatType(tpe)}'."
 
@@ -270,18 +269,17 @@ object TypeError {
       vt << NewLine
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << " Add an instance for the type." << NewLine
-    }
+    override def explain: String = "<Underline>Tip:</Underline> Add an instance for the type."
+
   }
 
   /**
-    * An error indicating that the main function's scheme is incorrect.
-    *
-    * @param declaredScheme the erroneous function's scheme.
-    * @param expectedScheme the scheme the main function is expected to have.
-    * @param loc            the location where the error occurred.
-    */
+   * An error indicating that the main function's scheme is incorrect.
+   *
+   * @param declaredScheme the erroneous function's scheme.
+   * @param expectedScheme the scheme the main function is expected to have.
+   * @param loc            the location where the error occurred.
+   */
   case class IllegalMain(declaredScheme: Scheme, expectedScheme: Scheme, loc: SourceLocation) extends TypeError {
     override def summary: String = "Illegal main."
 
@@ -294,17 +292,17 @@ object TypeError {
       vt << NewLine
     }
 
-    override def explain: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      vt << "The main function must have the form:" << NewLine
-      vt << NewLine
-      vt << "  def main(args: Array[String]): Int & Impure = ..." << NewLine
-      vt << NewLine
-      vt << "i.e." << NewLine
-      vt << "- it must return an integer which is the exit code, and" << NewLine
-      vt << "- it must have a side-effect (such as printing to the screen)." << NewLine
-      vt << NewLine
-      vt << "(If the arguments are not needed, then 'args' can be replaced with '_'." << NewLine
+    override def explain: String = {
+      """The main function must have the form:
+        |
+        |  def main(args: Array[String]): Int & Impure = ...
+        |
+        |i.e.
+        |- it must return an integer which is the exit code, and
+        |- it must have a side-effect (such as printing to the screen).
+        |
+        |(If the arguments are not needed, then 'args' can be replaced with '_'.
+        |""".stripMargin
     }
   }
 

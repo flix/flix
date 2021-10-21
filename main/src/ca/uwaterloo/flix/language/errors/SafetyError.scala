@@ -30,13 +30,11 @@ object SafetyError {
       vt << Code(loc, "the variable occurs in this negated atom.") << NewLine
     }
 
-    override def explain: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      if (!sym.isWild) {
-        vt << NewLine
-        vt << Underline("Tip:") << " Ensure that the variable occurs in at least one positive atom." << NewLine
-      }
-      vt
+    override def explain: String = {
+      if (!sym.isWild)
+        "<Underline>Tip:</Underline> Ensure that the variable occurs in at least one positive atom."
+      else
+        ""
     }
   }
 

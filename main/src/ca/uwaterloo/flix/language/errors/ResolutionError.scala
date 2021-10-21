@@ -25,8 +25,8 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
 import java.lang.reflect.{Constructor, Field, Method}
 
 /**
-  * A common super-type for resolution errors.
-  */
+ * A common super-type for resolution errors.
+ */
 sealed trait ResolutionError extends CompilationMessage {
   def kind = "Resolution Error"
 }
@@ -36,15 +36,16 @@ object ResolutionError {
   private implicit val audience: Audience = Audience.External
 
   /**
-    * Ambiguous Name Error.
-    *
-    * @param qn   the ambiguous name.
-    * @param ns   the current namespace.
-    * @param locs the locations where the names are defined.
-    * @param loc  the location where the error occurred.
-    */
+   * Ambiguous Name Error.
+   *
+   * @param qn   the ambiguous name.
+   * @param ns   the current namespace.
+   * @param locs the locations where the names are defined.
+   * @param loc  the location where the error occurred.
+   */
   case class AmbiguousName(qn: Name.QName, ns: Name.NName, locs: List[SourceLocation], loc: SourceLocation) extends ResolutionError {
     def summary: String = "Ambiguous name."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -61,15 +62,16 @@ object ResolutionError {
   }
 
   /**
-    * Ambiguous Type Error.
-    *
-    * @param qn   the ambiguous name.
-    * @param ns   the current namespace.
-    * @param locs the locations where the names are defined.
-    * @param loc  the location where the error occurred.
-    */
+   * Ambiguous Type Error.
+   *
+   * @param qn   the ambiguous name.
+   * @param ns   the current namespace.
+   * @param locs the locations where the names are defined.
+   * @param loc  the location where the error occurred.
+   */
   case class AmbiguousType(qn: String, ns: Name.NName, locs: List[SourceLocation], loc: SourceLocation) extends ResolutionError {
     def summary: String = "Ambiguous type."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -86,15 +88,16 @@ object ResolutionError {
   }
 
   /**
-    * Ambiguous Tag Error.
-    *
-    * @param tag  the tag.
-    * @param ns   the current namespace.
-    * @param locs the source location of the matched tags.
-    * @param loc  the location where the error occurred.
-    */
+   * Ambiguous Tag Error.
+   *
+   * @param tag  the tag.
+   * @param ns   the current namespace.
+   * @param locs the source location of the matched tags.
+   * @param loc  the location where the error occurred.
+   */
   case class AmbiguousTag(tag: String, ns: Name.NName, locs: List[SourceLocation], loc: SourceLocation) extends ResolutionError {
     def summary: String = "Ambiguous tag."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -110,17 +113,16 @@ object ResolutionError {
       vt << NewLine
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << " Prefix the tag with the enum name." << NewLine
-    }
+    override def explain: String = "<Underline>Tip:</Underline> Prefix the tag with the enum name."
+
   }
 
   /**
-    * Illegal Type Error.
-    *
-    * @param tpe the illegal type.
-    * @param loc the location where the error occurred.
-    */
+   * Illegal Type Error.
+   *
+   * @param tpe the illegal type.
+   * @param loc the location where the error occurred.
+   */
   case class IllegalType(tpe: Type, loc: SourceLocation) extends ResolutionError {
 
     def summary: String = "Illegal type."
@@ -135,14 +137,15 @@ object ResolutionError {
   }
 
   /**
-    * Inaccessible Class Error.
-    *
-    * @param sym the class symbol.
-    * @param ns  the namespace where the symbol is not accessible.
-    * @param loc the location where the error occurred.
-    */
+   * Inaccessible Class Error.
+   *
+   * @param sym the class symbol.
+   * @param ns  the namespace where the symbol is not accessible.
+   * @param loc the location where the error occurred.
+   */
   case class InaccessibleClass(sym: Symbol.ClassSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Inaccessible."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -152,20 +155,20 @@ object ResolutionError {
       vt << NewLine
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << " Mark the class as public." << NewLine
-    }
+    override def explain: String = "<Underline>Tip:</Underline> Mark the class as public."
+
   }
 
   /**
-    * Sealed Class Error.
-    *
-    * @param sym the class symbol.
-    * @param ns  the namespace from which the class is sealed.
-    * @param loc the location where the error occurred.
-    */
+   * Sealed Class Error.
+   *
+   * @param sym the class symbol.
+   * @param ns  the namespace from which the class is sealed.
+   * @param loc the location where the error occurred.
+   */
   case class SealedClass(sym: Symbol.ClassSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Sealed."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -175,20 +178,20 @@ object ResolutionError {
       vt << NewLine
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << " Move the instance or sub class to the class's namespace." << NewLine
-    }
+    override def explain: String = "<Underline>Tip:</Underline> Move the instance or sub class to the class's namespace."
+
   }
 
   /**
-    * Inaccessible Def Error.
-    *
-    * @param sym the def symbol.
-    * @param ns  the namespace where the symbol is not accessible.
-    * @param loc the location where the error occurred.
-    */
+   * Inaccessible Def Error.
+   *
+   * @param sym the def symbol.
+   * @param ns  the namespace where the symbol is not accessible.
+   * @param loc the location where the error occurred.
+   */
   case class InaccessibleDef(sym: Symbol.DefnSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Inaccessible."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -198,20 +201,20 @@ object ResolutionError {
       vt << NewLine
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << " Mark the definition as public." << NewLine
-    }
+    override def explain: String = "<Underline>Tip:</Underline> Mark the definition as public."
+
   }
 
   /**
-    * Inaccessible Sig Error.
-    *
-    * @param sym the sig symbol.
-    * @param ns  the namespace where the symbol is not accessible.
-    * @param loc the location where the error occurred.
-    */
+   * Inaccessible Sig Error.
+   *
+   * @param sym the sig symbol.
+   * @param ns  the namespace where the symbol is not accessible.
+   * @param loc the location where the error occurred.
+   */
   case class InaccessibleSig(sym: Symbol.SigSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Inaccessible."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -221,20 +224,20 @@ object ResolutionError {
       vt << NewLine
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << " Mark the definition as public." << NewLine
-    }
+    override def explain: String = "<Underline>Tip:</Underline> Mark the definition as public."
+
   }
 
   /**
-    * Inaccessible Enum Error.
-    *
-    * @param sym the enum symbol.
-    * @param ns  the namespace where the symbol is not accessible.
-    * @param loc the location where the error occurred.
-    */
+   * Inaccessible Enum Error.
+   *
+   * @param sym the enum symbol.
+   * @param ns  the namespace where the symbol is not accessible.
+   * @param loc the location where the error occurred.
+   */
   case class InaccessibleEnum(sym: Symbol.EnumSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Inaccessible."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -244,20 +247,20 @@ object ResolutionError {
       vt << NewLine
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << " Mark the definition as public." << NewLine
-    }
+    override def explain: String = "<Underline>Tip:</Underline> Mark the definition as public."
+
   }
 
   /**
-    * Inaccessible Type Alias Error.
-    *
-    * @param sym the type alias symbol.
-    * @param ns  the namespace where the symbol is not accessible.
-    * @param loc the location where the error occurred.
-    */
+   * Inaccessible Type Alias Error.
+   *
+   * @param sym the type alias symbol.
+   * @param ns  the namespace where the symbol is not accessible.
+   * @param loc the location where the error occurred.
+   */
   case class InaccessibleTypeAlias(sym: Symbol.TypeAliasSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Inaccessible type alias ${sym.name}"
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -267,20 +270,20 @@ object ResolutionError {
       vt << NewLine
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << " Mark the definition as public." << NewLine
-    }
+    override def explain: String = "<Underline>Tip:</Underline> Mark the definition as public."
+
   }
 
   /**
-    * Recursion Limit Error.
-    *
-    * @param ident the type alias symbol.
-    * @param limit the current recursion limit.
-    * @param loc   the location where the error occurred.
-    */
+   * Recursion Limit Error.
+   *
+   * @param ident the type alias symbol.
+   * @param limit the current recursion limit.
+   * @param loc   the location where the error occurred.
+   */
   case class RecursionLimit(ident: Symbol.TypeAliasSym, limit: Int, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Recursion limit $limit reached while unfolding the ${ident.name} type alias."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -290,17 +293,16 @@ object ResolutionError {
       vt << NewLine
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << "Ensure that there is no cyclic definition of type aliases." << NewLine
-    }
+    override def explain: String = "Ensure that there is no cyclic definition of type aliases."
+
   }
 
   /**
-    * An error raise to indicate a cycle in type aliases.
-    *
-    * @param path the type reference path from a type alias to itself.
-    * @param loc  the location where the error occurred.
-    */
+   * An error raise to indicate a cycle in type aliases.
+   *
+   * @param path the type reference path from a type alias to itself.
+   * @param loc  the location where the error occurred.
+   */
   case class CyclicTypeAliases(path: List[Symbol.TypeAliasSym], loc: SourceLocation) extends ResolutionError {
     private val fullCycle = path.last :: path
 
@@ -324,14 +326,15 @@ object ResolutionError {
   }
 
   /**
-    * Undefined Name Error.
-    *
-    * @param qn  the unresolved name.
-    * @param ns  the current namespace.
-    * @param loc the location where the error occurred.
-    */
+   * Undefined Name Error.
+   *
+   * @param qn  the unresolved name.
+   * @param ns  the current namespace.
+   * @param loc the location where the error occurred.
+   */
   case class UndefinedName(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Undefined name."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -341,21 +344,21 @@ object ResolutionError {
       vt << NewLine
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << " Possible typo or non-existent definition?" << NewLine
-    }
+    override def explain: String = "<Underline>Tip:</Underline> Possible typo or non-existent definition?"
+
   }
 
   /**
-    * Undefined Sig Error.
-    *
-    * @param clazz  the class.
-    * @param sig    the unresolved sig.
-    * @param ns     the current namespace.
-    * @param loc    the location where the error occurred.
-    */
+   * Undefined Sig Error.
+   *
+   * @param clazz the class.
+   * @param sig   the unresolved sig.
+   * @param ns    the current namespace.
+   * @param loc   the location where the error occurred.
+   */
   case class UndefinedSig(clazz: Name.QName, sig: Name.Ident, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Undefined signature."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -365,20 +368,20 @@ object ResolutionError {
       vt << NewLine
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << " Possible typo or non-existent class or signature?" << NewLine
-    }
+    override def explain: String = "<Underline>Tip:</Underline> Possible typo or non-existent class or signature?"
+
   }
 
   /**
-    * Undefined Class Error.
-    *
-    * @param qn  the unresolved class.
-    * @param ns  the current namespace.
-    * @param loc the location where the error occurred.
-    */
+   * Undefined Class Error.
+   *
+   * @param qn  the unresolved class.
+   * @param ns  the current namespace.
+   * @param loc the location where the error occurred.
+   */
   case class UndefinedClass(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Undefined class."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -388,20 +391,20 @@ object ResolutionError {
       vt << NewLine
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << " Possible typo or non-existent class?" << NewLine
-    }
+    override def explain: String = "<Underline>Tip:</Underline> Possible typo or non-existent class?"
+
   }
 
   /**
-    * Undefined Tag Error.
-    *
-    * @param tag the tag.
-    * @param ns  the current namespace.
-    * @param loc the location where the error occurred.
-    */
+   * Undefined Tag Error.
+   *
+   * @param tag the tag.
+   * @param ns  the current namespace.
+   * @param loc the location where the error occurred.
+   */
   case class UndefinedTag(tag: String, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Undefined tag."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -411,20 +414,20 @@ object ResolutionError {
       vt << NewLine
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << " Possible typo or non-existent tag?" << NewLine
-    }
+    override def explain: String = "<Underline>Tip:</Underline> Possible typo or non-existent tag?"
+
   }
 
   /**
-    * Undefined Type Error.
-    *
-    * @param qn  the name.
-    * @param ns  the current namespace.
-    * @param loc the location where the error occurred.
-    */
+   * Undefined Type Error.
+   *
+   * @param qn  the name.
+   * @param ns  the current namespace.
+   * @param loc the location where the error occurred.
+   */
   case class UndefinedType(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Undefined type"
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -434,19 +437,19 @@ object ResolutionError {
       vt << NewLine
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << " Possible typo or non-existent type?" << NewLine
-    }
+    override def explain: String = "<Underline>Tip:</Underline> Possible typo or non-existent type?"
+
   }
 
   /**
-    * An error raised to indicate that the class name was not found.
-    *
-    * @param name the class name.
-    * @param loc  the location of the class name.
-    */
+   * An error raised to indicate that the class name was not found.
+   *
+   * @param name the class name.
+   * @param loc  the location of the class name.
+   */
   case class UndefinedJvmClass(name: String, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Undefined class."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -457,15 +460,16 @@ object ResolutionError {
   }
 
   /**
-    * An error raised to indicate that a matching constructor was not found.
-    *
-    * @param className    the class name.
-    * @param signature    the signature of the constructor.
-    * @param constructors the constructors in the class.
-    * @param loc          the location of the constructor name.
-    */
+   * An error raised to indicate that a matching constructor was not found.
+   *
+   * @param className    the class name.
+   * @param signature    the signature of the constructor.
+   * @param constructors the constructors in the class.
+   * @param loc          the location of the constructor name.
+   */
   case class UndefinedJvmConstructor(className: String, signature: List[Class[_]], constructors: List[Constructor[_]], loc: SourceLocation) extends ResolutionError {
     def summary: String = "Undefined constructor."
+
     def message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -483,15 +487,15 @@ object ResolutionError {
   }
 
   /**
-    * An error raised to indicate that a matching method was not found.
-    *
-    * @param className  the class name.
-    * @param methodName the method name.
-    * @param static     whether the method is static.
-    * @param signature  the signature of the method.
-    * @param methods    the methods of the class.
-    * @param loc        the location of the method name.
-    */
+   * An error raised to indicate that a matching method was not found.
+   *
+   * @param className  the class name.
+   * @param methodName the method name.
+   * @param static     whether the method is static.
+   * @param signature  the signature of the method.
+   * @param methods    the methods of the class.
+   * @param loc        the location of the method name.
+   */
   case class UndefinedJvmMethod(className: String, methodName: String, static: Boolean, signature: List[Class[_]], methods: List[Method], loc: SourceLocation) extends ResolutionError {
     def summary: String = {
       if (!static) {
@@ -522,14 +526,14 @@ object ResolutionError {
   }
 
   /**
-    * An error raised to indicate that the field name was not found.
-    *
-    * @param className the class name.
-    * @param fieldName the field name.
-    * @param static    whether the field is static.
-    * @param fields    the fields of the class.
-    * @param loc       the location of the method name.
-    */
+   * An error raised to indicate that the field name was not found.
+   *
+   * @param className the class name.
+   * @param fieldName the field name.
+   * @param static    whether the field is static.
+   * @param fields    the fields of the class.
+   * @param loc       the location of the method name.
+   */
   case class UndefinedJvmField(className: String, fieldName: String, static: Boolean, fields: List[Field], loc: SourceLocation) extends ResolutionError {
     def summary: String = {
       if (!static) {
@@ -558,11 +562,11 @@ object ResolutionError {
   }
 
   /**
-    * An error raise to indicate a cycle in the class hierarchy.
-    *
-    * @param path the super class path from a class to itself.
-    * @param loc  the location where the error occurred.
-    */
+   * An error raise to indicate a cycle in the class hierarchy.
+   *
+   * @param path the super class path from a class to itself.
+   * @param loc  the location where the error occurred.
+   */
   case class CyclicClassHierarchy(path: List[Symbol.ClassSym], loc: SourceLocation) extends ResolutionError {
     private val fullCycle = path.last :: path
 
@@ -586,12 +590,12 @@ object ResolutionError {
   }
 
   /**
-    * An error raised to indicate a duplicate derivation.
-    *
-    * @param sym  the class symbol of the duplicate derivation.
-    * @param loc1 the location of the first occurrence.
-    * @param loc2 the location of the second occurrence.
-    */
+   * An error raised to indicate a duplicate derivation.
+   *
+   * @param sym  the class symbol of the duplicate derivation.
+   * @param loc1 the location of the first occurrence.
+   * @param loc2 the location of the second occurrence.
+   */
   case class DuplicateDerivation(sym: Symbol.ClassSym, loc1: SourceLocation, loc2: SourceLocation) extends ResolutionError {
     override def summary: String = s"Duplicate derivation: ${sym.name}"
 
@@ -608,18 +612,17 @@ object ResolutionError {
 
     override def loc: SourceLocation = loc1
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << " Remove one of the occurrences." << NewLine
-    }
+    override def explain: String = "<Underline>Tip:</Underline> Remove one of the occurrences."
+
   }
 
   /**
-    * An error raised to indicate an illegal derivation.
-    *
-    * @param sym       the class symbol of the illegal derivation.
-    * @param legalSyms the list of class symbols of legal derivations.
-    * @param loc       the location where the error occurred.
-    */
+   * An error raised to indicate an illegal derivation.
+   *
+   * @param sym       the class symbol of the illegal derivation.
+   * @param legalSyms the list of class symbols of legal derivations.
+   * @param loc       the location where the error occurred.
+   */
   case class IllegalDerivation(sym: Symbol.ClassSym, legalSyms: List[Symbol.ClassSym], loc: SourceLocation) extends ResolutionError {
     override def summary: String = s"Illegal derivation: ${sym.name}"
 
@@ -632,17 +635,16 @@ object ResolutionError {
       vt << NewLine
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << s" Only the following classes may be derived: ${legalSyms.map(_.name).mkString(", ")}." << NewLine
-    }
+    override def explain: String = s"<Underline>Tip:</Underline> Only the following classes may be derived: ${legalSyms.map(_.name).mkString(", ")}."
+
   }
 
   /**
-    * An error raised to indicate an under-applied type alias.
-    *
-    * @param sym the type alias.
-    * @param loc the location where the error occurred.
-    */
+   * An error raised to indicate an under-applied type alias.
+   *
+   * @param sym the type alias.
+   * @param loc the location where the error occurred.
+   */
   case class UnderAppliedTypeAlias(sym: Symbol.TypeAliasSym, loc: SourceLocation) extends ResolutionError {
     override def summary: String = s"Under-applied type alias: ${sym.name}"
 
@@ -655,14 +657,13 @@ object ResolutionError {
       vt << NewLine
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << " Type aliases must be fully applied." << NewLine
-    }
+    override def explain: String = "<Underline>Tip:</Underline> Type aliases must be fully applied."
+
   }
 
   /**
-    * Removes all access modifiers from the given string `s`.
-    */
+   * Removes all access modifiers from the given string `s`.
+   */
   private def stripAccessModifier(s: String): String =
     s.replace("public", "").
       replace("protected", "").
