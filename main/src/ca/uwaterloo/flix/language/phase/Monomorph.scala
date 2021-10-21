@@ -502,9 +502,12 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           else
             Expression.False(loc)
 
-        case Expression.ReifyType(t, _, _, loc) => reifyType(subst0(t), loc)
+        case Expression.ReifyType(t, k, _, _, loc) =>
+          k match {
+            case Kind.Star => reifyType(subst0(t), loc)
+            case _ => throw InternalCompilerException(s"Unexpected kind: $k.")
+          }
       }
-
 
       /**
         * Specializes the given pattern `p0` w.r.t. the current substitution.

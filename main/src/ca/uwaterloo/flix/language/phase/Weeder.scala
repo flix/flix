@@ -1486,7 +1486,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Expression.ReifyType(sp1, t0, sp2) =>
       val t = visitType(t0)
-      WeededAst.Expression.ReifyType(t, mkSL(sp1, sp2)).toSuccess
+      WeededAst.Expression.ReifyType(t, Kind.Star, mkSL(sp1, sp2)).toSuccess
 
   }
 
