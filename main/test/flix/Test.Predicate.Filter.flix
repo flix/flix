@@ -1,27 +1,27 @@
 namespace Test/Predicate/Filter {
 
     @test
-    def testFilter01(): #{ R(String) } = solve {
+    def testFilter01(): #{ R(String) } = solve #{
         R("a") :- success().
     }
 
     @test
-    def testFilter02(): #{ R(String) } = solve {
+    def testFilter02(): #{ R(String) } = solve #{
         R("a") :- failure().
     }
 
     @test
-    def testFilter03(): #{ R(String) } = solve {
+    def testFilter03(): #{ R(String) } = solve #{
         R("a") :- isZero(0).
     }
 
     @test
-    def testFilter04(): #{ R(String) } = solve {
+    def testFilter04(): #{ R(String) } = solve #{
         R("b") :- isZero(1).
     }
 
     @test
-    def testFilter05(): #{ R(String) } = solve {
+    def testFilter05(): #{ R(String) } = solve #{
         R("c") :- isZero(2).
     }
 
