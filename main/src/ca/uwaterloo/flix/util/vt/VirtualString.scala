@@ -30,9 +30,9 @@ object VirtualString {
 
   case object Dedent extends VirtualString
 
-  case class Line(left: String, right: String) extends VirtualString
+  case class line(left: String, right: String) extends VirtualString
 
-  case class Code(loc: SourceLocation, text: String) extends VirtualString
+  case class code(loc: SourceLocation, text: String) extends VirtualString
 
   case class Text(s: String) extends VirtualString
 
@@ -40,13 +40,13 @@ object VirtualString {
 
   case class Blue(s: String) extends VirtualString
 
-  case class Cyan(s: String) extends VirtualString
+  case class cyan(s: String) extends VirtualString
 
   case class Green(s: String) extends VirtualString
 
-  case class Magenta(s: String) extends VirtualString
+  case class magenta(s: String) extends VirtualString
 
-  case class Red(s: String) extends VirtualString
+  case class red(s: String) extends VirtualString
 
   case class Yellow(s: String) extends VirtualString
 
@@ -54,6 +54,6 @@ object VirtualString {
 
   case class Bold(s: String) extends VirtualString
 
-  case class Underline(s: String) extends VirtualString
+  case class underline(s: String) extends VirtualString
 
 }

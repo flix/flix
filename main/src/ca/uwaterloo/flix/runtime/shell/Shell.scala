@@ -223,14 +223,14 @@ class Shell(initialPaths: List[Path], options: Options) {
 
           // Iterate through the premises, i.e. the variable symbols in scope.
           for ((varSym, varType) <- env) {
-            vt << Blue(varSym.text) << ": " << Cyan(FormatType.formatType(varType)) << " " * 6
+            vt << Blue(varSym.text) << ": " << cyan(FormatType.formatType(varType)) << " " * 6
           }
 
           // Print the divider.
           vt << NewLine << "-" * 80 << NewLine
 
           // Print the goal.
-          vt << Blue(sym.toString) << ": " << Cyan(FormatType.formatType(holeType)) << NewLine
+          vt << Blue(sym.toString) << ": " << cyan(FormatType.formatType(holeType)) << NewLine
 
           // Print the result to the terminal.
           terminal.writer().print(vt.fmt)
@@ -530,12 +530,12 @@ class Shell(initialPaths: List[Path], options: Options) {
   private def prettyPrintDef(defn: Def, vt: VirtualTerminal): Unit = {
     vt << Bold("def ") << Blue(defn.sym.name) << "("
     if (defn.spec.fparams.nonEmpty) {
-      vt << defn.spec.fparams.head.sym.text << ": " << Cyan(FormatType.formatType(defn.spec.fparams.head.tpe))
+      vt << defn.spec.fparams.head.sym.text << ": " << cyan(FormatType.formatType(defn.spec.fparams.head.tpe))
       for (fparam <- defn.spec.fparams.tail) {
-        vt << ", " << fparam.sym.text << ": " << Cyan(FormatType.formatType(fparam.tpe))
+        vt << ", " << fparam.sym.text << ": " << cyan(FormatType.formatType(fparam.tpe))
       }
     }
-    vt << "): " << Cyan(FormatType.formatType(defn.impl.inferredScheme.base.typeArguments.last)) << NewLine
+    vt << "): " << cyan(FormatType.formatType(defn.impl.inferredScheme.base.typeArguments.last)) << NewLine
   }
 
   /**
@@ -551,7 +551,7 @@ class Shell(initialPaths: List[Path], options: Options) {
       vt << Bold("Holes:") << Indent
       // Print each hole and its type.
       for ((sym, ctx) <- holes) {
-        vt << NewLine << Blue(sym.toString) << ": " << Cyan(FormatType.formatType(ctx.tpe))
+        vt << NewLine << Blue(sym.toString) << ": " << cyan(FormatType.formatType(ctx.tpe))
       }
       vt << Dedent << NewLine
     }

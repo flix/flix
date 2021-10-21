@@ -425,8 +425,8 @@ object PrettyPrinter {
           vt.text("force ")
           visitExp(exp)
 
-        case Expression.HoleError(sym, tpe, loc) => Red("HoleError")
-        case Expression.MatchError(tpe, loc) => vt << Red("MatchError")
+        case Expression.HoleError(sym, tpe, loc) => red("HoleError")
+        case Expression.MatchError(tpe, loc) => vt << red("MatchError")
       }
 
       visitExp(exp0)
@@ -439,7 +439,7 @@ object PrettyPrinter {
     }
 
     def fmtSym(sym: Symbol.VarSym, vt: VirtualTerminal): Unit = {
-      vt << Cyan(sym.toString)
+      vt << cyan(sym.toString)
     }
 
     def fmtSym(sym: Symbol.DefnSym, vt: VirtualTerminal): Unit = {
@@ -447,7 +447,7 @@ object PrettyPrinter {
     }
 
     def fmtSym(sym: Symbol.LabelSym, vt: VirtualTerminal): Unit = {
-      vt << Magenta(sym.toString)
+      vt << magenta(sym.toString)
     }
 
     def fmtUnaryOp(op: UnaryOperator, vt: VirtualTerminal): Unit = op match {

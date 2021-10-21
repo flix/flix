@@ -48,7 +48,7 @@ class VirtualTerminal() {
     * Appends the given virtual string to this terminal.
     */
   def <<(s: VirtualString): VirtualTerminal = s match {
-    case VirtualString.Code(loc, msg) => highlight(loc, Text(msg)); this
+    case VirtualString.code(loc, msg) => highlight(loc, Text(msg)); this
     case _ => buffer = s :: buffer; this
   }
 
@@ -77,20 +77,20 @@ class VirtualTerminal() {
         case Text(s) => sb.append(s)
         case Black(s) => sb.append(ctx.emitBlack(s))
         case Blue(s) => sb.append(ctx.emitBlue(s))
-        case Cyan(s) => sb.append(ctx.emitCyan(s))
+        case cyan(s) => sb.append(ctx.emitCyan(s))
         case Green(s) => sb.append(ctx.emitGreen(s))
-        case Magenta(s) => sb.append(ctx.emitMagenta(s))
-        case Red(s) => sb.append(ctx.emitRed(s))
+        case magenta(s) => sb.append(ctx.emitMagenta(s))
+        case red(s) => sb.append(ctx.emitRed(s))
         case Yellow(s) => sb.append(ctx.emitYellow(s))
         case White(s) => sb.append(ctx.emitWhite(s))
 
         // Formatting
         case Bold(s) => sb.append(ctx.emitBold(s))
-        case Underline(s) => sb.append(ctx.emitUnderline(s))
+        case underline(s) => sb.append(ctx.emitUnderline(s))
 
         // Macros
-        case Line(l, r) => sb.append(ctx.emitBlue(s"-- $l -------------------------------------------------- $r\n"))
-        case Code(l, m) => // NB: Already de-sugared.
+        case line(l, r) => sb.append(ctx.emitBlue(s"-- $l -------------------------------------------------- $r\n"))
+        case code(l, m) => // NB: Already de-sugared.
       }
     }
     sb.toString()
@@ -113,7 +113,7 @@ class VirtualTerminal() {
       val lineNo = beginLine.toString + " | "
 
       this << lineNo << lineAt(beginLine) << NewLine
-      this << " " * (beginCol + lineNo.length - 1) << Red("^" * (endCol - beginCol)) << NewLine
+      this << " " * (beginCol + lineNo.length - 1) << red("^" * (endCol - beginCol)) << NewLine
       this << " " * (beginCol + lineNo.length - 1)
       this << msg
       this << NewLine
@@ -122,7 +122,7 @@ class VirtualTerminal() {
     def leftline(): Unit = {
       for (lineNo <- beginLine to endLine) {
         val currentLine = lineAt(lineNo)
-        this << lineNo << " |" << Red(">") << " " << currentLine << NewLine
+        this << lineNo << " |" << red(">") << " " << currentLine << NewLine
       }
       this << NewLine
       this << msg

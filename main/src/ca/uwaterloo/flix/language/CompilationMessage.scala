@@ -19,50 +19,45 @@ package ca.uwaterloo.flix.language
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.errors.Severity
-import ca.uwaterloo.flix.util.vt.VirtualString.NewLine
-import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
-  * A common super-type for compilation messages.
-  */
+ * A common super-type for compilation messages.
+ */
 trait CompilationMessage {
 
   /**
-    * Returns the kind of error message, e.g. "Syntax Error" or "Type Error".
-    */
+   * Returns the kind of error message, e.g. "Syntax Error" or "Type Error".
+   */
   def kind: String
 
   /**
-    * Returns the severity of the error.
-    */
+   * Returns the severity of the error.
+   */
   def severity: Severity = Severity.Error
 
   /**
-    * Returns the input source of the error message.
-    */
+   * Returns the input source of the error message.
+   */
   def source: Source = loc.source
 
   /**
-    * Returns the primary source location of the error.
-    */
+   * Returns the primary source location of the error.
+   */
   def loc: SourceLocation
 
   /**
-    * Returns a short description of the error message.
-    */
+   * Returns a short description of the error message.
+   */
   def summary: String
 
   /**
-    * Returns the formatted error message.
-    */
-  def message: VirtualTerminal
+   * Returns the formatted error message.
+   */
+  def message: String
 
   /**
    * Returns a formatted string with helpful suggestions.
    */
-  def explain: VirtualTerminal = {
-    val vt = new VirtualTerminal()
-    vt << "" << NewLine
-  }
+  def explain: String = ""
 
 }

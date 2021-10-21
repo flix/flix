@@ -67,7 +67,7 @@ object Tester {
       val vt = new VirtualTerminal()
       for ((ns, tests) <- results.groupBy(_.sym.namespace)) {
         val namespace = if (ns.isEmpty) "root" else ns.mkString("/")
-        vt << Line("Tests", namespace)
+        vt << line("Tests", namespace)
         vt << Indent << NewLine
         for (test <- tests.sortBy(_.sym.loc)) {
           test match {
@@ -75,7 +75,7 @@ object Tester {
               vt << Green("✓") << " " << sym.name << NewLine
               success = success + 1
             case TestResult.Failure(sym, msg) =>
-              vt << Red("✗") << " " << sym.name << ": " << msg << " (" << Blue(sym.loc.format) << ")" << NewLine
+              vt << red("✗") << " " << sym.name << ": " << msg << " (" << Blue(sym.loc.format) << ")" << NewLine
               failure = failure + 1
           }
         }
@@ -85,7 +85,7 @@ object Tester {
       if (failure == 0) {
         vt << Green("  Tests Passed!") << s" (Passed: $success / $success)" << NewLine
       } else {
-        vt << Red(s"  Tests Failed!") << s" (Passed: $success / ${success + failure})"
+        vt << red(s"  Tests Failed!") << s" (Passed: $success / ${success + failure})"
       }
       vt
     }

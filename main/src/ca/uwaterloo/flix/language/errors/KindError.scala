@@ -19,57 +19,56 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation}
 import ca.uwaterloo.flix.language.debug.FormatKind.formatKind
 import ca.uwaterloo.flix.util.vt.VirtualString._
-import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
-  * A common super-type for kind errors.
-  */
+ * A common super-type for kind errors.
+ */
 sealed trait KindError extends CompilationMessage {
-  def kind: String = "Kind Error"
+  val kind: String = "Kind Error"
 }
 
 object KindError {
   /**
-    * An error describing mismatched inferred kinds.
-    *
-    * @param k1   the first kind.
-    * @param k2   the second kind.
-    * @param loc the location where the error occurred.
-    */
+   * An error describing mismatched inferred kinds.
+   *
+   * @param k1  the first kind.
+   * @param k2  the second kind.
+   * @param loc the location where the error occurred.
+   */
   case class MismatchedKinds(k1: Kind, k2: Kind, loc: SourceLocation) extends KindError {
     override def summary: String = s"Mismatched kinds: '${formatKind(k1)}' and '${formatKind(k2)}''"
 
-    override def message: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> This type variable was used as both kind '" << Red(formatKind(k1)) << "' and kind '" << Red(formatKind(k2)) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "mismatched kind.") << NewLine
-      vt << NewLine
-      vt << "Kind One: " << Cyan(formatKind(k1)) << NewLine
-      vt << "Kind Two: " << Magenta(formatKind(k2)) << NewLine
+    override def message: String = {
+      s"""${line(kind, source.format)}
+         |>> This type variable was used as both kind 'red(formatKind(k1))' and kind 'red(formatKind(k2))'.
+         |
+         |${code(loc, "mismatched kind.")}
+         |
+         |Kind One: ${cyan(formatKind(k1))}
+         |Kind Two: ${magenta(formatKind(k2))}
+         |""".stripMargin
     }
   }
 
   /**
-    * An error describing a kind that doesn't match the expected kind.
-    *
-    * @param expectedKind the expected kind.
-    * @param actualKind   the actual kind.
-    * @param loc          the location where the error occurred.
-    */
+   * An error describing a kind that doesn't match the expected kind.
+   *
+   * @param expectedKind the expected kind.
+   * @param actualKind   the actual kind.
+   * @param loc          the location where the error occurred.
+   */
   case class UnexpectedKind(expectedKind: Kind, actualKind: Kind, loc: SourceLocation) extends KindError {
     override def summary: String = s"Kind ${formatKind(expectedKind)} was expected, but found ${formatKind(actualKind)}."
 
-    override def message: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Expected kind '" << Red(formatKind(expectedKind)) << "' here, but kind '" << Red(formatKind(actualKind)) << "' is used." << NewLine
-      vt << NewLine
-      vt << Code(loc, "unexpected kind.") << NewLine
-      vt << NewLine
-      vt << "Expected kind: " << Cyan(formatKind(expectedKind)) << NewLine
-      vt << "Actual kind:   " << Magenta(formatKind(actualKind)) << NewLine
+    override def message: String = {
+      s"""${line(kind, source.format)}
+         |>> Expected kind '${red(formatKind(expectedKind))}' here, but kind 'red(formatKind(actualKind))' is used.
+         |
+         |${code(loc, "unexpected kind.")}
+         |
+         |Expected kind: ${cyan(formatKind(expectedKind))}
+         |Actual kind:   ${magenta(formatKind(actualKind))}
+         |""".stripMargin
     }
   }
 }

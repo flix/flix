@@ -20,312 +20,276 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme, FormatType}
 import ca.uwaterloo.flix.util.vt.VirtualString._
-import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
-  * A common super-type for instance errors.
-  */
+ * A common super-type for instance errors.
+ */
 sealed trait InstanceError extends CompilationMessage {
-  def kind: String = "Instance Error"
+  val kind: String = "Instance Error"
 }
 
 object InstanceError {
   private implicit val audience: Audience = Audience.External
 
   /**
-    * Error indicating that the types of two instances overlap.
-    *
-    * @param loc1 the location of the first instance.
-    * @param loc2 the location of the second instance.
-    */
+   * Error indicating that the types of two instances overlap.
+   *
+   * @param loc1 the location of the first instance.
+   * @param loc2 the location of the second instance.
+   */
   case class OverlappingInstances(loc1: SourceLocation, loc2: SourceLocation) extends InstanceError {
     def summary: String = "Overlapping instances."
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      vt << Line(kind, source.format) << NewLine
-      vt << NewLine
-      vt << Code(loc1, "the first instance was declared here.") << NewLine
-      vt << NewLine
-      vt << Code(loc2, "the second instance was declared here.") << NewLine
+    def message: String = {
+      s"""${line(kind, source.format)}
+         |
+         |${code(loc1, "the first instance was declared here.")}
+         |
+         |${code(loc2, "the second instance was declared here.")}
+         |""".stripMargin
     }
 
     def loc: SourceLocation = loc1
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << " Remove or change the type of one of the instances." << NewLine
-    }
+    override def explain: String = s"${underline("Tip: ")} Remove or change the type of one of the instances."
   }
 
   /**
-    * Error indicating that the type scheme of a definition does not match the type scheme of the signature it implements.
-    *
-    * @param sigSym   the mismatched signature
-    * @param loc      the location of the definition
-    * @param expected the scheme of the signature
-    * @param actual   the scheme of the definition
-    */
+   * Error indicating that the type scheme of a definition does not match the type scheme of the signature it implements.
+   *
+   * @param sigSym   the mismatched signature
+   * @param loc      the location of the definition
+   * @param expected the scheme of the signature
+   * @param actual   the scheme of the definition
+   */
   case class MismatchedSignatures(sigSym: Symbol.SigSym, loc: SourceLocation, expected: Scheme, actual: Scheme) extends InstanceError {
     def summary: String = "Mismatched signature."
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      vt << Line(kind, source.format) << NewLine
-      vt << NewLine
-      vt << "Mismatched signature '" << Red(sigSym.name) << "' required by class '" << Red(sigSym.clazz.name) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "mismatched signature.") << NewLine
-      vt << NewLine
-      vt << s"Expected scheme: ${FormatScheme.formatScheme(expected)}" << NewLine
-      vt << s"Actual scheme:   ${FormatScheme.formatScheme(actual)}" << NewLine
+    def message: String = {
+      s"""${line(kind, source.format)}
+         |
+         |Mismatched signature '${red(sigSym.name)}' required by class '${red(sigSym.clazz.name)}'.
+         |
+         |${code(loc, "mismatched signature.")}
+         |
+         |Expected scheme: ${FormatScheme.formatScheme(expected)}
+         |Actual scheme:   ${FormatScheme.formatScheme(actual)}
+         |""".stripMargin
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << " Modify the definition to match the signature." << NewLine
-    }
+    override def explain: String = s"${underline("Tip:")} Modify the definition to match the signature."
   }
 
   /**
-    * Error indicating the instance is missing a signature implementation.
-    *
-    * @param sig the missing signature.
-    * @param loc the location of the instance.
-    */
+   * Error indicating the instance is missing a signature implementation.
+   *
+   * @param sig the missing signature.
+   * @param loc the location of the instance.
+   */
   case class MissingImplementation(sig: Symbol.SigSym, loc: SourceLocation) extends InstanceError {
     def summary: String = "Missing implementation."
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      vt << Line(kind, source.format) << NewLine
-      vt << NewLine
-      vt << s"Missing implementation of '" << Red(sig.name) << "' required by class '" << Red(sig.clazz.name) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, s"missing implementation") << NewLine
+    def message: String = {
+      s"""${line(kind, source.format)}
+         |
+         |Missing implementation of '${red(sig.name)}' required by class '${red(sig.clazz.name)}'.
+         |
+         |${code(loc, s"missing implementation")}
+         |""".stripMargin
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << " Add an implementation of the signature to the instance." << NewLine
-    }
+    override def explain: String = s"${underline("Tip:")} Add an implementation of the signature to the instance."
   }
 
   /**
-    * Error indicating the instance has a definition not present in the implemented class.
-    *
-    * @param defn the extraneous definition.
-    * @param loc  the location of the definition.
-    */
+   * Error indicating the instance has a definition not present in the implemented class.
+   *
+   * @param defn the extraneous definition.
+   * @param loc  the location of the definition.
+   */
   case class ExtraneousDefinition(defn: Symbol.DefnSym, loc: SourceLocation) extends InstanceError {
     def summary: String = "Extraneous implementation."
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      vt << Line(kind, source.format) << NewLine
-      vt << NewLine
-      vt << Code(loc, s"The signature ${defn.name} is not present in the class.")
-      vt << NewLine
+    def message: String = {
+      s"""${line(kind, source.format)}
+         |
+         |${code(loc, s"The signature ${defn.name} is not present in the class.")}
+         |""".stripMargin
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << " Remove this definition from the instance." << NewLine
-    }
+    override def explain: String = s"${underline("Tip:")} Remove this definition from the instance."
   }
 
   /**
-    * Error indicating the duplicate use of a type variable in an instance type.
-    *
-    * @param tvar the duplicated type variable.
-    * @param sym  the class symbol.
-    * @param loc  the location where the error occurred.
-    */
+   * Error indicating the duplicate use of a type variable in an instance type.
+   *
+   * @param tvar the duplicated type variable.
+   * @param sym  the class symbol.
+   * @param loc  the location where the error occurred.
+   */
   case class DuplicateTypeVariableOccurrence(tvar: Type.KindedVar, sym: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
     override def summary: String = "Duplicate type variable."
 
-    override def message: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Duplicate type variable '" << Red(FormatType.formatType(tvar)) << "' in '" << Red(sym.name) << "'."
-      vt << NewLine
-      vt << Code(loc, s"The type variable '${FormatType.formatType(tvar)}' occurs more than once.")
-      vt << NewLine
-
+    override def message: String = {
+      s"""${line(kind, source.format)}
+         |>> Duplicate type variable '${red(FormatType.formatType(tvar))}' in '${red(sym.name)}'.
+         |
+         |${code(loc, s"The type variable '${FormatType.formatType(tvar)}' occurs more than once.")}
+         |""".stripMargin
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << " Rename one of the instances of the type variable." << NewLine
-    }
+    override def explain: String = s"${underline("Tip:")} Rename one of the instances of the type variable."
+
   }
 
   /**
-    * Error indicating a complex instance type.
-    *
-    * @param tpe the complex type.
-    * @param sym the class symbol.
-    * @param loc the location where the error occurred.
-    */
+   * Error indicating a complex instance type.
+   *
+   * @param tpe the complex type.
+   * @param sym the class symbol.
+   * @param loc the location where the error occurred.
+   */
   case class ComplexInstanceType(tpe: Type, sym: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
     override def summary: String = "Complex instance type."
 
-    override def message: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Complex instance type '" << Red(FormatType.formatType(tpe)) << "' in '" << Red(sym.name) << "'."
-      vt << NewLine
-      vt << Code(loc, s"complex instance type")
-      vt << NewLine
+    override def message: String = {
+      s"""${line(kind, source.format)}
+         |>> Complex instance type '${red(FormatType.formatType(tpe))}' in '${red(sym.name)}'.
+         |${code(loc, s"complex instance type")}
+         |""".stripMargin
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << " An instance type must be a type constructor applied to zero or more distinct type variables." << NewLine
-    }
+    override def explain: String = s"${underline("Tip:")} An instance type must be a type constructor applied to zero or more distinct type variables."
   }
 
   /**
-    * Error indicating a type alias in an instance type.
-    *
-    * @param alias the type alias.
-    * @param clazz the class symbol.
-    * @param loc   the location where the error occurred.
-    */
+   * Error indicating a type alias in an instance type.
+   *
+   * @param alias the type alias.
+   * @param clazz the class symbol.
+   * @param loc   the location where the error occurred.
+   */
   case class IllegalTypeAliasInstance(alias: Symbol.TypeAliasSym, clazz: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
     override def summary: String = "Type alias in instance type."
 
-    override def message: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Illegal use of type alias '" << Red(alias.name) << "' in instance declaration for '" << Red(clazz.name) << "'."
-      vt << NewLine
-      vt << Code(loc, s"illegal use of type alias")
-      vt << NewLine
+    override def message: String = {
+      s"""${line(kind, source.format)}
+         |>> Illegal use of type alias '${red(alias.name)}' in instance declaration for '${red(clazz.name)}'.
+         |${code(loc, s"illegal use of type alias")}
+         |""".stripMargin
+
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << " A type class instance cannot use a type alias. Use the full type." << NewLine
-    }
+    override def explain: String = s"${underline("Tip:")} A type class instance cannot use a type alias. Use the full type."
+
   }
 
   /**
-    * Error indicating an orphan instance.
-    *
-    * @param tpe the instance type.
-    * @param sym the class symbol.
-    * @param loc the location where the error occurred.
-    */
+   * Error indicating an orphan instance.
+   *
+   * @param tpe the instance type.
+   * @param sym the class symbol.
+   * @param loc the location where the error occurred.
+   */
   case class OrphanInstance(tpe: Type, sym: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
     override def summary: String = "Orphan instance."
 
-    override def message: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Orphan instance for type '" << Red(FormatType.formatType(tpe)) << "' in '" << Red(sym.name) << "'."
-      vt << NewLine
-      vt << Code(loc, s"orphan instance")
-      vt << NewLine
+    override def message: String = {
+      s"""${line(kind, source.format)}
+         |>> Orphan instance for type '${red(FormatType.formatType(tpe))}' in '${red(sym.name)}'.
+         |${code(loc, s"orphan instance")}
+         |""".stripMargin
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << " An instance must be declared in the class's namespace or in the type's namespace." << NewLine
-    }
+    override def explain: String = s"${underline("Tip:")} An instance must be declared in the class's namespace or in the type's namespace."
   }
 
   /**
-    * Error indicating a missing super class instance.
-    *
-    * @param tpe        the type for which the super class instance is missing.
-    * @param subClass   the symbol of the sub class.
-    * @param superClass the symbol of the super class.
-    * @param loc        the location where the error occurred.
-    */
+   * Error indicating a missing super class instance.
+   *
+   * @param tpe        the type for which the super class instance is missing.
+   * @param subClass   the symbol of the sub class.
+   * @param superClass the symbol of the super class.
+   * @param loc        the location where the error occurred.
+   */
   case class MissingSuperClassInstance(tpe: Type, subClass: Symbol.ClassSym, superClass: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
     override def summary: String = s"Missing super class instance '$superClass'."
 
-    override def message: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Missing super class instance '" << Red(superClass.name) << "' for type '" << Red(FormatType.formatType(tpe)) << "'." << NewLine
-      vt << NewLine
-      vt << ">> The class '" << Red(subClass.name) << "' extends the class '" << Red(superClass.name) << "'." << NewLine
-      vt << ">> If you provide an instance for '" << Red(subClass.name) << "' you must also provide an instance for '" << Red(superClass.name) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, s"missing super class instance")
-      vt << NewLine
+    override def message: String = {
+      s"""${line(kind, source.format)}
+         |>> Missing super class instance '${red(superClass.name)}' for type '${red(FormatType.formatType(tpe))}'.
+         |
+         |>> The class '${red(subClass.name)}' extends the class '${red(superClass.name)}'.
+         |>> If you provide an instance for '${red(subClass.name)}' you must also provide an instance for '${red(superClass.name)}'.
+         |
+         |${code(loc, s"missing super class instance")}
+         |""".stripMargin
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << s" Add an instance of '${superClass.name}' for '${FormatType.formatType(tpe)}'." << NewLine
-    }
+    override def explain: String = s"${underline("Tip:")} Add an instance of '${superClass.name}' for '${FormatType.formatType(tpe)}'."
   }
 
   /**
-    * Error indicating an unlawful signature in a lawful class.
-    *
-    * @param sym the symbol of the unlawful signature.
-    * @param loc the location where the error occurred.
-    */
+   * Error indicating an unlawful signature in a lawful class.
+   *
+   * @param sym the symbol of the unlawful signature.
+   * @param loc the location where the error occurred.
+   */
   case class UnlawfulSignature(sym: Symbol.SigSym, loc: SourceLocation) extends InstanceError {
     override def summary: String = s"Unlawful signature '$sym'."
 
-    override def message: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Unlawful signature '" << Red(sym.name) << "'." << NewLine
-      vt << NewLine
-      vt << ">> Each signature of a lawful class must appear in at least one law."
-      vt << NewLine
-      vt << Code(loc, s"unlawful signature")
-      vt << NewLine
+    override def message: String = {
+      s"""${line(kind, source.format)}
+         |>> Unlawful signature '${red(sym.name)}'.
+         |
+         |>> Each signature of a lawful class must appear in at least one law.
+         |${code(loc, s"unlawful signature")}
+         |""".stripMargin
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << s" Create a law for '$sym' or mark the class as unlawful." << NewLine
-    }
+    override def explain: String = s"${underline("Tip:")} Create a law for '$sym' or mark the class as unlawful."
   }
 
   /**
-    * Error indicating the illegal placement of an override modifier.
-    *
-    * @param sym the def that the modifier was applied to.
-    * @param loc the location where the error occurred.
-    */
+   * Error indicating the illegal placement of an override modifier.
+   *
+   * @param sym the def that the modifier was applied to.
+   * @param loc the location where the error occurred.
+   */
   case class IllegalOverride(sym: Symbol.DefnSym, loc: SourceLocation) extends InstanceError {
     override def summary: String = s"Illegal override of '$sym'."
 
-    override def message: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Illegal override of '" << Red(sym.name) << "'." << NewLine
-      vt << NewLine
-      vt << ">> Only signatures with default implementations can be overridden." << NewLine
-      vt << NewLine
-      vt << Code(loc, s"illegal override")
-      vt << NewLine
+    override def message: String = {
+      s"""${line(kind, source.format)}
+         |>> Illegal override of '${red(sym.name)}'.
+         |
+         |>> Only signatures with default implementations can be overridden.
+         |
+         |${code(loc, s"illegal override")}
+         |""".stripMargin
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << s" Remove the modifier." << NewLine
-    }
+    override def explain: String = s"${underline("Tip:")} Remove the modifier."
   }
 
   /**
-    * Error indicating a missing override modifier.
-    *
-    * @param sym the def that is missing the modifier.
-    * @param loc the location where the error occurred.
-    */
+   * Error indicating a missing override modifier.
+   *
+   * @param sym the def that is missing the modifier.
+   * @param loc the location where the error occurred.
+   */
   case class UnmarkedOverride(sym: Symbol.DefnSym, loc: SourceLocation) extends InstanceError {
     override def summary: String = s"Unmarked override '$sym'."
 
-    override def message: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Unmarked override of '" << Red(sym.name) << "'. This definition overrides a default implementation." << NewLine
-      vt << NewLine
-      vt << Code(loc, s"unmarked override")
-      vt << NewLine
+    override def message: String = {
+      s"""${line(kind, source.format)}
+         |>> Unmarked override of '${red(sym.name)}'. This definition overrides a default implementation.
+         |
+         |${code(loc, s"unmarked override")}
+         |""".stripMargin
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << s" Either add the `override` modifier or remove the definition." << NewLine
-    }
+    override def explain: String = s"${underline("Tip:")} Either add the `override` modifier or remove the definition."
   }
 
 }

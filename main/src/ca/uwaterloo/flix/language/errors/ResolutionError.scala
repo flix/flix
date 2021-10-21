@@ -20,15 +20,19 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
 import ca.uwaterloo.flix.util.vt.VirtualString._
-import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 import java.lang.reflect.{Constructor, Field, Method}
 
 /**
-  * A common super-type for resolution errors.
-  */
+ * A common super-type for resolution errors.
+ */
 sealed trait ResolutionError extends CompilationMessage {
-  def kind = "Resolution Error"
+  val kind = "Resolution Error"
+
+  // TODO: Move to formatter?
+  protected def appendLocations(locs: List[SourceLocation], s: String): String = {
+    locs.map(l => code(l, s)).mkString(System.lineSeparator() + System.lineSeparator())
+  }
 }
 
 object ResolutionError {
@@ -36,271 +40,261 @@ object ResolutionError {
   private implicit val audience: Audience = Audience.External
 
   /**
-    * Ambiguous Name Error.
-    *
-    * @param qn   the ambiguous name.
-    * @param ns   the current namespace.
-    * @param locs the locations where the names are defined.
-    * @param loc  the location where the error occurred.
-    */
+   * Ambiguous Name Error.
+   *
+   * @param qn   the ambiguous name.
+   * @param ns   the current namespace.
+   * @param locs the locations where the names are defined.
+   * @param loc  the location where the error occurred.
+   */
   case class AmbiguousName(qn: Name.QName, ns: Name.NName, locs: List[SourceLocation], loc: SourceLocation) extends ResolutionError {
     def summary: String = "Ambiguous name."
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Ambiguous name '" << Red(qn.toString) << "' Name refers to multiple definitions." << NewLine
-      vt << NewLine
-      vt << Code(loc, "ambiguous name.") << NewLine
-      vt << NewLine
-      for (loc1 <- locs) {
-        vt << Code(loc1, "definition/effect/signature matches.") << NewLine
-        vt << NewLine
-      }
-      vt
+
+
+    def message: String = {
+      s"""${line(kind, source.format)}
+         |>> Ambiguous name '${red(qn.toString)}' Name refers to multiple definitions.
+         |
+         |${code(loc, "ambiguous name.")}
+         |
+         |${appendLocations(locs, "definition/effect/signature matches.")}
+         |""".stripMargin
     }
   }
 
   /**
-    * Ambiguous Type Error.
-    *
-    * @param qn   the ambiguous name.
-    * @param ns   the current namespace.
-    * @param locs the locations where the names are defined.
-    * @param loc  the location where the error occurred.
-    */
+   * Ambiguous Type Error.
+   *
+   * @param qn   the ambiguous name.
+   * @param ns   the current namespace.
+   * @param locs the locations where the names are defined.
+   * @param loc  the location where the error occurred.
+   */
   case class AmbiguousType(qn: String, ns: Name.NName, locs: List[SourceLocation], loc: SourceLocation) extends ResolutionError {
     def summary: String = "Ambiguous type."
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Ambiguous type '" << Red(qn) << "'. Name refers to multiple types." << NewLine
-      vt << NewLine
-      vt << Code(loc, "ambiguous type.") << NewLine
-      vt << NewLine
-      for (loc1 <- locs) {
-        vt << Code(loc1, "type matches.") << NewLine
-        vt << NewLine
-      }
-      vt
+
+    def message: String = {
+      s"""${line(kind, source.format)}
+         |>> Ambiguous type '${red(qn)}'. Name refers to multiple types.
+         |
+         |${code(loc, "ambiguous type.")}
+         |
+         |${appendLocations(locs, "type matches.")}
+         |""".stripMargin
     }
   }
 
   /**
-    * Ambiguous Tag Error.
-    *
-    * @param tag  the tag.
-    * @param ns   the current namespace.
-    * @param locs the source location of the matched tags.
-    * @param loc  the location where the error occurred.
-    */
+   * Ambiguous Tag Error.
+   *
+   * @param tag  the tag.
+   * @param ns   the current namespace.
+   * @param locs the source location of the matched tags.
+   * @param loc  the location where the error occurred.
+   */
   case class AmbiguousTag(tag: String, ns: Name.NName, locs: List[SourceLocation], loc: SourceLocation) extends ResolutionError {
     def summary: String = "Ambiguous tag."
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Ambiguous tag '" << Red(tag) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "ambiguous tag name.") << NewLine
-      vt << NewLine
-      vt << "The tag is defined in multiple enums:" << NewLine
-      vt << NewLine
-      for (l <- locs) {
-        vt << Code(l, "tag is defined in this enum.") << NewLine
-      }
-      vt << NewLine
+
+    def message: String = {
+      s"""${line(kind, source.format)}
+         |>> Ambiguous tag '${red(tag)}'.
+         |
+         |${code(loc, "ambiguous tag name.")}
+         |
+         |The tag is defined in multiple enums:
+         |
+         |${appendLocations(locs, "tag is defined in this enum.")}
+         |""".stripMargin
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << " Prefix the tag with the enum name." << NewLine
-    }
+    override def explain: String = s"${underline("Tip:")} Prefix the tag with the enum name."
+
   }
 
   /**
-    * Illegal Type Error.
-    *
-    * @param tpe the illegal type.
-    * @param loc the location where the error occurred.
-    */
+   * Illegal Type Error.
+   *
+   * @param tpe the illegal type.
+   * @param loc the location where the error occurred.
+   */
   case class IllegalType(tpe: Type, loc: SourceLocation) extends ResolutionError {
 
     def summary: String = "Illegal type."
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Illegal type: '" << Red(FormatType.formatType(tpe)) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "illegal type.") << NewLine
+    def message: String = {
+      s"""${line(kind, source.format)}
+         |>> Illegal type: '${red(FormatType.formatType(tpe))}'.
+         |
+         |${code(loc, "illegal type.")}
+         |""".stripMargin
     }
   }
 
   /**
-    * Inaccessible Class Error.
-    *
-    * @param sym the class symbol.
-    * @param ns  the namespace where the symbol is not accessible.
-    * @param loc the location where the error occurred.
-    */
+   * Inaccessible Class Error.
+   *
+   * @param sym the class symbol.
+   * @param ns  the namespace where the symbol is not accessible.
+   * @param loc the location where the error occurred.
+   */
   case class InaccessibleClass(sym: Symbol.ClassSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Inaccessible."
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Class'" << Red(sym.toString) << s"' is not accessible from the namespace '" << Cyan(ns.toString) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "inaccessible class.") << NewLine
-      vt << NewLine
+
+    def message: String = {
+      s"""${line(kind, source.format)}
+         |>> Class '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
+         |
+         |${code(loc, "inaccessible class.")}
+         |
+         |""".stripMargin
+
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << " Mark the class as public." << NewLine
-    }
+    override def explain: String = s"${underline("Tip:")} Mark the class as public."
   }
 
   /**
-    * Sealed Class Error.
-    *
-    * @param sym the class symbol.
-    * @param ns  the namespace from which the class is sealed.
-    * @param loc the location where the error occurred.
-    */
+   * Sealed Class Error.
+   *
+   * @param sym the class symbol.
+   * @param ns  the namespace from which the class is sealed.
+   * @param loc the location where the error occurred.
+   */
   case class SealedClass(sym: Symbol.ClassSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Sealed."
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Class '" << Red(sym.toString) << s"' is sealed from the namespace '" << Cyan(ns.toString) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "sealed class.") << NewLine
-      vt << NewLine
+
+    def message: String = {
+      s"""${line(kind, source.format)}
+         |>> Class '${red(sym.toString)}' is sealed from the namespace '${cyan(ns.toString)}'.
+         |
+         |${code(loc, "sealed class.")}
+         |
+         |""".stripMargin
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << " Move the instance or sub class to the class's namespace." << NewLine
-    }
+    override def explain: String = s"${underline("Tip:")} Move the instance or sub class to the class's namespace."
+
   }
 
   /**
-    * Inaccessible Def Error.
-    *
-    * @param sym the def symbol.
-    * @param ns  the namespace where the symbol is not accessible.
-    * @param loc the location where the error occurred.
-    */
+   * Inaccessible Def Error.
+   *
+   * @param sym the def symbol.
+   * @param ns  the namespace where the symbol is not accessible.
+   * @param loc the location where the error occurred.
+   */
   case class InaccessibleDef(sym: Symbol.DefnSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Inaccessible."
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Definition '" << Red(sym.toString) << s"' is not accessible from the namespace '" << Cyan(ns.toString) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "inaccessible definition.") << NewLine
-      vt << NewLine
+
+    def message: String = {
+      s"""${line(kind, source.format)}
+         |>> Definition '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
+         |
+         |${code(loc, "inaccessible definition.")}
+         |
+         |""".stripMargin
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << " Mark the definition as public." << NewLine
-    }
+    override def explain: String = s"${underline("Tip:")} Mark the definition as public."
+
   }
 
   /**
-    * Inaccessible Sig Error.
-    *
-    * @param sym the sig symbol.
-    * @param ns  the namespace where the symbol is not accessible.
-    * @param loc the location where the error occurred.
-    */
+   * Inaccessible Sig Error.
+   *
+   * @param sym the sig symbol.
+   * @param ns  the namespace where the symbol is not accessible.
+   * @param loc the location where the error occurred.
+   */
   case class InaccessibleSig(sym: Symbol.SigSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Inaccessible."
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Definition '" << Red(sym.toString) << s"' is not accessible from the namespace '" << Cyan(ns.toString) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "inaccessible definition.") << NewLine
-      vt << NewLine
+
+    def message: String = {
+      s"""${line(kind, source.format)}
+         |>> Definition '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
+         |
+         |${code(loc, "inaccessible definition.")}
+         |""".stripMargin
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << " Mark the definition as public." << NewLine
-    }
+    override def explain: String = s"${underline("Tip:")} Mark the definition as public."
+
   }
 
   /**
-    * Inaccessible Enum Error.
-    *
-    * @param sym the enum symbol.
-    * @param ns  the namespace where the symbol is not accessible.
-    * @param loc the location where the error occurred.
-    */
+   * Inaccessible Enum Error.
+   *
+   * @param sym the enum symbol.
+   * @param ns  the namespace where the symbol is not accessible.
+   * @param loc the location where the error occurred.
+   */
   case class InaccessibleEnum(sym: Symbol.EnumSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Inaccessible."
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Enum '" << Red(sym.toString) << s"' is not accessible from the namespace '" << Cyan(ns.toString) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "inaccessible enum.") << NewLine
-      vt << NewLine
+
+    def message: String = {
+      s"""${line(kind, source.format)}
+         |>> Enum '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
+         |
+         |${code(loc, "inaccessible enum.")}
+         |
+         |""".stripMargin
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << " Mark the definition as public." << NewLine
-    }
+    override def explain: String = s"${underline("Tip:")} Mark the definition as public."
+
   }
 
   /**
-    * Inaccessible Type Alias Error.
-    *
-    * @param sym the type alias symbol.
-    * @param ns  the namespace where the symbol is not accessible.
-    * @param loc the location where the error occurred.
-    */
+   * Inaccessible Type Alias Error.
+   *
+   * @param sym the type alias symbol.
+   * @param ns  the namespace where the symbol is not accessible.
+   * @param loc the location where the error occurred.
+   */
   case class InaccessibleTypeAlias(sym: Symbol.TypeAliasSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Inaccessible type alias ${sym.name}"
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Type alias '" << Red(sym.toString) << s"' is not accessible from the namespace '" << Cyan(ns.toString) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "inaccessible type alias.") << NewLine
-      vt << NewLine
+
+    def message: String = {
+      s"""${line(kind, source.format)}
+         |>> Type alias '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
+         |
+         |${code(loc, "inaccessible type alias.")}
+         |
+         |""".stripMargin
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << " Mark the definition as public." << NewLine
-    }
+    override def explain: String = s"${underline("Tip:")} Mark the definition as public."
+
   }
 
   /**
-    * Recursion Limit Error.
-    *
-    * @param ident the type alias symbol.
-    * @param limit the current recursion limit.
-    * @param loc   the location where the error occurred.
-    */
+   * Recursion Limit Error.
+   *
+   * @param ident the type alias symbol.
+   * @param limit the current recursion limit.
+   * @param loc   the location where the error occurred.
+   */
   case class RecursionLimit(ident: Symbol.TypeAliasSym, limit: Int, loc: SourceLocation) extends ResolutionError {
     def summary: String = s"Recursion limit $limit reached while unfolding the ${ident.name} type alias."
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Recursion limit (" << limit << ") reached while unfolding the '" << Red(ident.name) << "' type alias." << NewLine
-      vt << NewLine
-      vt << Code(loc, "recursion limit reached.") << NewLine
-      vt << NewLine
+
+    def message: String = {
+      s"""${line(kind, source.format)}
+         |>> Recursion limit ($limit) reached while unfolding the '${red(ident.name)}' type alias.
+         |
+         |${code(loc, "recursion limit reached.")}
+         |""".stripMargin
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << "Ensure that there is no cyclic definition of type aliases." << NewLine
-    }
+    override def explain: String = "Ensure that there is no cyclic definition of type aliases."
+
   }
 
   /**
-    * An error raise to indicate a cycle in type aliases.
-    *
-    * @param path the type reference path from a type alias to itself.
-    * @param loc  the location where the error occurred.
-    */
+   * An error raise to indicate a cycle in type aliases.
+   *
+   * @param path the type reference path from a type alias to itself.
+   * @param loc  the location where the error occurred.
+   */
   case class CyclicTypeAliases(path: List[Symbol.TypeAliasSym], loc: SourceLocation) extends ResolutionError {
     private val fullCycle = path.last :: path
 
@@ -309,189 +303,203 @@ object ResolutionError {
       "Cyclic type aliases: " + pathString
     }
 
-    override def message: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      vt << Line(kind, source.format) << NewLine
-      vt << NewLine
-      vt << Code(loc, "Cyclic type aliases.") << NewLine
-      vt << NewLine
-      vt << "The following type aliases are in the cycle:" << NewLine
+    override def message: String = {
+      s"""${line(kind, source.format)}
+         |
+         |${code(loc, "Cyclic type aliases.")}
+         |
+         |The following type aliases are in the cycle:
+         |$appendCycles
+         |""".stripMargin
+    }
+
+    private def appendCycles: String = {
+      var res = ""
       for (List(subClass, superClass) <- fullCycle.sliding(2)) {
-        vt << s"$subClass references $superClass" << NewLine
+        res += s"$subClass references $superClass" + System.lineSeparator()
       }
-      vt
+      res
     }
   }
 
   /**
-    * Undefined Name Error.
-    *
-    * @param qn  the unresolved name.
-    * @param ns  the current namespace.
-    * @param loc the location where the error occurred.
-    */
+   * Undefined Name Error.
+   *
+   * @param qn  the unresolved name.
+   * @param ns  the current namespace.
+   * @param loc the location where the error occurred.
+   */
   case class UndefinedName(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Undefined name."
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Undefined name '" << Red(qn.toString) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "name not found") << NewLine
-      vt << NewLine
+
+    def message: String = {
+      s"""${line(kind, source.format)}
+         |>> Undefined name '${red(qn.toString)}'.
+         |
+         |${code(loc, "name not found")}
+         |
+         |""".stripMargin
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << " Possible typo or non-existent definition?" << NewLine
-    }
+    override def explain: String = s"${underline("Tip:")} Possible typo or non-existent definition?"
+
   }
 
   /**
-    * Undefined Sig Error.
-    *
-    * @param clazz  the class.
-    * @param sig    the unresolved sig.
-    * @param ns     the current namespace.
-    * @param loc    the location where the error occurred.
-    */
+   * Undefined Sig Error.
+   *
+   * @param clazz the class.
+   * @param sig   the unresolved sig.
+   * @param ns    the current namespace.
+   * @param loc   the location where the error occurred.
+   */
   case class UndefinedSig(clazz: Name.QName, sig: Name.Ident, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Undefined signature."
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Undefined signature '" << Red(sig.name) << "' in class '" << Red(clazz.toString) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "signature not found") << NewLine
-      vt << NewLine
+
+    def message: String = {
+      s"""${line(kind, source.format)}
+         |>> Undefined signature '${red(sig.name)}' in class '${red(clazz.toString)}'.
+         |
+         |${code(loc, "signature not found")}
+         |
+         |""".stripMargin
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << " Possible typo or non-existent class or signature?" << NewLine
-    }
+    override def explain: String = s"${underline("Tip:")} Possible typo or non-existent class or signature?"
+
   }
 
   /**
-    * Undefined Class Error.
-    *
-    * @param qn  the unresolved class.
-    * @param ns  the current namespace.
-    * @param loc the location where the error occurred.
-    */
+   * Undefined Class Error.
+   *
+   * @param qn  the unresolved class.
+   * @param ns  the current namespace.
+   * @param loc the location where the error occurred.
+   */
   case class UndefinedClass(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Undefined class."
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Undefined class '" << Red(qn.toString) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "class not found") << NewLine
-      vt << NewLine
+
+    def message: String = {
+      s"""${line(kind, source.format)}
+         |>> Undefined class '${red(qn.toString)}'.
+         |
+         |${code(loc, "class not found")}
+         |
+         |""".stripMargin
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << " Possible typo or non-existent class?" << NewLine
-    }
+    override def explain: String = s"${underline("Tip:")} Possible typo or non-existent class?"
+
   }
 
   /**
-    * Undefined Tag Error.
-    *
-    * @param tag the tag.
-    * @param ns  the current namespace.
-    * @param loc the location where the error occurred.
-    */
+   * Undefined Tag Error.
+   *
+   * @param tag the tag.
+   * @param ns  the current namespace.
+   * @param loc the location where the error occurred.
+   */
   case class UndefinedTag(tag: String, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Undefined tag."
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Undefined tag '" << Red(tag) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "tag not found.") << NewLine
-      vt << NewLine
+
+    def message: String = {
+      s"""${line(kind, source.format)}
+         |>> Undefined tag '${red(tag)}'.
+         |
+         |${code(loc, "tag not found.")}
+         |
+         |""".stripMargin
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << " Possible typo or non-existent tag?" << NewLine
-    }
+    override def explain: String = s"${underline("Tip:")} Possible typo or non-existent tag?"
+
   }
 
   /**
-    * Undefined Type Error.
-    *
-    * @param qn  the name.
-    * @param ns  the current namespace.
-    * @param loc the location where the error occurred.
-    */
+   * Undefined Type Error.
+   *
+   * @param qn  the name.
+   * @param ns  the current namespace.
+   * @param loc the location where the error occurred.
+   */
   case class UndefinedType(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Undefined type"
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Undefined type '" << Red(qn.toString) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "type not found.") << NewLine
-      vt << NewLine
+
+    def message: String = {
+      s"""${line(kind, source.format)}
+         |>> Undefined type '${red(qn.toString)}'.
+         |
+         |${code(loc, "type not found.")}
+         |
+         |""".stripMargin
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << " Possible typo or non-existent type?" << NewLine
-    }
+    override def explain: String = s"${underline("Tip:")} Possible typo or non-existent type?"
+
   }
 
   /**
-    * An error raised to indicate that the class name was not found.
-    *
-    * @param name the class name.
-    * @param loc  the location of the class name.
-    */
+   * An error raised to indicate that the class name was not found.
+   *
+   * @param name the class name.
+   * @param loc  the location of the class name.
+   */
   case class UndefinedJvmClass(name: String, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Undefined class."
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Undefined class '" << Red(name) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "undefined class.") << NewLine
+
+    def message: String = {
+      s"""${line(kind, source.format)}
+         |>> Undefined class '${red(name)}'.
+         |
+         |${code(loc, "undefined class.")}
+         |""".stripMargin
     }
   }
 
   /**
-    * An error raised to indicate that a matching constructor was not found.
-    *
-    * @param className    the class name.
-    * @param signature    the signature of the constructor.
-    * @param constructors the constructors in the class.
-    * @param loc          the location of the constructor name.
-    */
+   * An error raised to indicate that a matching constructor was not found.
+   *
+   * @param className    the class name.
+   * @param signature    the signature of the constructor.
+   * @param constructors the constructors in the class.
+   * @param loc          the location of the constructor name.
+   */
   case class UndefinedJvmConstructor(className: String, signature: List[Class[_]], constructors: List[Constructor[_]], loc: SourceLocation) extends ResolutionError {
     def summary: String = "Undefined constructor."
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Undefined constructor in class '" << Cyan(className) << "' with the given signature." << NewLine
-      vt << NewLine
-      vt << Code(loc, "undefined constructor.") << NewLine
-      vt << "No constructor matches the signature:" << NewLine
-      vt << "  " << className << "(" << signature.map(_.toString).mkString(",") << ")" << NewLine << NewLine
-      vt << "Available constructors:" << NewLine
+
+    def message: String = {
+      s"""${line(kind, source.format)}
+         |>> Undefined constructor in class '${cyan(className)}' with the given signature.
+         |
+         |${code(loc, "undefined constructor.")}
+         |No constructor matches the signature:
+         |  $className (${signature.map(_.toString).mkString(",")})
+         |
+         |Available constructors:
+         |$appendConstructors
+         |""".stripMargin
+    }
+
+
+    private def appendConstructors: String = {
+      var res = ""
       for (constructor <- constructors) {
-        vt << "  " << stripAccessModifier(constructor.toString) << NewLine
+        res += "  " + stripAccessModifier(constructor.toString) + System.lineSeparator()
       }
-      vt
+      res
     }
   }
 
   /**
-    * An error raised to indicate that a matching method was not found.
-    *
-    * @param className  the class name.
-    * @param methodName the method name.
-    * @param static     whether the method is static.
-    * @param signature  the signature of the method.
-    * @param methods    the methods of the class.
-    * @param loc        the location of the method name.
-    */
+   * An error raised to indicate that a matching method was not found.
+   *
+   * @param className  the class name.
+   * @param methodName the method name.
+   * @param static     whether the method is static.
+   * @param signature  the signature of the method.
+   * @param methods    the methods of the class.
+   * @param loc        the location of the method name.
+   */
   case class UndefinedJvmMethod(className: String, methodName: String, static: Boolean, signature: List[Class[_]], methods: List[Method], loc: SourceLocation) extends ResolutionError {
     def summary: String = {
       if (!static) {
@@ -501,35 +509,38 @@ object ResolutionError {
       }
     }
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      if (!static) {
-        vt << ">> Undefined " << Magenta("object") << " method '" << Red(methodName) << "' in class '" << Cyan(className) << "." << NewLine
-      } else {
-        vt << ">> Undefined " << Magenta("static") << " method '" << Red(methodName) << "' in class '" << Cyan(className) << "." << NewLine
-      }
-      vt << NewLine
-      vt << Code(loc, "undefined method.") << NewLine
-      vt << "No method matches the signature:" << NewLine
-      vt << "  " << methodName << "(" << signature.map(_.toString).mkString(",") << ")" << NewLine << NewLine
-      vt << "Available methods:" << NewLine
-      for (method <- methods) {
-        vt << "  " << stripAccessModifier(method.toString) << NewLine
-      }
-      vt
+    def message: String = {
+      s"""${line(kind, source.format)}
+         |>> Undefined ${magenta(keyword)} method '${red(methodName)}' in class '${cyan(className)}'.
+         |
+         |${code(loc, "undefined method.")}
+         |No method matches the signature:
+         |  $methodName(${signature.map(_.toString).mkString(",")})
+         |
+         |
+         |Available methods:
+         |$appendMethods
+         |""".stripMargin
+    }
+
+    private def keyword: String = {
+      if (static) "static" else "object"
+    }
+
+    private def appendMethods: String = {
+      methods.map(m => "  " + stripAccessModifier(m.toString) + System.lineSeparator()).mkString
     }
   }
 
   /**
-    * An error raised to indicate that the field name was not found.
-    *
-    * @param className the class name.
-    * @param fieldName the field name.
-    * @param static    whether the field is static.
-    * @param fields    the fields of the class.
-    * @param loc       the location of the method name.
-    */
+   * An error raised to indicate that the field name was not found.
+   *
+   * @param className the class name.
+   * @param fieldName the field name.
+   * @param static    whether the field is static.
+   * @param fields    the fields of the class.
+   * @param loc       the location of the method name.
+   */
   case class UndefinedJvmField(className: String, fieldName: String, static: Boolean, fields: List[Field], loc: SourceLocation) extends ResolutionError {
     def summary: String = {
       if (!static) {
@@ -539,30 +550,31 @@ object ResolutionError {
       }
     }
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      if (!static) {
-        vt << ">> Undefined " << Magenta("object") << " field '" << Red(fieldName) << "' in class '" << Cyan(className) << "." << NewLine
-      } else {
-        vt << ">> Undefined " << Magenta("static") << " field '" << Red(fieldName) << "' in class '" << Cyan(className) << "." << NewLine
-      }
-      vt << NewLine
-      vt << Code(loc, "undefined field.") << NewLine
-      vt << "Available fields:" << NewLine
-      for (field <- fields) {
-        vt << "  " << stripAccessModifier(field.toString) << NewLine
-      }
-      vt
+    def message: String = {
+      s"""${line(kind, source.format)}
+         |>> Undefined ${magenta(keyword)} field '${red(fieldName)}' in class '${cyan(className)}'.
+         |
+         |${code(loc, "undefined field.")}
+         |Available fields:
+         |$appendFields
+         |""".stripMargin
+    }
+
+    private def keyword: String = {
+      if (static) "static" else "object"
+    }
+
+    private def appendFields: String = {
+      fields.map(f => "  " + stripAccessModifier(f.toString) + System.lineSeparator()).mkString
     }
   }
 
   /**
-    * An error raise to indicate a cycle in the class hierarchy.
-    *
-    * @param path the super class path from a class to itself.
-    * @param loc  the location where the error occurred.
-    */
+   * An error raise to indicate a cycle in the class hierarchy.
+   *
+   * @param path the super class path from a class to itself.
+   * @param loc  the location where the error occurred.
+   */
   case class CyclicClassHierarchy(path: List[Symbol.ClassSym], loc: SourceLocation) extends ResolutionError {
     private val fullCycle = path.last :: path
 
@@ -571,98 +583,99 @@ object ResolutionError {
       "Cyclic inheritance: " + pathString
     }
 
-    override def message: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      vt << Line(kind, source.format) << NewLine
-      vt << NewLine
-      vt << Code(loc, "Cyclic inheritance.") << NewLine
-      vt << NewLine
-      vt << "The following classes are in the cycle:" << NewLine
+    override def message: String = {
+      s"""${line(kind, source.format)}
+         |
+         |${code(loc, "Cyclic inheritance.")}
+         |
+         |The following classes are in the cycle:
+         |
+         |$cyclicClasses
+         |""".stripMargin
+    }
+
+    private def cyclicClasses: String = {
+      var res = ""
       for (List(subClass, superClass) <- fullCycle.sliding(2)) {
-        vt << s"$subClass extends $superClass" << NewLine
+        res += s"$subClass extends $superClass" + System.lineSeparator()
       }
-      vt
+      res
     }
   }
 
   /**
-    * An error raised to indicate a duplicate derivation.
-    *
-    * @param sym  the class symbol of the duplicate derivation.
-    * @param loc1 the location of the first occurrence.
-    * @param loc2 the location of the second occurrence.
-    */
+   * An error raised to indicate a duplicate derivation.
+   *
+   * @param sym  the class symbol of the duplicate derivation.
+   * @param loc1 the location of the first occurrence.
+   * @param loc2 the location of the second occurrence.
+   */
   case class DuplicateDerivation(sym: Symbol.ClassSym, loc1: SourceLocation, loc2: SourceLocation) extends ResolutionError {
     override def summary: String = s"Duplicate derivation: ${sym.name}"
 
-    override def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Duplicate derivation '" << Red(sym.name) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc1, "the first occurrence was here.") << NewLine
-      vt << NewLine
-      vt << Code(loc2, "the second occurrence was here.") << NewLine
-      vt << NewLine
+    override def message: String = {
+      s"""${line(kind, source.format)}
+         |>> Duplicate derivation '${red(sym.name)}'.
+         |
+         |${code(loc1, "the first occurrence was here.")}
+         |
+         |${code(loc2, "the second occurrence was here.")}
+         |
+         |""".stripMargin
     }
 
     override def loc: SourceLocation = loc1
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << " Remove one of the occurrences." << NewLine
-    }
+    override def explain: String = s"${underline("Tip:")} Remove one of the occurrences."
+
   }
 
   /**
-    * An error raised to indicate an illegal derivation.
-    *
-    * @param sym       the class symbol of the illegal derivation.
-    * @param legalSyms the list of class symbols of legal derivations.
-    * @param loc       the location where the error occurred.
-    */
+   * An error raised to indicate an illegal derivation.
+   *
+   * @param sym       the class symbol of the illegal derivation.
+   * @param legalSyms the list of class symbols of legal derivations.
+   * @param loc       the location where the error occurred.
+   */
   case class IllegalDerivation(sym: Symbol.ClassSym, legalSyms: List[Symbol.ClassSym], loc: SourceLocation) extends ResolutionError {
     override def summary: String = s"Illegal derivation: ${sym.name}"
 
-    override def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Illegal derivation '" << Red(sym.name) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "Illegal derivation.")
-      vt << NewLine
+    override def message: String = {
+      s"""${line(kind, source.format)}
+         |>> Illegal derivation '${red(sym.name)}'.
+         |
+         |${code(loc, "Illegal derivation.")}
+         |""".stripMargin
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << s" Only the following classes may be derived: ${legalSyms.map(_.name).mkString(", ")}." << NewLine
-    }
+    override def explain: String = s"${underline("Tip:")} Only the following classes may be derived: ${legalSyms.map(_.name).mkString(", ")}."
+
   }
 
   /**
-    * An error raised to indicate an under-applied type alias.
-    *
-    * @param sym the type alias.
-    * @param loc the location where the error occurred.
-    */
+   * An error raised to indicate an under-applied type alias.
+   *
+   * @param sym the type alias.
+   * @param loc the location where the error occurred.
+   */
   case class UnderAppliedTypeAlias(sym: Symbol.TypeAliasSym, loc: SourceLocation) extends ResolutionError {
     override def summary: String = s"Under-applied type alias: ${sym.name}"
 
-    override def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Under-applied type alias '" << Red(sym.name) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "Under-applied type alias.")
-      vt << NewLine
+    override def message: String = {
+      s"""${line(kind, source.format)}
+         |>> Under-applied type alias '${red(sym.name)}'.
+         |
+         |${code(loc, "Under-applied type alias.")}
+         |""".stripMargin
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << " Type aliases must be fully applied." << NewLine
-    }
+    override def explain: String = s"${underline("Tip:")} Type aliases must be fully applied."
+
   }
 
   /**
-    * Removes all access modifiers from the given string `s`.
-    */
+   * Removes all access modifiers from the given string `s`.
+   */
   private def stripAccessModifier(s: String): String =
     s.replace("public", "").
       replace("protected", "").
