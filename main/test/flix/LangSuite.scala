@@ -287,6 +287,7 @@ class LangSuite extends Suites(
   // Reify.
   //
   new FlixTest("Test.Exp.Reify", "main/test/flix/Test.Exp.Reify.flix"),
+  new FlixTest("Test.Exp.ReifyType", "main/test/flix/Test.Exp.ReifyType.flix"),
 
   //
   // Tag.
