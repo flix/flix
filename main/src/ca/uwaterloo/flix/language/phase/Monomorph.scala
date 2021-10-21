@@ -625,6 +625,11 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       // Unify the declared and actual type to obtain the substitution map.
       val subst = StrictSubstitution(Unification.unifyTypes(defn.impl.inferredScheme.base, tpe).get)
 
+      // TODO: Need to compute the erasure of tpe.
+      // TODO: Must still account for Boolean variables that may be free.
+      // TODO: Inside a function it is possible for a sequence of expressions to have free variables.
+      // TODO: Would this perhaps show up in the inferred type?
+
       // Check whether the function definition has already been specialized.
       def2def.get((defn.sym, tpe)) match {
         case None =>
