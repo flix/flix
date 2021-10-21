@@ -327,19 +327,19 @@ namespace TestDemandList {
 
     @test
     def foldLeft01(): Bool =
-    	DemandList.foldLeft((i, e) -> (i - e) * (e % 2 + 1), 100, DemandList.empty()) == 100
+    	DemandList.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, DemandList.empty()) == 100
 
     @test
     def foldLeft02(): Bool =
-    	(1 :: Nil) |> List.toDemandList |> DemandList.foldLeft((i, e) -> (i - e) * (e % 2 + 1), 100) == 198
+    	(1 :: Nil) |> List.toDemandList |> DemandList.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100) == 198
 
     @test
     def foldLeft03(): Bool =
-    	(1 :: 2 :: Nil) |> List.toDemandList |> DemandList.foldLeft((i, e) -> (i - e) * (e % 2 + 1), 100) == 196
+    	(1 :: 2 :: Nil) |> List.toDemandList |> DemandList.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100) == 196
 
     @test
     def foldLeft04(): Bool =
-    	(1 :: 2 :: 3 :: Nil) |> List.toDemandList |> DemandList.foldLeft((i, e) -> (i - e) * (e % 2 + 1), 100) == 386
+    	(1 :: 2 :: 3 :: Nil) |> List.toDemandList |> DemandList.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100) == 386
 
     @test
     def foldLeft05(): Bool =
@@ -352,19 +352,19 @@ namespace TestDemandList {
 
     @test
     def foldRight01(): Bool =
-    	DemandList.foldRight((e, i) -> (i - e) * (e % 2 + 1), 100, DemandList.empty()) == 100
+    	DemandList.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, DemandList.empty()) == 100
 
     @test
     def foldRight02(): Bool =
-    	(1 :: Nil) |> List.toDemandList |> DemandList.foldRight((e, i) -> (i - e) * (e % 2 + 1), 100) == 198
+    	(1 :: Nil) |> List.toDemandList |> DemandList.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100) == 198
 
     @test
     def foldRight03(): Bool =
-    	(1 :: 2 :: Nil) |> List.toDemandList |> DemandList.foldRight((e, i) -> (i - e) * (e % 2 + 1), 100) == 194
+    	(1 :: 2 :: Nil) |> List.toDemandList |> DemandList.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100) == 194
 
     @test
     def foldRight04(): Bool =
-    	(1 :: 2 :: 3 :: Nil) |> List.toDemandList |> DemandList.foldRight((e, i) -> (i - e) * (e % 2 + 1), 100) == 382
+    	(1 :: 2 :: 3 :: Nil) |> List.toDemandList |> DemandList.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100) == 382
 
     @test
     def foldRight05(): Bool =

@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.errors.LinterError
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.{Options, Validation}
@@ -338,6 +338,6 @@ class TestLinter extends FunSuite with TestUtils {
     expectError[LinterError.Lint](result)
   }
 
-  private def run(s: String): Validation[CompilationResult, CompilationError] = new Flix().setOptions(DefaultOptions).addStr(s).compile()
+  private def run(s: String): Validation[CompilationResult, CompilationMessage] = new Flix().setOptions(DefaultOptions).addStr(s).compile()
 
 }

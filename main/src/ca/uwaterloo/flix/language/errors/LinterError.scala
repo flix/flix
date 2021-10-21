@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.Expression
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.debug.PrettyExpression
@@ -10,7 +10,7 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
 /**
   * A common super-type for trivial errors.
   */
-sealed trait LinterError extends CompilationError {
+sealed trait LinterError extends CompilationMessage {
   val kind = "Lint"
 }
 

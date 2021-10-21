@@ -510,7 +510,7 @@ namespace Array {
     ///
     def rotateLeftHelper(n: Int32, a: Array[a]): Array[a] & Impure =
         let len = length(a);
-        let f = i -> { let i1 = n + i; a[i1 % len] };
+        let f = i -> { let i1 = n + i; a[i1 rem len] };
         init(f, len)
 
     ///
@@ -533,9 +533,9 @@ namespace Array {
     ///
     def rotateRightHelper(n: Int32, a: Array[a]): Array[a] & Impure =
         let len = length(a);
-        let n1 = n % len;
+        let n1 = n rem len;
         let start = len - n1;
-        let f = i -> { let i1 = start + i; a[i1 % len]};
+        let f = i -> { let i1 = start + i; a[i1 rem len]};
         init(f, len)
 
     ///
