@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
 import ca.uwaterloo.flix.util.vt.VirtualString._
@@ -27,7 +27,7 @@ import java.lang.reflect.{Constructor, Field, Method}
 /**
   * A common super-type for resolution errors.
   */
-sealed trait ResolutionError extends CompilationError {
+sealed trait ResolutionError extends CompilationMessage {
   def kind = "Resolution Error"
 }
 
@@ -107,7 +107,11 @@ object ResolutionError {
       for (l <- locs) {
         vt << Code(l, "tag is defined in this enum.") << NewLine
       }
-      vt << Underline("Tip:") << " Prefix the tag with the enum name." << NewLine
+      vt << NewLine
+    }
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << " Prefix the tag with the enum name." << NewLine
     }
   }
 
@@ -146,7 +150,10 @@ object ResolutionError {
       vt << NewLine
       vt << Code(loc, "inaccessible class.") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << " Mark the class as public." << NewLine
+    }
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << " Mark the class as public." << NewLine
     }
   }
 
@@ -166,7 +173,10 @@ object ResolutionError {
       vt << NewLine
       vt << Code(loc, "sealed class.") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << " Move the instance or sub class to the class's namespace." << NewLine
+    }
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << " Move the instance or sub class to the class's namespace." << NewLine
     }
   }
 
@@ -186,7 +196,10 @@ object ResolutionError {
       vt << NewLine
       vt << Code(loc, "inaccessible definition.") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << " Mark the definition as public." << NewLine
+    }
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << " Mark the definition as public." << NewLine
     }
   }
 
@@ -206,7 +219,10 @@ object ResolutionError {
       vt << NewLine
       vt << Code(loc, "inaccessible definition.") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << " Mark the definition as public." << NewLine
+    }
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << " Mark the definition as public." << NewLine
     }
   }
 
@@ -226,7 +242,10 @@ object ResolutionError {
       vt << NewLine
       vt << Code(loc, "inaccessible enum.") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << " Mark the definition as public." << NewLine
+    }
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << " Mark the definition as public." << NewLine
     }
   }
 
@@ -246,7 +265,10 @@ object ResolutionError {
       vt << NewLine
       vt << Code(loc, "inaccessible type alias.") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << " Mark the definition as public." << NewLine
+    }
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << " Mark the definition as public." << NewLine
     }
   }
 
@@ -266,7 +288,10 @@ object ResolutionError {
       vt << NewLine
       vt << Code(loc, "recursion limit reached.") << NewLine
       vt << NewLine
-      vt << "Ensure that there is no cyclic definition of type aliases."
+    }
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << "Ensure that there is no cyclic definition of type aliases." << NewLine
     }
   }
 
@@ -314,7 +339,10 @@ object ResolutionError {
       vt << NewLine
       vt << Code(loc, "name not found") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << " Possible typo or non-existent definition?" << NewLine
+    }
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << " Possible typo or non-existent definition?" << NewLine
     }
   }
 
@@ -335,7 +363,10 @@ object ResolutionError {
       vt << NewLine
       vt << Code(loc, "signature not found") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << " Possible typo or non-existent class or signature?" << NewLine
+    }
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << " Possible typo or non-existent class or signature?" << NewLine
     }
   }
 
@@ -355,7 +386,10 @@ object ResolutionError {
       vt << NewLine
       vt << Code(loc, "class not found") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << " Possible typo or non-existent class?" << NewLine
+    }
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << " Possible typo or non-existent class?" << NewLine
     }
   }
 
@@ -375,7 +409,10 @@ object ResolutionError {
       vt << NewLine
       vt << Code(loc, "tag not found.") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << " Possible typo or non-existent tag?" << NewLine
+    }
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << " Possible typo or non-existent tag?" << NewLine
     }
   }
 
@@ -395,7 +432,10 @@ object ResolutionError {
       vt << NewLine
       vt << Code(loc, "type not found.") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << " Possible typo or non-existent type?" << NewLine
+    }
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << " Possible typo or non-existent type?" << NewLine
     }
   }
 
@@ -564,10 +604,13 @@ object ResolutionError {
       vt << NewLine
       vt << Code(loc2, "the second occurrence was here.") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << " Remove one of the occurrences." << NewLine
     }
 
     override def loc: SourceLocation = loc1
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << " Remove one of the occurrences." << NewLine
+    }
   }
 
   /**
@@ -587,7 +630,10 @@ object ResolutionError {
       vt << NewLine
       vt << Code(loc, "Illegal derivation.")
       vt << NewLine
-      vt << Underline("Tip:") << s" Only the following classes may be derived: ${legalSyms.map(_.name).mkString(", ")}."
+    }
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << s" Only the following classes may be derived: ${legalSyms.map(_.name).mkString(", ")}." << NewLine
     }
   }
 
@@ -607,7 +653,10 @@ object ResolutionError {
       vt << NewLine
       vt << Code(loc, "Under-applied type alias.")
       vt << NewLine
-      vt << Underline("Tip:") << " Type aliases must be fully applied."
+    }
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << " Type aliases must be fully applied." << NewLine
     }
   }
 

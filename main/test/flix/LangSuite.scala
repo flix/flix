@@ -329,7 +329,6 @@ class LangSuite extends Suites(
     "main/test/flix/Test.Predicate.Filter.flix",
     "main/test/flix/Test.Predicate.Guard.flix",
     "main/test/flix/Test.Predicate.Nullary.flix",
-    // "main/test/flix/Test.Predicate.Union.flix" // TODO
   ), Options.TestWithLibAll),
 
   //
