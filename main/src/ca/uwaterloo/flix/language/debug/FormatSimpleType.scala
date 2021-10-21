@@ -43,19 +43,24 @@ object FormatSimpleType {
       val strings = tpes.map(format).padTo(2, "?")
       strings.mkString(" or ")
     case SimpleType.RelationConstructor => "Relation" // MATT ?
-    case SimpleType.Relation(tpes) => ???
+    case SimpleType.Relation(tpes) =>
+      val terms = tpes.map(format).mkString(", ")
+      s"Relation($terms)"
     case SimpleType.LatticeConstructor => "Lattice" // MATT ?
-    case SimpleType.Lattice(tpes) => ???
+    case SimpleType.Lattice(tpes) =>
+      val lat = format(tpes.last)
+      val terms = tpes.init.map(format).mkString(", ")
+      s"Lattice($terms; $lat)"
     case SimpleType.ArrowConstructor(arity) =>
       val params = Iterable.fill(arity - 1)("?").mkString("(", ", ", ")")
       s"$params -> ? & ?"
     case SimpleType.PartialPureArrow(arity, tpes) =>
       val params = tpes.map(format).padTo(arity - 1, "?").mkString("(", ", ", ")")
       s"$params -> ?"
-    case SimpleType.PartialImpureArrow(arity, tpes) => ???
+    case SimpleType.PartialImpureArrow(arity, tpes) =>
       val params = tpes.map(format).padTo(arity - 1, "?").mkString("(", ", ", ")")
       s"$params ~> ?"
-    case SimpleType.PartialPolyArrow(arity, tpes, eff) => ???
+    case SimpleType.PartialPolyArrow(arity, tpes, eff) =>
       val params = tpes.map(format).padTo(arity - 1, "?").mkString("(", ", ", ")")
       val effString = format(eff)
       s"$params -> ? & $effString"
@@ -63,11 +68,11 @@ object FormatSimpleType {
       val params = args.mkString("(", ", ", ")")
       val retString = format(ret)
       s"$params -> $retString"
-    case SimpleType.ImpureArrow(args, ret) => ???
+    case SimpleType.ImpureArrow(args, ret) =>
       val params = args.mkString("(", ", ", ")")
       val retString = format(ret)
       s"$params ~> $retString"
-    case SimpleType.PolyArrow(args, ret, eff) => ???
+    case SimpleType.PolyArrow(args, ret, eff) =>
       val params = args.mkString("(", ", ", ")")
       val retString = format(ret)
       val effString = format(eff)
