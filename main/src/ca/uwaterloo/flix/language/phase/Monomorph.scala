@@ -825,17 +825,16 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val tag = Name.Tag("ReifiedInt64", loc)
           Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
 
-        case TypeConstructor.Str =>
-          val tag = Name.Tag("ErasedType", loc)
-          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
-
         case TypeConstructor.Array =>
           val tag = Name.Tag("ReifiedArray", loc)
           val innerTpe = t0.typeArguments.head
           val innerExp = visit(innerTpe)
           Expression.Tag(sym, tag, innerExp, resultTpe, resultEff, loc)
 
-        case other => throw ReifyTypeException(tpe, loc)
+        case other =>
+          val tag = Name.Tag("ErasedType", loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+
       }
     }
 

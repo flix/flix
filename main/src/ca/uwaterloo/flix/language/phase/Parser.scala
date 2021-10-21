@@ -977,7 +977,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def ConstraintSingleton: Rule1[ParsedAst.Expression] = rule {
-      SP ~ Constraint ~ SP ~> ParsedAst.Expression.FixpointConstraint
+      atomic("#") ~ optWS ~ SP ~ Constraint ~ SP ~> ParsedAst.Expression.FixpointConstraint
     }
 
     def ConstraintSet: Rule1[ParsedAst.Expression] = rule {

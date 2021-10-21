@@ -34,26 +34,26 @@ def testNew03(): Bool & Impure = Array.new(42, 10)[9] == 42
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def testGet01(): Bool & Impure = Array.get([1, 2, 3], 0) == 1
+def testGet01(): Bool & Impure = Array.get(0, [1, 2, 3]) == 1
 
 @test
-def testGet02(): Bool & Impure = Array.get([1, 2, 3], 1) == 2
+def testGet02(): Bool & Impure = Array.get(1, [1, 2, 3]) == 2
 
 @test
-def testGet03(): Bool & Impure = Array.get([1, 2, 3], 2) == 3
+def testGet03(): Bool & Impure = Array.get(2, [1, 2, 3]) == 3
 
 /////////////////////////////////////////////////////////////////////////////
 // put                                                                     //
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def testPut01(): Bool & Impure = Array.put([1], 0, 42)[0] == 42
+def testPut01(): Bool & Impure = Array.put(42, 0, [1])[0] == 42
 
 @test
-def testPut02(): Bool & Impure = Array.put([1, 2], 1, 42)[1] == 42
+def testPut02(): Bool & Impure = Array.put(42, 1, [1, 2])[1] == 42
 
 @test
-def testPut03(): Bool & Impure = Array.put([1, 2, 3], 2, 42)[2] == 42
+def testPut03(): Bool & Impure = Array.put(42, 2, [1, 2, 3])[2] == 42
 
 /////////////////////////////////////////////////////////////////////////////
 // isEmpty                                                                 //
@@ -86,13 +86,13 @@ def testLength03(): Bool & Impure = Array.length([1, 2, 3]) == 3
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def testSlice01(): Bool & Impure = Array.slice([1, 2, 3], 0, 1)[0] == 1
+def testSlice01(): Bool & Impure = Array.slice(0, 1, [1, 2, 3])[0] == 1
 
 @test
-def testSlice02(): Bool & Impure = Array.slice([1, 2, 3], 1, 2)[0] == 2
+def testSlice02(): Bool & Impure = Array.slice(1, 2, [1, 2, 3])[0] == 2
 
 @test
-def testSlice03(): Bool & Impure = Array.slice([1, 2, 3], 2, 3)[0] == 3
+def testSlice03(): Bool & Impure = Array.slice(2, 3, [1, 2, 3])[0] == 3
 
 /////////////////////////////////////////////////////////////////////////////
 // toList                                                                  //
@@ -4151,8 +4151,8 @@ def sortWith13!(): Bool & Impure =
 /////////////////////////////////////////////////////////////////////////////
 
 def testSort!VsSortWith!(a: Array[Int32]) : Bool & Impure =
-    let b = Array.slice(a, 0, Array.length(a));
-    let c = Array.slice(a, 0, Array.length(a));
+    let b = Array.slice(0, Array.length(a), a);
+    let c = Array.slice(0, Array.length(a), a);
     Array.sort!(b);
     Array.sortWith!(cmp, c);
     b == c
@@ -4241,8 +4241,8 @@ def sortBy10(): Bool & Impure =
 /////////////////////////////////////////////////////////////////////////////
 
 def testSortBy!VsSortBy(a: Array[Int32]) : Bool & Impure =
-    let b = Array.slice(a, 0, Array.length(a));
-    let c = Array.slice(a, 0, Array.length(a));
+    let b = Array.slice(0, Array.length(a), a);
+    let c = Array.slice(0, Array.length(a), a);
     Array.sortBy!(identity, b);
     Array.sortBy!(x -> 4*x+7, c);
     (b == Array.sortBy(x -> 4*x+7, a)) and
@@ -4365,5 +4365,152 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
     def toLazyList04(): Bool & Impure =
         Array.range(-1000, 1000) |> Array.toLazyList |> LazyList.toArray == Array.range(-1000, 1000)
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // copyOfRange                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def copyOfRange01(): Bool & Impure =
+        Array.copyOfRange(0, 3, [true, false, true]) == [true, false, true]
+
+    @test
+    def copyOfRange02(): Bool & Impure =
+        Array.copyOfRange(1, 3, [true, false, true]) == [false, true]
+
+    @test
+    def copyOfRange03(): Bool & Impure =
+        let a = Array.copyOfRange(2, 5, [true, false, true]);
+        Array.length(a) == 3 and Array.memberOf(true, a)
+
+    @test
+    def copyOfRange04(): Bool & Impure =
+        Array.copyOfRange(0, 3, ['a', 'b', 'c']) == ['a', 'b', 'c']
+
+    @test
+    def copyOfRange05(): Bool & Impure =
+        Array.copyOfRange(1, 3, ['a', 'b', 'c']) == ['b', 'c']
+
+    @test
+    def copyOfRange06(): Bool & Impure =
+        let a = Array.copyOfRange(2, 5, ['a', 'b', 'c']);
+        Array.length(a) == 3 and Array.memberOf('c', a)
+
+    @test
+    def copyOfRange07(): Bool & Impure =
+        Array.copyOfRange(0, 3, [1.0f32, 2.0f32, 3.0f32]) == [1.0f32, 2.0f32, 3.0f32]
+
+    @test
+    def copyOfRange08(): Bool & Impure =
+        Array.copyOfRange(1, 3, [1.0f32, 2.0f32, 3.0f32]) == [2.0f32, 3.0f32]
+
+    @test
+    def copyOfRange09(): Bool & Impure =
+        let a = Array.copyOfRange(2, 5, [1.0f32, 2.0f32, 3.0f32]);
+        Array.length(a) == 3 and Array.memberOf(3.0f32, a)
+
+    @test
+    def copyOfRange10(): Bool & Impure =
+        Array.copyOfRange(0, 3, [1.0f64, 2.0f64, 3.0f64]) == [1.0f64, 2.0f64, 3.0f64]
+
+    @test
+    def copyOfRange11(): Bool & Impure =
+        Array.copyOfRange(1, 3, [1.0f64, 2.0f64, 3.0f64]) == [2.0f64, 3.0f64]
+
+    @test
+    def copyOfRange12(): Bool & Impure =
+        let a = Array.copyOfRange(2, 5, [1.0f64, 2.0f64, 3.0f64]);
+        Array.length(a) == 3 and Array.memberOf(3.0f64, a)
+
+    @test
+    def copyOfRange13(): Bool & Impure =
+        Array.copyOfRange(0, 3, [1i8, 2i8, 3i8]) == [1i8, 2i8, 3i8]
+
+    @test
+    def copyOfRange14(): Bool & Impure =
+        Array.copyOfRange(1, 3, [1i8, 2i8, 3i8]) == [2i8, 3i8]
+
+    @test
+    def copyOfRange15(): Bool & Impure =
+        let a = Array.copyOfRange(2, 5, [1i8, 2i8, 3i8]);
+        Array.length(a) == 3 and Array.memberOf(3i8, a)
+
+    @test
+    def copyOfRange16(): Bool & Impure =
+        Array.copyOfRange(0, 3, [1i16, 2i16, 3i16]) == [1i16, 2i16, 3i16]
+
+    @test
+    def copyOfRange17(): Bool & Impure =
+        Array.copyOfRange(1, 3, [1i16, 2i16, 3i16]) == [2i16, 3i16]
+
+    @test
+    def copyOfRange18(): Bool & Impure =
+        let a = Array.copyOfRange(2, 5, [1i16, 2i16, 3i16]);
+        Array.length(a) == 3 and Array.memberOf(3i16, a)
+
+    @test
+    def copyOfRange19(): Bool & Impure =
+        Array.copyOfRange(0, 3, [1, 2, 3]) == [1, 2, 3]
+
+    @test
+    def copyOfRange20(): Bool & Impure =
+        Array.copyOfRange(1, 3, [1, 2, 3]) == [2, 3]
+
+    @test
+    def copyOfRange21(): Bool & Impure =
+        let a = Array.copyOfRange(2, 5, [1, 2, 3]);
+        Array.length(a) == 3 and Array.memberOf(3, a)
+
+    @test
+    def copyOfRange22(): Bool & Impure =
+        Array.copyOfRange(0, 3, [1i64, 2i64, 3i64]) == [1i64, 2i64, 3i64]
+
+    @test
+    def copyOfRange23(): Bool & Impure =
+        Array.copyOfRange(1, 3, [1i64, 2i64, 3i64]) == [2i64, 3i64]
+
+    @test
+    def copyOfRange24(): Bool & Impure =
+        let a = Array.copyOfRange(2, 5, [1i64, 2i64, 3i64]);
+        Array.length(a) == 3 and Array.memberOf(3i64, a)
+
+    @test
+    def copyOfRange25(): Bool & Impure =
+        Array.copyOfRange(0, 3, [['a', 'b', 'c'], ['d', 'e', 'f', 'g'], ['h']]) == [['a', 'b', 'c'], ['d', 'e', 'f', 'g'], ['h']]
+
+    @test
+    def copyOfRange26(): Bool & Impure =
+        Array.copyOfRange(1, 3, [['a', 'b', 'c'], ['d', 'e', 'f', 'g'], ['h']]) == [['d', 'e', 'f', 'g'], ['h']]
+
+    @test
+    def copyOfRange27(): Bool & Impure =
+        let a = Array.copyOfRange(2, 5, [['a', 'b', 'c'], ['d', 'e', 'f', 'g'], ['h']]);
+        Array.length(a) == 3 and Array.memberOf(['h'], a)
+
+    @test
+    def copyOfRange28(): Bool & Impure =
+        Array.copyOfRange(0, 3, [Some(1), Some(2), None]) == [Some(1), Some(2), None]
+
+    @test
+    def copyOfRange29(): Bool & Impure =
+        Array.copyOfRange(1, 3, [Some(1), Some(2), None]) == [Some(2), None]
+
+    @test
+    def copyOfRange30(): Bool & Impure =
+        let a = Array.copyOfRange(2, 5, [Some(1), Some(2), None]);
+        Array.length(a) == 3 and Array.memberOf(None, a)
+
+    @test
+    def copyOfRange31(): Bool & Impure =
+        Array.copyOfRange(0, 3, [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]]) == [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]]
+
+    @test
+    def copyOfRange32(): Bool & Impure =
+        Array.copyOfRange(1, 3, [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]]) == [[Some('d'), Some('e'), Some('f'), Some('g')], [None]]
+
+    @test
+    def copyOfRange33(): Bool & Impure =
+        let a = Array.copyOfRange(2, 5, [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]]);
+        Array.length(a) == 3 and Array.memberOf([None], a)
 
 }
