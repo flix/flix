@@ -1097,7 +1097,7 @@ namespace TestLazyList {
     def last12(): Bool =
     	LazyList.range(0, 1000) |> LazyList.last == Some(999)
 
-
+/*
     /////////////////////////////////////////////////////////////////////////////
     // toIter                                                                  //
     /////////////////////////////////////////////////////////////////////////////
@@ -1117,7 +1117,7 @@ namespace TestLazyList {
     @test
     def toIter09(): Bool & Impure =
     	LazyList.range(-100, 100) |> LazyList.toIter |> Iterator.toList == List.range(-100, 100)
-
+*/
 
     /////////////////////////////////////////////////////////////////////////////
     // zip                                                                     //
