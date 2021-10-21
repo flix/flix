@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.Ast.Input
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
-import ca.uwaterloo.flix.language.{CompilationError, GenSym}
+import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt.TerminalContext
@@ -122,7 +122,6 @@ class Flix {
     "Int16.flix" -> LocalResource.get("/src/library/Int16.flix"),
     "Int32.flix" -> LocalResource.get("/src/library/Int32.flix"),
     "Int64.flix" -> LocalResource.get("/src/library/Int64.flix"),
-    "Iterator.flix" -> LocalResource.get("/src/library/Iterator.flix"),
     "LazyList.flix" -> LocalResource.get("/src/library/LazyList.flix"),
     "DemandList.flix" -> LocalResource.get("/src/library/DemandList.flix"),
     "List.flix" -> LocalResource.get("/src/library/List.flix"),
@@ -319,7 +318,7 @@ class Flix {
   /**
     * Compiles the Flix program and returns a typed ast.
     */
-  def check(): Validation[TypedAst.Root, CompilationError] = {
+  def check(): Validation[TypedAst.Root, CompilationMessage] = {
     // Initialize fork join pool.
     initForkJoin()
 
@@ -361,7 +360,7 @@ class Flix {
   /**
     * Compiles the given typed ast to an executable ast.
     */
-  def codeGen(typedAst: TypedAst.Root): Validation[CompilationResult, CompilationError] = {
+  def codeGen(typedAst: TypedAst.Root): Validation[CompilationResult, CompilationMessage] = {
     // Initialize fork join pool.
     initForkJoin()
 
@@ -398,7 +397,7 @@ class Flix {
   /**
     * Compiles the given typed ast to an executable ast.
     */
-  def compile(): Validation[CompilationResult, CompilationError] =
+  def compile(): Validation[CompilationResult, CompilationMessage] =
     check() flatMap {
       case typedAst => codeGen(typedAst)
     }
