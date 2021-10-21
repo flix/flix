@@ -567,11 +567,10 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         t <- visitType(t0, Kind.Bool, kenv, taenv, root)
       } yield KindedAst.Expression.Reify(t, loc)
 
-    case ResolvedAst.Expression.ReifyType(t0, k, loc) =>
+    case ResolvedAst.Expression.ReifyType(t0, k0, loc) =>
       for {
-        t <- visitType(t0, Kind.Star, kenv, taenv, root)
-      } yield KindedAst.Expression.ReifyType(t, k, loc)
-
+        t <- visitType(t0, k0, kenv, taenv, root)
+      } yield KindedAst.Expression.ReifyType(t, k0, loc)
   }
 
   /**

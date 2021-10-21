@@ -1445,6 +1445,10 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
 
       case KindedAst.Expression.ReifyType(t, k, loc) =>
         k match {
+          case Kind.Bool =>
+            val sym = Symbol.mkEnumSym("ReifiedBool")
+            val tpe = Type.mkEnum(sym, Kind.Star, loc)
+            liftM(Nil, tpe, Type.Pure)
           case Kind.Star =>
             val sym = Symbol.mkEnumSym("ReifiedType")
             val tpe = Type.mkEnum(sym, Kind.Star, loc)
