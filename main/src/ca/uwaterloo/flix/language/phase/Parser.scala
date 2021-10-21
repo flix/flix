@@ -519,7 +519,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Multiplicative: Rule1[ParsedAst.Expression] = rule {
-      Compose ~ zeroOrMore(optWS ~ capture(atomic("**") | atomic("*") | atomic("/") | atomic("%")) ~ optWS ~ Compose ~ SP ~> ParsedAst.Expression.Binary)
+      Compose ~ zeroOrMore(optWS ~ capture(atomic("**") | atomic("*") | atomic("/") | atomic("mod") | atomic("rem")) ~ optWS ~ Compose ~ SP ~> ParsedAst.Expression.Binary)
     }
 
     def Compose: Rule1[ParsedAst.Expression] = rule {
@@ -977,7 +977,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def ConstraintSingleton: Rule1[ParsedAst.Expression] = rule {
-      SP ~ Constraint ~ SP ~> ParsedAst.Expression.FixpointConstraint
+      atomic("#") ~ optWS ~ SP ~ Constraint ~ SP ~> ParsedAst.Expression.FixpointConstraint
     }
 
     def ConstraintSet: Rule1[ParsedAst.Expression] = rule {

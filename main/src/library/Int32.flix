@@ -98,12 +98,12 @@ namespace Int32 {
 
     ///
     /// Returns the logical right shift of `x` by `distance`.
-    /// Only the rightmost 5 bits of `distance` are considered (ie. `distance % 32`).
+    /// Only the rightmost 5 bits of `distance` are considered (ie. `distance rem 32`).
     /// A zero is shifted into the leftmost position regardless of sign extension.
     ///
     @Time(1) @Space(1)
     pub def logicalRightShift(x: Int32, distance: Int32): Int32 =
-        if (x < 0 and distance % size() != 0)
+        if (x < 0 and distance rem size() != 0)
             ((x >>> 1) &&& maxValue()) >>> (distance - 1)
         else
             x >>> distance
@@ -115,7 +115,7 @@ namespace Int32 {
     @Time(1) @Space(1)
     pub def bitCount(x: Int32): Int32 = {
         if      (x == 0)        0
-        else if (x % 2 != 0)    bitCount(logicalRightShift(x, 1)) + 1
+        else if (x rem 2 != 0)    bitCount(logicalRightShift(x, 1)) + 1
         else                    bitCount(logicalRightShift(x, 1))
     }
 
@@ -243,7 +243,7 @@ namespace Int32 {
     ///
     @Time(1) @Space(1)
     pub def getBit(x: Int32, position: Int32): Int32 =
-        if ((x >>> position) % 2 == 0) 0 else 1
+        if ((x >>> position) rem 2 == 0) 0 else 1
 
     ///
     /// Returns `x` with the bit at position `position` set (to 1).
