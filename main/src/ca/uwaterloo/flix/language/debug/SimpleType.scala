@@ -25,6 +25,8 @@ sealed trait SimpleType
 
 object SimpleType {
 
+  // MATT add examples for anything nontrivial
+
   // Primitives
 
   case object Unit extends SimpleType
@@ -152,6 +154,7 @@ object SimpleType {
   case class Tuple(length: Int, fields: List[SimpleType]) extends SimpleType
 
 
+  // MATT docs
   def fromWellKindedType(t: Type): SimpleType = t.baseType match {
     case Type.KindedVar(id, kind, loc, rigidity, text) => Var(id, text.get) // MATT how to handle vars? alpha-renaming, etc.
     case _: Type.UnkindedVar => throw InternalCompilerException("") // MATT
@@ -263,11 +266,13 @@ object SimpleType {
     }
   }
 
+  // MATT docs
   private def mkApply(base: SimpleType, args: List[SimpleType]): SimpleType = args match {
     case Nil => base
     case _ :: _ => Apply(base, args)
   }
 
+  // MATT docs
   private def destructTuple(tpe: SimpleType): List[SimpleType] = tpe match {
     case Tuple(_, fields) => fields
     case Unit => Nil
