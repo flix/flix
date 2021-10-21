@@ -504,6 +504,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
         case Expression.ReifyType(t, k, _, _, loc) =>
           k match {
+            case Kind.Bool => reifyBool(subst0(t), loc)
             case Kind.Star => reifyType(subst0(t), loc)
             case _ => throw InternalCompilerException(s"Unexpected kind: $k.")
           }
@@ -780,6 +781,32 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       case ReifyBoolException(tpe, loc) => ReificationError.IllegalReifiedBool(tpe, loc).toFailure
       case ReifyTypeException(tpe, loc) => ReificationError.IllegalReifiedType(tpe, loc).toFailure
       case UnexpectedNonConstBool(tpe, loc) => ReificationError.UnexpectedNonConstBool(tpe, loc).toFailure
+    }
+  }
+
+  /**
+    * Returns an expression that evaluates to a ReifiedBool for the given type `tpe`.
+    */
+  private def reifyBool(tpe: Type, loc: SourceLocation): Expression = {
+    val sym = Symbol.mkEnumSym("ReifiedBool")
+    val resultTpe = Type.mkEnum(sym, Kind.Star, loc)
+    val resultEff = Type.Pure
+
+    tpe.typeConstructor match {
+      case None =>
+        throw ReifyTypeException(tpe, loc)
+
+      case Some(tc) => tc match {
+        case TypeConstructor.True =>
+          val tag = Name.Tag("ReifiedTrue", loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+
+        case TypeConstructor.False =>
+          val tag = Name.Tag("ReifiedFalse", loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+
+        case other => ??? //  TODO
+      }
     }
   }
 
