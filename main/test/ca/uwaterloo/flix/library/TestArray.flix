@@ -34,26 +34,26 @@ def testNew03(): Bool & Impure = Array.new(42, 10)[9] == 42
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def testGet01(): Bool & Impure = Array.get([1, 2, 3], 0) == 1
+def testGet01(): Bool & Impure = Array.get(0, [1, 2, 3]) == 1
 
 @test
-def testGet02(): Bool & Impure = Array.get([1, 2, 3], 1) == 2
+def testGet02(): Bool & Impure = Array.get(1, [1, 2, 3]) == 2
 
 @test
-def testGet03(): Bool & Impure = Array.get([1, 2, 3], 2) == 3
+def testGet03(): Bool & Impure = Array.get(2, [1, 2, 3]) == 3
 
 /////////////////////////////////////////////////////////////////////////////
 // put                                                                     //
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def testPut01(): Bool & Impure = Array.put([1], 0, 42)[0] == 42
+def testPut01(): Bool & Impure = Array.put(42, 0, [1])[0] == 42
 
 @test
-def testPut02(): Bool & Impure = Array.put([1, 2], 1, 42)[1] == 42
+def testPut02(): Bool & Impure = Array.put(42, 1, [1, 2])[1] == 42
 
 @test
-def testPut03(): Bool & Impure = Array.put([1, 2, 3], 2, 42)[2] == 42
+def testPut03(): Bool & Impure = Array.put(42, 2, [1, 2, 3])[2] == 42
 
 /////////////////////////////////////////////////////////////////////////////
 // isEmpty                                                                 //
@@ -86,13 +86,13 @@ def testLength03(): Bool & Impure = Array.length([1, 2, 3]) == 3
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def testSlice01(): Bool & Impure = Array.slice([1, 2, 3], 0, 1)[0] == 1
+def testSlice01(): Bool & Impure = Array.slice(0, 1, [1, 2, 3])[0] == 1
 
 @test
-def testSlice02(): Bool & Impure = Array.slice([1, 2, 3], 1, 2)[0] == 2
+def testSlice02(): Bool & Impure = Array.slice(1, 2, [1, 2, 3])[0] == 2
 
 @test
-def testSlice03(): Bool & Impure = Array.slice([1, 2, 3], 2, 3)[0] == 3
+def testSlice03(): Bool & Impure = Array.slice(2, 3, [1, 2, 3])[0] == 3
 
 /////////////////////////////////////////////////////////////////////////////
 // toList                                                                  //
@@ -4151,8 +4151,8 @@ def sortWith13!(): Bool & Impure =
 /////////////////////////////////////////////////////////////////////////////
 
 def testSort!VsSortWith!(a: Array[Int32]) : Bool & Impure =
-    let b = Array.slice(a, 0, Array.length(a));
-    let c = Array.slice(a, 0, Array.length(a));
+    let b = Array.slice(0, Array.length(a), a);
+    let c = Array.slice(0, Array.length(a), a);
     Array.sort!(b);
     Array.sortWith!(cmp, c);
     b == c
@@ -4241,8 +4241,8 @@ def sortBy10(): Bool & Impure =
 /////////////////////////////////////////////////////////////////////////////
 
 def testSortBy!VsSortBy(a: Array[Int32]) : Bool & Impure =
-    let b = Array.slice(a, 0, Array.length(a));
-    let c = Array.slice(a, 0, Array.length(a));
+    let b = Array.slice(0, Array.length(a), a);
+    let c = Array.slice(0, Array.length(a), a);
     Array.sortBy!(identity, b);
     Array.sortBy!(x -> 4*x+7, c);
     (b == Array.sortBy(x -> 4*x+7, a)) and
