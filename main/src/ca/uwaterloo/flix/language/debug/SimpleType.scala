@@ -156,6 +156,7 @@ object SimpleType {
     case Type.KindedVar(id, kind, loc, rigidity, text) => Var(id, text.get) // MATT how to handle vars? alpha-renaming, etc.
     case _: Type.UnkindedVar => throw InternalCompilerException("") // MATT
     case _: Type.Ascribe => throw InternalCompilerException("") // MATT
+    case Type.Alias(sym, args, tpe, loc) => Apply(Name(sym.name), args.map(fromWellKindedType))
     case Type.Cst(tc, loc) => tc match {
       case TypeConstructor.Unit => Unit
       case TypeConstructor.Null => Null
@@ -199,6 +200,7 @@ object SimpleType {
             case tvar: Var => Record(Nil, Some(tvar))
             case _ => ??? // MATT ICE
           }
+          case _ => ??? // MATT ICE
         }
       case TypeConstructor.SchemaRowEmpty => SchemaRowEmpty
       case TypeConstructor.SchemaRowExtend(pred) =>
@@ -219,6 +221,7 @@ object SimpleType {
             case tvar: Var => Schema(Nil, Some(tvar))
             case _ => ??? // MATT ICE
           }
+          case _ => ??? // MATT ICE
         }
       case TypeConstructor.Array => mkApply(Array, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Channel => mkApply(Channel, t.typeArguments.map(fromWellKindedType))
@@ -256,6 +259,7 @@ object SimpleType {
       case TypeConstructor.And => And(t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Or => Or(t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Region => mkApply(Region, t.typeArguments.map(fromWellKindedType))
+      case _: TypeConstructor.UnappliedAlias => ??? // MATT ICE
     }
   }
 

@@ -59,13 +59,23 @@ object FormatSimpleType {
       val params = tpes.map(format).padTo(arity - 1, "?").mkString("(", ", ", ")")
       val effString = format(eff)
       s"$params -> ? & $effString"
-    case SimpleType.PureArrow(args, ret) => ???
+    case SimpleType.PureArrow(args, ret) =>
+      val params = args.mkString("(", ", ", ")")
+      val retString = format(ret)
+      s"$params -> $retString"
     case SimpleType.ImpureArrow(args, ret) => ???
+      val params = args.mkString("(", ", ", ")")
+      val retString = format(ret)
+      s"$params ~> $retString"
     case SimpleType.PolyArrow(args, ret, eff) => ???
+      val params = args.mkString("(", ", ", ")")
+      val retString = format(ret)
+      val effString = format(eff)
+      s"$params ~> $retString & $effString"
     case SimpleType.TagConstructor(name) => ???
     case SimpleType.PartialTag(name, args) => ???
     case SimpleType.Tag(name, args, ret) => ???
-    case SimpleType.Name(name) => ???
+    case SimpleType.Name(name) => name
     case SimpleType.Apply(tpe, tpes) =>
       val string = format(tpe)
       val strings = tpes.map(format)
