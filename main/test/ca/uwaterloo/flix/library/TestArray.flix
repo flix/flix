@@ -1829,32 +1829,32 @@ def fold04(): Bool & Impure = Array.fold([("yes", "no"), ("no", "yes")]) == ("ye
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def foldLeft01(): Bool & Impure = Array.foldLeft((i, e) -> (i - e)*(e % 2 + 1), 100, []) == 100
+def foldLeft01(): Bool & Impure = Array.foldLeft((i, e) -> (i - e)*(e rem 2 + 1), 100, []) == 100
 
 @test
-def foldLeft02(): Bool & Impure = Array.foldLeft((i, e) -> (i - e)*(e % 2 + 1), 100, [1]) == 198
+def foldLeft02(): Bool & Impure = Array.foldLeft((i, e) -> (i - e)*(e rem 2 + 1), 100, [1]) == 198
 
 @test
-def foldLeft03(): Bool & Impure = Array.foldLeft((i, e) -> (i - e)*(e % 2 + 1), 100, [1,2]) == 196
+def foldLeft03(): Bool & Impure = Array.foldLeft((i, e) -> (i - e)*(e rem 2 + 1), 100, [1,2]) == 196
 
 @test
-def foldLeft04(): Bool & Impure = Array.foldLeft((i, e) -> (i - e)*(e % 2 + 1), 100, [1,2,3]) == 386
+def foldLeft04(): Bool & Impure = Array.foldLeft((i, e) -> (i - e)*(e rem 2 + 1), 100, [1,2,3]) == 386
 
 /////////////////////////////////////////////////////////////////////////////
 // foldRight                                                               //
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def foldRight01(): Bool & Impure = Array.foldRight((e, i) -> (i - e)*(e % 2 + 1), 100, []) == 100
+def foldRight01(): Bool & Impure = Array.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, []) == 100
 
 @test
-def foldRight02(): Bool & Impure = Array.foldRight((e, i) -> (i - e)*(e % 2 + 1), 100, [1]) == 198
+def foldRight02(): Bool & Impure = Array.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, [1]) == 198
 
 @test
-def foldRight03(): Bool & Impure = Array.foldRight((e, i) -> (i - e)*(e % 2 + 1), 100, [1,2]) == 194
+def foldRight03(): Bool & Impure = Array.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, [1,2]) == 194
 
 @test
-def foldRight04(): Bool & Impure = Array.foldRight((e, i) -> (i - e)*(e % 2 + 1), 100, [1,2,3]) == 382
+def foldRight04(): Bool & Impure = Array.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, [1,2,3]) == 382
 
 /////////////////////////////////////////////////////////////////////////////
 // reduceLeft                                                              //
@@ -3143,42 +3143,42 @@ def foldRight210(): Bool & Impure = Array.foldRight2((a, b, c) -> if (b) a+c els
 
 @test
 def filterMap01(): Bool & Impure =
-    let a = Array.filterMap(i -> if (i % 2 == 0) Some(i/2) else None, []: Array[Int32]);
+    let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, []: Array[Int32]);
     Array.sameElements(a, []: Array[Int32])
 
 @test
 def filterMap02(): Bool & Impure =
-    let a = Array.filterMap(i -> if (i % 2 == 0) Some(i/2) else None, [1]);
+    let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, [1]);
     Array.sameElements(a, []: Array[Int32])
 
 @test
 def filterMap03(): Bool & Impure =
-    let a = Array.filterMap(i -> if (i % 2 == 0) Some(i/2) else None, [2]);
+    let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, [2]);
     Array.sameElements(a, [1])
 
 @test
 def filterMap04(): Bool & Impure =
-    let a = Array.filterMap(i -> if (i % 2 == 0) Some(i/2) else None, [1,3]);
+    let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, [1,3]);
     Array.sameElements(a, []: Array[Int32])
 
 @test
 def filterMap05(): Bool & Impure =
-    let a = Array.filterMap(i -> if (i % 2 == 0) Some(i/2) else None, [1,4]);
+    let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, [1,4]);
     Array.sameElements(a, [2])
 
 @test
 def filterMap06(): Bool & Impure =
-    let a = Array.filterMap(i -> if (i % 2 == 0) Some(i/2) else None, [6,-1]);
+    let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, [6,-1]);
     Array.sameElements(a, [3])
 
 @test
 def filterMap07(): Bool & Impure =
-    let a = Array.filterMap(i -> if (i % 2 == 0) Some(i/2) else None, [8,6]);
+    let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, [8,6]);
     Array.sameElements(a, [4,3])
 
 @test
 def filterMap08(): Bool & Impure =
-    let a = Array.filterMap(i -> if (i % 2 == 0) Some(i/2) else None, [0,1,2,3,4,5,10]);
+    let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, [0,1,2,3,4,5,10]);
     Array.sameElements(a, [0,1,2,5])
 
 /////////////////////////////////////////////////////////////////////////////
@@ -3186,28 +3186,28 @@ def filterMap08(): Bool & Impure =
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def findMap01(): Bool & Impure = Array.findMap(i -> if (i % 2 == 0) Some(i/2) else None, []: Array[Int32]) == None
+def findMap01(): Bool & Impure = Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, []: Array[Int32]) == None
 
 @test
-def findMap02(): Bool & Impure = Array.findMap(i -> if (i % 2 == 0) Some(i/2) else None, [1]) == None
+def findMap02(): Bool & Impure = Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, [1]) == None
 
 @test
-def findMap03(): Bool & Impure = Array.findMap(i -> if (i % 2 == 0) Some(i/2) else None, [2]) == Some(1)
+def findMap03(): Bool & Impure = Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, [2]) == Some(1)
 
 @test
-def findMap04(): Bool & Impure = Array.findMap(i -> if (i % 2 == 0) Some(i/2) else None, [1,3]) == None
+def findMap04(): Bool & Impure = Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, [1,3]) == None
 
 @test
-def findMap05(): Bool & Impure = Array.findMap(i -> if (i % 2 == 0) Some(i/2) else None, [1,4]) == Some(2)
+def findMap05(): Bool & Impure = Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, [1,4]) == Some(2)
 
 @test
-def findMap06(): Bool & Impure = Array.findMap(i -> if (i % 2 == 0) Some(i/2) else None, [6,-1]) == Some(3)
+def findMap06(): Bool & Impure = Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, [6,-1]) == Some(3)
 
 @test
-def findMap07(): Bool & Impure = Array.findMap(i -> if (i % 2 == 0) Some(i/2) else None, [8,6]) == Some(4)
+def findMap07(): Bool & Impure = Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, [8,6]) == Some(4)
 
 @test
-def findMap08(): Bool & Impure = Array.findMap(i -> if (i % 2 == 0) Some(i/2) else None, [0,1,2,3,4,5,10]) == Some(0)
+def findMap08(): Bool & Impure = Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, [0,1,2,3,4,5,10]) == Some(0)
 
 /////////////////////////////////////////////////////////////////////////////
 // toSet                                                                   //
