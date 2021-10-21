@@ -74,6 +74,7 @@ class Flix {
     "Mul.flix" -> LocalResource.get("/src/library/Mul.flix"),
     "Div.flix" -> LocalResource.get("/src/library/Div.flix"),
     "Rem.flix" -> LocalResource.get("/src/library/Rem.flix"),
+    "Mod.flix" -> LocalResource.get("/src/library/Mod.flix"),
     "Exp.flix" -> LocalResource.get("/src/library/Exp.flix"),
     "BitwiseNot.flix" -> LocalResource.get("/src/library/BitwiseNot.flix"),
     "BitwiseAnd.flix" -> LocalResource.get("/src/library/BitwiseAnd.flix"),
