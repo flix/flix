@@ -805,7 +805,9 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val tag = Name.Tag("ReifiedFalse", loc)
           Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
 
-        case other => ??? //  TODO
+        case other =>
+          val tag = Name.Tag("ErasedBool", loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
       }
     }
   }
