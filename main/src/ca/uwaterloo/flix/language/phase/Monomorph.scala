@@ -747,30 +747,23 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
        * Performs function specialization until both queues are empty.
        */
       while (defQueue.nonEmpty) {
+        // Extract a function from the queue and specializes it w.r.t. its substitution.
+        val (freshSym, defn, subst) = defQueue.dequeue()
 
-        /*
-         * Performs function specialization until the queue is empty.
-         */
-        while (defQueue.nonEmpty) {
-          // Extract a function from the queue and specializes it w.r.t. its substitution.
-          val (freshSym, defn, subst) = defQueue.dequeue()
+        flix.subtask(freshSym.toString, sample = true)
 
-          flix.subtask(freshSym.toString, sample = true)
+        // Specialize the formal parameters and introduce fresh local variable symbols.
+        val (fparams, env0) = specializeFormalParams(defn.spec.fparams, subst)
 
-          // Specialize the formal parameters and introduce fresh local variable symbols.
-          val (fparams, env0) = specializeFormalParams(defn.spec.fparams, subst)
+        // Specialize the body expression.
+        val specializedExp = specialize(defn.impl.exp, env0, subst)
 
-          // Specialize the body expression.
-          val specializedExp = specialize(defn.impl.exp, env0, subst)
+        // Reassemble the definition.
+        // NB: Removes the type parameters as the function is now monomorphic.
+        val specializedDefn = defn.copy(sym = freshSym, spec = defn.spec.copy(fparams = fparams, tparams = Nil), impl = TypedAst.Impl(specializedExp, Scheme(Nil, List.empty, subst(defn.impl.inferredScheme.base))))
 
-          // Reassemble the definition.
-          // NB: Removes the type parameters as the function is now monomorphic.
-          val specializedDefn = defn.copy(sym = freshSym, spec = defn.spec.copy(fparams = fparams, tparams = Nil), impl = TypedAst.Impl(specializedExp, Scheme(Nil, List.empty, subst(defn.impl.inferredScheme.base))))
-
-          // Save the specialized function.
-          specializedDefns.put(freshSym, specializedDefn)
-        }
-
+        // Save the specialized function.
+        specializedDefns.put(freshSym, specializedDefn)
       }
 
       // Reassemble the AST.
