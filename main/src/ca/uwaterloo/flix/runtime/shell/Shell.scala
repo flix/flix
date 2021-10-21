@@ -370,7 +370,8 @@ class Shell(initialPaths: List[Path], options: Options) {
       case Validation.Failure(errors) =>
         terminal.writer().println()
         for (error <- errors) {
-          terminal.writer().print(error.message.fmt)
+          val msg = if (options.explain) error.message << error.explain else error.message
+          terminal.writer().print(msg.fmt)
         }
         terminal.writer().println()
         terminal.writer().print(prompt)
