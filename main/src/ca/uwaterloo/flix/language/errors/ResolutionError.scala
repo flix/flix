@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
 import ca.uwaterloo.flix.util.vt.VirtualString._
@@ -27,7 +27,7 @@ import java.lang.reflect.{Constructor, Field, Method}
 /**
   * A common super-type for resolution errors.
   */
-sealed trait ResolutionError extends CompilationError {
+sealed trait ResolutionError extends CompilationMessage {
   def kind = "Resolution Error"
 }
 

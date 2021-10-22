@@ -985,10 +985,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             t <- resolveType(t0, taenv, ns0, root)
           } yield ResolvedAst.Expression.Reify(t, loc)
 
-        case NamedAst.Expression.ReifyType(t0, loc) =>
+        case NamedAst.Expression.ReifyType(t0, k, loc) =>
           for {
             t <- resolveType(t0, taenv, ns0, root)
-          } yield ResolvedAst.Expression.ReifyType(t, loc)
+          } yield ResolvedAst.Expression.ReifyType(t, k, loc)
 
 
       }

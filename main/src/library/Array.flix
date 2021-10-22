@@ -71,7 +71,7 @@ namespace Array {
     /// Equivalent to the expression `a[i]`.
     ///
     @Time(1) @Space(1)
-    pub def get(a: Array[a], i: Int32): a & Impure = a[i]
+    pub def get(i: Int32, a: Array[a]): a & Impure = a[i]
 
     ///
     /// Stores the value `x` at position `i` in the array `a`.
@@ -79,7 +79,7 @@ namespace Array {
     /// Equivalent to the expression `a[i] = x`.
     ///
     @Time(1) @Space(1)
-    pub def put(a: Array[a], i: Int32, x: a): Array[a] & Impure = a[i] = x; a
+    pub def put(x: a, i: Int32, a: Array[a]): Array[a] & Impure = a[i] = x; a
 
     ///
     /// Returns `true` if the given array `a` is empty.
@@ -99,7 +99,7 @@ namespace Array {
     /// Equivalent to the expression `a[b..e]`.
     ///
     @Time(e - b) @Space(e - b)
-    pub def slice(a: Array[a], b: Int32, e: Int32): Array[a] & Impure = a[b..e]
+    pub def slice(b: Int32, e: Int32, a: Array[a]): Array[a] & Impure = a[b..e]
 
     ///
     /// Returns the array `a` as a list.
@@ -183,7 +183,7 @@ namespace Array {
         let len1 = length(a);
         let len2 = length(b);
         if (len1 == 0)
-            slice(b, 0, len2)
+            slice(0, len2, b)
         else {
             let out = new(a[0], len1 + len2);
             updateSequence!(0, a, out);
@@ -347,7 +347,7 @@ namespace Array {
     ///
     /// Alias for `scanLeft`.
     ///
-    pub def scan(f: (b, a) ->b & ef, s: b, xs: Array[a]): Array[b] & Impure = scanLeft(f, s, xs)
+    pub def scan(f: (b, a) -> b & ef, s: b, xs: Array[a]): Array[b] & Impure = scanLeft(f, s, xs)
 
     ///
     /// Accumulates the result of applying `f` to `a` going left to right.
@@ -485,8 +485,8 @@ namespace Array {
         else {
             let x = a[i];
             let y = a[j];
-            put(a, i, y);
-            put(a, j, x);
+            put(y, i, a);
+            put(x, j, a);
             reverseHelper!(a, halflen, i+1, j-1)
         }
 
@@ -510,7 +510,7 @@ namespace Array {
     ///
     def rotateLeftHelper(n: Int32, a: Array[a]): Array[a] & Impure =
         let len = length(a);
-        let f = i -> { let i1 = n + i; a[i1 % len] };
+        let f = i -> { let i1 = n + i; a[i1 rem len] };
         init(f, len)
 
     ///
@@ -533,9 +533,9 @@ namespace Array {
     ///
     def rotateRightHelper(n: Int32, a: Array[a]): Array[a] & Impure =
         let len = length(a);
-        let n1 = n % len;
+        let n1 = n rem len;
         let start = len - n1;
-        let f = i -> { let i1 = start + i; a[i1 % len]};
+        let f = i -> { let i1 = start + i; a[i1 rem len]};
         init(f, len)
 
     ///
@@ -573,7 +573,7 @@ namespace Array {
     pub def patch(i: Int32, n: Int32, a: Array[a], b: Array[a]): Array[a] & Impure =
         let len1 = length(a);
         let size = if (n > len1) len1 else n;
-        let sub = slice(a, 0, size);
+        let sub = slice(0, size, a);
         updateSequence(i, sub, b)
 
     ///
@@ -587,7 +587,7 @@ namespace Array {
     pub def patch!(i: Int32, n: Int32, a: Array[a], b: mut Array[a]): Unit & Impure =
         let len1 = length(a);
         let size = if (n > len1) len1 else n;
-        let sub = slice(a, 0, size);
+        let sub = slice(0, size, a);
         updateSequence!(i, sub, b)
 
     ///
@@ -962,7 +962,7 @@ namespace Array {
         } else {
             let out = new(a[0], len);
             let endPos = filterHelper(f, 0, a, 0, out);
-            slice(out, 0, endPos)
+            slice(0, endPos, out)
         }
 
     ///
@@ -1033,7 +1033,7 @@ namespace Array {
             []
         else {
             let start = if (n < 0) 0 else n;
-            slice(a, start, len)
+            slice(start, len, a)
         }
 
     ///
@@ -1048,7 +1048,7 @@ namespace Array {
             []
         else {
             let end = if (n < 0) len else len - n;
-            slice(a, 0, end)
+            slice(0, end, a)
         }
 
     ///
@@ -1081,7 +1081,7 @@ namespace Array {
     pub def dropWhileRight(f: a -> Bool, a: Array[a]): Array[a] & Impure =
         match findIndexOfRight(x -> not (f(x)), a) {
             case None => []
-            case Some(i) => slice(a, 0, i+1)
+            case Some(i) => slice(0, i + 1, a)
         }
 
     ///
@@ -1102,7 +1102,7 @@ namespace Array {
         else {
             let len = length(a);
             let end = if (n > len) len else n;
-            slice(a, 0, end)
+            slice(0, end, a)
         }
 
     ///
@@ -1117,7 +1117,7 @@ namespace Array {
         else {
             let len = length(a);
             let start = if (n > len) 0 else len - n;
-            slice(a, start, len)
+            slice(start, len, a)
         }
 
     ///
@@ -1148,8 +1148,8 @@ namespace Array {
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def takeWhileRight(f: a -> Bool, a: Array[a]): Array[a] & Impure =
         match findIndexOfRight(x -> not (f(x)), a) {
-            case None => slice(a, 0, length(a))
-            case Some(i) => slice(a, i+1, length(a))
+            case None => slice(0, length(a), a)
+            case Some(i) => slice(i + 1, length(a), a)
         }
 
     ///
@@ -1646,7 +1646,7 @@ namespace Array {
     ///
     pub def sortWith(cmp: (a,a) -> Comparison, a: Array[a]): Array[a] & Impure =
         let len = length(a);
-        let b = slice(a, 0, len);
+        let b = slice(0, len, a);
         sortWith!(cmp, b);
         b
 
@@ -1678,7 +1678,7 @@ namespace Array {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith!(cmp: (a,a) -> Comparison, a: mut Array[a]): Unit & Impure = sortWithin!(cmp, a, 0, length(a)-1)
+    pub def sortWith!(cmp: (a,a) -> Comparison, a: mut Array[a]): Unit & Impure = sortWithin!(cmp, 0, length(a) - 1, a)
 
     ///
     /// Sort array `a` between the indices `lo` and `hi` (both inclusive) so that elements in that range are ordered
@@ -1689,13 +1689,13 @@ namespace Array {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWithin!(cmp: (a,a) -> Comparison, a: mut Array[a], lo: Int32, hi: Int32): Unit & Impure =
+    pub def sortWithin!(cmp: (a,a) -> Comparison, lo: Int32, hi: Int32, a: mut Array[a]): Unit & Impure =
         if (lo >= hi)
             ()
         else {
             let p = quicksortPartition(cmp, a, lo, hi);
-            sortWithin!(cmp, a, lo, p-1);
-            sortWithin!(cmp, a, p+1, hi)
+            sortWithin!(cmp, lo, p - 1, a);
+            sortWithin!(cmp, p + 1, hi, a)
         }
 
     ///
@@ -1754,11 +1754,45 @@ namespace Array {
         else
             acc
 
-    // TODO: Add documentation.
-    // TODO: Add tests
-    // TODO: Rename to slice?
-    def _copyOfRange(b: Int32, e: Int32, a: Array[a]): Array[a] & Impure =
+    ///
+    /// Copies the range between `b` (inclusive) and `e` (exclusive) of a into a new array.
+    ///
+    /// A valid range has the following properties:
+    ///   - 0 <= `b` <= `length(a)`.
+    ///   - `e` >= `b`.
+    /// If the range is valid and greater than the length of `a`, the resulting array with have the length of the range
+    /// and include the specified range of `a`.
+    ///
+    pub def copyOfRange(b: Int32, e: Int32, a: Array[a]): Array[a] & Impure =
         match (reifyType a) {
+            case ErasedType =>
+                let arr = a as Array[##java.lang.Object];
+                import java.util.Arrays:copyOfRange(Array[##java.lang.Object], Int32, Int32) as copy;
+                copy(arr, b, e) as Array[a]
+            case ReifiedBool =>
+                let arr = a as Array[Bool];
+                import java.util.Arrays:copyOfRange(Array[Bool], Int32, Int32) as copy;
+                copy(arr, b, e) as Array[a]
+            case ReifiedChar =>
+                let arr = a as Array[Char];
+                import java.util.Arrays:copyOfRange(Array[Char], Int32, Int32) as copy;
+                copy(arr, b, e) as Array[a]
+            case ReifiedFloat32 =>
+                let arr = a as Array[Float32];
+                import java.util.Arrays:copyOfRange(Array[Float32], Int32, Int32) as copy;
+                copy(arr, b, e) as Array[a]
+            case ReifiedFloat64 =>
+                let arr = a as Array[Float64];
+                import java.util.Arrays:copyOfRange(Array[Float64], Int32, Int32) as copy;
+                copy(arr, b, e) as Array[a]
+            case ReifiedInt8 =>
+                let arr = a as Array[Int8];
+                import java.util.Arrays:copyOfRange(Array[Int8], Int32, Int32) as copy;
+                copy(arr, b, e) as Array[a]
+            case ReifiedInt16 =>
+                let arr = a as Array[Int16];
+                import java.util.Arrays:copyOfRange(Array[Int16], Int32, Int32) as copy;
+                copy(arr, b, e) as Array[a]
             case ReifiedInt32 =>
                 let arr = a as Array[Int32];
                 import java.util.Arrays:copyOfRange(Array[Int32], Int32, Int32) as copy;
@@ -1767,7 +1801,9 @@ namespace Array {
                 let arr = a as Array[Int64];
                 import java.util.Arrays:copyOfRange(Array[Int64], Int32, Int32) as copy;
                 copy(arr, b, e) as Array[a]
-            case _ => ??? // TODO
+            case ReifiedArray(_) =>
+                let arr = a as Array[##java.lang.Object];
+                import java.util.Arrays:copyOfRange(Array[##java.lang.Object], Int32, Int32) as copy;
+                copy(arr, b, e) as Array[a]
         }
-
 }
