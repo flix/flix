@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
+import ca.uwaterloo.flix.language.errors.Format
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
 import ca.uwaterloo.flix.util._
@@ -45,43 +46,43 @@ class Shell(initialPaths: List[Path], options: Options) {
   private val WarmupIterations = 80
 
   /**
-    * The default color context.
-    */
+   * The default color context.
+   */
   private implicit val terminalContext: TerminalContext = TerminalContext.AnsiTerminal
 
   /**
-    * The executor service.
-    */
+   * The executor service.
+   */
   private val executorService = Executors.newSingleThreadExecutor()
 
   /**
-    * The mutable set of paths to load.
-    */
+   * The mutable set of paths to load.
+   */
   private val sourcePaths = mutable.Set.empty[Path] ++ initialPaths
 
   /**
-    * The current flix instance (initialized on startup).
-    */
+   * The current flix instance (initialized on startup).
+   */
   private var flix: Flix = _
 
   /**
-    * The current typed ast root (initialized on startup).
-    */
+   * The current typed ast root (initialized on startup).
+   */
   private var root: Root = _
 
   /**
-    * The current compilation result (initialized on startup).
-    */
+   * The current compilation result (initialized on startup).
+   */
   private var compilationResult: CompilationResult = _
 
   /**
-    * The current watcher (if any).
-    */
+   * The current watcher (if any).
+   */
   private var watcher: WatcherThread = _
 
   /**
-    * Continuously reads a line of input from the terminal, parses and executes it.
-    */
+   * Continuously reads a line of input from the terminal, parses and executes it.
+   */
   def loop(): Unit = {
     // Silence JLine warnings about terminal type.
     Logger.getLogger("org.jline").setLevel(Level.OFF)
@@ -132,8 +133,8 @@ class Shell(initialPaths: List[Path], options: Options) {
   }
 
   /**
-    * Prints the welcome banner to the terminal.
-    */
+   * Prints the welcome banner to the terminal.
+   */
   private def printWelcomeBanner()(implicit terminal: Terminal): Unit = {
     val banner =
       """     __   _   _
@@ -149,13 +150,13 @@ class Shell(initialPaths: List[Path], options: Options) {
   }
 
   /**
-    * Returns the Flix prompt.
-    */
+   * Returns the Flix prompt.
+   */
   private def prompt: String = "flix> "
 
   /**
-    * Executes the given command `cmd`.
-    */
+   * Executes the given command `cmd`.
+   */
   private def execute(cmd: Command)(implicit terminal: Terminal): Unit = cmd match {
     case Command.Nop => // nop
     case Command.Run => execRun()
@@ -176,8 +177,8 @@ class Shell(initialPaths: List[Path], options: Options) {
   }
 
   /**
-    * Executes the eval command.
-    */
+   * Executes the eval command.
+   */
   private def execRun()(implicit terminal: Terminal): Unit = {
     // Recompile the program.
     execReload()
@@ -190,8 +191,8 @@ class Shell(initialPaths: List[Path], options: Options) {
   }
 
   /**
-    * Shows the hole context of the given `fqn`.
-    */
+   * Shows the hole context of the given `fqn`.
+   */
   private def execHole(fqnOpt: Option[String])(implicit terminal: Terminal): Unit = fqnOpt match {
     case None =>
       // Case 1: Print all available holes.
@@ -212,72 +213,87 @@ class Shell(initialPaths: List[Path], options: Options) {
           terminal.writer().println(s"Undefined hole: '$fqn'.")
         case Some(HoleContext(_, holeType, env)) =>
           // Case 2: Hole found.
-          val vt = new VirtualTerminal
+          val sb = new StringBuilder()
 
           // Indent
-          vt << "  "
+          sb.append("  ")
 
           // Iterate through the premises, i.e. the variable symbols in scope.
           for ((varSym, varType) <- env) {
-            vt << blue(varSym.text) << ": " << cyan(FormatType.formatType(varType)) << " " * 6
+            sb.append(Format.blue(varSym.text))
+              .append(": ")
+              .append(Format.cyan(FormatType.formatType(varType)))
+              .append(" " * 6)
           }
 
           // Print the divider.
-          vt << NewLine << "-" * 80 << NewLine
+          sb.append(System.lineSeparator())
+            .append("-" * 80)
+            .append(System.lineSeparator())
 
           // Print the goal.
-          vt << blue(sym.toString) << ": " << cyan(FormatType.formatType(holeType)) << NewLine
+          sb.append(Format.blue(sym.toString))
+            .append(": ")
+            .append(Format.cyan(FormatType.formatType(holeType)))
+            .append(System.lineSeparator())
 
           // Print the result to the terminal.
-          terminal.writer().print(vt.fmt)
+          terminal.writer().print(sb.toString())
       }
   }
 
   /**
-    * Executes the browse command.
-    */
+   * Executes the browse command.
+   */
   private def execBrowse(nsOpt: Option[String])(implicit terminal: Terminal): Unit = nsOpt match {
     case None =>
       // Case 1: Browse available namespaces.
 
-      // Construct a new virtual terminal.
-      val vt = new VirtualTerminal
+      // Construct a new String Builder.
+      val sb = new StringBuilder()
 
       // Find the available namespaces.
       val namespaces = namespacesOf(this.root)
 
-      vt << bold("Namespaces:") << Indent << NewLine << NewLine
+      sb.append(Format.bold("Namespaces:"))
+        .append(System.lineSeparator())
+        .append(System.lineSeparator())
       for (namespace <- namespaces.toList.sorted) {
-        vt << namespace << NewLine
+        sb.append(" " * 2)
+          .append(namespace)
+          .append(System.lineSeparator())
       }
-      vt << Dedent << NewLine
+      sb.append(System.lineSeparator())
 
       // Print the result to the terminal.
-      terminal.writer().print(vt.fmt)
+      terminal.writer().print(sb.toString())
 
     case Some(ns) =>
       // Case 2: Browse a specific namespace.
 
-      // Construct a new virtual terminal.
-      val vt = new VirtualTerminal
+      // Construct a new String Builder.
+      val sb = new StringBuilder()
 
       // Print the matched definitions.
       val matchedDefs = getDefinitionsByNamespace(ns, this.root)
       if (matchedDefs.nonEmpty) {
-        vt << bold("Definitions:") << Indent << NewLine << NewLine
+        sb.append(Format.bold("Definitions:"))
+          .append(System.lineSeparator())
+          .append(System.lineSeparator())
         for (defn <- matchedDefs.sortBy(_.sym.name)) {
-          prettyPrintDef(defn, vt)
+          sb.append(" " * 2)
+            .append(prettyPrintDef(defn).replace(System.lineSeparator(), System.lineSeparator() + (" " * 2)))
         }
-        vt << Dedent << NewLine
+        sb.append(System.lineSeparator())
       }
 
       // Print the result to the terminal.
-      terminal.writer().print(vt.fmt)
+      terminal.writer().print(sb.toString())
   }
 
   /**
-    * Executes the doc command.
-    */
+   * Executes the doc command.
+   */
   private def execDoc(fqn: String)(implicit terminal: Terminal): Unit = {
     val sym = Symbol.mkDefnSym(fqn)
     this.root.defs.get(sym) match {
@@ -287,29 +303,32 @@ class Shell(initialPaths: List[Path], options: Options) {
       case Some(defn) =>
         // Case 2: Symbol found.
 
-        // Construct a new virtual terminal.
-        val vt = new VirtualTerminal
-        prettyPrintDef(defn, vt)
-        vt << defn.spec.doc.text
-        vt << NewLine
+        // Construct a new String Builder.
+        val sb = new StringBuilder()
+        sb.append(prettyPrintDef(defn))
+          .append(System.lineSeparator())
+          .append(defn.spec.doc.text)
+          .append(System.lineSeparator())
 
         // Print the result to the terminal.
-        terminal.writer().print(vt.fmt)
+        terminal.writer().print(sb.toString())
     }
   }
 
   /**
-    * Searches for the given `needle`.
-    */
+   * Searches for the given `needle`.
+   */
   private def execSearch(needle: String)(implicit terminal: Terminal): Unit = {
     /**
-      * Returns `true` if the definition `d` is matched by the `needle`.
-      */
+     * Returns `true` if the definition `d` is matched by the `needle`.
+     */
     def isMatched(d: Def): Boolean = d.sym.name.toLowerCase.contains(needle.toLowerCase)
 
-    // Construct a new virtual terminal.
-    val vt = new VirtualTerminal
-    vt << bold("Definitions:") << Indent << NewLine << NewLine
+    // Construct a new String Builder.
+    val sb = new StringBuilder()
+    sb.append(Format.bold("Definitions:"))
+      .append(System.lineSeparator())
+      .append(System.lineSeparator())
 
     // Group definitions by namespace.
     val defsByNamespace = this.root.defs.values.groupBy(_.sym.namespace).toList
@@ -321,22 +340,26 @@ class Shell(initialPaths: List[Path], options: Options) {
 
       // Print the namespace.
       if (matchedDefs.nonEmpty) {
-        vt << bold(ns.mkString("/")) << Indent << NewLine
+        sb.append(" " * 2)
+          .append(Format.bold(ns.mkString("/")))
+          .append(System.lineSeparator())
         for (defn <- matchedDefs) {
-          prettyPrintDef(defn, vt)
+          sb.append(" " * 4)
+            .append(prettyPrintDef(defn).replace(System.lineSeparator(), System.lineSeparator() + " " * 4))
+            .append(System.lineSeparator())
         }
-        vt << Dedent << NewLine
+        sb.append(System.lineSeparator())
       }
     }
-    vt << Dedent << NewLine
+    sb.append(System.lineSeparator())
 
     // Print the result to the terminal.
-    terminal.writer().print(vt.fmt)
+    terminal.writer().print(sb.toString())
   }
 
   /**
-    * Reloads every source path.
-    */
+   * Reloads every source path.
+   */
   private def execReload()(implicit terminal: Terminal): Unit = {
     // Instantiate a fresh flix instance.
     this.flix = new Flix()
@@ -377,30 +400,30 @@ class Shell(initialPaths: List[Path], options: Options) {
   }
 
   /**
-    * Run all benchmarks in the program.
-    */
+   * Run all benchmarks in the program.
+   */
   private def execBenchmark()(implicit terminal: Terminal): Unit = {
     // Run all benchmarks.
     Benchmarker.benchmark(this.compilationResult, terminal.writer())(options)
   }
 
   /**
-    * Run all unit tests in the program.
-    */
+   * Run all unit tests in the program.
+   */
   private def execTest()(implicit terminal: Terminal): Unit = {
     // Run all unit tests.
-    val vt = Tester.test(this.compilationResult)
+    val res = Tester.test(this.compilationResult)
 
     // Print the result to the terminal.
-    terminal.writer().print(vt.output.fmt)
+    terminal.writer().print(res.output)
   }
 
   /**
-    * Warms up the compiler by running it multiple times.
-    */
+   * Warms up the compiler by running it multiple times.
+   */
   private def execWarmup()(implicit terminal: Terminal): Unit = {
     val elapsed = mutable.ListBuffer.empty[Duration]
-    for (i <- 0 until WarmupIterations) {
+    for (_ <- 0 until WarmupIterations) {
       val t = System.nanoTime()
       execReload()
       terminal.writer().print(".")
@@ -413,8 +436,8 @@ class Shell(initialPaths: List[Path], options: Options) {
   }
 
   /**
-    * Watches source paths for changes.
-    */
+   * Watches source paths for changes.
+   */
   private def execWatch()(implicit terminal: Terminal): Unit = {
     // Check if the watcher is already initialized.
     if (this.watcher != null) {
@@ -436,8 +459,8 @@ class Shell(initialPaths: List[Path], options: Options) {
   }
 
   /**
-    * Unwatches source paths for changes.
-    */
+   * Unwatches source paths for changes.
+   */
   private def execUnwatch()(implicit terminal: Terminal): Unit = {
     this.watcher.interrupt()
     this.watcher = null
@@ -445,15 +468,15 @@ class Shell(initialPaths: List[Path], options: Options) {
   }
 
   /**
-    * Exits the shell.
-    */
+   * Exits the shell.
+   */
   private def execQuit()(implicit terminal: Terminal): Unit = {
     Thread.currentThread().interrupt()
   }
 
   /**
-    * Executes the help command.
-    */
+   * Executes the help command.
+   */
   private def execHelp()(implicit terminal: Terminal): Unit = {
     val w = terminal.writer()
 
@@ -476,28 +499,28 @@ class Shell(initialPaths: List[Path], options: Options) {
   }
 
   /**
-    * Executes the praise command.
-    */
+   * Executes the praise command.
+   */
   private def execPraise()(implicit terminal: Terminal): Unit = {
     val w = terminal.writer()
     w.print(Toucan.leToucan())
   }
 
   /**
-    * Reports unknown command.
-    */
+   * Reports unknown command.
+   */
   private def execUnknown(s: String)(implicit terminal: Terminal): Unit = {
     terminal.writer().println(s"Unknown command '$s'. Try `:run` or `:help'.")
   }
 
   /**
-    * Returns the namespaces in the given AST `root`.
-    */
+   * Returns the namespaces in the given AST `root`.
+   */
   private def namespacesOf(root: Root): Set[String] = root.defs.keySet.map(_.namespace.mkString("/"))
 
   /**
-    * Returns the definitions in the given namespace.
-    */
+   * Returns the definitions in the given namespace.
+   */
   private def getDefinitionsByNamespace(ns: String, root: Root): List[Def] = {
     val namespace: List[String] = getNameSpace(ns)
     root.defs.foldLeft(Nil: List[Def]) {
@@ -508,8 +531,8 @@ class Shell(initialPaths: List[Path], options: Options) {
   }
 
   /**
-    * Interprets the given string `ns` as a namespace.
-    */
+   * Interprets the given string `ns` as a namespace.
+   */
   private def getNameSpace(ns: String): List[String] = {
     if (ns == "" || ns == ".") {
       // Case 1: The empty namespace.
@@ -521,49 +544,66 @@ class Shell(initialPaths: List[Path], options: Options) {
   }
 
   /**
-    * Pretty prints the given definition `defn` to the given virtual terminal `vt`.
-    */
-  private def prettyPrintDef(defn: Def, vt: VirtualTerminal): Unit = {
-    vt << bold("def ") << blue(defn.sym.name) << "("
+   * Pretty prints the given definition `defn` to the given virtual terminal `vt`.
+   */
+  private def prettyPrintDef(defn: Def): String = {
+    val sb = new StringBuilder()
+    sb.append(Format.bold("def "))
+      .append(Format.blue(defn.sym.name))
+      .append("(")
     if (defn.spec.fparams.nonEmpty) {
-      vt << defn.spec.fparams.head.sym.text << ": " << cyan(FormatType.formatType(defn.spec.fparams.head.tpe))
+      sb.append(defn.spec.fparams.head.sym.text)
+        .append(": ")
+        .append(Format.cyan(FormatType.formatType(defn.spec.fparams.head.tpe)))
       for (fparam <- defn.spec.fparams.tail) {
-        vt << ", " << fparam.sym.text << ": " << cyan(FormatType.formatType(fparam.tpe))
+        sb.append(", ")
+          .append(fparam.sym.text)
+          .append(": ")
+          .append(Format.cyan(FormatType.formatType(fparam.tpe)))
       }
     }
-    vt << "): " << cyan(FormatType.formatType(defn.impl.inferredScheme.base.typeArguments.last)) << NewLine
+    sb.append("): ")
+      .append(Format.cyan(FormatType.formatType(defn.impl.inferredScheme.base.typeArguments.last)))
+      .append(System.lineSeparator())
+      .toString()
   }
 
   /**
-    * Pretty prints the holes in the program.
-    */
+   * Pretty prints the holes in the program.
+   */
   private def prettyPrintHoles()(implicit terminal: Terminal): Unit = {
     // Print holes, if any.
     val holes = TypedAstOps.holesOf(root)
-    val vt = new VirtualTerminal
+    val sb = new StringBuilder()
 
     // Check if any holes are present.
     if (holes.nonEmpty) {
-      vt << bold("Holes:") << Indent
+      sb.append(Format.bold("Holes:"))
+        .append(System.lineSeparator())
+
       // Print each hole and its type.
       for ((sym, ctx) <- holes) {
-        vt << NewLine << blue(sym.toString) << ": " << cyan(FormatType.formatType(ctx.tpe))
+        sb.append(" " * 2)
+          .append(Format.blue(sym.toString))
+          .append(": ")
+          .append(Format.cyan(FormatType.formatType(ctx.tpe)))
+          .append(System.lineSeparator())
       }
-      vt << Dedent << NewLine
+      sb.append(System.lineSeparator())
     }
 
     // Print the result to the terminal.
-    terminal.writer().print(vt.fmt)
+    terminal.writer().print(sb.toString())
   }
 
   /**
-    * A thread to watch over changes in a collection of directories.
-    */
+   * A thread to watch over changes in a collection of directories.
+   */
   class WatcherThread(paths: List[Path])(implicit terminal: Terminal) extends Thread {
 
     /**
-      * The minimum amount of time between runs of the compiler.
-      */
+     * The minimum amount of time between runs of the compiler.
+     */
     private val Delay: Long = 1000 * 1000 * 1000
 
     // Initialize a new watcher service.
