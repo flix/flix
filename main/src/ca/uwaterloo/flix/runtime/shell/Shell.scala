@@ -542,7 +542,7 @@ class Shell(initialPaths: List[Path], options: Options) {
   }
 
   /**
-   * Pretty prints the given definition `defn` to the given virtual terminal `vt`.
+   * Pretty prints the given definition `defn`.
    */
   private def prettyPrintDef(defn: Def): String = {
     val sb = new StringBuilder()

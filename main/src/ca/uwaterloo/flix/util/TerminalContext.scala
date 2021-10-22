@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.util
 
 /**
- * A terminal context abstract the operations supported by a specific virtual terminal.
+ * A terminal context abstract the operations supported by a specific terminal.
  */
 sealed trait TerminalContext {
 
