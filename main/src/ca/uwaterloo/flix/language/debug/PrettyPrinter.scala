@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.debug
 
 import ca.uwaterloo.flix.language.ast.LiftedAst._
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.errors.Format
+import ca.uwaterloo.flix.util.Format
 
 object PrettyPrinter {
 

@@ -1,4 +1,4 @@
-package ca.uwaterloo.flix.language.errors
+package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
 

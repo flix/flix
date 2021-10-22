@@ -1,8 +1,8 @@
 package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.language.errors.Format
 import ca.uwaterloo.flix.runtime.CompilationResult
+import ca.uwaterloo.flix.util.Format
 
 /**
  * Evaluates all tests in a model.
