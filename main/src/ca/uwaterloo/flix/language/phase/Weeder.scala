@@ -1484,9 +1484,13 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val t = visitType(t0)
       WeededAst.Expression.Reify(t, mkSL(sp1, sp2)).toSuccess
 
+    case ParsedAst.Expression.ReifyBool(sp1, t0, sp2) =>
+      val t = visitType(t0)
+      WeededAst.Expression.ReifyType(t, Kind.Bool, mkSL(sp1, sp2)).toSuccess
+
     case ParsedAst.Expression.ReifyType(sp1, t0, sp2) =>
       val t = visitType(t0)
-      WeededAst.Expression.ReifyType(t, mkSL(sp1, sp2)).toSuccess
+      WeededAst.Expression.ReifyType(t, Kind.Star, mkSL(sp1, sp2)).toSuccess
 
   }
 
@@ -2481,6 +2485,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.FixpointSolveWithProject(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointQueryWithSelect(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.Reify(sp1, _, _) => sp1
+    case ParsedAst.Expression.ReifyBool(sp1, _, _) => sp1
     case ParsedAst.Expression.ReifyType(sp1, _, _) => sp1
   }
 
