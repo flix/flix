@@ -33,6 +33,23 @@ import java.nio.file.{Files, Path, Paths}
 
 object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
 
+  private val Api: String =
+    """
+      |interface Api {
+      |    classes: [Class];
+      |}
+      |""".stripMargin
+
+
+  private val Class: String =
+    """
+      |interface Class {
+      |    name: String,
+      |    doc: [String]
+      |}
+      |
+      |""".stripMargin
+
   /**
     * The title of the generated API.
     */
@@ -138,24 +155,23 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
 
   // TODO: DOC
   private def classesToJson(root: Root): JObject = {
-    val classesByNamespace = root.classes.filter {
-      case (sym, clazz) => clazz.mod.isPublic
-    }.groupBy(_._1.namespace)
+    val classesByNamespace = root.classes.groupBy(kv => kv._1.namespace)
 
-    classesByNamespace.foldRight(List.empty[(String, JValue)]) {
-      case ((ns, clazz), acc) =>
-        val cs = clazz.toList.map(kv => classAsJSON(kv._2))
-        (ns.mkString(".") -> JArray(cs)) :: acc
+    classesByNamespace.map {
+      case (ns, classes) =>
+        getNamespace(ns) -> JArray(classes.map(kv => visitClass(kv._2)).toList)
     }
   }
 
   // TODO: DOC
-  private def classAsJSON(clazz: TypedAst.Class): JValue = clazz match {
+  private def visitClass(clazz: TypedAst.Class): JValue = clazz match {
     case TypedAst.Class(doc, mod, sym, tparam, superClasses, signatures, laws, loc) =>
       ("name" -> sym.name) ~
         ("doc" -> doc.text) ~
         ("superClasses" -> superClasses.map(_.sym.name))
   }
+
+  private def getNamespace(ns: List[String]): String = ns.mkString("/")
 
   /**
     * Writes the given string `s` to the given path `p`.
