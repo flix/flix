@@ -16,7 +16,7 @@
 import {SourceLocation} from "./SourceLocation";
 
 export interface EnumSym {
-    namespace: [String]
-    name: String
+    namespace: [string]
+    name: string
     loc: SourceLocation
 }

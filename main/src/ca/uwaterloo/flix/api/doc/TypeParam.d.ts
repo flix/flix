@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {SourceLocation} from "./SourceLocation";
+import {Kind} from "./Api";
 
-export interface TypeAliasSym {
-    namespace: [string]
-    name: string
-    loc: SourceLocation
+export interface TypeParam {
+    // TODO
+    name: string,
+    kind: Kind
 }

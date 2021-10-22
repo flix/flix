@@ -18,6 +18,6 @@ import {SourceLocation} from "./SourceLocation";
 
 export interface SigSym {
     class: ClassSym
-    name: String
+    name: string
     loc: SourceLocation
 }

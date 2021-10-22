@@ -14,9 +14,23 @@
  * limitations under the License.
  */
 import {SourceLocation} from "./SourceLocation";
+import {Modifier} from "./Modifier";
+import {EnumSym} from "./EnumSym";
+import {TypeParam} from "./TypeParam";
+import {Scheme} from "./Scheme";
 
-export interface TypeAliasSym {
-    namespace: [string]
-    name: string
+export interface Enum {
+    doc: [string]
+    mod: [Modifier]
+    sym: EnumSym
+    tparams: [TypeParam]
+    cases: [Case]
+    sc: Scheme
     loc: SourceLocation
 }
+
+export interface Case {
+    // TODO
+}
+
+//   case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[TypedAst.TypeParam], cases: Map[Name.Tag, TypedAst.Case], tpeDeprecated: Type, sc: Scheme, loc: SourceLocation)
