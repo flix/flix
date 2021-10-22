@@ -15,14 +15,10 @@
  */
 package ca.uwaterloo.flix.tools
 
-import java.net.InetSocketAddress
-import java.text.SimpleDateFormat
-import java.util.Date
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.vt.TerminalContext
-import ca.uwaterloo.flix.util.{LibLevel, InternalCompilerException, InternalRuntimeException, Options, Result, SafeExec, Timer}
+import ca.uwaterloo.flix.util._
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
@@ -31,16 +27,20 @@ import org.json4s.ParserUtil.ParseException
 import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods._
 
+import java.net.InetSocketAddress
+import java.text.SimpleDateFormat
+import java.util.Date
+
 /**
-  * A WebSocket server implementation that receives and evaluates Flix programs.
-  *
-  * @param port the local port to listen on.
-  */
+ * A WebSocket server implementation that receives and evaluates Flix programs.
+ *
+ * @param port the local port to listen on.
+ */
 class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port)) {
 
   /**
-    * The custom date format to use for logging.
-    */
+   * The custom date format to use for logging.
+   */
   val DateFormat: String = "yyyy-MM-dd HH:mm:ss"
 
   /**
@@ -199,7 +199,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
 
         case Failure(errors) =>
           // Compilation failed. Retrieve and format the first error message.
-          Err(errors.head.message.fmt(TerminalContext.NoTerminal))
+          Err(errors.head.message)
       }
     } catch {
       case ex: RuntimeException => Err(ex.getMessage)

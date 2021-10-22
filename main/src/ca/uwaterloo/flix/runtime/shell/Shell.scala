@@ -16,36 +16,33 @@
 
 package ca.uwaterloo.flix.runtime.shell
 
-import java.nio.file._
-import java.util.concurrent.Executors
-import java.util.logging.{Level, Logger}
-
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.ast.Ast.HoleContext
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
 import ca.uwaterloo.flix.util._
-import ca.uwaterloo.flix.util.tc.Show
-import ca.uwaterloo.flix.util.tc.Show._
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.{TerminalContext, VirtualTerminal}
 import org.jline.reader.{EndOfFileException, LineReaderBuilder, UserInterruptException}
 import org.jline.terminal.{Terminal, TerminalBuilder}
 
-import scala.jdk.CollectionConverters._
+import java.nio.file._
+import java.util.concurrent.Executors
+import java.util.logging.{Level, Logger}
 import scala.collection.mutable
+import scala.jdk.CollectionConverters._
 
 class Shell(initialPaths: List[Path], options: Options) {
 
   private implicit val audience: Audience = Audience.External
 
   /**
-    * The number of warmup iterations.
-    */
+   * The number of warmup iterations.
+   */
   private val WarmupIterations = 80
 
   /**
@@ -364,14 +361,14 @@ class Shell(initialPaths: List[Path], options: Options) {
             compilationResult = m
           case Validation.Failure(errors) =>
             for (error <- errors) {
-              terminal.writer().print(error.message.fmt)
+              terminal.writer().print(error)
             }
         }
       case Validation.Failure(errors) =>
         terminal.writer().println()
         for (error <- errors) {
-          val msg = if (options.explain) error.message << error.explain else error.message
-          terminal.writer().print(msg.fmt)
+          val msg = if (options.explain) error.message + error.explain else error.message
+          terminal.writer().print(msg)
         }
         terminal.writer().println()
         terminal.writer().print(prompt)

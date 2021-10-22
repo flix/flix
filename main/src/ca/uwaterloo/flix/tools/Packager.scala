@@ -167,7 +167,7 @@ object Packager {
     flix.check() match {
       case Validation.Success(_) => ()
       case Validation.Failure(errors) =>
-        errors.foreach(e => println(e.message.fmt))
+        errors.foreach(e => println(e))
     }
   }
 
@@ -193,7 +193,7 @@ object Packager {
     flix.compile() match {
       case Validation.Success(r) => Some(r)
       case Validation.Failure(errors) =>
-        errors.foreach(e => println(e.message.fmt))
+        errors.foreach(e => println(e.message))
         None
     }
   }

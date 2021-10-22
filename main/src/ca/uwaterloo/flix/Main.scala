@@ -211,7 +211,7 @@ object Main {
           Console.println(results.output.fmt)
         }
       case Validation.Failure(errors) =>
-        errors.sortBy(_.source.name).foreach(e => println(e.message.fmt))
+        errors.sortBy(_.source.name).foreach(e => println(e.message))
         println()
         println(s"Compilation failed with ${errors.length} error(s).")
         System.exit(1)

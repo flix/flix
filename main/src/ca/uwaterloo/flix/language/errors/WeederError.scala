@@ -518,7 +518,7 @@ object WeederError {
    * @param loc  the location where the error occurred.
    */
   case class MalformedUnicodeEscapeSequence(code: String, loc: SourceLocation) extends WeederError {
-    def summary: String = s"Malformed unicode escape sequence '${code}'."
+    def summary: String = s"Malformed unicode escape sequence '$code'."
 
     def message: String = {
       s"""${line(kind, source.format)}
@@ -540,7 +540,7 @@ object WeederError {
    * @param loc  the location where the error occurred.
    */
   case class InvalidEscapeSequence(char: Char, loc: SourceLocation) extends WeederError {
-    def summary: String = s"Invalid escape sequence '\\${char}'."
+    def summary: String = s"Invalid escape sequence '\\$char'."
 
     def message: String = {
       s"""${line(kind, source.format)}
@@ -551,7 +551,7 @@ object WeederError {
          |""".stripMargin
     }
 
-    override def explain: String = s"${underline("Tip:")} The valid escape sequences are '\\t', '\\\\', '\\\'', '\\\"', '\\n', and '\\r'."
+    override def explain: String = s"${underline("Tip:")}" + " The valid escape sequences are '\\t', '\\\\', '\\\'', '\\\"', '\\n', and '\\r'."
 
   }
 

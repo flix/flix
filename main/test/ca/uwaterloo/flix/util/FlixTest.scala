@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.util
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
-import ca.uwaterloo.flix.util.vt.TerminalContext
 import org.scalatest.FunSuite
 
 class FlixTest(name: String, paths: List[String], options: Options) extends FunSuite {
@@ -49,7 +48,7 @@ class FlixTest(name: String, paths: List[String], options: Options) extends FunS
         // Create a single test that always fails.
         test("Aborted.") {
           for (e <- errors) {
-            println(e.message.fmt(TerminalContext.AnsiTerminal))
+            println(e.message)
           }
           fail(s"Unable to compile FlixTest for test suite: '$name'. Failed with: ${errors.length} errors.")
         }

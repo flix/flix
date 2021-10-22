@@ -16,7 +16,6 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.util.vt.TerminalContext
 import org.json4s.JsonDSL._
 import org.json4s._
 
@@ -29,7 +28,7 @@ object Diagnostic {
     val severity = Some(DiagnosticSeverity.from(compilationMessage.severity))
     val code = compilationMessage.kind
     val message = compilationMessage.summary
-    val fullMessage = (compilationMessage.message << compilationMessage.explain).fmt(TerminalContext.NoTerminal)
+    val fullMessage = compilationMessage.message + compilationMessage.explain
     Diagnostic(range, severity, Some(code), None, message, fullMessage, Nil)
   }
 }
