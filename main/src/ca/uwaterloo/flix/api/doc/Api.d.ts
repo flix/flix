@@ -33,16 +33,6 @@ interface Enum {
 
 }
 
-
-
-//   final class DefnSym(val id: Option[Int], val namespace: List[String], val text: String, val loc: SourceLocation) {
-
-//   final class EnumSym(val namespace: List[String], val name: String, val loc: SourceLocation) {
-
-//   final class SigSym(val clazz: Symbol.ClassSym, val name: String, val loc: SourceLocation) {
-
-//   final class TypeAliasSym(val namespace: List[String], val name: String, val loc: SourceLocation) {
-
 interface TypeParam {
     name: String,
     kind: Kind
