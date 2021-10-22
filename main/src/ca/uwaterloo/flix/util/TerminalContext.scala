@@ -14,11 +14,11 @@
  *  limitations under the License.
  */
 
-package ca.uwaterloo.flix.util.vt
+package ca.uwaterloo.flix.util
 
 /**
-  * A terminal context abstract the operations supported by a specific virtual terminal.
-  */
+ * A terminal context abstract the operations supported by a specific virtual terminal.
+ */
 sealed trait TerminalContext {
 
   def emitBlack(s: String): String
@@ -126,9 +126,9 @@ object TerminalContext {
   }
 
   /**
-    * Returns `true` if the terminal appears to support at least 256 colors.
-    */
-  def hasColorSupport(): Boolean = isAnsiTerminal || isTrueColorTerminal || isWindowsTerminal
+   * Returns `true` if the terminal appears to support at least 256 colors.
+   */
+  def hasColorSupport: Boolean = isAnsiTerminal || isTrueColorTerminal || isWindowsTerminal
 
   /**
     * Returns `true` if the terminal appears to be an ANSI terminal.

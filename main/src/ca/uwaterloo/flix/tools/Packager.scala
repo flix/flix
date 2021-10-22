@@ -20,7 +20,6 @@ import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.github.GitHub
 import ca.uwaterloo.flix.util._
-import ca.uwaterloo.flix.util.vt.TerminalContext
 
 import java.io.{File, PrintWriter}
 import java.nio.file._

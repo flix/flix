@@ -23,7 +23,6 @@ import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
 import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util._
-import ca.uwaterloo.flix.util.vt.TerminalContext
 
 import java.nio.charset.Charset
 import java.nio.file.{Files, Path, Paths}

@@ -1,10 +1,9 @@
 package ca.uwaterloo.flix.tools
 
-import java.nio.file.Files
-
-import ca.uwaterloo.flix.util.Options
-import ca.uwaterloo.flix.util.vt.TerminalContext
+import ca.uwaterloo.flix.util.{Options, TerminalContext}
 import org.scalatest.FunSuite
+
+import java.nio.file.Files
 
 class TestPackager extends FunSuite {
 
