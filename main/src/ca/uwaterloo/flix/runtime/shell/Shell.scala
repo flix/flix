@@ -220,14 +220,14 @@ class Shell(initialPaths: List[Path], options: Options) {
 
           // Iterate through the premises, i.e. the variable symbols in scope.
           for ((varSym, varType) <- env) {
-            vt << Blue(varSym.text) << ": " << cyan(FormatType.formatType(varType)) << " " * 6
+            vt << blue(varSym.text) << ": " << cyan(FormatType.formatType(varType)) << " " * 6
           }
 
           // Print the divider.
           vt << NewLine << "-" * 80 << NewLine
 
           // Print the goal.
-          vt << Blue(sym.toString) << ": " << cyan(FormatType.formatType(holeType)) << NewLine
+          vt << blue(sym.toString) << ": " << cyan(FormatType.formatType(holeType)) << NewLine
 
           // Print the result to the terminal.
           terminal.writer().print(vt.fmt)
@@ -247,7 +247,7 @@ class Shell(initialPaths: List[Path], options: Options) {
       // Find the available namespaces.
       val namespaces = namespacesOf(this.root)
 
-      vt << Bold("Namespaces:") << Indent << NewLine << NewLine
+      vt << bold("Namespaces:") << Indent << NewLine << NewLine
       for (namespace <- namespaces.toList.sorted) {
         vt << namespace << NewLine
       }
@@ -265,7 +265,7 @@ class Shell(initialPaths: List[Path], options: Options) {
       // Print the matched definitions.
       val matchedDefs = getDefinitionsByNamespace(ns, this.root)
       if (matchedDefs.nonEmpty) {
-        vt << Bold("Definitions:") << Indent << NewLine << NewLine
+        vt << bold("Definitions:") << Indent << NewLine << NewLine
         for (defn <- matchedDefs.sortBy(_.sym.name)) {
           prettyPrintDef(defn, vt)
         }
@@ -310,7 +310,7 @@ class Shell(initialPaths: List[Path], options: Options) {
 
     // Construct a new virtual terminal.
     val vt = new VirtualTerminal
-    vt << Bold("Definitions:") << Indent << NewLine << NewLine
+    vt << bold("Definitions:") << Indent << NewLine << NewLine
 
     // Group definitions by namespace.
     val defsByNamespace = this.root.defs.values.groupBy(_.sym.namespace).toList
@@ -322,7 +322,7 @@ class Shell(initialPaths: List[Path], options: Options) {
 
       // Print the namespace.
       if (matchedDefs.nonEmpty) {
-        vt << Bold(ns.mkString("/")) << Indent << NewLine
+        vt << bold(ns.mkString("/")) << Indent << NewLine
         for (defn <- matchedDefs) {
           prettyPrintDef(defn, vt)
         }
@@ -525,7 +525,7 @@ class Shell(initialPaths: List[Path], options: Options) {
     * Pretty prints the given definition `defn` to the given virtual terminal `vt`.
     */
   private def prettyPrintDef(defn: Def, vt: VirtualTerminal): Unit = {
-    vt << Bold("def ") << Blue(defn.sym.name) << "("
+    vt << bold("def ") << blue(defn.sym.name) << "("
     if (defn.spec.fparams.nonEmpty) {
       vt << defn.spec.fparams.head.sym.text << ": " << cyan(FormatType.formatType(defn.spec.fparams.head.tpe))
       for (fparam <- defn.spec.fparams.tail) {
@@ -545,10 +545,10 @@ class Shell(initialPaths: List[Path], options: Options) {
 
     // Check if any holes are present.
     if (holes.nonEmpty) {
-      vt << Bold("Holes:") << Indent
+      vt << bold("Holes:") << Indent
       // Print each hole and its type.
       for ((sym, ctx) <- holes) {
-        vt << NewLine << Blue(sym.toString) << ": " << cyan(FormatType.formatType(ctx.tpe))
+        vt << NewLine << blue(sym.toString) << ": " << cyan(FormatType.formatType(ctx.tpe))
       }
       vt << Dedent << NewLine
     }

@@ -34,25 +34,25 @@ object VirtualString {
 
   case class code(loc: SourceLocation, text: String) extends VirtualString
 
-  case class Text(s: String) extends VirtualString
+  case class text(s: String) extends VirtualString
 
-  case class Black(s: String) extends VirtualString
+  case class black(s: String) extends VirtualString
 
-  case class Blue(s: String) extends VirtualString
+  case class blue(s: String) extends VirtualString
 
   case class cyan(s: String) extends VirtualString
 
-  case class Green(s: String) extends VirtualString
+  case class green(s: String) extends VirtualString
 
   case class magenta(s: String) extends VirtualString
 
   case class red(s: String) extends VirtualString
 
-  case class Yellow(s: String) extends VirtualString
+  case class yellow(s: String) extends VirtualString
 
-  case class White(s: String) extends VirtualString
+  case class white(s: String) extends VirtualString
 
-  case class Bold(s: String) extends VirtualString
+  case class bold(s: String) extends VirtualString
 
   case class underline(s: String) extends VirtualString
 

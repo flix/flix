@@ -27,20 +27,20 @@ class VirtualTerminal() {
   private var buffer: List[VirtualString] = Nil
 
   /**
-    * Appends the given int to this terminal.
-    */
-  def <<(i: Int): VirtualTerminal = <<(Text(i.toString))
+   * Appends the given int to this terminal.
+   */
+  def <<(i: Int): VirtualTerminal = <<(text(i.toString))
 
   /**
-    * Appends the given string to this terminal.
-    */
-  def <<(s: String): VirtualTerminal = <<(Text(s.toString))
+   * Appends the given string to this terminal.
+   */
+  def <<(s: String): VirtualTerminal = <<(text(s.toString))
 
   /**
     * Appends the given string to this terminal.
     */
   def text(s: String): VirtualTerminal = {
-    buffer = Text(s) :: buffer
+    buffer = text(s) :: buffer
     this
   }
 
@@ -48,7 +48,7 @@ class VirtualTerminal() {
     * Appends the given virtual string to this terminal.
     */
   def <<(s: VirtualString): VirtualTerminal = s match {
-    case VirtualString.code(loc, msg) => highlight(loc, Text(msg)); this
+    case VirtualString.code(loc, msg) => highlight(loc, text(msg)); this
     case _ => buffer = s :: buffer; this
   }
 
@@ -74,18 +74,18 @@ class VirtualTerminal() {
         case Dedent => indentation = indentation - 1
 
         // Colors
-        case Text(s) => sb.append(s)
-        case Black(s) => sb.append(ctx.emitBlack(s))
-        case Blue(s) => sb.append(ctx.emitBlue(s))
+        case text(s) => sb.append(s)
+        case black(s) => sb.append(ctx.emitBlack(s))
+        case blue(s) => sb.append(ctx.emitBlue(s))
         case cyan(s) => sb.append(ctx.emitCyan(s))
-        case Green(s) => sb.append(ctx.emitGreen(s))
+        case green(s) => sb.append(ctx.emitGreen(s))
         case magenta(s) => sb.append(ctx.emitMagenta(s))
         case red(s) => sb.append(ctx.emitRed(s))
-        case Yellow(s) => sb.append(ctx.emitYellow(s))
-        case White(s) => sb.append(ctx.emitWhite(s))
+        case yellow(s) => sb.append(ctx.emitYellow(s))
+        case white(s) => sb.append(ctx.emitWhite(s))
 
         // Formatting
-        case Bold(s) => sb.append(ctx.emitBold(s))
+        case bold(s) => sb.append(ctx.emitBold(s))
         case underline(s) => sb.append(ctx.emitUnderline(s))
 
         // Macros

@@ -2,8 +2,8 @@ package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.CompilationResult
-import ca.uwaterloo.flix.util.vt.VirtualTerminal
 import ca.uwaterloo.flix.util.vt.VirtualString._
+import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
   * Evaluates all tests in a model.
@@ -72,10 +72,10 @@ object Tester {
         for (test <- tests.sortBy(_.sym.loc)) {
           test match {
             case TestResult.Success(sym, msg) =>
-              vt << Green("✓") << " " << sym.name << NewLine
+              vt << green("✓") << " " << sym.name << NewLine
               success = success + 1
             case TestResult.Failure(sym, msg) =>
-              vt << red("✗") << " " << sym.name << ": " << msg << " (" << Blue(sym.loc.format) << ")" << NewLine
+              vt << red("✗") << " " << sym.name << ": " << msg << " (" << blue(sym.loc.format) << ")" << NewLine
               failure = failure + 1
           }
         }
@@ -83,7 +83,7 @@ object Tester {
       }
       // Summary
       if (failure == 0) {
-        vt << Green("  Tests Passed!") << s" (Passed: $success / $success)" << NewLine
+        vt << green("  Tests Passed!") << s" (Passed: $success / $success)" << NewLine
       } else {
         vt << red(s"  Tests Failed!") << s" (Passed: $success / ${success + failure})"
       }

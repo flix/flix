@@ -30,7 +30,7 @@ object PrettyPrinter {
     def fmtRoot(root: Root): VirtualTerminal = {
       val vt = new VirtualTerminal()
       for ((sym, defn) <- root.defs.toList.sortBy(_._1.loc)) {
-        vt << Bold("def") << " " << Blue(sym.toString) << "("
+        vt << bold("def") << " " << blue(sym.toString) << "("
         for (fparam <- defn.fparams) {
           fmtParam(fparam, vt)
           vt << ", "
@@ -145,14 +145,14 @@ object PrettyPrinter {
           visitExp(exp2)
 
         case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
-          vt << Bold("if") << " ("
+          vt << bold("if") << " ("
           visitExp(exp1)
           vt.text(") {")
           vt << Indent << NewLine
           visitExp(exp2)
           vt << Dedent << NewLine
           vt.text("} ")
-          vt << Bold("else") << " {"
+          vt << bold("else") << " {"
           vt << Indent << NewLine
           visitExp(exp3)
           vt << Dedent << NewLine
@@ -175,7 +175,7 @@ object PrettyPrinter {
           fmtSym(sym, vt)
 
         case Expression.Let(sym, exp1, exp2, tpe, loc) =>
-          vt << Bold("let") << " "
+          vt << bold("let") << " "
           fmtSym(sym, vt)
           vt.text(" = ")
           vt << Indent << NewLine
@@ -443,7 +443,7 @@ object PrettyPrinter {
     }
 
     def fmtSym(sym: Symbol.DefnSym, vt: VirtualTerminal): Unit = {
-      vt << Blue(sym.toString)
+      vt << blue(sym.toString)
     }
 
     def fmtSym(sym: Symbol.LabelSym, vt: VirtualTerminal): Unit = {

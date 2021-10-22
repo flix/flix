@@ -324,7 +324,7 @@ class TestFormatType extends FunSuite with TestUtils {
 
     val diff = TypeDiff.diff(tpe1, tpe2)
     val expected = "(..., Int32, ...)"
-    val actual = FormatType.formatTypeDiff(diff, VirtualString.Text)(Audience.External).fmt(TerminalContext.NoTerminal)
+    val actual = FormatType.formatTypeDiff(diff, VirtualString.text)(Audience.External).fmt(TerminalContext.NoTerminal)
 
     assert(actual == expected)
   }
@@ -335,7 +335,7 @@ class TestFormatType extends FunSuite with TestUtils {
 
     val diff = TypeDiff.diff(tpe1, tpe2)
     val expected = "... -> Int32"
-    val actual = FormatType.formatTypeDiff(diff, VirtualString.Text)(Audience.External).fmt(TerminalContext.NoTerminal)
+    val actual = FormatType.formatTypeDiff(diff, VirtualString.text)(Audience.External).fmt(TerminalContext.NoTerminal)
 
     assert(actual == expected)
   }
@@ -347,7 +347,7 @@ class TestFormatType extends FunSuite with TestUtils {
 
     val diff = TypeDiff.diff(tpe1, tpe2)
     val expected = "...[..., Bool]"
-    val actual = FormatType.formatTypeDiff(diff, VirtualString.Text)(Audience.External).fmt(TerminalContext.NoTerminal)
+    val actual = FormatType.formatTypeDiff(diff, VirtualString.text)(Audience.External).fmt(TerminalContext.NoTerminal)
 
     assert(actual == expected)
   }

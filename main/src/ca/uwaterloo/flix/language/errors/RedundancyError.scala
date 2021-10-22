@@ -339,7 +339,7 @@ object RedundancyError {
 
     def message: String = {
       s"""${line(kind, source.format)}
-         |>> Type constraint '${red(FormatTypeConstraint.formatTypeConstraint(redundantTconstr))}' is entailed by type constraint '${Green(FormatTypeConstraint.formatTypeConstraint(redundantTconstr))}'.
+         |>> Type constraint '${red(FormatTypeConstraint.formatTypeConstraint(redundantTconstr))}' is entailed by type constraint '${green(FormatTypeConstraint.formatTypeConstraint(redundantTconstr))}'.
          |
          |${code(loc, "redundant type constraint.")}
          |""".stripMargin
