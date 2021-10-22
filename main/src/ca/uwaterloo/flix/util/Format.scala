@@ -54,7 +54,7 @@ object Format {
       leftline
   }
 
-  def text(s: String): String = wrap(s, TextTag)
+  def text(s: String): String = s
 
   def black(s: String): String = wrap(s, BlackTag)
 
@@ -82,18 +82,6 @@ object Format {
     def open: String
 
     def close: String = open.replace("<", "</")
-  }
-
-  case object CodeTag extends Tag {
-    override def open: String = "<Code>"
-  }
-
-  case object LocTag extends Tag {
-    override def open: String = "<Loc>"
-  }
-
-  case object TextTag extends Tag {
-    override def open: String = "<Text>"
   }
 
   case object BlackTag extends Tag {
