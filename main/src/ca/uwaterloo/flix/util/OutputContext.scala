@@ -76,26 +76,45 @@ object OutputContext {
    */
   object AnsiTerminalOutput extends OutputContext {
 
-    def emitBlack(s: String): String = Console.BLACK + s + Console.RESET
+    def emitBlack(s: String): String =
+      s.replace(Format.BlackTag.open, Console.BLACK)
+        .replace(Format.BlackTag.close, Console.RESET)
 
-    def emitBlue(s: String): String = Console.BLUE + s + Console.RESET
+    def emitBlue(s: String): String =
+      s.replace(Format.BlueTag.open, Console.BLUE)
+        .replace(Format.BlueTag.close, Console.RESET)
 
-    def emitCyan(s: String): String = Console.CYAN + s + Console.RESET
+    def emitCyan(s: String): String =
+      s.replace(Format.CyanTag.open, Console.CYAN)
+        .replace(Format.CyanTag.close, Console.RESET)
 
-    def emitGreen(s: String): String = Console.GREEN + s + Console.RESET
+    def emitGreen(s: String): String =
+      s.replace(Format.GreenTag.open, Console.GREEN)
+        .replace(Format.GreenTag.close, Console.RESET)
 
-    def emitMagenta(s: String): String = Console.MAGENTA + s + Console.RESET
+    def emitMagenta(s: String): String =
+      s.replace(Format.MagentaTag.open, Console.MAGENTA)
+        .replace(Format.MagentaTag.close, Console.RESET)
 
-    def emitRed(s: String): String = Console.RED + s + Console.RESET
+    def emitRed(s: String): String =
+      s.replace(Format.RedTag.open, Console.RED)
+        .replace(Format.RedTag.close, Console.RESET)
 
-    def emitYellow(s: String): String = Console.YELLOW + s + Console.RESET
+    def emitYellow(s: String): String =
+      s.replace(Format.YellowTag.open, Console.YELLOW)
+        .replace(Format.YellowTag.close, Console.RESET)
 
-    def emitWhite(s: String): String = Console.WHITE + s + Console.RESET
+    def emitWhite(s: String): String =
+      s.replace(Format.WhiteTag.open, Console.WHITE)
+        .replace(Format.WhiteTag.close, Console.RESET)
 
-    def emitBold(s: String): String = Console.BOLD + s + Console.RESET
+    def emitBold(s: String): String =
+      s.replace(Format.BoldTag.open, Console.BOLD)
+        .replace(Format.BoldTag.close, Console.RESET)
 
-    def emitUnderline(s: String): String = Console.UNDERLINED + s + Console.RESET
-
+    def emitUnderline(s: String): String =
+      s.replace(Format.UnderlineTag.open, Console.UNDERLINED)
+        .replace(Format.UnderlineTag.close, Console.RESET)
   }
 
   /**
@@ -103,26 +122,29 @@ object OutputContext {
    */
   object HTMLOutput extends OutputContext {
 
-    def emitBlack(s: String): String = s"""<span class="black">$s</span>"""
+    def emitBlack(s: String): String = createHTMLTag(s, Format.BlackTag, "black")
 
-    def emitBlue(s: String): String = s"""<span class="blue">$s</span>"""
+    def emitBlue(s: String): String = createHTMLTag(s, Format.BlueTag, "blue")
 
-    def emitCyan(s: String): String = s"""<span class="cyan">$s</span>"""
+    def emitCyan(s: String): String = createHTMLTag(s, Format.CyanTag, "cyan")
 
-    def emitGreen(s: String): String = s"""<span class="green">$s</span>"""
+    def emitGreen(s: String): String = createHTMLTag(s, Format.GreenTag, "green")
 
-    def emitMagenta(s: String): String = s"""<span class="magenta">$s</span>"""
+    def emitMagenta(s: String): String = createHTMLTag(s, Format.MagentaTag, "magenta")
 
-    def emitRed(s: String): String = s"""<span class="red">$s</span>"""
+    def emitRed(s: String): String = createHTMLTag(s, Format.RedTag, "red")
 
-    def emitYellow(s: String): String = s"""<span class="yellow">$s</span>"""
+    def emitYellow(s: String): String = createHTMLTag(s, Format.YellowTag, "yellow")
 
-    def emitWhite(s: String): String = s"""<span class="white">$s</span>"""
+    def emitWhite(s: String): String = createHTMLTag(s, Format.WhiteTag, "white")
 
-    def emitBold(s: String): String = s"""<span class="bold">$s</span>"""
+    def emitBold(s: String): String = createHTMLTag(s, Format.BoldTag, "bold")
 
-    def emitUnderline(s: String): String = s"""<span class="underline">$s</span>"""
+    def emitUnderline(s: String): String = createHTMLTag(s, Format.UnderlineTag, "underline")
 
+    private def createHTMLTag(s: String, tag: Format.Tag, htmlClassName: String): String =
+      s.replace(tag.open, s"""<span class="$htmlClassName">""")
+        .replace(tag.close, "</span>")
   }
 
   /**
@@ -131,8 +153,8 @@ object OutputContext {
   def hasColorSupport: Boolean = isAnsiTerminal || isTrueColorTerminal || isWindowsTerminal
 
   /**
-    * Returns `true` if the terminal appears to be an ANSI terminal.
-    */
+   * Returns `true` if the terminal appears to be an ANSI terminal.
+   */
   private def isAnsiTerminal: Boolean = {
     val term = System.getenv("TERM")
     term != null && (
@@ -143,16 +165,16 @@ object OutputContext {
   }
 
   /**
-    * Returns `true` if the terminal appears to support 24bit colors.
-    */
+   * Returns `true` if the terminal appears to support 24bit colors.
+   */
   private def isTrueColorTerminal: Boolean = {
     val colorTerm = System.getenv("COLORTERM")
     colorTerm != null && colorTerm.contains("truecolor")
   }
 
   /**
-    * Returns `true` if the terminal appears to be a Windows Terminal.
-    */
+   * Returns `true` if the terminal appears to be a Windows Terminal.
+   */
   private def isWindowsTerminal: Boolean = {
     val wtSession = System.getenv("WT_SESSION")
     wtSession != null
