@@ -318,7 +318,7 @@ class TestFormatType extends FunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("FormatTypeDiff.Tuple.01") {
+  ignore("FormatTypeDiff.Tuple.01") {
     val tpe1 = Type.mkTuple(List(Type.Int32, Type.Int32, Type.Int32), loc)
     val tpe2 = Type.mkTuple(List(Type.Int32, Type.Bool, Type.Int32), loc)
 
@@ -329,7 +329,7 @@ class TestFormatType extends FunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("FormatTypeDiff.Arrow.01") {
+  ignore("FormatTypeDiff.Arrow.01") {
     val tpe1 = Type.mkArrowWithEffect(Type.Int32, Type.Pure, Type.Int32, loc)
     val tpe2 = Type.mkArrowWithEffect(Type.Int32, Type.Pure, Type.Bool, loc)
 
@@ -340,7 +340,7 @@ class TestFormatType extends FunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("FormatTypeDiff.Enum.01") {
+  ignore("FormatTypeDiff.Enum.01") {
     val map = Type.mkEnum(Symbol.mkEnumSym("Map"), Kind.Star ->: Kind.Star ->: Kind.Star, loc)
     val tpe1 = Type.mkApply(map, List(Type.Int32, Type.Bool), loc)
     val tpe2 = Type.mkApply(map, List(Type.Int32, Type.Str), loc)
