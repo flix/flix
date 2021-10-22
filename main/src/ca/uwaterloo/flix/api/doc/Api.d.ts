@@ -1,3 +1,5 @@
+import {ClassSym} from "./ClassSym";
+
 interface Api {
     classes: ClassesByNS
     enums: [Enum]
@@ -31,10 +33,7 @@ interface Enum {
 
 }
 
-interface ClassSym {
-    namespace: [String]
-    name: String
-}
+
 
 //   final class DefnSym(val id: Option[Int], val namespace: List[String], val text: String, val loc: SourceLocation) {
 
