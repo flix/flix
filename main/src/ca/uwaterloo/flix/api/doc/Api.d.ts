@@ -1,4 +1,5 @@
 import {ClassSym} from "./ClassSym";
+import {Modifier} from "./Modifier";
 
 interface Api {
     classes: ClassesByNS
@@ -40,4 +41,3 @@ interface TypeParam {
 
 type Kind = "Bool" | "Star"
 
-type Modifier = "public"
