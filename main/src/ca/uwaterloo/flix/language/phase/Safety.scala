@@ -242,7 +242,7 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.Reify(_, _, _, _) => Nil
 
-    case Expression.ReifyType(_, _, _, _) => Nil
+    case Expression.ReifyType(_, _, _, _, _) => Nil
 
   }
 
