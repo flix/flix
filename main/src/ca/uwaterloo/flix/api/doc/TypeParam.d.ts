@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {Kind} from "./Api";
+import {Kind} from "./Kind";
 
 export interface TypeParam {
     // TODO

@@ -14,4 +14,4 @@
  * limitations under the License.
  */
 
-type Kind = "Bool" | "Star"
+export type Kind = "Bool" | "Star" | "Record" | "Schema"
