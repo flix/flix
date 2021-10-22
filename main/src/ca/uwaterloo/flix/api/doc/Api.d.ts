@@ -1,19 +1,33 @@
 import {ClassSym} from "./ClassSym";
-import {Modifier} from "./Modifier";
+import {Def} from "./Def";
 import {Enum} from "./Enum";
+import {Modifier} from "./Modifier";
 import {TypeParam} from "./TypeParam";
+import {TypeAlias} from "./TypeAlias";
 
-interface Api {
+export interface Api {
     classes: ClassesByNS
+    // TODO: instances
+    // TODO: signs
+    defs: DefsByNS
     enums: EnumsByNs
+    typealiases: TypeAliasesByNs
 }
 
 type ClassesByNS = {
     [key: string]: [Class]
 }
 
+type DefsByNS = {
+    [key: string]: [Def]
+}
+
 type EnumsByNs = {
     [key: string]: [Enum]
+}
+
+type TypeAliasesByNs = {
+    [key: string]: [TypeAlias]
 }
 
 interface Class {
@@ -29,7 +43,5 @@ interface Class {
 //   case class Sig(sym: Symbol.SigSym, spec: TypedAst.Spec, impl: Option[TypedAst.Impl])
 //  case class Spec(doc: Ast.Doc, ann: List[TypedAst.Annotation], mod: Ast.Modifiers, tparams: List[TypedAst.TypeParam], fparams: List[TypedAst.FormalParam], declaredScheme: Scheme, retTpe: Type, eff: Type, loc: SourceLocation)
 
-//   case class Def(sym: Symbol.DefnSym, spec: TypedAst.Spec, impl: TypedAst.Impl)
-//   case class Spec(doc: Ast.Doc, ann: List[TypedAst.Annotation], mod: Ast.Modifiers, tparams: List[TypedAst.TypeParam], fparams: List[TypedAst.FormalParam], declaredScheme: Scheme, retTpe: Type, eff: Type, loc: SourceLocation)
 
 

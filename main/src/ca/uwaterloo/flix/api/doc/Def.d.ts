@@ -13,17 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import {DefnSym} from "./DefnSym";
 import {Modifier} from "./Modifier";
-import {SourceLocation} from "./SourceLocation";
-import {Type} from "./Type";
 import {TypeParam} from "./TypeParam";
-import {TypeAliasSym} from "./TypeAliasSym";
+import {Type} from "./Type";
+import {SourceLocation} from "./SourceLocation";
 
-export interface TypeAlias {
+export interface Def {
+    sym: DefnSym
     doc: [string]
     mod: [Modifier]
-    sym: TypeAliasSym
     tparams: [TypeParam]
-    tpe: Type
+    fparams: [string] // TODO
+    retTpe: Type // TODO
+    eff: Type // TODO
     loc: SourceLocation
 }
