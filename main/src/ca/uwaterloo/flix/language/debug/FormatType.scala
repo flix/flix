@@ -20,14 +20,13 @@ package ca.uwaterloo.flix.language.debug
 import ca.uwaterloo.flix.language.ast.Kind.Bool
 import ca.uwaterloo.flix.language.ast.{Kind, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
-import ca.uwaterloo.flix.util.vt.{VirtualString, VirtualTerminal}
 
 object FormatType {
 
   /**
-    * Formats the given type.
-    * The type is assumed to be well-kinded, though not necessarily a proper type (e.g. it may be partially applied).
-    */
+   * Formats the given type.
+   * The type is assumed to be well-kinded, though not necessarily a proper type (e.g. it may be partially applied).
+   */
   def formatType(tpe: Type)(implicit audience: Audience): String = {
 
     val renameMap = alphaRenameVars(tpe)
@@ -281,63 +280,58 @@ object FormatType {
   }
 
   /**
-    * Returns a human readable representation of the given type difference.
-    */
-  def formatTypeDiff(td: TypeDiff, color: String => VirtualString)(implicit audience: Audience): VirtualTerminal = {
-    val vt = new VirtualTerminal()
+   * Returns a human readable representation of the given type difference.
+   */
+  def formatTypeDiff(td: TypeDiff, color: String => String)(implicit audience: Audience): String = {
+    def visit(d: TypeDiff): String = {
+      def visitWithAcc(d: TypeDiff, acc: String): String = {
+        val base = d.typeConstructor
+        val args = d.typeArguments
 
-    def visit(d: TypeDiff): Unit = {
-      val base = d.typeConstructor
-      val args = d.typeArguments
-
-      base match {
-        case TypeDiff.Arrow =>
-          intercalate(args, visit, vt, before = "", separator = " -> ", after = "")
-        case TypeDiff.Enum =>
-          vt << "..."
-          intercalate(args, visit, vt, before = "[", separator = ", ", after = "]")
-        case TypeDiff.Tuple =>
-          intercalate(args, visit, vt, before = "(", separator = ", ", after = ")")
-        case TypeDiff.Other =>
-          vt << "..."
-          intercalate(args, visit, vt, before = "[", separator = ", ", after = "]")
-        case TypeDiff.Mismatch(tpe1, _) => vt << color(formatType(tpe1))
-        case _ => throw InternalCompilerException(s"Unexpected base type: '$base'.")
+        base match {
+          case TypeDiff.Arrow =>
+            intercalate(args, visit, acc, before = "", separator = " -> ", after = "")
+          case TypeDiff.Enum =>
+            intercalate(args, visit, acc + "...", before = "[", separator = ", ", after = "]")
+          case TypeDiff.Tuple =>
+            intercalate(args, visit, acc, before = "(", separator = ", ", after = ")")
+          case TypeDiff.Other =>
+            intercalate(args, visit, acc + "...", before = "[", separator = ", ", after = "]")
+          case TypeDiff.Mismatch(tpe1, _) => acc + color(formatType(tpe1))
+          case _ => throw InternalCompilerException(s"Unexpected base type: '$base'.")
+        }
       }
+
+      visitWithAcc(d, "")
     }
 
     visit(td)
-
-    vt
   }
 
   /**
-    * Helper function to generate text before, in the middle of, and after a list of items.
-    */
-  private def intercalate[A](xs: List[A], f: A => Unit, vt: VirtualTerminal, before: String, separator: String, after: String): Unit = {
-    if (xs.isEmpty) return
-    vt << before
-    var first: Boolean = true
-    for (x <- xs) {
-      if (first) {
-        f(x)
-      } else {
-        vt << separator
-        f(x)
-      }
-      first = false
+   * Helper function to generate text before, in the middle of, and after a list of items.
+   */
+  private def intercalate[A](xs: List[A], f: A => String, start: String, before: String, separator: String, after: String): String = {
+    if (xs.isEmpty) {
+      ""
+    } else {
+      val sb = new StringBuilder()
+      sb.append(start)
+        .append(before)
+        .append(xs.map(f).mkString(separator))
+        .append(after)
+        .toString()
     }
-    vt << after
   }
 
 
   /**
-    * A flat representation of a schema or record.
-    *
-    * Contains the fields and their types as a list at the top level.
-    * This better mirrors the structure of records and schemas as they are displayed (e.g. `{ x :: Int8, y :: Bool | r }`)
-    * rather than their true underlying shape (e.g. `{ x :: Int8 | { y :: Bool | r } }`).
-    */
+   * A flat representation of a schema or record.
+   *
+   * Contains the fields and their types as a list at the top level.
+   * This better mirrors the structure of records and schemas as they are displayed (e.g. `{ x :: Int8, y :: Bool | r }`)
+   * rather than their true underlying shape (e.g. `{ x :: Int8 | { y :: Bool | r } }`).
+   */
   private case class FlatNestable(fields: List[(String, Type)], rest: Type) {
     def ::(head: (String, Type)): FlatNestable = {
       copy(fields = head :: fields)
@@ -345,8 +339,8 @@ object FormatType {
   }
 
   /**
-    * Convert a record to a [[FlatNestable]].
-    */
+   * Convert a record to a [[FlatNestable]].
+   */
   private def flattenRecordRow(record: Type): FlatNestable = record match {
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(field), _), tpe, _), rest, _) =>
       (field.name, tpe) :: flattenRecordRow(rest)
@@ -354,8 +348,8 @@ object FormatType {
   }
 
   /**
-    * Convert a schema to a [[FlatNestable]].
-    */
+   * Convert a schema to a [[FlatNestable]].
+   */
   private def flattenSchemaRow(schema: Type): FlatNestable = schema match {
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), _), tpe, _), rest, _) =>
       (pred.name, tpe) :: flattenSchemaRow(rest)
@@ -364,12 +358,12 @@ object FormatType {
 
 
   /**
-    * Get the var name for the given index.
-    * Maps `0-25` to `a-z`,
-    * then `26-51` to `a1-z1`,
-    * then `52-77` to `a2-z2`,
-    * etc.
-    */
+   * Get the var name for the given index.
+   * Maps `0-25` to `a-z`,
+   * then `26-51` to `a1-z1`,
+   * then `52-77` to `a2-z2`,
+   * etc.
+   */
   private def getVarName(index: Int): String = {
     if (index / 26 <= 0)
       "'" + (index + 'a').toChar.toString
@@ -378,8 +372,8 @@ object FormatType {
   }
 
   /**
-    * Rename the variables in the given type.
-    */
+   * Rename the variables in the given type.
+   */
   private def alphaRenameVars(tpe0: Type): Map[Int, String] = {
     val tvars = typeVars(tpe0)
     val starTypeVars = tvars.filter(_.kind == Kind.Star)
@@ -393,8 +387,8 @@ object FormatType {
   }
 
   /**
-    * Returns all type variables in the type in the order in which they appear.
-    */
+   * Returns all type variables in the type in the order in which they appear.
+   */
   private def typeVars(tpe0: Type): List[Type.Var] = {
     def visit(t: Type): List[Type.Var] = t match {
       case tvar: Type.KindedVar => tvar :: Nil

@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.debug
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.ast.{Kind, Name, Rigidity, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.util.vt.{TerminalContext, VirtualString}
+import ca.uwaterloo.flix.language.errors.Format
 import org.scalatest.FunSuite
 
 class TestFormatType extends FunSuite with TestUtils {
@@ -324,7 +324,7 @@ class TestFormatType extends FunSuite with TestUtils {
 
     val diff = TypeDiff.diff(tpe1, tpe2)
     val expected = "(..., Int32, ...)"
-    val actual = FormatType.formatTypeDiff(diff, VirtualString.text)(Audience.External).fmt(TerminalContext.NoTerminal)
+    val actual = FormatType.formatTypeDiff(diff, Format.text)(Audience.External)
 
     assert(actual == expected)
   }
@@ -335,7 +335,7 @@ class TestFormatType extends FunSuite with TestUtils {
 
     val diff = TypeDiff.diff(tpe1, tpe2)
     val expected = "... -> Int32"
-    val actual = FormatType.formatTypeDiff(diff, VirtualString.text)(Audience.External).fmt(TerminalContext.NoTerminal)
+    val actual = FormatType.formatTypeDiff(diff, Format.text)(Audience.External)
 
     assert(actual == expected)
   }
@@ -347,7 +347,7 @@ class TestFormatType extends FunSuite with TestUtils {
 
     val diff = TypeDiff.diff(tpe1, tpe2)
     val expected = "...[..., Bool]"
-    val actual = FormatType.formatTypeDiff(diff, VirtualString.text)(Audience.External).fmt(TerminalContext.NoTerminal)
+    val actual = FormatType.formatTypeDiff(diff, Format.text)(Audience.External)
 
     assert(actual == expected)
   }
