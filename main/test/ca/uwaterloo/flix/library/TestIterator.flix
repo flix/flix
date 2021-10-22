@@ -69,7 +69,7 @@ namespace TestIterator {
 
     @test
     def toArray01(): Bool & Impure =
-        (Nil: List[Int32] |> List1.toIterator |> Iterator.toArray) == []
+        (Nil: List[Int32] |> List.toIterator |> Iterator.toArray) == []
 
     @test
     def toArray02(): Bool & Impure =
@@ -82,5 +82,25 @@ namespace TestIterator {
     @test
     def toArray04(): Bool & Impure =
         Iterator.range(-100, 200) |> Iterator.toArray == Array.range(-100, 200)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toMap                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toMap01(): Bool & Impure =
+        Nil: List[(String, Int32)] |> List.toIterator |> Iterator.toMap == Map.empty()
+
+    @test
+    def toMap02(): Bool & Impure =
+        (("A", 1) :: ("B", 2) :: ("C", 3) :: ("D", 4) :: Nil)|>
+        List.toIterator |>
+        Iterator.toMap == Map#{"A" -> 1, "B" -> 2, "C" -> 3, "D" -> 4}
+
+    @test
+    def toMap03(): Bool & Impure =
+        let map = Map#{"1" -> 2, "2" -> 3, "3" -> 4};
+        map |> Map.toList |> List.toIterator |> Iterator.toMap == map
 
 }
