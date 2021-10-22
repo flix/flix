@@ -323,7 +323,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val tpe2 = Type.mkTuple(List(Type.Int32, Type.Bool, Type.Int32), loc)
 
     val diff = TypeDiff.diff(tpe1, tpe2)
-    val expected = "(..., Int32, ...)"
+    val expected = "(..., <Text>Int32</Text>, ...)"
     val actual = FormatType.formatTypeDiff(diff, Format.text)(Audience.External)
 
     assert(actual == expected)
@@ -334,7 +334,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val tpe2 = Type.mkArrowWithEffect(Type.Int32, Type.Pure, Type.Bool, loc)
 
     val diff = TypeDiff.diff(tpe1, tpe2)
-    val expected = "... -> Int32"
+    val expected = "... -> <Text>Int32</Text>"
     val actual = FormatType.formatTypeDiff(diff, Format.text)(Audience.External)
 
     assert(actual == expected)
@@ -346,7 +346,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val tpe2 = Type.mkApply(map, List(Type.Int32, Type.Str), loc)
 
     val diff = TypeDiff.diff(tpe1, tpe2)
-    val expected = "...[..., Bool]"
+    val expected = "...[..., <Text>Bool</Text>]"
     val actual = FormatType.formatTypeDiff(diff, Format.text)(Audience.External)
 
     assert(actual == expected)
