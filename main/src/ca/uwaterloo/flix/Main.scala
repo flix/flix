@@ -208,7 +208,7 @@ object Main {
 
         if (cmdOpts.test) {
           val results = Tester.test(compilationResult)
-          Console.println(results.output.fmt)
+          Console.println(results.output)
         }
       case Validation.Failure(errors) =>
         errors.sortBy(_.source.name).foreach(e => println(e.message))

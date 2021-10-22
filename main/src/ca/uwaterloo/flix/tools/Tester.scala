@@ -1,91 +1,91 @@
 package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.errors.Format
 import ca.uwaterloo.flix.runtime.CompilationResult
 
 /**
-  * Evaluates all tests in a model.
-  */
+ * Evaluates all tests in a model.
+ */
 object Tester {
 
   /**
-    * Represents the outcome of a single test.
-    */
+   * Represents the outcome of a single test.
+   */
   sealed trait TestResult {
     /**
-      * The symbol associated with the test.
-      */
+     * The symbol associated with the test.
+     */
     def sym: Symbol.DefnSym
   }
 
   object TestResult {
 
     /**
-      * Represents a successful test case.
-      */
+     * Represents a successful test case.
+     */
     case class Success(sym: Symbol.DefnSym, msg: String) extends TestResult
 
     /**
-      * Represents a failed test case.
-      */
+     * Represents a failed test case.
+     */
     case class Failure(sym: Symbol.DefnSym, msg: String) extends TestResult
 
   }
 
   /**
-    * Represents the outcome of a run of a suite of tests.
-    */
+   * Represents the outcome of a run of a suite of tests.
+   */
   sealed trait OverallTestResult
 
   object OverallTestResult {
 
     /**
-      * Represents the outcome where all tests succeeded.
-      */
+     * Represents the outcome where all tests succeeded.
+     */
     case object Success extends OverallTestResult
 
     /**
-      * Represents the outcome where at least one test failed.
-      */
+     * Represents the outcome where at least one test failed.
+     */
     case object Failure extends OverallTestResult
 
     /**
-      * Represents the outcome where no tests were run.
-      */
+     * Represents the outcome where no tests were run.
+     */
     case object NoTests extends OverallTestResult
   }
 
   /**
-    * Represents the results of running all the tests in a given model.
-    */
+   * Represents the results of running all the tests in a given model.
+   */
   case class TestResults(results: List[TestResult]) {
-    def output: VirtualTerminal = {
+    def output: String = {
       var success = 0
       var failure = 0
-      val vt = new VirtualTerminal()
+      val sb = new StringBuilder()
       for ((ns, tests) <- results.groupBy(_.sym.namespace)) {
         val namespace = if (ns.isEmpty) "root" else ns.mkString("/")
-        vt << line("Tests", namespace)
-        vt << Indent << NewLine
+        sb.append(Format.line("Tests", namespace) + System.lineSeparator())
         for (test <- tests.sortBy(_.sym.loc)) {
           test match {
             case TestResult.Success(sym, msg) =>
-              vt << green("✓") << " " << sym.name << NewLine
+              sb.append("  " + Format.green("✓") + " " + sym.name + System.lineSeparator())
               success = success + 1
             case TestResult.Failure(sym, msg) =>
-              vt << red("✗") << " " << sym.name << ": " << msg << " (" << blue(sym.loc.format) << ")" << NewLine
+              sb.append("  " + Format.red("✗") + " " + sym.name + ": " + msg + " (" + Format.blue(sym.loc.format) + ")" + System.lineSeparator())
               failure = failure + 1
           }
         }
-        vt << Dedent << NewLine
+        sb.append(System.lineSeparator())
       }
       // Summary
       if (failure == 0) {
-        vt << green("  Tests Passed!") << s" (Passed: $success / $success)" << NewLine
+        sb.append(Format.green("  Tests Passed!") + s" (Passed: $success / $success)" + System.lineSeparator())
       } else {
-        vt << red(s"  Tests Failed!") << s" (Passed: $success / ${success + failure})"
+        sb.append(Format.red(s"  Tests Failed!") + s" (Passed: $success / ${success + failure})" + System.lineSeparator())
       }
-      vt
+      sb.toString()
     }
 
     def overallResult: OverallTestResult = {
@@ -100,10 +100,10 @@ object Tester {
   }
 
   /**
-    * Evaluates all tests.
-    *
-    * Returns a pair of (successful, failed)-tests.
-    */
+   * Evaluates all tests.
+   *
+   * Returns a pair of (successful, failed)-tests.
+   */
   def test(compilationResult: CompilationResult): TestResults = {
     val results = compilationResult.getTests.toList.map {
       case (sym, defn) =>
