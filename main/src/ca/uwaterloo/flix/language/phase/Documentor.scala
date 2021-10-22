@@ -33,23 +33,6 @@ import java.nio.file.{Files, Path, Paths}
 
 object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
 
-  private val Api: String =
-    """
-      |interface Api {
-      |    classes: [Class];
-      |}
-      |""".stripMargin
-
-
-  private val Class: String =
-    """
-      |interface Class {
-      |    name: String,
-      |    doc: [String]
-      |}
-      |
-      |""".stripMargin
-
   /**
     * The title of the generated API.
     */
