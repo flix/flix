@@ -7,7 +7,7 @@
  *
  *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
+ * Unless requiFormat.red by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.debug
 
 import ca.uwaterloo.flix.language.ast.LiftedAst._
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.errors.Format
 
 object PrettyPrinter {
 
@@ -25,459 +26,466 @@ object PrettyPrinter {
 
   object Lifted {
 
-    def fmtRoot(root: Root): VirtualTerminal = {
-      val vt = new VirtualTerminal()
+    def fmtRoot(root: Root): String = {
+      val sb = new StringBuilder()
       for ((sym, defn) <- root.defs.toList.sortBy(_._1.loc)) {
-        vt << bold("def") << " " << blue(sym.toString) << "("
+        sb.append(s"${Format.bold("def")} ${Format.blue(sym.toString)}(")
         for (fparam <- defn.fparams) {
-          fmtParam(fparam, vt)
-          vt << ", "
+          sb.append(s"${fmtParam(fparam)}, ")
         }
-        vt << ") = "
-        vt << Indent << NewLine
-        fmtDef(defn, vt)
-        vt << Dedent << NewLine << NewLine
+        sb.append(") = ")
+        sb.append(fmtDef(defn).replace(System.lineSeparator(), System.lineSeparator() + "  "))
+        sb.append(System.lineSeparator() + System.lineSeparator())
       }
-      vt
+      sb.toString()
     }
 
-    def fmtDef(defn: Def, vt: VirtualTerminal): Unit = {
-      fmtExp(defn.exp, vt)
+    def fmtDef(defn: Def): String = {
+      fmtExp(defn.exp)
     }
 
-    def fmtExp(exp0: Expression, vt: VirtualTerminal): Unit = {
-      def visitExp(e0: Expression): Unit = e0 match {
-        case Expression.Unit(_) => vt.text("Unit")
+    def fmtExp(exp0: Expression): String = {
+      def visitExp(e0: Expression): String = e0 match {
+        case Expression.Unit(_) => Format.text("Unit")
 
-        case Expression.Null(tpe, _) => vt.text("null")
+        case Expression.Null(tpe, _) => Format.text("null")
 
-        case Expression.True(_) => vt.text("true")
+        case Expression.True(_) => Format.text("true")
 
-        case Expression.False(_) => vt.text("false")
+        case Expression.False(_) => Format.text("false")
 
-        case Expression.Char(lit, _) => vt.text("'").text(lit.toString).text("'")
+        case Expression.Char(lit, _) => Format.text("'") + Format.text(lit.toString) + Format.text("'")
 
-        case Expression.Float32(lit, _) => vt.text(lit.toString).text("f32")
+        case Expression.Float32(lit, _) => Format.text(lit.toString) + Format.text("f32")
 
-        case Expression.Float64(lit, _) => vt.text(lit.toString).text("f32")
+        case Expression.Float64(lit, _) => Format.text(lit.toString) + Format.text("f32")
 
-        case Expression.Int8(lit, _) => vt.text(lit.toString).text("i8")
+        case Expression.Int8(lit, _) => Format.text(lit.toString) + Format.text("i8")
 
-        case Expression.Int16(lit, _) => vt.text(lit.toString).text("i16")
+        case Expression.Int16(lit, _) => Format.text(lit.toString) + Format.text("i16")
 
-        case Expression.Int32(lit, _) => vt.text(lit.toString).text("i32")
+        case Expression.Int32(lit, _) => Format.text(lit.toString) + Format.text("i32")
 
-        case Expression.Int64(lit, _) => vt.text(lit.toString).text("i64")
+        case Expression.Int64(lit, _) => Format.text(lit.toString) + Format.text("i64")
 
-        case Expression.BigInt(lit, _) => vt.text(lit.toString()).text("ii")
+        case Expression.BigInt(lit, _) => Format.text(lit.toString()) + Format.text("ii")
 
-        case Expression.Str(lit, _) => vt.text("\"").text(lit).text("\"")
+        case Expression.Str(lit, _) => Format.text("\"") + Format.text(lit) + Format.text("\"")
 
-        case Expression.Var(sym, tpe, loc) => fmtSym(sym, vt)
+        case Expression.Var(sym, tpe, loc) => fmtSym(sym)
 
         case Expression.Closure(sym, freeVars, tpe, loc) =>
-          vt.text("Closure(")
-          fmtSym(sym, vt)
-          vt.text(", [")
+          val sb = new StringBuilder()
+          sb.append(Format.text("Closure("))
+            .append(fmtSym(sym))
+            .append(Format.text(", ["))
           for (freeVar <- freeVars) {
-            fmtSym(freeVar.sym, vt)
-            vt.text(", ")
+            sb.append(fmtSym(freeVar.sym))
+              .append(Format.text(", "))
           }
-          vt.text("])")
+          sb.append(Format.text("])"))
+            .toString()
 
         case Expression.ApplyClo(exp, args, tpe, loc) =>
-          visitExp(exp)
-          vt.text("(")
+          val sb = new StringBuilder()
+          sb.append(visitExp(exp))
+            .append(Format.text("("))
           for (arg <- args) {
-            visitExp(arg)
-            vt.text(", ")
+            sb.append(visitExp(arg))
+              .append(Format.text(", "))
           }
-          vt.text(")")
+          sb.append(Format.text(")"))
+            .toString()
 
         case Expression.ApplyDef(sym, args, tpe, loc) =>
-          fmtSym(sym, vt)
-          vt.text("(")
+          val sb = new StringBuilder()
+          sb.append(fmtSym(sym))
+            .append(Format.text("("))
           for (arg <- args) {
-            visitExp(arg)
-            vt.text(", ")
+            sb.append(visitExp(arg))
+              .append(Format.text(", "))
           }
-          vt.text(")")
-          vt.text(")")
+          sb.append(Format.text(")"))
+            .append(Format.text(")"))
+            .toString()
 
         case Expression.ApplyCloTail(exp, args, tpe, loc) =>
-          visitExp(exp)
-          vt.text("*(")
+          val sb = new StringBuilder()
+          sb.append(visitExp(exp))
+            .append(Format.text("*("))
           for (arg <- args) {
-            visitExp(arg)
-            vt.text(", ")
+            sb.append(visitExp(arg))
+              .append(Format.text(", "))
           }
-          vt.text(")")
+          sb.append(Format.text(")"))
+            .toString()
 
         case Expression.ApplyDefTail(sym, args, tpe, loc) =>
-          fmtSym(sym, vt)
-          vt.text("*(")
+          val sb = new StringBuilder()
+          sb.append(fmtSym(sym))
+            .append(Format.text("*("))
           for (arg <- args) {
-            visitExp(arg)
-            vt.text(", ")
+            sb.append(visitExp(arg))
+              .append(Format.text(", "))
           }
-          vt.text(")")
+          sb.append(Format.text(")"))
+            .toString()
 
         case Expression.ApplySelfTail(name, formals, args, tpe, loc) =>
-          vt.text("ApplySelfTail")
-          vt.text("*(")
+          val sb = new StringBuilder()
+          sb.append(Format.text("ApplySelfTail"))
+            .append(Format.text("*("))
           for (arg <- args) {
-            visitExp(arg)
-            vt.text(", ")
+            sb.append(visitExp(arg))
+              .append(Format.text(", "))
           }
-          vt.text(")")
+          sb.append(Format.text(")"))
+            .toString()
 
         case Expression.Unary(sop, op, exp, tpe, loc) =>
-          fmtUnaryOp(op, vt)
-          visitExp(exp)
+          fmtUnaryOp(op) + visitExp(exp)
 
         case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
-          visitExp(exp1)
-          vt.text(" ")
-          fmtBinaryOp(op, vt)
-          vt.text(" ")
-          visitExp(exp2)
+          val sb = new StringBuilder()
+          sb.append(visitExp(exp1))
+            .append(Format.text(" "))
+            .append(fmtBinaryOp(op))
+            .append(Format.text(" "))
+            .append(visitExp(exp2))
+            .toString()
 
         case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
-          vt << bold("if") << " ("
-          visitExp(exp1)
-          vt.text(") {")
-          vt << Indent << NewLine
-          visitExp(exp2)
-          vt << Dedent << NewLine
-          vt.text("} ")
-          vt << bold("else") << " {"
-          vt << Indent << NewLine
-          visitExp(exp3)
-          vt << Dedent << NewLine
-          vt.text("}")
+          val sb = new StringBuilder()
+          sb.append(Format.bold("if") + " (")
+            .append(visitExp(exp1))
+            .append(Format.text(") {"))
+            .append(System.lineSeparator())
+            .append("  " + visitExp(exp2).replace(System.lineSeparator(), System.lineSeparator() + "  "))
+            .append(System.lineSeparator())
+            .append(Format.text("} "))
+            .append(Format.bold("else") + " {")
+            .append(System.lineSeparator())
+            .append("  " + visitExp(exp3).replace(System.lineSeparator(), System.lineSeparator() + "  "))
+            .append(System.lineSeparator())
+            .append(Format.text("}"))
+            .toString()
 
         case Expression.Branch(exp, branches, tpe, loc) =>
-          vt << "branch {" << Indent << NewLine
-          visitExp(exp)
-          vt << NewLine
+          val sb = new StringBuilder()
+          sb.append("branch {")
+            .append("  " + visitExp(exp).replace(System.lineSeparator(), System.lineSeparator() + "  "))
+            .append(System.lineSeparator())
           for ((sym, b) <- branches) {
-            fmtSym(sym, vt)
-            vt << ":" << Indent << NewLine
-            visitExp(b)
-            vt << Dedent << NewLine
+            sb.append("    " + fmtSym(sym).replace(System.lineSeparator(), System.lineSeparator() + "    "))
+              .append(":")
+              .append(System.lineSeparator())
+              .append("    " + visitExp(b).replace(System.lineSeparator(), System.lineSeparator() + "    "))
+              .append(System.lineSeparator())
           }
-          vt << "}" << Dedent << NewLine
+          sb.append("}")
+            .append(System.lineSeparator())
+            .toString()
 
-        case Expression.JumpTo(sym, tpe, loc) =>
-          vt << "jumpto" << " "
-          fmtSym(sym, vt)
+        case Expression.JumpTo(sym, tpe, loc) => s"jumpto ${fmtSym(sym)}"
 
         case Expression.Let(sym, exp1, exp2, tpe, loc) =>
-          vt << bold("let") << " "
-          fmtSym(sym, vt)
-          vt.text(" = ")
-          vt << Indent << NewLine
-          visitExp(exp1)
-          vt << Dedent
-          vt << ";" << NewLine
-          visitExp(exp2)
+          val sb = new StringBuilder()
+          sb.append(Format.bold("let "))
+            .append(fmtSym(sym))
+            .append(Format.text(" = "))
+            .append(visitExp(exp1).replace(System.lineSeparator(), System.lineSeparator() + "  "))
+            .append(";")
+            .append(System.lineSeparator())
+            .append(visitExp(exp2))
+            .toString()
 
-        case Expression.Is(sym, tag, exp, loc) =>
-          visitExp(exp)
-          vt.text(" is ")
-          vt.text(tag.name)
+        case Expression.Is(sym, tag, exp, loc) => visitExp(exp) + Format.text(" is ") + Format.text(tag.name)
 
         case Expression.Tag(sym, tag, exp, tpe, loc) => exp match {
-          case Expression.Unit(_) => vt.text(tag.name)
+          case Expression.Unit(_) => Format.text(tag.name)
           case _ =>
-            vt.text(tag.name).text("(")
-            visitExp(exp)
-            vt.text(")")
+            val sb = new StringBuilder()
+            sb.append(Format.text(tag.name))
+              .append(Format.text("("))
+              .append(visitExp(exp))
+              .append(Format.text(")"))
+              .toString()
         }
 
-        case Expression.Untag(sym, tag, exp, tpe, loc) =>
-          vt.text("Untag(")
-          visitExp(exp)
-          vt.text(")")
+        case Expression.Untag(sym, tag, exp, tpe, loc) => Format.text("Untag(") + visitExp(exp) + Format.text(")")
 
         case Expression.Index(exp, offset, tpe, loc) =>
-          visitExp(exp)
-          vt.text("[")
-          vt.text(offset.toString)
-          vt.text("]")
+          visitExp(exp) +
+            Format.text("[") +
+            Format.text(offset.toString) +
+            Format.text("]")
 
         case Expression.Tuple(elms, tpe, loc) =>
-          vt.text("(")
+          val sb = new StringBuilder()
+          sb.append(Format.text("("))
           for (elm <- elms) {
-            visitExp(elm)
-            vt.text(", ")
+            sb.append(visitExp(elm))
+              .append(Format.text(", "))
           }
-          vt.text(")")
+          sb.append(Format.text(")"))
+            .toString()
 
-        case Expression.RecordEmpty(tpe, loc) =>
-          vt.text("{}")
+        case Expression.RecordEmpty(tpe, loc) => Format.text("{}")
 
         case Expression.RecordSelect(exp, field, tpe, loc) =>
-          visitExp(exp)
-          vt.text(".")
-          vt.text(field.name)
+          visitExp(exp) +
+            Format.text(".") +
+            Format.text(field.name)
 
         case Expression.RecordExtend(field, value, rest, tpe, loc) =>
-          vt.text("{ ")
-          vt.text(field.name)
-          vt.text(" = ")
-          visitExp(value)
-          vt.text(" | ")
-          visitExp(rest)
-          vt.text(" }")
+          Format.text("{ ") +
+            Format.text(field.name) +
+            Format.text(" = ") +
+            visitExp(value) +
+            Format.text(" | ") +
+            visitExp(rest) +
+            Format.text(" }")
 
         case Expression.RecordRestrict(field, rest, tpe, loc) =>
-          vt.text("{ -")
-          vt.text(field.name)
-          vt.text(" | ")
-          visitExp(rest)
-          vt.text("}")
+          Format.text("{ -") +
+            Format.text(field.name) +
+            Format.text(" | ") +
+            visitExp(rest) +
+            Format.text("}")
 
         case Expression.ArrayLit(elms, tpe, loc) =>
-          vt.text("[")
+          val sb = new StringBuilder()
+          sb.append(Format.text("["))
           for (elm <- elms) {
-            visitExp(elm)
-            vt.text(",")
+            sb.append(visitExp(elm))
+            sb.append(Format.text(","))
           }
-          vt.text("]")
+          sb.append(Format.text("]"))
+            .toString()
 
         case Expression.ArrayNew(elm, len, tpe, loc) =>
-          vt.text("[")
-          visitExp(elm)
-          vt.text(";")
-          vt.text(len.toString)
-          vt.text("]")
+          Format.text("[") +
+            visitExp(elm) +
+            Format.text(";") +
+            Format.text(len.toString) +
+            Format.text("]")
 
         case Expression.ArrayLoad(base, index, tpe, loc) =>
-          visitExp(base)
-          vt.text("[")
-          visitExp(index)
-          vt.text("]")
+          visitExp(base) +
+            Format.text("[") +
+            visitExp(index) +
+            Format.text("]")
 
         case Expression.ArrayStore(base, index, elm, tpe, loc) =>
-          visitExp(base)
-          vt.text("[")
-          visitExp(index)
-          vt.text("]")
-          vt.text(" = ")
-          visitExp(elm)
+          visitExp(base) +
+            Format.text("[") +
+            visitExp(index) +
+            Format.text("]") +
+            Format.text(" = ") +
+            visitExp(elm)
 
         case Expression.ArrayLength(base, tpe, loc) =>
-          vt.text("length")
-          vt.text("[")
-          visitExp(base)
-          vt.text("]")
+          Format.text("length") +
+            Format.text("[") +
+            visitExp(base) +
+            Format.text("]")
 
         case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
-          visitExp(base)
-          vt.text("[")
-          visitExp(beginIndex)
-          vt.text("..")
-          visitExp(endIndex)
-          vt.text("]")
+          visitExp(base) +
+            Format.text("[") +
+            visitExp(beginIndex) +
+            Format.text("..") +
+            visitExp(endIndex) +
+            Format.text("]")
 
-        case Expression.Ref(exp, tpe, loc) =>
-          vt.text("ref ")
-          visitExp(exp)
+        case Expression.Ref(exp, tpe, loc) => Format.text("ref ") + visitExp(exp)
 
-        case Expression.Deref(exp, tpe, loc) =>
-          vt.text("deref ")
-          visitExp(exp)
+        case Expression.Deref(exp, tpe, loc) => Format.text("deref ") + visitExp(exp)
 
-        case Expression.Assign(exp1, exp2, tpe, loc) =>
-          visitExp(exp1)
-          vt.text(" := ")
-          visitExp(exp2)
+        case Expression.Assign(exp1, exp2, tpe, loc) => visitExp(exp1) + Format.text(" := ") + visitExp(exp2)
 
         case Expression.Existential(fparam, exp, loc) =>
-          vt.text("∃(")
-          fmtParam(fparam, vt)
-          vt.text("). ")
-          visitExp(exp)
+          Format.text("∃(") +
+            fmtParam(fparam) +
+            Format.text("). ") +
+            visitExp(exp)
 
         case Expression.Universal(fparam, exp, loc) =>
-          vt.text("∀(")
-          fmtParam(fparam, vt)
-          vt.text("). ")
-          visitExp(exp)
+          Format.text("∀(") +
+            fmtParam(fparam) +
+            Format.text("). ") +
+            visitExp(exp)
 
         case Expression.Cast(exp, tpe, loc) =>
-          visitExp(exp)
-          vt.text(" as ")
-          vt.text(tpe.toString)
+          visitExp(exp) +
+            Format.text(" as ") +
+            Format.text(tpe.toString)
 
         case Expression.TryCatch(exp, rules, tpe, loc) =>
-          vt << "try {" << Indent << NewLine
-          visitExp(exp)
-          vt << Dedent << NewLine
-          vt << "} catch {" << Indent << NewLine
+          val sb = new StringBuilder()
+          sb.append("try {")
+            .append(System.lineSeparator())
+            .append("  " + visitExp(exp).replace(System.lineSeparator(), System.lineSeparator() + "  "))
+            .append(System.lineSeparator())
+            .append("} catch {")
+            .append(System.lineSeparator())
           for (CatchRule(sym, clazz, body) <- rules) {
-            vt << "case "
-            fmtSym(sym, vt)
-            vt << ": " << clazz.toString << " => "
-            visitExp(body)
+            sb.append("  case ")
+              .append(fmtSym(sym))
+              .append(s": ${clazz.toString} => ")
+              .append(System.lineSeparator())
+              .append("    " + visitExp(body).replace(System.lineSeparator(), System.lineSeparator() + "    "))
+              .append(System.lineSeparator())
           }
-          vt << Dedent << NewLine << "}" << NewLine
+          sb.append("}")
+            .append(System.lineSeparator())
+            .toString()
 
         case Expression.InvokeConstructor(constructor, args, tpe, loc) =>
-          vt.text(constructor.toString)
-          vt.text("(")
+          val sb = new StringBuilder()
+          sb.append(Format.text(constructor.toString))
+            .append(Format.text("("))
           for (e <- args) {
-            visitExp(e)
-            vt.text(", ")
+            sb.append(visitExp(e))
+              .append(Format.text(", "))
           }
-          vt.text(")")
+          sb.append(Format.text(")"))
+            .toString()
 
         case Expression.InvokeMethod(method, exp, args, tpe, loc) =>
-          visitExp(exp)
-          vt.text(".")
-          vt.text(method.getDeclaringClass.getCanonicalName + "." + method.getName)
-          vt.text("(")
+          val sb = new StringBuilder()
+          sb.append(visitExp(exp))
+            .append(Format.text("."))
+            .append(Format.text(method.getDeclaringClass.getCanonicalName + "." + method.getName))
+            .append(Format.text("("))
           for (e <- args) {
-            visitExp(e)
-            vt.text(", ")
+            sb.append(visitExp(e))
+              .append(Format.text(", "))
           }
-          vt.text(")")
+          sb.append(Format.text(")"))
+            .toString()
 
         case Expression.InvokeStaticMethod(method, args, tpe, loc) =>
-          vt.text(method.getDeclaringClass.getCanonicalName + "." + method.getName)
-          vt.text("(")
+          val sb = new StringBuilder()
+          sb.append(Format.text(method.getDeclaringClass.getCanonicalName + "." + method.getName))
+            .append(Format.text("("))
           for (e <- args) {
-            visitExp(e)
-            vt.text(", ")
+            sb.append(visitExp(e))
+              .append(Format.text(", "))
           }
-          vt.text(")")
+          sb.append(Format.text(")"))
+            .toString()
 
         case Expression.GetField(field, exp, tpe, loc) =>
-          vt.text("get field ")
-          vt.text(field.getName)
-          vt.text(" of ")
-          visitExp(exp)
+          Format.text("get field ") +
+            Format.text(field.getName) +
+            Format.text(" of ") +
+            visitExp(exp)
 
         case Expression.PutField(field, exp1, exp2, tpe, loc) =>
-          vt.text("put field ")
-          vt.text(field.getName)
-          vt.text(" of ")
-          visitExp(exp1)
-          vt.text(" value ")
-          visitExp(exp2)
+          Format.text("put field ") +
+            Format.text(field.getName) +
+            Format.text(" of ") +
+            visitExp(exp1) +
+            Format.text(" value ") +
+            visitExp(exp2)
 
-        case Expression.GetStaticField(field, tpe, loc) =>
-          vt.text("get static field ")
-          vt.text(field.getName)
+        case Expression.GetStaticField(field, tpe, loc) => Format.text("get static field ") + Format.text(field.getName)
 
         case Expression.PutStaticField(field, exp, tpe, loc) =>
-          vt.text("put static field ")
-          vt.text(field.getName)
-          vt.text(" value ")
-          visitExp(exp)
+          Format.text("put static field ") +
+            Format.text(field.getName) +
+            Format.text(" value ") +
+            visitExp(exp)
 
-        case Expression.NewChannel(exp, tpe, loc) =>
-          vt.text("Channel")
-          vt.text(" ")
-          visitExp(exp)
+        case Expression.NewChannel(exp, tpe, loc) => Format.text("Channel") + Format.text(" ") + visitExp(exp)
 
-        case Expression.PutChannel(exp1, exp2, tpe, loc) =>
-          visitExp(exp1)
-          vt.text(" <- ")
-          visitExp(exp2)
+        case Expression.PutChannel(exp1, exp2, tpe, loc) => visitExp(exp1) + Format.text(" <- ") + visitExp(exp2)
 
-        case Expression.GetChannel(exp, tpe, loc) =>
-          vt.text("<- ")
-          visitExp(exp)
+        case Expression.GetChannel(exp, tpe, loc) => Format.text("<- ") + visitExp(exp)
 
         case Expression.SelectChannel(rules, default, tpe, loc) =>
-          vt << "select {" << Indent << NewLine
+          val sb = new StringBuilder()
+          sb.append("select {")
+            .append(System.lineSeparator())
           for (SelectChannelRule(sym, chan, exp) <- rules) {
-            vt << "case "
-            fmtSym(sym, vt)
-            vt << " <- "
-            visitExp(chan)
-            vt << " => "
-            visitExp(exp)
-            vt << NewLine
+            sb.append("  case ")
+              .append(fmtSym(sym))
+              .append(" <- ")
+              .append(visitExp(chan).replace(System.lineSeparator(), System.lineSeparator() + "  "))
+              .append(" => ")
+              .append(System.lineSeparator())
+              .append("    " + visitExp(exp).replace(System.lineSeparator(), System.lineSeparator() + "    "))
+              .append(System.lineSeparator())
           }
           default match {
             case Some(exp) =>
-              vt << "case _ => "
-              visitExp(exp)
-              vt << NewLine
+              sb.append("  case _ => ")
+                .append(System.lineSeparator())
+                .append("    " + visitExp(exp).replace(System.lineSeparator(), System.lineSeparator() + "    "))
+                .append(System.lineSeparator())
             case None =>
           }
-          vt << Dedent << "}"
+          sb.append("}")
+            .toString()
 
-        case Expression.Spawn(exp, tpe, loc) =>
-          vt.text("spawn ")
-          visitExp(exp)
+        case Expression.Spawn(exp, tpe, loc) => Format.text("spawn ") + visitExp(exp)
 
-        case Expression.Lazy(exp, tpe, loc) =>
-          vt.text("lazy ")
-          visitExp(exp)
+        case Expression.Lazy(exp, tpe, loc) => Format.text("lazy ") + visitExp(exp)
 
-        case Expression.Force(exp, tpe, loc) =>
-          vt.text("force ")
-          visitExp(exp)
+        case Expression.Force(exp, tpe, loc) => Format.text("force ") + visitExp(exp)
 
-        case Expression.HoleError(sym, tpe, loc) => red("HoleError")
-        case Expression.MatchError(tpe, loc) => vt << red("MatchError")
+        case Expression.HoleError(sym, tpe, loc) => Format.red("HoleError")
+        case Expression.MatchError(tpe, loc) => Format.red("MatchError")
       }
 
       visitExp(exp0)
     }
 
-    def fmtParam(p: FormalParam, vt: VirtualTerminal): Unit = {
-      fmtSym(p.sym, vt)
-      vt.text(": ")
-      vt.text(FormatType.formatType(p.tpe))
+    def fmtParam(p: FormalParam): String = {
+      fmtSym(p.sym) + Format.text(": ") + Format.text(FormatType.formatType(p.tpe))
     }
 
-    def fmtSym(sym: Symbol.VarSym, vt: VirtualTerminal): Unit = {
-      vt << cyan(sym.toString)
+    def fmtSym(sym: Symbol.VarSym): String = {
+      Format.cyan(sym.toString)
     }
 
-    def fmtSym(sym: Symbol.DefnSym, vt: VirtualTerminal): Unit = {
-      vt << blue(sym.toString)
+    def fmtSym(sym: Symbol.DefnSym): String = {
+      Format.blue(sym.toString)
     }
 
-    def fmtSym(sym: Symbol.LabelSym, vt: VirtualTerminal): Unit = {
-      vt << magenta(sym.toString)
+    def fmtSym(sym: Symbol.LabelSym): String = {
+      Format.magenta(sym.toString)
     }
 
-    def fmtUnaryOp(op: UnaryOperator, vt: VirtualTerminal): Unit = op match {
-      case UnaryOperator.LogicalNot => vt.text("not")
-      case UnaryOperator.Plus => vt.text("+")
-      case UnaryOperator.Minus => vt.text("-")
-      case UnaryOperator.BitwiseNegate => vt.text("~~~")
+    def fmtUnaryOp(op: UnaryOperator): String = op match {
+      case UnaryOperator.LogicalNot => Format.text("not")
+      case UnaryOperator.Plus => Format.text("+")
+      case UnaryOperator.Minus => Format.text("-")
+      case UnaryOperator.BitwiseNegate => Format.text("~~~")
     }
 
-    def fmtBinaryOp(op: BinaryOperator, vt: VirtualTerminal): VirtualTerminal = op match {
-      case BinaryOperator.Plus => vt.text("+")
-      case BinaryOperator.Minus => vt.text("-")
-      case BinaryOperator.Times => vt.text("*")
-      case BinaryOperator.Divide => vt.text("/")
-      case BinaryOperator.Modulo => vt.text("%")
-      case BinaryOperator.Exponentiate => vt.text("**")
-      case BinaryOperator.Less => vt.text("<")
-      case BinaryOperator.LessEqual => vt.text("<=")
-      case BinaryOperator.Greater => vt.text(">")
-      case BinaryOperator.GreaterEqual => vt.text(">=")
-      case BinaryOperator.Equal => vt.text("==")
-      case BinaryOperator.NotEqual => vt.text("!=")
-      case BinaryOperator.Spaceship => vt.text("<=>")
-      case BinaryOperator.LogicalAnd => vt.text("and")
-      case BinaryOperator.LogicalOr => vt.text("or")
-      case BinaryOperator.BitwiseAnd => vt.text("&&&")
-      case BinaryOperator.BitwiseOr => vt.text("|||")
-      case BinaryOperator.BitwiseXor => vt.text("^^^")
-      case BinaryOperator.BitwiseLeftShift => vt.text("<<<")
-      case BinaryOperator.BitwiseRightShift => vt.text(">>>")
+    def fmtBinaryOp(op: BinaryOperator): String = op match {
+      case BinaryOperator.Plus => Format.text("+")
+      case BinaryOperator.Minus => Format.text("-")
+      case BinaryOperator.Times => Format.text("*")
+      case BinaryOperator.Divide => Format.text("/")
+      case BinaryOperator.Modulo => Format.text("%")
+      case BinaryOperator.Exponentiate => Format.text("**")
+      case BinaryOperator.Less => Format.text("<")
+      case BinaryOperator.LessEqual => Format.text("<=")
+      case BinaryOperator.Greater => Format.text(">")
+      case BinaryOperator.GreaterEqual => Format.text(">=")
+      case BinaryOperator.Equal => Format.text("==")
+      case BinaryOperator.NotEqual => Format.text("!=")
+      case BinaryOperator.Spaceship => Format.text("<=>")
+      case BinaryOperator.LogicalAnd => Format.text("and")
+      case BinaryOperator.LogicalOr => Format.text("or")
+      case BinaryOperator.BitwiseAnd => Format.text("&&&")
+      case BinaryOperator.BitwiseOr => Format.text("|||")
+      case BinaryOperator.BitwiseXor => Format.text("^^^")
+      case BinaryOperator.BitwiseLeftShift => Format.text("<<<")
+      case BinaryOperator.BitwiseRightShift => Format.text(">>>")
     }
-
   }
-
 }
