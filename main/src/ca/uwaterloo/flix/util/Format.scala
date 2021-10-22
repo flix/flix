@@ -4,19 +4,55 @@ import ca.uwaterloo.flix.language.ast.SourceLocation
 
 object Format {
 
-  def line(left: String, right: String): String = {
-    wrap(
-      wrap(left, LeftTag) +
-        wrap(right, RightTag),
-      LineTag)
+  // Maybe move this function somewhere else and simply wrap left and right in LineTag
+  def line(left: String, right: String): String =
+    this.blue(s"-- $left -------------------------------------------------- $right${System.lineSeparator()}")
+
+  // Maybe move this function somewhere else and simply wrap in CodeTag
+  def code(loc: SourceLocation, msg: String): String = {
+    val beginLine = loc.beginLine
+    val beginCol = loc.beginCol
+    val endLine = loc.endLine
+    val endCol = loc.endCol
+    val lineAt = loc.lineAt
+
+    def underline: String = {
+      val sb = new StringBuilder()
+      val lineNo = beginLine.toString + " | "
+      sb.append(lineNo)
+        .append(lineAt(beginLine))
+        .append(System.lineSeparator())
+        .append(" " * (beginCol + lineNo.length - 1))
+        .append(red("^" * (endCol - beginCol)))
+        .append(System.lineSeparator())
+        .append(" " * (beginCol + lineNo.length - 1))
+        .append(msg)
+        .append(System.lineSeparator())
+        .toString()
+    }
+
+    def leftline: String = {
+      val sb = new StringBuilder()
+      for (lineNo <- beginLine to endLine) {
+        val currentLine = lineAt(lineNo)
+        sb.append(lineNo)
+          .append(" |")
+          .append(red(">"))
+          .append(" ")
+          .append(currentLine)
+          .append(System.lineSeparator())
+      }
+      sb.append(System.lineSeparator())
+        .append(msg)
+        .append(System.lineSeparator())
+        .toString()
+    }
+
+    if (beginLine == endLine)
+      underline
+    else
+      leftline
   }
-
-  def code(loc: SourceLocation, text: String): String =
-    wrap(
-      wrap(loc.format, LocTag) +
-        wrap(text, TextTag),
-      CodeTag)
-
 
   def text(s: String): String = wrap(s, TextTag)
 
@@ -46,18 +82,6 @@ object Format {
     def open: String
 
     def close: String = open.replace("<", "</")
-  }
-
-  case object LineTag extends Tag {
-    override def open: String = "<Line>"
-  }
-
-  case object RightTag extends Tag {
-    override def open: String = "<Right>"
-  }
-
-  case object LeftTag extends Tag {
-    override def open: String = "<Left>"
   }
 
   case object CodeTag extends Tag {
