@@ -4,30 +4,111 @@ import ca.uwaterloo.flix.language.ast.SourceLocation
 
 object Format {
 
-  def line(left: String, right: String): String = s"<Line><Left>$left</Left><Right>$right</Right></Line>"
+  def line(left: String, right: String): String = {
+    wrap(
+      wrap(left, LeftTag) +
+        wrap(right, RightTag),
+      LineTag)
+  }
 
-  def code(loc: SourceLocation, text: String): String = s"<Code><Loc>${loc.format}</Loc>${this.text(text)}</Code>"
+  def code(loc: SourceLocation, text: String): String =
+    wrap(
+      wrap(loc.format, LocTag) +
+        wrap(text, TextTag),
+      CodeTag)
 
-  def text(s: String): String = s"<Text>$s</Text>"
 
-  def black(s: String): String = s"<Black>$s</Black>"
+  def text(s: String): String = wrap(s, TextTag)
 
-  def blue(s: String): String = s"<Blue>$s</Blue>"
+  def black(s: String): String = wrap(s, BlackTag)
 
-  def cyan(s: String): String = s"<Cyan>$s</Cyan>"
+  def blue(s: String): String = wrap(s, BlueTag)
 
-  def green(s: String): String = s"<Green>$s</Green>"
+  def cyan(s: String): String = wrap(s, CyanTag)
 
-  def magenta(s: String): String = s"<Magenta>$s</Magenta>"
+  def green(s: String): String = wrap(s, GreenTag)
 
-  def red(s: String): String = s"<Red>$s</Red>"
+  def magenta(s: String): String = wrap(s, MagentaTag)
 
-  def yellow(s: String): String = s"<Yellow>$s</Yellow>"
+  def red(s: String): String = wrap(s, RedTag)
 
-  def white(s: String): String = s"<White>$s</White>"
+  def yellow(s: String): String = wrap(s, YellowTag)
 
-  def bold(s: String): String = s"<Bold>$s</Bold>"
+  def white(s: String): String = wrap(s, WhiteTag)
 
-  def underline(s: String): String = s"<Underline>$s</Underline>"
+  def bold(s: String): String = wrap(s, BoldTag)
 
+  def underline(s: String): String = wrap(s, UnderlineTag)
+
+  private def wrap(s: String, t: Tag): String = t.open + s + t.close
+
+  sealed trait Tag {
+    def open: String
+
+    def close: String = open.replace("<", "</")
+  }
+
+  case object LineTag extends Tag {
+    override def open: String = "<Line>"
+  }
+
+  case object RightTag extends Tag {
+    override def open: String = "<Right>"
+  }
+
+  case object LeftTag extends Tag {
+    override def open: String = "<Left>"
+  }
+
+  case object CodeTag extends Tag {
+    override def open: String = "<Code>"
+  }
+
+  case object LocTag extends Tag {
+    override def open: String = "<Loc>"
+  }
+
+  case object TextTag extends Tag {
+    override def open: String = "<Text>"
+  }
+
+  case object BlackTag extends Tag {
+    override def open: String = "<Black>"
+  }
+
+  case object BlueTag extends Tag {
+    override def open: String = "<Blue>"
+  }
+
+  case object CyanTag extends Tag {
+    override def open: String = "<Cyan>"
+  }
+
+  case object GreenTag extends Tag {
+    override def open: String = "<Green>"
+  }
+
+  case object MagentaTag extends Tag {
+    override def open: String = "<Magenta>"
+  }
+
+  case object RedTag extends Tag {
+    override def open: String = "<Red>"
+  }
+
+  case object YellowTag extends Tag {
+    override def open: String = "<Yellow>"
+  }
+
+  case object WhiteTag extends Tag {
+    override def open: String = "<White>"
+  }
+
+  case object BoldTag extends Tag {
+    override def open: String = "<Bold>"
+  }
+
+  case object UnderlineTag extends Tag {
+    override def open: String = "<Underline>"
+  }
 }
