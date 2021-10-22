@@ -22,8 +22,8 @@ import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme, FormatType}
 import ca.uwaterloo.flix.util.Format
 
 /**
- * A common super-type for instance errors.
- */
+  * A common super-type for instance errors.
+  */
 sealed trait InstanceError extends CompilationMessage {
   val kind: String = "Instance Error"
 }
@@ -32,11 +32,11 @@ object InstanceError {
   private implicit val audience: Audience = Audience.External
 
   /**
-   * Error indicating that the types of two instances overlap.
-   *
-   * @param loc1 the location of the first instance.
-   * @param loc2 the location of the second instance.
-   */
+    * Error indicating that the types of two instances overlap.
+    *
+    * @param loc1 the location of the first instance.
+    * @param loc2 the location of the second instance.
+    */
   case class OverlappingInstances(loc1: SourceLocation, loc2: SourceLocation) extends InstanceError {
     def summary: String = "Overlapping instances."
 
@@ -55,13 +55,13 @@ object InstanceError {
   }
 
   /**
-   * Error indicating that the type scheme of a definition does not match the type scheme of the signature it implements.
-   *
-   * @param sigSym   the mismatched signature
-   * @param loc      the location of the definition
-   * @param expected the scheme of the signature
-   * @param actual   the scheme of the definition
-   */
+    * Error indicating that the type scheme of a definition does not match the type scheme of the signature it implements.
+    *
+    * @param sigSym   the mismatched signature
+    * @param loc      the location of the definition
+    * @param expected the scheme of the signature
+    * @param actual   the scheme of the definition
+    */
   case class MismatchedSignatures(sigSym: Symbol.SigSym, loc: SourceLocation, expected: Scheme, actual: Scheme) extends InstanceError {
     def summary: String = "Mismatched signature."
 
@@ -81,11 +81,11 @@ object InstanceError {
   }
 
   /**
-   * Error indicating the instance is missing a signature implementation.
-   *
-   * @param sig the missing signature.
-   * @param loc the location of the instance.
-   */
+    * Error indicating the instance is missing a signature implementation.
+    *
+    * @param sig the missing signature.
+    * @param loc the location of the instance.
+    */
   case class MissingImplementation(sig: Symbol.SigSym, loc: SourceLocation) extends InstanceError {
     def summary: String = "Missing implementation."
 
@@ -102,11 +102,11 @@ object InstanceError {
   }
 
   /**
-   * Error indicating the instance has a definition not present in the implemented class.
-   *
-   * @param defn the extraneous definition.
-   * @param loc  the location of the definition.
-   */
+    * Error indicating the instance has a definition not present in the implemented class.
+    *
+    * @param defn the extraneous definition.
+    * @param loc  the location of the definition.
+    */
   case class ExtraneousDefinition(defn: Symbol.DefnSym, loc: SourceLocation) extends InstanceError {
     def summary: String = "Extraneous implementation."
 
@@ -121,12 +121,12 @@ object InstanceError {
   }
 
   /**
-   * Error indicating the duplicate use of a type variable in an instance type.
-   *
-   * @param tvar the duplicated type variable.
-   * @param sym  the class symbol.
-   * @param loc  the location where the error occurred.
-   */
+    * Error indicating the duplicate use of a type variable in an instance type.
+    *
+    * @param tvar the duplicated type variable.
+    * @param sym  the class symbol.
+    * @param loc  the location where the error occurred.
+    */
   case class DuplicateTypeVariableOccurrence(tvar: Type.KindedVar, sym: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
     override def summary: String = "Duplicate type variable."
 
@@ -143,12 +143,12 @@ object InstanceError {
   }
 
   /**
-   * Error indicating a complex instance type.
-   *
-   * @param tpe the complex type.
-   * @param sym the class symbol.
-   * @param loc the location where the error occurred.
-   */
+    * Error indicating a complex instance type.
+    *
+    * @param tpe the complex type.
+    * @param sym the class symbol.
+    * @param loc the location where the error occurred.
+    */
   case class ComplexInstanceType(tpe: Type, sym: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
     override def summary: String = "Complex instance type."
 
@@ -163,12 +163,12 @@ object InstanceError {
   }
 
   /**
-   * Error indicating a type alias in an instance type.
-   *
-   * @param alias the type alias.
-   * @param clazz the class symbol.
-   * @param loc   the location where the error occurred.
-   */
+    * Error indicating a type alias in an instance type.
+    *
+    * @param alias the type alias.
+    * @param clazz the class symbol.
+    * @param loc   the location where the error occurred.
+    */
   case class IllegalTypeAliasInstance(alias: Symbol.TypeAliasSym, clazz: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
     override def summary: String = "Type alias in instance type."
 
@@ -185,12 +185,12 @@ object InstanceError {
   }
 
   /**
-   * Error indicating an orphan instance.
-   *
-   * @param tpe the instance type.
-   * @param sym the class symbol.
-   * @param loc the location where the error occurred.
-   */
+    * Error indicating an orphan instance.
+    *
+    * @param tpe the instance type.
+    * @param sym the class symbol.
+    * @param loc the location where the error occurred.
+    */
   case class OrphanInstance(tpe: Type, sym: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
     override def summary: String = "Orphan instance."
 
@@ -205,13 +205,13 @@ object InstanceError {
   }
 
   /**
-   * Error indicating a missing super class instance.
-   *
-   * @param tpe        the type for which the super class instance is missing.
-   * @param subClass   the symbol of the sub class.
-   * @param superClass the symbol of the super class.
-   * @param loc        the location where the error occurred.
-   */
+    * Error indicating a missing super class instance.
+    *
+    * @param tpe        the type for which the super class instance is missing.
+    * @param subClass   the symbol of the sub class.
+    * @param superClass the symbol of the super class.
+    * @param loc        the location where the error occurred.
+    */
   case class MissingSuperClassInstance(tpe: Type, subClass: Symbol.ClassSym, superClass: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
     override def summary: String = s"Missing super class instance '$superClass'."
 
@@ -230,11 +230,11 @@ object InstanceError {
   }
 
   /**
-   * Error indicating an unlawful signature in a lawful class.
-   *
-   * @param sym the symbol of the unlawful signature.
-   * @param loc the location where the error occurred.
-   */
+    * Error indicating an unlawful signature in a lawful class.
+    *
+    * @param sym the symbol of the unlawful signature.
+    * @param loc the location where the error occurred.
+    */
   case class UnlawfulSignature(sym: Symbol.SigSym, loc: SourceLocation) extends InstanceError {
     override def summary: String = s"Unlawful signature '$sym'."
 
@@ -251,11 +251,11 @@ object InstanceError {
   }
 
   /**
-   * Error indicating the illegal placement of an override modifier.
-   *
-   * @param sym the def that the modifier was applied to.
-   * @param loc the location where the error occurred.
-   */
+    * Error indicating the illegal placement of an override modifier.
+    *
+    * @param sym the def that the modifier was applied to.
+    * @param loc the location where the error occurred.
+    */
   case class IllegalOverride(sym: Symbol.DefnSym, loc: SourceLocation) extends InstanceError {
     override def summary: String = s"Illegal override of '$sym'."
 
@@ -273,11 +273,11 @@ object InstanceError {
   }
 
   /**
-   * Error indicating a missing override modifier.
-   *
-   * @param sym the def that is missing the modifier.
-   * @param loc the location where the error occurred.
-   */
+    * Error indicating a missing override modifier.
+    *
+    * @param sym the def that is missing the modifier.
+    * @param loc the location where the error occurred.
+    */
   case class UnmarkedOverride(sym: Symbol.DefnSym, loc: SourceLocation) extends InstanceError {
     override def summary: String = s"Unmarked override '$sym'."
 

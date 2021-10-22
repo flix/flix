@@ -20,8 +20,8 @@ import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.Format
 
 /**
- * A common super-type for termination errors.
- */
+  * A common super-type for termination errors.
+  */
 sealed trait TerminationError extends CompilationMessage {
   val kind: String = "Termination Error"
 }
@@ -29,10 +29,10 @@ sealed trait TerminationError extends CompilationMessage {
 object TerminationError {
 
   /**
-   * An error raised to indicate that the given definition recurses unconditionally.
-   *
-   * @param sym the unconditionally recursive definition.
-   */
+    * An error raised to indicate that the given definition recurses unconditionally.
+    *
+    * @param sym the unconditionally recursive definition.
+    */
   case class UnconditionalRecursion(sym: Symbol.DefnSym) extends TerminationError {
     def summary: String = "Unconditional recursion."
 

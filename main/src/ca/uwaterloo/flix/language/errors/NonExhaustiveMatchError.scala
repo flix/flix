@@ -21,8 +21,8 @@ import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
 import ca.uwaterloo.flix.util.Format
 
 /**
- * An error raised to indicate a non exhaustive pattern match expression.
- */
+  * An error raised to indicate a non exhaustive pattern match expression.
+  */
 case class NonExhaustiveMatchError(rules: List[TypedAst.MatchRule], pat: String, loc: SourceLocation) extends CompilationMessage {
   val kind = "Pattern Match"
 

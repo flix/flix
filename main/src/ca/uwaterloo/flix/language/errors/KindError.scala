@@ -21,20 +21,20 @@ import ca.uwaterloo.flix.language.debug.FormatKind.formatKind
 import ca.uwaterloo.flix.util.Format
 
 /**
- * A common super-type for kind errors.
- */
+  * A common super-type for kind errors.
+  */
 sealed trait KindError extends CompilationMessage {
   val kind: String = "Kind Error"
 }
 
 object KindError {
   /**
-   * An error describing mismatched inferred kinds.
-   *
-   * @param k1  the first kind.
-   * @param k2  the second kind.
-   * @param loc the location where the error occurred.
-   */
+    * An error describing mismatched inferred kinds.
+    *
+    * @param k1  the first kind.
+    * @param k2  the second kind.
+    * @param loc the location where the error occurred.
+    */
   case class MismatchedKinds(k1: Kind, k2: Kind, loc: SourceLocation) extends KindError {
     override def summary: String = s"Mismatched kinds: '${formatKind(k1)}' and '${formatKind(k2)}''"
 
@@ -51,12 +51,12 @@ object KindError {
   }
 
   /**
-   * An error describing a kind that doesn't match the expected kind.
-   *
-   * @param expectedKind the expected kind.
-   * @param actualKind   the actual kind.
-   * @param loc          the location where the error occurred.
-   */
+    * An error describing a kind that doesn't match the expected kind.
+    *
+    * @param expectedKind the expected kind.
+    * @param actualKind   the actual kind.
+    * @param loc          the location where the error occurred.
+    */
   case class UnexpectedKind(expectedKind: Kind, actualKind: Kind, loc: SourceLocation) extends KindError {
     override def summary: String = s"Kind ${formatKind(expectedKind)} was expected, but found ${formatKind(actualKind)}."
 

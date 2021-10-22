@@ -22,8 +22,8 @@ import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
 import ca.uwaterloo.flix.util.Format
 
 /**
- * An error raised to indicate that a constraint set is not stratified.
- */
+  * An error raised to indicate that a constraint set is not stratified.
+  */
 case class StratificationError(cycle: List[(Name.Pred, SourceLocation)], tpe: Type, loc: SourceLocation) extends CompilationMessage {
   private implicit val audience: Audience = Audience.External
 

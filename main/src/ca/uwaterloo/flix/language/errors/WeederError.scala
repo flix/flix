@@ -21,8 +21,8 @@ import ca.uwaterloo.flix.language.ast.{Name, SourceLocation}
 import ca.uwaterloo.flix.util.Format
 
 /**
- * A common super-type for weeding errors.
- */
+  * A common super-type for weeding errors.
+  */
 sealed trait WeederError extends CompilationMessage {
   val kind = "Syntax Error"
 }
@@ -30,12 +30,12 @@ sealed trait WeederError extends CompilationMessage {
 object WeederError {
 
   /**
-   * An error raised to indicate that the annotation `name` was used multiple times.
-   *
-   * @param name the name of the attribute.
-   * @param loc1 the location of the first annotation.
-   * @param loc2 the location of the second annotation.
-   */
+    * An error raised to indicate that the annotation `name` was used multiple times.
+    *
+    * @param name the name of the attribute.
+    * @param loc1 the location of the first annotation.
+    * @param loc2 the location of the second annotation.
+    */
   case class DuplicateAnnotation(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     def summary: String = s"Multiple occurrences of the annotation '$name'."
 
@@ -57,12 +57,12 @@ object WeederError {
   }
 
   /**
-   * An error raised to indicate that the formal parameter `name` was declared multiple times.
-   *
-   * @param name the name of the parameter.
-   * @param loc1 the location of the first parameter.
-   * @param loc2 the location of the second parameter.
-   */
+    * An error raised to indicate that the formal parameter `name` was declared multiple times.
+    *
+    * @param name the name of the parameter.
+    * @param loc1 the location of the first parameter.
+    * @param loc2 the location of the second parameter.
+    */
   case class DuplicateFormalParam(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     def summary: String = s"Multiple declarations of the formal parameter '$name'."
 
@@ -84,12 +84,12 @@ object WeederError {
   }
 
   /**
-   * An error raised to indicate that the modifier `name` was used multiple times.
-   *
-   * @param name the name of the modifier.
-   * @param loc1 the location of the first modifier.
-   * @param loc2 the location of the second modifier.
-   */
+    * An error raised to indicate that the modifier `name` was used multiple times.
+    *
+    * @param name the name of the modifier.
+    * @param loc1 the location of the first modifier.
+    * @param loc2 the location of the second modifier.
+    */
   case class DuplicateModifier(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     def summary: String = s"Duplicate modifier '$name'."
 
@@ -108,13 +108,13 @@ object WeederError {
   }
 
   /**
-   * An error raised to indicate that the tag `name` was declared multiple times.
-   *
-   * @param enumName the name of the enum.
-   * @param tag      the name of the tag.
-   * @param loc1     the location of the first tag.
-   * @param loc2     the location of the second tag.
-   */
+    * An error raised to indicate that the tag `name` was declared multiple times.
+    *
+    * @param enumName the name of the enum.
+    * @param tag      the name of the tag.
+    * @param loc1     the location of the first tag.
+    * @param loc2     the location of the second tag.
+    */
   case class DuplicateTag(enumName: String, tag: Name.Tag, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     def summary: String = s"Duplicate tag: '$tag'."
 
@@ -136,10 +136,10 @@ object WeederError {
   }
 
   /**
-   * An error raised to indicate an illegal array length.
-   *
-   * @param loc the location where the illegal array length occurs.
-   */
+    * An error raised to indicate an illegal array length.
+    *
+    * @param loc the location where the illegal array length occurs.
+    */
   case class IllegalArrayLength(loc: SourceLocation) extends WeederError {
     def summary: String = "Illegal array length"
 
@@ -153,10 +153,10 @@ object WeederError {
   }
 
   /**
-   * An error raised to indicate an illegal field name.
-   *
-   * @param loc the location where the illegal field name occurs.
-   */
+    * An error raised to indicate an illegal field name.
+    *
+    * @param loc the location where the illegal field name occurs.
+    */
   case class IllegalFieldName(loc: SourceLocation) extends WeederError {
     def summary: String = "Illegal field name"
 
@@ -171,11 +171,11 @@ object WeederError {
   }
 
   /**
-   * An error raised to indicate that the formal parameter lacks a type declaration.
-   *
-   * @param name the name of the parameter.
-   * @param loc  the location of the formal parameter.
-   */
+    * An error raised to indicate that the formal parameter lacks a type declaration.
+    *
+    * @param name the name of the parameter.
+    * @param loc  the location of the formal parameter.
+    */
   case class IllegalFormalParameter(name: String, loc: SourceLocation) extends WeederError {
     def summary: String = "The formal parameter must have a declared type."
 
@@ -193,10 +193,10 @@ object WeederError {
   }
 
   /**
-   * An error raised to indicate an illegal existential quantification expression.
-   *
-   * @param loc the location where the illegal expression occurs.
-   */
+    * An error raised to indicate an illegal existential quantification expression.
+    *
+    * @param loc the location where the illegal expression occurs.
+    */
   case class IllegalExistential(loc: SourceLocation) extends WeederError {
     def summary: String = "The existential quantifier does not declare any formal parameters."
 
@@ -214,10 +214,10 @@ object WeederError {
   }
 
   /**
-   * An error raised to indicate an illegal universal quantification expression.
-   *
-   * @param loc the location where the illegal expression occurs.
-   */
+    * An error raised to indicate an illegal universal quantification expression.
+    *
+    * @param loc the location where the illegal expression occurs.
+    */
   case class IllegalUniversal(loc: SourceLocation) extends WeederError {
     def summary: String = "The universal quantifier does not declare any formal parameters."
 
@@ -235,10 +235,10 @@ object WeederError {
   }
 
   /**
-   * An error raised to indicate that a float is out of bounds.
-   *
-   * @param loc the location where the illegal float occurs.
-   */
+    * An error raised to indicate that a float is out of bounds.
+    *
+    * @param loc the location where the illegal float occurs.
+    */
   case class IllegalFloat(loc: SourceLocation) extends WeederError {
     def summary: String = "Illegal float."
 
@@ -256,10 +256,10 @@ object WeederError {
   }
 
   /**
-   * An error raised to indicate that an int is out of bounds.
-   *
-   * @param loc the location where the illegal int occurs.
-   */
+    * An error raised to indicate that an int is out of bounds.
+    *
+    * @param loc the location where the illegal int occurs.
+    */
   case class IllegalInt(loc: SourceLocation) extends WeederError {
     def summary: String = "Illegal int."
 
@@ -277,10 +277,10 @@ object WeederError {
   }
 
   /**
-   * An error raised to indicate an illegal intrinsic.
-   *
-   * @param loc the location where the illegal intrinsic occurs.
-   */
+    * An error raised to indicate an illegal intrinsic.
+    *
+    * @param loc the location where the illegal intrinsic occurs.
+    */
   case class IllegalIntrinsic(loc: SourceLocation) extends WeederError {
     def summary: String = "Illegal intrinsic"
 
@@ -294,10 +294,10 @@ object WeederError {
   }
 
   /**
-   * An error raised to indicate an illegal modifier.
-   *
-   * @param loc the location where the illegal modifier occurs.
-   */
+    * An error raised to indicate an illegal modifier.
+    *
+    * @param loc the location where the illegal modifier occurs.
+    */
   case class IllegalModifier(loc: SourceLocation) extends WeederError {
     def summary: String = "Illegal modifier."
 
@@ -311,10 +311,10 @@ object WeederError {
   }
 
   /**
-   * An error raised to indicate an illegal null pattern.
-   *
-   * @param loc the location where the illegal pattern occurs.
-   */
+    * An error raised to indicate an illegal null pattern.
+    *
+    * @param loc the location where the illegal pattern occurs.
+    */
   case class IllegalNullPattern(loc: SourceLocation) extends WeederError {
     def summary: String = "Illegal null pattern"
 
@@ -328,10 +328,10 @@ object WeederError {
   }
 
   /**
-   * An error raised to indicate an illegal jvm field or method name.
-   *
-   * @param loc the location of the name.
-   */
+    * An error raised to indicate an illegal jvm field or method name.
+    *
+    * @param loc the location of the name.
+    */
   case class IllegalJvmFieldOrMethodName(loc: SourceLocation) extends WeederError {
     def summary: String = "Illegal jvm field or method name."
 
@@ -345,10 +345,10 @@ object WeederError {
   }
 
   /**
-   * An error raised to indicate an illegal wildcard in an expression.
-   *
-   * @param loc the location where the illegal wildcard occurs.
-   */
+    * An error raised to indicate an illegal wildcard in an expression.
+    *
+    * @param loc the location where the illegal wildcard occurs.
+    */
   case class IllegalWildcard(loc: SourceLocation) extends WeederError {
     def summary: String = "Wildcard not allowed here."
 
@@ -362,12 +362,12 @@ object WeederError {
   }
 
   /**
-   * An error raised to indicate a mismatched arity.
-   *
-   * @param expected the expected arity.
-   * @param actual   the actual arity.
-   * @param loc      the location where mismatch occurs.
-   */
+    * An error raised to indicate a mismatched arity.
+    *
+    * @param expected the expected arity.
+    * @param actual   the actual arity.
+    * @param loc      the location where mismatch occurs.
+    */
   case class MismatchedArity(expected: Int, actual: Int, loc: SourceLocation) extends WeederError {
     def summary: String = s"Mismatched arity: expected: $expected, actual: $actual."
 
@@ -381,12 +381,12 @@ object WeederError {
   }
 
   /**
-   * An error raised to indicate that the variable `name` occurs multiple times in the same pattern.
-   *
-   * @param name the name of the variable.
-   * @param loc1 the location of the first use of the variable.
-   * @param loc2 the location of the second use of the variable.
-   */
+    * An error raised to indicate that the variable `name` occurs multiple times in the same pattern.
+    *
+    * @param name the name of the variable.
+    * @param loc1 the location of the first use of the variable.
+    * @param loc2 the location of the second use of the variable.
+    */
   case class NonLinearPattern(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     def summary: String = s"Multiple occurrences of '$name' in pattern."
 
@@ -408,11 +408,11 @@ object WeederError {
   }
 
   /**
-   * An error raised to indicate an undefined annotation.
-   *
-   * @param name the name of the undefined annotation.
-   * @param loc  the location of the annotation.
-   */
+    * An error raised to indicate an undefined annotation.
+    *
+    * @param name the name of the undefined annotation.
+    * @param loc  the location of the annotation.
+    */
   case class UndefinedAnnotation(name: String, loc: SourceLocation) extends WeederError {
     def summary: String = s"Undefined annotation $name"
 
@@ -426,11 +426,11 @@ object WeederError {
   }
 
   /**
-   * An error raised to indicate an illegal private declaration.
-   *
-   * @param ident the name of the declaration.
-   * @param loc   the location where the error occurred.
-   */
+    * An error raised to indicate an illegal private declaration.
+    *
+    * @param ident the name of the declaration.
+    * @param loc   the location where the error occurred.
+    */
   case class IllegalPrivateDeclaration(ident: Name.Ident, loc: SourceLocation) extends WeederError {
     def summary: String = s"Illegal private declaration '${ident.name}'."
 
@@ -448,10 +448,10 @@ object WeederError {
   }
 
   /**
-   * An error raised to indicate an illegal type constraint parameter.
-   *
-   * @param loc the location where the error occurred.
-   */
+    * An error raised to indicate an illegal type constraint parameter.
+    *
+    * @param loc the location where the error occurred.
+    */
   case class IllegalTypeConstraintParameter(loc: SourceLocation) extends WeederError {
     def summary: String = s"Illegal type constraint parameter."
 
@@ -469,10 +469,10 @@ object WeederError {
   }
 
   /**
-   * An error raised to indicate type params where some (but not all) are explicitly kinded.
-   *
-   * @param loc the location where the error occurred.
-   */
+    * An error raised to indicate type params where some (but not all) are explicitly kinded.
+    *
+    * @param loc the location where the error occurred.
+    */
   case class InconsistentTypeParameters(loc: SourceLocation) extends WeederError {
     def summary: String = "Either all or none of the type parameters must be annotated with a kind."
 
@@ -490,10 +490,10 @@ object WeederError {
   }
 
   /**
-   * An error raised to indicate type params that are not kinded.
-   *
-   * @param loc the location where the error occurred.
-   */
+    * An error raised to indicate type params that are not kinded.
+    *
+    * @param loc the location where the error occurred.
+    */
   case class UnkindedTypeParameters(loc: SourceLocation) extends WeederError {
     def summary: String = "Type parameters here must be annotated with a kind."
 
@@ -511,11 +511,11 @@ object WeederError {
   }
 
   /**
-   * An error raised to indicate a malformed unicode escape sequence.
-   *
-   * @param code the escape sequence
-   * @param loc  the location where the error occurred.
-   */
+    * An error raised to indicate a malformed unicode escape sequence.
+    *
+    * @param code the escape sequence
+    * @param loc  the location where the error occurred.
+    */
   case class MalformedUnicodeEscapeSequence(code: String, loc: SourceLocation) extends WeederError {
     def summary: String = s"Malformed unicode escape sequence '$code'."
 
@@ -533,11 +533,11 @@ object WeederError {
   }
 
   /**
-   * An error raised to indicate an invalid escape sequence.
-   *
-   * @param char the invalid escape character.
-   * @param loc  the location where the error occurred.
-   */
+    * An error raised to indicate an invalid escape sequence.
+    *
+    * @param char the invalid escape character.
+    * @param loc  the location where the error occurred.
+    */
   case class InvalidEscapeSequence(char: Char, loc: SourceLocation) extends WeederError {
     def summary: String = s"Invalid escape sequence '\\$char'."
 
@@ -555,11 +555,11 @@ object WeederError {
   }
 
   /**
-   * An error raised to indicate a non-single character literal.
-   *
-   * @param chars the characters in the character literal.
-   * @param loc   the location where the error occurred.
-   */
+    * An error raised to indicate a non-single character literal.
+    *
+    * @param chars the characters in the character literal.
+    * @param loc   the location where the error occurred.
+    */
   case class NonSingleCharacter(chars: String, loc: SourceLocation) extends WeederError {
     def summary: String = "Non-single-character literal."
 
@@ -577,10 +577,10 @@ object WeederError {
   }
 
   /**
-   * An error raised to indicate an empty interpolated expression (`"${}"`)
-   *
-   * @param loc the location where the error occurred.
-   */
+    * An error raised to indicate an empty interpolated expression (`"${}"`)
+    *
+    * @param loc the location where the error occurred.
+    */
   case class EmptyInterpolatedExpression(loc: SourceLocation) extends WeederError {
     def summary: String = "Empty interpolated expression."
 

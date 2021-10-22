@@ -17,8 +17,8 @@
 package ca.uwaterloo.flix.util
 
 /**
- * A terminal context abstract the operations supported by a specific terminal.
- */
+  * A terminal context abstract the operations supported by a specific terminal.
+  */
 sealed trait OutputContext {
 
   def emitBlack(s: String): String
@@ -46,8 +46,8 @@ sealed trait OutputContext {
 object OutputContext {
 
   /**
-   * A basic terminal context.
-   */
+    * A basic terminal context.
+    */
   object RawOutput extends OutputContext {
 
     def emitBlack(s: String): String = s
@@ -72,8 +72,8 @@ object OutputContext {
   }
 
   /**
-   * A terminal context compatible with an ANSI terminal.
-   */
+    * A terminal context compatible with an ANSI terminal.
+    */
   object AnsiTerminalOutput extends OutputContext {
 
     def emitBlack(s: String): String =
@@ -118,8 +118,8 @@ object OutputContext {
   }
 
   /**
-   * A terminal context compatible with HTML output.
-   */
+    * A terminal context compatible with HTML output.
+    */
   object HTMLOutput extends OutputContext {
 
     def emitBlack(s: String): String = createHTMLTag(s, Format.BlackTag, "black")
@@ -148,13 +148,13 @@ object OutputContext {
   }
 
   /**
-   * Returns `true` if the terminal appears to support at least 256 colors.
-   */
+    * Returns `true` if the terminal appears to support at least 256 colors.
+    */
   def hasColorSupport: Boolean = isAnsiTerminal || isTrueColorTerminal || isWindowsTerminal
 
   /**
-   * Returns `true` if the terminal appears to be an ANSI terminal.
-   */
+    * Returns `true` if the terminal appears to be an ANSI terminal.
+    */
   private def isAnsiTerminal: Boolean = {
     val term = System.getenv("TERM")
     term != null && (
@@ -165,16 +165,16 @@ object OutputContext {
   }
 
   /**
-   * Returns `true` if the terminal appears to support 24bit colors.
-   */
+    * Returns `true` if the terminal appears to support 24bit colors.
+    */
   private def isTrueColorTerminal: Boolean = {
     val colorTerm = System.getenv("COLORTERM")
     colorTerm != null && colorTerm.contains("truecolor")
   }
 
   /**
-   * Returns `true` if the terminal appears to be a Windows Terminal.
-   */
+    * Returns `true` if the terminal appears to be a Windows Terminal.
+    */
   private def isWindowsTerminal: Boolean = {
     val wtSession = System.getenv("WT_SESSION")
     wtSession != null

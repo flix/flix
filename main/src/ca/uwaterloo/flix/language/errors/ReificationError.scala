@@ -22,8 +22,8 @@ import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
 import ca.uwaterloo.flix.util.Format
 
 /**
- * A common super-type for reification errors.
- */
+  * A common super-type for reification errors.
+  */
 sealed trait ReificationError extends CompilationMessage {
   val kind: String = "Monomorph Error"
 }
@@ -33,11 +33,11 @@ object ReificationError {
   private implicit val audience: Audience = Audience.External
 
   /**
-   * An error raised to indicate that the Boolean type cannot be reified.
-   *
-   * @param tpe the Boolean type that cannot be reified.
-   * @param loc the location of the Boolean type.
-   */
+    * An error raised to indicate that the Boolean type cannot be reified.
+    *
+    * @param tpe the Boolean type that cannot be reified.
+    * @param loc the location of the Boolean type.
+    */
   case class IllegalReifiedBool(tpe: Type, loc: SourceLocation) extends ReificationError {
     def summary: String = "Type cannot be reified."
 
@@ -51,11 +51,11 @@ object ReificationError {
   }
 
   /**
-   * An error raised to indicate that the type cannot be reified.
-   *
-   * @param tpe the type that cannot be reified.
-   * @param loc the location of the type.
-   */
+    * An error raised to indicate that the type cannot be reified.
+    *
+    * @param tpe the type that cannot be reified.
+    * @param loc the location of the type.
+    */
   case class IllegalReifiedType(tpe: Type, loc: SourceLocation) extends ReificationError {
     def summary: String = "Type cannot be reified."
 
@@ -69,11 +69,11 @@ object ReificationError {
   }
 
   /**
-   * An error raised to indicate an internal error in the Monomorpher.
-   *
-   * @param tpe the problematic Boolean type.
-   * @param loc the location of the Boolean type.
-   */
+    * An error raised to indicate an internal error in the Monomorpher.
+    *
+    * @param tpe the problematic Boolean type.
+    * @param loc the location of the Boolean type.
+    */
   case class UnexpectedNonConstBool(tpe: Type, loc: SourceLocation) extends ReificationError {
     def summary: String = "Unexpected type."
 

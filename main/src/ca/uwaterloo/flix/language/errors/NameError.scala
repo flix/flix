@@ -21,8 +21,8 @@ import ca.uwaterloo.flix.language.ast.{Name, SourceLocation}
 import ca.uwaterloo.flix.util.Format
 
 /**
- * A common super-type for naming errors.
- */
+  * A common super-type for naming errors.
+  */
 sealed trait NameError extends CompilationMessage {
   val kind = "Name Error"
 }
@@ -30,13 +30,13 @@ sealed trait NameError extends CompilationMessage {
 object NameError {
 
   /**
-   * An error raised to indicate that the given `name` is ambiguous.
-   *
-   * @param name the ambiguous name.
-   * @param loc  the location of the ambiguous name.
-   * @param loc1 the location of the var.
-   * @param loc2 the location of the use.
-   */
+    * An error raised to indicate that the given `name` is ambiguous.
+    *
+    * @param name the ambiguous name.
+    * @param loc  the location of the ambiguous name.
+    * @param loc1 the location of the var.
+    * @param loc2 the location of the use.
+    */
   case class AmbiguousVarOrUse(name: String, loc: SourceLocation, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     def summary: String = s"Ambiguous name. The name may refer to both a variable and a use."
 
@@ -56,12 +56,12 @@ object NameError {
   }
 
   /**
-   * An error raised to indicate that the given def `name` is defined multiple times.
-   *
-   * @param name the name.
-   * @param loc1 the location of the first definition.
-   * @param loc2 the location of the second definition.
-   */
+    * An error raised to indicate that the given def `name` is defined multiple times.
+    *
+    * @param name the name.
+    * @param loc1 the location of the first definition.
+    * @param loc2 the location of the second definition.
+    */
   case class DuplicateDefOrSig(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     def summary: String = s"Duplicate definition."
 
@@ -81,12 +81,12 @@ object NameError {
   }
 
   /**
-   * An error raised to indicate that the given def or sig `name` is used twice.
-   *
-   * @param name the clashing name.
-   * @param loc1 the location of the first use.
-   * @param loc2 the location of the second use.
-   */
+    * An error raised to indicate that the given def or sig `name` is used twice.
+    *
+    * @param name the clashing name.
+    * @param loc1 the location of the first use.
+    * @param loc2 the location of the second use.
+    */
   case class DuplicateUseDefOrSig(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     def summary: String = s"Duplicate use."
 
@@ -104,12 +104,12 @@ object NameError {
   }
 
   /**
-   * An error raised to indicate that the given type or class `name` is used twice.
-   *
-   * @param name the clashing name.
-   * @param loc1 the location of the first use.
-   * @param loc2 the location of the second use.
-   */
+    * An error raised to indicate that the given type or class `name` is used twice.
+    *
+    * @param name the clashing name.
+    * @param loc1 the location of the first use.
+    * @param loc2 the location of the second use.
+    */
   case class DuplicateUseTypeOrClass(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     def summary: String = s"Duplicate use."
 
@@ -128,12 +128,12 @@ object NameError {
   }
 
   /**
-   * An error raised to indicate that the given `tag` is used twice.
-   *
-   * @param name the clashing name.
-   * @param loc1 the location of the first use.
-   * @param loc2 the location of the second use.
-   */
+    * An error raised to indicate that the given `tag` is used twice.
+    *
+    * @param name the clashing name.
+    * @param loc1 the location of the first use.
+    * @param loc2 the location of the second use.
+    */
   case class DuplicateUseTag(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     def summary: String = s"Duplicate use."
 
@@ -152,12 +152,12 @@ object NameError {
   }
 
   /**
-   * An error raised to indicate that the given type alias or enum `name` is defined multiple times.
-   *
-   * @param name the name.
-   * @param loc1 the location of the first definition.
-   * @param loc2 the location of the second definition.
-   */
+    * An error raised to indicate that the given type alias or enum `name` is defined multiple times.
+    *
+    * @param name the name.
+    * @param loc1 the location of the first definition.
+    * @param loc2 the location of the second definition.
+    */
   case class DuplicateTypeOrClass(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     def summary: String = s"Duplicate type or class declaration."
 
@@ -178,11 +178,11 @@ object NameError {
   }
 
   /**
-   * An error raised to indicate a suspicious type variable name.
-   *
-   * @param name the name of the type variable.
-   * @param loc  the location of the suspicious type variable.
-   */
+    * An error raised to indicate a suspicious type variable name.
+    *
+    * @param name the name of the type variable.
+    * @param loc  the location of the suspicious type variable.
+    */
   case class SuspiciousTypeVarName(name: String, loc: SourceLocation) extends NameError {
     def summary: String = s"Suspicious type variable. Did you mean: '${name.capitalize}'?"
 
@@ -199,11 +199,11 @@ object NameError {
   }
 
   /**
-   * An error raised to indicate that the class name was not found.
-   *
-   * @param name the class name.
-   * @param loc  the location of the class name.
-   */
+    * An error raised to indicate that the class name was not found.
+    *
+    * @param name the class name.
+    * @param loc  the location of the class name.
+    */
   case class UndefinedNativeClass(name: String, loc: SourceLocation) extends NameError {
     def summary: String = s"Undefined class."
 
@@ -217,11 +217,11 @@ object NameError {
   }
 
   /**
-   * An error raised to indicate that the local variable was not found.
-   *
-   * @param name the name of the variable.
-   * @param loc  the location of the undefined variable.
-   */
+    * An error raised to indicate that the local variable was not found.
+    *
+    * @param name the name of the variable.
+    * @param loc  the location of the undefined variable.
+    */
   case class UndefinedVar(name: String, loc: SourceLocation) extends NameError {
     def summary: String = s"Undefined variable."
 
@@ -235,11 +235,11 @@ object NameError {
   }
 
   /**
-   * An error raised to indicate that the type variable was not found.
-   *
-   * @param name the name of the type variable.
-   * @param loc  the location of the undefined type variable.
-   */
+    * An error raised to indicate that the type variable was not found.
+    *
+    * @param name the name of the type variable.
+    * @param loc  the location of the undefined type variable.
+    */
   case class UndefinedTypeVar(name: String, loc: SourceLocation) extends NameError {
     def summary: String = s"Undefined type variable."
 
@@ -255,11 +255,11 @@ object NameError {
   }
 
   /**
-   * An error raised to indicate that a signature does not include the class's type parameter.
-   *
-   * @param name the name of the signature.
-   * @param loc  the location where the error occurred.
-   */
+    * An error raised to indicate that a signature does not include the class's type parameter.
+    *
+    * @param name the name of the signature.
+    * @param loc  the location where the error occurred.
+    */
   case class IllegalSignature(name: Name.Ident, loc: SourceLocation) extends NameError {
     def summary: String = "Illegal signature."
 

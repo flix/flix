@@ -21,11 +21,11 @@ import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.Format
 
 /**
- * An error raised to indicate a parse error.
- *
- * @param msg the error message.
- * @param loc the source location.
- */
+  * An error raised to indicate a parse error.
+  *
+  * @param msg the error message.
+  * @param loc the source location.
+  */
 case class ParseError(msg: String, loc: SourceLocation) extends CompilationMessage {
   val kind = "Parse Error"
 

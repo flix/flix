@@ -7,8 +7,8 @@ import ca.uwaterloo.flix.language.debug.PrettyExpression
 import ca.uwaterloo.flix.util.Format
 
 /**
- * A common super-type for trivial errors.
- */
+  * A common super-type for trivial errors.
+  */
 sealed trait LinterError extends CompilationMessage {
   val kind = "Lint"
 }
@@ -16,11 +16,11 @@ sealed trait LinterError extends CompilationMessage {
 object LinterError {
 
   /**
-   * An error raised to indicate that an expression can be simplified.
-   *
-   * @param sym the symbol of the lint.
-   * @param loc the location of the expression.
-   */
+    * An error raised to indicate that an expression can be simplified.
+    *
+    * @param sym the symbol of the lint.
+    * @param loc the location of the expression.
+    */
   case class Lint(sym: Symbol.DefnSym, replacement: Expression, loc: SourceLocation) extends LinterError {
     def summary: String = s"The expression matches the '$sym' lint."
 

@@ -20,8 +20,8 @@ import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.Format
 
 /**
- * A common super-type for code hints.
- */
+  * A common super-type for code hints.
+  */
 trait CodeHint extends CompilationMessage {
   val kind: String = "Code Hint"
 }
@@ -29,11 +29,11 @@ trait CodeHint extends CompilationMessage {
 object CodeHint {
 
   /**
-   * A code hint that indicates that an operation could be lazy if given a pure function.
-   *
-   * @param sym the symbol of the operation that could be lazy.
-   * @param loc the location associated with the code hint.
-   */
+    * A code hint that indicates that an operation could be lazy if given a pure function.
+    *
+    * @param sym the symbol of the operation that could be lazy.
+    * @param loc the location associated with the code hint.
+    */
   case class LazyWhenPure(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
     override def summary: String = s"Use of impure function prevents lazy evaluation."
 
@@ -49,11 +49,11 @@ object CodeHint {
   }
 
   /**
-   * A code hint that indicates that an operation could be parallel if given a pure function.
-   *
-   * @param sym the symbol of the operation that could be parallel.
-   * @param loc the location associated with the code hint.
-   */
+    * A code hint that indicates that an operation could be parallel if given a pure function.
+    *
+    * @param sym the symbol of the operation that could be parallel.
+    * @param loc the location associated with the code hint.
+    */
   case class ParallelWhenPure(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
     override def summary: String = s"Use of impure function prevents parallel evaluation."
 
@@ -69,10 +69,10 @@ object CodeHint {
   }
 
   /**
-   * A code hint that indicates an expression has a non-trivial effect.
-   *
-   * @param loc the location of the expression.
-   */
+    * A code hint that indicates an expression has a non-trivial effect.
+    *
+    * @param loc the location of the expression.
+    */
   case class NonTrivialEffect(loc: SourceLocation) extends CodeHint {
     override def summary: String = s"Expression has a non-trivial effect."
 
