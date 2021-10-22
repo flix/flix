@@ -23,7 +23,6 @@ import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.debug.PrettyPrinter
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.vt._
 
 /**
   * The Optimization phase performs intra-procedural optimizations.
@@ -331,7 +330,7 @@ object Optimizer extends Phase[Root, Root] {
 
     // Print the ast if debugging is enabled.
     if (flix.options.debug) {
-      println(PrettyPrinter.Lifted.fmtRoot(result).fmt(TerminalContext.AnsiTerminal))
+      println(PrettyPrinter.Lifted.fmtRoot(result))
     }
 
     result.toSuccess

@@ -329,7 +329,7 @@ object Packager {
       case None => Tester.OverallTestResult.NoTests
       case Some(compilationResult) =>
         val results = Tester.test(compilationResult)
-        Console.println(results.output.fmt)
+        Console.println(results.output)
         results.overallResult
     }
   }
