@@ -74,7 +74,7 @@ object Main {
     }
 
     // the default color context.
-    implicit val terminal: TerminalContext = TerminalContext.AnsiTerminal
+    implicit val terminal: OutputContext = OutputContext.AnsiTerminalOutput
 
     // construct flix options.
     var options = Options.Default.copy(

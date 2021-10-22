@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.util
 /**
  * A terminal context abstract the operations supported by a specific terminal.
  */
-sealed trait TerminalContext {
+sealed trait OutputContext {
 
   def emitBlack(s: String): String
 
@@ -43,12 +43,12 @@ sealed trait TerminalContext {
 
 }
 
-object TerminalContext {
+object OutputContext {
 
   /**
-    * A basic terminal context.
-    */
-  object NoTerminal extends TerminalContext {
+   * A basic terminal context.
+   */
+  object RawOutput extends OutputContext {
 
     def emitBlack(s: String): String = s
 
@@ -72,9 +72,9 @@ object TerminalContext {
   }
 
   /**
-    * A terminal context compatible with an ANSI terminal.
-    */
-  object AnsiTerminal extends TerminalContext {
+   * A terminal context compatible with an ANSI terminal.
+   */
+  object AnsiTerminalOutput extends OutputContext {
 
     def emitBlack(s: String): String = Console.BLACK + s + Console.RESET
 
@@ -99,9 +99,9 @@ object TerminalContext {
   }
 
   /**
-    * A terminal context compatible with HTML output.
-    */
-  object HtmlTerminal extends TerminalContext {
+   * A terminal context compatible with HTML output.
+   */
+  object HTMLOutput extends OutputContext {
 
     def emitBlack(s: String): String = s"""<span class="black">$s</span>"""
 
@@ -157,5 +157,4 @@ object TerminalContext {
     val wtSession = System.getenv("WT_SESSION")
     wtSession != null
   }
-
 }

@@ -46,7 +46,7 @@ class Shell(initialPaths: List[Path], options: Options) {
   /**
    * The default color context.
    */
-  private implicit val terminalContext: TerminalContext = TerminalContext.AnsiTerminal
+  private implicit val terminalContext: OutputContext = OutputContext.AnsiTerminalOutput
 
   /**
    * The executor service.

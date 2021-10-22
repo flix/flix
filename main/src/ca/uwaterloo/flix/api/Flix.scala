@@ -428,7 +428,7 @@ class Flix {
     if (options.debug) {
       // Print information about the phase.
       val d = new Duration(e)
-      val terminalCtx = TerminalContext.AnsiTerminal
+      val terminalCtx = OutputContext.AnsiTerminalOutput
       val emojiPart = terminalCtx.emitBlue("✓ ")
       val phasePart = terminalCtx.emitBlue(f"$phase%-40s")
       val timePart = f"${d.fmtMiliSeconds}%8s"
