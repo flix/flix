@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
@@ -8,7 +8,7 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
 /**
   * A common super-type for safety errors.
   */
-sealed trait SafetyError extends CompilationError {
+sealed trait SafetyError extends CompilationMessage {
   def kind: String = "Safety Error"
 }
 

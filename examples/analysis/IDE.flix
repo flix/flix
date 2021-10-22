@@ -86,7 +86,7 @@ instance JoinLattice[Transformer] {
             if (a1 == a2 and b1 == b2)
                 Transformer.NonBotTrans(a1, b1, JoinLattice.leastUpperBound(c1, c2))
             else if(c1 == c2)
-                if((a2-a1) != 0 and 0==(b1-b2)%(a2-a1))
+                if((a2-a1) != 0 and 0==(b1-b2)rem(a2-a1))
                 //                // is divisible
                 Transformer.NonBotTrans(a1, b2, JoinLattice.leastUpperBound(Value.Cst(a1*(b1-b2)/(a2-a1)+b1), JoinLattice.leastUpperBound(c1, c2)))
                 //                // is not divisible

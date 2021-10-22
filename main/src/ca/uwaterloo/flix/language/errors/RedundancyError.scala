@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatTypeConstraint}
 import ca.uwaterloo.flix.util.vt.VirtualString._
@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
 /**
   * A common super-type for redundancy errors.
   */
-trait RedundancyError extends CompilationError {
+trait RedundancyError extends CompilationMessage {
   def kind: String = "Redundancy Error"
 }
 

@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
@@ -27,7 +27,7 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
   * @param msg the error message.
   * @param loc the source location.
   */
-case class ParseError(msg: String, loc: SourceLocation) extends CompilationError {
+case class ParseError(msg: String, loc: SourceLocation) extends CompilationMessage {
   def kind = "Parse Error"
   def summary: String = msg
   def message: VirtualTerminal = {
