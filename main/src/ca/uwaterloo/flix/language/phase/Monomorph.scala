@@ -77,9 +77,12 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       val t = s(tpe0)
 
       t.map {
-        case Type.KindedVar(_, Kind.Bool, loc, _, _) =>
+        case t0@Type.KindedVar(_, Kind.Bool, loc, _, _) =>
           // TODO: In strict mode we demand that there are no free (uninstantiated) Boolean variables.
-          // In the future we need to decide what should actually happen if such variables occur.
+          // TODO: In the future we need to decide what should actually happen if such variables occur.
+          // TODO: In particular, it seems there are two cases.
+          // TODO: A. Variables that occur inside the specialized types (those we can erase?)
+          // TODO: B. Variables that occur inside an expression but nowhere else really.
           if (flix.options.xstrictmono)
             throw UnexpectedNonConstBool(tpe0, loc)
           else
@@ -566,11 +569,14 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       // Lookup the definition and its declared type.
       val defn = root.defs(sym)
 
+      // Compute the erased type.
+      val erasedType = eraseType(tpe)
+
       // Check if the function is non-polymorphic.
       if (defn.spec.tparams.isEmpty) {
         defn.sym
       } else {
-        specializeDef(defn, tpe)
+        specializeDef(defn, erasedType)
       }
     }
 
@@ -624,11 +630,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     def specializeDef(defn: TypedAst.Def, tpe: Type): Symbol.DefnSym = {
       // Unify the declared and actual type to obtain the substitution map.
       val subst = StrictSubstitution(Unification.unifyTypes(defn.impl.inferredScheme.base, tpe).get)
-
-      // TODO: Need to compute the erasure of tpe.
-      // TODO: Must still account for Boolean variables that may be free.
-      // TODO: Inside a function it is possible for a sequence of expressions to have free variables.
-      // TODO: Would this perhaps show up in the inferred type?
 
       // Check whether the function definition has already been specialized.
       def2def.get((defn.sym, tpe)) match {
@@ -869,6 +870,37 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     visit(tpe)
+  }
+
+  /**
+    * Performs type erasure on the given type `tpe`.
+    *
+    * Flix does not erase normal types, but it does erase Boolean formulas.
+    */
+  private def eraseType(tpe: Type)(implicit flix: Flix): Type = tpe match {
+    case Type.KindedVar(_, _, loc, _, _) =>
+      if (flix.options.xstrictmono)
+        throw UnexpectedNonConstBool(tpe, loc)
+      else {
+        // TODO: We should return Type.ErasedBool or something.
+        Type.True
+      }
+
+    case Type.Cst(_, _) => tpe
+
+    case Type.Apply(tpe1, tpe2, loc) =>
+      val t1 = eraseType(tpe1)
+      val t2 = eraseType(tpe2)
+      Type.Apply(t1, t2, loc)
+
+    case Type.Alias(sym, args, tpe, loc) =>
+      val as = args.map(eraseType)
+      val t = eraseType(tpe)
+      Type.Alias(sym, as, t, loc)
+
+    case Type.UnkindedVar(_, loc, _, _) => throw InternalCompilerException(s"Unexpected type at: ${loc.format}")
+
+    case Type.Ascribe(_, _, loc) => throw InternalCompilerException(s"Unexpected type at: ${loc.format}")
   }
 
 }
