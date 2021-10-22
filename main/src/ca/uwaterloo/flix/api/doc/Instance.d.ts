@@ -13,14 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import {ClassSym} from "./ClassSym";
 import {SourceLocation} from "./SourceLocation";
-import {Modifier} from "./Modifier";
-import {EnumSym} from "./EnumSym";
-import {TypeParam} from "./TypeParam";
-import {Scheme} from "./Scheme";
+import {Type} from "./Type";
 
 export interface Instance {
- // TODO
+    sym: ClassSym
+    tpe: Type
+    loc: SourceLocation
 }
-
-//   case class Instance(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, tpe: Type, tconstrs: List[Ast.TypeConstraint], defs: List[TypedAst.Def], ns: Name.NName, loc: SourceLocation)

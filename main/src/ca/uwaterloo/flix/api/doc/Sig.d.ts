@@ -13,16 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {DefnSym} from "./DefnSym";
-import {Modifier} from "./Modifier";
-import {TypeParam} from "./TypeParam";
-import {Type} from "./Type";
-import {SourceLocation} from "./SourceLocation";
+import {SigSym} from "./SigSym";
 
 export interface Sig {
+    sym: SigSym
 
+    implemented: boolean
 }
 // TODO
-//   case class Sig(sym: Symbol.SigSym, spec: TypedAst.Spec, impl: Option[TypedAst.Impl])
+//   case class Sig(sym: Symbol.SigSym)
 //  case class Spec(doc: Ast.Doc, ann: List[TypedAst.Annotation], mod: Ast.Modifiers, tparams: List[TypedAst.TypeParam], fparams: List[TypedAst.FormalParam], declaredScheme: Scheme, retTpe: Type, eff: Type, loc: SourceLocation)
 

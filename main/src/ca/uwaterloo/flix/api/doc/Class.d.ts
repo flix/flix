@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import {ClassSym} from "./ClassSym";
+import {Instance} from "./Instance";
 import {Modifier} from "./Modifier";
 import {TypeParam} from "./TypeParam";
-import {ClassSym} from "./ClassSym";
 
 export interface Class {
     sym: ClassSym
@@ -24,4 +25,5 @@ export interface Class {
     tparam: TypeParam
     // TODO
     //  superClasses: List[Ast.TypeConstraint], signatures: List[TypedAst.Sig], laws: List[TypedAst.Def], loc: SourceLocation
+    instances: [Instance]
 }

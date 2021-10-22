@@ -5,8 +5,6 @@ import {TypeAlias} from "./TypeAlias";
 
 export interface Api {
     classes: ClassesByNS
-    // TODO: instances
-    // TODO: signs
     defs: DefsByNS
     enums: EnumsByNs
     typeAliases: TypeAliasesByNs
