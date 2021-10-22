@@ -17,7 +17,6 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
-import ca.uwaterloo.flix.util.vt.VirtualString.{code, line, red}
 
 /**
  * A common super-type for termination errors.
@@ -37,10 +36,10 @@ object TerminationError {
     def summary: String = "Unconditional recursion."
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Unconditionally recursive definition '${red(sym.name)}'. All branches will recurse indefinitely.
+      s"""${Format.line(kind, source.format)}
+         |>> Unconditionally recursive definition '${Format.red(sym.name)}'. All branches will recurse indefinitely.
          |
-         |${code(sym.loc, "unconditional recursion.")}
+         |${Format.code(sym.loc, "unconditional recursion.")}
          |
          |""".stripMargin
     }

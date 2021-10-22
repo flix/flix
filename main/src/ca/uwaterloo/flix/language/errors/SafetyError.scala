@@ -2,7 +2,6 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
-import ca.uwaterloo.flix.util.vt.VirtualString._
 
 /**
  * A common super-type for safety errors.
@@ -22,17 +21,17 @@ object SafetyError {
     def summary: String = s"Illegal non-positively bound variable '$sym'."
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Illegal non-positively bound variable '${red(sym.text)}'.
+      s"""${Format.line(kind, source.format)}
+         |>> Illegal non-positively bound variable '${Format.red(sym.text)}'.
          |
-         |${code(loc, "the variable occurs in this negated atom.")}
+         |${Format.code(loc, "the variable occurs in this negated atom.")}
          |""".stripMargin
     }
 
     override def explain: String = {
       if (!sym.isWild)
         s"""
-           |${underline("Tip:")} Ensure that the variable occurs in at least one positive atom.
+           |${Format.underline("Tip:")} Ensure that the variable occurs in at least one positive atom.
            |""".stripMargin
       else
         ""
@@ -48,10 +47,10 @@ object SafetyError {
     def summary: String = s"Illegal negatively bound variable '$sym'."
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Illegal negatively bound variable '${red(sym.text)}'.
+      s"""${Format.line(kind, source.format)}
+         |>> Illegal negatively bound variable '${Format.red(sym.text)}'.
          |
-         |${code(loc, "the variable occurs in this negated atom.")}
+         |${Format.code(loc, "the variable occurs in this negated atom.")}
          |""".stripMargin
     }
   }
@@ -65,10 +64,10 @@ object SafetyError {
     def summary: String = s"Illegal negatively bound wildcard '_'."
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Illegal negatively bound wildcard '${red("_")}'.
+      s"""${Format.line(kind, source.format)}
+         |>> Illegal negatively bound wildcard '${Format.red("_")}'.
          |
-         |${code(loc, "the wildcard occurs in this negated atom.")}
+         |${Format.code(loc, "the wildcard occurs in this negated atom.")}
          |""".stripMargin
     }
   }

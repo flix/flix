@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
-import ca.uwaterloo.flix.util.vt.VirtualString._
 
 /**
  * An error raised to indicate a non exhaustive pattern match expression.
@@ -29,10 +28,10 @@ case class NonExhaustiveMatchError(rules: List[TypedAst.MatchRule], pat: String,
   def summary: String = s"Non-exhaustive match. Missing case: '$pat'."
 
   def message: String = {
-    s"""${line(kind, source.format)}
-       |>> Non-Exhaustive Pattern. Missing case: ${red(pat)} in match expression.
+    s"""${Format.line(kind, source.format)}
+       |>> Non-Exhaustive Pattern. Missing case: ${Format.red(pat)} in match expression.
        |
-       |${code(loc, "incomplete pattern.")}
+       |${Format.code(loc, "incomplete pattern.")}
        |""".stripMargin
 
   }

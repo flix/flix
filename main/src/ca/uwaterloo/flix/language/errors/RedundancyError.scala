@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatTypeConstraint}
-import ca.uwaterloo.flix.util.vt.VirtualString._
 
 /**
  * A common super-type for redundancy errors.
@@ -42,10 +41,10 @@ object RedundancyError {
     def summary: String = "Hidden variable symbol."
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Hidden variable symbol '${red(sym.text)}'. The symbol is marked as unused.
+      s"""${Format.line(kind, source.format)}
+         |>> Hidden variable symbol '${Format.red(sym.text)}'. The symbol is marked as unused.
          |
-         |${code(loc, "hidden symbol.")}
+         |${Format.code(loc, "hidden symbol.")}
          |""".stripMargin
 
     }
@@ -71,14 +70,14 @@ object RedundancyError {
     def summary: String = "Shadowed variable."
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Shadowed variable '${red(sym1.text)}'.
+      s"""${Format.line(kind, source.format)}
+         |>> Shadowed variable '${Format.red(sym1.text)}'.
          |
-         |${code(sym2.loc, "shadowing variable.")}
+         |${Format.code(sym2.loc, "shadowing variable.")}
          |
          |The shadowed variable was declared here:
          |
-         |${code(sym1.loc, "shadowed variable.")}
+         |${Format.code(sym1.loc, "shadowed variable.")}
          |
          |""".stripMargin
     }
@@ -96,10 +95,10 @@ object RedundancyError {
     def summary: String = "Unused definition."
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Unused definition '${red(sym.name)}'. The definition is never referenced.
+      s"""${Format.line(kind, source.format)}
+         |>> Unused definition '${Format.red(sym.name)}'. The definition is never referenced.
          |
-         |${code(sym.loc, "unused definition.")}
+         |${Format.code(sym.loc, "unused definition.")}
          |""".stripMargin
     }
 
@@ -126,10 +125,10 @@ object RedundancyError {
     def summary: String = "Unused enum."
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Unused enum '${red(sym.name)}'. Neither the enum nor its cases are ever used.
+      s"""${Format.line(kind, source.format)}
+         |>> Unused enum '${Format.red(sym.name)}'. Neither the enum nor its cases are ever used.
          |
-         |${code(sym.loc, "unused enum.")}
+         |${Format.code(sym.loc, "unused enum.")}
          |""".stripMargin
     }
 
@@ -158,10 +157,10 @@ object RedundancyError {
     def summary: String = s"Unused case '${tag.name}'."
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Unused case '${red(tag.name)}' in enum '${cyan(sym.name)}'.
+      s"""${Format.line(kind, source.format)}
+         |>> Unused case '${Format.red(tag.name)}' in enum '${Format.cyan(sym.name)}'.
          |
-         |${code(tag.loc, "unused tag.")}
+         |${Format.code(tag.loc, "unused tag.")}
          |""".stripMargin
 
     }
@@ -189,10 +188,10 @@ object RedundancyError {
     def summary: String = "Unused formal parameter."
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Unused formal parameter '${red(sym.text)}'. The parameter is not used within its scope.
+      s"""${Format.line(kind, source.format)}
+         |>> Unused formal parameter '${Format.red(sym.text)}'. The parameter is not used within its scope.
          |
-         |${code(sym.loc, "unused formal parameter.")}
+         |${Format.code(sym.loc, "unused formal parameter.")}
          |""".stripMargin
     }
 
@@ -219,10 +218,10 @@ object RedundancyError {
     def summary: String = "Unused type parameter."
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Unused type parameter '${red(ident.name)}'. The parameter is not referenced anywhere.
+      s"""${Format.line(kind, source.format)}
+         |>> Unused type parameter '${Format.red(ident.name)}'. The parameter is not referenced anywhere.
          |
-         |${code(ident.loc, "unused type parameter.")}
+         |${Format.code(ident.loc, "unused type parameter.")}
          |""".stripMargin
     }
 
@@ -249,10 +248,10 @@ object RedundancyError {
     def summary: String = "Unused local variable."
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Unused local variable '${red(sym.text)}'. The variable is not referenced within its scope.
+      s"""${Format.line(kind, source.format)}
+         |>> Unused local variable '${Format.red(sym.text)}'. The variable is not referenced within its scope.
          |
-         |${code(sym.loc, "unused local variable.")}
+         |${Format.code(sym.loc, "unused local variable.")}
          |""".stripMargin
     }
 
@@ -280,10 +279,10 @@ object RedundancyError {
     def summary: String = s"Single use of variable '$sym'."
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> This variable is named, but only used once '${red(sym.text)}'. Use a wildcard instead?
+      s"""${Format.line(kind, source.format)}
+         |>> This variable is named, but only used once '${Format.red(sym.text)}'. Use a wildcard instead?
          |
-         |${code(loc, "the variable occurs here.")}
+         |${Format.code(loc, "the variable occurs here.")}
          |""".stripMargin
     }
 
@@ -308,10 +307,10 @@ object RedundancyError {
     def summary: String = "Useless expression."
 
     def message: String = {
-      s"""${line(kind, source.format)}
+      s"""${Format.line(kind, source.format)}
          |>> Useless expression: It has no side-effect(s) and its result is discarded.
          |
-         |${code(loc, "useless expression.")}
+         |${Format.code(loc, "useless expression.")}
          |""".stripMargin
     }
 
@@ -338,10 +337,10 @@ object RedundancyError {
     def summary: String = "Redundant type constraint."
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Type constraint '${red(FormatTypeConstraint.formatTypeConstraint(redundantTconstr))}' is entailed by type constraint '${green(FormatTypeConstraint.formatTypeConstraint(redundantTconstr))}'.
+      s"""${Format.line(kind, source.format)}
+         |>> Type constraint '${Format.red(FormatTypeConstraint.formatTypeConstraint(redundantTconstr))}' is entailed by type constraint '${Format.green(FormatTypeConstraint.formatTypeConstraint(redundantTconstr))}'.
          |
-         |${code(loc, "redundant type constraint.")}
+         |${Format.code(loc, "redundant type constraint.")}
          |""".stripMargin
     }
 

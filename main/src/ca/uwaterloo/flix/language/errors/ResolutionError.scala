@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
-import ca.uwaterloo.flix.util.vt.VirtualString._
 
 import java.lang.reflect.{Constructor, Field, Method}
 
@@ -31,7 +30,7 @@ sealed trait ResolutionError extends CompilationMessage {
 
   // TODO: Move to formatter?
   protected def appendLocations(locs: List[SourceLocation], s: String): String = {
-    locs.map(l => code(l, s)).mkString(System.lineSeparator() + System.lineSeparator())
+    locs.map(l => Format.code(l, s)).mkString(System.lineSeparator() + System.lineSeparator())
   }
 }
 
@@ -52,10 +51,10 @@ object ResolutionError {
 
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Ambiguous name '${red(qn.toString)}' Name refers to multiple definitions.
+      s"""${Format.line(kind, source.format)}
+         |>> Ambiguous name '${Format.red(qn.toString)}' Name refers to multiple definitions.
          |
-         |${code(loc, "ambiguous name.")}
+         |${Format.code(loc, "ambiguous name.")}
          |
          |${appendLocations(locs, "definition/effect/signature matches.")}
          |""".stripMargin
@@ -74,10 +73,10 @@ object ResolutionError {
     def summary: String = "Ambiguous type."
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Ambiguous type '${red(qn)}'. Name refers to multiple types.
+      s"""${Format.line(kind, source.format)}
+         |>> Ambiguous type '${Format.red(qn)}'. Name refers to multiple types.
          |
-         |${code(loc, "ambiguous type.")}
+         |${Format.code(loc, "ambiguous type.")}
          |
          |${appendLocations(locs, "type matches.")}
          |""".stripMargin
@@ -96,10 +95,10 @@ object ResolutionError {
     def summary: String = "Ambiguous tag."
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Ambiguous tag '${red(tag)}'.
+      s"""${Format.line(kind, source.format)}
+         |>> Ambiguous tag '${Format.red(tag)}'.
          |
-         |${code(loc, "ambiguous tag name.")}
+         |${Format.code(loc, "ambiguous tag name.")}
          |
          |The tag is defined in multiple enums:
          |
@@ -107,7 +106,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    override def explain: String = s"${underline("Tip:")} Prefix the tag with the enum name."
+    override def explain: String = s"${Format.underline("Tip:")} Prefix the tag with the enum name."
 
   }
 
@@ -122,10 +121,10 @@ object ResolutionError {
     def summary: String = "Illegal type."
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Illegal type: '${red(FormatType.formatType(tpe))}'.
+      s"""${Format.line(kind, source.format)}
+         |>> Illegal type: '${Format.red(FormatType.formatType(tpe))}'.
          |
-         |${code(loc, "illegal type.")}
+         |${Format.code(loc, "illegal type.")}
          |""".stripMargin
     }
   }
@@ -141,16 +140,16 @@ object ResolutionError {
     def summary: String = "Inaccessible."
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Class '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
+      s"""${Format.line(kind, source.format)}
+         |>> Class '${Format.red(sym.toString)}' is not accessible from the namespace '${Format.cyan(ns.toString)}'.
          |
-         |${code(loc, "inaccessible class.")}
+         |${Format.code(loc, "inaccessible class.")}
          |
          |""".stripMargin
 
     }
 
-    override def explain: String = s"${underline("Tip:")} Mark the class as public."
+    override def explain: String = s"${Format.underline("Tip:")} Mark the class as public."
   }
 
   /**
@@ -164,15 +163,15 @@ object ResolutionError {
     def summary: String = "Sealed."
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Class '${red(sym.toString)}' is sealed from the namespace '${cyan(ns.toString)}'.
+      s"""${Format.line(kind, source.format)}
+         |>> Class '${Format.red(sym.toString)}' is sealed from the namespace '${Format.cyan(ns.toString)}'.
          |
-         |${code(loc, "sealed class.")}
+         |${Format.code(loc, "sealed class.")}
          |
          |""".stripMargin
     }
 
-    override def explain: String = s"${underline("Tip:")} Move the instance or sub class to the class's namespace."
+    override def explain: String = s"${Format.underline("Tip:")} Move the instance or sub class to the class's namespace."
 
   }
 
@@ -187,15 +186,15 @@ object ResolutionError {
     def summary: String = "Inaccessible."
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Definition '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
+      s"""${Format.line(kind, source.format)}
+         |>> Definition '${Format.red(sym.toString)}' is not accessible from the namespace '${Format.cyan(ns.toString)}'.
          |
-         |${code(loc, "inaccessible definition.")}
+         |${Format.code(loc, "inaccessible definition.")}
          |
          |""".stripMargin
     }
 
-    override def explain: String = s"${underline("Tip:")} Mark the definition as public."
+    override def explain: String = s"${Format.underline("Tip:")} Mark the definition as public."
 
   }
 
@@ -210,14 +209,14 @@ object ResolutionError {
     def summary: String = "Inaccessible."
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Definition '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
+      s"""${Format.line(kind, source.format)}
+         |>> Definition '${Format.red(sym.toString)}' is not accessible from the namespace '${Format.cyan(ns.toString)}'.
          |
-         |${code(loc, "inaccessible definition.")}
+         |${Format.code(loc, "inaccessible definition.")}
          |""".stripMargin
     }
 
-    override def explain: String = s"${underline("Tip:")} Mark the definition as public."
+    override def explain: String = s"${Format.underline("Tip:")} Mark the definition as public."
 
   }
 
@@ -232,15 +231,15 @@ object ResolutionError {
     def summary: String = "Inaccessible."
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Enum '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
+      s"""${Format.line(kind, source.format)}
+         |>> Enum '${Format.red(sym.toString)}' is not accessible from the namespace '${Format.cyan(ns.toString)}'.
          |
-         |${code(loc, "inaccessible enum.")}
+         |${Format.code(loc, "inaccessible enum.")}
          |
          |""".stripMargin
     }
 
-    override def explain: String = s"${underline("Tip:")} Mark the definition as public."
+    override def explain: String = s"${Format.underline("Tip:")} Mark the definition as public."
 
   }
 
@@ -255,15 +254,15 @@ object ResolutionError {
     def summary: String = s"Inaccessible type alias ${sym.name}"
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Type alias '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
+      s"""${Format.line(kind, source.format)}
+         |>> Type alias '${Format.red(sym.toString)}' is not accessible from the namespace '${Format.cyan(ns.toString)}'.
          |
-         |${code(loc, "inaccessible type alias.")}
+         |${Format.code(loc, "inaccessible type alias.")}
          |
          |""".stripMargin
     }
 
-    override def explain: String = s"${underline("Tip:")} Mark the definition as public."
+    override def explain: String = s"${Format.underline("Tip:")} Mark the definition as public."
 
   }
 
@@ -278,10 +277,10 @@ object ResolutionError {
     def summary: String = s"Recursion limit $limit reached while unfolding the ${ident.name} type alias."
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Recursion limit ($limit) reached while unfolding the '${red(ident.name)}' type alias.
+      s"""${Format.line(kind, source.format)}
+         |>> Recursion limit ($limit) reached while unfolding the '${Format.red(ident.name)}' type alias.
          |
-         |${code(loc, "recursion limit reached.")}
+         |${Format.code(loc, "recursion limit reached.")}
          |""".stripMargin
     }
 
@@ -304,9 +303,9 @@ object ResolutionError {
     }
 
     override def message: String = {
-      s"""${line(kind, source.format)}
+      s"""${Format.line(kind, source.format)}
          |
-         |${code(loc, "Cyclic type aliases.")}
+         |${Format.code(loc, "Cyclic type aliases.")}
          |
          |The following type aliases are in the cycle:
          |$appendCycles
@@ -333,15 +332,15 @@ object ResolutionError {
     def summary: String = "Undefined name."
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Undefined name '${red(qn.toString)}'.
+      s"""${Format.line(kind, source.format)}
+         |>> Undefined name '${Format.red(qn.toString)}'.
          |
-         |${code(loc, "name not found")}
+         |${Format.code(loc, "name not found")}
          |
          |""".stripMargin
     }
 
-    override def explain: String = s"${underline("Tip:")} Possible typo or non-existent definition?"
+    override def explain: String = s"${Format.underline("Tip:")} Possible typo or non-existent definition?"
 
   }
 
@@ -357,15 +356,15 @@ object ResolutionError {
     def summary: String = "Undefined signature."
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Undefined signature '${red(sig.name)}' in class '${red(clazz.toString)}'.
+      s"""${Format.line(kind, source.format)}
+         |>> Undefined signature '${Format.red(sig.name)}' in class '${Format.red(clazz.toString)}'.
          |
-         |${code(loc, "signature not found")}
+         |${Format.code(loc, "signature not found")}
          |
          |""".stripMargin
     }
 
-    override def explain: String = s"${underline("Tip:")} Possible typo or non-existent class or signature?"
+    override def explain: String = s"${Format.underline("Tip:")} Possible typo or non-existent class or signature?"
 
   }
 
@@ -380,15 +379,15 @@ object ResolutionError {
     def summary: String = "Undefined class."
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Undefined class '${red(qn.toString)}'.
+      s"""${Format.line(kind, source.format)}
+         |>> Undefined class '${Format.red(qn.toString)}'.
          |
-         |${code(loc, "class not found")}
+         |${Format.code(loc, "class not found")}
          |
          |""".stripMargin
     }
 
-    override def explain: String = s"${underline("Tip:")} Possible typo or non-existent class?"
+    override def explain: String = s"${Format.underline("Tip:")} Possible typo or non-existent class?"
 
   }
 
@@ -403,15 +402,15 @@ object ResolutionError {
     def summary: String = "Undefined tag."
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Undefined tag '${red(tag)}'.
+      s"""${Format.line(kind, source.format)}
+         |>> Undefined tag '${Format.red(tag)}'.
          |
-         |${code(loc, "tag not found.")}
+         |${Format.code(loc, "tag not found.")}
          |
          |""".stripMargin
     }
 
-    override def explain: String = s"${underline("Tip:")} Possible typo or non-existent tag?"
+    override def explain: String = s"${Format.underline("Tip:")} Possible typo or non-existent tag?"
 
   }
 
@@ -426,15 +425,15 @@ object ResolutionError {
     def summary: String = "Undefined type"
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Undefined type '${red(qn.toString)}'.
+      s"""${Format.line(kind, source.format)}
+         |>> Undefined type '${Format.red(qn.toString)}'.
          |
-         |${code(loc, "type not found.")}
+         |${Format.code(loc, "type not found.")}
          |
          |""".stripMargin
     }
 
-    override def explain: String = s"${underline("Tip:")} Possible typo or non-existent type?"
+    override def explain: String = s"${Format.underline("Tip:")} Possible typo or non-existent type?"
 
   }
 
@@ -448,10 +447,10 @@ object ResolutionError {
     def summary: String = "Undefined class."
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Undefined class '${red(name)}'.
+      s"""${Format.line(kind, source.format)}
+         |>> Undefined class '${Format.red(name)}'.
          |
-         |${code(loc, "undefined class.")}
+         |${Format.code(loc, "undefined class.")}
          |""".stripMargin
     }
   }
@@ -468,10 +467,10 @@ object ResolutionError {
     def summary: String = "Undefined constructor."
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Undefined constructor in class '${cyan(className)}' with the given signature.
+      s"""${Format.line(kind, source.format)}
+         |>> Undefined constructor in class '${Format.cyan(className)}' with the given signature.
          |
-         |${code(loc, "undefined constructor.")}
+         |${Format.code(loc, "undefined constructor.")}
          |No constructor matches the signature:
          |  $className (${signature.map(_.toString).mkString(",")})
          |
@@ -510,10 +509,10 @@ object ResolutionError {
     }
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Undefined ${magenta(keyword)} method '${red(methodName)}' in class '${cyan(className)}'.
+      s"""${Format.line(kind, source.format)}
+         |>> Undefined ${Format.magenta(keyword)} method '${Format.red(methodName)}' in class '${Format.cyan(className)}'.
          |
-         |${code(loc, "undefined method.")}
+         |${Format.code(loc, "undefined method.")}
          |No method matches the signature:
          |  $methodName(${signature.map(_.toString).mkString(",")})
          |
@@ -551,10 +550,10 @@ object ResolutionError {
     }
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Undefined ${magenta(keyword)} field '${red(fieldName)}' in class '${cyan(className)}'.
+      s"""${Format.line(kind, source.format)}
+         |>> Undefined ${Format.magenta(keyword)} field '${Format.red(fieldName)}' in class '${Format.cyan(className)}'.
          |
-         |${code(loc, "undefined field.")}
+         |${Format.code(loc, "undefined field.")}
          |Available fields:
          |$appendFields
          |""".stripMargin
@@ -584,9 +583,9 @@ object ResolutionError {
     }
 
     override def message: String = {
-      s"""${line(kind, source.format)}
+      s"""${Format.line(kind, source.format)}
          |
-         |${code(loc, "Cyclic inheritance.")}
+         |${Format.code(loc, "Cyclic inheritance.")}
          |
          |The following classes are in the cycle:
          |
@@ -614,19 +613,19 @@ object ResolutionError {
     override def summary: String = s"Duplicate derivation: ${sym.name}"
 
     override def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Duplicate derivation '${red(sym.name)}'.
+      s"""${Format.line(kind, source.format)}
+         |>> Duplicate derivation '${Format.red(sym.name)}'.
          |
-         |${code(loc1, "the first occurrence was here.")}
+         |${Format.code(loc1, "the first occurrence was here.")}
          |
-         |${code(loc2, "the second occurrence was here.")}
+         |${Format.code(loc2, "the second occurrence was here.")}
          |
          |""".stripMargin
     }
 
     override def loc: SourceLocation = loc1
 
-    override def explain: String = s"${underline("Tip:")} Remove one of the occurrences."
+    override def explain: String = s"${Format.underline("Tip:")} Remove one of the occurrences."
 
   }
 
@@ -641,14 +640,14 @@ object ResolutionError {
     override def summary: String = s"Illegal derivation: ${sym.name}"
 
     override def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Illegal derivation '${red(sym.name)}'.
+      s"""${Format.line(kind, source.format)}
+         |>> Illegal derivation '${Format.red(sym.name)}'.
          |
-         |${code(loc, "Illegal derivation.")}
+         |${Format.code(loc, "Illegal derivation.")}
          |""".stripMargin
     }
 
-    override def explain: String = s"${underline("Tip:")} Only the following classes may be derived: ${legalSyms.map(_.name).mkString(", ")}."
+    override def explain: String = s"${Format.underline("Tip:")} Only the following classes may be derived: ${legalSyms.map(_.name).mkString(", ")}."
 
   }
 
@@ -662,14 +661,14 @@ object ResolutionError {
     override def summary: String = s"Under-applied type alias: ${sym.name}"
 
     override def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Under-applied type alias '${red(sym.name)}'.
+      s"""${Format.line(kind, source.format)}
+         |>> Under-applied type alias '${Format.red(sym.name)}'.
          |
-         |${code(loc, "Under-applied type alias.")}
+         |${Format.code(loc, "Under-applied type alias.")}
          |""".stripMargin
     }
 
-    override def explain: String = s"${underline("Tip:")} Type aliases must be fully applied."
+    override def explain: String = s"${Format.underline("Tip:")} Type aliases must be fully applied."
 
   }
 

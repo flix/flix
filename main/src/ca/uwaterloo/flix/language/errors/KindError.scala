@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation}
 import ca.uwaterloo.flix.language.debug.FormatKind.formatKind
-import ca.uwaterloo.flix.util.vt.VirtualString._
 
 /**
  * A common super-type for kind errors.
@@ -39,13 +38,13 @@ object KindError {
     override def summary: String = s"Mismatched kinds: '${formatKind(k1)}' and '${formatKind(k2)}''"
 
     override def message: String = {
-      s"""${line(kind, source.format)}
+      s"""${Format.line(kind, source.format)}
          |>> This type variable was used as both kind 'red(formatKind(k1))' and kind 'red(formatKind(k2))'.
          |
-         |${code(loc, "mismatched kind.")}
+         |${Format.code(loc, "mismatched kind.")}
          |
-         |Kind One: ${cyan(formatKind(k1))}
-         |Kind Two: ${magenta(formatKind(k2))}
+         |Kind One: ${Format.cyan(formatKind(k1))}
+         |Kind Two: ${Format.magenta(formatKind(k2))}
          |""".stripMargin
     }
   }
@@ -61,13 +60,13 @@ object KindError {
     override def summary: String = s"Kind ${formatKind(expectedKind)} was expected, but found ${formatKind(actualKind)}."
 
     override def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Expected kind '${red(formatKind(expectedKind))}' here, but kind 'red(formatKind(actualKind))' is used.
+      s"""${Format.line(kind, source.format)}
+         |>> Expected kind '${Format.red(formatKind(expectedKind))}' here, but kind 'red(formatKind(actualKind))' is used.
          |
-         |${code(loc, "unexpected kind.")}
+         |${Format.code(loc, "unexpected kind.")}
          |
-         |Expected kind: ${cyan(formatKind(expectedKind))}
-         |Actual kind:   ${magenta(formatKind(actualKind))}
+         |Expected kind: ${Format.cyan(formatKind(expectedKind))}
+         |Actual kind:   ${Format.magenta(formatKind(actualKind))}
          |""".stripMargin
     }
   }

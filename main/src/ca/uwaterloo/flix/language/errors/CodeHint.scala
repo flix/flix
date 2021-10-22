@@ -17,7 +17,6 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
-import ca.uwaterloo.flix.util.vt.VirtualString.{code, line}
 
 /**
  * A common super-type for code hints.
@@ -40,10 +39,10 @@ object CodeHint {
     override def severity: Severity = Severity.Hint
 
     override def message: String = {
-      s"""${line(kind, source.format)}
+      s"""${Format.line(kind, source.format)}
          |>> Use of impure function prevents lazy evaluation.
          |
-         |${code(loc, "use of impure function.")}
+         |${Format.code(loc, "use of impure function.")}
          |""".stripMargin
     }
   }
@@ -60,10 +59,10 @@ object CodeHint {
     override def severity: Severity = Severity.Hint
 
     override def message: String = {
-      s"""${line(kind, source.format)}
+      s"""${Format.line(kind, source.format)}
          |>> Use of impure function prevents parallel evaluation.
          |
-         |${code(loc, "use of impure function.")}
+         |${Format.code(loc, "use of impure function.")}
          |""".stripMargin
     }
   }
@@ -79,10 +78,10 @@ object CodeHint {
     override def severity: Severity = Severity.Info
 
     override def message: String = {
-      s"""${line(kind, source.format)}
+      s"""${Format.line(kind, source.format)}
          |>> Expression has a non-trivial effect.
          |
-         |${code(loc, "non-trivial effect.")}
+         |${Format.code(loc, "non-trivial effect.")}
          |""".stripMargin
 
     }

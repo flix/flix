@@ -18,8 +18,6 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation}
-import ca.uwaterloo.flix.util.vt.VirtualString
-import ca.uwaterloo.flix.util.vt.VirtualString._
 
 /**
  * A common super-type for weeding errors.
@@ -41,19 +39,19 @@ object WeederError {
     def summary: String = s"Multiple occurrences of the annotation '$name'."
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Multiple occurrences of the annotation '${red("@" + name)}'.
+      s"""${Format.line(kind, source.format)}
+         |>> Multiple occurrences of the annotation '${Format.red("@" + name)}'.
          |
-         |${code(loc1, "the first occurrence was here.")}
+         |${Format.code(loc1, "the first occurrence was here.")}
          |
-         |${code(loc2, "the second occurrence was here.")}
+         |${Format.code(loc2, "the second occurrence was here.")}
          |
          |""".stripMargin
     }
 
     def loc: SourceLocation = loc1
 
-    override def explain: String = s"${underline("Tip:")} Remove one of the two annotations."
+    override def explain: String = s"${Format.underline("Tip:")} Remove one of the two annotations."
 
   }
 
@@ -68,19 +66,19 @@ object WeederError {
     def summary: String = s"Multiple declarations of the formal parameter '$name'."
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Multiple declarations of the formal parameter '${red(name)}'.
+      s"""${Format.line(kind, source.format)}
+         |>> Multiple declarations of the formal parameter '${Format.red(name)}'.
          |
-         |${code(loc1, "the first declaration was here.")}
+         |${Format.code(loc1, "the first declaration was here.")}
          |
-         |${code(loc2, "the second declaration was here.")}
+         |${Format.code(loc2, "the second declaration was here.")}
          |
          |""".stripMargin
     }
 
     def loc: SourceLocation = loc1
 
-    override def explain: String = s"${underline("Tip:")} Remove or rename one of the formal parameters to avoid the name clash."
+    override def explain: String = s"${Format.underline("Tip:")} Remove or rename one of the formal parameters to avoid the name clash."
 
   }
 
@@ -95,12 +93,12 @@ object WeederError {
     def summary: String = s"Duplicate modifier '$name'."
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Multiple occurrences of the modifier '${red(name)}'.
+      s"""${Format.line(kind, source.format)}
+         |>> Multiple occurrences of the modifier '${Format.red(name)}'.
          |
-         |${code(loc1, "the first occurrence was here.")}
+         |${Format.code(loc1, "the first occurrence was here.")}
          |
-         |${code(loc2, "the second occurrence was here.")}
+         |${Format.code(loc2, "the second occurrence was here.")}
          |""".stripMargin
     }
 
@@ -120,19 +118,19 @@ object WeederError {
     def summary: String = s"Duplicate tag: '$tag'."
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Multiple declarations of the tag '${red(tag.name)}' in the enum '${cyan(enumName)}'.
+      s"""${Format.line(kind, source.format)}
+         |>> Multiple declarations of the tag '${Format.red(tag.name)}' in the enum '${Format.cyan(enumName)}'.
          |
-         |${code(loc1, "the first declaration was here.")}
+         |${Format.code(loc1, "the first declaration was here.")}
          |
-         |${code(loc2, "the second declaration was here.")}
+         |${Format.code(loc2, "the second declaration was here.")}
          |
          |""".stripMargin
     }
 
     def loc: SourceLocation = loc1
 
-    override def explain: String = s"${underline("Tip:")} Remove or rename one of the tags to avoid the name clash."
+    override def explain: String = s"${Format.underline("Tip:")} Remove or rename one of the tags to avoid the name clash."
 
   }
 
@@ -145,10 +143,10 @@ object WeederError {
     def summary: String = "Illegal array length"
 
     def message: String = {
-      s"""${line(kind, source.format)}
+      s"""${Format.line(kind, source.format)}
          |>> Illegal array length.
          |
-         |${code(loc, "illegal array length.")}
+         |${Format.code(loc, "illegal array length.")}
          |""".stripMargin
     }
   }
@@ -162,11 +160,11 @@ object WeederError {
     def summary: String = "Illegal field name"
 
     def message: String = {
-      s"""${line(kind, source.format)}
+      s"""${Format.line(kind, source.format)}
          |
          |>> Illegal field name.
          |
-         |${code(loc, "illegal field name.")}
+         |${Format.code(loc, "illegal field name.")}
          |""".stripMargin
     }
   }
@@ -181,15 +179,15 @@ object WeederError {
     def summary: String = "The formal parameter must have a declared type."
 
     def message: String = {
-      s"""${line(kind, source.format)}
+      s"""${Format.line(kind, source.format)}
          |
-         |>> The formal parameter '${red(name)}' must have a declared type.
+         |>> The formal parameter '${Format.red(name)}' must have a declared type.
          |
-         |${code(loc, "has no declared type.")}
+         |${Format.code(loc, "has no declared type.")}
          |""".stripMargin
     }
 
-    override def explain: String = s"${underline("Tip:")} Explicitly declare the type of the formal parameter."
+    override def explain: String = s"${Format.underline("Tip:")} Explicitly declare the type of the formal parameter."
 
   }
 
@@ -202,15 +200,15 @@ object WeederError {
     def summary: String = "The existential quantifier does not declare any formal parameters."
 
     def message: String = {
-      s"""${line(kind, source.format)}
+      s"""${Format.line(kind, source.format)}
          |>> The existential quantifier does not declare any formal parameters.
          |
-         |${code(loc, "quantifier must declare at least one parameter.")}
+         |${Format.code(loc, "quantifier must declare at least one parameter.")}
          |
          |""".stripMargin
     }
 
-    override def explain: String = s"${underline("Tip:")} Add a formal parameter or remove the quantifier."
+    override def explain: String = s"${Format.underline("Tip:")} Add a formal parameter or remove the quantifier."
 
   }
 
@@ -223,15 +221,15 @@ object WeederError {
     def summary: String = "The universal quantifier does not declare any formal parameters."
 
     def message: String = {
-      s"""${line(kind, source.format)}
+      s"""${Format.line(kind, source.format)}
          |>> The universal quantifier does not declare any formal parameters.
          |
-         |${code(loc, "quantifier must declare at least one parameter.")}
+         |${Format.code(loc, "quantifier must declare at least one parameter.")}
          |
          |""".stripMargin
     }
 
-    override def explain: String = s"${underline("Tip:")} Add a formal parameter or remove the quantifier."
+    override def explain: String = s"${Format.underline("Tip:")} Add a formal parameter or remove the quantifier."
 
   }
 
@@ -244,15 +242,15 @@ object WeederError {
     def summary: String = "Illegal float."
 
     def message: String = {
-      s"""${line(kind, source.format)}
+      s"""${Format.line(kind, source.format)}
          |>> Illegal float.
          |
-         |${code(loc, "illegal float.")}
+         |${Format.code(loc, "illegal float.")}
          |
          |""".stripMargin
     }
 
-    override def explain: String = s"${underline("Tip:")} Ensure that the literal is within bounds."
+    override def explain: String = s"${Format.underline("Tip:")} Ensure that the literal is within bounds."
 
   }
 
@@ -265,15 +263,15 @@ object WeederError {
     def summary: String = "Illegal int."
 
     def message: String = {
-      s"""${line(kind, source.format)}
+      s"""${Format.line(kind, source.format)}
          |>> Illegal int.
          |
-         |${code(loc, "illegal int.")}
+         |${Format.code(loc, "illegal int.")}
          |
          |""".stripMargin
     }
 
-    override def explain: String = s"${underline("Tip:")} Ensure that the literal is within bounds."
+    override def explain: String = s"${Format.underline("Tip:")} Ensure that the literal is within bounds."
 
   }
 
@@ -286,10 +284,10 @@ object WeederError {
     def summary: String = "Illegal intrinsic"
 
     def message: String = {
-      s"""${line(kind, source.format)}
+      s"""${Format.line(kind, source.format)}
          |>> Illegal intrinsic.
          |
-         |${code(loc, "illegal intrinsic.")}
+         |${Format.code(loc, "illegal intrinsic.")}
          |""".stripMargin
     }
   }
@@ -303,10 +301,10 @@ object WeederError {
     def summary: String = "Illegal modifier."
 
     def message: String = {
-      s"""${line(kind, source.format)}
+      s"""${Format.line(kind, source.format)}
          |>> Illegal modifier.
          |
-         |${code(loc, "illegal modifier.")}
+         |${Format.code(loc, "illegal modifier.")}
          |""".stripMargin
     }
   }
@@ -320,10 +318,10 @@ object WeederError {
     def summary: String = "Illegal null pattern"
 
     def message: String = {
-      s"""${line(kind, source.format)}
+      s"""${Format.line(kind, source.format)}
          |>> Illegal null pattern.
          |
-         |${code(loc, "illegal null pattern.")}
+         |${Format.code(loc, "illegal null pattern.")}
          |""".stripMargin
     }
   }
@@ -337,10 +335,10 @@ object WeederError {
     def summary: String = "Illegal jvm field or method name."
 
     def message: String = {
-      s"""${line(kind, source.format)}
+      s"""${Format.line(kind, source.format)}
          |>> Illegal jvm field or method name.
          |
-         |${code(loc, "illegal name.")}
+         |${Format.code(loc, "illegal name.")}
          |""".stripMargin
     }
   }
@@ -354,10 +352,10 @@ object WeederError {
     def summary: String = "Wildcard not allowed here."
 
     def message: String = {
-      s"""${line(kind, source.format)}
+      s"""${Format.line(kind, source.format)}
          |>> Wildcard not allowed here.
          |
-         |${code(loc, "illegal wildcard.")}
+         |${Format.code(loc, "illegal wildcard.")}
          |""".stripMargin
     }
   }
@@ -373,10 +371,10 @@ object WeederError {
     def summary: String = s"Mismatched arity: expected: $expected, actual: $actual."
 
     def message: String = {
-      s"""${line(kind, source.format)}
+      s"""${Format.line(kind, source.format)}
          |>> Mismatched arity: expected: $expected, actual: $actual.
          |
-         |${code(loc, "mismatched arity.")}
+         |${Format.code(loc, "mismatched arity.")}
          |""".stripMargin
     }
   }
@@ -392,19 +390,19 @@ object WeederError {
     def summary: String = s"Multiple occurrences of '$name' in pattern."
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Multiple occurrences of '${red(name)}'  in pattern.
+      s"""${Format.line(kind, source.format)}
+         |>> Multiple occurrences of '${Format.red(name)}'  in pattern.
          |
-         |${code(loc1, "the first occurrence was here.")}
+         |${Format.code(loc1, "the first occurrence was here.")}
          |
-         |${code(loc2, "the second occurrence was here.")}
+         |${Format.code(loc2, "the second occurrence was here.")}
          |
          |""".stripMargin
     }
 
     def loc: SourceLocation = loc1 min loc2
 
-    override def explain: String = s"${underline("Tip:")} A variable may only occur once in a pattern."
+    override def explain: String = s"${Format.underline("Tip:")} A variable may only occur once in a pattern."
 
   }
 
@@ -418,10 +416,10 @@ object WeederError {
     def summary: String = s"Undefined annotation $name"
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Undefined annotation '${red(name)}'.
+      s"""${Format.line(kind, source.format)}
+         |>> Undefined annotation '${Format.red(name)}'.
          |
-         |${code(loc, "undefined annotation.")}
+         |${Format.code(loc, "undefined annotation.")}
          |""".stripMargin
     }
   }
@@ -436,15 +434,15 @@ object WeederError {
     def summary: String = s"Illegal private declaration '${ident.name}'."
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Illegal private declaration '${red(ident.name)}'.
+      s"""${Format.line(kind, source.format)}
+         |>> Illegal private declaration '${Format.red(ident.name)}'.
          |
-         |${code(loc, "illegal private declaration")}
+         |${Format.code(loc, "illegal private declaration")}
          |
          |""".stripMargin
     }
 
-    override def explain: String = s"${underline("Tip:")} Mark the declaration as 'pub'."
+    override def explain: String = s"${Format.underline("Tip:")} Mark the declaration as 'pub'."
 
   }
 
@@ -457,15 +455,15 @@ object WeederError {
     def summary: String = s"Illegal type constraint parameter."
 
     def message: String = {
-      s"""${line(kind, source.format)}
+      s"""${Format.line(kind, source.format)}
          |>> Illegal type constraint parameter.
          |
-         |${code(loc, "illegal type constraint parameter")}
+         |${Format.code(loc, "illegal type constraint parameter")}
          |
          |""".stripMargin
     }
 
-    override def explain: String = s"${underline("Tip:")} Type constraint parameters must be composed only of type variables."
+    override def explain: String = s"${Format.underline("Tip:")} Type constraint parameters must be composed only of type variables."
 
   }
 
@@ -478,15 +476,15 @@ object WeederError {
     def summary: String = "Either all or none of the type parameters must be annotated with a kind."
 
     def message: String = {
-      s"""${line(kind, source.format)}
+      s"""${Format.line(kind, source.format)}
          |>> Inconsistent type parameters.
          |
-         |${code(loc, "inconsistent type parameters")}
+         |${Format.code(loc, "inconsistent type parameters")}
          |
          |""".stripMargin
     }
 
-    override def explain: String = s"${underline("Tip:")} Either all or none of the type parameters must be annotated with a kind."
+    override def explain: String = s"${Format.underline("Tip:")} Either all or none of the type parameters must be annotated with a kind."
 
   }
 
@@ -499,15 +497,15 @@ object WeederError {
     def summary: String = "Type parameters here must be annotated with a kind."
 
     def message: String = {
-      s"""${line(kind, source.format)}
+      s"""${Format.line(kind, source.format)}
          |>> Unkinded type parameters.
          |
-         |${code(loc, "unkinded type parameters")}
+         |${Format.code(loc, "unkinded type parameters")}
          |
          |""".stripMargin
     }
 
-    override def explain: String = s"${underline("Tip:")} Type parameters here must be annotated with a kind."
+    override def explain: String = s"${Format.underline("Tip:")} Type parameters here must be annotated with a kind."
 
   }
 
@@ -521,15 +519,15 @@ object WeederError {
     def summary: String = s"Malformed unicode escape sequence '$code'."
 
     def message: String = {
-      s"""${line(kind, source.format)}
+      s"""${Format.line(kind, source.format)}
          |>> Malformed unicode escape sequence.
          |
-         |${VirtualString.code(loc, "malformed unicode escape sequence")}
+         |${Format.code(loc, "malformed unicode escape sequence")}
          |
          |""".stripMargin
     }
 
-    override def explain: String = s"${underline("Tip:")}" + " A Unicode escape sequence must be of the form \\uXXXX where X is a hexadecimal."
+    override def explain: String = s"${Format.underline("Tip:")}" + " A Unicode escape sequence must be of the form \\uXXXX where X is a hexadecimal."
 
   }
 
@@ -543,15 +541,15 @@ object WeederError {
     def summary: String = s"Invalid escape sequence '\\$char'."
 
     def message: String = {
-      s"""${line(kind, source.format)}
+      s"""${Format.line(kind, source.format)}
          |>> Invalid escape sequence.
          |
-         |${code(loc, "invalid escape sequence")}
+         |${Format.code(loc, "invalid escape sequence")}
          |
          |""".stripMargin
     }
 
-    override def explain: String = s"${underline("Tip:")}" + " The valid escape sequences are '\\t', '\\\\', '\\\'', '\\\"', '\\n', and '\\r'."
+    override def explain: String = s"${Format.underline("Tip:")}" + " The valid escape sequences are '\\t', '\\\\', '\\\'', '\\\"', '\\n', and '\\r'."
 
   }
 
@@ -565,15 +563,15 @@ object WeederError {
     def summary: String = "Non-single-character literal."
 
     def message: String = {
-      s"""${line(kind, source.format)}
+      s"""${Format.line(kind, source.format)}
          |>> Non-single-character literal.
          |
-         |${code(loc, "non-single-character literal")}
+         |${Format.code(loc, "non-single-character literal")}
          |
          |""".stripMargin
     }
 
-    override def explain: String = s"${underline("Tip:")} A character literal must consist of a single character."
+    override def explain: String = s"${Format.underline("Tip:")} A character literal must consist of a single character."
 
   }
 
@@ -586,15 +584,15 @@ object WeederError {
     def summary: String = "Empty interpolated expression."
 
     def message: String = {
-      s"""${line(kind, source.format)}
+      s"""${Format.line(kind, source.format)}
          |>> Empty interpolated expression.
          |
-         |${code(loc, "empty interpolated expression")}
+         |${Format.code(loc, "empty interpolated expression")}
          |
          |""".stripMargin
     }
 
-    override def explain: String = s"${underline("Tip:")} Add an expression to the interpolation or remove the interpolation."
+    override def explain: String = s"${Format.underline("Tip:")} Add an expression to the interpolation or remove the interpolation."
 
   }
 }

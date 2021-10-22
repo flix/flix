@@ -2,8 +2,6 @@ package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.CompilationResult
-import ca.uwaterloo.flix.util.vt.VirtualString._
-import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
   * Evaluates all tests in a model.

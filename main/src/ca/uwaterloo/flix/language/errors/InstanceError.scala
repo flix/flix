@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme, FormatType}
-import ca.uwaterloo.flix.util.vt.VirtualString._
 
 /**
  * A common super-type for instance errors.
@@ -41,17 +40,17 @@ object InstanceError {
     def summary: String = "Overlapping instances."
 
     def message: String = {
-      s"""${line(kind, source.format)}
+      s"""${Format.line(kind, source.format)}
          |
-         |${code(loc1, "the first instance was declared here.")}
+         |${Format.code(loc1, "the first instance was declared here.")}
          |
-         |${code(loc2, "the second instance was declared here.")}
+         |${Format.code(loc2, "the second instance was declared here.")}
          |""".stripMargin
     }
 
     def loc: SourceLocation = loc1
 
-    override def explain: String = s"${underline("Tip: ")} Remove or change the type of one of the instances."
+    override def explain: String = s"${Format.underline("Tip: ")} Remove or change the type of one of the instances."
   }
 
   /**
@@ -66,18 +65,18 @@ object InstanceError {
     def summary: String = "Mismatched signature."
 
     def message: String = {
-      s"""${line(kind, source.format)}
+      s"""${Format.line(kind, source.format)}
          |
-         |Mismatched signature '${red(sigSym.name)}' required by class '${red(sigSym.clazz.name)}'.
+         |Mismatched signature '${Format.red(sigSym.name)}' required by class '${Format.red(sigSym.clazz.name)}'.
          |
-         |${code(loc, "mismatched signature.")}
+         |${Format.code(loc, "mismatched signature.")}
          |
          |Expected scheme: ${FormatScheme.formatScheme(expected)}
          |Actual scheme:   ${FormatScheme.formatScheme(actual)}
          |""".stripMargin
     }
 
-    override def explain: String = s"${underline("Tip:")} Modify the definition to match the signature."
+    override def explain: String = s"${Format.underline("Tip:")} Modify the definition to match the signature."
   }
 
   /**
@@ -90,15 +89,15 @@ object InstanceError {
     def summary: String = "Missing implementation."
 
     def message: String = {
-      s"""${line(kind, source.format)}
+      s"""${Format.line(kind, source.format)}
          |
-         |Missing implementation of '${red(sig.name)}' required by class '${red(sig.clazz.name)}'.
+         |Missing implementation of '${Format.red(sig.name)}' required by class '${Format.red(sig.clazz.name)}'.
          |
-         |${code(loc, s"missing implementation")}
+         |${Format.code(loc, s"missing implementation")}
          |""".stripMargin
     }
 
-    override def explain: String = s"${underline("Tip:")} Add an implementation of the signature to the instance."
+    override def explain: String = s"${Format.underline("Tip:")} Add an implementation of the signature to the instance."
   }
 
   /**
@@ -111,13 +110,13 @@ object InstanceError {
     def summary: String = "Extraneous implementation."
 
     def message: String = {
-      s"""${line(kind, source.format)}
+      s"""${Format.line(kind, source.format)}
          |
-         |${code(loc, s"The signature ${defn.name} is not present in the class.")}
+         |${Format.code(loc, s"The signature ${defn.name} is not present in the class.")}
          |""".stripMargin
     }
 
-    override def explain: String = s"${underline("Tip:")} Remove this definition from the instance."
+    override def explain: String = s"${Format.underline("Tip:")} Remove this definition from the instance."
   }
 
   /**
@@ -131,14 +130,14 @@ object InstanceError {
     override def summary: String = "Duplicate type variable."
 
     override def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Duplicate type variable '${red(FormatType.formatType(tvar))}' in '${red(sym.name)}'.
+      s"""${Format.line(kind, source.format)}
+         |>> Duplicate type variable '${Format.red(FormatType.formatType(tvar))}' in '${Format.red(sym.name)}'.
          |
-         |${code(loc, s"The type variable '${FormatType.formatType(tvar)}' occurs more than once.")}
+         |${Format.code(loc, s"The type variable '${FormatType.formatType(tvar)}' occurs more than once.")}
          |""".stripMargin
     }
 
-    override def explain: String = s"${underline("Tip:")} Rename one of the instances of the type variable."
+    override def explain: String = s"${Format.underline("Tip:")} Rename one of the instances of the type variable."
 
   }
 
@@ -153,13 +152,13 @@ object InstanceError {
     override def summary: String = "Complex instance type."
 
     override def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Complex instance type '${red(FormatType.formatType(tpe))}' in '${red(sym.name)}'.
-         |${code(loc, s"complex instance type")}
+      s"""${Format.line(kind, source.format)}
+         |>> Complex instance type '${Format.red(FormatType.formatType(tpe))}' in '${Format.red(sym.name)}'.
+         |${Format.code(loc, s"complex instance type")}
          |""".stripMargin
     }
 
-    override def explain: String = s"${underline("Tip:")} An instance type must be a type constructor applied to zero or more distinct type variables."
+    override def explain: String = s"${Format.underline("Tip:")} An instance type must be a type constructor applied to zero or more distinct type variables."
   }
 
   /**
@@ -173,14 +172,14 @@ object InstanceError {
     override def summary: String = "Type alias in instance type."
 
     override def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Illegal use of type alias '${red(alias.name)}' in instance declaration for '${red(clazz.name)}'.
-         |${code(loc, s"illegal use of type alias")}
+      s"""${Format.line(kind, source.format)}
+         |>> Illegal use of type alias '${Format.red(alias.name)}' in instance declaration for '${Format.red(clazz.name)}'.
+         |${Format.code(loc, s"illegal use of type alias")}
          |""".stripMargin
 
     }
 
-    override def explain: String = s"${underline("Tip:")} A type class instance cannot use a type alias. Use the full type."
+    override def explain: String = s"${Format.underline("Tip:")} A type class instance cannot use a type alias. Use the full type."
 
   }
 
@@ -195,13 +194,13 @@ object InstanceError {
     override def summary: String = "Orphan instance."
 
     override def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Orphan instance for type '${red(FormatType.formatType(tpe))}' in '${red(sym.name)}'.
-         |${code(loc, s"orphan instance")}
+      s"""${Format.line(kind, source.format)}
+         |>> Orphan instance for type '${Format.red(FormatType.formatType(tpe))}' in '${Format.red(sym.name)}'.
+         |${Format.code(loc, s"orphan instance")}
          |""".stripMargin
     }
 
-    override def explain: String = s"${underline("Tip:")} An instance must be declared in the class's namespace or in the type's namespace."
+    override def explain: String = s"${Format.underline("Tip:")} An instance must be declared in the class's namespace or in the type's namespace."
   }
 
   /**
@@ -216,17 +215,17 @@ object InstanceError {
     override def summary: String = s"Missing super class instance '$superClass'."
 
     override def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Missing super class instance '${red(superClass.name)}' for type '${red(FormatType.formatType(tpe))}'.
+      s"""${Format.line(kind, source.format)}
+         |>> Missing super class instance '${Format.red(superClass.name)}' for type '${Format.red(FormatType.formatType(tpe))}'.
          |
-         |>> The class '${red(subClass.name)}' extends the class '${red(superClass.name)}'.
-         |>> If you provide an instance for '${red(subClass.name)}' you must also provide an instance for '${red(superClass.name)}'.
+         |>> The class '${Format.red(subClass.name)}' extends the class '${Format.red(superClass.name)}'.
+         |>> If you provide an instance for '${Format.red(subClass.name)}' you must also provide an instance for '${Format.red(superClass.name)}'.
          |
-         |${code(loc, s"missing super class instance")}
+         |${Format.code(loc, s"missing super class instance")}
          |""".stripMargin
     }
 
-    override def explain: String = s"${underline("Tip:")} Add an instance of '${superClass.name}' for '${FormatType.formatType(tpe)}'."
+    override def explain: String = s"${Format.underline("Tip:")} Add an instance of '${superClass.name}' for '${FormatType.formatType(tpe)}'."
   }
 
   /**
@@ -239,15 +238,15 @@ object InstanceError {
     override def summary: String = s"Unlawful signature '$sym'."
 
     override def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Unlawful signature '${red(sym.name)}'.
+      s"""${Format.line(kind, source.format)}
+         |>> Unlawful signature '${Format.red(sym.name)}'.
          |
          |>> Each signature of a lawful class must appear in at least one law.
-         |${code(loc, s"unlawful signature")}
+         |${Format.code(loc, s"unlawful signature")}
          |""".stripMargin
     }
 
-    override def explain: String = s"${underline("Tip:")} Create a law for '$sym' or mark the class as unlawful."
+    override def explain: String = s"${Format.underline("Tip:")} Create a law for '$sym' or mark the class as unlawful."
   }
 
   /**
@@ -260,16 +259,16 @@ object InstanceError {
     override def summary: String = s"Illegal override of '$sym'."
 
     override def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Illegal override of '${red(sym.name)}'.
+      s"""${Format.line(kind, source.format)}
+         |>> Illegal override of '${Format.red(sym.name)}'.
          |
          |>> Only signatures with default implementations can be overridden.
          |
-         |${code(loc, s"illegal override")}
+         |${Format.code(loc, s"illegal override")}
          |""".stripMargin
     }
 
-    override def explain: String = s"${underline("Tip:")} Remove the modifier."
+    override def explain: String = s"${Format.underline("Tip:")} Remove the modifier."
   }
 
   /**
@@ -282,14 +281,14 @@ object InstanceError {
     override def summary: String = s"Unmarked override '$sym'."
 
     override def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Unmarked override of '${red(sym.name)}'. This definition overrides a default implementation.
+      s"""${Format.line(kind, source.format)}
+         |>> Unmarked override of '${Format.red(sym.name)}'. This definition overrides a default implementation.
          |
-         |${code(loc, s"unmarked override")}
+         |${Format.code(loc, s"unmarked override")}
          |""".stripMargin
     }
 
-    override def explain: String = s"${underline("Tip:")} Either add the `override` modifier or remove the definition."
+    override def explain: String = s"${Format.underline("Tip:")} Either add the `override` modifier or remove the definition."
   }
 
 }

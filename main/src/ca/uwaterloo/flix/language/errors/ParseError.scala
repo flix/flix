@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.util.vt.VirtualString._
 
 /**
  * An error raised to indicate a parse error.
@@ -32,10 +31,10 @@ case class ParseError(msg: String, loc: SourceLocation) extends CompilationMessa
   def summary: String = msg
 
   def message: String = {
-    s"""${line(kind, source.format)}
+    s"""${Format.line(kind, source.format)}
        |>> Parse Error:
        |
-       |${red(msg)}
+       |${Format.red(msg)}
        |""".stripMargin
   }
 }

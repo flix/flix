@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
-import ca.uwaterloo.flix.util.vt.VirtualString._
 
 /**
  * An error raised to indicate that a constraint set is not stratified.
@@ -32,13 +31,13 @@ case class StratificationError(cycle: List[(Name.Pred, SourceLocation)], tpe: Ty
   def summary: String = "The expression is not stratified. A predicate depends negatively on itself."
 
   def message: String = {
-    s"""${line(kind, source.format)}
+    s"""${Format.line(kind, source.format)}
        |>> The expression is not stratified. A predicate depends negatively on itself.
        |
-       |${code(loc, "the expression is not stratified.")}
+       |${Format.code(loc, "the expression is not stratified.")}
        |The type of the expression is:
        |
-       |  ${cyan(FormatType.formatType(tpe))}
+       |  ${Format.cyan(FormatType.formatType(tpe))}
        |
        |The following predicate symbols are on the negative cycle:
        |
@@ -50,6 +49,6 @@ case class StratificationError(cycle: List[(Name.Pred, SourceLocation)], tpe: Ty
   }
 
   private def constraints: String = {
-    cycle.map(t => "  " + cyan(t._1.name) + " at " + t._2.format + " (which depends on)" + System.lineSeparator()).mkString
+    cycle.map(t => "  " + Format.cyan(t._1.name) + " at " + t._2.format + " (which depends on)" + System.lineSeparator()).mkString
   }
 }

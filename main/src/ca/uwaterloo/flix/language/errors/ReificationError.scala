@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Type}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
-import ca.uwaterloo.flix.util.vt.VirtualString.{code, line, red}
 
 /**
  * A common super-type for reification errors.
@@ -42,10 +41,10 @@ object ReificationError {
     def summary: String = "Type cannot be reified."
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Unable to reify the non-constant Bool '${red(FormatType.formatType(tpe))}'.
+      s"""${Format.line(kind, source.format)}
+         |>> Unable to reify the non-constant Bool '${Format.red(FormatType.formatType(tpe))}'.
          |
-         |${code(loc, "unable to reify type.")}
+         |${Format.code(loc, "unable to reify type.")}
          |""".stripMargin
     }
   }
@@ -60,10 +59,10 @@ object ReificationError {
     def summary: String = "Type cannot be reified."
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Unable to reify the type '${red(FormatType.formatType(tpe))}'.
+      s"""${Format.line(kind, source.format)}
+         |>> Unable to reify the type '${Format.red(FormatType.formatType(tpe))}'.
          |
-         |${code(loc, "unable to reify type.")}
+         |${Format.code(loc, "unable to reify type.")}
          |""".stripMargin
     }
   }
@@ -78,10 +77,10 @@ object ReificationError {
     def summary: String = "Unexpected type."
 
     def message: String = {
-      s"""${line(kind, source.format)}
-         |>> Unexpected Boolean type: '${red(FormatType.formatType(tpe))}'.
+      s"""${Format.line(kind, source.format)}
+         |>> Unexpected Boolean type: '${Format.red(FormatType.formatType(tpe))}'.
          |
-         |${code(loc, "unexpected Boolean type.")}
+         |${Format.code(loc, "unexpected Boolean type.")}
          |""".stripMargin
     }
   }
