@@ -34,7 +34,7 @@ object PrettyPrinter {
           sb.append(s"${fmtParam(fparam)}, ")
         }
         sb.append(") = ")
-        sb.append(fmtDef(defn).replace(System.lineSeparator(), System.lineSeparator() + "  "))
+        sb.append(fmtDef(defn).replace(System.lineSeparator(), System.lineSeparator() + (" " * 2)))
         sb.append(System.lineSeparator() + System.lineSeparator())
       }
       sb.toString()
@@ -160,12 +160,12 @@ object PrettyPrinter {
             .append(visitExp(exp1))
             .append(Format.text(") {"))
             .append(System.lineSeparator())
-            .append("  " + visitExp(exp2).replace(System.lineSeparator(), System.lineSeparator() + "  "))
+            .append((" " * 2) + visitExp(exp2).replace(System.lineSeparator(), System.lineSeparator() + (" " * 2)))
             .append(System.lineSeparator())
             .append(Format.text("} "))
             .append(Format.bold("else") + " {")
             .append(System.lineSeparator())
-            .append("  " + visitExp(exp3).replace(System.lineSeparator(), System.lineSeparator() + "  "))
+            .append((" " * 2) + visitExp(exp3).replace(System.lineSeparator(), System.lineSeparator() + (" " * 2)))
             .append(System.lineSeparator())
             .append(Format.text("}"))
             .toString()
@@ -173,13 +173,13 @@ object PrettyPrinter {
         case Expression.Branch(exp, branches, tpe, loc) =>
           val sb = new StringBuilder()
           sb.append("branch {")
-            .append("  " + visitExp(exp).replace(System.lineSeparator(), System.lineSeparator() + "  "))
+            .append((" " * 2) + visitExp(exp).replace(System.lineSeparator(), System.lineSeparator() + (" " * 2)))
             .append(System.lineSeparator())
           for ((sym, b) <- branches) {
-            sb.append("    " + fmtSym(sym).replace(System.lineSeparator(), System.lineSeparator() + "    "))
+            sb.append((" " * 4) + fmtSym(sym).replace(System.lineSeparator(), System.lineSeparator() + (" " * 4)))
               .append(":")
               .append(System.lineSeparator())
-              .append("    " + visitExp(b).replace(System.lineSeparator(), System.lineSeparator() + "    "))
+              .append((" " * 4) + visitExp(b).replace(System.lineSeparator(), System.lineSeparator() + (" " * 4)))
               .append(System.lineSeparator())
           }
           sb.append("}")
@@ -193,7 +193,7 @@ object PrettyPrinter {
           sb.append(Format.bold("let "))
             .append(fmtSym(sym))
             .append(Format.text(" = "))
-            .append(visitExp(exp1).replace(System.lineSeparator(), System.lineSeparator() + "  "))
+            .append(visitExp(exp1).replace(System.lineSeparator(), System.lineSeparator() + (" " * 2)))
             .append(";")
             .append(System.lineSeparator())
             .append(visitExp(exp2))
@@ -325,7 +325,7 @@ object PrettyPrinter {
           val sb = new StringBuilder()
           sb.append("try {")
             .append(System.lineSeparator())
-            .append("  " + visitExp(exp).replace(System.lineSeparator(), System.lineSeparator() + "  "))
+            .append((" " * 2) + visitExp(exp).replace(System.lineSeparator(), System.lineSeparator() + (" " * 2)))
             .append(System.lineSeparator())
             .append("} catch {")
             .append(System.lineSeparator())
@@ -334,7 +334,7 @@ object PrettyPrinter {
               .append(fmtSym(sym))
               .append(s": ${clazz.toString} => ")
               .append(System.lineSeparator())
-              .append("    " + visitExp(body).replace(System.lineSeparator(), System.lineSeparator() + "    "))
+              .append((" " * 4) + visitExp(body).replace(System.lineSeparator(), System.lineSeparator() + (" " * 4)))
               .append(System.lineSeparator())
           }
           sb.append("}")
@@ -412,17 +412,17 @@ object PrettyPrinter {
             sb.append("  case ")
               .append(fmtSym(sym))
               .append(" <- ")
-              .append(visitExp(chan).replace(System.lineSeparator(), System.lineSeparator() + "  "))
+              .append(visitExp(chan).replace(System.lineSeparator(), System.lineSeparator() + (" " * 2)))
               .append(" => ")
               .append(System.lineSeparator())
-              .append("    " + visitExp(exp).replace(System.lineSeparator(), System.lineSeparator() + "    "))
+              .append((" " * 4) + visitExp(exp).replace(System.lineSeparator(), System.lineSeparator() + (" " * 4)))
               .append(System.lineSeparator())
           }
           default match {
             case Some(exp) =>
               sb.append("  case _ => ")
                 .append(System.lineSeparator())
-                .append("    " + visitExp(exp).replace(System.lineSeparator(), System.lineSeparator() + "    "))
+                .append((" " * 4) + visitExp(exp).replace(System.lineSeparator(), System.lineSeparator() + (" " * 4)))
                 .append(System.lineSeparator())
             case None =>
           }
