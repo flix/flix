@@ -30,7 +30,6 @@ export interface Enum {
 }
 
 export interface Case {
-    // TODO
+    tag: string
+    sc: Scheme
 }
-
-//   case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[TypedAst.TypeParam], cases: Map[Name.Tag, TypedAst.Case], tpeDeprecated: Type, sc: Scheme, loc: SourceLocation)
