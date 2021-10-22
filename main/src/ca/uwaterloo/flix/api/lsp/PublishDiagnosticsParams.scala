@@ -22,8 +22,8 @@ import org.json4s.JsonDSL._
 import org.json4s._
 
 /**
- * Companion object of [[PublishDiagnosticsParams]].
- */
+  * Companion object of [[PublishDiagnosticsParams]].
+  */
 object PublishDiagnosticsParams {
   def from(errors: LazyList[CompilationMessage]): List[PublishDiagnosticsParams] = {
     implicit val ctx: OutputContext = RawOutput
@@ -41,11 +41,11 @@ object PublishDiagnosticsParams {
 }
 
 /**
- * Represent a `PublishDiagnosticsParams` in LSP.
- *
- * @param uri         The URI for which diagnostic information is reported.
- * @param diagnostics An array of diagnostic information items.
- */
+  * Represent a `PublishDiagnosticsParams` in LSP.
+  *
+  * @param uri         The URI for which diagnostic information is reported.
+  * @param diagnostics An array of diagnostic information items.
+  */
 case class PublishDiagnosticsParams(uri: String, diagnostics: List[Diagnostic]) {
   def toJSON: JValue = ("uri" -> uri) ~ ("diagnostics" -> diagnostics.map(_.toJSON))
 }

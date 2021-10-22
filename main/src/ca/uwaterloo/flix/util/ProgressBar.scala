@@ -43,8 +43,8 @@ class ProgressBar {
   private val sampleTick = new AtomicInteger(0)
 
   /**
-   * A Boolean that represents whether the terminal is believed to support color.
-   */
+    * A Boolean that represents whether the terminal is believed to support color.
+    */
   private val supportsColors: Boolean = OutputContext.hasColorSupport
 
   /**

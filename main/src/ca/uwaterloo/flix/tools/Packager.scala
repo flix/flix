@@ -34,12 +34,12 @@ import scala.util.Using
 object Packager {
 
   /**
-   * Installs a flix package from the Github `project`.
-   *
-   * `project` must be of the form `<owner>/<repo>`
-   *
-   * The package is installed at `lib/<owner>/<repo>`
-   */
+    * Installs a flix package from the Github `project`.
+    *
+    * `project` must be of the form `<owner>/<repo>`
+    *
+    * The package is installed at `lib/<owner>/<repo>`
+    */
   def install(project: String, p: Path, o: Options)(implicit tc: OutputContext): Unit = {
     val proj = GitHub.parseProject(project)
     val release = GitHub.getLatestRelease(proj)
@@ -63,10 +63,10 @@ object Packager {
   }
 
   /**
-   * Initializes a new flix project at the given path `p`.
-   *
-   * The project must not already exist.
-   */
+    * Initializes a new flix project at the given path `p`.
+    *
+    * The project must not already exist.
+    */
   def init(p: Path, o: Options)(implicit tc: OutputContext): Unit = {
     //
     // Check that the current working directory is usable.
@@ -149,8 +149,8 @@ object Packager {
   }
 
   /**
-   * Type checks the source files for the given project path `p`.
-   */
+    * Type checks the source files for the given project path `p`.
+    */
   def check(p: Path, o: Options)(implicit tc: OutputContext): Unit = {
     // Check that the path is a project path.
     if (!isProjectPath(p))
@@ -171,8 +171,8 @@ object Packager {
   }
 
   /**
-   * Builds (compiles) the source files for the given project path `p`.
-   */
+    * Builds (compiles) the source files for the given project path `p`.
+    */
   def build(p: Path, o: Options, loadClasses: Boolean = true)(implicit tc: OutputContext): Option[CompilationResult] = {
     // Check that the path is a project path.
     if (!isProjectPath(p))
@@ -224,8 +224,8 @@ object Packager {
   }
 
   /**
-   * Builds a jar package for the given project path `p`.
-   */
+    * Builds a jar package for the given project path `p`.
+    */
   def buildJar(p: Path, o: Options)(implicit tc: OutputContext): Unit = {
     // Check that the path is a project path.
     if (!isProjectPath(p))
@@ -263,8 +263,8 @@ object Packager {
   }
 
   /**
-   * Builds a flix package for the given project path `p`.
-   */
+    * Builds a flix package for the given project path `p`.
+    */
   def buildPkg(p: Path, o: Options)(implicit tc: OutputContext): Unit = {
     // Check that the path is a project path.
     if (!isProjectPath(p))
@@ -297,8 +297,8 @@ object Packager {
   }
 
   /**
-   * Runs the main function in flix package for the given project path `p`.
-   */
+    * Runs the main function in flix package for the given project path `p`.
+    */
   def run(p: Path, o: Options)(implicit tc: OutputContext): Unit = {
     for {
       compilationResult <- build(p, o)
@@ -310,8 +310,8 @@ object Packager {
   }
 
   /**
-   * Runs all benchmarks in the flix package for the given project path `p`.
-   */
+    * Runs all benchmarks in the flix package for the given project path `p`.
+    */
   def benchmark(p: Path, o: Options)(implicit tc: OutputContext): Unit = {
     build(p, o) match {
       case None => // nop
@@ -321,8 +321,8 @@ object Packager {
   }
 
   /**
-   * Runs all tests in the flix package for the given project path `p`.
-   */
+    * Runs all tests in the flix package for the given project path `p`.
+    */
   def test(p: Path, o: Options)(implicit tc: OutputContext): Tester.OverallTestResult = {
     build(p, o) match {
       case None => Tester.OverallTestResult.NoTests
