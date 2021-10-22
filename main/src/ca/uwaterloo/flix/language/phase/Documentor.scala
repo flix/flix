@@ -16,20 +16,20 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import java.io.IOException
-import java.nio.file.{Files, Path, Paths}
-
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.{Ast, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.debug.{Audience, FormatExpression, FormatType, PrettyExpression}
+import ca.uwaterloo.flix.language.ast.{Ast, Type, TypedAst}
+import ca.uwaterloo.flix.language.debug.{Audience, FormatType, PrettyExpression}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 import org.json4s.JsonAST._
 import org.json4s.JsonDSL._
 import org.json4s.native.JsonMethods
+
+import java.io.IOException
+import java.nio.file.{Files, Path, Paths}
 
 object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
 
@@ -69,7 +69,8 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       // Construct the JSON object.
       val json = JObject(
         ("title", JString(ApiTitle)),
-        ("namespaces", JObject(jsonDefsByNs))
+        ("namespaces", JObject(jsonDefsByNs)),
+        ("classes", classesToJson(root)),
       )
 
       // Serialize the JSON object to a string.
@@ -133,6 +134,27 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   private def getSpace(defn0: Def): Option[String] = defn0.spec.ann.collectFirst {
     case Annotation(Ast.Annotation.Space(_), exp :: _, _) =>
       PrettyExpression.pretty(exp)
+  }
+
+  // TODO: DOC
+  private def classesToJson(root: Root): JObject = {
+    val classesByNamespace = root.classes.filter {
+      case (sym, clazz) => clazz.mod.isPublic
+    }.groupBy(_._1.namespace)
+
+    classesByNamespace.foldRight(List.empty[(String, JValue)]) {
+      case ((ns, clazz), acc) =>
+        val cs = clazz.toList.map(kv => classAsJSON(kv._2))
+        (ns.mkString(".") -> JArray(cs)) :: acc
+    }
+  }
+
+  // TODO: DOC
+  private def classAsJSON(clazz: TypedAst.Class): JValue = clazz match {
+    case TypedAst.Class(doc, mod, sym, tparam, superClasses, signatures, laws, loc) =>
+      ("name" -> sym.name) ~
+        ("doc" -> doc.text) ~
+        ("superClasses" -> superClasses.map(_.sym.name))
   }
 
   /**
