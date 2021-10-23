@@ -149,4 +149,17 @@ object OutputContext {
     val wtSession = System.getenv("WT_SESSION")
     wtSession != null
   }
+
+  def render(s: String)(implicit outputContext: OutputContext): String =
+    outputContext.emitRed(
+      outputContext.emitCyan(
+        outputContext.emitBlack(
+          outputContext.emitBlue(
+            outputContext.emitBold(
+              outputContext.emitGreen(
+                outputContext.emitMagenta(
+                  outputContext.emitUnderline(
+                    outputContext.emitWhite(
+                      outputContext.emitYellow(s))))))))))
+
 }

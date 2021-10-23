@@ -46,7 +46,7 @@ class Shell(initialPaths: List[Path], options: Options) {
   /**
     * The default color context.
     */
-  private implicit val terminalContext: OutputContext = OutputContext.AnsiTerminalOutput
+  private implicit val outputContext: OutputContext = OutputContext.AnsiTerminalOutput
 
   /**
     * The executor service.
@@ -117,7 +117,7 @@ class Shell(initialPaths: List[Path], options: Options) {
           execute(cmd)
         } catch {
           case e: Exception =>
-            terminal.writer().print(e.getMessage)
+            terminal.writer().print(OutputContext.render(e.getMessage))
             e.printStackTrace(terminal.writer())
         }
       }
@@ -236,7 +236,7 @@ class Shell(initialPaths: List[Path], options: Options) {
             .append(System.lineSeparator())
 
           // Print the result to the terminal.
-          terminal.writer().print(sb.toString())
+          terminal.writer().print(OutputContext.render(sb.toString()))
       }
   }
 
@@ -264,7 +264,7 @@ class Shell(initialPaths: List[Path], options: Options) {
       sb.append(System.lineSeparator())
 
       // Print the result to the terminal.
-      terminal.writer().print(sb.toString())
+      terminal.writer().print(OutputContext.render(sb.toString()))
 
     case Some(ns) =>
       // Case 2: Browse a specific namespace.
@@ -286,7 +286,7 @@ class Shell(initialPaths: List[Path], options: Options) {
       }
 
       // Print the result to the terminal.
-      terminal.writer().print(sb.toString())
+      terminal.writer().print(OutputContext.render(sb.toString()))
   }
 
   /**
@@ -309,7 +309,7 @@ class Shell(initialPaths: List[Path], options: Options) {
           .append(System.lineSeparator())
 
         // Print the result to the terminal.
-        terminal.writer().print(sb.toString())
+        terminal.writer().print(OutputContext.render(sb.toString()))
     }
   }
 
@@ -352,7 +352,7 @@ class Shell(initialPaths: List[Path], options: Options) {
     sb.append(System.lineSeparator())
 
     // Print the result to the terminal.
-    terminal.writer().print(sb.toString())
+    terminal.writer().print(OutputContext.render(sb.toString()))
   }
 
   /**
@@ -388,7 +388,7 @@ class Shell(initialPaths: List[Path], options: Options) {
         terminal.writer().println()
         for (error <- errors) {
           val msg = if (options.explain) error.message + error.explain else error.message
-          terminal.writer().print(msg)
+          terminal.writer().print(OutputContext.render(msg))
         }
         terminal.writer().println()
         terminal.writer().print(prompt)
@@ -591,7 +591,7 @@ class Shell(initialPaths: List[Path], options: Options) {
     }
 
     // Print the result to the terminal.
-    terminal.writer().print(sb.toString())
+    terminal.writer().print(OutputContext.render(sb.toString()))
   }
 
   /**
