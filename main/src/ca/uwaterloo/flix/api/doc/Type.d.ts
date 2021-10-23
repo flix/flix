@@ -15,20 +15,15 @@
  */
 import {Kind} from "./Kind";
 
-export interface Type {
-    variant: TypeVariant
-    tpe: TypeVar | TypeCst
-}
-
-export enum TypeVariant {
-    TypeVar
-}
+export type Type = TypeVar | TypeCst
 
 export interface TypeVar {
+    "variant": "TypeVar"
     kind: Kind
 }
 
 export interface TypeCst {
+    "variant": "TypeCst"
     kind: Kind
 }
 
