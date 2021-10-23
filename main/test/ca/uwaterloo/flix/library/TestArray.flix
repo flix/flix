@@ -4513,4 +4513,33 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
         let a = Array.copyOfRange(2, 5, [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]]);
         Array.length(a) == 3 and Array.memberOf([None], a)
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toIterator                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toIterator01(): Bool & Impure =
+        []: Array[Int32] |> Array.toIterator |> Iterator.toList == Nil
+
+    @test
+    def toIterator02(): Bool & Impure =
+        [1, 2, 3] |> Array.toIterator |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+
+    @test
+    def toIterator03(): Bool & Impure =
+        [1, 2, 3] |> Array.toIterator |> Iterator.toArray == [1, 2, 3]
+
+    @test
+    def toIterator04(): Bool & Impure =
+        Array.range(-100, 100) |> Array.toIterator |> Iterator.toArray == Array.range(-100, 100)
+
+    @test
+    def toIterator05(): Bool & Impure = {
+        let a = [1, 2, 3];
+        let iter = Array.toIterator(a);
+        a[0] = 10000;
+        Iterator.toArray(iter) == [1, 2, 3]
+    }
+
 }
