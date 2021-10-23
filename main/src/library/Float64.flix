@@ -122,7 +122,7 @@ namespace Float64 {
     pub def fromString(s: String): Result[Float64, String] = try {
         import java.lang.String.strip();
         import java.lang.Double:parseDouble(String);
-        Ok(s.strip().parseDouble()) as & Pure
+        Ok(s |> strip |> parseDouble) as & Pure
     } catch {
         case _: ##java.lang.NumberFormatException => Err("Float64.fromString")
     }
@@ -143,7 +143,7 @@ namespace Float64 {
         if (x < Int8.toFloat64(Int8.minValue()) or x > Int8.toFloat64(Int8.maxValue()) or isNan(x) or isInfinite(x))
             None
         else
-            Some(valueOf(x).byteValue()) as & Pure
+            Some(valueOf(x) |> byteValue) as & Pure
 
     ///
     /// Convert `x` to an `Option[Int16]`.
@@ -161,7 +161,7 @@ namespace Float64 {
         if (x < Int16.toFloat64(Int16.minValue()) or x > Int16.toFloat64(Int16.maxValue()) or isNan(x) or isInfinite(x))
             None
         else
-            Some(valueOf(x).shortValue()) as & Pure
+            Some(valueOf(x) |> shortValue) as & Pure
 
     ///
     /// Convert `x` to an `Option[Int32]`.
@@ -179,7 +179,7 @@ namespace Float64 {
         if (x < Int32.toFloat64(Int32.minValue()) or x > Int32.toFloat64(Int32.maxValue()) or isNan(x) or isInfinite(x))
             None
         else
-            Some(valueOf(x).intValue()) as & Pure
+            Some(valueOf(x) |> intValue) as & Pure
 
     ///
     /// Convert `x` to an `Option[Int64]`.
@@ -200,7 +200,7 @@ namespace Float64 {
         if (x < Int64.toFloat64(Int64.minValue()) or x > Int64.toFloat64(Int64.maxValue()) or isNan(x) or isInfinite(x))
             None
         else
-            Some(valueOf(x).longValue()) as & Pure
+            Some(valueOf(x) |> longValue) as & Pure
 
     ///
     /// Convert `x` to an `Option[BigInt]`.
@@ -214,7 +214,7 @@ namespace Float64 {
         import java.math.BigDecimal:valueOf(Float64);
         import java.math.BigDecimal.toBigInteger();
         try {
-            Some(x.valueOf().toBigInteger()) as & Pure
+            Some(x |> valueOf |> toBigInteger) as & Pure
         } catch {
             // Catch NaN, isInfinite.
             case _: ##java.lang.NumberFormatException => None
@@ -239,7 +239,7 @@ namespace Float64 {
         if (x < Float32.toFloat64(Float32.minValue()) or x > Float32.toFloat64(Float32.maxValue()))
             None
         else
-            Some(valueOf(x).floatValue()) as & Pure
+            Some(valueOf(x) |> floatValue) as & Pure
 
     ///
     /// Helper function for the `clamp` conversion functions.
@@ -267,10 +267,10 @@ namespace Float64 {
         import java.lang.Double.byteValue();
         let minf64 = Int8.toFloat64(minimum);
         let maxf64 = Int8.toFloat64(maximum);
-        if (x.isNan())
+        if (x |> isNan)
             nanValue
         else
-            valueOf(clamp(x, minf64, maxf64)).byteValue() as & Pure
+            (valueOf(clamp(x, minf64, maxf64)) |> byteValue) as & Pure
 
     ///
     /// Convert `x` to an `Int16`.
@@ -286,10 +286,10 @@ namespace Float64 {
         import java.lang.Double.shortValue();
         let minf64 = Int16.toFloat64(minimum);
         let maxf64 = Int16.toFloat64(maximum);
-        if (x.isNan())
+        if (x |> isNan)
             nanValue
         else
-            valueOf(clamp(x, minf64, maxf64)).shortValue() as & Pure
+            (valueOf(clamp(x, minf64, maxf64)) |> shortValue) as & Pure
 
     ///
     /// Convert `x` to an `Int32`.
@@ -305,10 +305,10 @@ namespace Float64 {
         import java.lang.Double.intValue();
         let minf64 = Int32.toFloat64(minimum);
         let maxf64 = Int32.toFloat64(maximum);
-        if (x.isNan())
+        if (x |> isNan)
             nanValue
         else
-            valueOf(clamp(x, minf64, maxf64)).intValue() as & Pure
+            (valueOf(clamp(x, minf64, maxf64)) |> intValue) as & Pure
 
     ///
     /// Convert `x` to an `Int64`.
@@ -324,10 +324,10 @@ namespace Float64 {
         import java.lang.Double.longValue();
         let minf64 = Int64.toFloat64(minimum);
         let maxf64 = Int64.toFloat64(maximum);
-        if (x.isNan())
+        if (x |> isNan)
             nanValue
         else
-            valueOf(clamp(x, minf64, maxf64)).longValue() as & Pure
+            (valueOf(clamp(x, minf64, maxf64)) |> longValue) as & Pure
 
     ///
     /// Convert `x` to a `Float32`.
@@ -340,10 +340,10 @@ namespace Float64 {
         import java.lang.Double.floatValue();
         let minf64 = Float32.toFloat64(minimum);
         let maxf64 = Float32.toFloat64(maximum);
-        if (x.isNan())
+        if (x |> isNan)
             Float32.nan()
         else
-            valueOf(clamp(x, minf64, maxf64)).floatValue() as & Pure
+            (valueOf(clamp(x, minf64, maxf64)) |> floatValue) as & Pure
 
     ///
     /// Returns the absolute value of `x`.

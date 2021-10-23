@@ -6,7 +6,7 @@ namespace Test/Exp/Jvm/PutField {
         import get flix.test.TestClass.boolField as getField;
         import set flix.test.TestClass.boolField as setField;
         let o = newObject();
-        o.setField(false);
+        o `setField` false;
         getField(o) == false
 
     @test
@@ -15,7 +15,7 @@ namespace Test/Exp/Jvm/PutField {
         import get flix.test.TestClass.charField as getField;
         import set flix.test.TestClass.charField as setField;
         let o = newObject();
-        o.setField('X');
+        o `setField` 'X';
         getField(o) == 'X'
 
     @test
@@ -24,7 +24,7 @@ namespace Test/Exp/Jvm/PutField {
         import get flix.test.TestClass.float32Field as getField;
         import set flix.test.TestClass.float32Field as setField;
         let o = newObject();
-        o.setField(21.42f32);
+        o `setField` 21.42f32;
         getField(o) == 21.42f32
 
     @test
@@ -33,7 +33,7 @@ namespace Test/Exp/Jvm/PutField {
         import get flix.test.TestClass.float64Field as getField;
         import set flix.test.TestClass.float64Field as setField;
         let o = newObject();
-        o.setField(21.42f64);
+        o `setField` 21.42f64;
         getField(o) == 21.42f64
 
     @test
@@ -42,7 +42,7 @@ namespace Test/Exp/Jvm/PutField {
         import get flix.test.TestClass.int8Field as getField;
         import set flix.test.TestClass.int8Field as setField;
         let o = newObject();
-        o.setField(42i8);
+        o `setField` 42i8;
         getField(o) == 42i8
 
     @test
@@ -51,7 +51,7 @@ namespace Test/Exp/Jvm/PutField {
         import get flix.test.TestClass.int16Field as getField;
         import set flix.test.TestClass.int16Field as setField;
         let o = newObject();
-        o.setField(42i16);
+        o `setField` 42i16;
         getField(o) == 42i16
 
     @test
@@ -60,7 +60,7 @@ namespace Test/Exp/Jvm/PutField {
         import get flix.test.TestClass.int32Field as getField;
         import set flix.test.TestClass.int32Field as setField;
         let o = newObject();
-        o.setField(42i32);
+        o `setField` 42i32;
         getField(o) == 42i32
 
     @test
@@ -69,7 +69,7 @@ namespace Test/Exp/Jvm/PutField {
         import get flix.test.TestClass.int64Field as getField;
         import set flix.test.TestClass.int64Field as setField;
         let o = newObject();
-        o.setField(42i64);
+        o `setField` 42i64;
         getField(o) == 42i64
 
     @test
@@ -78,7 +78,7 @@ namespace Test/Exp/Jvm/PutField {
         import get flix.test.TestClass.stringField as getField;
         import set flix.test.TestClass.stringField as setField;
         let o = newObject();
-        o.setField("Goodbye World");
+        o `setField` "Goodbye World";
         getField(o) == "Goodbye World"
 
 }

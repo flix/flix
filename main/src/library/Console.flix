@@ -62,28 +62,28 @@ namespace Console {
         ///
         pub def print(s: String): Unit & Impure =
             import java.io.PrintStream.print(String);
-            getOutputStream().print(s)
+            getOutputStream() `print` s
 
         ///
         /// Prints the given string `s` and a newline to the standard output stream.
         ///
         pub def printLine(s: String): Unit & Impure =
             import java.io.PrintStream.println(String);
-            getOutputStream().println(s)
+            getOutputStream() `println` s
 
         ///
         /// Prints a newline to the standard output stream.
         ///
         pub def newLine(): Unit & Impure =
             import java.io.PrintStream.println();
-            getOutputStream().println()
+            getOutputStream() |> println
 
         ///
         /// Flushes the standard output stream.
         ///
         pub def flush(): Unit & Impure =
             import java.io.PrintStream.flush();
-            getOutputStream().flush()
+            getOutputStream() |> flush
 
         ///
         /// Returns the standard output stream.
@@ -104,28 +104,28 @@ namespace Console {
         ///
         pub def print(s: String): Unit & Impure =
             import java.io.PrintStream.print(String);
-            getErrorStream().print(s)
+            getErrorStream() `print` s
 
         ///
         /// Prints the given string `s` and a newline to the standard error stream.
         ///
         pub def printLine(s: String): Unit & Impure =
             import java.io.PrintStream.println(String);
-            getErrorStream().println(s)
+            getErrorStream() `println` s
 
         ///
         /// Prints a newline to the standard error stream.
         ///
         pub def newLine(): Unit & Impure =
             import java.io.PrintStream.println();
-            getErrorStream().println()
+            getErrorStream() |> println
 
         ///
         /// Flushes the standard error stream.
         ///
         pub def flush(): Unit & Impure =
             import java.io.PrintStream.flush();
-            getErrorStream().flush()
+            getErrorStream() |> flush
 
         ///
         /// Returns the standard error stream.

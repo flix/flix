@@ -23,7 +23,7 @@ namespace Environment {
         import java.util.Map.entrySet();
         import java.util.Set.iterator();
         try {
-            let iter = getenv().entrySet().iterator();
+            let iter = getenv() |> entrySet |> iterator;
             getEnvHelper(iter, Map.empty())
         } catch {
             case _:##java.lang.Exception => Map.empty()
@@ -117,17 +117,17 @@ namespace Environment {
     pub def getVirtualProcessors(): Int32 =
         import java.lang.Runtime:getRuntime();
         import java.lang.Runtime.availableProcessors();
-        getRuntime().availableProcessors() as & Pure
+        (getRuntime() |> availableProcessors) as & Pure
 
     def getEnvHelper(iter: ##java.util.Iterator, m: Map[String, String]): Map[String, String] & Impure =
         import java.util.Iterator.hasNext();
         import java.util.Iterator.next();
         import java.util.Map$Entry.getKey();
         import java.util.Map$Entry.getValue();
-        if (iter.hasNext())
-            let entry = iter.next() as ##java.util.Map$Entry;
-            let key = entry.getKey() as String;
-            let value = entry.getValue() as String;
+        if (iter |> hasNext)
+            let entry = (iter |> next) as ##java.util.Map$Entry;
+            let key = (entry |> getKey) as String;
+            let value = (entry |> getValue) as String;
             getEnvHelper(iter, Map.insert(key, value, m))
         else
             m

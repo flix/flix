@@ -39,7 +39,7 @@ namespace Char {
     @Time(1) @Space(1)
     pub def isLetter(c: Char): Bool =
         import java.lang.Character:isLetter(Char);
-        c.isLetter() as & Pure
+        (c |> isLetter) as & Pure
 
     ///
     /// Returns `true` if the given char `c` is a recognized Unicode digit.
@@ -48,7 +48,7 @@ namespace Char {
     @Time(1) @Space(1)
     pub def isDigit(c: Char): Bool =
         import java.lang.Character:isDigit(Char);
-        c.isDigit() as & Pure
+        (c |> isDigit) as & Pure
 
     ///
     /// Returns `true` if the given char `c` is strictly in the range of ASCII digits 0...9.
@@ -85,7 +85,7 @@ namespace Char {
     @Time(1) @Space(1)
     pub def isLowerCase(c: Char): Bool =
         import java.lang.Character:isLowerCase(Char);
-        c.isLowerCase() as & Pure
+        (c |> isLowerCase) as & Pure
 
     ///
     /// Returns `true` if the given char `c` is uppercase.
@@ -93,7 +93,7 @@ namespace Char {
     @Time(1) @Space(1)
     pub def isUpperCase(c: Char): Bool =
         import java.lang.Character:isUpperCase(Char);
-        c.isUpperCase() as & Pure
+        (c |> isUpperCase) as & Pure
 
     ///
     /// Returns `true` if the given char `c` is a white space character.
@@ -101,7 +101,7 @@ namespace Char {
     @Time(1) @Space(1)
     pub def isWhiteSpace(c: Char): Bool =
         import java.lang.Character:isWhitespace(Char);
-        c.isWhitespace() as & Pure
+        (c |> isWhitespace) as & Pure
 
     ///
     /// Converts a letter to its lowercase version.
@@ -111,7 +111,7 @@ namespace Char {
     @Time(1) @Space(1)
     pub def toLowerCase(c: Char): Char =
         import java.lang.Character:toLowerCase(Char);
-        c.toLowerCase() as & Pure
+        (c |> toLowerCase) as & Pure
 
     ///
     /// Converts a letter to its uppercase version.
@@ -121,7 +121,7 @@ namespace Char {
     @Time(1) @Space(1)
     pub def toUpperCase(c: Char): Char =
         import java.lang.Character:toUpperCase(Char);
-        c.toUpperCase() as & Pure
+        (c |> toUpperCase) as & Pure
 
     ///
     /// Returns the character `c` as a string.
