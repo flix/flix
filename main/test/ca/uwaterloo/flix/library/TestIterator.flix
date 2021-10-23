@@ -103,4 +103,42 @@ namespace TestIterator {
         let map = Map#{"1" -> 2, "2" -> 3, "3" -> 4};
         map |> Map.toList |> List.toIterator |> Iterator.toMap == map
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toSet                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toSet01(): Bool & Impure =
+        List.toIterator(Nil: List[Int32]) |> Iterator.toSet == Set.empty()
+
+    @test
+    def toSet02(): Bool & Impure =
+        Set#{} |> Set.toList |> List.toIterator |> Iterator.toSet == Set.empty()
+
+    @test
+    def toSet03(): Bool & Impure =
+        Set#{"a", "b", "c", "d"} |> Set.toList |> List.toIterator |> Iterator.toSet == Set#{"a", "b", "c", "d"}
+
+    @test
+    def toSet04(): Bool & Impure =
+        Set.range(0, 10000) |> Set.toList |> List.toIterator |> Iterator.toSet == Set.range(0, 10000)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toNel                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toNel01(): Bool & Impure =
+        Nil |> List.toIterator |> Iterator.toNel == None
+
+    @test
+    def toNel02(): Bool & Impure =
+        (1 :: Nil) |> List.toIterator |> Iterator.toNel == Some(Nel(1, Nil))
+
+    @test
+    def toNel03(): Bool & Impure =
+        Iterator.range(0, 1000) |> Iterator.toNel == Some(Nel(0, List.range(1, 1000)))
+
 }
