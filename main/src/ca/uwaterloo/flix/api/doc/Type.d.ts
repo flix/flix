@@ -13,7 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import {Kind} from "./Kind";
 
 export interface Type {
-
+    variant: TypeVariant
+    tpe: TypeVar | TypeCst
 }
+
+export enum TypeVariant {
+    TypeVar
+}
+
+export interface TypeVar {
+    kind: Kind
+}
+
+export interface TypeCst {
+    kind: Kind
+}
+
+

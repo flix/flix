@@ -17,7 +17,7 @@ import {ClassSym} from "./ClassSym";
 import {SourceLocation} from "./SourceLocation";
 
 export interface SigSym {
-    class: ClassSym
+    classSym: ClassSym
     name: string
     loc: SourceLocation
 }
