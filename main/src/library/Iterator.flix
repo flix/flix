@@ -32,6 +32,7 @@ pub enum Iterator[a] {
     case Iterator(Done, Next[a])
 }
 
+
 namespace Iterator {
 
     ///
@@ -85,43 +86,72 @@ namespace Iterator {
     /// Helper function for `toArray`.
     ///
     def toArrayAcc(done: Done, next: Next[a], v: MutList[a]): Array[a] & Impure =
-        if (done())
+        if (done()) {
             MutList.toArray(v)
-        else
-            toArrayAcc(done, next, MutList.push!(next(), v))
+        }
+        else {
+            MutList.push!(next(), v);
+            toArrayAcc(done, next, v)
+        }
 
     ///
     /// Returns the contents of `iter` as a list. Consumes the entire iterator.
     ///
-    pub def toList(iter: Iterator[a]): List[a] & ef =
+    pub def toList(iter: Iterator[a]): List[a] & Impure =
         let Iterator(done, next) = iter;
-        (toListAcc(done, next, Nil) |> List.reverse) as & ef
+        toListAcc(done, next, ks -> ks)
 
     ///
     /// Helper function for `toList`.
     ///
-    def toListAcc(done: Done, next: Next[a], acc: List[a]): List[a] & Impure =
+    def toListAcc(done: Done, next: Next[a], k: List[a] -> List[a]): List[a] & Impure =
         if (done()) {
-            acc
+            k(Nil)
         }
         else {
-            toListAcc(done, next, next() :: acc)
+            let x = next();
+            toListAcc(done, next, ks -> k(x :: ks))
         }
 
     ///
     /// Returns the contents of `iter` as a map. Consumes the entire iterator.
     ///
-    pub def toMap(iter: Iterator[(a, b)]): Map[a, b] & Impure =
+    pub def toMap(iter: Iterator[(a, b)]): Map[a, b] & Impure with Order[a] =
         let Iterator(done, next) = iter;
         toMapAcc(done, next, Map.empty())
 
     ///
     /// Helper function for `toMap`.
     ///
-    def toMapAcc(done: Done, next: Next[(a, b)], acc: Map[a, b]): Map[a, b] & Impure =
+    def toMapAcc(done: Done, next: Next[(a, b)], m: Map[a, b]): Map[a, b] & Impure with Order[a] =
         if (done())
-            acc
+            m
         else
-            toMapAcc(done, next, Map.insert(next(), acc))
+            let (k, v) = next();
+            toMapAcc(done, next, Map.insert(k, v, m))
+
+    ///
+    /// Returns the contents of `iter` as a `Some(Nel)` if `iter` is not empty. Returns None otherwise.
+    ///
+    pub def toNel(iter: Iterator[a]): Option[Nel[a]] & Impure = match toList(iter) {
+        case Nil     => None
+        case x :: xs => Some(Nel(x, xs))
+    }
+
+    ///
+    /// Returns the contents of `iter` as a set. Consumes the entire iterator.
+    ///
+    pub def toSet(iter: Iterator[a]): Set[a] & Impure with Order[a] =
+        let Iterator(done, next) = iter;
+        toSetAcc(done, next, Set.empty())
+
+    ///
+    /// Helper function for `toSet`.
+    ///
+    def toSetAcc(done: Done, next: Next[a], s: Set[a]): Set[a] & Impure with Order[a] =
+        if (done())
+            s
+        else
+            toSetAcc(done, next, Set.insert(next(), s))
 
 }
