@@ -280,52 +280,6 @@ object FormatType {
   }
 
   /**
-   * Returns a human readable representation of the given type difference.
-   */
-  def formatTypeDiff(td: TypeDiff, color: String => String)(implicit audience: Audience): String = {
-    def visit(d: TypeDiff): String = {
-      def visitWithAcc(d: TypeDiff, acc: String): String = {
-        val base = d.typeConstructor
-        val args = d.typeArguments
-
-        base match {
-          case TypeDiff.Arrow =>
-            intercalate(args, visit, acc, before = "", separator = " -> ", after = "")
-          case TypeDiff.Enum =>
-            intercalate(args, visit, acc + "...", before = "[", separator = ", ", after = "]")
-          case TypeDiff.Tuple =>
-            intercalate(args, visit, acc, before = "(", separator = ", ", after = ")")
-          case TypeDiff.Other =>
-            intercalate(args, visit, acc + "...", before = "[", separator = ", ", after = "]")
-          case TypeDiff.Mismatch(tpe1, _) => acc + color(formatType(tpe1))
-          case _ => throw InternalCompilerException(s"Unexpected base type: '$base'.")
-        }
-      }
-
-      visitWithAcc(d, "")
-    }
-
-    visit(td)
-  }
-
-  /**
-   * Helper function to generate text before, in the middle of, and after a list of items.
-   */
-  private def intercalate[A](xs: List[A], f: A => String, start: String, before: String, separator: String, after: String): String = {
-    if (xs.isEmpty) {
-      ""
-    } else {
-      val sb = new StringBuilder()
-      sb.append(start)
-        .append(before)
-        .append(xs.map(f).mkString(separator))
-        .append(after)
-        .toString()
-    }
-  }
-
-
-  /**
    * A flat representation of a schema or record.
    *
    * Contains the fields and their types as a list at the top level.

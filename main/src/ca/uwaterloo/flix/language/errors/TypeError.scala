@@ -71,8 +71,8 @@ object TypeError {
          |
          |${Format.code(loc, "mismatched types.")}
          |
-         |Type One: ${FormatType.formatTypeDiff(TypeDiff.diff(fullType1, fullType2), Format.cyan)}
-         |Type Two: ${FormatType.formatTypeDiff(TypeDiff.diff(fullType2, fullType1), Format.magenta)}
+         |Type One: ${TypeDiff.diff(fullType1, fullType2)}
+         |Type Two: ${TypeDiff.diff(fullType2, fullType1)}
          |""".stripMargin
     }
   }
@@ -159,8 +159,8 @@ object TypeError {
          |
          |${Format.code(loc, "mismatched types.")}
          |
-         |Type One: ${FormatType.formatTypeDiff(TypeDiff.diff(fullType1, fullType2), Format.cyan)}
-         |Type Two: ${FormatType.formatTypeDiff(TypeDiff.diff(fullType2, fullType1), Format.magenta)}
+         |Type One: ${TypeDiff.diff(fullType1, fullType2)}
+         |Type Two: ${TypeDiff.diff(fullType2, fullType1)}
          |""".stripMargin
     }
   }
