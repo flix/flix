@@ -51,6 +51,11 @@ object TypeError {
          |  Inferred: ${Format.magenta(FormatScheme.formatSchemeWithoutConstraints(inferred))}
          |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 
   /**
@@ -75,6 +80,11 @@ object TypeError {
          |Type Two: ${TypeDiff.diff(fullType2, fullType1)}
          |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 
   /**
@@ -106,7 +116,7 @@ object TypeError {
       case _ => "" // nop
     }
 
-    override def explain: String = {
+    override def explain: Option[String] = Some({
       s"""If the Boolean formula describes purity:
          |
          |  (1) Did you forget to mark the function as impure?
@@ -118,7 +128,7 @@ object TypeError {
          |  (1) Are you trying to pass null where a non-null value is required?
          |
          |""".stripMargin
-    }
+    })
   }
 
   /**
@@ -138,6 +148,11 @@ object TypeError {
          |${Format.code(loc, "mismatched arity of types.")}
          |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 
   /**
@@ -163,6 +178,11 @@ object TypeError {
          |Type Two: ${TypeDiff.diff(fullType2, fullType1)}
          |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 
   /**
@@ -188,6 +208,11 @@ object TypeError {
          |does not contain the field '${Format.red(field.name)}' of type ${Format.cyan(FormatType.formatType(fieldType))}.
          |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 
   /**
@@ -213,6 +238,11 @@ object TypeError {
          |does not contain the predicate '${Format.red(pred.name)}' of type ${Format.cyan(FormatType.formatType(predType))}.
          |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 
   /**
@@ -231,6 +261,11 @@ object TypeError {
          |${Format.code(loc, "unexpected non-record type.")}
          |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 
   /**
@@ -249,6 +284,11 @@ object TypeError {
          |${Format.code(loc, "unexpected non-schema type.")}
          |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 
   /**
@@ -269,7 +309,7 @@ object TypeError {
          |""".stripMargin
     }
 
-    override def explain: String = s"${Format.underline("Tip:")} Add an instance for the type."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Add an instance for the type.")
 
   }
 
@@ -291,7 +331,7 @@ object TypeError {
          |""".stripMargin
     }
 
-    override def explain: String = {
+    override def explain: Option[String] = Some({
       s"""The main function must have the form:
          |
          |  def main(args: Array[String]): Int & Impure = ...
@@ -302,6 +342,6 @@ object TypeError {
          |
          |(If the arguments are not needed, then 'args' can be replaced with '_'.
          |""".stripMargin
-    }
+    })
   }
 }

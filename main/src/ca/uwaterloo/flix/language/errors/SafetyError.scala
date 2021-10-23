@@ -29,14 +29,14 @@ object SafetyError {
          |""".stripMargin
     }
 
-    override def explain: String = {
+    override def explain: Option[String] = Some({
       if (!sym.isWild)
         s"""
            |${Format.underline("Tip:")} Ensure that the variable occurs in at least one positive atom.
            |""".stripMargin
       else
         ""
-    }
+    })
   }
 
   /**
@@ -54,6 +54,11 @@ object SafetyError {
          |${Format.code(loc, "the variable occurs in this negated atom.")}
          |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 
   /**
@@ -71,5 +76,10 @@ object SafetyError {
          |${Format.code(loc, "the wildcard occurs in this negated atom.")}
          |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 }

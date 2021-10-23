@@ -47,13 +47,13 @@ object TerminationError {
 
     def loc: SourceLocation = sym.loc
 
-    override def explain: String = {
+    override def explain: Option[String] = Some({
       s"""
          |"Possible fixes:"
          |
          |  (1)  Add a non-recursive branch to the definition.
          |
          |""".stripMargin
-    }
+    })
   }
 }

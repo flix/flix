@@ -48,6 +48,11 @@ object KindError {
          |Kind Two: ${Format.magenta(formatKind(k2))}
          |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 
   /**
@@ -70,5 +75,10 @@ object KindError {
          |Actual kind:   ${Format.magenta(formatKind(actualKind))}
          |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 }

@@ -41,14 +41,14 @@ object LinterError {
          |""".stripMargin
     }
 
-    override def explain: String = {
+    override def explain: Option[String] = Some({
       s"""The lint suggests that this code can be replaced by:
          |
          |  ${Format.magenta(PrettyExpression.pretty(replacement))}
          |
          |The lint was declared at: '${Format.cyan(sym.loc.format)}'.
          |""".stripMargin
-    }
+    })
   }
 
 }

@@ -50,7 +50,7 @@ object RedundancyError {
 
     }
 
-    override def explain: String = {
+    override def explain: Option[String] = Some({
       s"""
          |Possible fixes:
          |
@@ -58,7 +58,7 @@ object RedundancyError {
          |  (2)  Rename the underscore prefix from the variable symbol name.
          |
          |""".stripMargin
-    }
+    })
   }
 
   /**
@@ -85,6 +85,10 @@ object RedundancyError {
 
     def loc: SourceLocation = sym1.loc min sym2.loc
 
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 
   /**
@@ -105,7 +109,7 @@ object RedundancyError {
 
     def loc: SourceLocation = sym.loc
 
-    override def explain: String = {
+    override def explain: Option[String] = Some({
       s"""Possible fixes:
          |
          |  (1)  Use the definition.
@@ -114,7 +118,7 @@ object RedundancyError {
          |  (4)  Prefix the definition name with an underscore.
          |
          |""".stripMargin
-    }
+    })
   }
 
   /**
@@ -135,7 +139,7 @@ object RedundancyError {
 
     def loc: SourceLocation = sym.loc
 
-    override def explain: String = {
+    override def explain: Option[String] = Some({
       s"""
          |Possible fixes:
          |
@@ -145,7 +149,7 @@ object RedundancyError {
          |  (4)  Prefix the enum name with an underscore.
          |
          |""".stripMargin
-    }
+    })
   }
 
   /**
@@ -168,7 +172,7 @@ object RedundancyError {
 
     def loc: SourceLocation = sym.loc
 
-    override def explain: String = {
+    override def explain: Option[String] = Some({
       s"""
          |Possible fixes:
          |
@@ -177,7 +181,7 @@ object RedundancyError {
          |  (3)  Prefix the case with an underscore.
          |
          |""".stripMargin
-    }
+    })
   }
 
   /**
@@ -198,7 +202,7 @@ object RedundancyError {
 
     def loc: SourceLocation = sym.loc
 
-    override def explain: String = {
+    override def explain: Option[String] = Some({
       s"""
          |Possible fixes:
          |
@@ -207,7 +211,7 @@ object RedundancyError {
          |  (3)  Prefix the formal parameter name with an underscore.
          |
          |""".stripMargin
-    }
+    })
   }
 
   /**
@@ -228,7 +232,7 @@ object RedundancyError {
 
     def loc: SourceLocation = SourceLocation.mk(ident.sp1, ident.sp2)
 
-    override def explain: String = {
+    override def explain: Option[String] = Some({
       s"""
          |Possible fixes:
          |
@@ -237,7 +241,7 @@ object RedundancyError {
          |  (3)  Prefix the type parameter name with an underscore.
          |
          |""".stripMargin
-    }
+    })
   }
 
   /**
@@ -258,7 +262,7 @@ object RedundancyError {
 
     def loc: SourceLocation = sym.loc
 
-    override def explain: String = {
+    override def explain: Option[String] = Some({
       s"""
          |Possible fixes:
          |
@@ -267,7 +271,7 @@ object RedundancyError {
          |  (3)  Prefix the variable name with an underscore.
          |
          |""".stripMargin
-    }
+    })
   }
 
   /**
@@ -287,7 +291,7 @@ object RedundancyError {
          |""".stripMargin
     }
 
-    override def explain: String = {
+    override def explain: Option[String] = Some({
       s"""
          |Possible fixes:
          |
@@ -296,7 +300,7 @@ object RedundancyError {
          |  (3)  Check for any spelling mistakes.
          |
          |""".stripMargin
-    }
+    })
   }
 
   /**
@@ -315,7 +319,7 @@ object RedundancyError {
          |""".stripMargin
     }
 
-    override def explain: String = {
+    override def explain: Option[String] = Some({
       s"""
          |Possible fixes:
          |
@@ -324,7 +328,7 @@ object RedundancyError {
          |  (3)  Introduce a let-binding with a wildcard name.
          |
          |""".stripMargin
-    }
+    })
   }
 
   /**
@@ -345,13 +349,13 @@ object RedundancyError {
          |""".stripMargin
     }
 
-    override def explain: String = {
+    override def explain: Option[String] = Some({
       s"""
          |Possible fixes:
          |
          |  (1)  Remove the type constraint.
          |
          |""".stripMargin
-    }
+    })
   }
 }

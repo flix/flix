@@ -53,6 +53,11 @@ object NameError {
          |${Format.code(loc2, "the 'use' was declared here.")}
          |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 
   /**
@@ -77,7 +82,7 @@ object NameError {
 
     def loc: SourceLocation = loc1
 
-    override def explain: String = s"${Format.underline("Tip:")} Remove or rename one of the occurrences."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Remove or rename one of the occurrences.")
   }
 
   /**
@@ -101,6 +106,11 @@ object NameError {
     }
 
     def loc: SourceLocation = loc1
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 
   /**
@@ -125,6 +135,10 @@ object NameError {
 
     def loc: SourceLocation = loc1
 
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 
   /**
@@ -149,6 +163,10 @@ object NameError {
 
     def loc: SourceLocation = loc1
 
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 
   /**
@@ -173,7 +191,7 @@ object NameError {
 
     def loc: SourceLocation = loc1
 
-    override def explain: String = s"${Format.underline("Tip:")} Remove or rename one of the occurrences."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Remove or rename one of the occurrences.")
 
   }
 
@@ -194,7 +212,7 @@ object NameError {
          |""".stripMargin
     }
 
-    override def explain: String = s"${Format.underline("Tip:")} Type variables are always lowercase. Named types are uppercase."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Type variables are always lowercase. Named types are uppercase.")
 
   }
 
@@ -214,6 +232,11 @@ object NameError {
          |${Format.code(loc, "undefined class.")}
          |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 
   /**
@@ -232,6 +255,11 @@ object NameError {
          |${Format.code(loc, "undefined variable.")}
          |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 
   /**
@@ -252,6 +280,11 @@ object NameError {
 
 
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 
   /**
@@ -271,7 +304,7 @@ object NameError {
          |""".stripMargin
     }
 
-    override def explain: String = s"${Format.underline("Tip:")} Change the signature to include the class type parameter, or remove the signature."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Change the signature to include the class type parameter, or remove the signature.")
 
   }
 

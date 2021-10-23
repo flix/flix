@@ -38,4 +38,9 @@ case class ParseError(msg: String, loc: SourceLocation) extends CompilationMessa
        |${Format.red(msg)}
        |""".stripMargin
   }
+
+  /**
+    * Returns a formatted string with helpful suggestions.
+    */
+  override def explain: Option[String] = None
 }

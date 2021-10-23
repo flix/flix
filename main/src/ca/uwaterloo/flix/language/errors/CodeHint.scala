@@ -46,6 +46,11 @@ object CodeHint {
          |${Format.code(loc, "use of impure function.")}
          |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 
   /**
@@ -66,6 +71,11 @@ object CodeHint {
          |${Format.code(loc, "use of impure function.")}
          |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 
   /**
@@ -86,5 +96,10 @@ object CodeHint {
          |""".stripMargin
 
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 }

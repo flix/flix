@@ -52,4 +52,9 @@ case class StratificationError(cycle: List[(Name.Pred, SourceLocation)], tpe: Ty
   private def constraints: String = {
     cycle.map(t => "  " + Format.cyan(t._1.name) + " at " + t._2.format + " (which depends on)" + System.lineSeparator()).mkString
   }
+
+  /**
+    * Returns a formatted string with helpful suggestions.
+    */
+  override def explain: Option[String] = None
 }

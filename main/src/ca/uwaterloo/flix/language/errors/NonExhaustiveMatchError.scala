@@ -36,4 +36,9 @@ case class NonExhaustiveMatchError(rules: List[TypedAst.MatchRule], pat: String,
        |""".stripMargin
 
   }
+
+  /**
+    * Returns a formatted string with helpful suggestions.
+    */
+  override def explain: Option[String] = None
 }

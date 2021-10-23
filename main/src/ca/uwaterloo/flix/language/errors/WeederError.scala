@@ -52,7 +52,7 @@ object WeederError {
 
     def loc: SourceLocation = loc1
 
-    override def explain: String = s"${Format.underline("Tip:")} Remove one of the two annotations."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Remove one of the two annotations.")
 
   }
 
@@ -79,7 +79,7 @@ object WeederError {
 
     def loc: SourceLocation = loc1
 
-    override def explain: String = s"${Format.underline("Tip:")} Remove or rename one of the formal parameters to avoid the name clash."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Remove or rename one of the formal parameters to avoid the name clash.")
 
   }
 
@@ -105,6 +105,10 @@ object WeederError {
 
     def loc: SourceLocation = loc1
 
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 
   /**
@@ -131,7 +135,7 @@ object WeederError {
 
     def loc: SourceLocation = loc1
 
-    override def explain: String = s"${Format.underline("Tip:")} Remove or rename one of the tags to avoid the name clash."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Remove or rename one of the tags to avoid the name clash.")
 
   }
 
@@ -150,6 +154,11 @@ object WeederError {
          |${Format.code(loc, "illegal array length.")}
          |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 
   /**
@@ -168,6 +177,11 @@ object WeederError {
          |${Format.code(loc, "illegal field name.")}
          |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 
   /**
@@ -188,7 +202,7 @@ object WeederError {
          |""".stripMargin
     }
 
-    override def explain: String = s"${Format.underline("Tip:")} Explicitly declare the type of the formal parameter."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Explicitly declare the type of the formal parameter.")
 
   }
 
@@ -209,7 +223,7 @@ object WeederError {
          |""".stripMargin
     }
 
-    override def explain: String = s"${Format.underline("Tip:")} Add a formal parameter or remove the quantifier."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Add a formal parameter or remove the quantifier.")
 
   }
 
@@ -230,7 +244,7 @@ object WeederError {
          |""".stripMargin
     }
 
-    override def explain: String = s"${Format.underline("Tip:")} Add a formal parameter or remove the quantifier."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Add a formal parameter or remove the quantifier.")
 
   }
 
@@ -251,7 +265,7 @@ object WeederError {
          |""".stripMargin
     }
 
-    override def explain: String = s"${Format.underline("Tip:")} Ensure that the literal is within bounds."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Ensure that the literal is within bounds.")
 
   }
 
@@ -272,7 +286,7 @@ object WeederError {
          |""".stripMargin
     }
 
-    override def explain: String = s"${Format.underline("Tip:")} Ensure that the literal is within bounds."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Ensure that the literal is within bounds.")
 
   }
 
@@ -291,6 +305,11 @@ object WeederError {
          |${Format.code(loc, "illegal intrinsic.")}
          |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 
   /**
@@ -308,6 +327,11 @@ object WeederError {
          |${Format.code(loc, "illegal modifier.")}
          |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 
   /**
@@ -325,6 +349,11 @@ object WeederError {
          |${Format.code(loc, "illegal null pattern.")}
          |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 
   /**
@@ -342,6 +371,11 @@ object WeederError {
          |${Format.code(loc, "illegal name.")}
          |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 
   /**
@@ -359,6 +393,11 @@ object WeederError {
          |${Format.code(loc, "illegal wildcard.")}
          |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 
   /**
@@ -378,6 +417,11 @@ object WeederError {
          |${Format.code(loc, "mismatched arity.")}
          |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 
   /**
@@ -403,7 +447,7 @@ object WeederError {
 
     def loc: SourceLocation = loc1 min loc2
 
-    override def explain: String = s"${Format.underline("Tip:")} A variable may only occur once in a pattern."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} A variable may only occur once in a pattern.")
 
   }
 
@@ -423,6 +467,11 @@ object WeederError {
          |${Format.code(loc, "undefined annotation.")}
          |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 
   /**
@@ -443,7 +492,7 @@ object WeederError {
          |""".stripMargin
     }
 
-    override def explain: String = s"${Format.underline("Tip:")} Mark the declaration as 'pub'."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Mark the declaration as 'pub'.")
 
   }
 
@@ -464,7 +513,7 @@ object WeederError {
          |""".stripMargin
     }
 
-    override def explain: String = s"${Format.underline("Tip:")} Type constraint parameters must be composed only of type variables."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Type constraint parameters must be composed only of type variables.")
 
   }
 
@@ -485,7 +534,7 @@ object WeederError {
          |""".stripMargin
     }
 
-    override def explain: String = s"${Format.underline("Tip:")} Either all or none of the type parameters must be annotated with a kind."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Either all or none of the type parameters must be annotated with a kind.")
 
   }
 
@@ -506,7 +555,7 @@ object WeederError {
          |""".stripMargin
     }
 
-    override def explain: String = s"${Format.underline("Tip:")} Type parameters here must be annotated with a kind."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Type parameters here must be annotated with a kind.")
 
   }
 
@@ -528,7 +577,7 @@ object WeederError {
          |""".stripMargin
     }
 
-    override def explain: String = s"${Format.underline("Tip:")}" + " A Unicode escape sequence must be of the form \\uXXXX where X is a hexadecimal."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")}" + " A Unicode escape sequence must be of the form \\uXXXX where X is a hexadecimal.")
 
   }
 
@@ -550,7 +599,7 @@ object WeederError {
          |""".stripMargin
     }
 
-    override def explain: String = s"${Format.underline("Tip:")}" + " The valid escape sequences are '\\t', '\\\\', '\\\'', '\\\"', '\\n', and '\\r'."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")}" + " The valid escape sequences are '\\t', '\\\\', '\\\'', '\\\"', '\\n', and '\\r'.")
 
   }
 
@@ -572,7 +621,7 @@ object WeederError {
          |""".stripMargin
     }
 
-    override def explain: String = s"${Format.underline("Tip:")} A character literal must consist of a single character."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} A character literal must consist of a single character.")
 
   }
 
@@ -593,7 +642,7 @@ object WeederError {
          |""".stripMargin
     }
 
-    override def explain: String = s"${Format.underline("Tip:")} Add an expression to the interpolation or remove the interpolation."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Add an expression to the interpolation or remove the interpolation.")
 
   }
 }

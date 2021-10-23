@@ -60,6 +60,11 @@ object ResolutionError {
          |${appendLocations(locs, "definition/effect/signature matches.")}
          |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 
   /**
@@ -82,6 +87,11 @@ object ResolutionError {
          |${appendLocations(locs, "type matches.")}
          |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 
   /**
@@ -107,7 +117,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    override def explain: String = s"${Format.underline("Tip:")} Prefix the tag with the enum name."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Prefix the tag with the enum name.")
 
   }
 
@@ -128,6 +138,11 @@ object ResolutionError {
          |${Format.code(loc, "illegal type.")}
          |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 
   /**
@@ -150,7 +165,7 @@ object ResolutionError {
 
     }
 
-    override def explain: String = s"${Format.underline("Tip:")} Mark the class as public."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Mark the class as public.")
   }
 
   /**
@@ -172,7 +187,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    override def explain: String = s"${Format.underline("Tip:")} Move the instance or sub class to the class's namespace."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Move the instance or sub class to the class's namespace.")
 
   }
 
@@ -195,7 +210,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    override def explain: String = s"${Format.underline("Tip:")} Mark the definition as public."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Mark the definition as public.")
 
   }
 
@@ -217,7 +232,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    override def explain: String = s"${Format.underline("Tip:")} Mark the definition as public."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Mark the definition as public.")
 
   }
 
@@ -240,7 +255,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    override def explain: String = s"${Format.underline("Tip:")} Mark the definition as public."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Mark the definition as public.")
 
   }
 
@@ -263,7 +278,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    override def explain: String = s"${Format.underline("Tip:")} Mark the definition as public."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Mark the definition as public.")
 
   }
 
@@ -285,7 +300,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    override def explain: String = "Ensure that there is no cyclic definition of type aliases."
+    override def explain: Option[String] = Some("Ensure that there is no cyclic definition of type aliases.")
 
   }
 
@@ -320,6 +335,11 @@ object ResolutionError {
       }
       res
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 
   /**
@@ -341,7 +361,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    override def explain: String = s"${Format.underline("Tip:")} Possible typo or non-existent definition?"
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Possible typo or non-existent definition?")
 
   }
 
@@ -365,7 +385,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    override def explain: String = s"${Format.underline("Tip:")} Possible typo or non-existent class or signature?"
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Possible typo or non-existent class or signature?")
 
   }
 
@@ -388,7 +408,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    override def explain: String = s"${Format.underline("Tip:")} Possible typo or non-existent class?"
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Possible typo or non-existent class?")
 
   }
 
@@ -411,7 +431,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    override def explain: String = s"${Format.underline("Tip:")} Possible typo or non-existent tag?"
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Possible typo or non-existent tag?")
 
   }
 
@@ -434,7 +454,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    override def explain: String = s"${Format.underline("Tip:")} Possible typo or non-existent type?"
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Possible typo or non-existent type?")
 
   }
 
@@ -454,6 +474,11 @@ object ResolutionError {
          |${Format.code(loc, "undefined class.")}
          |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 
   /**
@@ -488,6 +513,11 @@ object ResolutionError {
       }
       res
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 
   /**
@@ -530,6 +560,11 @@ object ResolutionError {
     private def appendMethods: String = {
       methods.map(m => "  " + stripAccessModifier(m.toString) + System.lineSeparator()).mkString
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 
   /**
@@ -567,6 +602,11 @@ object ResolutionError {
     private def appendFields: String = {
       fields.map(f => "  " + stripAccessModifier(f.toString) + System.lineSeparator()).mkString
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 
   /**
@@ -601,6 +641,11 @@ object ResolutionError {
       }
       res
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 
   /**
@@ -626,7 +671,7 @@ object ResolutionError {
 
     override def loc: SourceLocation = loc1
 
-    override def explain: String = s"${Format.underline("Tip:")} Remove one of the occurrences."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Remove one of the occurrences.")
 
   }
 
@@ -648,7 +693,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    override def explain: String = s"${Format.underline("Tip:")} Only the following classes may be derived: ${legalSyms.map(_.name).mkString(", ")}."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Only the following classes may be derived: ${legalSyms.map(_.name).mkString(", ")}.")
 
   }
 
@@ -669,7 +714,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    override def explain: String = s"${Format.underline("Tip:")} Type aliases must be fully applied."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Type aliases must be fully applied.")
 
   }
 

@@ -51,7 +51,7 @@ object InstanceError {
 
     def loc: SourceLocation = loc1
 
-    override def explain: String = s"${Format.underline("Tip: ")} Remove or change the type of one of the instances."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip: ")} Remove or change the type of one of the instances.")
   }
 
   /**
@@ -77,7 +77,7 @@ object InstanceError {
          |""".stripMargin
     }
 
-    override def explain: String = s"${Format.underline("Tip:")} Modify the definition to match the signature."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Modify the definition to match the signature.")
   }
 
   /**
@@ -98,7 +98,7 @@ object InstanceError {
          |""".stripMargin
     }
 
-    override def explain: String = s"${Format.underline("Tip:")} Add an implementation of the signature to the instance."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Add an implementation of the signature to the instance.")
   }
 
   /**
@@ -117,7 +117,7 @@ object InstanceError {
          |""".stripMargin
     }
 
-    override def explain: String = s"${Format.underline("Tip:")} Remove this definition from the instance."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Remove this definition from the instance.")
   }
 
   /**
@@ -138,7 +138,7 @@ object InstanceError {
          |""".stripMargin
     }
 
-    override def explain: String = s"${Format.underline("Tip:")} Rename one of the instances of the type variable."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Rename one of the instances of the type variable.")
 
   }
 
@@ -159,7 +159,7 @@ object InstanceError {
          |""".stripMargin
     }
 
-    override def explain: String = s"${Format.underline("Tip:")} An instance type must be a type constructor applied to zero or more distinct type variables."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} An instance type must be a type constructor applied to zero or more distinct type variables.")
   }
 
   /**
@@ -180,7 +180,7 @@ object InstanceError {
 
     }
 
-    override def explain: String = s"${Format.underline("Tip:")} A type class instance cannot use a type alias. Use the full type."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} A type class instance cannot use a type alias. Use the full type.")
 
   }
 
@@ -201,7 +201,7 @@ object InstanceError {
          |""".stripMargin
     }
 
-    override def explain: String = s"${Format.underline("Tip:")} An instance must be declared in the class's namespace or in the type's namespace."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} An instance must be declared in the class's namespace or in the type's namespace.")
   }
 
   /**
@@ -226,7 +226,7 @@ object InstanceError {
          |""".stripMargin
     }
 
-    override def explain: String = s"${Format.underline("Tip:")} Add an instance of '${superClass.name}' for '${FormatType.formatType(tpe)}'."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Add an instance of '${superClass.name}' for '${FormatType.formatType(tpe)}'.")
   }
 
   /**
@@ -247,7 +247,7 @@ object InstanceError {
          |""".stripMargin
     }
 
-    override def explain: String = s"${Format.underline("Tip:")} Create a law for '$sym' or mark the class as unlawful."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Create a law for '$sym' or mark the class as unlawful.")
   }
 
   /**
@@ -269,7 +269,7 @@ object InstanceError {
          |""".stripMargin
     }
 
-    override def explain: String = s"${Format.underline("Tip:")} Remove the modifier."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Remove the modifier.")
   }
 
   /**
@@ -289,7 +289,7 @@ object InstanceError {
          |""".stripMargin
     }
 
-    override def explain: String = s"${Format.underline("Tip:")} Either add the `override` modifier or remove the definition."
+    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Either add the `override` modifier or remove the definition.")
   }
 
 }

@@ -58,6 +58,6 @@ trait CompilationMessage {
   /**
     * Returns a formatted string with helpful suggestions.
     */
-  def explain: String = ""
+  def explain: Option[String]
 
 }

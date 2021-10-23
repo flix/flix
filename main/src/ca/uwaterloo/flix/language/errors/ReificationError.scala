@@ -48,6 +48,11 @@ object ReificationError {
          |${Format.code(loc, "unable to reify type.")}
          |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 
   /**
@@ -66,6 +71,11 @@ object ReificationError {
          |${Format.code(loc, "unable to reify type.")}
          |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 
   /**
@@ -84,5 +94,10 @@ object ReificationError {
          |${Format.code(loc, "unexpected Boolean type.")}
          |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain: Option[String] = None
   }
 }
