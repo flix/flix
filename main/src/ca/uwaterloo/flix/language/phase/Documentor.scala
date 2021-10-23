@@ -18,9 +18,10 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.Ast.TypeConstraint
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.{Ast, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType, PrettyExpression}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
@@ -136,25 +137,50 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       PrettyExpression.pretty(exp)
   }
 
-  // TODO: DOC
-  private def classesToJson(root: Root): JObject = {
-    val classesByNamespace = root.classes.groupBy(kv => kv._1.namespace)
-
-    classesByNamespace.map {
-      case (ns, classes) =>
-        getNamespace(ns) -> JArray(classes.map(kv => visitClass(kv._2)).toList)
-    }
+  /**
+    * Returns the given instance `inst` as a JSON value.
+    */
+  private def visitInstance(inst: Instance): JObject = inst match {
+    case Instance(_, _, sym, tpe, tconstrs, _, _, loc) =>
+      ("sym" -> visitClassSym(sym)) ~
+        ("tpe" -> visitType(tpe)) ~
+        ("tconstrs" -> tconstrs.map(visitTypeConstraint))
+      ("loc" -> visitSourceLocation(loc))
   }
 
-  // TODO: DOC
-  private def visitClass(clazz: TypedAst.Class): JValue = clazz match {
-    case TypedAst.Class(doc, mod, sym, tparam, superClasses, signatures, laws, loc) =>
+  /**
+    * Returns the given type `tpe` as a JSON value.
+    */
+  private def visitType(tpe: Type): JObject = ??? // TODO
+
+  /**
+    * Returns the given type constraint `tc` as a JSON value.
+    */
+  private def visitTypeConstraint(tc: TypeConstraint): JObject = tc match {
+    case TypeConstraint(sym, arg, _) =>
+      ("sym" -> visitClassSym(sym)) ~
+        ("arg" -> visitType(arg))
+  }
+
+  /**
+    * Returns the given class symbol `sym` as a JSON value.
+    */
+  private def visitClassSym(sym: Symbol.ClassSym): JObject =
+    ("namespace" -> sym.namespace) ~
       ("name" -> sym.name) ~
-        ("doc" -> doc.text) ~
-        ("superClasses" -> superClasses.map(_.sym.name))
-  }
+      ("loc" -> visitSourceLocation(sym.loc))
 
-  private def getNamespace(ns: List[String]): String = ns.mkString("/")
+  /**
+    * Returns the given source location `loc` as a JSON value.
+    */
+  private def visitSourceLocation(loc: SourceLocation): JObject = loc match {
+    case SourceLocation(source, beginLine, beginCol, endLine, endCol, _) =>
+      ("name" -> source.name) ~
+        ("beginLine" -> beginLine) ~
+        ("beginCol" -> beginCol) ~
+        ("endLine" -> endLine) ~
+        ("endCol" -> endCol)
+  }
 
   /**
     * Writes the given string `s` to the given path `p`.

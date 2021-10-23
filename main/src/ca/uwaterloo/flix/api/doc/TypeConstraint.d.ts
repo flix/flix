@@ -16,11 +16,8 @@
 import {ClassSym} from "./ClassSym";
 import {SourceLocation} from "./SourceLocation";
 import {Type} from "./Type";
-import {TypeConstraint} from "./TypeConstraint";
 
-export interface Instance {
+export interface TypeConstraint {
     sym: ClassSym
     tpe: Type
-    tcs: [TypeConstraint]
-    loc: SourceLocation
 }
