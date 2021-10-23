@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {ClassSym} from "./ClassSym";
-import {SourceLocation} from "./SourceLocation";
 
-export type Type = "abc" // TODO
+export interface Type {
+
+}

@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {SourceLocation} from "./SourceLocation";
-import {Modifier} from "./Modifier";
 import {EnumSym} from "./EnumSym";
+import {Modifier} from "./Modifier";
+import {SourceLocation} from "./SourceLocation";
+import {Type} from "./Type";
 import {TypeParam} from "./TypeParam";
-import {Scheme} from "./Scheme";
 
 export interface Enum {
     doc: [string]
@@ -25,11 +25,10 @@ export interface Enum {
     sym: EnumSym
     tparams: [TypeParam]
     cases: [Case]
-    sc: Scheme
     loc: SourceLocation
 }
 
 export interface Case {
     tag: string
-    sc: Scheme
+    tpe: Type
 }

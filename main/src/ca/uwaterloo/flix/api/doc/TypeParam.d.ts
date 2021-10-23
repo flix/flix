@@ -16,7 +16,6 @@
 import {Kind} from "./Kind";
 
 export interface TypeParam {
-    // TODO
     name: string,
     kind: Kind
 }
