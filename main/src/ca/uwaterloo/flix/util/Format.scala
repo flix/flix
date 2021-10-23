@@ -54,8 +54,6 @@ object Format {
       leftline
   }
 
-  def text(s: String): String = s
-
   def black(s: String): String = wrap(s, BlackTag)
 
   def blue(s: String): String = wrap(s, BlueTag)
