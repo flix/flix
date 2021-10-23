@@ -118,36 +118,6 @@ object OutputContext {
   }
 
   /**
-    * A terminal context compatible with HTML output.
-    */
-  object HTMLOutput extends OutputContext {
-
-    def emitBlack(s: String): String = createHTMLTag(s, Format.BlackTag, "black")
-
-    def emitBlue(s: String): String = createHTMLTag(s, Format.BlueTag, "blue")
-
-    def emitCyan(s: String): String = createHTMLTag(s, Format.CyanTag, "cyan")
-
-    def emitGreen(s: String): String = createHTMLTag(s, Format.GreenTag, "green")
-
-    def emitMagenta(s: String): String = createHTMLTag(s, Format.MagentaTag, "magenta")
-
-    def emitRed(s: String): String = createHTMLTag(s, Format.RedTag, "red")
-
-    def emitYellow(s: String): String = createHTMLTag(s, Format.YellowTag, "yellow")
-
-    def emitWhite(s: String): String = createHTMLTag(s, Format.WhiteTag, "white")
-
-    def emitBold(s: String): String = createHTMLTag(s, Format.BoldTag, "bold")
-
-    def emitUnderline(s: String): String = createHTMLTag(s, Format.UnderlineTag, "underline")
-
-    private def createHTMLTag(s: String, tag: Format.Tag, htmlClassName: String): String =
-      s.replace(tag.open, s"""<span class="$htmlClassName">""")
-        .replace(tag.close, "</span>")
-  }
-
-  /**
     * Returns `true` if the terminal appears to support at least 256 colors.
     */
   def hasColorSupport: Boolean = isAnsiTerminal || isTrueColorTerminal || isWindowsTerminal
