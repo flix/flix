@@ -24,9 +24,9 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 object FormatType {
 
   /**
-   * Formats the given type.
-   * The type is assumed to be well-kinded, though not necessarily a proper type (e.g. it may be partially applied).
-   */
+    * Formats the given type.
+    * The type is assumed to be well-kinded, though not necessarily a proper type (e.g. it may be partially applied).
+    */
   def formatType(tpe: Type)(implicit audience: Audience): String = {
 
     val renameMap = alphaRenameVars(tpe)
@@ -280,12 +280,12 @@ object FormatType {
   }
 
   /**
-   * A flat representation of a schema or record.
-   *
-   * Contains the fields and their types as a list at the top level.
-   * This better mirrors the structure of records and schemas as they are displayed (e.g. `{ x :: Int8, y :: Bool | r }`)
-   * rather than their true underlying shape (e.g. `{ x :: Int8 | { y :: Bool | r } }`).
-   */
+    * A flat representation of a schema or record.
+    *
+    * Contains the fields and their types as a list at the top level.
+    * This better mirrors the structure of records and schemas as they are displayed (e.g. `{ x :: Int8, y :: Bool | r }`)
+    * rather than their true underlying shape (e.g. `{ x :: Int8 | { y :: Bool | r } }`).
+    */
   private case class FlatNestable(fields: List[(String, Type)], rest: Type) {
     def ::(head: (String, Type)): FlatNestable = {
       copy(fields = head :: fields)
@@ -293,8 +293,8 @@ object FormatType {
   }
 
   /**
-   * Convert a record to a [[FlatNestable]].
-   */
+    * Convert a record to a [[FlatNestable]].
+    */
   private def flattenRecordRow(record: Type): FlatNestable = record match {
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(field), _), tpe, _), rest, _) =>
       (field.name, tpe) :: flattenRecordRow(rest)
@@ -302,8 +302,8 @@ object FormatType {
   }
 
   /**
-   * Convert a schema to a [[FlatNestable]].
-   */
+    * Convert a schema to a [[FlatNestable]].
+    */
   private def flattenSchemaRow(schema: Type): FlatNestable = schema match {
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), _), tpe, _), rest, _) =>
       (pred.name, tpe) :: flattenSchemaRow(rest)
@@ -312,12 +312,12 @@ object FormatType {
 
 
   /**
-   * Get the var name for the given index.
-   * Maps `0-25` to `a-z`,
-   * then `26-51` to `a1-z1`,
-   * then `52-77` to `a2-z2`,
-   * etc.
-   */
+    * Get the var name for the given index.
+    * Maps `0-25` to `a-z`,
+    * then `26-51` to `a1-z1`,
+    * then `52-77` to `a2-z2`,
+    * etc.
+    */
   private def getVarName(index: Int): String = {
     if (index / 26 <= 0)
       "'" + (index + 'a').toChar.toString
@@ -326,8 +326,8 @@ object FormatType {
   }
 
   /**
-   * Rename the variables in the given type.
-   */
+    * Rename the variables in the given type.
+    */
   private def alphaRenameVars(tpe0: Type): Map[Int, String] = {
     val tvars = typeVars(tpe0)
     val starTypeVars = tvars.filter(_.kind == Kind.Star)
@@ -341,8 +341,8 @@ object FormatType {
   }
 
   /**
-   * Returns all type variables in the type in the order in which they appear.
-   */
+    * Returns all type variables in the type in the order in which they appear.
+    */
   private def typeVars(tpe0: Type): List[Type.Var] = {
     def visit(t: Type): List[Type.Var] = t match {
       case tvar: Type.KindedVar => tvar :: Nil
