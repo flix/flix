@@ -38,9 +38,9 @@ instance Hash[Set[a]] with Hash[a] {
         Set.foldLeft((acc, x) -> acc * 37 + Hash.hash(x), 7793, xs)
 }
 
-instance Eq[Set[a]] with Order[a] {
+instance Eq[Set[a]] with Eq[a] {
     pub def eq(xs: Set[a], ys: Set[a]): Bool =
-        Set.isSubsetOf(xs, ys) and Set.isSubsetOf(ys, xs)
+        Set.toList(xs) == Set.toList(ys)
 }
 
 instance Order[Set[a]] with Order[a] {
@@ -488,5 +488,11 @@ namespace Set {
     ///
     def rangeHelper(b: Int32, n: Int32, acc: Set[Int32]): Set[Int32] =
         if (n < b) acc else rangeHelper(b, n - 1, insert(n, acc))
+
+    ///
+    /// Returns the set `s` as a `LazyList`.
+    ///
+    pub def toLazyList(s: Set[a]): LazyList[a] =
+        foldRight((x, acc) -> ECons(x, acc), ENil, s)
 
 }

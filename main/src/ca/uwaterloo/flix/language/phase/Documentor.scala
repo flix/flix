@@ -20,7 +20,7 @@ import java.io.IOException
 import java.nio.file.{Files, Path, Paths}
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
 import ca.uwaterloo.flix.language.ast.{Ast, Type, TypeConstructor, TypedAst}
@@ -48,7 +48,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Emits a JSON file with information about the definitions of the program.
     */
-  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("Documentor") {
+  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationMessage] = flix.phase("Documentor") {
     // Check whether to generate documentation.
     if (flix.options.documentor) {
       // Collect all public definitions and group them by namespace.

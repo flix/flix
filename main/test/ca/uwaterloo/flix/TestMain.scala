@@ -164,4 +164,17 @@ class TestMain extends FunSuite {
     val opts = Main.parseCmdOpts(args).get
     assert(opts.xlib == LibLevel.All)
   }
+
+  test("--Xstrictmono") {
+    val args = Array("--Xstrictmono")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xstrictmono)
+  }
+
+  test("--explain") {
+    val args = Array("--explain")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.explain)
+  }
+
 }

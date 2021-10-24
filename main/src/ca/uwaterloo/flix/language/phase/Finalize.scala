@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
@@ -28,7 +28,7 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
 
   private type TopLevel = mutable.Map[Symbol.DefnSym, FinalAst.Def]
 
-  def run(root: LiftedAst.Root)(implicit flix: Flix): Validation[FinalAst.Root, CompilationError] = flix.phase("Finalize") {
+  def run(root: LiftedAst.Root)(implicit flix: Flix): Validation[FinalAst.Root, CompilationMessage] = flix.phase("Finalize") {
 
     val m: TopLevel = mutable.Map.empty
 
@@ -395,100 +395,112 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
   }
 
   // TODO: Should be private
-  def visitType(t0: Type): MonoType = {
-    val base = t0.typeConstructor
-    val args = t0.typeArguments.map(visitType)
+  /**
+    * Finalizes the given type.
+    */
+  def visitType(tpe0: Type): MonoType = {
 
-    base match {
-      case None => t0 match {
-        case Type.KindedVar(id, _, _, _, _) => MonoType.Var(id)
-        case _ => throw InternalCompilerException(s"Unexpected type: '$t0'.")
-      }
+    def visit(t0: Type): MonoType = {
 
-      case Some(tc) =>
-        tc match {
-          case TypeConstructor.Unit => MonoType.Unit
+      val base = t0.typeConstructor
+      val args = t0.typeArguments.map(visit)
 
-          case TypeConstructor.Null => MonoType.Unit
-
-          case TypeConstructor.Bool => MonoType.Bool
-
-          case TypeConstructor.Char => MonoType.Char
-
-          case TypeConstructor.Float32 => MonoType.Float32
-
-          case TypeConstructor.Float64 => MonoType.Float64
-
-          case TypeConstructor.Int8 => MonoType.Int8
-
-          case TypeConstructor.Int16 => MonoType.Int16
-
-          case TypeConstructor.Int32 => MonoType.Int32
-
-          case TypeConstructor.Int64 => MonoType.Int64
-
-          case TypeConstructor.BigInt => MonoType.BigInt
-
-          case TypeConstructor.Str => MonoType.Str
-
-          case TypeConstructor.RecordRowEmpty => MonoType.RecordEmpty()
-
-          case TypeConstructor.Array => MonoType.Array(args.head)
-
-          case TypeConstructor.Channel => MonoType.Channel(args.head)
-
-          case TypeConstructor.Lazy => MonoType.Lazy(args.head)
-
-          case TypeConstructor.KindedEnum(sym, _) => MonoType.Enum(sym, args)
-
-          case TypeConstructor.Tag(sym, _) =>
-            throw InternalCompilerException(s"Unexpected type: '$t0'.")
-
-          case TypeConstructor.Native(clazz) => MonoType.Native(clazz)
-
-          case TypeConstructor.ScopedRef =>
-            MonoType.Ref(args.head)
-
-          case TypeConstructor.Region =>
-            MonoType.Unit // TODO: Should be erased?
-
-          case TypeConstructor.Tuple(l) => MonoType.Tuple(args)
-
-          case TypeConstructor.Arrow(l) => MonoType.Arrow(args.drop(1).init, args.last)
-
-          case TypeConstructor.RecordRowExtend(field) => MonoType.RecordExtend(field.name, args.head, args(1))
-
-          case TypeConstructor.Record => args.head
-
-          case TypeConstructor.True => MonoType.Unit
-
-          case TypeConstructor.False => MonoType.Unit
-
-          case TypeConstructor.Not => MonoType.Unit
-
-          case TypeConstructor.And => MonoType.Unit
-
-          case TypeConstructor.Or => MonoType.Unit
-
-          case TypeConstructor.UnkindedEnum(sym) =>
-            throw InternalCompilerException(s"Unexpected type: '$t0'.")
-
-          case TypeConstructor.Relation =>
-            throw InternalCompilerException(s"Unexpected type: '$t0'.")
-
-          case TypeConstructor.Lattice =>
-            throw InternalCompilerException(s"Unexpected type: '$t0'.")
-
-          case TypeConstructor.SchemaRowEmpty =>
-            throw InternalCompilerException(s"Unexpected type: '$t0'.")
-
-          case TypeConstructor.SchemaRowExtend(pred) =>
-            throw InternalCompilerException(s"Unexpected type: '$t0'.")
-
-          case TypeConstructor.Schema =>
-            throw InternalCompilerException(s"Unexpected type: '$t0'.")
+      base match {
+        case None => t0 match {
+          case Type.KindedVar(id, _, _, _, _) => MonoType.Var(id)
+          case _ => throw InternalCompilerException(s"Unexpected type: $t0")
         }
+
+        case Some(tc) =>
+          tc match {
+            case TypeConstructor.Unit => MonoType.Unit
+
+            case TypeConstructor.Null => MonoType.Unit
+
+            case TypeConstructor.Bool => MonoType.Bool
+
+            case TypeConstructor.Char => MonoType.Char
+
+            case TypeConstructor.Float32 => MonoType.Float32
+
+            case TypeConstructor.Float64 => MonoType.Float64
+
+            case TypeConstructor.Int8 => MonoType.Int8
+
+            case TypeConstructor.Int16 => MonoType.Int16
+
+            case TypeConstructor.Int32 => MonoType.Int32
+
+            case TypeConstructor.Int64 => MonoType.Int64
+
+            case TypeConstructor.BigInt => MonoType.BigInt
+
+            case TypeConstructor.Str => MonoType.Str
+
+            case TypeConstructor.RecordRowEmpty => MonoType.RecordEmpty()
+
+            case TypeConstructor.Array => MonoType.Array(args.head)
+
+            case TypeConstructor.Channel => MonoType.Channel(args.head)
+
+            case TypeConstructor.Lazy => MonoType.Lazy(args.head)
+
+            case TypeConstructor.KindedEnum(sym, _) => MonoType.Enum(sym, args)
+
+            case TypeConstructor.Tag(sym, _) =>
+              throw InternalCompilerException(s"Unexpected type: '$t0'.")
+
+            case TypeConstructor.Native(clazz) => MonoType.Native(clazz)
+
+            case TypeConstructor.ScopedRef =>
+              MonoType.Ref(args.head)
+
+            case TypeConstructor.Region =>
+              MonoType.Unit // TODO: Should be erased?
+
+            case TypeConstructor.Tuple(l) => MonoType.Tuple(args)
+
+            case TypeConstructor.Arrow(l) => MonoType.Arrow(args.drop(1).init, args.last)
+
+            case TypeConstructor.RecordRowExtend(field) => MonoType.RecordExtend(field.name, args.head, args(1))
+
+            case TypeConstructor.Record => args.head
+
+            case TypeConstructor.True => MonoType.Unit
+
+            case TypeConstructor.False => MonoType.Unit
+
+            case TypeConstructor.Not => MonoType.Unit
+
+            case TypeConstructor.And => MonoType.Unit
+
+            case TypeConstructor.Or => MonoType.Unit
+
+            case TypeConstructor.UnkindedEnum(_) =>
+              throw InternalCompilerException(s"Unexpected type: '$t0'.")
+
+            case TypeConstructor.UnappliedAlias(_) =>
+              throw InternalCompilerException(s"Unexpected type: '$t0'.")
+
+            case TypeConstructor.Relation =>
+              throw InternalCompilerException(s"Unexpected type: '$t0'.")
+
+            case TypeConstructor.Lattice =>
+              throw InternalCompilerException(s"Unexpected type: '$t0'.")
+
+            case TypeConstructor.SchemaRowEmpty =>
+              throw InternalCompilerException(s"Unexpected type: '$t0'.")
+
+            case TypeConstructor.SchemaRowExtend(pred) =>
+              throw InternalCompilerException(s"Unexpected type: '$t0'.")
+
+            case TypeConstructor.Schema =>
+              throw InternalCompilerException(s"Unexpected type: '$t0'.")
+          }
+      }
     }
+
+    visit(Type.eraseAliases(tpe0))
   }
 
   // TODO: Deprecated

@@ -26,6 +26,7 @@ object Options {
     lib = LibLevel.All,
     debug = false,
     documentor = false,
+    explain = false,
     json = false,
     progress = false,
     test = false,
@@ -38,7 +39,8 @@ object Options {
     xlinter = false,
     xnoboolunification = false,
     xnostratifier = false,
-    xstatistics = false
+    xstatistics = false,
+    xstrictmono = false
   )
 
   /**
@@ -80,10 +82,13 @@ object Options {
   * @param xlinter            enables the semantic linter.
   * @param xnoboolunification disables boolean unification.
   * @param xnostratifier      disables computation of stratification.
+  * @param xstatistics        enables statistics collection.
+  * @param xstrictmono        enables strict monomorphization.
   */
 case class Options(lib: LibLevel,
                    debug: Boolean,
                    documentor: Boolean,
+                   explain: Boolean,
                    json: Boolean,
                    progress: Boolean,
                    target: JvmTarget,
@@ -96,7 +101,8 @@ case class Options(lib: LibLevel,
                    xlinter: Boolean,
                    xnoboolunification: Boolean,
                    xnostratifier: Boolean,
-                   xstatistics: Boolean
+                   xstatistics: Boolean,
+                   xstrictmono: Boolean
                   )
 
 /**

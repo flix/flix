@@ -384,7 +384,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Expression.Intrinsic(sp1, op, exps, sp2) =>
       val loc = mkSL(sp1, sp2)
-      flatMapN(traverse(exps)(visitExp)) {
+      flatMapN(traverse(exps)(visitArgument)) {
         case es => (op.name, es) match {
           case ("BOOL_NOT", e1 :: Nil) => WeededAst.Expression.Unary(SemanticOperator.BoolOp.Not, e1, loc).toSuccess
           case ("BOOL_AND", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BoolOp.And, e1, e2, loc).toSuccess
@@ -537,7 +537,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Apply(lambda, args, sp2) =>
       val sp1 = leftMostSourcePosition(lambda)
       val loc = mkSL(sp1, sp2)
-      mapN(visitExp(lambda), traverse(args)(e => visitExp(e))) {
+      mapN(visitExp(lambda), traverse(args)(e => visitArgument(e))) {
         case (e, as) =>
           val es = getArguments(as, sp1, sp2)
           WeededAst.Expression.Apply(e, es, loc)
@@ -557,7 +557,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       /*
        * Rewrites postfix expressions to apply expressions.
        */
-      mapN(visitExp(exp), traverse(exps)(e => visitExp(e))) {
+      mapN(visitExp(exp), traverse(exps)(e => visitArgument(e))) {
         case (e, es) =>
           val sp1 = leftMostSourcePosition(exp)
           val loc = mkSL(sp1, sp2)
@@ -614,7 +614,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           case "-" => mkApplyFqn("Sub.sub", List(e1, e2), sp1, sp2)
           case "*" => mkApplyFqn("Mul.mul", List(e1, e2), sp1, sp2)
           case "/" => mkApplyFqn("Div.div", List(e1, e2), sp1, sp2)
-          case "%" => mkApplyFqn("Rem.rem", List(e1, e2), sp1, sp2)
+          case "rem" => mkApplyFqn("Rem.rem", List(e1, e2), sp1, sp2)
+          case "mod" => mkApplyFqn("Mod.mod", List(e1, e2), sp1, sp2)
           case "**" => mkApplyFqn("Exp.exp", List(e1, e2), sp1, sp2)
           case "<" => mkApplyFqn("Order.less", List(e1, e2), sp1, sp2)
           case "<=" => mkApplyFqn("Order.lessEqual", List(e1, e2), sp1, sp2)
@@ -1483,10 +1484,32 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val t = visitType(t0)
       WeededAst.Expression.Reify(t, mkSL(sp1, sp2)).toSuccess
 
+    case ParsedAst.Expression.ReifyBool(sp1, t0, sp2) =>
+      val t = visitType(t0)
+      WeededAst.Expression.ReifyType(t, Kind.Bool, mkSL(sp1, sp2)).toSuccess
+
     case ParsedAst.Expression.ReifyType(sp1, t0, sp2) =>
       val t = visitType(t0)
-      WeededAst.Expression.ReifyType(t, mkSL(sp1, sp2)).toSuccess
+      WeededAst.Expression.ReifyType(t, Kind.Star, mkSL(sp1, sp2)).toSuccess
 
+  }
+
+  /**
+    * Performs weeding on the given argument.
+    *
+    * Named arguments are transformed into records.
+    * `f(arg = x)` becomes `f({arg = x})`
+    */
+  private def visitArgument(arg: ParsedAst.Argument)(implicit flix: Flix): Validation[WeededAst.Expression, WeederError] = arg match {
+    // Case 1: Named parameter. Turn it into a record.
+    case ParsedAst.Argument.Named(name, exp0, sp2) =>
+      visitExp(exp0) map {
+        exp =>
+          val loc = mkSL(name.sp1, sp2)
+          WeededAst.Expression.RecordExtend(Name.mkField(name), exp, WeededAst.Expression.RecordEmpty(loc), loc)
+      }
+    // Case 2: Unnamed parameter. Just return it.
+    case ParsedAst.Argument.Unnamed(exp) => visitExp(exp)
   }
 
   /**
@@ -1838,7 +1861,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Predicate.Body.Filter(sp1, qname, terms, sp2) =>
       val loc = mkSL(sp1, sp2)
-      traverse(terms)(visitExp) map {
+      traverse(terms)(visitArgument) map {
         case ts =>
           // Check if the argument list is empty. If so, invoke the function with the Unit value.
           val as = if (ts.isEmpty) List(WeededAst.Expression.Unit(loc)) else ts
@@ -1881,7 +1904,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     */
   private def visitAnnotation(past: ParsedAst.Annotation)(implicit flix: Flix): Validation[WeededAst.Annotation, WeederError] = {
     val loc = mkSL(past.sp1, past.sp2)
-    val argsVal = traverse(past.args.getOrElse(Nil))(visitExp)
+    val argsVal = traverse(past.args.getOrElse(Nil))(visitArgument)
 
     flatMapN(argsVal) {
       case args =>
@@ -2462,6 +2485,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.FixpointSolveWithProject(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointQueryWithSelect(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.Reify(sp1, _, _) => sp1
+    case ParsedAst.Expression.ReifyBool(sp1, _, _) => sp1
     case ParsedAst.Expression.ReifyType(sp1, _, _) => sp1
   }
 

@@ -18,7 +18,7 @@
 package ca.uwaterloo.flix.language.debug
 
 import ca.uwaterloo.flix.language.ast.Kind.Bool
-import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.vt.{VirtualString, VirtualTerminal}
 
@@ -103,12 +103,11 @@ object FormatType {
               case Some(t) => t
             }
           }
-          case Type.Lambda(tvar, tpe, loc) => audience match {
-            case Audience.Internal => s"${tvar.id.toString} => ${visit(tpe)}"
-            case Audience.External => s"${tvar.text.getOrElse(renameMap(tvar.id))} => ${visit(tpe)}"
-          }
           case Type.Apply(tpe1, tpe2, loc) => s"${visit(tpe1)}[${visit(tpe2)}]"
-          case _ => throw InternalCompilerException(s"Unexpected type: '${tpe.getClass}'.") // TODO: This can lead to infinite recursion.
+          case Type.Alias(sym, aliasArgs, _, _) => formatApply(sym.name, aliasArgs ++ args)
+          case _: Type.Cst => throw InternalCompilerException("Unexpected type.")
+          case _: Type.Ascribe => throw InternalCompilerException("Unexpected type.")
+          case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected type.")
         }
 
         case Some(tc) => tc match {
@@ -151,6 +150,8 @@ object FormatType {
           case TypeConstructor.KindedEnum(sym, _) => formatApply(sym.toString, args)
 
           case TypeConstructor.UnkindedEnum(sym) => formatApply(sym.toString, args)
+
+          case TypeConstructor.UnappliedAlias(sym) => formatApply(sym.toString, args)
 
           case TypeConstructor.Lattice => formatApply("Lattice", args)
 
@@ -399,9 +400,9 @@ object FormatType {
       case tvar: Type.KindedVar => tvar :: Nil
       case tvar: Type.UnkindedVar => tvar :: Nil
       case Type.Cst(tc, loc) => Nil
-      case Type.Lambda(tvar, tpe, _) => tvar :: visit(tpe)
       case Type.Apply(tpe1, tpe2, _) => visit(tpe1) ::: visit(tpe2)
       case Type.Ascribe(tpe, _, _) => typeVars(tpe)
+      case Type.Alias(_, _, tpe, _) => typeVars(tpe)
     }
 
     visit(tpe0).distinct

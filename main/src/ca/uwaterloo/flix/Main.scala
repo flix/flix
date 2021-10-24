@@ -82,6 +82,7 @@ object Main {
       lib = cmdOpts.xlib,
       debug = cmdOpts.xdebug,
       documentor = cmdOpts.documentor,
+      explain = cmdOpts.explain,
       json = cmdOpts.json,
       progress = true,
       threads = cmdOpts.threads.getOrElse(Runtime.getRuntime.availableProcessors()),
@@ -89,7 +90,8 @@ object Main {
       xlinter = cmdOpts.xlinter,
       xnoboolunification = cmdOpts.xnoboolunification,
       xnostratifier = cmdOpts.xnostratifier,
-      xstatistics = cmdOpts.xstatistics
+      xstatistics = cmdOpts.xstatistics,
+      xstrictmono = cmdOpts.xstrictmono
     )
 
     // Don't use progress bar if benchmarking.
@@ -224,6 +226,7 @@ object Main {
                      args: Option[String] = None,
                      benchmark: Boolean = false,
                      documentor: Boolean = false,
+                     explain: Boolean = false,
                      interactive: Boolean = false,
                      json: Boolean = false,
                      listen: Option[Int] = None,
@@ -238,6 +241,7 @@ object Main {
                      xlinter: Boolean = false,
                      xnostratifier: Boolean = false,
                      xstatistics: Boolean = false,
+                     xstrictmono: Boolean = false,
                      files: Seq[File] = Seq())
 
   /**
@@ -325,6 +329,9 @@ object Main {
       opt[Unit]("doc").action((_, c) => c.copy(documentor = true)).
         text("generates HTML documentation.")
 
+      opt[Unit]("explain").action((_, c) => c.copy(explain = true)).
+        text("provides suggestions on how to solve a problem")
+
       // Help.
       help("help").text("prints this usage information.")
 
@@ -390,6 +397,9 @@ object Main {
 
       opt[Unit]("Xstatistics").action((_, c) => c.copy(xstatistics = true)).
         text("[experimental] prints compilation statistics.")
+
+      opt[Unit]("Xstrictmono").action((_, c) => c.copy(xstrictmono = true)).
+        text("[experimental] enable strict monomorphization.")
 
       note("")
 

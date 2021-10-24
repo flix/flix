@@ -38,9 +38,9 @@ instance Hash[Map[k, v]] with Hash[k], Hash[v] {
         Map.foldLeftWithKey((acc, k, v) -> acc * 17 + Hash.hash(k) + 19 * Hash.hash(v), 7937, m)
 }
 
-instance Eq[Map[k, v]] with Order[k], Eq[v] {
+instance Eq[Map[k, v]] with Eq[k], Eq[v] {
     pub def eq(m1: Map[k, v], m2: Map[k, v]): Bool =
-        Map.isSubmapOf(m1, m2) and Map.isSubmapOf(m2, m1)
+        Map.toList(m1) == Map.toList(m2)
 
 }
 
@@ -577,6 +577,12 @@ namespace Map {
     @Time(size(m)) @Space(size(m))
     pub def toSet(m: Map[k, v]): Set[(k, v)] with Order[k], Order[v] =
         foldLeftWithKey((acc, k, v) -> Set.insert((k, v), acc), Set.empty(), m)
+
+    ///
+    /// Returns the map `m` as a `LazyList` of key-value pairs.
+    ///
+    pub def toLazyList(m: Map[k, v]): LazyList[(k, v)] =
+        foldRightWithKey((k, v, acc) -> ECons((k, v), acc), ENil, m)
 
     ///
     /// Applies `f` to every element of `xs`.

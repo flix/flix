@@ -242,7 +242,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.Reify(_, _, _, _) => Nil
 
-      case Expression.ReifyType(_, _, _, _) => Nil
+      case Expression.ReifyType(_, _, _, _, _) => Nil
 
     }
 
@@ -960,8 +960,8 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       case Expression.Reify(t0, tpe, eff, loc) =>
         Expression.Reify(t0, tpe, eff, loc)
 
-      case Expression.ReifyType(t0, tpe, eff, loc) =>
-        Expression.ReifyType(t0, tpe, eff, loc)
+      case Expression.ReifyType(t, k, tpe, eff, loc) =>
+        Expression.ReifyType(t, k, tpe, eff, loc)
 
       case Expression.Existential(_, _, _) => throw InternalCompilerException(s"Unexpected expression: $exp0.")
 

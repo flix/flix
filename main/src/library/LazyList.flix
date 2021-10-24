@@ -34,7 +34,7 @@ instance Eq[LazyList[a]] with Eq[a] {
         case _                            => false
     }
 }
-    
+
 instance Foldable[LazyList] {
     pub def foldLeft( f: (b, a) -> b & ef, s: b, l: LazyList[a]): b & ef = LazyList.foldLeft( f, s, l)
     pub def foldRight(f: (a, b) -> b & ef, s: b, l: LazyList[a]): b & ef = LazyList.foldRight(f, s, l)
@@ -250,7 +250,6 @@ namespace LazyList {
     ///
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
-    // TODO: Use k function as acc.
     def mapE(f: a -> b & Impure, l: LazyList[a]): LazyList[b] & Impure =
         mapEAcc(f, l, ks -> ks)
 
@@ -288,14 +287,11 @@ namespace LazyList {
     ///
     /// Applies `f` lazily (i.e. the tail is not forced).
     ///
-    // TODO: Collect f(x) and not f(x) cases into if-else exp.
     def filterL(f: a -> Bool, l: LazyList[a]): LazyList[a] = match l {
-        case ENil                 => ENil
-        case ECons(x, xs) if f(x) => LCons(x, lazy filterL(f,       xs))
-        case LCons(x, xs) if f(x) => LCons(x, lazy filterL(f, force xs))
-        case ECons(_, xs)         => LList(   lazy filterL(f,       xs))
-        case LCons(_, xs)         => LList(   lazy filterL(f, force xs))
-        case LList(xs)            => LList(   lazy filterL(f, force xs))
+        case ENil         => ENil
+        case ECons(x, xs) => if (f(x)) LCons(x, lazy filterL(f,       xs)) else LList(lazy filterL(f,       xs))
+        case LCons(x, xs) => if (f(x)) LCons(x, lazy filterL(f, force xs)) else LList(lazy filterL(f, force xs))
+        case LList(xs)    => LList(   lazy filterL(f, force xs))
     }
 
     ///
@@ -303,18 +299,17 @@ namespace LazyList {
     ///
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
-    // TODO: Use k function as acc.
     def filterE(f: a -> Bool & Impure, l: LazyList[a]): LazyList[a] & Impure =
-        filterEAcc(f, l, ENil) |> reverse
+        filterEAcc(f, l, ks -> ks)
 
     ///
     /// Helper function for `filterE`
     ///
-    def filterEAcc(f: a -> Bool & Impure, l: LazyList[a], acc: LazyList[a]): LazyList[a] & Impure = match l {
-        case ENil         => acc
-        case ECons(x, xs) => if (f(x)) filterEAcc(f,       xs, ECons(x, acc)) else filterEAcc(f,       xs, acc)
-        case LCons(x, xs) => if (f(x)) filterEAcc(f, force xs, ECons(x, acc)) else filterEAcc(f, force xs, acc)
-        case LList(xs)    => filterEAcc(f, force xs, acc)
+    def filterEAcc(f: a -> Bool & Impure, l: LazyList[a], k: LazyList[a] -> LazyList[a]): LazyList[a] & Impure = match l {
+        case ENil         => k(ENil)
+        case ECons(x, xs) => if (f(x)) filterEAcc(f,       xs, ks -> k(ECons(x, ks))) else filterEAcc(f,       xs, k)
+        case LCons(x, xs) => if (f(x)) filterEAcc(f, force xs, ks -> k(ECons(x, ks))) else filterEAcc(f, force xs, k)
+        case LList(xs)    => filterEAcc(f, force xs, k)
     }
 
     ///
@@ -374,6 +369,7 @@ namespace LazyList {
         foldLeft(f, 0, l);
         a
 
+/*
     ///
     /// Returns `l` as an `Iterator`.
     ///
@@ -392,24 +388,24 @@ namespace LazyList {
                 x
         };
         Iterator(done, next)
+*/
 
     ///
     /// Returns `l` as a `List`.
     ///
     /// Forces the entire list `l`.
     ///
-    // TODO: Use k function as acc.
     pub def toList(l: LazyList[a]): List[a] =
-        toListAcc(l, Nil) |> List.reverse
+        toListAcc(l, ks -> ks)
 
     ///
     /// Helper function for `toList`.
     ///
-    def toListAcc(l: LazyList[a], acc: List[a]): List[a] = match l {
-        case ENil         => acc
-        case ECons(x, ys) => toListAcc(      ys, x :: acc)
-        case LCons(x, ys) => toListAcc(force ys, x :: acc)
-        case LList(ys)    => toListAcc(force ys,      acc)
+    def toListAcc(l: LazyList[a], k: List[a] -> List[a]): List[a] = match l {
+        case ENil         => k(Nil)
+        case ECons(x, xs) => toListAcc(      xs, ks -> k(x :: ks))
+        case LCons(x, xs) => toListAcc(force xs, ks -> k(x :: ks))
+        case LList(xs)    => toListAcc(force xs,       k)
     }
 
     ///
@@ -490,10 +486,20 @@ namespace LazyList {
     /// Does not force the tail of `l`.
     ///
     pub def flatten(l: LazyList[LazyList[a]]): LazyList[a] = match l {
-        case ENil          => ENil
-        case ECons(xs, ys) => LList(lazy append(xs, flatten(      ys)))
-        case LCons(xs, ys) => LList(lazy append(xs, flatten(force ys)))
-        case LList(xs)     => LList(lazy flatten(force xs))
+        case ENil         => ENil
+        case ECons(x, xs) => LList(lazy append(x, flattenHelper(      xs)))
+        case LCons(x, xs) => LList(lazy append(x, flattenHelper(force xs)))
+        case LList(xs)    => LList(lazy flattenHelper(force xs))
+    }
+
+    ///
+    /// Helper function for `flatten`.
+    ///
+    def flattenHelper(l: LazyList[LazyList[a]]): LazyList[a] = match l {
+        case ENil         => ENil
+        case ECons(x, xs) => append(x,  LList(lazy flattenHelper(      xs)))
+        case LCons(x, xs) => append(x,  LList(lazy flattenHelper(force xs)))
+        case LList(xs)    => LList(lazy flattenHelper(force xs))
     }
 
     ///
@@ -505,10 +511,10 @@ namespace LazyList {
     ///
     pub def exists(f: a -> Bool & ef, l: LazyList[a]): Bool & ef = match l {
         case ENil         => false
-        case ECons(x, xs) => f(x) or exists(f, xs)
-        case LCons(x, xs) => f(x) or exists(f, force xs)
+        case ECons(x, xs) => if (f(x)) true else exists(f,       xs)
+        case LCons(x, xs) => if (f(x)) true else exists(f, force xs)
         case LList(xs)    => exists(f, force xs)
-    }
+   }
 
     ///
     /// Returns `true` if and only if all elements in `l` satisfy the predicate `f`.
@@ -519,8 +525,8 @@ namespace LazyList {
     ///
     pub def forall(f: a -> Bool & ef, l: LazyList[a]): Bool & ef = match l {
         case ENil         => true
-        case ECons(x, xs) => f(x) and forall(f, xs)
-        case LCons(x, xs) => f(x) and forall(f, force xs)
+        case ECons(x, xs) => if (f(x)) forall(f,       xs) else false
+        case LCons(x, xs) => if (f(x)) forall(f, force xs) else false
         case LList(xs)    => forall(f, force xs)
     }
 
@@ -573,13 +579,28 @@ namespace LazyList {
     pub def zip(l1: LazyList[a], l2: LazyList[b]): LazyList[(a, b)] = match (l1, l2) {
         case (ENil, _)                    => ENil
         case (_, ENil)                    => ENil
-        case (ECons(x, xs), ECons(y, ys)) => LList(lazy LCons((x, y), lazy zip(      xs,       ys)))
-        case (ECons(x, xs), LCons(y, ys)) => LList(lazy LCons((x, y), lazy zip(      xs, force ys)))
-        case (LCons(x, xs), ECons(y, ys)) => LList(lazy LCons((x, y), lazy zip(force xs,       ys)))
-        case (LCons(x, xs), LCons(y, ys)) => LList(lazy LCons((x, y), lazy zip(force xs, force ys)))
-        case (LList(xs), LList(ys))       => LList(                   lazy zip(force xs, force ys))
-        case (xs, LList(ys))              => LList(                   lazy zip(      xs, force ys))
-        case (LList(xs), ys)              => LList(                   lazy zip(force xs,       ys))
+        case (ECons(x, xs), ECons(y, ys)) => LList(lazy LCons((x, y), lazy zipHelper(      xs,       ys)))
+        case (ECons(x, xs), LCons(y, ys)) => LList(lazy LCons((x, y), lazy zipHelper(      xs, force ys)))
+        case (LCons(x, xs), ECons(y, ys)) => LList(lazy LCons((x, y), lazy zipHelper(force xs,       ys)))
+        case (LCons(x, xs), LCons(y, ys)) => LList(lazy LCons((x, y), lazy zipHelper(force xs, force ys)))
+        case (LList(xs), LList(ys))       => LList(                   lazy zipHelper(force xs, force ys))
+        case (xs, LList(ys))              => LList(                   lazy zipHelper(      xs, force ys))
+        case (LList(xs), ys)              => LList(                   lazy zipHelper(force xs,       ys))
+    }
+
+    ///
+    /// Helper function for `zip`.
+    ///
+    def zipHelper(l1: LazyList[a], l2: LazyList[b]): LazyList[(a, b)] = match (l1, l2) {
+        case (ENil, _)                    => ENil
+        case (_, ENil)                    => ENil
+        case (ECons(x, xs), ECons(y, ys)) => LCons((x, y), lazy zipHelper(      xs,       ys))
+        case (ECons(x, xs), LCons(y, ys)) => LCons((x, y), lazy zipHelper(      xs, force ys))
+        case (LCons(x, xs), ECons(y, ys)) => LCons((x, y), lazy zipHelper(force xs,       ys))
+        case (LCons(x, xs), LCons(y, ys)) => LCons((x, y), lazy zipHelper(force xs, force ys))
+        case (LList(xs), LList(ys))       => LList(        lazy zipHelper(force xs, force ys))
+        case (xs, LList(ys))              => LList(        lazy zipHelper(      xs, force ys))
+        case (LList(xs), ys)              => LList(        lazy zipHelper(force xs,       ys))
     }
 
     ///
@@ -700,9 +721,19 @@ namespace LazyList {
     ///
     def flatMapL(f: a -> LazyList[b], l: LazyList[a]): LazyList[b] = match l {
         case ENil         => ENil
-        case ECons(x, xs) => LList(lazy append(f(x), LList(lazy flatMapL(f,       xs))))
-        case LCons(x, xs) => LList(lazy append(f(x), LList(lazy flatMapL(f, force xs))))
-        case LList(xs)    => LList(lazy flatMapL(f, force xs))
+        case ECons(x, xs) => LList(lazy append(f(x), LList(lazy flatMapLHelper(f,       xs))))
+        case LCons(x, xs) => LList(lazy append(f(x), LList(lazy flatMapLHelper(f, force xs))))
+        case LList(xs)    => LList(lazy flatMapLHelper(f, force xs))
+    }
+
+    ///
+    /// Helper fucntion for `flatMapL`.
+    ///
+    def flatMapLHelper(f: a -> LazyList[b], l: LazyList[a]): LazyList[b] = match l {
+        case ENil         => ENil
+        case ECons(x, xs) => append(f(x), LList(lazy flatMapLHelper(f,       xs)))
+        case LCons(x, xs) => append(f(x), LList(lazy flatMapLHelper(f, force xs)))
+        case LList(xs)    => LList(lazy flatMapLHelper(f, force xs))
     }
 
     ///
@@ -762,9 +793,18 @@ namespace LazyList {
     ///
     /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from right to left.
     ///
-    // TODO: Use native / own implementation
     pub def findRight(f: a -> Bool & ef, l: LazyList[a]): Option[a] & ef =
-        reverse(l) |> findLeft(f)
+        findRightAcc(x -> if (f(x)) Some(x) else None, l, (o, _) -> o as & ef)
+
+    ///
+    /// Helper function for `findRight`.
+    ///
+    def findRightAcc(f: a -> Option[a] & ef, l: LazyList[a], k: (Option[a], LazyList[a]) -> Option[a] & ef): Option[a] & ef = match l {
+        case ENil         => k(None, ENil)
+        case ECons(x, xs) => findRightAcc(f,       xs, (o, ks) -> if (Option.isEmpty(o)) k(f(x), ECons(x, ks)) else o)
+        case LCons(x, xs) => findRightAcc(f, force xs, (o, ks) -> if (Option.isEmpty(o)) k(f(x), ECons(x, ks)) else o)
+        case LList(xs)    => findRightAcc(f, force xs, k)
+    }
 
     ///
     /// Returns the result of applying `f` to every element in `l` along with that element's index.
@@ -788,16 +828,16 @@ namespace LazyList {
     /// Applies `f` lazily (i.e. the tail is not forced).
     ///
     def mapWithIndexL(f: (a, Int32) -> b, l: LazyList[a]): LazyList[b] =
-        mapWithIndexLAcc(f, l, 0)
+        LList(lazy mapWithIndexLHelper(f, l, 0))
 
     ///
     /// Helper function for `mapWithIndexL`.
     ///
-    def mapWithIndexLAcc(f: (a, Int32) -> b, l: LazyList[a], i: Int32): LazyList[b] = match l {
+    def mapWithIndexLHelper(f: (a, Int32) -> b, l: LazyList[a], i: Int32): LazyList[b] = match l {
         case ENil         => ENil
-        case ECons(x, xs) => LList(lazy LCons(f(x, i), lazy mapWithIndexLAcc(f,       xs, i + 1)))
-        case LCons(x, xs) => LList(lazy LCons(f(x, i), lazy mapWithIndexLAcc(f, force xs, i + 1)))
-        case LList(xs)    => LList(                    lazy mapWithIndexLAcc(f, force xs, i    ))
+        case ECons(x, xs) => LCons(f(x, i), lazy mapWithIndexLHelper(f,       xs, i + 1))
+        case LCons(x, xs) => LCons(f(x, i), lazy mapWithIndexLHelper(f, force xs, i + 1))
+        case LList(xs)    => LList(         lazy mapWithIndexLHelper(f, force xs, i    ))
     }
 
     ///
@@ -831,9 +871,19 @@ namespace LazyList {
     ///
     pub def intercalate(l1: LazyList[a], l2: LazyList[LazyList[a]]): LazyList[a] = match l2 {
         case ENil           => ENil
-        case ECons(x, xs)   => if (isEmpty(      xs)) x else LList(lazy append(append(x, l1), intercalate(l1,       xs)))
-        case LCons(x, xs)   => if (isEmpty(force xs)) x else LList(lazy append(append(x, l1), intercalate(l1, force xs)))
-        case LList(xs)      => LList(lazy intercalate(l1, force xs))
+        case ECons(x, xs)   => if (isEmpty(      xs)) x else LList(lazy append(append(x, l1), intercalateHelper(l1,       xs)))
+        case LCons(x, xs)   => if (isEmpty(force xs)) x else LList(lazy append(append(x, l1), intercalateHelper(l1, force xs)))
+        case LList(xs)      => LList(lazy intercalateHelper(l1, force xs))
+    }
+
+    ///
+    /// Helper function for `intercalate`.
+    ///
+    def intercalateHelper(l1: LazyList[a], l2: LazyList[LazyList[a]]): LazyList[a] = match l2 {
+        case ENil           => ENil
+        case ECons(x, xs)   => if (isEmpty(      xs)) x else append(append(x, l1), intercalateHelper(l1,       xs))
+        case LCons(x, xs)   => if (isEmpty(force xs)) x else append(append(x, l1), intercalateHelper(l1, force xs))
+        case LList(xs)      => LList(lazy intercalateHelper(l1, force xs))
     }
 
     ///
@@ -981,19 +1031,25 @@ namespace LazyList {
     ///
     /// Applies `f` lazily (i.e. the tail is not forced).
     ///
-    def filterMapL(f: a -> Option[b], l: LazyList[a]): LazyList[b] = match l {
+    def filterMapL(f: a -> Option[b], l: LazyList[a]): LazyList[b] =
+        LList(lazy filterMapLHelper(f, l))
+
+    ///
+    /// Helper function for `filterMapL`.
+    ///
+    def filterMapLHelper(f: a -> Option[b], l: LazyList[a]): LazyList[b] = match l {
         case ENil         => ENil
         case ECons(x, xs) =>
-            LList(lazy match f(x) {
-                case None    => filterMapL(f, xs)
-                case Some(v) => LCons(v, lazy filterMapL(f, xs))
-            })
+            match f(x) {
+                case None    => filterMapLHelper(f, xs)
+                case Some(v) => LCons(v, lazy filterMapLHelper(f, xs))
+            }
         case LCons(x, xs) =>
-            LList(lazy match f(x) {
-                case None    => filterMapL(f, force xs)
-                case Some(v) => LCons(v, lazy filterMapL(f, force xs))
-            })
-        case LList(xs)    => LList(lazy filterMapL(f, force xs))
+            match f(x) {
+                case None    => filterMapLHelper(f, force xs)
+                case Some(v) => LCons(v, lazy filterMapLHelper(f, force xs))
+            }
+        case LList(xs)    => LList(lazy filterMapLHelper(f, force xs))
     }
 
     ///

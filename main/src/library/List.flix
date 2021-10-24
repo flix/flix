@@ -430,7 +430,7 @@ namespace List {
     pub def rotateLeft(n: Int32, xs: List[a]): List[a] =
         let len = length(xs);
             if (len == 0) xs else
-                let rem = n % len;
+                let rem = n rem len;
                 let rotate = if (rem < 0) rem + len else rem;
                     drop(rotate, xs) ::: take(rotate, xs)
 
@@ -1176,9 +1176,9 @@ namespace List {
     ///
     /// Returns the elements of `l` as a lazy list.
     ///
-    pub def toLazy(l: List[a]): LazyList[a] = match l {
+    pub def toLazyList(l: List[a]): LazyList[a] = match l {
         case Nil     => ENil
-        case x :: xs => LList(lazy LCons(x, lazy toLazy(xs)))
+        case x :: xs => LCons(x, lazy toLazyList(xs))
     }
 
     ///
