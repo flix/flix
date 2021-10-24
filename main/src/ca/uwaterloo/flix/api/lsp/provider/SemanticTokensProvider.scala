@@ -31,15 +31,13 @@ object SemanticTokensProvider {
     * Processes a request for (full) semantic tokens.
     */
   def provideSemanticTokens(uri: String)(implicit index: Index, root: Root): JObject = {
-    val semanticTokens = if (root == null) {
-      Nil
-    } else {
-      root.defs.filter(_._1.loc.source.name == uri).flatMap {
-        case (_, defn) => visitDef(defn)
-      }.toList
-    }
-    val encoded = encodeSemanticTokens(semanticTokens)
-    ("status" -> "success") ~ ("result" -> ("data" -> encoded))
+    val entities = index.query(uri)
+    val semanticTokens = root.defs.filter(_._1.loc.source.name == uri).flatMap {
+      case (_, defn) => visitDef(defn)
+    }.toList
+    val encoding = encodeSemanticTokens(semanticTokens)
+    val result = ("data" -> encoding)
+    ("status" -> "success") ~ ("result" -> result)
   }
 
   // TODO: DOC
@@ -56,9 +54,7 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given expression `exp0`.
     */
   private def visitExp(exp0: Expression): Iterator[SemanticToken] = exp0 match {
-    case Expression.Wild(_, loc) =>
-      val t = SemanticToken(SemanticTokenType.Variable, Nil, loc)
-      Iterator(t)
+    case Expression.Wild(_, _) => Iterator.empty
 
     case Expression.Var(_, _, loc) =>
       val t = SemanticToken(SemanticTokenType.Variable, Nil, loc)
@@ -104,16 +100,21 @@ object SemanticTokensProvider {
 
     case Expression.Default(_, _) => Iterator.empty
 
-    case Expression.Lambda(fparam, exp, _, _) =>
-      visitFormalParam(fparam) ++ visitExp(exp)
-
-    case Expression.Apply(exp, exps, _, _, _) =>
-      visitExp(exp) ++ visitExps(exps)
-
-    case Expression.Unary(_, exp, _, _, _) =>
+    // TODO
+    case Expression.Lambda(fparam, exp, tpe, loc) =>
+      val env1 = Map(fparam.sym -> fparam.tpe)
       visitExp(exp)
 
-    case Expression.Binary(_, exp1, exp2, _, _, _) =>
+    case Expression.Apply(exp, exps, tpe, eff, loc) =>
+      val init = visitExp(exp)
+      exps.foldLeft(init) {
+        case (acc, exp) => acc ++ visitExp(exp)
+      }
+
+    case Expression.Unary(sop, exp, tpe, eff, loc) =>
+      visitExp(exp)
+
+    case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) =>
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.Let(sym, _, exp1, exp2, _, _, _) =>
