@@ -57,18 +57,28 @@ object SemanticTokensProvider {
       Iterator(t) ++ visitTypeParam(tparam)
   }
 
-  // TODO: DOC
-  private def visitEnum(enum0: TypedAst.Enum): Iterator[SemanticToken] = {
-    enum0.cases.flatMap {
-      case (_, caze) => visitCase(caze)
-    }.iterator
+  /**
+    * Returns all semantic tokens in the given enum `enum0`.
+    *
+    * Returns tokens for the symbol, the type parameters, and the cases.
+    */
+  private def visitEnum(enum0: TypedAst.Enum): Iterator[SemanticToken] = enum0 match {
+    case TypedAst.Enum(_, _, sym, tparams, cases, _, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Enum, Nil, sym.loc)
+      val ts1 = tparams.flatMap(visitTypeParam).iterator
+      val ts2 = enum0.cases.foldLeft(Iterator.empty[SemanticToken]) {
+        case (acc, (_, caze)) => acc ++ visitCase(caze)
+      }
+      Iterator(t) ++ ts1 ++ ts2
   }
 
-  // TODO: DOC
+  /**
+    * Returns all semantic tokens in the given case `case0`.
+    */
   private def visitCase(case0: TypedAst.Case): Iterator[SemanticToken] = case0 match {
-    case TypedAst.Case(_, tag, _, _, _) =>
+    case TypedAst.Case(_, tag, _, sc, _) =>
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, tag.loc)
-      Iterator(t)
+      Iterator(t) /* ++ visitType(sc.base) TODO: Broken */
   }
 
   // TODO: DOC
