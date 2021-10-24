@@ -41,13 +41,7 @@ object SemanticTokensProvider {
    */
   private def getSemanticTokens(entity: Entity): List[SemanticToken] = entity match {
     case Entity.Exp(e) => e match {
-      case Expression.Int8(_, _)
-           | Expression.Int16(_, _)
-           | Expression.Int32(_, _)
-           | Expression.Float32(_, _)
-           | Expression.Float64(_, _)
-           | Expression.BigInt(_, _) => List(SemanticToken(e.loc, SemanticTokenType.Number, List()))
-      case Expression.Str(_, loc) => List(SemanticToken(loc, SemanticTokenType.Str, List()))
+      case Expression.Tag(_, tag, _, _, _, _) => List(SemanticToken(tag.loc, SemanticTokenType.EnumMember, List()))
       case _ => List() // TODO: Handle other kinds of expressions
     }
     case _ => List() // TODO: Handle other kinds of entities
