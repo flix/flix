@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp._
 import ca.uwaterloo.flix.language.ast.{Type, TypedAst}
-import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Constraint, Def, Expression, FormalParam, MatchRule, Pattern, Root, SelectChannelRule}
+import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Constraint, Def, Expression, FormalParam, MatchRule, Pattern, Root, SelectChannelRule, TypeParam}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
@@ -33,15 +33,28 @@ object SemanticTokensProvider {
   def provideSemanticTokens(uri: String)(implicit index: Index, root: Root): JObject = {
     // TODO: Run check/deal with null root.
     val entities = index.query(uri)
+    val st3 = root.classes.filter(_._1.loc.source.name == uri).flatMap {
+      case (_, clazz) => visitClass(clazz)
+    }.toList
     val st1 = root.defs.filter(_._1.loc.source.name == uri).flatMap {
       case (_, defn) => visitDef(defn)
     }.toList
     val st2 = root.enums.filter(_._1.loc.source.name == uri).flatMap {
       case (_, enum) => visitEnum(enum)
     }.toList
-    val encoding = encodeSemanticTokens(st1 ++ st2)
+    val encoding = encodeSemanticTokens(st3 ++ st1 ++ st2)
     val result = ("data" -> encoding)
     ("status" -> "success") ~ ("result" -> result)
+  }
+
+  /**
+    * Returns all semantic tokens in the given class `classDecl`.
+    */
+  private def visitClass(classDecl: TypedAst.Class): Iterator[SemanticToken] = classDecl match {
+    case TypedAst.Class(_, _, sym, tparam, superClasses, signatures, laws, _) =>
+      // TODO: Superclasses, signatures and laws.
+      val t = SemanticToken(SemanticTokenType.Class, Nil, sym.loc)
+      Iterator(t) ++ visitTypeParam(tparam)
   }
 
   // TODO: DOC
@@ -403,6 +416,15 @@ object SemanticTokensProvider {
     case FormalParam(sym, _, tpe, _) =>
       val t = SemanticToken(SemanticTokenType.Parameter, Nil, sym.loc)
       Iterator(t) ++ visitType(tpe)
+  }
+
+  /**
+    * Returns all semantic tokens in the given type parameter `tparam0`.
+    */
+  private def visitTypeParam(tparam0: TypedAst.TypeParam): Iterator[SemanticToken] = tparam0 match {
+    case TypeParam(ident, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Type, Nil, ident.loc)
+      Iterator(t)
   }
 
   // TODO: DOC
