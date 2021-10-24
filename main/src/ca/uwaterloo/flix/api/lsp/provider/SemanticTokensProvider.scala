@@ -30,13 +30,15 @@ object SemanticTokensProvider {
     * Processes a request for (full) semantic tokens.
     */
   def provideSemanticTokens(uri: String)(implicit index: Index, root: Root): JObject = {
-    val entities = index.query(uri)
-    val semanticTokens = root.defs.filter(_._1.loc.source.name == uri).flatMap {
-      case (_, defn) => visitDef(defn)
-    }.toList
-    val encoding = encodeSemanticTokens(semanticTokens)
-    val result = ("data" -> encoding)
-    ("status" -> "success") ~ ("result" -> result)
+    val semanticTokens = if (root == null) {
+      Nil
+    } else {
+      root.defs.filter(_._1.loc.source.name == uri).flatMap {
+        case (_, defn) => visitDef(defn)
+      }.toList
+    }
+    val encoded = encodeSemanticTokens(semanticTokens)
+    ("status" -> "success") ~ ("result" -> ("data" -> encoded))
   }
 
   // TODO: DOC
@@ -112,7 +114,7 @@ object SemanticTokensProvider {
       val t = SemanticToken(SemanticTokenType.Variable, Nil, sym.loc)
       Iterator(t) ++ visitExp(exp1) ++ visitExp(exp2)
 
-      // TODO: From here
+    // TODO: From here
 
     case Expression.LetRegion(_, exp, _, _, _) =>
       visitExp(exp)
