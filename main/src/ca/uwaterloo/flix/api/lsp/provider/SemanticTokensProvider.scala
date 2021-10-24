@@ -320,10 +320,17 @@ object SemanticTokensProvider {
     case Pattern.ArrayHeadSpread(_, elms, _, _) => elms.flatMap(visitPat).iterator
   }
 
+  // TODO: DOC
+  private def visitFormalParams(fparams: List[FormalParam]): Iterator[SemanticToken] = {
+    fparams.flatMap(visitFormalParam).iterator
+  }
 
   // TODO: DOC
-  private def visitFormalParams(fparams: List[FormalParam]): Iterator[SemanticToken] = ???
-
+  private def visitFormalParam(fparam: FormalParam): Iterator[SemanticToken] = fparam match {
+    case FormalParam(sym, _, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Parameter, Nil, sym.loc)
+      Iterator(t)
+  }
 
   private def visitConstraint(c: Constraint): Iterator[SemanticToken] = Iterator.empty // TODO
 
