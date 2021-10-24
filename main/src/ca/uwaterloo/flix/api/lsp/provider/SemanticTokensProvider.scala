@@ -44,10 +44,12 @@ object SemanticTokensProvider {
       case _ => Nil
     }
 
+    //
+    // Construct an iterator for semantic tokens from instances.
+    //
     val st4: List[SemanticToken] = root.instances.filter(_._1.loc.source.name == uri).flatMap {
       case (_, instances) => instances.flatMap(visitInstance)
     }.toList
-
 
     //
     // Construct an iterator for semantic tokens from defs.
@@ -61,7 +63,7 @@ object SemanticTokensProvider {
     // Construct an iterator for semantic tokens from sigs.
     //
     val sigsTokens = root.sigs.values.flatMap {
-      case decl if include(uri, decl.sym.loc) => visitSig(decl)
+      case decl if include(uri, decl.spec.loc) => visitSig(decl)
       case _ => Nil
     }
 
@@ -101,7 +103,7 @@ object SemanticTokensProvider {
   private def visitClass(classDecl: TypedAst.Class): Iterator[SemanticToken] = classDecl match {
     case TypedAst.Class(_, _, sym, tparam, superClasses, signatures, laws, _) =>
       // TODO: Superclasses, signatures and laws.
-      val t = SemanticToken(SemanticTokenType.Class, Nil, sym.loc)
+      val t = SemanticToken(SemanticTokenType.Interface, Nil, sym.loc)
       Iterator(t) ++ visitTypeParam(tparam)
   }
 
@@ -109,10 +111,12 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given instance `inst0`.
     */
   private def visitInstance(inst0: TypedAst.Instance): Iterator[SemanticToken] = inst0 match {
-    case TypedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, ns, loc) =>
-      // TODO: sym, tpe, tconstr, defns
-
-      Iterator.empty
+    case TypedAst.Instance(_, _, sym, tpe, tconstrs, defs, _, _) =>
+      // TODO: , tconstr,
+      val t = SemanticToken(SemanticTokenType.Class, Nil, sym.loc)
+      val tokens1 = visitType(tpe)
+      val tokens2 = defs.flatMap(visitDef)
+      Iterator(t) ++ tokens1 ++ tokens2
   }
 
   /**
