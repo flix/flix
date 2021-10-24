@@ -304,34 +304,34 @@ object SemanticTokensProvider {
     case Expression.ArrayNew(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    // TODO: From here
-
-    case Expression.ArrayLoad(base, index, tpe, eff, loc) =>
-      visitExp(base) ++ visitExp(index)
-
-    case Expression.ArrayStore(base, index, elm, loc) =>
-      visitExp(base) ++ visitExp(index) ++ visitExp(elm)
-
-    case Expression.ArrayLength(base, eff, loc) =>
-      visitExp(base)
-
-    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
-      visitExp(base) ++ visitExp(beginIndex) ++ visitExp(endIndex)
-
-    case Expression.Ref(exp, tpe, eff, loc) =>
-      visitExp(exp)
-
-    case Expression.Deref(exp, tpe, eff, loc) =>
-      visitExp(exp)
-
-    case Expression.Assign(exp1, exp2, tpe, eff, loc) =>
+    case Expression.ArrayLoad(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Existential(fparam, exp, loc) =>
+    case Expression.ArrayStore(exp1, exp2, exp3, _) =>
+      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+
+    case Expression.ArrayLength(exp, _, _) =>
       visitExp(exp)
 
-    case Expression.Universal(fparam, exp, loc) =>
+    case Expression.ArraySlice(exp1, exp2, exp3, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+
+    case Expression.Ref(exp, _, _, _) =>
       visitExp(exp)
+
+    case Expression.Deref(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expression.Assign(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
+
+    case Expression.Existential(_, _, _) =>
+      throw InternalCompilerException("to be removed")
+
+    case Expression.Universal(_, _, _) =>
+      throw InternalCompilerException("to be removed")
+
+    // TODO: From here
 
     case Expression.Ascribe(exp, tpe, eff, loc) =>
       visitExp(exp)
