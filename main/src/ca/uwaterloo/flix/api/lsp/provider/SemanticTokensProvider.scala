@@ -50,11 +50,17 @@ object SemanticTokensProvider {
   private def visitExp(exp0: Expression, env0: Map[Symbol.VarSym, Type]): Iterator[SemanticToken] = exp0 match {
     case Expression.Wild(_, _) => Iterator.empty
 
-    case Expression.Var(_, _, loc) => Iterator(SemanticToken(SemanticTokenType.Variable, List(), loc))
+    case Expression.Var(_, _, loc) =>
+      val t = SemanticToken(SemanticTokenType.Variable, Nil, loc)
+      Iterator(t)
 
-    case Expression.Def(_, _, loc) => Iterator(SemanticToken(SemanticTokenType.Function, List(), loc))
+    case Expression.Def(_, _, loc) =>
+      val t = SemanticToken(SemanticTokenType.Function, Nil, loc)
+      Iterator(t)
 
-    case Expression.Sig(_, _, loc) => Iterator(SemanticToken(SemanticTokenType.Method, List(), loc))
+    case Expression.Sig(_, _, loc) =>
+      val t = SemanticToken(SemanticTokenType.Method, Nil, loc)
+      Iterator(t)
 
     case Expression.Hole(sym, tpe, loc) => Iterator.empty
 
