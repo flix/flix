@@ -33,39 +33,45 @@ object SemanticTokensProvider {
   def provideSemanticTokens(uri: String)(implicit index: Index, root: Root): JObject = {
     // TODO: Run check/deal with null root.
     val entities = index.query(uri)
+
     val st3 = root.classes.filter(_._1.loc.source.name == uri).flatMap {
       case (_, clazz) => visitClass(clazz)
     }.toList
+
     val st4: List[SemanticToken] = root.instances.filter(_._1.loc.source.name == uri).flatMap {
       case (_, instances) => instances.flatMap(visitInstance)
     }.toList
 
     // TODO: sigs
 
-    val st1 = root.defs.filter(_._1.loc.source.name == uri).flatMap {
-      case (_, defn) => visitDef(defn)
+    //
+    // Construct an iterator for semantic tokens from defs.
+    //
+    val defnTokens = root.defs.values.flatMap {
+      case decl if include(uri, decl.sym.loc) => visitDef(decl)
+      case _ => Nil
     }.toList
 
     //
-    // Construct an iterator for all the semantic tokens from enums.
+    // Construct an iterator for semantic tokens from enums.
     //
     val enumTokens = root.enums.values.flatMap {
-      case enum0 if include(uri, enum0.loc) => visitEnum(enum0)
+      case decl if include(uri, decl.loc) => visitEnum(decl)
       case _ => Nil
     }
 
     //
-    // Construct an iterator for all the semantic tokens from type aliases.
+    // Construct an iterator for semantic tokens from type aliases.
     //
     val typeAliasTokens = root.typealiases.flatMap {
-      case (_, typeAlias0) if include(uri, typeAlias0.loc) => visitTypeAlias(typeAlias0)
+      case (_, decl) if include(uri, decl.loc) => visitTypeAlias(decl)
       case _ => Nil
     }
 
     //
     // Encode all the semantic tokens as a list of integers.
     //
-    val encodedTokens = encodeSemanticTokens(st3 ++ st4 ++ st1 ++ enumTokens ++ typeAliasTokens)
+    val encodedTokens = encodeSemanticTokens(st3 ++ st4 ++ defnTokens ++ enumTokens ++ typeAliasTokens)
 
     //
     // Build the JSON result.
