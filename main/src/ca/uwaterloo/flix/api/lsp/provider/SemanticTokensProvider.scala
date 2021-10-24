@@ -102,14 +102,17 @@ object SemanticTokensProvider {
     case Expression.Apply(exp, exps, _, _, _) =>
       visitExp(exp) ++ visitExps(exps)
 
-    case Expression.Unary(sop, exp, tpe, eff, loc) =>
+    case Expression.Unary(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) =>
+    case Expression.Binary(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Let(sym, _, exp1, exp2, tpe, eff, loc) =>
-      visitExp(exp1) ++ visitExp(exp2)
+    case Expression.Let(sym, _, exp1, exp2, _, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Variable, Nil, sym.loc)
+      Iterator(t) ++ visitExp(exp1) ++ visitExp(exp2)
+
+      // TODO: From here
 
     case Expression.LetRegion(_, exp, _, _, _) =>
       visitExp(exp)
