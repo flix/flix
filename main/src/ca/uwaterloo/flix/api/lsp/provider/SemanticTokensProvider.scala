@@ -113,12 +113,13 @@ object SemanticTokensProvider {
       visitExp(defn0.impl.exp)
   }
 
-
-  // TODO: DOC
+  /**
+    * Returns all semantic tokens in the given type alias `typeAlias0`.
+    */
   private def visitTypeAlias(typeAlias0: TypedAst.TypeAlias): Iterator[SemanticToken] = typeAlias0 match {
-    case TypedAst.TypeAlias(doc, mod, sym, tparams, tpe, loc) =>
-      // TODO:
-      Iterator.empty
+    case TypedAst.TypeAlias(_, _, sym, tparams, tpe, _) =>
+      val t = SemanticToken(SemanticTokenType.Type, Nil, sym.loc)
+      Iterator(t) ++ visitTypeParams(tparams) ++ visitType(tpe)
   }
 
   /**
@@ -445,9 +446,10 @@ object SemanticTokensProvider {
   /**
     * Returns all semantic tokens in the given formal parameters `fparams0`.
     */
-  private def visitFormalParams(fparams0: List[FormalParam]): Iterator[SemanticToken] = {
-    fparams0.flatMap(visitFormalParam).iterator
-  }
+  private def visitFormalParams(fparams0: List[FormalParam]): Iterator[SemanticToken] =
+    fparams0.foldLeft(Iterator.empty[SemanticToken]) {
+      case (acc, fparam0) => acc ++ visitFormalParam(fparam0)
+    }
 
   /**
     * Returns all semantic tokens in the given formal parameter `fparam0`.
@@ -457,6 +459,14 @@ object SemanticTokensProvider {
       val t = SemanticToken(SemanticTokenType.Parameter, Nil, sym.loc)
       Iterator(t) ++ visitType(tpe)
   }
+
+  /**
+    * Returns all semantic tokens in the given type parameter `tparam0`.
+    */
+  private def visitTypeParams(tparams0: List[TypedAst.TypeParam]): Iterator[SemanticToken] =
+    tparams0.foldLeft(Iterator.empty[SemanticToken]) {
+      case (acc, tparam0) => acc ++ visitTypeParam(tparam0)
+    }
 
   /**
     * Returns all semantic tokens in the given type parameter `tparam0`.
