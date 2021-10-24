@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp._
+import ca.uwaterloo.flix.language.ast.Ast.TypeConstraint
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Constraint, Expression, FormalParam, MatchRule, Pattern, Root, SelectChannelRule, TypeParam}
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -111,12 +112,14 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given instance `inst0`.
     */
   private def visitInstance(inst0: TypedAst.Instance): Iterator[SemanticToken] = inst0 match {
-    case TypedAst.Instance(_, _, sym, tpe, tconstrs, defs, _, _) =>
-      // TODO: , tconstr,
-      val t = SemanticToken(SemanticTokenType.Class, Nil, sym.loc)
+    case TypedAst.Instance(_, _, _, tpe, tconstrs, defs, _, _) =>
+      // TODO: We cannot create a semantic token for the *USE* of the class symbol because we do not have its location.
+      // TODO: We have the location of the class symbol, but not the location of the use.
+      // val t = SemanticToken(SemanticTokenType.Class, Nil, sym.loc)
       val tokens1 = visitType(tpe)
-      val tokens2 = defs.flatMap(visitDef)
-      Iterator(t) ++ tokens1 ++ tokens2
+      val tokens2 = tconstrs.flatMap(visitTypeConstraint)
+      val tokens3 = defs.flatMap(visitDef)
+      tokens1 ++ tokens2 ++ tokens3
   }
 
   /**
@@ -500,7 +503,13 @@ object SemanticTokensProvider {
 
     case Type.UnkindedVar(_, _, _, _) =>
       throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
+  }
 
+  /**
+    * Returns all semantic tokens in the given type constraint `tc0`.
+    */
+  private def visitTypeConstraint(tc0: TypeConstraint): Iterator[SemanticToken] = tc0 match {
+    case TypeConstraint(_, arg, _) => visitType(arg)
   }
 
   /**
