@@ -50,11 +50,11 @@ object SemanticTokensProvider {
   private def visitExp(exp0: Expression, env0: Map[Symbol.VarSym, Type]): Iterator[SemanticToken] = exp0 match {
     case Expression.Wild(_, _) => Iterator.empty
 
-    case Expression.Var(_, _, loc) => Iterator(SemanticToken(loc, SemanticTokenType.Variable, List()))
+    case Expression.Var(_, _, loc) => Iterator(SemanticToken(SemanticTokenType.Variable, List(), loc))
 
-    case Expression.Def(_, _, loc) =>  Iterator(SemanticToken(loc, SemanticTokenType.Function, List()))
+    case Expression.Def(_, _, loc) => Iterator(SemanticToken(SemanticTokenType.Function, List(), loc))
 
-    case Expression.Sig(_, _, loc) => Iterator(SemanticToken(loc, SemanticTokenType.Method, List()))
+    case Expression.Sig(_, _, loc) => Iterator(SemanticToken(SemanticTokenType.Method, List(), loc))
 
     case Expression.Hole(sym, tpe, loc) => Iterator.empty
 
@@ -135,7 +135,7 @@ object SemanticTokensProvider {
     case Expression.RecordEmpty(tpe, loc) => Iterator.empty
 
     case Expression.RecordSelect(base, field, tpe, eff, loc) =>
-      val s = SemanticToken(field.loc, SemanticTokenType.Property, Nil)
+      val s = SemanticToken(, SemanticTokenType.Property, Nil, loc)
       visitExp(base, env0) ++ Iterator(s)
 
     case Expression.RecordExtend(_, value, rest, tpe, eff, loc) =>
@@ -258,9 +258,9 @@ object SemanticTokensProvider {
     case Expression.FixpointProjectOut(_, exp, tpe, eff, loc) =>
       visitExp(exp, env0)
 
-    case Expression.Reify(_, _, _, _) =>  Iterator.empty
+    case Expression.Reify(_, _, _, _) => Iterator.empty
 
-    case Expression.ReifyType(_, _, _, _, _) =>  Iterator.empty
+    case Expression.ReifyType(_, _, _, _, _) => Iterator.empty
 
   }
 
@@ -288,8 +288,8 @@ object SemanticTokensProvider {
       encoding += relLine
       encoding += relCol
       encoding += token.loc.endCol - token.loc.beginCol
-      encoding += token.tokenType.toInt
-      encoding += encodeModifiers(token.tokenModifiers)
+      encoding += token.tpe.toInt
+      encoding += encodeModifiers(token.mod)
 
       prevLine = token.loc.beginLine - 1
       prevCol = token.loc.beginCol - 1
