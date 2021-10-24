@@ -251,6 +251,8 @@ object SemanticTokensProvider {
       val d = default.map(visitExp).getOrElse(Iterator.empty)
       rs ++ d
 
+      // TODO> to here
+
     case Expression.Spawn(exp, _, _, _) => visitExp(exp)
 
     case Expression.Lazy(exp, _, _) => visitExp(exp)
