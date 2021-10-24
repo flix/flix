@@ -120,18 +120,17 @@ object SemanticTokensProvider {
       val t = SemanticToken(SemanticTokenType.Variable, Nil, sym.loc)
       Iterator(t) ++ visitExp(exp1) ++ visitExp(exp2)
 
-    // TODO: From here
+    case Expression.LetRegion(sym, exp, _, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Variable, Nil, sym.loc)
+      Iterator(t) ++ visitExp(exp)
 
-    case Expression.LetRegion(_, exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
+    case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-    case Expression.Stm(exp1, exp2, tpe, eff, loc) =>
+    case Expression.Stm(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Match(matchExp, rules, tpe, eff, loc) =>
+    case Expression.Match(matchExp, rules, _, _, _) =>
       val m = visitExp(matchExp)
       rules.foldLeft(m) {
         case (macc, MatchRule(pat, guard, exp)) =>
@@ -141,31 +140,31 @@ object SemanticTokensProvider {
     case Expression.Choose(exps, rules, tpe, eff, loc) =>
       Iterator.empty // TODO
 
-    case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
+    case Expression.Tag(_, tag, exp, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, tag.loc)
       Iterator(t) ++ visitExp(exp)
 
-    case Expression.Tuple(elms, tpe, eff, loc) =>
-      elms.foldLeft(Iterator.empty[SemanticToken]) {
-        case (macc, elm) => macc ++ visitExp(elm)
-      }
+    case Expression.Tuple(exps, _, _, _) =>
+      visitExps(exps)
 
-    case Expression.RecordEmpty(tpe, loc) => Iterator.empty
+    case Expression.RecordEmpty(_, _) => Iterator.empty
 
-    case Expression.RecordSelect(base, field, tpe, eff, loc) =>
-      val t = SemanticToken(SemanticTokenType.Property, Nil, loc)
-      Iterator(t) ++ visitExp(base)
+    case Expression.RecordSelect(exp, field, _, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Property, Nil, field.loc)
+      Iterator(t) ++ visitExp(exp)
 
-    case Expression.RecordExtend(_, value, rest, tpe, eff, loc) =>
-      visitExp(rest) ++ visitExp(value)
+    case Expression.RecordExtend(field, exp1, exp2, _, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Property, Nil, field.loc)
+      Iterator(t) ++ visitExp(exp2) ++ visitExp(exp1)
 
-    case Expression.RecordRestrict(_, rest, tpe, eff, loc) =>
-      visitExp(rest)
+    case Expression.RecordRestrict(field, exp, _, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Property, Nil, field.loc)
+      Iterator(t) ++ visitExp(exp)
 
-    case Expression.ArrayLit(elms, tpe, eff, loc) =>
-      elms.foldLeft(Iterator.empty[SemanticToken]) {
-        case (macc, elm) => macc ++ visitExp(elm)
-      }
+    case Expression.ArrayLit(exps, _, _, _) =>
+      visitExps(exps)
+
+    // TODO: From here
 
     case Expression.ArrayNew(elm, len, tpe, eff, loc) =>
       visitExp(elm)
