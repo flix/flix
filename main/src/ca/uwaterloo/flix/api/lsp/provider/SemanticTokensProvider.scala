@@ -61,7 +61,7 @@ object SemanticTokensProvider {
   private def visitExp(exp0: Expression, env0: Map[Symbol.VarSym, Type]): Iterator[SemanticToken] = exp0 match {
     case Expression.Wild(_, _) => Iterator.empty
 
-    case Expression.Var(_, _, loc) => Iterator(SemanticToken(loc, SemanticTokenType.Var, List()))
+    case Expression.Var(_, _, loc) => Iterator(SemanticToken(loc, SemanticTokenType.Variable, List()))
 
     case Expression.Def(_, _, _) =>  Iterator.empty
 
