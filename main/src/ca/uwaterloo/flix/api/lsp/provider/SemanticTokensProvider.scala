@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp._
-import ca.uwaterloo.flix.language.ast.{Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Constraint, Def, Expression, FormalParam, MatchRule, Pattern, Root, SelectChannelRule, TypeParam}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.json4s.JsonAST.JObject
@@ -45,19 +45,36 @@ object SemanticTokensProvider {
     val st1 = root.defs.filter(_._1.loc.source.name == uri).flatMap {
       case (_, defn) => visitDef(defn)
     }.toList
-    val st2 = root.enums.filter(_._1.loc.source.name == uri).flatMap {
-      case (_, enum) => visitEnum(enum)
-    }.toList
 
-    val typeAliasTokens = root.typealiases.filter(_._1.loc.source.name == uri).flatMap {
-      case (_, typeAlias) => visitTypeAlias(typeAlias)
-    }.toList
+    //
+    // Construct an iterator for all the semantic tokens from enums.
+    //
+    val enumTokens = root.enums.values.flatMap {
+      case enum0 if include(uri, enum0.loc) => visitEnum(enum0)
+      case _ => Nil
+    }
 
-    val encoding = encodeSemanticTokens(st3 ++ st4 ++ st1 ++ st2 ++ typeAliasTokens)
+    //
+    // Construct an iterator for all the semantic tokens from type aliases.
+    //
+    val typeAliasTokens = root.typealiases.flatMap {
+      case (_, typeAlias0) if include(uri, typeAlias0.loc) => visitTypeAlias(typeAlias0)
+      case _ => Nil
+    }
 
-    val result = ("data" -> encoding)
-    ("status" -> "success") ~ ("result" -> result)
+    //
+    // Encode all the semantic tokens as a list of integers.
+    //
+    val encodedTokens = encodeSemanticTokens(st3 ++ st4 ++ st1 ++ enumTokens ++ typeAliasTokens)
+
+    //
+    // Build the JSON result.
+    //
+    ("status" -> "success") ~ ("result" -> ("data" -> encodedTokens))
   }
+
+  // TODO: DOC
+  private def include(uri: String, loc: SourceLocation): Boolean = loc.source.name == uri
 
   /**
     * Returns all semantic tokens in the given class `classDecl`.
@@ -482,7 +499,7 @@ object SemanticTokensProvider {
 
   // TODO: DOC
   // Inspired by https://github.com/microsoft/vscode-languageserver-node/blob/f425af9de46a0187adb78ec8a46b9b2ce80c5412/server/src/sematicTokens.proposed.ts#L45
-  private def encodeSemanticTokens(tokens: Iterable[SemanticToken]): List[Int] = {
+  private def encodeSemanticTokens(tokens: List[SemanticToken]): List[Int] = {
     val encoding = new ArrayBuffer[Int](initialSize = 5 * tokens.size)
 
     var prevLine = 0
