@@ -40,17 +40,6 @@ object SemanticTokensProvider {
     ("status" -> "success") ~ ("result" -> result)
   }
 
-  /**
-    * Returns the semantic tokens in the given Entity.
-    */
-  private def getSemanticTokens(entity: Entity): List[SemanticToken] = entity match {
-    case Entity.Exp(e) => e match {
-      case Expression.Tag(_, tag, _, _, _, _) => List(SemanticToken(tag.loc, SemanticTokenType.EnumMember, List()))
-      case _ => List() // TODO: Handle other kinds of expressions
-    }
-    case _ => List() // TODO: Handle other kinds of entities
-  }
-
   private def visitDef(defn0: Def): Iterator[SemanticToken] = {
     visitExp(defn0.impl.exp, Map.empty)
   }
@@ -63,9 +52,9 @@ object SemanticTokensProvider {
 
     case Expression.Var(_, _, loc) => Iterator(SemanticToken(loc, SemanticTokenType.Variable, List()))
 
-    case Expression.Def(_, _, _) =>  Iterator.empty
+    case Expression.Def(_, _, loc) =>  Iterator(SemanticToken(loc, SemanticTokenType.Function, List()))
 
-    case Expression.Sig(_, _, _) => Iterator.empty
+    case Expression.Sig(_, _, loc) => Iterator(SemanticToken(loc, SemanticTokenType.Method, List()))
 
     case Expression.Hole(sym, tpe, loc) => Iterator.empty
 
@@ -145,8 +134,9 @@ object SemanticTokensProvider {
 
     case Expression.RecordEmpty(tpe, loc) => Iterator.empty
 
-    case Expression.RecordSelect(base, _, tpe, eff, loc) =>
-      visitExp(base, env0)
+    case Expression.RecordSelect(base, field, tpe, eff, loc) =>
+      val s = SemanticToken(field.loc, SemanticTokenType.Property, Nil)
+      visitExp(base, env0) ++ Iterator(s)
 
     case Expression.RecordExtend(_, value, rest, tpe, eff, loc) =>
       visitExp(rest, env0) ++ visitExp(value, env0)
