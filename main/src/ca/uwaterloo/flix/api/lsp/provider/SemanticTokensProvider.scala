@@ -276,31 +276,35 @@ object SemanticTokensProvider {
       val t = SemanticToken(SemanticTokenType.Variable, Nil, loc)
       Iterator(t)
 
-    case Pattern.Var(_, _, loc) => ???
+    case Pattern.Var(_, _, loc) =>
+      val t = SemanticToken(SemanticTokenType.Variable, Nil, loc)
+      Iterator(t)
 
-    case Pattern.Unit(loc) => ???
+    case Pattern.Unit(loc) =>
+      val t = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)
+      Iterator(t)
 
-    case Pattern.True(loc) => ???
+    case Pattern.True(_) => Iterator.empty
 
-    case Pattern.False(loc) => ???
+    case Pattern.False(_) => Iterator.empty
 
-    case Pattern.Char(lit, loc) => ???
+    case Pattern.Char(_, _) => Iterator.empty
 
-    case Pattern.Float32(lit, loc) => ???
+    case Pattern.Float32(_, _) => Iterator.empty
 
-    case Pattern.Float64(lit, loc) => ???
+    case Pattern.Float64(_, _) => Iterator.empty
 
-    case Pattern.Int8(lit, loc) => ???
+    case Pattern.Int8(_, _) => Iterator.empty
 
-    case Pattern.Int16(lit, loc) => ???
+    case Pattern.Int16(_, _) => Iterator.empty
 
-    case Pattern.Int32(lit, loc) => ???
+    case Pattern.Int32(_, _) => Iterator.empty
 
-    case Pattern.Int64(lit, loc) => ???
+    case Pattern.Int64(_, _) => Iterator.empty
 
-    case Pattern.BigInt(lit, loc) => ???
+    case Pattern.BigInt(_, _) => Iterator.empty
 
-    case Pattern.Str(lit, loc) => ???
+    case Pattern.Str(_, _) => Iterator.empty
 
     case Pattern.Tag(sym, tag, pat, tpe, loc) => ???
 
