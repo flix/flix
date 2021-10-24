@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.lsp._
 import ca.uwaterloo.flix.language.ast.Type
 import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Constraint, Def, Expression, FormalParam, MatchRule, Pattern, Root, SelectChannelRule}
+import ca.uwaterloo.flix.util.InternalCompilerException
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 
@@ -43,7 +44,12 @@ object SemanticTokensProvider {
 
   // TODO: DOC
   private def visitDef(defn0: Def): Iterator[SemanticToken] = {
-    visitFormalParams(defn0.spec.fparams) ++ visitExp(defn0.impl.exp)
+    val t = SemanticToken(SemanticTokenType.Function, Nil, defn0.sym.loc)
+
+    Iterator(t) ++
+      visitFormalParams(defn0.spec.fparams) ++
+      visitType(defn0.spec.retTpe) ++
+      visitExp(defn0.impl.exp)
   }
 
   /**
@@ -333,17 +339,24 @@ object SemanticTokensProvider {
 
   // TODO: DOC
   private def visitType(tpe: Type): Iterator[SemanticToken] = tpe match {
-    case Type.KindedVar(id, kind, loc, rigidity, text) => Iterator.empty // TODO
+    case Type.KindedVar(_, _, loc, _, _) =>
+      val t = SemanticToken(SemanticTokenType.TypeParameter, Nil, loc)
+      Iterator(t)
 
-    case Type.UnkindedVar(id, loc, rigidity, text) => Iterator.empty // TODO
+    case Type.Ascribe(tpe, _, _) =>
+      visitType(tpe) // TODO: What about the kind?
 
-    case Type.Ascribe(tpe, kind, loc) => Iterator.empty // TODO
+    case Type.Cst(_, loc) =>
+      val t = SemanticToken(SemanticTokenType.Type, Nil, loc)
+      Iterator(t)
 
-    case Type.Cst(tc, loc) => Iterator.empty // TODO
-
-    case Type.Apply(tpe1, tpe2, loc) => Iterator.empty // TODO
+    case Type.Apply(tpe1, tpe2, _) =>
+      visitType(tpe1) ++ visitType(tpe2)
 
     case Type.Alias(sym, args, tpe, loc) => Iterator.empty // TODO
+
+    case Type.UnkindedVar(_, _, _, _) =>
+      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
 
   }
 
@@ -354,9 +367,9 @@ object SemanticTokensProvider {
 
   // TODO: DOC
   private def visitFormalParam(fparam: FormalParam): Iterator[SemanticToken] = fparam match {
-    case FormalParam(sym, _, _, _) =>
+    case FormalParam(sym, _, tpe, _) =>
       val t = SemanticToken(SemanticTokenType.Parameter, Nil, sym.loc)
-      Iterator(t)
+      Iterator(t) ++ visitType(tpe)
   }
 
   private def visitConstraint(c: Constraint): Iterator[SemanticToken] = Iterator.empty // TODO
