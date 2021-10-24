@@ -152,14 +152,17 @@ object SemanticTokensProvider {
     case Expression.Wild(_, _) => Iterator.empty
 
     case Expression.Var(_, _, loc) =>
+      // TODO: Add special support for operators.
       val t = SemanticToken(SemanticTokenType.Variable, Nil, loc)
       Iterator(t)
 
     case Expression.Def(_, _, loc) =>
+      // TODO: Add special support for operators.
       val t = SemanticToken(SemanticTokenType.Function, Nil, loc)
       Iterator(t)
 
     case Expression.Sig(_, _, loc) =>
+      // TODO: Add special support for operators.
       val t = SemanticToken(SemanticTokenType.Method, Nil, loc)
       Iterator(t)
 
