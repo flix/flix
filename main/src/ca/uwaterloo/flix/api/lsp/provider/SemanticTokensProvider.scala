@@ -142,8 +142,9 @@ object SemanticTokensProvider {
     */
   private def visitCase(case0: TypedAst.Case): Iterator[SemanticToken] = case0 match {
     case TypedAst.Case(_, tag, _, sc, _) =>
+      // TODO: There is a bug where `sc.base` somehow contains source locations pointing to the beginning of the enum.
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, tag.loc)
-      Iterator(t) /* TODO: There is a bug where the type contains source locations corresponding to the enum. ++ visitType(sc.base) */
+      Iterator(t) ++ visitType(sc.base)
   }
 
   // TODO: DOC
@@ -331,18 +332,20 @@ object SemanticTokensProvider {
     case Expression.Universal(_, _, _) =>
       throw InternalCompilerException("to be removed")
 
-    // TODO: From here
+    case Expression.Ascribe(exp, tpe, _, _) =>
+      visitExp(exp) ++ visitType(tpe)
 
-    case Expression.Ascribe(exp, tpe, eff, loc) =>
-      visitExp(exp)
+    case Expression.Cast(exp, tpe, _, _) =>
+      visitExp(exp) ++ visitType(tpe)
 
-    case Expression.Cast(exp, tpe, eff, loc) =>
-      visitExp(exp)
-
-    case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+    case Expression.TryCatch(exp, rules, _, _, _) =>
       rules.foldLeft(visitExp(exp)) {
-        case (macc, CatchRule(sym, clazz, body)) => macc ++ visitExp(body)
+        case (macc, CatchRule(sym, _, body)) =>
+          val t = SemanticToken(SemanticTokenType.Variable, Nil, sym.loc)
+          macc ++ Iterator(t) ++ visitExp(body)
       }
+
+    // TODO: From here
 
     case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
       args.foldLeft(Iterator.empty[SemanticToken]) {
@@ -379,9 +382,9 @@ object SemanticTokensProvider {
 
     case Expression.SelectChannel(rules, default, tpe, eff, loc) =>
       val rs = rules.foldLeft(Iterator.empty[SemanticToken]) {
-        case (macc, SelectChannelRule(sym, chan, exp)) => macc ++ visitExp(chan) ++ visitExp(exp)
+        case (macc, SelectChannelRule(sym, chan, exp)) =>
+          macc ++ visitExp(chan) ++ visitExp(exp)
       }
-
       val d = default.map(visitExp).getOrElse(Iterator.empty)
       rs ++ d
 
@@ -485,8 +488,10 @@ object SemanticTokensProvider {
     */
   private def visitType(tpe0: Type): Iterator[SemanticToken] = tpe0 match {
     case Type.KindedVar(_, _, loc, _, _) =>
-      val t = SemanticToken(SemanticTokenType.TypeParameter, Nil, loc)
-      Iterator(t)
+      // TODO: Currently broken because of source locations associated with parameters.
+      // val t = SemanticToken(SemanticTokenType.TypeParameter, Nil, loc)
+      // Iterator(t)
+      Iterator.empty
 
     case Type.Ascribe(tpe, _, _) =>
       visitType(tpe)
@@ -542,8 +547,10 @@ object SemanticTokensProvider {
     */
   private def visitTypeParam(tparam0: TypedAst.TypeParam): Iterator[SemanticToken] = tparam0 match {
     case TypeParam(ident, _, _) =>
-      val t = SemanticToken(SemanticTokenType.Type, Nil, ident.loc)
-      Iterator(t)
+      // TODO: Currently broken (and thus hidden)
+      // val t = SemanticToken(SemanticTokenType.TypeParameter, Nil, ident.loc)
+      // Iterator(t)
+      Iterator.empty
   }
 
   // TODO: DOC
@@ -590,6 +597,6 @@ object SemanticTokensProvider {
   /**
     * Encodes a list of modifiers as a bitset (as per the LSP spec).
     */
-  def encodeModifiers(modifiers: List[SemanticTokenModifier]): Int =
+  private def encodeModifiers(modifiers: List[SemanticTokenModifier]): Int =
     modifiers.foldLeft(0)((bitset, modifier) => bitset | (1 << modifier.toInt))
 }
