@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp._
-import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Constraint, Def, Expression, MatchRule, Pattern, Root, SelectChannelRule}
+import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Constraint, Def, Expression, FormalParam, MatchRule, Pattern, Root, SelectChannelRule}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 
@@ -38,8 +38,9 @@ object SemanticTokensProvider {
     ("status" -> "success") ~ ("result" -> result)
   }
 
+  // TODO: DOC
   private def visitDef(defn0: Def): Iterator[SemanticToken] = {
-    visitExp(defn0.impl.exp)
+    visitFormalParams(defn0.spec.fparams) ++ visitExp(defn0.impl.exp)
   }
 
   /**
@@ -122,7 +123,7 @@ object SemanticTokensProvider {
       val m = visitExp(matchExp)
       rules.foldLeft(m) {
         case (macc, MatchRule(pat, guard, exp)) =>
-          macc ++ visitExp(guard) ++ visitExp(exp)
+          macc ++ visitPat(pat) ++ visitExp(guard) ++ visitExp(exp)
       }
 
     case Expression.Choose(exps, rules, tpe, eff, loc) =>
@@ -306,16 +307,23 @@ object SemanticTokensProvider {
 
     case Pattern.Str(_, _) => Iterator.empty
 
-    case Pattern.Tag(sym, tag, pat, tpe, loc) => ??? // TODO
+    case Pattern.Tag(_, tag, _, _, _) =>
+      val t = SemanticToken(SemanticTokenType.EnumMember, Nil, tag.loc)
+      Iterator(t)
 
     case Pattern.Tuple(elms, _, _) => elms.flatMap(visitPat).iterator
 
     case Pattern.Array(elms, _, _) => elms.flatMap(visitPat).iterator
 
-    case Pattern.ArrayTailSpread(elms, sym, tpe, loc) => ???
+    case Pattern.ArrayTailSpread(elms, _, _, _) => elms.flatMap(visitPat).iterator
 
-    case Pattern.ArrayHeadSpread(sym, elms, tpe, loc) => ???
+    case Pattern.ArrayHeadSpread(_, elms, _, _) => elms.flatMap(visitPat).iterator
   }
+
+
+  // TODO: DOC
+  private def visitFormalParams(fparams: List[FormalParam]): Iterator[SemanticToken] = ???
+
 
   private def visitConstraint(c: Constraint): Iterator[SemanticToken] = Iterator.empty // TODO
 
