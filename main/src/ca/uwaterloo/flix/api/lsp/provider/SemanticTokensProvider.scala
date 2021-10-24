@@ -36,13 +36,25 @@ object SemanticTokensProvider {
     val st3 = root.classes.filter(_._1.loc.source.name == uri).flatMap {
       case (_, clazz) => visitClass(clazz)
     }.toList
+    val st4: List[SemanticToken] = root.instances.filter(_._1.loc.source.name == uri).flatMap {
+      case (_, instances) => instances.flatMap(visitInstance)
+    }.toList
+
+    // TODO: sigs
+
     val st1 = root.defs.filter(_._1.loc.source.name == uri).flatMap {
       case (_, defn) => visitDef(defn)
     }.toList
     val st2 = root.enums.filter(_._1.loc.source.name == uri).flatMap {
       case (_, enum) => visitEnum(enum)
     }.toList
-    val encoding = encodeSemanticTokens(st3 ++ st1 ++ st2)
+
+    val typeAliasTokens = root.typealiases.filter(_._1.loc.source.name == uri).flatMap {
+      case (_, typeAlias) => visitTypeAlias(typeAlias)
+    }.toList
+
+    val encoding = encodeSemanticTokens(st3 ++ st4 ++ st1 ++ st2 ++ typeAliasTokens)
+
     val result = ("data" -> encoding)
     ("status" -> "success") ~ ("result" -> result)
   }
@@ -55,6 +67,16 @@ object SemanticTokensProvider {
       // TODO: Superclasses, signatures and laws.
       val t = SemanticToken(SemanticTokenType.Class, Nil, sym.loc)
       Iterator(t) ++ visitTypeParam(tparam)
+  }
+
+  /**
+    * Returns all semantic tokens in the given instance `inst0`.
+    */
+  private def visitInstance(inst0: TypedAst.Instance): Iterator[SemanticToken] = inst0 match {
+    case TypedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, ns, loc) =>
+      // TODO: sym, tpe, tconstr, defns
+
+      Iterator.empty
   }
 
   /**
@@ -89,6 +111,14 @@ object SemanticTokensProvider {
       visitFormalParams(defn0.spec.fparams) ++
       visitType(defn0.spec.retTpe) ++
       visitExp(defn0.impl.exp)
+  }
+
+
+  // TODO: DOC
+  private def visitTypeAlias(typeAlias0: TypedAst.TypeAlias): Iterator[SemanticToken] = typeAlias0 match {
+    case TypedAst.TypeAlias(doc, mod, sym, tparams, tpe, loc) =>
+      // TODO:
+      Iterator.empty
   }
 
   /**
