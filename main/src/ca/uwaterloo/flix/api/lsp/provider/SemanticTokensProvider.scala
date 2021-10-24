@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp._
-import ca.uwaterloo.flix.language.ast.Type
+import ca.uwaterloo.flix.language.ast.{Type, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Constraint, Def, Expression, FormalParam, MatchRule, Pattern, Root, SelectChannelRule}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.json4s.JsonAST.JObject
@@ -33,16 +33,33 @@ object SemanticTokensProvider {
   def provideSemanticTokens(uri: String)(implicit index: Index, root: Root): JObject = {
     // TODO: Run check/deal with null root.
     val entities = index.query(uri)
-    val semanticTokens = root.defs.filter(_._1.loc.source.name == uri).flatMap {
+    val st1 = root.defs.filter(_._1.loc.source.name == uri).flatMap {
       case (_, defn) => visitDef(defn)
     }.toList
-    val encoding = encodeSemanticTokens(semanticTokens)
+    val st2 = root.enums.filter(_._1.loc.source.name == uri).flatMap {
+      case (_, enum) => visitEnum(enum)
+    }.toList
+    val encoding = encodeSemanticTokens(st1 ++ st2)
     val result = ("data" -> encoding)
     ("status" -> "success") ~ ("result" -> result)
   }
 
   // TODO: DOC
-  private def visitDef(defn0: Def): Iterator[SemanticToken] = {
+  private def visitEnum(enum0: TypedAst.Enum): Iterator[SemanticToken] = {
+    enum0.cases.flatMap {
+      case (_, caze) => visitCase(caze)
+    }.iterator
+  }
+
+  // TODO: DOC
+  private def visitCase(case0: TypedAst.Case): Iterator[SemanticToken] = case0 match {
+    case TypedAst.Case(_, tag, _, _, _) =>
+      val t = SemanticToken(SemanticTokenType.EnumMember, Nil, tag.loc)
+      Iterator(t)
+  }
+
+  // TODO: DOC
+  private def visitDef(defn0: TypedAst.Def): Iterator[SemanticToken] = {
     val t = SemanticToken(SemanticTokenType.Function, Nil, defn0.sym.loc)
 
     Iterator(t) ++
