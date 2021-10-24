@@ -306,11 +306,11 @@ object SemanticTokensProvider {
 
     case Pattern.Str(_, _) => Iterator.empty
 
-    case Pattern.Tag(sym, tag, pat, tpe, loc) => ???
+    case Pattern.Tag(sym, tag, pat, tpe, loc) => ??? // TODO
 
-    case Pattern.Tuple(elms, tpe, loc) => ???
+    case Pattern.Tuple(elms, _, _) => elms.flatMap(visitPat).iterator
 
-    case Pattern.Array(elms, tpe, loc) => ???
+    case Pattern.Array(elms, _, _) => elms.flatMap(visitPat).iterator
 
     case Pattern.ArrayTailSpread(elms, sym, tpe, loc) => ???
 
