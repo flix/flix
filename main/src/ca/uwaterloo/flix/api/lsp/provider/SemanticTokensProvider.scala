@@ -78,7 +78,7 @@ object SemanticTokensProvider {
   private def visitCase(case0: TypedAst.Case): Iterator[SemanticToken] = case0 match {
     case TypedAst.Case(_, tag, _, sc, _) =>
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, tag.loc)
-      Iterator(t) /* ++ visitType(sc.base) TODO: Broken */
+      Iterator(t) /* TODO: There is a bug where the type contains source locations corresponding to the enum. ++ visitType(sc.base) */
   }
 
   // TODO: DOC
