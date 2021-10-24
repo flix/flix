@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp._
+import ca.uwaterloo.flix.language.ast.Type
 import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Constraint, Def, Expression, FormalParam, MatchRule, Pattern, Root, SelectChannelRule}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
@@ -47,7 +48,9 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given expression `exp0`.
     */
   private def visitExp(exp0: Expression): Iterator[SemanticToken] = exp0 match {
-    case Expression.Wild(_, _) => Iterator.empty
+    case Expression.Wild(_, loc) =>
+      val t = SemanticToken(SemanticTokenType.Variable, Nil, loc)
+      Iterator(t)
 
     case Expression.Var(_, _, loc) =>
       val t = SemanticToken(SemanticTokenType.Variable, Nil, loc)
@@ -61,45 +64,43 @@ object SemanticTokensProvider {
       val t = SemanticToken(SemanticTokenType.Method, Nil, loc)
       Iterator(t)
 
-    case Expression.Hole(sym, tpe, loc) => Iterator.empty
+    case Expression.Hole(_, _, _) => Iterator.empty
 
-    case Expression.Unit(loc) => Iterator.empty
+    case Expression.Unit(loc) =>
+      val t = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)
+      Iterator(t)
 
-    case Expression.Null(tpe, loc) => Iterator.empty
+    case Expression.Null(_, _) => Iterator.empty
 
-    case Expression.True(loc) => Iterator.empty
+    case Expression.True(_) => Iterator.empty
 
-    case Expression.False(loc) => Iterator.empty
+    case Expression.False(_) => Iterator.empty
 
-    case Expression.Char(lit, loc) => Iterator.empty
+    case Expression.Char(_, _) => Iterator.empty
 
-    case Expression.Float32(lit, loc) => Iterator.empty
+    case Expression.Float32(_, _) => Iterator.empty
 
-    case Expression.Float64(lit, loc) => Iterator.empty
+    case Expression.Float64(_, _) => Iterator.empty
 
-    case Expression.Int8(lit, loc) => Iterator.empty
+    case Expression.Int8(_, _) => Iterator.empty
 
-    case Expression.Int16(lit, loc) => Iterator.empty
+    case Expression.Int16(_, _) => Iterator.empty
 
-    case Expression.Int32(lit, loc) => Iterator.empty
+    case Expression.Int32(_, _) => Iterator.empty
 
-    case Expression.Int64(lit, loc) => Iterator.empty
+    case Expression.Int64(_, _) => Iterator.empty
 
-    case Expression.BigInt(lit, loc) => Iterator.empty
+    case Expression.BigInt(_, _) => Iterator.empty
 
-    case Expression.Str(lit, loc) => Iterator.empty
+    case Expression.Str(_, _) => Iterator.empty
 
-    case Expression.Default(tpe, loc) => Iterator.empty
+    case Expression.Default(_, _) => Iterator.empty
 
-    case Expression.Lambda(fparam, exp, tpe, loc) =>
-      val env1 = Map(fparam.sym -> fparam.tpe)
-      visitExp(exp)
+    case Expression.Lambda(fparam, exp, _, _) =>
+      visitFormalParam(fparam) ++ visitExp(exp)
 
-    case Expression.Apply(exp, exps, tpe, eff, loc) =>
-      val init = visitExp(exp)
-      exps.foldLeft(init) {
-        case (acc, exp) => acc ++ visitExp(exp)
-      }
+    case Expression.Apply(exp, exps, _, _, _) =>
+      visitExp(exp) ++ visitExps(exps)
 
     case Expression.Unary(sop, exp, tpe, eff, loc) =>
       visitExp(exp)
@@ -130,7 +131,8 @@ object SemanticTokensProvider {
       Iterator.empty // TODO
 
     case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
-      visitExp(exp)
+      val t = SemanticToken(SemanticTokenType.EnumMember, Nil, tag.loc)
+      Iterator(t) ++ visitExp(exp)
 
     case Expression.Tuple(elms, tpe, eff, loc) =>
       elms.foldLeft(Iterator.empty[SemanticToken]) {
@@ -269,6 +271,10 @@ object SemanticTokensProvider {
 
   }
 
+  // TODO: DOC
+  private def visitExps(exps: List[Expression]): Iterator[SemanticToken] =
+    exps.flatMap(visitExp).iterator
+
   /**
     * Returns all semantic tokens in the given pattern `pat0`.
     */
@@ -318,6 +324,22 @@ object SemanticTokensProvider {
     case Pattern.ArrayTailSpread(elms, _, _, _) => elms.flatMap(visitPat).iterator
 
     case Pattern.ArrayHeadSpread(_, elms, _, _) => elms.flatMap(visitPat).iterator
+  }
+
+  // TODO: DOC
+  private def visitType(tpe: Type): Iterator[SemanticToken] = tpe match {
+    case Type.KindedVar(id, kind, loc, rigidity, text) => Iterator.empty // TODO
+
+    case Type.UnkindedVar(id, loc, rigidity, text) => Iterator.empty // TODO
+
+    case Type.Ascribe(tpe, kind, loc) => Iterator.empty // TODO
+
+    case Type.Cst(tc, loc) => Iterator.empty // TODO
+
+    case Type.Apply(tpe1, tpe2, loc) => Iterator.empty // TODO
+
+    case Type.Alias(sym, args, tpe, loc) => Iterator.empty // TODO
+
   }
 
   // TODO: DOC
