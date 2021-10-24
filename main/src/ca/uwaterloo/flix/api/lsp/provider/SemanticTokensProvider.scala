@@ -31,6 +31,7 @@ object SemanticTokensProvider {
     * Processes a request for (full) semantic tokens.
     */
   def provideSemanticTokens(uri: String)(implicit index: Index, root: Root): JObject = {
+    // TODO: Run check/deal with null root.
     val entities = index.query(uri)
     val semanticTokens = root.defs.filter(_._1.loc.source.name == uri).flatMap {
       case (_, defn) => visitDef(defn)
@@ -105,6 +106,7 @@ object SemanticTokensProvider {
       val env1 = Map(fparam.sym -> fparam.tpe)
       visitExp(exp)
 
+    // TODO
     case Expression.Apply(exp, exps, tpe, eff, loc) =>
       val init = visitExp(exp)
       exps.foldLeft(init) {
@@ -165,10 +167,10 @@ object SemanticTokensProvider {
     case Expression.ArrayLit(exps, _, _, _) =>
       visitExps(exps)
 
-    // TODO: From here
+    case Expression.ArrayNew(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.ArrayNew(elm, len, tpe, eff, loc) =>
-      visitExp(elm)
+    // TODO: From here
 
     case Expression.ArrayLoad(base, index, tpe, eff, loc) =>
       visitExp(base) ++ visitExp(index)
@@ -247,44 +249,45 @@ object SemanticTokensProvider {
       }
 
       val d = default.map(visitExp).getOrElse(Iterator.empty)
-
       rs ++ d
 
-    case Expression.Spawn(exp, tpe, eff, loc) => visitExp(exp)
+    case Expression.Spawn(exp, _, _, _) => visitExp(exp)
 
-    case Expression.Lazy(exp, tpe, loc) => visitExp(exp)
+    case Expression.Lazy(exp, _, _) => visitExp(exp)
 
-    case Expression.Force(exp, tpe, eff, loc) => visitExp(exp)
+    case Expression.Force(exp, _, _, _) => visitExp(exp)
 
-    case Expression.FixpointConstraintSet(cs, stf, tpe, loc) =>
+    case Expression.FixpointConstraintSet(cs, _, _, _) =>
       cs.foldLeft(Iterator.empty[SemanticToken]) {
         case (macc, c) => macc ++ visitConstraint(c)
       }
 
-    case Expression.FixpointMerge(exp1, exp2, stf, tpe, eff, loc) =>
+    case Expression.FixpointMerge(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.FixpointSolve(exp, stf, tpe, eff, loc) =>
+    case Expression.FixpointSolve(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.FixpointFilter(_, exp, tpe, eff, loc) =>
+    case Expression.FixpointFilter(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.FixpointProjectIn(exp, _, tpe, eff, loc) =>
+    case Expression.FixpointProjectIn(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.FixpointProjectOut(_, exp, tpe, eff, loc) =>
+    case Expression.FixpointProjectOut(_, exp, _, _, _) =>
       visitExp(exp)
 
     case Expression.Reify(_, _, _, _) => Iterator.empty
 
-    case Expression.ReifyType(_, _, _, _, _) => Iterator.empty
+    case Expression.ReifyType(t, _, _, _, _) => visitType(t)
 
   }
 
-  // TODO: DOC
-  private def visitExps(exps: List[Expression]): Iterator[SemanticToken] =
-    exps.flatMap(visitExp).iterator
+  /**
+    * Returns all semantic tokens in the given expressions `exps0`.
+    */
+  private def visitExps(exps0: List[Expression]): Iterator[SemanticToken] =
+    exps0.flatMap(visitExp).iterator
 
   /**
     * Returns all semantic tokens in the given pattern `pat0`.
@@ -328,23 +331,29 @@ object SemanticTokensProvider {
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, tag.loc)
       Iterator(t)
 
-    case Pattern.Tuple(elms, _, _) => elms.flatMap(visitPat).iterator
+    case Pattern.Tuple(pats, _, _) => pats.flatMap(visitPat).iterator
 
-    case Pattern.Array(elms, _, _) => elms.flatMap(visitPat).iterator
+    case Pattern.Array(pats, _, _) => pats.flatMap(visitPat).iterator
 
-    case Pattern.ArrayTailSpread(elms, _, _, _) => elms.flatMap(visitPat).iterator
+    case Pattern.ArrayTailSpread(pats, sym, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Variable, Nil, sym.loc)
+      Iterator(t) ++ pats.flatMap(visitPat).iterator
 
-    case Pattern.ArrayHeadSpread(_, elms, _, _) => elms.flatMap(visitPat).iterator
+    case Pattern.ArrayHeadSpread(sym, pats, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Variable, Nil, sym.loc)
+      Iterator(t) ++ pats.flatMap(visitPat).iterator
   }
 
-  // TODO: DOC
-  private def visitType(tpe: Type): Iterator[SemanticToken] = tpe match {
+  /**
+    * Returns all semantic tokens in the given type `tpe0`.
+    */
+  private def visitType(tpe0: Type): Iterator[SemanticToken] = tpe0 match {
     case Type.KindedVar(_, _, loc, _, _) =>
       val t = SemanticToken(SemanticTokenType.TypeParameter, Nil, loc)
       Iterator(t)
 
     case Type.Ascribe(tpe, _, _) =>
-      visitType(tpe) // TODO: What about the kind?
+      visitType(tpe)
 
     case Type.Cst(_, loc) =>
       val t = SemanticToken(SemanticTokenType.Type, Nil, loc)
@@ -353,27 +362,34 @@ object SemanticTokensProvider {
     case Type.Apply(tpe1, tpe2, _) =>
       visitType(tpe1) ++ visitType(tpe2)
 
-    case Type.Alias(sym, args, tpe, loc) => Iterator.empty // TODO
+    case Type.Alias(_, args, _, _) =>
+      args.flatMap(visitType).iterator
 
     case Type.UnkindedVar(_, _, _, _) =>
-      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+      throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
 
   }
 
-  // TODO: DOC
-  private def visitFormalParams(fparams: List[FormalParam]): Iterator[SemanticToken] = {
-    fparams.flatMap(visitFormalParam).iterator
+  /**
+    * Returns all semantic tokens in the given formal parameters `fparams0`.
+    */
+  private def visitFormalParams(fparams0: List[FormalParam]): Iterator[SemanticToken] = {
+    fparams0.flatMap(visitFormalParam).iterator
   }
 
-  // TODO: DOC
-  private def visitFormalParam(fparam: FormalParam): Iterator[SemanticToken] = fparam match {
+  /**
+    * Returns all semantic tokens in the given formal parameter `fparam0`.
+    */
+  private def visitFormalParam(fparam0: FormalParam): Iterator[SemanticToken] = fparam0 match {
     case FormalParam(sym, _, tpe, _) =>
       val t = SemanticToken(SemanticTokenType.Parameter, Nil, sym.loc)
       Iterator(t) ++ visitType(tpe)
   }
 
+  // TODO: DOC
   private def visitConstraint(c: Constraint): Iterator[SemanticToken] = Iterator.empty // TODO
 
+  // TODO: DOC
   // Inspired by https://github.com/microsoft/vscode-languageserver-node/blob/f425af9de46a0187adb78ec8a46b9b2ce80c5412/server/src/sematicTokens.proposed.ts#L45
   private def encodeSemanticTokens(tokens: Iterable[SemanticToken]): List[Int] = {
     val encoding = new ArrayBuffer[Int](initialSize = 5 * tokens.size)
