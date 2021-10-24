@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp._
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypedAst}
-import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Constraint, Def, Expression, FormalParam, MatchRule, Pattern, Root, SelectChannelRule, TypeParam}
+import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Constraint, Expression, FormalParam, MatchRule, Pattern, Root, SelectChannelRule, TypeParam}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
@@ -31,18 +31,23 @@ object SemanticTokensProvider {
     * Processes a request for (full) semantic tokens.
     */
   def provideSemanticTokens(uri: String)(implicit index: Index, root: Root): JObject = {
-    // TODO: Run check/deal with null root.
-    val entities = index.query(uri)
+    // TODO: Replace by a call to check?
+    if (root == null) {
+      return ("status" -> "success") ~ ("result" -> ("data" -> Nil))
+    }
 
-    val st3 = root.classes.filter(_._1.loc.source.name == uri).flatMap {
-      case (_, clazz) => visitClass(clazz)
-    }.toList
+    //
+    // Construct an iterator for semantic tokens from classes.
+    //
+    val classTokens = root.classes.values.flatMap {
+      case decl if include(uri, decl.loc) => visitClass(decl)
+      case _ => Nil
+    }
 
     val st4: List[SemanticToken] = root.instances.filter(_._1.loc.source.name == uri).flatMap {
       case (_, instances) => instances.flatMap(visitInstance)
     }.toList
 
-    // TODO: sigs
 
     //
     // Construct an iterator for semantic tokens from defs.
@@ -50,7 +55,15 @@ object SemanticTokensProvider {
     val defnTokens = root.defs.values.flatMap {
       case decl if include(uri, decl.sym.loc) => visitDef(decl)
       case _ => Nil
-    }.toList
+    }
+
+    //
+    // Construct an iterator for semantic tokens from sigs.
+    //
+    val sigsTokens = root.sigs.values.flatMap {
+      case decl if include(uri, decl.sym.loc) => visitSig(decl)
+      case _ => Nil
+    }
 
     //
     // Construct an iterator for semantic tokens from enums.
@@ -71,7 +84,7 @@ object SemanticTokensProvider {
     //
     // Encode all the semantic tokens as a list of integers.
     //
-    val encodedTokens = encodeSemanticTokens(st3 ++ st4 ++ defnTokens ++ enumTokens ++ typeAliasTokens)
+    val encodedTokens = encodeSemanticTokens((classTokens ++ st4 ++ defnTokens ++ enumTokens ++ typeAliasTokens).toList)
 
     //
     // Build the JSON result.
@@ -137,6 +150,23 @@ object SemanticTokensProvider {
   }
 
   /**
+    * Returns all semantic tokens in the given signature `sig0`.
+    */
+  private def visitSig(sig0: TypedAst.Sig): Iterator[SemanticToken] = sig0 match {
+    case TypedAst.Sig(sym, spec, impl) => impl match {
+      case None =>
+        // No implementation. Just signature.
+        val t = SemanticToken(SemanticTokenType.Function, Nil, sig0.sym.loc)
+        Iterator(t) ++ visitFormalParams(sig0.spec.fparams) ++ visitType(sig0.spec.retTpe)
+
+      case Some(i) =>
+        // With implementation.
+        val t = SemanticToken(SemanticTokenType.Function, Nil, sig0.sym.loc)
+        Iterator(t) ++ visitFormalParams(sig0.spec.fparams) ++ visitType(sig0.spec.retTpe) ++ visitExp(i.exp)
+    }
+  }
+
+  /**
     * Returns all semantic tokens in the given type alias `typeAlias0`.
     */
   private def visitTypeAlias(typeAlias0: TypedAst.TypeAlias): Iterator[SemanticToken] = typeAlias0 match {
@@ -151,19 +181,19 @@ object SemanticTokensProvider {
   private def visitExp(exp0: Expression): Iterator[SemanticToken] = exp0 match {
     case Expression.Wild(_, _) => Iterator.empty
 
-    case Expression.Var(_, _, loc) =>
-      // TODO: Add special support for operators.
-      val t = SemanticToken(SemanticTokenType.Variable, Nil, loc)
+    case Expression.Var(sym, _, loc) =>
+      val o = if (isOperator(sym.text)) SemanticTokenType.Operator else SemanticTokenType.Method
+      val t = SemanticToken(o, Nil, loc)
       Iterator(t)
 
-    case Expression.Def(_, _, loc) =>
-      // TODO: Add special support for operators.
-      val t = SemanticToken(SemanticTokenType.Function, Nil, loc)
+    case Expression.Def(sym, _, loc) =>
+      val o = if (isOperator(sym.name)) SemanticTokenType.Operator else SemanticTokenType.Method
+      val t = SemanticToken(o, Nil, loc)
       Iterator(t)
 
-    case Expression.Sig(_, _, loc) =>
-      // TODO: Add special support for operators.
-      val t = SemanticToken(SemanticTokenType.Method, Nil, loc)
+    case Expression.Sig(sym, _, loc) =>
+      val o = if (isOperator(sym.name)) SemanticTokenType.Operator else SemanticTokenType.Method
+      val t = SemanticToken(o, Nil, loc)
       Iterator(t)
 
     case Expression.Hole(_, _, _) => Iterator.empty
@@ -505,6 +535,11 @@ object SemanticTokensProvider {
 
   // TODO: DOC
   private def visitConstraint(c: Constraint): Iterator[SemanticToken] = Iterator.empty // TODO
+
+  /**
+    * Returns `true` if the given string `s` contains non-letter symbols.
+    */
+  private def isOperator(s: String): Boolean = s.forall(c => !Character.isLetter(c))
 
   // TODO: DOC
   // Inspired by https://github.com/microsoft/vscode-languageserver-node/blob/f425af9de46a0187adb78ec8a46b9b2ce80c5412/server/src/sematicTokens.proposed.ts#L45
