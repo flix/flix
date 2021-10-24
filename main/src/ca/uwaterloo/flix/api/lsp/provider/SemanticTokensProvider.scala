@@ -251,7 +251,7 @@ object SemanticTokensProvider {
       val d = default.map(visitExp).getOrElse(Iterator.empty)
       rs ++ d
 
-      // TODO> to here
+    // TODO> to here
 
     case Expression.Spawn(exp, _, _, _) => visitExp(exp)
 
@@ -329,9 +329,9 @@ object SemanticTokensProvider {
 
     case Pattern.Str(_, _) => Iterator.empty
 
-    case Pattern.Tag(_, tag, _, _, _) =>
+    case Pattern.Tag(_, tag, pat, _, _) =>
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, tag.loc)
-      Iterator(t)
+      Iterator(t) ++ visitPat(pat)
 
     case Pattern.Tuple(pats, _, _) => pats.flatMap(visitPat).iterator
 
