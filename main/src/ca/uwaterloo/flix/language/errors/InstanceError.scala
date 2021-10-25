@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme, FormatType}
 import ca.uwaterloo.flix.util.vt.VirtualString._
@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
 /**
   * A common super-type for instance errors.
   */
-sealed trait InstanceError extends CompilationError {
+sealed trait InstanceError extends CompilationMessage {
   def kind: String = "Instance Error"
 }
 
@@ -48,11 +48,13 @@ object InstanceError {
       vt << Code(loc1, "the first instance was declared here.") << NewLine
       vt << NewLine
       vt << Code(loc2, "the second instance was declared here.") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " Remove or change the type of one of the instances." << NewLine
     }
 
     def loc: SourceLocation = loc1
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << " Remove or change the type of one of the instances." << NewLine
+    }
   }
 
   /**
@@ -76,8 +78,10 @@ object InstanceError {
       vt << NewLine
       vt << s"Expected scheme: ${FormatScheme.formatScheme(expected)}" << NewLine
       vt << s"Actual scheme:   ${FormatScheme.formatScheme(actual)}" << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " Modify the definition to match the signature."
+    }
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << " Modify the definition to match the signature." << NewLine
     }
   }
 
@@ -97,8 +101,10 @@ object InstanceError {
       vt << s"Missing implementation of '" << Red(sig.name) << "' required by class '" << Red(sig.clazz.name) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, s"missing implementation") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " Add an implementation of the signature to the instance."
+    }
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << " Add an implementation of the signature to the instance." << NewLine
     }
   }
 
@@ -117,7 +123,10 @@ object InstanceError {
       vt << NewLine
       vt << Code(loc, s"The signature ${defn.name} is not present in the class.")
       vt << NewLine
-      vt << Underline("Tip:") << " Remove this definition from the instance."
+    }
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << " Remove this definition from the instance." << NewLine
     }
   }
 
@@ -138,7 +147,11 @@ object InstanceError {
       vt << NewLine
       vt << Code(loc, s"The type variable '${FormatType.formatType(tvar)}' occurs more than once.")
       vt << NewLine
-      vt << Underline("Tip:") << " Rename one of the instances of the type variable."
+
+    }
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << " Rename one of the instances of the type variable." << NewLine
     }
   }
 
@@ -159,7 +172,34 @@ object InstanceError {
       vt << NewLine
       vt << Code(loc, s"complex instance type")
       vt << NewLine
-      vt << Underline("Tip:") << " An instance type must be a type constructor applied to zero or more distinct type variables."
+    }
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << " An instance type must be a type constructor applied to zero or more distinct type variables." << NewLine
+    }
+  }
+
+  /**
+    * Error indicating a type alias in an instance type.
+    *
+    * @param alias the type alias.
+    * @param clazz the class symbol.
+    * @param loc   the location where the error occurred.
+    */
+  case class IllegalTypeAliasInstance(alias: Symbol.TypeAliasSym, clazz: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
+    override def summary: String = "Type alias in instance type."
+
+    override def message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Illegal use of type alias '" << Red(alias.name) << "' in instance declaration for '" << Red(clazz.name) << "'."
+      vt << NewLine
+      vt << Code(loc, s"illegal use of type alias")
+      vt << NewLine
+    }
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << " A type class instance cannot use a type alias. Use the full type." << NewLine
     }
   }
 
@@ -180,7 +220,10 @@ object InstanceError {
       vt << NewLine
       vt << Code(loc, s"orphan instance")
       vt << NewLine
-      vt << Underline("Tip:") << " An instance must be declared in the class's namespace or in the type's namespace."
+    }
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << " An instance must be declared in the class's namespace or in the type's namespace." << NewLine
     }
   }
 
@@ -205,7 +248,10 @@ object InstanceError {
       vt << NewLine
       vt << Code(loc, s"missing super class instance")
       vt << NewLine
-      vt << Underline("Tip:") << s" Add an instance of '${superClass.name}' for '${FormatType.formatType(tpe)}'."
+    }
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << s" Add an instance of '${superClass.name}' for '${FormatType.formatType(tpe)}'." << NewLine
     }
   }
 
@@ -227,7 +273,10 @@ object InstanceError {
       vt << NewLine
       vt << Code(loc, s"unlawful signature")
       vt << NewLine
-      vt << Underline("Tip:") << s" Create a law for '$sym' or mark the class as unlawful."
+    }
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << s" Create a law for '$sym' or mark the class as unlawful." << NewLine
     }
   }
 
@@ -249,7 +298,10 @@ object InstanceError {
       vt << NewLine
       vt << Code(loc, s"illegal override")
       vt << NewLine
-      vt << Underline("Tip:") << s" Remove the modifier." << NewLine
+    }
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << s" Remove the modifier." << NewLine
     }
   }
 
@@ -269,7 +321,10 @@ object InstanceError {
       vt << NewLine
       vt << Code(loc, s"unmarked override")
       vt << NewLine
-      vt << Underline("Tip:") << s" Either add the `override` modifier or remove the definition." << NewLine
+    }
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << s" Either add the `override` modifier or remove the definition." << NewLine
     }
   }
 

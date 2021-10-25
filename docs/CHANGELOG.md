@@ -2,6 +2,16 @@
 
 HEAD:
 
+Version 0.24.0:
+- Added support for schema rows (thanks Matthew!)
+- Added support for labelled records (thanks Matthew!)
+- Added `rem` and `mod` keywords (thanks Matthew!)
+- Added `MutDeque` (thanks Jakob!)
+- Added extra Datalog examples (thanks Jonathan!)
+- Improvements to monomorphization (thanks Magnus!)
+- Updated String signatures (thanks Nina!)
+- Fixed a performance bug in the parser (thanks Magnus!)
+
 Version 0.23.0:
 - Added support for go to implementation (thanks Nicola!)
 - Added code hint for complex effects (thanks Magnus!)

@@ -155,7 +155,7 @@ namespace TestMutList {
     def count02(): Bool & Impure = MutList.count(x -> x >= 2, MutList.range(0, 4)) == 2
 
     @test
-    def count03(): Bool & Impure = MutList.count(x -> x % 2 == 0, MutList.range(0, 10)) == 5
+    def count03(): Bool & Impure = MutList.count(x -> x rem 2 == 0, MutList.range(0, 10)) == 5
 
     @test
     def count04(): Bool & Impure = MutList.count(x -> x == 11, MutList.range(0, 21)) == 1
@@ -292,7 +292,7 @@ namespace TestMutList {
     def findLeft03(): Bool & Impure = MutList.findLeft(x -> x < 3, MutList.range(3, 11)) == None
 
     @test
-    def findLeft04(): Bool & Impure = MutList.findLeft(x -> x % 2 == 1, MutList.range(3, 11)) == Some(3)
+    def findLeft04(): Bool & Impure = MutList.findLeft(x -> x rem 2 == 1, MutList.range(3, 11)) == Some(3)
 
     /////////////////////////////////////////////////////////////////////////////
     // findRight                                                               //
@@ -305,7 +305,7 @@ namespace TestMutList {
     def findRight02(): Bool & Impure = MutList.findRight(x -> x == 10, MutList.range(9, 10)) == None
 
     @test
-    def findRight03(): Bool & Impure = MutList.findRight(x -> x % 2 == 0, MutList.range(3, 4)) == None
+    def findRight03(): Bool & Impure = MutList.findRight(x -> x rem 2 == 0, MutList.range(3, 4)) == None
 
     @test
     def findRight04(): Bool & Impure = MutList.findRight(x -> x < 5, MutList.range(3, 11)) == Some(4)
@@ -861,13 +861,13 @@ namespace TestMutList {
     @test
     def retain!01(): Bool & Impure =
         let v = MutList.range(0, 10);
-        MutList.retain!(x -> x % 2 == 0, v);
+        MutList.retain!(x -> x rem 2 == 0, v);
         MutList.sameElements(List.toMutList(0 :: 2 :: 4 :: 6 :: 8 :: Nil), v)
 
     @test
     def retain!02(): Bool & Impure =
         let v = MutList.range(0, 10);
-        MutList.retain!(x -> x % 2 == 1, v);
+        MutList.retain!(x -> x rem 2 == 1, v);
         MutList.sameElements(List.toMutList(1 :: 3 :: 5 :: 7 :: 9 :: Nil), v)
 
     @test
@@ -1110,7 +1110,7 @@ namespace TestMutList {
     def foreach02(): Bool & Impure =
         let v = MutList.range(0, 5);
         let sb = StringBuilder.new();
-        let f = x -> if (x % 2 == 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
+        let f = x -> if (x rem 2 == 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
         MutList.foreach(f, v);
         StringBuilder.toString(sb) == "TFTFT"
 
@@ -1138,14 +1138,14 @@ namespace TestMutList {
     def foreachWithIndex01(): Bool & Impure =
         let v1 = MutList.range(0, 100);
         let v2 = MutList.new();
-        MutList.foreachWithIndex((x, i) -> if (x % 2 == 0 and i < 10) MutList.push!(x, v2) else (), v1);
+        MutList.foreachWithIndex((x, i) -> if (x rem 2 == 0 and i < 10) MutList.push!(x, v2) else (), v1);
         MutList.sameElements(v2, List.toMutList(0 :: 2 :: 4 :: 6 :: 8 :: Nil))
 
     @test
     def foreachWithIndex02(): Bool & Impure =
         let v = MutList.range(1, 4);
         let sb = StringBuilder.new();
-        let f = (x, i) -> if (x % 2 == 1 and i == 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
+        let f = (x, i) -> if (x rem 2 == 1 and i == 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
         MutList.foreachWithIndex(f, v);
         StringBuilder.toString(sb) == "TFF"
 
@@ -1153,7 +1153,7 @@ namespace TestMutList {
     def foreachWithIndex03(): Bool & Impure =
         let v = MutList.range(0, 5);
         let sb = StringBuilder.new();
-        let f = (x, _) -> if (x % 2 == 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
+        let f = (x, _) -> if (x rem 2 == 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
         MutList.foreachWithIndex(f, v);
         StringBuilder.toString(sb) == "TFTFT"
 
@@ -1256,7 +1256,7 @@ namespace TestMutList {
     @test
     def minimumBy05(): Bool & Impure =
         let v = MutList.range(9, 19);
-        let cmp = (x, y) -> if (x < y and x % 2 == 0) LessThan else GreaterThan;
+        let cmp = (x, y) -> if (x < y and x rem 2 == 0) LessThan else GreaterThan;
         MutList.minimumBy(cmp, v) == Some(10)
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1281,7 +1281,7 @@ namespace TestMutList {
     @test
     def maximumBy05(): Bool & Impure =
         let v = MutList.range(9, 19);
-        let cmp = (x, y) -> if (x > y and x % 2 == 0) GreaterThan else LessThan;
+        let cmp = (x, y) -> if (x > y and x rem 2 == 0) GreaterThan else LessThan;
         MutList.maximumBy(cmp, v) == Some(18)
 
     /////////////////////////////////////////////////////////////////////////////

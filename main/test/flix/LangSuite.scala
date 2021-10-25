@@ -287,6 +287,7 @@ class LangSuite extends Suites(
   // Reify.
   //
   new FlixTest("Test.Exp.Reify", "main/test/flix/Test.Exp.Reify.flix"),
+  new FlixTest("Test.Exp.ReifyType", "main/test/flix/Test.Exp.ReifyType.flix"),
 
   //
   // Tag.
@@ -328,7 +329,6 @@ class LangSuite extends Suites(
     "main/test/flix/Test.Predicate.Filter.flix",
     "main/test/flix/Test.Predicate.Guard.flix",
     "main/test/flix/Test.Predicate.Nullary.flix",
-    // "main/test/flix/Test.Predicate.Union.flix" // TODO
   ), Options.TestWithLibAll),
 
   //

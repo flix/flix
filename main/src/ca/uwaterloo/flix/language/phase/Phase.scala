@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.util.Validation
 
 /**
@@ -31,13 +31,13 @@ trait Phase[I, O] {
   /**
     * Runs the phase.
     */
-  def run(input: I)(implicit flix: Flix): Validation[O, CompilationError]
+  def run(input: I)(implicit flix: Flix): Validation[O, CompilationMessage]
 
   /**
     * Returns a phase that is the result of applying `this` phase followed by `that` phase.
     */
   def |>[O2](that: Phase[O, O2]): Phase[I, O2] = new Phase[I, O2] {
-    def run(input: I)(implicit flix: Flix): Validation[O2, CompilationError] =
+    def run(input: I)(implicit flix: Flix): Validation[O2, CompilationMessage] =
       Phase.this.run(input) flatMap {
         case output => that.run(output)
       }

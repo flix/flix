@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation}
 import ca.uwaterloo.flix.language.debug.FormatKind.formatKind
 import ca.uwaterloo.flix.util.vt.VirtualString._
@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
 /**
   * A common super-type for kind errors.
   */
-sealed trait KindError extends CompilationError {
+sealed trait KindError extends CompilationMessage {
   def kind: String = "Kind Error"
 }
 
