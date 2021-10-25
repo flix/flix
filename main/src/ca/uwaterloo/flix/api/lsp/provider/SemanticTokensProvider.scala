@@ -200,12 +200,12 @@ object SemanticTokensProvider {
     case Expression.Wild(_, _) => Iterator.empty
 
     case Expression.Var(sym, _, loc) =>
-      val o = if (isOperator(sym.text)) SemanticTokenType.Operator else SemanticTokenType.Method
+      val o = if (isOperator(sym.text)) SemanticTokenType.Operator else SemanticTokenType.Variable
       val t = SemanticToken(o, Nil, loc)
       Iterator(t)
 
     case Expression.Def(sym, _, loc) =>
-      val o = if (isOperator(sym.name)) SemanticTokenType.Operator else SemanticTokenType.Method
+      val o = if (isOperator(sym.name)) SemanticTokenType.Operator else SemanticTokenType.Function
       val t = SemanticToken(o, Nil, loc)
       Iterator(t)
 
