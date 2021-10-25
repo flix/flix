@@ -44,7 +44,7 @@ object Parser extends Phase[List[Source], ParsedAst.Program] {
     }
   }
 
-  private def reduceLiteralWhitespaceChars(s: String): String =
+  private def stripLiteralWhitespaceChars(s: String): String =
     s.replaceAll("\\\\n|\\\\r|\\\\t"," ")
 
   /**
@@ -59,7 +59,7 @@ object Parser extends Phase[List[Source], ParsedAst.Program] {
         ast.toSuccess
       case scala.util.Failure(e: org.parboiled2.ParseError) =>
         val loc = SourceLocation(source, e.position.line, e.position.column, e.position.line, e.position.column, _ => "")
-        ca.uwaterloo.flix.language.errors.ParseError(reduceLiteralWhitespaceChars(parser.formatError(e)), loc).toFailure
+        ca.uwaterloo.flix.language.errors.ParseError(stripLiteralWhitespaceChars(parser.formatError(e)), loc).toFailure
       case scala.util.Failure(e) =>
         ca.uwaterloo.flix.language.errors.ParseError(e.getMessage, SourceLocation.Unknown).toFailure
     }
@@ -75,7 +75,7 @@ object Parser extends Phase[List[Source], ParsedAst.Program] {
         ast.toSuccess
       case scala.util.Failure(e: org.parboiled2.ParseError) =>
         val loc = SourceLocation(source, e.position.line, e.position.column, e.position.line, e.position.column, _ => "")
-        ca.uwaterloo.flix.language.errors.ParseError(reduceLiteralWhitespaceChars(parser.formatError(e)), loc).toFailure
+        ca.uwaterloo.flix.language.errors.ParseError(stripLiteralWhitespaceChars(parser.formatError(e)), loc).toFailure
       case scala.util.Failure(e) =>
         ca.uwaterloo.flix.language.errors.ParseError(e.getMessage, SourceLocation.Unknown).toFailure
     }
