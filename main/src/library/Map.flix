@@ -647,4 +647,10 @@ namespace Map {
         let Map(xs) = m;
         RedBlackTree.queryWith(p, f, xs)
 
+    ///
+    /// Returns an iterator over all key-value pairs in `m`.
+    ///
+    pub def toIterator(m: Map[a, b]): Iterator[(a, b)] & Impure =
+        List.toIterator(Map.query(_ -> EqualTo, m))
+
 }
