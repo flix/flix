@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Stratification}
 import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
 import ca.uwaterloo.flix.language.ast._
@@ -42,7 +42,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
   /**
     * Type checks the given AST root.
     */
-  def run(root: KindedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("Typer") {
+  def run(root: KindedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationMessage] = flix.phase("Typer") {
     val classEnv = mkClassEnv(root.classes, root.instances)
 
     val classesVal = visitClasses(root, classEnv)
@@ -50,10 +50,12 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
     val defsVal = visitDefs(root, classEnv)
     val enumsVal = visitEnums(root)
 
+    val typeAliases = visitTypeAliases(root)
+
     Validation.mapN(classesVal, instancesVal, defsVal, enumsVal) {
       case (classes, instances, defs, enums) =>
         val sigs = classes.values.flatMap(_.signatures).map(sig => sig.sym -> sig).toMap
-        TypedAst.Root(classes, instances, sigs, defs, enums, root.reachable, root.sources, classEnv)
+        TypedAst.Root(classes, instances, sigs, defs, enums, typeAliases, root.reachable, root.sources, classEnv)
     }
   }
 
@@ -314,6 +316,18 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
 
     // Sequence the results and convert them back to a map.
     Validation.sequence(result).map(_.toMap)
+  }
+
+  /**
+    * Performs typing on the type aliases in the given `root`.
+    */
+  private def visitTypeAliases(root: KindedAst.Root)(implicit flix: Flix): Map[Symbol.TypeAliasSym, TypedAst.TypeAlias] = {
+    def visitTypeAlias(alias: KindedAst.TypeAlias): (Symbol.TypeAliasSym, TypedAst.TypeAlias) = alias match {
+      case KindedAst.TypeAlias(doc, mod, sym, tparams0, tpe, loc) =>
+        val tparams = getTypeParams(tparams0)
+        sym -> TypedAst.TypeAlias(doc, mod, sym, tparams, tpe, loc)
+    }
+    root.typeAliases.values.map(visitTypeAlias).toMap
   }
 
   /**
@@ -1429,11 +1443,19 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
       case KindedAst.Expression.Reify(t, loc) =>
         liftM(Nil, Type.Bool, Type.Pure)
 
-      case KindedAst.Expression.ReifyType(t, loc) =>
-        val sym = Symbol.mkEnumSym("ReifiedType")
-        val tpe = Type.mkEnum(sym, Kind.Star, loc)
-        liftM(Nil, tpe, Type.Pure)
-
+      case KindedAst.Expression.ReifyType(t, k, loc) =>
+        k match {
+          case Kind.Bool =>
+            val sym = Symbol.mkEnumSym("ReifiedBool")
+            val tpe = Type.mkEnum(sym, Kind.Star, loc)
+            liftM(Nil, tpe, Type.Pure)
+          case Kind.Star =>
+            val sym = Symbol.mkEnumSym("ReifiedType")
+            val tpe = Type.mkEnum(sym, Kind.Star, loc)
+            liftM(Nil, tpe, Type.Pure)
+          case _ =>
+            throw InternalCompilerException(s"Unexpected kind: '$k'.")
+        }
     }
 
     /**
@@ -1843,12 +1865,12 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
         val eff = Type.Pure
         TypedAst.Expression.Reify(t, tpe, eff, loc)
 
-      case KindedAst.Expression.ReifyType(t0, loc) =>
+      case KindedAst.Expression.ReifyType(t0, k0, loc) =>
         val t = subst0(t0)
         val sym = Symbol.mkEnumSym("ReifiedType")
         val tpe = Type.mkEnum(sym, Kind.Star, loc)
         val eff = Type.Pure
-        TypedAst.Expression.ReifyType(t, tpe, eff, loc)
+        TypedAst.Expression.ReifyType(t, k0, tpe, eff, loc)
 
     }
 

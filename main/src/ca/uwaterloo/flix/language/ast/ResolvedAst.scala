@@ -28,6 +28,7 @@ object ResolvedAst {
                   defs: Map[Symbol.DefnSym, ResolvedAst.Def],
                   enums: Map[Symbol.EnumSym, ResolvedAst.Enum],
                   typealiases: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias],
+                  taOrder: List[Symbol.TypeAliasSym],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
@@ -194,7 +195,7 @@ object ResolvedAst {
 
     case class Reify(t: Type, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class ReifyType(t: Type, loc: SourceLocation) extends ResolvedAst.Expression
+    case class ReifyType(t: Type, k: Kind, loc: SourceLocation) extends ResolvedAst.Expression
 
   }
 

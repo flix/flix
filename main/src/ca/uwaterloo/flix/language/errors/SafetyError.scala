@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
@@ -8,7 +8,7 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
 /**
   * A common super-type for safety errors.
   */
-sealed trait SafetyError extends CompilationError {
+sealed trait SafetyError extends CompilationMessage {
   def kind: String = "Safety Error"
 }
 
@@ -28,6 +28,10 @@ object SafetyError {
       vt << ">> Illegal non-positively bound variable '" << Red(sym.text) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "the variable occurs in this negated atom.") << NewLine
+    }
+
+    override def explain: VirtualTerminal = {
+      val vt = new VirtualTerminal()
       if (!sym.isWild) {
         vt << NewLine
         vt << Underline("Tip:") << " Ensure that the variable occurs in at least one positive atom." << NewLine
@@ -50,7 +54,6 @@ object SafetyError {
       vt << ">> Illegal negatively bound variable '" << Red(sym.text) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "the variable occurs in this negated atom.") << NewLine
-      vt
     }
   }
 

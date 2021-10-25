@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.Polarity
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
@@ -21,7 +21,7 @@ object Safety extends Phase[Root, Root] {
   /**
     * Performs safety and well-formedness checks on the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Safety") {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("Safety") {
     //
     // Collect all errors.
     //
@@ -41,12 +41,12 @@ object Safety extends Phase[Root, Root] {
   /**
     * Performs safety and well-formedness checks on the given definition `def0`.
     */
-  private def visitDef(def0: TypedAst.Def): List[CompilationError] = visitExp(def0.impl.exp)
+  private def visitDef(def0: TypedAst.Def): List[CompilationMessage] = visitExp(def0.impl.exp)
 
   /**
     * Performs safety and well-formedness checks on the given expression `exp0`.
     */
-  private def visitExp(exp0: Expression): List[CompilationError] = exp0 match {
+  private def visitExp(exp0: Expression): List[CompilationMessage] = exp0 match {
     case Expression.Unit(_) => Nil
 
     case Expression.Null(_, _) => Nil
@@ -242,14 +242,14 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.Reify(_, _, _, _) => Nil
 
-    case Expression.ReifyType(_, _, _, _) => Nil
+    case Expression.ReifyType(_, _, _, _, _) => Nil
 
   }
 
   /**
     * Performs safety and well-formedness checks on the given constraint `c0`.
     */
-  private def checkConstraint(c0: Constraint): List[CompilationError] = {
+  private def checkConstraint(c0: Constraint): List[CompilationMessage] = {
     //
     // Compute the set of positively defined variable symbols in the constraint.
     //
@@ -272,7 +272,7 @@ object Safety extends Phase[Root, Root] {
     * Performs safety and well-formedness checks on the given body predicate `p0`
     * with the given positively defined variable symbols `posVars`.
     */
-  private def checkBodyPredicate(p0: Predicate.Body, posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym]): List[CompilationError] = p0 match {
+  private def checkBodyPredicate(p0: Predicate.Body, posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym]): List[CompilationMessage] = p0 match {
     case Predicate.Body.Atom(_, _, polarity, terms, _, loc) =>
       checkBodyAtomPredicate(polarity, terms, posVars, quantVars, loc)
 
@@ -290,7 +290,7 @@ object Safety extends Phase[Root, Root] {
   /**
     * Performs safety and well-formedness checks on an atom with the given polarity, terms, and positive variables.
     */
-  private def checkBodyAtomPredicate(polarity: Polarity, terms: List[TypedAst.Pattern], posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym], loc: SourceLocation): List[CompilationError] = {
+  private def checkBodyAtomPredicate(polarity: Polarity, terms: List[TypedAst.Pattern], posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym], loc: SourceLocation): List[CompilationMessage] = {
     polarity match {
       case Polarity.Positive => Nil
       case Polarity.Negative =>
@@ -330,7 +330,7 @@ object Safety extends Phase[Root, Root] {
     *
     * @param loc the location of the atom containing the terms.
     */
-  private def visitPats(terms: List[TypedAst.Pattern], loc: SourceLocation): List[CompilationError] = {
+  private def visitPats(terms: List[TypedAst.Pattern], loc: SourceLocation): List[CompilationMessage] = {
     terms.flatMap(visitPat(_, loc))
   }
 
@@ -340,7 +340,7 @@ object Safety extends Phase[Root, Root] {
     * @param loc the location of the atom containing the term.
     */
   @tailrec
-  private def visitPat(term: TypedAst.Pattern, loc: SourceLocation): List[CompilationError] = term match {
+  private def visitPat(term: TypedAst.Pattern, loc: SourceLocation): List[CompilationMessage] = term match {
     case Pattern.Wild(_, _) => List(IllegalNegativelyBoundWildcard(loc))
     case Pattern.Var(_, _, _) => Nil
     case Pattern.Unit(_) => Nil

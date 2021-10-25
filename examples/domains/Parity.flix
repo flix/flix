@@ -64,7 +64,7 @@ namespace Domain/Parity {
     ///
     /// Abstracts a concrete integer into the Parity domain.
     ///
-    pub def alpha(i: Int): Parity = if (i % 2 != 0) Odd else Even
+    pub def alpha(i: Int): Parity = if (i rem 2 != 0) Odd else Even
 
     ///
     /// Over-approximates integer `increment`.
@@ -149,7 +149,7 @@ namespace Domain/Parity {
     ///
     /// Over-approximates integer `modulus`.
     ///
-//    #safe2((x, y) -> x % y)
+//    #safe2((x, y) -> x rem y)
 //    #strict2 #monotone2
     pub def modulo(e1: Parity, e2: Parity): Parity = match (e1, e2) {
        case (_, Bot)        => Bot
