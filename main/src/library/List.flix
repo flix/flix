@@ -1407,7 +1407,6 @@ namespace List {
             case x :: xs => DemandList.LList(lazy DemandList.LCons(x, lazy toDemandList(xs)))
         }
 
-
     ///
     /// Returns an iterator over `l`.
     ///
