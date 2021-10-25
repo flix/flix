@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Jacob Harris Cryer Kragh
+ * Copyright 2021 Jacob Harris Cryer Kragh, Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -95,7 +95,9 @@ object SemanticTokensProvider {
     ("status" -> "success") ~ ("result" -> ("data" -> encodedTokens))
   }
 
-  // TODO: DOC
+  /**
+    * Returns `true` if the given source location `loc` is associated with the given `uri`.
+    */
   private def include(uri: String, loc: SourceLocation): Boolean = loc.source.name == uri
 
   /**
@@ -556,8 +558,11 @@ object SemanticTokensProvider {
     */
   private def isOperator(s: String): Boolean = s.forall(c => !Character.isLetter(c))
 
-  // TODO: DOC
-  // Inspired by https://github.com/microsoft/vscode-languageserver-node/blob/f425af9de46a0187adb78ec8a46b9b2ce80c5412/server/src/sematicTokens.proposed.ts#L45
+  /**
+    * Returns the given `tokens` as an encoded list of integers.
+    *
+    * Inspired by https://github.com/microsoft/vscode-languageserver-node/blob/f425af9de46a0187adb78ec8a46b9b2ce80c5412/server/src/sematicTokens.proposed.ts#L45
+    */
   private def encodeSemanticTokens(tokens: List[SemanticToken]): List[Int] = {
     val encoding = new ArrayBuffer[Int](initialSize = 5 * tokens.size)
 
