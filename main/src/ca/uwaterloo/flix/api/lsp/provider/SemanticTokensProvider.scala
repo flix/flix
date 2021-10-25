@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp._
 import ca.uwaterloo.flix.language.ast.Ast.TypeConstraint
+import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Constraint, Expression, FormalParam, MatchRule, Pattern, Root, SelectChannelRule, TypeParam}
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -550,8 +551,34 @@ object SemanticTokensProvider {
       Iterator.empty
   }
 
-  // TODO: DOC
-  private def visitConstraint(c: Constraint): Iterator[SemanticToken] = Iterator.empty // TODO
+  /**
+    * Returns all semantic tokens in the given constraint `constraint0`.
+    */
+  private def visitConstraint(constraint0: Constraint): Iterator[SemanticToken] = constraint0 match {
+    case Constraint(_, head, body, _) =>
+      visitHeadPredicate(head) ++ body.flatMap(visitBodyPredicate)
+  }
+
+  /**
+    * Returns all semantic tokens in the given head predicate `h0`.
+    */
+  private def visitHeadPredicate(h0: TypedAst.Predicate.Head): Iterator[SemanticToken] = h0 match {
+    case Head.Atom(pred, _, terms, _, _) =>
+      val t = SemanticToken(SemanticTokenType.EnumMember, Nil, pred.loc)
+      Iterator(t) ++ terms.flatMap(visitExp).iterator
+  }
+
+  /**
+    * Returns all semantic tokens in the given body predicate `b0`.
+    */
+  private def visitBodyPredicate(b0: TypedAst.Predicate.Body): Iterator[SemanticToken] = b0 match {
+    case Body.Atom(pred, _, _, terms, _, _) =>
+      val t = SemanticToken(SemanticTokenType.EnumMember, Nil, pred.loc)
+      Iterator(t) ++ terms.flatMap(visitPat).iterator
+
+    case Body.Guard(exp, _) =>
+      visitExp(exp)
+  }
 
   /**
     * Returns `true` if the given string `s` contains non-letter symbols.
