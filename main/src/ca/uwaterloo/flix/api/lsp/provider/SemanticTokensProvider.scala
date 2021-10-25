@@ -257,8 +257,7 @@ object SemanticTokensProvider {
     case Expression.Default(_, _) => Iterator.empty
 
     case Expression.Lambda(fparam, exp, _, _) =>
-      // TODO: The body expression of lambdas appear to break semantic tokens.
-      visitFormalParam(fparam) // ++      visitExp(exp)
+      visitFormalParam(fparam) ++ visitExp(exp)
 
     case Expression.Apply(exp, exps, _, _, _) =>
       exps.foldLeft(visitExp(exp)) {
