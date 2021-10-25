@@ -1512,6 +1512,30 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Argument.Unnamed(exp) => visitExp(exp)
   }
 
+  // MATT docs
+  private sealed trait OperatorResult
+  private object OperatorResult {
+    // MATT docs
+    case class Signature(name: Name.QName) extends OperatorResult
+    // MATT docs
+    case class Operator(op: SemanticOperator) extends OperatorResult
+    // MATT docs
+    case object NoOp extends OperatorResult
+  }
+
+  // MATT docs
+  private def visitUnaryOperator(o: ParsedAst.Operator)(implicit flix: Flix): OperatorResult = o match {
+    case ParsedAst.Operator(sp1, op, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      op match {
+        case "not" => OperatorResult.Operator(SemanticOperator.BoolOp.Not)
+        case "+" => OperatorResult.NoOp
+        case "-" => mkApplyFqn("Neg.neg", List(e), sp1, sp2)
+        case "~~~" => mkApplyFqn("BitwiseNot.not", List(e), sp1, sp2)
+        case _ => mkApplyFqn(op, List(e), sp1, sp2)
+      }
+  }
+
   /**
     * Translates the hex code into the corresponding character.
     * Returns an error if the code is not hexadecimal.
