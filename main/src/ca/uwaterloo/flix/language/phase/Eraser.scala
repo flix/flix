@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.ERefType._
 import ca.uwaterloo.flix.language.ast.EType._
 import ca.uwaterloo.flix.language.ast.PRefType._
@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.util.Validation._
 
 object Eraser extends Phase[FinalAst.Root, FinalAst.Root] {
 
-  def run(root: FinalAst.Root)(implicit flix: Flix): Validation[FinalAst.Root, CompilationError] = flix.phase("Eraser") {
+  def run(root: FinalAst.Root)(implicit flix: Flix): Validation[FinalAst.Root, CompilationMessage] = flix.phase("Eraser") {
     val defns = root.defs.map { case (k, v) => k -> visitDef(v) }
     val enums = root.enums.map {
       case (k, FinalAst.Enum(mod, sym, cases0, _, loc)) =>

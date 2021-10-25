@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Kind, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.ReificationError
@@ -73,13 +73,16 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       *
       * NB: Applies the substitution first, then replaces every type variable with the unit type.
       */
-    def apply(tpe0: Type): Validation[Type, CompilationError] = {
+    def apply(tpe0: Type): Validation[Type, CompilationMessage] = {
       val t = s(tpe0)
 
       transformType(t) {
         case Type.KindedVar(_, Kind.Bool, loc, _, _) =>
           // TODO: In strict mode we demand that there are no free (uninstantiated) Boolean variables.
-          // In the future we need to decide what should actually happen if such variables occur.
+          // TODO: In the future we need to decide what should actually happen if such variables occur.
+          // TODO: In particular, it seems there are two cases.
+          // TODO: A. Variables that occur inside the specialized types (those we can erase?)
+          // TODO: B. Variables that occur inside an expression but nowhere else really.
           if (flix.options.xstrictmono) {
             ReificationError.UnexpectedNonConstBool(tpe0, loc).toFailure
           } else
@@ -111,7 +114,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Performs monomorphization of the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Monomorph") {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("Monomorph") {
 
     /**
       * A function-local queue of pending (fresh symbol, function definition, and substitution)-triples.
@@ -228,19 +231,22 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     * If a specialized version of a function does not yet exists, a fresh symbol is created for it, and the
     * definition and substitution is enqueued.
     */
-  def specialize(exp0: Expression, env0: Map[Symbol.VarSym, Symbol.VarSym], subst0: StrictSubstitution)(implicit root: Root, flix: Flix, def2def: Def2Def, defQueue: DefQueue): Validation[Expression, CompilationError] = {
+  private def specialize(exp0: Expression, env0: Map[Symbol.VarSym, Symbol.VarSym], subst0: StrictSubstitution)(implicit root: Root, flix: Flix, def2def: Def2Def, defQueue: DefQueue): Validation[Expression, CompilationMessage] = {
 
     /**
       * Specializes the given expression `e0` under the environment `env0`. w.r.t. the current substitution.
       */
-    def visitExp(e0: Expression, env0: Map[Symbol.VarSym, Symbol.VarSym]): Validation[Expression, CompilationError] = e0 match {
+    def visitExp(e0: Expression, env0: Map[Symbol.VarSym, Symbol.VarSym]): Validation[Expression, CompilationMessage] = e0 match {
       case Expression.Wild(tpe, loc) => subst0(tpe).map(Expression.Wild(_, loc))
 
       case Expression.Var(sym, tpe, loc) => subst0(tpe).map(Expression.Var(env0(sym), _, loc))
 
       case Expression.Def(sym, tpe, loc) =>
         // !! This is where all the magic happens !!
-        subst0(tpe).map(t => Expression.Def(specializeDefSym(sym, t), t, loc))
+        for {
+          t <- subst0(tpe)
+          s <- specializeDefSym(sym, t)
+        } yield Expression.Def(s, t, loc)
 
       case Expression.Sig(sym, tpe, loc) =>
         subst0(tpe).map(t => Expression.Def(specializeSigSym(sym, t), t, loc))
@@ -399,8 +405,9 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
                 e <- visitExp(exp, env0 ++ env1)
               } yield ChoiceRule(p, e)
           }
-          // TODO dont subst type?
-        } yield Expression.Choose(es, rs, tpe, eff, loc)
+          t <- subst0(tpe)
+          ef <- subst0(eff)
+        } yield Expression.Choose(es, rs, t, ef, loc)
 
       case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
         for {
@@ -562,37 +569,44 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         for {
           e <- visitExp(exp, env0)
           as <- traverse(args)(visitExp(_, env0))
-          // TODO dont subst type?
-        } yield Expression.InvokeMethod(method, e, as, tpe, eff, loc)
+          t <- subst0(tpe)
+          ef <- subst0(eff)
+        } yield Expression.InvokeMethod(method, e, as, t, ef, loc)
 
       case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) =>
         for {
           as <- traverse(args)(visitExp(_, env0))
-          // TODO dont subst type?
-        } yield Expression.InvokeStaticMethod(method, as, tpe, eff, loc)
+          t <- subst0(tpe)
+          ef <- subst0(eff)
+        } yield Expression.InvokeStaticMethod(method, as, t, ef, loc)
 
       case Expression.GetField(field, exp, tpe, eff, loc) =>
         for {
           e <- visitExp(exp, env0)
-          // TODO dont subst type?
-        } yield Expression.GetField(field, e, tpe, eff, loc)
+          t <- subst0(tpe)
+          ef <- subst0(eff)
+        } yield Expression.GetField(field, e, t, ef, loc)
 
       case Expression.PutField(field, exp1, exp2, tpe, eff, loc) =>
         for {
           e1 <- visitExp(exp1, env0)
           e2 <- visitExp(exp2, env0)
-          // TODO dont subst type?
-        } yield Expression.PutField(field, e1, e2, tpe, eff, loc)
+          t <- subst0(tpe)
+          ef <- subst0(eff)
+        } yield Expression.PutField(field, e1, e2, t, ef, loc)
 
       case Expression.GetStaticField(field, tpe, eff, loc) =>
-        // TODO dont subst type?
-        Expression.GetStaticField(field, tpe, eff, loc).toSuccess
+        for {
+          t <- subst0 (tpe)
+          ef <- subst0 (eff)
+        } yield Expression.GetStaticField(field, t, ef, loc)
 
       case Expression.PutStaticField(field, exp, tpe, eff, loc) =>
         for {
           e <- visitExp(exp, env0)
-          // TODO dont subst type?
-        } yield Expression.PutStaticField(field, e, tpe, eff, loc)
+          t <- subst0(tpe)
+          ef <- subst0(eff)
+        } yield Expression.PutStaticField(field, e, t, ef, loc)
 
       case Expression.NewChannel(exp, tpe, eff, loc) =>
         for {
@@ -685,7 +699,14 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           res = if (isTrue) Expression.True(loc) else Expression.False(loc)
         } yield res
 
-      case Expression.ReifyType(t, _, _, loc) => subst0(t).flatMap(reifyType(_, loc))
+      case Expression.ReifyType(t, k, _, _, loc) =>
+        subst0(t).flatMap(t =>
+          k match {
+            case Kind.Bool => reifyBool(t, loc)
+            case Kind.Star => reifyType(t, loc)
+            case _ => throw InternalCompilerException(s"Unexpected kind: $k.")
+          }
+        )
     }
 
     /**
@@ -693,7 +714,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       *
       * Returns the new pattern and a mapping from variable symbols to fresh variable symbols.
       */
-    def visitPat(p0: Pattern): Validation[(Pattern, Map[Symbol.VarSym, Symbol.VarSym]), CompilationError] = {
+    def visitPat(p0: Pattern): Validation[(Pattern, Map[Symbol.VarSym, Symbol.VarSym]), CompilationMessage] = {
       p0 match {
         case Pattern.Wild(tpe, loc) => subst0(tpe).map(t => (Pattern.Wild(t, loc), Map.empty[Symbol.VarSym, Symbol.VarSym]))
         case Pattern.Var(sym, tpe, loc) =>
@@ -758,22 +779,24 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Returns the def symbol corresponding to the specialized symbol `sym` w.r.t. to the type `tpe`.
     */
-  def specializeDefSym(sym: Symbol.DefnSym, tpe: Type)(implicit root: Root, flix: Flix, def2def: Def2Def, defQueue: DefQueue): Symbol.DefnSym = {
+  private def specializeDefSym(sym: Symbol.DefnSym, tpe: Type)(implicit root: Root, flix: Flix, def2def: Def2Def, defQueue: DefQueue): Validation[Symbol.DefnSym, CompilationMessage] = {
     // Lookup the definition and its declared type.
     val defn = root.defs(sym)
 
-    // Check if the function is non-polymorphic.
-    if (defn.spec.tparams.isEmpty) {
-      defn.sym
-    } else {
-      specializeDef(defn, tpe)
-    }
+    // Compute the erased type.
+    eraseType(tpe).map(erasedType => {
+      if (defn.spec.tparams.isEmpty) {
+        defn.sym
+      } else {
+        specializeDef(defn, erasedType)
+      }
+    })
   }
 
   /**
     * Returns the def symbol corresponding to the specialized symbol `sym` w.r.t. to the type `tpe`.
     */
-  def specializeSigSym(sym: Symbol.SigSym, tpe: Type)(implicit root: Root, flix: Flix, def2def: Def2Def, defQueue: DefQueue): Symbol.DefnSym = {
+  private def specializeSigSym(sym: Symbol.SigSym, tpe: Type)(implicit root: Root, flix: Flix, def2def: Def2Def, defQueue: DefQueue): Symbol.DefnSym = {
     val sig = root.sigs(sym)
 
     // lookup the instance corresponding to this type
@@ -802,14 +825,14 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Converts a signature with an implementation into the equivalent definition.
     */
-  def sigToDef(sigSym: Symbol.SigSym, spec: TypedAst.Spec, impl: TypedAst.Impl): TypedAst.Def = {
+  private def sigToDef(sigSym: Symbol.SigSym, spec: TypedAst.Spec, impl: TypedAst.Impl): TypedAst.Def = {
     TypedAst.Def(sigSymToDefnSym(sigSym), spec, impl)
   }
 
   /**
     * Converts a SigSym into the equivalent DefnSym.
     */
-  def sigSymToDefnSym(sigSym: Symbol.SigSym): Symbol.DefnSym = {
+  private def sigSymToDefnSym(sigSym: Symbol.SigSym): Symbol.DefnSym = {
     val ns = sigSym.clazz.namespace :+ sigSym.clazz.name
     new Symbol.DefnSym(None, ns, sigSym.name, sigSym.loc)
   }
@@ -817,7 +840,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Returns the def symbol corresponding to the specialized def `defn` w.r.t. to the type `tpe`.
     */
-  def specializeDef(defn: TypedAst.Def, tpe: Type)(implicit flix: Flix, def2def: Def2Def, defQueue: DefQueue): Symbol.DefnSym = {
+  private def specializeDef(defn: TypedAst.Def, tpe: Type)(implicit flix: Flix, def2def: Def2Def, defQueue: DefQueue): Symbol.DefnSym = {
     // Unify the declared and actual type to obtain the substitution map.
     val subst = StrictSubstitution(Unification.unifyTypes(defn.impl.inferredScheme.base, tpe).get)
 
@@ -848,7 +871,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     *
     * Returns the new formal parameters and an environment mapping the variable symbol for each parameter to a fresh symbol.
     */
-  def specializeFormalParams(fparams0: List[FormalParam], subst0: StrictSubstitution)(implicit flix: Flix): Validation[(List[FormalParam], Map[Symbol.VarSym, Symbol.VarSym]), CompilationError] = {
+  private def specializeFormalParams(fparams0: List[FormalParam], subst0: StrictSubstitution)(implicit flix: Flix): Validation[(List[FormalParam], Map[Symbol.VarSym, Symbol.VarSym]), CompilationMessage] = {
     // Return early if there are no formal parameters.
     if (fparams0.isEmpty)
       return (Nil: List[FormalParam], Map.empty[Symbol.VarSym, Symbol.VarSym]).toSuccess
@@ -864,7 +887,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     *
     * Returns the new formal parameter and an environment mapping the variable symbol to a fresh variable symbol.
     */
-  def specializeFormalParam(fparam0: FormalParam, subst0: StrictSubstitution)(implicit flix: Flix): Validation[(FormalParam, Map[Symbol.VarSym, Symbol.VarSym]), CompilationError] = {
+  private def specializeFormalParam(fparam0: FormalParam, subst0: StrictSubstitution)(implicit flix: Flix): Validation[(FormalParam, Map[Symbol.VarSym, Symbol.VarSym]), CompilationMessage] = {
     val FormalParam(sym, mod, tpe, loc) = fparam0
     val freshSym = Symbol.freshVarSym(sym)
     subst0(tpe).map(t => (FormalParam(freshSym, mod, t, loc), Map(sym -> freshSym)))
@@ -875,7 +898,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     *
     * Returns the new formal parameters and an environment mapping the variable symbol for each parameter to a fresh symbol.
     */
-  def specializeConstraintParams(cparams0: List[ConstraintParam], subst0: StrictSubstitution)(implicit flix: Flix): Validation[(List[ConstraintParam], Map[Symbol.VarSym, Symbol.VarSym]), CompilationError] = {
+  private def specializeConstraintParams(cparams0: List[ConstraintParam], subst0: StrictSubstitution)(implicit flix: Flix): Validation[(List[ConstraintParam], Map[Symbol.VarSym, Symbol.VarSym]), CompilationMessage] = {
     // Return early if there are no formal parameters.
     if (cparams0.isEmpty)
       return (Nil: List[ConstraintParam], Map.empty[Symbol.VarSym, Symbol.VarSym]).toSuccess
@@ -891,7 +914,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     *
     * Returns the new constraint parameter and an environment mapping the variable symbol to a fresh variable symbol.
     */
-  def specializeConstraintParam(cparam0: ConstraintParam, subst0: StrictSubstitution)(implicit flix: Flix): Validation[(ConstraintParam, Map[Symbol.VarSym, Symbol.VarSym]), CompilationError] = cparam0 match {
+  private def specializeConstraintParam(cparam0: ConstraintParam, subst0: StrictSubstitution)(implicit flix: Flix): Validation[(ConstraintParam, Map[Symbol.VarSym, Symbol.VarSym]), CompilationMessage] = cparam0 match {
     case ConstraintParam.HeadParam(sym, tpe, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
       subst0(tpe).map(t => (ConstraintParam.HeadParam(freshSym, t, loc), Map(sym -> freshSym)))
@@ -901,14 +924,41 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   /**
+    * Returns an expression that evaluates to a ReifiedBool for the given type `tpe`.
+    */
+  private def reifyBool(tpe: Type, loc: SourceLocation): Validation[Expression, CompilationMessage] = {
+    val sym = Symbol.mkEnumSym("ReifiedBool")
+    val resultTpe = Type.mkEnum(sym, Kind.Star, loc)
+    val resultEff = Type.Pure
+
+    tpe.typeConstructor match {
+      case None => ReificationError.IllegalReifiedType(tpe, loc).toFailure
+
+      case Some(tc) => tc match {
+        case TypeConstructor.True =>
+          val tag = Name.Tag("ReifiedTrue", loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc).toSuccess
+
+        case TypeConstructor.False =>
+          val tag = Name.Tag("ReifiedFalse", loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc).toSuccess
+
+        case _ =>
+          val tag = Name.Tag("ErasedBool", loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc).toSuccess
+      }
+    }
+  }
+
+  /**
     * Returns an expression that evaluates to a ReifiedType for the given type `tpe`.
     */
-  private def reifyType(tpe: Type, loc: SourceLocation): Validation[Expression, CompilationError] = {
+  private def reifyType(tpe: Type, loc: SourceLocation): Validation[Expression, CompilationMessage] = {
     val sym = Symbol.mkEnumSym("ReifiedType")
     val resultTpe = Type.mkEnum(sym, Kind.Star, loc)
     val resultEff = Type.Pure
 
-    def visit(t0: Type): Validation[Expression, CompilationError] = t0.typeConstructor match {
+    def visit(t0: Type): Validation[Expression, CompilationMessage] = t0.typeConstructor match {
       case None =>
         ReificationError.IllegalReifiedType(tpe, loc).toFailure
 
@@ -945,19 +995,52 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val tag = Name.Tag("ReifiedInt64", loc)
           Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc).toSuccess
 
-        case TypeConstructor.Str =>
-          val tag = Name.Tag("ErasedType", loc)
-          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc).toSuccess
-
         case TypeConstructor.Array =>
           val tag = Name.Tag("ReifiedArray", loc)
           val innerTpe = t0.typeArguments.head
           visit(innerTpe).map(Expression.Tag(sym, tag, _, resultTpe, resultEff, loc))
 
-        case _ => ReificationError.IllegalReifiedType(tpe, loc).toFailure
+        case _ =>
+          val tag = Name.Tag("ErasedType", loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc).toSuccess
+
       }
     }
 
     visit(tpe)
   }
+
+  /**
+    * Performs type erasure on the given type `tpe`.
+    *
+    * Flix does not erase normal types, but it does erase Boolean formulas.
+    */
+  private def eraseType(tpe: Type)(implicit flix: Flix): Validation[Type, CompilationMessage] = tpe match {
+    case Type.KindedVar(_, _, loc, _, _) =>
+      if (flix.options.xstrictmono)
+        ReificationError.UnexpectedNonConstBool(tpe, loc).toFailure
+      else {
+        // TODO: We should return Type.ErasedBool or something.
+        Type.True.toSuccess
+      }
+
+    case Type.Cst(_, _) => tpe.toSuccess
+
+    case Type.Apply(tpe1, tpe2, loc) =>
+      for {
+        t1 <- eraseType(tpe1)
+        t2 <- eraseType(tpe2)
+      } yield Type.Apply(t1, t2, loc)
+
+    case Type.Alias(sym, args, tpe, loc) =>
+      for {
+        as <- traverse(args)(eraseType)
+        t <- eraseType(tpe)
+      } yield Type.Alias(sym, as, t, loc)
+
+    case Type.UnkindedVar(_, loc, _, _) => throw InternalCompilerException(s"Unexpected type at: ${loc.format}")
+
+    case Type.Ascribe(_, _, loc) => throw InternalCompilerException(s"Unexpected type at: ${loc.format}")
+  }
+
 }

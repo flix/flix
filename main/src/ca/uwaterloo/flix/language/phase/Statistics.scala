@@ -150,7 +150,7 @@ object Statistics extends Phase[Root, Root] {
       case Expression.FixpointProjectIn(exp, pred, tpe, eff, loc) => visitExp(exp)
       case Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) => visitExp(exp)
       case Expression.Reify(t, tpe, eff, loc) => Counter.empty
-      case Expression.ReifyType(t, tpe, eff, loc) => Counter.empty
+      case Expression.ReifyType(t, k, tpe, eff, loc) => Counter.empty
     }
 
     base ++ subExprs

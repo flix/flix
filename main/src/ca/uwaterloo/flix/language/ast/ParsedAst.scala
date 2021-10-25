@@ -1031,6 +1031,15 @@ object ParsedAst {
     case class Reify(sp1: SourcePosition, t: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * ReifyBool Expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param t   the type to reify.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class ReifyBool(sp1: SourcePosition, t: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * ReifyType Expression.
       *
       * @param sp1 the position of the first character in the expression.
