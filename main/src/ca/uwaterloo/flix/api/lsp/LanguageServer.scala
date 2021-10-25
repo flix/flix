@@ -73,9 +73,9 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
   implicit val DefaultAudience: Audience = Audience.External
 
   /**
-   * The terminal context used for formatting.
-   */
-  implicit val DefaultTerminalContext: OutputContext = OutputContext.RawOutput
+    * The terminal context used for formatting.
+    */
+  implicit val formatter: Formatter = Formatter.NoFormatter
 
   /**
     * The default compiler options.

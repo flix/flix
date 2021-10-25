@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
-import ca.uwaterloo.flix.util.Format
+import ca.uwaterloo.flix.util.Formatter
 
 /**
   * A common super-type for code hints.
@@ -39,18 +39,18 @@ object CodeHint {
 
     override def severity: Severity = Severity.Hint
 
-    override def message: String = {
-      s"""${Format.line(kind, source.format)}
+    override def message(implicit formatter: Formatter): String = {
+      s"""${formatter.line(kind, source.format)}
          |>> Use of impure function prevents lazy evaluation.
          |
-         |${Format.code(loc, "use of impure function.")}
+         |${formatter.code(loc, "use of impure function.")}
          |""".stripMargin
     }
 
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain: Option[String] = None
+    override def explain(implicit formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -64,18 +64,18 @@ object CodeHint {
 
     override def severity: Severity = Severity.Hint
 
-    override def message: String = {
-      s"""${Format.line(kind, source.format)}
+    override def message(implicit formatter: Formatter): String = {
+      s"""${formatter.line(kind, source.format)}
          |>> Use of impure function prevents parallel evaluation.
          |
-         |${Format.code(loc, "use of impure function.")}
+         |${formatter.code(loc, "use of impure function.")}
          |""".stripMargin
     }
 
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain: Option[String] = None
+    override def explain(implicit formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -88,11 +88,11 @@ object CodeHint {
 
     override def severity: Severity = Severity.Info
 
-    override def message: String = {
-      s"""${Format.line(kind, source.format)}
+    override def message(implicit formatter: Formatter): String = {
+      s"""${formatter.line(kind, source.format)}
          |>> Expression has a non-trivial effect.
          |
-         |${Format.code(loc, "non-trivial effect.")}
+         |${formatter.code(loc, "non-trivial effect.")}
          |""".stripMargin
 
     }
@@ -100,6 +100,6 @@ object CodeHint {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain: Option[String] = None
+    override def explain(implicit formatter: Formatter): Option[String] = None
   }
 }

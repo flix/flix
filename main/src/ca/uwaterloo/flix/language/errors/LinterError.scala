@@ -4,7 +4,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.Expression
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.debug.PrettyExpression
-import ca.uwaterloo.flix.util.Format
+import ca.uwaterloo.flix.util.Formatter
 
 /**
   * A common super-type for trivial errors.
@@ -24,8 +24,8 @@ object LinterError {
   case class Lint(sym: Symbol.DefnSym, replacement: Expression, loc: SourceLocation) extends LinterError {
     def summary: String = s"The expression matches the '$sym' lint."
 
-    def message: String = {
-      s"""${Format.line(kind, source.format)}
+    def message(implicit formatter: Formatter): String = {
+      s"""${formatter.line(kind, source.format)}
          |   __
          |  /  \\        __________________________________________________
          |  |  |       /                                                  \\
@@ -35,18 +35,18 @@ object LinterError {
          |  |\\_/|      | Do you want me to help you with that?            |
          |  \\___/      \\__________________________________________________/
          |
-         |>> The ${Format.red(sym.name)} lint applies to the code at:
+         |>> The ${formatter.red(sym.name)} lint applies to the code at:
          |
-         |${Format.code(loc, s"matches ${sym.name}.")}
+         |${formatter.code(loc, s"matches ${sym.name}.")}
          |""".stripMargin
     }
 
-    override def explain: Option[String] = Some({
+    override def explain(implicit formatter: Formatter): Option[String] = Some({
       s"""The lint suggests that this code can be replaced by:
          |
-         |  ${Format.magenta(PrettyExpression.pretty(replacement))}
+         |  ${formatter.magenta(PrettyExpression.pretty(replacement))}
          |
-         |The lint was declared at: '${Format.cyan(sym.loc.format)}'.
+         |The lint was declared at: '${formatter.cyan(sym.loc.format)}'.
          |""".stripMargin
     })
   }

@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.CompilationResult
-import ca.uwaterloo.flix.util.Format
+import ca.uwaterloo.flix.util.Formatter
 
 /**
  * Evaluates all tests in a model.
@@ -60,20 +60,20 @@ object Tester {
    * Represents the results of running all the tests in a given model.
    */
   case class TestResults(results: List[TestResult]) {
-    def output: String = {
+    def output(implicit formatter: Formatter): String = {
       var success = 0
       var failure = 0
       val sb = new StringBuilder()
       for ((ns, tests) <- results.groupBy(_.sym.namespace)) {
         val namespace = if (ns.isEmpty) "root" else ns.mkString("/")
-        sb.append(Format.line("Tests", namespace) + System.lineSeparator())
+        sb.append(formatter.line("Tests", namespace) + System.lineSeparator())
         for (test <- tests.sortBy(_.sym.loc)) {
           test match {
             case TestResult.Success(sym, msg) =>
-              sb.append("  " + Format.green("✓") + " " + sym.name + System.lineSeparator())
+              sb.append("  " + formatter.green("✓") + " " + sym.name + System.lineSeparator())
               success = success + 1
             case TestResult.Failure(sym, msg) =>
-              sb.append("  " + Format.red("✗") + " " + sym.name + ": " + msg + " (" + Format.blue(sym.loc.format) + ")" + System.lineSeparator())
+              sb.append("  " + formatter.red("✗") + " " + sym.name + ": " + msg + " (" + formatter.blue(sym.loc.format) + ")" + System.lineSeparator())
               failure = failure + 1
           }
         }
@@ -81,9 +81,9 @@ object Tester {
       }
       // Summary
       if (failure == 0) {
-        sb.append(Format.green("  Tests Passed!") + s" (Passed: $success / $success)" + System.lineSeparator())
+        sb.append(formatter.green("  Tests Passed!") + s" (Passed: $success / $success)" + System.lineSeparator())
       } else {
-        sb.append(Format.red(s"  Tests Failed!") + s" (Passed: $success / ${success + failure})" + System.lineSeparator())
+        sb.append(formatter.red(s"  Tests Failed!") + s" (Passed: $success / ${success + failure})" + System.lineSeparator())
       }
       sb.toString()
     }

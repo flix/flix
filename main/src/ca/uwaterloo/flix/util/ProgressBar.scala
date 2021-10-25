@@ -45,7 +45,7 @@ class ProgressBar {
   /**
     * A Boolean that represents whether the terminal is believed to support color.
     */
-  private val supportsColors: Boolean = OutputContext.hasColorSupport
+  private val supportsColors: Boolean = Formatter.hasColorSupport
 
   /**
     * Updates the progress with the given message `msg` in the given `phase`.

@@ -428,9 +428,9 @@ class Flix {
     if (options.debug) {
       // Print information about the phase.
       val d = new Duration(e)
-      val terminalCtx = OutputContext.AnsiTerminalOutput
-      val emojiPart = terminalCtx.emitBlue("✓ ")
-      val phasePart = terminalCtx.emitBlue(f"$phase%-40s")
+      val formatter = Formatter.AnsiTerminalFormatter
+      val emojiPart = formatter.blue("✓ ")
+      val phasePart = formatter.blue(f"$phase%-40s")
       val timePart = f"${d.fmtMiliSeconds}%8s"
       Console.println(emojiPart + phasePart + timePart)
 
@@ -438,7 +438,7 @@ class Flix {
       for ((subphase, e) <- currentPhase.subphases.reverse) {
         val d = new Duration(e)
         val emojiPart = "    "
-        val phasePart = terminalCtx.emitMagenta(f"$subphase%-37s")
+        val phasePart = formatter.magenta(f"$subphase%-37s")
         val timePart = f"(${d.fmtMiliSeconds}%8s)"
         Console.println(emojiPart + phasePart + timePart)
       }

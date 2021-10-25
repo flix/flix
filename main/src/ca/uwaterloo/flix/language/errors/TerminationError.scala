@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
-import ca.uwaterloo.flix.util.Format
+import ca.uwaterloo.flix.util.Formatter
 
 /**
   * A common super-type for termination errors.
@@ -36,18 +36,18 @@ object TerminationError {
   case class UnconditionalRecursion(sym: Symbol.DefnSym) extends TerminationError {
     def summary: String = "Unconditional recursion."
 
-    def message: String = {
-      s"""${Format.line(kind, source.format)}
-         |>> Unconditionally recursive definition '${Format.red(sym.name)}'. All branches will recurse indefinitely.
+    def message(implicit formatter: Formatter): String = {
+      s"""${formatter.line(kind, source.format)}
+         |>> Unconditionally recursive definition '${formatter.red(sym.name)}'. All branches will recurse indefinitely.
          |
-         |${Format.code(sym.loc, "unconditional recursion.")}
+         |${formatter.code(sym.loc, "unconditional recursion.")}
          |
          |""".stripMargin
     }
 
     def loc: SourceLocation = sym.loc
 
-    override def explain: Option[String] = Some({
+    override def explain(implicit formatter: Formatter): Option[String] = Some({
       s"""
          |"Possible fixes:"
          |

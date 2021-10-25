@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.util.Formatter
 import org.json4s.JsonDSL._
 import org.json4s._
 
@@ -23,7 +24,7 @@ import org.json4s._
  * Companion object for [[Diagnostic]].
  */
 object Diagnostic {
-  def from(compilationMessage: CompilationMessage): Diagnostic = {
+  def from(compilationMessage: CompilationMessage)(implicit formatter: Formatter): Diagnostic = {
     val range = Range.from(compilationMessage.loc)
     val severity = Some(DiagnosticSeverity.from(compilationMessage.severity))
     val code = compilationMessage.kind

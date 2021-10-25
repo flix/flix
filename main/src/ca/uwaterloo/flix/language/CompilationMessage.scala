@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.errors.Severity
+import ca.uwaterloo.flix.util.Formatter
 
 /**
   * A common super-type for compilation messages.
@@ -53,11 +54,11 @@ trait CompilationMessage {
   /**
     * Returns the formatted error message.
     */
-  def message: String
+  def message(implicit formatter: Formatter): String
 
   /**
     * Returns a formatted string with helpful suggestions.
     */
-  def explain: Option[String]
+  def explain(implicit formatter: Formatter): Option[String]
 
 }

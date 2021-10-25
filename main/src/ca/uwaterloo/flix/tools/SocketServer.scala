@@ -32,15 +32,15 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 /**
- * A WebSocket server implementation that receives and evaluates Flix programs.
- *
- * @param port the local port to listen on.
- */
-class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port)) {
+  * A WebSocket server implementation that receives and evaluates Flix programs.
+  *
+  * @param port the local port to listen on.
+  */
+class SocketServer(port: Int)(implicit formatter: Formatter) extends WebSocketServer(new InetSocketAddress(port)) {
 
   /**
-   * The custom date format to use for logging.
-   */
+    * The custom date format to use for logging.
+    */
   val DateFormat: String = "yyyy-MM-dd HH:mm:ss"
 
   /**

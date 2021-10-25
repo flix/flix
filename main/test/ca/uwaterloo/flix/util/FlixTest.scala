@@ -25,6 +25,8 @@ class FlixTest(name: String, paths: List[String], options: Options) extends FunS
 
   def this(name: String, path: String)(implicit options: Options = Options.TestWithLibMin) = this(name, List(path), options)
 
+  implicit val formatter: Formatter = options.formatter
+
   /**
     * Returns the name of the test suite.
     */

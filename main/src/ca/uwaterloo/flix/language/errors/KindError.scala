@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation}
 import ca.uwaterloo.flix.language.debug.FormatKind.formatKind
-import ca.uwaterloo.flix.util.Format
+import ca.uwaterloo.flix.util.Formatter
 
 /**
   * A common super-type for kind errors.
@@ -38,21 +38,21 @@ object KindError {
   case class MismatchedKinds(k1: Kind, k2: Kind, loc: SourceLocation) extends KindError {
     override def summary: String = s"Mismatched kinds: '${formatKind(k1)}' and '${formatKind(k2)}''"
 
-    override def message: String = {
-      s"""${Format.line(kind, source.format)}
+    override def message(implicit formatter: Formatter): String = {
+      s"""${formatter.line(kind, source.format)}
          |>> This type variable was used as both kind 'red(formatKind(k1))' and kind 'red(formatKind(k2))'.
          |
-         |${Format.code(loc, "mismatched kind.")}
+         |${formatter.code(loc, "mismatched kind.")}
          |
-         |Kind One: ${Format.cyan(formatKind(k1))}
-         |Kind Two: ${Format.magenta(formatKind(k2))}
+         |Kind One: ${formatter.cyan(formatKind(k1))}
+         |Kind Two: ${formatter.magenta(formatKind(k2))}
          |""".stripMargin
     }
 
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain: Option[String] = None
+    override def explain(implicit formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -65,20 +65,20 @@ object KindError {
   case class UnexpectedKind(expectedKind: Kind, actualKind: Kind, loc: SourceLocation) extends KindError {
     override def summary: String = s"Kind ${formatKind(expectedKind)} was expected, but found ${formatKind(actualKind)}."
 
-    override def message: String = {
-      s"""${Format.line(kind, source.format)}
-         |>> Expected kind '${Format.red(formatKind(expectedKind))}' here, but kind 'red(formatKind(actualKind))' is used.
+    override def message(implicit formatter: Formatter): String = {
+      s"""${formatter.line(kind, source.format)}
+         |>> Expected kind '${formatter.red(formatKind(expectedKind))}' here, but kind 'red(formatKind(actualKind))' is used.
          |
-         |${Format.code(loc, "unexpected kind.")}
+         |${formatter.code(loc, "unexpected kind.")}
          |
-         |Expected kind: ${Format.cyan(formatKind(expectedKind))}
-         |Actual kind:   ${Format.magenta(formatKind(actualKind))}
+         |Expected kind: ${formatter.cyan(formatKind(expectedKind))}
+         |Actual kind:   ${formatter.magenta(formatKind(actualKind))}
          |""".stripMargin
     }
 
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain: Option[String] = None
+    override def explain(implicit formatter: Formatter): Option[String] = None
   }
 }

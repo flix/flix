@@ -43,6 +43,9 @@ object Main {
       null
     }
 
+    // the default color context.
+    implicit val formatter: Formatter = Formatter.AnsiTerminalFormatter
+
     // check if the --listen flag was passed.
     if (cmdOpts.listen.nonEmpty) {
       var successfulRun: Boolean = false
@@ -72,9 +75,6 @@ object Main {
       }
       System.exit(0)
     }
-
-    // the default color context.
-    implicit val terminal: OutputContext = OutputContext.AnsiTerminalOutput
 
     // construct flix options.
     var options = Options.Default.copy(

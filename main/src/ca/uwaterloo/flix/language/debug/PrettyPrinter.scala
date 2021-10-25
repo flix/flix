@@ -18,7 +18,8 @@ package ca.uwaterloo.flix.language.debug
 
 import ca.uwaterloo.flix.language.ast.LiftedAst._
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.util.Format
+import ca.uwaterloo.flix.language.debug.FormatType.formatType
+import ca.uwaterloo.flix.util.Formatter
 
 object PrettyPrinter {
 
@@ -26,10 +27,10 @@ object PrettyPrinter {
 
   object Lifted {
 
-    def fmtRoot(root: Root): String = {
+    def fmtRoot(root: Root)(implicit formatter: Formatter): String = {
       val sb = new StringBuilder()
       for ((sym, defn) <- root.defs.toList.sortBy(_._1.loc)) {
-        sb.append(s"${Format.bold("def")} ${Format.blue(sym.toString)}(")
+        sb.append(s"${formatter.bold("def")} ${formatter.blue(sym.toString)}(")
         for (fparam <- defn.fparams) {
           sb.append(s"${fmtParam(fparam)}, ")
         }
@@ -40,11 +41,11 @@ object PrettyPrinter {
       sb.toString()
     }
 
-    def fmtDef(defn: Def): String = {
+    def fmtDef(defn: Def)(implicit formatter: Formatter): String = {
       fmtExp(defn.exp)
     }
 
-    def fmtExp(exp0: Expression): String = {
+    def fmtExp(exp0: Expression)(implicit formatter: Formatter): String = {
       def visitExp(e0: Expression): String = e0 match {
         case Expression.Unit(_) => "Unit"
 
@@ -156,14 +157,14 @@ object PrettyPrinter {
 
         case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
           val sb = new StringBuilder()
-          sb.append(Format.bold("if") + " (")
+          sb.append(formatter.bold("if") + " (")
             .append(visitExp(exp1))
             .append(") {")
             .append(System.lineSeparator())
             .append((" " * 2) + visitExp(exp2).replace(System.lineSeparator(), System.lineSeparator() + (" " * 2)))
             .append(System.lineSeparator())
             .append("} ")
-            .append(Format.bold("else") + " {")
+            .append(formatter.bold("else") + " {")
             .append(System.lineSeparator())
             .append((" " * 2) + visitExp(exp3).replace(System.lineSeparator(), System.lineSeparator() + (" " * 2)))
             .append(System.lineSeparator())
@@ -190,7 +191,7 @@ object PrettyPrinter {
 
         case Expression.Let(sym, exp1, exp2, tpe, loc) =>
           val sb = new StringBuilder()
-          sb.append(Format.bold("let "))
+          sb.append(formatter.bold("let "))
             .append(fmtSym(sym))
             .append(" = ")
             .append(visitExp(exp1).replace(System.lineSeparator(), System.lineSeparator() + (" " * 2)))
@@ -435,27 +436,27 @@ object PrettyPrinter {
 
         case Expression.Force(exp, tpe, loc) => "force " + visitExp(exp)
 
-        case Expression.HoleError(sym, tpe, loc) => Format.red("HoleError")
-        case Expression.MatchError(tpe, loc) => Format.red("MatchError")
+        case Expression.HoleError(sym, tpe, loc) => formatter.red("HoleError")
+        case Expression.MatchError(tpe, loc) => formatter.red("MatchError")
       }
 
       visitExp(exp0)
     }
 
-    def fmtParam(p: FormalParam): String = {
-      fmtSym(p.sym) + ": " + FormatType.formatType(p.tpe)
+    def fmtParam(p: FormalParam)(implicit formatter: Formatter): String = {
+      fmtSym(p.sym) + ": " + formatType(p.tpe)
     }
 
-    def fmtSym(sym: Symbol.VarSym): String = {
-      Format.cyan(sym.toString)
+    def fmtSym(sym: Symbol.VarSym)(implicit formatter: Formatter): String = {
+      formatter.cyan(sym.toString)
     }
 
-    def fmtSym(sym: Symbol.DefnSym): String = {
-      Format.blue(sym.toString)
+    def fmtSym(sym: Symbol.DefnSym)(implicit formatter: Formatter): String = {
+      formatter.blue(sym.toString)
     }
 
-    def fmtSym(sym: Symbol.LabelSym): String = {
-      Format.magenta(sym.toString)
+    def fmtSym(sym: Symbol.LabelSym)(implicit formatter: Formatter): String = {
+      formatter.magenta(sym.toString)
     }
 
     def fmtUnaryOp(op: UnaryOperator): String = op match {

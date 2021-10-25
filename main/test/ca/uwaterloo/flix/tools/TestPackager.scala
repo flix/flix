@@ -1,13 +1,13 @@
 package ca.uwaterloo.flix.tools
 
-import ca.uwaterloo.flix.util.{Options, OutputContext}
+import ca.uwaterloo.flix.util.{Formatter, Options}
 import org.scalatest.FunSuite
 
 import java.nio.file.Files
 
 class TestPackager extends FunSuite {
 
-  private implicit val terminalContext: OutputContext = OutputContext.RawOutput
+  private implicit val terminalContext: Formatter = Formatter.NoFormatter
 
   private val ProjectPrefix: String = "flix-project-"
 

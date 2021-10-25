@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Type}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
-import ca.uwaterloo.flix.util.Format
+import ca.uwaterloo.flix.util.Formatter
 
 /**
   * A common super-type for reification errors.
@@ -41,18 +41,18 @@ object ReificationError {
   case class IllegalReifiedBool(tpe: Type, loc: SourceLocation) extends ReificationError {
     def summary: String = "Type cannot be reified."
 
-    def message: String = {
-      s"""${Format.line(kind, source.format)}
-         |>> Unable to reify the non-constant Bool '${Format.red(FormatType.formatType(tpe))}'.
+    def message(implicit formatter: Formatter): String = {
+      s"""${formatter.line(kind, source.format)}
+         |>> Unable to reify the non-constant Bool '${formatter.red(FormatType.formatType(tpe))}'.
          |
-         |${Format.code(loc, "unable to reify type.")}
+         |${formatter.code(loc, "unable to reify type.")}
          |""".stripMargin
     }
 
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain: Option[String] = None
+    override def explain(implicit formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -64,18 +64,18 @@ object ReificationError {
   case class IllegalReifiedType(tpe: Type, loc: SourceLocation) extends ReificationError {
     def summary: String = "Type cannot be reified."
 
-    def message: String = {
-      s"""${Format.line(kind, source.format)}
-         |>> Unable to reify the type '${Format.red(FormatType.formatType(tpe))}'.
+    def message(implicit formatter: Formatter): String = {
+      s"""${formatter.line(kind, source.format)}
+         |>> Unable to reify the type '${formatter.red(FormatType.formatType(tpe))}'.
          |
-         |${Format.code(loc, "unable to reify type.")}
+         |${formatter.code(loc, "unable to reify type.")}
          |""".stripMargin
     }
 
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain: Option[String] = None
+    override def explain(implicit formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -87,17 +87,17 @@ object ReificationError {
   case class UnexpectedNonConstBool(tpe: Type, loc: SourceLocation) extends ReificationError {
     def summary: String = "Unexpected type."
 
-    def message: String = {
-      s"""${Format.line(kind, source.format)}
-         |>> Unexpected Boolean type: '${Format.red(FormatType.formatType(tpe))}'.
+    def message(implicit formatter: Formatter): String = {
+      s"""${formatter.line(kind, source.format)}
+         |>> Unexpected Boolean type: '${formatter.red(FormatType.formatType(tpe))}'.
          |
-         |${Format.code(loc, "unexpected Boolean type.")}
+         |${formatter.code(loc, "unexpected Boolean type.")}
          |""".stripMargin
     }
 
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain: Option[String] = None
+    override def explain(implicit formatter: Formatter): Option[String] = None
   }
 }

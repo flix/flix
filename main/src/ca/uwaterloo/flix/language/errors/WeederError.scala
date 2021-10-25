@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation}
-import ca.uwaterloo.flix.util.Format
+import ca.uwaterloo.flix.util.Formatter
 
 /**
   * A common super-type for weeding errors.
@@ -39,20 +39,20 @@ object WeederError {
   case class DuplicateAnnotation(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     def summary: String = s"Multiple occurrences of the annotation '$name'."
 
-    def message: String = {
-      s"""${Format.line(kind, source.format)}
-         |>> Multiple occurrences of the annotation '${Format.red("@" + name)}'.
+    def message(implicit formatter: Formatter): String = {
+      s"""${formatter.line(kind, source.format)}
+         |>> Multiple occurrences of the annotation '${formatter.red("@" + name)}'.
          |
-         |${Format.code(loc1, "the first occurrence was here.")}
+         |${formatter.code(loc1, "the first occurrence was here.")}
          |
-         |${Format.code(loc2, "the second occurrence was here.")}
+         |${formatter.code(loc2, "the second occurrence was here.")}
          |
          |""".stripMargin
     }
 
     def loc: SourceLocation = loc1
 
-    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Remove one of the two annotations.")
+    override def explain(implicit formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Remove one of the two annotations.")
 
   }
 
@@ -66,20 +66,20 @@ object WeederError {
   case class DuplicateFormalParam(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     def summary: String = s"Multiple declarations of the formal parameter '$name'."
 
-    def message: String = {
-      s"""${Format.line(kind, source.format)}
-         |>> Multiple declarations of the formal parameter '${Format.red(name)}'.
+    def message(implicit formatter: Formatter): String = {
+      s"""${formatter.line(kind, source.format)}
+         |>> Multiple declarations of the formal parameter '${formatter.red(name)}'.
          |
-         |${Format.code(loc1, "the first declaration was here.")}
+         |${formatter.code(loc1, "the first declaration was here.")}
          |
-         |${Format.code(loc2, "the second declaration was here.")}
+         |${formatter.code(loc2, "the second declaration was here.")}
          |
          |""".stripMargin
     }
 
     def loc: SourceLocation = loc1
 
-    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Remove or rename one of the formal parameters to avoid the name clash.")
+    override def explain(implicit formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Remove or rename one of the formal parameters to avoid the name clash.")
 
   }
 
@@ -93,13 +93,13 @@ object WeederError {
   case class DuplicateModifier(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     def summary: String = s"Duplicate modifier '$name'."
 
-    def message: String = {
-      s"""${Format.line(kind, source.format)}
-         |>> Multiple occurrences of the modifier '${Format.red(name)}'.
+    def message(implicit formatter: Formatter): String = {
+      s"""${formatter.line(kind, source.format)}
+         |>> Multiple occurrences of the modifier '${formatter.red(name)}'.
          |
-         |${Format.code(loc1, "the first occurrence was here.")}
+         |${formatter.code(loc1, "the first occurrence was here.")}
          |
-         |${Format.code(loc2, "the second occurrence was here.")}
+         |${formatter.code(loc2, "the second occurrence was here.")}
          |""".stripMargin
     }
 
@@ -108,7 +108,7 @@ object WeederError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain: Option[String] = None
+    override def explain(implicit formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -122,20 +122,20 @@ object WeederError {
   case class DuplicateTag(enumName: String, tag: Name.Tag, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     def summary: String = s"Duplicate tag: '$tag'."
 
-    def message: String = {
-      s"""${Format.line(kind, source.format)}
-         |>> Multiple declarations of the tag '${Format.red(tag.name)}' in the enum '${Format.cyan(enumName)}'.
+    def message(implicit formatter: Formatter): String = {
+      s"""${formatter.line(kind, source.format)}
+         |>> Multiple declarations of the tag '${formatter.red(tag.name)}' in the enum '${formatter.cyan(enumName)}'.
          |
-         |${Format.code(loc1, "the first declaration was here.")}
+         |${formatter.code(loc1, "the first declaration was here.")}
          |
-         |${Format.code(loc2, "the second declaration was here.")}
+         |${formatter.code(loc2, "the second declaration was here.")}
          |
          |""".stripMargin
     }
 
     def loc: SourceLocation = loc1
 
-    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Remove or rename one of the tags to avoid the name clash.")
+    override def explain(implicit formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Remove or rename one of the tags to avoid the name clash.")
 
   }
 
@@ -147,18 +147,18 @@ object WeederError {
   case class IllegalArrayLength(loc: SourceLocation) extends WeederError {
     def summary: String = "Illegal array length"
 
-    def message: String = {
-      s"""${Format.line(kind, source.format)}
+    def message(implicit formatter: Formatter): String = {
+      s"""${formatter.line(kind, source.format)}
          |>> Illegal array length.
          |
-         |${Format.code(loc, "illegal array length.")}
+         |${formatter.code(loc, "illegal array length.")}
          |""".stripMargin
     }
 
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain: Option[String] = None
+    override def explain(implicit formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -169,19 +169,19 @@ object WeederError {
   case class IllegalFieldName(loc: SourceLocation) extends WeederError {
     def summary: String = "Illegal field name"
 
-    def message: String = {
-      s"""${Format.line(kind, source.format)}
+    def message(implicit formatter: Formatter): String = {
+      s"""${formatter.line(kind, source.format)}
          |
          |>> Illegal field name.
          |
-         |${Format.code(loc, "illegal field name.")}
+         |${formatter.code(loc, "illegal field name.")}
          |""".stripMargin
     }
 
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain: Option[String] = None
+    override def explain(implicit formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -193,16 +193,16 @@ object WeederError {
   case class IllegalFormalParameter(name: String, loc: SourceLocation) extends WeederError {
     def summary: String = "The formal parameter must have a declared type."
 
-    def message: String = {
-      s"""${Format.line(kind, source.format)}
+    def message(implicit formatter: Formatter): String = {
+      s"""${formatter.line(kind, source.format)}
          |
-         |>> The formal parameter '${Format.red(name)}' must have a declared type.
+         |>> The formal parameter '${formatter.red(name)}' must have a declared type.
          |
-         |${Format.code(loc, "has no declared type.")}
+         |${formatter.code(loc, "has no declared type.")}
          |""".stripMargin
     }
 
-    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Explicitly declare the type of the formal parameter.")
+    override def explain(implicit formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Explicitly declare the type of the formal parameter.")
 
   }
 
@@ -214,16 +214,16 @@ object WeederError {
   case class IllegalExistential(loc: SourceLocation) extends WeederError {
     def summary: String = "The existential quantifier does not declare any formal parameters."
 
-    def message: String = {
-      s"""${Format.line(kind, source.format)}
+    def message(implicit formatter: Formatter): String = {
+      s"""${formatter.line(kind, source.format)}
          |>> The existential quantifier does not declare any formal parameters.
          |
-         |${Format.code(loc, "quantifier must declare at least one parameter.")}
+         |${formatter.code(loc, "quantifier must declare at least one parameter.")}
          |
          |""".stripMargin
     }
 
-    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Add a formal parameter or remove the quantifier.")
+    override def explain(implicit formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Add a formal parameter or remove the quantifier.")
 
   }
 
@@ -235,16 +235,16 @@ object WeederError {
   case class IllegalUniversal(loc: SourceLocation) extends WeederError {
     def summary: String = "The universal quantifier does not declare any formal parameters."
 
-    def message: String = {
-      s"""${Format.line(kind, source.format)}
+    def message(implicit formatter: Formatter): String = {
+      s"""${formatter.line(kind, source.format)}
          |>> The universal quantifier does not declare any formal parameters.
          |
-         |${Format.code(loc, "quantifier must declare at least one parameter.")}
+         |${formatter.code(loc, "quantifier must declare at least one parameter.")}
          |
          |""".stripMargin
     }
 
-    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Add a formal parameter or remove the quantifier.")
+    override def explain(implicit formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Add a formal parameter or remove the quantifier.")
 
   }
 
@@ -256,16 +256,16 @@ object WeederError {
   case class IllegalFloat(loc: SourceLocation) extends WeederError {
     def summary: String = "Illegal float."
 
-    def message: String = {
-      s"""${Format.line(kind, source.format)}
+    def message(implicit formatter: Formatter): String = {
+      s"""${formatter.line(kind, source.format)}
          |>> Illegal float.
          |
-         |${Format.code(loc, "illegal float.")}
+         |${formatter.code(loc, "illegal float.")}
          |
          |""".stripMargin
     }
 
-    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Ensure that the literal is within bounds.")
+    override def explain(implicit formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Ensure that the literal is within bounds.")
 
   }
 
@@ -277,16 +277,16 @@ object WeederError {
   case class IllegalInt(loc: SourceLocation) extends WeederError {
     def summary: String = "Illegal int."
 
-    def message: String = {
-      s"""${Format.line(kind, source.format)}
+    def message(implicit formatter: Formatter): String = {
+      s"""${formatter.line(kind, source.format)}
          |>> Illegal int.
          |
-         |${Format.code(loc, "illegal int.")}
+         |${formatter.code(loc, "illegal int.")}
          |
          |""".stripMargin
     }
 
-    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Ensure that the literal is within bounds.")
+    override def explain(implicit formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Ensure that the literal is within bounds.")
 
   }
 
@@ -298,18 +298,18 @@ object WeederError {
   case class IllegalIntrinsic(loc: SourceLocation) extends WeederError {
     def summary: String = "Illegal intrinsic"
 
-    def message: String = {
-      s"""${Format.line(kind, source.format)}
+    def message(implicit formatter: Formatter): String = {
+      s"""${formatter.line(kind, source.format)}
          |>> Illegal intrinsic.
          |
-         |${Format.code(loc, "illegal intrinsic.")}
+         |${formatter.code(loc, "illegal intrinsic.")}
          |""".stripMargin
     }
 
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain: Option[String] = None
+    override def explain(implicit formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -320,18 +320,18 @@ object WeederError {
   case class IllegalModifier(loc: SourceLocation) extends WeederError {
     def summary: String = "Illegal modifier."
 
-    def message: String = {
-      s"""${Format.line(kind, source.format)}
+    def message(implicit formatter: Formatter): String = {
+      s"""${formatter.line(kind, source.format)}
          |>> Illegal modifier.
          |
-         |${Format.code(loc, "illegal modifier.")}
+         |${formatter.code(loc, "illegal modifier.")}
          |""".stripMargin
     }
 
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain: Option[String] = None
+    override def explain(implicit formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -342,18 +342,18 @@ object WeederError {
   case class IllegalNullPattern(loc: SourceLocation) extends WeederError {
     def summary: String = "Illegal null pattern"
 
-    def message: String = {
-      s"""${Format.line(kind, source.format)}
+    def message(implicit formatter: Formatter): String = {
+      s"""${formatter.line(kind, source.format)}
          |>> Illegal null pattern.
          |
-         |${Format.code(loc, "illegal null pattern.")}
+         |${formatter.code(loc, "illegal null pattern.")}
          |""".stripMargin
     }
 
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain: Option[String] = None
+    override def explain(implicit formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -364,18 +364,18 @@ object WeederError {
   case class IllegalJvmFieldOrMethodName(loc: SourceLocation) extends WeederError {
     def summary: String = "Illegal jvm field or method name."
 
-    def message: String = {
-      s"""${Format.line(kind, source.format)}
+    def message(implicit formatter: Formatter): String = {
+      s"""${formatter.line(kind, source.format)}
          |>> Illegal jvm field or method name.
          |
-         |${Format.code(loc, "illegal name.")}
+         |${formatter.code(loc, "illegal name.")}
          |""".stripMargin
     }
 
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain: Option[String] = None
+    override def explain(implicit formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -386,18 +386,18 @@ object WeederError {
   case class IllegalWildcard(loc: SourceLocation) extends WeederError {
     def summary: String = "Wildcard not allowed here."
 
-    def message: String = {
-      s"""${Format.line(kind, source.format)}
+    def message(implicit formatter: Formatter): String = {
+      s"""${formatter.line(kind, source.format)}
          |>> Wildcard not allowed here.
          |
-         |${Format.code(loc, "illegal wildcard.")}
+         |${formatter.code(loc, "illegal wildcard.")}
          |""".stripMargin
     }
 
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain: Option[String] = None
+    override def explain(implicit formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -410,18 +410,18 @@ object WeederError {
   case class MismatchedArity(expected: Int, actual: Int, loc: SourceLocation) extends WeederError {
     def summary: String = s"Mismatched arity: expected: $expected, actual: $actual."
 
-    def message: String = {
-      s"""${Format.line(kind, source.format)}
+    def message(implicit formatter: Formatter): String = {
+      s"""${formatter.line(kind, source.format)}
          |>> Mismatched arity: expected: $expected, actual: $actual.
          |
-         |${Format.code(loc, "mismatched arity.")}
+         |${formatter.code(loc, "mismatched arity.")}
          |""".stripMargin
     }
 
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain: Option[String] = None
+    override def explain(implicit formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -434,20 +434,20 @@ object WeederError {
   case class NonLinearPattern(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     def summary: String = s"Multiple occurrences of '$name' in pattern."
 
-    def message: String = {
-      s"""${Format.line(kind, source.format)}
-         |>> Multiple occurrences of '${Format.red(name)}'  in pattern.
+    def message(implicit formatter: Formatter): String = {
+      s"""${formatter.line(kind, source.format)}
+         |>> Multiple occurrences of '${formatter.red(name)}'  in pattern.
          |
-         |${Format.code(loc1, "the first occurrence was here.")}
+         |${formatter.code(loc1, "the first occurrence was here.")}
          |
-         |${Format.code(loc2, "the second occurrence was here.")}
+         |${formatter.code(loc2, "the second occurrence was here.")}
          |
          |""".stripMargin
     }
 
     def loc: SourceLocation = loc1 min loc2
 
-    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} A variable may only occur once in a pattern.")
+    override def explain(implicit formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} A variable may only occur once in a pattern.")
 
   }
 
@@ -460,18 +460,18 @@ object WeederError {
   case class UndefinedAnnotation(name: String, loc: SourceLocation) extends WeederError {
     def summary: String = s"Undefined annotation $name"
 
-    def message: String = {
-      s"""${Format.line(kind, source.format)}
-         |>> Undefined annotation '${Format.red(name)}'.
+    def message(implicit formatter: Formatter): String = {
+      s"""${formatter.line(kind, source.format)}
+         |>> Undefined annotation '${formatter.red(name)}'.
          |
-         |${Format.code(loc, "undefined annotation.")}
+         |${formatter.code(loc, "undefined annotation.")}
          |""".stripMargin
     }
 
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain: Option[String] = None
+    override def explain(implicit formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -483,16 +483,16 @@ object WeederError {
   case class IllegalPrivateDeclaration(ident: Name.Ident, loc: SourceLocation) extends WeederError {
     def summary: String = s"Illegal private declaration '${ident.name}'."
 
-    def message: String = {
-      s"""${Format.line(kind, source.format)}
-         |>> Illegal private declaration '${Format.red(ident.name)}'.
+    def message(implicit formatter: Formatter): String = {
+      s"""${formatter.line(kind, source.format)}
+         |>> Illegal private declaration '${formatter.red(ident.name)}'.
          |
-         |${Format.code(loc, "illegal private declaration")}
+         |${formatter.code(loc, "illegal private declaration")}
          |
          |""".stripMargin
     }
 
-    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Mark the declaration as 'pub'.")
+    override def explain(implicit formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Mark the declaration as 'pub'.")
 
   }
 
@@ -504,16 +504,16 @@ object WeederError {
   case class IllegalTypeConstraintParameter(loc: SourceLocation) extends WeederError {
     def summary: String = s"Illegal type constraint parameter."
 
-    def message: String = {
-      s"""${Format.line(kind, source.format)}
+    def message(implicit formatter: Formatter): String = {
+      s"""${formatter.line(kind, source.format)}
          |>> Illegal type constraint parameter.
          |
-         |${Format.code(loc, "illegal type constraint parameter")}
+         |${formatter.code(loc, "illegal type constraint parameter")}
          |
          |""".stripMargin
     }
 
-    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Type constraint parameters must be composed only of type variables.")
+    override def explain(implicit formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Type constraint parameters must be composed only of type variables.")
 
   }
 
@@ -525,16 +525,16 @@ object WeederError {
   case class InconsistentTypeParameters(loc: SourceLocation) extends WeederError {
     def summary: String = "Either all or none of the type parameters must be annotated with a kind."
 
-    def message: String = {
-      s"""${Format.line(kind, source.format)}
+    def message(implicit formatter: Formatter): String = {
+      s"""${formatter.line(kind, source.format)}
          |>> Inconsistent type parameters.
          |
-         |${Format.code(loc, "inconsistent type parameters")}
+         |${formatter.code(loc, "inconsistent type parameters")}
          |
          |""".stripMargin
     }
 
-    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Either all or none of the type parameters must be annotated with a kind.")
+    override def explain(implicit formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Either all or none of the type parameters must be annotated with a kind.")
 
   }
 
@@ -546,16 +546,16 @@ object WeederError {
   case class UnkindedTypeParameters(loc: SourceLocation) extends WeederError {
     def summary: String = "Type parameters here must be annotated with a kind."
 
-    def message: String = {
-      s"""${Format.line(kind, source.format)}
+    def message(implicit formatter: Formatter): String = {
+      s"""${formatter.line(kind, source.format)}
          |>> Unkinded type parameters.
          |
-         |${Format.code(loc, "unkinded type parameters")}
+         |${formatter.code(loc, "unkinded type parameters")}
          |
          |""".stripMargin
     }
 
-    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Type parameters here must be annotated with a kind.")
+    override def explain(implicit formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Type parameters here must be annotated with a kind.")
 
   }
 
@@ -568,16 +568,16 @@ object WeederError {
   case class MalformedUnicodeEscapeSequence(code: String, loc: SourceLocation) extends WeederError {
     def summary: String = s"Malformed unicode escape sequence '$code'."
 
-    def message: String = {
-      s"""${Format.line(kind, source.format)}
+    def message(implicit formatter: Formatter): String = {
+      s"""${formatter.line(kind, source.format)}
          |>> Malformed unicode escape sequence.
          |
-         |${Format.code(loc, "malformed unicode escape sequence")}
+         |${formatter.code(loc, "malformed unicode escape sequence")}
          |
          |""".stripMargin
     }
 
-    override def explain: Option[String] = Some(s"${Format.underline("Tip:")}" + " A Unicode escape sequence must be of the form \\uXXXX where X is a hexadecimal.")
+    override def explain(implicit formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")}" + " A Unicode escape sequence must be of the form \\uXXXX where X is a hexadecimal.")
 
   }
 
@@ -590,16 +590,16 @@ object WeederError {
   case class InvalidEscapeSequence(char: Char, loc: SourceLocation) extends WeederError {
     def summary: String = s"Invalid escape sequence '\\$char'."
 
-    def message: String = {
-      s"""${Format.line(kind, source.format)}
+    def message(implicit formatter: Formatter): String = {
+      s"""${formatter.line(kind, source.format)}
          |>> Invalid escape sequence.
          |
-         |${Format.code(loc, "invalid escape sequence")}
+         |${formatter.code(loc, "invalid escape sequence")}
          |
          |""".stripMargin
     }
 
-    override def explain: Option[String] = Some(s"${Format.underline("Tip:")}" + " The valid escape sequences are '\\t', '\\\\', '\\\'', '\\\"', '\\n', and '\\r'.")
+    override def explain(implicit formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")}" + " The valid escape sequences are '\\t', '\\\\', '\\\'', '\\\"', '\\n', and '\\r'.")
 
   }
 
@@ -612,16 +612,16 @@ object WeederError {
   case class NonSingleCharacter(chars: String, loc: SourceLocation) extends WeederError {
     def summary: String = "Non-single-character literal."
 
-    def message: String = {
-      s"""${Format.line(kind, source.format)}
+    def message(implicit formatter: Formatter): String = {
+      s"""${formatter.line(kind, source.format)}
          |>> Non-single-character literal.
          |
-         |${Format.code(loc, "non-single-character literal")}
+         |${formatter.code(loc, "non-single-character literal")}
          |
          |""".stripMargin
     }
 
-    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} A character literal must consist of a single character.")
+    override def explain(implicit formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} A character literal must consist of a single character.")
 
   }
 
@@ -633,16 +633,16 @@ object WeederError {
   case class EmptyInterpolatedExpression(loc: SourceLocation) extends WeederError {
     def summary: String = "Empty interpolated expression."
 
-    def message: String = {
-      s"""${Format.line(kind, source.format)}
+    def message(implicit formatter: Formatter): String = {
+      s"""${formatter.line(kind, source.format)}
          |>> Empty interpolated expression.
          |
-         |${Format.code(loc, "empty interpolated expression")}
+         |${formatter.code(loc, "empty interpolated expression")}
          |
          |""".stripMargin
     }
 
-    override def explain: Option[String] = Some(s"${Format.underline("Tip:")} Add an expression to the interpolation or remove the interpolation.")
+    override def explain(implicit formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Add an expression to the interpolation or remove the interpolation.")
 
   }
 }

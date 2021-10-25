@@ -16,8 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.util.OutputContext
-import ca.uwaterloo.flix.util.OutputContext.RawOutput
+import ca.uwaterloo.flix.util.Formatter
 import org.json4s.JsonDSL._
 import org.json4s._
 
@@ -26,7 +25,7 @@ import org.json4s._
   */
 object PublishDiagnosticsParams {
   def from(errors: LazyList[CompilationMessage]): List[PublishDiagnosticsParams] = {
-    implicit val ctx: OutputContext = RawOutput
+    implicit val formatter: Formatter = Formatter.NoFormatter
 
     // Group the error messages by source.
     val errorsBySource = errors.toList.groupBy(_.loc.source)

@@ -46,7 +46,7 @@ class Shell(initialPaths: List[Path], options: Options) {
   /**
     * The default color context.
     */
-  private implicit val outputContext: OutputContext = OutputContext.AnsiTerminalOutput
+  private implicit val formatter: Formatter = Formatter.AnsiTerminalFormatter
 
   /**
     * The executor service.
@@ -117,7 +117,7 @@ class Shell(initialPaths: List[Path], options: Options) {
           execute(cmd)
         } catch {
           case e: Exception =>
-            terminal.writer().print(OutputContext.render(e.getMessage))
+            terminal.writer().print(e.getMessage)
             e.printStackTrace(terminal.writer())
         }
       }
@@ -218,9 +218,9 @@ class Shell(initialPaths: List[Path], options: Options) {
 
           // Iterate through the premises, i.e. the variable symbols in scope.
           for ((varSym, varType) <- env) {
-            sb.append(Format.blue(varSym.text))
+            sb.append(formatter.blue(varSym.text))
               .append(": ")
-              .append(Format.cyan(FormatType.formatType(varType)))
+              .append(formatter.cyan(FormatType.formatType(varType)))
               .append(" " * 6)
           }
 
@@ -230,13 +230,13 @@ class Shell(initialPaths: List[Path], options: Options) {
             .append(System.lineSeparator())
 
           // Print the goal.
-          sb.append(Format.blue(sym.toString))
+          sb.append(formatter.blue(sym.toString))
             .append(": ")
-            .append(Format.cyan(FormatType.formatType(holeType)))
+            .append(formatter.cyan(FormatType.formatType(holeType)))
             .append(System.lineSeparator())
 
           // Print the result to the terminal.
-          terminal.writer().print(OutputContext.render(sb.toString()))
+          terminal.writer().print(sb.toString())
       }
   }
 
@@ -253,7 +253,7 @@ class Shell(initialPaths: List[Path], options: Options) {
       // Find the available namespaces.
       val namespaces = namespacesOf(this.root)
 
-      sb.append(Format.bold("Namespaces:"))
+      sb.append(formatter.bold("Namespaces:"))
         .append(System.lineSeparator())
         .append(System.lineSeparator())
       for (namespace <- namespaces.toList.sorted) {
@@ -264,7 +264,7 @@ class Shell(initialPaths: List[Path], options: Options) {
       sb.append(System.lineSeparator())
 
       // Print the result to the terminal.
-      terminal.writer().print(OutputContext.render(sb.toString()))
+      terminal.writer().print(sb.toString())
 
     case Some(ns) =>
       // Case 2: Browse a specific namespace.
@@ -275,7 +275,7 @@ class Shell(initialPaths: List[Path], options: Options) {
       // Print the matched definitions.
       val matchedDefs = getDefinitionsByNamespace(ns, this.root)
       if (matchedDefs.nonEmpty) {
-        sb.append(Format.bold("Definitions:"))
+        sb.append(formatter.bold("Definitions:"))
           .append(System.lineSeparator())
           .append(System.lineSeparator())
         for (defn <- matchedDefs.sortBy(_.sym.name)) {
@@ -286,7 +286,7 @@ class Shell(initialPaths: List[Path], options: Options) {
       }
 
       // Print the result to the terminal.
-      terminal.writer().print(OutputContext.render(sb.toString()))
+      terminal.writer().print(sb.toString())
   }
 
   /**
@@ -309,7 +309,7 @@ class Shell(initialPaths: List[Path], options: Options) {
           .append(System.lineSeparator())
 
         // Print the result to the terminal.
-        terminal.writer().print(OutputContext.render(sb.toString()))
+        terminal.writer().print(sb.toString())
     }
   }
 
@@ -324,7 +324,7 @@ class Shell(initialPaths: List[Path], options: Options) {
 
     // Construct a new String Builder.
     val sb = new StringBuilder()
-    sb.append(Format.bold("Definitions:"))
+    sb.append(formatter.bold("Definitions:"))
       .append(System.lineSeparator())
       .append(System.lineSeparator())
 
@@ -339,7 +339,7 @@ class Shell(initialPaths: List[Path], options: Options) {
       // Print the namespace.
       if (matchedDefs.nonEmpty) {
         sb.append(" " * 2)
-          .append(Format.bold(ns.mkString("/")))
+          .append(formatter.bold(ns.mkString("/")))
           .append(System.lineSeparator())
         for (defn <- matchedDefs) {
           sb.append(" " * 4)
@@ -352,7 +352,7 @@ class Shell(initialPaths: List[Path], options: Options) {
     sb.append(System.lineSeparator())
 
     // Print the result to the terminal.
-    terminal.writer().print(OutputContext.render(sb.toString()))
+    terminal.writer().print(sb.toString())
   }
 
   /**
@@ -388,7 +388,7 @@ class Shell(initialPaths: List[Path], options: Options) {
         terminal.writer().println()
         for (error <- errors) {
           val msg = if (options.explain) error.message + error.explain else error.message
-          terminal.writer().print(OutputContext.render(msg))
+          terminal.writer().print(msg)
         }
         terminal.writer().println()
         terminal.writer().print(prompt)
@@ -546,22 +546,22 @@ class Shell(initialPaths: List[Path], options: Options) {
     */
   private def prettyPrintDef(defn: Def): String = {
     val sb = new StringBuilder()
-    sb.append(Format.bold("def "))
-      .append(Format.blue(defn.sym.name))
+    sb.append(formatter.bold("def "))
+      .append(formatter.blue(defn.sym.name))
       .append("(")
     if (defn.spec.fparams.nonEmpty) {
       sb.append(defn.spec.fparams.head.sym.text)
         .append(": ")
-        .append(Format.cyan(FormatType.formatType(defn.spec.fparams.head.tpe)))
+        .append(formatter.cyan(FormatType.formatType(defn.spec.fparams.head.tpe)))
       for (fparam <- defn.spec.fparams.tail) {
         sb.append(", ")
           .append(fparam.sym.text)
           .append(": ")
-          .append(Format.cyan(FormatType.formatType(fparam.tpe)))
+          .append(formatter.cyan(FormatType.formatType(fparam.tpe)))
       }
     }
     sb.append("): ")
-      .append(Format.cyan(FormatType.formatType(defn.impl.inferredScheme.base.typeArguments.last)))
+      .append(formatter.cyan(FormatType.formatType(defn.impl.inferredScheme.base.typeArguments.last)))
       .append(System.lineSeparator())
       .toString()
   }
@@ -576,22 +576,22 @@ class Shell(initialPaths: List[Path], options: Options) {
 
     // Check if any holes are present.
     if (holes.nonEmpty) {
-      sb.append(Format.bold("Holes:"))
+      sb.append(formatter.bold("Holes:"))
         .append(System.lineSeparator())
 
       // Print each hole and its type.
       for ((sym, ctx) <- holes) {
         sb.append(" " * 2)
-          .append(Format.blue(sym.toString))
+          .append(formatter.blue(sym.toString))
           .append(": ")
-          .append(Format.cyan(FormatType.formatType(ctx.tpe)))
+          .append(formatter.cyan(FormatType.formatType(ctx.tpe)))
           .append(System.lineSeparator())
       }
       sb.append(System.lineSeparator())
     }
 
     // Print the result to the terminal.
-    terminal.writer().print(OutputContext.render(sb.toString()))
+    terminal.writer().print(sb.toString())
   }
 
   /**
