@@ -236,15 +236,13 @@ object SemanticTokensProvider {
 
     case Expression.Default(_, _) => Iterator.empty
 
-    // TODO
-    case Expression.Lambda(fparam, exp, tpe, loc) =>
-      val env1 = Map(fparam.sym -> fparam.tpe)
-      visitExp(exp)
+    case Expression.Lambda(fparam, exp, _, _) =>
+      // TODO: The source location of fparam is bugged. Enabling it seems to break everything.
+      // TODO: Something is broken  with the bodies of lambdas.
+      visitFormalParam(fparam) // ++      visitExp(exp)
 
-    // TODO
-    case Expression.Apply(exp, exps, tpe, eff, loc) =>
-      val init = visitExp(exp)
-      exps.foldLeft(init) {
+    case Expression.Apply(exp, exps, _, _, _) =>
+      exps.foldLeft(visitExp(exp)) {
         case (acc, exp) => acc ++ visitExp(exp)
       }
 
