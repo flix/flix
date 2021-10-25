@@ -33,7 +33,7 @@ object SemanticTokensProvider {
     * Processes a request for (full) semantic tokens.
     */
   def provideSemanticTokens(uri: String)(implicit index: Index, root: Root): JObject = {
-    // TODO 1: When to compute semantic tokens?
+    // TODO: When to compute semantic tokens?
     if (root == null) {
       return ("status" -> "success") ~ ("result" -> ("data" -> Nil))
     }
@@ -49,8 +49,11 @@ object SemanticTokensProvider {
     //
     // Construct an iterator for semantic tokens from instances.
     //
-    val instanceTokens = root.instances.filter(_._1.loc.source.name == uri).flatMap {
-      case (_, instances) => instances.flatMap(visitInstance)
+    val instanceTokens = root.instances.values.flatMap {
+      case instances => instances.flatMap {
+        case instance if include(uri, instance.loc) => visitInstance(instance)
+        case _ => Nil
+      }
     }
 
     //
