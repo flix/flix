@@ -298,7 +298,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def UseMany: Rule1[ParsedAst.Use.UseMany] = {
       def NameAndAlias: Rule1[ParsedAst.Use.NameAndAlias] = rule {
-        SP ~ UseName ~ optional(atomic((WS ~ atomic("=>") ~ WS).named("' => '")) ~ UseName) ~ SP ~> ParsedAst.Use.NameAndAlias
+        SP ~ UseName ~ optional((WS ~ atomic("=>") ~ WS) ~ UseName) ~ SP ~> ParsedAst.Use.NameAndAlias
       }
 
       rule {
@@ -312,7 +312,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def UseManyTag: Rule1[ParsedAst.Use.UseManyTag] = {
       def TagAndAlias: Rule1[ParsedAst.Use.NameAndAlias] = rule {
-        SP ~ Names.Tag ~ optional(atomic((WS ~ atomic("=>") ~ WS).named("' => '")) ~ Names.Tag) ~ SP ~> ParsedAst.Use.NameAndAlias
+        SP ~ Names.Tag ~ optional(WS ~ atomic("=>") ~ WS ~ Names.Tag) ~ SP ~> ParsedAst.Use.NameAndAlias
       }
 
       rule {
@@ -321,7 +321,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def UseName: Rule1[Name.Ident] = rule {
-      atomic(Names.LowerCaseName | Names.UpperCaseName | Names.GreekName | Names.MathName | Names.OperatorName).named("Identifier")
+      Names.LowerCaseName | Names.UpperCaseName | Names.GreekName | Names.MathName | Names.OperatorName
     }
   }
 
@@ -329,7 +329,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Literals                                                                //
   /////////////////////////////////////////////////////////////////////////////
   def Literal: Rule1[ParsedAst.Literal] = rule {
-    atomic((Literals.Null | Literals.Bool | Literals.Char | Literals.Str | Literals.Default | Literals.Float | Literals.Int).named("Literal"))
+    Literals.Null | Literals.Bool | Literals.Char | Literals.Str | Literals.Default | Literals.Float | Literals.Int
   }
 
   object Literals {
@@ -450,7 +450,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def CharCode: Rule1[ParsedAst.CharCode] = rule {
-      atomic((Escape | Literal).named("Char"))
+      Escape | Literal
     }
   }
 
@@ -568,7 +568,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       rule {
         // NB: UserOpN must occur before UserOp2.
-        Unary ~ zeroOrMore(optWS ~ atomic((UserOpN | UserOp3 | UserOp2 | MathOp).named("UserOperator")) ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.Binary)
+        Unary ~ zeroOrMore(optWS ~ (UserOpN | UserOp3 | UserOp2 | MathOp) ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.Binary)
       }
     }
 
@@ -582,7 +582,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        !Literal ~ (SP ~ atomic((UnaryOp1 | UnaryOp2).named("UnaryOperator")) ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.Unary) | Ref
+        !Literal ~ (SP ~ (UnaryOp1 | UnaryOp2) ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.Unary) | Ref
       }
     }
 
@@ -755,7 +755,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         Expression ~> ((e: ParsedAst.Expression) => Seq(e))
       }
 
-      def MatchMany: Rule1[Seq[ParsedAst.Expression]] = namedRule("'('") {
+      def MatchMany: Rule1[Seq[ParsedAst.Expression]] = rule {
         "(" ~ optWS ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
       }
 
@@ -788,7 +788,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         keyword("case") ~ WS ~ Names.Variable ~ optWS ~ ":" ~ optWS ~ atomic("##") ~ Names.JavaName ~ WS ~ atomic("=>") ~ optWS ~ Expression ~> ParsedAst.CatchRule
       }
 
-      def CatchBody: Rule1[Seq[ParsedAst.CatchRule]] = namedRule("'{'") {
+      def CatchBody: Rule1[Seq[ParsedAst.CatchRule]] = rule {
         "{" ~ optWS ~ oneOrMore(CatchRule).separatedBy(CaseSeparator) ~ optWS ~ "}"
       }
 
@@ -861,7 +861,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Tag: Rule1[ParsedAst.Expression.Tag] = rule {
-      SP ~ Names.QualifiedTag ~ optional(optWS ~ Tuple.named("Tuple")) ~ SP ~> ParsedAst.Expression.Tag
+      SP ~ Names.QualifiedTag ~ optional(optWS ~ Tuple) ~ SP ~> ParsedAst.Expression.Tag
     }
 
     def Tuple: Rule1[ParsedAst.Expression] = rule {
@@ -1008,7 +1008,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS)
       }
 
-      def ProjectPart: Rule1[Option[Seq[Name.Ident]]] = namedRule("' project'") {
+      def ProjectPart: Rule1[Option[Seq[Name.Ident]]] = rule {
         optional(WS ~ keyword("project") ~ WS ~ oneOrMore(Names.Predicate).separatedBy(optWS ~ "," ~ optWS))
       }
 
@@ -1041,16 +1041,16 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
           }
         }
 
-        namedRule("' select'") {
+        rule {
           WS ~ keyword("select") ~ WS ~ (SelectMany | SelectOne)
         }
       }
 
-      def FromPart: Rule1[Seq[ParsedAst.Predicate.Body.Atom]] = namedRule("' from'") {
+      def FromPart: Rule1[Seq[ParsedAst.Predicate.Body.Atom]] = rule {
         WS ~ keyword("from") ~ WS ~ oneOrMore(Predicates.Body.Positive | Predicates.Body.Negative).separatedBy(optWS ~ "," ~ optWS)
       }
 
-      def WherePart: Rule1[Option[ParsedAst.Expression]] = namedRule("' where'") {
+      def WherePart: Rule1[Option[ParsedAst.Expression]] = rule {
         optional(WS ~ keyword("where") ~ WS ~ Expression)
       }
 
@@ -1320,7 +1320,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Var: Rule1[ParsedAst.Type] = rule {
-      SP ~ atomic(Names.Variable.named("TypeVariable")) ~ SP ~> ParsedAst.Type.Var
+      SP ~ Names.Variable ~ SP ~> ParsedAst.Type.Var
     }
 
     def Ambiguous: Rule1[ParsedAst.Type] = rule {
@@ -1501,14 +1501,14 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       * A lowercase identifier is a lowercase letter optionally followed by any letter, underscore, or prime.
       */
     def LowerCaseName: Rule1[Name.Ident] = rule {
-      atomic((SP ~ capture(optional("_") ~ LowerLetter ~ zeroOrMore(LegalLetter)) ~ SP).named("LowerCaseName")) ~> Name.Ident
+      SP ~ capture(optional("_") ~ LowerLetter ~ zeroOrMore(LegalLetter)) ~ SP ~> Name.Ident
     }
 
     /**
       * An uppercase identifier is an uppercase letter optionally followed by any letter, underscore, or prime.
       */
     def UpperCaseName: Rule1[Name.Ident] = rule {
-      atomic((SP ~ capture(optional("_") ~ UpperLetter ~ zeroOrMore(LegalLetter)) ~ SP).named("UpperCaseName")) ~> Name.Ident
+      SP ~ capture(optional("_") ~ UpperLetter ~ zeroOrMore(LegalLetter)) ~ SP ~> Name.Ident
     }
 
     /**
@@ -1536,77 +1536,77 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       * A greek identifier.
       */
     def GreekName: Rule1[Name.Ident] = rule {
-      atomic((SP ~ capture(oneOrMore(GreekLetter)) ~ SP).named("GreekName")) ~> Name.Ident
+      SP ~ capture(oneOrMore(GreekLetter)) ~ SP ~> Name.Ident
     }
 
     /**
       * A math identifier.
       */
     def MathName: Rule1[Name.Ident] = rule {
-      atomic((SP ~ capture(oneOrMore(MathLetter)) ~ SP).named("MathSymbol")) ~> Name.Ident
+      SP ~ capture(oneOrMore(MathLetter)) ~ SP ~> Name.Ident
     }
 
     /**
       * An operator identifier.
       */
     def OperatorName: Rule1[Name.Ident] = rule {
-      atomic((SP ~ capture(oneOrMore(OperatorLetter)) ~ SP).named("OperatorName")) ~> Name.Ident
+      SP ~ capture(oneOrMore(OperatorLetter)) ~ SP ~> Name.Ident
     }
 
     /**
       * Namespaces are lower or uppercase.
       */
     def Namespace: Rule1[Name.NName] = rule {
-      SP ~ oneOrMore(atomic(UpperCaseName.named("NamespaceName"))).separatedBy("/") ~ SP ~>
+      SP ~ oneOrMore(UpperCaseName).separatedBy("/") ~ SP ~>
         ((sp1: SourcePosition, parts: Seq[Name.Ident], sp2: SourcePosition) => Name.NName(sp1, parts.toList, sp2))
     }
 
     def Annotation: Rule1[Name.Ident] = rule {
-      atomic((LowerCaseName | UpperCaseName).named("Annotation"))
+      LowerCaseName | UpperCaseName
     }
 
-    def Attribute: Rule1[Name.Ident] = rule(atomic(LowerCaseName.named("AttributeName")))
+    def Attribute: Rule1[Name.Ident] = LowerCaseName
 
-    def Class: Rule1[Name.Ident] = rule(atomic(UpperCaseName.named("ClassName")))
+    def Class: Rule1[Name.Ident] = UpperCaseName
 
-    def QualifiedClass: Rule1[Name.QName] = rule(atomic(UpperCaseQName.named("QualifiedClassName")))
+    def QualifiedClass: Rule1[Name.QName] = UpperCaseQName
 
     def Definition: Rule1[Name.Ident] = rule {
-      atomic((LowerCaseName | GreekName | MathName | OperatorName).named("DefinitionName"))
+      LowerCaseName | GreekName | MathName | OperatorName
     }
 
-    def QualifiedDefinition: Rule1[Name.QName] = rule(atomic(LowerCaseQName.named("QualifiedDefinitionName")))
+    def QualifiedDefinition: Rule1[Name.QName] = LowerCaseQName
 
-    def Eff: Rule1[Name.Ident] = rule(atomic(LowerCaseName.named("EffectName")))
+    def Eff: Rule1[Name.Ident] = LowerCaseName
 
-    def Field: Rule1[Name.Ident] = rule(atomic(LowerCaseName.named("FieldName")))
+    def Field: Rule1[Name.Ident] = LowerCaseName
 
-    def Hole: Rule1[Name.Ident] = rule(atomic(LowerCaseName.named("HoleName")))
+    def Hole: Rule1[Name.Ident] = LowerCaseName
 
-    def Intrinsic: Rule1[Name.Ident] = rule(atomic(UpperCaseName.named("IntrinsicName")))
+    def Intrinsic: Rule1[Name.Ident] = UpperCaseName
 
-    def Predicate: Rule1[Name.Ident] = rule(atomic(UpperCaseName.named("PredicateName")))
+    def Predicate: Rule1[Name.Ident] = UpperCaseName
 
-    def QualifiedPredicate: Rule1[Name.QName] = rule(atomic(UpperCaseQName.named("QualifiedPredicateName")))
+    def QualifiedPredicate: Rule1[Name.QName] = UpperCaseQName
 
-    def Tag: Rule1[Name.Ident] = rule(atomic(UpperCaseName.named("TagName")))
+    def Tag: Rule1[Name.Ident] = UpperCaseName
 
-    def QualifiedTag: Rule1[Name.QName] = rule(atomic(UpperCaseQName.named("QualifiedTagName")))
+    def QualifiedTag: Rule1[Name.QName] = UpperCaseQName
 
-    def Type: Rule1[Name.Ident] = rule(atomic(UpperCaseName.named("Type")))
+    def Type: Rule1[Name.Ident] = UpperCaseName
 
-    def QualifiedType: Rule1[Name.QName] = rule(atomic(UpperCaseQName.named("QualifiedType")))
+    def QualifiedType: Rule1[Name.QName] = UpperCaseQName
 
     def Variable: Rule1[Name.Ident] = rule {
-      atomic((LowerCaseName | Wildcard | GreekName | MathName).named("VariableName"))
+      LowerCaseName | Wildcard | GreekName | MathName
     }
 
     def JavaIdentifier: Rule1[String] = rule {
-      atomic(capture((CharPredicate.Alpha | anyOf("_$")) ~ zeroOrMore(CharPredicate.AlphaNum | anyOf("_$"))).named("JavaIdentifier"))
+      capture((CharPredicate.Alpha | anyOf("_$")) ~ zeroOrMore(CharPredicate.AlphaNum | anyOf("_$")))
     }
 
     def JavaName: Rule1[Seq[String]] = rule {
-      atomic(oneOrMore(JavaIdentifier).separatedBy(".").named("JavaName"))
+      oneOrMore(JavaIdentifier).separatedBy(".")
     }
 
   }
@@ -1633,15 +1633,15 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Whitespace                                                              //
   /////////////////////////////////////////////////////////////////////////////
   def WS: Rule0 = rule {
-    quiet(atomic((oneOrMore(" " | "\t" | NewLine | Comment)).named("Whitespace")))
+    quiet(oneOrMore(" " | "\t" | NewLine | Comment))
   }
 
   def optWS: Rule0 = rule {
-    quiet((optional(WS)).named("OptionalWhitespace"))
+    quiet(optional(WS))
   }
 
   def NewLine: Rule0 = rule {
-    quiet(atomic(("\n" | "\r").named("NewLine")))
+    quiet("\n" | "\r")
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -1654,17 +1654,17 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   def Documentation: Rule1[ParsedAst.Doc] = {
     // Matches real whitespace.
     def PureWS: Rule0 = rule {
-      quiet(atomic(zeroOrMore(" " | "\t" | NewLine).named("Whitespace")))
+      quiet(zeroOrMore(" " | "\t" | NewLine))
     }
 
     // Matches triple dashed comments.
-    def TripleSlashComment: Rule1[Seq[String]] = rule {
-      oneOrMore(PureWS ~ atomic("///") ~ atomic((capture(zeroOrMore(!NewLine ~ ANY)) ~ (NewLine | EOI)).named("text")))
+    def TripleSlash: Rule1[Seq[String]] = rule {
+      oneOrMore(PureWS ~ atomic("///") ~ (capture(zeroOrMore(!NewLine ~ ANY)) ~ (NewLine | EOI)))
     }
 
     // Optionally matches a triple dashed comment and then any whitespace.
     rule {
-      atomic((SP ~ optional(TripleSlashComment) ~ SP ~ optWS).named("Documentation")) ~> (
+      SP ~ optional(TripleSlash) ~ SP ~ optWS ~> (
         (sp1: SourcePosition, o: Option[Seq[String]], sp2: SourcePosition) => o match {
           case None => ParsedAst.Doc(sp1, Seq.empty, sp2)
           case Some(lines) => ParsedAst.Doc(sp1, lines, sp2)
@@ -1676,7 +1676,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Comments                                                                //
   /////////////////////////////////////////////////////////////////////////////
   def Comment: Rule0 = rule {
-    atomic((Comments.SingleLineComment | Comments.MultiLineComment).named("Comment"))
+    Comments.SingleLineComment | Comments.MultiLineComment
   }
 
   object Comments {
