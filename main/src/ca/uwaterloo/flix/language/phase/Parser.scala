@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Polarity, Source}
-import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
+import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 import org.parboiled2._
@@ -45,7 +45,7 @@ object Parser extends Phase[List[Source], ParsedAst.Program] {
   }
 
   private def stripLiteralWhitespaceChars(s: String): String =
-    s.replaceAll("\\\\n|\\\\r|\\\\t"," ")
+    s.replaceAll("\\\\n|\\\\r|\\\\t", " ")
 
   /**
     * Attempts to parse the given `source` as a root.
@@ -478,6 +478,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       def Or: Rule1[String] = rule {
         WS ~ capture(keyword("or")) ~ WS
       }
+
       rule {
         LogicalAnd ~ zeroOrMore(Or ~ LogicalAnd ~ SP ~> ParsedAst.Expression.Binary)
       }
@@ -487,6 +488,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       def And: Rule1[String] = rule {
         WS ~ capture(keyword("and")) ~ WS
       }
+
       rule {
         BitwiseOr ~ zeroOrMore(And ~ BitwiseOr ~ SP ~> ParsedAst.Expression.Binary)
       }
@@ -574,9 +576,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       def UnaryOp1: Rule1[String] = rule {
         capture("+" | "-" | atomic("~~~"))
       }
+
       def UnaryOp2: Rule1[String] = rule {
         capture(keyword("not")) ~ WS
       }
+
       rule {
         !Literal ~ (SP ~ atomic((UnaryOp1 | UnaryOp2).named("UnaryOperator")) ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.Unary) | Ref
       }
@@ -626,12 +630,13 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetRegion | LetMatch | LetMatchStar | LetUse | LetImport | IfThenElse | Reify | ReifyBool | ReifyType | Choose | Match | LambdaMatch | TryCatch | Lambda | Tuple |
+      LetRegion | LetMatch | LetMatchStar | LetUse | LetImport | IfThenElse | Reify | ReifyBool |
+        ReifyType | Choose | Match | LambdaMatch | TryCatch | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | Spawn | Lazy | Force | Intrinsic | ArrayLit | ArrayNew |
-        FNil | FSet | FMap | ConstraintSet | FixpointProject | FixpointSolveWithProject | FixpointQueryWithSelect |
-        ConstraintSingleton | Interpolation | Literal | Existential | Universal |
-        UnaryLambda | FName | Tag | Hole
+        FNil | FSet | FMap | ConstraintSet | FixpointProject | FixpointSolveWithProject |
+        FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal | Existential |
+        Universal | UnaryLambda | FName | Tag | Hole
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -832,7 +837,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Intrinsic: Rule1[ParsedAst.Expression.Intrinsic] = rule {
-      SP ~ "$"~ Names.Intrinsic ~ "$" ~ ArgumentList ~ SP ~> ParsedAst.Expression.Intrinsic
+      SP ~ "$" ~ Names.Intrinsic ~ "$" ~ ArgumentList ~ SP ~> ParsedAst.Expression.Intrinsic
     }
 
     def Postfix: Rule1[ParsedAst.Expression] = rule {
@@ -1601,7 +1606,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def JavaName: Rule1[Seq[String]] = rule {
-        atomic(oneOrMore(JavaIdentifier).separatedBy(".").named("JavaName"))
+      atomic(oneOrMore(JavaIdentifier).separatedBy(".").named("JavaName"))
     }
 
   }
@@ -1609,6 +1614,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // Keyword                                                                 //
   /////////////////////////////////////////////////////////////////////////////
+
   /**
     * Reads the keyword and looks ahead to ensure there no legal letters immediately following.
     */
@@ -1641,6 +1647,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // Documentation                                                           //
   /////////////////////////////////////////////////////////////////////////////
+
   /**
     * Optionally a parses a documentation comment.
     */
