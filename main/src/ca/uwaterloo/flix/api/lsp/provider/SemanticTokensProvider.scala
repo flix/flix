@@ -109,9 +109,13 @@ object SemanticTokensProvider {
     */
   private def visitClass(classDecl: TypedAst.Class): Iterator[SemanticToken] = classDecl match {
     case TypedAst.Class(_, _, sym, tparam, superClasses, signatures, laws, _) =>
-      // TODO: Superclasses, signatures and laws.
       val t = SemanticToken(SemanticTokenType.Interface, Nil, sym.loc)
-      Iterator(t) ++ visitTypeParam(tparam)
+
+      Iterator(t) ++
+        superClasses.flatMap(visitTypeConstraint) ++
+        visitTypeParam(tparam) ++
+        signatures.flatMap(visitSig) ++
+        laws.flatMap(visitDef)
   }
 
   /**
