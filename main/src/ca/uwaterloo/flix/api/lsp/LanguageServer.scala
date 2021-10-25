@@ -104,6 +104,11 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
   var index: Index = Index.empty
 
   /**
+    * A Boolean that records if root AST is current (i.e. up-to-date).
+    */
+  private var current: Boolean = false
+
+  /**
     * Invoked when the server is started.
     */
   override def onStart(): Unit = {
@@ -194,10 +199,12 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     */
   private def processRequest(request: Request)(implicit ws: WebSocket): JValue = request match {
     case Request.AddUri(id, uri, src) =>
+      current = false
       sources += (uri -> src)
       ("id" -> id) ~ ("status" -> "success")
 
     case Request.RemUri(id, uri) =>
+      current = false
       sources -= uri
       ("id" -> id) ~ ("status" -> "success")
 
@@ -259,7 +266,10 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       ("id" -> id) ~ FindReferencesProvider.findRefs(uri, pos)(index, root)
 
     case Request.SemanticTokens(id, uri) =>
-      ("id" -> id) ~ SemanticTokensProvider.provideSemanticTokens(uri)(index, root)
+      if (current)
+        ("id" -> id) ~ SemanticTokensProvider.provideSemanticTokens(uri)(index, root)
+      else
+        ("id" -> id) ~ ("status" -> "success") ~ ("result" -> ("data" -> Nil))
 
   }
 
@@ -291,6 +301,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
           // Case 1: Compilation was successful. Build the reverse index.
           this.root = root
           this.index = Indexer.visitRoot(root)
+          this.current = true
 
           // Compute elapsed time.
           val e = System.nanoTime() - t
@@ -310,11 +321,16 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
         case Failure(errors) =>
           // Case 2: Compilation failed. Send back the error messages.
+
+          // Mark the AST as outdated.
+          current = false
           val results = PublishDiagnosticsParams.from(errors)
           ("id" -> requestId) ~ ("status" -> "failure") ~ ("result" -> results.map(_.toJSON))
       }
     } catch {
       case t: Throwable =>
+        // Mark the AST as outdated.
+        current = false
         t.printStackTrace(System.err)
         ("id" -> requestId) ~ ("status" -> "failure")
     }

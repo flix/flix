@@ -89,9 +89,19 @@ object SemanticTokensProvider {
     }
 
     //
+    // Collect all tokens into one list.
+    //
+    val allTokens = (classTokens ++ instanceTokens ++ defnTokens ++ enumTokens ++ typeAliasTokens).toList
+
+    //
+    // TODO: Hack to filter source locations that are Unknown.
+    //
+    val filteredTokens = allTokens.filter(_.loc.beginLine > 1)
+
+    //
     // Encode all the semantic tokens as a list of integers.
     //
-    val encodedTokens = encodeSemanticTokens((classTokens ++ instanceTokens ++ defnTokens ++ enumTokens ++ typeAliasTokens).toList)
+    val encodedTokens = encodeSemanticTokens(filteredTokens)
 
     //
     // Build the JSON result.
