@@ -271,8 +271,8 @@ object SemanticTokensProvider {
     case Expression.Match(matchExp, rules, _, _, _) =>
       val m = visitExp(matchExp)
       rules.foldLeft(m) {
-        case (macc, MatchRule(pat, guard, exp)) =>
-          macc ++ visitPat(pat) ++ visitExp(guard) ++ visitExp(exp)
+        case (acc, MatchRule(pat, guard, exp)) =>
+          acc ++ visitPat(pat) ++ visitExp(guard) ++ visitExp(exp)
       }
 
     case Expression.Choose(exps, rules, tpe, eff, loc) =>
@@ -340,55 +340,52 @@ object SemanticTokensProvider {
 
     case Expression.TryCatch(exp, rules, _, _, _) =>
       rules.foldLeft(visitExp(exp)) {
-        case (macc, CatchRule(sym, _, body)) =>
+        case (acc, CatchRule(sym, _, exp)) =>
           val t = SemanticToken(SemanticTokenType.Variable, Nil, sym.loc)
-          macc ++ Iterator(t) ++ visitExp(body)
+          acc ++ Iterator(t) ++ visitExp(exp)
       }
 
-    // TODO: From here
-
-    case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
-      args.foldLeft(Iterator.empty[SemanticToken]) {
-        case (macc, arg) => macc ++ visitExp(arg)
+    case Expression.InvokeConstructor(_, exps, _, _, _) =>
+      exps.foldLeft(Iterator.empty[SemanticToken]) {
+        case (acc, exp) => acc ++ visitExp(exp)
       }
 
-    case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) =>
-      args.foldLeft(visitExp(exp)) {
-        case (macc, arg) => macc ++ visitExp(arg)
+    case Expression.InvokeMethod(method, exp, exps, _, _, _) =>
+      exps.foldLeft(visitExp(exp)) {
+        case (acc, e) => acc ++ visitExp(e)
       }
 
-    case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) =>
-      args.foldLeft(Iterator.empty[SemanticToken]) {
-        case (macc, arg) => macc ++ visitExp(arg)
+    case Expression.InvokeStaticMethod(_, exps, _, _, _) =>
+      exps.foldLeft(Iterator.empty[SemanticToken]) {
+        case (acc, e) => acc ++ visitExp(e)
       }
 
-    case Expression.GetField(field, exp, tpe, eff, loc) =>
+    case Expression.GetField(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.PutField(field, exp1, exp2, tpe, eff, loc) =>
+    case Expression.PutField(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.GetStaticField(field, tpe, eff, loc) =>
+    case Expression.GetStaticField(_, _, _, _) =>
       Iterator.empty
 
-    case Expression.PutStaticField(field, exp, tpe, eff, loc) =>
+    case Expression.PutStaticField(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.NewChannel(exp, tpe, eff, loc) => visitExp(exp)
+    case Expression.NewChannel(exp, _, _, _) => visitExp(exp)
 
-    case Expression.GetChannel(exp, tpe, eff, loc) => visitExp(exp)
+    case Expression.GetChannel(exp, _, _, _) => visitExp(exp)
 
-    case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
+    case Expression.PutChannel(exp1, exp2, _, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.SelectChannel(rules, default, tpe, eff, loc) =>
+    case Expression.SelectChannel(rules, default, _, _, _) =>
       val rs = rules.foldLeft(Iterator.empty[SemanticToken]) {
-        case (macc, SelectChannelRule(sym, chan, exp)) =>
-          macc ++ visitExp(chan) ++ visitExp(exp)
+        case (acc, SelectChannelRule(sym, chan, exp)) =>
+          val t = SemanticToken(SemanticTokenType.Variable, Nil, sym.loc)
+          acc ++ Iterator(t) ++ visitExp(chan) ++ visitExp(exp)
       }
       val d = default.map(visitExp).getOrElse(Iterator.empty)
       rs ++ d
-
-    // TODO> to here
 
     case Expression.Spawn(exp, _, _, _) => visitExp(exp)
 
@@ -398,7 +395,7 @@ object SemanticTokensProvider {
 
     case Expression.FixpointConstraintSet(cs, _, _, _) =>
       cs.foldLeft(Iterator.empty[SemanticToken]) {
-        case (macc, c) => macc ++ visitConstraint(c)
+        case (acc, c) => acc ++ visitConstraint(c)
       }
 
     case Expression.FixpointMerge(exp1, exp2, _, _, _, _) =>
