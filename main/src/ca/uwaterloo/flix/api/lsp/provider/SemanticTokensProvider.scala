@@ -123,9 +123,7 @@ object SemanticTokensProvider {
     */
   private def visitInstance(inst0: TypedAst.Instance): Iterator[SemanticToken] = inst0 match {
     case TypedAst.Instance(_, _, _, tpe, tconstrs, defs, _, _) =>
-      // TODO: We cannot create a semantic token for the *USE* of the class symbol because we do not have its location.
-      // TODO: We have the location of the class symbol, but not the location of the use.
-      // val t = SemanticToken(SemanticTokenType.Class, Nil, sym.loc)
+      // TODO: We lack the occurrence of a class symbol in an instance.
       val tokens1 = visitType(tpe)
       val tokens2 = tconstrs.flatMap(visitTypeConstraint)
       val tokens3 = defs.flatMap(visitDef)
@@ -152,12 +150,14 @@ object SemanticTokensProvider {
     */
   private def visitCase(case0: TypedAst.Case): Iterator[SemanticToken] = case0 match {
     case TypedAst.Case(_, tag, _, sc, _) =>
-      // TODO: There is a bug where `sc.base` somehow contains source locations pointing to the beginning of the enum.
+      // TODO: The scheme of a tag contains source locations that refer to the enum itself.
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, tag.loc)
       Iterator(t) ++ visitType(sc.base)
   }
 
-  // TODO: DOC
+  /**
+    * Returns all semantic tokens in the given definition `defn0`.
+    */
   private def visitDef(defn0: TypedAst.Def): Iterator[SemanticToken] = {
     val t = SemanticToken(SemanticTokenType.Function, Nil, defn0.sym.loc)
 
@@ -247,8 +247,7 @@ object SemanticTokensProvider {
     case Expression.Default(_, _) => Iterator.empty
 
     case Expression.Lambda(fparam, exp, _, _) =>
-      // TODO: The source location of fparam is bugged. Enabling it seems to break everything.
-      // TODO: Something is broken  with the bodies of lambdas.
+      // TODO: The body expression of lambdas appear to break semantic tokens.
       visitFormalParam(fparam) // ++      visitExp(exp)
 
     case Expression.Apply(exp, exps, _, _, _) =>
@@ -284,7 +283,7 @@ object SemanticTokensProvider {
       }
 
     case Expression.Choose(exps, rules, tpe, eff, loc) =>
-      Iterator.empty // TODO
+      Iterator.empty // TODO: Choose expression.
 
     case Expression.Tag(_, tag, exp, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, tag.loc)
@@ -493,9 +492,7 @@ object SemanticTokensProvider {
     */
   private def visitType(tpe0: Type): Iterator[SemanticToken] = tpe0 match {
     case Type.KindedVar(_, _, loc, _, _) =>
-      // TODO: Currently broken because of source locations associated with parameters.
-      // val t = SemanticToken(SemanticTokenType.TypeParameter, Nil, loc)
-      // Iterator(t)
+      // TODO: The source location of Type.KindedVar is associated with its declaration, not its use.
       Iterator.empty
 
     case Type.Ascribe(tpe, _, _) =>
@@ -552,9 +549,7 @@ object SemanticTokensProvider {
     */
   private def visitTypeParam(tparam0: TypedAst.TypeParam): Iterator[SemanticToken] = tparam0 match {
     case TypeParam(ident, _, _) =>
-      // TODO: Currently broken (and thus hidden)
-      // val t = SemanticToken(SemanticTokenType.TypeParameter, Nil, ident.loc)
-      // Iterator(t)
+      // TODO: Disabled until type variables are fixed.
       Iterator.empty
   }
 
