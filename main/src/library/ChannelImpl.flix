@@ -124,6 +124,8 @@ namespace ChannelImpl {
 
     def newChannelWithQueue(bufferSize: Int, typedDeque: TypedDeque): ChannelImpl & Impure =
         import dev.flix.runtime.GlobalCounter:newId();
+        if (bufferSize < 0) inputBug("newChannelWithQueue", "bufferSize < 0") as & Impure
+        else ();
         let buffered = bufferSize == 0;
         let reentrantLock = ReentrantLock.new(false);
         Mpmc(
@@ -139,56 +141,56 @@ namespace ChannelImpl {
     pub def putInt8(channel: ChannelImpl, element: Int8): ChannelImpl & Impure =
         match channel {
             case Mpmc(_, _, _, _, EQI8(deque), _, _) => put(channel, element, deque)
-            case _ => bug!("wrong type")
+            case _ => inputBug("putInt8", "wrong element type")
         }
 
     pub def putInt16(channel: ChannelImpl, element: Int16): ChannelImpl & Impure =
         match channel {
             case Mpmc(_, _, _, _, EQI16(deque), _, _) => put(channel, element, deque)
-            case _ => bug!("wrong type")
+            case _ => inputBug("putInt8", "wrong element type")
         }
 
     pub def putInt32(channel: ChannelImpl, element: Int32): ChannelImpl & Impure =
         match channel {
             case Mpmc(_, _, _, _, EQI32(deque), _, _) => put(channel, element, deque)
-            case _ => bug!("wrong type")
+            case _ => inputBug("putInt8", "wrong element type")
         }
     
     pub def putInt64(channel: ChannelImpl, element: Int64): ChannelImpl & Impure =
         match channel {
             case Mpmc(_, _, _, _, EQI64(deque), _, _) => put(channel, element, deque)
-            case _ => bug!("wrong type")
+            case _ => inputBug("putInt8", "wrong element type")
         }
     
     pub def putFloat32(channel: ChannelImpl, element: Float32): ChannelImpl & Impure =
         match channel {
             case Mpmc(_, _, _, _, EQF32(deque), _, _) => put(channel, element, deque)
-            case _ => bug!("wrong type")
+            case _ => inputBug("putInt8", "wrong element type")
         }
     
     pub def putFloat64(channel: ChannelImpl, element: Float64): ChannelImpl & Impure =
         match channel {
             case Mpmc(_, _, _, _, EQF64(deque), _, _) => put(channel, element, deque)
-            case _ => bug!("wrong type")
+            case _ => inputBug("putInt8", "wrong element type")
         }
     
     pub def putBool(channel: ChannelImpl, element: Bool): ChannelImpl & Impure =
         match channel {
             case Mpmc(_, _, _, _, EQBool(deque), _, _) => put(channel, element, deque)
-            case _ => bug!("wrong type")
+            case _ => inputBug("putInt8", "wrong element type")
         }
     
     pub def putChar(channel: ChannelImpl, element: Char): ChannelImpl & Impure =
         match channel {
             case Mpmc(_, _, _, _, EQChar(deque), _, _) => put(channel, element, deque)
-            case _ => bug!("wrong type")
+            case _ => inputBug("putInt8", "wrong element type")
         }
 
     pub def putObj(channel: ChannelImpl, element: a): ChannelImpl & Impure = {
         let Mpmc(_, _, _, _, typedDeque, _, _) = channel;
         match typedDeque {
             case EQObj(deque) => put(channel, element as ##java.lang.Object, deque)
-            case _ => bug!("wrong type")
+            case _ => inputBug("putInt8", "wrong element type")
         }
     }
 
@@ -255,55 +257,55 @@ namespace ChannelImpl {
     pub def getInt8(channel: ChannelImpl): Int8 & Impure =
         match channel {
             case Mpmc(_, _, _, _, EQI8(deque), _, _) => get(channel, deque)
-            case _ => bug!("wrong type")
+            case _ => inputBug("getInt8", "wrong get call")
         }
 
     pub def getInt16(channel: ChannelImpl): Int16 & Impure =
         match channel {
             case Mpmc(_, _, _, _, EQI16(deque), _, _) => get(channel, deque)
-            case _ => bug!("wrong type")
+            case _ => inputBug("getInt8", "wrong get call")
         }
     
     pub def getInt32(channel: ChannelImpl): Int32 & Impure =
         match channel {
             case Mpmc(_, _, _, _, EQI32(deque), _, _) => get(channel, deque)
-            case _ => bug!("wrong type")
+            case _ => inputBug("getInt8", "wrong get call")
         }
     
     pub def getInt64(channel: ChannelImpl): Int64 & Impure =
         match channel {
             case Mpmc(_, _, _, _, EQI64(deque), _, _) => get(channel, deque)
-            case _ => bug!("wrong type")
+            case _ => inputBug("getInt8", "wrong get call")
         }
     
     pub def getFloat32(channel: ChannelImpl): Float32 & Impure =
         match channel {
             case Mpmc(_, _, _, _, EQF32(deque), _, _) => get(channel, deque)
-            case _ => bug!("wrong type")
+            case _ => inputBug("getInt8", "wrong get call")
         }
     
     pub def getFloat64(channel: ChannelImpl): Float64 & Impure =
         match channel {
             case Mpmc(_, _, _, _, EQF64(deque), _, _) => get(channel, deque)
-            case _ => bug!("wrong type")
+            case _ => inputBug("getInt8", "wrong get call")
         }
     
     pub def getBool(channel: ChannelImpl): Bool & Impure =
         match channel {
             case Mpmc(_, _, _, _, EQBool(deque), _, _) => get(channel, deque)
-            case _ => bug!("wrong type")
+            case _ => inputBug("getInt8", "wrong get call")
         }
     
     pub def getChar(channel: ChannelImpl): Char & Impure =
         match channel {
             case Mpmc(_, _, _, _, EQChar(deque), _, _) => get(channel, deque)
-            case _ => bug!("wrong type")
+            case _ => inputBug("getInt8", "wrong get call")
         }
     
     pub def getObj(channel: ChannelImpl): a & Impure =
         match channel {
             case Mpmc(_, _, _, _, EQObj(deque), _, _) => get(channel, deque) as a
-            case _ => bug!("wrong type")
+            case _ => inputBug("getInt8", "wrong get call")
         }
 
     ///
@@ -483,13 +485,13 @@ namespace ChannelImpl {
                 }
             }
         } else {
-            bug!("Thread is interrupted")
+            internalBug("selectHelper", "thread interrupted")
         }
 
     def firstAvailableElement(index: Int, channels: Array[ChannelImpl]): Option[(Int, ChannelResult)] & Impure =
         if (index < 0) {
             // Passed `index` less than 0
-            bug!("Std lib error in ChannelImpl.flix")
+            internalBug("firstAvailableElement", "index < 0")
         } else if (index >= Array.length(channels)) {
             None
         } else {
@@ -508,6 +510,12 @@ namespace ChannelImpl {
 
     // ----- Helper Methods -----
 
+    def internalBug(methodName: String, description: String): a =
+        bug!("implementation error in ChannelImpl.flix.${methodName}, ${description}")
+
+    def inputBug(methodName: String, description: String): a =
+        bug!("ChannelImpl.${methodName}, ${description}")
+
     ///
     /// The channel lock is expected to be held.
     ///
@@ -516,7 +524,7 @@ namespace ChannelImpl {
             case Ok(_) => ()
             case Err(_) =>
                 // Error: await without holding the corresponding lock
-                bug!("Std lib error in ChannelImpl.flix")
+                internalBug("awaitCondition", "lock not held")
         }
 
     ///
@@ -527,7 +535,7 @@ namespace ChannelImpl {
             case Ok(_) => ()
             case Err(_) =>
                 // Error: await without holding the corresponding lock
-                bug!("Std lib error in ChannelImpl.flix")
+                internalBug("signalCondition", "lock not held")
         }
 
     ///
@@ -538,7 +546,7 @@ namespace ChannelImpl {
             case Ok(_) => ()
             case Err(_) =>
                 // Error: unlock without holding the lock
-                bug!("Std lib error in ChannelImpl.flix")
+                internalBug("unlockLock", "lock not held")
         }
 
 }
