@@ -21,14 +21,24 @@ object FormatSimpleType {
     case SimpleType.True => "True"
     case SimpleType.False => "False"
     case SimpleType.Region => "Region"
-    case SimpleType.Record(fields, rest) => ??? // MATT probably easier if we separate into extended an unextended records
-    case SimpleType.RecordRow(fields, rest) => ??? // MATT see above
+    case SimpleType.Record(fields, rest) =>
+      val fieldString = fields.map {
+        case SimpleType.FieldType(name, tpe) => s"$name :: ${format(tpe)}"
+      }.mkString(", ")
+      val restString = rest.map(r => s" | ${format(r)}").getOrElse("")
+      s"{$fieldString$restString}"
+    case SimpleType.RecordRow(fields, rest) =>
+      val fieldString = fields.map {
+        case SimpleType.FieldType(name, tpe) => s"$name :: ${format(tpe)}"
+      }.mkString(", ")
+      val restString = rest.map(r => s" | ${format(r)}").getOrElse("")
+      s"($fieldString$restString)"
     case SimpleType.RecordRowEmpty => "()"
     case SimpleType.RecordEmpty => "{}"
     case SimpleType.RecordConstructor => "{ ? }"
     case SimpleType.RecordRowConstructor(field) => s"( $field :: ? | ? )"
     case SimpleType.RecordRowHead(name, tpe) => s"( $name :: ${format(tpe)} | ? )"
-    case SimpleType.Schema(fields, rest) => ??? // MATT see above
+    case SimpleType.Schema(fields, rest) =>
     case SimpleType.SchemaRow(fields, rest) => ??? // MATT see above
     case SimpleType.SchemaRowEmpty => "#()"
     case SimpleType.SchemaEmpty => "#{}"
