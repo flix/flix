@@ -488,5 +488,12 @@ namespace Nel {
         case x :: xs => sumAcc(xs, x + acc)
     }
 
+    ///
+    /// Returns an iterator over `l`.
+    ///
+    pub def toIterator(l: Nel[a]): Iterator[a] & Impure =
+       let Nel(x, xs) = l;
+       List.toIterator(x :: xs)
+
 }
 
