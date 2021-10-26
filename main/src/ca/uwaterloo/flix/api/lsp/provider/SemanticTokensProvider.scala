@@ -18,7 +18,8 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.lsp._
 import ca.uwaterloo.flix.language.ast.Ast.TypeConstraint
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Constraint, Expression, FormalParam, MatchRule, Pattern, Root, SelectChannelRule, TypeParam}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.json4s.JsonAST.JObject
@@ -211,8 +212,8 @@ object SemanticTokensProvider {
   private def visitExp(exp0: Expression): Iterator[SemanticToken] = exp0 match {
     case Expression.Wild(_, _) => Iterator.empty
 
-    case Expression.Var(sym, _, loc) =>
-      val o = if (isOperator(sym.text)) SemanticTokenType.Operator else SemanticTokenType.Variable
+    case Expression.Var(sym, tpe, loc) =>
+      val o = getSemanticTokenType(sym, tpe)
       val t = SemanticToken(o, Nil, loc)
       Iterator(t)
 
@@ -273,7 +274,8 @@ object SemanticTokensProvider {
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.Let(sym, _, exp1, exp2, _, _, _) =>
-      val t = SemanticToken(SemanticTokenType.Variable, Nil, sym.loc)
+      val o = getSemanticTokenType(sym, exp1.tpe)
+      val t = SemanticToken(o, Nil, sym.loc)
       Iterator(t) ++ visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.LetRegion(sym, exp, _, _, _) =>
@@ -451,8 +453,9 @@ object SemanticTokensProvider {
       val t = SemanticToken(SemanticTokenType.Variable, Nil, loc)
       Iterator(t)
 
-    case Pattern.Var(_, _, loc) =>
-      val t = SemanticToken(SemanticTokenType.Variable, Nil, loc)
+    case Pattern.Var(sym, tpe, loc) =>
+      val o = getSemanticTokenType(sym, tpe)
+      val t = SemanticToken(o, Nil, loc)
       Iterator(t)
 
     case Pattern.Unit(loc) =>
@@ -594,9 +597,32 @@ object SemanticTokensProvider {
   }
 
   /**
+    * Returns the semantic token type associated with the given variable `sym` of the given type `tpe`.
+    */
+  private def getSemanticTokenType(sym: Symbol.VarSym, tpe: Type): SemanticTokenType = {
+    val isOp = isOperator(sym.text)
+    val isFn = isFunction(tpe)
+
+    if (isOp)
+      SemanticTokenType.Operator
+    else if (isFn)
+      SemanticTokenType.Function
+    else
+      SemanticTokenType.Variable
+  }
+
+  /**
     * Returns `true` if the given string `s` contains non-letter symbols.
     */
   private def isOperator(s: String): Boolean = s.forall(c => !Character.isLetter(c))
+
+  /**
+    * Returns `true` if the given type `tpe` is a function type.
+    */
+  private def isFunction(tpe: Type): Boolean = tpe.typeConstructor match {
+    case Some(TypeConstructor.Arrow(_)) => true
+    case _ => false
+  }
 
   /**
     * Returns the given `tokens` as an encoded list of integers.
