@@ -53,7 +53,7 @@ namespace File {
     ///
     def readAllHelper(r: ##java.io.BufferedReader, acc: List[String]): List[String] & Impure =
         import java.io.BufferedReader.readLine();
-        let line = readLine(e);
+        let line = readLine(r);
         if (Object.isNull(line))
             acc
         else
