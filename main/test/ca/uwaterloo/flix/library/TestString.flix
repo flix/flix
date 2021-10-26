@@ -602,52 +602,52 @@ def isSubmatch11(): Bool = String.isSubmatch({regex = "[b]+"}, "aabbbc") == true
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def slice01(): Bool = String.slice(0, 1, "") == ""
+def slice01(): Bool = String.slice("", 0, 1) == ""
 
 @test
-def slice02(): Bool = String.slice(0, 1, "a") == "a"
+def slice02(): Bool = String.slice("a", 0, 1) == "a"
 
 @test
-def slice03(): Bool = String.slice(1, 2, "a") == ""
+def slice03(): Bool = String.slice("a", 1, 2) == ""
 
 @test
-def slice04(): Bool = String.slice(0, 2, "a") == ""
+def slice04(): Bool = String.slice("a", 0, 2) == ""
 
 @test
-def slice05(): Bool = String.slice(-1, 0, "a") == ""
+def slice05(): Bool = String.slice("a", -1, 0) == ""
 
 @test
-def slice06(): Bool = String.slice(0, 1, "ab") == "a"
+def slice06(): Bool = String.slice("ab", 0, 1) == "a"
 
 @test
-def slice07(): Bool = String.slice(1, 2, "ab") == "b"
+def slice07(): Bool = String.slice("ab", 1, 2) == "b"
 
 @test
-def slice08(): Bool = String.slice(0, 2, "ab") == "ab"
+def slice08(): Bool = String.slice("ab", 0, 2) == "ab"
 
 @test
-def slice09(): Bool = String.slice(0, 3, "ab") == ""
+def slice09(): Bool = String.slice("ab", 0, 3) == ""
 
 @test
-def slice10(): Bool = String.slice(-1, 2, "ab") == ""
+def slice10(): Bool = String.slice("ab", -1, 2) == ""
 
 @test
-def slice11(): Bool = String.slice(0, 1, "abc") == "a"
+def slice11(): Bool = String.slice("abc", 0, 1) == "a"
 
 @test
-def slice12(): Bool = String.slice(1, 2, "abc") == "b"
+def slice12(): Bool = String.slice("abc", 1, 2) == "b"
 
 @test
-def slice13(): Bool = String.slice(2, 3, "abc") == "c"
+def slice13(): Bool = String.slice("abc", 2, 3) == "c"
 
 @test
-def slice14(): Bool = String.slice(0, 2, "abc") == "ab"
+def slice14(): Bool = String.slice("abc", 0, 2) == "ab"
 
 @test
-def slice15(): Bool = String.slice(1, 3, "abc") == "bc"
+def slice15(): Bool = String.slice("abc", 1, 3) == "bc"
 
 @test
-def slice16(): Bool = String.slice(0, 3, "abc") == "abc"
+def slice16(): Bool = String.slice("abc", 0, 3) == "abc"
 
 /////////////////////////////////////////////////////////////////////////////
 // sliceLeft                                                               //

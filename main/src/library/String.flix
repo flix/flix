@@ -319,7 +319,8 @@ namespace String {
     ///
     /// If `b` or `e` are out-of-bounds, return the empty string.
     ///
-    pub def slice(b: Int32, e: Int32, s: String): String  = try {
+    @Time(e - b) @Space(e - b)
+    pub def slice(s: String, b: Int32, e: Int32): String  = try {
         import java.lang.String.substring(Int32, Int32);
         s.substring(b, e) as & Pure
     } catch {
@@ -329,25 +330,25 @@ namespace String {
     ///
     /// Get the substring of `s` to the left of index `e` (exclusive).
     ///
-    /// `sliceLeft == slice(0 , e, s)`
+    /// `sliceLeft == slice(s, 0 , e)`
     ///
     @Time(e) @Space(e)
     pub def sliceLeft(s: String, e: Int32): String = match length(s) {
         case len if e > len => ""
         case _   if e < 0   => ""
-        case _              => slice(0, e, s)
+        case _              => slice(s, 0, e)
     }
 
     ///
     /// Get the substring of `s` to the right starting at index `b` (inclusive).
     ///
-    /// `sliceRight == slice(b , length(s), s)`
+    /// `sliceRight == slice(s, b , length(s))`
     ///
     @Time(length(s) - b) @Space(length(s) - b)
     pub def sliceRight(s: String, b: Int32): String = match length(s) {
         case len if b >= len => ""
         case _   if b < 0 => ""
-        case len => slice(b, len, s)
+        case len => slice(s, b, len)
     }
 
 
@@ -445,7 +446,7 @@ namespace String {
     ///
     @Time(n) @Space(n)
     pub def takeLeft(n: Int32, s: String): String =
-        if (n >= length(s)) s else slice(0, n, s)
+        if (n >= length(s)) s else slice(s, 0, n)
 
     ///
     /// Take the last `n` characters of string `s` from the right.
@@ -456,7 +457,7 @@ namespace String {
     @Time(n) @Space(n)
     pub def takeRight(n: Int32, s: String): String =
         let len = length(s);
-        if (n >= len) s else slice(len - n, len, s)
+        if (n >= len) s else slice(s, len - n, len)
 
 
     ///
@@ -475,7 +476,7 @@ namespace String {
         if (n <= 0)
             s
         else
-            slice(n, length(s), s)
+            slice(s, n, length(s))
 
 
     ///
@@ -487,7 +488,7 @@ namespace String {
     pub def dropRight(n: Int32, s: String): String =
         if (n > 0) {
             let len = length(s);
-            slice(0, len - n, s)
+            slice(s, 0, len - n)
         } else s
 
     ///
@@ -519,7 +520,7 @@ namespace String {
     pub def takeWhileRight(f: Char -> Bool, s: String): String =
         match findIndexOfRight(x -> not (f(x)), s) {
             case None => s
-            case Some(i) => slice(i+1, length(s), s)
+            case Some(i) => slice(s, i+1, length(s))
         }
 
     ///
@@ -566,7 +567,7 @@ namespace String {
             case (None, None) => ""
             case (Some(l), None) => sliceRight(s, l)
             case (None, Some(r)) => sliceLeft(s, r)
-            case (Some(l), Some(r)) => slice(l, r + 1, s)
+            case (Some(l), Some(r)) => slice(s, l, r + 1)
         }
 
     ///
@@ -1145,7 +1146,7 @@ namespace String {
             case _   if w < 3   => ""
             case len            => {
                 let start = len - w + 3;
-                "..." + slice(start, len, s)
+                "..." + slice(s, start, len)
             }
         }
 
@@ -1162,7 +1163,7 @@ namespace String {
         match length(s) {
             case len if len < w => s
             case _   if w < 3   => ""
-            case _              => slice(0, w - 3, s) + "..."
+            case _              => slice(s, 0, w - 3) + "..."
         }
 
     ///
@@ -1253,7 +1254,7 @@ namespace String {
                         Some(s1, maxlen + 1)
                     }
                     case Some(ix2) => {
-                        let s1 = slice(ix, ix2, s);
+                        let s1 = slice(s, ix, ix2);
                         Some(s1, ix2 + sublen)
                     }
                 }
@@ -1310,7 +1311,7 @@ namespace String {
         let step = pos -> match pos {
             case i if i >= len          => None
             case i if i + size >= len   => Some(sliceRight(s, i), len)
-            case i                      => Some(slice(i, i + size, s), i + size)
+            case i                      => Some(slice(s, i, i + size), i + size)
         };
         List.unfold(step, 0)
 
