@@ -33,7 +33,7 @@ instance Eq[MutList[a]] with Eq[a] {
             let MutList(l1, n1) = xs;
             let MutList(l2, n2) = ys;
             deref n1 == deref n2 and
-                Array.slice(deref l1, 0, deref n1) == Array.slice(deref l2, 0, deref n2)
+                Array.slice(0, deref n1, deref l1) == Array.slice(0, deref n2, deref l2)
         } as & Pure
 }
 
@@ -89,7 +89,7 @@ namespace MutList {
         if (i >= deref l)
             bug!("Invalid argument ${i}")
         else
-            Array.get(deref a, i)
+            Array.get(i, deref a)
 
     ///
     /// Returns the number of elements in the given mutable list `v`.
@@ -472,9 +472,9 @@ namespace MutList {
         let MutList(a, l) = v;
         let len = deref l;
         if (len > minCapacity())
-            MutList(ref Array.slice(deref a, 0, len), ref len)
+            MutList(ref Array.slice(0, len, deref a), ref len)
         else
-            MutList(ref Array.slice(deref a, 0, capacity(v)), ref len)
+            MutList(ref Array.slice(0, capacity(v), deref a), ref len)
 
     ///
     /// Optionally removes and returns the last element in the given mutable list `v`.
@@ -485,7 +485,7 @@ namespace MutList {
         if (len > 0)
             let last = (deref a)[len - 1];
             l := len - 1;
-            Array.put(deref a, len - 1, default);
+            Array.put(default, len - 1, deref a);
             compress!(v);
             Some(last)
         else
@@ -516,7 +516,7 @@ namespace MutList {
         if (capacity(v) - len == 0)
             reserve!(len, v)
         else ();
-        let sub = Array.slice(deref a, i, len);
+        let sub = Array.slice(i, len, deref a);
         Array.updateSequence!(i + 1, sub, deref a);
         (deref a)[i] = x;
         l := len + 1
@@ -601,8 +601,8 @@ namespace MutList {
         else {
             let x = a[i];
             let y = a[j];
-            Array.put(a, i, y);
-            Array.put(a, j, x);
+            Array.put(y, i, a);
+            Array.put(x, j, a);
             reverseHelper!(a, halflen, i + 1, j - 1)
         }
 
@@ -618,7 +618,7 @@ namespace MutList {
         if (n < capv and capv != minCap) {
             let len = deref l;
             let newCap = Order.max(n, minCap);
-            a := Array.slice(deref a, 0, newCap);
+            a := Array.slice(0, newCap, deref a);
             l := Order.min(len, newCap)
         }
         else ()
@@ -677,7 +677,7 @@ namespace MutList {
     ///
     pub def toArray(v: MutList[a]): Array[a] & Impure =
         let MutList(a, l) = v;
-        Array.slice(deref a, 0, deref l)
+        Array.slice(0, deref l, deref a)
 
     ///
     /// Returns `true` if the mutable lists `v1` and `v2` have the same elements, i.e. are structurally equal.
@@ -845,7 +845,7 @@ namespace MutList {
     ///
     pub def sortWith!(cmp: (a,a) -> Comparison, v: mut MutList[a]): Unit & Impure =
         let MutList(a, l) = v;
-        Array.sortWithin!(cmp, deref a, 0, (deref l) - 1)
+        Array.sortWithin!(cmp, 0, (deref l) - 1, deref a)
 
     ///
     /// Returns the sum of all elements in the list `v`.

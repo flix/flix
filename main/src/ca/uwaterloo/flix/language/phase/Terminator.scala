@@ -128,7 +128,7 @@ object Terminator extends Phase[Root, Root] {
       case Expression.FixpointProjectIn(exp, _, _, _, _) => visit(exp)
       case Expression.FixpointProjectOut(_, exp, _, _, _) => visit(exp)
       case Expression.Reify(_, _, _, _) => false // reify expressions always terminate.
-      case Expression.ReifyType(_, _, _, _) => false // reify expressions always terminate.
+      case Expression.ReifyType(_, _, _, _, _) => false // reify expressions always terminate.
     }
 
     visit(exp0)

@@ -39,6 +39,9 @@ namespace Test/Dec/RelAlias {
     @test
     def testDecRel13(): Unit = f(#{ A(21). B(true, 42). C(true, true). })
 
+    @test
+    def testDecRel14(): Unit = f(#{ A(21). B(true, 42). C(true, true). } : Z[#( A, B, C[Bool] )])
+
     def f(_: Z[_]): Unit = ()
 
     rel A(x: Int)

@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.errors.InstanceError
 import ca.uwaterloo.flix.util.{Options, Validation}
 import org.scalatest.FunSuite
@@ -307,7 +307,7 @@ class TestInstances extends FunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[CompilationError](result) // TODO should be MismatchedSignature
+    expectError[CompilationMessage](result) // TODO should be MismatchedSignature
   }
 
   test("Test.MismatchedSignatures.04") {
@@ -559,5 +559,27 @@ class TestInstances extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[InstanceError.ComplexInstanceType](result)
     rejectError[InstanceError.ExtraneousDefinition](result)
+  }
+
+  test("Test.TypeAliasInstance.01") {
+    val input =
+      """
+        |class C[a]
+        |type alias T = Int
+        |instance C[T]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[InstanceError.IllegalTypeAliasInstance](result)
+  }
+
+  test("Test.TypeAliasInstance.02") {
+    val input =
+      """
+        |class C[a]
+        |type alias T[a] = Int
+        |instance C[T[a]]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[InstanceError.IllegalTypeAliasInstance](result)
   }
 }

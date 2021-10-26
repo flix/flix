@@ -38,9 +38,9 @@ instance Hash[Map[k, v]] with Hash[k], Hash[v] {
         Map.foldLeftWithKey((acc, k, v) -> acc * 17 + Hash.hash(k) + 19 * Hash.hash(v), 7937, m)
 }
 
-instance Eq[Map[k, v]] with Order[k], Eq[v] {
+instance Eq[Map[k, v]] with Eq[k], Eq[v] {
     pub def eq(m1: Map[k, v], m2: Map[k, v]): Bool =
-        Map.isSubmapOf(m1, m2) and Map.isSubmapOf(m2, m1)
+        Map.toList(m1) == Map.toList(m2)
 
 }
 
@@ -646,5 +646,11 @@ namespace Map {
     pub def queryWith(p: k -> Comparison & ef, f: (k, v) ~> Unit, m: Map[k, v]): Unit & Impure =
         let Map(xs) = m;
         RedBlackTree.queryWith(p, f, xs)
+
+    ///
+    /// Returns an iterator over all key-value pairs in `m`.
+    ///
+    pub def toIterator(m: Map[a, b]): Iterator[(a, b)] & Impure =
+        List.toIterator(Map.query(_ -> EqualTo, m))
 
 }

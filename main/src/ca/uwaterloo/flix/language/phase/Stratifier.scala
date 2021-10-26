@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{DependencyEdge, DependencyGraph, Polarity}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast._
@@ -46,7 +46,7 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * Returns a stratified version of the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Stratifier") {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("Stratifier") {
     // A cache of stratifications. Only caches successful stratifications.
     val cache: Cache = mutable.Map.empty
 
@@ -76,7 +76,7 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * Performs stratification of the given definition `def0`.
     */
-  private def visitDef(def0: Def)(implicit dg: DependencyGraph, cache: Cache): Validation[Def, CompilationError] =
+  private def visitDef(def0: Def)(implicit dg: DependencyGraph, cache: Cache): Validation[Def, CompilationMessage] =
     visitExp(def0.impl.exp) map {
       case e => def0.copy(impl = def0.impl.copy(exp = e))
     }
@@ -411,8 +411,8 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.Reify(t, tpe, eff, loc) =>
       Expression.Reify(t, tpe, eff, loc).toSuccess
 
-    case Expression.ReifyType(t, tpe, eff, loc) =>
-      Expression.ReifyType(t, tpe, eff, loc).toSuccess
+    case Expression.ReifyType(t, k, tpe, eff, loc) =>
+      Expression.ReifyType(t, k, tpe, eff, loc).toSuccess
 
   }
 
@@ -649,7 +649,7 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.Reify(_, _, _, _) =>
       DependencyGraph.empty
 
-    case Expression.ReifyType(_, _, _, _) =>
+    case Expression.ReifyType(_, _, _, _, _) =>
       DependencyGraph.empty
 
   }

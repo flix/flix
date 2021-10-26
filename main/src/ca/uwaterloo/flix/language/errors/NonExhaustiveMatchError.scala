@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
 /**
   * An error raised to indicate a non exhaustive pattern match expression.
   */
-case class NonExhaustiveMatchError(rules: List[TypedAst.MatchRule], pat: String, loc: SourceLocation) extends CompilationError {
+case class NonExhaustiveMatchError(rules: List[TypedAst.MatchRule], pat: String, loc: SourceLocation) extends CompilationMessage {
   def kind = "Pattern Match"
   def summary: String = s"Non-exhaustive match. Missing case: '$pat'."
   def message: VirtualTerminal = {

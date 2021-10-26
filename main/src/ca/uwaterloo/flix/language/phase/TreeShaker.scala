@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.LiftedAst.Root
 import ca.uwaterloo.flix.language.ast.LiftedAst._
 import ca.uwaterloo.flix.language.ast.Symbol
@@ -39,7 +39,7 @@ object TreeShaker extends Phase[Root, Root] {
   /**
     * Performs tree shaking on the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("TreeShaker") {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("TreeShaker") {
     // Compute the symbols that are always reachable.
     val initReach = initReachable(root)
 

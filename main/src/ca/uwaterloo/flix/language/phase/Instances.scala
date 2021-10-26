@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.{Scheme, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.InstanceError
@@ -30,7 +30,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Validates instances and classes in the given AST root.
     */
-  override def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("Instances") {
+  override def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationMessage] = flix.phase("Instances") {
     Validation.sequenceX(List(
       visitInstances(root),
       visitClasses(root)
@@ -112,7 +112,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
             // Case 2: Non-type variable. Error.
             case (_, _) => InstanceError.ComplexInstanceType(tpe, sym, loc).toFailure
           }.map(_ => ())
-        case _: Type.Lambda => throw InternalCompilerException("Unexpected lambda type.")
+        case Type.Alias(alias, _, _, _) => InstanceError.IllegalTypeAliasInstance(alias, sym, loc).toFailure
         case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type.")
         case _: Type.Ascribe => throw InternalCompilerException("Unexpected ascribe type.")
       }
