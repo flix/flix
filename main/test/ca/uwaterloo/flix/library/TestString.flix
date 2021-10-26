@@ -654,52 +654,52 @@ def slice16(): Bool = String.slice(0, 3, "abc") == "abc"
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def sliceLeft01(): Bool = String.sliceLeft(0, "") == ""
+def sliceLeft01(): Bool = String.sliceLeft("", 0) == ""
 
 @test
-def sliceLeft02(): Bool = String.sliceLeft(1, "") == ""
+def sliceLeft02(): Bool = String.sliceLeft("", 1) == ""
 
 @test
-def sliceLeft03(): Bool = String.sliceLeft(1, "a") == "a"
+def sliceLeft03(): Bool = String.sliceLeft("a", 1) == "a"
 
 @test
-def sliceLeft04(): Bool = String.sliceLeft(0, "a") == ""
+def sliceLeft04(): Bool = String.sliceLeft("a", 0) == ""
 
 @test
-def sliceLeft05(): Bool = String.sliceLeft(2, "a") == ""
+def sliceLeft05(): Bool = String.sliceLeft("a", 2) == ""
 
 @test
-def sliceLeft06(): Bool = String.sliceLeft(1, "ab") == "a"
+def sliceLeft06(): Bool = String.sliceLeft("ab", 1) == "a"
 
 @test
-def sliceLeft07(): Bool = String.sliceLeft(2, "ab") == "ab"
+def sliceLeft07(): Bool = String.sliceLeft("ab", 2) == "ab"
 
 @test
-def sliceLeft08(): Bool = String.sliceLeft(0, "ab") == ""
+def sliceLeft08(): Bool = String.sliceLeft("ab", 0) == ""
 
 @test
-def sliceLeft09(): Bool = String.sliceLeft(3, "ab") == ""
+def sliceLeft09(): Bool = String.sliceLeft("ab", 3) == ""
 
 @test
-def sliceLeft10(): Bool = String.sliceLeft(-1, "ab") == ""
+def sliceLeft10(): Bool = String.sliceLeft("ab", -1) == ""
 
 @test
-def sliceLeft11(): Bool = String.sliceLeft(1, "abc") == "a"
+def sliceLeft11(): Bool = String.sliceLeft("abc", 1) == "a"
 
 @test
-def sliceLeft12(): Bool = String.sliceLeft(2, "abc") == "ab"
+def sliceLeft12(): Bool = String.sliceLeft("abc", 2) == "ab"
 
 @test
-def sliceLeft13(): Bool = String.sliceLeft(3, "abc") == "abc"
+def sliceLeft13(): Bool = String.sliceLeft("abc", 3) == "abc"
 
 @test
-def sliceLeft14(): Bool = String.sliceLeft(0, "abc") == ""
+def sliceLeft14(): Bool = String.sliceLeft("abc", 0) == ""
 
 @test
-def sliceLeft15(): Bool = String.sliceLeft(4, "abc") == ""
+def sliceLeft15(): Bool = String.sliceLeft("abc", 4) == ""
 
 @test
-def sliceLeft16(): Bool = String.sliceLeft(-1, "abc") == ""
+def sliceLeft16(): Bool = String.sliceLeft("abc", -1) == ""
 
 /////////////////////////////////////////////////////////////////////////////
 // sliceRight                                                              //

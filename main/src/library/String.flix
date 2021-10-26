@@ -331,7 +331,8 @@ namespace String {
     ///
     /// `sliceLeft == slice(0 , e, s)`
     ///
-    pub def sliceLeft(e: Int32, s: String): String = match length(s) {
+    @Time(e) @Space(e)
+    pub def sliceLeft(s: String, e: Int32): String = match length(s) {
         case len if e > len => ""
         case _   if e < 0   => ""
         case _              => slice(0, e, s)
@@ -550,7 +551,7 @@ namespace String {
     pub def dropWhileRight(f: Char -> Bool, s: String): String =
         match findIndexOfRight(x -> not (f(x)), s) {
             case None => ""
-            case Some(i) => sliceLeft(i + 1, s)     // must include i
+            case Some(i) => sliceLeft(s, i + 1)     // must include i
         }
 
     ///
@@ -564,7 +565,7 @@ namespace String {
         match (findIndexOfLeft(x -> not (f(x)), s), findIndexOfRight(x -> not (f(x)), s)) {
             case (None, None) => ""
             case (Some(l), None) => sliceRight(s, l)
-            case (None, Some(r)) => sliceLeft(r, s)
+            case (None, Some(r)) => sliceLeft(s, r)
             case (Some(l), Some(r)) => slice(l, r + 1, s)
         }
 
@@ -580,7 +581,7 @@ namespace String {
         match length(s) {
             case _   if n <= 0  => ("", s)
             case len if n > len => (s, "")
-            case _              => (sliceLeft(n, s), sliceRight(s, n))
+            case _              => (sliceLeft(s, n), sliceRight(s, n))
         }
 
 
@@ -1320,7 +1321,7 @@ namespace String {
     pub def breakOnLeft(substr: {substr :: String}, s: String): (String, String) =
         match indexOfLeft({substr = substr.substr}, s) {
             case None => (s, "")
-            case Some(i) => (sliceLeft(i, s), sliceRight(s, i))
+            case Some(i) => (sliceLeft(s, i), sliceRight(s, i))
         }
 
     ///
@@ -1331,7 +1332,7 @@ namespace String {
         let sublen = length(substr.substr);
         match indexOfRight({substr = substr.substr}, s) {
             case None => (s, "")
-            case Some(i) => (sliceLeft(i + sublen, s), sliceRight(s, i + sublen))
+            case Some(i) => (sliceLeft(s, i + sublen), sliceRight(s, i + sublen))
         }
 
     ///
