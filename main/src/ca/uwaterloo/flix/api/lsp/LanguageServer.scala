@@ -104,7 +104,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
   var index: Index = Index.empty
 
   /**
-    * A Boolean that records if root AST is current (i.e. up-to-date).
+    * A Boolean that records if the root AST is current (i.e. up-to-date).
     */
   private var current: Boolean = false
 
