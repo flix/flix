@@ -125,14 +125,14 @@ namespace StringBuilder {
     ///
     pub def appendLine!(sb: StringBuilder, s: String): Unit & Impure =
         sb `appendString!` s;
-        sb |> appendLineSeparator!
+        appendLineSeparator!(sb)
 
     ///
     /// Appends `f(x)` to the string builder `sb`.
     ///
     pub def appendLineWith!(sb: StringBuilder, f: a -> String, x: a): Unit & Impure =
         sb `appendString!` f(x);
-        sb |> appendLineSeparator!
+        appendLineSeparator!(sb)
 
     ///
     /// Appends each string in the array `a` to the string builder `sb`.
@@ -165,7 +165,7 @@ namespace StringBuilder {
     pub def length(sb: StringBuilder): Int32 & Impure =
         import java.lang.StringBuilder.length();
         let StringBuilder(msb) = sb;
-        msb |> length
+        length(msb)
 
     ///
     /// Convert the StringBuilder `sb` to a string.
@@ -173,6 +173,6 @@ namespace StringBuilder {
     pub def toString(sb: StringBuilder): String & Impure =
         import java.lang.StringBuilder.toString();
         let StringBuilder(msb) = sb;
-        msb |> toString
+        toString(msb)
 
 }

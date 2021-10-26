@@ -38,7 +38,7 @@ namespace String {
     @Time(1) @Space(1)
     pub def isEmpty(s: String): Bool =
         import java.lang.String.isEmpty();
-        (s |> isEmpty) as & Pure
+        isEmpty(s) as & Pure
 
     ///
     /// Returns the length of the string `s`.
@@ -46,7 +46,7 @@ namespace String {
     @Time(1) @Space(1)
     pub def length(s: String): Int =
         import java.lang.String.length();
-        (s |> length) as & Pure
+        length(s) as & Pure
 
     ///
     /// Returns `true` if the string `s` starts with the string `prefix`.
@@ -75,7 +75,7 @@ namespace String {
     @Time(length(s)) @Space(length(s))
     pub def toLowerCase(s: String): String =
         import java.lang.String.toLowerCase();
-        (s |> toLowerCase) as & Pure
+        toLowerCase(s) as & Pure
 
     ///
     /// Returns the upper case version of the string `s`.
@@ -83,7 +83,7 @@ namespace String {
     @Time(length(s)) @Space(length(s))
     pub def toUpperCase(s: String): String =
         import java.lang.String.toUpperCase();
-        (s |> toUpperCase) as & Pure
+        toUpperCase(s) as & Pure
 
     ///
     /// Returns the given string `s` as a list of characters.
@@ -99,7 +99,7 @@ namespace String {
     @Time(length(s)) @Space(length(s))
     pub def trim(s: String): String =
         import java.lang.String.trim();
-        (s |> trim) as & Pure
+        trim(s) as & Pure
 
     ///
     /// Get the system line separator.

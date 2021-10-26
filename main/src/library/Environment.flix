@@ -124,10 +124,10 @@ namespace Environment {
         import java.util.Iterator.next();
         import java.util.Map$Entry.getKey();
         import java.util.Map$Entry.getValue();
-        if (iter |> hasNext)
-            let entry = (iter |> next) as ##java.util.Map$Entry;
-            let key = (entry |> getKey) as String;
-            let value = (entry |> getValue) as String;
+        if (hasNext(iter))
+            let entry = next(iter) as ##java.util.Map$Entry;
+            let key = getKey(entry) as String;
+            let value = getValue(entry) as String;
             getEnvHelper(iter, Map.insert(key, value, m))
         else
             m

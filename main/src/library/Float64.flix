@@ -267,7 +267,7 @@ namespace Float64 {
         import java.lang.Double.byteValue();
         let minf64 = Int8.toFloat64(minimum);
         let maxf64 = Int8.toFloat64(maximum);
-        if (x |> isNan)
+        if (isNan(x))
             nanValue
         else
             (valueOf(clamp(x, minf64, maxf64)) |> byteValue) as & Pure
@@ -286,7 +286,7 @@ namespace Float64 {
         import java.lang.Double.shortValue();
         let minf64 = Int16.toFloat64(minimum);
         let maxf64 = Int16.toFloat64(maximum);
-        if (x |> isNan)
+        if (isNan(x))
             nanValue
         else
             (valueOf(clamp(x, minf64, maxf64)) |> shortValue) as & Pure
@@ -305,7 +305,7 @@ namespace Float64 {
         import java.lang.Double.intValue();
         let minf64 = Int32.toFloat64(minimum);
         let maxf64 = Int32.toFloat64(maximum);
-        if (x |> isNan)
+        if (isNan(x))
             nanValue
         else
             (valueOf(clamp(x, minf64, maxf64)) |> intValue) as & Pure
@@ -324,7 +324,7 @@ namespace Float64 {
         import java.lang.Double.longValue();
         let minf64 = Int64.toFloat64(minimum);
         let maxf64 = Int64.toFloat64(maximum);
-        if (x |> isNan)
+        if (isNan(x))
             nanValue
         else
             (valueOf(clamp(x, minf64, maxf64)) |> longValue) as & Pure
@@ -340,7 +340,7 @@ namespace Float64 {
         import java.lang.Double.floatValue();
         let minf64 = Float32.toFloat64(minimum);
         let maxf64 = Float32.toFloat64(maximum);
-        if (x |> isNan)
+        if (isNan(x))
             Float32.nan()
         else
             (valueOf(clamp(x, minf64, maxf64)) |> floatValue) as & Pure

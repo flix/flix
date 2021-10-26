@@ -251,7 +251,7 @@ namespace Float32 {
         import java.lang.Float.byteValue();
         let minf32 = Int8.toFloat32(minimum);
         let maxf32 = Int8.toFloat32(maximum);
-        if (x |> isNan)
+        if (isNan(x))
             nanValue
         else
             (valueOf(clamp(x, minf32, maxf32)) |> byteValue) as & Pure
@@ -270,7 +270,7 @@ namespace Float32 {
         import java.lang.Float.shortValue();
         let minf32 = Int16.toFloat32(minimum);
         let maxf32 = Int16.toFloat32(maximum);
-        if (x |> isNan)
+        if (isNan(x))
             nanValue
         else
             (valueOf(clamp(x, minf32, maxf32)) |> shortValue) as & Pure
@@ -289,7 +289,7 @@ namespace Float32 {
         import java.lang.Float.intValue();
         let minf32 = Int32.toFloat32(minimum);
         let maxf32 = Int32.toFloat32(maximum);
-        if (x |> isNan)
+        if (isNan(x))
             nanValue
         else
             (valueOf(clamp(x, minf32, maxf32)) |> intValue) as & Pure
@@ -308,7 +308,7 @@ namespace Float32 {
         import java.lang.Float.longValue();
         let minf32 = Int64.toFloat32(minimum);
         let maxf32 = Int64.toFloat32(maximum);
-        if (x |> isNan)
+        if (isNan(x))
             nanValue
         else
             (valueOf(clamp(x, minf32, maxf32)) |> longValue) as & Pure

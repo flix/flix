@@ -35,7 +35,7 @@ namespace ReentrantLock {
     pub def isFair(lock: ReentrantLock): Bool & Impure =
         import java.util.concurrent.locks.ReentrantLock.isFair();
         let ReentrantLock(l) = lock;
-        l |> isFair
+        isFair(l)
 
     ///
     /// Acquires the lock.
@@ -43,7 +43,7 @@ namespace ReentrantLock {
     pub def lock(lock: ReentrantLock): Unit & Impure =
         import java.util.concurrent.locks.ReentrantLock.lock() as lockIt;
         let ReentrantLock(l) = lock;
-        l |> lockIt
+        lockIt(l)
 
     ///
     /// Acquires the lock unless the current thread is interrupted.
@@ -52,7 +52,7 @@ namespace ReentrantLock {
         import java.util.concurrent.locks.ReentrantLock.lockInterruptibly();
         let ReentrantLock(l) = lock;
         try {
-            Ok(l |> lockInterruptibly)
+            Ok(lockInterruptibly(l))
         } catch {
             case e: ##java.lang.InterruptedException => Err(e)
         }
@@ -63,7 +63,7 @@ namespace ReentrantLock {
     pub def newCondition(lock: ReentrantLock): Condition & Impure =
         import java.util.concurrent.locks.ReentrantLock.newCondition();
         let ReentrantLock(l) = lock;
-        Condition(l |> newCondition)
+        Condition(newCondition(l))
 
     ///
     /// Acquires the lock only if it is not held by another thread at the time of invocation.
@@ -71,7 +71,7 @@ namespace ReentrantLock {
     pub def tryLock(lock: ReentrantLock): Bool & Impure =
         import java.util.concurrent.locks.ReentrantLock.tryLock();
         let ReentrantLock(l) = lock;
-        l |> tryLock
+        tryLock(l)
 
     ///
     /// Acquires the lock if it is not held by another thread within the given waiting time (nanos) and the current thread has not been interrupted.
@@ -93,7 +93,7 @@ namespace ReentrantLock {
         import java.util.concurrent.locks.ReentrantLock.unlock();
         let ReentrantLock(l) = lock;
         try {
-            Ok(l |> unlock)
+            Ok(unlock(l))
         } catch {
             case e: ##java.lang.IllegalMonitorStateException => Err(e)
         }
