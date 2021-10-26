@@ -94,9 +94,9 @@ object SemanticTokensProvider {
     val allTokens = (classTokens ++ instanceTokens ++ defnTokens ++ enumTokens ++ typeAliasTokens).toList
 
     //
-    // TODO: Hack to filter source locations that are Unknown.
+    // We remove all: (i) multi-line tokens and (ii) tokens with unknown source locations.
     //
-    val filteredTokens = allTokens.filter(_.loc.beginLine > 1)
+    val filteredTokens = allTokens.filter(t => !t.loc.isMultiLine && t.loc != SourceLocation.Unknown)
 
     //
     // Encode all the semantic tokens as a list of integers.
