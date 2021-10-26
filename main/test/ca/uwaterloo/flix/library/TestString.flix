@@ -706,46 +706,46 @@ def sliceLeft16(): Bool = String.sliceLeft(-1, "abc") == ""
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def sliceRight01(): Bool = String.sliceRight(0, "") == ""
+def sliceRight01(): Bool = String.sliceRight("", 0) == ""
 
 @test
-def sliceRight02(): Bool = String.sliceRight(1, "") == ""
+def sliceRight02(): Bool = String.sliceRight("", 1) == ""
 
 @test
-def sliceRight03(): Bool = String.sliceRight(1, "a") == ""
+def sliceRight03(): Bool = String.sliceRight("a", 1) == ""
 
 @test
-def sliceRight04(): Bool = String.sliceRight(0, "a") == "a"
+def sliceRight04(): Bool = String.sliceRight("a", 0) == "a"
 
 @test
-def sliceRight05(): Bool = String.sliceRight(1, "a") == ""
+def sliceRight05(): Bool = String.sliceRight("a", 1) == ""
 
 @test
-def sliceRight06(): Bool = String.sliceRight(0, "ab") == "ab"
+def sliceRight06(): Bool = String.sliceRight("ab", 0) == "ab"
 
 @test
-def sliceRight07(): Bool = String.sliceRight(1, "ab") == "b"
+def sliceRight07(): Bool = String.sliceRight("ab", 1) == "b"
 
 @test
-def sliceRight08(): Bool = String.sliceRight(-1, "ab") == ""
+def sliceRight08(): Bool = String.sliceRight("ab", -1) == ""
 
 @test
-def sliceRight09(): Bool = String.sliceRight(2, "ab") == ""
+def sliceRight09(): Bool = String.sliceRight("ab", 2) == ""
 
 @test
-def sliceRight10(): Bool = String.sliceRight(0, "abc") == "abc"
+def sliceRight10(): Bool = String.sliceRight("abc", 0) == "abc"
 
 @test
-def sliceRight11(): Bool = String.sliceRight(1, "abc") == "bc"
+def sliceRight11(): Bool = String.sliceRight("abc", 1) == "bc"
 
 @test
-def sliceRight12(): Bool = String.sliceRight(2, "abc") == "c"
+def sliceRight12(): Bool = String.sliceRight("abc", 2) == "c"
 
 @test
-def sliceRight13(): Bool = String.sliceRight(3, "abc") == ""
+def sliceRight13(): Bool = String.sliceRight("abc", 3) == ""
 
 @test
-def sliceRight14(): Bool = String.sliceRight(-1, "abc") == ""
+def sliceRight14(): Bool = String.sliceRight("abc", -1) == ""
 
 /////////////////////////////////////////////////////////////////////////////
 // findIndexOfLeft                                                         //

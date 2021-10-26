@@ -342,7 +342,8 @@ namespace String {
     ///
     /// `sliceRight == slice(b , length(s), s)`
     ///
-    pub def sliceRight(b: Int32, s: String): String = match length(s) {
+    @Time(length(s) - b) @Space(length(s) - b)
+    pub def sliceRight(s: String, b: Int32): String = match length(s) {
         case len if b >= len => ""
         case _   if b < 0 => ""
         case len => slice(b, len, s)
@@ -536,7 +537,7 @@ namespace String {
     pub def dropWhileLeft(f: Char -> Bool, s: String): String =
         match findIndexOfLeft(x -> not (f(x)), s) {
             case None => ""
-            case Some(i) => sliceRight(i, s)
+            case Some(i) => sliceRight(s, i)
         }
 
     ///
@@ -562,7 +563,7 @@ namespace String {
     pub def dropWhileAround(f: Char -> Bool, s: String): String =
         match (findIndexOfLeft(x -> not (f(x)), s), findIndexOfRight(x -> not (f(x)), s)) {
             case (None, None) => ""
-            case (Some(l), None) => sliceRight(l, s)
+            case (Some(l), None) => sliceRight(s, l)
             case (None, Some(r)) => sliceLeft(r, s)
             case (Some(l), Some(r)) => slice(l, r + 1, s)
         }
@@ -579,7 +580,7 @@ namespace String {
         match length(s) {
             case _   if n <= 0  => ("", s)
             case len if n > len => (s, "")
-            case _              => (sliceLeft(n, s), sliceRight(n, s))
+            case _              => (sliceLeft(n, s), sliceRight(s, n))
         }
 
 
@@ -959,10 +960,10 @@ namespace String {
     ///
     def stripIndentDropWhiteSpace(s: String, limit: Int32, ix: Int32): String =
         if (ix >= limit)
-            sliceRight(ix, s)
+            sliceRight(s, ix)
         else
             if (not Char.isWhiteSpace(charAt(ix, s)))
-                sliceRight(ix, s)
+                sliceRight(s, ix)
             else
                 stripIndentDropWhiteSpace(s, limit, ix+1)
 
@@ -1247,7 +1248,7 @@ namespace String {
             else {
                 match indexOfLeftWithOffset({substr = substr.substr}, {offset = ix}, s) {
                     case None => {
-                        let s1 = sliceRight(ix, s);
+                        let s1 = sliceRight(s, ix);
                         Some(s1, maxlen + 1)
                     }
                     case Some(ix2) => {
@@ -1307,7 +1308,7 @@ namespace String {
         let len = length(s);
         let step = pos -> match pos {
             case i if i >= len          => None
-            case i if i + size >= len   => Some(sliceRight(i, s), len)
+            case i if i + size >= len   => Some(sliceRight(s, i), len)
             case i                      => Some(slice(i, i + size, s), i + size)
         };
         List.unfold(step, 0)
@@ -1319,7 +1320,7 @@ namespace String {
     pub def breakOnLeft(substr: {substr :: String}, s: String): (String, String) =
         match indexOfLeft({substr = substr.substr}, s) {
             case None => (s, "")
-            case Some(i) => (sliceLeft(i, s), sliceRight(i, s))
+            case Some(i) => (sliceLeft(i, s), sliceRight(s, i))
         }
 
     ///
@@ -1330,7 +1331,7 @@ namespace String {
         let sublen = length(substr.substr);
         match indexOfRight({substr = substr.substr}, s) {
             case None => (s, "")
-            case Some(i) => (sliceLeft(i + sublen, s), sliceRight(i + sublen, s))
+            case Some(i) => (sliceLeft(i + sublen, s), sliceRight(s, i + sublen))
         }
 
     ///
