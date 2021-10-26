@@ -468,6 +468,31 @@ class TestKinder extends FunSuite with TestUtils {
     expectError[KindError.UnexpectedKind](result)
   }
 
+  test("KindError.Def.Expression.Ascribe.06") {
+    val input =
+      """
+        |enum E
+        |
+        |pub def foo(): Int =
+        |    let x: E[Int] = ???; 0
+        |
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
+  test("KindError.Def.Expression.Ascribe.07") {
+    val input =
+      """
+        |enum E[a, b]
+        |
+        |pub def foo(): Int =
+        |    let x: E[Int] = ???; 0
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
   test("KindError.Def.Expression.Cast.01") {
     val input =
       """
@@ -486,6 +511,27 @@ class TestKinder extends FunSuite with TestUtils {
     expectError[KindError.UnexpectedKind](result)
   }
 
+  test("KindError.Def.Expression.Cast.03") {
+    val input =
+      """
+        |enum E
+        |
+        |pub def foo(): Int = 0 as E[Int]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
+  test("KindError.Def.Expression.Cast.04") {
+    val input =
+      """
+        |enum E[a, b]
+        |
+        |pub def foo(): Int = 0 as E[Int]
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
   test("KindError.Def.Type.01") {
     val input =
       """
@@ -542,6 +588,15 @@ class TestKinder extends FunSuite with TestUtils {
     expectError[KindError.UnexpectedKind](result)
   }
 
+  test("KindError.Def.Type.07") {
+    val input =
+      """
+        |def f(x: Int[Int]): Int = ???
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
   test("KindError.Def.Parameter.01") {
     val input =
       """
@@ -577,6 +632,15 @@ class TestKinder extends FunSuite with TestUtils {
         |enum E[a]
         |
         |def f(): E = ???
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
+  test("KindError.Def.Return.03") {
+    val input =
+      """
+        |def f(): Int[Int] = ???
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
@@ -684,6 +748,17 @@ class TestKinder extends FunSuite with TestUtils {
       """
         |enum E[a] {
         |  case C(Int -> Int & a)
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
+  test("KindError.Enum.Type.05") {
+    val input =
+      """
+        |enum E {
+        |  case C(Int[Int])
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
