@@ -71,7 +71,7 @@ namespace MutSet {
     ///
     pub def remove!(x: a, s: mut MutSet[a]): Unit & Impure with Order[a] =
         let MutSet(ms) = s;
-        ms := Set.delete(x, deref ms)
+        ms := Set.remove(x, deref ms)
 
     ///
     /// Removes all elements in the mutable set `s1` from the mutable set `s2`.

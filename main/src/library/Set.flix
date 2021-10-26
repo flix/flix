@@ -107,7 +107,7 @@ namespace Set {
     /// Removes `x` from `xs`.
     ///
     @Time(Int32.log2(size(xs))) @Space(Int32.log2(size(xs)))
-    pub def delete(x: a, xs: Set[a]): Set[a] with Order[a] =
+    pub def remove(x: a, xs: Set[a]): Set[a] with Order[a] =
         let Set(es) = xs;
         Set(RedBlackTree.delete(x, es))
 
@@ -373,7 +373,7 @@ namespace Set {
     ///
     @Time(Int32.log2(size(xs))) @Space(Int32.log2(size(xs)))
     pub def replace(x: a, y: a, xs: Set[a]): Set[a] with Order[a] =
-        if (memberOf(x, xs)) insert(y, delete(x, xs)) else xs
+        if (memberOf(x, xs)) insert(y, remove(x, xs)) else xs
 
     ///
     /// Returns a pair of sets `(ys, zs)`.

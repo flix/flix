@@ -89,40 +89,40 @@ def insert08(): Bool = Set.insert(11, Set#{2, 1, 3, 7, 8, 9, 10, 35}) == Set#{11
 // delete                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def delete01(): Bool = Set.delete(1, Set#{}) == Set#{}
+def delete01(): Bool = Set.remove(1, Set#{}) == Set#{}
 
 @test
-def delete02(): Bool = Set.delete(1, Set#{1}) == Set#{}
+def delete02(): Bool = Set.remove(1, Set#{1}) == Set#{}
 
 @test
-def delete03(): Bool = Set.delete(1, Set#{2}) == Set#{2}
+def delete03(): Bool = Set.remove(1, Set#{2}) == Set#{2}
 
 @test
-def delete04(): Bool = Set.delete(2, Set#{2, 3}) == Set#{3}
+def delete04(): Bool = Set.remove(2, Set#{2, 3}) == Set#{3}
 
 @test
-def delete05(): Bool = Set.delete(3, Set#{2, 3}) == Set#{2}
+def delete05(): Bool = Set.remove(3, Set#{2, 3}) == Set#{2}
 
 @test
-def delete06(): Bool = Set.delete(1, Set#{2, 3}) == Set#{2, 3}
+def delete06(): Bool = Set.remove(1, Set#{2, 3}) == Set#{2, 3}
 
 @test
-def delete07(): Bool = Set.delete(0, Set#{1, 2, 3, 4, 5, 6, 7}) == Set#{1, 2, 3, 4, 5, 6, 7}
+def delete07(): Bool = Set.remove(0, Set#{1, 2, 3, 4, 5, 6, 7}) == Set#{1, 2, 3, 4, 5, 6, 7}
 
 @test
-def delete08(): Bool = Set.delete(1, Set#{1, 2, 3, 4, 5, 6, 7}) == Set#{2, 3, 4, 5, 6, 7}
+def delete08(): Bool = Set.remove(1, Set#{1, 2, 3, 4, 5, 6, 7}) == Set#{2, 3, 4, 5, 6, 7}
 
 @test
-def delete09(): Bool = Set.delete(2, Set#{1, 2, 3, 4, 5, 6, 7}) == Set#{1, 3, 4, 5, 6, 7}
+def delete09(): Bool = Set.remove(2, Set#{1, 2, 3, 4, 5, 6, 7}) == Set#{1, 3, 4, 5, 6, 7}
 
 @test
-def delete10(): Bool = Set.delete(6, Set#{1, 2, 3, 4, 5, 6, 7}) == Set#{1, 2, 3, 4, 5, 7}
+def delete10(): Bool = Set.remove(6, Set#{1, 2, 3, 4, 5, 6, 7}) == Set#{1, 2, 3, 4, 5, 7}
 
 @test
-def delete11(): Bool = Set.delete(7, Set#{1, 2, 3, 4, 5, 6, 7}) == Set#{1, 2, 3, 4, 5, 6}
+def delete11(): Bool = Set.remove(7, Set#{1, 2, 3, 4, 5, 6, 7}) == Set#{1, 2, 3, 4, 5, 6}
 
 @test
-def delete12(): Bool = Set.delete(8, Set#{1, 2, 3, 4, 5, 6, 7}) == Set#{1, 2, 3, 4, 5, 6, 7}
+def delete12(): Bool = Set.remove(8, Set#{1, 2, 3, 4, 5, 6, 7}) == Set#{1, 2, 3, 4, 5, 6, 7}
 
 /////////////////////////////////////////////////////////////////////////////
 // isEmpty                                                                 //
