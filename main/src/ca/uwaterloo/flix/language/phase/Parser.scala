@@ -473,7 +473,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def LogicalOr: Rule1[ParsedAst.Expression] = {
-      def Or: Rule1[String] = rule {
+      def Or: Rule1[ParsedAst.Operator] = rule {
         WS ~ operator("or") ~ WS
       }
       rule {
@@ -482,7 +482,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def LogicalAnd: Rule1[ParsedAst.Expression] = {
-      def And: Rule1[String] = rule {
+      def And: Rule1[ParsedAst.Operator] = rule {
         WS ~ operator("and") ~ WS
       }
       rule {
@@ -519,7 +519,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Multiplicative: Rule1[ParsedAst.Expression] = rule {
-      Compose ~ zeroOrMore(optWS ~ (operator("**") | operator("*") | atomic("/") | atomic("mod") | atomic("rem")) ~ optWS ~ Compose ~ SP ~> ParsedAst.Expression.Binary)
+      Compose ~ zeroOrMore(optWS ~ (operator("**") | operator("*") | operator("/") | operator("mod") | operator("rem")) ~ optWS ~ Compose ~ SP ~> ParsedAst.Expression.Binary)
     }
 
     def Compose: Rule1[ParsedAst.Expression] = rule {
@@ -574,11 +574,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Unary: Rule1[ParsedAst.Expression] = {
-      def UnaryOp1: Rule1[String] = rule {
-        capture(atomic("+") | atomic("-") | atomic("~~~"))
+      def UnaryOp1: Rule1[ParsedAst.Operator] = rule {
+        operator("+") | operator("-") | operator("~~~")
       }
-      def UnaryOp2: Rule1[String] = rule {
-        capture(keyword("not")) ~ WS
+      def UnaryOp2: Rule1[ParsedAst.Operator] = rule {
+        operator("not") ~ WS
       }
       rule {
         !Literal ~ (SP ~ (UnaryOp1 | UnaryOp2) ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.Unary) | Ref
