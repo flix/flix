@@ -389,34 +389,34 @@ def updateWithKey09(): Bool = Map.updateWithKey((k, v) -> if (v rem 2 != 0) Some
 // delete                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def delete01(): Bool = Map.delete(1, Map#{}: Map[_, Unit]) == Map#{}
+def delete01(): Bool = Map.remove(1, Map#{}: Map[_, Unit]) == Map#{}
 
 @test
-def delete02(): Bool = Map.delete(1, Map#{2 -> 4}) == Map#{2 -> 4}
+def delete02(): Bool = Map.remove(1, Map#{2 -> 4}) == Map#{2 -> 4}
 
 @test
-def delete03(): Bool = Map.delete(1, Map#{1 -> 4}) == Map#{}
+def delete03(): Bool = Map.remove(1, Map#{1 -> 4}) == Map#{}
 
 @test
-def delete04(): Bool = Map.delete(1, Map#{6 -> 1, 2 -> 4}) == Map#{6 -> 1, 2 -> 4}
+def delete04(): Bool = Map.remove(1, Map#{6 -> 1, 2 -> 4}) == Map#{6 -> 1, 2 -> 4}
 
 @test
-def delete05(): Bool = Map.delete(6, Map#{6 -> 1, 2 -> 4}) == Map#{2 -> 4}
+def delete05(): Bool = Map.remove(6, Map#{6 -> 1, 2 -> 4}) == Map#{2 -> 4}
 
 @test
-def delete06(): Bool = Map.delete(2, Map#{6 -> 1, 2 -> 4}) == Map#{6 -> 1}
+def delete06(): Bool = Map.remove(2, Map#{6 -> 1, 2 -> 4}) == Map#{6 -> 1}
 
 @test
-def delete07(): Bool = Map.delete(1, Map#{6 -> 1, 2 -> 4, 8 -> 89}) == Map#{6 -> 1, 2 -> 4, 8 -> 89}
+def delete07(): Bool = Map.remove(1, Map#{6 -> 1, 2 -> 4, 8 -> 89}) == Map#{6 -> 1, 2 -> 4, 8 -> 89}
 
 @test
-def delete08(): Bool = Map.delete(6, Map#{6 -> 1, 2 -> 4, 8 -> 89}) == Map#{2 -> 4, 8 -> 89}
+def delete08(): Bool = Map.remove(6, Map#{6 -> 1, 2 -> 4, 8 -> 89}) == Map#{2 -> 4, 8 -> 89}
 
 @test
-def delete09(): Bool = Map.delete(2, Map#{6 -> 1, 2 -> 4, 8 -> 89}) == Map#{6 -> 1, 8 -> 89}
+def delete09(): Bool = Map.remove(2, Map#{6 -> 1, 2 -> 4, 8 -> 89}) == Map#{6 -> 1, 8 -> 89}
 
 @test
-def delete10(): Bool = Map.delete(8, Map#{6 -> 1, 2 -> 4, 8 -> 89}) == Map#{6 -> 1, 2 -> 4}
+def delete10(): Bool = Map.remove(8, Map#{6 -> 1, 2 -> 4, 8 -> 89}) == Map#{6 -> 1, 2 -> 4}
 
 /////////////////////////////////////////////////////////////////////////////
 // isSubmapOf                                                              //
