@@ -30,4 +30,8 @@ namespace Test/Exp/Jvm/InvokeStaticMethod {
         import java.lang.String:valueOf(Int64);
         valueOf(42i64) == "42"
 
+    @test
+    def testPureInvokeStaticMethod01(): Bool =
+        import pure java.lang.String:valueOf(Bool);
+        valueOf(true) == "true"
 }

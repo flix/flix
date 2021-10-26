@@ -621,11 +621,12 @@ object ParsedAst {
       * Let Import Expression.
       *
       * @param sp1 the position of the first character in the expression.
+      * @param eff the optional effect cast in the import.
       * @param op  the imported JVM operation.
       * @param exp the body expression.
       * @param sp2 the position of the last character in the expression.
       */
-    case class LetImport(sp1: SourcePosition, op: ParsedAst.JvmOp, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class LetImport(sp1: SourcePosition, eff: Option[ParsedAst.Type], op: ParsedAst.JvmOp, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Let Region Expression.

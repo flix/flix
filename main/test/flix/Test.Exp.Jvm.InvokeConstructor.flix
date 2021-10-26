@@ -45,4 +45,8 @@ namespace Test/Exp/Jvm/InvokeConstructor {
         import new java.lang.String(String) as newString;
         newString("Hello World")
 
+    @test
+    def testPureInvokeConstructor01(): ##java.lang.Boolean =
+        import pure new java.lang.Boolean(Bool) as newBoolean;
+        newBoolean(true)
 }

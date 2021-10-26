@@ -730,8 +730,19 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         "(" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
       }
 
-      def Import: Rule1[ParsedAst.JvmOp] = rule {
-        keyword("import") ~ WS ~ (Constructor | Method | StaticMethod | GetField | PutField | GetStaticField | PutStaticField)
+      def OptPure: Rule1[Option[ParsedAst.Type]] = {
+
+        def Pure = rule {
+          SP ~ keyword("pure") ~ SP ~> ParsedAst.Type.True
+        }
+
+        rule {
+          optional(Pure)
+        }
+      }
+
+      def Import: Rule2[Option[ParsedAst.Type], ParsedAst.JvmOp] = rule {
+        keyword("import") ~ WS ~ OptPure ~ optWS ~ (Constructor | Method | StaticMethod | GetField | PutField | GetStaticField | PutStaticField)
       }
 
       rule {

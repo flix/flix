@@ -697,7 +697,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           WeededAst.Expression.Apply(inner, List(value), loc)
       }
 
-    case ParsedAst.Expression.LetImport(sp1, impl, exp2, sp2) =>
+    case ParsedAst.Expression.LetImport(sp1, eff, impl, exp2, sp2) =>
       val loc = mkSL(sp1, sp2)
 
       //
@@ -718,7 +718,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               //
               if (sig.isEmpty) {
                 val fparam = WeededAst.FormalParam(Name.Ident(sp1, "_", sp2), Ast.Modifiers.Empty, Some(WeededAst.Type.Unit(loc)), loc)
-                val lambdaBody = WeededAst.Expression.InvokeConstructor(className, Nil, Nil, loc)
+                val impureBody = WeededAst.Expression.InvokeConstructor(className, Nil, Nil, loc)
+                // add the cast from the import declaration
+                val lambdaBody = withEffectCast(impureBody, eff)
                 val e1 = WeededAst.Expression.Lambda(fparam, lambdaBody, loc)
                 return WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc).toSuccess
               }
@@ -741,7 +743,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               }
 
               // Assemble the lambda expression.
-              val lambdaBody = WeededAst.Expression.InvokeConstructor(className, as, ts, loc)
+              val impureBody = WeededAst.Expression.InvokeConstructor(className, as, ts, loc)
+              val lambdaBody = withEffectCast(impureBody, eff)
               val e1 = mkCurried(fs, lambdaBody, loc)
               WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
           }
@@ -780,7 +783,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               }
 
               // Assemble the lambda expression.
-              val lambdaBody = WeededAst.Expression.InvokeMethod(className, methodName, as.head, as.tail, ts, loc)
+              val impureBody = WeededAst.Expression.InvokeMethod(className, methodName, as.head, as.tail, ts, loc)
+              // Add the effect cast
+              val lambdaBody = withEffectCast(impureBody, eff)
               val e1 = mkCurried(fs, lambdaBody, loc)
               WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
           }
@@ -800,7 +805,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               //
               if (sig.isEmpty) {
                 val fparam = WeededAst.FormalParam(Name.Ident(sp1, "_", sp2), Ast.Modifiers.Empty, Some(WeededAst.Type.Unit(loc)), loc)
-                val lambdaBody = WeededAst.Expression.InvokeStaticMethod(className, methodName, Nil, Nil, loc)
+                val impureBody = WeededAst.Expression.InvokeStaticMethod(className, methodName, Nil, Nil, loc)
+                // Add the effect cast
+                val lambdaBody = withEffectCast(impureBody, eff)
                 val e1 = WeededAst.Expression.Lambda(fparam, lambdaBody, loc)
                 return WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc).toSuccess
               }
@@ -823,7 +830,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               }
 
               // Assemble the lambda expression.
-              val lambdaBody = WeededAst.Expression.InvokeStaticMethod(className, methodName, as, ts, loc)
+              val impureBody = WeededAst.Expression.InvokeStaticMethod(className, methodName, as, ts, loc)
+              // Add the effect cast
+              val lambdaBody = withEffectCast(impureBody, eff)
               val e1 = mkCurried(fs, lambdaBody, loc)
               WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
           }
@@ -837,7 +846,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               val objectId = Name.Ident(sp1, "o$", sp2)
               val objectExp = WeededAst.Expression.VarOrDefOrSig(objectId, loc)
               val objectParam = WeededAst.FormalParam(objectId, Ast.Modifiers.Empty, None, loc)
-              val lambdaBody = WeededAst.Expression.GetField(className, fieldName, objectExp, loc)
+              val impureBody = WeededAst.Expression.GetField(className, fieldName, objectExp, loc)
+              // Add the effect cast
+              val lambdaBody = withEffectCast(impureBody, eff)
               val e1 = WeededAst.Expression.Lambda(objectParam, lambdaBody, loc)
               WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
           }
@@ -854,7 +865,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               val valueExp = WeededAst.Expression.VarOrDefOrSig(valueId, loc)
               val objectParam = WeededAst.FormalParam(objectId, Ast.Modifiers.Empty, None, loc)
               val valueParam = WeededAst.FormalParam(valueId, Ast.Modifiers.Empty, None, loc)
-              val lambdaBody = WeededAst.Expression.PutField(className, fieldName, objectExp, valueExp, loc)
+              val impureBody = WeededAst.Expression.PutField(className, fieldName, objectExp, valueExp, loc)
+              // Add the effect cast
+              val lambdaBody = withEffectCast(impureBody, eff)
               val e1 = mkCurried(objectParam :: valueParam :: Nil, lambdaBody, loc)
               WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
           }
@@ -867,7 +880,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             case ((className, fieldName), e2) =>
               val unitId = Name.Ident(sp1, "_", sp2)
               val unitParam = WeededAst.FormalParam(unitId, Ast.Modifiers.Empty, Some(WeededAst.Type.Unit(loc)), loc)
-              val lambdaBody = WeededAst.Expression.GetStaticField(className, fieldName, loc)
+              val impureBody = WeededAst.Expression.GetStaticField(className, fieldName, loc)
+              // Add the effect cast
+              val lambdaBody = withEffectCast(impureBody, eff)
               val e1 = WeededAst.Expression.Lambda(unitParam, lambdaBody, loc)
               WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
           }
@@ -881,7 +896,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               val valueId = Name.Ident(sp1, "v$", sp2)
               val valueExp = WeededAst.Expression.VarOrDefOrSig(valueId, loc)
               val valueParam = WeededAst.FormalParam(valueId, Ast.Modifiers.Empty, None, loc)
-              val lambdaBody = WeededAst.Expression.PutStaticField(className, fieldName, valueExp, loc)
+              val impureBody = WeededAst.Expression.PutStaticField(className, fieldName, valueExp, loc)
+              // Add the effect cast
+              val lambdaBody = withEffectCast(impureBody, eff)
               val e1 = WeededAst.Expression.Lambda(valueParam, lambdaBody, loc)
               WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
           }
@@ -2339,6 +2356,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   }
 
   /**
+    * Returns the given expression `exp0` optionally wrapped in an effect cast if `eff0` is `Some`.
+    */
+  private def withEffectCast(exp0: WeededAst.Expression, eff0: Option[ParsedAst.Type])(implicit flix: Flix): WeededAst.Expression = eff0 match {
+    case None => exp0
+    case Some(t) => WeededAst.Expression.Cast(exp0, None, Some(visitType(t)), exp0.loc)
+  }
+
+  /**
     * Removes underscores from the given string of digits.
     */
   private def stripUnderscores(digits: String): String = {
@@ -2442,7 +2467,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Stm(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.LetMatch(sp1, _, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetMatchStar(sp1, _, _, _, _, _) => sp1
-    case ParsedAst.Expression.LetImport(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.LetImport(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.LetRegion(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Choose(sp1, _, _, _, _) => sp1
