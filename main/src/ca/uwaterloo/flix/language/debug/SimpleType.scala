@@ -149,14 +149,14 @@ object SimpleType {
 
   case class Apply(tpe: SimpleType, tpes: List[SimpleType]) extends SimpleType
 
-  case class Var(id: Int, text: String) extends SimpleType
+  case class Var(id: Int) extends SimpleType
 
   case class Tuple(length: Int, fields: List[SimpleType]) extends SimpleType
 
 
   // MATT docs
   def fromWellKindedType(t: Type): SimpleType = t.baseType match {
-    case Type.KindedVar(id, kind, loc, rigidity, text) => Var(id, text.get) // MATT how to handle vars? alpha-renaming, etc.
+    case Type.KindedVar(id, kind, loc, rigidity, text) => Var(id) // MATT ignoring name
     case _: Type.UnkindedVar => throw InternalCompilerException("") // MATT
     case _: Type.Ascribe => throw InternalCompilerException("") // MATT
     case Type.Alias(sym, args, tpe, loc) => Apply(Name(sym.name), args.map(fromWellKindedType))
@@ -292,7 +292,7 @@ object SimpleType {
           case _ => ??? // MATT ICE
         }
       case Type.Cst(TypeConstructor.RecordRowEmpty, _) => SimpleType.RecordRowEmpty
-      case Type.KindedVar(id, kind, loc, rigidity, text) => SimpleType.Var(id, text.get) // MATT handle no text
+      case Type.KindedVar(id, kind, loc, rigidity, text) => SimpleType.Var(id) // MATT ignoring text
       case _ => ??? // MATT ICE
     }
 
@@ -317,7 +317,7 @@ object SimpleType {
           case _ => ??? // MATT ICE
         }
       case Type.Cst(TypeConstructor.SchemaRowEmpty, _) => SimpleType.SchemaRowEmpty
-      case Type.KindedVar(id, kind, loc, rigidity, text) => SimpleType.Var(id, text.get) // MATT handle no text
+      case Type.KindedVar(id, kind, loc, rigidity, text) => SimpleType.Var(id) // MATT ignoring text
       case _ => ??? // MATT ICE
     }
 

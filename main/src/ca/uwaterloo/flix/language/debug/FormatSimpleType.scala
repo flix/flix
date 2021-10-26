@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.debug
 
 object FormatSimpleType {
-  def format(tpe: SimpleType): String = tpe match {
+  def format(tpe: SimpleType, nameContext: Map[Int, String]): String = tpe match {
     case SimpleType.Unit => "Unit"
     case SimpleType.Null =>"Null"
     case SimpleType.Bool => "Bool"
@@ -95,7 +95,7 @@ object FormatSimpleType {
       val string = format(tpe)
       val strings = tpes.map(format)
       string + strings.mkString("[", ", ", "]")
-    case SimpleType.Var(id, text) => ??? // MATT have to handle text and stuff
+    case SimpleType.Var(id) => nameContext(id) // MATT have to handle bad lookups
     case SimpleType.Tuple(length, fields) =>
       val strings = fields.map(format).padTo(length, "?")
       strings.mkString("(", ", ", ")")
