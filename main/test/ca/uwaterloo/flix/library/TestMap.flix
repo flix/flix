@@ -1894,4 +1894,22 @@ def query18(): Bool =
     def toLazyList03(): Bool =
         Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0) |> Map.toLazyList |> LazyList.toMap == Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0)
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toIterator                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toIterator01(): Bool & Impure =
+        Map.empty(): Map[Int32, Int32] |> Map.toIterator |> Iterator.toMap == Map.empty()
+
+    @test
+    def toIterator02(): Bool & Impure =
+        Map#{"A" -> 1, "B" -> 2, "C" -> 3, "D" -> 4} |> Map.toIterator |> Iterator.toMap == Map#{"A" -> 1, "B" -> 2, "C" -> 3, "D" -> 4}
+
+    @test
+    def toIterator03(): Bool & Impure =
+        let l = List.range(0, 100);
+        List.zip(l, List.reverse(l)) |> List.toMap |> Map.toIterator |> Iterator.toMap |> Map.toList == List.zip(List.range(0, 100), List.reverse(List.range(0, 100)))
+
 }
