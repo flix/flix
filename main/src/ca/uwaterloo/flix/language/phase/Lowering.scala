@@ -597,10 +597,10 @@ object Lowering extends Phase[Root, Root] {
       val tpe = visitType(tpe0)
       Expression.Reify(t, tpe, eff, loc)
 
-    case Expression.ReifyType(t0, tpe0, eff, loc) =>
+    case Expression.ReifyType(t0, k, tpe0, eff, loc) =>
       val t = visitType(t0)
       val tpe = visitType(tpe0)
-      Expression.ReifyType(t, tpe, eff, loc)
+      Expression.ReifyType(t, k, tpe, eff, loc)
 
   }
 
@@ -1492,8 +1492,8 @@ object Lowering extends Phase[Root, Root] {
     case Expression.Reify(t, tpe, eff, loc) =>
       Expression.Reify(t, tpe, eff, loc)
 
-    case Expression.ReifyType(t, tpe, eff, loc) =>
-      Expression.ReifyType(t, tpe, eff, loc)
+    case Expression.ReifyType(t, k, tpe, eff, loc) =>
+      Expression.ReifyType(t, k, tpe, eff, loc)
 
     case Expression.FixpointConstraintSet(cs, stf, tpe, loc) => throw InternalCompilerException(s"Unexpected expression near ${loc.format}.")
   }

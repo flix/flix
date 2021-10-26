@@ -77,9 +77,12 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       val t = s(tpe0)
 
       t.map {
-        case Type.KindedVar(_, Kind.Bool, loc, _, _) =>
+        case t0@Type.KindedVar(_, Kind.Bool, loc, _, _) =>
           // TODO: In strict mode we demand that there are no free (uninstantiated) Boolean variables.
-          // In the future we need to decide what should actually happen if such variables occur.
+          // TODO: In the future we need to decide what should actually happen if such variables occur.
+          // TODO: In particular, it seems there are two cases.
+          // TODO: A. Variables that occur inside the specialized types (those we can erase?)
+          // TODO: B. Variables that occur inside an expression but nowhere else really.
           if (flix.options.xstrictmono)
             throw UnexpectedNonConstBool(tpe0, loc)
           else
@@ -502,9 +505,13 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           else
             Expression.False(loc)
 
-        case Expression.ReifyType(t, _, _, loc) => reifyType(subst0(t), loc)
+        case Expression.ReifyType(t, k, _, _, loc) =>
+          k match {
+            case Kind.Bool => reifyBool(subst0(t), loc)
+            case Kind.Star => reifyType(subst0(t), loc)
+            case _ => throw InternalCompilerException(s"Unexpected kind: $k.")
+          }
       }
-
 
       /**
         * Specializes the given pattern `p0` w.r.t. the current substitution.
@@ -562,11 +569,14 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       // Lookup the definition and its declared type.
       val defn = root.defs(sym)
 
+      // Compute the erased type.
+      val erasedType = eraseType(tpe)
+
       // Check if the function is non-polymorphic.
       if (defn.spec.tparams.isEmpty) {
         defn.sym
       } else {
-        specializeDef(defn, tpe)
+        specializeDef(defn, erasedType)
       }
     }
 
@@ -743,30 +753,23 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
        * Performs function specialization until both queues are empty.
        */
       while (defQueue.nonEmpty) {
+        // Extract a function from the queue and specializes it w.r.t. its substitution.
+        val (freshSym, defn, subst) = defQueue.dequeue()
 
-        /*
-         * Performs function specialization until the queue is empty.
-         */
-        while (defQueue.nonEmpty) {
-          // Extract a function from the queue and specializes it w.r.t. its substitution.
-          val (freshSym, defn, subst) = defQueue.dequeue()
+        flix.subtask(freshSym.toString, sample = true)
 
-          flix.subtask(freshSym.toString, sample = true)
+        // Specialize the formal parameters and introduce fresh local variable symbols.
+        val (fparams, env0) = specializeFormalParams(defn.spec.fparams, subst)
 
-          // Specialize the formal parameters and introduce fresh local variable symbols.
-          val (fparams, env0) = specializeFormalParams(defn.spec.fparams, subst)
+        // Specialize the body expression.
+        val specializedExp = specialize(defn.impl.exp, env0, subst)
 
-          // Specialize the body expression.
-          val specializedExp = specialize(defn.impl.exp, env0, subst)
+        // Reassemble the definition.
+        // NB: Removes the type parameters as the function is now monomorphic.
+        val specializedDefn = defn.copy(sym = freshSym, spec = defn.spec.copy(fparams = fparams, tparams = Nil), impl = TypedAst.Impl(specializedExp, Scheme(Nil, List.empty, subst(defn.impl.inferredScheme.base))))
 
-          // Reassemble the definition.
-          // NB: Removes the type parameters as the function is now monomorphic.
-          val specializedDefn = defn.copy(sym = freshSym, spec = defn.spec.copy(fparams = fparams, tparams = Nil), impl = TypedAst.Impl(specializedExp, Scheme(Nil, List.empty, subst(defn.impl.inferredScheme.base))))
-
-          // Save the specialized function.
-          specializedDefns.put(freshSym, specializedDefn)
-        }
-
+        // Save the specialized function.
+        specializedDefns.put(freshSym, specializedDefn)
       }
 
       // Reassemble the AST.
@@ -777,6 +780,34 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       case ReifyBoolException(tpe, loc) => ReificationError.IllegalReifiedBool(tpe, loc).toFailure
       case ReifyTypeException(tpe, loc) => ReificationError.IllegalReifiedType(tpe, loc).toFailure
       case UnexpectedNonConstBool(tpe, loc) => ReificationError.UnexpectedNonConstBool(tpe, loc).toFailure
+    }
+  }
+
+  /**
+    * Returns an expression that evaluates to a ReifiedBool for the given type `tpe`.
+    */
+  private def reifyBool(tpe: Type, loc: SourceLocation): Expression = {
+    val sym = Symbol.mkEnumSym("ReifiedBool")
+    val resultTpe = Type.mkEnum(sym, Kind.Star, loc)
+    val resultEff = Type.Pure
+
+    tpe.typeConstructor match {
+      case None =>
+        throw ReifyTypeException(tpe, loc)
+
+      case Some(tc) => tc match {
+        case TypeConstructor.True =>
+          val tag = Name.Tag("ReifiedTrue", loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+
+        case TypeConstructor.False =>
+          val tag = Name.Tag("ReifiedFalse", loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+
+        case other =>
+          val tag = Name.Tag("ErasedBool", loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+      }
     }
   }
 
@@ -839,6 +870,37 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     visit(tpe)
+  }
+
+  /**
+    * Performs type erasure on the given type `tpe`.
+    *
+    * Flix does not erase normal types, but it does erase Boolean formulas.
+    */
+  private def eraseType(tpe: Type)(implicit flix: Flix): Type = tpe match {
+    case Type.KindedVar(_, _, loc, _, _) =>
+      if (flix.options.xstrictmono)
+        throw UnexpectedNonConstBool(tpe, loc)
+      else {
+        // TODO: We should return Type.ErasedBool or something.
+        Type.True
+      }
+
+    case Type.Cst(_, _) => tpe
+
+    case Type.Apply(tpe1, tpe2, loc) =>
+      val t1 = eraseType(tpe1)
+      val t2 = eraseType(tpe2)
+      Type.Apply(t1, t2, loc)
+
+    case Type.Alias(sym, args, tpe, loc) =>
+      val as = args.map(eraseType)
+      val t = eraseType(tpe)
+      Type.Alias(sym, as, t, loc)
+
+    case Type.UnkindedVar(_, loc, _, _) => throw InternalCompilerException(s"Unexpected type at: ${loc.format}")
+
+    case Type.Ascribe(_, _, loc) => throw InternalCompilerException(s"Unexpected type at: ${loc.format}")
   }
 
 }

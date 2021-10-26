@@ -411,8 +411,8 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.Reify(t, tpe, eff, loc) =>
       Expression.Reify(t, tpe, eff, loc).toSuccess
 
-    case Expression.ReifyType(t, tpe, eff, loc) =>
-      Expression.ReifyType(t, tpe, eff, loc).toSuccess
+    case Expression.ReifyType(t, k, tpe, eff, loc) =>
+      Expression.ReifyType(t, k, tpe, eff, loc).toSuccess
 
   }
 
@@ -649,7 +649,7 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.Reify(_, _, _, _) =>
       DependencyGraph.empty
 
-    case Expression.ReifyType(_, _, _, _) =>
+    case Expression.ReifyType(_, _, _, _, _) =>
       DependencyGraph.empty
 
   }
