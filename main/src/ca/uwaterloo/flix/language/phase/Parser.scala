@@ -1615,8 +1615,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
   }
 
-  // MATT docs
-  // MATT move closer to bin expressions
+  /////////////////////////////////////////////////////////////////////////////
+  // Operator                                                                //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * Reads the symbol and captures its source location.
+    */
   def operator(symbol: String): Rule1[ParsedAst.Operator] = namedRule(symbol) {
     SP ~ capture(atomic(symbol)) ~ SP ~> ParsedAst.Operator
   }

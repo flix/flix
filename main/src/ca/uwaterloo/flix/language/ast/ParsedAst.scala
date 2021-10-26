@@ -1508,7 +1508,13 @@ object ParsedAst {
     case class Unnamed(exp: ParsedAst.Expression) extends Argument
   }
 
-  // MATT docs
+  /**
+    * Operator.
+    *
+    * @param sp1 the position of the first character in the operator.
+    * @param op the operator.
+    * @param sp2 the position of the last character in the operator.
+    */
   case class Operator(sp1: SourcePosition, op: String, sp2: SourcePosition)
 
   /**

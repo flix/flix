@@ -1491,18 +1491,30 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Argument.Unnamed(exp) => visitExp(exp)
   }
 
-  // MATT docs
+  /**
+    * The result of weeding an operator.
+    */
   private sealed trait OperatorResult
   private object OperatorResult {
-    // MATT docs
+    /**
+      * The operator represents a signature.
+      */
     case class Signature(name: Name.QName) extends OperatorResult
-    // MATT docs
+
+    /**
+      * The operator represents a semantic operator.
+      */
     case class Operator(op: SemanticOperator) extends OperatorResult
-    // MATT docs
+
+    /**
+      * The operator represents a no-op.
+      */
     case object NoOp extends OperatorResult
   }
 
-  // MATT docs
+  /**
+    * Performs weeding on the given unary operator.
+    */
   private def visitUnaryOperator(o: ParsedAst.Operator)(implicit flix: Flix): OperatorResult = o match {
     case ParsedAst.Operator(sp1, op, sp2) =>
       op match {
@@ -1514,7 +1526,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       }
   }
 
-  // MATT docs
+  /**
+    * Performs weeding on the given binary operator.
+    */
   private def visitBinaryOperator(o: ParsedAst.Operator)(implicit flix: Flix): OperatorResult = o match {
     case ParsedAst.Operator(sp1, op, sp2) =>
       op match {
