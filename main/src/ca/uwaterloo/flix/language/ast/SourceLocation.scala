@@ -50,14 +50,19 @@ object SourceLocation {
 case class SourceLocation(source: Source, beginLine: Int, beginCol: Int, endLine: Int, endCol: Int, lineAt: Int => String) {
 
   /**
-    * Returns a formatted string representation of `this` source location.
+    * Returns `true` if this source location spans more than one line.
     */
-  def format: String = s"${source.format}:$beginLine:$beginCol"
+  def isMultiLine: Boolean = beginLine != endLine
 
   /**
     * Returns the smallest (i.e. the first that appears in the source code) of `this` and `that`.
     */
   def min(that: SourceLocation): SourceLocation = SourceLocation.Order.min(this, that)
+
+  /**
+    * Returns a formatted string representation of `this` source location.
+    */
+  def format: String = s"${source.format}:$beginLine:$beginCol"
 
   /**
     * Returns the hashCode of `this` source location.
