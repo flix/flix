@@ -386,37 +386,37 @@ def updateWithKey08(): Bool = Map.updateWithKey((k, v) -> if (v rem 2 != 0) Some
 def updateWithKey09(): Bool = Map.updateWithKey((k, v) -> if (v rem 2 != 0) Some(k+2*v) else None, 4, Map#{1 -> 4, 5 -> -2}) == Map#{1 -> 4, 5 -> -2}
 
 /////////////////////////////////////////////////////////////////////////////
-// delete                                                                  //
+// remove                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def delete01(): Bool = Map.delete(1, Map#{}: Map[_, Unit]) == Map#{}
+def remove01(): Bool = Map.remove(1, Map#{}: Map[_, Unit]) == Map#{}
 
 @test
-def delete02(): Bool = Map.delete(1, Map#{2 -> 4}) == Map#{2 -> 4}
+def remove02(): Bool = Map.remove(1, Map#{2 -> 4}) == Map#{2 -> 4}
 
 @test
-def delete03(): Bool = Map.delete(1, Map#{1 -> 4}) == Map#{}
+def remove03(): Bool = Map.remove(1, Map#{1 -> 4}) == Map#{}
 
 @test
-def delete04(): Bool = Map.delete(1, Map#{6 -> 1, 2 -> 4}) == Map#{6 -> 1, 2 -> 4}
+def remove04(): Bool = Map.remove(1, Map#{6 -> 1, 2 -> 4}) == Map#{6 -> 1, 2 -> 4}
 
 @test
-def delete05(): Bool = Map.delete(6, Map#{6 -> 1, 2 -> 4}) == Map#{2 -> 4}
+def remove05(): Bool = Map.remove(6, Map#{6 -> 1, 2 -> 4}) == Map#{2 -> 4}
 
 @test
-def delete06(): Bool = Map.delete(2, Map#{6 -> 1, 2 -> 4}) == Map#{6 -> 1}
+def remove06(): Bool = Map.remove(2, Map#{6 -> 1, 2 -> 4}) == Map#{6 -> 1}
 
 @test
-def delete07(): Bool = Map.delete(1, Map#{6 -> 1, 2 -> 4, 8 -> 89}) == Map#{6 -> 1, 2 -> 4, 8 -> 89}
+def remove07(): Bool = Map.remove(1, Map#{6 -> 1, 2 -> 4, 8 -> 89}) == Map#{6 -> 1, 2 -> 4, 8 -> 89}
 
 @test
-def delete08(): Bool = Map.delete(6, Map#{6 -> 1, 2 -> 4, 8 -> 89}) == Map#{2 -> 4, 8 -> 89}
+def remove08(): Bool = Map.remove(6, Map#{6 -> 1, 2 -> 4, 8 -> 89}) == Map#{2 -> 4, 8 -> 89}
 
 @test
-def delete09(): Bool = Map.delete(2, Map#{6 -> 1, 2 -> 4, 8 -> 89}) == Map#{6 -> 1, 8 -> 89}
+def remove09(): Bool = Map.remove(2, Map#{6 -> 1, 2 -> 4, 8 -> 89}) == Map#{6 -> 1, 8 -> 89}
 
 @test
-def delete10(): Bool = Map.delete(8, Map#{6 -> 1, 2 -> 4, 8 -> 89}) == Map#{6 -> 1, 2 -> 4}
+def remove10(): Bool = Map.remove(8, Map#{6 -> 1, 2 -> 4, 8 -> 89}) == Map#{6 -> 1, 2 -> 4}
 
 /////////////////////////////////////////////////////////////////////////////
 // isSubmapOf                                                              //
@@ -1893,5 +1893,23 @@ def query18(): Bool =
     @test
     def toLazyList03(): Bool =
         Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0) |> Map.toLazyList |> LazyList.toMap == Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toIterator                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toIterator01(): Bool & Impure =
+        Map.empty(): Map[Int32, Int32] |> Map.toIterator |> Iterator.toMap == Map.empty()
+
+    @test
+    def toIterator02(): Bool & Impure =
+        Map#{"A" -> 1, "B" -> 2, "C" -> 3, "D" -> 4} |> Map.toIterator |> Iterator.toMap == Map#{"A" -> 1, "B" -> 2, "C" -> 3, "D" -> 4}
+
+    @test
+    def toIterator03(): Bool & Impure =
+        let l = List.range(0, 100);
+        List.zip(l, List.reverse(l)) |> List.toMap |> Map.toIterator |> Iterator.toMap |> Map.toList == List.zip(List.range(0, 100), List.reverse(List.range(0, 100)))
 
 }

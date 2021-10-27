@@ -107,12 +107,11 @@ class VirtualTerminal() {
     val beginCol = loc.beginCol
     val endLine = loc.endLine
     val endCol = loc.endCol
-    val lineAt = loc.lineAt
 
     def underline(): Unit = {
       val lineNo = beginLine.toString + " | "
 
-      this << lineNo << lineAt(beginLine) << NewLine
+      this << lineNo << loc.lineAt(beginLine) << NewLine
       this << " " * (beginCol + lineNo.length - 1) << Red("^" * (endCol - beginCol)) << NewLine
       this << " " * (beginCol + lineNo.length - 1)
       this << msg
@@ -121,7 +120,7 @@ class VirtualTerminal() {
 
     def leftline(): Unit = {
       for (lineNo <- beginLine to endLine) {
-        val currentLine = lineAt(lineNo)
+        val currentLine = loc.lineAt(lineNo)
         this << lineNo << " |" << Red(">") << " " << currentLine << NewLine
       }
       this << NewLine
