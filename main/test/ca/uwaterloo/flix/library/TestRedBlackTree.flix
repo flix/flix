@@ -25,27 +25,27 @@ namespace TestRedBlackTree {
         RedBlackTree.size(toTree(List.range(0, 100))) == 100
 
     @test
-    def testDelete01(): Bool =
+    def testRemove01(): Bool =
         not RedBlackTree.memberOf(1, RedBlackTree.remove(1, toTree(List.range(0, 100))))
 
     @test
-    def testDelete02(): Bool =
+    def testRemove02(): Bool =
         not RedBlackTree.memberOf(50, RedBlackTree.remove(50, toTree(List.range(0, 100))))
 
     @test
-    def testDelete03(): Bool =
+    def testRemove03(): Bool =
         not RedBlackTree.memberOf(99, RedBlackTree.remove(99, toTree(List.range(0, 100))))
 
     @test
-    def testEmptyAfterDelete01(): Bool =
+    def testEmptyAfterRemove01(): Bool =
         RedBlackTree.empty() == RedBlackTree.remove(42, RedBlackTree.insert(42, (), RedBlackTree.empty()))
 
     @test
-    def testEmptyAfterDelete02(): Bool =
+    def testEmptyAfterRemove02(): Bool =
         RedBlackTree.empty() == RedBlackTree.remove(2, RedBlackTree.remove(1, RedBlackTree.remove(0, toTree(List.range(0, 3)))))
 
     @test
-    def testEmptyAfterDelete03(): Bool =
+    def testEmptyAfterRemove03(): Bool =
         let tree =
         List.foldLeft(acc, x) -> RedBlackTree.remove(x, acc), toTree(List.range(0, 20)), List.range(0, 20));
         tree == RedBlackTree.empty()
