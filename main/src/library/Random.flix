@@ -34,7 +34,7 @@ namespace Random {
     pub def nextBool(r: Random): Bool & Impure =
         import java.util.Random.nextBoolean();
         let Random(o) = r;
-        o |> nextBoolean
+        nextBoolean(o)
 
     ///
     /// Returns the next pseudorandom 32-bit floating point number from the given random number generator `r`.
@@ -42,7 +42,7 @@ namespace Random {
     pub def nextFloat32(r: Random): Float32 & Impure =
         import java.util.Random.nextFloat();
         let Random(o) = r;
-        o |> nextFloat
+        nextFloat(o)
 
     ///
     /// Returns the next pseudorandom 64-bit floating point number from the given random number generator `r`.
@@ -50,7 +50,7 @@ namespace Random {
     pub def nextFloat64(r: Random): Float64 & Impure =
         import java.util.Random.nextDouble();
         let Random(o) = r;
-        o |> nextDouble
+        nextDouble(o)
 
     ///
     /// Returns the next pseudorandom 32-bit integer value from the given random number generator `r`.
@@ -58,7 +58,7 @@ namespace Random {
     pub def nextInt32(r: Random): Int32 & Impure =
         import java.util.Random.nextInt();
         let Random(o) = r;
-        o |> nextInt
+        nextInt(o)
 
     ///
     /// Returns the next pseudorandom 64-bit integer value from the given random number generator `r`.
@@ -66,7 +66,7 @@ namespace Random {
     pub def nextInt64(r: Random): Int64 & Impure =
         import java.util.Random.nextLong();
         let Random(o) = r;
-        o |> nextLong
+        nextLong(o)
 
     ///
     /// Returns the next pseudorandom Gaussian distributed 64-bit floating point number.
@@ -74,7 +74,7 @@ namespace Random {
     pub def nextGaussian(r: Random): Float64 & Impure =
         import java.util.Random.nextGaussian();
         let Random(o) = r;
-        o |> nextGaussian
+        nextGaussian(o)
 
     ///
     /// Returns the next pseudorandom 32-bit integer value between `0` and `m` (exclusive) using the given random number generator `r`.
@@ -82,7 +82,7 @@ namespace Random {
     pub def nextNatWithMax(r: Random, m: Int32): Int32 & Impure =
         import java.util.Random.nextInt(Int32);
         let Random(o) = r;
-        o `nextInt` m
+        nextInt(o, m)
 
     ///
     /// Represents a random number generator.
