@@ -2088,28 +2088,28 @@ def replace08(): Bool = String.replace({from = "c"}, {to = "d"}, "cc") == "dd"
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def replaceChar01(): Bool = String.replaceChar('c', 'd', "") == ""
+def replaceChar01(): Bool = String.replaceChar({from = 'c'}, {to = 'd'}, "") == ""
 
 @test
-def replaceChar02(): Bool = String.replaceChar('c', 'd', "a") == "a"
+def replaceChar02(): Bool = String.replaceChar({from = 'c'}, {to = 'd'}, "a") == "a"
 
 @test
-def replaceChar03(): Bool = String.replaceChar('c', 'd', "c") == "d"
+def replaceChar03(): Bool = String.replaceChar({from = 'c'}, {to = 'd'}, "c") == "d"
 
 @test
-def replaceChar04(): Bool = String.replaceChar('c', 'd', "d") == "d"
+def replaceChar04(): Bool = String.replaceChar({from = 'c'}, {to = 'd'}, "d") == "d"
 
 @test
-def replaceChar05(): Bool = String.replaceChar('c', 'd', "ab") == "ab"
+def replaceChar05(): Bool = String.replaceChar({from = 'c'}, {to = 'd'}, "ab") == "ab"
 
 @test
-def replaceChar06(): Bool = String.replaceChar('c', 'd', "abc") == "abd"
+def replaceChar06(): Bool = String.replaceChar({from = 'c'}, {to = 'd'}, "abc") == "abd"
 
 @test
-def replaceChar07(): Bool = String.replaceChar('c', 'd', "cd") == "dd"
+def replaceChar07(): Bool = String.replaceChar({from = 'c'}, {to = 'd'}, "cd") == "dd"
 
 @test
-def replaceChar08(): Bool = String.replaceChar('c', 'd', "cc") == "dd"
+def replaceChar08(): Bool = String.replaceChar({from = 'c'}, {to = 'd'}, "cc") == "dd"
 
 /////////////////////////////////////////////////////////////////////////////
 // replaceMatches                                                          //
