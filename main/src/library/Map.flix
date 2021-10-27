@@ -244,9 +244,9 @@ namespace Map {
     /// Removes the mapping `k` from the map `m`.
     ///
     @Time(Int32.log2(size(m))) @Space(Int32.log2(size(m)))
-    pub def delete(k: k, m: Map[k, v]): Map[k, v] with Order[k] =
+    pub def remove(k: k, m: Map[k, v]): Map[k, v] with Order[k] =
         let Map(xs) = m;
-        Map(RedBlackTree.delete(k, xs))
+        Map(RedBlackTree.remove(k, xs))
 
 
 
@@ -646,5 +646,11 @@ namespace Map {
     pub def queryWith(p: k -> Comparison & ef, f: (k, v) ~> Unit, m: Map[k, v]): Unit & Impure =
         let Map(xs) = m;
         RedBlackTree.queryWith(p, f, xs)
+
+    ///
+    /// Returns an iterator over all key-value pairs in `m`.
+    ///
+    pub def toIterator(m: Map[a, b]): Iterator[(a, b)] & Impure =
+        List.toIterator(Map.query(_ -> EqualTo, m))
 
 }

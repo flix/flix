@@ -2407,4 +2407,20 @@ def distinctWith09(): Bool =
         List.range(1, 101) |> List.sum == 5050
 
 
+    /////////////////////////////////////////////////////////////////////////////
+    // toIterator                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toIterator01(): Bool & Impure =
+        Nil: List[Int32] |> List.toIterator |> Iterator.toList == Nil
+
+    @test
+    def toIterator02(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> List.toIterator |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+
+    @test
+    def toIterator03(): Bool & Impure =
+        List.range(-100, 100) |> List.toIterator |> Iterator.toList == List.range(-100, 100)
+
 }

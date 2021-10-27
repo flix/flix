@@ -72,7 +72,7 @@ object Formatter {
       val beginCol = loc.beginCol
       val endLine = loc.endLine
       val endCol = loc.endCol
-      val lineAt = loc.lineAt
+      val lineAt = loc.lineAt(beginLine)
 
       def underline: String = {
         val sb = new StringBuilder()
