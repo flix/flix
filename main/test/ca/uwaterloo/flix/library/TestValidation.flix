@@ -48,10 +48,10 @@ namespace Validation {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def getWithDefault01(): Bool = (Success(123) `getWithDefault` 456) == 123
+    def getWithDefault01(): Bool = getWithDefault(Success(123), 456) == 123
 
     @test
-    def getWithDefault02(): Bool = (Failure(Nel(42, Nil)) `getWithDefault` 456) == 456
+    def getWithDefault02(): Bool = getWithDefault(Failure(Nel(42, Nil)), 456) == 456
 
     /////////////////////////////////////////////////////////////////////////////
     // withDefault                                                             //
