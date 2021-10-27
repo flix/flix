@@ -624,12 +624,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetRegion | LetMatch | LetMatchStar | LetUse | LetImport | IfThenElse | Reify | ReifyType | Choose | Match | LambdaMatch | TryCatch | Lambda | Tuple |
-        RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
-        GetChannel | SelectChannel | Spawn | Lazy | Force | Intrinsic | ArrayLit | ArrayNew |
-        FNil | FSet | FMap | ConstraintSet | FixpointProject | FixpointSolveWithProject | FixpointQueryWithSelect |
-        ConstraintSingleton | Interpolation | Literal | Existential | Universal |
-        UnaryLambda | FName | Tag | Hole
+      LetRegion | LetMatch | LetMatchStar | LetUse | LetImport | IfThenElse | Reify | ReifyType|
+        Choose | Match | LambdaMatch | TryCatch | Lambda | Tuple | RecordOperation | RecordLiteral |
+        Block | RecordSelectLambda | NewChannel | GetChannel | SelectChannel | Spawn | Lazy | Force |
+        Intrinsic | ArrayLit | ArrayNew | FNil | FSet | FMap | ConstraintSet | FixpointProject |
+        FixpointSolveWithProject | FixpointQueryWithSelect | ConstraintSingleton | Interpolation |
+        Literal | Existential | Universal | UnaryLambda | FName | Tag | Hole
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
