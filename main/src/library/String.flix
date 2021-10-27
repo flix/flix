@@ -845,10 +845,9 @@ namespace String {
     ///
     /// Returns `s` with every match of the character `target` replaced by the character `rep`.
     ///
-    @Time(length(s)) @Space(length(s))
     pub def replaceChar(from: {from :: Char}, to: {to :: Char}, s: String): String =
         import java.lang.String.replace(Char, Char);
-        s.replace(target, rep) as & Pure
+        s.replace(from.from, to.to) as & Pure
 
     ///
     /// Returns `s` with every match of the regular expression `regex` replaced by the string `to`.
