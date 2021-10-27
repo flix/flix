@@ -15,6 +15,7 @@
  */
 import {Kind} from "./Kind";
 
+// TODO: This is not done.
 export type Type = TypeVar | TypeCst
 
 export interface TypeVar {

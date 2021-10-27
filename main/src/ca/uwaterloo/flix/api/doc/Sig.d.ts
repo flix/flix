@@ -17,10 +17,9 @@ import {SigSym} from "./SigSym";
 
 export interface Sig {
     sym: SigSym
-
     implemented: boolean
 }
-// TODO
+// TODO: This is not done
 //   case class Sig(sym: Symbol.SigSym)
 //  case class Spec(doc: Ast.Doc, ann: List[TypedAst.Annotation], mod: Ast.Modifiers, tparams: List[TypedAst.TypeParam], fparams: List[TypedAst.FormalParam], declaredScheme: Scheme, retTpe: Type, eff: Type, loc: SourceLocation)
 

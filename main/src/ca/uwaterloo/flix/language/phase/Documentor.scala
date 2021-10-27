@@ -70,8 +70,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       // Construct the JSON object.
       val json = JObject(
         ("title", JString(ApiTitle)),
-        ("namespaces", JObject(jsonDefsByNs)),
-        ("classes", classesToJson(root)),
+        ("namespaces", JObject(jsonDefsByNs))
       )
 
       // Serialize the JSON object to a string.
@@ -144,8 +143,8 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     case Instance(_, _, sym, tpe, tconstrs, _, _, loc) =>
       ("sym" -> visitClassSym(sym)) ~
         ("tpe" -> visitType(tpe)) ~
-        ("tconstrs" -> tconstrs.map(visitTypeConstraint))
-      ("loc" -> visitSourceLocation(loc))
+        ("tconstrs" -> tconstrs.map(visitTypeConstraint)) ~
+        ("loc" -> visitSourceLocation(loc))
   }
 
   /**
@@ -169,6 +168,8 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     ("namespace" -> sym.namespace) ~
       ("name" -> sym.name) ~
       ("loc" -> visitSourceLocation(sym.loc))
+
+  // TODO: Visit the other symbols.
 
   /**
     * Returns the given source location `loc` as a JSON value.
