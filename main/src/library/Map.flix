@@ -246,7 +246,7 @@ namespace Map {
     @Time(Int32.log2(size(m))) @Space(Int32.log2(size(m)))
     pub def remove(k: k, m: Map[k, v]): Map[k, v] with Order[k] =
         let Map(xs) = m;
-        Map(RedBlackTree.delete(k, xs))
+        Map(RedBlackTree.remove(k, xs))
 
 
 

@@ -109,7 +109,7 @@ namespace Set {
     @Time(Int32.log2(size(xs))) @Space(Int32.log2(size(xs)))
     pub def remove(x: a, xs: Set[a]): Set[a] with Order[a] =
         let Set(es) = xs;
-        Set(RedBlackTree.delete(x, es))
+        Set(RedBlackTree.remove(x, es))
 
 
 
