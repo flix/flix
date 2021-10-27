@@ -52,7 +52,7 @@ namespace Condition {
         import java.util.concurrent.locks.Condition.awaitNanos(Int64);
         let Condition(c) = condition;
         try {
-            Ok(c `awaitNanos` timeout)
+            Ok(awaitNanos(c, timeout))
         } catch {
             case e: ##java.lang.InterruptedException => Err(InterruptedError(e))
             case e: ##java.lang.IllegalMonitorStateException => Err(MonitorStateError(e))
