@@ -788,4 +788,22 @@ def lift1012(): Bool = Option.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2
     @test
     def hash05(): Bool = hash(None: Option[Unit]) != hash(Some((())))
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toIterator                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toIterator01(): Bool & Impure =
+        None: Option[Int32] |> Option.toIterator |> Iterator.toList == Nil
+
+    @test
+    def toIterator02(): Bool & Impure =
+        Some(1) |> Option.toIterator |> Iterator.toList == 1 :: Nil
+
+    @test
+    def toIterator03(): Bool & Impure =
+        Some(1 :: 2 :: 3 :: Nil) |> Option.toIterator |> Iterator.toList == (1 :: 2 :: 3 :: Nil) :: Nil
+
+
 }
