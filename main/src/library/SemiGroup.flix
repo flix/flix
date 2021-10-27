@@ -39,5 +39,5 @@ instance SemiGroup[String] {
     pub def combineN(x: String, n: Int32): String =
         if (n <= 0) ???
         else if (n == 1) x
-        else x + SemiGroup1.combineN(x, n - 1)
+        else x + SemiGroup.combineN(x, n - 1)
 }
