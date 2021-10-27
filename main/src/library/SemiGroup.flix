@@ -41,3 +41,11 @@ instance SemiGroup[String] {
         else if (n == 1) x
         else SemiGroup.combine(x, SemiGroup.combineN(x, n - 1))
 }
+
+instance SemiGroup1[List[a]] {
+  pub def combine(x: List[a], y: List[a]): List[a] = match x {
+    case (z :: zs) => SemiGroup1.combine(zs, z :: y)
+    case (Nil) => y
+  }
+  pub def combineN(x: List[a], n: Int32): List[a] = ???
+}
