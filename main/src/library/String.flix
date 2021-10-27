@@ -22,7 +22,7 @@ namespace String {
     @Time(1) @Space(1)
     pub def charAt(i: Int, s: String): Char =
         import java.lang.String.charAt(Int32);
-        (s `charAt` i) as & Pure
+        charAt(s, i) as & Pure
 
     ///
     /// Returns the string `s1` followed by the string `s2`.
@@ -67,7 +67,7 @@ namespace String {
     ///
     pub def split(regex: {regex :: String}, s: String): List[String] & Impure =
         import java.lang.String.split(String);
-        Array.toList(s `split` regex.regex)
+        Array.toList(split(s, regex.regex))
 
     ///
     /// Returns the lower case version of the string `s`.
@@ -287,7 +287,7 @@ namespace String {
     pub def isMatch(regex: {regex :: String}, s: String): Bool =
         try {
             import java.lang.String.matches(String);
-            (s `matches` regex.regex) as & Pure
+            matches(s, regex.regex) as & Pure
         } catch {
             case _: ##java.util.regex.PatternSyntaxException => false
         }
@@ -308,8 +308,8 @@ namespace String {
             import java.util.regex.Matcher.find(Int32);
             let cs1 = s as ##java.lang.CharSequence;
             let p1 = compile(pattern);
-            let m1 = p1 `matcher` cs1;
-            m1 `find` 0
+            let m1 = matcher(p1, cs1);
+            find(m1, 0)
         } catch {
             case _: ##java.util.regex.PatternSyntaxException => false
         }
@@ -809,7 +809,7 @@ namespace String {
         if (n < 0)
             ""
         else
-            (s `repeat` n) as & Pure
+            repeat(s, n) as & Pure
 
     ///
     /// Pad the string `s` at the left with the supplied char `c` to fit the width `w`.
@@ -1044,7 +1044,7 @@ namespace String {
         if (isEmpty(substr.substr))
             None
         else {
-            let i = (s `indexOf` substr.substr) as & Pure;
+            let i = indexOf(s, substr.substr) as & Pure;
             if (i < 0) None else Some(i)
         }
 
@@ -1060,7 +1060,7 @@ namespace String {
         if (isEmpty(substr.substr))
             None
         else {
-            let i = (s `lastIndexOf` substr.substr) as & Pure;
+            let i = lastIndexOf(s, substr.substr) as & Pure;
             if (i < 0) None else Some(i)
         }
 
