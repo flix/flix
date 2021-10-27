@@ -150,6 +150,12 @@ pub lawless class Foldable[t : Type -> Type] {
         MutList.toArray(v)
 
     ///
+    /// Returns an iterator over `t`.
+    ///
+    pub def toIterator(t: t[a]): Iterator[a] & Impure =
+        List.toIterator(Foldable.toList(t))
+
+    ///
     /// Returns `t` as a mutable list.
     ///
     pub def toMutList(t: t[a]): MutList[a] & Impure =
