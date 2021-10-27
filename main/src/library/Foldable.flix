@@ -153,7 +153,17 @@ pub lawless class Foldable[t : Type -> Type] {
     /// Returns an iterator over `t`.
     ///
     pub def toIterator(t: t[a]): Iterator[a] & Impure =
-        List.toIterator(Foldable.toList(t))
+        let arr = Foldable.toArray(t);
+        let len = Array.length(arr);
+        let i = ref 0;
+        let done = () -> (deref i) >= len;
+        let next = () -> {
+            let j = deref i;
+            let x = arr[j];
+            i := j + 1;
+            x
+        };
+        Iterator(done, next)
 
     ///
     /// Returns `t` as a mutable list.
