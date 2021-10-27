@@ -41,7 +41,7 @@ object ReificationError {
   case class IllegalReifiedBool(tpe: Type, loc: SourceLocation) extends ReificationError {
     def summary: String = "Type cannot be reified."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Unable to reify the non-constant Bool '${formatter.red(FormatType.formatType(tpe))}'.
          |
@@ -52,7 +52,7 @@ object ReificationError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(implicit formatter: Formatter): Option[String] = None
+    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -64,7 +64,7 @@ object ReificationError {
   case class IllegalReifiedType(tpe: Type, loc: SourceLocation) extends ReificationError {
     def summary: String = "Type cannot be reified."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Unable to reify the type '${formatter.red(FormatType.formatType(tpe))}'.
          |
@@ -75,7 +75,7 @@ object ReificationError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(implicit formatter: Formatter): Option[String] = None
+    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -87,7 +87,7 @@ object ReificationError {
   case class UnexpectedNonConstBool(tpe: Type, loc: SourceLocation) extends ReificationError {
     def summary: String = "Unexpected type."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Unexpected Boolean type: '${formatter.red(FormatType.formatType(tpe))}'.
          |
@@ -98,6 +98,6 @@ object ReificationError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(implicit formatter: Formatter): Option[String] = None
+    override def explain(formatter: Formatter): Option[String] = None
   }
 }

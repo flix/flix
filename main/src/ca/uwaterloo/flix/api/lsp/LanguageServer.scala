@@ -75,7 +75,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
   /**
     * The terminal context used for formatting.
     */
-  implicit val formatter: Formatter = Formatter.NoFormatter
+  val formatter: Formatter = Formatter.NoFormatter
 
   /**
     * The default compiler options.

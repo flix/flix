@@ -60,7 +60,7 @@ object Tester {
    * Represents the results of running all the tests in a given model.
    */
   case class TestResults(results: List[TestResult]) {
-    def output(implicit formatter: Formatter): String = {
+    def output(formatter: Formatter): String = {
       var success = 0
       var failure = 0
       val sb = new StringBuilder()

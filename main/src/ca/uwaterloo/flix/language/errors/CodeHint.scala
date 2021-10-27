@@ -39,7 +39,7 @@ object CodeHint {
 
     override def severity: Severity = Severity.Hint
 
-    override def message(implicit formatter: Formatter): String = {
+    override def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Use of impure function prevents lazy evaluation.
          |
@@ -50,7 +50,7 @@ object CodeHint {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(implicit formatter: Formatter): Option[String] = None
+    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -64,7 +64,7 @@ object CodeHint {
 
     override def severity: Severity = Severity.Hint
 
-    override def message(implicit formatter: Formatter): String = {
+    override def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Use of impure function prevents parallel evaluation.
          |
@@ -75,7 +75,7 @@ object CodeHint {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(implicit formatter: Formatter): Option[String] = None
+    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -88,7 +88,7 @@ object CodeHint {
 
     override def severity: Severity = Severity.Info
 
-    override def message(implicit formatter: Formatter): String = {
+    override def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Expression has a non-trivial effect.
          |
@@ -100,6 +100,6 @@ object CodeHint {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(implicit formatter: Formatter): Option[String] = None
+    override def explain(formatter: Formatter): Option[String] = None
   }
 }

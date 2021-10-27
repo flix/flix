@@ -40,7 +40,7 @@ object Packager {
     *
     * The package is installed at `lib/<owner>/<repo>`
     */
-  def install(project: String, p: Path, o: Options)(implicit formatter: Formatter): Unit = {
+  def install(project: String, p: Path, o: Options, formatter: Formatter): Unit = {
     val proj = GitHub.parseProject(project)
     val release = GitHub.getLatestRelease(proj)
     val assets = release.assets.filter(_.name.endsWith(".fpkg"))
@@ -67,7 +67,7 @@ object Packager {
     *
     * The project must not already exist.
     */
-  def init(p: Path, o: Options)(implicit formatter: Formatter): Unit = {
+  def init(p: Path, o: Options, formatter: Formatter): Unit = {
     //
     // Check that the current working directory is usable.
     //
@@ -151,7 +151,7 @@ object Packager {
   /**
     * Type checks the source files for the given project path `p`.
     */
-  def check(p: Path, o: Options)(implicit formatter: Formatter): Unit = {
+  def check(p: Path, o: Options, formatter: Formatter): Unit = {
     // Check that the path is a project path.
     if (!isProjectPath(p))
       throw new RuntimeException(s"The path '$p' does not appear to be a flix project.")
@@ -173,7 +173,7 @@ object Packager {
   /**
     * Builds (compiles) the source files for the given project path `p`.
     */
-  def build(p: Path, o: Options, loadClasses: Boolean = true)(implicit formatter: Formatter): Option[CompilationResult] = {
+  def build(p: Path, o: Options, formatter: Formatter, loadClasses: Boolean = true): Option[CompilationResult] = {
     // Check that the path is a project path.
     if (!isProjectPath(p))
       throw new RuntimeException(s"The path '$p' does not appear to be a flix project.")
@@ -192,7 +192,7 @@ object Packager {
     flix.compile() match {
       case Validation.Success(r) => Some(r)
       case Validation.Failure(errors) =>
-        errors.foreach(e => println(e.message))
+        errors.foreach(e => println(e.message(formatter)))
         None
     }
   }
@@ -226,7 +226,7 @@ object Packager {
   /**
     * Builds a jar package for the given project path `p`.
     */
-  def buildJar(p: Path, o: Options)(implicit formatter: Formatter): Unit = {
+  def buildJar(p: Path, o: Options, formatter: Formatter): Unit = {
     // Check that the path is a project path.
     if (!isProjectPath(p))
       throw new RuntimeException(s"The path '$p' does not appear to be a flix project.")
@@ -265,7 +265,7 @@ object Packager {
   /**
     * Builds a flix package for the given project path `p`.
     */
-  def buildPkg(p: Path, o: Options)(implicit formatter: Formatter): Unit = {
+  def buildPkg(p: Path, o: Options, formatter: Formatter): Unit = {
     // Check that the path is a project path.
     if (!isProjectPath(p))
       throw new RuntimeException(s"The path '$p' does not appear to be a flix project.")
@@ -299,9 +299,9 @@ object Packager {
   /**
     * Runs the main function in flix package for the given project path `p`.
     */
-  def run(p: Path, o: Options)(implicit formatter: Formatter): Unit = {
+  def run(p: Path, o: Options, formatter: Formatter): Unit = {
     for {
-      compilationResult <- build(p, o)
+      compilationResult <- build(p, o, formatter)
       main <- compilationResult.getMain
     } yield {
       val exitCode = main(Array.empty)
@@ -312,8 +312,8 @@ object Packager {
   /**
     * Runs all benchmarks in the flix package for the given project path `p`.
     */
-  def benchmark(p: Path, o: Options)(implicit formatter: Formatter): Unit = {
-    build(p, o) match {
+  def benchmark(p: Path, o: Options, formatter: Formatter): Unit = {
+    build(p, o, formatter) match {
       case None => // nop
       case Some(compilationResult) =>
         Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))(o)
@@ -323,12 +323,12 @@ object Packager {
   /**
     * Runs all tests in the flix package for the given project path `p`.
     */
-  def test(p: Path, o: Options)(implicit formatter: Formatter): Tester.OverallTestResult = {
-    build(p, o) match {
+  def test(p: Path, o: Options, formatter: Formatter): Tester.OverallTestResult = {
+    build(p, o, formatter) match {
       case None => Tester.OverallTestResult.NoTests
       case Some(compilationResult) =>
         val results = Tester.test(compilationResult)
-        Console.println(results.output)
+        Console.println(results.output(formatter))
         results.overallResult
     }
   }

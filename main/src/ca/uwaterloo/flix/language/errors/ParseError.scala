@@ -31,7 +31,7 @@ case class ParseError(msg: String, loc: SourceLocation) extends CompilationMessa
 
   def summary: String = msg
 
-  def message(implicit formatter: Formatter): String = {
+  def message(formatter: Formatter): String = {
     s"""${formatter.line(kind, source.format)}
        |>> Parse Error:
        |
@@ -42,5 +42,5 @@ case class ParseError(msg: String, loc: SourceLocation) extends CompilationMessa
   /**
     * Returns a formatted string with helpful suggestions.
     */
-  override def explain(implicit formatter: Formatter): Option[String] = None
+  override def explain(formatter: Formatter): Option[String] = None
 }

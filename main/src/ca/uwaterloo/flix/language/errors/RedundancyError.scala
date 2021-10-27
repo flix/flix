@@ -41,7 +41,7 @@ object RedundancyError {
   case class HiddenVarSym(sym: Symbol.VarSym, loc: SourceLocation) extends RedundancyError {
     def summary: String = "Hidden variable symbol."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Hidden variable symbol '${formatter.red(sym.text)}'. The symbol is marked as unused.
          |
@@ -50,7 +50,7 @@ object RedundancyError {
 
     }
 
-    override def explain(implicit formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       s"""
          |Possible fixes:
          |
@@ -70,7 +70,7 @@ object RedundancyError {
   case class ShadowedVar(sym1: Symbol.VarSym, sym2: Symbol.VarSym) extends RedundancyError {
     def summary: String = "Shadowed variable."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Shadowed variable '${formatter.red(sym1.text)}'.
          |
@@ -88,7 +88,7 @@ object RedundancyError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(implicit formatter: Formatter): Option[String] = None
+    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -99,7 +99,7 @@ object RedundancyError {
   case class UnusedDefSym(sym: Symbol.DefnSym) extends RedundancyError {
     def summary: String = "Unused definition."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Unused definition '${formatter.red(sym.name)}'. The definition is never referenced.
          |
@@ -109,7 +109,7 @@ object RedundancyError {
 
     def loc: SourceLocation = sym.loc
 
-    override def explain(implicit formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       s"""Possible fixes:
          |
          |  (1)  Use the definition.
@@ -129,7 +129,7 @@ object RedundancyError {
   case class UnusedEnumSym(sym: Symbol.EnumSym) extends RedundancyError {
     def summary: String = "Unused enum."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Unused enum '${formatter.red(sym.name)}'. Neither the enum nor its cases are ever used.
          |
@@ -139,7 +139,7 @@ object RedundancyError {
 
     def loc: SourceLocation = sym.loc
 
-    override def explain(implicit formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       s"""
          |Possible fixes:
          |
@@ -161,7 +161,7 @@ object RedundancyError {
   case class UnusedEnumTag(sym: Symbol.EnumSym, tag: Name.Tag) extends RedundancyError {
     def summary: String = s"Unused case '${tag.name}'."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Unused case '${formatter.red(tag.name)}' in enum '${formatter.cyan(sym.name)}'.
          |
@@ -172,7 +172,7 @@ object RedundancyError {
 
     def loc: SourceLocation = sym.loc
 
-    override def explain(implicit formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       s"""
          |Possible fixes:
          |
@@ -192,7 +192,7 @@ object RedundancyError {
   case class UnusedFormalParam(sym: Symbol.VarSym) extends RedundancyError {
     def summary: String = "Unused formal parameter."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Unused formal parameter '${formatter.red(sym.text)}'. The parameter is not used within its scope.
          |
@@ -202,7 +202,7 @@ object RedundancyError {
 
     def loc: SourceLocation = sym.loc
 
-    override def explain(implicit formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       s"""
          |Possible fixes:
          |
@@ -222,7 +222,7 @@ object RedundancyError {
   case class UnusedTypeParam(ident: Name.Ident) extends RedundancyError {
     def summary: String = "Unused type parameter."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Unused type parameter '${formatter.red(ident.name)}'. The parameter is not referenced anywhere.
          |
@@ -232,7 +232,7 @@ object RedundancyError {
 
     def loc: SourceLocation = SourceLocation.mk(ident.sp1, ident.sp2)
 
-    override def explain(implicit formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       s"""
          |Possible fixes:
          |
@@ -252,7 +252,7 @@ object RedundancyError {
   case class UnusedVarSym(sym: Symbol.VarSym) extends RedundancyError {
     def summary: String = "Unused local variable."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Unused local variable '${formatter.red(sym.text)}'. The variable is not referenced within its scope.
          |
@@ -262,7 +262,7 @@ object RedundancyError {
 
     def loc: SourceLocation = sym.loc
 
-    override def explain(implicit formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       s"""
          |Possible fixes:
          |
@@ -283,7 +283,7 @@ object RedundancyError {
   case class IllegalSingleVariable(sym: Symbol.VarSym, loc: SourceLocation) extends RedundancyError {
     def summary: String = s"Single use of variable '$sym'."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> This variable is named, but only used once '${formatter.red(sym.text)}'. Use a wildcard instead?
          |
@@ -291,7 +291,7 @@ object RedundancyError {
          |""".stripMargin
     }
 
-    override def explain(implicit formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       s"""
          |Possible fixes:
          |
@@ -311,7 +311,7 @@ object RedundancyError {
   case class UselessExpression(loc: SourceLocation) extends RedundancyError {
     def summary: String = "Useless expression."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Useless expression: It has no side-effect(s) and its result is discarded.
          |
@@ -319,7 +319,7 @@ object RedundancyError {
          |""".stripMargin
     }
 
-    override def explain(implicit formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       s"""
          |Possible fixes:
          |
@@ -341,7 +341,7 @@ object RedundancyError {
   case class RedundantTypeConstraint(entailingTconstr: Ast.TypeConstraint, redundantTconstr: Ast.TypeConstraint, loc: SourceLocation) extends RedundancyError {
     def summary: String = "Redundant type constraint."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Type constraint '${formatter.red(FormatTypeConstraint.formatTypeConstraint(redundantTconstr))}' is entailed by type constraint '${formatter.green(FormatTypeConstraint.formatTypeConstraint(redundantTconstr))}'.
          |
@@ -349,7 +349,7 @@ object RedundancyError {
          |""".stripMargin
     }
 
-    override def explain(implicit formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       s"""
          |Possible fixes:
          |

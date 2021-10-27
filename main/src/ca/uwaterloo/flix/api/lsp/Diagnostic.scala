@@ -24,12 +24,12 @@ import org.json4s._
  * Companion object for [[Diagnostic]].
  */
 object Diagnostic {
-  def from(compilationMessage: CompilationMessage)(implicit formatter: Formatter): Diagnostic = {
+  def from(compilationMessage: CompilationMessage, formatter: Formatter): Diagnostic = {
     val range = Range.from(compilationMessage.loc)
     val severity = Some(DiagnosticSeverity.from(compilationMessage.severity))
     val code = compilationMessage.kind
     val message = compilationMessage.summary
-    val fullMessage = compilationMessage.message + compilationMessage.explain
+    val fullMessage = compilationMessage.message(formatter) + compilationMessage.explain(formatter)
     Diagnostic(range, severity, Some(code), None, message, fullMessage, Nil)
   }
 }

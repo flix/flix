@@ -40,7 +40,7 @@ object NameError {
   case class AmbiguousVarOrUse(name: String, loc: SourceLocation, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     def summary: String = s"Ambiguous name. The name may refer to both a variable and a use."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Ambiguous name '${formatter.red(name)}'. The name may refer to both a variable and a use.
          |
@@ -57,7 +57,7 @@ object NameError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(implicit formatter: Formatter): Option[String] = None
+    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -70,7 +70,7 @@ object NameError {
   case class DuplicateDefOrSig(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     def summary: String = s"Duplicate definition."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Duplicate definition '${formatter.red(name)}'.
          |
@@ -82,7 +82,7 @@ object NameError {
 
     def loc: SourceLocation = loc1
 
-    override def explain(implicit formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Remove or rename one of the occurrences.")
+    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Remove or rename one of the occurrences.")
   }
 
   /**
@@ -95,7 +95,7 @@ object NameError {
   case class DuplicateUseDefOrSig(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     def summary: String = s"Duplicate use."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Duplicate use of '${formatter.red(name)}'.
          |
@@ -110,7 +110,7 @@ object NameError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(implicit formatter: Formatter): Option[String] = None
+    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -123,7 +123,7 @@ object NameError {
   case class DuplicateUseTypeOrClass(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     def summary: String = s"Duplicate use."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Duplicate use of the type or class '${formatter.red(name)}'.
          |
@@ -138,7 +138,7 @@ object NameError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(implicit formatter: Formatter): Option[String] = None
+    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -151,7 +151,7 @@ object NameError {
   case class DuplicateUseTag(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     def summary: String = s"Duplicate use."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Duplicate use of the tag '${formatter.red(name)}'.
          |
@@ -166,7 +166,7 @@ object NameError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(implicit formatter: Formatter): Option[String] = None
+    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -179,7 +179,7 @@ object NameError {
   case class DuplicateTypeOrClass(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     def summary: String = s"Duplicate type or class declaration."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Duplicate type or class declaration '${formatter.red(name)}'.
          |
@@ -191,7 +191,7 @@ object NameError {
 
     def loc: SourceLocation = loc1
 
-    override def explain(implicit formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Remove or rename one of the occurrences.")
+    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Remove or rename one of the occurrences.")
 
   }
 
@@ -204,7 +204,7 @@ object NameError {
   case class SuspiciousTypeVarName(name: String, loc: SourceLocation) extends NameError {
     def summary: String = s"Suspicious type variable. Did you mean: '${name.capitalize}'?"
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Suspicious type variable '${formatter.red(name)}'. Did you mean: '${formatter.cyan(name.capitalize)}'?
          |
@@ -212,7 +212,7 @@ object NameError {
          |""".stripMargin
     }
 
-    override def explain(implicit formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Type variables are always lowercase. Named types are uppercase.")
+    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Type variables are always lowercase. Named types are uppercase.")
 
   }
 
@@ -225,7 +225,7 @@ object NameError {
   case class UndefinedNativeClass(name: String, loc: SourceLocation) extends NameError {
     def summary: String = s"Undefined class."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Undefined class '${formatter.red(name)}'.
          |
@@ -236,7 +236,7 @@ object NameError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(implicit formatter: Formatter): Option[String] = None
+    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -248,7 +248,7 @@ object NameError {
   case class UndefinedVar(name: String, loc: SourceLocation) extends NameError {
     def summary: String = s"Undefined variable."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Undefined variable '${formatter.red(name)}'.
          |
@@ -259,7 +259,7 @@ object NameError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(implicit formatter: Formatter): Option[String] = None
+    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -271,7 +271,7 @@ object NameError {
   case class UndefinedTypeVar(name: String, loc: SourceLocation) extends NameError {
     def summary: String = s"Undefined type variable."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Undefined type variable '${formatter.red(name)}'.
          |
@@ -284,7 +284,7 @@ object NameError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(implicit formatter: Formatter): Option[String] = None
+    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -296,7 +296,7 @@ object NameError {
   case class IllegalSignature(name: Name.Ident, loc: SourceLocation) extends NameError {
     def summary: String = "Illegal signature."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Illegal signature '${formatter.red(name.name)}'.
          |
@@ -304,7 +304,7 @@ object NameError {
          |""".stripMargin
     }
 
-    override def explain(implicit formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Change the signature to include the class type parameter, or remove the signature.")
+    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Change the signature to include the class type parameter, or remove the signature.")
 
   }
 

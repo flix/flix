@@ -25,7 +25,7 @@ import org.json4s._
   */
 object PublishDiagnosticsParams {
   def from(errors: LazyList[CompilationMessage]): List[PublishDiagnosticsParams] = {
-    implicit val formatter: Formatter = Formatter.NoFormatter
+    val formatter: Formatter = Formatter.NoFormatter
 
     // Group the error messages by source.
     val errorsBySource = errors.toList.groupBy(_.loc.source)
@@ -33,7 +33,7 @@ object PublishDiagnosticsParams {
     // Translate each compilation message to a diagnostic.
     errorsBySource.foldLeft(Nil: List[PublishDiagnosticsParams]) {
       case (acc, (source, compilationMessages)) =>
-        val diagnostics = compilationMessages.map(Diagnostic.from)
+        val diagnostics = compilationMessages.map(msg => Diagnostic.from(msg, formatter))
         PublishDiagnosticsParams(source.name, diagnostics) :: acc
     }
   }

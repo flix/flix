@@ -41,7 +41,7 @@ object TypeError {
   case class GeneralizationError(declared: Scheme, inferred: Scheme, loc: SourceLocation) extends TypeError {
     def summary: String = s"The type scheme '${FormatScheme.formatSchemeWithoutConstraints(inferred)}' cannot be generalized to '${FormatScheme.formatSchemeWithoutConstraints(declared)}'."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> The type scheme: '${formatter.red(FormatScheme.formatSchemeWithoutConstraints(inferred))}' cannot be generalized to '${formatter.red(FormatScheme.formatSchemeWithoutConstraints(declared))}'.
          |
@@ -55,7 +55,7 @@ object TypeError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(implicit formatter: Formatter): Option[String] = None
+    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -70,7 +70,7 @@ object TypeError {
   case class MismatchedTypes(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
     def summary: String = s"Unable to unify the types '$fullType1' and '$fullType2'."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Unable to unify the types: '${formatter.red(FormatType.formatType(baseType1))}' and '${formatter.red(FormatType.formatType(baseType2))}'.
          |
@@ -84,7 +84,7 @@ object TypeError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(implicit formatter: Formatter): Option[String] = None
+    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -99,16 +99,16 @@ object TypeError {
   case class MismatchedBools(baseType1: Type, baseType2: Type, fullType1: Option[Type], fullType2: Option[Type], loc: SourceLocation) extends TypeError {
     def summary: String = s"Unable to unify the Boolean formulas '$baseType1' and '$baseType2'."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Unable to unify the Boolean formulas: '${formatter.red(FormatType.formatType(baseType1))}' and '${formatter.red(FormatType.formatType(baseType2))}'.
          |
          |${formatter.code(loc, "mismatched boolean formulas.")}
-         |$appendMismatchedBooleans
+         |${appendMismatchedBooleans(formatter)}
          |""".stripMargin
     }
 
-    private def appendMismatchedBooleans(implicit formatter: Formatter): String = (fullType1, fullType2) match {
+    private def appendMismatchedBooleans(formatter: Formatter): String = (fullType1, fullType2) match {
       case (Some(ft1), Some(ft2)) =>
         s"""Type One: ${formatter.cyan(FormatType.formatType(ft1))}
            |Type Two: ${formatter.magenta(FormatType.formatType(ft2))}
@@ -116,7 +116,7 @@ object TypeError {
       case _ => "" // nop
     }
 
-    override def explain(implicit formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       s"""If the Boolean formula describes purity:
          |
          |  (1) Did you forget to mark the function as impure?
@@ -141,7 +141,7 @@ object TypeError {
   case class MismatchedArity(tpe1: Type, tpe2: Type, loc: SourceLocation) extends TypeError {
     def summary: String = s"Unable to unify the types '$tpe1' and '$tpe2'."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Unable to unify the types: '${formatter.red(FormatType.formatType(tpe1))}' and '${formatter.red(FormatType.formatType(tpe2))}'.
          |
@@ -152,7 +152,7 @@ object TypeError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(implicit formatter: Formatter): Option[String] = None
+    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -167,7 +167,7 @@ object TypeError {
   case class OccursCheckError(baseVar: Type.KindedVar, baseType: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
     def summary: String = s"Unable to unify the type variable '$baseVar' with the type '$baseType'."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Unable to unify the type variable '${formatter.red(baseVar.toString)}' with the type '${formatter.red(FormatType.formatType(baseType))}'.
          |>> The type variable occurs recursively within the type.
@@ -182,7 +182,7 @@ object TypeError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(implicit formatter: Formatter): Option[String] = None
+    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -196,7 +196,7 @@ object TypeError {
   case class UndefinedField(field: Name.Field, fieldType: Type, recordType: Type, loc: SourceLocation) extends TypeError {
     def summary: String = s"Missing field '$field' of type '$fieldType'."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Missing field '${formatter.red(field.name)}' of type '${formatter.cyan(FormatType.formatType(fieldType))}'.
          |
@@ -212,7 +212,7 @@ object TypeError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(implicit formatter: Formatter): Option[String] = None
+    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -226,7 +226,7 @@ object TypeError {
   case class UndefinedPredicate(pred: Name.Pred, predType: Type, schemaType: Type, loc: SourceLocation) extends TypeError {
     def summary: String = s"Missing predicate '${pred.name}' of type '$predType'."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Missing predicate '${formatter.red(pred.name)}' of type '${formatter.cyan(FormatType.formatType(predType))}'.
          |
@@ -242,7 +242,7 @@ object TypeError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(implicit formatter: Formatter): Option[String] = None
+    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -254,7 +254,7 @@ object TypeError {
   case class NonRecordType(tpe: Type, loc: SourceLocation) extends TypeError {
     def summary: String = s"Unexpected non-record type '$tpe'."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Unexpected non-record type: '${formatter.red(FormatType.formatType(tpe))}'.
          |
@@ -265,7 +265,7 @@ object TypeError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(implicit formatter: Formatter): Option[String] = None
+    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -277,7 +277,7 @@ object TypeError {
   case class NonSchemaType(tpe: Type, loc: SourceLocation) extends TypeError {
     def summary: String = s"Unexpected non-schema type '$tpe'."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Unexpected non-schema type: '${formatter.red(FormatType.formatType(tpe))}'.
          |
@@ -288,7 +288,7 @@ object TypeError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(implicit formatter: Formatter): Option[String] = None
+    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -301,7 +301,7 @@ object TypeError {
   case class NoMatchingInstance(clazz: Symbol.ClassSym, tpe: Type, loc: SourceLocation) extends TypeError {
     def summary: String = s"No instance of class '$clazz' for type '${FormatType.formatType(tpe)}'."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> No instance of class '${formatter.red(clazz.toString)}' for type ${formatter.red(FormatType.formatType(tpe))}.
          |
@@ -309,7 +309,7 @@ object TypeError {
          |""".stripMargin
     }
 
-    override def explain(implicit formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Add an instance for the type.")
+    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Add an instance for the type.")
 
   }
 
@@ -323,7 +323,7 @@ object TypeError {
   case class IllegalMain(declaredScheme: Scheme, expectedScheme: Scheme, loc: SourceLocation) extends TypeError {
     override def summary: String = "Illegal main."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Main function with wrong type.
          |
@@ -331,7 +331,7 @@ object TypeError {
          |""".stripMargin
     }
 
-    override def explain(implicit formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       s"""The main function must have the form:
          |
          |  def main(args: Array[String]): Int & Impure = ...

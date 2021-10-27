@@ -36,7 +36,7 @@ import java.util.Date
   *
   * @param port the local port to listen on.
   */
-class SocketServer(port: Int)(implicit formatter: Formatter) extends WebSocketServer(new InetSocketAddress(port)) {
+class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port)) {
 
   /**
     * The custom date format to use for logging.
@@ -75,7 +75,7 @@ class SocketServer(port: Int)(implicit formatter: Formatter) extends WebSocketSe
     for {
       (src, opts) <- parseRequest(data)(ws)
     } yield {
-      processRequest(src, opts)(ws)
+      processRequest(src, opts, opts.formatter)(ws)
     }
   }
 
@@ -144,14 +144,14 @@ class SocketServer(port: Int)(implicit formatter: Formatter) extends WebSocketSe
   /**
     * Process the request.
     */
-  private def processRequest(src: String, opts: Options)(implicit ws: WebSocket): Unit = {
+  private def processRequest(src: String, opts: Options, formatter: Formatter)(implicit ws: WebSocket): Unit = {
     // Log the string.
     for (line <- src.split("\n")) {
       log("  >  " + line)(ws)
     }
 
     // Evaluate the string.
-    val result = eval(src, opts)(ws)
+    val result = eval(src, opts, formatter)(ws)
 
     // Log whether evaluation was successful.
     log("")(ws)
@@ -176,7 +176,7 @@ class SocketServer(port: Int)(implicit formatter: Formatter) extends WebSocketSe
   /**
     * Evaluates the given string `input` as a Flix program.
     */
-  private def eval(input: String, opts: Options)(implicit ws: WebSocket): Result[(String, Long, Long), String] = {
+  private def eval(input: String, opts: Options, formatter: Formatter)(implicit ws: WebSocket): Result[(String, Long, Long), String] = {
     try {
       // Compile the program.
       mkFlix(input, opts).compile() match {
@@ -199,7 +199,7 @@ class SocketServer(port: Int)(implicit formatter: Formatter) extends WebSocketSe
 
         case Failure(errors) =>
           // Compilation failed. Retrieve and format the first error message.
-          Err(errors.head.message)
+          Err(errors.head.message(formatter))
       }
     } catch {
       case ex: RuntimeException => Err(ex.getMessage)

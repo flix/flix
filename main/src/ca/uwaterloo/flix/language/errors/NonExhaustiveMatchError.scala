@@ -28,7 +28,7 @@ case class NonExhaustiveMatchError(rules: List[TypedAst.MatchRule], pat: String,
 
   def summary: String = s"Non-exhaustive match. Missing case: '$pat'."
 
-  def message(implicit formatter: Formatter): String = {
+  def message(formatter: Formatter): String = {
     s"""${formatter.line(kind, source.format)}
        |>> Non-Exhaustive Pattern. Missing case: ${formatter.red(pat)} in match expression.
        |
@@ -40,5 +40,5 @@ case class NonExhaustiveMatchError(rules: List[TypedAst.MatchRule], pat: String,
   /**
     * Returns a formatted string with helpful suggestions.
     */
-  override def explain(implicit formatter: Formatter): Option[String] = None
+  override def explain(formatter: Formatter): Option[String] = None
 }

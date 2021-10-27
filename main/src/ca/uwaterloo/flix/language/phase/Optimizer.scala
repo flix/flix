@@ -330,7 +330,7 @@ object Optimizer extends Phase[Root, Root] {
 
     // Print the ast if debugging is enabled.
     if (flix.options.debug) {
-      println(PrettyPrinter.Lifted.fmtRoot(result)(Formatter.AnsiTerminalFormatter))
+      println(PrettyPrinter.Lifted.fmtRoot(result, Formatter.AnsiTerminalFormatter))
     }
 
     result.toSuccess

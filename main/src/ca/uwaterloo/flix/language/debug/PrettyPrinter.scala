@@ -27,25 +27,25 @@ object PrettyPrinter {
 
   object Lifted {
 
-    def fmtRoot(root: Root)(implicit formatter: Formatter): String = {
+    def fmtRoot(root: Root, formatter: Formatter): String = {
       val sb = new StringBuilder()
       for ((sym, defn) <- root.defs.toList.sortBy(_._1.loc)) {
         sb.append(s"${formatter.bold("def")} ${formatter.blue(sym.toString)}(")
         for (fparam <- defn.fparams) {
-          sb.append(s"${fmtParam(fparam)}, ")
+          sb.append(s"${fmtParam(fparam, formatter)}, ")
         }
         sb.append(") = ")
-        sb.append(fmtDef(defn).replace(System.lineSeparator(), System.lineSeparator() + (" " * 2)))
+        sb.append(fmtDef(defn, formatter).replace(System.lineSeparator(), System.lineSeparator() + (" " * 2)))
         sb.append(System.lineSeparator() + System.lineSeparator())
       }
       sb.toString()
     }
 
-    def fmtDef(defn: Def)(implicit formatter: Formatter): String = {
-      fmtExp(defn.exp)
+    def fmtDef(defn: Def, formatter: Formatter): String = {
+      fmtExp(defn.exp, formatter)
     }
 
-    def fmtExp(exp0: Expression)(implicit formatter: Formatter): String = {
+    def fmtExp(exp0: Expression, formatter: Formatter): String = {
       def visitExp(e0: Expression): String = e0 match {
         case Expression.Unit(_) => "Unit"
 
@@ -73,15 +73,15 @@ object PrettyPrinter {
 
         case Expression.Str(lit, _) => "\"" + lit + "\""
 
-        case Expression.Var(sym, tpe, loc) => fmtSym(sym)
+        case Expression.Var(sym, tpe, loc) => fmtSym(sym, formatter)
 
         case Expression.Closure(sym, freeVars, tpe, loc) =>
           val sb = new StringBuilder()
           sb.append("Closure(")
-            .append(fmtSym(sym))
+            .append(fmtSym(sym, formatter))
             .append(", [")
           for (freeVar <- freeVars) {
-            sb.append(fmtSym(freeVar.sym))
+            sb.append(fmtSym(freeVar.sym, formatter))
               .append(", ")
           }
           sb.append("])")
@@ -100,7 +100,7 @@ object PrettyPrinter {
 
         case Expression.ApplyDef(sym, args, tpe, loc) =>
           val sb = new StringBuilder()
-          sb.append(fmtSym(sym))
+          sb.append(fmtSym(sym, formatter))
             .append("(")
           for (arg <- args) {
             sb.append(visitExp(arg))
@@ -123,7 +123,7 @@ object PrettyPrinter {
 
         case Expression.ApplyDefTail(sym, args, tpe, loc) =>
           val sb = new StringBuilder()
-          sb.append(fmtSym(sym))
+          sb.append(fmtSym(sym, formatter))
             .append("*(")
           for (arg <- args) {
             sb.append(visitExp(arg))
@@ -177,7 +177,7 @@ object PrettyPrinter {
             .append((" " * 2) + visitExp(exp).replace(System.lineSeparator(), System.lineSeparator() + (" " * 2)))
             .append(System.lineSeparator())
           for ((sym, b) <- branches) {
-            sb.append((" " * 4) + fmtSym(sym).replace(System.lineSeparator(), System.lineSeparator() + (" " * 4)))
+            sb.append((" " * 4) + fmtSym(sym, formatter).replace(System.lineSeparator(), System.lineSeparator() + (" " * 4)))
               .append(":")
               .append(System.lineSeparator())
               .append((" " * 4) + visitExp(b).replace(System.lineSeparator(), System.lineSeparator() + (" " * 4)))
@@ -187,12 +187,12 @@ object PrettyPrinter {
             .append(System.lineSeparator())
             .toString()
 
-        case Expression.JumpTo(sym, tpe, loc) => s"jumpto ${fmtSym(sym)}"
+        case Expression.JumpTo(sym, tpe, loc) => s"jumpto ${fmtSym(sym, formatter)}"
 
         case Expression.Let(sym, exp1, exp2, tpe, loc) =>
           val sb = new StringBuilder()
           sb.append(formatter.bold("let "))
-            .append(fmtSym(sym))
+            .append(fmtSym(sym, formatter))
             .append(" = ")
             .append(visitExp(exp1).replace(System.lineSeparator(), System.lineSeparator() + (" " * 2)))
             .append(";")
@@ -307,13 +307,13 @@ object PrettyPrinter {
 
         case Expression.Existential(fparam, exp, loc) =>
           "∃(" +
-            fmtParam(fparam) +
+            fmtParam(fparam, formatter) +
             "). " +
             visitExp(exp)
 
         case Expression.Universal(fparam, exp, loc) =>
           "∀(" +
-            fmtParam(fparam) +
+            fmtParam(fparam, formatter) +
             "). " +
             visitExp(exp)
 
@@ -332,7 +332,7 @@ object PrettyPrinter {
             .append(System.lineSeparator())
           for (CatchRule(sym, clazz, body) <- rules) {
             sb.append("  case ")
-              .append(fmtSym(sym))
+              .append(fmtSym(sym, formatter))
               .append(s": ${clazz.toString} => ")
               .append(System.lineSeparator())
               .append((" " * 4) + visitExp(body).replace(System.lineSeparator(), System.lineSeparator() + (" " * 4)))
@@ -411,7 +411,7 @@ object PrettyPrinter {
             .append(System.lineSeparator())
           for (SelectChannelRule(sym, chan, exp) <- rules) {
             sb.append("  case ")
-              .append(fmtSym(sym))
+              .append(fmtSym(sym, formatter))
               .append(" <- ")
               .append(visitExp(chan).replace(System.lineSeparator(), System.lineSeparator() + (" " * 2)))
               .append(" => ")
@@ -443,19 +443,19 @@ object PrettyPrinter {
       visitExp(exp0)
     }
 
-    def fmtParam(p: FormalParam)(implicit formatter: Formatter): String = {
-      fmtSym(p.sym) + ": " + formatType(p.tpe)
+    def fmtParam(p: FormalParam, formatter: Formatter): String = {
+      fmtSym(p.sym, formatter) + ": " + formatType(p.tpe)
     }
 
-    def fmtSym(sym: Symbol.VarSym)(implicit formatter: Formatter): String = {
+    def fmtSym(sym: Symbol.VarSym, formatter: Formatter): String = {
       formatter.cyan(sym.toString)
     }
 
-    def fmtSym(sym: Symbol.DefnSym)(implicit formatter: Formatter): String = {
+    def fmtSym(sym: Symbol.DefnSym, formatter: Formatter): String = {
       formatter.blue(sym.toString)
     }
 
-    def fmtSym(sym: Symbol.LabelSym)(implicit formatter: Formatter): String = {
+    def fmtSym(sym: Symbol.LabelSym, formatter: Formatter): String = {
       formatter.magenta(sym.toString)
     }
 

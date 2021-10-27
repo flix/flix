@@ -31,7 +31,7 @@ case class StratificationError(cycle: List[(Name.Pred, SourceLocation)], tpe: Ty
 
   def summary: String = "The expression is not stratified. A predicate depends negatively on itself."
 
-  def message(implicit formatter: Formatter): String = {
+  def message(formatter: Formatter): String = {
     s"""${formatter.line(kind, source.format)}
        |>> The expression is not stratified. A predicate depends negatively on itself.
        |
@@ -45,16 +45,16 @@ case class StratificationError(cycle: List[(Name.Pred, SourceLocation)], tpe: Ty
        |  ${cycle.map(_._1).mkString(" <- ")}
        |
        |The following constraints are part of the negative cycle:
-       |$constraints
+       |${constraints(formatter)}
        |""".stripMargin
   }
 
-  private def constraints(implicit formatter: Formatter): String = {
+  private def constraints(formatter: Formatter): String = {
     cycle.map(t => "  " + formatter.cyan(t._1.name) + " at " + t._2.format + " (which depends on)" + System.lineSeparator()).mkString
   }
 
   /**
     * Returns a formatted string with helpful suggestions.
     */
-  override def explain(implicit formatter: Formatter): Option[String] = None
+  override def explain(formatter: Formatter): Option[String] = None
 }

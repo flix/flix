@@ -40,7 +40,7 @@ object InstanceError {
   case class OverlappingInstances(loc1: SourceLocation, loc2: SourceLocation) extends InstanceError {
     def summary: String = "Overlapping instances."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |
          |${formatter.code(loc1, "the first instance was declared here.")}
@@ -51,7 +51,7 @@ object InstanceError {
 
     def loc: SourceLocation = loc1
 
-    override def explain(implicit formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip: ")} Remove or change the type of one of the instances.")
+    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip: ")} Remove or change the type of one of the instances.")
   }
 
   /**
@@ -65,7 +65,7 @@ object InstanceError {
   case class MismatchedSignatures(sigSym: Symbol.SigSym, loc: SourceLocation, expected: Scheme, actual: Scheme) extends InstanceError {
     def summary: String = "Mismatched signature."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |
          |Mismatched signature '${formatter.red(sigSym.name)}' required by class '${formatter.red(sigSym.clazz.name)}'.
@@ -77,7 +77,7 @@ object InstanceError {
          |""".stripMargin
     }
 
-    override def explain(implicit formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Modify the definition to match the signature.")
+    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Modify the definition to match the signature.")
   }
 
   /**
@@ -89,7 +89,7 @@ object InstanceError {
   case class MissingImplementation(sig: Symbol.SigSym, loc: SourceLocation) extends InstanceError {
     def summary: String = "Missing implementation."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |
          |Missing implementation of '${formatter.red(sig.name)}' required by class '${formatter.red(sig.clazz.name)}'.
@@ -98,7 +98,7 @@ object InstanceError {
          |""".stripMargin
     }
 
-    override def explain(implicit formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Add an implementation of the signature to the instance.")
+    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Add an implementation of the signature to the instance.")
   }
 
   /**
@@ -110,14 +110,14 @@ object InstanceError {
   case class ExtraneousDefinition(defn: Symbol.DefnSym, loc: SourceLocation) extends InstanceError {
     def summary: String = "Extraneous implementation."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |
          |${formatter.code(loc, s"The signature ${defn.name} is not present in the class.")}
          |""".stripMargin
     }
 
-    override def explain(implicit formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Remove this definition from the instance.")
+    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Remove this definition from the instance.")
   }
 
   /**
@@ -130,7 +130,7 @@ object InstanceError {
   case class DuplicateTypeVariableOccurrence(tvar: Type.KindedVar, sym: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
     override def summary: String = "Duplicate type variable."
 
-    override def message(implicit formatter: Formatter): String = {
+    override def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Duplicate type variable '${formatter.red(FormatType.formatType(tvar))}' in '${formatter.red(sym.name)}'.
          |
@@ -138,7 +138,7 @@ object InstanceError {
          |""".stripMargin
     }
 
-    override def explain(implicit formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Rename one of the instances of the type variable.")
+    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Rename one of the instances of the type variable.")
 
   }
 
@@ -152,14 +152,14 @@ object InstanceError {
   case class ComplexInstanceType(tpe: Type, sym: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
     override def summary: String = "Complex instance type."
 
-    override def message(implicit formatter: Formatter): String = {
+    override def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Complex instance type '${formatter.red(FormatType.formatType(tpe))}' in '${formatter.red(sym.name)}'.
          |${formatter.code(loc, s"complex instance type")}
          |""".stripMargin
     }
 
-    override def explain(implicit formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} An instance type must be a type constructor applied to zero or more distinct type variables.")
+    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} An instance type must be a type constructor applied to zero or more distinct type variables.")
   }
 
   /**
@@ -172,7 +172,7 @@ object InstanceError {
   case class IllegalTypeAliasInstance(alias: Symbol.TypeAliasSym, clazz: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
     override def summary: String = "Type alias in instance type."
 
-    override def message(implicit formatter: Formatter): String = {
+    override def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Illegal use of type alias '${formatter.red(alias.name)}' in instance declaration for '${formatter.red(clazz.name)}'.
          |${formatter.code(loc, s"illegal use of type alias")}
@@ -180,7 +180,7 @@ object InstanceError {
 
     }
 
-    override def explain(implicit formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} A type class instance cannot use a type alias. Use the full type.")
+    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} A type class instance cannot use a type alias. Use the full type.")
 
   }
 
@@ -194,14 +194,14 @@ object InstanceError {
   case class OrphanInstance(tpe: Type, sym: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
     override def summary: String = "Orphan instance."
 
-    override def message(implicit formatter: Formatter): String = {
+    override def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Orphan instance for type '${formatter.red(FormatType.formatType(tpe))}' in '${formatter.red(sym.name)}'.
          |${formatter.code(loc, s"orphan instance")}
          |""".stripMargin
     }
 
-    override def explain(implicit formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} An instance must be declared in the class's namespace or in the type's namespace.")
+    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} An instance must be declared in the class's namespace or in the type's namespace.")
   }
 
   /**
@@ -215,7 +215,7 @@ object InstanceError {
   case class MissingSuperClassInstance(tpe: Type, subClass: Symbol.ClassSym, superClass: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
     override def summary: String = s"Missing super class instance '$superClass'."
 
-    override def message(implicit formatter: Formatter): String = {
+    override def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Missing super class instance '${formatter.red(superClass.name)}' for type '${formatter.red(FormatType.formatType(tpe))}'.
          |
@@ -226,7 +226,7 @@ object InstanceError {
          |""".stripMargin
     }
 
-    override def explain(implicit formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Add an instance of '${superClass.name}' for '${FormatType.formatType(tpe)}'.")
+    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Add an instance of '${superClass.name}' for '${FormatType.formatType(tpe)}'.")
   }
 
   /**
@@ -238,7 +238,7 @@ object InstanceError {
   case class UnlawfulSignature(sym: Symbol.SigSym, loc: SourceLocation) extends InstanceError {
     override def summary: String = s"Unlawful signature '$sym'."
 
-    override def message(implicit formatter: Formatter): String = {
+    override def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Unlawful signature '${formatter.red(sym.name)}'.
          |
@@ -247,7 +247,7 @@ object InstanceError {
          |""".stripMargin
     }
 
-    override def explain(implicit formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Create a law for '$sym' or mark the class as unlawful.")
+    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Create a law for '$sym' or mark the class as unlawful.")
   }
 
   /**
@@ -259,7 +259,7 @@ object InstanceError {
   case class IllegalOverride(sym: Symbol.DefnSym, loc: SourceLocation) extends InstanceError {
     override def summary: String = s"Illegal override of '$sym'."
 
-    override def message(implicit formatter: Formatter): String = {
+    override def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Illegal override of '${formatter.red(sym.name)}'.
          |
@@ -269,7 +269,7 @@ object InstanceError {
          |""".stripMargin
     }
 
-    override def explain(implicit formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Remove the modifier.")
+    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Remove the modifier.")
   }
 
   /**
@@ -281,7 +281,7 @@ object InstanceError {
   case class UnmarkedOverride(sym: Symbol.DefnSym, loc: SourceLocation) extends InstanceError {
     override def summary: String = s"Unmarked override '$sym'."
 
-    override def message(implicit formatter: Formatter): String = {
+    override def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Unmarked override of '${formatter.red(sym.name)}'. This definition overrides a default implementation.
          |
@@ -289,7 +289,7 @@ object InstanceError {
          |""".stripMargin
     }
 
-    override def explain(implicit formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Either add the `override` modifier or remove the definition.")
+    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Either add the `override` modifier or remove the definition.")
   }
 
 }

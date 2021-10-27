@@ -24,7 +24,7 @@ object LinterError {
   case class Lint(sym: Symbol.DefnSym, replacement: Expression, loc: SourceLocation) extends LinterError {
     def summary: String = s"The expression matches the '$sym' lint."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |   __
          |  /  \\        __________________________________________________
@@ -41,7 +41,7 @@ object LinterError {
          |""".stripMargin
     }
 
-    override def explain(implicit formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       s"""The lint suggests that this code can be replaced by:
          |
          |  ${formatter.magenta(PrettyExpression.pretty(replacement))}

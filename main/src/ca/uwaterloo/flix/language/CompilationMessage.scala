@@ -54,11 +54,11 @@ trait CompilationMessage {
   /**
     * Returns the formatted error message.
     */
-  def message(implicit formatter: Formatter): String
+  def message(formatter: Formatter): String
 
   /**
     * Returns a formatted string with helpful suggestions.
     */
-  def explain(implicit formatter: Formatter): Option[String]
+  def explain(formatter: Formatter): Option[String]
 
 }

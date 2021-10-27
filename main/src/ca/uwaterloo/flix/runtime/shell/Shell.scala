@@ -46,7 +46,7 @@ class Shell(initialPaths: List[Path], options: Options) {
   /**
     * The default color context.
     */
-  private implicit val formatter: Formatter = Formatter.AnsiTerminalFormatter
+  private val formatter: Formatter = Formatter.AnsiTerminalFormatter
 
   /**
     * The executor service.
@@ -387,7 +387,7 @@ class Shell(initialPaths: List[Path], options: Options) {
       case Validation.Failure(errors) =>
         terminal.writer().println()
         for (error <- errors) {
-          val msg = if (options.explain) error.message + error.explain else error.message
+          val msg = if (options.explain) error.message(formatter) + error.explain(formatter) else error.message(formatter)
           terminal.writer().print(msg)
         }
         terminal.writer().println()
@@ -413,7 +413,7 @@ class Shell(initialPaths: List[Path], options: Options) {
     val res = Tester.test(this.compilationResult)
 
     // Print the result to the terminal.
-    terminal.writer().print(res.output)
+    terminal.writer().print(res.output(formatter))
   }
 
   /**

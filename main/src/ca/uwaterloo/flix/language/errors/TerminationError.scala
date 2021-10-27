@@ -36,7 +36,7 @@ object TerminationError {
   case class UnconditionalRecursion(sym: Symbol.DefnSym) extends TerminationError {
     def summary: String = "Unconditional recursion."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Unconditionally recursive definition '${formatter.red(sym.name)}'. All branches will recurse indefinitely.
          |
@@ -47,7 +47,7 @@ object TerminationError {
 
     def loc: SourceLocation = sym.loc
 
-    override def explain(implicit formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       s"""
          |"Possible fixes:"
          |

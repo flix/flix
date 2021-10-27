@@ -21,7 +21,7 @@ object SafetyError {
   case class IllegalNonPositivelyBoundVariable(sym: Symbol.VarSym, loc: SourceLocation) extends SafetyError {
     def summary: String = s"Illegal non-positively bound variable '$sym'."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Illegal non-positively bound variable '${formatter.red(sym.text)}'.
          |
@@ -29,7 +29,7 @@ object SafetyError {
          |""".stripMargin
     }
 
-    override def explain(implicit formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       if (!sym.isWild)
         s"""
            |${formatter.underline("Tip:")} Ensure that the variable occurs in at least one positive atom.
@@ -47,7 +47,7 @@ object SafetyError {
   case class IllegalNegativelyBoundWildVariable(sym: Symbol.VarSym, loc: SourceLocation) extends SafetyError {
     def summary: String = s"Illegal negatively bound variable '$sym'."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Illegal negatively bound variable '${formatter.red(sym.text)}'.
          |
@@ -58,7 +58,7 @@ object SafetyError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(implicit formatter: Formatter): Option[String] = None
+    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -69,7 +69,7 @@ object SafetyError {
   case class IllegalNegativelyBoundWildcard(loc: SourceLocation) extends SafetyError {
     def summary: String = s"Illegal negatively bound wildcard '_'."
 
-    def message(implicit formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
          |>> Illegal negatively bound wildcard '${formatter.red("_")}'.
          |
@@ -80,6 +80,6 @@ object SafetyError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(implicit formatter: Formatter): Option[String] = None
+    override def explain(formatter: Formatter): Option[String] = None
   }
 }
