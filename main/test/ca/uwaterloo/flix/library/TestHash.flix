@@ -310,7 +310,7 @@ namespace TestHash {
 
     @test
     def tuple6Hash05(): Bool =
-        hash((true, true, false, false, 'x', "%")) != hash((false, true, false, false, 'x', "%"))
+        hash((true, true, false, false, 'x', "rem")) != hash((false, true, false, false, 'x', "rem"))
 
     /////////////////////////////////////////////////////////////////////////////
     // Tuple7                                                                  //
@@ -334,7 +334,7 @@ namespace TestHash {
 
     @test
     def tuple7Hash05(): Bool =
-        hash((true, true, false, false, 'x', "%", (1, 1, true))) != hash((false, true, false, false, 'x', "%", (1, 1, true)))
+        hash((true, true, false, false, 'x', "rem", (1, 1, true))) != hash((false, true, false, false, 'x', "rem", (1, 1, true)))
 
     /////////////////////////////////////////////////////////////////////////////
     // Tuple8                                                                  //
@@ -358,7 +358,7 @@ namespace TestHash {
 
     @test
     def tuple8Hash05(): Bool =
-        hash((true, true, false, false, 'x', "%", (1, 1, true), (1, 2, 3, 9, 8))) != hash((false, true, false, false, 'x', "%", (1, 1, true), (1, 2, 3, 9, 8)))
+        hash((true, true, false, false, 'x', "rem", (1, 1, true), (1, 2, 3, 9, 8))) != hash((false, true, false, false, 'x', "rem", (1, 1, true), (1, 2, 3, 9, 8)))
 
     /////////////////////////////////////////////////////////////////////////////
     // Tuple9                                                                  //
@@ -382,7 +382,7 @@ namespace TestHash {
 
     @test
     def tuple9Hash05(): Bool =
-        hash((true, true, false, false, 'x', "%", (1, 1, true), (1, 2, 3, 9, 8), '_')) != hash((false, true, false, false, 'x', "%", (1, 1, true), (1, 2, 3, 9, 8), '_'))
+        hash((true, true, false, false, 'x', "rem", (1, 1, true), (1, 2, 3, 9, 8), '_')) != hash((false, true, false, false, 'x', "rem", (1, 1, true), (1, 2, 3, 9, 8), '_'))
 
     /////////////////////////////////////////////////////////////////////////////
     // Tuple10                                                                 //
@@ -406,6 +406,6 @@ namespace TestHash {
 
     @test
     def tuple10Hash05(): Bool =
-        hash((true, true, false, false, 'x', "%", (1, 1, true), (1, 2, 3, 9, 8), '_', "tired")) != hash((false, true, false, false, 'x', "%", (1, 1, true), (1, 2, 3, 9, 8), '_', "tired"))
+        hash((true, true, false, false, 'x', "rem", (1, 1, true), (1, 2, 3, 9, 8), '_', "tired")) != hash((false, true, false, false, 'x', "rem", (1, 1, true), (1, 2, 3, 9, 8), '_', "tired"))
 
 }

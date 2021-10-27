@@ -746,4 +746,17 @@ def sortBy09(): Bool = testSortByVsSort(Nel(2, 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
     def sum07(): Bool =
         Nel(1, List.range(2, 101)) |> Nel.sum == 5050
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toIterator                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toIterator01(): Bool & Impure =
+        Nel(1, 2 :: 3 :: Nil) |> Nel.toIterator |> Iterator.toNel == Some(Nel(1, 2 :: 3 :: Nil))
+
+    @test
+    def toIterator02(): Bool & Impure =
+        Nel(-100, List.range(-99, 100)) |> Nel.toIterator |> Iterator.toList == List.range(-100, 100)
+
 }

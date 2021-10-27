@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme, FormatType, TypeDiff}
 import ca.uwaterloo.flix.util.vt.VirtualString._
@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.util.vt._
 /**
   * A common super-type for type errors.
   */
-sealed trait TypeError extends CompilationError {
+sealed trait TypeError extends CompilationMessage {
   def kind: String = "Type Error"
 }
 
@@ -101,9 +101,13 @@ object TypeError {
         case (Some(ft1), Some(ft2)) =>
           vt << "Type One: " << Cyan(FormatType.formatType(ft1)) << NewLine
           vt << "Type Two: " << Magenta(FormatType.formatType(ft2)) << NewLine
-          vt << NewLine
         case _ => // nop
       }
+      vt << NewLine
+    }
+
+    override def explain: VirtualTerminal = {
+      val vt = new VirtualTerminal()
       vt << "If the Boolean formula describes purity:" << NewLine
       vt << NewLine
       vt << "  (1) Did you forget to mark the function as impure?" << NewLine
@@ -114,7 +118,6 @@ object TypeError {
       vt << NewLine
       vt << "  (1) Are you trying to pass null where a non-null value is required?" << NewLine
       vt << NewLine
-      vt
     }
   }
 
@@ -265,7 +268,10 @@ object TypeError {
       vt << NewLine
       vt << Code(loc, s"no instance of class '${clazz.toString}' for type ${FormatType.formatType(tpe)}") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << " Add an instance for the type." << NewLine
+    }
+
+    override def explain: VirtualTerminal = {
+      new VirtualTerminal() << Underline("Tip:") << " Add an instance for the type." << NewLine
     }
   }
 
@@ -286,6 +292,10 @@ object TypeError {
       vt << NewLine
       vt << Code(loc, s"main function with wrong type.") << NewLine
       vt << NewLine
+    }
+
+    override def explain: VirtualTerminal = {
+      val vt = new VirtualTerminal()
       vt << "The main function must have the form:" << NewLine
       vt << NewLine
       vt << "  def main(args: Array[String]): Int & Impure = ..." << NewLine

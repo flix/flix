@@ -4,6 +4,15 @@
 type alias Ref[t] = ScopedRef[t, false]
 
 ///
+/// The Reified Flix Bools.
+///
+pub enum ReifiedBool with Eq, Order, ToString {
+    case ErasedBool,
+    case ReifiedTrue,
+    case ReifiedFalse
+}
+
+///
 /// The Reified Flix Types.
 ///
 pub enum ReifiedType with Eq, Order, ToString {

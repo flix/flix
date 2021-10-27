@@ -211,7 +211,7 @@ object WeededAst {
 
     case class Reify(t: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
 
-    case class ReifyType(t: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
+    case class ReifyType(t: WeededAst.Type, k: Kind, loc: SourceLocation) extends WeededAst.Expression
 
   }
 

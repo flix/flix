@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import java.nio.file.Files
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Input, Source}
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.tools.Packager
@@ -34,7 +34,7 @@ object Reader extends Phase[List[Input], List[Source]] {
   /**
     * Reads the given source inputs into memory.
     */
-  def run(input: List[Input])(implicit flix: Flix): Validation[List[Source], CompilationError] = flix.phase("Reader") {
+  def run(input: List[Input])(implicit flix: Flix): Validation[List[Source], CompilationMessage] = flix.phase("Reader") {
     // Compute the sources.
     val sources = input flatMap {
 
