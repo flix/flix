@@ -122,8 +122,7 @@ namespace RedBlackTree {
     ///
     /// Otherwise, returns `tree`.
     ///
-    @Time(Int32.log2(size(tree))) @Space(Int32.log2(size(tree)))
-    pub def delete(k: k, tree: RedBlackTree[k, v]): RedBlackTree[k, v] with Order[k] = redden(deleteHelper(k, tree))
+    pub def remove(k: k, tree: RedBlackTree[k, v]): RedBlackTree[k, v] with Order[k] = redden(removeHelper(k, tree))
 
     ///
     /// Returns `Some(v)` if `k -> v` is in `tree`.
@@ -398,22 +397,22 @@ namespace RedBlackTree {
     ///
     /// Helper function for `delete`.
     ///
-    def deleteHelper(k: k, tree: RedBlackTree[k, v]): RedBlackTree[k, v] with Order[k] = match tree {
+    def removeHelper(k: k, tree: RedBlackTree[k, v]): RedBlackTree[k, v] with Order[k] = match tree {
         case Node(Red, Leaf, k1, _, Leaf) => if (k <=> k1 == EqualTo) Leaf else tree
         case Node(Black, Leaf, k1, _, Leaf) => if (k <=> k1 == EqualTo) DoubleBlackLeaf else tree
         case Node(Black, Node(Red, Leaf, k1, v1, Leaf), k2, v2, Leaf) =>
             match k <=> k2 {
-                case LessThan => Node(Black, deleteHelper(k, Node(Red, Leaf, k1, v1, Leaf)), k2, v2, Leaf)
+                case LessThan => Node(Black, removeHelper(k, Node(Red, Leaf, k1, v1, Leaf)), k2, v2, Leaf)
                 case EqualTo => Node(Black, Leaf, k1, v1, Leaf)
                 case GreaterThan => Node(Black, Node(Red, Leaf, k1, v1, Leaf), k2, v2, Leaf)
             }
         case Node(c, a, k1, v1, b) =>
             match k <=> k1 {
-                case LessThan => rotate(Node(c, deleteHelper(k, a), k1, v1, b))
+                case LessThan => rotate(Node(c, removeHelper(k, a), k1, v1, b))
                 case EqualTo =>
                     let (k2, v2, e) = minDelete(b);
                     rotate(Node(c, a, k2, v2, e))
-                case GreaterThan => rotate(Node(c, a, k1, v1, deleteHelper(k, b)))
+                case GreaterThan => rotate(Node(c, a, k1, v1, removeHelper(k, b)))
             }
         case _ => tree
     }
