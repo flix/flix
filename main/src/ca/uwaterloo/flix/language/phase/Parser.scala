@@ -300,7 +300,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def UseMany: Rule1[ParsedAst.Use.UseMany] = {
       def NameAndAlias: Rule1[ParsedAst.Use.NameAndAlias] = rule {
-        SP ~ UseName ~ optional((WS ~ atomic("=>") ~ WS) ~ UseName) ~ SP ~> ParsedAst.Use.NameAndAlias
+        SP ~ UseName ~ optional(WS ~ atomic("=>") ~ WS ~ UseName) ~ SP ~> ParsedAst.Use.NameAndAlias
       }
 
       rule {
