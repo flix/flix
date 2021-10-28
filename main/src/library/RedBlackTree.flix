@@ -420,9 +420,7 @@ namespace RedBlackTree {
     ///
     /// Applies `f` to all key-value pairs from `tree` where `p(k)` returns `EqualTo`.
     ///
-    /// The function `f` must be impure.
-    ///
-    pub def queryWith(p: k -> Comparison & ef, f: (k, v) ~> Unit, tree: RedBlackTree[k, v]): Unit & Impure = match tree {
+    pub def queryWith(p: k -> Comparison & ef1, f: (k, v) -> Unit & ef2, tree: RedBlackTree[k, v]): Unit & (ef1 and ef2) = match tree {
         case Node(_, a, k, v, b) =>
             match p(k) {
                 case LessThan => queryWith(p, f, b)
