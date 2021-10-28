@@ -41,8 +41,5 @@ instance SemiGroup[String] {
 }
 
 instance SemiGroup[List[a]] {
-  pub def combine(x: List[a], y: List[a]): List[a] = match x {
-    case (z :: zs) => z :: SemiGroup.combine(zs, y)
-    case (Nil) => y
-  }
+  pub def combine(x: List[a], y: List[a]): List[a] = x ::: y
 }
