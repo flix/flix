@@ -280,7 +280,7 @@ namespace Int64 {
     pub def fromString(s: String): Result[Int64, String] = try {
         import java.lang.String.strip();
         import java.lang.Long:parseLong(String);
-        Ok(s.strip().parseLong()) as & Pure
+        Ok(s |> strip |> parseLong) as & Pure
     } catch {
         case _: ##java.lang.NumberFormatException => Err("Int64.fromString")
     }
@@ -300,7 +300,7 @@ namespace Int64 {
         if (x < Int8.toInt64(Int8.minValue()) or x > Int8.toInt64(Int8.maxValue()))
             None
         else
-            Some(valueOf(x).byteValue()) as & Pure
+            Some(valueOf(x) |> byteValue) as & Pure
 
     ///
     /// Convert `x` to an `Option[Int16]`.
@@ -317,7 +317,7 @@ namespace Int64 {
         if (x < Int16.toInt64(Int16.minValue()) or x > Int16.toInt64(Int16.maxValue()))
             None
         else
-            Some(valueOf(x).shortValue()) as & Pure
+            Some(valueOf(x) |> shortValue) as & Pure
 
     ///
     /// Convert `x` to an `Option[Int32]`.
@@ -334,7 +334,7 @@ namespace Int64 {
         if (x < Int32.toInt64(Int32.minValue()) or x > Int32.toInt64(Int32.maxValue()))
             None
         else
-            Some(valueOf(x).intValue()) as & Pure
+            Some(valueOf(x) |> intValue) as & Pure
     ///
     /// Convert `x` to a BigInt.
     ///
@@ -345,7 +345,7 @@ namespace Int64 {
         import java.lang.Long:valueOf(Int64) as i64ValueOf;
         import java.lang.Long.longValue();
         import java.math.BigInteger:valueOf(Int64) as asBigInt;
-        i64ValueOf(x).longValue().asBigInt() as & Pure
+        (i64ValueOf(x) |> longValue |> asBigInt) as & Pure
 
     ///
     /// Convert `x` to a Float32.
@@ -356,7 +356,7 @@ namespace Int64 {
     pub def toFloat32(x: Int64): Float32 =
         import java.lang.Long:valueOf(Int64);
         import java.lang.Long.floatValue();
-        valueOf(x).floatValue() as & Pure
+        (valueOf(x) |> floatValue) as & Pure
 
     ///
     /// Convert `x` to a Float32.
@@ -367,7 +367,7 @@ namespace Int64 {
     pub def toFloat64(x: Int64): Float64 =
         import java.lang.Long:valueOf(Int64);
         import java.lang.Long.doubleValue();
-        valueOf(x).doubleValue() as & Pure
+        (valueOf(x) |> doubleValue) as & Pure
 
     ///
     /// Helper function for the `clamp` conversion functions.
@@ -392,7 +392,7 @@ namespace Int64 {
         import java.lang.Long.byteValue();
         let mini64 = Int8.toInt64(minimum);
         let maxi64 = Int8.toInt64(maximum);
-        valueOf(clamp(x, mini64, maxi64)).byteValue() as & Pure
+        (valueOf(clamp(x, mini64, maxi64)) |> byteValue) as & Pure
 
     ///
     /// Convert `x` to an `Int16`.
@@ -405,7 +405,7 @@ namespace Int64 {
         import java.lang.Long.shortValue();
         let mini64 = Int16.toInt64(minimum);
         let maxi64 = Int16.toInt64(maximum);
-        valueOf(clamp(x, mini64, maxi64)).shortValue() as & Pure
+        (valueOf(clamp(x, mini64, maxi64)) |> shortValue) as & Pure
 
 
     ///
@@ -419,6 +419,6 @@ namespace Int64 {
         import java.lang.Long.intValue();
         let mini64 = Int32.toInt64(minimum);
         let maxi64 = Int32.toInt64(maximum);
-        valueOf(clamp(x, mini64, maxi64)).intValue() as & Pure
+        (valueOf(clamp(x, mini64, maxi64)) |> intValue) as & Pure
 
 }
