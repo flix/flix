@@ -46,7 +46,7 @@ class Shell(initialPaths: List[Path], options: Options) {
   /**
     * The default color context.
     */
-  private val formatter: Formatter = Formatter.AnsiTerminalFormatter
+  private val formatter: Formatter = options.formatter
 
   /**
     * The executor service.

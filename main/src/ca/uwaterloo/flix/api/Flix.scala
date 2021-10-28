@@ -427,7 +427,7 @@ class Flix {
     if (options.debug) {
       // Print information about the phase.
       val d = new Duration(e)
-      val formatter = Formatter.AnsiTerminalFormatter
+      val formatter = options.formatter
       val emojiPart = formatter.blue("✓ ")
       val phasePart = formatter.blue(f"$phase%-40s")
       val timePart = f"${d.fmtMiliSeconds}%8s"

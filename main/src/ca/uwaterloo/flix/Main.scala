@@ -43,9 +43,6 @@ object Main {
       null
     }
 
-    // the default color context.
-    val formatter: Formatter = Formatter.AnsiTerminalFormatter
-
     // check if the --listen flag was passed.
     if (cmdOpts.listen.nonEmpty) {
       var successfulRun: Boolean = false
@@ -107,44 +104,44 @@ object Main {
         // nop, continue
 
         case Command.Init =>
-          Packager.init(cwd, options, formatter)
+          Packager.init(cwd, options)
           System.exit(0)
 
         case Command.Check =>
-          Packager.check(cwd, options, formatter)
+          Packager.check(cwd, options)
           System.exit(0)
 
         case Command.Build =>
-          Packager.build(cwd, options, formatter, loadClasses = false)
+          Packager.build(cwd, options, loadClasses = false)
           System.exit(0)
 
         case Command.BuildJar =>
-          Packager.buildJar(cwd, options, formatter)
+          Packager.buildJar(cwd, options)
           System.exit(0)
 
         case Command.BuildPkg =>
-          Packager.buildPkg(cwd, options, formatter)
+          Packager.buildPkg(cwd, options)
           System.exit(0)
 
         case Command.Run =>
-          Packager.run(cwd, options, formatter)
+          Packager.run(cwd, options)
           System.exit(0)
 
         case Command.Benchmark =>
           val o = options.copy(progress = false)
-          Packager.benchmark(cwd, o, formatter)
+          Packager.benchmark(cwd, o)
           System.exit(0)
 
         case Command.Test =>
           val o = options.copy(progress = false)
-          Packager.test(cwd, o, formatter) match {
+          Packager.test(cwd, o) match {
             case Tester.OverallTestResult.NoTests | Tester.OverallTestResult.Success => System.exit(0)
             case Tester.OverallTestResult.Failure => System.exit(1)
           }
 
         case Command.Install(project) =>
           val o = options.copy(progress = false)
-          Packager.install(project, cwd, o, formatter)
+          Packager.install(project, cwd, o)
           System.exit(0)
 
       }
@@ -207,10 +204,10 @@ object Main {
 
         if (cmdOpts.test) {
           val results = Tester.test(compilationResult)
-          Console.println(results.output(formatter))
+          Console.println(results.output(options.formatter))
         }
       case Validation.Failure(errors) =>
-        errors.sortBy(_.source.name).foreach(e => println(e.message(formatter)))
+        errors.sortBy(_.source.name).foreach(e => println(e.message(options.formatter)))
         println()
         println(s"Compilation failed with ${errors.length} error(s).")
         System.exit(1)
