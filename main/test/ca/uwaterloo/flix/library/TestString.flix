@@ -602,150 +602,150 @@ def isSubmatch11(): Bool = String.isSubmatch({regex = "[b]+"}, "aabbbc") == true
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def slice01(): Bool = String.slice("", 0, 1) == ""
+def slice01(): Bool = String.slice(0, 1, "") == ""
 
 @test
-def slice02(): Bool = String.slice("a", 0, 1) == "a"
+def slice02(): Bool = String.slice(0, 1, "a") == "a"
 
 @test
-def slice03(): Bool = String.slice("a", 1, 2) == ""
+def slice03(): Bool = String.slice(1, 2, "a") == ""
 
 @test
-def slice04(): Bool = String.slice("a", 0, 2) == ""
+def slice04(): Bool = String.slice(0, 2, "a") == ""
 
 @test
-def slice05(): Bool = String.slice("a", -1, 0) == ""
+def slice05(): Bool = String.slice(-1, 0, "a") == ""
 
 @test
-def slice06(): Bool = String.slice("ab", 0, 1) == "a"
+def slice06(): Bool = String.slice(0, 1, "ab") == "a"
 
 @test
-def slice07(): Bool = String.slice("ab", 1, 2) == "b"
+def slice07(): Bool = String.slice(1, 2, "ab") == "b"
 
 @test
-def slice08(): Bool = String.slice("ab", 0, 2) == "ab"
+def slice08(): Bool = String.slice(0, 2, "ab") == "ab"
 
 @test
-def slice09(): Bool = String.slice("ab", 0, 3) == ""
+def slice09(): Bool = String.slice(0, 3, "ab") == ""
 
 @test
-def slice10(): Bool = String.slice("ab", -1, 2) == ""
+def slice10(): Bool = String.slice(-1, 2, "ab") == ""
 
 @test
-def slice11(): Bool = String.slice("abc", 0, 1) == "a"
+def slice11(): Bool = String.slice(0, 1, "abc") == "a"
 
 @test
-def slice12(): Bool = String.slice("abc", 1, 2) == "b"
+def slice12(): Bool = String.slice(1, 2, "abc") == "b"
 
 @test
-def slice13(): Bool = String.slice("abc", 2, 3) == "c"
+def slice13(): Bool = String.slice(2, 3, "abc") == "c"
 
 @test
-def slice14(): Bool = String.slice("abc", 0, 2) == "ab"
+def slice14(): Bool = String.slice(0, 2, "abc") == "ab"
 
 @test
-def slice15(): Bool = String.slice("abc", 1, 3) == "bc"
+def slice15(): Bool = String.slice(1, 3, "abc") == "bc"
 
 @test
-def slice16(): Bool = String.slice("abc", 0, 3) == "abc"
+def slice16(): Bool = String.slice(0, 3, "abc") == "abc"
 
 /////////////////////////////////////////////////////////////////////////////
 // sliceLeft                                                               //
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def sliceLeft01(): Bool = String.sliceLeft("", 0) == ""
+def sliceLeft01(): Bool = String.sliceLeft(0, "") == ""
 
 @test
-def sliceLeft02(): Bool = String.sliceLeft("", 1) == ""
+def sliceLeft02(): Bool = String.sliceLeft(1, "") == ""
 
 @test
-def sliceLeft03(): Bool = String.sliceLeft("a", 1) == "a"
+def sliceLeft03(): Bool = String.sliceLeft(1, "a") == "a"
 
 @test
-def sliceLeft04(): Bool = String.sliceLeft("a", 0) == ""
+def sliceLeft04(): Bool = String.sliceLeft(0, "a") == ""
 
 @test
-def sliceLeft05(): Bool = String.sliceLeft("a", 2) == ""
+def sliceLeft05(): Bool = String.sliceLeft(2, "a") == ""
 
 @test
-def sliceLeft06(): Bool = String.sliceLeft("ab", 1) == "a"
+def sliceLeft06(): Bool = String.sliceLeft(1, "ab") == "a"
 
 @test
-def sliceLeft07(): Bool = String.sliceLeft("ab", 2) == "ab"
+def sliceLeft07(): Bool = String.sliceLeft(2, "ab") == "ab"
 
 @test
-def sliceLeft08(): Bool = String.sliceLeft("ab", 0) == ""
+def sliceLeft08(): Bool = String.sliceLeft(0, "ab") == ""
 
 @test
-def sliceLeft09(): Bool = String.sliceLeft("ab", 3) == ""
+def sliceLeft09(): Bool = String.sliceLeft(3, "ab") == ""
 
 @test
-def sliceLeft10(): Bool = String.sliceLeft("ab", -1) == ""
+def sliceLeft10(): Bool = String.sliceLeft(-1, "ab") == ""
 
 @test
-def sliceLeft11(): Bool = String.sliceLeft("abc", 1) == "a"
+def sliceLeft11(): Bool = String.sliceLeft(1, "abc") == "a"
 
 @test
-def sliceLeft12(): Bool = String.sliceLeft("abc", 2) == "ab"
+def sliceLeft12(): Bool = String.sliceLeft(2, "abc") == "ab"
 
 @test
-def sliceLeft13(): Bool = String.sliceLeft("abc", 3) == "abc"
+def sliceLeft13(): Bool = String.sliceLeft(3, "abc") == "abc"
 
 @test
-def sliceLeft14(): Bool = String.sliceLeft("abc", 0) == ""
+def sliceLeft14(): Bool = String.sliceLeft(0, "abc") == ""
 
 @test
-def sliceLeft15(): Bool = String.sliceLeft("abc", 4) == ""
+def sliceLeft15(): Bool = String.sliceLeft(4, "abc") == ""
 
 @test
-def sliceLeft16(): Bool = String.sliceLeft("abc", -1) == ""
+def sliceLeft16(): Bool = String.sliceLeft(-1, "abc") == ""
 
 /////////////////////////////////////////////////////////////////////////////
 // sliceRight                                                              //
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def sliceRight01(): Bool = String.sliceRight("", 0) == ""
+def sliceRight01(): Bool = String.sliceRight(0, "") == ""
 
 @test
-def sliceRight02(): Bool = String.sliceRight("", 1) == ""
+def sliceRight02(): Bool = String.sliceRight(1, "") == ""
 
 @test
-def sliceRight03(): Bool = String.sliceRight("a", 1) == ""
+def sliceRight03(): Bool = String.sliceRight(1, "a") == ""
 
 @test
-def sliceRight04(): Bool = String.sliceRight("a", 0) == "a"
+def sliceRight04(): Bool = String.sliceRight(0, "a") == "a"
 
 @test
-def sliceRight05(): Bool = String.sliceRight("a", 1) == ""
+def sliceRight05(): Bool = String.sliceRight(1, "a") == ""
 
 @test
-def sliceRight06(): Bool = String.sliceRight("ab", 0) == "ab"
+def sliceRight06(): Bool = String.sliceRight(0, "ab") == "ab"
 
 @test
-def sliceRight07(): Bool = String.sliceRight("ab", 1) == "b"
+def sliceRight07(): Bool = String.sliceRight(1, "ab") == "b"
 
 @test
-def sliceRight08(): Bool = String.sliceRight("ab", -1) == ""
+def sliceRight08(): Bool = String.sliceRight(-1, "ab") == ""
 
 @test
-def sliceRight09(): Bool = String.sliceRight("ab", 2) == ""
+def sliceRight09(): Bool = String.sliceRight(2, "ab") == ""
 
 @test
-def sliceRight10(): Bool = String.sliceRight("abc", 0) == "abc"
+def sliceRight10(): Bool = String.sliceRight(0, "abc") == "abc"
 
 @test
-def sliceRight11(): Bool = String.sliceRight("abc", 1) == "bc"
+def sliceRight11(): Bool = String.sliceRight(1, "abc") == "bc"
 
 @test
-def sliceRight12(): Bool = String.sliceRight("abc", 2) == "c"
+def sliceRight12(): Bool = String.sliceRight(2, "abc") == "c"
 
 @test
-def sliceRight13(): Bool = String.sliceRight("abc", 3) == ""
+def sliceRight13(): Bool = String.sliceRight(3, "abc") == ""
 
 @test
-def sliceRight14(): Bool = String.sliceRight("abc", -1) == ""
+def sliceRight14(): Bool = String.sliceRight(-1, "abc") == ""
 
 /////////////////////////////////////////////////////////////////////////////
 // findIndexOfLeft                                                         //
@@ -2088,28 +2088,28 @@ def replace08(): Bool = String.replace({from = "c"}, {to = "d"}, "cc") == "dd"
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def replaceChar01(): Bool = String.replaceChar('c', 'd', "") == ""
+def replaceChar01(): Bool = String.replaceChar({from = 'c'}, {to = 'd'}, "") == ""
 
 @test
-def replaceChar02(): Bool = String.replaceChar('c', 'd', "a") == "a"
+def replaceChar02(): Bool = String.replaceChar({from = 'c'}, {to = 'd'}, "a") == "a"
 
 @test
-def replaceChar03(): Bool = String.replaceChar('c', 'd', "c") == "d"
+def replaceChar03(): Bool = String.replaceChar({from = 'c'}, {to = 'd'}, "c") == "d"
 
 @test
-def replaceChar04(): Bool = String.replaceChar('c', 'd', "d") == "d"
+def replaceChar04(): Bool = String.replaceChar({from = 'c'}, {to = 'd'}, "d") == "d"
 
 @test
-def replaceChar05(): Bool = String.replaceChar('c', 'd', "ab") == "ab"
+def replaceChar05(): Bool = String.replaceChar({from = 'c'}, {to = 'd'}, "ab") == "ab"
 
 @test
-def replaceChar06(): Bool = String.replaceChar('c', 'd', "abc") == "abd"
+def replaceChar06(): Bool = String.replaceChar({from = 'c'}, {to = 'd'}, "abc") == "abd"
 
 @test
-def replaceChar07(): Bool = String.replaceChar('c', 'd', "cd") == "dd"
+def replaceChar07(): Bool = String.replaceChar({from = 'c'}, {to = 'd'}, "cd") == "dd"
 
 @test
-def replaceChar08(): Bool = String.replaceChar('c', 'd', "cc") == "dd"
+def replaceChar08(): Bool = String.replaceChar({from = 'c'}, {to = 'd'}, "cc") == "dd"
 
 /////////////////////////////////////////////////////////////////////////////
 // replaceMatches                                                          //

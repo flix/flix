@@ -16,20 +16,21 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import java.io.IOException
-import java.nio.file.{Files, Path, Paths}
-
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.Ast.TypeConstraint
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.{Ast, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.debug.{Audience, FormatExpression, FormatType, PrettyExpression}
+import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.debug.{Audience, FormatType, PrettyExpression}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 import org.json4s.JsonAST._
 import org.json4s.JsonDSL._
 import org.json4s.native.JsonMethods
+
+import java.io.IOException
+import java.nio.file.{Files, Path, Paths}
 
 object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
 
@@ -48,7 +49,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Emits a JSON file with information about the definitions of the program.
     */
-  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("Documentor") {
+  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationMessage] = flix.phase("Documentor") {
     // Check whether to generate documentation.
     if (flix.options.documentor) {
       // Collect all public definitions and group them by namespace.
@@ -133,6 +134,53 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   private def getSpace(defn0: Def): Option[String] = defn0.spec.ann.collectFirst {
     case Annotation(Ast.Annotation.Space(_), exp :: _, _) =>
       PrettyExpression.pretty(exp)
+  }
+
+  /**
+    * Returns the given instance `inst` as a JSON value.
+    */
+  private def visitInstance(inst: Instance): JObject = inst match {
+    case Instance(_, _, sym, tpe, tconstrs, _, _, loc) =>
+      ("sym" -> visitClassSym(sym)) ~
+        ("tpe" -> visitType(tpe)) ~
+        ("tconstrs" -> tconstrs.map(visitTypeConstraint)) ~
+        ("loc" -> visitSourceLocation(loc))
+  }
+
+  /**
+    * Returns the given type `tpe` as a JSON value.
+    */
+  private def visitType(tpe: Type): JObject = ??? // TODO
+
+  /**
+    * Returns the given type constraint `tc` as a JSON value.
+    */
+  private def visitTypeConstraint(tc: TypeConstraint): JObject = tc match {
+    case TypeConstraint(sym, arg, _) =>
+      ("sym" -> visitClassSym(sym)) ~
+        ("arg" -> visitType(arg))
+  }
+
+  /**
+    * Returns the given class symbol `sym` as a JSON value.
+    */
+  private def visitClassSym(sym: Symbol.ClassSym): JObject =
+    ("namespace" -> sym.namespace) ~
+      ("name" -> sym.name) ~
+      ("loc" -> visitSourceLocation(sym.loc))
+
+  // TODO: Visit the other symbols.
+
+  /**
+    * Returns the given source location `loc` as a JSON value.
+    */
+  private def visitSourceLocation(loc: SourceLocation): JObject = loc match {
+    case SourceLocation(_, source, beginLine, beginCol, endLine, endCol) =>
+      ("name" -> source.name) ~
+        ("beginLine" -> beginLine) ~
+        ("beginCol" -> beginCol) ~
+        ("endLine" -> endLine) ~
+        ("endCol" -> endCol)
   }
 
   /**

@@ -4,6 +4,15 @@
 type alias Ref[t] = ScopedRef[t, false]
 
 ///
+/// The Reified Flix Bools.
+///
+pub enum ReifiedBool with Eq, Order, ToString {
+    case ErasedBool,
+    case ReifiedTrue,
+    case ReifiedFalse
+}
+
+///
 /// The Reified Flix Types.
 ///
 pub enum ReifiedType with Eq, Order, ToString {
@@ -133,7 +142,7 @@ pub def bug!(m: String): a =
         import get java.lang.System:err as getErr;
         import java.io.PrintStream.println(String);
         import java.lang.String.repeat(Int32);
-        let prt = s -> getErr().println(s);
+        let prt = println(getErr());
         prt(repeat("*", 80));
         prt("**") ;
         prt("**  BUG: ${m}") ;

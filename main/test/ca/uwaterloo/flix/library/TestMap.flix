@@ -329,94 +329,94 @@ def adjustWithKey06(): Bool = Map.adjustWithKey((k, v) -> k+v, 4, Map#{1 -> 4, 5
 // update                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def update01(): Bool = Map.update(v -> if (v % 2 != 0) Some(2*v) else None, 1, Map#{}) == Map#{}
+def update01(): Bool = Map.update(v -> if (v rem 2 != 0) Some(2*v) else None, 1, Map#{}) == Map#{}
 
 @test
-def update02(): Bool = Map.update(v -> if (v % 2 != 0) Some(2*v) else None, 1, Map#{1 -> 3}) == Map#{1 -> 6}
+def update02(): Bool = Map.update(v -> if (v rem 2 != 0) Some(2*v) else None, 1, Map#{1 -> 3}) == Map#{1 -> 6}
 
 @test
-def update03(): Bool = Map.update(v -> if (v % 2 != 0) Some(2*v) else None, 1, Map#{1 -> 4}) == Map#{1 -> 4}
+def update03(): Bool = Map.update(v -> if (v rem 2 != 0) Some(2*v) else None, 1, Map#{1 -> 4}) == Map#{1 -> 4}
 
 @test
-def update04(): Bool = Map.update(v -> if (v % 2 != 0) Some(2*v) else None, 2, Map#{1 -> 4}) == Map#{1 -> 4}
+def update04(): Bool = Map.update(v -> if (v rem 2 != 0) Some(2*v) else None, 2, Map#{1 -> 4}) == Map#{1 -> 4}
 
 @test
-def update05(): Bool = Map.update(v -> if (v % 2 != 0) Some(2*v) else None, 1, Map#{1 -> -14, 5 -> -2}) == Map#{1 -> -14, 5 -> -2}
+def update05(): Bool = Map.update(v -> if (v rem 2 != 0) Some(2*v) else None, 1, Map#{1 -> -14, 5 -> -2}) == Map#{1 -> -14, 5 -> -2}
 
 @test
-def update06(): Bool = Map.update(v -> if (v % 2 != 0) Some(2*v) else None, 1, Map#{1 -> -13, 5 -> -2}) == Map#{1 -> -26, 5 -> -2}
+def update06(): Bool = Map.update(v -> if (v rem 2 != 0) Some(2*v) else None, 1, Map#{1 -> -13, 5 -> -2}) == Map#{1 -> -26, 5 -> -2}
 
 @test
-def update07(): Bool = Map.update(v -> if (v % 2 != 0) Some(2*v) else None, 5, Map#{1 -> 4, 5 -> -2}) == Map#{1 -> 4, 5 -> -2}
+def update07(): Bool = Map.update(v -> if (v rem 2 != 0) Some(2*v) else None, 5, Map#{1 -> 4, 5 -> -2}) == Map#{1 -> 4, 5 -> -2}
 
 @test
-def update08(): Bool = Map.update(v -> if (v % 2 != 0) Some(2*v) else None, 5, Map#{1 -> 4, 5 -> -1}) == Map#{1 -> 4, 5 -> -2}
+def update08(): Bool = Map.update(v -> if (v rem 2 != 0) Some(2*v) else None, 5, Map#{1 -> 4, 5 -> -1}) == Map#{1 -> 4, 5 -> -2}
 
 @test
-def update09(): Bool = Map.update(v -> if (v % 2 != 0) Some(2*v) else None, 4, Map#{1 -> 4, 5 -> -2}) == Map#{1 -> 4, 5 -> -2}
+def update09(): Bool = Map.update(v -> if (v rem 2 != 0) Some(2*v) else None, 4, Map#{1 -> 4, 5 -> -2}) == Map#{1 -> 4, 5 -> -2}
 
 /////////////////////////////////////////////////////////////////////////////
 // updateWithKey                                                           //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def updateWithKey01(): Bool = Map.updateWithKey((k, v) -> if (v % 2 != 0) Some(k+2*v) else None, 1, Map#{}) == Map#{}
+def updateWithKey01(): Bool = Map.updateWithKey((k, v) -> if (v rem 2 != 0) Some(k+2*v) else None, 1, Map#{}) == Map#{}
 
 @test
-def updateWithKey02(): Bool = Map.updateWithKey((k, v) -> if (v % 2 != 0) Some(k+2*v) else None, 1, Map#{1 -> 3}) == Map#{1 -> 7}
+def updateWithKey02(): Bool = Map.updateWithKey((k, v) -> if (v rem 2 != 0) Some(k+2*v) else None, 1, Map#{1 -> 3}) == Map#{1 -> 7}
 
 @test
-def updateWithKey03(): Bool = Map.updateWithKey((k, v) -> if (v % 2 != 0) Some(k+2*v) else None, 1, Map#{1 -> 4}) == Map#{1 -> 4}
+def updateWithKey03(): Bool = Map.updateWithKey((k, v) -> if (v rem 2 != 0) Some(k+2*v) else None, 1, Map#{1 -> 4}) == Map#{1 -> 4}
 
 @test
-def updateWithKey04(): Bool = Map.updateWithKey((k, v) -> if (v % 2 != 0) Some(k+2*v) else None, 2, Map#{1 -> 4}) == Map#{1 -> 4}
+def updateWithKey04(): Bool = Map.updateWithKey((k, v) -> if (v rem 2 != 0) Some(k+2*v) else None, 2, Map#{1 -> 4}) == Map#{1 -> 4}
 
 @test
-def updateWithKey05(): Bool = Map.updateWithKey((k, v) -> if (v % 2 != 0) Some(k+2*v) else None, 1, Map#{1 -> -14, 5 -> -2}) == Map#{1 -> -14, 5 -> -2}
+def updateWithKey05(): Bool = Map.updateWithKey((k, v) -> if (v rem 2 != 0) Some(k+2*v) else None, 1, Map#{1 -> -14, 5 -> -2}) == Map#{1 -> -14, 5 -> -2}
 
 @test
-def updateWithKey06(): Bool = Map.updateWithKey((k, v) -> if (v % 2 != 0) Some(k+2*v) else None, 1, Map#{1 -> -13, 5 -> -2}) == Map#{1 -> -25, 5 -> -2}
+def updateWithKey06(): Bool = Map.updateWithKey((k, v) -> if (v rem 2 != 0) Some(k+2*v) else None, 1, Map#{1 -> -13, 5 -> -2}) == Map#{1 -> -25, 5 -> -2}
 
 @test
-def updateWithKey07(): Bool = Map.updateWithKey((k, v) -> if (v % 2 != 0) Some(k+2*v) else None, 5, Map#{1 -> 4, 5 -> -2}) == Map#{1 -> 4, 5 -> -2}
+def updateWithKey07(): Bool = Map.updateWithKey((k, v) -> if (v rem 2 != 0) Some(k+2*v) else None, 5, Map#{1 -> 4, 5 -> -2}) == Map#{1 -> 4, 5 -> -2}
 
 @test
-def updateWithKey08(): Bool = Map.updateWithKey((k, v) -> if (v % 2 != 0) Some(k+2*v) else None, 5, Map#{1 -> 4, 5 -> -1}) == Map#{1 -> 4, 5 -> 3}
+def updateWithKey08(): Bool = Map.updateWithKey((k, v) -> if (v rem 2 != 0) Some(k+2*v) else None, 5, Map#{1 -> 4, 5 -> -1}) == Map#{1 -> 4, 5 -> 3}
 
 @test
-def updateWithKey09(): Bool = Map.updateWithKey((k, v) -> if (v % 2 != 0) Some(k+2*v) else None, 4, Map#{1 -> 4, 5 -> -2}) == Map#{1 -> 4, 5 -> -2}
+def updateWithKey09(): Bool = Map.updateWithKey((k, v) -> if (v rem 2 != 0) Some(k+2*v) else None, 4, Map#{1 -> 4, 5 -> -2}) == Map#{1 -> 4, 5 -> -2}
 
 /////////////////////////////////////////////////////////////////////////////
-// delete                                                                  //
+// remove                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def delete01(): Bool = Map.delete(1, Map#{}: Map[_, Unit]) == Map#{}
+def remove01(): Bool = Map.remove(1, Map#{}: Map[_, Unit]) == Map#{}
 
 @test
-def delete02(): Bool = Map.delete(1, Map#{2 -> 4}) == Map#{2 -> 4}
+def remove02(): Bool = Map.remove(1, Map#{2 -> 4}) == Map#{2 -> 4}
 
 @test
-def delete03(): Bool = Map.delete(1, Map#{1 -> 4}) == Map#{}
+def remove03(): Bool = Map.remove(1, Map#{1 -> 4}) == Map#{}
 
 @test
-def delete04(): Bool = Map.delete(1, Map#{6 -> 1, 2 -> 4}) == Map#{6 -> 1, 2 -> 4}
+def remove04(): Bool = Map.remove(1, Map#{6 -> 1, 2 -> 4}) == Map#{6 -> 1, 2 -> 4}
 
 @test
-def delete05(): Bool = Map.delete(6, Map#{6 -> 1, 2 -> 4}) == Map#{2 -> 4}
+def remove05(): Bool = Map.remove(6, Map#{6 -> 1, 2 -> 4}) == Map#{2 -> 4}
 
 @test
-def delete06(): Bool = Map.delete(2, Map#{6 -> 1, 2 -> 4}) == Map#{6 -> 1}
+def remove06(): Bool = Map.remove(2, Map#{6 -> 1, 2 -> 4}) == Map#{6 -> 1}
 
 @test
-def delete07(): Bool = Map.delete(1, Map#{6 -> 1, 2 -> 4, 8 -> 89}) == Map#{6 -> 1, 2 -> 4, 8 -> 89}
+def remove07(): Bool = Map.remove(1, Map#{6 -> 1, 2 -> 4, 8 -> 89}) == Map#{6 -> 1, 2 -> 4, 8 -> 89}
 
 @test
-def delete08(): Bool = Map.delete(6, Map#{6 -> 1, 2 -> 4, 8 -> 89}) == Map#{2 -> 4, 8 -> 89}
+def remove08(): Bool = Map.remove(6, Map#{6 -> 1, 2 -> 4, 8 -> 89}) == Map#{2 -> 4, 8 -> 89}
 
 @test
-def delete09(): Bool = Map.delete(2, Map#{6 -> 1, 2 -> 4, 8 -> 89}) == Map#{6 -> 1, 8 -> 89}
+def remove09(): Bool = Map.remove(2, Map#{6 -> 1, 2 -> 4, 8 -> 89}) == Map#{6 -> 1, 8 -> 89}
 
 @test
-def delete10(): Bool = Map.delete(8, Map#{6 -> 1, 2 -> 4, 8 -> 89}) == Map#{6 -> 1, 2 -> 4}
+def remove10(): Bool = Map.remove(8, Map#{6 -> 1, 2 -> 4, 8 -> 89}) == Map#{6 -> 1, 2 -> 4}
 
 /////////////////////////////////////////////////////////////////////////////
 // isSubmapOf                                                              //
@@ -608,25 +608,25 @@ def findRight07(): Bool = Map.findRight((k, v) -> k == v, Map#{1 -> 1, 2 -> 2}) 
 // filter                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def filter01(): Bool = Map.filter(v -> v % 2 == 0, Map#{}: Map[Unit, _]) == Map#{}
+def filter01(): Bool = Map.filter(v -> v rem 2 == 0, Map#{}: Map[Unit, _]) == Map#{}
 
 @test
-def filter02(): Bool = Map.filter(v -> v % 2 == 0, Map#{1 -> 2}) == Map#{1 -> 2}
+def filter02(): Bool = Map.filter(v -> v rem 2 == 0, Map#{1 -> 2}) == Map#{1 -> 2}
 
 @test
-def filter03(): Bool = Map.filter(v -> v % 2 == 0, Map#{1 -> 3}) == Map#{}
+def filter03(): Bool = Map.filter(v -> v rem 2 == 0, Map#{1 -> 3}) == Map#{}
 
 @test
-def filter04(): Bool = Map.filter(v -> v % 2 == 0, Map#{1 -> 8, 2 -> 4}) == Map#{1 -> 8, 2 -> 4}
+def filter04(): Bool = Map.filter(v -> v rem 2 == 0, Map#{1 -> 8, 2 -> 4}) == Map#{1 -> 8, 2 -> 4}
 
 @test
-def filter05(): Bool = Map.filter(v -> v % 2 == 0, Map#{1 -> 7, 2 -> 4}) == Map#{2 -> 4}
+def filter05(): Bool = Map.filter(v -> v rem 2 == 0, Map#{1 -> 7, 2 -> 4}) == Map#{2 -> 4}
 
 @test
-def filter06(): Bool = Map.filter(v -> v % 2 == 0, Map#{1 -> 8, 2 -> 3}) == Map#{1 -> 8}
+def filter06(): Bool = Map.filter(v -> v rem 2 == 0, Map#{1 -> 8, 2 -> 3}) == Map#{1 -> 8}
 
 @test
-def filter07(): Bool = Map.filter(v -> v % 2 == 0, Map#{1 -> -1, 2 -> -3}) == Map#{}
+def filter07(): Bool = Map.filter(v -> v rem 2 == 0, Map#{1 -> -1, 2 -> -3}) == Map#{}
 
 /////////////////////////////////////////////////////////////////////////////
 // filterWithKey                                                           //
@@ -1893,5 +1893,23 @@ def query18(): Bool =
     @test
     def toLazyList03(): Bool =
         Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0) |> Map.toLazyList |> LazyList.toMap == Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toIterator                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toIterator01(): Bool & Impure =
+        Map.empty(): Map[Int32, Int32] |> Map.toIterator |> Iterator.toMap == Map.empty()
+
+    @test
+    def toIterator02(): Bool & Impure =
+        Map#{"A" -> 1, "B" -> 2, "C" -> 3, "D" -> 4} |> Map.toIterator |> Iterator.toMap == Map#{"A" -> 1, "B" -> 2, "C" -> 3, "D" -> 4}
+
+    @test
+    def toIterator03(): Bool & Impure =
+        let l = List.range(0, 100);
+        List.zip(l, List.reverse(l)) |> List.toMap |> Map.toIterator |> Iterator.toMap |> Map.toList == List.zip(List.range(0, 100), List.reverse(List.range(0, 100)))
 
 }

@@ -430,7 +430,7 @@ namespace List {
     pub def rotateLeft(n: Int32, xs: List[a]): List[a] =
         let len = length(xs);
             if (len == 0) xs else
-                let rem = n % len;
+                let rem = n rem len;
                 let rotate = if (rem < 0) rem + len else rem;
                     drop(rotate, xs) ::: take(rotate, xs)
 
@@ -1407,4 +1407,21 @@ namespace List {
             case x :: xs => DemandList.LList(lazy DemandList.LCons(x, lazy toDemandList(xs)))
         }
 
+    ///
+    /// Returns an iterator over `l`.
+    ///
+    pub def toIterator(l: List[a]): Iterator[a] & Impure =
+        let cursor = ref l;
+        let done = () -> match (deref cursor) {
+            case Nil => true
+            case _   => false
+        };
+        let next = () -> match (deref cursor) {
+            case Nil     => bug!("Empty Iterator!")
+            case x :: xs => {
+                cursor := xs;
+                x
+            }
+        };
+        Iterator(done, next)
 }

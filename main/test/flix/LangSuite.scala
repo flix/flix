@@ -196,7 +196,7 @@ class LangSuite extends Suites(
   new FlixTest("Test.Exp.Jvm.InvokeStaticMethod", "main/test/flix/Test.Exp.Jvm.InvokeStaticMethod.flix"),
   new FlixTest("Test.Exp.Jvm.PutField", "main/test/flix/Test.Exp.Jvm.PutField.flix"),
   new FlixTest("Test.Exp.Jvm.PutStaticField", "main/test/flix/Test.Exp.Jvm.PutStaticField.flix"),
-  new FlixTest("test.Exp.Jvm.TryCatch", "main/test/flix/Test.Exp.Jvm.TryCatch.flix")(Options.TestWithLibNix),
+  new FlixTest("Test.Exp.Jvm.TryCatch", "main/test/flix/Test.Exp.Jvm.TryCatch.flix")(Options.TestWithLibNix),
 
   //
   // Kind.
@@ -254,11 +254,6 @@ class LangSuite extends Suites(
   new FlixTest("Test.Exp.Null", "main/test/flix/Test.Exp.Null.flix"),
 
   //
-  // Postfix.
-  //
-  new FlixTest("Test.Exp.Postfix", "main/test/flix/Test.Exp.Postfix.flix"),
-
-  //
   // Record.
   //
   new FlixTest("Test.Exp.Record.Extend", "main/test/flix/Test.Exp.Record.Extend.flix"),
@@ -287,6 +282,7 @@ class LangSuite extends Suites(
   // Reify.
   //
   new FlixTest("Test.Exp.Reify", "main/test/flix/Test.Exp.Reify.flix"),
+  new FlixTest("Test.Exp.ReifyType", "main/test/flix/Test.Exp.ReifyType.flix"),
 
   //
   // Tag.
@@ -328,7 +324,6 @@ class LangSuite extends Suites(
     "main/test/flix/Test.Predicate.Filter.flix",
     "main/test/flix/Test.Predicate.Guard.flix",
     "main/test/flix/Test.Predicate.Nullary.flix",
-    // "main/test/flix/Test.Predicate.Union.flix" // TODO
   ), Options.TestWithLibAll),
 
   //

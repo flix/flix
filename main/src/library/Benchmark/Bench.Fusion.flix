@@ -39,7 +39,7 @@ pub def listFilterLength(l: Array[Int32]): Benchmark =
     defBenchmark("List.filterLength", () -> {
         l |>
         Array.toList |>
-        List.filter(x -> x % 2 == 0) |>
+        List.filter(x -> x rem 2 == 0) |>
         List.length
     } as & Pure)
 
@@ -47,7 +47,7 @@ pub def lazyListFilterLength(l: Array[Int32]): Benchmark =
     defBenchmark("LazyList.filterLength", () -> {
         l |>
         Array.toLazyList |>
-        LazyList.filter(x -> x % 2 == 0) |>
+        LazyList.filter(x -> x rem 2 == 0) |>
         LazyList.length
     } as & Pure)
 
@@ -55,7 +55,7 @@ pub def streamFilterLength(l: Array[Int32]): Benchmark =
     defBenchmark("Stream.filterLength", () -> {
         l |>
         Array.toStream |>
-        Stream.filter(x -> x % 2 == 0) |>
+        Stream.filter(x -> x rem 2 == 0) |>
         Stream.length
     } as & Pure)
 
@@ -66,7 +66,7 @@ pub def listFilterMapLength(l: Array[Int32]): Benchmark =
     defBenchmark("List.filterMapLength", () -> {
         l |>
         Array.toList |>
-        List.filter(x -> x % 2 == 0) |>
+        List.filter(x -> x rem 2 == 0) |>
         List.map(x -> x * x) |>
         List.length
     } as & Pure)
@@ -75,7 +75,7 @@ pub def lazyListFilterMapLength(l: Array[Int32]): Benchmark =
     defBenchmark("LazyList.filterMapLength", () -> {
         l |>
         Array.toLazyList |>
-        LazyList.filter(x -> x % 2 == 0) |>
+        LazyList.filter(x -> x rem 2 == 0) |>
         LazyList.map(x -> x * x) |>
         LazyList.length
     } as & Pure)
@@ -84,7 +84,7 @@ pub def streamFilterMapLength(l: Array[Int32]): Benchmark =
     defBenchmark("Stream.filterMapLength", () -> {
         l |>
         Array.toStream |>
-        Stream.filter(x -> x % 2 == 0) |>
+        Stream.filter(x -> x rem 2 == 0) |>
         Stream.map(x -> x * x) |>
         Stream.length
     } as & Pure)
@@ -120,7 +120,7 @@ pub def listFilterSum(l: Array[Int32]): Benchmark =
     defBenchmark("List.filterSum", () -> {
         l |>
         Array.toList |>
-        List.filter(x -> x % 2 == 0) |>
+        List.filter(x -> x rem 2 == 0) |>
         List.sum
     } as & Pure)
 
@@ -128,7 +128,7 @@ pub def lazyListFilterSum(l: Array[Int32]): Benchmark =
     defBenchmark("LazyList.filterSum", () -> {
         l |>
         Array.toLazyList |>
-        LazyList.filter(x -> x % 2 == 0) |>
+        LazyList.filter(x -> x rem 2 == 0) |>
         LazyList.sum
     } as & Pure)
 
@@ -136,7 +136,7 @@ pub def streamFilterSum(l: Array[Int32]): Benchmark =
     defBenchmark("Stream.filterSum", () -> {
         l |>
         Array.toStream |>
-        Stream.filter(x -> x % 2 == 0) |>
+        Stream.filter(x -> x rem 2 == 0) |>
         Stream.sum
     } as & Pure)
 
@@ -147,7 +147,7 @@ pub def listFilterMapSum(l: Array[Int32]): Benchmark =
     defBenchmark("List.filterMapSum", () -> {
         l |>
         Array.toList |>
-        List.filter(x -> x % 2 == 0) |>
+        List.filter(x -> x rem 2 == 0) |>
         List.map(x -> x * x) |>
         List.sum
     } as & Pure)
@@ -156,7 +156,7 @@ pub def lazyListFilterMapSum(l: Array[Int32]): Benchmark =
     defBenchmark("LazyList.filterMapSum", () -> {
         l |>
         Array.toLazyList |>
-        LazyList.filter(x -> x % 2 == 0) |>
+        LazyList.filter(x -> x rem 2 == 0) |>
         LazyList.map(x -> x * x) |>
         LazyList.sum
     } as & Pure)
@@ -165,7 +165,7 @@ pub def streamFilterMapSum(l: Array[Int32]): Benchmark =
     defBenchmark("Stream.filterMapSum", () -> {
         l |>
         Array.toStream |>
-        Stream.filter(x -> x % 2 == 0) |>
+        Stream.filter(x -> x rem 2 == 0) |>
         Stream.map(x -> x * x) |>
         Stream.sum
     } as & Pure)
