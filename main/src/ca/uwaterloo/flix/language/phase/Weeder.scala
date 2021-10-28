@@ -553,18 +553,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           WeededAst.Expression.Apply(lambda, List(e1, e2), loc)
       }
 
-    case ParsedAst.Expression.Postfix(exp, ident, exps, sp2) =>
-      /*
-       * Rewrites postfix expressions to apply expressions.
-       */
-      mapN(visitExp(exp), traverse(exps)(e => visitArgument(e))) {
-        case (e, es) =>
-          val sp1 = leftMostSourcePosition(exp)
-          val loc = mkSL(sp1, sp2)
-          val lambda = WeededAst.Expression.VarOrDefOrSig(ident, loc)
-          WeededAst.Expression.Apply(lambda, e :: es, loc)
-      }
-
     case ParsedAst.Expression.Lambda(sp1, fparams0, exp, sp2) =>
       val loc = mkSL(sp1, sp2)
       /*
@@ -2478,7 +2466,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Intrinsic(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Apply(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Infix(e1, _, _, _) => leftMostSourcePosition(e1)
-    case ParsedAst.Expression.Postfix(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Lambda(sp1, _, _, _) => sp1
     case ParsedAst.Expression.LambdaMatch(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Unary(sp1, _, _, _) => sp1
