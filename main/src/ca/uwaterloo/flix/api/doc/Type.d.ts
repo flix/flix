@@ -16,26 +16,34 @@
 import {Kind} from "./Kind";
 
 // TODO: Implement type.
-export type Type = TypeVar | TypeCst
+export type Type = TypeVar | TypeCst | TypeApply
 
 export interface TypeVar {
-    "variant": "Var"
+    tag: "Var"
+    name: string
     kind: Kind
 }
 
 export interface TypeCst {
-    "variant": "Cst"
+    tag: "Cst"
     tc: TypeConstructor
     kind: Kind
 }
 
 export interface TypeApply {
-    "variant": "Apply"
+    tag: "Apply"
     tpe1: Type
     tpe2: Type
     kind: Kind
 }
 
-export type TypeConstructor =
-    "Bool" | "Int8" | "Int16"// TODO: What about arrows? Do these need to be objects?
+export type TypeConstructor = Bool | Int32
+
+export interface Bool {
+    tag: "Bool"
+}
+
+export interface Int32 {
+    tag: "Int32"
+}
 
