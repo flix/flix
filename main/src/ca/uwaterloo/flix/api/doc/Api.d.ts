@@ -19,6 +19,7 @@ import {Enum} from "./Enum";
 import {TypeAlias} from "./TypeAlias";
 
 export interface Api {
+    namespaces: [string]
     classes: ClassesByNS
     defs: DefsByNS
     enums: EnumsByNs

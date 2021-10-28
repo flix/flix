@@ -14,12 +14,20 @@
  * limitations under the License.
  */
 import {SigSym} from "./SigSym";
+import {TypeParam} from "./TypeParam";
+import {FormalParam} from "./FormalParam";
+import {Modifier} from "./Modifier";
+import {Type} from "./Type";
+import {SourceLocation} from "./SourceLocation";
 
 export interface Sig {
     sym: SigSym
+    doc: [string]
+    mod: [Modifier]
+    tparams: [TypeParam]
+    fparams: [FormalParam]
+    retTpe: Type
+    eff: Type
+    loc: SourceLocation
     implemented: boolean
 }
-// TODO: This is not done
-//   case class Sig(sym: Symbol.SigSym)
-//  case class Spec(doc: Ast.Doc, ann: List[TypedAst.Annotation], mod: Ast.Modifiers, tparams: List[TypedAst.TypeParam], fparams: List[TypedAst.FormalParam], declaredScheme: Scheme, retTpe: Type, eff: Type, loc: SourceLocation)
-
