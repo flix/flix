@@ -521,18 +521,6 @@ object ParsedAst {
     case class Infix(e1: ParsedAst.Expression, name: ParsedAst.Expression, e2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Postfix Apply.
-      *
-      * Replaced with Apply by Weeder.
-      *
-      * @param e    the first argument expression.
-      * @param name the name of the function.
-      * @param es   the the remaining arguments.
-      * @param sp2  the position of the last character in the expression.
-      */
-    case class Postfix(e: ParsedAst.Expression, name: Name.Ident, es: Seq[ParsedAst.Argument], sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
       * Lambda Expression.
       *
       * @param sp1     the position of the first character in the expression.
@@ -560,7 +548,7 @@ object ParsedAst {
       * @param exp the expression.
       * @param sp2 the position of the last character in the expression.
       */
-    case class Unary(sp1: SourcePosition, op: String, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class Unary(sp1: SourcePosition, op: Operator, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Binary Expression.
@@ -570,7 +558,7 @@ object ParsedAst {
       * @param exp2 the right expression.
       * @param sp2  the position of the last character in the expression.
       */
-    case class Binary(exp1: ParsedAst.Expression, op: String, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class Binary(exp1: ParsedAst.Expression, op: Operator, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * If-then-else Expression.
@@ -1507,6 +1495,15 @@ object ParsedAst {
       */
     case class Unnamed(exp: ParsedAst.Expression) extends Argument
   }
+
+  /**
+    * Operator.
+    *
+    * @param sp1 the position of the first character in the operator.
+    * @param op the operator.
+    * @param sp2 the position of the last character in the operator.
+    */
+  case class Operator(sp1: SourcePosition, op: String, sp2: SourcePosition)
 
   /**
     * Attribute.

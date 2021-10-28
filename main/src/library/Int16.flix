@@ -285,7 +285,7 @@ namespace Int16 {
     pub def fromString(s: String): Result[Int16, String] = try {
         import java.lang.String.strip();
         import java.lang.Short:parseShort(String);
-        Ok(s.strip().parseShort()) as & Pure
+        Ok(s |> strip |> parseShort) as & Pure
     } catch {
         case _: ##java.lang.NumberFormatException => Err("Int16.fromString")
     }
@@ -305,7 +305,7 @@ namespace Int16 {
         if (x < Int8.toInt16(Int8.minValue()) or x > Int8.toInt16(Int8.maxValue()))
             None
         else
-            Some(valueOf(x).byteValue()) as & Pure
+            Some(valueOf(x) |> byteValue) as & Pure
 
     ///
     /// Convert `x` to a Int32.
@@ -316,7 +316,7 @@ namespace Int16 {
     pub def toInt32(x: Int16): Int32 =
         import java.lang.Short:valueOf(Int16);
         import java.lang.Short.intValue();
-        valueOf(x).intValue() as & Pure
+        (valueOf(x) |> intValue) as & Pure
 
     ///
     /// Convert `x` to a Int64.
@@ -327,7 +327,7 @@ namespace Int16 {
     pub def toInt64(x: Int16): Int64 =
         import java.lang.Short:valueOf(Int16);
         import java.lang.Short.longValue();
-        valueOf(x).longValue() as & Pure
+        (valueOf(x) |> longValue) as & Pure
 
     ///
     /// Convert `x` to a BigInt.
@@ -339,7 +339,7 @@ namespace Int16 {
         import java.lang.Short:valueOf(Int16) as i16ValueOf;
         import java.lang.Short.longValue();
         import java.math.BigInteger:valueOf(Int64) as asBigInt;
-        i16ValueOf(x).longValue().asBigInt() as & Pure
+        (i16ValueOf(x) |> longValue |> asBigInt) as & Pure
 
     ///
     /// Convert `x` to a Float32.
@@ -350,7 +350,7 @@ namespace Int16 {
     pub def toFloat32(x: Int16): Float32 =
         import java.lang.Short:valueOf(Int16);
         import java.lang.Short.floatValue();
-        valueOf(x).floatValue() as & Pure
+        (valueOf(x) |> floatValue) as & Pure
 
     ///
     /// Convert `x` to a Float64.
@@ -361,7 +361,7 @@ namespace Int16 {
     pub def toFloat64(x: Int16): Float64 =
         import java.lang.Short:valueOf(Int16);
         import java.lang.Short.doubleValue();
-        valueOf(x).doubleValue() as & Pure
+        (valueOf(x) |> doubleValue) as & Pure
 
     ///
     /// Helper function for the `clamp` conversion function.
@@ -386,6 +386,6 @@ namespace Int16 {
         import java.lang.Short.byteValue();
         let mini16 = Int8.toInt16(minimum);
         let maxi16 = Int8.toInt16(maximum);
-        valueOf(clamp(x, mini16, maxi16)).byteValue() as & Pure
+        (valueOf(clamp(x, mini16, maxi16)) |> byteValue) as & Pure
 
 }

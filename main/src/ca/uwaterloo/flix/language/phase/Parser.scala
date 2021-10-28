@@ -58,8 +58,8 @@ object Parser extends Phase[List[Source], ParsedAst.Program] {
       case scala.util.Success(ast) =>
         ast.toSuccess
       case scala.util.Failure(e: org.parboiled2.ParseError) =>
-        val loc = SourceLocation(source, e.position.line, e.position.column, e.position.line, e.position.column, _ => "")
-        ca.uwaterloo.flix.language.errors.ParseError(stripLiteralWhitespaceChars(parser.formatError(e)), loc).toFailure
+        val loc = SourceLocation(None, source, e.position.line, e.position.column, e.position.line, e.position.column)
+        ca.uwaterloo.flix.language.errors.ParseError(parser.formatError(e), loc).toFailure
       case scala.util.Failure(e) =>
         ca.uwaterloo.flix.language.errors.ParseError(e.getMessage, SourceLocation.Unknown).toFailure
     }
@@ -74,8 +74,8 @@ object Parser extends Phase[List[Source], ParsedAst.Program] {
       case scala.util.Success(ast) =>
         ast.toSuccess
       case scala.util.Failure(e: org.parboiled2.ParseError) =>
-        val loc = SourceLocation(source, e.position.line, e.position.column, e.position.line, e.position.column, _ => "")
-        ca.uwaterloo.flix.language.errors.ParseError(stripLiteralWhitespaceChars(parser.formatError(e)), loc).toFailure
+        val loc = SourceLocation(None, source, e.position.line, e.position.column, e.position.line, e.position.column)
+        ca.uwaterloo.flix.language.errors.ParseError(parser.formatError(e), loc).toFailure
       case scala.util.Failure(e) =>
         ca.uwaterloo.flix.language.errors.ParseError(e.getMessage, SourceLocation.Unknown).toFailure
     }
@@ -475,8 +475,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def LogicalOr: Rule1[ParsedAst.Expression] = {
-      def Or: Rule1[String] = rule {
-        WS ~ capture(keyword("or")) ~ WS
+      def Or: Rule1[ParsedAst.Operator] = rule {
+        WS ~ operator("or") ~ WS
       }
 
       rule {
@@ -485,8 +485,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def LogicalAnd: Rule1[ParsedAst.Expression] = {
-      def And: Rule1[String] = rule {
-        WS ~ capture(keyword("and")) ~ WS
+      def And: Rule1[ParsedAst.Operator] = rule {
+        WS ~ operator("and") ~ WS
       }
 
       rule {
@@ -495,35 +495,35 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def BitwiseOr: Rule1[ParsedAst.Expression] = rule {
-      BitwiseXOr ~ zeroOrMore(optWS ~ capture(atomic("|||")) ~ optWS ~ BitwiseXOr ~ SP ~> ParsedAst.Expression.Binary)
+      BitwiseXOr ~ zeroOrMore(optWS ~ operator("|||") ~ optWS ~ BitwiseXOr ~ SP ~> ParsedAst.Expression.Binary)
     }
 
     def BitwiseXOr: Rule1[ParsedAst.Expression] = rule {
-      BitwiseAnd ~ zeroOrMore(optWS ~ capture(atomic("^^^")) ~ optWS ~ BitwiseAnd ~ SP ~> ParsedAst.Expression.Binary)
+      BitwiseAnd ~ zeroOrMore(optWS ~ operator("^^^") ~ optWS ~ BitwiseAnd ~ SP ~> ParsedAst.Expression.Binary)
     }
 
     def BitwiseAnd: Rule1[ParsedAst.Expression] = rule {
-      Equality ~ zeroOrMore(optWS ~ capture(atomic("&&&")) ~ optWS ~ Equality ~ SP ~> ParsedAst.Expression.Binary)
+      Equality ~ zeroOrMore(optWS ~ operator("&&&") ~ optWS ~ Equality ~ SP ~> ParsedAst.Expression.Binary)
     }
 
     def Equality: Rule1[ParsedAst.Expression] = rule {
-      Relational ~ optional(optWS ~ capture(atomic("==") | atomic("!=") | atomic("<=>")) ~ optWS ~ Relational ~ SP ~> ParsedAst.Expression.Binary)
+      Relational ~ optional(optWS ~ (operator("==") | operator("!=") | operator("<=>")) ~ optWS ~ Relational ~ SP ~> ParsedAst.Expression.Binary)
     }
 
     def Relational: Rule1[ParsedAst.Expression] = rule {
-      Shift ~ optional(WS ~ capture(atomic("<=") | atomic(">=") | "<" | ">") ~ WS ~ Shift ~ SP ~> ParsedAst.Expression.Binary)
+      Shift ~ optional(WS ~ (operator("<=") | operator(">=") | operator("<") | operator(">")) ~ WS ~ Shift ~ SP ~> ParsedAst.Expression.Binary)
     }
 
     def Shift: Rule1[ParsedAst.Expression] = rule {
-      Additive ~ optional(optWS ~ capture(atomic("<<<") | atomic(">>>")) ~ optWS ~ Additive ~ SP ~> ParsedAst.Expression.Binary)
+      Additive ~ optional(optWS ~ (operator("<<<") | operator(">>>")) ~ optWS ~ Additive ~ SP ~> ParsedAst.Expression.Binary)
     }
 
     def Additive: Rule1[ParsedAst.Expression] = rule {
-      Multiplicative ~ zeroOrMore(optWS ~ capture("+" | "-") ~ optWS ~ Multiplicative ~ SP ~> ParsedAst.Expression.Binary)
+      Multiplicative ~ zeroOrMore(optWS ~ (operator("+") | operator("-")) ~ optWS ~ Multiplicative ~ SP ~> ParsedAst.Expression.Binary)
     }
 
     def Multiplicative: Rule1[ParsedAst.Expression] = rule {
-      Compose ~ zeroOrMore(optWS ~ capture(atomic("**") | atomic("*") | atomic("/") | atomic("mod") | atomic("rem")) ~ optWS ~ Compose ~ SP ~> ParsedAst.Expression.Binary)
+      Compose ~ zeroOrMore(optWS ~ (operator("**") | operator("*") | operator("/") | operator("mod") | operator("rem")) ~ optWS ~ Compose ~ SP ~> ParsedAst.Expression.Binary)
     }
 
     def Compose: Rule1[ParsedAst.Expression] = rule {
@@ -556,7 +556,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         !Reserved3 ~ capture(Names.OperatorLetter ~ Names.OperatorLetter ~ Names.OperatorLetter)
       }
 
-      // Match any operator which has at least three characters.
+      // Match any operator which has at least four characters.
       def UserOpN: Rule1[String] = rule {
         capture(Names.OperatorLetter ~ Names.OperatorLetter ~ Names.OperatorLetter ~ oneOrMore(Names.OperatorLetter))
       }
@@ -566,19 +566,24 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         capture(Names.MathLetter)
       }
 
+      // Capture the source positions around the operator.
+      // NB: UserOpN must occur before UserOp2.
+      def Op: Rule1[ParsedAst.Operator] = rule {
+        SP ~ (UserOpN | UserOp3 | UserOp2 | MathOp) ~ SP ~> ParsedAst.Operator
+      }
+
       rule {
-        // NB: UserOpN must occur before UserOp2.
-        Unary ~ zeroOrMore(optWS ~ (UserOpN | UserOp3 | UserOp2 | MathOp) ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.Binary)
+        Unary ~ zeroOrMore(optWS ~ Op ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.Binary)
       }
     }
 
     def Unary: Rule1[ParsedAst.Expression] = {
-      def UnaryOp1: Rule1[String] = rule {
-        capture("+" | "-" | atomic("~~~"))
+      def UnaryOp1: Rule1[ParsedAst.Operator] = rule {
+        operator("+") | operator("-") | operator("~~~")
       }
 
-      def UnaryOp2: Rule1[String] = rule {
-        capture(keyword("not")) ~ WS
+      def UnaryOp2: Rule1[ParsedAst.Operator] = rule {
+        operator("not") ~ WS
       }
 
       rule {
@@ -798,7 +803,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def RecordSelect: Rule1[ParsedAst.Expression] = rule {
-      Postfix ~ zeroOrMore(optWS ~ "." ~ Names.Field ~ SP ~> ParsedAst.Expression.RecordSelect)
+      ArraySlice ~ zeroOrMore(optWS ~ "." ~ Names.Field ~ SP ~> ParsedAst.Expression.RecordSelect)
     }
 
     //TODO SJ: order this with primaries
@@ -838,10 +843,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Intrinsic: Rule1[ParsedAst.Expression.Intrinsic] = rule {
       SP ~ "$" ~ Names.Intrinsic ~ "$" ~ ArgumentList ~ SP ~> ParsedAst.Expression.Intrinsic
-    }
-
-    def Postfix: Rule1[ParsedAst.Expression] = rule {
-      ArraySlice ~ zeroOrMore(optWS ~ "." ~ Names.Definition ~ ArgumentList ~ SP ~> ParsedAst.Expression.Postfix)
     }
 
     def ArraySlice: Rule1[ParsedAst.Expression] = rule {
@@ -1609,6 +1610,17 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       oneOrMore(JavaIdentifier).separatedBy(".")
     }
 
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Operator                                                                //
+  /////////////////////////////////////////////////////////////////////////////
+
+  /**
+    * Reads the symbol and captures its source location.
+    */
+  def operator(symbol: String): Rule1[ParsedAst.Operator] = namedRule(symbol) {
+    SP ~ capture(atomic(symbol)) ~ SP ~> ParsedAst.Operator
   }
 
   /////////////////////////////////////////////////////////////////////////////

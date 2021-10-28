@@ -226,7 +226,7 @@ namespace MutMap {
     ///
     pub def remove!(k: k, m: mut MutMap[k, v]): Unit & Impure with Order[k] =
         let MutMap(mm) = m;
-        mm := Map.delete(k, deref mm)
+        mm := Map.remove(k, deref mm)
 
     ///
     /// Applies the function `f` to every value in the mutable map `m`.
