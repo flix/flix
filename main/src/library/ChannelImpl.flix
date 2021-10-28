@@ -18,18 +18,6 @@
 
 namespace ChannelImpl {
 
-    pub enum ChannelResult {
-        case Int8Result(Int8)
-        case Int16Result(Int16)
-        case Int32Result(Int32)
-        case Int64Result(Int64)
-        case Float32Result(Float32)
-        case Float64Result(Float64)
-        case BoolResult(Bool)
-        case CharResult(Char)
-        case ObjResult(##java.lang.Object)
-    }
-
     /**
     * The tuple corresponds to (id, channelLock, bufferType, elementQueue, waitingGetters, waitingSetters)
     *   - id
@@ -69,28 +57,28 @@ namespace ChannelImpl {
 
     pub def newInt16(bufferSize: Int): Result[ChannelImpl, String] & Impure =
         bufferCheck(bufferSize, uncheckedNewInt16)
-    
+
     pub def newInt32(bufferSize: Int): Result[ChannelImpl, String] & Impure =
         bufferCheck(bufferSize, uncheckedNewInt32)
-    
+
     pub def newInt64(bufferSize: Int): Result[ChannelImpl, String] & Impure =
         bufferCheck(bufferSize, uncheckedNewInt64)
 
     pub def newFloat32(bufferSize: Int): Result[ChannelImpl, String] & Impure =
         bufferCheck(bufferSize, uncheckedNewFloat32)
-    
+
     pub def newFloat64(bufferSize: Int): Result[ChannelImpl, String] & Impure =
         bufferCheck(bufferSize, uncheckedNewFloat64)
-    
+
     pub def newBool(bufferSize: Int): Result[ChannelImpl, String] & Impure =
         bufferCheck(bufferSize, uncheckedNewBool)
-    
+
     pub def newChar(bufferSize: Int): Result[ChannelImpl, String] & Impure =
         bufferCheck(bufferSize, uncheckedNewChar)
-    
+
     pub def newObj(bufferSize: Int): Result[ChannelImpl, String] & Impure =
         bufferCheck(bufferSize, uncheckedNewObj)
-    
+
     def bufferCheck(bufferSize: Int, continuation: Int -> ChannelImpl & eff): Result[ChannelImpl, String] & eff =
         if (bufferSize < 0) Err("Channel's buffer size must be non-negative.")
         else Ok(continuation(bufferSize))
@@ -100,25 +88,25 @@ namespace ChannelImpl {
 
     pub def uncheckedNewInt16(bufferSize: Int): ChannelImpl & Impure =
         newChannelWithQueue(bufferSize, EQI16(MutDeque.new()))
-    
+
     pub def uncheckedNewInt32(bufferSize: Int): ChannelImpl & Impure =
         newChannelWithQueue(bufferSize, EQI32(MutDeque.new()))
-    
+
     pub def uncheckedNewInt64(bufferSize: Int): ChannelImpl & Impure =
         newChannelWithQueue(bufferSize, EQI64(MutDeque.new()))
-    
+
     pub def uncheckedNewFloat32(bufferSize: Int): ChannelImpl & Impure =
         newChannelWithQueue(bufferSize, EQF32(MutDeque.new()))
-    
+
     pub def uncheckedNewFloat64(bufferSize: Int): ChannelImpl & Impure =
         newChannelWithQueue(bufferSize, EQF64(MutDeque.new()))
-    
+
     pub def uncheckedNewBool(bufferSize: Int): ChannelImpl & Impure =
         newChannelWithQueue(bufferSize, EQBool(MutDeque.new()))
-    
+
     pub def uncheckedNewChar(bufferSize: Int): ChannelImpl & Impure =
         newChannelWithQueue(bufferSize, EQChar(MutDeque.new()))
-    
+
     pub def uncheckedNewObj(bufferSize: Int): ChannelImpl & Impure =
         newChannelWithQueue(bufferSize, EQObj(MutDeque.new()))
 
@@ -155,31 +143,31 @@ namespace ChannelImpl {
             case Mpmc(_, _, _, _, EQI32(deque), _, _) => put(channel, element, deque)
             case _ => inputBug("putInt8", "wrong element type")
         }
-    
+
     pub def putInt64(channel: ChannelImpl, element: Int64): ChannelImpl & Impure =
         match channel {
             case Mpmc(_, _, _, _, EQI64(deque), _, _) => put(channel, element, deque)
             case _ => inputBug("putInt8", "wrong element type")
         }
-    
+
     pub def putFloat32(channel: ChannelImpl, element: Float32): ChannelImpl & Impure =
         match channel {
             case Mpmc(_, _, _, _, EQF32(deque), _, _) => put(channel, element, deque)
             case _ => inputBug("putInt8", "wrong element type")
         }
-    
+
     pub def putFloat64(channel: ChannelImpl, element: Float64): ChannelImpl & Impure =
         match channel {
             case Mpmc(_, _, _, _, EQF64(deque), _, _) => put(channel, element, deque)
             case _ => inputBug("putInt8", "wrong element type")
         }
-    
+
     pub def putBool(channel: ChannelImpl, element: Bool): ChannelImpl & Impure =
         match channel {
             case Mpmc(_, _, _, _, EQBool(deque), _, _) => put(channel, element, deque)
             case _ => inputBug("putInt8", "wrong element type")
         }
-    
+
     pub def putChar(channel: ChannelImpl, element: Char): ChannelImpl & Impure =
         match channel {
             case Mpmc(_, _, _, _, EQChar(deque), _, _) => put(channel, element, deque)
@@ -253,7 +241,7 @@ namespace ChannelImpl {
         } else {
             ()
         }
-    
+
     pub def getInt8(channel: ChannelImpl): Int8 & Impure =
         match channel {
             case Mpmc(_, _, _, _, EQI8(deque), _, _) => get(channel, deque)
@@ -265,43 +253,43 @@ namespace ChannelImpl {
             case Mpmc(_, _, _, _, EQI16(deque), _, _) => get(channel, deque)
             case _ => inputBug("getInt8", "wrong get call")
         }
-    
+
     pub def getInt32(channel: ChannelImpl): Int32 & Impure =
         match channel {
             case Mpmc(_, _, _, _, EQI32(deque), _, _) => get(channel, deque)
             case _ => inputBug("getInt8", "wrong get call")
         }
-    
+
     pub def getInt64(channel: ChannelImpl): Int64 & Impure =
         match channel {
             case Mpmc(_, _, _, _, EQI64(deque), _, _) => get(channel, deque)
             case _ => inputBug("getInt8", "wrong get call")
         }
-    
+
     pub def getFloat32(channel: ChannelImpl): Float32 & Impure =
         match channel {
             case Mpmc(_, _, _, _, EQF32(deque), _, _) => get(channel, deque)
             case _ => inputBug("getInt8", "wrong get call")
         }
-    
+
     pub def getFloat64(channel: ChannelImpl): Float64 & Impure =
         match channel {
             case Mpmc(_, _, _, _, EQF64(deque), _, _) => get(channel, deque)
             case _ => inputBug("getInt8", "wrong get call")
         }
-    
+
     pub def getBool(channel: ChannelImpl): Bool & Impure =
         match channel {
             case Mpmc(_, _, _, _, EQBool(deque), _, _) => get(channel, deque)
             case _ => inputBug("getInt8", "wrong get call")
         }
-    
+
     pub def getChar(channel: ChannelImpl): Char & Impure =
         match channel {
             case Mpmc(_, _, _, _, EQChar(deque), _, _) => get(channel, deque)
             case _ => inputBug("getInt8", "wrong get call")
         }
-    
+
     pub def getObj(channel: ChannelImpl): a & Impure =
         match channel {
             case Mpmc(_, _, _, _, EQObj(deque), _, _) => get(channel, deque) as a
@@ -343,7 +331,7 @@ namespace ChannelImpl {
                 let condition = ReentrantLock.newCondition(conditionLock);
                 // Add LockConditionPair to the channel
                 let pair = (conditionLock, condition);
-                
+
                 // Add LockConditionPair to the channel
                 MutList.push!(pair, waitingGetters);
 
@@ -364,21 +352,30 @@ namespace ChannelImpl {
             case Some(e) => e
         }
 
-    def tryGet(channel: ChannelImpl): Option[ChannelResult] & Impure =
+    def tryGet(channel: ChannelImpl): Option[Boxed] & Impure =
+        import java.lang.Object.hashCode();
+        import java.lang.Object.toString();
+
+        let valueToObjBox = v -> BoxedObject(
+            v,
+            (v1, v2) -> (hashCode(v1 as ##java.lang.Object) as & Pure) <=> (hashCode(v2 as ##java.lang.Object) as & Pure),
+            v1 -> toString(v1 as ##java.lang.Object) as & Pure
+        );
+
         let Mpmc(_, channelLock, _, _, typedDeque, _, waitingSetters) = channel;
         ReentrantLock.lock(channelLock);
 
         // Try to get an element from the channel
         let element = match typedDeque {
-            case EQI8(deque) => Option.map(Int8Result, MutDeque.popFront(deque))
-            case EQI16(deque) => Option.map(Int16Result, MutDeque.popFront(deque))
-            case EQI32(deque) => Option.map(Int32Result, MutDeque.popFront(deque))
-            case EQI64(deque) => Option.map(Int64Result, MutDeque.popFront(deque))
-            case EQF32(deque) => Option.map(Float32Result, MutDeque.popFront(deque))
-            case EQF64(deque) => Option.map(Float64Result, MutDeque.popFront(deque))
-            case EQBool(deque) => Option.map(BoolResult, MutDeque.popFront(deque))
-            case EQChar(deque) => Option.map(CharResult, MutDeque.popFront(deque))
-            case EQObj(deque) => Option.map(ObjResult, MutDeque.popFront(deque))
+            case EQI8(deque) => Option.map(BoxedInt8, MutDeque.popFront(deque))
+            case EQI16(deque) => Option.map(BoxedInt16, MutDeque.popFront(deque))
+            case EQI32(deque) => Option.map(BoxedInt32, MutDeque.popFront(deque))
+            case EQI64(deque) => Option.map(BoxedInt64, MutDeque.popFront(deque))
+            case EQF32(deque) => Option.map(BoxedFloat32, MutDeque.popFront(deque))
+            case EQF64(deque) => Option.map(BoxedFloat64, MutDeque.popFront(deque))
+            case EQBool(deque) => Option.map(BoxedBool, MutDeque.popFront(deque))
+            case EQChar(deque) => Option.map(BoxedChar, MutDeque.popFront(deque))
+            case EQObj(deque) => Option.map(valueToObjBox, MutDeque.popFront(deque))
         };
 
         // If there was an element, signal waiting setters
@@ -404,7 +401,7 @@ namespace ChannelImpl {
     * @param channels the channels to select on
     * @return the channel index of the channel with an element and the element
     */
-    pub def selectImpl(channels: Array[ChannelImpl], hasDefault: Bool): Option[(Int, ChannelResult)] & Impure =
+    pub def selectImpl(channels: Array[ChannelImpl], hasDefault: Bool): Option[(Int, Boxed)] & Impure =
         // Create new Condition and channelLock the current thread
         let selectLock = ReentrantLock.new(false);
         let selectCondition = ReentrantLock.newCondition(selectLock);
@@ -417,7 +414,7 @@ namespace ChannelImpl {
         import java.lang.Thread:interrupted();
         interrupted()
 
-    def selectHelper(channels: Array[ChannelImpl], sortedChannels: Array[ChannelImpl], selectLock: ReentrantLock, selectCondition: Condition, hasDefault: Bool): Option[(Int, ChannelResult)] & Impure =
+    def selectHelper(channels: Array[ChannelImpl], sortedChannels: Array[ChannelImpl], selectLock: ReentrantLock, selectCondition: Condition, hasDefault: Bool): Option[(Int, Boxed)] & Impure =
         if (not threadInterrupted()) {
             // Lock all channels in sorted order
             let lockChannel = c -> {
@@ -488,7 +485,7 @@ namespace ChannelImpl {
             internalBug("selectHelper", "thread interrupted")
         }
 
-    def firstAvailableElement(index: Int, channels: Array[ChannelImpl]): Option[(Int, ChannelResult)] & Impure =
+    def firstAvailableElement(index: Int, channels: Array[ChannelImpl]): Option[(Int, Boxed)] & Impure =
         if (index < 0) {
             // Passed `index` less than 0
             internalBug("firstAvailableElement", "index < 0")
