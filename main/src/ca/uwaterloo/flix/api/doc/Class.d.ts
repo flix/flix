@@ -18,6 +18,8 @@ import {Instance} from "./Instance";
 import {Modifier} from "./Modifier";
 import {TypeParam} from "./TypeParam";
 import {TypeConstraint} from "./TypeConstraint";
+import {Sig} from "./Sig";
+import {SourceLocation} from "./SourceLocation";
 
 export interface Class {
     sym: ClassSym
@@ -25,7 +27,7 @@ export interface Class {
     mod: [Modifier]
     tparam: TypeParam
     superClasses: [TypeConstraint]
-    // TODO
-    //   signatures: List[TypedAst.Sig], laws: List[TypedAst.Def], loc: SourceLocation
+    signatures: [Sig]
     instances: [Instance]
+    loc: SourceLocation
 }
