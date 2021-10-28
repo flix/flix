@@ -91,3 +91,9 @@ instance SemiGroup[(a1, a2, a3, a4, a5)] with SemiGroup[a1], SemiGroup[a2], Semi
         case ((x1, x2, x3, x4, x5), (y1, y2, y3, y4, y5)) => (SemiGroup.combine(x1, y1), SemiGroup.combine(x2, y2), SemiGroup.combine(x3, y3), SemiGroup.combine(x4, y4), SemiGroup.combine(x5, y5))
     }
 }
+
+instance SemiGroup[(a1, a2, a3, a4, a5, a6)] with SemiGroup[a1], SemiGroup[a2], SemiGroup[a3], SemiGroup[a4], SemiGroup[a5], SemiGroup[a6] {
+    pub def combine(x: (a1, a2, a3, a4, a5, a6), y: (a1, a2, a3, a4, a5, a6)): (a1, a2, a3, a4, a5, a6) = match (x, y) {
+        case ((x1, x2, x3, x4, x5, x6), (y1, y2, y3, y4, y5, y6)) => (SemiGroup.combine(x1, y1), SemiGroup.combine(x2, y2), SemiGroup.combine(x3, y3), SemiGroup.combine(x4, y4), SemiGroup.combine(x5, y5), SemiGroup.combine(x6, y6))
+    }
+}
