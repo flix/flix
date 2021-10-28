@@ -13,21 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {ClassSym} from "./ClassSym";
-import {Instance} from "./Instance";
-import {Modifier} from "./Modifier";
-import {TypeParam} from "./TypeParam";
-import {TypeConstraint} from "./TypeConstraint";
-import {Sig} from "./Sig";
-import {SourceLocation} from "./SourceLocation";
+import {Type} from "./Type";
 
-export interface Class {
-    sym: ClassSym
-    doc: [String]
-    mod: [Modifier]
-    tparam: TypeParam
-    superClasses: [TypeConstraint]
-    signatures: [Sig]
-    instances: [Instance]
-    loc: SourceLocation
+export interface FormalParam {
+    name: string,
+    tpe: Type
 }
