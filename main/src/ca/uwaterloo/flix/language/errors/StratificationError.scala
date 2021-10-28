@@ -57,5 +57,5 @@ case class StratificationError(cycle: List[(Name.Pred, SourceLocation)], tpe: Ty
   /**
     * Returns a formatted string with helpful suggestions.
     */
-  override def explain(formatter: Formatter): Option[String] = None
+  def explain(formatter: Formatter): Option[String] = None
 }

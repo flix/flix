@@ -53,7 +53,7 @@ object WeederError {
 
     def loc: SourceLocation = loc1
 
-    override def explain(formatter: Formatter): Option[String] = Some({
+    def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Remove one of the two annotations."
     })
@@ -84,7 +84,7 @@ object WeederError {
 
     def loc: SourceLocation = loc1
 
-    override def explain(formatter: Formatter): Option[String] = Some({
+    def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Remove or rename one of the formal parameters to avoid the name clash."
     })
@@ -117,7 +117,7 @@ object WeederError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -145,7 +145,7 @@ object WeederError {
 
     def loc: SourceLocation = loc1
 
-    override def explain(formatter: Formatter): Option[String] = Some({
+    def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Remove or rename one of the tags to avoid the name clash."
     })
@@ -172,7 +172,7 @@ object WeederError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -196,7 +196,7 @@ object WeederError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -218,7 +218,7 @@ object WeederError {
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some({
+    def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Explicitly declare the type of the formal parameter."
     })
@@ -243,7 +243,7 @@ object WeederError {
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some({
+    def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Add a formal parameter or remove the quantifier."
     })
@@ -268,7 +268,7 @@ object WeederError {
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some({
+    def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Add a formal parameter or remove the quantifier."
     })
@@ -293,7 +293,7 @@ object WeederError {
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some({
+    def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Ensure that the literal is within bounds."
     })
@@ -318,7 +318,7 @@ object WeederError {
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some({
+    def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Ensure that the literal is within bounds."
     })
@@ -345,7 +345,7 @@ object WeederError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -368,7 +368,7 @@ object WeederError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -391,7 +391,7 @@ object WeederError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -414,7 +414,7 @@ object WeederError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -437,7 +437,7 @@ object WeederError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -462,7 +462,7 @@ object WeederError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -489,7 +489,7 @@ object WeederError {
 
     def loc: SourceLocation = loc1 min loc2
 
-    override def explain(formatter: Formatter): Option[String] = Some({
+    def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} A variable may only occur once in a pattern."
     })
@@ -517,7 +517,7 @@ object WeederError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -539,7 +539,7 @@ object WeederError {
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some({
+    def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Mark the declaration as 'pub'."
     })
@@ -564,7 +564,7 @@ object WeederError {
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some({
+    def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Type constraint parameters must be composed only of type variables."
     })
@@ -589,7 +589,7 @@ object WeederError {
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some({
+    def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Either all or none of the type parameters must be annotated with a kind."
     })
@@ -614,7 +614,7 @@ object WeederError {
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some({
+    def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Type parameters here must be annotated with a kind."
     })
@@ -640,7 +640,7 @@ object WeederError {
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some({
+    def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")}" + " A Unicode escape sequence must be of the form \\uXXXX where X is a hexadecimal."
     })
@@ -666,7 +666,7 @@ object WeederError {
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some({
+    def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")}" + " The valid escape sequences are '\\t', '\\\\', '\\\'', '\\\"', '\\n', and '\\r'."
     })
@@ -692,7 +692,7 @@ object WeederError {
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some({
+    def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} A character literal must consist of a single character."
     })
@@ -717,7 +717,7 @@ object WeederError {
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some({
+    def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Add an expression to the interpolation or remove the interpolation."
     })

@@ -30,7 +30,7 @@ object SafetyError {
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some({
+    def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       if (!sym.isWild)
         s"""
@@ -61,7 +61,7 @@ object SafetyError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -84,6 +84,6 @@ object SafetyError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = None
   }
 }

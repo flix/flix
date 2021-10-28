@@ -56,7 +56,7 @@ object TypeError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -86,7 +86,7 @@ object TypeError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -120,7 +120,7 @@ object TypeError {
       case _ => "" // nop
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some({
+    def explain(formatter: Formatter): Option[String] = Some({
       s"""If the Boolean formula describes purity:
          |
          |  (1) Did you forget to mark the function as impure?
@@ -157,7 +157,7 @@ object TypeError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -188,7 +188,7 @@ object TypeError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -219,7 +219,7 @@ object TypeError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -250,7 +250,7 @@ object TypeError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -274,7 +274,7 @@ object TypeError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -298,7 +298,7 @@ object TypeError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -320,7 +320,7 @@ object TypeError {
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some({
+    def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Add an instance for the type."
     })
@@ -346,7 +346,7 @@ object TypeError {
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some({
+    def explain(formatter: Formatter): Option[String] = Some({
       s"""The main function must have the form:
          |
          |  def main(args: Array[String]): Int & Impure = ...

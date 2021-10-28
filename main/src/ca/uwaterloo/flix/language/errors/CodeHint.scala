@@ -39,7 +39,7 @@ object CodeHint {
 
     override def severity: Severity = Severity.Hint
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.format)}
          |>> Use of impure function prevents lazy evaluation.
@@ -51,7 +51,7 @@ object CodeHint {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -65,7 +65,7 @@ object CodeHint {
 
     override def severity: Severity = Severity.Hint
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.format)}
          |>> Use of impure function prevents parallel evaluation.
@@ -77,7 +77,7 @@ object CodeHint {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -90,7 +90,7 @@ object CodeHint {
 
     override def severity: Severity = Severity.Info
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.format)}
          |>> Expression has a non-trivial effect.
@@ -103,6 +103,6 @@ object CodeHint {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = None
   }
 }

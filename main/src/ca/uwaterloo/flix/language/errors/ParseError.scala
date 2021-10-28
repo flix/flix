@@ -43,5 +43,5 @@ case class ParseError(msg: String, loc: SourceLocation) extends CompilationMessa
   /**
     * Returns a formatted string with helpful suggestions.
     */
-  override def explain(formatter: Formatter): Option[String] = None
+  def explain(formatter: Formatter): Option[String] = None
 }

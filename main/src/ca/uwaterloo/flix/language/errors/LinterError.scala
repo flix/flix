@@ -42,7 +42,7 @@ object LinterError {
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some({
+    def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"""The lint suggests that this code can be replaced by:
          |

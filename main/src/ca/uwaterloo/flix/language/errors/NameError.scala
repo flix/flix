@@ -58,7 +58,7 @@ object NameError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -84,7 +84,7 @@ object NameError {
 
     def loc: SourceLocation = loc1
 
-    override def explain(formatter: Formatter): Option[String] = Some({
+    def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Remove or rename one of the occurrences."
     })
@@ -116,7 +116,7 @@ object NameError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -145,7 +145,7 @@ object NameError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -174,7 +174,7 @@ object NameError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -200,7 +200,7 @@ object NameError {
 
     def loc: SourceLocation = loc1
 
-    override def explain(formatter: Formatter): Option[String] = Some({
+    def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Remove or rename one of the occurrences."
     })
@@ -225,7 +225,7 @@ object NameError {
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some({
+    def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Type variables are always lowercase. Named types are uppercase."
     })
@@ -253,7 +253,7 @@ object NameError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -277,7 +277,7 @@ object NameError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -303,7 +303,7 @@ object NameError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -324,7 +324,7 @@ object NameError {
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some({
+    def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Change the signature to include the class type parameter, or remove the signature."
     })

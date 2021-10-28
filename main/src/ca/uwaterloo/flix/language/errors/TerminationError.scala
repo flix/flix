@@ -48,7 +48,7 @@ object TerminationError {
 
     def loc: SourceLocation = sym.loc
 
-    override def explain(formatter: Formatter): Option[String] = Some({
+    def explain(formatter: Formatter): Option[String] = Some({
       s"""
          |"Possible fixes:"
          |

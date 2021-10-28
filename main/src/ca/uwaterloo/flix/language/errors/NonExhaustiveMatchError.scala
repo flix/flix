@@ -41,5 +41,5 @@ case class NonExhaustiveMatchError(rules: List[TypedAst.MatchRule], pat: String,
   /**
     * Returns a formatted string with helpful suggestions.
     */
-  override def explain(formatter: Formatter): Option[String] = None
+  def explain(formatter: Formatter): Option[String] = None
 }

@@ -64,7 +64,7 @@ object ResolutionError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -92,7 +92,7 @@ object ResolutionError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -119,7 +119,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some({
+    def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Prefix the tag with the enum name."
     })
@@ -148,7 +148,7 @@ object ResolutionError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -172,7 +172,7 @@ object ResolutionError {
 
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some({
+    def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Mark the class as public."
     })
@@ -198,7 +198,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some({
+    def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Move the instance or sub class to the class's namespace."
     })
@@ -225,7 +225,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some({
+    def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Mark the definition as public."
     })
@@ -251,7 +251,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some({
+    def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Mark the definition as public."
     })
@@ -278,7 +278,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some({
+    def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Mark the definition as public."
     })
@@ -305,7 +305,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some({
+    def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Mark the definition as public."
     })
@@ -331,7 +331,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some("Ensure that there is no cyclic definition of type aliases.")
+    def explain(formatter: Formatter): Option[String] = Some("Ensure that there is no cyclic definition of type aliases.")
 
   }
 
@@ -349,7 +349,7 @@ object ResolutionError {
       "Cyclic type aliases: " + pathString
     }
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.format)}
          |
@@ -371,7 +371,7 @@ object ResolutionError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -394,7 +394,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some({
+    def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Possible typo or non-existent definition?"
     })
@@ -422,7 +422,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some({
+    def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Possible typo or non-existent class or signature?"
     })
@@ -449,7 +449,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some({
+    def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Possible typo or non-existent class?"
     })
@@ -476,7 +476,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some({
+    def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Possible typo or non-existent tag?"
     })
@@ -503,7 +503,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some({
+    def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Possible typo or non-existent type?"
     })
@@ -531,7 +531,7 @@ object ResolutionError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -571,7 +571,7 @@ object ResolutionError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -619,7 +619,7 @@ object ResolutionError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -662,7 +662,7 @@ object ResolutionError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -679,7 +679,7 @@ object ResolutionError {
       "Cyclic inheritance: " + pathString
     }
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.format)}
          |
@@ -702,7 +702,7 @@ object ResolutionError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    override def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -715,7 +715,7 @@ object ResolutionError {
   case class DuplicateDerivation(sym: Symbol.ClassSym, loc1: SourceLocation, loc2: SourceLocation) extends ResolutionError {
     override def summary: String = s"Duplicate derivation: ${sym.name}"
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.format)}
          |>> Duplicate derivation '${red(sym.name)}'.
@@ -729,7 +729,7 @@ object ResolutionError {
 
     override def loc: SourceLocation = loc1
 
-    override def explain(formatter: Formatter): Option[String] = Some({
+    def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Remove one of the occurrences."
     })
@@ -746,7 +746,7 @@ object ResolutionError {
   case class IllegalDerivation(sym: Symbol.ClassSym, legalSyms: List[Symbol.ClassSym], loc: SourceLocation) extends ResolutionError {
     override def summary: String = s"Illegal derivation: ${sym.name}"
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.format)}
          |>> Illegal derivation '${red(sym.name)}'.
@@ -755,7 +755,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some({
+    def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Only the following classes may be derived: ${legalSyms.map(_.name).mkString(", ")}."
     })
@@ -771,7 +771,7 @@ object ResolutionError {
   case class UnderAppliedTypeAlias(sym: Symbol.TypeAliasSym, loc: SourceLocation) extends ResolutionError {
     override def summary: String = s"Under-applied type alias: ${sym.name}"
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.format)}
          |>> Under-applied type alias '${red(sym.name)}'.
@@ -780,7 +780,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some({
+    def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Type aliases must be fully applied."
     })
