@@ -22,7 +22,7 @@ namespace String {
     @Time(1) @Space(1)
     pub def charAt(i: Int, s: String): Char =
         import java.lang.String.charAt(Int32);
-        s.charAt(i) as & Pure
+        charAt(s, i) as & Pure
 
     ///
     /// Returns the string `s1` followed by the string `s2`.
@@ -30,7 +30,7 @@ namespace String {
     @Time(length(s1) + length(s2)) @Space(length(s1) + length(s2))
     pub def concat(s1: String, s2: String): String =
         import java.lang.String.concat(String);
-        s1.concat(s2) as & Pure
+        (s1 `concat` s2) as & Pure
 
     ///
     /// Returns `true` if the string `s` is the empty string.
@@ -38,7 +38,7 @@ namespace String {
     @Time(1) @Space(1)
     pub def isEmpty(s: String): Bool =
         import java.lang.String.isEmpty();
-        s.isEmpty() as & Pure
+        isEmpty(s) as & Pure
 
     ///
     /// Returns the length of the string `s`.
@@ -46,28 +46,28 @@ namespace String {
     @Time(1) @Space(1)
     pub def length(s: String): Int =
         import java.lang.String.length();
-        s.length() as & Pure
+        length(s) as & Pure
 
     ///
     /// Returns `true` if the string `s` starts with the string `prefix`.
     ///
     pub def startsWith(prefix: {prefix :: String}, s: String): Bool =
         import java.lang.String.startsWith(String);
-        s.startsWith(prefix.prefix) as & Pure
+        (s `startsWith` prefix.prefix) as & Pure
 
     ///
     /// Returns `true` if the string `s` ends with the string `suffix`.
     ///
     pub def endsWith(suffix: {suffix :: String}, s: String): Bool =
         import java.lang.String.endsWith(String);
-        s.endsWith(suffix.suffix) as & Pure
+        (s `endsWith` suffix.suffix) as & Pure
 
     ///
     /// Splits the string `s` around matches of the regular expression `regex`.
     ///
     pub def split(regex: {regex :: String}, s: String): List[String] & Impure =
         import java.lang.String.split(String);
-        Array.toList(s.split(regex.regex))
+        Array.toList(split(s, regex.regex))
 
     ///
     /// Returns the lower case version of the string `s`.
@@ -75,7 +75,7 @@ namespace String {
     @Time(length(s)) @Space(length(s))
     pub def toLowerCase(s: String): String =
         import java.lang.String.toLowerCase();
-        s.toLowerCase() as & Pure
+        toLowerCase(s) as & Pure
 
     ///
     /// Returns the upper case version of the string `s`.
@@ -83,7 +83,7 @@ namespace String {
     @Time(length(s)) @Space(length(s))
     pub def toUpperCase(s: String): String =
         import java.lang.String.toUpperCase();
-        s.toUpperCase() as & Pure
+        toUpperCase(s) as & Pure
 
     ///
     /// Returns the given string `s` as a list of characters.
@@ -99,7 +99,7 @@ namespace String {
     @Time(length(s)) @Space(length(s))
     pub def trim(s: String): String =
         import java.lang.String.trim();
-        s.trim() as & Pure
+        trim(s) as & Pure
 
     ///
     /// Get the system line separator.
@@ -287,7 +287,7 @@ namespace String {
     pub def isMatch(regex: {regex :: String}, s: String): Bool =
         try {
             import java.lang.String.matches(String);
-            s.matches(regex.regex) as & Pure
+            matches(s, regex.regex) as & Pure
         } catch {
             case _: ##java.util.regex.PatternSyntaxException => false
         }
@@ -308,8 +308,8 @@ namespace String {
             import java.util.regex.Matcher.find(Int32);
             let cs1 = s as ##java.lang.CharSequence;
             let p1 = compile(pattern);
-            let m1 = p1.matcher(cs1);
-            m1.find(0)
+            let m1 = matcher(p1, cs1);
+            find(m1, 0)
         } catch {
             case _: ##java.util.regex.PatternSyntaxException => false
         }
@@ -321,7 +321,7 @@ namespace String {
     ///
     pub def slice(b: Int32, e: Int32, s: String): String  = try {
         import java.lang.String.substring(Int32, Int32);
-        s.substring(b, e) as & Pure
+        substring(s, b, e) as & Pure
     } catch {
         case _: ##java.lang.IndexOutOfBoundsException => ""
     }
@@ -809,7 +809,7 @@ namespace String {
         if (n < 0)
             ""
         else
-            s.repeat(n) as & Pure
+            repeat(s, n) as & Pure
 
     ///
     /// Pad the string `s` at the left with the supplied char `c` to fit the width `w`.
@@ -840,28 +840,28 @@ namespace String {
         import java.lang.String.replace(##java.lang.CharSequence, ##java.lang.CharSequence);
         let t = from.from as ##java.lang.CharSequence;
         let r = to.to as ##java.lang.CharSequence;
-        s.replace(t, r) as & Pure
+        replace(s, t, r) as & Pure
 
     ///
     /// Returns `s` with every match of the character `target` replaced by the character `rep`.
     ///
     pub def replaceChar(from: {from :: Char}, to: {to :: Char}, s: String): String =
         import java.lang.String.replace(Char, Char);
-        s.replace(from.from, to.to) as & Pure
+        replace(s, from.from, to.to) as & Pure
 
     ///
     /// Returns `s` with every match of the regular expression `regex` replaced by the string `to`.
     ///
     pub def replaceMatches(regex: {regex :: String}, to: {to :: String}, s: String): String =
         import java.lang.String.replaceAll(String, String);
-        s.replaceAll(regex.regex, to.to) as & Pure
+        replaceAll(s, regex.regex, to.to) as & Pure
 
     ///
     /// Returns `s` with the first match of the regular expression `regex` replaced by the string `to`.
     ///
     pub def replaceFirstMatch(regex: {regex :: String}, to: {to :: String}, s: String): String =
         import java.lang.String.replaceFirst(String, String);
-        s.replaceFirst(regex.regex, to.to) as & Pure
+        replaceFirst(s, regex.regex, to.to) as & Pure
 
     ///
     /// Returns `s` with the element at index `i` replaced by `a`.
@@ -1044,7 +1044,7 @@ namespace String {
         if (isEmpty(substr.substr))
             None
         else {
-            let i = s.indexOf(substr.substr) as & Pure;
+            let i = indexOf(s, substr.substr) as & Pure;
             if (i < 0) None else Some(i)
         }
 
@@ -1060,7 +1060,7 @@ namespace String {
         if (isEmpty(substr.substr))
             None
         else {
-            let i = s.lastIndexOf(substr.substr) as & Pure;
+            let i = lastIndexOf(s, substr.substr) as & Pure;
             if (i < 0) None else Some(i)
         }
 
@@ -1267,7 +1267,7 @@ namespace String {
         if (isEmpty(substr.substr))
             None
         else {
-            let ix = s.indexOf(substr.substr, offset.offset) as & Pure;
+            let ix = indexOf(s, substr.substr, offset.offset) as & Pure;
             if (ix < 0) None else Some(ix)
         }
 
@@ -1281,7 +1281,7 @@ namespace String {
         if (isEmpty(substr.substr))
             None
         else {
-            let ix = s.lastIndexOf(substr.substr, offset.offset) as & Pure;
+            let ix = lastIndexOf(s, substr.substr, offset.offset) as & Pure;
             if (ix < 0) None else Some(ix)
         }
 
