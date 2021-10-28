@@ -27,9 +27,8 @@ pub lawless class SemiGroup[a] {
     /// Returns `x` combined with itself `n` times.
     ///
     pub def combineN(x: a, n: Int32): a =
-      if (n <= 0) ???
-      else if (n == 1) x
-      else SemiGroup.combine(x, SemiGroup.combineN(x, n - 1))
+        if (n <= 1) x
+        else SemiGroup.combine(x, SemiGroup.combineN(x, n - 1))
 }
 
 instance SemiGroup[Unit] {
