@@ -35,8 +35,8 @@ namespace File {
             import java.io.File.toPath();
             import java.nio.file.Files:newBufferedReader(##java.nio.file.Path);
             let javaFile = newFile(f);
-            let javaPath = javaFile.toPath();
-            let reader = javaPath.newBufferedReader();
+            let javaPath = toPath(javaFile);
+            let reader = newBufferedReader(javaPath);
             Ok(readAll(reader))
         } catch {
             case _: ##java.io.IOException => Err("I/O Error")
@@ -53,7 +53,7 @@ namespace File {
     ///
     def readAllHelper(r: ##java.io.BufferedReader, acc: List[String]): List[String] & Impure =
         import java.io.BufferedReader.readLine();
-        let line = r.readLine();
+        let line = readLine(r);
         if (Object.isNull(line))
             acc
         else
