@@ -67,3 +67,27 @@ instance SemiGroup[Validation[t, e]] with SemiGroup[t] {
         case (_, Failure(_)) => y
     }
 }
+
+instance SemiGroup[(a1, a2)] with SemiGroup[a1], SemiGroup[a2] {
+    pub def combine(x: (a1, a2), y: (a1, a2)): (a1, a2) = match (x, y) {
+        case ((x1, x2), (y1, y2)) => (SemiGroup.combine(x1, y1), SemiGroup.combine(x2, y2))
+    }
+}
+
+instance SemiGroup[(a1, a2, a3)] with SemiGroup[a1], SemiGroup[a2], SemiGroup[a3] {
+    pub def combine(x: (a1, a2, a3), y: (a1, a2, a3)): (a1, a2, a3) = match (x, y) {
+        case ((x1, x2, x3), (y1, y2, y3)) => (SemiGroup.combine(x1, y1), SemiGroup.combine(x2, y2), SemiGroup.combine(x3, y3))
+    }
+}
+
+instance SemiGroup[(a1, a2, a3, a4)] with SemiGroup[a1], SemiGroup[a2], SemiGroup[a3], SemiGroup[a4] {
+    pub def combine(x: (a1, a2, a3, a4), y: (a1, a2, a3, a4)): (a1, a2, a3, a4) = match (x, y) {
+        case ((x1, x2, x3, x4), (y1, y2, y3, y4)) => (SemiGroup.combine(x1, y1), SemiGroup.combine(x2, y2), SemiGroup.combine(x3, y3), SemiGroup.combine(x4, y4))
+    }
+}
+
+instance SemiGroup[(a1, a2, a3, a4, a5)] with SemiGroup[a1], SemiGroup[a2], SemiGroup[a3], SemiGroup[a4], SemiGroup[a5] {
+    pub def combine(x: (a1, a2, a3, a4, a5), y: (a1, a2, a3, a4, a5)): (a1, a2, a3, a4, a5) = match (x, y) {
+        case ((x1, x2, x3, x4, x5), (y1, y2, y3, y4, y5)) => (SemiGroup.combine(x1, y1), SemiGroup.combine(x2, y2), SemiGroup.combine(x3, y3), SemiGroup.combine(x4, y4), SemiGroup.combine(x5, y5))
+    }
+}
