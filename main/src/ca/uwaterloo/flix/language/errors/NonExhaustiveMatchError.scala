@@ -29,10 +29,11 @@ case class NonExhaustiveMatchError(rules: List[TypedAst.MatchRule], pat: String,
   def summary: String = s"Non-exhaustive match. Missing case: '$pat'."
 
   def message(formatter: Formatter): String = {
-    s"""${formatter.line(kind, source.format)}
-       |>> Non-Exhaustive Pattern. Missing case: ${formatter.red(pat)} in match expression.
+    import formatter._
+    s"""${line(kind, source.format)}
+       |>> Non-Exhaustive Pattern. Missing case: ${red(pat)} in match expression.
        |
-       |${formatter.code(loc, "incomplete pattern.")}
+       |${code(loc, "incomplete pattern.")}
        |""".stripMargin
 
   }

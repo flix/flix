@@ -22,17 +22,19 @@ object SafetyError {
     def summary: String = s"Illegal non-positively bound variable '$sym'."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Illegal non-positively bound variable '${formatter.red(sym.text)}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Illegal non-positively bound variable '${red(sym.text)}'.
          |
-         |${formatter.code(loc, "the variable occurs in this negated atom.")}
+         |${code(loc, "the variable occurs in this negated atom.")}
          |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
       if (!sym.isWild)
         s"""
-           |${formatter.underline("Tip:")} Ensure that the variable occurs in at least one positive atom.
+           |${underline("Tip:")} Ensure that the variable occurs in at least one positive atom.
            |""".stripMargin
       else
         ""
@@ -48,10 +50,11 @@ object SafetyError {
     def summary: String = s"Illegal negatively bound variable '$sym'."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Illegal negatively bound variable '${formatter.red(sym.text)}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Illegal negatively bound variable '${red(sym.text)}'.
          |
-         |${formatter.code(loc, "the variable occurs in this negated atom.")}
+         |${code(loc, "the variable occurs in this negated atom.")}
          |""".stripMargin
     }
 
@@ -70,10 +73,11 @@ object SafetyError {
     def summary: String = s"Illegal negatively bound wildcard '_'."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Illegal negatively bound wildcard '${formatter.red("_")}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Illegal negatively bound wildcard '${red("_")}'.
          |
-         |${formatter.code(loc, "the wildcard occurs in this negated atom.")}
+         |${code(loc, "the wildcard occurs in this negated atom.")}
          |""".stripMargin
     }
 

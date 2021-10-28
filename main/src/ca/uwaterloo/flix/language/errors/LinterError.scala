@@ -25,7 +25,8 @@ object LinterError {
     def summary: String = s"The expression matches the '$sym' lint."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
+      import formatter._
+      s"""${line(kind, source.format)}
          |   __
          |  /  \\        __________________________________________________
          |  |  |       /                                                  \\
@@ -35,18 +36,19 @@ object LinterError {
          |  |\\_/|      | Do you want me to help you with that?            |
          |  \\___/      \\__________________________________________________/
          |
-         |>> The ${formatter.red(sym.name)} lint applies to the code at:
+         |>> The ${red(sym.name)} lint applies to the code at:
          |
-         |${formatter.code(loc, s"matches ${sym.name}.")}
+         |${code(loc, s"matches ${sym.name}.")}
          |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
       s"""The lint suggests that this code can be replaced by:
          |
-         |  ${formatter.magenta(PrettyExpression.pretty(replacement))}
+         |  ${magenta(PrettyExpression.pretty(replacement))}
          |
-         |The lint was declared at: '${formatter.cyan(sym.loc.format)}'.
+         |The lint was declared at: '${cyan(sym.loc.format)}'.
          |""".stripMargin
     })
   }

@@ -40,10 +40,11 @@ object CodeHint {
     override def severity: Severity = Severity.Hint
 
     override def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
+      import formatter._
+      s"""${line(kind, source.format)}
          |>> Use of impure function prevents lazy evaluation.
          |
-         |${formatter.code(loc, "use of impure function.")}
+         |${code(loc, "use of impure function.")}
          |""".stripMargin
     }
 
@@ -65,10 +66,11 @@ object CodeHint {
     override def severity: Severity = Severity.Hint
 
     override def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
+      import formatter._
+      s"""${line(kind, source.format)}
          |>> Use of impure function prevents parallel evaluation.
          |
-         |${formatter.code(loc, "use of impure function.")}
+         |${code(loc, "use of impure function.")}
          |""".stripMargin
     }
 
@@ -89,10 +91,11 @@ object CodeHint {
     override def severity: Severity = Severity.Info
 
     override def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
+      import formatter._
+      s"""${line(kind, source.format)}
          |>> Expression has a non-trivial effect.
          |
-         |${formatter.code(loc, "non-trivial effect.")}
+         |${code(loc, "non-trivial effect.")}
          |""".stripMargin
 
     }

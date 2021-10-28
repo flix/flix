@@ -28,9 +28,10 @@ object PrettyPrinter {
   object Lifted {
 
     def fmtRoot(root: Root, formatter: Formatter): String = {
+      import formatter._
       val sb = new StringBuilder()
       for ((sym, defn) <- root.defs.toList.sortBy(_._1.loc)) {
-        sb.append(s"${formatter.bold("def")} ${formatter.blue(sym.toString)}(")
+        sb.append(s"${bold("def")} ${blue(sym.toString)}(")
         for (fparam <- defn.fparams) {
           sb.append(s"${fmtParam(fparam, formatter)}, ")
         }

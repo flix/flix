@@ -41,17 +41,21 @@ object InstanceError {
     def summary: String = "Overlapping instances."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
+      import formatter._
+      s"""${line(kind, source.format)}
          |
-         |${formatter.code(loc1, "the first instance was declared here.")}
+         |${code(loc1, "the first instance was declared here.")}
          |
-         |${formatter.code(loc2, "the second instance was declared here.")}
+         |${code(loc2, "the second instance was declared here.")}
          |""".stripMargin
     }
 
     def loc: SourceLocation = loc1
 
-    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip: ")} Remove or change the type of one of the instances.")
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip: ")} Remove or change the type of one of the instances."
+    })
   }
 
   /**
@@ -66,18 +70,22 @@ object InstanceError {
     def summary: String = "Mismatched signature."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
+      import formatter._
+      s"""${line(kind, source.format)}
          |
-         |Mismatched signature '${formatter.red(sigSym.name)}' required by class '${formatter.red(sigSym.clazz.name)}'.
+         |Mismatched signature '${red(sigSym.name)}' required by class '${red(sigSym.clazz.name)}'.
          |
-         |${formatter.code(loc, "mismatched signature.")}
+         |${code(loc, "mismatched signature.")}
          |
          |Expected scheme: ${FormatScheme.formatScheme(expected)}
          |Actual scheme:   ${FormatScheme.formatScheme(actual)}
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Modify the definition to match the signature.")
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Modify the definition to match the signature."
+    })
   }
 
   /**
@@ -90,15 +98,19 @@ object InstanceError {
     def summary: String = "Missing implementation."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
+      import formatter._
+      s"""${line(kind, source.format)}
          |
-         |Missing implementation of '${formatter.red(sig.name)}' required by class '${formatter.red(sig.clazz.name)}'.
+         |Missing implementation of '${red(sig.name)}' required by class '${red(sig.clazz.name)}'.
          |
-         |${formatter.code(loc, s"missing implementation")}
+         |${code(loc, s"missing implementation")}
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Add an implementation of the signature to the instance.")
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Add an implementation of the signature to the instance."
+    })
   }
 
   /**
@@ -111,13 +123,17 @@ object InstanceError {
     def summary: String = "Extraneous implementation."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
+      import formatter._
+      s"""${line(kind, source.format)}
          |
-         |${formatter.code(loc, s"The signature ${defn.name} is not present in the class.")}
+         |${code(loc, s"The signature ${defn.name} is not present in the class.")}
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Remove this definition from the instance.")
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Remove this definition from the instance."
+    })
   }
 
   /**
@@ -131,14 +147,18 @@ object InstanceError {
     override def summary: String = "Duplicate type variable."
 
     override def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Duplicate type variable '${formatter.red(FormatType.formatType(tvar))}' in '${formatter.red(sym.name)}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Duplicate type variable '${red(FormatType.formatType(tvar))}' in '${red(sym.name)}'.
          |
-         |${formatter.code(loc, s"The type variable '${FormatType.formatType(tvar)}' occurs more than once.")}
+         |${code(loc, s"The type variable '${FormatType.formatType(tvar)}' occurs more than once.")}
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Rename one of the instances of the type variable.")
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Rename one of the instances of the type variable."
+    })
 
   }
 
@@ -153,13 +173,17 @@ object InstanceError {
     override def summary: String = "Complex instance type."
 
     override def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Complex instance type '${formatter.red(FormatType.formatType(tpe))}' in '${formatter.red(sym.name)}'.
-         |${formatter.code(loc, s"complex instance type")}
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Complex instance type '${red(FormatType.formatType(tpe))}' in '${red(sym.name)}'.
+         |${code(loc, s"complex instance type")}
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} An instance type must be a type constructor applied to zero or more distinct type variables.")
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} An instance type must be a type constructor applied to zero or more distinct type variables."
+    })
   }
 
   /**
@@ -173,14 +197,18 @@ object InstanceError {
     override def summary: String = "Type alias in instance type."
 
     override def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Illegal use of type alias '${formatter.red(alias.name)}' in instance declaration for '${formatter.red(clazz.name)}'.
-         |${formatter.code(loc, s"illegal use of type alias")}
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Illegal use of type alias '${red(alias.name)}' in instance declaration for '${red(clazz.name)}'.
+         |${code(loc, s"illegal use of type alias")}
          |""".stripMargin
 
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} A type class instance cannot use a type alias. Use the full type.")
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} A type class instance cannot use a type alias. Use the full type."
+    })
 
   }
 
@@ -195,13 +223,17 @@ object InstanceError {
     override def summary: String = "Orphan instance."
 
     override def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Orphan instance for type '${formatter.red(FormatType.formatType(tpe))}' in '${formatter.red(sym.name)}'.
-         |${formatter.code(loc, s"orphan instance")}
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Orphan instance for type '${red(FormatType.formatType(tpe))}' in '${red(sym.name)}'.
+         |${code(loc, s"orphan instance")}
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} An instance must be declared in the class's namespace or in the type's namespace.")
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} An instance must be declared in the class's namespace or in the type's namespace."
+    })
   }
 
   /**
@@ -216,17 +248,21 @@ object InstanceError {
     override def summary: String = s"Missing super class instance '$superClass'."
 
     override def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Missing super class instance '${formatter.red(superClass.name)}' for type '${formatter.red(FormatType.formatType(tpe))}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Missing super class instance '${red(superClass.name)}' for type '${red(FormatType.formatType(tpe))}'.
          |
-         |>> The class '${formatter.red(subClass.name)}' extends the class '${formatter.red(superClass.name)}'.
-         |>> If you provide an instance for '${formatter.red(subClass.name)}' you must also provide an instance for '${formatter.red(superClass.name)}'.
+         |>> The class '${red(subClass.name)}' extends the class '${red(superClass.name)}'.
+         |>> If you provide an instance for '${red(subClass.name)}' you must also provide an instance for '${red(superClass.name)}'.
          |
-         |${formatter.code(loc, s"missing super class instance")}
+         |${code(loc, s"missing super class instance")}
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Add an instance of '${superClass.name}' for '${FormatType.formatType(tpe)}'.")
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Add an instance of '${superClass.name}' for '${FormatType.formatType(tpe)}'."
+    })
   }
 
   /**
@@ -239,15 +275,19 @@ object InstanceError {
     override def summary: String = s"Unlawful signature '$sym'."
 
     override def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Unlawful signature '${formatter.red(sym.name)}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Unlawful signature '${red(sym.name)}'.
          |
          |>> Each signature of a lawful class must appear in at least one law.
-         |${formatter.code(loc, s"unlawful signature")}
+         |${code(loc, s"unlawful signature")}
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Create a law for '$sym' or mark the class as unlawful.")
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Create a law for '$sym' or mark the class as unlawful."
+    })
   }
 
   /**
@@ -260,16 +300,20 @@ object InstanceError {
     override def summary: String = s"Illegal override of '$sym'."
 
     override def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Illegal override of '${formatter.red(sym.name)}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Illegal override of '${red(sym.name)}'.
          |
          |>> Only signatures with default implementations can be overridden.
          |
-         |${formatter.code(loc, s"illegal override")}
+         |${code(loc, s"illegal override")}
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Remove the modifier.")
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Remove the modifier."
+    })
   }
 
   /**
@@ -282,14 +326,18 @@ object InstanceError {
     override def summary: String = s"Unmarked override '$sym'."
 
     override def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Unmarked override of '${formatter.red(sym.name)}'. This definition overrides a default implementation.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Unmarked override of '${red(sym.name)}'. This definition overrides a default implementation.
          |
-         |${formatter.code(loc, s"unmarked override")}
+         |${code(loc, s"unmarked override")}
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Either add the `override` modifier or remove the definition.")
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Either add the `override` modifier or remove the definition."
+    })
   }
 
 }

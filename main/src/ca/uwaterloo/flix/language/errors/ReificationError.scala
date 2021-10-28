@@ -42,10 +42,11 @@ object ReificationError {
     def summary: String = "Type cannot be reified."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Unable to reify the non-constant Bool '${formatter.red(FormatType.formatType(tpe))}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Unable to reify the non-constant Bool '${red(FormatType.formatType(tpe))}'.
          |
-         |${formatter.code(loc, "unable to reify type.")}
+         |${code(loc, "unable to reify type.")}
          |""".stripMargin
     }
 
@@ -65,10 +66,11 @@ object ReificationError {
     def summary: String = "Type cannot be reified."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Unable to reify the type '${formatter.red(FormatType.formatType(tpe))}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Unable to reify the type '${red(FormatType.formatType(tpe))}'.
          |
-         |${formatter.code(loc, "unable to reify type.")}
+         |${code(loc, "unable to reify type.")}
          |""".stripMargin
     }
 
@@ -88,10 +90,11 @@ object ReificationError {
     def summary: String = "Unexpected type."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Unexpected Boolean type: '${formatter.red(FormatType.formatType(tpe))}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Unexpected Boolean type: '${red(FormatType.formatType(tpe))}'.
          |
-         |${formatter.code(loc, "unexpected Boolean type.")}
+         |${code(loc, "unexpected Boolean type.")}
          |""".stripMargin
     }
 

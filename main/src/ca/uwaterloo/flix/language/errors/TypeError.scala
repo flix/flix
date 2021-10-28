@@ -42,13 +42,14 @@ object TypeError {
     def summary: String = s"The type scheme '${FormatScheme.formatSchemeWithoutConstraints(inferred)}' cannot be generalized to '${FormatScheme.formatSchemeWithoutConstraints(declared)}'."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> The type scheme: '${formatter.red(FormatScheme.formatSchemeWithoutConstraints(inferred))}' cannot be generalized to '${formatter.red(FormatScheme.formatSchemeWithoutConstraints(declared))}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> The type scheme: '${red(FormatScheme.formatSchemeWithoutConstraints(inferred))}' cannot be generalized to '${red(FormatScheme.formatSchemeWithoutConstraints(declared))}'.
          |
-         |${formatter.code(loc, "unable to generalize the type scheme.")}
+         |${code(loc, "unable to generalize the type scheme.")}
          |
-         |  Declared: ${formatter.cyan(FormatScheme.formatSchemeWithoutConstraints(declared))}
-         |  Inferred: ${formatter.magenta(FormatScheme.formatSchemeWithoutConstraints(inferred))}
+         |  Declared: ${cyan(FormatScheme.formatSchemeWithoutConstraints(declared))}
+         |  Inferred: ${magenta(FormatScheme.formatSchemeWithoutConstraints(inferred))}
          |""".stripMargin
     }
 
@@ -71,10 +72,11 @@ object TypeError {
     def summary: String = s"Unable to unify the types '$fullType1' and '$fullType2'."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Unable to unify the types: '${formatter.red(FormatType.formatType(baseType1))}' and '${formatter.red(FormatType.formatType(baseType2))}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Unable to unify the types: '${red(FormatType.formatType(baseType1))}' and '${red(FormatType.formatType(baseType2))}'.
          |
-         |${formatter.code(loc, "mismatched types.")}
+         |${code(loc, "mismatched types.")}
          |
          |Type One: ${TypeDiff.diff(fullType1, fullType2)}
          |Type Two: ${TypeDiff.diff(fullType2, fullType1)}
@@ -100,18 +102,20 @@ object TypeError {
     def summary: String = s"Unable to unify the Boolean formulas '$baseType1' and '$baseType2'."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Unable to unify the Boolean formulas: '${formatter.red(FormatType.formatType(baseType1))}' and '${formatter.red(FormatType.formatType(baseType2))}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Unable to unify the Boolean formulas: '${red(FormatType.formatType(baseType1))}' and '${red(FormatType.formatType(baseType2))}'.
          |
-         |${formatter.code(loc, "mismatched boolean formulas.")}
+         |${code(loc, "mismatched boolean formulas.")}
          |${appendMismatchedBooleans(formatter)}
          |""".stripMargin
     }
 
     private def appendMismatchedBooleans(formatter: Formatter): String = (fullType1, fullType2) match {
       case (Some(ft1), Some(ft2)) =>
-        s"""Type One: ${formatter.cyan(FormatType.formatType(ft1))}
-           |Type Two: ${formatter.magenta(FormatType.formatType(ft2))}
+        import formatter._
+        s"""Type One: ${cyan(FormatType.formatType(ft1))}
+           |Type Two: ${magenta(FormatType.formatType(ft2))}
            |""".stripMargin
       case _ => "" // nop
     }
@@ -142,10 +146,11 @@ object TypeError {
     def summary: String = s"Unable to unify the types '$tpe1' and '$tpe2'."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Unable to unify the types: '${formatter.red(FormatType.formatType(tpe1))}' and '${formatter.red(FormatType.formatType(tpe2))}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Unable to unify the types: '${red(FormatType.formatType(tpe1))}' and '${red(FormatType.formatType(tpe2))}'.
          |
-         |${formatter.code(loc, "mismatched arity of types.")}
+         |${code(loc, "mismatched arity of types.")}
          |""".stripMargin
     }
 
@@ -168,11 +173,12 @@ object TypeError {
     def summary: String = s"Unable to unify the type variable '$baseVar' with the type '$baseType'."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Unable to unify the type variable '${formatter.red(baseVar.toString)}' with the type '${formatter.red(FormatType.formatType(baseType))}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Unable to unify the type variable '${red(baseVar.toString)}' with the type '${red(FormatType.formatType(baseType))}'.
          |>> The type variable occurs recursively within the type.
          |
-         |${formatter.code(loc, "mismatched types.")}
+         |${code(loc, "mismatched types.")}
          |
          |Type One: ${TypeDiff.diff(fullType1, fullType2)}
          |Type Two: ${TypeDiff.diff(fullType2, fullType1)}
@@ -197,15 +203,16 @@ object TypeError {
     def summary: String = s"Missing field '$field' of type '$fieldType'."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Missing field '${formatter.red(field.name)}' of type '${formatter.cyan(FormatType.formatType(fieldType))}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Missing field '${red(field.name)}' of type '${cyan(FormatType.formatType(fieldType))}'.
          |
-         |${formatter.code(loc, "missing field.")}
+         |${code(loc, "missing field.")}
          |The record type:
          |
          |  ${FormatType.formatType(recordType)}
          |
-         |does not contain the field '${formatter.red(field.name)}' of type ${formatter.cyan(FormatType.formatType(fieldType))}.
+         |does not contain the field '${red(field.name)}' of type ${cyan(FormatType.formatType(fieldType))}.
          |""".stripMargin
     }
 
@@ -227,15 +234,16 @@ object TypeError {
     def summary: String = s"Missing predicate '${pred.name}' of type '$predType'."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Missing predicate '${formatter.red(pred.name)}' of type '${formatter.cyan(FormatType.formatType(predType))}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Missing predicate '${red(pred.name)}' of type '${cyan(FormatType.formatType(predType))}'.
          |
-         |${formatter.code(loc, "missing predicate.")}
+         |${code(loc, "missing predicate.")}
          |The schema type:
          |
          |  ${FormatType.formatType(schemaType)}
          |
-         |does not contain the predicate '${formatter.red(pred.name)}' of type ${formatter.cyan(FormatType.formatType(predType))}.
+         |does not contain the predicate '${red(pred.name)}' of type ${cyan(FormatType.formatType(predType))}.
          |""".stripMargin
     }
 
@@ -255,10 +263,11 @@ object TypeError {
     def summary: String = s"Unexpected non-record type '$tpe'."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Unexpected non-record type: '${formatter.red(FormatType.formatType(tpe))}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Unexpected non-record type: '${red(FormatType.formatType(tpe))}'.
          |
-         |${formatter.code(loc, "unexpected non-record type.")}
+         |${code(loc, "unexpected non-record type.")}
          |""".stripMargin
     }
 
@@ -278,10 +287,11 @@ object TypeError {
     def summary: String = s"Unexpected non-schema type '$tpe'."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Unexpected non-schema type: '${formatter.red(FormatType.formatType(tpe))}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Unexpected non-schema type: '${red(FormatType.formatType(tpe))}'.
          |
-         |${formatter.code(loc, "unexpected non-schema type.")}
+         |${code(loc, "unexpected non-schema type.")}
          |""".stripMargin
     }
 
@@ -302,14 +312,18 @@ object TypeError {
     def summary: String = s"No instance of class '$clazz' for type '${FormatType.formatType(tpe)}'."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> No instance of class '${formatter.red(clazz.toString)}' for type ${formatter.red(FormatType.formatType(tpe))}.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> No instance of class '${red(clazz.toString)}' for type ${red(FormatType.formatType(tpe))}.
          |
-         |${formatter.code(loc, s"no instance of class '${clazz.toString}' for type ${FormatType.formatType(tpe)}")}
+         |${code(loc, s"no instance of class '${clazz.toString}' for type ${FormatType.formatType(tpe)}")}
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Add an instance for the type.")
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Add an instance for the type."
+    })
 
   }
 
@@ -324,10 +338,11 @@ object TypeError {
     override def summary: String = "Illegal main."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
+      import formatter._
+      s"""${line(kind, source.format)}
          |>> Main function with wrong type.
          |
-         |${formatter.code(loc, s"main function with wrong type.")}
+         |${code(loc, s"main function with wrong type.")}
          |""".stripMargin
     }
 

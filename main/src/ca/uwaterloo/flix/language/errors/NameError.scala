@@ -41,16 +41,17 @@ object NameError {
     def summary: String = s"Ambiguous name. The name may refer to both a variable and a use."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Ambiguous name '${formatter.red(name)}'. The name may refer to both a variable and a use.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Ambiguous name '${red(name)}'. The name may refer to both a variable and a use.
          |
-         |${formatter.code(loc, "ambiguous name.")}
+         |${code(loc, "ambiguous name.")}
          |
          |The relevant declarations are:
          |
-         |${formatter.code(loc1, "the 'var' was declared here.")}
+         |${code(loc1, "the 'var' was declared here.")}
          |
-         |${formatter.code(loc2, "the 'use' was declared here.")}
+         |${code(loc2, "the 'use' was declared here.")}
          |""".stripMargin
     }
 
@@ -71,18 +72,22 @@ object NameError {
     def summary: String = s"Duplicate definition."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Duplicate definition '${formatter.red(name)}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Duplicate definition '${red(name)}'.
          |
-         |${formatter.code(loc1, "the first occurrence was here.")}
+         |${code(loc1, "the first occurrence was here.")}
          |
-         |${formatter.code(loc2, "the second occurrence was here.")}
+         |${code(loc2, "the second occurrence was here.")}
          |""".stripMargin
     }
 
     def loc: SourceLocation = loc1
 
-    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Remove or rename one of the occurrences.")
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Remove or rename one of the occurrences."
+    })
   }
 
   /**
@@ -96,12 +101,13 @@ object NameError {
     def summary: String = s"Duplicate use."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Duplicate use of '${formatter.red(name)}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Duplicate use of '${red(name)}'.
          |
-         |${formatter.code(loc1, "the first use was here.")}
+         |${code(loc1, "the first use was here.")}
          |
-         |${formatter.code(loc2, "the second use was here.")}
+         |${code(loc2, "the second use was here.")}
          |""".stripMargin
     }
 
@@ -124,12 +130,13 @@ object NameError {
     def summary: String = s"Duplicate use."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Duplicate use of the type or class '${formatter.red(name)}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Duplicate use of the type or class '${red(name)}'.
          |
-         |${formatter.code(loc1, "the first use was here.")}
+         |${code(loc1, "the first use was here.")}
          |
-         |${formatter.code(loc2, "the second use was here.")}
+         |${code(loc2, "the second use was here.")}
          |""".stripMargin
     }
 
@@ -152,12 +159,13 @@ object NameError {
     def summary: String = s"Duplicate use."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Duplicate use of the tag '${formatter.red(name)}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Duplicate use of the tag '${red(name)}'.
          |
-         |${formatter.code(loc1, "the first use was here.")}
+         |${code(loc1, "the first use was here.")}
          |
-         |${formatter.code(loc2, "the second use was here.")}
+         |${code(loc2, "the second use was here.")}
          |""".stripMargin
     }
 
@@ -180,18 +188,22 @@ object NameError {
     def summary: String = s"Duplicate type or class declaration."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Duplicate type or class declaration '${formatter.red(name)}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Duplicate type or class declaration '${red(name)}'.
          |
-         |${formatter.code(loc1, "the first occurrence was here.")}
+         |${code(loc1, "the first occurrence was here.")}
          |
-         |${formatter.code(loc2, "the second occurrence was here.")}
+         |${code(loc2, "the second occurrence was here.")}
          |""".stripMargin
     }
 
     def loc: SourceLocation = loc1
 
-    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Remove or rename one of the occurrences.")
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Remove or rename one of the occurrences."
+    })
 
   }
 
@@ -205,14 +217,18 @@ object NameError {
     def summary: String = s"Suspicious type variable. Did you mean: '${name.capitalize}'?"
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Suspicious type variable '${formatter.red(name)}'. Did you mean: '${formatter.cyan(name.capitalize)}'?
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Suspicious type variable '${red(name)}'. Did you mean: '${cyan(name.capitalize)}'?
          |
-         |${formatter.code(loc, "Suspicious type variable.")}
+         |${code(loc, "Suspicious type variable.")}
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Type variables are always lowercase. Named types are uppercase.")
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Type variables are always lowercase. Named types are uppercase."
+    })
 
   }
 
@@ -226,10 +242,11 @@ object NameError {
     def summary: String = s"Undefined class."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Undefined class '${formatter.red(name)}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Undefined class '${red(name)}'.
          |
-         |${formatter.code(loc, "undefined class.")}
+         |${code(loc, "undefined class.")}
          |""".stripMargin
     }
 
@@ -249,10 +266,11 @@ object NameError {
     def summary: String = s"Undefined variable."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Undefined variable '${formatter.red(name)}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Undefined variable '${red(name)}'.
          |
-         |${formatter.code(loc, "undefined variable.")}
+         |${code(loc, "undefined variable.")}
          |""".stripMargin
     }
 
@@ -272,10 +290,11 @@ object NameError {
     def summary: String = s"Undefined type variable."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Undefined type variable '${formatter.red(name)}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Undefined type variable '${red(name)}'.
          |
-         |${formatter.code(loc, "undefined type variable.")}
+         |${code(loc, "undefined type variable.")}
          |""".stripMargin
 
 
@@ -297,14 +316,18 @@ object NameError {
     def summary: String = "Illegal signature."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Illegal signature '${formatter.red(name.name)}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Illegal signature '${red(name.name)}'.
          |
-         |${formatter.code(loc, "Illegal signature.")}
+         |${code(loc, "Illegal signature.")}
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Change the signature to include the class type parameter, or remove the signature.")
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Change the signature to include the class type parameter, or remove the signature."
+    })
 
   }
 

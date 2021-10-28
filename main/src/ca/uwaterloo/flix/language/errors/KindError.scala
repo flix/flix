@@ -39,13 +39,14 @@ object KindError {
     override def summary: String = s"Mismatched kinds: '${formatKind(k1)}' and '${formatKind(k2)}''"
 
     override def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> This type variable was used as both kind '${formatter.red(formatKind(k1))}' and kind '${formatter.red(formatKind(k2))}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> This type variable was used as both kind '${red(formatKind(k1))}' and kind '${red(formatKind(k2))}'.
          |
-         |${formatter.code(loc, "mismatched kind.")}
+         |${code(loc, "mismatched kind.")}
          |
-         |Kind One: ${formatter.cyan(formatKind(k1))}
-         |Kind Two: ${formatter.magenta(formatKind(k2))}
+         |Kind One: ${cyan(formatKind(k1))}
+         |Kind Two: ${magenta(formatKind(k2))}
          |""".stripMargin
     }
 
@@ -66,13 +67,14 @@ object KindError {
     override def summary: String = s"Kind ${formatKind(expectedKind)} was expected, but found ${formatKind(actualKind)}."
 
     override def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Expected kind '${formatter.red(formatKind(expectedKind))}' here, but kind '${formatter.red(formatKind(actualKind))}' is used.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Expected kind '${red(formatKind(expectedKind))}' here, but kind '${red(formatKind(actualKind))}' is used.
          |
-         |${formatter.code(loc, "unexpected kind.")}
+         |${code(loc, "unexpected kind.")}
          |
-         |Expected kind: ${formatter.cyan(formatKind(expectedKind))}
-         |Actual kind:   ${formatter.magenta(formatKind(actualKind))}
+         |Expected kind: ${cyan(formatKind(expectedKind))}
+         |Actual kind:   ${magenta(formatKind(actualKind))}
          |""".stripMargin
     }
 

@@ -32,13 +32,14 @@ case class StratificationError(cycle: List[(Name.Pred, SourceLocation)], tpe: Ty
   def summary: String = "The expression is not stratified. A predicate depends negatively on itself."
 
   def message(formatter: Formatter): String = {
-    s"""${formatter.line(kind, source.format)}
+    import formatter._
+    s"""${line(kind, source.format)}
        |>> The expression is not stratified. A predicate depends negatively on itself.
        |
-       |${formatter.code(loc, "the expression is not stratified.")}
+       |${code(loc, "the expression is not stratified.")}
        |The type of the expression is:
        |
-       |  ${formatter.cyan(FormatType.formatType(tpe))}
+       |  ${cyan(FormatType.formatType(tpe))}
        |
        |The following predicate symbols are on the negative cycle:
        |

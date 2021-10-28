@@ -51,10 +51,11 @@ object ResolutionError {
 
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Ambiguous name '${formatter.red(qn.toString)}' Name refers to multiple definitions.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Ambiguous name '${red(qn.toString)}' Name refers to multiple definitions.
          |
-         |${formatter.code(loc, "ambiguous name.")}
+         |${code(loc, "ambiguous name.")}
          |
          |${appendLocations(locs, "definition/effect/signature matches.", formatter)}
          |""".stripMargin
@@ -78,10 +79,11 @@ object ResolutionError {
     def summary: String = "Ambiguous type."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Ambiguous type '${formatter.red(qn)}'. Name refers to multiple types.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Ambiguous type '${red(qn)}'. Name refers to multiple types.
          |
-         |${formatter.code(loc, "ambiguous type.")}
+         |${code(loc, "ambiguous type.")}
          |
          |${appendLocations(locs, "type matches.", formatter)}
          |""".stripMargin
@@ -105,10 +107,11 @@ object ResolutionError {
     def summary: String = "Ambiguous tag."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Ambiguous tag '${formatter.red(tag)}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Ambiguous tag '${red(tag)}'.
          |
-         |${formatter.code(loc, "ambiguous tag name.")}
+         |${code(loc, "ambiguous tag name.")}
          |
          |The tag is defined in multiple enums:
          |
@@ -116,7 +119,10 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Prefix the tag with the enum name.")
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Prefix the tag with the enum name."
+    })
 
   }
 
@@ -131,10 +137,11 @@ object ResolutionError {
     def summary: String = "Illegal type."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Illegal type: '${formatter.red(FormatType.formatType(tpe))}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Illegal type: '${red(FormatType.formatType(tpe))}'.
          |
-         |${formatter.code(loc, "illegal type.")}
+         |${code(loc, "illegal type.")}
          |""".stripMargin
     }
 
@@ -155,16 +162,20 @@ object ResolutionError {
     def summary: String = "Inaccessible."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Class '${formatter.red(sym.toString)}' is not accessible from the namespace '${formatter.cyan(ns.toString)}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Class '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
          |
-         |${formatter.code(loc, "inaccessible class.")}
+         |${code(loc, "inaccessible class.")}
          |
          |""".stripMargin
 
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Mark the class as public.")
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Mark the class as public."
+    })
   }
 
   /**
@@ -178,15 +189,19 @@ object ResolutionError {
     def summary: String = "Sealed."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Class '${formatter.red(sym.toString)}' is sealed from the namespace '${formatter.cyan(ns.toString)}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Class '${red(sym.toString)}' is sealed from the namespace '${cyan(ns.toString)}'.
          |
-         |${formatter.code(loc, "sealed class.")}
+         |${code(loc, "sealed class.")}
          |
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Move the instance or sub class to the class's namespace.")
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Move the instance or sub class to the class's namespace."
+    })
 
   }
 
@@ -201,15 +216,19 @@ object ResolutionError {
     def summary: String = "Inaccessible."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Definition '${formatter.red(sym.toString)}' is not accessible from the namespace '${formatter.cyan(ns.toString)}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Definition '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
          |
-         |${formatter.code(loc, "inaccessible definition.")}
+         |${code(loc, "inaccessible definition.")}
          |
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Mark the definition as public.")
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Mark the definition as public."
+    })
 
   }
 
@@ -224,14 +243,18 @@ object ResolutionError {
     def summary: String = "Inaccessible."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Definition '${formatter.red(sym.toString)}' is not accessible from the namespace '${formatter.cyan(ns.toString)}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Definition '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
          |
-         |${formatter.code(loc, "inaccessible definition.")}
+         |${code(loc, "inaccessible definition.")}
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Mark the definition as public.")
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Mark the definition as public."
+    })
 
   }
 
@@ -246,15 +269,19 @@ object ResolutionError {
     def summary: String = "Inaccessible."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Enum '${formatter.red(sym.toString)}' is not accessible from the namespace '${formatter.cyan(ns.toString)}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Enum '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
          |
-         |${formatter.code(loc, "inaccessible enum.")}
+         |${code(loc, "inaccessible enum.")}
          |
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Mark the definition as public.")
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Mark the definition as public."
+    })
 
   }
 
@@ -269,15 +296,19 @@ object ResolutionError {
     def summary: String = s"Inaccessible type alias ${sym.name}"
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Type alias '${formatter.red(sym.toString)}' is not accessible from the namespace '${formatter.cyan(ns.toString)}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Type alias '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
          |
-         |${formatter.code(loc, "inaccessible type alias.")}
+         |${code(loc, "inaccessible type alias.")}
          |
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Mark the definition as public.")
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Mark the definition as public."
+    })
 
   }
 
@@ -292,10 +323,11 @@ object ResolutionError {
     def summary: String = s"Recursion limit $limit reached while unfolding the ${ident.name} type alias."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Recursion limit ($limit) reached while unfolding the '${formatter.red(ident.name)}' type alias.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Recursion limit ($limit) reached while unfolding the '${red(ident.name)}' type alias.
          |
-         |${formatter.code(loc, "recursion limit reached.")}
+         |${code(loc, "recursion limit reached.")}
          |""".stripMargin
     }
 
@@ -318,9 +350,10 @@ object ResolutionError {
     }
 
     override def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
+      import formatter._
+      s"""${line(kind, source.format)}
          |
-         |${formatter.code(loc, "Cyclic type aliases.")}
+         |${code(loc, "Cyclic type aliases.")}
          |
          |The following type aliases are in the cycle:
          |$appendCycles
@@ -352,15 +385,19 @@ object ResolutionError {
     def summary: String = "Undefined name."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Undefined name '${formatter.red(qn.toString)}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Undefined name '${red(qn.toString)}'.
          |
-         |${formatter.code(loc, "name not found")}
+         |${code(loc, "name not found")}
          |
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Possible typo or non-existent definition?")
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Possible typo or non-existent definition?"
+    })
 
   }
 
@@ -376,15 +413,19 @@ object ResolutionError {
     def summary: String = "Undefined signature."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Undefined signature '${formatter.red(sig.name)}' in class '${formatter.red(clazz.toString)}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Undefined signature '${red(sig.name)}' in class '${red(clazz.toString)}'.
          |
-         |${formatter.code(loc, "signature not found")}
+         |${code(loc, "signature not found")}
          |
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Possible typo or non-existent class or signature?")
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Possible typo or non-existent class or signature?"
+    })
 
   }
 
@@ -399,15 +440,19 @@ object ResolutionError {
     def summary: String = "Undefined class."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Undefined class '${formatter.red(qn.toString)}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Undefined class '${red(qn.toString)}'.
          |
-         |${formatter.code(loc, "class not found")}
+         |${code(loc, "class not found")}
          |
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Possible typo or non-existent class?")
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Possible typo or non-existent class?"
+    })
 
   }
 
@@ -422,15 +467,19 @@ object ResolutionError {
     def summary: String = "Undefined tag."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Undefined tag '${formatter.red(tag)}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Undefined tag '${red(tag)}'.
          |
-         |${formatter.code(loc, "tag not found.")}
+         |${code(loc, "tag not found.")}
          |
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Possible typo or non-existent tag?")
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Possible typo or non-existent tag?"
+    })
 
   }
 
@@ -445,15 +494,19 @@ object ResolutionError {
     def summary: String = "Undefined type"
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Undefined type '${formatter.red(qn.toString)}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Undefined type '${red(qn.toString)}'.
          |
-         |${formatter.code(loc, "type not found.")}
+         |${code(loc, "type not found.")}
          |
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Possible typo or non-existent type?")
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Possible typo or non-existent type?"
+    })
 
   }
 
@@ -467,10 +520,11 @@ object ResolutionError {
     def summary: String = "Undefined class."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Undefined class '${formatter.red(name)}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Undefined class '${red(name)}'.
          |
-         |${formatter.code(loc, "undefined class.")}
+         |${code(loc, "undefined class.")}
          |""".stripMargin
     }
 
@@ -492,10 +546,11 @@ object ResolutionError {
     def summary: String = "Undefined constructor."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Undefined constructor in class '${formatter.cyan(className)}' with the given signature.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Undefined constructor in class '${cyan(className)}' with the given signature.
          |
-         |${formatter.code(loc, "undefined constructor.")}
+         |${code(loc, "undefined constructor.")}
          |No constructor matches the signature:
          |  $className (${signature.map(_.toString).mkString(",")})
          |
@@ -539,10 +594,11 @@ object ResolutionError {
     }
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Undefined ${formatter.magenta(keyword)} method '${formatter.red(methodName)}' in class '${formatter.cyan(className)}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Undefined ${magenta(keyword)} method '${red(methodName)}' in class '${cyan(className)}'.
          |
-         |${formatter.code(loc, "undefined method.")}
+         |${code(loc, "undefined method.")}
          |No method matches the signature:
          |  $methodName(${signature.map(_.toString).mkString(",")})
          |
@@ -585,10 +641,11 @@ object ResolutionError {
     }
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Undefined ${formatter.magenta(keyword)} field '${formatter.red(fieldName)}' in class '${formatter.cyan(className)}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Undefined ${magenta(keyword)} field '${red(fieldName)}' in class '${cyan(className)}'.
          |
-         |${formatter.code(loc, "undefined field.")}
+         |${code(loc, "undefined field.")}
          |Available fields:
          |$appendFields
          |""".stripMargin
@@ -623,9 +680,10 @@ object ResolutionError {
     }
 
     override def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
+      import formatter._
+      s"""${line(kind, source.format)}
          |
-         |${formatter.code(loc, "Cyclic inheritance.")}
+         |${code(loc, "Cyclic inheritance.")}
          |
          |The following classes are in the cycle:
          |
@@ -658,19 +716,23 @@ object ResolutionError {
     override def summary: String = s"Duplicate derivation: ${sym.name}"
 
     override def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Duplicate derivation '${formatter.red(sym.name)}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Duplicate derivation '${red(sym.name)}'.
          |
-         |${formatter.code(loc1, "the first occurrence was here.")}
+         |${code(loc1, "the first occurrence was here.")}
          |
-         |${formatter.code(loc2, "the second occurrence was here.")}
+         |${code(loc2, "the second occurrence was here.")}
          |
          |""".stripMargin
     }
 
     override def loc: SourceLocation = loc1
 
-    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Remove one of the occurrences.")
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Remove one of the occurrences."
+    })
 
   }
 
@@ -685,14 +747,18 @@ object ResolutionError {
     override def summary: String = s"Illegal derivation: ${sym.name}"
 
     override def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Illegal derivation '${formatter.red(sym.name)}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Illegal derivation '${red(sym.name)}'.
          |
-         |${formatter.code(loc, "Illegal derivation.")}
+         |${code(loc, "Illegal derivation.")}
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Only the following classes may be derived: ${legalSyms.map(_.name).mkString(", ")}.")
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Only the following classes may be derived: ${legalSyms.map(_.name).mkString(", ")}."
+    })
 
   }
 
@@ -706,14 +772,18 @@ object ResolutionError {
     override def summary: String = s"Under-applied type alias: ${sym.name}"
 
     override def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Under-applied type alias '${formatter.red(sym.name)}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Under-applied type alias '${red(sym.name)}'.
          |
-         |${formatter.code(loc, "Under-applied type alias.")}
+         |${code(loc, "Under-applied type alias.")}
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some(s"${formatter.underline("Tip:")} Type aliases must be fully applied.")
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Type aliases must be fully applied."
+    })
 
   }
 

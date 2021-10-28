@@ -42,10 +42,11 @@ object RedundancyError {
     def summary: String = "Hidden variable symbol."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Hidden variable symbol '${formatter.red(sym.text)}'. The symbol is marked as unused.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Hidden variable symbol '${red(sym.text)}'. The symbol is marked as unused.
          |
-         |${formatter.code(loc, "hidden symbol.")}
+         |${code(loc, "hidden symbol.")}
          |""".stripMargin
 
     }
@@ -71,14 +72,15 @@ object RedundancyError {
     def summary: String = "Shadowed variable."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Shadowed variable '${formatter.red(sym1.text)}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Shadowed variable '${red(sym1.text)}'.
          |
-         |${formatter.code(sym2.loc, "shadowing variable.")}
+         |${code(sym2.loc, "shadowing variable.")}
          |
          |The shadowed variable was declared here:
          |
-         |${formatter.code(sym1.loc, "shadowed variable.")}
+         |${code(sym1.loc, "shadowed variable.")}
          |
          |""".stripMargin
     }
@@ -100,10 +102,11 @@ object RedundancyError {
     def summary: String = "Unused definition."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Unused definition '${formatter.red(sym.name)}'. The definition is never referenced.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Unused definition '${red(sym.name)}'. The definition is never referenced.
          |
-         |${formatter.code(sym.loc, "unused definition.")}
+         |${code(sym.loc, "unused definition.")}
          |""".stripMargin
     }
 
@@ -130,10 +133,11 @@ object RedundancyError {
     def summary: String = "Unused enum."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Unused enum '${formatter.red(sym.name)}'. Neither the enum nor its cases are ever used.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Unused enum '${red(sym.name)}'. Neither the enum nor its cases are ever used.
          |
-         |${formatter.code(sym.loc, "unused enum.")}
+         |${code(sym.loc, "unused enum.")}
          |""".stripMargin
     }
 
@@ -162,10 +166,11 @@ object RedundancyError {
     def summary: String = s"Unused case '${tag.name}'."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Unused case '${formatter.red(tag.name)}' in enum '${formatter.cyan(sym.name)}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Unused case '${red(tag.name)}' in enum '${cyan(sym.name)}'.
          |
-         |${formatter.code(tag.loc, "unused tag.")}
+         |${code(tag.loc, "unused tag.")}
          |""".stripMargin
 
     }
@@ -193,10 +198,11 @@ object RedundancyError {
     def summary: String = "Unused formal parameter."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Unused formal parameter '${formatter.red(sym.text)}'. The parameter is not used within its scope.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Unused formal parameter '${red(sym.text)}'. The parameter is not used within its scope.
          |
-         |${formatter.code(sym.loc, "unused formal parameter.")}
+         |${code(sym.loc, "unused formal parameter.")}
          |""".stripMargin
     }
 
@@ -223,10 +229,11 @@ object RedundancyError {
     def summary: String = "Unused type parameter."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Unused type parameter '${formatter.red(ident.name)}'. The parameter is not referenced anywhere.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Unused type parameter '${red(ident.name)}'. The parameter is not referenced anywhere.
          |
-         |${formatter.code(ident.loc, "unused type parameter.")}
+         |${code(ident.loc, "unused type parameter.")}
          |""".stripMargin
     }
 
@@ -253,10 +260,11 @@ object RedundancyError {
     def summary: String = "Unused local variable."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Unused local variable '${formatter.red(sym.text)}'. The variable is not referenced within its scope.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Unused local variable '${red(sym.text)}'. The variable is not referenced within its scope.
          |
-         |${formatter.code(sym.loc, "unused local variable.")}
+         |${code(sym.loc, "unused local variable.")}
          |""".stripMargin
     }
 
@@ -284,10 +292,11 @@ object RedundancyError {
     def summary: String = s"Single use of variable '$sym'."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> This variable is named, but only used once '${formatter.red(sym.text)}'. Use a wildcard instead?
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> This variable is named, but only used once '${red(sym.text)}'. Use a wildcard instead?
          |
-         |${formatter.code(loc, "the variable occurs here.")}
+         |${code(loc, "the variable occurs here.")}
          |""".stripMargin
     }
 
@@ -312,10 +321,11 @@ object RedundancyError {
     def summary: String = "Useless expression."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
+      import formatter._
+      s"""${line(kind, source.format)}
          |>> Useless expression: It has no side-effect(s) and its result is discarded.
          |
-         |${formatter.code(loc, "useless expression.")}
+         |${code(loc, "useless expression.")}
          |""".stripMargin
     }
 
@@ -342,10 +352,11 @@ object RedundancyError {
     def summary: String = "Redundant type constraint."
 
     def message(formatter: Formatter): String = {
-      s"""${formatter.line(kind, source.format)}
-         |>> Type constraint '${formatter.red(FormatTypeConstraint.formatTypeConstraint(redundantTconstr))}' is entailed by type constraint '${formatter.green(FormatTypeConstraint.formatTypeConstraint(redundantTconstr))}'.
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Type constraint '${red(FormatTypeConstraint.formatTypeConstraint(redundantTconstr))}' is entailed by type constraint '${green(FormatTypeConstraint.formatTypeConstraint(redundantTconstr))}'.
          |
-         |${formatter.code(loc, "redundant type constraint.")}
+         |${code(loc, "redundant type constraint.")}
          |""".stripMargin
     }
 
