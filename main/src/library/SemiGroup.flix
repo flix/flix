@@ -39,6 +39,14 @@ instance SemiGroup[String] {
     pub def combine(x: String, y: String): String = x + y
 }
 
+instance SemiGroup[Option[a]] with SemiGroup[a] {
+  pub def combine(x: Option[a], y: Option[a]): Option[a] = match (x, y) {
+        case (Some(x1), Some(y1)) => Some(SemiGroup.combine(x1, y1))
+        case (a, None) => a
+        case (None, b) => b
+    }
+}
+
 instance SemiGroup[List[a]] {
   pub def combine(x: List[a], y: List[a]): List[a] = x ::: y
 }
