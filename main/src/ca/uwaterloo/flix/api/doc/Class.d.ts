@@ -17,13 +17,15 @@ import {ClassSym} from "./ClassSym";
 import {Instance} from "./Instance";
 import {Modifier} from "./Modifier";
 import {TypeParam} from "./TypeParam";
+import {TypeConstraint} from "./TypeConstraint";
 
 export interface Class {
     sym: ClassSym
     doc: [String]
     mod: [Modifier]
     tparam: TypeParam
+    superClasses: [TypeConstraint]
     // TODO
-    //  superClasses: List[Ast.TypeConstraint], signatures: List[TypedAst.Sig], laws: List[TypedAst.Def], loc: SourceLocation
+    //   signatures: List[TypedAst.Sig], laws: List[TypedAst.Def], loc: SourceLocation
     instances: [Instance]
 }

@@ -13,20 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {DefnSym} from "./DefnSym";
-import {FormalParam} from "./FormalParam";
-import {Modifier} from "./Modifier";
-import {TypeParam} from "./TypeParam";
 import {Type} from "./Type";
-import {SourceLocation} from "./SourceLocation";
 
-export interface Def {
-    sym: DefnSym
-    doc: [string]
-    mod: [Modifier]
-    tparams: [TypeParam]
-    fparams: [FormalParam]
-    retTpe: Type
-    eff: Type
-    loc: SourceLocation
+export interface FormalParam {
+    name: string,
+    tpe: Type
 }
