@@ -40,7 +40,7 @@ object KindError {
 
     override def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
-         |>> This type variable was used as both kind 'red(formatKind(k1))' and kind 'red(formatKind(k2))'.
+         |>> This type variable was used as both kind '${formatter.red(formatKind(k1))}' and kind '${formatter.red(formatKind(k2))}'.
          |
          |${formatter.code(loc, "mismatched kind.")}
          |
@@ -67,7 +67,7 @@ object KindError {
 
     override def message(formatter: Formatter): String = {
       s"""${formatter.line(kind, source.format)}
-         |>> Expected kind '${formatter.red(formatKind(expectedKind))}' here, but kind 'red(formatKind(actualKind))' is used.
+         |>> Expected kind '${formatter.red(formatKind(expectedKind))}' here, but kind '${formatter.red(formatKind(actualKind))}' is used.
          |
          |${formatter.code(loc, "unexpected kind.")}
          |
