@@ -44,6 +44,11 @@ object Parser extends Phase[List[Source], ParsedAst.Program] {
     }
   }
 
+  /**
+    * Replaces `"\n"` `"\r"` `"\t"` with spaces (not actual newlines etc. but dash n etc.).
+    * If the user forgets `;` and instead the parser reads a newline and `def` then the listed
+    * input is `Invalid input "\r\n\tdef"` which is replaced with `"   def"` by this method.
+    */
   private def stripLiteralWhitespaceChars(s: String): String =
     s.replaceAll("\\\\n|\\\\r|\\\\t", " ")
 
@@ -59,7 +64,7 @@ object Parser extends Phase[List[Source], ParsedAst.Program] {
         ast.toSuccess
       case scala.util.Failure(e: org.parboiled2.ParseError) =>
         val loc = SourceLocation(None, source, e.position.line, e.position.column, e.position.line, e.position.column)
-        ca.uwaterloo.flix.language.errors.ParseError(parser.formatError(e), loc).toFailure
+        ca.uwaterloo.flix.language.errors.ParseError(stripLiteralWhitespaceChars(parser.formatError(e)), loc).toFailure
       case scala.util.Failure(e) =>
         ca.uwaterloo.flix.language.errors.ParseError(e.getMessage, SourceLocation.Unknown).toFailure
     }
@@ -75,7 +80,7 @@ object Parser extends Phase[List[Source], ParsedAst.Program] {
         ast.toSuccess
       case scala.util.Failure(e: org.parboiled2.ParseError) =>
         val loc = SourceLocation(None, source, e.position.line, e.position.column, e.position.line, e.position.column)
-        ca.uwaterloo.flix.language.errors.ParseError(parser.formatError(e), loc).toFailure
+        ca.uwaterloo.flix.language.errors.ParseError(stripLiteralWhitespaceChars(parser.formatError(e)), loc).toFailure
       case scala.util.Failure(e) =>
         ca.uwaterloo.flix.language.errors.ParseError(e.getMessage, SourceLocation.Unknown).toFailure
     }
@@ -87,9 +92,6 @@ object Parser extends Phase[List[Source], ParsedAst.Program] {
   * A parser for the Flix language.
   */
 class Parser(val source: Source) extends org.parboiled2.Parser {
-
-  // TODO: remove objects as namespaces
-  // TODO: def naming shows up in parser output, name for sensible output (not shortening etc.)
 
   /*
    * Initialize parser input.
