@@ -57,4 +57,23 @@ namespace TestSemiGroup {
     @test
     def combineOption04(): Bool = combine(Some("a"), Some("b")) == Some("ab")
 
+    /////////////////////////////////////////////////////////////////////////////
+    // List                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def combineList01(): Bool = combine(Nil, Nil) == Nil
+
+    @test
+    def combineList02(): Bool = combine(1 :: Nil, Nil) == 1 :: Nil
+
+    @test
+    def combineList03(): Bool = combine(Nil, 2 :: Nil) == 2 :: Nil
+
+    @test
+    def combineList04(): Bool = combine(1 :: Nil, 2 :: Nil) == 1 :: 2 :: Nil
+
+    @test
+    def combineList05(): Bool = combine(1 :: 2 :: Nil, 1 :: 2 :: Nil) == 1 :: 2 :: 1 :: 2 :: Nil
+
 }
