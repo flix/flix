@@ -95,4 +95,20 @@ namespace TestSemiGroup {
     @test
     def combineMap05(): Bool = combine(Map#{1 -> "A", 2 -> "B", 3 -> "C"}, Map#{2 -> "b", 3 -> "c", 4 -> "d"}) == Map#{1 -> "A", 2 -> "Bb", 3 -> "Cc", 4 -> "d"}
 
+    /////////////////////////////////////////////////////////////////////////////
+    // Validation                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def combineValidation01(): Bool = combine(Failure(Nel.singleton("e1")), Failure(Nel.singleton("e2"))): Validation[String, String] == Failure(Nel.append(Nel.singleton("e1"), Nel.singleton("e2")))
+
+    @test
+    def combineValidation02(): Bool = combine(Success("a"), Failure(Nel.singleton("e1"))): Validation[String, String] == Failure(Nel.singleton("e1"))
+
+    @test
+    def combineValidation03(): Bool = combine(Failure(Nel.singleton("e1")), Success("1")): Validation[String, String] == Failure(Nel.singleton("e1"))
+
+    @test
+    def combineValidation04(): Bool = combine(Success("a"), Success("1")): Validation[String, String] == Success("a1")
+
 }
