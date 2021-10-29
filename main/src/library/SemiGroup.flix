@@ -55,8 +55,8 @@ instance SemiGroup[Set[a]] with Order[a] {
   pub def combine(x: Set[a], y: Set[a]): Set[a] = Set.union(x,y)
 }
 
-instance SemiGroup[Map[k,v]] with Order[k] {
-  pub def combine(x: Map[k,v], y: Map[k,v]): Map[k,v] = Map.union(x, y)
+instance SemiGroup[Map[k,v]] with Order[k], SemiGroup[v] {
+  pub def combine(x: Map[k,v], y: Map[k,v]): Map[k,v] = Map.unionWith((v1, v2) -> SemiGroup.combine(v1, v2), x, y)
 }
 
 instance SemiGroup[Validation[t, e]] with SemiGroup[t] {
