@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 import {DefnSym} from "./DefnSym";
+import {FormalParam} from "./FormalParam";
 import {Modifier} from "./Modifier";
 import {TypeParam} from "./TypeParam";
 import {Type} from "./Type";
@@ -24,8 +25,8 @@ export interface Def {
     doc: [string]
     mod: [Modifier]
     tparams: [TypeParam]
-    fparams: [string] // TODO
-    retTpe: Type // TODO
-    eff: Type // TODO
+    fparams: [FormalParam]
+    retTpe: Type
+    eff: Type
     loc: SourceLocation
 }
