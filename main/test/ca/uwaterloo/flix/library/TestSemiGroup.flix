@@ -41,4 +41,20 @@ namespace TestSemiGroup {
     @test
     def combineString04(): Bool = combine("a", "b") == "ab"
 
+    /////////////////////////////////////////////////////////////////////////////
+    // Option                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def combineOption01(): Bool = combine(None, None) == None
+
+    @test
+    def combineOption02(): Bool = combine(Some("a"), None) == Some("a")
+
+    @test
+    def combineOption03(): Bool = combine(None, Some("b")) == Some("b")
+
+    @test
+    def combineOption04(): Bool = combine(Some("a"), Some("b")) == Some("ab")
+
 }
