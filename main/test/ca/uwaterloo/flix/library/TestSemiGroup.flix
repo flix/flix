@@ -282,6 +282,32 @@ namespace TestSemiGroup {
     @test
     def combine10Tuple05(): Bool = combine(("a", (), "b", (), "c", (), "d", (), "e", ()), ("1", (), "2", (), "3", (), "4", (), "5", ())) == ("a1", (), "b2", (), "c3", (), "d4", (), "e5", ())
 
+    /////////////////////////////////////////////////////////////////////////////
+    // combineN                                                                //
+    /////////////////////////////////////////////////////////////////////////////
 
+    @test
+    def combineN01(): Bool = combineN((), 0) == ()
+
+    @test
+    def combineN02(): Bool = combineN((), 3) == ()
+
+    @test
+    def combineN03(): Bool = combineN("", -1) == ""
+
+    @test
+    def combineN04(): Bool = combineN("", 5) == ""
+
+    @test
+    def combineN05(): Bool = combineN("a", 3) == "aaa"
+
+    @test
+    def combineN06(): Bool = combineN(Some("ab"), 5) == Some("ababababab")
+
+    @test
+    def combineN07(): Bool = combineN(1 :: Nil, 2) == 1 :: 1 :: Nil
+
+    @test
+    def combineN08(): Bool = combineN(Map#{1 -> "a"}, 4) == Map#{1 -> "aaaa"}
 
 }
