@@ -130,5 +130,23 @@ namespace TestSemiGroup {
     @test
     def combine2Tuple05(): Bool = combine(("a", ()), ("1", ())) == ("a1", ())
 
+    /////////////////////////////////////////////////////////////////////////////
+    // 3-Tuple                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def combine3Tuple01(): Bool = combine(("", "", ""), ("", "", "")) == ("", "", "")
+
+    @test
+    def combine3Tuple02(): Bool = combine(("a", "b", "c"), ("", "", "")) == ("a", "b", "c")
+
+    @test
+    def combine3Tuple03(): Bool = combine(("", "", ""), ("1", "2", "3")) == ("1", "2", "3")
+
+    @test
+    def combine3Tuple04(): Bool = combine(("a", "b", "c"), ("1", "2", "3")) == ("a1", "b2", "c3")
+
+    @test
+    def combine3Tuple05(): Bool = combine(("a", (), "b"), ("1", (), "2")) == ("a1", (), "b2")
 
 }
