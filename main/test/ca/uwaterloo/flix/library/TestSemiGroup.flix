@@ -76,4 +76,23 @@ namespace TestSemiGroup {
     @test
     def combineList05(): Bool = combine(1 :: 2 :: Nil, 1 :: 2 :: Nil) == 1 :: 2 :: 1 :: 2 :: Nil
 
+    /////////////////////////////////////////////////////////////////////////////
+    // Map                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def combineMap01(): Bool = combine(Map#{}, Map#{}) == Map#{}
+
+    @test
+    def combineMap02(): Bool = combine(Map#{1 -> "A"}, Map#{}) == Map#{1 -> "A"}
+
+    @test
+    def combineMap03(): Bool = combine(Map#{}, Map#{1 -> "a"}) == Map#{1 -> "a"}
+
+    @test
+    def combineMap04(): Bool = combine(Map#{1 -> "A"}, Map#{1 -> "a"}) == Map#{1 -> "Aa"}
+
+    @test
+    def combineMap05(): Bool = combine(Map#{1 -> "A", 2 -> "B", 3 -> "C"}, Map#{2 -> "b", 3 -> "c", 4 -> "d"}) == Map#{1 -> "A", 2 -> "Bb", 3 -> "Cc", 4 -> "d"}
+
 }
