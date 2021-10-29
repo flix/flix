@@ -1,10 +1,7 @@
-def halfSiblings(g: #{Parent(Person, Person), Male(Person), Female(Person)}): #{HalfBro(Person, Person), HalfSis(Person, Person)} =
-    let p = #{
-        Sibling(c, s) :- Parent(c, p), Parent(s, p), if c != s.
-        HalfBro(c, s) :- Sibling(c, s), Male(s),
-                         Parent(s, p), not Parent(c, p).
-        HalfSis(c, s) :- Sibling(c, s), Female(s),
-                         Parent(s, p), not Parent(c, p).
+pub def halfSiblings(siblings: Array[(person, person)]): Array[(person, person)] with Boxable[person] =
+    let s = project siblings into Sibling;
+    let lp = #{
+        Sibling(x, y) :- Parent(x, p), Parent(y, p), if x != y.
+        HalfSibling(x, y) :- Sibling(x, y), Parent(y, p), not Parent(x, p).
     };
-    let m = solve (p <+> g);
-    (project HalfBro m) <+> (project HalfSis m)
+    query s, lp select (x, y) from HalfSibling(x, y)

@@ -1,10 +1,15 @@
-def heirsAndUsurpers(g: #{Parent(Person, Person), Emperor(Person)}): (#{Heir(Person, Person)}, #{Usurper(Person)}) =
-    let p = #{
+pub def heirsAndUsurpers(parents: Array[(person, person)], emperors: Array[person]): {heirs :: Array[person], usurpers :: Array[person]} with Boxable[person] =
+    let p = project parents into Parent;
+    let e = project emperors into Emperor;
+    let lp = #{
         Ancestor(x, y) :- Parent(x, y), not Emperor(y).
         Ancestor(x, z) :- Ancestor(x, y), Parent(y, z), not Emperor(z).
-        Heir(x, y) :- Emperor(x), Parent(x, y), Emperor(y).
-        Heir(x, z) :- Emperor(x), Ancestor(x, y), Parent(y, z), Emperor(z).
-        Usurper(x) :- Emperor(x), not Heir(x, _).
+        HeirOf(x, y) :- Emperor(x), Parent(x, y), Emperor(y).
+        HeirOf(x, z) :- Emperor(x), Ancestor(x, y), Parent(y, z), Emperor(z).
+        Heir(x) :- HeirOf(x, _).
+        Usurper(x) :- Emperor(x), not Heir(x).
     };
-    let m = solve g <+> p;
-    (project Heir m, project Usurper m)
+    let solution = solve p, e, lp;
+    let heirs = query solution select x from Heir(x);
+    let usurpers = query solution select x from Usurper(x);
+    {heirs = heirs, usurpers = usurpers}
