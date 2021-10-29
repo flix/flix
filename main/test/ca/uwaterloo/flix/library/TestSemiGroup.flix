@@ -111,4 +111,24 @@ namespace TestSemiGroup {
     @test
     def combineValidation04(): Bool = combine(Success("a"), Success("1")): Validation[String, String] == Success("a1")
 
+    /////////////////////////////////////////////////////////////////////////////
+    // 2-Tuple                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def combine2Tuple01(): Bool = combine(("", ""), ("", "")) == ("", "")
+
+    @test
+    def combine2Tuple02(): Bool = combine(("a", "b"), ("", "")) == ("a", "b")
+
+    @test
+    def combine2Tuple03(): Bool = combine(("", ""), ("1", "2")) == ("1", "2")
+
+    @test
+    def combine2Tuple04(): Bool = combine(("a", "b"), ("1", "2")) == ("a1", "b2")
+
+    @test
+    def combine2Tuple05(): Bool = combine(("a", ()), ("1", ())) == ("a1", ())
+
+
 }
