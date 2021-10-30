@@ -50,8 +50,13 @@ namespace Iterator {
         let d = ref false;
         let done = () -> deref d;
         let next = () -> {
-            d := true;
-            x
+            if (done()) {
+                bug!("Empty Iterator!")
+            }
+            else {
+                d := true;
+                x
+            }
         };
         Iterator(done, next)
 
