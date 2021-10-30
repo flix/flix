@@ -15,17 +15,35 @@
  */
 import {Kind} from "./Kind";
 
-// TODO: This is not done.
-export type Type = TypeVar | TypeCst
+// TODO: Implement type.
+export type Type = TypeVar | TypeCst | TypeApply
 
 export interface TypeVar {
-    "variant": "TypeVar"
+    tag: "Var"
+    name: string
     kind: Kind
 }
 
 export interface TypeCst {
-    "variant": "TypeCst"
+    tag: "Cst"
+    tc: TypeConstructor
     kind: Kind
 }
 
+export interface TypeApply {
+    tag: "Apply"
+    tpe1: Type
+    tpe2: Type
+    kind: Kind
+}
+
+export type TypeConstructor = Bool | Int32
+
+export interface Bool {
+    tag: "Bool"
+}
+
+export interface Int32 {
+    tag: "Int32"
+}
 

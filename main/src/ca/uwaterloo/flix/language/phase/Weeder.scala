@@ -585,9 +585,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val loc = mkSL(sp1, sp2)
       visitExp(exp) map {
         e => visitUnaryOperator(op) match {
-          case OperatorResult.Signature(name) => WeededAst.Expression.Apply(WeededAst.Expression.DefOrSig(name, name.loc), List(e), loc)
+          case OperatorResult.BuiltIn(name) => WeededAst.Expression.Apply(WeededAst.Expression.DefOrSig(name, name.loc), List(e), loc)
           case OperatorResult.Operator(o) => WeededAst.Expression.Unary(o, e, loc)
           case OperatorResult.NoOp => e
+          case OperatorResult.Unrecognized(ident) => WeededAst.Expression.Apply(WeededAst.Expression.VarOrDefOrSig(ident, loc), List(e), loc)
         }
       }
 
@@ -596,8 +597,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val loc = mkSL(sp1, sp2)
       mapN(visitExp(exp1), visitExp(exp2)) {
         case (e1, e2) => visitBinaryOperator(op) match {
-          case OperatorResult.Signature(name) => WeededAst.Expression.Apply(WeededAst.Expression.DefOrSig(name, name.loc), List(e1, e2), loc)
+          case OperatorResult.BuiltIn(name) => WeededAst.Expression.Apply(WeededAst.Expression.DefOrSig(name, name.loc), List(e1, e2), loc)
           case OperatorResult.Operator(o) => WeededAst.Expression.Binary(o, e1, e2, loc)
+          case OperatorResult.Unrecognized(ident) => WeededAst.Expression.Apply(WeededAst.Expression.VarOrDefOrSig(ident, loc), List(e1, e2), loc)
           case OperatorResult.NoOp => throw InternalCompilerException(s"Unexpected operator: $op")
         }
       }
@@ -1485,9 +1487,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   private sealed trait OperatorResult
   private object OperatorResult {
     /**
-      * The operator represents a signature.
+      * The operator represents a signature or definition from the core library.
       */
-    case class Signature(name: Name.QName) extends OperatorResult
+    case class BuiltIn(name: Name.QName) extends OperatorResult
 
     /**
       * The operator represents a semantic operator.
@@ -1498,6 +1500,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       * The operator represents a no-op.
       */
     case object NoOp extends OperatorResult
+
+    /**
+      * The operator is unrecognized: it must have been defined elsewhere.
+      */
+    case class Unrecognized(ident: Name.Ident) extends OperatorResult
   }
 
   /**
@@ -1508,9 +1515,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       op match {
         case "not" => OperatorResult.Operator(SemanticOperator.BoolOp.Not)
         case "+" => OperatorResult.NoOp
-        case "-" => OperatorResult.Signature(Name.mkQName("Neg.neg", sp1, sp2))
-        case "~~~" => OperatorResult.Signature(Name.mkQName("BitwiseNot.not", sp1, sp2))
-        case _ => OperatorResult.Signature(Name.mkQName(op, sp1, sp2))
+        case "-" => OperatorResult.BuiltIn(Name.mkQName("Neg.neg", sp1, sp2))
+        case "~~~" => OperatorResult.BuiltIn(Name.mkQName("BitwiseNot.not", sp1, sp2))
+        case _ => OperatorResult.Unrecognized(Name.Ident(sp1, op, sp2))
       }
   }
 
@@ -1520,28 +1527,28 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   private def visitBinaryOperator(o: ParsedAst.Operator)(implicit flix: Flix): OperatorResult = o match {
     case ParsedAst.Operator(sp1, op, sp2) =>
       op match {
-        case "+" => OperatorResult.Signature(Name.mkQName("Add.add", sp1, sp2))
-        case "-" => OperatorResult.Signature(Name.mkQName("Sub.sub", sp1, sp2))
-        case "*" => OperatorResult.Signature(Name.mkQName("Mul.mul", sp1, sp2))
-        case "/" => OperatorResult.Signature(Name.mkQName("Div.div", sp1, sp2))
-        case "rem" => OperatorResult.Signature(Name.mkQName("Rem.rem", sp1, sp2))
-        case "mod" => OperatorResult.Signature(Name.mkQName("Mod.mod", sp1, sp2))
-        case "**" => OperatorResult.Signature(Name.mkQName("Exp.exp", sp1, sp2))
-        case "<" => OperatorResult.Signature(Name.mkQName("Order.less", sp1, sp2))
-        case "<=" => OperatorResult.Signature(Name.mkQName("Order.lessEqual", sp1, sp2))
-        case ">" => OperatorResult.Signature(Name.mkQName("Order.greater", sp1, sp2))
-        case ">=" => OperatorResult.Signature(Name.mkQName("Order.greaterEqual", sp1, sp2))
-        case "==" => OperatorResult.Signature(Name.mkQName("Eq.eq", sp1, sp2))
-        case "!=" => OperatorResult.Signature(Name.mkQName("Eq.neq", sp1, sp2))
-        case "<=>" => OperatorResult.Signature(Name.mkQName("Order.compare", sp1, sp2))
+        case "+" => OperatorResult.BuiltIn(Name.mkQName("Add.add", sp1, sp2))
+        case "-" => OperatorResult.BuiltIn(Name.mkQName("Sub.sub", sp1, sp2))
+        case "*" => OperatorResult.BuiltIn(Name.mkQName("Mul.mul", sp1, sp2))
+        case "/" => OperatorResult.BuiltIn(Name.mkQName("Div.div", sp1, sp2))
+        case "rem" => OperatorResult.BuiltIn(Name.mkQName("Rem.rem", sp1, sp2))
+        case "mod" => OperatorResult.BuiltIn(Name.mkQName("Mod.mod", sp1, sp2))
+        case "**" => OperatorResult.BuiltIn(Name.mkQName("Exp.exp", sp1, sp2))
+        case "<" => OperatorResult.BuiltIn(Name.mkQName("Order.less", sp1, sp2))
+        case "<=" => OperatorResult.BuiltIn(Name.mkQName("Order.lessEqual", sp1, sp2))
+        case ">" => OperatorResult.BuiltIn(Name.mkQName("Order.greater", sp1, sp2))
+        case ">=" => OperatorResult.BuiltIn(Name.mkQName("Order.greaterEqual", sp1, sp2))
+        case "==" => OperatorResult.BuiltIn(Name.mkQName("Eq.eq", sp1, sp2))
+        case "!=" => OperatorResult.BuiltIn(Name.mkQName("Eq.neq", sp1, sp2))
+        case "<=>" => OperatorResult.BuiltIn(Name.mkQName("Order.compare", sp1, sp2))
         case "and" => OperatorResult.Operator(SemanticOperator.BoolOp.And)
         case "or" => OperatorResult.Operator(SemanticOperator.BoolOp.Or)
-        case "&&&" => OperatorResult.Signature(Name.mkQName("BitwiseAnd.and", sp1, sp2))
-        case "|||" => OperatorResult.Signature(Name.mkQName("BitwiseOr.or", sp1, sp2))
-        case "^^^" => OperatorResult.Signature(Name.mkQName("BitwiseXor.xor", sp1, sp2))
-        case "<<<" => OperatorResult.Signature(Name.mkQName("BitwiseShl.shl", sp1, sp2))
-        case ">>>" => OperatorResult.Signature(Name.mkQName("BitwiseShr.shr", sp1, sp2))
-        case _ => OperatorResult.Signature(Name.mkQName(op, sp1, sp2))
+        case "&&&" => OperatorResult.BuiltIn(Name.mkQName("BitwiseAnd.and", sp1, sp2))
+        case "|||" => OperatorResult.BuiltIn(Name.mkQName("BitwiseOr.or", sp1, sp2))
+        case "^^^" => OperatorResult.BuiltIn(Name.mkQName("BitwiseXor.xor", sp1, sp2))
+        case "<<<" => OperatorResult.BuiltIn(Name.mkQName("BitwiseShl.shl", sp1, sp2))
+        case ">>>" => OperatorResult.BuiltIn(Name.mkQName("BitwiseShr.shr", sp1, sp2))
+        case _ => OperatorResult.Unrecognized(Name.Ident(sp1, op, sp2))
       }
   }
 
