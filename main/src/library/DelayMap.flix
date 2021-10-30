@@ -60,4 +60,29 @@ namespace DelayMap {
             case None    => None
             case Some(x) => Some(force x)
         }
+
+    ///
+    /// Updates `m` with `k -> f(v, v1)` if `k -> v1` is in `m`.
+    ///
+    /// Otherwise, updates `m` with `k -> v`.
+    ///
+    pub def insertWith(f: (v, v) -> v & ef, k: k, v: v, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
+        insertWithKey((_, v1, v2) -> f(v1, v2), k, v, m)
+
+    ///
+    /// Updates `m` with `k -> f(k, v, v1)` if `k -> v1` is in `m`.
+    ///
+    /// Otherwise, updates `m` with `k -> v`.
+    ///
+    pub def insertWithKey(f: (k, v, v) -> v & ef, k: k, v: v, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
+        let DMap(t) = m;
+        if (reify ef)
+            let f1 = (k1, v2, v1) -> lazy (f(k1, force v2, force v1));
+            DMap(RedBlackTree.insertWith(f1 as & Pure, k, lazy v, t))
+        else
+            let f1 = (k1, v2, v1) -> {
+                let x = f(k1, force v2, force v1);
+                lazy x
+            };
+            DMap(RedBlackTree.insertWith(f1 as & Impure, k, lazy v, t)) as & ef
 }
