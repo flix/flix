@@ -97,9 +97,13 @@ object SemanticTokensProvider {
     val allTokens = (classTokens ++ instanceTokens ++ defnTokens ++ enumTokens ++ typeAliasTokens).toList
 
     //
-    // We remove all: (i) multi-line tokens and (ii) tokens with unknown source locations.
+    // We keep all tokens that are: (i) single-line tokens and (ii) have the same source as `uri`.
     //
-    val filteredTokens = allTokens.filter(t => !t.loc.isMultiLine && t.loc != SourceLocation.Unknown)
+    // Note that the last criteria (automatically) excludes:
+    //   (a) tokens with unknown source locations, and
+    //   (b) tokens that come from entities inside `uri` but that originate from different uris.
+    //
+    val filteredTokens = allTokens.filter(t => t.loc.isSingleLine && include(uri, t.loc))
 
     //
     // Encode the semantic tokens as a list of integers.
