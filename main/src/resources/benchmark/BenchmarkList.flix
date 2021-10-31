@@ -46,7 +46,7 @@ namespace BenchmarkList {
     /// create a list of integers, flatMap it over lists of integers, and compute the length of the result.
     ///
     @benchmark
-    pub def benchmark08(): Bool = List.length(List.flatMap(x -> List.repeat(x, 20), List.range(0, 20))) == 400
+    pub def benchmark08(): Bool = List.length(List.flatMap(x -> List.repeat(20, x), List.range(0, 20))) == 400
 
     ///
     /// create a list of integers and compute its sum via foldLeft.

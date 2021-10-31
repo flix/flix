@@ -85,7 +85,7 @@ namespace Iterator {
     ///
     /// Returns an empty iterator if `n < 0`.
     ///
-    pub def repeat(x: a, n: Int32): Iterator[a] & Impure =
+    pub def repeat(n: Int32, x: a): Iterator[a] & Impure =
         let i = ref 0;
         let done = () -> deref i >= n;
         let next = () -> {
