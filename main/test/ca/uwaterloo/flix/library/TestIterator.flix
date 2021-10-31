@@ -56,7 +56,7 @@ namespace TestIterator {
 
     @test
     def repeat03(): Bool & Impure =
-        Iterator.repeat(2, 100) |> Iterator.toList == List.repeat(2, 100)
+        Iterator.repeat(2, 100) |> Iterator.toList == List.repeat(100, 2)
 
     @test
     def repeat04(): Bool & Impure =

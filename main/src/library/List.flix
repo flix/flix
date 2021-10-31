@@ -604,7 +604,7 @@ namespace List {
     /// Helper function for `transpose`.
     ///
     def transposeHelper(xs: List[List[a]], l: Int32): List[List[a]] = match xs {
-        case Nil => repeat(Nil, l)
+        case Nil => repeat(l, Nil)
         case x :: rs => applyListHelper(x, transposeHelper(rs, l))
     }
 
