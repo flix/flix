@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.Source
+import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Source}
 import ca.uwaterloo.flix.language.ast.WeededAst.ChoicePattern
 import ca.uwaterloo.flix.language.ast.{NamedAst, _}
 import ca.uwaterloo.flix.language.errors.NameError
@@ -282,7 +282,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (macc, ident) => macc.get(ident.name) match {
           // Check if the identifier is bound by the rule scope.
           case None if !ruleVars.exists(_.name == ident.name) =>
-            macc + (ident.name -> Symbol.freshVarSym(ident))
+            macc + (ident.name -> Symbol.freshVarSym(ident, BoundBy.Constraint))
           case _ => macc
         }
       }
@@ -290,7 +290,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       // Introduce a symbol for each variable that is visible in the rule scope of the constraint.
       val ruleEnv = ruleVars.foldLeft(Map.empty[String, Symbol.VarSym]) {
         case (macc, ident) => macc.get(ident.name) match {
-          case None => macc + (ident.name -> Symbol.freshVarSym(ident))
+          case None => macc + (ident.name -> Symbol.freshVarSym(ident, BoundBy.Constraint))
           case Some(sym) => macc
         }
       }
@@ -559,14 +559,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       else
         Scopedness.Unscoped
 
-      val sym = Symbol.freshVarSym(ident, scopedness)
+      val sym = Symbol.freshVarSym(ident, scopedness, BoundBy.Let)
       mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0 + (ident.name -> sym), uenv0, tenv0)) {
         case (e1, e2) => NamedAst.Expression.Let(sym, mod, e1, e2, loc)
       }
 
     case WeededAst.Expression.LetRegion(ident, exp, loc) =>
       // make a fresh variable symbol for the local variable.
-      val sym = Symbol.freshVarSym(ident)
+      val sym = Symbol.freshVarSym(ident, BoundBy.Let)
       mapN(visitExp(exp, env0 + (ident.name -> sym), uenv0, tenv0)) {
         case e =>
           NamedAst.Expression.LetRegion(sym, e, loc)
@@ -595,7 +595,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           val env1 = pat0.foldLeft(Map.empty[String, Symbol.VarSym]) {
             case (acc, WeededAst.ChoicePattern.Wild(loc)) => acc
             case (acc, WeededAst.ChoicePattern.Absent(loc)) => acc
-            case (acc, WeededAst.ChoicePattern.Present(ident, loc)) => acc + (ident.name -> Symbol.freshVarSym(ident))
+            case (acc, WeededAst.ChoicePattern.Present(ident, loc)) => acc + (ident.name -> Symbol.freshVarSym(ident, BoundBy.Pattern))
           }
           val p = pat0.map {
             case WeededAst.ChoicePattern.Wild(loc) => NamedAst.ChoicePattern.Wild(loc)
@@ -749,7 +749,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       val expVal = visitExp(exp, env0, uenv0, tenv0)
       val rulesVal = traverse(rules) {
         case WeededAst.CatchRule(ident, className, body) =>
-          val sym = Symbol.freshVarSym(ident)
+          val sym = Symbol.freshVarSym(ident, BoundBy.CatchRule)
           val classVal = lookupClass(className, loc)
           val bodyVal = visitExp(body, env0 + (ident.name -> sym), uenv0, tenv0)
           mapN(classVal, bodyVal) {
@@ -820,7 +820,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       val rulesVal = traverse(rules) {
         case WeededAst.SelectChannelRule(ident, chan, body) =>
           // make a fresh variable symbol for the local recursive variable.
-          val sym = Symbol.freshVarSym(ident)
+          val sym = Symbol.freshVarSym(ident, BoundBy.SelectRule)
           val env1 = env0 + (ident.name -> sym)
           mapN(visitExp(chan, env0, uenv0, tenv0), visitExp(body, env1, uenv0, tenv0)) {
             case (c, b) => NamedAst.SelectChannelRule(sym, c, b)
@@ -906,7 +906,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       case WeededAst.Pattern.Wild(loc) => NamedAst.Pattern.Wild(loc)
       case WeededAst.Pattern.Var(ident, loc) =>
         // make a fresh variable symbol for the local variable.
-        val sym = Symbol.freshVarSym(ident)
+        val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
         m += (ident.name -> sym)
         NamedAst.Pattern.Var(sym, loc)
       case WeededAst.Pattern.Unit(loc) => NamedAst.Pattern.Unit(loc)
@@ -932,19 +932,19 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
       case WeededAst.Pattern.ArrayTailSpread(elms, ident, loc) => ident match {
         case None =>
-          val sym = Symbol.freshVarSym("_", loc)
+          val sym = Symbol.freshVarSym("_", BoundBy.Pattern, loc)
           NamedAst.Pattern.ArrayTailSpread(elms map visit, sym, loc)
         case Some(id) =>
-          val sym = Symbol.freshVarSym(id)
+          val sym = Symbol.freshVarSym(id, BoundBy.Pattern)
           m += (id.name -> sym)
           NamedAst.Pattern.ArrayTailSpread(elms map visit, sym, loc)
       }
       case WeededAst.Pattern.ArrayHeadSpread(ident, elms, loc) => ident match {
         case None =>
-          val sym = Symbol.freshVarSym("_", loc)
+          val sym = Symbol.freshVarSym("_", BoundBy.Pattern, loc)
           NamedAst.Pattern.ArrayTailSpread(elms map visit, sym, loc)
         case Some(id) =>
-          val sym = Symbol.freshVarSym(id)
+          val sym = Symbol.freshVarSym(id, BoundBy.Pattern)
           m += (id.name -> sym)
           NamedAst.Pattern.ArrayHeadSpread(sym, elms map visit, loc)
       }
@@ -986,14 +986,16 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       case WeededAst.Pattern.Array(elms, loc) => NamedAst.Pattern.Array(elms map visit, loc)
       case WeededAst.Pattern.ArrayTailSpread(elms, ident, loc) => ident match {
         case None =>
-          NamedAst.Pattern.ArrayTailSpread(elms map visit, Symbol.freshVarSym("_", loc), loc)
+          val sym = Symbol.freshVarSym("_", BoundBy.Pattern, loc)
+          NamedAst.Pattern.ArrayTailSpread(elms map visit, sym, loc)
         case Some(value) =>
           val sym = env0(value.name)
           NamedAst.Pattern.ArrayTailSpread(elms map visit, sym, loc)
       }
       case WeededAst.Pattern.ArrayHeadSpread(ident, elms, loc) => ident match {
         case None =>
-          NamedAst.Pattern.ArrayHeadSpread(Symbol.freshVarSym("_", loc), elms map visit, loc)
+          val sym = Symbol.freshVarSym("_", BoundBy.Pattern, loc)
+          NamedAst.Pattern.ArrayHeadSpread(sym, elms map visit, loc)
         case Some(value) =>
           val sym = env0(value.name)
           NamedAst.Pattern.ArrayHeadSpread(sym, elms map visit, loc)
@@ -1457,9 +1459,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         Scopedness.Unscoped
 
       val freshSym = if (ident.name == "_")
-        Symbol.freshVarSym("_", fparam.loc)
+        Symbol.freshVarSym("_", BoundBy.FormalParam, fparam.loc)
       else
-        Symbol.freshVarSym(ident, scopedness)
+        Symbol.freshVarSym(ident, scopedness, BoundBy.FormalParam)
 
       // Compute the type of the formal parameter or use the type variable of the symbol.
       val tpeVal = optType match {

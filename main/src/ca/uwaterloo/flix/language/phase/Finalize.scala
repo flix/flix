@@ -511,22 +511,4 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
   }
 
-  // TODO: Deprecated
-  // TODO: This should be done in a prior phase, perhaps during lambda lifting, or not done at all...
-  private def lit2symTemporaryToBeRemoved(exp0: LiftedAst.Expression, loc: SourceLocation, m: TopLevel)(implicit flix: Flix): Symbol.DefnSym = {
-    // Generate a top-level function for the constant.
-    val sym = Symbol.freshDefnSym("lit", loc)
-    val lit = visitExp(exp0, m)
-    val ann = Ast.Annotations.Empty
-    val mod = Ast.Modifiers(List(Ast.Modifier.Synthetic))
-    val varX = Symbol.freshVarSym("_unit", loc)
-    varX.setStackOffset(0)
-    val fparam = FinalAst.FormalParam(varX, MonoType.Unit)
-    val fs = List(fparam)
-    val tpe = MonoType.Arrow(MonoType.Unit :: Nil, visitType(exp0.tpe))
-    val defn = FinalAst.Def(ann, mod, sym, fs, lit, tpe, exp0.loc)
-    m += (sym -> defn)
-    sym
-  }
-
 }

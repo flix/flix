@@ -1588,7 +1588,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
           // Case 3.2: Unicode escape
           case "u" => rest match {
-            // Case 3.2.1: `\u` followed by 4 or more literals
+            // Case 3.2.1: `\\u` followed by 4 or more literals
             case ParsedAst.CharCode.Literal(sp1, d0, _) ::
               ParsedAst.CharCode.Literal(_, d1, _) ::
               ParsedAst.CharCode.Literal(_, d2, _) ::
@@ -1600,7 +1600,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
                 case Validation.Success(char) => visit(rest2, char :: acc)
                 case Validation.Failure(errors) => Validation.Failure(errors)
               }
-            // Case 3.2.2: `\u` followed by less than 4 literals
+            // Case 3.2.2: `\\u` followed by less than 4 literals
             case rest2 =>
               val code = rest2.takeWhile(_.isInstanceOf[ParsedAst.CharCode.Literal])
               val sp2 = code.lastOption.getOrElse(esc).sp2
