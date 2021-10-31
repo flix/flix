@@ -85,7 +85,7 @@ object Symbol {
     * Returns a fresh variable symbol with the given text.
     */
   def freshVarSym(text: String, loc: SourceLocation)(implicit flix: Flix): VarSym = {
-    new VarSym(flix.genSym.freshId(), text, Type.freshUnkindedVar(loc), Scopedness.Unscoped, BoundBy.Unknown, loc)
+    new VarSym(flix.genSym.freshId(), text, Type.freshUnkindedVar(loc), Scopedness.Unscoped, BoundBy.Unclassified, loc)
   }
 
   /**

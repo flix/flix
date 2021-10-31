@@ -749,7 +749,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       val expVal = visitExp(exp, env0, uenv0, tenv0)
       val rulesVal = traverse(rules) {
         case WeededAst.CatchRule(ident, className, body) =>
-          val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
+          val sym = Symbol.freshVarSym(ident, BoundBy.Unclassified)
           val classVal = lookupClass(className, loc)
           val bodyVal = visitExp(body, env0 + (ident.name -> sym), uenv0, tenv0)
           mapN(classVal, bodyVal) {
@@ -1459,7 +1459,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       val freshSym = if (ident.name == "_")
         Symbol.freshVarSym("_", fparam.loc)
       else
-        Symbol.freshVarSym(ident, scopedness, BoundBy.FormalParam)
+        Symbol.freshVarSym(ident, scopedness, BoundBy.Param)
 
       // Compute the type of the formal parameter or use the type variable of the symbol.
       val tpeVal = optType match {

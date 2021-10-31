@@ -472,12 +472,10 @@ object Ast {
 
   object BoundBy {
 
-    // TODO: Better names
-
     /**
       * Represents a variable that is bound by a formal parameter.
       */
-    case object FormalParam extends BoundBy
+    case object Param extends BoundBy
 
     /**
       * Represents a variable that is bound by a let.
@@ -502,7 +500,7 @@ object Ast {
     /**
       * Represents some other unknown binding.
       */
-    case object Unknown extends BoundBy
+    case object Unclassified extends BoundBy
 
   }
 
