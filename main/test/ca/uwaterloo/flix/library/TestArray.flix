@@ -434,12 +434,12 @@ def range06(): Bool & Impure =
 
 @test
 def repeat01(): Bool & Impure =
-    let a = Array.repeat(1, -1);
+    let a = Array.repeat(-1, 1);
     Array.sameElements(a, []: Array[Int32])
 
 @test
 def repeat02(): Bool & Impure =
-    let a = Array.repeat(1, 0);
+    let a = Array.repeat(0, 1);
     Array.sameElements(a, []: Array[Int32])
 
 @test
@@ -449,12 +449,12 @@ def repeat03(): Bool & Impure =
 
 @test
 def repeat04(): Bool & Impure =
-    let a = Array.repeat(1, 2);
+    let a = Array.repeat(2, 1);
     Array.sameElements(a, [1,1])
 
 @test
 def repeat05(): Bool & Impure =
-    let a = Array.repeat(1, 3);
+    let a = Array.repeat(3, 1);
     Array.sameElements(a, [1,1,1])
 
 /////////////////////////////////////////////////////////////////////////////
