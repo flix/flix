@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.BindingType
+import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.Name.{Ident, NName}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -64,28 +64,28 @@ object Symbol {
     * Returns a fresh variable symbol based on the given symbol.
     */
   def freshVarSym(sym: VarSym)(implicit flix: Flix): VarSym = {
-    new VarSym(flix.genSym.freshId(), sym.text, sym.tvar, Scopedness.Unscoped, sym.bindingType, sym.loc)
+    new VarSym(flix.genSym.freshId(), sym.text, sym.tvar, Scopedness.Unscoped, sym.boundBy, sym.loc)
   }
 
   /**
     * Returns a fresh variable symbol for the given identifier.
     */
-  def freshVarSym(ident: Name.Ident, bindingType: BindingType)(implicit flix: Flix): VarSym = {
-    new VarSym(flix.genSym.freshId(), ident.name, Type.freshUnkindedVar(ident.loc), Scopedness.Unscoped, bindingType, ident.loc)
+  def freshVarSym(ident: Name.Ident, boundBy: BoundBy)(implicit flix: Flix): VarSym = {
+    new VarSym(flix.genSym.freshId(), ident.name, Type.freshUnkindedVar(ident.loc), Scopedness.Unscoped, boundBy, ident.loc)
   }
 
   /**
     * Returns a fresh variable symbol for the given identifier and scopedness.
     */
-  def freshVarSym(ident: Name.Ident, scopedness: Scopedness)(implicit flix: Flix): VarSym = {
-    new VarSym(flix.genSym.freshId(), ident.name, Type.freshUnkindedVar(ident.loc), scopedness, ident.loc)
+  def freshVarSym(ident: Name.Ident, scopedness: Scopedness, boundBy: BoundBy)(implicit flix: Flix): VarSym = {
+    new VarSym(flix.genSym.freshId(), ident.name, Type.freshUnkindedVar(ident.loc), scopedness, boundBy, ident.loc)
   }
 
   /**
     * Returns a fresh variable symbol with the given text.
     */
   def freshVarSym(text: String, loc: SourceLocation)(implicit flix: Flix): VarSym = {
-    new VarSym(flix.genSym.freshId(), text, Type.freshUnkindedVar(loc), Scopedness.Unscoped, loc)
+    new VarSym(flix.genSym.freshId(), text, Type.freshUnkindedVar(loc), Scopedness.Unscoped, BoundBy.Unknown, loc)
   }
 
   /**
@@ -171,13 +171,13 @@ object Symbol {
   /**
     * Variable Symbol.
     *
-    * @param id          the globally unique name of the symbol.
-    * @param text        the original name, as it appears in the source code, of the symbol
-    * @param tvar        the type variable associated with the symbol. This type variable always has kind `Star`.
-    * @param bindingType the binding type of the variable.
-    * @param loc         the source location associated with the symbol.
+    * @param id      the globally unique name of the symbol.
+    * @param text    the original name, as it appears in the source code, of the symbol
+    * @param tvar    the type variable associated with the symbol. This type variable always has kind `Star`.
+    * @param boundBy the way the variable is bound.
+    * @param loc     the source location associated with the symbol.
     */
-  final class VarSym(val id: Int, val text: String, val tvar: Type.UnkindedVar, val scopedness: Scopedness, val bindingType: BindingType, val loc: SourceLocation) {
+  final class VarSym(val id: Int, val text: String, val tvar: Type.UnkindedVar, val scopedness: Scopedness, val boundBy: BoundBy, val loc: SourceLocation) {
 
     /**
       * The internal stack offset. Computed during variable numbering.

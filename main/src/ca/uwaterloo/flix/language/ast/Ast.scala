@@ -466,20 +466,43 @@ object Ast {
   case class Derivation(clazz: Symbol.ClassSym, loc: SourceLocation)
 
   /**
-    * Represents a binding type, i.e. the way a variable was bound.
+    * Represents the way a variable is bound.
     */
-  sealed trait BindingType
+  sealed trait BoundBy
 
-  object BindingType {
-    /**
-      * The variable is bound by a formal parameter.
-      */
-    case object FormalParam extends BindingType
+  object BoundBy {
+
+    // TODO: Better names
 
     /**
-      * The variable variable is bound in some other way.
+      * Represents a variable that is bound by a formal parameter.
       */
-    case object Other extends BindingType
+    case object FormalParam extends BoundBy
+
+    /**
+      * Represents a variable that is bound by a let.
+      */
+    case object Let extends BoundBy
+
+    /**
+      * Represents a variable that is bound by a pattern.
+      */
+    case object Pattern extends BoundBy
+
+    /**
+      * Represents a variable that is bound by a select.
+      */
+    case object Select extends BoundBy
+
+    /**
+      * Represents a variable that is bound by a constraint.
+      */
+    case object Constraint extends BoundBy
+
+    /**
+      * Represents some other unknown binding.
+      */
+    case object Unknown extends BoundBy
 
   }
 
