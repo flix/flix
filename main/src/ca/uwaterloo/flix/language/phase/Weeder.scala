@@ -588,7 +588,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           case OperatorResult.BuiltIn(name) => WeededAst.Expression.Apply(WeededAst.Expression.DefOrSig(name, name.loc), List(e), loc)
           case OperatorResult.Operator(o) => WeededAst.Expression.Unary(o, e, loc)
           case OperatorResult.NoOp => e
-          case OperatorResult.Unrecognized(ident) => WeededAst.Expression.Apply(WeededAst.Expression.VarOrDefOrSig(ident, loc), List(e), loc)
+          case OperatorResult.Unrecognized(ident) => WeededAst.Expression.Apply(WeededAst.Expression.VarOrDefOrSig(ident, ident.loc), List(e), loc)
         }
       }
 
@@ -599,7 +599,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (e1, e2) => visitBinaryOperator(op) match {
           case OperatorResult.BuiltIn(name) => WeededAst.Expression.Apply(WeededAst.Expression.DefOrSig(name, name.loc), List(e1, e2), loc)
           case OperatorResult.Operator(o) => WeededAst.Expression.Binary(o, e1, e2, loc)
-          case OperatorResult.Unrecognized(ident) => WeededAst.Expression.Apply(WeededAst.Expression.VarOrDefOrSig(ident, loc), List(e1, e2), loc)
+          case OperatorResult.Unrecognized(ident) => WeededAst.Expression.Apply(WeededAst.Expression.VarOrDefOrSig(ident, ident.loc), List(e1, e2), loc)
           case OperatorResult.NoOp => throw InternalCompilerException(s"Unexpected operator: $op")
         }
       }
