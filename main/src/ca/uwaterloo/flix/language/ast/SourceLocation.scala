@@ -46,9 +46,14 @@ object SourceLocation {
 case class SourceLocation(input: Option[ParserInput], source: Source, beginLine: Int, beginCol: Int, endLine: Int, endCol: Int) {
 
   /**
+    * Returns `true` if this source location spans a single line.
+    */
+  def isSingleLine: Boolean = beginLine == endLine
+
+  /**
     * Returns `true` if this source location spans more than one line.
     */
-  def isMultiLine: Boolean = beginLine != endLine
+  def isMultiLine: Boolean = !isSingleLine
 
   /**
     * Returns the smallest (i.e. the first that appears in the source code) of `this` and `that`.
