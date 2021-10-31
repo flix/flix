@@ -51,4 +51,7 @@ namespace Test/Exp/Hole {
         case Some(n) => ?hole1(List.map(?hole2, List.range(?hole3, ?hole4)))
     }
 
+    @test
+    def testHole10(): Int & Impure = if (true) 42 else ?hole
+
 }

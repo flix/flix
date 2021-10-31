@@ -396,8 +396,8 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
           tconstrs = tconstrs0.map(_.copy(loc = loc))
         } yield (tconstrs, resultTyp, Type.Pure)
 
-      case KindedAst.Expression.Hole(sym, tvar, loc) =>
-        liftM(List.empty, tvar, Type.Pure)
+      case KindedAst.Expression.Hole(sym, tvar, evar, loc) =>
+        liftM(List.empty, tvar, evar)
 
       case KindedAst.Expression.Unit(loc) =>
         liftM(List.empty, Type.Unit, Type.Pure)
@@ -1500,8 +1500,8 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
       case KindedAst.Expression.Sig(sym, tvar, loc) =>
         TypedAst.Expression.Sig(sym, subst0(tvar), loc)
 
-      case KindedAst.Expression.Hole(sym, tpe, loc) =>
-        TypedAst.Expression.Hole(sym, subst0(tpe), loc)
+      case KindedAst.Expression.Hole(sym, tpe, eff, loc) =>
+        TypedAst.Expression.Hole(sym, subst0(tpe), subst0(eff), loc)
 
       case KindedAst.Expression.Unit(loc) => TypedAst.Expression.Unit(loc)
 
