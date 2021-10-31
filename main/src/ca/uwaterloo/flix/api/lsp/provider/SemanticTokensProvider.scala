@@ -628,7 +628,7 @@ object SemanticTokensProvider {
     * Returns `true` if the given symbol `sym` is bound as a formal parameter.
     */
   private def boundByFormalParam(sym: Symbol.VarSym): Boolean = sym.boundBy match {
-    case BoundBy.Param => true
+    case BoundBy.FormalParam => true
     case _ => false
   }
 

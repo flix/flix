@@ -475,10 +475,10 @@ object Ast {
     /**
       * Represents a variable that is bound by a formal parameter.
       */
-    case object Param extends BoundBy
+    case object FormalParam extends BoundBy
 
     /**
-      * Represents a variable that is bound by a let.
+      * Represents a variable that is bound by a let-binding.
       */
     case object Let extends BoundBy
 
@@ -490,17 +490,17 @@ object Ast {
     /**
       * Represents a variable that is bound by a select.
       */
-    case object Select extends BoundBy
+    case object SelectRule extends BoundBy
+
+    /**
+      * Represents a variable that is bound by a catch rule.
+      */
+    case object CatchRule extends BoundBy
 
     /**
       * Represents a variable that is bound by a constraint.
       */
     case object Constraint extends BoundBy
-
-    /**
-      * Represents some other unknown binding.
-      */
-    case object Unclassified extends BoundBy
 
   }
 
