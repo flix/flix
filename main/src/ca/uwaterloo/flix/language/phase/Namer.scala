@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.Source
+import ca.uwaterloo.flix.language.ast.Ast.{BindingType, Source}
 import ca.uwaterloo.flix.language.ast.WeededAst.ChoicePattern
 import ca.uwaterloo.flix.language.ast.{NamedAst, _}
 import ca.uwaterloo.flix.language.errors.NameError
@@ -282,7 +282,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (macc, ident) => macc.get(ident.name) match {
           // Check if the identifier is bound by the rule scope.
           case None if !ruleVars.exists(_.name == ident.name) =>
-            macc + (ident.name -> Symbol.freshVarSym(ident))
+            macc + (ident.name -> Symbol.freshVarSym(ident, BindingType.Other))
           case _ => macc
         }
       }
@@ -290,7 +290,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       // Introduce a symbol for each variable that is visible in the rule scope of the constraint.
       val ruleEnv = ruleVars.foldLeft(Map.empty[String, Symbol.VarSym]) {
         case (macc, ident) => macc.get(ident.name) match {
-          case None => macc + (ident.name -> Symbol.freshVarSym(ident))
+          case None => macc + (ident.name -> Symbol.freshVarSym(ident, BindingType.Other))
           case Some(sym) => macc
         }
       }
@@ -566,7 +566,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.LetRegion(ident, exp, loc) =>
       // make a fresh variable symbol for the local variable.
-      val sym = Symbol.freshVarSym(ident)
+      val sym = Symbol.freshVarSym(ident, BindingType.Other)
       mapN(visitExp(exp, env0 + (ident.name -> sym), uenv0, tenv0)) {
         case e =>
           NamedAst.Expression.LetRegion(sym, e, loc)

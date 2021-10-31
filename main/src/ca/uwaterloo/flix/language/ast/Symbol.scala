@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Ast.BindingType
 import ca.uwaterloo.flix.language.ast.Name.{Ident, NName}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -63,14 +64,14 @@ object Symbol {
     * Returns a fresh variable symbol based on the given symbol.
     */
   def freshVarSym(sym: VarSym)(implicit flix: Flix): VarSym = {
-    new VarSym(flix.genSym.freshId(), sym.text, sym.tvar, Scopedness.Unscoped, sym.loc)
+    new VarSym(flix.genSym.freshId(), sym.text, sym.tvar, Scopedness.Unscoped, sym.bindingType, sym.loc)
   }
 
   /**
     * Returns a fresh variable symbol for the given identifier.
     */
-  def freshVarSym(ident: Name.Ident)(implicit flix: Flix): VarSym = {
-    new VarSym(flix.genSym.freshId(), ident.name, Type.freshUnkindedVar(ident.loc), Scopedness.Unscoped, ident.loc)
+  def freshVarSym(ident: Name.Ident, bindingType: BindingType)(implicit flix: Flix): VarSym = {
+    new VarSym(flix.genSym.freshId(), ident.name, Type.freshUnkindedVar(ident.loc), Scopedness.Unscoped, bindingType, ident.loc)
   }
 
   /**
@@ -170,12 +171,13 @@ object Symbol {
   /**
     * Variable Symbol.
     *
-    * @param id   the globally unique name of the symbol.
-    * @param text the original name, as it appears in the source code, of the symbol
-    * @param tvar the type variable associated with the symbol. This type variable always has kind `Star`.
-    * @param loc  the source location associated with the symbol.
+    * @param id          the globally unique name of the symbol.
+    * @param text        the original name, as it appears in the source code, of the symbol
+    * @param tvar        the type variable associated with the symbol. This type variable always has kind `Star`.
+    * @param bindingType the binding type of the variable.
+    * @param loc         the source location associated with the symbol.
     */
-  final class VarSym(val id: Int, val text: String, val tvar: Type.UnkindedVar, val scopedness: Scopedness, val loc: SourceLocation) {
+  final class VarSym(val id: Int, val text: String, val tvar: Type.UnkindedVar, val scopedness: Scopedness, val bindingType: BindingType, val loc: SourceLocation) {
 
     /**
       * The internal stack offset. Computed during variable numbering.
