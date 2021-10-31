@@ -258,7 +258,7 @@ namespace List {
     /// Returns `Nil` if `n < 0`.
     ///
     @Time(n) @Space(n)
-    pub def repeat(a: a, n: Int32): List[a] = repeatHelper(a, n, xs -> xs)
+    pub def repeat(n: Int32, a: a): List[a] = repeatHelper(a, n, xs -> xs)
 
     ///
     /// Helper function for `repeat`.
