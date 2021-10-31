@@ -97,11 +97,11 @@ object SemanticTokensProvider {
     val allTokens = (classTokens ++ instanceTokens ++ defnTokens ++ enumTokens ++ typeAliasTokens).toList
 
     //
-    // We keep until tokens that are: (i) single-line tokens and (ii) have the same source as uri.
+    // We keep all tokens that are: (i) single-line tokens and (ii) have the same source as `uri`.
     //
-    // Note that the last criteria automatically excludes:
+    // Note that the last criteria (automatically) excludes:
     //   (a) tokens with unknown source locations, and
-    //   (b) tokens that come from entities inside `uri` but that nevertheless come from elsewhere.
+    //   (b) tokens that come from entities inside `uri` but that originate from different uris.
     //
     val filteredTokens = allTokens.filter(t => t.loc.isSingleLine && include(uri, t.loc))
 
