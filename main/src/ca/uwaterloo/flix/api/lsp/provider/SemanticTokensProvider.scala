@@ -227,7 +227,7 @@ object SemanticTokensProvider {
       val t = SemanticToken(o, Nil, loc)
       Iterator(t)
 
-    case Expression.Hole(_, _, _) => Iterator.empty
+    case Expression.Hole(_, _, _, _) => Iterator.empty
 
     case Expression.Unit(loc) =>
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)

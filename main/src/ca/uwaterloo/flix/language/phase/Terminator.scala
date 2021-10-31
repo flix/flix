@@ -69,7 +69,7 @@ object Terminator extends Phase[Root, Root] {
       case Expression.Var(_, _, _) => false
       case Expression.Def(_, _, _) => false
       case Expression.Sig(_, _, _) => false
-      case Expression.Hole(_, _, _) => false
+      case Expression.Hole(_, _, _, _) => false
       case Expression.Lambda(_, _, _, _) => false
 
       // If the Apply is a recursive call, then return true
