@@ -804,7 +804,7 @@ namespace String {
     /// Returns the empty string if `n < 0`.
     ///
     @Time(length(s) * n) @Space(length(s) * n)
-    pub def repeat(s: String, n: Int32): String =
+    pub def repeat(n: Int32, s: String): String =
         import java.lang.String.repeat(Int32);
         if (n < 0)
             ""
@@ -820,7 +820,7 @@ namespace String {
         if (len >= w)
             s
         else
-            repeat(Char.toString(c), w - len) + s
+            repeat(w - len, Char.toString(c)) + s
 
     ///
     /// Pad the string `s` at the right with the supplied char `c` to fit the width `w`.
@@ -831,7 +831,7 @@ namespace String {
         if (len >= w)
             s
         else
-            s + repeat(Char.toString(c), w - len)
+            s + repeat(w - len, Char.toString(c))
 
     ///
     /// Returns `s` with every match of the substring `from` replaced by the string `to`.
@@ -912,7 +912,7 @@ namespace String {
     ///
     def indentHelper(n: Int32, s: String): String & Impure =
         let sb = StringBuilder.new();
-        let prefix = repeat(" ", n);
+        let prefix = repeat(n, " ");
         let step = x -> {
             StringBuilder.appendString!(sb, prefix);
             StringBuilder.appendLine!(sb, x)
