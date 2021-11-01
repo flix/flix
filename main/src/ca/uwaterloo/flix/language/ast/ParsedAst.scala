@@ -761,40 +761,40 @@ object ParsedAst {
     /**
       * Cons expression (of list).
       *
-      * @param hd  the head of the list.
-      * @param sp1 the position of the first character in the :: operator.
-      * @param sp2 the position of the last character in the :: operator.
-      * @param tl  the tail of the list.
+      * @param exp1 the head of the list.
+      * @param sp1  the position of the first character in the :: operator.
+      * @param sp2  the position of the last character in the :: operator.
+      * @param exp2 the tail of the list.
       */
-    case class FCons(hd: ParsedAst.Expression, sp1: SourcePosition, sp2: SourcePosition, tl: ParsedAst.Expression) extends ParsedAst.Expression
+    case class FCons(exp1: ParsedAst.Expression, sp1: SourcePosition, sp2: SourcePosition, exp2: ParsedAst.Expression) extends ParsedAst.Expression
 
     /**
       * Append expression (of list).
       *
-      * @param fst the first list.
-      * @param sp1 the position of the first character in the operator @@.
-      * @param sp2 the position of the last character in the operator @@.
-      * @param snd the second list.
+      * @param exp1 the first list.
+      * @param sp1  the position of the first character in the operator @@.
+      * @param sp2  the position of the last character in the operator @@.
+      * @param exp2 the second list.
       */
-    case class FAppend(fst: ParsedAst.Expression, sp1: SourcePosition, sp2: SourcePosition, snd: ParsedAst.Expression) extends ParsedAst.Expression
+    case class FAppend(exp1: ParsedAst.Expression, sp1: SourcePosition, sp2: SourcePosition, exp2: ParsedAst.Expression) extends ParsedAst.Expression
 
     /**
       * Set Expression.
       *
-      * @param sp1  the position of the first character in the expression.
-      * @param elms the elements of the set.
-      * @param sp2  the position of the last character in the expression.
+      * @param sp1  the position of the first character in the `Set` keyword.
+      * @param sp2  the position of the last character in the `Set` keyword.
+      * @param exps the elements of the set.
       */
-    case class FSet(sp1: SourcePosition, elms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+    case class FSet(sp1: SourcePosition, sp2: SourcePosition, exps: Seq[ParsedAst.Expression]) extends ParsedAst.Expression
 
     /**
       * Map Expression.
       *
-      * @param sp1  the position of the first character in the expression.
-      * @param elms the (key, values) of the map.
-      * @param sp2  the position of the last character in the expression.
+      * @param sp1  the position of the first character in the `Map` keyword.
+      * @param sp2  the position of the last character in the `Map` keyword.
+      * @param exps the (key, values) of the map.
       */
-    case class FMap(sp1: SourcePosition, elms: Seq[(ParsedAst.Expression, ParsedAst.Expression)], sp2: SourcePosition) extends ParsedAst.Expression
+    case class FMap(sp1: SourcePosition, sp2: SourcePosition, exps: Seq[(ParsedAst.Expression, ParsedAst.Expression)]) extends ParsedAst.Expression
 
     /**
       * String Interpolation Expression.
@@ -1491,7 +1491,7 @@ object ParsedAst {
     /**
       * An unnamed argument.
       *
-      * @param exp  the value of the argument.
+      * @param exp the value of the argument.
       */
     case class Unnamed(exp: ParsedAst.Expression) extends Argument
   }
@@ -1500,7 +1500,7 @@ object ParsedAst {
     * Operator.
     *
     * @param sp1 the position of the first character in the operator.
-    * @param op the operator.
+    * @param op  the operator.
     * @param sp2 the position of the last character in the operator.
     */
   case class Operator(sp1: SourcePosition, op: String, sp2: SourcePosition)
