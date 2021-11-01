@@ -77,11 +77,11 @@ namespace DelayMap {
     pub def insertWithKey(f: (k, v, v) -> v & ef, k: k, v: v, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
         let DMap(t) = m;
         if (reify ef)
-            let f1 = (k1, v2, v1) -> lazy (f(k1, force v2, force v1) as & Pure);
+            let f1 = (key, newVal, oldVal) -> lazy (f(key, force newVal, force oldVal) as & Pure);
             DMap(RedBlackTree.insertWith(f1, k, lazy v, t))
         else
-            let f1 = (k1, v2, v1) -> {
-                let x = f(k1, force v2, force v1);
+            let f1 = (key, newVal, oldVal) -> {
+                let x = f(key, force newVal, force oldVal);
                 lazy x
             };
             DMap(RedBlackTree.insertWith(f1, k, lazy v, t)) as & ef
