@@ -116,4 +116,20 @@ namespace Bool {
     @test
     def andTest04(): Bool = and(true, lazy true) == true
 
+    /////////////////////////////////////////////////////////////////////////////
+    // Logical Or (lazy)                                                      //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def orTest01(): Bool = or(false, lazy false) == false
+
+    @test
+    def orTest02(): Bool = or(false, lazy true) == true
+
+    @test
+    def orTest03(): Bool = or(true, lazy false) == true
+
+    @test
+    def orTest04(): Bool = or(true, lazy true) == true
+
 }

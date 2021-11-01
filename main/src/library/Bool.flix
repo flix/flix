@@ -64,4 +64,9 @@ namespace Bool {
     ///
     pub def and(x: Bool, y: Lazy[Bool]): Bool = if(x) force y else x
 
+    ///
+    /// Logical or.
+    ///
+    pub def or(x: Bool, y: Lazy[Bool]): Bool = if(x) x else force y
+
 }
