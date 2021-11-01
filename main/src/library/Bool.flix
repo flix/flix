@@ -54,4 +54,9 @@ namespace Bool {
     @Time(1) @Space(1)
     pub def ⊕(x: Bool, y: Bool): Bool = (x ∨ y) ∧ not (x ∧ y)
 
+    ///
+    /// Negation of `x`
+    ///
+    pub def not(x: Bool): Bool = not x
+
 }

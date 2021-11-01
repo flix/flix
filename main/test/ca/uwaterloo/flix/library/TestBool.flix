@@ -90,4 +90,14 @@ namespace Bool {
     @test
     def mathXor04(): Bool = (false ⊕ false) == false
 
+    /////////////////////////////////////////////////////////////////////////////
+    // Negation                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def notBool01(): Bool = not(true) == false
+
+    @test
+    def notBool02(): Bool = not(false) == true
+
 }
