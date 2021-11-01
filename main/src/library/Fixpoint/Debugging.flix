@@ -24,9 +24,9 @@ namespace Fixpoint {
     ///
     pub def notifyPreSolve(d: Datalog[v], _stf: Map[PredSym, Int32]): Unit with Order[v], ToString[v] = {
         if (enableDebugging()) {
-            println(String.repeat("*", 80));
+            println(String.repeat(80, "*"));
             println("** Datalog Input");
-            println(String.repeat("*", 80));
+            println(String.repeat(80, "*"));
             println("");
             println(String.indent(4, "${d}"));
             println("")
@@ -38,9 +38,9 @@ namespace Fixpoint {
     ///
     pub def notifyPostSolve(d: Datalog[v]): Unit with Order[v], ToString[v] = {
         if (enableDebugging()) {
-            println(String.repeat("*", 80));
+            println(String.repeat(80, "*"));
             println("** Minimal Model");
-            println(String.repeat("*", 80));
+            println(String.repeat(80, "*"));
             println("");
             println(String.indent(4, "${d}"));
             println("")
@@ -52,9 +52,9 @@ namespace Fixpoint {
     ///
     pub def notifyPreInterpret(s: RamStmt[v]): Unit with Order[v], ToString[v] = {
         if (enableDebugging()) {
-            println(String.repeat("*", 80));
+            println(String.repeat(80, "*"));
             println("** Relation Algebra Machine AST");
-            println(String.repeat("*", 80));
+            println(String.repeat(80, "*"));
             println("");
             println(String.indent(4, "${s}"));
             println("")

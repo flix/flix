@@ -588,7 +588,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           case OperatorResult.BuiltIn(name) => WeededAst.Expression.Apply(WeededAst.Expression.DefOrSig(name, name.loc), List(e), loc)
           case OperatorResult.Operator(o) => WeededAst.Expression.Unary(o, e, loc)
           case OperatorResult.NoOp => e
-          case OperatorResult.Unrecognized(ident) => WeededAst.Expression.Apply(WeededAst.Expression.VarOrDefOrSig(ident, loc), List(e), loc)
+          case OperatorResult.Unrecognized(ident) => WeededAst.Expression.Apply(WeededAst.Expression.VarOrDefOrSig(ident, ident.loc), List(e), loc)
         }
       }
 
@@ -599,7 +599,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (e1, e2) => visitBinaryOperator(op) match {
           case OperatorResult.BuiltIn(name) => WeededAst.Expression.Apply(WeededAst.Expression.DefOrSig(name, name.loc), List(e1, e2), loc)
           case OperatorResult.Operator(o) => WeededAst.Expression.Binary(o, e1, e2, loc)
-          case OperatorResult.Unrecognized(ident) => WeededAst.Expression.Apply(WeededAst.Expression.VarOrDefOrSig(ident, loc), List(e1, e2), loc)
+          case OperatorResult.Unrecognized(ident) => WeededAst.Expression.Apply(WeededAst.Expression.VarOrDefOrSig(ident, ident.loc), List(e1, e2), loc)
           case OperatorResult.NoOp => throw InternalCompilerException(s"Unexpected operator: $op")
         }
       }
@@ -1064,11 +1064,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val exp = WeededAst.Expression.Unit(loc)
       WeededAst.Expression.Tag(None, tag, Some(exp), loc).toSuccess
 
-    case ParsedAst.Expression.FCons(hd, sp1, sp2, tl) =>
+    case ParsedAst.Expression.FCons(exp1, sp1, sp2, exp2) =>
       /*
        * Rewrites a `FCons` expression into a tag expression.
        */
-      mapN(visitExp(hd), visitExp(tl)) {
+      mapN(visitExp(exp1), visitExp(exp2)) {
         case (e1, e2) =>
           val loc = mkSL(sp1, sp2)
           val tag = Name.Tag("Cons", loc)
@@ -1076,22 +1076,22 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           WeededAst.Expression.Tag(None, tag, Some(exp), loc)
       }
 
-    case ParsedAst.Expression.FAppend(fst, sp1, sp2, snd) =>
+    case ParsedAst.Expression.FAppend(exp1, sp1, sp2, exp2) =>
       /*
        * Rewrites a `FAppend` expression into a call to `List/append`.
        */
-      mapN(visitExp(fst), visitExp(snd)) {
+      mapN(visitExp(exp1), visitExp(exp2)) {
         case (e1, e2) =>
           // NB: We painstakingly construct the qualified name
           // to ensure that source locations are available.
           mkApplyFqn("List.append", List(e1, e2), sp1, sp2)
       }
 
-    case ParsedAst.Expression.FSet(sp1, elms, sp2) =>
+    case ParsedAst.Expression.FSet(sp1, sp2, exps) =>
       /*
        * Rewrites a `FSet` expression into `Set/empty` and a `Set/insert` calls.
        */
-      traverse(elms)(e => visitExp(e)) map {
+      traverse(exps)(e => visitExp(e)) map {
         case es =>
           val empty = mkApplyFqn("Set.empty", List(WeededAst.Expression.Unit(mkSL(sp1, sp2))), sp1, sp2)
           es.foldLeft(empty) {
@@ -1099,11 +1099,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           }
       }
 
-    case ParsedAst.Expression.FMap(sp1, elms, sp2) =>
+    case ParsedAst.Expression.FMap(sp1, sp2, exps) =>
       /*
        * Rewrites a `FMap` expression into `Map/empty` and a `Map/insert` calls.
        */
-      val elmsVal = traverse(elms) {
+      val elmsVal = traverse(exps) {
         case (key, value) => mapN(visitExp(key), visitExp(value)) {
           case (k, v) => (k, v)
         }
@@ -1588,7 +1588,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
           // Case 3.2: Unicode escape
           case "u" => rest match {
-            // Case 3.2.1: `\u` followed by 4 or more literals
+            // Case 3.2.1: `\\u` followed by 4 or more literals
             case ParsedAst.CharCode.Literal(sp1, d0, _) ::
               ParsedAst.CharCode.Literal(_, d1, _) ::
               ParsedAst.CharCode.Literal(_, d2, _) ::
@@ -1600,7 +1600,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
                 case Validation.Success(char) => visit(rest2, char :: acc)
                 case Validation.Failure(errors) => Validation.Failure(errors)
               }
-            // Case 3.2.2: `\u` followed by less than 4 literals
+            // Case 3.2.2: `\\u` followed by less than 4 literals
             case rest2 =>
               val code = rest2.takeWhile(_.isInstanceOf[ParsedAst.CharCode.Literal])
               val sp2 = code.lastOption.getOrElse(esc).sp2

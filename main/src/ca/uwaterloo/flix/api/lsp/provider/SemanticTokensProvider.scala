@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp._
-import ca.uwaterloo.flix.language.ast.Ast.TypeConstraint
+import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, TypeConstraint}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.Symbol
@@ -97,9 +97,13 @@ object SemanticTokensProvider {
     val allTokens = (classTokens ++ instanceTokens ++ defnTokens ++ enumTokens ++ typeAliasTokens).toList
 
     //
-    // We remove all: (i) multi-line tokens and (ii) tokens with unknown source locations.
+    // We keep all tokens that are: (i) single-line tokens and (ii) have the same source as `uri`.
     //
-    val filteredTokens = allTokens.filter(t => !t.loc.isMultiLine && t.loc != SourceLocation.Unknown)
+    // Note that the last criteria (automatically) excludes:
+    //   (a) tokens with unknown source locations, and
+    //   (b) tokens that come from entities inside `uri` but that originate from different uris.
+    //
+    val filteredTokens = allTokens.filter(t => t.loc.isSingleLine && include(uri, t.loc))
 
     //
     // Encode the semantic tokens as a list of integers.
@@ -218,12 +222,12 @@ object SemanticTokensProvider {
       Iterator(t)
 
     case Expression.Def(sym, _, loc) =>
-      val o = if (isOperator(sym.name)) SemanticTokenType.Operator else SemanticTokenType.Function
+      val o = if (isOperatorName(sym.name)) SemanticTokenType.Operator else SemanticTokenType.Function
       val t = SemanticToken(o, Nil, loc)
       Iterator(t)
 
     case Expression.Sig(sym, _, loc) =>
-      val o = if (isOperator(sym.name)) SemanticTokenType.Operator else SemanticTokenType.Method
+      val o = if (isOperatorName(sym.name)) SemanticTokenType.Operator else SemanticTokenType.Method
       val t = SemanticToken(o, Nil, loc)
       Iterator(t)
 
@@ -546,7 +550,8 @@ object SemanticTokensProvider {
     */
   private def visitFormalParam(fparam0: FormalParam): Iterator[SemanticToken] = fparam0 match {
     case FormalParam(sym, _, tpe, _) =>
-      val t = SemanticToken(SemanticTokenType.Parameter, Nil, sym.loc)
+      val o = getSemanticTokenType(sym, tpe)
+      val t = SemanticToken(o, Nil, sym.loc)
       Iterator(t) ++ visitType(tpe)
   }
 
@@ -600,12 +605,11 @@ object SemanticTokensProvider {
     * Returns the semantic token type associated with the given variable `sym` of the given type `tpe`.
     */
   private def getSemanticTokenType(sym: Symbol.VarSym, tpe: Type): SemanticTokenType = {
-    val isOp = isOperator(sym.text)
-    val isFn = isFunction(tpe)
-
-    if (isOp)
+    if (boundByFormalParam(sym))
+      SemanticTokenType.Parameter
+    else if (isOperatorName(sym.text))
       SemanticTokenType.Operator
-    else if (isFn)
+    else if (isFunctionType(tpe))
       SemanticTokenType.Function
     else
       SemanticTokenType.Variable
@@ -614,13 +618,21 @@ object SemanticTokensProvider {
   /**
     * Returns `true` if the given string `s` contains non-letter symbols.
     */
-  private def isOperator(s: String): Boolean = s.forall(c => !Character.isLetter(c))
+  private def isOperatorName(s: String): Boolean = s.forall(c => !Character.isLetter(c))
 
   /**
     * Returns `true` if the given type `tpe` is a function type.
     */
-  private def isFunction(tpe: Type): Boolean = tpe.typeConstructor match {
+  private def isFunctionType(tpe: Type): Boolean = tpe.typeConstructor match {
     case Some(TypeConstructor.Arrow(_)) => true
+    case _ => false
+  }
+
+  /**
+    * Returns `true` if the given symbol `sym` is bound as a formal parameter.
+    */
+  private def boundByFormalParam(sym: Symbol.VarSym): Boolean = sym.boundBy match {
+    case BoundBy.FormalParam => true
     case _ => false
   }
 

@@ -242,19 +242,19 @@ def range05(): Bool = List.range(1, 4) == 1 :: 2 :: 3 :: Nil
 // repeat                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def repeat01(): Bool = List.repeat(1, -1) == Nil
+def repeat01(): Bool = List.repeat(-1, 1) == Nil
 
 @test
-def repeat02(): Bool = List.repeat(1, 0) == Nil
+def repeat02(): Bool = List.repeat(0, 1) == Nil
 
 @test
 def repeat03(): Bool = List.repeat(1, 1) == 1 :: Nil
 
 @test
-def repeat04(): Bool = List.repeat(1, 2) == 1 :: 1 :: Nil
+def repeat04(): Bool = List.repeat(2, 1) == 1 :: 1 :: Nil
 
 @test
-def repeat05(): Bool = List.repeat(1, 3) == 1 :: 1 :: 1 :: Nil
+def repeat05(): Bool = List.repeat(3, 1) == 1 :: 1 :: 1 :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
 // scan                                                                    //

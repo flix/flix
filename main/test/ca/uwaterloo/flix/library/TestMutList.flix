@@ -917,9 +917,9 @@ namespace TestMutList {
 
     @test
     def replace!05(): Bool & Impure =
-        let v = List.toMutList(List.repeat('a', 97));
+        let v = List.toMutList(List.repeat(97, 'a'));
         MutList.replace!('a', 'z', v);
-        MutList.sameElements(List.toMutList(List.repeat('z', 97)), v)
+        MutList.sameElements(List.toMutList(List.repeat(97, 'z')), v)
 
     /////////////////////////////////////////////////////////////////////////////
     // reverse!                                                                //
