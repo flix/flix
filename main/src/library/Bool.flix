@@ -59,4 +59,9 @@ namespace Bool {
     ///
     pub def not(x: Bool): Bool = not x
 
+    ///
+    /// Logical and.
+    ///
+    pub def and(x: Bool, y: Lazy[Bool]): Bool = if(x) force y else x
+
 }
