@@ -665,4 +665,21 @@ def lift1012(): Bool = Result.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2
     @test
     def hash05(): Bool = hash(Err(13i8): Result[Unit, _]) != hash(Err(255i16): Result[Unit, _])
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toIterator                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toIterator01(): Bool & Impure =
+        Err(1): Result[Int32, Int32] |> Result.toIterator |> Iterator.toList == Nil
+
+    @test
+    def toIterator02(): Bool & Impure =
+        Ok(1) |> Result.toIterator |> Iterator.toList == 1 :: Nil
+
+    @test
+    def toIterator03(): Bool & Impure =
+        Ok(1 :: 2 :: 3 :: Nil) |> Result.toIterator |> Iterator.toList == (1 :: 2 :: 3 :: Nil) :: Nil
+
 }

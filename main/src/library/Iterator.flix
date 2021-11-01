@@ -36,6 +36,31 @@ pub enum Iterator[a] {
 namespace Iterator {
 
     ///
+    /// Returns an empty iterator.
+    ///
+    pub def empty(): Iterator[a] =
+        let done = () -> true as & Impure;
+        let next = () -> bug!("Empty Iterator!") as & Impure;
+        Iterator(done, next)
+
+    ///
+    /// Returns an iterator containing only a single element, `x`.
+    ///
+    pub def singleton(x: a): Iterator[a] & Impure =
+        let d = ref false;
+        let done = () -> deref d;
+        let next = () -> {
+            if (done()) {
+                bug!("Empty Iterator!")
+            }
+            else {
+                d := true;
+                x
+            }
+        };
+        Iterator(done, next)
+
+    ///
     /// Returns an iterator of all integers between `b` (inclusive) and `e` (exclusive).
     ///
     /// Returns an empty iterator if `b >= e`.
@@ -60,7 +85,7 @@ namespace Iterator {
     ///
     /// Returns an empty iterator if `n < 0`.
     ///
-    pub def repeat(x: a, n: Int32): Iterator[a] & Impure =
+    pub def repeat(n: Int32, x: a): Iterator[a] & Impure =
         let i = ref 0;
         let done = () -> deref i >= n;
         let next = () -> {

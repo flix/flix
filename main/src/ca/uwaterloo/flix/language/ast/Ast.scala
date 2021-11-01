@@ -434,8 +434,8 @@ object Ast {
 
   /**
     * Represents that the annotated element is eliminated by the class `clazz`.
-  */
- case class EliminatedBy(clazz: java.lang.Class[_]) extends scala.annotation.StaticAnnotation
+    */
+  case class EliminatedBy(clazz: java.lang.Class[_]) extends scala.annotation.StaticAnnotation
 
   /**
     * Represents that the type `arg` must belong to class `sym`.
@@ -464,5 +464,44 @@ object Ast {
     * Represents a derivation on an enum (e.g. `enum E with Eq`).
     */
   case class Derivation(clazz: Symbol.ClassSym, loc: SourceLocation)
+
+  /**
+    * Represents the way a variable is bound.
+    */
+  sealed trait BoundBy
+
+  object BoundBy {
+
+    /**
+      * Represents a variable that is bound by a formal parameter.
+      */
+    case object FormalParam extends BoundBy
+
+    /**
+      * Represents a variable that is bound by a let-binding.
+      */
+    case object Let extends BoundBy
+
+    /**
+      * Represents a variable that is bound by a pattern.
+      */
+    case object Pattern extends BoundBy
+
+    /**
+      * Represents a variable that is bound by a select.
+      */
+    case object SelectRule extends BoundBy
+
+    /**
+      * Represents a variable that is bound by a catch rule.
+      */
+    case object CatchRule extends BoundBy
+
+    /**
+      * Represents a variable that is bound by a constraint.
+      */
+    case object Constraint extends BoundBy
+
+  }
 
 }

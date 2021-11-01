@@ -1277,4 +1277,21 @@ def query07(): Bool =
     def toLazyList03(): Bool =
         Set.range(-1000, 1000) |> Set.toLazyList |> LazyList.toSet == Set.range(-1000, 1000)
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toIterator                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toIterator01(): Bool & Impure =
+        Set.empty(): Set[Int32] |> Set.toIterator |> Iterator.toSet == Set.empty()
+
+    @test
+    def toIterator02(): Bool & Impure =
+        Set#{1, 2, 3, 4} |> Set.toIterator |> Iterator.toSet == Set#{1, 2, 3, 4}
+
+    @test
+    def toIterator03(): Bool & Impure =
+        Set.range(0, 100) |> Set.toIterator |> Iterator.toSet == Set.range(0, 100)
+
 }

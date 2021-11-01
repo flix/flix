@@ -338,7 +338,7 @@ namespace Array {
     /// Returns `[]` if `n <= 0`.
     ///
     @Time(n) @Space(n)
-    pub def repeat(x: a, n: Int32): Array[a] & Impure =
+    pub def repeat(n: Int32, x: a): Array[a] & Impure =
         if (n <= 0)
             []
         else

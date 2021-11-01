@@ -258,7 +258,7 @@ namespace List {
     /// Returns `Nil` if `n < 0`.
     ///
     @Time(n) @Space(n)
-    pub def repeat(a: a, n: Int32): List[a] = repeatHelper(a, n, xs -> xs)
+    pub def repeat(n: Int32, a: a): List[a] = repeatHelper(a, n, xs -> xs)
 
     ///
     /// Helper function for `repeat`.
@@ -604,7 +604,7 @@ namespace List {
     /// Helper function for `transpose`.
     ///
     def transposeHelper(xs: List[List[a]], l: Int32): List[List[a]] = match xs {
-        case Nil => repeat(Nil, l)
+        case Nil => repeat(l, Nil)
         case x :: rs => applyListHelper(x, transposeHelper(rs, l))
     }
 
