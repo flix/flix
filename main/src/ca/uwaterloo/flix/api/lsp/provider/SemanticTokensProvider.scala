@@ -520,11 +520,13 @@ object SemanticTokensProvider {
       val t = SemanticToken(SemanticTokenType.Type, Nil, loc)
       Iterator(t)
 
-    case Type.Apply(tpe1, tpe2, _) =>
-      visitType(tpe1) ++ visitType(tpe2)
+    case Type.Apply(tpe1, tpe2, loc) =>
+      val t = SemanticToken(SemanticTokenType.Type, Nil, loc)
+      Iterator(t) ++ visitType(tpe1) ++ visitType(tpe2)
 
-    case Type.Alias(_, args, _, _) =>
-      args.flatMap(visitType).iterator
+    case Type.Alias(_, args, _, loc) =>
+      val t = SemanticToken(SemanticTokenType.Type, Nil, loc)
+      Iterator(t) ++ args.flatMap(visitType).iterator
 
     case Type.UnkindedVar(_, _, _, _) =>
       throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
