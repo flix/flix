@@ -122,7 +122,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
       val instsVal = Validation.traverse(insts0)(visitInstance)
 
       instsVal.map {
-        insts => insts.head.sym -> insts
+        insts => insts.head.sym.clazz -> insts
       }
     }
 

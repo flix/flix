@@ -80,13 +80,13 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
       * * The same namespace as its type.
       */
     def checkOrphan(inst: TypedAst.Instance): Validation[Unit, InstanceError] = inst match {
-      case TypedAst.Instance(_, _, classSym, tpe, _, _, ns, loc) => tpe.typeConstructor match {
+      case TypedAst.Instance(_, _, sym, tpe, _, _, ns, loc) => tpe.typeConstructor match {
         // Case 1: Enum type in the same namespace as the instance: not an orphan
         case Some(TypeConstructor.KindedEnum(enumSym, _)) if enumSym.namespace == ns.idents.map(_.name) => ().toSuccess
         // Case 2: Any type in the class namespace: not an orphan
-        case _ if (classSym.namespace) == ns.idents.map(_.name) => ().toSuccess
+        case _ if (sym.clazz.namespace) == ns.idents.map(_.name) => ().toSuccess
         // Case 3: Any type outside the class companion namespace and enum declaration namespace: orphan
-        case _ => InstanceError.OrphanInstance(tpe, classSym, loc).toFailure
+        case _ => InstanceError.OrphanInstance(tpe, sym, loc).toFailure
       }
     }
 
@@ -136,7 +136,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
       * Checks that every signature in `clazz` is implemented in `inst`, and that `inst` does not have any extraneous definitions.
       */
     def checkSigMatch(inst: TypedAst.Instance)(implicit flix: Flix): Validation[Unit, InstanceError] = {
-      val clazz = root.classes(inst.sym)
+      val clazz = root.classes(inst.sym.clazz)
 
       // Step 1: check that each signature has an implementation.
       val sigMatchVal = Validation.traverseX(clazz.signatures) {
@@ -179,7 +179,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
       */
     def checkSuperInstances(inst: TypedAst.Instance): Validation[Unit, InstanceError] = inst match {
       case TypedAst.Instance(_, _, sym, tpe, _, _, _, loc) =>
-        val superClasses = root.classEnv(sym).superClasses
+        val superClasses = root.classEnv(sym.clazz).superClasses
         Validation.traverseX(superClasses) {
           superClass =>
             val superInsts = root.classEnv.get(superClass).map(_.instances).getOrElse(Nil)
