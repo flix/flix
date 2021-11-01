@@ -53,7 +53,7 @@ namespace TestDelayMap {
     @test
     def insertWithInsertWith01(): Bool =
         (("a", 1) :: Nil)                                    |>
-            List.toDelayMap                                 |>
+            List.toDelayMap                                  |>
             DelayMap.insertWith((v1, v2) -> v1 + v2, "b", 1) |>
             DelayMap.insertWith((v1, v2) -> v1 + v2, "b", 3) |>
             DelayMap.toList == ("a", 1) :: ("b", 4) :: Nil
@@ -61,14 +61,14 @@ namespace TestDelayMap {
     @test
     def insertWithInsertWith02(): Bool & Impure =
         (("a", 1) :: Nil)                                                |>
-            List.toDelayMap                                             |>
+            List.toDelayMap                                              |>
             DelayMap.insertWith((v1, v2) -> v1 + v2, "b" as & Impure, 1) |>
             DelayMap.insertWith((v1, v2) -> v1 + v2, "b", 3)             |>
             DelayMap.toList == ("a", 1) :: ("b", 4) :: Nil
     @test
     def insertWithInsertWith03(): Bool & Impure =
         (("a", 1) :: Nil)                                                |>
-            List.toDelayMap                                             |>
+            List.toDelayMap                                              |>
             DelayMap.insertWith((v1, v2) -> v1 + v2, "b", 1)             |>
             DelayMap.insertWith((v1, v2) -> v1 + v2, "b" as & Impure, 3) |>
             DelayMap.toList == ("a", 1) :: ("b", 4) :: Nil
@@ -76,7 +76,7 @@ namespace TestDelayMap {
     @test
     def insertWithInsertWith04(): Bool & Impure =
         (("a", 1) :: Nil)                                                |>
-            List.toDelayMap                                             |>
+            List.toDelayMap                                              |>
             DelayMap.insertWith((v1, v2) -> v1 + v2, "b" as & Impure, 1) |>
             DelayMap.insertWith((v1, v2) -> v1 + v2, "b" as & Impure, 3) |>
             DelayMap.toList == ("a", 1) :: ("b", 4) :: Nil
