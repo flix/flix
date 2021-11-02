@@ -1424,4 +1424,14 @@ namespace List {
             }
         };
         Iterator(done, next)
+
+    ///
+    /// Returns the association list `xs` as a `DelayMap`.
+    ///
+    /// If `xs` contains multiple mappings with the same key, `toDelayMap` does not
+    /// make any guarantees about which mapping will be in the resulting map.
+    ///
+    pub def toDelayMap(l: List[(a, b)]): DelayMap[a, b] with Order[a] =
+        List.foldRight((x, m) -> DelayMap.insert(fst(x), snd(x), m), DelayMap.empty(), l)
+
 }
