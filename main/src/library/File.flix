@@ -273,4 +273,33 @@ namespace File {
                 Iterator(done, next)
         }
 
+    ///
+    /// Writes `data` to the given `file`.
+    ///
+    /// Creates `file` if it does not exist. Overwrites it if it exists.
+    ///
+    /// Returns `true` if the file was created.
+    ///
+    pub def write(file: String, data: t): Result[Bool, String] & Impure with ToString[t] =
+        try {
+            import new java.io.File(String) as newFile;
+            import new java.io.PrintWriter(##java.io.File) as newPrintWriter;
+            import java.io.PrintWriter.println(String);
+            import java.io.PrintWriter.close();
+            import java.io.PrintWriter.checkError();
+
+            let javaFile = newFile(file);
+            let w = newPrintWriter(javaFile);
+
+            w.println(ToString.toString(data));
+            w.close();
+
+            Ok(w.checkError())
+
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
 }
