@@ -159,14 +159,12 @@ namespace Option {
         }
 
     ///
-    /// If argument `x` is a `Some`, return the result of applying the function to the value inside `x`.
-    /// Otherwise return `None`.
+    /// Returns `f(v)` if `o` is `Some(v)`. Otherwise returns `None`.
     ///
-    pub def flatMap(f: a -> Option[b] & e, x: Option[a]) : Option[b] & e =
-        match x {
-            case None => None
-            case Some(y) => f(y)
-        }
+    pub def flatMap(f: a -> Option[b] & ef, o: Option[a]): Option[b] & ef = match o {
+        case None => None
+        case Some(v) => f(v)
+    }
 
     ///
     /// Returns `Some(f(v1, v2))` if `o1` is `Some(v1)` and `o2` is `Some(v2)`. Otherwise returns `None`.
