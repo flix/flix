@@ -327,7 +327,7 @@ object Symbol {
     */
   final class InstanceSym(val id: Int, val clazz: Symbol.ClassSym, val loc: SourceLocation) {
     /**
-      *
+      * Returns `true` if this symbol is equal to `that` symbol.
       */
     override def equals(obj: scala.Any): Boolean = obj match {
       case that: InstanceSym => this.id == that.id && this.clazz == that.clazz
