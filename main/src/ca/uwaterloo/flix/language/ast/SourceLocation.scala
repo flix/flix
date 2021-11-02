@@ -2,6 +2,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.debug.FormatSourceLocation
+import org.parboiled2.ParserInput
 
 
 /**
@@ -19,13 +20,8 @@ object SourceLocation {
   /**
     * Returns the source location constructed from the source positions `b` and `e.`
     */
-  def mk(b: SourcePosition, e: SourcePosition): SourceLocation = {
-    val lineAt = b.input match {
-      case None => (i: Int) => ""
-      case Some(input) => (i: Int) => input.getLine(i)
-    }
-    SourceLocation(b.source, b.line, b.col, e.line, e.col, lineAt)
-  }
+  def mk(b: SourcePosition, e: SourcePosition): SourceLocation =
+    SourceLocation(b.input, b.source, b.line, b.col, e.line, e.col)
 
   implicit object Order extends Ordering[SourceLocation] {
 
@@ -40,24 +36,39 @@ object SourceLocation {
 /**
   * A class that represents the physical source location of some parsed syntactic entity.
   *
+  * @param input     the parser input.
   * @param source    the source input.
   * @param beginLine the line number where the entity begins.
   * @param beginCol  the column number where the entity begins.
   * @param endLine   the line number where the entity ends.
   * @param endCol    the column number where the entity ends.
-  * @param lineAt    a closure which returns the text at the given line offset.
   */
-case class SourceLocation(source: Source, beginLine: Int, beginCol: Int, endLine: Int, endCol: Int, lineAt: Int => String) {
+case class SourceLocation(input: Option[ParserInput], source: Source, beginLine: Int, beginCol: Int, endLine: Int, endCol: Int) {
+
+  /**
+    * Returns `true` if this source location spans a single line.
+    */
+  def isSingleLine: Boolean = beginLine == endLine
 
   /**
     * Returns `true` if this source location spans more than one line.
     */
-  def isMultiLine: Boolean = beginLine != endLine
+  def isMultiLine: Boolean = !isSingleLine
 
   /**
     * Returns the smallest (i.e. the first that appears in the source code) of `this` and `that`.
     */
   def min(that: SourceLocation): SourceLocation = SourceLocation.Order.min(this, that)
+
+  /**
+    * Returns the text at the given `line`.
+    *
+    * The line does not have to refer to `this` source location.
+    */
+  def lineAt(line: Int): String = input match {
+    case None => ""
+    case Some(input) => input.getLine(line)
+  }
 
   /**
     * Returns a formatted string representation of `this` source location.

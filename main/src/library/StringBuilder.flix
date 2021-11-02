@@ -36,7 +36,7 @@ namespace StringBuilder {
         let StringBuilder(msb1) = sb1;
         let StringBuilder(msb2) = sb2;
         let cs2 = msb2 as ##java.lang.CharSequence;
-        msb1.append(cs2);
+        msb1 `append` cs2;
         ()
 
     ///
@@ -45,7 +45,7 @@ namespace StringBuilder {
     pub def appendString!(sb: StringBuilder, s: String): Unit & Impure =
         import java.lang.StringBuilder.append(String);
         let StringBuilder(msb) = sb;
-        msb.append(s);
+        msb `append` s;
         ()
 
     ///
@@ -54,21 +54,21 @@ namespace StringBuilder {
     pub def appendChar!(sb: StringBuilder, c: Char): Unit & Impure =
         import java.lang.StringBuilder.append(Char);
         let StringBuilder(msb) = sb;
-        msb.append(c);
+        msb `append` c;
         ()
 
     ///
     /// Append the Int8 `i` to the StringBuilder `sb`.
     ///
     pub def appendInt8!(sb: StringBuilder, i: Int8): Unit & Impure =
-        sb.appendString!(Int8.toString(i));
+        sb `appendString!` Int8.toString(i);
         ()
 
     ///
     /// Append the Int16 `i` to the StringBuilder `sb`.
     ///
     pub def appendInt16!(sb: StringBuilder, i: Int16): Unit & Impure =
-        sb.appendString!(Int16.toString(i));
+        sb `appendString!` Int16.toString(i);
         ()
 
     ///
@@ -77,7 +77,7 @@ namespace StringBuilder {
     pub def appendInt32!(sb: StringBuilder, i: Int32): Unit & Impure =
         import java.lang.StringBuilder.append(Int32);
         let StringBuilder(msb) = sb;
-        msb.append(i);
+        msb `append` i;
         ()
 
     ///
@@ -86,14 +86,14 @@ namespace StringBuilder {
     pub def appendInt64!(sb: StringBuilder, i: Int64): Unit & Impure =
         import java.lang.StringBuilder.append(Int64);
         let StringBuilder(msb) = sb;
-        msb.append(i);
+        msb `append` i;
         ()
 
     ///
     /// Append the BigInt `i` to the StringBuilder `sb`.
     ///
     pub def appendBigInt!(sb: StringBuilder, i: BigInt): Unit & Impure =
-        sb.appendString!(BigInt.toString(i));
+        sb `appendString!` BigInt.toString(i);
         ()
 
     ///
@@ -102,7 +102,7 @@ namespace StringBuilder {
     pub def appendFloat32!(sb: StringBuilder, d: Float32): Unit & Impure =
         import java.lang.StringBuilder.append(Float32);
         let StringBuilder(msb) = sb;
-        msb.append(d);
+        msb `append` d;
         ()
 
     ///
@@ -111,28 +111,28 @@ namespace StringBuilder {
     pub def appendFloat64!(sb: StringBuilder, d: Float64): Unit & Impure =
         import java.lang.StringBuilder.append(Float64);
         let StringBuilder(msb) = sb;
-        msb.append(d);
+        msb `append` d;
         ()
 
     ///
     /// Append the system line separator to the StringBuilder `sb`.
     ///
     pub def appendLineSeparator!(sb: StringBuilder): Unit & Impure =
-        sb.appendString!(String.lineSeparator())
+        sb `appendString!` String.lineSeparator()
 
     ///
     /// Append the String `s` followed by the system line separator to the StringBuilder `sb`.
     ///
     pub def appendLine!(sb: StringBuilder, s: String): Unit & Impure =
-        sb.appendString!(s);
-        sb.appendLineSeparator!()
+        sb `appendString!` s;
+        appendLineSeparator!(sb)
 
     ///
     /// Appends `f(x)` to the string builder `sb`.
     ///
     pub def appendLineWith!(sb: StringBuilder, f: a -> String, x: a): Unit & Impure =
-        sb.appendString!(f(x));
-        sb.appendLineSeparator!()
+        sb `appendString!` f(x);
+        appendLineSeparator!(sb)
 
     ///
     /// Appends each string in the array `a` to the string builder `sb`.
@@ -165,7 +165,7 @@ namespace StringBuilder {
     pub def length(sb: StringBuilder): Int32 & Impure =
         import java.lang.StringBuilder.length();
         let StringBuilder(msb) = sb;
-        msb.length()
+        length(msb)
 
     ///
     /// Convert the StringBuilder `sb` to a string.
@@ -173,6 +173,6 @@ namespace StringBuilder {
     pub def toString(sb: StringBuilder): String & Impure =
         import java.lang.StringBuilder.toString();
         let StringBuilder(msb) = sb;
-        msb.toString()
+        toString(msb)
 
 }

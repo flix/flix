@@ -25,29 +25,29 @@ namespace TestRedBlackTree {
         RedBlackTree.size(toTree(List.range(0, 100))) == 100
 
     @test
-    def testDelete01(): Bool =
-        not RedBlackTree.memberOf(1, RedBlackTree.delete(1, toTree(List.range(0, 100))))
+    def testRemove01(): Bool =
+        not RedBlackTree.memberOf(1, RedBlackTree.remove(1, toTree(List.range(0, 100))))
 
     @test
-    def testDelete02(): Bool =
-        not RedBlackTree.memberOf(50, RedBlackTree.delete(50, toTree(List.range(0, 100))))
+    def testRemove02(): Bool =
+        not RedBlackTree.memberOf(50, RedBlackTree.remove(50, toTree(List.range(0, 100))))
 
     @test
-    def testDelete03(): Bool =
-        not RedBlackTree.memberOf(99, RedBlackTree.delete(99, toTree(List.range(0, 100))))
+    def testRemove03(): Bool =
+        not RedBlackTree.memberOf(99, RedBlackTree.remove(99, toTree(List.range(0, 100))))
 
     @test
-    def testEmptyAfterDelete01(): Bool =
-        RedBlackTree.empty() == RedBlackTree.delete(42, RedBlackTree.insert(42, (), RedBlackTree.empty()))
+    def testEmptyAfterRemove01(): Bool =
+        RedBlackTree.empty() == RedBlackTree.remove(42, RedBlackTree.insert(42, (), RedBlackTree.empty()))
 
     @test
-    def testEmptyAfterDelete02(): Bool =
-        RedBlackTree.empty() == RedBlackTree.delete(2, RedBlackTree.delete(1, RedBlackTree.delete(0, toTree(List.range(0, 3)))))
+    def testEmptyAfterRemove02(): Bool =
+        RedBlackTree.empty() == RedBlackTree.remove(2, RedBlackTree.remove(1, RedBlackTree.remove(0, toTree(List.range(0, 3)))))
 
     @test
-    def testEmptyAfterDelete03(): Bool =
+    def testEmptyAfterRemove03(): Bool =
         let tree =
-        List.foldLeft(acc, x) -> RedBlackTree.delete(x, acc), toTree(List.range(0, 20)), List.range(0, 20));
+        List.foldLeft(acc, x) -> RedBlackTree.remove(x, acc), toTree(List.range(0, 20)), List.range(0, 20));
         tree == RedBlackTree.empty()
 
     @test
@@ -72,20 +72,20 @@ namespace TestRedBlackTree {
 
     @test
     def testBinarySearchTreeInvariant06(): Bool =
-        checkBinarySearchTreeInvariant(RedBlackTree.delete(0, toTree(List.range(0, 100))))
+        checkBinarySearchTreeInvariant(RedBlackTree.remove(0, toTree(List.range(0, 100))))
 
     @test
     def testBinarySearchTreeInvariant07(): Bool =
-        checkBinarySearchTreeInvariant(RedBlackTree.delete(49, toTree(List.range(0, 100))))
+        checkBinarySearchTreeInvariant(RedBlackTree.remove(49, toTree(List.range(0, 100))))
 
     @test
     def testBinarySearchTreeInvariant08(): Bool =
-        checkBinarySearchTreeInvariant(RedBlackTree.delete(99, toTree(List.range(0, 100))))
+        checkBinarySearchTreeInvariant(RedBlackTree.remove(99, toTree(List.range(0, 100))))
 
     @test
     def testBinarySearchTreeInvariant09(): Bool =
         let tree =
-        List.foldLeft(acc, x) -> RedBlackTree.delete(x, acc), toTree(List.range(0, 20)), 12 :: 11 :: 80 :: 93 :: 21 :: 71 :: 39 :: 32 :: 29 :: 95 :: Nil);
+        List.foldLeft(acc, x) -> RedBlackTree.remove(x, acc), toTree(List.range(0, 20)), 12 :: 11 :: 80 :: 93 :: 21 :: 71 :: 39 :: 32 :: 29 :: 95 :: Nil);
         checkBinarySearchTreeInvariant(tree)
 
     @test
@@ -119,20 +119,20 @@ namespace TestRedBlackTree {
 
     @test
     def testRedParentInvariant06(): Bool =
-        checkRedParentInvariant(RedBlackTree.delete(0, toTree(List.range(0, 100))))
+        checkRedParentInvariant(RedBlackTree.remove(0, toTree(List.range(0, 100))))
 
     @test
     def testRedParentInvariant07(): Bool =
-        checkRedParentInvariant(RedBlackTree.delete(49, toTree(List.range(0, 100))))
+        checkRedParentInvariant(RedBlackTree.remove(49, toTree(List.range(0, 100))))
 
     @test
     def testRedParentInvariant08(): Bool =
-        checkRedParentInvariant(RedBlackTree.delete(99, toTree(List.range(0, 100))))
+        checkRedParentInvariant(RedBlackTree.remove(99, toTree(List.range(0, 100))))
 
     @test
     def testRedParentInvariant09(): Bool =
         let tree =
-        List.foldLeft(acc, x) -> RedBlackTree.delete(x, acc), toTree(List.range(0, 20)), 12 :: 11 :: 80 :: 93 :: 21 :: 71 :: 39 :: 32 :: 29 :: 95 :: Nil);
+        List.foldLeft(acc, x) -> RedBlackTree.remove(x, acc), toTree(List.range(0, 20)), 12 :: 11 :: 80 :: 93 :: 21 :: 71 :: 39 :: 32 :: 29 :: 95 :: Nil);
         checkRedParentInvariant(tree)
 
     @test

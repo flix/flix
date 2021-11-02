@@ -49,6 +49,10 @@ instance Applicative[Option] {
     override pub def liftA5(f: t1 -> t2 -> t3 -> t4 -> t5 -> r & e, x1: Option[t1], x2: Option[t2], x3: Option[t3], x4: Option[t4], x5: Option[t5]): Option[r] & e = Option.lift5(f, x1, x2, x3, x4, x5)
 }
 
+instance Monad[Option] {
+    pub def flatMap(f: a -> Option[b] & ef, x : Option[a]) : Option[b] & ef = Option.flatMap(f, x)
+}
+
 instance Foldable[Option] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, o: Option[a]): b & ef = Option.foldLeft(f, s, o)
     pub def foldRight(f: (a, b) -> b & ef, s: b, o: Option[a]): b & ef = Option.foldRight(f, o, s)
@@ -155,6 +159,14 @@ namespace Option {
         }
 
     ///
+    /// Returns `f(v)` if `o` is `Some(v)`. Otherwise returns `None`.
+    ///
+    pub def flatMap(f: a -> Option[b] & ef, o: Option[a]): Option[b] & ef = match o {
+        case None => None
+        case Some(v) => f(v)
+    }
+
+    ///
     /// Returns `Some(f(v1, v2))` if `o1` is `Some(v1)` and `o2` is `Some(v2)`. Otherwise returns `None`.
     ///
     @Time(time(f)) @Space(space(f))
@@ -162,15 +174,6 @@ namespace Option {
         case (None, _) => None
         case (_, None) => None
         case (Some(v1), Some(v2)) => Some(f(v1, v2))
-    }
-
-    ///
-    /// Returns `f(v)` if `o` is `Some(v)`. Otherwise returns `None`.
-    ///
-    @Time(time(f)) @Space(space(f))
-    pub def flatMap(f: a -> Option[b] & ef, o: Option[a]): Option[b] & ef = match o {
-        case None => None
-        case Some(v) => f(v)
     }
 
     ///
@@ -499,4 +502,11 @@ namespace Option {
     pub def lift10(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) -> u & f, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4], o5: Option[t5], o6: Option[t6], o7: Option[t7], o8: Option[t8], o9: Option[t9], o10: Option[t10]): Option[u] & f =
         ap(lift9(f, o1, o2, o3, o4, o5, o6, o7, o8, o9), o10)
 
+    ///
+    /// Returns an iterator over `o` with 1 element or an empty iterator if `o` is `None`.
+    ///
+    pub def toIterator(o: Option[a]): Iterator[a] & Impure = match o {
+        case None    => Iterator.empty()
+        case Some(x) => Iterator.singleton(x)
+    }
 }

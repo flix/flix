@@ -337,7 +337,7 @@ instance Order[String] {
 
     pub def compare(x: String, y: String): Comparison =
         import java.lang.String.compareTo(String);
-        Comparison.fromInt(x.compareTo(y) as & Pure)
+        Comparison.fromInt((x `compareTo` y) as & Pure)
 
 }
 

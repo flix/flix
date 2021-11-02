@@ -285,7 +285,7 @@ namespace Int8 {
     pub def fromString(s: String): Result[Int8, String] = try {
         import java.lang.String.strip();
         import java.lang.Byte:parseByte(String);
-        Ok(s.strip().parseByte()) as & Pure
+        Ok(s |> strip |> parseByte) as & Pure
     } catch {
         case _: ##java.lang.NumberFormatException => Err("Int8.fromString")
     }
@@ -299,7 +299,7 @@ namespace Int8 {
     pub def toInt16(x: Int8): Int16 =
         import java.lang.Byte:valueOf(Int8);
         import java.lang.Byte.shortValue();
-        valueOf(x).shortValue() as & Pure
+        (valueOf(x) |> shortValue) as & Pure
 
     ///
     /// Convert `x` to an Int32.
@@ -310,7 +310,7 @@ namespace Int8 {
     pub def toInt32(x: Int8): Int32 =
         import java.lang.Byte:valueOf(Int8);
         import java.lang.Byte.intValue();
-        valueOf(x).intValue() as & Pure
+        (valueOf(x) |> intValue) as & Pure
 
     ///
     /// Convert `x` to an Int64.
@@ -321,7 +321,7 @@ namespace Int8 {
     pub def toInt64(x: Int8): Int64 =
         import java.lang.Byte:valueOf(Int8);
         import java.lang.Byte.longValue();
-        valueOf(x).longValue() as & Pure
+        (valueOf(x) |> longValue) as & Pure
 
     ///
     /// Convert `x` to a BigInt.
@@ -333,7 +333,7 @@ namespace Int8 {
         import java.lang.Byte:valueOf(Int8) as i8ValueOf;
         import java.lang.Byte.longValue();
         import java.math.BigInteger:valueOf(Int64) as asBigInt;
-        i8ValueOf(x).longValue().asBigInt() as & Pure
+        (i8ValueOf(x) |> longValue |> asBigInt) as & Pure
 
     ///
     /// Convert `x` to a Float32.
@@ -344,7 +344,7 @@ namespace Int8 {
     pub def toFloat32(x: Int8): Float32 =
         import java.lang.Byte:valueOf(Int8);
         import java.lang.Byte.floatValue();
-        valueOf(x).floatValue() as & Pure
+        (valueOf(x) |> floatValue) as & Pure
 
     ///
     /// Convert `x` to a Float64.
@@ -355,6 +355,6 @@ namespace Int8 {
     pub def toFloat64(x: Int8): Float64 =
         import java.lang.Byte:valueOf(Int8);
         import java.lang.Byte.doubleValue();
-        valueOf(x).doubleValue() as & Pure
+        (valueOf(x) |> doubleValue) as & Pure
 
 }
