@@ -221,7 +221,7 @@ class TestTyper extends FunSuite with TestUtils {
         |    }
         |}
         |
-        |def doF(x: Box[Float]): String = C.foo(x)
+        |def doF(x: Box[Float64]): String = C.foo(x)
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.NoMatchingInstance](result)
