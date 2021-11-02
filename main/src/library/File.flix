@@ -256,7 +256,7 @@ namespace File {
                         if(j+chunkSize >= byteCount) byteCount-1
                         else j+chunkSize-1
                     };
-                    let byteOfChuckSize = Array.slice(bytes, j, end);
+                    let byteOfChuckSize = Array.slice(j, end, bytes);
                     i := j+chunkSize;
                     Ok(byteOfChuckSize)
                 } else bug!("Empty Iterator!")
