@@ -302,7 +302,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       mapN(modVal, tparamsVal) {
         case (mod, tparams) =>
           val termTypes = attr.map(a => visitType(a.tpe))
-          val tpe = WeededAst.Type.Relation(termTypes.toList, loc)
+          val tpe = WeededAst.Type.Relation(termTypes.toList, ident.loc)
           List(WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams, tpe, loc))
       }
   }
@@ -323,7 +323,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       mapN(modVal, tparamsVal) {
         case (mod, tparams) =>
           val termTypes = attr.map(a => visitType(a.tpe))
-          val tpe = WeededAst.Type.Lattice(termTypes.toList, loc)
+          val tpe = WeededAst.Type.Lattice(termTypes.toList, ident.loc)
           List(WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams, tpe, loc))
       }
   }
