@@ -69,6 +69,10 @@ instance Applicative[List] {
     pub def ap(f: List[a -> b & e], x: List[a]) : List[b] & e = List.ap(f, x)
 }
 
+instance Monad[List] {
+    pub def flatMap(f: a -> List[b] & ef, x : List[a]) : List[b] & ef = List.flatMap(f, x)
+}
+
 instance Foldable[List] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, xs: List[a]): b & ef = List.foldLeft(f, s, xs)
     pub def foldRight(f: (a, b) -> b & ef, s: b, xs: List[a]): b & ef = List.foldRight(f, s, xs)
@@ -1070,7 +1074,9 @@ namespace List {
     pub def map2(f: (a, b) -> c & ef, xs: List[a], ys: List[b]): List[c] & ef = zipWith(f, xs, ys)
 
     ///
-    /// Concatenates the results of applying `f` pairwise to the elements of `xs` and `ys`.
+    /// Concatenates the results of applying `f` pairwise to the elements of `xs` and `ys`,
+    /// ignoring additional elements of the longer list.
+    ///
     ///
     @Time(time(f) * Int32.min(length(xs), length(ys))) @Space(space(f) * Int32.min(length(xs), length(ys)))
     pub def flatMap2(f: (a, b) -> List[c] & ef, xs: List[a], ys: List[b]): List[c] & ef = flatMap2Helper(f, xs, ys, ks -> ks)
