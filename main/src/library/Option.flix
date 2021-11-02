@@ -50,7 +50,7 @@ instance Applicative[Option] {
 }
 
 instance Monad[Option] {
-    pub def flatMap(f: a -> Option[b] & e, x : Option[a]) : Option[b] & e = Option.flatMap(f, x)
+    pub def flatMap(f: a -> Option[b] & ef, x : Option[a]) : Option[b] & ef = Option.flatMap(f, x)
 }
 
 instance Foldable[Option] {

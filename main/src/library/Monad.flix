@@ -25,7 +25,7 @@ class Monad[m : Type -> Type] with Applicative[m] {
     ///
     /// Apply function `f` to the monadic value `x`, resulting in a combined monadic value.
     ///
-    pub def flatMap(f: a -> m[b] & e, x: m[a]) : m[b] & e
+    pub def flatMap(f: a -> m[b] & ef, x: m[a]) : m[b] & ef
 
     ///
     /// Applying `flatMap` to the `point` function is the identity function.

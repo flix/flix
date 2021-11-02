@@ -59,7 +59,7 @@ instance Functor[Nel] {
 
 // TODO implement Applicative
 // instance Monad[Nel] {
-//     pub def flatMap(f: a -> Nel[b] & e, x : Nel[a]) : Nel[b] & e = Nel.flatMap(f, x)
+//     pub def flatMap(f: a -> Nel[b] & ef, x : Nel[a]) : Nel[b] & ef = Nel.flatMap(f, x)
 // }
 
 instance Foldable[Nel] {

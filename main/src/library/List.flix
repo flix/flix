@@ -70,7 +70,7 @@ instance Applicative[List] {
 }
 
 instance Monad[List] {
-    pub def flatMap(f: a -> List[b] & e, x : List[a]) : List[b] & e = List.flatMap(f, x)
+    pub def flatMap(f: a -> List[b] & ef, x : List[a]) : List[b] & ef = List.flatMap(f, x)
 }
 
 instance Foldable[List] {
