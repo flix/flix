@@ -517,7 +517,7 @@ object SemanticTokensProvider {
       visitType(tpe)
 
     case Type.Cst(cst, loc) =>
-      if (shouldHighlight(cst)) {
+      if (shouldColor(cst)) {
         val t = SemanticToken(SemanticTokenType.Type, Nil, loc)
         Iterator(t)
       } else {
@@ -527,15 +527,18 @@ object SemanticTokensProvider {
     case Type.Apply(tpe1, tpe2, _) =>
       visitType(tpe1) ++ visitType(tpe2)
 
-    case Type.Alias(_, args, _, loc) => // MATT visit sym?
+    case Type.Alias(_, args, _, _) => // TODO no location for the "constructor"
       args.flatMap(visitType).iterator
 
     case Type.UnkindedVar(_, _, _, _) =>
       throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
   }
 
-  // MATT docs
-  private def shouldHighlight(tycon: TypeConstructor): Boolean = tycon match {
+  /**
+    * Returns true if the type constructor should be highlighted.
+    * This is restricted to type constructors whose that use the standard shape (X[Y, Z]).
+    */
+  private def shouldColor(tycon: TypeConstructor): Boolean = tycon match {
     case TypeConstructor.Unit => true
     case TypeConstructor.Null => true
     case TypeConstructor.Bool => true
@@ -558,7 +561,7 @@ object SemanticTokensProvider {
     case TypeConstructor.Array => true
     case TypeConstructor.Channel => true
     case TypeConstructor.Lazy => true
-    case TypeConstructor.Tag(sym, tag) => false // MATT ?
+    case TypeConstructor.Tag(sym, tag) => false
     case TypeConstructor.KindedEnum(sym, kind) => true
     case TypeConstructor.Native(clazz) => true
     case TypeConstructor.ScopedRef => true
@@ -570,7 +573,7 @@ object SemanticTokensProvider {
     case TypeConstructor.Not => false
     case TypeConstructor.And => false
     case TypeConstructor.Or => false
-    case TypeConstructor.Region => false // MATT ?
+    case TypeConstructor.Region => false
 
     case TypeConstructor.UnkindedEnum(sym) => throw InternalCompilerException("Unexpected unkinded type.")
     case TypeConstructor.UnappliedAlias(sym) => throw InternalCompilerException("Unexpected unkinded type.")
