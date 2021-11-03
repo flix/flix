@@ -181,6 +181,42 @@ namespace File {
         List.foldLeft((x, y) -> x + "\n" + y, "", list)
 
     ///
+    /// Returns a string containing the given file `f` with the options `opts`.
+    ///
+    pub def readWith(opts: {offset :: Int64, count :: Int32, charSet :: String}, file : String): Result[String, String] & Impure = {
+        try {
+            import new java.io.File(String) as newFile;
+            import java.nio.charset.Charset:forName(String);
+            import java.io.File.toPath();
+            import java.nio.file.Files:newBufferedReader(##java.nio.file.Path, ##java.nio.charset.Charset);
+            let javaFile = newFile(file);
+            let javaPath = javaFile.toPath();
+            let reader = newBufferedReader(javaPath, forName(opts.charSet));
+            let fileRead = readHelper(readAll(reader));
+            Ok(readWithHelper(fileRead, opts.offset, opts.count))
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+    }
+
+    ///
+    /// Helper function for readWith.
+    /// Takes a String and applys the options.
+    ///
+    def readWithHelper(file: String, offset: Int64, count: Int32): String & Pure =
+        let fileLength = String.length(file);
+
+        match Int64.tryToInt32(offset) {
+            case None => String.dropRight(fileLength - count, file)
+            case Some(n) =>
+                let str = String.dropLeft(n, file);
+                let strLength = String.length(str);
+                String.dropRight(strLength - count, str)
+        }
+
+    ///
     /// Returns an iterator of the given `file`
     ///
     pub def readLinesIter(file: String): Iterator[Result[String, String]] & Impure =
