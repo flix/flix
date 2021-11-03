@@ -1495,15 +1495,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         }
     }
 
-    case NamedAst.Type.Ambiguous(qname, loc) => // MATT should this be replaced too?
+    case NamedAst.Type.Ambiguous(qname, loc) =>
       // Disambiguate type.
-      (lookupEnum(qname, ns0, root), lookupTypeAlias(qname, ns0, root)) match {
-        case (None, None) => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
-        case (Some(enumDecl), None) => getEnumTypeIfAccessible(enumDecl, ns0, loc)
-        case (None, Some(typeAliasDecl)) => getTypeAliasTypeIfAccessible(typeAliasDecl, ns0, root, loc)
-        case (Some(enumDecl), Some(typeAliasDecl)) =>
-          val locs = enumDecl.loc :: typeAliasDecl.loc :: Nil
-          ResolutionError.AmbiguousType(qname.ident.name, ns0, locs, loc).toFailure
+      lookupEnumOrTypeAlias(qname, ns0, root) match {
+        case EnumOrTypeAliasLookupResult.Enum(enum) => getEnumTypeIfAccessible(enum, ns0, loc)
+        case EnumOrTypeAliasLookupResult.TypeAlias(typeAlias) => getTypeAliasTypeIfAccessible(typeAlias, ns0, root, loc)
+        case EnumOrTypeAliasLookupResult.NotFound => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
       }
 
     case NamedAst.Type.Enum(sym, loc) =>
