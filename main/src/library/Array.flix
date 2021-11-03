@@ -1244,7 +1244,8 @@ namespace Array {
         init(i -> f(a[i], b[i]), len)
 
     ///
-    /// Concatenates the results of applying `f` pairwise to the elements of `a` and `b`.
+    /// Concatenates the results of applying `f` pairwise to the elements of `a` and `b`,
+    /// ignoring additional elements of the longer array.
     ///
     @Time(time(f) * Int32.min(length(a), length(b))) @Space(space(f) * Int32.min(length(a), length(b)))
     pub def flatMap2(f: (a, b) -> Array[c] & ef, a: Array[a], b: Array[b]): Array[c] & Impure =
