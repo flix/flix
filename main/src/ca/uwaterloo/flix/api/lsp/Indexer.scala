@@ -95,7 +95,7 @@ object Indexer {
     */
   private def visitInstance(instance0: Instance): Index = instance0 match {
     case Instance(_, _, sym, tpe, _, defs, _, loc) =>
-      val idx1 = Index.useOf(sym, loc)
+      val idx1 = Index.useOf(sym.clazz, loc)
       val idx2 = visitType(tpe)
       val idx3 = defs.foldLeft(Index.empty) {
         case (acc, defn) => visitDef(defn)
