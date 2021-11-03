@@ -1686,6 +1686,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     * The result of looking up an ambiguous type.
     */
   private sealed trait EnumOrTypeAliasLookupResult {
+    /**
+      * Returns `other` if this result is [[EnumOrTypeAliasLookupResult.NotFound]].
+      *
+      * Otherwise, returns this result.
+      */
     def orElse(other: => EnumOrTypeAliasLookupResult): EnumOrTypeAliasLookupResult = this match {
       case res: EnumOrTypeAliasLookupResult.Enum => res
       case res: EnumOrTypeAliasLookupResult.TypeAlias => res
