@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.github.GitHub
+import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
 import ca.uwaterloo.flix.util._
 
 import java.io.{File, PrintWriter}
@@ -166,20 +167,19 @@ object Packager {
     flix.check() match {
       case Validation.Success(_) => ()
       case Validation.Failure(errors) =>
-        errors.foreach(e => println(e))
+        errors.foreach(e => println(e.message(flix.getFormatter)))
     }
   }
 
   /**
     * Builds (compiles) the source files for the given project path `p`.
     */
-  def build(p: Path, o: Options, loadClasses: Boolean = true): Option[CompilationResult] = {
+  def build(p: Path, o: Options, flix: Flix = new Flix(), loadClasses: Boolean = true): Option[CompilationResult] = {
     // Check that the path is a project path.
     if (!isProjectPath(p))
       throw new RuntimeException(s"The path '$p' does not appear to be a flix project.")
 
     // Configure a new Flix object.
-    val flix = new Flix()
     val newOptions = o.copy(
       targetDirectory = getBuildDirectory(p),
       loadClassFiles = loadClasses,
@@ -192,7 +192,7 @@ object Packager {
     flix.compile() match {
       case Validation.Success(r) => Some(r)
       case Validation.Failure(errors) =>
-        errors.foreach(e => println(e.message(o.formatter)))
+        errors.foreach(e => println(e.message(flix.getFormatter)))
         None
     }
   }
@@ -324,11 +324,12 @@ object Packager {
     * Runs all tests in the flix package for the given project path `p`.
     */
   def test(p: Path, o: Options): Tester.OverallTestResult = {
-    build(p, o) match {
+    val flix = new Flix().setFormatter(AnsiTerminalFormatter)
+    build(p, o, flix) match {
       case None => Tester.OverallTestResult.NoTests
       case Some(compilationResult) =>
         val results = Tester.test(compilationResult)
-        Console.println(results.output(o.formatter))
+        Console.println(results.output(flix.getFormatter))
         results.overallResult
     }
   }

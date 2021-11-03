@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
+import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
 import ca.uwaterloo.flix.util._
 import org.jline.reader.{EndOfFileException, LineReaderBuilder, UserInterruptException}
 import org.jline.terminal.{Terminal, TerminalBuilder}
@@ -44,11 +45,6 @@ class Shell(initialPaths: List[Path], options: Options) {
   private val WarmupIterations = 80
 
   /**
-    * The default color context.
-    */
-  private val formatter: Formatter = options.formatter
-
-  /**
     * The executor service.
     */
   private val executorService = Executors.newSingleThreadExecutor()
@@ -61,7 +57,7 @@ class Shell(initialPaths: List[Path], options: Options) {
   /**
     * The current flix instance (initialized on startup).
     */
-  private var flix: Flix = _
+  private var flix: Flix = new Flix().setFormatter(AnsiTerminalFormatter)
 
   /**
     * The current typed ast root (initialized on startup).
@@ -218,9 +214,9 @@ class Shell(initialPaths: List[Path], options: Options) {
 
           // Iterate through the premises, i.e. the variable symbols in scope.
           for ((varSym, varType) <- env) {
-            sb.append(formatter.blue(varSym.text))
+            sb.append(flix.getFormatter.blue(varSym.text))
               .append(": ")
-              .append(formatter.cyan(FormatType.formatType(varType)))
+              .append(flix.getFormatter.cyan(FormatType.formatType(varType)))
               .append(" " * 6)
           }
 
@@ -230,9 +226,9 @@ class Shell(initialPaths: List[Path], options: Options) {
             .append(System.lineSeparator())
 
           // Print the goal.
-          sb.append(formatter.blue(sym.toString))
+          sb.append(flix.getFormatter.blue(sym.toString))
             .append(": ")
-            .append(formatter.cyan(FormatType.formatType(holeType)))
+            .append(flix.getFormatter.cyan(FormatType.formatType(holeType)))
             .append(System.lineSeparator())
 
           // Print the result to the terminal.
@@ -253,7 +249,7 @@ class Shell(initialPaths: List[Path], options: Options) {
       // Find the available namespaces.
       val namespaces = namespacesOf(this.root)
 
-      sb.append(formatter.bold("Namespaces:"))
+      sb.append(flix.getFormatter.bold("Namespaces:"))
         .append(System.lineSeparator())
         .append(System.lineSeparator())
       for (namespace <- namespaces.toList.sorted) {
@@ -275,7 +271,7 @@ class Shell(initialPaths: List[Path], options: Options) {
       // Print the matched definitions.
       val matchedDefs = getDefinitionsByNamespace(ns, this.root)
       if (matchedDefs.nonEmpty) {
-        sb.append(formatter.bold("Definitions:"))
+        sb.append(flix.getFormatter.bold("Definitions:"))
           .append(System.lineSeparator())
           .append(System.lineSeparator())
         for (defn <- matchedDefs.sortBy(_.sym.name)) {
@@ -324,7 +320,7 @@ class Shell(initialPaths: List[Path], options: Options) {
 
     // Construct a new String Builder.
     val sb = new StringBuilder()
-    sb.append(formatter.bold("Definitions:"))
+    sb.append(flix.getFormatter.bold("Definitions:"))
       .append(System.lineSeparator())
       .append(System.lineSeparator())
 
@@ -339,7 +335,7 @@ class Shell(initialPaths: List[Path], options: Options) {
       // Print the namespace.
       if (matchedDefs.nonEmpty) {
         sb.append(" " * 2)
-          .append(formatter.bold(ns.mkString("/")))
+          .append(flix.getFormatter.bold(ns.mkString("/")))
           .append(System.lineSeparator())
         for (defn <- matchedDefs) {
           sb.append(" " * 4)
@@ -362,6 +358,7 @@ class Shell(initialPaths: List[Path], options: Options) {
     // Instantiate a fresh flix instance.
     this.flix = new Flix()
     this.flix.setOptions(options)
+      .setFormatter(AnsiTerminalFormatter)
 
     // Add each path to Flix.
     for (path <- this.sourcePaths) {
@@ -387,7 +384,7 @@ class Shell(initialPaths: List[Path], options: Options) {
       case Validation.Failure(errors) =>
         terminal.writer().println()
         for (error <- errors) {
-          val msg = if (options.explain) error.message(formatter) + error.explain(formatter) else error.message(formatter)
+          val msg = if (options.explain) error.message(flix.getFormatter) + error.explain(flix.getFormatter) else error.message(flix.getFormatter)
           terminal.writer().print(msg)
         }
         terminal.writer().println()
@@ -413,7 +410,7 @@ class Shell(initialPaths: List[Path], options: Options) {
     val res = Tester.test(this.compilationResult)
 
     // Print the result to the terminal.
-    terminal.writer().print(res.output(formatter))
+    terminal.writer().print(res.output(flix.getFormatter))
   }
 
   /**
@@ -546,22 +543,22 @@ class Shell(initialPaths: List[Path], options: Options) {
     */
   private def prettyPrintDef(defn: Def): String = {
     val sb = new StringBuilder()
-    sb.append(formatter.bold("def "))
-      .append(formatter.blue(defn.sym.name))
+    sb.append(flix.getFormatter.bold("def "))
+      .append(flix.getFormatter.blue(defn.sym.name))
       .append("(")
     if (defn.spec.fparams.nonEmpty) {
       sb.append(defn.spec.fparams.head.sym.text)
         .append(": ")
-        .append(formatter.cyan(FormatType.formatType(defn.spec.fparams.head.tpe)))
+        .append(flix.getFormatter.cyan(FormatType.formatType(defn.spec.fparams.head.tpe)))
       for (fparam <- defn.spec.fparams.tail) {
         sb.append(", ")
           .append(fparam.sym.text)
           .append(": ")
-          .append(formatter.cyan(FormatType.formatType(fparam.tpe)))
+          .append(flix.getFormatter.cyan(FormatType.formatType(fparam.tpe)))
       }
     }
     sb.append("): ")
-      .append(formatter.cyan(FormatType.formatType(defn.impl.inferredScheme.base.typeArguments.last)))
+      .append(flix.getFormatter.cyan(FormatType.formatType(defn.impl.inferredScheme.base.typeArguments.last)))
       .append(System.lineSeparator())
       .toString()
   }
@@ -576,15 +573,15 @@ class Shell(initialPaths: List[Path], options: Options) {
 
     // Check if any holes are present.
     if (holes.nonEmpty) {
-      sb.append(formatter.bold("Holes:"))
+      sb.append(flix.getFormatter.bold("Holes:"))
         .append(System.lineSeparator())
 
       // Print each hole and its type.
       for ((sym, ctx) <- holes) {
         sb.append(" " * 2)
-          .append(formatter.blue(sym.toString))
+          .append(flix.getFormatter.blue(sym.toString))
           .append(": ")
-          .append(formatter.cyan(FormatType.formatType(ctx.tpe)))
+          .append(flix.getFormatter.cyan(FormatType.formatType(ctx.tpe)))
           .append(System.lineSeparator())
       }
       sb.append(System.lineSeparator())

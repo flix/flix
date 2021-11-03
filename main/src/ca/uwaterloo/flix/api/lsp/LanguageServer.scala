@@ -78,11 +78,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
   val DefaultOptions: Options = Options.Default
 
   /**
-    * The terminal context used for formatting.
-    */
-  val formatter: Formatter = DefaultOptions.formatter
-
-  /**
     * A map from source URIs to source code.
     */
   val sources: mutable.Map[String, String] = mutable.Map.empty

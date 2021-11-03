@@ -204,10 +204,10 @@ object Main {
 
         if (cmdOpts.test) {
           val results = Tester.test(compilationResult)
-          Console.println(results.output(options.formatter))
+          Console.println(results.output(flix.getFormatter))
         }
       case Validation.Failure(errors) =>
-        errors.sortBy(_.source.name).foreach(e => println(e.message(options.formatter)))
+        errors.sortBy(_.source.name).foreach(e => println(e.message(flix.getFormatter)))
         println()
         println(s"Compilation failed with ${errors.length} error(s).")
         System.exit(1)

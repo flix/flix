@@ -40,8 +40,7 @@ object Options {
     xnoboolunification = false,
     xnostratifier = false,
     xstatistics = false,
-    xstrictmono = false,
-    formatter = Formatter.AnsiTerminalFormatter
+    xstrictmono = false
   )
 
   /**
@@ -104,7 +103,6 @@ case class Options(lib: LibLevel,
                    xnostratifier: Boolean,
                    xstatistics: Boolean,
                    xstrictmono: Boolean,
-                   formatter: Formatter = Formatter.AnsiTerminalFormatter
                   )
 
 /**

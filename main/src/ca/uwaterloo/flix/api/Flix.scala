@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
 import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult
+import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util._
 
 import java.nio.charset.Charset
@@ -246,6 +247,11 @@ class Flix {
   val genSym = new GenSym()
 
   /**
+    * The default output formatter.
+    */
+  private var formatter: Formatter = NoFormatter
+
+  /**
     * Adds the given string `s` to the list of strings to be parsed.
     */
   def addStr(s: String): Flix = {
@@ -315,6 +321,18 @@ class Flix {
     options = opts
     this
   }
+
+  /**
+    * Sets the output formatter used for this Flix instance.
+    */
+  def setFormatter(formatter: Formatter): Flix = {
+    if (formatter == null)
+      throw new IllegalArgumentException("'formatter' must be non-null.")
+    this.formatter = formatter
+    this
+  }
+
+  def getFormatter: Formatter = this.formatter
 
   /**
     * Compiles the Flix program and returns a typed ast.
@@ -427,7 +445,6 @@ class Flix {
     if (options.debug) {
       // Print information about the phase.
       val d = new Duration(e)
-      val formatter = options.formatter
       val emojiPart = formatter.blue("✓ ")
       val phasePart = formatter.blue(f"$phase%-40s")
       val timePart = f"${d.fmtMiliSeconds}%8s"

@@ -75,7 +75,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
     for {
       (src, opts) <- parseRequest(data)(ws)
     } yield {
-      processRequest(src, opts, opts.formatter)(ws)
+      processRequest(src, opts)(ws)
     }
   }
 
@@ -144,14 +144,14 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
   /**
     * Process the request.
     */
-  private def processRequest(src: String, opts: Options, formatter: Formatter)(implicit ws: WebSocket): Unit = {
+  private def processRequest(src: String, opts: Options)(implicit ws: WebSocket): Unit = {
     // Log the string.
     for (line <- src.split("\n")) {
       log("  >  " + line)(ws)
     }
 
     // Evaluate the string.
-    val result = eval(src, opts, formatter)(ws)
+    val result = eval(src, opts)(ws)
 
     // Log whether evaluation was successful.
     log("")(ws)
@@ -176,10 +176,11 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
   /**
     * Evaluates the given string `input` as a Flix program.
     */
-  private def eval(input: String, opts: Options, formatter: Formatter)(implicit ws: WebSocket): Result[(String, Long, Long), String] = {
+  private def eval(input: String, opts: Options)(implicit ws: WebSocket): Result[(String, Long, Long), String] = {
     try {
       // Compile the program.
-      mkFlix(input, opts).compile() match {
+      val flix = mkFlix(input, opts)
+      flix.compile() match {
         case Success(compilationResult) =>
           // Compilation was successful.
 
@@ -199,7 +200,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
 
         case Failure(errors) =>
           // Compilation failed. Retrieve and format the first error message.
-          Err(errors.head.message(formatter))
+          Err(errors.head.message(flix.getFormatter))
       }
     } catch {
       case ex: RuntimeException => Err(ex.getMessage)
