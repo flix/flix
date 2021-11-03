@@ -29,8 +29,9 @@ namespace File {
                 Err(getMessage(ex))
         }
 
+
     ///
-    /// Returns `true` if the given file `file` is a directory.
+    /// Returns `true` is the given file `file` is a directory.
     ///
     pub def isDirectory(file: String): Result[Bool, String] & Impure =
         try {
@@ -43,6 +44,7 @@ namespace File {
                 Err(getMessage(ex))
         }
 
+
     ///
     /// Returns `true` if the given file `file` is a regular file.
     ///
@@ -52,7 +54,7 @@ namespace File {
             import java.io.File.toPath();
             import java.nio.file.Files:isRegularFile(##java.nio.file.Path, Array[##java.nio.file.LinkOption]);
             let javaFile = newFile(file);
-            let javaPath = javaFile.toPath();
+            let javaPath = toPath(javaFile);
             let isRegular = isRegularFile(javaPath, []);
             Ok(isRegular)
         } catch {
@@ -60,6 +62,7 @@ namespace File {
                 import java.lang.Throwable.getMessage();
                 Err(getMessage(ex))
         }
+
 
     ///
     /// Returns `true` if the given file `f` is a symbolic link.
@@ -70,14 +73,15 @@ namespace File {
             import java.io.File.toPath();
             import java.nio.file.Files:isSymbolicLink(##java.nio.file.Path);
             let javaFile = newFile(file);
-            let javaPath = javaFile.toPath();
-            let isSymbolic = javaPath.isSymbolicLink();
+            let javaPath = toPath(javaFile);
+            let isSymbolic = isSymbolicLink(javaPath);
             Ok(isSymbolic)
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage();
                 Err(getMessage(ex))
         }
+
 
     ///
     /// Returns `true` if the given file `f` is readable.
@@ -93,6 +97,7 @@ namespace File {
                 Err(getMessage(ex))
         }
 
+
     ///
     /// Returns `true` if the given file `file` is writable.
     ///
@@ -106,6 +111,7 @@ namespace File {
                 import java.lang.Throwable.getMessage();
                 Err(getMessage(ex))
         }
+
 
     ///
     /// Returns `true` if the given file `file` is executable.
@@ -121,10 +127,12 @@ namespace File {
                 Err(getMessage(ex))
         }
 
+
     ///
     /// Returns a list of all the lines in the given file `f`.
     ///
-    pub def readLines(f: String): Result[List[String], String] & Impure = try {
+    pub def readLines(f: String): Result[List[String], String] & Impure =
+        try {
             import new java.io.File(String) as newFile;
             import java.io.File.toPath();
             import java.nio.file.Files:newBufferedReader(##java.nio.file.Path);
@@ -138,10 +146,12 @@ namespace File {
                 Err(getMessage(ex))
         }
 
+
     ///
     /// Reads all lines from the given buffered reader `r` until it is empty.
     ///
     def readAll(r: ##java.io.BufferedReader): List[String] & Impure = List.reverse(readAllHelper(r, Nil))
+
 
     ///
     /// Helper function for readAll.
@@ -155,6 +165,7 @@ namespace File {
         else
             readAllHelper(r, line :: acc)
 
+
     ///
     /// Returns a string containing the given file `f`.
     ///
@@ -164,8 +175,8 @@ namespace File {
             import java.io.File.toPath();
             import java.nio.file.Files:newBufferedReader(##java.nio.file.Path);
             let javaFile = newFile(file);
-            let javaPath = javaFile.toPath();
-            let reader = javaPath.newBufferedReader();
+            let javaPath = toPath(javaFile);
+            let reader = newBufferedReader(javaPath);
             Ok(readHelper(readAll(reader)))
         } catch {
             case ex: ##java.io.IOException =>
@@ -173,12 +184,14 @@ namespace File {
                 Err(getMessage(ex))
         }
 
+
     ///
     /// Helper function for read.
-    /// Converts a list of strings to a string
+    /// Converts a list of strings to a string with linebreaks between every string in `list`.
     ///
-    def readHelper(list: List[String]): String & Impure =
+    def readHelper(list: List[String]): String & Pure =
         List.foldLeft((x, y) -> x + "\n" + y, "", list)
+
 
     ///
     /// Returns a string containing the given file `f` with the options `opts`.
@@ -190,7 +203,7 @@ namespace File {
             import java.io.File.toPath();
             import java.nio.file.Files:newBufferedReader(##java.nio.file.Path, ##java.nio.charset.Charset);
             let javaFile = newFile(file);
-            let javaPath = javaFile.toPath();
+            let javaPath = toPath(javaFile);
             let reader = newBufferedReader(javaPath, forName(opts.charSet));
             let fileRead = readHelper(readAll(reader));
             Ok(readWithHelper(fileRead, opts.offset, opts.count))
@@ -200,6 +213,7 @@ namespace File {
                 Err(getMessage(ex))
         }
     }
+
 
     ///
     /// Helper function for readWith.
@@ -216,6 +230,7 @@ namespace File {
                 String.dropRight(strLength - count, str)
         }
 
+
     ///
     /// Returns an iterator of the given `file`
     ///
@@ -227,14 +242,14 @@ namespace File {
             import java.io.BufferedReader.readLine();
 
             let javaFile = newFile(file);
-            let javaPath = javaFile.toPath();
-            let reader = javaPath.newBufferedReader();
-            let line = ref reader.readLine();
+            let javaPath = toPath(javaFile);
+            let reader = newBufferedReader(javaPath);
+            let line = ref readLine(reader);
 
             let done = () -> Object.isNull(deref line);
             let next = () -> {
                 let l = deref line;
-                line := reader.readLine();
+                line := readLine(reader);
                 Ok(l)
             };
             Iterator(done, next)
@@ -249,6 +264,7 @@ namespace File {
                 Iterator(done, next)
         }
 
+
     ///
     /// Returns an array of all the bytes in the given file `file`.
     ///
@@ -259,7 +275,7 @@ namespace File {
             import java.nio.file.Files:readAllBytes(##java.nio.file.Path);
 
             let javaFile = newFile(file);
-            let javaPath = javaFile.toPath();
+            let javaPath = toPath(javaFile);
             let bytes = readAllBytes(javaPath);
 
             Ok(bytes)
@@ -268,6 +284,7 @@ namespace File {
                 import java.lang.Throwable.getMessage();
                 Err(getMessage(ex))
         }
+
 
     ///
     /// Returns an iterator of the bytes in the given `file` in chunks of size `chunkSize`.
@@ -279,7 +296,7 @@ namespace File {
             import java.nio.file.Files:readAllBytes(##java.nio.file.Path);
 
             let javaFile = newFile(file);
-            let javaPath = javaFile.toPath();
+            let javaPath = toPath(javaFile);
             let bytes = readAllBytes(javaPath);
             let byteCount = Array.length(bytes);
             let i = ref 0;
@@ -309,6 +326,7 @@ namespace File {
                 Iterator(done, next)
         }
 
+
     ///
     /// Writes `data` to the given `file`.
     ///
@@ -327,15 +345,16 @@ namespace File {
             let javaFile = newFile(file);
             let w = newPrintWriter(javaFile);
 
-            w.println(ToString.toString(data));
-            w.close();
+            println(w, ToString.toString(data));
+            close(w);
 
-            Ok(w.checkError())
+            Ok(checkError(w))
 
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage();
                 Err(getMessage(ex))
         }
+
 
 }
