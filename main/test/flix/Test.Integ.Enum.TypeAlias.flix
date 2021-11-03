@@ -1,14 +1,14 @@
 // NB: These tests must be in the root namespace.
-type alias T = Int
+pub type alias T = Int
 namespace N {
-    enum T
+    pub enum T
 
-    pub def f(): T
+    pub def f(): T = ???
 }
 
-enum U
+pub enum U
 namespace M {
-    type alias U = Int
+    pub type alias U = Int
 
-    pub def f(): U
+    pub def f(): U = ???
 }
