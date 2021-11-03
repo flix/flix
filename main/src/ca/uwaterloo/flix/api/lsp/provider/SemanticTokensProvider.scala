@@ -139,12 +139,14 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given instance `inst0`.
     */
   private def visitInstance(inst0: TypedAst.Instance): Iterator[SemanticToken] = inst0 match {
-    case TypedAst.Instance(_, _, _, tpe, tconstrs, defs, _, _) =>
-      // TODO: We lack the occurrence of a class symbol in an instance.
-      val st1 = visitType(tpe)
-      val st2 = tconstrs.flatMap(visitTypeConstraint)
-      val st3 = defs.flatMap(visitDef)
-      st1 ++ st2 ++ st3
+    case TypedAst.Instance(_, _, sym, tpe, tconstrs, defs, _, _) =>
+      // NB: we use SemanticTokenType.Class because the OOP "Class" most directly corresponds to the FP "Instance"
+      val t = SemanticToken(SemanticTokenType.Class, Nil, sym.loc)
+      val st1 = Iterator(t)
+      val st2 = visitType(tpe)
+      val st3 = tconstrs.flatMap(visitTypeConstraint)
+      val st4 = defs.flatMap(visitDef)
+      st1 ++ st2 ++ st3 ++ st4
   }
 
   /**
@@ -168,7 +170,6 @@ object SemanticTokensProvider {
     */
   private def visitCase(case0: TypedAst.Case): Iterator[SemanticToken] = case0 match {
     case TypedAst.Case(_, tag, _, sc, _) =>
-      // TODO: The scheme of a tag contains source locations that refer to the enum itself.
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, tag.loc)
       Iterator(t) ++ visitType(sc.base)
   }

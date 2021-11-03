@@ -112,18 +112,6 @@ def map204(): Bool = Option.map2((i, b) -> if (b) 2*i else 3*i, Some(1), Some(tr
 def map205(): Bool = Option.map2((i, b) -> if (b) 2*i else 3*i, Some(1), Some(false)) == Some(3)
 
 /////////////////////////////////////////////////////////////////////////////
-// flatMap                                                                 //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def flatMap01(): Bool = Option.flatMap(i -> if (i == 1) None else Some(2*i), None) == None
-
-@test
-def flatMap02(): Bool = Option.flatMap(i -> if (i == 1) None else Some(2*i), Some(1)) == None
-
-@test
-def flatMap03(): Bool = Option.flatMap(i -> if (i == 1) None else Some(2*i), Some(2)) == Some(4)
-
-/////////////////////////////////////////////////////////////////////////////
 // flatMap2                                                                //
 /////////////////////////////////////////////////////////////////////////////
 @test
@@ -510,6 +498,31 @@ def ap03(): Bool = Option.ap(None, Some(123)): Option[Int32] == None
 
 @test
 def ap04(): Bool = Option.ap(None, None): Option[Unit] == None
+
+/////////////////////////////////////////////////////////////////////////////
+// flatMap                                                                 //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def flatMap01(): Bool = Option.flatMap(x -> Some(x + 1), Some(123)) == Some(124)
+
+@test
+def flatMap02(): Bool = Option.flatMap(x -> Some(x + 1), None: Option[Int32]) == None
+
+@test
+def flatMap03(): Bool = Option.flatMap(_x -> None, Some(123)): Option[Int32] == None
+
+@test
+def flatMap04(): Bool = Option.flatMap(_x -> None, None): Option[Unit] == None
+
+@test
+def flatMap05(): Bool = Option.flatMap(i -> if (i == 1) None else Some(2*i), None) == None
+
+@test
+def flatMap06(): Bool = Option.flatMap(i -> if (i == 1) None else Some(2*i), Some(1)) == None
+
+@test
+def flatMap07(): Bool = Option.flatMap(i -> if (i == 1) None else Some(2*i), Some(2)) == Some(4)
 
 /////////////////////////////////////////////////////////////////////////////
 // lift2                                                                   //
