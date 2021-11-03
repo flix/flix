@@ -30,20 +30,6 @@ namespace X {
     pub def f(): Bool = true
 }
 
-type alias T = Int
-namespace N {
-    enum T
-
-    pub def f(): T
-}
-
-enum U
-namespace M {
-    type alias U = Int
-
-    pub def f(): U
-}
-
 @test
 def testNamespace01(): Bool = A.f()
 
