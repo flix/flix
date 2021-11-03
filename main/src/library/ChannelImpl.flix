@@ -16,7 +16,7 @@
 // limitations under the License.
 //
 
-namespace ChannelImpl {
+namespace Channel {
 
     ///
     /// An enum that represents a multiple-producer, multiple-consumer (mpmc)
@@ -91,7 +91,7 @@ namespace ChannelImpl {
     }
 
     ///
-    /// Order is based on the channel `id` and is used by `selectImpl` to lock
+    /// Order is based on the channel `id` and is used by `select` to lock
     /// in a global ordering.
     ///
     instance Order[Mpmc] {
@@ -127,7 +127,7 @@ namespace ChannelImpl {
     ///
     /// Implements the expression `c <- e`.
     ///
-    pub def put(c: Mpmc, e: Boxed): Mpmc & Impure =
+    pub def put(e: Boxed, c: Mpmc): Mpmc & Impure =
         let Mpmc(_, channelLock, unBuffered, _, elementDeque, _, waitingPutters) = c;
         lock(channelLock);
 
@@ -173,7 +173,7 @@ namespace ChannelImpl {
     /// Returns the first channel that has an element in the array along with
     /// the index of the channel. Returns None if the default case is chosen.
     ///
-    pub def selectImpl(channels: Array[Mpmc], hasDefault: Bool): Option[(Int32, Boxed)] & Impure =
+    pub def select(channels: Array[Mpmc], hasDefault: Bool): Option[(Int32, Boxed)] & Impure =
         // Create a new lock and condition for this select. The condition is
         // potentially put into the waiting getters of the channels if a
         // default isn't defined.
@@ -261,7 +261,7 @@ namespace ChannelImpl {
         element
 
     ///
-    /// Recursive helper function for selectImpl, returns the first channel that
+    /// Recursive helper function for select, returns the first channel that
     /// has an element in the array along with its index. Returns false if the
     /// default case is chosen (no element was immediately available).
     ///
@@ -279,9 +279,10 @@ namespace ChannelImpl {
         // while this lock is held.
         lock(selectLock);
 
-        // Find the first channel with an availble element (do not use
-        // sortedChannels here since Flix dictates that they should be searched
-        // in order of writing)
+        // Find the first channel with an availble element (channels is used
+        // here to probe the channels in written order).
+        // TODO: Optimization opportunity. The order of searching here could be
+        //     randomized to avoid starvation scenarios).
         let selectChoice = firstAvailableElement(0, channels);
 
         match selectChoice {
