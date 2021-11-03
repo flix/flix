@@ -517,7 +517,7 @@ object SemanticTokensProvider {
       visitType(tpe)
 
     case Type.Cst(cst, loc) =>
-      if (shouldColor(cst)) {
+      if (isVisibleTypeConstructor(cst)) {
         val t = SemanticToken(SemanticTokenType.Type, Nil, loc)
         Iterator(t)
       } else {
@@ -538,7 +538,7 @@ object SemanticTokensProvider {
     * Returns true if the type constructor should be highlighted.
     * This is restricted to type constructors whose that use the standard shape (X[Y, Z]).
     */
-  private def shouldColor(tycon: TypeConstructor): Boolean = tycon match {
+  private def isVisibleTypeConstructor(tycon: TypeConstructor): Boolean = tycon match {
     case TypeConstructor.Unit => true
     case TypeConstructor.Null => true
     case TypeConstructor.Bool => true
@@ -551,21 +551,21 @@ object SemanticTokensProvider {
     case TypeConstructor.Int64 => true
     case TypeConstructor.BigInt => true
     case TypeConstructor.Str => true
-    case TypeConstructor.Arrow(arity) => false
+    case TypeConstructor.Arrow(_) => false
     case TypeConstructor.RecordRowEmpty => false
-    case TypeConstructor.RecordRowExtend(field) => false
+    case TypeConstructor.RecordRowExtend(_) => false
     case TypeConstructor.Record => false
     case TypeConstructor.SchemaRowEmpty => false
-    case TypeConstructor.SchemaRowExtend(pred) => false
+    case TypeConstructor.SchemaRowExtend(_) => false
     case TypeConstructor.Schema => false
     case TypeConstructor.Array => true
     case TypeConstructor.Channel => true
     case TypeConstructor.Lazy => true
-    case TypeConstructor.Tag(sym, tag) => false
-    case TypeConstructor.KindedEnum(sym, kind) => true
-    case TypeConstructor.Native(clazz) => true
+    case TypeConstructor.Tag(_, _) => false
+    case TypeConstructor.KindedEnum(_, _) => true
+    case TypeConstructor.Native(_) => true
     case TypeConstructor.ScopedRef => true
-    case TypeConstructor.Tuple(l) => false
+    case TypeConstructor.Tuple(_) => false
     case TypeConstructor.Relation => false
     case TypeConstructor.Lattice => false
     case TypeConstructor.True => true
@@ -575,8 +575,8 @@ object SemanticTokensProvider {
     case TypeConstructor.Or => false
     case TypeConstructor.Region => false
 
-    case TypeConstructor.UnkindedEnum(sym) => throw InternalCompilerException("Unexpected unkinded type.")
-    case TypeConstructor.UnappliedAlias(sym) => throw InternalCompilerException("Unexpected unkinded type.")
+    case TypeConstructor.UnkindedEnum(_) => throw InternalCompilerException("Unexpected unkinded type.")
+    case TypeConstructor.UnappliedAlias(_) => throw InternalCompilerException("Unexpected unkinded type.")
   }
 
   /**
