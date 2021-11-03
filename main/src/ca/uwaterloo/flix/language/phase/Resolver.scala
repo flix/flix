@@ -1682,70 +1682,73 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     } yield tpe
   }
 
-  // MATT docs
-  private sealed trait EnumOrTypeAliasLookupResult
+  /**
+    * The result of looking up an ambiguous type.
+    */
+  private sealed trait EnumOrTypeAliasLookupResult {
+    def orElse(other: => EnumOrTypeAliasLookupResult): EnumOrTypeAliasLookupResult = this match {
+      case res: EnumOrTypeAliasLookupResult.Enum => res
+      case res: EnumOrTypeAliasLookupResult.TypeAlias => res
+      case EnumOrTypeAliasLookupResult.NotFound => other
+    }
+  }
+
   private object EnumOrTypeAliasLookupResult {
+    /**
+      * The result is an enum.
+      */
     case class Enum(enum: NamedAst.Enum) extends EnumOrTypeAliasLookupResult
+
+    /**
+      * The result is a type alias.
+      */
     case class TypeAlias(typeAlias: NamedAst.TypeAlias) extends EnumOrTypeAliasLookupResult
+
+    /**
+      * The type cannot be found.
+      */
     case object NotFound extends EnumOrTypeAliasLookupResult
   }
 
-  // MATT docs
+  /**
+    * Looks up the ambiguous type.
+    */
   private def lookupEnumOrTypeAlias(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): EnumOrTypeAliasLookupResult = {
-    // MATT make lookupIn function and orElse to simplify/dedupe
-    if (qname.isUnqualified) {
-      // Case 1: The name is unqualified. Lookup in the current namespace.
-      val enumsInNamespace = root.enums.getOrElse(ns0, Map.empty)
-      val aliasesInNamespace = root.typealiases.getOrElse(ns0, Map.empty)
+
+    /**
+      * Looks up the type in the given namespace.
+      */
+    def lookupIn(ns: Name.NName): EnumOrTypeAliasLookupResult = {
+      val enumsInNamespace = root.enums.getOrElse(ns, Map.empty)
+      val aliasesInNamespace = root.typealiases.getOrElse(ns, Map.empty)
       (enumsInNamespace.get(qname.ident.name), aliasesInNamespace.get(qname.ident.name)) match {
         case (None, None) =>
-          // Case 1.1: The name was not found in the current namespace. Try the root namespace.
-          val enumsInRootNS = root.enums.getOrElse(Name.RootNS, Map.empty)
-          val typeAliasesInRootNS = root.typealiases.getOrElse(Name.RootNS, Map.empty)
-          (enumsInRootNS.get(qname.ident.name), typeAliasesInRootNS.get(qname.ident.name)) match {
-            case (None, None) =>
-              // Case 1.1.1: name not found
-              EnumOrTypeAliasLookupResult.NotFound
-            case (Some(enum), None) =>
-              // Case 1.1.2: found an enum
-              EnumOrTypeAliasLookupResult.Enum(enum)
-            case (None, Some(alias)) =>
-              // Case 1.1.3: found a type alias
-              EnumOrTypeAliasLookupResult.TypeAlias(alias)
-            case (Some(_), Some(_)) =>
-              // Case 1.1.4: found both -- error
-              throw InternalCompilerException("Unexpected ambiguity: Duplicate types / classes should have been resolved.")
-          }
-        case (Some(enum), None) =>
-          // Case 1.2: found an enum
-          EnumOrTypeAliasLookupResult.Enum(enum)
-        case (None, Some(alias)) =>
-          // Case 1.3: found a type alias
-          EnumOrTypeAliasLookupResult.TypeAlias(alias)
-        case (Some(_), Some(_)) =>
-          // Case 1.4: found both -- error
-          throw InternalCompilerException("Unexpected ambiguity: Duplicate types / classes should have been resolved.")
-      }
-    } else {
-      // Case 2: The name is qualified. Look it up in its namespace.
-      val enumsInNS = root.enums.getOrElse(qname.namespace, Map.empty)
-      val typeAliasesInNS = root.typealiases.getOrElse(qname.namespace, Map.empty)
-      (enumsInNS.get(qname.ident.name), typeAliasesInNS.get(qname.ident.name)) match {
-        case (None, None) =>
-          // Case 2.1: name not found
+          // Case 1: name not found
           EnumOrTypeAliasLookupResult.NotFound
         case (Some(enum), None) =>
-          // Case 2.2: found an enum
+          // Case 2: found an enum
           EnumOrTypeAliasLookupResult.Enum(enum)
         case (None, Some(alias)) =>
-          // Case 2.3: found a type alias
+          // Case 3: found a type alias
           EnumOrTypeAliasLookupResult.TypeAlias(alias)
         case (Some(_), Some(_)) =>
-          // Case 2.4: found both -- error
+          // Case 4: found both -- error
           throw InternalCompilerException("Unexpected ambiguity: Duplicate types / classes should have been resolved.")
       }
     }
+
+    if (qname.isUnqualified) {
+      // Case 1: The name is unqualified. Lookup in the current namespace.
+      lookupIn(ns0).orElse {
+        // Case 1.1: The name was not found in the current namespace. Try the root namespace.
+        lookupIn(Name.RootNS)
+      }
+    } else {
+      // Case 2: The name is qualified. Look it up in its namespace.
+      lookupIn(qname.namespace)
+    }
   }
+
   /**
     * Optionally returns the enum with the given `name` in the given namespace `ns0`.
     */
