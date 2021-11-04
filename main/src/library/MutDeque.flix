@@ -75,10 +75,10 @@ namespace MutDeque {
     /// Returns the size of a MutDeque, where `l` = array length, `f` = front index, `b` = back index.
     ///
     def computeSize(c: Int32, f: Int32, b: Int32): Int32 =
-        if (f <= b) // The elements laid out without "wrapping around" the array.
+        if (f <= b) // The elements are laid out without "wrapping around" the array.
             b - f
         else
-            c - (f - b) // Subtract the complement of number of elements from the capacity
+            c - f + b // Subtract the complement of number of elements from the capacity
 
     ///
     /// Returns `true` if `d` is empty.
@@ -99,7 +99,7 @@ namespace MutDeque {
             let a1 = deref a;
             let f1 = deref f;
             let x = a1[f1];
-            f := (f1 + 1) mod capacity(d);
+            f := (f1 + 1) &&& (capacity(d) - 1); // Use bit masking since the capacity is always a power of 2.
             compress!(d);
             Some(x)
         }
@@ -114,7 +114,7 @@ namespace MutDeque {
         else { // Update index such that back points to a valid element `x`, get element, optionally compress array, return `Some(x)`.
             let MutDeque(a, _, b) = d;
             let a1 = deref a;
-            let b1 = (deref b - 1) mod capacity(d);
+            let b1 = (deref b - 1) &&& (capacity(d) - 1); // Use bit masking since the capacity is always a power of 2.
             let x = a1[b1];
             b := b1;
             compress!(d);
@@ -127,10 +127,10 @@ namespace MutDeque {
     pub def pushFront(x: a, d: MutDeque[a]): Unit & Impure =
         let MutDeque(a, f, _) = d;
         let a1 = deref a;
-        let f1 = (deref f - 1) mod capacity(d); // Update index such that it points to an empty index. This will never overlap with the back index.
-        a1[f1] = x;                               // Store `x` in the array.
-        f := f1;                                  // Update the front index reference.
-        expand!(d)                                // Optionally expand `d`.
+        let f1 = (deref f - 1) &&& (capacity(d) - 1); // Update index such that it points to an empty index. This will never overlap with the back index. Use bit masking since the capacity is always a power of 2.
+        a1[f1] = x;                                   // Store `x` in the array.
+        f := f1;                                      // Update the front index reference.
+        expand!(d)                                    // Optionally expand `d`.
 
     ///
     /// Pushes `x` to the back of `d`.
@@ -139,9 +139,9 @@ namespace MutDeque {
         let MutDeque(a, _, b) = d;
         let a1 = deref a;
         let b1 = deref b;
-        a1[b1] = x;                      // Store `x` in the array.
-        b := (b1 + 1) mod capacity(d);   // Update back index reference to point to next empty index.
-        expand!(d)                       // Optionally expand `d`.
+        a1[b1] = x;                          // Store `x` in the array.
+        b := (b1 + 1) &&& (capacity(d) - 1); // Update back index reference to point to next empty index. Use bit masking since the capacity is always a power of 2.
+        expand!(d)                           // Optionally expand `d`.
 
     ///
     /// Doubles the capacity of `d` if the load factor is greater than or equal to `maxLoadFactor`.
@@ -159,11 +159,9 @@ namespace MutDeque {
     /// Doubles the capacity of `d`.
     ///
     def grow!(d: MutDeque[a]): Unit & Impure = {
-        let MutDeque(a, f, _) = d;
+        let MutDeque(a, f, b) = d;
         let c = capacity(d);
-        let c1 = 2 * c;
-        a := Array.copyOfRange(0, c1, deref a); // Copy elements into array with capacity 2c.
-        f := c1 - c + (deref f)                 // Update front index.
+        copyElements!(f, b, a, c * 2)
     }
 
     ///
@@ -185,7 +183,7 @@ namespace MutDeque {
         let MutDeque(a, f, b) = d;
         let c = capacity(d);
         if (c > minCapacity()) { // Prevent the backing array from shrinking below `minCapacity`.
-            copyElements(f, b, a, c / 2) // Copy elements into new array and update references.
+            copyElements!(f, b, a, c / 2) // Copy elements into new array and update references.
         } else {
             ()
         }
@@ -193,20 +191,28 @@ namespace MutDeque {
     ///
     /// Copies the elements from `a` to `a1`. Mutates the array `a1`.
     ///
-    def copyElements(f: Ref[Int32], b: Ref[Int32], a: Ref[Array[a]], c1: Int32): Unit & Impure =
-        let c = Array.length(deref a);
+    def copyElements!(f: Ref[Int32], b: Ref[Int32], a: Ref[Array[a]], c1: Int32): Unit & Impure =
         let f1 = deref f;
         let b1 = deref b;
         let a1 = deref a;
+        let c = Array.length(a1);
         if (f1 < b1) { // If this predicate is true the elements do not "wrap around" in the array, i.e. the elements are laid out sequentially from [0 .. b].
-            a := Array.copyOfRange(f1, c1, a1)
+            a := Array.copyOfRange(0, c1, a1); // Copy elements and create new backing array;
+            if (f1 >= c1) { // If the new array is smaller and the elements were located at the end of the old array.
+                Array.updateSequence!(0, Array.copyOfRange(f1, b1, a1), deref a); // Copy elements of old array into new array.
+                f := 0;      // Update indices.
+                b := b1 - f1
+                }
+            else {
+                ()
+            }
         } else {
-            let a2 = Array.copyOfRange(f1, c1, a1); // Copy the front elements of `a` and create an array with capacity `c1`.
-            let a3 = Array.copyOfRange(0, b1, a1);  // Copy the back  elements of `a` into a1.
-            let b2 = c - f1;                        // Compute new back index.
-            Array.updateSequence!(b2, a3, a2);      // Stitch the arrays together.
-            f := 0;                                 // Update indexes.
-            b := b2 + b1
+            let a2 = Array.copyOfRange(f1, c, a1); // Copy the front elements of `a`.
+            let a3 = Array.copyOfRange(0, c1, a1); // Copy the back  elements of `a` and create an array with capacity `c1`.
+            let f2 = c1 - c + f1;                  // Compute new front index.
+            Array.updateSequence!(f2, a2, a3);     // Stitch the new array together with the front elements.
+            a := a3;                               // Update reference to backing array.
+            f := f2                                // Update indices.
         }
 
     ///
