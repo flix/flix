@@ -51,7 +51,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Weeds the given abstract syntax tree.
     */
   private def visitRoot(root: ParsedAst.Root)(implicit flix: Flix): Validation[WeededAst.Root, WeederError] = {
-    val usesVal = traverse(root.uses)(visitUse)
+    val usesVal = traverse(root.uses)(visitNonImportUse)
     val declarationsVal = traverse(root.decls)(visitDecl)
     val loc = mkSL(root.sp1, root.sp2)
 
@@ -66,7 +66,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     */
   private def visitDecl(decl: ParsedAst.Declaration)(implicit flix: Flix): Validation[List[WeededAst.Declaration], WeederError] = decl match {
     case ParsedAst.Declaration.Namespace(sp1, name, uses, decls, sp2) =>
-      val usesVal = traverse(uses)(visitUse)
+      val usesVal = traverse(uses)(visitNonImportUse)
       val declarationsVal = traverse(decls)(visitDecl)
       mapN(usesVal, declarationsVal) {
         case (us, ds) => List(WeededAst.Declaration.Namespace(name, us.flatten, ds.flatten, mkSL(sp1, sp2)))
@@ -331,7 +331,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Performs weeding on the given use `u0`.
     */
-  private def visitUse(u0: ParsedAst.UseOrImport): Validation[List[WeededAst.Use], WeederError] = u0 match {
+  private def visitUse(u0: ParsedAst.Use): Validation[List[WeededAst.Use], WeederError] = u0 match {
     case ParsedAst.Use.UseOne(sp1, nname, ident, sp2) =>
       if (ident.isUpper)
         List(WeededAst.Use.UseTypeOrClass(Name.QName(sp1, nname, ident, sp2), ident, mkSL(sp1, sp2))).toSuccess
@@ -358,9 +358,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           WeededAst.Use.UseTag(qname, Name.mkTag(ident), alias, mkSL(sp1, sp2)) :: acc
       }
       us.toSuccess
+  }
 
-    case _ => throw InternalCompilerException("import not allowed here") // MATT change to proper error
-
+  // MATT docs
+  private def visitNonImportUse(u0: ParsedAst.UseOrImport): Validation[List[WeededAst.Use], WeederError] = u0 match {
+    case u: ParsedAst.Use => visitUse(u)
+    case _: ParsedAst.Import => ??? // MATT proper error
   }
 
   /**
@@ -377,10 +380,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val loc = mkSL(sp1, sp2)
       WeededAst.Expression.Hole(name, loc).toSuccess
 
-    case ParsedAst.Expression.Use(sp1, use, exp, sp2) =>
+    case ParsedAst.Expression.Use(sp1, use: ParsedAst.Use, exp, sp2) =>
       mapN(visitUse(use), visitExp(exp)) {
         case (us, e) => WeededAst.Expression.Use(us, e, mkSL(sp1, sp2))
       }
+
+    case ParsedAst.Expression.Use(sp1, imp: ParsedAst.Import, exp, sp2) => ??? // MATT LetImport stuff
 
     case ParsedAst.Expression.Lit(sp1, lit, sp2) => lit2exp(lit)
 
