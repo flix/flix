@@ -141,7 +141,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def visitInstance(inst: Instance): JObject = inst match {
     case Instance(_, _, sym, tpe, tconstrs, _, _, loc) =>
-      ("sym" -> visitClassSym(sym)) ~
+      ("sym" -> visitInstanceSym(sym)) ~
         ("tpe" -> visitType(tpe)) ~
         ("tconstrs" -> tconstrs.map(visitTypeConstraint)) ~
         ("loc" -> visitSourceLocation(loc))
@@ -168,6 +168,12 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     ("namespace" -> sym.namespace) ~
       ("name" -> sym.name) ~
       ("loc" -> visitSourceLocation(sym.loc))
+
+  /**
+    * Returns the given instance symbol `sym` as a JSON value.
+    */
+  private def visitInstanceSym(sym: Symbol.InstanceSym): JObject = ??? // TODO
+
 
   // TODO: Visit the other symbols.
 

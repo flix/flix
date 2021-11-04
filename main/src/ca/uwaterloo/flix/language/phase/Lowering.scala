@@ -136,7 +136,7 @@ object Lowering extends Phase[Root, Root] {
 
     val newDefs = defs.map(kv => kv.sym -> kv).toMap
     val newSigs = sigs.map(kv => kv.sym -> kv).toMap
-    val newInstances = instances.map(kv => kv.head.sym -> kv).toMap
+    val newInstances = instances.map(kv => kv.head.sym.clazz -> kv).toMap
     val newEnums = enums.map(kv => kv.sym -> kv).toMap
 
     // Sigs are shared between the `sigs` field and the `classes` field.
@@ -550,7 +550,7 @@ object Lowering extends Phase[Root, Root] {
 
     case Expression.FixpointProjectIn(exp, pred, tpe, eff, loc) =>
       // Compute the arity of the functor F[(a, b, c)] or F[a].
-      val arity = exp.tpe match {
+      val arity = Type.eraseAliases(exp.tpe) match {
         case Type.Apply(_, innerType, _) => innerType.typeConstructor match {
           case Some(TypeConstructor.Tuple(l)) => l
           case _ => 1
@@ -572,7 +572,7 @@ object Lowering extends Phase[Root, Root] {
     case Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) =>
       // Compute the arity of the predicate symbol.
       // The type is either of the form `Array[(a, b, c)]` or `Array[a]`.
-      val arity = tpe match {
+      val arity = Type.eraseAliases(tpe) match {
         case Type.Apply(Type.Cst(TypeConstructor.Array, _), innerType, _) => innerType.typeConstructor match {
           case Some(TypeConstructor.Tuple(_)) => innerType.typeArguments.length
           case Some(TypeConstructor.Unit) => 0
