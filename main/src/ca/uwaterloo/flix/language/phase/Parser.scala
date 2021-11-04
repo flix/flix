@@ -94,7 +94,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Root                                                                    //
   /////////////////////////////////////////////////////////////////////////////
   def Root: Rule1[ParsedAst.Root] = {
-    def Uses: Rule1[Seq[ParsedAst.Use]] = rule {
+    def Uses: Rule1[Seq[ParsedAst.UseOrImport]] = rule {
       zeroOrMore(Use ~ optWS ~ ";").separatedBy(optWS)
     }
 
@@ -126,7 +126,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   object Declarations {
 
     def Namespace: Rule1[ParsedAst.Declaration.Namespace] = {
-      def Uses: Rule1[Seq[ParsedAst.Use]] = rule {
+      def Uses: Rule1[Seq[ParsedAst.UseOrImport]] = rule {
         zeroOrMore(Use ~ optWS ~ ";").separatedBy(optWS)
       }
 
@@ -285,8 +285,18 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // Uses                                                                    //
   /////////////////////////////////////////////////////////////////////////////
-  def Use: Rule1[ParsedAst.Use] = rule {
-    keyword("use") ~ WS ~ (Uses.UseOneTag | Uses.UseManyTag | Uses.UseOne | Uses.UseMany )
+  def Use: Rule1[ParsedAst.UseOrImport] = rule {
+    keyword("use") ~ WS ~ (
+      Uses.UseOneTag | Uses.UseManyTag |
+        Uses.UseOne | Uses.UseMany |
+        Uses.UseOneConstructor | Uses.UseManyConstructor |
+        Uses.UseOneMethod | Uses.UseManyMethod |
+        Uses.UseOneStaticMethod | Uses.UseManyStaticMethod |
+        Uses.UseOneGetField | Uses.UseManyGetField |
+        Uses.UseOnePutField | Uses.UseManyPutField |
+        Uses.UseOneGetStaticField | Uses.UseManyGetStaticField |
+        Uses.UseOnePutStaticField | Uses.UseManyPutStaticField
+      )
   }
 
   object Uses {

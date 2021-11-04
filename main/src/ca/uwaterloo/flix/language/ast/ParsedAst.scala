@@ -37,7 +37,7 @@ object ParsedAst {
     * @param decls the declarations in the abstract syntax tree.
     * @param sp2   the position of the last character in the source.
     */
-  case class Root(sp1: SourcePosition, uses: Seq[ParsedAst.Use], decls: Seq[ParsedAst.Declaration], sp2: SourcePosition)
+  case class Root(sp1: SourcePosition, uses: Seq[ParsedAst.UseOrImport], decls: Seq[ParsedAst.Declaration], sp2: SourcePosition)
 
   /**
     * Declarations.
@@ -60,7 +60,7 @@ object ParsedAst {
       * @param decls the nested declarations.
       * @param sp2   the position of the last character in the declaration.
       */
-    case class Namespace(sp1: SourcePosition, name: Name.NName, uses: Seq[ParsedAst.Use], decls: Seq[ParsedAst.Declaration], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Namespace(sp1: SourcePosition, name: Name.NName, uses: Seq[ParsedAst.UseOrImport], decls: Seq[ParsedAst.Declaration], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Definition Declaration.
@@ -279,34 +279,34 @@ object ParsedAst {
   object Import {
 
     // MATT docs
-    case class UseOneConstructor(sp1: SourcePosition, fqn: Seq[String], sig: Seq[ParsedAst.Type], sp2: SourcePosition) extends Use
+    case class UseOneConstructor(sp1: SourcePosition, fqn: Seq[String], sig: Seq[ParsedAst.Type], sp2: SourcePosition) extends Import
 
     // MATT docs
-    case class UseManyConstructor(sp1: SourcePosition, ns: Seq[String], constrs: Seq[ParsedAst.Import.NameAndSigAndAlias], sp2: SourcePosition) extends Use
+    case class UseManyConstructor(sp1: SourcePosition, ns: Seq[String], constrs: Seq[ParsedAst.Import.NameAndSigAndAlias], sp2: SourcePosition) extends Import
 
-    case class UseOneMethod(sp1: SourcePosition, fqn: Seq[String], sig: Seq[ParsedAst.Type], sp2: SourcePosition) extends Use
+    case class UseOneMethod(sp1: SourcePosition, fqn: Seq[String], sig: Seq[ParsedAst.Type], sp2: SourcePosition) extends Import
 
-    case class UseManyMethod(sp1: SourcePosition, ns: Seq[String], methods: Seq[ParsedAst.Import.NameAndSigAndAlias], sp2: SourcePosition) extends Use
+    case class UseManyMethod(sp1: SourcePosition, ns: Seq[String], methods: Seq[ParsedAst.Import.NameAndSigAndAlias], sp2: SourcePosition) extends Import
 
-    case class UseOneStaticMethod(sp1: SourcePosition, fqn: Seq[String], sig: Seq[ParsedAst.Type], sp2: SourcePosition) extends Use
+    case class UseOneStaticMethod(sp1: SourcePosition, fqn: Seq[String], sig: Seq[ParsedAst.Type], sp2: SourcePosition) extends Import
 
-    case class UseManyStaticMethod(sp1: SourcePosition, ns: Seq[String], methods: Seq[ParsedAst.Import.NameAndSigAndAlias], sp2: SourcePosition) extends Use
+    case class UseManyStaticMethod(sp1: SourcePosition, ns: Seq[String], methods: Seq[ParsedAst.Import.NameAndSigAndAlias], sp2: SourcePosition) extends Import
 
-    case class UseOneGetField(sp1: SourcePosition, fqn: Seq[String], sp2: SourcePosition) extends Use
+    case class UseOneGetField(sp1: SourcePosition, fqn: Seq[String], sp2: SourcePosition) extends Import
 
-    case class UseManyGetField(sp1: SourcePosition, ns: Seq[String], fields: Seq[ParsedAst.Import.JNameAndAlias], sp2: SourcePosition) extends Use
+    case class UseManyGetField(sp1: SourcePosition, ns: Seq[String], fields: Seq[ParsedAst.Import.JNameAndAlias], sp2: SourcePosition) extends Import
 
-    case class UseOnePutField(sp1: SourcePosition, fqn: Seq[String], sp2: SourcePosition) extends Use
+    case class UseOnePutField(sp1: SourcePosition, fqn: Seq[String], sp2: SourcePosition) extends Import
 
-    case class UseManyPutField(sp1: SourcePosition, ns: Seq[String], fields: Seq[ParsedAst.Import.JNameAndAlias], sp2: SourcePosition) extends Use
+    case class UseManyPutField(sp1: SourcePosition, ns: Seq[String], fields: Seq[ParsedAst.Import.JNameAndAlias], sp2: SourcePosition) extends Import
 
-    case class UseOneGetStaticField(sp1: SourcePosition, fqn: Seq[String], sp2: SourcePosition) extends Use
+    case class UseOneGetStaticField(sp1: SourcePosition, fqn: Seq[String], sp2: SourcePosition) extends Import
 
-    case class UseManyGetStaticField(sp1: SourcePosition, ns: Seq[String], fields: Seq[ParsedAst.Import.JNameAndAlias], sp2: SourcePosition) extends Use
+    case class UseManyGetStaticField(sp1: SourcePosition, ns: Seq[String], fields: Seq[ParsedAst.Import.JNameAndAlias], sp2: SourcePosition) extends Import
 
-    case class UseOnePutStaticField(sp1: SourcePosition, fqn: Seq[String], sp2: SourcePosition) extends Use
+    case class UseOnePutStaticField(sp1: SourcePosition, fqn: Seq[String], sp2: SourcePosition) extends Import
 
-    case class UseManyPutStaticField(sp1: SourcePosition, ns: Seq[String], fields: Seq[ParsedAst.Import.JNameAndAlias], sp2: SourcePosition) extends Use
+    case class UseManyPutStaticField(sp1: SourcePosition, ns: Seq[String], fields: Seq[ParsedAst.Import.JNameAndAlias], sp2: SourcePosition) extends Import
 
     // MATT docs
     // MATT merge w/ NameAndAlias probs
@@ -529,7 +529,7 @@ object ParsedAst {
       * @param exp the body expression.
       * @param sp2 the position of the last character in the expression.
       */
-    case class Use(sp1: SourcePosition, use: ParsedAst.Use, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class Use(sp1: SourcePosition, use: ParsedAst.UseOrImport, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Literal Expression.
