@@ -318,9 +318,83 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
+    // MATT condense into fewer cases
+    def UseOneConstructor: Rule1[ParsedAst.Use.UseOneConstructor] = rule {
+      SP ~ keyword("new") ~ WS ~ "##" ~ Names.JavaName ~ Signature ~ SP ~> ParsedAst.Use.UseOneConstructor
+    }
+
+    def UseManyConstructor: Rule1[ParsedAst.Use.UseManyConstructor] = rule {
+      SP ~ keyword("new") ~ WS ~ "##" ~ Names.JavaName ~ "." ~ "{" ~ zeroOrMore(JNameAndSigAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Use.UseManyConstructor
+    }
+
+    def UseOneMethod: Rule1[ParsedAst.Use.UseOneMethod] = rule {
+      SP ~ "##" ~ Names.JavaName ~ Signature ~ SP ~> ParsedAst.Use.UseOneMethod
+    }
+
+    def UseManyMethod: Rule1[ParsedAst.Use.UseManyMethod] = rule {
+      SP ~ "##" ~ Names.JavaName ~ "." ~ "{" ~ zeroOrMore(JNameAndSigAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Use.UseManyMethod
+    }
+
+    def UseOneStaticMethod: Rule1[ParsedAst.Use.UseOneStaticMethod] = rule {
+      SP ~ "##" ~ JvmStaticName ~ Signature ~ SP ~> ParsedAst.Use.UseOneStaticMethod
+    }
+
+    def UseManyStaticMethod: Rule1[ParsedAst.Use.UseManyStaticMethod] = rule {
+      SP ~ "##" ~ Names.JavaName ~ ":" ~ "{" ~ zeroOrMore(JNameAndSigAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Use.UseManyStaticMethod
+    }
+
+    def UseOneGetField: Rule1[ParsedAst.Use.UseOneGetField] = rule {
+      SP ~ keyword("get") ~ WS ~ "##" ~ Names.JavaName ~ SP ~> ParsedAst.Use.UseOneGetField
+    }
+
+    def UseManyGetField: Rule1[ParsedAst.Use.UseManyGetField] = rule {
+      SP ~ keyword("get") ~ WS ~ "##" ~ Names.JavaName ~ "." ~ "{" ~ zeroOrMore(JNameAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Use.UseManyGetField
+    }
+
+    def UseOnePutField: Rule1[ParsedAst.Use.UseOnePutField] = rule {
+      SP ~ keyword("set") ~ WS ~ "##" ~ Names.JavaName ~ SP ~> ParsedAst.Use.UseOnePutField
+    }
+
+    def UseManyPutField: Rule1[ParsedAst.Use.UseManyPutField] = rule {
+      SP ~ keyword("set") ~ WS ~ "##" ~ Names.JavaName ~ "." ~ "{" ~ zeroOrMore(JNameAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Use.UseManyPutField
+    }
+
+    def UseOneGetStaticField: Rule1[ParsedAst.Use.UseOneGetStaticField] = rule {
+      SP ~ keyword("get") ~ WS ~ "##" ~ JvmStaticName ~ SP ~> ParsedAst.Use.UseOneGetStaticField
+    }
+
+    def UseManyGetStaticField: Rule1[ParsedAst.Use.UseManyGetStaticField] = rule {
+      SP ~ keyword("get") ~ WS ~ "##" ~ Names.JavaName ~ ":" ~ "{" ~ zeroOrMore(JNameAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Use.UseManyGetStaticField
+    }
+
+    def UseOnePutStaticField: Rule1[ParsedAst.Use.UseOnePutStaticField] = rule {
+      SP ~ keyword("set") ~ WS ~ "##" ~ JvmStaticName ~ SP ~> ParsedAst.Use.UseOnePutStaticField
+    }
+
+    def UseManyPutStaticField: Rule1[ParsedAst.Use.UseManyPutStaticField] = rule {
+      SP ~ keyword("set") ~ WS ~ "##" ~ Names.JavaName ~ ":" ~ "{" ~ zeroOrMore(JNameAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Use.UseManyPutStaticField
+    }
+
     def UseName: Rule1[Name.Ident] = rule {
       Names.LowerCaseName | Names.UpperCaseName | Names.GreekName | Names.MathName | Names.OperatorName
     }
+
+    def Signature: Rule1[Seq[ParsedAst.Type]] = rule {
+      "(" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
+    }
+
+    def JvmStaticName: Rule1[Seq[String]] = rule {
+      oneOrMore(Names.JavaIdentifier).separatedBy(".") ~ ":" ~ Names.JavaIdentifier ~> ((xs: Seq[String], x: String) => xs :+ x)
+    }
+
+    def JNameAndAlias: Rule1[ParsedAst.Use.JNameAndAlias] = rule {
+      SP ~ Names.JavaIdentifier ~ optional(optWS ~ atomic("=>") ~ optWS ~ Names.Definition) ~ SP ~> ParsedAst.Use.JNameAndAlias
+    }
+
+    def JNameAndSigAndAlias: Rule1[ParsedAst.Use.NameAndSigAndAlias] = rule {
+      SP ~ Names.JavaIdentifier ~ Signature ~ optional(optWS ~ atomic("=>") ~ optWS ~ Names.Definition) ~ SP ~> ParsedAst.Use.NameAndSigAndAlias
+    }
+
   }
 
   /////////////////////////////////////////////////////////////////////////////

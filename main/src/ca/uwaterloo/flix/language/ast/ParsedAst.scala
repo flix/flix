@@ -253,6 +253,36 @@ object ParsedAst {
       */
     case class UseManyTag(sp1: SourcePosition, qname: Name.QName, tags: Seq[ParsedAst.Use.NameAndAlias], sp2: SourcePosition) extends Use
 
+    // MATT docs
+    case class UseOneConstructor(sp1: SourcePosition, fqn: Seq[String], sig: Seq[ParsedAst.Type], sp2: SourcePosition) extends Use
+
+    // MATT docs
+    case class UseManyConstructor(sp1: SourcePosition, ns: Seq[String], constrs: Seq[ParsedAst.Use.NameAndSigAndAlias], sp2: SourcePosition) extends Use
+
+    case class UseOneMethod(sp1: SourcePosition, fqn: Seq[String], sig: Seq[ParsedAst.Type], sp2: SourcePosition) extends Use
+
+    case class UseManyMethod(sp1: SourcePosition, ns: Seq[String], methods: Seq[ParsedAst.Use.NameAndSigAndAlias], sp2: SourcePosition) extends Use
+
+    case class UseOneStaticMethod(sp1: SourcePosition, fqn: Seq[String], sig: Seq[ParsedAst.Type], sp2: SourcePosition) extends Use
+
+    case class UseManyStaticMethod(sp1: SourcePosition, ns: Seq[String], methods: Seq[ParsedAst.Use.NameAndSigAndAlias], sp2: SourcePosition) extends Use
+
+    case class UseOneGetField(sp1: SourcePosition, fqn: Seq[String], sp2: SourcePosition) extends Use
+
+    case class UseManyGetField(sp1: SourcePosition, ns: Seq[String], fields: Seq[ParsedAst.Use.JNameAndAlias], sp2: SourcePosition) extends Use
+
+    case class UseOnePutField(sp1: SourcePosition, fqn: Seq[String], sp2: SourcePosition) extends Use
+
+    case class UseManyPutField(sp1: SourcePosition, ns: Seq[String], fields: Seq[ParsedAst.Use.JNameAndAlias], sp2: SourcePosition) extends Use
+
+    case class UseOneGetStaticField(sp1: SourcePosition, fqn: Seq[String], sp2: SourcePosition) extends Use
+
+    case class UseManyGetStaticField(sp1: SourcePosition, ns: Seq[String], fields: Seq[ParsedAst.Use.JNameAndAlias], sp2: SourcePosition) extends Use
+
+    case class UseOnePutStaticField(sp1: SourcePosition, fqn: Seq[String], sp2: SourcePosition) extends Use
+
+    case class UseManyPutStaticField(sp1: SourcePosition, ns: Seq[String], fields: Seq[ParsedAst.Use.JNameAndAlias], sp2: SourcePosition) extends Use
+
     /**
       * A name with an optional alias.
       *
@@ -263,6 +293,12 @@ object ParsedAst {
       */
     case class NameAndAlias(sp1: SourcePosition, ident: Name.Ident, alias: Option[Name.Ident], sp2: SourcePosition)
 
+    // MATT docs
+    // MATT merge w/ NameAndAlias probs
+    case class JNameAndAlias(sp1: SourcePosition, ident: String, alias: Option[Name.Ident], sp2: SourcePosition)
+
+    // MATT docs
+    case class NameAndSigAndAlias(sp1: SourcePosition, ident: String, sig: Seq[ParsedAst.Type], alias: Option[Name.Ident], sp2: SourcePosition)
   }
 
 
