@@ -19,6 +19,12 @@
   - Only in extreme cases are type casts OK.
 - Indentation is 4 spaces.
 - Pattern matches should align `=>`.
+- Avoid unnecessary lambdas. 
+  - e.g. prefer `List.map(String.toLowerCase)` over `List.map(s -> String.toLowerCase(s)`.
+- Prefer string interpolation to constructing strings with concatenation.
+- Keep the simplest cases in a pattern matches first.
+  - e.g. keep the base case(s) before the inductive case(s).
+- Doc comments should use triple slashes ///.
 
 ## Scala-specific
 
