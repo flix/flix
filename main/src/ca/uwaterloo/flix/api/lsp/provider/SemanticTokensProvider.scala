@@ -517,18 +517,67 @@ object SemanticTokensProvider {
     case Type.Ascribe(tpe, _, _) =>
       visitType(tpe)
 
-    case Type.Cst(_, loc) =>
-      val t = SemanticToken(SemanticTokenType.Type, Nil, loc)
-      Iterator(t)
+    case Type.Cst(cst, loc) =>
+      if (isVisibleTypeConstructor(cst)) {
+        val t = SemanticToken(SemanticTokenType.Type, Nil, loc)
+        Iterator(t)
+      } else {
+        Iterator.empty
+      }
 
     case Type.Apply(tpe1, tpe2, _) =>
       visitType(tpe1) ++ visitType(tpe2)
 
-    case Type.Alias(_, args, _, _) =>
+    case Type.Alias(_, args, _, _) => // TODO no location for the "constructor"
       args.flatMap(visitType).iterator
 
     case Type.UnkindedVar(_, _, _, _) =>
       throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
+  }
+
+  /**
+    * Returns true if the type constructor should be highlighted.
+    * This is restricted to type constructors whose that use the standard shape (X[Y, Z]).
+    */
+  private def isVisibleTypeConstructor(tycon: TypeConstructor): Boolean = tycon match {
+    case TypeConstructor.Unit => true
+    case TypeConstructor.Null => true
+    case TypeConstructor.Bool => true
+    case TypeConstructor.Char => true
+    case TypeConstructor.Float32 => true
+    case TypeConstructor.Float64 => true
+    case TypeConstructor.Int8 => true
+    case TypeConstructor.Int16 => true
+    case TypeConstructor.Int32 => true
+    case TypeConstructor.Int64 => true
+    case TypeConstructor.BigInt => true
+    case TypeConstructor.Str => true
+    case TypeConstructor.Arrow(_) => false
+    case TypeConstructor.RecordRowEmpty => false
+    case TypeConstructor.RecordRowExtend(_) => false
+    case TypeConstructor.Record => false
+    case TypeConstructor.SchemaRowEmpty => false
+    case TypeConstructor.SchemaRowExtend(_) => false
+    case TypeConstructor.Schema => false
+    case TypeConstructor.Array => true
+    case TypeConstructor.Channel => true
+    case TypeConstructor.Lazy => true
+    case TypeConstructor.Tag(_, _) => false
+    case TypeConstructor.KindedEnum(_, _) => true
+    case TypeConstructor.Native(_) => true
+    case TypeConstructor.ScopedRef => true
+    case TypeConstructor.Tuple(_) => false
+    case TypeConstructor.Relation => false
+    case TypeConstructor.Lattice => false
+    case TypeConstructor.True => true
+    case TypeConstructor.False => true
+    case TypeConstructor.Not => false
+    case TypeConstructor.And => false
+    case TypeConstructor.Or => false
+    case TypeConstructor.Region => false
+
+    case TypeConstructor.UnkindedEnum(_) => throw InternalCompilerException("Unexpected unkinded type.")
+    case TypeConstructor.UnappliedAlias(_) => throw InternalCompilerException("Unexpected unkinded type.")
   }
 
   /**
