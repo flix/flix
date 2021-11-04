@@ -17,6 +17,8 @@
 - Avoids casts.
   - If necessary, effect casts are OK.
   - Only in extreme cases are type casts OK.
+- Indentation is 4 spaces.
+- Pattern matches should align `=>`.
 
 ## Scala-specific
 
