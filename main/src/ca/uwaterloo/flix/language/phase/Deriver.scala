@@ -37,8 +37,8 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
 
     val newInstances = derivedInstances.foldLeft(root.instances) {
       case (acc, inst) =>
-        val accInsts = acc.getOrElse(inst.sym, Nil)
-        acc + (inst.sym -> (inst :: accInsts))
+        val accInsts = acc.getOrElse(inst.sym.clazz, Nil)
+        acc + (inst.sym.clazz -> (inst :: accInsts))
     }
 
     root.copy(instances = newInstances).toSuccess
@@ -92,6 +92,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
   private def mkEqInstance(enum: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum match {
     case KindedAst.Enum(_, _, _, tparams, _, _, _, sc, _) =>
       val eqClassSym = PredefinedClasses.lookupClassSym("Eq", root)
+      val eqInstanceSym = Symbol.freshInstanceSym(eqClassSym, loc)
       val eqDefSym = Symbol.mkDefnSym("Eq.eq")
 
       val param1 = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
@@ -106,7 +107,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
       KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
         mod = Ast.Modifiers.Empty,
-        sym = eqClassSym,
+        sym = eqInstanceSym,
         tpe = sc.base,
         tconstrs = tconstrs,
         defs = List(defn),
@@ -237,6 +238,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
   private def mkOrderInstance(enum: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum match {
     case KindedAst.Enum(_, _, _, tparams, _, _, _, sc, _) =>
       val orderClassSym = PredefinedClasses.lookupClassSym("Order", root)
+      val orderInstanceSym = Symbol.freshInstanceSym(orderClassSym, loc)
       val compareDefSym = Symbol.mkDefnSym("Order.compare")
 
       val param1 = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
@@ -251,7 +253,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
       KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
         mod = Ast.Modifiers.Empty,
-        sym = orderClassSym,
+        sym = orderInstanceSym,
         tpe = sc.base,
         tconstrs = tconstrs,
         defs = List(defn),
@@ -434,6 +436,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
   private def mkToStringInstance(enum: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum match {
     case KindedAst.Enum(_, _, _, tparams, _, _, _, sc, _) =>
       val toStringClassSym = PredefinedClasses.lookupClassSym("ToString", root)
+      val toStringInstanceSym = Symbol.freshInstanceSym(toStringClassSym, loc)
       val toStringDefSym = Symbol.mkDefnSym("ToString.toString")
 
       val param = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
@@ -447,7 +450,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
       KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
         mod = Ast.Modifiers.Empty,
-        sym = toStringClassSym,
+        sym = toStringInstanceSym,
         tpe = sc.base,
         tconstrs = tconstrs,
         defs = List(defn),
@@ -567,6 +570,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
   private def mkHashInstance(enum: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum match {
     case KindedAst.Enum(_, _, _, tparams, _, _, _, sc, _) =>
       val hashClassSym = PredefinedClasses.lookupClassSym("Hash", root)
+      val hashInstanceSym = Symbol.freshInstanceSym(hashClassSym, loc)
       val hashDefSym = Symbol.mkDefnSym("Hash.hash")
 
       val param = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
@@ -580,7 +584,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
       KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
         mod = Ast.Modifiers.Empty,
-        sym = hashClassSym,
+        sym = hashInstanceSym,
         tpe = sc.base,
         tconstrs = tconstrs,
         defs = List(defn),
@@ -692,13 +696,14 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
     *
     * The instance is empty because the class has default definitions.
     */
-  private def mkBoxableInstance(enum: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root): KindedAst.Instance = enum match {
+  private def mkBoxableInstance(enum: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum match {
     case KindedAst.Enum(_, _, _, _, _, _, _, sc, _) =>
       val boxableClassSym = PredefinedClasses.lookupClassSym("Boxable", root)
+      val boxableInstanceSym = Symbol.freshInstanceSym(boxableClassSym, loc)
       KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
         mod = Ast.Modifiers.Empty,
-        sym = boxableClassSym,
+        sym = boxableInstanceSym,
         tpe = sc.base,
         tconstrs = Nil,
         defs = Nil,
