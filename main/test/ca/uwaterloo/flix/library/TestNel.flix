@@ -219,13 +219,13 @@ namespace Nel {
     def flatMap03(): Bool = flatMap(x -> Nel(x + 1, Nil), Nel(1, 2 :: 3 :: Nil)) == Nel(2, 3 :: 4 :: Nil)
 
     @test
-    def flatMap04(): Bool = flatMap(x -> Nel(x, x :: Nil), Nel(1, Nil)) == Nel(1, 1 :: Nil)
+    def flatMap04(): Bool = flatMap(x -> Nel(x, (x+1) :: Nil), Nel(1, Nil)) == Nel(1, 2 :: Nil)
 
     @test
-    def flatMap05(): Bool = flatMap(x -> Nel(x, x :: Nil), Nel(1, 2 :: Nil)) == Nel(1, 1 :: 2 :: 2 :: Nil)
+    def flatMap05(): Bool = flatMap(x -> Nel(x, (x+1) :: Nil), Nel(1, 4 :: Nil)) == Nel(1, 2 :: 4 :: 5 :: Nil)
 
     @test
-    def flatMap06(): Bool = flatMap(x -> Nel(x, x :: Nil), Nel(1, 2 :: 3 :: Nil)) == Nel(1, 1 :: 2 :: 2 :: 3 :: 3 :: Nil)
+    def flatMap06(): Bool = flatMap(x -> Nel(x, (x+1) :: Nil), Nel(1, 3 :: 5 :: Nil)) == Nel(1, 2 :: 3 :: 4 :: 5 :: 6 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // reverse                                                                 //

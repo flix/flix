@@ -21,6 +21,8 @@ import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.Name.{Ident, NName}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
+import java.util.Objects
+
 object Symbol {
 
   /**
@@ -50,6 +52,14 @@ object Symbol {
   def freshDefnSym(ns: List[String], text: String, loc: SourceLocation)(implicit flix: Flix): DefnSym = {
     val id = Some(flix.genSym.freshId())
     new DefnSym(id, ns, text, loc)
+  }
+
+  /**
+    * Returns a fresh instance symbol with the given class.
+    */
+  def freshInstanceSym(clazz: Symbol.ClassSym, loc: SourceLocation)(implicit flix: Flix): InstanceSym = {
+    val id = flix.genSym.freshId()
+    new InstanceSym(id, clazz, loc)
   }
 
   /**
@@ -310,6 +320,34 @@ object Symbol {
       * Human readable representation.
       */
     override def toString: String = if (namespace.isEmpty) name else namespace.mkString("/") + "." + name
+  }
+
+  /**
+    * Instance Symbol.
+    */
+  final class InstanceSym(val id: Int, val clazz: Symbol.ClassSym, val loc: SourceLocation) {
+    /**
+      * Returns `true` if this symbol is equal to `that` symbol.
+      */
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that: InstanceSym => this.id == that.id && this.clazz == that.clazz
+      case _ => false
+    }
+
+    /**
+      * Returns the hash code of this symbol.
+      */
+    override val hashCode: Int = Objects.hash(id, clazz)
+
+    /**
+      * Human readable representation.
+      */
+    override def toString: String = clazz.toString + "$" + id
+
+    /**
+      * The name of the instance.
+      */
+    val name: String = clazz.name
   }
 
   /**

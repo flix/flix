@@ -19,7 +19,7 @@
 ///
 class Functor[m : Type -> Type] {
     ///
-    /// Applies the function `f` to `s` preserving its structure.
+    /// Applies the function `f` to `x` preserving its structure.
     ///
     pub def map(f: a -> b & ef, x: m[a]): m[b] & ef
 
