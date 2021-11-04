@@ -313,70 +313,71 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         SP ~ Names.Tag ~ optional(WS ~ atomic("=>") ~ WS ~ Names.Tag) ~ SP ~> ParsedAst.Use.NameAndAlias
       }
 
+
       rule {
         SP ~ Names.QualifiedType ~ "." ~ "{" ~ zeroOrMore(TagAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Use.UseManyTag
       }
     }
 
-    // MATT condense into fewer cases
-    def UseOneConstructor: Rule1[ParsedAst.Use.UseOneConstructor] = rule {
-      SP ~ keyword("new") ~ WS ~ "##" ~ Names.JavaName ~ Signature ~ SP ~> ParsedAst.Use.UseOneConstructor
-    }
-
-    def UseManyConstructor: Rule1[ParsedAst.Use.UseManyConstructor] = rule {
-      SP ~ keyword("new") ~ WS ~ "##" ~ Names.JavaName ~ "." ~ "{" ~ zeroOrMore(JNameAndSigAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Use.UseManyConstructor
-    }
-
-    def UseOneMethod: Rule1[ParsedAst.Use.UseOneMethod] = rule {
-      SP ~ "##" ~ Names.JavaName ~ Signature ~ SP ~> ParsedAst.Use.UseOneMethod
-    }
-
-    def UseManyMethod: Rule1[ParsedAst.Use.UseManyMethod] = rule {
-      SP ~ "##" ~ Names.JavaName ~ "." ~ "{" ~ zeroOrMore(JNameAndSigAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Use.UseManyMethod
-    }
-
-    def UseOneStaticMethod: Rule1[ParsedAst.Use.UseOneStaticMethod] = rule {
-      SP ~ "##" ~ JvmStaticName ~ Signature ~ SP ~> ParsedAst.Use.UseOneStaticMethod
-    }
-
-    def UseManyStaticMethod: Rule1[ParsedAst.Use.UseManyStaticMethod] = rule {
-      SP ~ "##" ~ Names.JavaName ~ ":" ~ "{" ~ zeroOrMore(JNameAndSigAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Use.UseManyStaticMethod
-    }
-
-    def UseOneGetField: Rule1[ParsedAst.Use.UseOneGetField] = rule {
-      SP ~ keyword("get") ~ WS ~ "##" ~ Names.JavaName ~ SP ~> ParsedAst.Use.UseOneGetField
-    }
-
-    def UseManyGetField: Rule1[ParsedAst.Use.UseManyGetField] = rule {
-      SP ~ keyword("get") ~ WS ~ "##" ~ Names.JavaName ~ "." ~ "{" ~ zeroOrMore(JNameAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Use.UseManyGetField
-    }
-
-    def UseOnePutField: Rule1[ParsedAst.Use.UseOnePutField] = rule {
-      SP ~ keyword("set") ~ WS ~ "##" ~ Names.JavaName ~ SP ~> ParsedAst.Use.UseOnePutField
-    }
-
-    def UseManyPutField: Rule1[ParsedAst.Use.UseManyPutField] = rule {
-      SP ~ keyword("set") ~ WS ~ "##" ~ Names.JavaName ~ "." ~ "{" ~ zeroOrMore(JNameAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Use.UseManyPutField
-    }
-
-    def UseOneGetStaticField: Rule1[ParsedAst.Use.UseOneGetStaticField] = rule {
-      SP ~ keyword("get") ~ WS ~ "##" ~ JvmStaticName ~ SP ~> ParsedAst.Use.UseOneGetStaticField
-    }
-
-    def UseManyGetStaticField: Rule1[ParsedAst.Use.UseManyGetStaticField] = rule {
-      SP ~ keyword("get") ~ WS ~ "##" ~ Names.JavaName ~ ":" ~ "{" ~ zeroOrMore(JNameAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Use.UseManyGetStaticField
-    }
-
-    def UseOnePutStaticField: Rule1[ParsedAst.Use.UseOnePutStaticField] = rule {
-      SP ~ keyword("set") ~ WS ~ "##" ~ JvmStaticName ~ SP ~> ParsedAst.Use.UseOnePutStaticField
-    }
-
-    def UseManyPutStaticField: Rule1[ParsedAst.Use.UseManyPutStaticField] = rule {
-      SP ~ keyword("set") ~ WS ~ "##" ~ Names.JavaName ~ ":" ~ "{" ~ zeroOrMore(JNameAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Use.UseManyPutStaticField
-    }
-
     def UseName: Rule1[Name.Ident] = rule {
       Names.LowerCaseName | Names.UpperCaseName | Names.GreekName | Names.MathName | Names.OperatorName
+    }
+
+    // MATT condense into fewer cases
+    def UseOneConstructor: Rule1[ParsedAst.Import.UseOneConstructor] = rule {
+      SP ~ keyword("new") ~ WS ~ "##" ~ Names.JavaName ~ Signature ~ SP ~> ParsedAst.Import.UseOneConstructor
+    }
+
+    def UseManyConstructor: Rule1[ParsedAst.Import.UseManyConstructor] = rule {
+      SP ~ keyword("new") ~ WS ~ "##" ~ Names.JavaName ~ "." ~ "{" ~ zeroOrMore(JNameAndSigAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Import.UseManyConstructor
+    }
+
+    def UseOneMethod: Rule1[ParsedAst.Import.UseOneMethod] = rule {
+      SP ~ "##" ~ Names.JavaName ~ Signature ~ SP ~> ParsedAst.Import.UseOneMethod
+    }
+
+    def UseManyMethod: Rule1[ParsedAst.Import.UseManyMethod] = rule {
+      SP ~ "##" ~ Names.JavaName ~ "." ~ "{" ~ zeroOrMore(JNameAndSigAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Import.UseManyMethod
+    }
+
+    def UseOneStaticMethod: Rule1[ParsedAst.Import.UseOneStaticMethod] = rule {
+      SP ~ "##" ~ JvmStaticName ~ Signature ~ SP ~> ParsedAst.Import.UseOneStaticMethod
+    }
+
+    def UseManyStaticMethod: Rule1[ParsedAst.Import.UseManyStaticMethod] = rule {
+      SP ~ "##" ~ Names.JavaName ~ ":" ~ "{" ~ zeroOrMore(JNameAndSigAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Import.UseManyStaticMethod
+    }
+
+    def UseOneGetField: Rule1[ParsedAst.Import.UseOneGetField] = rule {
+      SP ~ keyword("get") ~ WS ~ "##" ~ Names.JavaName ~ SP ~> ParsedAst.Import.UseOneGetField
+    }
+
+    def UseManyGetField: Rule1[ParsedAst.Import.UseManyGetField] = rule {
+      SP ~ keyword("get") ~ WS ~ "##" ~ Names.JavaName ~ "." ~ "{" ~ zeroOrMore(JNameAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Import.UseManyGetField
+    }
+
+    def UseOnePutField: Rule1[ParsedAst.Import.UseOnePutField] = rule {
+      SP ~ keyword("set") ~ WS ~ "##" ~ Names.JavaName ~ SP ~> ParsedAst.Import.UseOnePutField
+    }
+
+    def UseManyPutField: Rule1[ParsedAst.Import.UseManyPutField] = rule {
+      SP ~ keyword("set") ~ WS ~ "##" ~ Names.JavaName ~ "." ~ "{" ~ zeroOrMore(JNameAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Import.UseManyPutField
+    }
+
+    def UseOneGetStaticField: Rule1[ParsedAst.Import.UseOneGetStaticField] = rule {
+      SP ~ keyword("get") ~ WS ~ "##" ~ JvmStaticName ~ SP ~> ParsedAst.Import.UseOneGetStaticField
+    }
+
+    def UseManyGetStaticField: Rule1[ParsedAst.Import.UseManyGetStaticField] = rule {
+      SP ~ keyword("get") ~ WS ~ "##" ~ Names.JavaName ~ ":" ~ "{" ~ zeroOrMore(JNameAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Import.UseManyGetStaticField
+    }
+
+    def UseOnePutStaticField: Rule1[ParsedAst.Import.UseOnePutStaticField] = rule {
+      SP ~ keyword("set") ~ WS ~ "##" ~ JvmStaticName ~ SP ~> ParsedAst.Import.UseOnePutStaticField
+    }
+
+    def UseManyPutStaticField: Rule1[ParsedAst.Import.UseManyPutStaticField] = rule {
+      SP ~ keyword("set") ~ WS ~ "##" ~ Names.JavaName ~ ":" ~ "{" ~ zeroOrMore(JNameAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Import.UseManyPutStaticField
     }
 
     def Signature: Rule1[Seq[ParsedAst.Type]] = rule {
@@ -387,12 +388,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       oneOrMore(Names.JavaIdentifier).separatedBy(".") ~ ":" ~ Names.JavaIdentifier ~> ((xs: Seq[String], x: String) => xs :+ x)
     }
 
-    def JNameAndAlias: Rule1[ParsedAst.Use.JNameAndAlias] = rule {
-      SP ~ Names.JavaIdentifier ~ optional(optWS ~ atomic("=>") ~ optWS ~ Names.Definition) ~ SP ~> ParsedAst.Use.JNameAndAlias
+    def JNameAndAlias: Rule1[ParsedAst.Import.JNameAndAlias] = rule {
+      SP ~ Names.JavaIdentifier ~ optional(optWS ~ atomic("=>") ~ optWS ~ Names.Definition) ~ SP ~> ParsedAst.Import.JNameAndAlias
     }
 
-    def JNameAndSigAndAlias: Rule1[ParsedAst.Use.NameAndSigAndAlias] = rule {
-      SP ~ Names.JavaIdentifier ~ Signature ~ optional(optWS ~ atomic("=>") ~ optWS ~ Names.Definition) ~ SP ~> ParsedAst.Use.NameAndSigAndAlias
+    def JNameAndSigAndAlias: Rule1[ParsedAst.Import.NameAndSigAndAlias] = rule {
+      SP ~ Names.JavaIdentifier ~ Signature ~ optional(optWS ~ atomic("=>") ~ optWS ~ Names.Definition) ~ SP ~> ParsedAst.Import.NameAndSigAndAlias
     }
 
   }

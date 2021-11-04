@@ -359,6 +359,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       }
       us.toSuccess
 
+    case _ => throw InternalCompilerException("import not allowed here") // MATT change to proper error
+
   }
 
   /**
