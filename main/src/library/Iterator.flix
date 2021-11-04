@@ -179,4 +179,24 @@ namespace Iterator {
         else
             toSetAcc(done, next, Set.insert(next(), s))
 
+    ///
+    /// Returns a list of every element in `iter` that satisfies the predicate `f`.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def filter(f: a -> Bool & ef, iter: Iterator[a]): List[a] & ef =
+        let Iterator(done, next) = iter;
+        filterAcc(f, done, next, ks -> ks) as & ef
+
+    ///
+    /// Helper function for `filter`.
+    ///
+    def filterAcc(f: a -> Bool & ef, done: Done, next: Next[a], k: List[a] -> List[a]): List[a] & Impure =
+        if (done())
+            k(Nil)
+        else
+            let x = next();
+            let include = f(x);
+            if (include) filterAcc(f, done, next, ks -> k(x :: ks)) else filterAcc(f, done, next, k)
+
 }
