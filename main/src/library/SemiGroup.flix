@@ -41,9 +41,9 @@ instance SemiGroup[String] {
 
 instance SemiGroup[Option[a]] with SemiGroup[a] {
   pub def combine(x: Option[a], y: Option[a]): Option[a] = match (x, y) {
-        case (a, None) => a
-        case (None, b) => b
-        case (Some(x1), Some(y1)) => Some(SemiGroup.combine(x1, y1))
+        case (a, None)              => a
+        case (None, b)              => b
+        case (Some(x1), Some(y1))   => Some(SemiGroup.combine(x1, y1))
     }
 }
 
@@ -61,10 +61,10 @@ instance SemiGroup[Map[k,v]] with Order[k], SemiGroup[v] {
 
 instance SemiGroup[Validation[t, e]] with SemiGroup[t] {
   pub def combine(x: Validation[t, e], y: Validation[t, e]): Validation[t, e] = match (x, y) {
-        case (Success(x1), Success(y1)) => Success(SemiGroup.combine(x1, y1))
-        case (Failure(es1), Failure(es2)) => Failure(Nel.append(es1, es2))
-        case (Failure(_), _) => x
-        case (_, Failure(_)) => y
+        case (Success(x1), Success(y1))     => Success(SemiGroup.combine(x1, y1))
+        case (Failure(es1), Failure(es2))   => Failure(Nel.append(es1, es2))
+        case (Failure(_), _)                => x
+        case (_, Failure(_))                => y
     }
 }
 
