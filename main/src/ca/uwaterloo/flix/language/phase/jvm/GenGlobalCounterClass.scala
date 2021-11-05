@@ -20,6 +20,9 @@ import ca.uwaterloo.flix.api.Flix
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes._
 
+/**
+  * A copy of this generated class has to be maintained at main/src/dev/flix/runtime/GlobalCounter.java.
+  */
 object GenGlobalCounterClass {
 
   val NewIdMethodName: String = "newId"

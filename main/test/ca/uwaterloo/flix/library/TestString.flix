@@ -1931,31 +1931,31 @@ def trimRight12(): Bool = String.trimRight("aa" + String.lineSeparator()) == "aa
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def repeat01(): Bool = String.repeat("a", -1) == ""
+def repeat01(): Bool = String.repeat(-1, "a") == ""
 
 @test
-def repeat02(): Bool = String.repeat("a", 0) == ""
+def repeat02(): Bool = String.repeat(0, "a") == ""
 
 @test
-def repeat03(): Bool = String.repeat("a", 1) == "a"
+def repeat03(): Bool = String.repeat(1, "a") == "a"
 
 @test
-def repeat04(): Bool = String.repeat("a", 2) == "aa"
+def repeat04(): Bool = String.repeat(2, "a") == "aa"
 
 @test
-def repeat05(): Bool = String.repeat("a", 3) == "aaa"
+def repeat05(): Bool = String.repeat(3, "a") == "aaa"
 
 @test
-def repeat06(): Bool = String.repeat("ab", 0) == ""
+def repeat06(): Bool = String.repeat(0, "ab") == ""
 
 @test
-def repeat07(): Bool = String.repeat("ab", 1) == "ab"
+def repeat07(): Bool = String.repeat(1, "ab") == "ab"
 
 @test
-def repeat08(): Bool = String.repeat("ab", 2) == "abab"
+def repeat08(): Bool = String.repeat(2, "ab") == "abab"
 
 @test
-def repeat09(): Bool = String.repeat("ab", 3) == "ababab"
+def repeat09(): Bool = String.repeat(3, "ab") == "ababab"
 
 /////////////////////////////////////////////////////////////////////////////
 // padLeft                                                                 //

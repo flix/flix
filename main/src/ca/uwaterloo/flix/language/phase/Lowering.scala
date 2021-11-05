@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.Denotation.{Latticenal, Relational}
-import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Polarity}
+import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Denotation, Polarity}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
@@ -136,7 +136,7 @@ object Lowering extends Phase[Root, Root] {
 
     val newDefs = defs.map(kv => kv.sym -> kv).toMap
     val newSigs = sigs.map(kv => kv.sym -> kv).toMap
-    val newInstances = instances.map(kv => kv.head.sym -> kv).toMap
+    val newInstances = instances.map(kv => kv.head.sym.clazz -> kv).toMap
     val newEnums = enums.map(kv => kv.sym -> kv).toMap
 
     // Sigs are shared between the `sigs` field and the `classes` field.
@@ -550,7 +550,7 @@ object Lowering extends Phase[Root, Root] {
 
     case Expression.FixpointProjectIn(exp, pred, tpe, eff, loc) =>
       // Compute the arity of the functor F[(a, b, c)] or F[a].
-      val arity = exp.tpe match {
+      val arity = Type.eraseAliases(exp.tpe) match {
         case Type.Apply(_, innerType, _) => innerType.typeConstructor match {
           case Some(TypeConstructor.Tuple(l)) => l
           case _ => 1
@@ -572,7 +572,7 @@ object Lowering extends Phase[Root, Root] {
     case Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) =>
       // Compute the arity of the predicate symbol.
       // The type is either of the form `Array[(a, b, c)]` or `Array[a]`.
-      val arity = tpe match {
+      val arity = Type.eraseAliases(tpe) match {
         case Type.Apply(Type.Cst(TypeConstructor.Array, _), innerType, _) => innerType.typeConstructor match {
           case Some(TypeConstructor.Tuple(_)) => innerType.typeArguments.length
           case Some(TypeConstructor.Unit) => 0
@@ -1044,8 +1044,9 @@ object Lowering extends Phase[Root, Root] {
 
     // Special case: No free variables.
     if (fvs.isEmpty) {
+      val sym = Symbol.freshVarSym("_unit", BoundBy.FormalParam, loc)
       // Construct a lambda that takes the unit argument.
-      val fparam = FormalParam(Symbol.freshVarSym("_unit", loc), Ast.Modifiers.Empty, Type.Unit, loc)
+      val fparam = FormalParam(sym, Ast.Modifiers.Empty, Type.Unit, loc)
       val tpe = Type.mkPureArrow(Type.Unit, exp.tpe, loc)
       val lambdaExp = Expression.Lambda(fparam, exp, tpe, loc)
       return mkTag(Enums.BodyPredicate, s"Guard0", lambdaExp, Types.BodyPredicate, loc)
@@ -1093,8 +1094,9 @@ object Lowering extends Phase[Root, Root] {
 
     // Special case: No free variables.
     if (fvs.isEmpty) {
+      val sym = Symbol.freshVarSym("_unit", BoundBy.FormalParam, loc)
       // Construct a lambda that takes the unit argument.
-      val fparam = FormalParam(Symbol.freshVarSym("_unit", loc), Ast.Modifiers.Empty, Type.Unit, loc)
+      val fparam = FormalParam(sym, Ast.Modifiers.Empty, Type.Unit, loc)
       val tpe = Type.mkPureArrow(Type.Unit, exp.tpe, loc)
       val lambdaExp = Expression.Lambda(fparam, exp, tpe, loc)
       return mkTag(Enums.HeadTerm, s"App0", lambdaExp, Types.HeadTerm, loc)

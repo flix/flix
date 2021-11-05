@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp._
-import ca.uwaterloo.flix.language.ast.Ast.TypeConstraint
+import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, TypeConstraint}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.Symbol
@@ -97,9 +97,13 @@ object SemanticTokensProvider {
     val allTokens = (classTokens ++ instanceTokens ++ defnTokens ++ enumTokens ++ typeAliasTokens).toList
 
     //
-    // We remove all: (i) multi-line tokens and (ii) tokens with unknown source locations.
+    // We keep all tokens that are: (i) single-line tokens and (ii) have the same source as `uri`.
     //
-    val filteredTokens = allTokens.filter(t => !t.loc.isMultiLine && t.loc != SourceLocation.Unknown)
+    // Note that the last criteria (automatically) excludes:
+    //   (a) tokens with unknown source locations, and
+    //   (b) tokens that come from entities inside `uri` but that originate from different uris.
+    //
+    val filteredTokens = allTokens.filter(t => t.loc.isSingleLine && include(uri, t.loc))
 
     //
     // Encode the semantic tokens as a list of integers.
@@ -135,12 +139,14 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given instance `inst0`.
     */
   private def visitInstance(inst0: TypedAst.Instance): Iterator[SemanticToken] = inst0 match {
-    case TypedAst.Instance(_, _, _, tpe, tconstrs, defs, _, _) =>
-      // TODO: We lack the occurrence of a class symbol in an instance.
-      val st1 = visitType(tpe)
-      val st2 = tconstrs.flatMap(visitTypeConstraint)
-      val st3 = defs.flatMap(visitDef)
-      st1 ++ st2 ++ st3
+    case TypedAst.Instance(_, _, sym, tpe, tconstrs, defs, _, _) =>
+      // NB: we use SemanticTokenType.Class because the OOP "Class" most directly corresponds to the FP "Instance"
+      val t = SemanticToken(SemanticTokenType.Class, Nil, sym.loc)
+      val st1 = Iterator(t)
+      val st2 = visitType(tpe)
+      val st3 = tconstrs.flatMap(visitTypeConstraint)
+      val st4 = defs.flatMap(visitDef)
+      st1 ++ st2 ++ st3 ++ st4
   }
 
   /**
@@ -164,7 +170,6 @@ object SemanticTokensProvider {
     */
   private def visitCase(case0: TypedAst.Case): Iterator[SemanticToken] = case0 match {
     case TypedAst.Case(_, tag, _, sc, _) =>
-      // TODO: The scheme of a tag contains source locations that refer to the enum itself.
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, tag.loc)
       Iterator(t) ++ visitType(sc.base)
   }
@@ -218,12 +223,12 @@ object SemanticTokensProvider {
       Iterator(t)
 
     case Expression.Def(sym, _, loc) =>
-      val o = if (isOperator(sym.name)) SemanticTokenType.Operator else SemanticTokenType.Function
+      val o = if (isOperatorName(sym.name)) SemanticTokenType.Operator else SemanticTokenType.Function
       val t = SemanticToken(o, Nil, loc)
       Iterator(t)
 
     case Expression.Sig(sym, _, loc) =>
-      val o = if (isOperator(sym.name)) SemanticTokenType.Operator else SemanticTokenType.Method
+      val o = if (isOperatorName(sym.name)) SemanticTokenType.Operator else SemanticTokenType.Method
       val t = SemanticToken(o, Nil, loc)
       Iterator(t)
 
@@ -512,18 +517,67 @@ object SemanticTokensProvider {
     case Type.Ascribe(tpe, _, _) =>
       visitType(tpe)
 
-    case Type.Cst(_, loc) =>
-      val t = SemanticToken(SemanticTokenType.Type, Nil, loc)
-      Iterator(t)
+    case Type.Cst(cst, loc) =>
+      if (isVisibleTypeConstructor(cst)) {
+        val t = SemanticToken(SemanticTokenType.Type, Nil, loc)
+        Iterator(t)
+      } else {
+        Iterator.empty
+      }
 
     case Type.Apply(tpe1, tpe2, _) =>
       visitType(tpe1) ++ visitType(tpe2)
 
-    case Type.Alias(_, args, _, _) =>
+    case Type.Alias(_, args, _, _) => // TODO no location for the "constructor"
       args.flatMap(visitType).iterator
 
     case Type.UnkindedVar(_, _, _, _) =>
       throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
+  }
+
+  /**
+    * Returns true if the type constructor should be highlighted.
+    * This is restricted to type constructors whose that use the standard shape (X[Y, Z]).
+    */
+  private def isVisibleTypeConstructor(tycon: TypeConstructor): Boolean = tycon match {
+    case TypeConstructor.Unit => true
+    case TypeConstructor.Null => true
+    case TypeConstructor.Bool => true
+    case TypeConstructor.Char => true
+    case TypeConstructor.Float32 => true
+    case TypeConstructor.Float64 => true
+    case TypeConstructor.Int8 => true
+    case TypeConstructor.Int16 => true
+    case TypeConstructor.Int32 => true
+    case TypeConstructor.Int64 => true
+    case TypeConstructor.BigInt => true
+    case TypeConstructor.Str => true
+    case TypeConstructor.Arrow(_) => false
+    case TypeConstructor.RecordRowEmpty => false
+    case TypeConstructor.RecordRowExtend(_) => false
+    case TypeConstructor.Record => false
+    case TypeConstructor.SchemaRowEmpty => false
+    case TypeConstructor.SchemaRowExtend(_) => false
+    case TypeConstructor.Schema => false
+    case TypeConstructor.Array => true
+    case TypeConstructor.Channel => true
+    case TypeConstructor.Lazy => true
+    case TypeConstructor.Tag(_, _) => false
+    case TypeConstructor.KindedEnum(_, _) => true
+    case TypeConstructor.Native(_) => true
+    case TypeConstructor.ScopedRef => true
+    case TypeConstructor.Tuple(_) => false
+    case TypeConstructor.Relation => false
+    case TypeConstructor.Lattice => false
+    case TypeConstructor.True => true
+    case TypeConstructor.False => true
+    case TypeConstructor.Not => false
+    case TypeConstructor.And => false
+    case TypeConstructor.Or => false
+    case TypeConstructor.Region => false
+
+    case TypeConstructor.UnkindedEnum(_) => throw InternalCompilerException("Unexpected unkinded type.")
+    case TypeConstructor.UnappliedAlias(_) => throw InternalCompilerException("Unexpected unkinded type.")
   }
 
   /**
@@ -546,7 +600,8 @@ object SemanticTokensProvider {
     */
   private def visitFormalParam(fparam0: FormalParam): Iterator[SemanticToken] = fparam0 match {
     case FormalParam(sym, _, tpe, _) =>
-      val t = SemanticToken(SemanticTokenType.Parameter, Nil, sym.loc)
+      val o = getSemanticTokenType(sym, tpe)
+      val t = SemanticToken(o, Nil, sym.loc)
       Iterator(t) ++ visitType(tpe)
   }
 
@@ -600,12 +655,11 @@ object SemanticTokensProvider {
     * Returns the semantic token type associated with the given variable `sym` of the given type `tpe`.
     */
   private def getSemanticTokenType(sym: Symbol.VarSym, tpe: Type): SemanticTokenType = {
-    val isOp = isOperator(sym.text)
-    val isFn = isFunction(tpe)
-
-    if (isOp)
+    if (boundByFormalParam(sym))
+      SemanticTokenType.Parameter
+    else if (isOperatorName(sym.text))
       SemanticTokenType.Operator
-    else if (isFn)
+    else if (isFunctionType(tpe))
       SemanticTokenType.Function
     else
       SemanticTokenType.Variable
@@ -614,13 +668,21 @@ object SemanticTokensProvider {
   /**
     * Returns `true` if the given string `s` contains non-letter symbols.
     */
-  private def isOperator(s: String): Boolean = s.forall(c => !Character.isLetter(c))
+  private def isOperatorName(s: String): Boolean = s.forall(c => !Character.isLetter(c))
 
   /**
     * Returns `true` if the given type `tpe` is a function type.
     */
-  private def isFunction(tpe: Type): Boolean = tpe.typeConstructor match {
+  private def isFunctionType(tpe: Type): Boolean = tpe.typeConstructor match {
     case Some(TypeConstructor.Arrow(_)) => true
+    case _ => false
+  }
+
+  /**
+    * Returns `true` if the given symbol `sym` is bound as a formal parameter.
+    */
+  private def boundByFormalParam(sym: Symbol.VarSym): Boolean = sym.boundBy match {
+    case BoundBy.FormalParam => true
     case _ => false
   }
 

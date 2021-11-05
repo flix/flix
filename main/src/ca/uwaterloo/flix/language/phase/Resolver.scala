@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.Denotation
+import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Denotation}
 import ca.uwaterloo.flix.language.ast.{Symbol, _}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.phase.unification.Substitution
@@ -68,7 +68,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         val instancesVal = root.instances.flatMap {
           case (ns0, instances0) => instances0.map {
             case (_, instances) => traverse(instances)(resolveInstance(_, taenv, ns0, root)) map {
-              case is => is.head.sym -> is
+              case is => is.head.sym.clazz -> is
             }
           }
         }
@@ -289,7 +289,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         tpe <- resolveType(tpe0, taenv, ns0, root)
         tconstrs <- traverse(tconstrs0)(resolveTypeConstraint(_, taenv, ns0, root))
         defs <- traverse(defs0)(resolveDef(_, taenv, ns0, root))
-      } yield ResolvedAst.Instance(doc, mod, clazz.sym, tpe, tconstrs, defs, ns0, loc)
+        sym = Symbol.freshInstanceSym(clazz.sym, clazz0.loc)
+      } yield ResolvedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, ns0, loc)
   }
 
   /**
@@ -355,7 +356,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         } yield {
           val freeVars = e0.tparams.tparams.map(_.tpe)
           val caseType = t
-          val enumType = mkUnkindedEnum(e0.sym, freeVars, e0.loc)
+          val enumType = mkUnkindedEnum(e0.sym, freeVars, e0.sym.loc)
           val base = Type.mkTag(e0.sym, tag, caseType, enumType, tpe.loc)
           val sc = ResolvedAst.Scheme(freeVars, tconstrs, base)
           name -> ResolvedAst.Case(enum, tag, t, sc)
@@ -402,7 +403,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         */
       def mkFreshFparams(arity: Int, loc: SourceLocation): List[ResolvedAst.FormalParam] = {
         // Introduce a fresh variable symbol for each argument of the function definition.
-        val varSyms = (0 until arity).map(i => Symbol.freshVarSym("$" + i, loc)).toList
+        val varSyms = (0 until arity).map(i => Symbol.freshVarSym("$" + i, BoundBy.FormalParam, loc)).toList
 
         // Introduce a formal parameter for each variable symbol.
         varSyms.map(sym => ResolvedAst.FormalParam(sym, Ast.Modifiers.Empty, sym.tvar, loc))
@@ -679,7 +680,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
                   // If the tag is `Some` we construct the lambda: x -> Some(x).
 
                   // Construct a fresh symbol for the formal parameter.
-                  val freshVar = Symbol.freshVarSym("x", loc)
+                  val freshVar = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
 
                   // Construct the formal parameter for the fresh symbol.
                   val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, Type.freshUnkindedVar(loc), loc)
@@ -1464,7 +1465,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       case "Null" => Type.mkNull(loc).toSuccess
       case "Bool" => Type.mkBool(loc).toSuccess
       case "Char" => Type.mkChar(loc).toSuccess
-      case "Float" => Type.mkFloat64(loc).toSuccess
       case "Float32" => Type.mkFloat32(loc).toSuccess
       case "Float64" => Type.mkFloat64(loc).toSuccess
       case "Int" => Type.mkInt32(loc).toSuccess

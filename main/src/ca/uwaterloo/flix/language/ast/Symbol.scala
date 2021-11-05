@@ -17,8 +17,11 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.Name.{Ident, NName}
 import ca.uwaterloo.flix.util.InternalCompilerException
+
+import java.util.Objects
 
 object Symbol {
 
@@ -52,6 +55,14 @@ object Symbol {
   }
 
   /**
+    * Returns a fresh instance symbol with the given class.
+    */
+  def freshInstanceSym(clazz: Symbol.ClassSym, loc: SourceLocation)(implicit flix: Flix): InstanceSym = {
+    val id = flix.genSym.freshId()
+    new InstanceSym(id, clazz, loc)
+  }
+
+  /**
     * Returns a fresh hole symbol associated with the given source location `loc`.
     */
   def freshHoleSym(loc: SourceLocation)(implicit flix: Flix): HoleSym = {
@@ -63,28 +74,28 @@ object Symbol {
     * Returns a fresh variable symbol based on the given symbol.
     */
   def freshVarSym(sym: VarSym)(implicit flix: Flix): VarSym = {
-    new VarSym(flix.genSym.freshId(), sym.text, sym.tvar, Scopedness.Unscoped, sym.loc)
+    new VarSym(flix.genSym.freshId(), sym.text, sym.tvar, Scopedness.Unscoped, sym.boundBy, sym.loc)
   }
 
   /**
     * Returns a fresh variable symbol for the given identifier.
     */
-  def freshVarSym(ident: Name.Ident)(implicit flix: Flix): VarSym = {
-    new VarSym(flix.genSym.freshId(), ident.name, Type.freshUnkindedVar(ident.loc), Scopedness.Unscoped, ident.loc)
+  def freshVarSym(ident: Name.Ident, boundBy: BoundBy)(implicit flix: Flix): VarSym = {
+    new VarSym(flix.genSym.freshId(), ident.name, Type.freshUnkindedVar(ident.loc), Scopedness.Unscoped, boundBy, ident.loc)
   }
 
   /**
     * Returns a fresh variable symbol for the given identifier and scopedness.
     */
-  def freshVarSym(ident: Name.Ident, scopedness: Scopedness)(implicit flix: Flix): VarSym = {
-    new VarSym(flix.genSym.freshId(), ident.name, Type.freshUnkindedVar(ident.loc), scopedness, ident.loc)
+  def freshVarSym(ident: Name.Ident, scopedness: Scopedness, boundBy: BoundBy)(implicit flix: Flix): VarSym = {
+    new VarSym(flix.genSym.freshId(), ident.name, Type.freshUnkindedVar(ident.loc), scopedness, boundBy, ident.loc)
   }
 
   /**
     * Returns a fresh variable symbol with the given text.
     */
-  def freshVarSym(text: String, loc: SourceLocation)(implicit flix: Flix): VarSym = {
-    new VarSym(flix.genSym.freshId(), text, Type.freshUnkindedVar(loc), Scopedness.Unscoped, loc)
+  def freshVarSym(text: String, boundBy: BoundBy, loc: SourceLocation)(implicit flix: Flix): VarSym = {
+    new VarSym(flix.genSym.freshId(), text, Type.freshUnkindedVar(loc), Scopedness.Unscoped, boundBy, loc)
   }
 
   /**
@@ -170,12 +181,13 @@ object Symbol {
   /**
     * Variable Symbol.
     *
-    * @param id   the globally unique name of the symbol.
-    * @param text the original name, as it appears in the source code, of the symbol
-    * @param tvar the type variable associated with the symbol. This type variable always has kind `Star`.
-    * @param loc  the source location associated with the symbol.
+    * @param id      the globally unique name of the symbol.
+    * @param text    the original name, as it appears in the source code, of the symbol
+    * @param tvar    the type variable associated with the symbol. This type variable always has kind `Star`.
+    * @param boundBy the way the variable is bound.
+    * @param loc     the source location associated with the symbol.
     */
-  final class VarSym(val id: Int, val text: String, val tvar: Type.UnkindedVar, val scopedness: Scopedness, val loc: SourceLocation) {
+  final class VarSym(val id: Int, val text: String, val tvar: Type.UnkindedVar, val scopedness: Scopedness, val boundBy: BoundBy, val loc: SourceLocation) {
 
     /**
       * The internal stack offset. Computed during variable numbering.
@@ -308,6 +320,34 @@ object Symbol {
       * Human readable representation.
       */
     override def toString: String = if (namespace.isEmpty) name else namespace.mkString("/") + "." + name
+  }
+
+  /**
+    * Instance Symbol.
+    */
+  final class InstanceSym(val id: Int, val clazz: Symbol.ClassSym, val loc: SourceLocation) {
+    /**
+      * Returns `true` if this symbol is equal to `that` symbol.
+      */
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that: InstanceSym => this.id == that.id && this.clazz == that.clazz
+      case _ => false
+    }
+
+    /**
+      * Returns the hash code of this symbol.
+      */
+    override val hashCode: Int = Objects.hash(id, clazz)
+
+    /**
+      * Human readable representation.
+      */
+    override def toString: String = clazz.toString + "$" + id
+
+    /**
+      * The name of the instance.
+      */
+    val name: String = clazz.name
   }
 
   /**
