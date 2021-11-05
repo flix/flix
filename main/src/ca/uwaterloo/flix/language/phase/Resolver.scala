@@ -1643,7 +1643,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       val map = alias.tparams.tparams.map(_.tpe).zip(args).toMap[Type.Var, Type]
       val subst = Substitution(map)
       val tpe = subst(alias.tpe)
-      Type.Alias(alias.sym, args, tpe, loc)
+      val cst = Type.AliasConstructor(alias.sym, alias.loc)
+      Type.Alias(cst, args, tpe, loc)
     }
 
     val baseType = tpe0.baseType
