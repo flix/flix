@@ -16,44 +16,42 @@
 namespace File {
 
     ///
-    /// Returns `true` if the given file `file` exists.
+    /// Returns `true` if the given file `f` exists.
     ///
-    pub def exists(file: String): Result[Bool, String] & Impure =
+    pub def exists(f: String): Result[Bool, String] & Impure =
         try {
             import new java.io.File(String) as newFile;
             import java.io.File.exists();
-            Ok(exists(newFile(file)))
+            Ok(exists(newFile(f)))
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage();
                 Err(getMessage(ex))
         }
 
-
     ///
-    /// Returns `true` is the given file `file` is a directory.
+    /// Returns `true` is the given file `f` is a directory.
     ///
-    pub def isDirectory(file: String): Result[Bool, String] & Impure =
+    pub def isDirectory(f: String): Result[Bool, String] & Impure =
         try {
             import new java.io.File(String) as newFile;
             import java.io.File.isDirectory();
-            Ok(isDirectory(newFile(file)))
+            Ok(isDirectory(newFile(f)))
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage();
                 Err(getMessage(ex))
         }
 
-
     ///
-    /// Returns `true` if the given file `file` is a regular file.
+    /// Returns `true` if the given file `f` is a regular file.
     ///
-    pub def isRegularFile(file: String): Result[Bool, String] & Impure =
+    pub def isRegularFile(f: String): Result[Bool, String] & Impure =
         try {
             import new java.io.File(String) as newFile;
             import java.io.File.toPath();
             import java.nio.file.Files:isRegularFile(##java.nio.file.Path, Array[##java.nio.file.LinkOption]);
-            let javaFile = newFile(file);
+            let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let isRegular = isRegularFile(javaPath, []);
             Ok(isRegular)
@@ -63,16 +61,15 @@ namespace File {
                 Err(getMessage(ex))
         }
 
-
     ///
     /// Returns `true` if the given file `f` is a symbolic link.
     ///
-    pub def isSymbolicLink(file: String): Result[Bool, String] & Impure =
+    pub def isSymbolicLink(f: String): Result[Bool, String] & Impure =
         try {
             import new java.io.File(String) as newFile;
             import java.io.File.toPath();
             import java.nio.file.Files:isSymbolicLink(##java.nio.file.Path);
-            let javaFile = newFile(file);
+            let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let isSymbolic = isSymbolicLink(javaPath);
             Ok(isSymbolic)
@@ -81,7 +78,6 @@ namespace File {
                 import java.lang.Throwable.getMessage();
                 Err(getMessage(ex))
         }
-
 
     ///
     /// Returns `true` if the given file `f` is readable.
@@ -97,36 +93,33 @@ namespace File {
                 Err(getMessage(ex))
         }
 
-
     ///
-    /// Returns `true` if the given file `file` is writable.
+    /// Returns `true` if the given file `f` is writable.
     ///
-    pub def isWritable(file: String): Result[Bool, String] & Impure =
+    pub def isWritable(f: String): Result[Bool, String] & Impure =
         try {
             import new java.io.File(String) as newFile;
             import java.io.File.canWrite();
-            Ok(canWrite(newFile(file)))
+            Ok(canWrite(newFile(f)))
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage();
                 Err(getMessage(ex))
         }
 
-
     ///
-    /// Returns `true` if the given file `file` is executable.
+    /// Returns `true` if the given file `f` is executable.
     ///
-    pub def isExecutable(file: String): Result[Bool, String] & Impure =
+    pub def isExecutable(f: String): Result[Bool, String] & Impure =
         try {
             import new java.io.File(String) as newFile;
             import java.io.File.canExecute();
-            Ok(canExecute(newFile(file)))
+            Ok(canExecute(newFile(f)))
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage();
                 Err(getMessage(ex))
         }
-
 
     ///
     /// Returns a list of all the lines in the given file `f`.
@@ -146,12 +139,10 @@ namespace File {
                 Err(getMessage(ex))
         }
 
-
     ///
     /// Reads all lines from the given buffered reader `r` until it is empty.
     ///
     def readAll(r: ##java.io.BufferedReader): List[String] & Impure = List.reverse(readAllHelper(r, Nil))
-
 
     ///
     /// Helper function for readAll.
@@ -165,16 +156,15 @@ namespace File {
         else
             readAllHelper(r, line :: acc)
 
-
     ///
     /// Returns a string containing the given file `f`.
     ///
-    pub def read(file: String): Result[String, String] & Impure =
+    pub def read(f: String): Result[String, String] & Impure =
         try {
             import new java.io.File(String) as newFile;
             import java.io.File.toPath();
             import java.nio.file.Files:newBufferedReader(##java.nio.file.Path);
-            let javaFile = newFile(file);
+            let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let reader = newBufferedReader(javaPath);
             Ok(readHelper(readAll(reader)))
@@ -184,7 +174,6 @@ namespace File {
                 Err(getMessage(ex))
         }
 
-
     ///
     /// Helper function for read.
     /// Converts a list of strings to a string with linebreaks between every string in `list`.
@@ -192,17 +181,16 @@ namespace File {
     def readHelper(list: List[String]): String & Pure =
         List.foldLeft((x, y) -> x + "\n" + y, "", list)
 
-
     ///
     /// Returns a string containing the given file `f` with the options `opts`.
     ///
-    pub def readWith(opts: {offset :: Int64, count :: Int32, charSet :: String}, file : String): Result[String, String] & Impure = {
+    pub def readWith(opts: {offset :: Int64, count :: Int32, charSet :: String}, f : String): Result[String, String] & Impure = {
         try {
             import new java.io.File(String) as newFile;
             import java.nio.charset.Charset:forName(String);
             import java.io.File.toPath();
             import java.nio.file.Files:newBufferedReader(##java.nio.file.Path, ##java.nio.charset.Charset);
-            let javaFile = newFile(file);
+            let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let reader = newBufferedReader(javaPath, forName(opts.charSet));
             let fileRead = readHelper(readAll(reader));
@@ -214,34 +202,31 @@ namespace File {
         }
     }
 
-
     ///
     /// Helper function for readWith.
     /// Takes a String and applys the options.
     ///
-    def readWithHelper(file: String, offset: Int64, count: Int32): String & Pure =
-        let fileLength = String.length(file);
-
+    def readWithHelper(f: String, offset: Int64, count: Int32): String & Pure =
+        let fileLength = String.length(f);
         match Int64.tryToInt32(offset) {
-            case None => String.dropRight(fileLength - count, file)
+            case None => String.dropRight(fileLength - count, f)
             case Some(n) =>
-                let str = String.dropLeft(n, file);
+                let str = String.dropLeft(n, f);
                 let strLength = String.length(str);
                 String.dropRight(strLength - count, str)
         }
 
-
     ///
-    /// Returns an iterator of the given `file`
+    /// Returns an iterator of the given file `f`
     ///
-    pub def readLinesIter(file: String): Iterator[Result[String, String]] & Impure =
+    pub def readLinesIter(f: String): Iterator[Result[String, String]] & Impure =
         try {
             import new java.io.File(String) as newFile;
             import java.io.File.toPath();
             import java.nio.file.Files:newBufferedReader(##java.nio.file.Path);
             import java.io.BufferedReader.readLine();
 
-            let javaFile = newFile(file);
+            let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let reader = newBufferedReader(javaPath);
             let line = ref readLine(reader);
@@ -264,17 +249,16 @@ namespace File {
                 Iterator(done, next)
         }
 
-
     ///
-    /// Returns an array of all the bytes in the given file `file`.
+    /// Returns an array of all the bytes in the given file `f`.
     ///
-    pub def readBytes(file: String): Result[Array[Int8], String] & Impure =
+    pub def readBytes(f: String): Result[Array[Int8], String] & Impure =
         try {
             import new java.io.File(String) as newFile;
             import java.io.File.toPath();
             import java.nio.file.Files:readAllBytes(##java.nio.file.Path);
 
-            let javaFile = newFile(file);
+            let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let bytes = readAllBytes(javaPath);
 
@@ -285,17 +269,16 @@ namespace File {
                 Err(getMessage(ex))
         }
 
-
     ///
     /// Returns an iterator of the bytes in the given `file` in chunks of size `chunkSize`.
     ///
-    pub def readChunks(file: String, chunkSize: Int32): Iterator[Result[Array[Int8], String]] & Impure =
+    pub def readChunks(f: String, chunkSize: Int32): Iterator[Result[Array[Int8], String]] & Impure =
         try {
             import new java.io.File(String) as newFile;
             import java.io.File.toPath();
             import java.nio.file.Files:readAllBytes(##java.nio.file.Path);
 
-            let javaFile = newFile(file);
+            let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let bytes = readAllBytes(javaPath);
             let byteCount = Array.length(bytes);
@@ -326,15 +309,14 @@ namespace File {
                 Iterator(done, next)
         }
 
-
     ///
-    /// Writes `data` to the given `file`.
+    /// Writes `data` to the given file `f`.
     ///
-    /// Creates `file` if it does not exist. Overwrites it if it exists.
+    /// Creates file `f` if it does not exist. Overwrites it if it exists.
     ///
     /// Returns `true` if the file was created.
     ///
-    pub def write(file: String, data: t): Result[Bool, String] & Impure with ToString[t] =
+    pub def write(f: String, data: t): Result[Bool, String] & Impure with ToString[t] =
         try {
             import new java.io.File(String) as newFile;
             import new java.io.PrintWriter(##java.io.File) as newPrintWriter;
@@ -342,7 +324,7 @@ namespace File {
             import java.io.PrintWriter.close();
             import java.io.PrintWriter.checkError();
 
-            let javaFile = newFile(file);
+            let javaFile = newFile(f);
             let w = newPrintWriter(javaFile);
 
             println(w, ToString.toString(data));
@@ -355,6 +337,5 @@ namespace File {
                 import java.lang.Throwable.getMessage();
                 Err(getMessage(ex))
         }
-
 
 }
