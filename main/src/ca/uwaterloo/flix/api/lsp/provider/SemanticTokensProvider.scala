@@ -528,8 +528,9 @@ object SemanticTokensProvider {
     case Type.Apply(tpe1, tpe2, _) =>
       visitType(tpe1) ++ visitType(tpe2)
 
-    case Type.Alias(_, args, _, _) => // TODO no location for the "constructor"
-      args.flatMap(visitType).iterator
+    case Type.Alias(cst, args, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Type, Nil, cst.loc)
+      Iterator(t) ++ args.flatMap(visitType).iterator
 
     case Type.UnkindedVar(_, _, _, _) =>
       throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
