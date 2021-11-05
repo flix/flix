@@ -1639,12 +1639,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       * Performs beta-reduction on the given type alias.
       * The list of arguments must be the same length as the alias's parameters.
       */
-    def applyAlias(alias: ResolvedAst.TypeAlias, args: List[Type], loc: SourceLocation): Type = {
+    def applyAlias(alias: ResolvedAst.TypeAlias, args: List[Type], cstLoc: SourceLocation): Type = {
       val map = alias.tparams.tparams.map(_.tpe).zip(args).toMap[Type.Var, Type]
       val subst = Substitution(map)
       val tpe = subst(alias.tpe)
-      val cst = Type.AliasConstructor(alias.sym, alias.loc)
-      Type.Alias(cst, args, tpe, loc)
+      val cst = Type.AliasConstructor(alias.sym, cstLoc)
+      Type.Alias(cst, args, tpe, tpe0.loc)
     }
 
     val baseType = tpe0.baseType
@@ -1664,7 +1664,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           traverse(targs)(finishResolveType(_, taenv)) map {
             resolvedArgs =>
               val (usedArgs, extraArgs) = resolvedArgs.splitAt(numParams)
-              Type.mkApply(applyAlias(alias, usedArgs, tpe0.loc), extraArgs, tpe0.loc)
+              Type.mkApply(applyAlias(alias, usedArgs, loc), extraArgs, tpe0.loc)
           }
         }
       case _ =>
