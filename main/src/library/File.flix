@@ -129,10 +129,13 @@ namespace File {
             import new java.io.File(String) as newFile;
             import java.io.File.toPath();
             import java.nio.file.Files:newBufferedReader(##java.nio.file.Path);
+            import java.io.BufferedReader.close();
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let reader = newBufferedReader(javaPath);
-            Ok(readAll(reader))
+            let result = readAll(reader);
+            close(reader);
+            Ok(result)
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage();
@@ -164,10 +167,13 @@ namespace File {
             import new java.io.File(String) as newFile;
             import java.io.File.toPath();
             import java.nio.file.Files:newBufferedReader(##java.nio.file.Path);
+            import java.io.BufferedReader.close();
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let reader = newBufferedReader(javaPath);
-            Ok(readHelper(readAll(reader)))
+            let result = readHelper(readAll(reader));
+            close(reader);
+            Ok(result)
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage();
@@ -190,10 +196,12 @@ namespace File {
             import java.nio.charset.Charset:forName(String);
             import java.io.File.toPath();
             import java.nio.file.Files:newBufferedReader(##java.nio.file.Path, ##java.nio.charset.Charset);
+            import java.io.BufferedReader.close();
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let reader = newBufferedReader(javaPath, forName(opts.charSet));
             let fileRead = readHelper(readAll(reader));
+            close(reader);
             Ok(readWithHelper(fileRead, opts.offset, opts.count))
         } catch {
             case ex: ##java.io.IOException =>
