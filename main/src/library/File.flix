@@ -335,7 +335,7 @@ namespace File {
             let javaFile = newFile(f);
             let w = newPrintWriter(javaFile);
 
-            println(w, ToString.toString(data));
+            println(w, "${data}");
             close(w);
 
             Ok(checkError(w))
