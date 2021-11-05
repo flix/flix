@@ -295,13 +295,13 @@ namespace File {
             let done = () -> deref i >= byteCount;
             let next = () -> {
                 let j = deref i;
-                if(j < byteCount) {
+                if (j < byteCount) {
                     let end = {
-                        if(j+chunkSize >= byteCount) byteCount-1
-                        else j+chunkSize-1
+                        if (j + chunkSize >= byteCount) byteCount - 1
+                        else j + chunkSize - 1
                     };
                     let byteOfChuckSize = Array.slice(j, end, bytes);
-                    i := j+chunkSize;
+                    i := j + chunkSize;
                     Ok(byteOfChuckSize)
                 } else bug!("Empty Iterator!")
             };
