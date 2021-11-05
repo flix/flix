@@ -310,4 +310,11 @@ namespace TestSemiGroup {
     @test
     def combineN08(): Bool = combineN(Map#{1 -> "a"}, 4) == Map#{1 -> "aaaa"}
 
+    /////////////////////////////////////////////////////////////////////////////
+    // associative law                                                         //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def associativeTest01(): Bool = combine(combine("a", "b"), "c") == combine("a", combine("b", "c"))
+
 }
