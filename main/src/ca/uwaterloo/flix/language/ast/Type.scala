@@ -496,7 +496,9 @@ object Type {
     override def kind: Kind = tpe.kind
   }
 
-  // MATT docs
+  /**
+    * A constructor for a type alias. (Not a valid type by itself).
+    */
   case class AliasConstructor(sym: Symbol.TypeAliasSym, loc: SourceLocation)
 
   /////////////////////////////////////////////////////////////////////////////
