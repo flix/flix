@@ -249,12 +249,7 @@ namespace File {
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage();
-                let err = ref getMessage(ex);
-                let done = () -> Object.isNull(deref err);
-                let next = () -> {
-                    Err(deref err)
-                };
-                Iterator(done, next)
+                Iterator.singleton(Err(getMessage(ex)))
         }
 
     ///
@@ -309,12 +304,7 @@ namespace File {
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage();
-                let err = ref getMessage(ex);
-                let done = () -> Object.isNull(deref err);
-                let next = () -> {
-                    Err(deref err)
-                };
-                Iterator(done, next)
+                Iterator.singleton(Err(getMessage(ex)))
         }
 
     ///
@@ -345,5 +335,4 @@ namespace File {
                 import java.lang.Throwable.getMessage();
                 Err(getMessage(ex))
         }
-
 }
