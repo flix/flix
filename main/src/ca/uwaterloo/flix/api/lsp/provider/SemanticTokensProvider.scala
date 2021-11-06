@@ -70,7 +70,7 @@ object SemanticTokensProvider {
     // Construct an iterator of the semantic tokens from sigs.
     //
     val sigsTokens = root.sigs.values.flatMap {
-      case decl if include(uri, decl.spec.loc) => visitSig(decl)
+      case decl if include(uri, decl.sym.loc) => visitSig(decl)
       case _ => Nil
     }
 

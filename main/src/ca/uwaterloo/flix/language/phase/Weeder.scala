@@ -133,7 +133,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         retTpe = visitType(tpe0)
         tpe = WeededAst.Type.Arrow(ts, eff, retTpe, loc)
         tconstrs <- traverse(tconstrs0)(visitTypeConstraint)
-      } yield List(WeededAst.Declaration.Sig(doc, as, mod, ident, tparams, fparams, exp.headOption, tpe, retTpe, eff, tconstrs, loc))
+      } yield List(WeededAst.Declaration.Sig(doc, as, mod, ident, tparams, fparams, exp.headOption, tpe, retTpe, eff, tconstrs))
   }
 
   /**
@@ -189,7 +189,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         retTpe = visitType(tpe0)
         tpe = WeededAst.Type.Arrow(ts, eff, retTpe, loc)
         tconstrs <- traverse(tconstrs0)(visitTypeConstraint)
-      } yield List(WeededAst.Declaration.Def(doc, as, mod, ident, tparams, fparams, exp, tpe, retTpe, eff, tconstrs, loc))
+      } yield List(WeededAst.Declaration.Def(doc, as, mod, ident, tparams, fparams, exp, tpe, retTpe, eff, tconstrs))
   }
 
   /**
@@ -211,7 +211,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           val ts = fs.map(_.tpe.get)
           val retTpe = WeededAst.Type.Ambiguous(Name.mkQName("Bool"), loc)
           val tpe = WeededAst.Type.Arrow(ts, WeededAst.Type.True(loc), retTpe, loc)
-          List(WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fs, exp, tpe, retTpe, WeededAst.Type.True(loc), tconstrs, loc))
+          List(WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fs, exp, tpe, retTpe, WeededAst.Type.True(loc), tconstrs))
       }
   }
 

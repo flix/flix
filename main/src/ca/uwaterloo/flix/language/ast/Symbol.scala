@@ -178,6 +178,13 @@ object Symbol {
     new TypeAliasSym(ns.parts, ident.name, ident.loc)
   }
 
+  // MATT docs
+  // MATT can this be avoided?
+  // MATT currently necessary for lookup stuff in Namer
+  sealed trait DefnSymOrSigSym {
+    val loc: SourceLocation
+  }
+
   /**
     * Variable Symbol.
     *
@@ -240,7 +247,7 @@ object Symbol {
   /**
     * Definition Symbol.
     */
-  final class DefnSym(val id: Option[Int], val namespace: List[String], val text: String, val loc: SourceLocation) {
+  final class DefnSym(val id: Option[Int], val namespace: List[String], val text: String, val loc: SourceLocation) extends DefnSymOrSigSym {
 
     /**
       * Returns `true` if `this` symbol is equal to the main symbol.
@@ -353,7 +360,7 @@ object Symbol {
   /**
     * Signature Symbol.
     */
-  final class SigSym(val clazz: Symbol.ClassSym, val name: String, val loc: SourceLocation) {
+  final class SigSym(val clazz: Symbol.ClassSym, val name: String, val loc: SourceLocation) extends DefnSymOrSigSym {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */

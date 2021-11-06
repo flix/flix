@@ -142,7 +142,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
       for {
         // check the main signature before typechecking the def
         _ <- checkMain(defn, classEnv)
-        res <- typeCheckDecl(spec0, exp0, assumedTconstrs, root, classEnv)
+        res <- typeCheckDecl(spec0, exp0, assumedTconstrs, root, classEnv, sym.loc)
         (spec, exp) = res
       } yield TypedAst.Def(sym, spec, exp)
   }
@@ -156,7 +156,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
     }
 
     if (!Scheme.equal(defn.spec.sc, mainScheme, classEnv)) {
-      TypeError.IllegalMain(declaredScheme = defn.spec.sc, expectedScheme = mainScheme, defn.spec.loc).toFailure
+      TypeError.IllegalMain(declaredScheme = defn.spec.sc, expectedScheme = mainScheme, defn.sym.loc).toFailure
     } else {
       ().toSuccess
     }
@@ -167,7 +167,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
     */
   private def visitSig(sig: KindedAst.Sig, assumedTconstrs: List[Ast.TypeConstraint], root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[TypedAst.Sig, TypeError] = sig match {
     case KindedAst.Sig(sym, spec0, Some(exp0)) =>
-      typeCheckDecl(spec0, exp0, assumedTconstrs, root, classEnv) map {
+      typeCheckDecl(spec0, exp0, assumedTconstrs, root, classEnv, sym.loc) map {
         case (spec, exp) => TypedAst.Sig(sym, spec, Some(exp))
       }
     case KindedAst.Sig(sym, spec0, None) =>
@@ -180,12 +180,12 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
     * Performs type inference and reassembly on the given Spec `spec`.
     */
   private def visitSpec(spec: KindedAst.Spec, root: KindedAst.Root, subst: Substitution)(implicit flix: Flix): Validation[TypedAst.Spec, TypeError] = spec match {
-    case KindedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc, tpe, eff, loc) =>
+    case KindedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc, tpe, eff) =>
       val annVal = visitAnnotations(ann0, root)
       val tparams = getTypeParams(tparams0)
       val fparams = getFormalParams(fparams0, subst)
       Validation.mapN(annVal) {
-        ann => TypedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, loc)
+        ann => TypedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff)
       }
   }
 
@@ -209,8 +209,8 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
   /**
     * Infers the type of the given definition `defn0`.
     */
-  private def typeCheckDecl(spec0: KindedAst.Spec, exp0: KindedAst.Expression, assumedTconstrs: List[Ast.TypeConstraint], root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[(TypedAst.Spec, TypedAst.Impl), TypeError] = spec0 match {
-    case KindedAst.Spec(doc, ann, mod, tparams0, fparams0, sc, tpe, eff, loc) =>
+  private def typeCheckDecl(spec0: KindedAst.Spec, exp0: KindedAst.Expression, assumedTconstrs: List[Ast.TypeConstraint], root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], loc: SourceLocation)(implicit flix: Flix): Validation[(TypedAst.Spec, TypedAst.Impl), TypeError] = spec0 match {
+    case KindedAst.Spec(doc, ann, mod, tparams0, fparams0, sc, tpe, eff) =>
 
       ///
       /// Infer the type of the expression `exp0`.

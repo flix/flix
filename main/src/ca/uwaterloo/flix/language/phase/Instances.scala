@@ -147,9 +147,9 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
             // Case 2: there is no definition with the same name, but there is a default implementation
             case (None, Some(_)) => ().toSuccess
             // Case 3: there is an implementation marked override, but no default implementation
-            case (Some(defn), None) if defn.spec.mod.isOverride => InstanceError.IllegalOverride(defn.sym, defn.spec.loc).toFailure
+            case (Some(defn), None) if defn.spec.mod.isOverride => InstanceError.IllegalOverride(defn.sym, defn.sym.loc).toFailure
             // Case 4: there is an overriding implementation, but no override modifier
-            case (Some(defn), Some(_)) if !defn.spec.mod.isOverride => InstanceError.UnmarkedOverride(defn.sym, defn.spec.loc).toFailure
+            case (Some(defn), Some(_)) if !defn.spec.mod.isOverride => InstanceError.UnmarkedOverride(defn.sym, defn.sym.loc).toFailure
             // Case 5: there is an implementation with the right modifier
             case (Some(defn), _) =>
               val expectedScheme = Scheme.partiallyInstantiate(sig.spec.declaredScheme, clazz.tparam.tpe, inst.tpe)
@@ -158,7 +158,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
                 ().toSuccess
               } else {
                 // Case 5.2: the schemes do not match
-                InstanceError.MismatchedSignatures(sig.sym, defn.spec.loc, expectedScheme, defn.spec.declaredScheme).toFailure
+                InstanceError.MismatchedSignatures(sig.sym, defn.sym.loc, expectedScheme, defn.spec.declaredScheme).toFailure
               }
           }
       }
@@ -166,7 +166,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
       val extraDefVal = Validation.traverseX(inst.defs) {
         defn =>
           clazz.signatures.find(_.sym.name == defn.sym.name) match {
-            case None => InstanceError.ExtraneousDefinition(defn.sym, defn.spec.loc).toFailure
+            case None => InstanceError.ExtraneousDefinition(defn.sym, defn.sym.loc).toFailure
             case _ => ().toSuccess
           }
       }

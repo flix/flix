@@ -33,7 +33,7 @@ object LocationLink {
     val originSelectionRange = Range.from(loc)
     val targetUri = sym.loc.source.name
     val targetRange = Range.from(sym.loc)
-    val targetSelectionRange = Range.from(defDecl.spec.loc)
+    val targetSelectionRange = Range.from(defDecl.sym.loc)
     LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
   }
 
@@ -45,7 +45,7 @@ object LocationLink {
     val originSelectionRange = Range.from(loc)
     val targetUri = sym.loc.source.name
     val targetRange = Range.from(sym.loc)
-    val targetSelectionRange = Range.from(sigDecl.spec.loc)
+    val targetSelectionRange = Range.from(sigDecl.sym.loc)
     LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
   }
 
