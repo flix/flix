@@ -180,12 +180,12 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
     * Performs type inference and reassembly on the given Spec `spec`.
     */
   private def visitSpec(spec: KindedAst.Spec, root: KindedAst.Root, subst: Substitution)(implicit flix: Flix): Validation[TypedAst.Spec, TypeError] = spec match {
-    case KindedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc, tpe, eff) =>
+    case KindedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc, tpe, eff, loc) =>
       val annVal = visitAnnotations(ann0, root)
       val tparams = getTypeParams(tparams0)
       val fparams = getFormalParams(fparams0, subst)
       Validation.mapN(annVal) {
-        ann => TypedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff)
+        ann => TypedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, loc)
       }
   }
 
@@ -210,7 +210,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
     * Infers the type of the given definition `defn0`.
     */
   private def typeCheckDecl(spec0: KindedAst.Spec, exp0: KindedAst.Expression, assumedTconstrs: List[Ast.TypeConstraint], root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], loc: SourceLocation)(implicit flix: Flix): Validation[(TypedAst.Spec, TypedAst.Impl), TypeError] = spec0 match {
-    case KindedAst.Spec(doc, ann, mod, tparams0, fparams0, sc, tpe, eff) =>
+    case KindedAst.Spec(doc, ann, mod, tparams0, fparams0, sc, tpe, eff, _) =>
 
       ///
       /// Infer the type of the expression `exp0`.

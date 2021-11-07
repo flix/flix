@@ -215,7 +215,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     * Performs kinding on the given spec under the given kind environment.
     */
   private def visitSpec(spec0: ResolvedAst.Spec, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Spec, KindError] = spec0 match {
-    case ResolvedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc0, tpe0, eff0) =>
+    case ResolvedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc0, tpe0, eff0, loc) =>
       val annVal = Validation.traverse(ann0)(visitAnnotation(_, kenv, taenv, root))
       val tparamsVal = Validation.traverse(tparams0.tparams)(visitTypeParam(_, kenv))
       val fparamsVal = Validation.traverse(fparams0)(visitFormalParam(_, kenv, taenv, root))
@@ -226,7 +226,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         result <- Validation.sequenceT(annVal, tparamsVal, fparamsVal, tpeVal, effVal)
         (ann, tparams, fparams, tpe, eff) = result
         sc <- scVal // ascribe the scheme separately
-      } yield KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff)
+      } yield KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, loc)
   }
 
   /**
@@ -863,7 +863,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     * as in the case of a class type parameter used in a sig or law.
     */
   private def inferSpec(spec0: ResolvedAst.Spec, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = spec0 match {
-    case ResolvedAst.Spec(_, _, _, _, fparams, sc, _, eff) =>
+    case ResolvedAst.Spec(_, _, _, _, fparams, sc, _, eff, _) =>
       val fparamKenvVal = Validation.fold(fparams, KindEnv.empty) {
         case (acc, fparam) => flatMapN(inferFormalParam(fparam, kenv, taenv, root)) {
           fparamKenv => acc ++ fparamKenv
@@ -980,7 +980,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     * Gets a kind environment from the spec.
     */
   private def getKindEnvFromSpec(spec0: ResolvedAst.Spec, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = spec0 match {
-    case ResolvedAst.Spec(_, _, _, tparams0, _, _, _, _) =>
+    case ResolvedAst.Spec(_, _, _, tparams0, _, _, _, _, _) =>
       tparams0 match {
         case tparams: ResolvedAst.TypeParams.Kinded => getKindEnvFromKindedTypeParams(tparams).toSuccess
         case _: ResolvedAst.TypeParams.Unkinded => inferSpec(spec0, kenv, taenv, root)

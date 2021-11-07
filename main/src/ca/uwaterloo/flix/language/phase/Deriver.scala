@@ -154,7 +154,8 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
           Type.mkPureUncurriedArrow(List(sc.base, sc.base), Type.mkBool(loc), loc)
         ),
         tpe = Type.mkBool(loc),
-        eff = Type.Cst(TypeConstructor.True, loc)
+        eff = Type.Cst(TypeConstructor.True, loc),
+        loc = loc
       )
   }
 
@@ -327,7 +328,8 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
           Type.mkPureUncurriedArrow(List(sc.base, sc.base), Type.mkEnum(comparisonEnumSym, Kind.Star, loc), loc)
         ),
         tpe = Type.mkEnum(comparisonEnumSym, Kind.Star, loc),
-        eff = Type.Cst(TypeConstructor.True, loc)
+        eff = Type.Cst(TypeConstructor.True, loc),
+        loc = loc
       )
   }
 
@@ -491,7 +493,8 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
           Type.mkPureArrow(sc.base, Type.mkString(loc), loc)
         ),
         tpe = Type.mkString(loc),
-        eff = Type.Cst(TypeConstructor.True, loc)
+        eff = Type.Cst(TypeConstructor.True, loc),
+        loc = loc
       )
   }
 
@@ -626,7 +629,8 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
           Type.mkPureArrow(sc.base, Type.mkInt32(loc), loc)
         ),
         tpe = Type.mkInt32(loc),
-        eff = Type.Cst(TypeConstructor.True, loc)
+        eff = Type.Cst(TypeConstructor.True, loc),
+        loc = loc
       )
   }
 

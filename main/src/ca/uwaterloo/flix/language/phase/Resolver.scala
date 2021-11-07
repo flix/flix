@@ -327,7 +327,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     * Performs name resolution on the given spec `s0` in the given namespace `ns0`.
     */
   def resolveSpec(s0: NamedAst.Spec, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Spec, ResolutionError] = s0 match {
-    case NamedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc0, retTpe0, eff0) =>
+    case NamedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc0, retTpe0, eff0, loc) =>
 
       val tparams = resolveTypeParams(tparams0, ns0, root)
       val fparamsVal = resolveFormalParams(fparams0, taenv, ns0, root)
@@ -338,7 +338,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
       mapN(fparamsVal, annVal, schemeVal, retTpeVal, effVal) {
         case (fparams, ann, scheme, retTpe, eff) =>
-          ResolvedAst.Spec(doc, ann, mod, tparams, fparams, scheme, retTpe, eff)
+          ResolvedAst.Spec(doc, ann, mod, tparams, fparams, scheme, retTpe, eff, loc)
       }
   }
 
