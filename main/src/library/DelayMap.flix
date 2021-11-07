@@ -188,4 +188,11 @@ namespace DelayMap {
         let DMap(t) = m;
         let f1 = (k1, v1, b1) -> f(k1, force v1, b1);
         RedBlackTree.foldRight(f1, s, t)
+
+    ///
+    /// Returns `m` as a Map, i.e. every value is forced.
+    ///
+    pub def toMap(m: DelayMap[k, v]): Map[k, v] =
+        let DMap(t) = m;
+        Map(RedBlackTree.mapWithKey((_, v) -> force v, t))
 }
