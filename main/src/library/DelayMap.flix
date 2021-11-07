@@ -19,7 +19,7 @@ pub enum DelayMap[k, v] {
     case DMap(RedBlackTree[k, Lazy[v]])
 }
 
-namespace DelayMap1 {
+namespace DelayMap {
 
     use RedBlackTree.RedBlackTree;
 
@@ -84,7 +84,7 @@ namespace DelayMap1 {
         insertWithKeyLazy(f, k, lazy v, m)
 
     ///
-    /// Helper function for `insertWithkey`.
+    /// Helper function for `insertWithKey`.
     ///
     def insertWithKeyLazy(f: (k, v, v) -> v & ef, k: k, v: Lazy[v], m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
         let DMap(t) = m;
@@ -97,6 +97,12 @@ namespace DelayMap1 {
                 lazy x
             };
             DMap(RedBlackTree.insertWith(f1, k, v, t)) as & ef
+
+    ///
+    /// Returns a map with mappings `k -> f(v)` for every `k -> v` in `m`.
+    ///
+    pub def map(f: v1 -> v2 & ef, m: DelayMap[k, v1]): DelayMap[k, v2] & ef with Order[k] =
+        mapWithKey((_, v) -> f(v), m)
 
     ///
     /// Returns a map with mappings `k -> f(k, v)` for every `k -> v` in `m`.
