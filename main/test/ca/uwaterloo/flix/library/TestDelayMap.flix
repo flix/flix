@@ -52,7 +52,7 @@ namespace TestDelayMap {
 
     @test
     def insertWithInsertWith01(): Bool =
-        (("a", 1) :: Nil)                                    |>
+        (("a", 1) :: Nil)                                     |>
             List.toDelayMap                                  |>
             DelayMap.insertWith((v1, v2) -> v1 + v2, "b", 1) |>
             DelayMap.insertWith((v1, v2) -> v1 + v2, "b", 3) |>
@@ -60,14 +60,14 @@ namespace TestDelayMap {
 
     @test
     def insertWithInsertWith02(): Bool & Impure =
-        (("a", 1) :: Nil)                                                |>
+        (("a", 1) :: Nil)                                                 |>
             List.toDelayMap                                              |>
             DelayMap.insertWith((v1, v2) -> v1 + v2, "b" as & Impure, 1) |>
             DelayMap.insertWith((v1, v2) -> v1 + v2, "b", 3)             |>
             DelayMap.toList == ("a", 1) :: ("b", 4) :: Nil
     @test
     def insertWithInsertWith03(): Bool & Impure =
-        (("a", 1) :: Nil)                                                |>
+        (("a", 1) :: Nil)                                                 |>
             List.toDelayMap                                              |>
             DelayMap.insertWith((v1, v2) -> v1 + v2, "b", 1)             |>
             DelayMap.insertWith((v1, v2) -> v1 + v2, "b" as & Impure, 3) |>
@@ -75,7 +75,7 @@ namespace TestDelayMap {
 
     @test
     def insertWithInsertWith04(): Bool & Impure =
-        (("a", 1) :: Nil)                                                |>
+        (("a", 1) :: Nil)                                                 |>
             List.toDelayMap                                              |>
             DelayMap.insertWith((v1, v2) -> v1 + v2, "b" as & Impure, 1) |>
             DelayMap.insertWith((v1, v2) -> v1 + v2, "b" as & Impure, 3) |>
@@ -87,7 +87,7 @@ namespace TestDelayMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def mapFusion01(): Bool & Impure =
+    def insertWithFusion01(): Bool & Impure =
         let l = ref Nil;
         List.toDelayMap((1, 1) :: Nil) |>
         DelayMap.insertWith((v, _) -> { l := "a" :: deref l; v }, 1, 1) |>
@@ -99,7 +99,7 @@ namespace TestDelayMap {
         List.reverse(deref l) == "a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil
 
     @test
-    def mapFusion02(): Bool & Impure =
+    def insertWithFusion02(): Bool & Impure =
         let l = ref Nil;
         let m = List.toDelayMap((1, 1) :: Nil) |>
         DelayMap.insertWith((v, _) -> { l := "a" :: deref l; v } as & Pure, 1, 1) |>
@@ -111,5 +111,141 @@ namespace TestDelayMap {
         let listBeforeEvaluation = deref l;
         let _ = DelayMap.toList(m);
         listBeforeEvaluation == Nil and List.reverse(deref l) == "a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // map (pure)                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def mapPure01(): Bool =
+        Map#{}: Map[Unit, Int32] |> Map.toDelayMap |> DelayMap.map(v -> 3 * v) |> DelayMap.toMap == Map#{}
+
+    @test
+    def mapPure02(): Bool =
+        Map#{1 -> 4} |> Map.toDelayMap |> DelayMap.map(v -> 3 * v) |> DelayMap.toMap == Map#{1 -> 12}
+
+    @test
+    def mapPure03(): Bool =
+        Map#{2 -> -1, 0 -> 0} |> Map.toDelayMap |> DelayMap.map(v -> 3 * v) |> DelayMap.toMap == Map#{2 -> -3, 0 -> 0}
+
+    @test
+    def mapPure04(): Bool =
+        Map#{2 -> -1, 5 -> 15, 11 -> -9} |> Map.toDelayMap |> DelayMap.map(v -> 3 * v) |> DelayMap.toMap == Map#{2 -> -3, 5 -> 45, 11 -> -27}
+
+    @test
+    def mapPure05(): Bool =
+        Map#{2 -> -1, 5 -> 15, 11 -> -9, 8 -> 8} |> Map.toDelayMap |> DelayMap.map(v -> 3 * v) |> DelayMap.toMap == Map#{2 -> -3, 5 -> 45, 11 -> -27, 8 -> 24}
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // map (impure)                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def mapImpure01(): Bool & Impure =
+        Map#{}: Map[Unit, Int32] |> Map.toDelayMap |> DelayMap.map(v -> 3 * v as & Impure) |> DelayMap.toMap == Map#{}
+
+    @test
+    def mapImpure02(): Bool & Impure =
+        Map#{1 -> 4} |> Map.toDelayMap |> DelayMap.map(v -> 3 * v as & Impure) |> DelayMap.toMap == Map#{1 -> 12}
+
+    @test
+    def mapImpure03(): Bool & Impure =
+        Map#{2 -> -1, 0 -> 0} |> Map.toDelayMap |> DelayMap.map(v -> 3 * v as & Impure) |> DelayMap.toMap == Map#{2 -> -3, 0 -> 0}
+
+    @test
+    def mapImpure04(): Bool & Impure =
+        Map#{2 -> -1, 5 -> 15, 11 -> -9} |> Map.toDelayMap |> DelayMap.map(v -> 3 * v as & Impure) |> DelayMap.toMap == Map#{2 -> -3, 5 -> 45, 11 -> -27}
+
+    @test
+    def mapImpure05(): Bool & Impure =
+        Map#{2 -> -1, 5 -> 15, 11 -> -9, 8 -> 8} |> Map.toDelayMap |> DelayMap.map(v -> 3 * v as & Impure) |> DelayMap.toMap == Map#{2 -> -3, 5 -> 45, 11 -> -27, 8 -> 24}
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // map map                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def mapMap01(): Bool =
+        Map#{2 -> -1, 5 -> 15, 11 -> -9} |>
+            Map.toDelayMap |>
+            DelayMap.map(v -> 3 * v) |>
+            DelayMap.map(v -> 3 * v) |>
+            DelayMap.toMap == Map#{2 -> -9, 5 -> 135, 11 -> -81}
+
+    @test
+    def mapMap02(): Bool & Impure =
+        Map#{2 -> -1, 5 -> 15, 11 -> -9} |>
+            Map.toDelayMap |>
+            DelayMap.map(v -> 3 * v as & Impure) |>
+            DelayMap.map(v -> 3 * v) |>
+            DelayMap.toMap == Map#{2 -> -9, 5 -> 135, 11 -> -81}
+
+    @test
+    def mapMap03(): Bool & Impure =
+        Map#{2 -> -1, 5 -> 15, 11 -> -9} |>
+            Map.toDelayMap |>
+            DelayMap.map(v -> 3 * v) |>
+            DelayMap.map(v -> 3 * v as & Impure) |>
+            DelayMap.toMap == Map#{2 -> -9, 5 -> 135, 11 -> -81}
+
+    @test
+    def mapMap04(): Bool & Impure =
+        Map#{2 -> -1, 5 -> 15, 11 -> -9} |>
+            Map.toDelayMap |>
+            DelayMap.map(v -> 3 * v as & Impure) |>
+            DelayMap.map(v -> 3 * v as & Impure) |>
+            DelayMap.toMap == Map#{2 -> -9, 5 -> 135, 11 -> -81}
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // map map (fusion)                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def mapFusion01(): Bool & Impure =
+        let l = ref Nil;
+        ((1, 1) :: (2, 2) :: (3, 3) :: Nil) |> List.toDelayMap |>
+        DelayMap.map(v -> { l := "a" :: deref l; v }) |>
+        DelayMap.map(v -> { l := "b" :: deref l; v });
+        List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
+
+    @test
+    def mapFusion02(): Bool & Impure =
+        let l = ref Nil;
+        let m = ((1, 1) :: (2, 2) :: (3, 3) :: Nil) |> List.toDelayMap |>
+        DelayMap.map(v -> { l := "a" :: deref l; v } as & Pure) |>
+        DelayMap.map(v -> { l := "b" :: deref l; v } as & Pure);
+        let listBeforeEvaluation = deref l;
+        let _ = DelayMap.toList(m);
+        listBeforeEvaluation == Nil and List.reverse(deref l) == "a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // mapWithKey                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def mapWithKey01(): Bool =
+        Map#{}: Map[Unit, Unit] |> Map.toDelayMap |> DelayMap.mapWithKey((_, v) -> v) |> DelayMap.toMap == Map#{}
+
+    @test
+    def mapWithKey02(): Bool =
+        Map#{1 -> 4} |> Map.toDelayMap |> DelayMap.mapWithKey((k, v) -> k + v) |> DelayMap.toMap == Map#{1 -> 5}
+
+    @test
+    def mapWithKey03(): Bool =
+        Map#{2 -> -1, 0 -> 0} |> Map.toDelayMap |> DelayMap.mapWithKey((k, v) -> k + v) |> DelayMap.toMap == Map#{2 -> 1, 0 -> 0}
+
+    @test
+    def mapWithKey04(): Bool =
+        Map#{2 -> -1, 5 -> 15, 11 -> -9} |> Map.toDelayMap |> DelayMap.mapWithKey((k, v) -> k + v) |> DelayMap.toMap == Map#{2 -> 1, 5 -> 20, 11 -> 2}
+
+    @test
+    def mapWithKey05(): Bool =
+        Map#{2 -> -1, 5 -> 15, 11 -> -9, 8 -> 8} |> Map.toDelayMap |> DelayMap.mapWithKey((k, v) -> k + v) |> DelayMap.toMap
+                                    == Map#{2 -> 1, 5 -> 20, 11 -> 2, 8 -> 16}
 
 }
