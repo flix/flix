@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
+use RedBlackTree.RedBlackTree;
 
-pub enum DelayMap[k, v] {
+enum DelayMap[k, v] {
     case DMap(RedBlackTree[k, Lazy[v]])
 }
 
 namespace DelayMap {
-
-    use RedBlackTree.RedBlackTree;
 
     ///
     /// Returns the empty map.
