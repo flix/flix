@@ -654,7 +654,7 @@ namespace Map {
         List.toIterator(Map.query(_ -> EqualTo, m))
 
     ///
-    /// Returns a copy of `m` as a `DelayMap`.
+    /// Returns `m` as a `DelayMap`.
     ///
     pub def toDelayMap(m: Map[k, v]): DelayMap[k, v] = {
         let Map(t) = m;
