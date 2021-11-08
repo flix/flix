@@ -762,8 +762,8 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         case Some(kind) => visitType(t, kind, kenv, taenv, root)
         case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = k, loc).toFailure
       }
-    case Type.Alias(sym, args0, t0, loc) =>
-      taenv(sym) match {
+    case Type.Alias(cst, args0, t0, loc) =>
+      taenv(cst.sym) match {
         case KindedAst.TypeAlias(_, _, _, tparams, tpe, _) =>
           val argsVal = traverse(tparams.zip(args0)) {
             case (tparam, arg) => visitType(arg, tparam.tpe.kind, kenv, taenv, root)
@@ -771,7 +771,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
           val tpeVal = visitType(t0, tpe.kind, kenv, taenv, root)
           flatMapN(argsVal, tpeVal) {
             case (args, t) => unify(t.kind, expectedKind) match {
-              case Some(_) => Type.Alias(sym, args, t, loc).toSuccess
+              case Some(_) => Type.Alias(cst, args, t, loc).toSuccess
               case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = t.kind, loc).toFailure
             }
           }
@@ -937,8 +937,8 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
 
     case Type.Ascribe(t, k, loc) => inferType(t, k, kenv0, taenv, root)
 
-    case Type.Alias(sym, args, tpe, loc) =>
-      val alias = taenv(sym)
+    case Type.Alias(cst, args, tpe, loc) =>
+      val alias = taenv(cst.sym)
       val tparamKinds = alias.tparams.map(_.tpe.kind)
 
       Validation.fold(args.zip(tparamKinds), KindEnv.empty) {
