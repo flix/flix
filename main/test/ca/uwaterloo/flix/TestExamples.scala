@@ -9,6 +9,7 @@ class TestExamples extends Suites(
   new FlixTest("algebraic-data-types-and-pattern-matching", "examples/algebraic-data-types-and-pattern-matching.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("an-interpreter-for-a-trivial-expression-language", "examples/an-interpreter-for-a-trivial-expression-language.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("compiler-puzzle", "examples/compiler-puzzle.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  new FlixTest("deriving-type-classes", "examples/deriving-type-classes.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("effect-polymorphic-functions", "examples/effect-polymorphic-functions.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("enums-and-parametric-polymorphism", "examples/enums-and-parametric-polymorphism.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("first-class-constraints-and-fixpoints", "examples/first-class-constraints-and-fixpoints.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
