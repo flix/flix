@@ -178,13 +178,6 @@ namespace File {
         }
 
     ///
-    /// Helper function for read.
-    /// Converts a list of strings to a string with linebreaks between every string in `list`.
-    ///
-    def readHelper(list: List[String]): String & Pure =
-        List.foldLeft((x, y) -> x + "\n" + y, "", list)
-
-    ///
     /// Returns a string containing the given file `f` with the options `opts`.
     ///
     pub def readWith(opts: {offset :: Int64, count :: Int32, charSet :: String}, f : String): Result[String, String] & Impure = {
@@ -192,13 +185,10 @@ namespace File {
             import new java.io.File(String) as newFile;
             import java.nio.charset.Charset:forName(String);
             import java.io.File.toPath();
-            import java.nio.file.Files:newBufferedReader(##java.nio.file.Path, ##java.nio.charset.Charset);
-            import java.io.BufferedReader.close();
+            import java.nio.file.Files:readString(##java.nio.file.Path, ##java.nio.charset.Charset);
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
-            let reader = newBufferedReader(javaPath, forName(opts.charSet));
-            let fileRead = readHelper(readAll(reader));
-            close(reader);
+            let fileRead = readString(javaPath, forName(opts.charSet));
             Ok(readWithHelper(fileRead, opts.offset, opts.count))
         } catch {
             case ex: ##java.io.IOException =>
@@ -209,7 +199,7 @@ namespace File {
 
     ///
     /// Helper function for readWith.
-    /// Takes a String and applys the options.
+    /// Takes a String and applies the options.
     ///
     def readWithHelper(f: String, offset: Int64, count: Int32): String & Pure =
         let fileLength = String.length(f);
