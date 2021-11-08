@@ -166,13 +166,10 @@ namespace File {
         try {
             import new java.io.File(String) as newFile;
             import java.io.File.toPath();
-            import java.nio.file.Files:newBufferedReader(##java.nio.file.Path);
-            import java.io.BufferedReader.close();
+            import java.nio.file.Files:readString(##java.nio.file.Path);
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
-            let reader = newBufferedReader(javaPath);
-            let result = readHelper(readAll(reader));
-            close(reader);
+            let result = readString(javaPath);
             Ok(result)
         } catch {
             case ex: ##java.io.IOException =>
