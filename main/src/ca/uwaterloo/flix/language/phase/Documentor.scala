@@ -174,6 +174,13 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def visitInstanceSym(sym: Symbol.InstanceSym): JObject = ??? // TODO
 
+  /**
+    * Returns the given class symbol `sym` as a JSON value.
+    */
+  private def visitTypeAliasSym(sym: Symbol.TypeAliasSym): JObject =
+    ("namespace" -> sym.namespace) ~
+      ("name" -> sym.name) ~
+      ("loc" -> visitSourceLocation(sym.loc))
 
   // TODO: Visit the other symbols.
 
