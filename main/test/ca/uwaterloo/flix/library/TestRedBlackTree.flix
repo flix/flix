@@ -188,4 +188,34 @@ namespace TestRedBlackTree {
         List.foldLeft(acc, x) -> RedBlackTree.insert(x, (), acc), RedBlackTree.empty(), List.map(_ -> Random.nextInt32(r), List.range(0, n)))
     }
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // map                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def map01(): Bool =
+        let Map(t) = Map#{}: Map[Unit, Int32];
+        Map(RedBlackTree.mapWithKey((_, v) -> v, t)) == Map#{}
+
+    @test
+    def map02(): Bool =
+        let Map(t) = Map#{1 -> 4};
+        Map(RedBlackTree.mapWithKey((k, v) -> k + v, t)) == Map#{1 -> 5}
+
+    @test
+    def map03(): Bool =
+        let Map(t) = Map#{2 -> -1, 0 -> 0};
+        Map(RedBlackTree.mapWithKey((k, v) -> k + v, t)) == Map#{2 -> 1, 0 -> 0}
+
+    @test
+    def map04(): Bool =
+        let Map(t) = Map#{2 -> -1, 5 -> 15, 11 -> -9};
+        Map(RedBlackTree.mapWithKey((k, v) -> k + v, t)) == Map#{2 -> 1, 5 -> 20, 11 -> 2}
+
+    @test
+    def map05(): Bool =
+        let Map(t) = Map#{2 -> -1, 5 -> 15, 11 -> -9, 8 -> 8};
+        Map(RedBlackTree.mapWithKey((k, v) -> k + v, t)) == Map#{2 -> 1, 5 -> 20, 11 -> 2, 8 -> 16}
+
 }
