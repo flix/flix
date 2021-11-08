@@ -175,7 +175,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     */
   private def visitInstance(inst: ResolvedAst.Instance, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, KindError] = inst match {
     case ResolvedAst.Instance(doc, mod, sym, tpe0, tconstrs0, defs0, ns, loc) =>
-      val kind = getClassKind(root.classes(sym))
+      val kind = getClassKind(root.classes(sym.clazz))
       for {
         kenv <- inferType(tpe0, kind, KindEnv.empty, taenv, root)
         tpeVal = visitType(tpe0, kind, kenv, taenv, root)

@@ -369,4 +369,5 @@ class LangSuite extends Suites(
   // Integration.
   //
   new FlixTest("Test.Integ.Class.Schema", "main/test/flix/Test.Integ.Class.Schema.flix")(Options.TestWithLibAll),
+  new FlixTest("Test.Integ.Fixpoint.TypeAlias", "main/test/flix/Test.Integ.Fixpoint.TypeAlias.flix")(Options.TestWithLibAll),
 )
