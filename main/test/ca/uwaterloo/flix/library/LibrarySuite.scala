@@ -46,6 +46,7 @@ class LibrarySuite extends Suites(
   new FlixTest("TestSet", "main/test/ca/uwaterloo/flix/library/TestSet.flix")(Options.TestWithLibAll),
   new FlixTest("TestStream", "main/test/ca/uwaterloo/flix/library/TestStream.flix")(Options.TestWithLibAll),
   new FlixTest("TestMap", "main/test/ca/uwaterloo/flix/library/TestMap.flix")(Options.TestWithLibAll),
+  new FlixTest("TestDelayMap", "main/test/ca/uwaterloo/flix/library/TestDelayMap.flix")(Options.TestWithLibAll),
   new FlixTest("TestNel", "main/test/ca/uwaterloo/flix/library/TestNel.flix")(Options.TestWithLibAll),
   new FlixTest("TestString", "main/test/ca/uwaterloo/flix/library/TestString.flix")(Options.TestWithLibAll),
   new FlixTest("TestStringBuilder", "main/test/ca/uwaterloo/flix/library/TestStringBuilder.flix")(Options.TestWithLibAll),

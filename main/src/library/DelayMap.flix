@@ -109,14 +109,14 @@ namespace DelayMap {
     pub def mapWithKey(f: (k, v1) -> v2 & ef, m: DelayMap[k, v1]): DelayMap[k, v2] & ef =
         let DMap(tree) = m;
         if (reify ef)
-            let f1 = (k, v) -> lazy (f(k, force v) as & Pure) as & Pure;
-            DMap(RedBlackTree.mapWithKey(f1, tree) as RedBlackTree[k, Lazy[v2]] & Pure)
+            let f1 = (k, v) -> lazy (f(k, force v) as & Pure);
+            DMap(RedBlackTree.mapWithKey(f1, tree))
         else
             let f1 = (k, v) -> {
-                let x1 = f(k, force v) as & Impure;
+                let x1 = f(k, force v);
                 lazy x1
-            } as & Impure;
-            DMap(RedBlackTree.mapWithKey(f1 as & Impure, tree) as RedBlackTree[k, Lazy[v2]] & Impure) as & ef
+            };
+            DMap(RedBlackTree.mapWithKey(f1, tree)) as & ef
 
     ///
     /// Returns the left-biased union of `m1` and `m2`.
@@ -137,13 +137,13 @@ namespace DelayMap {
     ///
     pub def unionWithKey(f: (k, v, v) -> v & ef, m1: DelayMap[k, v], m2: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
         if (reify ef)
-            unionWithKeyHelper((k, v1, v2) -> lazy (f(k, force v1, force v2) as & Pure) as & Pure, m1, m2)
+            unionWithKeyHelper((k, v1, v2) -> lazy (f(k, force v1, force v2) as & Pure), m1, m2)
         else
             let f1 = (k, v1, v2) -> {
-                let x = f(k, force v1, force v2) as & Impure;
+                let x = f(k, force v1, force v2);
                 lazy x
             };
-            unionWithKeyHelper(f1 as & Impure, m1, m2) as & ef
+            unionWithKeyHelper(f1, m1, m2) as & ef
 
     ///
     /// Helper function for `unionWithKey`.
