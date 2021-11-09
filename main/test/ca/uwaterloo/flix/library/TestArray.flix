@@ -4365,6 +4365,25 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
     def toLazyList04(): Bool & Impure =
         Array.range(-1000, 1000) |> Array.toLazyList |> LazyList.toArray == Array.range(-1000, 1000)
 
+    /////////////////////////////////////////////////////////////////////////////
+    // toChain                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toChain01(): Bool & Impure =
+        Array.toChain([]: Array[Unit]) == Chain.empty(): Chain[Unit]
+
+    @test
+    def toChain02(): Bool & Impure =
+        Array.toChain([1]) == Chain.point(1)
+
+    @test
+    def toChain03(): Bool & Impure =
+        Array.toChain([1,2]) == List.toChain(1 :: 2 :: Nil)
+
+    @test
+    def toChain04(): Bool & Impure =
+        Array.toChain([1,2,3]) == List.toChain(1 :: 2 :: 3 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // copyOfRange                                                             //

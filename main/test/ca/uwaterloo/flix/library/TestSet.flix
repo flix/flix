@@ -918,6 +918,26 @@ def toList03(): Bool = Set.toList(Set#{1, 2}) == 2 :: 1 :: Nil
 def toList04(): Bool = Set.toList(Set#{1, 2, 3}) == 3 :: 2 :: 1 :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
+// toChain                                                                 //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def toChain01(): Bool =
+    Set.toChain(Set#{}: Set[Int]) == Chain.empty(): Chain[Int]
+
+@test
+def toChain02(): Bool =
+    Set.toChain(Set#{1}) == Chain.point(1)
+
+@test
+def toChain03(): Bool =
+    Set.toChain(Set#{1, 2}) == List.toChain(1 :: 2 :: Nil)
+
+@test
+def toChain04(): Bool =
+    Set.toChain(Set#{1, 2, 3}) == List.toChain(1 :: 2 :: 3 :: Nil)
+
+/////////////////////////////////////////////////////////////////////////////
 // toMap                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test

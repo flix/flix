@@ -57,10 +57,10 @@ namespace TestChain {
     def ap04(): Bool = Chain.ap(Chain.point(x -> x+1), Chain.point(5)) == Chain.point(6)
 
     @test
-    def ap05(): Bool = Chain.ap(Chain.point(x -> x+1), Chain.fromList(0 :: 5 :: Nil)) == Chain.fromList(1 :: 6 :: Nil)
+    def ap05(): Bool = Chain.ap(Chain.point(x -> x+1), List.toChain(0 :: 5 :: Nil)) == List.toChain(1 :: 6 :: Nil)
 
     @test
-    def ap06(): Bool = Chain.ap(Chain.fromList((x -> x+1) :: (x -> x*2) :: Nil), Chain.fromList(0 :: 4 :: Nil)) == Chain.fromList(1 :: 5 :: 0 :: 8 :: Nil)
+    def ap06(): Bool = Chain.ap(List.toChain((x -> x+1) :: (x -> x*2) :: Nil), List.toChain(0 :: 4 :: Nil)) == List.toChain(1 :: 5 :: 0 :: 8 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // isEmpty                                                                 //
@@ -73,7 +73,7 @@ namespace TestChain {
     def isEmpty02(): Bool = Chain.isEmpty(Chain.point(1)) == false
 
     @test
-    def isEmpty03(): Bool = Chain.isEmpty(Chain.fromList(1 :: 2 :: Nil)) == false
+    def isEmpty03(): Bool = Chain.isEmpty(List.toChain(1 :: 2 :: Nil)) == false
 
     /////////////////////////////////////////////////////////////////////////////
     // cons                                                                    //
@@ -83,7 +83,7 @@ namespace TestChain {
     def cons01(): Bool = Chain.cons(1, Chain.empty()) == Chain.point(1)
 
     @test
-    def cons02(): Bool = Chain.cons(1, Chain.point(2)) == Chain.fromList(1 :: 2 :: Nil)
+    def cons02(): Bool = Chain.cons(1, Chain.point(2)) == List.toChain(1 :: 2 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // snoc                                                                    //
@@ -93,7 +93,7 @@ namespace TestChain {
     def snoc01(): Bool = Chain.snoc(Chain.empty(), 1) == Chain.point(1)
 
     @test
-    def snoc02(): Bool = Chain.snoc(Chain.point(1), 2) == Chain.fromList(1 :: 2 :: Nil)
+    def snoc02(): Bool = Chain.snoc(Chain.point(1), 2) == List.toChain(1 :: 2 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // head                                                                    //
@@ -106,10 +106,10 @@ namespace TestChain {
     def head02(): Bool = Chain.head(Chain.point(1)) == Some(1)
 
     @test
-    def head03(): Bool = Chain.head(Chain.fromList(2 :: 1 :: Nil)) == Some(2)
+    def head03(): Bool = Chain.head(List.toChain(2 :: 1 :: Nil)) == Some(2)
 
     @test
-    def head04(): Bool = Chain.head(Chain.fromList(3 :: 2 :: 1 :: Nil)) == Some(3)
+    def head04(): Bool = Chain.head(List.toChain(3 :: 2 :: 1 :: Nil)) == Some(3)
 
     /////////////////////////////////////////////////////////////////////////////
     // last                                                                    //
@@ -122,10 +122,10 @@ namespace TestChain {
     def last02(): Bool = Chain.last(Chain.point(1)) == Some(1)
 
     @test
-    def last03(): Bool = Chain.last(Chain.fromList(1 :: 2 :: Nil)) == Some(2)
+    def last03(): Bool = Chain.last(List.toChain(1 :: 2 :: Nil)) == Some(2)
 
     @test
-    def last04(): Bool = Chain.last(Chain.fromList(1 :: 2 :: 3 :: Nil)) == Some(3)
+    def last04(): Bool = Chain.last(List.toChain(1 :: 2 :: 3 :: Nil)) == Some(3)
 
     /////////////////////////////////////////////////////////////////////////////
     // init                                                                  //
@@ -138,19 +138,19 @@ namespace TestChain {
     def init02(): Bool = Chain.init(Chain.point(0)) == Some(Chain.empty())
 
     @test
-    def init03(): Bool = Chain.init(Chain.fromList(0 :: 1 :: Nil)) == Some(Chain.point(0))
+    def init03(): Bool = Chain.init(List.toChain(0 :: 1 :: Nil)) == Some(Chain.point(0))
 
     @test
-    def init04(): Bool = Chain.init(Chain.fromList(2 :: 1 :: 0 :: Nil)) == Some(Chain.fromList(2 :: 1 :: Nil))
+    def init04(): Bool = Chain.init(List.toChain(2 :: 1 :: 0 :: Nil)) == Some(List.toChain(2 :: 1 :: Nil))
 
     @test
-    def init05(): Bool = Chain.init(Chain.fromList('a' :: 'b' :: 'c' :: 'd' :: Nil)) == Some(Chain.fromList('a' :: 'b' :: 'c' :: Nil))
+    def init05(): Bool = Chain.init(List.toChain('a' :: 'b' :: 'c' :: 'd' :: Nil)) == Some(List.toChain('a' :: 'b' :: 'c' :: Nil))
 
     @test
-    def init06(): Bool = Chain.init(Chain.fromList("test1" :: "test2" :: "test3" :: Nil)) == Some(Chain.fromList("test1" :: "test2" :: Nil))
+    def init06(): Bool = Chain.init(List.toChain("test1" :: "test2" :: "test3" :: Nil)) == Some(List.toChain("test1" :: "test2" :: Nil))
 
     @test
-    def init07(): Bool = Chain.init(Chain.fromList(2 :: 1 :: 0 :: -1 :: Nil)) == Some(Chain.fromList(2 :: 1 :: 0 :: Nil))
+    def init07(): Bool = Chain.init(List.toChain(2 :: 1 :: 0 :: -1 :: Nil)) == Some(List.toChain(2 :: 1 :: 0 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // length                                                                  //
@@ -163,10 +163,10 @@ namespace TestChain {
     def length02(): Bool = Chain.length(Chain.point(1)) == 1
 
     @test
-    def length03(): Bool = Chain.length(Chain.fromList(1 :: 2 :: Nil)) == 2
+    def length03(): Bool = Chain.length(List.toChain(1 :: 2 :: Nil)) == 2
 
     @test
-    def length04(): Bool = Chain.length(Chain.fromList(1 :: 2 :: 3 :: Nil)) == 3
+    def length04(): Bool = Chain.length(List.toChain(1 :: 2 :: 3 :: Nil)) == 3
 
     /////////////////////////////////////////////////////////////////////////////
     // append                                                                  //
@@ -179,22 +179,22 @@ namespace TestChain {
     def append02(): Bool = Chain.append(Chain.empty(), Chain.point(1)) == Chain.point(1)
 
     @test
-    def append03(): Bool = Chain.append(Chain.empty(), Chain.fromList(1 :: 2 :: Nil)) == Chain.fromList(1 :: 2 :: Nil)
+    def append03(): Bool = Chain.append(Chain.empty(), List.toChain(1 :: 2 :: Nil)) == List.toChain(1 :: 2 :: Nil)
 
     @test
     def append04(): Bool = Chain.append(Chain.point(1), Chain.empty()) == Chain.point(1)
 
     @test
-    def append05(): Bool = Chain.append(Chain.fromList(1 :: 2 :: Nil), Chain.empty()) == Chain.fromList(1 :: 2 :: Nil)
+    def append05(): Bool = Chain.append(List.toChain(1 :: 2 :: Nil), Chain.empty()) == List.toChain(1 :: 2 :: Nil)
 
     @test
-    def append06(): Bool = Chain.append(Chain.point(1), Chain.point(2)) == Chain.fromList(1 :: 2 :: Nil)
+    def append06(): Bool = Chain.append(Chain.point(1), Chain.point(2)) == List.toChain(1 :: 2 :: Nil)
 
     @test
-    def append07(): Bool = Chain.append(Chain.fromList(1 :: 2 :: Nil), Chain.point(3)) == Chain.fromList(1 :: 2 :: 3 :: Nil)
+    def append07(): Bool = Chain.append(List.toChain(1 :: 2 :: Nil), Chain.point(3)) == List.toChain(1 :: 2 :: 3 :: Nil)
 
     @test
-    def append08(): Bool = Chain.append(Chain.point(1), Chain.fromList(2 :: 3 :: Nil)) == Chain.fromList(1 :: 2 :: 3 :: Nil)
+    def append08(): Bool = Chain.append(Chain.point(1), List.toChain(2 :: 3 :: Nil)) == List.toChain(1 :: 2 :: 3 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // viewLeft                                                                //
@@ -207,10 +207,10 @@ namespace TestChain {
     def viewLeft02(): Bool = Chain.viewLeft(Chain.point(1)) == Chain/ViewLeft.SomeLeft(1, Chain.empty())
 
     @test
-    def viewLeft03(): Bool = Chain.viewLeft(Chain.fromList(1 :: 2 :: Nil)) == Chain/ViewLeft.SomeLeft(1, Chain.point(2))
+    def viewLeft03(): Bool = Chain.viewLeft(List.toChain(1 :: 2 :: Nil)) == Chain/ViewLeft.SomeLeft(1, Chain.point(2))
 
     @test
-    def viewLeft04(): Bool = Chain.viewLeft(Chain.fromList(1 :: 2 :: 3 :: Nil)) == Chain/ViewLeft.SomeLeft(1, Chain.fromList(2 :: 3 :: Nil))
+    def viewLeft04(): Bool = Chain.viewLeft(List.toChain(1 :: 2 :: 3 :: Nil)) == Chain/ViewLeft.SomeLeft(1, List.toChain(2 :: 3 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // viewRight                                                               //
@@ -223,10 +223,10 @@ namespace TestChain {
     def viewRight02(): Bool = Chain.viewRight(Chain.point(1)) == Chain/ViewRight.SomeRight(Chain.empty(), 1)
 
     @test
-    def viewRight03(): Bool = Chain.viewRight(Chain.fromList(1 :: 2 :: Nil)) == Chain/ViewRight.SomeRight(Chain.point(1), 2)
+    def viewRight03(): Bool = Chain.viewRight(List.toChain(1 :: 2 :: Nil)) == Chain/ViewRight.SomeRight(Chain.point(1), 2)
 
     @test
-    def viewRight04(): Bool = Chain.viewRight(Chain.fromList(1 :: 2 :: 3 :: Nil)) == Chain/ViewRight.SomeRight(Chain.fromList(1 :: 2 :: Nil), 3)
+    def viewRight04(): Bool = Chain.viewRight(List.toChain(1 :: 2 :: 3 :: Nil)) == Chain/ViewRight.SomeRight(List.toChain(1 :: 2 :: Nil), 3)
 
     /////////////////////////////////////////////////////////////////////////////
     // memberOf                                                                //
@@ -242,16 +242,16 @@ namespace TestChain {
     def memberOf03(): Bool = Chain.memberOf(0, Chain.point(0)) == true
 
     @test
-    def memberOf04(): Bool = Chain.memberOf(0, Chain.fromList(1 :: 2 :: Nil)) == false
+    def memberOf04(): Bool = Chain.memberOf(0, List.toChain(1 :: 2 :: Nil)) == false
 
     @test
-    def memberOf05(): Bool = Chain.memberOf(1, Chain.fromList(1 :: 2 :: Nil)) == true
+    def memberOf05(): Bool = Chain.memberOf(1, List.toChain(1 :: 2 :: Nil)) == true
 
     @test
-    def memberOf06(): Bool = Chain.memberOf(2, Chain.fromList(1 :: 2 :: Nil)) == true
+    def memberOf06(): Bool = Chain.memberOf(2, List.toChain(1 :: 2 :: Nil)) == true
 
     @test
-    def memberOf07(): Bool = Chain.memberOf(3, Chain.fromList(1 :: 2 :: Nil)) == false
+    def memberOf07(): Bool = Chain.memberOf(3, List.toChain(1 :: 2 :: Nil)) == false
 
     /////////////////////////////////////////////////////////////////////////////
     // indexOf                                                                 //
@@ -267,13 +267,13 @@ namespace TestChain {
     def indexOf03(): Bool = Chain.indexOf(1, Chain.point(1)) == 0
 
     @test
-    def indexOf04(): Bool = Chain.indexOf(0, Chain.fromList(1 :: 2 :: Nil)) == -1
+    def indexOf04(): Bool = Chain.indexOf(0, List.toChain(1 :: 2 :: Nil)) == -1
 
     @test
-    def indexOf05(): Bool = Chain.indexOf(1, Chain.fromList(1 :: 2 :: Nil)) == 0
+    def indexOf05(): Bool = Chain.indexOf(1, List.toChain(1 :: 2 :: Nil)) == 0
 
     @test
-    def indexOf06(): Bool = Chain.indexOf(2, Chain.fromList(1 :: 2 :: Nil)) == 1
+    def indexOf06(): Bool = Chain.indexOf(2, List.toChain(1 :: 2 :: Nil)) == 1
 
     /////////////////////////////////////////////////////////////////////////////
     // find                                                                    //
@@ -289,16 +289,16 @@ namespace TestChain {
     def find03(): Bool = Chain.find(i -> i > 2, Chain.point(3)) == Some(3)
 
     @test
-    def find04(): Bool = Chain.find(i -> i > 2, Chain.fromList(1 :: 2 :: Nil)) == None
+    def find04(): Bool = Chain.find(i -> i > 2, List.toChain(1 :: 2 :: Nil)) == None
 
     @test
-    def find05(): Bool = Chain.find(i -> i > 2, Chain.fromList(6 :: -6 :: Nil)) == Some(6)
+    def find05(): Bool = Chain.find(i -> i > 2, List.toChain(6 :: -6 :: Nil)) == Some(6)
 
     @test
-    def find06(): Bool = Chain.find(i -> i > 2, Chain.fromList(-6 :: 6 :: Nil)) == Some(6)
+    def find06(): Bool = Chain.find(i -> i > 2, List.toChain(-6 :: 6 :: Nil)) == Some(6)
 
     @test
-    def find07(): Bool = Chain.find(i -> i > 2, Chain.fromList(6 :: 7 :: Nil)) == Some(6)
+    def find07(): Bool = Chain.find(i -> i > 2, List.toChain(6 :: 7 :: Nil)) == Some(6)
 
     /////////////////////////////////////////////////////////////////////////////
     // findLeft                                                                //
@@ -314,16 +314,16 @@ namespace TestChain {
     def findLeft03(): Bool = Chain.findLeft(i -> i > 2, Chain.point(3)) == Some(3)
 
     @test
-    def findLeft04(): Bool = Chain.findLeft(i -> i > 2, Chain.fromList(1 :: 2 :: Nil)) == None
+    def findLeft04(): Bool = Chain.findLeft(i -> i > 2, List.toChain(1 :: 2 :: Nil)) == None
 
     @test
-    def findLeft05(): Bool = Chain.findLeft(i -> i > 2, Chain.fromList(6 :: -6 :: Nil)) == Some(6)
+    def findLeft05(): Bool = Chain.findLeft(i -> i > 2, List.toChain(6 :: -6 :: Nil)) == Some(6)
 
     @test
-    def findLeft06(): Bool = Chain.findLeft(i -> i > 2, Chain.fromList(-6 :: 6 :: Nil)) == Some(6)
+    def findLeft06(): Bool = Chain.findLeft(i -> i > 2, List.toChain(-6 :: 6 :: Nil)) == Some(6)
 
     @test
-    def findLeft07(): Bool = Chain.findLeft(i -> i > 2, Chain.fromList(6 :: 7 :: Nil)) == Some(6)
+    def findLeft07(): Bool = Chain.findLeft(i -> i > 2, List.toChain(6 :: 7 :: Nil)) == Some(6)
 
     /////////////////////////////////////////////////////////////////////////////
     // findRight                                                               //
@@ -339,16 +339,16 @@ namespace TestChain {
     def findRight03(): Bool = Chain.findRight(i -> i > 2, Chain.point(3)) == Some(3)
 
     @test
-    def findRight04(): Bool = Chain.findRight(i -> i > 2, Chain.fromList(1 :: 2 :: Nil)) == None
+    def findRight04(): Bool = Chain.findRight(i -> i > 2, List.toChain(1 :: 2 :: Nil)) == None
 
     @test
-    def findRight05(): Bool = Chain.findRight(i -> i > 2, Chain.fromList(6 :: -6 :: Nil)) == Some(6)
+    def findRight05(): Bool = Chain.findRight(i -> i > 2, List.toChain(6 :: -6 :: Nil)) == Some(6)
 
     @test
-    def findRight06(): Bool = Chain.findRight(i -> i > 2, Chain.fromList(-6 :: 6 :: Nil)) == Some(6)
+    def findRight06(): Bool = Chain.findRight(i -> i > 2, List.toChain(-6 :: 6 :: Nil)) == Some(6)
 
     @test
-    def findRight07(): Bool = Chain.findRight(i -> i > 2, Chain.fromList(6 :: 7 :: Nil)) == Some(7)
+    def findRight07(): Bool = Chain.findRight(i -> i > 2, List.toChain(6 :: 7 :: Nil)) == Some(7)
 
     /////////////////////////////////////////////////////////////////////////////
     // range                                                                   //
@@ -364,10 +364,10 @@ namespace TestChain {
     def range03(): Bool = Chain.range(1, 2) == Chain.point(1)
 
     @test
-    def range04(): Bool = Chain.range(1, 3) == Chain.fromList(1 :: 2 :: Nil)
+    def range04(): Bool = Chain.range(1, 3) == List.toChain(1 :: 2 :: Nil)
 
     @test
-    def range05(): Bool = Chain.range(1, 4) == Chain.fromList(1 :: 2 :: 3 :: Nil)
+    def range05(): Bool = Chain.range(1, 4) == List.toChain(1 :: 2 :: 3 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // repeat                                                                  //
@@ -383,10 +383,10 @@ namespace TestChain {
     def repeat03(): Bool = Chain.repeat(1, 1) == Chain.point(1)
     
     @test
-    def repeat04(): Bool = Chain.repeat(2, 1) == Chain.fromList(1 :: 1 :: Nil)
+    def repeat04(): Bool = Chain.repeat(2, 1) == List.toChain(1 :: 1 :: Nil)
     
     @test
-    def repeat05(): Bool = Chain.repeat(3, 1) == Chain.fromList(1 :: 1 :: 1 :: Nil)
+    def repeat05(): Bool = Chain.repeat(3, 1) == List.toChain(1 :: 1 :: 1 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // scan                                                                    //
@@ -395,22 +395,22 @@ namespace TestChain {
     def scan01(): Bool = Chain.scan((i, b) -> if (b) i+1 else i+2, 1, Chain.empty()) == Chain.point(1)
 
     @test
-    def scan02(): Bool = Chain.scan((i, b) -> if (b) i+1 else i+2, 1, Chain.point(false)) == Chain.fromList(1 :: 3 :: Nil)
+    def scan02(): Bool = Chain.scan((i, b) -> if (b) i+1 else i+2, 1, Chain.point(false)) == List.toChain(1 :: 3 :: Nil)
 
     @test
-    def scan03(): Bool = Chain.scan((i, b) -> if (b) i+1 else i+2, 1, Chain.point(true)) == Chain.fromList(1 :: 2 :: Nil)
+    def scan03(): Bool = Chain.scan((i, b) -> if (b) i+1 else i+2, 1, Chain.point(true)) == List.toChain(1 :: 2 :: Nil)
 
     @test
-    def scan04(): Bool = Chain.scan((i, b) -> if (b) i+1 else i+2, 1, Chain.fromList(false :: false :: Nil)) == Chain.fromList(1 :: 3 :: 5 :: Nil)
+    def scan04(): Bool = Chain.scan((i, b) -> if (b) i+1 else i+2, 1, List.toChain(false :: false :: Nil)) == List.toChain(1 :: 3 :: 5 :: Nil)
 
     @test
-    def scan05(): Bool = Chain.scan((i, b) -> if (b) i+1 else i+2, 1, Chain.fromList(false :: true :: Nil)) == Chain.fromList(1 :: 3 :: 4 :: Nil)
+    def scan05(): Bool = Chain.scan((i, b) -> if (b) i+1 else i+2, 1, List.toChain(false :: true :: Nil)) == List.toChain(1 :: 3 :: 4 :: Nil)
 
     @test
-    def scan06(): Bool = Chain.scan((i, b) -> if (b) i+1 else i+2, 1, Chain.fromList(true :: false :: Nil)) == Chain.fromList(1 :: 2 :: 4 :: Nil)
+    def scan06(): Bool = Chain.scan((i, b) -> if (b) i+1 else i+2, 1, List.toChain(true :: false :: Nil)) == List.toChain(1 :: 2 :: 4 :: Nil)
 
     @test
-    def scan07(): Bool = Chain.scan((i, b) -> if (b) i+1 else i+2, 1, Chain.fromList(true :: true :: Nil)) == Chain.fromList(1 :: 2 :: 3 :: Nil)
+    def scan07(): Bool = Chain.scan((i, b) -> if (b) i+1 else i+2, 1, List.toChain(true :: true :: Nil)) == List.toChain(1 :: 2 :: 3 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // scanLeft                                                                //
@@ -420,22 +420,22 @@ namespace TestChain {
     def scanLeft01(): Bool = Chain.scanLeft((i, b) -> if (b) i+1 else i+2, 1, Chain.empty()) == Chain.point(1)
 
     @test
-    def scanLeft02(): Bool = Chain.scanLeft((i, b) -> if (b) i+1 else i+2, 1, Chain.point(false)) == Chain.fromList(1 :: 3 :: Nil)
+    def scanLeft02(): Bool = Chain.scanLeft((i, b) -> if (b) i+1 else i+2, 1, Chain.point(false)) == List.toChain(1 :: 3 :: Nil)
 
     @test
-    def scanLeft03(): Bool = Chain.scanLeft((i, b) -> if (b) i+1 else i+2, 1, Chain.point(true)) == Chain.fromList(1 :: 2 :: Nil)
+    def scanLeft03(): Bool = Chain.scanLeft((i, b) -> if (b) i+1 else i+2, 1, Chain.point(true)) == List.toChain(1 :: 2 :: Nil)
 
     @test
-    def scanLeft04(): Bool = Chain.scanLeft((i, b) -> if (b) i+1 else i+2, 1, Chain.fromList(false :: false :: Nil)) == Chain.fromList(1 :: 3 :: 5 :: Nil)
+    def scanLeft04(): Bool = Chain.scanLeft((i, b) -> if (b) i+1 else i+2, 1, List.toChain(false :: false :: Nil)) == List.toChain(1 :: 3 :: 5 :: Nil)
 
     @test
-    def scanLeft05(): Bool = Chain.scanLeft((i, b) -> if (b) i+1 else i+2, 1, Chain.fromList(false :: true :: Nil)) == Chain.fromList(1 :: 3 :: 4 :: Nil)
+    def scanLeft05(): Bool = Chain.scanLeft((i, b) -> if (b) i+1 else i+2, 1, List.toChain(false :: true :: Nil)) == List.toChain(1 :: 3 :: 4 :: Nil)
 
     @test
-    def scanLeft06(): Bool = Chain.scanLeft((i, b) -> if (b) i+1 else i+2, 1, Chain.fromList(true :: false :: Nil)) == Chain.fromList(1 :: 2 :: 4 :: Nil)
+    def scanLeft06(): Bool = Chain.scanLeft((i, b) -> if (b) i+1 else i+2, 1, List.toChain(true :: false :: Nil)) == List.toChain(1 :: 2 :: 4 :: Nil)
 
     @test
-    def scanLeft07(): Bool = Chain.scanLeft((i, b) -> if (b) i+1 else i+2, 1, Chain.fromList(true :: true :: Nil)) == Chain.fromList(1 :: 2 :: 3 :: Nil)
+    def scanLeft07(): Bool = Chain.scanLeft((i, b) -> if (b) i+1 else i+2, 1, List.toChain(true :: true :: Nil)) == List.toChain(1 :: 2 :: 3 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // scanRight                                                               //
@@ -445,22 +445,22 @@ namespace TestChain {
     def scanRight01(): Bool = Chain.scanRight((b, i) -> if (b) i+1 else i+2, 1, Chain.empty()) == Chain.point(1)
 
     @test
-    def scanRight02(): Bool = Chain.scanRight((b, i) -> if (b) i+1 else i+2, 1, Chain.point(false)) == Chain.fromList(3 :: 1 :: Nil)
+    def scanRight02(): Bool = Chain.scanRight((b, i) -> if (b) i+1 else i+2, 1, Chain.point(false)) == List.toChain(3 :: 1 :: Nil)
 
     @test
-    def scanRight03(): Bool = Chain.scanRight((b, i) -> if (b) i+1 else i+2, 1, Chain.point(true)) == Chain.fromList(2 :: 1 :: Nil)
+    def scanRight03(): Bool = Chain.scanRight((b, i) -> if (b) i+1 else i+2, 1, Chain.point(true)) == List.toChain(2 :: 1 :: Nil)
 
     @test
-    def scanRight04(): Bool = Chain.scanRight((b, i) -> if (b) i+1 else i+2, 1, Chain.fromList(false :: false :: Nil)) == Chain.fromList(5 :: 3 :: 1 :: Nil)
+    def scanRight04(): Bool = Chain.scanRight((b, i) -> if (b) i+1 else i+2, 1, List.toChain(false :: false :: Nil)) == List.toChain(5 :: 3 :: 1 :: Nil)
 
     @test
-    def scanRight05(): Bool = Chain.scanRight((b, i) -> if (b) i+1 else i+2, 1, Chain.fromList(false :: true :: Nil)) == Chain.fromList(4 :: 2 :: 1 :: Nil)
+    def scanRight05(): Bool = Chain.scanRight((b, i) -> if (b) i+1 else i+2, 1, List.toChain(false :: true :: Nil)) == List.toChain(4 :: 2 :: 1 :: Nil)
 
     @test
-    def scanRight06(): Bool = Chain.scanRight((b, i) -> if (b) i+1 else i+2, 1, Chain.fromList(true :: false :: Nil)) == Chain.fromList(4 :: 3 :: 1 :: Nil)
+    def scanRight06(): Bool = Chain.scanRight((b, i) -> if (b) i+1 else i+2, 1, List.toChain(true :: false :: Nil)) == List.toChain(4 :: 3 :: 1 :: Nil)
 
     @test
-    def scanRight07(): Bool = Chain.scanRight((b, i) -> if (b) i+1 else i+2, 1, Chain.fromList(true :: true :: Nil)) == Chain.fromList(3 :: 2 :: 1 :: Nil)
+    def scanRight07(): Bool = Chain.scanRight((b, i) -> if (b) i+1 else i+2, 1, List.toChain(true :: true :: Nil)) == List.toChain(3 :: 2 :: 1 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // map                                                                     //
@@ -476,16 +476,16 @@ namespace TestChain {
     def map03(): Bool = Chain.map(i -> i > 2, Chain.point(3)) == Chain.point(true)
 
     @test
-    def map04(): Bool = Chain.map(i -> i > 2, Chain.fromList(1 :: 2 :: Nil)) == Chain.fromList(false :: false :: Nil)
+    def map04(): Bool = Chain.map(i -> i > 2, List.toChain(1 :: 2 :: Nil)) == List.toChain(false :: false :: Nil)
 
     @test
-    def map05(): Bool = Chain.map(i -> i > 2, Chain.fromList(1 :: 8 :: Nil)) == Chain.fromList(false :: true :: Nil)
+    def map05(): Bool = Chain.map(i -> i > 2, List.toChain(1 :: 8 :: Nil)) == List.toChain(false :: true :: Nil)
 
     @test
-    def map06(): Bool = Chain.map(i -> i > 2, Chain.fromList(8 :: 1 :: Nil)) == Chain.fromList(true :: false :: Nil)
+    def map06(): Bool = Chain.map(i -> i > 2, List.toChain(8 :: 1 :: Nil)) == List.toChain(true :: false :: Nil)
 
     @test
-    def map07(): Bool = Chain.map(i -> i > 2, Chain.fromList(7 :: 8 :: Nil)) == Chain.fromList(true :: true :: Nil)
+    def map07(): Bool = Chain.map(i -> i > 2, List.toChain(7 :: 8 :: Nil)) == List.toChain(true :: true :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // mapWithIndex                                                            //
@@ -501,16 +501,16 @@ namespace TestChain {
     def mapWithIndex03(): Bool = Chain.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, Chain.point(3)) == Chain.point(true)
     
     @test
-    def mapWithIndex04(): Bool = Chain.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, Chain.fromList(1 :: 2 :: Nil)) == Chain.fromList(false :: true :: Nil)
+    def mapWithIndex04(): Bool = Chain.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, List.toChain(1 :: 2 :: Nil)) == List.toChain(false :: true :: Nil)
     
     @test
-    def mapWithIndex05(): Bool = Chain.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, Chain.fromList(1 :: 8 :: Nil)) == Chain.fromList(false :: false :: Nil)
+    def mapWithIndex05(): Bool = Chain.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, List.toChain(1 :: 8 :: Nil)) == List.toChain(false :: false :: Nil)
     
     @test
-    def mapWithIndex06(): Bool = Chain.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, Chain.fromList(8 :: 1 :: Nil)) == Chain.fromList(true :: true :: Nil)
+    def mapWithIndex06(): Bool = Chain.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, List.toChain(8 :: 1 :: Nil)) == List.toChain(true :: true :: Nil)
     
     @test
-    def mapWithIndex07(): Bool = Chain.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, Chain.fromList(7 :: 8 :: Nil)) == Chain.fromList(true :: false :: Nil)
+    def mapWithIndex07(): Bool = Chain.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, List.toChain(7 :: 8 :: Nil)) == List.toChain(true :: false :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // flatMap                                                                 //
@@ -526,13 +526,13 @@ namespace TestChain {
     def flatMap03(): Bool = Chain.flatMap(i -> Chain.repeat(i, i), Chain.point(1)) == Chain.point(1)
     
     @test
-    def flatMap04(): Bool = Chain.flatMap(i -> Chain.repeat(i, i), Chain.point(2)) == Chain.fromList(2 :: 2 :: Nil)
+    def flatMap04(): Bool = Chain.flatMap(i -> Chain.repeat(i, i), Chain.point(2)) == List.toChain(2 :: 2 :: Nil)
     
     @test
-    def flatMap05(): Bool = Chain.flatMap(i -> Chain.repeat(i, i), Chain.fromList(1 :: 2 :: Nil)) == Chain.fromList(1 :: 2 :: 2 :: Nil)
+    def flatMap05(): Bool = Chain.flatMap(i -> Chain.repeat(i, i), List.toChain(1 :: 2 :: Nil)) == List.toChain(1 :: 2 :: 2 :: Nil)
     
     @test
-    def flatMap06(): Bool = Chain.flatMap(i -> Chain.repeat(i, i), Chain.fromList(2 :: 3 :: Nil)) == Chain.fromList(2 :: 2 :: 3 :: 3 :: 3 :: Nil)
+    def flatMap06(): Bool = Chain.flatMap(i -> Chain.repeat(i, i), List.toChain(2 :: 3 :: Nil)) == List.toChain(2 :: 2 :: 3 :: 3 :: 3 :: Nil)
     
     /////////////////////////////////////////////////////////////////////////////
     // reverse                                                                 //
@@ -545,16 +545,16 @@ namespace TestChain {
     def reverse02(): Bool = Chain.reverse(Chain.point(1)) == Chain.point(1)
     
     @test
-    def reverse03(): Bool = Chain.reverse(Chain.fromList(1 :: 2 :: Nil)) == Chain.fromList(2 :: 1 :: Nil)
+    def reverse03(): Bool = Chain.reverse(List.toChain(1 :: 2 :: Nil)) == List.toChain(2 :: 1 :: Nil)
     
     @test
-    def reverse04(): Bool = Chain.reverse(Chain.fromList(1 :: 1 :: Nil)) == Chain.fromList(1 :: 1 :: Nil)
+    def reverse04(): Bool = Chain.reverse(List.toChain(1 :: 1 :: Nil)) == List.toChain(1 :: 1 :: Nil)
     
     @test
-    def reverse05(): Bool = Chain.reverse(Chain.fromList(1 :: 2 :: 3 :: Nil)) == Chain.fromList(3 :: 2 :: 1 :: Nil)
+    def reverse05(): Bool = Chain.reverse(List.toChain(1 :: 2 :: 3 :: Nil)) == List.toChain(3 :: 2 :: 1 :: Nil)
     
     @test
-    def reverse06(): Bool = Chain.reverse(Chain.fromList(1 :: 2 :: 3 :: 4 :: Nil)) == Chain.fromList(4 :: 3 :: 2 :: 1 :: Nil)
+    def reverse06(): Bool = Chain.reverse(List.toChain(1 :: 2 :: 3 :: 4 :: Nil)) == List.toChain(4 :: 3 :: 2 :: 1 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // intersperse                                                             //
@@ -567,13 +567,13 @@ namespace TestChain {
     def intersperse02(): Bool = Chain.intersperse(11, Chain.point(1)) == Chain.point(1)
 
     @test
-    def intersperse03(): Bool = Chain.intersperse(11, Chain.fromList(1 :: 2 :: Nil)) == Chain.fromList(1 :: 11 :: 2 :: Nil)
+    def intersperse03(): Bool = Chain.intersperse(11, List.toChain(1 :: 2 :: Nil)) == List.toChain(1 :: 11 :: 2 :: Nil)
 
     @test
-    def intersperse04(): Bool = Chain.intersperse(11, Chain.fromList(1 :: 2 :: 3 :: Nil)) == Chain.fromList(1 :: 11 :: 2 :: 11 :: 3 :: Nil)
+    def intersperse04(): Bool = Chain.intersperse(11, List.toChain(1 :: 2 :: 3 :: Nil)) == List.toChain(1 :: 11 :: 2 :: 11 :: 3 :: Nil)
 
     @test
-    def intersperse05(): Bool = Chain.intersperse(11, Chain.fromList(1 :: 2 :: 3 :: 4 :: Nil)) == Chain.fromList(1 :: 11 :: 2 :: 11 :: 3 :: 11 :: 4 :: Nil)
+    def intersperse05(): Bool = Chain.intersperse(11, List.toChain(1 :: 2 :: 3 :: 4 :: Nil)) == List.toChain(1 :: 11 :: 2 :: 11 :: 3 :: 11 :: 4 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // count                                                                   //
@@ -589,16 +589,16 @@ namespace TestChain {
     def count03(): Bool = Chain.count(i -> i > 3, Chain.point(4)) == 1
 
     @test
-    def count04(): Bool = Chain.count(i -> i > 3, Chain.fromList(1 :: 2 :: Nil)) == 0
+    def count04(): Bool = Chain.count(i -> i > 3, List.toChain(1 :: 2 :: Nil)) == 0
 
     @test
-    def count05(): Bool = Chain.count(i -> i > 3, Chain.fromList(1 :: 8 :: Nil)) == 1
+    def count05(): Bool = Chain.count(i -> i > 3, List.toChain(1 :: 8 :: Nil)) == 1
 
     @test
-    def count06(): Bool = Chain.count(i -> i > 3, Chain.fromList(8 :: 1 :: Nil)) == 1
+    def count06(): Bool = Chain.count(i -> i > 3, List.toChain(8 :: 1 :: Nil)) == 1
 
     @test
-    def count07(): Bool = Chain.count(i -> i > 3, Chain.fromList(6 :: 7 :: Nil)) == 2
+    def count07(): Bool = Chain.count(i -> i > 3, List.toChain(6 :: 7 :: Nil)) == 2
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -615,25 +615,25 @@ namespace TestChain {
     def flatten03(): Bool = Chain.flatten(Chain.point(Chain.point(1))) == Chain.point(1)
     
     @test
-    def flatten04(): Bool = Chain.flatten(Chain.point(Chain.fromList(1 :: 2 :: Nil))) == Chain.fromList(1 :: 2 :: Nil)
+    def flatten04(): Bool = Chain.flatten(Chain.point(List.toChain(1 :: 2 :: Nil))) == List.toChain(1 :: 2 :: Nil)
     
     @test
-    def flatten05(): Bool = Chain.flatten(Chain.fromList(Chain.empty() :: Chain.empty() :: Nil)): Chain[Unit] == Chain.empty()
+    def flatten05(): Bool = Chain.flatten(List.toChain(Chain.empty() :: Chain.empty() :: Nil)): Chain[Unit] == Chain.empty()
     
     @test
-    def flatten06(): Bool = Chain.flatten(Chain.fromList(Chain.point(1) :: Chain.empty() :: Nil)) == Chain.point(1)
+    def flatten06(): Bool = Chain.flatten(List.toChain(Chain.point(1) :: Chain.empty() :: Nil)) == Chain.point(1)
     
     @test
-    def flatten07(): Bool = Chain.flatten(Chain.fromList(Chain.empty() :: Chain.point(1) :: Nil)) == Chain.point(1)
+    def flatten07(): Bool = Chain.flatten(List.toChain(Chain.empty() :: Chain.point(1) :: Nil)) == Chain.point(1)
     
     @test
-    def flatten08(): Bool = Chain.flatten(Chain.fromList(Chain.point(1) :: Chain.point(2) :: Nil)) == Chain.fromList(1 :: 2 :: Nil)
+    def flatten08(): Bool = Chain.flatten(List.toChain(Chain.point(1) :: Chain.point(2) :: Nil)) == List.toChain(1 :: 2 :: Nil)
     
     @test
-    def flatten09(): Bool = Chain.flatten(Chain.fromList(Chain.fromList(1 :: 2 :: Nil) :: Chain.fromList(3 :: 4 :: 5 :: Nil) :: Nil)) == Chain.fromList(1 :: 2 :: 3 :: 4 :: 5 :: Nil)
+    def flatten09(): Bool = Chain.flatten(List.toChain(List.toChain(1 :: 2 :: Nil) :: List.toChain(3 :: 4 :: 5 :: Nil) :: Nil)) == List.toChain(1 :: 2 :: 3 :: 4 :: 5 :: Nil)
     
     @test
-    def flatten10(): Bool = Chain.flatten(Chain.fromList(Chain.point(1) :: Chain.fromList(2 :: 3 :: Nil) :: Chain.point(4) :: Nil)) == Chain.fromList(1 :: 2 :: 3 :: 4 :: Nil)
+    def flatten10(): Bool = Chain.flatten(List.toChain(Chain.point(1) :: List.toChain(2 :: 3 :: Nil) :: Chain.point(4) :: Nil)) == List.toChain(1 :: 2 :: 3 :: 4 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // exists                                                                  //
@@ -649,22 +649,22 @@ namespace TestChain {
     def exists03(): Bool = Chain.exists(i -> i > 3, Chain.point(5)) == true
 
     @test
-    def exists04(): Bool = Chain.exists(i -> i > 3, Chain.fromList(1 :: 2 :: Nil)) == false
+    def exists04(): Bool = Chain.exists(i -> i > 3, List.toChain(1 :: 2 :: Nil)) == false
 
     @test
-    def exists05(): Bool = Chain.exists(i -> i > 3, Chain.fromList(1 :: 6 :: Nil)) == true
+    def exists05(): Bool = Chain.exists(i -> i > 3, List.toChain(1 :: 6 :: Nil)) == true
 
     @test
-    def exists06(): Bool = Chain.exists(i -> i > 3, Chain.fromList(6 :: 1 :: Nil)) == true
+    def exists06(): Bool = Chain.exists(i -> i > 3, List.toChain(6 :: 1 :: Nil)) == true
 
     @test
-    def exists07(): Bool = Chain.exists(i -> i > 3, Chain.fromList(16 :: 6 :: Nil)) == true
+    def exists07(): Bool = Chain.exists(i -> i > 3, List.toChain(16 :: 6 :: Nil)) == true
 
     @test
-    def exists08(): Bool = Chain.exists(i -> i > 3, Chain.fromList(1 :: -9 :: 3 :: Nil)) == false
+    def exists08(): Bool = Chain.exists(i -> i > 3, List.toChain(1 :: -9 :: 3 :: Nil)) == false
 
     @test
-    def exists09(): Bool = Chain.exists(i -> i > 3, Chain.fromList(1 :: 9 :: 3 :: Nil)) == true
+    def exists09(): Bool = Chain.exists(i -> i > 3, List.toChain(1 :: 9 :: 3 :: Nil)) == true
 
     /////////////////////////////////////////////////////////////////////////////
     // forall                                                                  //
@@ -680,25 +680,25 @@ namespace TestChain {
     def forall03(): Bool = Chain.forall(i -> i > 3, Chain.point(5)) == true
     
     @test
-    def forall04(): Bool = Chain.forall(i -> i > 3, Chain.fromList(1 :: 2 :: Nil)) == false
+    def forall04(): Bool = Chain.forall(i -> i > 3, List.toChain(1 :: 2 :: Nil)) == false
     
     @test
-    def forall05(): Bool = Chain.forall(i -> i > 3, Chain.fromList(1 :: 6 :: Nil)) == false
+    def forall05(): Bool = Chain.forall(i -> i > 3, List.toChain(1 :: 6 :: Nil)) == false
     
     @test
-    def forall06(): Bool = Chain.forall(i -> i > 3, Chain.fromList(6 :: 1 :: Nil)) == false
+    def forall06(): Bool = Chain.forall(i -> i > 3, List.toChain(6 :: 1 :: Nil)) == false
     
     @test
-    def forall07(): Bool = Chain.forall(i -> i > 3, Chain.fromList(16 :: 6 :: Nil)) == true
+    def forall07(): Bool = Chain.forall(i -> i > 3, List.toChain(16 :: 6 :: Nil)) == true
     
     @test
-    def forall08(): Bool = Chain.forall(i -> i > 3, Chain.fromList(1 :: -9 :: 3 :: Nil)) == false
+    def forall08(): Bool = Chain.forall(i -> i > 3, List.toChain(1 :: -9 :: 3 :: Nil)) == false
     
     @test
-    def forall09(): Bool = Chain.forall(i -> i > 3, Chain.fromList(1 :: 9 :: 3 :: Nil)) == false
+    def forall09(): Bool = Chain.forall(i -> i > 3, List.toChain(1 :: 9 :: 3 :: Nil)) == false
     
     @test
-    def forall10(): Bool = Chain.forall(i -> i > 3, Chain.fromList(11 :: 9 :: 31 :: Nil)) == true
+    def forall10(): Bool = Chain.forall(i -> i > 3, List.toChain(11 :: 9 :: 31 :: Nil)) == true
 
     /////////////////////////////////////////////////////////////////////////////
     // filter                                                                  //
@@ -714,19 +714,19 @@ namespace TestChain {
     def filter03(): Bool = Chain.filter(i -> i > 3, Chain.point(4)) == Chain.point(4)
     
     @test
-    def filter04(): Bool = Chain.filter(i -> i > 3, Chain.fromList(1 :: 3 :: Nil)) == Chain.empty()
+    def filter04(): Bool = Chain.filter(i -> i > 3, List.toChain(1 :: 3 :: Nil)) == Chain.empty()
     
     @test
-    def filter05(): Bool = Chain.filter(i -> i > 3, Chain.fromList(1 :: 8 :: Nil)) == Chain.point(8)
+    def filter05(): Bool = Chain.filter(i -> i > 3, List.toChain(1 :: 8 :: Nil)) == Chain.point(8)
     
     @test
-    def filter06(): Bool = Chain.filter(i -> i > 3, Chain.fromList(8 :: 1 :: Nil)) == Chain.point(8)
+    def filter06(): Bool = Chain.filter(i -> i > 3, List.toChain(8 :: 1 :: Nil)) == Chain.point(8)
     
     @test
-    def filter07(): Bool = Chain.filter(i -> i > 3, Chain.fromList(8 :: 9 :: Nil)) == Chain.fromList(8 :: 9 :: Nil)
+    def filter07(): Bool = Chain.filter(i -> i > 3, List.toChain(8 :: 9 :: Nil)) == List.toChain(8 :: 9 :: Nil)
     
     @test
-    def filter08(): Bool = Chain.filter(i -> i > 3, Chain.fromList(1 :: 4 :: 11 :: 2 :: -22 :: 17 :: Nil)) == Chain.fromList(4 :: 11 :: 17 :: Nil)
+    def filter08(): Bool = Chain.filter(i -> i > 3, List.toChain(1 :: 4 :: 11 :: 2 :: -22 :: 17 :: Nil)) == List.toChain(4 :: 11 :: 17 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // foldLeft                                                                //
@@ -739,10 +739,10 @@ namespace TestChain {
     def foldLeft02(): Bool = Chain.foldLeft((i, e) -> (i - e)*(e rem 2 + 1), 100, Chain.point(1)) == 198
 
     @test
-    def foldLeft03(): Bool = Chain.foldLeft((i, e) -> (i - e)*(e rem 2 + 1), 100, Chain.fromList(1 :: 2 :: Nil)) == 196
+    def foldLeft03(): Bool = Chain.foldLeft((i, e) -> (i - e)*(e rem 2 + 1), 100, List.toChain(1 :: 2 :: Nil)) == 196
 
     @test
-    def foldLeft04(): Bool = Chain.foldLeft((i, e) -> (i - e)*(e rem 2 + 1), 100, Chain.fromList(1 :: 2 :: 3 :: Nil)) == 386
+    def foldLeft04(): Bool = Chain.foldLeft((i, e) -> (i - e)*(e rem 2 + 1), 100, List.toChain(1 :: 2 :: 3 :: Nil)) == 386
 
     /////////////////////////////////////////////////////////////////////////////
     // foldRight                                                               //
@@ -755,10 +755,10 @@ namespace TestChain {
     def foldRight02(): Bool = Chain.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, Chain.point(1)) == 198
 
     @test
-    def foldRight03(): Bool = Chain.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, Chain.fromList(1 :: 2 :: Nil)) == 194
+    def foldRight03(): Bool = Chain.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, List.toChain(1 :: 2 :: Nil)) == 194
 
     @test
-    def foldRight04(): Bool = Chain.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, Chain.fromList(1 :: 2 :: 3 :: Nil)) == 382
+    def foldRight04(): Bool = Chain.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, List.toChain(1 :: 2 :: 3 :: Nil)) == 382
 
     /////////////////////////////////////////////////////////////////////////////
     // dropLeft                                                                //
@@ -786,19 +786,19 @@ namespace TestChain {
     def dropLeft07(): Bool = Chain.dropLeft(2, Chain.point(1)) == Chain.empty()
     
     @test
-    def dropLeft08(): Bool = Chain.dropLeft(0, Chain.fromList(1 :: 2 :: Nil)) == Chain.fromList(1 :: 2 :: Nil)
+    def dropLeft08(): Bool = Chain.dropLeft(0, List.toChain(1 :: 2 :: Nil)) == List.toChain(1 :: 2 :: Nil)
     
     @test
-    def dropLeft09(): Bool = Chain.dropLeft(1, Chain.fromList(1 :: 2 :: Nil)) == Chain.point(2)
+    def dropLeft09(): Bool = Chain.dropLeft(1, List.toChain(1 :: 2 :: Nil)) == Chain.point(2)
     
     @test
-    def dropLeft10(): Bool = Chain.dropLeft(2, Chain.fromList(1 :: 2 :: Nil)) == Chain.empty()
+    def dropLeft10(): Bool = Chain.dropLeft(2, List.toChain(1 :: 2 :: Nil)) == Chain.empty()
     
     @test
-    def dropLeft11(): Bool = Chain.dropLeft(2, Chain.fromList(1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil)) == Chain.fromList(3 :: 4 :: 5 :: 6 :: Nil)
+    def dropLeft11(): Bool = Chain.dropLeft(2, List.toChain(1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil)) == List.toChain(3 :: 4 :: 5 :: 6 :: Nil)
     
     @test
-    def dropLeft12(): Bool = Chain.dropLeft(4, Chain.fromList(1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil)) == Chain.fromList(5 :: 6 :: Nil)
+    def dropLeft12(): Bool = Chain.dropLeft(4, List.toChain(1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil)) == List.toChain(5 :: 6 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // dropRight                                                                //
@@ -826,19 +826,19 @@ namespace TestChain {
     def dropRight07(): Bool = Chain.dropRight(2, Chain.point(1)) == Chain.empty()
 
     @test
-    def dropRight08(): Bool = Chain.dropRight(0, Chain.fromList(1 :: 2 :: Nil)) == Chain.fromList(1 :: 2 :: Nil)
+    def dropRight08(): Bool = Chain.dropRight(0, List.toChain(1 :: 2 :: Nil)) == List.toChain(1 :: 2 :: Nil)
 
     @test
-    def dropRight09(): Bool = Chain.dropRight(1, Chain.fromList(1 :: 2 :: Nil)) == Chain.point(1)
+    def dropRight09(): Bool = Chain.dropRight(1, List.toChain(1 :: 2 :: Nil)) == Chain.point(1)
 
     @test
-    def dropRight10(): Bool = Chain.dropRight(2, Chain.fromList(1 :: 2 :: Nil)) == Chain.empty()
+    def dropRight10(): Bool = Chain.dropRight(2, List.toChain(1 :: 2 :: Nil)) == Chain.empty()
 
     @test
-    def dropRight11(): Bool = Chain.dropRight(2, Chain.fromList(1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil)) == Chain.fromList(1 :: 2 :: 3 :: 4 :: Nil)
+    def dropRight11(): Bool = Chain.dropRight(2, List.toChain(1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil)) == List.toChain(1 :: 2 :: 3 :: 4 :: Nil)
 
     @test
-    def dropRight12(): Bool = Chain.dropRight(4, Chain.fromList(1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil)) == Chain.fromList(1 :: 2 :: Nil)
+    def dropRight12(): Bool = Chain.dropRight(4, List.toChain(1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil)) == List.toChain(1 :: 2 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // dropWhileLeft                                                           //
@@ -854,20 +854,20 @@ namespace TestChain {
     def dropWhileLeft03(): Bool = Chain.dropWhileLeft(i -> i > 3, Chain.point(4)) == Chain.empty()
     
     @test
-    def dropWhileLeft04(): Bool = Chain.dropWhileLeft(i -> i > 3, Chain.fromList(1 :: 2 :: Nil)) == Chain.fromList(1 :: 2 :: Nil)
+    def dropWhileLeft04(): Bool = Chain.dropWhileLeft(i -> i > 3, List.toChain(1 :: 2 :: Nil)) == List.toChain(1 :: 2 :: Nil)
     
     @test
-    def dropWhileLeft05(): Bool = Chain.dropWhileLeft(i -> i > 3, Chain.fromList(1 :: 5 :: Nil)) == Chain.fromList(1 :: 5 :: Nil)
+    def dropWhileLeft05(): Bool = Chain.dropWhileLeft(i -> i > 3, List.toChain(1 :: 5 :: Nil)) == List.toChain(1 :: 5 :: Nil)
     
     @test
-    def dropWhileLeft06(): Bool = Chain.dropWhileLeft(i -> i > 3, Chain.fromList(5 :: 1 :: Nil)) == Chain.point(1)
+    def dropWhileLeft06(): Bool = Chain.dropWhileLeft(i -> i > 3, List.toChain(5 :: 1 :: Nil)) == Chain.point(1)
     
     @test
-    def dropWhileLeft07(): Bool = Chain.dropWhileLeft(i -> i > 3, Chain.fromList(5 :: 8 :: Nil)) == Chain.empty()
+    def dropWhileLeft07(): Bool = Chain.dropWhileLeft(i -> i > 3, List.toChain(5 :: 8 :: Nil)) == Chain.empty()
     
     @test
-    def dropWhileLeft08(): Bool = Chain.dropWhileLeft(i -> i > 3, Chain.fromList(4 :: 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil)) ==
-                            Chain.fromList(-3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil)
+    def dropWhileLeft08(): Bool = Chain.dropWhileLeft(i -> i > 3, List.toChain(4 :: 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil)) ==
+                            List.toChain(-3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // dropWhileRight                                                          //
@@ -883,20 +883,20 @@ namespace TestChain {
     def dropWhileRight03(): Bool = Chain.dropWhileRight(i -> i > 3, Chain.point(4)) == Chain.empty()
 
     @test
-    def dropWhileRight04(): Bool = Chain.dropWhileRight(i -> i > 3, Chain.fromList(1 :: 2 :: Nil)) == Chain.fromList(1 :: 2 :: Nil)
+    def dropWhileRight04(): Bool = Chain.dropWhileRight(i -> i > 3, List.toChain(1 :: 2 :: Nil)) == List.toChain(1 :: 2 :: Nil)
 
     @test
-    def dropWhileRight05(): Bool = Chain.dropWhileRight(i -> i > 3, Chain.fromList(1 :: 5 :: Nil)) == Chain.point(1)
+    def dropWhileRight05(): Bool = Chain.dropWhileRight(i -> i > 3, List.toChain(1 :: 5 :: Nil)) == Chain.point(1)
 
     @test
-    def dropWhileRight06(): Bool = Chain.dropWhileRight(i -> i > 3, Chain.fromList(5 :: 1 :: Nil)) == Chain.fromList(5 :: 1 :: Nil)
+    def dropWhileRight06(): Bool = Chain.dropWhileRight(i -> i > 3, List.toChain(5 :: 1 :: Nil)) == List.toChain(5 :: 1 :: Nil)
 
     @test
-    def dropWhileRight07(): Bool = Chain.dropWhileRight(i -> i > 3, Chain.fromList(5 :: 8 :: Nil)) == Chain.empty()
+    def dropWhileRight07(): Bool = Chain.dropWhileRight(i -> i > 3, List.toChain(5 :: 8 :: Nil)) == Chain.empty()
 
     @test
-    def dropWhileRight08(): Bool = Chain.dropWhileRight(i -> i > 3, Chain.fromList(4 :: 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil)) ==
-                            Chain.fromList(4 :: 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: Nil)
+    def dropWhileRight08(): Bool = Chain.dropWhileRight(i -> i > 3, List.toChain(4 :: 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil)) ==
+                            List.toChain(4 :: 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // takeLeft                                                                //
@@ -924,19 +924,19 @@ namespace TestChain {
     def takeLeft07(): Bool = Chain.takeLeft(2, Chain.point(1)) == Chain.point(1)
     
     @test
-    def takeLeft08(): Bool = Chain.takeLeft(0, Chain.fromList(1 :: 2 :: Nil)) == Chain.empty()
+    def takeLeft08(): Bool = Chain.takeLeft(0, List.toChain(1 :: 2 :: Nil)) == Chain.empty()
     
     @test
-    def takeLeft09(): Bool = Chain.takeLeft(1, Chain.fromList(1 :: 2 :: Nil)) == Chain.point(1)
+    def takeLeft09(): Bool = Chain.takeLeft(1, List.toChain(1 :: 2 :: Nil)) == Chain.point(1)
     
     @test
-    def takeLeft10(): Bool = Chain.takeLeft(2, Chain.fromList(1 :: 2 :: Nil)) == Chain.fromList(1 :: 2 :: Nil)
+    def takeLeft10(): Bool = Chain.takeLeft(2, List.toChain(1 :: 2 :: Nil)) == List.toChain(1 :: 2 :: Nil)
     
     @test
-    def takeLeft11(): Bool = Chain.takeLeft(2, Chain.fromList(1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil)) == Chain.fromList(1 :: 2 :: Nil)
+    def takeLeft11(): Bool = Chain.takeLeft(2, List.toChain(1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil)) == List.toChain(1 :: 2 :: Nil)
     
     @test
-    def takeLeft12(): Bool = Chain.takeLeft(4, Chain.fromList(1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil)) == Chain.fromList(1 :: 2 :: 3 :: 4 :: Nil)
+    def takeLeft12(): Bool = Chain.takeLeft(4, List.toChain(1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil)) == List.toChain(1 :: 2 :: 3 :: 4 :: Nil)
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -965,19 +965,19 @@ namespace TestChain {
     def takeRight07(): Bool = Chain.takeRight(2, Chain.point(1)) == Chain.point(1)
 
     @test
-    def takeRight08(): Bool = Chain.takeRight(0, Chain.fromList(1 :: 2 :: Nil)) == Chain.empty()
+    def takeRight08(): Bool = Chain.takeRight(0, List.toChain(1 :: 2 :: Nil)) == Chain.empty()
 
     @test
-    def takeRight09(): Bool = Chain.takeRight(1, Chain.fromList(1 :: 2 :: Nil)) == Chain.point(2)
+    def takeRight09(): Bool = Chain.takeRight(1, List.toChain(1 :: 2 :: Nil)) == Chain.point(2)
 
     @test
-    def takeRight10(): Bool = Chain.takeRight(2, Chain.fromList(1 :: 2 :: Nil)) == Chain.fromList(1 :: 2 :: Nil)
+    def takeRight10(): Bool = Chain.takeRight(2, List.toChain(1 :: 2 :: Nil)) == List.toChain(1 :: 2 :: Nil)
 
     @test
-    def takeRight11(): Bool = Chain.takeRight(2, Chain.fromList(1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil)) == Chain.fromList(5 :: 6 :: Nil)
+    def takeRight11(): Bool = Chain.takeRight(2, List.toChain(1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil)) == List.toChain(5 :: 6 :: Nil)
 
     @test
-    def takeRight12(): Bool = Chain.takeRight(4, Chain.fromList(1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil)) == Chain.fromList(3 :: 4 :: 5 :: 6 :: Nil)
+    def takeRight12(): Bool = Chain.takeRight(4, List.toChain(1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil)) == List.toChain(3 :: 4 :: 5 :: 6 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // takeWhileLeft                                                           //
@@ -993,20 +993,20 @@ namespace TestChain {
     def takeWhileLeft03(): Bool = Chain.takeWhileLeft(i -> i > 3, Chain.point(4)) == Chain.point(4)
 
     @test
-    def takeWhileLeft04(): Bool = Chain.takeWhileLeft(i -> i > 3, Chain.fromList(1 :: 2 :: Nil)) == Chain.empty()
+    def takeWhileLeft04(): Bool = Chain.takeWhileLeft(i -> i > 3, List.toChain(1 :: 2 :: Nil)) == Chain.empty()
 
     @test
-    def takeWhileLeft05(): Bool = Chain.takeWhileLeft(i -> i > 3, Chain.fromList(1 :: 5 :: Nil)) == Chain.empty()
+    def takeWhileLeft05(): Bool = Chain.takeWhileLeft(i -> i > 3, List.toChain(1 :: 5 :: Nil)) == Chain.empty()
 
     @test
-    def takeWhileLeft06(): Bool = Chain.takeWhileLeft(i -> i > 3, Chain.fromList(5 :: 1 :: Nil)) == Chain.point(5)
+    def takeWhileLeft06(): Bool = Chain.takeWhileLeft(i -> i > 3, List.toChain(5 :: 1 :: Nil)) == Chain.point(5)
 
     @test
-    def takeWhileLeft07(): Bool = Chain.takeWhileLeft(i -> i > 3, Chain.fromList(5 :: 8 :: Nil)) == Chain.fromList(5 :: 8 :: Nil)
+    def takeWhileLeft07(): Bool = Chain.takeWhileLeft(i -> i > 3, List.toChain(5 :: 8 :: Nil)) == List.toChain(5 :: 8 :: Nil)
 
     @test
-    def takeWhileLeft08(): Bool = Chain.takeWhileLeft(i -> i > 3, Chain.fromList(4 :: 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil)) ==
-                            Chain.fromList(4 :: 6 :: Nil)
+    def takeWhileLeft08(): Bool = Chain.takeWhileLeft(i -> i > 3, List.toChain(4 :: 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil)) ==
+                            List.toChain(4 :: 6 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // takeWhileRight                                                          //
@@ -1022,19 +1022,19 @@ namespace TestChain {
     def takeWhileRight03(): Bool = Chain.takeWhileRight(i -> i > 3, Chain.point(4)) == Chain.point(4)
 
     @test
-    def takeWhileRight04(): Bool = Chain.takeWhileRight(i -> i > 3, Chain.fromList(1 :: 2 :: Nil)) == Chain.empty()
+    def takeWhileRight04(): Bool = Chain.takeWhileRight(i -> i > 3, List.toChain(1 :: 2 :: Nil)) == Chain.empty()
 
     @test
-    def takeWhileRight05(): Bool = Chain.takeWhileRight(i -> i > 3, Chain.fromList(1 :: 5 :: Nil)) == Chain.point(5)
+    def takeWhileRight05(): Bool = Chain.takeWhileRight(i -> i > 3, List.toChain(1 :: 5 :: Nil)) == Chain.point(5)
 
     @test
-    def takeWhileRight06(): Bool = Chain.takeWhileRight(i -> i > 3, Chain.fromList(5 :: 1 :: Nil)) == Chain.empty()
+    def takeWhileRight06(): Bool = Chain.takeWhileRight(i -> i > 3, List.toChain(5 :: 1 :: Nil)) == Chain.empty()
 
     @test
-    def takeWhileRight07(): Bool = Chain.takeWhileRight(i -> i > 3, Chain.fromList(5 :: 8 :: Nil)) == Chain.fromList(5 :: 8 :: Nil)
+    def takeWhileRight07(): Bool = Chain.takeWhileRight(i -> i > 3, List.toChain(5 :: 8 :: Nil)) == List.toChain(5 :: 8 :: Nil)
 
     @test
-    def takeWhileRight08(): Bool = Chain.takeWhileRight(i -> i > 3, Chain.fromList(4 :: 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil)) ==
+    def takeWhileRight08(): Bool = Chain.takeWhileRight(i -> i > 3, List.toChain(4 :: 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil)) ==
                             Chain.point(7)
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1051,20 +1051,20 @@ namespace TestChain {
     def filterMap03(): Bool = Chain.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, Chain.point(2)) == Chain.point(1)
     
     @test
-    def filterMap04(): Bool = Chain.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, Chain.fromList(1 :: 3 :: Nil)) == Chain.empty()
+    def filterMap04(): Bool = Chain.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, List.toChain(1 :: 3 :: Nil)) == Chain.empty()
     
     @test
-    def filterMap05(): Bool = Chain.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, Chain.fromList(1 :: 4 :: Nil)) == Chain.point(2)
+    def filterMap05(): Bool = Chain.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, List.toChain(1 :: 4 :: Nil)) == Chain.point(2)
     
     @test
-    def filterMap06(): Bool = Chain.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, Chain.fromList(6 :: -1 :: Nil)) == Chain.point(3)
+    def filterMap06(): Bool = Chain.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, List.toChain(6 :: -1 :: Nil)) == Chain.point(3)
     
     @test
-    def filterMap07(): Bool = Chain.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, Chain.fromList(8 :: 6 :: Nil)) == Chain.fromList(4 :: 3 :: Nil)
+    def filterMap07(): Bool = Chain.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, List.toChain(8 :: 6 :: Nil)) == List.toChain(4 :: 3 :: Nil)
     
     @test
-    def filterMap08(): Bool = Chain.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, Chain.fromList(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 10 :: Nil)) ==
-                            Chain.fromList(0 :: 1 :: 2 :: 5 :: Nil)
+    def filterMap08(): Bool = Chain.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, List.toChain(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 10 :: Nil)) ==
+                            List.toChain(0 :: 1 :: 2 :: 5 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // findMap                                                                 //
@@ -1080,19 +1080,19 @@ namespace TestChain {
     def findMap03(): Bool = Chain.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, Chain.point(2)) == Some(1)
     
     @test
-    def findMap04(): Bool = Chain.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, Chain.fromList(1 :: 3 :: Nil)) == None
+    def findMap04(): Bool = Chain.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, List.toChain(1 :: 3 :: Nil)) == None
     
     @test
-    def findMap05(): Bool = Chain.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, Chain.fromList(1 :: 4 :: Nil)) == Some(2)
+    def findMap05(): Bool = Chain.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, List.toChain(1 :: 4 :: Nil)) == Some(2)
     
     @test
-    def findMap06(): Bool = Chain.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, Chain.fromList(6 :: -1 :: Nil)) == Some(3)
+    def findMap06(): Bool = Chain.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, List.toChain(6 :: -1 :: Nil)) == Some(3)
     
     @test
-    def findMap07(): Bool = Chain.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, Chain.fromList(8 :: 6 :: Nil)) == Some(4)
+    def findMap07(): Bool = Chain.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, List.toChain(8 :: 6 :: Nil)) == Some(4)
     
     @test
-    def findMap08(): Bool = Chain.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, Chain.fromList(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 10 :: Nil)) == Some(0)
+    def findMap08(): Bool = Chain.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, List.toChain(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 10 :: Nil)) == Some(0)
 
     /////////////////////////////////////////////////////////////////////////////
     // zip                                                                     //
@@ -1111,13 +1111,13 @@ namespace TestChain {
     def zip04(): Bool = Chain.zip(Chain.point(1), Chain.point(2)) == Chain.point((1, 2))
 
     @test
-    def zip05(): Bool = Chain.zip(Chain.fromList(1 :: 3 :: Nil), Chain.fromList(2 :: 4 :: Nil)) == Chain.fromList((1, 2) :: (3, 4) :: Nil)
+    def zip05(): Bool = Chain.zip(List.toChain(1 :: 3 :: Nil), List.toChain(2 :: 4 :: Nil)) == List.toChain((1, 2) :: (3, 4) :: Nil)
 
     @test
-    def zip06(): Bool = Chain.zip(Chain.fromList(1 :: 3 :: 5 :: Nil), Chain.fromList(2 :: 4 :: 6 :: Nil)) == Chain.fromList((1, 2) :: (3, 4) :: (5, 6) :: Nil)
+    def zip06(): Bool = Chain.zip(List.toChain(1 :: 3 :: 5 :: Nil), List.toChain(2 :: 4 :: 6 :: Nil)) == List.toChain((1, 2) :: (3, 4) :: (5, 6) :: Nil)
 
     @test
-    def zip07(): Bool = Chain.zip(Chain.fromList(1 :: 3 :: 5 :: 7 :: Nil), Chain.fromList(2 :: 4 :: 6 :: 8 :: Nil)) == Chain.fromList((1, 2) :: (3, 4) :: (5, 6) :: (7, 8) :: Nil)
+    def zip07(): Bool = Chain.zip(List.toChain(1 :: 3 :: 5 :: 7 :: Nil), List.toChain(2 :: 4 :: 6 :: 8 :: Nil)) == List.toChain((1, 2) :: (3, 4) :: (5, 6) :: (7, 8) :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // zipWith                                                                 //
@@ -1139,9 +1139,9 @@ namespace TestChain {
     def zipWith05(): Bool = Chain.zipWith((a, b) -> if (b) a+1 else a, Chain.point(1), Chain.point(false)) == Chain.point(1)
 
     @test
-    def zipWith06(): Bool = Chain.zipWith((a, b) -> if (b) a+1 else a, Chain.fromList(1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil),
-                          Chain.fromList(false :: true :: true :: false :: false :: true :: true :: true :: Nil)) ==
-                          Chain.fromList(1 :: 3 :: 4 :: 4 :: 5 :: 7 :: 8 :: 9 :: Nil)
+    def zipWith06(): Bool = Chain.zipWith((a, b) -> if (b) a+1 else a, List.toChain(1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil),
+                          List.toChain(false :: true :: true :: false :: false :: true :: true :: true :: Nil)) ==
+                          List.toChain(1 :: 3 :: 4 :: 4 :: 5 :: 7 :: 8 :: 9 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // unzip                                                                   //
@@ -1154,11 +1154,11 @@ namespace TestChain {
     def unzip02(): Bool = Chain.unzip(Chain.point((1, true))) == (Chain.point(1), Chain.point(true))
     
     @test
-    def unzip03(): Bool = Chain.unzip(Chain.fromList((1, true) :: (2, true) :: Nil)) == (Chain.fromList(1 :: 2 :: Nil), Chain.fromList(true :: true :: Nil))
+    def unzip03(): Bool = Chain.unzip(List.toChain((1, true) :: (2, true) :: Nil)) == (List.toChain(1 :: 2 :: Nil), List.toChain(true :: true :: Nil))
     
     @test
-    def unzip04(): Bool = Chain.unzip(Chain.fromList((1, true) :: (2, true) :: (3, false) :: Nil)) ==
-                        (Chain.fromList(1 :: 2 :: 3 :: Nil), Chain.fromList(true :: true :: false :: Nil))
+    def unzip04(): Bool = Chain.unzip(List.toChain((1, true) :: (2, true) :: (3, false) :: Nil)) ==
+                        (List.toChain(1 :: 2 :: 3 :: Nil), List.toChain(true :: true :: false :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // mapAccumLeft                                                            //
@@ -1171,10 +1171,10 @@ namespace TestChain {
     def mapAccumLeft02(): Bool = Chain.mapAccumLeft((s, x) -> (s+1, x+s), 0, Chain.point(1)) == (1, Chain.point(1))
 
     @test
-    def mapAccumLeft03(): Bool = Chain.mapAccumLeft((s, x) -> (s+1, x+s), 0, Chain.fromList(1 :: 1 :: Nil)) == (2, Chain.fromList(1 :: 2 :: Nil))
+    def mapAccumLeft03(): Bool = Chain.mapAccumLeft((s, x) -> (s+1, x+s), 0, List.toChain(1 :: 1 :: Nil)) == (2, List.toChain(1 :: 2 :: Nil))
 
     @test
-    def mapAccumLeft04(): Bool = Chain.mapAccumLeft((s, x) -> (s+1, x+s), 0, Chain.fromList(1 :: 1 :: 1 :: Nil)) == (3, Chain.fromList(1 :: 2 :: 3 :: Nil))
+    def mapAccumLeft04(): Bool = Chain.mapAccumLeft((s, x) -> (s+1, x+s), 0, List.toChain(1 :: 1 :: 1 :: Nil)) == (3, List.toChain(1 :: 2 :: 3 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // mapAccumRight                                                           //
@@ -1187,10 +1187,10 @@ namespace TestChain {
     def mapAccumRight02(): Bool = Chain.mapAccumRight((s, x) -> (s+1, x+s), 0, Chain.point(1)) == (1, Chain.point(1))
 
     @test
-    def mapAccumRight03(): Bool = Chain.mapAccumRight((s, x) -> (s+1, x+s), 0, Chain.fromList(1 :: 1 :: Nil)) == (2, Chain.fromList(2 :: 1 :: Nil))
+    def mapAccumRight03(): Bool = Chain.mapAccumRight((s, x) -> (s+1, x+s), 0, List.toChain(1 :: 1 :: Nil)) == (2, List.toChain(2 :: 1 :: Nil))
 
     @test
-    def mapAccumRight04(): Bool = Chain.mapAccumRight((s, x) -> (s+1, x+s), 0, Chain.fromList(1 :: 1 :: 1 :: Nil)) == (3, Chain.fromList(3 :: 2 :: 1 :: Nil))
+    def mapAccumRight04(): Bool = Chain.mapAccumRight((s, x) -> (s+1, x+s), 0, List.toChain(1 :: 1 :: 1 :: Nil)) == (3, List.toChain(3 :: 2 :: 1 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // foreach                                                                 //
@@ -1205,31 +1205,11 @@ namespace TestChain {
     @test
     def foreach02(): Bool & Impure =
         let r = ref 21;
-        Chain.foreach(x -> r := x, Chain.fromList(1 :: 2 :: 3 :: Nil));
+        Chain.foreach(x -> r := x, List.toChain(1 :: 2 :: 3 :: Nil));
         3 == deref r
 
     /////////////////////////////////////////////////////////////////////////////
-    // toMutList                                                               //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def fromList01(): Bool =
-        Chain.fromList(Nil: List[Int]) == Chain.empty(): Chain[Int]
-
-    @test
-    def fromList02(): Bool =
-        Chain.fromList(1 :: Nil) == Chain.point(1)
-
-    @test
-    def fromList03(): Bool =
-        Chain.fromList(1 :: 2 :: Nil) == (1 `Chain.cons` (2 `Chain.cons` Chain.empty()))
-
-    @test
-    def fromList04(): Bool =
-        Chain.fromList(1 :: 2 :: 3 :: Nil) == (1 `Chain.cons` (2 `Chain.cons` (3 `Chain.cons` Chain.empty())))
-
-    /////////////////////////////////////////////////////////////////////////////
-    // toMutList                                                               //
+    // toList                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
@@ -1242,31 +1222,11 @@ namespace TestChain {
 
     @test
     def toList03(): Bool =
-        Chain.toList(Chain.fromList(1 :: 2 :: Nil)) == 1 :: 2 :: Nil
+        Chain.toList(List.toChain(1 :: 2 :: Nil)) == 1 :: 2 :: Nil
 
     @test
     def toList04(): Bool =
-        Chain.toList(Chain.fromList(1 :: 2 :: 3 :: Nil)) == 1 :: 2 :: 3 :: Nil
-
-    /////////////////////////////////////////////////////////////////////////////
-    // toMutList                                                               //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def fromMutList01(): Bool & Impure =
-        Chain.fromMutList(List.toMutList(Nil): MutList[Int]) == Chain.empty(): Chain[Int]
-
-    @test
-    def fromMutList02(): Bool & Impure =
-        Chain.fromMutList(List.toMutList(1 :: Nil)) == Chain.point(1)
-
-    @test
-    def fromMutList03(): Bool & Impure =
-        Chain.fromMutList(List.toMutList(1 :: 2 :: Nil)) == Chain.fromList(1 :: 2 :: Nil)
-
-    @test
-    def fromMutList04(): Bool & Impure =
-        Chain.fromMutList(List.toMutList(1 :: 2 :: 3 :: Nil)) == Chain.fromList(1 :: 2 :: 3 :: Nil)
+        Chain.toList(List.toChain(1 :: 2 :: 3 :: Nil)) == 1 :: 2 :: 3 :: Nil
 
     /////////////////////////////////////////////////////////////////////////////
     // toMutList                                                               //
@@ -1282,31 +1242,11 @@ namespace TestChain {
 
     @test
     def toMutList03(): Bool & Impure =
-        Chain.toMutList(Chain.fromList(1 :: 2 :: Nil)) == List.toMutList(1 :: 2 :: Nil)
+        Chain.toMutList(List.toChain(1 :: 2 :: Nil)) == List.toMutList(1 :: 2 :: Nil)
 
     @test
     def toMutList04(): Bool & Impure =
-        Chain.toMutList(Chain.fromList(1 :: 2 :: 3 :: Nil)) == List.toMutList(1 :: 2 :: 3 :: Nil)
-
-    /////////////////////////////////////////////////////////////////////////////
-    // fromSet                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def fromSet01(): Bool =
-        Chain.fromSet(Set#{}: Set[Int]) == Chain.empty(): Chain[Int]
-
-    @test
-    def fromSet02(): Bool =
-        Chain.fromSet(Set#{1}) == Chain.point(1)
-
-    @test
-    def fromSet03(): Bool =
-        Chain.fromSet(Set#{1, 2}) == Chain.fromList(1 :: 2 :: Nil)
-
-    @test
-    def fromSet04(): Bool =
-        Chain.fromSet(Set#{1, 2, 3}) == Chain.fromList(1 :: 2 :: 3 :: Nil)
+        Chain.toMutList(List.toChain(1 :: 2 :: 3 :: Nil)) == List.toMutList(1 :: 2 :: 3 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // toSet                                                                 //
@@ -1322,31 +1262,11 @@ namespace TestChain {
 
     @test
     def toSet03(): Bool =
-        Chain.toSet(Chain.fromList(1 :: 2 :: Nil)) == Set#{1, 2}
+        Chain.toSet(List.toChain(1 :: 2 :: Nil)) == Set#{1, 2}
 
     @test
     def toSet04(): Bool =
-        Chain.toSet(Chain.fromList(1 :: 2 :: 3 :: Nil)) == Set#{1, 2, 3}
-
-    /////////////////////////////////////////////////////////////////////////////
-    // fromMap                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def fromMap01(): Bool =
-        Chain.fromMap(Map#{}: Map[Int, Int]) == Chain.empty(): Chain[(Int, Int)]
-
-    @test
-    def fromMap02(): Bool =
-        Chain.fromMap(Map#{1 -> 1}) == Chain.point((1, 1))
-
-    @test
-    def fromMap03(): Bool =
-        Chain.fromMap(Map#{1 -> 1, 2 -> 2}) == Chain.fromList((1, 1) :: (2, 2) :: Nil)
-
-    @test
-    def fromMap04(): Bool =
-        Chain.fromMap(Map#{1 -> 1, 2 -> 2, 3 -> 3}) == Chain.fromList((1, 1) :: (2, 2) :: (3, 3) :: Nil)
+        Chain.toSet(List.toChain(1 :: 2 :: 3 :: Nil)) == Set#{1, 2, 3}
 
     /////////////////////////////////////////////////////////////////////////////
     // toMap                                                                   //
@@ -1362,11 +1282,11 @@ namespace TestChain {
 
     @test
     def toMap03(): Bool =
-        Chain.toMap(Chain.fromList((1, 1) :: (2, 2) :: Nil)) == Map#{1 -> 1, 2 -> 2}
+        Chain.toMap(List.toChain((1, 1) :: (2, 2) :: Nil)) == Map#{1 -> 1, 2 -> 2}
 
     @test
     def toMap04(): Bool =
-        Chain.toMap(Chain.fromList((1, 1) :: (2, 2) :: (3, 3) :: Nil)) == Map#{1 -> 1, 2 -> 2, 3 -> 3}
+        Chain.toMap(List.toChain((1, 1) :: (2, 2) :: (3, 3) :: Nil)) == Map#{1 -> 1, 2 -> 2, 3 -> 3}
 
     /////////////////////////////////////////////////////////////////////////////
     // toArray                                                                 //
@@ -1385,33 +1305,13 @@ namespace TestChain {
 
     @test
     def toArray03(): Bool & Impure =
-        let a = Chain.toArray(Chain.fromList(1 :: 2 :: Nil));
+        let a = Chain.toArray(List.toChain(1 :: 2 :: Nil));
         Array.sameElements(a, [1,2])
 
     @test
     def toArray04(): Bool & Impure =
-        let a = Chain.toArray(Chain.fromList(1 :: 2 :: 3 :: Nil));
+        let a = Chain.toArray(List.toChain(1 :: 2 :: 3 :: Nil));
         Array.sameElements(a, [1,2,3])
-
-    /////////////////////////////////////////////////////////////////////////////
-    // fromArray                                                               //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def fromArray01(): Bool & Impure =
-        Chain.fromArray([]: Array[Unit]) == Chain.empty(): Chain[Unit]
-
-    @test
-    def fromArray02(): Bool & Impure =
-        Chain.fromArray([1]) == Chain.point(1)
-
-    @test
-    def fromArray03(): Bool & Impure =
-        Chain.fromArray([1,2]) == Chain.fromList(1 :: 2 :: Nil)
-
-    @test
-    def fromArray04(): Bool & Impure =
-        Chain.fromArray([1,2,3]) == Chain.fromList(1 :: 2 :: 3 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // sort                                                                    //
@@ -1427,25 +1327,25 @@ namespace TestChain {
     def sort02(): Bool = testSortVsSortWith(Chain.point(0))
 
     @test
-    def sort03(): Bool = testSortVsSortWith(Chain.fromList(0 :: 1 :: Nil))
+    def sort03(): Bool = testSortVsSortWith(List.toChain(0 :: 1 :: Nil))
 
     @test
-    def sort04(): Bool = testSortVsSortWith(Chain.fromList(1 :: 0 :: Nil))
+    def sort04(): Bool = testSortVsSortWith(List.toChain(1 :: 0 :: Nil))
 
     @test
-    def sort05(): Bool = testSortVsSortWith(Chain.fromList(1 :: 1 :: Nil))
+    def sort05(): Bool = testSortVsSortWith(List.toChain(1 :: 1 :: Nil))
 
     @test
-    def sort06(): Bool = testSortVsSortWith(Chain.fromList(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil))
+    def sort06(): Bool = testSortVsSortWith(List.toChain(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil))
 
     @test
-    def sort07(): Bool = testSortVsSortWith(Chain.fromList(5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil))
+    def sort07(): Bool = testSortVsSortWith(List.toChain(5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil))
 
     @test
-    def sort08(): Bool = testSortVsSortWith(Chain.fromList(5 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
+    def sort08(): Bool = testSortVsSortWith(List.toChain(5 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
 
     @test
-    def sort09(): Bool = testSortVsSortWith(Chain.fromList(2 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
+    def sort09(): Bool = testSortVsSortWith(List.toChain(2 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // sortBy                                                                  //
@@ -1463,25 +1363,25 @@ namespace TestChain {
     def sortBy02(): Bool = testSortByVsSort(Chain.point(0))
 
     @test
-    def sortBy03(): Bool = testSortByVsSort(Chain.fromList(0 :: 1 :: Nil))
+    def sortBy03(): Bool = testSortByVsSort(List.toChain(0 :: 1 :: Nil))
 
     @test
-    def sortBy04(): Bool = testSortByVsSort(Chain.fromList(1 :: 0 :: Nil))
+    def sortBy04(): Bool = testSortByVsSort(List.toChain(1 :: 0 :: Nil))
 
     @test
-    def sortBy05(): Bool = testSortByVsSort(Chain.fromList(1 :: 1 :: Nil))
+    def sortBy05(): Bool = testSortByVsSort(List.toChain(1 :: 1 :: Nil))
 
     @test
-    def sortBy06(): Bool = testSortByVsSort(Chain.fromList(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil))
+    def sortBy06(): Bool = testSortByVsSort(List.toChain(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil))
 
     @test
-    def sortBy07(): Bool = testSortByVsSort(Chain.fromList(5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil))
+    def sortBy07(): Bool = testSortByVsSort(List.toChain(5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil))
 
     @test
-    def sortBy08(): Bool = testSortByVsSort(Chain.fromList(5 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
+    def sortBy08(): Bool = testSortByVsSort(List.toChain(5 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
 
     @test
-    def sortBy09(): Bool = testSortByVsSort(Chain.fromList(2 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
+    def sortBy09(): Bool = testSortByVsSort(List.toChain(2 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // sortWith                                                                //
@@ -1502,47 +1402,47 @@ namespace TestChain {
 
     @test
     def sortWith03(): Bool =
-        Chain.sortWith(cmp, Chain.fromList(0 :: 1 :: Nil)) == Chain.fromList(0 :: 1 :: Nil)
+        Chain.sortWith(cmp, List.toChain(0 :: 1 :: Nil)) == List.toChain(0 :: 1 :: Nil)
 
     @test
     def sortWith04(): Bool =
-        Chain.sortWith(cmp, Chain.fromList(1 :: 0 :: Nil)) == Chain.fromList(0 :: 1 :: Nil)
+        Chain.sortWith(cmp, List.toChain(1 :: 0 :: Nil)) == List.toChain(0 :: 1 :: Nil)
 
     @test
     def sortWith05(): Bool =
-        Chain.sortWith(cmp, Chain.fromList(1 :: 1 :: Nil)) == Chain.fromList(1 :: 1 :: Nil)
+        Chain.sortWith(cmp, List.toChain(1 :: 1 :: Nil)) == List.toChain(1 :: 1 :: Nil)
 
     @test
     def sortWith06(): Bool =
-        Chain.sortWith(cmp, Chain.fromList(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil)) == Chain.fromList(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil)
+        Chain.sortWith(cmp, List.toChain(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil)) == List.toChain(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil)
 
     @test
     def sortWith07(): Bool =
-        Chain.sortWith(cmp, Chain.fromList(5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil)) == Chain.fromList(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil)
+        Chain.sortWith(cmp, List.toChain(5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil)) == List.toChain(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil)
 
     @test
     def sortWith08(): Bool =
-        Chain.sortWith(cmp, Chain.fromList(5 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil)) == Chain.fromList(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil)
+        Chain.sortWith(cmp, List.toChain(5 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil)) == List.toChain(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil)
 
     @test
     def sortWith09(): Bool =
-        Chain.sortWith(cmp, Chain.fromList(2 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil)) == Chain.fromList(0 :: 1 :: 2 :: 2 :: 3 :: 4 :: Nil)
+        Chain.sortWith(cmp, List.toChain(2 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil)) == List.toChain(0 :: 1 :: 2 :: 2 :: 3 :: 4 :: Nil)
 
     @test
     def sortWith10(): Bool =
-        Chain.sortWith(flip(cmp), Chain.fromList(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil)) == Chain.fromList(5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil)
+        Chain.sortWith(flip(cmp), List.toChain(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil)) == List.toChain(5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil)
 
     @test
     def sortWith11(): Bool =
-        Chain.sortWith(flip(cmp), Chain.fromList(5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil)) == Chain.fromList(5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil)
+        Chain.sortWith(flip(cmp), List.toChain(5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil)) == List.toChain(5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil)
 
     @test
     def sortWith12(): Bool =
-        Chain.sortWith(flip(cmp), Chain.fromList(5 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil)) == Chain.fromList(5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil)
+        Chain.sortWith(flip(cmp), List.toChain(5 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil)) == List.toChain(5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil)
 
     @test
     def sortWith13(): Bool =
-        Chain.sortWith(flip(cmp), Chain.fromList(2 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil)) == Chain.fromList(4 :: 3 :: 2 :: 2 :: 1 :: 0 :: Nil)
+        Chain.sortWith(flip(cmp), List.toChain(2 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil)) == List.toChain(4 :: 3 :: 2 :: 2 :: 1 :: 0 :: Nil)
 
 
 }

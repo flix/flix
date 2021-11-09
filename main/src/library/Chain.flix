@@ -85,33 +85,17 @@ namespace Chain {
     ///
     /// A datatype for pattern matching on a chain (traversing left-to-right).
     ///
-    pub enum ViewLeft[t] {
+    pub enum ViewLeft[t] with Eq {
         case NoneLeft
         case SomeLeft(t, Chain[t])
-    }
-
-    instance Eq[ViewLeft[a]] with Eq[a] {
-        pub def eq(xs: ViewLeft[a], ys: ViewLeft[a]): Bool = match (xs, ys) {
-            case (NoneLeft, NoneLeft)                   => true
-            case (SomeLeft(x1, xs1), SomeLeft(y1, ys1)) => x1 == y1 and xs1 == ys1
-            case (_, _)                                 => false
-        }
     }
 
     ///
     /// A datatype for pattern matching on a chain (traversing right-to-left).
     ///
-    pub enum ViewRight[t] {
+    pub enum ViewRight[t] with Eq {
         case NoneRight
         case SomeRight(Chain[t], t)
-    }
-
-    instance Eq[ViewRight[a]] with Eq[a] {
-        pub def eq(xs: ViewRight[a], ys: ViewRight[a]): Bool = match (xs, ys) {
-            case (NoneRight, NoneRight)                   => true
-            case (SomeRight(xs1, x1), SomeRight(ys1, y1)) => x1 == y1 and xs1 == ys1
-            case (_, _)                                   => false
-        }
     }
 
     ///
@@ -157,7 +141,7 @@ namespace Chain {
     }
 
     ///
-    /// Add element `x` to the left end of Chain `xs`.
+    /// Add element `x` to the right end of Chain `xs`.
     ///
     pub def snoc(xs: Chain[a], x: a): Chain[a] = match xs {
         case Empty => One(x)
@@ -779,18 +763,6 @@ namespace Chain {
         foldRight((x,ac) -> x :: ac, Nil, xs)
 
     ///
-    /// Returns the list `xs` as a chain.
-    ///
-    pub def fromList(xs: List[a]): Chain[a] =
-        List.foldLeft(snoc, empty(), xs)
-
-    ///
-    /// Returns the mutable list `xs` as a chain.
-    ///
-    pub def fromMutList(xs: MutList[a]): Chain[a] & Impure =
-        MutList.foldLeft((ac, x) -> snoc(ac, x), empty(), xs)
-
-    ///
     /// Returns `xs` as a mutable list.
     ///
     pub def toMutList(xs: Chain[a]): MutList[a] & Impure =
@@ -801,31 +773,15 @@ namespace Chain {
     ///
     pub def toSet(xs: Chain[a]): Set[a] with Order[a] = foldRight(Set.insert, Set.empty(), xs)
 
-    ///
-    /// Returns the set `s` as a chain.
-    ///
-    pub def fromSet(s: Set[a]): Chain[a] =
-        Set.foldLeft((ac, x) -> snoc(ac, x), empty(), s)
 
     ///
-    /// Returns the Map `m` as a chain of key-value pairs.
-    ///
-    pub def fromMap(m: Map[a, b]): Chain[(a, b)] with Order[a] =
-        Map.foldLeftWithKey((acc, k, v) -> snoc(acc, (k,v)), empty(), m)
-
-    ///
-    /// Returns the association list `xs` as a map.
+    /// Returns the chain of pairs `xs` that represents an association list as a map.
     ///
     /// If `xs` contains multiple mappings with the same key, `toMap` does not
     /// make any guarantees about which mapping will be in the resulting map.
     ///
     pub def toMap(xs: Chain[(a, b)]): Map[a, b] with Order[a] = foldRight((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), xs)
 
-    ///
-    /// Returns the array `xs` as a chain.
-    ///
-    pub def fromArray(xs: Array[a]): Chain[a] & Impure =
-        Array.foldLeft(snoc, empty(), xs)
 
     ///
     /// Returns the chain `xs` as an array.
@@ -866,7 +822,7 @@ namespace Chain {
     /// The sort implementation is a Quicksort.
     ///
     pub def sort(xs: Chain[a]): Chain[a] with Order[a] =
-        (xs |> toArray |> Array.sort |> fromArray) as & Pure
+        (xs |> toArray |> Array.sort |> Array.toChain) as & Pure
 
     /// Sort chain `xs` so that elements are ordered from low to high according to the `Order` instance
     /// for the values obtained by applying `f` to each element.
@@ -876,7 +832,7 @@ namespace Chain {
     /// The sort implementation is a Quicksort.
     ///
     pub def sortBy(f: a -> b, xs: Chain[a]): Chain[a] with Order[b] =
-        (xs |> toArray |> Array.sortBy(f) |> fromArray) as & Pure
+        (xs |> toArray |> Array.sortBy(f) |> Array.toChain) as & Pure
 
     ///
     /// Sort chain `xs` so that elements are ordered from low to high according to the comparison function `cmp`.
@@ -886,6 +842,6 @@ namespace Chain {
     /// The sort implementation is a Quicksort.
     ///
     pub def sortWith(cmp: (a,a) -> Comparison, xs: Chain[a]): Chain[a] =
-        (xs |> toArray |> Array.sortWith(cmp) |> fromArray) as & Pure
+        (xs |> toArray |> Array.sortWith(cmp) |> Array.toChain) as & Pure
 
 }
