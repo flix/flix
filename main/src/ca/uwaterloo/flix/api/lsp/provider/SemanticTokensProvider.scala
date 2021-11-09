@@ -18,9 +18,8 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.lsp._
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, TypeConstraint}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Constraint, Expression, FormalParam, MatchRule, Pattern, Root, SelectChannelRule, TypeParam}
+import ca.uwaterloo.flix.language.ast.TypedAst._
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
@@ -442,6 +441,10 @@ object SemanticTokensProvider {
 
     case Expression.ReifyType(t, _, _, _, _) => visitType(t)
 
+    case Expression.ReifyEff(sym, exp1, exp2, exp3, tpe, eff, loc) =>
+      val o = getSemanticTokenType(sym, exp1.tpe)
+      val t = SemanticToken(o, Nil, sym.loc)
+      Iterator(t) ++ visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
   }
 
   /**

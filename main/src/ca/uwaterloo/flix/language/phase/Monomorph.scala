@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.Ast.Modifiers
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Kind, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.ReificationError
@@ -510,6 +511,25 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
             case Kind.Bool => reifyBool(subst0(t), loc)
             case Kind.Star => reifyType(subst0(t), loc)
             case _ => throw InternalCompilerException(s"Unexpected kind: $k.")
+          }
+
+        case Expression.ReifyEff(sym, exp1, exp2, exp3, tpe, eff, loc) =>
+          // Magic!
+          val isPure = subst0(exp1.tpe).arrowEffectType match {
+            case Type.Cst(TypeConstructor.True, _) => true
+            case _ => false
+          }
+
+          if (isPure) {
+            // Generate a fresh symbol for the let-bound variable.
+            val freshSym = Symbol.freshVarSym(sym)
+            val env1 = env0 + (sym -> freshSym)
+
+            val e1 = visitExp(exp1, env0)
+            val e2 = visitExp(exp2, env1)
+            Expression.Let(freshSym, Modifiers.Empty, e1, e2, e2.tpe, e2.eff, loc)
+          } else {
+            visitExp(exp3, env0)
           }
       }
 

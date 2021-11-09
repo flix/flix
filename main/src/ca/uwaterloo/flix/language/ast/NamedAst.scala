@@ -212,6 +212,8 @@ object NamedAst {
 
     case class ReifyType(t: NamedAst.Type, k: Kind, loc: SourceLocation) extends NamedAst.Expression
 
+    case class ReifyEff(sym: Symbol.VarSym, exp1: NamedAst.Expression, exp2: NamedAst.Expression, exp3: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+
   }
 
   sealed trait Pattern {
@@ -396,7 +398,9 @@ object NamedAst {
 
   sealed trait TypeParam {
     def name: Name.Ident
+
     def tpe: ast.Type.UnkindedVar
+
     def loc: SourceLocation
   }
 
