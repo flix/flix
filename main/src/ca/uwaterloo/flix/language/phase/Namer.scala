@@ -894,6 +894,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case t => NamedAst.Expression.ReifyType(t, k, loc)
       }
 
+    case WeededAst.Expression.ReifyEff(ident, exp1, exp2, exp3, loc) =>
+      val sym = Symbol.freshVarSym(ident, Scopedness.Unscoped, BoundBy.Let)
+      mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0 + (ident.name -> sym), uenv0, tenv0), visitExp(exp3, env0, uenv0, tenv0)) {
+        case (e1, e2, e3) => NamedAst.Expression.ReifyEff(sym, e1, e2, e3, loc)
+      }
+
   }
 
   /**

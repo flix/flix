@@ -216,10 +216,14 @@ namespace LazyList {
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
     pub def map(f: a -> b & ef, l: LazyList[a]): LazyList[b] & ef =
-        if (reify ef)
-            mapL(f as a -> b & Pure,   l)
-        else
-            mapE(f as a -> b & Impure, l) as & ef
+        reifyEff f {
+            case Pure(g) => mapL(g, l)
+            case _       => mapE(f, l)
+        }
+        //if (reify ef)
+        //    mapL(f as a -> b & Pure,   l)
+        //else
+        //    mapE(f as a -> b & Impure, l) as & ef
 
     ///
     /// Returns the result of applying `f` to every element in `l`.
@@ -250,13 +254,13 @@ namespace LazyList {
     ///
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
-    def mapE(f: a -> b & Impure, l: LazyList[a]): LazyList[b] & Impure =
+    def mapE(f: a -> b & ef, l: LazyList[a]): LazyList[b] & ef =
         mapEAcc(f, l, ks -> ks)
 
     ///
     /// Helper function for `mapE`.
     ///
-    def mapEAcc(f: a -> b & Impure, l: LazyList[a], k: LazyList[b] -> LazyList[b]): LazyList[b] & Impure = match l {
+    def mapEAcc(f: a -> b & ef, l: LazyList[a], k: LazyList[b] -> LazyList[b]): LazyList[b] & ef = match l {
         case ENil         => k(ENil)
         case ECons(x, xs) =>
             let x1 = f(x);
