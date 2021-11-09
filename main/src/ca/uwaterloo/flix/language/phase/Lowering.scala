@@ -1504,6 +1504,12 @@ object Lowering extends Phase[Root, Root] {
     case Expression.ReifyType(t, k, tpe, eff, loc) =>
       Expression.ReifyType(t, k, tpe, eff, loc)
 
+    case Expression.ReifyEff(sym, exp1, exp2, exp3, tpe, eff, loc) =>
+      val e1 = substExp(exp1, subst)
+      val e2 = substExp(exp2, subst)
+      val e3 = substExp(exp3, subst)
+      Expression.ReifyEff(sym, e1, e2, e3, tpe, eff, loc)
+
     case Expression.FixpointConstraintSet(cs, stf, tpe, loc) => throw InternalCompilerException(s"Unexpected expression near ${loc.format}.")
   }
 
