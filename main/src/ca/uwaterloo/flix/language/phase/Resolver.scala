@@ -991,6 +991,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             t <- resolveType(t0, taenv, ns0, root)
           } yield ResolvedAst.Expression.ReifyType(t, k, loc)
 
+        case NamedAst.Expression.ReifyEff(sym, exp1, exp2, exp3, loc) =>
+          for {
+            e1 <- visit(exp1, tenv0)
+            e2 <- visit(exp2, tenv0)
+            e3 <- visit(exp3, tenv0)
+          } yield ResolvedAst.Expression.ReifyEff(sym, e1, e2, e3, loc)
 
       }
 
