@@ -199,6 +199,14 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       ("name" -> sym.name) ~
       ("loc" -> visitSourceLocation(sym.loc))
 
+  /**
+    * Returns the given sig symbol `sym` as a JSON value.
+    */
+  private def visitSigSym(sym: Symbol.SigSym): JObject =
+    ("classSym" -> visitClassSym(sym.clazz)) ~
+      ("name" -> sym.name) ~
+      ("loc" -> visitSourceLocation(sym.loc))
+
   // TODO: Visit the other symbols.
 
   /**
