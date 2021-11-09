@@ -196,6 +196,8 @@ object KindedAst {
 
     case class ReifyType(t: Type, k: Kind, loc: SourceLocation) extends KindedAst.Expression
 
+    case class ReifyEff(sym: Symbol.VarSym, exp1: KindedAst.Expression, exp2: KindedAst.Expression, exp3: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
+
   }
 
   sealed trait Pattern {
