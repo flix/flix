@@ -216,10 +216,10 @@ namespace LazyList {
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
     pub def map(f: a -> b & ef, l: LazyList[a]): LazyList[b] & ef =
-        if (reify ef)
-            mapL(f as a -> b & Pure,   l)
-        else
-            mapE(f as a -> b & Impure, l) as & ef
+        reifyEff(f) {
+            case Pure(g) => mapL(g, l)
+            case _       => mapE(f, l)
+        }
 
     ///
     /// Returns the result of applying `f` to every element in `l`.
@@ -250,13 +250,13 @@ namespace LazyList {
     ///
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
-    def mapE(f: a -> b & Impure, l: LazyList[a]): LazyList[b] & Impure =
+    def mapE(f: a -> b & ef, l: LazyList[a]): LazyList[b] & ef =
         mapEAcc(f, l, ks -> ks)
 
     ///
     /// Helper function for `mapE`.
     ///
-    def mapEAcc(f: a -> b & Impure, l: LazyList[a], k: LazyList[b] -> LazyList[b]): LazyList[b] & Impure = match l {
+    def mapEAcc(f: a -> b & ef, l: LazyList[a], k: LazyList[b] -> LazyList[b]): LazyList[b] & ef = match l {
         case ENil         => k(ENil)
         case ECons(x, xs) =>
             let x1 = f(x);
@@ -277,10 +277,10 @@ namespace LazyList {
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
     pub def filter(f: a -> Bool & ef, l: LazyList[a]): LazyList[a] & ef =
-        if (reify ef)
-            filterL(f as a -> Bool & Pure,   l)
-        else
-            filterE(f as a -> Bool & Impure, l) as & ef
+        reifyEff(f) {
+            case Pure(g) => filterL(g, l)
+            case _       => filterE(f, l)
+        }
 
     ///
     /// Returns a lazy list of every element in `l` that satisfies the predicate `f`.
@@ -299,13 +299,13 @@ namespace LazyList {
     ///
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
-    def filterE(f: a -> Bool & Impure, l: LazyList[a]): LazyList[a] & Impure =
+    def filterE(f: a -> Bool & ef, l: LazyList[a]): LazyList[a] & ef =
         filterEAcc(f, l, ks -> ks)
 
     ///
     /// Helper function for `filterE`
     ///
-    def filterEAcc(f: a -> Bool & Impure, l: LazyList[a], k: LazyList[a] -> LazyList[a]): LazyList[a] & Impure = match l {
+    def filterEAcc(f: a -> Bool & ef, l: LazyList[a], k: LazyList[a] -> LazyList[a]): LazyList[a] & ef = match l {
         case ENil         => k(ENil)
         case ECons(x, xs) => if (f(x)) filterEAcc(f,       xs, ks -> k(ECons(x, ks))) else filterEAcc(f,       xs, k)
         case LCons(x, xs) => if (f(x)) filterEAcc(f, force xs, ks -> k(ECons(x, ks))) else filterEAcc(f, force xs, k)

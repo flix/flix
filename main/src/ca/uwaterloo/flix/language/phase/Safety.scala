@@ -244,6 +244,9 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.ReifyType(_, _, _, _, _) => Nil
 
+    case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+
   }
 
   /**
