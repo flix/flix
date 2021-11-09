@@ -1493,8 +1493,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Returns the class reflection object for the given `className`.
     */
   // TODO: Deprecated should be moved to resolver.
-  private def lookupClass(className: String, loc: SourceLocation): Validation[Class[_], NameError] = try {
-    Class.forName(className).toSuccess
+  private def lookupClass(className: String, loc: SourceLocation)(implicit flix: Flix): Validation[Class[_], NameError] = try {
+    Class.forName(className, true, flix.classLoader).toSuccess
   } catch {
     case ex: ClassNotFoundException => NameError.UndefinedNativeClass(className, loc).toFailure
   }

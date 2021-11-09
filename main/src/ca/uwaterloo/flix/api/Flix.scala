@@ -25,6 +25,7 @@ import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt.TerminalContext
 
+import java.net.URLClassLoader
 import java.nio.charset.Charset
 import java.nio.file.{Files, Path, Paths}
 import scala.collection.mutable
@@ -49,6 +50,11 @@ class Flix {
     * A sequence of inputs to be parsed into Flix ASTs.
     */
   private val inputs = ListBuffer.empty[Input]
+
+  /**
+    * A class loader for loading JARs.
+    */
+  val classLoader = new AppendableClassLoader // MATT move to public section ?
 
   /**
     * A set of reachable root definitions.
@@ -294,6 +300,22 @@ class Flix {
       throw new IllegalArgumentException(s"'$p' must a readable file.")
 
     paths += p
+    this
+  }
+
+  // MATT docs
+  def addJar(p: Path): Flix = {
+    if (p == null)
+      throw new IllegalArgumentException(s"'p' must be non-null.")
+    if (!Files.exists(p))
+      throw new IllegalArgumentException(s"'$p' must a file.")
+    if (!Files.isRegularFile(p))
+      throw new IllegalArgumentException(s"'$p' must a regular file.")
+    if (!Files.isReadable(p))
+      throw new IllegalArgumentException(s"'$p' must a readable file.")
+    // MATT check that it's a jar
+
+    classLoader.addURL(p.toUri.toURL)
     this
   }
 
