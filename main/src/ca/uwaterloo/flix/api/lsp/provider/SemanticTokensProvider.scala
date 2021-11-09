@@ -53,7 +53,7 @@ object SemanticTokensProvider {
     //
     val instanceTokens = root.instances.values.flatMap {
       case instances => instances.flatMap {
-        case instance if include(uri, instance.loc) => visitInstance(instance)
+        case instance if include(uri, instance.sym.loc) => visitInstance(instance)
         case _ => Nil
       }
     }
@@ -139,7 +139,7 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given instance `inst0`.
     */
   private def visitInstance(inst0: TypedAst.Instance): Iterator[SemanticToken] = inst0 match {
-    case TypedAst.Instance(_, _, sym, tpe, tconstrs, defs, _, _) =>
+    case TypedAst.Instance(_, _, sym, tpe, tconstrs, defs, _) =>
       // NB: we use SemanticTokenType.Class because the OOP "Class" most directly corresponds to the FP "Instance"
       val t = SemanticToken(SemanticTokenType.Class, Nil, sym.loc)
       val st1 = Iterator(t)

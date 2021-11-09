@@ -90,9 +90,9 @@ object LocationLink {
     */
   def fromInstance(instance: TypedAst.Instance, originLoc: SourceLocation): LocationLink = {
     val originSelectionRange = Range.from(originLoc)
-    val targetUri = instance.loc.source.name
-    val targetRange = Range.from(instance.loc)
-    val targetSelectionRange = Range.from(instance.loc)
+    val targetUri = instance.sym.loc.source.name
+    val targetRange = Range.from(instance.sym.loc)
+    val targetSelectionRange = Range.from(instance.sym.loc)
     LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
   }
 

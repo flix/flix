@@ -34,6 +34,6 @@ object ImplementationProvider {
         || (i.loc.beginLine == position.line && i.loc.beginCol <= position.character))
       && (i.loc.endLine > position.line
         || (i.loc.endLine == position.line && i.loc.endCol >= position.character))
-    ).flatMap(c => root.instances.getOrElse(c, Nil).map(c => LocationLink.fromInstance(c, c.loc))).toList
+    ).flatMap(c => root.instances.getOrElse(c, Nil).map(c => LocationLink.fromInstance(c, c.sym.loc))).toList
   }
 }

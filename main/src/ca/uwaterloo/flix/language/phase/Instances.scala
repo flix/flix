@@ -80,13 +80,13 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
       * * The same namespace as its type.
       */
     def checkOrphan(inst: TypedAst.Instance): Validation[Unit, InstanceError] = inst match {
-      case TypedAst.Instance(_, _, sym, tpe, _, _, ns, loc) => tpe.typeConstructor match {
+      case TypedAst.Instance(_, _, sym, tpe, _, _, ns) => tpe.typeConstructor match {
         // Case 1: Enum type in the same namespace as the instance: not an orphan
         case Some(TypeConstructor.KindedEnum(enumSym, _)) if enumSym.namespace == ns.idents.map(_.name) => ().toSuccess
         // Case 2: Any type in the class namespace: not an orphan
         case _ if (sym.clazz.namespace) == ns.idents.map(_.name) => ().toSuccess
         // Case 3: Any type outside the class companion namespace and enum declaration namespace: orphan
-        case _ => InstanceError.OrphanInstance(tpe, sym, loc).toFailure
+        case _ => InstanceError.OrphanInstance(tpe, sym, sym.loc).toFailure
       }
     }
 
@@ -96,23 +96,23 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
       * * all type arguments are variables
       */
     def checkSimple(inst: TypedAst.Instance): Validation[Unit, InstanceError] = inst match {
-      case TypedAst.Instance(_, _, sym, tpe, _, _, _, loc) => tpe match {
+      case TypedAst.Instance(_, _, sym, tpe, _, _, _) => tpe match {
         case _: Type.Cst => ().toSuccess
-        case _: Type.KindedVar => InstanceError.ComplexInstanceType(tpe, sym, loc).toFailure
+        case _: Type.KindedVar => InstanceError.ComplexInstanceType(tpe, sym, sym.loc).toFailure
         case _: Type.Apply =>
           Validation.fold(tpe.typeArguments, List.empty[Type.KindedVar]) {
             // Case 1: Type variable
             case (seen, tvar: Type.KindedVar) =>
               // Case 1.1 We've seen it already. Error.
               if (seen.contains(tvar))
-                InstanceError.DuplicateTypeVariableOccurrence(tvar, sym, loc).toFailure
+                InstanceError.DuplicateTypeVariableOccurrence(tvar, sym, sym.loc).toFailure
               // Case 1.2 We haven't seen it before. Add it to the list.
               else
                 (tvar :: seen).toSuccess
             // Case 2: Non-type variable. Error.
-            case (_, _) => InstanceError.ComplexInstanceType(tpe, sym, loc).toFailure
+            case (_, _) => InstanceError.ComplexInstanceType(tpe, sym, sym.loc).toFailure
           }.map(_ => ())
-        case Type.Alias(alias, _, _, _) => InstanceError.IllegalTypeAliasInstance(alias.sym, sym, loc).toFailure
+        case Type.Alias(alias, _, _, _) => InstanceError.IllegalTypeAliasInstance(alias.sym, sym, sym.loc).toFailure
         case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type.")
         case _: Type.Ascribe => throw InternalCompilerException("Unexpected ascribe type.")
       }
@@ -125,8 +125,8 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
       Unification.unifyTypes(inst1.tpe, inst2.tpe) match {
         case Ok(_) =>
           Validation.Failure(LazyList(
-            InstanceError.OverlappingInstances(inst1.loc, inst2.loc),
-            InstanceError.OverlappingInstances(inst2.loc, inst1.loc)
+            InstanceError.OverlappingInstances(inst1.sym.loc, inst2.sym.loc),
+            InstanceError.OverlappingInstances(inst2.sym.loc, inst1.sym.loc)
           ))
         case Err(_) => ().toSuccess
       }
@@ -143,7 +143,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
         sig =>
           (inst.defs.find(_.sym.name == sig.sym.name), sig.impl) match {
             // Case 1: there is no definition with the same name, and no default implementation
-            case (None, None) => InstanceError.MissingImplementation(sig.sym, inst.loc).toFailure
+            case (None, None) => InstanceError.MissingImplementation(sig.sym, inst.sym.loc).toFailure
             // Case 2: there is no definition with the same name, but there is a default implementation
             case (None, Some(_)) => ().toSuccess
             // Case 3: there is an implementation marked override, but no default implementation
@@ -178,7 +178,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
       * Checks that there is an instance for each super class of the class of `inst`.
       */
     def checkSuperInstances(inst: TypedAst.Instance): Validation[Unit, InstanceError] = inst match {
-      case TypedAst.Instance(_, _, sym, tpe, _, _, _, loc) =>
+      case TypedAst.Instance(_, _, sym, tpe, _, _, _) =>
         val superClasses = root.classEnv(sym.clazz).superClasses
         Validation.traverseX(superClasses) {
           superClass =>
@@ -189,7 +189,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
               ().toSuccess
             } else {
               // Case 2: No instance matches. Error.
-              InstanceError.MissingSuperClassInstance(tpe, sym, superClass, loc).toFailure
+              InstanceError.MissingSuperClassInstance(tpe, sym, superClass, sym.loc).toFailure
             }
         }
     }

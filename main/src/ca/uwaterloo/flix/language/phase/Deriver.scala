@@ -111,8 +111,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
         tpe = sc.base,
         tconstrs = tconstrs,
         defs = List(defn),
-        ns = Name.RootNS,
-        loc = loc
+        ns = Name.RootNS
       )
   }
 
@@ -257,8 +256,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
         tpe = sc.base,
         tconstrs = tconstrs,
         defs = List(defn),
-        ns = Name.RootNS,
-        loc = loc
+        ns = Name.RootNS
       )
   }
 
@@ -454,8 +452,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
         tpe = sc.base,
         tconstrs = tconstrs,
         defs = List(defn),
-        ns = Name.RootNS,
-        loc = loc
+        ns = Name.RootNS
       )
   }
 
@@ -588,8 +585,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
         tpe = sc.base,
         tconstrs = tconstrs,
         defs = List(defn),
-        ns = Name.RootNS,
-        loc = loc
+        ns = Name.RootNS
       )
   }
 
@@ -707,8 +703,7 @@ object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
         tpe = sc.base,
         tconstrs = Nil,
         defs = Nil,
-        ns = Name.RootNS,
-        loc = loc
+        ns = Name.RootNS
       )
   }
 

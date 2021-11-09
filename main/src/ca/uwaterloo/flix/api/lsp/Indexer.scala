@@ -91,8 +91,8 @@ object Indexer {
     * Returns a reverse index for the given instance `instance0`.
     */
   private def visitInstance(instance0: Instance): Index = instance0 match {
-    case Instance(_, _, sym, tpe, _, defs, _, loc) =>
-      val idx1 = Index.useOf(sym.clazz, loc)
+    case Instance(_, _, sym, tpe, _, defs, _) =>
+      val idx1 = Index.useOf(sym.clazz, sym.loc)
       val idx2 = visitType(tpe)
       val idx3 = defs.foldLeft(Index.empty) {
         case (acc, defn) => visitDef(defn)
