@@ -67,7 +67,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
       case (classSym, clazz) =>
         val instances = instances0.getOrElse(classSym, Nil)
         val envInsts = instances.map {
-          case KindedAst.Instance(_, _, _, tpe, tconstrs, _, _) => Ast.Instance(tpe, tconstrs)
+          case KindedAst.Instance(_, _, _, tpe, tconstrs, _, _, _) => Ast.Instance(tpe, tconstrs)
         }
         // ignore the super class parameters since they should all be the same as the class param
         val superClasses = clazz.superClasses.map(_.sym)
@@ -109,10 +109,10 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
       * Reassembles a single instance.
       */
     def visitInstance(inst: KindedAst.Instance): Validation[TypedAst.Instance, TypeError] = inst match {
-      case KindedAst.Instance(doc, mod, sym, tpe, tconstrs, defs0, ns) =>
+      case KindedAst.Instance(doc, mod, sym, tpe, tconstrs, defs0, ns, loc) =>
         for {
           defs <- Validation.traverse(defs0)(visitDefn(_, tconstrs, root, classEnv))
-        } yield TypedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, ns)
+        } yield TypedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, ns, loc)
     }
 
     /**

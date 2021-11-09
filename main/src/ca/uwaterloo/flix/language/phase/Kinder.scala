@@ -174,7 +174,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     * Performs kinding on the given instance.
     */
   private def visitInstance(inst: ResolvedAst.Instance, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, KindError] = inst match {
-    case ResolvedAst.Instance(doc, mod, sym, tpe0, tconstrs0, defs0, ns) =>
+    case ResolvedAst.Instance(doc, mod, sym, tpe0, tconstrs0, defs0, ns, loc) =>
       val kind = getClassKind(root.classes(sym.clazz))
       for {
         kenv <- inferType(tpe0, kind, KindEnv.empty, taenv, root)
@@ -183,7 +183,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         defsVal = Validation.traverse(defs0)(visitDef(_, kenv, taenv, root))
         result <- Validation.sequenceT(tpeVal, tconstrsVal, defsVal)
         (tpe, tconstrs, defs) = result
-      } yield KindedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, ns)
+      } yield KindedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, ns, loc)
   }
 
   /**

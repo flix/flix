@@ -283,14 +283,14 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     * Performs name resolution on the given instance `i0` in the given namespace `ns0`.
     */
   def resolveInstance(i0: NamedAst.Instance, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Instance, ResolutionError] = i0 match {
-    case NamedAst.Instance(doc, mod, clazz0, tpe0, tconstrs0, defs0) =>
+    case NamedAst.Instance(doc, mod, clazz0, tpe0, tconstrs0, defs0, loc) =>
       for {
         clazz <- lookupClassForImplementation(clazz0, ns0, root)
         tpe <- resolveType(tpe0, taenv, ns0, root)
         tconstrs <- traverse(tconstrs0)(resolveTypeConstraint(_, taenv, ns0, root))
         defs <- traverse(defs0)(resolveDef(_, taenv, ns0, root))
         sym = Symbol.freshInstanceSym(clazz.sym, clazz0.loc)
-      } yield ResolvedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, ns0)
+      } yield ResolvedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, ns0, loc)
   }
 
   /**

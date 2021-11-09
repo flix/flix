@@ -140,7 +140,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns the given instance `inst` as a JSON value.
     */
   private def visitInstance(inst: Instance): JObject = inst match {
-    case Instance(_, _, sym, tpe, tconstrs, _, _) =>
+    case Instance(_, _, sym, tpe, tconstrs, _, _, _) =>
       ("sym" -> visitInstanceSym(sym)) ~
         ("tpe" -> visitType(tpe)) ~
         ("tconstrs" -> tconstrs.map(visitTypeConstraint)) ~
