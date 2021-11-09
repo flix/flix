@@ -182,6 +182,23 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       ("name" -> sym.name) ~
       ("loc" -> visitSourceLocation(sym.loc))
 
+
+  /**
+    * Returns the given defn symbol `sym` as a JSON value.
+    */
+  private def visitDefnSym(sym: Symbol.DefnSym): JObject =
+    ("namespace" -> sym.namespace) ~
+      ("name" -> sym.text) ~
+      ("loc" -> visitSourceLocation(sym.loc))
+
+  /**
+    * Returns the given enum symbol `sym` as a JSON value.
+    */
+  private def visitEnumSym(sym: Symbol.EnumSym): JObject =
+    ("namespace" -> sym.namespace) ~
+      ("name" -> sym.name) ~
+      ("loc" -> visitSourceLocation(sym.loc))
+
   // TODO: Visit the other symbols.
 
   /**
