@@ -83,13 +83,13 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
   private def visitClasses(root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Map[Symbol.ClassSym, TypedAst.Class], TypeError] = {
 
     def visitClass(clazz: KindedAst.Class): Validation[(Symbol.ClassSym, TypedAst.Class), TypeError] = clazz match {
-      case KindedAst.Class(doc, mod, sym, tparam, superClasses, sigs, laws0, loc) =>
+      case KindedAst.Class(doc, mod, sym, tparam, superClasses, sigs, laws0) =>
         val tparams = getTypeParams(List(tparam))
-        val tconstr = Ast.TypeConstraint(sym, tparam.tpe, loc)
+        val tconstr = Ast.TypeConstraint(sym, tparam.tpe, sym.loc)
         for {
           sigs <- Validation.traverse(sigs.values)(visitSig(_, List(tconstr), root, classEnv))
           laws <- Validation.traverse(laws0)(visitDefn(_, List(tconstr), root, classEnv))
-        } yield (sym, TypedAst.Class(doc, mod, sym, tparams.head, superClasses, sigs, laws, loc))
+        } yield (sym, TypedAst.Class(doc, mod, sym, tparams.head, superClasses, sigs, laws))
     }
 
     // visit each class

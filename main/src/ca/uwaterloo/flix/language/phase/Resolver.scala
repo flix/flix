@@ -268,7 +268,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     * Performs name resolution on the given typeclass `c0` in the given namespace `ns0`.
     */
   def resolveClass(c0: NamedAst.Class, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Class, ResolutionError] = c0 match {
-    case NamedAst.Class(doc, mod, sym, tparam0, superClasses0, signatures, laws0, loc) =>
+    case NamedAst.Class(doc, mod, sym, tparam0, superClasses0, signatures, laws0) =>
       val tparam = Params.resolveTparam(tparam0)
       for {
         sigsList <- traverse(signatures)(resolveSig(_, taenv, ns0, root))
@@ -276,7 +276,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         superClasses <- traverse(superClasses0)(tconstr => resolveSuperClass(tconstr, taenv, ns0, root))
         laws <- traverse(laws0)(resolveDef(_, taenv, ns0, root))
         sigs = sigsList.map(sig => (sig.sym, sig)).toMap
-      } yield ResolvedAst.Class(doc, mod, sym, tparam, superClasses, sigs, laws, loc)
+      } yield ResolvedAst.Class(doc, mod, sym, tparam, superClasses, sigs, laws)
   }
 
   /**
