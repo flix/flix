@@ -178,9 +178,9 @@ object Symbol {
     new TypeAliasSym(ns.parts, ident.name, ident.loc)
   }
 
-  // MATT docs
-  // MATT can this be avoided?
-  // MATT currently necessary for lookup stuff in Namer
+  /**
+    * A union type for [[DefnSym]]s and [[SigSym]]s
+    */
   sealed trait DefnSymOrSigSym {
     val loc: SourceLocation
   }
