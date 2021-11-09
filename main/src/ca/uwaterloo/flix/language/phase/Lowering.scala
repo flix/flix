@@ -602,6 +602,13 @@ object Lowering extends Phase[Root, Root] {
       val tpe = visitType(tpe0)
       Expression.ReifyType(t, k, tpe, eff, loc)
 
+    case Expression.ReifyEff(sym, exp1, exp2, exp3, tpe, eff, loc) =>
+      val t = visitType(tpe)
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val e3 = visitExp(exp3)
+      Expression.ReifyEff(sym, e1, e2, e3, tpe, eff, loc)
+
   }
 
   /**
