@@ -607,7 +607,7 @@ object Lowering extends Phase[Root, Root] {
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val e3 = visitExp(exp3)
-      Expression.ReifyEff(sym, e1, e2, e3, tpe, eff, loc)
+      Expression.ReifyEff(sym, e1, e2, e3, t, eff, loc)
 
   }
 
