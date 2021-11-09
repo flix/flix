@@ -85,7 +85,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
             }
         }
 
-      case decl@WeededAst.Declaration.Class(doc, mod, ident, tparam, superClasses, sigs, laws) =>
+      case decl@WeededAst.Declaration.Class(_, _, ident, _, _, _, _, _) =>
         // Check if the class already exists.
         val sigNs = Name.extendNName(ns0, ident)
         val defsAndSigs0 = prog0.defsAndSigs.getOrElse(sigNs, Map.empty)
@@ -94,7 +94,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           case LookupResult.NotDefined =>
             // Case 1: The class does not already exist. Update it.
             visitClass(decl, uenv0, Map.empty, ns0) flatMap {
-              case clazz@NamedAst.Class(_, _, _, _, _, sigs, _) =>
+              case clazz@NamedAst.Class(_, _, _, _, _, sigs, _, _) =>
                 // add each signature to the namespace
                 // TODO add laws
                 val defsAndSigsVal = Validation.fold(sigs, defsAndSigs0) {
@@ -326,7 +326,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Performs naming on the given class `clazz`.
     */
   private def visitClass(clazz: WeededAst.Declaration.Class, uenv0: UseEnv, tenv0: Map[String, Type.UnkindedVar], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Class, NameError] = clazz match {
-    case WeededAst.Declaration.Class(doc, mod, ident, tparams0, superClasses0, signatures, laws0) =>
+    case WeededAst.Declaration.Class(doc, mod, ident, tparams0, superClasses0, signatures, laws0, loc) =>
       val sym = Symbol.mkClassSym(ns0, ident)
       val tparam = getTypeParam(tparams0)
       val tenv = tenv0 ++ getTypeEnv(List(tparam))
@@ -335,7 +335,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         superClasses <- traverse(superClasses0)(visitTypeConstraint(_, uenv0, tenv, ns0))
         sigs <- traverse(signatures)(visitSig(_, uenv0, tenv, ns0, ident, sym, tparam))
         laws <- traverse(laws0)(visitDef(_, uenv0, tenv, ns0, List(tconstr), List(tparam.tpe)))
-      } yield NamedAst.Class(doc, mod, sym, tparam, superClasses, sigs, laws)
+      } yield NamedAst.Class(doc, mod, sym, tparam, superClasses, sigs, laws, loc)
   }
 
   /**

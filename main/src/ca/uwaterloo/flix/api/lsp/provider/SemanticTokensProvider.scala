@@ -125,7 +125,7 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given class `classDecl`.
     */
   private def visitClass(classDecl: TypedAst.Class): Iterator[SemanticToken] = classDecl match {
-    case TypedAst.Class(_, _, sym, tparam, superClasses, signatures, laws) =>
+    case TypedAst.Class(_, _, sym, tparam, superClasses, signatures, laws, _) =>
       val t = SemanticToken(SemanticTokenType.Interface, Nil, sym.loc)
       val st1 = Iterator(t)
       val st2 = superClasses.flatMap(visitTypeConstraint)

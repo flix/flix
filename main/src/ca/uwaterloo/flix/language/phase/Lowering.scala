@@ -206,11 +206,11 @@ object Lowering extends Phase[Root, Root] {
     * Lowers the given class `clazz0`, with the given lowered sigs `sigs`.
     */
   private def visitClass(clazz0: Class, sigs: Map[Symbol.SigSym, Sig])(implicit root: Root, flix: Flix): Class = clazz0 match {
-    case Class(doc, mod, sym, tparam, superClasses0, signatures0, laws0) =>
+    case Class(doc, mod, sym, tparam, superClasses0, signatures0, laws0, loc) =>
       val superClasses = superClasses0.map(visitTypeConstraint)
       val signatures = signatures0.map(sig => sigs(sig.sym))
       val laws = laws0.map(visitDef)
-      Class(doc, mod, sym, tparam, superClasses, signatures, laws)
+      Class(doc, mod, sym, tparam, superClasses, signatures, laws, loc)
   }
 
   /**

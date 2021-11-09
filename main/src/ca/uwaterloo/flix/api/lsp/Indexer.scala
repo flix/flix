@@ -85,10 +85,7 @@ object Indexer {
   /**
     * Returns a reverse index for the given class `class0`.
     */
-  private def visitClass(class0: TypedAst.Class): Index = class0 match {
-    case TypedAst.Class(doc, mod, sym, tparam, superClasses, signatures, laws) =>
-      Index.occurrenceOf(class0)
-  }
+  private def visitClass(class0: TypedAst.Class): Index = Index.occurrenceOf(class0)
 
   /**
     * Returns a reverse index for the given instance `instance0`.

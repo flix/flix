@@ -155,7 +155,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
     * Performs kinding on the given type class.
     */
   private def visitClass(clazz: ResolvedAst.Class, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Class, KindError] = clazz match {
-    case ResolvedAst.Class(doc, mod, sym, tparam0, superClasses0, sigs0, laws0) =>
+    case ResolvedAst.Class(doc, mod, sym, tparam0, superClasses0, sigs0, laws0, loc) =>
       val kenv = getKindEnvFromTypeParamDefaultStar(tparam0)
 
       val tparamVal = visitTypeParam(tparam0, kenv)
@@ -166,7 +166,7 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       val lawsVal = traverse(laws0)(visitDef(_, kenv, taenv, root))
 
       mapN(tparamVal, superClassesVal, sigsVal, lawsVal) {
-        case (tparam, superClasses, sigs, laws) => KindedAst.Class(doc, mod, sym, tparam, superClasses, sigs.toMap, laws)
+        case (tparam, superClasses, sigs, laws) => KindedAst.Class(doc, mod, sym, tparam, superClasses, sigs.toMap, laws, loc)
       }
   }
 
