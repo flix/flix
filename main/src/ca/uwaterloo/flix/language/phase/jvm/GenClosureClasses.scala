@@ -1,13 +1,11 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.FinalAst.{Def, FormalParam, FreeVar, Root}
+import ca.uwaterloo.flix.language.ast.ErasedAst.{Def, FormalParam, FreeVar, Root}
 import ca.uwaterloo.flix.language.ast.MonoType
 import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.{ClassWriter, Label}
-
-import scala.collection.parallel.CollectionConverters._
 
 /**
   * Generates byte code for the closure classes.
@@ -41,11 +39,11 @@ object GenClosureClasses {
     * private int res;
     *
     * public Clo$mkAdder(int x) {
-    *     this.x = x;
+    * this.x = x;
     * }
     *
     * public setArg0(int arg0) {
-    *     this.arg0 = arg0;
+    * this.arg0 = arg0;
     * }
     *
     * public int getResult() {
@@ -53,7 +51,7 @@ object GenClosureClasses {
     * }
     *
     * public void apply(Context ctx) {
-    *     this.res = this.x + this.arg0;
+    * this.res = this.x + this.arg0;
     * }
     * }
     *
@@ -434,7 +432,7 @@ object GenClosureClasses {
     AsmOps.boxIfPrim(mv, jvmResultType)
 
     // Construct a proxy object.
-    AsmOps.newProxyObject(resultType, mv)
+    AsmOps.newProxyObject(mv)
 
     // Return the proxy object.
     mv.visitInsn(ARETURN)

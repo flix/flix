@@ -22,15 +22,14 @@ import ca.uwaterloo.flix.language.ast.{ErasedAst, FinalAst}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
-object Eraser extends Phase[FinalAst.Root, FinalAst.Root] {
+object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
 
-  def run(root: FinalAst.Root)(implicit flix: Flix): Validation[FinalAst.Root, CompilationMessage] = flix.phase("Eraser") {
+  def run(root: FinalAst.Root)(implicit flix: Flix): Validation[ErasedAst.Root, CompilationMessage] = flix.phase("Eraser") {
     val defs = root.defs.map { case (k, v) => k -> visitDef(v) }
     val enums = root.enums.map { case (k, v) => k -> visitEnum(v) }
     val reachable = root.reachable
 
-    val erasedRoot = ErasedAst.Root(defs, enums, reachable, root.sources).toSuccess
-    root.toSuccess
+    ErasedAst.Root(defs, enums, reachable, root.sources).toSuccess
   }
 
   /**

@@ -15,14 +15,11 @@
  */
 package ca.uwaterloo.flix.tools
 
-import java.net.InetSocketAddress
-import java.text.SimpleDateFormat
-import java.util.Date
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt.TerminalContext
-import ca.uwaterloo.flix.util.{LibLevel, InternalCompilerException, InternalRuntimeException, Options, Result, SafeExec, Timer}
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
@@ -30,6 +27,10 @@ import org.json4s.JsonAST._
 import org.json4s.ParserUtil.ParseException
 import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods._
+
+import java.net.InetSocketAddress
+import java.text.SimpleDateFormat
+import java.util.Date
 
 /**
   * A WebSocket server implementation that receives and evaluates Flix programs.
@@ -83,10 +84,10 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
     * Invoked when an error occurs.
     */
   override def onError(ws: WebSocket, e: Exception): Unit = e match {
-    case ex: InternalCompilerException =>
+    case _: InternalCompilerException =>
       log(s"Unexpected error: ${e.getMessage}")(ws)
       e.printStackTrace()
-    case ex: InternalRuntimeException =>
+    case _: InternalRuntimeException =>
       log(s"Unexpected error: ${e.getMessage}")(ws)
       e.printStackTrace()
     case ex => throw ex
@@ -156,7 +157,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
     // Log whether evaluation was successful.
     log("")(ws)
     result match {
-      case Ok(__) => log("Evaluation was successful. Sending response:")(ws)
+      case Ok(_) => log("Evaluation was successful. Sending response:")(ws)
       case Err(_) => log("Evaluation failure. Sending response:")(ws)
     }
     log("")(ws)
@@ -187,14 +188,14 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
           compilationResult.getMain match {
             case None =>
               // The main function was not present. Just report successful compilation.
-              Ok("Compilation was successful. No main function to run.", compilationResult.getTotalTime(), 0L)
+              Ok("Compilation was successful. No main function to run.", compilationResult.getTotalTime, 0L)
             case Some(main) =>
               // Evaluate the main function and get the result as a string.
               val timer = new Timer({
-                val (result, stdOut, stdErr) = SafeExec.execute(() => main(Array.empty))
+                val (_, stdOut, stdErr) = SafeExec.execute(() => main(Array.empty))
                 stdOut + stdErr
               })
-              Ok(timer.getResult, compilationResult.getTotalTime(), timer.getElapsed)
+              Ok(timer.getResult, compilationResult.getTotalTime, timer.getElapsed)
           }
 
         case Failure(errors) =>

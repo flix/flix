@@ -17,10 +17,11 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.FinalAst.Root
+import ca.uwaterloo.flix.language.ast.ErasedAst.Root
 import ca.uwaterloo.flix.language.ast.MonoType
-import org.objectweb.asm.{ClassWriter, Label}
 import org.objectweb.asm.Opcodes._
+import org.objectweb.asm.{ClassWriter, Label}
+
 /**
   * Generates bytecode for the extended record class.
   */
@@ -31,7 +32,7 @@ object GenRecordExtend {
     */
   def gen(ts: Set[MonoType])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     ts.foldLeft(Map.empty[JvmName, JvmClass]) {
-      case (macc, tpe@MonoType.RecordExtend(_, value, _)) => {
+      case (macc, tpe@MonoType.RecordExtend(_, value, _)) =>
         val interfaceType = JvmOps.getRecordInterfaceType()
         val jvmType = JvmOps.getRecordExtendClassType(tpe)
         val jvmName = jvmType.name
@@ -39,8 +40,7 @@ object GenRecordExtend {
         val targs = List[JvmType](JvmType.String, valueJvmErasedType, interfaceType)
         val bytecode = genByteCode(jvmType, interfaceType, targs, valueJvmErasedType)
         macc + (jvmName -> JvmClass(jvmName, bytecode))
-      }
-      case (macc, tpe) =>
+      case (macc, _) =>
         macc
     }
   }
@@ -58,7 +58,7 @@ object GenRecordExtend {
     * Then we generate the code for each of the fields in the RecordExtend class, namely the label, value and the rest of the record
     * with the value being specialized according to the type of RecordExtend. This is if we are generating RecordExtend$Obj
     *
-    *We generate the following fields in the class:
+    * We generate the following fields in the class:
     *
     * private String field0;
     * private Object field1;
@@ -71,9 +71,9 @@ object GenRecordExtend {
     * For example for RecordExtend$Obj(String, Object, IRecord) creates the following constructor:
     *
     * public RecordExtend(String var1, Object var2, IRecord var3) {
-    *   this.field0 = var1;
-    *   this.field1 = var2;
-    *   this.field2 = var3;
+    * this.field0 = var1;
+    * this.field1 = var2;
+    * this.field2 = var3;
     * }
     *
     *
@@ -114,7 +114,7 @@ object GenRecordExtend {
     *
     */
   private def genByteCode(classType: JvmType.Reference, interfaceType: JvmType.Reference, targs: List[JvmType],
-                          valueJvmErasedType : JvmType)(implicit root: Root, flix: Flix): Array[Byte] = {
+                          valueJvmErasedType: JvmType)(implicit root: Root, flix: Flix): Array[Byte] = {
     // class writer
     val visitor = AsmOps.mkClassWriter()
 
@@ -176,9 +176,9 @@ object GenRecordExtend {
     * For example for RecordExtend$Obj(String, Object, IRecord) creates the following constructor:
     *
     * public RecordExtend$Obj(String var1, Object var2, IRecord var3) {
-    *   this.field0 = var1;
-    *   this.field1 = var2;
-    *   this.field2 = var3;
+    * this.field0 = var1;
+    * this.field1 = var2;
+    * this.field2 = var3;
     * }
     *
     */
