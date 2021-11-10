@@ -619,23 +619,25 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       //
       // Rewrites a let-match to a regular let-binding or a full-blown pattern match.
       //
+      val loc = mkSL(sp1, sp2)
+
       flatMapN(visitPattern(pat), visitExp(exp1), visitExp(exp2)) {
         case (WeededAst.Pattern.Var(ident, loc), value, body) =>
           // No pattern match.
           mapN(visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Scoped))) {
-            mod => WeededAst.Expression.Let(ident, mod, withAscription(value, tpe), body, mkSL(sp1, sp2))
+            mod => WeededAst.Expression.Let(ident, mod, withAscription(value, tpe), body, loc)
           }
         case (pat, value, body) =>
           // Full-blown pattern match.
           mapN(visitModifiers(mod0, legalModifiers = Set.empty)) {
             mod =>
-              val rule = WeededAst.MatchRule(pat, WeededAst.Expression.True(mkSL(sp1, sp2)), body)
-              WeededAst.Expression.Match(withAscription(value, tpe), List(rule), mkSL(sp1, sp2))
+              val rule = WeededAst.MatchRule(pat, WeededAst.Expression.True(loc.asSynthetic), body)
+              WeededAst.Expression.Match(withAscription(value, tpe), List(rule), loc)
           }
       }
 
     case ParsedAst.Expression.LetMatchStar(sp1, pat, tpe, exp1, exp2, sp2) =>
-      val loc = SourceLocation.mk(sp1, sp2)
+      val loc = mkSL(sp1, sp2)
 
       //
       // Rewrites a monadic let-match to a regular let-binding or a full-blown pattern match inside a flatMap.
@@ -657,8 +659,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           val lambdaIdent = Name.Ident(sp1, "pat$0", sp2)
           val lambdaVar = WeededAst.Expression.VarOrDefOrSig(lambdaIdent, loc)
 
-          val rule = WeededAst.MatchRule(pat, WeededAst.Expression.True(mkSL(sp1, sp2)), body)
-          val lambdaBody = WeededAst.Expression.Match(withAscription(lambdaVar, tpe), List(rule), mkSL(sp1, sp2))
+          val rule = WeededAst.MatchRule(pat, WeededAst.Expression.True(loc.asSynthetic), body)
+          val lambdaBody = WeededAst.Expression.Match(withAscription(lambdaVar, tpe), List(rule), loc)
 
           val fparam = WeededAst.FormalParam(lambdaIdent, Ast.Modifiers.Empty, tpe.map(visitType), loc)
           val lambda = WeededAst.Expression.Lambda(fparam, lambdaBody, loc)
@@ -1080,22 +1082,26 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       /*
        * Rewrites a `FAppend` expression into a call to `List/append`.
        */
+      val loc = mkSL(sp1, sp2).asSynthetic
+
       mapN(visitExp(exp1), visitExp(exp2)) {
         case (e1, e2) =>
           // NB: We painstakingly construct the qualified name
           // to ensure that source locations are available.
-          mkApplyFqn("List.append", List(e1, e2), sp1, sp2)
+          mkApplyFqn("List.append", List(e1, e2), loc)
       }
 
     case ParsedAst.Expression.FSet(sp1, sp2, exps) =>
       /*
        * Rewrites a `FSet` expression into `Set/empty` and a `Set/insert` calls.
        */
+      val loc = mkSL(sp1, sp2).asSynthetic
+
       traverse(exps)(e => visitExp(e)) map {
         case es =>
-          val empty = mkApplyFqn("Set.empty", List(WeededAst.Expression.Unit(mkSL(sp1, sp2))), sp1, sp2)
+          val empty = mkApplyFqn("Set.empty", List(WeededAst.Expression.Unit(loc)), loc)
           es.foldLeft(empty) {
-            case (acc, elm) => mkApplyFqn("Set.insert", List(elm, acc), sp1, sp2)
+            case (acc, elm) => mkApplyFqn("Set.insert", List(elm, acc), loc)
           }
       }
 
@@ -1103,6 +1109,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       /*
        * Rewrites a `FMap` expression into `Map/empty` and a `Map/insert` calls.
        */
+      val loc = mkSL(sp1, sp2).asSynthetic
+
       val elmsVal = traverse(exps) {
         case (key, value) => mapN(visitExp(key), visitExp(value)) {
           case (k, v) => (k, v)
@@ -1111,9 +1119,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
       elmsVal map {
         case es =>
-          val empty = mkApplyFqn("Map.empty", List(WeededAst.Expression.Unit(mkSL(sp1, sp2))), sp1, sp2)
+          val empty = mkApplyFqn("Map.empty", List(WeededAst.Expression.Unit(loc)), loc)
           es.foldLeft(empty) {
-            case (acc, (k, v)) => mkApplyFqn("Map.insert", List(k, v, acc), sp1, sp2)
+            case (acc, (k, v)) => mkApplyFqn("Map.insert", List(k, v, acc), loc)
           }
       }
 
@@ -1132,7 +1140,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         */
       def mkApplyToString(e: WeededAst.Expression, sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
         val fqn = "ToString.toString"
-        mkApplyFqn(fqn, List(e), sp1, sp2)
+        val loc = mkSL(sp1, sp2).asSynthetic
+        mkApplyFqn(fqn, List(e), loc)
       }
 
       val loc = mkSL(sp1, sp2)
@@ -2177,7 +2186,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * In other words, the type is of the form `tpe1 ->{eff} tpe2`
     */
   private def mkArrow(tpe1: WeededAst.Type, eff: WeededAst.Type, tpe2: WeededAst.Type, loc: SourceLocation): WeededAst.Type =
-    WeededAst.Type.Arrow(List(tpe1), eff, tpe2, loc)
+    WeededAst.Type.Arrow(List(tpe1), eff, tpe2, loc.asSynthetic)
 
   /**
     * Returns a sequence of arrow types type from `tparams` to `tresult` where every arrow is pure except the last which has effect `eff`.
@@ -2185,8 +2194,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * In other words, the type is of the form `tpe1 ->> tpe2 ->> ... ->{eff} tresult`.
     */
   private def mkCurriedArrow(tparams: Seq[WeededAst.Type], eff: WeededAst.Type, tresult: WeededAst.Type, loc: SourceLocation): WeededAst.Type = {
-    val base = mkArrow(tparams.last, eff, tresult, loc)
-    tparams.init.foldRight(base)(mkArrow(_, WeededAst.Type.True(loc), _, loc))
+    val l = loc.asSynthetic
+    val base = mkArrow(tparams.last, eff, tresult, l)
+    tparams.init.foldRight(base)(mkArrow(_, WeededAst.Type.True(l), _, l))
   }
 
   /**
@@ -2342,18 +2352,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Returns an apply expression for the given fully-qualified name `fqn` and the given arguments `args`.
     */
-  private def mkApplyFqn(fqn: String, args: List[WeededAst.Expression], sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
-    val lambda = WeededAst.Expression.DefOrSig(Name.mkQName(fqn, sp1, sp2), mkSL(sp1, sp2))
-    WeededAst.Expression.Apply(lambda, args, mkSL(sp1, sp2))
-  }
-
-  /**
-    * Returns an apply expression for the given ident `ident` and the given arguments `args`.
-    */
-  private def mkApplyIdent(ident: String, args: List[WeededAst.Expression], sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
-    val lambda = WeededAst.Expression.VarOrDefOrSig(Name.Ident(sp1, ident, sp2), mkSL(sp1, sp2))
-    WeededAst.Expression.Apply(lambda, args, mkSL(sp1, sp2))
-
+  private def mkApplyFqn(fqn: String, args: List[WeededAst.Expression], loc: SourceLocation): WeededAst.Expression = {
+    val l = loc.asSynthetic
+    val lambda = WeededAst.Expression.DefOrSig(Name.mkQName(fqn), l)
+    WeededAst.Expression.Apply(lambda, args, l)
   }
 
   /**

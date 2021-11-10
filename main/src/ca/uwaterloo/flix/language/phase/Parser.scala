@@ -63,7 +63,7 @@ object Parser extends Phase[List[Source], ParsedAst.Program] {
       case scala.util.Success(ast) =>
         ast.toSuccess
       case scala.util.Failure(e: org.parboiled2.ParseError) =>
-        val loc = SourceLocation(None, source, e.position.line, e.position.column, e.position.line, e.position.column)
+        val loc = SourceLocation(None, source, LocationKind.Real, e.position.line, e.position.column, e.position.line, e.position.column)
         ca.uwaterloo.flix.language.errors.ParseError(stripLiteralWhitespaceChars(parser.formatError(e)), loc).toFailure
       case scala.util.Failure(e) =>
         ca.uwaterloo.flix.language.errors.ParseError(e.getMessage, SourceLocation.Unknown).toFailure
@@ -79,7 +79,7 @@ object Parser extends Phase[List[Source], ParsedAst.Program] {
       case scala.util.Success(ast) =>
         ast.toSuccess
       case scala.util.Failure(e: org.parboiled2.ParseError) =>
-        val loc = SourceLocation(None, source, e.position.line, e.position.column, e.position.line, e.position.column)
+        val loc = SourceLocation(None, source, LocationKind.Real, e.position.line, e.position.column, e.position.line, e.position.column)
         ca.uwaterloo.flix.language.errors.ParseError(stripLiteralWhitespaceChars(parser.formatError(e)), loc).toFailure
       case scala.util.Failure(e) =>
         ca.uwaterloo.flix.language.errors.ParseError(e.getMessage, SourceLocation.Unknown).toFailure
