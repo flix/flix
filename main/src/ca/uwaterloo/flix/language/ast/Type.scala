@@ -17,10 +17,12 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{EliminatedBy, IntroducedBy}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
-import ca.uwaterloo.flix.language.phase.{Kinder, Monomorph}
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.language.phase.Kinder
+import ca.uwaterloo.flix.util.Validation.{ToSuccess, mapN, traverse}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import java.util.Objects
 import scala.collection.immutable.SortedSet
@@ -139,6 +141,32 @@ sealed trait Type {
     case Type.Apply(tpe1, tpe2, loc) => Type.Apply(tpe1.map(f), tpe2.map(f), loc)
     case Type.Ascribe(tpe, kind, loc) => Type.Ascribe(tpe.map(f), kind, loc)
     case Type.Alias(sym, args, tpe, loc) => Type.Alias(sym, args.map(_.map(f)), tpe.map(f), loc)
+  }
+
+  /**
+    * Applies `f` to every type variable in `this` type.
+    */
+  def mapV(f: Type.KindedVar => Validation[Type, CompilationMessage]): Validation[Type, CompilationMessage] = this match {
+    case tvar: Type.Var => f(tvar.asKinded)
+
+    case Type.Cst(_, _) => this.toSuccess
+
+    case Type.Apply(tpe1, tpe2, loc) =>
+      mapN(tpe1.mapV(f), tpe2.mapV(f)) {
+        case (t1, t2) => Type.Apply(t1, t2, loc)
+      }
+
+    case Type.Ascribe(tpe, kind, loc) =>
+      tpe.mapV(f).map(Type.Ascribe(_, kind, loc))
+
+    case Type.Alias(sym, args, tpe, loc) =>
+      mapN(
+        traverse(args)(_.mapV(f)),
+        tpe.mapV(f)
+      ) {
+        case (a, t) => Type.Alias(sym, a, t, loc)
+      }
+
   }
 
   /**
