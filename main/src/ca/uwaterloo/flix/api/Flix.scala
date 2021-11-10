@@ -309,7 +309,6 @@ class Flix {
   def addJar(p: String): Flix = {
     val uri = new URI(p)
     val path = Path.of(uri)
-    // MATT some extra indirection here...
     addJar(path)
   }
 
