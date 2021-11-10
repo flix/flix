@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.TypeConstraint
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType, PrettyExpression}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
@@ -182,7 +182,6 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       ("name" -> sym.name) ~
       ("loc" -> visitSourceLocation(sym.loc))
 
-
   /**
     * Returns the given defn symbol `sym` as a JSON value.
     */
@@ -219,6 +218,29 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
         ("beginCol" -> beginCol) ~
         ("endLine" -> endLine) ~
         ("endCol" -> endCol)
+  }
+
+  /**
+    * Returns the given Kind `kind` as a JSON value.
+    */
+  def visitKind(kind: Kind): JObject = ??? // TODO
+
+  /**
+    * Returns the given Type Parameter `tparam` as a JSON value.
+    */
+  private def visitTypeParam(tparam: TypeParam): JObject = tparam match {
+    case TypeParam(ident, tpe, loc) =>
+      ("name" -> ident.name) ~
+        ("kind" -> visitKind(tpe.kind))
+  }
+
+  /**
+    * Returns the given Type Constraint `tconstr` as a JSON value.
+    */
+  private def visitTypeConstraint(tconstr: TypeConstraint): JObject = tconstr match {
+    case TypeConstraint(sym, arg, loc) =>
+      ("sym" -> visitClassSym(sym)) ~
+        ("tpe" -> visitType(arg))
   }
 
   /**
