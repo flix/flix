@@ -108,11 +108,6 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       val tagClasses = GenTagClasses.gen(tags)
 
       //
-      // Generate tuple interfaces for each tuple type in the program.
-      //
-      val tupleInterfaces = GenTupleInterfaces.gen(types)
-
-      //
       // Generate tuple classes for each tuple type in the program.
       //
       val tupleClasses = GenTupleClasses.gen(types)
@@ -185,7 +180,6 @@ object JvmBackend extends Phase[Root, CompilationResult] {
         closureClasses,
         enumInterfaces,
         tagClasses,
-        tupleInterfaces,
         tupleClasses,
         recordInterfaces,
         recordEmptyClasses,
