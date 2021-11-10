@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.lsp._
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, TypeConstraint}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceKind, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
@@ -96,13 +96,14 @@ object SemanticTokensProvider {
     val allTokens = (classTokens ++ instanceTokens ++ defnTokens ++ enumTokens ++ typeAliasTokens).toList
 
     //
-    // We keep all tokens that are: (i) single-line tokens and (ii) have the same source as `uri`.
+    // We keep all tokens that are: (i) single-line tokens, (ii) have the same source as `uri`, and (iii) come from real source locations.
     //
     // Note that the last criteria (automatically) excludes:
-    //   (a) tokens with unknown source locations, and
-    //   (b) tokens that come from entities inside `uri` but that originate from different uris.
+    //   (a) tokens with unknown source locations,
+    //   (b) tokens that come from entities inside `uri` but that originate from different uris, and
+    //   (c) tokens that come from synthetic (generated) source code.
     //
-    val filteredTokens = allTokens.filter(t => t.loc.isSingleLine && include(uri, t.loc))
+    val filteredTokens = allTokens.filter(t => t.loc.isSingleLine && include(uri, t.loc) && !t.loc.isSynthetic)
 
     //
     // Encode the semantic tokens as a list of integers.

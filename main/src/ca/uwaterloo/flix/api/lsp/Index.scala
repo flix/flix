@@ -247,6 +247,11 @@ case class Index(m: Map[(String, Int), List[Entity]],
     * Adds the given entity `exp0` to `this` index.
     */
   private def +(entity: Entity): Index = {
+    // Do not index synthetic source locations.
+    if (entity.loc.isSynthetic) {
+      return this
+    }
+
     // Compute the uri, line, and column of the expression.
     val uri = entity.loc.source.name
     val beginLine = entity.loc.beginLine
