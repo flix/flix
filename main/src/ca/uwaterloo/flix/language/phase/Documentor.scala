@@ -235,15 +235,6 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   /**
-    * Returns the given Type Constraint `tconstr` as a JSON value.
-    */
-  private def visitTypeConstraint(tconstr: TypeConstraint): JObject = tconstr match {
-    case TypeConstraint(sym, arg, loc) =>
-      ("sym" -> visitClassSym(sym)) ~
-        ("tpe" -> visitType(arg))
-  }
-
-  /**
     * Writes the given string `s` to the given path `p`.
     */
   private def writeString(s: String, p: Path): Unit = try {
