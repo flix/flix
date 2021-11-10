@@ -266,7 +266,11 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     *
     */
-  private def visitFormalParam(f: FormalParam): JObject = ??? // TODO
+  private def visitFormalParam(f: FormalParam): JObject = f match {
+    case FormalParam(sym, mod, tpe, loc) =>
+      ("name" -> sym.text) ~
+        ("tpe" -> visitType(tpe))
+  }
 
   /**
     * Returns the given Sig `sig` as a JSON value.
