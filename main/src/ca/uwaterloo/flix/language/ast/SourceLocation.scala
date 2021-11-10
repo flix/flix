@@ -4,7 +4,6 @@ import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.debug.FormatSourceLocation
 import org.parboiled2.ParserInput
 
-
 /**
   * Companion object for the [[SourceLocation]] class.
   */
@@ -38,7 +37,7 @@ object SourceLocation {
   *
   * @param input        the parser input.
   * @param source       the source input.
-  * @param locationKind the       source location kind.
+  * @param locationKind the source location kind.
   * @param beginLine    the line number where the entity begins.
   * @param beginCol     the column number where the entity begins.
   * @param endLine      the line number where the entity ends.
