@@ -31,6 +31,7 @@ import org.json4s.native.JsonMethods
 
 import java.io.IOException
 import java.nio.file.{Files, Path, Paths}
+import scala.collection.immutable.List
 
 object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
 
@@ -229,9 +230,36 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns the given Type Parameter `tparam` as a JSON value.
     */
   private def visitTypeParam(tparam: TypeParam): JObject = tparam match {
-    case TypeParam(ident, tpe, loc) =>
-      ("name" -> ident.name) ~
-        ("kind" -> visitKind(tpe.kind))
+  case TypeParam(ident, tpe, loc) =>
+  ("name" -> ident.name) ~
+  ("kind" -> visitKind(tpe.kind))
+}
+
+  /**
+    * Returns the given Doc `doc` as a JSON value.
+    */
+  private def visitDoc(doc: Ast.Doc): JObject = ??? // TODO
+
+  /**
+    * Returns the given Modifier `mod` as a JSON value.
+    */
+  private def visitModifier(mod: Ast.Modifiers): JObject = ??? // TODO
+
+  /**
+    * Returns the given Type Alias `talias` as a JSON value.
+    */
+  private def visitTypeAlias(talias: TypeAlias): JObject = talias match {
+    case TypeAlias(doc, mod, sym, tparams, tpe, loc) =>
+      // Compute the type parameters.
+      val computedtparams = tparams.map {
+            t => visitTypeParam(t)
+      }
+      ("doc" -> visitDoc(doc)) ~
+        ("mod" -> visitModifier(mod)) ~
+        ("sym" -> visitTypeAliasSym(sym)) ~
+        ("tparams" -> computedtparams) ~
+        ("tpe" -> visitType(tpe)) ~
+        ("loc" -> visitSourceLocation(loc))
   }
 
   /**
