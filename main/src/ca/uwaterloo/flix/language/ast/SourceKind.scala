@@ -18,18 +18,18 @@ package ca.uwaterloo.flix.language.ast
 /**
   * Represents the provenance of a source location.
   */
-sealed trait LocationKind
+sealed trait SourceKind
 
-object LocationKind {
+object SourceKind {
 
   /**
     * A source location that originates from the actual source code.
     */
-  case object Real extends LocationKind
+  case object Real extends SourceKind
 
   /**
     * A source location that was synthetically constructed from the actual source code.
     */
-  case object Synthetic extends LocationKind
+  case object Synthetic extends SourceKind
 
 }

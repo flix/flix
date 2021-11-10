@@ -366,10 +366,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     */
   private def visitExp(exp0: ParsedAst.Expression)(implicit flix: Flix): Validation[WeededAst.Expression, WeederError] = exp0 match {
     case ParsedAst.Expression.SName(sp1, ident, sp2) =>
-      WeededAst.Expression.VarOrDefOrSig(ident, mkSL(sp1, sp2)).toSuccess
+      val loc = mkSL(sp1, sp2)
+      WeededAst.Expression.VarOrDefOrSig(ident, loc).toSuccess
 
     case ParsedAst.Expression.QName(sp1, qname, sp2) =>
-      WeededAst.Expression.DefOrSig(qname, mkSL(sp1, sp2)).toSuccess
+      val loc = mkSL(sp1, sp2)
+      WeededAst.Expression.DefOrSig(qname, loc).toSuccess
 
     case ParsedAst.Expression.Hole(sp1, name, sp2) =>
       val loc = mkSL(sp1, sp2)
@@ -539,7 +541,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val loc = mkSL(sp1, sp2)
       mapN(visitExp(lambda), traverse(args)(e => visitArgument(e))) {
         case (e, as) =>
-          val es = getArguments(as, sp1, sp2)
+          val es = getArguments(as, loc)
           WeededAst.Expression.Apply(e, es, loc)
       }
 
@@ -569,14 +571,16 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
        */
       mapN(visitPattern(pat), visitExp(exp)) {
         case (p, e) =>
-          val loc = mkSL(sp1, sp2)
+          val loc = mkSL(sp1, sp2).asSynthetic
+
           // The name of the lambda parameter.
           val ident = Name.Ident(sp1, "pat$0", sp2)
+
           // Construct the body of the lambda expression.
           val varOrRef = WeededAst.Expression.VarOrDefOrSig(ident, loc)
           val rule = WeededAst.MatchRule(p, WeededAst.Expression.True(loc), e)
 
-          val fparam = WeededAst.FormalParam(ident, Ast.Modifiers.Empty, None, ident.loc)
+          val fparam = WeededAst.FormalParam(ident, Ast.Modifiers.Empty, None, loc)
           val body = WeededAst.Expression.Match(varOrRef, List(rule), loc)
           WeededAst.Expression.Lambda(fparam, body, loc)
       }
@@ -584,7 +588,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Unary(sp1, op, exp, sp2) =>
       val loc = mkSL(sp1, sp2)
       visitExp(exp) map {
-        e => visitUnaryOperator(op) match {
+        case e => visitUnaryOperator(op) match {
           case OperatorResult.BuiltIn(name) => WeededAst.Expression.Apply(WeededAst.Expression.DefOrSig(name, name.loc), List(e), loc)
           case OperatorResult.Operator(o) => WeededAst.Expression.Unary(o, e, loc)
           case OperatorResult.NoOp => e
@@ -864,11 +868,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       }
 
     case ParsedAst.Expression.Match(sp1, exp, rules, sp2) =>
+      val loc = mkSL(sp1, sp2)
       val rulesVal = traverse(rules) {
         case ParsedAst.MatchRule(pat, None, body) =>
           mapN(visitPattern(pat), visitExp(body)) {
             // Pattern match without guard.
-            case (p, e) => WeededAst.MatchRule(p, WeededAst.Expression.True(mkSL(sp1, sp2)), e)
+            case (p, e) => WeededAst.MatchRule(p, WeededAst.Expression.True(loc.asSynthetic), e)
           }
         case ParsedAst.MatchRule(pat, Some(guard), body) => mapN(visitPattern(pat), visitExp(guard), visitExp(body)) {
           // Pattern match with guard.
@@ -876,7 +881,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         }
       }
       mapN(visitExp(exp), rulesVal) {
-        case (e, rs) => WeededAst.Expression.Match(e, rs, mkSL(sp1, sp2))
+        case (e, rs) => WeededAst.Expression.Match(e, rs, loc)
       }
 
     case ParsedAst.Expression.Choose(sp1, star, exps, rules, sp2) =>
@@ -1499,6 +1504,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * The result of weeding an operator.
     */
   private sealed trait OperatorResult
+
   private object OperatorResult {
     /**
       * The operator represents a signature or definition from the core library.
@@ -2362,8 +2368,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Returns a curried version of the given expression `e` for each formal parameter in `fparams0`.
     */
   private def mkCurried(fparams0: List[WeededAst.FormalParam], e: WeededAst.Expression, loc: SourceLocation): WeededAst.Expression = {
+    val l = loc.asSynthetic
     fparams0.foldRight(e) {
-      case (fparam, eacc) => WeededAst.Expression.Lambda(fparam, eacc, loc)
+      case (fparam, eacc) => WeededAst.Expression.Lambda(fparam, eacc, l)
     }
   }
 
@@ -2372,17 +2379,23 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     *
     * If so, returns a list with a single unit expression.
     */
-  private def getArguments(args0: List[WeededAst.Expression], sp1: SourcePosition, sp2: SourcePosition): List[WeededAst.Expression] = args0 match {
-    case Nil => List(WeededAst.Expression.Unit(mkSL(sp1, sp2)))
-    case as => as
+  private def getArguments(args0: List[WeededAst.Expression], loc: SourceLocation): List[WeededAst.Expression] = {
+    val l = loc.asSynthetic
+    args0 match {
+      case Nil => List(WeededAst.Expression.Unit(l))
+      case as => as
+    }
   }
 
   /**
     * Returns the given expression `exp0` optionally wrapped in a type ascription if `tpe0` is `Some`.
     */
-  private def withAscription(exp0: WeededAst.Expression, tpe0: Option[ParsedAst.Type])(implicit flix: Flix): WeededAst.Expression = tpe0 match {
-    case None => exp0
-    case Some(t) => WeededAst.Expression.Ascribe(exp0, Some(visitType(t)), None, exp0.loc)
+  private def withAscription(exp0: WeededAst.Expression, tpe0: Option[ParsedAst.Type])(implicit flix: Flix): WeededAst.Expression = {
+    val l = exp0.loc.asSynthetic
+    tpe0 match {
+      case None => exp0
+      case Some(t) => WeededAst.Expression.Ascribe(exp0, Some(visitType(t)), None, l)
+    }
   }
 
   /**

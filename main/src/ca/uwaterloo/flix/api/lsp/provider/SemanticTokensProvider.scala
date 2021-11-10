@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.lsp._
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, TypeConstraint}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{LocationKind, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceKind, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._

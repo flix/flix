@@ -20,7 +20,7 @@ object SourceLocation {
   /**
     * Returns the source location constructed from the source positions `b` and `e.`
     */
-  def mk(b: SourcePosition, e: SourcePosition, k: LocationKind = LocationKind.Real): SourceLocation =
+  def mk(b: SourcePosition, e: SourcePosition, k: SourceKind = SourceKind.Real): SourceLocation =
     SourceLocation(b.input, b.source, k, b.line, b.col, e.line, e.col)
 
   implicit object Order extends Ordering[SourceLocation] {
@@ -44,7 +44,7 @@ object SourceLocation {
   * @param endLine      the line number where the entity ends.
   * @param endCol       the column number where the entity ends.
   */
-case class SourceLocation(input: Option[ParserInput], source: Source, locationKind: LocationKind, beginLine: Int, beginCol: Int, endLine: Int, endCol: Int) {
+case class SourceLocation(input: Option[ParserInput], source: Source, locationKind: SourceKind, beginLine: Int, beginCol: Int, endLine: Int, endCol: Int) {
 
   /**
     * Returns `true` if this source location spans a single line.
@@ -59,12 +59,12 @@ case class SourceLocation(input: Option[ParserInput], source: Source, locationKi
   /**
     * Returns `true` if this source location is synthetic.
     */
-  def isSynthetic: Boolean = locationKind == LocationKind.Synthetic
+  def isSynthetic: Boolean = locationKind == SourceKind.Synthetic
 
   /**
     * Returns `this` source location but as a synthetic kind.
     */
-  def asSynthetic: SourceLocation = copy(locationKind = LocationKind.Synthetic)
+  def asSynthetic: SourceLocation = copy(locationKind = SourceKind.Synthetic)
 
   /**
     * Returns the smallest (i.e. the first that appears in the source code) of `this` and `that`.
