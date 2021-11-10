@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt.TerminalContext
 
-import java.net.{URI, URL, URLClassLoader}
+import java.net.URI
 import java.nio.charset.Charset
 import java.nio.file.{Files, Path, Paths}
 import scala.collection.mutable
