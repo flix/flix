@@ -63,7 +63,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     * Unit type. In other words, when performing a type substitution if there is no requirement on a polymorphic type
     * we assume it to be Unit. This is safe since otherwise the type would not be polymorphic after type-inference.
     */
-  case class StrictSubstitution(s: Substitution)(implicit flix: Flix) {
+  private case class StrictSubstitution(s: Substitution)(implicit flix: Flix) {
     /**
       * Returns `true` if this substitution is empty.
       */
@@ -238,7 +238,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     * If a specialized version of a function does not yet exists, a fresh symbol is created for it, and the
     * definition and substitution is enqueued.
     */
-  def specialize(exp0: Expression, env0: Map[Symbol.VarSym, Symbol.VarSym], subst0: StrictSubstitution, def2def: Def2Def, defQueue: DefQueue)(implicit root: Root, flix: Flix): Expression = {
+  private def specialize(exp0: Expression, env0: Map[Symbol.VarSym, Symbol.VarSym], subst0: StrictSubstitution, def2def: Def2Def, defQueue: DefQueue)(implicit root: Root, flix: Flix): Expression = {
 
     // TODO: Monomorph: Must apply subst to all effects.
 
@@ -659,7 +659,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Returns the def symbol corresponding to the specialized symbol `sym` w.r.t. to the type `tpe`.
     */
-  def specializeDefSym(sym: Symbol.DefnSym, tpe: Type, def2def: Def2Def, defQueue: DefQueue)(implicit root: Root, flix: Flix): Symbol.DefnSym = {
+  private def specializeDefSym(sym: Symbol.DefnSym, tpe: Type, def2def: Def2Def, defQueue: DefQueue)(implicit root: Root, flix: Flix): Symbol.DefnSym = {
     // Lookup the definition and its declared type.
     val defn = root.defs(sym)
 
@@ -677,7 +677,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Returns the def symbol corresponding to the specialized symbol `sym` w.r.t. to the type `tpe`.
     */
-  def specializeSigSym(sym: Symbol.SigSym, tpe: Type, def2def: Def2Def, defQueue: DefQueue)(implicit root: Root, flix: Flix): Symbol.DefnSym = {
+  private def specializeSigSym(sym: Symbol.SigSym, tpe: Type, def2def: Def2Def, defQueue: DefQueue)(implicit root: Root, flix: Flix): Symbol.DefnSym = {
     val sig = root.sigs(sym)
 
     // lookup the instance corresponding to this type
@@ -706,14 +706,14 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Converts a signature with an implementation into the equivalent definition.
     */
-  def sigToDef(sigSym: Symbol.SigSym, spec: TypedAst.Spec, impl: TypedAst.Impl): TypedAst.Def = {
+  private def sigToDef(sigSym: Symbol.SigSym, spec: TypedAst.Spec, impl: TypedAst.Impl): TypedAst.Def = {
     TypedAst.Def(sigSymToDefnSym(sigSym), spec, impl)
   }
 
   /**
     * Converts a SigSym into the equivalent DefnSym.
     */
-  def sigSymToDefnSym(sigSym: Symbol.SigSym): Symbol.DefnSym = {
+  private def sigSymToDefnSym(sigSym: Symbol.SigSym): Symbol.DefnSym = {
     val ns = sigSym.clazz.namespace :+ sigSym.clazz.name
     new Symbol.DefnSym(None, ns, sigSym.name, sigSym.loc)
   }
@@ -721,7 +721,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Returns the def symbol corresponding to the specialized def `defn` w.r.t. to the type `tpe`.
     */
-  def specializeDef(defn: TypedAst.Def, tpe: Type, def2def: Def2Def, defQueue: DefQueue)(implicit flix: Flix): Symbol.DefnSym = {
+  private def specializeDef(defn: TypedAst.Def, tpe: Type, def2def: Def2Def, defQueue: DefQueue)(implicit flix: Flix): Symbol.DefnSym = {
     // Unify the declared and actual type to obtain the substitution map.
     val subst = StrictSubstitution(Unification.unifyTypes(defn.impl.inferredScheme.base, tpe).get)
 
@@ -753,7 +753,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     *
     * Returns the new formal parameters and an environment mapping the variable symbol for each parameter to a fresh symbol.
     */
-  def specializeFormalParams(fparams0: List[FormalParam], subst0: StrictSubstitution)(implicit flix: Flix): (List[FormalParam], Map[Symbol.VarSym, Symbol.VarSym]) = {
+  private def specializeFormalParams(fparams0: List[FormalParam], subst0: StrictSubstitution)(implicit flix: Flix): (List[FormalParam], Map[Symbol.VarSym, Symbol.VarSym]) = {
     // Return early if there are no formal parameters.
     if (fparams0.isEmpty)
       return (Nil, Map.empty)
@@ -768,7 +768,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     *
     * Returns the new formal parameter and an environment mapping the variable symbol to a fresh variable symbol.
     */
-  def specializeFormalParam(fparam0: FormalParam, subst0: StrictSubstitution)(implicit flix: Flix): (FormalParam, Map[Symbol.VarSym, Symbol.VarSym]) = {
+  private def specializeFormalParam(fparam0: FormalParam, subst0: StrictSubstitution)(implicit flix: Flix): (FormalParam, Map[Symbol.VarSym, Symbol.VarSym]) = {
     val FormalParam(sym, mod, tpe, loc) = fparam0
     val freshSym = Symbol.freshVarSym(sym)
     (FormalParam(freshSym, mod, subst0(tpe), loc), Map(sym -> freshSym))
@@ -779,7 +779,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     *
     * Returns the new formal parameters and an environment mapping the variable symbol for each parameter to a fresh symbol.
     */
-  def specializeConstraintParams(cparams0: List[ConstraintParam], subst0: StrictSubstitution)(implicit flix: Flix): (List[ConstraintParam], Map[Symbol.VarSym, Symbol.VarSym]) = {
+  private def specializeConstraintParams(cparams0: List[ConstraintParam], subst0: StrictSubstitution)(implicit flix: Flix): (List[ConstraintParam], Map[Symbol.VarSym, Symbol.VarSym]) = {
     // Return early if there are no formal parameters.
     if (cparams0.isEmpty)
       return (Nil, Map.empty)
@@ -794,7 +794,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     *
     * Returns the new constraint parameter and an environment mapping the variable symbol to a fresh variable symbol.
     */
-  def specializeConstraintParam(cparam0: ConstraintParam, subst0: StrictSubstitution)(implicit flix: Flix): (ConstraintParam, Map[Symbol.VarSym, Symbol.VarSym]) = cparam0 match {
+  private def specializeConstraintParam(cparam0: ConstraintParam, subst0: StrictSubstitution)(implicit flix: Flix): (ConstraintParam, Map[Symbol.VarSym, Symbol.VarSym]) = cparam0 match {
     case ConstraintParam.HeadParam(sym, tpe, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
       (ConstraintParam.HeadParam(freshSym, subst0(tpe), loc), Map(sym -> freshSym))
