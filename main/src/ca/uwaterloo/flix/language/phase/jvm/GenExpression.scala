@@ -1172,52 +1172,106 @@ object GenExpression {
       AsmOps.compileThrowFlixError(visitor, JvmName.MatchError, loc)
 
     case Expression.BoxBool(exp, loc) =>
-      ???
+      addSourceLine(visitor, loc)
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Boolean", "valueOf", "(Z)Ljava/lang/Boolean;", false)
+
 
     case Expression.BoxInt8(exp, loc) =>
-      ???
+      addSourceLine(visitor, loc)
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Byte", "valueOf", "(B)Ljava/lang/Byte;", false)
+
 
     case Expression.BoxInt16(exp, loc) =>
-      ???
+      addSourceLine(visitor, loc)
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Short", "valueOf", "(S)Ljava/lang/Short;", false)
+
 
     case Expression.BoxInt32(exp, loc) =>
-      ???
+      addSourceLine(visitor, loc)
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Integer", "valueOf", "(I)Ljava/lang/Integer;", false)
+
 
     case Expression.BoxInt64(exp, loc) =>
-      ???
+      addSourceLine(visitor, loc)
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Long", "valueOf", "(J)Ljava/lang/Long;", false)
+
 
     case Expression.BoxChar(exp, loc) =>
-      ???
+      addSourceLine(visitor, loc)
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Character", "valueOf", "(C)Ljava/lang/Character;", false)
+
 
     case Expression.BoxFloat32(exp, loc) =>
-      ???
+      addSourceLine(visitor, loc)
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Float", "valueOf", "(F)Ljava/lang/Float;", false)
+
 
     case Expression.BoxFloat64(exp, loc) =>
-      ???
+      addSourceLine(visitor, loc)
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Double", "valueOf", "(D)Ljava/lang/Double;", false)
 
     case Expression.UnboxBool(exp, loc) =>
-      ???
+      addSourceLine(visitor, loc)
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      visitor.visitTypeInsn(CHECKCAST, "java/lang/Boolean")
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Boolean", "booleanValue", "()Z", false)
+
 
     case Expression.UnboxInt8(exp, loc) =>
-      ???
+      addSourceLine(visitor, loc)
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      visitor.visitTypeInsn(CHECKCAST, "java/lang/Character")
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Character", "charValue", "()C", false)
+
 
     case Expression.UnboxInt16(exp, loc) =>
-      ???
+      addSourceLine(visitor, loc)
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      visitor.visitTypeInsn(CHECKCAST, "java/lang/Short")
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Short", "shortValue", "()S", false)
+
 
     case Expression.UnboxInt32(exp, loc) =>
-      ???
+      addSourceLine(visitor, loc)
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      visitor.visitTypeInsn(CHECKCAST, "java/lang/Integer")
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Integer", "intValue", "()I", false)
 
     case Expression.UnboxInt64(exp, loc) =>
-      ???
+      addSourceLine(visitor, loc)
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      visitor.visitTypeInsn(CHECKCAST, "java/lang/Long")
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Long", "longValue", "()J", false)
+
 
     case Expression.UnboxChar(exp, loc) =>
-      ???
+      addSourceLine(visitor, loc)
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      visitor.visitTypeInsn(CHECKCAST, "java/lang/Character")
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Character", "charValue", "()C", false)
+
 
     case Expression.UnboxFloat32(exp, loc) =>
-      ???
+      addSourceLine(visitor, loc)
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      visitor.visitTypeInsn(CHECKCAST, "java/lang/Float")
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Float", "floatValue", "()F", false)
+
 
     case Expression.UnboxFloat64(exp, loc) =>
-      ???
+      addSourceLine(visitor, loc)
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      visitor.visitTypeInsn(CHECKCAST, "java/lang/Double")
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Double", "doubleValue", "()D", false)
+
   }
 
   /*
