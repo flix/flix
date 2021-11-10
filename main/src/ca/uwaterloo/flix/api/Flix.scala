@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt.TerminalContext
 
-import java.net.URLClassLoader
+import java.net.{URI, URL, URLClassLoader}
 import java.nio.charset.Charset
 import java.nio.file.{Files, Path, Paths}
 import scala.collection.mutable
@@ -293,11 +293,11 @@ class Flix {
     if (p == null)
       throw new IllegalArgumentException(s"'p' must be non-null.")
     if (!Files.exists(p))
-      throw new IllegalArgumentException(s"'$p' must a file.")
+      throw new IllegalArgumentException(s"'$p' must be a file.")
     if (!Files.isRegularFile(p))
-      throw new IllegalArgumentException(s"'$p' must a regular file.")
+      throw new IllegalArgumentException(s"'$p' must be a regular file.")
     if (!Files.isReadable(p))
-      throw new IllegalArgumentException(s"'$p' must a readable file.")
+      throw new IllegalArgumentException(s"'$p' must be a readable file.")
 
     paths += p
     this
@@ -307,6 +307,9 @@ class Flix {
     * Adds the JAR file at path `p` to the class loader.
     */
   def addJar(p: String): Flix = {
+    val uri = new URI(p)
+    val path = Path.of(uri)
+    // MATT some extra indirection here...
     addJar(Path.of(p))
   }
 
@@ -317,11 +320,11 @@ class Flix {
     if (p == null)
       throw new IllegalArgumentException(s"'p' must be non-null.")
     if (!Files.exists(p))
-      throw new IllegalArgumentException(s"'$p' must a file.")
+      throw new IllegalArgumentException(s"'$p' must be a file.")
     if (!Files.isRegularFile(p))
-      throw new IllegalArgumentException(s"'$p' must a regular file.")
+      throw new IllegalArgumentException(s"'$p' must be a regular file.")
     if (!Files.isReadable(p))
-      throw new IllegalArgumentException(s"'$p' must a readable file.")
+      throw new IllegalArgumentException(s"'$p' must be a readable file.")
 
     classLoader.addURL(p.toUri.toURL)
     this
