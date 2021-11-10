@@ -1137,7 +1137,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         */
       def mkConcat(e1: WeededAst.Expression, e2: WeededAst.Expression, loc: SourceLocation): WeededAst.Expression = {
         val sop = SemanticOperator.StringOp.Concat
-        WeededAst.Expression.Binary(sop, e1, e2, loc)
+        val l = loc.asSynthetic
+        WeededAst.Expression.Binary(sop, e1, e2, l)
       }
 
       /**
