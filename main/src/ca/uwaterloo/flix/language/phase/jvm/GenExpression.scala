@@ -477,13 +477,11 @@ object GenExpression {
 
     case Expression.Index(base, offset, tpe, _) =>
       // We get the JvmType of the class for the tuple
-      val classType = JvmOps.getTupleInterfaceType(base.tpe.asInstanceOf[MonoType.Tuple])
+      val classType = JvmOps.getTupleClassType(base.tpe.asInstanceOf[MonoType.Tuple])
       // evaluating the `base`
       compileExpression(base, visitor, currentClass, lenv0, entryPoint)
-      // Descriptor of the method
-      val methodDescriptor = AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe))
-      // Invoking `getField${offset}()` method for fetching the field
-      visitor.visitMethodInsn(INVOKEINTERFACE, classType.name.toInternalName, s"getIndex$offset", methodDescriptor, true)
+      // Retrieving the field `field${offset}`
+      visitor.visitFieldInsn(GETFIELD, classType.name.toInternalName, s"field$offset", JvmOps.getErasedJvmType(tpe).toDescriptor)
       // Cast the object to it's type if it's not a primitive
       AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
