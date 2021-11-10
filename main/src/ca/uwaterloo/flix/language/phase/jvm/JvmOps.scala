@@ -66,7 +66,7 @@ object JvmOps {
     case MonoType.Channel(_) => JvmType.Object
     case MonoType.Lazy(_) => JvmType.Object
     case MonoType.Ref(_) => getRefClassType(tpe)
-    case MonoType.Tuple(_) => getTupleInterfaceType(tpe.asInstanceOf[MonoType.Tuple])
+    case MonoType.Tuple(_) => getTupleClassType(tpe.asInstanceOf[MonoType.Tuple])
     case MonoType.RecordEmpty() => getRecordInterfaceType()
     case MonoType.RecordExtend(_, _, _) => getRecordInterfaceType()
     case MonoType.Enum(_, _) => getEnumInterfaceType(tpe)
@@ -229,32 +229,6 @@ object JvmOps {
 
     // The tag class resides in its namespace package.
     JvmType.Reference(JvmName(tag.sym.namespace, name))
-  }
-
-  /**
-    * Returns the tuple interface type `TX$Y$Z` for the given type `tpe`.
-    *
-    * For example,
-    *
-    * (Int, Int)              =>    T2$Int$Int
-    * (Int, Int, Int)         =>    T3$Int$Int$Int
-    * (Bool, Char, Int)       =>    T3$Bool$Char$Int
-    *
-    * NB: The given type `tpe` must be a tuple type.
-    */
-  def getTupleInterfaceType(tpe: MonoType.Tuple)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
-    case MonoType.Tuple(elms) =>
-      // Compute the arity of the tuple.
-      val arity = elms.length
-
-      // Compute the stringified erased type of each type argument.
-      val args = elms.map(tpe => stringify(getErasedJvmType(tpe)))
-
-      // The JVM name is of the form TArity$Arg0$Arg1$Arg2
-      val name = "ITuple" + arity + "$" + args.mkString("$")
-
-      // The type resides in the root package.
-      JvmType.Reference(JvmName(RootPackage, name))
   }
 
   /**
