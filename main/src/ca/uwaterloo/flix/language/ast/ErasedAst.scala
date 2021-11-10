@@ -191,6 +191,61 @@ object ErasedAst {
 
     case class MatchError(tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
+    case class BoxInt8(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
+      final val tpe = MonoType.Native(java.lang.Byte.TYPE)
+    }
+
+    case class BoxInt16(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
+      final val tpe = MonoType.Native(java.lang.Short.TYPE)
+    }
+
+    case class BoxInt32(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
+      final val tpe = MonoType.Native(java.lang.Integer.TYPE)
+    }
+
+    case class BoxInt64(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
+      final val tpe = MonoType.Native(java.lang.Long.TYPE)
+    }
+
+    case class BoxChar(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
+      final val tpe = MonoType.Native(java.lang.Character.TYPE)
+    }
+
+    case class BoxFloat32(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
+      final val tpe = MonoType.Native(java.lang.Float.TYPE)
+    }
+
+    case class BoxFloat64(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
+      final val tpe = MonoType.Native(java.lang.Double.TYPE)
+    }
+
+    case class UnboxInt8(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
+      final val tpe = MonoType.Int8
+    }
+
+    case class UnboxInt16(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
+      final val tpe = MonoType.Int16
+    }
+
+    case class UnboxInt32(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
+      final val tpe = MonoType.Int32
+    }
+
+    case class UnboxInt64(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
+      final val tpe = MonoType.Int64
+    }
+
+    case class UnboxChar(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
+      final val tpe = MonoType.Char
+    }
+
+    case class UnboxFloat32(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
+      final val tpe = MonoType.Float32
+    }
+
+    case class UnboxFloat64(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
+      final val tpe = MonoType.Float64
+    }
   }
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: ErasedAst.Expression, exp: ErasedAst.Expression)
@@ -202,60 +257,4 @@ object ErasedAst {
   case class FormalParam(sym: Symbol.VarSym, tpe: MonoType)
 
   case class FreeVar(sym: Symbol.VarSym, tpe: MonoType)
-
-  case class BoxInt8(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-    final val tpe = MonoType.Native(java.lang.Byte.TYPE)
-  }
-
-  case class BoxInt16(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-    final val tpe = MonoType.Native(java.lang.Short.TYPE)
-  }
-
-  case class BoxInt32(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-    final val tpe = MonoType.Native(java.lang.Integer.TYPE)
-  }
-
-  case class BoxInt64(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-    final val tpe = MonoType.Native(java.lang.Long.TYPE)
-  }
-
-  case class BoxChar(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-    final val tpe = MonoType.Native(java.lang.Character.TYPE)
-  }
-
-  case class BoxFloat32(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-    final val tpe = MonoType.Native(java.lang.Float.TYPE)
-  }
-
-  case class BoxFloat64(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-    final val tpe = MonoType.Native(java.lang.Double.TYPE)
-  }
-
-  case class UnboxInt8(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-    final val tpe = MonoType.Int8
-  }
-
-  case class UnboxInt16(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-    final val tpe = MonoType.Int16
-  }
-
-  case class UnboxInt32(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-    final val tpe = MonoType.Int32
-  }
-
-  case class UnboxInt64(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-    final val tpe = MonoType.Int64
-  }
-
-  case class UnboxChar(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-    final val tpe = MonoType.Char
-  }
-
-  case class UnboxFloat32(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-    final val tpe = MonoType.Float32
-  }
-
-  case class UnboxFloat64(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-    final val tpe = MonoType.Float64
-  }
 }

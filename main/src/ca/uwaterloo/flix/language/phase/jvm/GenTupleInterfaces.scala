@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.FinalAst.Root
+import ca.uwaterloo.flix.language.ast.ErasedAst.Root
 import ca.uwaterloo.flix.language.ast.MonoType
 import org.objectweb.asm.Opcodes._
 
@@ -39,7 +39,7 @@ object GenTupleInterfaces {
         val targs = elms.map(JvmOps.getErasedJvmType)
         val bytecode = genByteCode(jvmType, targs)
         macc + (jvmName -> JvmClass(jvmName, bytecode))
-      case (macc, tpe) =>
+      case (macc, _) =>
         // Case 2: The type constructor is a non-tuple.
         // Nothing to be done. Return the map.
         macc
