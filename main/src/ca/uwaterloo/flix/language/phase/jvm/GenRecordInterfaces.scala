@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.FinalAst.Root
+import ca.uwaterloo.flix.language.ast.ErasedAst.Root
 import org.objectweb.asm.Opcodes._
 
 /**
@@ -31,8 +31,7 @@ object GenRecordInterfaces {
   def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     val jvmType = JvmOps.getRecordInterfaceType()
     val jvmName = jvmType.name
-    val targs = List()
-    val bytecode = genByteCode(jvmType, targs)
+    val bytecode = genByteCode(jvmType)
     Map(jvmName -> JvmClass(jvmName, bytecode))
   }
 
@@ -44,7 +43,7 @@ object GenRecordInterfaces {
     * the class type should never be used to reference to that object and this interface should be used for all interactions
     * with that object.
     */
-  private def genByteCode(interfaceType: JvmType.Reference, targs: List[JvmType])(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genByteCode(interfaceType: JvmType.Reference)(implicit root: Root, flix: Flix): Array[Byte] = {
     // class writer
     val visitor = AsmOps.mkClassWriter()
 

@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.FinalAst.{Def, Root}
+import ca.uwaterloo.flix.language.ast.ErasedAst.{Def, Root}
 import ca.uwaterloo.flix.language.ast.MonoType
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.{ClassWriter, Label}
@@ -237,7 +237,7 @@ object GenNamespaces {
       AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
 
     // Initializing each field
-    for ((sym, defn) <- ns.defs) {
+    for ((sym, _) <- ns.defs) {
 
       // JvmType for the `sym`
       val jvmType = JvmOps.getFunctionDefinitionClassType(sym)

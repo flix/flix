@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.FinalAst.Root
+import ca.uwaterloo.flix.language.ast.ErasedAst.Root
 import ca.uwaterloo.flix.language.ast.MonoType
 import org.objectweb.asm.Opcodes._
 
@@ -31,7 +31,7 @@ object GenContinuationInterfaces {
     */
   def gen(ts: Set[MonoType])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     ts.foldLeft(Map.empty[JvmName, JvmClass]) {
-      case (macc, tpe@MonoType.Arrow(targs, tresult)) =>
+      case (macc, tpe@MonoType.Arrow(_, tresult)) =>
         // Case 1: The type constructor is an arrow.
         // Construct continuation interface.
         val jvmType = JvmOps.getContinuationInterfaceType(tpe)
@@ -39,7 +39,7 @@ object GenContinuationInterfaces {
         val resultType = JvmOps.getErasedJvmType(tresult)
         val bytecode = genByteCode(jvmType, resultType)
         macc + (jvmName -> JvmClass(jvmName, bytecode))
-      case (macc, tpe) =>
+      case (macc, _) =>
         // Case 2: The type constructor is a non-arrow.
         // Nothing to be done. Return the map.
         macc
