@@ -294,8 +294,9 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
         ("fparams" -> computedfparams) ~
         ("retTpe" -> visitType(spec.retTpe)) ~
         ("eff" -> visitType(spec.eff)) ~
-        ("loc" -> visitSourceLocation(spec.loc)) ~
-        ("implemented" -> impl)
+        ("loc" -> visitSourceLocation(spec.loc))
+
+      // TODO: missing implemented as last type
   }
 
   /**
