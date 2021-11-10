@@ -17,13 +17,11 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.FinalAst._
+import ca.uwaterloo.flix.language.ast.ErasedAst._
 import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
 import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.{ClassWriter, Label, MethodVisitor}
-
-import scala.collection.parallel.CollectionConverters._
 
 /**
   * Generates bytecode for the function classes.
@@ -51,7 +49,7 @@ object GenFunctionClasses {
         val className = classType.name
         macc + (className -> JvmClass(className, genByteCode(classType, functionInterface, defn)))
 
-      case (macc, (sym, defn)) => macc
+      case (macc, (_, _)) => macc
     }, _ ++ _)
   }
 
@@ -105,7 +103,7 @@ object GenFunctionClasses {
     compileApplyMethod(visitor, classType, defn, tresult)
 
     // Eval method of the class
-    compileEvalMethod(visitor, classType, defn, tresult)
+    compileEvalMethod(visitor, defn, tresult)
 
     visitor.toByteArray
   }
@@ -218,7 +216,7 @@ object GenFunctionClasses {
     // Construct a proxy object.
     resultType match {
       case arrayType: MonoType.Array => AsmOps.newProxyArray(arrayType, mv)
-      case nonArrayType => AsmOps.newProxyObject(resultType, mv)
+      case _ => AsmOps.newProxyObject(mv)
     }
 
     // Return the proxy object.
@@ -231,7 +229,7 @@ object GenFunctionClasses {
   /**
     * Emits code for a functional that fully evaluates the current function, including tail calls.
     */
-  private def compileEvalMethod(cw: ClassWriter, classType: JvmType.Reference, defn: Def, resultType: MonoType)(implicit root: Root, flix: Flix): Unit = {
+  private def compileEvalMethod(cw: ClassWriter, defn: Def, resultType: MonoType)(implicit root: Root, flix: Flix): Unit = {
     // Method header
     val mv = cw.visitMethod(ACC_PUBLIC + ACC_FINAL, "eval", AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Object), null, null)
 
@@ -314,7 +312,7 @@ object GenFunctionClasses {
     mv.visitVarInsn(ASTORE, ArrayLocalVar)
 
     // Iterate through each formal argument and invoke `setArg`.
-    for ((FormalParam(sym, tpe), index) <- defn.formals.zipWithIndex) {
+    for ((FormalParam(_, tpe), index) <- defn.formals.zipWithIndex) {
       // Load the `this` value (to be used for the call below).
       mv.visitVarInsn(ALOAD, 0)
 
