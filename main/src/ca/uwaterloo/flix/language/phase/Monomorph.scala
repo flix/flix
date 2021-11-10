@@ -908,39 +908,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       t => (FormalParam(freshSym, mod, t, loc), Map(sym -> freshSym))
     }
   }
-  //
-  //  /**
-  //    * Specializes the given constraint parameters `cparams0` w.r.t. the given substitution `subst0`.
-  //    *
-  //    * Returns the new formal parameters and an environment mapping the variable symbol for each parameter to a fresh symbol.
-  //    */
-  //  private def specializeConstraintParams(cparams0: List[ConstraintParam], subst0: StrictSubstitution)(implicit flix: Flix): (List[ConstraintParam], Map[Symbol.VarSym, Symbol.VarSym]) = {
-  //    // Return early if there are no formal parameters.
-  //    if (cparams0.isEmpty)
-  //      return (Nil, Map.empty)
-  //
-  //    // Specialize each constraint parameter and recombine the results.
-  //    val (params, envs) = cparams0.map(p => specializeConstraintParam(p, subst0)).unzip
-  //    (params, envs.reduce(_ ++ _))
-  //  }
-  //
-  //  /**
-  //    * Specializes the given constraint parameter `fparam0` w.r.t. the given substitution `subst0`.
-  //    *
-  //    * Returns the new constraint parameter and an environment mapping the variable symbol to a fresh variable symbol.
-  //    */
-  //  private def specializeConstraintParam(cparam0: ConstraintParam, subst0: StrictSubstitution)(implicit flix: Flix): Validation[(ConstraintParam, Map[Symbol.VarSym, Symbol.VarSym]), CompilationMessage] = cparam0 match {
-  //    case ConstraintParam.HeadParam(sym, tpe, loc) =>
-  //      val freshSym = Symbol.freshVarSym(sym)
-  //      mapN(subst0(tpe)){
-  //        t => (ConstraintParam.HeadParam(freshSym, t, loc), Map(sym -> freshSym))
-  //      }
-  //    case ConstraintParam.RuleParam(sym, tpe, loc) =>
-  //      val freshSym = Symbol.freshVarSym(sym)
-  //      mapN(subst0(tpe)){
-  //        t => (ConstraintParam.RuleParam(freshSym, t, loc), Map(sym -> freshSym))
-  //      }
-  //  }
 
   /**
     * Returns an expression that evaluates to a ReifiedBool for the given type `tpe`.
