@@ -191,6 +191,10 @@ object ErasedAst {
 
     case class MatchError(tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
+    case class BoxBool(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
+      final val tpe = MonoType.Native(java.lang.Boolean.TYPE)
+    }
+
     case class BoxInt8(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
       final val tpe = MonoType.Native(java.lang.Byte.TYPE)
     }
@@ -217,6 +221,10 @@ object ErasedAst {
 
     case class BoxFloat64(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
       final val tpe = MonoType.Native(java.lang.Double.TYPE)
+    }
+
+    case class UnboxBool(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
+      final val tpe = MonoType.Bool
     }
 
     case class UnboxInt8(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {

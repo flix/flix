@@ -1171,6 +1171,9 @@ object GenExpression {
       addSourceLine(visitor, loc)
       AsmOps.compileThrowFlixError(visitor, JvmName.MatchError, loc)
 
+    case Expression.BoxBool(exp, loc) =>
+      ???
+
     case Expression.BoxInt8(exp, loc) =>
       ???
 
@@ -1190,6 +1193,9 @@ object GenExpression {
       ???
 
     case Expression.BoxFloat64(exp, loc) =>
+      ???
+
+    case Expression.UnboxBool(exp, loc) =>
       ???
 
     case Expression.UnboxInt8(exp, loc) =>
