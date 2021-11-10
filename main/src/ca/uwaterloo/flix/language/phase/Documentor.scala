@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.TypeConstraint
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, Scheme, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType, PrettyExpression}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
@@ -230,10 +230,10 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns the given Type Parameter `tparam` as a JSON value.
     */
   private def visitTypeParam(tparam: TypeParam): JObject = tparam match {
-  case TypeParam(ident, tpe, loc) =>
-  ("name" -> ident.name) ~
-  ("kind" -> visitKind(tpe.kind))
-}
+    case TypeParam(ident, tpe, loc) =>
+      ("name" -> ident.name) ~
+        ("kind" -> visitKind(tpe.kind))
+  }
 
   /**
     * Returns the given Doc `doc` as a JSON value.
@@ -252,7 +252,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     case TypeAlias(doc, mod, sym, tparams, tpe, loc) =>
       // Compute the type parameters.
       val computedtparams = tparams.map {
-            t => visitTypeParam(t)
+        t => visitTypeParam(t)
       }
 
       ("doc" -> visitDoc(doc)) ~
@@ -296,7 +296,58 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
         ("eff" -> visitType(spec.eff)) ~
         ("loc" -> visitSourceLocation(spec.loc))
 
-      // TODO: missing implemented as last type
+    // TODO: missing implemented as last type
+  }
+
+  /**
+    * Returns the given Enum `enum` as a JSON value.
+    */
+  private def visitEnum(enum: Enum): JObject = enum match {
+    case Enum(doc, mod, sym, tparams, cases, tpeDeprecated, sc, loc) =>
+      // Compute the type parameters.
+      val computedtparams = tparams.map {
+        t => visitTypeParam(t)
+      }
+
+      // Compute the cases.
+      val computedCases = cases.toList.map {
+        case (tag, tcase) =>
+          ("tag" -> tag.name) ~
+            ("tpe" -> visitType(tcase.tpeDeprecated))
+      }
+
+      ("doc" -> visitDoc(doc)) ~
+        ("mod" -> visitModifier(mod)) ~
+        ("sym" -> visitEnumSym(sym)) ~
+        ("tparams" -> computedtparams) ~
+        ("cases" -> computedCases) ~
+        ("loc" -> visitSourceLocation(loc))
+  }
+
+  /**
+    * Return the given Class `cla` as a JSON value.
+    */
+  private def visitClass(cla: Class): JObject = cla match {
+    case Class(doc, mod, sym, tparam, superClasses, signatures, laws, loc) =>
+      // Compute the type constraints.
+      val computedTypeConstraints = superClasses.map {
+        tc => visitTypeConstraint(tc)
+      }
+
+      // Compute the signatures.
+      val computedSig = signatures.map {
+        sig => visitSig(sig)
+      }
+
+      ("sym" -> visitClassSym(sym)) ~
+        ("doc" -> visitDoc(doc)) ~
+        ("mod" -> visitModifier(mod)) ~
+        ("tparams" -> visitTypeParam(tparam)) ~
+        ("superClasses" -> computedTypeConstraints) ~
+        ("signatures" -> computedSig) ~
+        ("loc" -> visitSourceLocation(loc))
+
+      // TODO: missing instances (second last)
   }
 
   /**
