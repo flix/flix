@@ -178,6 +178,8 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       case JString("api/remUri") => Request.parseRemUri(json)
       case JString("api/addPkg") => Request.parseAddPkg(json)
       case JString("api/remPkg") => Request.parseRemPkg(json)
+      case JString("api/addJar") => Request.parseAddJar(json)
+      case JString("api/remJar") => Request.parseRemJar(json)
       case JString("api/version") => Request.parseVersion(json)
       case JString("api/shutdown") => Request.parseShutdown(json)
 
