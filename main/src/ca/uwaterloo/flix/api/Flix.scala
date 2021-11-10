@@ -52,11 +52,6 @@ class Flix {
   private val inputs = ListBuffer.empty[Input]
 
   /**
-    * A class loader for loading JARs.
-    */
-  val classLoader = new AppendableClassLoader // MATT move to public section ?
-
-  /**
     * A set of reachable root definitions.
     */
   private val reachableRoots = mutable.Set.empty[Symbol.DefnSym]
@@ -255,6 +250,11 @@ class Flix {
   val genSym = new GenSym()
 
   /**
+    * A class loader for loading JARs.
+    */
+  val classLoader = new AppendableClassLoader
+
+  /**
     * Adds the given string `s` to the list of strings to be parsed.
     */
   def addStr(s: String): Flix = {
@@ -303,7 +303,16 @@ class Flix {
     this
   }
 
-  // MATT docs
+  /**
+    * Adds the JAR file at path `p` to the class loader.
+    */
+  def addJar(p: String): Flix = {
+    addJar(Path.of(p))
+  }
+
+  /**
+    * Adds the JAR file at path `p` to the class loader.
+    */
   def addJar(p: Path): Flix = {
     if (p == null)
       throw new IllegalArgumentException(s"'p' must be non-null.")
@@ -313,7 +322,6 @@ class Flix {
       throw new IllegalArgumentException(s"'$p' must a regular file.")
     if (!Files.isReadable(p))
       throw new IllegalArgumentException(s"'$p' must a readable file.")
-    // MATT check that it's a jar
 
     classLoader.addURL(p.toUri.toURL)
     this

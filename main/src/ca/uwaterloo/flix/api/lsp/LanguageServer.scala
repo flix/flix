@@ -38,6 +38,7 @@ import org.json4s.native.JsonMethods.parse
 import java.io.ByteArrayInputStream
 import java.net.InetSocketAddress
 import java.nio.charset.Charset
+import java.nio.file.Path
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.zip.ZipInputStream
@@ -92,6 +93,11 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     * A map from package URIs to source code.
     */
   val packages: mutable.Map[String, List[String]] = mutable.Map.empty
+
+  /**
+    * A set of JAR URIs.
+    */
+  val jars: mutable.Set[String] = mutable.Set.empty
 
   /**
     * The current AST root. The root is null until the source code is compiled.
@@ -231,6 +237,14 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       packages -= uri
       ("id" -> id) ~ ("status" -> "success")
 
+    case Request.AddJar(id, uri) =>
+      jars += uri
+      ("id" -> id) ~ ("status" -> "success")
+
+    case Request.RemJar(id, uri) =>
+      jars -= uri
+      ("id" -> id) ~ ("status" -> "success")
+
     case Request.Version(id) => processVersion(id)
 
     case Request.Shutdown(id) => processShutdown()
@@ -290,6 +304,11 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       for (src <- items) {
         flix.addInput(uri, src)
       }
+    }
+
+    // Add JARs.
+    for (uri <- jars) {
+      flix.addJar(uri)
     }
 
     // Measure elapsed time.
