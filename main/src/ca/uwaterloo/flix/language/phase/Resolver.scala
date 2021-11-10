@@ -413,15 +413,17 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         * Creates a lambda for use in a curried dif or sig application.
         */
       def mkCurriedLambda(fparams: List[ResolvedAst.FormalParam], baseExp: ResolvedAst.Expression, loc: SourceLocation): ResolvedAst.Expression = {
+        val l = loc.asSynthetic
+
         // The arguments passed to the definition (i.e. the fresh variable symbols).
-        val argExps = fparams.map(fparam => ResolvedAst.Expression.Var(fparam.sym, fparam.sym.tvar, loc))
+        val argExps = fparams.map(fparam => ResolvedAst.Expression.Var(fparam.sym, fparam.sym.tvar, l))
 
         // The apply expression inside the lambda.
-        val applyExp = ResolvedAst.Expression.Apply(baseExp, argExps, loc)
+        val applyExp = ResolvedAst.Expression.Apply(baseExp, argExps, l)
 
         // The curried lambda expressions.
         fparams.foldRight(applyExp: ResolvedAst.Expression) {
-          case (fparam, acc) => ResolvedAst.Expression.Lambda(fparam, acc, loc)
+          case (fparam, acc) => ResolvedAst.Expression.Lambda(fparam, acc, l)
         }
       }
 
@@ -433,13 +435,13 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         val arity = defn.spec.fparams.length
 
         // Create the fresh fparams
-        val fparams = mkFreshFparams(arity, loc)
+        val fparams = mkFreshFparams(arity, loc.asSynthetic)
 
         // The definition expression.
         val defExp = ResolvedAst.Expression.Def(defn.sym, loc)
 
         // Create and apply the lambda expressions
-        mkCurriedLambda(fparams, defExp, loc)
+        mkCurriedLambda(fparams, defExp, loc.asSynthetic)
       }
 
       /**
@@ -450,13 +452,13 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         val arity = sig.spec.fparams.length
 
         // Create the fresh fparams
-        val fparams = mkFreshFparams(arity, loc)
+        val fparams = mkFreshFparams(arity, loc.asSynthetic)
 
         // The signature expression.
         val sigExp = ResolvedAst.Expression.Sig(sig.sym, loc)
 
         // Create and apply the lambda expressions
-        mkCurriedLambda(fparams, sigExp, loc)
+        mkCurriedLambda(fparams, sigExp, loc.asSynthetic)
       }
 
       /**
@@ -469,7 +471,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             es <- traverse(exps)(visit(_, tenv0))
           } yield {
             es.foldLeft(e) {
-              case (acc, a) => ResolvedAst.Expression.Apply(acc, List(a), loc)
+              case (acc, a) => ResolvedAst.Expression.Apply(acc, List(a), loc.asSynthetic)
             }
           }
       }
