@@ -254,12 +254,44 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       val computedtparams = tparams.map {
             t => visitTypeParam(t)
       }
+
       ("doc" -> visitDoc(doc)) ~
         ("mod" -> visitModifier(mod)) ~
         ("sym" -> visitTypeAliasSym(sym)) ~
         ("tparams" -> computedtparams) ~
         ("tpe" -> visitType(tpe)) ~
         ("loc" -> visitSourceLocation(loc))
+  }
+
+  /**
+    *
+    */
+  private def visitFormalParam(f: FormalParam): JObject = ??? // TODO
+
+  /**
+    * Returns the given Sig `sig` as a JSON value.
+    */
+  private def visitSig(sig: Sig): JObject = sig match {
+    case Sig(sym, spec, impl) =>
+      // Compute the type parameters.
+      val computedtparams = spec.tparams.map {
+        t => visitTypeParam(t)
+      }
+
+      // Compute the formal parameters.
+      val computedfparams = spec.fparams.map {
+        f => visitFormalParam(f)
+      }
+
+      ("sym" -> visitSigSym(sym)) ~
+        ("doc" -> visitDoc(spec.doc)) ~
+        ("mod" -> visitModifier(spec.mod)) ~
+        ("tparams" -> computedtparams) ~
+        ("fparams" -> computedfparams) ~
+        ("retTpe" -> visitType(spec.retTpe)) ~
+        ("eff" -> visitType(spec.eff)) ~
+        ("loc" -> visitSourceLocation(spec.loc)) ~
+        ("implemented" -> impl)
   }
 
   /**
