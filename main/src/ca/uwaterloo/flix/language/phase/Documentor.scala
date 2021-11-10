@@ -350,6 +350,8 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       // TODO: missing instances (second last)
   }
 
+  // TODO: visitAPI
+
   /**
     * Writes the given string `s` to the given path `p`.
     */
