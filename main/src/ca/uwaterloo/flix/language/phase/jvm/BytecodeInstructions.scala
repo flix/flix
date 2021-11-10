@@ -16,16 +16,63 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import org.objectweb.asm.MethodVisitor
+import org.objectweb.asm.{MethodVisitor, Opcodes}
 
 object BytecodeInstructions {
 
-  sealed case class F(visitor: MethodVisitor)
+  /**
+    * A Frame that represents the Jvm state and contains a visitor to emit code
+    */
+  sealed class F(visitor: MethodVisitor) {
+    def visitTypeInstruction(opcode: Int, tpe: JvmName): Unit =
+      visitor.visitTypeInsn(opcode, tpe.toInternalName)
+
+    def visitInstruction(opcode: Int): Unit = visitor.visitInsn(opcode)
+
+    def visitMethodInstruction(opcode: Int, owner: JvmName, methodName: String, descriptor: String): Unit =
+      visitor.visitMethodInsn(opcode, owner.toInternalName, methodName, descriptor, false)
+
+    def visitFieldInstruction(opcode: Int, owner: JvmName, fieldName: String, fieldType: JvmType): Unit =
+      visitor.visitFieldInsn(opcode, owner.toInternalName, fieldName, fieldType.toDescriptor)
+
+    def visitVarInstruction(opcode: Int, v: Int): Unit =
+      visitor.visitVarInsn(opcode, v)
+  }
 
   type Instruction = F => F
 
   implicit class ComposeOps(i1: Instruction) {
     def ~(i2: Instruction): Instruction =
       f => i2(i1(f))
+  }
+
+  def NEW(className: JvmName): Instruction = f => {
+    f.visitTypeInstruction(Opcodes.NEW, className)
+    f
+  }
+
+  def DUP: Instruction = f => {
+    f.visitInstruction(Opcodes.DUP)
+    f
+  }
+
+  def InvokeSimpleConstructor(className: JvmName): Instruction = f => {
+    f.visitMethodInstruction(Opcodes.INVOKESPECIAL, className, JvmName.ConstructorMethod, JvmName.Descriptors.NothingToVoid)
+    f
+  }
+
+  def PUTSTATIC(className: JvmName, fieldName: String, fieldType: JvmType): Instruction = f => {
+    f.visitFieldInstruction(Opcodes.PUTSTATIC, className, fieldName, fieldType)
+    f
+  }
+
+  def RETURN: Instruction = f => {
+    f.visitInstruction(Opcodes.RETURN)
+    f
+  }
+
+  def ALOAD(index: Int): Instruction = f => {
+    f.visitVarInstruction(Opcodes.ALOAD, index)
+    f
   }
 }
