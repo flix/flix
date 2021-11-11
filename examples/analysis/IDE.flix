@@ -112,8 +112,9 @@ def id(): Transformer = Transformer.NonBotTrans(1,0,Const.Bot)
 // call-to-start
 def nonbottom(t: Transformer): Bool = t != Transformer.BotTrans
 
+
 // Rules
-def main(_: Array[String]): Int32 & Impure =
+def analysis(cfg: List[(String, String)]): Int32 & Impure =
     let p = #{
         // nodes in a given procedure
         InProc(p,start) :- StartNode(p, start).
@@ -158,21 +159,10 @@ def main(_: Array[String]): Int32 & Impure =
             Results(call,d;v),
             EshCallStart(call,d,proc,dp;cs).
     };
+
+    let f1 = project cfg into CFG;
+
     let f = #{
-        CFG("smain","n1").
-        CFG("n1","n2").
-        CFG("n2","n3").
-        CFG("n3","emain").
-
-        CFG("sp","n4").
-        CFG("n4","n5").
-        CFG("n4","n9").
-        CFG("n5","n6").
-        CFG("n6","n7").
-        CFG("n7","n8").
-        CFG("n8","n9").
-        CFG("n9","ep").
-
         StartNode("main","smain").
         StartNode("p","sp").
         EndNode("main","emain").
@@ -216,7 +206,7 @@ def main(_: Array[String]): Int32 & Impure =
         JumpFn("zero","smain","zero";id()).
         ResultProc("main","zero";Const.Top).
     };
-    let m = solve p, f;
+    let m = solve p, f, f1;
     (m |> Fixpoint.unsafePrint) as & Impure;
     0
 
@@ -304,3 +294,28 @@ def mul(x: Const, y: Const): Const = match (x, y) {
     case (Const.Cst(n1), Const.Cst(n2)) => Const.Cst(n1 * n2)
     case _                              => Const.Top
 }
+
+
+///
+/// Run the example.
+///
+def main(_: Array[String]): Int32 & Impure =
+    println("Running IDE");
+
+    let cfg =
+        ("smain","n1") ::
+        ("n1","n2") ::
+        ("n2","n3") ::
+        ("n3","emain") ::
+
+        ("sp","n4") ::
+        ("n4","n5") ::
+        ("n4","n9") ::
+        ("n5","n6") ::
+        ("n6","n7") ::
+        ("n7","n8") ::
+        ("n8","n9") ::
+        ("n9","ep") :: Nil;
+
+    analysis(cfg);
+    0
