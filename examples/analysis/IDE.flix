@@ -88,6 +88,7 @@ namespace IDE {
     }
 
     type alias IDE = {
+        zero        :: String,
         cfg         :: List[(String, String)],
         callGraph   :: List[(String, String)]
     }
@@ -144,18 +145,19 @@ namespace IDE {
                 InProc(proc, n),
                 JumpFn(dp, n, d; fn).
 
+            // TODO: Ondrej: Add comment.
             ResultProc(proc,dp;apply(cs,v)) :-
                 Results(call,d;v),
                 EshCallStart(call,d,proc,dp;cs).
+
+            // TODO: Ondrej: Add comment.
+            EshIntra(n, ide.zero, ide.zero, id()) :- CFG(n,_).
         };
 
         let f1 = project ide.cfg, ide.callGraph, startNodes, endNodes into CFG, CallGraph, StartNode, EndNode;
         let f2 = project eshIntra into EshIntra;
         // TODO: Move more facts as arguments.
         let f = #{
-
-            EshIntra(n,"zero","zero", id()) :- CFG(n,_).
-
             EshCallStart(call,"zero",target,"zero";id()) :- CallGraph(call,target).
             EshEndReturn(target,"zero",call,"zero";id()) :- CallGraph(call,target).
 
@@ -328,5 +330,5 @@ def main(_: Array[String]): Int32 & Impure =
         ("n9","a","a", IDE/Trans.id()) ::
         ("n9","a","x", IDE/Transformer.NonBotTrans(-2,5, ConstantProp/Const.Bot)) :: Nil;
 
-    IDE.runIDE({cfg = cfg, callGraph = callGraph}, startNodes, endNodes, eshIntra);
+    IDE.runIDE({zero = "zero", cfg = cfg, callGraph = callGraph}, startNodes, endNodes, eshIntra);
     0
