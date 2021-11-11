@@ -2383,7 +2383,7 @@ def distinctWith09(): Bool =
 
     @test
     def toChain02(): Bool =
-        List.toChain(1 :: Nil) == Chain.point(1)
+        List.toChain(1 :: Nil) == Chain.singleton(1)
 
     @test
     def toChain03(): Bool =

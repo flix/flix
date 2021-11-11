@@ -4375,7 +4375,7 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
 
     @test
     def toChain02(): Bool & Impure =
-        Array.toChain([1]) == Chain.point(1)
+        Array.toChain([1]) == Chain.singleton(1)
 
     @test
     def toChain03(): Bool & Impure =

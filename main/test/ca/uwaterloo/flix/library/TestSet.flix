@@ -927,7 +927,7 @@ def toChain01(): Bool =
 
 @test
 def toChain02(): Bool =
-    Set.toChain(Set#{1}) == Chain.point(1)
+    Set.toChain(Set#{1}) == Chain.singleton(1)
 
 @test
 def toChain03(): Bool =

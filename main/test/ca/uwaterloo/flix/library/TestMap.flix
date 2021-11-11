@@ -1904,7 +1904,7 @@ def query18(): Bool =
 
     @test
     def toChain02(): Bool =
-        Map.toChain(Map#{1 -> 1}) == Chain.point((1, 1))
+        Map.toChain(Map#{1 -> 1}) == Chain.singleton((1, 1))
 
     @test
     def toChain03(): Bool =

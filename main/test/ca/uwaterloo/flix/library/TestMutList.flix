@@ -1336,7 +1336,7 @@ namespace TestMutList {
 
     @test
     def toChain02(): Bool & Impure =
-        MutList.toChain(List.toMutList(1 :: Nil)) == Chain.point(1)
+        MutList.toChain(List.toMutList(1 :: Nil)) == Chain.singleton(1)
 
     @test
     def toChain03(): Bool & Impure =
