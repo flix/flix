@@ -152,14 +152,19 @@ namespace IDE {
 
             // TODO: Ondrej: Add comment.
             EshIntra(n, ide.zero, ide.zero, id()) :- CFG(n,_).
+
+            // TODO: Ondrej: Add comment.
+            EshCallStart(call, ide.zero, target, ide.zero; id()) :- CallGraph(call, target).
+
+            // TODO: Ondrej: Add comment.
+            EshEndReturn(target, ide.zero, call, ide.zero; id()) :- CallGraph(call, target).
         };
 
         let f1 = project ide.cfg, ide.callGraph, startNodes, endNodes into CFG, CallGraph, StartNode, EndNode;
         let f2 = project eshIntra into EshIntra;
         // TODO: Move more facts as arguments.
         let f = #{
-            EshCallStart(call,"zero",target,"zero";id()) :- CallGraph(call,target).
-            EshEndReturn(target,"zero",call,"zero";id()) :- CallGraph(call,target).
+
 
             EshCallStart("n1","zero","p","a";Transformer.NonBotTrans(0,7,ConstantProp/Const.Bot)).
             EshCallStart("n1","x","p","x";id()).
