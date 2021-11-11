@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.util.InternalRuntimeException
 
 import scala.collection.mutable
@@ -25,7 +26,7 @@ import scala.collection.mutable
   *
   * @param classes A map from internal names (strings) to JvmClasses.
   */
-class FlixClassLoader(classes: Map[String, JvmClass]) extends ClassLoader {
+class FlixClassLoader(classes: Map[String, JvmClass], flix: Flix) extends ClassLoader {
 
   /**
     * An internal cache of already loaded classes.
@@ -43,7 +44,8 @@ class FlixClassLoader(classes: Map[String, JvmClass]) extends ClassLoader {
         classes.get(name) match {
           case None =>
             // Case 1.1: The internal name does not exist. Try the super loader.
-            super.findClass(name)
+            flix.classLoader.loadClass(name) // MATT testing idk
+//            super.findClass(name)
           case Some(jvmClass) =>
             // Case 1.2: The internal name was found. Define the class using its byte code.
             val clazz = defineClass(name, jvmClass.bytecode, 0, jvmClass.bytecode.length)
