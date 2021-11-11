@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst.Root
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker._
 
 object GenUnitClass {
 
@@ -32,15 +33,15 @@ object GenUnitClass {
   }
 
   private def genByteCode(unitType: JvmType, unitName: JvmName)(implicit flix: Flix): Array[Byte] = {
-    val classMaker = ClassMaker.mkClass(unitName)
+    val cm = mkClass(unitName, Public, Final)
 
     // Singleton instance
-    classMaker.mkStaticField(InstanceFieldName, unitType)
+    cm.mkField(InstanceFieldName, unitType, Public, Final, Static)
 
-    classMaker.mkStaticConstructor(genStaticConstructor(unitType, unitName))
-    classMaker.mkPrivateConstructor(genConstructor(), JvmName.Descriptors.NothingToVoid)
+    cm.mkStaticConstructor(genStaticConstructor(unitType, unitName))
+    cm.mkConstructor(genConstructor(), JvmName.Descriptors.NothingToVoid, Private)
 
-    classMaker.closeClassMaker
+    cm.closeClassMaker
   }
 
   private def genStaticConstructor(unitType: JvmType, unitName: JvmName): Instruction = {
