@@ -277,7 +277,8 @@ namespace ConstantProp {
     pub def mul(x: Const, y: Const): Const = match (x, y) {
         case (Const.Bot, _)                 => Const.Bot
         case (_, Const.Bot)                 => Const.Bot
-        case (Const.Cst(_), Const.Cst(0))   => Const.Cst(0) // TODO: Ondrej: Why is it like this?>
+        case (Const.Cst(0), _)              => Const.Cst(0)
+        case (_, Const.Cst(0))              => Const.Cst(0)
         case (Const.Cst(n1), Const.Cst(n2)) => Const.Cst(n1 * n2)
         case _                              => Const.Top
     }
