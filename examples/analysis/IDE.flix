@@ -1,63 +1,48 @@
-enum Value with Eq, Order, ToString {
-    case Bot,
-    case Cst(Int),
-    case Top
-}
+/*
+ * Copyright 2021 Magnus Madsen, Ondřej Lhoták
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-def sum(e1: Value, e2: Int): Value = match e1 {
-    case Value.Cst(n) => Value.Cst(n+e2)
-    case _ => e1
-}
+/// 
+/// A fully polymorphic implementation of the IDE framework in Flix.
+///
+/// Written by Magnus Madsen, Ondřej Lhoták
+///
 
-def prod(e1: Value, e2: Int): Value = match (e1, e2) {
-    case (Value.Cst(n), _) => Value.Cst(n*e2)
-    case (Value.Bot, _) => Value.Bot
-    case (_, zero) => if(zero == 0) Value.Cst(0) else e1
-    case _ => e1
-}
+///
+/// We have now defined the IDE framework.
+/// 
+/// Next, we instantiate it with the constant propagation lattice.
+///
 
-instance LowerBound[Value] {
-    pub def minValue(): Value = Value.Bot
-}
+///
+/// We begin by defining the lattice and its associated operations.
+///
 
-instance PartialOrder[Value] {
-    pub def lessEqual(e1: Value, e2: Value): Bool = match (e1, e2) {
-        case (Value.Bot, _) => true
-        case (Value.Cst(n1), Value.Cst(n2)) => n1 == n2
-        case (_, Value.Top) => true
-        case _ => false
-    }
-}
 
-instance JoinLattice[Value] {
-    pub def leastUpperBound(e1: Value, e2: Value): Value = match (e1, e2) {
-        case (Value.Bot, x) => x
-        case (x, Value.Bot) => x
-        case (Value.Cst(n1), Value.Cst(n2)) => if(n1 == n2) Value.Cst(n1) else Value.Top
-        case _ => Value.Top
-    }
-}
-
-instance MeetLattice[Value] {
-    pub def greatestLowerBound(e1: Value, e2: Value): Value = match (e1, e2) {
-        case (Value.Top, x) => x
-        case (x, Value.Top) => x
-        case (Value.Cst(n1), Value.Cst(n2)) => if(n1 == n2) Value.Cst(n1) else Value.Bot
-        case _ => Value.Bot
-    }
-}
 
 enum Transformer with Eq, Order, ToString {
     case BotTrans,
-    case NonBotTrans(Int,Int,Value)
+    case NonBotTrans(Int,Int,Const)
 }
 
 def compose(t1: Transformer, t2: Transformer): Transformer = match (t1, t2) {
 case (_,Transformer.BotTrans) => Transformer.BotTrans
 case (Transformer.BotTrans, Transformer.NonBotTrans(_, _, c)) => match c {
-  case Value.Bot => Transformer.BotTrans
-  case Value.Top => Transformer.NonBotTrans(0,0,Value.Top)
-  case Value.Cst(cc) => Transformer.NonBotTrans(0,cc,c)
+  case Const.Bot => Transformer.BotTrans
+  case Const.Top => Transformer.NonBotTrans(0,0,Const.Top)
+  case Const.Cst(cc) => Transformer.NonBotTrans(0,cc,c)
 }
 case (Transformer.NonBotTrans(a2, b2, c2), Transformer.NonBotTrans(a1, b1, c1)) =>
   Transformer.NonBotTrans(a1*a2, (a1*b2)+b1, JoinLattice.leastUpperBound(sum(prod(c2, a1), b1), c1))
@@ -65,9 +50,9 @@ case (Transformer.NonBotTrans(a2, b2, c2), Transformer.NonBotTrans(a1, b1, c1)) 
 
 // from paper: f = \l. a*l+b meet c; f(Top) = Top
 // paper is upside-down, so: f = \l. a*l+b join c; f(Bot) = Bot
-def apply(t: Transformer, l: Value): Value = match t {
-    case Transformer.BotTrans => Value.Bot
-    case Transformer.NonBotTrans(a, b, c) => if(l==Value.Bot) Value.Bot else JoinLattice.leastUpperBound(sum(prod(l,a),b),c)
+def apply(t: Transformer, l: Const): Const = match t {
+    case Transformer.BotTrans => Const.Bot
+    case Transformer.NonBotTrans(a, b, c) => if(l==Const.Bot) Const.Bot else JoinLattice.leastUpperBound(sum(prod(l,a),b),c)
 }
 
 instance LowerBound[Transformer] {
@@ -88,9 +73,9 @@ instance JoinLattice[Transformer] {
             else if(c1 == c2)
                 if((a2-a1) != 0 and 0==(b1-b2)rem(a2-a1))
                 //                // is divisible
-                Transformer.NonBotTrans(a1, b2, JoinLattice.leastUpperBound(Value.Cst(a1*(b1-b2)/(a2-a1)+b1), JoinLattice.leastUpperBound(c1, c2)))
+                Transformer.NonBotTrans(a1, b2, JoinLattice.leastUpperBound(Const.Cst(a1*(b1-b2)/(a2-a1)+b1), JoinLattice.leastUpperBound(c1, c2)))
                 //                // is not divisible
-                else Transformer.NonBotTrans(1, 0, Value.Top)
+                else Transformer.NonBotTrans(1, 0, Const.Top)
             else ???: Transformer
     }
 }
@@ -113,14 +98,14 @@ rel EndNode(proc: String, node: String)
 // Internal lattices
 lat JumpFn(infact: String, node: String, outfact: String, transformer: Transformer)
 lat SummaryFn(node: String, infact: String, outfact: String, transformer: Transformer)
-lat ResultProc(proc: String, fact: String, value: Value)
+lat ResultProc(proc: String, fact: String, value: Const)
 rel InProc(proc: String, node: String)
 
 // Output
-lat Results(node: String, fact: String, value: Value)
+lat Results(node: String, fact: String, value: Const)
 
 // Rules for Example (constant propagation) from IDE paper
-def id(): Transformer = Transformer.NonBotTrans(1,0,Value.Bot)
+def id(): Transformer = Transformer.NonBotTrans(1,0,Const.Bot)
 
 // call-to-start
 def nonbottom(t: Transformer): Bool = t != Transformer.BotTrans
@@ -203,20 +188,20 @@ def main(_: Array[String]): Int32 & Impure =
         EshIntra("sp","x","x";id()).
         EshIntra("n4","a","a";id()).
         EshIntra("n4","x","x";id()).
-        EshIntra("n5","a","a";Transformer.NonBotTrans(1,-2,Value.Bot)).
+        EshIntra("n5","a","a";Transformer.NonBotTrans(1,-2,Const.Bot)).
         EshIntra("n5","x","x";id()).
         EshIntra("n6","a","a";id()).
         EshIntra("n7","a","a";id()).
         EshIntra("n7","x","x";id()).
-        EshIntra("n8","a","a";Transformer.NonBotTrans(1,2,Value.Bot)).
+        EshIntra("n8","a","a";Transformer.NonBotTrans(1,2,Const.Bot)).
         EshIntra("n8","x","x";id()).
         EshIntra("n9","a","a";id()).
-        EshIntra("n9","a","x";Transformer.NonBotTrans(-2,5,Value.Bot)).
+        EshIntra("n9","a","x";Transformer.NonBotTrans(-2,5,Const.Bot)).
 
         EshCallStart(call,"zero",target,"zero";id()) :- CallGraph(call,target).
         EshEndReturn(target,"zero",call,"zero";id()) :- CallGraph(call,target).
 
-        EshCallStart("n1","zero","p","a";Transformer.NonBotTrans(0,7,Value.Bot)).
+        EshCallStart("n1","zero","p","a";Transformer.NonBotTrans(0,7,Const.Bot)).
         EshCallStart("n1","x","p","x";id()).
         EshEndReturn("p","x","n1","x";id()).
 
@@ -226,8 +211,78 @@ def main(_: Array[String]): Int32 & Impure =
 
         // Entrypoint
         JumpFn("zero","smain","zero";id()).
-        ResultProc("main","zero";Value.Top).
+        ResultProc("main","zero";Const.Top).
     };
     let m = solve p;
     (m |> Fixpoint.unsafePrint) as & Impure;
     0
+
+
+
+///            Top
+///
+///   ... -2 -1 0 1 2 ...
+/// 
+///            Bot
+///
+enum Const with Eq, Order, ToString {
+    case Bot,
+    case Cst(Int),
+    case Top
+}
+
+///
+/// The Bottom Element of `Const`.
+///
+instance LowerBound[Const] {
+    pub def minValue(): Const = Const.Bot
+}
+
+///
+/// The Partial Order on `Const`.
+///
+instance PartialOrder[Const] {
+    pub def lessEqual(x: Const, y: Const): Bool = match (x, y) {
+        case (Const.Bot, _)                 => true
+        case (Const.Cst(n1), Const.Cst(n2)) => n1 == n2
+        case (_, Const.Top)                 => true
+        case _                              => false
+    }
+}
+
+///
+/// The Least Upper Bound on `Const`.
+///
+instance JoinLattice[Const] {
+    pub def leastUpperBound(x: Const, y: Const): Const = match (x, y) {
+        case (Const.Bot, _)                               => y
+        case (_, Const.Bot)                               => x
+        case (Const.Cst(n1), Const.Cst(n2)) if (n1 == n2) => Const.Cst(n1)
+        case _                                            => Const.Top
+    }
+}
+
+///
+/// The Greatest Lower Bound on `Const`.
+///
+instance MeetLattice[Const] {
+    pub def greatestLowerBound(x: Const, y: Const): Const = match (x, y) {
+        case (Const.Top, _)                               => y
+        case (_, Const.Top)                               => x
+        case (Const.Cst(n1), Const.Cst(n2)) if (n1 == n2) => Const.Cst(n1)
+        case _                                            => Const.Bot
+    }
+}
+
+
+def sum(e1: Const, e2: Int): Const = match e1 {
+    case Const.Cst(n) => Const.Cst(n+e2)
+    case _ => e1
+}
+
+def prod(e1: Const, e2: Int): Const = match (e1, e2) {
+    case (Const.Cst(n), _) => Const.Cst(n*e2)
+    case (Const.Bot, _) => Const.Bot
+    case (_, zero) => if(zero == 0) Const.Cst(0) else e1
+    case _ => e1
+}
