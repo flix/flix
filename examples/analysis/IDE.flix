@@ -160,7 +160,7 @@ namespace IDE {
             EshEndReturn(target, ide.zero, call, ide.zero, id()) :- CallGraph(call, target).
 
             // TODO: Ondrej: Add comment.
-            ResultProc("main", ide.zero; LowerBound.minValue()).
+            ResultProc(ide.main, ide.zero; LowerBound.minValue()).
 
             // TODO: Ondrej: Add comment.
             JumpFn(ide.zero, ide.main, ide.zero; id()).
