@@ -37,23 +37,6 @@ enum Transformer with Eq, Order, ToString {
     case NonBotTrans(Int,Int,Const)
 }
 
-def compose(t1: Transformer, t2: Transformer): Transformer = match (t1, t2) {
-case (_,Transformer.BotTrans) => Transformer.BotTrans
-case (Transformer.BotTrans, Transformer.NonBotTrans(_, _, c)) => match c {
-  case Const.Bot => Transformer.BotTrans
-  case Const.Top => Transformer.NonBotTrans(0,0,Const.Top)
-  case Const.Cst(cc) => Transformer.NonBotTrans(0,cc,c)
-}
-case (Transformer.NonBotTrans(a2, b2, c2), Transformer.NonBotTrans(a1, b1, c1)) =>
-  Transformer.NonBotTrans(a1*a2, (a1*b2)+b1, JoinLattice.leastUpperBound(sum(mul(c2, lift(a1)), lift(b1)), c1))
-}
-
-// from paper: f = \l. a*l+b meet c; f(Top) = Top
-// paper is upside-down, so: f = \l. a*l+b join c; f(Bot) = Bot
-def apply(t: Transformer, l: Const): Const = match t {
-    case Transformer.BotTrans => Const.Bot
-    case Transformer.NonBotTrans(a, b, c) => if(l==Const.Bot) Const.Bot else JoinLattice.leastUpperBound(sum(mul(l, lift(a)), lift(b)),c)
-}
 
 instance LowerBound[Transformer] {
     pub def minValue(): Transformer = Transformer.BotTrans
@@ -83,6 +66,25 @@ instance JoinLattice[Transformer] {
 instance MeetLattice[Transformer] {
     pub def greatestLowerBound(x: Transformer, y: Transformer): Transformer = ???
 }
+
+def compose(t1: Transformer, t2: Transformer): Transformer = match (t1, t2) {
+case (_,Transformer.BotTrans) => Transformer.BotTrans
+case (Transformer.BotTrans, Transformer.NonBotTrans(_, _, c)) => match c {
+  case Const.Bot => Transformer.BotTrans
+  case Const.Top => Transformer.NonBotTrans(0,0,Const.Top)
+  case Const.Cst(cc) => Transformer.NonBotTrans(0,cc,c)
+}
+case (Transformer.NonBotTrans(a2, b2, c2), Transformer.NonBotTrans(a1, b1, c1)) =>
+  Transformer.NonBotTrans(a1*a2, (a1*b2)+b1, JoinLattice.leastUpperBound(sum(mul(c2, lift(a1)), lift(b1)), c1))
+}
+
+// from paper: f = \l. a*l+b meet c; f(Top) = Top
+// paper is upside-down, so: f = \l. a*l+b join c; f(Bot) = Bot
+def apply(t: Transformer, l: Const): Const = match t {
+    case Transformer.BotTrans => Const.Bot
+    case Transformer.NonBotTrans(a, b, c) => if(l==Const.Bot) Const.Bot else JoinLattice.leastUpperBound(sum(mul(l, lift(a)), lift(b)),c)
+}
+
 
 // Inputs
 lat EshIntra(node: String, infact: String, outfact: String, transformer: Transformer)
@@ -155,7 +157,8 @@ def main(_: Array[String]): Int32 & Impure =
         ResultProc(proc,dp;apply(cs,v)) :-
             Results(call,d;v),
             EshCallStart(call,d,proc,dp;cs).
-
+    };
+    let f = #{
         CFG("smain","n1").
         CFG("n1","n2").
         CFG("n2","n3").
@@ -213,7 +216,7 @@ def main(_: Array[String]): Int32 & Impure =
         JumpFn("zero","smain","zero";id()).
         ResultProc("main","zero";Const.Top).
     };
-    let m = solve p;
+    let m = solve p, f;
     (m |> Fixpoint.unsafePrint) as & Impure;
     0
 
