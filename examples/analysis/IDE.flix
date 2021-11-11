@@ -68,14 +68,14 @@ instance MeetLattice[Transformer] {
 }
 
 def compose(t1: Transformer, t2: Transformer): Transformer = match (t1, t2) {
-case (_,Transformer.BotTrans) => Transformer.BotTrans
-case (Transformer.BotTrans, Transformer.NonBotTrans(_, _, c)) => match c {
-  case Const.Bot => Transformer.BotTrans
-  case Const.Top => Transformer.NonBotTrans(0,0,Const.Top)
-  case Const.Cst(cc) => Transformer.NonBotTrans(0,cc,c)
-}
-case (Transformer.NonBotTrans(a2, b2, c2), Transformer.NonBotTrans(a1, b1, c1)) =>
-  Transformer.NonBotTrans(a1*a2, (a1*b2)+b1, JoinLattice.leastUpperBound(sum(mul(c2, lift(a1)), lift(b1)), c1))
+    case (_,Transformer.BotTrans)                                 => Transformer.BotTrans
+    case (Transformer.BotTrans, Transformer.NonBotTrans(_, _, c)) => match c {
+        case Const.Bot => Transformer.BotTrans
+        case Const.Top => Transformer.NonBotTrans(0,0,Const.Top)
+        case Const.Cst(cc) => Transformer.NonBotTrans(0,cc,c)
+    }
+    case (Transformer.NonBotTrans(a2, b2, c2), Transformer.NonBotTrans(a1, b1, c1)) =>
+    Transformer.NonBotTrans(a1*a2, (a1*b2)+b1, JoinLattice.leastUpperBound(sum(mul(c2, lift(a1)), lift(b1)), c1))
 }
 
 // from paper: f = \l. a*l+b meet c; f(Top) = Top
@@ -86,33 +86,21 @@ def apply(t: Transformer, l: Const): Const = match t {
 }
 
 
-// Inputs
-lat EshIntra(node: String, infact: String, outfact: String, transformer: Transformer)
-lat EshCallStart(node: String, infact: String, proc: String, outfact: String, transformer: Transformer)
-lat EshEndReturn(proc: String, infact: String, node: String, outfact: String, transformer: Transformer)
+lawless class Trans[a] {
+    pub def id(): a
+}
 
-// Call-to-Return edges should be included above in EshIntra
-rel CFG(src: String, dst: String)
-rel CallGraph(callsite: String, proc: String)
-rel StartNode(proc: String, node: String)
-rel EndNode(proc: String, node: String)
+instance Trans[Transformer] {
+  pub def id(): Transformer = Transformer.NonBotTrans(1,0,Const.Bot)
 
-// Internal lattices
-lat JumpFn(infact: String, node: String, outfact: String, transformer: Transformer)
-lat SummaryFn(node: String, infact: String, outfact: String, transformer: Transformer)
-lat ResultProc(proc: String, fact: String, value: Const)
-rel InProc(proc: String, node: String)
-
-// Output
-lat Results(node: String, fact: String, value: Const)
-
-// Rules for Example (constant propagation) from IDE paper
-def id(): Transformer = Transformer.NonBotTrans(1,0,Const.Bot)
+}
 
 // Rules
 def runIDE(cfg: List[(String, String)],
            startNodes: List[(String, String)],
            endNodes: List[(String, String)]): Int32 & Impure =
+    use Trans.{id};
+
     let p = #{
         // nodes in a given procedure
         InProc(p,start) :- StartNode(p, start).
