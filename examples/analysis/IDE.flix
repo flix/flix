@@ -92,6 +92,7 @@ namespace IDE {
         main            :: t,
         cfg             :: List[(t, t)],
         startNodes      :: List[(t, t)],
+        endNodes        :: List[(t, t)],
         callGraph       :: List[(t, t)],
         eshIntra        :: List[(t, t, t, Transformer)],
         eshCallStart    :: List[(t, t, t, t, Transformer)],
@@ -101,11 +102,8 @@ namespace IDE {
     // TODO: Introduce more type aliases.
     // TODO: Or use a record?
 
-
     // Rules
-    pub def runIDE(ide: IDE[String],
-            endNodes: List[(String, String)]
-            ): Int32 & Impure =
+    pub def runIDE(ide: IDE[String]): Int32 & Impure =
         use IDE/Trans.{id, compose, apply};
 
         let p = #{
@@ -169,13 +167,12 @@ namespace IDE {
             JumpFn(ide.zero, ide.main, ide.zero; id()).
         };
 
-        let f1 = project ide.cfg, ide.callGraph, ide.startNodes, endNodes into CFG, CallGraph, StartNode, EndNode;
+        let f1 = project ide.cfg, ide.callGraph, ide.startNodes, ide.endNodes into CFG, CallGraph, StartNode, EndNode;
 
-        let f2 = project ide.eshIntra into EshIntra;                // TODO: How important is it for these to have lattice semantics?
-        let f5 = project ide.eshCallStart into EshCallStart;    // TODO: How important is it for these to have lattice semantics?
-        let f3 = project ide.eshEndReturn into EshEndReturn;    // TODO: How important is it for these to have lattice semantics?
+        // TODO: How important is it for these to have lattice semantics?
+        let f2 = project ide.eshIntra, ide.eshCallStart, ide.eshEndReturn  into EshIntra, EshCallStart, EshEndReturn;
 
-        let m = solve p, f1, f2, f3, f5;
+        let m = solve p, f1, f2;
         (m |> Fixpoint.unsafePrint) as & Impure;
         0
 
@@ -347,10 +344,10 @@ def main(_: Array[String]): Int32 & Impure =
         main = "smain",
         cfg = cfg,
         startNodes = startNodes,
+        endNodes = endNodes,
         callGraph = callGraph,
         eshIntra     = eshIntra,
         eshCallStart = eshCallStart,
         eshEndReturn = eshEndReturn
-        },
-        endNodes);
+        });
     0
