@@ -92,6 +92,7 @@ namespace IDE {
         main            :: t,
         cfg             :: List[(t, t)],
         callGraph       :: List[(t, t)],
+        eshCallStart    :: List[(t, t, t, t, Transformer)],
         eshEndReturn    :: List[(t, t, t, t, Transformer)]
     }
 
@@ -127,7 +128,7 @@ namespace IDE {
             JumpFn(d3,start,d3;id()) :-
                 JumpFn(_d1,call,d2;nonbottom1),
                 CallGraph(call,target),
-                EshCallStart(call,d2,target,d3;nonbottom2),
+                EshCallStart(call,d2,target,d3,nonbottom2),
                 StartNode(target,start),
                 if (nonbottom1 != LowerBound.minValue() and
                     nonbottom2 != LowerBound.minValue()). // TODO: Ondrej: Why are these checks here?
@@ -137,7 +138,7 @@ namespace IDE {
                 CallGraph(call,target),
                 StartNode(target,_start),
                 EndNode(target,end),
-                EshCallStart(call,d4,target,d1;cs),
+                EshCallStart(call,d4,target,d1,cs),
                 JumpFn(d1,end,d2;se),
                 EshEndReturn(target,d2,call,d5,er).
 
@@ -150,13 +151,13 @@ namespace IDE {
             // TODO: Ondrej: Add comment.
             ResultProc(proc,dp;apply(cs,v)) :-
                 Results(call,d;v),
-                EshCallStart(call,d,proc,dp;cs).
+                EshCallStart(call,d,proc,dp,cs).
 
             // TODO: Ondrej: Add comment.
             EshIntra(n, ide.zero, ide.zero, id()) :- CFG(n,_).
 
             // TODO: Ondrej: Add comment.
-            EshCallStart(call, ide.zero, target, ide.zero; id()) :- CallGraph(call, target).
+            EshCallStart(call, ide.zero, target, ide.zero, id()) :- CallGraph(call, target).
 
             // TODO: Ondrej: Add comment.
             EshEndReturn(target, ide.zero, call, ide.zero, id()) :- CallGraph(call, target).
@@ -170,15 +171,10 @@ namespace IDE {
 
         let f1 = project ide.cfg, ide.callGraph, startNodes, endNodes into CFG, CallGraph, StartNode, EndNode;
         let f2 = project eshIntra into EshIntra;                // TODO: How important is it for these to have lattice semantics?
+        let f5 = project ide.eshCallStart into EshCallStart;    // TODO: How important is it for these to have lattice semantics?
         let f3 = project ide.eshEndReturn into EshEndReturn;    // TODO: How important is it for these to have lattice semantics?
-        // TODO: Move more facts as arguments.
-        let f = #{
-            EshCallStart("n1","zero","p","a";Transformer.NonBotTrans(0,7,ConstantProp/Const.Bot)).
-            EshCallStart("n1","x","p","x";id()).
-            EshCallStart("n6","a","p","a";id()).
-            EshCallStart("n6","x","p","x";id()).
-        };
-        let m = solve p, f, f1, f2, f3;
+
+        let m = solve p, f1, f2, f3, f5;
         (m |> Fixpoint.unsafePrint) as & Impure;
         0
 
@@ -335,6 +331,12 @@ def main(_: Array[String]): Int32 & Impure =
         ("n9","a","a", IDE/Trans.id()) ::
         ("n9","a","x", IDE/Transformer.NonBotTrans(-2,5, ConstantProp/Const.Bot)) :: Nil;
 
+    let eshCallStart =
+        ("n1","zero","p","a",IDE/Transformer.NonBotTrans(0,7,ConstantProp/Const.Bot)) ::
+        ("n1","x","p","x",IDE/Trans.id()) ::
+        ("n6","a","p","a",IDE/Trans.id()) ::
+        ("n6","x","p","x",IDE/Trans.id()) :: Nil;
+
     let eshEndReturn =
         ("p", "x", "n1", "x", IDE/Trans.id()) ::
         ("p", "x", "n6", "x", IDE/Trans.id()) :: Nil;
@@ -344,6 +346,7 @@ def main(_: Array[String]): Int32 & Impure =
         main = "smain",
         cfg = cfg,
         callGraph = callGraph,
+        eshCallStart = eshCallStart,
         eshEndReturn = eshEndReturn
         },
         startNodes,
