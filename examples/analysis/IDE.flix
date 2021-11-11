@@ -87,12 +87,12 @@ namespace IDE {
 
     }
 
-    type alias IDE = {
-        zero            :: String,
-        main            :: String,
-        cfg             :: List[(String, String)],
-        callGraph       :: List[(String, String)],
-        eshEndReturn    :: List[(String, String, String, String, Transformer)]
+    type alias IDE[t] = {
+        zero            :: t,
+        main            :: t,
+        cfg             :: List[(t, t)],
+        callGraph       :: List[(t, t)],
+        eshEndReturn    :: List[(t, t, t, t, Transformer)]
     }
 
     // TODO: Introduce more type aliases.
@@ -100,7 +100,7 @@ namespace IDE {
 
 
     // Rules
-    pub def runIDE(ide: IDE,
+    pub def runIDE(ide: IDE[String],
             startNodes: List[(String, String)],
             endNodes: List[(String, String)],
             eshIntra: List[(String, String, String, Transformer)]
@@ -175,7 +175,6 @@ namespace IDE {
         let f = #{
             EshCallStart("n1","zero","p","a";Transformer.NonBotTrans(0,7,ConstantProp/Const.Bot)).
             EshCallStart("n1","x","p","x";id()).
-
             EshCallStart("n6","a","p","a";id()).
             EshCallStart("n6","x","p","x";id()).
         };
@@ -339,9 +338,6 @@ def main(_: Array[String]): Int32 & Impure =
     let eshEndReturn =
         ("p", "x", "n1", "x", IDE/Trans.id()) ::
         ("p", "x", "n6", "x", IDE/Trans.id()) :: Nil;
-
-            //EshEndReturn("p","x","n1","x";id()).
-            //EshEndReturn("p","x","n6","x";id()).
 
     IDE.runIDE({
         zero = "zero",
