@@ -18,63 +18,45 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst.Root
-import org.objectweb.asm.ClassWriter
-import org.objectweb.asm.Opcodes._
+import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker._
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 
 object GenUnitClass {
 
   val InstanceFieldName = "INSTANCE"
 
   def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
-    val jvmType = JvmType.Unit
-    val jvmName = jvmType.name
-    val bytecode = genByteCode(jvmType, jvmName)
-    Map(jvmName -> JvmClass(jvmName, bytecode))
+    val unitType = JvmType.Unit
+    val unitName = unitType.name
+    val bytecode = genByteCode()
+    Map(unitName -> JvmClass(unitName, bytecode))
   }
 
-  private def genByteCode(jvmType: JvmType, name: JvmName)(implicit flix: Flix): Array[Byte] = {
-    // class writer
-    val visitor = AsmOps.mkClassWriter()
+  private def genByteCode()(implicit flix: Flix): Array[Byte] = {
+    val cm = mkClass(JvmType.Unit.name, Public, Final)
 
-    // internal name of super
-    val superClass = JvmName.Object.toInternalName
+    // Singleton instance
+    cm.mkField(InstanceFieldName, JvmType.Unit, Public, Final, Static)
 
-    // Initialize the visitor to create a class.
-    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, name.toInternalName, null, superClass, null)
+    cm.mkStaticConstructor(genStaticConstructor())
+    cm.mkConstructor(genConstructor(), MethodDescriptor.NothingToVoid, Private)
 
-    // Source of the class
-    visitor.visitSource(name.toInternalName, null)
-
-    // singleton instance
-    visitor.visitField(ACC_STATIC + ACC_FINAL + ACC_PUBLIC, InstanceFieldName, jvmType.toDescriptor, null, null).visitEnd()
-
-    genStaticConstructor(jvmType, name, visitor)
-    genConstructor(visitor)
-
-    visitor.visitEnd()
-    visitor.toByteArray
+    cm.closeClassMaker
   }
 
-  private def genStaticConstructor(jvmType: JvmType, name: JvmName, visitor: ClassWriter): Unit = {
-    val methodVisitor = visitor.visitMethod(ACC_STATIC, "<clinit>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), null, null)
-    methodVisitor.visitCode()
-    methodVisitor.visitTypeInsn(NEW, name.toInternalName)
-    methodVisitor.visitInsn(DUP)
-    methodVisitor.visitMethodInsn(INVOKESPECIAL, name.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
-    methodVisitor.visitFieldInsn(PUTSTATIC, name.toInternalName, InstanceFieldName, jvmType.toDescriptor)
-    methodVisitor.visitInsn(RETURN)
-    methodVisitor.visitMaxs(999, 999)
-    methodVisitor.visitEnd()
+  private def genStaticConstructor(): Instruction = {
+    NEW(JvmType.Unit.name) ~
+      DUP ~
+      InvokeSimpleConstructor(JvmType.Unit.name) ~
+      PUTSTATIC(JvmType.Unit.name, InstanceFieldName, JvmType.Unit) ~
+      RETURN
   }
 
-  private def genConstructor(visitor: ClassWriter): Unit = {
-    val methodVisitor = visitor.visitMethod(ACC_PRIVATE, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), null, null)
-    methodVisitor.visitCode()
-    methodVisitor.visitVarInsn(ALOAD, 0)
-    methodVisitor.visitMethodInsn(INVOKESPECIAL, JvmName.Object.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
-    methodVisitor.visitInsn(RETURN)
-    methodVisitor.visitMaxs(999, 999)
-    methodVisitor.visitEnd()
+  private def genConstructor(): Instruction = {
+    ALOAD(0) ~
+      InvokeSimpleConstructor(JvmName.Object) ~
+      RETURN
   }
 
 }
