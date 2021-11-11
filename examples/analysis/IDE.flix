@@ -88,10 +88,11 @@ namespace IDE {
     }
 
     type alias IDE = {
-        zero        :: String,
-        main        :: String,
-        cfg         :: List[(String, String)],
-        callGraph   :: List[(String, String)]
+        zero            :: String,
+        main            :: String,
+        cfg             :: List[(String, String)],
+        callGraph       :: List[(String, String)],
+        eshEndReturn    :: List[(String, String, String, String, Transformer)]
     }
 
     // TODO: Introduce more type aliases.
@@ -138,7 +139,7 @@ namespace IDE {
                 EndNode(target,end),
                 EshCallStart(call,d4,target,d1;cs),
                 JumpFn(d1,end,d2;se),
-                EshEndReturn(target,d2,call,d5;er).
+                EshEndReturn(target,d2,call,d5,er).
 
             // tabulate result
             Results(n, d; apply(fn, vp)) :-
@@ -158,7 +159,7 @@ namespace IDE {
             EshCallStart(call, ide.zero, target, ide.zero; id()) :- CallGraph(call, target).
 
             // TODO: Ondrej: Add comment.
-            EshEndReturn(target, ide.zero, call, ide.zero; id()) :- CallGraph(call, target).
+            EshEndReturn(target, ide.zero, call, ide.zero, id()) :- CallGraph(call, target).
 
             // TODO: Ondrej: Add comment.
             ResultProc("main", ide.zero; LowerBound.minValue()).
@@ -168,18 +169,17 @@ namespace IDE {
         };
 
         let f1 = project ide.cfg, ide.callGraph, startNodes, endNodes into CFG, CallGraph, StartNode, EndNode;
-        let f2 = project eshIntra into EshIntra;
+        let f2 = project eshIntra into EshIntra;                // TODO: How important is it for these to have lattice semantics?
+        let f3 = project ide.eshEndReturn into EshEndReturn;    // TODO: How important is it for these to have lattice semantics?
         // TODO: Move more facts as arguments.
         let f = #{
             EshCallStart("n1","zero","p","a";Transformer.NonBotTrans(0,7,ConstantProp/Const.Bot)).
             EshCallStart("n1","x","p","x";id()).
-            EshEndReturn("p","x","n1","x";id()).
 
             EshCallStart("n6","a","p","a";id()).
             EshCallStart("n6","x","p","x";id()).
-            EshEndReturn("p","x","n6","x";id()).
         };
-        let m = solve p, f, f1, f2;
+        let m = solve p, f, f1, f2, f3;
         (m |> Fixpoint.unsafePrint) as & Impure;
         0
 
@@ -336,11 +336,20 @@ def main(_: Array[String]): Int32 & Impure =
         ("n9","a","a", IDE/Trans.id()) ::
         ("n9","a","x", IDE/Transformer.NonBotTrans(-2,5, ConstantProp/Const.Bot)) :: Nil;
 
+    let eshEndReturn =
+        ("p", "x", "n1", "x", IDE/Trans.id()) ::
+        ("p", "x", "n6", "x", IDE/Trans.id()) :: Nil;
+
+            //EshEndReturn("p","x","n1","x";id()).
+            //EshEndReturn("p","x","n6","x";id()).
+
     IDE.runIDE({
         zero = "zero",
         main = "smain",
         cfg = cfg,
-        callGraph = callGraph},
+        callGraph = callGraph,
+        eshEndReturn = eshEndReturn
+        },
         startNodes,
         endNodes,
         eshIntra);
