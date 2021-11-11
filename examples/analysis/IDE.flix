@@ -91,7 +91,9 @@ namespace IDE {
         zero            :: t,
         main            :: t,
         cfg             :: List[(t, t)],
+        startNodes      :: List[(t, t)],
         callGraph       :: List[(t, t)],
+        eshIntra        :: List[(t, t, t, Transformer)],
         eshCallStart    :: List[(t, t, t, t, Transformer)],
         eshEndReturn    :: List[(t, t, t, t, Transformer)]
     }
@@ -102,9 +104,7 @@ namespace IDE {
 
     // Rules
     pub def runIDE(ide: IDE[String],
-            startNodes: List[(String, String)],
-            endNodes: List[(String, String)],
-            eshIntra: List[(String, String, String, Transformer)]
+            endNodes: List[(String, String)]
             ): Int32 & Impure =
         use IDE/Trans.{id, compose, apply};
 
@@ -169,8 +169,9 @@ namespace IDE {
             JumpFn(ide.zero, ide.main, ide.zero; id()).
         };
 
-        let f1 = project ide.cfg, ide.callGraph, startNodes, endNodes into CFG, CallGraph, StartNode, EndNode;
-        let f2 = project eshIntra into EshIntra;                // TODO: How important is it for these to have lattice semantics?
+        let f1 = project ide.cfg, ide.callGraph, ide.startNodes, endNodes into CFG, CallGraph, StartNode, EndNode;
+
+        let f2 = project ide.eshIntra into EshIntra;                // TODO: How important is it for these to have lattice semantics?
         let f5 = project ide.eshCallStart into EshCallStart;    // TODO: How important is it for these to have lattice semantics?
         let f3 = project ide.eshEndReturn into EshEndReturn;    // TODO: How important is it for these to have lattice semantics?
 
@@ -345,11 +346,11 @@ def main(_: Array[String]): Int32 & Impure =
         zero = "zero",
         main = "smain",
         cfg = cfg,
+        startNodes = startNodes,
         callGraph = callGraph,
+        eshIntra     = eshIntra,
         eshCallStart = eshCallStart,
         eshEndReturn = eshEndReturn
         },
-        startNodes,
-        endNodes,
-        eshIntra);
+        endNodes);
     0
