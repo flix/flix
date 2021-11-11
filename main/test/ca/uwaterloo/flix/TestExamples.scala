@@ -38,6 +38,7 @@ class TestExamples extends Suites(
   new FlixTest("datalog/array", "examples/datalog/array.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("datalog/connect-network", "examples/datalog/connect-network.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("datalog/delivery-date", "examples/datalog/delivery-date.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  new FlixTest("datalog/stratifier", "examples/datalog/delivery-date.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("datalog/sequence", "examples/datalog/sequence.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("datalog/topsort", "examples/datalog/topsort.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("datalog/two-sat", "examples/datalog/two-sat.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
