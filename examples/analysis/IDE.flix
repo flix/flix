@@ -109,10 +109,6 @@ lat Results(node: String, fact: String, value: Const)
 // Rules for Example (constant propagation) from IDE paper
 def id(): Transformer = Transformer.NonBotTrans(1,0,Const.Bot)
 
-// call-to-start
-def nonbottom(t: Transformer): Bool = t != Transformer.BotTrans
-
-
 // Rules
 def runIDE(cfg: List[(String, String)],
            startNodes: List[(String, String)],
@@ -139,8 +135,8 @@ def runIDE(cfg: List[(String, String)],
             CallGraph(call,target),
             EshCallStart(call,d2,target,d3;nonbottom2),
             StartNode(target,start),
-            nonbottom(nonbottom1),
-            nonbottom(nonbottom2).
+            if (nonbottom1 != LowerBound.minValue() and
+                nonbottom2 != LowerBound.minValue()). // TODO: Ondrej: Why are these checks here?
 
         // compute summary
         SummaryFn(call,d4,d5;compose(compose(cs,se),er)) :-
@@ -164,6 +160,7 @@ def runIDE(cfg: List[(String, String)],
 
     let f1 = project cfg, startNodes, endNodes into CFG, StartNode, EndNode;
 
+    // TODO: Move more facts as arguments.
     let f = #{
         CallGraph("n1","p").
         CallGraph("n6","p").
