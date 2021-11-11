@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.FinalAst.Root
+import ca.uwaterloo.flix.language.ast.ErasedAst.Root
 import ca.uwaterloo.flix.language.ast.MonoType
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm.Opcodes._
@@ -35,12 +35,12 @@ object GenFunctionInterfaces {
     // Generate a function interface for each type and collect the results in a map.
     //
     ts.foldLeft(Map.empty[JvmName, JvmClass]) {
-      case (macc, tpe@MonoType.Arrow(targs, tresult)) =>
+      case (macc, tpe: MonoType.Arrow) =>
         // Case 1: The type constructor is an arrow type.
         // Construct the functional interface.
         val clazz = genFunctionalInterface(tpe)
         macc + (clazz.name -> clazz)
-      case (macc, tpe) =>
+      case (macc, _) =>
         // Case 2: The type constructor is a non-arrow.
         // Nothing to be done. Return the map.
         macc
@@ -51,7 +51,7 @@ object GenFunctionInterfaces {
     * Returns the function interface of the given type `tpe`.
     */
   private def genFunctionalInterface(tpe: MonoType)(implicit root: Root, flix: Flix): JvmClass = tpe match {
-    case MonoType.Arrow(targs, tresult) =>
+    case MonoType.Arrow(targs, _) =>
       // `JvmType` of the continuation interface for `tpe`
       val continuationSuperInterface = JvmOps.getContinuationInterfaceType(tpe)
 

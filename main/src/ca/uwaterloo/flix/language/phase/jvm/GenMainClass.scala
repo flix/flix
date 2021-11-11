@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.FinalAst.{Def, Root}
+import ca.uwaterloo.flix.language.ast.ErasedAst.{Def, Root}
 import ca.uwaterloo.flix.language.ast.Symbol
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes._
@@ -37,11 +37,11 @@ object GenMainClass {
       val jvmType = JvmOps.getMainClassType()
       val jvmName = jvmType.name
       val retJvmType = JvmOps.getErasedJvmType(defn.tpe)
-      val bytecode = genByteCode(jvmType, retJvmType)
+      val bytecode = genByteCode(jvmType)
       Map(jvmName -> JvmClass(jvmName, bytecode))
   }
 
-  private def genByteCode(jvmType: JvmType.Reference, retJvmType: JvmType)(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genByteCode(jvmType: JvmType.Reference)(implicit root: Root, flix: Flix): Array[Byte] = {
     // class writer
     val visitor = AsmOps.mkClassWriter()
 
@@ -55,7 +55,7 @@ object GenMainClass {
     visitor.visitSource(jvmType.name.toInternalName, null)
 
     // Emit the code for the main method
-    compileMainMethod(visitor, jvmType, retJvmType)
+    compileMainMethod(visitor)
 
     visitor.visitEnd()
     visitor.toByteArray
@@ -71,7 +71,7 @@ object GenMainClass {
     *
     * Ns.m_main((Object)null);
     */
-  private def compileMainMethod(visitor: ClassWriter, jvmType: JvmType.Reference, retJvmType: JvmType)(implicit root: Root, flix: Flix): Unit = {
+  private def compileMainMethod(visitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = {
 
     //Get the (argument) descriptor, since the main argument is of type String[], we need to get it's corresponding descriptor
     val argumentDescriptor = AsmOps.getArrayType(JvmType.String)
@@ -80,7 +80,7 @@ object GenMainClass {
     val resultDescriptor = JvmType.Void.toDescriptor
 
     //Emit the main method signature
-    val main = visitor.visitMethod(ACC_PUBLIC + ACC_STATIC, "main",s"($argumentDescriptor)$resultDescriptor", null, null)
+    val main = visitor.visitMethod(ACC_PUBLIC + ACC_STATIC, "main", s"($argumentDescriptor)$resultDescriptor", null, null)
 
     main.visitCode()
 
@@ -100,7 +100,7 @@ object GenMainClass {
       AsmOps.getMethodDescriptor(List(JvmType.PrimInt), JvmType.Void), false)
 
     main.visitInsn(RETURN)
-    main.visitMaxs(1,1)
+    main.visitMaxs(1, 1)
     main.visitEnd()
   }
 
@@ -113,7 +113,7 @@ object GenMainClass {
 
     // Check if the main function exists.
     root.defs.get(sym) flatMap {
-      case defn =>
+      defn =>
         // The main function must take zero arguments.
         Some(defn)
     }

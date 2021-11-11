@@ -18,297 +18,256 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.ERefType._
-import ca.uwaterloo.flix.language.ast.EType._
-import ca.uwaterloo.flix.language.ast.PRefType._
-import ca.uwaterloo.flix.language.ast.PType._
-import ca.uwaterloo.flix.language.ast.{EType, ErasedAst, FinalAst, MonoType, PType, Symbol}
+import ca.uwaterloo.flix.language.ast.{ErasedAst, FinalAst}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
-object Eraser extends Phase[FinalAst.Root, FinalAst.Root] {
+object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
 
-  def run(root: FinalAst.Root)(implicit flix: Flix): Validation[FinalAst.Root, CompilationMessage] = flix.phase("Eraser") {
-    val defns = root.defs.map { case (k, v) => k -> visitDef(v) }
-    val enums = root.enums.map {
-      case (k, FinalAst.Enum(mod, sym, cases0, _, loc)) =>
-        val cases = cases0 map {
-          case (tag, FinalAst.Case(enumSym, tagName, tagTpeDeprecated, tagLoc)) => tag -> ErasedAst.Case(enumSym, tagName, visitTpe(tagTpeDeprecated), tagLoc)
-        }
-        k -> ErasedAst.Enum(mod, sym, cases, loc)
-    }
+  def run(root: FinalAst.Root)(implicit flix: Flix): Validation[ErasedAst.Root, CompilationMessage] = flix.phase("Eraser") {
+    val defs = root.defs.map { case (k, v) => k -> visitDef(v) }
+    val enums = root.enums.map { case (k, v) => k -> visitEnum(v) }
     val reachable = root.reachable
 
-    val actualTransformation = ErasedAst.Root(defns, enums, reachable, root.sources).toSuccess
-    root.toSuccess
+    ErasedAst.Root(defs, enums, reachable, root.sources).toSuccess
+  }
+
+  /**
+    * Translates the given enum `enum0` to the ErasedAst.
+    */
+  private def visitEnum(enum0: FinalAst.Enum): ErasedAst.Enum = {
+    val cases = enum0.cases map { case (t, c) => t -> visitCase(c) }
+    ErasedAst.Enum(enum0.mod, enum0.sym, cases, enum0.tpeDeprecated, enum0.loc)
+  }
+
+  /**
+    * Translates the given case `case0` to the ErasedAst.
+    */
+  private def visitCase(case0: FinalAst.Case): ErasedAst.Case = {
+    ErasedAst.Case(case0.sym, case0.tag, case0.tpeDeprecated, case0.loc)
   }
 
   /**
     * Translates the given definition `def0` to the ErasedAst.
     */
   private def visitDef(def0: FinalAst.Def): ErasedAst.Def = {
-    val fs = def0.formals.map(visitFormalParam)
-    val exp = visitExp[PType](def0.exp)
-    val tpe = visitTpe[PType](def0.tpe)
-    ErasedAst.Def(def0.ann, def0.mod, def0.sym, fs, exp, tpe, def0.loc)
-  }
-
-  /**
-    * Translates the given expression `exp0` to the ErasedAst.
-    */
-  private def visitExp[T <: PType](exp0: FinalAst.Expression): ErasedAst.Expression[T] = exp0 match {
-    case FinalAst.Expression.Unit(loc) =>
-      ErasedAst.Expression.Unit(loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.Null(tpe, loc) =>
-      ErasedAst.Expression.Null[PAnyObject](visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.True(loc) =>
-      ErasedAst.Expression.True(loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.False(loc) =>
-      (ErasedAst.Expression.False(loc)).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.Char(lit, loc) =>
-      ErasedAst.Expression.Char(lit, loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.Float32(lit, loc) =>
-      ErasedAst.Expression.Float32(lit, loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.Float64(lit, loc) =>
-      ErasedAst.Expression.Float64(lit, loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.Int8(lit, loc) =>
-      ErasedAst.Expression.Int8(lit, loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.Int16(lit, loc) =>
-      ErasedAst.Expression.Int16(lit, loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.Int32(lit, loc) =>
-      ErasedAst.Expression.Int32(lit, loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.Int64(lit, loc) =>
-      ErasedAst.Expression.Int64(lit, loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.BigInt(lit, loc) =>
-      ErasedAst.Expression.BigInt(lit, loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.Str(lit, loc) =>
-      ErasedAst.Expression.Str(lit, loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.Var(sym, tpe, loc) =>
-      ErasedAst.Expression.Var(sym, visitTpe(tpe), loc)
-
-    case FinalAst.Expression.Closure(sym, freeVars, _, tpe, loc) =>
-      val newFreeVars = freeVars.map { case FinalAst.FreeVar(sym, tpe) => ErasedAst.FreeVar(sym, visitTpe(tpe)) }
-      ErasedAst.Expression.Closure(sym, newFreeVars, visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.ApplyClo(exp, args, tpe, loc) =>
-      ErasedAst.Expression.ApplyClo(visitExp(exp), args.map(visitExp), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.ApplyDef(sym, args, tpe, loc) =>
-      ErasedAst.Expression.ApplyDef(sym, args.map(visitExp), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.ApplyCloTail(exp, args, tpe, loc) =>
-      ErasedAst.Expression.ApplyCloTail(visitExp(exp), args.map(visitExp), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.ApplyDefTail(sym, args, tpe, loc) =>
-      ErasedAst.Expression.ApplyDefTail(sym, args.map(visitExp), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) =>
-      val newFormals = formals.map { case FinalAst.FormalParam(sym, tpe) => ErasedAst.FormalParam(sym, visitTpe(tpe)) }
-      ErasedAst.Expression.ApplySelfTail(sym, newFormals, actuals.map(visitExp), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.Unary(sop, op, exp, tpe, loc) =>
-      ErasedAst.Expression.Unary(sop, op, visitExp(exp), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
-      ErasedAst.Expression.Binary(sop, op, visitExp(exp1), visitExp(exp2), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
-      ErasedAst.Expression.IfThenElse(visitExp(exp1), visitExp[T](exp2), visitExp[T](exp3), visitTpe(tpe), loc)
-
-    case FinalAst.Expression.Branch(exp, branches, tpe, loc) =>
-      val newBranches = branches.map { case (label, branchExp) => (label, visitExp[T](branchExp)) }
-      ErasedAst.Expression.Branch(visitExp(exp), newBranches, visitTpe(tpe), loc)
-
-    case FinalAst.Expression.JumpTo(sym, tpe, loc) =>
-      ErasedAst.Expression.JumpTo(sym, visitTpe(tpe), loc)
-
-    case FinalAst.Expression.Let(sym, exp1, exp2, tpe, loc) =>
-      ErasedAst.Expression.Let(sym, visitExp(exp1), visitExp(exp2), visitTpe(tpe), loc)
-
-    case FinalAst.Expression.Is(sym, tag, exp, loc) =>
-      ErasedAst.Expression.Is(sym, tag, visitExp(exp), loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.Tag(sym, tag, exp, tpe, loc) =>
-      ErasedAst.Expression.Tag(sym, tag, visitExp(exp), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.Untag(sym, tag, exp, tpe, loc) =>
-      ErasedAst.Expression.Untag(sym, tag, visitExp(exp), visitTpe(tpe), loc)
-
-    case FinalAst.Expression.Index(base, offset, tpe, loc) =>
-      val e: ErasedAst.Expression[PType] = ErasedAst.Expression.Index(visitExp(base), offset, visitTpe(tpe), loc)
-      ErasedAst.Expression.Cast(e, visitTpe(tpe), loc)
-
-    case FinalAst.Expression.Tuple(elms, tpe, loc) =>
-      ErasedAst.Expression.Tuple(elms.map(visitExp), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.RecordEmpty(tpe, loc) =>
-      ErasedAst.Expression.RecordEmpty(visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.RecordSelect(exp, field, tpe, loc) =>
-      ErasedAst.Expression.RecordSelect(visitExp(exp), field, visitTpe(tpe), loc)
-
-    case FinalAst.Expression.RecordExtend(field, value, rest, tpe, loc) =>
-      ErasedAst.Expression.RecordExtend(field, visitExp(value), visitExp(rest), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.RecordRestrict(field, rest, tpe, loc) =>
-      ErasedAst.Expression.RecordRestrict(field, visitExp(rest), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.ArrayLit(elms, tpe, loc) =>
-      ErasedAst.Expression.ArrayLit(elms.map(visitExp[PType]), visitTpe[PReference[PArray[PType]]](tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.ArrayNew(elm, len, tpe, loc) =>
-      ErasedAst.Expression.ArrayNew(visitExp[PType](elm), visitExp(len), visitTpe[PReference[PArray[PType]]](tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.ArrayLoad(base, index, tpe, loc) =>
-      ErasedAst.Expression.ArrayLoad(visitExp[PReference[PArray[T]]](base), visitExp(index), visitTpe(tpe), loc)
-
-    case FinalAst.Expression.ArrayStore(base, index, elm, tpe, loc) =>
-      ErasedAst.Expression.ArrayStore(visitExp[PReference[PArray[PType]]](base), visitExp(index), visitExp(elm), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.ArrayLength(base, tpe, loc) =>
-      ErasedAst.Expression.ArrayLength(visitExp[PReference[PArray[PType]]](base), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
-      ErasedAst.Expression.ArraySlice(visitExp[PReference[PArray[PType]]](base), visitExp(beginIndex), visitExp(endIndex), visitTpe[PReference[PArray[PType]]](tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.Ref(exp, tpe, loc) =>
-      val tpe0 = visitTpe[PReference[PRef[PType]]](tpe)
-      ErasedAst.Expression.Ref(visitExp(exp), tpe0.toInternalName, tpe0, loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.Deref(exp, tpe, loc) =>
-      val tpe0 = visitTpe[T](tpe)
-      ErasedAst.Expression.Deref(visitExp(exp), tpe0.toInternalName, tpe0, loc)
-
-    case FinalAst.Expression.Assign(exp1, exp2, tpe, loc) =>
-      val tpe0 = visitTpe[PReference[PUnit]](tpe)
-      ErasedAst.Expression.Assign(visitExp[PReference[PRef[PType]]](exp1), visitExp(exp2), tpe0.toInternalName, tpe0, loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.Cast(exp, tpe, loc) =>
-      ErasedAst.Expression.Cast(visitExp(exp), visitTpe(tpe), loc)
-
-    case FinalAst.Expression.TryCatch(exp, rules, tpe, loc) =>
-      val newRules = rules.map { case FinalAst.CatchRule(sym, clazz, exp) =>
-        ErasedAst.CatchRule[T](sym, clazz, visitExp(exp))
-      }
-      ErasedAst.Expression.TryCatch(visitExp(exp), newRules, visitTpe(tpe), loc)
-
-    case FinalAst.Expression.InvokeConstructor(constructor, args, tpe, loc) =>
-      ErasedAst.Expression.InvokeConstructor(constructor, args.map(visitExp), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.InvokeMethod(method, exp, args, tpe, loc) =>
-      ErasedAst.Expression.InvokeMethod(method, visitExp(exp), args.map(visitExp), visitTpe(tpe), loc)
-
-    case FinalAst.Expression.InvokeStaticMethod(method, args, tpe, loc) =>
-      ErasedAst.Expression.InvokeStaticMethod(method, args.map(visitExp), visitTpe(tpe), loc)
-
-    case FinalAst.Expression.GetField(field, exp, tpe, loc) =>
-      ErasedAst.Expression.GetField(field, visitExp(exp), visitTpe(tpe), loc)
-
-    case FinalAst.Expression.PutField(field, exp1, exp2, tpe, loc) =>
-      ErasedAst.Expression.PutField(field, visitExp(exp1), visitExp(exp2), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.GetStaticField(field, tpe, loc) =>
-      ErasedAst.Expression.GetStaticField(field, visitTpe(tpe), loc)
-
-    case FinalAst.Expression.PutStaticField(field, exp, tpe, loc) =>
-      ErasedAst.Expression.PutStaticField(field, visitExp(exp), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.NewChannel(exp, tpe, loc) =>
-      ErasedAst.Expression.NewChannel(visitExp(exp), visitTpe[PReference[PChan[T]]](tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.GetChannel(exp, tpe, loc) =>
-      ErasedAst.Expression.GetChannel(visitExp(exp), visitTpe(tpe), loc)
-
-    case FinalAst.Expression.PutChannel(exp1, exp2, tpe, loc) =>
-      ErasedAst.Expression.PutChannel(visitExp[PReference[PChan[PType]]](exp1), visitExp(exp2), visitTpe[PReference[PChan[PType]]](tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.SelectChannel(rules, default, tpe, loc) =>
-      val newRules = rules.map { case FinalAst.SelectChannelRule(sym, chan, exp) =>
-        ErasedAst.SelectChannelRule[T](sym, visitExp(chan), visitExp(exp))
-      }
-      ErasedAst.Expression.SelectChannel(newRules, default.map(visitExp[T]), visitTpe(tpe), loc)
-
-    case FinalAst.Expression.Spawn(exp, tpe, loc) =>
-      ErasedAst.Expression.Spawn(visitExp(exp), visitTpe(tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.Lazy(exp, tpe, loc) =>
-      ErasedAst.Expression.Lazy(visitExp(exp), visitTpe[PReference[PLazy[PType]]](tpe), loc).asInstanceOf[ErasedAst.Expression[T]]
-
-    case FinalAst.Expression.Force(exp, tpe, loc) =>
-      ErasedAst.Expression.Force(visitExp(exp), visitTpe(tpe), loc)
-
-    case FinalAst.Expression.HoleError(sym, tpe, loc) =>
-      ErasedAst.Expression.HoleError(sym, visitTpe(tpe), loc)
-
-    case FinalAst.Expression.MatchError(tpe, loc) =>
-      ErasedAst.Expression.MatchError(visitTpe(tpe), loc)
+    val formals = def0.formals.map(visitFormalParam)
+    val exp = visitExp(def0.exp)
+    ErasedAst.Def(def0.ann, def0.mod, def0.sym, formals, exp, def0.tpe, def0.loc)
   }
 
   /**
     * Translates the given formal param `p` to the ErasedAst.
     */
   private def visitFormalParam(p: FinalAst.FormalParam): ErasedAst.FormalParam =
-    ErasedAst.FormalParam(p.sym, visitTpe(p.tpe))
+    ErasedAst.FormalParam(p.sym, p.tpe)
 
   /**
-    * Translates the type 'tpe' to the ErasedType.
+    * Translates the given expression `exp0` to the ErasedAst.
     */
-  private def visitTpe[T <: PType](tpe: MonoType): EType[T] = (tpe match {
-    case MonoType.Unit => Reference(Unit())
-    case MonoType.Bool => Bool()
-    case MonoType.Char => Char()
-    case MonoType.Float32 => Float32()
-    case MonoType.Float64 => Float64()
-    case MonoType.Int8 => Int8()
-    case MonoType.Int16 => Int16()
-    case MonoType.Int32 => Int32()
-    case MonoType.Int64 => Int64()
-    case MonoType.BigInt =>
-      Reference(BigInt())
-    case MonoType.Str =>
-      Reference(Str())
-    case MonoType.Array(tpe) =>
-      Reference(Array[PType](visitTpe[PType](tpe)))
-    case MonoType.Channel(tpe) =>
-      Reference(Channel(visitTpe(tpe)))
-    case MonoType.Lazy(tpe) =>
-      Reference(Lazy(visitTpe(tpe)))
-    case MonoType.Ref(tpe) =>
-      Reference(Ref(visitTpe(tpe)))
-    case MonoType.Tuple(elms) =>
-      Reference(Tuple(elms.map(visitTpe)))
-    case MonoType.Enum(sym, args) =>
-      Reference(Enum(sym, args.map(visitTpe)))
-    case MonoType.Arrow(args, result) =>
-      Reference(Arrow(args.map(visitTpe), visitTpe(result)))
-    case MonoType.RecordEmpty() =>
-      Reference(RecordEmpty())
-    case MonoType.RecordExtend(field, value, rest) =>
-      Reference(RecordExtend(field, visitTpe(value), visitTpe(rest)))
-    case MonoType.SchemaEmpty() =>
-      Reference(SchemaEmpty())
-    case MonoType.SchemaExtend(name, tpe, rest) =>
-      Reference(SchemaExtend(name, visitTpe(tpe), visitTpe(rest)))
-    case MonoType.Relation(tpes) =>
-      Reference(Relation(tpes.map(visitTpe)))
-    case MonoType.Lattice(tpes) =>
-      Reference(Lattice(tpes.map(visitTpe)))
-    case MonoType.Native(clazz) =>
-      Reference(Native(clazz))
-    case MonoType.Var(id) =>
-      Reference(Var(id))
-  }).asInstanceOf[EType[T]]
+  private def visitExp(exp0: FinalAst.Expression): ErasedAst.Expression = exp0 match {
+    case FinalAst.Expression.Unit(loc) =>
+      ErasedAst.Expression.Unit(loc)
+
+    case FinalAst.Expression.Null(tpe, loc) =>
+      ErasedAst.Expression.Null(tpe, loc)
+
+    case FinalAst.Expression.True(loc) =>
+      ErasedAst.Expression.True(loc)
+
+    case FinalAst.Expression.False(loc) =>
+      ErasedAst.Expression.False(loc)
+
+    case FinalAst.Expression.Char(lit, loc) =>
+      ErasedAst.Expression.Char(lit, loc)
+
+    case FinalAst.Expression.Float32(lit, loc) =>
+      ErasedAst.Expression.Float32(lit, loc)
+
+    case FinalAst.Expression.Float64(lit, loc) =>
+      ErasedAst.Expression.Float64(lit, loc)
+
+    case FinalAst.Expression.Int8(lit, loc) =>
+      ErasedAst.Expression.Int8(lit, loc)
+
+    case FinalAst.Expression.Int16(lit, loc) =>
+      ErasedAst.Expression.Int16(lit, loc)
+
+    case FinalAst.Expression.Int32(lit, loc) =>
+      ErasedAst.Expression.Int32(lit, loc)
+
+    case FinalAst.Expression.Int64(lit, loc) =>
+      ErasedAst.Expression.Int64(lit, loc)
+
+    case FinalAst.Expression.BigInt(lit, loc) =>
+      ErasedAst.Expression.BigInt(lit, loc)
+
+    case FinalAst.Expression.Str(lit, loc) =>
+      ErasedAst.Expression.Str(lit, loc)
+
+    case FinalAst.Expression.Var(sym, tpe, loc) =>
+      ErasedAst.Expression.Var(sym, tpe, loc)
+
+    case FinalAst.Expression.Closure(sym, freeVars, fnMonoType, tpe, loc) =>
+      val newFreeVars = freeVars.map {
+        case FinalAst.FreeVar(freeSym, freeTpe) => ErasedAst.FreeVar(freeSym, freeTpe)
+      }
+      ErasedAst.Expression.Closure(sym, newFreeVars, fnMonoType, tpe, loc)
+
+    case FinalAst.Expression.ApplyClo(exp, args, tpe, loc) =>
+      ErasedAst.Expression.ApplyClo(visitExp(exp), args.map(visitExp), tpe, loc)
+
+    case FinalAst.Expression.ApplyDef(sym, args, tpe, loc) =>
+      ErasedAst.Expression.ApplyDef(sym, args.map(visitExp), tpe, loc)
+
+    case FinalAst.Expression.ApplyCloTail(exp, args, tpe, loc) =>
+      ErasedAst.Expression.ApplyCloTail(visitExp(exp), args.map(visitExp), tpe, loc)
+
+    case FinalAst.Expression.ApplyDefTail(sym, args, tpe, loc) =>
+      ErasedAst.Expression.ApplyDefTail(sym, args.map(visitExp), tpe, loc)
+
+    case FinalAst.Expression.ApplySelfTail(sym, formals0, actuals, tpe, loc) =>
+      val formals = formals0.map {
+        case FinalAst.FormalParam(formalSym, formalTpe) => ErasedAst.FormalParam(formalSym, formalTpe)
+      }
+      ErasedAst.Expression.ApplySelfTail(sym, formals, actuals.map(visitExp), tpe, loc)
+
+    case FinalAst.Expression.Unary(sop, op, exp, tpe, loc) =>
+      ErasedAst.Expression.Unary(sop, op, visitExp(exp), tpe, loc)
+
+    case FinalAst.Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
+      ErasedAst.Expression.Binary(sop, op, visitExp(exp1), visitExp(exp2), tpe, loc)
+
+    case FinalAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
+      ErasedAst.Expression.IfThenElse(visitExp(exp1), visitExp(exp2), visitExp(exp3), tpe, loc)
+
+    case FinalAst.Expression.Branch(exp, branches0, tpe, loc) =>
+      val branches = branches0.map {
+        case (branchLabel, branchExp) => (branchLabel, visitExp(branchExp))
+      }
+      ErasedAst.Expression.Branch(visitExp(exp), branches, tpe, loc)
+
+    case FinalAst.Expression.JumpTo(sym, tpe, loc) =>
+      ErasedAst.Expression.JumpTo(sym, tpe, loc)
+
+    case FinalAst.Expression.Let(sym, exp1, exp2, tpe, loc) =>
+      ErasedAst.Expression.Let(sym, visitExp(exp1), visitExp(exp2), tpe, loc)
+
+    case FinalAst.Expression.Is(sym, tag, exp, loc) =>
+      ErasedAst.Expression.Is(sym, tag, visitExp(exp), loc)
+
+    case FinalAst.Expression.Tag(sym, tag, exp, tpe, loc) =>
+      ErasedAst.Expression.Tag(sym, tag, visitExp(exp), tpe, loc)
+
+    case FinalAst.Expression.Untag(sym, tag, exp, tpe, loc) =>
+      ErasedAst.Expression.Untag(sym, tag, visitExp(exp), tpe, loc)
+
+    case FinalAst.Expression.Index(base, offset, tpe, loc) =>
+      ErasedAst.Expression.Index(visitExp(base), offset, tpe, loc)
+
+    case FinalAst.Expression.Tuple(elms, tpe, loc) =>
+      ErasedAst.Expression.Tuple(elms.map(visitExp), tpe, loc)
+
+    case FinalAst.Expression.RecordEmpty(tpe, loc) =>
+      ErasedAst.Expression.RecordEmpty(tpe, loc)
+
+    case FinalAst.Expression.RecordSelect(exp, field, tpe, loc) =>
+      ErasedAst.Expression.RecordSelect(visitExp(exp), field, tpe, loc)
+
+    case FinalAst.Expression.RecordExtend(field, value, rest, tpe, loc) =>
+      ErasedAst.Expression.RecordExtend(field, visitExp(value), visitExp(rest), tpe, loc)
+
+    case FinalAst.Expression.RecordRestrict(field, rest, tpe, loc) =>
+      ErasedAst.Expression.RecordRestrict(field, visitExp(rest), tpe, loc)
+
+    case FinalAst.Expression.ArrayLit(elms, tpe, loc) =>
+      ErasedAst.Expression.ArrayLit(elms.map(visitExp), tpe, loc)
+
+    case FinalAst.Expression.ArrayNew(elm, len, tpe, loc) =>
+      ErasedAst.Expression.ArrayNew(visitExp(elm), visitExp(len), tpe, loc)
+
+    case FinalAst.Expression.ArrayLoad(base, index, tpe, loc) =>
+      ErasedAst.Expression.ArrayLoad(visitExp(base), visitExp(index), tpe, loc)
+
+    case FinalAst.Expression.ArrayStore(base, index, elm, tpe, loc) =>
+      ErasedAst.Expression.ArrayStore(visitExp(base), visitExp(index), visitExp(elm), tpe, loc)
+
+    case FinalAst.Expression.ArrayLength(base, tpe, loc) =>
+      ErasedAst.Expression.ArrayLength(visitExp(base), tpe, loc)
+
+    case FinalAst.Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
+      ErasedAst.Expression.ArraySlice(visitExp(base), visitExp(beginIndex), visitExp(endIndex), tpe, loc)
+
+    case FinalAst.Expression.Ref(exp, tpe, loc) =>
+      ErasedAst.Expression.Ref(visitExp(exp), tpe, loc)
+
+    case FinalAst.Expression.Deref(exp, tpe, loc) =>
+      ErasedAst.Expression.Deref(visitExp(exp), tpe, loc)
+
+    case FinalAst.Expression.Assign(exp1, exp2, tpe, loc) =>
+      ErasedAst.Expression.Assign(visitExp(exp1), visitExp(exp2), tpe, loc)
+
+    case FinalAst.Expression.Cast(exp, tpe, loc) =>
+      ErasedAst.Expression.Cast(visitExp(exp), tpe, loc)
+
+    case FinalAst.Expression.TryCatch(exp, rules0, tpe, loc) =>
+      val rules = rules0.map {
+        case FinalAst.CatchRule(catchSym, catchClazz, catchExp) =>
+          ErasedAst.CatchRule(catchSym, catchClazz, visitExp(catchExp))
+      }
+      ErasedAst.Expression.TryCatch(visitExp(exp), rules, tpe, loc)
+
+    case FinalAst.Expression.InvokeConstructor(constructor, args, tpe, loc) =>
+      ErasedAst.Expression.InvokeConstructor(constructor, args.map(visitExp), tpe, loc)
+
+    case FinalAst.Expression.InvokeMethod(method, exp, args, tpe, loc) =>
+      ErasedAst.Expression.InvokeMethod(method, visitExp(exp), args.map(visitExp), tpe, loc)
+
+    case FinalAst.Expression.InvokeStaticMethod(method, args, tpe, loc) =>
+      ErasedAst.Expression.InvokeStaticMethod(method, args.map(visitExp), tpe, loc)
+
+    case FinalAst.Expression.GetField(field, exp, tpe, loc) =>
+      ErasedAst.Expression.GetField(field, visitExp(exp), tpe, loc)
+
+    case FinalAst.Expression.PutField(field, exp1, exp2, tpe, loc) =>
+      ErasedAst.Expression.PutField(field, visitExp(exp1), visitExp(exp2), tpe, loc)
+
+    case FinalAst.Expression.GetStaticField(field, tpe, loc) =>
+      ErasedAst.Expression.GetStaticField(field, tpe, loc)
+
+    case FinalAst.Expression.PutStaticField(field, exp, tpe, loc) =>
+      ErasedAst.Expression.PutStaticField(field, visitExp(exp), tpe, loc)
+
+    case FinalAst.Expression.NewChannel(exp, tpe, loc) =>
+      ErasedAst.Expression.NewChannel(visitExp(exp), tpe, loc)
+
+    case FinalAst.Expression.GetChannel(exp, tpe, loc) =>
+      ErasedAst.Expression.GetChannel(visitExp(exp), tpe, loc)
+
+    case FinalAst.Expression.PutChannel(exp1, exp2, tpe, loc) =>
+      ErasedAst.Expression.PutChannel(visitExp(exp1), visitExp(exp2), tpe, loc)
+
+    case FinalAst.Expression.SelectChannel(rules0, default, tpe, loc) =>
+      val rules = rules0.map {
+        case FinalAst.SelectChannelRule(ruleSym, ruleChan, ruleExp) =>
+          ErasedAst.SelectChannelRule(ruleSym, visitExp(ruleChan), visitExp(ruleExp))
+      }
+      ErasedAst.Expression.SelectChannel(rules, default.map(visitExp), tpe, loc)
+
+    case FinalAst.Expression.Spawn(exp, tpe, loc) =>
+      ErasedAst.Expression.Spawn(visitExp(exp), tpe, loc)
+
+    case FinalAst.Expression.Lazy(exp, tpe, loc) =>
+      ErasedAst.Expression.Lazy(visitExp(exp), tpe, loc)
+
+    case FinalAst.Expression.Force(exp, tpe, loc) =>
+      ErasedAst.Expression.Force(visitExp(exp), tpe, loc)
+
+    case FinalAst.Expression.HoleError(sym, tpe, loc) =>
+      ErasedAst.Expression.HoleError(sym, tpe, loc)
+
+    case FinalAst.Expression.MatchError(tpe, loc) =>
+      ErasedAst.Expression.MatchError(tpe, loc)
+  }
+
 }
