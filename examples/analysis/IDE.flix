@@ -87,6 +87,9 @@ namespace IDE {
 
     }
 
+    ///
+    /// An IDE instance.
+    ///
     type alias IDE[t] = {
         zero            :: t,
         main            :: t,
@@ -99,10 +102,6 @@ namespace IDE {
         eshEndReturn    :: List[(t, t, t, t, Transformer)]
     }
 
-    // TODO: Introduce more type aliases.
-    // TODO: Or use a record?
-
-    // Rules
     pub def runIDE(ide: IDE[String]): Int32 & Impure =
         use IDE/Trans.{id, compose, apply};
 
@@ -170,10 +169,11 @@ namespace IDE {
         let f1 = project ide.cfg, ide.callGraph, ide.startNodes, ide.endNodes into CFG, CallGraph, StartNode, EndNode;
 
         // TODO: How important is it for these to have lattice semantics?
-        let f2 = project ide.eshIntra, ide.eshCallStart, ide.eshEndReturn  into EshIntra, EshCallStart, EshEndReturn;
+        let f2 = project ide.eshIntra, ide.eshCallStart, ide.eshEndReturn into EshIntra, EshCallStart, EshEndReturn;
 
         let m = solve p, f1, f2;
         (m |> Fixpoint.unsafePrint) as & Impure;
+        query p, f1, f2 select (n, d; l) from Results(n, d; l) |> println;
         0
 
 }
@@ -340,14 +340,15 @@ def main(_: Array[String]): Int32 & Impure =
         ("p", "x", "n6", "x", IDE/Trans.id()) :: Nil;
 
     IDE.runIDE({
-        zero = "zero",
-        main = "smain",
-        cfg = cfg,
-        startNodes = startNodes,
-        endNodes = endNodes,
-        callGraph = callGraph,
+        zero         = "zero",
+        main         = "smain",
+        cfg          = cfg,
+        startNodes   = startNodes,
+        endNodes     = endNodes,
+        callGraph    = callGraph,
         eshIntra     = eshIntra,
         eshCallStart = eshCallStart,
         eshEndReturn = eshEndReturn
         });
+
     0
