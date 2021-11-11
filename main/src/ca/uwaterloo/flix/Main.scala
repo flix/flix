@@ -179,8 +179,7 @@ object Main {
     val flix = new Flix()
     flix.setOptions(options)
     for (file <- cmdOpts.files) {
-      //
-      val ext = file.getAbsolutePath.split('.').last
+      val ext = file.getName.split('.').last
       ext match {
         case "flix" => flix.addPath(file.toPath)
         case "fpkg" => flix.addPath(file.toPath)
