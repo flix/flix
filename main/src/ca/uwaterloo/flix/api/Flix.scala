@@ -250,7 +250,7 @@ class Flix {
   val genSym = new GenSym()
 
   /**
-    * A class loader for loading JARs.
+    * A class loader for loading external JARs.
     */
   val classLoader = new AppendableClassLoader
 
