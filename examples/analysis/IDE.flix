@@ -102,7 +102,7 @@ namespace IDE {
         eshEndReturn    :: List[(t, t, t, t, Transformer)]
     }
 
-    pub def runIDE(ide: IDE[String]): Int32 & Impure =
+    pub def runIDE(ide: IDE[String]): List[(String, String, ConstantProp.Const)] & Impure =
         use IDE/Trans.{id, compose, apply};
 
         let p = #{
@@ -173,8 +173,7 @@ namespace IDE {
 
         let m = solve p, f1, f2;
         (m |> Fixpoint.unsafePrint) as & Impure;
-        query p, f1, f2 select (n, d; l) from Results(n, d; l) |> println;
-        0
+        query p, f1, f2 select (n, d; l) from Results(n, d; l) |> Array.toList
 
 }
 
@@ -339,7 +338,7 @@ def main(_: Array[String]): Int32 & Impure =
         ("p", "x", "n1", "x", IDE/Trans.id()) ::
         ("p", "x", "n6", "x", IDE/Trans.id()) :: Nil;
 
-    IDE.runIDE({
+    let result = IDE.runIDE({
         zero         = "zero",
         main         = "smain",
         cfg          = cfg,
@@ -350,5 +349,7 @@ def main(_: Array[String]): Int32 & Impure =
         eshCallStart = eshCallStart,
         eshEndReturn = eshEndReturn
         });
+
+    println(result);
 
     0
