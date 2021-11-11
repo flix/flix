@@ -89,6 +89,7 @@ namespace IDE {
 
     type alias IDE = {
         zero        :: String,
+        main        :: String,
         cfg         :: List[(String, String)],
         callGraph   :: List[(String, String)]
     }
@@ -161,14 +162,15 @@ namespace IDE {
 
             // TODO: Ondrej: Add comment.
             ResultProc("main", ide.zero; LowerBound.minValue()).
+
+            // TODO: Ondrej: Add comment.
+            JumpFn(ide.zero, ide.main, ide.zero; id()).
         };
 
         let f1 = project ide.cfg, ide.callGraph, startNodes, endNodes into CFG, CallGraph, StartNode, EndNode;
         let f2 = project eshIntra into EshIntra;
         // TODO: Move more facts as arguments.
         let f = #{
-
-
             EshCallStart("n1","zero","p","a";Transformer.NonBotTrans(0,7,ConstantProp/Const.Bot)).
             EshCallStart("n1","x","p","x";id()).
             EshEndReturn("p","x","n1","x";id()).
@@ -176,11 +178,6 @@ namespace IDE {
             EshCallStart("n6","a","p","a";id()).
             EshCallStart("n6","x","p","x";id()).
             EshEndReturn("p","x","n6","x";id()).
-
-            // TODO: Ondrej: Add comment.
-            JumpFn("zero","smain","zero";id()).
-
-
         };
         let m = solve p, f, f1, f2;
         (m |> Fixpoint.unsafePrint) as & Impure;
@@ -339,5 +336,12 @@ def main(_: Array[String]): Int32 & Impure =
         ("n9","a","a", IDE/Trans.id()) ::
         ("n9","a","x", IDE/Transformer.NonBotTrans(-2,5, ConstantProp/Const.Bot)) :: Nil;
 
-    IDE.runIDE({zero = "zero", cfg = cfg, callGraph = callGraph}, startNodes, endNodes, eshIntra);
+    IDE.runIDE({
+        zero = "zero",
+        main = "smain",
+        cfg = cfg,
+        callGraph = callGraph},
+        startNodes,
+        endNodes,
+        eshIntra);
     0
