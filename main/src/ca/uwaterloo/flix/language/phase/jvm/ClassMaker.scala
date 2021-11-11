@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker._
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import org.objectweb.asm.{ClassWriter, Opcodes}
 
 class ClassMaker(visitor: ClassWriter) {
@@ -31,16 +32,16 @@ class ClassMaker(visitor: ClassWriter) {
     makeField(fieldName, fieldType, v, f, i)
   }
 
-  def mkConstructor(f: BytecodeInstructions.Instruction, descriptor: String, v: Visibility): Unit = {
+  def mkConstructor(f: BytecodeInstructions.Instruction, descriptor: MethodDescriptor, v: Visibility): Unit = {
     mkMethod(f, JvmName.ConstructorMethod, descriptor, v, Instanced)
   }
 
   def mkStaticConstructor(f: BytecodeInstructions.Instruction): Unit =
-    mkMethod(f, JvmName.StaticConstructorMethod, JvmName.Descriptors.NothingToVoid, Default, Static)
+    mkMethod(f, JvmName.StaticConstructorMethod, MethodDescriptor.NothingToVoid, Default, Static)
 
-  private def mkMethod(f: BytecodeInstructions.Instruction, methodName: String, descriptor: String, v: Visibility, i: Instancing): Unit = {
+  private def mkMethod(f: BytecodeInstructions.Instruction, methodName: String, descriptor: MethodDescriptor, v: Visibility, i: Instancing): Unit = {
     val modifier = ClassMaker.valueOf(v) + ClassMaker.valueOf(i)
-    val methodVisitor = visitor.visitMethod(modifier, methodName, descriptor, null, null)
+    val methodVisitor = visitor.visitMethod(modifier, methodName, descriptor.toString, null, null)
     methodVisitor.visitCode()
     f(new BytecodeInstructions.F(methodVisitor))
     methodVisitor.visitMaxs(999, 999)

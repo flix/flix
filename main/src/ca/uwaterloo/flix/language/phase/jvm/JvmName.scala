@@ -23,9 +23,19 @@ import java.nio.file.{Path, Paths}
  */
 object JvmName {
 
-  object Descriptors {
-    val NothingToVoid: String = AsmOps.getMethodDescriptor(Nil, JvmType.Void)
+
+  case class MethodDescriptor(arguments: List[JvmType], result: JvmType) {
+    /**
+      * Returns the type descriptor of this method.
+      */
+    override lazy val toString: String = AsmOps.getMethodDescriptor(arguments, result)
   }
+
+  object MethodDescriptor {
+    val NothingToVoid: MethodDescriptor = MethodDescriptor(Nil, JvmType.Void)
+  }
+
+
 
   /**
     * The name of the static constructor method `<clinit>`.

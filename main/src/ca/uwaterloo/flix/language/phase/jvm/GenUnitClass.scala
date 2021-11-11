@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst.Root
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker._
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 
 object GenUnitClass {
 
@@ -39,7 +40,7 @@ object GenUnitClass {
     cm.mkField(InstanceFieldName, JvmType.Unit, Public, Final, Static)
 
     cm.mkStaticConstructor(genStaticConstructor())
-    cm.mkConstructor(genConstructor(), JvmName.Descriptors.NothingToVoid, Private)
+    cm.mkConstructor(genConstructor(), MethodDescriptor.NothingToVoid, Private)
 
     cm.closeClassMaker
   }
