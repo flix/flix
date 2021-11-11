@@ -23,9 +23,9 @@ namespace TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testExists01(): Bool = exists("./README.md") == Ok(true)
+    def testExists01(): Bool & Impure = File1.exists("./README.md") == Ok(true)
 
     @test
-    def testExists02(): Bool = exists("./READMEfake.md") == Ok(false)
+    def testExists02(): Bool & Impure = File1.exists("./README2.md") == Ok(false)
 
 }
