@@ -79,7 +79,7 @@ lawless class Trans[a] {
 }
 
 instance Trans[Transformer] {
-  pub def id(): Transformer = Transformer.NonBotTrans(1,0,Const.Bot)
+    pub def id(): Transformer = Transformer.NonBotTrans(1,0,Const.Bot)
 
     pub def compose(t1: Transformer, t2: Transformer): Transformer = match (t1, t2) {
         case (_,Transformer.BotTrans)                                 => Transformer.BotTrans
@@ -101,8 +101,11 @@ instance Trans[Transformer] {
 
 }
 
+type alias ControlFlowGraph[t] = List[(t, t)]
+// TODO: Introduce more type aliases.
+
 // Rules
-def runIDE(cfg: List[(String, String)],
+def runIDE(cfg: ControlFlowGraph[String],
            callGraph: List[(String, String)],
            startNodes: List[(String, String)],
            endNodes: List[(String, String)]): Int32 & Impure =
