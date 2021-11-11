@@ -114,7 +114,8 @@ def nonbottom(t: Transformer): Bool = t != Transformer.BotTrans
 
 
 // Rules
-def analysis(cfg: List[(String, String)]): Int32 & Impure =
+def analysis(cfg: List[(String, String)],
+            startNodes: List[(String, String)]): Int32 & Impure =
     let p = #{
         // nodes in a given procedure
         InProc(p,start) :- StartNode(p, start).
@@ -160,11 +161,10 @@ def analysis(cfg: List[(String, String)]): Int32 & Impure =
             EshCallStart(call,d,proc,dp;cs).
     };
 
-    let f1 = project cfg into CFG;
+    let f1 = project cfg, startNodes into CFG, StartNode;
 
     let f = #{
-        StartNode("main","smain").
-        StartNode("p","sp").
+
         EndNode("main","emain").
         EndNode("p","ep").
 
@@ -302,6 +302,8 @@ def mul(x: Const, y: Const): Const = match (x, y) {
 def main(_: Array[String]): Int32 & Impure =
     println("Running IDE");
 
+    // TODO: Magnus: Use sets?
+
     let cfg =
         ("smain","n1") ::
         ("n1","n2") ::
@@ -317,5 +319,9 @@ def main(_: Array[String]): Int32 & Impure =
         ("n8","n9") ::
         ("n9","ep") :: Nil;
 
-    analysis(cfg);
+    let startNodes =
+        ("main","smain") ::
+        ("p","sp") :: Nil;
+
+    analysis(cfg, startNodes);
     0
