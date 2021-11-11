@@ -1970,7 +1970,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     * Returns the class reflection object for the given `className`.
     */
   private def lookupJvmClass(className: String, loc: SourceLocation)(implicit flix: Flix): Validation[Class[_], ResolutionError] = try {
-    Class.forName(className, true, flix.classLoader).toSuccess
+    // Don't initialize the class; we don't want to execute static initializers.
+    val initialize = false
+    Class.forName(className, initialize, flix.classLoader).toSuccess
   } catch {
     case ex: ClassNotFoundException => ResolutionError.UndefinedJvmClass(className, loc).toFailure
   }

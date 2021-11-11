@@ -1494,7 +1494,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   // TODO: Deprecated should be moved to resolver.
   private def lookupClass(className: String, loc: SourceLocation)(implicit flix: Flix): Validation[Class[_], NameError] = try {
-    Class.forName(className, true, flix.classLoader).toSuccess
+    // Don't initialize the class; we don't want to execute static initializers.
+    val initialize = false
+    Class.forName(className, initialize, flix.classLoader).toSuccess
   } catch {
     case ex: ClassNotFoundException => NameError.UndefinedNativeClass(className, loc).toFailure
   }
