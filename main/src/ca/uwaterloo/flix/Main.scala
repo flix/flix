@@ -180,10 +180,6 @@ object Main {
     flix.setOptions(options)
     for (file <- cmdOpts.files) {
       val ext = file.getName.split('.').last
-      // MATT debugging...
-      Console.println(s"file: $file")
-      Console.println(s"parts ${file.getName.split('.').toList}")
-      Console.println(s"ext: $ext")
       ext match {
         case "flix" => flix.addPath(file.toPath)
         case "fpkg" => flix.addPath(file.toPath)
@@ -192,7 +188,6 @@ object Main {
           Console.println(s"Unrecognized file extension: '$ext'.")
           System.exit(1)
       }
-      flix.addPath(file.toPath)
     }
 
     // evaluate main.
