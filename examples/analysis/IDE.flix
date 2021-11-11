@@ -23,7 +23,7 @@ namespace IDE {
 
     enum Transformer with Eq, Order, ToString {
         case BotTrans,
-        case NonBotTrans(Int,Int,Const)
+        case NonBotTrans(Int,Int,ConstantProp.Const)
     }
 
 
@@ -45,9 +45,9 @@ namespace IDE {
                 else if(c1 == c2)
                     if((a2-a1) != 0 and 0==(b1-b2)rem(a2-a1))
                     //                // is divisible
-                    Transformer.NonBotTrans(a1, b2, JoinLattice.leastUpperBound(Cst(a1*(b1-b2)/(a2-a1)+b1), JoinLattice.leastUpperBound(c1, c2)))
+                    Transformer.NonBotTrans(a1, b2, JoinLattice.leastUpperBound(ConstantProp/Const.Cst(a1*(b1-b2)/(a2-a1)+b1), JoinLattice.leastUpperBound(c1, c2)))
                     //                // is not divisible
-                    else Transformer.NonBotTrans(1, 0, Top)
+                    else Transformer.NonBotTrans(1, 0, ConstantProp/Const.Top)
                 else ???: Transformer
         }
     }
@@ -61,28 +61,28 @@ namespace IDE {
         pub def id(): a
         pub def compose(x: a, y: a): a
 
-        pub def apply(x: a, l: Const): Const // TODO: Signature
+        pub def apply(x: a, l: ConstantProp.Const): ConstantProp.Const // TODO: Signature
     }
 
     instance Trans[Transformer] {
-        pub def id(): Transformer = Transformer.NonBotTrans(1,0,Bot)
+        pub def id(): Transformer = Transformer.NonBotTrans(1,0,ConstantProp/Const.Bot)
 
         pub def compose(t1: Transformer, t2: Transformer): Transformer = match (t1, t2) {
             case (_,Transformer.BotTrans)                                 => Transformer.BotTrans
             case (Transformer.BotTrans, Transformer.NonBotTrans(_, _, c)) => match c {
-                case Bot => Transformer.BotTrans
-                case Top => Transformer.NonBotTrans(0,0,Top)
-                case Cst(cc) => Transformer.NonBotTrans(0,cc,c)
+                case ConstantProp/Const.Bot => Transformer.BotTrans
+                case ConstantProp/Const.Top => Transformer.NonBotTrans(0,0,ConstantProp/Const.Top)
+                case ConstantProp/Const.Cst(cc) => Transformer.NonBotTrans(0,cc,c)
             }
             case (Transformer.NonBotTrans(a2, b2, c2), Transformer.NonBotTrans(a1, b1, c1)) =>
-                Transformer.NonBotTrans(a1*a2, (a1*b2)+b1, JoinLattice.leastUpperBound(sum(mul(c2, lift(a1)), lift(b1)), c1))
+                Transformer.NonBotTrans(a1*a2, (a1*b2)+b1, JoinLattice.leastUpperBound(ConstantProp.sum(ConstantProp.mul(c2, ConstantProp.lift(a1)), ConstantProp.lift(b1)), c1))
         }
 
         // from paper: f = \l. a*l+b meet c; f(Top) = Top
         // paper is upside-down, so: f = \l. a*l+b join c; f(Bot) = Bot
-        pub def apply(t: Transformer, l: Const): Const = match t {
-            case Transformer.BotTrans => Bot
-            case Transformer.NonBotTrans(a, b, c) => if(l==Bot) Bot else JoinLattice.leastUpperBound(sum(mul(l, lift(a)), lift(b)),c)
+        pub def apply(t: Transformer, l: ConstantProp.Const): ConstantProp.Const = match t {
+            case Transformer.BotTrans => ConstantProp/Const.Bot
+            case Transformer.NonBotTrans(a, b, c) => if(l==ConstantProp/Const.Bot) ConstantProp/Const.Bot else JoinLattice.leastUpperBound(ConstantProp.sum(ConstantProp.mul(l, ConstantProp.lift(a)), ConstantProp.lift(b)),c)
         }
 
     }
@@ -156,20 +156,20 @@ namespace IDE {
             EshIntra("sp","x","x";id()).
             EshIntra("n4","a","a";id()).
             EshIntra("n4","x","x";id()).
-            EshIntra("n5","a","a";Transformer.NonBotTrans(1,-2,Bot)).
+            EshIntra("n5","a","a";Transformer.NonBotTrans(1,-2,ConstantProp/Const.Bot)).
             EshIntra("n5","x","x";id()).
             EshIntra("n6","a","a";id()).
             EshIntra("n7","a","a";id()).
             EshIntra("n7","x","x";id()).
-            EshIntra("n8","a","a";Transformer.NonBotTrans(1,2,Bot)).
+            EshIntra("n8","a","a";Transformer.NonBotTrans(1,2,ConstantProp/Const.Bot)).
             EshIntra("n8","x","x";id()).
             EshIntra("n9","a","a";id()).
-            EshIntra("n9","a","x";Transformer.NonBotTrans(-2,5,Bot)).
+            EshIntra("n9","a","x";Transformer.NonBotTrans(-2,5,ConstantProp/Const.Bot)).
 
             EshCallStart(call,"zero",target,"zero";id()) :- CallGraph(call,target).
             EshEndReturn(target,"zero",call,"zero";id()) :- CallGraph(call,target).
 
-            EshCallStart("n1","zero","p","a";Transformer.NonBotTrans(0,7,Bot)).
+            EshCallStart("n1","zero","p","a";Transformer.NonBotTrans(0,7,ConstantProp/Const.Bot)).
             EshCallStart("n1","x","p","x";id()).
             EshEndReturn("p","x","n1","x";id()).
 
@@ -179,7 +179,7 @@ namespace IDE {
 
             // Entrypoint
             JumpFn("zero","smain","zero";id()).
-            ResultProc("main","zero";Top).
+            ResultProc("main","zero";ConstantProp/Const.Top).
         };
         let m = solve p, f, f1;
         (m |> Fixpoint.unsafePrint) as & Impure;
@@ -197,93 +197,92 @@ namespace IDE {
 ///
 /// We begin by defining the lattice and its associated operations.
 ///
+namespace ConstantProp {
 
-
-
-
-///            Top
-///
-///   ... -2 -1 0 1 2 ...
-///
-///            Bot
-///
-enum Const with Eq, Order, ToString {
-    case Bot,
-    case Cst(Int),
-    case Top
-}
-
-///
-/// The Bottom Element of `Const`.
-///
-instance LowerBound[Const] {
-    pub def minValue(): Const = Const.Bot
-}
-
-///
-/// The Partial Order on `Const`.
-///
-instance PartialOrder[Const] {
-    pub def lessEqual(x: Const, y: Const): Bool = match (x, y) {
-        case (Const.Bot, _)                 => true
-        case (Const.Cst(n1), Const.Cst(n2)) => n1 == n2
-        case (_, Const.Top)                 => true
-        case _                              => false
+    ///            Top
+    ///
+    ///   ... -2 -1 0 1 2 ...
+    ///
+    ///            Bot
+    ///
+    pub enum Const with Eq, Order, ToString {
+        case Bot,
+        case Cst(Int),
+        case Top
     }
-}
 
-///
-/// The Least Upper Bound on `Const`.
-///
-instance JoinLattice[Const] {
-    pub def leastUpperBound(x: Const, y: Const): Const = match (x, y) {
-        case (Const.Bot, _)                               => y
-        case (_, Const.Bot)                               => x
-        case (Const.Cst(n1), Const.Cst(n2)) if (n1 == n2) => Const.Cst(n1)
-        case _                                            => Const.Top
+    ///
+    /// The Bottom Element of `Const`.
+    ///
+    instance LowerBound[Const] {
+        pub def minValue(): Const = Const.Bot
     }
-}
 
-///
-/// The Greatest Lower Bound on `Const`.
-///
-instance MeetLattice[Const] {
-    pub def greatestLowerBound(x: Const, y: Const): Const = match (x, y) {
-        case (Const.Top, _)                               => y
-        case (_, Const.Top)                               => x
-        case (Const.Cst(n1), Const.Cst(n2)) if (n1 == n2) => Const.Cst(n1)
-        case _                                            => Const.Bot
+    ///
+    /// The Partial Order on `Const`.
+    ///
+    instance PartialOrder[Const] {
+        pub def lessEqual(x: Const, y: Const): Bool = match (x, y) {
+            case (Const.Bot, _)                 => true
+            case (Const.Cst(n1), Const.Cst(n2)) => n1 == n2
+            case (_, Const.Top)                 => true
+            case _                              => false
+        }
     }
+
+    ///
+    /// The Least Upper Bound on `Const`.
+    ///
+    instance JoinLattice[Const] {
+        pub def leastUpperBound(x: Const, y: Const): Const = match (x, y) {
+            case (Const.Bot, _)                               => y
+            case (_, Const.Bot)                               => x
+            case (Const.Cst(n1), Const.Cst(n2)) if (n1 == n2) => Const.Cst(n1)
+            case _                                            => Const.Top
+        }
+    }
+
+    ///
+    /// The Greatest Lower Bound on `Const`.
+    ///
+    instance MeetLattice[Const] {
+        pub def greatestLowerBound(x: Const, y: Const): Const = match (x, y) {
+            case (Const.Top, _)                               => y
+            case (_, Const.Top)                               => x
+            case (Const.Cst(n1), Const.Cst(n2)) if (n1 == n2) => Const.Cst(n1)
+            case _                                            => Const.Bot
+        }
+    }
+
+    ///
+    /// We define a function to lift a concrete element into the constant propagation lattice.
+    ///
+    pub def lift(n: Int32): Const = Const.Cst(n)
+
+    // TODO: Use Add and Mul type classes?
+
+    ///
+    /// We define abstract addintion:
+    ///
+    pub def sum(x: Const, y: Const): Const = match (x, y) {
+        case (Const.Bot, _)                 => Const.Bot
+        case (_, Const.Bot)                 => Const.Bot
+        case (Const.Cst(n1), Const.Cst(n2)) => Const.Cst(n1 + n2)
+        case _                              => Const.Top
+    }
+
+    ///
+    /// And we define abstract multiplication:
+    ///
+    pub def mul(x: Const, y: Const): Const = match (x, y) {
+        case (Const.Bot, _)                 => Const.Bot
+        case (_, Const.Bot)                 => Const.Bot
+        case (Const.Cst(_), Const.Cst(0))   => Const.Cst(0) // TODO: Ondrej: Why is it like this?>
+        case (Const.Cst(n1), Const.Cst(n2)) => Const.Cst(n1 * n2)
+        case _                              => Const.Top
+    }
+
 }
-
-///
-/// We define a function to lift a concrete element into the constant propagation lattice.
-///
-def lift(n: Int32): Const = Const.Cst(n)
-
-// TODO: Use Add and Mul type classes?
-
-///
-/// We define abstract addintion:
-///
-def sum(x: Const, y: Const): Const = match (x, y) {
-    case (Const.Bot, _)                 => Const.Bot
-    case (_, Const.Bot)                 => Const.Bot
-    case (Const.Cst(n1), Const.Cst(n2)) => Const.Cst(n1 + n2)
-    case _                              => Const.Top
-}
-
-///
-/// And we define abstract multiplication:
-///
-def mul(x: Const, y: Const): Const = match (x, y) {
-    case (Const.Bot, _)                 => Const.Bot
-    case (_, Const.Bot)                 => Const.Bot
-    case (Const.Cst(_), Const.Cst(0))   => Const.Cst(0) // TODO: Ondrej: Why is it like this?>
-    case (Const.Cst(n1), Const.Cst(n2)) => Const.Cst(n1 * n2)
-    case _                              => Const.Top
-}
-
 
 ///
 /// Run the example.
