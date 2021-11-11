@@ -252,7 +252,7 @@ class Flix {
   /**
     * A class loader for loading external JARs.
     */
-  val classLoader = new AppendableClassLoader
+  val classLoader = new ExternalClassLoader
 
   /**
     * Adds the given string `s` to the list of strings to be parsed.
