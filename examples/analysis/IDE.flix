@@ -102,7 +102,7 @@ namespace IDE {
         eshEndReturn    :: List[(t, t, t, t, Transformer)]
     }
 
-    pub def runIDE(ide: IDE[String]): List[(String, String, ConstantProp.Const)] & Impure =
+    pub def runIDE(ide: IDE[t]): List[(t, t, ConstantProp.Const)] & Impure with Boxable[t] =
         use IDE/Trans.{id, compose, apply};
 
         let p = #{
