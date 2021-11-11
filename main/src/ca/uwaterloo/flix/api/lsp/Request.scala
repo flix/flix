@@ -55,7 +55,7 @@ object Request {
   case class RemPkg(requestId: String, uri: String) extends Request
 
   /**
-    * A request to add (or update) the JAR at the given uri with the given binary data.
+    * A request to add (or update) the JAR at the given uri.
     */
   case class AddJar(requestId: String, uri: String) extends Request
 
@@ -203,7 +203,6 @@ object Request {
         id <- parseId(json)
         uri <- parseUri(json)
       } yield {
-        val decoder = Base64.getDecoder
         Request.AddJar(id, uri)
       }
     } catch {

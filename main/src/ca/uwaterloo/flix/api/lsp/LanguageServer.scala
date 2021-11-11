@@ -139,7 +139,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     * Invoked when a client sends a message.
     */
   override def onMessage(ws: WebSocket, data: String): Unit = try {
-    Console.err.println(data) // MATT hacking logging
     parseRequest(data)(ws) match {
       case Ok(request) =>
         val result = processRequest(request)(ws)
