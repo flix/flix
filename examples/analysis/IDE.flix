@@ -114,8 +114,9 @@ def nonbottom(t: Transformer): Bool = t != Transformer.BotTrans
 
 
 // Rules
-def analysis(cfg: List[(String, String)],
-            startNodes: List[(String, String)]): Int32 & Impure =
+def runIDE(cfg: List[(String, String)],
+           startNodes: List[(String, String)],
+           endNodes: List[(String, String)]): Int32 & Impure =
     let p = #{
         // nodes in a given procedure
         InProc(p,start) :- StartNode(p, start).
@@ -161,13 +162,9 @@ def analysis(cfg: List[(String, String)],
             EshCallStart(call,d,proc,dp;cs).
     };
 
-    let f1 = project cfg, startNodes into CFG, StartNode;
+    let f1 = project cfg, startNodes, endNodes into CFG, StartNode, EndNode;
 
     let f = #{
-
-        EndNode("main","emain").
-        EndNode("p","ep").
-
         CallGraph("n1","p").
         CallGraph("n6","p").
 
@@ -323,5 +320,9 @@ def main(_: Array[String]): Int32 & Impure =
         ("main","smain") ::
         ("p","sp") :: Nil;
 
-    analysis(cfg, startNodes);
+    let endNodes =
+        ("main","emain") ::
+        ("p","ep") :: Nil;
+
+    runIDE(cfg, startNodes, endNodes);
     0
