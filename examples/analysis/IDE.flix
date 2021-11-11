@@ -97,6 +97,7 @@ instance Trans[Transformer] {
 
 // Rules
 def runIDE(cfg: List[(String, String)],
+           callGraph: List[(String, String)],
            startNodes: List[(String, String)],
            endNodes: List[(String, String)]): Int32 & Impure =
     use Trans.{id};
@@ -146,13 +147,10 @@ def runIDE(cfg: List[(String, String)],
             EshCallStart(call,d,proc,dp;cs).
     };
 
-    let f1 = project cfg, startNodes, endNodes into CFG, StartNode, EndNode;
+    let f1 = project cfg, callGraph, startNodes, endNodes into CFG, CallGraph, StartNode, EndNode;
 
     // TODO: Move more facts as arguments.
     let f = #{
-        CallGraph("n1","p").
-        CallGraph("n6","p").
-
         EshIntra(n,"zero","zero";id()) :- CFG(n,_).
 
         EshIntra("smain","zero","x";Transformer.BotTrans).
@@ -301,6 +299,10 @@ def main(_: Array[String]): Int32 & Impure =
         ("n8","n9") ::
         ("n9","ep") :: Nil;
 
+    let callGraph =
+        ("n1","p") ::
+        ("n6","p") :: Nil;
+
     let startNodes =
         ("main","smain") ::
         ("p","sp") :: Nil;
@@ -309,5 +311,5 @@ def main(_: Array[String]): Int32 & Impure =
         ("main","emain") ::
         ("p","ep") :: Nil;
 
-    runIDE(cfg, startNodes, endNodes);
+    runIDE(cfg, callGraph, startNodes, endNodes);
     0
