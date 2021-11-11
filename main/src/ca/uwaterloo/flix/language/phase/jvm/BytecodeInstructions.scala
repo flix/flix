@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import org.objectweb.asm.{MethodVisitor, Opcodes}
 
 object BytecodeInstructions {
@@ -29,8 +30,8 @@ object BytecodeInstructions {
 
     def visitInstruction(opcode: Int): Unit = visitor.visitInsn(opcode)
 
-    def visitMethodInstruction(opcode: Int, owner: JvmName, methodName: String, descriptor: String): Unit =
-      visitor.visitMethodInsn(opcode, owner.toInternalName, methodName, descriptor, false)
+    def visitMethodInstruction(opcode: Int, owner: JvmName, methodName: String, descriptor: MethodDescriptor): Unit =
+      visitor.visitMethodInsn(opcode, owner.toInternalName, methodName, descriptor.toString, false)
 
     def visitFieldInstruction(opcode: Int, owner: JvmName, fieldName: String, fieldType: JvmType): Unit =
       visitor.visitFieldInsn(opcode, owner.toInternalName, fieldName, fieldType.toDescriptor)
@@ -80,7 +81,7 @@ object BytecodeInstructions {
   //
 
   def InvokeSimpleConstructor(className: JvmName): Instruction = f => {
-    f.visitMethodInstruction(Opcodes.INVOKESPECIAL, className, JvmName.ConstructorMethod, JvmName.Descriptors.NothingToVoid)
+    f.visitMethodInstruction(Opcodes.INVOKESPECIAL, className, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid)
     f
   }
 }
