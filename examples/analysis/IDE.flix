@@ -21,7 +21,7 @@
 ///
 namespace IDE {
 
-    enum Transformer with Eq, Order, ToString {
+    pub enum Transformer with Eq, Order, ToString {
         case BotTrans,
         case NonBotTrans(Int,Int,ConstantProp.Const)
     }
@@ -87,14 +87,18 @@ namespace IDE {
 
     }
 
-    type alias ControlFlowGraph[t] = List[(t, t)]
     // TODO: Introduce more type aliases.
+    // TODO: Or use a record?
+    type alias ControlFlowGraph[t] = List[(t, t)]
+    type alias CallGraph[t] = List[(t, t)]
 
     // Rules
     pub def runIDE(cfg: ControlFlowGraph[String],
-            callGraph: List[(String, String)],
+            callGraph: CallGraph[String],
             startNodes: List[(String, String)],
-            endNodes: List[(String, String)]): Int32 & Impure =
+            endNodes: List[(String, String)],
+            eshIntra: List[(String, String, String, Transformer)]
+            ): Int32 & Impure =
         use IDE/Trans.{id, compose, apply};
 
         let p = #{
@@ -106,7 +110,7 @@ namespace IDE {
             JumpFn(d1,m,d3;compose(long,short)) :-
                 CFG(n,m),
                 JumpFn(d1,n,d2;long),
-                EshIntra(n,d2,d3;short).
+                EshIntra(n,d2,d3, short).
 
             // use summary
             JumpFn(d1,m,d3;compose(caller,summary)) :-
@@ -143,28 +147,11 @@ namespace IDE {
         };
 
         let f1 = project cfg, callGraph, startNodes, endNodes into CFG, CallGraph, StartNode, EndNode;
-
+        let f2 = project eshIntra into EshIntra;
         // TODO: Move more facts as arguments.
         let f = #{
-            EshIntra(n,"zero","zero";id()) :- CFG(n,_).
 
-            EshIntra("smain","zero","x";Transformer.BotTrans).
-            EshIntra("n2","x","x";id()).
-            EshIntra("n3","x","x";id()).
-
-            EshIntra("sp","a","a";id()).
-            EshIntra("sp","x","x";id()).
-            EshIntra("n4","a","a";id()).
-            EshIntra("n4","x","x";id()).
-            EshIntra("n5","a","a";Transformer.NonBotTrans(1,-2,ConstantProp/Const.Bot)).
-            EshIntra("n5","x","x";id()).
-            EshIntra("n6","a","a";id()).
-            EshIntra("n7","a","a";id()).
-            EshIntra("n7","x","x";id()).
-            EshIntra("n8","a","a";Transformer.NonBotTrans(1,2,ConstantProp/Const.Bot)).
-            EshIntra("n8","x","x";id()).
-            EshIntra("n9","a","a";id()).
-            EshIntra("n9","a","x";Transformer.NonBotTrans(-2,5,ConstantProp/Const.Bot)).
+            EshIntra(n,"zero","zero", id()) :- CFG(n,_).
 
             EshCallStart(call,"zero",target,"zero";id()) :- CallGraph(call,target).
             EshEndReturn(target,"zero",call,"zero";id()) :- CallGraph(call,target).
@@ -181,7 +168,7 @@ namespace IDE {
             JumpFn("zero","smain","zero";id()).
             ResultProc("main","zero";ConstantProp/Const.Top).
         };
-        let m = solve p, f, f1;
+        let m = solve p, f, f1, f2;
         (m |> Fixpoint.unsafePrint) as & Impure;
         0
 
@@ -259,8 +246,6 @@ namespace ConstantProp {
     ///
     pub def lift(n: Int32): Const = Cst(n)
 
-    // TODO: Use Add and Mul type classes?
-
     ///
     /// We define abstract addintion:
     ///
@@ -320,5 +305,25 @@ def main(_: Array[String]): Int32 & Impure =
         ("main","emain") ::
         ("p","ep") :: Nil;
 
-    IDE.runIDE(cfg, callGraph, startNodes, endNodes);
+
+    let eshIntra =
+        ("smain","zero","x", IDE/Transformer.BotTrans) ::
+        ("n2","x","x", IDE/Trans.id()) ::
+        ("n3","x","x", IDE/Trans.id()) ::
+
+        ("sp","a","a", IDE/Trans.id()) ::
+        ("sp","x","x", IDE/Trans.id()) ::
+        ("n4","a","a", IDE/Trans.id()) ::
+        ("n4","x","x", IDE/Trans.id()) ::
+        ("n5","a","a", IDE/Transformer.NonBotTrans(1,-2, ConstantProp/Const.Bot)) ::
+        ("n5","x","x", IDE/Trans.id()) ::
+        ("n6","a","a", IDE/Trans.id()) ::
+        ("n7","a","a", IDE/Trans.id()) ::
+        ("n7","x","x", IDE/Trans.id()) ::
+        ("n8","a","a", IDE/Transformer.NonBotTrans(1,2, ConstantProp/Const.Bot)) ::
+        ("n8","x","x", IDE/Trans.id()) ::
+        ("n9","a","a", IDE/Trans.id()) ::
+        ("n9","a","x", IDE/Transformer.NonBotTrans(-2,5, ConstantProp/Const.Bot)) :: Nil;
+
+    IDE.runIDE(cfg, callGraph, startNodes, endNodes, eshIntra);
     0
