@@ -67,16 +67,7 @@ instance MeetLattice[Transformer] {
     pub def greatestLowerBound(x: Transformer, y: Transformer): Transformer = ???
 }
 
-def compose(t1: Transformer, t2: Transformer): Transformer = match (t1, t2) {
-    case (_,Transformer.BotTrans)                                 => Transformer.BotTrans
-    case (Transformer.BotTrans, Transformer.NonBotTrans(_, _, c)) => match c {
-        case Const.Bot => Transformer.BotTrans
-        case Const.Top => Transformer.NonBotTrans(0,0,Const.Top)
-        case Const.Cst(cc) => Transformer.NonBotTrans(0,cc,c)
-    }
-    case (Transformer.NonBotTrans(a2, b2, c2), Transformer.NonBotTrans(a1, b1, c1)) =>
-    Transformer.NonBotTrans(a1*a2, (a1*b2)+b1, JoinLattice.leastUpperBound(sum(mul(c2, lift(a1)), lift(b1)), c1))
-}
+
 
 // from paper: f = \l. a*l+b meet c; f(Top) = Top
 // paper is upside-down, so: f = \l. a*l+b join c; f(Bot) = Bot
@@ -88,10 +79,22 @@ def apply(t: Transformer, l: Const): Const = match t {
 
 lawless class Trans[a] {
     pub def id(): a
+    pub def compose(x: a, y: a): a
 }
 
 instance Trans[Transformer] {
   pub def id(): Transformer = Transformer.NonBotTrans(1,0,Const.Bot)
+
+    pub def compose(t1: Transformer, t2: Transformer): Transformer = match (t1, t2) {
+        case (_,Transformer.BotTrans)                                 => Transformer.BotTrans
+        case (Transformer.BotTrans, Transformer.NonBotTrans(_, _, c)) => match c {
+            case Const.Bot => Transformer.BotTrans
+            case Const.Top => Transformer.NonBotTrans(0,0,Const.Top)
+            case Const.Cst(cc) => Transformer.NonBotTrans(0,cc,c)
+        }
+        case (Transformer.NonBotTrans(a2, b2, c2), Transformer.NonBotTrans(a1, b1, c1)) =>
+            Transformer.NonBotTrans(a1*a2, (a1*b2)+b1, JoinLattice.leastUpperBound(sum(mul(c2, lift(a1)), lift(b1)), c1))
+    }
 
 }
 
@@ -100,7 +103,7 @@ def runIDE(cfg: List[(String, String)],
            callGraph: List[(String, String)],
            startNodes: List[(String, String)],
            endNodes: List[(String, String)]): Int32 & Impure =
-    use Trans.{id};
+    use Trans.{id, compose};
 
     let p = #{
         // nodes in a given procedure
