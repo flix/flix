@@ -46,8 +46,12 @@ object BytecodeInstructions {
       f => i2(i1(f))
   }
 
-  def NEW(className: JvmName): Instruction = f => {
-    f.visitTypeInstruction(Opcodes.NEW, className)
+  //
+  // ~~~~~~~~~~~~~~~~~~~~~~~~ Direct JVM Instructions ~~~~~~~~~~~~~~~~~~~~~~~~
+  //
+
+  def ALOAD(index: Int): Instruction = f => {
+    f.visitVarInstruction(Opcodes.ALOAD, index)
     f
   }
 
@@ -56,8 +60,8 @@ object BytecodeInstructions {
     f
   }
 
-  def InvokeSimpleConstructor(className: JvmName): Instruction = f => {
-    f.visitMethodInstruction(Opcodes.INVOKESPECIAL, className, JvmName.ConstructorMethod, JvmName.Descriptors.NothingToVoid)
+  def NEW(className: JvmName): Instruction = f => {
+    f.visitTypeInstruction(Opcodes.NEW, className)
     f
   }
 
@@ -71,8 +75,12 @@ object BytecodeInstructions {
     f
   }
 
-  def ALOAD(index: Int): Instruction = f => {
-    f.visitVarInstruction(Opcodes.ALOAD, index)
+  //
+  // ~~~~~~~~~~~~~~~~~~~~~~~~~ Meta JVM Instructions ~~~~~~~~~~~~~~~~~~~~~~~~~
+  //
+
+  def InvokeSimpleConstructor(className: JvmName): Instruction = f => {
+    f.visitMethodInstruction(Opcodes.INVOKESPECIAL, className, JvmName.ConstructorMethod, JvmName.Descriptors.NothingToVoid)
     f
   }
 }
