@@ -20,7 +20,7 @@ import java.net.{URL, URLClassLoader}
 /**
   * A class loader to which JARs can be added dynamically.
   */
-class ExternalClassLoader extends URLClassLoader(Array.empty) {
+class ExternalJarLoader extends URLClassLoader(Array.empty) {
 
   /**
     * Adds the URL to the class loader.
