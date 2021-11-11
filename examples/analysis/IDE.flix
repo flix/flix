@@ -45,14 +45,14 @@ case (Transformer.BotTrans, Transformer.NonBotTrans(_, _, c)) => match c {
   case Const.Cst(cc) => Transformer.NonBotTrans(0,cc,c)
 }
 case (Transformer.NonBotTrans(a2, b2, c2), Transformer.NonBotTrans(a1, b1, c1)) =>
-  Transformer.NonBotTrans(a1*a2, (a1*b2)+b1, JoinLattice.leastUpperBound(sum(prod(c2, a1), b1), c1))
+  Transformer.NonBotTrans(a1*a2, (a1*b2)+b1, JoinLattice.leastUpperBound(sum(mul(c2, lift(a1)), lift(b1)), c1))
 }
 
 // from paper: f = \l. a*l+b meet c; f(Top) = Top
 // paper is upside-down, so: f = \l. a*l+b join c; f(Bot) = Bot
 def apply(t: Transformer, l: Const): Const = match t {
     case Transformer.BotTrans => Const.Bot
-    case Transformer.NonBotTrans(a, b, c) => if(l==Const.Bot) Const.Bot else JoinLattice.leastUpperBound(sum(prod(l,a),b),c)
+    case Transformer.NonBotTrans(a, b, c) => if(l==Const.Bot) Const.Bot else JoinLattice.leastUpperBound(sum(mul(l, lift(a)), lift(b)),c)
 }
 
 instance LowerBound[Transformer] {
@@ -222,7 +222,7 @@ def main(_: Array[String]): Int32 & Impure =
 ///            Top
 ///
 ///   ... -2 -1 0 1 2 ...
-/// 
+///
 ///            Bot
 ///
 enum Const with Eq, Order, ToString {
@@ -274,15 +274,30 @@ instance MeetLattice[Const] {
     }
 }
 
+///
+/// We define a function to lift a concrete element into the constant propagation lattice.
+///
+def lift(n: Int32): Const = Const.Cst(n)
 
-def sum(e1: Const, e2: Int): Const = match e1 {
-    case Const.Cst(n) => Const.Cst(n+e2)
-    case _ => e1
+// TODO: Use Add and Mul type classes?
+
+///
+/// We define abstract addintion:
+///
+def sum(x: Const, y: Const): Const = match (x, y) {
+    case (Const.Bot, _)                 => Const.Bot
+    case (_, Const.Bot)                 => Const.Bot
+    case (Const.Cst(n1), Const.Cst(n2)) => Const.Cst(n1 + n2)
+    case _                              => Const.Top
 }
 
-def prod(e1: Const, e2: Int): Const = match (e1, e2) {
-    case (Const.Cst(n), _) => Const.Cst(n*e2)
-    case (Const.Bot, _) => Const.Bot
-    case (_, zero) => if(zero == 0) Const.Cst(0) else e1
-    case _ => e1
+///
+/// And we define abstract multiplication:
+///
+def mul(x: Const, y: Const): Const = match (x, y) {
+    case (Const.Bot, _)                 => Const.Bot
+    case (_, Const.Bot)                 => Const.Bot
+    case (Const.Cst(_), Const.Cst(0))   => Const.Cst(0) // TODO: Ondrej: Why is it like this?>
+    case (Const.Cst(n1), Const.Cst(n2)) => Const.Cst(n1 * n2)
+    case _                              => Const.Top
 }
