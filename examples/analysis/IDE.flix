@@ -105,6 +105,14 @@ namespace IDE {
     pub def runIDE(ide: IDE[t]): List[(t, t, ConstantProp.Const)] & Impure with Boxable[t] =
         use IDE/Trans.{id, compose, apply};
 
+        let f1 = project ide.cfg, ide.callGraph, ide.startNodes, ide.endNodes into CFG, CallGraph, StartNode, EndNode;
+        // TODO: How important is it for these to have lattice semantics?
+        let f2 = project ide.eshIntra, ide.eshCallStart, ide.eshEndReturn into EshIntra, EshCallStart, EshEndReturn;
+
+        ///
+        /// The core IDE Framework.
+        ///
+
         let p = #{
             // nodes in a given procedure
             InProc(p,start) :- StartNode(p, start).
@@ -165,11 +173,6 @@ namespace IDE {
             // TODO: Ondrej: Add comment.
             JumpFn(ide.zero, ide.main, ide.zero; id()).
         };
-
-        let f1 = project ide.cfg, ide.callGraph, ide.startNodes, ide.endNodes into CFG, CallGraph, StartNode, EndNode;
-
-        // TODO: How important is it for these to have lattice semantics?
-        let f2 = project ide.eshIntra, ide.eshCallStart, ide.eshEndReturn into EshIntra, EshCallStart, EshEndReturn;
 
         let m = solve p, f1, f2;
         (m |> Fixpoint.unsafePrint) as & Impure;
@@ -307,7 +310,6 @@ def main(_: Array[String]): Int32 & Impure =
     let endNodes =
         ("main","emain") ::
         ("p","ep") :: Nil;
-
 
     let eshIntra =
         ("smain","zero","x", IDE/Transformer.BotTrans) ::
