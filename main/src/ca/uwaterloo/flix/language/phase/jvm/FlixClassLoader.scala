@@ -26,7 +26,7 @@ import scala.collection.mutable
   *
   * @param classes A map from internal names (strings) to JvmClasses.
   */
-class FlixClassLoader(classes: Map[String, JvmClass], flix: Flix) extends ClassLoader {
+class FlixClassLoader(classes: Map[String, JvmClass])(implicit flix: Flix) extends ClassLoader {
 
   /**
     * An internal cache of already loaded classes.
