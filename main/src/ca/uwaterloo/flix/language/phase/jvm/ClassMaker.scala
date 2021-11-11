@@ -85,30 +85,30 @@ object ClassMaker {
 
   sealed trait Visibility
 
-  object Private extends Visibility
+  case object Private extends Visibility
 
-  object Default extends Visibility
+  case object Default extends Visibility
 
-  object Public extends Visibility
+  case object Public extends Visibility
 
 
   sealed trait Finality
 
-  object Final extends Finality
+  case object Final extends Finality
 
-  object Implementable extends Finality
+  case object Implementable extends Finality
 
 
   sealed trait Instancing
 
-  object Static extends Instancing
+  case object Static extends Instancing
 
-  object Instanced extends Instancing
+  case object Instanced extends Instancing
 
 
   sealed trait Abstraction
 
-  object Abstract extends Abstraction
+  case object Abstract extends Abstraction
 
-  object Implemented extends Abstraction
+  case object Implemented extends Abstraction
 }
