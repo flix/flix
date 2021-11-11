@@ -69,17 +69,13 @@ instance MeetLattice[Transformer] {
 
 
 
-// from paper: f = \l. a*l+b meet c; f(Top) = Top
-// paper is upside-down, so: f = \l. a*l+b join c; f(Bot) = Bot
-def apply(t: Transformer, l: Const): Const = match t {
-    case Transformer.BotTrans => Const.Bot
-    case Transformer.NonBotTrans(a, b, c) => if(l==Const.Bot) Const.Bot else JoinLattice.leastUpperBound(sum(mul(l, lift(a)), lift(b)),c)
-}
 
 
 lawless class Trans[a] {
     pub def id(): a
     pub def compose(x: a, y: a): a
+
+    pub def apply(x: a, l: Const): Const // TODO: Signature
 }
 
 instance Trans[Transformer] {
@@ -96,6 +92,13 @@ instance Trans[Transformer] {
             Transformer.NonBotTrans(a1*a2, (a1*b2)+b1, JoinLattice.leastUpperBound(sum(mul(c2, lift(a1)), lift(b1)), c1))
     }
 
+    // from paper: f = \l. a*l+b meet c; f(Top) = Top
+    // paper is upside-down, so: f = \l. a*l+b join c; f(Bot) = Bot
+    pub def apply(t: Transformer, l: Const): Const = match t {
+        case Transformer.BotTrans => Const.Bot
+        case Transformer.NonBotTrans(a, b, c) => if(l==Const.Bot) Const.Bot else JoinLattice.leastUpperBound(sum(mul(l, lift(a)), lift(b)),c)
+    }
+
 }
 
 // Rules
@@ -103,7 +106,7 @@ def runIDE(cfg: List[(String, String)],
            callGraph: List[(String, String)],
            startNodes: List[(String, String)],
            endNodes: List[(String, String)]): Int32 & Impure =
-    use Trans.{id, compose};
+    use Trans.{id, compose, apply};
 
     let p = #{
         // nodes in a given procedure
