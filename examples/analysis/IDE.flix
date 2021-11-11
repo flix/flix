@@ -87,14 +87,17 @@ namespace IDE {
 
     }
 
+    type alias IDE = {
+        cfg         :: List[(String, String)],
+        callGraph   :: List[(String, String)]
+    }
+
     // TODO: Introduce more type aliases.
     // TODO: Or use a record?
-    type alias ControlFlowGraph[t] = List[(t, t)]
-    type alias CallGraph[t] = List[(t, t)]
+
 
     // Rules
-    pub def runIDE(cfg: ControlFlowGraph[String],
-            callGraph: CallGraph[String],
+    pub def runIDE(ide: IDE,
             startNodes: List[(String, String)],
             endNodes: List[(String, String)],
             eshIntra: List[(String, String, String, Transformer)]
@@ -146,7 +149,7 @@ namespace IDE {
                 EshCallStart(call,d,proc,dp;cs).
         };
 
-        let f1 = project cfg, callGraph, startNodes, endNodes into CFG, CallGraph, StartNode, EndNode;
+        let f1 = project ide.cfg, ide.callGraph, startNodes, endNodes into CFG, CallGraph, StartNode, EndNode;
         let f2 = project eshIntra into EshIntra;
         // TODO: Move more facts as arguments.
         let f = #{
@@ -325,5 +328,5 @@ def main(_: Array[String]): Int32 & Impure =
         ("n9","a","a", IDE/Trans.id()) ::
         ("n9","a","x", IDE/Transformer.NonBotTrans(-2,5, ConstantProp/Const.Bot)) :: Nil;
 
-    IDE.runIDE(cfg, callGraph, startNodes, endNodes, eshIntra);
+    IDE.runIDE({cfg = cfg, callGraph = callGraph}, startNodes, endNodes, eshIntra);
     0
