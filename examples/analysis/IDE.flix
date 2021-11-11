@@ -158,6 +158,9 @@ namespace IDE {
 
             // TODO: Ondrej: Add comment.
             EshEndReturn(target, ide.zero, call, ide.zero; id()) :- CallGraph(call, target).
+
+            // TODO: Ondrej: Add comment.
+            ResultProc("main", ide.zero; LowerBound.minValue()).
         };
 
         let f1 = project ide.cfg, ide.callGraph, startNodes, endNodes into CFG, CallGraph, StartNode, EndNode;
@@ -174,9 +177,10 @@ namespace IDE {
             EshCallStart("n6","x","p","x";id()).
             EshEndReturn("p","x","n6","x";id()).
 
-            // Entrypoint
+            // TODO: Ondrej: Add comment.
             JumpFn("zero","smain","zero";id()).
-            ResultProc("main","zero";ConstantProp/Const.Top).
+
+
         };
         let m = solve p, f, f1, f2;
         (m |> Fixpoint.unsafePrint) as & Impure;
