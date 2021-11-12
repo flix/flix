@@ -32,7 +32,11 @@ trait Formatter {
 
 object Formatter {
 
-
+  /**
+    * A formatter that does not apply any styling or formatting.
+    * Functions `line` and `code` append their parameters in the correct order
+    * but does nothing more than that.
+    */
   object NoFormatter extends Formatter {
 
     override def line(left: String, right: String): String = left + right
