@@ -353,9 +353,7 @@ class Shell(initialPaths: List[Path], options: Options) {
         case "flix" => flix.addPath(path)
         case "fpkg" => flix.addPath(path)
         case "jar" => flix.addJar(path)
-        case _ =>
-          Console.println(s"Unrecognized file extension: '$ext'.")
-          System.exit(1)
+        case _ => throw new IllegalStateException(s"Unrecognized file extension: '$ext'.")
       }
     }
 
