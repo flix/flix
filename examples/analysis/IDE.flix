@@ -290,36 +290,35 @@ namespace ConstantProp {
     ///
     pub def id(): MicroFunction = MicroFunction.NonBot(1, 0, Const.Bot)
 
-
-
-
-
-
-
     ///
-    /// Returns the
+    /// Returns the composition of the two micro functions `f1` and `f2`.
     ///
-    pub def compose(t1: MicroFunction, t2: MicroFunction): MicroFunction = match (t1, t2) {
-        case (_,MicroFunction.Bot)                                 => MicroFunction.Bot
+    pub def compose(f1: MicroFunction, f2: MicroFunction): MicroFunction = match (f1, f2) {
+        case (_, MicroFunction.Bot) => MicroFunction.Bot
         case (MicroFunction.Bot, MicroFunction.NonBot(_, _, c)) => match c {
-            case ConstantProp/Const.Bot => MicroFunction.Bot
-            case ConstantProp/Const.Top => MicroFunction.NonBot(0,0,ConstantProp/Const.Top)
-            case ConstantProp/Const.Cst(cc) => MicroFunction.NonBot(0,cc,c)
+            case Const.Bot     => MicroFunction.Bot
+            case Const.Top     => MicroFunction.NonBot(0, 0, Const.Top)
+            case Const.Cst(cc) => MicroFunction.NonBot(0, cc, c)
         }
         case (MicroFunction.NonBot(a2, b2, c2), MicroFunction.NonBot(a1, b1, c1)) =>
-            MicroFunction.NonBot(a1*a2, (a1*b2)+b1, JoinLattice.leastUpperBound(ConstantProp.sum(ConstantProp.mul(c2, ConstantProp.lift(a1)), ConstantProp.lift(b1)), c1))
+            use JoinLattice.{leastUpperBound => lub};
+            MicroFunction.NonBot(a1 * a2, (a1 * b2) + b1, lub(sum(mul(c2, lift(a1)), lift(b1)), c1))
     }
 
-
-    pub def apply(t: MicroFunction, l: ConstantProp.Const): ConstantProp.Const = match t {
-        case MicroFunction.Bot => ConstantProp/Const.Bot
-        case MicroFunction.NonBot(a, b, c) => if(l==ConstantProp/Const.Bot) ConstantProp/Const.Bot else JoinLattice.leastUpperBound(ConstantProp.sum(ConstantProp.mul(l, ConstantProp.lift(a)), ConstantProp.lift(b)),c)
+    ///
+    /// Returns the result of applying the micro function `f` to the lattice element `l`.
+    ///
+    pub def apply(f: MicroFunction, l: ConstantProp.Const): ConstantProp.Const = match f {
+        case MicroFunction.Bot             => Const.Bot
+        case MicroFunction.NonBot(a, b, c) => match l {
+            case Const.Bot => Const.Bot
+            case _         =>
+                // TODO: Ondrej corporate this somewhere:
+                // from paper: f = \l. a*l+b meet c; f(Top) = Top
+                // paper is upside-down, so: f = \l. a*l+b join c; f(Bot) = Bot
+                JoinLattice.leastUpperBound(sum(mul(l, lift(a)), lift(b)),c)
+        }
     }
-    // TODO: Ondrej corporate this somewhere:
-    // from paper: f = \l. a*l+b meet c; f(Top) = Top
-    // paper is upside-down, so: f = \l. a*l+b join c; f(Bot) = Bot
-
-
 }
 
 ///
@@ -402,5 +401,4 @@ def main(_: Array[String]): Int32 & Impure =
         });
 
     println(result);
-
     0
