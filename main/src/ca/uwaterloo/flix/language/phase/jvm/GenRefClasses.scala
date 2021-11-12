@@ -18,7 +18,7 @@ object GenRefClasses {
 
     // Type that we need a cell class for
     val types = List(MonoType.Bool, MonoType.Char, MonoType.Float32, MonoType.Float64,
-      MonoType.Int8, MonoType.Int16, MonoType.Int32, MonoType.Int64, MonoType.Native(classOf[Object]))
+      MonoType.Int8, MonoType.Int16, MonoType.Int32, MonoType.Int64, MonoType.Unit)
 
     // Generating each cell class
     types.map { tpe =>
