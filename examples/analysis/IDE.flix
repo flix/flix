@@ -58,7 +58,7 @@ namespace IDE {
 
         let f1 = project ide.cfg, ide.callGraph, ide.startNodes, ide.endNodes into CFG, CallGraph, StartNode, EndNode;
 
-        // TODO: How important is it for these to have lattice semantics?
+        // TODO: These should have lattice semantics and also be replaced by the loop
         let f2 = project ide.eshIntra, ide.eshCallStart, ide.eshEndReturn into EshIntra, EshCallStart, EshEndReturn;
 
         ///
