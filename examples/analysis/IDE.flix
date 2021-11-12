@@ -57,14 +57,13 @@ namespace IDE {
     }
 
 
-    lawless class Trans[a] {
+    lawless class MicroFunction[a] {
         pub def id(): a
         pub def compose(x: a, y: a): a
-
         pub def apply(x: a, l: ConstantProp.Const): ConstantProp.Const // TODO: Signature
     }
 
-    instance Trans[Transformer] {
+    instance MicroFunction[Transformer] {
         pub def id(): Transformer = Transformer.NonBotTrans(1,0,ConstantProp/Const.Bot)
 
         pub def compose(t1: Transformer, t2: Transformer): Transformer = match (t1, t2) {
@@ -91,8 +90,8 @@ namespace IDE {
     /// An IDE instance.
     ///
     // p - procedures
-// n - program point
-// d - analysis data element
+    // n - program point
+    // d - analysis data element
     type alias IDE[p,n,d] = {
         zero            :: d,
         main            :: p,
@@ -106,7 +105,7 @@ namespace IDE {
     }
 
     pub def runIDE(ide: IDE[p,n,d]): List[(n, d, ConstantProp.Const)] & Impure with Boxable[n], Boxable[d], Boxable[p] =
-        use IDE/Trans.{id, compose, apply};
+        use IDE/MicroFunction.{id, compose, apply};
 
         let main = ide.main;
 
@@ -319,32 +318,32 @@ def main(_: Array[String]): Int32 & Impure =
 
     let eshIntra =
         ("smain","zero","x", IDE/Transformer.BotTrans) ::
-        ("n2","x","x", IDE/Trans.id()) ::
-        ("n3","x","x", IDE/Trans.id()) ::
+        ("n2","x","x", IDE/MicroFunction.id()) ::
+        ("n3","x","x", IDE/MicroFunction.id()) ::
 
-        ("sp","a","a", IDE/Trans.id()) ::
-        ("sp","x","x", IDE/Trans.id()) ::
-        ("n4","a","a", IDE/Trans.id()) ::
-        ("n4","x","x", IDE/Trans.id()) ::
+        ("sp","a","a", IDE/MicroFunction.id()) ::
+        ("sp","x","x", IDE/MicroFunction.id()) ::
+        ("n4","a","a", IDE/MicroFunction.id()) ::
+        ("n4","x","x", IDE/MicroFunction.id()) ::
         ("n5","a","a", IDE/Transformer.NonBotTrans(1,-2, ConstantProp/Const.Bot)) ::
-        ("n5","x","x", IDE/Trans.id()) ::
-        ("n6","a","a", IDE/Trans.id()) ::
-        ("n7","a","a", IDE/Trans.id()) ::
-        ("n7","x","x", IDE/Trans.id()) ::
+        ("n5","x","x", IDE/MicroFunction.id()) ::
+        ("n6","a","a", IDE/MicroFunction.id()) ::
+        ("n7","a","a", IDE/MicroFunction.id()) ::
+        ("n7","x","x", IDE/MicroFunction.id()) ::
         ("n8","a","a", IDE/Transformer.NonBotTrans(1,2, ConstantProp/Const.Bot)) ::
-        ("n8","x","x", IDE/Trans.id()) ::
-        ("n9","a","a", IDE/Trans.id()) ::
+        ("n8","x","x", IDE/MicroFunction.id()) ::
+        ("n9","a","a", IDE/MicroFunction.id()) ::
         ("n9","a","x", IDE/Transformer.NonBotTrans(-2,5, ConstantProp/Const.Bot)) :: Nil;
 
     let eshCallStart =
         ("n1","zero","p","a",IDE/Transformer.NonBotTrans(0,7,ConstantProp/Const.Bot)) ::
-        ("n1","x","p","x",IDE/Trans.id()) ::
-        ("n6","a","p","a",IDE/Trans.id()) ::
-        ("n6","x","p","x",IDE/Trans.id()) :: Nil;
+        ("n1","x","p","x",IDE/MicroFunction.id()) ::
+        ("n6","a","p","a",IDE/MicroFunction.id()) ::
+        ("n6","x","p","x",IDE/MicroFunction.id()) :: Nil;
 
     let eshEndReturn =
-        ("p", "x", "n1", "x", IDE/Trans.id()) ::
-        ("p", "x", "n6", "x", IDE/Trans.id()) :: Nil;
+        ("p", "x", "n1", "x", IDE/MicroFunction.id()) ::
+        ("p", "x", "n6", "x", IDE/MicroFunction.id()) :: Nil;
 
     let result = IDE.runIDE({
         zero         = "zero",
