@@ -348,7 +348,15 @@ class Shell(initialPaths: List[Path], options: Options) {
 
     // Add each path to Flix.
     for (path <- this.sourcePaths) {
-      this.flix.addPath(path)
+      val ext = path.toFile.getName.split('.').last
+      ext match {
+        case "flix" => flix.addPath(path)
+        case "fpkg" => flix.addPath(path)
+        case "jar" => flix.addJar(path)
+        case _ =>
+          Console.println(s"Unrecognized file extension: '$ext'.")
+          System.exit(1)
+      }
     }
 
     // Compute the TypedAst and store it.
