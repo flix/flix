@@ -24,27 +24,22 @@ namespace Stratifier {
 
     pub def ullman(pg: PrecedenceGraph, predicates: Int): Option[Map[PredicateSymbol, Int]] & Impure =
         use Int32.max;
-        let facts = project pg into Precedence;
+        let facts = project pg into DependencyEdge;
         let rules = #{
-            Predicate(p; 1) :- Precedence(p, _, _).
-            Predicate(p; 1) :- Precedence(_, _, p).
-            Predicate(ph; max(pbs, phs)) :- Precedence(ph, true, pb), Predicate(pb; pbs), Predicate(ph; phs).
-            Predicate(ph; max(pbs + 1, phs)) :-
-                Precedence(ph, false, pb),
-                Predicate(pb; pbs),
-                Predicate(ph; phs),
-                if max(pbs + 1, phs) <= predicates.
-            NonStratified() :-
-                Precedence(ph, false, pb),
-                Predicate(pb; pbs),
-                Predicate(ph; phs),
-                if max(pbs + 1, phs) > predicates.
+            Stratum(p; 1) :- DependencyEdge(p, _, _).
+            Stratum(p; 1) :- DependencyEdge(_, _, p).
+            Stratum(ph; max(pbs, phs)) :- DependencyEdge(ph, true, pb), Stratum(pb; pbs), Stratum(ph; phs).
+            Stratum(ph; max(pbs + 1, phs)) :-
+                DependencyEdge(ph, false, pb),
+                Stratum(pb; pbs),
+                Stratum(ph; phs),
+                if pbs <= predicates.
+                // allow one level of strata above the bound for a stratification check
         };
         let solution = solve facts, rules;
-        let stratified = query solution select () from NonStratified() |> Array.isEmpty;
-        
+        let stratified = (query solution select () from Stratum(_; s) where s >= predicates + 1) |> Array.isEmpty;
         if (not stratified) None else
-        let mappings = query solution select (p, s) from Predicate(p; s);
+        let mappings = query solution select (p, s) from Stratum(p; s);
         Some(Array.toMap(mappings))
 
     pub def testScenario01(): Unit & Impure =
