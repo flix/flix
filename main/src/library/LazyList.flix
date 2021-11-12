@@ -111,23 +111,6 @@ namespace LazyList {
     }
 
     ///
-    /// Returns a lazy list of all integers between `b` (inclusive) and `e` (exclusive).
-    ///
-    /// Returns an empty lazy list if `b >= e`.
-    ///
-    pub def range(b: Int32, e: Int32): LazyList[Int32] =
-        LList(lazy rangeHelper(b, e))
-
-    ///
-    /// Helper function for `range`.
-    ///
-    def rangeHelper(b: Int32, e:Int32): LazyList[Int32] =
-        if (b >= e)
-            ENil
-        else
-            LCons(b, lazy rangeHelper(b + 1, e))
-
-    ///
     /// Returns `Some(x)` if `x` is the first element of `l`.
     ///
     /// Returns `None` if `l` is empty.
@@ -150,6 +133,23 @@ namespace LazyList {
         case LCons(_, xs) => LList(                xs )
         case LList(xs)    => LList(lazy tail(force xs))
     }
+
+    ///
+    /// Returns a lazy list of all integers between `b` (inclusive) and `e` (exclusive).
+    ///
+    /// Returns an empty lazy list if `b >= e`.
+    ///
+    pub def range(b: Int32, e: Int32): LazyList[Int32] =
+        LList(lazy rangeHelper(b, e))
+
+    ///
+    /// Helper function for `range`.
+    ///
+    def rangeHelper(b: Int32, e:Int32): LazyList[Int32] =
+        if (b >= e)
+            ENil
+        else
+            LCons(b, lazy rangeHelper(b + 1, e))
 
     ///
     /// Returns the first `n` elements of `l`.
