@@ -2,6 +2,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst.Root
+import ca.uwaterloo.flix.language.ast.MonoType
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes._
 
@@ -16,13 +17,13 @@ object GenRefClasses {
   def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
 
     // Type that we need a cell class for
-    val types = List(JvmType.PrimBool, JvmType.PrimChar, JvmType.PrimFloat, JvmType.PrimDouble,
-      JvmType.PrimByte, JvmType.PrimShort, JvmType.PrimInt, JvmType.PrimLong, JvmType.Object)
+    val types = List(MonoType.Bool, MonoType.Char, MonoType.Float32, MonoType.Float64,
+      MonoType.Int8, MonoType.Int16, MonoType.Int32, MonoType.Int64, MonoType.Native(classOf[Object]))
 
     // Generating each cell class
     types.map { tpe =>
-      val classType = JvmName.getCellClassType(tpe)
-      classType.name -> JvmClass(classType.name, genRefClass(classType, tpe))
+      val classType = JvmOps.getRefClassType(MonoType.Ref(tpe))
+      classType.name -> JvmClass(classType.name, genRefClass(classType, classType))
     }.toMap
   }
 

@@ -71,13 +71,11 @@ object JvmOps {
     case MonoType.RecordExtend(_, _, _) => getRecordInterfaceType()
     case MonoType.Enum(_, _) => getEnumInterfaceType(tpe)
     case MonoType.Arrow(_, _) => getFunctionInterfaceType(tpe)
-    case MonoType.Relation(_) => JvmType.Reference(JvmName.PredSym)
+    //case MonoType.Relation(_) => JvmType.Reference(JvmName.PredSym)
     case MonoType.Native(clazz) =>
       // TODO: Ugly hack.
       val fqn = clazz.getName.replace('.', '/')
       JvmType.Reference(JvmName.mk(fqn))
-    case MonoType.SchemaEmpty() => JvmType.Reference(JvmName.Runtime.Fixpoint.ConstraintSystem)
-    case MonoType.SchemaExtend(_, _, _) => JvmType.Reference(JvmName.Runtime.Fixpoint.ConstraintSystem)
 
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
   }
