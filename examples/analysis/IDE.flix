@@ -90,20 +90,25 @@ namespace IDE {
     ///
     /// An IDE instance.
     ///
-    type alias IDE[t] = {
-        zero            :: t,
-        main            :: t,
-        cfg             :: List[(t, t)],
-        startNodes      :: List[(t, t)],
-        endNodes        :: List[(t, t)],
-        callGraph       :: List[(t, t)],
-        eshIntra        :: List[(t, t, t, Transformer)],
-        eshCallStart    :: List[(t, t, t, t, Transformer)],
-        eshEndReturn    :: List[(t, t, t, t, Transformer)]
+    // p - procedures
+// n - program point
+// d - analysis data element
+    type alias IDE[p,n,d] = {
+        zero            :: d,
+        main            :: p,
+        cfg             :: List[(n, n)],
+        startNodes      :: List[(p, n)],
+        endNodes        :: List[(p, n)],
+        callGraph       :: List[(n, p)],
+        eshIntra        :: List[(n, d, d, Transformer)],
+        eshCallStart    :: List[(n, d, p, d, Transformer)],
+        eshEndReturn    :: List[(p, d, n, d, Transformer)]
     }
 
-    pub def runIDE(ide: IDE[t]): List[(t, t, ConstantProp.Const)] & Impure with Boxable[t] =
+    pub def runIDE(ide: IDE[p,n,d]): List[(n, d, ConstantProp.Const)] & Impure with Boxable[n], Boxable[d], Boxable[p] =
         use IDE/Trans.{id, compose, apply};
+
+        let main = ide.main;
 
         let f1 = project ide.cfg, ide.callGraph, ide.startNodes, ide.endNodes into CFG, CallGraph, StartNode, EndNode;
         // TODO: How important is it for these to have lattice semantics?
@@ -171,7 +176,8 @@ namespace IDE {
             ResultProc(ide.main, ide.zero; LowerBound.minValue()).
 
             // TODO: Ondrej: Add comment.
-            JumpFn(ide.zero, ide.main, ide.zero; id()).
+            JumpFn(ide.zero, n, ide.zero; id()) :- StartNode(main, n).
+
         };
 
         let m = solve p, f1, f2;
