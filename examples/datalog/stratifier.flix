@@ -1,58 +1,71 @@
 namespace Stratifier {
-    type alias Program = List[Constraint]
-    type alias Constraint = (HeadAtom, List[BodyAtom])
-    type alias Atom = PredicateSymbol
-    type alias HeadAtom = Atom
+    use Int32.max;
+    use List.{map, flatMap, partition};
+
+    opaque type Program = List[Constraint]
+    opaque type Constraint = (HeadAtom, List[BodyAtom])
+    opaque type Atom = PredicateSymbol
+    opaque type HeadAtom = Atom
     enum BodyAtom {
         case Positive(Atom)
         case Negative(Atom)
     }
-    type alias PredicateSymbol = String
+    opaque type PredicateSymbol with Boxable, ToString, Eq, Order = String
 
     // A :- B leads to (A, true, B)
     type alias PrecedenceEdge = (PredicateSymbol, Bool, PredicateSymbol)
     type alias PrecedenceGraph = List[PrecedenceEdge]
 
-    pub def convertProgram(p: Program): PrecedenceGraph =
-        List.flatMap(convertConstraint, p)
+    def convertProgram(p: Program): PrecedenceGraph =
+        let Program(c) = p;
+        flatMap(convertConstraint, c)
 
-    pub def convertConstraint(c: Constraint): PrecedenceGraph =
-        use List.map;
-        let (a0, b) = c;
-        let unfoldBodyAtom = ba -> match ba {case Positive(a) => (true, a), case Negative(a) => (false, a)};
+    def convertConstraint(c: Constraint): PrecedenceGraph =
+        let Constraint(HeadAtom(Atom(a0)), b) = c;
+        let unfoldBodyAtom = ba -> match ba {
+            case Positive(Atom(ps)) => (true, ps),
+            case Negative(Atom(ps)) => (false, ps)
+        };
         b |> map(unfoldBodyAtom) |> map(pna -> match pna {case (pn, a) => (a0, pn, a)})
 
-    pub def ullman(pg: PrecedenceGraph, predicates: Int): Option[Map[PredicateSymbol, Int]] & Impure =
-        use Int32.max;
-        let facts = project pg into DependencyEdge;
+    pub def ullman(p: Program, numberOfPredicates: Int): Option[Map[PredicateSymbol, Int]] & Impure =
+        let pg: PrecedenceGraph = convertProgram(p);
+        let (pos, neg) = partition(e -> match e {case (_, b, _) => b}, pg);
+        let removeBool = triple -> match triple {case (a, _, b) => (a, b)};
+        let facts = project map(removeBool, pos), map(removeBool, neg) into PositiveDependencyEdge, NegativeDependencyEdge;
         let rules = #{
-            Stratum(p; 1) :- DependencyEdge(p, _, _).
-            Stratum(p; 1) :- DependencyEdge(_, _, p).
-            Stratum(ph; max(pbs, phs)) :- DependencyEdge(ph, true, pb), Stratum(pb; pbs), Stratum(ph; phs).
+            Stratum(pd; 1) :- PositiveDependencyEdge(pd, _). Stratum(pd; 1) :- PositiveDependencyEdge(_, pd).
+            Stratum(pd; 1) :- NegativeDependencyEdge(pd, _). Stratum(pd; 1) :- NegativeDependencyEdge(_, pd).
+            Stratum(ph; max(pbs, phs)) :- PositiveDependencyEdge(ph, pb), Stratum(pb; pbs), Stratum(ph; phs).
             Stratum(ph; max(pbs + 1, phs)) :-
-                DependencyEdge(ph, false, pb),
+                NegativeDependencyEdge(ph, pb),
                 Stratum(pb; pbs),
                 Stratum(ph; phs),
-                if pbs <= predicates.
-                // allow one level of strata above the bound for a stratification check
+                if pbs <= numberOfPredicates.
+                // allow one level of strata above the bound for a stratification check later
         };
         let solution = solve facts, rules;
-        let stratified = (query solution select () from Stratum(_; s) where s >= predicates + 1) |> Array.isEmpty;
-        if (not stratified) None else
-        let mappings = query solution select (p, s) from Stratum(p; s);
-        Some(Array.toMap(mappings))
+        let stratified = (query solution select () from Stratum(_; s) where s >= numberOfPredicates + 1) |> Array.isEmpty;
+        if (not stratified)
+            None
+        else
+            let mappings = query solution select (pd, s) from Stratum(pd; s);
+            Some(Array.toMap(mappings))
 
     pub def testScenario01(): Unit & Impure =
         println("testScenario01");
         // A :- B, C
         // B :- D
         // C :- not D
-        let program =
-            (("A"), Positive("B") :: Positive("C") :: Nil) ::
-            (("B"), Positive("D") :: Nil) ::
-            (("C"), Negative("D") :: Nil) ::
-            Nil;
-        outputString(ullman(convertProgram(program), 4), "Map#{A -> 2, B -> 1, C -> 2, D -> 1}") |> println
+        let p = Program(
+            Constraint(HeadAtom(Atom(PredicateSymbol("A"))), Positive(Atom(PredicateSymbol("B"))) :: Positive(Atom(PredicateSymbol("C"))) :: Nil) ::
+            Constraint(HeadAtom(Atom(PredicateSymbol("B"))), Positive(Atom(PredicateSymbol("D"))) :: Nil) ::
+            Constraint(HeadAtom(Atom(PredicateSymbol("C"))), Negative(Atom(PredicateSymbol("D"))) :: Nil) ::
+            Nil
+        );
+        let result = ullman(p, 4);
+        let expected = "Map#{PredicateSymbol(A) -> 2, PredicateSymbol(B) -> 1, PredicateSymbol(C) -> 2, PredicateSymbol(D) -> 1}";
+        outputString(result, expected) |> println
 
     pub def testScenario02(): Unit & Impure =
         println("testScenario02");
@@ -60,13 +73,16 @@ namespace Stratifier {
         // B :- D
         // C :- not D
         // D :- A
-        let program =
-            (("A"), Positive("B") :: Positive("C") :: Nil) ::
-            (("B"), Positive("D") :: Nil) ::
-            (("C"), Negative("D") :: Nil) ::
-            (("D"), Negative("A") :: Nil) ::
-            Nil;
-        outputString(ullman(convertProgram(program), 4), "Not Stratified") |> println
+        let p = Program(
+            Constraint(HeadAtom(Atom(PredicateSymbol("A"))), Positive(Atom(PredicateSymbol("B"))) :: Positive(Atom(PredicateSymbol("C"))) :: Nil) ::
+            Constraint(HeadAtom(Atom(PredicateSymbol("B"))), Positive(Atom(PredicateSymbol("D"))) :: Nil) ::
+            Constraint(HeadAtom(Atom(PredicateSymbol("C"))), Negative(Atom(PredicateSymbol("D"))) :: Nil) ::
+            Constraint(HeadAtom(Atom(PredicateSymbol("D"))), Negative(Atom(PredicateSymbol("A"))) :: Nil) ::
+            Nil
+        );
+        let result = ullman(p, 4);
+        let expected = "Not Stratified";
+        outputString(result, expected) |> println
 
     def outputString(value: Option[Map[PredicateSymbol, Int]], expected: String): String =
         let resString = match value {
