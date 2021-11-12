@@ -95,22 +95,28 @@ namespace IDE {
     // p - procedures
     // n - program point
     // d - analysis data element
-    type alias IDE[p,n,d] = {
+    type alias IDE[p, n, d, f, l] = {
         zero            :: d,
         main            :: p,
         cfg             :: List[(n, n)],
         startNodes      :: List[(p, n)],
         endNodes        :: List[(p, n)],
         callGraph       :: List[(n, p)],
-        eshIntra        :: List[(n, d, d, Transformer)],
-        eshCallStart    :: List[(n, d, p, d, Transformer)],
-        eshEndReturn    :: List[(p, d, n, d, Transformer)]
+        eshIntra        :: List[(n, d, d, f)],     // TODO: Later
+        eshCallStart    :: List[(n, d, p, d, f)], // TODO: Later
+        eshEndReturn    :: List[(p, d, n, d, f)], // TODO: Later
+        id              :: f,
+        apply           :: (f, l) -> l,
+        compose         :: (f, f) -> f
     }
 
-    pub def runIDE(ide: IDE[p,n,d]): List[(n, d, ConstantProp.Const)] & Impure with Boxable[n], Boxable[d], Boxable[p] =
-        use IDE/MicroFunction.{id, compose, apply};
+    pub def runIDE(ide: IDE[p, n, d, f, l]): List[(n, d, l)] & Impure
+        with Boxable[n], Boxable[d], Boxable[p], Boxable[f], LowerBound[f], JoinLattice[f], MeetLattice[f], Boxable[l], LowerBound[l], JoinLattice[l], MeetLattice[l] =
 
         let main = ide.main;
+        let id = (_x: Unit) -> ide.id;
+        let apply = ide.apply;
+        let compose = ide.compose;
 
         let f1 = project ide.cfg, ide.callGraph, ide.startNodes, ide.endNodes into CFG, CallGraph, StartNode, EndNode;
         // TODO: How important is it for these to have lattice semantics?
@@ -357,7 +363,10 @@ def main(_: Array[String]): Int32 & Impure =
         callGraph    = callGraph,
         eshIntra     = eshIntra,
         eshCallStart = eshCallStart,
-        eshEndReturn = eshEndReturn
+        eshEndReturn = eshEndReturn,
+        id           = IDE/MicroFunction.id(),
+        apply        = IDE/MicroFunction.apply,
+        compose      = IDE/MicroFunction.compose
         });
 
     println(result);
