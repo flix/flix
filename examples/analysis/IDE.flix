@@ -57,7 +57,7 @@ namespace IDE {
     }
 
 
-// class microfunctionops[l, microfun[l]]
+// TODO: Elim. type class.
     lawless class MicroFunction[a] {
         pub def id(): a
         pub def compose(x: a, y: a): a
@@ -99,12 +99,12 @@ namespace IDE {
         zero            :: d,
         main            :: p,
         cfg             :: List[(n, n)],
-        startNodes      :: List[(p, n)],
+        startNodes      :: List[(p, n)],            // Functions from p -> d.
         endNodes        :: List[(p, n)],
         callGraph       :: List[(n, p)],
-        eshIntra        :: List[(n, d, d, f)],     // TODO: Later
-        eshCallStart    :: List[(n, d, p, d, f)], // TODO: Later
-        eshEndReturn    :: List[(p, d, n, d, f)], // TODO: Later
+        eshIntra        :: List[(n, d, d, f)],     // TODO: Later        sig:   (n, d)      -> (d, f)
+        eshCallStart    :: List[(n, d, p, d, f)], // TODO: Later         sig    (n, d, p)   -> (d, f) // TODO: Needs to functions!
+        eshEndReturn    :: List[(p, d, n, d, f)], // TODO: Later                (p, d, n)   -> (d, f) // TODO: Need this loop construct!!!!!!!!!
         id              :: f,
         apply           :: (f, l) -> l,
         compose         :: (f, f) -> f
