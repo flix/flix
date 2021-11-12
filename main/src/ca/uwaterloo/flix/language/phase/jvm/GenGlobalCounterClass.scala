@@ -40,7 +40,7 @@ object GenGlobalCounterClass {
     cm.mkConstructor(genConstructor(), JvmName.MethodDescriptor.NothingToVoid, Private)
     cm.mkStaticConstructor(genStaticConstructor())
     cm.mkField(counterFieldName, JvmType.AtomicLong, Private, Final, Static)
-    cm.mkMethod(genNewIdMethod(), NewIdMethodName, MethodDescriptor(Nil, JvmType.PrimLong), Public, Final, Instanced)
+    cm.mkMethod(genNewIdMethod(), NewIdMethodName, MethodDescriptor(Nil, JvmType.PrimLong), Public, Final, Static)
 
     cm.closeClassMaker
   }
