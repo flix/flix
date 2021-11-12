@@ -252,7 +252,7 @@ class Flix {
   /**
     * A class loader for loading external JARs.
     */
-  val classLoader = new ExternalJarLoader
+  val jarLoader = new ExternalJarLoader
 
   /**
     * Adds the given string `s` to the list of strings to be parsed.
@@ -325,7 +325,7 @@ class Flix {
     if (!Files.isReadable(p))
       throw new IllegalArgumentException(s"'$p' must be a readable file.")
 
-    classLoader.addURL(p.toUri.toURL)
+    jarLoader.addURL(p.toUri.toURL)
     this
   }
 
