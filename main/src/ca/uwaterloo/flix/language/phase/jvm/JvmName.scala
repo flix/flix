@@ -48,6 +48,11 @@ object JvmName {
   val ConstructorMethod: String = "<init>"
 
   /**
+    * The Flix reserved delimiter for generated jvm classes.
+    */
+  val Delimiter: String = "_"
+
+  /**
    * Returns the JvmName of the given string `s`.
    */
   def mk(s: String): JvmName = {
@@ -206,7 +211,7 @@ object JvmName {
    * Get the class type for the cell with subtype `subType`
    */
   def getCellClassType(subType: JvmType): JvmType.Reference = {
-    val name = "Ref" + "$" + JvmOps.stringify(subType)
+    val name = "Ref" + Delimiter + JvmOps.stringify(subType)
 
     // The type resides in the ca.uwaterloo.flix package.
     JvmType.Reference(JvmName(Nil, name))
