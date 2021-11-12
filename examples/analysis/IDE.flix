@@ -57,9 +57,12 @@ namespace IDE {
     }
 
 
+// class microfunctionops[l, microfun[l]]
     lawless class MicroFunction[a] {
         pub def id(): a
         pub def compose(x: a, y: a): a
+        // TODO: Change this to:         //pub def apply(x: a, l: l): l with LowerBound[l], PartialOrder[l], JoinLattice[l]
+
         pub def apply(x: a, l: ConstantProp.Const): ConstantProp.Const // TODO: Signature
     }
 
