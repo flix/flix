@@ -21,86 +21,37 @@
 ///
 namespace IDE {
 
-    pub enum Transformer with Eq, Order, ToString {
-        case BotTrans,
-        case NonBotTrans(Int,Int,ConstantProp.Const)
-    }
-
-
-    instance LowerBound[Transformer] {
-        pub def minValue(): Transformer = Transformer.BotTrans
-    }
-
-    instance PartialOrder[Transformer] {
-        pub def lessEqual(e1: Transformer, e2: Transformer): Bool = e2 == JoinLattice.leastUpperBound(e1, e2)
-    }
-
-    instance JoinLattice[Transformer] {
-        pub def leastUpperBound(t1: Transformer, t2: Transformer): Transformer = match (t1, t2) {
-            case (Transformer.BotTrans, _) => t2
-            case (_, Transformer.BotTrans) => t1
-            case (Transformer.NonBotTrans(a1, b1, c1), Transformer.NonBotTrans(a2, b2, c2)) =>
-                if (a1 == a2 and b1 == b2)
-                    Transformer.NonBotTrans(a1, b1, JoinLattice.leastUpperBound(c1, c2))
-                else if(c1 == c2)
-                    if((a2-a1) != 0 and 0==(b1-b2)rem(a2-a1))
-                    //                // is divisible
-                    Transformer.NonBotTrans(a1, b2, JoinLattice.leastUpperBound(ConstantProp/Const.Cst(a1*(b1-b2)/(a2-a1)+b1), JoinLattice.leastUpperBound(c1, c2)))
-                    //                // is not divisible
-                    else Transformer.NonBotTrans(1, 0, ConstantProp/Const.Top)
-                else ???: Transformer
-        }
-    }
-
-    instance MeetLattice[Transformer] {
-        pub def greatestLowerBound(x: Transformer, y: Transformer): Transformer = ???
-    }
-
-    pub def id(): Transformer = Transformer.NonBotTrans(1,0,ConstantProp/Const.Bot)
-
-    pub def compose(t1: Transformer, t2: Transformer): Transformer = match (t1, t2) {
-        case (_,Transformer.BotTrans)                                 => Transformer.BotTrans
-        case (Transformer.BotTrans, Transformer.NonBotTrans(_, _, c)) => match c {
-            case ConstantProp/Const.Bot => Transformer.BotTrans
-            case ConstantProp/Const.Top => Transformer.NonBotTrans(0,0,ConstantProp/Const.Top)
-            case ConstantProp/Const.Cst(cc) => Transformer.NonBotTrans(0,cc,c)
-        }
-        case (Transformer.NonBotTrans(a2, b2, c2), Transformer.NonBotTrans(a1, b1, c1)) =>
-            Transformer.NonBotTrans(a1*a2, (a1*b2)+b1, JoinLattice.leastUpperBound(ConstantProp.sum(ConstantProp.mul(c2, ConstantProp.lift(a1)), ConstantProp.lift(b1)), c1))
-    }
-
-    // from paper: f = \l. a*l+b meet c; f(Top) = Top
-    // paper is upside-down, so: f = \l. a*l+b join c; f(Bot) = Bot
-    pub def apply(t: Transformer, l: ConstantProp.Const): ConstantProp.Const = match t {
-        case Transformer.BotTrans => ConstantProp/Const.Bot
-        case Transformer.NonBotTrans(a, b, c) => if(l==ConstantProp/Const.Bot) ConstantProp/Const.Bot else JoinLattice.leastUpperBound(ConstantProp.sum(ConstantProp.mul(l, ConstantProp.lift(a)), ConstantProp.lift(b)),c)
-    }
-
-
     ///
-    /// An IDE instance.
+    /// An IDE instance where:
     ///
-    // p - procedures
-    // n - program point
-    // d - analysis data element
+    /// - p is the type of procedures.
+    /// - n is the type of program point.
+    /// - d is the type of analysis data elements.
+    ///
     type alias IDE[p, n, d, f, l] = {
         zero            :: d,
         main            :: p,
         cfg             :: List[(n, n)],
-        startNodes      :: List[(p, n)],            // Functions from p -> d.
+        startNodes      :: List[(p, n)],            // TODO: Ondrej: Should this also be a function?
         endNodes        :: List[(p, n)],
         callGraph       :: List[(n, p)],
-        eshIntra        :: List[(n, d, d, f)],     // TODO: Later        sig:   (n, d)      -> (d, f)
-        eshCallStart    :: List[(n, d, p, d, f)], // TODO: Later         sig    (n, d, p)   -> (d, f) // TODO: Needs to functions!
-        eshEndReturn    :: List[(p, d, n, d, f)], // TODO: Later                (p, d, n)   -> (d, f) // TODO: Need this loop construct!!!!!!!!!
+        eshIntra        :: List[(n, d, d, f)],      // TODO: Ought to be a function: (n, d)      -> (d, f)
+        eshCallStart    :: List[(n, d, p, d, f)],   // TODO: Ought to be a function: (n, d, p)   -> (d, f)
+        eshEndReturn    :: List[(p, d, n, d, f)],   // TODO: Ought to be a function: (p, d, n)   -> (d, f)
         id              :: f,
         apply           :: (f, l) -> l,
         compose         :: (f, f) -> f
     }
 
-    pub def runIDE(ide: IDE[p, n, d, f, l]): List[(n, d, l)] & Impure
-        with Boxable[n], Boxable[d], Boxable[p], Boxable[f], LowerBound[f], JoinLattice[f], MeetLattice[f], Boxable[l], LowerBound[l], JoinLattice[l], MeetLattice[l] =
+    ///
+    /// Solves the given IDE instances.
+    ///
+    pub def run(ide: IDE[p, n, d, f, l]): List[(n, d, l)] & Impure
+        with LowerBound[f], JoinLattice[f], MeetLattice[f],
+             LowerBound[l], JoinLattice[l], MeetLattice[l],
+             Boxable[n], Boxable[d], Boxable[p], Boxable[f],  Boxable[l] =
 
+        // TODO: Explode the record.
         let main = ide.main;
         let id = (_x: Unit) -> ide.id;
         let apply = ide.apply;
@@ -113,7 +64,6 @@ namespace IDE {
         ///
         /// The core IDE Framework.
         ///
-
         let p = #{
             // nodes in a given procedure
             InProc(p,start) :- StartNode(p, start).
@@ -177,7 +127,9 @@ namespace IDE {
         };
 
         let m = solve p, f1, f2;
-        (m |> Fixpoint.unsafePrint) as & Impure;
+
+        (m |> Fixpoint.unsafePrint) as & Impure; // NB: Just for debugging.
+
         query p, f1, f2 select (n, d; l) from Results(n, d; l) |> Array.toList
 
 }
@@ -276,6 +228,73 @@ namespace ConstantProp {
         case _                              => Const.Top
     }
 
+    ///
+    /// We can now define the micro functions.
+    ///
+
+
+
+
+
+
+
+    pub enum Transformer with Eq, Order, ToString {
+        case BotTrans,
+        case NonBotTrans(Int,Int,ConstantProp.Const)
+    }
+
+
+    instance LowerBound[Transformer] {
+        pub def minValue(): Transformer = Transformer.BotTrans
+    }
+
+    instance PartialOrder[Transformer] {
+        pub def lessEqual(e1: Transformer, e2: Transformer): Bool = e2 == JoinLattice.leastUpperBound(e1, e2)
+    }
+
+    instance JoinLattice[Transformer] {
+        pub def leastUpperBound(t1: Transformer, t2: Transformer): Transformer = match (t1, t2) {
+            case (Transformer.BotTrans, _) => t2
+            case (_, Transformer.BotTrans) => t1
+            case (Transformer.NonBotTrans(a1, b1, c1), Transformer.NonBotTrans(a2, b2, c2)) =>
+                if (a1 == a2 and b1 == b2)
+                    Transformer.NonBotTrans(a1, b1, JoinLattice.leastUpperBound(c1, c2))
+                else if(c1 == c2)
+                    if((a2-a1) != 0 and 0==(b1-b2)rem(a2-a1))
+                    //                // is divisible
+                    Transformer.NonBotTrans(a1, b2, JoinLattice.leastUpperBound(ConstantProp/Const.Cst(a1*(b1-b2)/(a2-a1)+b1), JoinLattice.leastUpperBound(c1, c2)))
+                    //                // is not divisible
+                    else Transformer.NonBotTrans(1, 0, ConstantProp/Const.Top)
+                else ???: Transformer
+        }
+    }
+
+    instance MeetLattice[Transformer] {
+        pub def greatestLowerBound(x: Transformer, y: Transformer): Transformer = ???
+    }
+
+    pub def id(): Transformer = Transformer.NonBotTrans(1,0,ConstantProp/Const.Bot)
+
+    pub def compose(t1: Transformer, t2: Transformer): Transformer = match (t1, t2) {
+        case (_,Transformer.BotTrans)                                 => Transformer.BotTrans
+        case (Transformer.BotTrans, Transformer.NonBotTrans(_, _, c)) => match c {
+            case ConstantProp/Const.Bot => Transformer.BotTrans
+            case ConstantProp/Const.Top => Transformer.NonBotTrans(0,0,ConstantProp/Const.Top)
+            case ConstantProp/Const.Cst(cc) => Transformer.NonBotTrans(0,cc,c)
+        }
+        case (Transformer.NonBotTrans(a2, b2, c2), Transformer.NonBotTrans(a1, b1, c1)) =>
+            Transformer.NonBotTrans(a1*a2, (a1*b2)+b1, JoinLattice.leastUpperBound(ConstantProp.sum(ConstantProp.mul(c2, ConstantProp.lift(a1)), ConstantProp.lift(b1)), c1))
+    }
+
+    // from paper: f = \l. a*l+b meet c; f(Top) = Top
+    // paper is upside-down, so: f = \l. a*l+b join c; f(Bot) = Bot
+    pub def apply(t: Transformer, l: ConstantProp.Const): ConstantProp.Const = match t {
+        case Transformer.BotTrans => ConstantProp/Const.Bot
+        case Transformer.NonBotTrans(a, b, c) => if(l==ConstantProp/Const.Bot) ConstantProp/Const.Bot else JoinLattice.leastUpperBound(ConstantProp.sum(ConstantProp.mul(l, ConstantProp.lift(a)), ConstantProp.lift(b)),c)
+    }
+
+
+
 }
 
 ///
@@ -314,35 +333,35 @@ def main(_: Array[String]): Int32 & Impure =
         ("p","ep") :: Nil;
 
     let eshIntra =
-        ("smain","zero","x", IDE/Transformer.BotTrans) ::
-        ("n2","x","x", IDE.id()) ::
-        ("n3","x","x", IDE.id()) ::
+        ("smain","zero","x", ConstantProp/Transformer.BotTrans) ::
+        ("n2","x","x", ConstantProp.id()) ::
+        ("n3","x","x", ConstantProp.id()) ::
 
-        ("sp","a","a", IDE.id()) ::
-        ("sp","x","x", IDE.id()) ::
-        ("n4","a","a", IDE.id()) ::
-        ("n4","x","x", IDE.id()) ::
-        ("n5","a","a", IDE/Transformer.NonBotTrans(1,-2, ConstantProp/Const.Bot)) ::
-        ("n5","x","x", IDE.id()) ::
-        ("n6","a","a", IDE.id()) ::
-        ("n7","a","a", IDE.id()) ::
-        ("n7","x","x", IDE.id()) ::
-        ("n8","a","a", IDE/Transformer.NonBotTrans(1,2, ConstantProp/Const.Bot)) ::
-        ("n8","x","x", IDE.id()) ::
-        ("n9","a","a", IDE.id()) ::
-        ("n9","a","x", IDE/Transformer.NonBotTrans(-2,5, ConstantProp/Const.Bot)) :: Nil;
+        ("sp","a","a", ConstantProp.id()) ::
+        ("sp","x","x", ConstantProp.id()) ::
+        ("n4","a","a", ConstantProp.id()) ::
+        ("n4","x","x", ConstantProp.id()) ::
+        ("n5","a","a", ConstantProp/Transformer.NonBotTrans(1,-2, ConstantProp/Const.Bot)) ::
+        ("n5","x","x", ConstantProp.id()) ::
+        ("n6","a","a", ConstantProp.id()) ::
+        ("n7","a","a", ConstantProp.id()) ::
+        ("n7","x","x", ConstantProp.id()) ::
+        ("n8","a","a", ConstantProp/Transformer.NonBotTrans(1,2, ConstantProp/Const.Bot)) ::
+        ("n8","x","x", ConstantProp.id()) ::
+        ("n9","a","a", ConstantProp.id()) ::
+        ("n9","a","x", ConstantProp/Transformer.NonBotTrans(-2,5, ConstantProp/Const.Bot)) :: Nil;
 
     let eshCallStart =
-        ("n1","zero","p","a",IDE/Transformer.NonBotTrans(0,7,ConstantProp/Const.Bot)) ::
-        ("n1","x","p","x",IDE.id()) ::
-        ("n6","a","p","a",IDE.id()) ::
-        ("n6","x","p","x",IDE.id()) :: Nil;
+        ("n1","zero","p","a",ConstantProp/Transformer.NonBotTrans(0,7,ConstantProp/Const.Bot)) ::
+        ("n1","x","p","x",ConstantProp.id()) ::
+        ("n6","a","p","a",ConstantProp.id()) ::
+        ("n6","x","p","x",ConstantProp.id()) :: Nil;
 
     let eshEndReturn =
-        ("p", "x", "n1", "x", IDE.id()) ::
-        ("p", "x", "n6", "x", IDE.id()) :: Nil;
+        ("p", "x", "n1", "x", ConstantProp.id()) ::
+        ("p", "x", "n6", "x", ConstantProp.id()) :: Nil;
 
-    let result = IDE.runIDE({
+    let result = IDE.run({
         zero         = "zero",
         main         = "smain",
         cfg          = cfg,
@@ -352,9 +371,9 @@ def main(_: Array[String]): Int32 & Impure =
         eshIntra     = eshIntra,
         eshCallStart = eshCallStart,
         eshEndReturn = eshEndReturn,
-        id           = IDE.id(),
-        apply        = IDE.apply,
-        compose      = IDE.compose
+        id           = ConstantProp.id(),
+        apply        = ConstantProp.apply,
+        compose      = ConstantProp.compose
         });
 
     println(result);
