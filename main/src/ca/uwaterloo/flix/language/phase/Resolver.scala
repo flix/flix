@@ -373,15 +373,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   }
 
   /**
-    * Performs name resolution on the given attribute `a0` in the given namespace `ns0`.
-    */
-  private def visitAttribute(a0: NamedAst.Attribute, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Attribute, ResolutionError] = {
-    for {
-      tpe <- resolveType(a0.tpe, taenv, ns0, root)
-    } yield ResolvedAst.Attribute(a0.ident, tpe, a0.loc)
-  }
-
-  /**
     * Performs name resolution on the given annotation `a0` in the given namespace `ns0`.
     */
   private def visitAnnotation(a0: NamedAst.Annotation, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Annotation, ResolutionError] = {

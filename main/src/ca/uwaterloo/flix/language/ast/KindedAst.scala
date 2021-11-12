@@ -286,8 +286,6 @@ object KindedAst {
 
   case class Annotation(name: Ast.Annotation, exps: List[KindedAst.Expression], loc: SourceLocation)
 
-  case class Attribute(ident: Name.Ident, tpe: Type, loc: SourceLocation)
-
   case class Case(enum: Name.Ident, tag: Name.Tag, tpeDeprecated: Type, sc: Scheme)
 
   case class Constraint(cparams: List[KindedAst.ConstraintParam], head: KindedAst.Predicate.Head, body: List[KindedAst.Predicate.Body], loc: SourceLocation)

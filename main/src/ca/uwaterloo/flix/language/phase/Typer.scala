@@ -2176,13 +2176,6 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
   }
 
   /**
-    * Performs type resolution on the given attribute `attr`.
-    */
-  private def typeCheckAttribute(attr: KindedAst.Attribute): Result[TypedAst.Attribute, TypeError] = attr match {
-    case KindedAst.Attribute(ident, tpe, loc) => Ok(TypedAst.Attribute(ident.name, tpe, loc))
-  }
-
-  /**
     * Returns a substitution from formal parameters to their declared types.
     *
     * Performs type resolution of the declared type of each formal parameters.

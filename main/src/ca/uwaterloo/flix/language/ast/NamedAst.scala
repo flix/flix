@@ -368,8 +368,6 @@ object NamedAst {
 
   case class Annotation(name: Ast.Annotation, args: List[NamedAst.Expression], loc: SourceLocation)
 
-  case class Attribute(ident: Name.Ident, tpe: NamedAst.Type, loc: SourceLocation)
-
   case class Case(enum: Name.Ident, tag: Name.Tag, tpe: NamedAst.Type)
 
   case class ConstrainedType(ident: Name.Ident, classes: List[Name.QName])

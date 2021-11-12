@@ -1445,16 +1445,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   }
 
   /**
-    * Translates the given weeded attribute to a named attribute.
-    */
-  private def visitAttribute(attr: WeededAst.Attribute, uenv0: UseEnv, tenv0: Map[String, Type.UnkindedVar])(implicit flix: Flix): Validation[NamedAst.Attribute, NameError] = attr match {
-    case WeededAst.Attribute(ident, tpe0, loc) =>
-      mapN(visitType(tpe0, uenv0, tenv0)) {
-        case tpe => NamedAst.Attribute(ident, tpe, loc)
-      }
-  }
-
-  /**
     * Translates the given weeded formal parameter to a named formal parameter.
     */
   private def visitFormalParam(fparam: WeededAst.FormalParam, uenv0: UseEnv, tenv0: Map[String, Type.UnkindedVar])(implicit flix: Flix): Validation[NamedAst.FormalParam, NameError] = fparam match {
