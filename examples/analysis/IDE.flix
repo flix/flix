@@ -233,64 +233,91 @@ namespace ConstantProp {
     /// We can now define the micro functions.
     ///
     pub enum MicroFunction with Eq, Order, ToString {
-        case BotTrans,
-        case NonBotTrans(Int32, Int32, ConstantProp.Const)
+        case Bot,
+        case NonBot(Int32, Int32, ConstantProp.Const)
     }
 
-
-
-
-
-
+    ///
+    /// The Bottom Element.
+    ///
     instance LowerBound[MicroFunction] {
-        pub def minValue(): MicroFunction = MicroFunction.BotTrans
+        pub def minValue(): MicroFunction = MicroFunction.Bot
     }
 
+    ///
+    /// The Partial Order.
+    ///
     instance PartialOrder[MicroFunction] {
-        pub def lessEqual(e1: MicroFunction, e2: MicroFunction): Bool = e2 == JoinLattice.leastUpperBound(e1, e2)
+        // TODO: Ondrej: This seems a bit lazy. Can we do better? :)
+        pub def lessEqual(x: MicroFunction, y: MicroFunction): Bool = y == JoinLattice.leastUpperBound(x, y)
     }
 
+    ///
+    /// The Least Upper Bound.
+    ///
     instance JoinLattice[MicroFunction] {
-        pub def leastUpperBound(t1: MicroFunction, t2: MicroFunction): MicroFunction = match (t1, t2) {
-            case (MicroFunction.BotTrans, _) => t2
-            case (_, MicroFunction.BotTrans) => t1
-            case (MicroFunction.NonBotTrans(a1, b1, c1), MicroFunction.NonBotTrans(a2, b2, c2)) =>
-                if (a1 == a2 and b1 == b2)
-                    MicroFunction.NonBotTrans(a1, b1, JoinLattice.leastUpperBound(c1, c2))
-                else if(c1 == c2)
-                    if((a2-a1) != 0 and 0==(b1-b2)rem(a2-a1))
-                    //                // is divisible
-                    MicroFunction.NonBotTrans(a1, b2, JoinLattice.leastUpperBound(ConstantProp/Const.Cst(a1*(b1-b2)/(a2-a1)+b1), JoinLattice.leastUpperBound(c1, c2)))
-                    //                // is not divisible
-                    else MicroFunction.NonBotTrans(1, 0, ConstantProp/Const.Top)
-                else ???: MicroFunction
-        }
+        pub def leastUpperBound(x: MicroFunction, y: MicroFunction): MicroFunction =
+            use JoinLattice.{leastUpperBound => lub};
+            match (x, y) {
+                case (MicroFunction.Bot, _) => y
+                case (_, MicroFunction.Bot) => x
+                case (MicroFunction.NonBot(a1, b1, c1), MicroFunction.NonBot(a2, b2, c2)) =>
+                    if (a1 == a2 and b1 == b2)
+                        MicroFunction.NonBot(a1, b1, lub(c1, c2))
+                    else if (c1 == c2)
+                        if((a2-a1) != 0 and 0 == (b1 - b2) rem (a2 - a1)) {
+                            // Divisible.
+                            MicroFunction.NonBot(a1, b2, lub(Const.Cst(a1 * (b1 - b2) / (a2 - a1) + b1), lub(c1, c2)))
+                        } else {
+                            // Indivisible.
+                            MicroFunction.NonBot(1, 0, Const.Top)
+                        }
+                    else {
+                        unreachable!()
+                    }
+            }
     }
 
+    ///
+    /// The Greatest Lower Bound (required but not used).
+    ///
     instance MeetLattice[MicroFunction] {
-        pub def greatestLowerBound(x: MicroFunction, y: MicroFunction): MicroFunction = ???
+        pub def greatestLowerBound(_x: MicroFunction, _y: MicroFunction): MicroFunction = bug!("Not Implemented")
     }
 
-    pub def id(): MicroFunction = MicroFunction.NonBotTrans(1,0,ConstantProp/Const.Bot)
+    ///
+    /// Returns the identity micro function.
+    ///
+    pub def id(): MicroFunction = MicroFunction.NonBot(1, 0, Const.Bot)
 
+
+
+
+
+
+
+    ///
+    /// Returns the
+    ///
     pub def compose(t1: MicroFunction, t2: MicroFunction): MicroFunction = match (t1, t2) {
-        case (_,MicroFunction.BotTrans)                                 => MicroFunction.BotTrans
-        case (MicroFunction.BotTrans, MicroFunction.NonBotTrans(_, _, c)) => match c {
-            case ConstantProp/Const.Bot => MicroFunction.BotTrans
-            case ConstantProp/Const.Top => MicroFunction.NonBotTrans(0,0,ConstantProp/Const.Top)
-            case ConstantProp/Const.Cst(cc) => MicroFunction.NonBotTrans(0,cc,c)
+        case (_,MicroFunction.Bot)                                 => MicroFunction.Bot
+        case (MicroFunction.Bot, MicroFunction.NonBot(_, _, c)) => match c {
+            case ConstantProp/Const.Bot => MicroFunction.Bot
+            case ConstantProp/Const.Top => MicroFunction.NonBot(0,0,ConstantProp/Const.Top)
+            case ConstantProp/Const.Cst(cc) => MicroFunction.NonBot(0,cc,c)
         }
-        case (MicroFunction.NonBotTrans(a2, b2, c2), MicroFunction.NonBotTrans(a1, b1, c1)) =>
-            MicroFunction.NonBotTrans(a1*a2, (a1*b2)+b1, JoinLattice.leastUpperBound(ConstantProp.sum(ConstantProp.mul(c2, ConstantProp.lift(a1)), ConstantProp.lift(b1)), c1))
+        case (MicroFunction.NonBot(a2, b2, c2), MicroFunction.NonBot(a1, b1, c1)) =>
+            MicroFunction.NonBot(a1*a2, (a1*b2)+b1, JoinLattice.leastUpperBound(ConstantProp.sum(ConstantProp.mul(c2, ConstantProp.lift(a1)), ConstantProp.lift(b1)), c1))
     }
 
+
+    pub def apply(t: MicroFunction, l: ConstantProp.Const): ConstantProp.Const = match t {
+        case MicroFunction.Bot => ConstantProp/Const.Bot
+        case MicroFunction.NonBot(a, b, c) => if(l==ConstantProp/Const.Bot) ConstantProp/Const.Bot else JoinLattice.leastUpperBound(ConstantProp.sum(ConstantProp.mul(l, ConstantProp.lift(a)), ConstantProp.lift(b)),c)
+    }
+    // TODO: Ondrej corporate this somewhere:
     // from paper: f = \l. a*l+b meet c; f(Top) = Top
     // paper is upside-down, so: f = \l. a*l+b join c; f(Bot) = Bot
-    pub def apply(t: MicroFunction, l: ConstantProp.Const): ConstantProp.Const = match t {
-        case MicroFunction.BotTrans => ConstantProp/Const.Bot
-        case MicroFunction.NonBotTrans(a, b, c) => if(l==ConstantProp/Const.Bot) ConstantProp/Const.Bot else JoinLattice.leastUpperBound(ConstantProp.sum(ConstantProp.mul(l, ConstantProp.lift(a)), ConstantProp.lift(b)),c)
-    }
-
 
 
 }
@@ -331,7 +358,7 @@ def main(_: Array[String]): Int32 & Impure =
         ("p","ep") :: Nil;
 
     let eshIntra =
-        ("smain","zero","x", ConstantProp/MicroFunction.BotTrans) ::
+        ("smain","zero","x", ConstantProp/MicroFunction.Bot) ::
         ("n2","x","x", ConstantProp.id()) ::
         ("n3","x","x", ConstantProp.id()) ::
 
@@ -339,18 +366,18 @@ def main(_: Array[String]): Int32 & Impure =
         ("sp","x","x", ConstantProp.id()) ::
         ("n4","a","a", ConstantProp.id()) ::
         ("n4","x","x", ConstantProp.id()) ::
-        ("n5","a","a", ConstantProp/MicroFunction.NonBotTrans(1,-2, ConstantProp/Const.Bot)) ::
+        ("n5","a","a", ConstantProp/MicroFunction.NonBot(1,-2, ConstantProp/Const.Bot)) ::
         ("n5","x","x", ConstantProp.id()) ::
         ("n6","a","a", ConstantProp.id()) ::
         ("n7","a","a", ConstantProp.id()) ::
         ("n7","x","x", ConstantProp.id()) ::
-        ("n8","a","a", ConstantProp/MicroFunction.NonBotTrans(1,2, ConstantProp/Const.Bot)) ::
+        ("n8","a","a", ConstantProp/MicroFunction.NonBot(1,2, ConstantProp/Const.Bot)) ::
         ("n8","x","x", ConstantProp.id()) ::
         ("n9","a","a", ConstantProp.id()) ::
-        ("n9","a","x", ConstantProp/MicroFunction.NonBotTrans(-2,5, ConstantProp/Const.Bot)) :: Nil;
+        ("n9","a","x", ConstantProp/MicroFunction.NonBot(-2,5, ConstantProp/Const.Bot)) :: Nil;
 
     let eshCallStart =
-        ("n1","zero","p","a",ConstantProp/MicroFunction.NonBotTrans(0,7,ConstantProp/Const.Bot)) ::
+        ("n1","zero","p","a",ConstantProp/MicroFunction.NonBot(0,7,ConstantProp/Const.Bot)) ::
         ("n1","x","p","x",ConstantProp.id()) ::
         ("n6","a","p","a",ConstantProp.id()) ::
         ("n6","x","p","x",ConstantProp.id()) :: Nil;
