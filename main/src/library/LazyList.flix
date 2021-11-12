@@ -135,6 +135,24 @@ namespace LazyList {
     }
 
     ///
+    /// Returns the length of `l`.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    pub def length(l: LazyList[a]): Int32 =
+        lengthAcc(l, 0)
+
+    ///
+    /// Helper function for `length`.
+    ///
+    def lengthAcc(l: LazyList[a], acc: Int32): Int32 = match l {
+        case ENil         => acc
+        case ECons(_, xs) => lengthAcc(      xs, acc + 1)
+        case LCons(_, xs) => lengthAcc(force xs, acc + 1)
+        case LList(xs)    => lengthAcc(force xs, acc)
+    }
+
+    ///
     /// Returns a lazy list of all integers between `b` (inclusive) and `e` (exclusive).
     ///
     /// Returns an empty lazy list if `b >= e`.
@@ -172,24 +190,6 @@ namespace LazyList {
                 case LCons(x, xs) => LCons(x, lazy takeHelper(n - 1, force xs))
                 case LList(xs)    => LList(   lazy takeHelper(n,     force xs))
             }
-
-    ///
-    /// Returns the length of `l`.
-    ///
-    /// Forces the entire list `l`.
-    ///
-    pub def length(l: LazyList[a]): Int32 =
-        lengthAcc(l, 0)
-
-    ///
-    /// Helper function for `length`.
-    ///
-    def lengthAcc(l: LazyList[a], acc: Int32): Int32 = match l {
-        case ENil         => acc
-        case ECons(_, xs) => lengthAcc(      xs, acc + 1)
-        case LCons(_, xs) => lengthAcc(force xs, acc + 1)
-        case LList(xs)    => lengthAcc(force xs, acc)
-    }
 
     ///
     /// Reverses the list `l`.
