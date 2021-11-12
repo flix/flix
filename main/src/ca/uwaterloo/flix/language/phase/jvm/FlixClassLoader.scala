@@ -43,9 +43,8 @@ class FlixClassLoader(classes: Map[String, JvmClass])(implicit flix: Flix) exten
         // Case 1: The class was not defined. Lookup the bytecode.
         classes.get(name) match {
           case None =>
-            // Case 1.1: The internal name does not exist. Try the super loader.
-//            flix.classLoader.loadClass(name) // MATT testing idk
-            super.findClass(name)
+            // Case 1.1: The internal name does not exist. Try the external JAR loader.
+            flix.classLoader.loadClass(name)
           case Some(jvmClass) =>
             // Case 1.2: The internal name was found. Define the class using its byte code.
             val clazz = defineClass(name, jvmClass.bytecode, 0, jvmClass.bytecode.length)
