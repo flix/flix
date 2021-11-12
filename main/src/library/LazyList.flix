@@ -369,13 +369,12 @@ namespace LazyList {
         foldLeft(f, 0, l);
         a
 
-/*
     ///
     /// Returns `l` as an `Iterator`.
     ///
     /// Does not force any elements of the list.
     ///
-    pub def toIter(l: LazyList[a]): Iterator[a] & Impure =
+    pub def toIterator(l: LazyList[a]): Iterator[a] & Impure =
         let cursor = ref l;
         let done = () -> match head(deref cursor) {
             case None    => true
@@ -388,7 +387,6 @@ namespace LazyList {
                 x
         };
         Iterator(done, next)
-*/
 
     ///
     /// Returns `l` as a `List`.
@@ -709,10 +707,10 @@ namespace LazyList {
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
     pub def flatMap(f: a -> LazyList[b] & ef, l: LazyList[a]): LazyList[b] & ef =
-        if (reify ef)
-            flatMapL(f as a -> LazyList[b] & Pure,   l)
-        else
-            flatMapE(f as a -> LazyList[b] & Impure, l) as & ef
+        reifyEff(f) {
+            case Pure(g) => flatMapL(g, l)
+            case _       => flatMapE(f, l)
+        }
 
     ///
     /// Returns the result of applying `f` to every element in `l` and concatenating the results.
@@ -727,7 +725,7 @@ namespace LazyList {
     }
 
     ///
-    /// Helper fucntion for `flatMapL`.
+    /// Helper function for `flatMapL`.
     ///
     def flatMapLHelper(f: a -> LazyList[b], l: LazyList[a]): LazyList[b] = match l {
         case ENil         => ENil
@@ -741,13 +739,13 @@ namespace LazyList {
     ///
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
-    def flatMapE(f: a -> LazyList[b] & Impure, l: LazyList[a]): LazyList[b] & Impure =
+    def flatMapE(f: a -> LazyList[b] & ef, l: LazyList[a]): LazyList[b] & ef =
         flatMapEAcc(f, l, ks -> ks)
 
     ///
     /// Helper function for `flatMapE`.
     ///
-    def flatMapEAcc(f: a -> LazyList[b] & Impure, l: LazyList[a], k: LazyList[b] -> LazyList[b]): LazyList[b] & Impure = match l {
+    def flatMapEAcc(f: a -> LazyList[b] & ef, l: LazyList[a], k: LazyList[b] -> LazyList[b]): LazyList[b] & ef = match l {
         case ENil         => k(ENil)
         case ECons(x, xs) =>
             let xs1 = f(x);
@@ -817,10 +815,11 @@ namespace LazyList {
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
     pub def mapWithIndex(f: (a, Int32) -> b & ef, l: LazyList[a]): LazyList[b] & ef =
-        if (reify ef)
-            mapWithIndexL(f as (a, Int32) -> b & Pure,   l)
-        else
-            mapWithIndexE(f as (a, Int32) -> b & Impure, l) as & ef
+        let f1 = (args) -> f(fst(args), snd(args));
+        reifyEff(f1) {
+            case Pure(g) => mapWithIndexL((x, i) -> g((x, i)), l)
+            case _       => mapWithIndexE(f, l)
+        }
 
     ///
     /// Returns the result of applying `f` to every element in `l` along with the element's index.
@@ -845,13 +844,13 @@ namespace LazyList {
     ///
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
-    def mapWithIndexE(f: (a, Int32) -> b & Impure, l: LazyList[a]): LazyList[b] & Impure =
+    def mapWithIndexE(f: (a, Int32) -> b & ef, l: LazyList[a]): LazyList[b] & ef =
         mapWithIndexEAcc(f, l, 0, ks -> ks)
 
     ///
     /// Helper function for `mapWithIndexE`.
     ///
-    def mapWithIndexEAcc(f: (a, Int32) -> b & Impure, l: LazyList[a], i: Int32, k: LazyList[b] -> LazyList[b]): LazyList[b] & Impure = match l {
+    def mapWithIndexEAcc(f: (a, Int32) -> b & ef, l: LazyList[a], i: Int32, k: LazyList[b] -> LazyList[b]): LazyList[b] & ef = match l {
         case ENil         => k(ENil)
         case ECons(x, xs) =>
             let x1 = f(x, i);
@@ -907,10 +906,10 @@ namespace LazyList {
     /// - If `f` is impure then it is applied eagerly (i.e. the tail is forced until the first element that satisfies `f`).
     ///
     pub def takeWhile(f: a -> Bool & ef, l: LazyList[a]): LazyList[a] & ef =
-        if (reify ef)
-            takeWhileL(f as a -> Bool & Pure,   l)
-        else
-            takeWhileE(f as a -> Bool & Impure, l) as & ef
+        reifyEff(f) {
+            case Pure(g) => takeWhileL(g, l)
+            case _       => takeWhileE(f, l)
+        }
 
     ///
     /// Returns the longest prefix of `l` that satisfies the predicate `f`.
@@ -935,13 +934,13 @@ namespace LazyList {
     ///
     /// Applies `f` eagerly (i.e. the tail is forced until the first element that satisfies `f`).
     ///
-    def takeWhileE(f: a -> Bool & Impure, l: LazyList[a]): LazyList[a] & Impure =
+    def takeWhileE(f: a -> Bool & ef, l: LazyList[a]): LazyList[a] & ef =
         takeWhileEAcc(f, l, ks -> ks)
 
     ///
     /// Helper function for `takeWhileE`.
     ///
-    def takeWhileEAcc(f: a -> Bool & Impure, l: LazyList[a], k: LazyList[a] -> LazyList[a]): LazyList[a] & Impure = match l {
+    def takeWhileEAcc(f: a -> Bool & ef, l: LazyList[a], k: LazyList[a] -> LazyList[a]): LazyList[a] & ef = match l {
         case ENil         => k(ENil)
         case ECons(x, xs) => if (f(x)) takeWhileEAcc(f,       xs, ks -> k(ECons(x, ks))) else k(ENil)
         case LCons(x, xs) => if (f(x)) takeWhileEAcc(f, force xs, ks -> k(ECons(x, ks))) else k(ENil)
@@ -957,10 +956,10 @@ namespace LazyList {
     /// - If `f` is impure then it is applied eagerly (i.e. the tail is forced until the first element that satisfies `f`).
     ///
     pub def dropWhile(f: a -> Bool & ef, l: LazyList[a]): LazyList[a] & ef =
-        if (reify ef)
-            dropWhileL(f as a -> Bool & Pure,   l)
-        else
-            dropWhileE(f as a -> Bool & Impure, l) as & ef
+        reifyEff(f) {
+            case Pure(g) => dropWhileL(g, l)
+            case _       => dropWhileE(f, l)
+        }
 
     ///
     /// Returns `l` without the longest prefix that satisfies the predicate `f`.
@@ -985,7 +984,7 @@ namespace LazyList {
     ///
     /// Applies `f` eagerly (i.e. the tail is forced until the first element that satisfies `f`).
     ///
-    def dropWhileE(f: a -> Bool & Impure, l: LazyList[a]): LazyList[a] & Impure = match l {
+    def dropWhileE(f: a -> Bool & ef, l: LazyList[a]): LazyList[a] & ef = match l {
         case ENil         => ENil
         case ECons(x, xs) => if (f(x)) dropWhileE(f,       xs) else l
         case LCons(x, xs) => if (f(x)) dropWhileE(f, force xs) else l
@@ -1021,10 +1020,10 @@ namespace LazyList {
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
     pub def filterMap(f: a -> Option[b] & ef, l: LazyList[a]): LazyList[b] & ef =
-        if (reify ef)
-            filterMapL(f as a -> Option[b] & Pure,   l)
-        else
-            filterMapE(f as a -> Option[b] & Impure, l) as & ef
+        reifyEff(f) {
+            case Pure(g) => filterMapL(g, l)
+            case _       => filterMapE(f, l)
+        }
 
     ///
     /// Collects the results of applying the partial function `f` to every element in `l`.
@@ -1057,13 +1056,13 @@ namespace LazyList {
     ///
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
-    def filterMapE(f: a -> Option[b] & Impure, l: LazyList[a]): LazyList[b] & Impure =
+    def filterMapE(f: a -> Option[b] & ef, l: LazyList[a]): LazyList[b] & ef =
         filterMapEAcc(f, l, ks -> ks)
 
     ///
     /// Helper function for `filterMapE`.
     ///
-    def filterMapEAcc(f: a -> Option[b] & Impure, l: LazyList[a], k: LazyList[b] -> LazyList[b]): LazyList[b] & Impure = match l {
+    def filterMapEAcc(f: a -> Option[b] & ef, l: LazyList[a], k: LazyList[b] -> LazyList[b]): LazyList[b] & ef = match l {
         case ENil         => k(ENil)
         case ECons(x, xs) => match f(x) {
             case None    => filterMapEAcc(f, xs, k)
@@ -1141,5 +1140,4 @@ namespace LazyList {
         case LCons(x, xs) => sumAcc(force xs, x + acc)
         case LList(xs)    => sumAcc(force xs,     acc)
     }
-
 }
