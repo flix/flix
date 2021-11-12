@@ -212,17 +212,12 @@ namespace DelayMap {
     ///
     /// Returns a map of all mappings `k -> v` in `m` where `v` satisfies the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
     pub def filter(f: v -> Bool & ef, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
         filterWithKey((_, v) -> f(v), m)
 
     ///
     /// Returns a map of all mappings `k -> v` in `m` where `(k, v)` satisfies the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
-    // TODO: Effect polymorphic split? Is that even possible since some nodes have to be removed?
     pub def filterWithKey(f: (k, v) -> Bool & ef, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
         foldLeftWithKey((acc, k, v) -> if (f(k, v)) insert(k, v, acc) else acc, empty(), m)
 
