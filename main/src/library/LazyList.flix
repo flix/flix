@@ -35,15 +35,6 @@ instance Eq[LazyList[a]] with Eq[a] {
     }
 }
 
-instance Foldable[LazyList] {
-    pub def foldLeft( f: (b, a) -> b & ef, s: b, l: LazyList[a]): b & ef = LazyList.foldLeft( f, s, l)
-    pub def foldRight(f: (a, b) -> b & ef, s: b, l: LazyList[a]): b & ef = LazyList.foldRight(f, s, l)
-}
-
-instance Functor[LazyList] {
-    pub def map(f: a -> b & ef, l: LazyList[a]): LazyList[b] & ef = LazyList.map(f, l)
-}
-
 instance Order[LazyList[a]] with Order[a] {
 
     ///
@@ -73,6 +64,15 @@ instance Order[LazyList[a]] with Order[a] {
 
 instance ToString[LazyList[a]] with ToString[a] {
     pub def toString(l: LazyList[a]): String = LazyList.toString(l)
+}
+
+instance Functor[LazyList] {
+    pub def map(f: a -> b & ef, l: LazyList[a]): LazyList[b] & ef = LazyList.map(f, l)
+}
+
+instance Foldable[LazyList] {
+    pub def foldLeft( f: (b, a) -> b & ef, s: b, l: LazyList[a]): b & ef = LazyList.foldLeft( f, s, l)
+    pub def foldRight(f: (a, b) -> b & ef, s: b, l: LazyList[a]): b & ef = LazyList.foldRight(f, s, l)
 }
 
 namespace LazyList {
