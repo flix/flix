@@ -222,7 +222,7 @@ namespace ConstantProp {
     /// The Bottom Element of `Const`.
     ///
     instance LowerBound[Const] {
-        pub def minValue(): Const = Bot
+        pub def minValue(): Const = Const.Bot
     }
 
     ///
@@ -230,10 +230,10 @@ namespace ConstantProp {
     ///
     instance PartialOrder[Const] {
         pub def lessEqual(x: Const, y: Const): Bool = match (x, y) {
-            case (Bot, _)           => true
-            case (Cst(n1), Cst(n2)) => n1 == n2
-            case (_, Top)           => true
-            case _                  => false
+            case (Const.Bot, _)                 => true
+            case (Const.Cst(n1), Const.Cst(n2)) => n1 == n2
+            case (_, Const.Top)                 => true
+            case _                              => false
         }
     }
 
@@ -242,10 +242,10 @@ namespace ConstantProp {
     ///
     instance JoinLattice[Const] {
         pub def leastUpperBound(x: Const, y: Const): Const = match (x, y) {
-            case (Bot, _)                         => y
-            case (_, Bot)                         => x
-            case (Cst(n1), Cst(n2)) if (n1 == n2) => Cst(n1)
-            case _                                => Top
+            case (Const.Bot, _)                    => y
+            case (_, Const.Bot)                    => x
+            case (Const.Cst(n1), Const.Cst(n2)) => if (n1 == n2) Cst(n1) else Const.Top
+            case _                                 => Const.Top
         }
     }
 
@@ -254,38 +254,38 @@ namespace ConstantProp {
     ///
     instance MeetLattice[Const] {
         pub def greatestLowerBound(x: Const, y: Const): Const = match (x, y) {
-            case (Top, _)                         => y
-            case (_, Top)                         => x
-            case (Cst(n1), Cst(n2)) if (n1 == n2) => Cst(n1)
-            case _                                => Bot
+            case (Const.Top, _)                 => y
+            case (_, Const.Top)                 => x
+            case (Const.Cst(n1), Const.Cst(n2)) => if (n1 == n2) Cst(n1) else Const.Bot
+            case _                              => Const.Bot
         }
     }
 
     ///
     /// We define a function to lift a concrete element into the constant propagation lattice.
     ///
-    pub def lift(n: Int32): Const = Cst(n)
+    pub def lift(n: Int32): Const = Const.Cst(n)
 
     ///
     /// We define abstract addintion:
     ///
     pub def sum(x: Const, y: Const): Const = match (x, y) {
-        case (Bot, _)           => Bot
-        case (_, Bot)           => Bot
-        case (Cst(n1), Cst(n2)) => Cst(n1 + n2)
-        case _                  => Top
+        case (Const.Bot, _)                 => Const.Bot
+        case (_, Const.Bot)                 => Const.Bot
+        case (Const.Cst(n1), Const.Cst(n2)) => Cst(n1 + n2)
+        case _                              => Const.Top
     }
 
     ///
     /// And we define abstract multiplication:
     ///
     pub def mul(x: Const, y: Const): Const = match (x, y) {
-        case (Bot, _)           => Bot
-        case (_, Bot)           => Bot
-        case (Cst(0), _)        => Cst(0)
-        case (_, Cst(0))        => Cst(0)
-        case (Cst(n1), Cst(n2)) => Cst(n1 * n2)
-        case _                  => Top
+        case (Const.Bot, _)                 => Const.Bot
+        case (_, Const.Bot)                 => Const.Bot
+        case (Const.Cst(0), _)              => Const.Cst(0)
+        case (_, Const.Cst(0))              => Const.Cst(0)
+        case (Const.Cst(n1), Const.Cst(n2)) => Const.Cst(n1 * n2)
+        case _                              => Const.Top
     }
 
 }
