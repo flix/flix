@@ -53,7 +53,6 @@ namespace IDE {
 
         // TODO: Explode the record.
         let main = ide.main;
-        let id = (_x: Unit) -> ide.id;
         let apply = ide.apply;
         let compose = ide.compose;
 
@@ -81,7 +80,7 @@ namespace IDE {
                 JumpFn(d1,n,d2;caller),
                 SummaryFn(n,d2,d3;summary).
 
-            JumpFn(d3,start,d3;id()) :-
+            JumpFn(d3,start,d3; ide.id) :-
                 JumpFn(_d1,call,d2;nonbottom1),
                 CallGraph(call,target),
                 EshCallStart(call,d2,target,d3,nonbottom2),
@@ -110,19 +109,19 @@ namespace IDE {
                 EshCallStart(call,d,proc,dp,cs).
 
             // TODO: Ondrej: Add comment.
-            EshIntra(n, ide.zero, ide.zero, id()) :- CFG(n,_).
+            EshIntra(n, ide.zero, ide.zero, ide.id) :- CFG(n,_).
 
             // TODO: Ondrej: Add comment.
-            EshCallStart(call, ide.zero, target, ide.zero, id()) :- CallGraph(call, target).
+            EshCallStart(call, ide.zero, target, ide.zero, ide.id) :- CallGraph(call, target).
 
             // TODO: Ondrej: Add comment.
-            EshEndReturn(target, ide.zero, call, ide.zero, id()) :- CallGraph(call, target).
+            EshEndReturn(target, ide.zero, call, ide.zero, ide.id) :- CallGraph(call, target).
 
             // TODO: Ondrej: Add comment.
             ResultProc(ide.main, ide.zero; LowerBound.minValue()).
 
             // TODO: Ondrej: Add comment.
-            JumpFn(ide.zero, n, ide.zero; id()) :- StartNode(main, n).
+            JumpFn(ide.zero, n, ide.zero; ide.id) :- StartNode(main, n).
 
         };
 
