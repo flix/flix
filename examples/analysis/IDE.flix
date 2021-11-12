@@ -57,6 +57,7 @@ namespace IDE {
         let compose = ide.compose;
 
         let f1 = project ide.cfg, ide.callGraph, ide.startNodes, ide.endNodes into CFG, CallGraph, StartNode, EndNode;
+
         // TODO: How important is it for these to have lattice semantics?
         let f2 = project ide.eshIntra, ide.eshCallStart, ide.eshEndReturn into EshIntra, EshCallStart, EshEndReturn;
 
@@ -65,37 +66,37 @@ namespace IDE {
         ///
         let p = #{
             // nodes in a given procedure
-            InProc(p,start) :- StartNode(p, start).
-            InProc(p,m) :- InProc(p,n), CFG(n,m).
+            InProc(p, start) :- StartNode(p, start).
+            InProc(p, m) :- InProc(p, n), CFG(n, m).
 
             // intraproc
-            JumpFn(d1,m,d3;compose(long,short)) :-
-                CFG(n,m),
-                JumpFn(d1,n,d2;long),
-                EshIntra(n,d2,d3, short).
+            JumpFn(d1, m, d3; compose(long, short)) :-
+                CFG(n, m),
+                JumpFn(d1, n, d2; long),
+                EshIntra(n, d2, d3, short).
 
             // use summary
-            JumpFn(d1,m,d3;compose(caller,summary)) :-
-                CFG(n,m),
-                JumpFn(d1,n,d2;caller),
-                SummaryFn(n,d2,d3;summary).
+            JumpFn(d1, m, d3; compose(caller, summary)) :-
+                CFG(n, m),
+                JumpFn(d1, n, d2; caller),
+                SummaryFn(n, d2, d3; summary).
 
-            JumpFn(d3,start,d3; ide.id) :-
-                JumpFn(_d1,call,d2;nonbottom1),
-                CallGraph(call,target),
-                EshCallStart(call,d2,target,d3,nonbottom2),
-                StartNode(target,start),
+            JumpFn(d3, start, d3; ide.id) :-
+                JumpFn(_d1, call, d2; nonbottom1),
+                CallGraph(call, target),
+                EshCallStart(call, d2, target, d3, nonbottom2),
+                StartNode(target, start),
                 if (nonbottom1 != LowerBound.minValue() and
                     nonbottom2 != LowerBound.minValue()). // TODO: Ondrej: Why are these checks here?
 
             // compute summary
-            SummaryFn(call,d4,d5;compose(compose(cs,se),er)) :-
-                CallGraph(call,target),
-                StartNode(target,_start),
-                EndNode(target,end),
-                EshCallStart(call,d4,target,d1,cs),
-                JumpFn(d1,end,d2;se),
-                EshEndReturn(target,d2,call,d5,er).
+            SummaryFn(call, d4, d5; compose(compose(cs, se), er)) :-
+                CallGraph(call, target),
+                StartNode(target, _start),
+                EndNode(target, end),
+                EshCallStart(call, d4, target, d1, cs),
+                JumpFn(d1, end, d2; se),
+                EshEndReturn(target, d2, call, d5, er).
 
             // tabulate result
             Results(n, d; apply(fn, vp)) :-
@@ -104,9 +105,9 @@ namespace IDE {
                 JumpFn(dp, n, d; fn).
 
             // TODO: Ondrej: Add comment.
-            ResultProc(proc,dp;apply(cs,v)) :-
-                Results(call,d;v),
-                EshCallStart(call,d,proc,dp,cs).
+            ResultProc(proc, dp; apply(cs,v)) :-
+                Results(call, d; v),
+                EshCallStart(call, d, proc, dp, cs).
 
             // TODO: Ondrej: Add comment.
             EshIntra(n, ide.zero, ide.zero, ide.id) :- CFG(n,_).
