@@ -58,11 +58,6 @@ object JvmName {
   val Context: JvmName = JvmName(Nil, "Context")
 
   /**
-   * The Flix Unit class.
-   */
-  val Unit: JvmName = JvmName(Nil, "Unit")
-
-  /**
    * The `java.math.BigInteger` name.
    */
   val BigInteger: JvmName = JvmName(List("java", "math"), "BigInteger")
@@ -174,6 +169,11 @@ object JvmName {
    * The `ca.uwaterloo.flix.runtime.interpreter.SelectChoice` name.
    */
   val SelectChoice: JvmName = JvmName(List("ca", "uwaterloo", "flix", "runtime", "interpreter"), "SelectChoice")
+
+  /**
+    * The Flix Unit class.
+    */
+  val Unit: JvmName = JvmName(List("dev", "flix", "runtime"), "Unit")
 
   /**
    * The `dev.flix.runtime.FlixError` name.
