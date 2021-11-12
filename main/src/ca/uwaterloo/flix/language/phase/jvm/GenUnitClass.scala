@@ -27,10 +27,7 @@ object GenUnitClass {
   val InstanceFieldName = "INSTANCE"
 
   def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
-    val unitType = JvmType.Unit
-    val unitName = unitType.name
-    val bytecode = genByteCode()
-    Map(unitName -> JvmClass(unitName, bytecode))
+    Map(JvmType.Unit.name -> JvmClass(JvmType.Unit.name, genByteCode()))
   }
 
   private def genByteCode()(implicit flix: Flix): Array[Byte] = {
