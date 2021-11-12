@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.Denotation
+import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Denotation}
 import ca.uwaterloo.flix.language.ast.{Symbol, _}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.phase.unification.Substitution
@@ -68,7 +68,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         val instancesVal = root.instances.flatMap {
           case (ns0, instances0) => instances0.map {
             case (_, instances) => traverse(instances)(resolveInstance(_, taenv, ns0, root)) map {
-              case is => is.head.sym -> is
+              case is => is.head.sym.clazz -> is
             }
           }
         }
@@ -289,7 +289,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         tpe <- resolveType(tpe0, taenv, ns0, root)
         tconstrs <- traverse(tconstrs0)(resolveTypeConstraint(_, taenv, ns0, root))
         defs <- traverse(defs0)(resolveDef(_, taenv, ns0, root))
-      } yield ResolvedAst.Instance(doc, mod, clazz.sym, tpe, tconstrs, defs, ns0, loc)
+        sym = Symbol.freshInstanceSym(clazz.sym, clazz0.loc)
+      } yield ResolvedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, ns0, loc)
   }
 
   /**
@@ -355,7 +356,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         } yield {
           val freeVars = e0.tparams.tparams.map(_.tpe)
           val caseType = t
-          val enumType = mkUnkindedEnum(e0.sym, freeVars, e0.loc)
+          val enumType = mkUnkindedEnum(e0.sym, freeVars, e0.sym.loc)
           val base = Type.mkTag(e0.sym, tag, caseType, enumType, tpe.loc)
           val sc = ResolvedAst.Scheme(freeVars, tconstrs, base)
           name -> ResolvedAst.Case(enum, tag, t, sc)
@@ -402,7 +403,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         */
       def mkFreshFparams(arity: Int, loc: SourceLocation): List[ResolvedAst.FormalParam] = {
         // Introduce a fresh variable symbol for each argument of the function definition.
-        val varSyms = (0 until arity).map(i => Symbol.freshVarSym("$" + i, loc)).toList
+        val varSyms = (0 until arity).map(i => Symbol.freshVarSym("$" + i, BoundBy.FormalParam, loc)).toList
 
         // Introduce a formal parameter for each variable symbol.
         varSyms.map(sym => ResolvedAst.FormalParam(sym, Ast.Modifiers.Empty, sym.tvar, loc))
@@ -412,15 +413,17 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         * Creates a lambda for use in a curried dif or sig application.
         */
       def mkCurriedLambda(fparams: List[ResolvedAst.FormalParam], baseExp: ResolvedAst.Expression, loc: SourceLocation): ResolvedAst.Expression = {
+        val l = loc.asSynthetic
+
         // The arguments passed to the definition (i.e. the fresh variable symbols).
-        val argExps = fparams.map(fparam => ResolvedAst.Expression.Var(fparam.sym, fparam.sym.tvar, loc))
+        val argExps = fparams.map(fparam => ResolvedAst.Expression.Var(fparam.sym, fparam.sym.tvar, l))
 
         // The apply expression inside the lambda.
-        val applyExp = ResolvedAst.Expression.Apply(baseExp, argExps, loc)
+        val applyExp = ResolvedAst.Expression.Apply(baseExp, argExps, l)
 
         // The curried lambda expressions.
         fparams.foldRight(applyExp: ResolvedAst.Expression) {
-          case (fparam, acc) => ResolvedAst.Expression.Lambda(fparam, acc, loc)
+          case (fparam, acc) => ResolvedAst.Expression.Lambda(fparam, acc, l)
         }
       }
 
@@ -432,13 +435,13 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         val arity = defn.spec.fparams.length
 
         // Create the fresh fparams
-        val fparams = mkFreshFparams(arity, loc)
+        val fparams = mkFreshFparams(arity, loc.asSynthetic)
 
         // The definition expression.
         val defExp = ResolvedAst.Expression.Def(defn.sym, loc)
 
         // Create and apply the lambda expressions
-        mkCurriedLambda(fparams, defExp, loc)
+        mkCurriedLambda(fparams, defExp, loc.asSynthetic)
       }
 
       /**
@@ -449,13 +452,13 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         val arity = sig.spec.fparams.length
 
         // Create the fresh fparams
-        val fparams = mkFreshFparams(arity, loc)
+        val fparams = mkFreshFparams(arity, loc.asSynthetic)
 
         // The signature expression.
         val sigExp = ResolvedAst.Expression.Sig(sig.sym, loc)
 
         // Create and apply the lambda expressions
-        mkCurriedLambda(fparams, sigExp, loc)
+        mkCurriedLambda(fparams, sigExp, loc.asSynthetic)
       }
 
       /**
@@ -468,7 +471,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             es <- traverse(exps)(visit(_, tenv0))
           } yield {
             es.foldLeft(e) {
-              case (acc, a) => ResolvedAst.Expression.Apply(acc, List(a), loc)
+              case (acc, a) => ResolvedAst.Expression.Apply(acc, List(a), loc.asSynthetic)
             }
           }
       }
@@ -679,7 +682,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
                   // If the tag is `Some` we construct the lambda: x -> Some(x).
 
                   // Construct a fresh symbol for the formal parameter.
-                  val freshVar = Symbol.freshVarSym("x", loc)
+                  val freshVar = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
 
                   // Construct the formal parameter for the fresh symbol.
                   val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, Type.freshUnkindedVar(loc), loc)
@@ -990,6 +993,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             t <- resolveType(t0, taenv, ns0, root)
           } yield ResolvedAst.Expression.ReifyType(t, k, loc)
 
+        case NamedAst.Expression.ReifyEff(sym, exp1, exp2, exp3, loc) =>
+          for {
+            e1 <- visit(exp1, tenv0)
+            e2 <- visit(exp2, tenv0)
+            e3 <- visit(exp3, tenv0)
+          } yield ResolvedAst.Expression.ReifyEff(sym, e1, e2, e3, loc)
 
       }
 
@@ -1464,7 +1473,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       case "Null" => Type.mkNull(loc).toSuccess
       case "Bool" => Type.mkBool(loc).toSuccess
       case "Char" => Type.mkChar(loc).toSuccess
-      case "Float" => Type.mkFloat64(loc).toSuccess
       case "Float32" => Type.mkFloat32(loc).toSuccess
       case "Float64" => Type.mkFloat64(loc).toSuccess
       case "Int" => Type.mkInt32(loc).toSuccess
@@ -1482,30 +1490,19 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
       // Disambiguate type.
       case typeName =>
-        (lookupEnum(qname, ns0, root), lookupTypeAlias(qname, ns0, root)) match {
-          // Case 1: Not Found.
-          case (None, None) => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
-
-          // Case 2: Enum.
-          case (Some(enum), None) => getEnumTypeIfAccessible(enum, ns0, loc)
-
-          // Case 3: TypeAlias.
-          case (None, Some(typealias)) => getTypeAliasTypeIfAccessible(typealias, ns0, root, loc)
-
-          // Case 4: Errors.
-          case (_, _) => throw InternalCompilerException("Unexpected ambiguity: Duplicate types / classes should have been resolved.")
+        lookupEnumOrTypeAlias(qname, ns0, root) match {
+          case EnumOrTypeAliasLookupResult.Enum(enum) => getEnumTypeIfAccessible(enum, ns0, loc)
+          case EnumOrTypeAliasLookupResult.TypeAlias(typeAlias) => getTypeAliasTypeIfAccessible(typeAlias, ns0, root, loc)
+          case EnumOrTypeAliasLookupResult.NotFound => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
         }
     }
 
     case NamedAst.Type.Ambiguous(qname, loc) =>
       // Disambiguate type.
-      (lookupEnum(qname, ns0, root), lookupTypeAlias(qname, ns0, root)) match {
-        case (None, None) => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
-        case (Some(enumDecl), None) => getEnumTypeIfAccessible(enumDecl, ns0, loc)
-        case (None, Some(typeAliasDecl)) => getTypeAliasTypeIfAccessible(typeAliasDecl, ns0, root, loc)
-        case (Some(enumDecl), Some(typeAliasDecl)) =>
-          val locs = enumDecl.loc :: typeAliasDecl.loc :: Nil
-          ResolutionError.AmbiguousType(qname.ident.name, ns0, locs, loc).toFailure
+      lookupEnumOrTypeAlias(qname, ns0, root) match {
+        case EnumOrTypeAliasLookupResult.Enum(enum) => getEnumTypeIfAccessible(enum, ns0, loc)
+        case EnumOrTypeAliasLookupResult.TypeAlias(typeAlias) => getTypeAliasTypeIfAccessible(typeAlias, ns0, root, loc)
+        case EnumOrTypeAliasLookupResult.NotFound => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
       }
 
     case NamedAst.Type.Enum(sym, loc) =>
@@ -1639,11 +1636,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       * Performs beta-reduction on the given type alias.
       * The list of arguments must be the same length as the alias's parameters.
       */
-    def applyAlias(alias: ResolvedAst.TypeAlias, args: List[Type], loc: SourceLocation): Type = {
+    def applyAlias(alias: ResolvedAst.TypeAlias, args: List[Type], cstLoc: SourceLocation): Type = {
       val map = alias.tparams.tparams.map(_.tpe).zip(args).toMap[Type.Var, Type]
       val subst = Substitution(map)
       val tpe = subst(alias.tpe)
-      Type.Alias(alias.sym, args, tpe, loc)
+      val cst = Type.AliasConstructor(alias.sym, cstLoc)
+      Type.Alias(cst, args, tpe, tpe0.loc)
     }
 
     val baseType = tpe0.baseType
@@ -1663,7 +1661,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
           traverse(targs)(finishResolveType(_, taenv)) map {
             resolvedArgs =>
               val (usedArgs, extraArgs) = resolvedArgs.splitAt(numParams)
-              Type.mkApply(applyAlias(alias, usedArgs, tpe0.loc), extraArgs, tpe0.loc)
+              Type.mkApply(applyAlias(alias, usedArgs, loc), extraArgs, tpe0.loc)
           }
         }
       case _ =>
@@ -1681,6 +1679,78 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       t <- semiResolveType(tpe0, ns0, root)
       tpe <- finishResolveType(t, taenv)
     } yield tpe
+  }
+
+  /**
+    * The result of looking up an ambiguous type.
+    */
+  private sealed trait EnumOrTypeAliasLookupResult {
+    /**
+      * Returns `other` if this result is [[EnumOrTypeAliasLookupResult.NotFound]].
+      *
+      * Otherwise, returns this result.
+      */
+    def orElse(other: => EnumOrTypeAliasLookupResult): EnumOrTypeAliasLookupResult = this match {
+      case res: EnumOrTypeAliasLookupResult.Enum => res
+      case res: EnumOrTypeAliasLookupResult.TypeAlias => res
+      case EnumOrTypeAliasLookupResult.NotFound => other
+    }
+  }
+
+  private object EnumOrTypeAliasLookupResult {
+    /**
+      * The result is an enum.
+      */
+    case class Enum(enum: NamedAst.Enum) extends EnumOrTypeAliasLookupResult
+
+    /**
+      * The result is a type alias.
+      */
+    case class TypeAlias(typeAlias: NamedAst.TypeAlias) extends EnumOrTypeAliasLookupResult
+
+    /**
+      * The type cannot be found.
+      */
+    case object NotFound extends EnumOrTypeAliasLookupResult
+  }
+
+  /**
+    * Looks up the ambiguous type.
+    */
+  private def lookupEnumOrTypeAlias(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): EnumOrTypeAliasLookupResult = {
+
+    /**
+      * Looks up the type in the given namespace.
+      */
+    def lookupIn(ns: Name.NName): EnumOrTypeAliasLookupResult = {
+      val enumsInNamespace = root.enums.getOrElse(ns, Map.empty)
+      val aliasesInNamespace = root.typealiases.getOrElse(ns, Map.empty)
+      (enumsInNamespace.get(qname.ident.name), aliasesInNamespace.get(qname.ident.name)) match {
+        case (None, None) =>
+          // Case 1: name not found
+          EnumOrTypeAliasLookupResult.NotFound
+        case (Some(enum), None) =>
+          // Case 2: found an enum
+          EnumOrTypeAliasLookupResult.Enum(enum)
+        case (None, Some(alias)) =>
+          // Case 3: found a type alias
+          EnumOrTypeAliasLookupResult.TypeAlias(alias)
+        case (Some(_), Some(_)) =>
+          // Case 4: found both -- error
+          throw InternalCompilerException("Unexpected ambiguity: Duplicate types / classes should have been resolved.")
+      }
+    }
+
+    if (qname.isUnqualified) {
+      // Case 1: The name is unqualified. Lookup in the current namespace.
+      lookupIn(ns0).orElse {
+        // Case 1.1: The name was not found in the current namespace. Try the root namespace.
+        lookupIn(Name.RootNS)
+      }
+    } else {
+      // Case 2: The name is qualified. Look it up in its namespace.
+      lookupIn(qname.namespace)
+    }
   }
 
   /**

@@ -122,7 +122,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
       val instsVal = Validation.traverse(insts0)(visitInstance)
 
       instsVal.map {
-        insts => insts.head.sym -> insts
+        insts => insts.head.sym.clazz -> insts
       }
     }
 
@@ -327,6 +327,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
         val tparams = getTypeParams(tparams0)
         sym -> TypedAst.TypeAlias(doc, mod, sym, tparams, tpe, loc)
     }
+
     root.typeAliases.values.map(visitTypeAlias).toMap
   }
 
@@ -1456,6 +1457,23 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
           case _ =>
             throw InternalCompilerException(s"Unexpected kind: '$k'.")
         }
+
+      case KindedAst.Expression.ReifyEff(sym, exp1, exp2, exp3, loc) =>
+        val a = Type.freshVar(Kind.Star, loc)
+        val b = Type.freshVar(Kind.Star, loc)
+        val ef = Type.freshVar(Kind.Bool, loc)
+        val polyLambdaType = Type.mkArrowWithEffect(a, ef, b, loc)
+        val pureLambdaType = Type.mkPureArrow(a, b, loc)
+        for {
+          (constrs1, tpe1, eff1) <- visitExp(exp1)
+          (constrs2, tpe2, eff2) <- visitExp(exp2)
+          (constrs3, tpe3, eff3) <- visitExp(exp3)
+          actualLambdaType <- unifyTypeM(polyLambdaType, tpe1, loc)
+          boundVar <- unifyTypeM(sym.tvar.ascribedWith(Kind.Star), pureLambdaType, loc)
+          resultTyp <- unifyTypeM(tpe2, tpe3, loc)
+          resultEff = Type.mkAnd(eff1, eff2, eff3, loc)
+        } yield (constrs1 ++ constrs2 ++ constrs3, resultTyp, resultEff)
+
     }
 
     /**
@@ -1872,6 +1890,14 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
         val eff = Type.Pure
         TypedAst.Expression.ReifyType(t, k0, tpe, eff, loc)
 
+      case KindedAst.Expression.ReifyEff(sym, exp1, exp2, exp3, loc) =>
+        val e1 = visitExp(exp1, subst0)
+        val e2 = visitExp(exp2, subst0)
+        val e3 = visitExp(exp3, subst0)
+
+        val tpe = e2.tpe
+        val eff = Type.mkAnd(e1.eff, e2.eff, e3.eff, loc)
+        TypedAst.Expression.ReifyEff(sym, e1, e2, e3, tpe, eff, loc)
     }
 
     /**

@@ -95,7 +95,7 @@ object Indexer {
     */
   private def visitInstance(instance0: Instance): Index = instance0 match {
     case Instance(_, _, sym, tpe, _, defs, _, loc) =>
-      val idx1 = Index.useOf(sym, loc)
+      val idx1 = Index.useOf(sym.clazz, loc)
       val idx2 = visitType(tpe)
       val idx3 = defs.foldLeft(Index.empty) {
         case (acc, defn) => visitDef(defn)
@@ -334,6 +334,9 @@ object Indexer {
 
     case Expression.ReifyType(t, _, _, _, _) =>
       visitType(t) ++ Index.occurrenceOf(exp0)
+
+    case Expression.ReifyEff(sym, exp1, exp2, exp3, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ Index.occurrenceOf(sym, exp1.tpe) ++ Index.occurrenceOf(exp0)
   }
 
   /**

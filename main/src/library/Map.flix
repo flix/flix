@@ -653,4 +653,11 @@ namespace Map {
     pub def toIterator(m: Map[a, b]): Iterator[(a, b)] & Impure =
         List.toIterator(Map.query(_ -> EqualTo, m))
 
+    ///
+    /// Returns `m` as a `DelayMap`.
+    ///
+    pub def toDelayMap(m: Map[k, v]): DelayMap[k, v] = {
+        let Map(t) = m;
+        DMap(RedBlackTree.mapWithKey((_, v) -> lazy v, t))
+    }
 }

@@ -492,9 +492,14 @@ object Type {
   /**
     * A type alias, including the arguments passed to it and the type it represents.
     */
-  case class Alias(sym: Symbol.TypeAliasSym, args: List[Type], tpe: Type, loc: SourceLocation) extends Type with BaseType {
+  case class Alias(cst: AliasConstructor, args: List[Type], tpe: Type, loc: SourceLocation) extends Type with BaseType {
     override def kind: Kind = tpe.kind
   }
+
+  /**
+    * A constructor for a type alias. (Not a valid type by itself).
+    */
+  case class AliasConstructor(sym: Symbol.TypeAliasSym, loc: SourceLocation)
 
   /////////////////////////////////////////////////////////////////////////////
   // Utility Functions                                                       //

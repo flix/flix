@@ -83,10 +83,10 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
     * Invoked when an error occurs.
     */
   override def onError(ws: WebSocket, e: Exception): Unit = e match {
-    case ex: InternalCompilerException =>
+    case _: InternalCompilerException =>
       log(s"Unexpected error: ${e.getMessage}")(ws)
       e.printStackTrace()
-    case ex: InternalRuntimeException =>
+    case _: InternalRuntimeException =>
       log(s"Unexpected error: ${e.getMessage}")(ws)
       e.printStackTrace()
     case ex => throw ex
@@ -156,7 +156,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
     // Log whether evaluation was successful.
     log("")(ws)
     result match {
-      case Ok(__) => log("Evaluation was successful. Sending response:")(ws)
+      case Ok(_) => log("Evaluation was successful. Sending response:")(ws)
       case Err(_) => log("Evaluation failure. Sending response:")(ws)
     }
     log("")(ws)
@@ -188,14 +188,14 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
           compilationResult.getMain match {
             case None =>
               // The main function was not present. Just report successful compilation.
-              Ok("Compilation was successful. No main function to run.", compilationResult.getTotalTime(), 0L)
+              Ok("Compilation was successful. No main function to run.", compilationResult.getTotalTime, 0L)
             case Some(main) =>
               // Evaluate the main function and get the result as a string.
               val timer = new Timer({
-                val (result, stdOut, stdErr) = SafeExec.execute(() => main(Array.empty))
+                val (_, stdOut, stdErr) = SafeExec.execute(() => main(Array.empty))
                 stdOut + stdErr
               })
-              Ok(timer.getResult, compilationResult.getTotalTime(), timer.getElapsed)
+              Ok(timer.getResult, compilationResult.getTotalTime, timer.getElapsed)
           }
 
         case Failure(errors) =>

@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.FinalAst._
+import ca.uwaterloo.flix.language.ast.ErasedAst._
 import ca.uwaterloo.flix.language.ast._
 
 /**
@@ -59,14 +59,14 @@ class CompilationResult(root: Root, main: Option[Array[String] => Int], defs: Ma
   /**
     * Returns the total number of lines of compiled code.
     */
-  def getTotalLines(): Int = getRoot.sources.foldLeft(0) {
+  def getTotalLines: Int = getRoot.sources.foldLeft(0) {
     case (acc, (_, sl)) => acc + sl.endLine
   }
 
   /**
     * Returns the total compilation time in nanoseconds.
     */
-  def getTotalTime(): Long = flix.phaseTimers.foldLeft(0L) {
+  def getTotalTime: Long = flix.phaseTimers.foldLeft(0L) {
     case (acc, phase) => acc + phase.time
   }
 }

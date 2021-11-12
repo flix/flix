@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.FinalAst.Root
+import ca.uwaterloo.flix.language.ast.ErasedAst.Root
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes._
 
@@ -33,8 +33,7 @@ object GenRecordEmpty {
     val interfaceType = JvmOps.getRecordInterfaceType()
     val jvmType = JvmOps.getRecordEmptyClassType()
     val jvmName = jvmType.name
-    val targs = List()
-    val bytecode = genByteCode(jvmType,interfaceType, targs)
+    val bytecode = genByteCode(jvmType, interfaceType)
     Map(jvmName -> JvmClass(jvmName, bytecode))
   }
 
@@ -90,7 +89,7 @@ object GenRecordEmpty {
     * }
     *
     */
-  private def genByteCode(classType: JvmType.Reference, interfaceType: JvmType.Reference, targs: List[JvmType])(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genByteCode(classType: JvmType.Reference, interfaceType: JvmType.Reference)(implicit root: Root, flix: Flix): Array[Byte] = {
     // class writer
     val visitor = AsmOps.mkClassWriter()
 
@@ -107,7 +106,7 @@ object GenRecordEmpty {
     visitor.visitSource(classType.name.toInternalName, null)
 
     // Emit the code for the constructor
-    compileRecordEmptyConstructor(visitor, classType, targs)
+    compileRecordEmptyConstructor(visitor)
 
     // Generate 'lookupField' method
     AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "lookupField",
@@ -145,7 +144,7 @@ object GenRecordEmpty {
     *
     * public RecordEmpty() {}
     */
-  def compileRecordEmptyConstructor(visitor: ClassWriter, classType: JvmType.Reference, fields: List[JvmType])(implicit root: Root, flix: Flix): Unit = {
+  def compileRecordEmptyConstructor(visitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = {
 
     val constructor = visitor.visitMethod(ACC_PUBLIC, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), null, null)
 

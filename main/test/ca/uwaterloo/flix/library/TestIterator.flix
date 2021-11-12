@@ -48,20 +48,19 @@ namespace TestIterator {
 
     @test
     def repeat01(): Bool & Impure =
-        Iterator.repeat(10, 0) |> Iterator.toList == Nil
+        Iterator.repeat(0, 10) |> Iterator.toList == Nil
 
     @test
     def repeat02(): Bool & Impure =
-        Iterator.repeat(2, -100) |> Iterator.toList == Nil
+        Iterator.repeat(-100, 2) |> Iterator.toList == Nil
 
     @test
     def repeat03(): Bool & Impure =
-        Iterator.repeat(2, 100) |> Iterator.toList == List.repeat(2, 100)
+        Iterator.repeat(100, 2) |> Iterator.toList == List.repeat(100, 2)
 
     @test
     def repeat04(): Bool & Impure =
-        Iterator.repeat(1, 3) |> Iterator.toList == 1 :: 1 :: 1 :: Nil
-
+        Iterator.repeat(3, 1) |> Iterator.toList == 1 :: 1 :: 1 :: Nil
 
     /////////////////////////////////////////////////////////////////////////////
     // toArray                                                                 //
@@ -77,7 +76,7 @@ namespace TestIterator {
 
     @test
     def toArray03(): Bool & Impure =
-        Iterator.repeat(1, 3) |> Iterator.toArray == [1, 1, 1]
+        Iterator.repeat(3, 1) |> Iterator.toArray == [1, 1, 1]
 
     @test
     def toArray04(): Bool & Impure =

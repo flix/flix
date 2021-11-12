@@ -39,63 +39,6 @@ object ResolutionError {
   private implicit val audience: Audience = Audience.External
 
   /**
-    * Ambiguous Name Error.
-    *
-    * @param qn   the ambiguous name.
-    * @param ns   the current namespace.
-    * @param locs the locations where the names are defined.
-    * @param loc  the location where the error occurred.
-    */
-  case class AmbiguousName(qn: Name.QName, ns: Name.NName, locs: List[SourceLocation], loc: SourceLocation) extends ResolutionError {
-    def summary: String = "Ambiguous name."
-
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> Ambiguous name '${red(qn.toString)}' Name refers to multiple definitions.
-         |
-         |${code(loc, "ambiguous name.")}
-         |
-         |${appendLocations(locs, "definition/effect/signature matches.", formatter)}
-         |""".stripMargin
-    }
-
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
-    * Ambiguous Type Error.
-    *
-    * @param qn   the ambiguous name.
-    * @param ns   the current namespace.
-    * @param locs the locations where the names are defined.
-    * @param loc  the location where the error occurred.
-    */
-  case class AmbiguousType(qn: String, ns: Name.NName, locs: List[SourceLocation], loc: SourceLocation) extends ResolutionError {
-    def summary: String = "Ambiguous type."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> Ambiguous type '${red(qn)}'. Name refers to multiple types.
-         |
-         |${code(loc, "ambiguous type.")}
-         |
-         |${appendLocations(locs, "type matches.", formatter)}
-         |""".stripMargin
-    }
-
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
     * Ambiguous Tag Error.
     *
     * @param tag  the tag.

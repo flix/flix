@@ -599,6 +599,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.ReifyType(_, _, _, _, _) =>
       Used.empty
+
+    case Expression.ReifyEff(sym, exp1, exp2, exp3, tpe, _, _) =>
+      Used.of(sym) ++ visitExp(exp1, env0) ++ visitExp(exp2, env0)++ visitExp(exp3, env0)
   }
 
   /**

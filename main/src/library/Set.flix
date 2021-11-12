@@ -495,4 +495,10 @@ namespace Set {
     pub def toLazyList(s: Set[a]): LazyList[a] =
         foldRight((x, acc) -> ECons(x, acc), ENil, s)
 
+    ///
+    /// Returns an iterator over `s`.
+    ///
+    pub def toIterator(s: Set[a]): Iterator[a] & Impure =
+        List.toIterator(Set.toList(s))
+
 }

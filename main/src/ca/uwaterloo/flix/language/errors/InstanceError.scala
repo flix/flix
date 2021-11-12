@@ -143,7 +143,7 @@ object InstanceError {
     * @param sym  the class symbol.
     * @param loc  the location where the error occurred.
     */
-  case class DuplicateTypeVariableOccurrence(tvar: Type.KindedVar, sym: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
+  case class DuplicateTypeVariableOccurrence(tvar: Type.KindedVar, sym: Symbol.InstanceSym, loc: SourceLocation) extends InstanceError {
     override def summary: String = "Duplicate type variable."
 
     def message(formatter: Formatter): String = {
@@ -169,7 +169,7 @@ object InstanceError {
     * @param sym the class symbol.
     * @param loc the location where the error occurred.
     */
-  case class ComplexInstanceType(tpe: Type, sym: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
+  case class ComplexInstanceType(tpe: Type, sym: Symbol.InstanceSym, loc: SourceLocation) extends InstanceError {
     override def summary: String = "Complex instance type."
 
     def message(formatter: Formatter): String = {
@@ -193,7 +193,7 @@ object InstanceError {
     * @param clazz the class symbol.
     * @param loc   the location where the error occurred.
     */
-  case class IllegalTypeAliasInstance(alias: Symbol.TypeAliasSym, clazz: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
+  case class IllegalTypeAliasInstance(alias: Symbol.TypeAliasSym, clazz: Symbol.InstanceSym, loc: SourceLocation) extends InstanceError {
     override def summary: String = "Type alias in instance type."
 
     def message(formatter: Formatter): String = {
@@ -216,10 +216,10 @@ object InstanceError {
     * Error indicating an orphan instance.
     *
     * @param tpe the instance type.
-    * @param sym the class symbol.
+    * @param sym the instance symbol.
     * @param loc the location where the error occurred.
     */
-  case class OrphanInstance(tpe: Type, sym: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
+  case class OrphanInstance(tpe: Type, sym: Symbol.InstanceSym, loc: SourceLocation) extends InstanceError {
     override def summary: String = "Orphan instance."
 
     def message(formatter: Formatter): String = {
@@ -244,7 +244,7 @@ object InstanceError {
     * @param superClass the symbol of the super class.
     * @param loc        the location where the error occurred.
     */
-  case class MissingSuperClassInstance(tpe: Type, subClass: Symbol.ClassSym, superClass: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
+  case class MissingSuperClassInstance(tpe: Type, subClass: Symbol.InstanceSym, superClass: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
     override def summary: String = s"Missing super class instance '$superClass'."
 
     def message(formatter: Formatter): String = {

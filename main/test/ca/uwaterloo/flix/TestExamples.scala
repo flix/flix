@@ -9,6 +9,7 @@ class TestExamples extends Suites(
   new FlixTest("algebraic-data-types-and-pattern-matching", "examples/algebraic-data-types-and-pattern-matching.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("an-interpreter-for-a-trivial-expression-language", "examples/an-interpreter-for-a-trivial-expression-language.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("compiler-puzzle", "examples/compiler-puzzle.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  new FlixTest("deriving-type-classes", "examples/deriving-type-classes.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("effect-polymorphic-functions", "examples/effect-polymorphic-functions.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("enums-and-parametric-polymorphism", "examples/enums-and-parametric-polymorphism.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("first-class-constraints-and-fixpoints", "examples/first-class-constraints-and-fixpoints.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
@@ -34,7 +35,22 @@ class TestExamples extends Suites(
   new FlixTest("using-laziness-for-logging", "examples/using-laziness-for-logging.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("using-laziness-to-compute-fibonacci", "examples/using-laziness-to-compute-fibonacci.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
 
+  new FlixTest("datalog/array", "examples/datalog/array.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  new FlixTest("datalog/connect-network", "examples/datalog/connect-network.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("datalog/delivery-date", "examples/datalog/delivery-date.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  new FlixTest("datalog/sequence", "examples/datalog/sequence.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  new FlixTest("datalog/topsort", "examples/datalog/topsort.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  new FlixTest("datalog/two-sat", "examples/datalog/two-sat.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+
+  new FlixTest("koans/drivable", "examples/koans/drivable.flix")(Options.DefaultTest),
+  new FlixTest("koans/drivable-speed", "examples/koans/drivable-speed.flix")(Options.DefaultTest),
+  new FlixTest("koans/friend-suggestions", "examples/koans/friend-suggestions.flix")(Options.DefaultTest),
+  new FlixTest("koans/half-siblings", "examples/koans/half-siblings.flix")(Options.DefaultTest),
+  new FlixTest("koans/heirs-and-usurpers", "examples/koans/heirs-and-usurpers.flix")(Options.DefaultTest),
+  new FlixTest("koans/os-process-classification", "examples/koans/os-process-classification.flix")(Options.DefaultTest),
+  new FlixTest("koans/pairwise-acyclic-graphs", "examples/koans/pairwise-acyclic-graphs.flix")(Options.DefaultTest),
+  new FlixTest("koans/travelling-with-preference", "examples/koans/travelling-with-preference.flix")(Options.DefaultTest),
+  new FlixTest("koans/unconnected-roads", "examples/koans/unconnected-roads.flix")(Options.DefaultTest),
 
   // Others
   new FlixTest("TestBelnap", "examples/domains/Belnap.flix")(Options.TestWithLibAll),
@@ -53,6 +69,6 @@ class TestExamples extends Suites(
   new FlixTest("IFDS", "examples/analysis/IFDS.flix")(Options.TestWithLibAll),
   new FlixTest("IDE", "examples/analysis/IDE.flix")(Options.TestWithLibAll),
   new FlixTest("SUOpt", "examples/analysis/SUopt.flix")(Options.TestWithLibAll),
-  new FlixTest("FloydWarshall", "examples/misc/FloydWarshall.flix")(Options.TestWithLibAll)
+  new FlixTest("FloydWarshall", "examples/misc/FloydWarshall.flix")(Options.TestWithLibAll),
 
 )
