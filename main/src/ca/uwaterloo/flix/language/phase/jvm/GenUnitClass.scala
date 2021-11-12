@@ -42,18 +42,18 @@ object GenUnitClass {
     cm.closeClassMaker
   }
 
-  private def genStaticConstructor(): Instruction = {
+  private def genStaticConstructor(): InstructionSet = {
     NEW(JvmName.Unit) ~
-      DUP ~
+      DUP() ~
       InvokeSimpleConstructor(JvmName.Unit) ~
       PUTSTATIC(JvmName.Unit, InstanceFieldName, JvmType.Unit) ~
-      RETURN
+      RETURN()
   }
 
-  private def genConstructor(): Instruction = {
+  private def genConstructor(): InstructionSet = {
     ALOAD(0) ~
       InvokeSimpleConstructor(JvmName.Object) ~
-      RETURN
+      RETURN()
   }
 
 }

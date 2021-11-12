@@ -32,20 +32,20 @@ class ClassMaker(visitor: ClassWriter) {
     makeField(fieldName, fieldType, v, f, i)
   }
 
-  def mkConstructor(f: BytecodeInstructions.Instruction, descriptor: MethodDescriptor, v: Visibility): Unit = {
-    mkMethod(f, JvmName.ConstructorMethod, descriptor, v, Instanced)
+  def mkConstructor(f: BytecodeInstructions.InstructionSet, descriptor: MethodDescriptor, v: Visibility): Unit = {
+    mkMethod(f, JvmName.ConstructorMethod, descriptor, v, Implementable, Instanced)
   }
 
-  def mkStaticConstructor(f: BytecodeInstructions.Instruction): Unit =
-    mkMethod(f, JvmName.StaticConstructorMethod, MethodDescriptor.NothingToVoid, Default, Static)
+  def mkStaticConstructor(f: BytecodeInstructions.InstructionSet): Unit =
+    mkMethod(f, JvmName.StaticConstructorMethod, MethodDescriptor.NothingToVoid, Default, Implementable, Static)
 
-  private def mkMethod(f: BytecodeInstructions.Instruction, methodName: String, descriptor: MethodDescriptor, v: Visibility, i: Instancing): Unit = {
-    val modifier = ClassMaker.valueOf(v) + ClassMaker.valueOf(i)
-    val methodVisitor = visitor.visitMethod(modifier, methodName, descriptor.toString, null, null)
-    methodVisitor.visitCode()
-    f(new BytecodeInstructions.F(methodVisitor))
-    methodVisitor.visitMaxs(999, 999)
-    methodVisitor.visitEnd()
+  def mkMethod(ins: BytecodeInstructions.InstructionSet, methodName: String, descriptor: MethodDescriptor, v: Visibility, f: Finality, i: Instancing): Unit = {
+    val m = ClassMaker.valueOf(v) + ClassMaker.valueOf(f) + ClassMaker.valueOf(i)
+    val mv = visitor.visitMethod(m, methodName, descriptor.toString, null, null)
+    mv.visitCode()
+    ins(new BytecodeInstructions.F(mv))
+    mv.visitMaxs(999, 999)
+    mv.visitEnd()
   }
 
   def closeClassMaker: Array[Byte] = {
@@ -73,11 +73,11 @@ object ClassMaker {
   }
 
   private def mkClassMaker(className: JvmName, v: Visibility, f: Finality, superClass: JvmName, interfaces: List[JvmName])(implicit flix: Flix): ClassMaker = {
-    val visitor = AsmOps.mkClassWriter()
-    val modifier = valueOf(f) + valueOf(v)
-    visitor.visit(AsmOps.JavaVersion, modifier, className.toInternalName, null, superClass.toInternalName, interfaces.map(_.toInternalName).toArray)
-    visitor.visitSource(className.toInternalName, null)
-    new ClassMaker(visitor)
+    val cw = AsmOps.mkClassWriter()
+    val m = valueOf(f) + valueOf(v)
+    cw.visit(AsmOps.JavaVersion, m, className.toInternalName, null, superClass.toInternalName, interfaces.map(_.toInternalName).toArray)
+    cw.visitSource(className.toInternalName, null)
+    new ClassMaker(cw)
   }
 
   def mkClass(className: JvmName, v: Visibility, f: Finality, superClass: JvmName = JvmName.Object, interfaces: List[JvmName] = Nil)(implicit flix: Flix): ClassMaker = {

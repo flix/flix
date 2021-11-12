@@ -23,7 +23,6 @@ import java.nio.file.{Path, Paths}
  */
 object JvmName {
 
-
   case class MethodDescriptor(arguments: List[JvmType], result: JvmType) {
     /**
       * Returns the type descriptor of this method.
@@ -34,8 +33,6 @@ object JvmName {
   object MethodDescriptor {
     val NothingToVoid: MethodDescriptor = MethodDescriptor(Nil, JvmType.Void)
   }
-
-
 
   /**
     * The name of the static constructor method `<clinit>`.
@@ -135,6 +132,38 @@ object JvmName {
    */
   val String: JvmName = JvmName(List("java", "lang"), "String")
 
+  /**
+    * The `java.lang.Exception` name.
+    */
+  val Exception: JvmName = JvmName(List("java", "lang"), "Exception")
+
+  /**
+    * The `java.lang.RuntimeException` name.
+    */
+  val RuntimeException: JvmName = JvmName(List("java", "lang"), "RuntimeException")
+
+  /**
+    * The `java.lang.Exception` name.
+    */
+  val UnsupportedOperationException: JvmName = JvmName(List("java", "lang"), "UnsupportedOperationException")
+
+  /**
+    * The `java.util.concurrent.atomic.AtomicLong` name.
+    */
+  val AtomicLong: JvmName = JvmName(List("java", "util", "concurrent", "atomic"), "AtomicLong")
+
+  /**
+    * The `java.util.function.Function` name.
+    */
+  val Function: JvmName = JvmName(List("java", "util", "function"), "Function")
+
+
+  /**
+    * The `scala.math.package$` name.
+    */
+  val ScalaMathPkg: JvmName = JvmName(List("scala", "math"), "package$")
+
+
   //TODO SJ: place this class a better place
   /**
    * The `ca.uwaterloo.flix.runtime.interpreter.Channel` name.
@@ -145,21 +174,6 @@ object JvmName {
    * The `ca.uwaterloo.flix.runtime.interpreter.SelectChoice` name.
    */
   val SelectChoice: JvmName = JvmName(List("ca", "uwaterloo", "flix", "runtime", "interpreter"), "SelectChoice")
-
-  /**
-   * The `scala.math.package$` name.
-   */
-  val ScalaMathPkg: JvmName = JvmName(List("scala", "math"), "package$")
-
-  /**
-   * The `java.lang.Exception` name.
-   */
-  val Exception: JvmName = JvmName(List("java", "lang"), "Exception")
-
-  /**
-   * The `java.lang.RuntimeException` name.
-   */
-  val RuntimeException: JvmName = JvmName(List("java", "lang"), "RuntimeException")
 
   /**
    * The `dev.flix.runtime.FlixError` name.
@@ -186,21 +200,9 @@ object JvmName {
     */
   val GlobalCounter: JvmName = JvmName(List("dev", "flix", "runtime"), "GlobalCounter")
 
-  /**
-    * The `java.util.concurrent.atomic.AtomicLong` name.
-    */
-  val AtomicLong: JvmName = JvmName(List("java", "util", "concurrent", "atomic"), "AtomicLong")
-
-  /**
-   * The `java.lang.Exception` name.
-   */
-  val UnsupportedOperationException: JvmName = JvmName(List("java", "lang"), "UnsupportedOperationException")
-
   val PredSym: JvmName = mk("ca/uwaterloo/flix/runtime/solver/api/symbol/PredSym")
 
   val ProxyObject: JvmName = mk("ca/uwaterloo/flix/runtime/solver/api/ProxyObject")
-
-  val Function: JvmName = mk("java/util/function/Function")
 
   /**
    * Get the class type for the cell with subtype `subType`
