@@ -51,15 +51,12 @@ namespace IDE {
              LowerBound[l], JoinLattice[l], MeetLattice[l],
              Boxable[n], Boxable[d], Boxable[p], Boxable[f],  Boxable[l] =
 
-        // TODO: Explode the record.
+        // Extract main.
         let main = ide.main;
+
+        // Extract apply and compose.
         let apply = ide.apply;
         let compose = ide.compose;
-
-        let f1 = project ide.cfg, ide.callGraph, ide.startNodes, ide.endNodes into CFG, CallGraph, StartNode, EndNode;
-
-        // TODO: These should have lattice semantics and also be replaced by the loop
-        let f2 = project ide.eshIntra, ide.eshCallStart, ide.eshEndReturn into EshIntra, EshCallStart, EshEndReturn;
 
         ///
         /// The core IDE Framework.
@@ -125,6 +122,10 @@ namespace IDE {
             JumpFn(ide.zero, n, ide.zero; ide.id) :- StartNode(main, n).
 
         };
+
+
+        let f1 = project ide.cfg, ide.callGraph, ide.startNodes, ide.endNodes into CFG, CallGraph, StartNode, EndNode;
+        let f2 = project ide.eshIntra, ide.eshCallStart, ide.eshEndReturn into EshIntra, EshCallStart, EshEndReturn;
 
         let m = solve p, f1, f2;
 
