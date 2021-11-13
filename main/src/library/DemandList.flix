@@ -105,10 +105,10 @@ namespace DemandList {
     /// Returns a lazy list of every element in `l` that satisfies the predicate `f`.
     ///
     pub def filter(f: a -> Bool & ef, l: DemandList[a, not ef or d]): DemandList[a, not ef or d] & ef =
-        if (reify ef)
-            filterL(f as a -> Bool & Pure,   l as DemandList[a, false]) as DemandList[a, not ef or d] & ef
-        else
-            filterE(f as a -> Bool & Impure, l as DemandList[a, Forced])  as DemandList[a, not ef or d] & ef
+        reifyEff(f) {
+            case Pure(g) => filterL(g, l as DemandList[a, false])  as DemandList[a, not ef or d]
+            case _       => filterE(f, l as DemandList[a, Forced]) as DemandList[a, not ef or d]
+        }
 
     ///
     /// Returns a lazy list of every element in `l` that satisfies the predicate `f`.
@@ -129,13 +129,13 @@ namespace DemandList {
     ///
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
-    def filterE(f: a -> Bool & Impure, l: DemandList[a, Forced]): DemandList[a, Forced] & Impure =
+    def filterE(f: a -> Bool & ef, l: DemandList[a, Forced]): DemandList[a, Forced] & ef =
         filterEAcc(f, l as DemandList[a, Forced], ENil) |> reverse
 
     ///
     /// Helper function for `filterE`
     ///
-    def filterEAcc(f: a -> Bool & Impure, l: DemandList[a, f], acc: DemandList[a, f]): DemandList[a, f] & Impure = match l {
+    def filterEAcc(f: a -> Bool & ef, l: DemandList[a, f], acc: DemandList[a, f]): DemandList[a, f] & ef = match l {
         case ENil         => acc
         case ECons(x, xs) => if (f(x)) filterEAcc(f,       xs, ECons(x, acc)) else filterEAcc(f,       xs, acc)
         case LCons(x, xs) => if (f(x)) filterEAcc(f, force xs, ECons(x, acc)) else filterEAcc(f, force xs, acc)
@@ -173,10 +173,10 @@ namespace DemandList {
     /// Returns the result of applying `f` to every element in `l`.
     ///
     pub def map(f: a -> b & ef, l: DemandList[a, not ef or d]): DemandList[b, not ef or d] & ef =
-        if (reify ef)
-            mapL(f as a -> b & Pure,   l as DemandList[a, false]) as DemandList[b, not ef or d] & ef
-        else
-            mapE(f as a -> b & Impure, l as DemandList[a, Forced])  as DemandList[b, not ef or d] & ef
+        reifyEff(f) {
+            case Pure(g) => mapL(g, l as DemandList[a, false])  as DemandList[b, not ef or d]
+            case _       => mapE(f, l as DemandList[a, Forced]) as DemandList[b, not ef or d]
+        }
 
     ///
     /// Returns the result of applying `f` to every element in `l`.
@@ -205,13 +205,13 @@ namespace DemandList {
     ///
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
-    def mapE(f: a -> b & Impure, l: DemandList[a, Forced]): DemandList[b, Forced] & Impure =
+    def mapE(f: a -> b & ef, l: DemandList[a, Forced]): DemandList[b, Forced] & ef =
         mapEAcc(f, l, ks -> ks)
 
     ///
     /// Helper function for `mapE`.
     ///
-    def mapEAcc(f: a -> b & Impure, l: DemandList[a, Forced], k: DemandList[b, Forced] -> DemandList[b, Forced]): DemandList[b, Forced] & Impure = match l {
+    def mapEAcc(f: a -> b & ef, l: DemandList[a, Forced], k: DemandList[b, Forced] -> DemandList[b, Forced]): DemandList[b, Forced] & ef = match l {
         case ENil         => k(ENil)
         case ECons(x, xs) =>
             let x1 = f(x);
@@ -341,10 +341,10 @@ namespace DemandList {
     /// Returns the result of applying `f` to every element in `l` and concatenating the results.
     ///
     pub def flatMap(f: a -> DemandList[b, false] & ef, l: DemandList[a, not ef or d]): DemandList[b, not ef or d] & ef =
-        if (reify ef)
-            flatMapL(f as a -> DemandList[b, false] & Pure,  l as DemandList[a, false]) as DemandList[b, not ef or d] & ef
-        else
-            flatMapE(f as a -> DemandList[b, Forced] & Impure, l as DemandList[a, Forced]) as DemandList[b, not ef or d] & ef
+        reifyEff(f) {
+            case Pure(g) => flatMapL(g, l as DemandList[a, false]) as DemandList[b, not ef or d]
+            case _       => flatMapE(f as a -> DemandList[b, Forced], l as DemandList[a, Forced]) as DemandList[b, not ef or d] & ef
+        }
 
     ///
     /// Returns the result of applying `f` to every element in `l` and concatenating the results.
@@ -363,13 +363,13 @@ namespace DemandList {
     ///
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
-    def flatMapE(f: a -> DemandList[b, Forced] & Impure, l: DemandList[a, Forced]): DemandList[b, Forced] & Impure =
+    def flatMapE(f: a -> DemandList[b, Forced] & ef, l: DemandList[a, Forced]): DemandList[b, Forced] & ef =
         flatMapEHelper(f, l, ks -> ks)
 
     ///
     /// Helper function for `flatMapE`.
     ///
-    def flatMapEHelper(f: a -> DemandList[b, Forced] & Impure, l: DemandList[a, Forced], k: DemandList[b, Forced] -> DemandList[b, Forced]): DemandList[b, Forced] & Impure = match l {
+    def flatMapEHelper(f: a -> DemandList[b, Forced] & ef, l: DemandList[a, Forced], k: DemandList[b, Forced] -> DemandList[b, Forced]): DemandList[b, Forced] & ef = match l {
         case ENil         => k(ENil)
         case ECons(x, xs) =>
             let xs1 = f(x);
@@ -410,10 +410,10 @@ namespace DemandList {
     /// Whether `f` is applied eagerly or lazily depends on its purity:
     ///
     pub def takeWhile(f: a -> Bool & ef, l: DemandList[a, not ef or d]): DemandList[a, not ef or d] & ef =
-        if (reify ef)
-            takeWhileL(f as a -> Bool & Pure,   l as DemandList[a, false]) as DemandList[a, not ef or d] & ef
-        else
-            takeWhileE(f as a -> Bool & Impure, l as DemandList[a, Forced]) as DemandList[a, not ef or d] & ef
+        reifyEff(f) {
+            case Pure(g) => takeWhileL(g, l as DemandList[a, false])  as DemandList[a, not ef or d]
+            case _       => takeWhileE(f, l as DemandList[a, Forced]) as DemandList[a, not ef or d]
+        }
 
     ///
     /// Returns the longest prefix of `l` that satisfies the predicate `f`.
@@ -438,13 +438,13 @@ namespace DemandList {
     ///
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
-    def takeWhileE(f: a -> Bool & Impure, l: DemandList[a, Forced]): DemandList[a, Forced] & Impure =
+    def takeWhileE(f: a -> Bool & ef, l: DemandList[a, Forced]): DemandList[a, Forced] & ef =
         takeWhileEAcc(f, l, ks -> ks)
 
     ///
     /// Helper function for `takeWhileE`.
     ///
-    def takeWhileEAcc(f: a -> Bool & Impure, l: DemandList[a, d], k: DemandList[a, d] -> DemandList[a, d]): DemandList[a, d] & Impure = match l {
+    def takeWhileEAcc(f: a -> Bool & ef, l: DemandList[a, d], k: DemandList[a, d] -> DemandList[a, d]): DemandList[a, d] & ef = match l {
         case ENil         => k(ENil)
         case ECons(x, xs) => if (f(x)) takeWhileEAcc(f,       xs, ks -> k(ECons(x, ks))) else k(ENil)
         case LCons(x, xs) => if (f(x)) takeWhileEAcc(f, force xs, ks -> k(ECons(x, ks))) else k(ENil)
@@ -457,10 +457,10 @@ namespace DemandList {
     /// Whether `f` is applied eagerly or lazily depends on its purity:
     ///
     pub def dropWhile(f: a -> Bool & ef, l: DemandList[a, not ef or d]): DemandList[a, not ef or d] & ef =
-        if (reify ef)
-            dropWhileL(f as a -> Bool & Pure,   l as DemandList[a, false]) as DemandList[a, not ef or d] & ef
-        else
-            dropWhileE(f as a -> Bool & Impure, l as DemandList[a, Forced]) as DemandList[a, not ef or d] & ef
+        reifyEff(f) {
+            case Pure(g) => dropWhileL(g, l as DemandList[a, false])  as DemandList[a, not ef or d]
+            case _       => dropWhileE(f, l as DemandList[a, Forced]) as DemandList[a, not ef or d]
+        }
 
     ///
     /// Returns `l` without the longest prefix that satisfies the predicate `f`.
@@ -485,7 +485,7 @@ namespace DemandList {
     ///
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
-    def dropWhileE(f: a -> Bool & Impure, l: DemandList[a, Forced]): DemandList[a, Forced] & Impure = match l {
+    def dropWhileE(f: a -> Bool & ef, l: DemandList[a, Forced]): DemandList[a, Forced] & ef = match l {
         case ENil         => ENil
         case ECons(x, xs) => if (f(x)) dropWhileE(f,       xs) else l
         case LCons(x, xs) => if (f(x)) dropWhileE(f, force xs) else l
