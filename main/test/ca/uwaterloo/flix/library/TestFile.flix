@@ -71,10 +71,8 @@ namespace TestFile {
     // isSymbolicLink                                                          //
     /////////////////////////////////////////////////////////////////////////////
 
-    // TODO: find symbolic link to test
-
     @test
-    def testIsSymbolicLink02(): Bool & Impure =
+    def testIsSymbolicLink(): Bool & Impure =
         isSymbolicLink("./README.md") == Ok(false)
 
     /////////////////////////////////////////////////////////////////////////////
@@ -94,11 +92,7 @@ namespace TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testIsExecutable01(): Bool & Impure =
-        isExecutable("main/src/library/File.flix") == Ok(true)
-
-    @test
-    def testIsExecutable02(): Bool & Impure =
+    def testIsExecutable(): Bool & Impure =
         isExecutable("./fakeREADME.md") == Ok(false)
 
 }
