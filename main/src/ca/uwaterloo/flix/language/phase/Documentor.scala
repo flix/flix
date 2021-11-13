@@ -243,12 +243,12 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Returns the given Doc `doc` as a JSON value.
     */
-  private def visitDoc(doc: Ast.Doc): JObject = ??? // TODO
+  private def visitDoc(doc: Ast.Doc): JObject = ??? // TODO : missing d.ts
 
   /**
     * Returns the given Modifier `mod` as a JSON value.
     */
-  private def visitModifier(mod: Ast.Modifiers): JObject = ??? // TODO
+  private def visitModifier(mod: Ast.Modifiers): String = "public"
 
   /**
     * Returns the given Type Alias `talias` as a JSON value.
