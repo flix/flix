@@ -599,6 +599,14 @@ namespace LazyList {
     }
 
     ///
+    /// Returns the number of elements in `l` that satisfy the predicate `f`.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    pub def count(f: a -> Bool & ef, l: LazyList[a]): Int32 & ef =
+        foldLeft((i, x) -> if (f(x)) i + 1 else i, 0, l)
+
+    ///
     /// Returns the first `n` elements of `l`.
     ///
     /// Does not force the tail of `l`.
@@ -750,14 +758,6 @@ namespace LazyList {
         case LCons(x, xs) => toSetAcc(force xs, Set.insert(x, acc))
         case LList(xs)    => toSetAcc(force xs, acc)
     }
-
-    ///
-    /// Returns the number of elements in `l` that satisfy the predicate `f`.
-    ///
-    /// Forces the entire list `l`.
-    ///
-    pub def count(f: a -> Bool & ef, l: LazyList[a]): Int32 & ef =
-        foldLeft((i, x) -> if (f(x)) i + 1 else i, 0, l)
 
     ///
     /// Returns `l` without the first `n` elements.
