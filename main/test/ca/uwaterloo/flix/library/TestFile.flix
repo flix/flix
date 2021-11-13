@@ -16,7 +16,7 @@
 
 namespace TestFile {
 
-    use File.{exists, isDirectory, isRegularFile};
+    use File.{exists, isDirectory, isRegularFile, isReadable, isSymbolicLink};
 
     /////////////////////////////////////////////////////////////////////////////
     // exists                                                                  //
@@ -58,9 +58,25 @@ namespace TestFile {
     // isReadable                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
+    @test
+    def testIsReadable01(): Bool & Impure =
+        isReadable("./README.md") == Ok(true)
+
+    @test
+    def testIsReadable02(): Bool & Impure =
+        isReadable("./fakeREADME.md") == Ok(false)
+
     /////////////////////////////////////////////////////////////////////////////
     // isSymbolicLink                                                          //
     /////////////////////////////////////////////////////////////////////////////
+
+    // @test
+    // def testIsSymbolicLink01(): Bool & Impure =
+    //     isSymbolicLink("./test/TestFile2.flix") == Ok(true)
+
+    // @test
+    // def testIsSymbolicLink02(): Bool & Impure =
+    //     isSymbolicLink("./fakeREADME.md") == Ok(false)
 
     /////////////////////////////////////////////////////////////////////////////
     // isWritable                                                              //
