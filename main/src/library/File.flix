@@ -59,4 +59,22 @@ namespace File {
         else
             readAllHelper(r, line :: acc)
 
+    ///
+    /// Returns a string containing the given file `f`.
+    ///
+    pub def read(f: String): Result[String, String] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import java.io.File.toPath();
+            import java.nio.file.Files:readString(##java.nio.file.Path);
+            let javaFile = newFile(f);
+            let javaPath = toPath(javaFile);
+            let result = readString(javaPath);
+            Ok(result)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
 }
