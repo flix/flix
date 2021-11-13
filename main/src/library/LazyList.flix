@@ -629,6 +629,34 @@ namespace LazyList {
     }
 
     ///
+    /// Returns `true` if and only if at least one element in `l` satisfies the predicate `f`.
+    ///
+    /// Returns `false` if `l` is empty.
+    ///
+    /// Forces elements of `l` until the predicate `f` is satisfied.
+    ///
+    pub def exists(f: a -> Bool & ef, l: LazyList[a]): Bool & ef = match l {
+        case ENil         => false
+        case ECons(x, xs) => if (f(x)) true else exists(f,       xs)
+        case LCons(x, xs) => if (f(x)) true else exists(f, force xs)
+        case LList(xs)    => exists(f, force xs)
+   }
+
+    ///
+    /// Returns `true` if and only if all elements in `l` satisfy the predicate `f`.
+    ///
+    /// Returns `true` if `l` is empty.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    pub def forall(f: a -> Bool & ef, l: LazyList[a]): Bool & ef = match l {
+        case ENil         => true
+        case ECons(x, xs) => if (f(x)) forall(f,       xs) else false
+        case LCons(x, xs) => if (f(x)) forall(f, force xs) else false
+        case LList(xs)    => forall(f, force xs)
+    }
+
+    ///
     /// Returns the first `n` elements of `l`.
     ///
     /// Does not force the tail of `l`.
@@ -805,34 +833,6 @@ namespace LazyList {
                 case LCons(_, xs) => LList(lazy dropHelper(n - 1, force xs))
                 case LList(xs)    => LList(lazy dropHelper(n,     force xs))
             }
-
-    ///
-    /// Returns `true` if and only if at least one element in `l` satisfies the predicate `f`.
-    ///
-    /// Returns `false` if `l` is empty.
-    ///
-    /// Forces elements of `l` until the predicate `f` is satisfied.
-    ///
-    pub def exists(f: a -> Bool & ef, l: LazyList[a]): Bool & ef = match l {
-        case ENil         => false
-        case ECons(x, xs) => if (f(x)) true else exists(f,       xs)
-        case LCons(x, xs) => if (f(x)) true else exists(f, force xs)
-        case LList(xs)    => exists(f, force xs)
-   }
-
-    ///
-    /// Returns `true` if and only if all elements in `l` satisfy the predicate `f`.
-    ///
-    /// Returns `true` if `l` is empty.
-    ///
-    /// Forces the entire list `l`.
-    ///
-    pub def forall(f: a -> Bool & ef, l: LazyList[a]): Bool & ef = match l {
-        case ENil         => true
-        case ECons(x, xs) => if (f(x)) forall(f,       xs) else false
-        case LCons(x, xs) => if (f(x)) forall(f, force xs) else false
-        case LList(xs)    => forall(f, force xs)
-    }
 
     ///
     /// Returns `Some(x)` if `x` is the last element of `l`.
