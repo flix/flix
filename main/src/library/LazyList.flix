@@ -522,6 +522,40 @@ namespace LazyList {
     }
 
     ///
+    /// Applies `f` to a start value `s` and all elements in `l` going from left to right.
+    ///
+    /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    pub def foldLeft(f: (b, a) -> b & ef, s: b, l: LazyList[a]): b & ef = match l {
+        case ENil         => s
+        case ECons(x, xs) => foldLeft(f, f(s, x),       xs)
+        case LCons(x, xs) => foldLeft(f, f(s, x), force xs)
+        case LList(xs)    => foldLeft(f, s,       force xs)
+    }
+
+    ///
+    /// Applies `f` to a start value `s` and all elements in `l` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    pub def foldRight(f: (a, b) -> b & ef, s: b, l: LazyList[a]): b & ef =
+        foldRightAcc(f, s, l, ks -> ks as & ef)
+
+    ///
+    /// Helper function for `foldRight`.
+    ///
+    def foldRightAcc(f: (a, b) -> b & ef, s: b, l: LazyList[a], k: b -> b & ef): b & ef = match l {
+        case ENil         => k(s)
+        case ECons(x, xs) => foldRightAcc(f, s,       xs, ks -> k(f(x, ks)))
+        case LCons(x, xs) => foldRightAcc(f, s, force xs, ks -> k(f(x, ks)))
+        case LList(xs)    => foldRightAcc(f, s, force xs, k)
+    }
+
+    ///
     /// Returns the first `n` elements of `l`.
     ///
     /// Does not force the tail of `l`.
@@ -585,40 +619,6 @@ namespace LazyList {
         case ECons(x, xs) => if (f(x)) filterEAcc(f,       xs, ks -> k(ECons(x, ks))) else filterEAcc(f,       xs, k)
         case LCons(x, xs) => if (f(x)) filterEAcc(f, force xs, ks -> k(ECons(x, ks))) else filterEAcc(f, force xs, k)
         case LList(xs)    => filterEAcc(f, force xs, k)
-    }
-
-    ///
-    /// Applies `f` to a start value `s` and all elements in `l` going from left to right.
-    ///
-    /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
-    ///
-    /// Forces the entire list `l`.
-    ///
-    pub def foldLeft(f: (b, a) -> b & ef, s: b, l: LazyList[a]): b & ef = match l {
-        case ENil         => s
-        case ECons(x, xs) => foldLeft(f, f(s, x),       xs)
-        case LCons(x, xs) => foldLeft(f, f(s, x), force xs)
-        case LList(xs)    => foldLeft(f, s,       force xs)
-    }
-
-    ///
-    /// Applies `f` to a start value `s` and all elements in `l` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
-    ///
-    /// Forces the entire list `l`.
-    ///
-    pub def foldRight(f: (a, b) -> b & ef, s: b, l: LazyList[a]): b & ef =
-        foldRightAcc(f, s, l, ks -> ks as & ef)
-
-    ///
-    /// Helper function for `foldRight`.
-    ///
-    def foldRightAcc(f: (a, b) -> b & ef, s: b, l: LazyList[a], k: b -> b & ef): b & ef = match l {
-        case ENil         => k(s)
-        case ECons(x, xs) => foldRightAcc(f, s,       xs, ks -> k(f(x, ks)))
-        case LCons(x, xs) => foldRightAcc(f, s, force xs, ks -> k(f(x, ks)))
-        case LList(xs)    => foldRightAcc(f, s, force xs, k)
     }
 
     ///
