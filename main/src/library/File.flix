@@ -67,13 +67,8 @@ namespace File {
             import new java.io.File(String) as newFile;
             import java.io.File.toPath();
             import java.nio.file.Files:readString(##java.nio.file.Path);
-            //import java.nio.file.Files:newBufferedReader(##java.nio.file.Path);
-            //import java.io.BufferedReader.close();
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
-            //let reader = newBufferedReader(javaPath);
-            //let result = readHelper(readAll(reader));
-            //close(reader);
             let result = readString(javaPath);
             Ok(result)
         } catch {
@@ -83,14 +78,8 @@ namespace File {
         }
 
     ///
-    /// Helper function for read.
-    /// Converts a list of strings to a string with linebreaks between every string in `list`.
-    ///
-    //def readHelper(list: List[String]): String & Pure =
-    //    List.foldLeft((x, y) -> x + "\n" + y, "", list)
-
-    ///
     /// Returns a string containing the given file `f` with the options `opts`.
+    /// TODO: add a note on what exactly the opts do
     ///
     pub def readWith(opts: {offset :: Int64, count :: Int32, charSet :: String}, f : String): Result[String, String] & Impure = {
         try {
@@ -98,14 +87,10 @@ namespace File {
             import java.nio.charset.Charset:forName(String);
             import java.io.File.toPath();
             import java.nio.file.Files:readString(##java.nio.file.Path, ##java.nio.charset.Charset);
-            //import java.nio.file.Files:newBufferedReader(##java.nio.file.Path, ##java.nio.charset.Charset);
-            //import java.io.BufferedReader.close();
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let fileRead = readString(javaPath, forName(opts.charSet));
-            //let reader = newBufferedReader(javaPath, forName(opts.charSet));
-            //let fileRead = readHelper(readAll(reader));
-            //close(reader);
+            // TODO: take care of offset before loading the whole file in memory
             Ok(readWithHelper(fileRead, opts.offset, opts.count))
         } catch {
             case ex: ##java.io.IOException =>
@@ -183,41 +168,6 @@ namespace File {
         try {
             import new java.io.File(String) as newFile;
             import java.io.File.toPath();
-            import java.nio.file.Files:readAllBytes(##java.nio.file.Path);
-
-            let javaFile = newFile(f);
-            let javaPath = toPath(javaFile);
-            let bytes = readAllBytes(javaPath);
-            let byteCount = Array.length(bytes);
-            let i = ref 0;
-
-            let done = () -> deref i >= byteCount;
-            let next = () -> {
-                let j = deref i;
-                if (j < byteCount) {
-                    let end = {
-                        if (j + chunkSize >= byteCount) byteCount - 1
-                        else j + chunkSize - 1
-                    };
-                    let byteOfchunkSize = Array.slice(j, end, bytes);
-                    i := j + chunkSize;
-                    Ok(byteOfchunkSize)
-                } else bug!("Empty Iterator!")
-            };
-            Iterator(done, next)
-        } catch {
-            case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage();
-                Iterator.singleton(Err(getMessage(ex)))
-        }
-
-    //
-    /// Returns an iterator of the bytes in the given `file` in chunks of size `chunkSize`.
-    ///
-    pub def readChunks2(f: String, chunkSize: Int32): Iterator[Result[Array[Int8], String]] & Impure =
-        try {
-            import new java.io.File(String) as newFile;
-            import java.io.File.toPath();
             import java.nio.file.Files:newBufferedReader(##java.nio.file.Path);
 
             let javaFile = newFile(f);
@@ -257,7 +207,7 @@ namespace File {
             acc
         else
             match Int32.tryToInt8(read(r)) {
-                case None       => ??? //throw exception or something?
+                case None       => ??? // TODO: throw exception or something?
                 case Some(n)    => readChunkHelper(r, chunkSize - 1, n :: acc)
             }
 
