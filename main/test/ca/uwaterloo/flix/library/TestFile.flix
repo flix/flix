@@ -16,17 +16,19 @@
 
 namespace TestFile {
 
-    use File.{exists, isDirectory};
+    use File.{exists, isDirectory, isRegularFile};
 
     /////////////////////////////////////////////////////////////////////////////
     // exists                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testExists01(): Bool & Impure = exists("./README.md") == Ok(true)
+    def testExists01(): Bool & Impure =
+        exists("./README.md") == Ok(true)
 
     @test
-    def testExists02(): Bool & Impure = exists("./fakeREADME.md") == Ok(false)
+    def testExists02(): Bool & Impure =
+        exists("./fakeREADME.md") == Ok(false)
 
     /////////////////////////////////////////////////////////////////////////////
     // isDirectory                                                             //
@@ -37,11 +39,20 @@ namespace TestFile {
         isDirectory("./main/test/ca/uwaterloo/flix/library") == Ok(true)
 
     @test
-    def testIsDirectory02(): Bool & Impure = isDirectory("./README.md") == Ok(false)
+    def testIsDirectory02(): Bool & Impure =
+        isDirectory("./README.md") == Ok(false)
 
     /////////////////////////////////////////////////////////////////////////////
     // isRegularFile                                                           //
     /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def testIsRegularFile01(): Bool & Impure =
+        isRegularFile("./main/test/ca/uwaterloo/flix/library") == Ok(false)
+
+    @test
+    def testIsRegularFile02(): Bool & Impure =
+        isRegularFile("./README.md") == Ok(true)
 
     /////////////////////////////////////////////////////////////////////////////
     // isReadable                                                              //
