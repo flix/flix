@@ -153,6 +153,70 @@ namespace LazyList {
     }
 
     ///
+    /// Returns `l2` appended to `l1`.
+    ///
+    /// Does not force the tail of `l`.
+    ///
+    pub def append(l1: LazyList[a], l2: LazyList[a]): LazyList[a] = match l1 {
+        case ENil         => l2
+        case ECons(x, xs) => LCons(x, lazy append(      xs, l2))
+        case LCons(x, xs) => LCons(x, lazy append(force xs, l2))
+        case LList(xs)    => LList(   lazy append(force xs, l2))
+    }
+
+    ///
+    /// Returns `true` if and only if `l` contains the element `a`.
+    ///
+    /// Forces elements until `a` is found.
+    ///
+    pub def memberOf(a: a, l: LazyList[a]): Bool with Eq[a] = match l {
+        case ENil         => false
+        case ECons(x, xs) => x == a or memberOf(a,       xs)
+        case LCons(x, xs) => x == a or memberOf(a, force xs)
+        case LList(xs)    =>           memberOf(a, force xs)
+    }
+
+    ///
+    /// Optionally finds the smallest element of `l` according to the `Order` on `a`.
+    ///
+    /// Returns `None` if `l` is empty.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    pub def minimum(l: LazyList[a]): Option[a] with Order[a] =
+        reduceLeft(Order.min, l)
+
+    ///
+    /// Optionally finds the smallest element of `l` according to the given comparator `cmp`.
+    ///
+    /// Returns `None` if `l` is empty.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    pub def minimumBy(cmp: (a, a) -> Comparison, l: LazyList[a]): Option[a] =
+        reduceLeft(Order.minBy(cmp), l)
+
+    ///
+    /// Optionally finds the largest element of `l` according to the `Order` on `a`.
+    ///
+    /// Returns `None` if `l` is empty.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    pub def maximum(l: LazyList[a]): Option[a] with Order[a] =
+        reduceLeft(Order.max, l)
+
+    ///
+    /// Optionally finds the largest element of `l` according to the given comparator `cmp`.
+    ///
+    /// Returns `None` if `l` is empty.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    pub def maximumBy(cmp: (a, a) -> Comparison, l: LazyList[a]): Option[a] =
+        reduceLeft(Order.maxBy(cmp), l)
+
+    ///
     /// Returns a lazy list of all integers between `b` (inclusive) and `e` (exclusive).
     ///
     /// Returns an empty lazy list if `b >= e`.
@@ -310,18 +374,6 @@ namespace LazyList {
         case ECons(x, xs) => if (f(x)) filterEAcc(f,       xs, ks -> k(ECons(x, ks))) else filterEAcc(f,       xs, k)
         case LCons(x, xs) => if (f(x)) filterEAcc(f, force xs, ks -> k(ECons(x, ks))) else filterEAcc(f, force xs, k)
         case LList(xs)    => filterEAcc(f, force xs, k)
-    }
-
-    ///
-    /// Returns `l2` appended to `l1`.
-    ///
-    /// Does not force the tail of `l`.
-    ///
-    pub def append(l1: LazyList[a], l2: LazyList[a]): LazyList[a] = match l1 {
-        case ENil         => l2
-        case ECons(x, xs) => LCons(x, lazy append(      xs, l2))
-        case LCons(x, xs) => LCons(x, lazy append(force xs, l2))
-        case LList(xs)    => LList(   lazy append(force xs, l2))
     }
 
     ///
@@ -659,46 +711,6 @@ namespace LazyList {
     }
 
     ///
-    /// Optionally finds the smallest element of `l` according to the `Order` on `a`.
-    ///
-    /// Returns `None` if `l` is empty.
-    ///
-    /// Forces the entire list `l`.
-    ///
-    pub def minimum(l: LazyList[a]): Option[a] with Order[a] =
-        reduceLeft(Order.min, l)
-
-    ///
-    /// Optionally finds the smallest element of `l` according to the given comparator `cmp`.
-    ///
-    /// Returns `None` if `l` is empty.
-    ///
-    /// Forces the entire list `l`.
-    ///
-    pub def minimumBy(cmp: (a, a) -> Comparison, l: LazyList[a]): Option[a] =
-        reduceLeft(Order.minBy(cmp), l)
-
-    ///
-    /// Optionally finds the largest element of `l` according to the `Order` on `a`.
-    ///
-    /// Returns `None` if `l` is empty.
-    ///
-    /// Forces the entire list `l`.
-    ///
-    pub def maximum(l: LazyList[a]): Option[a] with Order[a] =
-        reduceLeft(Order.max, l)
-
-    ///
-    /// Optionally finds the largest element of `l` according to the given comparator `cmp`.
-    ///
-    /// Returns `None` if `l` is empty.
-    ///
-    /// Forces the entire list `l`.
-    ///
-    pub def maximumBy(cmp: (a, a) -> Comparison, l: LazyList[a]): Option[a] =
-        reduceLeft(Order.maxBy(cmp), l)
-
-    ///
     /// Returns the result of applying `f` to every element in `l` and concatenating the results.
     ///
     /// Whether `f` is applied eagerly or lazily depends on its purity:
@@ -754,18 +766,6 @@ namespace LazyList {
             let xs1 = f(x);
             flatMapEAcc(f, force xs, ks -> k(append(xs1, ks)))
         case LList(xs)    => flatMapEAcc(f, force xs, k)
-    }
-
-    ///
-    /// Returns `true` if and only if `l` contains the element `a`.
-    ///
-    /// Forces elements until `a` is found.
-    ///
-    pub def memberOf(a: a, l: LazyList[a]): Bool with Eq[a] = match l {
-        case ENil         => false
-        case ECons(x, xs) => x == a or memberOf(a,       xs)
-        case LCons(x, xs) => x == a or memberOf(a, force xs)
-        case LList(xs)    =>           memberOf(a, force xs)
     }
 
     ///
