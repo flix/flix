@@ -286,44 +286,6 @@ namespace LazyList {
         LCons(n, lazy fromHelper(n + 1))
 
     ///
-    /// Returns the first `n` elements of `l`.
-    ///
-    /// Does not force the tail of `l`.
-    ///
-    pub def take(n: Int32, l: LazyList[a]): LazyList[a] =
-        LList(lazy takeHelper(n, l))
-
-    ///
-    /// Helper function for `take`.
-    ///
-    def takeHelper(n: Int32, l: LazyList[a]): LazyList[a] =
-        if (n <= 0)
-            ENil
-        else
-            match l {
-                case ENil         => ENil
-                case ECons(x, xs) => LCons(x, lazy takeHelper(n - 1,       xs))
-                case LCons(x, xs) => LCons(x, lazy takeHelper(n - 1, force xs))
-                case LList(xs)    => LList(   lazy takeHelper(n,     force xs))
-            }
-
-    ///
-    /// Reverses the list `l`.
-    ///
-    pub def reverse(l: LazyList[a]): LazyList[a] =
-        LList(lazy reverseAcc(l, ENil))
-
-    ///
-    /// Helper function for `reverse`.
-    ///
-    def reverseAcc(l: LazyList[a], acc: LazyList[a]): LazyList[a] = match l {
-        case ENil         => acc
-        case ECons(x, xs) => reverseAcc(      xs, ECons(x, acc))
-        case LCons(x, xs) => reverseAcc(force xs, ECons(x, acc))
-        case LList(xs)    => reverseAcc(force xs,          acc)
-    }
-
-    ///
     /// Returns the result of applying `f` to every element in `l`.
     ///
     /// Whether `f` is applied eagerly or lazily depends on its purity:
@@ -382,6 +344,44 @@ namespace LazyList {
             mapEAcc(f, force xs, ks -> k(ECons(x1, ks)))
         case LList(xs)    =>
             mapEAcc(f, force xs, k)
+    }
+
+    ///
+    /// Returns the first `n` elements of `l`.
+    ///
+    /// Does not force the tail of `l`.
+    ///
+    pub def take(n: Int32, l: LazyList[a]): LazyList[a] =
+        LList(lazy takeHelper(n, l))
+
+    ///
+    /// Helper function for `take`.
+    ///
+    def takeHelper(n: Int32, l: LazyList[a]): LazyList[a] =
+        if (n <= 0)
+            ENil
+        else
+            match l {
+                case ENil         => ENil
+                case ECons(x, xs) => LCons(x, lazy takeHelper(n - 1,       xs))
+                case LCons(x, xs) => LCons(x, lazy takeHelper(n - 1, force xs))
+                case LList(xs)    => LList(   lazy takeHelper(n,     force xs))
+            }
+
+    ///
+    /// Reverses the list `l`.
+    ///
+    pub def reverse(l: LazyList[a]): LazyList[a] =
+        LList(lazy reverseAcc(l, ENil))
+
+    ///
+    /// Helper function for `reverse`.
+    ///
+    def reverseAcc(l: LazyList[a], acc: LazyList[a]): LazyList[a] = match l {
+        case ENil         => acc
+        case ECons(x, xs) => reverseAcc(      xs, ECons(x, acc))
+        case LCons(x, xs) => reverseAcc(force xs, ECons(x, acc))
+        case LList(xs)    => reverseAcc(force xs,          acc)
     }
 
     ///
