@@ -310,11 +310,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       }
 
       // Compute the cases.
-      val computedCases = cases.toList.map {
-        case (tag, tcase) =>
-          ("tag" -> tag.name) ~
-            ("tpe" -> visitType(tcase.tpeDeprecated))
-      }
+      val computedCases = ??? // TODO: convert cases (Map) to [Case]
 
       ("doc" -> visitDoc(doc)) ~
         ("mod" -> visitModifier(mod)) ~
