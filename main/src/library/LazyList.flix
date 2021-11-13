@@ -722,6 +722,33 @@ namespace LazyList {
     }
 
     ///
+    /// `l1` is the longest prefix of `l` that satisfies the predicate `f`.
+    /// `l2` is the remainder of `l`.
+    ///
+    /// Forces elements in the list until the first element (inclusive) that does not satisfy the predicate `f`.
+    ///
+    pub def span(f: a -> Bool & ef, l: LazyList[a]): (LazyList[a], LazyList[a]) & ef =
+        spanAcc(f, l, (ks, ls) -> (ks, ls))
+
+    ///
+    /// Helper function for `span`.
+    ///
+    def spanAcc(f: a -> Bool & ef, l: LazyList[a], k: (LazyList[a], LazyList[a]) -> (LazyList[a], LazyList[a])): (LazyList[a], LazyList[a]) & ef = match l {
+        case ENil         => k(ENil, ENil)
+        case ECons(x, xs) =>
+            if (f(x))
+                spanAcc(f, xs, (ks, ls) -> k(ECons(x, ks), ls))
+            else
+                k(ENil, l)
+        case LCons(x, xs) =>
+            if (f(x))
+                spanAcc(f, force xs, (ks, ls) -> k(ECons(x, ks), ls))
+            else
+                k(ENil, l)
+        case LList(xs)    => spanAcc(f, force xs, k)
+    }
+
+    ///
     /// Returns the first `n` elements of `l`.
     ///
     /// Does not force the tail of `l`.
@@ -1094,33 +1121,6 @@ namespace LazyList {
             case Some(v) => filterMapEAcc(f, force xs, ks -> k(ECons(v, ks)))
         }
         case LList(xs)    => filterMapEAcc(f, force xs, k)
-    }
-
-    ///
-    /// `l1` is the longest prefix of `l` that satisfies the predicate `f`.
-    /// `l2` is the remainder of `l`.
-    ///
-    /// Forces elements in the list until the first element (inclusive) that does not satisfy the predicate `f`.
-    ///
-    pub def span(f: a -> Bool & ef, l: LazyList[a]): (LazyList[a], LazyList[a]) & ef =
-        spanAcc(f, l, (ks, ls) -> (ks, ls))
-
-    ///
-    /// Helper function for `span`.
-    ///
-    def spanAcc(f: a -> Bool & ef, l: LazyList[a], k: (LazyList[a], LazyList[a]) -> (LazyList[a], LazyList[a])): (LazyList[a], LazyList[a]) & ef = match l {
-        case ENil         => k(ENil, ENil)
-        case ECons(x, xs) =>
-            if (f(x))
-                spanAcc(f, xs, (ks, ls) -> k(ECons(x, ks), ls))
-            else
-                k(ENil, l)
-        case LCons(x, xs) =>
-            if (f(x))
-                spanAcc(f, force xs, (ks, ls) -> k(ECons(x, ks), ls))
-            else
-                k(ENil, l)
-        case LList(xs)    => spanAcc(f, force xs, k)
     }
 
     ///
