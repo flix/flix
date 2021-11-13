@@ -462,6 +462,30 @@ namespace LazyList {
     }
 
     ///
+    /// Reverses the list `l`.
+    ///
+    pub def reverse(l: LazyList[a]): LazyList[a] =
+        LList(lazy reverseAcc(l, ENil))
+
+    ///
+    /// Helper function for `reverse`.
+    ///
+    def reverseAcc(l: LazyList[a], acc: LazyList[a]): LazyList[a] = match l {
+        case ENil         => acc
+        case ECons(x, xs) => reverseAcc(      xs, ECons(x, acc))
+        case LCons(x, xs) => reverseAcc(force xs, ECons(x, acc))
+        case LList(xs)    => reverseAcc(force xs,          acc)
+    }
+
+    ///
+    /// Returns `l` with every occurrence of `x` replaced by `y`.
+    ///
+    /// Does not force the tail of `l`.
+    ///
+    pub def replace(x: a, y: a, l: LazyList[a]): LazyList[a] with Eq[a] =
+        map(e -> if (x == e) y else e, l)
+
+    ///
     /// Returns the first `n` elements of `l`.
     ///
     /// Does not force the tail of `l`.
@@ -482,22 +506,6 @@ namespace LazyList {
                 case LCons(x, xs) => LCons(x, lazy takeHelper(n - 1, force xs))
                 case LList(xs)    => LList(   lazy takeHelper(n,     force xs))
             }
-
-    ///
-    /// Reverses the list `l`.
-    ///
-    pub def reverse(l: LazyList[a]): LazyList[a] =
-        LList(lazy reverseAcc(l, ENil))
-
-    ///
-    /// Helper function for `reverse`.
-    ///
-    def reverseAcc(l: LazyList[a], acc: LazyList[a]): LazyList[a] = match l {
-        case ENil         => acc
-        case ECons(x, xs) => reverseAcc(      xs, ECons(x, acc))
-        case LCons(x, xs) => reverseAcc(force xs, ECons(x, acc))
-        case LList(xs)    => reverseAcc(force xs,          acc)
-    }
 
     ///
     /// Returns a lazy list of every element in `l` that satisfies the predicate `f`.
@@ -852,14 +860,6 @@ namespace LazyList {
         case LList(xs)    => reduceRightAcc(f, force xs, k)
         case _            => bug!("Unreachable code!")
     }
-
-    ///
-    /// Returns `l` with every occurrence of `x` replaced by `y`.
-    ///
-    /// Does not force the tail of `l`.
-    ///
-    pub def replace(x: a, y: a, l: LazyList[a]): LazyList[a] with Eq[a] =
-        map(e -> if (x == e) y else e, l)
 
     ///
     /// Returns the concatenation of the elements in `l2` with the elements of `l1` inserted between every two adjacent elements.
