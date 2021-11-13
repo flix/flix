@@ -486,6 +486,42 @@ namespace LazyList {
         map(e -> if (x == e) y else e, l)
 
     ///
+    /// Returns `xs` with `a` inserted between every two adjacent elements.
+    ///
+    /// Forces the first element of the tail of `l2` unless that tail is an `LList`.
+    ///
+    pub def intersperse(x: a, l: LazyList[a]): LazyList[a] = match l {
+        case ENil           => ENil
+        case ECons(x1, xs)  => if (isEmpty(      xs)) l else LCons(x1, lazy LCons(x, lazy intersperse(x,       xs)))
+        case LCons(x1, xs)  => if (isEmpty(force xs)) l else LCons(x1, lazy LCons(x, lazy intersperse(x, force xs)))
+        case LList(xs)      => LList(lazy intersperse(x, force xs))
+    }
+
+    ///
+    /// Returns the concatenation of the elements in `l2` with the elements of `l1` inserted between every two adjacent elements.
+    ///
+    /// That is, returns `l2.1 :: l1.1 ... l1.n :: l2.2 :: ... :: l2.n-1 :: l1.1 :: ... :: l1.n :: l2.n :: ENil`.
+    ///
+    /// Forces the first element of the tail of `l2` unless that tail is an `LList`.
+    ///
+    pub def intercalate(l1: LazyList[a], l2: LazyList[LazyList[a]]): LazyList[a] = match l2 {
+        case ENil           => ENil
+        case ECons(x, xs)   => if (isEmpty(      xs)) x else LList(lazy append(append(x, l1), intercalateHelper(l1,       xs)))
+        case LCons(x, xs)   => if (isEmpty(force xs)) x else LList(lazy append(append(x, l1), intercalateHelper(l1, force xs)))
+        case LList(xs)      => LList(lazy intercalateHelper(l1, force xs))
+    }
+
+    ///
+    /// Helper function for `intercalate`.
+    ///
+    def intercalateHelper(l1: LazyList[a], l2: LazyList[LazyList[a]]): LazyList[a] = match l2 {
+        case ENil           => ENil
+        case ECons(x, xs)   => if (isEmpty(      xs)) x else append(append(x, l1), intercalateHelper(l1,       xs))
+        case LCons(x, xs)   => if (isEmpty(force xs)) x else append(append(x, l1), intercalateHelper(l1, force xs))
+        case LList(xs)      => LList(lazy intercalateHelper(l1, force xs))
+    }
+
+    ///
     /// Returns the first `n` elements of `l`.
     ///
     /// Does not force the tail of `l`.
@@ -859,42 +895,6 @@ namespace LazyList {
         case LCons(x, xs) => if (isEmpty(force xs)) k(x) else reduceRightAcc(f, force xs, ks -> k(f(x, ks)))
         case LList(xs)    => reduceRightAcc(f, force xs, k)
         case _            => bug!("Unreachable code!")
-    }
-
-    ///
-    /// Returns the concatenation of the elements in `l2` with the elements of `l1` inserted between every two adjacent elements.
-    ///
-    /// That is, returns `l2.1 :: l1.1 ... l1.n :: l2.2 :: ... :: l2.n-1 :: l1.1 :: ... :: l1.n :: l2.n :: ENil`.
-    ///
-    /// Forces the first element of the tail of `l2` unless that tail is an `LList`.
-    ///
-    pub def intercalate(l1: LazyList[a], l2: LazyList[LazyList[a]]): LazyList[a] = match l2 {
-        case ENil           => ENil
-        case ECons(x, xs)   => if (isEmpty(      xs)) x else LList(lazy append(append(x, l1), intercalateHelper(l1,       xs)))
-        case LCons(x, xs)   => if (isEmpty(force xs)) x else LList(lazy append(append(x, l1), intercalateHelper(l1, force xs)))
-        case LList(xs)      => LList(lazy intercalateHelper(l1, force xs))
-    }
-
-    ///
-    /// Helper function for `intercalate`.
-    ///
-    def intercalateHelper(l1: LazyList[a], l2: LazyList[LazyList[a]]): LazyList[a] = match l2 {
-        case ENil           => ENil
-        case ECons(x, xs)   => if (isEmpty(      xs)) x else append(append(x, l1), intercalateHelper(l1,       xs))
-        case LCons(x, xs)   => if (isEmpty(force xs)) x else append(append(x, l1), intercalateHelper(l1, force xs))
-        case LList(xs)      => LList(lazy intercalateHelper(l1, force xs))
-    }
-
-    ///
-    /// Returns `xs` with `a` inserted between every two adjacent elements.
-    ///
-    /// Forces the first element of the tail of `l2` unless that tail is an `LList`.
-    ///
-    pub def intersperse(x: a, l: LazyList[a]): LazyList[a] = match l {
-        case ENil           => ENil
-        case ECons(x1, xs)  => if (isEmpty(      xs)) l else LCons(x1, lazy LCons(x, lazy intersperse(x,       xs)))
-        case LCons(x1, xs)  => if (isEmpty(force xs)) l else LCons(x1, lazy LCons(x, lazy intersperse(x, force xs)))
-        case LList(xs)      => LList(lazy intersperse(x, force xs))
     }
 
     ///
