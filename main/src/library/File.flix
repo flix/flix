@@ -67,10 +67,223 @@ namespace File {
             import new java.io.File(String) as newFile;
             import java.io.File.toPath();
             import java.nio.file.Files:readString(##java.nio.file.Path);
+            //import java.nio.file.Files:newBufferedReader(##java.nio.file.Path);
+            //import java.io.BufferedReader.close();
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
+            //let reader = newBufferedReader(javaPath);
+            //let result = readHelper(readAll(reader));
+            //close(reader);
             let result = readString(javaPath);
             Ok(result)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Helper function for read.
+    /// Converts a list of strings to a string with linebreaks between every string in `list`.
+    ///
+    //def readHelper(list: List[String]): String & Pure =
+    //    List.foldLeft((x, y) -> x + "\n" + y, "", list)
+
+    ///
+    /// Returns a string containing the given file `f` with the options `opts`.
+    ///
+    pub def readWith(opts: {offset :: Int64, count :: Int32, charSet :: String}, f : String): Result[String, String] & Impure = {
+        try {
+            import new java.io.File(String) as newFile;
+            import java.nio.charset.Charset:forName(String);
+            import java.io.File.toPath();
+            import java.nio.file.Files:readString(##java.nio.file.Path, ##java.nio.charset.Charset);
+            //import java.nio.file.Files:newBufferedReader(##java.nio.file.Path, ##java.nio.charset.Charset);
+            //import java.io.BufferedReader.close();
+            let javaFile = newFile(f);
+            let javaPath = toPath(javaFile);
+            let fileRead = readString(javaPath, forName(opts.charSet));
+            //let reader = newBufferedReader(javaPath, forName(opts.charSet));
+            //let fileRead = readHelper(readAll(reader));
+            //close(reader);
+            Ok(readWithHelper(fileRead, opts.offset, opts.count))
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+    }
+
+    ///
+    /// Helper function for readWith.
+    /// Takes a String and applys the options.
+    ///
+    def readWithHelper(f: String, offset: Int64, count: Int32): String & Pure =
+        let fileLength = String.length(f);
+        match Int64.tryToInt32(offset) {
+            case None => String.dropRight(fileLength - count, f)
+            case Some(n) =>
+                let str = String.dropLeft(n, f);
+                let strLength = String.length(str);
+                String.dropRight(strLength - count, str)
+        }
+
+    ///
+    /// Returns an iterator of the given file `f`
+    ///
+    pub def readLinesIter(f: String): Iterator[Result[String, String]] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import java.io.File.toPath();
+            import java.nio.file.Files:newBufferedReader(##java.nio.file.Path);
+            import java.io.BufferedReader.readLine();
+
+            let javaFile = newFile(f);
+            let javaPath = toPath(javaFile);
+            let reader = newBufferedReader(javaPath);
+            let line = ref readLine(reader);
+
+            let done = () -> Object.isNull(deref line);
+            let next = () -> {
+                let l = deref line;
+                line := readLine(reader);
+                Ok(l)
+            };
+            Iterator(done, next)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Iterator.singleton(Err(getMessage(ex)))
+        }
+
+    ///
+    /// Returns an array of all the bytes in the given file `f`.
+    ///
+    pub def readBytes(f: String): Result[Array[Int8], String] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import java.io.File.toPath();
+            import java.nio.file.Files:readAllBytes(##java.nio.file.Path);
+
+            let javaFile = newFile(f);
+            let javaPath = toPath(javaFile);
+            let bytes = readAllBytes(javaPath);
+
+            Ok(bytes)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Returns an iterator of the bytes in the given `file` in chunks of size `chunkSize`.
+    ///
+    pub def readChunks(f: String, chunkSize: Int32): Iterator[Result[Array[Int8], String]] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import java.io.File.toPath();
+            import java.nio.file.Files:readAllBytes(##java.nio.file.Path);
+
+            let javaFile = newFile(f);
+            let javaPath = toPath(javaFile);
+            let bytes = readAllBytes(javaPath);
+            let byteCount = Array.length(bytes);
+            let i = ref 0;
+
+            let done = () -> deref i >= byteCount;
+            let next = () -> {
+                let j = deref i;
+                if (j < byteCount) {
+                    let end = {
+                        if (j + chunkSize >= byteCount) byteCount - 1
+                        else j + chunkSize - 1
+                    };
+                    let byteOfchunkSize = Array.slice(j, end, bytes);
+                    i := j + chunkSize;
+                    Ok(byteOfchunkSize)
+                } else bug!("Empty Iterator!")
+            };
+            Iterator(done, next)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Iterator.singleton(Err(getMessage(ex)))
+        }
+
+    //
+    /// Returns an iterator of the bytes in the given `file` in chunks of size `chunkSize`.
+    ///
+    pub def readChunks2(f: String, chunkSize: Int32): Iterator[Result[Array[Int8], String]] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import java.io.File.toPath();
+            import java.nio.file.Files:newBufferedReader(##java.nio.file.Path);
+
+            let javaFile = newFile(f);
+            let javaPath = toPath(javaFile);
+            let reader = newBufferedReader(javaPath);
+            let line = ref readChunk(reader, chunkSize);
+
+            let done = () -> {
+                let l = deref line;
+                Array.get(Array.length(l) - 1, l) == -1i8
+            };
+            let next = () -> {
+                let l = deref line;
+                line := readChunk(reader, chunkSize);
+                Ok(l)
+            };
+            Iterator(done, next)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Iterator.singleton(Err(getMessage(ex)))
+        }
+
+    ///
+    /// Reads bytes in chunks of size `chunkSize` from the given buffered reader `r`.
+    ///
+    def readChunk(r: ##java.io.BufferedReader, chunkSize: Int32): Array[Int8] & Impure =
+        List.toArray(List.reverse(readChunkHelper(r, chunkSize, Nil)))
+
+    ///
+    /// Helper function for readchunk.
+    /// Reads all lines from the buffered reader `r` of `chunksize`, returning a backward list.
+    ///
+    def readChunkHelper(r: ##java.io.BufferedReader, chunkSize: Int32, acc: List[Int8]): List[Int8] & Impure =
+        import java.io.BufferedReader.read();
+        if (chunkSize == 0)
+            acc
+        else
+            match Int32.tryToInt8(read(r)) {
+                case None       => ??? //throw exception or something?
+                case Some(n)    => readChunkHelper(r, chunkSize - 1, n :: acc)
+            }
+
+    ///
+    /// Writes `data` to the given file `f`.
+    ///
+    /// Creates file `f` if it does not exist. Overwrites it if it exists.
+    ///
+    /// Returns `true` if the file was created.
+    ///
+    pub def write(f: String, data: t): Result[Bool, String] & Impure with ToString[t] =
+        try {
+            import new java.io.File(String) as newFile;
+            import new java.io.PrintWriter(##java.io.File) as newPrintWriter;
+            import java.io.PrintWriter.println(String);
+            import java.io.PrintWriter.close();
+            import java.io.PrintWriter.checkError();
+
+            let javaFile = newFile(f);
+            let w = newPrintWriter(javaFile);
+
+            println(w, "${data}");
+            close(w);
+
+            Ok(checkError(w))
+
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage();
