@@ -72,11 +72,11 @@ namespace TestFile {
 
     // @test
     // def testIsSymbolicLink01(): Bool & Impure =
-    //     isSymbolicLink("./test/TestFile2.flix") == Ok(true)
+    // TODO: find symbolic link to test
 
-    // @test
-    // def testIsSymbolicLink02(): Bool & Impure =
-    //     isSymbolicLink("./fakeREADME.md") == Ok(false)
+    @test
+    def testIsSymbolicLink02(): Bool & Impure =
+        isSymbolicLink("./README.md") == Ok(false)
 
     /////////////////////////////////////////////////////////////////////////////
     // isWritable                                                              //
