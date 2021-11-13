@@ -404,6 +404,64 @@ namespace LazyList {
     }
 
     ///
+    /// Returns the result of applying `f` to every element in `l` and concatenating the results.
+    ///
+    /// Whether `f` is applied eagerly or lazily depends on its purity:
+    ///
+    /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
+    /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
+    ///
+    pub def flatMap(f: a -> LazyList[b] & ef, l: LazyList[a]): LazyList[b] & ef =
+        reifyEff(f) {
+            case Pure(g) => flatMapL(g, l)
+            case _       => flatMapE(f, l)
+        }
+
+    ///
+    /// Returns the result of applying `f` to every element in `l` and concatenating the results.
+    ///
+    /// Applies `f` lazily (i.e. the tail is not forced).
+    ///
+    def flatMapL(f: a -> LazyList[b], l: LazyList[a]): LazyList[b] = match l {
+        case ENil         => ENil
+        case ECons(x, xs) => LList(lazy append(f(x), LList(lazy flatMapLHelper(f,       xs))))
+        case LCons(x, xs) => LList(lazy append(f(x), LList(lazy flatMapLHelper(f, force xs))))
+        case LList(xs)    => LList(lazy flatMapLHelper(f, force xs))
+    }
+
+    ///
+    /// Helper function for `flatMapL`.
+    ///
+    def flatMapLHelper(f: a -> LazyList[b], l: LazyList[a]): LazyList[b] = match l {
+        case ENil         => ENil
+        case ECons(x, xs) => append(f(x), LList(lazy flatMapLHelper(f,       xs)))
+        case LCons(x, xs) => append(f(x), LList(lazy flatMapLHelper(f, force xs)))
+        case LList(xs)    => LList(lazy flatMapLHelper(f, force xs))
+    }
+
+    ///
+    /// Returns the result of applying `f` to every element in `l` and concatenating the results.
+    ///
+    /// Applies `f` eagerly (i.e. the entire list `l` is forced).
+    ///
+    def flatMapE(f: a -> LazyList[b] & ef, l: LazyList[a]): LazyList[b] & ef =
+        flatMapEAcc(f, l, ks -> ks)
+
+    ///
+    /// Helper function for `flatMapE`.
+    ///
+    def flatMapEAcc(f: a -> LazyList[b] & ef, l: LazyList[a], k: LazyList[b] -> LazyList[b]): LazyList[b] & ef = match l {
+        case ENil         => k(ENil)
+        case ECons(x, xs) =>
+            let xs1 = f(x);
+            flatMapEAcc(f,       xs, ks -> k(append(xs1, ks)))
+        case LCons(x, xs) =>
+            let xs1 = f(x);
+            flatMapEAcc(f, force xs, ks -> k(append(xs1, ks)))
+        case LList(xs)    => flatMapEAcc(f, force xs, k)
+    }
+
+    ///
     /// Returns the first `n` elements of `l`.
     ///
     /// Does not force the tail of `l`.
@@ -793,64 +851,6 @@ namespace LazyList {
         case LCons(x, xs) => if (isEmpty(force xs)) k(x) else reduceRightAcc(f, force xs, ks -> k(f(x, ks)))
         case LList(xs)    => reduceRightAcc(f, force xs, k)
         case _            => bug!("Unreachable code!")
-    }
-
-    ///
-    /// Returns the result of applying `f` to every element in `l` and concatenating the results.
-    ///
-    /// Whether `f` is applied eagerly or lazily depends on its purity:
-    ///
-    /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
-    /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
-    ///
-    pub def flatMap(f: a -> LazyList[b] & ef, l: LazyList[a]): LazyList[b] & ef =
-        reifyEff(f) {
-            case Pure(g) => flatMapL(g, l)
-            case _       => flatMapE(f, l)
-        }
-
-    ///
-    /// Returns the result of applying `f` to every element in `l` and concatenating the results.
-    ///
-    /// Applies `f` lazily (i.e. the tail is not forced).
-    ///
-    def flatMapL(f: a -> LazyList[b], l: LazyList[a]): LazyList[b] = match l {
-        case ENil         => ENil
-        case ECons(x, xs) => LList(lazy append(f(x), LList(lazy flatMapLHelper(f,       xs))))
-        case LCons(x, xs) => LList(lazy append(f(x), LList(lazy flatMapLHelper(f, force xs))))
-        case LList(xs)    => LList(lazy flatMapLHelper(f, force xs))
-    }
-
-    ///
-    /// Helper function for `flatMapL`.
-    ///
-    def flatMapLHelper(f: a -> LazyList[b], l: LazyList[a]): LazyList[b] = match l {
-        case ENil         => ENil
-        case ECons(x, xs) => append(f(x), LList(lazy flatMapLHelper(f,       xs)))
-        case LCons(x, xs) => append(f(x), LList(lazy flatMapLHelper(f, force xs)))
-        case LList(xs)    => LList(lazy flatMapLHelper(f, force xs))
-    }
-
-    ///
-    /// Returns the result of applying `f` to every element in `l` and concatenating the results.
-    ///
-    /// Applies `f` eagerly (i.e. the entire list `l` is forced).
-    ///
-    def flatMapE(f: a -> LazyList[b] & ef, l: LazyList[a]): LazyList[b] & ef =
-        flatMapEAcc(f, l, ks -> ks)
-
-    ///
-    /// Helper function for `flatMapE`.
-    ///
-    def flatMapEAcc(f: a -> LazyList[b] & ef, l: LazyList[a], k: LazyList[b] -> LazyList[b]): LazyList[b] & ef = match l {
-        case ENil         => k(ENil)
-        case ECons(x, xs) =>
-            let xs1 = f(x);
-            flatMapEAcc(f,       xs, ks -> k(append(xs1, ks)))
-        case LCons(x, xs) =>
-            let xs1 = f(x);
-            flatMapEAcc(f, force xs, ks -> k(append(xs1, ks)))
-        case LList(xs)    => flatMapEAcc(f, force xs, k)
     }
 
     ///
