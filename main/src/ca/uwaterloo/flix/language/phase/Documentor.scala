@@ -151,7 +151,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Returns the given type `tpe` as a JSON value.
     */
-  private def visitType(tpe: Type): JObject = ??? // TODO
+  private def visitType(tpe: Type): JObject = ??? // TODO: make function
 
   /**
     * Returns the given type constraint `tc` as a JSON value.
@@ -173,7 +173,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Returns the given instance symbol `sym` as a JSON value.
     */
-  private def visitInstanceSym(sym: Symbol.InstanceSym): JObject = ??? // TODO
+  private def visitInstanceSym(sym: Symbol.InstanceSym): JObject = ??? // TODO : missing d.ts
 
   /**
     * Returns the given class symbol `sym` as a JSON value.
@@ -224,7 +224,12 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Returns the given Kind `kind` as a JSON value.
     */
-  def visitKind(kind: Kind): JObject = ??? // TODO
+  def visitKind(kind: Kind): String = kind match {
+    case Kind.Star => "Star"
+    case Kind.Bool => "Bool"
+    case Kind.RecordRow => "Record"
+    case Kind.SchemaRow => "Schema"
+  }
 
   /**
     * Returns the given Type Parameter `tparam` as a JSON value.
