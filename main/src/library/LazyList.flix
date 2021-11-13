@@ -607,6 +607,28 @@ namespace LazyList {
         foldLeft((i, x) -> if (f(x)) i + 1 else i, 0, l)
 
     ///
+    /// Returns the concatenation of the elements in `l`.
+    ///
+    /// Does not force the tail of `l`.
+    ///
+    pub def flatten(l: LazyList[LazyList[a]]): LazyList[a] = match l {
+        case ENil         => ENil
+        case ECons(x, xs) => LList(lazy append(x, flattenHelper(      xs)))
+        case LCons(x, xs) => LList(lazy append(x, flattenHelper(force xs)))
+        case LList(xs)    => LList(lazy flattenHelper(force xs))
+    }
+
+    ///
+    /// Helper function for `flatten`.
+    ///
+    def flattenHelper(l: LazyList[LazyList[a]]): LazyList[a] = match l {
+        case ENil         => ENil
+        case ECons(x, xs) => append(x,  LList(lazy flattenHelper(      xs)))
+        case LCons(x, xs) => append(x,  LList(lazy flattenHelper(force xs)))
+        case LList(xs)    => LList(lazy flattenHelper(force xs))
+    }
+
+    ///
     /// Returns the first `n` elements of `l`.
     ///
     /// Does not force the tail of `l`.
@@ -783,28 +805,6 @@ namespace LazyList {
                 case LCons(_, xs) => LList(lazy dropHelper(n - 1, force xs))
                 case LList(xs)    => LList(lazy dropHelper(n,     force xs))
             }
-
-    ///
-    /// Returns the concatenation of the elements in `l`.
-    ///
-    /// Does not force the tail of `l`.
-    ///
-    pub def flatten(l: LazyList[LazyList[a]]): LazyList[a] = match l {
-        case ENil         => ENil
-        case ECons(x, xs) => LList(lazy append(x, flattenHelper(      xs)))
-        case LCons(x, xs) => LList(lazy append(x, flattenHelper(force xs)))
-        case LList(xs)    => LList(lazy flattenHelper(force xs))
-    }
-
-    ///
-    /// Helper function for `flatten`.
-    ///
-    def flattenHelper(l: LazyList[LazyList[a]]): LazyList[a] = match l {
-        case ENil         => ENil
-        case ECons(x, xs) => append(x,  LList(lazy flattenHelper(      xs)))
-        case LCons(x, xs) => append(x,  LList(lazy flattenHelper(force xs)))
-        case LList(xs)    => LList(lazy flattenHelper(force xs))
-    }
 
     ///
     /// Returns `true` if and only if at least one element in `l` satisfies the predicate `f`.
