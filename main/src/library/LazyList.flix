@@ -217,6 +217,34 @@ namespace LazyList {
         reduceLeft(Order.maxBy(cmp), l)
 
     ///
+    /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from left to right.
+    ///
+    /// Forces elements of `l` until the predicate `f` is satisfied.
+    ///
+    pub def findLeft(f: a -> Bool & ef, l: LazyList[a]): Option[a] & ef = match l {
+        case ENil         => None
+        case ECons(x, xs) => if (f(x)) Some(x) else findLeft(f,       xs)
+        case LCons(x, xs) => if (f(x)) Some(x) else findLeft(f, force xs)
+        case LList(xs)    => findLeft(f, force xs)
+    }
+
+    ///
+    /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from right to left.
+    ///
+    pub def findRight(f: a -> Bool & ef, l: LazyList[a]): Option[a] & ef =
+        findRightAcc(x -> if (f(x)) Some(x) else None, l, (o, _) -> o as & ef)
+
+    ///
+    /// Helper function for `findRight`.
+    ///
+    def findRightAcc(f: a -> Option[a] & ef, l: LazyList[a], k: (Option[a], LazyList[a]) -> Option[a] & ef): Option[a] & ef = match l {
+        case ENil         => k(None, ENil)
+        case ECons(x, xs) => findRightAcc(f,       xs, (o, ks) -> if (Option.isEmpty(o)) k(f(x), ECons(x, ks)) else o)
+        case LCons(x, xs) => findRightAcc(f, force xs, (o, ks) -> if (Option.isEmpty(o)) k(f(x), ECons(x, ks)) else o)
+        case LList(xs)    => findRightAcc(f, force xs, k)
+    }
+
+    ///
     /// Returns a lazy list of all integers between `b` (inclusive) and `e` (exclusive).
     ///
     /// Returns an empty lazy list if `b >= e`.
@@ -775,34 +803,6 @@ namespace LazyList {
     ///
     pub def replace(x: a, y: a, l: LazyList[a]): LazyList[a] with Eq[a] =
         map(e -> if (x == e) y else e, l)
-
-    ///
-    /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from left to right.
-    ///
-    /// Forces elements of `l` until the predicate `f` is satisfied.
-    ///
-    pub def findLeft(f: a -> Bool & ef, l: LazyList[a]): Option[a] & ef = match l {
-        case ENil         => None
-        case ECons(x, xs) => if (f(x)) Some(x) else findLeft(f,       xs)
-        case LCons(x, xs) => if (f(x)) Some(x) else findLeft(f, force xs)
-        case LList(xs)    => findLeft(f, force xs)
-    }
-
-    ///
-    /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from right to left.
-    ///
-    pub def findRight(f: a -> Bool & ef, l: LazyList[a]): Option[a] & ef =
-        findRightAcc(x -> if (f(x)) Some(x) else None, l, (o, _) -> o as & ef)
-
-    ///
-    /// Helper function for `findRight`.
-    ///
-    def findRightAcc(f: a -> Option[a] & ef, l: LazyList[a], k: (Option[a], LazyList[a]) -> Option[a] & ef): Option[a] & ef = match l {
-        case ENil         => k(None, ENil)
-        case ECons(x, xs) => findRightAcc(f,       xs, (o, ks) -> if (Option.isEmpty(o)) k(f(x), ECons(x, ks)) else o)
-        case LCons(x, xs) => findRightAcc(f, force xs, (o, ks) -> if (Option.isEmpty(o)) k(f(x), ECons(x, ks)) else o)
-        case LList(xs)    => findRightAcc(f, force xs, k)
-    }
 
     ///
     /// Returns the result of applying `f` to every element in `l` along with that element's index.
