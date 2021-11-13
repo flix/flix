@@ -23,6 +23,35 @@ import java.nio.file.{Path, Paths}
  */
 object JvmName {
 
+
+  case class MethodDescriptor(arguments: List[JvmType], result: JvmType) {
+    /**
+      * Returns the type descriptor of this method.
+      */
+    override lazy val toString: String = AsmOps.getMethodDescriptor(arguments, result)
+  }
+
+  object MethodDescriptor {
+    val NothingToVoid: MethodDescriptor = MethodDescriptor(Nil, JvmType.Void)
+  }
+
+
+
+  /**
+    * The name of the static constructor method `<clinit>`.
+    */
+  val StaticConstructorMethod: String = "<clinit>"
+
+  /**
+    * The name of the constructor method `<init>`.
+    */
+  val ConstructorMethod: String = "<init>"
+
+  /**
+    * The Flix reserved delimiter for generated jvm classes.
+    */
+  val Delimiter: String = "$"
+
   /**
    * Returns the JvmName of the given string `s`.
    */
@@ -35,11 +64,6 @@ object JvmName {
    * The Flix Context class.
    */
   val Context: JvmName = JvmName(Nil, "Context")
-
-  /**
-   * The Flix Unit class.
-   */
-  val Unit: JvmName = JvmName(Nil, "Unit")
 
   /**
    * The `java.math.BigInteger` name.
@@ -138,6 +162,11 @@ object JvmName {
   val RuntimeException: JvmName = JvmName(List("java", "lang"), "RuntimeException")
 
   /**
+    * The Flix Unit class.
+    */
+  val Unit: JvmName = JvmName(List("dev", "flix", "runtime"), "Unit")
+
+  /**
    * The `dev.flix.runtime.FlixError` name.
    */
   val FlixError: JvmName = JvmName(List("dev", "flix", "runtime"), "FlixError")
@@ -182,7 +211,7 @@ object JvmName {
    * Get the class type for the cell with subtype `subType`
    */
   def getCellClassType(subType: JvmType): JvmType.Reference = {
-    val name = "Ref" + "$" + JvmOps.stringify(subType)
+    val name = "Ref" + Delimiter + JvmOps.stringify(subType)
 
     // The type resides in the ca.uwaterloo.flix package.
     JvmType.Reference(JvmName(Nil, name))

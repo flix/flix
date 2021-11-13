@@ -308,6 +308,64 @@ namespace DelayMap {
         Map(RedBlackTree.mapWithKey((_, v) -> force v, t))
 
     ///
+    /// Updates `m` with `k -> f(v)` if `k -> v` is in `m`.
+    ///
+    /// Otherwise, returns `m`.
+    ///
+    pub def adjust(f: v -> v & ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
+        adjustWithKey((_, v1) -> f(v1), k, m)
+
+    ///
+    /// Updates `m` with `k -> f(k, v)` if `k -> v` is in `m`. Otherwise, returns `m`.
+    ///
+    pub def adjustWithKey(f: (k, v) -> v & ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
+        updateWithKey((k1, v) -> Some(f(k1, v)), k, m)
+
+    ///
+    /// Updates `m` with `k -> v1` if `k -> v` is in `m` and `f(v) = Some(v1)`. Otherwise, returns `m`.
+    ///
+    pub def update(f: v -> Option[v] & ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
+        updateWithKey((_, v1) -> f(v1), k, m)
+
+    ///
+    /// Updates `m` with `k -> v1` if `k -> v` is in `m` and `f(k, v) = Some(v1)`. Otherwise, returns `m`.
+    ///
+    pub def updateWithKey(f: (k, v) -> Option[v] & ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
+        let f1 = (t) -> f(fst(t), snd(t));
+        reifyEff(f1) {
+            case Pure(g) => updateWithKeyL((k1, v) -> g((k1, v)), k, m)
+            case _       => updateWithKeyE(f, k, m)
+        }
+
+    ///
+    /// Helper function for `updateWithKey`. Does not force the `v`.
+    ///
+    def updateWithKeyL(f: (k, v) -> Option[v], k: k, m: DelayMap[k, v]): DelayMap[k, v] with Order[k] =
+        let DMap(t) = m;
+        let f1 = (k, v) -> {
+            let res = lazy match f(k, force v) {
+                case Some(v1) => v1
+                case None     => force v
+            };
+            Some(res)
+        };
+        DMap(RedBlackTree.updateWith(f1, k, t))
+
+    ///
+    /// Helper function for `updateWithKey`. Forces `v`.
+    ///
+    def updateWithKeyE(f: (k, v) -> Option[v] & ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
+        let DMap(t) = m;
+        let f1 = (k, v) -> {
+            let res = f(k, force v);
+            match res {
+                case Some(v1) => Some(lazy v1)
+                case None     => None
+            }
+        };
+        DMap(RedBlackTree.updateWith(f1, k, t))
+
+    ///
     /// Returns `m` as a mutable set.
     ///
     pub def toMutMap(m: DelayMap[k, v]): MutMap[k, v] & Impure =

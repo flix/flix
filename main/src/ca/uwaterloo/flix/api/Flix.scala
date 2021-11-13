@@ -160,7 +160,7 @@ class Flix {
 
     "Validation.flix" -> LocalResource.get("/src/library/Validation.flix"),
 
-    "ChannelImpl.flix" -> LocalResource.get("/src/library/ChannelImpl.flix"),
+    "Channel.flix" -> LocalResource.get("/src/library/Channel.flix"),
     "Ticker.flix" -> LocalResource.get("/src/library/Ticker.flix"),
     "Timer.flix" -> LocalResource.get("/src/library/Timer.flix"),
     "Duration.flix" -> LocalResource.get("/src/library/Duration.flix"),
