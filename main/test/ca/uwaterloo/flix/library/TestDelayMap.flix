@@ -1050,4 +1050,195 @@ namespace TestDelayMap {
     def size06(): Bool =
         Map#{1 -> 2, 2 -> 4, 3 -> 6, 4 -> 8, 5 -> 10} |> Map.toDelayMap |> DelayMap.size == 5
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // singleton                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def singleton01(): Bool =
+        DelayMap.singleton(1, 2) |> DelayMap.toMap == Map#{1 -> 2}
+
+    @test
+    def singleton02(): Bool =
+        DelayMap.singleton(3, -1) |> DelayMap.toMap == Map#{3 -> -1}
+
+    @test
+    def singleton03(): Bool =
+        DelayMap.singleton(-99, -11) |> DelayMap.toMap == Map#{-99 -> -11}
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // isEmpty                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def isEmpty01(): Bool =
+        Map#{}: Map[Unit, Unit] |> Map.toDelayMap |> DelayMap.isEmpty
+
+    @test
+    def isEmpty02(): Bool =
+        not (Map#{1 -> 2} |> Map.toDelayMap |> DelayMap.isEmpty)
+
+    @test
+    def isEmpty03(): Bool =
+        not (Map#{1 -> 2, 2 -> 4} |> Map.toDelayMap |> DelayMap.isEmpty)
+
+    @test
+    def isEmpty04(): Bool =
+        not (Map#{1 -> 2, 2 -> 4, 3 -> 6} |> Map.toDelayMap |> DelayMap.isEmpty)
+
+    @test
+    def isEmpty05(): Bool =
+        not (Map#{1 -> 2, 2 -> 4, 3 -> 6, 4 -> 8} |> Map.toDelayMap |> DelayMap.isEmpty)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldLeft                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldLeft01(): Bool =
+        Map#{} |> Map.toDelayMap |>
+            DelayMap.foldLeft((s, v) -> s + v, 0) == 0
+
+    @test
+    def foldLeft02(): Bool =
+        Map#{1 -> 2} |> Map.toDelayMap |>
+            DelayMap.foldLeft((s, v) -> s + v, 0) == 2
+
+    @test
+    def foldLeft03(): Bool =
+        Map#{1 -> 2, 3 -> 4} |> Map.toDelayMap |>
+            DelayMap.foldLeft((s, v) -> s + v, 0) == 6
+
+    @test
+    def foldLeft04(): Bool =
+        Map#{1 -> 2, 3 -> 4, 5 -> 6} |> Map.toDelayMap |>
+            DelayMap.foldLeft((s, v) -> s + v, 0) == 12
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldLeftWithKey                                                         //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldLeftWithKey01(): Bool =
+        Map#{} |> Map.toDelayMap |>
+            DelayMap.foldLeftWithKey((s, k, v) -> k + s + v, 0) == 0
+
+    @test
+    def foldLeftWithKey02(): Bool =
+        Map#{1 -> 2} |> Map.toDelayMap |>
+            DelayMap.foldLeftWithKey((s, k, v) -> k + s + v, 0) == 3
+
+    @test
+    def foldLeftWithKey03(): Bool =
+        Map#{1 -> 2, 3 -> 4} |> Map.toDelayMap |>
+            DelayMap.foldLeftWithKey((s, k, v) -> k + s + v, 0) == 10
+
+    @test
+    def foldLeftWithKey04(): Bool =
+        Map#{1 -> 2, 3 -> 4, 5 -> 6} |> Map.toDelayMap |>
+            DelayMap.foldLeftWithKey((s, k, v) -> k + s + v, 0) == 21
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldRight                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldRight01(): Bool =
+        Map#{} |> Map.toDelayMap |>
+            DelayMap.foldRight((v, s) -> s + v, 0) == 0
+
+    @test
+    def foldRight02(): Bool =
+        Map#{1 -> 2} |> Map.toDelayMap |>
+            DelayMap.foldRight((v, s) -> s + v, 0) == 2
+
+    @test
+    def foldRight03(): Bool =
+        Map#{1 -> 2, 3 -> 4} |> Map.toDelayMap |>
+            DelayMap.foldRight((v, s) -> s + v, 0) == 6
+
+    @test
+    def foldRight04(): Bool =
+        Map#{1 -> 2, 3 -> 4, 5 -> 6} |> Map.toDelayMap |>
+            DelayMap.foldRight((v, s) -> s + v, 0) == 12
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldRightWithKey                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldRightWithKey01(): Bool =
+        Map#{} |> Map.toDelayMap |>
+            DelayMap.foldRightWithKey((k, v, s) -> k + s + v, 0) == 0
+
+    @test
+    def foldRightWithKey02(): Bool =
+        Map#{1 -> 2} |> Map.toDelayMap |>
+            DelayMap.foldRightWithKey((k, v, s) -> k + s + v, 0) == 3
+
+    @test
+    def foldRightWithKey03(): Bool =
+        Map#{1 -> 2, 3 -> 4} |> Map.toDelayMap |>
+            DelayMap.foldRightWithKey((k, v, s) -> k + s + v, 0) == 10
+
+    @test
+    def foldRightWithKey04(): Bool =
+        Map#{1 -> 2, 3 -> 4, 5 -> 6} |> Map.toDelayMap |>
+            DelayMap.foldRightWithKey((k, v, s) -> k + s + v, 0) == 21
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // reduceLeft                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def reduceLeft01(): Bool =
+        Map#{}: Map[Int32, Int32] |> Map.toDelayMap |>
+            DelayMap.reduceLeft((v1, v2) -> v1 - v2) == None
+
+    @test
+    def reduceLeft02(): Bool =
+        Map#{1 -> 2} |> Map.toDelayMap |>
+            DelayMap.reduceLeft((v1, v2) -> v1 - v2) == Some(2)
+
+    @test
+    def reduceLeft03(): Bool =
+        Map#{1 -> 2, 2 -> 3} |> Map.toDelayMap |>
+            DelayMap.reduceLeft((v1, v2) -> v1 - v2) == Some(-1)
+
+    @test
+    def reduceLeft04(): Bool =
+        Map#{1 -> 2, 2 -> 3, 3 -> 4} |> Map.toDelayMap |>
+            DelayMap.reduceLeft((v1, v2) -> v1 - v2) == Some(-5)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // reduceLeftWithKey                                                       //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def reduceLeftWithKey01(): Bool =
+        Map#{}: Map[Int32, Int32] |> Map.toDelayMap |>
+            DelayMap.reduceLeftWithKey((k1, v1, k2, v2) -> (k1 - k2, v1 - v2)) == None
+
+    @test
+    def reduceLeftWithKey02(): Bool =
+        Map#{1 -> 2} |> Map.toDelayMap |>
+            DelayMap.reduceLeftWithKey((k1, v1, k2, v2) -> (k1 - k2, v1 - v2)) == Some((1, 2))
+
+    @test
+    def reduceLeftWithKey03(): Bool =
+        Map#{1 -> 2, 2 -> 3} |> Map.toDelayMap |>
+            DelayMap.reduceLeftWithKey((k1, v1, k2, v2) -> (k1 - k2, v1 - v2)) == Some((-1, -1))
+
+    @test
+    def reduceLeftWithKey04(): Bool =
+        Map#{1 -> 2, 2 -> 3, 3 -> 4} |> Map.toDelayMap |>
+            DelayMap.reduceLeftWithKey((k1, v1, k2, v2) -> (k1 - k2, v1 - v2)) == Some((-4, -5))
+
 }
