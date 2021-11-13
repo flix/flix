@@ -71,8 +71,6 @@ namespace TestFile {
     // isSymbolicLink                                                          //
     /////////////////////////////////////////////////////////////////////////////
 
-    // @test
-    // def testIsSymbolicLink01(): Bool & Impure =
     // TODO: find symbolic link to test
 
     @test
