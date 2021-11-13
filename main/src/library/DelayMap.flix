@@ -281,6 +281,14 @@ namespace DelayMap {
         foldRightWithKey((k, v, acc) -> (k, v) :: acc, Nil, m)
 
     ///
+    /// Applies `f` to a start value `s` and all values in `m` going from left to right.
+    ///
+    /// That is, the result is of the form: `f(...f(f(s, v1), v2)..., vn)`.
+    ///
+    pub def foldLeft(f: (b, v) -> b & ef, s: b, m: DelayMap[k, v]): b & ef =
+        foldLeftWithKey((acc, _, v) -> f(acc, v), s, m)
+
+    ///
     /// Applies `f` to a start value `s` and all key-value pairs in `m` going from left to right.
     ///
     /// That is, the result is of the form: `f(...f(f(s, k1, v1), k2, v2)..., vn)`.
