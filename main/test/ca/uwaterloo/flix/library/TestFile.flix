@@ -95,7 +95,7 @@ namespace TestFile {
 
     @test
     def testIsExecutable01(): Bool & Impure =
-        isExecutable("./README.md") == Ok(true)
+        isExecutable("main/src/library/File.flix") == Ok(true)
 
     @test
     def testIsExecutable02(): Bool & Impure =
