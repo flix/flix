@@ -125,6 +125,20 @@ namespace LazyList {
     }
 
     ///
+    /// Returns `Some(x)` if `x` is the last element of `l`.
+    ///
+    /// Returns `None` if `l` is empty.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    pub def last(l: LazyList[a]): Option[a] = match l {
+        case ENil         => None
+        case ECons(x, xs) => if (isEmpty(      xs)) Some(x) else last(      xs)
+        case LCons(x, xs) => if (isEmpty(force xs)) Some(x) else last(force xs)
+        case LList(xs)    => last(force xs)
+    }
+
+    ///
     /// Returns `l` without the first element.
     ///
     pub def tail(l: LazyList[a]): LazyList[a] = match l {
@@ -1023,20 +1037,6 @@ namespace LazyList {
         case ECons(x, xs) => toSetAcc(      xs, Set.insert(x, acc))
         case LCons(x, xs) => toSetAcc(force xs, Set.insert(x, acc))
         case LList(xs)    => toSetAcc(force xs, acc)
-    }
-
-    ///
-    /// Returns `Some(x)` if `x` is the last element of `l`.
-    ///
-    /// Returns `None` if `l` is empty.
-    ///
-    /// Forces the entire list `l`.
-    ///
-    pub def last(l: LazyList[a]): Option[a] = match l {
-        case ENil         => None
-        case ECons(x, xs) => if (isEmpty(      xs)) Some(x) else last(      xs)
-        case LCons(x, xs) => if (isEmpty(force xs)) Some(x) else last(force xs)
-        case LList(xs)    => last(force xs)
     }
 
     ///
