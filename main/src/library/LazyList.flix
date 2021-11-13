@@ -953,6 +953,90 @@ namespace LazyList {
         map((x) -> f(fst(x), snd(x)), zip(l1, l2))
 
     ///
+    /// Collects the results of applying the partial function `f` to every element in `l`.
+    ///
+    /// Whether `f` is applied eagerly or lazily depends on its purity:
+    ///
+    /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
+    /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
+    ///
+    pub def filterMap(f: a -> Option[b] & ef, l: LazyList[a]): LazyList[b] & ef =
+        reifyEff(f) {
+            case Pure(g) => filterMapL(g, l)
+            case _       => filterMapE(f, l)
+        }
+
+    ///
+    /// Collects the results of applying the partial function `f` to every element in `l`.
+    ///
+    /// Applies `f` lazily (i.e. the tail is not forced).
+    ///
+    def filterMapL(f: a -> Option[b], l: LazyList[a]): LazyList[b] =
+        LList(lazy filterMapLHelper(f, l))
+
+    ///
+    /// Helper function for `filterMapL`.
+    ///
+    def filterMapLHelper(f: a -> Option[b], l: LazyList[a]): LazyList[b] = match l {
+        case ENil         => ENil
+        case ECons(x, xs) =>
+            match f(x) {
+                case None    => filterMapLHelper(f, xs)
+                case Some(v) => LCons(v, lazy filterMapLHelper(f, xs))
+            }
+        case LCons(x, xs) =>
+            match f(x) {
+                case None    => filterMapLHelper(f, force xs)
+                case Some(v) => LCons(v, lazy filterMapLHelper(f, force xs))
+            }
+        case LList(xs)    => LList(lazy filterMapLHelper(f, force xs))
+    }
+
+    ///
+    /// Collects the results of applying the partial function `f` to every element in `l`.
+    ///
+    /// Applies `f` eagerly (i.e. the entire list `l` is forced).
+    ///
+    def filterMapE(f: a -> Option[b] & ef, l: LazyList[a]): LazyList[b] & ef =
+        filterMapEAcc(f, l, ks -> ks)
+
+    ///
+    /// Helper function for `filterMapE`.
+    ///
+    def filterMapEAcc(f: a -> Option[b] & ef, l: LazyList[a], k: LazyList[b] -> LazyList[b]): LazyList[b] & ef = match l {
+        case ENil         => k(ENil)
+        case ECons(x, xs) => match f(x) {
+            case None    => filterMapEAcc(f, xs, k)
+            case Some(v) => filterMapEAcc(f, xs, ks -> k(ECons(v, ks)))
+        }
+        case LCons(x, xs) => match f(x) {
+            case None    => filterMapEAcc(f, force xs, k)
+            case Some(v) => filterMapEAcc(f, force xs, ks -> k(ECons(v, ks)))
+        }
+        case LList(xs)    => filterMapEAcc(f, force xs, k)
+    }
+
+    ///
+    /// Returns the first non-None result of applying the partial function `f` to each element of `l`.
+    ///
+    /// Returns `None` if every element `f(x)` of `l` is `None`.
+    ///
+    /// Forces elements of `l` until `f(x)` returns `Some(v)`.
+    ///
+    pub def findMap(f: a -> Option[b] & ef, l: LazyList[a]): Option[b] & ef = match l {
+        case ENil         => None
+        case ECons(x, xs) => match f(x) {
+            case None    => findMap(f, xs)
+            case Some(v) => Some(v)
+        }
+        case LCons(x, xs) => match f(x) {
+            case None    => findMap(f, force xs)
+            case Some(v) => Some(v)
+        }
+        case LList(xs)    => findMap(f, force xs)
+    }
+
+    ///
     /// Returns `l` as an `Array`.
     ///
     /// Forces the entire list `l`.
@@ -1037,90 +1121,6 @@ namespace LazyList {
         case ECons(x, xs) => toSetAcc(      xs, Set.insert(x, acc))
         case LCons(x, xs) => toSetAcc(force xs, Set.insert(x, acc))
         case LList(xs)    => toSetAcc(force xs, acc)
-    }
-
-    ///
-    /// Returns the first non-None result of applying the partial function `f` to each element of `l`.
-    ///
-    /// Returns `None` if every element `f(x)` of `l` is `None`.
-    ///
-    /// Forces elements of `l` until `f(x)` returns `Some(v)`.
-    ///
-    pub def findMap(f: a -> Option[b] & ef, l: LazyList[a]): Option[b] & ef = match l {
-        case ENil         => None
-        case ECons(x, xs) => match f(x) {
-            case None    => findMap(f, xs)
-            case Some(v) => Some(v)
-        }
-        case LCons(x, xs) => match f(x) {
-            case None    => findMap(f, force xs)
-            case Some(v) => Some(v)
-        }
-        case LList(xs)    => findMap(f, force xs)
-    }
-
-    ///
-    /// Collects the results of applying the partial function `f` to every element in `l`.
-    ///
-    /// Whether `f` is applied eagerly or lazily depends on its purity:
-    ///
-    /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
-    /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
-    ///
-    pub def filterMap(f: a -> Option[b] & ef, l: LazyList[a]): LazyList[b] & ef =
-        reifyEff(f) {
-            case Pure(g) => filterMapL(g, l)
-            case _       => filterMapE(f, l)
-        }
-
-    ///
-    /// Collects the results of applying the partial function `f` to every element in `l`.
-    ///
-    /// Applies `f` lazily (i.e. the tail is not forced).
-    ///
-    def filterMapL(f: a -> Option[b], l: LazyList[a]): LazyList[b] =
-        LList(lazy filterMapLHelper(f, l))
-
-    ///
-    /// Helper function for `filterMapL`.
-    ///
-    def filterMapLHelper(f: a -> Option[b], l: LazyList[a]): LazyList[b] = match l {
-        case ENil         => ENil
-        case ECons(x, xs) =>
-            match f(x) {
-                case None    => filterMapLHelper(f, xs)
-                case Some(v) => LCons(v, lazy filterMapLHelper(f, xs))
-            }
-        case LCons(x, xs) =>
-            match f(x) {
-                case None    => filterMapLHelper(f, force xs)
-                case Some(v) => LCons(v, lazy filterMapLHelper(f, force xs))
-            }
-        case LList(xs)    => LList(lazy filterMapLHelper(f, force xs))
-    }
-
-    ///
-    /// Collects the results of applying the partial function `f` to every element in `l`.
-    ///
-    /// Applies `f` eagerly (i.e. the entire list `l` is forced).
-    ///
-    def filterMapE(f: a -> Option[b] & ef, l: LazyList[a]): LazyList[b] & ef =
-        filterMapEAcc(f, l, ks -> ks)
-
-    ///
-    /// Helper function for `filterMapE`.
-    ///
-    def filterMapEAcc(f: a -> Option[b] & ef, l: LazyList[a], k: LazyList[b] -> LazyList[b]): LazyList[b] & ef = match l {
-        case ENil         => k(ENil)
-        case ECons(x, xs) => match f(x) {
-            case None    => filterMapEAcc(f, xs, k)
-            case Some(v) => filterMapEAcc(f, xs, ks -> k(ECons(v, ks)))
-        }
-        case LCons(x, xs) => match f(x) {
-            case None    => filterMapEAcc(f, force xs, k)
-            case Some(v) => filterMapEAcc(f, force xs, ks -> k(ECons(v, ks)))
-        }
-        case LList(xs)    => filterMapEAcc(f, force xs, k)
     }
 
     ///
