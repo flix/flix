@@ -262,6 +262,30 @@ namespace LazyList {
             LCons(b, lazy rangeHelper(b + 1, e))
 
     ///
+    /// Returns an infinite LazyList of repeating `x`s.
+    ///
+    pub def repeat(x: a): LazyList[a] =
+        LList(lazy repeatHelper(x))
+
+    ///
+    /// Helper function for `repeat`.
+    ///
+    def repeatHelper(x: a): LazyList[a] =
+        LCons(x, lazy repeatHelper(x))
+
+    ///
+    /// Returns an infinite sequence of integers starting from and including `n`.
+    ///
+    pub def from(n: Int32): LazyList[Int32] =
+        LList(lazy fromHelper(n))
+
+    ///
+    /// Helper function for `from`.
+    ///
+    def fromHelper(n: Int32): LazyList[Int32] =
+        LCons(n, lazy fromHelper(n + 1))
+
+    ///
     /// Returns the first `n` elements of `l`.
     ///
     /// Does not force the tail of `l`.
@@ -607,30 +631,6 @@ namespace LazyList {
         case LCons(x, xs) => if (f(x)) forall(f, force xs) else false
         case LList(xs)    => forall(f, force xs)
     }
-
-    ///
-    /// Returns an infinite LazyList of repeating `x`s.
-    ///
-    pub def repeat(x: a): LazyList[a] =
-        LList(lazy repeatHelper(x))
-
-    ///
-    /// Helper function for `repeat`.
-    ///
-    def repeatHelper(x: a): LazyList[a] =
-        LCons(x, lazy repeatHelper(x))
-
-    ///
-    /// Returns an infinite sequence of integers starting from and including `n`.
-    ///
-    pub def from(n: Int32): LazyList[Int32] =
-        LList(lazy fromHelper(n))
-
-    ///
-    /// Helper function for `from`.
-    ///
-    def fromHelper(n: Int32): LazyList[Int32] =
-        LCons(n, lazy fromHelper(n + 1))
 
     ///
     /// Returns `Some(x)` if `x` is the last element of `l`.
