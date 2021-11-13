@@ -657,28 +657,6 @@ namespace LazyList {
     }
 
     ///
-    /// Returns the first `n` elements of `l`.
-    ///
-    /// Does not force the tail of `l`.
-    ///
-    pub def take(n: Int32, l: LazyList[a]): LazyList[a] =
-        LList(lazy takeHelper(n, l))
-
-    ///
-    /// Helper function for `take`.
-    ///
-    def takeHelper(n: Int32, l: LazyList[a]): LazyList[a] =
-        if (n <= 0)
-            ENil
-        else
-            match l {
-                case ENil         => ENil
-                case ECons(x, xs) => LCons(x, lazy takeHelper(n - 1,       xs))
-                case LCons(x, xs) => LCons(x, lazy takeHelper(n - 1, force xs))
-                case LList(xs)    => LList(   lazy takeHelper(n,     force xs))
-            }
-
-    ///
     /// Returns a lazy list of every element in `l` that satisfies the predicate `f`.
     ///
     /// Whether `f` is applied eagerly or lazily depends on its purity:
@@ -721,6 +699,28 @@ namespace LazyList {
         case LCons(x, xs) => if (f(x)) filterEAcc(f, force xs, ks -> k(ECons(x, ks))) else filterEAcc(f, force xs, k)
         case LList(xs)    => filterEAcc(f, force xs, k)
     }
+
+    ///
+    /// Returns the first `n` elements of `l`.
+    ///
+    /// Does not force the tail of `l`.
+    ///
+    pub def take(n: Int32, l: LazyList[a]): LazyList[a] =
+        LList(lazy takeHelper(n, l))
+
+    ///
+    /// Helper function for `take`.
+    ///
+    def takeHelper(n: Int32, l: LazyList[a]): LazyList[a] =
+        if (n <= 0)
+            ENil
+        else
+            match l {
+                case ENil         => ENil
+                case ECons(x, xs) => LCons(x, lazy takeHelper(n - 1,       xs))
+                case LCons(x, xs) => LCons(x, lazy takeHelper(n - 1, force xs))
+                case LList(xs)    => LList(   lazy takeHelper(n,     force xs))
+            }
 
     ///
     /// Returns `l` as an `Array`.
