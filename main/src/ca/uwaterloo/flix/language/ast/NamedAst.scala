@@ -388,7 +388,7 @@ object NamedAst {
 
   case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: NamedAst.Type, loc: SourceLocation)
 
-  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: NamedAst.Expression)
+  case class CatchRule(sym: Symbol.VarSym, className: String, exp: NamedAst.Expression)
 
   case class ChoiceRule(pat: List[NamedAst.ChoicePattern], exp: NamedAst.Expression)
 

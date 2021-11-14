@@ -834,11 +834,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         case NamedAst.Expression.TryCatch(exp, rules, loc) =>
           val rulesVal = traverse(rules) {
-            case NamedAst.CatchRule(sym, clazz, body) =>
-              val exceptionType = Type.mkNative(clazz, loc)
-              visit(body, tenv0 + (sym -> exceptionType)) map {
-                case b => ResolvedAst.CatchRule(sym, clazz, b)
-              }
+            case NamedAst.CatchRule(sym, className, body) =>
+              for {
+                clazz <- lookupJvmClass(className, sym.loc)
+                exceptionType = Type.mkNative(clazz, loc)
+                b <- visit(body, tenv0 + (sym -> exceptionType))
+              } yield ResolvedAst.CatchRule(sym, clazz, b)
           }
 
           for {
