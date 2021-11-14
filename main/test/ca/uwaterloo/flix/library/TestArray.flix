@@ -1742,7 +1742,7 @@ def isSuffixOf13(): Bool & Impure = Array.isSuffixOf([1,2,3], [89,11,1,2,3])
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def testEq01(): Bool & Impure = ([] : Array[Int]) == ([] : Array[Int])
+def testEq01(): Bool & Impure = ([] : Array[Int32]) == ([] : Array[Int32])
 
 @test
 def testEq02(): Bool & Impure = [1] != []
@@ -1770,7 +1770,7 @@ def testEq08(): Bool & Impure = [1,2,3,4] == [1,2,3,4]
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def testCompare01(): Bool & Impure = ([] : Array[Int]) <=> ([] : Array[Int]) == EqualTo
+def testCompare01(): Bool & Impure = ([] : Array[Int32]) <=> ([] : Array[Int32]) == EqualTo
 
 @test
 def testCompare02(): Bool & Impure = [1] <=> [] == GreaterThan
@@ -1861,7 +1861,7 @@ def foldRight04(): Bool & Impure = Array.foldRight((e, i) -> (i - e)*(e rem 2 + 
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def reduceLeft01(): Bool & Impure = Array.reduceLeft((a, b) -> a-b, []: Array[Int]) == None
+def reduceLeft01(): Bool & Impure = Array.reduceLeft((a, b) -> a-b, []: Array[Int32]) == None
 
 @test
 def reduceLeft02(): Bool & Impure = Array.reduceLeft((a, b) -> a-b, [1]) == Some(1)
@@ -1880,7 +1880,7 @@ def reduceLeft05(): Bool & Impure = Array.reduceLeft((a, b) -> a-b, [1,2,3,4]) =
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def reduceRight01(): Bool & Impure = Array.reduceRight((a, b) -> a-b, []: Array[Int]) == None
+def reduceRight01(): Bool & Impure = Array.reduceRight((a, b) -> a-b, []: Array[Int32]) == None
 
 @test
 def reduceRight02(): Bool & Impure = Array.reduceRight((a, b) -> a-b, [1]) == Some(1)
