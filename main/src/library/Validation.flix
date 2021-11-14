@@ -23,7 +23,7 @@ pub enum Validation[t, e] with Eq, Order, ToString {
 }
 
 instance Hash[Validation[t, e]] with Hash[t], Hash[e] {
-    pub def hash(x: Validation[t, e]): Int = match x {
+    pub def hash(x: Validation[t, e]): Int32 = match x {
         case Success(v) => 5407 + 197 * Hash.hash(v)
         case Failure(v) => 5413 + 199 * Hash.hash(v)
     }
