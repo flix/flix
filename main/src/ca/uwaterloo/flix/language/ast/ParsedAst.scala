@@ -1229,6 +1229,9 @@ object ParsedAst {
         */
       case class Filter(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Argument], sp2: SourcePosition) extends ParsedAst.Predicate.Body
 
+      // TODO: DOC
+      case class Loop(sp1: SourcePosition, pats: Seq[Name.Ident], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Predicate.Body
+
     }
 
   }
