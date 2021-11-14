@@ -123,7 +123,7 @@ namespace Nel {
     /// Returns the length of `xs`.
     ///
     @Time(length(xs)) @Space(1)
-    pub def length(xs: Nel[a]): Int = match xs {
+    pub def length(xs: Nel[a]): Int32 = match xs {
         case Nel(_, l) => 1 + List.length(l)
     }
 

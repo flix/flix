@@ -92,7 +92,7 @@ namespace Test/Exp/Concurrency/Unbuffered {
 
     @test
     def testUnbufferedChannelPutGet16(): Bool & Impure =
-        let c1 = chan Channel[Int] 0;
+        let c1 = chan Channel[Int32] 0;
         let c2 = chan Int 0;
         spawn c1 <- c2;
         spawn c2 <- 42;
@@ -189,8 +189,8 @@ namespace Test/Exp/Concurrency/Unbuffered {
         c <- [1, 2, 3]
 
     @test
-    def testUnbufferedChannelGetPut16(): Channel[Int] & Impure =
-        let c1 = chan Channel[Int] 0;
+    def testUnbufferedChannelGetPut16(): Channel[Int32] & Impure =
+        let c1 = chan Channel[Int32] 0;
         let c2 = chan Int 0;
         spawn <- <- c1;
         spawn c1 <- c2;
