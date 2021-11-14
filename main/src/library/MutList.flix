@@ -680,6 +680,12 @@ namespace MutList {
         Array.slice(0, deref l, deref a)
 
     ///
+    /// Returns the mutable list `xs` as a chain.
+    ///
+    pub def toChain(xs: MutList[a]): Chain[a] & Impure =
+        foldLeft((ac, x) -> Chain.snoc(ac, x), Chain.empty(), xs)
+
+    ///
     /// Returns `true` if the mutable lists `v1` and `v2` have the same elements, i.e. are structurally equal.
     ///
     pub def sameElements(v1: MutList[a], v2: MutList[a]): Bool & Impure with Eq[a] =

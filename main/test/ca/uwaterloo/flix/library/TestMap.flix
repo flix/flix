@@ -1894,6 +1894,26 @@ def query18(): Bool =
     def toLazyList03(): Bool =
         Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0) |> Map.toLazyList |> LazyList.toMap == Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0)
 
+    /////////////////////////////////////////////////////////////////////////////
+    // toChain                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toChain01(): Bool =
+        Map.toChain(Map#{}: Map[Int, Int]) == Chain.empty(): Chain[(Int, Int)]
+
+    @test
+    def toChain02(): Bool =
+        Map.toChain(Map#{1 -> 1}) == Chain.singleton((1, 1))
+
+    @test
+    def toChain03(): Bool =
+        Map.toChain(Map#{1 -> 1, 2 -> 2}) == List.toChain((1, 1) :: (2, 2) :: Nil)
+
+    @test
+    def toChain04(): Bool =
+        Map.toChain(Map#{1 -> 1, 2 -> 2, 3 -> 3}) == List.toChain((1, 1) :: (2, 2) :: (3, 3) :: Nil)
+
 
     /////////////////////////////////////////////////////////////////////////////
     // toIterator                                                              //
