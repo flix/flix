@@ -48,6 +48,11 @@ object JvmName {
   val ConstructorMethod: String = "<init>"
 
   /**
+    * The Flix reserved delimiter for generated jvm classes.
+    */
+  val Delimiter: String = "$"
+
+  /**
    * Returns the JvmName of the given string `s`.
    */
   def mk(s: String): JvmName = {
@@ -59,11 +64,6 @@ object JvmName {
    * The Flix Context class.
    */
   val Context: JvmName = JvmName(Nil, "Context")
-
-  /**
-   * The Flix Unit class.
-   */
-  val Unit: JvmName = JvmName(Nil, "Unit")
 
   /**
    * The `java.math.BigInteger` name.
@@ -162,6 +162,11 @@ object JvmName {
   val RuntimeException: JvmName = JvmName(List("java", "lang"), "RuntimeException")
 
   /**
+    * The Flix Unit class.
+    */
+  val Unit: JvmName = JvmName(List("dev", "flix", "runtime"), "Unit")
+
+  /**
    * The `dev.flix.runtime.FlixError` name.
    */
   val FlixError: JvmName = JvmName(List("dev", "flix", "runtime"), "FlixError")
@@ -206,7 +211,7 @@ object JvmName {
    * Get the class type for the cell with subtype `subType`
    */
   def getCellClassType(subType: JvmType): JvmType.Reference = {
-    val name = "Ref" + "$" + JvmOps.stringify(subType)
+    val name = "Ref" + Delimiter + JvmOps.stringify(subType)
 
     // The type resides in the ca.uwaterloo.flix package.
     JvmType.Reference(JvmName(Nil, name))

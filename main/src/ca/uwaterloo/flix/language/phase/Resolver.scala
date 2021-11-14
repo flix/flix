@@ -143,7 +143,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     *   - a list of the aliases in a processing order,
     *       such that any alias only depends on those earlier in the list
     */
-  private def resolveTypeAliases(aliases0: Map[Name.NName, Map[String, NamedAst.TypeAlias]], root: NamedAst.Root): Validation[(Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], List[Symbol.TypeAliasSym]), ResolutionError] = {
+  private def resolveTypeAliases(aliases0: Map[Name.NName, Map[String, NamedAst.TypeAlias]], root: NamedAst.Root)(implicit flix: Flix): Validation[(Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], List[Symbol.TypeAliasSym]), ResolutionError] = {
 
     /**
       * Partially resolves the type alias.
@@ -834,11 +834,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         case NamedAst.Expression.TryCatch(exp, rules, loc) =>
           val rulesVal = traverse(rules) {
-            case NamedAst.CatchRule(sym, clazz, body) =>
-              val exceptionType = Type.mkNative(clazz, loc)
-              visit(body, tenv0 + (sym -> exceptionType)) map {
-                case b => ResolvedAst.CatchRule(sym, clazz, b)
-              }
+            case NamedAst.CatchRule(sym, className, body) =>
+              for {
+                clazz <- lookupJvmClass(className, sym.loc)
+                exceptionType = Type.mkNative(clazz, loc)
+                b <- visit(body, tenv0 + (sym -> exceptionType))
+              } yield ResolvedAst.CatchRule(sym, clazz, b)
           }
 
           for {
@@ -1121,7 +1122,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     /**
       * Performs name resolution on the given formal parameter `fparam0` in the given namespace `ns0`.
       */
-    def resolve(fparam0: NamedAst.FormalParam, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.FormalParam, ResolutionError] = {
+    def resolve(fparam0: NamedAst.FormalParam, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.FormalParam, ResolutionError] = {
       for {
         t <- resolveType(fparam0.tpe, taenv, ns0, root)
       } yield ResolvedAst.FormalParam(fparam0.sym, fparam0.mod, t, fparam0.loc)
@@ -1153,7 +1154,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Performs name resolution on the given formal parameters `fparams0`.
     */
-  def resolveFormalParams(fparams0: List[NamedAst.FormalParam], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root): Validation[List[ResolvedAst.FormalParam], ResolutionError] = {
+  def resolveFormalParams(fparams0: List[NamedAst.FormalParam], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[List[ResolvedAst.FormalParam], ResolutionError] = {
     traverse(fparams0)(fparam => Params.resolve(fparam, taenv, ns0, root))
   }
 
@@ -1172,7 +1173,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Performs name resolution on the given scheme `sc0`.
     */
-  def resolveScheme(sc0: NamedAst.Scheme, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.Scheme, ResolutionError] = {
+  def resolveScheme(sc0: NamedAst.Scheme, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Scheme, ResolutionError] = {
     for {
       base <- resolveType(sc0.base, taenv, ns0, root)
       tconstrs <- sequence(sc0.tconstrs.map(resolveTypeConstraint(_, taenv, ns0, root)))
@@ -1182,7 +1183,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Performs name resolution on the given type constraint `tconstr0`.
     */
-  def resolveTypeConstraint(tconstr0: NamedAst.TypeConstraint, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.TypeConstraint, ResolutionError] = tconstr0 match {
+  def resolveTypeConstraint(tconstr0: NamedAst.TypeConstraint, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.TypeConstraint, ResolutionError] = tconstr0 match {
     case NamedAst.TypeConstraint(clazz0, tpe0, loc) =>
       val classVal = lookupClass(clazz0, ns0, root)
       val tpeVal = resolveType(tpe0, taenv, ns0, root)
@@ -1195,7 +1196,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Performs name resolution on the given superclass constraint `tconstr0`.
     */
-  def resolveSuperClass(tconstr0: NamedAst.TypeConstraint, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.TypeConstraint, ResolutionError] = tconstr0 match {
+  def resolveSuperClass(tconstr0: NamedAst.TypeConstraint, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.TypeConstraint, ResolutionError] = tconstr0 match {
     case NamedAst.TypeConstraint(clazz0, tpe0, loc) =>
       val classVal = lookupClassForImplementation(clazz0, ns0, root)
       val tpeVal = resolveType(tpe0, taenv, ns0, root)
@@ -1462,7 +1463,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     *
     * Type aliases are given temporary placeholders.
     */
-  private def semiResolveType(tpe0: NamedAst.Type, ns0: Name.NName, root: NamedAst.Root): Validation[Type, ResolutionError] = tpe0 match {
+  private def semiResolveType(tpe0: NamedAst.Type, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[Type, ResolutionError] = tpe0 match {
     case NamedAst.Type.Var(tvar, loc) => tvar.toSuccess
 
     case NamedAst.Type.Unit(loc) => Type.mkUnit(loc).toSuccess
@@ -1674,7 +1675,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Performs name resolution on the given type `tpe0` in the given namespace `ns0`.
     */
-  def resolveType(tpe0: NamedAst.Type, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root): Validation[Type, ResolutionError] = {
+  def resolveType(tpe0: NamedAst.Type, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[Type, ResolutionError] = {
     for {
       t <- semiResolveType(tpe0, ns0, root)
       tpe <- finishResolveType(t, taenv)
@@ -1969,8 +1970,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Returns the class reflection object for the given `className`.
     */
-  private def lookupJvmClass(className: String, loc: SourceLocation): Validation[Class[_], ResolutionError] = try {
-    Class.forName(className).toSuccess
+  private def lookupJvmClass(className: String, loc: SourceLocation)(implicit flix: Flix): Validation[Class[_], ResolutionError] = try {
+    // Don't initialize the class; we don't want to execute static initializers.
+    val initialize = false
+    Class.forName(className, initialize, flix.jarLoader).toSuccess
   } catch {
     case ex: ClassNotFoundException => ResolutionError.UndefinedJvmClass(className, loc).toFailure
   }
@@ -1978,7 +1981,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Returns the constructor reflection object for the given `className` and `signature`.
     */
-  private def lookupJvmConstructor(className: String, signature: List[Type], loc: SourceLocation): Validation[Constructor[_], ResolutionError] = {
+  private def lookupJvmConstructor(className: String, signature: List[Type], loc: SourceLocation)(implicit flix: Flix): Validation[Constructor[_], ResolutionError] = {
     // Lookup the class and signature.
     flatMapN(lookupJvmClass(className, loc), lookupSignature(signature, loc)) {
       case (clazz, sig) => try {
@@ -1994,7 +1997,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Returns the method reflection object for the given `className`, `methodName`, and `signature`.
     */
-  private def lookupJvmMethod(className: String, methodName: String, signature: List[Type], static: Boolean, loc: SourceLocation): Validation[Method, ResolutionError] = {
+  private def lookupJvmMethod(className: String, methodName: String, signature: List[Type], static: Boolean, loc: SourceLocation)(implicit flix: Flix): Validation[Method, ResolutionError] = {
     // Lookup the class and signature.
     flatMapN(lookupJvmClass(className, loc), lookupSignature(signature, loc)) {
       case (clazz, sig) => try {
@@ -2017,7 +2020,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Returns the field reflection object for the given `className` and `fieldName`.
     */
-  private def lookupJvmField(className: String, fieldName: String, static: Boolean, loc: SourceLocation): Validation[Field, ResolutionError] = {
+  private def lookupJvmField(className: String, fieldName: String, static: Boolean, loc: SourceLocation)(implicit flix: Flix): Validation[Field, ResolutionError] = {
     flatMapN(lookupJvmClass(className, loc)) {
       case clazz => try {
         // Lookup the field.
@@ -2039,7 +2042,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   /**
     * Performs name resolution on the given `signature`.
     */
-  private def lookupSignature(signature: List[Type], loc: SourceLocation): Validation[List[Class[_]], ResolutionError] = {
+  private def lookupSignature(signature: List[Type], loc: SourceLocation)(implicit flix: Flix): Validation[List[Class[_]], ResolutionError] = {
     traverse(signature)(getJVMType(_, loc))
   }
 
@@ -2050,7 +2053,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
     *
     * An array type is mapped to the corresponding array type.
     */
-  private def getJVMType(tpe: Type, loc: SourceLocation): Validation[Class[_], ResolutionError] = tpe.typeConstructor match {
+  private def getJVMType(tpe: Type, loc: SourceLocation)(implicit flix: Flix): Validation[Class[_], ResolutionError] = tpe.typeConstructor match {
     case None =>
       ResolutionError.IllegalType(tpe, loc).toFailure
 
