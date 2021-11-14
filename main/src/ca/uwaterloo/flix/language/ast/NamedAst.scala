@@ -294,6 +294,8 @@ object NamedAst {
 
       case class Guard(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Predicate.Body
 
+      case class Loop(syms: List[Symbol.VarSym], exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Predicate.Body
+
     }
 
   }

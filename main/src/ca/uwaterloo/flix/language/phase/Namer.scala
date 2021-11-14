@@ -1029,9 +1029,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       } yield NamedAst.Predicate.Body.Guard(e, loc)
 
     case WeededAst.Predicate.Body.Loop(idents, exp, loc) =>
+      val varSyms = idents.map(ident => headEnv0(ident.name))
       for {
         e <- visitExp(exp, outerEnv ++ headEnv0 ++ ruleEnv0, uenv0, tenv0)
-      } yield NamedAst.Predicate.Body.Guard(e, loc)
+      } yield NamedAst.Predicate.Body.Loop(varSyms, e, loc)
 
   }
 
@@ -1048,8 +1049,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Returns the identifiers that are visible in the rule scope by the given body predicate `p0`.
     */
   private def visibleInRuleScope(p0: WeededAst.Predicate.Body): List[Name.Ident] = p0 match {
-    case WeededAst.Predicate.Body.Atom(_, den, polarity, terms, loc) => terms.flatMap(freeVars)
-    case WeededAst.Predicate.Body.Guard(exp, loc) => Nil
+    case WeededAst.Predicate.Body.Atom(_, _, _, terms, _) => terms.flatMap(freeVars)
+    case WeededAst.Predicate.Body.Guard(_, _) => Nil
+    case WeededAst.Predicate.Body.Loop(_, _, _) =>  Nil
   }
 
   /**
