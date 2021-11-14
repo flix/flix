@@ -23,8 +23,8 @@ namespace TestChain {
 
     @test
     def empty01(): Bool =
-        let xs: Chain[Int32] = Chain.empty();
-        Chain.toList(xs) == Nil
+        let c: Chain[Int32] = Chain.empty();
+        Chain.toList(c) == Nil
 
     /////////////////////////////////////////////////////////////////////////////
     // singleton                                                               //
@@ -32,13 +32,13 @@ namespace TestChain {
 
     @test
     def singleton01(): Bool =
-        let xs = Chain.singleton(1);
-        Chain.toList(xs) == 1 :: Nil
+        let c = Chain.singleton(1);
+        Chain.toList(c) == 1 :: Nil
 
     @test
     def singleton02(): Bool =
-        let xs: Chain[Option[Int32]] = Chain.singleton(None);
-        Chain.toList(xs) == None :: Nil
+        let c: Chain[Option[Int32]] = Chain.singleton(None);
+        Chain.toList(c) == None :: Nil
 
     /////////////////////////////////////////////////////////////////////////////
     // ap                                                                      //
@@ -1294,8 +1294,8 @@ namespace TestChain {
 
     @test
     def toArray01(): Bool & Impure =
-        let xs: Chain[Int32] = Chain.empty();
-        let a: Array[Int32] = Chain.toArray(xs);
+        let c: Chain[Int32] = Chain.empty();
+        let a: Array[Int32] = Chain.toArray(c);
         Array.sameElements(a, []: Array[Int32])
 
     @test
@@ -1317,8 +1317,8 @@ namespace TestChain {
     // sort                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    def testSortVsSortWith(xs: Chain[Int32]) : Bool =
-        Chain.sort(xs) == Chain.sortWith(cmp, xs)
+    def testSortVsSortWith(c: Chain[Int32]) : Bool =
+        Chain.sort(c) == Chain.sortWith(cmp, c)
 
     @test
     def sort01(): Bool = testSortVsSortWith(Chain.empty(): Chain[Int32])
