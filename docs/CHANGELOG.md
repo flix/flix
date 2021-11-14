@@ -2,6 +2,20 @@
 
 HEAD:
 
+Version 0.25.0:
+
+- Added support for semantic tokens (thanks Magnus, Jacob, and Matthew!)
+- Added support for inclusion of external JARs (thanks Matthew!)
+- Added Monad type class (thanks Felix!)
+- Added examples with derive (thanks Matthew!)
+- Added experimental support for reifyEff (thanks Magnus!)
+- Updates to String functions (thanks Nina!)
+- Updates to SemiGroup (thanks Nina!)
+- Updates to Koans (thanks Jonathan!)
+- Tweaks to code generation (thanks Jonathan!)
+- Reduced memory usage (thanks Magnus!)
+- Several bug fixes (thanks everyone!)
+
 Version 0.24.0:
 - Added support for schema rows (thanks Matthew!)
 - Added support for labelled records (thanks Matthew!)
