@@ -394,6 +394,8 @@ object TypedAst {
 
       case class Guard(exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Predicate.Body
 
+      case class Loop(varSyms: List[Symbol.VarSym], exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Predicate.Body
+
     }
 
   }
