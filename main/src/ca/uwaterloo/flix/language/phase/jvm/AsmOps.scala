@@ -541,7 +541,7 @@ object AsmOps {
     mv.visitInsn(ACONST_NULL)
 
     // Construct the proxy object.
-    mv.visitMethodInsn(INVOKESTATIC, JvmName.ProxyObject.toInternalName, "of", "(Ljava/lang/Object;Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;)Lflix/runtime/ProxyObject;", false)
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.ProxyObject.toInternalName, "of", s"(Ljava/lang/Object;Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;)L${JvmName.ProxyObject.toInternalName};", false)
   }
 
   /**
