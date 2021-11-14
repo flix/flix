@@ -23,7 +23,7 @@ import org.objectweb.asm.{ClassWriter, Opcodes}
 
 class ClassMaker(visitor: ClassWriter) {
   private def makeField(fieldName: String, fieldType: JvmType, v: Visibility, f: Finality, i: Instancing): Unit = {
-    val modifier = ClassMaker.valueOf(v) + ClassMaker.valueOf(f) + ClassMaker.valueOf(i)
+    val modifier = v.toInt + f.toInt + i.toInt
     val field = visitor.visitField(modifier, fieldName, fieldType.toDescriptor, null, null)
     field.visitEnd()
   }
@@ -40,7 +40,7 @@ class ClassMaker(visitor: ClassWriter) {
     mkMethod(f, JvmName.StaticConstructorMethod, MethodDescriptor.NothingToVoid, Default, Implementable, Static)
 
   def mkMethod(ins: BytecodeInstructions.InstructionSet, methodName: String, descriptor: MethodDescriptor, v: Visibility, f: Finality, i: Instancing): Unit = {
-    val m = ClassMaker.valueOf(v) + ClassMaker.valueOf(f) + ClassMaker.valueOf(i)
+    val m = v.toInt + f.toInt + i.toInt
     val mv = visitor.visitMethod(m, methodName, descriptor.toString, null, null)
     mv.visitCode()
     ins(new BytecodeInstructions.F(mv))
@@ -56,25 +56,9 @@ class ClassMaker(visitor: ClassWriter) {
 
 object ClassMaker {
 
-  private def valueOf(v: Visibility): Int = v match {
-    case Private => Opcodes.ACC_PRIVATE
-    case Default => 0
-    case Public => Opcodes.ACC_PUBLIC
-  }
-
-  private def valueOf(f: Finality): Int = f match {
-    case Final => Opcodes.ACC_FINAL
-    case Implementable => 0
-  }
-
-  private def valueOf(i: Instancing): Int = i match {
-    case Static => Opcodes.ACC_STATIC
-    case Instanced => 0
-  }
-
   private def mkClassMaker(className: JvmName, v: Visibility, f: Finality, superClass: JvmName, interfaces: List[JvmName])(implicit flix: Flix): ClassMaker = {
     val cw = AsmOps.mkClassWriter()
-    val m = valueOf(f) + valueOf(v)
+    val m = f.toInt + v.toInt
     cw.visit(AsmOps.JavaVersion, m, className.toInternalName, null, superClass.toInternalName, interfaces.map(_.toInternalName).toArray)
     cw.visitSource(className.toInternalName, null)
     new ClassMaker(cw)
@@ -84,32 +68,58 @@ object ClassMaker {
     mkClassMaker(className, v, f, superClass, interfaces)
   }
 
-  sealed trait Visibility
+  sealed trait Visibility {
+    def toInt: Int
+  }
 
-  case object Private extends Visibility
+  case object Private extends Visibility {
+    override val toInt: Int = Opcodes.ACC_PRIVATE
+  }
 
-  case object Default extends Visibility
+  case object Default extends Visibility {
+    override val toInt: Int = 0
+  }
 
-  case object Public extends Visibility
-
-
-  sealed trait Finality
-
-  case object Final extends Finality
-
-  case object Implementable extends Finality
-
-
-  sealed trait Instancing
-
-  case object Static extends Instancing
-
-  case object Instanced extends Instancing
+  case object Public extends Visibility {
+    override val toInt: Int = Opcodes.ACC_PUBLIC
+  }
 
 
-  sealed trait Abstraction
+  sealed trait Finality {
+    def toInt: Int
+  }
 
-  case object Abstract extends Abstraction
+  case object Final extends Finality {
+    override val toInt: Int = Opcodes.ACC_FINAL
+  }
 
-  case object Implemented extends Abstraction
+  case object Implementable extends Finality {
+    override val toInt: Int = 0
+  }
+
+
+  sealed trait Instancing {
+    def toInt: Int
+  }
+
+  case object Static extends Instancing {
+    override val toInt: Int = Opcodes.ACC_STATIC
+  }
+
+  case object Instanced extends Instancing {
+    override val toInt: Int = 0
+  }
+
+
+  sealed trait Abstraction {
+    def toInt: Int
+  }
+
+  case object Abstract extends Abstraction {
+    override val toInt: Int = Opcodes.ACC_ABSTRACT
+  }
+
+  case object Implemented extends Abstraction {
+    override val toInt: Int = 0
+  }
 }
