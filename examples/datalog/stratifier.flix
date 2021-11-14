@@ -35,21 +35,21 @@ namespace Stratifier {
         let removeBool = triple -> match triple {case (a, _, b) => (a, b)};
         let facts = project map(removeBool, pos), map(removeBool, neg) into PositiveDependencyEdge, NegativeDependencyEdge;
         let rules = #{
-            Stratum(pd; 1) :- PositiveDependencyEdge(pd, _).
-            Stratum(pd; 1) :- PositiveDependencyEdge(_, pd).
-            Stratum(pd; 1) :- NegativeDependencyEdge(pd, _).
-            Stratum(pd; 1) :- NegativeDependencyEdge(_, pd).
+            Stratum(pd; 0) :- PositiveDependencyEdge(pd, _).
+            Stratum(pd; 0) :- PositiveDependencyEdge(_, pd).
+            Stratum(pd; 0) :- NegativeDependencyEdge(pd, _).
+            Stratum(pd; 0) :- NegativeDependencyEdge(_, pd).
             Stratum(ph; max(pbs, phs)) :- PositiveDependencyEdge(ph, pb), Stratum(pb; pbs), Stratum(ph; phs).
             Stratum(ph; max(pbs + 1, phs)) :-
                 NegativeDependencyEdge(ph, pb),
                 Stratum(pb; pbs),
                 Stratum(ph; phs),
-                if pbs <= numberOfPredicates.
+                if pbs < numberOfPredicates.
                 // allow one level of strata above the bound for a stratification check later
         };
         let solution = solve facts, rules;
         let m = query solution select (pd, s) from Stratum(pd; s) |> toMap;
-        let notStratified = Map.exists((_, stratum) -> stratum > numberOfPredicates, m);
+        let notStratified = Map.exists((_, stratum) -> stratum >= numberOfPredicates, m);
         if (notStratified)
             None
         else
@@ -93,10 +93,27 @@ namespace Stratifier {
             case Some(res) => ToString.toString(res)
         };
         "Output:\n${rs}\nExpected:\nNot Stratified" |> println
+
+    pub def example03(): Unit & Impure =
+        println("example03");
+        // A :- not B.
+        let p = Program(
+            Constraint(HeadAtom(Atom(PredicateSymbol("A"))), Negative(Atom(PredicateSymbol("B"))) :: Nil) ::
+            Nil
+        );
+        let result = ullman(p, 2);
+        let expected = "Map#{PredicateSymbol(A) -> 1, PredicateSymbol(B) -> 0}";
+        let rs = match result {
+            case None => "Not Stratified"
+            case Some(res) => ToString.toString(res)
+        };
+        "Output:\n${rs}\nExpected:\n${expected}" |> println
 }
 
 def main(_args: Array[String]): Int32 & Impure =
         Stratifier.example01();
         println("");
         Stratifier.example02();
+        println("");
+        Stratifier.example03();
         0
