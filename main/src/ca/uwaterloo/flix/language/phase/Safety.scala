@@ -277,6 +277,8 @@ object Safety extends Phase[Root, Root] {
       checkBodyAtomPredicate(polarity, terms, posVars, quantVars, loc)
 
     case Predicate.Body.Guard(exp, _) => visitExp(exp)
+
+    case Predicate.Body.Loop(_, exp, _) => visitExp(exp)
   }
 
   /**
@@ -323,6 +325,8 @@ object Safety extends Phase[Root, Root] {
     }
 
     case Predicate.Body.Guard(_, _) => Set.empty
+
+    case Predicate.Body.Loop(_, _, _) => Set.empty
   }
 
   /**
