@@ -25,6 +25,7 @@ import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt.TerminalContext
 
+import java.net.URI
 import java.nio.charset.Charset
 import java.nio.file.{Files, Path, Paths}
 import scala.collection.mutable
@@ -113,6 +114,7 @@ class Flix {
     "Benchmark.flix" -> LocalResource.get("/src/library/Benchmark.flix"),
     "Bool.flix" -> LocalResource.get("/src/library/Bool.flix"),
     "BigInt.flix" -> LocalResource.get("/src/library/BigInt.flix"),
+    "Chain.flix" -> LocalResource.get("/src/library/Chain.flix"),
     "Char.flix" -> LocalResource.get("/src/library/Char.flix"),
     "Choice.flix" -> LocalResource.get("/src/library/Choice.flix"),
     "Condition.flix" -> LocalResource.get("/src/library/Condition.flix"),
@@ -159,7 +161,7 @@ class Flix {
 
     "Validation.flix" -> LocalResource.get("/src/library/Validation.flix"),
 
-    "ChannelImpl.flix" -> LocalResource.get("/src/library/ChannelImpl.flix"),
+    "Channel.flix" -> LocalResource.get("/src/library/Channel.flix"),
     "Ticker.flix" -> LocalResource.get("/src/library/Ticker.flix"),
     "Timer.flix" -> LocalResource.get("/src/library/Timer.flix"),
     "Duration.flix" -> LocalResource.get("/src/library/Duration.flix"),
@@ -249,6 +251,11 @@ class Flix {
   val genSym = new GenSym()
 
   /**
+    * A class loader for loading external JARs.
+    */
+  val jarLoader = new ExternalJarLoader
+
+  /**
     * Adds the given string `s` to the list of strings to be parsed.
     */
   def addStr(s: String): Flix = {
@@ -287,13 +294,39 @@ class Flix {
     if (p == null)
       throw new IllegalArgumentException(s"'p' must be non-null.")
     if (!Files.exists(p))
-      throw new IllegalArgumentException(s"'$p' must a file.")
+      throw new IllegalArgumentException(s"'$p' must be a file.")
     if (!Files.isRegularFile(p))
-      throw new IllegalArgumentException(s"'$p' must a regular file.")
+      throw new IllegalArgumentException(s"'$p' must be a regular file.")
     if (!Files.isReadable(p))
-      throw new IllegalArgumentException(s"'$p' must a readable file.")
+      throw new IllegalArgumentException(s"'$p' must be a readable file.")
 
     paths += p
+    this
+  }
+
+  /**
+    * Adds the JAR file at path `p` to the class loader.
+    */
+  def addJar(p: String): Flix = {
+    val uri = new URI(p)
+    val path = Path.of(uri)
+    addJar(path)
+  }
+
+  /**
+    * Adds the JAR file at path `p` to the class loader.
+    */
+  def addJar(p: Path): Flix = {
+    if (p == null)
+      throw new IllegalArgumentException(s"'p' must be non-null.")
+    if (!Files.exists(p))
+      throw new IllegalArgumentException(s"'$p' must be a file.")
+    if (!Files.isRegularFile(p))
+      throw new IllegalArgumentException(s"'$p' must be a regular file.")
+    if (!Files.isReadable(p))
+      throw new IllegalArgumentException(s"'$p' must be a readable file.")
+
+    jarLoader.addURL(p.toUri.toURL)
     this
   }
 

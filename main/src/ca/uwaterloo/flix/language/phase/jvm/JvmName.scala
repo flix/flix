@@ -47,6 +47,11 @@ object JvmName {
   val ConstructorMethod: String = "<init>"
 
   /**
+    * The Flix reserved delimiter for generated jvm classes.
+    */
+  val Delimiter: String = "$"
+
+  /**
     * Returns the JvmName of the given string `s`.
     */
   def mk(s: String): JvmName = {
