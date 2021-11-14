@@ -1431,8 +1431,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Returns the free variables in the given body predicate `b0`.
     */
   private def freeVarsBodyPred(b0: WeededAst.Predicate.Body): List[Name.Ident] = b0 match {
-    case WeededAst.Predicate.Body.Atom(_, den, polarity, terms, loc) => terms.flatMap(freeVars)
-    case WeededAst.Predicate.Body.Guard(exp, loc) => freeVars(exp)
+    case WeededAst.Predicate.Body.Atom(_, _, _, terms, _) => terms.flatMap(freeVars)
+    case WeededAst.Predicate.Body.Guard(exp, _) => freeVars(exp)
+    case WeededAst.Predicate.Body.Loop(_, exp, _) => freeVars(exp)
   }
 
   /**
