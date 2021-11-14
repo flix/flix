@@ -27,7 +27,7 @@ enum Result[t, e] with Eq, Order, ToString {
 }
 
 instance Hash[Result[t, e]] with Hash[t], Hash[e] {
-    pub def hash(r: Result[t, e]): Int = match r {
+    pub def hash(r: Result[t, e]): Int32 = match r {
         case Ok(v)  => 5381 + 113 * Hash.hash(v)
         case Err(v) => 5351 + 97 * Hash.hash(v)
     }
