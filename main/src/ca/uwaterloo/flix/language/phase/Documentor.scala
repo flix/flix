@@ -53,7 +53,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationMessage] = flix.phase("Documentor") {
     // Check whether to generate documentation.
     if (flix.options.documentor) {
-      // Collect all public definitions and group them by namespace.
+      /*// Collect all public definitions and group them by namespace.
       val defsByNS = root.defs.filter {
         case (sym, defn) => defn.spec.mod.isPublic && !isBenchmark(defn.spec.ann) && !isLaw(defn.spec.ann) && !isTest(defn.spec.ann)
       }.groupBy(_._1.namespace)
@@ -73,6 +73,24 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
         ("title", JString(ApiTitle)),
         ("namespaces", JObject(jsonDefsByNs))
       )
+      */
+
+      // Get all the classes.
+      val ClassesByNS: Map[String, List[Class]] = root.classes.values.groupBy(
+        x => x.sym.name
+      ).map(
+        s => (s._1, s._2.toList)
+      )
+
+      // Construct the JSON object.
+      val json = JObject(
+        ("namespaces", "[string]"),
+        ("classes", ClassesByNS),
+        /*("defs", DefsByNS),
+        ("enums", EnumsByNs),
+        ("typeAliases", TypeAliasesByNs)*/
+      )
+
 
       // Serialize the JSON object to a string.
       val s = JsonMethods.pretty(JsonMethods.render(json))
