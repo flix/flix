@@ -32,7 +32,7 @@ instance ToString[List[a]] with ToString[a] {
 }
 
 instance Hash[List[a]] with Hash[a] {
-    pub def hash(xs: List[a]): Int =
+    pub def hash(xs: List[a]): Int32 =
         List.foldLeft((acc, x) -> acc * 31 + Hash.hash(x), 37199, xs)
 }
 
