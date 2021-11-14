@@ -1475,7 +1475,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       case "Char" => Type.mkChar(loc).toSuccess
       case "Float32" => Type.mkFloat32(loc).toSuccess
       case "Float64" => Type.mkFloat64(loc).toSuccess
-      //case "Int" => Type.mkInt32(loc).toSuccess
+      case "Int" => Type.mkInt32(loc).toSuccess
       case "Int8" => Type.mkInt8(loc).toSuccess
       case "Int16" => Type.mkInt16(loc).toSuccess
       case "Int32" => Type.mkInt32(loc).toSuccess
