@@ -87,9 +87,12 @@ namespace DelayMap {
     ///
     /// Returns `None` if `m` is empty.
     ///
-    pub def minimum(m: DelayMap[k, v]): Option[(k, Lazy[v])] =
+    pub def minimum(m: DelayMap[k, v]): Option[(k, v)] =
         let DMap(t) = m;
-        RedBlackTree.minimum(t)
+        match RedBlackTree.minimum(t) {
+            case None       => None
+            case Some((k, v)) => Some((k, force v))
+        }
 
     ///
     /// Optionally finds `k -> v` where `k` is the smallest key according to the given comparator `cmp`.
@@ -104,9 +107,12 @@ namespace DelayMap {
     ///
     /// Returns `None` if `m` is empty.
     ///
-    pub def maximum(m: DelayMap[k, v]): Option[(k, Lazy[v])] =
+    pub def maximum(m: DelayMap[k, v]): Option[(k, v)] =
         let DMap(t) = m;
-        RedBlackTree.maximum(t)
+        match RedBlackTree.maximum(t) {
+            case None => None
+            case Some((k, v)) => Some((k, force v))
+        }
 
     ///
     /// Optionally finds `k -> v` where `k` is the largest key according to the given comparator `cmp`.
@@ -281,6 +287,14 @@ namespace DelayMap {
         foldRightWithKey((k, v, acc) -> (k, v) :: acc, Nil, m)
 
     ///
+    /// Applies `f` to a start value `s` and all values in `m` going from left to right.
+    ///
+    /// That is, the result is of the form: `f(...f(f(s, v1), v2)..., vn)`.
+    ///
+    pub def foldLeft(f: (b, v) -> b & ef, s: b, m: DelayMap[k, v]): b & ef =
+        foldLeftWithKey((acc, _, v) -> f(acc, v), s, m)
+
+    ///
     /// Applies `f` to a start value `s` and all key-value pairs in `m` going from left to right.
     ///
     /// That is, the result is of the form: `f(...f(f(s, k1, v1), k2, v2)..., vn)`.
@@ -332,6 +346,34 @@ namespace DelayMap {
             (k, lazy v)
         };
         match RedBlackTree.reduceLeft(f1, t) {
+            case Some((k, v)) => Some((k, force v))
+            case None         => None
+        }
+
+    ///
+    /// Applies `f` to all values in `m` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
+    ///
+    /// That is, the result is of the form: `Some(f(v1, ...f(vn-2, f(vn-1, vn))...))`
+    ///
+    /// Returns `None` if `m` is the empty DelayMap.
+    ///
+    pub def reduceRight(f: (v, v) -> v & ef, m: DelayMap[k, v]): Option[v] & ef =
+        reduceRightWithKey((k, v1, _, v2) -> (k, f(v1, v2)), m) |> Option.map(snd)
+
+    ///
+    /// Applies `f` to all mappings in `m` going from right to left until a single mapping `(k, v)` is obtained.  Returns `Some((k, v))`.
+    ///
+    /// That is, the result is of the form: `Some(f(k1, v1, ...f(kn-2, vn-2, f(kn-1, vn-1, kn, vn))...))`
+    ///
+    /// Returns `None` if `m` is the empty DelayMap.
+    ///
+    pub def reduceRightWithKey(f: (k, v, k, v) -> (k, v) & ef, m: DelayMap[k, v]): Option[(k, v)] & ef =
+        let DMap(t) = m;
+        let f1 = (k1, v1, k2, v2) -> {
+            let (k, v) = f(k1, force v1, k2, force v2);
+            (k, lazy v)
+        };
+        match RedBlackTree.reduceRight(f1, t) {
             case Some((k, v)) => Some((k, force v))
             case None         => None
         }
@@ -422,6 +464,12 @@ namespace DelayMap {
         foldRightWithKey((k, v, acc) -> ECons((k, v), acc), ENil, m)
 
     ///
+    /// Returns an iterator over all key-value pairs in `m`.
+    ///
+    pub def toIterator(m: DelayMap[a, b]): Iterator[(a, b)] & Impure =
+        List.toIterator(query(_ -> EqualTo, m))
+
+    ///
     /// Applies `f` to every element of `xs`.
     ///
     pub def foreach(f: (k, v) -> Unit & ef, m: DelayMap[k, v]): Unit & ef =
@@ -444,11 +492,5 @@ namespace DelayMap {
     pub def queryWith(p: k -> Comparison & ef1, f: (k, v) -> Unit & ef2, m: DelayMap[k, v]): Unit & (ef1 and ef2) =
         let DMap(t) = m;
         RedBlackTree.queryWith(p, (k, v) -> f(k, force v) as & Impure, t) as & (ef1 and ef2)
-
-    ///
-    /// Returns an iterator over all key-value pairs in `m`.
-    ///
-    pub def toIterator(m: DelayMap[a, b]): Iterator[(a, b)] & Impure =
-        List.toIterator(query(_ -> EqualTo, m))
 
 }
