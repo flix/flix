@@ -373,26 +373,24 @@ object Ast {
       * Represents a negative labelled edge.
       */
     case class Negative(head: Name.Pred, body: Name.Pred, loc: SourceLocation) extends DependencyEdge
-
   }
 
   /**
-    * Represents a dependency graph; a set of dependency edges.
+    * Contains the edges held in a single constraint.
     */
-  type DependencyGraph = Set[DependencyEdge]
+  case class ConstraintMultiEdge(head: Name.Pred, positives: Set[(Name.Pred, SourceLocation)], negatives: Set[(Name.Pred, SourceLocation)])
 
   object ConstraintGraph {
     /**
       * The empty constraint graph.
       */
     val empty: ConstraintGraph = ConstraintGraph(Set.empty)
-
   }
 
   /**
     * Represents a constraint graph; a set dependency graphs representing each rule.
     */
-  case class ConstraintGraph(xs: Set[DependencyGraph]) {
+  case class ConstraintGraph(xs: Set[ConstraintMultiEdge]) {
     /**
       * Returns a constraint graph with all dependency graphs in `this` and `that` constraint graph.
       */
@@ -410,12 +408,12 @@ object Ast {
       * edges have both the source and destination in `syms`.
       */
     def restrict(syms: Set[Name.Pred]): ConstraintGraph =
-      ConstraintGraph(xs.filter(
-        rule => rule.forall {
-          case DependencyEdge.Positive(x, y, _) => syms.contains(x) && syms.contains(y)
-          case DependencyEdge.Negative(x, y, _) => syms.contains(x) && syms.contains(y)
-        }
-      ))
+      ConstraintGraph(xs.filter {
+        case ConstraintMultiEdge(head, positives, negatives) =>
+          syms.contains(head) &&
+            positives.forall { case (s, _) => syms.contains(s) } &&
+            negatives.forall { case (s, _) => syms.contains(s) }
+      })
   }
 
   object Stratification {

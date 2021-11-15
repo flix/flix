@@ -18,7 +18,8 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.{ConstraintGraph, DependencyEdge, DependencyGraph, Polarity}
+import ca.uwaterloo.flix.language.ast.Ast.{ConstraintGraph, ConstraintMultiEdge, DependencyEdge, Polarity}
+import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.StratificationError
@@ -669,8 +670,17 @@ object Stratifier extends Phase[Root, Root] {
       getPredicate(head) match {
         case None => ConstraintGraph.empty
         case Some(headSym) =>
-          val dependencies = body flatMap (b => visitDependencyEdge(headSym, b))
-          ConstraintGraph(Set(dependencies.toSet))
+          val (pos, neg) = body.foldLeft((Set.empty[(Name.Pred, SourceLocation)], Set.empty[(Name.Pred, SourceLocation)])) {
+            case ((pos, neg), b) => b match {
+              case Body.Atom(pred, _, polarity, _, _, loc) => polarity match {
+                case Polarity.Positive => (pos + ((pred, loc)), neg)
+                case Polarity.Negative => (pos, neg + ((pred, loc)))
+              }
+              case Body.Guard(_, _) => (pos, neg)
+            }
+          }
+          val edge = ConstraintMultiEdge(headSym, pos, neg)
+          ConstraintGraph(Set(edge))
       }
   }
 
@@ -679,18 +689,6 @@ object Stratifier extends Phase[Root, Root] {
     */
   private def getPredicate(head0: Predicate.Head): Option[Name.Pred] = head0 match {
     case Predicate.Head.Atom(pred, _, _, _, _) => Some(pred)
-  }
-
-  /**
-    * Optionally returns a dependency edge of the right type for the given head predicate `head` and body predicate `body0`.
-    */
-  private def visitDependencyEdge(head: Name.Pred, body0: Predicate.Body): Option[DependencyEdge] = body0 match {
-    case Predicate.Body.Atom(pred, _, polarity, _, _, loc) => polarity match {
-      case Polarity.Positive => Some(DependencyEdge.Positive(head, pred, loc))
-      case Polarity.Negative => Some(DependencyEdge.Negative(head, pred, loc))
-    }
-
-    case Predicate.Body.Guard(_, _) => None
   }
 
   /**
@@ -715,7 +713,7 @@ object Stratifier extends Phase[Root, Root] {
         val rg = restrict(dg, tpe)
 
         // Compute the stratification.
-        stratify(rg.xs.flatten, tpe, loc) match {
+        stratify(constraintGraphToDepedencyGraph(rg), tpe, loc) match {
           case Validation.Success(stf) =>
             // Cache the stratification.
             cache.put(key, stf)
@@ -729,12 +727,20 @@ object Stratifier extends Phase[Root, Root] {
     }
   }
 
+  private def constraintGraphToDepedencyGraph(c: ConstraintGraph): Set[DependencyEdge] =
+    c.xs.flatMap {
+      case ConstraintMultiEdge(head, positives, negatives) =>
+        val p = positives.map { case (b, loc) => DependencyEdge.Positive(head, b, loc) }
+        val n = negatives.map { case (b, loc) => DependencyEdge.Negative(head, b, loc) }
+        p ++ n
+    }
+
   /**
     * Computes the stratification of the given dependency graph `g` at the given source location `loc`.
     *
     * See Database and Knowledge - Base Systems Volume 1 Ullman, Algorithm 3.5 p 133
     */
-  private def stratify(g: DependencyGraph, tpe: Type, loc: SourceLocation): Validation[Ast.Stratification, StratificationError] = {
+  private def stratify(g: Set[DependencyEdge], tpe: Type, loc: SourceLocation): Validation[Ast.Stratification, StratificationError] = {
     //
     // Maintain a mutable map from predicates to their (maximum) stratum number.
     //
@@ -805,7 +811,7 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * Returns a path that forms a cycle with the edge from `src` to `dst` in the given dependency graph `g`.
     */
-  private def findNegativeCycle(src: Name.Pred, dst: Name.Pred, g: DependencyGraph, loc: SourceLocation): List[(Name.Pred, SourceLocation)] = {
+  private def findNegativeCycle(src: Name.Pred, dst: Name.Pred, g: Set[DependencyEdge], loc: SourceLocation): List[(Name.Pred, SourceLocation)] = {
     // Computes a map from predicates to their successors.
     val succ = mutable.Map.empty[Name.Pred, Set[(Name.Pred, SourceLocation)]]
     for (edge <- g) {
