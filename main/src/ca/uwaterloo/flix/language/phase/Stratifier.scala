@@ -69,7 +69,7 @@ object Stratifier extends Phase[Root, Root] {
     }
 
     mapN(defsVal) {
-      ds => root.copy(defs = ds.toMap)
+      case ds => root.copy(defs = ds.toMap)
     }
   }
 
@@ -78,7 +78,7 @@ object Stratifier extends Phase[Root, Root] {
     */
   private def visitDef(def0: Def)(implicit dg: DependencyGraph, cache: Cache): Validation[Def, CompilationMessage] =
     visitExp(def0.impl.exp) map {
-      e => def0.copy(impl = def0.impl.copy(exp = e))
+      case e => def0.copy(impl = def0.impl.copy(exp = e))
     }
 
   /**
@@ -127,7 +127,7 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.Lambda(fparam, exp, tpe, loc) =>
       mapN(visitExp(exp)) {
-        e => Expression.Lambda(fparam, e, tpe, loc)
+        case e => Expression.Lambda(fparam, e, tpe, loc)
       }
 
     case Expression.Apply(exp, exps, tpe, eff, loc) =>
@@ -137,7 +137,7 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.Unary(sop, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        e => Expression.Unary(sop, e, tpe, eff, loc)
+        case e => Expression.Unary(sop, e, tpe, eff, loc)
       }
 
     case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) =>
@@ -152,7 +152,7 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.LetRegion(sym, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        e => Expression.LetRegion(sym, e, tpe, eff, loc)
+        case e => Expression.LetRegion(sym, e, tpe, eff, loc)
       }
 
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
@@ -187,12 +187,12 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        e => Expression.Tag(sym, tag, e, tpe, eff, loc)
+        case e => Expression.Tag(sym, tag, e, tpe, eff, loc)
       }
 
     case Expression.Tuple(elms, tpe, eff, loc) =>
       mapN(traverse(elms)(visitExp)) {
-        es => Expression.Tuple(es, tpe, eff, loc)
+        case es => Expression.Tuple(es, tpe, eff, loc)
       }
 
     case Expression.RecordEmpty(tpe, loc) =>
@@ -200,7 +200,7 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.RecordSelect(base, field, tpe, eff, loc) =>
       mapN(visitExp(base)) {
-        b => Expression.RecordSelect(b, field, tpe, eff, loc)
+        case b => Expression.RecordSelect(b, field, tpe, eff, loc)
       }
 
     case Expression.RecordExtend(field, value, rest, tpe, eff, loc) =>
@@ -210,12 +210,12 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.RecordRestrict(field, rest, tpe, eff, loc) =>
       mapN(visitExp(rest)) {
-        r => Expression.RecordRestrict(field, r, tpe, eff, loc)
+        case r => Expression.RecordRestrict(field, r, tpe, eff, loc)
       }
 
     case Expression.ArrayLit(elms, tpe, eff, loc) =>
       mapN(traverse(elms)(visitExp)) {
-        es => Expression.ArrayLit(es, tpe, eff, loc)
+        case es => Expression.ArrayLit(es, tpe, eff, loc)
       }
 
     case Expression.ArrayNew(elm, len, tpe, eff, loc) =>
@@ -230,7 +230,7 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.ArrayLength(base, eff, loc) =>
       mapN(visitExp(base)) {
-        b => Expression.ArrayLength(b, eff, loc)
+        case b => Expression.ArrayLength(b, eff, loc)
       }
 
     case Expression.ArrayStore(base, index, elm, loc) =>
@@ -245,12 +245,12 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.Ref(exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        e => Expression.Ref(e, tpe, eff, loc)
+        case e => Expression.Ref(e, tpe, eff, loc)
       }
 
     case Expression.Deref(exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        e => Expression.Deref(e, tpe, eff, loc)
+        case e => Expression.Deref(e, tpe, eff, loc)
       }
 
     case Expression.Assign(exp1, exp2, tpe, eff, loc) =>
@@ -260,22 +260,22 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.Existential(fparam, exp, loc) =>
       mapN(visitExp(exp)) {
-        e => Expression.Existential(fparam, e, loc)
+        case e => Expression.Existential(fparam, e, loc)
       }
 
     case Expression.Universal(fparam, exp, loc) =>
       mapN(visitExp(exp)) {
-        e => Expression.Universal(fparam, e, loc)
+        case e => Expression.Universal(fparam, e, loc)
       }
 
     case Expression.Ascribe(exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        e => Expression.Ascribe(e, tpe, eff, loc)
+        case e => Expression.Ascribe(e, tpe, eff, loc)
       }
 
     case Expression.Cast(exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        e => Expression.Cast(e, tpe, eff, loc)
+        case e => Expression.Cast(e, tpe, eff, loc)
       }
 
     case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
@@ -288,7 +288,7 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
       mapN(traverse(args)(visitExp)) {
-        as => Expression.InvokeConstructor(constructor, as, tpe, eff, loc)
+        case as => Expression.InvokeConstructor(constructor, as, tpe, eff, loc)
       }
 
     case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) =>
@@ -298,12 +298,12 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) =>
       mapN(traverse(args)(visitExp)) {
-        as => Expression.InvokeStaticMethod(method, as, tpe, eff, loc)
+        case as => Expression.InvokeStaticMethod(method, as, tpe, eff, loc)
       }
 
     case Expression.GetField(field, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        e => Expression.GetField(field, e, tpe, eff, loc)
+        case e => Expression.GetField(field, e, tpe, eff, loc)
       }
 
     case Expression.PutField(field, exp1, exp2, tpe, eff, loc) =>
@@ -316,17 +316,17 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.PutStaticField(field, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        e => Expression.PutStaticField(field, e, tpe, eff, loc)
+        case e => Expression.PutStaticField(field, e, tpe, eff, loc)
       }
 
     case Expression.NewChannel(exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        e => Expression.NewChannel(e, tpe, eff, loc)
+        case e => Expression.NewChannel(e, tpe, eff, loc)
       }
 
     case Expression.GetChannel(exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        e => Expression.GetChannel(e, tpe, eff, loc)
+        case e => Expression.GetChannel(e, tpe, eff, loc)
       }
 
     case Expression.PutChannel(exp1, exp2, tpe, eff, loc) =>
@@ -344,7 +344,7 @@ object Stratifier extends Phase[Root, Root] {
       val defaultVal = default match {
         case None => None.toSuccess
         case Some(exp) => visitExp(exp) map {
-          e => Some(e)
+          case e => Some(e)
         }
       }
 
@@ -354,17 +354,17 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.Spawn(exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        e => Expression.Spawn(e, tpe, eff, loc)
+        case e => Expression.Spawn(e, tpe, eff, loc)
       }
 
     case Expression.Lazy(exp, tpe, loc) =>
       mapN(visitExp(exp)) {
-        e => Expression.Lazy(e, tpe, loc)
+        case e => Expression.Lazy(e, tpe, loc)
       }
 
     case Expression.Force(exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        e => Expression.Force(e, tpe, eff, loc)
+        case e => Expression.Force(e, tpe, eff, loc)
       }
 
     case Expression.FixpointConstraintSet(cs0, _, tpe, loc) =>
@@ -372,7 +372,7 @@ object Stratifier extends Phase[Root, Root] {
       val stf = stratifyWithCache(dg, tpe, loc)
 
       mapN(stf) {
-        s =>
+        case s =>
           val cs = cs0.map(reorder)
           Expression.FixpointConstraintSet(cs, s, tpe, loc)
       }
@@ -395,17 +395,17 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.FixpointFilter(pred, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        e => Expression.FixpointFilter(pred, e, tpe, eff, loc)
+        case e => Expression.FixpointFilter(pred, e, tpe, eff, loc)
       }
 
     case Expression.FixpointProjectIn(exp, pred, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        e => Expression.FixpointProjectIn(e, pred, tpe, eff, loc)
+        case e => Expression.FixpointProjectIn(e, pred, tpe, eff, loc)
       }
 
     case Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        e => Expression.FixpointProjectOut(pred, e, tpe, eff, loc)
+        case e => Expression.FixpointProjectOut(pred, e, tpe, eff, loc)
       }
 
     case Expression.Reify(t, tpe, eff, loc) =>
