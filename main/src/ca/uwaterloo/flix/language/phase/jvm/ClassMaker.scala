@@ -17,6 +17,9 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Finality._
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Instancing._
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility._
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker._
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import org.objectweb.asm.{ClassWriter, Opcodes}
@@ -72,16 +75,18 @@ object ClassMaker {
     def toInt: Int
   }
 
-  case object Private extends Visibility {
-    override val toInt: Int = Opcodes.ACC_PRIVATE
-  }
+  object Visibility {
+    case object Private extends Visibility {
+      override val toInt: Int = Opcodes.ACC_PRIVATE
+    }
 
-  case object Default extends Visibility {
-    override val toInt: Int = 0
-  }
+    case object Default extends Visibility {
+      override val toInt: Int = 0
+    }
 
-  case object Public extends Visibility {
-    override val toInt: Int = Opcodes.ACC_PUBLIC
+    case object Public extends Visibility {
+      override val toInt: Int = Opcodes.ACC_PUBLIC
+    }
   }
 
 
@@ -89,25 +94,28 @@ object ClassMaker {
     def toInt: Int
   }
 
-  case object Final extends Finality {
-    override val toInt: Int = Opcodes.ACC_FINAL
-  }
+  object Finality {
+    case object Final extends Finality {
+      override val toInt: Int = Opcodes.ACC_FINAL
+    }
 
-  case object Implementable extends Finality {
-    override val toInt: Int = 0
+    case object Implementable extends Finality {
+      override val toInt: Int = 0
+    }
   }
-
 
   sealed trait Instancing {
     def toInt: Int
   }
 
-  case object Static extends Instancing {
-    override val toInt: Int = Opcodes.ACC_STATIC
-  }
+  object Instancing {
+    case object Static extends Instancing {
+      override val toInt: Int = Opcodes.ACC_STATIC
+    }
 
-  case object Instanced extends Instancing {
-    override val toInt: Int = 0
+    case object Instanced extends Instancing {
+      override val toInt: Int = 0
+    }
   }
 
 
@@ -115,11 +123,13 @@ object ClassMaker {
     def toInt: Int
   }
 
-  case object Abstract extends Abstraction {
-    override val toInt: Int = Opcodes.ACC_ABSTRACT
-  }
+  object Abstraction {
+    case object Abstract extends Abstraction {
+      override val toInt: Int = Opcodes.ACC_ABSTRACT
+    }
 
-  case object Implemented extends Abstraction {
-    override val toInt: Int = 0
+    case object Implemented extends Abstraction {
+      override val toInt: Int = 0
+    }
   }
 }

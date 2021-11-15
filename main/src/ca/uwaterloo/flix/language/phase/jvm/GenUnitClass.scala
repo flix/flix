@@ -19,6 +19,9 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst.Root
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Finality._
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Instancing._
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility._
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker._
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 
@@ -45,14 +48,14 @@ object GenUnitClass {
   private def genStaticConstructor(): InstructionSet = {
     NEW(JvmName.Unit) ~
       DUP() ~
-      InvokeSimpleConstructor(JvmName.Unit) ~
+      invokeConstructor(JvmName.Unit) ~
       PUTSTATIC(JvmName.Unit, InstanceFieldName, JvmType.Unit) ~
       RETURN()
   }
 
   private def genConstructor(): InstructionSet = {
     ALOAD(0) ~
-      InvokeSimpleConstructor(JvmName.Object) ~
+      invokeConstructor(JvmName.Object) ~
       RETURN()
   }
 
