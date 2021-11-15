@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.FinalAst.Root
+import ca.uwaterloo.flix.language.ast.ErasedAst.Root
 import ca.uwaterloo.flix.language.ast.{MonoType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.{InternalCompilerException, JvmTarget}
 import org.objectweb.asm.Opcodes._
@@ -234,7 +234,7 @@ object AsmOps {
     case JvmType.PrimShort => visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Short", "valueOf", "(S)Ljava/lang/Short;", false)
     case JvmType.PrimInt => visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Integer", "valueOf", "(I)Ljava/lang/Integer;", false)
     case JvmType.PrimLong => visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Long", "valueOf", "(J)Ljava/lang/Long;", false)
-    case JvmType.Reference(name) => ()
+    case JvmType.Reference(_) => ()
   }
 
   /**
@@ -524,13 +524,13 @@ object AsmOps {
     case JvmType.PrimShort => mv.visitMethodInsn(INVOKESTATIC, "java/lang/Short", "valueOf", "(S)Ljava/lang/Short;", false)
     case JvmType.PrimInt => mv.visitMethodInsn(INVOKESTATIC, "java/lang/Integer", "valueOf", "(I)Ljava/lang/Integer;", false)
     case JvmType.PrimLong => mv.visitMethodInsn(INVOKESTATIC, "java/lang/Long", "valueOf", "(J)Ljava/lang/Long;", false)
-    case JvmType.Reference(name) => ()
+    case JvmType.Reference(_) => ()
   }
 
   /**
     * Emits code to construct a new proxy object for the value on top of the stack of the given type `tpe`.
     */
-  def newProxyObject(tpe: MonoType, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+  def newProxyObject(mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
     // Construct the equal function object.
     mv.visitInsn(ACONST_NULL)
 
@@ -541,7 +541,7 @@ object AsmOps {
     mv.visitInsn(ACONST_NULL)
 
     // Construct the proxy object.
-    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.ProxyObject.toInternalName, "of", "(Ljava/lang/Object;Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;)Lflix/runtime/ProxyObject;", false);
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.ProxyObject.toInternalName, "of", s"(Ljava/lang/Object;Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;)L${JvmName.ProxyObject.toInternalName};", false)
   }
 
   /**
@@ -574,7 +574,7 @@ object AsmOps {
     mv.visitInsn(ARRAYLENGTH)
 
     // Allocate a new array of proxy objects of the same length as the original array and store it in a local variable.
-    mv.visitTypeInsn(ANEWARRAY, JvmName.Runtime.ProxyObject.toInternalName)
+    mv.visitTypeInsn(ANEWARRAY, JvmName.ProxyObject.toInternalName)
     mv.visitVarInsn(ASTORE, resultArrayIndex)
 
     // Initialize the loop counter to zero.
@@ -615,7 +615,7 @@ object AsmOps {
     boxIfPrim(jvmElementType, mv)
 
     // Allocate a new proxy object for the element.
-    newProxyObject(elementType, mv)
+    newProxyObject(mv)
 
     // The result array, current index, and proxy object is on the stack. Store the element.
     mv.visitInsn(AASTORE)

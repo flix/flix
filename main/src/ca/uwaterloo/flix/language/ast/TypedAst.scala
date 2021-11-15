@@ -291,6 +291,8 @@ object TypedAst {
 
     case class ReifyType(t: Type, k: Kind, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
+    case class ReifyEff(sym: Symbol.VarSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, exp3: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+
   }
 
   sealed trait Pattern {

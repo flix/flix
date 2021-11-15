@@ -1,10 +1,10 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
-import java.lang.reflect.Method
-
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.FinalAst.Root
+import ca.uwaterloo.flix.language.ast.ErasedAst.Root
 import ca.uwaterloo.flix.util.InternalCompilerException
+
+import java.lang.reflect.Method
 
 /**
   * Loads all the generated classes into the JVM and decorates the AST.

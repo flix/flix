@@ -36,56 +36,6 @@ object ResolutionError {
   private implicit val audience: Audience = Audience.External
 
   /**
-    * Ambiguous Name Error.
-    *
-    * @param qn   the ambiguous name.
-    * @param ns   the current namespace.
-    * @param locs the locations where the names are defined.
-    * @param loc  the location where the error occurred.
-    */
-  case class AmbiguousName(qn: Name.QName, ns: Name.NName, locs: List[SourceLocation], loc: SourceLocation) extends ResolutionError {
-    def summary: String = "Ambiguous name."
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Ambiguous name '" << Red(qn.toString) << "' Name refers to multiple definitions." << NewLine
-      vt << NewLine
-      vt << Code(loc, "ambiguous name.") << NewLine
-      vt << NewLine
-      for (loc1 <- locs) {
-        vt << Code(loc1, "definition/effect/signature matches.") << NewLine
-        vt << NewLine
-      }
-      vt
-    }
-  }
-
-  /**
-    * Ambiguous Type Error.
-    *
-    * @param qn   the ambiguous name.
-    * @param ns   the current namespace.
-    * @param locs the locations where the names are defined.
-    * @param loc  the location where the error occurred.
-    */
-  case class AmbiguousType(qn: String, ns: Name.NName, locs: List[SourceLocation], loc: SourceLocation) extends ResolutionError {
-    def summary: String = "Ambiguous type."
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Ambiguous type '" << Red(qn) << "'. Name refers to multiple types." << NewLine
-      vt << NewLine
-      vt << Code(loc, "ambiguous type.") << NewLine
-      vt << NewLine
-      for (loc1 <- locs) {
-        vt << Code(loc1, "type matches.") << NewLine
-        vt << NewLine
-      }
-      vt
-    }
-  }
-
-  /**
     * Ambiguous Tag Error.
     *
     * @param tag  the tag.

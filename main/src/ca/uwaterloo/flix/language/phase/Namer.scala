@@ -750,10 +750,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       val rulesVal = traverse(rules) {
         case WeededAst.CatchRule(ident, className, body) =>
           val sym = Symbol.freshVarSym(ident, BoundBy.CatchRule)
-          val classVal = lookupClass(className, loc)
           val bodyVal = visitExp(body, env0 + (ident.name -> sym), uenv0, tenv0)
-          mapN(classVal, bodyVal) {
-            case (c, b) => NamedAst.CatchRule(sym, c, b)
+          mapN(bodyVal) {
+            b => NamedAst.CatchRule(sym, className, b)
           }
       }
 
@@ -892,6 +891,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.ReifyType(t0, k, loc) =>
       mapN(visitType(t0, uenv0, tenv0)) {
         case t => NamedAst.Expression.ReifyType(t, k, loc)
+      }
+
+    case WeededAst.Expression.ReifyEff(ident, exp1, exp2, exp3, loc) =>
+      val sym = Symbol.freshVarSym(ident, Scopedness.Unscoped, BoundBy.Let)
+      mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0 + (ident.name -> sym), uenv0, tenv0), visitExp(exp3, env0, uenv0, tenv0)) {
+        case (e1, e2, e3) => NamedAst.Expression.ReifyEff(sym, e1, e2, e3, loc)
       }
 
   }
@@ -1298,6 +1303,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.FixpointProjectOut(pred, exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.Reify(t, loc) => Nil
     case WeededAst.Expression.ReifyType(t, k, loc) => Nil
+    case WeededAst.Expression.ReifyEff(ident, exp1, exp2, exp3, loc) => filterBoundVars(freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3), List(ident))
   }
 
   /**
@@ -1480,16 +1486,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def filterBoundVars(freeVars: List[Name.Ident], boundVars: List[Name.Ident]): List[Name.Ident] = {
     freeVars.filter(n1 => !boundVars.exists(n2 => n1.name == n2.name))
-  }
-
-  /**
-    * Returns the class reflection object for the given `className`.
-    */
-  // TODO: Deprecated should be moved to resolver.
-  private def lookupClass(className: String, loc: SourceLocation): Validation[Class[_], NameError] = try {
-    Class.forName(className).toSuccess
-  } catch {
-    case ex: ClassNotFoundException => NameError.UndefinedNativeClass(className, loc).toFailure
   }
 
   /**

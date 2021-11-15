@@ -63,7 +63,7 @@ object Parser extends Phase[List[Source], ParsedAst.Program] {
       case scala.util.Success(ast) =>
         ast.toSuccess
       case scala.util.Failure(e: org.parboiled2.ParseError) =>
-        val loc = SourceLocation(None, source, e.position.line, e.position.column, e.position.line, e.position.column)
+        val loc = SourceLocation(None, source, SourceKind.Real, e.position.line, e.position.column, e.position.line, e.position.column)
         ca.uwaterloo.flix.language.errors.ParseError(stripLiteralWhitespaceChars(parser.formatError(e)), loc).toFailure
       case scala.util.Failure(e) =>
         ca.uwaterloo.flix.language.errors.ParseError(e.getMessage, SourceLocation.Unknown).toFailure
@@ -79,7 +79,7 @@ object Parser extends Phase[List[Source], ParsedAst.Program] {
       case scala.util.Success(ast) =>
         ast.toSuccess
       case scala.util.Failure(e: org.parboiled2.ParseError) =>
-        val loc = SourceLocation(None, source, e.position.line, e.position.column, e.position.line, e.position.column)
+        val loc = SourceLocation(None, source, SourceKind.Real, e.position.line, e.position.column, e.position.line, e.position.column)
         ca.uwaterloo.flix.language.errors.ParseError(stripLiteralWhitespaceChars(parser.formatError(e)), loc).toFailure
       case scala.util.Failure(e) =>
         ca.uwaterloo.flix.language.errors.ParseError(e.getMessage, SourceLocation.Unknown).toFailure
@@ -638,7 +638,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
       LetRegion | LetMatch | LetMatchStar | LetUse | LetImport | IfThenElse | Reify | ReifyBool |
-        ReifyType | Choose | Match | LambdaMatch | TryCatch | Lambda | Tuple |
+        ReifyType | ReifyEff | Choose | Match | LambdaMatch | TryCatch | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | Spawn | Lazy | Force | Intrinsic | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointProject | FixpointSolveWithProject |
@@ -682,6 +682,20 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def ReifyType: Rule1[ParsedAst.Expression.ReifyType] = rule {
       SP ~ keyword("reifyType") ~ WS ~ Type ~ SP ~> ParsedAst.Expression.ReifyType
+    }
+
+    def ReifyEff: Rule1[ParsedAst.Expression.ReifyEff] = {
+      def ThenBranch: Rule2[Name.Ident, ParsedAst.Expression] = rule {
+        keyword("case") ~ WS ~ keyword("Pure") ~ "(" ~ Names.Variable ~ ")" ~ WS ~ keyword("=>") ~ WS ~ Expression
+      }
+
+      def ElseBranch: Rule1[ParsedAst.Expression] = rule {
+        keyword("case") ~ WS ~ "_" ~ WS ~ keyword("=>") ~ WS ~ Expression
+      }
+
+      rule {
+        SP ~ keyword("reifyEff") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ optWS ~ "{" ~ optWS ~ ThenBranch ~ WS ~ ElseBranch ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.ReifyEff
+      }
     }
 
     def LetMatch: Rule1[ParsedAst.Expression.LetMatch] = rule {

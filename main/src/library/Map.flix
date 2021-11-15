@@ -585,6 +585,12 @@ namespace Map {
         foldRightWithKey((k, v, acc) -> ECons((k, v), acc), ENil, m)
 
     ///
+    /// Returns the map `m` as a chain of key-value pairs.
+    ///
+    pub def toChain(m: Map[a, b]): Chain[(a, b)] with Order[a] =
+        foldLeftWithKey((acc, k, v) -> Chain.snoc(acc, (k,v)), Chain.empty(), m)
+
+    ///
     /// Applies `f` to every element of `xs`.
     ///
     /// The function `f` must be impure.
@@ -653,4 +659,11 @@ namespace Map {
     pub def toIterator(m: Map[a, b]): Iterator[(a, b)] & Impure =
         List.toIterator(Map.query(_ -> EqualTo, m))
 
+    ///
+    /// Returns `m` as a `DelayMap`.
+    ///
+    pub def toDelayMap(m: Map[k, v]): DelayMap[k, v] = {
+        let Map(t) = m;
+        DMap(RedBlackTree.mapWithKey((_, v) -> lazy v, t))
+    }
 }

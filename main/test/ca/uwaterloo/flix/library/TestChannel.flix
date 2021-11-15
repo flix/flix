@@ -1,5 +1,6 @@
 /*
  * Copyright 2019 Magnus Madsen
+ * Copyright 2021 Jonathan Lindegaard Starup
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,37 +16,65 @@
  */
 
 @test
-def testNew01(): Channel[Bool] & Impure = Channel.new()
+def testNew01(): Channel.Mpmc & Impure = Channel.new(0)
 
 @test
-def testNew02(): Channel[Int] & Impure = Channel.new()
-
-@test
-def testNew03(): Channel[String] & Impure = Channel.new()
-
-@test
-def testNewWithCapacity01(): Channel[Bool] & Impure = Channel.newWithCapacity(123)
-
-@test
-def testNewWithCapacity02(): Channel[Int] & Impure = Channel.newWithCapacity(123)
-
-@test
-def testNewWithCapacity03(): Channel[String] & Impure = Channel.newWithCapacity(123)
+def testNew02(): Channel.Mpmc & Impure = Channel.new(32)
 
 @test
 def testGetPut01(): Bool & Impure =
-    let c = Channel.newWithCapacity(1);
-    Channel.put(c, true);
-    Channel.get(c)
+    let c = Channel.new(1);
+    Channel.put(BoxedBool(true), c);
+    match Channel.get(c) {
+        case BoxedBool(b) => b
+        case _ => false
+    }
 
 @test
-def testGetPut02(): Int & Impure =
-    let c = Channel.newWithCapacity(1);
-    Channel.put(c, 123);
-    Channel.get(c)
+def testGetPut02(): Bool & Impure =
+    let c = Channel.new(1);
+    Channel.put(BoxedInt32(123), c);
+    match Channel.get(c) {
+        case BoxedInt32(i) => i == 123
+        case _ => bug!("Impossible")
+    }
 
 @test
-def testGetPut03(): String & Impure =
-    let c = Channel.newWithCapacity(1);
-    Channel.put(c, "Hello World!");
-    Channel.get(c)
+def testGetPut03(): Bool & Impure =
+    let c = Channel.new(1);
+    Channel.put(BoxedValue("Hello World!" as ##java.lang.Object), c);
+    match Channel.get(c) {
+        case BoxedValue(s) => (s as String) == "Hello World!"
+        case _ => bug!("Impossible")
+    }
+
+@test
+def testSelect01(): Bool & Impure =
+    let c = Channel.new(1);
+    Channel.put(BoxedInt32(2), c);
+    match Channel.select([c], false) {
+        case Some(0, BoxedInt32(i)) => i == 2
+        case _ => bug!("impossible")
+    }
+
+@test
+def testSelect02(): Bool & Impure =
+    let c = Channel.new(1);
+    match Channel.select([c], true) {
+        case Some(0, BoxedInt32(_)) => bug!("The channel should be empty")
+        case None => true
+        case _ => bug!("impossible")
+    }
+
+@test
+def testSelect03(): Bool & Impure =
+    let cString = Channel.new(10);
+    let cInt = Channel.new(0);
+
+    Channel.put(BoxedValue("hey" as ##java.lang.Object), cString);
+
+    match Channel.select([cInt, cString], false) {
+        case Some(0, BoxedInt32(_)) => bug!("The channel should be empty")
+        case Some(1, BoxedValue(o)) => let s = o as String; s == "hey"
+        case _ => bug!("impossible")
+    }
