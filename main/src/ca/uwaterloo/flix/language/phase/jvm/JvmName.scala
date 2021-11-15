@@ -23,7 +23,6 @@ import java.nio.file.{Path, Paths}
   */
 object JvmName {
 
-
   case class MethodDescriptor(arguments: List[JvmType], result: JvmType) {
     /**
       * Returns the type descriptor of this method.
@@ -34,7 +33,6 @@ object JvmName {
   object MethodDescriptor {
     val NothingToVoid: MethodDescriptor = MethodDescriptor(Nil, JvmType.Void)
   }
-
 
   /**
     * The name of the static constructor method `<clinit>`.
@@ -134,7 +132,6 @@ object JvmName {
     */
   val String: JvmName = JvmName(List("java", "lang"), "String")
 
-  //TODO SJ: place this class a better place
   /**
     * The `ca.uwaterloo.flix.runtime.interpreter.Channel` name.
     */
@@ -150,6 +147,8 @@ object JvmName {
     */
   val ScalaMathPkg: JvmName = JvmName(List("scala", "math"), "package$")
 
+
+  //TODO SJ: place this class a better place
   /**
     * The `java.lang.Exception` name.
     */
@@ -201,7 +200,7 @@ object JvmName {
   val UnsupportedOperationException: JvmName = JvmName(List("java", "lang"), "UnsupportedOperationException")
 
   val Function: JvmName = mk("java/util/function/Function")
-
+  
   val ProxyObject: JvmName = JvmName(List("dev", "flix", "runtime"), "ProxyObject")
 
 }

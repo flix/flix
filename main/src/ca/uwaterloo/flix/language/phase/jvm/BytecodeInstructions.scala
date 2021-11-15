@@ -40,10 +40,10 @@ object BytecodeInstructions {
       visitor.visitVarInsn(opcode, v)
   }
 
-  type Instruction = F => F
+  type InstructionSet = F => F
 
-  implicit class ComposeOps(i1: Instruction) {
-    def ~(i2: Instruction): Instruction =
+  implicit class ComposeOps(i1: InstructionSet) {
+    def ~(i2: InstructionSet): InstructionSet =
       f => i2(i1(f))
   }
 
@@ -51,27 +51,42 @@ object BytecodeInstructions {
   // ~~~~~~~~~~~~~~~~~~~~~~~~ Direct JVM Instructions ~~~~~~~~~~~~~~~~~~~~~~~~
   //
 
-  def ALOAD(index: Int): Instruction = f => {
+  def ALOAD(index: Int): InstructionSet = f => {
     f.visitVarInstruction(Opcodes.ALOAD, index)
     f
   }
 
-  def DUP: Instruction = f => {
+  def DUP(): InstructionSet = f => {
     f.visitInstruction(Opcodes.DUP)
     f
   }
 
-  def NEW(className: JvmName): Instruction = f => {
+  def GETSTATIC(className: JvmName, fieldName: String, fieldType: JvmType): InstructionSet = f => {
+    f.visitFieldInstruction(Opcodes.GETSTATIC, className, fieldName, fieldType)
+    f
+  }
+
+  def INVOKEVIRTUAL(className: JvmName, methodName: String, descriptor: MethodDescriptor): InstructionSet = f => {
+    f.visitMethodInstruction(Opcodes.INVOKEVIRTUAL, className, methodName, descriptor)
+    f
+  }
+
+  def LRETURN(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.LRETURN)
+    f
+  }
+
+  def NEW(className: JvmName): InstructionSet = f => {
     f.visitTypeInstruction(Opcodes.NEW, className)
     f
   }
 
-  def PUTSTATIC(className: JvmName, fieldName: String, fieldType: JvmType): Instruction = f => {
+  def PUTSTATIC(className: JvmName, fieldName: String, fieldType: JvmType): InstructionSet = f => {
     f.visitFieldInstruction(Opcodes.PUTSTATIC, className, fieldName, fieldType)
     f
   }
 
-  def RETURN: Instruction = f => {
+  def RETURN(): InstructionSet = f => {
     f.visitInstruction(Opcodes.RETURN)
     f
   }
@@ -80,8 +95,13 @@ object BytecodeInstructions {
   // ~~~~~~~~~~~~~~~~~~~~~~~~~ Meta JVM Instructions ~~~~~~~~~~~~~~~~~~~~~~~~~
   //
 
-  def InvokeSimpleConstructor(className: JvmName): Instruction = f => {
+  def InvokeSimpleConstructor(className: JvmName): InstructionSet = f => {
     f.visitMethodInstruction(Opcodes.INVOKESPECIAL, className, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid)
+    f
+  }
+
+  def XReturn(tpe: JvmType): InstructionSet = f => {
+    f.visitInstruction(AsmOps.getReturnInstruction(tpe))
     f
   }
 }

@@ -27,14 +27,11 @@ object GenUnitClass {
   val InstanceFieldName = "INSTANCE"
 
   def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
-    val unitType = JvmType.Unit
-    val unitName = unitType.name
-    val bytecode = genByteCode()
-    Map(unitName -> JvmClass(unitName, bytecode))
+    Map(JvmName.Unit -> JvmClass(JvmName.Unit, genByteCode()))
   }
 
   private def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = mkClass(JvmType.Unit.name, Public, Final)
+    val cm = mkClass(JvmName.Unit, Public, Final)
 
     // Singleton instance
     cm.mkField(InstanceFieldName, JvmType.Unit, Public, Final, Static)
@@ -45,18 +42,18 @@ object GenUnitClass {
     cm.closeClassMaker
   }
 
-  private def genStaticConstructor(): Instruction = {
-    NEW(JvmType.Unit.name) ~
-      DUP ~
-      InvokeSimpleConstructor(JvmType.Unit.name) ~
-      PUTSTATIC(JvmType.Unit.name, InstanceFieldName, JvmType.Unit) ~
-      RETURN
+  private def genStaticConstructor(): InstructionSet = {
+    NEW(JvmName.Unit) ~
+      DUP() ~
+      InvokeSimpleConstructor(JvmName.Unit) ~
+      PUTSTATIC(JvmName.Unit, InstanceFieldName, JvmType.Unit) ~
+      RETURN()
   }
 
-  private def genConstructor(): Instruction = {
+  private def genConstructor(): InstructionSet = {
     ALOAD(0) ~
       InvokeSimpleConstructor(JvmName.Object) ~
-      RETURN
+      RETURN()
   }
 
 }
