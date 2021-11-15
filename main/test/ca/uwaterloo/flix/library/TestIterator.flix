@@ -41,7 +41,6 @@ namespace TestIterator {
         Iterator.range(-100, 200) |> Iterator.toList == List.range(-100, 200)
 
 
-
     /////////////////////////////////////////////////////////////////////////////
     // repeat                                                                  //
     /////////////////////////////////////////////////////////////////////////////
@@ -61,6 +60,7 @@ namespace TestIterator {
     @test
     def repeat04(): Bool & Impure =
         Iterator.repeat(3, 1) |> Iterator.toList == 1 :: 1 :: 1 :: Nil
+
 
     /////////////////////////////////////////////////////////////////////////////
     // toArray                                                                 //
@@ -213,5 +213,104 @@ namespace TestIterator {
     @test
     def filterImpure08(): Bool & Impure =
         (1 :: 4 :: 11 :: 2 :: -22 :: 17 :: Nil) |> List.toIterator |> Iterator.filter(i -> i > 3 as & Impure) == 4 :: 11 :: 17 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // map (pure)                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def mapPure01(): Bool & Impure =
+        Nil |> List.toIterator |>
+            Iterator.map(i -> i > 2) == Nil
+
+    @test
+    def mapPure02(): Bool & Impure =
+        (1 :: Nil) |> List.toIterator |>
+            Iterator.map(i -> i > 2) == false :: Nil
+
+    @test
+    def mapPure03(): Bool & Impure =
+        (3 :: Nil) |> List.toIterator |>
+            Iterator.map(i -> i > 2) == true :: Nil
+
+    @test
+    def mapPure04(): Bool & Impure =
+        (1 :: 2 :: Nil) |> List.toIterator |>
+            Iterator.map(i -> i > 2) == false :: false :: Nil
+
+    @test
+    def mapPure05(): Bool & Impure =
+        (1 :: 8 :: Nil) |> List.toIterator |>
+            Iterator.map(i -> i > 2) == false :: true :: Nil
+
+    @test
+    def mapPure06(): Bool & Impure =
+        (8 :: 1 :: Nil) |> List.toIterator |>
+            Iterator.map(i -> i > 2) == true :: false :: Nil
+
+    @test
+    def mapPure07(): Bool & Impure =
+        (7 :: 8 :: Nil) |> List.toIterator |>
+            Iterator.map(i -> i > 2) == true :: true :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // map (impure)                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def mapImpure01(): Bool & Impure =
+        Nil |> List.toIterator |>
+            Iterator.map(i -> i > 2 as & Impure) == Nil
+
+    @test
+    def mapImpure02(): Bool & Impure =
+        (1 :: Nil) |> List.toIterator |>
+            Iterator.map(i -> i > 2 as & Impure) == false :: Nil
+
+    @test
+    def mapImpure03(): Bool & Impure =
+        (3 :: Nil) |> List.toIterator |>
+            Iterator.map(i -> i > 2 as & Impure) == true :: Nil
+
+    @test
+    def mapImpure04(): Bool & Impure =
+        (1 :: 2 :: Nil) |> List.toIterator |>
+            Iterator.map(i -> i > 2 as & Impure) == false :: false :: Nil
+
+    @test
+    def mapImpure05(): Bool & Impure =
+        (1 :: 8 :: Nil) |> List.toIterator |>
+            Iterator.map(i -> i > 2 as & Impure) == false :: true :: Nil
+
+    @test
+    def mapImpure06(): Bool & Impure =
+        (8 :: 1 :: Nil) |> List.toIterator |>
+            Iterator.map(i -> i > 2 as & Impure) == true :: false :: Nil
+
+    @test
+    def mapImpure07(): Bool & Impure =
+        (7 :: 8 :: Nil) |> List.toIterator |>
+            Iterator.map(i -> i > 2 as & Impure) == true :: true :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foreach                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foreach01(): Bool & Impure =
+        let r = ref 21;
+        Nil |> List.toIterator |>
+            Iterator.foreach(x -> r := x);
+        21 == deref r
+
+    @test
+    def foreach02(): Bool & Impure =
+        let r = ref 21;
+        (1 :: 2 :: 3 :: Nil) |> List.toIterator |>
+            Iterator.foreach(x -> r := x);
+        3 == deref r
 
 }
