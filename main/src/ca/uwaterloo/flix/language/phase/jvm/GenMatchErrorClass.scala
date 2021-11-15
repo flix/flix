@@ -42,6 +42,8 @@ object GenMatchErrorClass {
     val cm = ClassMaker.mkClass(JvmName.MatchError, Public, Final, superClass = JvmName.FlixError)
 
     cm.mkConstructor(genConstructor(), mkDescriptor(JvmType.ReifiedSourceLocation)(JvmType.Void), Public)
+
+    // TODO: Are these ever used?
     cm.mkMethod(genEquals(), "equals", mkDescriptor(JvmType.Object)(JvmType.PrimBool), Public, Implementable, Instanced)
     cm.mkMethod(genHashCode(), "hashCode", mkDescriptor()(JvmType.PrimInt), Public, Implementable, Instanced)
     cm.mkField(LocationFieldName, JvmType.ReifiedSourceLocation, Public, Final, Instanced)
