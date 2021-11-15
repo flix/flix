@@ -31,6 +31,8 @@
 - No shadowed variables.
 - No unused local variables.
 - Common methods are `visitExp`, `visitExps`, `visitPat`, etc.
+- When using monads like `Validation` use `mapN` over `for ... yield` whenever possible
+- Write single-variable `mapN` cases open to additional variables with `mapN ... { case ... => ... }`
 - Prefer to name expressions just `exp1`, `exp2`, `exp3`.
   - Names such as `beginExp` etc. quickly get outdated.
 - Leave the code in better state than you found it in.

@@ -57,7 +57,7 @@ object Stratifier extends Phase[Root, Root] {
     // Compute an over-approximation of the dependency graph for all constraints in the program.
     val dg = flix.subphase("Compute Dependency Graph") {
       ParOps.parAgg(root.defs, DependencyGraph.empty)({
-        case (acc, (sym, decl)) => acc + dependencyGraphOfDef(decl)
+        case (acc, (_, decl)) => acc + dependencyGraphOfDef(decl)
       }, _ + _)
     }
 
@@ -658,14 +658,14 @@ object Stratifier extends Phase[Root, Root] {
       DependencyGraph.empty
 
     case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _) =>
-     dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2) + dependencyGraphOfExp(exp3)
+      dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2) + dependencyGraphOfExp(exp3)
   }
 
   /**
     * Returns the dependency graph of the given constraint `c0`.
     */
   private def dependencyGraphOfConstraint(c0: Constraint): DependencyGraph = c0 match {
-    case Constraint(cparams, head, body, _) =>
+    case Constraint(_, head, body, _) =>
       getPredicate(head) match {
         case None => DependencyGraph.empty
         case Some(headSym) =>
@@ -678,19 +678,19 @@ object Stratifier extends Phase[Root, Root] {
     * Optionally returns the predicate of the given head atom `head0`.
     */
   private def getPredicate(head0: Predicate.Head): Option[Name.Pred] = head0 match {
-    case Predicate.Head.Atom(pred, den, terms, tpe, loc) => Some(pred)
+    case Predicate.Head.Atom(pred, _, _, _, _) => Some(pred)
   }
 
   /**
     * Optionally returns a dependency edge of the right type for the given head predicate `head` and body predicate `body0`.
     */
   private def visitDependencyEdge(head: Name.Pred, body0: Predicate.Body): Option[DependencyEdge] = body0 match {
-    case Predicate.Body.Atom(pred, den, polarity, terms, tpe, loc) => polarity match {
+    case Predicate.Body.Atom(pred, _, polarity, _, _, loc) => polarity match {
       case Polarity.Positive => Some(DependencyEdge.Positive(head, pred, loc))
       case Polarity.Negative => Some(DependencyEdge.Negative(head, pred, loc))
     }
 
-    case Predicate.Body.Guard(exp, loc) => None
+    case Predicate.Body.Guard(_, _) => None
   }
 
   /**
