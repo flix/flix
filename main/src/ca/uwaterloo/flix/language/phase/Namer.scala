@@ -750,10 +750,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       val rulesVal = traverse(rules) {
         case WeededAst.CatchRule(ident, className, body) =>
           val sym = Symbol.freshVarSym(ident, BoundBy.CatchRule)
-          val classVal = lookupClass(className, loc)
           val bodyVal = visitExp(body, env0 + (ident.name -> sym), uenv0, tenv0)
-          mapN(classVal, bodyVal) {
-            case (c, b) => NamedAst.CatchRule(sym, c, b)
+          mapN(bodyVal) {
+            b => NamedAst.CatchRule(sym, className, b)
           }
       }
 
@@ -1487,18 +1486,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def filterBoundVars(freeVars: List[Name.Ident], boundVars: List[Name.Ident]): List[Name.Ident] = {
     freeVars.filter(n1 => !boundVars.exists(n2 => n1.name == n2.name))
-  }
-
-  /**
-    * Returns the class reflection object for the given `className`.
-    */
-  // TODO: Deprecated should be moved to resolver.
-  private def lookupClass(className: String, loc: SourceLocation)(implicit flix: Flix): Validation[Class[_], NameError] = try {
-    // Don't initialize the class; we don't want to execute static initializers.
-    val initialize = false
-    Class.forName(className, initialize, flix.jarLoader).toSuccess
-  } catch {
-    case ex: ClassNotFoundException => NameError.UndefinedNativeClass(className, loc).toFailure
   }
 
   /**

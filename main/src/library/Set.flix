@@ -411,6 +411,12 @@ namespace Set {
         foldLeft((acc, x) -> x :: acc, Nil, xs)
 
     ///
+    /// Returns the set `s` as a chain.
+    ///
+    pub def toChain(s: Set[a]): Chain[a] =
+        foldLeft((ac, x) -> Chain.snoc(ac, x), Chain.empty(), s)
+
+    ///
     /// Returns the association set `xs` as a map.
     ///
     /// If `xs` contains multiple mappings with the same key, `toMap` does not

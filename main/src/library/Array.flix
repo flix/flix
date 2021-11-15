@@ -136,6 +136,23 @@ namespace Array {
         }
 
     ///
+    /// Returns the array `arr` as a chain.
+    ///
+    pub def toChain(arr: Array[a]): Chain[a] & Impure =
+        toChainHelper(arr, arr.length, Chain.empty())
+
+    ///
+    /// Helper function for `toChain`.
+    ///
+    def toChainHelper(a: Array[a], i: Int32, ac: Chain[a]): Chain[a] & Impure =
+        if (i == 0) {
+            ac
+        } else {
+            let x = a[i - 1];
+            toChainHelper(a, i - 1, Chain.cons(x, ac))
+        }
+
+    ///
     /// Returns the array `a` as a stream.
     ///
     // TODO: Add tests

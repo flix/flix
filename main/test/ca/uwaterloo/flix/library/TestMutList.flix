@@ -1326,6 +1326,27 @@ namespace TestMutList {
         ml |> MutList.toList == List.range(0, 1000) and
            ml == MutList.range(0, 1000)
 
+    /////////////////////////////////////////////////////////////////////////////
+    // toChain                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toChain01(): Bool & Impure =
+        MutList.toChain(List.toMutList(Nil): MutList[Int]) == Chain.empty(): Chain[Int]
+
+    @test
+    def toChain02(): Bool & Impure =
+        MutList.toChain(List.toMutList(1 :: Nil)) == Chain.singleton(1)
+
+    @test
+    def toChain03(): Bool & Impure =
+        MutList.toChain(List.toMutList(1 :: 2 :: Nil)) == List.toChain(1 :: 2 :: Nil)
+
+    @test
+    def toChain04(): Bool & Impure =
+        MutList.toChain(List.toMutList(1 :: 2 :: 3 :: Nil)) == List.toChain(1 :: 2 :: 3 :: Nil)
+
+
 
 /////////////////////////////////////////////////////////////////////////////
 // The following tests for sort functions correspond to those in TestArray //

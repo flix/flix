@@ -71,9 +71,9 @@ object JvmType {
     */
   val ScalaMathPkg: JvmType.Reference = Reference(JvmName.ScalaMathPkg)
 
-  val ProxyObject: JvmType.Reference = Reference(JvmName.ProxyObject)
-
   val Function: JvmType.Reference = Reference(JvmName.Function)
+
+  val AtomicLong: JvmType.Reference = Reference(JvmName.AtomicLong)
 
   /**
     * Represents the void type.
