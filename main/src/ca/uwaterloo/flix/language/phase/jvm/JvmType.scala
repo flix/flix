@@ -73,6 +73,8 @@ object JvmType {
 
   val Function: JvmType.Reference = Reference(JvmName.Function)
 
+  val AtomicLong: JvmType.Reference = Reference(JvmName.AtomicLong)
+
   /**
     * Represents the void type.
     */
