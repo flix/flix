@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.InternalCompilerException
-import org.objectweb.asm.{Label, MethodVisitor, Opcodes => Op}
+import org.objectweb.asm.{Label, MethodVisitor, Opcodes}
 
 object BytecodeInstructions {
 
@@ -64,118 +64,118 @@ object BytecodeInstructions {
   //
 
   def AASTORE(): InstructionSet = f => {
-    f.visitInstruction(Op.AASTORE)
+    f.visitInstruction(Opcodes.AASTORE)
     f
   }
 
   def ALOAD(index: Int): InstructionSet = f => {
-    f.visitVarInstruction(Op.ALOAD, index)
+    f.visitVarInstruction(Opcodes.ALOAD, index)
     f
   }
 
   def ANEWARRAY(className: JvmName): InstructionSet = f => {
-    f.visitTypeInstruction(Op.ANEWARRAY, className)
+    f.visitTypeInstruction(Opcodes.ANEWARRAY, className)
     f
   }
 
   def ARETURN(): InstructionSet = f => {
-    f.visitInstruction(Op.ARETURN)
+    f.visitInstruction(Opcodes.ARETURN)
     f
   }
 
   def ASTORE(index: Int): InstructionSet = f => {
-    f.visitVarInstruction(Op.ASTORE, index)
+    f.visitVarInstruction(Opcodes.ASTORE, index)
     f
   }
 
   def CHECKCAST(className: JvmName): InstructionSet = f => {
-    f.visitTypeInstruction(Op.CHECKCAST, className)
+    f.visitTypeInstruction(Opcodes.CHECKCAST, className)
     f
   }
 
   def DRETURN(): InstructionSet = f => {
-    f.visitInstruction(Op.DRETURN)
+    f.visitInstruction(Opcodes.DRETURN)
     f
   }
 
   def DUP(): InstructionSet = f => {
-    f.visitInstruction(Op.DUP)
+    f.visitInstruction(Opcodes.DUP)
     f
   }
 
   def FRETURN(): InstructionSet = f => {
-    f.visitInstruction(Op.FRETURN)
+    f.visitInstruction(Opcodes.FRETURN)
     f
   }
 
   def GETFIELD(className: JvmName, fieldName: String, fieldType: JvmType): InstructionSet = f => {
-    f.visitFieldInstruction(Op.GETFIELD, className, fieldName, fieldType)
+    f.visitFieldInstruction(Opcodes.GETFIELD, className, fieldName, fieldType)
     f
   }
 
   def GETSTATIC(className: JvmName, fieldName: String, fieldType: JvmType): InstructionSet = f => {
-    f.visitFieldInstruction(Op.GETSTATIC, className, fieldName, fieldType)
+    f.visitFieldInstruction(Opcodes.GETSTATIC, className, fieldName, fieldType)
     f
   }
 
   def ICONST_0(): InstructionSet = f => {
-    f.visitInstruction(Op.ICONST_0)
+    f.visitInstruction(Opcodes.ICONST_0)
     f
   }
 
   def ICONST_1(): InstructionSet = f => {
-    f.visitInstruction(Op.ICONST_1)
+    f.visitInstruction(Opcodes.ICONST_1)
     f
   }
 
   def IF_ACMPNE(trueBranch: InstructionSet)(falseBranch: InstructionSet): InstructionSet =
-    branch(Op.IF_ACMPNE)(trueBranch)(falseBranch)
+    branch(Opcodes.IF_ACMPNE)(trueBranch)(falseBranch)
 
   def IFNULL(trueBranch: InstructionSet)(falseBranch: InstructionSet): InstructionSet =
-    branch(Op.IFNULL)(trueBranch)(falseBranch)
+    branch(Opcodes.IFNULL)(trueBranch)(falseBranch)
 
   def INVOKESPECIAL(className: JvmName, methodName: String, descriptor: MethodDescriptor): InstructionSet = f => {
-    f.visitMethodInstruction(Op.INVOKESPECIAL, className, methodName, descriptor)
+    f.visitMethodInstruction(Opcodes.INVOKESPECIAL, className, methodName, descriptor)
     f
   }
 
   def INVOKESTATIC(className: JvmName, methodName: String, descriptor: MethodDescriptor): InstructionSet = f => {
-    f.visitMethodInstruction(Op.INVOKESTATIC, className, methodName, descriptor)
+    f.visitMethodInstruction(Opcodes.INVOKESTATIC, className, methodName, descriptor)
     f
   }
 
   def INVOKEVIRTUAL(className: JvmName, methodName: String, descriptor: MethodDescriptor): InstructionSet = f => {
-    f.visitMethodInstruction(Op.INVOKEVIRTUAL, className, methodName, descriptor)
+    f.visitMethodInstruction(Opcodes.INVOKEVIRTUAL, className, methodName, descriptor)
     f
   }
 
   def IRETURN(): InstructionSet = f => {
-    f.visitInstruction(Op.IRETURN)
+    f.visitInstruction(Opcodes.IRETURN)
     f
   }
 
   def LRETURN(): InstructionSet = f => {
-    f.visitInstruction(Op.LRETURN)
+    f.visitInstruction(Opcodes.LRETURN)
     f
   }
 
   def NEW(className: JvmName): InstructionSet = f => {
-    f.visitTypeInstruction(Op.NEW, className)
+    f.visitTypeInstruction(Opcodes.NEW, className)
     f
   }
 
   def PUTFIELD(className: JvmName, fieldName: String, fieldType: JvmType): InstructionSet = f => {
-    f.visitFieldInstruction(Op.PUTFIELD, className, fieldName, fieldType)
+    f.visitFieldInstruction(Opcodes.PUTFIELD, className, fieldName, fieldType)
     f
   }
 
   def PUTSTATIC(className: JvmName, fieldName: String, fieldType: JvmType): InstructionSet = f => {
-    f.visitFieldInstruction(Op.PUTSTATIC, className, fieldName, fieldType)
+    f.visitFieldInstruction(Opcodes.PUTSTATIC, className, fieldName, fieldType)
     f
   }
 
   def RETURN(): InstructionSet = f => {
-    f.visitInstruction(Op.RETURN)
+    f.visitInstruction(Opcodes.RETURN)
     f
   }
 
@@ -219,7 +219,7 @@ object BytecodeInstructions {
     f.visitJumpInstruction(opcode, jumpLabel)
 
     f = falseBranch(f)
-    f.visitJumpInstruction(Op.GOTO, skipLabel)
+    f.visitJumpInstruction(Opcodes.GOTO, skipLabel)
 
     f.visitLabel(jumpLabel)
     f = trueBranch(f)
