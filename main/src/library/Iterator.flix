@@ -204,6 +204,8 @@ namespace Iterator {
     ///
     /// That is, the result is of the form: `f(x1) :: f(x2) :: ...`.
     ///
+    /// Consumes the entire iterator.
+    ///
     pub def map(f: a -> b & ef, iter: Iterator[a]): List[b] & Impure =
         let Iterator(done, next) = iter;
         mapAcc(f, done, next, ks -> ks)
@@ -220,6 +222,8 @@ namespace Iterator {
 
     ///
     /// Applies `f` to every element of `iter`.
+    ///
+    /// Consumes the entire iterator.
     ///
     pub def foreach(f: a -> Unit & ef, iter: Iterator[a]): Unit & Impure =
         let Iterator(done, next) = iter;
