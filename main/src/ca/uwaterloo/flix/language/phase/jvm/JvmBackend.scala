@@ -39,6 +39,10 @@ object JvmBackend extends Phase[Root, CompilationResult] {
     //
     implicit val r: Root = root
 
+    // TODO: This should be limited to those actually used
+    val erasedRefTypes = List(JvmType.PrimBool, JvmType.PrimChar, JvmType.PrimFloat, JvmType.PrimDouble,
+      JvmType.PrimByte, JvmType.PrimShort, JvmType.PrimInt, JvmType.PrimLong, JvmType.Reference(JvmName.Object)).map(JvmType.???(_))
+
     // Generate all classes.
     val allClasses = flix.subphase("CodeGen") {
 
