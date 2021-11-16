@@ -17,132 +17,99 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import org.objectweb.asm.{ClassWriter, Label}
-import org.objectweb.asm.Opcodes._
+import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Finality._
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Instancing._
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility._
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
+import org.objectweb.asm.Opcodes
 
 object GenMatchErrorClass {
 
   val LocationFieldName: String = "location"
 
   /**
-   * Creates a subclass of `dev.flix.runtime.FlixError` with a `dev.flix.runtime.ReifiedSourceLocation` and a string prefix o the message.
-   * Includes equals and hashCode methods.
-   *
-   * @param className the jvm name of the class
-   * @param prefix something like `Division by zero at ` which will be followed by the location (remember the trailing space)
-   */
+    * Creates a subclass of `dev.flix.runtime.FlixError` with a
+    * `dev.flix.runtime.ReifiedSourceLocation` and a string prefix of the message.
+    * Includes equals and hashCode methods.
+    */
   def gen()(implicit flix: Flix): Map[JvmName, JvmClass] = {
-    val className = JvmName.MatchError
-    val bytecode = genByteCode(className)
-    Map(className -> JvmClass(className, bytecode))
+    Map(JvmName.MatchError -> JvmClass(JvmName.MatchError, genByteCode()))
   }
 
-  private def genByteCode(name: JvmName)(implicit flix: Flix): Array[Byte] = {
-    // class writer
-    val visitor = AsmOps.mkClassWriter()
+  private def genByteCode()(implicit flix: Flix): Array[Byte] = {
+    val cm = ClassMaker.mkClass(JvmName.MatchError, Public, Final, superClass = JvmName.FlixError)
 
-    // internal name of super
-    val superClass = JvmName.FlixError
+    cm.mkConstructor(genConstructor(), mkDescriptor(JvmType.ReifiedSourceLocation)(JvmType.Void), Public)
 
-    // Initialize the visitor to create a class.
-    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, name.toInternalName, null, superClass.toInternalName, null)
+    // TODO: Are these ever used?
+    cm.mkMethod(genEquals(), "equals", mkDescriptor(JvmType.Object)(JvmType.PrimBool), Public, Implementable, Instanced)
+    cm.mkMethod(genHashCode(), "hashCode", mkDescriptor()(JvmType.PrimInt), Public, Implementable, Instanced)
+    cm.mkField(LocationFieldName, JvmType.ReifiedSourceLocation, Public, Final, Instanced)
 
-    // Source of the class
-    visitor.visitSource(name.toInternalName, null)
-
-    genConstructor(name, superClass, visitor)
-    genEquals(name, visitor)
-    genHashCode(name, visitor)
-    visitor.visitField(ACC_PUBLIC + ACC_FINAL, LocationFieldName, JvmName.ReifiedSourceLocation.toDescriptor, null, null).visitEnd()
-
-    visitor.visitEnd()
-    visitor.toByteArray
+    cm.closeClassMaker
   }
 
-  private def genConstructor(name: JvmName, superClass: JvmName, visitor: ClassWriter): Unit = {
-    val stringToBuilderDescriptor = s"(${JvmName.String.toDescriptor})${JvmName.StringBuilder.toDescriptor}"
-    val builderName = JvmName.StringBuilder.toInternalName
-
-    val method = visitor.visitMethod(ACC_PUBLIC, "<init>", s"(${JvmName.ReifiedSourceLocation.toDescriptor})${JvmType.Void.toDescriptor}", null, null)
-    method.visitCode()
-
-    method.visitVarInsn(ALOAD, 0)
-    method.visitTypeInsn(NEW, builderName)
-    method.visitInsn(DUP)
-    method.visitMethodInsn(INVOKESPECIAL, builderName, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
-    method.visitLdcInsn("Non-exhaustive match at ")
-    method.visitMethodInsn(INVOKEVIRTUAL, builderName, "append", stringToBuilderDescriptor, false)
-    method.visitVarInsn(ALOAD, 1)
-    method.visitMethodInsn(INVOKEVIRTUAL, JvmName.ReifiedSourceLocation.toInternalName, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String), false)
-    method.visitMethodInsn(INVOKEVIRTUAL, builderName, "append", stringToBuilderDescriptor, false)
-    method.visitMethodInsn(INVOKEVIRTUAL, builderName, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String), false)
-    method.visitMethodInsn(INVOKESPECIAL, superClass.toInternalName, "<init>", AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Void), false)
-    method.visitVarInsn(ALOAD, 0)
-    method.visitVarInsn(ALOAD, 1)
-    method.visitFieldInsn(PUTFIELD, name.toInternalName, LocationFieldName, JvmName.ReifiedSourceLocation.toDescriptor)
-    method.visitInsn(RETURN)
-
-    method.visitMaxs(999, 999)
-    method.visitEnd()
+  private def genConstructor(): InstructionSet = {
+    val stringBuilderDescriptor = mkDescriptor(JvmType.String)(JvmType.StringBuilder)
+    ALOAD(0) ~
+      NEW(JvmName.StringBuilder) ~
+      DUP() ~
+      invokeConstructor(JvmName.StringBuilder) ~
+      pushString("Non-exhaustive match at ") ~
+      INVOKEVIRTUAL(JvmName.StringBuilder, "append", stringBuilderDescriptor) ~
+      ALOAD(1) ~
+      INVOKEVIRTUAL(JvmName.ReifiedSourceLocation, "toString", mkDescriptor()(JvmType.String)) ~
+      INVOKEVIRTUAL(JvmName.StringBuilder, "append", stringBuilderDescriptor) ~
+      INVOKEVIRTUAL(JvmName.StringBuilder, "toString", mkDescriptor()(JvmType.String)) ~
+      invokeConstructor(JvmName.FlixError, mkDescriptor(JvmType.String)(JvmType.Void)) ~
+      ALOAD(0) ~
+      ALOAD(1) ~
+      PUTFIELD(JvmName.MatchError, LocationFieldName, JvmType.ReifiedSourceLocation) ~
+      RETURN()
   }
 
-  private def genEquals(name: JvmName, visitor: ClassWriter): Unit = {
-    val method = visitor.visitMethod(ACC_PUBLIC, "equals", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.PrimBool), null, null)
-    method.visitCode()
-
-    method.visitVarInsn(ALOAD, 0)
-    method.visitVarInsn(ALOAD, 1)
-    val label1 = new Label()
-    method.visitJumpInsn(IF_ACMPNE, label1)
-    method.visitInsn(ICONST_1)
-    method.visitInsn(IRETURN)
-
-    method.visitLabel(label1)
-    method.visitVarInsn(ALOAD, 1)
-    val label2 = new Label()
-    method.visitJumpInsn(IFNULL, label2)
-    method.visitVarInsn(ALOAD, 0)
-    method.visitMethodInsn(INVOKEVIRTUAL, JvmName.Object.toInternalName, "getClass", "()Ljava/lang/Class;", false)
-    method.visitVarInsn(ALOAD, 1)
-    method.visitMethodInsn(INVOKEVIRTUAL, JvmName.Object.toInternalName, "getClass", "()Ljava/lang/Class;", false)
-    val label3 = new Label()
-    method.visitJumpInsn(IF_ACMPEQ, label3)
-
-    method.visitLabel(label2)
-    method.visitInsn(ICONST_0)
-    method.visitInsn(IRETURN)
-
-    method.visitLabel(label3)
-    method.visitVarInsn(ALOAD, 1)
-    method.visitTypeInsn(CHECKCAST, name.toInternalName)
-    method.visitVarInsn(ASTORE, 2)
-    method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, LocationFieldName, JvmName.ReifiedSourceLocation.toDescriptor)
-    method.visitVarInsn(ALOAD, 2)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, LocationFieldName, JvmName.ReifiedSourceLocation.toDescriptor)
-    method.visitMethodInsn(INVOKESTATIC, JvmName.Objects.toInternalName, "equals", AsmOps.getMethodDescriptor(List(JvmType.Object, JvmType.Object), JvmType.PrimBool), false)
-    method.visitInsn(IRETURN)
-
-    method.visitMaxs(999, 999)
-    method.visitEnd()
+  private def genEquals(): InstructionSet = {
+    ALOAD(0) ~
+      ALOAD(1) ~
+      IF_ACMPNE {
+        ALOAD(1) ~
+          IFNULL {
+            pushBool(false) ~ IRETURN()
+          } {
+            ALOAD(0) ~
+              INVOKEVIRTUAL(JvmName.Object, "getClass", MethodDescriptor(Nil, JvmType.Class)) ~
+              ALOAD(1) ~
+              INVOKEVIRTUAL(JvmName.Object, "getClass", MethodDescriptor(Nil, JvmType.Class)) ~
+              IF_ACMPNE {
+                ALOAD(1) ~
+                  CHECKCAST(JvmName.MatchError) ~
+                  ASTORE(2) ~
+                  ALOAD(0) ~
+                  GETFIELD(JvmName.MatchError, LocationFieldName, JvmType.ReifiedSourceLocation) ~
+                  ALOAD(2) ~
+                  GETFIELD(JvmName.MatchError, LocationFieldName, JvmType.ReifiedSourceLocation) ~
+                  INVOKESTATIC(JvmName.Objects, "equals", MethodDescriptor(List(JvmType.Object, JvmType.Object), JvmType.PrimBool)) ~
+                  IRETURN()
+              } {
+                pushBool(false) ~ IRETURN()
+              }
+          }
+      } {
+        pushBool(true) ~ IRETURN()
+      }
   }
 
-  private def genHashCode(name: JvmName, visitor: ClassWriter): Unit = {
-    val method = visitor.visitMethod(ACC_PUBLIC, "hashCode", AsmOps.getMethodDescriptor(Nil, JvmType.PrimInt), null, null)
-    method.visitCode()
-
-    method.visitInsn(ICONST_1)
-    method.visitTypeInsn(ANEWARRAY, JvmName.Object.toInternalName)
-    method.visitInsn(DUP)
-    method.visitInsn(ICONST_0)
-    method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, LocationFieldName, JvmName.ReifiedSourceLocation.toDescriptor)
-    method.visitInsn(AASTORE)
-    method.visitMethodInsn(INVOKESTATIC, JvmName.Objects.toInternalName, "hash", s"([${JvmName.Object.toDescriptor})${JvmType.PrimInt.toDescriptor}", false)
-    method.visitInsn(IRETURN)
-
-    method.visitMaxs(999, 999)
-    method.visitEnd()
+  private def genHashCode(): InstructionSet = {
+    ICONST_1() ~
+      ANEWARRAY(JvmName.Object) ~
+      DUP() ~
+      ICONST_0() ~
+      ALOAD(0) ~
+      GETFIELD(JvmName.MatchError, LocationFieldName, JvmType.ReifiedSourceLocation) ~
+      AASTORE() ~
+      cheat(_.visitMethodInsn(Opcodes.INVOKESTATIC, JvmName.Objects.toInternalName, "hash", s"([${JvmName.Object.toDescriptor})${JvmType.PrimInt.toDescriptor}", false)) ~
+      IRETURN()
   }
-
 }
