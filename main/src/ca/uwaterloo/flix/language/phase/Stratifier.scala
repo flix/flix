@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.{ConstraintGraph, ConstraintMultiEdge, DependencyEdge, Polarity}
+import ca.uwaterloo.flix.language.ast.Ast.{ConstraintGraph, DependencyEdge, DependencyGraph, MultiEdge, Polarity}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast._
@@ -679,7 +679,7 @@ object Stratifier extends Phase[Root, Root] {
               case Body.Guard(_, _) => (pos, neg)
             }
           }
-          val edge = ConstraintMultiEdge(headSym, pos, neg)
+          val edge = MultiEdge(headSym, pos, neg)
           ConstraintGraph(Set(edge))
       }
   }
@@ -713,7 +713,7 @@ object Stratifier extends Phase[Root, Root] {
         val rg = restrict(dg, tpe)
 
         // Compute the stratification.
-        stratify(constraintGraphToDepedencyGraph(rg), tpe, loc) match {
+        stratify(constraintGraphToDependencyGraph(rg), tpe, loc) match {
           case Validation.Success(stf) =>
             // Cache the stratification.
             cache.put(key, stf)
@@ -727,9 +727,12 @@ object Stratifier extends Phase[Root, Root] {
     }
   }
 
-  private def constraintGraphToDepedencyGraph(c: ConstraintGraph): Set[DependencyEdge] =
+  /**
+    * Computes the dependency graph from the Constraint graph.
+    */
+  private def constraintGraphToDependencyGraph(c: ConstraintGraph): DependencyGraph =
     c.xs.flatMap {
-      case ConstraintMultiEdge(head, positives, negatives) =>
+      case MultiEdge(head, positives, negatives) =>
         val p = positives.map { case (b, loc) => DependencyEdge.Positive(head, b, loc) }
         val n = negatives.map { case (b, loc) => DependencyEdge.Negative(head, b, loc) }
         p ++ n
@@ -740,7 +743,7 @@ object Stratifier extends Phase[Root, Root] {
     *
     * See Database and Knowledge - Base Systems Volume 1 Ullman, Algorithm 3.5 p 133
     */
-  private def stratify(g: Set[DependencyEdge], tpe: Type, loc: SourceLocation): Validation[Ast.Stratification, StratificationError] = {
+  private def stratify(g: DependencyGraph, tpe: Type, loc: SourceLocation): Validation[Ast.Stratification, StratificationError] = {
     //
     // Maintain a mutable map from predicates to their (maximum) stratum number.
     //
@@ -811,7 +814,7 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * Returns a path that forms a cycle with the edge from `src` to `dst` in the given dependency graph `g`.
     */
-  private def findNegativeCycle(src: Name.Pred, dst: Name.Pred, g: Set[DependencyEdge], loc: SourceLocation): List[(Name.Pred, SourceLocation)] = {
+  private def findNegativeCycle(src: Name.Pred, dst: Name.Pred, g: DependencyGraph, loc: SourceLocation): List[(Name.Pred, SourceLocation)] = {
     // Computes a map from predicates to their successors.
     val succ = mutable.Map.empty[Name.Pred, Set[(Name.Pred, SourceLocation)]]
     for (edge <- g) {

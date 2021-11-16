@@ -376,9 +376,14 @@ object Ast {
   }
 
   /**
+    * Represents the separated dependency graph oblivious to the rules that contain them.
+    */
+  type DependencyGraph = Set[DependencyEdge]
+
+  /**
     * Contains the edges held in a single constraint.
     */
-  case class ConstraintMultiEdge(head: Name.Pred, positives: Set[(Name.Pred, SourceLocation)], negatives: Set[(Name.Pred, SourceLocation)])
+  case class MultiEdge(head: Name.Pred, positives: Set[(Name.Pred, SourceLocation)], negatives: Set[(Name.Pred, SourceLocation)])
 
   object ConstraintGraph {
     /**
@@ -390,7 +395,7 @@ object Ast {
   /**
     * Represents a constraint graph; a set dependency graphs representing each rule.
     */
-  case class ConstraintGraph(xs: Set[ConstraintMultiEdge]) {
+  case class ConstraintGraph(xs: Set[MultiEdge]) {
     /**
       * Returns a constraint graph with all dependency graphs in `this` and `that` constraint graph.
       */
@@ -409,7 +414,7 @@ object Ast {
       */
     def restrict(syms: Set[Name.Pred]): ConstraintGraph =
       ConstraintGraph(xs.filter {
-        case ConstraintMultiEdge(head, positives, negatives) =>
+        case MultiEdge(head, positives, negatives) =>
           syms.contains(head) &&
             positives.forall { case (s, _) => syms.contains(s) } &&
             negatives.forall { case (s, _) => syms.contains(s) }
