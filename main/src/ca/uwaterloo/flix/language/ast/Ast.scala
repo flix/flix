@@ -358,29 +358,6 @@ object Ast {
   }
 
   /**
-    * Represents a dependency between two predicate symbols.
-    */
-  sealed trait DependencyEdge
-
-  object DependencyEdge {
-
-    /**
-      * Represents a positive labelled edge.
-      */
-    case class Positive(head: Name.Pred, body: Name.Pred, loc: SourceLocation) extends DependencyEdge
-
-    /**
-      * Represents a negative labelled edge.
-      */
-    case class Negative(head: Name.Pred, body: Name.Pred, loc: SourceLocation) extends DependencyEdge
-  }
-
-  /**
-    * Represents the separated dependency graph oblivious to the rules that contain them.
-    */
-  type DependencyGraph = Set[DependencyEdge]
-
-  /**
     * Contains the edges held in a single constraint.
     */
   case class MultiEdge(head: Name.Pred, positives: Set[(Name.Pred, SourceLocation)], negatives: Set[(Name.Pred, SourceLocation)])
