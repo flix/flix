@@ -18,7 +18,9 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker._
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Finality._
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Instancing._
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility._
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 
 /**
@@ -47,14 +49,14 @@ object GenGlobalCounterClass {
 
   private def genConstructor(): InstructionSet = {
     ALOAD(0) ~
-      InvokeSimpleConstructor(JvmName.Object) ~
+      invokeConstructor(JvmName.Object) ~
       RETURN()
   }
 
   private def genStaticConstructor(): InstructionSet = {
     NEW(JvmName.AtomicLong) ~
       DUP() ~
-      InvokeSimpleConstructor(JvmName.AtomicLong) ~
+      invokeConstructor(JvmName.AtomicLong) ~
       PUTSTATIC(JvmName.AtomicLong, counterFieldName, JvmType.AtomicLong) ~
       RETURN()
   }
