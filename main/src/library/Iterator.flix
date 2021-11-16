@@ -179,4 +179,60 @@ namespace Iterator {
         else
             toSetAcc(done, next, Set.insert(next(), s))
 
+    ///
+    /// Returns a list of every element in `iter` that satisfies the predicate `f`.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def filter(f: a -> Bool & ef, iter: Iterator[a]): List[a] & ef =
+        let Iterator(done, next) = iter;
+        filterAcc(f, done, next, ks -> ks) as & ef
+
+    ///
+    /// Helper function for `filter`.
+    ///
+    def filterAcc(f: a -> Bool & ef, done: Done, next: Next[a], k: List[a] -> List[a]): List[a] & Impure =
+        if (done())
+            k(Nil)
+        else
+            let x = next();
+            let include = f(x);
+            if (include) filterAcc(f, done, next, ks -> k(x :: ks)) else filterAcc(f, done, next, k)
+
+    ///
+    /// Returns a list with `f` applied to every element in `iter`.
+    ///
+    /// That is, the result is of the form: `f(x1) :: f(x2) :: ...`.
+    ///
+    pub def map(f: a -> b & ef, iter: Iterator[a]): List[b] & ef =
+        let Iterator(done, next) = iter;
+        mapAcc(f, done, next, ks -> ks) as & ef
+
+    ///
+    /// Helper function for `map`.
+    ///
+    def mapAcc(f: a -> b & ef, done: Done, next: Next[a], k: List[b] -> List[b]): List[b] & Impure =
+        if (done())
+            k(Nil)
+        else
+            let x = f(next());
+            mapAcc(f, done, next, ks -> k(x :: ks))
+
+    ///
+    /// Applies `f` to every element of `iter`.
+    ///
+    pub def foreach(f: a -> Unit & ef, iter: Iterator[a]): Unit & ef =
+        let Iterator(done, next) = iter;
+        foreachHelper(f, done, next) as & ef
+
+    ///
+    /// Helper function for `foreach`.
+    ///
+    def foreachHelper(f: a -> Unit & ef, done: Done, next: Next[a]): Unit & Impure =
+        if (done())
+            ()
+        else
+            let _ = f(next());
+            foreachHelper(f, done, next)
+
 }
