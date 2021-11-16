@@ -77,15 +77,22 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
 
       // Get all the classes.
       val classesByNS = root.classes.values.groupBy(
-        x => x.sym.name
-      ).map{
-        case (str, value) => JField(str, value.map(c => visitClass(c)))
+        x => x.sym
+      ).map {
+        case (str, value) => (visitClassSym(str), value.map(c => visitClass(c)))
+      }
+
+      // Get all the defs.
+      val DefsByNS = root.defs.values.groupBy(
+        x => x.sym
+      ).map {
+        case (str, value) => (visitDefnSym(str), value.map(c => visitDef(c)))
       }
 
       // Construct the JSON object.
       val json = JObject(
         ("namespaces", "[string]"),
-        classesByNS,
+        ("classes", classesByNS),
         /*("defs", DefsByNS),
         ("enums", EnumsByNs),
         ("typeAliases", TypeAliasesByNs)*/
