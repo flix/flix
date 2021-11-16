@@ -16,6 +16,52 @@
 namespace File {
 
     ///
+    /// Returns `true` if the given file `f` exists.
+    ///
+    pub def exists(f: String): Result[Bool, String] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import java.io.File.exists();
+            Ok(exists(newFile(f)))
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Returns `true` is the given file `f` is a directory.
+    ///
+    pub def isDirectory(f: String): Result[Bool, String] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import java.io.File.isDirectory();
+            Ok(isDirectory(newFile(f)))
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Returns `true` if the given file `f` is a regular file.
+    ///
+    pub def isRegularFile(f: String): Result[Bool, String] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import java.io.File.toPath();
+            import java.nio.file.Files:isRegularFile(##java.nio.file.Path, Array[##java.nio.file.LinkOption]);
+            let javaFile = newFile(f);
+            let javaPath = toPath(javaFile);
+            let isRegular = isRegularFile(javaPath, []);
+            Ok(isRegular)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
+    ///
     /// Returns `true` if the given file `f` is readable.
     ///
     pub def isReadable(f: String): Result[Bool, String] & Impure =
@@ -25,6 +71,52 @@ namespace File {
             Ok(canRead(newFile(f)))
         } catch {
             case _: ##java.io.IOException => Err("I/O Error")
+        }
+
+    ///
+    /// Returns `true` if the given file `f` is a symbolic link.
+    ///
+    pub def isSymbolicLink(f: String): Result[Bool, String] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import java.io.File.toPath();
+            import java.nio.file.Files:isSymbolicLink(##java.nio.file.Path);
+            let javaFile = newFile(f);
+            let javaPath = toPath(javaFile);
+            let isSymbolic = isSymbolicLink(javaPath);
+            Ok(isSymbolic)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Returns `true` if the given file `f` is writable.
+    ///
+    pub def isWritable(f: String): Result[Bool, String] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import java.io.File.canWrite();
+            Ok(canWrite(newFile(f)))
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Returns `true` if the given file `f` is executable.
+    ///
+    pub def isExecutable(f: String): Result[Bool, String] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import java.io.File.canExecute();
+            Ok(canExecute(newFile(f)))
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
         }
 
     ///
