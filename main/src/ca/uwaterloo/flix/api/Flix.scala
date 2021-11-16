@@ -114,6 +114,7 @@ class Flix {
     "Benchmark.flix" -> LocalResource.get("/src/library/Benchmark.flix"),
     "Bool.flix" -> LocalResource.get("/src/library/Bool.flix"),
     "BigInt.flix" -> LocalResource.get("/src/library/BigInt.flix"),
+    "Chain.flix" -> LocalResource.get("/src/library/Chain.flix"),
     "Char.flix" -> LocalResource.get("/src/library/Char.flix"),
     "Choice.flix" -> LocalResource.get("/src/library/Choice.flix"),
     "Condition.flix" -> LocalResource.get("/src/library/Condition.flix"),

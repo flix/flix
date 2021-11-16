@@ -1188,6 +1188,12 @@ namespace List {
     }
 
     ///
+    /// Returns the list `xs` as a chain.
+    ///
+    pub def toChain(xs: List[a]): Chain[a] =
+        List.foldLeft(Chain.snoc, Chain.empty(), xs)
+
+    ///
     /// Returns `xs` as a mutable list.
     ///
     pub def toMutList(xs: List[a]): MutList[a] & Impure = {
