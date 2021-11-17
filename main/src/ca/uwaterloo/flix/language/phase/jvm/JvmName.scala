@@ -112,6 +112,9 @@ object JvmName {
   val ReifiedSourceLocation: JvmName = JvmName(DevFlixRuntime, "ReifiedSourceLocation")
   val SelectChoice: JvmName = JvmName(List("ca", "uwaterloo", "flix", "runtime", "interpreter"), "SelectChoice")
 
+  // Deprecated: Should not be used in new code.
+  val Channel: JvmName = JvmName(List("ca", "uwaterloo", "flix", "runtime", "interpreter"), "Channel")
+
   //
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Scala Names ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //

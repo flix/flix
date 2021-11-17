@@ -978,26 +978,26 @@ object GenExpression {
 
     case Expression.NewChannel(exp, _, loc) =>
       addSourceLine(visitor, loc)
-      visitor.visitTypeInsn(NEW, BackendObjType.Channel(null).jvmName.toInternalName)
+      visitor.visitTypeInsn(NEW, JvmName.Channel.toInternalName)
       visitor.visitInsn(DUP)
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-      visitor.visitMethodInsn(INVOKESPECIAL, BackendObjType.Channel(null).jvmName.toInternalName, "<init>", AsmOps.getMethodDescriptor(List(JvmType.PrimInt), JvmType.Void), false)
+      visitor.visitMethodInsn(INVOKESPECIAL, JvmName.Channel.toInternalName, "<init>", AsmOps.getMethodDescriptor(List(JvmType.PrimInt), JvmType.Void), false)
 
     case Expression.GetChannel(exp, tpe, loc) =>
       addSourceLine(visitor, loc)
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-      visitor.visitTypeInsn(CHECKCAST, BackendObjType.Channel(null).jvmName.toInternalName)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Channel(null).jvmName.toInternalName, "get", AsmOps.getMethodDescriptor(Nil, JvmType.Object), false)
+      visitor.visitTypeInsn(CHECKCAST, JvmName.Channel.toInternalName)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Channel.toInternalName, "get", AsmOps.getMethodDescriptor(Nil, JvmType.Object), false)
       AsmOps.castIfNotPrimAndUnbox(visitor, JvmOps.getJvmType(tpe))
 
     case Expression.PutChannel(exp1, exp2, _, loc) =>
       addSourceLine(visitor, loc)
       compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
-      visitor.visitTypeInsn(CHECKCAST, BackendObjType.Channel(null).jvmName.toInternalName)
+      visitor.visitTypeInsn(CHECKCAST, JvmName.Channel.toInternalName)
       visitor.visitInsn(DUP)
       compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
       AsmOps.boxIfPrim(visitor, JvmOps.getJvmType(exp2.tpe))
-      visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Channel(null).jvmName.toInternalName, "put", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Void), false)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Channel.toInternalName, "put", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Void), false)
 
     case Expression.SelectChannel(rules, default, _, loc) =>
       addSourceLine(visitor, loc)
@@ -1005,7 +1005,7 @@ object GenExpression {
 
       // Calculate the size of the array and initiate it
       compileInt(visitor, rules.size)
-      visitor.visitTypeInsn(ANEWARRAY, BackendObjType.Channel(null).jvmName.toInternalName)
+      visitor.visitTypeInsn(ANEWARRAY, JvmName.Channel.toInternalName)
       for ((rule, index) <- rules.zipWithIndex) {
         // Dup so we end up with an array on top of the stack
         visitor.visitInsn(DUP)
@@ -1014,7 +1014,7 @@ object GenExpression {
         // Compile the chan expression 100
         compileExpression(rule.chan, visitor, currentClass, lenv0, entryPoint)
         // Cast the type from Object to Channel
-        visitor.visitTypeInsn(CHECKCAST, BackendObjType.Channel(null).jvmName.toInternalName)
+        visitor.visitTypeInsn(CHECKCAST, JvmName.Channel.toInternalName)
         // Store the expression in the array
         visitor.visitInsn(AASTORE)
       }
@@ -1029,7 +1029,7 @@ object GenExpression {
 
       // TODO SJ: Should we create a JvmName for the return type here? yes
       // Invoke select in Channel. This puts a SelectChoice on the stack
-      visitor.visitMethodInsn(INVOKESTATIC, BackendObjType.Channel(null).jvmName.toInternalName, "select", "([Lca/uwaterloo/flix/runtime/interpreter/Channel;Z)Lca/uwaterloo/flix/runtime/interpreter/SelectChoice;", false)
+      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Channel.toInternalName, "select", "([Lca/uwaterloo/flix/runtime/interpreter/Channel;Z)Lca/uwaterloo/flix/runtime/interpreter/SelectChoice;", false)
 
       // Check if the default case was selected
       val defaultLabel = new Label()
