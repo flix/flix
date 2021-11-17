@@ -1366,7 +1366,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       }
 
     case ParsedAst.Expression.FixpointSolveWithProject(sp1, exps, optIdents, sp2) =>
-      val loc = mkSL(sp1, sp2)
+      val loc = mkSL(sp1, sp2).asSynthetic
       mapN(traverse(exps)(visitExp)) {
         case es =>
           //
@@ -1381,7 +1381,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
           // Introduce a $tmp variable that holds the minimal model of the merge of the exps.
           val freshVar = flix.genSym.freshId()
-          val localVar = Name.Ident(sp1, s"tmp$freshVar", sp2)
+          val localVar = Name.Ident(SourcePosition.Unknown, s"tmp$freshVar", SourcePosition.Unknown)
 
           // Merge all the exps into one Datalog program value.
           val mergeExp = es.reduceRight[WeededAst.Expression] {
@@ -1411,11 +1411,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           }
 
           // Bind the $tmp variable to the minimal model and combine it with the body expression.
-          WeededAst.Expression.Let(localVar, Ast.Modifiers.Empty, modelExp, bodyExp, loc)
+          WeededAst.Expression.Let(localVar, Ast.Modifiers.Empty, modelExp, bodyExp, loc.asReal)
       }
 
     case ParsedAst.Expression.FixpointQueryWithSelect(sp1, exps0, selects0, from0, whereExp0, sp2) =>
-      val loc = mkSL(sp1, sp2)
+      val loc = mkSL(sp1, sp2).asSynthetic
       val selects1 = selects0 match {
         case ParsedAst.SelectFragment(exps, None) => exps
         case ParsedAst.SelectFragment(exps, Some(exp)) => exps.toList ::: exp :: Nil
@@ -1461,7 +1461,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           }
 
           // Extract the tuples of the result predicate.
-          WeededAst.Expression.FixpointProjectOut(pred, queryExp, dbExp, loc)
+          WeededAst.Expression.FixpointProjectOut(pred, queryExp, dbExp, loc.asSynthetic.asReal)
       }
 
     case ParsedAst.Expression.Reify(sp1, t0, sp2) =>
