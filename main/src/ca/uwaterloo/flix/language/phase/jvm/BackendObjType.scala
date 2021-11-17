@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.util.InternalCompilerException
   */
 sealed trait BackendObjType {
   /**
-    * The `JvmName` that represents the type `Ref(Int)` refers to `Ref$Int`.
+    * The `JvmName` that represents the type `Ref(Int)` refers to `"Ref$Int"`.
     */
   val jvmName: JvmName = this match {
     case BackendObjType.Unit => JvmName(DevFlixRuntime, "Unit")
@@ -47,7 +47,7 @@ sealed trait BackendObjType {
   }
 
   /**
-    * The JVM type descriptor of the form `L<jvmName.toInternalName>;`.
+    * The JVM type descriptor of the form `"L<jvmName.toInternalName>;"`.
     */
   def toDescriptor: String = jvmName.toDescriptor
 
