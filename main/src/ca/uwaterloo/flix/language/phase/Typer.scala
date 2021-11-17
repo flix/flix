@@ -1145,20 +1145,6 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
           resultEff <- unifyTypeM(evar, Type.mkAnd(eff1 :: eff2 :: lifetimeVar :: Nil, loc), loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
-      case KindedAst.Expression.Existential(fparam, exp, loc) =>
-        for {
-          paramTyp <- unifyTypeM(fparam.sym.tvar.ascribedWith(Kind.Star), fparam.tpe, loc)
-          (constrs, typ, eff) <- visitExp(exp)
-          resultTyp <- unifyTypeM(typ, Type.Bool, loc)
-        } yield (constrs, resultTyp, Type.Pure)
-
-      case KindedAst.Expression.Universal(fparam, exp, loc) =>
-        for {
-          paramTyp <- unifyTypeM(fparam.sym.tvar.ascribedWith(Kind.Star), fparam.tpe, loc)
-          (constrs, typ, eff) <- visitExp(exp)
-          resultTyp <- unifyTypeM(typ, Type.Bool, loc)
-        } yield (constrs, resultTyp, Type.Pure)
-
       case KindedAst.Expression.Ascribe(exp, expectedTyp, expectedEff, tvar, loc) =>
         // An ascribe expression is sound; the type system checks that the declared type matches the inferred type.
         for {
@@ -1718,14 +1704,6 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
         val tpe = Type.Unit
         val eff = subst0(evar)
         TypedAst.Expression.Assign(e1, e2, tpe, eff, loc)
-
-      case KindedAst.Expression.Existential(fparam, exp, loc) =>
-        val e = visitExp(exp, subst0)
-        TypedAst.Expression.Existential(visitParam(fparam), e, loc)
-
-      case KindedAst.Expression.Universal(fparam, exp, loc) =>
-        val e = visitExp(exp, subst0)
-        TypedAst.Expression.Universal(visitParam(fparam), e, loc)
 
       case KindedAst.Expression.Ascribe(exp, _, _, tvar, loc) =>
         val e = visitExp(exp, subst0)

@@ -787,18 +787,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.Assign(e1, e2, loc)
 
-        case NamedAst.Expression.Existential(fparam, exp, loc) =>
-          for {
-            fp <- Params.resolve(fparam, taenv, ns0, root)
-            e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.Existential(fp, e, loc)
-
-        case NamedAst.Expression.Universal(fparam, exp, loc) =>
-          for {
-            fp <- Params.resolve(fparam, taenv, ns0, root)
-            e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.Universal(fp, e, loc)
-
         case NamedAst.Expression.Ascribe(exp, expectedType, expectedEff, loc) =>
           val expectedTypVal = expectedType match {
             case None => (None: Option[Type]).toSuccess
