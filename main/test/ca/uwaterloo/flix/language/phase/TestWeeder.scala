@@ -62,18 +62,6 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.DuplicateFormalParam](result)
   }
 
-  test("DuplicateFormal.06") {
-    val input = "def f(): Bool = ∀(x: E, x: E). true"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.DuplicateFormalParam](result)
-  }
-
-  test("DuplicateFormal.07") {
-    val input = "def f(): Bool = ∃(x: E, x: E). true"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.DuplicateFormalParam](result)
-  }
-
   test("DuplicateTag.01") {
     val input =
       """enum Color {

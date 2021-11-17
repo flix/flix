@@ -234,9 +234,6 @@ object ClosureConv extends Phase[Root, Root] {
       val e2 = visitExp(exp2)
       Expression.Assign(e1, e2, tpe, loc)
 
-    case Expression.Existential(params, e, loc) =>
-      Expression.Existential(params, visitExp(e), loc)
-
     case Expression.Cast(exp, tpe, loc) =>
       val e = visitExp(exp)
       Expression.Cast(e, tpe, loc)

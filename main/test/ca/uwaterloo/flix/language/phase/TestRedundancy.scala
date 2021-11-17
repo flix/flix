@@ -430,26 +430,6 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.UnusedFormalParam](result)
   }
 
-  test("UnusedFormalParam.Forall.01") {
-    val input =
-      s"""
-         |pub def f(): Bool = forall(x: Int). true
-         |
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.UnusedFormalParam](result)
-  }
-
-  test("UnusedFormalParam.Exists.01") {
-    val input =
-      s"""
-         |pub def f(): Bool = exists(x: Int). true
-         |
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.UnusedFormalParam](result)
-  }
-
   test("UnusedTypeParam.Def.01") {
     val input =
       s"""
