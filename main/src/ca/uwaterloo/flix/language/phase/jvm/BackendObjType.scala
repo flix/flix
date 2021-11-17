@@ -17,13 +17,36 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.language.phase.jvm.JvmName.Delimiter
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.{Delimiter, DevFlixRuntime, JavaLang, RootPackage}
 
 /**
   * Represents all Flix types that are objects on the JVM (array is an exception).
   */
 sealed trait BackendObjType {
-  def jvmName: JvmName
+  /**
+    * Constructs a concatenated list of erased strings delimited with `JvmName.Delimiter`.
+    */
+  private def erasedListOfTypes(ts: List[BackendType]): String =
+    ts.map(e => e.toErased.toString).mkString(Delimiter)
+
+  val jvmName: JvmName = this match {
+    case BackendObjType.Unit => JvmName(DevFlixRuntime, "Unit")
+    case BackendObjType.BigInt => JvmName(List("java", "math"), "BigInteger")
+    case BackendObjType.String => JvmName(JavaLang, "String")
+    case BackendObjType.Channel(_) => JvmName(List("ca", "uwaterloo", "flix", "runtime", "interpreter"), "Channel")
+    case BackendObjType.Lazy(tpe) => JvmName(RootPackage, s"Lazy$Delimiter${tpe.toErased}")
+    case BackendObjType.Ref(tpe) => JvmName(RootPackage, s"Ref$Delimiter${tpe.toErased}")
+    case BackendObjType.Tuple(elms) => JvmName(RootPackage, s"Tuple${elms.length}$Delimiter${erasedListOfTypes(elms)}")
+    case BackendObjType.Enum(_, _) => ???
+    case BackendObjType.Arrow(args, result) => JvmName(RootPackage, s"Fn${args.length}$Delimiter${erasedListOfTypes(args)}$Delimiter${result.toErased}")
+    case BackendObjType.RecordEmpty => JvmName(RootPackage, s"RecordEmpty$Delimiter")
+    case BackendObjType.RecordExtend(_, value, _) => JvmName(RootPackage, s"RecordExtend$Delimiter${value.toErased}")
+    case BackendObjType.SchemaEmpty => ???
+    case BackendObjType.SchemaExtend(_, _, _) => ???
+    case BackendObjType.Relation(_) => ???
+    case BackendObjType.Lattice(_) => ???
+    case BackendObjType.Native(className) => className
+  }
 
   def toDescriptor: String = jvmName.toDescriptor
 
@@ -31,85 +54,44 @@ sealed trait BackendObjType {
 }
 
 object BackendObjType {
+  case object Unit extends BackendObjType
 
-  private val rootPackage: List[String] = Nil
+  case object BigInt extends BackendObjType
 
-  private val devFlixRuntime = List("dev", "flix", "runtime")
+  case object String extends BackendObjType
 
-  private val javaLang = List("java", "lang")
+  case class Channel(tpe: BackendType) extends BackendObjType
 
-  /**
-    * Constructs a concatenated list of erased strings delimited with `JvmName.Delimiter`.
-    */
-  private def erasedListOfTypes(ts: List[BackendType]): String =
-    ts.map(e => e.toErased.toString).mkString(Delimiter)
+  case class Lazy(tpe: BackendType) extends BackendObjType
 
-  case object Unit extends BackendObjType {
-    override val jvmName: JvmName = JvmName(devFlixRuntime, "Unit")
-  }
+  case class Ref(tpe: BackendType) extends BackendObjType
 
-  case object BigInt extends BackendObjType {
-    override val jvmName: JvmName = JvmName(List("java", "math"), "BigInteger")
-  }
+  case class Tuple(elms: List[BackendType]) extends BackendObjType
 
-  case object String extends BackendObjType {
-    override val jvmName: JvmName = JvmName(javaLang, "String")
-  }
+  case class Enum(sym: Symbol.EnumSym, args: List[BackendType]) extends BackendObjType
 
-  case class Channel(tpe: BackendType) extends BackendObjType {
-    override val jvmName: JvmName = JvmName(List("ca", "uwaterloo", "flix", "runtime", "interpreter"), "Channel")
-  }
-
-  case class Lazy(tpe: BackendType) extends BackendObjType {
-    override val jvmName: JvmName = JvmName(rootPackage, s"Lazy$Delimiter${tpe.toErased}")
-  }
-
-  case class Ref(tpe: BackendType) extends BackendObjType {
-    override val jvmName: JvmName = JvmName(rootPackage, s"Ref$Delimiter${tpe.toErased}")
-  }
-
-  case class Tuple(elms: List[BackendType]) extends BackendObjType {
-    override val jvmName: JvmName = JvmName(rootPackage, s"Tuple${elms.length}$Delimiter${erasedListOfTypes(elms)}")
-  }
-
-  case class Enum(sym: Symbol.EnumSym, args: List[BackendType]) extends BackendObjType {
-    override val jvmName: JvmName = ???
-  }
-
-  case class Arrow(args: List[BackendType], result: BackendType) extends BackendObjType {
-    override val jvmName: JvmName = JvmName(rootPackage, s"Fn${args.length}$Delimiter${erasedListOfTypes(args)}$Delimiter${result.toErased}")
-  }
+  case class Arrow(args: List[BackendType], result: BackendType) extends BackendObjType
 
   case object RecordEmpty extends BackendObjType {
-    // TODO: These should include delimiter
-    override val jvmName: JvmName = JvmName(rootPackage, s"RecordEmpty")
-    val interface: JvmName = JvmName(rootPackage, "IRecord")
+    val interface: JvmName = JvmName(RootPackage, s"IRecord$Delimiter")
   }
 
   case class RecordExtend(field: String, value: BackendType, rest: BackendType) extends BackendObjType {
-    override val jvmName: JvmName = JvmName(rootPackage, s"RecordExtend$Delimiter${value.toErased}")
+    val interface: JvmName = JvmName(RootPackage, s"IRecord$Delimiter")
   }
 
-  case object SchemaEmpty extends BackendObjType {
-    override val jvmName: JvmName = ???
-  }
+  case object SchemaEmpty extends BackendObjType
 
-  case class SchemaExtend(name: String, tpe: BackendType, rest: BackendType) extends BackendObjType {
-    override val jvmName: JvmName = ???
-  }
+  case class SchemaExtend(name: String, tpe: BackendType, rest: BackendType) extends BackendObjType
 
-  case class Relation(tpes: List[BackendType]) extends BackendObjType {
-    override val jvmName: JvmName = ???
-  }
+  case class Relation(tpes: List[BackendType]) extends BackendObjType
 
-  case class Lattice(tpes: List[BackendType]) extends BackendObjType {
-    override val jvmName: JvmName = ???
-  }
+  case class Lattice(tpes: List[BackendType]) extends BackendObjType
 
   /**
     * Represents a JVM type not represented in Flix like `java.lang.Object` or `dev.flix.runtime.ReifiedSourceLocation`.
     * This should not be used for `java.lang.String` for example since `BackendObjType.String`
     * represents this type.
     */
-  case class Native(jvmName: JvmName) extends BackendObjType
+  case class Native(className: JvmName) extends BackendObjType
 }
