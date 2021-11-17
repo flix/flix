@@ -40,6 +40,9 @@ class ClassMaker(visitor: ClassWriter) {
     mkMethod(f, JvmName.ConstructorMethod, descriptor, v, NonFinal, NonStatic)
   }
 
+  /**
+    * Creates a instruction set calling `<init>` on `java.lang.Object` and returns.
+    */
   def mkObjectConstructor(v: Visibility): Unit = {
     val constructor = ALOAD(0) ~ invokeConstructor(JvmName.Object, MethodDescriptor.NothingToVoid) ~ RETURN()
     mkConstructor(constructor, MethodDescriptor.NothingToVoid, v)

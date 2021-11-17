@@ -16,7 +16,9 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-
+/**
+  * Represents all Flix types that are not object on the JVM including Void.
+  */
 sealed trait VoidableType {
   def toDescriptor: String
 }
@@ -29,11 +31,18 @@ object VoidableType {
   }
 }
 
-
+/**
+  * Represents all Flix types that are not objects on the JVM (array is an exception).
+  */
 sealed trait BackendType extends VoidableType {
   def toDescriptor: String
 
   def toErased: BackendType
+
+  /**
+    * A string representing the erased type. This is used for parametrized class names.
+    */
+  override def toString: String = "BackendType:MissingImpl"
 }
 
 object BackendType {
@@ -109,6 +118,9 @@ object BackendType {
     override def toString: String = "Obj"
   }
 
+  /**
+    * Holds a reference to some object type.
+    */
   case class Reference(ref: BackendObjType) extends BackendType {
     override val toDescriptor: String = ref.toDescriptor
 
@@ -119,7 +131,9 @@ object BackendType {
     override def toString: String = "Obj"
   }
 
-
+  /**
+    * Contains all the primitive types and `Reference(Native(JvmName.Object))`.
+    */
   def erasedTypes: List[BackendType] =
     Bool :: Char :: Float32 :: Float64 :: Int8 :: Int16 :: Int32 :: Int64 :: JvmName.Object.toObjTpe.toTpe :: Nil
 }

@@ -19,6 +19,9 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.Delimiter
 
+/**
+  * Represents all Flix types that are objects on the JVM (array is an exception).
+  */
 sealed trait BackendObjType {
   def jvmName: JvmName
 
@@ -35,6 +38,9 @@ object BackendObjType {
 
   private val javaLang = List("java", "lang")
 
+  /**
+    * Constructs a concatenated list of erased strings delimited with `JvmName.Delimiter`.
+    */
   private def erasedListOfTypes(ts: List[BackendType]): String =
     ts.map(e => e.toErased.toString).mkString(Delimiter)
 
@@ -100,5 +106,10 @@ object BackendObjType {
     override val jvmName: JvmName = ???
   }
 
+  /**
+    * Represents a JVM type not represented in Flix like `java.lang.Object` or `dev.flix.runtime.ReifiedSourceLocation`.
+    * This should not be used for `java.lang.String` for example since `BackendObjType.String`
+    * represents this type.
+    */
   case class Native(jvmName: JvmName) extends BackendObjType
 }
