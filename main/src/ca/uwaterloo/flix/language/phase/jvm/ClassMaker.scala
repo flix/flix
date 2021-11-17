@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Finality._
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Instancing._
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility._
@@ -37,6 +38,11 @@ class ClassMaker(visitor: ClassWriter) {
 
   def mkConstructor(f: BytecodeInstructions.InstructionSet, descriptor: MethodDescriptor, v: Visibility): Unit = {
     mkMethod(f, JvmName.ConstructorMethod, descriptor, v, NonFinal, NonStatic)
+  }
+
+  def mkObjectConstructor(v: Visibility): Unit = {
+    val constructor = ALOAD(0) ~ invokeConstructor(JvmName.Object, MethodDescriptor.NothingToVoid) ~ RETURN()
+    mkConstructor(constructor, MethodDescriptor.NothingToVoid, v)
   }
 
   def mkStaticConstructor(f: BytecodeInstructions.InstructionSet): Unit =

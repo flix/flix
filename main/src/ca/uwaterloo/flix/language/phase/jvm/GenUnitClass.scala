@@ -40,7 +40,7 @@ object GenUnitClass {
     cm.mkField(InstanceFieldName, BackendObjType.Unit.toTpe, Public, Final, Static)
 
     cm.mkStaticConstructor(genStaticConstructor())
-    cm.mkConstructor(genConstructor(), MethodDescriptor.NothingToVoid, Private)
+    cm.mkObjectConstructor(Private)
 
     cm.closeClassMaker
   }
@@ -51,10 +51,4 @@ object GenUnitClass {
       invokeConstructor(BackendObjType.Unit.jvmName) ~
       PUTSTATIC(BackendObjType.Unit.jvmName, InstanceFieldName, BackendObjType.Unit.toTpe) ~
       RETURN()
-
-  private def genConstructor(): InstructionSet =
-    ALOAD(0) ~
-      invokeConstructor(JvmName.Object) ~
-      RETURN()
-
 }

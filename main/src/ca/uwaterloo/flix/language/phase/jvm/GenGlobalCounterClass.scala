@@ -39,18 +39,13 @@ object GenGlobalCounterClass {
   private def genByteCode()(implicit flix: Flix): Array[Byte] = {
     val cm = ClassMaker.mkClass(JvmName.GlobalCounter, Public, Final)
 
-    cm.mkConstructor(genConstructor(), JvmName.MethodDescriptor.NothingToVoid, Private)
+    cm.mkObjectConstructor(Private)
     cm.mkStaticConstructor(genStaticConstructor())
     cm.mkField(counterFieldName, JvmName.AtomicLong.toObjTpe.toTpe, Private, Final, Static)
     cm.mkMethod(genNewIdMethod(), NewIdMethodName, MethodDescriptor(Nil, BackendType.Int64), Public, Final, Static)
 
     cm.closeClassMaker
   }
-
-  private def genConstructor(): InstructionSet =
-    ALOAD(0) ~
-      invokeConstructor(JvmName.Object) ~
-      RETURN()
 
   private def genStaticConstructor(): InstructionSet =
     NEW(JvmName.AtomicLong) ~
