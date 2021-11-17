@@ -77,25 +77,33 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
 
       // Get all the classes.
       val classesByNS = root.classes.values.groupBy(
-        x => x.sym
+        x => x.sym.name
       ).map {
-        case (str, value) => (visitClassSym(str), value.map(c => visitClass(c)))
+        case (str, value) => JObject(JField(str, JArray(value.toArray)))
       }
 
-      // Get all the defs.
-      val DefsByNS = root.defs.values.groupBy(
-        x => x.sym
-      ).map {
-        case (str, value) => (visitDefnSym(str), value.map(c => visitDef(c)))
+      // Convert all definitions to JSON objects.
+      val defsByNS = root.defs.values.groupBy(d => d.sym.text)
+
+      val jsonDefsByNs:List[(String, JObject)] = defsByNS.map {
+        case (str, itr) => (str, itr.toList.map(d => visitDef(d)))
       }
+
+      // Convert all definitions to JSON objects.
+      val jsonDefsByNs = defsByNS.foldRight(List.empty[(String, JObject)]) {
+        case ((ns, defs), acc) =>
+          val ds = defs.toList.map(kv => visitDef(kv._2))
+          (ns.mkString(".") -> JObject(JField("defs", JArray(ds)))) :: acc
+      }
+
 
       // Construct the JSON object.
       val json = JObject(
-        ("namespaces", "[string]"),
+        ("namespaces", ???),
         ("classes", classesByNS),
-        /*("defs", DefsByNS),
-        ("enums", EnumsByNs),
-        ("typeAliases", TypeAliasesByNs)*/
+        ("defs", defsByNs),
+        ("enums", ???),
+        ("typeAliases", ???)
       )
 
 
