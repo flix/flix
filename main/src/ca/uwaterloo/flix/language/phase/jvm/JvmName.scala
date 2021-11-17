@@ -24,17 +24,27 @@ import java.nio.file.{Path, Paths}
   */
 object JvmName {
 
-  case class MethodDescriptor(arguments: List[JvmType], result: JvmType) {
+  // TODO: Would be nice to allow BackendObjType here to avoid conversions
+  case class MethodDescriptor(arguments: List[BackendType], result: VoidableType) {
     /**
       * Returns the type descriptor of this method.
       */
-    override lazy val toString: String = AsmOps.getMethodDescriptor(arguments, result)
+    override lazy val toString: String = {
+      // Descriptor of result
+      val resultDescriptor = result.toDescriptor
+
+      // Descriptor of arguments
+      val argumentDescriptor = arguments.map(_.toDescriptor).mkString
+
+      // Descriptor of the method
+      s"($argumentDescriptor)$resultDescriptor"
+    }
   }
 
   object MethodDescriptor {
-    val NothingToVoid: MethodDescriptor = MethodDescriptor(Nil, JvmType.Void)
+    val NothingToVoid: MethodDescriptor = MethodDescriptor(Nil, VoidableType.Void)
 
-    def mkDescriptor(argument: JvmType*)(result: JvmType): MethodDescriptor = MethodDescriptor(argument.toList, result)
+    def mkDescriptor(argument: BackendType*)(result: VoidableType): MethodDescriptor = MethodDescriptor(argument.toList, result)
   }
 
   /**
@@ -67,7 +77,6 @@ object JvmName {
   private val javaLang = List("java", "lang")
 
   val AtomicLong: JvmName = JvmName(List("java", "util", "concurrent", "atomic"), "AtomicLong")
-  val BigInteger: JvmName = JvmName(List("java", "math"), "BigInteger")
   val Boolean: JvmName = JvmName(javaLang, "Boolean")
   val Byte: JvmName = JvmName(javaLang, "Byte")
   val Character: JvmName = JvmName(javaLang, "Character")
@@ -83,7 +92,6 @@ object JvmName {
   val Runnable: JvmName = JvmName(javaLang, "Runnable")
   val RuntimeException: JvmName = JvmName(javaLang, "RuntimeException")
   val Short: JvmName = JvmName(javaLang, "Short")
-  val String: JvmName = JvmName(javaLang, "String")
   val StringBuilder: JvmName = JvmName(javaLang, "StringBuilder")
   val UnsupportedOperationException: JvmName = JvmName(javaLang, "UnsupportedOperationException")
 
@@ -93,7 +101,6 @@ object JvmName {
 
   private val devFlixRuntime = List("dev", "flix", "runtime")
 
-  val Channel: JvmName = JvmName(List("ca", "uwaterloo", "flix", "runtime", "interpreter"), "Channel")
   val Context: JvmName = JvmName(Nil, "Context")
   val FlixError: JvmName = JvmName(devFlixRuntime, "FlixError")
   val GlobalCounter: JvmName = JvmName(devFlixRuntime, "GlobalCounter")
@@ -102,7 +109,6 @@ object JvmName {
   val ProxyObject: JvmName = JvmName(devFlixRuntime, "ProxyObject")
   val ReifiedSourceLocation: JvmName = JvmName(devFlixRuntime, "ReifiedSourceLocation")
   val SelectChoice: JvmName = JvmName(List("ca", "uwaterloo", "flix", "runtime", "interpreter"), "SelectChoice")
-  val Unit: JvmName = JvmName(devFlixRuntime, "Unit")
 
   //
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Scala Names ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -146,4 +152,9 @@ case class JvmName(pkg: List[String], name: String) {
     * Returns the relative path of `this` Java name.
     */
   lazy val toPath: Path = Paths.get(pkg.mkString("/"), name + ".class")
+
+  /**
+    * Wraps this name in `backendObjType.Native`.
+    */
+  def toObjTpe: BackendObjType.Native = BackendObjType.Native(this)
 }

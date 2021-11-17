@@ -36,7 +36,7 @@ object GenExpression {
   def compileExpression(exp0: Expression, visitor: MethodVisitor, currentClass: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)(implicit root: Root, flix: Flix): Unit = exp0 match {
     case Expression.Unit(loc) =>
       addSourceLine(visitor, loc)
-      visitor.visitFieldInsn(GETSTATIC, JvmName.Unit.toInternalName, GenUnitClass.InstanceFieldName, JvmName.Unit.toDescriptor)
+      visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, GenUnitClass.InstanceFieldName, BackendObjType.Unit.toDescriptor)
 
     case Expression.Null(tpe, loc) =>
       addSourceLine(visitor, loc)
@@ -90,10 +90,10 @@ object GenExpression {
 
     case Expression.BigInt(ii, loc) =>
       addSourceLine(visitor, loc)
-      visitor.visitTypeInsn(NEW, JvmName.BigInteger.toInternalName)
+      visitor.visitTypeInsn(NEW, BackendObjType.BigInt.jvmName.toInternalName)
       visitor.visitInsn(DUP)
       visitor.visitLdcInsn(ii.toString)
-      visitor.visitMethodInsn(INVOKESPECIAL, JvmName.BigInteger.toInternalName, "<init>",
+      visitor.visitMethodInsn(INVOKESPECIAL, BackendObjType.BigInt.jvmName.toInternalName, "<init>",
         AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Void), false)
 
     case Expression.Str(s, loc) =>
@@ -445,7 +445,7 @@ object GenExpression {
         visitor.visitTypeInsn(NEW, classType.name.toInternalName)
         visitor.visitInsn(DUP)
         if (JvmOps.isUnitTag(tagInfo)) {
-          visitor.visitFieldInsn(GETSTATIC, JvmName.Unit.toInternalName, GenUnitClass.InstanceFieldName, JvmName.Unit.toDescriptor)
+          visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, GenUnitClass.InstanceFieldName, BackendObjType.Unit.jvmName.toDescriptor)
         } else {
           // Evaluating the single argument of the class constructor
           compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
@@ -689,7 +689,7 @@ object GenExpression {
       // with the store instruction corresponding to the stored element
       visitor.visitInsn(AsmOps.getArrayStoreInstruction(jvmType))
       // Since the return type is 'unit', we put an instance of 'unit' on top of the stack
-      visitor.visitFieldInsn(GETSTATIC, JvmName.Unit.toInternalName, GenUnitClass.InstanceFieldName, JvmName.Unit.toDescriptor)
+      visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, GenUnitClass.InstanceFieldName, BackendObjType.Unit.jvmName.toDescriptor)
 
     case Expression.ArrayLength(base, _, loc) =>
       // Adding source line number for debugging
@@ -768,10 +768,8 @@ object GenExpression {
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
       // JvmType of the reference class
       val classType = JvmOps.getRefClassType(exp.tpe)
-      // Get descriptor of `getValue` method
-      val methodDescriptor = AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe))
       // Dereference the expression
-      visitor.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "getValue", methodDescriptor, false)
+      visitor.visitFieldInsn(GETFIELD, classType.name.toInternalName, GenRefClasses.ValueFieldName, JvmOps.getErasedJvmType(tpe).toDescriptor)
       // Cast underlying value to the correct type if the underlying type is Object
       AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
@@ -784,12 +782,10 @@ object GenExpression {
       compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
       // JvmType of the reference class
       val classType = JvmOps.getRefClassType(exp1.tpe)
-      // Get descriptor of `setValue` method
-      val methodDescriptor = AsmOps.getMethodDescriptor(List(JvmOps.getErasedJvmType(exp2.tpe)), JvmType.Void)
       // Invoke `setValue` method to set the value to the given number
-      visitor.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "setValue", methodDescriptor, false)
+      visitor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, GenRefClasses.ValueFieldName, JvmOps.getErasedJvmType(exp2.tpe).toDescriptor)
       // Since the return type is unit, we put an instance of unit on top of the stack
-      visitor.visitFieldInsn(GETSTATIC, JvmName.Unit.toInternalName, GenUnitClass.InstanceFieldName, JvmName.Unit.toDescriptor)
+      visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, GenUnitClass.InstanceFieldName, BackendObjType.Unit.jvmName.toDescriptor)
 
     case Expression.Cast(exp, tpe, loc) =>
       addSourceLine(visitor, loc)
@@ -916,7 +912,7 @@ object GenExpression {
 
       // If the method is void, put a unit on top of the stack
       if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
-        visitor.visitFieldInsn(GETSTATIC, JvmName.Unit.toInternalName, GenUnitClass.InstanceFieldName, JvmName.Unit.toDescriptor)
+        visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, GenUnitClass.InstanceFieldName, BackendObjType.Unit.jvmName.toDescriptor)
       }
 
     case Expression.InvokeStaticMethod(method, args, _, loc) =>
@@ -945,7 +941,7 @@ object GenExpression {
       val descriptor = asm.Type.getMethodDescriptor(method)
       visitor.visitMethodInsn(INVOKESTATIC, declaration, name, descriptor, false)
       if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
-        visitor.visitFieldInsn(GETSTATIC, JvmName.Unit.toInternalName, GenUnitClass.InstanceFieldName, JvmName.Unit.toDescriptor)
+        visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, GenUnitClass.InstanceFieldName, BackendObjType.Unit.jvmName.toDescriptor)
       }
 
     case Expression.GetField(field, exp, tpe, loc) =>
@@ -962,7 +958,7 @@ object GenExpression {
       visitor.visitFieldInsn(PUTFIELD, declaration, field.getName, JvmOps.getJvmType(exp2.tpe).toDescriptor)
 
       // Push Unit on the stack.
-      visitor.visitFieldInsn(GETSTATIC, JvmName.Unit.toInternalName, GenUnitClass.InstanceFieldName, JvmName.Unit.toDescriptor)
+      visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, GenUnitClass.InstanceFieldName, BackendObjType.Unit.jvmName.toDescriptor)
 
     case Expression.GetStaticField(field, tpe, loc) =>
       addSourceLine(visitor, loc)
@@ -976,30 +972,30 @@ object GenExpression {
       visitor.visitFieldInsn(PUTSTATIC, declaration, field.getName, JvmOps.getJvmType(exp.tpe).toDescriptor)
 
       // Push Unit on the stack.
-      visitor.visitFieldInsn(GETSTATIC, JvmName.Unit.toInternalName, GenUnitClass.InstanceFieldName, JvmName.Unit.toDescriptor)
+      visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, GenUnitClass.InstanceFieldName, BackendObjType.Unit.jvmName.toDescriptor)
 
     case Expression.NewChannel(exp, _, loc) =>
       addSourceLine(visitor, loc)
-      visitor.visitTypeInsn(NEW, JvmName.Channel.toInternalName)
+      visitor.visitTypeInsn(NEW, BackendObjType.Channel(null).jvmName.toInternalName)
       visitor.visitInsn(DUP)
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-      visitor.visitMethodInsn(INVOKESPECIAL, JvmName.Channel.toInternalName, "<init>", AsmOps.getMethodDescriptor(List(JvmType.PrimInt), JvmType.Void), false)
+      visitor.visitMethodInsn(INVOKESPECIAL, BackendObjType.Channel(null).jvmName.toInternalName, "<init>", AsmOps.getMethodDescriptor(List(JvmType.PrimInt), JvmType.Void), false)
 
     case Expression.GetChannel(exp, tpe, loc) =>
       addSourceLine(visitor, loc)
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-      visitor.visitTypeInsn(CHECKCAST, JvmName.Channel.toInternalName)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Channel.toInternalName, "get", AsmOps.getMethodDescriptor(Nil, JvmType.Object), false)
+      visitor.visitTypeInsn(CHECKCAST, BackendObjType.Channel(null).jvmName.toInternalName)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Channel(null).jvmName.toInternalName, "get", AsmOps.getMethodDescriptor(Nil, JvmType.Object), false)
       AsmOps.castIfNotPrimAndUnbox(visitor, JvmOps.getJvmType(tpe))
 
     case Expression.PutChannel(exp1, exp2, _, loc) =>
       addSourceLine(visitor, loc)
       compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
-      visitor.visitTypeInsn(CHECKCAST, JvmName.Channel.toInternalName)
+      visitor.visitTypeInsn(CHECKCAST, BackendObjType.Channel(null).jvmName.toInternalName)
       visitor.visitInsn(DUP)
       compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
       AsmOps.boxIfPrim(visitor, JvmOps.getJvmType(exp2.tpe))
-      visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Channel.toInternalName, "put", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Void), false)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Channel(null).jvmName.toInternalName, "put", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Void), false)
 
     case Expression.SelectChannel(rules, default, _, loc) =>
       addSourceLine(visitor, loc)
@@ -1007,7 +1003,7 @@ object GenExpression {
 
       // Calculate the size of the array and initiate it
       compileInt(visitor, rules.size)
-      visitor.visitTypeInsn(ANEWARRAY, JvmName.Channel.toInternalName)
+      visitor.visitTypeInsn(ANEWARRAY, BackendObjType.Channel(null).jvmName.toInternalName)
       for ((rule, index) <- rules.zipWithIndex) {
         // Dup so we end up with an array on top of the stack
         visitor.visitInsn(DUP)
@@ -1016,7 +1012,7 @@ object GenExpression {
         // Compile the chan expression 100
         compileExpression(rule.chan, visitor, currentClass, lenv0, entryPoint)
         // Cast the type from Object to Channel
-        visitor.visitTypeInsn(CHECKCAST, JvmName.Channel.toInternalName)
+        visitor.visitTypeInsn(CHECKCAST, BackendObjType.Channel(null).jvmName.toInternalName)
         // Store the expression in the array
         visitor.visitInsn(AASTORE)
       }
@@ -1031,7 +1027,7 @@ object GenExpression {
 
       // TODO SJ: Should we create a JvmName for the return type here? yes
       // Invoke select in Channel. This puts a SelectChoice on the stack
-      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Channel.toInternalName, "select", "([Lca/uwaterloo/flix/runtime/interpreter/Channel;Z)Lca/uwaterloo/flix/runtime/interpreter/SelectChoice;", false)
+      visitor.visitMethodInsn(INVOKESTATIC, BackendObjType.Channel(null).jvmName.toInternalName, "select", "([Lca/uwaterloo/flix/runtime/interpreter/Channel;Z)Lca/uwaterloo/flix/runtime/interpreter/SelectChoice;", false)
 
       // Check if the default case was selected
       val defaultLabel = new Label()
@@ -1104,7 +1100,7 @@ object GenExpression {
       visitor.visitMethodInsn(INVOKESPECIAL, "java/lang/Thread", "<init>", s"(${JvmName.Runnable.toDescriptor})${JvmType.Void.toDescriptor}", false)
       visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Thread", "start", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
       // Put a Unit value on the stack
-      visitor.visitFieldInsn(GETSTATIC, JvmName.Unit.toInternalName, GenUnitClass.InstanceFieldName, JvmName.Unit.toDescriptor)
+      visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, GenUnitClass.InstanceFieldName, BackendObjType.Unit.jvmName.toDescriptor)
 
     case Expression.Lazy(exp, tpe, loc) =>
       // Add source line numbers for debugging.
@@ -1377,7 +1373,7 @@ object GenExpression {
     case Int32Op.Neg => visitor.visitInsn(INEG)
     case Int64Op.Neg => visitor.visitInsn(LNEG)
     case BigIntOp.Neg =>
-      visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.BigInteger.toInternalName, "negate",
+      visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName, "negate",
         AsmOps.getMethodDescriptor(Nil, JvmType.BigInteger), false)
     case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.")
   }
@@ -1406,7 +1402,7 @@ object GenExpression {
       visitor.visitInsn(I2L)
       visitor.visitInsn(LXOR)
     case BigIntOp.Not =>
-      visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.BigInteger.toInternalName, "not",
+      visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName, "not",
         AsmOps.getMethodDescriptor(Nil, JvmType.BigInteger), false)
     case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.")
   }
@@ -1488,10 +1484,10 @@ object GenExpression {
         case Int32Op.Add | Int32Op.Sub | Int32Op.Mul | Int32Op.Div | Int32Op.Rem => visitor.visitInsn(intOp)
         case Int64Op.Add | Int64Op.Sub | Int64Op.Mul | Int64Op.Div | Int64Op.Rem => visitor.visitInsn(longOp)
         case BigIntOp.Add | BigIntOp.Sub | BigIntOp.Mul | BigIntOp.Div | BigIntOp.Rem =>
-          visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.BigInteger.toInternalName, bigIntOp,
+          visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName, bigIntOp,
             AsmOps.getMethodDescriptor(List(JvmType.BigInteger), JvmType.BigInteger), false)
         case StringOp.Concat =>
-          visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.String.toInternalName, "concat",
+          visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.String.jvmName.toInternalName, "concat",
             AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.String), false)
         case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.")
       }
@@ -1585,7 +1581,7 @@ object GenExpression {
         visitor.visitInsn(LCMP)
         visitor.visitJumpInsn(cmp, condElse)
       case BigIntOp.Lt | BigIntOp.Le | BigIntOp.Gt | BigIntOp.Ge | BigIntOp.Eq | BigIntOp.Neq =>
-        visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.BigInteger.toInternalName, "compareTo",
+        visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName, "compareTo",
           AsmOps.getMethodDescriptor(List(JvmType.BigInteger), JvmType.PrimInt), false)
         visitor.visitInsn(ICONST_0)
         visitor.visitJumpInsn(intOp, condElse)
@@ -1707,7 +1703,7 @@ object GenExpression {
       case Int32Op.And | Int32Op.Or | Int32Op.Xor | Int32Op.Shl | Int32Op.Shr => visitor.visitInsn(intOp)
       case Int64Op.And | Int64Op.Or | Int64Op.Xor | Int64Op.Shl | Int64Op.Shr => visitor.visitInsn(longOp)
       case BigIntOp.And | BigIntOp.Or | BigIntOp.Xor | BigIntOp.Shl | BigIntOp.Shr =>
-        visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.BigInteger.toInternalName,
+        visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName,
           bigintOp, AsmOps.getMethodDescriptor(List(JvmOps.getJvmType(e2.tpe)), JvmType.BigInteger), false)
       case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.")
     }

@@ -25,22 +25,22 @@ import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import org.objectweb.asm.{ClassWriter, Opcodes}
 
 class ClassMaker(visitor: ClassWriter) {
-  private def makeField(fieldName: String, fieldType: JvmType, v: Visibility, f: Finality, i: Instancing): Unit = {
+  private def makeField(fieldName: String, fieldType: BackendType, v: Visibility, f: Finality, i: Instancing): Unit = {
     val modifier = v.toInt + f.toInt + i.toInt
     val field = visitor.visitField(modifier, fieldName, fieldType.toDescriptor, null, null)
     field.visitEnd()
   }
 
-  def mkField(fieldName: String, fieldType: JvmType, v: Visibility, f: Finality, i: Instancing): Unit = {
+  def mkField(fieldName: String, fieldType: BackendType, v: Visibility, f: Finality, i: Instancing): Unit = {
     makeField(fieldName, fieldType, v, f, i)
   }
 
   def mkConstructor(f: BytecodeInstructions.InstructionSet, descriptor: MethodDescriptor, v: Visibility): Unit = {
-    mkMethod(f, JvmName.ConstructorMethod, descriptor, v, Implementable, Instanced)
+    mkMethod(f, JvmName.ConstructorMethod, descriptor, v, NonFinal, NonStatic)
   }
 
   def mkStaticConstructor(f: BytecodeInstructions.InstructionSet): Unit =
-    mkMethod(f, JvmName.StaticConstructorMethod, MethodDescriptor.NothingToVoid, Default, Implementable, Static)
+    mkMethod(f, JvmName.StaticConstructorMethod, MethodDescriptor.NothingToVoid, Default, NonFinal, Static)
 
   def mkMethod(ins: BytecodeInstructions.InstructionSet, methodName: String, descriptor: MethodDescriptor, v: Visibility, f: Finality, i: Instancing): Unit = {
     val m = v.toInt + f.toInt + i.toInt
@@ -99,7 +99,7 @@ object ClassMaker {
       override val toInt: Int = Opcodes.ACC_FINAL
     }
 
-    case object Implementable extends Finality {
+    case object NonFinal extends Finality {
       override val toInt: Int = 0
     }
   }
@@ -113,7 +113,7 @@ object ClassMaker {
       override val toInt: Int = Opcodes.ACC_STATIC
     }
 
-    case object Instanced extends Instancing {
+    case object NonStatic extends Instancing {
       override val toInt: Int = 0
     }
   }

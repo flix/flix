@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
-import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm.{Label, MethodVisitor, Opcodes}
 
 object BytecodeInstructions {
@@ -34,7 +33,7 @@ object BytecodeInstructions {
     def visitMethodInstruction(opcode: Int, owner: JvmName, methodName: String, descriptor: MethodDescriptor): Unit =
       visitor.visitMethodInsn(opcode, owner.toInternalName, methodName, descriptor.toString, false)
 
-    def visitFieldInstruction(opcode: Int, owner: JvmName, fieldName: String, fieldType: JvmType): Unit =
+    def visitFieldInstruction(opcode: Int, owner: JvmName, fieldName: String, fieldType: BackendType): Unit =
       visitor.visitFieldInsn(opcode, owner.toInternalName, fieldName, fieldType.toDescriptor)
 
     def visitVarInstruction(opcode: Int, v: Int): Unit =
@@ -73,6 +72,7 @@ object BytecodeInstructions {
     f
   }
 
+  // TODO: All JvmNames could be BackendObjTypes
   def ANEWARRAY(className: JvmName): InstructionSet = f => {
     f.visitTypeInstruction(Opcodes.ANEWARRAY, className)
     f
@@ -93,8 +93,18 @@ object BytecodeInstructions {
     f
   }
 
+  def DLOAD(index: Int): InstructionSet = f => {
+    f.visitVarInstruction(Opcodes.DLOAD, index)
+    f
+  }
+
   def DRETURN(): InstructionSet = f => {
     f.visitInstruction(Opcodes.DRETURN)
+    f
+  }
+
+  def DSTORE(index: Int): InstructionSet = f => {
+    f.visitVarInstruction(Opcodes.DSTORE, index)
     f
   }
 
@@ -103,17 +113,27 @@ object BytecodeInstructions {
     f
   }
 
+  def FLOAD(index: Int): InstructionSet = f => {
+    f.visitVarInstruction(Opcodes.FLOAD, index)
+    f
+  }
+
   def FRETURN(): InstructionSet = f => {
     f.visitInstruction(Opcodes.FRETURN)
     f
   }
 
-  def GETFIELD(className: JvmName, fieldName: String, fieldType: JvmType): InstructionSet = f => {
+  def FSTORE(index: Int): InstructionSet = f => {
+    f.visitVarInstruction(Opcodes.FSTORE, index)
+    f
+  }
+
+  def GETFIELD(className: JvmName, fieldName: String, fieldType: BackendType): InstructionSet = f => {
     f.visitFieldInstruction(Opcodes.GETFIELD, className, fieldName, fieldType)
     f
   }
 
-  def GETSTATIC(className: JvmName, fieldName: String, fieldType: JvmType): InstructionSet = f => {
+  def GETSTATIC(className: JvmName, fieldName: String, fieldType: BackendType): InstructionSet = f => {
     f.visitFieldInstruction(Opcodes.GETSTATIC, className, fieldName, fieldType)
     f
   }
@@ -133,6 +153,11 @@ object BytecodeInstructions {
 
   def IFNULL(trueBranch: InstructionSet)(falseBranch: InstructionSet): InstructionSet =
     branch(Opcodes.IFNULL)(trueBranch)(falseBranch)
+
+  def ILOAD(index: Int): InstructionSet = f => {
+    f.visitVarInstruction(Opcodes.ILOAD, index)
+    f
+  }
 
   def INVOKESPECIAL(className: JvmName, methodName: String, descriptor: MethodDescriptor): InstructionSet = f => {
     f.visitMethodInstruction(Opcodes.INVOKESPECIAL, className, methodName, descriptor)
@@ -154,8 +179,23 @@ object BytecodeInstructions {
     f
   }
 
+  def ISTORE(index: Int): InstructionSet = f => {
+    f.visitVarInstruction(Opcodes.ISTORE, index)
+    f
+  }
+
+  def LLOAD(index: Int): InstructionSet = f => {
+    f.visitVarInstruction(Opcodes.LLOAD, index)
+    f
+  }
+
   def LRETURN(): InstructionSet = f => {
     f.visitInstruction(Opcodes.LRETURN)
+    f
+  }
+
+  def LSTORE(index: Int): InstructionSet = f => {
+    f.visitVarInstruction(Opcodes.LSTORE, index)
     f
   }
 
@@ -164,12 +204,12 @@ object BytecodeInstructions {
     f
   }
 
-  def PUTFIELD(className: JvmName, fieldName: String, fieldType: JvmType): InstructionSet = f => {
+  def PUTFIELD(className: JvmName, fieldName: String, fieldType: BackendType): InstructionSet = f => {
     f.visitFieldInstruction(Opcodes.PUTFIELD, className, fieldName, fieldType)
     f
   }
 
-  def PUTSTATIC(className: JvmName, fieldName: String, fieldType: JvmType): InstructionSet = f => {
+  def PUTSTATIC(className: JvmName, fieldName: String, fieldType: BackendType): InstructionSet = f => {
     f.visitFieldInstruction(Opcodes.PUTSTATIC, className, fieldName, fieldType)
     f
   }
@@ -199,13 +239,20 @@ object BytecodeInstructions {
     f
   }
 
-  def xReturn(tpe: JvmType): InstructionSet = tpe match {
-    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe")
-    case JvmType.PrimBool | JvmType.PrimChar | JvmType.PrimByte | JvmType.PrimShort | JvmType.PrimInt => IRETURN()
-    case JvmType.PrimLong => LRETURN()
-    case JvmType.PrimFloat => FRETURN()
-    case JvmType.PrimDouble => DRETURN()
-    case JvmType.Reference(_) => ARETURN()
+  def xLoad(tpe: BackendType, index: Int): InstructionSet = tpe match {
+    case BackendType.Bool | BackendType.Char | BackendType.Int8 | BackendType.Int16 | BackendType.Int32 => ILOAD(index)
+    case BackendType.Int64 => LLOAD(index)
+    case BackendType.Float32 => FLOAD(index)
+    case BackendType.Float64 => DLOAD(index)
+    case BackendType.Array(_) | BackendType.Reference(_) => ALOAD(index)
+  }
+
+  def xReturn(tpe: BackendType): InstructionSet = tpe match {
+    case BackendType.Bool | BackendType.Char | BackendType.Int8 | BackendType.Int16 | BackendType.Int32 => IRETURN()
+    case BackendType.Int64 => LRETURN()
+    case BackendType.Float32 => FRETURN()
+    case BackendType.Float64 => DRETURN()
+    case BackendType.Array(_) | BackendType.Reference(_) => ARETURN()
   }
 
   //
