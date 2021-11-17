@@ -17,8 +17,11 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import org.objectweb.asm.ClassWriter
-import org.objectweb.asm.Opcodes._
+import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Finality._
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Instancing._
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility._
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 
 /**
   * A copy of this generated class has to be maintained at main/src/dev/flix/runtime/GlobalCounter.java.
@@ -26,74 +29,42 @@ import org.objectweb.asm.Opcodes._
 object GenGlobalCounterClass {
 
   val NewIdMethodName: String = "newId"
-  val NewIdReturnType: JvmType = JvmType.PrimLong
 
   private val counterFieldName: String = "counter"
 
   def gen()(implicit flix: Flix): Map[JvmName, JvmClass] = {
-    val className = JvmName.GlobalCounter
-    val bytecode = genByteCode(className)
-    Map(className -> JvmClass(className, bytecode))
+    Map(JvmName.GlobalCounter -> JvmClass(JvmName.GlobalCounter, genByteCode()))
   }
 
-  private def genByteCode(name: JvmName)(implicit flix: Flix): Array[Byte] = {
-    // class writer
-    val visitor = AsmOps.mkClassWriter()
+  private def genByteCode()(implicit flix: Flix): Array[Byte] = {
+    val cm = ClassMaker.mkClass(JvmName.GlobalCounter, Public, Final)
 
-    // internal name of super
-    val superClass = JvmName.Object
+    cm.mkConstructor(genConstructor(), JvmName.MethodDescriptor.NothingToVoid, Private)
+    cm.mkStaticConstructor(genStaticConstructor())
+    cm.mkField(counterFieldName, JvmType.AtomicLong, Private, Final, Static)
+    cm.mkMethod(genNewIdMethod(), NewIdMethodName, MethodDescriptor(Nil, JvmType.PrimLong), Public, Final, Static)
 
-    // Initialize the visitor to create a class.
-    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, name.toInternalName, null, superClass.toInternalName, null)
-
-    // Source of the class
-    visitor.visitSource(name.toInternalName, null)
-
-    genConstructor(superClass, visitor)
-    genStaticConstructor(name, visitor)
-    visitor.visitField(ACC_PRIVATE + ACC_FINAL + ACC_STATIC, counterFieldName, JvmName.AtomicLong.toDescriptor, null, null).visitEnd()
-    genNewIdMethod(name, visitor)
-
-    visitor.visitEnd()
-    visitor.toByteArray
+    cm.closeClassMaker
   }
 
-  private def genConstructor(superClass: JvmName, visitor: ClassWriter): Unit = {
-    val method = visitor.visitMethod(ACC_PRIVATE, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), null, null)
-    method.visitCode()
-
-    method.visitVarInsn(ALOAD, 0)
-    method.visitMethodInsn(INVOKESPECIAL, superClass.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
-    method.visitInsn(RETURN)
-
-    method.visitMaxs(999, 999)
-    method.visitEnd()
+  private def genConstructor(): InstructionSet = {
+    ALOAD(0) ~
+      invokeConstructor(JvmName.Object) ~
+      RETURN()
   }
 
-  private def genStaticConstructor(name: JvmName, visitor: ClassWriter): Unit = {
-    val methodVisitor = visitor.visitMethod(ACC_STATIC, "<clinit>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), null, null)
-    methodVisitor.visitCode()
-
-    methodVisitor.visitTypeInsn(NEW, JvmName.AtomicLong.toInternalName)
-    methodVisitor.visitInsn(DUP)
-    methodVisitor.visitMethodInsn(INVOKESPECIAL, JvmName.AtomicLong.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
-    methodVisitor.visitFieldInsn(PUTSTATIC, name.toInternalName, counterFieldName, JvmName.AtomicLong.toDescriptor)
-    methodVisitor.visitInsn(RETURN)
-
-    methodVisitor.visitMaxs(999, 999)
-    methodVisitor.visitEnd()
+  private def genStaticConstructor(): InstructionSet = {
+    NEW(JvmName.AtomicLong) ~
+      DUP() ~
+      invokeConstructor(JvmName.AtomicLong) ~
+      PUTSTATIC(JvmName.AtomicLong, counterFieldName, JvmType.AtomicLong) ~
+      RETURN()
   }
 
-  private def genNewIdMethod(name: JvmName, visitor: ClassWriter)(implicit flix: Flix): Unit = {
-    val method = visitor.visitMethod(ACC_PUBLIC + ACC_STATIC + ACC_FINAL, NewIdMethodName, AsmOps.getMethodDescriptor(Nil, NewIdReturnType), null, null)
-    method.visitCode()
-
-    method.visitFieldInsn(GETSTATIC, name.toInternalName, counterFieldName, JvmName.AtomicLong.toDescriptor)
-    method.visitMethodInsn(INVOKEVIRTUAL, JvmName.AtomicLong.toInternalName, "getAndIncrement", AsmOps.getMethodDescriptor(Nil, JvmType.PrimLong), false)
-    method.visitInsn(AsmOps.getReturnInstruction(NewIdReturnType))
-
-    method.visitMaxs(999, 999)
-    method.visitEnd()
+  private def genNewIdMethod()(implicit flix: Flix): InstructionSet = {
+    GETSTATIC(JvmName.GlobalCounter, counterFieldName, JvmType.AtomicLong) ~
+      INVOKEVIRTUAL(JvmName.AtomicLong, "getAndIncrement", MethodDescriptor(Nil, JvmType.PrimLong)) ~
+      LRETURN()
   }
 
 }

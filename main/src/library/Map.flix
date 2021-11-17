@@ -585,6 +585,12 @@ namespace Map {
         foldRightWithKey((k, v, acc) -> ECons((k, v), acc), ENil, m)
 
     ///
+    /// Returns the map `m` as a chain of key-value pairs.
+    ///
+    pub def toChain(m: Map[a, b]): Chain[(a, b)] with Order[a] =
+        foldLeftWithKey((acc, k, v) -> Chain.snoc(acc, (k,v)), Chain.empty(), m)
+
+    ///
     /// Applies `f` to every element of `xs`.
     ///
     /// The function `f` must be impure.

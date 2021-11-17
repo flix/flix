@@ -71,13 +71,10 @@ object JvmOps {
     case MonoType.RecordExtend(_, _, _) => getRecordInterfaceType()
     case MonoType.Enum(_, _) => getEnumInterfaceType(tpe)
     case MonoType.Arrow(_, _) => getFunctionInterfaceType(tpe)
-    case MonoType.Relation(_) => JvmType.Reference(JvmName.PredSym)
     case MonoType.Native(clazz) =>
       // TODO: Ugly hack.
       val fqn = clazz.getName.replace('.', '/')
       JvmType.Reference(JvmName.mk(fqn))
-    case MonoType.SchemaEmpty() => JvmType.Reference(JvmName.Runtime.Fixpoint.ConstraintSystem)
-    case MonoType.SchemaExtend(_, _, _) => JvmType.Reference(JvmName.Runtime.Fixpoint.ConstraintSystem)
 
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
   }
@@ -150,7 +147,7 @@ object JvmOps {
       val args = (targs ::: tresult :: Nil).map(tpe => stringify(getErasedJvmType(tpe)))
 
       // The JVM name is of the form FnArity$Arg0$Arg1$Arg2
-      val name = "Fn" + arity + "$" + args.mkString("$")
+      val name = "Fn" + arity + JvmName.Delimiter + args.mkString(JvmName.Delimiter)
 
       // The type resides in the root package.
       JvmType.Reference(JvmName(RootPackage, name))
@@ -168,7 +165,7 @@ object JvmOps {
   def getClosureClassType(closure: ClosureInfo)(implicit root: Root, flix: Flix): JvmType.Reference = closure.tpe match {
     case MonoType.Arrow(_, _) =>
       // The JVM name is of the form Clo$sym.name
-      val name = "Clo" + "$" + mangle(closure.sym.name)
+      val name = "Clo" + JvmName.Delimiter + mangle(closure.sym.name)
 
       // The JVM package is the namespace of the symbol.
       val pkg = closure.sym.namespace
@@ -196,7 +193,7 @@ object JvmOps {
       val args = elms.map(tpe => stringify(getErasedJvmType(tpe)))
 
       // The JVM name is of the form Option$ or Option$Int
-      val name = if (args.isEmpty) "I" + sym.name else "I" + sym.name + "$" + args.mkString("$")
+      val name = if (args.isEmpty) "I" + sym.name else "I" + sym.name + JvmName.Delimiter + args.mkString(JvmName.Delimiter)
 
       // The enum resides in its namespace package.
       JvmType.Reference(JvmName(sym.namespace, name))
@@ -225,7 +222,7 @@ object JvmOps {
     val args = tag.tparams.map(tpe => stringify(getErasedJvmType(tpe)))
 
     // The JVM name is of the form Tag$Arg0$Arg1$Arg2
-    val name = tag.sym.name + "$" + (if (args.isEmpty) tagName else tagName + "$" + args.mkString("$"))
+    val name = tag.sym.name + JvmName.Delimiter + (if (args.isEmpty) tagName else tagName + JvmName.Delimiter + args.mkString(JvmName.Delimiter))
 
     // The tag class resides in its namespace package.
     JvmType.Reference(JvmName(tag.sym.namespace, name))
@@ -253,7 +250,7 @@ object JvmOps {
       val args = elms.map(tpe => stringify(getErasedJvmType(tpe)))
 
       // The JVM name is of the form TupleArity$Arg0$Arg1$Arg2
-      val name = "Tuple" + arity + "$" + args.mkString("$")
+      val name = "Tuple" + arity + JvmName.Delimiter + args.mkString(JvmName.Delimiter)
 
       // The type resides in the root package.
       JvmType.Reference(JvmName(RootPackage, name))
@@ -376,7 +373,7 @@ object JvmOps {
       val arg = stringify(getErasedJvmType(elmType))
 
       // The JVM name is of the form TArity$Arg0$Arg1$Arg2
-      val name = "Ref" + "$" + arg
+      val name = "Ref" + JvmName.Delimiter + arg
 
       // The type resides in the ca.uwaterloo.flix.api.cell package.
       JvmType.Reference(JvmName(Nil, name))
@@ -427,7 +424,7 @@ object JvmOps {
     if (ns.isRoot)
       "ns$Root$"
     else
-      "ns$" + ns.ns.mkString("$")
+      "ns$" + ns.ns.mkString(JvmName.Delimiter)
 
   /**
     * Returns the field name of a defn as used in a namespace class.

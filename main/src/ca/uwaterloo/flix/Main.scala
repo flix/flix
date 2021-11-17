@@ -179,7 +179,15 @@ object Main {
     val flix = new Flix()
     flix.setOptions(options)
     for (file <- cmdOpts.files) {
-      flix.addPath(file.toPath)
+      val ext = file.getName.split('.').last
+      ext match {
+        case "flix" => flix.addPath(file.toPath)
+        case "fpkg" => flix.addPath(file.toPath)
+        case "jar" => flix.addJar(file.toPath)
+        case _ =>
+          Console.println(s"Unrecognized file extension: '$ext'.")
+          System.exit(1)
+      }
     }
 
     // evaluate main.
@@ -407,7 +415,7 @@ object Main {
       arg[File]("<file>...").action((x, c) => c.copy(files = c.files :+ x))
         .optional()
         .unbounded()
-        .text("input Flix source code files.")
+        .text("input Flix source code files, Flix packages, and Java archives.")
 
     }
 

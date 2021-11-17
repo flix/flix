@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Magnus Madsen
+ * Copyright 2021 Matthew Lutze
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package ca.uwaterloo.flix.util
 
-package ca.uwaterloo.flix.api
-
-object Version {
-  /**
-    * Represents the current version of Flix.
-    */
-  val CurrentVersion: Version = Version(major = 0, minor = 25, revision = 0)
-}
+import java.net.{URL, URLClassLoader}
 
 /**
-  * A case class to represent versions.
+  * A class loader to which JARs can be added dynamically.
   */
-case class Version(major: Int, minor: Int, revision: Int) {
-  override val toString: String = s"v$major.$minor.$revision"
+class ExternalJarLoader extends URLClassLoader(Array.empty) {
+
+  /**
+    * Adds the URL to the class loader.
+    */
+  override def addURL(url: URL): Unit = {
+    // just reimplements the superclass, but makes it public
+    super.addURL(url)
+  }
 }

@@ -1,5 +1,6 @@
 /*
  * Copyright 2017 Magnus Madsen
+ * Copyright 2021 Jonathan Lindegaard Starup
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,41 +41,6 @@ sealed trait JvmType {
 }
 
 object JvmType {
-
-  /**
-    * The Flix Context class.
-    */
-  val Context: JvmType.Reference = Reference(JvmName.Context)
-
-  /**
-    * The `ca.uwaterloo.flix.api.Unit` type
-    */
-  val Unit: JvmType.Reference = Reference(JvmName.Unit)
-
-  /**
-    * The `java.lang.BigInteger` type.
-    */
-  val BigInteger: JvmType.Reference = Reference(JvmName.BigInteger)
-
-  /**
-    * The `java.lang.Object` type.
-    */
-  val Object: JvmType.Reference = Reference(JvmName.Object)
-
-  /**
-    * The `java.lang.String` type.
-    */
-  val String: JvmType.Reference = Reference(JvmName.String)
-
-  /**
-    * The `scala.math.package$` type
-    */
-  val ScalaMathPkg: JvmType.Reference = Reference(JvmName.ScalaMathPkg)
-
-  val ProxyObject: JvmType.Reference = Reference(JvmName.ProxyObject)
-
-  val Function: JvmType.Reference = Reference(JvmName.Function)
-
   /**
     * Represents the void type.
     */
@@ -125,4 +91,29 @@ object JvmType {
     */
   case class Reference(name: JvmName) extends JvmType
 
+  //
+  // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Java Types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  //
+
+  val AtomicLong: JvmType.Reference = Reference(JvmName.AtomicLong)
+  val BigInteger: JvmType.Reference = Reference(JvmName.BigInteger)
+  val Class: JvmType.Reference = Reference(JvmName.Class)
+  val Function: JvmType.Reference = Reference(JvmName.Function)
+  val Object: JvmType.Reference = Reference(JvmName.Object)
+  val String: JvmType.Reference = Reference(JvmName.String)
+  val StringBuilder: JvmType.Reference = Reference(JvmName.StringBuilder)
+
+  //
+  // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Flix Types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  //
+
+  val Context: JvmType.Reference = Reference(JvmName.Context)
+  val ReifiedSourceLocation: JvmType.Reference = Reference(JvmName.ReifiedSourceLocation)
+  val Unit: JvmType.Reference = Reference(JvmName.Unit)
+
+  //
+  // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Scala Types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  //
+
+  val ScalaMathPkg: JvmType.Reference = Reference(JvmName.ScalaMathPkg)
 }

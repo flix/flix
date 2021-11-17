@@ -1,5 +1,6 @@
 /*
  * Copyright 2017 Magnus Madsen
+ * Copyright 2021 Jonathan Lindegaard Starup
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,252 +20,130 @@ package ca.uwaterloo.flix.language.phase.jvm
 import java.nio.file.{Path, Paths}
 
 /**
- * Companion object for the [[JvmName]] class.
- */
+  * Companion object for the [[JvmName]] class.
+  */
 object JvmName {
 
+  case class MethodDescriptor(arguments: List[JvmType], result: JvmType) {
+    /**
+      * Returns the type descriptor of this method.
+      */
+    override lazy val toString: String = AsmOps.getMethodDescriptor(arguments, result)
+  }
+
+  object MethodDescriptor {
+    val NothingToVoid: MethodDescriptor = MethodDescriptor(Nil, JvmType.Void)
+
+    def mkDescriptor(argument: JvmType*)(result: JvmType): MethodDescriptor = MethodDescriptor(argument.toList, result)
+  }
+
   /**
-   * Returns the JvmName of the given string `s`.
-   */
+    * The name of the static constructor method `<clinit>`.
+    */
+  val StaticConstructorMethod: String = "<clinit>"
+
+  /**
+    * The name of the constructor method `<init>`.
+    */
+  val ConstructorMethod: String = "<init>"
+
+  /**
+    * The Flix reserved delimiter for generated jvm classes.
+    */
+  val Delimiter: String = "$"
+
+  /**
+    * Returns the JvmName of the given string `s`.
+    */
   def mk(s: String): JvmName = {
     val l = s.split("/")
     JvmName(l.init.toList, l.last)
   }
 
-  /**
-   * The Flix Context class.
-   */
-  val Context: JvmName = JvmName(Nil, "Context")
+  //
+  // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Java Names ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  //
 
-  /**
-   * The Flix Unit class.
-   */
-  val Unit: JvmName = JvmName(Nil, "Unit")
+  private val javaLang = List("java", "lang")
 
-  /**
-   * The `java.math.BigInteger` name.
-   */
-  val BigInteger: JvmName = JvmName(List("java", "math"), "BigInteger")
-
-  /**
-   * The `java.lang.Boolean` name.
-   */
-  val Boolean: JvmName = JvmName(List("java", "lang"), "Boolean")
-
-  /**
-   * The `java.lang.Byte` name.
-   */
-  val Byte: JvmName = JvmName(List("java", "lang"), "Byte")
-
-  /**
-   * The `java.lang.Character` name.
-   */
-  val Character: JvmName = JvmName(List("java", "lang"), "Character")
-
-  /**
-   * The `java.lang.Short` name.
-   */
-  val Short: JvmName = JvmName(List("java", "lang"), "Short")
-
-  /**
-   * The `java.lang.Integer` name.
-   */
-  val Integer: JvmName = JvmName(List("java", "lang"), "Integer")
-
-  /**
-   * The `java.lang.Long` name.
-   */
-  val Long: JvmName = JvmName(List("java", "lang"), "Long")
-
-  /**
-   * The `java.lang.Float` name.
-   */
-  val Float: JvmName = JvmName(List("java", "lang"), "Float")
-
-  /**
-   * The `java.lang.Double` name.
-   */
-  val Double: JvmName = JvmName(List("java", "lang"), "Double")
-
-  /**
-   * The `java.lang.Object` name.
-   */
-  val Object: JvmName = JvmName(List("java", "lang"), "Object")
-
-  /**
-   * The `java.lang.Objects` name.
-   */
-  val Objects: JvmName = JvmName(List("java", "lang"), "Objects")
-
-  /**
-   * The `java.lang.Runnable` name.
-   */
-  val Runnable: JvmName = JvmName(List("java", "lang"), "Runnable")
-
-  /**
-   * The `java.lang.StringBuilder` name.
-   */
-  val StringBuilder: JvmName = JvmName(List("java", "lang"), "StringBuilder")
-
-  /**
-   * The `java.lang.String` name.
-   */
-  val String: JvmName = JvmName(List("java", "lang"), "String")
-
-  //TODO SJ: place this class a better place
-  /**
-   * The `ca.uwaterloo.flix.runtime.interpreter.Channel` name.
-   */
-  val Channel: JvmName = JvmName(List("ca", "uwaterloo", "flix", "runtime", "interpreter"), "Channel")
-
-  /**
-   * The `ca.uwaterloo.flix.runtime.interpreter.SelectChoice` name.
-   */
-  val SelectChoice: JvmName = JvmName(List("ca", "uwaterloo", "flix", "runtime", "interpreter"), "SelectChoice")
-
-  /**
-   * The `scala.math.package$` name.
-   */
-  val ScalaMathPkg: JvmName = JvmName(List("scala", "math"), "package$")
-
-  /**
-   * The `java.lang.Exception` name.
-   */
-  val Exception: JvmName = JvmName(List("java", "lang"), "Exception")
-
-  /**
-   * The `java.lang.RuntimeException` name.
-   */
-  val RuntimeException: JvmName = JvmName(List("java", "lang"), "RuntimeException")
-
-  /**
-   * The `dev.flix.runtime.FlixError` name.
-   */
-  val FlixError: JvmName = JvmName(List("dev", "flix", "runtime"), "FlixError")
-
-  /**
-   * The `dev.flix.runtime.HoleError` name.
-   */
-  val HoleError: JvmName = JvmName(List("dev", "flix", "runtime"), "HoleError")
-
-  /**
-   * The `dev.flix.runtime.MatchError` name.
-   */
-  val MatchError: JvmName = JvmName(List("dev", "flix", "runtime"), "MatchError")
-
-  /**
-   * The `dev.flix.runtime.ReifiedSourceLocation` name.
-   */
-  val ReifiedSourceLocation: JvmName = JvmName(List("dev", "flix", "runtime"), "ReifiedSourceLocation")
-
-  /**
-    * The `dev.flix.runtime.GlobalCounter` name.
-    */
-  val GlobalCounter: JvmName = JvmName(List("dev", "flix", "runtime"), "GlobalCounter")
-
-  /**
-    * The `java.util.concurrent.atomic.AtomicLong` name.
-    */
   val AtomicLong: JvmName = JvmName(List("java", "util", "concurrent", "atomic"), "AtomicLong")
+  val BigInteger: JvmName = JvmName(List("java", "math"), "BigInteger")
+  val Boolean: JvmName = JvmName(javaLang, "Boolean")
+  val Byte: JvmName = JvmName(javaLang, "Byte")
+  val Character: JvmName = JvmName(javaLang, "Character")
+  val Class: JvmName = JvmName(javaLang, "Class")
+  val Double: JvmName = JvmName(javaLang, "Double")
+  val Exception: JvmName = JvmName(javaLang, "Exception")
+  val Float: JvmName = JvmName(javaLang, "Float")
+  val Function: JvmName = JvmName(List("java", "util", "function"), "Function")
+  val Integer: JvmName = JvmName(javaLang, "Integer")
+  val Long: JvmName = JvmName(javaLang, "Long")
+  val Object: JvmName = JvmName(javaLang, "Object")
+  val Objects: JvmName = JvmName(javaLang, "Objects")
+  val Runnable: JvmName = JvmName(javaLang, "Runnable")
+  val RuntimeException: JvmName = JvmName(javaLang, "RuntimeException")
+  val Short: JvmName = JvmName(javaLang, "Short")
+  val String: JvmName = JvmName(javaLang, "String")
+  val StringBuilder: JvmName = JvmName(javaLang, "StringBuilder")
+  val UnsupportedOperationException: JvmName = JvmName(javaLang, "UnsupportedOperationException")
 
-  /**
-   * The `java.lang.Exception` name.
-   */
-  val UnsupportedOperationException: JvmName = JvmName(List("java", "lang"), "UnsupportedOperationException")
+  //
+  // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Flix Names ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  //
 
-  val PredSym: JvmName = mk("ca/uwaterloo/flix/runtime/solver/api/symbol/PredSym")
+  private val devFlixRuntime = List("dev", "flix", "runtime")
 
-  val ProxyObject: JvmName = mk("ca/uwaterloo/flix/runtime/solver/api/ProxyObject")
+  val Channel: JvmName = JvmName(List("ca", "uwaterloo", "flix", "runtime", "interpreter"), "Channel")
+  val Context: JvmName = JvmName(Nil, "Context")
+  val FlixError: JvmName = JvmName(devFlixRuntime, "FlixError")
+  val GlobalCounter: JvmName = JvmName(devFlixRuntime, "GlobalCounter")
+  val HoleError: JvmName = JvmName(devFlixRuntime, "HoleError")
+  val MatchError: JvmName = JvmName(devFlixRuntime, "MatchError")
+  val ProxyObject: JvmName = JvmName(devFlixRuntime, "ProxyObject")
+  val ReifiedSourceLocation: JvmName = JvmName(devFlixRuntime, "ReifiedSourceLocation")
+  val SelectChoice: JvmName = JvmName(List("ca", "uwaterloo", "flix", "runtime", "interpreter"), "SelectChoice")
+  val Unit: JvmName = JvmName(devFlixRuntime, "Unit")
 
-  val Function: JvmName = mk("java/util/function/Function")
+  //
+  // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Scala Names ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  //
 
-  /**
-   * Get the class type for the cell with subtype `subType`
-   */
-  def getCellClassType(subType: JvmType): JvmType.Reference = {
-    val name = "Ref" + "$" + JvmOps.stringify(subType)
-
-    // The type resides in the ca.uwaterloo.flix package.
-    JvmType.Reference(JvmName(Nil, name))
-  }
-
-  object Runtime {
-
-    val ProxyObject: JvmName = mk("flix/runtime/ProxyObject")
-
-    object Fixpoint {
-
-      val Constraint: JvmName = mk("flix/runtime/fixpoint/Constraint")
-      val ConstraintSystem: JvmName = mk("flix/runtime/fixpoint/ConstraintSystem")
-      val ConstantFunction: JvmName = mk("flix/runtime/fixpoint/ConstantFunction")
-      val Options: JvmName = mk("flix/runtime/fixpoint/Options")
-      val LatticeOps: JvmName = mk("flix/runtime/fixpoint/LatticeOps")
-      val Solver: JvmName = mk("flix/runtime/fixpoint/Solver")
-      val Stratification: JvmName = mk("flix/runtime/fixpoint/Stratification")
-
-      object Predicate {
-        val Predicate: JvmName = mk("flix/runtime/fixpoint/predicate/Predicate")
-
-        val AtomPredicate: JvmName = mk("flix/runtime/fixpoint/predicate/AtomPredicate")
-        val GuardPredicate: JvmName = mk("flix/runtime/fixpoint/predicate/GuardPredicate")
-        val UnionPredicate: JvmName = mk("flix/runtime/fixpoint/predicate/UnionPredicate")
-      }
-
-      object Symbol {
-        val PredSym: JvmName = mk("flix/runtime/fixpoint/symbol/PredSym")
-        val LatSym: JvmName = mk("flix/runtime/fixpoint/symbol/LatSym")
-        val RelSym: JvmName = mk("flix/runtime/fixpoint/symbol/RelSym")
-
-        val VarSym: JvmName = mk("flix/runtime/fixpoint/symbol/VarSym")
-      }
-
-      object Term {
-        val Term: JvmName = mk("flix/runtime/fixpoint/term/Term")
-
-        val AppTerm: JvmName = mk("flix/runtime/fixpoint/term/AppTerm")
-        val LitTerm: JvmName = mk("flix/runtime/fixpoint/term/LitTerm")
-        val VarTerm: JvmName = mk("flix/runtime/fixpoint/term/VarTerm")
-        val WildTerm: JvmName = mk("flix/runtime/fixpoint/term/WildTerm")
-      }
-
-    }
-  }
-
+  val ScalaMathPkg: JvmName = JvmName(List("scala", "math"), "package$")
 }
 
 /**
- * Represents the name of a Java class or interface.
- *
- * @param pkg  the package name.
- * @param name the class or interface name.
- */
+  * Represents the name of a Java class or interface.
+  *
+  * @param pkg  the package name.
+  * @param name the class or interface name.
+  */
 case class JvmName(pkg: List[String], name: String) {
   /**
-   * Returns the type descriptor of `this` Java name.
-   */
+    * Returns the type descriptor of `this` Java name.
+    */
   lazy val toDescriptor: String =
     if (pkg.isEmpty) "L" + name + ";" else "L" + pkg.mkString("/") + "/" + name + ";"
 
   /**
-   * Returns the binary name of `this` Java name.
-   *
-   * The binary name is of the form `java.lang.String`.
-   *
-   * The binary name is rarely used. Mostly likely you need the [[toInternalName]].
-   */
+    * Returns the binary name of `this` Java name.
+    *
+    * The binary name is of the form `java.lang.String`.
+    *
+    * The binary name is rarely used. Mostly likely you need the [[toInternalName]].
+    */
   lazy val toBinaryName: String =
     if (pkg.isEmpty) name else pkg.mkString(".") + "." + name
 
   /**
-   * Returns the internal name of `this` Java name.
-   *
-   * The internal name is of the form `java/lang/String`.
-   */
+    * Returns the internal name of `this` Java name.
+    *
+    * The internal name is of the form `java/lang/String`.
+    */
   lazy val toInternalName: String =
     if (pkg.isEmpty) name else pkg.mkString("/") + "/" + name
 
   /**
-   * Returns the relative path of `this` Java name.
-   */
+    * Returns the relative path of `this` Java name.
+    */
   lazy val toPath: Path = Paths.get(pkg.mkString("/"), name + ".class")
 }
