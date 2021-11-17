@@ -35,100 +35,71 @@ object VoidableType {
   * Represents all Flix types that are not objects on the JVM (array is an exception).
   */
 sealed trait BackendType extends VoidableType {
-  def toDescriptor: String
+  val toDescriptor: String = this match {
+    case BackendType.Bool => "Z"
+    case BackendType.Char => "C"
+    case BackendType.Int8 => "B"
+    case BackendType.Int16 => "S"
+    case BackendType.Int32 => "I"
+    case BackendType.Int64 => "J"
+    case BackendType.Float32 => "F"
+    case BackendType.Float64 => "D"
+    case BackendType.Array(tpe) => s"[${tpe.toDescriptor}"
+    case BackendType.Reference(ref) => ref.toDescriptor
+  }
 
-  def toErased: BackendType
+  /**
+    * Returns the erased type, either itself if `this` is primitive or `java.lang.Object`
+    * if `this` is an array or a reference.
+    * @return
+    */
+  def toErased: BackendType = this match {
+    case BackendType.Bool | BackendType.Char | BackendType.Int8 | BackendType.Int16 |
+         BackendType.Int32 | BackendType.Int64 | BackendType.Float32 | BackendType.Float64 => this
+    case BackendType.Array(_) | BackendType.Reference(_) => JvmName.Object.toObjTpe.toTpe
+  }
 
   /**
     * A string representing the erased type. This is used for parametrized class names.
     */
-  override def toString: String = "BackendType:MissingImpl"
+  override val toString: String = this match {
+    case BackendType.Bool => "Bool"
+    case BackendType.Char => "Char"
+    case BackendType.Int8 => "Int8"
+    case BackendType.Int16 => "Int16"
+    case BackendType.Int32 => "Int32"
+    case BackendType.Int64 => "Int64"
+    case BackendType.Float32 => "Float32"
+    case BackendType.Float64 => "Float64"
+    case BackendType.Array(_) | BackendType.Reference(_) => "Obj"
+  }
 }
 
 object BackendType {
-  case object Bool extends BackendType {
-    override val toDescriptor: String = "Z"
+  case object Bool extends BackendType
 
-    override def toErased: BackendType = this
+  case object Char extends BackendType
 
-    override def toString: String = "Bool"
-  }
+  case object Int8 extends BackendType
 
-  case object Char extends BackendType {
-    override val toDescriptor: String = "C"
+  case object Int16 extends BackendType
 
-    override def toErased: BackendType = this
+  case object Int32 extends BackendType
 
-    override def toString: String = "Char"
-  }
+  case object Int64 extends BackendType
 
-  case object Int8 extends BackendType {
-    override val toDescriptor: String = "B"
+  case object Float32 extends BackendType
 
-    override def toErased: BackendType = this
-
-    override def toString: String = "Int8"
-  }
-
-  case object Int16 extends BackendType {
-    override val toDescriptor: String = "S"
-
-    override def toErased: BackendType = this
-
-    override def toString: String = "Int16"
-  }
-
-  case object Int32 extends BackendType {
-    override val toDescriptor: String = "I"
-
-    override def toErased: BackendType = this
-
-    override def toString: String = "Int32"
-  }
-
-  case object Int64 extends BackendType {
-    override val toDescriptor: String = "J"
-
-    override def toErased: BackendType = this
-
-    override def toString: String = "Int64"
-  }
-
-  case object Float32 extends BackendType {
-    override val toDescriptor: String = "F"
-
-    override def toErased: BackendType = this
-
-    override def toString: String = "Float32"
-  }
-
-  case object Float64 extends BackendType {
-    override val toDescriptor: String = "D"
-
-    override def toErased: BackendType = this
-
-    override def toString: String = "Float64"
-  }
+  case object Float64 extends BackendType
 
   case class Array(tpe: BackendType) extends BackendType {
-    override def toDescriptor: String = s"[${tpe.toDescriptor}"
-
-    override def toErased: BackendType = JvmName.Object.toObjTpe.toTpe
-
-    override def toString: String = "Obj"
   }
 
   /**
     * Holds a reference to some object type.
     */
   case class Reference(ref: BackendObjType) extends BackendType {
-    override val toDescriptor: String = ref.toDescriptor
-
     def name: JvmName = ref.jvmName
-
-    override def toErased: BackendType = JvmName.Object.toObjTpe.toTpe
-
-    override def toString: String = "Obj"
   }
 
   /**
