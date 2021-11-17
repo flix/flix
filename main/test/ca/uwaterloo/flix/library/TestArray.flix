@@ -1738,34 +1738,6 @@ def isSuffixOf12(): Bool & Impure = Array.isSuffixOf([1,2,3], [1,2]) == false
 def isSuffixOf13(): Bool & Impure = Array.isSuffixOf([1,2,3], [89,11,1,2,3])
 
 /////////////////////////////////////////////////////////////////////////////
-// eq                                                                      //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def testEq01(): Bool & Impure = ([] : Array[Int]) == ([] : Array[Int])
-
-@test
-def testEq02(): Bool & Impure = [1] != []
-
-@test
-def testEq03(): Bool & Impure = [] != [1]
-
-@test
-def testEq04(): Bool & Impure = [1] == [1]
-
-@test
-def testEq05(): Bool & Impure = [1] != [2]
-
-@test
-def testEq06(): Bool & Impure = [1,2] != [1]
-
-@test
-def testEq07(): Bool & Impure = [1] != [1,2]
-
-@test
-def testEq08(): Bool & Impure = [1,2,3,4] == [1,2,3,4]
-
-/////////////////////////////////////////////////////////////////////////////
 // compare                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 
