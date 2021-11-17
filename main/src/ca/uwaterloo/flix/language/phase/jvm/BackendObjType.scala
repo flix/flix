@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.{Delimiter, DevFlixRuntime, JavaLang, RootPackage}
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
   * Represents all Flix types that are objects on the JVM (array is an exception).
@@ -34,14 +35,14 @@ sealed trait BackendObjType {
     case BackendObjType.Lazy(tpe) => JvmName(RootPackage, s"Lazy$Delimiter${tpe.toErased}")
     case BackendObjType.Ref(tpe) => JvmName(RootPackage, s"Ref$Delimiter${tpe.toErased}")
     case BackendObjType.Tuple(elms) => JvmName(RootPackage, s"Tuple${elms.length}$Delimiter${erasedListOfTypes(elms)}")
-    case BackendObjType.Enum(_, _) => JvmName(RootPackage, "MissingInBackendObjType") // TODO
+    case BackendObjType.Enum(_, _) => throw InternalCompilerException("Enum JVM NAME") // TODO
     case BackendObjType.Arrow(args, result) => JvmName(RootPackage, s"Fn${args.length}$Delimiter${erasedListOfTypes(args)}$Delimiter${result.toErased}")
     case BackendObjType.RecordEmpty => JvmName(RootPackage, s"RecordEmpty$Delimiter")
     case BackendObjType.RecordExtend(_, value, _) => JvmName(RootPackage, s"RecordExtend$Delimiter${value.toErased}")
-    case BackendObjType.SchemaEmpty => JvmName(RootPackage, "MissingInBackendObjType") // TODO
-    case BackendObjType.SchemaExtend(_, _, _) => JvmName(RootPackage, "MissingInBackendObjType") // TODO
-    case BackendObjType.Relation(_) => JvmName(RootPackage, "MissingInBackendObjType") // TODO
-    case BackendObjType.Lattice(_) => JvmName(RootPackage, "MissingInBackendObjType") // TODO
+    case BackendObjType.SchemaEmpty() => throw InternalCompilerException("SchemaEmpty JVM NAME") // TODO
+    case BackendObjType.SchemaExtend(_, _, _) => throw InternalCompilerException("SchemaExtend JVM NAME") // TODO
+    case BackendObjType.Relation(_) => throw InternalCompilerException("Relation JVM NAME") // TODO
+    case BackendObjType.Lattice(_) => throw InternalCompilerException("Lattice JVM NAME") // TODO
     case BackendObjType.Native(className) => className
   }
 
@@ -89,7 +90,8 @@ object BackendObjType {
     val interface: JvmName = JvmName(RootPackage, s"IRecord$Delimiter")
   }
 
-  case object SchemaEmpty extends BackendObjType
+  // TODO: Should be an object
+  case class SchemaEmpty() extends BackendObjType
 
   case class SchemaExtend(name: String, tpe: BackendType, rest: BackendType) extends BackendObjType
 
