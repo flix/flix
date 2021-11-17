@@ -388,6 +388,8 @@ object Ast {
     /**
       * Returns `this` constraint graph including only the graphs where all
       * edges have both the source and destination in `syms`.
+      * A rule like `A :- B, C, not D.` is represented by `MultiEdge(A, {B, C}, {D})` and is only
+      * included in the output if `syms` contains all of `A, B, C, D`.
       */
     def restrict(syms: Set[Name.Pred]): ConstraintGraph =
       ConstraintGraph(xs.filter {
