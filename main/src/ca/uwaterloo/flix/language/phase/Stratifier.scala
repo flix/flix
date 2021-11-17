@@ -671,6 +671,7 @@ object Stratifier extends Phase[Root, Root] {
       getPredicate(head) match {
         case None => ConstraintGraph.empty
         case Some(headSym) =>
+          // TODO: These sets do not eliminate most duplicates since location is included in the equality.
           val (pos, neg) = body.foldLeft((Set.empty[(Name.Pred, SourceLocation)], Set.empty[(Name.Pred, SourceLocation)])) {
             case ((pos, neg), b) => b match {
               case Body.Atom(pred, _, polarity, _, _, loc) => polarity match {
