@@ -1254,8 +1254,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.RefWithRegion(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.Deref(exp, loc) => freeVars(exp)
     case WeededAst.Expression.Assign(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
-    case WeededAst.Expression.Existential(tparams, fparam, exp, loc) => filterBoundVars(freeVars(exp), List(fparam.ident))
-    case WeededAst.Expression.Universal(tparams, fparam, exp, loc) => filterBoundVars(freeVars(exp), List(fparam.ident))
     case WeededAst.Expression.Ascribe(exp, tpe, eff, loc) => freeVars(exp)
     case WeededAst.Expression.Cast(exp, tpe, eff, loc) => freeVars(exp)
     case WeededAst.Expression.TryCatch(exp, rules, loc) =>

@@ -351,12 +351,6 @@ object SemanticTokensProvider {
     case Expression.Assign(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Existential(_, _, _) =>
-      throw InternalCompilerException("to be removed")
-
-    case Expression.Universal(_, _, _) =>
-      throw InternalCompilerException("to be removed")
-
     case Expression.Ascribe(exp, tpe, _, _) =>
       visitExp(exp) ++ visitType(tpe)
 

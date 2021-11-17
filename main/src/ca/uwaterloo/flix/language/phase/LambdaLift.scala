@@ -261,16 +261,6 @@ object LambdaLift extends Phase[SimplifiedAst.Root, LiftedAst.Root] {
         val e2 = visitExp(exp2)
         LiftedAst.Expression.Assign(e1, e2, tpe, loc)
 
-      case SimplifiedAst.Expression.Existential(fparam, exp, loc) =>
-        val p = visitFormalParam(fparam)
-        val e = visitExp(exp)
-        LiftedAst.Expression.Existential(p, e, loc)
-
-      case SimplifiedAst.Expression.Universal(fparam, exp, loc) =>
-        val p = visitFormalParam(fparam)
-        val e = visitExp(exp)
-        LiftedAst.Expression.Universal(p, e, loc)
-
       case SimplifiedAst.Expression.Cast(exp, tpe, loc) =>
         val e = visitExp(exp)
         LiftedAst.Expression.Cast(e, tpe, loc)

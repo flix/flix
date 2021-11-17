@@ -241,12 +241,6 @@ object Indexer {
     case Expression.Assign(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
-    case Expression.Existential(fparam, exp, _) =>
-      visitFormalParam(fparam) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
-
-    case Expression.Universal(fparam, exp, _) =>
-      visitFormalParam(fparam) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
-
     case Expression.Ascribe(exp, tpe, eff, loc) =>
       visitExp(exp) ++ visitType(tpe) ++ visitType(eff) ++ Index.occurrenceOf(exp0)
 

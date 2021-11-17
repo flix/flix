@@ -121,12 +121,6 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.IllegalFieldName](result)
   }
 
-  test("IllegalExistential.01") {
-    val input = "def f(): Bool = ∃(). true"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalExistential](result)
-  }
-
   test("IllegalInt8.01") {
     val input = "def f(): Int8 = -1000i8"
     val result = compile(input, Options.TestWithLibNix)
@@ -173,12 +167,6 @@ class TestWeeder extends FunSuite with TestUtils {
     val input = "def f(): Int64 = 100000000000000000000i64"
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalInt](result)
-  }
-
-  test("IllegalUniversal.01") {
-    val input = "def f(): Prop = ∀(). true"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalUniversal](result)
   }
 
   test("IllegalNullPattern.01") {

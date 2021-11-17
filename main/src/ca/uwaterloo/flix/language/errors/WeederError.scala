@@ -196,50 +196,6 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate an illegal existential quantification expression.
-    *
-    * @param loc the location where the illegal expression occurs.
-    */
-  case class IllegalExistential(loc: SourceLocation) extends WeederError {
-    def summary: String = "The existential quantifier does not declare any formal parameters."
-
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> The existential quantifier does not declare any formal parameters." << NewLine
-      vt << NewLine
-      vt << Code(loc, "quantifier must declare at least one parameter.") << NewLine
-      vt << NewLine
-    }
-
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << " Add a formal parameter or remove the quantifier." << NewLine
-    }
-  }
-
-  /**
-    * An error raised to indicate an illegal universal quantification expression.
-    *
-    * @param loc the location where the illegal expression occurs.
-    */
-  case class IllegalUniversal(loc: SourceLocation) extends WeederError {
-    def summary: String = "The universal quantifier does not declare any formal parameters."
-
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> The universal quantifier does not declare any formal parameters." << NewLine
-      vt << NewLine
-      vt << Code(loc, "quantifier must declare at least one parameter.") << NewLine
-      vt << NewLine
-    }
-
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << " Add a formal parameter or remove the quantifier." << NewLine
-    }
-  }
-
-  /**
     * An error raised to indicate that a float is out of bounds.
     *
     * @param loc the location where the illegal float occurs.

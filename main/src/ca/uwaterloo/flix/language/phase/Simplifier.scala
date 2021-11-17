@@ -190,16 +190,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val e2 = visitExp(exp2)
         SimplifiedAst.Expression.Assign(e1, e2, tpe, loc)
 
-      case TypedAst.Expression.Existential(fparam, exp, loc) =>
-        val p = SimplifiedAst.FormalParam(fparam.sym, fparam.mod, fparam.tpe, fparam.loc)
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.Existential(p, e, loc)
-
-      case TypedAst.Expression.Universal(fparam, exp, loc) =>
-        val p = SimplifiedAst.FormalParam(fparam.sym, fparam.mod, fparam.tpe, fparam.loc)
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.Universal(p, e, loc)
-
       case TypedAst.Expression.Ascribe(exp, tpe, eff, loc) => visitExp(exp)
 
       case TypedAst.Expression.Cast(exp, tpe, eff, loc) =>
@@ -925,14 +915,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
       case SimplifiedAst.Expression.Assign(exp1, exp2, tpe, loc) =>
         SimplifiedAst.Expression.Assign(visitExp(exp1), visitExp(exp2), tpe, loc)
-
-      case SimplifiedAst.Expression.Existential(params, exp, loc) =>
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.Existential(params, e, loc)
-
-      case SimplifiedAst.Expression.Universal(params, exp, loc) =>
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.Universal(params, e, loc)
 
       case SimplifiedAst.Expression.Cast(exp, tpe, loc) =>
         val e = visitExp(exp)

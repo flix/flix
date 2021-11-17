@@ -161,12 +161,6 @@ object Safety extends Phase[Root, Root] {
     case Expression.Assign(exp1, exp2, _, _, _) =>
       visitExp(exp1) ::: visitExp(exp2)
 
-    case Expression.Existential(_, exp, _) =>
-      visitExp(exp)
-
-    case Expression.Universal(_, exp, _) =>
-      visitExp(exp)
-
     case Expression.Ascribe(exp, _, _, _) =>
       visitExp(exp)
 

@@ -425,16 +425,6 @@ object Lowering extends Phase[Root, Root] {
       val t = visitType(tpe)
       Expression.Assign(e1, e2, t, eff, loc)
 
-    case Expression.Existential(fparam, exp, loc) =>
-      val p = visitFormalParam(fparam)
-      val e = visitExp(exp)
-      Expression.Existential(p, e, loc)
-
-    case Expression.Universal(fparam, exp, loc) =>
-      val p = visitFormalParam(fparam)
-      val e = visitExp(exp)
-      Expression.Universal(p, e, loc)
-
     case Expression.Ascribe(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
@@ -1401,16 +1391,6 @@ object Lowering extends Phase[Root, Root] {
       val e1 = substExp(exp1, subst)
       val e2 = substExp(exp2, subst)
       Expression.Assign(e1, e2, tpe, eff, loc)
-
-    case Expression.Existential(fparam, exp, loc) =>
-      val f = substFormalParam(fparam, subst)
-      val e = substExp(exp, subst)
-      Expression.Existential(f, e, loc)
-
-    case Expression.Universal(fparam, exp, loc) =>
-      val f = substFormalParam(fparam, subst)
-      val e = substExp(exp, subst)
-      Expression.Universal(f, e, loc)
 
     case Expression.Ascribe(exp, tpe, eff, loc) =>
       val e = substExp(exp, subst)
