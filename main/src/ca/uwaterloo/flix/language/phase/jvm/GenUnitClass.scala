@@ -23,7 +23,6 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Finality._
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Instancing._
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility._
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker._
-import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 
 object GenUnitClass {
 
