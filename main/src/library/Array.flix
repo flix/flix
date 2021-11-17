@@ -38,23 +38,6 @@ instance Foldable[Array] {
     pub def foldRight(f: (a, b) -> b & ef, s: b, a: Array[a]): b & ef = Array.foldRight(f, s, a) as & ef
 }
 
-namespace ArrayOps {
-    pub def compareHelper(a: Array[v], b: Array[v], len: Int32, i: Int32): Comparison & Impure with Order[v] =
-        if (i < len) {
-            let cmp = a[i] <=> b[i];
-            if (cmp == EqualTo)
-                compareHelper(a, b, len, i + 1)
-            else
-                cmp
-        } else if (i < Array.length(a)) {
-            GreaterThan
-        } else if (i < Array.length(b)) {
-            LessThan
-        } else {
-            EqualTo
-        }
-}
-
 namespace Array {
 
     ///
