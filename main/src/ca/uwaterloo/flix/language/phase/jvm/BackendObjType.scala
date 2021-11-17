@@ -37,14 +37,14 @@ sealed trait BackendObjType {
     case BackendObjType.Lazy(tpe) => JvmName(RootPackage, s"Lazy$Delimiter${tpe.toErased}")
     case BackendObjType.Ref(tpe) => JvmName(RootPackage, s"Ref$Delimiter${tpe.toErased}")
     case BackendObjType.Tuple(elms) => JvmName(RootPackage, s"Tuple${elms.length}$Delimiter${erasedListOfTypes(elms)}")
-    case BackendObjType.Enum(_, _) => ???
+    case BackendObjType.Enum(_, _) => JvmName(RootPackage, "MissingInBackendObjType") // TODO
     case BackendObjType.Arrow(args, result) => JvmName(RootPackage, s"Fn${args.length}$Delimiter${erasedListOfTypes(args)}$Delimiter${result.toErased}")
     case BackendObjType.RecordEmpty => JvmName(RootPackage, s"RecordEmpty$Delimiter")
     case BackendObjType.RecordExtend(_, value, _) => JvmName(RootPackage, s"RecordExtend$Delimiter${value.toErased}")
-    case BackendObjType.SchemaEmpty => ???
-    case BackendObjType.SchemaExtend(_, _, _) => ???
-    case BackendObjType.Relation(_) => ???
-    case BackendObjType.Lattice(_) => ???
+    case BackendObjType.SchemaEmpty => JvmName(RootPackage, "MissingInBackendObjType") // TODO
+    case BackendObjType.SchemaExtend(_, _, _) => JvmName(RootPackage, "MissingInBackendObjType") // TODO
+    case BackendObjType.Relation(_) => JvmName(RootPackage, "MissingInBackendObjType") // TODO
+    case BackendObjType.Lattice(_) => JvmName(RootPackage, "MissingInBackendObjType") // TODO
     case BackendObjType.Native(className) => className
   }
 
