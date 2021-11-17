@@ -429,10 +429,8 @@ namespace Set {
     ///
     /// Applies `f` to every element of `xs`.
     ///
-    /// The function `f` must be impure.
-    ///
     @Time(size(f) * size(xs)) @Space(space(f) * Int32.log2(size(xs)))
-    pub def foreach(f: a ~> Unit, xs: Set[a]): Unit & Impure =
+    pub def foreach(f: a -> Unit & ef, xs: Set[a]): Unit & ef =
         let Set(es) = xs;
         RedBlackTree.foreach((x, _) -> f(x), es)
 
@@ -461,12 +459,12 @@ namespace Set {
     ///
     /// `next` should return `None` to signal the end of building the set.
     ///
-    pub def unfoldWithIter(next: Unit ~> Option[a]): Set[a] & Impure with Order[a] = unfoldWithIterHelper(next, empty())
+    pub def unfoldWithIter(next: Unit -> Option[a] & Impure): Set[a] & Impure with Order[a] = unfoldWithIterHelper(next, empty())
 
     ///
     /// Helper function for `unfoldWithIter`.
     ///
-    def unfoldWithIterHelper(next: Unit ~> Option[a], ac: Set[a]): Set[a] & Impure with Order[a] = match next() {
+    def unfoldWithIterHelper(next: Unit -> Option[a] & Impure, ac: Set[a]): Set[a] & Impure with Order[a] = match next() {
         case None => ac
         case Some(a) => unfoldWithIterHelper(next, insert(a, ac))
     }
@@ -485,7 +483,7 @@ namespace Set {
     ///
     /// The function `f` must be impure.
     ///
-    pub def queryWith(p: a -> Comparison & ef, f: a ~> Unit, xs: Set[a]): Unit & Impure =
+    pub def queryWith(p: a -> Comparison & ef, f: a -> Unit & Impure, xs: Set[a]): Unit & Impure =
         let Set(es) = xs;
         RedBlackTree.queryWith(p, (k, _) -> f(k), es)
 
