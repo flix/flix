@@ -24,11 +24,8 @@ import ca.uwaterloo.flix.language.phase.jvm.JvmName.{Delimiter, DevFlixRuntime, 
   */
 sealed trait BackendObjType {
   /**
-    * Constructs a concatenated list of erased strings delimited with `JvmName.Delimiter`.
+    * The `JvmName` that represents the type `Ref(Int)` refers to `Ref$Int`.
     */
-  private def erasedListOfTypes(ts: List[BackendType]): String =
-    ts.map(e => e.toErased.toString).mkString(Delimiter)
-
   val jvmName: JvmName = this match {
     case BackendObjType.Unit => JvmName(DevFlixRuntime, "Unit")
     case BackendObjType.BigInt => JvmName(List("java", "math"), "BigInteger")
@@ -48,9 +45,21 @@ sealed trait BackendObjType {
     case BackendObjType.Native(className) => className
   }
 
+  /**
+    * The JVM type descriptor of the form `L<jvmName.toInternalName>;`.
+    */
   def toDescriptor: String = jvmName.toDescriptor
 
+  /**
+    * Returns `this` wrapped in `BackendType.Reference`.
+    */
   def toTpe: BackendType.Reference = BackendType.Reference(this)
+
+  /**
+    * Constructs a concatenated list of erased strings delimited with `JvmName.Delimiter`.
+    */
+  private def erasedListOfTypes(ts: List[BackendType]): String =
+    ts.map(e => e.toErased.toString).mkString(Delimiter)
 }
 
 object BackendObjType {
