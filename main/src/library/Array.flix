@@ -14,6 +14,47 @@
  * limitations under the License.
  */
 
+instance Eq[Array[v]] with Eq[v] {
+    // TODO More efficient implementation
+    pub def eq(a: Array[v], b: Array[v]): Bool =
+        (Array.length(a) == Array.length(b)) and
+        (Foldable.foldLeft((acc, p) -> let (x,y) = p; (acc and (x == y)), true, Array.zip(a,b))) as & Pure
+}
+
+instance Order[Array[v]] with Order[v] {
+    ///
+    /// Compares `a` and `b` lexicographically.
+    ///
+    pub def compare(a: Array[v], b: Array[v]): Comparison =
+        ArrayOps.compareHelper(a, b, Int32.min(Array.length(a), Array.length(b)), 0) as & Pure
+}
+
+instance Functor[Array] {
+    pub def map(f: a -> b & ef, a: Array[a]): Array[b] & ef = Array.map(f, a) as & ef
+}
+
+instance Foldable[Array] {
+    pub def foldLeft(f: (b, a) -> b & ef, s: b, a: Array[a]): b & ef = Array.foldLeft(f, s, a) as & ef
+    pub def foldRight(f: (a, b) -> b & ef, s: b, a: Array[a]): b & ef = Array.foldRight(f, s, a) as & ef
+}
+
+namespace ArrayOps {
+    pub def compareHelper(a: Array[v], b: Array[v], len: Int32, i: Int32): Comparison & Impure with Order[v] =
+        if (i < len) {
+            let cmp = a[i] <=> b[i];
+            if (cmp == EqualTo)
+                compareHelper(a, b, len, i + 1)
+            else
+                cmp
+        } else if (i < Array.length(a)) {
+            GreaterThan
+        } else if (i < Array.length(b)) {
+            LessThan
+        } else {
+            EqualTo
+        }
+}
+
 namespace Array {
 
     ///
