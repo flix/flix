@@ -37,9 +37,10 @@
   - Names such as `beginExp` etc. quickly get outdated.
 - Leave the code in better state than you found it in.
 
-## Jvm-specific
+## JVM Bytecode Generation Policy
 
 - Prefer public fields over private fields with getter/setter.
 - Prefer direct field initialization over construction arguments.
+- Ensure classes are final.
 
 If a PR discovers a new style principle, feel free to add it to this file as part of the same PR.
