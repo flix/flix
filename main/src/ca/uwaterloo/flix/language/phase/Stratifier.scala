@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.StratificationError
 import ca.uwaterloo.flix.language.phase.UllmansAlgorithm.DependencyGraph
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{ParOps, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 import scala.collection.mutable
 
@@ -700,6 +700,11 @@ object Stratifier extends Phase[Root, Root] {
     */
   private def stratifyWithCache(dg: ConstraintGraph, tpe: Type, loc: SourceLocation)(implicit cache: Cache): Validation[Ast.Stratification, StratificationError] = {
     // The key is the set of predicates that occur in the row type.
+    // TODO: delete
+    println(tpe)
+    println()
+    println(predicateSymbolsOf2(tpe))
+    throw InternalCompilerException("stop")
     val key = predicateSymbolsOf(tpe)
 
     // Lookup the key in the stratification cache.
@@ -775,5 +780,25 @@ object Stratifier extends Phase[Root, Root] {
     case (acc, TypeConstructor.SchemaRowExtend(pred)) => acc + pred
     case (acc, _) => acc
   }
+
+
+  /**
+    * Returns the set of predicates that appears in the given row type `tpe`.
+    */
+  private def predicateSymbolsOf2(tpe: Type, acc: Map[Name.Pred, Int] = Map.empty): Option[Map[Name.Pred, Int]] = tpe match {
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), _), predType, _), rest, _) => predicateSymbolsOf2(rest, acc + (pred -> arityOf(predType)))
+    case Type.Apply(Type.Cst(TypeConstructor.SchemaRowEmpty, _), rest, _) => Some(acc)
+    case rest => println(rest match {
+        case Type.KindedVar(id, kind, loc, rigidity, text) => s"kindedvar:$kind,$text"
+        case Type.UnkindedVar(id, loc, rigidity, text) => s"unkindedvar:$text"
+        case Type.Ascribe(tpe, kind, loc) => s"Ascripe:$tpe"
+        case Type.Cst(tc, loc) => s"Cst:$tc"
+        case Type.Apply(tpe1, tpe2, loc) => s"Apply:$tpe1,$tpe2"
+        case Type.Alias(cst, args, tpe, loc) => s"Alias:$cst,$args,$tpe"
+      }); None
+
+  }
+
+  private def arityOf(value: Type): Int = 0
 
 }
