@@ -179,13 +179,6 @@ object Symbol {
   }
 
   /**
-    * A union type for [[DefnSym]]s and [[SigSym]]s
-    */
-  sealed trait DefnSymOrSigSym {
-    val loc: SourceLocation
-  }
-
-  /**
     * Variable Symbol.
     *
     * @param id      the globally unique name of the symbol.
@@ -247,7 +240,7 @@ object Symbol {
   /**
     * Definition Symbol.
     */
-  final class DefnSym(val id: Option[Int], val namespace: List[String], val text: String, val loc: SourceLocation) extends DefnSymOrSigSym {
+  final class DefnSym(val id: Option[Int], val namespace: List[String], val text: String, val loc: SourceLocation) {
 
     /**
       * Returns `true` if `this` symbol is equal to the main symbol.
@@ -360,7 +353,7 @@ object Symbol {
   /**
     * Signature Symbol.
     */
-  final class SigSym(val clazz: Symbol.ClassSym, val name: String, val loc: SourceLocation) extends DefnSymOrSigSym {
+  final class SigSym(val clazz: Symbol.ClassSym, val name: String, val loc: SourceLocation) {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */

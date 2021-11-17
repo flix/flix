@@ -75,7 +75,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         val definitionsVal = root.defsAndSigs.flatMap {
           case (ns0, defsAndSigs) => defsAndSigs.collect {
-            case (_, defn: NamedAst.Def) => resolveDef(defn, taenv, ns0, root) map {
+            case (_, NamedAst.DefOrSig.Def(defn)) => resolveDef(defn, taenv, ns0, root) map {
               case d => d.sym -> d
             }
             // Skip Sigs as they are handled under classes.
@@ -527,8 +527,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         case NamedAst.Expression.DefOrSig(qname, loc) =>
           mapN(lookupDefOrSig(qname, ns0, root)) {
-            case defn: NamedAst.Def => visitDef(defn, loc)
-            case sig: NamedAst.Sig => visitSig(sig, loc)
+            case NamedAst.DefOrSig.Def(defn) => visitDef(defn, loc)
+            case NamedAst.DefOrSig.Sig(sig) => visitSig(sig, loc)
           }
 
         case NamedAst.Expression.Hole(nameOpt, loc) =>
@@ -581,8 +581,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         case app@NamedAst.Expression.Apply(NamedAst.Expression.DefOrSig(qname, innerLoc), exps, outerLoc) =>
           flatMapN(lookupDefOrSig(qname, ns0, root)) {
-            case defn: NamedAst.Def => visitApplyDef(app, defn, exps, innerLoc, outerLoc)
-            case sig: NamedAst.Sig => visitApplySig(app, sig, exps, innerLoc, outerLoc)
+            case NamedAst.DefOrSig.Def(defn) => visitApplyDef(app, defn, exps, innerLoc, outerLoc)
+            case NamedAst.DefOrSig.Sig(sig) => visitApplySig(app, sig, exps, innerLoc, outerLoc)
           }
 
         case app@NamedAst.Expression.Apply(_, _, _) => visitApply(app)
@@ -1324,15 +1324,15 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
     defOrSigOpt match {
       case None => ResolutionError.UndefinedName(qname, ns0, qname.loc).toFailure
-      case Some(defn: NamedAst.Def) =>
+      case Some(d@NamedAst.DefOrSig.Def(defn)) =>
         if (isDefAccessible(defn, ns0)) {
-          defn.toSuccess
+          d.toSuccess
         } else {
           ResolutionError.InaccessibleDef(defn.sym, ns0, qname.loc).toFailure
         }
-      case Some(sig: NamedAst.Sig) =>
+      case Some(s@NamedAst.DefOrSig.Sig(sig)) =>
         if (isSigAccessible(sig, ns0)) {
-          sig.toSuccess
+          s.toSuccess
         } else {
           ResolutionError.InaccessibleSig(sig.sym, ns0, qname.loc).toFailure
         }

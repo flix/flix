@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Source}
+import ca.uwaterloo.flix.language.ast.NamedAst.DefOrSig
 import ca.uwaterloo.flix.language.ast.WeededAst.ChoicePattern
 import ca.uwaterloo.flix.language.ast.{NamedAst, _}
 import ca.uwaterloo.flix.language.errors.NameError
@@ -102,13 +103,13 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
                     case Some(otherSig) =>
                       val name = sig.sym.name
                       val loc1 = sig.sym.loc
-                      val loc2 = otherSig.sym.loc
+                      val loc2 = getSymLocation(otherSig)
                       Failure(LazyList(
                         // NB: We report an error at both source locations.
                         NameError.DuplicateDefOrSig(name, loc1, loc2),
                         NameError.DuplicateDefOrSig(name, loc2, loc1)
                       ))
-                    case None => (defsAndSigs + (sig.sym.name -> sig)).toSuccess
+                    case None => (defsAndSigs + (sig.sym.name -> NamedAst.DefOrSig.Sig(sig))).toSuccess
                   }
                 }
                 defsAndSigsVal.map {
@@ -142,12 +143,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           case None =>
             // Case 1: The definition does not already exist. Update it.
             visitDef(decl, uenv0, Map.empty, ns0, Nil, Nil) map {
-              defn => prog0.copy(defsAndSigs = prog0.defsAndSigs + (ns0 -> (defsAndSigs + (ident.name -> defn))))
+              defn => prog0.copy(defsAndSigs = prog0.defsAndSigs + (ns0 -> (defsAndSigs + (ident.name -> NamedAst.DefOrSig.Def(defn)))))
             }
           case Some(defOrSig) =>
             // Case 2: Duplicate definition.
             val name = ident.name
-            val loc1 = defOrSig.sym.loc
+            val loc1 = getSymLocation(defOrSig)
             val loc2 = ident.loc
             Failure(LazyList(
               // NB: We report an error at both source locations.
@@ -1667,6 +1668,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     } else {
       uenv0.typesAndClasses.getOrElse(qname.ident.name, qname)
     }
+  }
+
+  /**
+    * Gets the location of the symbol of the given def or sig.
+    */
+  private def getSymLocation(f: NamedAst.DefOrSig): SourceLocation = f match {
+    case DefOrSig.Def(d) => d.sym.loc
+    case DefOrSig.Sig(s) => s.sym.loc
   }
 
 
