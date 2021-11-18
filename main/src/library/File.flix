@@ -172,18 +172,23 @@ namespace File {
     ///
     /// Returns a string containing the given file `f` with the options `opts`.
     /// TODO: add a note on what exactly the opts do
+    /// TODO: OBS I changed offset to Int32.
     ///
-    pub def readWith(opts: {offset :: Int64, count :: Int32, charSet :: String}, f : String): Result[String, String] & Impure = {
+    pub def readWith(opts: {offset :: Int32, count :: Int32, charSet :: String}, f : String): Result[String, String] & Impure = {
         try {
             import new java.io.File(String) as newFile;
+            import new java.io.FileInputStream(##java.io.File) as newInputStream;
+            import java.io.FileInputStream.read(Array[Int8], Int32, Int32);
             import java.nio.charset.Charset:forName(String);
-            import java.io.File.toPath();
-            import java.nio.file.Files:readString(##java.nio.file.Path, ##java.nio.charset.Charset);
+            import new java.lang.String(Array[Int8], ##java.nio.charset.Charset) as newString;
+
             let javaFile = newFile(f);
-            let javaPath = toPath(javaFile);
-            let fileRead = readString(javaPath, forName(opts.charSet));
-            // TODO: take care of offset before loading the whole file in memory
-            Ok(readWithHelper(fileRead, opts.offset, opts.count))
+            let stream = newInputStream(javaFile);
+            let bytes = [];
+            read(stream, bytes, opts.offset, opts.count);
+            let charSet = forName(opts.charSet);
+            let returnString = newString(bytes, charSet);
+            Ok(returnString)
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage();
