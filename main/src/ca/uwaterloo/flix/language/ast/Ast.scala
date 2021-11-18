@@ -358,55 +358,45 @@ object Ast {
   }
 
   /**
-    * Represents a dependency between two predicate symbols.
+    * Contains the edges held in a single constraint.
     */
-  sealed trait DependencyEdge
+  case class MultiEdge(head: Name.Pred, positives: Set[(Name.Pred, SourceLocation)], negatives: Set[(Name.Pred, SourceLocation)])
 
-  object DependencyEdge {
-
+  object ConstraintGraph {
     /**
-      * Represents a positive labelled edge.
+      * The empty constraint graph.
       */
-    case class Positive(head: Name.Pred, body: Name.Pred, loc: SourceLocation) extends DependencyEdge
-
-    /**
-      * Represents a negative labelled edge.
-      */
-    case class Negative(head: Name.Pred, body: Name.Pred, loc: SourceLocation) extends DependencyEdge
-
-  }
-
-  object DependencyGraph {
-    /**
-      * The empty dependency graph.
-      */
-    val empty: DependencyGraph = DependencyGraph(Set.empty)
-
+    val empty: ConstraintGraph = ConstraintGraph(Set.empty)
   }
 
   /**
-    * Represents a dependency graph; a set of dependency edges.
+    * Represents a constraint graph; a set dependency graphs representing each rule.
     */
-  case class DependencyGraph(xs: Set[DependencyEdge]) {
+  case class ConstraintGraph(xs: Set[MultiEdge]) {
     /**
-      * Returns a dependency graph with all dependency edges in `this` and `that` dependency graph.
+      * Returns a constraint graph with all dependency graphs in `this` and `that` constraint graph.
       */
-    def +(that: DependencyGraph): DependencyGraph = {
-      if (this eq DependencyGraph.empty)
+    def +(that: ConstraintGraph): ConstraintGraph = {
+      if (this eq ConstraintGraph.empty)
         that
-      else if (that eq DependencyGraph.empty)
+      else if (that eq ConstraintGraph.empty)
         this
       else
-        DependencyGraph(this.xs ++ that.xs)
+        ConstraintGraph(this.xs ++ that.xs)
     }
 
     /**
-      * Returns `this` dependency graph including only the edges where both the source and destination are in `syms`.
+      * Returns `this` constraint graph including only the graphs where all
+      * edges have both the source and destination in `syms`.
+      * A rule like `A :- B, C, not D.` is represented by `MultiEdge(A, {B, C}, {D})` and is only
+      * included in the output if `syms` contains all of `A, B, C, D`.
       */
-    def restrict(syms: Set[Name.Pred]): DependencyGraph =
-      DependencyGraph(xs.filter {
-        case DependencyEdge.Positive(x, y, _) => syms.contains(x) && syms.contains(y)
-        case DependencyEdge.Negative(x, y, _) => syms.contains(x) && syms.contains(y)
+    def restrict(syms: Set[Name.Pred]): ConstraintGraph =
+      ConstraintGraph(xs.filter {
+        case MultiEdge(head, positives, negatives) =>
+          syms.contains(head) &&
+            positives.forall { case (s, _) => syms.contains(s) } &&
+            negatives.forall { case (s, _) => syms.contains(s) }
       })
   }
 

@@ -73,9 +73,34 @@ namespace Test/Stratification {
     @test
     def testStratification09(): #{ A(Int), B(Int), N() } = solve #{
         A(1). A(2).
-        B(1).  B(2).
+        B(1). B(2).
         N() :- not A(1), not B(1).
         N() :- not A(2), not B(2).
     }
+
+    @test
+    def testStratification10(): Unit =
+        let _a = #{
+            A10(x) :- B10(x), DiffA10(_).
+        };
+        let _b = #{
+            B10(x) :- not A10(x), DiffB10(x).
+        };
+        ()
+
+    @test
+    def testStratification11(): Unit =
+        let _a = #{
+            C(12).
+            A11(x) :- B11(x).
+        };
+        let _b = #{
+            B11(x) :- not C11(x), A(x), Diff11(_).
+        };
+        let _c = #{
+            A11(x) :- B11(x).
+            C11(x) :- A11(x).
+        };
+        ()
 
 }
