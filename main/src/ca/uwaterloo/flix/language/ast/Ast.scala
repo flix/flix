@@ -360,7 +360,7 @@ object Ast {
   /**
     * Contains the edges held in a single constraint.
     */
-  case class MultiEdge(head: Name.Pred, positives: Set[(Name.Pred, SourceLocation)], negatives: Set[(Name.Pred, SourceLocation)])
+  case class MultiEdge(head: (Name.Pred, Int), positives: Set[(Name.Pred, Int, SourceLocation)], negatives: Set[(Name.Pred, Int, SourceLocation)])
 
   object ConstraintGraph {
     /**
@@ -391,12 +391,12 @@ object Ast {
       * A rule like `A :- B, C, not D.` is represented by `MultiEdge(A, {B, C}, {D})` and is only
       * included in the output if `syms` contains all of `A, B, C, D`.
       */
-    def restrict(syms: Set[Name.Pred]): ConstraintGraph =
+    def restrict(syms: Map[Name.Pred, Int]): ConstraintGraph =
       ConstraintGraph(xs.filter {
-        case MultiEdge(head, positives, negatives) =>
-          syms.contains(head) &&
-            positives.forall { case (s, _) => syms.contains(s) } &&
-            negatives.forall { case (s, _) => syms.contains(s) }
+        case MultiEdge((head, headArity), positives, negatives) =>
+          syms.get(head).contains(headArity) &&
+            positives.forall { case (s, arity, _) => syms.get(s).contains(arity) } &&
+            negatives.forall { case (s, arity, _) => syms.get(s).contains(arity) }
       })
   }
 

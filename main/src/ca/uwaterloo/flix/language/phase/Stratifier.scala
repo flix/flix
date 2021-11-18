@@ -27,6 +27,7 @@ import ca.uwaterloo.flix.language.phase.UllmansAlgorithm.DependencyGraph
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
+import scala.annotation.tailrec
 import scala.collection.mutable
 
 /**
@@ -43,7 +44,7 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * A type alias for the stratification cache.
     */
-  type Cache = mutable.Map[Set[Name.Pred], Ast.Stratification]
+  type Cache = mutable.Map[Map[Name.Pred, Int], Ast.Stratification]
 
   /**
     * Returns a stratified version of the given AST `root`.
@@ -667,30 +668,19 @@ object Stratifier extends Phase[Root, Root] {
     * Returns the constraint graph of the given constraint `c0`.
     */
   private def constraintGraphOfConstraint(c0: Constraint): ConstraintGraph = c0 match {
-    case Constraint(_, head, body, _) =>
-      getPredicate(head) match {
-        case None => ConstraintGraph.empty
-        case Some(headSym) =>
-          // TODO: These sets do not eliminate most duplicates since location is included in the equality.
-          val (pos, neg) = body.foldLeft((Set.empty[(Name.Pred, SourceLocation)], Set.empty[(Name.Pred, SourceLocation)])) {
-            case ((pos, neg), b) => b match {
-              case Body.Atom(pred, _, polarity, _, _, loc) => polarity match {
-                case Polarity.Positive => (pos + ((pred, loc)), neg)
-                case Polarity.Negative => (pos, neg + ((pred, loc)))
-              }
-              case Body.Guard(_, _) => (pos, neg)
-            }
+    case Constraint(_, Predicate.Head.Atom(headSym, _, headTerms, _, _), body, _) =>
+      // TODO: These sets do not eliminate most duplicates since location is included in the equality.
+      val (pos, neg) = body.foldLeft((Set.empty[(Name.Pred, Int, SourceLocation)], Set.empty[(Name.Pred, Int, SourceLocation)])) {
+        case ((pos, neg), b) => b match {
+          case Body.Atom(pred, _, polarity, terms, _, loc) => polarity match {
+            case Polarity.Positive => (pos + ((pred, terms.length, loc)), neg)
+            case Polarity.Negative => (pos, neg + ((pred, terms.length, loc)))
           }
-          val edge = MultiEdge(headSym, pos, neg)
-          ConstraintGraph(Set(edge))
+          case Body.Guard(_, _) => (pos, neg)
+        }
       }
-  }
-
-  /**
-    * Optionally returns the predicate of the given head atom `head0`.
-    */
-  private def getPredicate(head0: Predicate.Head): Option[Name.Pred] = head0 match {
-    case Predicate.Head.Atom(pred, _, _, _, _) => Some(pred)
+      val edge = MultiEdge((headSym, headTerms.length), pos, neg)
+      ConstraintGraph(Set(edge))
   }
 
   /**
@@ -700,11 +690,6 @@ object Stratifier extends Phase[Root, Root] {
     */
   private def stratifyWithCache(dg: ConstraintGraph, tpe: Type, loc: SourceLocation)(implicit cache: Cache): Validation[Ast.Stratification, StratificationError] = {
     // The key is the set of predicates that occur in the row type.
-    // TODO: delete
-    println(tpe)
-    println()
-    println(predicateSymbolsOf2(tpe))
-    throw InternalCompilerException("stop")
     val key = predicateSymbolsOf(tpe)
 
     // Lookup the key in the stratification cache.
@@ -717,7 +702,7 @@ object Stratifier extends Phase[Root, Root] {
         // Cache miss: Compute the stratification and possibly cache it.
 
         // Compute the restricted constraint graph.
-        val rg = restrict(dg, tpe)
+        val rg = restrict(dg, key)
 
         // Compute the stratification.
         UllmansAlgorithm.stratify(constraintGraphToDependencyGraph(rg), tpe, loc) match {
@@ -739,9 +724,9 @@ object Stratifier extends Phase[Root, Root] {
     */
   private def constraintGraphToDependencyGraph(c: ConstraintGraph): DependencyGraph =
     c.xs.flatMap {
-      case MultiEdge(head, positives, negatives) =>
-        val p = positives.map { case (b, loc) => UllmansAlgorithm.DependencyEdge.Positive(head, b, loc) }
-        val n = negatives.map { case (b, loc) => UllmansAlgorithm.DependencyEdge.Negative(head, b, loc) }
+      case MultiEdge((head, _), positives, negatives) =>
+        val p = positives.map { case (b, _, loc) => UllmansAlgorithm.DependencyEdge.Positive(head, b, loc) }
+        val n = negatives.map { case (b, _, loc) => UllmansAlgorithm.DependencyEdge.Negative(head, b, loc) }
         p ++ n
     }
 
@@ -768,37 +753,83 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * Restricts the given constraint graph `dg` to the predicates that occur in the given type `tpe`.
     */
-  private def restrict(dg: ConstraintGraph, tpe: Type): ConstraintGraph = {
-    val predSyms = predicateSymbolsOf(tpe)
+  private def restrict(dg: ConstraintGraph, predSyms: Map[Name.Pred, Int]): ConstraintGraph = {
     dg.restrict(predSyms)
   }
 
   /**
     * Returns the set of predicates that appears in the given row type `tpe`.
     */
-  private def predicateSymbolsOf(tpe: Type): Set[Name.Pred] = tpe.typeConstructors.foldLeft(Set.empty[Name.Pred]) {
-    case (acc, TypeConstructor.SchemaRowExtend(pred)) => acc + pred
-    case (acc, _) => acc
+  private def predicateSymbolsOf(tpe: Type): Map[Name.Pred, Int] = Type.eraseAliases(tpe) match {
+    case Type.Apply(Type.Cst(TypeConstructor.Schema, _), schemaRow, _) => predicateSymbolsOf(schemaRow, Map.empty)
+    // TODO: Arrays are here for some reason?
+    case _ => Map.empty
   }
 
-
-  /**
-    * Returns the set of predicates that appears in the given row type `tpe`.
-    */
-  private def predicateSymbolsOf2(tpe: Type, acc: Map[Name.Pred, Int] = Map.empty): Option[Map[Name.Pred, Int]] = tpe match {
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), _), predType, _), rest, _) => predicateSymbolsOf2(rest, acc + (pred -> arityOf(predType)))
-    case Type.Apply(Type.Cst(TypeConstructor.SchemaRowEmpty, _), rest, _) => Some(acc)
-    case rest => println(rest match {
-        case Type.KindedVar(id, kind, loc, rigidity, text) => s"kindedvar:$kind,$text"
-        case Type.UnkindedVar(id, loc, rigidity, text) => s"unkindedvar:$text"
-        case Type.Ascribe(tpe, kind, loc) => s"Ascripe:$tpe"
-        case Type.Cst(tc, loc) => s"Cst:$tc"
-        case Type.Apply(tpe1, tpe2, loc) => s"Apply:$tpe1,$tpe2"
-        case Type.Alias(cst, args, tpe, loc) => s"Alias:$cst,$args,$tpe"
-      }); None
-
+  @tailrec
+  private def predicateSymbolsOf(tpe: Type, acc: Map[Name.Pred, Int]): Map[Name.Pred, Int] = tpe match {
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), _), predType, _), rest, _) => predicateSymbolsOf(rest, acc + (pred -> arityOf(predType)))
+    case Type.Cst(TypeConstructor.SchemaRowEmpty, _) => acc
+    case _ => acc
   }
 
-  private def arityOf(value: Type): Int = 0
+  private def arityOf(tpe: Type): Int = tpe match {
+    case Type.Apply(Type.Cst(TypeConstructor.Relation | TypeConstructor.Lattice, _), element, _) => element.baseType match {
+      case Type.Cst(TypeConstructor.Tuple(arity), _) => arity
+      case Type.Cst(TypeConstructor.Unit, _) => 0
+      case _ => 1
+    }
+    case other => throw InternalCompilerException(s"Unexpected type ${structureOf(other)}")
+  }
 
+  // TODO: Delete
+  private def structureOf(tpe: Type): String = tpe match {
+    case Type.KindedVar(_, kind, _, _, _) => s"KindedVar(_, $kind, _, _, _)"
+    case Type.UnkindedVar(_, _, _, _) => s"UnkindedVar(_, _, _, _)"
+    case Type.Ascribe(tpe, kind, _) => s"Ascribe(${structureOf(tpe)}, $kind, _)"
+    case Type.Cst(tc, _) => s"Cst(${structureOf(tc)}, _)"
+    case Type.Apply(tpe1, tpe2, _) => s"Apply(${structureOf(tpe1)}, ${structureOf(tpe2)}, _)"
+    case Type.Alias(_, args, tpe, _) => s"Alias(_, ${args.map(structureOf).mkString(", ")}, ${structureOf(tpe)}, _)"
+  }
+
+  // TODO: Delete
+  private def structureOf(tc: TypeConstructor): String = tc match {
+    case TypeConstructor.Unit => "Unit"
+    case TypeConstructor.Null => "Null"
+    case TypeConstructor.Bool => "Bool"
+    case TypeConstructor.Char => "Char"
+    case TypeConstructor.Float32 => "Float32"
+    case TypeConstructor.Float64 => "Float64"
+    case TypeConstructor.Int8 => "Int8"
+    case TypeConstructor.Int16 => "Int16"
+    case TypeConstructor.Int32 => "Int32"
+    case TypeConstructor.Int64 => "Int64"
+    case TypeConstructor.BigInt => "BigInt"
+    case TypeConstructor.Str => "Str"
+    case TypeConstructor.Arrow(arity) => s"Arrow$arity"
+    case TypeConstructor.RecordRowEmpty => "RecordRowEmpty"
+    case TypeConstructor.RecordRowExtend(field) => s"RecordRowExtend($field)"
+    case TypeConstructor.Record => "Record"
+    case TypeConstructor.SchemaRowEmpty => "SchemaRowEmpty"
+    case TypeConstructor.SchemaRowExtend(pred) => s"SchemaRowExtend($pred)"
+    case TypeConstructor.Schema => "Schema"
+    case TypeConstructor.Array => "Array"
+    case TypeConstructor.Channel => "Channel"
+    case TypeConstructor.Lazy => "Lazy"
+    case TypeConstructor.Tag(sym, tag) => s"Tag($sym, $tag)"
+    case TypeConstructor.KindedEnum(sym, kind) => s"KindedEnum($sym, $kind)"
+    case TypeConstructor.UnkindedEnum(sym) => s"UnkindedEnum($sym)"
+    case TypeConstructor.UnappliedAlias(sym) => s"UnapplliedAlias($sym)"
+    case TypeConstructor.Native(_) => "Native"
+    case TypeConstructor.ScopedRef => "ScopedRef"
+    case TypeConstructor.Tuple(l) => s"Tuple$l"
+    case TypeConstructor.Relation => "Relation"
+    case TypeConstructor.Lattice => "Lattice"
+    case TypeConstructor.True => "True"
+    case TypeConstructor.False => "False"
+    case TypeConstructor.Not => "Not"
+    case TypeConstructor.And => "And"
+    case TypeConstructor.Or => "Or"
+    case TypeConstructor.Region => "Region"
+  }
 }
