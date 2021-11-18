@@ -95,7 +95,7 @@ object Main {
     )
 
     // Don't use progress bar if benchmarking.
-    if (cmdOpts.benchmark || cmdOpts.xbenchmarkPhases || cmdOpts.xbenchmarkThroughput) {
+    if (cmdOpts.benchmark || cmdOpts.xbenchmarkCodeSize || cmdOpts.xbenchmarkPhases || cmdOpts.xbenchmarkThroughput) {
       options = options.copy(progress = false)
     }
 
@@ -153,6 +153,12 @@ object Main {
       case ex: RuntimeException =>
         Console.println(ex.getMessage)
         System.exit(1)
+    }
+
+    // check if the -Xbenchmark-code-size flag was passed.
+    if (cmdOpts.xbenchmarkCodeSize) {
+      BenchmarkCompiler.benchmarkCodeSize(options)
+      System.exit(0)
     }
 
     // check if the -Xbenchmark-phases flag was passed.
@@ -241,6 +247,7 @@ object Main {
                      lsp: Option[Int] = None,
                      test: Boolean = false,
                      threads: Option[Int] = None,
+                     xbenchmarkCodeSize: Boolean = false,
                      xbenchmarkPhases: Boolean = false,
                      xbenchmarkThroughput: Boolean = false,
                      xlib: LibLevel = LibLevel.All,
@@ -374,6 +381,10 @@ object Main {
       // Experimental options:
       note("")
       note("The following options are experimental:")
+
+      // xbenchmark-code-size
+      opt[Unit]("Xbenchmark-code-size").action((_, c) => c.copy(xbenchmarkCodeSize = true)).
+        text("[experimental] benchmarks the size of the generated JVM files.")
 
       // Xbenchmark-phases
       opt[Unit]("Xbenchmark-phases").action((_, c) => c.copy(xbenchmarkPhases = true)).

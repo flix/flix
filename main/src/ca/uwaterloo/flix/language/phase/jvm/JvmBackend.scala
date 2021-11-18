@@ -211,13 +211,15 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       }
     }
 
+    val outputBytes = allClasses.map(_._2.bytecode.length).sum
+
     val loadClasses = flix.options.loadClassFiles
 
     if (!loadClasses) {
       //
       // Do not load any classes.
       //
-      new CompilationResult(root, None, Map.empty).toSuccess
+      new CompilationResult(root, None, Map.empty, outputBytes).toSuccess
     } else {
       //
       // Loads all the generated classes into the JVM and decorates the AST.
@@ -227,7 +229,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       //
       // Return the compilation result.
       //
-      new CompilationResult(root, getCompiledMain(root), getCompiledDefs(root)).toSuccess
+      new CompilationResult(root, getCompiledMain(root), getCompiledDefs(root), outputBytes).toSuccess
     }
   }
 
