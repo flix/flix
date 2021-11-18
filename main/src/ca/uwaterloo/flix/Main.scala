@@ -155,7 +155,7 @@ object Main {
         System.exit(1)
     }
 
-    // check if the -Xbenchmark-code-size fals was passed.
+    // check if the -Xbenchmark-code-size flag was passed.
     if (cmdOpts.xbenchmarkCodeSize) {
       BenchmarkCompiler.benchmarkCodeSize(options)
       System.exit(0)
