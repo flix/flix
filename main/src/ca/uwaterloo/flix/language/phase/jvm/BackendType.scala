@@ -33,7 +33,7 @@ object VoidableType {
     /**
       * The erased string representation used in JVM names.
       */
-    override def toString: String = "Void"
+    val toErasedString: String = "Void"
   }
 }
 
@@ -68,7 +68,7 @@ sealed trait BackendType extends VoidableType {
   /**
     * A string representing the erased type. This is used for parametrized class names.
     */
-  override val toString: String = this match {
+  val toErasedString: String = this match {
     case BackendType.Bool => "Bool"
     case BackendType.Char => "Char"
     case BackendType.Int8 => "Int8"

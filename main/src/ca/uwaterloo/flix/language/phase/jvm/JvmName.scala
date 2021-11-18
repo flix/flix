@@ -29,7 +29,7 @@ object JvmName {
     /**
       * Returns the type descriptor of this method.
       */
-    override lazy val toString: String = {
+    val toDescriptor: String = {
       // Descriptor of result
       val resultDescriptor = result.toDescriptor
 

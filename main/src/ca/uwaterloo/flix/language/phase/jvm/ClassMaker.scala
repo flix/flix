@@ -36,8 +36,8 @@ class ClassMaker(visitor: ClassWriter) {
     makeField(fieldName, fieldType, v, f, i)
   }
 
-  def mkConstructor(f: BytecodeInstructions.InstructionSet, descriptor: MethodDescriptor, v: Visibility): Unit = {
-    mkMethod(f, JvmName.ConstructorMethod, descriptor, v, NonFinal, NonStatic)
+  def mkConstructor(ins: InstructionSet, d: MethodDescriptor, v: Visibility): Unit = {
+    mkMethod(ins, JvmName.ConstructorMethod, d, v, NonFinal, NonStatic)
   }
 
   /**
@@ -48,12 +48,12 @@ class ClassMaker(visitor: ClassWriter) {
     mkConstructor(constructor, MethodDescriptor.NothingToVoid, v)
   }
 
-  def mkStaticConstructor(f: BytecodeInstructions.InstructionSet): Unit =
-    mkMethod(f, JvmName.StaticConstructorMethod, MethodDescriptor.NothingToVoid, Default, NonFinal, Static)
+  def mkStaticConstructor(ins: InstructionSet): Unit =
+    mkMethod(ins, JvmName.StaticConstructorMethod, MethodDescriptor.NothingToVoid, Default, NonFinal, Static)
 
-  def mkMethod(ins: BytecodeInstructions.InstructionSet, methodName: String, descriptor: MethodDescriptor, v: Visibility, f: Finality, i: Instancing): Unit = {
+  def mkMethod(ins: InstructionSet, methodName: String, d: MethodDescriptor, v: Visibility, f: Finality, i: Instancing): Unit = {
     val m = v.toInt + f.toInt + i.toInt
-    val mv = visitor.visitMethod(m, methodName, descriptor.toString, null, null)
+    val mv = visitor.visitMethod(m, methodName, d.toDescriptor, null, null)
     mv.visitCode()
     ins(new BytecodeInstructions.F(mv))
     mv.visitMaxs(999, 999)

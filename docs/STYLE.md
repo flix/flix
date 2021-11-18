@@ -35,6 +35,7 @@
 - Write single-variable `mapN` cases open to additional variables with `mapN ... { case ... => ... }`
 - Prefer to name expressions just `exp1`, `exp2`, `exp3`.
   - Names such as `beginExp` etc. quickly get outdated.
+- Never use toString for anything other than debugging.
 - Leave the code in better state than you found it in.
 
 ## JVM Bytecode Generation Policy

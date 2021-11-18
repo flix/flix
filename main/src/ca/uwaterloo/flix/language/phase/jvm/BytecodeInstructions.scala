@@ -31,7 +31,7 @@ object BytecodeInstructions {
     def visitInstruction(opcode: Int): Unit = visitor.visitInsn(opcode)
 
     def visitMethodInstruction(opcode: Int, owner: JvmName, methodName: String, descriptor: MethodDescriptor): Unit =
-      visitor.visitMethodInsn(opcode, owner.toInternalName, methodName, descriptor.toString, false)
+      visitor.visitMethodInsn(opcode, owner.toInternalName, methodName, descriptor.toDescriptor, false)
 
     def visitFieldInstruction(opcode: Int, owner: JvmName, fieldName: String, fieldType: BackendType): Unit =
       visitor.visitFieldInsn(opcode, owner.toInternalName, fieldName, fieldType.toDescriptor)

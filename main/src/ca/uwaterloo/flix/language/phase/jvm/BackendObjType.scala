@@ -16,9 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.{Delimiter, DevFlixRuntime, JavaLang, RootPackage}
-import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
   * Represents all Flix types that are objects on the JVM (array is an exception).
@@ -31,18 +29,13 @@ sealed trait BackendObjType {
     case BackendObjType.Unit => JvmName(DevFlixRuntime, "Unit")
     case BackendObjType.BigInt => JvmName(List("java", "math"), "BigInteger")
     case BackendObjType.String => JvmName(JavaLang, "String")
-    case BackendObjType.Channel(_) => JvmName(List("ca", "uwaterloo", "flix", "runtime", "interpreter"), "Channel")
-    case BackendObjType.Lazy(tpe) => JvmName(RootPackage, s"Lazy$Delimiter${tpe.toErased}")
-    case BackendObjType.Ref(tpe) => JvmName(RootPackage, s"Ref$Delimiter${tpe.toErased}")
-    case BackendObjType.Tuple(elms) => JvmName(RootPackage, s"Tuple${elms.length}$Delimiter${erasedListOfTypes(elms)}")
-    case BackendObjType.Enum(_, _) => throw InternalCompilerException("Enum JVM NAME") // TODO
-    case BackendObjType.Arrow(args, result) => JvmName(RootPackage, s"Fn${args.length}$Delimiter${erasedListOfTypes(args)}$Delimiter${result.toErased}")
-    case BackendObjType.RecordEmpty => JvmName(RootPackage, s"RecordEmpty$Delimiter")
-    case BackendObjType.RecordExtend(_, value, _) => JvmName(RootPackage, s"RecordExtend$Delimiter${value.toErased}")
-    case BackendObjType.SchemaEmpty() => throw InternalCompilerException("SchemaEmpty JVM NAME") // TODO
-    case BackendObjType.SchemaExtend(_, _, _) => throw InternalCompilerException("SchemaExtend JVM NAME") // TODO
-    case BackendObjType.Relation(_) => throw InternalCompilerException("Relation JVM NAME") // TODO
-    case BackendObjType.Lattice(_) => throw InternalCompilerException("Lattice JVM NAME") // TODO
+    case BackendObjType.Channel(_) => JvmName(List("ca", "uwaterloo", "flix", "runtime", "interpreter"), mkName("Channel"))
+    case BackendObjType.Lazy(tpe) => JvmName(RootPackage, mkName("Lazy", tpe))
+    case BackendObjType.Ref(tpe) => JvmName(RootPackage, mkName("Ref", tpe))
+    case BackendObjType.Tuple(elms) => JvmName(RootPackage, mkName("Tuple", elms))
+    case BackendObjType.Arrow(args, result) => JvmName(RootPackage, mkName(s"Fn${args.length}", args :+ result))
+    case BackendObjType.RecordEmpty => JvmName(RootPackage, mkName(s"RecordEmpty"))
+    case BackendObjType.RecordExtend(_, value, _) => JvmName(RootPackage, mkName("RecordExtend", value))
     case BackendObjType.Native(className) => className
   }
 
@@ -57,10 +50,21 @@ sealed trait BackendObjType {
   def toTpe: BackendType.Reference = BackendType.Reference(this)
 
   /**
-    * Constructs a concatenated list of erased strings delimited with `JvmName.Delimiter`.
+    * Constructs a concatenated string using `JvmName.Delimiter`. The call
+    * `mkName("Tuple2", List(Object, Int, String))` would
+    * result in the string `"Tuple2$Obj$Int32$Obj"`.
     */
-  private def erasedListOfTypes(ts: List[BackendType]): String =
-    ts.map(e => e.toErased.toString).mkString(Delimiter)
+  private def mkName(prefix: String, args: List[BackendType]): String = {
+    // TODO: Should delimiter always be included?
+    if (args.isEmpty) prefix
+    else s"$prefix$Delimiter${args.map(e => e.toErased.toErasedString).mkString(Delimiter)}"
+  }
+
+  private def mkName(prefix: String, arg: BackendType): String =
+    mkName(prefix, List(arg))
+
+  private def mkName(prefix: String): String =
+    mkName(prefix, Nil)
 }
 
 object BackendObjType {
@@ -78,7 +82,7 @@ object BackendObjType {
 
   case class Tuple(elms: List[BackendType]) extends BackendObjType
 
-  case class Enum(sym: Symbol.EnumSym, args: List[BackendType]) extends BackendObjType
+  //case class Enum(sym: Symbol.EnumSym, args: List[BackendType]) extends BackendObjType
 
   case class Arrow(args: List[BackendType], result: BackendType) extends BackendObjType
 
@@ -90,14 +94,13 @@ object BackendObjType {
     val interface: JvmName = JvmName(RootPackage, s"IRecord$Delimiter")
   }
 
-  // TODO: Should be an object
-  case class SchemaEmpty() extends BackendObjType
+  // case object SchemaEmpty extends BackendObjType
 
-  case class SchemaExtend(name: String, tpe: BackendType, rest: BackendType) extends BackendObjType
+  //  case class SchemaExtend(name: String, tpe: BackendType, rest: BackendType) extends BackendObjType
 
-  case class Relation(tpes: List[BackendType]) extends BackendObjType
+  //  case class Relation(tpes: List[BackendType]) extends BackendObjType
 
-  case class Lattice(tpes: List[BackendType]) extends BackendObjType
+  //  case class Lattice(tpes: List[BackendType]) extends BackendObjType
 
   /**
     * Represents a JVM type not represented in Flix like `java.lang.Object` or `dev.flix.runtime.ReifiedSourceLocation`.
