@@ -197,20 +197,6 @@ namespace File {
     }
 
     ///
-    /// Helper function for readWith.
-    /// Takes a String and applys the options.
-    ///
-    def readWithHelper(f: String, offset: Int64, count: Int32): String & Pure =
-        let fileLength = String.length(f);
-        match Int64.tryToInt32(offset) {
-            case None => String.dropRight(fileLength - count, f)
-            case Some(n) =>
-                let str = String.dropLeft(n, f);
-                let strLength = String.length(str);
-                String.dropRight(strLength - count, str)
-        }
-
-    ///
     /// Returns an iterator of the given file `f`
     ///
     pub def readLinesIter(f: String): Iterator[Result[String, String]] & Impure =
