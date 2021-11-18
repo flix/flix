@@ -103,4 +103,33 @@ namespace Test/Stratification {
         };
         ()
 
+    @test
+    def testStratification12(): Unit =
+        let _a = #{
+            A12(x) :- B12(x), C12(x).
+        };
+        let _b = #{
+            B12(x, 2) :- not A12(x), C12(x).
+        };
+        ()
+
+    @test
+    def testStratification13(): Unit =
+        let _a = #{
+            A13(x) :- B13(x), C13(x).
+        };
+        let _b = #{
+            B13(x) :- not A13(x), C13(x, 12).
+        };
+        ()
+
+    @test
+    def testStratification14(): Unit =
+        let _a = #{
+            A14(x) :- B14(x), C14().
+        };
+        let _b = #{
+            B14(x) :- not A14(x), C14(x).
+        };
+        ()
 }
