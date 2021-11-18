@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Finality._
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Instancing._
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility._
@@ -25,26 +26,34 @@ import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import org.objectweb.asm.{ClassWriter, Opcodes}
 
 class ClassMaker(visitor: ClassWriter) {
-  private def makeField(fieldName: String, fieldType: JvmType, v: Visibility, f: Finality, i: Instancing): Unit = {
+  private def makeField(fieldName: String, fieldType: BackendType, v: Visibility, f: Finality, i: Instancing): Unit = {
     val modifier = v.toInt + f.toInt + i.toInt
     val field = visitor.visitField(modifier, fieldName, fieldType.toDescriptor, null, null)
     field.visitEnd()
   }
 
-  def mkField(fieldName: String, fieldType: JvmType, v: Visibility, f: Finality, i: Instancing): Unit = {
+  def mkField(fieldName: String, fieldType: BackendType, v: Visibility, f: Finality, i: Instancing): Unit = {
     makeField(fieldName, fieldType, v, f, i)
   }
 
-  def mkConstructor(f: BytecodeInstructions.InstructionSet, descriptor: MethodDescriptor, v: Visibility): Unit = {
-    mkMethod(f, JvmName.ConstructorMethod, descriptor, v, Implementable, Instanced)
+  def mkConstructor(ins: InstructionSet, d: MethodDescriptor, v: Visibility): Unit = {
+    mkMethod(ins, JvmName.ConstructorMethod, d, v, NonFinal, NonStatic)
   }
 
-  def mkStaticConstructor(f: BytecodeInstructions.InstructionSet): Unit =
-    mkMethod(f, JvmName.StaticConstructorMethod, MethodDescriptor.NothingToVoid, Default, Implementable, Static)
+  /**
+    * Creates a instruction set calling `<init>` on `java.lang.Object` and returns.
+    */
+  def mkObjectConstructor(v: Visibility): Unit = {
+    val constructor = ALOAD(0) ~ invokeConstructor(JvmName.Object, MethodDescriptor.NothingToVoid) ~ RETURN()
+    mkConstructor(constructor, MethodDescriptor.NothingToVoid, v)
+  }
 
-  def mkMethod(ins: BytecodeInstructions.InstructionSet, methodName: String, descriptor: MethodDescriptor, v: Visibility, f: Finality, i: Instancing): Unit = {
+  def mkStaticConstructor(ins: InstructionSet): Unit =
+    mkMethod(ins, JvmName.StaticConstructorMethod, MethodDescriptor.NothingToVoid, Default, NonFinal, Static)
+
+  def mkMethod(ins: InstructionSet, methodName: String, d: MethodDescriptor, v: Visibility, f: Finality, i: Instancing): Unit = {
     val m = v.toInt + f.toInt + i.toInt
-    val mv = visitor.visitMethod(m, methodName, descriptor.toString, null, null)
+    val mv = visitor.visitMethod(m, methodName, d.toDescriptor, null, null)
     mv.visitCode()
     ins(new BytecodeInstructions.F(mv))
     mv.visitMaxs(999, 999)
@@ -99,7 +108,7 @@ object ClassMaker {
       override val toInt: Int = Opcodes.ACC_FINAL
     }
 
-    case object Implementable extends Finality {
+    case object NonFinal extends Finality {
       override val toInt: Int = 0
     }
   }
@@ -113,7 +122,7 @@ object ClassMaker {
       override val toInt: Int = Opcodes.ACC_STATIC
     }
 
-    case object Instanced extends Instancing {
+    case object NonStatic extends Instancing {
       override val toInt: Int = 0
     }
   }

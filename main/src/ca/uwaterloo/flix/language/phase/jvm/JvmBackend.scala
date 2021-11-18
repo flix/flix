@@ -39,6 +39,9 @@ object JvmBackend extends Phase[Root, CompilationResult] {
     //
     implicit val r: Root = root
 
+    // TODO: This should be limited to those actually used
+    val erasedRefTypes: List[BackendObjType.Ref] = BackendType.erasedTypes.map(BackendObjType.Ref)
+
     // Generate all classes.
     val allClasses = flix.subphase("CodeGen") {
 
@@ -130,7 +133,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       //
       // Generate references classes.
       //
-      val refClasses = GenRefClasses.gen()
+      val refClasses = GenRefClasses.gen(erasedRefTypes)
 
       //
       // Generate lazy classes.
