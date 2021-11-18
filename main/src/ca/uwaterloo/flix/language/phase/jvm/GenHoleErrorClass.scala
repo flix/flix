@@ -47,7 +47,7 @@ object GenHoleErrorClass {
     genConstructor(name, superClass, visitor)
     genEquals(name, visitor)
     genHashCode(name, visitor)
-    visitor.visitField(ACC_PUBLIC + ACC_FINAL, HoleFieldName, JvmName.String.toDescriptor, null, null).visitEnd()
+    visitor.visitField(ACC_PUBLIC + ACC_FINAL, HoleFieldName, BackendObjType.String.jvmName.toDescriptor, null, null).visitEnd()
     visitor.visitField(ACC_PUBLIC + ACC_FINAL, LocationFieldName, JvmName.ReifiedSourceLocation.toDescriptor, null, null).visitEnd()
 
     visitor.visitEnd()
@@ -55,10 +55,10 @@ object GenHoleErrorClass {
   }
 
   private def genConstructor(name: JvmName, superClass: JvmName, visitor: ClassWriter): Unit = {
-    val stringToBuilderDescriptor = s"(${JvmName.String.toDescriptor})${JvmName.StringBuilder.toDescriptor}"
+    val stringToBuilderDescriptor = s"(${BackendObjType.String.jvmName.toDescriptor})${JvmName.StringBuilder.toDescriptor}"
     val builderName = JvmName.StringBuilder.toInternalName
 
-    val method = visitor.visitMethod(ACC_PUBLIC, "<init>", s"(${JvmName.String.toDescriptor}${JvmName.ReifiedSourceLocation.toDescriptor})${JvmType.Void.toDescriptor}", null, null)
+    val method = visitor.visitMethod(ACC_PUBLIC, "<init>", s"(${BackendObjType.String.jvmName.toDescriptor}${JvmName.ReifiedSourceLocation.toDescriptor})${JvmType.Void.toDescriptor}", null, null)
     method.visitCode()
 
     method.visitVarInsn(ALOAD, 0)
@@ -78,7 +78,7 @@ object GenHoleErrorClass {
     method.visitMethodInsn(INVOKESPECIAL, superClass.toInternalName, "<init>", AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Void), false)
     method.visitVarInsn(ALOAD, 0)
     method.visitVarInsn(ALOAD, 1)
-    method.visitFieldInsn(PUTFIELD, name.toInternalName, HoleFieldName, JvmName.String.toDescriptor)
+    method.visitFieldInsn(PUTFIELD, name.toInternalName, HoleFieldName, BackendObjType.String.jvmName.toDescriptor)
     method.visitVarInsn(ALOAD, 0)
     method.visitVarInsn(ALOAD, 2)
     method.visitFieldInsn(PUTFIELD, name.toInternalName, LocationFieldName, JvmName.ReifiedSourceLocation.toDescriptor)
@@ -119,9 +119,9 @@ object GenHoleErrorClass {
     method.visitTypeInsn(CHECKCAST, name.toInternalName)
     method.visitVarInsn(ASTORE, 2)
     method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, HoleFieldName, JvmName.String.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, HoleFieldName, BackendObjType.String.jvmName.toDescriptor)
     method.visitVarInsn(ALOAD, 2)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, HoleFieldName, JvmName.String.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, HoleFieldName, BackendObjType.String.jvmName.toDescriptor)
     method.visitMethodInsn(INVOKESTATIC, JvmName.Objects.toInternalName, "equals", AsmOps.getMethodDescriptor(List(JvmType.Object, JvmType.Object), JvmType.PrimBool), false)
     val returnFalse2 = new Label()
     method.visitJumpInsn(IFEQ, returnFalse2)

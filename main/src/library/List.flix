@@ -676,7 +676,9 @@ namespace List {
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
-    pub def foldRight(f: (a, b) -> b & ef, s: b, xs: List[a]): b & ef = foldRightHelper(f, s, xs, s1 -> s1 as & ef)
+    pub def foldRight(f: (a, b) -> b & ef, s: b, xs: List[a]): b & ef =
+        foldRightHelper(f, s, xs, s1 -> s1 as & ef) // NB: Cast required because the identity continuation is pure,
+                                                    // but the intermediate continuations are effect polymorphic
 
     ///
     /// Helper function for `foldRight`.

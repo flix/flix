@@ -21,9 +21,7 @@ import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Finality._
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Instancing._
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility._
-import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
-import org.objectweb.asm.Opcodes
 
 object GenMatchErrorClass {
 
@@ -41,18 +39,18 @@ object GenMatchErrorClass {
   private def genByteCode()(implicit flix: Flix): Array[Byte] = {
     val cm = ClassMaker.mkClass(JvmName.MatchError, Public, Final, superClass = JvmName.FlixError)
 
-    cm.mkConstructor(genConstructor(), mkDescriptor(JvmType.ReifiedSourceLocation)(JvmType.Void), Public)
+    cm.mkConstructor(genConstructor(), mkDescriptor(JvmName.ReifiedSourceLocation.toObjTpe.toTpe)(VoidableType.Void), Public)
 
     // TODO: Are these ever used?
-    cm.mkMethod(genEquals(), "equals", mkDescriptor(JvmType.Object)(JvmType.PrimBool), Public, Implementable, Instanced)
-    cm.mkMethod(genHashCode(), "hashCode", mkDescriptor()(JvmType.PrimInt), Public, Implementable, Instanced)
-    cm.mkField(LocationFieldName, JvmType.ReifiedSourceLocation, Public, Final, Instanced)
+    cm.mkMethod(genEquals(), "equals", mkDescriptor(JvmName.Object.toObjTpe.toTpe)(BackendType.Bool), Public, NonFinal, NonStatic)
+    cm.mkMethod(genHashCode(), "hashCode", mkDescriptor()(BackendType.Int32), Public, NonFinal, NonStatic)
+    cm.mkField(LocationFieldName, JvmName.ReifiedSourceLocation.toObjTpe.toTpe, Public, Final, NonStatic)
 
     cm.closeClassMaker
   }
 
   private def genConstructor(): InstructionSet = {
-    val stringBuilderDescriptor = mkDescriptor(JvmType.String)(JvmType.StringBuilder)
+    val stringBuilderDescriptor = mkDescriptor(BackendObjType.String.toTpe)(JvmName.StringBuilder.toObjTpe.toTpe)
     ALOAD(0) ~
       NEW(JvmName.StringBuilder) ~
       DUP() ~
@@ -60,17 +58,17 @@ object GenMatchErrorClass {
       pushString("Non-exhaustive match at ") ~
       INVOKEVIRTUAL(JvmName.StringBuilder, "append", stringBuilderDescriptor) ~
       ALOAD(1) ~
-      INVOKEVIRTUAL(JvmName.ReifiedSourceLocation, "toString", mkDescriptor()(JvmType.String)) ~
+      INVOKEVIRTUAL(JvmName.ReifiedSourceLocation, "toString", mkDescriptor()(BackendObjType.String.toTpe)) ~
       INVOKEVIRTUAL(JvmName.StringBuilder, "append", stringBuilderDescriptor) ~
-      INVOKEVIRTUAL(JvmName.StringBuilder, "toString", mkDescriptor()(JvmType.String)) ~
-      invokeConstructor(JvmName.FlixError, mkDescriptor(JvmType.String)(JvmType.Void)) ~
+      INVOKEVIRTUAL(JvmName.StringBuilder, "toString", mkDescriptor()(BackendObjType.String.toTpe)) ~
+      invokeConstructor(JvmName.FlixError, mkDescriptor(BackendObjType.String.toTpe)(VoidableType.Void)) ~
       ALOAD(0) ~
       ALOAD(1) ~
-      PUTFIELD(JvmName.MatchError, LocationFieldName, JvmType.ReifiedSourceLocation) ~
+      PUTFIELD(JvmName.MatchError, LocationFieldName, JvmName.ReifiedSourceLocation.toObjTpe.toTpe) ~
       RETURN()
   }
 
-  private def genEquals(): InstructionSet = {
+  private def genEquals(): InstructionSet =
     ALOAD(0) ~
       ALOAD(1) ~
       IF_ACMPNE {
@@ -79,18 +77,18 @@ object GenMatchErrorClass {
             pushBool(false) ~ IRETURN()
           } {
             ALOAD(0) ~
-              INVOKEVIRTUAL(JvmName.Object, "getClass", MethodDescriptor(Nil, JvmType.Class)) ~
+              INVOKEVIRTUAL(JvmName.Object, "getClass", mkDescriptor()(JvmName.Class.toObjTpe.toTpe)) ~
               ALOAD(1) ~
-              INVOKEVIRTUAL(JvmName.Object, "getClass", MethodDescriptor(Nil, JvmType.Class)) ~
+              INVOKEVIRTUAL(JvmName.Object, "getClass", mkDescriptor()(JvmName.Class.toObjTpe.toTpe)) ~
               IF_ACMPNE {
                 ALOAD(1) ~
                   CHECKCAST(JvmName.MatchError) ~
                   ASTORE(2) ~
                   ALOAD(0) ~
-                  GETFIELD(JvmName.MatchError, LocationFieldName, JvmType.ReifiedSourceLocation) ~
+                  GETFIELD(JvmName.MatchError, LocationFieldName, JvmName.ReifiedSourceLocation.toObjTpe.toTpe) ~
                   ALOAD(2) ~
-                  GETFIELD(JvmName.MatchError, LocationFieldName, JvmType.ReifiedSourceLocation) ~
-                  INVOKESTATIC(JvmName.Objects, "equals", MethodDescriptor(List(JvmType.Object, JvmType.Object), JvmType.PrimBool)) ~
+                  GETFIELD(JvmName.MatchError, LocationFieldName, JvmName.ReifiedSourceLocation.toObjTpe.toTpe) ~
+                  INVOKESTATIC(JvmName.Objects, "equals", mkDescriptor(JvmName.Object.toObjTpe.toTpe, JvmName.Object.toObjTpe.toTpe)(BackendType.Bool)) ~
                   IRETURN()
               } {
                 pushBool(false) ~ IRETURN()
@@ -99,17 +97,15 @@ object GenMatchErrorClass {
       } {
         pushBool(true) ~ IRETURN()
       }
-  }
 
-  private def genHashCode(): InstructionSet = {
+  private def genHashCode(): InstructionSet =
     ICONST_1() ~
       ANEWARRAY(JvmName.Object) ~
       DUP() ~
       ICONST_0() ~
       ALOAD(0) ~
-      GETFIELD(JvmName.MatchError, LocationFieldName, JvmType.ReifiedSourceLocation) ~
+      GETFIELD(JvmName.MatchError, LocationFieldName, JvmName.ReifiedSourceLocation.toObjTpe.toTpe) ~
       AASTORE() ~
-      cheat(_.visitMethodInsn(Opcodes.INVOKESTATIC, JvmName.Objects.toInternalName, "hash", s"([${JvmName.Object.toDescriptor})${JvmType.PrimInt.toDescriptor}", false)) ~
+      INVOKESTATIC(JvmName.Object, "hash", mkDescriptor(BackendType.Array(JvmName.Object.toObjTpe.toTpe))(BackendType.Int32)) ~
       IRETURN()
-  }
 }
