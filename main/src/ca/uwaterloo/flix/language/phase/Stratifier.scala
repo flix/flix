@@ -779,57 +779,6 @@ object Stratifier extends Phase[Root, Root] {
       case Type.Cst(TypeConstructor.Unit, _) => 0
       case _ => 1
     }
-    case other => throw InternalCompilerException(s"Unexpected type ${structureOf(other)}")
-  }
-
-  // TODO: Delete
-  private def structureOf(tpe: Type): String = tpe match {
-    case Type.KindedVar(_, kind, _, _, _) => s"KindedVar(_, $kind, _, _, _)"
-    case Type.UnkindedVar(_, _, _, _) => s"UnkindedVar(_, _, _, _)"
-    case Type.Ascribe(tpe, kind, _) => s"Ascribe(${structureOf(tpe)}, $kind, _)"
-    case Type.Cst(tc, _) => s"Cst(${structureOf(tc)}, _)"
-    case Type.Apply(tpe1, tpe2, _) => s"Apply(${structureOf(tpe1)}, ${structureOf(tpe2)}, _)"
-    case Type.Alias(_, args, tpe, _) => s"Alias(_, ${args.map(structureOf).mkString(", ")}, ${structureOf(tpe)}, _)"
-  }
-
-  // TODO: Delete
-  private def structureOf(tc: TypeConstructor): String = tc match {
-    case TypeConstructor.Unit => "Unit"
-    case TypeConstructor.Null => "Null"
-    case TypeConstructor.Bool => "Bool"
-    case TypeConstructor.Char => "Char"
-    case TypeConstructor.Float32 => "Float32"
-    case TypeConstructor.Float64 => "Float64"
-    case TypeConstructor.Int8 => "Int8"
-    case TypeConstructor.Int16 => "Int16"
-    case TypeConstructor.Int32 => "Int32"
-    case TypeConstructor.Int64 => "Int64"
-    case TypeConstructor.BigInt => "BigInt"
-    case TypeConstructor.Str => "Str"
-    case TypeConstructor.Arrow(arity) => s"Arrow$arity"
-    case TypeConstructor.RecordRowEmpty => "RecordRowEmpty"
-    case TypeConstructor.RecordRowExtend(field) => s"RecordRowExtend($field)"
-    case TypeConstructor.Record => "Record"
-    case TypeConstructor.SchemaRowEmpty => "SchemaRowEmpty"
-    case TypeConstructor.SchemaRowExtend(pred) => s"SchemaRowExtend($pred)"
-    case TypeConstructor.Schema => "Schema"
-    case TypeConstructor.Array => "Array"
-    case TypeConstructor.Channel => "Channel"
-    case TypeConstructor.Lazy => "Lazy"
-    case TypeConstructor.Tag(sym, tag) => s"Tag($sym, $tag)"
-    case TypeConstructor.KindedEnum(sym, kind) => s"KindedEnum($sym, $kind)"
-    case TypeConstructor.UnkindedEnum(sym) => s"UnkindedEnum($sym)"
-    case TypeConstructor.UnappliedAlias(sym) => s"UnapplliedAlias($sym)"
-    case TypeConstructor.Native(_) => "Native"
-    case TypeConstructor.ScopedRef => "ScopedRef"
-    case TypeConstructor.Tuple(l) => s"Tuple$l"
-    case TypeConstructor.Relation => "Relation"
-    case TypeConstructor.Lattice => "Lattice"
-    case TypeConstructor.True => "True"
-    case TypeConstructor.False => "False"
-    case TypeConstructor.Not => "Not"
-    case TypeConstructor.And => "And"
-    case TypeConstructor.Or => "Or"
-    case TypeConstructor.Region => "Region"
+    case other => throw InternalCompilerException(s"Unexpected type $other")
   }
 }
