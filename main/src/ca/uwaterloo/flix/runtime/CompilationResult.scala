@@ -26,7 +26,7 @@ import ca.uwaterloo.flix.language.ast._
   * @param root the abstract syntax tree of the program.
   * @param defs the definitions in the program.
   */
-class CompilationResult(root: Root, main: Option[Array[String] => Int], defs: Map[Symbol.DefnSym, () => AnyRef])(implicit flix: Flix) {
+class CompilationResult(root: Root, main: Option[Array[String] => Int], defs: Map[Symbol.DefnSym, () => AnyRef], val codeSize: Int)(implicit flix: Flix) {
 
   /**
     * Returns the root AST.
