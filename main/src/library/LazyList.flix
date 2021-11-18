@@ -246,7 +246,8 @@ namespace LazyList {
     /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from right to left.
     ///
     pub def findRight(f: a -> Bool & ef, l: LazyList[a]): Option[a] & ef =
-        findRightAcc(x -> if (f(x)) Some(x) else None, l, (o, _) -> o as & ef)
+        findRightAcc(x -> if (f(x)) Some(x) else None, l, (o, _) -> o as & ef) // NB: Cast required because the identity continuation is pure,
+                                                                               // but the intermediate continuations are effect polymorphic
 
     ///
     /// Helper function for `findRight`.
@@ -557,7 +558,8 @@ namespace LazyList {
     /// Forces the entire list `l`.
     ///
     pub def foldRight(f: (a, b) -> b & ef, s: b, l: LazyList[a]): b & ef =
-        foldRightAcc(f, s, l, ks -> ks as & ef)
+        foldRightAcc(f, s, l, ks -> ks as & ef) // NB: Cast required because the identity continuation is pure,
+                                                // but the intermediate continuations are effect polymorphic
 
     ///
     /// Helper function for `foldRight`.
@@ -597,7 +599,8 @@ namespace LazyList {
     pub def reduceRight(f: (a, a) -> a & ef, l: LazyList[a]): Option[a] & ef = match l {
         case ENil      => None
         case LList(xs) => reduceRight(f, force xs)
-        case _         => Some(reduceRightAcc(f, l, ks -> ks as & ef))
+        case _         => Some(reduceRightAcc(f, l, ks -> ks as & ef)) // NB: Cast required because the identity continuation is pure,
+                                                                       // but the intermediate continuations are effect polymorphic
     }
 
     ///
