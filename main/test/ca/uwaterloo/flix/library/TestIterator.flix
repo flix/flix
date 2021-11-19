@@ -313,4 +313,72 @@ namespace TestIterator {
             Iterator.foreach(x -> r := x);
         3 == deref r
 
+    /////////////////////////////////////////////////////////////////////////////
+    // lazyFilter                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def lazyFilter01(): Bool & Impure =
+        List.toIterator(Nil) |> Iterator.lazyFilter(i -> i > 3) |> Iterator.toList == Nil
+
+    @test
+    def lazyFilter02(): Bool & Impure =
+        List.toIterator(2 :: Nil) |> Iterator.lazyFilter(i -> i > 3) |> Iterator.toList == Nil
+
+    @test
+    def lazyFilter03(): Bool & Impure =
+        List.toIterator(4 :: Nil) |> Iterator.lazyFilter(i -> i > 3) |> Iterator.toList == 4 :: Nil
+
+    @test
+    def lazyFilter04(): Bool & Impure =
+        List.toIterator(1 :: 3 :: Nil) |> Iterator.lazyFilter(i -> i > 3) |> Iterator.toList == Nil
+
+    @test
+    def lazyFilter05(): Bool & Impure =
+        List.toIterator(1 :: 8 :: Nil) |> Iterator.lazyFilter(i -> i > 3) |> Iterator.toList == 8 :: Nil
+
+    @test
+    def lazyFilter06(): Bool & Impure =
+        List.toIterator(8 :: 1 :: Nil) |> Iterator.lazyFilter(i -> i > 3) |> Iterator.toList == 8 :: Nil
+
+    @test
+    def lazyFilter07(): Bool & Impure =
+        List.toIterator(8 :: 9 :: Nil) |> Iterator.lazyFilter(i -> i > 3) |> Iterator.toList == 8 :: 9 :: Nil
+
+    @test
+    def lazyFilter08(): Bool & Impure =
+        List.toIterator(1 :: 4 :: 11 :: 2 :: -22 :: 17 :: Nil) |> Iterator.lazyFilter(i -> i > 3) |> Iterator.toList == 4 :: 11 :: 17 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // lazyMap                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def lazyMap01(): Bool & Impure =
+        List.toIterator(Nil) |> Iterator.lazyMap(i -> i > 2) |> Iterator.toList == Nil
+
+    @test
+    def lazyMap02(): Bool & Impure =
+        List.toIterator(1 :: Nil) |> Iterator.lazyMap(i -> i > 2) |> Iterator.toList == false :: Nil
+
+    @test
+    def lazyMap03(): Bool & Impure =
+        List.toIterator(3 :: Nil) |> Iterator.lazyMap(i -> i > 2) |> Iterator.toList == true :: Nil
+
+    @test
+    def lazyMap04(): Bool & Impure =
+        List.toIterator(1 :: 2 :: Nil) |> Iterator.lazyMap(i -> i > 2) |> Iterator.toList == false :: false :: Nil
+
+    @test
+    def lazyMap05(): Bool & Impure =
+        List.toIterator(1 :: 8 :: Nil) |> Iterator.lazyMap(i -> i > 2) |> Iterator.toList == false :: true :: Nil
+
+    @test
+    def lazyMap06(): Bool & Impure =
+        List.toIterator(8 :: 1 :: Nil) |> Iterator.lazyMap(i -> i > 2) |> Iterator.toList == true :: false :: Nil
+
+    @test
+    def lazyMap07(): Bool & Impure =
+        List.toIterator(7 :: 8 :: Nil) |> Iterator.lazyMap(i -> i > 2) |> Iterator.toList == true :: true :: Nil
 }

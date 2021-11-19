@@ -204,6 +204,8 @@ namespace Iterator {
     ///
     /// That is, the result is of the form: `f(x1) :: f(x2) :: ...`.
     ///
+    /// Consumes the entire iterator.
+    ///
     pub def map(f: a -> b & ef, iter: Iterator[a]): List[b] & Impure =
         let Iterator(done, next) = iter;
         mapAcc(f, done, next, ks -> ks)
@@ -221,6 +223,8 @@ namespace Iterator {
     ///
     /// Applies `f` to every element of `iter`.
     ///
+    /// Consumes the entire iterator.
+    ///
     pub def foreach(f: a -> Unit & ef, iter: Iterator[a]): Unit & Impure =
         let Iterator(done, next) = iter;
         foreachHelper(f, done, next)
@@ -235,4 +239,59 @@ namespace Iterator {
             let _ = f(next());
             foreachHelper(f, done, next)
 
+    ///
+    /// Returns an iterator with every element of the iterator `iter` that
+    /// satisfies the predicate `f`.
+	///
+	/// Does *not* consume any elements from the iterator.
+	///
+	/// The original iterator `iter` should not be reused.
+    ///
+	pub def lazyFilter(f: a -> Bool, iter: Iterator[a]): Iterator[a] & Impure =
+        let Iterator(done, next) = iter;
+
+        // Allocate a reference to hold the next element.
+        let cursor = ref None;
+
+        let done1 = () -> match deref cursor {
+            case None => match forward(f, done, next) {
+                case None    => true
+                case Some(x) =>
+                    // An element was found. Store it in the reference.
+                    cursor := Some(x);
+                    false
+            }
+            case Some(_) => false
+        };
+
+        let next1 = () -> match deref cursor {
+            case None    => bug!("Empty iterator")
+            case Some(x) =>
+                // An element is in the reference. Use it.
+                cursor := None;
+                x
+        };
+        Iterator(done1, next1)
+
+	///
+	/// Fast forwards the given iterator until the next element that satisfies
+	/// the given predicate `f`. Returns it (if it exists).
+	///
+    def forward(f: a -> Bool & ef, done: Done, next: Next[a]): Option[a] & Impure =
+        if (done())
+            None
+        else {
+            let e = next();
+            if (f(e)) Some(e) else forward(f, done, next)
+        }
+
+    ///
+    /// Returns an iterator with every `f` lazily applied to each element in `iter`.
+    ///
+    /// Does *not* consume any elements from the iterator.
+    ///
+    pub def lazyMap(f: a -> b, iter: Iterator[a]): Iterator[b] =
+        let Iterator(done, next) = iter;
+        let next1 = () -> f(next());
+        Iterator(done, next1)
 }
