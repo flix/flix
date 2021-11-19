@@ -19,8 +19,9 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst.Root
-import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.InstructionSet
+import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{Finality, Instancing, Visibility}
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 
 /**
@@ -28,28 +29,28 @@ import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescripto
   */
 object GenRecordEmpty {
 
+  val InstanceFieldName: String = "INSTANCE"
+
   /**
-    * Returns a Map with a single entry, for the empty record class
+    * Returns a Map with a single entry, for the empty record class.
     */
   def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     Map(BackendObjType.RecordEmpty.jvmName -> JvmClass(BackendObjType.RecordEmpty.jvmName, genByteCode()))
   }
 
   /**
-    * This method creates the class for RecordEmpty.
+    * This method creates the class RecordEmpty that implements IRecord$.
+    * It follows the singleton pattern.
     *
-    * We then define the interfaces which this class implements (RecordEmpty).
+    * public static final RecordEmpty INSTANCE = new RecordEmpty();
     *
-    * First, we will generate the `lookupField(String)` method which will always throws an exception,
-    * since `lookupField` should not be called.
+    * private RecordEmpty() { }
     *
-    * public final IRecord lookupField(String var1) {
+    * public final IRecord$ lookupField(String var1) {
     * throw new UnsupportedOperationException("lookupField method shouldn't be called");
     * }
     *
-    * Afterwards, we will generate the `restrictField(String)` method which will always throws an exception, since `restrictField` should not be called.
-    *
-    * public final IRecord restrictField(String var1) {
+    * public final IRecord$ restrictField(String var1) {
     * throw new UnsupportedOperationException("restrictField method shouldn't be called");
     * }
     */
@@ -57,24 +58,35 @@ object GenRecordEmpty {
     val recordInterface = BackendObjType.RecordEmpty.interface
     val cm = ClassMaker.mkClass(BackendObjType.RecordEmpty.jvmName, Visibility.Public, Finality.Final, interfaces = List(recordInterface))
 
-    cm.mkObjectConstructor(Visibility.Public)
-    cm.mkMethod(genLookupFieldMethod(), GenRecordInterfaces.LookupFieldFunctionName, mkDescriptor(BackendObjType.String.toTpe)(recordInterface.toObjTpe.toTpe), Visibility.Public, Finality.Final, Instancing.NonStatic)
-    cm.mkMethod(genRestrictFieldMethod(), GenRecordInterfaces.RestrictFieldFunctionName, mkDescriptor(BackendObjType.String.toTpe)(recordInterface.toObjTpe.toTpe), Visibility.Public, Finality.Final, Instancing.NonStatic)
-
-    //    // Generate 'lookupField' method
-    //    AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "lookupField",
-    //      AsmOps.getMethodDescriptor(List(JvmType.String), interfaceType),
-    //      "lookupField method shouldn't be called")
-    //
-    //    // Generate 'restrictField' method
-    //    AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "restrictField",
-    //      AsmOps.getMethodDescriptor(List(JvmType.String), JvmOps.getRecordInterfaceType()),
-    //      "restrictField method shouldn't be called")
+    cm.mkStaticConstructor(genStaticConstructor())
+    cm.mkObjectConstructor(Visibility.Private)
+    cm.mkField(InstanceFieldName, BackendObjType.RecordEmpty.toTpe, Visibility.Public, Finality.Final, Instancing.Static)
+    val stringToIRecord = mkDescriptor(BackendObjType.String.toTpe)(recordInterface.toObjTpe.toTpe)
+    cm.mkMethod(genLookupFieldMethod(), GenRecordInterfaces.LookupFieldFunctionName, stringToIRecord, Visibility.Public, Finality.Final, Instancing.NonStatic)
+    cm.mkMethod(genRestrictFieldMethod(), GenRecordInterfaces.RestrictFieldFunctionName, stringToIRecord, Visibility.Public, Finality.Final, Instancing.NonStatic)
 
     cm.closeClassMaker
   }
 
-  private def genLookupFieldMethod(): InstructionSet = ???
+  private def genStaticConstructor(): InstructionSet =
+    NEW(BackendObjType.RecordEmpty.jvmName) ~
+      DUP() ~
+      invokeConstructor(BackendObjType.RecordEmpty.jvmName, MethodDescriptor.NothingToVoid) ~
+      PUTSTATIC(BackendObjType.RecordEmpty.jvmName, InstanceFieldName, BackendObjType.RecordEmpty.toTpe) ~
+      RETURN()
 
-  private def genRestrictFieldMethod(): InstructionSet = ???
+
+  private def genLookupFieldMethod(): InstructionSet =
+    NEW(JvmName.UnsupportedOperationException) ~
+      DUP() ~
+      pushString("lookupField method shouldn't be called") ~
+      INVOKESPECIAL(JvmName.UnsupportedOperationException, JvmName.ConstructorMethod, mkDescriptor(BackendObjType.String.toTpe)(VoidableType.Void)) ~
+      ATHROW()
+
+  private def genRestrictFieldMethod(): InstructionSet =
+    NEW(JvmName.UnsupportedOperationException) ~
+      DUP() ~
+      pushString("restrictField method shouldn't be called") ~
+      INVOKESPECIAL(JvmName.UnsupportedOperationException, JvmName.ConstructorMethod, mkDescriptor(BackendObjType.String.toTpe)(VoidableType.Void)) ~
+      ATHROW()
 }
