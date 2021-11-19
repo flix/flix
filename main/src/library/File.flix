@@ -176,7 +176,9 @@ namespace File {
             let reader = newBufferedReader(javaPath);
             Ok(readAll(reader))
         } catch {
-            case _: ##java.io.IOException => Err("I/O Error")
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
         }
 
     ///
@@ -195,6 +197,26 @@ namespace File {
             acc
         else
             readAllHelper(r, line :: acc)
+
+    ///
+    /// Returns a list of all the lines in the given file `f` with the options `opts`.
+    ///
+    pub def readLinesWith(opts: {charSet :: String}, f: String): Result[List[String], String] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import java.io.File.toPath();
+            import java.nio.file.Files:newBufferedReader(##java.nio.file.Path, ##java.nio.charset.Charset);
+            import java.nio.charset.Charset:forName(String);
+
+            let javaFile = newFile(f);
+            let javaPath = toPath(javaFile);
+            let reader = newBufferedReader(javaPath, forName(opts.charSet));
+            Ok(readAll(reader))
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
 
     ///
     /// Returns an iterator of the given file `f`
