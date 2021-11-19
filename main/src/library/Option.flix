@@ -413,10 +413,8 @@ namespace Option {
     ///
     /// Applies `f` to `v` if `o` is `Some(v)`. Otherwise does nothing.
     ///
-    /// The function `f` must be impure.
-    ///
     @Time(time(f)) @Space(space(f))
-    pub def foreach(f: a ~> Unit, o: Option[a]): Unit & Impure = match o {
+    pub def foreach(f: a -> Unit & ef, o: Option[a]): Unit & ef = match o {
         case None    => ()
         case Some(v) => f(v)
     }

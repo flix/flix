@@ -85,7 +85,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
     def visitClass(clazz: KindedAst.Class): Validation[(Symbol.ClassSym, TypedAst.Class), TypeError] = clazz match {
       case KindedAst.Class(doc, mod, sym, tparam, superClasses, sigs, laws0, loc) =>
         val tparams = getTypeParams(List(tparam))
-        val tconstr = Ast.TypeConstraint(sym, tparam.tpe, loc)
+        val tconstr = Ast.TypeConstraint(sym, tparam.tpe, sym.loc)
         for {
           sigs <- Validation.traverse(sigs.values)(visitSig(_, List(tconstr), root, classEnv))
           laws <- Validation.traverse(laws0)(visitDefn(_, List(tconstr), root, classEnv))
@@ -142,7 +142,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
       for {
         // check the main signature before typechecking the def
         _ <- checkMain(defn, classEnv)
-        res <- typeCheckDecl(spec0, exp0, assumedTconstrs, root, classEnv)
+        res <- typeCheckDecl(spec0, exp0, assumedTconstrs, root, classEnv, sym.loc)
         (spec, exp) = res
       } yield TypedAst.Def(sym, spec, exp)
   }
@@ -156,7 +156,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
     }
 
     if (!Scheme.equal(defn.spec.sc, mainScheme, classEnv)) {
-      TypeError.IllegalMain(declaredScheme = defn.spec.sc, expectedScheme = mainScheme, defn.spec.loc).toFailure
+      TypeError.IllegalMain(declaredScheme = defn.spec.sc, expectedScheme = mainScheme, defn.sym.loc).toFailure
     } else {
       ().toSuccess
     }
@@ -167,7 +167,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
     */
   private def visitSig(sig: KindedAst.Sig, assumedTconstrs: List[Ast.TypeConstraint], root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[TypedAst.Sig, TypeError] = sig match {
     case KindedAst.Sig(sym, spec0, Some(exp0)) =>
-      typeCheckDecl(spec0, exp0, assumedTconstrs, root, classEnv) map {
+      typeCheckDecl(spec0, exp0, assumedTconstrs, root, classEnv, sym.loc) map {
         case (spec, exp) => TypedAst.Sig(sym, spec, Some(exp))
       }
     case KindedAst.Sig(sym, spec0, None) =>
@@ -209,8 +209,8 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
   /**
     * Infers the type of the given definition `defn0`.
     */
-  private def typeCheckDecl(spec0: KindedAst.Spec, exp0: KindedAst.Expression, assumedTconstrs: List[Ast.TypeConstraint], root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[(TypedAst.Spec, TypedAst.Impl), TypeError] = spec0 match {
-    case KindedAst.Spec(doc, ann, mod, tparams0, fparams0, sc, tpe, eff, loc) =>
+  private def typeCheckDecl(spec0: KindedAst.Spec, exp0: KindedAst.Expression, assumedTconstrs: List[Ast.TypeConstraint], root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], loc: SourceLocation)(implicit flix: Flix): Validation[(TypedAst.Spec, TypedAst.Impl), TypeError] = spec0 match {
+    case KindedAst.Spec(doc, ann, mod, tparams0, fparams0, sc, tpe, eff, _) =>
 
       ///
       /// Infer the type of the expression `exp0`.
@@ -1145,20 +1145,6 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
           resultEff <- unifyTypeM(evar, Type.mkAnd(eff1 :: eff2 :: lifetimeVar :: Nil, loc), loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
-      case KindedAst.Expression.Existential(fparam, exp, loc) =>
-        for {
-          paramTyp <- unifyTypeM(fparam.sym.tvar.ascribedWith(Kind.Star), fparam.tpe, loc)
-          (constrs, typ, eff) <- visitExp(exp)
-          resultTyp <- unifyTypeM(typ, Type.Bool, loc)
-        } yield (constrs, resultTyp, Type.Pure)
-
-      case KindedAst.Expression.Universal(fparam, exp, loc) =>
-        for {
-          paramTyp <- unifyTypeM(fparam.sym.tvar.ascribedWith(Kind.Star), fparam.tpe, loc)
-          (constrs, typ, eff) <- visitExp(exp)
-          resultTyp <- unifyTypeM(typ, Type.Bool, loc)
-        } yield (constrs, resultTyp, Type.Pure)
-
       case KindedAst.Expression.Ascribe(exp, expectedTyp, expectedEff, tvar, loc) =>
         // An ascribe expression is sound; the type system checks that the declared type matches the inferred type.
         for {
@@ -1718,14 +1704,6 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
         val tpe = Type.Unit
         val eff = subst0(evar)
         TypedAst.Expression.Assign(e1, e2, tpe, eff, loc)
-
-      case KindedAst.Expression.Existential(fparam, exp, loc) =>
-        val e = visitExp(exp, subst0)
-        TypedAst.Expression.Existential(visitParam(fparam), e, loc)
-
-      case KindedAst.Expression.Universal(fparam, exp, loc) =>
-        val e = visitExp(exp, subst0)
-        TypedAst.Expression.Universal(visitParam(fparam), e, loc)
 
       case KindedAst.Expression.Ascribe(exp, _, _, tvar, loc) =>
         val e = visitExp(exp, subst0)

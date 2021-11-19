@@ -765,9 +765,7 @@ namespace Chain {
     ///
     /// Applies `f` to every element of `c`.
     ///
-    /// The function `f` must be impure.
-    ///
-    pub def foreach(f: a ~> Unit, c: Chain[a]): Unit & Impure = match viewLeft(c) {
+    pub def foreach(f: a -> Unit & ef, c: Chain[a]): Unit & ef = match viewLeft(c) {
         case NoneLeft        => ()
         case SomeLeft(x, rs) => f(x); foreach(f, rs)
     }
