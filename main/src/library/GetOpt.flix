@@ -389,7 +389,7 @@ namespace GetOpt {
     ///
     /// Here we are in the initial state, outside a quotation.
     ///
-    def groupWhenQuotedHelper(quoteOpen: String, quoteClose: String, tokens: List[String], k: List[String] ~> Array[String]): Array[String] & Impure =
+    def groupWhenQuotedHelper(quoteOpen: String, quoteClose: String, tokens: List[String], k: List[String] -> Array[String] & ef): Array[String] & ef =
         match tokens {
             case Nil => k(Nil)
             case x :: rest if String.contains({substr = quoteOpen}, x) and String.endsWith({suffix = quoteClose}, x) => groupWhenQuotedHelper(quoteOpen, quoteClose, rest, ks -> k(x :: ks))
@@ -402,7 +402,7 @@ namespace GetOpt {
     ///
     /// Here we are "inside" a quotation, stored so far as `acc`.
     ///
-    def groupWhenQuotedHelperInner(quoteOpen: String, quoteClose: String, tokens: List[String], acc: String, k: List[String] ~> Array[String]): Array[String] & Impure =
+    def groupWhenQuotedHelperInner(quoteOpen: String, quoteClose: String, tokens: List[String], acc: String, k: List[String] -> Array[String] & ef): Array[String] & ef =
         match tokens {
             case Nil => k(acc :: Nil)
             case x :: rest if String.contains({substr = quoteClose}, x) => groupWhenQuotedHelper(quoteOpen, quoteClose, rest, ks -> k((acc + " " +  x) :: ks))

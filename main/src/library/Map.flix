@@ -593,10 +593,8 @@ namespace Map {
     ///
     /// Applies `f` to every element of `xs`.
     ///
-    /// The function `f` must be impure.
-    ///
     @Time(size(f) * size(m)) @Space(space(f) * Int32.log2(size(m)))
-    pub def foreach(f: (k, v) ~> Unit, m: Map[k, v]): Unit & Impure =
+    pub def foreach(f: (k, v) -> Unit & ef, m: Map[k, v]): Unit & ef =
         let Map(xs) = m;
         RedBlackTree.foreach(f, xs)
 
@@ -625,12 +623,12 @@ namespace Map {
     ///
     /// `next` should return `None` to signal the end of building the map.
     ///
-    pub def unfoldWithIter(next: Unit ~> Option[(k, v)]): Map[k, v] & Impure with Order[k] = unfoldWithIterHelper(next, empty())
+    pub def unfoldWithIter(next: Unit -> Option[(k, v)] & ef): Map[k, v] & ef with Order[k] = unfoldWithIterHelper(next, empty())
 
     ///
     /// Helper function for `unfoldWithIter`.
     ///
-    def unfoldWithIterHelper(next: Unit ~> Option[(k, v)], ac: Map[k, v]): Map[k, v] & Impure with Order[k] = match next() {
+    def unfoldWithIterHelper(next: Unit -> Option[(k, v)] & ef, ac: Map[k, v]): Map[k, v] & ef with Order[k] = match next() {
         case None => ac
         case Some(k, v) => unfoldWithIterHelper(next, insert(k, v, ac))
     }
@@ -649,7 +647,8 @@ namespace Map {
     ///
     /// The function `f` must be impure.
     ///
-    pub def queryWith(p: k -> Comparison & ef, f: (k, v) ~> Unit, m: Map[k, v]): Unit & Impure =
+    // TODO: Make `f` effect polymorphic
+    pub def queryWith(p: k -> Comparison & ef, f: (k, v) -> Unit & Impure, m: Map[k, v]): Unit & Impure =
         let Map(xs) = m;
         RedBlackTree.queryWith(p, f, xs)
 
