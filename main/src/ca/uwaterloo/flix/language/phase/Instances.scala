@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.{Kind, Scheme, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.InstanceError
-import ca.uwaterloo.flix.language.phase.unification.Unification
+import ca.uwaterloo.flix.language.phase.unification.{ClassEnvironment, Unification}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
@@ -193,21 +193,33 @@ object Instances {
     }
 
     /**
-      * Checks that there is an instance for each super class of the class of `inst`.
+      * Checks that there is an instance for each super class of the class of `inst`,
+      * and that the constraints on `inst` entail the constraints on the super instance.
       */
     def checkSuperInstances(inst: TypedAst.Instance): Validation[Unit, InstanceError] = inst match {
-      case TypedAst.Instance(_, _, sym, tpe, _, _, _, _) =>
+      case TypedAst.Instance(_, _, sym, tpe, tconstrs, _, _, loc) =>
         val superClasses = root.classEnv(sym.clazz).superClasses
         Validation.traverseX(superClasses) {
           superClass =>
             val superInsts = root.classEnv.get(superClass).map(_.instances).getOrElse(Nil)
             // Check each instance of the super class
-            if (superInsts.exists(superInst => Unification.unifiesWith(tpe, superInst.tpe))) {
-              // Case 1: An instance matches. Success.
-              ().toSuccess
-            } else {
-              // Case 2: No instance matches. Error.
-              InstanceError.MissingSuperClassInstance(tpe, sym, superClass, sym.loc).toFailure
+            superInsts.find(superInst => Unification.unifiesWith(tpe, superInst.tpe)) match {
+              case Some(superInst) =>
+                // Case 1: An instance matches. Check that its constraints are entailed by this instance.
+                // MATT do we need to explore the whole tree?
+                // MATT I think no because of simple types?
+                // MATT helper function?
+                Validation.traverseX(superInst.tconstrs) {
+                  tconstr => ClassEnvironment.entail(tconstrs, tconstr, root.classEnv) match {
+                    case Validation.Failure(errors) => Validation.Failure(errors.map(_ => InstanceError.MissingConstraint())) // MATT use full error stuff
+                    case Validation.Success(_) => ().toSuccess
+
+                  }
+                }
+
+              case None =>
+                // Case 2: No instance matches. Error.
+                InstanceError.MissingSuperClassInstance(tpe, sym, superClass, sym.loc).toFailure
             }
         }
     }
