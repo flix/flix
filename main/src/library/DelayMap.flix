@@ -492,4 +492,11 @@ namespace DelayMap {
         let f1 = (k, v) -> f(k, force v);
         RedBlackTree.foreach(f1 as & Impure, t) as & ef
 
+    ///
+    /// Returns the sum of all values in `m`.
+    ///
+    pub def sum(m: DelayMap[k, Int32]): Int32 =
+        let DMap(t) = m;
+        RedBlackTree.foldLeft((acc, _, v) -> acc + force v, 0, t)
+
 }
