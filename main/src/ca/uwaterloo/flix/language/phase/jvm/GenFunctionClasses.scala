@@ -176,7 +176,8 @@ object GenFunctionClasses {
   }
 
   /**
-    * Emits code for a functional that fully evaluates the current function, including tail calls.
+    * Emits code for a functional that fully evaluates the current function, including
+    * tail calls, and returns the boxed value.
     */
   private def compileEvalMethod(cw: ClassWriter, defn: Def, resultType: MonoType)(implicit root: Root, flix: Flix): Unit = {
     // Method header

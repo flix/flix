@@ -31,27 +31,37 @@ object GenClosureClasses {
   /**
     * Returns the byte code for the closure with the given symbol `sym` and free variables `freeVars`.
     *
-    * For example, given the symbol `mkAdder` with type (Int, Int) -> Int and the free variable `x`, we create:
+    * For example, given the symbol `mkAdder` with type (Int32, Int32) -> Int32 and the free variable `x`, we create:
     *
-    * Clo$mkAdder extends Fn1$Int$Int {
-    * private int x;
+    * Clo$mkAdder implements Fn2$Int32$Int32$Int32, Runnable {
+    * private Context creationContext;
+    * private int clo0;
     * private int arg0;
-    * private int res;
+    * private int arg1;
+    * private int result;
     *
-    * public Clo$mkAdder(int x) {
-    * this.x = x;
+    * public Clo$mkAdder(Context c, int x) {
+    * this.creationContext = c;
+    * this.clo0 = x;
     * }
     *
     * public setArg0(int arg0) {
     * this.arg0 = arg0;
     * }
     *
+    * public setArg1(int arg1) {
+    * this.arg1 = arg1;
+    * }
+    *
     * public int getResult() {
     * return this.res;
     * }
     *
-    * public void apply(Context ctx) {
+    * public void invoke(Context ctx) {
     * this.res = this.x + this.arg0;
+    * }
+    *
+    * public void run() {
     * }
     * }
     *
