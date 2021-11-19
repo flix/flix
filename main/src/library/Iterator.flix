@@ -18,12 +18,12 @@
 ///
 /// The type of the done function.
 ///
-type alias Done = Unit ~> Bool
+type alias Done = Unit -> Bool & Impure
 
 ///
 /// The type of the next function.
 ///
-type alias Next[a] = Unit ~> a
+type alias Next[a] = Unit -> a & Impure
 
 ///
 /// An iterator is a stream of elements that are produced on demand.

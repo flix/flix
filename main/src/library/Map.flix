@@ -638,17 +638,14 @@ namespace Map {
     ///
     /// That is, the result is a list of all pairs `(k, v)` where `p(k)` returns `Equal`.
     ///
-    pub def query(p: k -> Comparison & ef, m: Map[k, v]): List[(k, v)] & ef =
+    pub def query(p: k -> Comparison, m: Map[k, v]): List[(k, v)] =
         let Map(xs) = m;
         RedBlackTree.query(p, (k, v) -> (k, v), xs)
 
     ///
     /// Applies `f` to all key-value pairs `(k, v)` from the map `m` where `p(k)` returns `EqualTo`.
     ///
-    /// The function `f` must be impure.
-    ///
-    // TODO: Make `f` effect polymorphic
-    pub def queryWith(p: k -> Comparison & ef, f: (k, v) -> Unit & Impure, m: Map[k, v]): Unit & Impure =
+    pub def queryWith(p: k -> Comparison, f: (k, v) -> Unit & ef, m: Map[k, v]): Unit & ef =
         let Map(xs) = m;
         RedBlackTree.queryWith(p, f, xs)
 

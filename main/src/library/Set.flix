@@ -470,24 +470,6 @@ namespace Set {
     }
 
     ///
-    /// Extracts a range of elements from the set `xs`.
-    ///
-    /// That is, the result is a list of all elements `x` where `p(x)` returns `EqualTo`.
-    ///
-    pub def query(p: a -> Comparison & ef, xs: Set[a]): List[a] & ef =
-        let Set(es) = xs;
-        RedBlackTree.query(p, (k, _) -> k, es)
-
-    ///
-    /// Applies `f` to all elements from the set `xs` where `p(x)` returns `EqualTo`.
-    ///
-    /// The function `f` must be impure.
-    ///
-    pub def queryWith(p: a -> Comparison & ef, f: a -> Unit & Impure, xs: Set[a]): Unit & Impure =
-        let Set(es) = xs;
-        RedBlackTree.queryWith(p, (k, _) -> f(k), es)
-
-    ///
     /// Helper function for `range`.
     ///
     def rangeHelper(b: Int32, n: Int32, acc: Set[Int32]): Set[Int32] =
