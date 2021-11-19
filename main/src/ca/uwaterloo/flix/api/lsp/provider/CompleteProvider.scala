@@ -308,7 +308,7 @@ object CompleteProvider {
         else
           decl.sym.text.startsWith(s)
     }
-    val isInFile = decl.spec.loc.source.name == uri
+    val isInFile = decl.sym.loc.source.name == uri
 
     isMatch && (isPublic || isInFile)
   }
@@ -327,7 +327,7 @@ object CompleteProvider {
         else
           sign.sym.name.startsWith(s)
     }
-    val isInFile = sign.spec.loc.source.name == uri
+    val isInFile = sign.sym.loc.source.name == uri
 
     isMatch && (isPublic || isInFile)
   }

@@ -26,9 +26,7 @@ object WeededAst {
 
   case class Root(uses: List[WeededAst.Use], decls: List[WeededAst.Declaration], loc: SourceLocation)
 
-  sealed trait Declaration {
-    def loc: SourceLocation
-  }
+  sealed trait Declaration
 
   object Declaration {
 

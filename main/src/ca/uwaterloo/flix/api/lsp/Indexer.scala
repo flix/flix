@@ -55,7 +55,7 @@ object Indexer {
     val idx2 = def0.spec.fparams.foldLeft(Index.empty) {
       case (acc, fparam) => acc ++ visitFormalParam(fparam)
     }
-    val idx3 = visitScheme(def0.spec.declaredScheme, def0.spec.loc)
+    val idx3 = visitScheme(def0.spec.declaredScheme, def0.sym.loc)
     idx0 ++ idx1 ++ idx2 ++ idx3
   }
 
@@ -85,17 +85,14 @@ object Indexer {
   /**
     * Returns a reverse index for the given class `class0`.
     */
-  private def visitClass(class0: TypedAst.Class): Index = class0 match {
-    case TypedAst.Class(doc, mod, sym, tparam, superClasses, signatures, laws, loc) =>
-      Index.occurrenceOf(class0)
-  }
+  private def visitClass(class0: TypedAst.Class): Index = Index.occurrenceOf(class0)
 
   /**
     * Returns a reverse index for the given instance `instance0`.
     */
   private def visitInstance(instance0: Instance): Index = instance0 match {
-    case Instance(_, _, sym, tpe, _, defs, _, loc) =>
-      val idx1 = Index.useOf(sym.clazz, loc)
+    case Instance(_, _, sym, tpe, _, defs, _, _) =>
+      val idx1 = Index.useOf(sym.clazz, sym.loc)
       val idx2 = visitType(tpe)
       val idx3 = defs.foldLeft(Index.empty) {
         case (acc, defn) => visitDef(defn)
