@@ -37,6 +37,15 @@ object CodeHinter {
     Symbol.mkDefnSym("LazyList.mapWithIndex"),
     Symbol.mkDefnSym("LazyList.dropWhile"),
     Symbol.mkDefnSym("LazyList.takeWhile"),
+
+    Symbol.mkDefnSym("DelayMap.insertWith"),
+    Symbol.mkDefnSym("DelayMap.insertWithKey"),
+    Symbol.mkDefnSym("DelayMap.map"),
+    Symbol.mkDefnSym("DelayMap.mapWithKey"),
+    Symbol.mkDefnSym("DelayMap.unionWith"),
+    Symbol.mkDefnSym("DelayMap.unionWithKey"),
+    Symbol.mkDefnSym("DelayMap.update"),
+    Symbol.mkDefnSym("DelayMap.updateWithKey"),
   )
 
   /**
