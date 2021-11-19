@@ -200,6 +200,7 @@ namespace File {
 
     ///
     /// Returns a list of all the lines in the given file `f` with the options `opts`.
+    /// TODO: specify the opts.
     ///
     pub def readLinesWith(opts: {charSet :: String}, f: String): Result[List[String], String] & Impure =
         try {
