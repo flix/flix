@@ -225,6 +225,36 @@ namespace File {
         }
 
     ///
+    /// Returns an iterator of the given file `f` with the options `opts`.
+    /// TODO: specify opts.
+    ///
+    pub def readLinesIterWith(opts: {charSet :: String}, f: String): Iterator[Result[String, String]] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import java.io.File.toPath();
+            import java.nio.file.Files:newBufferedReader(##java.nio.file.Path, ##java.nio.charset.Charset);
+            import java.nio.charset.Charset:forName(String);
+            import java.io.BufferedReader.readLine();
+
+            let javaFile = newFile(f);
+            let javaPath = toPath(javaFile);
+            let reader = newBufferedReader(javaPath, forName(opts.charSet));
+            let line = ref readLine(reader);
+
+            let done = () -> Object.isNull(deref line);
+            let next = () -> {
+                let l = deref line;
+                line := readLine(reader);
+                Ok(l)
+            };
+            Iterator(done, next)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Iterator.singleton(Err(getMessage(ex)))
+        }
+
+    ///
     /// Returns an array of all the bytes in the given file `f`.
     ///
     pub def readBytes(f: String): Result[Array[Int8], String] & Impure =
