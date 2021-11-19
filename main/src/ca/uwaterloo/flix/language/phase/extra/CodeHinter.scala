@@ -32,17 +32,11 @@ object CodeHinter {
     Symbol.mkDefnSym("LazyList.filter"),
     Symbol.mkDefnSym("LazyList.filterMap"),
     Symbol.mkDefnSym("LazyList.map"),
+    Symbol.mkDefnSym("LazyList.mapWithIndex"),
     Symbol.mkDefnSym("LazyList.flatMap"),
     Symbol.mkDefnSym("LazyList.mapWithIndex"),
     Symbol.mkDefnSym("LazyList.dropWhile"),
     Symbol.mkDefnSym("LazyList.takeWhile"),
-    Symbol.mkDefnSym("Stream.filter"),
-    Symbol.mkDefnSym("Stream.filterMap"),
-    Symbol.mkDefnSym("Stream.map"),
-    Symbol.mkDefnSym("Stream.flatMap"),
-    Symbol.mkDefnSym("Stream.mapWithIndex"),
-    Symbol.mkDefnSym("Stream.dropWhile"),
-    Symbol.mkDefnSym("Stream.takeWhile")
   )
 
   /**
