@@ -2028,13 +2028,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.SchemaRow(sp1, predicates, restOpt, sp2) =>
       buildSchemaRow(predicates, restOpt, mkSL(sp1, sp2))
 
-    case ParsedAst.Type.UnaryImpureArrow(tpe1, tpe2, sp2) =>
-      val loc = mkSL(leftMostSourcePosition(tpe1), sp2)
-      val t1 = visitType(tpe1)
-      val t2 = visitType(tpe2)
-      val eff = WeededAst.Type.False(loc)
-      mkArrow(t1, eff, t2, loc)
-
     case ParsedAst.Type.UnaryPolymorphicArrow(tpe1, tpe2, effOpt, sp2) =>
       val loc = mkSL(leftMostSourcePosition(tpe1), sp2)
       val t1 = visitType(tpe1)
@@ -2045,13 +2038,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case Some(f) => visitType(f)
       }
       mkArrow(t1, eff, t2, loc)
-
-    case ParsedAst.Type.ImpureArrow(sp1, tparams, tresult, sp2) =>
-      val loc = mkSL(sp1, sp2)
-      val ts = tparams.map(visitType)
-      val tr = visitType(tresult)
-      val eff = WeededAst.Type.False(loc)
-      mkCurriedArrow(ts, eff, tr, loc)
 
     case ParsedAst.Type.PolymorphicArrow(sp1, tparams, tresult, effOpt, sp2) =>
       val loc = mkSL(sp1, sp2)
@@ -2519,9 +2505,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.RecordRow(sp1, _, _, _) => sp1
     case ParsedAst.Type.Schema(sp1, _, _, _) => sp1
     case ParsedAst.Type.SchemaRow(sp1, _, _, _) => sp1
-    case ParsedAst.Type.UnaryImpureArrow(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.UnaryPolymorphicArrow(tpe1, _, _, _) => leftMostSourcePosition(tpe1)
-    case ParsedAst.Type.ImpureArrow(sp1, _, _, _) => sp1
     case ParsedAst.Type.PolymorphicArrow(sp1, _, _, _, _) => sp1
     case ParsedAst.Type.Native(sp1, _, _) => sp1
     case ParsedAst.Type.Apply(tpe1, _, _) => leftMostSourcePosition(tpe1)
