@@ -120,38 +120,6 @@ namespace File {
         }
 
     ///
-    /// Returns a list of all the lines in the given file `f`.
-    ///
-    pub def readLines(f: String): Result[List[String], String] & Impure = try {
-            import new java.io.File(String) as newFile;
-            import java.io.File.toPath();
-            import java.nio.file.Files:newBufferedReader(##java.nio.file.Path);
-            let javaFile = newFile(f);
-            let javaPath = toPath(javaFile);
-            let reader = newBufferedReader(javaPath);
-            Ok(readAll(reader))
-        } catch {
-            case _: ##java.io.IOException => Err("I/O Error")
-        }
-
-    ///
-    /// Reads all lines from the given buffered reader `r` until it is empty.
-    ///
-    def readAll(r: ##java.io.BufferedReader): List[String] & Impure = List.reverse(readAllHelper(r, Nil))
-
-    ///
-    /// Helper function for readAll.
-    /// Reads all lines from the buffered reader `r` until it is empty, returning a backward list.
-    ///
-    def readAllHelper(r: ##java.io.BufferedReader, acc: List[String]): List[String] & Impure =
-        import java.io.BufferedReader.readLine();
-        let line = readLine(r);
-        if (Object.isNull(line))
-            acc
-        else
-            readAllHelper(r, line :: acc)
-
-    ///
     /// Returns a string containing the given file `f`.
     ///
     pub def read(f: String): Result[String, String] & Impure =
@@ -195,6 +163,38 @@ namespace File {
                 Err(getMessage(ex))
         }
     }
+
+    ///
+    /// Returns a list of all the lines in the given file `f`.
+    ///
+    pub def readLines(f: String): Result[List[String], String] & Impure = try {
+            import new java.io.File(String) as newFile;
+            import java.io.File.toPath();
+            import java.nio.file.Files:newBufferedReader(##java.nio.file.Path);
+            let javaFile = newFile(f);
+            let javaPath = toPath(javaFile);
+            let reader = newBufferedReader(javaPath);
+            Ok(readAll(reader))
+        } catch {
+            case _: ##java.io.IOException => Err("I/O Error")
+        }
+
+    ///
+    /// Reads all lines from the given buffered reader `r` until it is empty.
+    ///
+    def readAll(r: ##java.io.BufferedReader): List[String] & Impure = List.reverse(readAllHelper(r, Nil))
+
+    ///
+    /// Helper function for readAll.
+    /// Reads all lines from the buffered reader `r` until it is empty, returning a backward list.
+    ///
+    def readAllHelper(r: ##java.io.BufferedReader, acc: List[String]): List[String] & Impure =
+        import java.io.BufferedReader.readLine();
+        let line = readLine(r);
+        if (Object.isNull(line))
+            acc
+        else
+            readAllHelper(r, line :: acc)
 
     ///
     /// Returns an iterator of the given file `f`
