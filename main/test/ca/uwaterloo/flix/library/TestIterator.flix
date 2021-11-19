@@ -480,4 +480,45 @@ namespace TestIterator {
         let iter2 = List.toIterator(2 :: 3 :: Nil);
         Iterator.append(iter1, iter2) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // zip                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def zip01(): Bool & Impure =
+        let iterA = Nil: List[Int32] |> List.toIterator;
+        let iterB = Iterator.repeat(1000, "b");
+        Iterator.zip(iterA, iterB) |> Iterator.toList == Nil
+
+    @test
+    def zip02(): Bool & Impure =
+        let iterA = Nil: List[Int32] |> List.toIterator;
+        let iterB = Iterator.repeat(1000, "b");
+        Iterator.zip(iterB, iterA) |> Iterator.toList == Nil
+
+    @test
+    def zip03(): Bool & Impure =
+        let iterA = Iterator.repeat(500,  "a");
+        let iterB = Iterator.repeat(1000, "b");
+        Iterator.zip(iterA, iterB) |> Iterator.toList == List.repeat(500, ("a", "b"))
+
+    @test
+    def zip04(): Bool & Impure =
+        let iterA = Iterator.repeat(1000, "a");
+        let iterB = Iterator.repeat(500,  "b");
+        Iterator.zip(iterA, iterB) |> Iterator.toList == List.repeat(500, ("a", "b"))
+
+    @test
+    def zip05(): Bool & Impure =
+        let iterA = Iterator.repeat(1000, "a");
+        let iterB = Iterator.repeat(1000, "b");
+        Iterator.zip(iterA, iterB) |> Iterator.toList == List.repeat(1000, ("a", "b"))
+
+    @test
+    def zip06(): Bool & Impure =
+        let iterA = Iterator.range(0, 500);
+        let iterB = Iterator.repeat(1000, "b");
+        Iterator.zip(iterA, iterB) |> Iterator.toList == List.zip(List.range(0, 500), List.repeat(500, "b"))
+
 }

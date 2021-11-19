@@ -309,14 +309,36 @@ namespace Iterator {
         Iterator(done, next1)
 
     ///
-    /// Returns `iter2` appended to `iter1`.
+    /// Returns `iterA` appended to `iterB`.
     ///
     /// Does *not* consume any elements from either iterator.
     ///
-    pub def append(iter1: Iterator[a], iter2: Iterator[a]): Iterator[a] =
-        let Iterator(done1, next1) = iter1;
-        let Iterator(done2, next2) = iter2;
-        let done3 = () -> done1() and done2();
-        let next3 = () -> if (done1()) next2() else next1();
-        Iterator(done3, next3)
+    /// The original iterators `iterA` and `iterB` should not be reused.
+    ///
+    pub def append(iterA: Iterator[a], iterB: Iterator[a]): Iterator[a] =
+        let Iterator(doneA, nextA) = iterA;
+        let Iterator(doneB, nextB) = iterB;
+        let doneAB = () -> doneA() and doneB();
+        let nextAB = () -> if (doneA()) nextB() else nextA();
+        Iterator(doneAB, nextAB)
+
+    ///
+    /// Returns an iterator where the element at index `i` is `(a, b)` where
+    /// `a` is the element at index `i` in `iterA` and `b` is the element at index `i` in `iterB`.
+    ///
+    /// Does *not* consume any elements from either iterator.
+    ///
+    /// If either `iterA` or `iterB` is depleted, then no further elements are added to the resulting iterator.
+    ///
+    /// The original iterators `iterA` and `iterB` should not be reused.
+    ///
+    /// An iterator should never be zipped with itself.
+    ///
+    pub def zip(iterA: Iterator[a], iterB: Iterator[b]): Iterator[(a, b)] =
+        let Iterator(doneA, nextA) = iterA;
+        let Iterator(doneB, nextB) = iterB;
+        let doneAB = () -> doneA() or doneB();
+        let nextAB = () -> (nextA(), nextB());
+        Iterator(doneAB, nextAB)
+
 }
