@@ -294,4 +294,17 @@ namespace Iterator {
         let Iterator(done, next) = iter;
         let next1 = () -> f(next());
         Iterator(done, next1)
+
+    ///
+    /// Returns an iterator with every occurrence of `x` replaced by `y` in `iter`.
+    ///
+    /// Does *not* consume any elements from the iterator.
+    ///
+    pub def replace(x: a, y: a, iter: Iterator[a]): Iterator[a] with Eq[a] =
+        let Iterator(done, next) = iter;
+        let next1 = () -> {
+            let el = next();
+            if (el == x) y else el
+        };
+        Iterator(done, next1)
 }
