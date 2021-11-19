@@ -339,22 +339,4 @@ namespace MutSet {
         let MutSet(ms) = s;
         Set.foreach(f, deref ms)
 
-    ///
-    /// Extracts a range of elements from the set `s`.
-    ///
-    /// That is, the result is a list of all elements `x` where `p(x)` returns `Equal`.
-    ///
-    pub def query(p: a -> Comparison & ef, s: MutSet[a]): List[a] & Impure =
-        let MutSet(ms) = s;
-        Set.query(p, deref ms)
-
-    ///
-    /// Applies `f` to all elements from the set `s` where `p(x)` returns `EqualTo`.
-    ///
-    /// The function `f` must be impure.
-    ///
-    pub def queryWith(p: a -> Comparison & ef, f: a -> Unit & Impure, s: MutSet[a]): Unit & Impure =
-        let MutSet(ms) = s;
-        Set.queryWith(p, f, deref ms)
-
 }
