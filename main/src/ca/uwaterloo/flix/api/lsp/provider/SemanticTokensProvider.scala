@@ -44,7 +44,7 @@ object SemanticTokensProvider {
     // Construct an iterator of the semantic tokens from classes.
     //
     val classTokens = root.classes.values.flatMap {
-      case decl if include(uri, decl.loc) => visitClass(decl)
+      case decl if include(uri, decl.sym.loc) => visitClass(decl)
       case _ => Nil
     }
 
@@ -53,7 +53,7 @@ object SemanticTokensProvider {
     //
     val instanceTokens = root.instances.values.flatMap {
       case instances => instances.flatMap {
-        case instance if include(uri, instance.loc) => visitInstance(instance)
+        case instance if include(uri, instance.sym.loc) => visitInstance(instance)
         case _ => Nil
       }
     }
@@ -70,7 +70,7 @@ object SemanticTokensProvider {
     // Construct an iterator of the semantic tokens from sigs.
     //
     val sigsTokens = root.sigs.values.flatMap {
-      case decl if include(uri, decl.spec.loc) => visitSig(decl)
+      case decl if include(uri, decl.sym.loc) => visitSig(decl)
       case _ => Nil
     }
 

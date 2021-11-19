@@ -39,32 +39,24 @@ object GenGlobalCounterClass {
   private def genByteCode()(implicit flix: Flix): Array[Byte] = {
     val cm = ClassMaker.mkClass(JvmName.GlobalCounter, Public, Final)
 
-    cm.mkConstructor(genConstructor(), JvmName.MethodDescriptor.NothingToVoid, Private)
+    cm.mkObjectConstructor(Private)
     cm.mkStaticConstructor(genStaticConstructor())
-    cm.mkField(counterFieldName, JvmType.AtomicLong, Private, Final, Static)
-    cm.mkMethod(genNewIdMethod(), NewIdMethodName, MethodDescriptor(Nil, JvmType.PrimLong), Public, Final, Static)
+    cm.mkField(counterFieldName, JvmName.AtomicLong.toObjTpe.toTpe, Private, Final, Static)
+    cm.mkMethod(genNewIdMethod(), NewIdMethodName, MethodDescriptor(Nil, BackendType.Int64), Public, Final, Static)
 
     cm.closeClassMaker
   }
 
-  private def genConstructor(): InstructionSet = {
-    ALOAD(0) ~
-      invokeConstructor(JvmName.Object) ~
-      RETURN()
-  }
-
-  private def genStaticConstructor(): InstructionSet = {
+  private def genStaticConstructor(): InstructionSet =
     NEW(JvmName.AtomicLong) ~
       DUP() ~
       invokeConstructor(JvmName.AtomicLong) ~
-      PUTSTATIC(JvmName.AtomicLong, counterFieldName, JvmType.AtomicLong) ~
+      PUTSTATIC(JvmName.AtomicLong, counterFieldName, JvmName.AtomicLong.toObjTpe.toTpe) ~
       RETURN()
-  }
 
-  private def genNewIdMethod()(implicit flix: Flix): InstructionSet = {
-    GETSTATIC(JvmName.GlobalCounter, counterFieldName, JvmType.AtomicLong) ~
-      INVOKEVIRTUAL(JvmName.AtomicLong, "getAndIncrement", MethodDescriptor(Nil, JvmType.PrimLong)) ~
+  private def genNewIdMethod()(implicit flix: Flix): InstructionSet =
+    GETSTATIC(JvmName.GlobalCounter, counterFieldName, JvmName.AtomicLong.toObjTpe.toTpe) ~
+      INVOKEVIRTUAL(JvmName.AtomicLong, "getAndIncrement", MethodDescriptor(Nil, BackendType.Int64)) ~
       LRETURN()
-  }
 
 }

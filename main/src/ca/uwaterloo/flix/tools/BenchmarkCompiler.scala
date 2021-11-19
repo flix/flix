@@ -16,6 +16,31 @@ object BenchmarkCompiler {
   val N = 15
 
   /**
+    * Outputs statistics about the size of the generated JVM code.
+    */
+  def benchmarkCodeSize(o: Options): Unit = {
+    val flix = newFlix(o)
+    val result = flix.compile().get
+    val codeSize = result.codeSize
+
+    // Find the number of lines of source code.
+    val lines = result.getTotalLines.toLong
+
+    // Print JSON or plain text?
+    if (o.json) {
+      val json =
+        ("codeSize" -> codeSize) ~
+          ("lines" -> lines)
+      val s = JsonMethods.pretty(JsonMethods.render(json))
+      println(s)
+    } else {
+      println("====================== Flix Generated Code Size ======================")
+      println()
+      println(s"Generated ${java.text.NumberFormat.getIntegerInstance.format(codeSize)} Bytes of code from $lines lines of source code.")
+    }
+  }
+
+  /**
     * Outputs statistics about time spent in each compiler phase.
     */
   def benchmarkPhases(o: Options): Unit = {

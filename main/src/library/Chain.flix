@@ -744,16 +744,16 @@ namespace Chain {
         }
 
     ///
-    /// `mapAccumRight` is a stateful version of `map`. The accumulating paramter `s` is updated at each
+    /// `mapAccumRight` is a stateful version of `map`. The accumulating parameter `s` is updated at each
     /// step in a right-to-left traversal.
     ///
     pub def mapAccumRight(f: (s, a) -> (s, b) & ef, start: s, c: Chain[a]): (s, Chain[b]) & ef =
-        mapAccumRightHelper(f, start, c, (s1, ks) -> (s1, ks) as & ef)
+        mapAccumRightHelper(f, start, c, (s1, ks) -> (s1, ks))
 
     ///
     /// Helper function for `mapAccumRight`.
     ///
-    def mapAccumRightHelper(f: (s, a) -> (s, b) & ef, s1: s, c: Chain[a], k: (s, Chain[b]) -> (s, Chain[b]) & ef): (s, Chain[b]) & ef =
+    def mapAccumRightHelper(f: (s, a) -> (s, b) & ef, s1: s, c: Chain[a], k: (s, Chain[b]) -> (s, Chain[b])): (s, Chain[b]) & ef =
         match viewRight(c) {
             case NoneRight        => k(s1, empty())
             case SomeRight(rs, x) => {
@@ -765,9 +765,7 @@ namespace Chain {
     ///
     /// Applies `f` to every element of `c`.
     ///
-    /// The function `f` must be impure.
-    ///
-    pub def foreach(f: a ~> Unit, c: Chain[a]): Unit & Impure = match viewLeft(c) {
+    pub def foreach(f: a -> Unit & ef, c: Chain[a]): Unit & ef = match viewLeft(c) {
         case NoneLeft        => ()
         case SomeLeft(x, rs) => f(x); foreach(f, rs)
     }
