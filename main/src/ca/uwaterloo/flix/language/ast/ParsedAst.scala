@@ -834,28 +834,6 @@ object ParsedAst {
     case class Assign(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Existentially Quantified Expression.
-      *
-      * @param sp1     the position of the first character in the expression.
-      * @param tparams the type parameters.
-      * @param fparams the existentially quantified variables.
-      * @param exp     the existentially quantified expression.
-      * @param sp2     the position of the last character in the expression.
-      */
-    case class Existential(sp1: SourcePosition, tparams: ParsedAst.TypeParams, fparams: Seq[ParsedAst.FormalParam], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * Universally Quantified Expression.
-      *
-      * @param sp1     the position of the first character in the expression.
-      * @param tparams the type parameters.
-      * @param fparams the universally quantified variables.
-      * @param exp     the universally quantified expression.
-      * @param sp2     the position of the last character in the expression.
-      */
-    case class Universal(sp1: SourcePosition, tparams: ParsedAst.TypeParams, fparams: Seq[ParsedAst.FormalParam], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
       * Ascribe Expression.
       *
       * @param exp the expression.

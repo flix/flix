@@ -1204,44 +1204,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         e2 <- visitExp(exp2)
       } yield WeededAst.Expression.Assign(e1, e2, mkSL(sp1, sp2))
 
-    case ParsedAst.Expression.Existential(sp1, _, fparams, exp, sp2) =>
-      /*
-       * Checks for `IllegalExistential`.
-       */
-      if (fparams.isEmpty)
-        return IllegalExistential(mkSL(sp1, sp2)).toFailure
-
-      for {
-        e <- visitExp(exp)
-        fs <- visitFormalParams(fparams, typeRequired = true)
-      } yield {
-        /*
-         * Rewrites the multi-parameter existential to nested single-parameter existentials.
-         */
-        fs.foldRight(e) {
-          case (param, eacc) => WeededAst.Expression.Existential(/* TODO: Pass type params. */ WeededAst.TypeParams.Elided, param, eacc, mkSL(sp1, sp2))
-        }
-      }
-
-    case ParsedAst.Expression.Universal(sp1, _, fparams, exp, sp2) =>
-      /*
-       * Checks for `IllegalUniversal`.
-       */
-      if (fparams.isEmpty)
-        return IllegalUniversal(mkSL(sp1, sp2)).toFailure
-
-      for {
-        e <- visitExp(exp)
-        fs <- visitFormalParams(fparams, typeRequired = true)
-      } yield {
-        /*
-         * Rewrites the multi-parameter universal to nested single-parameter universals.
-         */
-        fs.foldRight(e) {
-          case (param, eacc) => WeededAst.Expression.Universal(/* TODO: Pass type params. */ WeededAst.TypeParams.Elided, param, eacc, mkSL(sp1, sp2))
-        }
-      }
-
     case ParsedAst.Expression.Ascribe(exp, expectedType, expectedEff, sp2) =>
       val t = expectedType.map(visitType)
       val f = expectedEff.map(visitType)
@@ -2508,8 +2470,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Ref(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Deref(sp1, _, _) => sp1
     case ParsedAst.Expression.Assign(e1, _, _) => leftMostSourcePosition(e1)
-    case ParsedAst.Expression.Existential(sp1, _, _, _, _) => sp1
-    case ParsedAst.Expression.Universal(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Ascribe(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Cast(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.TryCatch(sp1, _, _, _) => sp1
