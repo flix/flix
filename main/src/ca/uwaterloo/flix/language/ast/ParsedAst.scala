@@ -1334,15 +1334,6 @@ object ParsedAst {
     case class SchemaRow(sp1: SourcePosition, predicates: Seq[ParsedAst.PredicateType], rest: Option[Name.Ident], sp2: SourcePosition) extends ParsedAst.Type
 
     /**
-      * Unary Impure Arrow Type.
-      *
-      * @param tpe1 the argument type.
-      * @param tpe2 the result type.
-      * @param sp2  the position of the last character in the type.
-      */
-    case class UnaryImpureArrow(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
-
-    /**
       * Unary Polymorphic Arrow Type.
       *
       * @param tpe1 the argument type.
@@ -1351,16 +1342,6 @@ object ParsedAst {
       * @param sp2  the position of the last character in the type.
       */
     case class UnaryPolymorphicArrow(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, eff: Option[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Type
-
-    /**
-      * Impure Arrow Type.
-      *
-      * @param sp1     the position of the first character in the type.
-      * @param tparams the arguments types.
-      * @param tresult the result type.
-      * @param sp2     the position of the last character in the type.
-      */
-    case class ImpureArrow(sp1: SourcePosition, tparams: Seq[ParsedAst.Type], tresult: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * Effect Polymorphic Arrow Type.
