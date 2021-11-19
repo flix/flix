@@ -27,7 +27,7 @@ import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescripto
 /**
   * Generates bytecode for the empty record class.
   */
-object GenRecordEmpty {
+object GenRecordEmptyClass {
 
   val InstanceFieldName: String = "INSTANCE"
 

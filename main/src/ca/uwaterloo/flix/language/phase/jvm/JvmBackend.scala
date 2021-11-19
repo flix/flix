@@ -123,7 +123,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       //
       // Generate empty record class.
       //
-      val recordEmptyClasses = GenRecordEmpty.gen()
+      val recordEmptyClasses = GenRecordEmptyClass.gen()
 
       //
       // Generate extended record classes for each (different) RecordExtend type in the program
