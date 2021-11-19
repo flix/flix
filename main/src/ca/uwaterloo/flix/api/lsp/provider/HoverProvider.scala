@@ -51,15 +51,29 @@ object HoverProvider {
             case _ => hoverTypAndEff(exp.tpe, exp.eff, exp.loc)
           }
 
-        case Entity.Pattern(pat) => hoverTypAndEff(pat.tpe, Type.Pure, pat.loc)
+        case Entity.FormalParam(fparam) => hoverType(fparam.tpe, fparam.loc)
 
-        case Entity.LocalVar(sym, tpe) => hoverTypAndEff(tpe, Type.Pure, sym.loc)
+        case Entity.Pattern(pat) => hoverType(pat.tpe, pat.loc)
+
+        case Entity.LocalVar(sym, tpe) => hoverType(tpe, sym.loc)
 
         case Entity.TypeCon(tc, loc) => hoverTypeConstructor(tc, loc)
 
         case _ => mkNotFound(uri, pos)
       }
     }
+  }
+
+  private def hoverType(tpe: Type, loc: SourceLocation)(implicit index: Index, root: Root): JObject = {
+    val markup =
+      s"""```flix
+         |${FormatType.formatType(tpe)}
+         |```
+         |""".stripMargin
+    val contents = MarkupContent(MarkupKind.Markdown, markup)
+    val range = Range.from(loc)
+    val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
+    ("status" -> "success") ~ ("result" -> result)
   }
 
   private def hoverTypAndEff(tpe: Type, eff: Type, loc: SourceLocation)(implicit index: Index, root: Root): JObject = {
