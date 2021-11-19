@@ -466,8 +466,23 @@ namespace DelayMap {
     ///
     /// Returns an iterator over all key-value pairs in `m`.
     ///
-//    pub def toIterator(m: DelayMap[a, b]): Iterator[(a, b)] & Impure =
-//        ??? as & Impure // TODO
+    pub def toIterator(m: DelayMap[a, b]): Iterator[(a, b)] & Impure with Order[a] =
+        let keys = keysOf(m) |> Set.toList;
+        let cursor = ref keys;
+        let done = () -> match deref cursor {
+            case Nil => true
+            case _   => false
+        };
+        let next = () -> match deref cursor {
+            case Nil     => bug!("Empty Iterator!")
+            case x :: xs =>
+                cursor := xs;
+                match DelayMap.get(x, m) {
+                    case None    => bug!("Empty Iterator!")
+                    case Some(v) => (x, v)
+                }
+        };
+        Iterator(done, next)
 
     ///
     /// Applies `f` to every element of `xs`.
@@ -476,5 +491,12 @@ namespace DelayMap {
         let DMap(t) = m;
         let f1 = (k, v) -> f(k, force v);
         RedBlackTree.foreach(f1 as & Impure, t) as & ef
+
+    ///
+    /// Returns the sum of all values in `m`.
+    ///
+    pub def sum(m: DelayMap[k, Int32]): Int32 =
+        let DMap(t) = m;
+        RedBlackTree.foldLeft((acc, _, v) -> acc + force v, 0, t)
 
 }
