@@ -184,9 +184,9 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def filter(f: a -> Bool & ef, iter: Iterator[a]): List[a] & ef =
+    pub def filter(f: a -> Bool & ef, iter: Iterator[a]): List[a] & Impure =
         let Iterator(done, next) = iter;
-        filterAcc(f, done, next, ks -> ks) as & ef
+        filterAcc(f, done, next, ks -> ks)
 
     ///
     /// Helper function for `filter`.
@@ -204,9 +204,9 @@ namespace Iterator {
     ///
     /// That is, the result is of the form: `f(x1) :: f(x2) :: ...`.
     ///
-    pub def map(f: a -> b & ef, iter: Iterator[a]): List[b] & ef =
+    pub def map(f: a -> b & ef, iter: Iterator[a]): List[b] & Impure =
         let Iterator(done, next) = iter;
-        mapAcc(f, done, next, ks -> ks) as & ef
+        mapAcc(f, done, next, ks -> ks)
 
     ///
     /// Helper function for `map`.
@@ -221,9 +221,9 @@ namespace Iterator {
     ///
     /// Applies `f` to every element of `iter`.
     ///
-    pub def foreach(f: a -> Unit & ef, iter: Iterator[a]): Unit & ef =
+    pub def foreach(f: a -> Unit & ef, iter: Iterator[a]): Unit & Impure =
         let Iterator(done, next) = iter;
-        foreachHelper(f, done, next) as & ef
+        foreachHelper(f, done, next)
 
     ///
     /// Helper function for `foreach`.

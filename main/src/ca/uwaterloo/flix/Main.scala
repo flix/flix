@@ -155,19 +155,19 @@ object Main {
         System.exit(1)
     }
 
-    // check if the -Xbenchmark-code-size flag was passed.
+    // check if the --Xbenchmark-code-size flag was passed.
     if (cmdOpts.xbenchmarkCodeSize) {
       BenchmarkCompiler.benchmarkCodeSize(options)
       System.exit(0)
     }
 
-    // check if the -Xbenchmark-phases flag was passed.
+    // check if the --Xbenchmark-phases flag was passed.
     if (cmdOpts.xbenchmarkPhases) {
       BenchmarkCompiler.benchmarkPhases(options)
       System.exit(0)
     }
 
-    // check if the -Xbenchmark-throughput flag was passed.
+    // check if the --Xbenchmark-throughput flag was passed.
     if (cmdOpts.xbenchmarkThroughput) {
       BenchmarkCompiler.benchmarkThroughput(options)
       System.exit(0)
@@ -351,11 +351,11 @@ object Main {
       help("help").text("prints this usage information.")
 
       // Interactive.
-      opt[Unit]("interactive").action((f, c) => c.copy(interactive = true)).
+      opt[Unit]("interactive").action((_, c) => c.copy(interactive = true)).
         text("enables interactive mode.")
 
       // Json.
-      opt[Unit]("json").action((f, c) => c.copy(json = true)).
+      opt[Unit]("json").action((_, c) => c.copy(json = true)).
         text("enables json output.")
 
       // Listen.

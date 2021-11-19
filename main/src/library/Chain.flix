@@ -744,16 +744,16 @@ namespace Chain {
         }
 
     ///
-    /// `mapAccumRight` is a stateful version of `map`. The accumulating paramter `s` is updated at each
+    /// `mapAccumRight` is a stateful version of `map`. The accumulating parameter `s` is updated at each
     /// step in a right-to-left traversal.
     ///
     pub def mapAccumRight(f: (s, a) -> (s, b) & ef, start: s, c: Chain[a]): (s, Chain[b]) & ef =
-        mapAccumRightHelper(f, start, c, (s1, ks) -> (s1, ks) as & ef)
+        mapAccumRightHelper(f, start, c, (s1, ks) -> (s1, ks))
 
     ///
     /// Helper function for `mapAccumRight`.
     ///
-    def mapAccumRightHelper(f: (s, a) -> (s, b) & ef, s1: s, c: Chain[a], k: (s, Chain[b]) -> (s, Chain[b]) & ef): (s, Chain[b]) & ef =
+    def mapAccumRightHelper(f: (s, a) -> (s, b) & ef, s1: s, c: Chain[a], k: (s, Chain[b]) -> (s, Chain[b])): (s, Chain[b]) & ef =
         match viewRight(c) {
             case NoneRight        => k(s1, empty())
             case SomeRight(rs, x) => {
