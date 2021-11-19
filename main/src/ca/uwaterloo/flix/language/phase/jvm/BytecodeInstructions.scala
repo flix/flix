@@ -88,6 +88,11 @@ object BytecodeInstructions {
     f
   }
 
+  def ATHROW(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.ATHROW)
+    f
+  }
+
   def CHECKCAST(className: JvmName): InstructionSet = f => {
     f.visitTypeInstruction(Opcodes.CHECKCAST, className)
     f
