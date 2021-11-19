@@ -53,57 +53,45 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationMessage] = flix.phase("Documentor") {
     // Check whether to generate documentation.
     if (flix.options.documentor) {
-      /*// Collect all public definitions and group them by namespace.
-      val defsByNS = root.defs.filter {
-        case (sym, defn) => defn.spec.mod.isPublic && !isBenchmark(defn.spec.ann) && !isLaw(defn.spec.ann) && !isTest(defn.spec.ann)
-      }.groupBy(_._1.namespace)
 
-      // Convert all definitions to JSON objects.
-      val jsonDefsByNs = defsByNS.foldRight(List.empty[(String, JObject)]) {
-        case ((ns, defs), acc) =>
-          val ds = defs.toList.map(kv => visitDef(kv._2))
-          (ns.mkString(".") -> JObject(JField("defs", JArray(ds)))) :: acc
-      }
-
-      // Create the output directory (and its parent directories).
-      Files.createDirectories(OutputDirectory)
-
-      // Construct the JSON object.
-      val json = JObject(
-        ("title", JString(ApiTitle)),
-        ("namespaces", JObject(jsonDefsByNs))
-      )
-      */
+      // Get all the namespaces.
+      val namespaces = ???
 
       // Get all the classes.
       val classesByNS = root.classes.values.groupBy(
         x => x.sym.name
       ).map {
-        case (str, value) => JObject(JField(str, JArray(value.toArray)))
+        case (str, value) => JObject(JField(str, value.map(v => visitClass(v))))
       }
 
       // Convert all definitions to JSON objects.
-      val defsByNS = root.defs.values.groupBy(d => d.sym.text)
-
-      val jsonDefsByNs:List[(String, JObject)] = defsByNS.map {
-        case (str, itr) => (str, itr.toList.map(d => visitDef(d)))
+      val defsByNS = root.defs.values.groupBy(
+        x => x.sym.name
+      ).map {
+        case (str, value) => JObject(JField(str, value.map(v => visitDef(v))))
       }
 
-      // Convert all definitions to JSON objects.
-      val jsonDefsByNs = defsByNS.foldRight(List.empty[(String, JObject)]) {
-        case ((ns, defs), acc) =>
-          val ds = defs.toList.map(kv => visitDef(kv._2))
-          (ns.mkString(".") -> JObject(JField("defs", JArray(ds)))) :: acc
+      // Convert all enums to JSON objects.
+      val enumsByNS = root.enums.values.groupBy(
+        x => x.sym.name
+      ).map {
+        case (str, value) => JObject(JField(str, value.map(v => visitEnum(v))))
       }
 
+      // Convert all aliases to JSON objects.
+      val aliasesByNS = root.typealiases.values.groupBy(
+        x => x.sym.name
+      ).map {
+        case (str, value) => JObject(JField(str, value.map(v => visitTypeAlias(v))))
+      }
 
       // Construct the JSON object.
       val json = JObject(
-        ("namespaces", ???),
+        ("namespaces", namespaces),
         ("classes", classesByNS),
-        ("defs", defsByNs),
-        ("enums", ???),
-        ("typeAliases", ???)
+        ("defs", defsByNS),
+        ("enums", enumsByNS),
+        ("typeAliases", aliasesByNS)
       )
 
 
