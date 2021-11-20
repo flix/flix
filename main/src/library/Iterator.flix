@@ -294,4 +294,86 @@ namespace Iterator {
         let Iterator(done, next) = iter;
         let next1 = () -> f(next());
         Iterator(done, next1)
+
+    ///
+    /// Returns an iterator with every occurrence of `x` replaced by `y` in `iter`.
+    ///
+    /// Does *not* consume any elements from the iterator.
+    ///
+    pub def replace(x: a, y: a, iter: Iterator[a]): Iterator[a] with Eq[a] =
+        let Iterator(done, next) = iter;
+        let next1 = () -> {
+            let el = next();
+            if (el == x) y else el
+        };
+        Iterator(done, next1)
+
+    ///
+    /// Returns `iterA` appended to `iterB`.
+    ///
+    /// Does *not* consume any elements from either iterator.
+    ///
+    /// The original iterators `iterA` and `iterB` should not be reused.
+    ///
+    pub def append(iterA: Iterator[a], iterB: Iterator[a]): Iterator[a] =
+        let Iterator(doneA, nextA) = iterA;
+        let Iterator(doneB, nextB) = iterB;
+        let doneAB = () -> doneA() and doneB();
+        let nextAB = () -> if (doneA()) nextB() else nextA();
+        Iterator(doneAB, nextAB)
+
+    ///
+    /// Returns an iterator where the element at index `i` is `(a, b)` where
+    /// `a` is the element at index `i` in `iterA` and `b` is the element at index `i` in `iterB`.
+    ///
+    /// Does *not* consume any elements from either iterator.
+    ///
+    /// If either `iterA` or `iterB` is depleted, then no further elements are added to the resulting iterator.
+    ///
+    /// The original iterators `iterA` and `iterB` should not be reused.
+    ///
+    /// An iterator should never be zipped with itself.
+    ///
+    pub def zip(iterA: Iterator[a], iterB: Iterator[b]): Iterator[(a, b)] =
+        let Iterator(doneA, nextA) = iterA;
+        let Iterator(doneB, nextB) = iterB;
+        let doneAB = () -> doneA() or doneB();
+        let nextAB = () -> (nextA(), nextB());
+        Iterator(doneAB, nextAB)
+
+    ///
+    /// Returns an iterator where the element at index `i` is `f(a, b)` where
+    /// `a` is the element at index `i` in `xs` and `b` is the element at index `i` in `ys`.
+    ///
+    /// Does *not* consume any elements from either iterator.
+    ///
+    /// If either `xs` or `ys` becomes depleted, then no further elements are added to the resulting list.
+    ///
+    /// The original iterators `iterA` and `iterB` should not be reused.
+    ///
+    /// An iterator should never be zipped with itself.
+    ///
+    pub def lazyZipWith(f: (a, b) -> c, iterA: Iterator[a], iterB: Iterator[b]): Iterator[c] =
+        let Iterator(done, next) = zip(iterA, iterB);
+        let next1 = () -> {
+            let (x, y) = next();
+            f(x, y)
+        };
+        Iterator(done, next1)
+
+    ///
+    /// Returns an iterator where the element at index `i` is `f(a, b)` where
+    /// `a` is the element at index `i` in `xs` and `b` is the element at index `i` in `ys`.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    /// If either `xs` or `ys` becomes depleted, then no further elements are added to the resulting list.
+    ///
+    /// The original iterators `iterA` and `iterB` should not be reused.
+    ///
+    /// An iterator should never be zipped with itself.
+    ///
+    pub def zipWith(f: (a, b) -> c & ef, iterA: Iterator[a], iterB: Iterator[b]): List[c] & Impure =
+        zip(iterA, iterB) |> map(xy -> f(fst(xy), snd(xy)))
+
 }
