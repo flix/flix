@@ -51,12 +51,12 @@ object WeederError {
          |""".stripMargin
     }
 
-    def loc: SourceLocation = loc1
-
     def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Remove one of the two annotations."
     })
+
+    def loc: SourceLocation = loc1
 
   }
 
@@ -82,12 +82,12 @@ object WeederError {
          |""".stripMargin
     }
 
-    def loc: SourceLocation = loc1
-
     def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Remove or rename one of the formal parameters to avoid the name clash."
     })
+
+    def loc: SourceLocation = loc1
 
   }
 
@@ -112,12 +112,12 @@ object WeederError {
          |""".stripMargin
     }
 
-    def loc: SourceLocation = loc1
-
     /**
       * Returns a formatted string with helpful suggestions.
       */
     def explain(formatter: Formatter): Option[String] = None
+
+    def loc: SourceLocation = loc1
   }
 
   /**
@@ -143,12 +143,12 @@ object WeederError {
          |""".stripMargin
     }
 
-    def loc: SourceLocation = loc1
-
     def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Remove or rename one of the tags to avoid the name clash."
     })
+
+    def loc: SourceLocation = loc1
 
   }
 
@@ -487,12 +487,12 @@ object WeederError {
          |""".stripMargin
     }
 
-    def loc: SourceLocation = loc1 min loc2
-
     def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} A variable may only occur once in a pattern."
     })
+
+    def loc: SourceLocation = loc1 min loc2
 
   }
 
