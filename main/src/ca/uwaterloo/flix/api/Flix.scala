@@ -325,6 +325,11 @@ class Flix {
   }
 
   /**
+    * Returns the current formatter instance.
+    */
+  def getFormatter: Formatter = this.formatter
+
+  /**
     * Sets the output formatter used for this Flix instance.
     */
   def setFormatter(formatter: Formatter): Flix = {
@@ -333,8 +338,6 @@ class Flix {
     this.formatter = formatter
     this
   }
-
-  def getFormatter: Formatter = this.formatter
 
   /**
     * Compiles the Flix program and returns a typed ast.
