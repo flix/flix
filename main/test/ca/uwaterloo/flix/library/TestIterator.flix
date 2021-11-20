@@ -521,4 +521,46 @@ namespace TestIterator {
         let iterB = Iterator.repeat(1000, "b");
         Iterator.zip(iterA, iterB) |> Iterator.toList == List.zip(List.range(0, 500), List.repeat(500, "b"))
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // lazyZipWith                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def lazyZipWith01(): Bool & Impure =
+        let iterA = List.toIterator(Nil);
+        let iterB = List.toIterator(Nil);
+        Iterator.lazyZipWith((a, b) -> if (b) a + 1 else a, iterA, iterB) |> Iterator.toList == Nil
+
+    @test
+    def lazyZipWith02(): Bool & Impure =
+        let iterA = List.toIterator(1 :: Nil);
+        let iterB = List.toIterator(Nil);
+        Iterator.lazyZipWith((a, b) -> if (b) a + 1 else a, iterA, iterB) |> Iterator.toList == Nil
+
+    @test
+    def lazyZipWith03(): Bool & Impure =
+        let iterA = List.toIterator(Nil);
+        let iterB = List.toIterator(true :: Nil);
+        Iterator.lazyZipWith((a, b) -> if (b) a + 1 else a, iterA, iterB) |> Iterator.toList == Nil
+
+    @test
+    def lazyZipWith04(): Bool & Impure =
+        let iterA = List.toIterator(1 :: Nil);
+        let iterB = List.toIterator(true :: Nil);
+        Iterator.lazyZipWith((a, b) -> if (b) a + 1 else a, iterA, iterB) |> Iterator.toList == 2 :: Nil
+
+    @test
+    def lazyZipWith05(): Bool & Impure =
+        let iterA = List.toIterator(1 :: Nil);
+        let iterB = List.toIterator(false :: Nil);
+        Iterator.lazyZipWith((a, b) -> if (b) a + 1 else a, iterA, iterB) |> Iterator.toList == 1 :: Nil
+
+    @test
+    def lazyZipWith06(): Bool & Impure =
+        let iterA = List.toIterator(1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil);
+        let iterB = List.toIterator(false :: true :: true :: false :: false :: true :: true :: true :: Nil);
+        Iterator.lazyZipWith((a, b) -> if (b) a + 1 else a, iterA, iterB) |>
+            Iterator.toList == 1 :: 3 :: 4 :: 4 :: 5 :: 7 :: 8 :: 9 :: Nil
+
 }
