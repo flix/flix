@@ -28,7 +28,7 @@ instance ToString[MutList[a]] with ToString[a] {
     }
 }
 
-/*instance Eq[MutList[a]] with Eq[a] {
+instance Eq[MutList[a]] with Eq[a] {
         pub def eq(xs: MutList[a], ys: MutList[a]): Bool = {
             let MutList(l1, n1) = xs;
             let MutList(l2, n2) = ys;
@@ -54,7 +54,7 @@ instance Functor[MutList] {
 instance Foldable[MutList] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, v: MutList[a]): b & ef = MutList.foldLeft(f, s, v) as & ef
     pub def foldRight(f: (a, b) -> b & ef, s: b, v: MutList[a]): b & ef = MutList.foldRight(f, s, v) as & ef
-}*/
+}
 
 namespace MutList {
 

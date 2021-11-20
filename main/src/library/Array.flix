@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-/*instance Eq[Array[v]] with Eq[v] {
+instance Eq[Array[v]] with Eq[v] {
     // TODO More efficient implementation
     pub def eq(a: Array[v], b: Array[v]): Bool =
         (Array.length(a) == Array.length(b)) and
@@ -29,9 +29,9 @@ instance Order[Array[v]] with Order[v] {
         ArrayOps.compareHelper(a, b, Int32.min(Array.length(a), Array.length(b)), 0) as & Pure
 }
 
-instance Functor[Array] {
-    pub def map(f: a -> b & ef, a: Array[a]): Array[b] & ef = Array.map(f, a) as & ef
-}
+//instance Functor[Array] {
+//    pub def map(f: a -> b & ef, a: Array[a]): Array[b] & ef = Array.map(f, a) as & ef
+//}
 
 instance Foldable[Array] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, a: Array[a]): b & ef = Array.foldLeft(f, s, a) as & ef
@@ -53,7 +53,7 @@ namespace ArrayOps {
         } else {
             EqualTo
         }
-}*/
+}
 
 namespace Array {
 

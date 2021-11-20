@@ -4523,9 +4523,9 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
     def copyOfRange31(): Bool & Impure =
         Array.copyOfRange(0, 3, [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]]) == [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]]
 
-    @test
+    /*@test
     def copyOfRange32(): Bool & Impure =
-        Array.copyOfRange(1, 3, [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]]) == [[Some('d'), Some('e'), Some('f'), Some('g')], [None]]
+        Array.copyOfRange(1, 3, [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]]) == [[Some('d'), Some('e'), Some('f'), Some('g')], [None]]*/
 
     @test
     def copyOfRange33(): Bool & Impure =
