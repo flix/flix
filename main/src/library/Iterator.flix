@@ -238,16 +238,15 @@ namespace Iterator {
         else
             let _ = f(next());
             foreachHelper(f, done, next)
-
     ///
     /// Returns an iterator with every element of the iterator `iter` that
     /// satisfies the predicate `f`.
-	///
-	/// Does *not* consume any elements from the iterator.
-	///
-	/// The original iterator `iter` should not be reused.
     ///
-	pub def lazyFilter(f: a -> Bool, iter: Iterator[a]): Iterator[a] & Impure =
+    /// Does *not* consume any elements from the iterator.
+    ///
+    /// The original iterator `iter` should not be reused.
+    ///
+    pub def lazyFilter(f: a -> Bool, iter: Iterator[a]): Iterator[a] & Impure =
         let Iterator(done, next) = iter;
 
         // Allocate a reference to hold the next element.
@@ -273,10 +272,10 @@ namespace Iterator {
         };
         Iterator(done1, next1)
 
-	///
-	/// Fast forwards the given iterator until the next element that satisfies
-	/// the given predicate `f`. Returns it (if it exists).
-	///
+    ///
+    /// Fast forwards the given iterator until the next element that satisfies
+    /// the given predicate `f`. Returns it (if it exists).
+    ///
     def forward(f: a -> Bool & ef, done: Done, next: Next[a]): Option[a] & Impure =
         if (done())
             None
