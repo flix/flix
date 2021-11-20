@@ -158,11 +158,11 @@ object Packager {
       throw new RuntimeException(s"The path '$p' does not appear to be a flix project.")
 
     // Configure a new Flix object.
-    val flix = new Flix()
+    implicit val flix: Flix = new Flix()
     flix.setOptions(o)
 
     // Add sources and packages.
-    addSourcesAndPackages(p, o, flix)
+    addSourcesAndPackages(p, o)
 
     flix.check() match {
       case Validation.Success(_) => ()
@@ -174,7 +174,7 @@ object Packager {
   /**
     * Builds (compiles) the source files for the given project path `p`.
     */
-  def build(p: Path, o: Options, flix: Flix = new Flix(), loadClasses: Boolean = true): Option[CompilationResult] = {
+  def build(p: Path, o: Options, loadClasses: Boolean = true)(implicit flix: Flix = new Flix()): Option[CompilationResult] = {
     // Check that the path is a project path.
     if (!isProjectPath(p))
       throw new RuntimeException(s"The path '$p' does not appear to be a flix project.")
@@ -187,7 +187,7 @@ object Packager {
     flix.setOptions(newOptions)
 
     // Add sources and packages.
-    addSourcesAndPackages(p, o, flix)
+    addSourcesAndPackages(p, o)
 
     flix.compile() match {
       case Validation.Success(r) => Some(r)
@@ -200,7 +200,7 @@ object Packager {
   /**
     * Adds all source files and packages to the given `flix` object.
     */
-  private def addSourcesAndPackages(p: Path, o: Options, flix: Flix): Unit = {
+  private def addSourcesAndPackages(p: Path, o: Options)(implicit flix: Flix): Unit = {
     // Add all source files.
     for (sourceFile <- getAllFiles(getSourceDirectory(p))) {
       if (sourceFile.getFileName.toString.endsWith(".flix")) {
@@ -324,8 +324,8 @@ object Packager {
     * Runs all tests in the flix package for the given project path `p`.
     */
   def test(p: Path, o: Options): Tester.OverallTestResult = {
-    val flix = new Flix().setFormatter(AnsiTerminalFormatter)
-    build(p, o, flix) match {
+    implicit val flix: Flix = new Flix().setFormatter(AnsiTerminalFormatter)
+    build(p, o) match {
       case None => Tester.OverallTestResult.NoTests
       case Some(compilationResult) =>
         val results = Tester.test(compilationResult)
