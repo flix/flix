@@ -40,12 +40,6 @@ object HoverProvider {
 
             case Expression.Sig(sym, _, loc) => hoverSig(sym, loc)
 
-            case Expression.FixpointConstraintSet(_, stf, tpe, loc) => hoverFixpoint(tpe, Type.Pure, stf, loc)
-
-            case Expression.FixpointMerge(_, _, stf, tpe, eff, loc) => hoverFixpoint(tpe, eff, stf, loc)
-
-            case Expression.FixpointSolve(_, stf, tpe, eff, loc) => hoverFixpoint(tpe, eff, stf, loc)
-
             case _ => hoverTypAndEff(exp.tpe, exp.eff, exp.loc)
           }
 
@@ -116,20 +110,6 @@ object HoverProvider {
     ("status" -> "success") ~ ("result" -> result)
   }
 
-  private def hoverFixpoint(tpe: Type, eff: Type, stf: Ast.Stratification, loc: SourceLocation)(implicit index: Index, root: Root): JObject = {
-    val markup =
-      s"""```flix
-         |${formatTypAndEff(tpe, eff)}
-         |```
-         |
-         |${formatStratification(stf)}
-         |""".stripMargin
-    val contents = MarkupContent(MarkupKind.Markdown, markup)
-    val range = Range.from(loc)
-    val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-    ("status" -> "success") ~ ("result" -> result)
-  }
-
   private def formatTypAndEff(tpe0: Type, eff0: Type): String = {
     val t = FormatType.formatType(tpe0)
     val e = eff0 match {
@@ -154,20 +134,6 @@ object HoverProvider {
 
   private def formatKind(tc: TypeConstructor): String = {
     FormatKind.formatKind(tc.kind)
-  }
-
-  private def formatStratification(stf: Ast.Stratification): String = {
-    val sb = new StringBuilder()
-    val max = stf.m.values.max
-    for (i <- 0 to max) {
-      sb.append("Stratum ").append(i).append(":").append("\r\n")
-      for ((sym, stratum) <- stf.m) {
-        if (i == stratum) {
-          sb.append("  ").append(sym).append("\r\n")
-        }
-      }
-    }
-    sb.toString()
   }
 
   /**
