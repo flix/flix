@@ -61,6 +61,18 @@ namespace Iterator {
         Iterator(done, next)
 
     ///
+    /// Return `Some(x)` if `iter` is not empty. Return `None` otherwise.
+    ///
+    /// Consumes the head element of `iter`.
+    ///
+    pub def next(iter: Iterator[a]): Option[a] & Impure =
+        let Iterator(done, next) = iter;
+        if (done())
+            None
+        else
+            Some(next())
+
+    ///
     /// Returns an iterator of all integers between `b` (inclusive) and `e` (exclusive).
     ///
     /// Returns an empty iterator if `b >= e`.
