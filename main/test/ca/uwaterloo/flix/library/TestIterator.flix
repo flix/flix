@@ -563,4 +563,45 @@ namespace TestIterator {
         Iterator.lazyZipWith((a, b) -> if (b) a + 1 else a, iterA, iterB) |>
             Iterator.toList == 1 :: 3 :: 4 :: 4 :: 5 :: 7 :: 8 :: 9 :: Nil
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // zipWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def zipWith01(): Bool & Impure =
+        let iterA = List.toIterator(Nil);
+        let iterB = List.toIterator(Nil);
+        Iterator.zipWith((a, b) -> if (b) a + 1 else a, iterA, iterB) == Nil
+
+    @test
+    def zipWith02(): Bool & Impure =
+        let iterA = List.toIterator(1 :: Nil);
+        let iterB = List.toIterator(Nil);
+        Iterator.zipWith((a, b) -> if (b) a + 1 else a, iterA, iterB) == Nil
+
+    @test
+    def zipWith03(): Bool & Impure =
+        let iterA = List.toIterator(Nil);
+        let iterB = List.toIterator(true :: Nil);
+        Iterator.zipWith((a, b) -> if (b) a + 1 else a, iterA, iterB) == Nil
+
+    @test
+    def zipWith04(): Bool & Impure =
+        let iterA = List.toIterator(1 :: Nil);
+        let iterB = List.toIterator(true :: Nil);
+        Iterator.zipWith((a, b) -> if (b) a + 1 else a, iterA, iterB) == 2 :: Nil
+
+    @test
+    def zipWith05(): Bool & Impure =
+        let iterA = List.toIterator(1 :: Nil);
+        let iterB = List.toIterator(false :: Nil);
+        Iterator.zipWith((a, b) -> if (b) a + 1 else a, iterA, iterB) == 1 :: Nil
+
+    @test
+    def zipWith06(): Bool & Impure =
+        let iterA = List.toIterator(1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil);
+        let iterB = List.toIterator(false :: true :: true :: false :: false :: true :: true :: true :: Nil);
+        Iterator.zipWith((a, b) -> if (b) a + 1 else a, iterA, iterB) == 1 :: 3 :: 4 :: 4 :: 5 :: 7 :: 8 :: 9 :: Nil
+
 }

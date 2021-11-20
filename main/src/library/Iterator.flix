@@ -361,4 +361,19 @@ namespace Iterator {
         };
         Iterator(done, next1)
 
+    ///
+    /// Returns an iterator where the element at index `i` is `f(a, b)` where
+    /// `a` is the element at index `i` in `xs` and `b` is the element at index `i` in `ys`.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    /// If either `xs` or `ys` becomes depleted, then no further elements are added to the resulting list.
+    ///
+    /// The original iterators `iterA` and `iterB` should not be reused.
+    ///
+    /// An iterator should never be zipped with itself.
+    ///
+    pub def zipWith(f: (a, b) -> c & ef, iterA: Iterator[a], iterB: Iterator[b]): List[c] & Impure =
+        zip(iterA, iterB) |> map(xy -> f(fst(xy), snd(xy)))
+
 }
