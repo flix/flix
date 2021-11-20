@@ -70,9 +70,17 @@ object RenameProvider {
 
   }
 
-  private def rename(newName: String, occurrences: List[SourceLocation])(implicit index: Index, root: Root): JObject = {
+  /**
+    * Constructs the JSON response for renaming all `occurences` to `newName`.
+    *
+    * NB: The occurrences must *NOT* overlap nor be repeated. Hence they are a set.
+    */
+  private def rename(newName: String, occurrences: Set[SourceLocation])(implicit index: Index, root: Root): JObject = {
+    // Convert the set of occurrences to a sorted list.
+    val targets = occurrences.toList.sorted
+
     // Group by URI.
-    val groupedByUri = occurrences.groupBy(_.source.name)
+    val groupedByUri = targets.groupBy(_.source.name)
 
     // Construct text edits.
     val textEdits = groupedByUri map {
@@ -89,37 +97,37 @@ object RenameProvider {
   private def renameDef(sym: Symbol.DefnSym, newName: String)(implicit index: Index, root: Root): JObject = {
     val defn = sym.loc
     val uses = index.usesOf(sym)
-    rename(newName, defn :: uses.toList)
+    rename(newName, uses + defn)
   }
 
   private def renameEnum(sym: Symbol.EnumSym, newName: String)(implicit index: Index, root: Root): JObject = {
     val defn = sym.loc
     val uses = index.usesOf(sym)
-    rename(newName, defn :: uses.toList)
+    rename(newName, uses + defn)
   }
 
   private def renameField(field: Name.Field, newName: String)(implicit index: Index, root: Root): JObject = {
     val defs = index.defsOf(field)
     val uses = index.usesOf(field)
-    rename(newName, (defs ++ uses).toList)
+    rename(newName, defs ++ uses)
   }
 
   private def renamePred(pred: Name.Pred, newName: String)(implicit index: Index, root: Root): JObject = {
     val defs = index.defsOf(pred)
     val uses = index.usesOf(pred)
-    rename(newName, (defs ++ uses).toList)
+    rename(newName, defs ++ uses)
   }
 
   private def renameTag(sym: Symbol.EnumSym, tag: Name.Tag, newName: String)(implicit index: Index, root: Root): JObject = {
     val defn = root.enums(sym).cases(tag).tag.loc
     val uses = index.usesOf(sym, tag)
-    rename(newName, defn :: uses.toList)
+    rename(newName, uses + defn)
   }
 
   private def renameVar(sym: Symbol.VarSym, newName: String)(implicit index: Index, root: Root): JObject = {
     val defn = sym.loc
     val uses = index.usesOf(sym)
-    rename(newName, defn :: uses.toList)
+    rename(newName, uses + defn)
   }
 
   /**
