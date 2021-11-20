@@ -71,13 +71,10 @@ object JvmOps {
     case MonoType.RecordExtend(_, _, _) => getRecordInterfaceType()
     case MonoType.Enum(_, _) => getEnumInterfaceType(tpe)
     case MonoType.Arrow(_, _) => getFunctionInterfaceType(tpe)
-    case MonoType.Relation(_) => JvmType.Reference(JvmName.PredSym)
     case MonoType.Native(clazz) =>
       // TODO: Ugly hack.
       val fqn = clazz.getName.replace('.', '/')
       JvmType.Reference(JvmName.mk(fqn))
-    case MonoType.SchemaEmpty() => JvmType.Reference(JvmName.Runtime.Fixpoint.ConstraintSystem)
-    case MonoType.SchemaExtend(_, _, _) => JvmType.Reference(JvmName.Runtime.Fixpoint.ConstraintSystem)
 
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
   }
@@ -278,7 +275,7 @@ object JvmOps {
   def getRecordInterfaceType()(implicit root: Root, flix: Flix): JvmType.Reference = {
 
     // The JVM name is of the form IRecord
-    val name = "IRecord"
+    val name = s"IRecord${JvmName.Delimiter}"
 
     // The type resides in the root package.
     JvmType.Reference(JvmName(RootPackage, name))
@@ -320,7 +317,7 @@ object JvmOps {
       val valueType = stringify(getErasedJvmType(value))
 
       // The JVM name is of the form RecordExtend
-      val name = "RecordExtend$" + valueType
+      val name = "RecordExtend" + JvmName.Delimiter + valueType
 
       // The type resides in the root package.
       JvmType.Reference(JvmName(RootPackage, name))

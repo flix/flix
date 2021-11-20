@@ -17,35 +17,47 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Finality._
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Instancing._
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility._
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker._
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import org.objectweb.asm.{ClassWriter, Opcodes}
 
 class ClassMaker(visitor: ClassWriter) {
-  private def makeField(fieldName: String, fieldType: JvmType, v: Visibility, f: Finality, i: Instancing): Unit = {
-    val modifier = ClassMaker.valueOf(v) + ClassMaker.valueOf(f) + ClassMaker.valueOf(i)
+  private def makeField(fieldName: String, fieldType: BackendType, v: Visibility, f: Finality, i: Instancing): Unit = {
+    val modifier = v.toInt + f.toInt + i.toInt
     val field = visitor.visitField(modifier, fieldName, fieldType.toDescriptor, null, null)
     field.visitEnd()
   }
 
-  def mkField(fieldName: String, fieldType: JvmType, v: Visibility, f: Finality, i: Instancing): Unit = {
+  def mkField(fieldName: String, fieldType: BackendType, v: Visibility, f: Finality, i: Instancing): Unit = {
     makeField(fieldName, fieldType, v, f, i)
   }
 
-  def mkConstructor(f: BytecodeInstructions.Instruction, descriptor: MethodDescriptor, v: Visibility): Unit = {
-    mkMethod(f, JvmName.ConstructorMethod, descriptor, v, Instanced)
+  def mkConstructor(ins: InstructionSet, d: MethodDescriptor, v: Visibility): Unit = {
+    mkMethod(ins, JvmName.ConstructorMethod, d, v, NonFinal, NonStatic)
   }
 
-  def mkStaticConstructor(f: BytecodeInstructions.Instruction): Unit =
-    mkMethod(f, JvmName.StaticConstructorMethod, MethodDescriptor.NothingToVoid, Default, Static)
+  /**
+    * Creates a instruction set calling `<init>` on `java.lang.Object` and returns.
+    */
+  def mkObjectConstructor(v: Visibility): Unit = {
+    val constructor = ALOAD(0) ~ invokeConstructor(JvmName.Object, MethodDescriptor.NothingToVoid) ~ RETURN()
+    mkConstructor(constructor, MethodDescriptor.NothingToVoid, v)
+  }
 
-  private def mkMethod(f: BytecodeInstructions.Instruction, methodName: String, descriptor: MethodDescriptor, v: Visibility, i: Instancing): Unit = {
-    val modifier = ClassMaker.valueOf(v) + ClassMaker.valueOf(i)
-    val methodVisitor = visitor.visitMethod(modifier, methodName, descriptor.toString, null, null)
-    methodVisitor.visitCode()
-    f(new BytecodeInstructions.F(methodVisitor))
-    methodVisitor.visitMaxs(999, 999)
-    methodVisitor.visitEnd()
+  def mkStaticConstructor(ins: InstructionSet): Unit =
+    mkMethod(ins, JvmName.StaticConstructorMethod, MethodDescriptor.NothingToVoid, Default, NonFinal, Static)
+
+  def mkMethod(ins: InstructionSet, methodName: String, d: MethodDescriptor, v: Visibility, f: Finality, i: Instancing): Unit = {
+    val m = v.toInt + f.toInt + i.toInt
+    val mv = visitor.visitMethod(m, methodName, d.toDescriptor, null, null)
+    mv.visitCode()
+    ins(new BytecodeInstructions.F(mv))
+    mv.visitMaxs(999, 999)
+    mv.visitEnd()
   }
 
   def closeClassMaker: Array[Byte] = {
@@ -56,60 +68,77 @@ class ClassMaker(visitor: ClassWriter) {
 
 object ClassMaker {
 
-  private def valueOf(v: Visibility): Int = v match {
-    case Private => Opcodes.ACC_PRIVATE
-    case Default => 0
-    case Public => Opcodes.ACC_PUBLIC
-  }
-
-  private def valueOf(f: Finality): Int = f match {
-    case Final => Opcodes.ACC_FINAL
-    case Implementable => 0
-  }
-
-  private def valueOf(i: Instancing): Int = i match {
-    case Static => Opcodes.ACC_STATIC
-    case Instanced => 0
-  }
-
   private def mkClassMaker(className: JvmName, v: Visibility, f: Finality, superClass: JvmName, interfaces: List[JvmName])(implicit flix: Flix): ClassMaker = {
-    val visitor = AsmOps.mkClassWriter()
-    val modifier = valueOf(f) + valueOf(v)
-    visitor.visit(AsmOps.JavaVersion, modifier, className.toInternalName, null, superClass.toInternalName, interfaces.map(_.toInternalName).toArray)
-    visitor.visitSource(className.toInternalName, null)
-    new ClassMaker(visitor)
+    val cw = AsmOps.mkClassWriter()
+    val m = f.toInt + v.toInt
+    cw.visit(AsmOps.JavaVersion, m, className.toInternalName, null, superClass.toInternalName, interfaces.map(_.toInternalName).toArray)
+    cw.visitSource(className.toInternalName, null)
+    new ClassMaker(cw)
   }
 
   def mkClass(className: JvmName, v: Visibility, f: Finality, superClass: JvmName = JvmName.Object, interfaces: List[JvmName] = Nil)(implicit flix: Flix): ClassMaker = {
     mkClassMaker(className, v, f, superClass, interfaces)
   }
 
-  sealed trait Visibility
+  sealed trait Visibility {
+    def toInt: Int
+  }
 
-  case object Private extends Visibility
+  object Visibility {
+    case object Private extends Visibility {
+      override val toInt: Int = Opcodes.ACC_PRIVATE
+    }
 
-  case object Default extends Visibility
+    case object Default extends Visibility {
+      override val toInt: Int = 0
+    }
 
-  case object Public extends Visibility
-
-
-  sealed trait Finality
-
-  case object Final extends Finality
-
-  case object Implementable extends Finality
-
-
-  sealed trait Instancing
-
-  case object Static extends Instancing
-
-  case object Instanced extends Instancing
+    case object Public extends Visibility {
+      override val toInt: Int = Opcodes.ACC_PUBLIC
+    }
+  }
 
 
-  sealed trait Abstraction
+  sealed trait Finality {
+    def toInt: Int
+  }
 
-  case object Abstract extends Abstraction
+  object Finality {
+    case object Final extends Finality {
+      override val toInt: Int = Opcodes.ACC_FINAL
+    }
 
-  case object Implemented extends Abstraction
+    case object NonFinal extends Finality {
+      override val toInt: Int = 0
+    }
+  }
+
+  sealed trait Instancing {
+    def toInt: Int
+  }
+
+  object Instancing {
+    case object Static extends Instancing {
+      override val toInt: Int = Opcodes.ACC_STATIC
+    }
+
+    case object NonStatic extends Instancing {
+      override val toInt: Int = 0
+    }
+  }
+
+
+  sealed trait Abstraction {
+    def toInt: Int
+  }
+
+  object Abstraction {
+    case object Abstract extends Abstraction {
+      override val toInt: Int = Opcodes.ACC_ABSTRACT
+    }
+
+    case object Implemented extends Abstraction {
+      override val toInt: Int = 0
+    }
+  }
 }

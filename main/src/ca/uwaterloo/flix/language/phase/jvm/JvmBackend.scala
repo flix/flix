@@ -39,6 +39,9 @@ object JvmBackend extends Phase[Root, CompilationResult] {
     //
     implicit val r: Root = root
 
+    // TODO: This should be limited to those actually used
+    val erasedRefTypes: List[BackendObjType.Ref] = BackendType.erasedTypes.map(BackendObjType.Ref)
+
     // Generate all classes.
     val allClasses = flix.subphase("CodeGen") {
 
@@ -120,7 +123,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       //
       // Generate empty record class.
       //
-      val recordEmptyClasses = GenRecordEmpty.gen()
+      val recordEmptyClasses = GenRecordEmptyClass.gen()
 
       //
       // Generate extended record classes for each (different) RecordExtend type in the program
@@ -130,7 +133,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       //
       // Generate references classes.
       //
-      val refClasses = GenRefClasses.gen()
+      val refClasses = GenRefClasses.gen(erasedRefTypes)
 
       //
       // Generate lazy classes.
@@ -208,13 +211,15 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       }
     }
 
+    val outputBytes = allClasses.map(_._2.bytecode.length).sum
+
     val loadClasses = flix.options.loadClassFiles
 
     if (!loadClasses) {
       //
       // Do not load any classes.
       //
-      new CompilationResult(root, None, Map.empty).toSuccess
+      new CompilationResult(root, None, Map.empty, outputBytes).toSuccess
     } else {
       //
       // Loads all the generated classes into the JVM and decorates the AST.
@@ -224,7 +229,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       //
       // Return the compilation result.
       //
-      new CompilationResult(root, getCompiledMain(root), getCompiledDefs(root)).toSuccess
+      new CompilationResult(root, getCompiledMain(root), getCompiledDefs(root), outputBytes).toSuccess
     }
   }
 

@@ -306,18 +306,6 @@ object PrettyPrinter {
 
         case Expression.Assign(exp1, exp2, tpe, loc) => visitExp(exp1) + " := " + visitExp(exp2)
 
-        case Expression.Existential(fparam, exp, loc) =>
-          "∃(" +
-            fmtParam(fparam, formatter) +
-            "). " +
-            visitExp(exp)
-
-        case Expression.Universal(fparam, exp, loc) =>
-          "∀(" +
-            fmtParam(fparam, formatter) +
-            "). " +
-            visitExp(exp)
-
         case Expression.Cast(exp, tpe, loc) =>
           visitExp(exp) +
             " as " +

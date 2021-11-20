@@ -368,7 +368,7 @@ object AsmOps {
     mv.visitInsn(SWAP)
     mv.visitLdcInsn(hole)
     mv.visitInsn(SWAP)
-    mv.visitMethodInsn(INVOKESPECIAL, className.toInternalName, "<init>", s"(${JvmName.String.toDescriptor}${JvmName.ReifiedSourceLocation.toDescriptor})${JvmType.Void.toDescriptor}", false)
+    mv.visitMethodInsn(INVOKESPECIAL, className.toInternalName, "<init>", s"(${BackendObjType.String.toDescriptor}${JvmName.ReifiedSourceLocation.toDescriptor})${JvmType.Void.toDescriptor}", false)
     mv.visitInsn(ATHROW)
   }
 
@@ -541,7 +541,7 @@ object AsmOps {
     mv.visitInsn(ACONST_NULL)
 
     // Construct the proxy object.
-    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.ProxyObject.toInternalName, "of", "(Ljava/lang/Object;Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;)Lflix/runtime/ProxyObject;", false)
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.ProxyObject.toInternalName, "of", s"(Ljava/lang/Object;Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;)L${JvmName.ProxyObject.toInternalName};", false)
   }
 
   /**
@@ -574,7 +574,7 @@ object AsmOps {
     mv.visitInsn(ARRAYLENGTH)
 
     // Allocate a new array of proxy objects of the same length as the original array and store it in a local variable.
-    mv.visitTypeInsn(ANEWARRAY, JvmName.Runtime.ProxyObject.toInternalName)
+    mv.visitTypeInsn(ANEWARRAY, JvmName.ProxyObject.toInternalName)
     mv.visitVarInsn(ASTORE, resultArrayIndex)
 
     // Initialize the loop counter to zero.

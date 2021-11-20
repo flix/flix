@@ -99,9 +99,6 @@ object GenFunctionClasses {
     // Invoke method of the class
     compileInvokeMethod(visitor, classType, defn, jvmResultType)
 
-    // Apply method of the class
-    compileApplyMethod(visitor, classType, defn, tresult)
-
     // Eval method of the class
     compileEvalMethod(visitor, defn, tresult)
 
@@ -179,55 +176,8 @@ object GenFunctionClasses {
   }
 
   /**
-    * Apply method for the given `defn` and `classType`.
-    */
-  private def compileApplyMethod(cw: ClassWriter, classType: JvmType.Reference, defn: Def, resultType: MonoType)(implicit root: Root, flix: Flix): Unit = {
-    // The JVM result type
-    val jvmResultType = JvmOps.getErasedJvmType(resultType)
-
-    // Method header
-    val mv = cw.visitMethod(ACC_PUBLIC + ACC_FINAL, "apply", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Object), null, null)
-
-    // Emit code to invoke setArgX for every argument in the array.
-    compileArguments(defn, classType, mv)
-
-    // TODO: Temporary instantiate a new context object and call the invoke method.
-    // TODO: Need to load it from thread local.
-
-    //
-    // Call this.apply(new Context)
-    //
-
-    // Put `this` on the stack.
-    mv.visitVarInsn(ALOAD, 0)
-
-    // Allocate a fresh context object.
-    mv.visitTypeInsn(NEW, JvmName.Context.toInternalName)
-    mv.visitInsn(DUP)
-    mv.visitMethodInsn(INVOKESPECIAL, JvmName.Context.toInternalName, "<init>", "()V", false)
-
-    // Store the context object in local variable 1.
-    mv.visitInsn(DUP)
-    mv.visitVarInsn(ASTORE, 1)
-
-    // Call the invoke method.
-    mv.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "eval", "(LContext;)Ljava/lang/Object;", false)
-
-    // Construct a proxy object.
-    resultType match {
-      case arrayType: MonoType.Array => AsmOps.newProxyArray(arrayType, mv)
-      case _ => AsmOps.newProxyObject(mv)
-    }
-
-    // Return the proxy object.
-    mv.visitInsn(ARETURN)
-
-    mv.visitMaxs(65535, 65535)
-    mv.visitEnd()
-  }
-
-  /**
-    * Emits code for a functional that fully evaluates the current function, including tail calls.
+    * Emits code for a functional that fully evaluates the current function, including
+    * tail calls, and returns the boxed value.
     */
   private def compileEvalMethod(cw: ClassWriter, defn: Def, resultType: MonoType)(implicit root: Root, flix: Flix): Unit = {
     // Method header

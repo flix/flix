@@ -226,56 +226,6 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate an illegal existential quantification expression.
-    *
-    * @param loc the location where the illegal expression occurs.
-    */
-  case class IllegalExistential(loc: SourceLocation) extends WeederError {
-    def summary: String = "The existential quantifier does not declare any formal parameters."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> The existential quantifier does not declare any formal parameters.
-         |
-         |${code(loc, "quantifier must declare at least one parameter.")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Add a formal parameter or remove the quantifier."
-    })
-
-  }
-
-  /**
-    * An error raised to indicate an illegal universal quantification expression.
-    *
-    * @param loc the location where the illegal expression occurs.
-    */
-  case class IllegalUniversal(loc: SourceLocation) extends WeederError {
-    def summary: String = "The universal quantifier does not declare any formal parameters."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> The universal quantifier does not declare any formal parameters.
-         |
-         |${code(loc, "quantifier must declare at least one parameter.")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Add a formal parameter or remove the quantifier."
-    })
-
-  }
-
-  /**
     * An error raised to indicate that a float is out of bounds.
     *
     * @param loc the location where the illegal float occurs.

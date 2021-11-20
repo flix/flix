@@ -91,7 +91,7 @@ object Main {
     )
 
     // Don't use progress bar if benchmarking.
-    if (cmdOpts.benchmark || cmdOpts.xbenchmarkPhases || cmdOpts.xbenchmarkThroughput) {
+    if (cmdOpts.benchmark || cmdOpts.xbenchmarkCodeSize || cmdOpts.xbenchmarkPhases || cmdOpts.xbenchmarkThroughput) {
       options = options.copy(progress = false)
     }
 
@@ -151,13 +151,19 @@ object Main {
         System.exit(1)
     }
 
-    // check if the -Xbenchmark-phases flag was passed.
+    // check if the --Xbenchmark-code-size flag was passed.
+    if (cmdOpts.xbenchmarkCodeSize) {
+      BenchmarkCompiler.benchmarkCodeSize(options)
+      System.exit(0)
+    }
+
+    // check if the --Xbenchmark-phases flag was passed.
     if (cmdOpts.xbenchmarkPhases) {
       BenchmarkCompiler.benchmarkPhases(options)
       System.exit(0)
     }
 
-    // check if the -Xbenchmark-throughput flag was passed.
+    // check if the --Xbenchmark-throughput flag was passed.
     if (cmdOpts.xbenchmarkThroughput) {
       BenchmarkCompiler.benchmarkThroughput(options)
       System.exit(0)
@@ -175,7 +181,15 @@ object Main {
     val flix = new Flix()
     flix.setOptions(options)
     for (file <- cmdOpts.files) {
-      flix.addPath(file.toPath)
+      val ext = file.getName.split('.').last
+      ext match {
+        case "flix" => flix.addPath(file.toPath)
+        case "fpkg" => flix.addPath(file.toPath)
+        case "jar" => flix.addJar(file.toPath)
+        case _ =>
+          Console.println(s"Unrecognized file extension: '$ext'.")
+          System.exit(1)
+      }
     }
 
     // evaluate main.
@@ -229,6 +243,7 @@ object Main {
                      lsp: Option[Int] = None,
                      test: Boolean = false,
                      threads: Option[Int] = None,
+                     xbenchmarkCodeSize: Boolean = false,
                      xbenchmarkPhases: Boolean = false,
                      xbenchmarkThroughput: Boolean = false,
                      xlib: LibLevel = LibLevel.All,
@@ -332,11 +347,11 @@ object Main {
       help("help").text("prints this usage information.")
 
       // Interactive.
-      opt[Unit]("interactive").action((f, c) => c.copy(interactive = true)).
+      opt[Unit]("interactive").action((_, c) => c.copy(interactive = true)).
         text("enables interactive mode.")
 
       // Json.
-      opt[Unit]("json").action((f, c) => c.copy(json = true)).
+      opt[Unit]("json").action((_, c) => c.copy(json = true)).
         text("enables json output.")
 
       // Listen.
@@ -362,6 +377,10 @@ object Main {
       // Experimental options:
       note("")
       note("The following options are experimental:")
+
+      // xbenchmark-code-size
+      opt[Unit]("Xbenchmark-code-size").action((_, c) => c.copy(xbenchmarkCodeSize = true)).
+        text("[experimental] benchmarks the size of the generated JVM files.")
 
       // Xbenchmark-phases
       opt[Unit]("Xbenchmark-phases").action((_, c) => c.copy(xbenchmarkPhases = true)).
@@ -403,7 +422,7 @@ object Main {
       arg[File]("<file>...").action((x, c) => c.copy(files = c.files :+ x))
         .optional()
         .unbounded()
-        .text("input Flix source code files.")
+        .text("input Flix source code files, Flix packages, and Java archives.")
 
     }
 

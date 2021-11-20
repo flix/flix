@@ -228,14 +228,6 @@ object Optimizer extends Phase[Root, Root] {
         val e2 = visitExp(exp2, env0)
         Expression.Assign(e1, e2, tpe, loc)
 
-      case Expression.Existential(fparam, exp, loc) =>
-        val e = visitExp(exp, env0)
-        Expression.Existential(fparam, e, loc)
-
-      case Expression.Universal(fparam, exp, loc) =>
-        val e = visitExp(exp, env0)
-        Expression.Universal(fparam, e, loc)
-
       case Expression.Cast(exp, tpe, loc) =>
         val e = visitExp(exp, env0)
         Expression.Cast(e, tpe, loc)

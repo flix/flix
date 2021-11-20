@@ -411,6 +411,12 @@ namespace Set {
         foldLeft((acc, x) -> x :: acc, Nil, xs)
 
     ///
+    /// Returns the set `s` as a chain.
+    ///
+    pub def toChain(s: Set[a]): Chain[a] =
+        foldLeft((ac, x) -> Chain.snoc(ac, x), Chain.empty(), s)
+
+    ///
     /// Returns the association set `xs` as a map.
     ///
     /// If `xs` contains multiple mappings with the same key, `toMap` does not
@@ -423,10 +429,8 @@ namespace Set {
     ///
     /// Applies `f` to every element of `xs`.
     ///
-    /// The function `f` must be impure.
-    ///
     @Time(size(f) * size(xs)) @Space(space(f) * Int32.log2(size(xs)))
-    pub def foreach(f: a ~> Unit, xs: Set[a]): Unit & Impure =
+    pub def foreach(f: a -> Unit & ef, xs: Set[a]): Unit & ef =
         let Set(es) = xs;
         RedBlackTree.foreach((x, _) -> f(x), es)
 
@@ -455,33 +459,15 @@ namespace Set {
     ///
     /// `next` should return `None` to signal the end of building the set.
     ///
-    pub def unfoldWithIter(next: Unit ~> Option[a]): Set[a] & Impure with Order[a] = unfoldWithIterHelper(next, empty())
+    pub def unfoldWithIter(next: Unit -> Option[a] & ef): Set[a] & ef with Order[a] = unfoldWithIterHelper(next, empty())
 
     ///
     /// Helper function for `unfoldWithIter`.
     ///
-    def unfoldWithIterHelper(next: Unit ~> Option[a], ac: Set[a]): Set[a] & Impure with Order[a] = match next() {
+    def unfoldWithIterHelper(next: Unit -> Option[a] & ef, ac: Set[a]): Set[a] & ef with Order[a] = match next() {
         case None => ac
         case Some(a) => unfoldWithIterHelper(next, insert(a, ac))
     }
-
-    ///
-    /// Extracts a range of elements from the set `xs`.
-    ///
-    /// That is, the result is a list of all elements `x` where `p(x)` returns `EqualTo`.
-    ///
-    pub def query(p: a -> Comparison & ef, xs: Set[a]): List[a] & ef =
-        let Set(es) = xs;
-        RedBlackTree.query(p, (k, _) -> k, es)
-
-    ///
-    /// Applies `f` to all elements from the set `xs` where `p(x)` returns `EqualTo`.
-    ///
-    /// The function `f` must be impure.
-    ///
-    pub def queryWith(p: a -> Comparison & ef, f: a ~> Unit, xs: Set[a]): Unit & Impure =
-        let Set(es) = xs;
-        RedBlackTree.queryWith(p, (k, _) -> f(k), es)
 
     ///
     /// Helper function for `range`.

@@ -37,6 +37,7 @@ import org.json4s.native.JsonMethods.parse
 import java.io.ByteArrayInputStream
 import java.net.InetSocketAddress
 import java.nio.charset.Charset
+import java.nio.file.Path
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.zip.ZipInputStream
@@ -86,6 +87,11 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     * A map from package URIs to source code.
     */
   val packages: mutable.Map[String, List[String]] = mutable.Map.empty
+
+  /**
+    * A set of JAR URIs.
+    */
+  val jars: mutable.Set[String] = mutable.Set.empty
 
   /**
     * The current AST root. The root is null until the source code is compiled.
@@ -166,6 +172,8 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       case JString("api/remUri") => Request.parseRemUri(json)
       case JString("api/addPkg") => Request.parseAddPkg(json)
       case JString("api/remPkg") => Request.parseRemPkg(json)
+      case JString("api/addJar") => Request.parseAddJar(json)
+      case JString("api/remJar") => Request.parseRemJar(json)
       case JString("api/version") => Request.parseVersion(json)
       case JString("api/shutdown") => Request.parseShutdown(json)
 
@@ -223,6 +231,14 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
     case Request.RemPkg(id, uri) =>
       packages -= uri
+      ("id" -> id) ~ ("status" -> "success")
+
+    case Request.AddJar(id, uri) =>
+      jars += uri
+      ("id" -> id) ~ ("status" -> "success")
+
+    case Request.RemJar(id, uri) =>
+      jars -= uri
       ("id" -> id) ~ ("status" -> "success")
 
     case Request.Version(id) => processVersion(id)
@@ -286,6 +302,11 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       }
     }
 
+    // Add JARs.
+    for (uri <- jars) {
+      flix.addJar(uri)
+    }
+
     // Measure elapsed time.
     val t = System.nanoTime()
     try {
@@ -344,7 +365,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
       val main = Symbol.Main
       root.defs.get(main) match {
-        case Some(defn) if matchesUri(uri, defn.spec.loc) =>
+        case Some(defn) if matchesUri(uri, defn.sym.loc) =>
           val runMain = Command("Run", "flix.runMain", Nil)
           val runMainWithArgs = Command("Run with args...", "flix.runMainWithArgs", Nil)
           val runMainNewTerminal = Command("Run (in new terminal)", "flix.runMainNewTerminal", Nil)

@@ -216,9 +216,13 @@ object Packager {
     }
 
     // Add all library packages.
-    for (pkgFile <- getAllFiles(getLibraryDirectory(p))) {
-      if (pkgFile.getFileName.toString.endsWith(".fpkg")) {
-        flix.addPath(pkgFile)
+    for (file <- getAllFiles(getLibraryDirectory(p))) {
+      if (file.getFileName.toString.endsWith(".fpkg")) {
+        // Case 1: It's a Flix package.
+        flix.addPath(file)
+      } else if (file.getFileName.toString.endsWith(".jar")) {
+        // Case 2: It's a JAR.
+        flix.addJar(file)
       }
     }
   }

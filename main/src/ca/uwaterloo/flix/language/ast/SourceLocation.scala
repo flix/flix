@@ -66,6 +66,11 @@ case class SourceLocation(input: Option[ParserInput], source: Source, locationKi
   def asSynthetic: SourceLocation = copy(locationKind = SourceKind.Synthetic)
 
   /**
+    * Returns `this` source location but as a real kind.
+    */
+  def asReal: SourceLocation = copy(locationKind = SourceKind.Real)
+
+  /**
     * Returns the smallest (i.e. the first that appears in the source code) of `this` and `that`.
     */
   def min(that: SourceLocation): SourceLocation = SourceLocation.Order.min(this, that)
