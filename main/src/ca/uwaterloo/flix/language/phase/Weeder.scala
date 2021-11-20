@@ -365,9 +365,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val loc = mkSL(sp1, sp2)
       WeededAst.Expression.VarOrDefOrSig(ident, loc).toSuccess
 
-    case ParsedAst.Expression.QName(sp1, qname, sp2) =>
-      val loc = mkSL(sp1, sp2)
-      WeededAst.Expression.DefOrSig(qname, loc).toSuccess
+    case ParsedAst.Expression.QName(_, qname, _) =>
+      // NB: We only use the source location of the identifier itself.
+      WeededAst.Expression.DefOrSig(qname, qname.ident.loc).toSuccess
 
     case ParsedAst.Expression.Hole(sp1, name, sp2) =>
       val loc = mkSL(sp1, sp2)
@@ -1747,7 +1747,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         o match {
           case None =>
             val loc = mkSL(sp1, sp2)
-            val lit = WeededAst.Pattern.Unit(loc)
+            val lit = WeededAst.Pattern.Unit(loc.asSynthetic)
             WeededAst.Pattern.Tag(enum, Name.mkTag(tag), lit, loc).toSuccess
           case Some(pat) => visit(pat) map {
             case p => WeededAst.Pattern.Tag(enum, Name.mkTag(tag), p, mkSL(sp1, sp2))
@@ -1755,13 +1755,15 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         }
 
       case ParsedAst.Pattern.Tuple(sp1, pats, sp2) =>
+        val loc = mkSL(sp1, sp2)
+
         /*
          * Rewrites empty tuples to Unit and eliminate single-element tuples.
          */
         traverse(pats)(visit) map {
-          case Nil => WeededAst.Pattern.Unit(mkSL(sp1, sp2))
+          case Nil => WeededAst.Pattern.Unit(loc)
           case x :: Nil => x
-          case xs => WeededAst.Pattern.Tuple(xs, mkSL(sp1, sp2))
+          case xs => WeededAst.Pattern.Tuple(xs, loc)
         }
 
       case ParsedAst.Pattern.Array(sp1, pats, sp2) =>
@@ -1801,7 +1803,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
          */
         val loc = mkSL(sp1, sp2)
         val tag = Name.Tag("Nil", loc)
-        val pat = WeededAst.Pattern.Unit(loc)
+        val pat = WeededAst.Pattern.Unit(loc.asSynthetic)
         WeededAst.Pattern.Tag(None, tag, pat, loc).toSuccess
 
       case ParsedAst.Pattern.FCons(pat1, sp1, sp2, pat2) =>

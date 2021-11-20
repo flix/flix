@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.lsp._
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, TypeConstraint}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{SourceKind, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
@@ -182,8 +182,9 @@ object SemanticTokensProvider {
     val st1 = Iterator(t)
     val st2 = visitFormalParams(defn0.spec.fparams)
     val st3 = visitType(defn0.spec.retTpe)
-    val st4 = visitExp(defn0.impl.exp)
-    st1 ++ st2 ++ st3 ++ st4
+    val st4 = defn0.spec.declaredScheme.constraints.flatMap(visitTypeConstraint)
+    val st5 = visitExp(defn0.impl.exp)
+    st1 ++ st2 ++ st3 ++ st4 ++ st5
   }
 
   /**
@@ -583,7 +584,11 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given type constraint `tc0`.
     */
   private def visitTypeConstraint(tc0: TypeConstraint): Iterator[SemanticToken] = tc0 match {
-    case TypeConstraint(_, arg, _) => visitType(arg)
+    case TypeConstraint(sym, arg, loc) =>
+      // TODO: We need a source location, not for the entire constraint, just for the class name.
+      val o = SemanticTokenType.Class
+      val t = SemanticToken(o, Nil, loc)
+      Iterator(t) ++ visitType(arg)
   }
 
   /**
