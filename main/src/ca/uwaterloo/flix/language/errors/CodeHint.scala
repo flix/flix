@@ -35,7 +35,7 @@ object CodeHint {
     * @param loc the location associated with the code hint.
     */
   case class LazyEvaluation(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
-    def summary: String = s"Purity polymorphic: Lazy evaluation enabled ✔"
+    def summary: String = s"Lazy: The function uses lazy evaluation (due to purity polymorphism)."
 
     override def severity: Severity = Severity.Hint
 
@@ -51,7 +51,7 @@ object CodeHint {
     * @param loc the location associated with the code hint.
     */
   case class ParallelEvaluation(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
-    def summary: String = s"Purity polymorphic: Parallel evaluation enabled ✔"
+    def summary: String = s"Parallel: The function uses parallel evaluation (due to purity polymorphism)."
 
     override def severity: Severity = Severity.Hint
 
@@ -67,7 +67,7 @@ object CodeHint {
     * @param loc the location associated with the code hint.
     */
   case class SuggestPurityForLazyEvaluation(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
-    def summary: String = "Use a pure function to enable lazy evaluation."
+    def summary: String = "Eager: Use a pure function to enable lazy evaluation (see purity polymorphism)."
 
     override def severity: Severity = Severity.Hint
 
@@ -83,7 +83,7 @@ object CodeHint {
     * @param loc the location associated with the code hint.
     */
   case class SuggestPurityForParallelEvaluation(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
-    def summary: String = "Use a pure function to enable parallel evaluation."
+    def summary: String = "Sequential: Use a pure function to enable parallel evaluation (see purity polymorphism)."
 
     override def severity: Severity = Severity.Hint
 
