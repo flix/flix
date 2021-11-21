@@ -17,14 +17,13 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
-import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Line, NewLine}
-import ca.uwaterloo.flix.util.vt.VirtualTerminal
+import ca.uwaterloo.flix.util.Formatter
 
 /**
   * A common super-type for code hints.
   */
 trait CodeHint extends CompilationMessage {
-  def kind: String = "Code Hint"
+  val kind: String = "Code Hint"
 }
 
 object CodeHint {
@@ -40,13 +39,19 @@ object CodeHint {
 
     override def severity: Severity = Severity.Hint
 
-    override def message: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Use of impure function prevents lazy evaluation." << NewLine
-      vt << NewLine
-      vt << Code(loc, "use of impure function.") << NewLine
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Use of impure function prevents lazy evaluation.
+         |
+         |${code(loc, "use of impure function.")}
+         |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -60,13 +65,19 @@ object CodeHint {
 
     override def severity: Severity = Severity.Hint
 
-    override def message: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Use of impure function prevents parallel evaluation." << NewLine
-      vt << NewLine
-      vt << Code(loc, "use of impure function.") << NewLine
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Use of impure function prevents parallel evaluation.
+         |
+         |${code(loc, "use of impure function.")}
+         |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -79,13 +90,19 @@ object CodeHint {
 
     override def severity: Severity = Severity.Info
 
-    override def message: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Expression has a non-trivial effect." << NewLine
-      vt << NewLine
-      vt << Code(loc, "non-trivial effect.") << NewLine
-    }
-  }
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Expression has a non-trivial effect.
+         |
+         |${code(loc, "non-trivial effect.")}
+         |""".stripMargin
 
+    }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    def explain(formatter: Formatter): Option[String] = None
+  }
 }
