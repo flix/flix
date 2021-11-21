@@ -34,9 +34,7 @@ case class ParseError(msg: String, loc: SourceLocation) extends CompilationMessa
   def message(formatter: Formatter): String = {
     import formatter._
     s"""${line(kind, source.format)}
-       |>> Parse Error:
-       |
-       |${red(msg)}
+       |>> Parse Error: ${red(msg)}
        |""".stripMargin
   }
 
