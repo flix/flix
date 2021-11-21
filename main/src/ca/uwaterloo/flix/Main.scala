@@ -21,7 +21,6 @@ import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools._
 import ca.uwaterloo.flix.util._
-import ca.uwaterloo.flix.util.vt._
 
 import java.io.{File, PrintWriter}
 import java.net.BindException
@@ -73,9 +72,6 @@ object Main {
       }
       System.exit(0)
     }
-
-    // the default color context.
-    implicit val terminal: TerminalContext = TerminalContext.AnsiTerminal
 
     // construct flix options.
     var options = Options.Default.copy(
@@ -222,10 +218,10 @@ object Main {
 
         if (cmdOpts.test) {
           val results = Tester.test(compilationResult)
-          Console.println(results.output.fmt)
+          Console.println(results.output(flix.getFormatter))
         }
       case Validation.Failure(errors) =>
-        errors.sortBy(_.source.name).foreach(e => println(e.message.fmt))
+        errors.sortBy(_.source.name).foreach(e => println(e.message(flix.getFormatter)))
         println()
         println(s"Compilation failed with ${errors.length} error(s).")
         System.exit(1)

@@ -17,9 +17,8 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation}
-import ca.uwaterloo.flix.util.vt.VirtualString._
-import ca.uwaterloo.flix.util.vt.VirtualTerminal
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation}
+import ca.uwaterloo.flix.util.Formatter
 
 /**
   * A common super-type for naming errors.
@@ -40,19 +39,26 @@ object NameError {
     */
   case class AmbiguousVarOrUse(name: String, loc: SourceLocation, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     def summary: String = s"Ambiguous name. The name may refer to both a variable and a use."
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Ambiguous name '" << Red(name) << "'. The name may refer to both a variable and a use." << NewLine
-      vt << NewLine
-      vt << Code(loc, "ambiguous name.") << NewLine
-      vt << NewLine
-      vt << "The relevant declarations are:" << NewLine
-      vt << NewLine
-      vt << Code(loc1, "the var was declared here.") << NewLine
-      vt << NewLine
-      vt << Code(loc2, "the use was declared here.") << NewLine
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Ambiguous name '${red(name)}'. The name may refer to both a variable and a use.
+         |
+         |${code(loc, "ambiguous name.")}
+         |
+         |The relevant declarations are:
+         |
+         |${code(loc1, "the 'var' was declared here.")}
+         |
+         |${code(loc2, "the 'use' was declared here.")}
+         |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -64,21 +70,24 @@ object NameError {
     */
   case class DuplicateDefOrSig(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     def summary: String = s"Duplicate definition."
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Duplicate definition '" << Red(name) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc1, "the first occurrence was here.") << NewLine
-      vt << NewLine
-      vt << Code(loc2, "the second occurrence was here.") << NewLine
-      vt << NewLine
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Duplicate definition '${red(name)}'.
+         |
+         |${code(loc1, "the first occurrence was here.")}
+         |
+         |${code(loc2, "the second occurrence was here.")}
+         |""".stripMargin
     }
+
     def loc: SourceLocation = loc1
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << " Remove or rename one of the occurrences." << NewLine
-    }
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Remove or rename one of the occurrences."
+    })
   }
 
   /**
@@ -90,16 +99,24 @@ object NameError {
     */
   case class DuplicateUseDefOrSig(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     def summary: String = s"Duplicate use."
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Duplicate use of '" << Red(name) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc1, "the first use was here.") << NewLine
-      vt << NewLine
-      vt << Code(loc2, "the second use was here.") << NewLine
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Duplicate use of '${red(name)}'.
+         |
+         |${code(loc1, "the first use was here.")}
+         |
+         |${code(loc2, "the second use was here.")}
+         |""".stripMargin
     }
+
     def loc: SourceLocation = loc1
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -111,16 +128,24 @@ object NameError {
     */
   case class DuplicateUseTypeOrClass(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     def summary: String = s"Duplicate use."
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Duplicate use of the type or class '" << Red(name) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc1, "the first use was here.") << NewLine
-      vt << NewLine
-      vt << Code(loc2, "the second use was here.") << NewLine
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Duplicate use of the type or class '${red(name)}'.
+         |
+         |${code(loc1, "the first use was here.")}
+         |
+         |${code(loc2, "the second use was here.")}
+         |""".stripMargin
     }
+
     def loc: SourceLocation = loc1
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -132,16 +157,24 @@ object NameError {
     */
   case class DuplicateUseTag(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     def summary: String = s"Duplicate use."
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Duplicate use of the tag '" << Red(name) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc1, "the first use was here.") << NewLine
-      vt << NewLine
-      vt << Code(loc2, "the second use was here.") << NewLine
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Duplicate use of the tag '${red(name)}'.
+         |
+         |${code(loc1, "the first use was here.")}
+         |
+         |${code(loc2, "the second use was here.")}
+         |""".stripMargin
     }
+
     def loc: SourceLocation = loc1
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -154,21 +187,24 @@ object NameError {
   case class DuplicateTypeOrClass(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     def summary: String = s"Duplicate type or class declaration."
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Duplicate type or class declaration '" << Red(name) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc1, "the first occurrence was here.") << NewLine
-      vt << NewLine
-      vt << Code(loc2, "the second occurrence was here.") << NewLine
-      vt << NewLine
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Duplicate type or class declaration '${red(name)}'.
+         |
+         |${code(loc1, "the first occurrence was here.")}
+         |
+         |${code(loc2, "the second occurrence was here.")}
+         |""".stripMargin
     }
+
     def loc: SourceLocation = loc1
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << " Remove or rename one of the occurrences." << NewLine
-    }
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Remove or rename one of the occurrences."
+    })
+
   }
 
   /**
@@ -179,18 +215,21 @@ object NameError {
     */
   case class SuspiciousTypeVarName(name: String, loc: SourceLocation) extends NameError {
     def summary: String = s"Suspicious type variable. Did you mean: '${name.capitalize}'?"
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Suspicious type variable '" << Red(name) << s"'. Did you mean: '" << Cyan(name.capitalize) << "'?" << NewLine
-      vt << NewLine
-      vt << Code(loc, "Suspicious type variable.") << NewLine
-      vt << NewLine
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Suspicious type variable '${red(name)}'. Did you mean: '${cyan(name.capitalize)}'?
+         |
+         |${code(loc, "Suspicious type variable.")}
+         |""".stripMargin
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << " Type variables are always lowercase. Named types are uppercase." << NewLine
-    }
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Type variables are always lowercase. Named types are uppercase."
+    })
+
   }
 
   /**
@@ -201,13 +240,20 @@ object NameError {
     */
   case class UndefinedNativeClass(name: String, loc: SourceLocation) extends NameError {
     def summary: String = s"Undefined class."
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Undefined class '" << Red(name) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "undefined class.") << NewLine
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Undefined class '${red(name)}'.
+         |
+         |${code(loc, "undefined class.")}
+         |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -218,13 +264,20 @@ object NameError {
     */
   case class UndefinedVar(name: String, loc: SourceLocation) extends NameError {
     def summary: String = s"Undefined variable."
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Undefined variable '" << Red(name) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "undefined variable.") << NewLine
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Undefined variable '${red(name)}'.
+         |
+         |${code(loc, "undefined variable.")}
+         |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -235,13 +288,22 @@ object NameError {
     */
   case class UndefinedTypeVar(name: String, loc: SourceLocation) extends NameError {
     def summary: String = s"Undefined type variable."
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Undefined type variable '" << Red(name) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "undefined type variable.") << NewLine
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Undefined type variable '${red(name)}'.
+         |
+         |${code(loc, "undefined type variable.")}
+         |""".stripMargin
+
+
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -253,18 +315,20 @@ object NameError {
   case class IllegalSignature(name: Name.Ident, loc: SourceLocation) extends NameError {
     def summary: String = "Illegal signature."
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Illegal signature '" << Red(name.name) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "Illegal signature.")
-      vt << NewLine
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Illegal signature '${red(name.name)}'.
+         |
+         |${code(loc, "Illegal signature.")}
+         |""".stripMargin
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << " Change the signature to include the class type parameter, or remove the signature."
-    }
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Change the signature to include the class type parameter, or remove the signature."
+    })
+
   }
 
 }

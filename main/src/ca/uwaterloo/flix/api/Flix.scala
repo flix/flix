@@ -22,8 +22,8 @@ import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
 import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult
+import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util._
-import ca.uwaterloo.flix.util.vt.TerminalContext
 
 import java.net.URI
 import java.nio.charset.Charset
@@ -251,6 +251,11 @@ class Flix {
   val genSym = new GenSym()
 
   /**
+    * The default output formatter.
+    */
+  private var formatter: Formatter = NoFormatter
+
+  /**
     * A class loader for loading external JARs.
     */
   val jarLoader = new ExternalJarLoader
@@ -353,6 +358,21 @@ class Flix {
   }
 
   /**
+    * Returns the current formatter instance.
+    */
+  def getFormatter: Formatter = this.formatter
+
+  /**
+    * Sets the output formatter used for this Flix instance.
+    */
+  def setFormatter(formatter: Formatter): Flix = {
+    if (formatter == null)
+      throw new IllegalArgumentException("'formatter' must be non-null.")
+    this.formatter = formatter
+    this
+  }
+
+  /**
     * Compiles the Flix program and returns a typed ast.
     */
   def check(): Validation[TypedAst.Root, CompilationMessage] = {
@@ -435,9 +455,7 @@ class Flix {
     * Compiles the given typed ast to an executable ast.
     */
   def compile(): Validation[CompilationResult, CompilationMessage] =
-    check() flatMap {
-      case typedAst => codeGen(typedAst)
-    }
+    check() flatMap codeGen
 
   /**
     * Enters the phase with the given name.
@@ -465,9 +483,8 @@ class Flix {
     if (options.debug) {
       // Print information about the phase.
       val d = new Duration(e)
-      val terminalCtx = TerminalContext.AnsiTerminal
-      val emojiPart = terminalCtx.emitBlue("✓ ")
-      val phasePart = terminalCtx.emitBlue(f"$phase%-40s")
+      val emojiPart = formatter.blue("✓ ")
+      val phasePart = formatter.blue(f"$phase%-40s")
       val timePart = f"${d.fmtMiliSeconds}%8s"
       Console.println(emojiPart + phasePart + timePart)
 
@@ -475,7 +492,7 @@ class Flix {
       for ((subphase, e) <- currentPhase.subphases.reverse) {
         val d = new Duration(e)
         val emojiPart = "    "
-        val phasePart = terminalCtx.emitMagenta(f"$subphase%-37s")
+        val phasePart = formatter.magenta(f"$subphase%-37s")
         val timePart = f"(${d.fmtMiliSeconds}%8s)"
         Console.println(emojiPart + phasePart + timePart)
       }

@@ -19,14 +19,13 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Type}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
-import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Line, NewLine, Red}
-import ca.uwaterloo.flix.util.vt.VirtualTerminal
+import ca.uwaterloo.flix.util.Formatter
 
 /**
   * A common super-type for reification errors.
   */
 sealed trait ReificationError extends CompilationMessage {
-  def kind: String = "Monomorph Error"
+  val kind: String = "Monomorph Error"
 }
 
 object ReificationError {
@@ -42,14 +41,19 @@ object ReificationError {
   case class IllegalReifiedBool(tpe: Type, loc: SourceLocation) extends ReificationError {
     def summary: String = "Type cannot be reified."
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Unable to reify the non-constant Bool '" << Red(FormatType.formatType(tpe)) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "unable to reify type.") << NewLine
-      vt
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Unable to reify the non-constant Bool '${red(FormatType.formatType(tpe))}'.
+         |
+         |${code(loc, "unable to reify type.")}
+         |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -61,14 +65,19 @@ object ReificationError {
   case class IllegalReifiedType(tpe: Type, loc: SourceLocation) extends ReificationError {
     def summary: String = "Type cannot be reified."
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Unable to reify the type '" << Red(FormatType.formatType(tpe)) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "unable to reify type.") << NewLine
-      vt
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Unable to reify the type '${red(FormatType.formatType(tpe))}'.
+         |
+         |${code(loc, "unable to reify type.")}
+         |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -80,14 +89,18 @@ object ReificationError {
   case class UnexpectedNonConstBool(tpe: Type, loc: SourceLocation) extends ReificationError {
     def summary: String = "Unexpected type."
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Unexpected Boolean type: '" << Red(FormatType.formatType(tpe)) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "unexpected Boolean type.") << NewLine
-      vt
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Unexpected Boolean type: '${red(FormatType.formatType(tpe))}'.
+         |
+         |${code(loc, "unexpected Boolean type.")}
+         |""".stripMargin
     }
-  }
 
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    def explain(formatter: Formatter): Option[String] = None
+  }
 }
