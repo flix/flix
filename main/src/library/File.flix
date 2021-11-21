@@ -297,6 +297,28 @@ namespace File {
                     Err(getMessage(ex))
             }
 
+    ///
+    /// Returns an array of all the bytes in the given file `f` and applying the options `opts`.
+    /// TODO: add a note on what exactly the opts do.
+    /// TODO: OBS I changed offset to Int32.
+    ///
+    pub def readBytesWith(opts: {offset :: Int32, count :: Int32}, f: String): Result[Array[Int8], String] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import new java.io.FileInputStream(##java.io.File) as newInputStream;
+            import java.io.FileInputStream.read(Array[Int8], Int32, Int32);
+
+            let javaFile = newFile(f);
+            let stream = newInputStream(javaFile);
+            let bytes = [];
+            read(stream, bytes, opts.offset, opts.count);
+            Ok(bytes)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
         ///
         /// Returns an iterator of the bytes in the given `file` in chunks of size `chunkSize`.
         ///
