@@ -23,8 +23,7 @@ import ca.uwaterloo.flix.language.debug._
 import ca.uwaterloo.flix.language.phase.extra.CodeHinter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
-import ca.uwaterloo.flix.util.vt.TerminalContext
-import ca.uwaterloo.flix.util.{InternalCompilerException, InternalRuntimeException, Options, Result, StreamOps}
+import ca.uwaterloo.flix.util._
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
@@ -73,11 +72,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     * The audience used for formatting.
     */
   implicit val DefaultAudience: Audience = Audience.External
-
-  /**
-    * The terminal context used for formatting.
-    */
-  implicit val DefaultTerminalContext: TerminalContext = TerminalContext.NoTerminal
 
   /**
     * The default compiler options.

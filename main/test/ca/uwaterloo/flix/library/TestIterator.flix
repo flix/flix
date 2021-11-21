@@ -17,6 +17,31 @@
 namespace TestIterator {
 
     /////////////////////////////////////////////////////////////////////////////
+    // next                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def next01(): Bool & Impure =
+        Iterator.empty() |> Iterator.next == None
+
+    @test
+    def next02(): Bool & Impure =
+        let iter = List.toIterator(1 :: Nil);
+        Iterator.next(iter) == Some(1)
+
+    @test
+    def next03(): Bool & Impure =
+        let iter = List.toIterator(1 :: Nil);
+        Iterator.next(iter);
+        Iterator.next(iter) == None
+
+    @test
+    def next04(): Bool & Impure =
+        let iter = List.toIterator(1 :: 2 :: Nil);
+        Iterator.next(iter);
+        Iterator.next(iter) == Some(2)
+
+    /////////////////////////////////////////////////////////////////////////////
     // range                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
