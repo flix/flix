@@ -29,47 +29,33 @@ trait CodeHint extends CompilationMessage {
 object CodeHint {
 
   /**
-    * A code hint that indicates that an operation is parallel.
+    * A code hint that indicates that a purity polymorphic operation is lazy.
     *
-    * @param sym the symbol of the operation that is parallel.
+    * @param sym the symbol of the operation that is lazy.
     * @param loc the location associated with the code hint.
     */
-  case class IsParallel(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
-    def summary: String = s"Is Lazy" // TODO
+  case class LazyEvaluation(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
+    def summary: String = s"Purity polymorphic: Lazy evaluation enabled ✔"
 
-    override def severity: Severity = Severity.Hint // TODO
+    override def severity: Severity = Severity.Hint
 
-    def message(formatter: Formatter): String = { // TODO
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> Is Lazy
-         |
-         |${code(loc, "lazy")}
-         |""".stripMargin
-    }
+    def message(formatter: Formatter): String = summary
 
     def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
-    * A code hint that indicates that an operation is lazy.
+    * A code hint that indicates that a purity polymorphic operation is parallel.
     *
-    * @param sym the symbol of the operation that is lazy.
+    * @param sym the symbol of the operation that is parallel.
     * @param loc the location associated with the code hint.
     */
-  case class IsLazy(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
-    def summary: String = s"Is Lazy" // TODO
+  case class ParallelEvaluation(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
+    def summary: String = s"Purity polymorphic: Parallel evaluation enabled ✔"
 
-    override def severity: Severity = Severity.Hint // TODO
+    override def severity: Severity = Severity.Hint
 
-    def message(formatter: Formatter): String = { // TODO
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> Is Lazy
-         |
-         |${code(loc, "lazy")}
-         |""".stripMargin
-    }
+    def message(formatter: Formatter): String = summary
 
     def explain(formatter: Formatter): Option[String] = None
   }
@@ -81,18 +67,11 @@ object CodeHint {
     * @param loc the location associated with the code hint.
     */
   case class SuggestPurityForLazyEvaluation(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
-    def summary: String = s"Use of impure function prevents lazy evaluation."
+    def summary: String = "Use a pure function to enable lazy evaluation."
 
     override def severity: Severity = Severity.Hint
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> Use of impure function prevents lazy evaluation.
-         |
-         |${code(loc, "use of impure function.")}
-         |""".stripMargin
-    }
+    def message(formatter: Formatter): String = summary
 
     def explain(formatter: Formatter): Option[String] = None
   }
@@ -104,18 +83,11 @@ object CodeHint {
     * @param loc the location associated with the code hint.
     */
   case class SuggestPurityForParallelEvaluation(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
-    override def summary: String = s"Use of impure function prevents parallel evaluation."
+    def summary: String = "Use a pure function to enable parallel evaluation."
 
     override def severity: Severity = Severity.Hint
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> Use of impure function prevents parallel evaluation.
-         |
-         |${code(loc, "use of impure function.")}
-         |""".stripMargin
-    }
+    def message(formatter: Formatter): String = summary
 
     def explain(formatter: Formatter): Option[String] = None
   }
@@ -126,20 +98,13 @@ object CodeHint {
     * @param loc the location of the expression.
     */
   case class NonTrivialEffect(loc: SourceLocation) extends CodeHint {
-    override def summary: String = s"Expression has a non-trivial effect."
+    def summary: String = s"Expression has a non-trivial effect."
 
     override def severity: Severity = Severity.Info
 
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.format)}
-         |>> Expression has a non-trivial effect.
-         |
-         |${code(loc, "non-trivial effect.")}
-         |""".stripMargin
-
-    }
+    def message(formatter: Formatter): String = summary
 
     def explain(formatter: Formatter): Option[String] = None
   }
+
 }

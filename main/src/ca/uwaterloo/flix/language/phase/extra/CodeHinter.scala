@@ -319,12 +319,12 @@ object CodeHinter {
   private def checkPurity(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation): List[CodeHint] = {
     if (LazyWhenPure.contains(sym)) {
       if (isPureFunction(tpe))
-        CodeHint.IsLazy(sym, loc) :: Nil
+        CodeHint.LazyEvaluation(sym, loc) :: Nil
       else
         CodeHint.SuggestPurityForLazyEvaluation(sym, loc) :: Nil
     } else if (ParallelWhenPure.contains(sym)) {
       if (isPureFunction(tpe))
-        CodeHint.IsParallel(sym, loc) :: Nil
+        CodeHint.ParallelEvaluation(sym, loc) :: Nil
       else
         CodeHint.SuggestPurityForParallelEvaluation(sym, loc) :: Nil
     } else {
