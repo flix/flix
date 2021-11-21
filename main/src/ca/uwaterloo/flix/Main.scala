@@ -179,7 +179,7 @@ object Main {
     }
 
     // configure Flix and add the paths.
-    val flix = new Flix()
+    implicit val flix: Flix = new Flix()
     flix.setOptions(options)
     for (file <- cmdOpts.files) {
       val ext = file.getName.split('.').last
