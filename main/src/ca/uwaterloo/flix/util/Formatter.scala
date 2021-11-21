@@ -4,9 +4,53 @@ import ca.uwaterloo.flix.language.ast.SourceLocation
 
 trait Formatter {
 
-  def line(left: String, right: String): String
+  def line(left: String, right: String): String =
+    this.blue(s"-- $left -------------------------------------------------- $right${System.lineSeparator()}")
 
-  def code(loc: SourceLocation, msg: String): String
+  def code(loc: SourceLocation, msg: String): String = {
+    val beginLine = loc.beginLine
+    val beginCol = loc.beginCol
+    val endLine = loc.endLine
+    val endCol = loc.endCol
+    val lineAt = loc.lineAt(beginLine)
+
+    def arrowUnderline: String = {
+      val sb = new StringBuilder()
+      val lineNo = beginLine.toString + " | "
+      sb.append(lineNo)
+        .append(lineAt(beginLine))
+        .append(System.lineSeparator())
+        .append(" " * (beginCol + lineNo.length - 1))
+        .append(red("^" * (endCol - beginCol)))
+        .append(System.lineSeparator())
+        .append(" " * (beginCol + lineNo.length - 1))
+        .append(msg)
+        .append(System.lineSeparator())
+        .toString()
+    }
+
+    def leftline: String = {
+      val sb = new StringBuilder()
+      for (lineNo <- beginLine to endLine) {
+        val currentLine = lineAt(lineNo)
+        sb.append(lineNo)
+          .append(" |")
+          .append(red(">"))
+          .append(" ")
+          .append(currentLine)
+          .append(System.lineSeparator())
+      }
+      sb.append(System.lineSeparator())
+        .append(msg)
+        .append(System.lineSeparator())
+        .toString()
+    }
+
+    if (beginLine == endLine)
+      arrowUnderline
+    else
+      leftline
+  }
 
   def black(s: String): String
 
@@ -26,25 +70,17 @@ trait Formatter {
 
   def bold(s: String): String
 
-  def underline(s: String): String
+  def underline(s: String): String = Console.UNDERLINED + s + Console.RESET
 
 }
 
 object Formatter {
 
   /**
-    * A formatter that does not apply any styling or formatting.
-    * Functions `line` and `code` append their parameters in the correct order
-    * but does nothing more than that.
+    * A formatter that does not apply any color styling.
     */
   object NoFormatter extends Formatter {
 
-    override def line(left: String, right: String): String =
-      s"-- $left -------------------------------------------------- $right${System.lineSeparator()}"
-
-    override def code(loc: SourceLocation, msg: String): String = loc.format + msg
-
-    // TODO: All of these must still format correctly, but just not with color!
     override def black(s: String): String = s
 
     override def blue(s: String): String = s
@@ -63,60 +99,12 @@ object Formatter {
 
     override def bold(s: String): String = s
 
-    override def underline(s: String): String = s
   }
 
   /**
     * A terminal context compatible with an ANSI terminal.
     */
   object AnsiTerminalFormatter extends Formatter {
-    override def line(left: String, right: String): String =
-      this.blue(s"-- $left -------------------------------------------------- $right${System.lineSeparator()}")
-
-    override def code(loc: SourceLocation, msg: String): String = {
-      val beginLine = loc.beginLine
-      val beginCol = loc.beginCol
-      val endLine = loc.endLine
-      val endCol = loc.endCol
-      val lineAt = loc.lineAt(beginLine)
-
-      def underline: String = {
-        val sb = new StringBuilder()
-        val lineNo = beginLine.toString + " | "
-        sb.append(lineNo)
-          .append(lineAt(beginLine))
-          .append(System.lineSeparator())
-          .append(" " * (beginCol + lineNo.length - 1))
-          .append(red("^" * (endCol - beginCol)))
-          .append(System.lineSeparator())
-          .append(" " * (beginCol + lineNo.length - 1))
-          .append(msg)
-          .append(System.lineSeparator())
-          .toString()
-      }
-
-      def leftline: String = {
-        val sb = new StringBuilder()
-        for (lineNo <- beginLine to endLine) {
-          val currentLine = lineAt(lineNo)
-          sb.append(lineNo)
-            .append(" |")
-            .append(red(">"))
-            .append(" ")
-            .append(currentLine)
-            .append(System.lineSeparator())
-        }
-        sb.append(System.lineSeparator())
-          .append(msg)
-          .append(System.lineSeparator())
-          .toString()
-      }
-
-      if (beginLine == endLine)
-        underline
-      else
-        leftline
-    }
 
     override def black(s: String): String = Console.BLACK + s + Console.RESET
 
@@ -136,7 +124,6 @@ object Formatter {
 
     override def bold(s: String): String = Console.BOLD + s + Console.RESET
 
-    override def underline(s: String): String = Console.UNDERLINED + s + Console.RESET
   }
 
   /**
