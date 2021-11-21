@@ -175,6 +175,7 @@ object Packager {
     * Builds (compiles) the source files for the given project path `p`.
     */
   def build(p: Path, o: Options, loadClasses: Boolean = true)(implicit flix: Flix = new Flix()): Option[CompilationResult] = {
+    flix.setFormatter(AnsiTerminalFormatter)
     // Check that the path is a project path.
     if (!isProjectPath(p))
       throw new RuntimeException(s"The path '$p' does not appear to be a flix project.")
