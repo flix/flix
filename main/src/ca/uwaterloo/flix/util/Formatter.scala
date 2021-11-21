@@ -18,7 +18,7 @@ trait Formatter {
       val sb = new StringBuilder()
       val lineNo = beginLine.toString + " | "
       sb.append(lineNo)
-        .append(lineAt(beginLine))
+        .append(lineAt)
         .append(System.lineSeparator())
         .append(" " * (beginCol + lineNo.length - 1))
         .append(red("^" * (endCol - beginCol)))
@@ -70,7 +70,7 @@ trait Formatter {
 
   def bold(s: String): String
 
-  def underline(s: String): String = Console.UNDERLINED + s + Console.RESET
+  def underline(s: String): String
 
 }
 
@@ -99,6 +99,7 @@ object Formatter {
 
     override def bold(s: String): String = s
 
+    override def underline(s: String): String = s
   }
 
   /**
@@ -124,6 +125,7 @@ object Formatter {
 
     override def bold(s: String): String = Console.BOLD + s + Console.RESET
 
+    override def underline(s: String): String = Console.UNDERLINED + s + Console.RESET
   }
 
   /**
