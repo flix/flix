@@ -159,7 +159,7 @@ object SimpleType {
     case Type.KindedVar(id, kind, loc, rigidity, text) => Var(id) // MATT ignoring name
     case _: Type.UnkindedVar => throw InternalCompilerException("") // MATT
     case _: Type.Ascribe => throw InternalCompilerException("") // MATT
-    case Type.Alias(sym, args, tpe, loc) => Apply(Name(sym.name), args.map(fromWellKindedType))
+    case Type.Alias(cst, args, tpe, loc) => Apply(Name(cst.sym.name), args.map(fromWellKindedType))
     case Type.Cst(tc, loc) => tc match {
       case TypeConstructor.Unit => Unit
       case TypeConstructor.Null => Null
