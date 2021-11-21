@@ -39,10 +39,12 @@ object Formatter {
     */
   object NoFormatter extends Formatter {
 
-    override def line(left: String, right: String): String = left + right
+    override def line(left: String, right: String): String =
+      s"-- $left -------------------------------------------------- $right${System.lineSeparator()}"
 
     override def code(loc: SourceLocation, msg: String): String = loc.format + msg
 
+    // TODO: All of these must still format correctly, but just not with color!
     override def black(s: String): String = s
 
     override def blue(s: String): String = s
