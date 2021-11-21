@@ -21,7 +21,6 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.debug._
 import ca.uwaterloo.flix.language.phase.extra.CodeHinter
-import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
 import ca.uwaterloo.flix.util._
@@ -289,8 +288,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
   private def processCheck(requestId: String)(implicit ws: WebSocket): JValue = {
     // Configure the Flix compiler.
     val flix = new Flix()
-    if (Formatter.hasColorSupport)
-      flix.setFormatter(AnsiTerminalFormatter)
 
     // Add sources.
     for ((uri, source) <- sources) {
