@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.lsp.LanguageServer
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools._
+import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
 import ca.uwaterloo.flix.util._
 
 import java.io.{File, PrintWriter}
@@ -191,6 +192,8 @@ object Main {
           System.exit(1)
       }
     }
+    if (Formatter.hasColorSupport)
+      flix.setFormatter(AnsiTerminalFormatter)
 
     // evaluate main.
     val timer = new Timer(flix.compile())
