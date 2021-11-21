@@ -100,6 +100,7 @@ object Formatter {
     override def bold(s: String): String = s
 
     override def underline(s: String): String = s
+
   }
 
   /**
@@ -126,6 +127,7 @@ object Formatter {
     override def bold(s: String): String = Console.BOLD + s + Console.RESET
 
     override def underline(s: String): String = Console.UNDERLINED + s + Console.RESET
+
   }
 
   /**
