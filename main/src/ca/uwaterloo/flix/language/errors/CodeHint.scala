@@ -35,7 +35,7 @@ object CodeHint {
     * @param loc the location associated with the code hint.
     */
   case class LazyEvaluation(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
-    def summary: String = s"Lazy: The function uses lazy evaluation (due to purity polymorphism)."
+    def summary: String = s"Lazy: The operation uses lazy evaluation (due to purity polymorphism)."
 
     override def severity: Severity = Severity.Hint
 
@@ -51,7 +51,7 @@ object CodeHint {
     * @param loc the location associated with the code hint.
     */
   case class ParallelEvaluation(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
-    def summary: String = s"Parallel: The function uses parallel evaluation (due to purity polymorphism)."
+    def summary: String = s"Parallel: The operation uses parallel evaluation (due to purity polymorphism)."
 
     override def severity: Severity = Severity.Hint
 
