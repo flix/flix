@@ -629,4 +629,59 @@ namespace TestIterator {
         let iterB = List.toIterator(false :: true :: true :: false :: false :: true :: true :: true :: Nil);
         Iterator.zipWith((a, b) -> if (b) a + 1 else a, iterA, iterB) == 1 :: 3 :: 4 :: 4 :: 5 :: 7 :: 8 :: 9 :: Nil
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldLeft                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldLeft01(): Bool & Impure =
+        let iter = List.toIterator(Nil);
+        Iterator.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, iter) == 100
+
+    @test
+    def foldLeft02(): Bool & Impure =
+        let iter = List.toIterator(1 :: Nil);
+        Iterator.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, iter) == 198
+
+    @test
+    def foldLeft03(): Bool & Impure =
+        let iter = List.toIterator(1 :: 2 :: Nil);
+        Iterator.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, iter) == 196
+
+    @test
+    def foldLeft04(): Bool & Impure =
+        let iter = List.toIterator(1 :: 2 :: 3 :: Nil);
+        Iterator.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, iter) == 386
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // reduceLeft                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def reduceLeft01(): Bool & Impure =
+        let iter = List.toIterator(Nil: List[Int]);
+        Iterator.reduceLeft((a, b) -> a - b, iter) == None
+
+    @test
+    def reduceLeft02(): Bool & Impure =
+        let iter = List.toIterator(1 :: Nil);
+        Iterator.reduceLeft((a, b) -> a - b, iter) == Some(1)
+
+    @test
+    def reduceLeft03(): Bool & Impure =
+        let iter = List.toIterator(1 :: 2 :: Nil);
+        Iterator.reduceLeft((a, b) -> a - b, iter) == Some(-1)
+
+    @test
+    def reduceLeft04(): Bool & Impure =
+        let iter = List.toIterator(1 :: 2 :: 3 :: Nil);
+        Iterator.reduceLeft((a, b) -> a - b, iter) == Some(-4)
+
+    @test
+    def reduceLeft05(): Bool & Impure =
+        let iter = List.toIterator(1 :: 2 :: 3 :: 4 :: Nil);
+        Iterator.reduceLeft((a, b) -> a - b, iter) == Some(-8)
+
 }
