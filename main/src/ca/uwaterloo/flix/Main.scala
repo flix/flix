@@ -91,24 +91,6 @@ object Main {
       xstrictmono = cmdOpts.xstrictmono
     )
 
-    // configure Flix and add the paths.
-    implicit val flix: Flix = new Flix()
-    flix.setOptions(options)
-    for (file <- cmdOpts.files) {
-      val ext = file.getName.split('.').last
-      ext match {
-        case "flix" => flix.addPath(file.toPath)
-        case "fpkg" => flix.addPath(file.toPath)
-        case "jar" => flix.addJar(file.toPath)
-        case _ =>
-          Console.println(s"Unrecognized file extension: '$ext'.")
-          System.exit(1)
-      }
-    }
-    if (Formatter.hasColorSupport)
-      flix.setFormatter(AnsiTerminalFormatter)
-
-
     // Don't use progress bar if benchmarking.
     if (cmdOpts.benchmark || cmdOpts.xbenchmarkCodeSize || cmdOpts.xbenchmarkPhases || cmdOpts.xbenchmarkThroughput) {
       options = options.copy(progress = false)
@@ -195,6 +177,23 @@ object Main {
       shell.loop()
       System.exit(0)
     }
+
+    // configure Flix and add the paths.
+    implicit val flix: Flix = new Flix()
+    flix.setOptions(options)
+    for (file <- cmdOpts.files) {
+      val ext = file.getName.split('.').last
+      ext match {
+        case "flix" => flix.addPath(file.toPath)
+        case "fpkg" => flix.addPath(file.toPath)
+        case "jar" => flix.addJar(file.toPath)
+        case _ =>
+          Console.println(s"Unrecognized file extension: '$ext'.")
+          System.exit(1)
+      }
+    }
+    if (Formatter.hasColorSupport)
+      flix.setFormatter(AnsiTerminalFormatter)
 
     // evaluate main.
     val timer = new Timer(flix.compile())
