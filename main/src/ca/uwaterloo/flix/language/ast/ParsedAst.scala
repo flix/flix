@@ -834,28 +834,6 @@ object ParsedAst {
     case class Assign(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Existentially Quantified Expression.
-      *
-      * @param sp1     the position of the first character in the expression.
-      * @param tparams the type parameters.
-      * @param fparams the existentially quantified variables.
-      * @param exp     the existentially quantified expression.
-      * @param sp2     the position of the last character in the expression.
-      */
-    case class Existential(sp1: SourcePosition, tparams: ParsedAst.TypeParams, fparams: Seq[ParsedAst.FormalParam], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * Universally Quantified Expression.
-      *
-      * @param sp1     the position of the first character in the expression.
-      * @param tparams the type parameters.
-      * @param fparams the universally quantified variables.
-      * @param exp     the universally quantified expression.
-      * @param sp2     the position of the last character in the expression.
-      */
-    case class Universal(sp1: SourcePosition, tparams: ParsedAst.TypeParams, fparams: Seq[ParsedAst.FormalParam], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
       * Ascribe Expression.
       *
       * @param exp the expression.
@@ -1334,15 +1312,6 @@ object ParsedAst {
     case class SchemaRow(sp1: SourcePosition, predicates: Seq[ParsedAst.PredicateType], rest: Option[Name.Ident], sp2: SourcePosition) extends ParsedAst.Type
 
     /**
-      * Unary Impure Arrow Type.
-      *
-      * @param tpe1 the argument type.
-      * @param tpe2 the result type.
-      * @param sp2  the position of the last character in the type.
-      */
-    case class UnaryImpureArrow(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
-
-    /**
       * Unary Polymorphic Arrow Type.
       *
       * @param tpe1 the argument type.
@@ -1351,16 +1320,6 @@ object ParsedAst {
       * @param sp2  the position of the last character in the type.
       */
     case class UnaryPolymorphicArrow(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, eff: Option[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Type
-
-    /**
-      * Impure Arrow Type.
-      *
-      * @param sp1     the position of the first character in the type.
-      * @param tparams the arguments types.
-      * @param tresult the result type.
-      * @param sp2     the position of the last character in the type.
-      */
-    case class ImpureArrow(sp1: SourcePosition, tparams: Seq[ParsedAst.Type], tresult: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * Effect Polymorphic Arrow Type.

@@ -453,14 +453,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         val e2 = visitExp(exp2, env0)
         Expression.Assign(e1, e2, subst0(tpe), eff, loc)
 
-      case Expression.Existential(fparam, exp, loc) =>
-        val (param, env1) = specializeFormalParam(fparam, subst0)
-        Expression.Existential(param, visitExp(exp, env0 ++ env1), loc)
-
-      case Expression.Universal(fparam, exp, loc) =>
-        val (param, env1) = specializeFormalParam(fparam, subst0)
-        Expression.Universal(param, visitExp(exp, env0 ++ env1), loc)
-
       case Expression.Ascribe(exp, tpe, eff, loc) =>
         val e = visitExp(exp, env0)
         Expression.Ascribe(e, subst0(tpe), eff, loc)

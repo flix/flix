@@ -234,12 +234,6 @@ object ClosureConv extends Phase[Root, Root] {
       val e2 = visitExp(exp2)
       Expression.Assign(e1, e2, tpe, loc)
 
-    case Expression.Existential(params, e, loc) =>
-      Expression.Existential(params, visitExp(e), loc)
-
-    case Expression.Universal(params, e, loc) =>
-      Expression.Universal(params, visitExp(e), loc)
-
     case Expression.Cast(exp, tpe, loc) =>
       val e = visitExp(exp)
       Expression.Cast(e, tpe, loc)
@@ -385,10 +379,6 @@ object ClosureConv extends Phase[Root, Root] {
     case Expression.Ref(exp, tpe, loc) => freeVars(exp)
     case Expression.Deref(exp, tpe, loc) => freeVars(exp)
     case Expression.Assign(exp1, exp2, tpe, loc) => freeVars(exp1) ++ freeVars(exp2)
-    case Expression.Existential(fparam, exp, loc) =>
-      freeVars(exp).filterNot { v => v._1 == fparam.sym }
-    case Expression.Universal(fparam, exp, loc) =>
-      freeVars(exp).filterNot { v => v._1 == fparam.sym }
 
     case Expression.Cast(exp, tpe, loc) => freeVars(exp)
 
@@ -613,16 +603,6 @@ object ClosureConv extends Phase[Root, Root] {
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         Expression.Assign(e1, e2, tpe, loc)
-
-      case Expression.Existential(fparam, exp, loc) =>
-        val fs = replace(fparam, subst)
-        val e = visitExp(exp)
-        Expression.Existential(fs, e, loc)
-
-      case Expression.Universal(fparam, exp, loc) =>
-        val fs = replace(fparam, subst)
-        val e = visitExp(exp)
-        Expression.Universal(fs, e, loc)
 
       case Expression.Cast(exp, tpe, loc) =>
         val e = visitExp(exp)

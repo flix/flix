@@ -19,7 +19,6 @@ import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util._
-import ca.uwaterloo.flix.util.vt.TerminalContext
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
@@ -180,7 +179,8 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
   private def eval(input: String, opts: Options)(implicit ws: WebSocket): Result[(String, Long, Long), String] = {
     try {
       // Compile the program.
-      mkFlix(input, opts).compile() match {
+      val flix = mkFlix(input, opts)
+      flix.compile() match {
         case Success(compilationResult) =>
           // Compilation was successful.
 
@@ -200,7 +200,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
 
         case Failure(errors) =>
           // Compilation failed. Retrieve and format the first error message.
-          Err(errors.head.message.fmt(TerminalContext.NoTerminal))
+          Err(errors.head.message(flix.getFormatter))
       }
     } catch {
       case ex: RuntimeException => Err(ex.getMessage)

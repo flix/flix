@@ -509,14 +509,7 @@ object GenExpression {
       // We get the JvmType of the class for the RecordEmpty
       val classType = JvmOps.getRecordEmptyClassType()
       // Instantiating a new object of tuple
-      visitor.visitTypeInsn(NEW, classType.name.toInternalName)
-      // Duplicating the class
-      visitor.visitInsn(DUP)
-
-      // Descriptor of constructor
-      val constructorDescriptor = AsmOps.getMethodDescriptor(List(), JvmType.Void)
-      // Invoking the constructor
-      visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
+      visitor.visitFieldInsn(GETSTATIC, classType.name.toInternalName, GenRecordEmptyClass.InstanceFieldName, classType.toDescriptor)
 
     case Expression.RecordSelect(exp, field, tpe, loc) =>
       // Adding source line number for debugging
