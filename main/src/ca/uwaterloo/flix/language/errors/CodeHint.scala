@@ -29,13 +29,59 @@ trait CodeHint extends CompilationMessage {
 object CodeHint {
 
   /**
+    * A code hint that indicates that an operation is parallel.
+    *
+    * @param sym the symbol of the operation that is parallel.
+    * @param loc the location associated with the code hint.
+    */
+  case class IsParallel(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
+    def summary: String = s"Is Lazy" // TODO
+
+    override def severity: Severity = Severity.Hint // TODO
+
+    def message(formatter: Formatter): String = { // TODO
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Is Lazy
+         |
+         |${code(loc, "lazy")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * A code hint that indicates that an operation is lazy.
+    *
+    * @param sym the symbol of the operation that is lazy.
+    * @param loc the location associated with the code hint.
+    */
+  case class IsLazy(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
+    def summary: String = s"Is Lazy" // TODO
+
+    override def severity: Severity = Severity.Hint // TODO
+
+    def message(formatter: Formatter): String = { // TODO
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Is Lazy
+         |
+         |${code(loc, "lazy")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
     * A code hint that indicates that an operation could be lazy if given a pure function.
     *
     * @param sym the symbol of the operation that could be lazy.
     * @param loc the location associated with the code hint.
     */
-  case class LazyWhenPure(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
-    override def summary: String = s"Use of impure function prevents lazy evaluation."
+  case class SuggestPurityForLazyEvaluation(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
+    def summary: String = s"Use of impure function prevents lazy evaluation."
 
     override def severity: Severity = Severity.Hint
 
@@ -48,9 +94,6 @@ object CodeHint {
          |""".stripMargin
     }
 
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
     def explain(formatter: Formatter): Option[String] = None
   }
 
@@ -60,7 +103,7 @@ object CodeHint {
     * @param sym the symbol of the operation that could be parallel.
     * @param loc the location associated with the code hint.
     */
-  case class ParallelWhenPure(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
+  case class SuggestPurityForParallelEvaluation(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
     override def summary: String = s"Use of impure function prevents parallel evaluation."
 
     override def severity: Severity = Severity.Hint
@@ -74,14 +117,11 @@ object CodeHint {
          |""".stripMargin
     }
 
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
     def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
-    * A code hint that indicates an expression has a non-trivial effect.
+    * A code hint that indicates that an expression has a non-trivial effect.
     *
     * @param loc the location of the expression.
     */
@@ -100,9 +140,6 @@ object CodeHint {
 
     }
 
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
     def explain(formatter: Formatter): Option[String] = None
   }
 }

@@ -124,7 +124,8 @@ object CodeHinter {
 
     case Expression.Apply(exp, exps, _, eff, loc) =>
       val hints0 = (exp, exps) match {
-        case (Expression.Def(sym, _, _), lambda :: _) => checkPurity(sym, lambda.tpe, loc)
+        case (Expression.Def(sym, _, _), lambda :: _) =>
+          checkPurity(sym, lambda.tpe, loc)
         case _ => Nil
       }
       val hints1 = checkEffect(eff, loc)
@@ -316,10 +317,16 @@ object CodeHinter {
     * Checks whether `sym` would benefit from `tpe` being pure.
     */
   private def checkPurity(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation): List[CodeHint] = {
-    if (LazyWhenPure.contains(sym) && nonPureFunction(tpe)) {
-      CodeHint.LazyWhenPure(sym, loc) :: Nil
-    } else if (ParallelWhenPure.contains(sym) && nonPureFunction(tpe)) {
-      CodeHint.ParallelWhenPure(sym, loc) :: Nil
+    if (LazyWhenPure.contains(sym)) {
+      if (isPureFunction(tpe))
+        CodeHint.IsLazy(sym, loc) :: Nil
+      else
+        CodeHint.SuggestPurityForLazyEvaluation(sym, loc) :: Nil
+    } else if (ParallelWhenPure.contains(sym)) {
+      if (isPureFunction(tpe))
+        CodeHint.IsParallel(sym, loc) :: Nil
+      else
+        CodeHint.SuggestPurityForParallelEvaluation(sym, loc) :: Nil
     } else {
       Nil
     }
@@ -339,9 +346,9 @@ object CodeHinter {
   }
 
   /**
-    * Returns `true` if the given function type `tpe` is non-pure (impure or polymorphic).
+    * Returns `true` if the given function type `tpe` is pure.
     */
-  private def nonPureFunction(tpe: Type): Boolean = tpe.arrowEffectType != Type.Pure
+  private def isPureFunction(tpe: Type): Boolean = tpe.arrowEffectType == Type.Pure
 
   /**
     * Returns `true` if the given effect `tpe` is non-trivial.
