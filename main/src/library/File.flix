@@ -278,24 +278,22 @@ namespace File {
         }
 
     ///
-        /// Returns an array of all the bytes in the given file `f`.
-        ///
-        pub def readBytes(f: String): Result[Array[Int8], String] & Impure =
-            try {
-                import new java.io.File(String) as newFile;
-                import java.io.File.toPath();
-                import java.nio.file.Files:readAllBytes(##java.nio.file.Path);
-
-                let javaFile = newFile(f);
-                let javaPath = toPath(javaFile);
-                let bytes = readAllBytes(javaPath);
-
-                Ok(bytes)
-            } catch {
-                case ex: ##java.io.IOException =>
-                    import java.lang.Throwable.getMessage();
-                    Err(getMessage(ex))
-            }
+    /// Returns an array of all the bytes in the given file `f`.
+    ///
+    pub def readBytes(f: String): Result[Array[Int8], String] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import java.io.File.toPath();
+            import java.nio.file.Files:readAllBytes(##java.nio.file.Pat
+            let javaFile = newFile(f);
+            let javaPath = toPath(javaFile);
+            let bytes = readAllBytes(javaPat
+            Ok(bytes)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
 
     ///
     /// Returns an array of all the bytes in the given file `f` and applying the options `opts`.
@@ -319,54 +317,83 @@ namespace File {
                 Err(getMessage(ex))
         }
 
-        ///
-        /// Returns an iterator of the bytes in the given `file` in chunks of size `chunkSize`.
-        ///
-        pub def readChunks(f: String, chunkSize: Int32): Iterator[Result[Array[Int8], String]] & Impure =
-            try {
-                import new java.io.File(String) as newFile;
-                import java.io.File.toPath();
-                import java.nio.file.Files:newBufferedReader(##java.nio.file.Path);
+    ///
+    /// Returns an iterator of the bytes in the given `file` in chunks of size `chunkSize`.
+    ///
+    pub def readChunks(f: String, chunkSize: Int32): Iterator[Result[Array[Int8], String]] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import java.io.File.toPath();
+            import java.nio.file.Files:newBufferedReader(##java.nio.file.Path);
 
-                let javaFile = newFile(f);
-                let javaPath = toPath(javaFile);
-                let reader = newBufferedReader(javaPath);
-                let line = ref readChunk(reader, chunkSize);
+            let javaFile = newFile(f);
+            let javaPath = toPath(javaFile);
+            let reader = newBufferedReader(javaPath);
+            let line = ref readChunk(reader, chunkSize);
 
-                let done = () -> {
-                    let l = deref line;
-                    Array.get(Array.length(l) - 1, l) == -1i8
-                };
-                let next = () -> {
-                    let l = deref line;
-                    line := readChunk(reader, chunkSize);
-                    Ok(l)
-                };
-                Iterator(done, next)
-            } catch {
-                case ex: ##java.io.IOException =>
-                    import java.lang.Throwable.getMessage();
-                    Iterator.singleton(Err(getMessage(ex)))
+            let done = () -> {
+                let l = deref line;
+                Array.get(Array.length(l) - 1, l) == -1i8
+            };
+            let next = () -> {
+                let l = deref line;
+                line := readChunk(reader, chunkSize);
+                Ok(l)
+            };
+            Iterator(done, next)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Iterator.singleton(Err(getMessage(ex)))
+        }
+
+    ///
+    /// Reads bytes in chunks of size `chunkSize` from the given buffered reader `r`.
+    ///
+    def readChunk(r: ##java.io.BufferedReader, chunkSize: Int32): Array[Int8] & Impure =
+        List.toArray(List.reverse(readChunkHelper(r, chunkSize, Nil)))
+
+    ///
+    /// Helper function for readchunk.
+    /// Reads all lines from the buffered reader `r` of `chunksize`, returning a backward list.
+    ///
+    def readChunkHelper(r: ##java.io.BufferedReader, chunkSize: Int32, acc: List[Int8]): List[Int8] & Impure =
+        import java.io.BufferedReader.read();
+        if (chunkSize == 0)
+            acc
+        else
+            match Int32.tryToInt8(read(r)) {
+                case None       => ??? // TODO: throw exception or something?
+                case Some(n)    => readChunkHelper(r, chunkSize - 1, n :: acc)
             }
 
-        ///
-        /// Reads bytes in chunks of size `chunkSize` from the given buffered reader `r`.
-        ///
-        def readChunk(r: ##java.io.BufferedReader, chunkSize: Int32): Array[Int8] & Impure =
-            List.toArray(List.reverse(readChunkHelper(r, chunkSize, Nil)))
+    ///
+    /// Writes `data` to the given file `f`.
+    ///
+    /// Creates file `f` if it does not exist. Overwrites it if it exists.
+    ///
+    /// Returns `true` if the file was created.
+    ///
+    pub def write(f: String, data: t): Result[Bool, String] & Impure with ToString[t] =
+        try {
+            import new java.io.File(String) as newFile;
+            import new java.io.PrintWriter(##java.io.File) as newPrintWriter;
+            import java.io.PrintWriter.println(String);
+            import java.io.PrintWriter.close();
+            import java.io.PrintWriter.checkError();
 
-        ///
-        /// Helper function for readchunk.
-        /// Reads all lines from the buffered reader `r` of `chunksize`, returning a backward list.
-        ///
-        def readChunkHelper(r: ##java.io.BufferedReader, chunkSize: Int32, acc: List[Int8]): List[Int8] & Impure =
-            import java.io.BufferedReader.read();
-            if (chunkSize == 0)
-                acc
-            else
-                match Int32.tryToInt8(read(r)) {
-                    case None       => ??? // TODO: throw exception or something?
-                    case Some(n)    => readChunkHelper(r, chunkSize - 1, n :: acc)
-                }
+            let javaFile = newFile(f);
+            let w = newPrintWriter(javaFile);
+
+            println(w, "${data}");
+            close(w);
+
+            Ok(checkError(w))
+
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
 
 }
