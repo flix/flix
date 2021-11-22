@@ -558,8 +558,6 @@ object GenExpression {
       // Invoking the constructor
       visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", MethodDescriptor.NothingToVoid.toDescriptor, false)
 
-      //Push the required argument to call the RecordExtend constructor.
-
       //Put the label of field (which is going to be the extension).
       visitor.visitInsn(DUP)
       visitor.visitLdcInsn(field.name)
