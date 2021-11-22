@@ -139,8 +139,10 @@ namespace File {
 
     ///
     /// Returns a string containing the given file `f` with the options `opts`.
-    /// TODO: add a note on what exactly the opts do
-    /// TODO: OBS I changed offset to Int32.
+    /// The options `opts` to apply consists of
+    /// `offset` - the start offset in the given file `f`.
+    /// `count` - the number of bytes read.
+    /// `charSet` - the specific charset to be used to decode the bytes.
     ///
     pub def readWith(opts: {offset :: Int32, count :: Int32, charSet :: String}, f : String): Result[String, String] & Impure = {
         try {
