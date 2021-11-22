@@ -16,16 +16,14 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol}
-import ca.uwaterloo.flix.language.debug.FormatTypeConstraint
-import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Green, Line, NewLine, Red}
-import ca.uwaterloo.flix.util.vt.VirtualTerminal
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
+import ca.uwaterloo.flix.util.Formatter
 
 /**
   * A common super-type for termination errors.
   */
 sealed trait TerminationError extends CompilationMessage {
-  override def kind: String = "Termination Error"
+  val kind: String = "Termination Error"
 }
 
 object TerminationError {
@@ -38,23 +36,25 @@ object TerminationError {
   case class UnconditionalRecursion(sym: Symbol.DefnSym) extends TerminationError {
     def summary: String = "Unconditional recursion."
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Unconditionally recursive definition '" << Red(sym.name) << "'. All branches will recurse indefinitely." << NewLine
-      vt << NewLine
-      vt << Code(sym.loc, "unconditional recursion.") << NewLine
-      vt << NewLine
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Unconditionally recursive definition '${red(sym.name)}'. All branches will recurse indefinitely.
+         |
+         |${code(sym.loc, "unconditional recursion.")}
+         |
+         |""".stripMargin
     }
 
     def loc: SourceLocation = sym.loc
 
-    override def explain: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      vt << "Possible fixes:" << NewLine
-      vt << NewLine
-      vt << "  (1)  Add a non-recursive branch to the definition." << NewLine
-      vt << NewLine
-    }
+    def explain(formatter: Formatter): Option[String] = Some({
+      s"""
+         |"Possible fixes:"
+         |
+         |  (1)  Add a non-recursive branch to the definition.
+         |
+         |""".stripMargin
+    })
   }
 }

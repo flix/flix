@@ -102,7 +102,7 @@ case class Options(lib: LibLevel,
                    xnoboolunification: Boolean,
                    xnostratifier: Boolean,
                    xstatistics: Boolean,
-                   xstrictmono: Boolean
+                   xstrictmono: Boolean,
                   )
 
 /**

@@ -32,17 +32,20 @@ object CodeHinter {
     Symbol.mkDefnSym("LazyList.filter"),
     Symbol.mkDefnSym("LazyList.filterMap"),
     Symbol.mkDefnSym("LazyList.map"),
+    Symbol.mkDefnSym("LazyList.mapWithIndex"),
     Symbol.mkDefnSym("LazyList.flatMap"),
     Symbol.mkDefnSym("LazyList.mapWithIndex"),
     Symbol.mkDefnSym("LazyList.dropWhile"),
     Symbol.mkDefnSym("LazyList.takeWhile"),
-    Symbol.mkDefnSym("Stream.filter"),
-    Symbol.mkDefnSym("Stream.filterMap"),
-    Symbol.mkDefnSym("Stream.map"),
-    Symbol.mkDefnSym("Stream.flatMap"),
-    Symbol.mkDefnSym("Stream.mapWithIndex"),
-    Symbol.mkDefnSym("Stream.dropWhile"),
-    Symbol.mkDefnSym("Stream.takeWhile")
+
+    Symbol.mkDefnSym("DelayMap.insertWith"),
+    Symbol.mkDefnSym("DelayMap.insertWithKey"),
+    Symbol.mkDefnSym("DelayMap.map"),
+    Symbol.mkDefnSym("DelayMap.mapWithKey"),
+    Symbol.mkDefnSym("DelayMap.unionWith"),
+    Symbol.mkDefnSym("DelayMap.unionWithKey"),
+    Symbol.mkDefnSym("DelayMap.update"),
+    Symbol.mkDefnSym("DelayMap.updateWithKey"),
   )
 
   /**
@@ -121,7 +124,8 @@ object CodeHinter {
 
     case Expression.Apply(exp, exps, _, eff, loc) =>
       val hints0 = (exp, exps) match {
-        case (Expression.Def(sym, _, _), lambda :: _) => checkPurity(sym, lambda.tpe, loc)
+        case (Expression.Def(sym, _, _), lambda :: _) =>
+          checkPurity(sym, lambda.tpe, loc)
         case _ => Nil
       }
       val hints1 = checkEffect(eff, loc)
@@ -198,12 +202,6 @@ object CodeHinter {
 
     case Expression.Assign(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
-
-    case Expression.Existential(_, exp, _) =>
-      visitExp(exp)
-
-    case Expression.Universal(_, exp, _) =>
-      visitExp(exp)
 
     case Expression.Ascribe(exp, _, _, _) =>
       visitExp(exp)
@@ -319,10 +317,16 @@ object CodeHinter {
     * Checks whether `sym` would benefit from `tpe` being pure.
     */
   private def checkPurity(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation): List[CodeHint] = {
-    if (LazyWhenPure.contains(sym) && nonPureFunction(tpe)) {
-      CodeHint.LazyWhenPure(sym, loc) :: Nil
-    } else if (ParallelWhenPure.contains(sym) && nonPureFunction(tpe)) {
-      CodeHint.ParallelWhenPure(sym, loc) :: Nil
+    if (LazyWhenPure.contains(sym)) {
+      if (isPureFunction(tpe))
+        CodeHint.LazyEvaluation(sym, loc) :: Nil
+      else
+        CodeHint.SuggestPurityForLazyEvaluation(sym, loc) :: Nil
+    } else if (ParallelWhenPure.contains(sym)) {
+      if (isPureFunction(tpe))
+        CodeHint.ParallelEvaluation(sym, loc) :: Nil
+      else
+        CodeHint.SuggestPurityForParallelEvaluation(sym, loc) :: Nil
     } else {
       Nil
     }
@@ -342,9 +346,9 @@ object CodeHinter {
   }
 
   /**
-    * Returns `true` if the given function type `tpe` is non-pure (impure or polymorphic).
+    * Returns `true` if the given function type `tpe` is pure.
     */
-  private def nonPureFunction(tpe: Type): Boolean = tpe.arrowEffectType != Type.Pure
+  private def isPureFunction(tpe: Type): Boolean = tpe.arrowEffectType == Type.Pure
 
   /**
     * Returns `true` if the given effect `tpe` is non-trivial.

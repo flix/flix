@@ -226,14 +226,6 @@ object SimplifiedAstOps {
         checkExp(exp2, env0, ienv0)
         checkType(tpe)
 
-      case Expression.Existential(fparam, exp, loc) =>
-        checkFormalParam(fparam)
-        checkExp(exp, env0 + fparam.sym, ienv0)
-
-      case Expression.Universal(fparam, exp, loc) =>
-        checkFormalParam(fparam)
-        checkExp(exp, env0 + fparam.sym, ienv0)
-
       case Expression.Cast(exp, tpe, loc) =>
         checkExp(exp, env0, ienv0)
         checkType(tpe)

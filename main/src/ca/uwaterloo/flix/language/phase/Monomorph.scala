@@ -529,22 +529,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
             Expression.Assign(e1, e2, t, eff, loc)
         }
 
-      case Expression.Existential(fparam, exp, loc) =>
-        flatMapN(specializeFormalParam(fparam, subst0)) {
-          case (param, env1) =>
-            mapN(visitExp(exp, env0 ++ env1)) {
-              e => Expression.Existential(param, e, loc)
-            }
-        }
-
-      case Expression.Universal(fparam, exp, loc) =>
-        flatMapN(specializeFormalParam(fparam, subst0)) {
-          case (param, env1) =>
-            mapN(visitExp(exp, env0 ++ env1)) {
-              e => Expression.Universal(param, e, loc)
-            }
-        }
-
       case Expression.Ascribe(exp, tpe, eff, loc) =>
         mapN(visitExp(exp, env0), subst0(tpe)) {
           case (e, t) =>
