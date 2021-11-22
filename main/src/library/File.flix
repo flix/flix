@@ -239,9 +239,15 @@ namespace File {
 
             let done = () -> Object.isNull(deref line);
             let next = () -> {
-                let l = deref line;
-                line := readLine(reader);
-                Ok(l)
+                try {
+                    let l = deref line;
+                    line := readLine(reader);
+                    Ok(l)
+                } catch {
+                    case ex: ##java.io.IOException =>
+                    import java.lang.Throwable.getMessage();
+                    Err(getMessage(ex))
+                }
             };
             Iterator(done, next)
         } catch {
