@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.util
 
 import scala.collection.mutable
-import scala.collection.parallel.CollectionConverters._
 
 sealed trait Validation[+T, +E] {
 
@@ -254,7 +253,7 @@ object Validation {
     */
   def flatMapN[T1, T2, T3, T4, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
                                      t4: Validation[T4, E])
-                                     (f: (T1, T2, T3, T4) => Validation[U, E]): Validation[U, E] =
+                                    (f: (T1, T2, T3, T4) => Validation[U, E]): Validation[U, E] =
     (t1, t2, t3, t4) match {
       case (Success(v1), Success(v2), Success(v3), Success(v4)) => f(v1, v2, v3, v4)
       case _ => Failure(t1.errors #::: t2.errors #::: t3.errors #::: t4.errors)
@@ -265,7 +264,7 @@ object Validation {
     */
   def flatMapN[T1, T2, T3, T4, T5, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
                                          t4: Validation[T4, E], t5: Validation[T5, E])
-                                         (f: (T1, T2, T3, T4, T5) => Validation[U, E]): Validation[U, E] =
+                                        (f: (T1, T2, T3, T4, T5) => Validation[U, E]): Validation[U, E] =
     (t1, t2, t3, t4, t5) match {
       case (Success(v1), Success(v2), Success(v3), Success(v4), Success(v5)) => f(v1, v2, v3, v4, v5)
       case _ => Failure(t1.errors #::: t2.errors #::: t3.errors #::: t4.errors #::: t5.errors)
@@ -288,7 +287,7 @@ object Validation {
     * Sequences over t1, t2, t3, t4, and t5.
     */
   def sequenceT[T1, T2, T3, T4, T5, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
-                                      t4: Validation[T4, E], t5: Validation[T5, E]): Validation[(T1, T2, T3, T4, T5), E] =
+                                          t4: Validation[T4, E], t5: Validation[T5, E]): Validation[(T1, T2, T3, T4, T5), E] =
     mapN(t1, t2, t3, t4, t5)(Function.untupled(identity))
 
   /**

@@ -261,16 +261,6 @@ object Stratifier extends Phase[Root, Root] {
         case (e1, e2) => Expression.Assign(e1, e2, tpe, eff, loc)
       }
 
-    case Expression.Existential(fparam, exp, loc) =>
-      mapN(visitExp(exp)) {
-        case e => Expression.Existential(fparam, e, loc)
-      }
-
-    case Expression.Universal(fparam, exp, loc) =>
-      mapN(visitExp(exp)) {
-        case e => Expression.Universal(fparam, e, loc)
-      }
-
     case Expression.Ascribe(exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => Expression.Ascribe(e, tpe, eff, loc)
@@ -561,12 +551,6 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.Assign(exp1, exp2, _, _, _) =>
       constraintGraphOfExp(exp1) + constraintGraphOfExp(exp2)
-
-    case Expression.Existential(_, exp, _) =>
-      constraintGraphOfExp(exp)
-
-    case Expression.Universal(_, exp, _) =>
-      constraintGraphOfExp(exp)
 
     case Expression.Ascribe(exp, _, _, _) =>
       constraintGraphOfExp(exp)

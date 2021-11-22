@@ -18,12 +18,12 @@
 ///
 /// The type of the done function.
 ///
-type alias Done = Unit ~> Bool
+type alias Done = Unit -> Bool & Impure
 
 ///
 /// The type of the next function.
 ///
-type alias Next[a] = Unit ~> a
+type alias Next[a] = Unit -> a & Impure
 
 ///
 /// An iterator is a stream of elements that are produced on demand.
@@ -59,6 +59,18 @@ namespace Iterator {
             }
         };
         Iterator(done, next)
+
+    ///
+    /// Return `Some(x)` if `iter` is not empty. Return `None` otherwise.
+    ///
+    /// Consumes the head element of `iter`.
+    ///
+    pub def next(iter: Iterator[a]): Option[a] & Impure =
+        let Iterator(done, next) = iter;
+        if (done())
+            None
+        else
+            Some(next())
 
     ///
     /// Returns an iterator of all integers between `b` (inclusive) and `e` (exclusive).
@@ -204,6 +216,8 @@ namespace Iterator {
     ///
     /// That is, the result is of the form: `f(x1) :: f(x2) :: ...`.
     ///
+    /// Consumes the entire iterator.
+    ///
     pub def map(f: a -> b & ef, iter: Iterator[a]): List[b] & Impure =
         let Iterator(done, next) = iter;
         mapAcc(f, done, next, ks -> ks)
@@ -221,6 +235,8 @@ namespace Iterator {
     ///
     /// Applies `f` to every element of `iter`.
     ///
+    /// Consumes the entire iterator.
+    ///
     pub def foreach(f: a -> Unit & ef, iter: Iterator[a]): Unit & Impure =
         let Iterator(done, next) = iter;
         foreachHelper(f, done, next)
@@ -234,5 +250,177 @@ namespace Iterator {
         else
             let _ = f(next());
             foreachHelper(f, done, next)
+    ///
+    /// Returns an iterator with every element of the iterator `iter` that
+    /// satisfies the predicate `f`.
+    ///
+    /// Does *not* consume any elements from the iterator.
+    ///
+    /// The original iterator `iter` should not be reused.
+    ///
+    pub def lazyFilter(f: a -> Bool, iter: Iterator[a]): Iterator[a] & Impure =
+        let Iterator(done, next) = iter;
+
+        // Allocate a reference to hold the next element.
+        let cursor = ref None;
+
+        let done1 = () -> match deref cursor {
+            case None => match forward(f, done, next) {
+                case None    => true
+                case Some(x) =>
+                    // An element was found. Store it in the reference.
+                    cursor := Some(x);
+                    false
+            }
+            case Some(_) => false
+        };
+
+        let next1 = () -> match deref cursor {
+            case None    => bug!("Empty iterator")
+            case Some(x) =>
+                // An element is in the reference. Use it.
+                cursor := None;
+                x
+        };
+        Iterator(done1, next1)
+
+    ///
+    /// Fast forwards the given iterator until the next element that satisfies
+    /// the given predicate `f`. Returns it (if it exists).
+    ///
+    def forward(f: a -> Bool & ef, done: Done, next: Next[a]): Option[a] & Impure =
+        if (done())
+            None
+        else {
+            let e = next();
+            if (f(e)) Some(e) else forward(f, done, next)
+        }
+
+    ///
+    /// Returns an iterator with every `f` lazily applied to each element in `iter`.
+    ///
+    /// Does *not* consume any elements from the iterator.
+    ///
+    pub def lazyMap(f: a -> b, iter: Iterator[a]): Iterator[b] =
+        let Iterator(done, next) = iter;
+        let next1 = () -> f(next());
+        Iterator(done, next1)
+
+    ///
+    /// Returns an iterator with every occurrence of `x` replaced by `y` in `iter`.
+    ///
+    /// Does *not* consume any elements from the iterator.
+    ///
+    pub def replace(x: a, y: a, iter: Iterator[a]): Iterator[a] with Eq[a] =
+        let Iterator(done, next) = iter;
+        let next1 = () -> {
+            let el = next();
+            if (el == x) y else el
+        };
+        Iterator(done, next1)
+
+    ///
+    /// Returns `iterA` appended to `iterB`.
+    ///
+    /// Does *not* consume any elements from either iterator.
+    ///
+    /// The original iterators `iterA` and `iterB` should not be reused.
+    ///
+    pub def append(iterA: Iterator[a], iterB: Iterator[a]): Iterator[a] =
+        let Iterator(doneA, nextA) = iterA;
+        let Iterator(doneB, nextB) = iterB;
+        let doneAB = () -> doneA() and doneB();
+        let nextAB = () -> if (doneA()) nextB() else nextA();
+        Iterator(doneAB, nextAB)
+
+    ///
+    /// Returns an iterator where the element at index `i` is `(a, b)` where
+    /// `a` is the element at index `i` in `iterA` and `b` is the element at index `i` in `iterB`.
+    ///
+    /// Does *not* consume any elements from either iterator.
+    ///
+    /// If either `iterA` or `iterB` is depleted, then no further elements are added to the resulting iterator.
+    ///
+    /// The original iterators `iterA` and `iterB` should not be reused.
+    ///
+    /// An iterator should never be zipped with itself.
+    ///
+    pub def zip(iterA: Iterator[a], iterB: Iterator[b]): Iterator[(a, b)] =
+        let Iterator(doneA, nextA) = iterA;
+        let Iterator(doneB, nextB) = iterB;
+        let doneAB = () -> doneA() or doneB();
+        let nextAB = () -> (nextA(), nextB());
+        Iterator(doneAB, nextAB)
+
+    ///
+    /// Returns an iterator where the element at index `i` is `f(a, b)` where
+    /// `a` is the element at index `i` in `xs` and `b` is the element at index `i` in `ys`.
+    ///
+    /// Does *not* consume any elements from either iterator.
+    ///
+    /// If either `xs` or `ys` becomes depleted, then no further elements are added to the resulting list.
+    ///
+    /// The original iterators `iterA` and `iterB` should not be reused.
+    ///
+    /// An iterator should never be zipped with itself.
+    ///
+    pub def lazyZipWith(f: (a, b) -> c, iterA: Iterator[a], iterB: Iterator[b]): Iterator[c] =
+        let Iterator(done, next) = zip(iterA, iterB);
+        let next1 = () -> {
+            let (x, y) = next();
+            f(x, y)
+        };
+        Iterator(done, next1)
+
+    ///
+    /// Returns an iterator where the element at index `i` is `f(a, b)` where
+    /// `a` is the element at index `i` in `xs` and `b` is the element at index `i` in `ys`.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    /// If either `xs` or `ys` becomes depleted, then no further elements are added to the resulting list.
+    ///
+    /// The original iterators `iterA` and `iterB` should not be reused.
+    ///
+    /// An iterator should never be zipped with itself.
+    ///
+    pub def zipWith(f: (a, b) -> c & ef, iterA: Iterator[a], iterB: Iterator[b]): List[c] & Impure =
+        zip(iterA, iterB) |> map(xy -> f(fst(xy), snd(xy)))
+
+    ///
+    /// Applies `f` to a start value `s` and all elements in `iter` going from left to right.
+    ///
+    /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def foldLeft(f: (b, a) -> b & ef, s: b, iter: Iterator[a]): b & Impure =
+        let Iterator(done, next) = iter;
+        foldLeftHelper(f, s, done, next)
+
+    ///
+    /// Helper function for `foldLeft`.
+    ///
+    def foldLeftHelper(f: (b, a) -> b & ef, s: b, done: Done, next: Next[a]): b & Impure =
+        if (done())
+            s
+        else
+            foldLeftHelper(f, f(s, next()), done, next)
+
+    ///
+    /// Applies `f` to all elements in `iter` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
+    ///
+    /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
+    ///
+    /// Returns `None` if `iter` is empty.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def reduceLeft(f: (a, a) -> a & ef, iter: Iterator[a]): Option[a] & Impure =
+        let Iterator(done, next) = iter;
+        if (done())
+            None
+        else
+            Some(foldLeft(f, next(), iter))
 
 }
