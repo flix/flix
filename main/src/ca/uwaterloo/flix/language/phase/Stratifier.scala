@@ -747,7 +747,7 @@ object Stratifier extends Phase[Root, Root] {
   private def predicateSymbolsOf(tpe: Type): Map[Name.Pred, Int] = Type.eraseAliases(tpe) match {
     case Type.Apply(Type.Cst(TypeConstructor.Schema, _), schemaRow, _) => predicateSymbolsOf(schemaRow, Map.empty)
     // TODO: Arrays are here for some reason?
-    case _ => Map.empty
+    case other => throw InternalCompilerException(s"Unexpected non-schema type $other")
   }
 
   @tailrec
@@ -763,6 +763,6 @@ object Stratifier extends Phase[Root, Root] {
       case Type.Cst(TypeConstructor.Unit, _) => 0
       case _ => 1
     }
-    case other => throw InternalCompilerException(s"Unexpected type $other")
+    case other => throw InternalCompilerException(s"Unexpected non-relation non-lattice type $other")
   }
 }
