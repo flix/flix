@@ -1388,7 +1388,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           //
           // =>
           //
-          // facts $Result (solve (merge (merge e1, e2, e3) #{ #Result(x, y, z) :- A(x, y), B(y) if x > 0 } )
+          // project out $Result from (solve (merge (merge e1, e2, e3) #{ #Result(x, y, z) :- A(x, y), B(y) if x > 0 } )
+          //
+          // OBS: The last merge and solve is done in the typer because of trouble when
+          // `(merge e1, e2, e3)` is a closed row.
 
           // The fresh predicate name where to store the result of the query.
           val pred = Name.Pred("$Result", loc)
