@@ -24,7 +24,7 @@ import org.objectweb.asm.Opcodes._
 /**
   * Generates bytecode for the `Context` class.
   */
-object GenContext {
+object GenContextClass {
 
   /**
     * Returns the `Context` class.
