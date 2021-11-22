@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.runtime.shell
 
 import ca.uwaterloo.flix.api.{Flix, Version}
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.HoleContext
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.TypedAst._
@@ -389,15 +390,20 @@ class Shell(initialPaths: List[Path], options: Options) {
         }
       case Validation.Failure(errors) =>
         terminal.writer().println()
-        for (error <- errors) {
-          val msg = if (options.explain) error.message(flix.getFormatter) + error.explain(flix.getFormatter) else error.message(flix.getFormatter)
-          terminal.writer().print(msg)
-        }
+        createPrintableMessage(errors, flix.getFormatter)
+          .foreach(terminal.writer().print)
         terminal.writer().println()
         terminal.writer().print(prompt)
         terminal.writer().flush()
     }
 
+  }
+
+  private def createPrintableMessage(errors: LazyList[CompilationMessage], formatter: Formatter): LazyList[String] = {
+    if (options.explain || errors.length == 1)
+      errors.map(cm => cm.message(formatter) + cm.explain(formatter))
+    else
+      errors.map(cm => cm.message(formatter))
   }
 
   /**
