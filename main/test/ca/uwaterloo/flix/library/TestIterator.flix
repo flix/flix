@@ -684,4 +684,49 @@ namespace TestIterator {
         let iter = List.toIterator(1 :: 2 :: 3 :: 4 :: Nil);
         Iterator.reduceLeft((a, b) -> a - b, iter) == Some(-8)
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // takeWhile                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def takeWhile01(): Bool & Impure =
+        List.toIterator(Nil: List[Int32]) |>
+            Iterator.takeWhile(i -> i > 3) == Nil
+
+    @test
+    def takeWhile02(): Bool & Impure =
+        List.toIterator(1 :: Nil) |>
+            Iterator.takeWhile(i -> i > 3) == Nil
+
+    @test
+    def takeWhile03(): Bool & Impure =
+        List.toIterator(4 :: Nil) |>
+            Iterator.takeWhile(i -> i > 3) == 4 :: Nil
+
+    @test
+    def takeWhile04(): Bool & Impure =
+        List.toIterator(1 :: 2 :: Nil) |>
+            Iterator.takeWhile(i -> i > 3) == Nil
+
+    @test
+    def takeWhile05(): Bool & Impure =
+        List.toIterator(1 :: 5 :: Nil) |>
+            Iterator.takeWhile(i -> i > 3) == Nil
+
+    @test
+    def takeWhile06(): Bool & Impure =
+        List.toIterator(5 :: 1 :: Nil) |>
+            Iterator.takeWhile(i -> i > 3) == 5 :: Nil
+
+    @test
+    def takeWhile07(): Bool & Impure =
+        List.toIterator(5 :: 8 :: Nil) |>
+            Iterator.takeWhile(i -> i > 3) == 5 :: 8 :: Nil
+
+    @test
+    def takeWhile08(): Bool & Impure =
+        List.toIterator(4 :: 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil) |>
+            Iterator.takeWhile(i -> i > 3) == 4 :: 6 :: Nil
+
 }

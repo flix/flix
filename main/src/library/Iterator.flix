@@ -423,4 +423,29 @@ namespace Iterator {
         else
             Some(foldLeft(f, next(), iter))
 
+    ///
+    /// Returns the longest prefix of `iter` that satisfies the predicate `f`.
+    ///
+    /// Consumes elements until predicate `f` is no longer satisfied.
+    ///
+    /// The original iterator `iter` should not be reused.
+    ///
+    pub def takeWhile(f: a -> Bool & ef, iter: Iterator[a]): List[a] & Impure =
+        let Iterator(done, next) = iter;
+        takeWhileAcc(f, done, next, ks -> ks as & ef) // NB: Cast required because the identity continuation is pure,
+                                                      // but the intermediate continuations are effect polymorphic
+
+    ///
+    /// Helper function for `takeWhile`.
+    ///
+    def takeWhileAcc(f: a -> Bool & ef, done: Done, next: Next[a], k: List[a] -> List[a] & ef): List[a] & Impure =
+        if (done())
+            k(Nil)
+        else
+            let x = next();
+            if (f(x))
+                takeWhileAcc(f, done, next, ks -> k(x :: ks))
+            else
+                k(Nil)
+
 }
