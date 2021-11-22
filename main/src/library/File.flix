@@ -202,7 +202,8 @@ namespace File {
 
     ///
     /// Returns a list of all the lines in the given file `f` with the options `opts`.
-    /// TODO: specify the opts.
+    /// The options `opts` to apply consists of
+    /// `charSet` - the specific charset to be used to decode the bytes.
     ///
     pub def readLinesWith(opts: {charSet :: String}, f: String): Result[List[String], String] & Impure =
         try {
@@ -251,7 +252,8 @@ namespace File {
 
     ///
     /// Returns an iterator of the given file `f` with the options `opts`.
-    /// TODO: specify opts.
+    /// The options `opts` to apply consists of
+    /// `charSet` - the specific charset to be used to decode the bytes.
     ///
     pub def readLinesIterWith(opts: {charSet :: String}, f: String): Iterator[Result[String, String]] & Impure =
         try {
