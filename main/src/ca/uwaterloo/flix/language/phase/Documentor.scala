@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.TypeConstraint
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, Scheme, SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType, PrettyExpression}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
@@ -163,7 +163,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def visitInstance(inst: Instance): JObject = inst match {
     case Instance(_, _, sym, tpe, tconstrs, _, _, loc) =>
-      ("sym" -> visitInstanceSym(sym)) ~
+      ("sym" -> visitClassSym(sym.clazz)) ~
         ("tpe" -> visitType(tpe)) ~
         ("tconstrs" -> tconstrs.map(visitTypeConstraint)) ~
         ("loc" -> visitSourceLocation(loc))
@@ -172,7 +172,34 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Returns the given type `tpe` as a JSON value.
     */
-  private def visitType(tpe: Type): JObject = ??? // TODO: make function
+  private def visitType(tpe: Type): JObject = tpe match {
+    case value: Type.Var =>
+      val name = value.text match {
+        case Some(value) => value
+        case None => ???
+      }
+      ("tag" -> "Var") ~
+        ("name" -> name) ~
+        ("kind" -> visitKind(tpe.kind))
+    case baseType: Type.BaseType => ???
+    case Type.KindedVar(id, kind, loc, rigidity, text) => ???
+    case Type.UnkindedVar(id, loc, rigidity, text) => ???
+    case Type.Cst(tc, loc) =>
+      val typeConst = tc match {
+        case TypeConstructor.Bool => ("tag" -> "Bool")
+        case TypeConstructor.Int32 => ("tag" -> "Int32")
+        case _ => ???
+      }
+      ("tag" -> "Cst") ~
+        ("tc" -> typeConst) ~
+        ("kind" -> visitKind(tpe.kind))
+    case Type.Apply(tpe1, tpe2, loc) =>
+      ("tag" -> "Apply") ~
+        ("tpe1" -> visitType(tpe1)) ~
+        ("tpe2" -> visitType(tpe2)) ~
+        ("kind" -> visitKind(tpe.kind))
+    case _ => ???
+  }
 
   /**
     * Returns the given type constraint `tc` as a JSON value.
@@ -190,11 +217,6 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     ("namespace" -> sym.namespace) ~
       ("name" -> sym.name) ~
       ("loc" -> visitSourceLocation(sym.loc))
-
-  /**
-    * Returns the given instance symbol `sym` as a JSON value.
-    */
-  private def visitInstanceSym(sym: Symbol.InstanceSym): JObject = ??? // TODO : missing d.ts
 
   /**
     * Returns the given class symbol `sym` as a JSON value.
