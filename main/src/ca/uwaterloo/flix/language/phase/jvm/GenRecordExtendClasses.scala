@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{Finality, Instancing, Vi
 import ca.uwaterloo.flix.language.phase.jvm.GenRecordInterfaces.{LookupFieldFunctionName, RestrictFieldFunctionName}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 
-object GenRecordExtend {
+object GenRecordExtendClasses {
 
   val LabelFieldName: String = "label"
   val ValueFieldName: String = "value"
