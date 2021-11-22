@@ -38,12 +38,12 @@ object NameError {
     * @param loc2 the location of the use.
     */
   case class AmbiguousVarOrUse(name: String, loc: SourceLocation, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
-    def summary: String = s"Ambiguous name. The name may refer to both a variable and a use."
+    def summary: String = s"Ambiguous name. The name may refer to both a variable and a use of a name."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.format)}
-         |>> Ambiguous name '${red(name)}'. The name may refer to both a variable and a use.
+         |>> Ambiguous name '${red(name)}'. The name may refer to both a variable and a use of a name.
          |
          |${code(loc, "ambiguous name.")}
          |
@@ -55,10 +55,11 @@ object NameError {
          |""".stripMargin
     }
 
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = Some({
+      """Flix is not able to determine if the variable refers to a local variable
+        |or an imported name. You may want to rename either the variable or the use.
+        |""".stripMargin
+    })
   }
 
   /**
@@ -69,25 +70,28 @@ object NameError {
     * @param loc2 the location of the second definition.
     */
   case class DuplicateDefOrSig(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
-    def summary: String = s"Duplicate definition."
+    def summary: String = s"Duplicate definition of '$name'."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.format)}
-         |>> Duplicate definition '${red(name)}'.
+         |>> Duplicate definition of '${red(name)}'.
          |
-         |${code(loc1, "the first occurrence was here.")}
+         |${code(loc1, "the first definition was here.")}
          |
-         |${code(loc2, "the second occurrence was here.")}
+         |${code(loc2, "the second definition was here.")}
          |""".stripMargin
     }
 
-    def loc: SourceLocation = loc1
-
     def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Remove or rename one of the occurrences."
+      """Flix does not allow the two functions to be given the same name.
+        |
+        |Flix does not support argument overloading. If you want to reuse
+        |the same name for two functions then you must use a type class.
+        |""".stripMargin
     })
+
+    def loc: SourceLocation = loc1
   }
 
   /**
@@ -111,12 +115,9 @@ object NameError {
          |""".stripMargin
     }
 
-    def loc: SourceLocation = loc1
-
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
     def explain(formatter: Formatter): Option[String] = None
+
+    def loc: SourceLocation = loc1
   }
 
   /**
@@ -140,12 +141,9 @@ object NameError {
          |""".stripMargin
     }
 
-    def loc: SourceLocation = loc1
-
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
     def explain(formatter: Formatter): Option[String] = None
+
+    def loc: SourceLocation = loc1
   }
 
   /**
@@ -169,12 +167,9 @@ object NameError {
          |""".stripMargin
     }
 
-    def loc: SourceLocation = loc1
-
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
     def explain(formatter: Formatter): Option[String] = None
+
+    def loc: SourceLocation = loc1
   }
 
   /**
@@ -198,12 +193,12 @@ object NameError {
          |""".stripMargin
     }
 
-    def loc: SourceLocation = loc1
-
     def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Remove or rename one of the occurrences."
     })
+
+    def loc: SourceLocation = loc1
 
   }
 
@@ -250,9 +245,6 @@ object NameError {
          |""".stripMargin
     }
 
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
     def explain(formatter: Formatter): Option[String] = None
   }
 
@@ -274,9 +266,6 @@ object NameError {
          |""".stripMargin
     }
 
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
     def explain(formatter: Formatter): Option[String] = None
   }
 
@@ -297,12 +286,8 @@ object NameError {
          |${code(loc, "undefined type variable.")}
          |""".stripMargin
 
-
     }
 
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
     def explain(formatter: Formatter): Option[String] = None
   }
 

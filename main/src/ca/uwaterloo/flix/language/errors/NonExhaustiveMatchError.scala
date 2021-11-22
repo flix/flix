@@ -37,11 +37,9 @@ case class NonExhaustiveMatchError(rules: List[TypedAst.MatchRule], pat: String,
        |""".stripMargin
   }
 
-  def explain(formatter: Formatter): Option[String] = {
-    import formatter._
-    Some({
-      s"""${underline("Explanation:")} Flix requires every pattern match to cover all cases.
-         |""".stripMargin
-    })
-  }
+  def explain(formatter: Formatter): Option[String] = Some({
+    s"""Flix requires every pattern match expression to cover all cases.
+       |""".stripMargin
+  })
+
 }
