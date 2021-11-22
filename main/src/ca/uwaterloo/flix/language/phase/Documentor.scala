@@ -55,7 +55,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     if (flix.options.documentor) {
 
       // Get all the namespaces.
-      val namespaces = ???
+      val namespaces = root.defs.keys.map(k => k.namespace).foldLeft(Nil: List[String])((value: List[String], acc: List[String]) => value ++ acc)
 
       // Get all the classes.
       val classesByNS = root.classes.values.groupBy(
