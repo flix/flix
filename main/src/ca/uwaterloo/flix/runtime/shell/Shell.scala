@@ -390,7 +390,11 @@ class Shell(initialPaths: List[Path], options: Options) {
       case Validation.Failure(errors) =>
         terminal.writer().println()
         for (error <- errors) {
-          val msg = if (options.explain) error.message(flix.getFormatter) + error.explain(flix.getFormatter) else error.message(flix.getFormatter)
+          val msg = if (options.explain)
+            error.message(flix.getFormatter) +
+              error.explain(flix.getFormatter).getOrElse("")
+          else
+            error.message(flix.getFormatter)
           terminal.writer().print(msg)
         }
         terminal.writer().println()
