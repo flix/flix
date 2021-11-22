@@ -66,7 +66,7 @@ object GenReifiedSourceLocationClass {
   }
 
   private def genToString(name: JvmName, visitor: ClassWriter): Unit = {
-    val stringToBuilderDescriptor = s"(${JvmName.String.toDescriptor})${JvmName.StringBuilder.toDescriptor}"
+    val stringToBuilderDescriptor = s"(${BackendObjType.String.jvmName.toDescriptor})${JvmName.StringBuilder.toDescriptor}"
     val intToBuilderDescriptor = s"(${JvmType.PrimInt.toDescriptor})${JvmName.StringBuilder.toDescriptor}"
     val builderName = JvmName.StringBuilder.toInternalName
 
@@ -77,7 +77,7 @@ object GenReifiedSourceLocationClass {
     method.visitInsn(DUP)
     method.visitMethodInsn(INVOKESPECIAL, builderName, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
     method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, SourceFieldName, JvmName.String.toDescriptor)
+    method.visitFieldInsn(GETFIELD, name.toInternalName, SourceFieldName, BackendObjType.String.jvmName.toDescriptor)
     method.visitMethodInsn(INVOKEVIRTUAL, builderName, "append", stringToBuilderDescriptor, false)
     method.visitLdcInsn(":")
     method.visitMethodInsn(INVOKEVIRTUAL, builderName, "append", stringToBuilderDescriptor, false)

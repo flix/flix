@@ -111,6 +111,12 @@ class TestMain extends FunSuite {
     assert(opts.threads.contains(42))
   }
 
+  test("--Xbenchmark-code-size") {
+    val args = Array("--Xbenchmark-code-size", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xbenchmarkCodeSize)
+  }
+
   test("--Xbenchmark-phases") {
     val args = Array("--Xbenchmark-phases", "p.flix")
     val opts = Main.parseCmdOpts(args).get

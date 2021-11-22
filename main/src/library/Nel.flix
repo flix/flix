@@ -426,10 +426,8 @@ namespace Nel {
     ///
     /// Applies `f` to every element of `xs`.
     ///
-    /// The function `f` must be impure.
-    ///
     @Time(time(f)) @Space(space(f))
-    pub def foreach(f: a ~> Unit, xs: Nel[a]): Unit & Impure = match xs {
+    pub def foreach(f: a -> Unit & ef, xs: Nel[a]): Unit & ef = match xs {
         case Nel(h, l) => f(h); List.foreach(f, l)
     }
 

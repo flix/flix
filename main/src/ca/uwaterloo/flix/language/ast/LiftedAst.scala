@@ -153,14 +153,6 @@ object LiftedAst {
 
     case class Assign(exp1: LiftedAst.Expression, exp2: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class Existential(fparam: LiftedAst.FormalParam, exp: LiftedAst.Expression, loc: SourceLocation) extends LiftedAst.Expression {
-      def tpe: Type = Type.Bool
-    }
-
-    case class Universal(fparam: LiftedAst.FormalParam, exp: LiftedAst.Expression, loc: SourceLocation) extends LiftedAst.Expression {
-      def tpe: Type = Type.Bool
-    }
-
     case class Cast(exp: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
 
     case class TryCatch(exp: LiftedAst.Expression, rules: List[LiftedAst.CatchRule], tpe: Type, loc: SourceLocation) extends LiftedAst.Expression

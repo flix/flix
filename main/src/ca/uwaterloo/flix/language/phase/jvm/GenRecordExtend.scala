@@ -243,7 +243,7 @@ object GenRecordExtend {
     getRecordWithField.visitVarInsn(ALOAD, 1)
 
     //Compare both strings on the stack using equals.
-    getRecordWithField.visitMethodInsn(INVOKEVIRTUAL, JvmName.String.toInternalName,
+    getRecordWithField.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.String.jvmName.toInternalName,
       "equals", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.PrimBool), false)
 
     //create new labels
@@ -313,7 +313,7 @@ object GenRecordExtend {
     restrictField.visitVarInsn(ALOAD, 1)
 
     //Compare both strings on the stack using equals.
-    restrictField.visitMethodInsn(INVOKEVIRTUAL, JvmName.String.toInternalName,
+    restrictField.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.String.jvmName.toInternalName,
       "equals", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.PrimBool), false)
 
     //create new labels

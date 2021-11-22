@@ -166,7 +166,7 @@ namespace DelayMap {
     ///
     def insertWithKeyL(f: (k, v, v) -> v, k: k, v: v, m: DelayMap[k, v]): DelayMap[k, v] with Order[k] =
         let DMap(t) = m;
-        let f1 = (k1, v1, v2) -> lazy (f(k1, force v1, force v2) as & Pure);
+        let f1 = (k1, v1, v2) -> lazy f(k1, force v1, force v2);
         DMap(RedBlackTree.insertWith(f1, k, lazy v, t))
 
     ///
@@ -201,7 +201,7 @@ namespace DelayMap {
     ///
     def mapWithKeyL(f: (k, v1) -> v2, m: DelayMap[k, v1]): DelayMap[k, v2] =
         let DMap(tree) = m;
-        let f1 = (k, v) -> lazy (f(k, force v) as & Pure);
+        let f1 = (k, v) -> lazy f(k, force v);
         DMap(RedBlackTree.mapWithKey(f1, tree))
 
     ///
@@ -466,8 +466,23 @@ namespace DelayMap {
     ///
     /// Returns an iterator over all key-value pairs in `m`.
     ///
-    pub def toIterator(m: DelayMap[a, b]): Iterator[(a, b)] & Impure =
-        List.toIterator(query(_ -> EqualTo, m))
+    pub def toIterator(m: DelayMap[a, b]): Iterator[(a, b)] & Impure with Order[a] =
+        let keys = keysOf(m) |> Set.toList;
+        let cursor = ref keys;
+        let done = () -> match deref cursor {
+            case Nil => true
+            case _   => false
+        };
+        let next = () -> match deref cursor {
+            case Nil     => bug!("Empty Iterator!")
+            case x :: xs =>
+                cursor := xs;
+                match DelayMap.get(x, m) {
+                    case None    => bug!("Empty Iterator!")
+                    case Some(v) => (x, v)
+                }
+        };
+        Iterator(done, next)
 
     ///
     /// Applies `f` to every element of `xs`.
@@ -478,19 +493,10 @@ namespace DelayMap {
         RedBlackTree.foreach(f1 as & Impure, t) as & ef
 
     ///
-    /// Extracts a range of key-value pairs from the map `m`.
+    /// Returns the sum of all values in `m`.
     ///
-    /// That is, the result is a list of all pairs `(k, v)` where `p(k)` returns `Equal`.
-    ///
-    pub def query(p: k -> Comparison & ef, m: DelayMap[k, v]): List[(k, v)] & ef =
+    pub def sum(m: DelayMap[k, Int32]): Int32 =
         let DMap(t) = m;
-        RedBlackTree.query(p, (k, v) -> (k, force v), t)
-
-    ///
-    /// Applies `f` to all key-value pairs `(k, v)` from the map `m` where `p(k)` returns `EqualTo`.
-    ///
-    pub def queryWith(p: k -> Comparison & ef1, f: (k, v) -> Unit & ef2, m: DelayMap[k, v]): Unit & (ef1 and ef2) =
-        let DMap(t) = m;
-        RedBlackTree.queryWith(p, (k, v) -> f(k, force v) as & Impure, t) as & (ef1 and ef2)
+        RedBlackTree.foldLeft((acc, _, v) -> acc + force v, 0, t)
 
 }
