@@ -28,10 +28,12 @@ object Diagnostic {
     val range = Range.from(compilationMessage.loc)
     val severity = Some(DiagnosticSeverity.from(compilationMessage.severity))
     val code = compilationMessage.kind
-    val message = compilationMessage.summary
-    val explanation = compilationMessage.explain(formatter).getOrElse("")
+    val summary = compilationMessage.summary
+    val explanation = compilationMessage.explain(formatter)
+      .map(s => System.lineSeparator() + s)
+      .getOrElse("")
     val fullMessage = compilationMessage.message(formatter) + explanation
-    Diagnostic(range, severity, Some(code), None, message, fullMessage, Nil)
+    Diagnostic(range, severity, Some(code), None, summary, fullMessage, Nil)
   }
 }
 

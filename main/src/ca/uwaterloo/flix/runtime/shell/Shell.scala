@@ -389,12 +389,15 @@ class Shell(initialPaths: List[Path], options: Options) {
         }
       case Validation.Failure(errors) =>
         terminal.writer().println()
+        val formatter = flix.getFormatter
         for (error <- errors) {
           val msg = if (options.explain)
-            error.message(flix.getFormatter) +
-              error.explain(flix.getFormatter).getOrElse("")
+            error.message(formatter) +
+              error.explain(formatter)
+                .map(s => System.lineSeparator() + s)
+                .getOrElse("")
           else
-            error.message(flix.getFormatter)
+            error.message(formatter)
           terminal.writer().print(msg)
         }
         terminal.writer().println()
