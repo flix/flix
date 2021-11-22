@@ -37,8 +37,10 @@ object NamedAst {
   case class Instance(doc: Ast.Doc, mod: Ast.Modifiers, clazz: Name.QName, tpe: NamedAst.Type, tconstrs: List[NamedAst.TypeConstraint], defs: List[NamedAst.Def], loc: SourceLocation)
 
   sealed trait DefOrSig
+
   object DefOrSig {
     case class Def(d: NamedAst.Def) extends NamedAst.DefOrSig
+
     case class Sig(s: NamedAst.Sig) extends NamedAst.DefOrSig
   }
 
@@ -204,7 +206,7 @@ object NamedAst {
 
     case class FixpointProjectIn(exp: NamedAst.Expression, pred: Name.Pred, loc: SourceLocation) extends NamedAst.Expression
 
-    case class FixpointProjectOut(pred: Name.Pred, exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class FixpointProjectOut(pred: Name.Pred, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Reify(t: NamedAst.Type, loc: SourceLocation) extends NamedAst.Expression
 

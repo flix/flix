@@ -1388,7 +1388,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           //
           // =>
           //
-          // facts $Result (solve (merge (merge e1, e2, e3) #{ #Result(x, y, z) :- A(x, y), B(y) if x > 0 } )
+          // project out $Result from (solve (merge (merge e1, e2, e3) #{ #Result(x, y, z) :- A(x, y), B(z) if x > 0 } )
 
           // The fresh predicate name where to store the result of the query.
           val pred = Name.Pred("$Result", loc)
@@ -1418,8 +1418,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             case (e, acc) => WeededAst.Expression.FixpointMerge(e, acc, loc)
           }
 
+          val mergeExp = WeededAst.Expression.FixpointMerge(queryExp, dbExp, loc)
+          val solveExp = WeededAst.Expression.FixpointSolve(mergeExp, loc)
+
           // Extract the tuples of the result predicate.
-          WeededAst.Expression.FixpointProjectOut(pred, queryExp, dbExp, loc.asSynthetic.asReal)
+          WeededAst.Expression.FixpointProjectOut(pred, solveExp, loc.asSynthetic.asReal)
       }
 
     case ParsedAst.Expression.Reify(sp1, t0, sp2) =>
@@ -2517,19 +2520,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.And(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.Or(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.Ascribe(tpe, _, _) => leftMostSourcePosition(tpe)
-  }
-
-  /**
-    * Returns the left most source position in the sub-tree of the kind `kind`.
-    */
-  @tailrec
-  private def leftMostSourcePosition(kind: ParsedAst.Kind): SourcePosition = kind match {
-    case ParsedAst.Kind.Star(sp1, _) => sp1
-    case ParsedAst.Kind.Bool(sp1, _) => sp1
-    case ParsedAst.Kind.RecordRow(sp1, _) => sp1
-    case ParsedAst.Kind.SchemaRow(sp1, _) => sp1
-    case ParsedAst.Kind.Predicate(sp1, _) => sp1
-    case ParsedAst.Kind.Arrow(k1, _, _) => leftMostSourcePosition(k1)
   }
 
   /**

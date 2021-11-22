@@ -241,7 +241,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
   }
 
 
-
   object Constraints {
 
     /**
@@ -966,11 +965,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e <- visit(exp, tenv0)
           } yield ResolvedAst.Expression.FixpointProjectIn(e, pred, loc)
 
-        case NamedAst.Expression.FixpointProjectOut(pred, exp1, exp2, loc) =>
+        case NamedAst.Expression.FixpointProjectOut(pred, exp, loc) =>
           for {
-            e1 <- visit(exp1, tenv0)
-            e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.FixpointProjectOut(pred, e1, e2, loc)
+            e <- visit(exp, tenv0)
+          } yield ResolvedAst.Expression.FixpointProjectOut(pred, e, loc)
 
         case NamedAst.Expression.Reify(t0, loc) =>
           for {
@@ -1120,8 +1118,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
       * Performs name resolution on the given type parameter `tparam0` in the given namespace `ns0`.
       */
     def resolveTparam(tparam0: NamedAst.TypeParam): ResolvedAst.TypeParam = tparam0 match {
-        case tparam: NamedAst.TypeParam.Kinded => resolveKindedTparam(tparam)
-        case tparam: NamedAst.TypeParam.Unkinded => resolveUnkindedTparam(tparam)
+      case tparam: NamedAst.TypeParam.Kinded => resolveKindedTparam(tparam)
+      case tparam: NamedAst.TypeParam.Unkinded => resolveUnkindedTparam(tparam)
     }
 
     /**
