@@ -391,14 +391,16 @@ class Shell(initialPaths: List[Path], options: Options) {
         terminal.writer().println()
         val formatter = flix.getFormatter
         for (error <- errors) {
-          val msg = if (options.explain)
-            error.message(formatter) +
-              error.explain(formatter)
-                .map(s => System.lineSeparator() + s)
-                .getOrElse("")
-          else
-            error.message(formatter)
-          terminal.writer().print(msg)
+          if (options.explain) {
+            val message = error.message(formatter)
+            val explanationHeading = formatter.underline("Explanation:") +
+              System.lineSeparator()
+            val explanation = error.explain(formatter)
+            val msg = message + explanationHeading + explanation
+            terminal.writer().print(msg)
+          } else {
+            terminal.writer().print(error.message(formatter))
+          }
         }
         terminal.writer().println()
         terminal.writer().print(prompt)
