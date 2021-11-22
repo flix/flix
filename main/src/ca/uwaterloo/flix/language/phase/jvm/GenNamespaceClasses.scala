@@ -25,7 +25,7 @@ import org.objectweb.asm.{ClassWriter, Label}
 /**
   * Generates bytecode for the namespace classes.
   */
-object GenNamespaces {
+object GenNamespaceClasses {
 
   /**
     * Returns the set of namespaces classes for the given set of namespaces.

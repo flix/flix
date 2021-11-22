@@ -73,12 +73,12 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       //
       // Generate the Context class.
       //
-      val contextClass = GenContext.gen(namespaces)
+      val contextClass = GenContextClass.gen(namespaces)
 
       //
       // Generate the namespace classes.
       //
-      val namespaceClasses = GenNamespaces.gen(namespaces)
+      val namespaceClasses = GenNamespaceClasses.gen(namespaces)
 
       //
       // Generate continuation interfaces for each function type in the program.
@@ -128,7 +128,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       //
       // Generate extended record classes for each (different) RecordExtend type in the program
       //
-      val recordExtendClasses = GenRecordExtend.gen(types)
+      val recordExtendClasses = GenRecordExtendClasses.gen(types)
 
       //
       // Generate references classes.

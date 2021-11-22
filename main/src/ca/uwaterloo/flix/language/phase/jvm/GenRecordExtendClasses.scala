@@ -25,7 +25,7 @@ import org.objectweb.asm.{ClassWriter, Label}
 /**
   * Generates bytecode for the extended record class.
   */
-object GenRecordExtend {
+object GenRecordExtendClasses {
 
   /**
     * Returns a Map with a single entry, for the extended record class
