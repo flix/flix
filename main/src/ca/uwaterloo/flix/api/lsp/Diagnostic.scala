@@ -29,7 +29,10 @@ object Diagnostic {
     val severity = Some(DiagnosticSeverity.from(compilationMessage.severity))
     val code = compilationMessage.kind
     val summary = compilationMessage.summary
-    val explanationHeading = formatter.underline("Explanation:") + System.lineSeparator()
+    val explanationHeading =
+      s"""${formatter.underline("Explanation:")}
+         |
+         |""".stripMargin
     val explanation = compilationMessage.explain(formatter).getOrElse("")
     val fullMessage = compilationMessage.message(formatter) + explanationHeading + explanation
     Diagnostic(range, severity, Some(code), None, summary, fullMessage, Nil)

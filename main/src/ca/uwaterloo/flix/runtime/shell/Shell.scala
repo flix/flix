@@ -393,8 +393,10 @@ class Shell(initialPaths: List[Path], options: Options) {
         for (error <- errors) {
           if (options.explain) {
             val message = error.message(formatter)
-            val explanationHeading = formatter.underline("Explanation:") +
-              System.lineSeparator()
+            val explanationHeading =
+              s"""${formatter.underline("Explanation:")}
+                 |
+                 |""".stripMargin
             val explanation = error.explain(formatter)
             val msg = message + explanationHeading + explanation
             terminal.writer().print(msg)
