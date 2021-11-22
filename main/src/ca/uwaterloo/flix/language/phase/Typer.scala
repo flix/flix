@@ -1851,8 +1851,12 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
         val tpe = subst0(tvar)
         val eff = Type.mkAnd(e1.eff, e2.eff, loc)
 
-        val mergeExp = TypedAst.Expression.FixpointMerge(e1, e2, stf, tpe, eff, loc)
-        val solveExp = TypedAst.Expression.FixpointSolve(mergeExp, stf, tpe, eff, loc)
+        // Note: This transformation should happen in the Weeder but it is here because
+        // `#{#Result(..)` | _} cannot be unified with `#{A(..)}` (a closed row).
+        // See Weeder for more details.
+        val mergeExp = TypedAst.Expression.FixpointMerge(e1, e2, stf, e1.tpe, eff, loc)
+        assert(e1.tpe.typeConstructor.contains(TypeConstructor.Schema))
+        val solveExp = TypedAst.Expression.FixpointSolve(mergeExp, stf, e1.tpe, eff, loc)
         TypedAst.Expression.FixpointProjectOut(pred, solveExp, tpe, eff, loc)
 
       case KindedAst.Expression.Reify(t0, loc) =>
