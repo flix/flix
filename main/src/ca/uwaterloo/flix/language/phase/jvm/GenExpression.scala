@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst._
 import ca.uwaterloo.flix.language.ast.SemanticOperator._
 import ca.uwaterloo.flix.language.ast.{MonoType, _}
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm
 import org.objectweb.asm.Opcodes._
@@ -536,9 +537,8 @@ object GenExpression {
       //Cast to proper record extend class
       visitor.visitTypeInsn(CHECKCAST, classType.name.toInternalName)
 
-      //Invoke the getField method on the record. (To get the proper value)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "getField",
-        AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe)), false)
+      //Retrieve the value field  (To get the proper value)
+      visitor.visitFieldInsn(GETFIELD, classType.name.toInternalName, GenRecordExtendClasses.ValueFieldName, JvmOps.getErasedJvmType(tpe).toDescriptor)
 
       // Cast the field value to the expected type.
       AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
@@ -554,25 +554,26 @@ object GenExpression {
 
       // Instantiating a new object of tuple
       visitor.visitTypeInsn(NEW, classType.name.toInternalName)
-      // Duplicating the class
       visitor.visitInsn(DUP)
+      // Invoking the constructor
+      visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", MethodDescriptor.NothingToVoid.toDescriptor, false)
 
       //Push the required argument to call the RecordExtend constructor.
 
-      //Push the label of field (which is going to be the extension).
+      //Put the label of field (which is going to be the extension).
+      visitor.visitInsn(DUP)
       visitor.visitLdcInsn(field.name)
+      visitor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, GenRecordExtendClasses.LabelFieldName, BackendObjType.String.toDescriptor)
 
-      //Push the value of the field onto the stack, since it is an expression we first need to compile it.
+      //Put the value of the field onto the stack, since it is an expression we first need to compile it.
+      visitor.visitInsn(DUP)
       compileExpression(value, visitor, currentClass, lenv0, entryPoint)
+      visitor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, GenRecordExtendClasses.ValueFieldName, JvmOps.getJvmType(value.tpe).toDescriptor)
 
-      //Push the value of the rest of the record onto the stack, since it's an expression we need to compile it first.
+      //Put the value of the rest of the record onto the stack, since it's an expression we need to compile it first.
+      visitor.visitInsn(DUP)
       compileExpression(rest, visitor, currentClass, lenv0, entryPoint)
-
-      // Descriptor of constructor
-      val constructorDescriptor = AsmOps.getMethodDescriptor(List(JvmType.String, JvmOps.getErasedJvmType(value.tpe),
-        interfaceType), JvmType.Void)
-      // Invoking the constructor
-      visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
+      visitor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, GenRecordExtendClasses.RestFieldName, interfaceType.toDescriptor)
 
     case Expression.RecordRestrict(field, rest, _, loc) =>
       // Adding source line number for debugging
