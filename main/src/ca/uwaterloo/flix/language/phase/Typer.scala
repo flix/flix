@@ -1855,7 +1855,6 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
         // `#{#Result(..)` | _} cannot be unified with `#{A(..)}` (a closed row).
         // See Weeder for more details.
         val mergeExp = TypedAst.Expression.FixpointMerge(e1, e2, stf, e1.tpe, eff, loc)
-        assert(e1.tpe.typeConstructor.contains(TypeConstructor.Schema))
         val solveExp = TypedAst.Expression.FixpointSolve(mergeExp, stf, e1.tpe, eff, loc)
         TypedAst.Expression.FixpointProjectOut(pred, solveExp, tpe, eff, loc)
 
