@@ -82,6 +82,8 @@ object Lowering extends Phase[Root, Root] {
 
     lazy val Comparison: Symbol.EnumSym = Symbol.mkEnumSym("Comparison")
     lazy val Boxed: Symbol.EnumSym = Symbol.mkEnumSym("Boxed")
+
+    lazy val ChannelMpmc: Symbol.EnumSym = Symbol.mkEnumSym("Channel/Mpmc")
   }
 
   private object Sigs {
@@ -91,6 +93,7 @@ object Lowering extends Phase[Root, Root] {
     private def mkIdent(s: String): Name.Ident = Name.Ident(SL, s, SL)
 
     lazy val Box: Symbol.SigSym = Symbol.mkSigSym(Symbol.mkClassSym(RootNS, mkIdent("Boxable")), mkIdent("box"))
+    lazy val Unbox: Symbol.SigSym = Symbol.mkSigSym(Symbol.mkClassSym(RootNS, mkIdent("Boxable")), mkIdent("unbox"))
   }
 
   private object Types {
@@ -116,6 +119,7 @@ object Lowering extends Phase[Root, Root] {
     lazy val Comparison: Type = Type.mkEnum(Enums.Comparison, Nil, SourceLocation.Unknown)
     lazy val Boxed: Type = Type.mkEnum(Enums.Boxed, Nil, SourceLocation.Unknown)
 
+    lazy val ChannelMpmc: Type = Type.mkEnum(Enums.ChannelMpmc, Nil, SourceLocation.Unknown)
 
     //
     // Function Types.
@@ -478,20 +482,39 @@ object Lowering extends Phase[Root, Root] {
       Expression.PutStaticField(field, e, t, eff, loc)
 
     case Expression.NewChannel(exp, tpe, eff, loc) =>
+      // `chan [exp] [tpe]`
+      // becomes
+      // `Channel.new([exp])`
       val e = visitExp(exp)
       val t = visitType(tpe)
-      Expression.NewChannel(e, t, eff, loc)
+      val channelNewSym = Symbol.mkDefnSym("Channel.new")
+      val channelNew = Expression.Def(channelNewSym, Type.mkImpureArrow(Type.Int32, t, loc), loc)
+      Expression.Apply(channelNew, List(e), t, eff, loc)
 
     case Expression.GetChannel(exp, tpe, eff, loc) =>
+      // `<- [exp]`
+      // becomes
+      // `Boxable.unbox(Channel.get([exp]))`
+      // TODO: this doesn't work. maybe make some help in Channel.flix
       val e = visitExp(exp)
       val t = visitType(tpe)
-      Expression.GetChannel(e, t, eff, loc)
+      val channelGetSym = Symbol.mkDefnSym("Channel.get")
+      val channelGet = Expression.Def(channelGetSym, Type.mkImpureArrow(e.tpe, Types.Boxed, loc), loc)
+      val boxedElement = Expression.Apply(channelGet, List(e), Types.Boxed, Type.Impure, loc)
+      unbox(boxedElement)
 
     case Expression.PutChannel(exp1, exp2, tpe, eff, loc) =>
+      // [exp1] <- [exp2]
+      // becomes
+      // Channel.put(Boxable.box([exp2], [exp1])
+      // TODO: this doesn't work. maybe make some help in Channel.flix
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      Expression.PutChannel(e1, e2, t, eff, loc)
+      val boxedElement = box(e2)
+      val channelPutSym = Symbol.mkDefnSym("Channel.put")
+      val channelPut = Expression.Def(channelPutSym, Type.mkImpureUncurriedArrow(List(Types.Boxed, t), t, loc))
+      Expression.Apply(channelPut, List(boxedElement, e1), t, eff, loc)
 
     case Expression.SelectChannel(rules, default, tpe, eff, loc) =>
       val rs = rules.map(visitSelectChannelRule)
@@ -687,6 +710,8 @@ object Lowering extends Phase[Root, Root] {
         case Kind.SchemaRow => Type.KindedVar(id, Kind.Star, loc, rigidity, text)
         case _ => tpe0
       }
+
+      case Type.Apply(Type.Cst(TypeConstructor.Channel, _), _, _) => Types.ChannelMpmc
 
       case Type.Cst(tc, loc) => tpe0
 
@@ -1023,6 +1048,16 @@ object Lowering extends Phase[Root, Root] {
     val tpe = Type.mkPureArrow(exp.tpe, Types.Boxed, loc)
     val innerExp = Expression.Sig(Sigs.Box, tpe, loc)
     Expression.Apply(innerExp, List(exp), Types.Boxed, Type.Pure, loc)
+  }
+
+  /**
+    * Returns the given expression `exp` unboxed.
+    */
+  private def unbox(exp: Expression): Expression = {
+    val loc = exp.loc
+    val tpe = Type.mkPureArrow(Types.Boxed, exp.tpe, loc)
+    val innerExp = Expression.Sig(Sigs.Unbox, tpe, loc)
+    Expression.Apply(innerExp, List(exp), exp.tpe, Type.Pure, loc)
   }
 
   /**
