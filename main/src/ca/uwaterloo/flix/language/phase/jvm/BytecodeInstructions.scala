@@ -159,6 +159,9 @@ object BytecodeInstructions {
   def IFEQ(cases: Boolean => InstructionSet): InstructionSet =
     branch(Opcodes.IFEQ)(cases)
 
+  def IFNE(cases: Boolean => InstructionSet): InstructionSet =
+    branch(Opcodes.IFNE)(cases)
+
   def IFNULL(cases: Boolean => InstructionSet): InstructionSet =
     branch(Opcodes.IFNULL)(cases)
 
@@ -242,7 +245,7 @@ object BytecodeInstructions {
   }
 
   def matchBool(cases: Boolean => InstructionSet): InstructionSet =
-    IFEQ(b => cases(!b))
+    IFNE(cases)
 
   def invokeConstructor(className: JvmName, descriptor: MethodDescriptor = MethodDescriptor.NothingToVoid): InstructionSet =
     INVOKESPECIAL(className, JvmName.ConstructorMethod, descriptor)

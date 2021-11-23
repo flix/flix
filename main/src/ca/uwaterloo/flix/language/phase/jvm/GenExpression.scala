@@ -517,7 +517,7 @@ object GenExpression {
       addSourceLine(visitor, loc)
 
       // Get the correct record extend class, given the expression type 'tpe'
-      // We get the JvmType of the extended record class to call the proper getField
+      // We get the JvmType of the extended record class to retrieve the proper field
       val classType = JvmOps.getRecordType(tpe)
 
       // We get the JvmType of the record interface
@@ -566,7 +566,7 @@ object GenExpression {
       //Put the value of the field onto the stack, since it is an expression we first need to compile it.
       visitor.visitInsn(DUP)
       compileExpression(value, visitor, currentClass, lenv0, entryPoint)
-      visitor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, GenRecordExtendClasses.ValueFieldName, JvmOps.getJvmType(value.tpe).toDescriptor)
+      visitor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, GenRecordExtendClasses.ValueFieldName, JvmOps.getErasedJvmType(value.tpe).toDescriptor)
 
       //Put the value of the rest of the record onto the stack, since it's an expression we need to compile it first.
       visitor.visitInsn(DUP)
