@@ -30,21 +30,6 @@ instance Eq[MutList[a]] with Eq[a] {
         } as & Pure
 }
 
-instance Order[MutList[v]] with Order[v] {
-    ///
-    /// Compares `u` and `v` lexicographically.
-    ///
-    pub def compare(u: MutList[v], v: MutList[v]): Comparison =
-        (let MutList(a, _) = u;
-        let MutList(b, _) = v;
-        deref a <=> deref b) as & Pure
-}
-
-/*instance Foldable[MutList] {
-    pub def foldLeft(f: (b, a) -> b & ef, s: b, v: MutList[a]): b & ef = MutList.foldLeft(f, s, v) as & ef
-    pub def foldRight(f: (a, b) -> b & ef, s: b, v: MutList[a]): b & ef = MutList.foldRight(f, s, v) as & ef
-}*/
-
 namespace MutList {
 
     ///
@@ -98,28 +83,12 @@ namespace MutList {
     pub def memberOf(x: a, v: MutList[a]): Bool & Impure with Eq[a] = exists(y -> y == x, v)
 
     ///
-    /// Optionally finds the smallest element of `v` according to the `Order` on `a`.
-    ///
-    /// Returns `None` if `v` is empty.
-    ///
-    pub def minimum(v: MutList[a]): Option[a] & Impure with Order[a] =
-        reduceLeft(Order.min, v)
-
-    ///
     /// Optionally finds the smallest element of `v` according to the given comparator `cmp`.
     ///
     /// Returns `None` if `v` is empty.
     ///
     pub def minimumBy(cmp: (a, a) -> Comparison, v: MutList[a]): Option[a] & Impure =
         reduceLeft(Order.minBy(cmp), v)
-
-    ///
-    /// Optionally finds the largest element of `v` according to the `Order` on `a`.
-    ///
-    /// Returns `None` if `v` is empty.
-    ///
-    pub def maximum(v: MutList[a]): Option[a] & Impure with Order[a] =
-        reduceLeft(Order.max, v)
 
     ///
     /// Optionally finds the largest element of `v` according to the given comparator `cmp`.
@@ -774,26 +743,6 @@ namespace MutList {
 
     ///
     /// Returns a sorted copy of MutList `v`, where the elements are ordered from low to high according to
-    /// their `Order` instance.
-    ///
-    /// The sort is not stable, i.e., equal elements may appear in a different order than in the input `v`.
-    ///
-    /// The sort implementation is a Quicksort.
-    ///
-    pub def sort(v: MutList[a]): MutList[a] & Impure with Order[a] = sortWith(Order.compare, v)
-
-    ///
-    /// Returns a sorted copy of MutList `v`, where the elements are ordered from low to high according to
-    /// the `Order` instance for the values obtained by applying `f` to each element.
-    ///
-    /// The sort is not stable, i.e., equal elements may appear in a different order than in the input `v`.
-    ///
-    /// The sort implementation is a Quicksort.
-    ///
-    pub def sortBy(f: a -> b, v: MutList[a]): MutList[a] & Impure with Order[b] = sortWith(Order.compare `on` f, v)
-
-    ///
-    /// Returns a sorted copy of MutList `v`, where the elements are ordered from low to high according to
     /// the comparison function `cmp`.
     ///
     /// The sort is not stable, i.e., equal elements may appear in a different order than in the input `v`.
@@ -804,26 +753,6 @@ namespace MutList {
         let vCopy = copy(v);
         sortWith!(cmp, vCopy);
         vCopy
-
-    ///
-    /// Sort MutList `v` so that elements are ordered from low to high according to their `Order` instance.
-    /// The MutList is mutated in-place.
-    ///
-    /// The sort is not stable, i.e., equal elements may appear in a different order than in the input `v`.
-    ///
-    /// The sort implementation is a Quicksort.
-    ///
-    pub def sort!(v: mut MutList[a]): Unit & Impure with Order[a] = sortWith!(Order.compare, v)
-
-    ///
-    /// Sort MutList `v` so that elements are ordered from low to high according to the `Order` instance for
-    /// the values obtained by applying `f` to each element. The MutList is mutated in-place.
-    ///
-    /// The sort is not stable, i.e., equal elements may appear in a different order than in the input `v`.
-    ///
-    /// The sort implementation is a Quicksort.
-    ///
-    pub def sortBy!(f: a -> b, v: mut MutList[a]): Unit & Impure with Order[b] = sortWith!(Order.compare `on` f, v)
 
     ///
     /// Sort MutList `v` so that elements are ordered from low to high according to the comparison function `cmp`.
