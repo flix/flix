@@ -654,12 +654,11 @@ object Stratifier extends Phase[Root, Root] {
     */
   private def constraintGraphOfConstraint(c0: Constraint): ConstraintGraph = c0 match {
     case Constraint(_, Predicate.Head.Atom(headSym, _, _, headTpe, _), body, _) =>
-      // TODO: These sets do not eliminate most duplicates since location is included in the equality.
-      val (pos, neg) = body.foldLeft((Set.empty[MultiElement], Set.empty[MultiElement])) {
+      val (pos, neg) = body.foldLeft((Vector.empty[MultiElement], Vector.empty[MultiElement])) {
         case ((pos, neg), b) => b match {
           case Body.Atom(pred, _, polarity, _, atomTpe, loc) => polarity match {
-            case Polarity.Positive => (pos + ((pred, atomTpe, loc)), neg)
-            case Polarity.Negative => (pos, neg + ((pred, atomTpe, loc)))
+            case Polarity.Positive => (pos.appended((pred, atomTpe, loc)), neg)
+            case Polarity.Negative => (pos, neg.appended((pred, atomTpe, loc)))
           }
           case Body.Guard(_, _) => (pos, neg)
         }
@@ -745,7 +744,7 @@ object Stratifier extends Phase[Root, Root] {
   }
 
   /**
-    * Returns the set of predicates that appears in the given row type `tpe`.
+    * Returns the map of predicates that appears in the given row type `tpe`.
     */
   private def predicateSymbolsOf(tpe: Type): Map[Name.Pred, Type] = Type.eraseAliases(tpe) match {
     case Type.Apply(Type.Cst(TypeConstructor.Schema, _), schemaRow, _) => predicateSymbolsOf(schemaRow, Map.empty)

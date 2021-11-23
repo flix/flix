@@ -362,7 +362,7 @@ object Ast {
   /**
     * Contains the edges held in a single constraint.
     */
-  case class MultiEdge(head: (Name.Pred, Type), positives: Set[MultiElement], negatives: Set[MultiElement])
+  case class MultiEdge(head: (Name.Pred, Type), positives: Vector[MultiElement], negatives: Vector[MultiElement])
 
   /**
     * Represents a body predicate on a MultiEdge.
