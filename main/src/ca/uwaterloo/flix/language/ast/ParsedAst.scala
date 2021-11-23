@@ -1229,7 +1229,14 @@ object ParsedAst {
         */
       case class Filter(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Argument], sp2: SourcePosition) extends ParsedAst.Predicate.Body
 
-      // TODO: DOC
+      /**
+        * Loop Predicate.
+        *
+        * @param sp1    the position of the first character in the predicate.
+        * @param idents the variable bound by the predicate.
+        * @param exp    the expression to iterate over.
+        * @param sp2    the position of the last character in the predicate.
+        */
       case class Loop(sp1: SourcePosition, idents: Seq[Name.Ident], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Predicate.Body
 
     }
