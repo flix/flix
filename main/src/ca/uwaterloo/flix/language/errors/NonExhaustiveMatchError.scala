@@ -38,7 +38,12 @@ case class NonExhaustiveMatchError(rules: List[TypedAst.MatchRule], pat: String,
   }
 
   def explain(formatter: Formatter): Option[String] = Some({
-    s"""Flix requires every pattern match expression to cover all cases.
+    s"""Flix requires every pattern match expression to be exhaustive, i.e. to cover all
+       |possible cases. A wild card pattern, written with an underscore, can be used to
+       |handle all other cases. For example:
+       |
+       |    case _ => // handle all other cases.
+       |
        |""".stripMargin
   })
 
