@@ -29,10 +29,6 @@ instance Order[Array[v]] with Order[v] {
         ArrayOps.compareHelper(a, b, Int32.min(Array.length(a), Array.length(b)), 0) as & Pure
 }
 
-//instance Functor[Array] {
-//    pub def map(f: a -> b & ef, a: Array[a]): Array[b] & ef = Array.map(f, a) as & ef
-//}
-
 instance Foldable[Array] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, a: Array[a]): b & ef = Array.foldLeft(f, s, a) as & ef
     pub def foldRight(f: (a, b) -> b & ef, s: b, a: Array[a]): b & ef = Array.foldRight(f, s, a) as & ef
