@@ -24,34 +24,25 @@ def testNew02(): Channel.Mpmc & Impure = Channel.new(32)
 @test
 def testGetPut01(): Bool & Impure =
     let c = Channel.new(1);
-    Channel.put(BoxedBool(true), c);
-    match Channel.get(c) {
-        case BoxedBool(b) => b
-        case _ => false
-    }
+    Channel.put(true, c);
+    Channel.getBool(c)
 
 @test
 def testGetPut02(): Bool & Impure =
     let c = Channel.new(1);
-    Channel.put(BoxedInt32(123), c);
-    match Channel.get(c) {
-        case BoxedInt32(i) => i == 123
-        case _ => bug!("Impossible")
-    }
+    Channel.put(123, c);
+    Channel.getInt32(c) == 123
 
 @test
 def testGetPut03(): Bool & Impure =
     let c = Channel.new(1);
-    Channel.put(BoxedValue("Hello World!" as ##java.lang.Object), c);
-    match Channel.get(c) {
-        case BoxedValue(s) => (s as String) == "Hello World!"
-        case _ => bug!("Impossible")
-    }
+    Channel.put("Hello World!", c);
+    Channel.getValue(c) as String == "Hello World!"
 
 @test
 def testSelect01(): Bool & Impure =
     let c = Channel.new(1);
-    Channel.put(BoxedInt32(2), c);
+    Channel.put(2, c);
     match Channel.select([c], false) {
         case Some(0, BoxedInt32(i)) => i == 2
         case _ => bug!("impossible")
@@ -71,10 +62,10 @@ def testSelect03(): Bool & Impure =
     let cString = Channel.new(10);
     let cInt = Channel.new(0);
 
-    Channel.put(BoxedValue("hey" as ##java.lang.Object), cString);
+    Channel.put("hey", cString);
 
     match Channel.select([cInt, cString], false) {
-        case Some(0, BoxedInt32(_)) => bug!("The channel should be empty")
+        case Some(0, _) => bug!("The channel should be empty")
         case Some(1, BoxedValue(o)) => let s = o as String; s == "hey"
         case _ => bug!("impossible")
     }

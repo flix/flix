@@ -127,7 +127,8 @@ namespace Channel {
     ///
     /// Implements the expression `c <- e`.
     ///
-    pub def put(e: Boxed, c: Mpmc): Mpmc & Impure =
+    pub def put(e: elementType, c: Mpmc): Mpmc & Impure =
+        let boxedElement = box(e);
         let Mpmc(_, channelLock, unBuffered, _, elementDeque, _, waitingPutters) = c;
         lock(channelLock);
 
@@ -135,7 +136,7 @@ namespace Channel {
         awaitAvailableSpace(c);
 
         // Insert the new element
-        MutDeque.pushBack(e, elementDeque);
+        MutDeque.pushBack(boxedElement, elementDeque);
 
         // Signal the waiting getters that an element has arrived
         signalGetters(c);
@@ -154,22 +155,6 @@ namespace Channel {
         c
 
     ///
-    /// Receives an element from the channel `c`. This is blocking if the
-    /// channel is empty.
-    ///
-    /// Implements to the expression `<- c`.
-    ///
-    pub def get(c: Mpmc): Boxed & Impure =
-        let Mpmc(_, channelLock, _, _, _, _, _) = c;
-        lock(channelLock);
-
-        // Get the next available element
-        let element = getHelper(c);
-
-        unlock(channelLock);
-        element
-
-    ///
     /// Returns the first channel that has an element in the array along with
     /// the index of the channel. Returns None if the default case is chosen.
     ///
@@ -183,6 +168,91 @@ namespace Channel {
         // Sort channels to avoid deadlocks
         let sortedChannels = Array.sort(channels);
         selectHelper(channels, hasDefault, sortedChannels, selectLock, selectCondition)
+
+    pub def getBool(c: Mpmc): Bool & Impure = match get(c) {
+        case BoxedBool(v) => v
+        case BoxedObject(_, _, _) => bug!("Implementation error: unexpected boxed object")
+        case _ => bug!("Implementation error: cannot unbox non-BoxedBool as Bool")
+    }
+
+    pub def getChar(c: Mpmc): Char & Impure = match get(c) {
+        case BoxedChar(v) => v
+        case BoxedObject(_, _, _) => bug!("Implementation error: unexpected boxed object")
+        case _ => bug!("Implementation error: cannot unbox non-BoxedChar as Char")
+    }
+
+    pub def getInt8(c: Mpmc): Int8 & Impure = match get(c) {
+        case BoxedInt8(v) => v
+        case BoxedObject(_, _, _) => bug!("Implementation error: unexpected boxed object")
+        case _ => bug!("Implementation error: cannot unbox non-BoxedInt8 as Int8")
+    }
+
+    pub def getInt16(c: Mpmc): Int16 & Impure = match get(c) {
+        case BoxedInt16(v) => v
+        case BoxedObject(_, _, _) => bug!("Implementation error: unexpected boxed object")
+        case _ => bug!("Implementation error: cannot unbox non-BoxedInt16 as Int16")
+    }
+
+    pub def getInt32(c: Mpmc): Int32 & Impure = match get(c) {
+        case BoxedInt32(v) => v
+        case BoxedObject(_, _, _) => bug!("Implementation error: unexpected boxed object")
+        case _ => bug!("Implementation error: cannot unbox non-BoxedInt32 as Int32")
+    }
+
+    pub def getInt64(c: Mpmc): Int64 & Impure = match get(c) {
+        case BoxedInt64(v) => v
+        case BoxedObject(_, _, _) => bug!("Implementation error: unexpected boxed object")
+        case _ => bug!("Implementation error: cannot unbox non-BoxedInt64 as Int64")
+    }
+    pub def getFloat32(c: Mpmc): Float32 & Impure = match get(c) {
+        case BoxedFloat32(v) => v
+        case BoxedObject(_, _, _) => bug!("Implementation error: unexpected boxed object")
+        case _ => bug!("Implementation error: cannot unbox non-BoxedFloat32 as Float32")
+    }
+
+    pub def getFloat64(c: Mpmc): Float64 & Impure = match get(c) {
+        case BoxedFloat64(v) => v
+        case BoxedObject(_, _, _) => bug!("Implementation error: unexpected boxed object")
+        case _ => bug!("Implementation error: cannot unbox non-BoxedFloat64 as Float64")
+    }
+
+    pub def getValue(c: Mpmc): ##java.lang.Object & Impure = match get(c) {
+        case BoxedValue(v) => v
+        case BoxedObject(_, _, _) => bug!("Implementation error: unexpected boxed object")
+        case _ => bug!("Implementation error: cannot unbox non-BoxedValue as value")
+    }
+
+    ///
+    /// Receives an element from the channel `c`. This is blocking if the
+    /// channel is empty.
+    ///
+    /// Implements to the expression `<- c`.
+    ///
+    def get(c: Mpmc): Boxed & Impure =
+        let Mpmc(_, channelLock, _, _, _, _, _) = c;
+        lock(channelLock);
+
+        // Get the next available element
+        let element = getHelper(c);
+
+        unlock(channelLock);
+        element
+
+    ///
+    /// Boxes `v` in a primitive box or `BoxedValue`.
+    ///
+    def box(v: t): Boxed = match reifyType t {
+        case ErasedType => BoxedValue(v as ##java.lang.Object)
+        case ReifiedBool => BoxedBool(v as Bool)
+        case ReifiedChar => BoxedChar(v as Char)
+        case ReifiedFloat32 => BoxedFloat32(v as Float32)
+        case ReifiedFloat64 => BoxedFloat64(v as Float64)
+        case ReifiedInt8 => BoxedInt8(v as Int8)
+        case ReifiedInt16 => BoxedInt16(v as Int16)
+        case ReifiedInt32 => BoxedInt32(v as Int32)
+        case ReifiedInt64 => BoxedInt64(v as Int64)
+        case ReifiedArray(_) => BoxedValue(v as ##java.lang.Object)
+    }
 
     ///
     /// Wait for the channel to have available space.

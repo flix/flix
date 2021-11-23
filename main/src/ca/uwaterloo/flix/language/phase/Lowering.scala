@@ -494,27 +494,28 @@ object Lowering extends Phase[Root, Root] {
     case Expression.GetChannel(exp, tpe, eff, loc) =>
       // `<- [exp]`
       // becomes
-      // `Boxable.unbox(Channel.get([exp]))`
-      // TODO: this doesn't work. maybe make some help in Channel.flix
+      // `Channel.get<exp.tpe>([exp])`
+      // and an additional cast if exp is an object
       val e = visitExp(exp)
       val t = visitType(tpe)
       val channelGetSym = Symbol.mkDefnSym("Channel.get")
       val channelGet = Expression.Def(channelGetSym, Type.mkImpureArrow(e.tpe, Types.Boxed, loc), loc)
       val boxedElement = Expression.Apply(channelGet, List(e), Types.Boxed, Type.Impure, loc)
       unbox(boxedElement)
+      ??? // TODO: remake
 
     case Expression.PutChannel(exp1, exp2, tpe, eff, loc) =>
       // [exp1] <- [exp2]
       // becomes
-      // Channel.put(Boxable.box([exp2], [exp1])
-      // TODO: this doesn't work. maybe make some help in Channel.flix
+      // Channel.put([exp2], [exp1])
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
       val boxedElement = box(e2)
       val channelPutSym = Symbol.mkDefnSym("Channel.put")
-      val channelPut = Expression.Def(channelPutSym, Type.mkImpureUncurriedArrow(List(Types.Boxed, t), t, loc))
+      val channelPut = Expression.Def(channelPutSym, Type.mkImpureUncurriedArrow(List(Types.Boxed, t), t, loc), loc)
       Expression.Apply(channelPut, List(boxedElement, e1), t, eff, loc)
+      ??? // TODO: remake
 
     case Expression.SelectChannel(rules, default, tpe, eff, loc) =>
       val rs = rules.map(visitSelectChannelRule)
