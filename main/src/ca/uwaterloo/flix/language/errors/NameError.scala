@@ -56,8 +56,11 @@ object NameError {
     }
 
     def explain(formatter: Formatter): Option[String] = Some({
-      """Flix is not able to determine if the variable refers to a local variable
-        |or an imported name. You may want to rename either the variable or the use.
+      """Flix is not able to determine if the variable refers to a local variable or to a
+        |name that has been brought into scope with a use declaration.
+        |
+        |Note that Flix does not support function overloading, so even if the two names
+        |have different types, Flix cannot use that information to tell them apart.
         |""".stripMargin
     })
   }
@@ -84,10 +87,12 @@ object NameError {
     }
 
     def explain(formatter: Formatter): Option[String] = Some({
-      """Flix does not allow the two functions to be given the same name.
+      """Flix does not allow two functions to share the same name.
         |
-        |Flix does not support argument overloading. If you want to reuse
-        |the same name for two functions then you must use a type class.
+        |Note that Flix does not support function overloading; even if the two functions
+        |have different arguments, Flix cannot tell them apart. If you want two functions
+        |to share the same name you have to either (a) put them into separate namespaces
+        |or (b) to use a type class.
         |""".stripMargin
     })
 
@@ -115,7 +120,10 @@ object NameError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = Some({
+      """
+        |""".stripMargin
+    })
 
     def loc: SourceLocation = loc1
   }
