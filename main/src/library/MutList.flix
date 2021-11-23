@@ -47,10 +47,6 @@ instance Order[MutList[v]] with Order[v] {
         deref a <=> deref b) as & Pure
 }
 
-instance Functor[MutList] {
-    pub def map(f: a -> b & ef, v: MutList[a]): MutList[b] & ef = MutList.map(f, v) as & ef
-}
-
 instance Foldable[MutList] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, v: MutList[a]): b & ef = MutList.foldLeft(f, s, v) as & ef
     pub def foldRight(f: (a, b) -> b & ef, s: b, v: MutList[a]): b & ef = MutList.foldRight(f, s, v) as & ef
