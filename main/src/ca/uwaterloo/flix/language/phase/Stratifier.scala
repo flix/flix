@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.{ConstraintGraph, MultiEdge, MultiElement, Polarity}
+import ca.uwaterloo.flix.language.ast.Ast.{ConstraintGraph, MultiEdge, TypedPredicate, Polarity}
 import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
@@ -654,11 +654,11 @@ object Stratifier extends Phase[Root, Root] {
     */
   private def constraintGraphOfConstraint(c0: Constraint): ConstraintGraph = c0 match {
     case Constraint(_, Predicate.Head.Atom(headSym, _, _, headTpe, _), body, _) =>
-      val (pos, neg) = body.foldLeft((Vector.empty[MultiElement], Vector.empty[MultiElement])) {
+      val (pos, neg) = body.foldLeft((Vector.empty[TypedPredicate], Vector.empty[TypedPredicate])) {
         case ((pos, neg), b) => b match {
           case Body.Atom(pred, _, polarity, _, atomTpe, loc) => polarity match {
-            case Polarity.Positive => (pos.appended((pred, atomTpe, loc)), neg)
-            case Polarity.Negative => (pos, neg.appended((pred, atomTpe, loc)))
+            case Polarity.Positive => (pos :+ TypedPredicate(pred, atomTpe, loc), neg)
+            case Polarity.Negative => (pos, neg :+ TypedPredicate(pred, atomTpe, loc))
           }
           case Body.Guard(_, _) => (pos, neg)
         }
@@ -711,8 +711,8 @@ object Stratifier extends Phase[Root, Root] {
   private def constraintGraphToDependencyGraph(c: ConstraintGraph): DependencyGraph =
     c.xs.flatMap {
       case MultiEdge((head, _), positives, negatives) =>
-        val p = positives.map { case (b, _, loc) => UllmansAlgorithm.DependencyEdge.Positive(head, b, loc) }
-        val n = negatives.map { case (b, _, loc) => UllmansAlgorithm.DependencyEdge.Negative(head, b, loc) }
+        val p = positives.map { case TypedPredicate(b, _, loc) => UllmansAlgorithm.DependencyEdge.Positive(head, b, loc) }
+        val n = negatives.map { case TypedPredicate(b, _, loc) => UllmansAlgorithm.DependencyEdge.Negative(head, b, loc) }
         p ++ n
     }
 
@@ -740,17 +740,21 @@ object Stratifier extends Phase[Root, Root] {
     * Restricts the given constraint graph `dg` to the predicates that occur in the given type `tpe`.
     */
   private def restrict(dg: ConstraintGraph, predSyms: Map[Name.Pred, Type]): ConstraintGraph = {
-    dg.restrict(predSyms)
+    dg.restrict(predSyms, (t1, t2) => arityOf(t1) == arityOf(t2))
   }
 
   /**
-    * Returns the map of predicates that appears in the given row type `tpe`.
+    * Returns the map of predicates that appears in the given Schema `tpe`.
+    * A non-Schema type will result in an `InternalCompilerException`.
     */
   private def predicateSymbolsOf(tpe: Type): Map[Name.Pred, Type] = Type.eraseAliases(tpe) match {
     case Type.Apply(Type.Cst(TypeConstructor.Schema, _), schemaRow, _) => predicateSymbolsOf(schemaRow, Map.empty)
     case other => throw InternalCompilerException(s"Unexpected non-schema type $other")
   }
 
+  /**
+    * Recursively collects the predicates and their type from a nested `SchemaRowExtend` type.
+    */
   @tailrec
   private def predicateSymbolsOf(tpe: Type, acc: Map[Name.Pred, Type]): Map[Name.Pred, Type] = tpe match {
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), _), predType, _), rest, _) =>
@@ -761,7 +765,7 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * Computes the arity of a `Relation` or `Lattice` type.
     */
-  def arityOf(tpe: Type): Int = eraseAliases(tpe) match {
+  private def arityOf(tpe: Type): Int = eraseAliases(tpe) match {
     case Type.Apply(Type.Cst(TypeConstructor.Relation | TypeConstructor.Lattice, _), element, _) => element.baseType match {
       case Type.Cst(TypeConstructor.Tuple(arity), _) => arity
       case Type.Cst(TypeConstructor.Unit, _) => 0

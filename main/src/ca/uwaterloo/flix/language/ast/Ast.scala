@@ -16,8 +16,6 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.phase.Stratifier.arityOf
-
 import java.nio.file.Path
 import java.util.Objects
 
@@ -362,12 +360,12 @@ object Ast {
   /**
     * Contains the edges held in a single constraint.
     */
-  case class MultiEdge(head: (Name.Pred, Type), positives: Vector[MultiElement], negatives: Vector[MultiElement])
+  case class MultiEdge(head: (Name.Pred, Type), positives: Vector[TypedPredicate], negatives: Vector[TypedPredicate])
 
   /**
     * Represents a body predicate on a MultiEdge.
     */
-  type MultiElement = (Name.Pred, Type, SourceLocation)
+  case class TypedPredicate(atom: Name.Pred, tpe: Type, loc: SourceLocation)
 
   object ConstraintGraph {
     /**
@@ -393,25 +391,20 @@ object Ast {
     }
 
     /**
-      * Returns true if the two types are relations or lattices and have the same arity.
+      * Returns `this` constraint graph including only the edges where all
+      * its predicates is in `syms` and `typeEquality` returns true for the predicate type and its type in `syms`.
+      * A rule like
+      * `A(ta) :- B(tb), C(tc), not D(tc).` is represented by `MultiEdge((A, ta), {(B, tb), (C, tc)}, {(D, td)})`
+      * and is only included in the output if `syms` contains all of `A, B, C, D` and `typeEquality(syms(A), ta)` etc.
       */
-    private def typesMatch(t1: Type, t2: Type): Boolean =
-      arityOf(t1) == arityOf(t2)
-
-    /**
-      * Returns `this` constraint graph including only the graphs where all
-      * edges have both the source and destination in `syms`.
-      * A rule like `A :- B, C, not D.` is represented by `MultiEdge(A, {B, C}, {D})` and is only
-      * included in the output if `syms` contains all of `A, B, C, D`.
-      */
-    def restrict(syms: Map[Name.Pred, Type]): ConstraintGraph =
+    def restrict(syms: Map[Name.Pred, Type], typeEquality: (Type, Type) => Boolean): ConstraintGraph =
       ConstraintGraph(xs.filter {
         case MultiEdge((head, headTpe), positives, negatives) =>
-          def checkBody(e: MultiElement): Boolean = e match {
-            case (s, tpe, _) => syms.get(s).exists(typesMatch(_, tpe))
+          def checkBody(e: TypedPredicate): Boolean = e match {
+            case TypedPredicate(s, tpe, _) => syms.get(s).exists(typeEquality(_, tpe))
           }
 
-          syms.get(head).exists(typesMatch(_, headTpe)) &&
+          syms.get(head).exists(typeEquality(_, headTpe)) &&
             positives.forall(checkBody) && negatives.forall(checkBody)
       })
   }
