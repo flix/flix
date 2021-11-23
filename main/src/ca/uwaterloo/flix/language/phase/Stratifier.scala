@@ -18,7 +18,8 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.{ConstraintGraph, MultiEdge, Polarity}
+import ca.uwaterloo.flix.language.ast.Ast.{ConstraintGraph, MultiEdge, MultiElement, Polarity}
+import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast._
@@ -652,18 +653,18 @@ object Stratifier extends Phase[Root, Root] {
     * Returns the constraint graph of the given constraint `c0`.
     */
   private def constraintGraphOfConstraint(c0: Constraint): ConstraintGraph = c0 match {
-    case Constraint(_, Predicate.Head.Atom(headSym, _, headTerms, _, _), body, _) =>
+    case Constraint(_, Predicate.Head.Atom(headSym, _, _, headTpe, _), body, _) =>
       // TODO: These sets do not eliminate most duplicates since location is included in the equality.
-      val (pos, neg) = body.foldLeft((Set.empty[(Name.Pred, Int, SourceLocation)], Set.empty[(Name.Pred, Int, SourceLocation)])) {
+      val (pos, neg) = body.foldLeft((Set.empty[MultiElement], Set.empty[MultiElement])) {
         case ((pos, neg), b) => b match {
-          case Body.Atom(pred, _, polarity, terms, _, loc) => polarity match {
-            case Polarity.Positive => (pos + ((pred, terms.length, loc)), neg)
-            case Polarity.Negative => (pos, neg + ((pred, terms.length, loc)))
+          case Body.Atom(pred, _, polarity, _, atomTpe, loc) => polarity match {
+            case Polarity.Positive => (pos + ((pred, atomTpe, loc)), neg)
+            case Polarity.Negative => (pos, neg + ((pred, atomTpe, loc)))
           }
           case Body.Guard(_, _) => (pos, neg)
         }
       }
-      val edge = MultiEdge((headSym, headTerms.length), pos, neg)
+      val edge = MultiEdge((headSym, headTpe), pos, neg)
       ConstraintGraph(Set(edge))
   }
 
@@ -674,7 +675,9 @@ object Stratifier extends Phase[Root, Root] {
     */
   private def stratifyWithCache(dg: ConstraintGraph, tpe: Type, loc: SourceLocation)(implicit cache: Cache): Validation[Ast.Stratification, StratificationError] = {
     // The key is the set of predicates that occur in the row type.
-    val key = predicateSymbolsOf(tpe)
+    val m = predicateSymbolsOf(tpe)
+
+    val key = m.map { case (p, t) => p -> arityOf(t) }
 
     // Lookup the key in the stratification cache.
     cache.get(key) match {
@@ -686,7 +689,7 @@ object Stratifier extends Phase[Root, Root] {
         // Cache miss: Compute the stratification and possibly cache it.
 
         // Compute the restricted constraint graph.
-        val rg = restrict(dg, key)
+        val rg = restrict(dg, m)
 
         // Compute the stratification.
         UllmansAlgorithm.stratify(constraintGraphToDependencyGraph(rg), tpe, loc) match {
@@ -737,27 +740,29 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * Restricts the given constraint graph `dg` to the predicates that occur in the given type `tpe`.
     */
-  private def restrict(dg: ConstraintGraph, predSyms: Map[Name.Pred, Int]): ConstraintGraph = {
+  private def restrict(dg: ConstraintGraph, predSyms: Map[Name.Pred, Type]): ConstraintGraph = {
     dg.restrict(predSyms)
   }
 
   /**
     * Returns the set of predicates that appears in the given row type `tpe`.
     */
-  private def predicateSymbolsOf(tpe: Type): Map[Name.Pred, Int] = Type.eraseAliases(tpe) match {
+  private def predicateSymbolsOf(tpe: Type): Map[Name.Pred, Type] = Type.eraseAliases(tpe) match {
     case Type.Apply(Type.Cst(TypeConstructor.Schema, _), schemaRow, _) => predicateSymbolsOf(schemaRow, Map.empty)
-    // TODO: Arrays are here for some reason?
     case other => throw InternalCompilerException(s"Unexpected non-schema type $other")
   }
 
   @tailrec
-  private def predicateSymbolsOf(tpe: Type, acc: Map[Name.Pred, Int]): Map[Name.Pred, Int] = tpe match {
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), _), predType, _), rest, _) => predicateSymbolsOf(rest, acc + (pred -> arityOf(predType)))
-    case Type.Cst(TypeConstructor.SchemaRowEmpty, _) => acc
+  private def predicateSymbolsOf(tpe: Type, acc: Map[Name.Pred, Type]): Map[Name.Pred, Type] = tpe match {
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), _), predType, _), rest, _) =>
+      predicateSymbolsOf(rest, acc + (pred -> predType))
     case _ => acc
   }
 
-  private def arityOf(tpe: Type): Int = tpe match {
+  /**
+    * Computes the arity of a `Relation` or `Lattice` type.
+    */
+  def arityOf(tpe: Type): Int = eraseAliases(tpe) match {
     case Type.Apply(Type.Cst(TypeConstructor.Relation | TypeConstructor.Lattice, _), element, _) => element.baseType match {
       case Type.Cst(TypeConstructor.Tuple(arity), _) => arity
       case Type.Cst(TypeConstructor.Unit, _) => 0

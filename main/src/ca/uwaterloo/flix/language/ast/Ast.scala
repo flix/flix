@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.language.phase.Stratifier.arityOf
+
 import java.nio.file.Path
 import java.util.Objects
 
@@ -360,7 +362,12 @@ object Ast {
   /**
     * Contains the edges held in a single constraint.
     */
-  case class MultiEdge(head: (Name.Pred, Int), positives: Set[(Name.Pred, Int, SourceLocation)], negatives: Set[(Name.Pred, Int, SourceLocation)])
+  case class MultiEdge(head: (Name.Pred, Type), positives: Set[MultiElement], negatives: Set[MultiElement])
+
+  /**
+    * Represents a body predicate on a MultiEdge.
+    */
+  type MultiElement = (Name.Pred, Type, SourceLocation)
 
   object ConstraintGraph {
     /**
@@ -386,17 +393,26 @@ object Ast {
     }
 
     /**
+      * Returns true if the two types are relations or lattices and have the same arity.
+      */
+    private def typesMatch(t1: Type, t2: Type): Boolean =
+      arityOf(t1) == arityOf(t2)
+
+    /**
       * Returns `this` constraint graph including only the graphs where all
       * edges have both the source and destination in `syms`.
       * A rule like `A :- B, C, not D.` is represented by `MultiEdge(A, {B, C}, {D})` and is only
       * included in the output if `syms` contains all of `A, B, C, D`.
       */
-    def restrict(syms: Map[Name.Pred, Int]): ConstraintGraph =
+    def restrict(syms: Map[Name.Pred, Type]): ConstraintGraph =
       ConstraintGraph(xs.filter {
-        case MultiEdge((head, headArity), positives, negatives) =>
-          syms.get(head).contains(headArity) &&
-            positives.forall { case (s, arity, _) => syms.get(s).contains(arity) } &&
-            negatives.forall { case (s, arity, _) => syms.get(s).contains(arity) }
+        case MultiEdge((head, headTpe), positives, negatives) =>
+          def checkBody(e: MultiElement): Boolean = e match {
+            case (s, tpe, _) => syms.get(s).exists(typesMatch(_, tpe))
+          }
+
+          syms.get(head).exists(typesMatch(_, headTpe)) &&
+            positives.forall(checkBody) && negatives.forall(checkBody)
       })
   }
 
