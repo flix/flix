@@ -38,7 +38,7 @@ object NameError {
     * @param loc2 the location of the use.
     */
   case class AmbiguousVarOrUse(name: String, loc: SourceLocation, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
-    def summary: String = s"Ambiguous name. The name may refer to both a variable and a use of a name."
+    def summary: String = s"Ambiguous name: '$name'. The name may refer to both a variable and a use of a name."
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -56,11 +56,8 @@ object NameError {
     }
 
     def explain(formatter: Formatter): Option[String] = Some({
-      """Flix is not able to determine if the variable refers to a local variable or to a
+      """Flix is not able to determine if the name refers to a local variable or to a
         |name that has been brought into scope with a use declaration.
-        |
-        |Note that Flix does not support function overloading, so even if the two names
-        |have different types, Flix cannot use that information to tell them apart.
         |""".stripMargin
     })
   }
@@ -87,12 +84,11 @@ object NameError {
     }
 
     def explain(formatter: Formatter): Option[String] = Some({
-      """Flix does not allow two functions to share the same name.
+      """Note: Flix does not support function overloading, i.e. you cannot define two
+        |functions with the same name, even if their formal parameters differ.
         |
-        |Note that Flix does not support function overloading; even if the two functions
-        |have different arguments, Flix cannot tell them apart. If you want two functions
-        |to share the same name you have to either (a) put them into separate namespaces
-        |or (b) to use a type class.
+        |If you want two functions to share the same name you have to either (a) put them
+        |into separate namespaces or (b) to use a type class.
         |""".stripMargin
     })
 
@@ -107,7 +103,7 @@ object NameError {
     * @param loc2 the location of the second use.
     */
   case class DuplicateUseDefOrSig(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
-    def summary: String = s"Duplicate use."
+    def summary: String = s"Duplicate use of '$name'."
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -120,10 +116,7 @@ object NameError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
-      """
-        |""".stripMargin
-    })
+    def explain(formatter: Formatter): Option[String] = None
 
     def loc: SourceLocation = loc1
   }
@@ -136,7 +129,7 @@ object NameError {
     * @param loc2 the location of the second use.
     */
   case class DuplicateUseTypeOrClass(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
-    def summary: String = s"Duplicate use."
+    def summary: String = s"Duplicate use of '$name'."
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -162,7 +155,7 @@ object NameError {
     * @param loc2 the location of the second use.
     */
   case class DuplicateUseTag(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
-    def summary: String = s"Duplicate use."
+    def summary: String = s"Duplicate use of '$name'."
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -188,7 +181,7 @@ object NameError {
     * @param loc2 the location of the second definition.
     */
   case class DuplicateTypeOrClass(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
-    def summary: String = s"Duplicate type or class declaration."
+    def summary: String = s"Duplicate type or class declaration '$name'."
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -201,10 +194,7 @@ object NameError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Remove or rename one of the occurrences."
-    })
+    def explain(formatter: Formatter): Option[String] = None
 
     def loc: SourceLocation = loc1
 
@@ -217,7 +207,7 @@ object NameError {
     * @param loc  the location of the suspicious type variable.
     */
   case class SuspiciousTypeVarName(name: String, loc: SourceLocation) extends NameError {
-    def summary: String = s"Suspicious type variable. Did you mean: '${name.capitalize}'?"
+    def summary: String = s"Suspicious type variable '$name'. Did you mean: '${name.capitalize}'?"
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -229,8 +219,13 @@ object NameError {
     }
 
     def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Type variables are always lowercase. Named types are uppercase."
+      """In Flix every type variable begins with a lowercase name. Your type variable
+        |looks suspiciously like the name of a built-in type. Perhaps you meant to use
+        |the built-in type?
+        |
+        |In Flix, `Int32` is a built-in type whereas `int32` is a type variable. To
+        |prevent confusion, Flix disallows type variables that look like built-in types.
+        |""".stripMargin
     })
 
   }
@@ -242,18 +237,20 @@ object NameError {
     * @param loc  the location of the class name.
     */
   case class UndefinedNativeClass(name: String, loc: SourceLocation) extends NameError {
-    def summary: String = s"Undefined class."
+    def summary: String = s"Undefined Java class '$name'."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.format)}
-         |>> Undefined class '${red(name)}'.
+         |>> Undefined Java class '${red(name)}'.
          |
-         |${code(loc, "undefined class.")}
+         |${code(loc, "undefined Java class.")}
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = Some({
+      "Flix cannot find the Java class. Maybe there is a typo?"
+    })
   }
 
   /**
@@ -263,7 +260,7 @@ object NameError {
     * @param loc  the location of the undefined variable.
     */
   case class UndefinedVar(name: String, loc: SourceLocation) extends NameError {
-    def summary: String = s"Undefined variable."
+    def summary: String = s"Undefined variable '$name'."
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -274,7 +271,9 @@ object NameError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = Some({
+      "Flix cannot find the variable. Maybe there is a typo?"
+    })
   }
 
   /**
@@ -284,7 +283,7 @@ object NameError {
     * @param loc  the location of the undefined type variable.
     */
   case class UndefinedTypeVar(name: String, loc: SourceLocation) extends NameError {
-    def summary: String = s"Undefined type variable."
+    def summary: String = s"Undefined type variable '$name'."
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -296,7 +295,9 @@ object NameError {
 
     }
 
-    def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = Some({
+      "Flix cannot find the type variable. Maybe there is a typo?"
+    })
   }
 
   /**
