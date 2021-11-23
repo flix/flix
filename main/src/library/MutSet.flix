@@ -25,11 +25,6 @@ instance ToString[MutSet[a]] with ToString[a] {
         "MutSet#{${String.dropRight(2, s)}}"
 }
 
-instance Foldable[MutSet] {
-    pub def foldLeft(f: (b, a) -> b & ef, i: b, s: MutSet[a]): b & ef = MutSet.foldLeft(f, i, s) as & ef
-    pub def foldRight(f: (a, b) -> b & ef, i: b, s: MutSet[a]): b & ef = MutSet.foldRight(f, i, s) as & ef
-}
-
 namespace MutSet {
 
     ///
@@ -211,11 +206,6 @@ namespace MutSet {
     pub def findRight(f: a -> Bool, s: MutSet[a]): Option[a] & Impure =
         let MutSet(ms) = s;
             Set.findRight(f, deref ms)
-
-    ///
-    /// Returns the result of applying `combine` to all the elements in `s`, using `empty` as the initial value.
-    ///
-    pub def fold(s: MutSet[a]): a with Monoid[a] = Foldable.fold(s)
 
     ///
     /// Applies `f` to a start value `i` and all elements in the mutable set `s` going from left to right.
