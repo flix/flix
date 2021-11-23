@@ -306,20 +306,20 @@ object NameError {
     * @param loc  the location where the error occurred.
     */
   case class IllegalSignature(name: Name.Ident, loc: SourceLocation) extends NameError {
-    def summary: String = "Illegal signature."
+    def summary: String = s"Unexpected signature which does not mention the type variable of the class."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.format)}
-         |>> Illegal signature '${red(name.name)}'.
+         |>> Unexpected signature '${red(name.name)}' which does not mention the type variable of the class.
          |
-         |${code(loc, "Illegal signature.")}
+         |${code(loc, "unexpected signature.")}
          |""".stripMargin
     }
 
     def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Change the signature to include the class type parameter, or remove the signature."
+      """Every signature in a type class must mention the type variable of the class.
+        |""".stripMargin
     })
 
   }
