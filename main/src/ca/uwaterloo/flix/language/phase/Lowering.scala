@@ -481,47 +481,122 @@ object Lowering extends Phase[Root, Root] {
       val t = visitType(tpe)
       Expression.PutStaticField(field, e, t, eff, loc)
 
-    case Expression.NewChannel(exp, tpe, eff, loc) =>
+    case Expression.NewChannel(exp, _, eff, loc) =>
       // `chan [exp] [tpe]`
+      //
       // becomes
+      //
       // `Channel.new([exp])`
       val e = visitExp(exp)
-      val t = visitType(tpe)
       val channelNewSym = Symbol.mkDefnSym("Channel.new")
-      val channelNew = Expression.Def(channelNewSym, Type.mkImpureArrow(Type.Int32, t, loc), loc)
-      Expression.Apply(channelNew, List(e), t, eff, loc)
+      val channelNew = Expression.Def(channelNewSym, Type.mkImpureArrow(Type.Int32, Types.ChannelMpmc, loc), loc)
+      Expression.Apply(channelNew, List(e), Types.ChannelMpmc, eff, loc)
 
     case Expression.GetChannel(exp, tpe, eff, loc) =>
-      // `<- [exp]`
+      // `<- <exp>`
+      //
       // becomes
-      // `Channel.get<exp.tpe>([exp])`
+      //
+      // `Channel.get<exp.tpe>(<exp>)`
+      //
       // and an additional cast if exp is an object
       val e = visitExp(exp)
       val t = visitType(tpe)
-      val channelGetSym = Symbol.mkDefnSym("Channel.get")
-      val channelGet = Expression.Def(channelGetSym, Type.mkImpureArrow(e.tpe, Types.Boxed, loc), loc)
-      val boxedElement = Expression.Apply(channelGet, List(e), Types.Boxed, Type.Impure, loc)
-      unbox(boxedElement)
-      ??? // TODO: remake
+      // TODO: This error is wrong, tc can be var
+      val tc = t.typeConstructor.getOrElse(throw InternalCompilerException("Unexpected var type"))
+      val (channelGetSym, primitive) = tc match {
+        case TypeConstructor.Bool => (Symbol.mkDefnSym("Channel.getBool"), true)
+        case TypeConstructor.Char => (Symbol.mkDefnSym("Channel.getChar"), true)
+        case TypeConstructor.Float32 => (Symbol.mkDefnSym("Channel.getFloat32"), true)
+        case TypeConstructor.Float64 => (Symbol.mkDefnSym("Channel.getFloat64"), true)
+        case TypeConstructor.Int8 => (Symbol.mkDefnSym("Channel.getInt8"), true)
+        case TypeConstructor.Int16 => (Symbol.mkDefnSym("Channel.getInt16"), true)
+        case TypeConstructor.Int32 => (Symbol.mkDefnSym("Channel.getInt32"), true)
+        case TypeConstructor.Int64 => (Symbol.mkDefnSym("Channel.getInt64"), true)
+        case _ => (Symbol.mkDefnSym("Channel.getValue"), false)
+      }
+      val channelGet = Expression.Def(channelGetSym, Type.mkImpureArrow(Types.ChannelMpmc, Types.Boxed, loc), loc)
+      val element = Expression.Apply(channelGet, List(e), Types.Boxed, Type.Impure, loc)
+      if (primitive) element
+      else Expression.Cast(element, t, eff, loc)
 
-    case Expression.PutChannel(exp1, exp2, tpe, eff, loc) =>
-      // [exp1] <- [exp2]
+    case Expression.PutChannel(exp1, exp2, _, eff, loc) =>
+      // <exp1> <- <exp2>
+      //
       // becomes
-      // Channel.put([exp2], [exp1])
+      //
+      // Channel.put(<exp2>, <exp1>)
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      val t = visitType(tpe)
-      val boxedElement = box(e2)
       val channelPutSym = Symbol.mkDefnSym("Channel.put")
-      val channelPut = Expression.Def(channelPutSym, Type.mkImpureUncurriedArrow(List(Types.Boxed, t), t, loc), loc)
-      Expression.Apply(channelPut, List(boxedElement, e1), t, eff, loc)
-      ??? // TODO: remake
+      // TODO: unsure if this is correct when put has a type variable
+      val channelPut = Expression.Def(channelPutSym, Type.mkImpureUncurriedArrow(List(e2.tpe, Types.ChannelMpmc), Types.ChannelMpmc, loc), loc)
+      Expression.Apply(channelPut, List(e2, e1), Types.ChannelMpmc, eff, loc)
 
     case Expression.SelectChannel(rules, default, tpe, eff, loc) =>
+      // select {
+      //   case <rules(0).sym> <- <rules(0).chan> => <rules(0).exp>
+      //   ...
+      //   case <rules(i).sym> <- <rules(i).chan> => <rules(i).exp>
+      //   case _ => <default>
+      // }
+      //
+      // becomes
+      //
+      // match Channel.select([<rules(0).chan>, <rules(1).chan>, ..., <rules(i).chan>], <default.isDefined>) {
+      //   case Some(0, Boxed<rules(0).tpe>(<rules(0).sym>) => <rules(0).exp>
+      //   ...
+      //   case Some(i, Boxed<rules(i).tpe>(<rules(i).sym>) => <rules(i).exp>
+      //   case None => <default>
+      //   case _ => bug!("impossible select case")
+      // }
+      //
+      // if <rules(i).tpe> is an object, then an additional casting is required
+      // case Some(i, Boxed<rules(i).tpe>(<fresh>) => let <rules(i).sym> = <fresh> as <rules(i).tpe>; <rules(i).exp>
       val rs = rules.map(visitSelectChannelRule)
       val d = default.map(visitExp)
       val t = visitType(tpe)
-      Expression.SelectChannel(rs, d, t, eff, loc)
+      val channelSelectSym = Symbol.mkDefnSym("Channel.select")
+      val optionSym = Symbol.mkEnumSym("Option")
+      val optionIntBoxed = Type.mkEnum(optionSym, List(Type.Int32, Types.Boxed), loc)
+      val selectType = Type.mkImpureUncurriedArrow(List(Type.mkArray(Types.ChannelMpmc, loc), Type.Bool), optionIntBoxed, loc)
+      val channelSelect = Expression.Def(channelSelectSym, selectType, loc)
+      val chanArray = Expression.ArrayLit(rs.map(r => r.chan), Type.mkArray(Types.ChannelMpmc, loc), Type.Impure, loc)
+      val hasDefault = if (d.isDefined) Expression.True(loc) else Expression.False(loc)
+      val selectResult = Expression.Apply(channelSelect, List(chanArray, hasDefault), optionIntBoxed, Type.Impure, loc)
+
+      def mkMatchRule(r: SelectChannelRule, caseIndex: Int): MatchRule = {
+        val typeOfSym: Type = ???
+        val originalSymPat = Pattern.Var(r.sym, typeOfSym, loc)
+        val indexPat = Pattern.Int32(caseIndex, loc)
+        // TODO: This error is wrong, tc can be var
+        val tc = typeOfSym.typeConstructor.getOrElse(throw InternalCompilerException("Unexpected var type"))
+        val (boxedName, primitive) = tc match {
+          case TypeConstructor.Bool => (Name.Tag("BoxedBool", loc), true)
+          case TypeConstructor.Char => (Name.Tag("BoxedChar", loc), true)
+          case TypeConstructor.Float32 => (Name.Tag("BoxedFloat32", loc), true)
+          case TypeConstructor.Float64 => (Name.Tag("BoxedFloat64", loc), true)
+          case TypeConstructor.Int8 => (Name.Tag("BoxedInt8", loc), true)
+          case TypeConstructor.Int16 => (Name.Tag("BoxedInt16", loc), true)
+          case TypeConstructor.Int32 => (Name.Tag("BoxedInt32", loc), true)
+          case TypeConstructor.Int64 => (Name.Tag("BoxedInt64", loc), true)
+          case _ => (Name.Tag("BoxedValue", loc), false)
+        }
+        val fresh = Symbol.freshVarSym(r.sym)
+        val javaLangObject = Type.Cst(TypeConstructor.Native(classOf[Object]), loc)
+        val symPat = if (primitive) originalSymPat else {
+          Pattern.Var(fresh, javaLangObject, loc)
+        }
+        val boxedPat = Pattern.Tag(Enums.Boxed, boxedName, symPat, Types.Boxed, loc)
+        val matchPattern = Pattern.Tuple(List(indexPat, boxedPat), Type.mkTuple(List(Type.Int32, Types.Boxed), loc), loc)
+        val ruleBody = if (primitive) r.exp else {
+          Expression.Let(r.sym, Ast.Modifiers.Empty, Expression.Cast(Expression.Var(fresh, typeOfSym, loc), javaLangObject, Type.Impure, loc), r.exp, r.exp.tpe, r.exp.eff, r.exp.loc)
+        }
+        MatchRule(Pattern.Tag(optionSym, Name.Tag("Some", loc), matchPattern, optionIntBoxed, loc), Expression.True(loc), ruleBody)
+      }
+
+      Expression.Match(selectResult, rules.zipWithIndex.map { case (r, i) => mkMatchRule(r, i) }, t, eff, loc)
+
 
     case Expression.Spawn(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -1049,16 +1124,6 @@ object Lowering extends Phase[Root, Root] {
     val tpe = Type.mkPureArrow(exp.tpe, Types.Boxed, loc)
     val innerExp = Expression.Sig(Sigs.Box, tpe, loc)
     Expression.Apply(innerExp, List(exp), Types.Boxed, Type.Pure, loc)
-  }
-
-  /**
-    * Returns the given expression `exp` unboxed.
-    */
-  private def unbox(exp: Expression): Expression = {
-    val loc = exp.loc
-    val tpe = Type.mkPureArrow(Types.Boxed, exp.tpe, loc)
-    val innerExp = Expression.Sig(Sigs.Unbox, tpe, loc)
-    Expression.Apply(innerExp, List(exp), exp.tpe, Type.Pure, loc)
   }
 
   /**
