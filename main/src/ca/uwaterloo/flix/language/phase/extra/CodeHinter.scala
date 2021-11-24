@@ -26,37 +26,6 @@ import ca.uwaterloo.flix.util.Validation._
 object CodeHinter {
 
   /**
-    * A list of operations that support lazy evaluation when given a pure function.
-    */
-  private val LazyWhenPure: List[Symbol.DefnSym] = List(
-    Symbol.mkDefnSym("LazyList.mapWithIndex"),
-    Symbol.mkDefnSym("LazyList.flatMap"),
-    Symbol.mkDefnSym("LazyList.mapWithIndex"),
-    Symbol.mkDefnSym("LazyList.dropWhile"),
-    Symbol.mkDefnSym("LazyList.takeWhile"),
-
-    Symbol.mkDefnSym("DelayMap.insertWith"),
-    Symbol.mkDefnSym("DelayMap.insertWithKey"),
-    Symbol.mkDefnSym("DelayMap.map"),
-    Symbol.mkDefnSym("DelayMap.mapWithKey"),
-    Symbol.mkDefnSym("DelayMap.unionWith"),
-    Symbol.mkDefnSym("DelayMap.unionWithKey"),
-    Symbol.mkDefnSym("DelayMap.update"),
-    Symbol.mkDefnSym("DelayMap.updateWithKey"),
-  )
-
-  /**
-    * A list of operations that support parallel evaluation when given a pure function.
-    */
-  private val ParallelWhenPure: List[Symbol.DefnSym] = List(
-    Symbol.mkDefnSym("Set.count"),
-    Symbol.mkDefnSym("Set.exists"),
-    Symbol.mkDefnSym("Set.forall"),
-    Symbol.mkDefnSym("Set.maximumBy"),
-    Symbol.mkDefnSym("Set.minimumBy"),
-  )
-
-  /**
     * Returns a collection of code quality hints for the given AST `root`.
     */
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CodeHint] = flix.phase("CodeQuality") {

@@ -261,7 +261,7 @@ namespace Set {
     ///
     /// The function `f` must be pure.
     ///
-    @Time(time(f) * size(xs)) @Space(space(f) * Int32.log2(size(xs)))
+    @ParallelIfPure // TODO
     pub def count(f: a -> Bool, xs: Set[a]): Int32 =
         foldLeft((acc, x) -> if (f(x)) 1 + acc else acc, 0, xs)
 
@@ -355,7 +355,7 @@ namespace Set {
     ///
     /// Note: The returned set may be smaller than `xs`.
     ///
-    @Time(time(f) * size(xs)) @Space(space(f) * size(xs))
+    @ParallelIfPure // TODO
     pub def map(f: a -> b & ef, xs: Set[a]): Set[b] & ef with Order[b] =
         foldLeft((acc, x) -> insert(f(x), acc), empty(), xs)
 
