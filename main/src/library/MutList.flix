@@ -21,13 +21,6 @@ pub enum MutList[a] {
     case MutList(Ref[Array[a]], Ref[Int32])
 }
 
-instance ToString[MutList[a]] with ToString[a] {
-    pub def toString(v: MutList[a]): String = {
-        let s = MutList.formatWith(x -> "${x}", ", ", v) as & Pure;
-        "MutList#{${s}}"
-    }
-}
-
 instance Eq[MutList[a]] with Eq[a] {
         pub def eq(xs: MutList[a], ys: MutList[a]): Bool = {
             let MutList(l1, n1) = xs;
