@@ -104,9 +104,9 @@ namespace Channel {
     ///
     /// Spawn the function `f` and send its value on the channel returned by this function.
     ///
-    def spawnWithChannel(f: Unit -> a & ef): Channel[a] & Impure =
-        let c = chan 1;
-        spawn(c <- f());
+    pub def spawnWithChannel(f: Unit -> a & ef): Channel[a] & Impure =
+        let c = chan a 1;
+        spawn c <- f();
         c
 
     ///
