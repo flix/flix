@@ -40,11 +40,6 @@ instance Order[MutList[v]] with Order[v] {
         deref a <=> deref b) as & Pure
 }
 
-instance Foldable[MutList] {
-    pub def foldLeft(f: (b, a) -> b & ef, s: b, v: MutList[a]): b & ef = MutList.foldLeft(f, s, v) as & ef
-    pub def foldRight(f: (a, b) -> b & ef, s: b, v: MutList[a]): b & ef = MutList.foldRight(f, s, v) as & ef
-}
-
 namespace MutList {
 
     ///
@@ -379,11 +374,6 @@ namespace MutList {
             a[i] = f(a[i], i);
             transformWithIndexHelper!(f, a, i + 1, n)
         }
-
-    ///
-    /// Returns the result of applying `combine` to all the elements in `v`, using `empty` as the initial value.
-    ///
-    pub def fold(v: MutList[a]): a with Monoid[a] = Foldable.fold(v)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `a` going from left to right.
