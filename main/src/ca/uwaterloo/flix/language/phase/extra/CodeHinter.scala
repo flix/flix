@@ -313,7 +313,7 @@ object CodeHinter {
     */
   private def parallelWhenPure(sym: Symbol.DefnSym)(implicit root: Root): Boolean = {
     val defn = root.defs(sym)
-    defn.spec.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.LazyWhenPure])
+    defn.spec.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.ParallelWhenPure])
   }
 
   /**
