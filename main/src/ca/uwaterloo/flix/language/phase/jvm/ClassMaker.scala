@@ -44,7 +44,7 @@ class ClassMaker(visitor: ClassWriter) {
     * Creates a instruction set calling `<init>` on `java.lang.Object` and returns.
     */
   def mkObjectConstructor(v: Visibility): Unit = {
-    val constructor = ALOAD(0) ~ invokeConstructor(JvmName.Object, MethodDescriptor.NothingToVoid) ~ RETURN()
+    val constructor = loadThis() ~ invokeConstructor(JvmName.Object, MethodDescriptor.NothingToVoid) ~ RETURN()
     mkConstructor(constructor, MethodDescriptor.NothingToVoid, v)
   }
 

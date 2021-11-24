@@ -8,7 +8,7 @@ object GenRefClasses {
 
   val ValueFieldName: String = "value"
 
-  def gen(types: List[BackendObjType.Ref])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+  def gen(types: Iterable[BackendObjType.Ref])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     types.map { refType =>
       refType.jvmName -> JvmClass(refType.jvmName, genRefClass(refType))
     }.toMap
