@@ -30,16 +30,6 @@ instance Eq[MutList[a]] with Eq[a] {
         } as & Pure
 }
 
-instance Order[MutList[v]] with Order[v] {
-    ///
-    /// Compares `u` and `v` lexicographically.
-    ///
-    pub def compare(u: MutList[v], v: MutList[v]): Comparison =
-        (let MutList(a, _) = u;
-        let MutList(b, _) = v;
-        deref a <=> deref b) as & Pure
-}
-
 namespace MutList {
 
     ///
