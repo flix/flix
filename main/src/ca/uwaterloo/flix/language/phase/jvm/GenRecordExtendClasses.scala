@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst.Root
+import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.Branch.{FalseBranch, TrueBranch}
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{Finality, Instancing, Visibility}
 import ca.uwaterloo.flix.language.phase.jvm.GenRecordInterfaces.{LookupFieldFunctionName, RestrictFieldFunctionName}
@@ -84,7 +85,7 @@ object GenRecordExtendClasses {
   /**
     * Compares the label of `this`and `ALOAD(1)` and executes the designated branch.
     */
-  private def caseOnLabelEquality(extendType: BackendObjType.RecordExtend)(cases: Boolean => InstructionSet): InstructionSet =
+  private def caseOnLabelEquality(extendType: BackendObjType.RecordExtend)(cases: Branch => InstructionSet): InstructionSet =
     loadThis() ~
       GETFIELD(extendType.jvmName, LabelFieldName, BackendObjType.String.toTpe) ~
       ALOAD(1) ~
@@ -93,9 +94,9 @@ object GenRecordExtendClasses {
 
   private def genLookupFieldMethod(extendType: BackendObjType.RecordExtend)(implicit root: Root, flix: Flix): InstructionSet =
     caseOnLabelEquality(extendType) {
-      case true =>
+      case TrueBranch =>
         loadThis() ~ ARETURN()
-      case false =>
+      case FalseBranch =>
         loadThis() ~
           GETFIELD(extendType.jvmName, RestFieldName, extendType.interface.toObjTpe.toTpe) ~
           ALOAD(1) ~
@@ -105,11 +106,11 @@ object GenRecordExtendClasses {
 
   private def genRestrictFieldMethod(extendType: BackendObjType.RecordExtend)(implicit root: Root, flix: Flix): InstructionSet =
     caseOnLabelEquality(extendType) {
-      case true =>
+      case TrueBranch =>
         loadThis() ~
           GETFIELD(extendType.jvmName, RestFieldName, extendType.interface.toObjTpe.toTpe) ~
           ARETURN()
-      case false =>
+      case FalseBranch =>
         loadThis() ~
           DUP() ~
           GETFIELD(extendType.jvmName, RestFieldName, extendType.interface.toObjTpe.toTpe) ~

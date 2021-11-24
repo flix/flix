@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.Branch.{FalseBranch, TrueBranch}
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Finality._
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Instancing._
@@ -72,18 +73,18 @@ object GenMatchErrorClass {
     loadThis() ~
       ALOAD(1) ~
       IF_ACMPNE {
-        case true =>
+        case TrueBranch =>
           ALOAD(1) ~
             IFNULL {
-              case true =>
+              case TrueBranch =>
                 pushBool(false) ~ IRETURN()
-              case false =>
+              case FalseBranch =>
                 loadThis() ~
                   INVOKEVIRTUAL(JvmName.Object, "getClass", mkDescriptor()(JvmName.Class.toObjTpe.toTpe)) ~
                   ALOAD(1) ~
                   INVOKEVIRTUAL(JvmName.Object, "getClass", mkDescriptor()(JvmName.Class.toObjTpe.toTpe)) ~
                   IF_ACMPNE {
-                    case true =>
+                    case TrueBranch =>
                       ALOAD(1) ~
                         CHECKCAST(JvmName.MatchError) ~
                         ASTORE(2) ~
@@ -93,11 +94,11 @@ object GenMatchErrorClass {
                         GETFIELD(JvmName.MatchError, LocationFieldName, JvmName.ReifiedSourceLocation.toObjTpe.toTpe) ~
                         INVOKESTATIC(JvmName.Objects, "equals", mkDescriptor(JvmName.Object.toObjTpe.toTpe, JvmName.Object.toObjTpe.toTpe)(BackendType.Bool)) ~
                         IRETURN()
-                    case false =>
+                    case FalseBranch =>
                       pushBool(false) ~ IRETURN()
                   }
             }
-        case false =>
+        case FalseBranch =>
           pushBool(true) ~ IRETURN()
       }
 

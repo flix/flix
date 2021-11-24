@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
+import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.Branch.{FalseBranch, TrueBranch}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import org.objectweb.asm.{Label, MethodVisitor, Opcodes}
 
@@ -56,6 +57,13 @@ object BytecodeInstructions {
   implicit class ComposeOps(i1: InstructionSet) {
     def ~(i2: InstructionSet): InstructionSet =
       f => i2(i1(f))
+  }
+
+  sealed trait Branch
+
+  object Branch {
+    case object TrueBranch extends Branch
+    case object FalseBranch extends Branch
   }
 
   //
@@ -153,16 +161,16 @@ object BytecodeInstructions {
     f
   }
 
-  def IF_ACMPNE(cases: Boolean => InstructionSet): InstructionSet =
+  def IF_ACMPNE(cases: Branch => InstructionSet): InstructionSet =
     branch(Opcodes.IF_ACMPNE)(cases)
 
-  def IFEQ(cases: Boolean => InstructionSet): InstructionSet =
+  def IFEQ(cases: Branch => InstructionSet): InstructionSet =
     branch(Opcodes.IFEQ)(cases)
 
-  def IFNE(cases: Boolean => InstructionSet): InstructionSet =
+  def IFNE(cases: Branch => InstructionSet): InstructionSet =
     branch(Opcodes.IFNE)(cases)
 
-  def IFNULL(cases: Boolean => InstructionSet): InstructionSet =
+  def IFNULL(cases: Branch => InstructionSet): InstructionSet =
     branch(Opcodes.IFNULL)(cases)
 
   def ILOAD(index: Int): InstructionSet = f => {
@@ -244,7 +252,7 @@ object BytecodeInstructions {
     f
   }
 
-  def matchBool(cases: Boolean => InstructionSet): InstructionSet =
+  def matchBool(cases: Branch => InstructionSet): InstructionSet =
     IFNE(cases)
 
   def invokeConstructor(className: JvmName, descriptor: MethodDescriptor = MethodDescriptor.NothingToVoid): InstructionSet =
@@ -281,17 +289,17 @@ object BytecodeInstructions {
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //
 
-  private def branch(opcode: Int)(cases: Boolean => InstructionSet): InstructionSet = f0 => {
+  private def branch(opcode: Int)(cases: Branch => InstructionSet): InstructionSet = f0 => {
     var f = f0
     val jumpLabel = new Label()
     val skipLabel = new Label()
     f.visitJumpInstruction(opcode, jumpLabel)
 
-    f = cases(false)(f)
+    f = cases(FalseBranch)(f)
     f.visitJumpInstruction(Opcodes.GOTO, skipLabel)
 
     f.visitLabel(jumpLabel)
-    f = cases(true)(f)
+    f = cases(TrueBranch)(f)
     f.visitLabel(skipLabel)
     f
   }
