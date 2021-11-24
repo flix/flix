@@ -102,6 +102,9 @@ class Flix {
     // Boxable
     "Boxable.flix" -> LocalResource.get("/src/library/Boxable.flix"),
     "Boxed.flix" -> LocalResource.get("/src/library/Boxed.flix"),
+
+    // Concurrency
+    "Mpmc.flix" -> LocalResource.get("/src/library/Mpmc.flix"),
   )
 
   /**
@@ -161,7 +164,6 @@ class Flix {
 
     "Validation.flix" -> LocalResource.get("/src/library/Validation.flix"),
 
-    "Channel.flix" -> LocalResource.get("/src/library/Channel.flix"),
     "Ticker.flix" -> LocalResource.get("/src/library/Ticker.flix"),
     "Timer.flix" -> LocalResource.get("/src/library/Timer.flix"),
     "Duration.flix" -> LocalResource.get("/src/library/Duration.flix"),

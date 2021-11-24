@@ -16,65 +16,65 @@
  */
 
 @test
-def testNew01(): Channel.Mpmc & Impure = Channel.new(0)
+def testNew01(): Mpmc.Mpmc & Impure = Mpmc.new(0)
 
 @test
-def testNew02(): Channel.Mpmc & Impure = Channel.new(32)
+def testNew02(): Mpmc.Mpmc & Impure = Mpmc.new(32)
 
 @test
 def testGetPut01(): Bool & Impure =
-    let c = Channel.new(1);
-    Channel.put(BoxedBool(true), c);
-    match Channel.get(c) {
+    let c = Mpmc.new(1);
+    Mpmc.put(BoxedBool(true), c);
+    match Mpmc.get(c) {
         case BoxedBool(b) => b
         case _ => false
     }
 
 @test
 def testGetPut02(): Bool & Impure =
-    let c = Channel.new(1);
-    Channel.put(BoxedInt32(123), c);
-    match Channel.get(c) {
+    let c = Mpmc.new(1);
+    Mpmc.put(BoxedInt32(123), c);
+    match Mpmc.get(c) {
         case BoxedInt32(i) => i == 123
         case _ => bug!("Impossible")
     }
 
 @test
 def testGetPut03(): Bool & Impure =
-    let c = Channel.new(1);
-    Channel.put(BoxedValue("Hello World!" as ##java.lang.Object), c);
-    match Channel.get(c) {
+    let c = Mpmc.new(1);
+    Mpmc.put(BoxedValue("Hello World!" as ##java.lang.Object), c);
+    match Mpmc.get(c) {
         case BoxedValue(s) => (s as String) == "Hello World!"
         case _ => bug!("Impossible")
     }
 
 @test
 def testSelect01(): Bool & Impure =
-    let c = Channel.new(1);
-    Channel.put(BoxedInt32(2), c);
-    match Channel.select([c], false) {
+    let c = Mpmc.new(1);
+    Mpmc.put(BoxedInt32(2), c);
+    match Mpmc.select([c], false) {
         case Some(0, BoxedInt32(i)) => i == 2
         case _ => bug!("impossible")
     }
 
 @test
 def testSelect02(): Bool & Impure =
-    let c = Channel.new(1);
-    match Channel.select([c], true) {
-        case Some(0, BoxedInt32(_)) => bug!("The channel should be empty")
+    let c = Mpmc.new(1);
+    match Mpmc.select([c], true) {
+        case Some(0, BoxedInt32(_)) => bug!("The Mpmc should be empty")
         case None => true
         case _ => bug!("impossible")
     }
 
 @test
 def testSelect03(): Bool & Impure =
-    let cString = Channel.new(10);
-    let cInt = Channel.new(0);
+    let cString = Mpmc.new(10);
+    let cInt = Mpmc.new(0);
 
-    Channel.put(BoxedValue("hey" as ##java.lang.Object), cString);
+    Mpmc.put(BoxedValue("hey" as ##java.lang.Object), cString);
 
-    match Channel.select([cInt, cString], false) {
-        case Some(0, BoxedInt32(_)) => bug!("The channel should be empty")
+    match Mpmc.select([cInt, cString], false) {
+        case Some(0, BoxedInt32(_)) => bug!("The Mpmc should be empty")
         case Some(1, BoxedValue(o)) => let s = o as String; s == "hey"
         case _ => bug!("impossible")
     }
