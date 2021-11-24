@@ -17,7 +17,7 @@
 namespace TestFile {
 
     use File.{exists, isDirectory, isRegularFile, isReadable, isSymbolicLink,
-        isWritable, isExecutable};
+        isWritable, isExecutable, readLines};
 
     /////////////////////////////////////////////////////////////////////////////
     // exists                                                                  //
@@ -94,5 +94,13 @@ namespace TestFile {
     @test
     def testIsExecutable(): Bool & Impure =
         isExecutable("./fakeREADME.md") == Ok(false)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // readLines                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def testReadLines01(): Bool & Impure =
+        Result.isOk(readLines("./LICENSE.md"))
 
 }
