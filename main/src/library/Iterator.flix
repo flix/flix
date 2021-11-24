@@ -426,9 +426,7 @@ namespace Iterator {
     ///
     /// Returns the longest prefix of `iter` that satisfies the predicate `f`.
     ///
-    /// Consumes elements until predicate `f` is no longer satisfied.
-    ///
-    /// The original iterator `iter` should not be reused.
+    /// Consumes the entire iterator.
     ///
     pub def takeWhile(f: a -> Bool & ef, iter: Iterator[a]): List[a] & Impure =
         let Iterator(done, next) = iter;
@@ -448,4 +446,15 @@ namespace Iterator {
             else
                 k(Nil)
 
+    ///
+    /// Returns `iter` without the longest prefix that satisfies the predicate `f`.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def dropWhile(f: a -> Bool & ef, iter: Iterator[a]): List[a] & Impure =
+        let Iterator(done, next) = iter;
+        match forward(x -> not f(x), done, next) {
+            case None    => Nil
+            case Some(i) => i :: toList(iter)
+        }
 }
