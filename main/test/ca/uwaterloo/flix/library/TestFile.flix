@@ -17,7 +17,7 @@
 namespace TestFile {
 
     use File.{exists, isDirectory, isRegularFile, isReadable, isSymbolicLink,
-        isWritable, isExecutable, readLines};
+        isWritable, isExecutable, readLines, readLinesWith};
 
     /////////////////////////////////////////////////////////////////////////////
     // exists                                                                  //
