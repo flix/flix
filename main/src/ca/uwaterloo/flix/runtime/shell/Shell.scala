@@ -401,7 +401,7 @@ class Shell(initialPaths: List[Path], options: Options) {
 
   private def createPrintableMessage(errors: LazyList[CompilationMessage], formatter: Formatter): LazyList[String] = {
     if (options.explain || errors.length == 1)
-      errors.map(cm => cm.message(formatter) + cm.explain(formatter))
+      errors.map(cm => cm.message(formatter) + cm.explain(formatter).getOrElse(""))
     else
       errors.map(cm => cm.message(formatter))
   }
