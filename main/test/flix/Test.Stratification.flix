@@ -80,6 +80,8 @@ namespace Test/Stratification {
 
     @test
     def testStratification10(): Unit =
+        // `_a` and `_b` will not be in the same stratification since they do not include
+        // the `Diff_10` of the other.
         let _a = #{
             A10(x) :- B10(x), DiffA10(_).
         };
@@ -90,21 +92,24 @@ namespace Test/Stratification {
 
     @test
     def testStratification11(): Unit =
+        // `_b` and `_c` will not be in the same stratification since they do not include
+        // the `Diff_11` of the other.
         let _a = #{
-            C(12).
+            C11(12).
             A11(x) :- B11(x).
         };
         let _b = #{
-            B11(x) :- not C11(x), A(x), Diff11(_).
+            B11(x) :- not C11(x), A11(x), DiffB11().
         };
         let _c = #{
-            A11(x) :- B11(x).
-            C11(x) :- A11(x).
+            B11(12).
+            C11(x) :- A11(x), DiffC11().
         };
         ()
 
     @test
     def testStratification12(): Unit =
+        // `_a` and `_b` will not be in the same stratification since they differ on the arity of `B12`.
         let _a = #{
             A12(x) :- B12(x), C12(x).
         };
@@ -115,6 +120,7 @@ namespace Test/Stratification {
 
     @test
     def testStratification13(): Unit =
+        // `_a` and `_b` will not be in the same stratification since they differ on the arity of `C13`.
         let _a = #{
             A13(x) :- B13(x), C13(x).
         };
@@ -125,6 +131,7 @@ namespace Test/Stratification {
 
     @test
     def testStratification14(): Unit =
+        // `_a` and `_b` will not be in the same stratification since they differ on the arity of `C14.
         let _a = #{
             A14(x) :- B14(x), C14().
         };

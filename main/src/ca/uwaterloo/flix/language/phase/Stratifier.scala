@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.{ConstraintGraph, MultiEdge, TypedPredicate, Polarity}
+import ca.uwaterloo.flix.language.ast.Ast.{ConstraintGraph, MultiEdge, Polarity, TypedPredicate}
 import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
@@ -41,12 +41,6 @@ import scala.collection.mutable
   * Reports a [[StratificationError]] if the constraints cannot be stratified.
   */
 object Stratifier extends Phase[Root, Root] {
-
-  /**
-    * A type alias for the stratification cache.
-    */
-  type Cache = mutable.Map[Map[Name.Pred, Int], Ast.Stratification]
-
   /**
     * Returns a stratified version of the given AST `root`.
     */
@@ -75,6 +69,35 @@ object Stratifier extends Phase[Root, Root] {
     mapN(defsVal) {
       case ds => root.copy(defs = ds.toMap)
     }
+  }
+
+  /**
+    * A type alias for the stratification cache.
+    */
+  private type Cache = mutable.Map[Map[Name.Pred, TypeKey], Ast.Stratification]
+
+  /**
+    * The type of the value used to calculate type equality.
+    */
+  private type TypeKey = Int
+
+  /**
+    * Computes the information used for type equality checking.
+    * The stratification precision can be changed by changing this
+    * function and fixing the `TypeKey` accordingly.
+    */
+  private def typeKeyOf(tpe: Type): TypeKey = arityOf(tpe)
+
+  /**
+    * Computes the arity of a `Relation` or `Lattice` type.
+    */
+  private def arityOf(tpe: Type): Int = eraseAliases(tpe) match {
+    case Type.Apply(Type.Cst(TypeConstructor.Relation | TypeConstructor.Lattice, _), element, _) => element.baseType match {
+      case Type.Cst(TypeConstructor.Tuple(arity), _) => arity // Multi-ary
+      case Type.Cst(TypeConstructor.Unit, _) => 0 // Nullary
+      case _ => 1 // Unary
+    }
+    case other => throw InternalCompilerException(s"Unexpected non-relation non-lattice type $other")
   }
 
   /**
@@ -674,9 +697,9 @@ object Stratifier extends Phase[Root, Root] {
     */
   private def stratifyWithCache(dg: ConstraintGraph, tpe: Type, loc: SourceLocation)(implicit cache: Cache): Validation[Ast.Stratification, StratificationError] = {
     // The key is the set of predicates that occur in the row type.
-    val m = predicateSymbolsOf(tpe)
+    val predSyms = predicateSymbolsOf(tpe)
 
-    val key = m.map { case (p, t) => p -> arityOf(t) }
+    val key = predSyms.map { case (p, t) => p -> typeKeyOf(t) }
 
     // Lookup the key in the stratification cache.
     cache.get(key) match {
@@ -688,7 +711,7 @@ object Stratifier extends Phase[Root, Root] {
         // Cache miss: Compute the stratification and possibly cache it.
 
         // Compute the restricted constraint graph.
-        val rg = restrict(dg, m)
+        val rg = dg.restrict(predSyms, (t1, t2) => typeKeyOf(t1) == typeKeyOf(t2))
 
         // Compute the stratification.
         UllmansAlgorithm.stratify(constraintGraphToDependencyGraph(rg), tpe, loc) match {
@@ -737,40 +760,21 @@ object Stratifier extends Phase[Root, Root] {
   }
 
   /**
-    * Restricts the given constraint graph `dg` to the predicates that occur in the given type `tpe`.
-    */
-  private def restrict(dg: ConstraintGraph, predSyms: Map[Name.Pred, Type]): ConstraintGraph = {
-    dg.restrict(predSyms, (t1, t2) => arityOf(t1) == arityOf(t2))
-  }
-
-  /**
     * Returns the map of predicates that appears in the given Schema `tpe`.
     * A non-Schema type will result in an `InternalCompilerException`.
     */
-  private def predicateSymbolsOf(tpe: Type): Map[Name.Pred, Type] = Type.eraseAliases(tpe) match {
-    case Type.Apply(Type.Cst(TypeConstructor.Schema, _), schemaRow, _) => predicateSymbolsOf(schemaRow, Map.empty)
-    case other => throw InternalCompilerException(s"Unexpected non-schema type $other")
-  }
-
-  /**
-    * Recursively collects the predicates and their type from a nested `SchemaRowExtend` type.
-    */
-  @tailrec
-  private def predicateSymbolsOf(tpe: Type, acc: Map[Name.Pred, Type]): Map[Name.Pred, Type] = tpe match {
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), _), predType, _), rest, _) =>
-      predicateSymbolsOf(rest, acc + (pred -> predType))
-    case _ => acc
-  }
-
-  /**
-    * Computes the arity of a `Relation` or `Lattice` type.
-    */
-  private def arityOf(tpe: Type): Int = eraseAliases(tpe) match {
-    case Type.Apply(Type.Cst(TypeConstructor.Relation | TypeConstructor.Lattice, _), element, _) => element.baseType match {
-      case Type.Cst(TypeConstructor.Tuple(arity), _) => arity
-      case Type.Cst(TypeConstructor.Unit, _) => 0
-      case _ => 1
+  private def predicateSymbolsOf(tpe: Type): Map[Name.Pred, Type] = {
+    @tailrec
+    def visitType(tpe: Type, acc: Map[Name.Pred, Type]): Map[Name.Pred, Type] = tpe match {
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), _), predType, _), rest, _) =>
+        visitType(rest, acc + (pred -> predType))
+      case _ => acc
     }
-    case other => throw InternalCompilerException(s"Unexpected non-relation non-lattice type $other")
+
+    Type.eraseAliases(tpe) match {
+      case Type.Apply(Type.Cst(TypeConstructor.Schema, _), schemaRow, _) => visitType(schemaRow, Map.empty)
+      case other => throw InternalCompilerException(s"Unexpected non-schema type $other")
+    }
   }
+
 }
