@@ -27,7 +27,7 @@ namespace TestMutList {
     /////////////////////////////////////////////////////////////////////////////
     // Eq.eq                                                                   //
     /////////////////////////////////////////////////////////////////////////////
-    
+
     @test
     def eq01(): Bool & Impure =
         let u: MutList[Int32] = MutList.new();
@@ -50,7 +50,7 @@ namespace TestMutList {
         MutList.push!(2, v);
         MutList.push!(3, v);
         u == v
-        
+
     @test
     def eq04(): Bool & Impure =
         let u = MutList.new();

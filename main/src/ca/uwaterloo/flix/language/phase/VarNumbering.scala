@@ -188,10 +188,6 @@ object VarNumbering extends Phase[Root, Root] {
         val i1 = visitExp(exp1, i0)
         visitExp(exp2, i1)
 
-      case Expression.Existential(params, exp, loc) => visitExp(exp, i0)
-
-      case Expression.Universal(params, exp, loc) => visitExp(exp, i0)
-
       case Expression.Cast(exp, tpe, loc) => visitExp(exp, i0)
 
       case Expression.TryCatch(exp, rules, tpe, loc) =>

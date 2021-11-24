@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.{LocationLink, Position}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.ast.Symbol
 
 object ImplementationProvider {
 
@@ -29,11 +30,23 @@ object ImplementationProvider {
       return Nil
     }
 
-    root.instances.keys.filter(i => i.loc.source.name == uri
-      && (i.loc.beginLine < position.line
-        || (i.loc.beginLine == position.line && i.loc.beginCol <= position.character))
-      && (i.loc.endLine > position.line
-        || (i.loc.endLine == position.line && i.loc.endCol >= position.character))
-    ).flatMap(c => root.instances.getOrElse(c, Nil).map(c => LocationLink.fromInstance(c, c.loc))).toList
+    val links = for {
+      classSym <- classAt(uri, position)
+      inst <- root.instances.getOrElse(classSym, Nil)
+    } yield LocationLink.fromInstanceSym(inst.sym, classSym.loc)
+
+    links.toList
+  }
+
+  /**
+    * Returns the class symbol located at the given position as a singleton iterable.
+    * Returns an empty iterable if there is no such class symbol.
+    */
+  private def classAt(uri: String, p: Position)(implicit root: Root): Iterable[Symbol.ClassSym] = {
+    root.instances.keys.filter(classSym => classSym.loc.source.name == uri
+      && (classSym.loc.beginLine < p.line
+      || (classSym.loc.beginLine == p.line && classSym.loc.beginCol <= p.character))
+      && (classSym.loc.endLine > p.line
+      || (classSym.loc.endLine == p.line && classSym.loc.endCol >= p.character)))
   }
 }
