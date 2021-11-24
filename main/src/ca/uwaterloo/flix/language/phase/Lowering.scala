@@ -543,6 +543,7 @@ object Lowering extends Phase[Root, Root] {
       val arity = Type.eraseAliases(exp.tpe) match {
         case Type.Apply(_, innerType, _) => innerType.typeConstructor match {
           case Some(TypeConstructor.Tuple(l)) => l
+          case Some(TypeConstructor.Unit) => 0
           case _ => 1
         }
         case _ => throw InternalCompilerException(s"Unexpected non-foldable type: '${exp.tpe}'.")
