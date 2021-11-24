@@ -21,6 +21,7 @@ opaque type MutSet[t] = Ref[Set[t]]
 
 namespace MutSet {
 
+
     ///
     /// Returns a fresh empty set.
     ///
