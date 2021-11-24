@@ -21,13 +21,6 @@ pub enum MutList[a] {
     case MutList(Ref[Array[a]], Ref[Int32])
 }
 
-instance ToString[MutList[a]] with ToString[a] {
-    pub def toString(v: MutList[a]): String = {
-        let s = MutList.formatWith(x -> "${x}", ", ", v) as & Pure;
-        "MutList#{${s}}"
-    }
-}
-
 instance Eq[MutList[a]] with Eq[a] {
         pub def eq(xs: MutList[a], ys: MutList[a]): Bool = {
             let MutList(l1, n1) = xs;
@@ -35,25 +28,6 @@ instance Eq[MutList[a]] with Eq[a] {
             deref n1 == deref n2 and
                 Array.slice(0, deref n1, deref l1) == Array.slice(0, deref n2, deref l2)
         } as & Pure
-}
-
-instance Order[MutList[v]] with Order[v] {
-    ///
-    /// Compares `u` and `v` lexicographically.
-    ///
-    pub def compare(u: MutList[v], v: MutList[v]): Comparison =
-        (let MutList(a, _) = u;
-        let MutList(b, _) = v;
-        deref a <=> deref b) as & Pure
-}
-
-instance Functor[MutList] {
-    pub def map(f: a -> b & ef, v: MutList[a]): MutList[b] & ef = MutList.map(f, v) as & ef
-}
-
-instance Foldable[MutList] {
-    pub def foldLeft(f: (b, a) -> b & ef, s: b, v: MutList[a]): b & ef = MutList.foldLeft(f, s, v) as & ef
-    pub def foldRight(f: (a, b) -> b & ef, s: b, v: MutList[a]): b & ef = MutList.foldRight(f, s, v) as & ef
 }
 
 namespace MutList {
@@ -390,11 +364,6 @@ namespace MutList {
             a[i] = f(a[i], i);
             transformWithIndexHelper!(f, a, i + 1, n)
         }
-
-    ///
-    /// Returns the result of applying `combine` to all the elements in `v`, using `empty` as the initial value.
-    ///
-    pub def fold(v: MutList[a]): a with Monoid[a] = Foldable.fold(v)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `a` going from left to right.
