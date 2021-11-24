@@ -102,6 +102,14 @@ namespace Channel {
     }
 
     ///
+    /// Spawn the function `f` and send its value on the channel returned by this function.
+    ///
+    def spawnWithChannel(f: Unit -> a & ef): Channel[a] & ef =
+        let c = chan 1;
+        spawn(c <- f());
+        c
+
+    ///
     /// Creates a new channel. A runtime error occurs if `bufferSize` is
     /// negative. A channel with `bufferSize` zero means that sending and
     /// receiving is syncronized.
