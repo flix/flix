@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
+import ca.uwaterloo.flix.language.ast.MonoType
+
 /**
   * Represents all Flix types that are not object on the JVM including Void.
   */
@@ -113,4 +115,23 @@ object BackendType {
     */
   def erasedTypes: List[BackendType] =
     Bool :: Char :: Float32 :: Float64 :: Int8 :: Int16 :: Int32 :: Int64 :: JvmName.Object.toObjTpe.toTpe :: Nil
+
+  /**
+    * Computes the erased `BackendType` based on the given `MonoType`.
+    */
+  def toErasedBackendType(tpe: MonoType): BackendType = tpe match {
+    case MonoType.Bool => Bool
+    case MonoType.Char => Char
+    case MonoType.Float32 => Float32
+    case MonoType.Float64 => Float64
+    case MonoType.Int8 => Int8
+    case MonoType.Int16 => Int16
+    case MonoType.Int32 => Int32
+    case MonoType.Int64 => Int64
+    case MonoType.Unit | MonoType.BigInt | MonoType.Str | MonoType.Array(_) | MonoType.Channel(_) |
+         MonoType.Lazy(_) | MonoType.Ref(_) | MonoType.Tuple(_) | MonoType.Enum(_, _) |
+         MonoType.Arrow(_, _) | MonoType.RecordEmpty() | MonoType.RecordExtend(_, _, _) |
+         MonoType.SchemaEmpty() | MonoType.SchemaExtend(_, _, _) | MonoType.Relation(_) |
+         MonoType.Lattice(_) | MonoType.Native(_) | MonoType.Var(_) => JvmName.Object.toObjTpe.toTpe
+  }
 }
