@@ -308,7 +308,7 @@ namespace LazyList {
     /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
-    @LazyIfPure
+    @LazyWhenPure
     pub def map(f: a -> b & ef, l: LazyList[a]): LazyList[b] & ef =
         reifyEff(f) {
             case Pure(g) => mapL(g, l)
@@ -372,7 +372,7 @@ namespace LazyList {
     /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
-    @LazyIfPure
+    @LazyWhenPure
     pub def mapWithIndex(f: (a, Int32) -> b & ef, l: LazyList[a]): LazyList[b] & ef =
         let f1 = (args) -> f(fst(args), snd(args));
         reifyEff(f1) {
@@ -428,7 +428,7 @@ namespace LazyList {
     /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
-    @LazyIfPure
+    @LazyWhenPure
     pub def flatMap(f: a -> LazyList[b] & ef, l: LazyList[a]): LazyList[b] & ef =
         reifyEff(f) {
             case Pure(g) => flatMapL(g, l)
@@ -684,7 +684,7 @@ namespace LazyList {
     /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
-    @LazyIfPure
+    @LazyWhenPure
     pub def filter(f: a -> Bool & ef, l: LazyList[a]): LazyList[a] & ef =
         reifyEff(f) {
             case Pure(g) => filterL(g, l)
@@ -802,7 +802,7 @@ namespace LazyList {
     /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
     /// - If `f` is impure then it is applied eagerly (i.e. the tail is forced until the first element that satisfies `f`).
     ///
-    @LazyIfPure
+    @LazyWhenPure
     pub def dropWhile(f: a -> Bool & ef, l: LazyList[a]): LazyList[a] & ef =
         reifyEff(f) {
             case Pure(g) => dropWhileL(g, l)
@@ -869,7 +869,7 @@ namespace LazyList {
     /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
     /// - If `f` is impure then it is applied eagerly (i.e. the tail is forced until the first element that satisfies `f`).
     ///
-    @LazyIfPure
+    @LazyWhenPure
     pub def takeWhile(f: a -> Bool & ef, l: LazyList[a]): LazyList[a] & ef =
         reifyEff(f) {
             case Pure(g) => takeWhileL(g, l)
@@ -969,7 +969,7 @@ namespace LazyList {
     /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
-    @LazyIfPure
+    @LazyWhenPure
     pub def filterMap(f: a -> Option[b] & ef, l: LazyList[a]): LazyList[b] & ef =
         reifyEff(f) {
             case Pure(g) => filterMapL(g, l)

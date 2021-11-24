@@ -283,12 +283,12 @@ object CodeHinter {
     * Checks whether `sym` would benefit from `tpe` being pure.
     */
   private def checkPurity(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation)(implicit root: Root): List[CodeHint] = {
-    if (lazyIfPure(sym)) {
+    if (lazyWhenPure(sym)) {
       if (isPureFunction(tpe))
         CodeHint.LazyEvaluation(sym, loc) :: Nil
       else
         CodeHint.SuggestPurityForLazyEvaluation(sym, loc) :: Nil
-    } else if (parallelIfPure(sym)) {
+    } else if (parallelWhenPure(sym)) {
       if (isPureFunction(tpe))
         CodeHint.ParallelEvaluation(sym, loc) :: Nil
       else
@@ -302,18 +302,18 @@ object CodeHinter {
     * Returns `true` if the the given `sym` is marked being purity polymorphic
     * and uses lazy evaluation when given a pure function argument.
     */
-  private def lazyIfPure(sym: Symbol.DefnSym)(implicit root: Root): Boolean = {
+  private def lazyWhenPure(sym: Symbol.DefnSym)(implicit root: Root): Boolean = {
     val defn = root.defs(sym)
-    defn.spec.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.LazyIfPure])
+    defn.spec.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.LazyWhenPure])
   }
 
   /**
     * Returns `true` if the given `sym` is marked being purity polymorphic
     * and uses parallel evaluation when given a pure function argument.
     */
-  private def parallelIfPure(sym: Symbol.DefnSym)(implicit root: Root): Boolean = {
+  private def parallelWhenPure(sym: Symbol.DefnSym)(implicit root: Root): Boolean = {
     val defn = root.defs(sym)
-    defn.spec.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.LazyIfPure])
+    defn.spec.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.LazyWhenPure])
   }
 
   /**

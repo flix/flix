@@ -125,21 +125,21 @@ object Ast {
     }
 
     /**
-      * An AST node that represents a `@LazyIfPure` annotation.
+      * An AST node that represents a `@LazyWhenPure` annotation.
       *
       * @param loc the source location of the annotation.
       */
-    case class LazyIfPure(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@LazyIfPure"
+    case class LazyWhenPure(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@LazyWhenPure"
     }
 
     /**
-      * An AST node that represents a `@ParallelIfPure` annotation.
+      * An AST node that represents a `@ParallelWhenPure` annotation.
       *
       * @param loc the source location of the annotation.
       */
-    case class ParallelIfPure(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@ParallelIfPure"
+    case class ParallelWhenPure(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@ParallelWhenPure"
     }
 
     /**
