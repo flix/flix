@@ -154,7 +154,9 @@ namespace File {
 
             let javaFile = newFile(f);
             let stream = newInputStream(javaFile);
-            let bytes = [];
+            let bytes = [0i8; 10];
+            // TODO: I get IndexOutOfBoundsException when reading if: let bytes = [];
+            // TODO: "enter" read with offset = 3, count = 3 -> "ent"
             read(stream, bytes, opts.offset, opts.count);
             let charSet = forName(opts.charSet);
             let returnString = newString(bytes, charSet);
