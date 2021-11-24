@@ -103,4 +103,12 @@ namespace TestFile {
     def testReadLines01(): Bool & Impure =
         Result.isOk(readLines("./LICENSE.md"))
 
+    /////////////////////////////////////////////////////////////////////////////
+    // readLinesWith                                                           //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def testReadLinesWith01(): Bool & Impure =
+        Result.isOk(readLinesWith({charSet = "UTF8"}, "./LICENSE.md"))
+
 }
