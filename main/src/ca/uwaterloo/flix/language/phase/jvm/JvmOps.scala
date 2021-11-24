@@ -817,6 +817,40 @@ object JvmOps {
   }
 
   /**
+    * Returns the set of ref types in `types` without searching recursively.
+    */
+  def getRefsOf(types: Iterable[MonoType])(implicit flix: Flix, root: Root): Set[BackendObjType.Ref] =
+    types.foldLeft(Set.empty[BackendObjType.Ref]){
+      case (acc, tpe) => acc ++ getRefsOf(tpe)
+    }
+
+  /**
+    * Returns a singleton set of the appropriate ref type if `tpe` is of ref type.
+    */
+  def getRefsOf(tpe: MonoType)(implicit flix: Flix, root: Root): Set[BackendObjType.Ref] = tpe match {
+    case MonoType.Ref(tpe) => Set(BackendObjType.Ref(BackendType.toErasedBackendType(tpe)))
+    case _ => Set.empty
+  }
+
+  /**
+    * Returns the set of record extend types in `types` without searching recursively.
+    */
+  def getRecordExtendsOf(types: Iterable[MonoType])(implicit flix: Flix, root: Root): Set[BackendObjType.RecordExtend] =
+    types.foldLeft(Set.empty[BackendObjType.RecordExtend]){
+      case (acc, tpe) => acc ++ getRecordExtendsOf(tpe)
+    }
+
+  /**
+    * Returns a singleton set of the appropriate record extend type if `tpe` is of record extend type.
+    */
+  def getRecordExtendsOf(tpe: MonoType)(implicit flix: Flix, root: Root): Set[BackendObjType.RecordExtend] = tpe match {
+    case MonoType.RecordExtend(field, value, _) =>
+      // TODO: should use mono -> backend transformation on `rest`
+      Set(BackendObjType.RecordExtend(field, BackendType.toErasedBackendType(value), BackendObjType.RecordEmpty.toTpe))
+    case _ => Set.empty
+  }
+
+  /**
     * Returns the set of all instantiated types in the given AST `root`.
     *
     * This include type components. For example, if the program contains
