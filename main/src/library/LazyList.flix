@@ -308,6 +308,7 @@ namespace LazyList {
     /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
+    @LazyIfPure
     pub def map(f: a -> b & ef, l: LazyList[a]): LazyList[b] & ef =
         reifyEff(f) {
             case Pure(g) => mapL(g, l)
@@ -681,6 +682,7 @@ namespace LazyList {
     /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
+    @LazyIfPure
     pub def filter(f: a -> Bool & ef, l: LazyList[a]): LazyList[a] & ef =
         reifyEff(f) {
             case Pure(g) => filterL(g, l)
@@ -963,6 +965,7 @@ namespace LazyList {
     /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
+    @LazyIfPure
     pub def filterMap(f: a -> Option[b] & ef, l: LazyList[a]): LazyList[b] & ef =
         reifyEff(f) {
             case Pure(g) => filterMapL(g, l)

@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.extra
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.CodeHint
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
@@ -29,9 +29,6 @@ object CodeHinter {
     * A list of operations that support lazy evaluation when given a pure function.
     */
   private val LazyWhenPure: List[Symbol.DefnSym] = List(
-    Symbol.mkDefnSym("LazyList.filter"),
-    Symbol.mkDefnSym("LazyList.filterMap"),
-    Symbol.mkDefnSym("LazyList.map"),
     Symbol.mkDefnSym("LazyList.mapWithIndex"),
     Symbol.mkDefnSym("LazyList.flatMap"),
     Symbol.mkDefnSym("LazyList.mapWithIndex"),
@@ -63,7 +60,7 @@ object CodeHinter {
     * Returns a collection of code quality hints for the given AST `root`.
     */
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CodeHint] = flix.phase("CodeQuality") {
-    val hints = root.defs.values.flatMap(visitDef).toList
+    val hints = root.defs.values.flatMap(visitDef(_)(root)).toList
     if (hints.isEmpty)
       root.toSuccess
     else
@@ -73,14 +70,14 @@ object CodeHinter {
   /**
     * Computes code quality hints for the given definition `def0`.
     */
-  private def visitDef(def0: TypedAst.Def): List[CodeHint] = {
+  private def visitDef(def0: TypedAst.Def)(implicit root: Root): List[CodeHint] = {
     visitExp(def0.impl.exp)
   }
 
   /**
     * Computes code quality hints for the given expression `exp0`.
     */
-  private def visitExp(exp0: Expression): List[CodeHint] = exp0 match {
+  private def visitExp(exp0: Expression)(implicit root: Root): List[CodeHint] = exp0 match {
     case Expression.Wild(_, _) => Nil
 
     case Expression.Var(_, _, _) => Nil
@@ -289,20 +286,20 @@ object CodeHinter {
   /**
     * Computes code quality hints for the given constraint `c`.
     */
-  private def visitConstraint(c: Constraint): List[CodeHint] =
+  private def visitConstraint(c: Constraint)(implicit root: Root): List[CodeHint] =
     visitHeadPredicate(c.head) ++ c.body.flatMap(visitBodyPredicate)
 
   /**
     * Computes code quality hints for the given head predicate `p`.
     */
-  private def visitHeadPredicate(p: TypedAst.Predicate.Head): List[CodeHint] = p match {
+  private def visitHeadPredicate(p: TypedAst.Predicate.Head)(implicit root: Root): List[CodeHint] = p match {
     case Head.Atom(_, _, terms, _, _) => visitExps(terms)
   }
 
   /**
     * Computes code quality hints for the given body predicate `p`.
     */
-  private def visitBodyPredicate(p: TypedAst.Predicate.Body): List[CodeHint] = p match {
+  private def visitBodyPredicate(p: TypedAst.Predicate.Body)(implicit root: Root): List[CodeHint] = p match {
     case Body.Atom(_, _, _, _, _, _) => Nil
     case Body.Guard(exp, _) => visitExp(exp)
   }
@@ -310,19 +307,19 @@ object CodeHinter {
   /**
     * Computes code quality hints for the given list of expressions `exps`.
     */
-  private def visitExps(exps: List[Expression]): List[CodeHint] =
+  private def visitExps(exps: List[Expression])(implicit root: Root): List[CodeHint] =
     exps.flatMap(visitExp)
 
   /**
     * Checks whether `sym` would benefit from `tpe` being pure.
     */
-  private def checkPurity(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation): List[CodeHint] = {
-    if (LazyWhenPure.contains(sym)) {
+  private def checkPurity(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation)(implicit root: Root): List[CodeHint] = {
+    if (lazyIfPure(sym)) {
       if (isPureFunction(tpe))
         CodeHint.LazyEvaluation(sym, loc) :: Nil
       else
         CodeHint.SuggestPurityForLazyEvaluation(sym, loc) :: Nil
-    } else if (ParallelWhenPure.contains(sym)) {
+    } else if (parallelIfPure(sym)) {
       if (isPureFunction(tpe))
         CodeHint.ParallelEvaluation(sym, loc) :: Nil
       else
@@ -330,6 +327,24 @@ object CodeHinter {
     } else {
       Nil
     }
+  }
+
+  /**
+    * Returns `true` if the the given `sym` is marked being purity polymorphic
+    * and uses lazy evaluation when given a pure function argument.
+    */
+  private def lazyIfPure(sym: Symbol.DefnSym)(implicit root: Root): Boolean = {
+    val defn = root.defs(sym)
+    defn.spec.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.LazyIfPure])
+  }
+
+  /**
+    * Returns `true` if the given `sym` is marked being purity polymorphic
+    * and uses parallel evaluation when given a pure function argument.
+    */
+  private def parallelIfPure(sym: Symbol.DefnSym)(implicit root: Root): Boolean = {
+    val defn = root.defs(sym)
+    defn.spec.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.LazyIfPure])
   }
 
   /**

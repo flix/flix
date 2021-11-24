@@ -125,19 +125,21 @@ object Ast {
     }
 
     /**
-      * An AST node that represents an `@unchecked` annotation.
-      *
-      * The properties of a function marked `@unchecked` are not checked by the verifier.
-      *
-      * E.g. if a function is marked @commutative and @unchecked then
-      * no attempt is made to check that the function is actually commutative.
-      * However, the compiler and run-time is still permitted to assume that the
-      * function is commutative.
+      * An AST node that represents a `@LazyIfPure` annotation.
       *
       * @param loc the source location of the annotation.
       */
-    case class Unchecked(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@unchecked"
+    case class LazyIfPure(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@LazyIfPure"
+    }
+
+    /**
+      * An AST node that represents a `@ParallelIfPure` annotation.
+      *
+      * @param loc the source location of the annotation.
+      */
+    case class ParallelIfPure(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@ParallelIfPure"
     }
 
     /**
@@ -195,10 +197,6 @@ object Ast {
       */
     def isTest: Boolean = annotations exists (_.isInstanceOf[Annotation.Test])
 
-    /**
-      * Returns `true` if `this` sequence contains the `@unchecked` annotation.
-      */
-    def isUnchecked: Boolean = annotations exists (_.isInstanceOf[Annotation.Unchecked])
   }
 
   /**
