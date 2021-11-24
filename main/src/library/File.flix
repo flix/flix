@@ -247,8 +247,8 @@ namespace File {
                     Ok(l)
                 } catch {
                     case ex: ##java.io.IOException =>
-                    import java.lang.Throwable.getMessage();
-                    Err(getMessage(ex))
+                        import java.lang.Throwable.getMessage();
+                        Err(getMessage(ex))
                 }
             };
             Iterator(done, next)
@@ -284,8 +284,8 @@ namespace File {
                     Ok(l)
                 } catch {
                     case ex: ##java.io.IOException =>
-                    import java.lang.Throwable.getMessage();
-                    Err(getMessage(ex))
+                        import java.lang.Throwable.getMessage();
+                        Err(getMessage(ex))
                 }
             };
             Iterator(done, next)
