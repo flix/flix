@@ -17,7 +17,8 @@
 namespace TestFile {
 
     use File.{exists, isDirectory, isRegularFile, isReadable, isSymbolicLink,
-        isWritable, isExecutable, readLines, readLinesWith, read, readWith};
+        isWritable, isExecutable, readLines, readLinesWith, read, readWith,
+        readLinesIter, readLinesIterWith};
 
     /////////////////////////////////////////////////////////////////////////////
     // exists                                                                  //
@@ -126,5 +127,32 @@ namespace TestFile {
     @test
     def testReadWith01(): Bool & Impure =
         Result.isOk(readWith({offset = 2, count = 2, charSet = "UTF8"}, "./LICENSE.md"))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // readLinesIter                                                           //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def testReadLinesIter01(): Bool & Impure =
+        match readLinesIter("./LICENSE.md") {
+            case Iterator(_, next) => Result.isOk(next())
+        }
+
+    @test
+    def testReadLinesIter02(): Bool & Impure =
+        match readLinesIter("./LICENSE.md") {
+            case Iterator(done, _) => done() == false
+        }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // readLinesIterWith                                                       //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def testReadLinesIterWithWith01(): Bool & Impure =
+        match readLinesIterWith({charSet = "utf8"}, "./LICENSE.md") {
+            case Iterator(_, next) => Result.isOk(next())
+        }
 
 }
