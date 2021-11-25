@@ -128,6 +128,10 @@ namespace TestFile {
     def testReadWith01(): Bool & Impure =
         Result.isOk(readWith({offset = 2i64, count = 2, charSet = "UTF8"}, "./LICENSE.md"))
 
+    @test
+    def testReadWith02(): Bool & Impure =
+        readWith({offset = 2i64, count = 2, charSet = "US-ASCII"}, "./LICENSE.md") == Ok("ac")
+
     /////////////////////////////////////////////////////////////////////////////
     // readLinesIter                                                           //
     /////////////////////////////////////////////////////////////////////////////
