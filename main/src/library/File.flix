@@ -246,9 +246,11 @@ namespace File {
                     line := readLine(reader);
                     Ok(l)
                 } catch {
-                    case ex: ##java.io.IOException =>
+                    case ex: ##java.io.IOException => {
+                        line := null as String;
                         import java.lang.Throwable.getMessage();
                         Err(getMessage(ex))
+                    }
                 }
             };
             Iterator(done, next)
@@ -283,9 +285,11 @@ namespace File {
                     line := readLine(reader);
                     Ok(l)
                 } catch {
-                    case ex: ##java.io.IOException =>
+                    case ex: ##java.io.IOException => {
+                        line := null as String;
                         import java.lang.Throwable.getMessage();
                         Err(getMessage(ex))
+                    }
                 }
             };
             Iterator(done, next)
