@@ -126,7 +126,7 @@ namespace TestFile {
 
     @test
     def testReadWith01(): Bool & Impure =
-        Result.isOk(readWith({offset = 2, count = 2, charSet = "UTF8"}, "./LICENSE.md"))
+        Result.isOk(readWith({offset = 2i64, count = 2, charSet = "UTF8"}, "./LICENSE.md"))
 
     /////////////////////////////////////////////////////////////////////////////
     // readLinesIter                                                           //
