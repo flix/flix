@@ -123,7 +123,7 @@ object GenExpression {
       }
 
     case Expression.ApplyClo(exp, args, tpe, _) =>
-      // Type of the function interface
+      // Type of the function abstract class
       val functionInterface = JvmOps.getFunctionInterfaceType(exp.tpe)
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
       // Casting to JvmType of FunctionInterface
@@ -164,7 +164,7 @@ object GenExpression {
       AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
     case Expression.ApplyCloTail(exp, args, _, _) =>
-      // Type of the function interface
+      // Type of the function abstract class
       val functionInterface = JvmOps.getFunctionInterfaceType(exp.tpe)
       // Evaluating the closure
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
@@ -185,7 +185,7 @@ object GenExpression {
     case Expression.ApplyDefTail(name, args, _, _) =>
       // Type of the function
       val fnType = root.defs(name).tpe
-      // Type of the function interface
+      // Type of the function abstract class
       val functionInterface = JvmOps.getFunctionInterfaceType(fnType)
 
       // Put the def on the stack
@@ -203,7 +203,7 @@ object GenExpression {
       visitor.visitInsn(ARETURN)
 
     case Expression.ApplySelfTail(sym, _, actuals, _, _) =>
-      // The function interface name
+      // The function abstract class name
       val functionType = JvmOps.getFunctionInterfaceType(root.defs(sym).tpe)
       // Evaluate each argument and put the result on the Fn class.
       for ((arg, i) <- actuals.zipWithIndex) {

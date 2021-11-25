@@ -24,16 +24,16 @@ import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes._
 
 /**
-  * Generates bytecode for the function interfaces.
+  * Generates bytecode for the function abstract classes.
   */
-object GenFunctionInterfaces {
+object GenFunctionAbstractClasses {
 
   /**
-    * Returns the set of function interfaces for the given set of types `ts`.
+    * Returns the set of function abstract classes for the given set of types `ts`.
     */
   def gen(ts: Set[MonoType])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     //
-    // Generate a function interface for each type and collect the results in a map.
+    // Generate a function abstract class for each type and collect the results in a map.
     //
     ts.foldLeft(Map.empty[JvmName, JvmClass]) {
       case (macc, tpe: MonoType.Arrow) =>
@@ -49,7 +49,7 @@ object GenFunctionInterfaces {
   }
 
   /**
-    * Returns the function interface of the given type `tpe`.
+    * Returns the function abstract class of the given type `tpe`.
     */
   private def genFunctionalInterface(tpe: MonoType.Arrow)(implicit root: Root, flix: Flix): JvmClass = {
     // (Int, String) -> Bool example:

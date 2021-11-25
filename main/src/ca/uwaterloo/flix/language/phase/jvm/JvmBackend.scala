@@ -81,9 +81,9 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       val continuationInterfaces = GenContinuationAbstractClasses.gen(types)
 
       //
-      // Generate function interfaces for each function type in the program.
+      // Generate a function abstract class for each function type in the program.
       //
-      val functionInterfaces = GenFunctionInterfaces.gen(types)
+      val functionInterfaces = GenFunctionAbstractClasses.gen(types)
 
       //
       // Generate function classes for each function in the program.

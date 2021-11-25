@@ -128,7 +128,7 @@ object JvmOps {
   }
 
   /**
-    * Returns the function interface type `FnX$Y$Z` for the given type `tpe`.
+    * Returns the function abstract class type `FnX$Y$Z` for the given type `tpe`.
     *
     * For example:
     *
@@ -139,7 +139,7 @@ object JvmOps {
     */
   def getFunctionInterfaceType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
     case MonoType.Arrow(targs, tresult) =>
-      // Compute the arity of the function interface.
+      // Compute the arity of the function abstract class.
       // We subtract one since the last argument is the return type.
       val arity = targs.length
 
