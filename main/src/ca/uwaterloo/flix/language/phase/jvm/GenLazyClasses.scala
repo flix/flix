@@ -99,9 +99,10 @@ object GenLazyClasses {
     val erasedValueTypeDescriptor = erasedType.toDescriptor
     val internalClassType = classType.name.toInternalName
     val returnIns = AsmOps.getReturnInstruction(erasedType)
+    val functionType = JvmOps.getContinuationInterfaceType(MonoType.Arrow(Nil, valueType))
 
     // Header of the method.
-    val returnDescription = AsmOps.getMethodDescriptor(List(JvmType.Context), erasedType)
+    val returnDescription = AsmOps.getMethodDescriptor(Nil, erasedType)
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL + ACC_SYNCHRONIZED, "force", returnDescription, null, null)
     method.visitCode()
 
@@ -122,14 +123,13 @@ object GenLazyClasses {
     method.visitLabel(continue)
     // [this] to assign the expression value
     method.visitVarInsn(ALOAD, 0)
-    // [this, context] load the context to give as an argument to the expression closure.
-    method.visitVarInsn(ALOAD, 1)
-    // [this, context, this] push this to get the expression.
+    // [this, this] push this to get the expression.
     method.visitVarInsn(ALOAD, 0)
-    // [this, context, expression] now ready to call the expression closure.
+    // [this, expression] now ready to call the expression closure.
     method.visitFieldInsn(GETFIELD, internalClassType, "expression", JvmType.Object.toDescriptor)
+    method.visitTypeInsn(CHECKCAST, functionType.name.toInternalName)
     // [this, value] the result of expression remains on the stack.
-    AsmOps.compileClosureApplication(method, MonoType.Arrow(List(MonoType.Unit), valueType), Nil, valueType, castFinalValue = false)
+    method.visitMethodInsn(INVOKEVIRTUAL, functionType.name.toInternalName, GenContinuationInterfaces.UnwindMethodName, AsmOps.getMethodDescriptor(Nil, erasedType), false)
     // [] this.value now stores the result from expression.
     method.visitFieldInsn(PUTFIELD, internalClassType, "value", erasedValueTypeDescriptor)
 

@@ -1,5 +1,6 @@
 /*
  * Copyright 2017 Magnus Madsen
+ * Copyright 2021 Jonathan Lindegaard Starup
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +20,18 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst.Root
 import ca.uwaterloo.flix.language.ast.MonoType
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import org.objectweb.asm.Opcodes._
+import org.objectweb.asm.{ClassWriter, Label}
 
 /**
   * Generates bytecode for the continuation interfaces.
   */
 object GenContinuationInterfaces {
+
+  val ResultFieldName: String = "result"
+  val InvokeMethodName: String = "invoke"
+  val UnwindMethodName: String = "unwind"
 
   /**
     * Returns the set of continuation interfaces for the given set of types `ts`.
@@ -53,40 +60,96 @@ object GenContinuationInterfaces {
 
     // Pseudo code to generate:
     //
-    // interface Cont$Bool {
-    //   boolean getResult();
-    //   void apply(Context c);
+    // public abstract class Cont$Bool implements java.lang.Runnable {
+    //   public abstract boolean result;
+    //   public Cont$Bool() { ... }
+    //   public abstract Cont$Bool invoke();
+    //   public final boolean unwind();
+    //   public final boolean run();
     // }
-    //
-    // The names `getResult` and `apply` are fixed and can be used as strings.
-    //
-    // The type Cont$Bool is available as the jvmType argument.
-    //
-    // From the type, the JvmName can be extract and from this we can get the internal name of Cont$Bool.
-    //
-    // The result type (here bool) we is provided as an argument. It could be primitive or some compound type.
-    // We can use `getErasedType` to map it down into one of the primitive types or to Object.
     //
 
     // Class visitor
     val visitor = AsmOps.mkClassWriter()
 
     // Class header
-    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_ABSTRACT + ACC_INTERFACE,
-      interfaceType.name.toInternalName, null, JvmName.Object.toInternalName, null)
+    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_ABSTRACT,
+      interfaceType.name.toInternalName, null, JvmName.Object.toInternalName, Array(JvmName.Runnable.toInternalName))
 
-    // `getResult()` method
-    val getResultMethod = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "getResult",
-      AsmOps.getMethodDescriptor(Nil, resultType), null, null)
-    getResultMethod.visitEnd()
+    // Class constructor
+    genConstructor(visitor)
+
+    // Result field
+    visitor.visitField(ACC_PUBLIC + ACC_ABSTRACT, ResultFieldName,
+      resultType.toDescriptor, null, null).visitEnd()
 
     // `invoke()` method
-    val invokeMethod = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "invoke",
-      AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), null, null)
-    invokeMethod.visitEnd()
+    visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, InvokeMethodName,
+      AsmOps.getMethodDescriptor(Nil, interfaceType), null, null).visitEnd()
+
+    // `unwind()` method
+    genUnwindMethod(visitor, interfaceType, resultType)
+
+    // `run()` method
+    genRunMethod(visitor, interfaceType, resultType)
 
     visitor.visitEnd()
     visitor.toByteArray
+  }
+
+  private def genConstructor(visitor: ClassWriter): Unit = {
+    val m = visitor.visitMethod(ACC_PUBLIC, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, null, null)
+
+    m.visitVarInsn(ALOAD, 0)
+    m.visitMethodInsn(INVOKESPECIAL, JvmName.Object.toInternalName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
+    m.visitInsn(RETURN)
+
+    m.visitMaxs(999, 999)
+    m.visitEnd()
+  }
+
+  private def genUnwindMethod(visitor: ClassWriter, interfaceType: JvmType.Reference, erasedResultType: JvmType): Unit = {
+    val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, UnwindMethodName, AsmOps.getMethodDescriptor(Nil, erasedResultType), null, null)
+    m.visitCode()
+
+    m.visitVarInsn(ALOAD, 0)
+    m.visitVarInsn(ASTORE, 1)
+
+    m.visitInsn(ACONST_NULL)
+    m.visitVarInsn(ASTORE, 2)
+
+    val loopStart = new Label()
+    m.visitLabel(loopStart)
+    m.visitVarInsn(ALOAD, 1)
+    m.visitVarInsn(ASTORE, 2)
+    m.visitVarInsn(ALOAD, 1)
+    m.visitMethodInsn(INVOKEVIRTUAL, interfaceType.name.toInternalName, InvokeMethodName, AsmOps.getMethodDescriptor(Nil, interfaceType), false)
+    m.visitVarInsn(ASTORE, 1)
+    m.visitVarInsn(ALOAD, 1)
+    m.visitJumpInsn(IFNONNULL, loopStart)
+
+    m.visitVarInsn(ALOAD, 2)
+    m.visitFieldInsn(GETFIELD, interfaceType.name.toInternalName, ResultFieldName, erasedResultType.toDescriptor)
+    m.visitInsn(AsmOps.getReturnInstruction(erasedResultType))
+
+    m.visitMaxs(999, 999)
+    m.visitEnd()
+  }
+
+  private def genRunMethod(visitor: ClassWriter, interfaceType: JvmType.Reference, erasedResultType: JvmType): Unit = {
+    val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "run", MethodDescriptor.NothingToVoid.toDescriptor, null, null)
+
+    m.visitVarInsn(ALOAD, 0)
+    m.visitMethodInsn(INVOKEVIRTUAL, interfaceType.name.toInternalName, UnwindMethodName, AsmOps.getMethodDescriptor(Nil, erasedResultType), false)
+    if (AsmOps.getStackSize(erasedResultType) == 1) {
+      m.visitInsn(POP)
+    } else {
+      m.visitInsn(POP2)
+    }
+    m.visitInsn(RETURN)
+
+    m.visitMaxs(999, 999)
+    m.visitEnd()
   }
 
 }

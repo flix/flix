@@ -71,11 +71,6 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       val mainClass = GenMainClass.gen()
 
       //
-      // Generate the Context class.
-      //
-      val contextClass = GenContextClass.gen(namespaces)
-
-      //
       // Generate the namespace classes.
       //
       val namespaceClasses = GenNamespaceClasses.gen(namespaces)
@@ -175,7 +170,6 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       //
       List(
         mainClass,
-        contextClass,
         namespaceClasses,
         continuationInterfaces,
         functionInterfaces,

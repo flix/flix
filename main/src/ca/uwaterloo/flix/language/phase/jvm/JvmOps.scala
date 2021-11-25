@@ -390,7 +390,7 @@ object JvmOps {
     */
   def getFunctionDefinitionClassType(sym: Symbol.DefnSym)(implicit root: Root, flix: Flix): JvmType.Reference = {
     val pkg = sym.namespace
-    val name = "Def$" + mangle(sym.name)
+    val name = "Def" + JvmName.Delimiter + mangle(sym.name)
     JvmType.Reference(JvmName(pkg, name))
   }
 
