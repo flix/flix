@@ -144,20 +144,20 @@ namespace File {
     /// `count` - the number of bytes read.
     /// `charSet` - the specific charset to be used to decode the bytes.
     ///
-    pub def readWith(opts: {offset :: Int32, count :: Int32, charSet :: String}, f : String): Result[String, String] & Impure = {
+    pub def readWith(opts: {offset :: Int64, count :: Int32, charSet :: String}, f : String): Result[String, String] & Impure = {
         try {
             import new java.io.File(String) as newFile;
             import new java.io.FileInputStream(##java.io.File) as newInputStream;
+            import java.io.FileInputStream.skip(Int64);
             import java.io.FileInputStream.read(Array[Int8], Int32, Int32);
             import java.nio.charset.Charset:forName(String);
             import new java.lang.String(Array[Int8], ##java.nio.charset.Charset) as newString;
 
             let javaFile = newFile(f);
             let stream = newInputStream(javaFile);
-            let bytes = [0i8; 10];
-            // TODO: I get IndexOutOfBoundsException when reading if: let bytes = [];
-            // TODO: "enter" read with offset = 3, count = 3 -> "ent"
-            read(stream, bytes, opts.offset, opts.count);
+            skip(stream, opts.offset);
+            let bytes = [0i8; opts.count];
+            read(stream, bytes, 0, opts.count);
             let charSet = forName(opts.charSet);
             let returnString = newString(bytes, charSet);
             Ok(returnString)
