@@ -119,7 +119,7 @@ object JvmOps {
       val returnType = JvmOps.getErasedJvmType(tresult)
 
       // The JVM name is of the form Cont$ErasedType
-      val name = "Cont$" + stringify(returnType)
+      val name = "Cont" + JvmName.Delimiter + stringify(returnType)
 
       // The type resides in the root package.
       JvmType.Reference(JvmName(RootPackage, name))
