@@ -18,15 +18,17 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.{ConstraintGraph, MultiEdge, Polarity}
+import ca.uwaterloo.flix.language.ast.Ast.{ConstraintGraph, MultiEdge, Polarity, TypedPredicate}
+import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.StratificationError
 import ca.uwaterloo.flix.language.phase.UllmansAlgorithm.DependencyGraph
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{ParOps, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
+import scala.annotation.tailrec
 import scala.collection.mutable
 
 /**
@@ -39,12 +41,6 @@ import scala.collection.mutable
   * Reports a [[StratificationError]] if the constraints cannot be stratified.
   */
 object Stratifier extends Phase[Root, Root] {
-
-  /**
-    * A type alias for the stratification cache.
-    */
-  type Cache = mutable.Map[Set[Name.Pred], Ast.Stratification]
-
   /**
     * Returns a stratified version of the given AST `root`.
     */
@@ -73,6 +69,35 @@ object Stratifier extends Phase[Root, Root] {
     mapN(defsVal) {
       case ds => root.copy(defs = ds.toMap)
     }
+  }
+
+  /**
+    * A type alias for the stratification cache.
+    */
+  private type Cache = mutable.Map[Map[Name.Pred, TypeKey], Ast.Stratification]
+
+  /**
+    * The type of the value used to calculate type equality.
+    */
+  private type TypeKey = Int
+
+  /**
+    * Computes the information used for type equality checking.
+    * The stratification precision can be changed by changing this
+    * function and fixing the `TypeKey` accordingly.
+    */
+  private def typeKeyOf(tpe: Type): TypeKey = arityOf(tpe)
+
+  /**
+    * Computes the arity of a `Relation` or `Lattice` type.
+    */
+  private def arityOf(tpe: Type): Int = eraseAliases(tpe) match {
+    case Type.Apply(Type.Cst(TypeConstructor.Relation | TypeConstructor.Lattice, _), element, _) => element.baseType match {
+      case Type.Cst(TypeConstructor.Tuple(arity), _) => arity // Multi-ary
+      case Type.Cst(TypeConstructor.Unit, _) => 0 // Nullary
+      case _ => 1 // Unary
+    }
+    case other => throw InternalCompilerException(s"Unexpected non-relation non-lattice type $other")
   }
 
   /**
@@ -258,16 +283,6 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.Assign(exp1, exp2, tpe, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
         case (e1, e2) => Expression.Assign(e1, e2, tpe, eff, loc)
-      }
-
-    case Expression.Existential(fparam, exp, loc) =>
-      mapN(visitExp(exp)) {
-        case e => Expression.Existential(fparam, e, loc)
-      }
-
-    case Expression.Universal(fparam, exp, loc) =>
-      mapN(visitExp(exp)) {
-        case e => Expression.Universal(fparam, e, loc)
       }
 
     case Expression.Ascribe(exp, tpe, eff, loc) =>
@@ -561,12 +576,6 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.Assign(exp1, exp2, _, _, _) =>
       constraintGraphOfExp(exp1) + constraintGraphOfExp(exp2)
 
-    case Expression.Existential(_, exp, _) =>
-      constraintGraphOfExp(exp)
-
-    case Expression.Universal(_, exp, _) =>
-      constraintGraphOfExp(exp)
-
     case Expression.Ascribe(exp, _, _, _) =>
       constraintGraphOfExp(exp)
 
@@ -667,30 +676,18 @@ object Stratifier extends Phase[Root, Root] {
     * Returns the constraint graph of the given constraint `c0`.
     */
   private def constraintGraphOfConstraint(c0: Constraint): ConstraintGraph = c0 match {
-    case Constraint(_, head, body, _) =>
-      getPredicate(head) match {
-        case None => ConstraintGraph.empty
-        case Some(headSym) =>
-          // TODO: These sets do not eliminate most duplicates since location is included in the equality.
-          val (pos, neg) = body.foldLeft((Set.empty[(Name.Pred, SourceLocation)], Set.empty[(Name.Pred, SourceLocation)])) {
-            case ((pos, neg), b) => b match {
-              case Body.Atom(pred, _, polarity, _, _, loc) => polarity match {
-                case Polarity.Positive => (pos + ((pred, loc)), neg)
-                case Polarity.Negative => (pos, neg + ((pred, loc)))
-              }
-              case Body.Guard(_, _) => (pos, neg)
-            }
+    case Constraint(_, Predicate.Head.Atom(headSym, _, _, headTpe, _), body, _) =>
+      val (pos, neg) = body.foldLeft((Vector.empty[TypedPredicate], Vector.empty[TypedPredicate])) {
+        case ((pos, neg), b) => b match {
+          case Body.Atom(pred, _, polarity, _, atomTpe, loc) => polarity match {
+            case Polarity.Positive => (pos :+ TypedPredicate(pred, atomTpe, loc), neg)
+            case Polarity.Negative => (pos, neg :+ TypedPredicate(pred, atomTpe, loc))
           }
-          val edge = MultiEdge(headSym, pos, neg)
-          ConstraintGraph(Set(edge))
+          case Body.Guard(_, _) => (pos, neg)
+        }
       }
-  }
-
-  /**
-    * Optionally returns the predicate of the given head atom `head0`.
-    */
-  private def getPredicate(head0: Predicate.Head): Option[Name.Pred] = head0 match {
-    case Predicate.Head.Atom(pred, _, _, _, _) => Some(pred)
+      val edge = MultiEdge((headSym, headTpe), pos, neg)
+      ConstraintGraph(Set(edge))
   }
 
   /**
@@ -700,7 +697,9 @@ object Stratifier extends Phase[Root, Root] {
     */
   private def stratifyWithCache(dg: ConstraintGraph, tpe: Type, loc: SourceLocation)(implicit cache: Cache): Validation[Ast.Stratification, StratificationError] = {
     // The key is the set of predicates that occur in the row type.
-    val key = predicateSymbolsOf(tpe)
+    val predSyms = predicateSymbolsOf(tpe)
+
+    val key = predSyms.map { case (p, t) => p -> typeKeyOf(t) }
 
     // Lookup the key in the stratification cache.
     cache.get(key) match {
@@ -712,7 +711,7 @@ object Stratifier extends Phase[Root, Root] {
         // Cache miss: Compute the stratification and possibly cache it.
 
         // Compute the restricted constraint graph.
-        val rg = restrict(dg, tpe)
+        val rg = dg.restrict(predSyms, (t1, t2) => typeKeyOf(t1) == typeKeyOf(t2))
 
         // Compute the stratification.
         UllmansAlgorithm.stratify(constraintGraphToDependencyGraph(rg), tpe, loc) match {
@@ -734,9 +733,9 @@ object Stratifier extends Phase[Root, Root] {
     */
   private def constraintGraphToDependencyGraph(c: ConstraintGraph): DependencyGraph =
     c.xs.flatMap {
-      case MultiEdge(head, positives, negatives) =>
-        val p = positives.map { case (b, loc) => UllmansAlgorithm.DependencyEdge.Positive(head, b, loc) }
-        val n = negatives.map { case (b, loc) => UllmansAlgorithm.DependencyEdge.Negative(head, b, loc) }
+      case MultiEdge((head, _), positives, negatives) =>
+        val p = positives.map { case TypedPredicate(b, _, loc) => UllmansAlgorithm.DependencyEdge.Positive(head, b, loc) }
+        val n = negatives.map { case TypedPredicate(b, _, loc) => UllmansAlgorithm.DependencyEdge.Negative(head, b, loc) }
         p ++ n
     }
 
@@ -761,19 +760,21 @@ object Stratifier extends Phase[Root, Root] {
   }
 
   /**
-    * Restricts the given constraint graph `dg` to the predicates that occur in the given type `tpe`.
+    * Returns the map of predicates that appears in the given Schema `tpe`.
+    * A non-Schema type will result in an `InternalCompilerException`.
     */
-  private def restrict(dg: ConstraintGraph, tpe: Type): ConstraintGraph = {
-    val predSyms = predicateSymbolsOf(tpe)
-    dg.restrict(predSyms)
-  }
+  private def predicateSymbolsOf(tpe: Type): Map[Name.Pred, Type] = {
+    @tailrec
+    def visitType(tpe: Type, acc: Map[Name.Pred, Type]): Map[Name.Pred, Type] = tpe match {
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), _), predType, _), rest, _) =>
+        visitType(rest, acc + (pred -> predType))
+      case _ => acc
+    }
 
-  /**
-    * Returns the set of predicates that appears in the given row type `tpe`.
-    */
-  private def predicateSymbolsOf(tpe: Type): Set[Name.Pred] = tpe.typeConstructors.foldLeft(Set.empty[Name.Pred]) {
-    case (acc, TypeConstructor.SchemaRowExtend(pred)) => acc + pred
-    case (acc, _) => acc
+    Type.eraseAliases(tpe) match {
+      case Type.Apply(Type.Cst(TypeConstructor.Schema, _), schemaRow, _) => visitType(schemaRow, Map.empty)
+      case other => throw InternalCompilerException(s"Unexpected non-schema type $other")
+    }
   }
 
 }

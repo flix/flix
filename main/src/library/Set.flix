@@ -261,7 +261,7 @@ namespace Set {
     ///
     /// The function `f` must be pure.
     ///
-    @Time(time(f) * size(xs)) @Space(space(f) * Int32.log2(size(xs)))
+    @ParallelWhenPure // TODO
     pub def count(f: a -> Bool, xs: Set[a]): Int32 =
         foldLeft((acc, x) -> if (f(x)) 1 + acc else acc, 0, xs)
 
@@ -355,7 +355,7 @@ namespace Set {
     ///
     /// Note: The returned set may be smaller than `xs`.
     ///
-    @Time(time(f) * size(xs)) @Space(space(f) * size(xs))
+    @ParallelWhenPure // TODO
     pub def map(f: a -> b & ef, xs: Set[a]): Set[b] & ef with Order[b] =
         foldLeft((acc, x) -> insert(f(x), acc), empty(), xs)
 
@@ -468,24 +468,6 @@ namespace Set {
         case None => ac
         case Some(a) => unfoldWithIterHelper(next, insert(a, ac))
     }
-
-    ///
-    /// Extracts a range of elements from the set `xs`.
-    ///
-    /// That is, the result is a list of all elements `x` where `p(x)` returns `EqualTo`.
-    ///
-    pub def query(p: a -> Comparison & ef, xs: Set[a]): List[a] & ef =
-        let Set(es) = xs;
-        RedBlackTree.query(p, (k, _) -> k, es)
-
-    ///
-    /// Applies `f` to all elements from the set `xs` where `p(x)` returns `EqualTo`.
-    ///
-    /// The function `f` must be impure.
-    ///
-    pub def queryWith(p: a -> Comparison & ef, f: a -> Unit & Impure, xs: Set[a]): Unit & Impure =
-        let Set(es) = xs;
-        RedBlackTree.queryWith(p, (k, _) -> f(k), es)
 
     ///
     /// Helper function for `range`.

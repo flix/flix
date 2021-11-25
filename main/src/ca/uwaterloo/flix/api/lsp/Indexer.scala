@@ -241,12 +241,6 @@ object Indexer {
     case Expression.Assign(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
-    case Expression.Existential(fparam, exp, _) =>
-      visitFormalParam(fparam) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
-
-    case Expression.Universal(fparam, exp, _) =>
-      visitFormalParam(fparam) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
-
     case Expression.Ascribe(exp, tpe, eff, loc) =>
       visitExp(exp) ++ visitType(tpe) ++ visitType(eff) ++ Index.occurrenceOf(exp0)
 
@@ -420,6 +414,9 @@ object Indexer {
   private def visitType(tpe0: Type): Index = tpe0 match {
     case _: Type.KindedVar => Index.empty
     case Type.Cst(tc, loc) => tc match {
+      case TypeConstructor.Arrow(_) =>
+        // We do not index arrow constructors.
+        Index.empty
       case TypeConstructor.RecordRowExtend(field) => Index.occurrenceOf(tc, loc) ++ Index.useOf(field)
       case TypeConstructor.SchemaRowExtend(pred) => Index.occurrenceOf(tc, loc) ++ Index.useOf(pred)
       case _ => Index.occurrenceOf(tc, loc)

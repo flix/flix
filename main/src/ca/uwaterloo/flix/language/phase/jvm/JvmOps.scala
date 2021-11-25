@@ -275,7 +275,7 @@ object JvmOps {
   def getRecordInterfaceType()(implicit root: Root, flix: Flix): JvmType.Reference = {
 
     // The JVM name is of the form IRecord
-    val name = "IRecord"
+    val name = s"IRecord${JvmName.Delimiter}"
 
     // The type resides in the root package.
     JvmType.Reference(JvmName(RootPackage, name))
@@ -814,6 +814,40 @@ object JvmOps {
     */
   def tagsOf(root: Root)(implicit flix: Flix): Set[TagInfo] = {
     typesOf(root).flatMap(tpe => getTagsOf(tpe)(root, flix))
+  }
+
+  /**
+    * Returns the set of ref types in `types` without searching recursively.
+    */
+  def getRefsOf(types: Iterable[MonoType])(implicit flix: Flix, root: Root): Set[BackendObjType.Ref] =
+    types.foldLeft(Set.empty[BackendObjType.Ref]){
+      case (acc, tpe) => acc ++ getRefsOf(tpe)
+    }
+
+  /**
+    * Returns a singleton set of the appropriate ref type if `tpe` is of ref type.
+    */
+  def getRefsOf(tpe: MonoType)(implicit flix: Flix, root: Root): Set[BackendObjType.Ref] = tpe match {
+    case MonoType.Ref(tpe) => Set(BackendObjType.Ref(BackendType.toErasedBackendType(tpe)))
+    case _ => Set.empty
+  }
+
+  /**
+    * Returns the set of record extend types in `types` without searching recursively.
+    */
+  def getRecordExtendsOf(types: Iterable[MonoType])(implicit flix: Flix, root: Root): Set[BackendObjType.RecordExtend] =
+    types.foldLeft(Set.empty[BackendObjType.RecordExtend]){
+      case (acc, tpe) => acc ++ getRecordExtendsOf(tpe)
+    }
+
+  /**
+    * Returns a singleton set of the appropriate record extend type if `tpe` is of record extend type.
+    */
+  def getRecordExtendsOf(tpe: MonoType)(implicit flix: Flix, root: Root): Set[BackendObjType.RecordExtend] = tpe match {
+    case MonoType.RecordExtend(field, value, _) =>
+      // TODO: should use mono -> backend transformation on `rest`
+      Set(BackendObjType.RecordExtend(field, BackendType.toErasedBackendType(value), BackendObjType.RecordEmpty.toTpe))
+    case _ => Set.empty
   }
 
   /**

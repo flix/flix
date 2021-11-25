@@ -1540,4 +1540,64 @@ namespace TestDelayMap {
         Map#{1 -> 2, 2 -> 3, 107 -> -107, 5 -> 5, 0 -> 2} |> Map.toDelayMap |>
             DelayMap.maximumBy((x, _, y, _) -> x <=> y) == Some((107, -107))
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toIterator                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toIterator01(): Bool & Impure =
+        Map.empty(): Map[Int32, Int32] |> Map.toDelayMap |>
+            DelayMap.toIterator |> Iterator.toMap == Map.empty()
+
+    @test
+    def toIterator02(): Bool & Impure =
+        Map#{"A" -> 1, "B" -> 2, "C" -> 3, "D" -> 4} |> Map.toDelayMap |>
+            DelayMap.toIterator |> Iterator.toMap == Map#{"A" -> 1, "B" -> 2, "C" -> 3, "D" -> 4}
+
+    @test
+    def toIterator03(): Bool & Impure =
+        let l = List.range(0, 100);
+        List.zip(l, List.reverse(l)) |> List.toMap |> Map.toDelayMap |>
+            DelayMap.toIterator |> Iterator.toMap |> Map.toList == List.zip(List.range(0, 100), List.reverse(List.range(0, 100)))
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sum                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sum01(): Bool =
+        DelayMap.empty() |> DelayMap.sum == 0
+
+    @test
+    def sum02(): Bool =
+        Map#{1 -> 1} |> Map.toDelayMap |>
+            DelayMap.sum == 1
+
+    @test
+    def sum03(): Bool =
+        Map#{1 -> 1, 2 -> 2, 3 -> 3} |> Map.toDelayMap |>
+            DelayMap.sum == 6
+
+    @test
+    def sum04(): Bool =
+        Map#{1 -> 1, 2 -> 2, 3 -> 3, -3 -> -3} |> Map.toDelayMap |>
+            DelayMap.sum == 3
+
+    @test
+    def sum05(): Bool =
+        Map#{-1 -> -1, -2 -> -2, -3 -> -3, -4 -> -4} |> Map.toDelayMap |>
+            DelayMap.sum == -10
+
+    @test
+    def sum06(): Bool =
+        Map#{10 -> 10, -10 -> -10} |> Map.toDelayMap |>
+            DelayMap.sum == 0
+
+    @test
+    def sum07(): Bool =
+        List.range(1, 101) |> List.zip(List.range(1, 101)) |> List.toDelayMap |>
+            DelayMap.sum == 5050
+
 }

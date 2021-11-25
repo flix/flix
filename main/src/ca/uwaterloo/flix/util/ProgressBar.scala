@@ -15,8 +15,6 @@
  */
 package ca.uwaterloo.flix.util
 
-import ca.uwaterloo.flix.util.vt.TerminalContext
-
 import java.util.concurrent.atomic.AtomicInteger
 
 class ProgressBar {
@@ -47,7 +45,7 @@ class ProgressBar {
   /**
     * A Boolean that represents whether the terminal is believed to support color.
     */
-  private val supportsColors: Boolean = TerminalContext.hasColorSupport()
+  private val supportsColors: Boolean = Formatter.hasColorSupport
 
   /**
     * Updates the progress with the given message `msg` in the given `phase`.

@@ -25,6 +25,10 @@ import org.objectweb.asm.Opcodes._
   */
 object GenRecordInterfaces {
 
+  val LookupFieldFunctionName: String = "lookupField"
+
+  val RestrictFieldFunctionName: String = "restrictField"
+
   /**
     * Returns a Map with a single entry, for the record interface
     */
@@ -57,12 +61,12 @@ object GenRecordInterfaces {
     visitor.visitSource(interfaceType.name.toInternalName, null)
 
     //Emitting a getRecordWithField method
-    val getRecordWithField = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "lookupField",
+    val getRecordWithField = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, LookupFieldFunctionName,
       AsmOps.getMethodDescriptor(List(JvmType.String), interfaceType), null, null)
     getRecordWithField.visitEnd()
 
     //Emitting a restrictField method
-    val restrictField = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "restrictField",
+    val restrictField = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, RestrictFieldFunctionName,
       AsmOps.getMethodDescriptor(List(JvmType.String), interfaceType), null, null)
     restrictField.visitEnd()
 

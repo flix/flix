@@ -460,32 +460,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       val us2 = visitExp(exp2, env0)
       us1 ++ us2
 
-    case Expression.Existential(fparam, exp, _) =>
-      // Check for variable shadowing.
-      val us1 = shadowing(fparam.sym, env0)
-
-      // Visit the expression under an extended environment.
-      val us2 = visitExp(exp, env0 + fparam.sym)
-
-      // Check if the quantified variable is dead.
-      if (deadVarSym(fparam.sym, us2))
-        us1 ++ us2 - fparam.sym + UnusedFormalParam(fparam.sym)
-      else
-        us1 ++ us2 - fparam.sym
-
-    case Expression.Universal(fparam, exp, _) =>
-      // Check for variable shadowing.
-      val us1 = shadowing(fparam.sym, env0)
-
-      // Visit the expression under an extended environment.
-      val us2 = visitExp(exp, env0 + fparam.sym)
-
-      // Check if the quantified variable is dead.
-      if (deadVarSym(fparam.sym, us2))
-        us1 ++ us2 - fparam.sym + UnusedFormalParam(fparam.sym)
-      else
-        us1 ++ us2 - fparam.sym
-
     case Expression.Ascribe(exp, _, _, _) =>
       visitExp(exp, env0)
 

@@ -39,9 +39,6 @@ object JvmBackend extends Phase[Root, CompilationResult] {
     //
     implicit val r: Root = root
 
-    // TODO: This should be limited to those actually used
-    val erasedRefTypes: List[BackendObjType.Ref] = BackendType.erasedTypes.map(BackendObjType.Ref)
-
     // Generate all classes.
     val allClasses = flix.subphase("CodeGen") {
 
@@ -65,6 +62,9 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       //
       val types = JvmOps.typesOf(root)
 
+      val erasedRefTypes: Iterable[BackendObjType.Ref] = JvmOps.getRefsOf(types)
+      val erasedExtendTypes: Iterable[BackendObjType.RecordExtend] = JvmOps.getRecordExtendsOf(types)
+
       //
       // Generate the main class.
       //
@@ -73,12 +73,12 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       //
       // Generate the Context class.
       //
-      val contextClass = GenContext.gen(namespaces)
+      val contextClass = GenContextClass.gen(namespaces)
 
       //
       // Generate the namespace classes.
       //
-      val namespaceClasses = GenNamespaces.gen(namespaces)
+      val namespaceClasses = GenNamespaceClasses.gen(namespaces)
 
       //
       // Generate continuation interfaces for each function type in the program.
@@ -123,12 +123,12 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       //
       // Generate empty record class.
       //
-      val recordEmptyClasses = GenRecordEmpty.gen()
+      val recordEmptyClasses = GenRecordEmptyClass.gen()
 
       //
       // Generate extended record classes for each (different) RecordExtend type in the program
       //
-      val recordExtendClasses = GenRecordExtend.gen(types)
+      val recordExtendClasses = GenRecordExtendClasses.gen(erasedExtendTypes)
 
       //
       // Generate references classes.

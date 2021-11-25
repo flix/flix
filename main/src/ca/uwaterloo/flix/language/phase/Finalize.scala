@@ -273,12 +273,6 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
         val t = visitType(tpe)
         FinalAst.Expression.Assign(e1, e2, t, loc)
 
-      case LiftedAst.Expression.Existential(fparam, exp, loc) =>
-        throw InternalCompilerException(s"Unexpected Existential expression, should have been handled earlier")
-
-      case LiftedAst.Expression.Universal(fparam, exp, loc) =>
-        throw InternalCompilerException(s"Unexpected Universal expression, should have been handled earlier")
-
       case LiftedAst.Expression.Cast(exp, tpe, loc) =>
         val e = visit(exp)
         val t = visitType(tpe)

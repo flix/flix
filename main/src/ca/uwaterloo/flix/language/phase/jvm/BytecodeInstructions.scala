@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
+import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.Branch.{FalseBranch, TrueBranch}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import org.objectweb.asm.{Label, MethodVisitor, Opcodes}
 
@@ -31,7 +32,7 @@ object BytecodeInstructions {
     def visitInstruction(opcode: Int): Unit = visitor.visitInsn(opcode)
 
     def visitMethodInstruction(opcode: Int, owner: JvmName, methodName: String, descriptor: MethodDescriptor): Unit =
-      visitor.visitMethodInsn(opcode, owner.toInternalName, methodName, descriptor.toDescriptor, false)
+      visitor.visitMethodInsn(opcode, owner.toInternalName, methodName, descriptor.toDescriptor, opcode == Opcodes.INVOKEINTERFACE)
 
     def visitFieldInstruction(opcode: Int, owner: JvmName, fieldName: String, fieldType: BackendType): Unit =
       visitor.visitFieldInsn(opcode, owner.toInternalName, fieldName, fieldType.toDescriptor)
@@ -56,6 +57,13 @@ object BytecodeInstructions {
   implicit class ComposeOps(i1: InstructionSet) {
     def ~(i2: InstructionSet): InstructionSet =
       f => i2(i1(f))
+  }
+
+  sealed trait Branch
+
+  object Branch {
+    case object TrueBranch extends Branch
+    case object FalseBranch extends Branch
   }
 
   //
@@ -85,6 +93,11 @@ object BytecodeInstructions {
 
   def ASTORE(index: Int): InstructionSet = f => {
     f.visitVarInstruction(Opcodes.ASTORE, index)
+    f
+  }
+
+  def ATHROW(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.ATHROW)
     f
   }
 
@@ -148,14 +161,25 @@ object BytecodeInstructions {
     f
   }
 
-  def IF_ACMPNE(trueBranch: InstructionSet)(falseBranch: InstructionSet): InstructionSet =
-    branch(Opcodes.IF_ACMPNE)(trueBranch)(falseBranch)
+  def IF_ACMPNE(cases: Branch => InstructionSet): InstructionSet =
+    branch(Opcodes.IF_ACMPNE)(cases)
 
-  def IFNULL(trueBranch: InstructionSet)(falseBranch: InstructionSet): InstructionSet =
-    branch(Opcodes.IFNULL)(trueBranch)(falseBranch)
+  def IFEQ(cases: Branch => InstructionSet): InstructionSet =
+    branch(Opcodes.IFEQ)(cases)
+
+  def IFNE(cases: Branch => InstructionSet): InstructionSet =
+    branch(Opcodes.IFNE)(cases)
+
+  def IFNULL(cases: Branch => InstructionSet): InstructionSet =
+    branch(Opcodes.IFNULL)(cases)
 
   def ILOAD(index: Int): InstructionSet = f => {
     f.visitVarInstruction(Opcodes.ILOAD, index)
+    f
+  }
+
+  def INVOKEINTERFACE(interfaceName: JvmName, methodName: String, descriptor: MethodDescriptor): InstructionSet = f => {
+    f.visitMethodInstruction(Opcodes.INVOKEINTERFACE, interfaceName, methodName, descriptor)
     f
   }
 
@@ -228,6 +252,9 @@ object BytecodeInstructions {
     f
   }
 
+  def matchBool(cases: Branch => InstructionSet): InstructionSet =
+    IFNE(cases)
+
   def invokeConstructor(className: JvmName, descriptor: MethodDescriptor = MethodDescriptor.NothingToVoid): InstructionSet =
     INVOKESPECIAL(className, JvmName.ConstructorMethod, descriptor)
 
@@ -238,6 +265,9 @@ object BytecodeInstructions {
     f.visitLoadConstantInstruction(s)
     f
   }
+
+  def loadThis(): InstructionSet =
+    ALOAD(0)
 
   def xLoad(tpe: BackendType, index: Int): InstructionSet = tpe match {
     case BackendType.Bool | BackendType.Char | BackendType.Int8 | BackendType.Int16 | BackendType.Int32 => ILOAD(index)
@@ -259,17 +289,17 @@ object BytecodeInstructions {
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //
 
-  private def branch(opcode: Int)(trueBranch: InstructionSet)(falseBranch: InstructionSet): InstructionSet = f0 => {
+  private def branch(opcode: Int)(cases: Branch => InstructionSet): InstructionSet = f0 => {
     var f = f0
     val jumpLabel = new Label()
     val skipLabel = new Label()
     f.visitJumpInstruction(opcode, jumpLabel)
 
-    f = falseBranch(f)
+    f = cases(FalseBranch)(f)
     f.visitJumpInstruction(Opcodes.GOTO, skipLabel)
 
     f.visitLabel(jumpLabel)
-    f = trueBranch(f)
+    f = cases(TrueBranch)(f)
     f.visitLabel(skipLabel)
     f
   }

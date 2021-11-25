@@ -425,16 +425,6 @@ object Lowering extends Phase[Root, Root] {
       val t = visitType(tpe)
       Expression.Assign(e1, e2, t, eff, loc)
 
-    case Expression.Existential(fparam, exp, loc) =>
-      val p = visitFormalParam(fparam)
-      val e = visitExp(exp)
-      Expression.Existential(p, e, loc)
-
-    case Expression.Universal(fparam, exp, loc) =>
-      val p = visitFormalParam(fparam)
-      val e = visitExp(exp)
-      Expression.Universal(p, e, loc)
-
     case Expression.Ascribe(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
@@ -541,18 +531,19 @@ object Lowering extends Phase[Root, Root] {
       val resultType = Types.Datalog
       Expression.Apply(defExp, argExps, resultType, eff, loc)
 
-    case Expression.FixpointFilter(pred, exp, tpe, eff, loc) =>
+    case Expression.FixpointFilter(pred, exp, _, eff, loc) =>
       val defn = Defs.lookup(Defs.Filter)
       val defExp = Expression.Def(defn.sym, Types.FilterType, loc)
       val argExps = mkPredSym(pred) :: visitExp(exp) :: Nil
       val resultType = Types.Datalog
       Expression.Apply(defExp, argExps, resultType, eff, loc)
 
-    case Expression.FixpointProjectIn(exp, pred, tpe, eff, loc) =>
+    case Expression.FixpointProjectIn(exp, pred, _, eff, loc) =>
       // Compute the arity of the functor F[(a, b, c)] or F[a].
       val arity = Type.eraseAliases(exp.tpe) match {
         case Type.Apply(_, innerType, _) => innerType.typeConstructor match {
           case Some(TypeConstructor.Tuple(l)) => l
+          case Some(TypeConstructor.Unit) => 0
           case _ => 1
         }
         case _ => throw InternalCompilerException(s"Unexpected non-foldable type: '${exp.tpe}'.")
@@ -698,7 +689,7 @@ object Lowering extends Phase[Root, Root] {
         case _ => tpe0
       }
 
-      case Type.Cst(tc, loc) => tpe0
+      case Type.Cst(_, _) => tpe0
 
       case Type.Apply(tpe1, tpe2, loc) =>
         val t1 = visitType(tpe1)
@@ -732,8 +723,8 @@ object Lowering extends Phase[Root, Root] {
   private def visitChoiceRule(rule0: ChoiceRule)(implicit root: Root, flix: Flix): ChoiceRule = rule0 match {
     case ChoiceRule(pat, exp) =>
       val p = pat.map {
-        case p@ChoicePattern.Wild(loc) => p
-        case p@ChoicePattern.Absent(loc) => p
+        case p@ChoicePattern.Wild(_) => p
+        case p@ChoicePattern.Absent(_) => p
         case ChoicePattern.Present(sym, tpe, loc) =>
           val t = visitType(tpe)
           ChoicePattern.Present(sym, t, loc)
@@ -813,7 +804,7 @@ object Lowering extends Phase[Root, Root] {
     * Lowers the given body predicate `p0`.
     */
   private def visitBodyPred(cparams0: List[ConstraintParam], p0: Predicate.Body)(implicit root: Root, flix: Flix): Expression = p0 match {
-    case Body.Atom(pred, den, polarity, terms, tpe, loc) =>
+    case Body.Atom(pred, den, polarity, terms, _, loc) =>
       val predSymExp = mkPredSym(pred)
       val denotationExp = mkDenotation(den, terms.lastOption.map(_.tpe), loc)
       val polarityExp = mkPolarity(polarity, loc)
@@ -840,7 +831,7 @@ object Lowering extends Phase[Root, Root] {
     // Case 3: The expression contains quantified variables. We translate it to an application term.
     //
     exp0 match {
-      case Expression.Var(sym, _, loc) =>
+      case Expression.Var(sym, _, _) =>
         // Case 1: Variable term.
         if (isQuantifiedVar(sym, cparams0)) {
           // Case 1.1: Quantified variable.
@@ -1061,7 +1052,7 @@ object Lowering extends Phase[Root, Root] {
 
     // Introduce a fresh variable for each free variable.
     val freshVars = fvs.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym]) {
-      case (acc, (oldSym, tpe)) => acc + (oldSym -> Symbol.freshVarSym(oldSym))
+      case (acc, (oldSym, _)) => acc + (oldSym -> Symbol.freshVarSym(oldSym))
     }
 
     // Substitute every symbol in `exp` for its fresh equivalent.
@@ -1111,7 +1102,7 @@ object Lowering extends Phase[Root, Root] {
 
     // Introduce a fresh variable for each free variable.
     val freshVars = fvs.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym]) {
-      case (acc, (oldSym, tpe)) => acc + (oldSym -> Symbol.freshVarSym(oldSym))
+      case (acc, (oldSym, _)) => acc + (oldSym -> Symbol.freshVarSym(oldSym))
     }
 
     // Substitute every symbol in `exp` for its fresh equivalent.
@@ -1326,7 +1317,7 @@ object Lowering extends Phase[Root, Root] {
       val e2 = substExp(exp2, subst)
       Expression.Stm(e1, e2, tpe, eff, loc)
 
-    case Expression.Match(exp, rules, tpe, eff, loc) => ??? // TODO
+    case Expression.Match(_, _, _, _, _) => ??? // TODO
 
     case Expression.Choose(exps, rules, tpe, eff, loc) =>
       val es = exps.map(substExp(_, subst))
@@ -1402,16 +1393,6 @@ object Lowering extends Phase[Root, Root] {
       val e2 = substExp(exp2, subst)
       Expression.Assign(e1, e2, tpe, eff, loc)
 
-    case Expression.Existential(fparam, exp, loc) =>
-      val f = substFormalParam(fparam, subst)
-      val e = substExp(exp, subst)
-      Expression.Existential(f, e, loc)
-
-    case Expression.Universal(fparam, exp, loc) =>
-      val f = substFormalParam(fparam, subst)
-      val e = substExp(exp, subst)
-      Expression.Universal(f, e, loc)
-
     case Expression.Ascribe(exp, tpe, eff, loc) =>
       val e = substExp(exp, subst)
       Expression.Ascribe(e, tpe, eff, loc)
@@ -1420,7 +1401,7 @@ object Lowering extends Phase[Root, Root] {
       val e = substExp(exp, subst)
       Expression.Cast(e, tpe, eff, loc)
 
-    case Expression.TryCatch(exp, rules, tpe, eff, loc) => ??? // TODO
+    case Expression.TryCatch(_, _, _, _, _) => ??? // TODO
 
     case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
       val as = args.map(substExp(_, subst))
@@ -1444,7 +1425,7 @@ object Lowering extends Phase[Root, Root] {
       val e2 = substExp(exp2, subst)
       Expression.PutField(field, e1, e2, tpe, eff, loc)
 
-    case Expression.GetStaticField(field, tpe, eff, loc) => exp0
+    case Expression.GetStaticField(_, _, _, _) => exp0
 
     case Expression.PutStaticField(field, exp, tpe, eff, loc) =>
       val e = substExp(exp, subst)
@@ -1463,7 +1444,7 @@ object Lowering extends Phase[Root, Root] {
       val e2 = substExp(exp2, subst)
       Expression.PutChannel(e1, e2, tpe, eff, loc)
 
-    case Expression.SelectChannel(rules, default, tpe, eff, loc) => ??? // TODO
+    case Expression.SelectChannel(_, _, _, _, _) => ??? // TODO
 
     case Expression.Spawn(exp, tpe, eff, loc) =>
       val e = substExp(exp, subst)
@@ -1510,7 +1491,7 @@ object Lowering extends Phase[Root, Root] {
       val e3 = substExp(exp3, subst)
       Expression.ReifyEff(sym, e1, e2, e3, tpe, eff, loc)
 
-    case Expression.FixpointConstraintSet(cs, stf, tpe, loc) => throw InternalCompilerException(s"Unexpected expression near ${loc.format}.")
+    case Expression.FixpointConstraintSet(_, _, _, loc) => throw InternalCompilerException(s"Unexpected expression near ${loc.format}.")
   }
 
   /**
