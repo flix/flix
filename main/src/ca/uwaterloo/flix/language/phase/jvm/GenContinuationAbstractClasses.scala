@@ -25,22 +25,22 @@ import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.{ClassWriter, Label}
 
 /**
-  * Generates bytecode for the continuation interfaces.
+  * Generates bytecode for the continuation classes.
   */
-object GenContinuationInterfaces {
+object GenContinuationAbstractClasses {
 
   val ResultFieldName: String = "result"
   val InvokeMethodName: String = "invoke"
   val UnwindMethodName: String = "unwind"
 
   /**
-    * Returns the set of continuation interfaces for the given set of types `ts`.
+    * Returns the set of continuation classes for the given set of types `ts`.
     */
   def gen(ts: Set[MonoType])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     ts.foldLeft(Map.empty[JvmName, JvmClass]) {
       case (macc, tpe@MonoType.Arrow(_, tresult)) =>
         // Case 1: The type constructor is an arrow.
-        // Construct continuation interface.
+        // Construct continuation class.
         val jvmType = JvmOps.getContinuationInterfaceType(tpe)
         val jvmName = jvmType.name
         val resultType = JvmOps.getErasedJvmType(tresult)
@@ -54,7 +54,7 @@ object GenContinuationInterfaces {
   }
 
   /**
-    * Returns the bytecode for the given continuation interface.
+    * Returns the bytecode for the given continuation class.
     */
   private def genByteCode(interfaceType: JvmType.Reference, resultType: JvmType)(implicit root: Root, flix: Flix): Array[Byte] = {
 

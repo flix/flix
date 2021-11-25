@@ -110,7 +110,7 @@ object GenNamespaceClasses {
       // Incrementing the offset
       offset += AsmOps.getStackSize(arg)
     }
-    method.visitMethodInsn(INVOKEVIRTUAL, functionType.name.toInternalName, GenContinuationInterfaces.UnwindMethodName, AsmOps.getMethodDescriptor(Nil, erasedResult), false)
+    method.visitMethodInsn(INVOKEVIRTUAL, functionType.name.toInternalName, GenContinuationAbstractClasses.UnwindMethodName, AsmOps.getMethodDescriptor(Nil, erasedResult), false)
     // no erasure here because the ns function works on erased values
 
     // Return

@@ -108,11 +108,11 @@ object GenFunctionClasses {
                                   classType: JvmType.Reference,
                                   defn: Def,
                                   resultType: MonoType)(implicit root: Root, flix: Flix): Unit = {
-    // Continuation interface
+    // Continuation class
     val continuationType = JvmOps.getContinuationInterfaceType(defn.tpe)
 
     // Method header
-    val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, GenContinuationInterfaces.InvokeMethodName,
+    val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, GenContinuationAbstractClasses.InvokeMethodName,
       AsmOps.getMethodDescriptor(Nil, continuationType), null, null)
 
     // Enter label
@@ -151,7 +151,7 @@ object GenFunctionClasses {
       m.visitInsn(POP)
     }
 
-    m.visitFieldInsn(PUTFIELD, classType.name.toInternalName, GenContinuationInterfaces.ResultFieldName, resultJvmType.toDescriptor)
+    m.visitFieldInsn(PUTFIELD, classType.name.toInternalName, GenContinuationAbstractClasses.ResultFieldName, resultJvmType.toDescriptor)
 
     // Return
     m.visitInsn(ACONST_NULL)

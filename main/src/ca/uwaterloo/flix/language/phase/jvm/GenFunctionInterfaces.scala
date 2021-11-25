@@ -62,7 +62,7 @@ object GenFunctionInterfaces {
     // TODO: this or subclasses do not implement Function::apply?
 
 
-    // `JvmType` of the continuation interface for `tpe`
+    // `JvmType` of the continuation class for `tpe`
     val continuationSuperInterface = JvmOps.getContinuationInterfaceType(tpe)
 
     // `JvmType` of the java.util.functions.Function

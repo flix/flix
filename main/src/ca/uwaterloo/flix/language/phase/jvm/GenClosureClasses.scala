@@ -92,7 +92,7 @@ object GenClosureClasses {
     val continuationType = JvmOps.getContinuationInterfaceType(defn.tpe)
 
     // Method header
-    val invokeMethod = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, GenContinuationInterfaces.InvokeMethodName,
+    val invokeMethod = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, GenContinuationAbstractClasses.InvokeMethodName,
       AsmOps.getMethodDescriptor(Nil, continuationType), null, null)
     invokeMethod.visitCode()
 
@@ -149,7 +149,7 @@ object GenClosureClasses {
     }
 
     // Saving the result on the `result` field of IFO
-    invokeMethod.visitFieldInsn(PUTFIELD, classType.name.toInternalName, GenContinuationInterfaces.ResultFieldName, resultJvmType.toDescriptor)
+    invokeMethod.visitFieldInsn(PUTFIELD, classType.name.toInternalName, GenContinuationAbstractClasses.ResultFieldName, resultJvmType.toDescriptor)
 
     // Return
     invokeMethod.visitInsn(ACONST_NULL)

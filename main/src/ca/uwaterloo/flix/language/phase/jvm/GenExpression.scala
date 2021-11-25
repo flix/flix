@@ -139,7 +139,7 @@ object GenExpression {
       }
       // Calling unwind and unboxing
       visitor.visitMethodInsn(INVOKEVIRTUAL, functionInterface.name.toInternalName,
-        GenContinuationInterfaces.UnwindMethodName, AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe)), false)
+        GenContinuationAbstractClasses.UnwindMethodName, AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe)), false)
       AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
     case Expression.ApplyDef(name, args, tpe, _) =>
@@ -159,7 +159,7 @@ object GenExpression {
           s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
       }
       // Calling unwind and unboxing
-      visitor.visitMethodInsn(INVOKEVIRTUAL, defJvmType.name.toInternalName, GenContinuationInterfaces.UnwindMethodName,
+      visitor.visitMethodInsn(INVOKEVIRTUAL, defJvmType.name.toInternalName, GenContinuationAbstractClasses.UnwindMethodName,
         AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe)), false)
       AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 

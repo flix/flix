@@ -106,7 +106,7 @@ object JvmOps {
   }
 
   /**
-    * Returns the continuation interface type `Cont$X` for the given type `tpe`.
+    * Returns the continuation class type `Cont$X` for the given type `tpe`.
     *
     * Int -> Int          =>  Cont$Int
     * (Int, Int) -> Int   =>  Cont$Int

@@ -76,9 +76,9 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       val namespaceClasses = GenNamespaceClasses.gen(namespaces)
 
       //
-      // Generate continuation interfaces for each function type in the program.
+      // Generate continuation classes for each function type in the program.
       //
-      val continuationInterfaces = GenContinuationInterfaces.gen(types)
+      val continuationInterfaces = GenContinuationAbstractClasses.gen(types)
 
       //
       // Generate function interfaces for each function type in the program.
