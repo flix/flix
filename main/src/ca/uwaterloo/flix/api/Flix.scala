@@ -22,9 +22,10 @@ import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
 import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult
+import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util._
-import ca.uwaterloo.flix.util.vt.TerminalContext
 
+import java.net.URI
 import java.nio.charset.Charset
 import java.nio.file.{Files, Path, Paths}
 import scala.collection.mutable
@@ -113,6 +114,7 @@ class Flix {
     "Benchmark.flix" -> LocalResource.get("/src/library/Benchmark.flix"),
     "Bool.flix" -> LocalResource.get("/src/library/Bool.flix"),
     "BigInt.flix" -> LocalResource.get("/src/library/BigInt.flix"),
+    "Chain.flix" -> LocalResource.get("/src/library/Chain.flix"),
     "Char.flix" -> LocalResource.get("/src/library/Char.flix"),
     "Choice.flix" -> LocalResource.get("/src/library/Choice.flix"),
     "Condition.flix" -> LocalResource.get("/src/library/Condition.flix"),
@@ -249,6 +251,16 @@ class Flix {
   val genSym = new GenSym()
 
   /**
+    * The default output formatter.
+    */
+  private var formatter: Formatter = NoFormatter
+
+  /**
+    * A class loader for loading external JARs.
+    */
+  val jarLoader = new ExternalJarLoader
+
+  /**
     * Adds the given string `s` to the list of strings to be parsed.
     */
   def addStr(s: String): Flix = {
@@ -287,13 +299,39 @@ class Flix {
     if (p == null)
       throw new IllegalArgumentException(s"'p' must be non-null.")
     if (!Files.exists(p))
-      throw new IllegalArgumentException(s"'$p' must a file.")
+      throw new IllegalArgumentException(s"'$p' must be a file.")
     if (!Files.isRegularFile(p))
-      throw new IllegalArgumentException(s"'$p' must a regular file.")
+      throw new IllegalArgumentException(s"'$p' must be a regular file.")
     if (!Files.isReadable(p))
-      throw new IllegalArgumentException(s"'$p' must a readable file.")
+      throw new IllegalArgumentException(s"'$p' must be a readable file.")
 
     paths += p
+    this
+  }
+
+  /**
+    * Adds the JAR file at path `p` to the class loader.
+    */
+  def addJar(p: String): Flix = {
+    val uri = new URI(p)
+    val path = Path.of(uri)
+    addJar(path)
+  }
+
+  /**
+    * Adds the JAR file at path `p` to the class loader.
+    */
+  def addJar(p: Path): Flix = {
+    if (p == null)
+      throw new IllegalArgumentException(s"'p' must be non-null.")
+    if (!Files.exists(p))
+      throw new IllegalArgumentException(s"'$p' must be a file.")
+    if (!Files.isRegularFile(p))
+      throw new IllegalArgumentException(s"'$p' must be a regular file.")
+    if (!Files.isReadable(p))
+      throw new IllegalArgumentException(s"'$p' must be a readable file.")
+
+    jarLoader.addURL(p.toUri.toURL)
     this
   }
 
@@ -316,6 +354,21 @@ class Flix {
     if (opts == null)
       throw new IllegalArgumentException("'opts' must be non-null.")
     options = opts
+    this
+  }
+
+  /**
+    * Returns the current formatter instance.
+    */
+  def getFormatter: Formatter = this.formatter
+
+  /**
+    * Sets the output formatter used for this Flix instance.
+    */
+  def setFormatter(formatter: Formatter): Flix = {
+    if (formatter == null)
+      throw new IllegalArgumentException("'formatter' must be non-null.")
+    this.formatter = formatter
     this
   }
 
@@ -402,9 +455,7 @@ class Flix {
     * Compiles the given typed ast to an executable ast.
     */
   def compile(): Validation[CompilationResult, CompilationMessage] =
-    check() flatMap {
-      case typedAst => codeGen(typedAst)
-    }
+    check() flatMap codeGen
 
   /**
     * Enters the phase with the given name.
@@ -432,9 +483,8 @@ class Flix {
     if (options.debug) {
       // Print information about the phase.
       val d = new Duration(e)
-      val terminalCtx = TerminalContext.AnsiTerminal
-      val emojiPart = terminalCtx.emitBlue("✓ ")
-      val phasePart = terminalCtx.emitBlue(f"$phase%-40s")
+      val emojiPart = formatter.blue("✓ ")
+      val phasePart = formatter.blue(f"$phase%-40s")
       val timePart = f"${d.fmtMiliSeconds}%8s"
       Console.println(emojiPart + phasePart + timePart)
 
@@ -442,7 +492,7 @@ class Flix {
       for ((subphase, e) <- currentPhase.subphases.reverse) {
         val d = new Duration(e)
         val emojiPart = "    "
-        val phasePart = terminalCtx.emitMagenta(f"$subphase%-37s")
+        val phasePart = formatter.magenta(f"$subphase%-37s")
         val timePart = f"(${d.fmtMiliSeconds}%8s)"
         Console.println(emojiPart + phasePart + timePart)
       }

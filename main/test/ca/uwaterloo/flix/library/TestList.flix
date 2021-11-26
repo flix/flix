@@ -2373,6 +2373,25 @@ def distinctWith09(): Bool =
     @test
     def toLazyList03(): Bool = List.range(-1000, 1000) |> List.toLazyList |> LazyList.toList == List.range(-1000, 1000)
 
+    /////////////////////////////////////////////////////////////////////////////
+    // toChain                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toChain01(): Bool =
+        List.toChain(Nil: List[Int]) == Chain.empty(): Chain[Int]
+
+    @test
+    def toChain02(): Bool =
+        List.toChain(1 :: Nil) == Chain.singleton(1)
+
+    @test
+    def toChain03(): Bool =
+        List.toChain(1 :: 2 :: Nil) == (1 `Chain.cons` (2 `Chain.cons` Chain.empty()))
+
+    @test
+    def toChain04(): Bool =
+        List.toChain(1 :: 2 :: 3 :: Nil) == (1 `Chain.cons` (2 `Chain.cons` (3 `Chain.cons` Chain.empty())))
 
     /////////////////////////////////////////////////////////////////////////////
     // sum                                                                     //

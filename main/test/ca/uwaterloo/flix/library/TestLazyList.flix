@@ -1097,27 +1097,27 @@ namespace TestLazyList {
     def last12(): Bool =
     	LazyList.range(0, 1000) |> LazyList.last == Some(999)
 
-/*
+
     /////////////////////////////////////////////////////////////////////////////
-    // toIter                                                                  //
+    // toIterator                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
     def toIter01(): Bool & Impure =
-    	LazyList.toIter(ENil: LazyList[Unit]) |> Iterator.toList == Nil
+    	LazyList.toIterator(ENil: LazyList[Unit]) |> Iterator.toList == Nil
 
     @test
     def toIter02(): Bool & Impure =
-    	LazyList.toIter(LList(lazy ENil): LazyList[Unit]) |> Iterator.toList == Nil
+    	LazyList.toIterator(LList(lazy ENil): LazyList[Unit]) |> Iterator.toList == Nil
 
     @test
     def toIter06(): Bool & Impure =
-    	LazyList.toIter(LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+    	LazyList.toIterator(LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
 
     @test
     def toIter09(): Bool & Impure =
-    	LazyList.range(-100, 100) |> LazyList.toIter |> Iterator.toList == List.range(-100, 100)
-*/
+    	LazyList.range(-100, 100) |> LazyList.toIterator |> Iterator.toList == List.range(-100, 100)
+
 
     /////////////////////////////////////////////////////////////////////////////
     // zip                                                                     //

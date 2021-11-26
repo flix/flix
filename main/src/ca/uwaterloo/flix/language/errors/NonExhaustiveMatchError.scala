@@ -18,21 +18,28 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
-import ca.uwaterloo.flix.util.vt.VirtualString._
-import ca.uwaterloo.flix.util.vt.VirtualTerminal
+import ca.uwaterloo.flix.util.Formatter
 
 /**
   * An error raised to indicate a non exhaustive pattern match expression.
   */
 case class NonExhaustiveMatchError(rules: List[TypedAst.MatchRule], pat: String, loc: SourceLocation) extends CompilationMessage {
-  def kind = "Pattern Match"
+  val kind = "Pattern Match"
+
   def summary: String = s"Non-exhaustive match. Missing case: '$pat'."
-  def message: VirtualTerminal = {
-    val vt = new VirtualTerminal
-    vt << Line(kind, source.format) << NewLine
-    vt << ">> Non-Exhaustive Pattern. Missing case: " << Red(pat) << " in match expression." << NewLine
-    vt << NewLine
-    vt << Code(loc, "incomplete pattern.")
-    vt << NewLine
+
+  def message(formatter: Formatter): String = {
+    import formatter._
+    s"""${line(kind, source.format)}
+       |>> Non-Exhaustive Pattern. Missing case: ${red(pat)} in match expression.
+       |
+       |${code(loc, "incomplete pattern.")}
+       |""".stripMargin
+
   }
+
+  /**
+    * Returns a formatted string with helpful suggestions.
+    */
+  def explain(formatter: Formatter): Option[String] = None
 }

@@ -19,12 +19,6 @@
 ///
 opaque type MutMap[k, v] = Ref[Map[k, v]]
 
-instance ToString[MutMap[k, v]] with ToString[k], ToString[v] {
-    pub def toString(m: MutMap[k, v]): String =
-        let s = MutMap.foldRightWithKey((k, v, acc) -> "${k} -> ${v}, ${acc}", "", m) as & Pure;
-        "MutMap#{${String.dropRight(2, s)}}"
-}
-
 namespace MutMap {
 
     ///
@@ -431,9 +425,7 @@ namespace MutMap {
     ///
     /// Applies `f` to every element in the mutable map `m`.
     ///
-    /// The function `f` must be impure.
-    ///
-    pub def foreach(f: (k, v) ~> Unit, m: MutMap[k, v]): Unit & Impure =
+    pub def foreach(f: (k, v) -> Unit & ef, m: MutMap[k, v]): Unit & Impure =
         let MutMap(mm) = m;
         Map.foreach(f, deref mm)
 
@@ -451,7 +443,7 @@ namespace MutMap {
     ///
     /// The function `f` must be impure.
     ///
-    pub def queryWith(p: k -> Comparison & ef, f: (k, v) ~> Unit, m: MutMap[k, v]): Unit & Impure =
+    pub def queryWith(p: k -> Comparison, f: (k, v) -> Unit & ef, m: MutMap[k, v]): Unit & Impure =
         let MutMap(mm) = m;
         Map.queryWith(p, f, deref mm)
 

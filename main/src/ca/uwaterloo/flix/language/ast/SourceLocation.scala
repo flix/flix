@@ -4,7 +4,6 @@ import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.debug.FormatSourceLocation
 import org.parboiled2.ParserInput
 
-
 /**
   * Companion object for the [[SourceLocation]] class.
   */
@@ -20,8 +19,8 @@ object SourceLocation {
   /**
     * Returns the source location constructed from the source positions `b` and `e.`
     */
-  def mk(b: SourcePosition, e: SourcePosition): SourceLocation =
-    SourceLocation(b.input, b.source, b.line, b.col, e.line, e.col)
+  def mk(b: SourcePosition, e: SourcePosition, k: SourceKind = SourceKind.Real): SourceLocation =
+    SourceLocation(b.input, b.source, k, b.line, b.col, e.line, e.col)
 
   implicit object Order extends Ordering[SourceLocation] {
 
@@ -36,14 +35,15 @@ object SourceLocation {
 /**
   * A class that represents the physical source location of some parsed syntactic entity.
   *
-  * @param input     the parser input.
-  * @param source    the source input.
-  * @param beginLine the line number where the entity begins.
-  * @param beginCol  the column number where the entity begins.
-  * @param endLine   the line number where the entity ends.
-  * @param endCol    the column number where the entity ends.
+  * @param input        the parser input.
+  * @param source       the source input.
+  * @param locationKind the source location kind.
+  * @param beginLine    the line number where the entity begins.
+  * @param beginCol     the column number where the entity begins.
+  * @param endLine      the line number where the entity ends.
+  * @param endCol       the column number where the entity ends.
   */
-case class SourceLocation(input: Option[ParserInput], source: Source, beginLine: Int, beginCol: Int, endLine: Int, endCol: Int) {
+case class SourceLocation(input: Option[ParserInput], source: Source, locationKind: SourceKind, beginLine: Int, beginCol: Int, endLine: Int, endCol: Int) {
 
   /**
     * Returns `true` if this source location spans a single line.
@@ -54,6 +54,21 @@ case class SourceLocation(input: Option[ParserInput], source: Source, beginLine:
     * Returns `true` if this source location spans more than one line.
     */
   def isMultiLine: Boolean = !isSingleLine
+
+  /**
+    * Returns `true` if this source location is synthetic.
+    */
+  def isSynthetic: Boolean = locationKind == SourceKind.Synthetic
+
+  /**
+    * Returns `this` source location but as a synthetic kind.
+    */
+  def asSynthetic: SourceLocation = copy(locationKind = SourceKind.Synthetic)
+
+  /**
+    * Returns `this` source location but as a real kind.
+    */
+  def asReal: SourceLocation = copy(locationKind = SourceKind.Real)
 
   /**
     * Returns the smallest (i.e. the first that appears in the source code) of `this` and `that`.

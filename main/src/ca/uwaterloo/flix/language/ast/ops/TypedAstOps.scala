@@ -152,12 +152,6 @@ object TypedAstOps {
       case Expression.Assign(exp1, exp2, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0)
 
-      case Expression.Existential(fparam, exp, loc) =>
-        visitExp(exp, env0 + (fparam.sym -> fparam.tpe))
-
-      case Expression.Universal(fparam, exp, loc) =>
-        visitExp(exp, env0 + (fparam.sym -> fparam.tpe))
-
       case Expression.Ascribe(exp, tpe, eff, loc) =>
         visitExp(exp, env0)
 
@@ -242,6 +236,9 @@ object TypedAstOps {
 
       case Expression.ReifyType(_, _, _, _, _) =>
         Map.empty
+
+      case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _) =>
+        visitExp(exp1, env0) ++ visitExp(exp2, env0) ++ visitExp(exp3, env0)
 
     }
 
@@ -372,8 +369,6 @@ object TypedAstOps {
     case Expression.Ref(exp, _, _, _) => sigSymsOf(exp)
     case Expression.Deref(exp, _, _, _) => sigSymsOf(exp)
     case Expression.Assign(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
-    case Expression.Existential(_, exp, _) => sigSymsOf(exp)
-    case Expression.Universal(_, exp, _) => sigSymsOf(exp)
     case Expression.Ascribe(exp, _, _, _) => sigSymsOf(exp)
     case Expression.Cast(exp, _, _, _) => sigSymsOf(exp)
     case Expression.TryCatch(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
@@ -399,6 +394,7 @@ object TypedAstOps {
     case Expression.FixpointProjectOut(_, exp, _, _, _) => sigSymsOf(exp)
     case Expression.Reify(_, _, _, _) => Set.empty
     case Expression.ReifyType(_, _, _, _, _) => Set.empty
+    case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++sigSymsOf(exp3)
   }
 
   /**
@@ -570,12 +566,6 @@ object TypedAstOps {
     case Expression.Assign(exp1, exp2, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)
 
-    case Expression.Existential(fparam, exp, _) =>
-      freeVars(exp) - fparam.sym
-
-    case Expression.Universal(fparam, exp, _) =>
-      freeVars(exp) - fparam.sym
-
     case Expression.Ascribe(exp, _, _, _) =>
       freeVars(exp)
 
@@ -663,6 +653,9 @@ object TypedAstOps {
 
     case Expression.ReifyType(_, _, _, _, _) =>
       Map.empty
+
+    case Expression.ReifyEff(sym, exp1, exp2, exp3, _, _, _) =>
+      (freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)) - sym
 
   }
 

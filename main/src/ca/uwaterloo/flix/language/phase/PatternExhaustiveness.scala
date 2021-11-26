@@ -249,8 +249,6 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
             _ <- checkPats(exp1, root)
             _ <- checkPats(exp2, root)
           } yield tast
-        case Expression.Existential(_, exp, _) => checkPats(exp, root).map(const(tast))
-        case Expression.Universal(_, exp, _) => checkPats(exp, root).map(const(tast))
         case Expression.Ascribe(exp, _, _, _) => checkPats(exp, root).map(const(tast))
         case Expression.Cast(exp, _, _, _) => checkPats(exp, root).map(const(tast))
         case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
@@ -363,6 +361,13 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
 
         case Expression.ReifyType(_, _, _, _, _) =>
           tast.toSuccess
+
+        case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _) =>
+          for {
+            _ <- checkPats(exp1, root)
+            _ <- checkPats(exp2, root)
+            _ <- checkPats(exp3, root)
+          } yield tast
 
       }
     }

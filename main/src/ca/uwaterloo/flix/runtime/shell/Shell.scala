@@ -16,28 +16,24 @@
 
 package ca.uwaterloo.flix.runtime.shell
 
-import java.nio.file._
-import java.util.concurrent.Executors
-import java.util.logging.{Level, Logger}
-
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.ast.Ast.HoleContext
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
+import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
 import ca.uwaterloo.flix.util._
-import ca.uwaterloo.flix.util.tc.Show
-import ca.uwaterloo.flix.util.tc.Show._
-import ca.uwaterloo.flix.util.vt.VirtualString._
-import ca.uwaterloo.flix.util.vt.{TerminalContext, VirtualTerminal}
 import org.jline.reader.{EndOfFileException, LineReaderBuilder, UserInterruptException}
 import org.jline.terminal.{Terminal, TerminalBuilder}
 
-import scala.jdk.CollectionConverters._
+import java.nio.file._
+import java.util.concurrent.Executors
+import java.util.logging.{Level, Logger}
 import scala.collection.mutable
+import scala.jdk.CollectionConverters._
 
 class Shell(initialPaths: List[Path], options: Options) {
 
@@ -47,11 +43,6 @@ class Shell(initialPaths: List[Path], options: Options) {
     * The number of warmup iterations.
     */
   private val WarmupIterations = 80
-
-  /**
-    * The default color context.
-    */
-  private implicit val terminalContext: TerminalContext = TerminalContext.AnsiTerminal
 
   /**
     * The executor service.
@@ -66,7 +57,7 @@ class Shell(initialPaths: List[Path], options: Options) {
   /**
     * The current flix instance (initialized on startup).
     */
-  private var flix: Flix = _
+  private var flix: Flix = new Flix().setFormatter(AnsiTerminalFormatter)
 
   /**
     * The current typed ast root (initialized on startup).
@@ -216,24 +207,32 @@ class Shell(initialPaths: List[Path], options: Options) {
           terminal.writer().println(s"Undefined hole: '$fqn'.")
         case Some(HoleContext(_, holeType, env)) =>
           // Case 2: Hole found.
-          val vt = new VirtualTerminal
+          val sb = new StringBuilder()
 
           // Indent
-          vt << "  "
+          sb.append("  ")
 
           // Iterate through the premises, i.e. the variable symbols in scope.
           for ((varSym, varType) <- env) {
-            vt << Blue(varSym.text) << ": " << Cyan(FormatType.formatType(varType)) << " " * 6
+            sb.append(flix.getFormatter.blue(varSym.text))
+              .append(": ")
+              .append(flix.getFormatter.cyan(FormatType.formatType(varType)))
+              .append(" " * 6)
           }
 
           // Print the divider.
-          vt << NewLine << "-" * 80 << NewLine
+          sb.append(System.lineSeparator())
+            .append("-" * 80)
+            .append(System.lineSeparator())
 
           // Print the goal.
-          vt << Blue(sym.toString) << ": " << Cyan(FormatType.formatType(holeType)) << NewLine
+          sb.append(flix.getFormatter.blue(sym.toString))
+            .append(": ")
+            .append(flix.getFormatter.cyan(FormatType.formatType(holeType)))
+            .append(System.lineSeparator())
 
           // Print the result to the terminal.
-          terminal.writer().print(vt.fmt)
+          terminal.writer().print(sb.toString())
       }
   }
 
@@ -244,39 +243,46 @@ class Shell(initialPaths: List[Path], options: Options) {
     case None =>
       // Case 1: Browse available namespaces.
 
-      // Construct a new virtual terminal.
-      val vt = new VirtualTerminal
+      // Construct a new String Builder.
+      val sb = new StringBuilder()
 
       // Find the available namespaces.
       val namespaces = namespacesOf(this.root)
 
-      vt << Bold("Namespaces:") << Indent << NewLine << NewLine
+      sb.append(flix.getFormatter.bold("Namespaces:"))
+        .append(System.lineSeparator())
+        .append(System.lineSeparator())
       for (namespace <- namespaces.toList.sorted) {
-        vt << namespace << NewLine
+        sb.append(" " * 2)
+          .append(namespace)
+          .append(System.lineSeparator())
       }
-      vt << Dedent << NewLine
+      sb.append(System.lineSeparator())
 
       // Print the result to the terminal.
-      terminal.writer().print(vt.fmt)
+      terminal.writer().print(sb.toString())
 
     case Some(ns) =>
       // Case 2: Browse a specific namespace.
 
-      // Construct a new virtual terminal.
-      val vt = new VirtualTerminal
+      // Construct a new String Builder.
+      val sb = new StringBuilder()
 
       // Print the matched definitions.
       val matchedDefs = getDefinitionsByNamespace(ns, this.root)
       if (matchedDefs.nonEmpty) {
-        vt << Bold("Definitions:") << Indent << NewLine << NewLine
+        sb.append(flix.getFormatter.bold("Definitions:"))
+          .append(System.lineSeparator())
+          .append(System.lineSeparator())
         for (defn <- matchedDefs.sortBy(_.sym.name)) {
-          prettyPrintDef(defn, vt)
+          sb.append(" " * 2)
+            .append(prettyPrintDef(defn).replace(System.lineSeparator(), System.lineSeparator() + (" " * 2)))
         }
-        vt << Dedent << NewLine
+        sb.append(System.lineSeparator())
       }
 
       // Print the result to the terminal.
-      terminal.writer().print(vt.fmt)
+      terminal.writer().print(sb.toString())
   }
 
   /**
@@ -291,14 +297,15 @@ class Shell(initialPaths: List[Path], options: Options) {
       case Some(defn) =>
         // Case 2: Symbol found.
 
-        // Construct a new virtual terminal.
-        val vt = new VirtualTerminal
-        prettyPrintDef(defn, vt)
-        vt << defn.spec.doc.text
-        vt << NewLine
+        // Construct a new String Builder.
+        val sb = new StringBuilder()
+        sb.append(prettyPrintDef(defn))
+          .append(System.lineSeparator())
+          .append(defn.spec.doc.text)
+          .append(System.lineSeparator())
 
         // Print the result to the terminal.
-        terminal.writer().print(vt.fmt)
+        terminal.writer().print(sb.toString())
     }
   }
 
@@ -311,9 +318,11 @@ class Shell(initialPaths: List[Path], options: Options) {
       */
     def isMatched(d: Def): Boolean = d.sym.name.toLowerCase.contains(needle.toLowerCase)
 
-    // Construct a new virtual terminal.
-    val vt = new VirtualTerminal
-    vt << Bold("Definitions:") << Indent << NewLine << NewLine
+    // Construct a new String Builder.
+    val sb = new StringBuilder()
+    sb.append(flix.getFormatter.bold("Definitions:"))
+      .append(System.lineSeparator())
+      .append(System.lineSeparator())
 
     // Group definitions by namespace.
     val defsByNamespace = this.root.defs.values.groupBy(_.sym.namespace).toList
@@ -325,17 +334,21 @@ class Shell(initialPaths: List[Path], options: Options) {
 
       // Print the namespace.
       if (matchedDefs.nonEmpty) {
-        vt << Bold(ns.mkString("/")) << Indent << NewLine
+        sb.append(" " * 2)
+          .append(flix.getFormatter.bold(ns.mkString("/")))
+          .append(System.lineSeparator())
         for (defn <- matchedDefs) {
-          prettyPrintDef(defn, vt)
+          sb.append(" " * 4)
+            .append(prettyPrintDef(defn).replace(System.lineSeparator(), System.lineSeparator() + " " * 4))
+            .append(System.lineSeparator())
         }
-        vt << Dedent << NewLine
+        sb.append(System.lineSeparator())
       }
     }
-    vt << Dedent << NewLine
+    sb.append(System.lineSeparator())
 
     // Print the result to the terminal.
-    terminal.writer().print(vt.fmt)
+    terminal.writer().print(sb.toString())
   }
 
   /**
@@ -345,10 +358,17 @@ class Shell(initialPaths: List[Path], options: Options) {
     // Instantiate a fresh flix instance.
     this.flix = new Flix()
     this.flix.setOptions(options)
+      .setFormatter(AnsiTerminalFormatter)
 
     // Add each path to Flix.
     for (path <- this.sourcePaths) {
-      this.flix.addPath(path)
+      val ext = path.toFile.getName.split('.').last
+      ext match {
+        case "flix" => flix.addPath(path)
+        case "fpkg" => flix.addPath(path)
+        case "jar" => flix.addJar(path)
+        case _ => throw new IllegalStateException(s"Unrecognized file extension: '$ext'.")
+      }
     }
 
     // Compute the TypedAst and store it.
@@ -364,14 +384,25 @@ class Shell(initialPaths: List[Path], options: Options) {
             compilationResult = m
           case Validation.Failure(errors) =>
             for (error <- errors) {
-              terminal.writer().print(error.message.fmt)
+              terminal.writer().print(error)
             }
         }
       case Validation.Failure(errors) =>
         terminal.writer().println()
+        val formatter = flix.getFormatter
         for (error <- errors) {
-          val msg = if (options.explain) error.message << error.explain else error.message
-          terminal.writer().print(msg.fmt)
+          if (options.explain) {
+            val message = error.message(formatter)
+            val explanationHeading =
+              s"""${formatter.underline("Explanation:")}
+                 |
+                 |""".stripMargin
+            val explanation = error.explain(formatter)
+            val msg = message + explanationHeading + explanation
+            terminal.writer().print(msg)
+          } else {
+            terminal.writer().print(error.message(formatter))
+          }
         }
         terminal.writer().println()
         terminal.writer().print(prompt)
@@ -393,10 +424,10 @@ class Shell(initialPaths: List[Path], options: Options) {
     */
   private def execTest()(implicit terminal: Terminal): Unit = {
     // Run all unit tests.
-    val vt = Tester.test(this.compilationResult)
+    val res = Tester.test(this.compilationResult)
 
     // Print the result to the terminal.
-    terminal.writer().print(vt.output.fmt)
+    terminal.writer().print(res.output(flix.getFormatter))
   }
 
   /**
@@ -404,7 +435,7 @@ class Shell(initialPaths: List[Path], options: Options) {
     */
   private def execWarmup()(implicit terminal: Terminal): Unit = {
     val elapsed = mutable.ListBuffer.empty[Duration]
-    for (i <- 0 until WarmupIterations) {
+    for (_ <- 0 until WarmupIterations) {
       val t = System.nanoTime()
       execReload()
       terminal.writer().print(".")
@@ -525,17 +556,28 @@ class Shell(initialPaths: List[Path], options: Options) {
   }
 
   /**
-    * Pretty prints the given definition `defn` to the given virtual terminal `vt`.
+    * Pretty prints the given definition `defn`.
     */
-  private def prettyPrintDef(defn: Def, vt: VirtualTerminal): Unit = {
-    vt << Bold("def ") << Blue(defn.sym.name) << "("
+  private def prettyPrintDef(defn: Def): String = {
+    val sb = new StringBuilder()
+    sb.append(flix.getFormatter.bold("def "))
+      .append(flix.getFormatter.blue(defn.sym.name))
+      .append("(")
     if (defn.spec.fparams.nonEmpty) {
-      vt << defn.spec.fparams.head.sym.text << ": " << Cyan(FormatType.formatType(defn.spec.fparams.head.tpe))
+      sb.append(defn.spec.fparams.head.sym.text)
+        .append(": ")
+        .append(flix.getFormatter.cyan(FormatType.formatType(defn.spec.fparams.head.tpe)))
       for (fparam <- defn.spec.fparams.tail) {
-        vt << ", " << fparam.sym.text << ": " << Cyan(FormatType.formatType(fparam.tpe))
+        sb.append(", ")
+          .append(fparam.sym.text)
+          .append(": ")
+          .append(flix.getFormatter.cyan(FormatType.formatType(fparam.tpe)))
       }
     }
-    vt << "): " << Cyan(FormatType.formatType(defn.impl.inferredScheme.base.typeArguments.last)) << NewLine
+    sb.append("): ")
+      .append(flix.getFormatter.cyan(FormatType.formatType(defn.impl.inferredScheme.base.typeArguments.last)))
+      .append(System.lineSeparator())
+      .toString()
   }
 
   /**
@@ -544,20 +586,26 @@ class Shell(initialPaths: List[Path], options: Options) {
   private def prettyPrintHoles()(implicit terminal: Terminal): Unit = {
     // Print holes, if any.
     val holes = TypedAstOps.holesOf(root)
-    val vt = new VirtualTerminal
+    val sb = new StringBuilder()
 
     // Check if any holes are present.
     if (holes.nonEmpty) {
-      vt << Bold("Holes:") << Indent
+      sb.append(flix.getFormatter.bold("Holes:"))
+        .append(System.lineSeparator())
+
       // Print each hole and its type.
       for ((sym, ctx) <- holes) {
-        vt << NewLine << Blue(sym.toString) << ": " << Cyan(FormatType.formatType(ctx.tpe))
+        sb.append(" " * 2)
+          .append(flix.getFormatter.blue(sym.toString))
+          .append(": ")
+          .append(flix.getFormatter.cyan(FormatType.formatType(ctx.tpe)))
+          .append(System.lineSeparator())
       }
-      vt << Dedent << NewLine
+      sb.append(System.lineSeparator())
     }
 
     // Print the result to the terminal.
-    terminal.writer().print(vt.fmt)
+    terminal.writer().print(sb.toString())
   }
 
   /**

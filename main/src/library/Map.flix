@@ -585,12 +585,16 @@ namespace Map {
         foldRightWithKey((k, v, acc) -> ECons((k, v), acc), ENil, m)
 
     ///
+    /// Returns the map `m` as a chain of key-value pairs.
+    ///
+    pub def toChain(m: Map[a, b]): Chain[(a, b)] with Order[a] =
+        foldLeftWithKey((acc, k, v) -> Chain.snoc(acc, (k,v)), Chain.empty(), m)
+
+    ///
     /// Applies `f` to every element of `xs`.
     ///
-    /// The function `f` must be impure.
-    ///
     @Time(size(f) * size(m)) @Space(space(f) * Int32.log2(size(m)))
-    pub def foreach(f: (k, v) ~> Unit, m: Map[k, v]): Unit & Impure =
+    pub def foreach(f: (k, v) -> Unit & ef, m: Map[k, v]): Unit & ef =
         let Map(xs) = m;
         RedBlackTree.foreach(f, xs)
 
@@ -619,12 +623,12 @@ namespace Map {
     ///
     /// `next` should return `None` to signal the end of building the map.
     ///
-    pub def unfoldWithIter(next: Unit ~> Option[(k, v)]): Map[k, v] & Impure with Order[k] = unfoldWithIterHelper(next, empty())
+    pub def unfoldWithIter(next: Unit -> Option[(k, v)] & ef): Map[k, v] & ef with Order[k] = unfoldWithIterHelper(next, empty())
 
     ///
     /// Helper function for `unfoldWithIter`.
     ///
-    def unfoldWithIterHelper(next: Unit ~> Option[(k, v)], ac: Map[k, v]): Map[k, v] & Impure with Order[k] = match next() {
+    def unfoldWithIterHelper(next: Unit -> Option[(k, v)] & ef, ac: Map[k, v]): Map[k, v] & ef with Order[k] = match next() {
         case None => ac
         case Some(k, v) => unfoldWithIterHelper(next, insert(k, v, ac))
     }
@@ -634,16 +638,14 @@ namespace Map {
     ///
     /// That is, the result is a list of all pairs `(k, v)` where `p(k)` returns `Equal`.
     ///
-    pub def query(p: k -> Comparison & ef, m: Map[k, v]): List[(k, v)] & ef =
+    pub def query(p: k -> Comparison, m: Map[k, v]): List[(k, v)] =
         let Map(xs) = m;
         RedBlackTree.query(p, (k, v) -> (k, v), xs)
 
     ///
     /// Applies `f` to all key-value pairs `(k, v)` from the map `m` where `p(k)` returns `EqualTo`.
     ///
-    /// The function `f` must be impure.
-    ///
-    pub def queryWith(p: k -> Comparison & ef, f: (k, v) ~> Unit, m: Map[k, v]): Unit & Impure =
+    pub def queryWith(p: k -> Comparison, f: (k, v) -> Unit & ef, m: Map[k, v]): Unit & ef =
         let Map(xs) = m;
         RedBlackTree.queryWith(p, f, xs)
 
@@ -653,4 +655,11 @@ namespace Map {
     pub def toIterator(m: Map[a, b]): Iterator[(a, b)] & Impure =
         List.toIterator(Map.query(_ -> EqualTo, m))
 
+    ///
+    /// Returns `m` as a `DelayMap`.
+    ///
+    pub def toDelayMap(m: Map[k, v]): DelayMap[k, v] = {
+        let Map(t) = m;
+        DMap(RedBlackTree.mapWithKey((_, v) -> lazy v, t))
+    }
 }

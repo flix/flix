@@ -676,7 +676,9 @@ namespace List {
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
-    pub def foldRight(f: (a, b) -> b & ef, s: b, xs: List[a]): b & ef = foldRightHelper(f, s, xs, s1 -> s1 as & ef)
+    pub def foldRight(f: (a, b) -> b & ef, s: b, xs: List[a]): b & ef =
+        foldRightHelper(f, s, xs, s1 -> s1 as & ef) // NB: Cast required because the identity continuation is pure,
+                                                    // but the intermediate continuations are effect polymorphic
 
     ///
     /// Helper function for `foldRight`.
@@ -1188,6 +1190,12 @@ namespace List {
     }
 
     ///
+    /// Returns the list `xs` as a chain.
+    ///
+    pub def toChain(xs: List[a]): Chain[a] =
+        List.foldLeft(Chain.snoc, Chain.empty(), xs)
+
+    ///
     /// Returns `xs` as a mutable list.
     ///
     pub def toMutList(xs: List[a]): MutList[a] & Impure = {
@@ -1217,7 +1225,7 @@ namespace List {
     /// The function `f` must be impure.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def foreach(f: a ~> Unit, xs: List[a]): Unit & Impure = match xs {
+    pub def foreach(f: a -> Unit & ef, xs: List[a]): Unit & ef = match xs {
         case Nil => ()
         case x :: rs => f(x); foreach(f, rs)
     }
@@ -1290,12 +1298,12 @@ namespace List {
     ///
     /// `next` should return `None` to signal the end of building the list.
     ///
-    pub def unfoldWithIter(next: Unit ~> Option[a]): List[a] & Impure = unfoldWithIterHelper(next, xs -> xs)
+    pub def unfoldWithIter(next: Unit -> Option[a] & ef): List[a] & ef = unfoldWithIterHelper(next, xs -> xs)
 
     ///
     /// Helper function for `unfoldWithIter`.
     ///
-    def unfoldWithIterHelper(next: Unit ~> Option[a], k: List[a] -> List[a]): List[a] & Impure = match next() {
+    def unfoldWithIterHelper(next: Unit -> Option[a] & ef, k: List[a] -> List[a]): List[a] & ef = match next() {
         case None => k(Nil)
         case Some(a) => unfoldWithIterHelper(next, xs -> k(a :: xs))
     }
@@ -1311,12 +1319,12 @@ namespace List {
     ///
     /// `next` should return `Err(e)` to signal that an error occurred. The function returns `Err(e)`.
     ///
-    pub def unfoldWithOkIter(next: Unit ~> Result[Option[a], e]): Result[List[a], e] & Impure = unfoldWithOkIterHelper(next, xs -> xs)
+    pub def unfoldWithOkIter(next: Unit -> Result[Option[a], e] & ef): Result[List[a], e] & ef = unfoldWithOkIterHelper(next, xs -> xs)
 
     ///
     /// Helper function for `unfoldWithOkIter`.
     ///
-    def unfoldWithOkIterHelper(next: Unit ~> Result[Option[a], e], k: Result[List[a], e] -> Result[List[a], e]): Result[List[a], e] & Impure = match next() {
+    def unfoldWithOkIterHelper(next: Unit -> Result[Option[a], e] & ef, k: Result[List[a], e] -> Result[List[a], e]): Result[List[a], e] & ef = match next() {
         case Ok(None) => k(Ok(Nil))
         case Err(e) => k(Err(e))
         case Ok(Some(a)) => unfoldWithOkIterHelper(next, Result.flatMap(xs -> k(Ok(a :: xs))))

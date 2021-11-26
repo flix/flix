@@ -20,7 +20,6 @@ package ca.uwaterloo.flix.language.debug
 import ca.uwaterloo.flix.language.ast.Kind.Bool
 import ca.uwaterloo.flix.language.ast.{Kind, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
-import ca.uwaterloo.flix.util.vt.{VirtualString, VirtualTerminal}
 
 object FormatType {
 
@@ -104,7 +103,7 @@ object FormatType {
             }
           }
           case Type.Apply(tpe1, tpe2, loc) => s"${visit(tpe1)}[${visit(tpe2)}]"
-          case Type.Alias(sym, aliasArgs, _, _) => formatApply(sym.name, aliasArgs ++ args)
+          case Type.Alias(cst, aliasArgs, _, _) => formatApply(cst.sym.name, aliasArgs ++ args)
           case _: Type.Cst => throw InternalCompilerException("Unexpected type.")
           case _: Type.Ascribe => throw InternalCompilerException("Unexpected type.")
           case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected type.")
@@ -279,57 +278,6 @@ object FormatType {
 
     visit(tpe)
   }
-
-  /**
-    * Returns a human readable representation of the given type difference.
-    */
-  def formatTypeDiff(td: TypeDiff, color: String => VirtualString)(implicit audience: Audience): VirtualTerminal = {
-    val vt = new VirtualTerminal()
-
-    def visit(d: TypeDiff): Unit = {
-      val base = d.typeConstructor
-      val args = d.typeArguments
-
-      base match {
-        case TypeDiff.Arrow =>
-          intercalate(args, visit, vt, before = "", separator = " -> ", after = "")
-        case TypeDiff.Enum =>
-          vt << "..."
-          intercalate(args, visit, vt, before = "[", separator = ", ", after = "]")
-        case TypeDiff.Tuple =>
-          intercalate(args, visit, vt, before = "(", separator = ", ", after = ")")
-        case TypeDiff.Other =>
-          vt << "..."
-          intercalate(args, visit, vt, before = "[", separator = ", ", after = "]")
-        case TypeDiff.Mismatch(tpe1, _) => vt << color(formatType(tpe1))
-        case _ => throw InternalCompilerException(s"Unexpected base type: '$base'.")
-      }
-    }
-
-    visit(td)
-
-    vt
-  }
-
-  /**
-    * Helper function to generate text before, in the middle of, and after a list of items.
-    */
-  private def intercalate[A](xs: List[A], f: A => Unit, vt: VirtualTerminal, before: String, separator: String, after: String): Unit = {
-    if (xs.isEmpty) return
-    vt << before
-    var first: Boolean = true
-    for (x <- xs) {
-      if (first) {
-        f(x)
-      } else {
-        vt << separator
-        f(x)
-      }
-      first = false
-    }
-    vt << after
-  }
-
 
   /**
     * A flat representation of a schema or record.

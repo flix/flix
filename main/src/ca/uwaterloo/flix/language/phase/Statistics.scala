@@ -124,8 +124,6 @@ object Statistics extends Phase[Root, Root] {
       case Expression.Ref(exp, tpe, eff, loc) => visitExp(exp)
       case Expression.Deref(exp, tpe, eff, loc) => visitExp(exp)
       case Expression.Assign(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
-      case Expression.Existential(fparam, exp, loc) => visitExp(exp)
-      case Expression.Universal(fparam, exp, loc) => visitExp(exp)
       case Expression.Ascribe(exp, tpe, eff, loc) => visitExp(exp)
       case Expression.Cast(exp, tpe, eff, loc) => visitExp(exp)
       case Expression.TryCatch(exp, rules, tpe, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitCatchRule))
@@ -151,6 +149,7 @@ object Statistics extends Phase[Root, Root] {
       case Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) => visitExp(exp)
       case Expression.Reify(t, tpe, eff, loc) => Counter.empty
       case Expression.ReifyType(t, k, tpe, eff, loc) => Counter.empty
+      case Expression.ReifyEff(sym, exp1, exp2, exp3, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
     }
 
     base ++ subExprs

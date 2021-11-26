@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Source}
+import ca.uwaterloo.flix.language.ast.NamedAst.DefOrSig
 import ca.uwaterloo.flix.language.ast.WeededAst.ChoicePattern
 import ca.uwaterloo.flix.language.ast.{NamedAst, _}
 import ca.uwaterloo.flix.language.errors.NameError
@@ -85,7 +86,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
             }
         }
 
-      case decl@WeededAst.Declaration.Class(doc, mod, ident, tparam, superClasses, sigs, laws, loc) =>
+      case decl@WeededAst.Declaration.Class(_, _, ident, _, _, _, _, _) =>
         // Check if the class already exists.
         val sigNs = Name.extendNName(ns0, ident)
         val defsAndSigs0 = prog0.defsAndSigs.getOrElse(sigNs, Map.empty)
@@ -101,14 +102,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
                   case (defsAndSigs, sig) => defsAndSigs.get(sig.sym.name) match {
                     case Some(otherSig) =>
                       val name = sig.sym.name
-                      val loc1 = sig.spec.loc
-                      val loc2 = otherSig.spec.loc
+                      val loc1 = sig.sym.loc
+                      val loc2 = getSymLocation(otherSig)
                       Failure(LazyList(
                         // NB: We report an error at both source locations.
                         NameError.DuplicateDefOrSig(name, loc1, loc2),
                         NameError.DuplicateDefOrSig(name, loc2, loc1)
                       ))
-                    case None => (defsAndSigs + (sig.sym.name -> sig)).toSuccess
+                    case None => (defsAndSigs + (sig.sym.name -> NamedAst.DefOrSig.Sig(sig))).toSuccess
                   }
                 }
                 defsAndSigsVal.map {
@@ -123,7 +124,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateNamePair(ident.name, ident.loc, otherLoc)
         }
 
-      case decl@WeededAst.Declaration.Instance(doc, mod, clazz, tpe0, tconstrs, defs, loc) =>
+      case decl@WeededAst.Declaration.Instance(_, _, clazz, _, _, _, _) =>
         // duplication check must come after name resolution
         val instances = prog0.instances.getOrElse(ns0, Map.empty)
         visitInstance(decl, uenv0, Map.empty, ns0) map {
@@ -142,12 +143,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           case None =>
             // Case 1: The definition does not already exist. Update it.
             visitDef(decl, uenv0, Map.empty, ns0, Nil, Nil) map {
-              defn => prog0.copy(defsAndSigs = prog0.defsAndSigs + (ns0 -> (defsAndSigs + (ident.name -> defn))))
+              defn => prog0.copy(defsAndSigs = prog0.defsAndSigs + (ns0 -> (defsAndSigs + (ident.name -> NamedAst.DefOrSig.Def(defn)))))
             }
           case Some(defOrSig) =>
             // Case 2: Duplicate definition.
             val name = ident.name
-            val loc1 = defOrSig.spec.loc
+            val loc1 = getSymLocation(defOrSig)
             val loc2 = ident.loc
             Failure(LazyList(
               // NB: We report an error at both source locations.
@@ -330,7 +331,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       val sym = Symbol.mkClassSym(ns0, ident)
       val tparam = getTypeParam(tparams0)
       val tenv = tenv0 ++ getTypeEnv(List(tparam))
-      val tconstr = NamedAst.TypeConstraint(Name.mkQName(ident), NamedAst.Type.Var(tparam.tpe, tparam.loc), loc)
+      val tconstr = NamedAst.TypeConstraint(Name.mkQName(ident), NamedAst.Type.Var(tparam.tpe, tparam.loc), sym.loc)
       for {
         superClasses <- traverse(superClasses0)(visitTypeConstraint(_, uenv0, tenv, ns0))
         sigs <- traverse(signatures)(visitSig(_, uenv0, tenv, ns0, ident, sym, tparam))
@@ -349,7 +350,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         tpe <- visitType(tpe0, uenv0, tenv)
         tconstrs <- traverse(tconstrs)(visitTypeConstraint(_, uenv0, tenv, ns0))
         qualifiedClass = getClass(clazz, uenv0)
-        instTconstr = NamedAst.TypeConstraint(qualifiedClass, tpe, loc)
+        instTconstr = NamedAst.TypeConstraint(qualifiedClass, tpe, clazz.loc)
         defs <- traverse(defs0)(visitDef(_, uenv0, tenv, ns0, List(instTconstr), tparams.tparams.map(_.tpe)))
       } yield NamedAst.Instance(doc, mod, qualifiedClass, tpe, tconstrs, defs, loc)
   }
@@ -373,7 +374,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, exp0, tpe0, retTpe0, eff0, tconstrs0, loc) =>
       val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, allowElision = true, uenv0, tenv0)
       val tenv = tenv0 ++ getTypeEnv(tparams.tparams)
-      val sigTypeCheckVal = checkSigType(ident, classTparam, tpe0, loc)
+      val sigTypeCheckVal = checkSigType(ident, classTparam, tpe0, ident.loc)
       val fparamsVal = getFormalParams(fparams0, uenv0, tenv)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, uenv0, tenv, ns0))
       flatMapN(sigTypeCheckVal, fparamsVal, tconstrsVal) {
@@ -701,20 +702,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           NamedAst.Expression.Assign(e1, e2, loc)
       }
 
-    case WeededAst.Expression.Existential(tparams0, fparam, exp, loc) =>
-      val tparams = getTypeParamsFromFormalParams(tparams0, List(fparam), WeededAst.Type.Ambiguous(Name.mkQName("Bool"), loc), allowElision = true, uenv0, tenv0)
-      for {
-        p <- visitFormalParam(fparam, uenv0, tenv0 ++ getTypeEnv(tparams.tparams))
-        e <- visitExp(exp, env0 + (p.sym.text -> p.sym), uenv0, tenv0 ++ getTypeEnv(tparams.tparams))
-      } yield NamedAst.Expression.Existential(p, e, loc) // TODO: Preserve type parameters in NamedAst?
-
-    case WeededAst.Expression.Universal(tparams0, fparam, exp, loc) =>
-      val tparams = getTypeParamsFromFormalParams(tparams0, List(fparam), WeededAst.Type.Ambiguous(Name.mkQName("Bool"), loc), allowElision = true, uenv0, tenv0)
-      for {
-        p <- visitFormalParam(fparam, uenv0, tenv0 ++ getTypeEnv(tparams.tparams))
-        e <- visitExp(exp, env0 + (p.sym.text -> p.sym), uenv0, tenv0 ++ getTypeEnv(tparams.tparams))
-      } yield NamedAst.Expression.Universal(p, e, loc) // TODO: Preserve type parameters in NamedAst?
-
     case WeededAst.Expression.Ascribe(exp, expectedType, expectedEff, loc) =>
       val expVal = visitExp(exp, env0, uenv0, tenv0)
       val expectedTypVal = expectedType match {
@@ -750,10 +737,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       val rulesVal = traverse(rules) {
         case WeededAst.CatchRule(ident, className, body) =>
           val sym = Symbol.freshVarSym(ident, BoundBy.CatchRule)
-          val classVal = lookupClass(className, loc)
           val bodyVal = visitExp(body, env0 + (ident.name -> sym), uenv0, tenv0)
-          mapN(classVal, bodyVal) {
-            case (c, b) => NamedAst.CatchRule(sym, c, b)
+          mapN(bodyVal) {
+            b => NamedAst.CatchRule(sym, className, b)
           }
       }
 
@@ -892,6 +878,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.ReifyType(t0, k, loc) =>
       mapN(visitType(t0, uenv0, tenv0)) {
         case t => NamedAst.Expression.ReifyType(t, k, loc)
+      }
+
+    case WeededAst.Expression.ReifyEff(ident, exp1, exp2, exp3, loc) =>
+      val sym = Symbol.freshVarSym(ident, Scopedness.Unscoped, BoundBy.Let)
+      mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0 + (ident.name -> sym), uenv0, tenv0), visitExp(exp3, env0, uenv0, tenv0)) {
+        case (e1, e2, e3) => NamedAst.Expression.ReifyEff(sym, e1, e2, e3, loc)
       }
 
   }
@@ -1262,8 +1254,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.RefWithRegion(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.Deref(exp, loc) => freeVars(exp)
     case WeededAst.Expression.Assign(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
-    case WeededAst.Expression.Existential(tparams, fparam, exp, loc) => filterBoundVars(freeVars(exp), List(fparam.ident))
-    case WeededAst.Expression.Universal(tparams, fparam, exp, loc) => filterBoundVars(freeVars(exp), List(fparam.ident))
     case WeededAst.Expression.Ascribe(exp, tpe, eff, loc) => freeVars(exp)
     case WeededAst.Expression.Cast(exp, tpe, eff, loc) => freeVars(exp)
     case WeededAst.Expression.TryCatch(exp, rules, loc) =>
@@ -1298,6 +1288,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.FixpointProjectOut(pred, exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.Reify(t, loc) => Nil
     case WeededAst.Expression.ReifyType(t, k, loc) => Nil
+    case WeededAst.Expression.ReifyEff(ident, exp1, exp2, exp3, loc) => filterBoundVars(freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3), List(ident))
   }
 
   /**
@@ -1483,16 +1474,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   }
 
   /**
-    * Returns the class reflection object for the given `className`.
-    */
-  // TODO: Deprecated should be moved to resolver.
-  private def lookupClass(className: String, loc: SourceLocation): Validation[Class[_], NameError] = try {
-    Class.forName(className).toSuccess
-  } catch {
-    case ex: ClassNotFoundException => NameError.UndefinedNativeClass(className, loc).toFailure
-  }
-
-  /**
     * Returns `true` if the class types present in `expected` equals those in `actual`.
     */
   private def parameterTypeMatch(expected: List[Option[Class[_]]], actual: List[Class[_]]): Boolean =
@@ -1671,6 +1652,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     } else {
       uenv0.typesAndClasses.getOrElse(qname.ident.name, qname)
     }
+  }
+
+  /**
+    * Gets the location of the symbol of the given def or sig.
+    */
+  private def getSymLocation(f: NamedAst.DefOrSig): SourceLocation = f match {
+    case DefOrSig.Def(d) => d.sym.loc
+    case DefOrSig.Sig(s) => s.sym.loc
   }
 
 
