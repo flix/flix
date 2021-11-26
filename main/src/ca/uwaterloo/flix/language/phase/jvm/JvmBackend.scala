@@ -1,5 +1,6 @@
 /*
  * Copyright 2017 Magnus Madsen
+ * Copyright 2021 Jonathan Lindegaard Starup
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,24 +72,19 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       val mainClass = GenMainClass.gen()
 
       //
-      // Generate the Context class.
-      //
-      val contextClass = GenContextClass.gen(namespaces)
-
-      //
       // Generate the namespace classes.
       //
       val namespaceClasses = GenNamespaceClasses.gen(namespaces)
 
       //
-      // Generate continuation interfaces for each function type in the program.
+      // Generate continuation classes for each function type in the program.
       //
-      val continuationInterfaces = GenContinuationInterfaces.gen(types)
+      val continuationInterfaces = GenContinuationAbstractClasses.gen(types)
 
       //
-      // Generate function interfaces for each function type in the program.
+      // Generate a function abstract class for each function type in the program.
       //
-      val functionInterfaces = GenFunctionInterfaces.gen(types)
+      val functionInterfaces = GenFunctionAbstractClasses.gen(types)
 
       //
       // Generate function classes for each function in the program.
@@ -175,7 +171,6 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       //
       List(
         mainClass,
-        contextClass,
         namespaceClasses,
         continuationInterfaces,
         functionInterfaces,
