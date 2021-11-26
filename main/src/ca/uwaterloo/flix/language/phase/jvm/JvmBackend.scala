@@ -118,7 +118,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       //
       // Generate record interface.
       //
-      val recordInterfaces = GenRecordInterfaces.gen()
+      val recordInterfaces = GenRecordInterface.gen()
 
       //
       // Generate empty record class.
