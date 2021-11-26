@@ -30,11 +30,14 @@ object Diagnostic {
     val code = compilationMessage.kind
     val summary = compilationMessage.summary
     val explanationHeading =
-      s"""${formatter.underline("Explanation:")}
-         |
+      s"""
+         |${formatter.underline("Explanation:")}
          |""".stripMargin
-    val explanation = compilationMessage.explain(formatter).getOrElse("")
-    val fullMessage = compilationMessage.message(formatter) + explanationHeading + explanation
+    val explanation = compilationMessage.explain(formatter) match {
+      case None => ""
+      case Some(expl) => explanationHeading + expl
+    }
+    val fullMessage = compilationMessage.message(formatter) + explanation
     Diagnostic(range, severity, Some(code), None, summary, fullMessage, Nil)
   }
 }
