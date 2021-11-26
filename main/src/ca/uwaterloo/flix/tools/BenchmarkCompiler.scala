@@ -16,17 +16,41 @@ object BenchmarkCompiler {
   val N = 15
 
   /**
+    * Outputs statistics about the size of the generated JVM code.
+    */
+  def benchmarkCodeSize(o: Options): Unit = {
+    val flix = newFlix(o)
+    val result = flix.compile().get
+    val codeSize = result.codeSize
+
+    // Find the number of lines of source code.
+    val lines = result.getTotalLines.toLong
+
+    // Print JSON or plain text?
+    if (o.json) {
+      val json =
+        ("codeSize" -> codeSize) ~
+          ("lines" -> lines)
+      val s = JsonMethods.pretty(JsonMethods.render(json))
+      println(s)
+    } else {
+      println("====================== Flix Generated Code Size ======================")
+      println()
+      println(s"Generated ${java.text.NumberFormat.getIntegerInstance.format(codeSize)} Bytes of code from $lines lines of source code.")
+    }
+  }
+
+  /**
     * Outputs statistics about time spent in each compiler phase.
     */
   def benchmarkPhases(o: Options): Unit = {
     //
     // Collect data from N iterations.
     //
-    val r = (0 until N).map {
-      case _ =>
-        val flix = newFlix(o)
-        val compilationResult = flix.compile().get
-        (compilationResult, flix.phaseTimers.toList)
+    val r = (0 until N).map { _ =>
+      val flix = newFlix(o)
+      val compilationResult = flix.compile().get
+      (compilationResult, flix.phaseTimers.toList)
     }
 
     //
@@ -50,10 +74,10 @@ object BenchmarkCompiler {
     val threads = o.threads
 
     // Find the number of lines of source code.
-    val lines = results.head.getTotalLines().toLong
+    val lines = results.head.getTotalLines.toLong
 
     // Find the timings of each run.
-    val timings = results.map(_.getTotalTime())
+    val timings = results.map(_.getTotalTime)
 
     // Compute the total time in seconds.
     val totalTime = (timings.sum / 1_000_000_000L).toInt
@@ -90,20 +114,19 @@ object BenchmarkCompiler {
     //
     // Collect data from N iterations.
     //
-    val results = (0 until N).map {
-      case _ =>
-        val flix = newFlix(o)
-        flix.compile().get
+    val results = (0 until N).map { _ =>
+      val flix = newFlix(o)
+      flix.compile().get
     }
 
     // The number of threads used.
     val threads = o.threads
 
     // Find the number of lines of source code.
-    val lines = results.head.getTotalLines().toLong
+    val lines = results.head.getTotalLines.toLong
 
     // Find the timings of each run.
-    val timings = results.map(_.getTotalTime()).toList
+    val timings = results.map(_.getTotalTime).toList
 
     // Compute the total time in seconds.
     val totalTime = (timings.sum / 1_000_000_000L).toInt

@@ -55,8 +55,6 @@ object FormatExpression {
     case TypedAst.Expression.Ref(exp, tpe, eff, loc) => s"Ref($exp)"
     case TypedAst.Expression.Deref(exp, tpe, eff, loc) => s"Deref($exp)"
     case TypedAst.Expression.Assign(exp1, exp2, tpe, eff, loc) => s"Assign($exp1, $exp2)"
-    case TypedAst.Expression.Existential(fparam, exp, loc) => s"Existential($fparam, $exp)"
-    case TypedAst.Expression.Universal(fparam, exp, loc) => s"Universal($fparam, $exp)"
     case TypedAst.Expression.Ascribe(exp, tpe, eff, loc) => s"Ascribe($exp, $tpe)"
     case TypedAst.Expression.Cast(exp, tpe, eff, loc) => s"Cast($exp, $tpe)"
     case TypedAst.Expression.TryCatch(exp, rules, tpe, eff, loc) => s"TryCatch($exp, ${rules.mkString(", ")})"
@@ -82,6 +80,7 @@ object FormatExpression {
     case TypedAst.Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) => s"FixpointProjectOut($pred, $exp)"
     case TypedAst.Expression.Reify(t, _, _, _) => s"Reify($t)"
     case TypedAst.Expression.ReifyType(t, k, _, _, _) => s"ReifyType($t, $k)"
+    case TypedAst.Expression.ReifyEff(sym, exp1, exp2, exp3, _, _, _) => s"ReifyEff($sym, $exp1, $exp2, $exp3)"
   }
 
 }

@@ -162,12 +162,12 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns the given instance `inst` as a JSON value.
     */
   private def visitInstance(inst: Instance): JObject = inst match {
-    case Instance(_, _, sym, tpe, tconstrs, _, _, loc) =>
+    case Instance(_, _, sym, tpe, tconstrs, _, _, _) =>
       ("sym" -> visitInstanceSym(sym)) ~
       //("sym" -> visitClassSym(sym.clazz)) ~
         ("tpe" -> visitType(tpe)) ~
         ("tconstrs" -> tconstrs.map(visitTypeConstraint)) ~
-        ("loc" -> visitSourceLocation(loc))
+        ("loc" -> visitSourceLocation(sym.loc))
   }
 
   private def visitInstanceSym(sym: Symbol.InstanceSym): JObject = ??? // TODO
@@ -256,7 +256,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns the given source location `loc` as a JSON value.
     */
   private def visitSourceLocation(loc: SourceLocation): JObject = loc match {
-    case SourceLocation(_, source, beginLine, beginCol, endLine, endCol) =>
+    case SourceLocation(_, source, _, beginLine, beginCol, endLine, endCol) =>
       ("name" -> source.name) ~
         ("beginLine" -> beginLine) ~
         ("beginCol" -> beginCol) ~

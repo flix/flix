@@ -100,8 +100,6 @@ object Terminator extends Phase[Root, Root] {
       case Expression.Ref(exp, _, _, _) => visit(exp)
       case Expression.Deref(exp, _, _, _) => visit(exp)
       case Expression.Assign(exp1, exp2, _, _, _) => visit(exp1) || visit(exp2)
-      case Expression.Existential(_, exp, _) => visit(exp)
-      case Expression.Universal(_, exp, _) => visit(exp)
       case Expression.Ascribe(exp, _, _, _) => visit(exp)
       case Expression.Cast(exp, _, _, _) => visit(exp)
       case Expression.TryCatch(exp, rules, _, _, _) => visit(exp) || rules.forall { rule => visit(rule.exp) }
@@ -129,6 +127,7 @@ object Terminator extends Phase[Root, Root] {
       case Expression.FixpointProjectOut(_, exp, _, _, _) => visit(exp)
       case Expression.Reify(_, _, _, _) => false // reify expressions always terminate.
       case Expression.ReifyType(_, _, _, _, _) => false // reify expressions always terminate.
+      case Expression.ReifyEff(_, _, _, _, _, _, _) => false // reify expressions always terminate.
     }
 
     visit(exp0)

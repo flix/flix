@@ -21,13 +21,6 @@ pub enum MutList[a] {
     case MutList(Ref[Array[a]], Ref[Int32])
 }
 
-instance ToString[MutList[a]] with ToString[a] {
-    pub def toString(v: MutList[a]): String = {
-        let s = MutList.formatWith(x -> "${x}", ", ", v) as & Pure;
-        "MutList#{${s}}"
-    }
-}
-
 instance Eq[MutList[a]] with Eq[a] {
         pub def eq(xs: MutList[a], ys: MutList[a]): Bool = {
             let MutList(l1, n1) = xs;
@@ -35,25 +28,6 @@ instance Eq[MutList[a]] with Eq[a] {
             deref n1 == deref n2 and
                 Array.slice(0, deref n1, deref l1) == Array.slice(0, deref n2, deref l2)
         } as & Pure
-}
-
-instance Order[MutList[v]] with Order[v] {
-    ///
-    /// Compares `u` and `v` lexicographically.
-    ///
-    pub def compare(u: MutList[v], v: MutList[v]): Comparison =
-        (let MutList(a, _) = u;
-        let MutList(b, _) = v;
-        deref a <=> deref b) as & Pure
-}
-
-instance Functor[MutList] {
-    pub def map(f: a -> b & ef, v: MutList[a]): MutList[b] & ef = MutList.map(f, v) as & ef
-}
-
-instance Foldable[MutList] {
-    pub def foldLeft(f: (b, a) -> b & ef, s: b, v: MutList[a]): b & ef = MutList.foldLeft(f, s, v) as & ef
-    pub def foldRight(f: (a, b) -> b & ef, s: b, v: MutList[a]): b & ef = MutList.foldRight(f, s, v) as & ef
 }
 
 namespace MutList {
@@ -392,11 +366,6 @@ namespace MutList {
         }
 
     ///
-    /// Returns the result of applying `combine` to all the elements in `v`, using `empty` as the initial value.
-    ///
-    pub def fold(v: MutList[a]): a with Monoid[a] = Foldable.fold(v)
-
-    ///
     /// Applies `f` to a start value `s` and all elements in `a` going from left to right.
     ///
     /// That is, the result is of the form: `f(...f(f(s, a[0]), a[1])..., xn)`.
@@ -680,6 +649,12 @@ namespace MutList {
         Array.slice(0, deref l, deref a)
 
     ///
+    /// Returns the mutable list `xs` as a chain.
+    ///
+    pub def toChain(xs: MutList[a]): Chain[a] & Impure =
+        foldLeft((ac, x) -> Chain.snoc(ac, x), Chain.empty(), xs)
+
+    ///
     /// Returns `true` if the mutable lists `v1` and `v2` have the same elements, i.e. are structurally equal.
     ///
     pub def sameElements(v1: MutList[a], v2: MutList[a]): Bool & Impure with Eq[a] =
@@ -715,9 +690,9 @@ namespace MutList {
         StringBuilder.toString(sb)
 
     ///
-    /// Apply the effectful function `f` to all the elements in `v`.
+    /// Applies `f` to all the elements in `v`.
     ///
-    pub def foreach(f: a ~> Unit, v: MutList[a]): Unit & Impure =
+    pub def foreach(f: a -> Unit & ef, v: MutList[a]): Unit & Impure =
         let MutList(a, l) = v;
         let len = deref l;
         if (len < 1)
@@ -728,7 +703,7 @@ namespace MutList {
     ///
     /// Helper function for `foreach`.
     ///
-    def foreachHelper(f: a ~> Unit, a: Array[a], i: Int32, n: Int32): Unit & Impure =
+    def foreachHelper(f: a -> Unit & ef, a: Array[a], i: Int32, n: Int32): Unit & Impure =
         if (i >= n)
             ()
         else {
@@ -737,9 +712,9 @@ namespace MutList {
         }
 
     ///
-    /// Apply the effectful function `f` to all the elements in `v`.
+    /// Applies `f` to all the elements in `v`.
     ///
-    pub def foreachWithIndex(f: (a, Int32) ~> Unit, v: MutList[a]): Unit & Impure =
+    pub def foreachWithIndex(f: (a, Int32) -> Unit & ef, v: MutList[a]): Unit & Impure =
         let MutList(a, l) = v;
         let len = deref l;
         if (len < 1)
@@ -750,7 +725,7 @@ namespace MutList {
     ///
     /// Helper function for `foreachWithIndex`.
     ///
-    def foreachWithIndexHelper(f: (a, Int32) ~> Unit, a: Array[a], i: Int32, n: Int32): Unit & Impure =
+    def foreachWithIndexHelper(f: (a, Int32) -> Unit & ef, a: Array[a], i: Int32, n: Int32): Unit & Impure =
         if (i >= n)
             ()
         else {

@@ -58,26 +58,6 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.HiddenVarSym](result)
   }
 
-  test("HiddenVarSym.Existential.01") {
-    val input =
-      s"""
-         |def f(): Bool = exists (_x: Bool). _x
-         |
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.HiddenVarSym](result)
-  }
-
-  test("HiddenVarSym.Universal.01") {
-    val input =
-      s"""
-         |def f(): Bool = forall (_x: Bool). _x
-         |
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.HiddenVarSym](result)
-  }
-
   test("HiddenVarSym.Predicate.01") {
     val input =
       s"""
@@ -253,30 +233,6 @@ class TestRedundancy extends FunSuite with TestUtils {
         |        case (u, v) => (u, v)
         |        case (y, x) => (x, y)
         |    }
-        |
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.ShadowedVar](result)
-  }
-
-  test("ShadowedVar.Existential.01") {
-    val input =
-      """
-        |def f(): Bool =
-        |    let x = 123;
-        |    exists (x: Bool). x
-        |
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.ShadowedVar](result)
-  }
-
-  test("ShadowedVar.Universal.01") {
-    val input =
-      """
-        |def f(): Bool =
-        |    let x = 123;
-        |    forall (x: Bool). x
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -468,26 +424,6 @@ class TestRedundancy extends FunSuite with TestUtils {
          |pub def f(): (Int, Int) =
          |  let f = (x, y, z) -> (x, z);
          |  f(1, 2, 3)
-         |
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.UnusedFormalParam](result)
-  }
-
-  test("UnusedFormalParam.Forall.01") {
-    val input =
-      s"""
-         |pub def f(): Bool = forall(x: Int). true
-         |
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.UnusedFormalParam](result)
-  }
-
-  test("UnusedFormalParam.Exists.01") {
-    val input =
-      s"""
-         |pub def f(): Bool = exists(x: Int). true
          |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)

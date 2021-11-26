@@ -18,9 +18,8 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.lsp._
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, TypeConstraint}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Constraint, Expression, FormalParam, MatchRule, Pattern, Root, SelectChannelRule, TypeParam}
+import ca.uwaterloo.flix.language.ast.TypedAst._
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
@@ -45,7 +44,7 @@ object SemanticTokensProvider {
     // Construct an iterator of the semantic tokens from classes.
     //
     val classTokens = root.classes.values.flatMap {
-      case decl if include(uri, decl.loc) => visitClass(decl)
+      case decl if include(uri, decl.sym.loc) => visitClass(decl)
       case _ => Nil
     }
 
@@ -54,7 +53,7 @@ object SemanticTokensProvider {
     //
     val instanceTokens = root.instances.values.flatMap {
       case instances => instances.flatMap {
-        case instance if include(uri, instance.loc) => visitInstance(instance)
+        case instance if include(uri, instance.sym.loc) => visitInstance(instance)
         case _ => Nil
       }
     }
@@ -71,7 +70,7 @@ object SemanticTokensProvider {
     // Construct an iterator of the semantic tokens from sigs.
     //
     val sigsTokens = root.sigs.values.flatMap {
-      case decl if include(uri, decl.spec.loc) => visitSig(decl)
+      case decl if include(uri, decl.sym.loc) => visitSig(decl)
       case _ => Nil
     }
 
@@ -97,13 +96,14 @@ object SemanticTokensProvider {
     val allTokens = (classTokens ++ instanceTokens ++ defnTokens ++ enumTokens ++ typeAliasTokens).toList
 
     //
-    // We keep all tokens that are: (i) single-line tokens and (ii) have the same source as `uri`.
+    // We keep all tokens that are: (i) single-line tokens, (ii) have the same source as `uri`, and (iii) come from real source locations.
     //
     // Note that the last criteria (automatically) excludes:
-    //   (a) tokens with unknown source locations, and
-    //   (b) tokens that come from entities inside `uri` but that originate from different uris.
+    //   (a) tokens with unknown source locations,
+    //   (b) tokens that come from entities inside `uri` but that originate from different uris, and
+    //   (c) tokens that come from synthetic (generated) source code.
     //
-    val filteredTokens = allTokens.filter(t => t.loc.isSingleLine && include(uri, t.loc))
+    val filteredTokens = allTokens.filter(t => t.loc.isSingleLine && include(uri, t.loc) && !t.loc.isSynthetic)
 
     //
     // Encode the semantic tokens as a list of integers.
@@ -182,8 +182,9 @@ object SemanticTokensProvider {
     val st1 = Iterator(t)
     val st2 = visitFormalParams(defn0.spec.fparams)
     val st3 = visitType(defn0.spec.retTpe)
-    val st4 = visitExp(defn0.impl.exp)
-    st1 ++ st2 ++ st3 ++ st4
+    val st4 = defn0.spec.declaredScheme.constraints.flatMap(visitTypeConstraint)
+    val st5 = visitExp(defn0.impl.exp)
+    st1 ++ st2 ++ st3 ++ st4 ++ st5
   }
 
   /**
@@ -351,12 +352,6 @@ object SemanticTokensProvider {
     case Expression.Assign(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Existential(_, _, _) =>
-      throw InternalCompilerException("to be removed")
-
-    case Expression.Universal(_, _, _) =>
-      throw InternalCompilerException("to be removed")
-
     case Expression.Ascribe(exp, tpe, _, _) =>
       visitExp(exp) ++ visitType(tpe)
 
@@ -442,6 +437,10 @@ object SemanticTokensProvider {
 
     case Expression.ReifyType(t, _, _, _, _) => visitType(t)
 
+    case Expression.ReifyEff(sym, exp1, exp2, exp3, tpe, eff, loc) =>
+      val o = getSemanticTokenType(sym, exp1.tpe)
+      val t = SemanticToken(o, Nil, sym.loc)
+      Iterator(t) ++ visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
   }
 
   /**
@@ -585,7 +584,11 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given type constraint `tc0`.
     */
   private def visitTypeConstraint(tc0: TypeConstraint): Iterator[SemanticToken] = tc0 match {
-    case TypeConstraint(_, arg, _) => visitType(arg)
+    case TypeConstraint(sym, arg, loc) =>
+      // TODO: We need a source location, not for the entire constraint, just for the class name.
+      val o = SemanticTokenType.Class
+      val t = SemanticToken(o, Nil, loc)
+      Iterator(t) ++ visitType(arg)
   }
 
   /**

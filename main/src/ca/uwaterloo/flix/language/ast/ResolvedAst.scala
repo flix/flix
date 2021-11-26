@@ -143,10 +143,6 @@ object ResolvedAst {
 
     case class Assign(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Existential(fparam: ResolvedAst.FormalParam, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class Universal(fparam: ResolvedAst.FormalParam, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
-
     case class Ascribe(exp: ResolvedAst.Expression, expectedType: Option[Type], expectedEff: Option[Type], loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Cast(exp: ResolvedAst.Expression, declaredType: Option[Type], declaredEff: Option[Type], loc: SourceLocation) extends ResolvedAst.Expression
@@ -196,6 +192,8 @@ object ResolvedAst {
     case class Reify(t: Type, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class ReifyType(t: Type, k: Kind, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class ReifyEff(sym: Symbol.VarSym, exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, exp3: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
   }
 

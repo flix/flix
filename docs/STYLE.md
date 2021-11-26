@@ -31,8 +31,17 @@
 - No shadowed variables.
 - No unused local variables.
 - Common methods are `visitExp`, `visitExps`, `visitPat`, etc.
+- When using monads like `Validation` use `mapN` over `for ... yield` whenever possible
+- Write single-variable `mapN` cases open to additional variables with `mapN ... { case ... => ... }`
 - Prefer to name expressions just `exp1`, `exp2`, `exp3`.
   - Names such as `beginExp` etc. quickly get outdated.
+- Never use toString for anything other than debugging.
 - Leave the code in better state than you found it in.
+
+## JVM Bytecode Generation Policy
+
+- Prefer public fields over private fields with getter/setter.
+- Prefer direct field initialization over construction arguments.
+- Ensure classes are final.
 
 If a PR discovers a new style principle, feel free to add it to this file as part of the same PR.

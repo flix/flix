@@ -184,10 +184,6 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.Assign(exp1, exp2, _, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0)
 
-      case Expression.Existential(_, exp, _) => visitExp(exp, lint0)
-
-      case Expression.Universal(_, exp, _) => visitExp(exp, lint0)
-
       case Expression.Ascribe(exp, _, _, _) => visitExp(exp, lint0)
 
       case Expression.Cast(exp, _, _, _) => visitExp(exp, lint0)
@@ -243,6 +239,8 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       case Expression.Reify(_, _, _, _) => Nil
 
       case Expression.ReifyType(_, _, _, _, _) => Nil
+
+      case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _) => visitExp(exp1, lint0) ++ visitExp(exp2, lint0) ++ visitExp(exp3, lint0)
 
     }
 
@@ -389,7 +387,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         s2 <- unifyExps(exps1, exps2, metaVars)
       } yield s2 @@ s1
 
-      // TODO: Not sure if we need to take the type of the semantic operator into account, e.g. Int32.Neg is the same as Int16.Neg?
+    // TODO: Not sure if we need to take the type of the semantic operator into account, e.g. Int32.Neg is the same as Int16.Neg?
     case (Expression.Unary(op1, exp1, _, _, _), Expression.Unary(op2, exp2, _, _, _)) if op1 == op2 =>
       unifyExp(exp1, exp2, metaVars)
 
@@ -459,22 +457,6 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case (Expression.Assign(exp11, exp12, _, _, _), Expression.Assign(exp21, exp22, _, _, _)) =>
       unifyExp(exp11, exp12, exp21, exp22, metaVars)
-
-    case (Expression.Existential(_, _, _), _) =>
-      // An existentially quantified expression never unifies with anything.
-      None
-
-    case (_, Expression.Existential(_, _, _)) =>
-      // An existentially quantified expression never unifies with anything.
-      None
-
-    case (Expression.Universal(_, _, _), _) =>
-      // A universally quantified expression never unifies with anything.
-      None
-
-    case (_, Expression.Universal(_, _, _)) =>
-      // A universally quantified expression never unifies with anything.
-      None
 
     case (Expression.Ascribe(exp1, _, _, _), Expression.Ascribe(exp2, _, _, _)) =>
       unifyExp(exp1, exp2, metaVars)
@@ -600,9 +582,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns the quantifiers and inner expression of the given (optionally) quantified expression `exp0`.
     */
   private def splitQuantifiersAndBody(exp0: Expression): (List[FormalParam], Expression) = {
-    @tailrec
     def visit(exp0: Expression, acc: List[FormalParam]): (List[FormalParam], Expression) = exp0 match {
-      case Expression.Universal(fparam, exp, loc) => visit(exp, fparam :: acc)
       case _ => (acc, exp0)
     }
 
@@ -963,9 +943,11 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       case Expression.ReifyType(t, k, tpe, eff, loc) =>
         Expression.ReifyType(t, k, tpe, eff, loc)
 
-      case Expression.Existential(_, _, _) => throw InternalCompilerException(s"Unexpected expression: $exp0.")
-
-      case Expression.Universal(_, _, _) => throw InternalCompilerException(s"Unexpected expression: $exp0.")
+      case Expression.ReifyEff(sym, exp1, exp2, exp3, tpe, eff, loc) =>
+        val e1 = apply(exp1)
+        val e2 = apply(exp2)
+        val e3 = apply(exp3)
+        Expression.ReifyEff(sym, e1, e2, e3, tpe, eff, loc)
     }
 
     /**

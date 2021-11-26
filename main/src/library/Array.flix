@@ -136,6 +136,23 @@ namespace Array {
         }
 
     ///
+    /// Returns the array `arr` as a chain.
+    ///
+    pub def toChain(arr: Array[a]): Chain[a] & Impure =
+        toChainHelper(arr, arr.length, Chain.empty())
+
+    ///
+    /// Helper function for `toChain`.
+    ///
+    def toChainHelper(a: Array[a], i: Int32, ac: Chain[a]): Chain[a] & Impure =
+        if (i == 0) {
+            ac
+        } else {
+            let x = a[i - 1];
+            toChainHelper(a, i - 1, Chain.cons(x, ac))
+        }
+
+    ///
     /// Returns the array `a` as a stream.
     ///
     // TODO: Add tests
@@ -1518,7 +1535,7 @@ namespace Array {
     /// Apply the effectful function `f` to all the elements in the array `a`.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
-    pub def foreach(f: a ~> Unit, a: Array[a]): Unit & Impure =
+    pub def foreach(f: a -> Unit & ef, a: Array[a]): Unit & Impure =
         let len = length(a);
         if (len < 1)
             ()
@@ -1528,7 +1545,7 @@ namespace Array {
     ///
     /// Helper function for `foreach`.
     ///
-    def foreachHelper(f: a ~> Unit, a: Array[a], len: Int32, i: Int32): Unit & Impure =
+    def foreachHelper(f: a -> Unit & ef, a: Array[a], len: Int32, i: Int32): Unit & Impure =
         if (i >= len)
             ()
         else {
@@ -1540,7 +1557,7 @@ namespace Array {
     /// Apply the effectful function `f` to all the elements in the array `a`.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
-    pub def foreachWithIndex(f: (a, Int32) ~> Unit, a: Array[a]): Unit & Impure =
+    pub def foreachWithIndex(f: (a, Int32) -> Unit & ef, a: Array[a]): Unit & Impure =
         let len = length(a);
         if (len < 1)
             ()
@@ -1550,7 +1567,7 @@ namespace Array {
     ///
     /// Helper function for `foreachWithIndex`.
     ///
-    def foreachWithIndexHelper(f: (a, Int32) ~> Unit, a: Array[a], len: Int32, i: Int32): Unit & Impure =
+    def foreachWithIndexHelper(f: (a, Int32) -> Unit & ef, a: Array[a], len: Int32, i: Int32): Unit & Impure =
         if (i >= len)
             ()
         else {
@@ -1563,13 +1580,13 @@ namespace Array {
     /// The function returns the final value of the accumulator `s`.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
-    pub def foreachAccum(f: (a, st) ~> st, s: st, a: Array[a]): st & Impure =
+    pub def foreachAccum(f: (a, st) -> st & ef, s: st, a: Array[a]): st & Impure =
         foreachAccumHelper(f, a, length(a), s, 0)
 
     ///
     /// Helper function for `foreachAccum`.
     ///
-    def foreachAccumHelper(f: (a, st) ~> st, a: Array[a], len: Int32, s: st, i: Int32): st & Impure =
+    def foreachAccumHelper(f: (a, st) -> st & ef, a: Array[a], len: Int32, s: st, i: Int32): st & Impure =
         if (i >= len)
             s
         else {

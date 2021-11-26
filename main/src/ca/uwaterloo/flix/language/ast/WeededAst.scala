@@ -26,9 +26,7 @@ object WeededAst {
 
   case class Root(uses: List[WeededAst.Use], decls: List[WeededAst.Declaration], loc: SourceLocation)
 
-  sealed trait Declaration {
-    def loc: SourceLocation
-  }
+  sealed trait Declaration
 
   object Declaration {
 
@@ -159,10 +157,6 @@ object WeededAst {
 
     case class Assign(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class Existential(tparams: WeededAst.TypeParams, fparam: WeededAst.FormalParam, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
-
-    case class Universal(tparams: WeededAst.TypeParams, fparam: WeededAst.FormalParam, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
-
     case class Ascribe(exp: WeededAst.Expression, expectedType: Option[WeededAst.Type], expectedEff: Option[WeededAst.Type], loc: SourceLocation) extends WeededAst.Expression
 
     case class Cast(exp: WeededAst.Expression, declaredType: Option[WeededAst.Type], declaredEff: Option[WeededAst.Type], loc: SourceLocation) extends WeededAst.Expression
@@ -212,6 +206,8 @@ object WeededAst {
     case class Reify(t: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
 
     case class ReifyType(t: WeededAst.Type, k: Kind, loc: SourceLocation) extends WeededAst.Expression
+
+    case class ReifyEff(ident: Name.Ident, exp1: WeededAst.Expression, exp2: WeededAst.Expression, exp3: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
   }
 

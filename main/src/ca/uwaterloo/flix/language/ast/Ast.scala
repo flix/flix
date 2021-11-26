@@ -125,19 +125,21 @@ object Ast {
     }
 
     /**
-      * An AST node that represents an `@unchecked` annotation.
-      *
-      * The properties of a function marked `@unchecked` are not checked by the verifier.
-      *
-      * E.g. if a function is marked @commutative and @unchecked then
-      * no attempt is made to check that the function is actually commutative.
-      * However, the compiler and run-time is still permitted to assume that the
-      * function is commutative.
+      * An AST node that represents a `@LazyWhenPure` annotation.
       *
       * @param loc the source location of the annotation.
       */
-    case class Unchecked(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@unchecked"
+    case class LazyWhenPure(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@LazyWhenPure"
+    }
+
+    /**
+      * An AST node that represents a `@ParallelWhenPure` annotation.
+      *
+      * @param loc the source location of the annotation.
+      */
+    case class ParallelWhenPure(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@ParallelWhenPure"
     }
 
     /**
@@ -195,10 +197,6 @@ object Ast {
       */
     def isTest: Boolean = annotations exists (_.isInstanceOf[Annotation.Test])
 
-    /**
-      * Returns `true` if `this` sequence contains the `@unchecked` annotation.
-      */
-    def isUnchecked: Boolean = annotations exists (_.isInstanceOf[Annotation.Unchecked])
   }
 
   /**
@@ -358,55 +356,54 @@ object Ast {
   }
 
   /**
-    * Represents a dependency between two predicate symbols.
+    * Contains the edges held in a single constraint.
     */
-  sealed trait DependencyEdge
+  case class MultiEdge(head: (Name.Pred, Type), positives: Vector[TypedPredicate], negatives: Vector[TypedPredicate])
 
-  object DependencyEdge {
+  /**
+    * Represents a body predicate on a MultiEdge.
+    */
+  case class TypedPredicate(atom: Name.Pred, tpe: Type, loc: SourceLocation)
 
+  object ConstraintGraph {
     /**
-      * Represents a positive labelled edge.
+      * The empty constraint graph.
       */
-    case class Positive(head: Name.Pred, body: Name.Pred, loc: SourceLocation) extends DependencyEdge
-
-    /**
-      * Represents a negative labelled edge.
-      */
-    case class Negative(head: Name.Pred, body: Name.Pred, loc: SourceLocation) extends DependencyEdge
-
-  }
-
-  object DependencyGraph {
-    /**
-      * The empty dependency graph.
-      */
-    val empty: DependencyGraph = DependencyGraph(Set.empty)
-
+    val empty: ConstraintGraph = ConstraintGraph(Set.empty)
   }
 
   /**
-    * Represents a dependency graph; a set of dependency edges.
+    * Represents a constraint graph; a set dependency graphs representing each rule.
     */
-  case class DependencyGraph(xs: Set[DependencyEdge]) {
+  case class ConstraintGraph(xs: Set[MultiEdge]) {
     /**
-      * Returns a dependency graph with all dependency edges in `this` and `that` dependency graph.
+      * Returns a constraint graph with all dependency graphs in `this` and `that` constraint graph.
       */
-    def +(that: DependencyGraph): DependencyGraph = {
-      if (this eq DependencyGraph.empty)
+    def +(that: ConstraintGraph): ConstraintGraph = {
+      if (this eq ConstraintGraph.empty)
         that
-      else if (that eq DependencyGraph.empty)
+      else if (that eq ConstraintGraph.empty)
         this
       else
-        DependencyGraph(this.xs ++ that.xs)
+        ConstraintGraph(this.xs ++ that.xs)
     }
 
     /**
-      * Returns `this` dependency graph including only the edges where both the source and destination are in `syms`.
+      * Returns `this` constraint graph including only the edges where all
+      * its predicates is in `syms` and `typeEquality` returns true for the predicate type and its type in `syms`.
+      * A rule like
+      * `A(ta) :- B(tb), C(tc), not D(tc).` is represented by `MultiEdge((A, ta), {(B, tb), (C, tc)}, {(D, td)})`
+      * and is only included in the output if `syms` contains all of `A, B, C, D` and `typeEquality(syms(A), ta)` etc.
       */
-    def restrict(syms: Set[Name.Pred]): DependencyGraph =
-      DependencyGraph(xs.filter {
-        case DependencyEdge.Positive(x, y, _) => syms.contains(x) && syms.contains(y)
-        case DependencyEdge.Negative(x, y, _) => syms.contains(x) && syms.contains(y)
+    def restrict(syms: Map[Name.Pred, Type], typeEquality: (Type, Type) => Boolean): ConstraintGraph =
+      ConstraintGraph(xs.filter {
+        case MultiEdge((head, headTpe), positives, negatives) =>
+          def checkBody(e: TypedPredicate): Boolean = e match {
+            case TypedPredicate(s, tpe, _) => syms.get(s).exists(typeEquality(_, tpe))
+          }
+
+          syms.get(head).exists(typeEquality(_, headTpe)) &&
+            positives.forall(checkBody) && negatives.forall(checkBody)
       })
   }
 

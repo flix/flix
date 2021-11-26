@@ -19,17 +19,6 @@
 ///
 opaque type MutSet[t] = Ref[Set[t]]
 
-instance ToString[MutSet[a]] with ToString[a] {
-    pub def toString(xs: MutSet[a]): String =
-        let s = MutSet.foldRight((x, acc) -> "${x}, ${acc}", "", xs) as & Pure;
-        "MutSet#{${String.dropRight(2, s)}}"
-}
-
-instance Foldable[MutSet] {
-    pub def foldLeft(f: (b, a) -> b & ef, i: b, s: MutSet[a]): b & ef = MutSet.foldLeft(f, i, s) as & ef
-    pub def foldRight(f: (a, b) -> b & ef, i: b, s: MutSet[a]): b & ef = MutSet.foldRight(f, i, s) as & ef
-}
-
 namespace MutSet {
 
     ///
@@ -213,11 +202,6 @@ namespace MutSet {
             Set.findRight(f, deref ms)
 
     ///
-    /// Returns the result of applying `combine` to all the elements in `s`, using `empty` as the initial value.
-    ///
-    pub def fold(s: MutSet[a]): a with Monoid[a] = Foldable.fold(s)
-
-    ///
     /// Applies `f` to a start value `i` and all elements in the mutable set `s` going from left to right.
     ///
     /// That is, the result is of the form: `f(...f(f(i, x1), x2)..., xn)`.
@@ -335,28 +319,8 @@ namespace MutSet {
     ///
     /// Applies `f` to every element of the mutable set `s`.
     ///
-    /// The function `f` must be impure.
-    ///
-    pub def foreach(f: a ~> Unit, s: MutSet[a]): Unit & Impure =
+    pub def foreach(f: a -> Unit & ef, s: MutSet[a]): Unit & Impure =
         let MutSet(ms) = s;
         Set.foreach(f, deref ms)
-
-    ///
-    /// Extracts a range of elements from the set `s`.
-    ///
-    /// That is, the result is a list of all elements `x` where `p(x)` returns `Equal`.
-    ///
-    pub def query(p: a -> Comparison & ef, s: MutSet[a]): List[a] & Impure =
-        let MutSet(ms) = s;
-        Set.query(p, deref ms)
-
-    ///
-    /// Applies `f` to all elements from the set `s` where `p(x)` returns `EqualTo`.
-    ///
-    /// The function `f` must be impure.
-    ///
-    pub def queryWith(p: a -> Comparison & ef, f: a ~> Unit, s: MutSet[a]): Unit & Impure =
-        let MutSet(ms) = s;
-        Set.queryWith(p, f, deref ms)
 
 }
