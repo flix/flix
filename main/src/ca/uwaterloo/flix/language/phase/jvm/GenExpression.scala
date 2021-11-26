@@ -926,7 +926,6 @@ object GenExpression {
       }
 
 
-      // TODO SJ: Should we create a JvmName for the return type here? yes
       // Invoke select in Channel. This puts a SelectChoice on the stack
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Channel.toInternalName, "select", "([Lca/uwaterloo/flix/runtime/interpreter/Channel;Z)Lca/uwaterloo/flix/runtime/interpreter/SelectChoice;", false)
 
@@ -969,7 +968,7 @@ object GenExpression {
 
       // TableSwitch instruction jumps here if "0 <= index < rules.length" is not satisfied.
       visitor.visitLabel(lookupErrorLabel)
-      // TODO SJ: throw flixError med god string ELLER egen subclass
+      // TODO: throw a better error
       // Throw exception
       visitor.visitInsn(ACONST_NULL)
       visitor.visitInsn(ATHROW)
@@ -992,8 +991,9 @@ object GenExpression {
 
     case Expression.Spawn(exp, _, loc) =>
       addSourceLine(visitor, loc)
-      // Compile the expression, putting a function implementing the Spawnable interface on the stack
+      // Compile the expression, putting a function implementing the Runnable interface on the stack
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      visitor.visitTypeInsn(CHECKCAST, JvmOps.getContinuationInterfaceType(exp.tpe).toDescriptor)
       // make a thread and run it
       visitor.visitTypeInsn(NEW, "java/lang/Thread")
       visitor.visitInsn(DUP_X1)
@@ -1166,27 +1166,6 @@ object GenExpression {
       visitor.visitTypeInsn(CHECKCAST, "java/lang/Double")
       visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Double", "doubleValue", "()D", false)
 
-  }
-
-  /*
-   * Pushes a dummy value of type `jvmType` to the top of the stack
-   */
-  private def pushDummyValue(visitor: MethodVisitor, tpe: MonoType)(implicit root: Root, flix: Flix): Unit = {
-    val erasedType = JvmOps.getErasedJvmType(tpe)
-    erasedType match {
-      case JvmType.Void => throw InternalCompilerException(s"Unexpected type: $erasedType")
-      case JvmType.PrimBool => visitor.visitInsn(ICONST_1)
-      case JvmType.PrimChar => visitor.visitInsn(ICONST_M1)
-      case JvmType.PrimByte => visitor.visitInsn(ICONST_M1)
-      case JvmType.PrimShort => visitor.visitInsn(ICONST_M1)
-      case JvmType.PrimInt => visitor.visitInsn(ICONST_M1)
-      case JvmType.PrimLong =>
-        visitor.visitInsn(ICONST_M1)
-        visitor.visitInsn(I2L)
-      case JvmType.PrimFloat => visitor.visitInsn(FCONST_1)
-      case JvmType.PrimDouble => visitor.visitInsn(DCONST_1)
-      case JvmType.Reference(_) => visitor.visitInsn(ACONST_NULL)
-    }
   }
 
   /*
