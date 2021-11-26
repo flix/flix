@@ -32,7 +32,7 @@ trait Formatter {
     def leftline: String = {
       val sb = new StringBuilder()
       for (lineNo <- beginLine to endLine) {
-        val currentLine = lineAt(lineNo)
+        val currentLine = lineAt
         sb.append(lineNo)
           .append(" |")
           .append(red(">"))
