@@ -415,12 +415,12 @@ namespace Result {
     /// Return `Err(e)`, if `f` throws a Java `RuntimeException`,
     /// where `e` is the error message.
     ///
-    pub def try(f: Unit -> a & ef): Result[a, String] & ef =
+    pub def try(f: Unit -> a & ef): Result[a, String] & Impure =
         try {
             Ok(f())
         } catch {
             case e: ##java.lang.RuntimeException =>
-                import java.lang.RuntimeException.getMessage();
+                import java.lang.Throwable.getMessage();
                 Err(getMessage(e))
         }
 }
