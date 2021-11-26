@@ -225,18 +225,22 @@ object Main {
           Console.println(results.output(flix.getFormatter))
         }
       case Validation.Failure(errors) =>
-        createPrintableMessage(errors.sortBy(_.source.name), flix.getFormatter)
+        mkMessage(errors.sortBy(_.source.name), flix.getFormatter)
           .foreach(println)
         println()
         println(s"Compilation failed with ${errors.length} error(s).")
         System.exit(1)
     }
 
-    def createPrintableMessage(errors: LazyList[CompilationMessage], formatter: Formatter): LazyList[String] = {
+    /**
+      * Converts a list of compiler error messages to a list of printable messages.
+      * Decides whether or not to print the explanation.
+      */
+    def mkMessage(errors: LazyList[CompilationMessage], formatter: Formatter): List[String] = {
       if (flix.options.explain || errors.length == 1)
-        errors.map(cm => cm.message(formatter) + cm.explain(formatter).getOrElse(""))
+        errors.map(cm => cm.message(formatter) + cm.explain(formatter).getOrElse("")).toList
       else
-        errors.map(cm => cm.message(formatter))
+        errors.map(cm => cm.message(formatter)).toList
     }
   }
 

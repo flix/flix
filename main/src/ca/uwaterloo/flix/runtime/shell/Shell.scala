@@ -390,7 +390,7 @@ class Shell(initialPaths: List[Path], options: Options) {
         }
       case Validation.Failure(errors) =>
         terminal.writer().println()
-        createPrintableMessage(errors, flix.getFormatter)
+        mkMessage(errors, flix.getFormatter)
           .foreach(terminal.writer().print)
         terminal.writer().println()
         terminal.writer().print(prompt)
@@ -399,11 +399,15 @@ class Shell(initialPaths: List[Path], options: Options) {
 
   }
 
-  private def createPrintableMessage(errors: LazyList[CompilationMessage], formatter: Formatter): LazyList[String] = {
+  /**
+    * Converts a list of compiler error messages to a list of printable messages.
+    * Decides whether or not to print the explanation.
+    */
+  private def mkMessage(errors: LazyList[CompilationMessage], formatter: Formatter): List[String] = {
     if (options.explain || errors.length == 1)
-      errors.map(cm => cm.message(formatter) + cm.explain(formatter).getOrElse(""))
+      errors.map(cm => cm.message(formatter) + cm.explain(formatter).getOrElse("")).toList
     else
-      errors.map(cm => cm.message(formatter))
+      errors.map(cm => cm.message(formatter)).toList
   }
 
   /**
