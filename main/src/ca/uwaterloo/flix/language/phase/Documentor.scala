@@ -163,11 +163,14 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def visitInstance(inst: Instance): JObject = inst match {
     case Instance(_, _, sym, tpe, tconstrs, _, _, loc) =>
-      ("sym" -> visitClassSym(sym.clazz)) ~
+      ("sym" -> visitInstanceSym(sym)) ~
+      //("sym" -> visitClassSym(sym.clazz)) ~
         ("tpe" -> visitType(tpe)) ~
         ("tconstrs" -> tconstrs.map(visitTypeConstraint)) ~
         ("loc" -> visitSourceLocation(loc))
   }
+
+  private def visitInstanceSym(sym: Symbol.InstanceSym): JObject = ??? // TODO
 
   /**
     * Returns the given type `tpe` as a JSON value.
