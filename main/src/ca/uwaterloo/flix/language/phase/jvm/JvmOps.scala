@@ -342,7 +342,7 @@ object JvmOps {
     val valueType = JvmOps.stringify(JvmOps.getErasedJvmType(tpe))
 
     // The JVM name is of the form RecordExtend
-    val name = "RecordExtend$" + valueType
+    val name = "RecordExtend" + JvmName.Delimiter + valueType
 
     // The type resides in the root package.
     JvmType.Reference(JvmName(JvmOps.RootPackage, name))
