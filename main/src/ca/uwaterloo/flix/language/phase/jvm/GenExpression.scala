@@ -993,7 +993,7 @@ object GenExpression {
       addSourceLine(visitor, loc)
       // Compile the expression, putting a function implementing the Runnable interface on the stack
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-      visitor.visitTypeInsn(CHECKCAST, JvmOps.getContinuationInterfaceType(exp.tpe).toDescriptor)
+      visitor.visitTypeInsn(CHECKCAST, JvmName.Runnable.toInternalName)
       // make a thread and run it
       visitor.visitTypeInsn(NEW, "java/lang/Thread")
       visitor.visitInsn(DUP_X1)
