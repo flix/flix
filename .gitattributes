@@ -1,0 +1,13 @@
+*.flix         text=auto
+*.sc           text=auto
+*.scala        text=auto
+*.py           text=auto
+*.yaml         text=auto
+*.yml          text=auto
+.editorconfig  text=auto
+.gitattributes text=auto
+.gitignore     text=auto
+*.md           text=auto
+build.gradle   text=auto
+gradlew        text=auto
+gradlew.bat    text=auto
