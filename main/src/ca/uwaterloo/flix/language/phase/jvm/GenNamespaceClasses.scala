@@ -19,8 +19,8 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst.{Def, Root}
 import ca.uwaterloo.flix.language.ast.MonoType
+import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes._
-import org.objectweb.asm.{ClassWriter, Label}
 
 /**
   * Generates bytecode for the namespace classes.
@@ -58,22 +58,13 @@ object GenNamespaceClasses {
       JvmName.Object.toInternalName, null)
 
     // Adding an IFO field and a shim method for each function in `ns`
-    for ((sym, defn) <- ns.defs) {
-      // JvmType of `defn`
-      val jvmType = JvmOps.getFunctionDefinitionClassType(sym)
-
-      // Name of the field on namespace
-      val fieldName = JvmOps.getDefFieldNameInNamespaceClass(sym)
-
-      // Adding the field for functional interface for `tpe`
-      AsmOps.compileField(visitor, fieldName, jvmType, isStatic = false, isPrivate = false)
-
+    for ((_, defn) <- ns.defs) {
       // Compile the shim method.
-      compileShimMethod(visitor, defn, jvmType, ns)
+      compileShimMethod(visitor, defn)
     }
 
     // Add the constructor
-    compileNamespaceConstructor(visitor, ns)
+    compileNamespaceConstructor(visitor)
 
     visitor.visitEnd()
     visitor.toByteArray
@@ -82,12 +73,10 @@ object GenNamespaceClasses {
   /**
     * Adding a shim for the function `defn` on namespace `ns`
     */
-  private def compileShimMethod(visitor: ClassWriter, defn: Def, ifoType: JvmType.Reference, ns: NamespaceInfo)(implicit root: Root, flix: Flix): Unit = {
+  private def compileShimMethod(visitor: ClassWriter, defn: Def)(implicit root: Root, flix: Flix): Unit = {
+    // TODO: This can probably be removed (used in GenMain and other places)
     // Name of the shim
     val name = JvmOps.getDefMethodNameInNamespaceClass(defn.sym)
-
-    // JvmType for namespace
-    val namespaceClassType = JvmOps.getNamespaceClassType(ns)
 
     // Jvm type of method args
     val MonoType.Arrow(targs, tresult) = defn.tpe
@@ -96,119 +85,33 @@ object GenNamespaceClasses {
     val erasedArgs = targs map JvmOps.getErasedJvmType
     val erasedResult = JvmOps.getErasedJvmType(tresult)
 
-    // Length of args in local
-    val stackSize = erasedArgs.map(AsmOps.getStackSize).sum
-
-    // Address of continuation
-    val contextAddr = stackSize
-
-    // Address of the current IFO
-    val ifoAddr = stackSize + 1
-
     // Method header
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL + ACC_STATIC, name, AsmOps.getMethodDescriptor(erasedArgs, erasedResult), null, null)
     method.visitCode()
 
-    // Creating a context object
-    method.visitTypeInsn(NEW, JvmName.Context.toInternalName)
-    method.visitInsn(DUP)
-
-    // Calling the constructor of context object
-    method.visitMethodInsn(INVOKESPECIAL, JvmName.Context.toInternalName, "<init>",
-      AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
-
-    // Putting another reference of context on top of the stack
-    method.visitInsn(DUP)
-
-    // Storing Context on the variable
-    method.visitVarInsn(ASTORE, contextAddr)
-
-    // Name of the field for namespace on context object
-    val nsFieldName = JvmOps.getNamespaceFieldNameInContextClass(ns)
-
-    // Name of the field for IFO of defn on namespace
-    val defnFieldName = JvmOps.getDefFieldNameInNamespaceClass(defn.sym)
-
-    // Extracting the namespace field from the context object
-    method.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, nsFieldName, namespaceClassType.toDescriptor)
-
-    // Extracting the ifo from namespace
-    method.visitFieldInsn(GETFIELD, namespaceClassType.name.toInternalName, defnFieldName, ifoType.toDescriptor)
-
-    // Strong the IFO on a local variable
-    method.visitVarInsn(ASTORE, ifoAddr)
+    val functionType = JvmOps.getFunctionInterfaceType(defn.tpe)
 
     // Offset for each parameter
     var offset: Int = 0
 
+    AsmOps.compileDefSymbol(defn.sym, method)
+
     // Set arguments for the IFO
     for ((arg, index) <- erasedArgs.zipWithIndex) {
-      // Duplicate the IFO reference
-      method.visitVarInsn(ALOAD, ifoAddr)
+      method.visitInsn(DUP)
 
       // Get the argument from the field
       val iLoad = AsmOps.getLoadInstruction(arg)
       method.visitVarInsn(iLoad, offset)
 
-      // Call the setter for the argument
-      method.visitMethodInsn(INVOKEVIRTUAL, ifoType.name.toInternalName, s"setArg$index",
-        AsmOps.getMethodDescriptor(List(arg), JvmType.Void), false)
+      // put the arg field
+      method.visitFieldInsn(PUTFIELD, functionType.name.toInternalName, s"arg$index", arg.toDescriptor)
 
       // Incrementing the offset
       offset += AsmOps.getStackSize(arg)
     }
-    // Label for the loop
-    val loop = new Label
-    // Type of the continuation interface
-    val cont = JvmOps.getContinuationInterfaceType(defn.tpe)
-    // Type of the function interface
-    val functionInterface = JvmOps.getFunctionInterfaceType(defn.tpe)
-    // Result type
-    val resultType = erasedResult
-    // Put the closure on `continuation` field of `Context`
-    method.visitVarInsn(ALOAD, contextAddr)
-    method.visitVarInsn(ALOAD, ifoAddr)
-
-    // Casting to JvmType of FunctionInterface
-    method.visitTypeInsn(CHECKCAST, functionInterface.name.toInternalName)
-    method.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
-
-    // This is necessary since the loop has to pop a value from the stack!
-    method.visitInsn(ACONST_NULL)
-    method.visitVarInsn(ASTORE, ifoAddr)
-
-    // Begin of the loop
-    method.visitLabel(loop)
-
-    // Getting `continuation` field on `Context`
-    method.visitVarInsn(ALOAD, contextAddr)
-    method.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
-
-    // Setting `continuation` field of global to `null`
-    method.visitVarInsn(ALOAD, contextAddr)
-    method.visitInsn(ACONST_NULL)
-    method.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
-
-    // Cast to the continuation
-    method.visitTypeInsn(CHECKCAST, cont.name.toInternalName)
-    // Duplicate
-    method.visitInsn(DUP)
-    // Storing the continuation on a local variable
-    method.visitVarInsn(ASTORE, ifoAddr)
-
-    // Call invoke
-    method.visitVarInsn(ALOAD, contextAddr)
-    method.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "invoke", AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), true)
-
-    // Getting `continuation` field on `Context`
-    method.visitVarInsn(ALOAD, contextAddr)
-    method.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
-    method.visitJumpInsn(IFNONNULL, loop)
-
-    // Loading the IFO
-    method.visitVarInsn(ALOAD, ifoAddr)
-    // Invoking the `getResult` method
-    method.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "getResult", AsmOps.getMethodDescriptor(Nil, resultType), true)
+    method.visitMethodInsn(INVOKEVIRTUAL, functionType.name.toInternalName, GenContinuationAbstractClasses.UnwindMethodName, AsmOps.getMethodDescriptor(Nil, erasedResult), false)
+    // no erasure here because the ns function works on erased values
 
     // Return
     method.visitInsn(AsmOps.getReturnInstruction(erasedResult))
@@ -221,45 +124,16 @@ object GenNamespaceClasses {
   /**
     * Add the constructor for the class which initializes each field
     */
-  private def compileNamespaceConstructor(visitor: ClassWriter, ns: NamespaceInfo)(implicit root: Root, flix: Flix): Unit = {
-
-    // JvmType for `ns`
-    val namespaceRef = JvmOps.getNamespaceClassType(ns)
-
+  private def compileNamespaceConstructor(visitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = {
     // Method header
     val constructor = visitor.visitMethod(ACC_PUBLIC, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), null, null)
 
     constructor.visitCode()
     constructor.visitVarInsn(ALOAD, 0)
-
-    // Call the super (java.lang.Object) constructor
     constructor.visitMethodInsn(INVOKESPECIAL, JvmName.Object.toInternalName, "<init>",
       AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
-
-    // Initializing each field
-    for ((sym, _) <- ns.defs) {
-
-      // JvmType for the `sym`
-      val jvmType = JvmOps.getFunctionDefinitionClassType(sym)
-
-      // Name of the field on namespace
-      val fieldName = JvmOps.getDefFieldNameInNamespaceClass(sym)
-
-      // Instantiating a new instance of the class
-      constructor.visitVarInsn(ALOAD, 0)
-      constructor.visitTypeInsn(NEW, jvmType.name.toInternalName)
-      constructor.visitInsn(DUP)
-
-      // Calling the constructor of `namespace` class
-      constructor.visitMethodInsn(INVOKESPECIAL, jvmType.name.toInternalName, "<init>",
-        AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
-
-      // Initializing the field
-      constructor.visitFieldInsn(PUTFIELD, namespaceRef.name.toInternalName, fieldName, jvmType.toDescriptor)
-    }
-
-    // Return
     constructor.visitInsn(RETURN)
+
     constructor.visitMaxs(65535, 65535)
     constructor.visitEnd()
   }
