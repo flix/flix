@@ -60,7 +60,7 @@ object JvmName {
   /**
     * The Flix reserved delimiter for generated jvm classes.
     */
-  val Delimiter: String = "$"
+  val Delimiter: String = "%"
 
   /**
     * Returns the JvmName of the given string `s`.
