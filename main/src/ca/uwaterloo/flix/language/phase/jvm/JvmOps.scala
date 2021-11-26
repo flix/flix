@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst._
 import ca.uwaterloo.flix.language.ast.{Kind, MonoType, Name, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.phase.Finalize
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.Delimiter
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -342,7 +343,7 @@ object JvmOps {
     val valueType = JvmOps.stringify(JvmOps.getErasedJvmType(tpe))
 
     // The JVM name is of the form RecordExtend
-    val name = "RecordExtend$" + valueType
+    val name = "RecordExtend" + JvmName.Delimiter + valueType
 
     // The type resides in the root package.
     JvmType.Reference(JvmName(JvmOps.RootPackage, name))
@@ -412,32 +413,6 @@ object JvmOps {
   }
 
   /**
-    * Returns the field name of a namespace as used in the Context class.
-    *
-    * For example:
-    *
-    * <root>      =>  Ns$Root$
-    * Foo         =>  Foo$Ns
-    * Foo.Bar     =>  Foo$Bar$Ns
-    * Foo.Bar.Baz =>  Foo$Bar$Baz$Ns
-    */
-  def getNamespaceFieldNameInContextClass(ns: NamespaceInfo): String =
-    if (ns.isRoot)
-      "ns$Root$"
-    else
-      "ns$" + ns.ns.mkString(JvmName.Delimiter)
-
-  /**
-    * Returns the field name of a defn as used in a namespace class.
-    *
-    * For example:
-    *
-    * find      =>  f_find
-    * length    =>  f_length
-    */
-  def getDefFieldNameInNamespaceClass(sym: Symbol.DefnSym): String = "f_" + mangle(sym.name)
-
-  /**
     * Returns the method name of a defn as used in a namespace class.
     *
     * For example:
@@ -452,24 +427,24 @@ object JvmOps {
     */
   // TODO: Magnus: Use this in appropriate places.
   def mangle(s: String): String = s.
-    replace("+", "$plus").
-    replace("-", "$minus").
-    replace("*", "$asterisk").
-    replace("/", "$fslash").
-    replace("\\", "$bslash").
-    replace("%", "$percent").
-    replace("<", "$less").
-    replace(">", "$greater").
-    replace("=", "$eq").
-    replace("&", "$ampersand").
-    replace("|", "$bar").
-    replace("^", "$caret").
-    replace("~", "$tilde").
-    replace("!", "$exclamation").
-    replace("#", "$hashtag").
-    replace(":", "$colon").
-    replace("?", "$question").
-    replace("@", "$at")
+    replace("+", s"${Delimiter}plus").
+    replace("-", s"${Delimiter}minus").
+    replace("*", s"${Delimiter}asterisk").
+    replace("/", s"${Delimiter}fslash").
+    replace("\\", s"${Delimiter}bslash").
+    replace("%", s"${Delimiter}percent").
+    replace("<", s"${Delimiter}less").
+    replace(">", s"${Delimiter}greater").
+    replace("=", s"${Delimiter}eq").
+    replace("&", s"${Delimiter}ampersand").
+    replace("|", s"${Delimiter}bar").
+    replace("^", s"${Delimiter}caret").
+    replace("~", s"${Delimiter}tilde").
+    replace("!", s"${Delimiter}exclamation").
+    replace("#", s"${Delimiter}hashtag").
+    replace(":", s"${Delimiter}colon").
+    replace("?", s"${Delimiter}question").
+    replace("@", s"${Delimiter}at")
 
   /**
     * Returns stringified name of the given JvmType `tpe`.
