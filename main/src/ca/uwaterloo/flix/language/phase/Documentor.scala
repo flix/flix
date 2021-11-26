@@ -181,9 +181,6 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       ("tag" -> "Var") ~
         ("name" -> name) ~
         ("kind" -> visitKind(tpe.kind))
-    case baseType: Type.BaseType => ???
-    case Type.KindedVar(id, kind, loc, rigidity, text) => ???
-    case Type.UnkindedVar(id, loc, rigidity, text) => ???
     case Type.Cst(tc, loc) =>
       val typeConst = tc match {
         case TypeConstructor.Bool => ("tag" -> "Bool")
