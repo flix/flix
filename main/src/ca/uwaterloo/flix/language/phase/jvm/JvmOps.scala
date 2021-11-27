@@ -431,7 +431,6 @@ object JvmOps {
     replace("*", Flix.Delimiter + "asterisk").
     replace("/", Flix.Delimiter + "fslash").
     replace("\\", Flix.Delimiter + "bslash").
-    replace("%", Flix.Delimiter + "percent").
     replace("<", Flix.Delimiter + "less").
     replace(">", Flix.Delimiter + "greater").
     replace("=", Flix.Delimiter + "eq").
