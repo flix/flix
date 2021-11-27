@@ -16,7 +16,8 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import ca.uwaterloo.flix.language.phase.jvm.JvmName.{Delimiter, DevFlixRuntime, JavaLang, RootPackage}
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.{DevFlixRuntime, JavaLang, RootPackage}
 
 /**
   * Represents all Flix types that are objects on the JVM (array is an exception).
@@ -57,7 +58,7 @@ sealed trait BackendObjType {
   private def mkName(prefix: String, args: List[BackendType]): String = {
     // TODO: Should delimiter always be included?
     if (args.isEmpty) prefix
-    else s"$prefix$Delimiter${args.map(e => e.toErased.toErasedString).mkString(Delimiter)}"
+    else s"$prefix${Flix.Delimiter}${args.map(e => e.toErased.toErasedString).mkString(Flix.Delimiter)}"
   }
 
   private def mkName(prefix: String, arg: BackendType): String =
@@ -87,11 +88,11 @@ object BackendObjType {
   case class Arrow(args: List[BackendType], result: BackendType) extends BackendObjType
 
   case object RecordEmpty extends BackendObjType {
-    val interface: JvmName = JvmName(RootPackage, s"IRecord$Delimiter")
+    val interface: JvmName = JvmName(RootPackage, s"IRecord" + Flix.Delimiter)
   }
 
   case class RecordExtend(field: String, value: BackendType, rest: BackendType) extends BackendObjType {
-    val interface: JvmName = JvmName(RootPackage, s"IRecord$Delimiter")
+    val interface: JvmName = JvmName(RootPackage, s"IRecord" + Flix.Delimiter)
   }
 
   // case object SchemaEmpty extends BackendObjType
