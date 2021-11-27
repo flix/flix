@@ -67,7 +67,7 @@ namespace Iterator {
     ///
     /// Assumes `f` may throw a Java `RuntimeException`.
     ///
-    pub def ofException(f: Unit -> a & Impure, x: Ref[a]): Iterator[Result[a, String]] =
+    pub def ofException(f: Unit -> a & ef, x: Ref[a]): Iterator[Result[a, String]] =
         let done = () -> Object.isNull(deref x);
         let next = () -> Result.try(f);
         Iterator(done, next)
@@ -77,7 +77,7 @@ namespace Iterator {
     ///
     /// Assumes that `f` eventually exhausts the resource at `x`.
     ///
-    pub def ofNullable(f: Unit -> a & Impure, x: Ref[a]): Iterator[a] =
+    pub def ofNullable(f: Unit -> a & ef, x: Ref[a]): Iterator[a] =
         let done = () -> Object.isNull(deref x);
         Iterator(done, f)
 
