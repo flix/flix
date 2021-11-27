@@ -20,8 +20,10 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst.Root
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.Branch.{FalseBranch, TrueBranch}
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{Finality, Instancing, Visibility}
-import ca.uwaterloo.flix.language.phase.jvm.GenRecordInterfaces.{LookupFieldFunctionName, RestrictFieldFunctionName}
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.IsPublic
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{Final, Static, Visibility}
+import ca.uwaterloo.flix.language.phase.jvm.GenRecordInterface.{LookupFieldFunctionName, RestrictFieldFunctionName}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 
 object GenRecordExtendClasses {
@@ -67,17 +69,17 @@ object GenRecordExtendClasses {
     * then this field should no longer be in the record. We then return 'this'.
     */
   private def genByteCode(extendType: BackendObjType.RecordExtend)(implicit root: Root, flix: Flix): Array[Byte] = {
-    val cm = ClassMaker.mkClass(extendType.jvmName, Visibility.Public, Finality.Final, interfaces = List(extendType.interface))
+    val cm = ClassMaker.mkClass(extendType.jvmName, IsFinal, interfaces = List(extendType.interface))
 
-    cm.mkField(LabelFieldName, BackendObjType.String.toTpe, Visibility.Public, Finality.NonFinal, Instancing.NonStatic)
-    cm.mkField(ValueFieldName, extendType.value, Visibility.Public, Finality.NonFinal, Instancing.NonStatic)
-    cm.mkField(RestFieldName, extendType.interface.toObjTpe.toTpe, Visibility.Public, Finality.NonFinal, Instancing.NonStatic)
+    cm.mkField(LabelFieldName, BackendObjType.String.toTpe, IsPublic, NotFinal)
+    cm.mkField(ValueFieldName, extendType.value, IsPublic, NotFinal)
+    cm.mkField(RestFieldName, extendType.interface.toObjTpe.toTpe, IsPublic, NotFinal)
 
-    cm.mkObjectConstructor(Visibility.Public)
+    cm.mkObjectConstructor(IsPublic)
 
     val stringToRecordInterface = mkDescriptor(BackendObjType.String.toTpe)(extendType.interface.toObjTpe.toTpe)
-    cm.mkMethod(genLookupFieldMethod(extendType), LookupFieldFunctionName, stringToRecordInterface, Visibility.Public, Finality.Final, Instancing.NonStatic)
-    cm.mkMethod(genRestrictFieldMethod(extendType), RestrictFieldFunctionName, stringToRecordInterface, Visibility.Public, Finality.Final, Instancing.NonStatic)
+    cm.mkMethod(genLookupFieldMethod(extendType), LookupFieldFunctionName, stringToRecordInterface, IsPublic, IsFinal)
+    cm.mkMethod(genRestrictFieldMethod(extendType), RestrictFieldFunctionName, stringToRecordInterface, IsPublic, IsFinal)
 
     cm.closeClassMaker
   }

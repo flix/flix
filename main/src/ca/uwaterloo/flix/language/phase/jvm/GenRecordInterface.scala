@@ -18,61 +18,38 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst.Root
-import org.objectweb.asm.Opcodes._
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 
 /**
   * Generates bytecode for the record interface.
   */
-object GenRecordInterfaces {
-
+object GenRecordInterface {
   val LookupFieldFunctionName: String = "lookupField"
-
   val RestrictFieldFunctionName: String = "restrictField"
+  private val recordInterface: JvmName = BackendObjType.RecordEmpty.interface
 
   /**
     * Returns a Map with a single entry, for the record interface
     */
   def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
-    val jvmType = JvmOps.getRecordInterfaceType()
-    val jvmName = jvmType.name
-    val bytecode = genByteCode(jvmType)
-    Map(jvmName -> JvmClass(jvmName, bytecode))
+    Map(recordInterface -> JvmClass(recordInterface, genByteCode()))
   }
 
   /**
     * This method will generate code for a record interface.
     * There is a lookupField method which returns the Record (Object) with the given label
-    * There is also a restrictField which given a label removes said label from the record
+    * There is also a restrictField which given a label removes said label from the record.
     * After creating a record object using a record class,
     * the class type should never be used to reference to that object and this interface should be used for all interactions
     * with that object.
     */
-  private def genByteCode(interfaceType: JvmType.Reference)(implicit root: Root, flix: Flix): Array[Byte] = {
-    // class writer
-    val visitor = AsmOps.mkClassWriter()
+  private def genByteCode()(implicit root: Root, flix: Flix): Array[Byte] = {
+    val cm = ClassMaker.mkInterface(recordInterface)
 
-    // Super descriptor
-    val superClass = JvmName.Object.toInternalName
+    val stringToInterface = mkDescriptor(BackendObjType.String.toTpe)(recordInterface.toObjTpe.toTpe)
+    cm.mkAbstractMethod(LookupFieldFunctionName, stringToInterface)
+    cm.mkAbstractMethod(RestrictFieldFunctionName, stringToInterface)
 
-    // Initialize the visitor to create a class.
-    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_ABSTRACT + ACC_INTERFACE, interfaceType.name.toInternalName, null, superClass, Array())
-
-    // Source of the class
-    visitor.visitSource(interfaceType.name.toInternalName, null)
-
-    //Emitting a getRecordWithField method
-    val getRecordWithField = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, LookupFieldFunctionName,
-      AsmOps.getMethodDescriptor(List(JvmType.String), interfaceType), null, null)
-    getRecordWithField.visitEnd()
-
-    //Emitting a restrictField method
-    val restrictField = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, RestrictFieldFunctionName,
-      AsmOps.getMethodDescriptor(List(JvmType.String), interfaceType), null, null)
-    restrictField.visitEnd()
-
-
-    visitor.visitEnd()
-    visitor.toByteArray
+    cm.closeClassMaker
   }
-
 }

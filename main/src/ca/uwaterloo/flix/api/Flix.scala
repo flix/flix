@@ -31,6 +31,13 @@ import java.nio.file.{Files, Path, Paths}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
+object Flix {
+  /**
+    * The reserved Flix delimiter.
+    */
+  val Delimiter: String = "%"
+}
+
 /**
   * Main programmatic interface for Flix.
   */

@@ -19,14 +19,15 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.Branch.{FalseBranch, TrueBranch}
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Finality._
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Instancing._
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final._
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility._
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 
 object GenMatchErrorClass {
 
   val LocationFieldName: String = "location"
+  private val reifiedSourceLocationName = JvmName.ReifiedSourceLocation
+  private val reifiedSourceLocationType = JvmName.ReifiedSourceLocation.toObjTpe.toTpe
 
   /**
     * Creates a subclass of `dev.flix.runtime.FlixError` with a
@@ -38,14 +39,14 @@ object GenMatchErrorClass {
   }
 
   private def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = ClassMaker.mkClass(JvmName.MatchError, Public, Final, superClass = JvmName.FlixError)
+    val cm = ClassMaker.mkClass(JvmName.MatchError, IsFinal, superClass = JvmName.FlixError)
 
-    cm.mkConstructor(genConstructor(), mkDescriptor(JvmName.ReifiedSourceLocation.toObjTpe.toTpe)(VoidableType.Void), Public)
+    cm.mkConstructor(genConstructor(), mkDescriptor(reifiedSourceLocationType)(VoidableType.Void), IsPublic)
 
     // TODO: Are these ever used?
-    cm.mkMethod(genEquals(), "equals", mkDescriptor(JvmName.Object.toObjTpe.toTpe)(BackendType.Bool), Public, NonFinal, NonStatic)
-    cm.mkMethod(genHashCode(), "hashCode", mkDescriptor()(BackendType.Int32), Public, NonFinal, NonStatic)
-    cm.mkField(LocationFieldName, JvmName.ReifiedSourceLocation.toObjTpe.toTpe, Public, Final, NonStatic)
+    cm.mkMethod(genEquals(), "equals", mkDescriptor(JvmName.Object.toObjTpe.toTpe)(BackendType.Bool), IsPublic, NotFinal)
+    cm.mkMethod(genHashCode(), "hashCode", mkDescriptor()(BackendType.Int32), IsPublic, NotFinal)
+    cm.mkField(LocationFieldName, reifiedSourceLocationType, IsPublic, IsFinal)
 
     cm.closeClassMaker
   }
@@ -59,13 +60,13 @@ object GenMatchErrorClass {
       pushString("Non-exhaustive match at ") ~
       INVOKEVIRTUAL(JvmName.StringBuilder, "append", stringBuilderDescriptor) ~
       ALOAD(1) ~
-      INVOKEVIRTUAL(JvmName.ReifiedSourceLocation, "toString", mkDescriptor()(BackendObjType.String.toTpe)) ~
+      INVOKEVIRTUAL(reifiedSourceLocationName, "toString", mkDescriptor()(BackendObjType.String.toTpe)) ~
       INVOKEVIRTUAL(JvmName.StringBuilder, "append", stringBuilderDescriptor) ~
       INVOKEVIRTUAL(JvmName.StringBuilder, "toString", mkDescriptor()(BackendObjType.String.toTpe)) ~
       invokeConstructor(JvmName.FlixError, mkDescriptor(BackendObjType.String.toTpe)(VoidableType.Void)) ~
       loadThis() ~
       ALOAD(1) ~
-      PUTFIELD(JvmName.MatchError, LocationFieldName, JvmName.ReifiedSourceLocation.toObjTpe.toTpe) ~
+      PUTFIELD(JvmName.MatchError, LocationFieldName, reifiedSourceLocationType) ~
       RETURN()
   }
 
@@ -89,9 +90,9 @@ object GenMatchErrorClass {
                         CHECKCAST(JvmName.MatchError) ~
                         ASTORE(2) ~
                         loadThis() ~
-                        GETFIELD(JvmName.MatchError, LocationFieldName, JvmName.ReifiedSourceLocation.toObjTpe.toTpe) ~
+                        GETFIELD(JvmName.MatchError, LocationFieldName, reifiedSourceLocationType) ~
                         ALOAD(2) ~
-                        GETFIELD(JvmName.MatchError, LocationFieldName, JvmName.ReifiedSourceLocation.toObjTpe.toTpe) ~
+                        GETFIELD(JvmName.MatchError, LocationFieldName, reifiedSourceLocationType) ~
                         INVOKESTATIC(JvmName.Objects, "equals", mkDescriptor(JvmName.Object.toObjTpe.toTpe, JvmName.Object.toObjTpe.toTpe)(BackendType.Bool)) ~
                         IRETURN()
                     case FalseBranch =>
@@ -108,7 +109,7 @@ object GenMatchErrorClass {
       DUP() ~
       ICONST_0() ~
       loadThis() ~
-      GETFIELD(JvmName.MatchError, LocationFieldName, JvmName.ReifiedSourceLocation.toObjTpe.toTpe) ~
+      GETFIELD(JvmName.MatchError, LocationFieldName, reifiedSourceLocationType) ~
       AASTORE() ~
       INVOKESTATIC(JvmName.Object, "hash", mkDescriptor(BackendType.Array(JvmName.Object.toObjTpe.toTpe))(BackendType.Int32)) ~
       IRETURN()
