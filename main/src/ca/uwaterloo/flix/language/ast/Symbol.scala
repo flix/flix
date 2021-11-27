@@ -234,7 +234,7 @@ object Symbol {
     /**
       * Human readable representation.
       */
-    override def toString: String = text + "$" + id
+    override def toString: String = text + Flix.Delimiter + id
   }
 
   /**
@@ -254,7 +254,7 @@ object Symbol {
       */
     def name: String = id match {
       case None => text
-      case Some(i) => text + "$" + i
+      case Some(i) => text + Flix.Delimiter + i
     }
 
     /**
@@ -342,7 +342,7 @@ object Symbol {
     /**
       * Human readable representation.
       */
-    override def toString: String = clazz.toString + "$" + id
+    override def toString: String = clazz.toString + Flix.Delimiter + id
 
     /**
       * The name of the instance.
@@ -393,7 +393,7 @@ object Symbol {
     /**
       * Human readable representation.
       */
-    override def toString: String = text + "$" + id
+    override def toString: String = text + Flix.Delimiter + id
   }
 
   /**
