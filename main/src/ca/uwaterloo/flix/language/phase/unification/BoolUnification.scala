@@ -84,14 +84,36 @@ object BoolUnification {
     try {
       val subst = successiveVariableElimination(query, freeVars)
 
-      //    if (!subst.isEmpty) {
-      //      val s = subst.toString
-      //      val len = s.length
-      //      if (len > 50) {
-      //        println(s.substring(0, Math.min(len, 300)))
-      //        println()
-      //      }
-      //    }
+      var sameSat : Boolean = (satisfiable(query) == satisfiable(nnf(query)))
+      var isNNF : Boolean = is_nnf(nnf(query))
+
+      if (!sameSat || !isNNF) {
+        print("ERROR:")
+        if (!sameSat) {
+          println("(SAT): " + satisfiable(query) + " / " + satisfiable(nnf(query)))
+          println("QUERY: ")
+          println(query)
+          println("NNF: ")
+          println(nnf(query))
+        }
+        if (!isNNF) {
+          println("(NOT NNF): ")
+          println("QUERY: ")
+          println(query)
+          println("NNF: ")
+          println(nnf(query))
+        }
+      sys.exit(0)
+      }
+
+//          if (!subst.isEmpty) {
+//            val s = subst.toString
+//            val len = s.length
+//            if (len > 50) {
+//              println(s.substring(0, Math.min(len, 300)))
+//              println()
+//            }
+//          }
 
       Ok(subst)
     } catch {
@@ -358,6 +380,129 @@ object BoolUnification {
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, _), x, _), y, _) => Some((x, y))
       case _ => None
     }
+  }
+
+  def nnf(tpe: Type): Type = tpe match {
+
+    // ¬(x ∨ y) => ¬x ∧ ¬y
+    case  Type.Apply(
+            Type.Cst(TypeConstructor.Not, _),
+            Type.Apply(
+              Type.Apply(
+                Type.Cst(TypeConstructor.Or, _),
+                x,
+                _
+              ),
+              y,
+              _
+            ),
+            _
+          )
+    => {
+      var notx: Type = Type.Apply(Type.Not, x, null)
+      var noty: Type = Type.Apply(Type.Not, y, null)
+      var t1: Type = nnf(notx)
+      var t2: Type = nnf(noty)
+      Type.Apply(Type.Apply(Type.And, t1, null), t2, null)
+    }
+
+    // ¬(x ∧ y) => ¬x ∨ ¬y
+    case  Type.Apply(
+            Type.Cst(TypeConstructor.Not, _),
+            Type.Apply(
+              Type.Apply(
+                Type.Cst(TypeConstructor.And, _),
+                x,
+                _
+              ),
+              y,
+              _
+            ),
+            _
+          )
+    => {
+      var notx: Type = Type.Apply(Type.Not, x, null)
+      var noty: Type = Type.Apply(Type.Not, y, null)
+      var t1: Type = nnf(notx)
+      var t2: Type = nnf(noty)
+      Type.Apply(Type.Apply(Type.Or, t1, null), t2, null)
+    }
+
+    // ¬¬x => x
+    case  Type.Apply(
+            Type.Cst(TypeConstructor.Not, _),
+            Type.Apply(
+              Type.Cst(TypeConstructor.Not, _),
+              x,
+              _
+            ),
+            _
+          )
+    => nnf(x)
+
+    // Catch all binary.
+    case  Type.Apply(
+            Type.Apply(
+              op,
+              x,
+              _
+            ),
+            y,
+            _
+          )
+    => {
+      var convx: Type = nnf(x)
+      var convy: Type = nnf(y)
+      Type.Apply(Type.Apply(op, convx, null), convy, null)
+    }
+
+    // Catch all unary.
+    case _ => tpe
+  }
+
+  def is_nnf(tpe: Type): Boolean = tpe match {
+
+    // ¬(x op y)
+    case  Type.Apply(
+            Type.Not,
+            Type.Apply(
+              Type.Apply(
+                op,
+                x,
+                _
+              ),
+              y,
+              _
+            ),
+            _
+          )
+    => false
+
+    // ¬¬x
+    case  Type.Apply(
+            Type.Not,
+            Type.Apply(
+              Type.Not,
+              x,
+              _
+            ),
+            _,
+          )
+    => false
+
+    // (x op y)
+    case  Type.Apply(
+            Type.Apply(
+              op,
+              x,
+              _
+            ),
+            y,
+            _
+          )
+    => is_nnf(x) && is_nnf(y)
+
+    case _ => true
   }
 
 }
