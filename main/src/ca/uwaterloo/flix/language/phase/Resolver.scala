@@ -403,7 +403,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         */
       def mkFreshFparams(arity: Int, loc: SourceLocation): List[ResolvedAst.FormalParam] = {
         // Introduce a fresh variable symbol for each argument of the function definition.
-        val varSyms = (0 until arity).map(i => Symbol.freshVarSym("$" + i, BoundBy.FormalParam, loc)).toList
+        val varSyms = (0 until arity).map(i => Symbol.freshVarSym(Flix.Delimiter + i, BoundBy.FormalParam, loc)).toList
 
         // Introduce a formal parameter for each variable symbol.
         varSyms.map(sym => ResolvedAst.FormalParam(sym, Ast.Modifiers.Empty, sym.tvar, loc))
