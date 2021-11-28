@@ -28,13 +28,16 @@ object CodeHinter {
   /**
     * Returns a collection of code quality hints for the given AST `root`.
     */
-  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CodeHint] = flix.phase("CodeQuality") {
-    val hints = root.defs.values.flatMap(visitDef(_)(root)).toList
-    if (hints.isEmpty)
-      root.toSuccess
-    else
-      Failure(hints.to(LazyList))
+  def run(root: TypedAst.Root, sources: Set[String])(implicit flix: Flix): List[CodeHint] = {
+    val codeHints = root.defs.values.flatMap(visitDef(_)(root)).toList
+    codeHints.filter(include(_, sources))
   }
+
+  /**
+    * Returns `true` if the given code `hint` should be included in the result.
+    */
+  private def include(hint: CodeHint, sources: Set[String]): Boolean =
+    sources.contains(hint.loc.source.name)
 
   /**
     * Computes code quality hints for the given definition `def0`.

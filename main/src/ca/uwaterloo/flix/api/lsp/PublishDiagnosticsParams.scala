@@ -39,11 +39,11 @@ object PublishDiagnosticsParams {
     }
   }
 
-  def fromCodeHints(errors: LazyList[CodeHint]): List[PublishDiagnosticsParams] = {
+  def fromCodeHints(codeHints: List[CodeHint]): List[PublishDiagnosticsParams] = {
     val formatter: Formatter = Formatter.NoFormatter
 
     // Group the error messages by source.
-    val errorsBySource = errors.toList.groupBy(_.loc.source)
+    val errorsBySource = codeHints.groupBy(_.loc.source)
 
     // Translate each code hint to a diagnostic.
     errorsBySource.foldLeft(Nil: List[PublishDiagnosticsParams]) {
