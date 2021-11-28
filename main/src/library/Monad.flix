@@ -20,14 +20,7 @@
 /// supports extraction of monadic values, or, viewed differently, allows to combine (flatten) nested
 /// monadic values (`flapMap` can be understood as a `Functor.map` followed by a `flatten`).
 ///
-lawless class Monad[m : Type -> Type] with Applicative[m] {
-
-    ///
-    /// Puts `x` into a default context.
-    ///
-    /// Re-exported from Applicative.
-    ///
-    pub def point(x: a) : m[a] = Applicative.point(x)
+class Monad[m : Type -> Type] with Applicative[m] {
 
     ///
     /// Apply function `f` to the monadic value `x`, resulting in a combined monadic value.
