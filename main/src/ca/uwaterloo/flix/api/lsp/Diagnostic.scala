@@ -27,7 +27,7 @@ import org.json4s._
 object Diagnostic {
   def from(compilationMessage: CompilationMessage, formatter: Formatter): Diagnostic = {
     val range = Range.from(compilationMessage.loc)
-    val severity = Some(DiagnosticSeverity.from(compilationMessage.severity))
+    val severity = Some(DiagnosticSeverity.Error)
     val code = compilationMessage.kind
     val summary = compilationMessage.summary
     val explanationHeading =
