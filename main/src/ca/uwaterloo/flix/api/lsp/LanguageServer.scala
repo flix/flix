@@ -329,8 +329,8 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
               ("id" -> requestId) ~ ("status" -> "success") ~ ("time" -> e)
             case Failure(l) =>
               // Case 2: Code hints are available.
-              val errors = l.filter(hint => sources.contains(hint.loc.source.name))
-              val results = PublishDiagnosticsParams.from(errors)
+              val codeHints = l.filter(hint => sources.contains(hint.loc.source.name))
+              val results = PublishDiagnosticsParams.fromCodeHints(codeHints)
               ("id" -> requestId) ~ ("status" -> "failure") ~ ("result" -> results.map(_.toJSON))
           }
 
@@ -339,7 +339,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
           // Mark the AST as outdated.
           current = false
-          val results = PublishDiagnosticsParams.from(errors)
+          val results = PublishDiagnosticsParams.fromMessages(errors)
           ("id" -> requestId) ~ ("status" -> "failure") ~ ("result" -> results.map(_.toJSON))
       }
     } catch {

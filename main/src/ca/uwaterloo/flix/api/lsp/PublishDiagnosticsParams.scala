@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.errors.CodeHint
 import ca.uwaterloo.flix.util.Formatter
 import org.json4s.JsonDSL._
 import org.json4s._
@@ -24,7 +25,7 @@ import org.json4s._
   * Companion object of [[PublishDiagnosticsParams]].
   */
 object PublishDiagnosticsParams {
-  def from(errors: LazyList[CompilationMessage]): List[PublishDiagnosticsParams] = {
+  def fromMessages(errors: LazyList[CompilationMessage]): List[PublishDiagnosticsParams] = {
     val formatter: Formatter = Formatter.NoFormatter
 
     // Group the error messages by source.
@@ -34,6 +35,20 @@ object PublishDiagnosticsParams {
     errorsBySource.foldLeft(Nil: List[PublishDiagnosticsParams]) {
       case (acc, (source, compilationMessages)) =>
         val diagnostics = compilationMessages.map(msg => Diagnostic.from(msg, formatter))
+        PublishDiagnosticsParams(source.name, diagnostics) :: acc
+    }
+  }
+
+  def fromCodeHints(errors: LazyList[CodeHint]): List[PublishDiagnosticsParams] = {
+    val formatter: Formatter = Formatter.NoFormatter
+
+    // Group the error messages by source.
+    val errorsBySource = errors.toList.groupBy(_.loc.source)
+
+    // Translate each code hint to a diagnostic.
+    errorsBySource.foldLeft(Nil: List[PublishDiagnosticsParams]) {
+      case (acc, (source, codeHints)) =>
+        val diagnostics = codeHints.map(codeHint => Diagnostic.from(codeHint, formatter))
         PublishDiagnosticsParams(source.name, diagnostics) :: acc
     }
   }
