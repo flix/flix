@@ -177,6 +177,7 @@ namespace BigInt {
     /// (i.e. 1.4E-45 to 3.4028235E38).
     ///
     pub def tryToFloat32(x: BigInt): Option[Float32] =
+        use Option.flatMap;
         import new java.math.BigDecimal(BigInt) as newBigDecimal;
         import java.math.BigDecimal.floatValue();
         let xd = newBigDecimal(x) as & Pure;
@@ -199,6 +200,7 @@ namespace BigInt {
     /// (i.e 4.9E-324 to 1.7976931348623157E308).
     ///
     pub def tryToFloat64(x: BigInt): Option[Float64] =
+        use Option.flatMap;
         import new java.math.BigDecimal(BigInt) as newBigDecimal;
         import java.math.BigDecimal.doubleValue();
         let xd = newBigDecimal(x) as & Pure;
@@ -292,6 +294,7 @@ namespace BigInt {
     /// Returns `x` clamped within the Float32 range `minimum` to `maximum`.
     ///
     pub def clampToFloat32(x: BigInt, minimum: Float32, maximum: Float32): Float32 =
+        use Option.flatMap;
         import new java.math.BigDecimal(BigInt) as newBigDecimal;
         import java.math.BigDecimal.floatValue();
         let step = () -> {
@@ -312,6 +315,7 @@ namespace BigInt {
     /// Returns `x` clamped within the Float64 range `minimum` to `maximum`.
     ///
     pub def clampToFloat64(x: BigInt, minimum: Float64, maximum: Float64): Float64 =
+        use Option.flatMap;
         import new java.math.BigDecimal(BigInt) as newBigDecimal;
         import java.math.BigDecimal.doubleValue();
         let step = () -> {

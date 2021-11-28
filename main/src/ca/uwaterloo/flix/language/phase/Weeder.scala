@@ -642,10 +642,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       //
       // Rewrites a monadic let-match to a regular let-binding or a full-blown pattern match inside a flatMap.
       //
-      // let* x = exp1; exp2     ==>   Monad.flatMap(x -> exp2)(exp1)
+      // let* x = exp1; exp2     ==>   flatMap(x -> exp2)(exp1)
       //
-      val qname = Name.mkQName("Monad.flatMap", sp1, sp2)
-      val flatMap = WeededAst.Expression.DefOrSig(qname, loc)
+      val ident = Name.Ident(sp1, "flatMap", sp2)
+      val flatMap = WeededAst.Expression.VarOrDefOrSig(ident, loc)
 
       mapN(visitPattern(pat), visitExp(exp1), visitExp(exp2)) {
         case (WeededAst.Pattern.Var(ident, loc), value, body) =>
