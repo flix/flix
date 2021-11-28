@@ -29,6 +29,21 @@ trait CodeHint extends CompilationMessage {
 object CodeHint {
 
   /**
+    * A code hint that indicates a symbol is deprecated.
+    *
+    * @param loc the location of the expression.
+    */
+  case class Deprecated(loc: SourceLocation) extends CodeHint {
+    def summary: String = s"Deprecated."
+
+    override def severity: Severity = Severity.Info
+
+    def message(formatter: Formatter): String = summary
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
     * A code hint that indicates that a purity polymorphic operation is lazy.
     *
     * @param sym the symbol of the operation that is lazy.
@@ -99,6 +114,21 @@ object CodeHint {
     */
   case class NonTrivialEffect(loc: SourceLocation) extends CodeHint {
     def summary: String = s"Expression has a non-trivial effect."
+
+    override def severity: Severity = Severity.Info
+
+    def message(formatter: Formatter): String = summary
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * A code hint that indicates an unsafe cast to pure.
+    *
+    * @param loc the location of the expression.
+    */
+  case class UnsafePurityCast(loc: SourceLocation) extends CodeHint {
+    def summary: String = s"Unsafe cast to pure."
 
     override def severity: Severity = Severity.Info
 

@@ -327,8 +327,9 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
             case Success(_) =>
               // Case 1: No code hints.
               ("id" -> requestId) ~ ("status" -> "success") ~ ("time" -> e)
-            case Failure(errors) =>
+            case Failure(l) =>
               // Case 2: Code hints are available.
+              val errors = l.filter(hint => sources.contains(hint.loc.source.name))
               val results = PublishDiagnosticsParams.from(errors)
               ("id" -> requestId) ~ ("status" -> "failure") ~ ("result" -> results.map(_.toJSON))
           }

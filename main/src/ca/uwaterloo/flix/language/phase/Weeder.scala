@@ -1934,10 +1934,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       case args =>
         past.ident.name match {
           case "benchmark" => WeededAst.Annotation(Ast.Annotation.Benchmark(loc), args, loc).toSuccess
-          case "deprecated" => WeededAst.Annotation(Ast.Annotation.Deprecated(loc), args, loc).toSuccess
           case "law" => WeededAst.Annotation(Ast.Annotation.Law(loc), args, loc).toSuccess
           case "lint" => WeededAst.Annotation(Ast.Annotation.Lint(loc), args, loc).toSuccess
           case "test" => WeededAst.Annotation(Ast.Annotation.Test(loc), args, loc).toSuccess
+          case "Deprecated" => WeededAst.Annotation(Ast.Annotation.Deprecated(loc), args, loc).toSuccess
           case "LazyWhenPure" => WeededAst.Annotation(Ast.Annotation.LazyWhenPure(loc), args, loc).toSuccess
           case "ParallelWhenPure" => WeededAst.Annotation(Ast.Annotation.ParallelWhenPure(loc), args, loc).toSuccess
           case "Time" => WeededAst.Annotation(Ast.Annotation.Time(loc), args, loc).toSuccess
