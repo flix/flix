@@ -321,17 +321,14 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
           val e = System.nanoTime() - t
 
           // Compute Code Quality hints.
-          val hints = CodeHinter.run(root)(flix)
-
-          hints match {
-            case Success(_) =>
-              // Case 1: No code hints.
-              ("id" -> requestId) ~ ("status" -> "success") ~ ("time" -> e)
-            case Failure(l) =>
-              // Case 2: Code hints are available.
-              val errors = l.filter(hint => sources.contains(hint.loc.source.name))
-              val results = PublishDiagnosticsParams.from(errors)
-              ("id" -> requestId) ~ ("status" -> "failure") ~ ("result" -> results.map(_.toJSON))
+          val codeHints = CodeHinter.run(root, sources.keySet.toSet)(flix)
+          if (codeHints.isEmpty) {
+            // Case 1: No code hints.
+            ("id" -> requestId) ~ ("status" -> "success") ~ ("time" -> e)
+          } else {
+            // Case 2: Code hints are available.
+            val results = PublishDiagnosticsParams.fromCodeHints(codeHints)
+            ("id" -> requestId) ~ ("status" -> "failure") ~ ("result" -> results.map(_.toJSON))
           }
 
         case Failure(errors) =>
@@ -339,7 +336,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
           // Mark the AST as outdated.
           current = false
-          val results = PublishDiagnosticsParams.from(errors)
+          val results = PublishDiagnosticsParams.fromMessages(errors)
           ("id" -> requestId) ~ ("status" -> "failure") ~ ("result" -> results.map(_.toJSON))
       }
     } catch {
