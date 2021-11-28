@@ -135,12 +135,6 @@ class TestMain extends FunSuite {
     assert(opts.xdebug)
   }
 
-  test("--Xno-bool-unification") {
-    val args = Array("--Xno-bool-unification", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xnoboolunification)
-  }
-
   test("--Xno-stratifier") {
     val args = Array("--Xno-stratifier", "p.flix")
     val opts = Main.parseCmdOpts(args).get

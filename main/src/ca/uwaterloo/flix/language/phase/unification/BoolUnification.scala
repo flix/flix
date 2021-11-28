@@ -30,12 +30,6 @@ object BoolUnification {
     */
   def unify(tpe1: Type, tpe2: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     ///
-    /// Return immediately if Boolean unification is disabled.
-    ///
-    if (flix.options.xnoboolunification)
-      return Ok(Substitution.empty)
-
-    ///
     /// Perform aggressive matching to optimize for common cases.
     ///
     if (tpe1 eq tpe2) {

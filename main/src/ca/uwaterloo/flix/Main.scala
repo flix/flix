@@ -84,7 +84,6 @@ object Main {
       progress = true,
       threads = cmdOpts.threads.getOrElse(Runtime.getRuntime.availableProcessors()),
       writeClassFiles = !cmdOpts.interactive,
-      xnoboolunification = cmdOpts.xnoboolunification,
       xnostratifier = cmdOpts.xnostratifier,
       xstatistics = cmdOpts.xstatistics,
       xstrictmono = cmdOpts.xstrictmono
@@ -250,7 +249,6 @@ object Main {
                      xbenchmarkThroughput: Boolean = false,
                      xlib: LibLevel = LibLevel.All,
                      xdebug: Boolean = false,
-                     xnoboolunification: Boolean = false,
                      xnostratifier: Boolean = false,
                      xstatistics: Boolean = false,
                      xstrictmono: Boolean = false,
@@ -399,17 +397,15 @@ object Main {
       opt[LibLevel]("Xlib").action((arg, c) => c.copy(xlib = arg)).
         text("[experimental] controls the amount of std. lib. to include (nix, min, all).")
 
-      // Xno-bool-unification
-      opt[Unit]("Xno-bool-unification").action((_, c) => c.copy(xnoboolunification = true)).
-        text("[experimental] disables bool unification.")
-
       // Xno-stratifier
       opt[Unit]("Xno-stratifier").action((_, c) => c.copy(xnostratifier = true)).
         text("[experimental] disables computation of stratification.")
 
+      // Xstatistics
       opt[Unit]("Xstatistics").action((_, c) => c.copy(xstatistics = true)).
         text("[experimental] prints compilation statistics.")
 
+      // Xstrictmono
       opt[Unit]("Xstrictmono").action((_, c) => c.copy(xstrictmono = true)).
         text("[experimental] enable strict monomorphization.")
 
