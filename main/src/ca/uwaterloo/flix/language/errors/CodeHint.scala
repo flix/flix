@@ -29,7 +29,7 @@ trait CodeHint extends CompilationMessage {
 object CodeHint {
 
   /**
-    * A code hint that indicates a symbol is deprecated.
+    * A code hint that indicates a deprecation.
     *
     * @param loc the location of the expression.
     */

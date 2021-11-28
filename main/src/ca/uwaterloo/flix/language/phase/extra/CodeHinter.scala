@@ -54,7 +54,7 @@ object CodeHinter {
     case Expression.Def(sym, _, loc) =>
       checkDeprecated(sym, loc)
 
-    case Expression.Sig(sym, _, loc) => Nil
+    case Expression.Sig(_, _, _) => Nil
 
     case Expression.Hole(_, _, _) => Nil
 
@@ -86,7 +86,7 @@ object CodeHinter {
 
     case Expression.Default(_, _) => Nil
 
-    case Expression.Lambda(fparam, exp, _, _) =>
+    case Expression.Lambda(_, exp, _, _) =>
       checkEffect(exp.eff, exp.loc) ++ visitExp(exp)
 
     case Expression.Apply(exp, exps, _, eff, loc) =>
