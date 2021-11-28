@@ -405,7 +405,6 @@ class Flix {
         PatternExhaustiveness |>
         Redundancy |>
         Terminator |>
-        Linter |>
         Safety
 
     // Apply the pipeline to the parsed AST.
