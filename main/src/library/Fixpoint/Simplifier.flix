@@ -37,7 +37,6 @@ namespace Fixpoint {
 
     def simplifyHelper(stratum: Set[RamSym[v]], stmt: RamStmt[v]): Option[RamStmt[v]] = match stmt {
         case RamStmt.Insert(op) =>
-            use Option.flatMap;
             let* newOp = simplifyOp(stratum, op);
             match newOp {
                 // Rewrite join loops that copy one relation into another into a `merge` statement.
@@ -99,7 +98,6 @@ namespace Fixpoint {
             else
                 Some(RelOp.If(newTest, then))
         case RelOp.Search(rowVar, ramSym, body) =>
-            use Option.flatMap;
             let* newBody = simplifyOp(stratum, body);
             match ramSym {
                 case RamSym.Delta(_) =>
@@ -110,7 +108,6 @@ namespace Fixpoint {
                 case _ => Some(RelOp.Search(rowVar, ramSym, newBody))
             }
         case RelOp.Query(rowVar, ramSym, query, body) =>
-            use Option.flatMap;
             let* newBody = simplifyOp(stratum, body);
             match ramSym {
                 case RamSym.Delta(_) =>
