@@ -36,7 +36,6 @@ object Options {
     loadClassFiles = true,
     writeClassFiles = true,
     xallowredundancies = false,
-    xlinter = false,
     xnoboolunification = false,
     xnostratifier = false,
     xstatistics = false,
@@ -79,7 +78,6 @@ object Options {
   * @param loadClassFiles     loads the generated class files into the JVM.
   * @param writeClassFiles    enables output of class files.
   * @param xallowredundancies disables the redundancy checker.
-  * @param xlinter            enables the semantic linter.
   * @param xnoboolunification disables boolean unification.
   * @param xnostratifier      disables computation of stratification.
   * @param xstatistics        enables statistics collection.
@@ -98,7 +96,6 @@ case class Options(lib: LibLevel,
                    loadClassFiles: Boolean,
                    writeClassFiles: Boolean,
                    xallowredundancies: Boolean,
-                   xlinter: Boolean,
                    xnoboolunification: Boolean,
                    xnostratifier: Boolean,
                    xstatistics: Boolean,
