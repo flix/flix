@@ -16,6 +16,7 @@
 
 namespace TestMutList {
     use ToString.toString;
+    use MutList.eq;
 
     ///
     /// Helper function to test capacity of internal array.
@@ -1296,67 +1297,67 @@ def cmp(x: Int32, y: Int32): Comparison =
 @test
 def sortWith01(): Bool & Impure =
     let a = MutList.sortWith(cmp, Array.toMutList([]: Array[Int32]));
-    a == Array.toMutList([]: Array[Int32])
+    a `eq` Array.toMutList([]: Array[Int32])
 
 @test
 def sortWith02(): Bool & Impure =
     let a = MutList.sortWith(cmp, Array.toMutList([0]));
-    a == Array.toMutList([0])
+    a `eq` Array.toMutList([0])
 
 @test
 def sortWith03(): Bool & Impure =
     let a = MutList.sortWith(cmp, Array.toMutList([0,1]));
-    a == Array.toMutList([0,1])
+    a `eq` Array.toMutList([0,1])
 
 @test
 def sortWith04(): Bool & Impure =
     let a = MutList.sortWith(cmp, Array.toMutList([1,0]));
-    a == Array.toMutList([0,1])
+    a `eq` Array.toMutList([0,1])
 
 @test
 def sortWith05(): Bool & Impure =
     let a = MutList.sortWith(cmp, Array.toMutList([1,1]));
-    a == Array.toMutList([1,1])
+    a `eq` Array.toMutList([1,1])
 
 @test
 def sortWith06(): Bool & Impure =
     let a = MutList.sortWith(cmp, Array.toMutList([0,1,2,3,4,5]));
-    a == Array.toMutList([0,1,2,3,4,5])
+    a `eq` Array.toMutList([0,1,2,3,4,5])
 
 @test
 def sortWith07(): Bool & Impure =
     let a = MutList.sortWith(cmp, Array.toMutList([5,4,3,2,1,0]));
-    a == Array.toMutList([0,1,2,3,4,5])
+    a `eq` Array.toMutList([0,1,2,3,4,5])
 
 @test
 def sortWith08(): Bool & Impure =
     let a = MutList.sortWith(cmp, Array.toMutList([5,3,0,4,1,2]));
-    a == Array.toMutList([0,1,2,3,4,5])
+    a `eq` Array.toMutList([0,1,2,3,4,5])
 
 @test
 def sortWith09(): Bool & Impure =
     let a = MutList.sortWith(cmp, Array.toMutList([2,3,0,4,1,2]));
-    a == Array.toMutList([0,1,2,2,3,4])
+    a `eq` Array.toMutList([0,1,2,2,3,4])
 
 @test
 def sortWith10(): Bool & Impure =
     let a = MutList.sortWith(flip(cmp), Array.toMutList([0,1,2,3,4,5]));
-    a == Array.toMutList([5,4,3,2,1,0])
+    a `eq` Array.toMutList([5,4,3,2,1,0])
 
 @test
 def sortWith11(): Bool & Impure =
     let a = MutList.sortWith(flip(cmp), Array.toMutList([5,4,3,2,1,0]));
-    a == Array.toMutList([5,4,3,2,1,0])
+    a `eq` Array.toMutList([5,4,3,2,1,0])
 
 @test
 def sortWith12(): Bool & Impure =
     let a = MutList.sortWith(flip(cmp), Array.toMutList([5,3,0,4,1,2]));
-    a == Array.toMutList([5,4,3,2,1,0])
+    a `eq` Array.toMutList([5,4,3,2,1,0])
 
 @test
 def sortWith13(): Bool & Impure =
     let a = MutList.sortWith(flip(cmp), Array.toMutList([2,3,0,4,1,2]));
-    a == Array.toMutList([4,3,2,2,1,0])
+    a `eq` Array.toMutList([4,3,2,2,1,0])
 
 /////////////////////////////////////////////////////////////////////////////
 // sort                                                                    //

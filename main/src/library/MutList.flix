@@ -21,14 +21,14 @@ pub enum MutList[a] {
     case MutList(Ref[Array[a]], Ref[Int32])
 }
 
-/*instance Eq[MutList[a]] with Eq[a] {
+instance Eq[MutList[a]] with Eq[a] {
         pub def eq(xs: MutList[a], ys: MutList[a]): Bool = {
             let MutList(l1, n1) = xs;
             let MutList(l2, n2) = ys;
             deref n1 == deref n2 and
                 Array.slice(0, deref n1, deref l1) == Array.slice(0, deref n2, deref l2)
         } as & Pure
-}*/
+}
 
 namespace MutList {
 
