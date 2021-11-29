@@ -265,9 +265,24 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
                   }
                   // Case 2: non instance error
                   if (instanceErrs.isEmpty) {
-                    return TypeError.GeneralizationError(declaredScheme, inferredSc, loc).toFailure
-                    // Case 3: instance error
+                    // Determine if the generalization error is because of effects.
+
+                    val inferredEff = inferredSc.base.arrowEffectType
+                    val declaredEff = declaredScheme.base.arrowEffectType
+
+                    val inferredEffScheme = Scheme(inferredSc.quantifiers, Nil, inferredEff)
+                    val declaredEffScheme = Scheme(declaredScheme.quantifiers, Nil, declaredEff)
+
+                    Scheme.checkLessThanEqual(inferredEffScheme, declaredEffScheme, classEnv) match {
+                      case Validation.Success(_) =>
+                        // Case 2.1: Regular generalization error.
+                        return TypeError.GeneralizationError(declaredScheme, inferredSc, loc).toFailure
+                      case Validation.Failure(_) =>
+                        // Case 2.2: Effect generalization error.
+                        return TypeError.EffectGeneralizationError(inferredEff, declaredEff, loc).toFailure
+                    }
                   } else {
+                    // Case 3: instance error
                     return Validation.Failure(instanceErrs)
                   }
               }

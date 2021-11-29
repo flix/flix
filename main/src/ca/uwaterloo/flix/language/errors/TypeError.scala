@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme, FormatType}
+import ca.uwaterloo.flix.language.debug.{Audience, FormatEff, FormatScheme, FormatType}
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -55,9 +55,6 @@ object TypeError {
          |""".stripMargin
     }
 
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
     def explain(formatter: Formatter): Option[String] = Some(
       """The declared type is more polymorphic than the inferred type. In other words,
         |the declared type has more type variables than the inferred type. Either:
@@ -65,6 +62,28 @@ object TypeError {
         |  (a) the declared type signature is incorrect, or
         |  (b) the implementation is incorrect.
         |""".stripMargin)
+  }
+
+  /**
+    * Effect Generalization Error.
+    *
+    * @param declared the declared effect.
+    * @param inferred the inferred effect.
+    * @param loc      the location where the error occurred.
+    */
+  case class EffectGeneralizationError(declared: Type, inferred: Type, loc: SourceLocation) extends TypeError {
+    def summary: String = s"The inferred effect '${FormatEff.formatEff(inferred)}' cannot be generalized to '${FormatEff.formatEff(declared)}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> The inferred effect: '${red(FormatEff.formatEff(inferred))}' cannot be generalized to '${red(FormatEff.formatEff(declared))}'.
+         |
+         |${code(loc, "unable to generalize the effect.")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -91,9 +110,6 @@ object TypeError {
          |""".stripMargin
     }
 
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
     def explain(formatter: Formatter): Option[String] = None
   }
 
@@ -163,9 +179,6 @@ object TypeError {
          |""".stripMargin
     }
 
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
     def explain(formatter: Formatter): Option[String] = None
   }
 
@@ -195,9 +208,6 @@ object TypeError {
          |""".stripMargin
     }
 
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
     def explain(formatter: Formatter): Option[String] = None
   }
 
@@ -227,9 +237,6 @@ object TypeError {
          |""".stripMargin
     }
 
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
     def explain(formatter: Formatter): Option[String] = None
   }
 
@@ -259,9 +266,6 @@ object TypeError {
          |""".stripMargin
     }
 
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
     def explain(formatter: Formatter): Option[String] = None
   }
 
@@ -283,9 +287,6 @@ object TypeError {
          |""".stripMargin
     }
 
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
     def explain(formatter: Formatter): Option[String] = None
   }
 
@@ -307,9 +308,6 @@ object TypeError {
          |""".stripMargin
     }
 
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
     def explain(formatter: Formatter): Option[String] = None
   }
 
