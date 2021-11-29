@@ -324,13 +324,14 @@ object TypeError {
       s"""${line(kind, source.format)}
          |>> No instance of class '${red(clazz.toString)}' for type ${red(FormatType.formatType(tpe))}.
          |
-         |${code(loc, s"no instance of class '${clazz.toString}' for type ${FormatType.formatType(tpe)}")}
+         |${code(loc, s"missing instance")}
          |""".stripMargin
     }
 
     def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Add an instance for the type."
+      """A type class operation is called on a type that does not have that operation.
+        |You may want to implement an instance for that type.
+        |""".stripMargin
     })
 
   }
@@ -348,22 +349,22 @@ object TypeError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.format)}
-         |>> Main function with wrong type.
+         |>> The main function has an unexpected type.
          |
-         |${code(loc, s"main function with wrong type.")}
+         |${code(loc, s"unexpected type.")}
          |""".stripMargin
     }
 
     def explain(formatter: Formatter): Option[String] = Some({
       s"""The main function must have the form:
          |
-         |  def main(args: Array[String]): Int & Impure = ...
+         |  def main(args: Array[String]): Int32 & Impure = ...
          |
          |i.e.
          |- it must return an integer which is the exit code, and
          |- it must have a side-effect (such as printing to the screen).
          |
-         |(If the arguments are not needed, then 'args' can be replaced with '_'.
+         |If the arguments `args` are not needed they can be replaced by an '_'.
          |""".stripMargin
     })
   }
