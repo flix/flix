@@ -126,9 +126,12 @@ object GenExpression {
     case Expression.ApplyClo(exp, args, tpe, _) =>
       // Type of the function abstract class
       val functionInterface = JvmOps.getFunctionInterfaceType(exp.tpe)
+      val closureAbstractClass = JvmOps.getClosureAbstractClassType(exp.tpe)
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-      // Casting to JvmType of FunctionInterface
-      visitor.visitTypeInsn(CHECKCAST, functionInterface.name.toInternalName)
+      // Casting to JvmType of closure abstract class
+      visitor.visitTypeInsn(CHECKCAST, closureAbstractClass.name.toInternalName)
+      // retrieving the unique thread object
+      visitor.visitMethodInsn(INVOKEVIRTUAL, closureAbstractClass.name.toInternalName, GenClosureAbstractClasses.GetUniqueThreadClosureFunctionName, AsmOps.getMethodDescriptor(Nil, closureAbstractClass), false)
       // Putting args on the Fn class
       for ((arg, i) <- args.zipWithIndex) {
         // Duplicate the FunctionInterface
@@ -167,10 +170,13 @@ object GenExpression {
     case Expression.ApplyCloTail(exp, args, _, _) =>
       // Type of the function abstract class
       val functionInterface = JvmOps.getFunctionInterfaceType(exp.tpe)
+      val closureAbstractClass = JvmOps.getClosureAbstractClassType(exp.tpe)
       // Evaluating the closure
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-      // Casting to JvmType of FunctionInterface
-      visitor.visitTypeInsn(CHECKCAST, functionInterface.name.toInternalName)
+      // Casting to JvmType of closure abstract class
+      visitor.visitTypeInsn(CHECKCAST, closureAbstractClass.name.toInternalName)
+      // retrieving the unique thread object
+      visitor.visitMethodInsn(INVOKEVIRTUAL, closureAbstractClass.name.toInternalName, GenClosureAbstractClasses.GetUniqueThreadClosureFunctionName, AsmOps.getMethodDescriptor(Nil, closureAbstractClass), false)
       // Putting args on the Fn class
       for ((arg, i) <- args.zipWithIndex) {
         // Duplicate the FunctionInterface
