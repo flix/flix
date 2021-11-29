@@ -256,7 +256,10 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
                 case Validation.Failure(errs) =>
                   val instanceErrs = errs.collect {
                     case UnificationError.NoMatchingInstance(tconstr) =>
-                      TypeError.NoMatchingInstance(tconstr.sym, tconstr.arg, tconstr.loc)
+                      if (tconstr.sym.name == "Eq")
+                        TypeError.MissingEq(tconstr.arg, tconstr.loc)
+                      else
+                        TypeError.NoMatchingInstance(tconstr.sym, tconstr.arg, tconstr.loc)
                   }
                   // Case 2: non instance error
                   if (instanceErrs.isEmpty) {
