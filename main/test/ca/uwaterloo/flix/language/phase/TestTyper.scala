@@ -161,13 +161,13 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestLeq.Wildcard.03") {
     val input = "def foo(a: Int): Int & _ = a"
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.GeneralizationError](result)
+    expectError[TypeError.EffectGeneralizationError](result)
   }
 
   test("TestLeq.Wildcard.04") {
     val input = "def foo(a: Int): Int & _ = a"
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.GeneralizationError](result)
+    expectError[TypeError.EffectGeneralizationError](result)
   }
 
   test("TestLeq.Wildcard.05") {

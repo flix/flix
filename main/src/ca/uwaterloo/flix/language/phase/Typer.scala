@@ -279,7 +279,10 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
                         return TypeError.GeneralizationError(declaredScheme, inferredSc, loc).toFailure
                       case Validation.Failure(_) =>
                         // Case 2.2: Effect generalization error.
-                        return TypeError.EffectGeneralizationError(inferredEff, declaredEff, loc).toFailure
+                        if (declaredEff == Type.Pure && inferredEff == Type.Impure) {
+                          return TypeError.ImpureDeclaredAsPure(inferredEff, declaredEff, loc).toFailure
+                        } else
+                          return TypeError.EffectGeneralizationError(inferredEff, declaredEff, loc).toFailure
                     }
                   } else {
                     // Case 3: instance error

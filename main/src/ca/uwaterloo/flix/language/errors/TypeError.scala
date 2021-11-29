@@ -87,6 +87,36 @@ object TypeError {
   }
 
   /**
+    * Impure function declared as pure.
+    *
+    * @param declared the declared effect.
+    * @param inferred the inferred effect.
+    * @param loc      the location where the error occurred.
+    */
+  case class ImpureDeclaredAsPure(declared: Type, inferred: Type, loc: SourceLocation) extends TypeError {
+    def summary: String = "Non-pure function declared as pure. A function with side-effects must be declared as impure."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Non-pure function declared as pure. A function with side-effects must be declared as impure.
+         |
+         |${code(loc, "non-pure function.")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      """A function whose body is impure must be declared as impure.
+        |
+        |For example:
+        |
+        |  def printHello(): Unit & Impure = println("Hello!")
+        |                         ^^^^^^^^
+        |""".stripMargin
+    })
+  }
+
+  /**
     * Mismatched Types.
     *
     * @param baseType1 the first base type.
