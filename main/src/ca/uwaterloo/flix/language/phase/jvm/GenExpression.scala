@@ -122,6 +122,10 @@ object GenExpression {
         compileExpression(v, visitor, currentClass, lenv0, entryPoint)
         visitor.visitFieldInsn(PUTFIELD, jvmType.name.toInternalName, s"clo$i", JvmOps.getErasedJvmType(f.tpe).toDescriptor)
       }
+      visitor.visitInsn(DUP)
+      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Thread.toInternalName, "currentThread", AsmOps.getMethodDescriptor(Nil, JvmType.Thread), false)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Thread.toInternalName, "getId", AsmOps.getMethodDescriptor(Nil, JvmType.PrimLong), false)
+      visitor.visitFieldInsn(PUTFIELD, jvmType.name.toInternalName, GenClosureClasses.IdFieldName, JvmType.PrimLong.toDescriptor)
 
     case Expression.ApplyClo(exp, args, tpe, _) =>
       // Type of the function abstract class

@@ -90,6 +90,7 @@ object JvmName {
   val RuntimeException: JvmName = JvmName(JavaLang, "RuntimeException")
   val Short: JvmName = JvmName(JavaLang, "Short")
   val StringBuilder: JvmName = JvmName(JavaLang, "StringBuilder")
+  val Thread: JvmName = JvmName(JavaLang, "Thread")
   val UnsupportedOperationException: JvmName = JvmName(JavaLang, "UnsupportedOperationException")
 
   //

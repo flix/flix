@@ -101,6 +101,7 @@ object JvmType {
   val Function: JvmType.Reference = Reference(JvmName.Function)
   val Object: JvmType.Reference = Reference(JvmName.Object)
   val String: JvmType.Reference = Reference(BackendObjType.String.jvmName)
+  val Thread: JvmType.Reference = Reference(JvmName.Thread)
 
   //
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Flix Types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

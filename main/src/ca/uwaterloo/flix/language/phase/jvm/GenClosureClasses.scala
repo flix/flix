@@ -29,6 +29,8 @@ import org.objectweb.asm.{ClassWriter, Label}
   */
 object GenClosureClasses {
 
+  val IdFieldName: String = "threadId"
+
   /**
     * Returns the set of closures classes for the given set of definitions `defs`.
     */
@@ -51,21 +53,22 @@ object GenClosureClasses {
     * For example, given the symbol `mkAdder` with type (Int32, Int32) -> Int32 and the free variable `x`, we create:
     *
     * public final class Clo$mkAdder implements Clo2$Int32$Int32$Int32 {
-    * public int clo0;
-    * public int arg0; // from Fn2$...
-    * public int arg1; // from Fn2$...
-    * public int result; // from Cont$...
+    *   public long threadId;
+    *   public int clo0;
+    *   public int arg0; // from Fn2$...
+    *   public int arg1; // from Fn2$...
+    *   public int result; // from Cont$...
     *
-    * public Clo$mkAdder() { }
+    *   public Clo$mkAdder() { }
     *
-    * public Clo2$Int32$Int32$Int32 getUniqueThreadClosure() {
-    *   Clo$mkAdder res = new Clo$mkAdder();
-    *   res.clo0 = this.clo0;
-    *   return res;
+    *   public Clo2$Int32$Int32$Int32 getUniqueThreadClosure() {
+    *     Clo$mkAdder res = new Clo$mkAdder();
+    *     res.clo0 = this.clo0;
+    *     return res;
     *
-    * public Cont$Int32 invoke() {
-    *   this.res = this.x + this.arg0;
-    *   return null;
+    *   public Cont$Int32 invoke() {
+    *     this.res = this.x + this.arg0;
+    *     return null;
     * }
     */
   private def genByteCode(closure: ClosureInfo)(implicit root: Root, flix: Flix): Array[Byte] = {
@@ -84,6 +87,9 @@ object GenClosureClasses {
     // Class visitor
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, classType.name.toInternalName, null,
       functionInterface.name.toInternalName, null)
+
+    // Thread id field for the creator of the closure
+    visitor.visitField(ACC_PUBLIC, IdFieldName, JvmType.PrimLong.toDescriptor, null, null)
 
     // Generate a field for each captured variable.
     for ((freeVar, index) <- closure.freeVars.zipWithIndex) {
@@ -191,6 +197,18 @@ object GenClosureClasses {
 
     val m = visitor.visitMethod(ACC_PUBLIC, GenClosureAbstractClasses.GetUniqueThreadClosureFunctionName, AsmOps.getMethodDescriptor(Nil, closureAbstractClass), null, null)
 
+    m.visitMethodInsn(INVOKESTATIC, JvmName.Thread.toInternalName, "currentThread", AsmOps.getMethodDescriptor(Nil, JvmType.Thread), false)
+    m.visitMethodInsn(INVOKEVIRTUAL, JvmName.Thread.toInternalName, "getId", AsmOps.getMethodDescriptor(Nil, JvmType.PrimLong), false)
+    m.visitIntInsn(ALOAD, 0)
+    m.visitFieldInsn(GETFIELD, classType.name.toInternalName, IdFieldName, JvmType.PrimLong.toDescriptor)
+    m.visitInsn(LCMP)
+    val newObjectLabel = new Label()
+    m.visitJumpInsn(IFNE, newObjectLabel)
+
+    m.visitIntInsn(ALOAD, 0)
+    m.visitInsn(ARETURN)
+
+    m.visitLabel(newObjectLabel)
     // Create the new clo object
     m.visitTypeInsn(NEW, classType.name.toInternalName)
     m.visitInsn(DUP)
@@ -204,6 +222,10 @@ object GenClosureClasses {
       m.visitFieldInsn(GETFIELD, classType.name.toInternalName, s"clo$i", fieldDescriptor)
       m.visitFieldInsn(PUTFIELD, classType.name.toInternalName, s"clo$i", fieldDescriptor)
     }
+    m.visitInsn(DUP)
+    m.visitMethodInsn(INVOKESTATIC, JvmName.Thread.toInternalName, "currentThread", AsmOps.getMethodDescriptor(Nil, JvmType.Thread), false)
+    m.visitMethodInsn(INVOKEVIRTUAL, JvmName.Thread.toInternalName, "getId", AsmOps.getMethodDescriptor(Nil, JvmType.PrimLong), false)
+    m.visitFieldInsn(PUTFIELD, classType.name.toInternalName, GenClosureClasses.IdFieldName, JvmType.PrimLong.toDescriptor)
 
     m.visitInsn(ARETURN)
 
