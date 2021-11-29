@@ -389,9 +389,20 @@ class Shell(initialPaths: List[Path], options: Options) {
         }
       case Validation.Failure(errors) =>
         terminal.writer().println()
+        val formatter = flix.getFormatter
         for (error <- errors) {
-          val msg = if (options.explain) error.message(flix.getFormatter) + error.explain(flix.getFormatter) else error.message(flix.getFormatter)
-          terminal.writer().print(msg)
+          if (options.explain) {
+            val message = error.message(formatter)
+            val explanationHeading =
+              s"""${formatter.underline("Explanation:")}
+                 |
+                 |""".stripMargin
+            val explanation = error.explain(formatter)
+            val msg = message + explanationHeading + explanation
+            terminal.writer().print(msg)
+          } else {
+            terminal.writer().print(error.message(formatter))
+          }
         }
         terminal.writer().println()
         terminal.writer().print(prompt)

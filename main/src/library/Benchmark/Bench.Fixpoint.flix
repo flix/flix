@@ -149,3 +149,8 @@ namespace Bench/Fixpoint {
         ]
 
 }
+
+// def main(_args: Array[String]) : Int32 & Impure =
+//     let s1 = Bench/Fixpoint.benchmarks();
+//     Benchmark.runWithBudget(s1, 250_000_000_000i64);
+//     0

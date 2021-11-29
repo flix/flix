@@ -1,5 +1,6 @@
 /*
  * Copyright 2017 Ramin Zarifi
+ * Copyright 2021 Jonathan Lindegaard Starup
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +21,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst._
 import ca.uwaterloo.flix.language.ast.SemanticOperator._
 import ca.uwaterloo.flix.language.ast.{MonoType, _}
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm
 import org.objectweb.asm.Opcodes._
@@ -112,199 +114,105 @@ object GenExpression {
       visitor.visitTypeInsn(NEW, jvmType.name.toInternalName)
       // Duplicate
       visitor.visitInsn(DUP)
-      // Load the context object
-      visitor.visitVarInsn(ALOAD, 1)
+      visitor.visitMethodInsn(INVOKESPECIAL, jvmType.name.toInternalName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
       // Capturing free args
-      for (f <- freeVars) {
+      for ((f, i) <- freeVars.zipWithIndex) {
+        visitor.visitInsn(DUP)
         val v = Expression.Var(f.sym, f.tpe, loc)
         compileExpression(v, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitFieldInsn(PUTFIELD, jvmType.name.toInternalName, s"clo$i", JvmOps.getErasedJvmType(f.tpe).toDescriptor)
       }
-      // Calling the constructor
-      val varTypes = freeVars.map(_.tpe).map(JvmOps.getErasedJvmType)
-      visitor.visitMethodInsn(INVOKESPECIAL, jvmType.name.toInternalName, "<init>", AsmOps.getMethodDescriptor(JvmType.Object +: varTypes, JvmType.Void), false)
 
     case Expression.ApplyClo(exp, args, tpe, _) =>
-      // Type of the function interface
+      // Type of the function abstract class
       val functionInterface = JvmOps.getFunctionInterfaceType(exp.tpe)
-      // Put the closure on `continuation` field of `Context`
-      visitor.visitVarInsn(ALOAD, 1)
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
       // Casting to JvmType of FunctionInterface
       visitor.visitTypeInsn(CHECKCAST, functionInterface.name.toInternalName)
-      // Saving the continuation so we don't have to use calculate this again
-      visitor.visitInsn(DUP)
-      // Putting args on the stack
-      for (arg <- args) {
+      // Putting args on the Fn class
+      for ((arg, i) <- args.zipWithIndex) {
         // Duplicate the FunctionInterface
         visitor.visitInsn(DUP)
-        // Erased Type
-        val argErasedType = JvmOps.getErasedJvmType(arg.tpe)
         // Evaluating the expression
         compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
-        if (AsmOps.getStackSize(argErasedType) == 1) {
-          visitor.visitInsn(SWAP)
-        } else {
-          visitor.visitInsn(DUP2_X1)
-          visitor.visitInsn(POP2)
-        }
+        visitor.visitFieldInsn(PUTFIELD, functionInterface.name.toInternalName,
+          s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
       }
-      visitor.visitInsn(POP)
-      AsmOps.compileClosureApplication(visitor, exp.tpe, args.map(_.tpe), tpe)
+      // Calling unwind and unboxing
+      visitor.visitMethodInsn(INVOKEVIRTUAL, functionInterface.name.toInternalName,
+        GenContinuationAbstractClasses.UnwindMethodName, AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe)), false)
+      AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
     case Expression.ApplyDef(name, args, tpe, _) =>
-      // Namespace of the Def
-      val ns = JvmOps.getNamespace(name)
-      // JvmType of `ns`
-      val nsJvmType = JvmOps.getNamespaceClassType(ns)
-      // Name of the field for `ns` on `Context`
-      val nsFieldName = JvmOps.getNamespaceFieldNameInContextClass(ns)
-      // Field for Def on `ns`
-      val defFiledName = JvmOps.getDefFieldNameInNamespaceClass(name)
       // JvmType of Def
       val defJvmType = JvmOps.getFunctionDefinitionClassType(name)
-      // Type of the function
-      val fnType = root.defs(name).tpe
-      // Type of the function interface
-      val functionInterface = JvmOps.getFunctionInterfaceType(fnType)
-      // Put the closure on `continuation` field of `Context`
-      visitor.visitVarInsn(ALOAD, 1)
-      // Load `Context`
-      visitor.visitVarInsn(ALOAD, 1)
-      // Load `ns`
-      visitor.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, nsFieldName, nsJvmType.toDescriptor)
-      // Load `continuation`
-      visitor.visitFieldInsn(GETFIELD, nsJvmType.name.toInternalName, defFiledName, defJvmType.toDescriptor)
-      // Casting to JvmType of FunctionInterface
-      visitor.visitTypeInsn(CHECKCAST, functionInterface.name.toInternalName)
-      visitor.visitInsn(DUP)
-      // Putting args on the stack
-      for (arg <- args) {
+
+      // Put the def on the stack
+      AsmOps.compileDefSymbol(name, visitor)
+
+      // Putting args on the Fn class
+      for ((arg, i) <- args.zipWithIndex) {
         // Duplicate the FunctionInterface
         visitor.visitInsn(DUP)
-        // Erased Type
-        val argErasedType = JvmOps.getErasedJvmType(arg.tpe)
         // Evaluating the expression
         compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
-        if (AsmOps.getStackSize(argErasedType) == 1) {
-          visitor.visitInsn(SWAP)
-        } else {
-          visitor.visitInsn(DUP2_X1)
-          visitor.visitInsn(POP2)
-        }
+        visitor.visitFieldInsn(PUTFIELD, defJvmType.name.toInternalName,
+          s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
       }
-      visitor.visitInsn(POP)
-      AsmOps.compileClosureApplication(visitor, fnType, args.map(_.tpe), tpe)
+      // Calling unwind and unboxing
+      visitor.visitMethodInsn(INVOKEVIRTUAL, defJvmType.name.toInternalName, GenContinuationAbstractClasses.UnwindMethodName,
+        AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe)), false)
+      AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
-    case Expression.ApplyCloTail(exp, args, tpe, _) =>
-      // Type of the function interface
+    case Expression.ApplyCloTail(exp, args, _, _) =>
+      // Type of the function abstract class
       val functionInterface = JvmOps.getFunctionInterfaceType(exp.tpe)
-      // Result type
-      val resultType = JvmOps.getErasedJvmType(tpe)
-      // Loading `Context`
-      visitor.visitVarInsn(ALOAD, 1)
       // Evaluating the closure
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
       // Casting to JvmType of FunctionInterface
       visitor.visitTypeInsn(CHECKCAST, functionInterface.name.toInternalName)
-      // Saving the continuation so we don't have to use calculate this again
-      visitor.visitInsn(DUP)
-      // Putting args on the stack
-      for (arg <- args) {
+      // Putting args on the Fn class
+      for ((arg, i) <- args.zipWithIndex) {
         // Duplicate the FunctionInterface
         visitor.visitInsn(DUP)
-        // Erased Type
-        val argErasedType = JvmOps.getErasedJvmType(arg.tpe)
         // Evaluating the expression
         compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
-        if (AsmOps.getStackSize(argErasedType) == 1) {
-          visitor.visitInsn(SWAP)
-        } else {
-          visitor.visitInsn(DUP2_X1)
-          visitor.visitInsn(POP2)
-        }
+        visitor.visitFieldInsn(PUTFIELD, functionInterface.name.toInternalName,
+          s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
       }
-      visitor.visitInsn(POP)
-      // Saving args to continuation in reverse order
-      for ((arg, ind) <- args.zipWithIndex.reverse) {
-        val argErasedType = JvmOps.getErasedJvmType(arg.tpe)
-        // Setting the arg
-        visitor.visitMethodInsn(INVOKEINTERFACE, functionInterface.name.toInternalName, s"setArg$ind",
-          AsmOps.getMethodDescriptor(List(argErasedType), JvmType.Void), true)
-      }
-      // Placing the interface on continuation field of `Context`
-      visitor.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
-      // Dummy value, since we have to put a result on top of the arg, this will be thrown away
-      pushDummyValue(visitor, tpe)
+      // Return the closure
+      visitor.visitInsn(ARETURN)
 
-    case Expression.ApplyDefTail(name, args, tpe, _) =>
-      // Namespace of the Def
-      val ns = JvmOps.getNamespace(name)
-      // JvmType of `ns`
-      val nsJvmType = JvmOps.getNamespaceClassType(ns)
-      // Name of the field for `ns` on `Context`
-      val nsFieldName = JvmOps.getNamespaceFieldNameInContextClass(ns)
-      // Field for Def on `ns`
-      val defFiledName = JvmOps.getDefFieldNameInNamespaceClass(name)
-      // JvmType of Def
-      val defJvmType = JvmOps.getFunctionDefinitionClassType(name)
+    case Expression.ApplyDefTail(name, args, _, _) =>
       // Type of the function
       val fnType = root.defs(name).tpe
-      // Type of the continuation interface
-      val cont = JvmOps.getContinuationInterfaceType(fnType)
-      // Type of the function interface
+      // Type of the function abstract class
       val functionInterface = JvmOps.getFunctionInterfaceType(fnType)
-      // Put the def on `continuation` field of `Context`
-      visitor.visitVarInsn(ALOAD, 1)
-      // Load `Context`
-      visitor.visitVarInsn(ALOAD, 1)
-      // Load `ns`
-      visitor.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, nsFieldName, nsJvmType.toDescriptor)
-      // Load Function
-      visitor.visitFieldInsn(GETFIELD, nsJvmType.name.toInternalName, defFiledName, defJvmType.toDescriptor)
-      // Result type
-      val resultType = JvmOps.getErasedJvmType(tpe)
-      // Casting to JvmType of FunctionInterface
-      visitor.visitTypeInsn(CHECKCAST, functionInterface.name.toInternalName)
-      // Putting args on the stack
-      visitor.visitInsn(DUP)
-      for (arg <- args) {
+
+      // Put the def on the stack
+      AsmOps.compileDefSymbol(name, visitor)
+      // Putting args on the Fn class
+      for ((arg, i) <- args.zipWithIndex) {
         // Duplicate the FunctionInterface
         visitor.visitInsn(DUP)
-        // Erased Type
-        val argErasedType = JvmOps.getErasedJvmType(arg.tpe)
         // Evaluating the expression
         compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
-        if (AsmOps.getStackSize(argErasedType) == 1) {
-          visitor.visitInsn(SWAP)
-        } else {
-          visitor.visitInsn(DUP2_X1)
-          visitor.visitInsn(POP2)
-        }
+        visitor.visitFieldInsn(PUTFIELD, functionInterface.name.toInternalName,
+          s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
       }
-      visitor.visitInsn(POP)
-      // Saving args on the continuation in reverse order
-      for ((arg, ind) <- args.zipWithIndex.reverse) {
-        val argErasedType = JvmOps.getErasedJvmType(arg.tpe)
-        visitor.visitMethodInsn(INVOKEINTERFACE, functionInterface.name.toInternalName, s"setArg$ind",
-          AsmOps.getMethodDescriptor(List(argErasedType), JvmType.Void), true)
-      }
-      // Placing the interface on continuation field of `Context`
-      visitor.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
-      // Dummy value, since we have to put a result on top of the arg, this will be thrown away
-      pushDummyValue(visitor, tpe)
+      // Return the def
+      visitor.visitInsn(ARETURN)
 
-    case Expression.ApplySelfTail(_, _, actuals, _, _) =>
-      // Evaluate each argument and push the result on the stack.
-      for (arg <- actuals) {
+    case Expression.ApplySelfTail(sym, _, actuals, _, _) =>
+      // The function abstract class name
+      val functionType = JvmOps.getFunctionInterfaceType(root.defs(sym).tpe)
+      // Evaluate each argument and put the result on the Fn class.
+      for ((arg, i) <- actuals.zipWithIndex) {
         visitor.visitVarInsn(ALOAD, 0)
         // Evaluate the argument and push the result on the stack.
         compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
-      }
-      // The values are on the stack in reverse order, so we must iterate over the arguments in reverse order.
-      for ((arg, ind) <- actuals.zipWithIndex.reverse) {
-        val argType = JvmOps.getErasedJvmType(arg.tpe)
-        visitor.visitMethodInsn(INVOKEVIRTUAL, currentClass.name.toInternalName, s"setArg$ind",
-          AsmOps.getMethodDescriptor(List(argType), JvmType.Void), false)
+        visitor.visitFieldInsn(PUTFIELD, functionType.name.toInternalName,
+          s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
       }
       // Jump to the entry point of the method.
       visitor.visitJumpInsn(GOTO, entryPoint)
@@ -396,7 +304,7 @@ object GenExpression {
       val jvmType = JvmOps.getJvmType(exp1.tpe)
       // Store instruction for `jvmType`
       val iStore = AsmOps.getStoreInstruction(jvmType)
-      visitor.visitVarInsn(iStore, sym.getStackOffset + 3)
+      visitor.visitVarInsn(iStore, sym.getStackOffset + 1)
       compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
 
     case Expression.Is(_, tag, exp, loc) =>
@@ -516,7 +424,7 @@ object GenExpression {
       addSourceLine(visitor, loc)
 
       // Get the correct record extend class, given the expression type 'tpe'
-      // We get the JvmType of the extended record class to call the proper getField
+      // We get the JvmType of the extended record class to retrieve the proper field
       val classType = JvmOps.getRecordType(tpe)
 
       // We get the JvmType of the record interface
@@ -536,9 +444,8 @@ object GenExpression {
       //Cast to proper record extend class
       visitor.visitTypeInsn(CHECKCAST, classType.name.toInternalName)
 
-      //Invoke the getField method on the record. (To get the proper value)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "getField",
-        AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe)), false)
+      //Retrieve the value field  (To get the proper value)
+      visitor.visitFieldInsn(GETFIELD, classType.name.toInternalName, GenRecordExtendClasses.ValueFieldName, JvmOps.getErasedJvmType(tpe).toDescriptor)
 
       // Cast the field value to the expected type.
       AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
@@ -554,25 +461,24 @@ object GenExpression {
 
       // Instantiating a new object of tuple
       visitor.visitTypeInsn(NEW, classType.name.toInternalName)
-      // Duplicating the class
       visitor.visitInsn(DUP)
-
-      //Push the required argument to call the RecordExtend constructor.
-
-      //Push the label of field (which is going to be the extension).
-      visitor.visitLdcInsn(field.name)
-
-      //Push the value of the field onto the stack, since it is an expression we first need to compile it.
-      compileExpression(value, visitor, currentClass, lenv0, entryPoint)
-
-      //Push the value of the rest of the record onto the stack, since it's an expression we need to compile it first.
-      compileExpression(rest, visitor, currentClass, lenv0, entryPoint)
-
-      // Descriptor of constructor
-      val constructorDescriptor = AsmOps.getMethodDescriptor(List(JvmType.String, JvmOps.getErasedJvmType(value.tpe),
-        interfaceType), JvmType.Void)
       // Invoking the constructor
-      visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
+      visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", MethodDescriptor.NothingToVoid.toDescriptor, false)
+
+      //Put the label of field (which is going to be the extension).
+      visitor.visitInsn(DUP)
+      visitor.visitLdcInsn(field.name)
+      visitor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, GenRecordExtendClasses.LabelFieldName, BackendObjType.String.toDescriptor)
+
+      //Put the value of the field onto the stack, since it is an expression we first need to compile it.
+      visitor.visitInsn(DUP)
+      compileExpression(value, visitor, currentClass, lenv0, entryPoint)
+      visitor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, GenRecordExtendClasses.ValueFieldName, JvmOps.getErasedJvmType(value.tpe).toDescriptor)
+
+      //Put the value of the rest of the record onto the stack, since it's an expression we need to compile it first.
+      visitor.visitInsn(DUP)
+      compileExpression(rest, visitor, currentClass, lenv0, entryPoint)
+      visitor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, GenRecordExtendClasses.RestFieldName, interfaceType.toDescriptor)
 
     case Expression.RecordRestrict(field, rest, _, loc) =>
       // Adding source line number for debugging
@@ -823,7 +729,7 @@ object GenExpression {
 
         // Store the exception in a local variable.
         val istore = AsmOps.getStoreInstruction(JvmType.Object)
-        visitor.visitVarInsn(istore, sym.getStackOffset + 3)
+        visitor.visitVarInsn(istore, sym.getStackOffset + 1)
 
         // Emit code for the handler body expression.
         compileExpression(body, visitor, currentClass, lenv0, entryPoint)
@@ -1020,7 +926,6 @@ object GenExpression {
       }
 
 
-      // TODO SJ: Should we create a JvmName for the return type here? yes
       // Invoke select in Channel. This puts a SelectChoice on the stack
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Channel.toInternalName, "select", "([Lca/uwaterloo/flix/runtime/interpreter/Channel;Z)Lca/uwaterloo/flix/runtime/interpreter/SelectChoice;", false)
 
@@ -1054,7 +959,7 @@ object GenExpression {
         // Store instruction for `jvmType`
         val iStore = AsmOps.getStoreInstruction(jvmType)
         // Extend the environment with the element from the channel
-        visitor.visitVarInsn(iStore, rule.sym.getStackOffset + 3)
+        visitor.visitVarInsn(iStore, rule.sym.getStackOffset + 1)
         // Finally compile the body of the selected rule
         compileExpression(rule.exp, visitor, currentClass, lenv0, entryPoint)
         // Jump out of the cases so we do not fall through to the next one
@@ -1063,7 +968,7 @@ object GenExpression {
 
       // TableSwitch instruction jumps here if "0 <= index < rules.length" is not satisfied.
       visitor.visitLabel(lookupErrorLabel)
-      // TODO SJ: throw flixError med god string ELLER egen subclass
+      // TODO: throw a better error
       // Throw exception
       visitor.visitInsn(ACONST_NULL)
       visitor.visitInsn(ATHROW)
@@ -1086,8 +991,9 @@ object GenExpression {
 
     case Expression.Spawn(exp, _, loc) =>
       addSourceLine(visitor, loc)
-      // Compile the expression, putting a function implementing the Spawnable interface on the stack
+      // Compile the expression, putting a function implementing the Runnable interface on the stack
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      visitor.visitTypeInsn(CHECKCAST, JvmName.Runnable.toInternalName)
       // make a thread and run it
       visitor.visitTypeInsn(NEW, "java/lang/Thread")
       visitor.visitInsn(DUP_X1)
@@ -1138,9 +1044,8 @@ object GenExpression {
       // If expression == null the we just use lazy.value, otherwise lazy.force(context)
       visitor.visitJumpInsn(IFNULL, alreadyInit)
 
-      // Call force(context).
-      visitor.visitVarInsn(ALOAD, 1)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, internalClassType, "force", AsmOps.getMethodDescriptor(List(JvmType.Context), erasedType), false)
+      // Call force().
+      visitor.visitMethodInsn(INVOKEVIRTUAL, internalClassType, "force", AsmOps.getMethodDescriptor(Nil, erasedType), false)
       // goto the cast to undo erasure
       visitor.visitJumpInsn(GOTO, end)
 
@@ -1261,27 +1166,6 @@ object GenExpression {
       visitor.visitTypeInsn(CHECKCAST, "java/lang/Double")
       visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Double", "doubleValue", "()D", false)
 
-  }
-
-  /*
-   * Pushes a dummy value of type `jvmType` to the top of the stack
-   */
-  private def pushDummyValue(visitor: MethodVisitor, tpe: MonoType)(implicit root: Root, flix: Flix): Unit = {
-    val erasedType = JvmOps.getErasedJvmType(tpe)
-    erasedType match {
-      case JvmType.Void => throw InternalCompilerException(s"Unexpected type: $erasedType")
-      case JvmType.PrimBool => visitor.visitInsn(ICONST_1)
-      case JvmType.PrimChar => visitor.visitInsn(ICONST_M1)
-      case JvmType.PrimByte => visitor.visitInsn(ICONST_M1)
-      case JvmType.PrimShort => visitor.visitInsn(ICONST_M1)
-      case JvmType.PrimInt => visitor.visitInsn(ICONST_M1)
-      case JvmType.PrimLong =>
-        visitor.visitInsn(ICONST_M1)
-        visitor.visitInsn(I2L)
-      case JvmType.PrimFloat => visitor.visitInsn(FCONST_1)
-      case JvmType.PrimDouble => visitor.visitInsn(DCONST_1)
-      case JvmType.Reference(_) => visitor.visitInsn(ACONST_NULL)
-    }
   }
 
   /*
@@ -1710,7 +1594,7 @@ object GenExpression {
   private def readVar(sym: Symbol.VarSym, tpe: MonoType, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
     val jvmType = JvmOps.getErasedJvmType(tpe)
     val iLOAD = AsmOps.getLoadInstruction(jvmType)
-    mv.visitVarInsn(iLOAD, sym.getStackOffset + 3) // This is `+2` because the first 2 are reserved!
+    mv.visitVarInsn(iLOAD, sym.getStackOffset + 1)
     AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
   }
 
