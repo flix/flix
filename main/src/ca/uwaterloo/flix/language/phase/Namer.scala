@@ -1187,7 +1187,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case "float" => true
     case "float32" => true
     case "float64" => true
-    case "int" => true
     case "int8" => true
     case "int16" => true
     case "int32" => true
