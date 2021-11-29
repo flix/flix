@@ -84,11 +84,13 @@ object NameError {
     }
 
     def explain(formatter: Formatter): Option[String] = Some({
-      """Note: Flix does not support function overloading, i.e. you cannot define two
-        |functions with the same name, even if their formal parameters differ.
+      """Flix does not support function overloading, i.e. you cannot define two functions
+        |with the same name, even if their formal parameters differ.
         |
-        |If you want two functions to share the same name you have to either (a) put them
-        |into separate namespaces or (b) to use a type class.
+        |If you want two functions to share the same name you have to either:
+        |
+        |    (a) put each function into its own namespace, or
+        |    (b) introduce a type class and implement two instances.
         |""".stripMargin
     })
 
@@ -219,12 +221,10 @@ object NameError {
     }
 
     def explain(formatter: Formatter): Option[String] = Some({
-      """In Flix every type variable begins with a lowercase name. Your type variable
-        |looks suspiciously like the name of a built-in type. Perhaps you meant to use
-        |the built-in type?
+      """Flix uses lowercase variables. The provided type variable looks suspiciously
+        |like the name of a built-in type. Perhaps you meant to use the built-in type?
         |
-        |In Flix, `Int32` is a built-in type whereas `int32` is a type variable. To
-        |prevent confusion, Flix disallows type variables that look like built-in types.
+        |For example, `Int32` is a built-in type whereas `int32` is a type variable.
         |""".stripMargin
     })
 
@@ -249,7 +249,15 @@ object NameError {
     }
 
     def explain(formatter: Formatter): Option[String] = Some({
-      "Flix cannot find the Java class. Maybe there is a typo?"
+      """Flix cannot find the Java class. You can check:
+        |
+        |    (a) if there is a simple typo.
+        |    (b) that the relevant JARs are included.
+        |    (c) that you are using the right Java version.
+        |
+        |Flix automatically includes JARs that are passed as arguments and JAR files
+        |located in the `lib` directory.
+        |""".stripMargin
     })
   }
 
@@ -319,8 +327,7 @@ object NameError {
     }
 
     def explain(formatter: Formatter): Option[String] = Some({
-      """Every signature in a type class must mention the type variable of the class.
-        |""".stripMargin
+      "Every signature in a type class must mention the type variable of the class."
     })
 
   }
