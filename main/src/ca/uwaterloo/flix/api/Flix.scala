@@ -145,7 +145,6 @@ class Flix {
     "ReentrantLock.flix" -> LocalResource.get("/src/library/ReentrantLock.flix"),
     "Result.flix" -> LocalResource.get("/src/library/Result.flix"),
     "Set.flix" -> LocalResource.get("/src/library/Set.flix"),
-    "Stream.flix" -> LocalResource.get("/src/library/Stream.flix"),
     "String.flix" -> LocalResource.get("/src/library/String.flix"),
 
     "MutDeque.flix" -> LocalResource.get("/src/library/MutDeque.flix"),
@@ -405,7 +404,6 @@ class Flix {
         PatternExhaustiveness |>
         Redundancy |>
         Terminator |>
-        Linter |>
         Safety
 
     // Apply the pipeline to the parsed AST.
