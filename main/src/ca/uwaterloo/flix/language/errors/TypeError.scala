@@ -342,35 +342,36 @@ object TypeError {
     * @param loc the location where the error occurred.
     */
   case class MissingEq(tpe: Type, loc: SourceLocation) extends TypeError {
-    def summary: String = s"Equality is not defined on '${FormatType.formatType(tpe)}'. Define an Eq instance."
+    def summary: String = s"Equality is not defined on '${FormatType.formatType(tpe)}'. Define or derive instance of Eq."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.format)}
-         |>> Equality is not defined on ${red(FormatType.formatType(tpe))}. Define an Eq instance.
+         |>> Equality is not defined on ${red(FormatType.formatType(tpe))}. Define or derive an instance of Eq.
          |
          |${code(loc, s"missing Eq instance")}
          |""".stripMargin
     }
 
     def explain(formatter: Formatter): Option[String] = Some({
-      """To define equality on a type, either:
-        |
-        |  (a) define an instance of Eq for the type, or
-        |  (b) derive an instance of Eq for the type.
-        |
-        |For example,
-        |
-        |  enum Color derives Eq {
-        |    case Red, Green, Blue
-        |  }
-        |
-        |The following types does not support equality:
-        |
-        |    - function types.
-        |    - records and schemas.
-        |    - mutable data structures (e.g. arrays).
-        |""".stripMargin})
+      s"""To define equality on '${FormatType.formatType(tpe)}', either:
+         |
+         |  (a) define an instance of Eq for '${FormatType.formatType(tpe)}', or
+         |  (b) derive an instance of Eq for '${FormatType.formatType(tpe)}'.
+         |
+         |To automatically derive an instance, you can write:
+         |
+         |  enum Color with Eq {
+         |    case Red, Green, Blue
+         |  }
+         |
+         |The following types does not support any notion of equality:
+         |
+         |    - function types.
+         |    - records and schemas.
+         |    - mutable data structures (e.g. references, arrays).
+         |""".stripMargin
+    })
   }
 
   /**
