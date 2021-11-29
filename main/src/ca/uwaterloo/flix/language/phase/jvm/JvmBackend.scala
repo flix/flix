@@ -92,6 +92,11 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       val functionClasses = GenFunctionClasses.gen(root.defs)
 
       //
+      // Generate closure abstract classes for each function in the program.
+      //
+      val closureAbstractClasses = GenClosureAbstractClasses.gen(types)
+
+      //
       // Generate closure classes for each closure in the program.
       //
       val closureClasses = GenClosureClasses.gen(closures)
@@ -175,6 +180,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
         continuationInterfaces,
         functionInterfaces,
         functionClasses,
+        closureAbstractClasses,
         closureClasses,
         enumInterfaces,
         tagClasses,
