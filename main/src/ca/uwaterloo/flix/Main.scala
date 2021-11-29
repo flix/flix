@@ -18,7 +18,6 @@ package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.api.lsp.LanguageServer
 import ca.uwaterloo.flix.api.{Flix, Version}
-import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools._
 import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
@@ -223,22 +222,11 @@ object Main {
           Console.println(results.output(flix.getFormatter))
         }
       case Validation.Failure(errors) =>
-        mkMessage(errors.sortBy(_.source.name), flix.getFormatter)
+        flix.mkMessages(errors.sortBy(_.source.name))
           .foreach(println)
         println()
         println(s"Compilation failed with ${errors.length} error(s).")
         System.exit(1)
-    }
-
-    /**
-      * Converts a list of compiler error messages to a list of printable messages.
-      * Decides whether or not to print the explanation.
-      */
-    def mkMessage(errors: LazyList[CompilationMessage], formatter: Formatter): List[String] = {
-      if (flix.options.explain || errors.length == 1)
-        errors.map(cm => cm.message(formatter) + cm.explain(formatter).getOrElse("")).toList
-      else
-        errors.map(cm => cm.message(formatter)).toList
     }
   }
 

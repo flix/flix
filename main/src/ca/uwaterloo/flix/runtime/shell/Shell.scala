@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.runtime.shell
 
 import ca.uwaterloo.flix.api.{Flix, Version}
-import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.HoleContext
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.TypedAst._
@@ -390,24 +389,13 @@ class Shell(initialPaths: List[Path], options: Options) {
         }
       case Validation.Failure(errors) =>
         terminal.writer().println()
-        mkMessage(errors, flix.getFormatter)
+        flix.mkMessages(errors)
           .foreach(terminal.writer().print)
         terminal.writer().println()
         terminal.writer().print(prompt)
         terminal.writer().flush()
     }
 
-  }
-
-  /**
-    * Converts a list of compiler error messages to a list of printable messages.
-    * Decides whether or not to print the explanation.
-    */
-  private def mkMessage(errors: LazyList[CompilationMessage], formatter: Formatter): List[String] = {
-    if (options.explain || errors.length == 1)
-      errors.map(cm => cm.message(formatter) + cm.explain(formatter).getOrElse("")).toList
-    else
-      errors.map(cm => cm.message(formatter)).toList
   }
 
   /**
