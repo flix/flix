@@ -884,17 +884,6 @@ class TestNamer extends FunSuite with TestUtils {
   test("SuspiciousTypeVarName.04") {
     val input =
       s"""
-         |def f(): Unit =
-         |    let x: int = 42;
-         |    ()
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.SuspiciousTypeVarName](result)
-  }
-
-  test("SuspiciousTypeVarName.05") {
-    val input =
-      s"""
          |enum A {
          |    case X(string)
          |}
