@@ -56,11 +56,12 @@ object TypeError {
     }
 
     def explain(formatter: Formatter): Option[String] = Some(
-      """The declared type is more polymorphic than the inferred type. In other words,
-        |the declared type has more type variables than the inferred type. Either:
+      """The declared type is more polymorphic than the inferred type.
+        |
+        |Typically:
         |
         |  (a) the declared type signature is incorrect, or
-        |  (b) the implementation is incorrect.
+        |  (b) the expression body is incorrect.
         |""".stripMargin)
   }
 
@@ -397,11 +398,6 @@ object TypeError {
          |    case Red, Green, Blue
          |  }
          |
-         |The following types does not support any notion of equality:
-         |
-         |    - function types.
-         |    - records and schemas.
-         |    - mutable data structures (e.g. references, arrays).
          |""".stripMargin
     })
   }
@@ -436,11 +432,7 @@ object TypeError {
          |    case Red, Green, Blue
          |  }
          |
-         |The following types does not support any notion of order:
-         |
-         |    - function types.
-         |    - records and schemas.
-         |    - mutable data structures (e.g. references, arrays).
+         |Note: To derive Order you must also derive Eq.
          |""".stripMargin
     })
   }
