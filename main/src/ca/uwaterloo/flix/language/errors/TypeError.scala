@@ -48,6 +48,8 @@ object TypeError {
          |
          |${code(loc, "unable to generalize the type scheme.")}
          |
+         |The declared type does not match the inferred type:
+         |
          |  Declared: ${cyan(FormatScheme.formatSchemeWithoutConstraints(declared))}
          |  Inferred: ${magenta(FormatScheme.formatSchemeWithoutConstraints(inferred))}
          |""".stripMargin
@@ -56,7 +58,13 @@ object TypeError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = Some(
+      """The declared type is more polymorphic than the inferred type. In other words,
+        |the declared type has more type variables than the inferred type. Either:
+        |
+        |  (a) the declared type signature is incorrect, or
+        |  (b) the implementation is incorrect.
+        |""".stripMargin)
   }
 
   /**
