@@ -1401,79 +1401,79 @@ def sort09(): Bool & Impure = testSortVsSortWith(Array.toMutList([2,3,0,4,1,2]))
 def sortWith01!(): Bool & Impure =
     let a = Array.toMutList([]: Array[Int32]);
     MutList.sortWith(cmp, a);
-    a == Array.toMutList([]: Array[Int32])
+    a `eq` Array.toMutList([]: Array[Int32])
 
 @test
 def sortWith02!(): Bool & Impure =
     let a = Array.toMutList([0]);
     MutList.sortWith!(cmp, a);
-    a == Array.toMutList([0])
+    a `eq` Array.toMutList([0])
 
 @test
 def sortWith03!(): Bool & Impure =
     let a = Array.toMutList([0,1]);
     MutList.sortWith!(cmp, a);
-    a == Array.toMutList([0,1])
+    a `eq` Array.toMutList([0,1])
 
 @test
 def sortWith04!(): Bool & Impure =
     let a = Array.toMutList([1,0]);
     MutList.sortWith!(cmp, a);
-    a == Array.toMutList([0,1])
+    a `eq` Array.toMutList([0,1])
 
 @test
 def sortWith05!(): Bool & Impure =
     let a = Array.toMutList([1,1]);
     MutList.sortWith!(cmp, a);
-    a == Array.toMutList([1,1])
+    a `eq` Array.toMutList([1,1])
 
 @test
 def sortWith06!(): Bool & Impure =
     let a = Array.toMutList([0,1,2,3,4,5]);
     MutList.sortWith!(cmp, a);
-    a == Array.toMutList([0,1,2,3,4,5])
+    a `eq` Array.toMutList([0,1,2,3,4,5])
 
 @test
 def sortWith07!(): Bool & Impure =
     let a = Array.toMutList([5,4,3,2,1,0]);
     MutList.sortWith!(cmp, a);
-    a == Array.toMutList([0,1,2,3,4,5])
+    a `eq` Array.toMutList([0,1,2,3,4,5])
 
 @test
 def sortWith08!(): Bool & Impure =
     let a = Array.toMutList([5,3,0,4,1,2]);
     MutList.sortWith!(cmp, a);
-    a == Array.toMutList([0,1,2,3,4,5])
+    a `eq` Array.toMutList([0,1,2,3,4,5])
 
 @test
 def sortWith09!(): Bool & Impure =
     let a = Array.toMutList([2,3,0,4,1,2]);
     MutList.sortWith!(cmp, a);
-    a == Array.toMutList([0,1,2,2,3,4])
+    a `eq` Array.toMutList([0,1,2,2,3,4])
 
 @test
 def sortWith10!(): Bool & Impure =
     let a = Array.toMutList([0,1,2,3,4,5]);
     MutList.sortWith!(flip(cmp), a);
-    a == Array.toMutList([5,4,3,2,1,0])
+    a `eq` Array.toMutList([5,4,3,2,1,0])
 
 @test
 def sortWith11!(): Bool & Impure =
     let a = Array.toMutList([5,4,3,2,1,0]);
     MutList.sortWith!(flip(cmp), a);
-    a == Array.toMutList([5,4,3,2,1,0])
+    a `eq` Array.toMutList([5,4,3,2,1,0])
 
 @test
 def sortWith12!(): Bool & Impure =
     let a = Array.toMutList([5,3,0,4,1,2]);
     MutList.sortWith!(flip(cmp), a);
-    a == Array.toMutList([5,4,3,2,1,0])
+    a `eq` Array.toMutList([5,4,3,2,1,0])
 
 @test
 def sortWith13!(): Bool & Impure =
     let a = Array.toMutList([2,3,0,4,1,2]);
     MutList.sortWith!(flip(cmp), a);
-    a == Array.toMutList([4,3,2,2,1,0])
+    a `eq` Array.toMutList([4,3,2,2,1,0])
 
 /////////////////////////////////////////////////////////////////////////////
 // sort!                                                                   //
@@ -1484,7 +1484,7 @@ def testSort!VsSortWith!(a: MutList[Int32]) : Bool & Impure =
     let c = MutList.copy(a);
     MutList.sort!(b);
     MutList.sortWith!(cmp, c);
-    b == c
+    b `eq` c
 
 @test
 def sort!01(): Bool & Impure = testSort!VsSortWith!(Array.toMutList([]: Array[Int32]))
@@ -1518,9 +1518,9 @@ def sort!09(): Bool & Impure = testSort!VsSortWith!(Array.toMutList([2,3,0,4,1,2
 /////////////////////////////////////////////////////////////////////////////
 
 def testSortByVsSort(a: MutList[Int32]) : Bool & Impure =
-    (MutList.sortBy(identity, a) == MutList.sort(a)) and
-    (MutList.sortBy(x -> 4*x+7, a) == MutList.sort(a)) and
-    (MutList.sortBy(x -> -x, a) == MutList.sortWith(flip(cmp),a))
+    (MutList.sortBy(identity, a) `eq` MutList.sort(a)) and
+    (MutList.sortBy(x -> 4*x+7, a) `eq` MutList.sort(a)) and
+    (MutList.sortBy(x -> -x, a) `eq` MutList.sortWith(flip(cmp),a))
 
 @test
 def sortBy01(): Bool & Impure = testSortByVsSort(Array.toMutList([]: Array[Int32]))
@@ -1574,8 +1574,8 @@ def testSortBy!VsSortBy(a: MutList[Int32]) : Bool & Impure =
     let c = MutList.copy(a);
     MutList.sortBy!(identity, b);
     MutList.sortBy!(x -> 4*x+7, c);
-    (b == MutList.sortBy(x -> 4*x+7, a)) and
-    (c == MutList.sortBy(identity, a))
+    (b `eq` MutList.sortBy(x -> 4*x+7, a)) and
+    (c `eq` MutList.sortBy(identity, a))
 
 @test
 def sortBy!01(): Bool & Impure = testSortBy!VsSortBy(Array.toMutList([]: Array[Int32]))
