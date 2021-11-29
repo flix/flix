@@ -32,11 +32,6 @@ trait CompilationMessage {
   def kind: String
 
   /**
-    * Returns the severity of the error.
-    */
-  def severity: Severity = Severity.Error
-
-  /**
     * Returns the input source of the error message.
     */
   def source: Source = loc.source

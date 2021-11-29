@@ -17,7 +17,8 @@
 namespace TestFile {
 
     use File.{exists, isDirectory, isRegularFile, isReadable, isSymbolicLink,
-        isWritable, isExecutable};
+        isWritable, isExecutable, readLines, readLinesWith, read, readWith,
+        readLinesIter, readLinesIterWith};
 
     /////////////////////////////////////////////////////////////////////////////
     // exists                                                                  //
@@ -94,5 +95,67 @@ namespace TestFile {
     @test
     def testIsExecutable(): Bool & Impure =
         isExecutable("./fakeREADME.md") == Ok(false)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // readLines                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def testReadLines01(): Bool & Impure =
+        Result.isOk(readLines("./LICENSE.md"))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // readLinesWith                                                           //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def testReadLinesWith01(): Bool & Impure =
+        Result.isOk(readLinesWith({charSet = "UTF8"}, "./LICENSE.md"))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // read                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def testRead01(): Bool & Impure =
+        Result.isOk(read("./LICENSE.md"))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // readWith                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def testReadWith01(): Bool & Impure =
+        Result.isOk(readWith({offset = 2i64, count = 2, charSet = "UTF8"}, "./LICENSE.md"))
+
+    @test
+    def testReadWith02(): Bool & Impure =
+        readWith({offset = 2i64, count = 2, charSet = "US-ASCII"}, "./LICENSE.md") == Ok("ac")
+
+    /////////////////////////////////////////////////////////////////////////////
+    // readLinesIter                                                           //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def testReadLinesIter01(): Bool & Impure =
+        match readLinesIter("./LICENSE.md") {
+            case Iterator(_, next) => Result.isOk(next())
+        }
+
+    @test
+    def testReadLinesIter02(): Bool & Impure =
+        match readLinesIter("./LICENSE.md") {
+            case Iterator(done, _) => done() == false
+        }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // readLinesIterWith                                                       //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def testReadLinesIterWithWith01(): Bool & Impure =
+        match readLinesIterWith({charSet = "utf8"}, "./LICENSE.md") {
+            case Iterator(_, next) => Result.isOk(next())
+        }
 
 }

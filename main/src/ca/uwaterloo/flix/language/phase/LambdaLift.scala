@@ -61,7 +61,7 @@ object LambdaLift extends Phase[SimplifiedAst.Root, LiftedAst.Root] {
   private def liftDef(def0: SimplifiedAst.Def, m: TopLevel)(implicit flix: Flix): LiftedAst.Def = def0 match {
     case SimplifiedAst.Def(ann, mod, sym, fparams, exp, tpe, loc) =>
       val fs = fparams.map(visitFormalParam)
-      val e = liftExp(def0.sym.namespace, def0.exp, def0.sym.name, m)
+      val e = liftExp(def0.exp, sym, m)
 
       LiftedAst.Def(ann, mod, sym, fs, e, tpe, loc)
   }
@@ -78,9 +78,9 @@ object LambdaLift extends Phase[SimplifiedAst.Root, LiftedAst.Root] {
   }
 
   /**
-    * Performs lambda lifting on the given expression `exp0` using the given `name` as part of the lifted name.
+    * Performs lambda lifting on the given expression `exp0` occurring with the given symbol `sym0`.
     */
-  private def liftExp(ns: List[String], exp0: SimplifiedAst.Expression, name: String, m: TopLevel)(implicit flix: Flix): LiftedAst.Expression = {
+  private def liftExp(exp0: SimplifiedAst.Expression, sym0: Symbol.DefnSym, m: TopLevel)(implicit flix: Flix): LiftedAst.Expression = {
     /**
       * Performs closure conversion and lambda lifting on the given expression `exp0`.
       */
@@ -118,7 +118,7 @@ object LambdaLift extends Phase[SimplifiedAst.Root, LiftedAst.Root] {
         val liftedExp = visitExp(exp)
 
         // Generate a fresh symbol for the new lifted definition.
-        val freshSymbol = Symbol.freshDefnSym(ns, name, loc)
+        val freshSymbol = Symbol.freshDefnSym(sym0)
 
         // Construct annotations and modifiers for the fresh definition.
         val ann = Ast.Annotations.Empty

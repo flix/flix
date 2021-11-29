@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme, FormatType, TypeDiff}
+import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme, FormatType}
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -78,8 +78,8 @@ object TypeError {
          |
          |${code(loc, "mismatched types.")}
          |
-         |Type One: ${TypeDiff.diff(fullType1, fullType2)}
-         |Type Two: ${TypeDiff.diff(fullType2, fullType1)}
+         |Type One: ${FormatType.formatType(fullType1)}
+         |Type Two: ${FormatType.formatType(fullType2)}
          |""".stripMargin
     }
 
@@ -180,8 +180,8 @@ object TypeError {
          |
          |${code(loc, "mismatched types.")}
          |
-         |Type One: ${TypeDiff.diff(fullType1, fullType2)}
-         |Type Two: ${TypeDiff.diff(fullType2, fullType1)}
+         |Type One: ${FormatType.formatType(fullType1)}
+         |Type Two: ${FormatType.formatType(fullType2)}
          |""".stripMargin
     }
 

@@ -15,18 +15,31 @@
  */
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
-import ca.uwaterloo.flix.util.Formatter
 
 /**
   * A common super-type for code hints.
   */
-trait CodeHint extends CompilationMessage {
-  val kind: String = "Code Hint"
+trait CodeHint {
+  def summary: String
+
+  def severity: Severity
+
+  def loc: SourceLocation
 }
 
 object CodeHint {
+
+  /**
+    * A code hint that indicates a deprecation.
+    *
+    * @param loc the location of the expression.
+    */
+  case class Deprecated(loc: SourceLocation) extends CodeHint {
+    def summary: String = s"Deprecated."
+
+    def severity: Severity = Severity.Info
+  }
 
   /**
     * A code hint that indicates that a purity polymorphic operation is lazy.
@@ -37,11 +50,7 @@ object CodeHint {
   case class LazyEvaluation(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
     def summary: String = s"Lazy: The operation uses lazy evaluation (due to purity polymorphism)."
 
-    override def severity: Severity = Severity.Hint
-
-    def message(formatter: Formatter): String = summary
-
-    def explain(formatter: Formatter): Option[String] = None
+    def severity: Severity = Severity.Hint
   }
 
   /**
@@ -53,11 +62,7 @@ object CodeHint {
   case class ParallelEvaluation(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
     def summary: String = s"Parallel: The operation uses parallel evaluation (due to purity polymorphism)."
 
-    override def severity: Severity = Severity.Hint
-
-    def message(formatter: Formatter): String = summary
-
-    def explain(formatter: Formatter): Option[String] = None
+    def severity: Severity = Severity.Hint
   }
 
   /**
@@ -69,11 +74,7 @@ object CodeHint {
   case class SuggestPurityForLazyEvaluation(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
     def summary: String = "Eager: Use a pure function to enable lazy evaluation (see purity polymorphism)."
 
-    override def severity: Severity = Severity.Hint
-
-    def message(formatter: Formatter): String = summary
-
-    def explain(formatter: Formatter): Option[String] = None
+    def severity: Severity = Severity.Hint
   }
 
   /**
@@ -85,11 +86,7 @@ object CodeHint {
   case class SuggestPurityForParallelEvaluation(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
     def summary: String = "Sequential: Use a pure function to enable parallel evaluation (see purity polymorphism)."
 
-    override def severity: Severity = Severity.Hint
-
-    def message(formatter: Formatter): String = summary
-
-    def explain(formatter: Formatter): Option[String] = None
+    def severity: Severity = Severity.Hint
   }
 
   /**
@@ -100,11 +97,18 @@ object CodeHint {
   case class NonTrivialEffect(loc: SourceLocation) extends CodeHint {
     def summary: String = s"Expression has a non-trivial effect."
 
-    override def severity: Severity = Severity.Info
+    def severity: Severity = Severity.Info
+  }
 
-    def message(formatter: Formatter): String = summary
+  /**
+    * A code hint that indicates an unsafe cast to pure.
+    *
+    * @param loc the location of the expression.
+    */
+  case class UnsafePurityCast(loc: SourceLocation) extends CodeHint {
+    def summary: String = s"Unsafe cast to pure."
 
-    def explain(formatter: Formatter): Option[String] = None
+    def severity: Severity = Severity.Info
   }
 
 }

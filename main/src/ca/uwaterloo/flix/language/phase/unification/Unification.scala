@@ -319,10 +319,6 @@ object Unification {
     * Unifies the two given Boolean formulas `tpe1` and `tpe2`.
     */
   def unifyBoolM(tpe1: Type, tpe2: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
-    // Return if Boolean unification is disabled.
-    if (flix.options.xnoboolunification)
-      return liftM(Type.True)
-
     InferMonad((s: Substitution) => {
       val bf1 = s(tpe1)
       val bf2 = s(tpe2)

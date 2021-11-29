@@ -39,22 +39,6 @@ object Symbol {
   }
 
   /**
-    * Returns a fresh def symbol with the given text.
-    */
-  def freshDefnSym(text: String, loc: SourceLocation)(implicit flix: Flix): DefnSym = {
-    val id = Some(flix.genSym.freshId())
-    new DefnSym(id, Nil, text, loc)
-  }
-
-  /**
-    * Returns a fresh def symbol with the given text in the given namespace.
-    */
-  def freshDefnSym(ns: List[String], text: String, loc: SourceLocation)(implicit flix: Flix): DefnSym = {
-    val id = Some(flix.genSym.freshId())
-    new DefnSym(id, ns, text, loc)
-  }
-
-  /**
     * Returns a fresh instance symbol with the given class.
     */
   def freshInstanceSym(clazz: Symbol.ClassSym, loc: SourceLocation)(implicit flix: Flix): InstanceSym = {
@@ -234,7 +218,7 @@ object Symbol {
     /**
       * Human readable representation.
       */
-    override def toString: String = text + "$" + id
+    override def toString: String = text + Flix.Delimiter + id
   }
 
   /**
@@ -254,7 +238,7 @@ object Symbol {
       */
     def name: String = id match {
       case None => text
-      case Some(i) => text + "$" + i
+      case Some(i) => text + Flix.Delimiter + i
     }
 
     /**
@@ -342,7 +326,7 @@ object Symbol {
     /**
       * Human readable representation.
       */
-    override def toString: String = clazz.toString + "$" + id
+    override def toString: String = clazz.toString + Flix.Delimiter + id
 
     /**
       * The name of the instance.
@@ -393,7 +377,7 @@ object Symbol {
     /**
       * Human readable representation.
       */
-    override def toString: String = text + "$" + id
+    override def toString: String = text + Flix.Delimiter + id
   }
 
   /**

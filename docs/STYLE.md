@@ -6,6 +6,7 @@
 - Prefer functional to imperative programming.
   - Use of local mutability is okay.
 - If a function or method can be private, make it private.
+- Don't use fancy features unless necessary and reasonable.
 
 ## Flix-specific
 
@@ -37,6 +38,8 @@
   - Names such as `beginExp` etc. quickly get outdated.
 - Never use toString for anything other than debugging.
 - Leave the code in better state than you found it in.
+- Avoid inheritance. Prefer algebraic data types and functions on them.
+- Think towards self-hosting: Don't use features that cannot easily be ported to Flix.
 
 ## JVM Bytecode Generation Policy
 

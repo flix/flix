@@ -1,5 +1,6 @@
 /*
  * Copyright 2017 Magnus Madsen
+ * Copyright 2021 Jonathan Lindegaard Starup
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,9 +40,6 @@ object JvmBackend extends Phase[Root, CompilationResult] {
     //
     implicit val r: Root = root
 
-    // TODO: This should be limited to those actually used
-    val erasedRefTypes: List[BackendObjType.Ref] = BackendType.erasedTypes.map(BackendObjType.Ref)
-
     // Generate all classes.
     val allClasses = flix.subphase("CodeGen") {
 
@@ -65,30 +63,28 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       //
       val types = JvmOps.typesOf(root)
 
+      val erasedRefTypes: Iterable[BackendObjType.Ref] = JvmOps.getRefsOf(types)
+      val erasedExtendTypes: Iterable[BackendObjType.RecordExtend] = JvmOps.getRecordExtendsOf(types)
+
       //
       // Generate the main class.
       //
       val mainClass = GenMainClass.gen()
 
       //
-      // Generate the Context class.
-      //
-      val contextClass = GenContext.gen(namespaces)
-
-      //
       // Generate the namespace classes.
       //
-      val namespaceClasses = GenNamespaces.gen(namespaces)
+      val namespaceClasses = GenNamespaceClasses.gen(namespaces)
 
       //
-      // Generate continuation interfaces for each function type in the program.
+      // Generate continuation classes for each function type in the program.
       //
-      val continuationInterfaces = GenContinuationInterfaces.gen(types)
+      val continuationInterfaces = GenContinuationAbstractClasses.gen(types)
 
       //
-      // Generate function interfaces for each function type in the program.
+      // Generate a function abstract class for each function type in the program.
       //
-      val functionInterfaces = GenFunctionInterfaces.gen(types)
+      val functionInterfaces = GenFunctionAbstractClasses.gen(types)
 
       //
       // Generate function classes for each function in the program.
@@ -118,7 +114,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       //
       // Generate record interface.
       //
-      val recordInterfaces = GenRecordInterfaces.gen()
+      val recordInterfaces = GenRecordInterface.gen()
 
       //
       // Generate empty record class.
@@ -128,7 +124,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       //
       // Generate extended record classes for each (different) RecordExtend type in the program
       //
-      val recordExtendClasses = GenRecordExtend.gen(types)
+      val recordExtendClasses = GenRecordExtendClasses.gen(erasedExtendTypes)
 
       //
       // Generate references classes.
@@ -175,7 +171,6 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       //
       List(
         mainClass,
-        contextClass,
         namespaceClasses,
         continuationInterfaces,
         functionInterfaces,

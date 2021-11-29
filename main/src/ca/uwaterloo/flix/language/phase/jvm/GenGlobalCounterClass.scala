@@ -18,8 +18,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Finality._
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Instancing._
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final._
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility._
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 
@@ -29,7 +28,6 @@ import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 object GenGlobalCounterClass {
 
   val NewIdMethodName: String = "newId"
-
   private val counterFieldName: String = "counter"
 
   def gen()(implicit flix: Flix): Map[JvmName, JvmClass] = {
@@ -37,12 +35,12 @@ object GenGlobalCounterClass {
   }
 
   private def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = ClassMaker.mkClass(JvmName.GlobalCounter, Public, Final)
+    val cm = ClassMaker.mkClass(JvmName.GlobalCounter, IsFinal)
 
-    cm.mkObjectConstructor(Private)
+    cm.mkObjectConstructor(IsPrivate)
     cm.mkStaticConstructor(genStaticConstructor())
-    cm.mkField(counterFieldName, JvmName.AtomicLong.toObjTpe.toTpe, Private, Final, Static)
-    cm.mkMethod(genNewIdMethod(), NewIdMethodName, MethodDescriptor(Nil, BackendType.Int64), Public, Final, Static)
+    cm.mkStaticField(counterFieldName, JvmName.AtomicLong.toObjTpe.toTpe, IsPrivate, IsFinal)
+    cm.mkStaticMethod(genNewIdMethod(), NewIdMethodName, MethodDescriptor(Nil, BackendType.Int64), IsPublic, IsFinal)
 
     cm.closeClassMaker
   }
