@@ -27,21 +27,21 @@ namespace TestMutList {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // Eq.eq                                                                   //
+    // eq                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
     def eq01(): Bool & Impure =
         let u: MutList[Int32] = MutList.new();
         let v: MutList[Int32] = MutList.new();
-        u == v
+        u `eq` v
 
     @test
     def eq02(): Bool & Impure =
         let u = MutList.new();
         MutList.push!(0, u);
         let v = MutList.new();
-        u != v
+        (u `eq` v) == false
 
     @test
     def eq03(): Bool & Impure =
@@ -51,7 +51,7 @@ namespace TestMutList {
         let v = MutList.new();
         MutList.push!(2, v);
         MutList.push!(3, v);
-        u == v
+        u `eq` v
 
     @test
     def eq04(): Bool & Impure =
@@ -61,14 +61,14 @@ namespace TestMutList {
         let v = MutList.new();
         MutList.push!(2, v);
         MutList.push!(2, v);
-        u != v
+        (u `eq` v) == false
 
     @test
     def eq05(): Bool & Impure =
         let u = MutList.new();
         MutList.push!(1, u);
         let v = MutList.new();
-        u != v
+        (u `eq` v) == false
 
     /////////////////////////////////////////////////////////////////////////////
     // Order.compare                                                           //
