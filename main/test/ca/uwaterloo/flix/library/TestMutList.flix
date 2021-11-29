@@ -564,7 +564,7 @@ namespace TestMutList {
     def copy01(): Bool & Impure =
         let v1 = MutList.range(0, 6);
         let v2 = MutList.copy(v1);
-        v1 == v2
+        v1 `eq` v2
 
     @test
     def copy02(): Bool & Impure =
@@ -1259,7 +1259,7 @@ namespace TestMutList {
     def toList03(): Bool & Impure =
         let ml = MutList.range(0, 1000);
         ml |> MutList.toList == List.range(0, 1000) and
-           ml == MutList.range(0, 1000)
+           ml `eq` MutList.range(0, 1000)
 
     /////////////////////////////////////////////////////////////////////////////
     // toChain                                                                 //
@@ -1364,7 +1364,7 @@ def sortWith13(): Bool & Impure =
 /////////////////////////////////////////////////////////////////////////////
 
 def testSortVsSortWith(a: MutList[Int32]) : Bool & Impure =
-    MutList.sort(a) == MutList.sortWith(cmp, a)
+    MutList.sort(a) `eq` MutList.sortWith(cmp, a)
 
 @test
 def sort01(): Bool & Impure = testSortVsSortWith(Array.toMutList([]: Array[Int32]))
@@ -1563,7 +1563,7 @@ instance Eq[R] {
 @test
 def sortBy10(): Bool & Impure =
     MutList.sortBy(r -> let R(x) = r; x.i, Array.toMutList([R({i = 2, s = "A"}), R({i = 1, s = "B"}), R({i = 3, s = "C"})]))
-    == Array.toMutList([R({i = 1, s = "B"}), R({i = 2, s = "A"}), R({i = 3, s = "C"})])
+    `eq` Array.toMutList([R({i = 1, s = "B"}), R({i = 2, s = "A"}), R({i = 3, s = "C"})])
 
 /////////////////////////////////////////////////////////////////////////////
 // sortBy!                                                                 //
