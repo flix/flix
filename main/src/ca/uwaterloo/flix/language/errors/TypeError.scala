@@ -115,6 +115,7 @@ object TypeError {
          |>> Unable to unify the Boolean formulas: '${red(FormatType.formatType(baseType1))}' and '${red(FormatType.formatType(baseType2))}'.
          |
          |${code(loc, "mismatched boolean formulas.")}
+         |
          |${appendMismatchedBooleans(formatter)}
          |""".stripMargin
     }
@@ -184,6 +185,7 @@ object TypeError {
       import formatter._
       s"""${line(kind, source.format)}
          |>> Unable to unify the type variable '${red(baseVar.toString)}' with the type '${red(FormatType.formatType(baseType))}'.
+         |
          |>> The type variable occurs recursively within the type.
          |
          |${code(loc, "mismatched types.")}
@@ -216,6 +218,7 @@ object TypeError {
          |>> Missing field '${red(field.name)}' of type '${cyan(FormatType.formatType(fieldType))}'.
          |
          |${code(loc, "missing field.")}
+         |
          |The record type:
          |
          |  ${FormatType.formatType(recordType)}
@@ -247,6 +250,7 @@ object TypeError {
          |>> Missing predicate '${red(pred.name)}' of type '${cyan(FormatType.formatType(predType))}'.
          |
          |${code(loc, "missing predicate.")}
+         |
          |The schema type:
          |
          |  ${FormatType.formatType(schemaType)}
@@ -366,6 +370,45 @@ object TypeError {
          |  }
          |
          |The following types does not support any notion of equality:
+         |
+         |    - function types.
+         |    - records and schemas.
+         |    - mutable data structures (e.g. references, arrays).
+         |""".stripMargin
+    })
+  }
+
+  /**
+    * Missing `Order` instance.
+    *
+    * @param tpe the type of the instance.
+    * @param loc the location where the error occurred.
+    */
+  case class MissingOrder(tpe: Type, loc: SourceLocation) extends TypeError {
+    def summary: String = s"Order is not defined on '${FormatType.formatType(tpe)}'. Define or derive instance of Order."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Order is not defined on ${red(FormatType.formatType(tpe))}. Define or derive an instance of Order.
+         |
+         |${code(loc, s"missing Order instance")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      s"""To define an order on '${FormatType.formatType(tpe)}', either:
+         |
+         |  (a) define an instance of Order for '${FormatType.formatType(tpe)}', or
+         |  (b) derive an instance of Order for '${FormatType.formatType(tpe)}'.
+         |
+         |To automatically derive an instance, you can write:
+         |
+         |  enum Color with Eq, Order {
+         |    case Red, Green, Blue
+         |  }
+         |
+         |The following types does not support any notion of order:
          |
          |    - function types.
          |    - records and schemas.
