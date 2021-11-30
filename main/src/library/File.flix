@@ -299,4 +299,24 @@ namespace File {
                 Iterator.singleton(Err(getMessage(ex)))
         }
 
+    ///
+    /// Returns an array of all the bytes in the given file `f`.
+    ///
+    pub def readBytes(f: String): Result[Array[Int8], String] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import java.io.File.toPath();
+            import java.nio.file.Files:readAllBytes(##java.nio.file.Path);
+
+            let javaFile = newFile(f);
+            let javaPath = toPath(javaFile);
+            let bytes = readAllBytes(javaPath);
+
+            Ok(bytes)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
 }
