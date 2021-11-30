@@ -319,4 +319,29 @@ namespace File {
                 Err(getMessage(ex))
         }
 
+    ///
+    /// Returns an array of all the bytes in the given file `f` and applying the options `opts`.
+    /// The options `opts` to apply consists of
+    /// `offset` - the start offset in the given file `f`.
+    /// `count` - the number of bytes read.
+    ///
+    pub def readBytesWith(opts: {offset :: Int64, count :: Int32}, f: String): Result[Array[Int8], String] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import new java.io.FileInputStream(##java.io.File) as newInputStream;
+            import java.io.FileInputStream.skip(Int64);
+            import java.io.FileInputStream.read(Array[Int8], Int32, Int32);
+
+            let javaFile = newFile(f);
+            let stream = newInputStream(javaFile);
+            skip(stream, opts.offset);
+            let bytes = [0i8; opts.count];
+            read(stream, bytes, 0, opts.count);
+            Ok(bytes)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
 }
