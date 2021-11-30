@@ -409,11 +409,7 @@ object TypeError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
-      """A type class operation is called on a type that does not have that operation.
-        |You may want to implement an instance for that type.
-        |""".stripMargin
-    })
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**

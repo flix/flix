@@ -313,7 +313,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |def foo(x: E, y: E): Bool = x == y
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MissingEq](result)
   }
 
@@ -326,20 +326,20 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |def foo(x: E, y: E): Bool = x <= y
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MissingOrder](result)
   }
 
   test("MissingToString.01") {
     val input =
       s"""
-        |pub enum E {
-        |   case E
-        |}
-        |
-        |def foo(x: E): String = ToString.toString(x)
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+         |pub enum E {
+         |   case E
+         |}
+         |
+         |def foo(x: E): String = ToString.toString(x)
+         |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MissingToString](result)
   }
 
@@ -1180,6 +1180,16 @@ class TestTyper extends FunSuite with TestUtils {
     val input =
       """
         |def f(g: Int32 -> Int32 & ef): Int32 & ef = 123
+        |
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.EffectGeneralizationError](result)
+  }
+
+  test("Test.EffectGeneralizationError.02") {
+    val input =
+      """
+        |def f(g: Int32 -> Int32 & ef1, h: Int32 -> Int32 & ef2): Int32 & (ef1 and ef2) = 123
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
