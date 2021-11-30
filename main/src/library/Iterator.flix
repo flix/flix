@@ -61,6 +61,18 @@ namespace Iterator {
         Iterator(done, next)
 
     ///
+    /// Return `Some(x)` if `iter` is not empty. Return `None` otherwise.
+    ///
+    /// Consumes the head element of `iter`.
+    ///
+    pub def next(iter: Iterator[a]): Option[a] & Impure =
+        let Iterator(done, next) = iter;
+        if (done())
+            None
+        else
+            Some(next())
+
+    ///
     /// Returns an iterator of all integers between `b` (inclusive) and `e` (exclusive).
     ///
     /// Returns an empty iterator if `b >= e`.
@@ -238,16 +250,15 @@ namespace Iterator {
         else
             let _ = f(next());
             foreachHelper(f, done, next)
-
     ///
     /// Returns an iterator with every element of the iterator `iter` that
     /// satisfies the predicate `f`.
-	///
-	/// Does *not* consume any elements from the iterator.
-	///
-	/// The original iterator `iter` should not be reused.
     ///
-	pub def lazyFilter(f: a -> Bool, iter: Iterator[a]): Iterator[a] & Impure =
+    /// Does *not* consume any elements from the iterator.
+    ///
+    /// The original iterator `iter` should not be reused.
+    ///
+    pub def lazyFilter(f: a -> Bool, iter: Iterator[a]): Iterator[a] & Impure =
         let Iterator(done, next) = iter;
 
         // Allocate a reference to hold the next element.
@@ -273,10 +284,10 @@ namespace Iterator {
         };
         Iterator(done1, next1)
 
-	///
-	/// Fast forwards the given iterator until the next element that satisfies
-	/// the given predicate `f`. Returns it (if it exists).
-	///
+    ///
+    /// Fast forwards the given iterator until the next element that satisfies
+    /// the given predicate `f`. Returns it (if it exists).
+    ///
     def forward(f: a -> Bool & ef, done: Done, next: Next[a]): Option[a] & Impure =
         if (done())
             None
@@ -376,4 +387,74 @@ namespace Iterator {
     pub def zipWith(f: (a, b) -> c & ef, iterA: Iterator[a], iterB: Iterator[b]): List[c] & Impure =
         zip(iterA, iterB) |> map(xy -> f(fst(xy), snd(xy)))
 
+    ///
+    /// Applies `f` to a start value `s` and all elements in `iter` going from left to right.
+    ///
+    /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def foldLeft(f: (b, a) -> b & ef, s: b, iter: Iterator[a]): b & Impure =
+        let Iterator(done, next) = iter;
+        foldLeftHelper(f, s, done, next)
+
+    ///
+    /// Helper function for `foldLeft`.
+    ///
+    def foldLeftHelper(f: (b, a) -> b & ef, s: b, done: Done, next: Next[a]): b & Impure =
+        if (done())
+            s
+        else
+            foldLeftHelper(f, f(s, next()), done, next)
+
+    ///
+    /// Applies `f` to all elements in `iter` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
+    ///
+    /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
+    ///
+    /// Returns `None` if `iter` is empty.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def reduceLeft(f: (a, a) -> a & ef, iter: Iterator[a]): Option[a] & Impure =
+        let Iterator(done, next) = iter;
+        if (done())
+            None
+        else
+            Some(foldLeft(f, next(), iter))
+
+    ///
+    /// Returns the longest prefix of `iter` that satisfies the predicate `f`.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def takeWhile(f: a -> Bool & ef, iter: Iterator[a]): List[a] & Impure =
+        let Iterator(done, next) = iter;
+        takeWhileAcc(f, done, next, ks -> ks as & ef) // NB: Cast required because the identity continuation is pure,
+                                                      // but the intermediate continuations are effect polymorphic
+
+    ///
+    /// Helper function for `takeWhile`.
+    ///
+    def takeWhileAcc(f: a -> Bool & ef, done: Done, next: Next[a], k: List[a] -> List[a] & ef): List[a] & Impure =
+        if (done())
+            k(Nil)
+        else
+            let x = next();
+            if (f(x))
+                takeWhileAcc(f, done, next, ks -> k(x :: ks))
+            else
+                k(Nil)
+
+    ///
+    /// Returns `iter` without the longest prefix that satisfies the predicate `f`.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def dropWhile(f: a -> Bool & ef, iter: Iterator[a]): List[a] & Impure =
+        let Iterator(done, next) = iter;
+        match forward(x -> not f(x), done, next) {
+            case None    => Nil
+            case Some(i) => i :: toList(iter)
+        }
 }

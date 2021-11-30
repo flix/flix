@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.extra
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.CodeHint
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
@@ -26,63 +26,36 @@ import ca.uwaterloo.flix.util.Validation._
 object CodeHinter {
 
   /**
-    * A list of operations that support lazy evaluation when given a pure function.
-    */
-  private val LazyWhenPure: List[Symbol.DefnSym] = List(
-    Symbol.mkDefnSym("LazyList.filter"),
-    Symbol.mkDefnSym("LazyList.filterMap"),
-    Symbol.mkDefnSym("LazyList.map"),
-    Symbol.mkDefnSym("LazyList.flatMap"),
-    Symbol.mkDefnSym("LazyList.mapWithIndex"),
-    Symbol.mkDefnSym("LazyList.dropWhile"),
-    Symbol.mkDefnSym("LazyList.takeWhile"),
-    Symbol.mkDefnSym("Stream.filter"),
-    Symbol.mkDefnSym("Stream.filterMap"),
-    Symbol.mkDefnSym("Stream.map"),
-    Symbol.mkDefnSym("Stream.flatMap"),
-    Symbol.mkDefnSym("Stream.mapWithIndex"),
-    Symbol.mkDefnSym("Stream.dropWhile"),
-    Symbol.mkDefnSym("Stream.takeWhile")
-  )
-
-  /**
-    * A list of operations that support parallel evaluation when given a pure function.
-    */
-  private val ParallelWhenPure: List[Symbol.DefnSym] = List(
-    Symbol.mkDefnSym("Set.count"),
-    Symbol.mkDefnSym("Set.exists"),
-    Symbol.mkDefnSym("Set.forall"),
-    Symbol.mkDefnSym("Set.maximumBy"),
-    Symbol.mkDefnSym("Set.minimumBy"),
-  )
-
-  /**
     * Returns a collection of code quality hints for the given AST `root`.
     */
-  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CodeHint] = flix.phase("CodeQuality") {
-    val hints = root.defs.values.flatMap(visitDef).toList
-    if (hints.isEmpty)
-      root.toSuccess
-    else
-      Failure(hints.to(LazyList))
+  def run(root: TypedAst.Root, sources: Set[String])(implicit flix: Flix): List[CodeHint] = {
+    val codeHints = root.defs.values.flatMap(visitDef(_)(root)).toList
+    codeHints.filter(include(_, sources))
   }
+
+  /**
+    * Returns `true` if the given code `hint` should be included in the result.
+    */
+  private def include(hint: CodeHint, sources: Set[String]): Boolean =
+    sources.contains(hint.loc.source.name)
 
   /**
     * Computes code quality hints for the given definition `def0`.
     */
-  private def visitDef(def0: TypedAst.Def): List[CodeHint] = {
+  private def visitDef(def0: TypedAst.Def)(implicit root: Root): List[CodeHint] = {
     visitExp(def0.impl.exp)
   }
 
   /**
     * Computes code quality hints for the given expression `exp0`.
     */
-  private def visitExp(exp0: Expression): List[CodeHint] = exp0 match {
+  private def visitExp(exp0: Expression)(implicit root: Root): List[CodeHint] = exp0 match {
     case Expression.Wild(_, _) => Nil
 
     case Expression.Var(_, _, _) => Nil
 
-    case Expression.Def(_, _, _) => Nil
+    case Expression.Def(sym, _, loc) =>
+      checkDeprecated(sym, loc)
 
     case Expression.Sig(_, _, _) => Nil
 
@@ -121,7 +94,8 @@ object CodeHinter {
 
     case Expression.Apply(exp, exps, _, eff, loc) =>
       val hints0 = (exp, exps) match {
-        case (Expression.Def(sym, _, _), lambda :: _) => checkPurity(sym, lambda.tpe, loc)
+        case (Expression.Def(sym, _, _), lambda :: _) =>
+          checkPurity(sym, lambda.tpe, loc)
         case _ => Nil
       }
       val hints1 = checkEffect(eff, loc)
@@ -202,8 +176,8 @@ object CodeHinter {
     case Expression.Ascribe(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Cast(exp, _, _, _) =>
-      visitExp(exp)
+    case Expression.Cast(exp, tpe, eff, loc) =>
+      checkCast(tpe, eff, loc) ++ visitExp(exp)
 
     case Expression.TryCatch(exp, rules, _, _, _) =>
       visitExp(exp) ++ rules.flatMap {
@@ -283,43 +257,67 @@ object CodeHinter {
   }
 
   /**
+    * Computes code quality hints for the given list of expressions `exps`.
+    */
+  private def visitExps(exps: List[Expression])(implicit root: Root): List[CodeHint] =
+    exps.flatMap(visitExp)
+
+  /**
     * Computes code quality hints for the given constraint `c`.
     */
-  private def visitConstraint(c: Constraint): List[CodeHint] =
+  private def visitConstraint(c: Constraint)(implicit root: Root): List[CodeHint] =
     visitHeadPredicate(c.head) ++ c.body.flatMap(visitBodyPredicate)
 
   /**
     * Computes code quality hints for the given head predicate `p`.
     */
-  private def visitHeadPredicate(p: TypedAst.Predicate.Head): List[CodeHint] = p match {
+  private def visitHeadPredicate(p: TypedAst.Predicate.Head)(implicit root: Root): List[CodeHint] = p match {
     case Head.Atom(_, _, terms, _, _) => visitExps(terms)
   }
 
   /**
     * Computes code quality hints for the given body predicate `p`.
     */
-  private def visitBodyPredicate(p: TypedAst.Predicate.Body): List[CodeHint] = p match {
+  private def visitBodyPredicate(p: TypedAst.Predicate.Body)(implicit root: Root): List[CodeHint] = p match {
     case Body.Atom(_, _, _, _, _, _) => Nil
     case Body.Guard(exp, _) => visitExp(exp)
   }
 
   /**
-    * Computes code quality hints for the given list of expressions `exps`.
-    */
-  private def visitExps(exps: List[Expression]): List[CodeHint] =
-    exps.flatMap(visitExp)
-
-  /**
     * Checks whether `sym` would benefit from `tpe` being pure.
     */
-  private def checkPurity(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation): List[CodeHint] = {
-    if (LazyWhenPure.contains(sym) && nonPureFunction(tpe)) {
-      CodeHint.LazyWhenPure(sym, loc) :: Nil
-    } else if (ParallelWhenPure.contains(sym) && nonPureFunction(tpe)) {
-      CodeHint.ParallelWhenPure(sym, loc) :: Nil
+  private def checkPurity(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation)(implicit root: Root): List[CodeHint] = {
+    if (lazyWhenPure(sym)) {
+      if (isPureFunction(tpe))
+        CodeHint.LazyEvaluation(sym, loc) :: Nil
+      else
+        CodeHint.SuggestPurityForLazyEvaluation(sym, loc) :: Nil
+    } else if (parallelWhenPure(sym)) {
+      if (isPureFunction(tpe))
+        CodeHint.ParallelEvaluation(sym, loc) :: Nil
+      else
+        CodeHint.SuggestPurityForParallelEvaluation(sym, loc) :: Nil
     } else {
       Nil
     }
+  }
+
+  /**
+    * Returns `true` if the the given `sym` is marked being purity polymorphic
+    * and uses lazy evaluation when given a pure function argument.
+    */
+  private def lazyWhenPure(sym: Symbol.DefnSym)(implicit root: Root): Boolean = {
+    val defn = root.defs(sym)
+    defn.spec.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.LazyWhenPure])
+  }
+
+  /**
+    * Returns `true` if the given `sym` is marked being purity polymorphic
+    * and uses parallel evaluation when given a pure function argument.
+    */
+  private def parallelWhenPure(sym: Symbol.DefnSym)(implicit root: Root): Boolean = {
+    val defn = root.defs(sym)
+    defn.spec.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.ParallelWhenPure])
   }
 
   /**
@@ -336,9 +334,32 @@ object CodeHinter {
   }
 
   /**
-    * Returns `true` if the given function type `tpe` is non-pure (impure or polymorphic).
+    * Checks whether the given definition symbol `sym` is deprecated.
     */
-  private def nonPureFunction(tpe: Type): Boolean = tpe.arrowEffectType != Type.Pure
+  private def checkDeprecated(sym: Symbol.DefnSym, loc: SourceLocation)(implicit root: Root): List[CodeHint] = {
+    val defn = root.defs(sym)
+    val isDeprecated = defn.spec.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.Deprecated])
+    if (isDeprecated) {
+      CodeHint.Deprecated(loc) :: Nil
+    } else {
+      Nil
+    }
+  }
+
+  /**
+    * Checks whether a cast to the given `tpe` and `eff` is an unsafe purity cast.
+    */
+  private def checkCast(tpe: Type, eff: Type, loc: SourceLocation): List[CodeHint] = {
+    eff.typeConstructor match {
+      case Some(TypeConstructor.True) => CodeHint.UnsafePurityCast(eff.loc) :: Nil
+      case _ => Nil
+    }
+  }
+
+  /**
+    * Returns `true` if the given function type `tpe` is pure.
+    */
+  private def isPureFunction(tpe: Type): Boolean = tpe.arrowEffectType == Type.Pure
 
   /**
     * Returns `true` if the given effect `tpe` is non-trivial.

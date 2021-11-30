@@ -58,11 +58,6 @@ object JvmName {
   val ConstructorMethod: String = "<init>"
 
   /**
-    * The Flix reserved delimiter for generated jvm classes.
-    */
-  val Delimiter: String = "$"
-
-  /**
     * Returns the JvmName of the given string `s`.
     */
   def mk(s: String): JvmName = {
@@ -103,7 +98,6 @@ object JvmName {
 
   val DevFlixRuntime: List[String] = List("dev", "flix", "runtime")
 
-  val Context: JvmName = JvmName(Nil, "Context")
   val FlixError: JvmName = JvmName(DevFlixRuntime, "FlixError")
   val GlobalCounter: JvmName = JvmName(DevFlixRuntime, "GlobalCounter")
   val HoleError: JvmName = JvmName(DevFlixRuntime, "HoleError")

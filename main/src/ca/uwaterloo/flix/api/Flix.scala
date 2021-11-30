@@ -31,6 +31,13 @@ import java.nio.file.{Files, Path, Paths}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
+object Flix {
+  /**
+    * The reserved Flix delimiter.
+    */
+  val Delimiter: String = "%"
+}
+
 /**
   * Main programmatic interface for Flix.
   */
@@ -138,7 +145,6 @@ class Flix {
     "ReentrantLock.flix" -> LocalResource.get("/src/library/ReentrantLock.flix"),
     "Result.flix" -> LocalResource.get("/src/library/Result.flix"),
     "Set.flix" -> LocalResource.get("/src/library/Set.flix"),
-    "Stream.flix" -> LocalResource.get("/src/library/Stream.flix"),
     "String.flix" -> LocalResource.get("/src/library/String.flix"),
 
     "MutDeque.flix" -> LocalResource.get("/src/library/MutDeque.flix"),
@@ -373,6 +379,17 @@ class Flix {
   }
 
   /**
+    * Converts a list of compiler error messages to a list of printable messages.
+    * Decides whether or not to print the explanation.
+    */
+  def mkMessages(errors: Seq[CompilationMessage]): List[String] = {
+    if (options.explain || errors.length == 1)
+      errors.map(cm => cm.message(formatter) + cm.explain(formatter).getOrElse("")).toList
+    else
+      errors.map(cm => cm.message(formatter)).toList
+  }
+
+  /**
     * Compiles the Flix program and returns a typed ast.
     */
   def check(): Validation[TypedAst.Root, CompilationMessage] = {
@@ -398,7 +415,6 @@ class Flix {
         PatternExhaustiveness |>
         Redundancy |>
         Terminator |>
-        Linter |>
         Safety
 
     // Apply the pipeline to the parsed AST.

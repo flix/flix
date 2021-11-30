@@ -1,5 +1,6 @@
 /*
  * Copyright 2017 Magnus Madsen
+ * Copyright 2021 Jonathan Lindegaard Starup
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -106,7 +107,7 @@ object JvmOps {
   }
 
   /**
-    * Returns the continuation interface type `Cont$X` for the given type `tpe`.
+    * Returns the continuation class type `Cont$X` for the given type `tpe`.
     *
     * Int -> Int          =>  Cont$Int
     * (Int, Int) -> Int   =>  Cont$Int
@@ -119,7 +120,7 @@ object JvmOps {
       val returnType = JvmOps.getErasedJvmType(tresult)
 
       // The JVM name is of the form Cont$ErasedType
-      val name = "Cont$" + stringify(returnType)
+      val name = "Cont" + Flix.Delimiter + stringify(returnType)
 
       // The type resides in the root package.
       JvmType.Reference(JvmName(RootPackage, name))
@@ -128,7 +129,7 @@ object JvmOps {
   }
 
   /**
-    * Returns the function interface type `FnX$Y$Z` for the given type `tpe`.
+    * Returns the function abstract class type `FnX$Y$Z` for the given type `tpe`.
     *
     * For example:
     *
@@ -139,7 +140,7 @@ object JvmOps {
     */
   def getFunctionInterfaceType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
     case MonoType.Arrow(targs, tresult) =>
-      // Compute the arity of the function interface.
+      // Compute the arity of the function abstract class.
       // We subtract one since the last argument is the return type.
       val arity = targs.length
 
@@ -147,7 +148,35 @@ object JvmOps {
       val args = (targs ::: tresult :: Nil).map(tpe => stringify(getErasedJvmType(tpe)))
 
       // The JVM name is of the form FnArity$Arg0$Arg1$Arg2
-      val name = "Fn" + arity + JvmName.Delimiter + args.mkString(JvmName.Delimiter)
+      val name = "Fn" + arity + Flix.Delimiter + args.mkString(Flix.Delimiter)
+
+      // The type resides in the root package.
+      JvmType.Reference(JvmName(RootPackage, name))
+
+    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+  }
+
+  /**
+    * Returns the closure abstract class type `CloX$Y$Z` for the given type `tpe`.
+    *
+    * For example:
+    *
+    * Int -> Int          =>  Clo2$Int$Int
+    * (Int, Int) -> Int   =>  Clo3$Int$Int$Int
+    *
+    * NB: The given type `tpe` must be an arrow type.
+    */
+  def getClosureAbstractClassType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
+    case MonoType.Arrow(targs, tresult) =>
+      // Compute the arity of the function abstract class.
+      // We subtract one since the last argument is the return type.
+      val arity = targs.length
+
+      // Compute the stringified erased type of each type argument.
+      val args = (targs ::: tresult :: Nil).map(tpe => stringify(getErasedJvmType(tpe)))
+
+      // The JVM name is of the form FnArity$Arg0$Arg1$Arg2
+      val name = "Clo" + arity + Flix.Delimiter + args.mkString(Flix.Delimiter)
 
       // The type resides in the root package.
       JvmType.Reference(JvmName(RootPackage, name))
@@ -165,7 +194,7 @@ object JvmOps {
   def getClosureClassType(closure: ClosureInfo)(implicit root: Root, flix: Flix): JvmType.Reference = closure.tpe match {
     case MonoType.Arrow(_, _) =>
       // The JVM name is of the form Clo$sym.name
-      val name = "Clo" + JvmName.Delimiter + mangle(closure.sym.name)
+      val name = "Clo" + Flix.Delimiter + mangle(closure.sym.name)
 
       // The JVM package is the namespace of the symbol.
       val pkg = closure.sym.namespace
@@ -193,7 +222,7 @@ object JvmOps {
       val args = elms.map(tpe => stringify(getErasedJvmType(tpe)))
 
       // The JVM name is of the form Option$ or Option$Int
-      val name = if (args.isEmpty) "I" + sym.name else "I" + sym.name + JvmName.Delimiter + args.mkString(JvmName.Delimiter)
+      val name = if (args.isEmpty) "I" + sym.name else "I" + sym.name + Flix.Delimiter + args.mkString(Flix.Delimiter)
 
       // The enum resides in its namespace package.
       JvmType.Reference(JvmName(sym.namespace, name))
@@ -222,7 +251,7 @@ object JvmOps {
     val args = tag.tparams.map(tpe => stringify(getErasedJvmType(tpe)))
 
     // The JVM name is of the form Tag$Arg0$Arg1$Arg2
-    val name = tag.sym.name + JvmName.Delimiter + (if (args.isEmpty) tagName else tagName + JvmName.Delimiter + args.mkString(JvmName.Delimiter))
+    val name = tag.sym.name + Flix.Delimiter + (if (args.isEmpty) tagName else tagName + Flix.Delimiter + args.mkString(Flix.Delimiter))
 
     // The tag class resides in its namespace package.
     JvmType.Reference(JvmName(tag.sym.namespace, name))
@@ -250,7 +279,7 @@ object JvmOps {
       val args = elms.map(tpe => stringify(getErasedJvmType(tpe)))
 
       // The JVM name is of the form TupleArity$Arg0$Arg1$Arg2
-      val name = "Tuple" + arity + JvmName.Delimiter + args.mkString(JvmName.Delimiter)
+      val name = "Tuple" + arity + Flix.Delimiter + args.mkString(Flix.Delimiter)
 
       // The type resides in the root package.
       JvmType.Reference(JvmName(RootPackage, name))
@@ -259,7 +288,7 @@ object JvmOps {
   def getLazyClassType(tpe: MonoType.Lazy)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
     case MonoType.Lazy(tpe) =>
       val arg = stringify(getErasedJvmType(tpe))
-      val name = "Lazy$" + arg
+      val name = "Lazy" + Flix.Delimiter + arg
       JvmType.Reference(JvmName(RootPackage, name))
   }
 
@@ -275,7 +304,7 @@ object JvmOps {
   def getRecordInterfaceType()(implicit root: Root, flix: Flix): JvmType.Reference = {
 
     // The JVM name is of the form IRecord
-    val name = s"IRecord${JvmName.Delimiter}"
+    val name = s"IRecord${Flix.Delimiter}"
 
     // The type resides in the root package.
     JvmType.Reference(JvmName(RootPackage, name))
@@ -317,7 +346,7 @@ object JvmOps {
       val valueType = stringify(getErasedJvmType(value))
 
       // The JVM name is of the form RecordExtend
-      val name = "RecordExtend" + JvmName.Delimiter + valueType
+      val name = "RecordExtend" + Flix.Delimiter + valueType
 
       // The type resides in the root package.
       JvmType.Reference(JvmName(RootPackage, name))
@@ -341,7 +370,7 @@ object JvmOps {
     val valueType = JvmOps.stringify(JvmOps.getErasedJvmType(tpe))
 
     // The JVM name is of the form RecordExtend
-    val name = "RecordExtend$" + valueType
+    val name = "RecordExtend" + Flix.Delimiter + valueType
 
     // The type resides in the root package.
     JvmType.Reference(JvmName(JvmOps.RootPackage, name))
@@ -373,7 +402,7 @@ object JvmOps {
       val arg = stringify(getErasedJvmType(elmType))
 
       // The JVM name is of the form TArity$Arg0$Arg1$Arg2
-      val name = "Ref" + JvmName.Delimiter + arg
+      val name = "Ref" + Flix.Delimiter + arg
 
       // The type resides in the ca.uwaterloo.flix.api.cell package.
       JvmType.Reference(JvmName(Nil, name))
@@ -390,7 +419,7 @@ object JvmOps {
     */
   def getFunctionDefinitionClassType(sym: Symbol.DefnSym)(implicit root: Root, flix: Flix): JvmType.Reference = {
     val pkg = sym.namespace
-    val name = "Def$" + mangle(sym.name)
+    val name = "Def" + Flix.Delimiter + mangle(sym.name)
     JvmType.Reference(JvmName(pkg, name))
   }
 
@@ -411,32 +440,6 @@ object JvmOps {
   }
 
   /**
-    * Returns the field name of a namespace as used in the Context class.
-    *
-    * For example:
-    *
-    * <root>      =>  Ns$Root$
-    * Foo         =>  Foo$Ns
-    * Foo.Bar     =>  Foo$Bar$Ns
-    * Foo.Bar.Baz =>  Foo$Bar$Baz$Ns
-    */
-  def getNamespaceFieldNameInContextClass(ns: NamespaceInfo): String =
-    if (ns.isRoot)
-      "ns$Root$"
-    else
-      "ns$" + ns.ns.mkString(JvmName.Delimiter)
-
-  /**
-    * Returns the field name of a defn as used in a namespace class.
-    *
-    * For example:
-    *
-    * find      =>  f_find
-    * length    =>  f_length
-    */
-  def getDefFieldNameInNamespaceClass(sym: Symbol.DefnSym): String = "f_" + mangle(sym.name)
-
-  /**
     * Returns the method name of a defn as used in a namespace class.
     *
     * For example:
@@ -451,24 +454,23 @@ object JvmOps {
     */
   // TODO: Magnus: Use this in appropriate places.
   def mangle(s: String): String = s.
-    replace("+", "$plus").
-    replace("-", "$minus").
-    replace("*", "$asterisk").
-    replace("/", "$fslash").
-    replace("\\", "$bslash").
-    replace("%", "$percent").
-    replace("<", "$less").
-    replace(">", "$greater").
-    replace("=", "$eq").
-    replace("&", "$ampersand").
-    replace("|", "$bar").
-    replace("^", "$caret").
-    replace("~", "$tilde").
-    replace("!", "$exclamation").
-    replace("#", "$hashtag").
-    replace(":", "$colon").
-    replace("?", "$question").
-    replace("@", "$at")
+    replace("+", Flix.Delimiter + "plus").
+    replace("-", Flix.Delimiter + "minus").
+    replace("*", Flix.Delimiter + "asterisk").
+    replace("/", Flix.Delimiter + "fslash").
+    replace("\\", Flix.Delimiter + "bslash").
+    replace("<", Flix.Delimiter + "less").
+    replace(">", Flix.Delimiter + "greater").
+    replace("=", Flix.Delimiter + "eq").
+    replace("&", Flix.Delimiter + "ampersand").
+    replace("|", Flix.Delimiter + "bar").
+    replace("^", Flix.Delimiter + "caret").
+    replace("~", Flix.Delimiter + "tilde").
+    replace("!", Flix.Delimiter + "exclamation").
+    replace("#", Flix.Delimiter + "hashtag").
+    replace(":", Flix.Delimiter + "colon").
+    replace("?", Flix.Delimiter + "question").
+    replace("@", Flix.Delimiter + "at")
 
   /**
     * Returns stringified name of the given JvmType `tpe`.
@@ -814,6 +816,40 @@ object JvmOps {
     */
   def tagsOf(root: Root)(implicit flix: Flix): Set[TagInfo] = {
     typesOf(root).flatMap(tpe => getTagsOf(tpe)(root, flix))
+  }
+
+  /**
+    * Returns the set of ref types in `types` without searching recursively.
+    */
+  def getRefsOf(types: Iterable[MonoType])(implicit flix: Flix, root: Root): Set[BackendObjType.Ref] =
+    types.foldLeft(Set.empty[BackendObjType.Ref]) {
+      case (acc, tpe) => acc ++ getRefsOf(tpe)
+    }
+
+  /**
+    * Returns a singleton set of the appropriate ref type if `tpe` is of ref type.
+    */
+  def getRefsOf(tpe: MonoType)(implicit flix: Flix, root: Root): Set[BackendObjType.Ref] = tpe match {
+    case MonoType.Ref(tpe) => Set(BackendObjType.Ref(BackendType.toErasedBackendType(tpe)))
+    case _ => Set.empty
+  }
+
+  /**
+    * Returns the set of record extend types in `types` without searching recursively.
+    */
+  def getRecordExtendsOf(types: Iterable[MonoType])(implicit flix: Flix, root: Root): Set[BackendObjType.RecordExtend] =
+    types.foldLeft(Set.empty[BackendObjType.RecordExtend]) {
+      case (acc, tpe) => acc ++ getRecordExtendsOf(tpe)
+    }
+
+  /**
+    * Returns a singleton set of the appropriate record extend type if `tpe` is of record extend type.
+    */
+  def getRecordExtendsOf(tpe: MonoType)(implicit flix: Flix, root: Root): Set[BackendObjType.RecordExtend] = tpe match {
+    case MonoType.RecordExtend(field, value, _) =>
+      // TODO: should use mono -> backend transformation on `rest`
+      Set(BackendObjType.RecordExtend(field, BackendType.toErasedBackendType(value), BackendObjType.RecordEmpty.toTpe))
+    case _ => Set.empty
   }
 
   /**
