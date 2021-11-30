@@ -96,6 +96,7 @@ object TypeError {
          |>> The inferred effect: '${red(FormatEff.formatEff(inferred))}' cannot be generalized to '${red(FormatEff.formatEff(declared))}'.
          |
          |${code(loc, "unable to generalize the effect.")}
+         |
          |""".stripMargin
     }
 
@@ -115,9 +116,11 @@ object TypeError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.format)}
-         |>> Non-pure function declared as pure. A function with side-effects must be declared as impure.
+         |>> ${red("Non-pure")} function declared as ${green("pure")}.
+         |>> A function with side-effects must be declared as impure.
          |
          |${code(loc, "non-pure function.")}
+         |
          |""".stripMargin
     }
 
@@ -222,6 +225,7 @@ object TypeError {
          |>> Unable to unify the types: '${red(FormatType.formatType(tpe1))}' and '${red(FormatType.formatType(tpe2))}'.
          |
          |${code(loc, "mismatched arity of types.")}
+         |
          |""".stripMargin
     }
 
@@ -351,6 +355,7 @@ object TypeError {
          |>> Unexpected non-schema type: '${red(FormatType.formatType(tpe))}'.
          |
          |${code(loc, "unexpected non-schema type.")}
+         |
          |""".stripMargin
     }
 
@@ -373,6 +378,7 @@ object TypeError {
          |>> No instance of class '${red(clazz.toString)}' for type ${red(FormatType.formatType(tpe))}.
          |
          |${code(loc, s"missing instance")}
+         |
          |""".stripMargin
     }
 
@@ -398,6 +404,7 @@ object TypeError {
          |>> Equality is not defined on ${red(FormatType.formatType(tpe))}. Define or derive an instance of Eq.
          |
          |${code(loc, s"missing Eq instance")}
+         |
          |""".stripMargin
     }
 
@@ -432,6 +439,7 @@ object TypeError {
          |>> Order is not defined on ${red(FormatType.formatType(tpe))}. Define or derive an instance of Order.
          |
          |${code(loc, s"missing Order instance")}
+         |
          |""".stripMargin
     }
 
@@ -468,6 +476,7 @@ object TypeError {
          |>> The main function has an unexpected type.
          |
          |${code(loc, s"unexpected type.")}
+         |
          |""".stripMargin
     }
 
