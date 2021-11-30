@@ -283,12 +283,14 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
                       val declaredEffScheme = Scheme(declaredScheme.quantifiers, Nil, declaredEff)
                       Scheme.checkLessThanEqual(inferredEffScheme, declaredEffScheme, classEnv) match {
                         case Validation.Success(_) =>
-                          // Case 3.1: The effect is not the problem. Regular generalization error.
-                          return TypeError.GeneralizationError(declaredScheme, inferredSc, loc).toFailure
+                        // Case 3.1: The effect is not the problem. Regular generalization error.
+                        // Fall through to below.
                         case Validation.Failure(_) =>
                           // Case 3.2: The effect cannot be generalized.
                           return TypeError.EffectGeneralizationError(declaredEff, inferredEff, loc).toFailure
                       }
+
+                      return TypeError.GeneralizationError(declaredScheme, inferredSc, loc).toFailure
                     }
                   } else {
                     // Case 3: instance error
