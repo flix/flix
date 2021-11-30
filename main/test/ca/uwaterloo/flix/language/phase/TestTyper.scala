@@ -1096,4 +1096,45 @@ class TestTyper extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.IllegalMain](result)
   }
+
+  test("Test.ImpureDeclaredAsPure.01") {
+    val input =
+      """
+        |pub def f(): Int32 = 123 as & Impure
+        |
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.ImpureDeclaredAsPure](result)
+  }
+
+  test("Test.ImpureDeclaredAsPure.02") {
+    val input =
+      """
+        |def f(): Int32 & Pure = 123 as & Impure
+        |
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.ImpureDeclaredAsPure](result)
+  }
+
+  test("Test.EffectPolymorphicDeclaredAsPure.01") {
+    val input =
+      """
+        |def f(g: Int32 -> Int32 & ef): Int32 = g(123)
+        |
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.EffectPolymorphicDeclaredAsPure](result)
+  }
+
+  test("Test.EffectPolymorphicDeclaredAsPure.02") {
+    val input =
+      """
+        |def f(g: Int32 -> Int32 & ef): Int32 & Pure = g(123)
+        |
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.EffectPolymorphicDeclaredAsPure](result)
+  }
+
 }
