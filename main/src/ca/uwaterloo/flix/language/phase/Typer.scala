@@ -271,26 +271,23 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
                     val inferredEff = inferredSc.base.arrowEffectType
                     val declaredEff = declaredScheme.base.arrowEffectType
 
-                    if (declaredEff == Type.Pure) {
-                      // Case 1: The declared effect is pure.
-                      if (inferredEff == Type.Impure) {
-                        // Case 1.1: Declared pure, but impure.
-                        return TypeError.ImpureDeclaredAsPure(loc).toFailure
-                      } else {
-                        // Case 1.2: Declared pure, but effect polymorphic.
-                        return TypeError.EffectPolymorphicDeclaredAsPure(inferredEff, loc).toFailure
-                      }
+                    if (declaredEff == Type.Pure && inferredEff == Type.Impure) {
+                      // Case 1: Declared as pure, but impure.
+                      return TypeError.ImpureDeclaredAsPure(loc).toFailure
+                    } else if (declaredEff == Type.Pure && inferredEff != Type.Pure) {
+                      // Case 2: Declared pure, but effect polymorphic.
+                      return TypeError.EffectPolymorphicDeclaredAsPure(inferredEff, loc).toFailure
                     } else {
-                      // Case 2: Declared non-pure.
+                      // Case 3: Check if it is the effect that cannot be generalized.
                       val inferredEffScheme = Scheme(inferredSc.quantifiers, Nil, inferredEff)
                       val declaredEffScheme = Scheme(declaredScheme.quantifiers, Nil, declaredEff)
                       Scheme.checkLessThanEqual(inferredEffScheme, declaredEffScheme, classEnv) match {
                         case Validation.Success(_) =>
-                          // Case 2.1: The effect is not the problem. Regular generalization error.
+                          // Case 3.1: The effect is not the problem. Regular generalization error.
                           return TypeError.GeneralizationError(declaredScheme, inferredSc, loc).toFailure
                         case Validation.Failure(_) =>
-                          // Case 2.2: The effect cannot be generalized.
-                          return TypeError.EffectGeneralizationError(inferredEff, declaredEff, loc).toFailure
+                          // Case 3.2: The effect cannot be generalized.
+                          return TypeError.EffectGeneralizationError(declaredEff, inferredEff, loc).toFailure
                       }
                     }
                   } else {
