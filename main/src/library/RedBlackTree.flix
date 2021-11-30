@@ -492,6 +492,15 @@ namespace RedBlackTree {
     }
 
     ///
+    /// Returns a RedBlackTree with mappings `k -> f(v)` for every `k -> v` in `t`.
+    ///
+    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    ///
+    @ParallelWhenPure
+    pub def map(f: v1 -> v2 & ef, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] & ef =
+        mapWithKey((_, v) -> f(v), t)
+
+    ///
     /// Returns a map with mappings `k -> f(k, v)` for every `k -> v` in `t`.
     ///
     /// Purity polymorphic: Runs in parallel when given a pure function `f`.
@@ -566,13 +575,4 @@ namespace RedBlackTree {
             let b1 = seqMap(f, b);
             Node(c, a1, k, v1, b1)
     }
-
-    ///
-    /// Returns a RedBlackTree with mappings `k -> f(v)` for every `k -> v` in `t`.
-    ///
-    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
-    ///
-    @ParallelWhenPure
-    pub def map(f: v1 -> v2 & ef, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] & ef =
-        mapWithKey((_, v) -> f(v), t)
 }
