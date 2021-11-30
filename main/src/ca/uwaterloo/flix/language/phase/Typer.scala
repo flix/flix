@@ -265,24 +265,33 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
                   }
                   // Case 2: non instance error
                   if (instanceErrs.isEmpty) {
-                    // Determine if the generalization error is because of effects.
-
+                    //
+                    // Determine the most precise type error to emit.
+                    //
                     val inferredEff = inferredSc.base.arrowEffectType
                     val declaredEff = declaredScheme.base.arrowEffectType
 
-                    val inferredEffScheme = Scheme(inferredSc.quantifiers, Nil, inferredEff)
-                    val declaredEffScheme = Scheme(declaredScheme.quantifiers, Nil, declaredEff)
-
-                    Scheme.checkLessThanEqual(inferredEffScheme, declaredEffScheme, classEnv) match {
-                      case Validation.Success(_) =>
-                        // Case 2.1: Regular generalization error.
-                        return TypeError.GeneralizationError(declaredScheme, inferredSc, loc).toFailure
-                      case Validation.Failure(_) =>
-                        // Case 2.2: Effect generalization error.
-                        if (declaredEff == Type.Pure && inferredEff == Type.Impure) {
-                          return TypeError.ImpureDeclaredAsPure(inferredEff, declaredEff, loc).toFailure
-                        } else
+                    if (declaredEff == Type.Pure) {
+                      // Case 1: The declared effect is pure.
+                      if (inferredEff == Type.Impure) {
+                        // Case 1.1: Declared pure, but impure.
+                        return TypeError.ImpureDeclaredAsPure(inferredEff, declaredEff, loc).toFailure
+                      } else {
+                        // Case 1.2: Declared pure, but effect polymorphic.
+                        return TypeError.EffectPolymorphicDeclaredAsPure(inferredEff, declaredEff, loc).toFailure
+                      }
+                    } else {
+                      // Case 2: Declared non-pure.
+                      val inferredEffScheme = Scheme(inferredSc.quantifiers, Nil, inferredEff)
+                      val declaredEffScheme = Scheme(declaredScheme.quantifiers, Nil, declaredEff)
+                      Scheme.checkLessThanEqual(inferredEffScheme, declaredEffScheme, classEnv) match {
+                        case Validation.Success(_) =>
+                          // Case 2.1: The effect is not the problem. Regular generalization error.
+                          return TypeError.GeneralizationError(declaredScheme, inferredSc, loc).toFailure
+                        case Validation.Failure(_) =>
+                          // Case 2.2: The effect cannot be generalized.
                           return TypeError.EffectGeneralizationError(inferredEff, declaredEff, loc).toFailure
+                      }
                     }
                   } else {
                     // Case 3: instance error

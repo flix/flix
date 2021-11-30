@@ -116,8 +116,8 @@ object TypeError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.format)}
-         |>> ${red("Non-pure")} function declared as ${green("pure")}.
-         |>> A function with side-effects must be declared as impure.
+         |>> ${red("Non-pure")} function declared as ${green("pure")}. A function with side-effects
+         |>> must be declared as impure.
          |
          |${code(loc, "non-pure function.")}
          |
@@ -125,12 +125,43 @@ object TypeError {
     }
 
     def explain(formatter: Formatter): Option[String] = Some({
-      """A function whose body is impure must be declared as impure.
+      """A function whose body is impure must be declared as so.
         |
         |For example:
         |
-        |  def printHello(): Unit & Impure = println("Hello!")
-        |                         ^^^^^^^^
+        |  def hello(): Unit & Impure = println("Hello!")
+        |                    ^^^^^^^^
+        |""".stripMargin
+    })
+  }
+
+  /**
+    * Effect polymorphic function declared as pure.
+    *
+    * @param declared the declared effect.
+    * @param inferred the inferred effect.
+    * @param loc      the location where the error occurred.
+    */
+  case class EffectPolymorphicDeclaredAsPure(declared: Type, inferred: Type, loc: SourceLocation) extends TypeError {
+    def summary: String = "Effect polymorphic function declared as pure."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> ${red("Effect polymorphic")} function declared as ${green("pure")}.
+         |
+         |${code(loc, "effect polymorphic function.")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      """A function whose body is effect polymorphic must be declared as so.
+        |
+        |For example:
+        |
+        |  def hof(f: Int32 -> Int32 & ef): Int32 & ef = f(123)
+        |                                         ^^^^
         |""".stripMargin
     })
   }
