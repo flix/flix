@@ -25,7 +25,6 @@ trait Formatter {
         .append(System.lineSeparator())
         .append(" " * (beginCol + lineNo.length - 1))
         .append(msg)
-        .append(System.lineSeparator())
         .toString()
     }
 
@@ -42,7 +41,6 @@ trait Formatter {
       }
       sb.append(System.lineSeparator())
         .append(msg)
-        .append(System.lineSeparator())
         .toString()
     }
 

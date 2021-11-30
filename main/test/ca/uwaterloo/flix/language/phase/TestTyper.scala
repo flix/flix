@@ -203,13 +203,13 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestLeq.Wildcard.03") {
     val input = "def foo(a: Int): Int & _ = a"
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.GeneralizationError](result)
+    expectError[TypeError.EffectGeneralizationError](result)
   }
 
   test("TestLeq.Wildcard.04") {
     val input = "def foo(a: Int): Int & _ = a"
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.GeneralizationError](result)
+    expectError[TypeError.EffectGeneralizationError](result)
   }
 
   test("TestLeq.Wildcard.05") {
@@ -344,6 +344,45 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.NoMatchingInstance](result)
+  }
+
+  test("MissingEq.01") {
+    val input =
+      """
+        |pub enum E {
+        |   case E
+        |}
+        |
+        |def foo(x: E, y: E): Bool = x == y
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.MissingEq](result)
+  }
+
+  test("MissingOrder.01") {
+    val input =
+      """
+        |pub enum E {
+        |   case E
+        |}
+        |
+        |def foo(x: E, y: E): Bool = x <= y
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.MissingOrder](result)
+  }
+
+  test("MissingToString.01") {
+    val input =
+      s"""
+         |pub enum E {
+         |   case E
+         |}
+         |
+         |def foo(x: E): String = ToString.toString(x)
+         |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.MissingToString](result)
   }
 
   test("TestChoose.Arity1.01") {
@@ -1138,4 +1177,65 @@ class TestTyper extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.IllegalMain](result)
   }
+
+  test("Test.ImpureDeclaredAsPure.01") {
+    val input =
+      """
+        |pub def f(): Int32 = 123 as & Impure
+        |
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.ImpureDeclaredAsPure](result)
+  }
+
+  test("Test.ImpureDeclaredAsPure.02") {
+    val input =
+      """
+        |def f(): Int32 & Pure = 123 as & Impure
+        |
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.ImpureDeclaredAsPure](result)
+  }
+
+  test("Test.EffectPolymorphicDeclaredAsPure.01") {
+    val input =
+      """
+        |def f(g: Int32 -> Int32 & ef): Int32 = g(123)
+        |
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.EffectPolymorphicDeclaredAsPure](result)
+  }
+
+  test("Test.EffectPolymorphicDeclaredAsPure.02") {
+    val input =
+      """
+        |def f(g: Int32 -> Int32 & ef): Int32 & Pure = g(123)
+        |
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.EffectPolymorphicDeclaredAsPure](result)
+  }
+
+  test("Test.EffectGeneralizationError.01") {
+    val input =
+      """
+        |def f(g: Int32 -> Int32 & ef): Int32 & ef = 123
+        |
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.EffectGeneralizationError](result)
+  }
+
+  test("Test.EffectGeneralizationError.02") {
+    val input =
+      """
+        |def f(g: Int32 -> Int32 & ef1, h: Int32 -> Int32 & ef2): Int32 & (ef1 and ef2) = 123
+        |
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.EffectGeneralizationError](result)
+  }
+
 }
