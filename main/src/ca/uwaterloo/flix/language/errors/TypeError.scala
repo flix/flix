@@ -106,11 +106,9 @@ object TypeError {
   /**
     * Impure function declared as pure.
     *
-    * @param declared the declared effect.
-    * @param inferred the inferred effect.
     * @param loc      the location where the error occurred.
     */
-  case class ImpureDeclaredAsPure(declared: Type, inferred: Type, loc: SourceLocation) extends TypeError {
+  case class ImpureDeclaredAsPure(loc: SourceLocation) extends TypeError {
     def summary: String = "Non-pure function declared as pure. A function with side-effects must be declared as impure."
 
     def message(formatter: Formatter): String = {
@@ -138,11 +136,10 @@ object TypeError {
   /**
     * Effect polymorphic function declared as pure.
     *
-    * @param declared the declared effect.
     * @param inferred the inferred effect.
     * @param loc      the location where the error occurred.
     */
-  case class EffectPolymorphicDeclaredAsPure(declared: Type, inferred: Type, loc: SourceLocation) extends TypeError {
+  case class EffectPolymorphicDeclaredAsPure(inferred: Type, loc: SourceLocation) extends TypeError {
     def summary: String = "Effect polymorphic function declared as pure."
 
     def message(formatter: Formatter): String = {

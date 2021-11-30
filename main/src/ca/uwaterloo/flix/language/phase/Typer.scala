@@ -275,10 +275,10 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
                       // Case 1: The declared effect is pure.
                       if (inferredEff == Type.Impure) {
                         // Case 1.1: Declared pure, but impure.
-                        return TypeError.ImpureDeclaredAsPure(inferredEff, declaredEff, loc).toFailure
+                        return TypeError.ImpureDeclaredAsPure(loc).toFailure
                       } else {
                         // Case 1.2: Declared pure, but effect polymorphic.
-                        return TypeError.EffectPolymorphicDeclaredAsPure(inferredEff, declaredEff, loc).toFailure
+                        return TypeError.EffectPolymorphicDeclaredAsPure(inferredEff, loc).toFailure
                       }
                     } else {
                       // Case 2: Declared non-pure.
