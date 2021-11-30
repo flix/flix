@@ -275,7 +275,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
                       // Case 1: Declared as pure, but impure.
                       return TypeError.ImpureDeclaredAsPure(loc).toFailure
                     } else if (declaredEff == Type.Pure && inferredEff != Type.Pure) {
-                      // Case 2: Declared pure, but effect polymorphic.
+                      // Case 2: Declared as pure, but effect polymorphic.
                       return TypeError.EffectPolymorphicDeclaredAsPure(inferredEff, loc).toFailure
                     } else {
                       // Case 3: Check if it is the effect that cannot be generalized.

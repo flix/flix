@@ -1137,4 +1137,14 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.EffectPolymorphicDeclaredAsPure](result)
   }
 
+  test("Test.EffectGeneralizationError.01") {
+    val input =
+      """
+        |def f(g: Int32 -> Int32 & ef): Int32 & ef = 123
+        |
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.EffectGeneralizationError](result)
+  }
+
 }
