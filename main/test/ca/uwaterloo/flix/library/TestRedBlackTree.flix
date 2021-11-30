@@ -220,6 +220,44 @@ namespace TestRedBlackTree {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // seqMapWithKey                                                           //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def mapWithKey01(): Bool =
+        let Map(t) = Map#{}: Map[Unit, Int32];
+        Map(RedBlackTree.seqMapWithKey((k, v) -> k + v, t)) == Map#{}
+
+    @test
+    def mapWithKey02(): Bool =
+        let Map(t) = Map#{1 -> 4};
+        Map(RedBlackTree.seqMapWithKey((k, v) -> k + v, t)) == Map#{1 -> 5}
+
+    @test
+    def mapWithKey03(): Bool =
+        let Map(t) = Map#{2 -> -1, 0 -> 0};
+        Map(RedBlackTree.seqMapWithKey((k, v) -> k + v, t)) == Map#{2 -> 1, 0 -> 0}
+
+    @test
+    def mapWithKey04(): Bool =
+        let Map(t) = Map#{2 -> -1, 5 -> 15, 11 -> -9};
+        Map(RedBlackTree.seqMapWithKey((k, v) -> k + v, t)) == Map#{2 -> 1, 5 -> 20, 11 -> 2}
+
+    @test
+    def mapWithKey05(): Bool =
+        let Map(t) = Map#{2 -> -1, 5 -> 15, 11 -> -9, 8 -> 8};
+        Map(RedBlackTree.seqMapWithKey((k, v) -> k + v, t)) == Map#{2 -> 1, 5 -> 20, 11 -> 2, 8 -> 16}
+
+    // TODO: Observe effects are sequential
+
+    /////////////////////////////////////////////////////////////////////////////
+    // parMapWithKey                                                           //
+    /////////////////////////////////////////////////////////////////////////////
+
+    // TODO: Observe effects are parallel
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // map                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -247,23 +285,5 @@ namespace TestRedBlackTree {
     def map05(): Bool =
         let Map(t) = Map#{2 -> -1, 5 -> 15, 11 -> -9, 8 -> 8};
         Map(RedBlackTree.map(v -> v + 1, t)) == Map#{2 -> 0, 5 -> 16, 11 -> -8, 8 -> 9}
-
-    @test
-    def map06(): Bool =
-        let Map(t) = List.zip(List.range(0, 16), List.range(0, 16)) |> List.toMap;
-        let m = Map(RedBlackTree1.map(v -> v + 1, t));
-        Map.toList(m) == List.zip(List.range(0, 16), List.range(1, 17))
-
-    @test
-    def map07(): Bool =
-        let Map(t) = List.zip(List.range(0, 5000), List.range(0, 5000)) |> List.toMap;
-        let m = Map(RedBlackTree1.map(v -> v + 1, t));
-        Map.toList(m) == List.zip(List.range(0, 5000), List.range(1, 5001))
-
-    @test
-    def map08(): Bool =
-        let Map(t) = List.zip(List.range(-10000, 10000), List.range(-10000, 10000)) |> List.toMap;
-        let m = Map(RedBlackTree1.map(x -> x + 1, t));
-        Map.toList(m) == List.zip(List.range(-10000, 10000), List.range(-9999, 10001))
 
 }
