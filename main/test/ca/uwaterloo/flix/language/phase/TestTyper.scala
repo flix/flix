@@ -146,6 +146,48 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.MismatchedTypes](result)
   }
 
+  test("TestOverApplied.01") {
+    val input =
+      """
+        |def f(s: String): String = s
+        |def over(): String = f("hello", 123)
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.OverApplied](result)
+  }
+
+  test("TestOverApplied.02") {
+    val input =
+      """
+        |def f(s: String): String = s
+        |def over(): String = f("hello", 123, true)
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.OverApplied](result)
+  }
+
+  test("TestUnderApplied.01") {
+    val input =
+      """
+        |def f(x: String, y: Int32): Bool = true
+        |def under(): String = f("hello"): String
+        |
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.UnderApplied](result)
+  }
+
+  test("TestUnderApplied.02") {
+    val input =
+      """
+        |def f(x: String, y: Int32, z: Bool): Bool = true
+        |def under(): String = f("hello"): String
+        |
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.UnderApplied](result)
+  }
+
   test("TestLeq.Wildcard.01") {
     val input = "def foo(a: _): _ = a"
     val result = compile(input, Options.TestWithLibNix)
