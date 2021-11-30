@@ -379,6 +379,17 @@ class Flix {
   }
 
   /**
+    * Converts a list of compiler error messages to a list of printable messages.
+    * Decides whether or not to print the explanation.
+    */
+  def mkMessages(errors: Seq[CompilationMessage]): List[String] = {
+    if (options.explain || errors.length == 1)
+      errors.map(cm => cm.message(formatter) + cm.explain(formatter).getOrElse("")).toList
+    else
+      errors.map(cm => cm.message(formatter)).toList
+  }
+
+  /**
     * Compiles the Flix program and returns a typed ast.
     */
   def check(): Validation[TypedAst.Root, CompilationMessage] = {

@@ -256,13 +256,46 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
                 case Validation.Failure(errs) =>
                   val instanceErrs = errs.collect {
                     case UnificationError.NoMatchingInstance(tconstr) =>
-                      TypeError.NoMatchingInstance(tconstr.sym, tconstr.arg, tconstr.loc)
+                      if (tconstr.sym.name == "Eq")
+                        TypeError.MissingEq(tconstr.arg, tconstr.loc)
+                      else if (tconstr.sym.name == "Order")
+                        TypeError.MissingOrder(tconstr.arg, tconstr.loc)
+                      else if (tconstr.sym.name == "ToString")
+                        TypeError.MissingToString(tconstr.arg, tconstr.loc)
+                      else
+                        TypeError.NoMatchingInstance(tconstr.sym, tconstr.arg, tconstr.loc)
                   }
                   // Case 2: non instance error
                   if (instanceErrs.isEmpty) {
-                    return TypeError.GeneralizationError(declaredScheme, inferredSc, loc).toFailure
-                    // Case 3: instance error
+                    //
+                    // Determine the most precise type error to emit.
+                    //
+                    val inferredEff = inferredSc.base.arrowEffectType
+                    val declaredEff = declaredScheme.base.arrowEffectType
+
+                    if (declaredEff == Type.Pure && inferredEff == Type.Impure) {
+                      // Case 1: Declared as pure, but impure.
+                      return TypeError.ImpureDeclaredAsPure(loc).toFailure
+                    } else if (declaredEff == Type.Pure && inferredEff != Type.Pure) {
+                      // Case 2: Declared as pure, but effect polymorphic.
+                      return TypeError.EffectPolymorphicDeclaredAsPure(inferredEff, loc).toFailure
+                    } else {
+                      // Case 3: Check if it is the effect that cannot be generalized.
+                      val inferredEffScheme = Scheme(inferredSc.quantifiers, Nil, inferredEff)
+                      val declaredEffScheme = Scheme(declaredScheme.quantifiers, Nil, declaredEff)
+                      Scheme.checkLessThanEqual(inferredEffScheme, declaredEffScheme, classEnv) match {
+                        case Validation.Success(_) =>
+                        // Case 3.1: The effect is not the problem. Regular generalization error.
+                        // Fall through to below.
+                        case Validation.Failure(_) =>
+                          // Case 3.2: The effect cannot be generalized.
+                          return TypeError.EffectGeneralizationError(declaredEff, inferredEff, loc).toFailure
+                      }
+
+                      return TypeError.GeneralizationError(declaredScheme, inferredSc, loc).toFailure
+                    }
                   } else {
+                    // Case 3: instance error
                     return Validation.Failure(instanceErrs)
                   }
               }

@@ -222,12 +222,12 @@ object Main {
           Console.println(results.output(flix.getFormatter))
         }
       case Validation.Failure(errors) =>
-        errors.sortBy(_.source.name).foreach(e => println(e.message(flix.getFormatter)))
+        flix.mkMessages(errors.sortBy(_.source.name))
+          .foreach(println)
         println()
         println(s"Compilation failed with ${errors.length} error(s).")
         System.exit(1)
     }
-
   }
 
   /**
