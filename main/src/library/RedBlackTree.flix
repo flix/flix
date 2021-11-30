@@ -547,18 +547,18 @@ namespace RedBlackTree {
     ///
     /// Maps `f` over the tree `t` sequentially from left to right.
     ///
-    /// Note that this is equivalent to `seqMap` but for performance reasons -- to avoid
+    /// Note that this is equivalent to `seqMapWithKey` but for performance reasons -- to avoid
     /// megamorphic calls -- we use a copy here.
     ///
     def parMapWithKeySeq(f: (k, v1) -> v2, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] = match t {
-        // Note that while this is identical to seqMap it must still be its own function
+        // Note that while this is identical to `seqMapWithKey` it must still be its own function
         // because the parallel path must not be reuse the seq. path.
         case Leaf                   => Leaf
         case DoubleBlackLeaf        => DoubleBlackLeaf
         case Node(c, a, k, v, b)    =>
-            let a1 = parMapSeq(f, a);
+            let a1 = parMapWithKeySeq(f, a);
             let v1 = f(k, v);
-            let b1 = parMapSeq(f, b);
+            let b1 = parMapWithKeySeq(f, b);
             Node(c, a1, k, v1, b1)
     }
 
@@ -569,9 +569,9 @@ namespace RedBlackTree {
         case Leaf                   => Leaf
         case DoubleBlackLeaf        => DoubleBlackLeaf
         case Node(c, a, k, v, b)    =>
-            let a1 = seqMap(f, a);
+            let a1 = seqMapWithKey(f, a);
             let v1 = f(k, v);
-            let b1 = seqMap(f, b);
+            let b1 = seqMapWithKey(f, b);
             Node(c, a1, k, v1, b1)
     }
 }
