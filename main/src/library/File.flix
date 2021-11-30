@@ -139,21 +139,25 @@ namespace File {
 
     ///
     /// Returns a string containing the given file `f` with the options `opts`.
-    /// TODO: add a note on what exactly the opts do
-    /// TODO: OBS I changed offset to Int32.
+    /// The options `opts` to apply consists of
+    /// `offset` - the start offset in the given file `f`.
+    /// `count` - the number of bytes read.
+    /// `charSet` - the specific charset to be used to decode the bytes.
     ///
-    pub def readWith(opts: {offset :: Int32, count :: Int32, charSet :: String}, f : String): Result[String, String] & Impure = {
+    pub def readWith(opts: {offset :: Int64, count :: Int32, charSet :: String}, f : String): Result[String, String] & Impure = {
         try {
             import new java.io.File(String) as newFile;
             import new java.io.FileInputStream(##java.io.File) as newInputStream;
+            import java.io.FileInputStream.skip(Int64);
             import java.io.FileInputStream.read(Array[Int8], Int32, Int32);
             import java.nio.charset.Charset:forName(String);
             import new java.lang.String(Array[Int8], ##java.nio.charset.Charset) as newString;
 
             let javaFile = newFile(f);
             let stream = newInputStream(javaFile);
-            let bytes = [];
-            read(stream, bytes, opts.offset, opts.count);
+            skip(stream, opts.offset);
+            let bytes = [0i8; opts.count];
+            read(stream, bytes, 0, opts.count);
             let charSet = forName(opts.charSet);
             let returnString = newString(bytes, charSet);
             Ok(returnString)
@@ -200,7 +204,8 @@ namespace File {
 
     ///
     /// Returns a list of all the lines in the given file `f` with the options `opts`.
-    /// TODO: specify the opts.
+    /// The options `opts` to apply consists of
+    /// `charSet` - the specific charset to be used to decode the bytes.
     ///
     pub def readLinesWith(opts: {charSet :: String}, f: String): Result[List[String], String] & Impure =
         try {
@@ -236,9 +241,17 @@ namespace File {
 
             let done = () -> Object.isNull(deref line);
             let next = () -> {
-                let l = deref line;
-                line := readLine(reader);
-                Ok(l)
+                try {
+                    let l = deref line;
+                    line := readLine(reader);
+                    Ok(l)
+                } catch {
+                    case ex: ##java.io.IOException => {
+                        line := null as String;
+                        import java.lang.Throwable.getMessage();
+                        Err(getMessage(ex))
+                    }
+                }
             };
             Iterator(done, next)
         } catch {
@@ -249,7 +262,8 @@ namespace File {
 
     ///
     /// Returns an iterator of the given file `f` with the options `opts`.
-    /// TODO: specify opts.
+    /// The options `opts` to apply consists of
+    /// `charSet` - the specific charset to be used to decode the bytes.
     ///
     pub def readLinesIterWith(opts: {charSet :: String}, f: String): Iterator[Result[String, String]] & Impure =
         try {
@@ -266,9 +280,17 @@ namespace File {
 
             let done = () -> Object.isNull(deref line);
             let next = () -> {
-                let l = deref line;
-                line := readLine(reader);
-                Ok(l)
+                try {
+                    let l = deref line;
+                    line := readLine(reader);
+                    Ok(l)
+                } catch {
+                    case ex: ##java.io.IOException => {
+                        line := null as String;
+                        import java.lang.Throwable.getMessage();
+                        Err(getMessage(ex))
+                    }
+                }
             };
             Iterator(done, next)
         } catch {
