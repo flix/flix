@@ -488,6 +488,41 @@ object TypeError {
   }
 
   /**
+    * Missing `ToString` instance.
+    *
+    * @param tpe the type of the instance.
+    * @param loc the location where the error occurred.
+    */
+  case class MissingToString(tpe: Type, loc: SourceLocation) extends TypeError {
+    def summary: String = s"ToString is not defined for '${FormatType.formatType(tpe)}'. Define or derive instance of ToString."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Order is not defined on ${red(FormatType.formatType(tpe))}. Define or derive an instance of ToString.
+         |
+         |${code(loc, s"missing ToString instance")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      s"""To define a string representation of '${FormatType.formatType(tpe)}', either:
+         |
+         |  (a) define an instance of ToString for '${FormatType.formatType(tpe)}', or
+         |  (b) derive an instance of ToString for '${FormatType.formatType(tpe)}'.
+         |
+         |To automatically derive an instance, you can write:
+         |
+         |  enum Color with ToString {
+         |    case Red, Green, Blue
+         |  }
+         |
+         |""".stripMargin
+    })
+  }
+
+  /**
     * An error indicating that the main function's scheme is incorrect.
     *
     * @param declaredScheme the erroneous function's scheme.

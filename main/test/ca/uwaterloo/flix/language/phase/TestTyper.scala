@@ -330,6 +330,19 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.MissingOrder](result)
   }
 
+  test("MissingToString.01") {
+    val input =
+      s"""
+        |pub enum E {
+        |   case E
+        |}
+        |
+        |def foo(x: E): String = ToString.toString(x)
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MissingToString](result)
+  }
+
   test("TestChoose.Arity1.01") {
     val input =
       """

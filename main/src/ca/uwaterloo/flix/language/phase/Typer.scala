@@ -260,6 +260,8 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
                         TypeError.MissingEq(tconstr.arg, tconstr.loc)
                       else if (tconstr.sym.name == "Order")
                         TypeError.MissingOrder(tconstr.arg, tconstr.loc)
+                      else if (tconstr.sym.name == "ToString")
+                        TypeError.MissingToString(tconstr.arg, tconstr.loc)
                       else
                         TypeError.NoMatchingInstance(tconstr.sym, tconstr.arg, tconstr.loc)
                   }
