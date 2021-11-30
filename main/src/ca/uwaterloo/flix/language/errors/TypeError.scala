@@ -190,6 +190,58 @@ object TypeError {
   }
 
   /**
+    * Over-applied Function.
+    *
+    * @param excessArgument the type of the excess argument.
+    * @param fullType1      the first full type.
+    * @param fullType2      the second full type.
+    * @param loc            the location where the error occurred.
+    */
+  case class OverApplied(excessArgument: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
+    def summary: String = s"Over-applied function. Excess argument of type: '${FormatType.formatType(excessArgument)}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Over-applied function. Excess argument of type: '${red(FormatType.formatType(excessArgument))}'.
+         |
+         |${code(loc, "over-applied function.")}
+         |
+         |Type One: ${FormatType.formatType(fullType1)}
+         |Type Two: ${FormatType.formatType(fullType2)}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * Under-applied Function.
+    *
+    * @param missingArgument the type of the missing argument.
+    * @param fullType1       the first full type.
+    * @param fullType2       the second full type.
+    * @param loc             the location where the error occurred.
+    */
+  case class UnderApplied(missingArgument: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
+    def summary: String = s"Under-applied function. Missing argument of type: '${FormatType.formatType(missingArgument)}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Under-applied function. Missing argument of type: '${red(FormatType.formatType(missingArgument))}'.
+         |
+         |${code(loc, "under-applied function.")}
+         |
+         |Type One: ${FormatType.formatType(fullType1)}
+         |Type Two: ${FormatType.formatType(fullType2)}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
     * Mismatched Boolean Formulas.
     *
     * @param baseType1 the first boolean formula.
