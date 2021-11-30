@@ -80,7 +80,7 @@ namespace RedBlackTree {
     /// By default we only enable parallel evaluation if the tree has a certain size.
     ///
     def useParallelEvaluation(t: RedBlackTree[k, v]): Bool =
-        let minSize = 2 ** RedBlackTree.blackHeight(t)
+        let minSize = 2 ** RedBlackTree.blackHeight(t);
         minSize >= 1024
 
     ///
@@ -507,16 +507,15 @@ namespace RedBlackTree {
     ///
     @ParallelWhenPure
     pub def mapWithKey(f: (k, v1) -> v2 & ef, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] & ef =
-        let cpus = multiplier() * Environment.getVirtualProcessors();
         let f1 = (r) -> f(r.k, r.v);
         reifyEff(f1) {
             case Pure(g) =>
                 let g1 = (k, v) -> g({k = k, v = v});
                 if (useParallelEvaluation(t))
-                    parMap(cpus - 1, g1, t) as & Pure
+                    parMapWithKey(threads() - 1, g1, t) as & Pure
                 else
-                    seqMap(g1, t)
-            case _  => seqMap(f, t)
+                    seqMapWithKey(g1, t)
+            case _  => seqMapWithKey(f, t)
         }
 
     ///
@@ -528,7 +527,7 @@ namespace RedBlackTree {
     ///
     pub def parMapWithKey(n: Int32, f: (k, v1) -> v2, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] & Impure = {
         if (n <= 1)
-            parMapSeq(f, t)
+            parMapWithKeySeq(f, t)
         else
             match t {
                 case Leaf                   => Leaf
@@ -536,9 +535,9 @@ namespace RedBlackTree {
                 case Node(c, a, k, v, b)    =>
                     let chanL = chan RedBlackTree[k, v2] 1;
                     let chanR = chan RedBlackTree[k, v2] 1;
-                    spawn (chanL <- parMap((n - 2) / 2, f, a)); // We divide the rest of the threads as follows:
-                    spawn (chanR <- parMap((n - 2) / 2, f, b)); // We spawn two new threads leaving us with n - 2
-                    let v1 = f(k, v);                           // that we distribute over the two spanned threads.
+                    spawn (chanL <- parMapWithKey((n - 2) / 2, f, a)); // We divide the rest of the threads as follows:
+                    spawn (chanR <- parMapWithKey((n - 2) / 2, f, b)); // We spawn two new threads leaving us with n - 2
+                    let v1 = f(k, v);                                  // that we distribute over the two spanned threads.
                     let a1 = <- chanL;
                     let b1 = <- chanR;
                     Node(c, a1, k, v1, b1)
