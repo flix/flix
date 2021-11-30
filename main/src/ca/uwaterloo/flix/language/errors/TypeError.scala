@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.debug.{Audience, FormatEff, FormatScheme, FormatType}
+import ca.uwaterloo.flix.language.debug.{Audience, FormatEff, FormatKind, FormatScheme, FormatType}
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -55,14 +55,29 @@ object TypeError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some(
-      """The declared type is more polymorphic than the inferred type.
-        |
-        |Typically:
-        |
-        |  (a) the declared type signature is incorrect, or
-        |  (b) the expression body is incorrect.
-        |""".stripMargin)
+    def explain(formatter: Formatter): Option[String] = Some({
+      val newLineAndIndent: String = System.lineSeparator() + "  "
+
+      def fmtTypeVar(tvar: Type, declared: Boolean): String = {
+        val color = if (declared) formatter.cyan _ else formatter.magenta _
+        s"${color(FormatType.formatType(tvar))} of kind: '${FormatKind.formatKind(tvar.kind)}'."
+      }
+
+      def fmtQuantifiers(quantifiers: List[Type.Var], declared: Boolean): String = {
+        if (quantifiers.isEmpty)
+          "<< no type variables >>"
+        else
+          quantifiers.map(fmtTypeVar(_, declared)).mkString(newLineAndIndent)
+      }
+
+      s"""
+         |The declared type variables:
+         |  ${fmtQuantifiers(declared.quantifiers, declared = true)}
+         |
+         |The inferred type variables:
+         |  ${fmtQuantifiers(inferred.quantifiers, declared = false)}
+         |""".stripMargin
+    })
   }
 
   /**
