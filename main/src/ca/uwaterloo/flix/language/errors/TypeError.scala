@@ -106,18 +106,17 @@ object TypeError {
   /**
     * Impure function declared as pure.
     *
-    * @param loc      the location where the error occurred.
+    * @param loc the location where the error occurred.
     */
   case class ImpureDeclaredAsPure(loc: SourceLocation) extends TypeError {
-    def summary: String = "Non-pure function declared as pure. A function with side-effects must be declared as impure."
+    def summary: String = "Impure function declared as pure."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.format)}
-         |>> ${red("Non-pure")} function declared as ${green("pure")}. A function with side-effects
-         |>> must be declared as impure.
+         |>> ${red("Impure")} function declared as ${green("pure")}.
          |
-         |${code(loc, "non-pure function.")}
+         |${code(loc, "impure function.")}
          |
          |""".stripMargin
     }
@@ -127,8 +126,8 @@ object TypeError {
         |
         |For example:
         |
-        |  def hello(): Unit & Impure = println("Hello!")
-        |                    ^^^^^^^^
+        |  def example(): Unit & Impure = println("hello")
+        |                      ^^^^^^^^
         |""".stripMargin
     })
   }
@@ -157,8 +156,8 @@ object TypeError {
         |
         |For example:
         |
-        |  def hof(f: Int32 -> Int32 & ef): Int32 & ef = f(123)
-        |                                         ^^^^
+        |  def example(f: Int32 -> Int32 & ef): Int32 & ef = f(123)
+        |                                             ^^^^
         |""".stripMargin
     })
   }
