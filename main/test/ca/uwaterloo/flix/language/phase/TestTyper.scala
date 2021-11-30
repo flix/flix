@@ -304,6 +304,32 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.NoMatchingInstance](result)
   }
 
+  test("MissingEq.01") {
+    val input =
+      """
+        |pub enum E {
+        |   case E
+        |}
+        |
+        |def foo(x: E, y: E): Bool = x == y
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MissingEq](result)
+  }
+
+  test("MissingOrder.01") {
+    val input =
+      """
+        |pub enum E {
+        |   case E
+        |}
+        |
+        |def foo(x: E, y: E): Bool = x <= y
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MissingOrder](result)
+  }
+
   test("TestChoose.Arity1.01") {
     val input =
       """
