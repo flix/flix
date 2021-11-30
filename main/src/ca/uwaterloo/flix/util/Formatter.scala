@@ -12,10 +12,10 @@ trait Formatter {
     val beginCol = loc.beginCol
     val endLine = loc.endLine
     val endCol = loc.endCol
-    val lineAt = loc.lineAt(beginLine)
 
     def arrowUnderline: String = {
       val sb = new StringBuilder()
+      val lineAt = loc.lineAt(beginLine)
       val lineNo = beginLine.toString + " | "
       sb.append(lineNo)
         .append(lineAt)
@@ -32,7 +32,7 @@ trait Formatter {
     def leftline: String = {
       val sb = new StringBuilder()
       for (lineNo <- beginLine to endLine) {
-        val currentLine = lineAt(lineNo)
+        val currentLine = loc.lineAt(lineNo)
         sb.append(lineNo)
           .append(" |")
           .append(red(">"))
