@@ -18,7 +18,7 @@ namespace TestFile {
 
     use File.{exists, isDirectory, isRegularFile, isReadable, isSymbolicLink,
         isWritable, isExecutable, readLines, readLinesWith, read, readWith,
-        readLinesIter, readLinesIterWith, readBytes};
+        readLinesIter, readLinesIterWith, readBytes, readBytesWith};
 
     /////////////////////////////////////////////////////////////////////////////
     // exists                                                                  //
@@ -165,5 +165,17 @@ namespace TestFile {
     @test
     def testReadBytes01(): Bool & Impure =
         Result.isOk(readBytes("./LICENSE.md"))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // readBytesWith                                                           //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def testReadBytesWith01(): Bool & Impure =
+        Result.isOk(readBytes({offset = 2i64, count = 2}, "./LICENSE.md"))
+
+    @test
+    def testReadBytesWith01(): Bool & Impure =
+        readBytes({offset = 2i64, count = 2}, "./LICENSE.md") == Ok(69, 110)
 
 }
