@@ -172,10 +172,13 @@ namespace TestFile {
 
     @test
     def testReadBytesWith01(): Bool & Impure =
-        Result.isOk(readBytes({offset = 2i64, count = 2}, "./LICENSE.md"))
+        Result.isOk(readBytesWith({offset = 2i64, count = 2}, "./LICENSE.md"))
 
     @test
-    def testReadBytesWith01(): Bool & Impure =
-        readBytes({offset = 2i64, count = 2}, "./LICENSE.md") == Ok(69, 110)
+    def testReadBytesWith02(): Bool & Impure =
+        match readBytesWith({offset = 2i64, count = 2}, "./LICENSE.md") {
+            case Ok(v) => v.length == 2
+            case _ => false
+        }
 
 }
