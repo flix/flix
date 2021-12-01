@@ -19,7 +19,7 @@ use Fixpoint/Ast.Denotation;
 
 namespace Fixpoint {
 
-    enum Tuple[v] {
+    enum Tuple[v] { // TODO: Move into some other namespace?
         case Tuple(Array[v])
     }
 
@@ -221,8 +221,8 @@ namespace Fixpoint {
         case _ => bug!("Illegal term ${term}")
     }
 
-    def valueAt( tuple: Tuple[v], index: Int32): v =
+    def valueAt( tuple: Tuple[v], index: Int32): v & Impure =
         let Tuple(a) = tuple;
-        a[index] as & Pure
+        a[index]
 
 }

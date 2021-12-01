@@ -15,11 +15,12 @@
  */
 
 use Fixpoint/Ram.RamSym;
+use Fixpoint.Tuple;
 
 namespace Fixpoint/Ast {
     pub enum Datalog[v] {
         case Datalog(Array[Constraint[v]], Array[Constraint[v]])
-        case Model(Map[RamSym[v], Map[Array[v], v]])
+        case Model(Map[RamSym[v], Map[Tuple[v], v]])
         case Join(Datalog[v], Datalog[v])
     }
 
@@ -35,10 +36,10 @@ namespace Fixpoint/Ast {
                 use Fixpoint.commaSeparate;
                 let sb = StringBuilder.new();
                 Map.foreach(ramSym -> rel -> match toDenotation(ramSym) {
-                    case Relational => Map.foreach(tuple -> _ -> {
+                    case Relational => Map.foreach(match Fixpoint/Tuple.Tuple(tuple) -> _ -> {
                         StringBuilder.appendLine!(sb, "${ramSym}(${commaSeparate(tuple)}).")
                     }, rel)
-                    case Latticenal(_) => Map.foreach(tuple -> lat -> {
+                    case Latticenal(_) => Map.foreach(match Fixpoint/Tuple.Tuple(tuple) -> lat -> {
                         StringBuilder.appendLine!(sb, "${ramSym}(${commaSeparate(tuple)}; ${lat}).")
                     }, rel)
                 }, db);
