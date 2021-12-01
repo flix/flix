@@ -276,7 +276,45 @@ namespace TestRedBlackTree {
     // parMapWithKey                                                           //
     /////////////////////////////////////////////////////////////////////////////
 
-    // TODO: Observe effects are parallel
+    @test
+    def parMapWithKey01(): Bool =
+        let Map(t) = Map#{}: Map[Unit, Int32];
+        Map(RedBlackTree.parMapWithKey((k, v) -> k + v, t)) == Map#{}
+
+    @test
+    def parMapWithKey02(): Bool =
+        let Map(t) = Map#{1 -> 4};
+        Map(RedBlackTree.parMapWithKey((k, v) -> k + v, t)) == Map#{1 -> 5}
+
+    @test
+    def parMapWithKey03(): Bool =
+        let Map(t) = Map#{2 -> -1, 0 -> 0};
+        Map(RedBlackTree.parMapWithKey((k, v) -> k + v, t)) == Map#{2 -> 1, 0 -> 0}
+
+    @test
+    def parMapWithKey04(): Bool =
+        let Map(t) = Map#{2 -> -1, 5 -> 15, 11 -> -9};
+        Map(RedBlackTree.parMapWithKey((k, v) -> k + v, t)) == Map#{2 -> 1, 5 -> 20, 11 -> 2}
+
+    @test
+    def parMapWithKey05(): Bool =
+        let Map(t) = Map#{2 -> -1, 5 -> 15, 11 -> -9, 8 -> 8};
+        Map(RedBlackTree.parMapWithKey((k, v) -> k + v, t)) == Map#{2 -> 1, 5 -> 20, 11 -> 2, 8 -> 16}
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // parMapWithKey fusion                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    // This test tries to force a lost update
+    // but there **could** be a run where all updates are accounted for
+    // so how do we ensure the parallelism is observed deterministically?
+    @test
+    def parMapWithKeyFusion01(): Bool & Impure =
+        let i = ref 0;
+        let Map(t) = List.zip(List.range(0, 1000), List.range(0, 1000)) |> List.toMap;
+        RedBlackTree.parMapWithKey((_, v) -> { i := 1 + deref i; v } as & Pure, t);
+        deref i < 1000
 
 
     /////////////////////////////////////////////////////////////////////////////
