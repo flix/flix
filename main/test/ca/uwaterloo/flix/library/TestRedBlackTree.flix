@@ -316,34 +316,4 @@ namespace TestRedBlackTree {
         RedBlackTree.parMapWithKey((_, v) -> { i := 1 + deref i; v } as & Pure, t);
         deref i < 1000
 
-
-    /////////////////////////////////////////////////////////////////////////////
-    // map                                                                     //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def map01(): Bool =
-        let Map(t) = Map#{}: Map[Unit, Int32];
-        Map(RedBlackTree.map(v -> v, t)) == Map#{}
-
-    @test
-    def map02(): Bool =
-        let Map(t) = Map#{1 -> 4};
-        Map(RedBlackTree.map(v -> v + 1, t)) == Map#{1 -> 5}
-
-    @test
-    def map03(): Bool =
-        let Map(t) = Map#{2 -> -1, 0 -> 0};
-        Map(RedBlackTree.map(v -> v + 1, t)) == Map#{2 -> 0, 0 -> 1}
-
-    @test
-    def map04(): Bool =
-        let Map(t) = Map#{2 -> -1, 5 -> 15, 11 -> -9};
-        Map(RedBlackTree.map(v -> v + 1, t)) == Map#{2 -> 0, 5 -> 16, 11 -> -8}
-
-    @test
-    def map05(): Bool =
-        let Map(t) = Map#{2 -> -1, 5 -> 15, 11 -> -9, 8 -> 8};
-        Map(RedBlackTree.map(v -> v + 1, t)) == Map#{2 -> 0, 5 -> 16, 11 -> -8, 8 -> 9}
-
 }
