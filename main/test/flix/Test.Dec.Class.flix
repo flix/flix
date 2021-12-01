@@ -215,8 +215,8 @@ namespace Test/Dec/Class {
     }
 
     namespace Test18 {
-        enum E[_: Bool]
-        enum F[_: Bool, _: Type]
+        pub enum E[_: Bool]
+        pub enum F[_: Bool, _: Type]
 
         lawless class C[a]
         lawless class D[a: Type -> Type]
