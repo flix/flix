@@ -18,7 +18,27 @@ use Fixpoint/Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar, toDenotation
 use Fixpoint/Ast.Denotation;
 
 namespace Fixpoint {
-    type alias Tuple[v] = Array[v]
+
+    enum Tuple[v] {
+        case Tuple(Array[v])
+    }
+
+    // NB: Unsafe instance.
+    instance Eq[Tuple[v]] with Eq[v] {
+        pub def eq(x: Tuple[v], y: Tuple[v]): Bool =
+            let Tuple(a) = x;
+            let Tuple(b) = y;
+            Array.eq(a, b) as & Pure
+    }
+
+    // NB: Unsafe instance.
+    instance Order[Tuple[v]] with Order[v] {
+        pub def compare(x: Tuple[v], y: Tuple[v]): Comparison =
+            let Tuple(a) = x;
+            let Tuple(b) = y;
+            Array.compare(a, b) as & Pure
+    }
+
     type alias Database[v] = MutMap[RamSym[v], MutMap[Tuple[v], v]]
     type alias SearchEnv[v] = (Array[Tuple[v]], Array[v])
 
@@ -57,7 +77,7 @@ namespace Fixpoint {
     def allocEnv(depth: Int32, relOp: RelOp[v]): SearchEnv[v] & Impure = match relOp {
         case RelOp.Search(_, _, body) => allocEnv(depth + 1, body)
         case RelOp.Query(_, _, _, body) => allocEnv(depth + 1, body)
-        case RelOp.Project(_) => (Array.new([], depth), Array.new(default, depth))
+        case RelOp.Project(_) => (Array.new(Tuple([]), depth), Array.new(default, depth))
         case RelOp.If(_, then) => allocEnv(depth, then)
     }
 
@@ -81,11 +101,11 @@ namespace Fixpoint {
                 let rel = MutMap.getOrElsePut!(ramSym, MutMap.empty(), db);
                 match toDenotation(ramSym) {
                     case Denotation.Relational =>
-                        let tuple = Array.map(evalTerm(env), terms);
+                        let tuple = Tuple(Array.map(evalTerm(env), terms));
                         MutMap.put!(tuple, default, rel)
                     case Denotation.Latticenal(bot, leq, lub, _) =>
                         let len = Array.length(terms);
-                        let key = Array.init(i -> evalTerm(env, terms[i]), len - 1);
+                        let key = Tuple(Array.init(i -> evalTerm(env, terms[i]), len - 1));
                         let lat = evalTerm(env, terms[len - 1]);
                         if (lat `leq` bot)
                             ()
@@ -106,7 +126,7 @@ namespace Fixpoint {
             EqualTo
         else {
             let (j, t) = query[i] as & Pure;
-            match (tuple[j] as & Pure) <=> evalTerm(env, t) {
+            match (valueAt(tuple, j) as & Pure) <=> evalTerm(env, t) {
                 case EqualTo => evalQuery(env, i+1, query, tuple)
                 case cmp => cmp
             }
@@ -120,11 +140,11 @@ namespace Fixpoint {
                 let rel = MutMap.getWithDefault(ramSym, MutMap.empty(), db);
                 match toDenotation(ramSym) {
                     case Denotation.Relational =>
-                        let tuple = Array.map(evalTerm(env), terms);
+                        let tuple = Tuple(Array.map(evalTerm(env), terms));
                         not MutMap.memberOf(tuple, rel)
                     case Denotation.Latticenal(bot, leq, _, _) =>
                         let len = Array.length(terms);
-                        let key = Array.init(i -> evalTerm(env, terms[i]), len - 1);
+                        let key = Tuple(Array.init(i -> evalTerm(env, terms[i]), len - 1));
                         let lat = evalTerm(env, terms[len - 1]);
                         not (lat `leq` MutMap.getWithDefault(key, bot, rel))
                 }
@@ -165,7 +185,7 @@ namespace Fixpoint {
         case RamTerm.Lit(v) => v
         case RamTerm.RowLoad(RowVar.Index(i), index) =>
             let (tupleEnv, _) = env;
-            tupleEnv[i][index] as & Pure
+            valueAt(tupleEnv[i], index) as & Pure
         case RamTerm.LoadLatVar(RowVar.Index(i)) =>
             let (_, latEnv) = env;
             latEnv[i] as & Pure
@@ -200,4 +220,9 @@ namespace Fixpoint {
             f(v1)(v2)(v3)(v4)(v5)
         case _ => bug!("Illegal term ${term}")
     }
+
+    def valueAt( tuple: Tuple[v], index: Int32): v =
+        let Tuple(a) = tuple;
+        a[index] as & Pure
+
 }

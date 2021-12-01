@@ -15,30 +15,27 @@
  */
 
 // TODO: Unsafe instance. Will be removed. (Blocked by Datalog engine usage.)
-instance Eq[Array[v]] with Eq[v] {
-    // TODO More efficient implementation
-    pub def eq(a: Array[v], b: Array[v]): Bool =
-        (Array.length(a) == Array.length(b)) and
-        (Array.foldLeft((acc, p) -> let (x,y) = p; (acc and (x == y)), true, Array.zip(a,b))) as & Pure
-}
-
-// TODO: Unsafe instance. Will be removed. (Blocked by Datalog engine usage.)
-instance Order[Array[v]] with Order[v] {
-    ///
-    /// Compares `a` and `b` lexicographically.
-    ///
-    pub def compare(a: Array[v], b: Array[v]): Comparison =
-        ArrayOps.compareHelper(a, b, Int32.min(Array.length(a), Array.length(b)), 0) as & Pure
-}
-
-// TODO: Unsafe instance. Will be removed. (Blocked by Datalog engine usage.)
 instance Foldable[Array] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, a: Array[a]): b & ef = Array.foldLeft(f, s, a) as & ef
     pub def foldRight(f: (a, b) -> b & ef, s: b, a: Array[a]): b & ef = Array.foldRight(f, s, a) as & ef
 }
 
-namespace ArrayOps {
-    pub def compareHelper(a: Array[v], b: Array[v], len: Int32, i: Int32): Comparison & Impure with Order[v] =
+namespace Array {
+
+    ///
+    /// Returns `true` if the elements of `a` are equal to the elements of `b`.
+    ///
+    pub def eq(a: Array[v], b: Array[v]): Bool & Impure with Eq[v] =
+        (Array.length(a) == Array.length(b)) and
+        (Array.foldLeft((acc, p) -> let (x,y) = p; (acc and (x == y)), true, Array.zip(a, b)))
+
+    ///
+    /// Compares `a` and `b` lexicographically.
+    ///
+    pub def compare(a: Array[v], b: Array[v]): Comparison & Impure with Order[v] =
+        compareHelper(a, b, Int32.min(Array.length(a), Array.length(b)), 0)
+
+    def compareHelper(a: Array[v], b: Array[v], len: Int32, i: Int32): Comparison & Impure with Order[v] =
         if (i < len) {
             let cmp = a[i] <=> b[i];
             if (cmp == EqualTo)
@@ -52,9 +49,6 @@ namespace ArrayOps {
         } else {
             EqualTo
         }
-}
-
-namespace Array {
 
     ///
     /// Returns a fresh array of length `l` filled with the element `x`.
