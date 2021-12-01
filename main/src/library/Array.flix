@@ -18,7 +18,7 @@ instance Eq[Array[v]] with Eq[v] {
     // TODO More efficient implementation
     pub def eq(a: Array[v], b: Array[v]): Bool =
         (Array.length(a) == Array.length(b)) and
-        (Foldable.foldLeft((acc, p) -> let (x,y) = p; (acc and (x == y)), true, Array.zip(a,b))) as & Pure
+        (Array.foldLeft((acc, p) -> let (x,y) = p; (acc and (x == y)), true, Array.zip(a,b))) as & Pure
 }
 
 instance Order[Array[v]] with Order[v] {
@@ -29,11 +29,8 @@ instance Order[Array[v]] with Order[v] {
         ArrayOps.compareHelper(a, b, Int32.min(Array.length(a), Array.length(b)), 0) as & Pure
 }
 
-instance Functor[Array] {
-    pub def map(f: a -> b & ef, a: Array[a]): Array[b] & ef = Array.map(f, a) as & ef
-}
-
 instance Foldable[Array] {
+    // TODO: These instances are used by datalog.
     pub def foldLeft(f: (b, a) -> b & ef, s: b, a: Array[a]): b & ef = Array.foldLeft(f, s, a) as & ef
     pub def foldRight(f: (a, b) -> b & ef, s: b, a: Array[a]): b & ef = Array.foldRight(f, s, a) as & ef
 }
@@ -796,7 +793,7 @@ namespace Array {
     ///
     /// Returns the result of applying `combine` to all the elements in `a`, using `empty` as the initial value.
     ///
-    pub def fold(a: Array[a]): a with Monoid[a] = Foldable.fold(a)
+    pub def fold(a: Array[a]): a & Impure with Monoid[a] = foldLeft(Monoid.combine, Monoid.empty(), a)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `a` going from left to right.
