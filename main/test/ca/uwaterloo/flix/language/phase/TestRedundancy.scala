@@ -771,13 +771,12 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.RedundantPurityCast](result)
   }
 
-  // TODO
   test("RedundantPurityCast.Let.02") {
     val input =
       s"""
-         |pub def f(): Int32 =
-         |  let x = 123;
-         |  x as & Puredsasa
+         |pub def f(): Array[Int32] & Impure =
+         |  let x = [1, 2, 3];
+         |  x as & Pure
          |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
