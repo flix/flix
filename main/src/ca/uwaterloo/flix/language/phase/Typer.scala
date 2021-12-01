@@ -1760,7 +1760,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
             TypedAst.CatchRule(sym, clazz, b)
         }
         val tpe = rs.head.exp.tpe
-        val eff = Type.mkAnd(rs.map(_.exp.eff), loc)
+        val eff = Type.mkAnd(e.eff :: rs.map(_.exp.eff), loc)
         TypedAst.Expression.TryCatch(e, rs, tpe, eff, loc)
 
       case KindedAst.Expression.InvokeConstructor(constructor, args, loc) =>
