@@ -290,9 +290,9 @@ object Stratifier extends Phase[Root, Root] {
         case e => Expression.Ascribe(e, tpe, eff, loc)
       }
 
-    case Expression.Cast(exp, tpe, eff, loc) =>
+    case Expression.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Cast(e, tpe, eff, loc)
+        case e => Expression.Cast(e, declaredType, declaredEff, tpe, eff, loc)
       }
 
     case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
@@ -579,7 +579,7 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.Ascribe(exp, _, _, _) =>
       constraintGraphOfExp(exp)
 
-    case Expression.Cast(exp, _, _, _) =>
+    case Expression.Cast(exp, _, _, _, _, _) =>
       constraintGraphOfExp(exp)
 
     case Expression.TryCatch(exp, rules, _, _, _) =>

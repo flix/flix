@@ -463,8 +463,11 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case Expression.Ascribe(exp, _, _, _) =>
       visitExp(exp, env0)
 
-    case Expression.Cast(exp, _, _, _) =>
-      visitExp(exp, env0)
+    case Expression.Cast(exp, _, declaredEff, _, _, loc) =>
+      if (declaredEff.contains(Type.Pure) && exp.eff == Type.Pure)
+        visitExp(exp, env0) + RedundantPurityCast(loc)
+      else
+        visitExp(exp, env0)
 
     case Expression.TryCatch(exp, rules, _, _, _) =>
       val usedExp = visitExp(exp, env0)
@@ -575,7 +578,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       Used.empty
 
     case Expression.ReifyEff(sym, exp1, exp2, exp3, tpe, _, _) =>
-      Used.of(sym) ++ visitExp(exp1, env0) ++ visitExp(exp2, env0)++ visitExp(exp3, env0)
+      Used.of(sym) ++ visitExp(exp1, env0) ++ visitExp(exp2, env0) ++ visitExp(exp3, env0)
   }
 
   /**

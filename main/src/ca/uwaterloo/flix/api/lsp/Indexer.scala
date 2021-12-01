@@ -244,7 +244,7 @@ object Indexer {
     case Expression.Ascribe(exp, tpe, eff, loc) =>
       visitExp(exp) ++ visitType(tpe) ++ visitType(eff) ++ Index.occurrenceOf(exp0)
 
-    case Expression.Cast(exp, tpe, eff, loc) =>
+    case Expression.Cast(exp, _, _, tpe, eff, loc) =>
       visitExp(exp) ++ visitType(tpe) ++ visitType(eff) ++ Index.occurrenceOf(exp0)
 
     case Expression.TryCatch(exp, rules, _, _, _) =>

@@ -192,7 +192,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
       case TypedAst.Expression.Ascribe(exp, tpe, eff, loc) => visitExp(exp)
 
-      case TypedAst.Expression.Cast(exp, tpe, eff, loc) =>
+      case TypedAst.Expression.Cast(exp, _, _, tpe, eff, loc) =>
         val e = visitExp(exp)
         SimplifiedAst.Expression.Cast(e, tpe, loc)
 

@@ -355,7 +355,7 @@ object SemanticTokensProvider {
     case Expression.Ascribe(exp, tpe, _, _) =>
       visitExp(exp) ++ visitType(tpe)
 
-    case Expression.Cast(exp, tpe, _, _) =>
+    case Expression.Cast(exp, _, _, tpe, _, _) =>
       visitExp(exp) ++ visitType(tpe)
 
     case Expression.TryCatch(exp, rules, _, _, _) =>

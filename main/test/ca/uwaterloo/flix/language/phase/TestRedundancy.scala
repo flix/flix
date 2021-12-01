@@ -7,6 +7,16 @@ import org.scalatest.FunSuite
 
 class TestRedundancy extends FunSuite with TestUtils {
 
+  test("CastPureToPure.Let.01") {
+    val input =
+      s"""
+         |pub def f(): Int32 = 123 as & Pure
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.RedundantPurityCast](result)
+  }
+
   test("HiddenVarSym.Let.01") {
     val input =
       s"""
