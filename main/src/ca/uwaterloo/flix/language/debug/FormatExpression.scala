@@ -56,7 +56,7 @@ object FormatExpression {
     case TypedAst.Expression.Deref(exp, tpe, eff, loc) => s"Deref($exp)"
     case TypedAst.Expression.Assign(exp1, exp2, tpe, eff, loc) => s"Assign($exp1, $exp2)"
     case TypedAst.Expression.Ascribe(exp, tpe, eff, loc) => s"Ascribe($exp, $tpe)"
-    case TypedAst.Expression.Cast(exp, tpe, eff, loc) => s"Cast($exp, $tpe)"
+    case TypedAst.Expression.Cast(exp, declaredType, declaredEff, tpe, eff, loc) => s"Cast($exp, $declaredType, $declaredEff, $tpe, $eff)"
     case TypedAst.Expression.TryCatch(exp, rules, tpe, eff, loc) => s"TryCatch($exp, ${rules.mkString(", ")})"
     case TypedAst.Expression.InvokeConstructor(constructor, args, tpe, eff, loc) => s"InvokeConstructor($constructor, ${args.mkString(", ")})"
     case TypedAst.Expression.InvokeMethod(method, exp, args, tpe, eff, loc) => s"InvokeMethod($method, $exp, ${args.mkString(", ")})"

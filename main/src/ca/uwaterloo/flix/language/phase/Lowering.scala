@@ -430,10 +430,11 @@ object Lowering extends Phase[Root, Root] {
       val t = visitType(tpe)
       Expression.Ascribe(e, t, eff, loc)
 
-    case Expression.Cast(exp, tpe, eff, loc) =>
+    case Expression.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
       val e = visitExp(exp)
+      val dt = declaredType.map(visitType)
       val t = visitType(tpe)
-      Expression.Cast(e, t, eff, loc)
+      Expression.Cast(e, dt, declaredEff, t, eff, loc)
 
     case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -1397,9 +1398,9 @@ object Lowering extends Phase[Root, Root] {
       val e = substExp(exp, subst)
       Expression.Ascribe(e, tpe, eff, loc)
 
-    case Expression.Cast(exp, tpe, eff, loc) =>
+    case Expression.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
       val e = substExp(exp, subst)
-      Expression.Cast(e, tpe, eff, loc)
+      Expression.Cast(e, declaredType, declaredEff, tpe, eff, loc)
 
     case Expression.TryCatch(_, _, _, _, _) => ??? // TODO
 

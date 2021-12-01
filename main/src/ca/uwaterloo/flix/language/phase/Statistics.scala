@@ -125,7 +125,7 @@ object Statistics extends Phase[Root, Root] {
       case Expression.Deref(exp, tpe, eff, loc) => visitExp(exp)
       case Expression.Assign(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.Ascribe(exp, tpe, eff, loc) => visitExp(exp)
-      case Expression.Cast(exp, tpe, eff, loc) => visitExp(exp)
+      case Expression.Cast(exp, _, _, tpe, eff, loc) => visitExp(exp)
       case Expression.TryCatch(exp, rules, tpe, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitCatchRule))
       case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) => Counter.merge(args.map(visitExp))
       case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) => visitExp(exp) ++ Counter.merge(args.map(visitExp))
