@@ -716,6 +716,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def LetImport: Rule1[ParsedAst.Expression] = {
 
+      // TODO: Remove me
       def JvmStaticName: Rule1[Seq[String]] = rule {
         Names.JavaName ~ ":" ~ Names.JavaIdentifier ~> ((xs: Seq[String], x: String) => xs :+ x)
       }
@@ -729,6 +730,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def StaticMethod: Rule1[ParsedAst.JvmOp] = rule {
+        keyword("static") ~ WS ~ Names.JavaName ~ optWS ~ Signature ~ optional(WS ~ keyword("as") ~ WS ~ Names.Variable) ~> ParsedAst.JvmOp.StaticMethod
+      }
+
+      // TODO: Remove me
+      def StaticMethodOLD: Rule1[ParsedAst.JvmOp] = rule {
         JvmStaticName ~ optWS ~ Signature ~ optional(WS ~ keyword("as") ~ WS ~ Names.Variable) ~> ParsedAst.JvmOp.StaticMethod
       }
 
@@ -741,10 +747,20 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def GetStaticField: Rule1[ParsedAst.JvmOp] = rule {
+        keyword("static") ~ WS ~ keyword("get") ~ WS ~ Names.JavaName ~ WS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.GetStaticField
+      }
+
+      // TODO: Remove me
+      def GetStaticFieldOLD: Rule1[ParsedAst.JvmOp] = rule {
         keyword("get") ~ WS ~ JvmStaticName ~ WS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.GetStaticField
       }
 
       def PutStaticField: Rule1[ParsedAst.JvmOp] = rule {
+        keyword("static") ~ WS ~ keyword("set") ~ WS ~ Names.JavaName ~ WS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.PutStaticField
+      }
+
+      // TODO: Remove me
+      def PutStaticFieldOLD: Rule1[ParsedAst.JvmOp] = rule {
         keyword("set") ~ WS ~ JvmStaticName ~ WS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.PutStaticField
       }
 
@@ -753,7 +769,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def Import: Rule1[ParsedAst.JvmOp] = rule {
-        keyword("import") ~ WS ~ (Constructor | Method | StaticMethod | GetField | PutField | GetStaticField | PutStaticField)
+        keyword("import") ~ WS ~ (Constructor | Method | StaticMethod | StaticMethodOLD | GetField | PutField | GetStaticField | GetStaticFieldOLD | PutStaticField | PutStaticFieldOLD)
       }
 
       rule {
