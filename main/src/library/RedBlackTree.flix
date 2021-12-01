@@ -492,7 +492,7 @@ namespace RedBlackTree {
     }
 
     ///
-    /// Returns a map with mappings `k -> f(k, v)` for every `k -> v` in `t`.
+    /// Returns a RedBlackTree with mappings `k -> f(k, v)` for every `k -> v` in `t`.
     ///
     /// Purity polymorphic: Runs in parallel when given a pure function `f`.
     ///
