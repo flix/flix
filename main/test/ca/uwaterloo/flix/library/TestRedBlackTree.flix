@@ -224,31 +224,53 @@ namespace TestRedBlackTree {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def mapWithKey01(): Bool =
+    def seqMapWithKey01(): Bool =
         let Map(t) = Map#{}: Map[Unit, Int32];
         Map(RedBlackTree.seqMapWithKey((k, v) -> k + v, t)) == Map#{}
 
     @test
-    def mapWithKey02(): Bool =
+    def seqMapWithKey02(): Bool =
         let Map(t) = Map#{1 -> 4};
         Map(RedBlackTree.seqMapWithKey((k, v) -> k + v, t)) == Map#{1 -> 5}
 
     @test
-    def mapWithKey03(): Bool =
+    def seqMapWithKey03(): Bool =
         let Map(t) = Map#{2 -> -1, 0 -> 0};
         Map(RedBlackTree.seqMapWithKey((k, v) -> k + v, t)) == Map#{2 -> 1, 0 -> 0}
 
     @test
-    def mapWithKey04(): Bool =
+    def seqMapWithKey04(): Bool =
         let Map(t) = Map#{2 -> -1, 5 -> 15, 11 -> -9};
         Map(RedBlackTree.seqMapWithKey((k, v) -> k + v, t)) == Map#{2 -> 1, 5 -> 20, 11 -> 2}
 
     @test
-    def mapWithKey05(): Bool =
+    def seqMapWithKey05(): Bool =
         let Map(t) = Map#{2 -> -1, 5 -> 15, 11 -> -9, 8 -> 8};
         Map(RedBlackTree.seqMapWithKey((k, v) -> k + v, t)) == Map#{2 -> 1, 5 -> 20, 11 -> 2, 8 -> 16}
 
-    // TODO: Observe effects are sequential
+
+    /////////////////////////////////////////////////////////////////////////////
+    // seqMapWithKey fusion                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def seqMapWithKeyFusion01(): Bool & Impure =
+        let l = ref Nil;
+        let Map(t) = Map#{1 -> 1, 2 -> 2, 3 -> 3};
+        t |>
+        RedBlackTree.seqMapWithKey((_, v) -> { l := "a" :: deref l; v }) |>
+        RedBlackTree.seqMapWithKey((_, v) -> { l := "b" :: deref l; v });
+        List.reverse(deref l) == "a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil
+
+    @test
+    def seqMapWithKeyFusion02(): Bool & Impure =
+        let l = ref Nil;
+        let Map(t) = Map#{1 -> 1, 2 -> 2, 3 -> 3};
+        t |>
+        RedBlackTree.seqMapWithKey((_, v) -> { l := "a" :: deref l; v } as & Pure) |>
+        RedBlackTree.seqMapWithKey((_, v) -> { l := "b" :: deref l; v } as & Pure);
+        List.reverse(deref l) == "a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil
+
 
     /////////////////////////////////////////////////////////////////////////////
     // parMapWithKey                                                           //
