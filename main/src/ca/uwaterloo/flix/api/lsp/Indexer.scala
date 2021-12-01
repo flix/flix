@@ -244,8 +244,10 @@ object Indexer {
     case Expression.Ascribe(exp, tpe, eff, loc) =>
       visitExp(exp) ++ visitType(tpe) ++ visitType(eff) ++ Index.occurrenceOf(exp0)
 
-    case Expression.Cast(exp, _, _, tpe, eff, loc) =>
-      visitExp(exp) ++ visitType(tpe) ++ visitType(eff) ++ Index.occurrenceOf(exp0)
+    case Expression.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
+      val dt = declaredType.map(visitType).getOrElse(Index.empty)
+      val de = declaredEff.map(visitType).getOrElse(Index.empty)
+      visitExp(exp) ++ dt ++ de ++ visitType(tpe) ++ visitType(eff) ++ Index.occurrenceOf(exp0)
 
     case Expression.TryCatch(exp, rules, _, _, _) =>
       val i0 = visitExp(exp) ++ Index.occurrenceOf(exp0)

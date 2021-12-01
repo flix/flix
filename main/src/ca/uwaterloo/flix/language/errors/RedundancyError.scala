@@ -340,6 +340,8 @@ object RedundancyError {
 
   /**
     * An error raised to indicate that a purity cast is redundant.
+    *
+    * @param loc the source location of the cast.
     */
   case class RedundantPurityCast(loc: SourceLocation) extends RedundancyError {
     def summary: String = "Redundant purity cast. The expression is already pure."
@@ -359,6 +361,8 @@ object RedundancyError {
 
   /**
     * An error raised to indicate that an effect cast is redundant.
+    *
+    * @param loc the source location of the cast.
     */
   case class RedundantEffectCast(loc: SourceLocation) extends RedundancyError {
     def summary: String = "Redundant effect cast. The expression already has the same effect."

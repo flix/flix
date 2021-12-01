@@ -761,7 +761,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.UnusedFormalParam](result)
   }
 
-  test("RedundantPurityCast.Let.01") {
+  test("RedundantPurityCast.01") {
     val input =
       s"""
          |pub def f(): Int32 = 123 as & Pure
@@ -771,7 +771,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.RedundantPurityCast](result)
   }
 
-  test("RedundantPurityCast.Let.02") {
+  test("RedundantPurityCast.02") {
     val input =
       s"""
          |pub def f(): Array[Int32] & Impure =
@@ -783,14 +783,14 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.RedundantPurityCast](result)
   }
 
-  test("RedundantEffectCast.Let.01") {
+  test("RedundantEffectCast.01") {
     val input =
       s"""
          |pub def f(g: Int32 -> Int32 & ef): Int32 & ef = g(123) as & ef
          |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.RedundantPurityCast](result)
+    expectError[RedundancyError.RedundantEffectCast](result)
   }
 
   test("RedundantTypeConstraint.Class.01") {
