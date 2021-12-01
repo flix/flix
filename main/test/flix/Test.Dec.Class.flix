@@ -199,23 +199,35 @@ namespace Test/Dec/Class {
     }
 
     namespace Test16 {
-      lawless class D[a] {
-        pub def f(x: a, y: a): Bool
-      }
+        lawless class D[a] {
+            pub def f(x: a, y: a): Bool
+        }
 
-      class C[a] {
-        law l: forall (x: a, y: a) with D[a] . Test/Dec/Class/Test16/D.f(x, y)
-      }
+        class C[a] {
+            law l: forall (x: a, y: a) with D[a] . Test/Dec/Class/Test16/D.f(x, y)
+        }
     }
 
     namespace Test17 {
-      lawless class D[a] {
-        pub def f(x: a): Bool
-      }
+        lawless class D[a] {
+            pub def f(x: a): Bool
+        }
 
-      class E[a: Type -> Type] {
-        law l: forall (x: a[b]) with D[a[b]] . Test/Dec/Class/Test17/D.f(x)
-      }
+        class E[a: Type -> Type] {
+            law l: forall (x: a[b]) with D[a[b]] . Test/Dec/Class/Test17/D.f(x)
+        }
+    }
+
+    namespace Test18 {
+        enum E[_: Bool]
+        enum F[_: Bool, _: Type]
+
+        lawless class C[a]
+        lawless class D[a: Type -> Type]
+
+        instance C[E[true]]
+        instance C[F[false, a]]
+        instance D[F[true]]
     }
 
     pub enum List[a] {

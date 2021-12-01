@@ -138,8 +138,8 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
 
     // MATT docs
     def generifyBools(tpe0: Type)(implicit flix: Flix): Type = tpe0 match {
-      case Type.Cst(Type.True, loc) => Type.freshVar(Kind.Bool, loc)
-      case Type.Cst(Type.False, loc) => Type.freshVar(Kind.Bool, loc)
+      case Type.Cst(TypeConstructor.True, loc) => Type.freshVar(Kind.Bool, loc)
+      case Type.Cst(TypeConstructor.False, loc) => Type.freshVar(Kind.Bool, loc)
       case t: Type.KindedVar => t
       case t: Type.Cst => t
       case Type.Apply(tpe1, tpe2, loc) => Type.Apply(generifyBools(tpe1), generifyBools(tpe2), loc)
