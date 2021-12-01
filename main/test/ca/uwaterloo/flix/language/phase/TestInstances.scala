@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.errors.InstanceError
-import ca.uwaterloo.flix.util.{Options, Validation}
+import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
 class TestInstances extends FunSuite with TestUtils {
@@ -115,6 +115,20 @@ class TestInstances extends FunSuite with TestUtils {
     expectError[InstanceError.OverlappingInstances](result)
   }
 
+  test("Test.OverlappingInstances.Bool.01") {
+    val input =
+      """
+        |lawless class C[a]
+        |
+        |enum E[_: Bool]
+        |
+        |instance C[E[true]]
+        |instance C[E[false]]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[InstanceError.OverlappingInstances](result)
+  }
+
   test("Test.ComplexInstanceType.01") {
     val input =
       """
@@ -147,17 +161,6 @@ class TestInstances extends FunSuite with TestUtils {
         |class C[a]
         |
         |instance C[Box[Int]]
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[InstanceError.ComplexInstanceType](result)
-  }
-
-  test("Test.ComplexInstanceType.04") {
-    val input =
-      """
-        |class C[a]
-        |
-        |instance C[a -> b]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[InstanceError.ComplexInstanceType](result)

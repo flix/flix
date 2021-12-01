@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{Scheme, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Kind, Scheme, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.InstanceError
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -126,7 +126,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
       * Checks for overlap of instance types, assuming the instances are of the same class.
       */
     def checkOverlap(inst1: TypedAst.Instance, inst2: TypedAst.Instance)(implicit flix: Flix): Validation[Unit, InstanceError] = {
-      Unification.unifyTypes(inst1.tpe, inst2.tpe) match {
+      Unification.unifyTypes(generifyBools(inst1.tpe), inst2.tpe) match {
         case Ok(_) =>
           Validation.Failure(LazyList(
             InstanceError.OverlappingInstances(inst1.sym.loc, inst2.sym.loc),
@@ -134,6 +134,18 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
           ))
         case Err(_) => ().toSuccess
       }
+    }
+
+    // MATT docs
+    def generifyBools(tpe0: Type)(implicit flix: Flix): Type = tpe0 match {
+      case Type.Cst(Type.True, loc) => Type.freshVar(Kind.Bool, loc)
+      case Type.Cst(Type.False, loc) => Type.freshVar(Kind.Bool, loc)
+      case t: Type.KindedVar => t
+      case t: Type.Cst => t
+      case Type.Apply(tpe1, tpe2, loc) => Type.Apply(generifyBools(tpe1), generifyBools(tpe2), loc)
+      case Type.Alias(cst, args, tpe, loc) => Type.Alias(cst, args.map(generifyBools), generifyBools(tpe), loc)
+      case _: Type.UnkindedVar => throw InternalCompilerException("unexpected unkinded type")
+      case _: Type.Ascribe => throw InternalCompilerException("unexpected unkinded type")
     }
 
     /**
