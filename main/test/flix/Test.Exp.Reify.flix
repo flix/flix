@@ -1,7 +1,7 @@
 namespace Test/Exp/Reify {
 
     @test
-    def reify01(): Bool = hof(_ -> 123 as & Pure)
+    def reify01(): Bool = hof(_ -> 123)
 
     @test
     def reify02(): Bool = not hof(_ -> 123 as & Impure)
