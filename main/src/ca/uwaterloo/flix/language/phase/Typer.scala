@@ -1749,8 +1749,11 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
 
       case KindedAst.Expression.Cast(exp, declaredType, declaredEff, tvar, loc) =>
         val e = visitExp(exp, subst0)
+        val dt = declaredType.map(tpe => subst0(tpe))
+        val de = declaredEff.map(eff => subst0(eff))
+        val tpe = subst0(tvar)
         val eff = declaredEff.getOrElse(e.eff)
-        TypedAst.Expression.Cast(e, declaredType, declaredEff, subst0(tvar), eff, loc)
+        TypedAst.Expression.Cast(e, dt, de, tpe, eff, loc)
 
       case KindedAst.Expression.TryCatch(exp, rules, loc) =>
         val e = visitExp(exp, subst0)

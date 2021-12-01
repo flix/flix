@@ -7,16 +7,6 @@ import org.scalatest.FunSuite
 
 class TestRedundancy extends FunSuite with TestUtils {
 
-  test("CastPureToPure.Let.01") {
-    val input =
-      s"""
-         |pub def f(): Int32 = 123 as & Pure
-         |
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.RedundantPurityCast](result)
-  }
-
   test("HiddenVarSym.Let.01") {
     val input =
       s"""
@@ -769,6 +759,39 @@ class TestRedundancy extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.UnusedFormalParam](result)
+  }
+
+  test("RedundantPurityCast.Let.01") {
+    val input =
+      s"""
+         |pub def f(): Int32 = 123 as & Pure
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.RedundantPurityCast](result)
+  }
+
+  // TODO
+  test("RedundantPurityCast.Let.02") {
+    val input =
+      s"""
+         |pub def f(): Int32 =
+         |  let x = 123;
+         |  x as & Puredsasa
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.RedundantPurityCast](result)
+  }
+
+  test("RedundantEffectCast.Let.01") {
+    val input =
+      s"""
+         |pub def f(g: Int32 -> Int32 & ef): Int32 & ef = g(123) as & ef
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.RedundantPurityCast](result)
   }
 
   test("RedundantTypeConstraint.Class.01") {

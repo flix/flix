@@ -342,12 +342,31 @@ object RedundancyError {
     * An error raised to indicate that a purity cast is redundant.
     */
   case class RedundantPurityCast(loc: SourceLocation) extends RedundancyError {
-    def summary: String = "Redundant purity cast. Expression is already pure."
+    def summary: String = "Redundant purity cast. The expression is already pure."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.format)}
-         |>> Redundant purity cast. Expression is already pure.
+         |>> Redundant purity cast. The expression is already pure.
+         |
+         |${code(loc, "redundant cast")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate that an effect cast is redundant.
+    */
+  case class RedundantEffectCast(loc: SourceLocation) extends RedundancyError {
+    def summary: String = "Redundant effect cast. The expression already has the same effect."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Redundant effect cast. The expression already has the same effect.
          |
          |${code(loc, "redundant cast")}
          |
