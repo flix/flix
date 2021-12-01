@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+// TODO: Unsafe instance. Will be removed. (Blocked by Datalog engine usage.)
 instance Eq[Array[v]] with Eq[v] {
     // TODO More efficient implementation
     pub def eq(a: Array[v], b: Array[v]): Bool =
@@ -21,6 +22,7 @@ instance Eq[Array[v]] with Eq[v] {
         (Array.foldLeft((acc, p) -> let (x,y) = p; (acc and (x == y)), true, Array.zip(a,b))) as & Pure
 }
 
+// TODO: Unsafe instance. Will be removed. (Blocked by Datalog engine usage.)
 instance Order[Array[v]] with Order[v] {
     ///
     /// Compares `a` and `b` lexicographically.
@@ -29,8 +31,8 @@ instance Order[Array[v]] with Order[v] {
         ArrayOps.compareHelper(a, b, Int32.min(Array.length(a), Array.length(b)), 0) as & Pure
 }
 
+// TODO: Unsafe instance. Will be removed. (Blocked by Datalog engine usage.)
 instance Foldable[Array] {
-    // TODO: These instances are used by datalog.
     pub def foldLeft(f: (b, a) -> b & ef, s: b, a: Array[a]): b & ef = Array.foldLeft(f, s, a) as & ef
     pub def foldRight(f: (a, b) -> b & ef, s: b, a: Array[a]): b & ef = Array.foldRight(f, s, a) as & ef
 }
