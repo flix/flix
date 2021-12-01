@@ -101,7 +101,7 @@ object Terminator extends Phase[Root, Root] {
       case Expression.Deref(exp, _, _, _) => visit(exp)
       case Expression.Assign(exp1, exp2, _, _, _) => visit(exp1) || visit(exp2)
       case Expression.Ascribe(exp, _, _, _) => visit(exp)
-      case Expression.Cast(exp, _, _, _) => visit(exp)
+      case Expression.Cast(exp, _, _, _, _, _) => visit(exp)
       case Expression.TryCatch(exp, rules, _, _, _) => visit(exp) || rules.forall { rule => visit(rule.exp) }
       case Expression.InvokeConstructor(_, args, _, _, _) => args.exists(visit)
       case Expression.InvokeMethod(_, exp, args, _, _, _) => visit(exp) || args.exists(visit)

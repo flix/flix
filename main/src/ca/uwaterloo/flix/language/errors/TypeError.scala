@@ -547,7 +547,7 @@ object TypeError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.format)}
-         |>> Order is not defined on ${red(FormatType.formatType(tpe))}. Define or derive an instance of ToString.
+         |>> ToString is not defined on ${red(FormatType.formatType(tpe))}. Define or derive an instance of ToString.
          |
          |${code(loc, s"missing ToString instance")}
          |
