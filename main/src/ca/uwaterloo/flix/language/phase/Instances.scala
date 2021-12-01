@@ -93,7 +93,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Checks that the instance type is simple:
       * * all type variables are unique
-      * * all type arguments are variables
+      * * all type arguments are variables or booleans
       */
     def checkSimple(inst: TypedAst.Instance): Validation[Unit, InstanceError] = inst match {
       case TypedAst.Instance(_, _, sym, tpe, _, _, _, _) => tpe match {
@@ -109,7 +109,11 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
               // Case 1.2 We haven't seen it before. Add it to the list.
               else
                 (tvar :: seen).toSuccess
-            // Case 2: Non-type variable. Error.
+            // Case 2: True. Continue.
+            case (seen, Type.Cst(TypeConstructor.True, _)) => seen.toSuccess
+            // Case 3: False. Continue.
+            case (seen, Type.Cst(TypeConstructor.False, _)) => seen.toSuccess
+            // Case 4: Some other type. Error.
             case (_, _) => InstanceError.ComplexInstanceType(tpe, sym, sym.loc).toFailure
           }.map(_ => ())
         case Type.Alias(alias, _, _, _) => InstanceError.IllegalTypeAliasInstance(alias.sym, sym, sym.loc).toFailure
