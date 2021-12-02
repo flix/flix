@@ -77,6 +77,22 @@ namespace Iterator {
     ///
     /// Assumes that `f` eventually exhausts the resource at `x`.
     ///
+    /// Assumes `f` may throw a Java `RuntimeException`.
+    ///
+    /// If `f` throws a Java `RuntimeException`, then `g` is invoked.
+    ///
+    pub def ofExceptionWith(f: Unit -> a & ef1, g: Unit -> b & ef2, x: Ref[a]): Iterator[Result[a, String]] =
+        let done = () -> Object.isNull(deref x);
+        let next = () -> Result.tryWith(f, g) as & Impure;
+        Iterator(done, next)
+
+    ///
+    /// Returns an iterator that unfolds `f` until the resource at `x` is null.
+    ///
+    /// Assumes that `f` eventually exhausts the resource at `x`.
+    ///
+    /// If `f` throws a Java exception, the program crashes.
+    ///
     pub def ofNullable(f: Unit -> a & ef, x: Ref[a]): Iterator[a] =
         let done = () -> Object.isNull(deref x);
         let next = () -> f() as & Impure;
