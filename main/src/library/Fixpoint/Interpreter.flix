@@ -19,7 +19,7 @@ use Fixpoint/Ast.Denotation;
 
 namespace Fixpoint {
 
-    enum Tuple[v] { // TODO: Move into some other namespace?
+    enum Tuple[v] {
         case Tuple(Array[v])
     }
 
