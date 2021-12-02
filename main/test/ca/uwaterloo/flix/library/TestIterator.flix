@@ -22,7 +22,7 @@ namespace TestIterator {
 
     @test
     def next01(): Bool & Impure =
-        Iterator.empty() |> Iterator.next == None
+        Iterator.empty() |> Iterator.next == None: Option[Int32]
 
     @test
     def next02(): Bool & Impure =
@@ -262,7 +262,7 @@ namespace TestIterator {
 
     @test
     def toNel01(): Bool & Impure =
-        Nil |> List.toIterator |> Iterator.toNel == None
+        Nil |> List.toIterator |> Iterator.toNel == None: Option[Int32]
 
     @test
     def toNel02(): Bool & Impure =

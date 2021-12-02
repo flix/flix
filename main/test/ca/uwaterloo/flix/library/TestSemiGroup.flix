@@ -46,7 +46,7 @@ namespace TestSemiGroup {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def combineOption01(): Bool = combine(None, None) == None
+    def combineOption01(): Bool = combine(None, None) == None: Option[String]
 
     @test
     def combineOption02(): Bool = combine(Some("a"), None) == Some("a")
@@ -62,7 +62,7 @@ namespace TestSemiGroup {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def combineList01(): Bool = combine(Nil, Nil) == Nil
+    def combineList01(): Bool = combine(Nil, Nil) == Nil: List[Int32]
 
     @test
     def combineList02(): Bool = combine(1 :: Nil, Nil) == 1 :: Nil
