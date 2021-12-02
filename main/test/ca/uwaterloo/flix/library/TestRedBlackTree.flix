@@ -234,25 +234,17 @@ namespace TestRedBlackTree {
     def mapWithKey08(): Bool & Impure =
         let range = List.range(0, 2000);
         let Map(t) = List.zip(range, range) |> List.toMap;
-        let a = [2000; default];
-        RedBlackTree.mapWithKey((k, v) -> { a[k] = v; v }, t);
+        let a = [default; 2000];
+        let i = ref 0;
+        RedBlackTree.mapWithKey((_, v) -> { a[deref i] = v; i := 1 + deref i; v }, t);
         Array.sameElements(a, List.toArray(range))
 
     @test
     def mapWithKey09(): Bool & Impure =
-        let l = ref Nil;
-        let Map(t) = Map#{1 -> 1, 2 -> 2, 3 -> 3};
-        t |>
-        RedBlackTree.mapWithKey((_, v) -> { l := "a" :: deref l; v }) |>
-        RedBlackTree.mapWithKey((_, v) -> { l := "b" :: deref l; v });
-        List.reverse(deref l) == "a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil
-
-    @test
-    def mapWithKey10(): Bool & Impure =
-        let i = ref 0;
-        let keys = List.range(0, 2000);
-        let Map(t) = List.zip(keys, List.range(-2000, 0)) |> List.toMap;
-        let expected = List.zip(keys, List.range(0, 2000)) |> List.toMap;
-        Map(RedBlackTree.mapWithKey((_, _) -> { i := 1 + deref i; deref i }, t)) == expected
+        let range = List.range(0, 2000);
+        let Map(t) = List.zip(range, range) |> List.toMap;
+        let a = MutList.new();
+        RedBlackTree.mapWithKey((_, v) -> { MutList.new() |> MutList.push(v) |> MutList.append(a); v }, t);
+        MutList.eq(a, List.toMutList(range))
 
 }
