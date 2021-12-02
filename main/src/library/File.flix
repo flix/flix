@@ -150,7 +150,7 @@ namespace File {
             import new java.io.FileInputStream(##java.io.File) as newInputStream;
             import java.io.FileInputStream.skip(Int64);
             import java.io.FileInputStream.read(Array[Int8], Int32, Int32);
-            import java.nio.charset.Charset:forName(String);
+            import static java.nio.charset.Charset.forName(String);
             import new java.lang.String(Array[Int8], ##java.nio.charset.Charset) as newString;
 
             let javaFile = newFile(f);
@@ -212,7 +212,7 @@ namespace File {
             import new java.io.File(String) as newFile;
             import java.io.File.toPath();
             import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path, ##java.nio.charset.Charset);
-            import java.nio.charset.Charset:forName(String);
+            import static java.nio.charset.Charset.forName(String);
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
@@ -270,7 +270,7 @@ namespace File {
             import new java.io.File(String) as newFile;
             import java.io.File.toPath();
             import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path, ##java.nio.charset.Charset);
-            import java.nio.charset.Charset:forName(String);
+            import static java.nio.charset.Charset.forName(String);
             import java.io.BufferedReader.readLine();
 
             let javaFile = newFile(f);
