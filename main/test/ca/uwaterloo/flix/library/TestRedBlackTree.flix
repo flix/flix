@@ -230,6 +230,14 @@ namespace TestRedBlackTree {
         let expected = List.zip(List.range(0, 2000), List.range(-999, 1001)) |> List.toMap;
         Map(RedBlackTree.mapWithKey((k, v) -> k + v, t)) == expected
 
+    @test
+    def mapWithKey08(): Bool & Impure =
+        let range = List.range(0, 2000);
+        let Map(t) = List.zip(range, range) |> List.toMap;
+        let a = [2000; default];
+        RedBlackTree.mapWithKey((k, v) -> { a[k] = v; v }, t);
+        Array.sameElements(a, List.toArray(range))
+
 
     /////////////////////////////////////////////////////////////////////////////
     // mapWithKey fusion                                                       //
