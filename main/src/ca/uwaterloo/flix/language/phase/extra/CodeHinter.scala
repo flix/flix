@@ -176,7 +176,7 @@ object CodeHinter {
     case Expression.Ascribe(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Cast(exp, tpe, eff, loc) =>
+    case Expression.Cast(exp, _, _, tpe, eff, loc) =>
       checkCast(tpe, eff, loc) ++ visitExp(exp)
 
     case Expression.TryCatch(exp, rules, _, _, _) =>

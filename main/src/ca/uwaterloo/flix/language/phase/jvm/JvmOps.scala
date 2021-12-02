@@ -157,6 +157,34 @@ object JvmOps {
   }
 
   /**
+    * Returns the closure abstract class type `CloX$Y$Z` for the given type `tpe`.
+    *
+    * For example:
+    *
+    * Int -> Int          =>  Clo2$Int$Int
+    * (Int, Int) -> Int   =>  Clo3$Int$Int$Int
+    *
+    * NB: The given type `tpe` must be an arrow type.
+    */
+  def getClosureAbstractClassType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
+    case MonoType.Arrow(targs, tresult) =>
+      // Compute the arity of the function abstract class.
+      // We subtract one since the last argument is the return type.
+      val arity = targs.length
+
+      // Compute the stringified erased type of each type argument.
+      val args = (targs ::: tresult :: Nil).map(tpe => stringify(getErasedJvmType(tpe)))
+
+      // The JVM name is of the form FnArity$Arg0$Arg1$Arg2
+      val name = "Clo" + arity + Flix.Delimiter + args.mkString(Flix.Delimiter)
+
+      // The type resides in the root package.
+      JvmType.Reference(JvmName(RootPackage, name))
+
+    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+  }
+
+  /**
     * Returns the closure class `Clo$Name` for the given closure.
     *
     * String.charAt     =>    String/Clo$charAt
