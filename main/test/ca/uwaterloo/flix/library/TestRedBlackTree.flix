@@ -218,102 +218,38 @@ namespace TestRedBlackTree {
         let Map(t) = Map#{2 -> -1, 5 -> 15, 11 -> -9, 8 -> 8};
         Map(RedBlackTree.mapWithKey((k, v) -> k + v, t)) == Map#{2 -> 1, 5 -> 20, 11 -> 2, 8 -> 16}
 
-
-    /////////////////////////////////////////////////////////////////////////////
-    // seqMapWithKey                                                           //
-    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def mapWithKey06(): Bool =
+        let Map(t) = List.zip(List.range(0, 2000), List.range(0, 2000)) |> List.toMap;
+        let expected = List.zip(List.range(0, 2000), List.range(1, 2001)) |> List.toMap;
+        Map(RedBlackTree.mapWithKey((k, v) -> k + v, t)) == expected
 
     @test
-    def seqMapWithKey01(): Bool =
-        let Map(t) = Map#{}: Map[Unit, Int32];
-        Map(RedBlackTree.seqMapWithKey((k, v) -> k + v, t)) == Map#{}
-
-    @test
-    def seqMapWithKey02(): Bool =
-        let Map(t) = Map#{1 -> 4};
-        Map(RedBlackTree.seqMapWithKey((k, v) -> k + v, t)) == Map#{1 -> 5}
-
-    @test
-    def seqMapWithKey03(): Bool =
-        let Map(t) = Map#{2 -> -1, 0 -> 0};
-        Map(RedBlackTree.seqMapWithKey((k, v) -> k + v, t)) == Map#{2 -> 1, 0 -> 0}
-
-    @test
-    def seqMapWithKey04(): Bool =
-        let Map(t) = Map#{2 -> -1, 5 -> 15, 11 -> -9};
-        Map(RedBlackTree.seqMapWithKey((k, v) -> k + v, t)) == Map#{2 -> 1, 5 -> 20, 11 -> 2}
-
-    @test
-    def seqMapWithKey05(): Bool =
-        let Map(t) = Map#{2 -> -1, 5 -> 15, 11 -> -9, 8 -> 8};
-        Map(RedBlackTree.seqMapWithKey((k, v) -> k + v, t)) == Map#{2 -> 1, 5 -> 20, 11 -> 2, 8 -> 16}
+    def mapWithKey07(): Bool =
+        let Map(t) = List.zip(List.range(0, 2000), List.range(-1000, 1000)) |> List.toMap;
+        let expected = List.zip(List.range(0, 2000), List.range(-999, 1001)) |> List.toMap;
+        Map(RedBlackTree.mapWithKey((k, v) -> k + v, t)) == expected
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // seqMapWithKey fusion                                                    //
+    // mapWithKey fusion                                                       //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def seqMapWithKeyFusion01(): Bool & Impure =
+    def mapWithKeyFusion01(): Bool & Impure =
         let l = ref Nil;
         let Map(t) = Map#{1 -> 1, 2 -> 2, 3 -> 3};
         t |>
-        RedBlackTree.seqMapWithKey((_, v) -> { l := "a" :: deref l; v }) |>
-        RedBlackTree.seqMapWithKey((_, v) -> { l := "b" :: deref l; v });
+        RedBlackTree.mapWithKey((_, v) -> { l := "a" :: deref l; v }) |>
+        RedBlackTree.mapWithKey((_, v) -> { l := "b" :: deref l; v });
         List.reverse(deref l) == "a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil
 
     @test
-    def seqMapWithKeyFusion02(): Bool & Impure =
-        let l = ref Nil;
-        let Map(t) = Map#{1 -> 1, 2 -> 2, 3 -> 3};
-        t |>
-        RedBlackTree.seqMapWithKey((_, v) -> { l := "a" :: deref l; v } as & Pure) |>
-        RedBlackTree.seqMapWithKey((_, v) -> { l := "b" :: deref l; v } as & Pure);
-        List.reverse(deref l) == "a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // parMapWithKey                                                           //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def parMapWithKey01(): Bool =
-        let Map(t) = Map#{}: Map[Unit, Int32];
-        Map(RedBlackTree.parMapWithKey((k, v) -> k + v, t)) == Map#{}
-
-    @test
-    def parMapWithKey02(): Bool =
-        let Map(t) = Map#{1 -> 4};
-        Map(RedBlackTree.parMapWithKey((k, v) -> k + v, t)) == Map#{1 -> 5}
-
-    @test
-    def parMapWithKey03(): Bool =
-        let Map(t) = Map#{2 -> -1, 0 -> 0};
-        Map(RedBlackTree.parMapWithKey((k, v) -> k + v, t)) == Map#{2 -> 1, 0 -> 0}
-
-    @test
-    def parMapWithKey04(): Bool =
-        let Map(t) = Map#{2 -> -1, 5 -> 15, 11 -> -9};
-        Map(RedBlackTree.parMapWithKey((k, v) -> k + v, t)) == Map#{2 -> 1, 5 -> 20, 11 -> 2}
-
-    @test
-    def parMapWithKey05(): Bool =
-        let Map(t) = Map#{2 -> -1, 5 -> 15, 11 -> -9, 8 -> 8};
-        Map(RedBlackTree.parMapWithKey((k, v) -> k + v, t)) == Map#{2 -> 1, 5 -> 20, 11 -> 2, 8 -> 16}
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // parMapWithKey fusion                                                    //
-    /////////////////////////////////////////////////////////////////////////////
-
-    // This test tries to force a lost update
-    // but there **could** be a run where all updates are accounted for
-    // so how do we ensure the parallelism is observed deterministically?
-    @test
-    def parMapWithKeyFusion01(): Bool & Impure =
+    def mapWithKeyFusion02(): Bool & Impure =
         let i = ref 0;
-        let Map(t) = List.zip(List.range(0, 1000), List.range(0, 1000)) |> List.toMap;
-        RedBlackTree.parMapWithKey((_, v) -> { i := 1 + deref i; v } as & Pure, t);
-        deref i < 1000
+        let keys = List.range(0, 2000);
+        let Map(t) = List.zip(keys, List.range(-2000, 0)) |> List.toMap;
+        let expected = List.zip(keys, List.range(0, 2000)) |> List.toMap;
+        Map(RedBlackTree.mapWithKey((_, _) -> { i := 1 + deref i; deref i }, t)) == expected
 
 }
