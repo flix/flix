@@ -226,6 +226,24 @@ namespace Test/Dec/Class {
         instance D[F[true]]
     }
 
+    namespace Test19 {
+        pub enum M[_: Bool, a: Type] {
+          case M(a)
+        }
+
+        instance Eq[M[true, a]] with Eq[a] {
+            pub def eq(x: M[true, a], y: M[true, a]): Bool = match (x, y) {
+                case (M(x1), M(y1)) => x1 == y1
+            }
+        }
+
+        @test
+        def testCallComplexBoolSig01(): Bool = M(10): M[true, Int] == M(10): M[true, Int]
+
+        @test
+        def testCallComplexBoolSig02(): Bool = M(10): M[true, Int] != M(11): M[true, Int]
+    }
+
     pub enum List[a] {
         case Nil
         case Cons(a, List[a])
