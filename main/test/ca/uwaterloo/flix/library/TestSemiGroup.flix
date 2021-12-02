@@ -81,7 +81,7 @@ namespace TestSemiGroup {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def combineMap01(): Bool = combine(Map#{}, Map#{}) == Map#{}
+    def combineMap01(): Bool = combine(Map#{}, Map#{}) == Map#{}: Map[Int32, String]
 
     @test
     def combineMap02(): Bool = combine(Map#{1 => "A"}, Map#{}) == Map#{1 => "A"}

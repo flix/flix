@@ -245,7 +245,7 @@ namespace TestIterator {
 
     @test
     def toSet02(): Bool & Impure =
-        Set#{} |> Set.toList |> List.toIterator |> Iterator.toSet == Set.empty()
+        Set#{} |> Set.toList |> List.toIterator |> Iterator.toSet == Set.empty(): Set[String]
 
     @test
     def toSet03(): Bool & Impure =
@@ -262,7 +262,7 @@ namespace TestIterator {
 
     @test
     def toNel01(): Bool & Impure =
-        Nil |> List.toIterator |> Iterator.toNel == None: Option[Int32]
+        Nil |> List.toIterator |> Iterator.toNel == None: Option[Nel[Int32]]
 
     @test
     def toNel02(): Bool & Impure =
