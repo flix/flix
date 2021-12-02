@@ -457,4 +457,25 @@ namespace Iterator {
             case None    => Nil
             case Some(i) => i :: toList(iter)
         }
+
+    ///
+    /// Returns an iterator with `a` inserted between every of `iter`.
+    ///
+    /// Does *not* consume any elements from the iterator.
+    ///
+    pub def intersperse(x: a, iter: Iterator[a]): Iterator[a] & Impure =
+        let Iterator(done, next) = iter;
+        let returnX = ref false;
+        let next1 = () -> {
+            if (deref returnX) {
+                returnX := false;
+                x
+            }
+            else {
+                returnX := true;
+                next()
+            }
+        };
+        Iterator(done, next1)
+
 }
