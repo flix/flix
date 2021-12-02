@@ -815,4 +815,10 @@ namespace TestIterator {
             Iterator.flatMap(i -> Iterator.repeat(i, i)) |>
             Iterator.toList == 2 :: 2 :: 3 :: 3 :: 3 :: Nil
 
+    @test
+    def flatMap07(): Bool & Impure =
+        List.toIterator(1 :: 2 :: 3 :: 4 :: Nil) |>
+            Iterator.flatMap(i -> if (i mod 2 == 0) Iterator.repeat(i, i) else Iterator.empty()) |>
+            Iterator.toList == 2 :: 2 :: 4 :: 4 :: 4 :: 4 :: Nil
+
 }
