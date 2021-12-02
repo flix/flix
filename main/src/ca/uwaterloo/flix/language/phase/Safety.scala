@@ -164,7 +164,7 @@ object Safety extends Phase[Root, Root] {
     case Expression.Ascribe(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Cast(exp, _, _, _) =>
+    case Expression.Cast(exp, _, _, _, _, _) =>
       visitExp(exp)
 
     case Expression.TryCatch(exp, rules, _, _, _) =>

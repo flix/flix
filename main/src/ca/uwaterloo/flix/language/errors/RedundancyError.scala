@@ -85,12 +85,9 @@ object RedundancyError {
          |""".stripMargin
     }
 
-    def loc: SourceLocation = sym1.loc min sym2.loc
-
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
     def explain(formatter: Formatter): Option[String] = None
+
+    def loc: SourceLocation = sym1.loc min sym2.loc
   }
 
   /**
@@ -110,8 +107,6 @@ object RedundancyError {
          |""".stripMargin
     }
 
-    def loc: SourceLocation = sym.loc
-
     def explain(formatter: Formatter): Option[String] = Some({
       s"""Possible fixes:
          |
@@ -122,6 +117,8 @@ object RedundancyError {
          |
          |""".stripMargin
     })
+
+    def loc: SourceLocation = sym.loc
   }
 
   /**
@@ -141,8 +138,6 @@ object RedundancyError {
          |""".stripMargin
     }
 
-    def loc: SourceLocation = sym.loc
-
     def explain(formatter: Formatter): Option[String] = Some({
       s"""
          |Possible fixes:
@@ -154,6 +149,8 @@ object RedundancyError {
          |
          |""".stripMargin
     })
+
+    def loc: SourceLocation = sym.loc
   }
 
   /**
@@ -175,8 +172,6 @@ object RedundancyError {
 
     }
 
-    def loc: SourceLocation = sym.loc
-
     def explain(formatter: Formatter): Option[String] = Some({
       s"""
          |Possible fixes:
@@ -187,6 +182,8 @@ object RedundancyError {
          |
          |""".stripMargin
     })
+
+    def loc: SourceLocation = sym.loc
   }
 
   /**
@@ -206,8 +203,6 @@ object RedundancyError {
          |""".stripMargin
     }
 
-    def loc: SourceLocation = sym.loc
-
     def explain(formatter: Formatter): Option[String] = Some({
       s"""
          |Possible fixes:
@@ -218,6 +213,8 @@ object RedundancyError {
          |
          |""".stripMargin
     })
+
+    def loc: SourceLocation = sym.loc
   }
 
   /**
@@ -237,8 +234,6 @@ object RedundancyError {
          |""".stripMargin
     }
 
-    def loc: SourceLocation = SourceLocation.mk(ident.sp1, ident.sp2)
-
     def explain(formatter: Formatter): Option[String] = Some({
       s"""
          |Possible fixes:
@@ -249,6 +244,8 @@ object RedundancyError {
          |
          |""".stripMargin
     })
+
+    def loc: SourceLocation = SourceLocation.mk(ident.sp1, ident.sp2)
   }
 
   /**
@@ -268,8 +265,6 @@ object RedundancyError {
          |""".stripMargin
     }
 
-    def loc: SourceLocation = sym.loc
-
     def explain(formatter: Formatter): Option[String] = Some({
       s"""
          |Possible fixes:
@@ -280,6 +275,8 @@ object RedundancyError {
          |
          |""".stripMargin
     })
+
+    def loc: SourceLocation = sym.loc
   }
 
   /**
@@ -339,6 +336,48 @@ object RedundancyError {
          |
          |""".stripMargin
     })
+  }
+
+  /**
+    * An error raised to indicate that a purity cast is redundant.
+    *
+    * @param loc the source location of the cast.
+    */
+  case class RedundantPurityCast(loc: SourceLocation) extends RedundancyError {
+    def summary: String = "Redundant purity cast. The expression is already pure."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Redundant purity cast. The expression is already pure.
+         |
+         |${code(loc, "redundant cast")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate that an effect cast is redundant.
+    *
+    * @param loc the source location of the cast.
+    */
+  case class RedundantEffectCast(loc: SourceLocation) extends RedundancyError {
+    def summary: String = "Redundant effect cast. The expression already has the same effect."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Redundant effect cast. The expression already has the same effect.
+         |
+         |${code(loc, "redundant cast")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**

@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.extra
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.CodeHint
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
@@ -28,13 +28,16 @@ object CodeHinter {
   /**
     * Returns a collection of code quality hints for the given AST `root`.
     */
-  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CodeHint] = flix.phase("CodeQuality") {
-    val hints = root.defs.values.flatMap(visitDef(_)(root)).toList
-    if (hints.isEmpty)
-      root.toSuccess
-    else
-      Failure(hints.to(LazyList))
+  def run(root: TypedAst.Root, sources: Set[String])(implicit flix: Flix): List[CodeHint] = {
+    val codeHints = root.defs.values.flatMap(visitDef(_)(root)).toList
+    codeHints.filter(include(_, sources))
   }
+
+  /**
+    * Returns `true` if the given code `hint` should be included in the result.
+    */
+  private def include(hint: CodeHint, sources: Set[String]): Boolean =
+    sources.contains(hint.loc.source.name)
 
   /**
     * Computes code quality hints for the given definition `def0`.
@@ -51,7 +54,8 @@ object CodeHinter {
 
     case Expression.Var(_, _, _) => Nil
 
-    case Expression.Def(_, _, _) => Nil
+    case Expression.Def(sym, _, loc) =>
+      checkDeprecated(sym, loc)
 
     case Expression.Sig(_, _, _) => Nil
 
@@ -172,8 +176,8 @@ object CodeHinter {
     case Expression.Ascribe(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Cast(exp, _, _, _) =>
-      visitExp(exp)
+    case Expression.Cast(exp, _, _, tpe, eff, loc) =>
+      checkCast(tpe, eff, loc) ++ visitExp(exp)
 
     case Expression.TryCatch(exp, rules, _, _, _) =>
       visitExp(exp) ++ rules.flatMap {
@@ -253,6 +257,12 @@ object CodeHinter {
   }
 
   /**
+    * Computes code quality hints for the given list of expressions `exps`.
+    */
+  private def visitExps(exps: List[Expression])(implicit root: Root): List[CodeHint] =
+    exps.flatMap(visitExp)
+
+  /**
     * Computes code quality hints for the given constraint `c`.
     */
   private def visitConstraint(c: Constraint)(implicit root: Root): List[CodeHint] =
@@ -272,12 +282,6 @@ object CodeHinter {
     case Body.Atom(_, _, _, _, _, _) => Nil
     case Body.Guard(exp, _) => visitExp(exp)
   }
-
-  /**
-    * Computes code quality hints for the given list of expressions `exps`.
-    */
-  private def visitExps(exps: List[Expression])(implicit root: Root): List[CodeHint] =
-    exps.flatMap(visitExp)
 
   /**
     * Checks whether `sym` would benefit from `tpe` being pure.
@@ -326,6 +330,29 @@ object CodeHinter {
       CodeHint.NonTrivialEffect(loc) :: Nil
     } else {
       Nil
+    }
+  }
+
+  /**
+    * Checks whether the given definition symbol `sym` is deprecated.
+    */
+  private def checkDeprecated(sym: Symbol.DefnSym, loc: SourceLocation)(implicit root: Root): List[CodeHint] = {
+    val defn = root.defs(sym)
+    val isDeprecated = defn.spec.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.Deprecated])
+    if (isDeprecated) {
+      CodeHint.Deprecated(loc) :: Nil
+    } else {
+      Nil
+    }
+  }
+
+  /**
+    * Checks whether a cast to the given `tpe` and `eff` is an unsafe purity cast.
+    */
+  private def checkCast(tpe: Type, eff: Type, loc: SourceLocation): List[CodeHint] = {
+    eff.typeConstructor match {
+      case Some(TypeConstructor.True) => CodeHint.UnsafePurityCast(eff.loc) :: Nil
+      case _ => Nil
     }
   }
 

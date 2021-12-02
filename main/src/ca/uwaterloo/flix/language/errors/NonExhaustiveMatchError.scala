@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
 import ca.uwaterloo.flix.util.Formatter
 
 /**
-  * An error raised to indicate a non exhaustive pattern match expression.
+  * An error raised to indicate a non-exhaustive pattern match expression.
   */
 case class NonExhaustiveMatchError(rules: List[TypedAst.MatchRule], pat: String, loc: SourceLocation) extends CompilationMessage {
   val kind = "Pattern Match"
@@ -35,11 +35,16 @@ case class NonExhaustiveMatchError(rules: List[TypedAst.MatchRule], pat: String,
        |
        |${code(loc, "incomplete pattern.")}
        |""".stripMargin
-
   }
 
-  /**
-    * Returns a formatted string with helpful suggestions.
-    */
-  def explain(formatter: Formatter): Option[String] = None
+  def explain(formatter: Formatter): Option[String] = Some({
+    s"""Flix requires every pattern match expression to be exhaustive, i.e. to cover all
+       |possible cases. A wild card pattern, written with an underscore, can be used to
+       |handle all other cases. For example:
+       |
+       |    case _ => // handle all other cases.
+       |
+       |""".stripMargin
+  })
+
 }

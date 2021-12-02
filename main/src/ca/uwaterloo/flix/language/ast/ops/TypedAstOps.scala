@@ -155,7 +155,7 @@ object TypedAstOps {
       case Expression.Ascribe(exp, tpe, eff, loc) =>
         visitExp(exp, env0)
 
-      case Expression.Cast(exp, tpe, eff, loc) =>
+      case Expression.Cast(exp, _, _, tpe, eff, loc) =>
         visitExp(exp, env0)
 
       case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
@@ -370,7 +370,7 @@ object TypedAstOps {
     case Expression.Deref(exp, _, _, _) => sigSymsOf(exp)
     case Expression.Assign(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.Ascribe(exp, _, _, _) => sigSymsOf(exp)
-    case Expression.Cast(exp, _, _, _) => sigSymsOf(exp)
+    case Expression.Cast(exp, _, _, _, _, _) => sigSymsOf(exp)
     case Expression.TryCatch(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expression.InvokeConstructor(_, args, _, _, _) => args.flatMap(sigSymsOf).toSet
     case Expression.InvokeMethod(_, exp, args, _, _, _) => sigSymsOf(exp) ++ args.flatMap(sigSymsOf)
@@ -569,7 +569,7 @@ object TypedAstOps {
     case Expression.Ascribe(exp, _, _, _) =>
       freeVars(exp)
 
-    case Expression.Cast(exp, _, _, _) =>
+    case Expression.Cast(exp, _, _, _, _, _) =>
       freeVars(exp)
 
     case Expression.TryCatch(exp, rules, tpe, eff, loc) =>

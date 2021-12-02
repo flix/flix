@@ -14,32 +14,43 @@
  * limitations under the License.
  */
 
+
+// TODO: Unsafe instance. Will be removed. (Blocked by Datalog engine usage.)
 instance Eq[Array[v]] with Eq[v] {
     // TODO More efficient implementation
-    pub def eq(a: Array[v], b: Array[v]): Bool =
-        (Array.length(a) == Array.length(b)) and
-        (Foldable.foldLeft((acc, p) -> let (x,y) = p; (acc and (x == y)), true, Array.zip(a,b))) as & Pure
+    pub def eq(a: Array[v], b: Array[v]): Bool = Array.eq(a, b) as & Pure
 }
 
+// TODO: Unsafe instance. Will be removed. (Blocked by Datalog engine usage.)
 instance Order[Array[v]] with Order[v] {
     ///
     /// Compares `a` and `b` lexicographically.
     ///
-    pub def compare(a: Array[v], b: Array[v]): Comparison =
-        ArrayOps.compareHelper(a, b, Int32.min(Array.length(a), Array.length(b)), 0) as & Pure
+    pub def compare(a: Array[v], b: Array[v]): Comparison = Array.compare(a, b) as & Pure
 }
 
-instance Functor[Array] {
-    pub def map(f: a -> b & ef, a: Array[a]): Array[b] & ef = Array.map(f, a) as & ef
-}
-
+// TODO: Unsafe instance. Will be removed. (Blocked by Datalog engine usage.)
 instance Foldable[Array] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, a: Array[a]): b & ef = Array.foldLeft(f, s, a) as & ef
     pub def foldRight(f: (a, b) -> b & ef, s: b, a: Array[a]): b & ef = Array.foldRight(f, s, a) as & ef
 }
 
-namespace ArrayOps {
-    pub def compareHelper(a: Array[v], b: Array[v], len: Int32, i: Int32): Comparison & Impure with Order[v] =
+namespace Array {
+
+    ///
+    /// Returns `true` if the elements of `a` are equal to the elements of `b`.
+    ///
+    pub def eq(a: Array[v], b: Array[v]): Bool & Impure with Eq[v] =
+        (Array.length(a) == Array.length(b)) and
+        (Array.foldLeft((acc, p) -> let (x,y) = p; (acc and (x == y)), true, Array.zip(a, b)))
+
+    ///
+    /// Compares `a` and `b` lexicographically.
+    ///
+    pub def compare(a: Array[v], b: Array[v]): Comparison & Impure with Order[v] =
+        compareHelper(a, b, Int32.min(Array.length(a), Array.length(b)), 0)
+
+    def compareHelper(a: Array[v], b: Array[v], len: Int32, i: Int32): Comparison & Impure with Order[v] =
         if (i < len) {
             let cmp = a[i] <=> b[i];
             if (cmp == EqualTo)
@@ -53,9 +64,6 @@ namespace ArrayOps {
         } else {
             EqualTo
         }
-}
-
-namespace Array {
 
     ///
     /// Returns a fresh array of length `l` filled with the element `x`.
@@ -151,21 +159,6 @@ namespace Array {
             let x = a[i - 1];
             toChainHelper(a, i - 1, Chain.cons(x, ac))
         }
-
-    ///
-    /// Returns the array `a` as a stream.
-    ///
-    // TODO: Add tests
-    pub def toStream(a: Array[a]): Stream[a, Int32] =
-        let next = i -> {
-            if (i == a.length)
-                Done
-            else {
-                let x = a[i] as & Pure; // TODO: Unsound cast.
-                Yield(x, i + 1)
-            }
-        };
-        Stream(next, 0)
 
     ///
     /// Returns `Some(x)` if `x` is the first element of `a`.
@@ -811,7 +804,7 @@ namespace Array {
     ///
     /// Returns the result of applying `combine` to all the elements in `a`, using `empty` as the initial value.
     ///
-    pub def fold(a: Array[a]): a with Monoid[a] = Foldable.fold(a)
+    pub def fold(a: Array[a]): a & Impure with Monoid[a] = foldLeft(Monoid.combine, Monoid.empty(), a)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `a` going from left to right.

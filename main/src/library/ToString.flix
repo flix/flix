@@ -37,7 +37,7 @@ instance ToString[Bool] {
 
 instance ToString[Char] {
     pub def toString(x: Char): String =
-        import java.lang.Character:toString(Char);
+        import static java.lang.Character.toString(Char);
         toString(x) as & Pure
 }
 
