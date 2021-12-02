@@ -730,7 +730,7 @@ namespace Array {
                 isPrefixOfHelper(a1, a2, len, i+1)
 
     ///
-    /// Returns `true` if and only if `a1` is a prefix of `a2`.
+    /// Returns `true` if and only if `a1` is a infix of `a2`.
     ///
     @Time(length(a1)) @Space(1)
     pub def isInfixOf(a1: Array[a], a2: Array[a]): Bool & Impure with Eq[a] =
@@ -776,7 +776,7 @@ namespace Array {
                     isInfixOfSearch(a1, a2, len1, len2, j+1)
 
     ///
-    /// Returns `true` if and only if `a1` is a prefix of `a2`.
+    /// Returns `true` if and only if `a1` is a suffix of `a2`.
     ///
     @Time(length(a1)) @Space(1)
     pub def isSuffixOf(a1: Array[a], a2: Array[a]): Bool & Impure with Eq[a] =
