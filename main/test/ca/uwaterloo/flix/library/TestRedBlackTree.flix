@@ -238,13 +238,8 @@ namespace TestRedBlackTree {
         RedBlackTree.mapWithKey((k, v) -> { a[k] = v; v }, t);
         Array.sameElements(a, List.toArray(range))
 
-
-    /////////////////////////////////////////////////////////////////////////////
-    // mapWithKey fusion                                                       //
-    /////////////////////////////////////////////////////////////////////////////
-
     @test
-    def mapWithKeyFusion01(): Bool & Impure =
+    def mapWithKey09(): Bool & Impure =
         let l = ref Nil;
         let Map(t) = Map#{1 -> 1, 2 -> 2, 3 -> 3};
         t |>
@@ -253,7 +248,7 @@ namespace TestRedBlackTree {
         List.reverse(deref l) == "a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil
 
     @test
-    def mapWithKeyFusion02(): Bool & Impure =
+    def mapWithKey10(): Bool & Impure =
         let i = ref 0;
         let keys = List.range(0, 2000);
         let Map(t) = List.zip(keys, List.range(-2000, 0)) |> List.toMap;
