@@ -327,7 +327,7 @@ namespace Float32 {
     @Time(1) @Space(1)
     pub def ceil(x: Float32): Float32 =
         import static java.lang.Float.valueOf(Float32) as valueOfF32;
-        import java.lang.Double:valueOf(Float64) as valueOfF64;
+        import static java.lang.Double.valueOf(Float64) as valueOfF64;
         import java.lang.Math:ceil(Float64);
         import java.lang.Double.floatValue();
         import java.lang.Float.doubleValue();
@@ -340,7 +340,7 @@ namespace Float32 {
     @Time(1) @Space(1)
     pub def floor(x: Float32): Float32 =
         import static java.lang.Float.valueOf(Float32) as valueOfF32;
-        import java.lang.Double:valueOf(Float64) as valueOfF64;
+        import static java.lang.Double.valueOf(Float64) as valueOfF64;
         import java.lang.Math:floor(Float64);
         import java.lang.Double.floatValue();
         import java.lang.Float.doubleValue();
@@ -356,7 +356,7 @@ namespace Float32 {
     @Time(1) @Space(1)
     pub def round(x: Float32): Float32 =
         import static java.lang.Float.valueOf(Float32) as valueOfF32;
-        import java.lang.Double:valueOf(Float64) as valueOfF64;
+        import static java.lang.Double.valueOf(Float64) as valueOfF64;
         import java.lang.Math:rint(Float64);
         import java.lang.Double.floatValue();
         import java.lang.Float.doubleValue();

@@ -49,13 +49,13 @@ instance ToString[Float32] {
 
 instance ToString[Float64] {
     pub def toString(x: Float64): String =
-        import java.lang.Double:toString(Float64);
+        import static java.lang.Double.toString(Float64);
         toString(x) as & Pure
 }
 
 instance ToString[Int8] {
     pub def toString(x: Int8): String =
-        import java.lang.Byte:toString(Int8);
+        import static java.lang.Byte.toString(Int8);
         toString(x) as & Pure
 }
 

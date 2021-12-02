@@ -51,13 +51,13 @@ instance Hash[Float32] {
 
 instance Hash[Float64] {
     pub def hash(x: Float64): Int =
-        import java.lang.Double:hashCode(Float64);
+        import static java.lang.Double.hashCode(Float64);
         hashCode(x) as & Pure
 }
 
 instance Hash[Int8] {
     pub def hash(x: Int8): Int =
-        import java.lang.Byte:hashCode(Int8);
+        import static java.lang.Byte.hashCode(Int8);
         hashCode(x) as & Pure
 }
 
