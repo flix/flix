@@ -69,7 +69,7 @@ namespace Iterator {
     ///
     pub def ofException(f: Unit -> a & ef, x: Ref[a]): Iterator[Result[a, String]] =
         let done = () -> Object.isNull(deref x);
-        let next = () -> Result.try(f);
+        let next = () -> Result.try(f) as & Impure;
         Iterator(done, next)
 
     ///
@@ -79,7 +79,8 @@ namespace Iterator {
     ///
     pub def ofNullable(f: Unit -> a & ef, x: Ref[a]): Iterator[a] =
         let done = () -> Object.isNull(deref x);
-        Iterator(done, f)
+        let next = () -> f() as & Impure;
+        Iterator(done, next)
 
     ///
     /// Return `Some(x)` if `iter` is not empty. Return `None` otherwise.
