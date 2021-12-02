@@ -23,7 +23,7 @@ use Fixpoint/Ast.PredSym.PredSym;
 use Fixpoint/Ast.Denotation.{Relational, Latticenal};
 use Fixpoint/Ram.RamSym;
 
-use Fixpoint/Tuple.Tuple;
+use Fixpoint.Tuple.Tuple;
 
 namespace Fixpoint {
     ///

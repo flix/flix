@@ -221,8 +221,11 @@ namespace Fixpoint {
         case _ => bug!("Illegal term ${term}")
     }
 
-    def valueAt( tuple: Tuple[v], index: Int32): v & Impure =
-        let Tuple(a) = tuple;
-        a[index]
+    ///
+    /// Unpacks the given tuple `t` and returns the value at index `i`.
+    ///
+    def valueAt(t: Tuple[v], v: Int32): v & Impure =
+        let Tuple(a) = t;
+        a[v]
 
 }
