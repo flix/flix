@@ -106,7 +106,7 @@ namespace String {
     ///
     @Time(1) @Space(1)
     pub def lineSeparator(): String =
-        import java.lang.System:lineSeparator();
+        import static java.lang.System.lineSeparator();
         lineSeparator() as & Pure
 
     ///

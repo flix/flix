@@ -211,7 +211,7 @@ namespace Float64 {
     ///
     @Time(1) @Space(1)
     pub def tryToBigInt(x: Float64): Option[BigInt] =
-        import java.math.BigDecimal:valueOf(Float64);
+        import static java.math.BigDecimal.valueOf(Float64);
         import java.math.BigDecimal.toBigInteger();
         try {
             Some(x |> valueOf |> toBigInteger) as & Pure
@@ -350,7 +350,7 @@ namespace Float64 {
     ///
     @Time(1) @Space(1)
     pub def abs(x: Float64): Float64 =
-        import java.lang.Math:abs(Float64);
+        import static java.lang.Math.abs(Float64);
         abs(x) as & Pure
 
     ///
@@ -358,7 +358,7 @@ namespace Float64 {
     ///
     @Time(1) @Space(1)
     pub def ceil(x: Float64): Float64 =
-        import java.lang.Math:ceil(Float64);
+        import static java.lang.Math.ceil(Float64);
         ceil(x) as & Pure
 
     ///
@@ -366,7 +366,7 @@ namespace Float64 {
     ///
     @Time(1) @Space(1)
     pub def floor(x: Float64): Float64 =
-        import java.lang.Math:floor(Float64);
+        import static java.lang.Math.floor(Float64);
         floor(x) as & Pure
 
     ///
@@ -377,7 +377,7 @@ namespace Float64 {
     ///
     @Time(1) @Space(1)
     pub def round(x: Float64): Float64 =
-        import java.lang.Math:rint(Float64);
+        import static java.lang.Math.rint(Float64);
         rint(x) as & Pure
 
 }

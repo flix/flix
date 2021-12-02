@@ -61,19 +61,19 @@ instance ToString[Int8] {
 
 instance ToString[Int16] {
     pub def toString(x: Int16): String =
-        import java.lang.Short:toString(Int16);
+        import static java.lang.Short.toString(Int16);
         toString(x) as & Pure
 }
 
 instance ToString[Int32] {
     pub def toString(x: Int32): String =
-        import java.lang.Integer:toString(Int32);
+        import static java.lang.Integer.toString(Int32);
         toString(x) as & Pure
 }
 
 instance ToString[Int64] {
     pub def toString(x: Int64): String =
-        import java.lang.Long:toString(Int64);
+        import static java.lang.Long.toString(Int64);
         toString(x) as & Pure
 }
 

@@ -234,7 +234,7 @@ namespace Test/Exp/Interpolation {
 ///
 ///instance ToString[Int32] {
 ///    def toString(x: Int32): String =
-///        import java.lang.Integer:toString(Int32);
+///        import static java.lang.Integer.toString(Int32);
 ///        x.toString() as & Pure
 ///}
 ///

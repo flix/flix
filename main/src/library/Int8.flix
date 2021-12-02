@@ -332,7 +332,7 @@ namespace Int8 {
     pub def toBigInt(x: Int8): BigInt =
         import static java.lang.Byte.valueOf(Int8) as i8ValueOf;
         import java.lang.Byte.longValue();
-        import java.math.BigInteger:valueOf(Int64) as asBigInt;
+        import static java.math.BigInteger.valueOf(Int64) as asBigInt;
         (i8ValueOf(x) |> longValue |> asBigInt) as & Pure
 
     ///

@@ -63,19 +63,19 @@ instance Hash[Int8] {
 
 instance Hash[Int16] {
     pub def hash(x: Int16): Int =
-        import java.lang.Short:hashCode(Int16);
+        import static java.lang.Short.hashCode(Int16);
         hashCode(x) as & Pure
 }
 
 instance Hash[Int32] {
     pub def hash(x: Int32): Int =
-        import java.lang.Integer:hashCode(Int32);
+        import static java.lang.Integer.hashCode(Int32);
         hashCode(x) as & Pure
 }
 
 instance Hash[Int64] {
     pub def hash(x: Int64): Int =
-        import java.lang.Long:hashCode(Int64);
+        import static java.lang.Long.hashCode(Int64);
         hashCode(x) as & Pure
 }
 
