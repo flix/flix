@@ -30,7 +30,7 @@ namespace MutList {
         let MutList(l1, n1) = xs;
         let MutList(l2, n2) = ys;
         deref n1 == deref n2 and
-            Array.slice(0, deref n1, deref l1) == Array.slice(0, deref n2, deref l2)
+            Array.slice(0, deref n1, deref l1) `Array.eq` Array.slice(0, deref n2, deref l2)
     }
 
     ///
