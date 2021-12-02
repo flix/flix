@@ -43,7 +43,7 @@ instance ToString[Char] {
 
 instance ToString[Float32] {
     pub def toString(x: Float32): String =
-        import java.lang.Float:toString(Float32);
+        import static java.lang.Float.toString(Float32);
         toString(x) as & Pure
 }
 

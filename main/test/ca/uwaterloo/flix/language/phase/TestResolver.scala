@@ -670,7 +670,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def foo(): Unit =
-         |    import get java.lang.Character:foo as getFoo;
+         |    import static get java.lang.Character.foo as getFoo;
          |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)

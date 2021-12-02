@@ -72,14 +72,14 @@ namespace Environment {
     /// File separator
     ///
     pub def getFileSeparator(): String =
-        import get java.io.File:separator as sep;
+        import static get java.io.File.separator as sep;
         sep() as String & Pure
 
     ///
     /// Path separator
     ///
     pub def getPathSeparator(): String =
-        import get java.io.File:pathSeparator as pathSep;
+        import static get java.io.File.pathSeparator as pathSep;
         pathSep() as String & Pure
 
     ///

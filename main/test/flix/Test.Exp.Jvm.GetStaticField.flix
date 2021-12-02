@@ -6,37 +6,37 @@ namespace Test/Exp/Jvm/GetStaticField {
 
     @test
     def testGetStaticField01(): Bool & Impure =
-        import get java.lang.Integer:MIN_VALUE as getMinValue;
+        import static get java.lang.Integer.MIN_VALUE as getMinValue;
         getMinValue() == Int32.minValue()
 
     @test
     def testGetStaticField02(): Bool & Impure =
-        import get java.lang.Integer:MAX_VALUE as getMinValue;
+        import static get java.lang.Integer.MAX_VALUE as getMinValue;
         getMinValue() == Int32.maxValue()
 
     @test
     def testGetStaticField03(): ##java.nio.file.StandardOpenOption & Impure =
-        import get java.nio.file.StandardOpenOption:APPEND as getAppendValue;
+        import static get java.nio.file.StandardOpenOption.APPEND as getAppendValue;
         getAppendValue()
 
     @test
     def testGetStaticField04(): ##java.nio.file.StandardOpenOption & Impure =
-        import get java.nio.file.StandardOpenOption:READ as getReadValue;
+        import static get java.nio.file.StandardOpenOption.READ as getReadValue;
         getReadValue()
 
     @test
     def testGetStaticField05(): ##java.io.InputStream & Impure =
-        import get java.lang.System:in as getIn;
+        import static get java.lang.System.in as getIn;
         getIn()
 
     @test
     def testGetStaticField06(): ##java.io.PrintStream & Impure =
-        import get java.lang.System:out as getOut;
+        import static get java.lang.System.out as getOut;
         getOut()
 
     @test
     def testGetStaticField07(): ##java.io.PrintStream & Impure =
-        import get java.lang.System:err as getErr;
+        import static get java.lang.System.err as getErr;
         getErr()
 
     ///

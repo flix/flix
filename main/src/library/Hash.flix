@@ -39,13 +39,13 @@ instance Hash[Bool] {
 
 instance Hash[Char] {
     pub def hash(x: Char): Int =
-        import java.lang.Character:hashCode(Char);
+        import static java.lang.Character.hashCode(Char);
         hashCode(x) as & Pure
 }
 
 instance Hash[Float32] {
     pub def hash(x: Float32): Int =
-        import java.lang.Float:hashCode(Float32);
+        import static java.lang.Float.hashCode(Float32);
         hashCode(x) as & Pure
 }
 

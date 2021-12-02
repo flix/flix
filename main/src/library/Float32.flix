@@ -121,7 +121,7 @@ namespace Float32 {
     @Time(1) @Space(1)
     pub def fromString(s: String): Result[Float32, String] = try {
         import java.lang.String.strip();
-        import java.lang.Float:parseFloat(String);
+        import static java.lang.Float.parseFloat(String);
         Ok(s |> strip |> parseFloat) as & Pure
      } catch {
          case _: ##java.lang.NumberFormatException => Err("Float32.fromString")
@@ -138,7 +138,7 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def tryToInt8(x: Float32): Option[Int8] =
-        import java.lang.Float:valueOf(Float32);
+        import static java.lang.Float.valueOf(Float32);
         import java.lang.Float.byteValue();
         if (x < Int8.toFloat32(Int8.minValue()) or x > Int8.toFloat32(Int8.maxValue()) or isNan(x) or isInfinite(x))
             None
@@ -156,7 +156,7 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def tryToInt16(x: Float32): Option[Int16] =
-        import java.lang.Float:valueOf(Float32);
+        import static java.lang.Float.valueOf(Float32);
         import java.lang.Float.shortValue();
         if (x < Int16.toFloat32(Int16.minValue()) or x > Int16.toFloat32(Int16.maxValue()) or isNan(x) or isInfinite(x))
             None
@@ -177,7 +177,7 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def tryToInt32(x: Float32): Option[Int32] =
-        import java.lang.Float:valueOf(Float32);
+        import static java.lang.Float.valueOf(Float32);
         import java.lang.Float.intValue();
         if (x < Int32.toFloat32(Int32.minValue()) or x > Int32.toFloat32(Int32.maxValue()) or isNan(x) or isInfinite(x))
             None
@@ -198,7 +198,7 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def tryToInt64(x: Float32): Option[Int64] =
-        import java.lang.Float:valueOf(Float32);
+        import static java.lang.Float.valueOf(Float32);
         import java.lang.Float.longValue();
         if (x < Int64.toFloat32(Int64.minValue()) or x > Int64.toFloat32(Int64.maxValue()) or isNan(x) or isInfinite(x))
             None
@@ -221,7 +221,7 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def toFloat64(x: Float32): Float64 =
-        import java.lang.Float:valueOf(Float32);
+        import static java.lang.Float.valueOf(Float32);
         import java.lang.Float.doubleValue();
         (valueOf(x) |> doubleValue) as & Pure
 
@@ -247,7 +247,7 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def clampToInt8(x: Float32, minimum: Int8, maximum: Int8, nanValue: Int8): Int8 =
-        import java.lang.Float:valueOf(Float32);
+        import static java.lang.Float.valueOf(Float32);
         import java.lang.Float.byteValue();
         let minf32 = Int8.toFloat32(minimum);
         let maxf32 = Int8.toFloat32(maximum);
@@ -266,7 +266,7 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def clampToInt16(x: Float32, minimum: Int16, maximum: Int16, nanValue: Int16): Int16 =
-        import java.lang.Float:valueOf(Float32);
+        import static java.lang.Float.valueOf(Float32);
         import java.lang.Float.shortValue();
         let minf32 = Int16.toFloat32(minimum);
         let maxf32 = Int16.toFloat32(maximum);
@@ -285,7 +285,7 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def clampToInt32(x: Float32, minimum: Int32, maximum: Int32, nanValue: Int32): Int32 =
-        import java.lang.Float:valueOf(Float32);
+        import static java.lang.Float.valueOf(Float32);
         import java.lang.Float.intValue();
         let minf32 = Int32.toFloat32(minimum);
         let maxf32 = Int32.toFloat32(maximum);
@@ -304,7 +304,7 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def clampToInt64(x: Float32, minimum: Int64, maximum: Int64, nanValue: Int64): Int64 =
-        import java.lang.Float:valueOf(Float32);
+        import static java.lang.Float.valueOf(Float32);
         import java.lang.Float.longValue();
         let minf32 = Int64.toFloat32(minimum);
         let maxf32 = Int64.toFloat32(maximum);
@@ -326,7 +326,7 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def ceil(x: Float32): Float32 =
-        import java.lang.Float:valueOf(Float32) as valueOfF32;
+        import static java.lang.Float.valueOf(Float32) as valueOfF32;
         import java.lang.Double:valueOf(Float64) as valueOfF64;
         import java.lang.Math:ceil(Float64);
         import java.lang.Double.floatValue();
@@ -339,7 +339,7 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def floor(x: Float32): Float32 =
-        import java.lang.Float:valueOf(Float32) as valueOfF32;
+        import static java.lang.Float.valueOf(Float32) as valueOfF32;
         import java.lang.Double:valueOf(Float64) as valueOfF64;
         import java.lang.Math:floor(Float64);
         import java.lang.Double.floatValue();
@@ -355,7 +355,7 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def round(x: Float32): Float32 =
-        import java.lang.Float:valueOf(Float32) as valueOfF32;
+        import static java.lang.Float.valueOf(Float32) as valueOfF32;
         import java.lang.Double:valueOf(Float64) as valueOfF64;
         import java.lang.Math:rint(Float64);
         import java.lang.Double.floatValue();
