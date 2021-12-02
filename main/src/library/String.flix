@@ -303,7 +303,7 @@ namespace String {
     ///
     def isSubmatchHelper(pattern: String, s: String): Bool & Impure =
         try {
-            import java.util.regex.Pattern:compile(String);
+            import static java.util.regex.Pattern.compile(String);
             import java.util.regex.Pattern.matcher(##java.lang.CharSequence);
             import java.util.regex.Matcher.find(Int32);
             let cs1 = s as ##java.lang.CharSequence;

@@ -115,7 +115,7 @@ namespace Environment {
     /// The returned value is never less than one.
     ///
     pub def getVirtualProcessors(): Int32 =
-        import java.lang.Runtime:getRuntime();
+        import static java.lang.Runtime.getRuntime();
         import java.lang.Runtime.availableProcessors();
         (getRuntime() |> availableProcessors) as & Pure
 
