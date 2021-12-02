@@ -27,6 +27,7 @@ We don't actually have a standardized process, but usually the following steps h
 6. You make the required changes, add test cases, documentation, and so forth.
 
 7. You push the local changes to your GitHub repository and create a new pull request (PR).
+   - See [Pull Requests](docs/PULLREQUEST.md) more information on formatting
 
 8. GitHub automatically compiles and tests the PR. Be sure to check the results!
 
