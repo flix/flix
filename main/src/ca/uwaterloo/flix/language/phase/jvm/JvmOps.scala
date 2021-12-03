@@ -566,6 +566,8 @@ object JvmOps {
 
       case Expression.Let(_, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
+      case Expression.LetRec(_, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
+
       case Expression.Is(_, _, exp, _) => visitExp(exp)
 
       case Expression.Tag(_, _, exp, _, _) => visitExp(exp)
