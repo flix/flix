@@ -54,10 +54,9 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     // Check whether to generate documentation.
     if (flix.options.documentor) {
 
-      // TODO: This has duplicates. It should probably be a set.
-      // Get all the namespaces.
+      // Compute all namespaces, remove duplicates, and sort them.
       val namespaces = root.defs.foldLeft(Set.empty[String]) {
-        case (acc, (sym, _)) => acc + sym.namespace.mkString(".")
+        case (acc, (sym, _)) => acc + getNameSpace(sym)
       }.toList.sorted
 
       // Get all the classes.
@@ -68,10 +67,8 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       }
 
       // Convert all definitions to JSON objects.
-      val defsByNS = root.defs.values.groupBy(
-        x => x.sym.name
-      ).map {
-        case (str, value) => JObject(JField(str, value.map(v => visitDef(v))))
+      val defsByNS = root.defs.values.groupBy(defn => getNameSpace(defn.sym)).map {
+        case (ns, defs) => ns -> JArray(defs.toList.map(visitDef))
       }
 
       // Convert all enums to JSON objects.
@@ -110,6 +107,8 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
 
     root.toSuccess
   }
+
+  private def getNameSpace(sym: Symbol.DefnSym): String = sym.namespace.mkString(".")
 
   /**
     * Returns the given definition `defn0` as a JSON object.
