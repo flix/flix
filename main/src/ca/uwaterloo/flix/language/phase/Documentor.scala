@@ -92,7 +92,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       //
       // Type Aliases
       //
-      val typeAliasesByNS = root.typealiases.values.groupBy(decl => getNameSpace(decl.sym)).map {
+      val typeAliasesByNS = root.typealiases.values.groupBy(getNameSpace).map {
         case (ns, decls) =>
           val filtered = decls.toList
           val sorted = filtered.sortBy(_.sym.name)
@@ -145,11 +145,11 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
 
 
   // TODO: DOC
-  private def getNameSpace(sym: Symbol.TypeAliasSym): String =
-    if (sym.namespace == Nil)
+  private def getNameSpace(decl: TypedAst.TypeAlias): String =
+    if (decl.sym.namespace == Nil)
       "Prelude"
     else
-      sym.namespace.mkString(".")
+      decl.sym.namespace.mkString(".")
 
 
   /**
@@ -333,7 +333,8 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Returns the given Doc `doc` as a JSON value.
     */
-  private def visitDoc(doc: Ast.Doc): JObject = ("placeholder" -> "placeholder") // TODO : missing d.ts
+  private def visitDoc(doc: Ast.Doc): JArray =
+    JArray(doc.lines.map(JString))
 
   /**
     * Returns the given Modifier `mod` as a JSON value.
@@ -345,15 +346,10 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def visitTypeAlias(talias: TypeAlias): JObject = talias match {
     case TypeAlias(doc, mod, sym, tparams, tpe, loc) =>
-      // Compute the type parameters.
-      val computedtparams = tparams.map {
-        t => visitTypeParam(t)
-      }
-
       ("doc" -> visitDoc(doc)) ~
         ("mod" -> visitModifier(mod)) ~
         ("sym" -> visitTypeAliasSym(sym)) ~
-        ("tparams" -> computedtparams) ~
+        ("tparams" -> tparams.map(visitTypeParam)) ~
         ("tpe" -> visitType(tpe)) ~
         ("loc" -> visitSourceLocation(loc))
   }
