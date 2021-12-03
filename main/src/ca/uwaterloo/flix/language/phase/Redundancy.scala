@@ -312,8 +312,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       // Extend the environment with the variable symbol.
       val env1 = env0 + sym
 
-      // Visit the two expressions under the extended environment.
-      val innerUsed1 = visitExp(exp1, env1)
+      // Visit the two expressions one under the original environment and one under the extended environment.
+      val innerUsed1 = visitExp(exp1, env0)
       val innerUsed2 = visitExp(exp2, env1)
 
       // Check for shadowing.
@@ -321,6 +321,23 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
       // Check if the let-bound variable symbol is dead in exp2.
       if (deadVarSym(sym, innerUsed2))
+        (innerUsed1 ++ innerUsed2 ++ shadowedVar) - sym + UnusedVarSym(sym)
+      else
+        (innerUsed1 ++ innerUsed2 ++ shadowedVar) - sym
+
+    case Expression.LetRec(sym, _, exp1, exp2, _, _, _) =>
+      // Extend the environment with the variable symbol.
+      val env1 = env0 + sym
+
+      // Visit the two expressions under the extended environment.
+      val innerUsed1 = visitExp(exp1, env1)
+      val innerUsed2 = visitExp(exp2, env1)
+
+      // Check for shadowing.
+      val shadowedVar = shadowing(sym, env0)
+
+      // Check if the let-bound variable symbol is dead in exp1 + exp2.
+      if (deadVarSym(sym, innerUsed1 + innerUsed2))
         (innerUsed1 ++ innerUsed2 ++ shadowedVar) - sym + UnusedVarSym(sym)
       else
         (innerUsed1 ++ innerUsed2 ++ shadowedVar) - sym
