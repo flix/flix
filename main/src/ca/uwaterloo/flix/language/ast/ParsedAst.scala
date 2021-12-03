@@ -605,7 +605,16 @@ object ParsedAst {
       */
     case class LetMatchStar(sp1: SourcePosition, pat: ParsedAst.Pattern, tpe: Option[ParsedAst.Type], exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
- // TODO
+    /**
+      * LetRecDef Expression (let rec using def keyword).
+      *
+      * @param sp1     the position of the first character in the expression.
+      * @param ident   the identifier of the function.
+      * @param fparams the formal parameters of the function.
+      * @param exp1    the value expression.
+      * @param exp2    the body expression.
+      * @param sp2     the position of the last character in the expression.
+      */
     case class LetRecDef(sp1: SourcePosition, ident: Name.Ident, fparams: Seq[ParsedAst.FormalParam], exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
