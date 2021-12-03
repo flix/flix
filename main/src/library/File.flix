@@ -338,15 +338,33 @@ namespace File {
             let bytes = [0i8; opts.count];
             let numberRead = read(stream, bytes, 0, opts.count);
 
-            if (numberRead < opts.count) {
-                Ok(Array.slice(0, numberRead, bytes))
-            } else {
-                Ok(bytes)
-            }
+            let res = readBytesWithHelper(bytes, numberRead, opts.count);
+
+            Ok(res)
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage();
                 Err(getMessage(ex))
+        }
+
+    ///
+    /// Helper function for `readBytesWith`.
+    /// Returns an array that corresponds to the bytes actually read from the stream.
+    ///
+    def readBytesWithHelper(bytes: Array[Int8], numberRead: Int32, count: Int32): Array[Int8] & Impure =
+        let nothingRead = numberRead == -1;
+        let countBiggest = numberRead < count;
+        println(numberRead);
+        println(count);
+        println(countBiggest);
+        if (nothingRead) {
+            []
+        } else {
+            if (countBiggest) {
+                Array.slice(0, numberRead, bytes)
+            } else {
+                bytes
+            }
         }
 
 }
