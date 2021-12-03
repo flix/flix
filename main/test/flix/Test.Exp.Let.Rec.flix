@@ -1,6 +1,53 @@
 namespace Test/Exp/LetRec {
 
     @test
+    def testLetRec01(): Bool =
+        def loop(n, acc) = if (n == 0) acc else loop(n - 1, acc + 1);
+        loop(10, 0) == 10
+
+    @test
+    def testLetRec02(): Bool =
+        def loop(acc, n) = if (n == 0) acc else loop(acc + 1, n - 1);
+        loop(0, 10) == 10
+
+    @test
+    def testLetRecPartialApply01(): Bool =
+        def loop(n, acc) = if (n == 0) acc else loop(n - 1)(acc + 1);
+        loop(10)(0) == 10
+
+    @test
+    def testLetRecPartialApply02(): Bool =
+        def loop(acc, n) = if (n == 0) acc else loop(acc + 1)(n - 1);
+        loop(0)(10) == 10
+
+    @test
+    def testLetRecCapture01(): Bool =
+        let a = 21;
+        def loop(n) = if (n == 0) a else loop(n - 1);
+        loop(10) == a
+
+    @test
+    def testLetRecCapture02(): Bool =
+        let a = 21;
+        let b = 42;
+        def loop(n) = if (n == 0) a + b else loop(n - 1);
+        loop(00) == a + b
+
+    @test
+    def testLetRecCapture03(): Bool =
+        let inc = x -> x + 1;
+        let dec = x -> x - 1;
+        def loop(n) = if (n == 0) inc(0) else loop(dec(n));
+        loop(10) == 1
+
+    @test
+    def testLetRecCapture04(): Bool =
+        def inc(x) = x + 1;
+        def dec(x) = x - 1;
+        def loop(n) = if (n == 0) inc(0) else loop(dec(n));
+        loop(10) == 1
+
+    @test
     def testLetRecUnit01(): Bool =
         def loop(n) = if (n == 0) () else loop(n - 1);
         loop(10) == ()
@@ -25,7 +72,34 @@ namespace Test/Exp/LetRec {
         def loop(n) = if (n == 0) 123.456f64 else loop(n - 1);
         loop(10) == 123.456f64
 
+    @test
+    def testLetRecInt801(): Bool =
+        def loop(n) = if (n == 0) 123i8 else loop(n - 1);
+        loop(10) == 123i8
 
+    @test
+    def testLetRecInt1601(): Bool =
+        def loop(n) = if (n == 0) 123i16 else loop(n - 1);
+        loop(10) == 123i16
+
+    @test
+    def testLetRecInt3201(): Bool =
+        def loop(n) = if (n == 0) 123i32 else loop(n - 1);
+        loop(10) == 123i32
+
+    @test
+    def testLetRecInt6401(): Bool =
+        def loop(n) = if (n == 0) 123i64 else loop(n - 1);
+        loop(10) == 123i64
+
+    @test
+    def testLetRecBigInt01(): Bool =
+        def loop(n) = if (n == 0) 123ii else loop(n - 1);
+        loop(10) == 123ii
+
+    @test
+    def testLetRecString01(): Bool =
+        def loop(n) = if (n == 0) "hello" else loop(n - 1);
+        loop(10) == "hello"
 
 }
-
