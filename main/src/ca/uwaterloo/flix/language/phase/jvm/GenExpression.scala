@@ -109,7 +109,7 @@ object GenExpression {
       // ClosureInfo
       val closure = ClosureInfo(sym, freeVars, fnType)
       // JvmType of the closure
-      val jvmType = JvmOps.getClosureClassType(closure)
+      val jvmType = JvmOps.getClosureClassType(closure.sym, closure.tpe)
       // new closure instance
       visitor.visitTypeInsn(NEW, jvmType.name.toInternalName)
       // Duplicate
@@ -314,10 +314,27 @@ object GenExpression {
       compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
 
     case Expression.LetRec(sym, exp1, exp2, _, loc) =>
-      // TODO: Note that exp1 now refers to sym. This means `sym` has to be defined before compiling exp1.
-      // TODO: Note you are allowed to assume that exp1 is a closure.
-      // TODO: The trick is probably to load null into sym. then compile exp1. then overwrite the closure field of sym with itself.
-      ???
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
+      // Jvm Type of the `exp1`
+      val jvmType = JvmOps.getJvmType(exp1.tpe)
+      // Store instruction for `jvmType`
+      val iStore = AsmOps.getStoreInstruction(jvmType)
+      // JvmType of the closure
+      val cloType = JvmOps.getClosureClassType(???, exp1.tpe)
+
+      // Store temp recursive value
+      visitor.visitInsn(ACONST_NULL)
+      visitor.visitVarInsn(iStore, sym.getStackOffset + 1)
+      // Compile the closure
+      compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+      // fix the local and closure reference
+      visitor.visitInsn(DUP)
+      visitor.visitInsn(DUP)
+      visitor.visitFieldInsn(PUTFIELD, cloType.name.toInternalName, s"clo${Flix.Delimiter}0", jvmType.toDescriptor)
+      // Store the closure locally (maybe not needed?)
+      visitor.visitVarInsn(iStore, sym.getStackOffset + 1)
+      compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
 
     case Expression.Is(_, tag, exp, loc) =>
       // Adding source line number for debugging
