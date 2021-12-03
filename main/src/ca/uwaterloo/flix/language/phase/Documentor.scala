@@ -347,7 +347,6 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   private def visitTypeAlias(talias: TypeAlias): JObject = talias match {
     case TypeAlias(doc, mod, sym, tparams, tpe, loc) =>
       ("doc" -> visitDoc(doc)) ~
-        ("mod" -> visitModifier(mod)) ~
         ("sym" -> visitTypeAliasSym(sym)) ~
         ("tparams" -> tparams.map(visitTypeParam)) ~
         ("tpe" -> visitType(tpe)) ~
