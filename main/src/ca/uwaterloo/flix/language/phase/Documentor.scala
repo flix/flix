@@ -56,7 +56,9 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
 
       // TODO: This has duplicates. It should probably be a set.
       // Get all the namespaces.
-      val namespaces = root.defs.keys.map(k => k.namespace).foldLeft(Nil: List[String])((value: List[String], acc: List[String]) => value ++ acc)
+      val namespaces = root.defs.foldLeft(Set.empty[String]) {
+        case (acc, (sym, _)) => acc + sym.namespace.mkString(".")
+      }.toList.sorted
 
       // Get all the classes.
       val classesByNS = root.classes.values.groupBy(
@@ -165,7 +167,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   private def visitInstance(inst: Instance): JObject = inst match {
     case Instance(_, _, sym, tpe, tconstrs, _, _, _) =>
       ("sym" -> visitInstanceSym(sym)) ~
-      //("sym" -> visitClassSym(sym.clazz)) ~
+        //("sym" -> visitClassSym(sym.clazz)) ~
         ("tpe" -> visitType(tpe)) ~
         ("tconstrs" -> tconstrs.map(visitTypeConstraint)) ~
         ("loc" -> visitSourceLocation(sym.loc))
@@ -395,7 +397,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
         ("signatures" -> computedSig) ~
         ("loc" -> visitSourceLocation(loc))
 
-      // TODO: missing instances (second last)
+    // TODO: missing instances (second last)
   }
 
   // TODO: visitAPI
