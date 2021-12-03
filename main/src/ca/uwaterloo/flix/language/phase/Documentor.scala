@@ -108,7 +108,12 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     root.toSuccess
   }
 
-  private def getNameSpace(sym: Symbol.DefnSym): String = sym.namespace.mkString(".")
+  // TODO: DOC
+  private def getNameSpace(sym: Symbol.DefnSym): String =
+    if (sym.namespace == Nil)
+      "Prelude"
+    else
+      sym.namespace.mkString(".")
 
   /**
     * Returns the given definition `defn0` as a JSON object.
