@@ -527,20 +527,16 @@ object ClosureConv extends Phase[Root, Root] {
         Expression.JumpTo(sym, tpe, loc)
 
       case Expression.Let(sym, exp1, exp2, tpe, loc) =>
+        val newSym = subst.getOrElse(sym, sym)
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
-        subst.get(sym) match {
-          case None => Expression.Let(sym, e1, e2, tpe, loc)
-          case Some(newSym) => Expression.Let(newSym, e1, e2, tpe, loc)
-        }
+        Expression.Let(newSym, e1, e2, tpe, loc)
 
       case Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
+        val newSym = subst.getOrElse(sym, sym)
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
-        subst.get(sym) match {
-          case None => Expression.LetRec(sym, e1, e2, tpe, loc)
-          case Some(newSym) => Expression.LetRec(newSym, e1, e2, tpe, loc)
-        }
+        Expression.LetRec(newSym, e1, e2, tpe, loc)
 
       case Expression.Is(sym, tag, exp, loc) =>
         val e = visitExp(exp)
