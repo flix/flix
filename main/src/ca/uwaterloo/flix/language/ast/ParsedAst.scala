@@ -611,7 +611,7 @@ object ParsedAst {
       * @param sp1     the position of the first character in the expression.
       * @param ident   the identifier of the function.
       * @param fparams the formal parameters of the function.
-      * @param exp1    the value expression.
+      * @param exp1    the function expression.
       * @param exp2    the body expression.
       * @param sp2     the position of the last character in the expression.
       */
