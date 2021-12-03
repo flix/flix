@@ -624,6 +624,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.Let(sym, mod, e1, e2, loc)
 
+        case NamedAst.Expression.LetRec(sym, mod, exp1, exp2, loc) =>
+          for {
+            e1 <- visit(exp1, tenv0)
+            e2 <- visit(exp2, tenv0)
+          } yield ResolvedAst.Expression.LetRec(sym, mod, e1, e2, loc)
+
         case NamedAst.Expression.LetRegion(sym, exp, loc) =>
           for {
             e <- visit(exp, tenv0)
