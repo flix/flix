@@ -394,18 +394,11 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def visitEnum(enum: Enum): JObject = enum match {
     case Enum(doc, mod, sym, tparams, cases, tpeDeprecated, sc, loc) =>
-      // Compute the type parameters.
-      val computedtparams = tparams.map {
-        t => visitTypeParam(t)
-      }
-
-      // Compute the cases.
       val computedCases = "placeholder" // TODO: convert cases (Map) to [Case]
 
       ("doc" -> visitDoc(doc)) ~
-        ("mod" -> visitModifier(mod)) ~
         ("sym" -> visitEnumSym(sym)) ~
-        ("tparams" -> computedtparams) ~
+        ("tparams" -> tparams.map(visitTypeParam)) ~
         ("cases" -> computedCases) ~
         ("loc" -> visitSourceLocation(loc))
   }
