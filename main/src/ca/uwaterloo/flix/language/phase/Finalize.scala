@@ -177,6 +177,12 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
         val t = visitType(tpe)
         FinalAst.Expression.Let(sym, e1, e2, t, loc)
 
+      case LiftedAst.Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
+        val t = visitType(tpe)
+        FinalAst.Expression.LetRec(sym, e1, e2, t, loc)
+
       case LiftedAst.Expression.Is(sym, tag, exp, loc) =>
         val e1 = visit(exp)
         FinalAst.Expression.Is(sym, tag, e1, loc)
@@ -389,6 +395,7 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
   }
 
   // TODO: Should be private
+
   /**
     * Finalizes the given type.
     */

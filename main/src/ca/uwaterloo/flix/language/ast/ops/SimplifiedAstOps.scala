@@ -141,6 +141,11 @@ object SimplifiedAstOps {
         checkExp(exp2, env0 + sym, ienv0)
         checkType(tpe)
 
+      case Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
+        checkExp(exp1, env0, ienv0)
+        checkExp(exp2, env0 + sym, ienv0)
+        checkType(tpe)
+
       case Expression.Is(sym, tag, exp, loc) =>
         assert(root.enums contains sym, s"Undefined enum symbol: '$sym'.")
         checkExp(exp, env0, ienv0)

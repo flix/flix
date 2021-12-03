@@ -176,6 +176,9 @@ object Indexer {
     case Expression.Let(sym, _, exp1, exp2, _, _, _) =>
       Index.occurrenceOf(sym, exp1.tpe) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
+    case Expression.LetRec(sym, _, exp1, exp2, _, _, _) =>
+      Index.occurrenceOf(sym, exp1.tpe) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
+
     case Expression.LetRegion(sym, exp, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
