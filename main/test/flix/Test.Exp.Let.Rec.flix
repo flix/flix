@@ -1,5 +1,8 @@
 namespace Test/Exp/LetRec {
 
+    ///
+    /// Basic Tail Recursion.
+    ///
     @test
     def testLetRec01(): Bool =
         def loop(n, acc) = if (n == 0) acc else loop(n - 1, acc + 1);
@@ -10,6 +13,10 @@ namespace Test/Exp/LetRec {
         def loop(acc, n) = if (n == 0) acc else loop(acc + 1, n - 1);
         loop(0, 10) == 10
 
+    ///
+    /// Partial Application.
+    ///
+
     @test
     def testLetRecPartialApply01(): Bool =
         def loop(n, acc) = if (n == 0) acc else loop(n - 1)(acc + 1);
@@ -19,6 +26,10 @@ namespace Test/Exp/LetRec {
     def testLetRecPartialApply02(): Bool =
         def loop(acc, n) = if (n == 0) acc else loop(acc + 1)(n - 1);
         loop(0)(10) == 10
+
+    ///
+    /// Capturing.
+    ///
 
     @test
     def testLetRecCapture01(): Bool =
@@ -47,6 +58,38 @@ namespace Test/Exp/LetRec {
         def loop(n) = if (n == 0) inc(0) else loop(dec(n));
         loop(10) == 1
 
+    ///
+    /// Nested Let Recs.
+    ///
+    @test
+    def testLetRecNested01(): Bool =
+        def outer(n) = {
+            def inner(m) = if (m == 0) 0 else inner(m - 1);
+            inner(n)
+        };
+        outer(10) == 0
+
+    @test
+    def testLetRecNested02(): Bool =
+        def outer(n) = {
+            def inner(m) = if (m == 0) n else inner(m - 1);
+            inner(n)
+        };
+        outer(10) == 10
+
+    @test
+    def testLetRecNested03(): Bool =
+        def outer(n) = {
+            def inc(x) = x + 1;
+            def dec(x) = x - 1;
+            def inner(m) = if (m == 0) inc(m) else inner(dec(m));
+            inner(n)
+        };
+        outer(10) == 1
+
+    ///
+    /// Primitive Types.
+    ///
     @test
     def testLetRecUnit01(): Bool =
         def loop(n) = if (n == 0) () else loop(n - 1);
