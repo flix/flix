@@ -84,24 +84,28 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       //
       val enumsByNS = root.enums.values.groupBy(decl => getNameSpace(decl.sym)).map {
         case (ns, decls) =>
-          val sorted = decls.toList.sortBy(_.sym.name)
-          ns -> JArray(sorted.map(v => visitEnum(v)))
+          val filtered = decls.toList.filter(_.mod.isPublic)
+          val sorted = filtered.sortBy(_.sym.name)
+          ns -> JArray(sorted.map(visitEnum))
       }
 
-      // Convert all aliases to JSON objects.
-      val aliasesByNS = root.typealiases.values.groupBy(
-        x => x.sym.name
-      ).map {
-        case (str, value) => JObject(JField(str, value.map(v => visitTypeAlias(v))))
+      //
+      // Type Aliases
+      //
+      val aliasesByNS = root.typealiases.values.groupBy(decl => getNameSpace(decl.sym)).map {
+        case (ns, decls) =>
+          val filtered = decls.toList.filter(_.mod.isPublic)
+          val sorted = filtered.sortBy(_.sym.name)
+          ns -> JArray(sorted.map(visitTypeAlias))
       }
 
       // Construct the JSON object.
       val json = JObject(
         ("namespaces", namespaces),
         ("classes", classesByNS),
-        ("defs", defsByNS),
         ("enums", enumsByNS),
-        ("typeAliases", aliasesByNS)
+        ("typeAliases", aliasesByNS),
+        ("defs", defsByNS)
       )
 
 
@@ -134,6 +138,14 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
 
   // TODO: DOC
   private def getNameSpace(sym: Symbol.DefnSym): String =
+    if (sym.namespace == Nil)
+      "Prelude"
+    else
+      sym.namespace.mkString(".")
+
+
+  // TODO: DOC
+  private def getNameSpace(sym: Symbol.TypeAliasSym): String =
     if (sym.namespace == Nil)
       "Prelude"
     else
