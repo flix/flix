@@ -336,8 +336,13 @@ namespace File {
             let stream = newInputStream(javaFile);
             skip(stream, opts.offset);
             let bytes = [0i8; opts.count];
-            read(stream, bytes, 0, opts.count);
-            Ok(bytes)
+            let numberRead = read(stream, bytes, 0, opts.count);
+
+            if (numberRead < opts.count) {
+                Ok(Array.slice(0, numberRead, bytes))
+            } else {
+                Ok(bytes)
+            }
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage();
