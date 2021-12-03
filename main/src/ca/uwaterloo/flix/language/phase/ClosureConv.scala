@@ -161,6 +161,9 @@ object ClosureConv extends Phase[Root, Root] {
     case Expression.Let(sym, e1, e2, tpe, loc) =>
       Expression.Let(sym, visitExp(e1), visitExp(e2), tpe, loc)
 
+    case Expression.LetRec(sym, e1, e2, tpe, loc) =>
+      Expression.LetRec(sym, visitExp(e1), visitExp(e2), tpe, loc)
+
     case Expression.Is(sym, tag, e, loc) =>
       Expression.Is(sym, tag, visitExp(e), loc)
 
