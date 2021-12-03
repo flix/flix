@@ -63,7 +63,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       val classesByNS = root.classes.values.groupBy(
         x => x.sym.name
       ).map {
-        case (str, value) => JObject(JField(str, value.map(v => visitClass(v))))
+        case (str, value) => JObject(JField(str, value.map(v => visitClass(v)))) // TODO: Sort
       }
 
       // Convert all definitions to JSON objects.
