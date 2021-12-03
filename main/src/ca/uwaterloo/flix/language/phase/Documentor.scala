@@ -393,7 +393,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns the given Enum `enum` as a JSON value.
     */
   private def visitEnum(enum: Enum): JObject = enum match {
-    case Enum(doc, mod, sym, tparams, cases, tpeDeprecated, sc, loc) =>
+    case Enum(doc, _, sym, tparams, cases, _, _, loc) =>
       val computedCases = "placeholder" // TODO: convert cases (Map) to [Case]
 
       ("doc" -> visitDoc(doc)) ~
