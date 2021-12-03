@@ -60,21 +60,32 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
         case (acc, (sym, _)) => acc + getNameSpace(sym)
       }.toList.sorted
 
-      // Get all the classes.
+      //
+      // Classes
+      //
       val classesByNS = root.classes.values.groupBy(decl => getNameSpace(decl.sym)).map {
-        case (ns, decls) => ns -> JArray(decls.toList.sortBy(_.sym.name).map(visitClass))
+        case (ns, decls) =>
+          val sorted = decls.toList.sortBy(_.sym.name)
+          ns -> JArray(sorted.map(visitClass))
       }
 
-      // Convert all definitions to JSON objects.
+      //
+      // Defs
+      //
       val defsByNS = root.defs.values.groupBy(decl => getNameSpace(decl.sym)).map {
-        case (ns, decls) => ns -> JArray(decls.toList.sortBy(_.sym.name).map(visitDef))
+        case (ns, decls) =>
+          val filtered = decls.filter(_.spec.mod.isPublic).toList
+          val sorted = filtered.sortBy(_.sym.name)
+          ns -> JArray(sorted.map(visitDef))
       }
 
-      // Convert all enums to JSON objects.
-      val enumsByNS = root.enums.values.groupBy(
-        x => x.sym.name
-      ).map {
-        case (str, value) => JObject(JField(str, value.map(v => visitEnum(v))))
+      //
+      // Enums
+      //
+      val enumsByNS = root.enums.values.groupBy(decl => getNameSpace(decl.sym)).map {
+        case (ns, decls) =>
+          val sorted = decls.toList.sortBy(_.sym.name)
+          ns -> JArray(sorted.map(v => visitEnum(v)))
       }
 
       // Convert all aliases to JSON objects.
@@ -106,6 +117,13 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
 
     root.toSuccess
   }
+
+  // TODO: DOC
+  private def getNameSpace(sym: Symbol.EnumSym): String =
+    if (sym.namespace == Nil)
+      "Prelude"
+    else
+      sym.namespace.mkString(".")
 
   // TODO: DOC
   private def getNameSpace(sym: Symbol.ClassSym): String =
