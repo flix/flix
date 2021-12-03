@@ -313,7 +313,7 @@ object GenExpression {
       visitor.visitVarInsn(iStore, sym.getStackOffset + 1)
       compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
 
-    case Expression.LetRec(sym, exp1, exp2, _, loc) =>
+    case Expression.LetRec(sym, defSym, exp1, exp2, _, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // Jvm Type of the `exp1`

@@ -201,10 +201,10 @@ object PrettyPrinter {
             .append(visitExp(exp2))
             .toString()
 
-        case Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
+        case Expression.LetRec(varSym, _, exp1, exp2, tpe, loc) =>
           val sb = new StringBuilder()
           sb.append(formatter.bold("let rec"))
-            .append(fmtSym(sym, formatter))
+            .append(fmtSym(varSym, formatter))
             .append(" = ")
             .append(visitExp(exp1).replace(System.lineSeparator(), System.lineSeparator() + (" " * 2)))
             .append(";")
