@@ -321,7 +321,7 @@ object GenExpression {
       // Store instruction for `jvmType`
       val iStore = AsmOps.getStoreInstruction(jvmType)
       // JvmType of the closure
-      val cloType = JvmOps.getClosureClassType(???, exp1.tpe)
+      val cloType = JvmOps.getClosureClassType(defSym, exp1.tpe)
 
       // Store temp recursive value
       visitor.visitInsn(ACONST_NULL)
@@ -331,7 +331,7 @@ object GenExpression {
       // fix the local and closure reference
       visitor.visitInsn(DUP)
       visitor.visitInsn(DUP)
-      visitor.visitFieldInsn(PUTFIELD, cloType.name.toInternalName, s"clo${Flix.Delimiter}0", jvmType.toDescriptor)
+      visitor.visitFieldInsn(PUTFIELD, cloType.name.toInternalName, s"clo${???}", JvmOps.getErasedJvmType(exp1.tpe).toDescriptor)
       // Store the closure locally (maybe not needed?)
       visitor.visitVarInsn(iStore, sym.getStackOffset + 1)
       compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
