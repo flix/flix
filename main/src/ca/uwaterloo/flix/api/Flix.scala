@@ -104,6 +104,7 @@ class Flix {
     "MeetLattice.flix" -> LocalResource.get("/src/library/MeetLattice.flix"),
 
     // String
+    "Debug.flix" -> LocalResource.get("/src/library/Debug.flix"),
     "ToString.flix" -> LocalResource.get("/src/library/ToString.flix"),
 
     // Boxable
