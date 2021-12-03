@@ -55,20 +55,19 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     if (flix.options.documentor) {
 
       // Compute all namespaces, remove duplicates, and sort them.
+      // TODO: Compute at the end instead.
       val namespaces = root.defs.foldLeft(Set.empty[String]) {
         case (acc, (sym, _)) => acc + getNameSpace(sym)
       }.toList.sorted
 
       // Get all the classes.
-      val classesByNS = root.classes.values.groupBy(
-        x => x.sym.name
-      ).map {
-        case (str, value) => JObject(JField(str, value.map(v => visitClass(v)))) // TODO: Sort
+      val classesByNS = root.classes.values.groupBy(decl => getNameSpace(decl.sym)).map {
+        case (ns, decls) => ns -> JArray(decls.toList.sortBy(_.sym.name).map(visitClass))
       }
 
       // Convert all definitions to JSON objects.
-      val defsByNS = root.defs.values.groupBy(defn => getNameSpace(defn.sym)).map {
-        case (ns, defs) => ns -> JArray(defs.toList.map(visitDef))
+      val defsByNS = root.defs.values.groupBy(decl => getNameSpace(decl.sym)).map {
+        case (ns, decls) => ns -> JArray(decls.toList.sortBy(_.sym.name).map(visitDef))
       }
 
       // Convert all enums to JSON objects.
@@ -109,11 +108,19 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   // TODO: DOC
+  private def getNameSpace(sym: Symbol.ClassSym): String =
+    if (sym.namespace == Nil)
+      "Prelude"
+    else
+      sym.namespace.mkString(".")
+
+  // TODO: DOC
   private def getNameSpace(sym: Symbol.DefnSym): String =
     if (sym.namespace == Nil)
       "Prelude"
     else
       sym.namespace.mkString(".")
+
 
   /**
     * Returns the given definition `defn0` as a JSON object.
