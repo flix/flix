@@ -92,9 +92,9 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       //
       // Type Aliases
       //
-      val aliasesByNS = root.typealiases.values.groupBy(decl => getNameSpace(decl.sym)).map {
+      val typeAliasesByNS = root.typealiases.values.groupBy(decl => getNameSpace(decl.sym)).map {
         case (ns, decls) =>
-          val filtered = decls.toList.filter(_.mod.isPublic)
+          val filtered = decls.toList
           val sorted = filtered.sortBy(_.sym.name)
           ns -> JArray(sorted.map(visitTypeAlias))
       }
@@ -104,7 +104,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
         ("namespaces", namespaces),
         ("classes", classesByNS),
         ("enums", enumsByNS),
-        ("typeAliases", aliasesByNS),
+        ("typeAliases", typeAliasesByNS),
         ("defs", defsByNS)
       )
 
