@@ -170,7 +170,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
         ("loc" -> visitSourceLocation(sym.loc))
   }
 
-  private def visitInstanceSym(sym: Symbol.InstanceSym): JObject = ??? // TODO
+  private def visitInstanceSym(sym: Symbol.InstanceSym): JObject = ("placeholder" -> "placeholder") // TODO
 
   /**
     * Returns the given type `tpe` as a JSON value.
@@ -179,7 +179,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     case value: Type.Var =>
       val name = value.text match {
         case Some(value) => value
-        case None => ???
+        case None => "placeholder"
       }
       ("tag" -> "Var") ~
         ("name" -> name) ~
@@ -188,7 +188,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       val typeConst = tc match {
         case TypeConstructor.Bool => ("tag" -> "Bool")
         case TypeConstructor.Int32 => ("tag" -> "Int32")
-        case _ => ???
+        case _ => ("placeholder" -> "placeholder")
       }
       ("tag" -> "Cst") ~
         ("tc" -> typeConst) ~
@@ -198,7 +198,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
         ("tpe1" -> visitType(tpe1)) ~
         ("tpe2" -> visitType(tpe2)) ~
         ("kind" -> visitKind(tpe.kind))
-    case _ => ???
+    case _ => ("placeholder" -> "placeholder")
   }
 
   /**
@@ -268,13 +268,13 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns the given Kind `kind` as a JSON value.
     */
   def visitKind(kind: Kind): String = kind match {
-    case Kind.Wild => ???
+    case Kind.Wild => "placeholder"
     case Kind.Star => "Star"
     case Kind.Bool => "Bool"
     case Kind.RecordRow => "Record"
     case Kind.SchemaRow => "Schema"
-    case Kind.Predicate => ???
-    case Kind.Arrow(k1, k2) => ???
+    case Kind.Predicate => "placeholder"
+    case Kind.Arrow(k1, k2) => "placeholder"
   }
 
   /**
@@ -289,7 +289,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Returns the given Doc `doc` as a JSON value.
     */
-  private def visitDoc(doc: Ast.Doc): JObject = ??? // TODO : missing d.ts
+  private def visitDoc(doc: Ast.Doc): JObject = ("placeholder" -> "placeholder") // TODO : missing d.ts
 
   /**
     * Returns the given Modifier `mod` as a JSON value.
@@ -361,7 +361,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       }
 
       // Compute the cases.
-      val computedCases = ??? // TODO: convert cases (Map) to [Case]
+      val computedCases = "placeholder" // TODO: convert cases (Map) to [Case]
 
       ("doc" -> visitDoc(doc)) ~
         ("mod" -> visitModifier(mod)) ~
