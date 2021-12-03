@@ -668,6 +668,16 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           WeededAst.Expression.Apply(inner, List(value), loc)
       }
 
+    case ParsedAst.Expression.LetRecDef(sp1, ident, fparams, exp1, exp2, sp2) =>
+      val mod = Ast.Modifiers.Empty
+      val loc = mkSL(sp1, sp2)
+
+      mapN(visitFormalParams(fparams, typeRequired = false), visitExp(exp1), visitExp(exp2)) {
+        case (fp, e1, e2) =>
+          val lambda = mkCurried(fp, e1, loc)
+          WeededAst.Expression.LetRec(ident, mod, lambda, e2, loc)
+      }
+
     case ParsedAst.Expression.LetImport(sp1, impl, exp2, sp2) =>
       val loc = mkSL(sp1, sp2)
 
@@ -2321,7 +2331,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   private def mkCurried(fparams0: List[WeededAst.FormalParam], e: WeededAst.Expression, loc: SourceLocation): WeededAst.Expression = {
     val l = loc.asSynthetic
     fparams0.foldRight(e) {
-      case (fparam, eacc) => WeededAst.Expression.Lambda(fparam, eacc, l)
+      case (fparam, acc) => WeededAst.Expression.Lambda(fparam, acc, l)
     }
   }
 

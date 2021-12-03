@@ -565,6 +565,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (e1, e2) => NamedAst.Expression.Let(sym, mod, e1, e2, loc)
       }
 
+    case WeededAst.Expression.LetRec(ident, mod, exp1, exp2, loc) =>
+      // TODO: Scopedness?
+      val sym = Symbol.freshVarSym(ident, Scopedness.Unscoped, BoundBy.Let)
+      val env1 = env0 + (ident.name -> sym)
+      mapN(visitExp(exp1, env1, uenv0, tenv0), visitExp(exp2, env1, uenv0, tenv0)) {
+        case (e1, e2) => NamedAst.Expression.LetRec(sym, mod, e1, e2, loc)
+      }
+
     case WeededAst.Expression.LetRegion(ident, exp, loc) =>
       // make a fresh variable symbol for the local variable.
       val sym = Symbol.freshVarSym(ident, BoundBy.Let)

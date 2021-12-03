@@ -605,6 +605,9 @@ object ParsedAst {
       */
     case class LetMatchStar(sp1: SourcePosition, pat: ParsedAst.Pattern, tpe: Option[ParsedAst.Type], exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
+ // TODO
+    case class LetRecDef(sp1: SourcePosition, ident: Name.Ident, fparams: Seq[ParsedAst.FormalParam], exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
     /**
       * Let Import Expression.
       *
