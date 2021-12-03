@@ -117,6 +117,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Let(sym, mod, e1, e2, tpe, eff, loc) =>
         SimplifiedAst.Expression.Let(sym, visitExp(e1), visitExp(e2), tpe, loc)
 
+      case TypedAst.Expression.LetRec(sym, mod, e1, e2, tpe, eff, loc) =>
+        SimplifiedAst.Expression.LetRec(sym, visitExp(e1), visitExp(e2), tpe, loc)
+
       case TypedAst.Expression.LetRegion(_, exp, _, _, _) =>
         visitExp(exp)
 
@@ -192,7 +195,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
       case TypedAst.Expression.Ascribe(exp, tpe, eff, loc) => visitExp(exp)
 
-      case TypedAst.Expression.Cast(exp, tpe, eff, loc) =>
+      case TypedAst.Expression.Cast(exp, _, _, tpe, eff, loc) =>
         val e = visitExp(exp)
         SimplifiedAst.Expression.Cast(e, tpe, loc)
 
@@ -857,6 +860,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
       case SimplifiedAst.Expression.Let(sym, exp1, exp2, tpe, loc) =>
         SimplifiedAst.Expression.Let(sym, visitExp(exp1), visitExp(exp2), tpe, loc)
+
+      case SimplifiedAst.Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
+        SimplifiedAst.Expression.LetRec(sym, visitExp(exp1), visitExp(exp2), tpe, loc)
 
       case SimplifiedAst.Expression.Is(sym, tag, exp, loc) =>
         SimplifiedAst.Expression.Is(sym, tag, visitExp(exp), loc)

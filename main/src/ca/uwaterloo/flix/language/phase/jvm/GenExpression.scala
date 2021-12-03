@@ -126,9 +126,12 @@ object GenExpression {
     case Expression.ApplyClo(exp, args, tpe, _) =>
       // Type of the function abstract class
       val functionInterface = JvmOps.getFunctionInterfaceType(exp.tpe)
+      val closureAbstractClass = JvmOps.getClosureAbstractClassType(exp.tpe)
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-      // Casting to JvmType of FunctionInterface
-      visitor.visitTypeInsn(CHECKCAST, functionInterface.name.toInternalName)
+      // Casting to JvmType of closure abstract class
+      visitor.visitTypeInsn(CHECKCAST, closureAbstractClass.name.toInternalName)
+      // retrieving the unique thread object
+      visitor.visitMethodInsn(INVOKEVIRTUAL, closureAbstractClass.name.toInternalName, GenClosureAbstractClasses.GetUniqueThreadClosureFunctionName, AsmOps.getMethodDescriptor(Nil, closureAbstractClass), false)
       // Putting args on the Fn class
       for ((arg, i) <- args.zipWithIndex) {
         // Duplicate the FunctionInterface
@@ -167,10 +170,13 @@ object GenExpression {
     case Expression.ApplyCloTail(exp, args, _, _) =>
       // Type of the function abstract class
       val functionInterface = JvmOps.getFunctionInterfaceType(exp.tpe)
+      val closureAbstractClass = JvmOps.getClosureAbstractClassType(exp.tpe)
       // Evaluating the closure
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-      // Casting to JvmType of FunctionInterface
-      visitor.visitTypeInsn(CHECKCAST, functionInterface.name.toInternalName)
+      // Casting to JvmType of closure abstract class
+      visitor.visitTypeInsn(CHECKCAST, closureAbstractClass.name.toInternalName)
+      // retrieving the unique thread object
+      visitor.visitMethodInsn(INVOKEVIRTUAL, closureAbstractClass.name.toInternalName, GenClosureAbstractClasses.GetUniqueThreadClosureFunctionName, AsmOps.getMethodDescriptor(Nil, closureAbstractClass), false)
       // Putting args on the Fn class
       for ((arg, i) <- args.zipWithIndex) {
         // Duplicate the FunctionInterface
@@ -306,6 +312,14 @@ object GenExpression {
       val iStore = AsmOps.getStoreInstruction(jvmType)
       visitor.visitVarInsn(iStore, sym.getStackOffset + 1)
       compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+
+    case Expression.LetRec(varSym, defSym, exp1, exp2, _, loc) =>
+      // TODO: Note that exp1 now refers to sym. This means `sym` has to be defined before compiling exp1.
+      // TODO: Note you are allowed to assume that exp1 is a closure.
+      // TODO: The trick is probably to load null into sym. then compile exp1. then overwrite the closure field of sym with itself.
+      println(varSym)
+      println(defSym)
+      ???
 
     case Expression.Is(_, tag, exp, loc) =>
       // Adding source line number for debugging

@@ -1388,16 +1388,6 @@ namespace List {
     }
 
     ///
-    /// Converts the list `l` to a `Stream`.
-    ///
-    pub def toStream(l: List[a]): Stream[a, List[a]] =
-        let next = s -> match s {
-            case Nil     => Done
-            case x :: xs => Yield(x, xs)
-        };
-        Stream(next, l)
-
-    ///
     /// Returns the sum of all elements in the list `l`.
     ///
     pub def sum(l: List[Int32]): Int32 =

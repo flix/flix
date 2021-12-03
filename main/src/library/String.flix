@@ -141,7 +141,7 @@ namespace String {
         if (i >= len)
             ()
         else {
-            let c = f(i) as & ef;
+            let c = f(i);
             StringBuilder.appendChar!(sb, c);
             initWorker(sb, f, len, i+1)
         }

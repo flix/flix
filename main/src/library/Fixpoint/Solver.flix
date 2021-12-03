@@ -23,6 +23,8 @@ use Fixpoint/Ast.PredSym.PredSym;
 use Fixpoint/Ast.Denotation.{Relational, Latticenal};
 use Fixpoint/Ram.RamSym;
 
+use Fixpoint.Tuple.Tuple;
+
 namespace Fixpoint {
     ///
     /// Returns the minimal model of the given Datalog program `d`.
@@ -424,7 +426,7 @@ namespace Fixpoint {
             let arity = Array.length(vs);
             let ramSym = RamSym.Full(relName, arity, Denotation.Relational);
             let rel = MutMap.getOrElsePut!(ramSym, MutMap.empty(), db);
-            MutMap.put!(vs, default, rel)
+            MutMap.put!(Tuple(vs), default, rel)
         }, (), ts);
         toModel(db)
 
@@ -568,9 +570,9 @@ namespace Fixpoint {
             };
             Map.queryWith(query, ramSym -> rel -> match toDenotation(ramSym) {
                 case Denotation.Relational =>
-                    Map.foreach(tuple -> _ -> MutList.push!(f(tuple), pFacts), rel)
+                    Map.foreach(match Tuple(tuple) -> _ -> MutList.push!(f(tuple), pFacts), rel)
                 case Denotation.Latticenal(_) =>
-                    Map.foreach(tuple -> lat -> {
+                    Map.foreach(match Tuple(tuple) -> lat -> {
                         let vs = Array.init(i -> {
                             if (i < Array.length(tuple))
                                 tuple[i]

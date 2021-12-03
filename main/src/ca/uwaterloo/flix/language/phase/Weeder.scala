@@ -570,7 +570,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           val loc = mkSL(sp1, sp2).asSynthetic
 
           // The name of the lambda parameter.
-          val ident = Name.Ident(sp1, "pat$0", sp2)
+          val ident = Name.Ident(sp1, "pat" + Flix.Delimiter + "0", sp2)
 
           // Construct the body of the lambda expression.
           val varOrRef = WeededAst.Expression.VarOrDefOrSig(ident, loc)
@@ -656,7 +656,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           WeededAst.Expression.Apply(inner, List(value), loc)
         case (pat, value, body) =>
           // Full-blown pattern match.
-          val lambdaIdent = Name.Ident(sp1, "pat$0", sp2)
+          val lambdaIdent = Name.Ident(sp1, "pat" + Flix.Delimiter + "0", sp2)
           val lambdaVar = WeededAst.Expression.VarOrDefOrSig(lambdaIdent, loc)
 
           val rule = WeededAst.MatchRule(pat, WeededAst.Expression.True(loc.asSynthetic), body)
@@ -666,6 +666,16 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           val lambda = WeededAst.Expression.Lambda(fparam, lambdaBody, loc)
           val inner = WeededAst.Expression.Apply(flatMap, List(lambda), loc)
           WeededAst.Expression.Apply(inner, List(value), loc)
+      }
+
+    case ParsedAst.Expression.LetRecDef(sp1, ident, fparams, exp1, exp2, sp2) =>
+      val mod = Ast.Modifiers.Empty
+      val loc = mkSL(sp1, sp2)
+
+      mapN(visitFormalParams(fparams, typeRequired = false), visitExp(exp1), visitExp(exp2)) {
+        case (fp, e1, e2) =>
+          val lambda = mkCurried(fp, e1, loc)
+          WeededAst.Expression.LetRec(ident, mod, lambda, e2, loc)
       }
 
     case ParsedAst.Expression.LetImport(sp1, impl, exp2, sp2) =>
@@ -732,21 +742,21 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               val ts = sig.map(visitType).toList
 
               // Introduce a formal parameter for the object argument.
-              val objId = Name.Ident(sp1, "obj$", sp2)
+              val objId = Name.Ident(sp1, "obj" + Flix.Delimiter, sp2)
               val objParam = WeededAst.FormalParam(objId, Ast.Modifiers.Empty, Some(receiverType), loc)
               val objExp = WeededAst.Expression.VarOrDefOrSig(objId, loc)
 
               // Introduce a formal parameter (of appropriate type) for each declared argument.
               val fs = objParam :: ts.zipWithIndex.map {
                 case (tpe, index) =>
-                  val ident = Name.Ident(sp1, "a" + index + "$", sp2)
+                  val ident = Name.Ident(sp1, "a" + index + Flix.Delimiter, sp2)
                   WeededAst.FormalParam(ident, Ast.Modifiers.Empty, Some(tpe), loc)
               }
 
               // Compute the argument to the method call.
               val as = objExp :: ts.zipWithIndex.map {
                 case (_, index) =>
-                  val ident = Name.Ident(sp1, "a" + index + "$", sp2)
+                  val ident = Name.Ident(sp1, "a" + index + Flix.Delimiter, sp2)
                   WeededAst.Expression.VarOrDefOrSig(ident, loc)
               }
 
@@ -782,14 +792,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               // Introduce a formal parameter (of appropriate type) for each declared argument.
               val fs = ts.zipWithIndex.map {
                 case (tpe, index) =>
-                  val id = Name.Ident(sp1, "a" + index + "$", sp2)
+                  val id = Name.Ident(sp1, "a" + index + Flix.Delimiter, sp2)
                   WeededAst.FormalParam(id, Ast.Modifiers.Empty, Some(tpe), loc)
               }
 
               // Compute the argument to the method call.
               val as = ts.zipWithIndex.map {
                 case (_, index) =>
-                  val ident = Name.Ident(sp1, "a" + index + "$", sp2)
+                  val ident = Name.Ident(sp1, "a" + index + Flix.Delimiter, sp2)
                   WeededAst.Expression.VarOrDefOrSig(ident, loc)
               }
 
@@ -805,7 +815,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           //
           mapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
             case ((className, fieldName), e2) =>
-              val objectId = Name.Ident(sp1, "o$", sp2)
+              val objectId = Name.Ident(sp1, "o" + Flix.Delimiter, sp2)
               val objectExp = WeededAst.Expression.VarOrDefOrSig(objectId, loc)
               val objectParam = WeededAst.FormalParam(objectId, Ast.Modifiers.Empty, None, loc)
               val lambdaBody = WeededAst.Expression.GetField(className, fieldName, objectExp, loc)
@@ -819,8 +829,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           //
           mapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
             case ((className, fieldName), e2) =>
-              val objectId = Name.Ident(sp1, "o$", sp2)
-              val valueId = Name.Ident(sp1, "v$", sp2)
+              val objectId = Name.Ident(sp1, "o" + Flix.Delimiter, sp2)
+              val valueId = Name.Ident(sp1, "v" + Flix.Delimiter, sp2)
               val objectExp = WeededAst.Expression.VarOrDefOrSig(objectId, loc)
               val valueExp = WeededAst.Expression.VarOrDefOrSig(valueId, loc)
               val objectParam = WeededAst.FormalParam(objectId, Ast.Modifiers.Empty, None, loc)
@@ -849,7 +859,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           //
           mapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
             case ((className, fieldName), e2) =>
-              val valueId = Name.Ident(sp1, "v$", sp2)
+              val valueId = Name.Ident(sp1, "v" + Flix.Delimiter, sp2)
               val valueExp = WeededAst.Expression.VarOrDefOrSig(valueId, loc)
               val valueParam = WeededAst.FormalParam(valueId, Ast.Modifiers.Empty, None, loc)
               val lambdaBody = WeededAst.Expression.PutStaticField(className, fieldName, valueExp, loc)
@@ -1334,12 +1344,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           //
           // =>
           //
-          // let $tmp = solve (merge e1, 2, e3);
-          // merge (project P1 $tmp, project P2 $tmp, project P3 $tmp)
+          // let tmp% = solve (merge e1, 2, e3);
+          // merge (project P1 tmp%, project P2 tmp%, project P3 tmp%)
 
-          // Introduce a $tmp variable that holds the minimal model of the merge of the exps.
+          // Introduce a tmp% variable that holds the minimal model of the merge of the exps.
           val freshVar = flix.genSym.freshId()
-          val localVar = Name.Ident(SourcePosition.Unknown, s"tmp$freshVar", SourcePosition.Unknown)
+          val localVar = Name.Ident(SourcePosition.Unknown, s"tmp" + Flix.Delimiter + freshVar, SourcePosition.Unknown)
 
           // Merge all the exps into one Datalog program value.
           val mergeExp = es.reduceRight[WeededAst.Expression] {
@@ -1368,7 +1378,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               }
           }
 
-          // Bind the $tmp variable to the minimal model and combine it with the body expression.
+          // Bind the tmp% variable to the minimal model and combine it with the body expression.
           WeededAst.Expression.Let(localVar, Ast.Modifiers.Empty, modelExp, bodyExp, loc.asReal)
       }
 
@@ -1388,13 +1398,13 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           //
           // =>
           //
-          // project out $Result from (solve (merge (merge e1, e2, e3) #{ #Result(x, y, z) :- A(x, y), B(y) if x > 0 } )
+          // project out %Result from (solve (merge (merge e1, e2, e3) #{ #Result(x, y, z) :- A(x, y), B(y) if x > 0 } )
           //
           // OBS: The last merge and solve is done in the typer because of trouble when
           // `(merge e1, e2, e3)` is a closed row.
 
           // The fresh predicate name where to store the result of the query.
-          val pred = Name.Pred("$Result", loc)
+          val pred = Name.Pred(Flix.Delimiter + "Result", loc)
 
           // The head of the pseudo-rule.
           val den = selects0 match {
@@ -1934,10 +1944,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       case args =>
         past.ident.name match {
           case "benchmark" => WeededAst.Annotation(Ast.Annotation.Benchmark(loc), args, loc).toSuccess
-          case "deprecated" => WeededAst.Annotation(Ast.Annotation.Deprecated(loc), args, loc).toSuccess
           case "law" => WeededAst.Annotation(Ast.Annotation.Law(loc), args, loc).toSuccess
           case "lint" => WeededAst.Annotation(Ast.Annotation.Lint(loc), args, loc).toSuccess
           case "test" => WeededAst.Annotation(Ast.Annotation.Test(loc), args, loc).toSuccess
+          case "Deprecated" => WeededAst.Annotation(Ast.Annotation.Deprecated(loc), args, loc).toSuccess
           case "LazyWhenPure" => WeededAst.Annotation(Ast.Annotation.LazyWhenPure(loc), args, loc).toSuccess
           case "ParallelWhenPure" => WeededAst.Annotation(Ast.Annotation.ParallelWhenPure(loc), args, loc).toSuccess
           case "Time" => WeededAst.Annotation(Ast.Annotation.Time(loc), args, loc).toSuccess
@@ -2321,7 +2331,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   private def mkCurried(fparams0: List[WeededAst.FormalParam], e: WeededAst.Expression, loc: SourceLocation): WeededAst.Expression = {
     val l = loc.asSynthetic
     fparams0.foldRight(e) {
-      case (fparam, eacc) => WeededAst.Expression.Lambda(fparam, eacc, l)
+      case (fparam, acc) => WeededAst.Expression.Lambda(fparam, acc, l)
     }
   }
 
@@ -2452,6 +2462,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Stm(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.LetMatch(sp1, _, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetMatchStar(sp1, _, _, _, _, _) => sp1
+    case ParsedAst.Expression.LetRecDef(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetImport(sp1, _, _, _) => sp1
     case ParsedAst.Expression.LetRegion(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1

@@ -63,6 +63,7 @@ object BytecodeInstructions {
 
   object Branch {
     case object TrueBranch extends Branch
+
     case object FalseBranch extends Branch
   }
 

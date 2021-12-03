@@ -317,6 +317,12 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
         exp2 <- visitExp(exp20, kenv, taenv, root)
       } yield KindedAst.Expression.Let(sym, mod, exp1, exp2, loc)
 
+    case ResolvedAst.Expression.LetRec(sym, mod, exp10, exp20, loc) =>
+      for {
+        exp1 <- visitExp(exp10, kenv, taenv, root)
+        exp2 <- visitExp(exp20, kenv, taenv, root)
+      } yield KindedAst.Expression.LetRec(sym, mod, exp1, exp2, loc)
+
     case ResolvedAst.Expression.LetRegion(sym, exp0, loc) =>
       for {
         exp <- visitExp(exp0, kenv, taenv, root)

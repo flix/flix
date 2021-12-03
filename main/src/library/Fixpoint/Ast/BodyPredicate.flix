@@ -32,9 +32,9 @@ namespace Fixpoint/Ast {
                 case BodyAtom(predSym, Relational, Positive, terms) => "${predSym}(${commaSeparate(terms)})"
                 case BodyAtom(predSym, Relational, Negative, terms) => "not ${predSym}(${commaSeparate(terms)})"
                 case BodyAtom(predSym, Latticenal(_), polarity, terms) =>
-                    let len = Array.length(terms) as & Pure;
-                    let k = terms[0..len-1] as & Pure;
-                    let l = terms[len-1] as & Pure;
+                    let len = Array.length(terms);
+                    let k = terms[0..len-1];
+                    let l = terms[len-1];
                     match polarity {
                         case Positive => "${predSym}(${commaSeparate(k)}; ${l})"
                         case Negative => "not ${predSym}(${commaSeparate(k)}; ${l})"
@@ -45,6 +45,6 @@ namespace Fixpoint/Ast {
                 case Guard3(_, v1, v2, v3) => "<clo>(${v1}, ${v2}, ${v3})"
                 case Guard4(_, v1, v2, v3, v4) => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
                 case Guard5(_, v1, v2, v3, v4, v5) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
-            }
+            } as & Pure
     }
 }
