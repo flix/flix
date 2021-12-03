@@ -156,7 +156,6 @@ namespace File {
             let javaFile = newFile(f);
             let stream = newInputStream(javaFile);
             skip(stream, opts.offset);
-            // TODO: if count > stream -> the end will still have 0's from the array
             let bytes = [0i8; opts.count];
             read(stream, bytes, 0, opts.count);
             let charSet = forName(opts.charSet);
