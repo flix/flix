@@ -54,6 +54,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     // Check whether to generate documentation.
     if (flix.options.documentor) {
 
+      // TODO: This has duplicates. It should probably be a set.
       // Get all the namespaces.
       val namespaces = root.defs.keys.map(k => k.namespace).foldLeft(Nil: List[String])((value: List[String], acc: List[String]) => value ++ acc)
 
