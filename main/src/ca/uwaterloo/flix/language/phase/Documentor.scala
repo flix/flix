@@ -394,13 +394,20 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def visitEnum(enum: Enum): JObject = enum match {
     case Enum(doc, _, sym, tparams, cases, _, _, loc) =>
-      val computedCases = "placeholder" // TODO: convert cases (Map) to [Case]
-
       ("doc" -> visitDoc(doc)) ~
         ("sym" -> visitEnumSym(sym)) ~
         ("tparams" -> tparams.map(visitTypeParam)) ~
-        ("cases" -> computedCases) ~
+        ("cases" -> cases.values.map(visitCase)) ~
         ("loc" -> visitSourceLocation(loc))
+  }
+
+  /**
+    * Returns the given case `caze` as a JSON value.
+    */
+  private def visitCase(caze: Case): JObject = caze match {
+    case Case(_, tag, _, sc, _) =>
+      ("tag" -> tag.name) ~
+        ("tpe" -> FormatType.formatType(sc.base))
   }
 
   /**
