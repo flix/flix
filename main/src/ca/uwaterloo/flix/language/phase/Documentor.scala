@@ -345,11 +345,11 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns the given Type Alias `talias` as a JSON value.
     */
   private def visitTypeAlias(talias: TypeAlias): JObject = talias match {
-    case TypeAlias(doc, mod, sym, tparams, tpe, loc) =>
+    case TypeAlias(doc, _, sym, tparams, tpe, loc) =>
       ("doc" -> visitDoc(doc)) ~
         ("sym" -> visitTypeAliasSym(sym)) ~
         ("tparams" -> tparams.map(visitTypeParam)) ~
-        ("tpe" -> visitType(tpe)) ~
+        ("tpe" -> FormatType.formatType(tpe)) ~
         ("loc" -> visitSourceLocation(loc))
   }
 

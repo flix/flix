@@ -22,6 +22,6 @@ export interface TypeAlias {
     doc: [string]
     sym: TypeAliasSym
     tparams: [TypeParam]
-    tpe: Type
+    tpe: string | Type
     loc: SourceLocation
 }
