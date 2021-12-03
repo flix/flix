@@ -177,6 +177,11 @@ object Stratifier extends Phase[Root, Root] {
         case (e1, e2) => Expression.Let(sym, mod, e1, e2, tpe, eff, loc)
       }
 
+    case Expression.LetRec(sym, mod, exp1, exp2, tpe, eff, loc) =>
+      mapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => Expression.LetRec(sym, mod, e1, e2, tpe, eff, loc)
+      }
+
     case Expression.LetRegion(sym, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => Expression.LetRegion(sym, e, tpe, eff, loc)
@@ -501,6 +506,9 @@ object Stratifier extends Phase[Root, Root] {
       constraintGraphOfExp(exp1) + constraintGraphOfExp(exp2)
 
     case Expression.Let(_, _, exp1, exp2, _, _, _) =>
+      constraintGraphOfExp(exp1) + constraintGraphOfExp(exp2)
+
+    case Expression.LetRec(_, _, exp1, exp2, _, _, _) =>
       constraintGraphOfExp(exp1) + constraintGraphOfExp(exp2)
 
     case Expression.LetRegion(_, exp, _, _, _) =>

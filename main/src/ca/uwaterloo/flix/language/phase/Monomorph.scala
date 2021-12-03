@@ -247,6 +247,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       */
     def visitExp(e0: Expression, env0: Map[Symbol.VarSym, Symbol.VarSym]): Expression = e0 match {
       case Expression.Wild(tpe, loc) => Expression.Wild(subst0(tpe), loc)
+
       case Expression.Var(sym, tpe, loc) => Expression.Var(env0(sym), subst0(tpe), loc)
 
       case Expression.Def(sym, tpe, loc) =>

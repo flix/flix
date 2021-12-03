@@ -117,6 +117,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Let(sym, mod, e1, e2, tpe, eff, loc) =>
         SimplifiedAst.Expression.Let(sym, visitExp(e1), visitExp(e2), tpe, loc)
 
+      case TypedAst.Expression.LetRec(sym, mod, e1, e2, tpe, eff, loc) =>
+        SimplifiedAst.Expression.LetRec(sym, visitExp(e1), visitExp(e2), tpe, loc)
+
       case TypedAst.Expression.LetRegion(_, exp, _, _, _) =>
         visitExp(exp)
 
