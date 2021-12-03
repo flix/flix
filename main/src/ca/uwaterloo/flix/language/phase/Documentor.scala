@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.Ast.TypeConstraint
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.debug.{Audience, FormatType, PrettyExpression}
+import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme, FormatType, PrettyExpression}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 import org.json4s.JsonAST._
@@ -407,11 +407,11 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   private def visitCase(caze: Case): JObject = caze match {
     case Case(_, tag, _, sc, _) =>
       ("tag" -> tag.name) ~
-        ("tpe" -> FormatType.formatType(sc.base))
+        ("tpe" -> "TYPE_PLACEHOLDER")
   }
 
   /**
-    * Return the given Class `cla` as a JSON value.
+    * Return the given class `clazz` as a JSON value.
     */
   private def visitClass(cla: Class): JObject = cla match {
     case Class(doc, mod, sym, tparam, superClasses, signatures, laws, loc) =>
