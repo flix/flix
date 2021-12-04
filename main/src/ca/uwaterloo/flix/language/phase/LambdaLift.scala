@@ -113,7 +113,7 @@ object LambdaLift extends Phase[SimplifiedAst.Root, LiftedAst.Root] {
 
       case SimplifiedAst.Expression.Var(sym, tpe, loc) => LiftedAst.Expression.Var(sym, tpe, loc)
 
-      case SimplifiedAst.Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) =>
+      case SimplifiedAst.Expression.LambdaClosure(fparams, letrecs, freeVars, exp, tpe, loc) =>
         // Recursively lift the inner expression.
         val liftedExp = visitExp(exp)
 
@@ -137,11 +137,11 @@ object LambdaLift extends Phase[SimplifiedAst.Root, LiftedAst.Root] {
         val fvs = freeVars.map(visitFreeVar)
 
         // Construct the closure expression.
-        LiftedAst.Expression.Closure(freshSymbol, fvs, tpe, loc)
+        LiftedAst.Expression.Closure(freshSymbol, letrecs, fvs, tpe, loc)
 
-      case SimplifiedAst.Expression.Closure(sym, freeVars, tpe, loc) =>
+      case SimplifiedAst.Expression.Closure(sym, letrecs, freeVars, tpe, loc) =>
         val fvs = freeVars.map(visitFreeVar)
-        LiftedAst.Expression.Closure(sym, fvs, tpe, loc)
+        LiftedAst.Expression.Closure(sym, letrecs, fvs, tpe, loc)
 
       case SimplifiedAst.Expression.ApplyClo(exp, args, tpe, loc) =>
         val e = visitExp(exp)
@@ -186,7 +186,7 @@ object LambdaLift extends Phase[SimplifiedAst.Root, LiftedAst.Root] {
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         e1 match {
-          case LiftedAst.Expression.Closure(defSym, _, _, _) =>
+          case LiftedAst.Expression.Closure(defSym, _, _, _, _) =>
             LiftedAst.Expression.LetRec(varSym, defSym, e1, e2, tpe, loc)
           case _ => throw InternalCompilerException(s"Unexpected expression: '$e1'.")
         }

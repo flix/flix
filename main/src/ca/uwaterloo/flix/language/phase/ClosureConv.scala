@@ -45,284 +45,290 @@ object ClosureConv extends Phase[Root, Root] {
     * Performs closure conversion on the given definition `def0`.
     */
   private def visitDef(def0: Def)(implicit flix: Flix): Def = {
-    val convertedExp = visitExp(def0.exp)
+    val convertedExp = visitExp(def0.exp, Nil)
     def0.copy(exp = convertedExp)
   }
 
   /**
     * Performs closure conversion on the given expression `exp0`.
     */
-  private def visitExp(exp0: Expression)(implicit flix: Flix): Expression = exp0 match {
-    case Expression.Unit(_) => exp0
+  private def visitExp(exp0: Expression, letrecs: List[FreeVar])(implicit flix: Flix): Expression = {
+    def visit(e: Expression): Expression = visitExp(e, letrecs)
 
-    case Expression.Null(_, _) => exp0
+    exp0 match {
+      case Expression.Unit(_) => exp0
 
-    case Expression.True(_) => exp0
+      case Expression.Null(_, _) => exp0
 
-    case Expression.False(_) => exp0
+      case Expression.True(_) => exp0
 
-    case Expression.Char(lit, _) => exp0
+      case Expression.False(_) => exp0
 
-    case Expression.Float32(lit, _) => exp0
+      case Expression.Char(lit, _) => exp0
 
-    case Expression.Float64(lit, _) => exp0
+      case Expression.Float32(lit, _) => exp0
 
-    case Expression.Int8(lit, _) => exp0
+      case Expression.Float64(lit, _) => exp0
 
-    case Expression.Int16(lit, _) => exp0
+      case Expression.Int8(lit, _) => exp0
 
-    case Expression.Int32(lit, _) => exp0
+      case Expression.Int16(lit, _) => exp0
 
-    case Expression.Int64(lit, _) => exp0
+      case Expression.Int32(lit, _) => exp0
 
-    case Expression.BigInt(lit, _) => exp0
+      case Expression.Int64(lit, _) => exp0
 
-    case Expression.Str(lit, _) => exp0
+      case Expression.BigInt(lit, _) => exp0
 
-    case Expression.Var(sym, tpe, loc) => exp0
+      case Expression.Str(lit, _) => exp0
 
-    case Expression.Def(sym, tpe, loc) =>
-      // The Def expression did not occur in an Apply expression.
-      // We must create a closure, without free variables, of the definition symbol.
-      Expression.Closure(sym, List.empty, tpe, loc)
+      case Expression.Var(sym, tpe, loc) => exp0
 
-    case Expression.Lambda(args, body, tpe, loc) =>
-      // Retrieve the type of the function.
-      val ts = tpe.typeArguments
-      val (targs, tresult) = (ts.init, ts.last)
+      case Expression.Def(sym, tpe, loc) =>
+        // The Def expression did not occur in an Apply expression.
+        // We must create a closure, without free variables, of the definition symbol.
+        Expression.Closure(sym, letrecs, List.empty, tpe, loc)
 
-      // Convert lambdas to closures. This is the main part of the `convert` function.
-      // Closure conversion happens as follows:
+      case Expression.Lambda(args, body, tpe, loc) =>
+        // Retrieve the type of the function.
+        val ts = tpe.typeArguments
+        val (targs, tresult) = (ts.init, ts.last)
 
-      // First, we collect the free variables in the lambda expression.
-      // NB: We pass the lambda expression (instead of its body) to account for bound arguments.
-      val fvs = freeVars(exp0).toList
+        // Convert lambdas to closures. This is the main part of the `convert` function.
+        // Closure conversion happens as follows:
 
-      // We prepend the free variables to the arguments list. Thus all variables within the lambda body will be treated
-      // uniformly. The implementation will supply values for the free variables, without any effort from the caller.
-      // We introduce new symbols for each introduced parameter and replace their occurrence in the body.
-      val subst = mutable.Map.empty[Symbol.VarSym, Symbol.VarSym]
-      val newArgs = fvs.map {
-        case (oldSym, ptype) =>
-          val newSym = Symbol.freshVarSym(oldSym)
-          subst += (oldSym -> newSym)
-          FormalParam(newSym, Ast.Modifiers.Empty, ptype, loc)
-      } ++ args
+        // First, we collect the free variables in the lambda expression.
+        // NB: We pass the lambda expression (instead of its body) to account for bound arguments.
+        val regularFvs = freeVars(exp0).toList.filterNot(fv => letrecs.contains(fv._1))
+        val fvs = letrecs ::: regularFvs
 
-      // Update the lambda type.
-      val argTpes = fvs.map(_._2) ++ targs
-      val newTpe = Type.mkPureUncurriedArrow(argTpes, tresult, tpe.loc)
+        // We prepend the free variables to the arguments list. Thus all variables within the lambda body will be treated
+        // uniformly. The implementation will supply values for the free variables, without any effort from the caller.
+        // We introduce new symbols for each introduced parameter and replace their occurrence in the body.
+        val subst = mutable.Map.empty[Symbol.VarSym, Symbol.VarSym]
+        val newArgs = fvs.map {
+          case (oldSym, ptype) =>
+            val newSym = Symbol.freshVarSym(oldSym)
+            subst += (oldSym -> newSym)
+            FormalParam(newSym, Ast.Modifiers.Empty, ptype, loc)
+        } ++ args
 
-      val newBody = visitExp(replace(body, subst.toMap))
-      // We rewrite the lambda with its new arguments list and new body, with any nested lambdas also converted.
-      val lambda = Expression.Lambda(newArgs, newBody, newTpe, loc)
+        // Update the lambda type.
+        val argTpes = fvs.map(_._2) ++ targs
+        val newTpe = Type.mkPureUncurriedArrow(argTpes, tresult, tpe.loc)
 
-      // At this point, `lambda` is the original lambda expression, but with all free variables converted to new
-      // arguments, prepended to the original arguments list. Additionally, any lambdas within the body have also been
-      // closure converted.
+        val newBody = visit(replace(body, subst.toMap))
+        // We rewrite the lambda with its new arguments list and new body, with any nested lambdas also converted.
+        val lambda = Expression.Lambda(newArgs, newBody, newTpe, loc)
 
-      // We return a MkClosure node, which contains `lambda` (rewritten to have extra arguments so there are no more
-      // free variables) as well as the cached `freeVars`. The closure will actually be created at run time, where the
-      // values for the free variables are bound and stored in the closure structure. When the closure is called, the
-      // bound values are passed as arguments.
-      // Note that MkClosure keeps the old lambda type.
-      // In a later phase, we will lift the lambda to a top-level definition.
-      //Expression.LambdaClosure(lambda, fvs.map(v => FreeVar(v._1, v._2)), tpe, loc)
-      Expression.LambdaClosure(newArgs, fvs.map(v => FreeVar(v._1, v._2)), newBody, tpe, loc)
+        // At this point, `lambda` is the original lambda expression, but with all free variables converted to new
+        // arguments, prepended to the original arguments list. Additionally, any lambdas within the body have also been
+        // closure converted.
 
-    case Expression.Apply(e, args, tpe, loc) =>
-      // We're trying to call some expression `e`. If `e` is a Ref, then it's a top-level function, so we directly call
-      // it with ApplyRef. We remove the Ref node and don't recurse on it to avoid creating a closure.
-      // We do something similar if `e` is a Hook, where we transform Apply to ApplyHook.
-      e match {
-        case Expression.Def(sym, _, _) => Expression.ApplyDef(sym, args.map(visitExp), tpe, loc)
-        case _ => Expression.ApplyClo(visitExp(e), args.map(visitExp), tpe, loc)
-      }
+        // We return a MkClosure node, which contains `lambda` (rewritten to have extra arguments so there are no more
+        // free variables) as well as the cached `freeVars`. The closure will actually be created at run time, where the
+        // values for the free variables are bound and stored in the closure structure. When the closure is called, the
+        // bound values are passed as arguments.
+        // Note that MkClosure keeps the old lambda type.
+        // In a later phase, we will lift the lambda to a top-level definition.
+        //Expression.LambdaClosure(lambda, fvs.map(v => FreeVar(v._1, v._2)), tpe, loc)
+        val newFreeVars = fvs.map(v => FreeVar(v._1, v._2)).filterNot(fv => letrecs.contains(fv.sym))
+        Expression.LambdaClosure(newArgs, letrecs, newFreeVars, newBody, tpe, loc)
 
-    case Expression.Unary(sop, op, e, tpe, loc) =>
-      Expression.Unary(sop, op, visitExp(e), tpe, loc)
+      case Expression.Apply(e, args, tpe, loc) =>
+        // We're trying to call some expression `e`. If `e` is a Ref, then it's a top-level function, so we directly call
+        // it with ApplyRef. We remove the Ref node and don't recurse on it to avoid creating a closure.
+        // We do something similar if `e` is a Hook, where we transform Apply to ApplyHook.
+        e match {
+          case Expression.Def(sym, _, _) => Expression.ApplyDef(sym, args.map(visit), tpe, loc)
+          case _ => Expression.ApplyClo(visit(e), args.map(visit), tpe, loc)
+        }
 
-    case Expression.Binary(sop, op, e1, e2, tpe, loc) =>
-      Expression.Binary(sop, op, visitExp(e1), visitExp(e2), tpe, loc)
+      case Expression.Unary(sop, op, e, tpe, loc) =>
+        Expression.Unary(sop, op, visit(e), tpe, loc)
 
-    case Expression.IfThenElse(e1, e2, e3, tpe, loc) =>
-      Expression.IfThenElse(visitExp(e1), visitExp(e2), visitExp(e3), tpe, loc)
+      case Expression.Binary(sop, op, e1, e2, tpe, loc) =>
+        Expression.Binary(sop, op, visit(e1), visit(e2), tpe, loc)
 
-    case Expression.Branch(exp, branches, tpe, loc) =>
-      val e = visitExp(exp)
-      val bs = branches map {
-        case (sym, br) => sym -> visitExp(br)
-      }
-      Expression.Branch(e, bs, tpe, loc)
-
-    case Expression.JumpTo(sym, tpe, loc) =>
-      Expression.JumpTo(sym, tpe, loc)
-
-    case Expression.Let(sym, e1, e2, tpe, loc) =>
-      Expression.Let(sym, visitExp(e1), visitExp(e2), tpe, loc)
-
-    case Expression.LetRec(sym, e1, e2, tpe, loc) =>
-      Expression.LetRec(sym, visitExp(e1), visitExp(e2), tpe, loc)
-
-    case Expression.Is(sym, tag, e, loc) =>
-      Expression.Is(sym, tag, visitExp(e), loc)
-
-    case Expression.Tag(enum, tag, e, tpe, loc) =>
-      Expression.Tag(enum, tag, visitExp(e), tpe, loc)
-
-    case Expression.Untag(sym, tag, e, tpe, loc) =>
-      Expression.Untag(sym, tag, visitExp(e), tpe, loc)
-
-    case Expression.Index(e, offset, tpe, loc) =>
-      Expression.Index(visitExp(e), offset, tpe, loc)
-
-    case Expression.Tuple(elms, tpe, loc) =>
-      Expression.Tuple(elms.map(visitExp), tpe, loc)
-
-    case Expression.RecordEmpty(tpe, loc) =>
-      Expression.RecordEmpty(tpe, loc)
-
-    case Expression.RecordSelect(exp, field, tpe, loc) =>
-      val e = visitExp(exp)
-      Expression.RecordSelect(e, field, tpe, loc)
-
-    case Expression.RecordExtend(field, value, rest, tpe, loc) =>
-      val v = visitExp(value)
-      val r = visitExp(rest)
-      Expression.RecordExtend(field, v, r, tpe, loc)
-
-    case Expression.RecordRestrict(field, rest, tpe, loc) =>
-      val r = visitExp(rest)
-      Expression.RecordRestrict(field, r, tpe, loc)
-
-    case Expression.ArrayLit(elms, tpe, loc) =>
-      Expression.ArrayLit(elms.map(visitExp), tpe, loc)
-
-    case Expression.ArrayNew(elm, len, tpe, loc) =>
-      val e1 = visitExp(elm)
-      val e2 = visitExp(len)
-      Expression.ArrayNew(e1, e2, tpe, loc)
-
-    case Expression.ArrayLoad(exp1, exp2, tpe, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expression.ArrayLoad(e1, e2, tpe, loc)
-
-    case Expression.ArrayStore(exp1, exp2, exp3, tpe, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val e3 = visitExp(exp3)
-      Expression.ArrayStore(e1, e2, e3, tpe, loc)
-
-    case Expression.ArrayLength(exp, tpe, loc) =>
-      val e = visitExp(exp)
-      Expression.ArrayLength(e, tpe, loc)
-
-    case Expression.ArraySlice(exp1, exp2, exp3, tpe, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val e3 = visitExp(exp3)
-      Expression.ArraySlice(e1, e2, e3, tpe, loc)
-
-    case Expression.Ref(exp, tpe, loc) =>
-      val e = visitExp(exp)
-      Expression.Ref(e, tpe, loc)
-
-    case Expression.Deref(exp, tpe, loc) =>
-      val e = visitExp(exp)
-      Expression.Deref(e, tpe, loc)
-
-    case Expression.Assign(exp1, exp2, tpe, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expression.Assign(e1, e2, tpe, loc)
-
-    case Expression.Cast(exp, tpe, loc) =>
-      val e = visitExp(exp)
-      Expression.Cast(e, tpe, loc)
-
-    case Expression.TryCatch(exp, rules, tpe, loc) =>
-      val e = visitExp(exp)
-      val rs = rules map {
-        case CatchRule(sym, clazz, body) =>
-          val b = visitExp(body)
-          CatchRule(sym, clazz, b)
-      }
-      Expression.TryCatch(e, rs, tpe, loc)
-
-    case Expression.InvokeConstructor(constructor, args, tpe, loc) =>
-      val as = args map visitExp
-      Expression.InvokeConstructor(constructor, as, tpe, loc)
-
-    case Expression.InvokeMethod(method, exp, args, tpe, loc) =>
-      val e = visitExp(exp)
-      val as = args.map(visitExp)
-      Expression.InvokeMethod(method, e, as, tpe, loc)
-
-    case Expression.InvokeStaticMethod(method, args, tpe, loc) =>
-      val as = args.map(visitExp)
-      Expression.InvokeStaticMethod(method, as, tpe, loc)
-
-    case Expression.GetField(field, exp, tpe, loc) =>
-      val e = visitExp(exp)
-      Expression.GetField(field, e, tpe, loc)
-
-    case Expression.PutField(field, exp1, exp2, tpe, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expression.PutField(field, e1, e2, tpe, loc)
-
-    case Expression.GetStaticField(field, tpe, loc) =>
-      Expression.GetStaticField(field, tpe, loc)
-
-    case Expression.PutStaticField(field, exp, tpe, loc) =>
-      val e = visitExp(exp)
-      Expression.PutStaticField(field, e, tpe, loc)
-
-    case Expression.NewChannel(exp, tpe, loc) =>
-      val e = visitExp(exp)
-      Expression.NewChannel(e, tpe, loc)
-
-    case Expression.GetChannel(exp, tpe, loc) =>
-      val e = visitExp(exp)
-      Expression.GetChannel(e, tpe, loc)
-
-    case Expression.PutChannel(exp1, exp2, tpe, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expression.PutChannel(e1, e2, tpe, loc)
-
-    case Expression.SelectChannel(rules, default, tpe, loc) =>
-      val rs = rules map {
-        case SelectChannelRule(sym, chan, exp) =>
-          val c = visitExp(chan)
-          val e = visitExp(exp)
-          SelectChannelRule(sym, c, e)
-      }
-
-      val d = default.map(visitExp(_))
-
-      Expression.SelectChannel(rs, d, tpe, loc)
-
-    case Expression.Spawn(exp, tpe, loc) =>
-      val e = visitExp(exp)
-      Expression.Spawn(e, tpe, loc)
-
-    case Expression.Lazy(exp, tpe, loc) =>
-      val e = visitExp(exp)
-      Expression.Lazy(e, tpe, loc)
-
-    case Expression.Force(exp, tpe, loc) =>
-      val e = visitExp(exp)
-      Expression.Force(e, tpe, loc)
-
-    case Expression.HoleError(sym, tpe, loc) => exp0
-    case Expression.MatchError(tpe, loc) => exp0
-
-    case Expression.Closure(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
-    case Expression.LambdaClosure(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
-    case Expression.ApplyClo(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
-    case Expression.ApplyDef(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
+      case Expression.IfThenElse(e1, e2, e3, tpe, loc) =>
+        Expression.IfThenElse(visit(e1), visit(e2), visit(e3), tpe, loc)
+
+      case Expression.Branch(exp, branches, tpe, loc) =>
+        val e = visit(exp)
+        val bs = branches map {
+          case (sym, br) => sym -> visit(br)
+        }
+        Expression.Branch(e, bs, tpe, loc)
+
+      case Expression.JumpTo(sym, tpe, loc) =>
+        Expression.JumpTo(sym, tpe, loc)
+
+      case Expression.Let(sym, e1, e2, tpe, loc) =>
+        Expression.Let(sym, visit(e1), visit(e2), tpe, loc)
+
+      case Expression.LetRec(sym, e1, e2, tpe, loc) =>
+        Expression.LetRec(sym, visitExp(e1, FreeVar(sym, e1.tpe) :: letrecs), visit(e2), tpe, loc)
+
+      case Expression.Is(sym, tag, e, loc) =>
+        Expression.Is(sym, tag, visit(e), loc)
+
+      case Expression.Tag(enum, tag, e, tpe, loc) =>
+        Expression.Tag(enum, tag, visit(e), tpe, loc)
+
+      case Expression.Untag(sym, tag, e, tpe, loc) =>
+        Expression.Untag(sym, tag, visit(e), tpe, loc)
+
+      case Expression.Index(e, offset, tpe, loc) =>
+        Expression.Index(visit(e), offset, tpe, loc)
+
+      case Expression.Tuple(elms, tpe, loc) =>
+        Expression.Tuple(elms.map(visit), tpe, loc)
+
+      case Expression.RecordEmpty(tpe, loc) =>
+        Expression.RecordEmpty(tpe, loc)
+
+      case Expression.RecordSelect(exp, field, tpe, loc) =>
+        val e = visit(exp)
+        Expression.RecordSelect(e, field, tpe, loc)
+
+      case Expression.RecordExtend(field, value, rest, tpe, loc) =>
+        val v = visit(value)
+        val r = visit(rest)
+        Expression.RecordExtend(field, v, r, tpe, loc)
+
+      case Expression.RecordRestrict(field, rest, tpe, loc) =>
+        val r = visit(rest)
+        Expression.RecordRestrict(field, r, tpe, loc)
+
+      case Expression.ArrayLit(elms, tpe, loc) =>
+        Expression.ArrayLit(elms.map(visit), tpe, loc)
+
+      case Expression.ArrayNew(elm, len, tpe, loc) =>
+        val e1 = visit(elm)
+        val e2 = visit(len)
+        Expression.ArrayNew(e1, e2, tpe, loc)
+
+      case Expression.ArrayLoad(exp1, exp2, tpe, loc) =>
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
+        Expression.ArrayLoad(e1, e2, tpe, loc)
+
+      case Expression.ArrayStore(exp1, exp2, exp3, tpe, loc) =>
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
+        val e3 = visit(exp3)
+        Expression.ArrayStore(e1, e2, e3, tpe, loc)
+
+      case Expression.ArrayLength(exp, tpe, loc) =>
+        val e = visit(exp)
+        Expression.ArrayLength(e, tpe, loc)
+
+      case Expression.ArraySlice(exp1, exp2, exp3, tpe, loc) =>
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
+        val e3 = visit(exp3)
+        Expression.ArraySlice(e1, e2, e3, tpe, loc)
+
+      case Expression.Ref(exp, tpe, loc) =>
+        val e = visit(exp)
+        Expression.Ref(e, tpe, loc)
+
+      case Expression.Deref(exp, tpe, loc) =>
+        val e = visit(exp)
+        Expression.Deref(e, tpe, loc)
+
+      case Expression.Assign(exp1, exp2, tpe, loc) =>
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
+        Expression.Assign(e1, e2, tpe, loc)
+
+      case Expression.Cast(exp, tpe, loc) =>
+        val e = visit(exp)
+        Expression.Cast(e, tpe, loc)
+
+      case Expression.TryCatch(exp, rules, tpe, loc) =>
+        val e = visit(exp)
+        val rs = rules map {
+          case CatchRule(sym, clazz, body) =>
+            val b = visit(body)
+            CatchRule(sym, clazz, b)
+        }
+        Expression.TryCatch(e, rs, tpe, loc)
+
+      case Expression.InvokeConstructor(constructor, args, tpe, loc) =>
+        val as = args map visit
+        Expression.InvokeConstructor(constructor, as, tpe, loc)
+
+      case Expression.InvokeMethod(method, exp, args, tpe, loc) =>
+        val e = visit(exp)
+        val as = args.map(visit)
+        Expression.InvokeMethod(method, e, as, tpe, loc)
+
+      case Expression.InvokeStaticMethod(method, args, tpe, loc) =>
+        val as = args.map(visit)
+        Expression.InvokeStaticMethod(method, as, tpe, loc)
+
+      case Expression.GetField(field, exp, tpe, loc) =>
+        val e = visit(exp)
+        Expression.GetField(field, e, tpe, loc)
+
+      case Expression.PutField(field, exp1, exp2, tpe, loc) =>
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
+        Expression.PutField(field, e1, e2, tpe, loc)
+
+      case Expression.GetStaticField(field, tpe, loc) =>
+        Expression.GetStaticField(field, tpe, loc)
+
+      case Expression.PutStaticField(field, exp, tpe, loc) =>
+        val e = visit(exp)
+        Expression.PutStaticField(field, e, tpe, loc)
+
+      case Expression.NewChannel(exp, tpe, loc) =>
+        val e = visit(exp)
+        Expression.NewChannel(e, tpe, loc)
+
+      case Expression.GetChannel(exp, tpe, loc) =>
+        val e = visit(exp)
+        Expression.GetChannel(e, tpe, loc)
+
+      case Expression.PutChannel(exp1, exp2, tpe, loc) =>
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
+        Expression.PutChannel(e1, e2, tpe, loc)
+
+      case Expression.SelectChannel(rules, default, tpe, loc) =>
+        val rs = rules map {
+          case SelectChannelRule(sym, chan, exp) =>
+            val c = visit(chan)
+            val e = visit(exp)
+            SelectChannelRule(sym, c, e)
+        }
+
+        val d = default.map(visit(_))
+
+        Expression.SelectChannel(rs, d, tpe, loc)
+
+      case Expression.Spawn(exp, tpe, loc) =>
+        val e = visit(exp)
+        Expression.Spawn(e, tpe, loc)
+
+      case Expression.Lazy(exp, tpe, loc) =>
+        val e = visit(exp)
+        Expression.Lazy(e, tpe, loc)
+
+      case Expression.Force(exp, tpe, loc) =>
+        val e = visit(exp)
+        Expression.Force(e, tpe, loc)
+
+      case Expression.HoleError(sym, tpe, loc) => exp0
+      case Expression.MatchError(tpe, loc) => exp0
+
+      case Expression.Closure(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
+      case Expression.LambdaClosure(_, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
+      case Expression.ApplyClo(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
+      case Expression.ApplyDef(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
+    }
   }
 
   /**
@@ -431,8 +437,8 @@ object ClosureConv extends Phase[Root, Root] {
     case Expression.HoleError(sym, tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.MatchError(tpe, loc) => mutable.LinkedHashSet.empty
 
-    case Expression.LambdaClosure(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
-    case Expression.Closure(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
+    case Expression.LambdaClosure(_, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
+    case Expression.Closure(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
     case Expression.ApplyClo(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
     case Expression.ApplyDef(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
   }
@@ -481,11 +487,11 @@ object ClosureConv extends Phase[Root, Root] {
         val e = visitExp(exp)
         Expression.Lambda(fs, e, tpe, loc)
 
-      case Expression.Closure(ref, freeVars, tpe, loc) => e
+      case Expression.Closure(_, _, _, _, _) => e
 
-      case Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) =>
+      case Expression.LambdaClosure(fparams, letrecs, freeVars, exp, tpe, loc) =>
         val e = visitExp(exp).asInstanceOf[Expression.Lambda]
-        Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc)
+        Expression.LambdaClosure(fparams, letrecs, freeVars, exp, tpe, loc)
 
       case Expression.ApplyClo(exp, args, tpe, loc) =>
         val e = visitExp(exp)

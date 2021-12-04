@@ -109,10 +109,10 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
         val t = visitType(tpe)
         FinalAst.Expression.Var(sym, t, loc)
 
-      case LiftedAst.Expression.Closure(sym, freeVars, tpe, loc) =>
+      case LiftedAst.Expression.Closure(sym, letrecs, freeVars, tpe, loc) =>
         val fvs = freeVars.map(visitFreeVar)
         val t = visitType(tpe)
-        FinalAst.Expression.Closure(sym, fvs, getFunctionTypeTemporaryToBeRemoved(fvs, t), t, loc)
+        FinalAst.Expression.Closure(sym, letrecs, fvs, getFunctionTypeTemporaryToBeRemoved(fvs, t), t, loc)
 
       case LiftedAst.Expression.ApplyClo(exp, args, tpe, loc) =>
         val as = args map visit

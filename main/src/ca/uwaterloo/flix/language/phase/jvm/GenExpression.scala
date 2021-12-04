@@ -105,7 +105,8 @@ object GenExpression {
     case Expression.Var(sym, tpe, _) =>
       readVar(sym, tpe, visitor)
 
-    case Expression.Closure(sym, freeVars, fnType, _, loc) =>
+    case Expression.Closure(sym, letrecs, freeVars, fnType, _, loc) =>
+      val letrecsThing = ???
       // ClosureInfo
       val closure = ClosureInfo(sym, freeVars, fnType)
       // JvmType of the closure
@@ -331,7 +332,7 @@ object GenExpression {
       // fix the local and closure reference
       visitor.visitInsn(DUP)
       visitor.visitInsn(DUP)
-      visitor.visitFieldInsn(PUTFIELD, cloType.name.toInternalName, s"clo${???}", JvmOps.getErasedJvmType(exp1.tpe).toDescriptor)
+      visitor.visitFieldInsn(PUTFIELD, cloType.name.toInternalName, s"clo0", JvmOps.getErasedJvmType(exp1.tpe).toDescriptor)
       // Store the closure locally (maybe not needed?)
       visitor.visitVarInsn(iStore, sym.getStackOffset + 1)
       compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
