@@ -29,6 +29,7 @@ pub lawless class Monoid[a] with SemiGroup[a] {
     ///
     pub def combine(x: a, y: a): a =
         SemiGroup.combine(x, y)
+
 }
 
 namespace Monoid {
