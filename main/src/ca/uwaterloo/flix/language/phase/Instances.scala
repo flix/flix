@@ -197,7 +197,7 @@ object Instances {
       * and that the constraints on `inst` entail the constraints on the super instance.
       */
     def checkSuperInstances(inst: TypedAst.Instance): Validation[Unit, InstanceError] = inst match {
-      case TypedAst.Instance(_, _, sym, tpe, tconstrs, _, _, loc) =>
+      case TypedAst.Instance(_, _, sym, tpe, tconstrs, _, _, _) =>
         val superClasses = root.classEnv(sym.clazz).superClasses
         Validation.traverseX(superClasses) {
           superClass =>
@@ -209,9 +209,10 @@ object Instances {
                 // MATT do we need to explore the whole tree?
                 // MATT I think no because of simple types?
                 // MATT helper function?
+                // MATT need to do some rigidity stuff here...
                 Validation.traverseX(superInst.tconstrs) {
                   tconstr => ClassEnvironment.entail(tconstrs, tconstr, root.classEnv) match {
-                    case Validation.Failure(errors) => Validation.Failure(errors.map(_ => InstanceError.MissingConstraint())) // MATT use full error stuff
+                    case Validation.Failure(errors) => Validation.Failure(errors.map(_ => InstanceError.MissingConstraint(sym.loc))) // MATT use full error stuff
                     case Validation.Success(_) => ().toSuccess
 
                   }

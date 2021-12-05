@@ -341,22 +341,21 @@ object InstanceError {
   }
 
   // MATT docs
-  case class MissingConstraint() extends InstanceError {
-    override def summary: String = s"Missing type constraint: $???" // MATT type constraint to string?
+  case class MissingConstraint(loc: SourceLocation) extends InstanceError {
+    override def summary: String = s"Missing type constraint: " // MATT type constraint to string?
 
-    override def message: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Missing type constraint '" << Red(???) << "'." << NewLine
-      // MATT something something this comes from the instance constraint X which comes from the class constriant Y
-      vt << NewLine
-      vt << Code(loc, s"missing type constraint")
-      vt << NewLine
+    override def message(formatter: Formatter): String  = {
+      import formatter._
+      s"""${line(kind, source.format)}
+          |>> Missing type constraint
+          |
+      """.stripMargin
     }
 
-    override def explain: VirtualTerminal = {
-      new VirtualTerminal() << Underline("Tip:") << s" Add the missing constraint to the instance" << NewLine
-    }
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Either add the `override` modifier or remove the definition."
+    }) // MATT hack
   }
 
 }
