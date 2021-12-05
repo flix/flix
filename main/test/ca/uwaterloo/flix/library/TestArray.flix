@@ -1769,46 +1769,44 @@ def testEq08(): Bool & Impure = [1,2,3,4] == [1,2,3,4]
 // compare                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 
-use Array.compare;
+@test
+def testCompare01(): Bool & Impure = (([] : Array[Int]) `Array.compare` ([] : Array[Int])) == EqualTo
 
 @test
-def testCompare01(): Bool & Impure = (([] : Array[Int]) `compare` ([] : Array[Int])) == EqualTo
+def testCompare02(): Bool & Impure = ([1] `Array.compare` []) == GreaterThan
 
 @test
-def testCompare02(): Bool & Impure = ([1] `compare` []) == GreaterThan
+def testCompare03(): Bool & Impure = ([] `Array.compare` [1]) == LessThan
 
 @test
-def testCompare03(): Bool & Impure = ([] `compare` [1]) == LessThan
+def testCompare04(): Bool & Impure = ([1] `Array.compare` [1]) == EqualTo
 
 @test
-def testCompare04(): Bool & Impure = ([1] `compare` [1]) == EqualTo
+def testCompare05(): Bool & Impure = ([1] `Array.compare` [2]) == LessThan
 
 @test
-def testCompare05(): Bool & Impure = ([1] `compare` [2]) == LessThan
+def testCompare06(): Bool & Impure = ([2] `Array.compare` [1]) == GreaterThan
 
 @test
-def testCompare06(): Bool & Impure = ([2] `compare` [1]) == GreaterThan
+def testCompare07(): Bool & Impure = ([1] `Array.compare` [1,2]) == LessThan
 
 @test
-def testCompare07(): Bool & Impure = ([1] `compare` [1,2]) == LessThan
+def testCompare08(): Bool & Impure = ([1,2] `Array.compare` [1]) == GreaterThan
 
 @test
-def testCompare08(): Bool & Impure = ([1,2] `compare` [1]) == GreaterThan
+def testCompare09(): Bool & Impure = ([1] `Array.compare` [0,0]) == GreaterThan
 
 @test
-def testCompare09(): Bool & Impure = ([1] `compare` [0,0]) == GreaterThan
+def testCompare10(): Bool & Impure = ([0,0] `Array.compare` [1]) == LessThan
 
 @test
-def testCompare10(): Bool & Impure = ([0,0] `compare` [1]) == LessThan
+def testCompare11(): Bool & Impure = ([1,2] `Array.compare` [1,1]) == GreaterThan
 
 @test
-def testCompare11(): Bool & Impure = ([1,2] `compare` [1,1]) == GreaterThan
+def testCompare12(): Bool & Impure = ([1,2] `Array.compare` [1,3]) == LessThan
 
 @test
-def testCompare12(): Bool & Impure = ([1,2] `compare` [1,3]) == LessThan
-
-@test
-def testCompare13(): Bool & Impure = ([1,2,3,4] `compare` [1,2,3,4]) == EqualTo
+def testCompare13(): Bool & Impure = ([1,2,3,4] `Array.compare` [1,2,3,4]) == EqualTo
 
 /////////////////////////////////////////////////////////////////////////////
 // fold                                                                    //
