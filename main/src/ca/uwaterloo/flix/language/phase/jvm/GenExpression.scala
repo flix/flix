@@ -313,6 +313,14 @@ object GenExpression {
       visitor.visitVarInsn(iStore, sym.getStackOffset + 1)
       compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
 
+    case Expression.LetRec(varSym, defSym, exp1, exp2, _, loc) =>
+      // TODO: Note that exp1 now refers to sym. This means `sym` has to be defined before compiling exp1.
+      // TODO: Note you are allowed to assume that exp1 is a closure.
+      // TODO: The trick is probably to load null into sym. then compile exp1. then overwrite the closure field of sym with itself.
+      println(varSym)
+      println(defSym)
+      ???
+
     case Expression.Is(_, tag, exp, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)

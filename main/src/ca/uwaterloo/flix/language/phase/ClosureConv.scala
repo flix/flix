@@ -161,6 +161,9 @@ object ClosureConv extends Phase[Root, Root] {
     case Expression.Let(sym, e1, e2, tpe, loc) =>
       Expression.Let(sym, visitExp(e1), visitExp(e2), tpe, loc)
 
+    case Expression.LetRec(sym, e1, e2, tpe, loc) =>
+      Expression.LetRec(sym, visitExp(e1), visitExp(e2), tpe, loc)
+
     case Expression.Is(sym, tag, e, loc) =>
       Expression.Is(sym, tag, visitExp(e), loc)
 
@@ -358,9 +361,15 @@ object ClosureConv extends Phase[Root, Root] {
         case (sym, br) => freeVars(br)
       })
     case Expression.JumpTo(sym, tpe, loc) => mutable.LinkedHashSet.empty
+
     case Expression.Let(sym, exp1, exp2, tpe, loc) =>
       val bound = sym
       freeVars(exp1) ++ freeVars(exp2).filterNot { v => bound == v._1 }
+
+    case Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
+      val bound = sym
+      (freeVars(exp1) ++ freeVars(exp2)).filterNot { v => bound == v._1 }
+
     case Expression.Is(sym, tag, exp, loc) => freeVars(exp)
     case Expression.Untag(sym, tag, exp, tpe, loc) => freeVars(exp)
     case Expression.Tag(enum, tag, exp, tpe, loc) => freeVars(exp)
@@ -518,12 +527,16 @@ object ClosureConv extends Phase[Root, Root] {
         Expression.JumpTo(sym, tpe, loc)
 
       case Expression.Let(sym, exp1, exp2, tpe, loc) =>
+        val newSym = subst.getOrElse(sym, sym)
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
-        subst.get(sym) match {
-          case None => Expression.Let(sym, e1, e2, tpe, loc)
-          case Some(newSym) => Expression.Let(newSym, e1, e2, tpe, loc)
-        }
+        Expression.Let(newSym, e1, e2, tpe, loc)
+
+      case Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
+        val newSym = subst.getOrElse(sym, sym)
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        Expression.LetRec(newSym, e1, e2, tpe, loc)
 
       case Expression.Is(sym, tag, exp, loc) =>
         val e = visitExp(exp)

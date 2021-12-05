@@ -182,6 +182,15 @@ object LambdaLift extends Phase[SimplifiedAst.Root, LiftedAst.Root] {
         val e2 = visitExp(exp2)
         LiftedAst.Expression.Let(sym, e1, e2, tpe, loc)
 
+      case SimplifiedAst.Expression.LetRec(varSym, exp1, exp2, tpe, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        e1 match {
+          case LiftedAst.Expression.Closure(defSym, _, _, _) =>
+            LiftedAst.Expression.LetRec(varSym, defSym, e1, e2, tpe, loc)
+          case _ => throw InternalCompilerException(s"Unexpected expression: '$e1'.")
+        }
+
       case SimplifiedAst.Expression.Is(sym, tag, exp, loc) =>
         val e = visitExp(exp)
         LiftedAst.Expression.Is(sym, tag, e, loc)

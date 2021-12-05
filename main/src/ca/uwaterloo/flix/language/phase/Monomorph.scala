@@ -247,6 +247,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       */
     def visitExp(e0: Expression, env0: Map[Symbol.VarSym, Symbol.VarSym]): Expression = e0 match {
       case Expression.Wild(tpe, loc) => Expression.Wild(subst0(tpe), loc)
+
       case Expression.Var(sym, tpe, loc) => Expression.Var(env0(sym), subst0(tpe), loc)
 
       case Expression.Def(sym, tpe, loc) =>
@@ -338,7 +339,13 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         // Generate a fresh symbol for the let-bound variable.
         val freshSym = Symbol.freshVarSym(sym)
         val env1 = env0 + (sym -> freshSym)
-        Expression.Let(freshSym, mod, visitExp(exp1, env1), visitExp(exp2, env1), subst0(tpe), eff, loc)
+        Expression.Let(freshSym, mod, visitExp(exp1, env0), visitExp(exp2, env1), subst0(tpe), eff, loc)
+
+      case Expression.LetRec(sym, mod, exp1, exp2, tpe, eff, loc) =>
+        // Generate a fresh symbol for the let-bound variable.
+        val freshSym = Symbol.freshVarSym(sym)
+        val env1 = env0 + (sym -> freshSym)
+        Expression.LetRec(freshSym, mod, visitExp(exp1, env1), visitExp(exp2, env1), subst0(tpe), eff, loc)
 
       case Expression.LetRegion(sym, exp, tpe, eff, loc) =>
         val e = visitExp(exp, env0)
