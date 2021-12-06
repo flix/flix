@@ -181,9 +181,8 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       ("fparams" -> fparams) ~
       ("result" -> FormatType.formatType(result)) ~
       ("effect" -> FormatType.formatType(effect)) ~
-      ("time" -> getTime(defn0)) ~
-      ("space" -> getSpace(defn0)) ~
-      ("comment" -> defn0.spec.doc.text.trim)
+      ("comment" -> defn0.spec.doc.text.trim) ~
+      ("loc" -> visitSourceLocation(defn0.spec.loc))
   }
 
   /**
