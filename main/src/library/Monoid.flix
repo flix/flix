@@ -32,7 +32,7 @@ pub lawless class Monoid[a] with SemiGroup[a] {
 
 }
 
-namespace Monoid {
+/*namespace Monoid {
 
     ///
     /// Returns the result of applying `combine` to all the elements of list `xs`,
@@ -41,7 +41,7 @@ namespace Monoid {
     pub def combineAll(xs: List[a]): a with Monoid[a] =
         List.foldLeft((ac, x) -> combine(ac, x), Monoid.empty(), xs)
 
-}
+}*/
 
 instance Monoid[Unit] {
     pub def empty(): Unit = ()
