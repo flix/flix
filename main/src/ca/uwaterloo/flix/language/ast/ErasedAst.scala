@@ -117,7 +117,7 @@ object ErasedAst {
 
     case class Let(sym: Symbol.VarSym, exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
-    case class LetRec(varSym: Symbol.VarSym, defSym: Symbol.DefnSym, exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    case class LetRec(varSym: Symbol.VarSym, index: Int, defSym: Symbol.DefnSym, exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
     case class Is(sym: Symbol.EnumSym, tag: Name.Tag, exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
       final val tpe: MonoType = MonoType.Bool
