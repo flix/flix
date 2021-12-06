@@ -17,7 +17,7 @@
 namespace TestMonoid {
 
     use Monoid.{empty, combine};
-    use Monoid.{combineAll};
+    /*use Monoid.{combineAll};
 
     /////////////////////////////////////////////////////////////////////////////
     // combineAll                                                              //
@@ -40,7 +40,7 @@ namespace TestMonoid {
 
     @test
     def combineAll06(): Bool = combineAll("a" :: "b" :: "cdefg" :: Nil) == "abcdefg"
-
+*/
     /////////////////////////////////////////////////////////////////////////////
     // Unit                                                                    //
     /////////////////////////////////////////////////////////////////////////////
