@@ -39,7 +39,7 @@ instance SemiGroup[Chain[a]] {
 
 instance Monoid[Chain[a]] {
     pub def empty(): Chain[a] = Chain.empty()
-    pub def combine(c1: Chain[a], c2: Chain[a]): Chain[a] = Chain.append(c1, c2)
+    //pub def combine(c1: Chain[a], c2: Chain[a]): Chain[a] = Chain.append(c1, c2)
 }
 
 instance Functor[Chain] {

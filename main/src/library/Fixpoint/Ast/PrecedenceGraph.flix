@@ -24,6 +24,12 @@ namespace Fixpoint/Ast {
     instance Monoid[PrecedenceGraph] {
         pub def empty(): PrecedenceGraph = PrecedenceGraph(Set.empty())
 
+        /*pub def combine(x: PrecedenceGraph, y: PrecedenceGraph): PrecedenceGraph = match (x, y) {
+            case (PrecedenceGraph(xs), PrecedenceGraph(ys)) => PrecedenceGraph(Set.union(xs, ys))
+        }*/
+    }
+
+    instance SemiGroup[PrecedenceGraph] {
         pub def combine(x: PrecedenceGraph, y: PrecedenceGraph): PrecedenceGraph = match (x, y) {
             case (PrecedenceGraph(xs), PrecedenceGraph(ys)) => PrecedenceGraph(Set.union(xs, ys))
         }
