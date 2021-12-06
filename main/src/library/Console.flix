@@ -15,42 +15,70 @@
  */
 
 namespace Console {
+    use Option.flatMap;
+    use Object.isNull;
 
     ///
-    /// Alias for `Console.StdIn.readLine`.
+    /// Wrapper for `java.lang.System.Console().readLine()`.
+    /// Returns `None` if a there is no line to read or no console is available.
     ///
-    pub def readLine(): Option[String] & Impure = Console/StdIn.readLine(())
+    pub def readLine(): Option[String] & Impure =
+        import java.io.Console.readLine();
+        let* c = getConsole();
+        let line = readLine(c);
+        if (isNull(line)) None else Some(line)
 
     ///
-    /// Alias for `Console.StdOut.print`.
+    /// Returns true if a console is available.
     ///
-    pub def print(s: String): Unit & Impure = Console/StdOut.print(s)
+    pub def hasConsole(): Bool & Impure =
+        not Option.isEmpty(getConsole())
 
     ///
-    /// Alias for `Console.StdOut.printLine`.
+    /// Wrapper for `java.lang.System.console().writer().print(s)`.
+    /// Returns `Err()` if no console is available.
     ///
-    pub def printLine(s: String): Unit & Impure = Console/StdOut.printLine(s)
+    pub def print(s: String): Unit & Impure =
+        import java.io.Console.writer();
+        import java.io.PrintWriter.print(String);
+        match getConsole() {
+            case None => ()
+            case Some(c) =>
+                print(writer(c), s)
+        }
 
     ///
-    /// Operations on the Standard Input Stream.
+    /// Wrapper for `java.lang.System.console().writer().println(s)`.
+    /// Returns `Err()` if no console is available.
     ///
-    namespace StdIn {
+    pub def printLine(s: String): Unit & Impure =
+        import java.io.Console.writer();
+        import java.io.PrintWriter.println(String);
+        match getConsole() {
+            case None => ()
+            case Some(c) =>
+                println(writer(c), s)
+        }
 
-        ///
-        /// Returns the next line read from the standard input stream.
-        ///
-        pub def readLine(): Option[String] & Impure =
-            import new java.util.Scanner(##java.io.InputStream) as newScanner;
-            import java.util.Scanner.hasNextLine() as hasNextLine;
-            import java.util.Scanner.nextLine() as nextLine;
-            import get java.lang.System:in as in;
-            let i = in() as ##java.io.InputStream; // safe up cast
-            let s = newScanner(i);
-            if (hasNextLine(s))
-                Some(nextLine(s))
-            else
-                None
-    }
+    ///
+    /// Wrapper for `java.lang.System.console().flush()`
+    ///
+    pub def flush(): Unit & Impure =
+        import java.io.Console.flush();
+        match getConsole() {
+            case None => ()
+            case Some(c) =>
+                flush(c)
+        }
+
+    ///
+    ///  Wrapper for `java.lang.System.console()` with `None` instead of null.
+    ///
+    def getConsole(): Option[##java.io.Console] & Impure =
+        import static java.lang.System.console();
+        let nullableConsole = console();
+        if (isNull(nullableConsole)) None
+        else Some(nullableConsole)
 
     ///
     /// Operations on the Standard Output Stream.
@@ -143,7 +171,7 @@ namespace Console {
         ///
         /// The terminal does not support any colors.
         ///
-        case None,
+        case NoColor,
 
         ///
         /// The terminal supports ANSI colors.
@@ -693,7 +721,7 @@ namespace Console {
     ///
     pub def rgb(c: (Int32, Int32 , Int32), s: String): String =
         match colorSupport() {
-            case ColorSupport.None      => s
+            case ColorSupport.NoColor   => s
             case ColorSupport.Ansi      =>
                 use Console/Color/Ansi.downsample;
                 let fg = downsample(c);
@@ -733,7 +761,7 @@ namespace Console {
         else if (isAnsiTerminal())
             ColorSupport.Ansi
         else
-            ColorSupport.None
+            ColorSupport.NoColor
 
     ///
     /// Returns `true` if the terminal supports ANSI colors.
