@@ -186,22 +186,6 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   /**
-    * Optionally returns the time complexity of the given definition `defn0`.
-    */
-  private def getTime(defn0: Def): Option[String] = defn0.spec.ann.collectFirst {
-    case Annotation(Ast.Annotation.Time(_), exp :: _, _) =>
-      PrettyExpression.pretty(exp)
-  }
-
-  /**
-    * Optionally returns the space complexity of the given definition `defn0`.
-    */
-  private def getSpace(defn0: Def): Option[String] = defn0.spec.ann.collectFirst {
-    case Annotation(Ast.Annotation.Space(_), exp :: _, _) =>
-      PrettyExpression.pretty(exp)
-  }
-
-  /**
     * Returns the given instance `inst` as a JSON value.
     */
   private def visitInstance(inst: Instance): JObject = inst match {
