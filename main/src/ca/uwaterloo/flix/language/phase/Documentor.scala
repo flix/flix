@@ -54,12 +54,6 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     // Check whether to generate documentation.
     if (flix.options.documentor) {
 
-      // Compute all namespaces, remove duplicates, and sort them.
-      // TODO: Compute at the end instead.
-      val namespaces = root.defs.foldLeft(Set.empty[String]) {
-        case (acc, (_, decl)) => acc + getNameSpace(decl)
-      }.toList.sorted
-
       //
       // Classes
       //
@@ -98,6 +92,11 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
           val sorted = filtered.sortBy(_.sym.name)
           ns -> JArray(sorted.map(visitDef))
       }
+
+      //
+      // Compute all namespaces.
+      //
+      val namespaces = (classesByNS.keySet ++ enumsByNS.keySet ++ typeAliasesByNS.keySet ++ defsByNS.keySet).toList.sorted
 
       // Construct the JSON object.
       val json = JObject(
