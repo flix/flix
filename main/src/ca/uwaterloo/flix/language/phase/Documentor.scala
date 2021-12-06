@@ -57,32 +57,22 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       // Compute all namespaces, remove duplicates, and sort them.
       // TODO: Compute at the end instead.
       val namespaces = root.defs.foldLeft(Set.empty[String]) {
-        case (acc, (sym, _)) => acc + getNameSpace(sym)
+        case (acc, (_, decl)) => acc + getNameSpace(decl)
       }.toList.sorted
 
       //
       // Classes
       //
-      val classesByNS = root.classes.values.groupBy(decl => getNameSpace(decl.sym)).map {
+      val classesByNS = root.classes.values.groupBy(decl => getNameSpace(decl)).map {
         case (ns, decls) =>
           val sorted = decls.toList.sortBy(_.sym.name)
           ns -> JArray(sorted.map(visitClass))
       }
 
       //
-      // Defs
-      //
-      val defsByNS = root.defs.values.groupBy(decl => getNameSpace(decl.sym)).map {
-        case (ns, decls) =>
-          val filtered = decls.filter(_.spec.mod.isPublic).toList
-          val sorted = filtered.sortBy(_.sym.name)
-          ns -> JArray(sorted.map(visitDef))
-      }
-
-      //
       // Enums
       //
-      val enumsByNS = root.enums.values.groupBy(decl => getNameSpace(decl.sym)).map {
+      val enumsByNS = root.enums.values.groupBy(decl => getNameSpace(decl)).map {
         case (ns, decls) =>
           val filtered = decls.toList.filter(_.mod.isPublic)
           val sorted = filtered.sortBy(_.sym.name)
@@ -97,6 +87,16 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
           val filtered = decls.toList
           val sorted = filtered.sortBy(_.sym.name)
           ns -> JArray(sorted.map(visitTypeAlias))
+      }
+
+      //
+      // Defs
+      //
+      val defsByNS = root.defs.values.groupBy(decl => getNameSpace(decl)).map {
+        case (ns, decls) =>
+          val filtered = decls.filter(_.spec.mod.isPublic).toList
+          val sorted = filtered.sortBy(_.sym.name)
+          ns -> JArray(sorted.map(visitDef))
       }
 
       // Construct the JSON object.
@@ -122,32 +122,39 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     root.toSuccess
   }
 
-  // TODO: DOC
-  private def getNameSpace(sym: Symbol.EnumSym): String =
-    if (sym.namespace == Nil)
-      "Prelude"
+  /**
+    * Returns the namespace of the given class `decl`.
+    */
+  private def getNameSpace(decl: TypedAst.Class): String =
+    if (decl.sym.namespace == Nil)
+      "@Prelude"
     else
-      sym.namespace.mkString(".")
+      decl.sym.namespace.mkString(".")
 
-  // TODO: DOC
-  private def getNameSpace(sym: Symbol.ClassSym): String =
-    if (sym.namespace == Nil)
-      "Prelude"
-    else
-      sym.namespace.mkString(".")
-
-  // TODO: DOC
-  private def getNameSpace(sym: Symbol.DefnSym): String =
-    if (sym.namespace == Nil)
-      "Prelude"
-    else
-      sym.namespace.mkString(".")
-
-
-  // TODO: DOC
-  private def getNameSpace(decl: TypedAst.TypeAlias): String =
+  /**
+    * Returns the namespace of the given enum `decl`.
+    */
+  private def getNameSpace(decl: TypedAst.Enum): String =
     if (decl.sym.namespace == Nil)
       "Prelude"
+    else
+      decl.sym.namespace.mkString(".")
+
+  /**
+    * Returns the namespace of the given definition `decl`.
+    */
+  private def getNameSpace(decl: TypedAst.Def): String =
+    if (decl.sym.namespace == Nil)
+      "@Prelude"
+    else
+      decl.sym.namespace.mkString(".")
+
+  /**
+    * Returns the namespace of the given type alias `decl`.
+    */
+  private def getNameSpace(decl: TypedAst.TypeAlias): String =
+    if (decl.sym.namespace == Nil)
+      "@Prelude"
     else
       decl.sym.namespace.mkString(".")
 
@@ -333,39 +340,26 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   /**
-    *
+    * Returns the given formal parameter `fparam` as a JSON value.
     */
-  private def visitFormalParam(f: FormalParam): JObject = f match {
-    case FormalParam(sym, mod, tpe, loc) =>
-      ("name" -> sym.text) ~
-        ("tpe" -> visitType(tpe))
+  private def visitFormalParam(fparam: FormalParam): JObject = fparam match {
+    case FormalParam(sym, _, tpe, _) =>
+      ("name" -> sym.text) ~ ("tpe" -> visitType(tpe))
   }
 
   /**
     * Returns the given Sig `sig` as a JSON value.
     */
   private def visitSig(sig: Sig): JObject = sig match {
-    case Sig(sym, spec, impl) =>
-      // Compute the type parameters.
-      val computedtparams = spec.tparams.map {
-        t => visitTypeParam(t)
-      }
-
-      // Compute the formal parameters.
-      val computedfparams = spec.fparams.map {
-        f => visitFormalParam(f)
-      }
-
+    case Sig(sym, spec, _) =>
       ("sym" -> visitSigSym(sym)) ~
         ("doc" -> visitDoc(spec.doc)) ~
         ("mod" -> visitModifier(spec.mod)) ~
-        ("tparams" -> computedtparams) ~
-        ("fparams" -> computedfparams) ~
+        ("tparams" -> spec.tparams.map(visitTypeParam)) ~
+        ("fparams" -> spec.fparams.map(visitFormalParam)) ~
         ("retTpe" -> visitType(spec.retTpe)) ~
         ("eff" -> visitType(spec.eff)) ~
         ("loc" -> visitSourceLocation(spec.loc))
-
-    // TODO: missing implemented as last type
   }
 
   /**
@@ -411,11 +405,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
         ("superClasses" -> computedTypeConstraints) ~
         ("signatures" -> computedSig) ~
         ("loc" -> visitSourceLocation(loc))
-
-    // TODO: missing instances (second last)
   }
-
-  // TODO: visitAPI
 
   /**
     * Writes the given string `s` to the given path `p`.
