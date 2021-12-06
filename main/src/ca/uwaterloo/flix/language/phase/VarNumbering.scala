@@ -135,7 +135,7 @@ object VarNumbering extends Phase[Root, Root] {
         // Visit the let-body expression.
         visitExp(exp2, i2)
 
-      case Expression.LetRec(varSym, defSym, exp1, exp2, tpe, loc) =>
+      case Expression.LetRec(varSym, index, defSym, exp1, exp2, tpe, loc) =>
         // Set the stack offset for the symbol.
         varSym.setStackOffset(i0)
 

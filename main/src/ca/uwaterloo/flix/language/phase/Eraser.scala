@@ -155,10 +155,10 @@ object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
       val e2 = visitExp(exp2)
       ErasedAst.Expression.Let(sym, e1, e2, tpe, loc)
 
-    case FinalAst.Expression.LetRec(varSym, defSym, exp1, exp2, tpe, loc) =>
+    case FinalAst.Expression.LetRec(varSym, index, defSym, exp1, exp2, tpe, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      ErasedAst.Expression.LetRec(varSym, defSym, e1, e2, tpe, loc)
+      ErasedAst.Expression.LetRec(varSym, index, defSym, e1, e2, tpe, loc)
 
     case FinalAst.Expression.Is(sym, tag, exp, loc) =>
       ErasedAst.Expression.Is(sym, tag, visitExp(exp), loc)

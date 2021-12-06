@@ -201,7 +201,7 @@ object PrettyPrinter {
             .append(visitExp(exp2))
             .toString()
 
-        case Expression.LetRec(varSym, _, exp1, exp2, tpe, loc) =>
+        case Expression.LetRec(varSym, _, _, exp1, exp2, tpe, loc) =>
           val sb = new StringBuilder()
           sb.append(formatter.bold("let rec"))
             .append(fmtSym(varSym, formatter))
