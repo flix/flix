@@ -149,10 +149,10 @@ object Optimizer extends Phase[Root, Root] {
             Expression.Let(sym, e1, e2, tpe, loc)
         }
 
-      case Expression.LetRec(varSym, defSym, exp1, exp2, tpe, loc) =>
+      case Expression.LetRec(varSym, index, defSym, exp1, exp2, tpe, loc) =>
         val e1 = visitExp(exp1, env0)
         val e2 = visitExp(exp2, env0)
-        Expression.LetRec(varSym, defSym, e1, e2, tpe, loc)
+        Expression.LetRec(varSym, index, defSym, e1, e2, tpe, loc)
 
       case Expression.Is(sym, tag, exp, loc) =>
         val e = visitExp(exp, env0)

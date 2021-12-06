@@ -131,8 +131,8 @@ object VarNumbering extends Phase[Root, Root] {
         val i2 = visitExp(exp1, i1)
         visitExp(exp2, i2)
 
-      case Expression.LetRec(sym, _, exp1, exp2, _, _) =>
-        val i1 = visitSymbolAssignment(sym, exp1.tpe, i0)
+      case Expression.LetRec(varSym, _, _, exp1, exp2, _, _) =>
+        val i1 = visitSymbolAssignment(varSym, exp1.tpe, i0)
         val i2 = visitExp(exp1, i1)
         visitExp(exp2, i2)
 
