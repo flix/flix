@@ -688,7 +688,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
                   // If the tag is `Some` we construct the lambda: x -> Some(x).
 
                   // Construct a fresh symbol for the formal parameter.
-                  val freshVar = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
+                  val freshVar = Symbol.freshVarSym("x" + Flix.Delimiter, BoundBy.FormalParam, loc)
 
                   // Construct the formal parameter for the fresh symbol.
                   val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, Type.freshUnkindedVar(loc), loc)
