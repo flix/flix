@@ -171,7 +171,7 @@ object TreeShaker extends Phase[Root, Root] {
     case Expression.Let(_, exp1, exp2, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.LetRec(_, _, exp1, exp2, _, _) =>
+    case Expression.LetRec(_, _, _, exp1, exp2, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.Is(_, _, exp, _) =>
