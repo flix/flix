@@ -284,6 +284,11 @@ object SemanticTokensProvider {
       val t = SemanticToken(o, Nil, sym.loc)
       Iterator(t) ++ visitExp(exp1) ++ visitExp(exp2)
 
+    case Expression.LetRec(sym, _, exp1, exp2, _, _, _) =>
+      val o = getSemanticTokenType(sym, exp1.tpe)
+      val t = SemanticToken(o, Nil, sym.loc)
+      Iterator(t) ++ visitExp(exp1) ++ visitExp(exp2)
+
     case Expression.LetRegion(sym, exp, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.Variable, Nil, sym.loc)
       Iterator(t) ++ visitExp(exp)

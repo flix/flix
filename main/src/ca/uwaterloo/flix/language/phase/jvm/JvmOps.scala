@@ -191,13 +191,13 @@ object JvmOps {
     * List.length       =>    List/Clo$length
     * List.map          =>    List/Clo$map
     */
-  def getClosureClassType(closure: ClosureInfo)(implicit root: Root, flix: Flix): JvmType.Reference = closure.tpe match {
+  def getClosureClassType(sym: Symbol.DefnSym, tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
     case MonoType.Arrow(_, _) =>
       // The JVM name is of the form Clo$sym.name
-      val name = "Clo" + Flix.Delimiter + mangle(closure.sym.name)
+      val name = s"Clo${Flix.Delimiter}${mangle(sym.name)}"
 
       // The JVM package is the namespace of the symbol.
-      val pkg = closure.sym.namespace
+      val pkg = sym.namespace
 
       // The result type.
       JvmType.Reference(JvmName(pkg, name))
@@ -565,6 +565,8 @@ object JvmOps {
       case Expression.JumpTo(_, _, _) => Set.empty
 
       case Expression.Let(_, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.LetRec(_, _, _, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
       case Expression.Is(_, _, exp, _) => visitExp(exp)
 
@@ -945,6 +947,8 @@ object JvmOps {
       case Expression.JumpTo(_, _, _) => Set.empty
 
       case Expression.Let(_, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.LetRec(_, _, _, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
       case Expression.Is(_, _, exp, _) => visitExp(exp)
 
