@@ -135,7 +135,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def getNameSpace(decl: TypedAst.Enum): String =
     if (decl.sym.namespace == Nil)
-      "Prelude"
+      "@Prelude"
     else
       decl.sym.namespace.mkString(".")
 
