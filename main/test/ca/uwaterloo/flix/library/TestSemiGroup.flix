@@ -310,24 +310,6 @@ namespace TestSemiGroup {
     @test
     def combineN08(): Bool = combineN(Map#{1 -> "a"}, 4) == Map#{1 -> "aaaa"}
 
-    @test
-    def combineN09(): Bool = combineN(Nil: List[Unit]) == ()
-
-    @test
-    def combineN10(): Bool = combineN(() :: Nil) == ()
-
-    @test
-    def combineN11(): Bool = combineN(Nil: List[String]) == ""
-
-    @test
-    def combineN12(): Bool = combineN("a" :: Nil) == "a"
-
-    @test
-    def combineN13(): Bool = combineN("a" :: "b" :: Nil) == "ab"
-
-    @test
-    def combineN14(): Bool = combineN("a" :: "b" :: "cdefg" :: Nil) == "abcdefg"
-
     /////////////////////////////////////////////////////////////////////////////
     // associative law                                                         //
     /////////////////////////////////////////////////////////////////////////////
