@@ -283,12 +283,8 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns the given source location `loc` as a JSON value.
     */
   private def visitSourceLocation(loc: SourceLocation): JObject = loc match {
-    case SourceLocation(_, source, _, beginLine, beginCol, endLine, endCol) =>
-      ("name" -> source.name) ~
-        ("beginLine" -> beginLine) ~
-        ("beginCol" -> beginCol) ~
-        ("endLine" -> endLine) ~
-        ("endCol" -> endCol)
+    case SourceLocation(_, source, _, beginLine, _, endLine, _) =>
+      ("name" -> source.name) ~ ("beginLine" -> beginLine) ~ ("endLine" -> endLine)
   }
 
   /**
