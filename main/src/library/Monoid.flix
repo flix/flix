@@ -37,6 +37,7 @@ namespace Monoid {
     ///
     /// Returns the result of applying `combine` to all the elements of list `xs`,
     /// using `empty` as the initial value.
+    /// TODO: should this be deleted? Not the same as CombineN in SemiGroup
     ///
     pub def combineAll(xs: List[a]): a with Monoid[a] =
         List.foldLeft((ac, x) -> combine(ac, x), Monoid.empty(), xs)
