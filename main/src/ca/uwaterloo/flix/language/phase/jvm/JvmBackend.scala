@@ -65,6 +65,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
 
       val erasedRefTypes: Iterable[BackendObjType.Ref] = JvmOps.getRefsOf(types)
       val erasedExtendTypes: Iterable[BackendObjType.RecordExtend] = JvmOps.getRecordExtendsOf(types)
+      val erasedArrowTypes: Iterable[BackendObjType.Arrow] = JvmOps.getArrowsOf(types)
 
       //
       // Generate the main class.
@@ -79,7 +80,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       //
       // Generate continuation classes for each function type in the program.
       //
-      val continuationInterfaces = GenContinuationAbstractClasses.gen(types)
+      val continuationInterfaces = GenContinuationAbstractClasses.gen(erasedArrowTypes)
 
       //
       // Generate a function abstract class for each function type in the program.
