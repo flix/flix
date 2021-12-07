@@ -15,11 +15,11 @@
  */
 
 
-/*// TODO: Unsafe instance. Will be removed. (Blocked by Datalog engine usage.)
+// TODO: Unsafe instance. Will be removed. (Blocked by Datalog engine usage.)
 instance Eq[Array[v]] with Eq[v] {
     // TODO More efficient implementation
     pub def eq(a: Array[v], b: Array[v]): Bool = Array.eq(a, b) as & Pure
-}*/
+}
 
 // TODO: Unsafe instance. Will be removed. (Blocked by Datalog engine usage.)
 instance Foldable[Array] {

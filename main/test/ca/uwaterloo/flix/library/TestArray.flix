@@ -16,6 +16,8 @@
 
 namespace TestArray {
 
+use Array.eq;
+
 /////////////////////////////////////////////////////////////////////////////
 // new                                                                     //
 /////////////////////////////////////////////////////////////////////////////
@@ -1742,28 +1744,28 @@ def isSuffixOf13(): Bool & Impure = Array.isSuffixOf([1,2,3], [89,11,1,2,3])
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def testEq01(): Bool & Impure = ([] : Array[Int]) == ([] : Array[Int])
+def testEq01(): Bool & Impure = ([] : Array[Int]) `eq` ([] : Array[Int])
 
 @test
-def testEq02(): Bool & Impure = [1] != []
+def testEq02(): Bool & Impure = Bool.not([1] `eq` [])
 
 @test
-def testEq03(): Bool & Impure = [] != [1]
+def testEq03(): Bool & Impure = Bool.not([] `eq` [1])
 
 @test
-def testEq04(): Bool & Impure = [1] == [1]
+def testEq04(): Bool & Impure = [1] `eq` [1]
 
 @test
-def testEq05(): Bool & Impure = [1] != [2]
+def testEq05(): Bool & Impure = Bool.not([1] `eq` [2])
 
 @test
-def testEq06(): Bool & Impure = [1,2] != [1]
+def testEq06(): Bool & Impure = Bool.not([1,2] `eq` [1])
 
 @test
-def testEq07(): Bool & Impure = [1] != [1,2]
+def testEq07(): Bool & Impure = Bool.not([1] `eq` [1,2])
 
 @test
-def testEq08(): Bool & Impure = [1,2,3,4] == [1,2,3,4]
+def testEq08(): Bool & Impure = [1,2,3,4] `eq` [1,2,3,4]
 
 /////////////////////////////////////////////////////////////////////////////
 // compare                                                                 //
