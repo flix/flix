@@ -200,8 +200,8 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns the given type constraint `tc` as a JSON value.
     */
   private def visitTypeConstraint(tc: TypeConstraint): JObject = tc match {
-    case TypeConstraint(sym, arg, _) =>
-      ("sym" -> visitClassSym(sym)) ~ ("arg" -> visitType(arg))
+    case TypeConstraint(sym, tpe, _) =>
+      ("sym" -> visitClassSym(sym)) ~ ("tpe" -> visitType(tpe))
   }
 
   /**
