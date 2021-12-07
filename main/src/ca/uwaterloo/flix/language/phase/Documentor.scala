@@ -66,7 +66,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       case (ns, decls) =>
         val filtered = decls.filter(_.mod.isPublic).toList
         val sorted = filtered.sortBy(_.sym.name)
-        ns -> JArray(sorted.map(visitClass))
+        ns -> JArray(sorted.map(visitClass(_)(root)))
     }
 
     //
@@ -182,16 +182,13 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Returns the given instance `inst` as a JSON value.
     */
-  private def visitInstance(inst: Instance): JObject = inst match {
-    case Instance(_, _, sym, tpe, tconstrs, _, _, _) =>
-      ("sym" -> visitInstanceSym(sym)) ~
-        //("sym" -> visitClassSym(sym.clazz)) ~
+  private def visitInstance(sym: Symbol.ClassSym, inst: Instance): JObject = inst match {
+    case Instance(_, _, _, tpe, tconstrs, _, _, _) =>
+      ("sym" -> visitClassSym(sym)) ~
         ("tpe" -> visitType(tpe)) ~
-        ("tconstrs" -> tconstrs.map(visitTypeConstraint)) ~
+        ("tcs" -> tconstrs.map(visitTypeConstraint)) ~
         ("loc" -> visitSourceLocation(sym.loc))
   }
-
-  private def visitInstanceSym(sym: Symbol.InstanceSym): JObject = ("placeholder" -> "placeholder") // TODO
 
   /**
     * Returns the given type `tpe` as a JSON value.
@@ -203,8 +200,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def visitTypeConstraint(tc: TypeConstraint): JObject = tc match {
     case TypeConstraint(sym, arg, _) =>
-      ("sym" -> visitClassSym(sym)) ~
-        ("arg" -> visitType(arg))
+      ("sym" -> visitClassSym(sym)) ~ ("arg" -> visitType(arg))
   }
 
   /**
@@ -348,7 +344,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Return the given class `clazz` as a JSON value.
     */
-  private def visitClass(cla: Class): JObject = cla match {
+  private def visitClass(cla: Class)(implicit root: Root): JObject = cla match {
     case Class(doc, mod, sym, tparam, superClasses, signatures, laws, loc) =>
       // Compute the type constraints.
       val computedTypeConstraints = superClasses.map {
@@ -360,12 +356,15 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
         sig => visitSig(sig)
       }
 
+      val instances = root.instances(sym).map(inst => visitInstance(sym, inst))
+
       ("sym" -> visitClassSym(sym)) ~
         ("doc" -> visitDoc(doc)) ~
         ("mod" -> visitModifier(mod)) ~
         ("tparam" -> visitTypeParam(tparam)) ~
         ("superClasses" -> computedTypeConstraints) ~
         ("signatures" -> computedSig) ~
+        ("instances" -> instances) ~
         ("loc" -> visitSourceLocation(loc))
   }
 
