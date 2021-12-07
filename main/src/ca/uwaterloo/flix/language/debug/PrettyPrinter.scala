@@ -201,6 +201,17 @@ object PrettyPrinter {
             .append(visitExp(exp2))
             .toString()
 
+        case Expression.LetRec(varSym, _, _, exp1, exp2, tpe, loc) =>
+          val sb = new StringBuilder()
+          sb.append(formatter.bold("let rec"))
+            .append(fmtSym(varSym, formatter))
+            .append(" = ")
+            .append(visitExp(exp1).replace(System.lineSeparator(), System.lineSeparator() + (" " * 2)))
+            .append(";")
+            .append(System.lineSeparator())
+            .append(visitExp(exp2))
+            .toString()
+
         case Expression.Is(sym, tag, exp, loc) => visitExp(exp) + " is " + tag.name
 
         case Expression.Tag(sym, tag, exp, tpe, loc) => exp match {

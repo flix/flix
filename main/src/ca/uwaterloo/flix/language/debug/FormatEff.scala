@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Esben Bjerre
+ * Copyright 2021 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-namespace TestMutMap {
+package ca.uwaterloo.flix.language.debug
+
+import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
+
+object FormatEff {
+
+  def formatEff(eff: Type)(implicit audience: Audience): String = eff match {
+    case Type.Cst(TypeConstructor.True, _) => "Pure"
+    case Type.Cst(TypeConstructor.False, _) => "Impure"
+    case _ => FormatType.formatType(eff)
+  }
 
 }

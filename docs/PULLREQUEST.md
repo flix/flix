@@ -2,7 +2,7 @@
 
 - Pull requests should use [Semantic Commit Messages](https://gist.github.com/joshbuchea/6f47e86d2510bce28f8e7f42ae84c716).
     - We use the types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`.
-    - The summary should be a single sentence in past tense (all lower case except for names).
+    - The summary should be a single clear sentence (all lower case except for names).
 - Pull requests should be a small as possible.
     - An ideal pull request is between one and a few hundred lines of code.
     - A pull request should focus on a single change.

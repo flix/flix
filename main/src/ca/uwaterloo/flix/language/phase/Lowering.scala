@@ -316,6 +316,12 @@ object Lowering extends Phase[Root, Root] {
       val t = visitType(tpe)
       Expression.Let(sym, mod, e1, e2, t, eff, loc)
 
+    case Expression.LetRec(sym, mod, exp1, exp2, tpe, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val t = visitType(tpe)
+      Expression.LetRec(sym, mod, e1, e2, t, eff, loc)
+
     case Expression.LetRegion(sym, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       Expression.LetRegion(sym, e, tpe, eff, loc)
@@ -430,10 +436,11 @@ object Lowering extends Phase[Root, Root] {
       val t = visitType(tpe)
       Expression.Ascribe(e, t, eff, loc)
 
-    case Expression.Cast(exp, tpe, eff, loc) =>
+    case Expression.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
       val e = visitExp(exp)
+      val dt = declaredType.map(visitType)
       val t = visitType(tpe)
-      Expression.Cast(e, t, eff, loc)
+      Expression.Cast(e, dt, declaredEff, t, eff, loc)
 
     case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -1301,6 +1308,12 @@ object Lowering extends Phase[Root, Root] {
       val e2 = substExp(exp2, subst)
       Expression.Let(s, mod, e1, e2, tpe, eff, loc)
 
+    case Expression.LetRec(sym, mod, exp1, exp2, tpe, eff, loc) =>
+      val s = subst.getOrElse(sym, sym)
+      val e1 = substExp(exp1, subst)
+      val e2 = substExp(exp2, subst)
+      Expression.LetRec(s, mod, e1, e2, tpe, eff, loc)
+
     case Expression.LetRegion(sym, exp, tpe, eff, loc) =>
       val s = subst.getOrElse(sym, sym)
       val e = substExp(exp, subst)
@@ -1397,9 +1410,9 @@ object Lowering extends Phase[Root, Root] {
       val e = substExp(exp, subst)
       Expression.Ascribe(e, tpe, eff, loc)
 
-    case Expression.Cast(exp, tpe, eff, loc) =>
+    case Expression.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
       val e = substExp(exp, subst)
-      Expression.Cast(e, tpe, eff, loc)
+      Expression.Cast(e, declaredType, declaredEff, tpe, eff, loc)
 
     case Expression.TryCatch(_, _, _, _, _) => ??? // TODO
 
