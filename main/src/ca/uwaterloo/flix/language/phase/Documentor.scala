@@ -259,13 +259,13 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns the given Kind `kind` as a JSON value.
     */
   def visitKind(kind: Kind): String = kind match {
-    case Kind.Wild => "placeholder"
-    case Kind.Star => "Star"
+    case Kind.Wild => ""
+    case Kind.Star => "Type"
     case Kind.Bool => "Bool"
     case Kind.RecordRow => "Record"
     case Kind.SchemaRow => "Schema"
-    case Kind.Predicate => "placeholder"
-    case Kind.Arrow(k1, k2) => "placeholder"
+    case Kind.Predicate => ""
+    case Kind.Arrow(k1, k2) => visitKind(k1) + " -> " + visitKind(k2)
   }
 
   /**
