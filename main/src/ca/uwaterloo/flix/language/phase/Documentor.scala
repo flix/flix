@@ -164,6 +164,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns the given definition `defn0` as a JSON object.
     */
   private def visitDef(defn0: Def): JObject = {
+    // TODO: Check with Def.d.ts
     ("name" -> defn0.sym.name) ~
       ("tparams" -> defn0.spec.tparams.map(visitTypeParam)) ~
       ("fparams" -> defn0.spec.fparams.map(visitFormalParam)) ~
