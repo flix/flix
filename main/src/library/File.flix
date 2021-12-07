@@ -306,7 +306,7 @@ namespace File {
         try {
             import new java.io.File(String) as newFile;
             import java.io.File.toPath();
-            import java.nio.file.Files:readAllBytes(##java.nio.file.Path);
+            import static java.nio.file.Files.readAllBytes(##java.nio.file.Path);
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
