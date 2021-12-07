@@ -37,6 +37,11 @@ import java.nio.file.{Files, Path, Paths}
 object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
 
   /**
+    * The "Pseudo-name" of the root namespace.
+    */
+  val RootNS: String = "@Prelude"
+
+  /**
     * The directory where to write the ouput.
     */
   val OutputDirectory: Path = Paths.get("./target/api")
@@ -55,38 +60,39 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     //
-    // Classes
+    // Classes.
     //
     val classesByNS = root.classes.values.groupBy(getNameSpace).map {
       case (ns, decls) =>
-        val sorted = decls.toList.sortBy(_.sym.name)
+        val filtered = decls.filter(_.mod.isPublic).toList
+        val sorted = filtered.sortBy(_.sym.name)
         ns -> JArray(sorted.map(visitClass))
     }
 
     //
-    // Enums
+    // Enums.
     //
-    val enumsByNS = root.enums.values.groupBy(decl => getNameSpace(decl)).map {
+    val enumsByNS = root.enums.values.groupBy(getNameSpace).map {
       case (ns, decls) =>
-        val filtered = decls.toList.filter(_.mod.isPublic)
+        val filtered = decls.filter(_.mod.isPublic).toList
         val sorted = filtered.sortBy(_.sym.name)
         ns -> JArray(sorted.map(visitEnum))
     }
 
     //
-    // Type Aliases
+    // Type Aliases.
     //
     val typeAliasesByNS = root.typealiases.values.groupBy(getNameSpace).map {
       case (ns, decls) =>
-        val filtered = decls.toList
+        val filtered = decls.filter(_.mod.isPublic).toList
         val sorted = filtered.sortBy(_.sym.name)
         ns -> JArray(sorted.map(visitTypeAlias))
     }
 
     //
-    // Defs
+    // Defs.
     //
-    val defsByNS = root.defs.values.groupBy(decl => getNameSpace(decl)).map {
+    val defsByNS = root.defs.values.groupBy(getNameSpace).map {
       case (ns, decls) =>
         val filtered = decls.filter(_.spec.mod.isPublic).toList
         val sorted = filtered.sortBy(_.sym.name)
@@ -107,7 +113,6 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       ("defs", defsByNS)
     )
 
-
     // Serialize the JSON object to a string.
     val s = JsonMethods.pretty(JsonMethods.render(json))
 
@@ -117,25 +122,23 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     // Write the string to the path.
     writeString(s, p)
 
-
     root.toSuccess
   }
 
   /**
     * Returns the namespace of the given class `decl`.
     */
-  private def getNameSpace(decl: TypedAst.Class): String =
-    if (decl.sym.namespace == Nil)
-      "@Prelude"
-    else
-      decl.sym.namespace.mkString(".")
+  private def getNameSpace(decl: TypedAst.Class): String = {
+    val namespace = decl.sym.namespace
+    if (namespace == Nil) RootNS else namespace.mkString(".")
+  }
 
   /**
     * Returns the namespace of the given enum `decl`.
     */
   private def getNameSpace(decl: TypedAst.Enum): String =
     if (decl.sym.namespace == Nil)
-      "@Prelude"
+      RootNS
     else
       decl.sym.namespace.mkString(".")
 
@@ -144,7 +147,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def getNameSpace(decl: TypedAst.Def): String =
     if (decl.sym.namespace == Nil)
-      "@Prelude"
+      RootNS
     else
       decl.sym.namespace.mkString(".")
 
@@ -153,43 +156,24 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def getNameSpace(decl: TypedAst.TypeAlias): String =
     if (decl.sym.namespace == Nil)
-      "@Prelude"
+      RootNS
     else
       decl.sym.namespace.mkString(".")
-
 
   /**
     * Returns the given definition `defn0` as a JSON object.
     */
   private def visitDef(defn0: Def): JObject = {
-    // Compute the type parameters.
-    val tparams = defn0.spec.tparams.map {
-      case TypeParam(ident, tpe, loc) => JObject(List(
-        JField("name", JString(ident.name))
-      ))
-    }
-
-    // Compute the formal parameters.
-    val fparams = defn0.spec.fparams.collect {
-      case FormalParam(psym, mod, tpe, loc) if tpe != Type.Unit => JObject(
-        JField("name", JString(psym.text)),
-        JField("type", JString("type"))
-      )
-    }
-
-    // Compute return type and effect.
-    val result = defn0.spec.retTpe
-    val effect = defn0.spec.eff
-
-    // Construct the JSON object.
     ("name" -> defn0.sym.name) ~
-      ("tparams" -> tparams) ~
-      ("fparams" -> fparams) ~
-      ("result" -> FormatType.formatType(result)) ~
-      ("effect" -> FormatType.formatType(effect)) ~
+      ("tparams" -> defn0.spec.tparams.map(visitTypeParam)) ~
+      ("fparams" -> defn0.spec.fparams.map(visitFormalParam)) ~
+      ("result" -> FormatType.formatType(defn0.spec.retTpe)) ~
+      ("effect" -> FormatType.formatType(defn0.spec.eff)) ~
       ("comment" -> defn0.spec.doc.text.trim) ~
       ("loc" -> visitSourceLocation(defn0.spec.loc))
   }
+
+  // TODO: Refactored until here.
 
   /**
     * Returns the given instance `inst` as a JSON value.
@@ -307,15 +291,6 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   /**
-    * Returns the given Type Parameter `tparam` as a JSON value.
-    */
-  private def visitTypeParam(tparam: TypeParam): JObject = tparam match {
-    case TypeParam(ident, tpe, loc) =>
-      ("name" -> ident.name) ~
-        ("kind" -> visitKind(tpe.kind))
-  }
-
-  /**
     * Returns the given Doc `doc` as a JSON value.
     */
   private def visitDoc(doc: Ast.Doc): JArray =
@@ -336,6 +311,14 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
         ("tparams" -> tparams.map(visitTypeParam)) ~
         ("tpe" -> FormatType.formatType(tpe)) ~
         ("loc" -> visitSourceLocation(loc))
+  }
+
+  /**
+    * Returns the given Type Parameter `tparam` as a JSON value.
+    */
+  private def visitTypeParam(tparam: TypeParam): JObject = tparam match {
+    case TypeParam(ident, tpe, _) =>
+      ("name" -> ident.name) ~ ("kind" -> visitKind(tpe.kind))
   }
 
   /**
