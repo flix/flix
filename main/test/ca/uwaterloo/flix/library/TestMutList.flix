@@ -17,7 +17,6 @@
 namespace TestMutList {
     use ToString.toString;
     use MutList.eq;
-    use Array.eq;
 
     ///
     /// Helper function to test capacity of internal array.
@@ -1615,13 +1614,13 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy(Array.toMutList([2,3,0,4,1,
         let v2 = MutList.range(0, 5) |> MutList.toArray;
         let arr1 = [1, 2, 3];
         let arr2 = [0, 1, 2, 3, 4];
-        eq(v1, arr1) and eq(v2, arr2)
+        Array.eq(v1, arr1) and Array.eq(v2, arr2)
 
     @test
     def range02(): Bool & Impure =
         let v = MutList.range(-1, 3) |> MutList.toArray;
         let arr = [-1, 0, 1, 2];
-        eq(v, arr)
+        Array.eq(v, arr)
 
     @test
     def range03(): Bool & Impure =
