@@ -166,7 +166,9 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   private def visitDef(defn0: Def): JObject = {
     // TODO: Check with Def.d.ts
     // TODO: Deal with  UNit
-    ("name" -> defn0.sym.name) ~
+    ("sym" -> visitDefnSym(defn0.sym)) ~
+      ("doc" -> visitDoc(defn0.spec.doc)) ~
+      ("name" -> defn0.sym.name) ~
       ("tparams" -> defn0.spec.tparams.map(visitTypeParam)) ~
       ("fparams" -> defn0.spec.fparams.map(visitFormalParam)) ~
       ("result" -> FormatType.formatType(defn0.spec.retTpe)) ~
