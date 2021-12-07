@@ -457,4 +457,50 @@ namespace Iterator {
             case None    => Nil
             case Some(i) => i :: toList(iter)
         }
+
+    ///
+    /// Returns the result of applying `f` to every element in `iter` and concatenating the results.
+    ///
+    /// Does *not* consume any elements from the iterator.
+    ///
+    pub def flatMap(f: a -> Iterator[b] & ef, iter: Iterator[a]): Iterator[b] & Impure =
+        let Iterator(done, next) = iter;
+        let cursor = ref None;
+        let done1 = () -> match deref cursor {
+            case None     => match flatMapForward(f, done, next) {
+                case None     => true
+                case Some(it) =>
+                    cursor := Some(it);
+                    false
+            }
+            case Some(it) =>
+                let Iterator(d, _) = it;
+                if (d())
+                    match flatMapForward(f, done, next) {
+                        case None      => true
+                        case Some(it1) =>
+                            cursor := Some(it1);
+                            false
+                    }
+                else
+                    false
+        };
+        let next1 = () -> match deref cursor {
+            case None     => bug!("Empty Iterator!")
+            case Some(it) =>
+                let Iterator(_, n) = it;
+                n()
+        };
+        Iterator(done1, next1)
+
+    ///
+    /// Forwards the given iterator to the first non-empty iterator produced by `f`.
+    ///
+    def flatMapForward(f: a -> Iterator[b] & ef, done: Done, next: Next[a]): Option[Iterator[b]] & Impure =
+        if (done())
+            None
+        else
+            let Iterator(d, n) = f(next());
+            if (d()) flatMapForward(f, done, next) else Some(Iterator(d, n))
+
 }

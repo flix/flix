@@ -22,14 +22,6 @@ instance Eq[Array[v]] with Eq[v] {
 }
 
 // TODO: Unsafe instance. Will be removed. (Blocked by Datalog engine usage.)
-instance Order[Array[v]] with Order[v] {
-    ///
-    /// Compares `a` and `b` lexicographically.
-    ///
-    pub def compare(a: Array[v], b: Array[v]): Comparison = Array.compare(a, b) as & Pure
-}
-
-// TODO: Unsafe instance. Will be removed. (Blocked by Datalog engine usage.)
 instance Foldable[Array] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, a: Array[a]): b & ef = Array.foldLeft(f, s, a) as & ef
     pub def foldRight(f: (a, b) -> b & ef, s: b, a: Array[a]): b & ef = Array.foldRight(f, s, a) as & ef
