@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.mkName
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.{DevFlixRuntime, JavaLang, RootPackage}
 
 /**
@@ -49,7 +50,9 @@ sealed trait BackendObjType {
     * Returns `this` wrapped in `BackendType.Reference`.
     */
   def toTpe: BackendType.Reference = BackendType.Reference(this)
+}
 
+object BackendObjType {
   /**
     * Constructs a concatenated string using `JvmName.Delimiter`. The call
     * `mkName("Tuple2", List(Object, Int, String))` would
@@ -66,9 +69,8 @@ sealed trait BackendObjType {
 
   private def mkName(prefix: String): String =
     mkName(prefix, Nil)
-}
 
-object BackendObjType {
+
   case object Unit extends BackendObjType
 
   case object BigInt extends BackendObjType
@@ -85,14 +87,16 @@ object BackendObjType {
 
   //case class Enum(sym: Symbol.EnumSym, args: List[BackendType]) extends BackendObjType
 
-  case class Arrow(args: List[BackendType], result: BackendType) extends BackendObjType
+  case class Arrow(args: List[BackendType], result: BackendType) extends BackendObjType {
+    val continuation: JvmName = JvmName(RootPackage, mkName("Cont", result))
+  }
 
   case object RecordEmpty extends BackendObjType {
-    val interface: JvmName = JvmName(RootPackage, s"IRecord" + Flix.Delimiter)
+    val interface: JvmName = JvmName(RootPackage, s"IRecord${Flix.Delimiter}")
   }
 
   case class RecordExtend(field: String, value: BackendType, rest: BackendType) extends BackendObjType {
-    val interface: JvmName = JvmName(RootPackage, s"IRecord" + Flix.Delimiter)
+    val interface: JvmName = RecordEmpty.interface
   }
 
   // case object SchemaEmpty extends BackendObjType
