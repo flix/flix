@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Magnus Madsen
+ * Copyright 2021 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,8 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.TypeConstraint
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme, FormatType, PrettyExpression}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 import org.json4s.JsonAST._
@@ -31,92 +30,93 @@ import org.json4s.native.JsonMethods
 
 import java.io.IOException
 import java.nio.file.{Files, Path, Paths}
-import scala.collection.immutable.List
 
+/**
+  * A phase that emits a JSON file for library documentation.
+  */
 object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
-
-  /**
-    * The title of the generated API.
-    */
-  val ApiTitle = "Flix Standard Library"
 
   /**
     * The directory where to write the ouput.
     */
   val OutputDirectory: Path = Paths.get("./target/api")
 
+  /**
+    * The audience to use for formatting types and effects.
+    */
   private implicit val audience: Audience = Audience.External
 
-  /**
-    * Emits a JSON file with information about the definitions of the program.
-    */
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationMessage] = flix.phase("Documentor") {
-    // Check whether to generate documentation.
-    if (flix.options.documentor) {
-
-      //
-      // Classes
-      //
-      val classesByNS = root.classes.values.groupBy(decl => getNameSpace(decl)).map {
-        case (ns, decls) =>
-          val sorted = decls.toList.sortBy(_.sym.name)
-          ns -> JArray(sorted.map(visitClass))
-      }
-
-      //
-      // Enums
-      //
-      val enumsByNS = root.enums.values.groupBy(decl => getNameSpace(decl)).map {
-        case (ns, decls) =>
-          val filtered = decls.toList.filter(_.mod.isPublic)
-          val sorted = filtered.sortBy(_.sym.name)
-          ns -> JArray(sorted.map(visitEnum))
-      }
-
-      //
-      // Type Aliases
-      //
-      val typeAliasesByNS = root.typealiases.values.groupBy(getNameSpace).map {
-        case (ns, decls) =>
-          val filtered = decls.toList
-          val sorted = filtered.sortBy(_.sym.name)
-          ns -> JArray(sorted.map(visitTypeAlias))
-      }
-
-      //
-      // Defs
-      //
-      val defsByNS = root.defs.values.groupBy(decl => getNameSpace(decl)).map {
-        case (ns, decls) =>
-          val filtered = decls.filter(_.spec.mod.isPublic).toList
-          val sorted = filtered.sortBy(_.sym.name)
-          ns -> JArray(sorted.map(visitDef))
-      }
-
-      //
-      // Compute all namespaces.
-      //
-      val namespaces = (classesByNS.keySet ++ enumsByNS.keySet ++ typeAliasesByNS.keySet ++ defsByNS.keySet).toList.sorted
-
-      // Construct the JSON object.
-      val json = JObject(
-        ("namespaces", namespaces),
-        ("classes", classesByNS),
-        ("enums", enumsByNS),
-        ("typeAliases", typeAliasesByNS),
-        ("defs", defsByNS)
-      )
-
-
-      // Serialize the JSON object to a string.
-      val s = JsonMethods.pretty(JsonMethods.render(json))
-
-      // The path to the file to write.
-      val p = OutputDirectory.resolve("api.json")
-
-      // Write the string to the path.
-      writeString(s, p)
+    //
+    // Determine whether to generate documentation.
+    //
+    if (!flix.options.documentor) {
+      return root.toSuccess
     }
+
+    //
+    // Classes
+    //
+    val classesByNS = root.classes.values.groupBy(getNameSpace).map {
+      case (ns, decls) =>
+        val sorted = decls.toList.sortBy(_.sym.name)
+        ns -> JArray(sorted.map(visitClass))
+    }
+
+    //
+    // Enums
+    //
+    val enumsByNS = root.enums.values.groupBy(decl => getNameSpace(decl)).map {
+      case (ns, decls) =>
+        val filtered = decls.toList.filter(_.mod.isPublic)
+        val sorted = filtered.sortBy(_.sym.name)
+        ns -> JArray(sorted.map(visitEnum))
+    }
+
+    //
+    // Type Aliases
+    //
+    val typeAliasesByNS = root.typealiases.values.groupBy(getNameSpace).map {
+      case (ns, decls) =>
+        val filtered = decls.toList
+        val sorted = filtered.sortBy(_.sym.name)
+        ns -> JArray(sorted.map(visitTypeAlias))
+    }
+
+    //
+    // Defs
+    //
+    val defsByNS = root.defs.values.groupBy(decl => getNameSpace(decl)).map {
+      case (ns, decls) =>
+        val filtered = decls.filter(_.spec.mod.isPublic).toList
+        val sorted = filtered.sortBy(_.sym.name)
+        ns -> JArray(sorted.map(visitDef))
+    }
+
+    //
+    // Compute all namespaces.
+    //
+    val namespaces = (classesByNS.keySet ++ enumsByNS.keySet ++ typeAliasesByNS.keySet ++ defsByNS.keySet).toList.sorted
+
+    // Construct the JSON object.
+    val json = JObject(
+      ("namespaces", namespaces),
+      ("classes", classesByNS),
+      ("enums", enumsByNS),
+      ("typeAliases", typeAliasesByNS),
+      ("defs", defsByNS)
+    )
+
+
+    // Serialize the JSON object to a string.
+    val s = JsonMethods.pretty(JsonMethods.render(json))
+
+    // The path to the file to write.
+    val p = OutputDirectory.resolve("api.json")
+
+    // Write the string to the path.
+    writeString(s, p)
+
 
     root.toSuccess
   }
