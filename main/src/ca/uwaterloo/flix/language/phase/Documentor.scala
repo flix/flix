@@ -165,6 +165,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def visitDef(defn0: Def): JObject = {
     // TODO: Check with Def.d.ts
+    // TODO: Deal with  UNit
     ("name" -> defn0.sym.name) ~
       ("tparams" -> defn0.spec.tparams.map(visitTypeParam)) ~
       ("fparams" -> defn0.spec.fparams.map(visitFormalParam)) ~
@@ -193,31 +194,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Returns the given type `tpe` as a JSON value.
     */
-  private def visitType(tpe: Type): JObject = tpe match {
-    case value: Type.Var =>
-      val name = value.text match {
-        case Some(value) => value
-        case None => "placeholder"
-      }
-      ("tag" -> "Var") ~
-        ("name" -> name) ~
-        ("kind" -> visitKind(tpe.kind))
-    case Type.Cst(tc, loc) =>
-      val typeConst = tc match {
-        case TypeConstructor.Bool => ("tag" -> "Bool")
-        case TypeConstructor.Int32 => ("tag" -> "Int32")
-        case _ => ("placeholder" -> "placeholder")
-      }
-      ("tag" -> "Cst") ~
-        ("tc" -> typeConst) ~
-        ("kind" -> visitKind(tpe.kind))
-    case Type.Apply(tpe1, tpe2, loc) =>
-      ("tag" -> "Apply") ~
-        ("tpe1" -> visitType(tpe1)) ~
-        ("tpe2" -> visitType(tpe2)) ~
-        ("kind" -> visitKind(tpe.kind))
-    case _ => ("placeholder" -> "placeholder")
-  }
+  private def visitType(tpe: Type): JString = JString(FormatType.formatType(tpe))
 
   /**
     * Returns the given type constraint `tc` as a JSON value.
