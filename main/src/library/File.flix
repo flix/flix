@@ -299,4 +299,72 @@ namespace File {
                 Iterator.singleton(Err(getMessage(ex)))
         }
 
+    ///
+    /// Returns an array of all the bytes in the given file `f`.
+    ///
+    pub def readBytes(f: String): Result[Array[Int8], String] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import java.io.File.toPath();
+            import static java.nio.file.Files.readAllBytes(##java.nio.file.Path);
+
+            let javaFile = newFile(f);
+            let javaPath = toPath(javaFile);
+            let bytes = readAllBytes(javaPath);
+
+            Ok(bytes)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Returns an array of all the bytes in the given file `f` and applying the options `opts`.
+    /// The options `opts` to apply consists of
+    /// `offset` - the start offset in the given file `f`.
+    /// `count` - the number of bytes read.
+    ///
+    pub def readBytesWith(opts: {offset :: Int64, count :: Int32}, f: String): Result[Array[Int8], String] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import new java.io.FileInputStream(##java.io.File) as newInputStream;
+            import java.io.FileInputStream.skip(Int64);
+            import java.io.FileInputStream.read(Array[Int8], Int32, Int32);
+
+            let javaFile = newFile(f);
+            let stream = newInputStream(javaFile);
+            skip(stream, opts.offset);
+            let bytes = [0i8; opts.count];
+            let numberRead = read(stream, bytes, 0, opts.count);
+
+            let res = readBytesWithHelper(bytes, numberRead, opts.count);
+
+            Ok(res)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Helper function for `readBytesWith`.
+    /// Returns an array that corresponds to the bytes actually read from the stream.
+    ///
+    def readBytesWithHelper(bytes: Array[Int8], numberRead: Int32, count: Int32): Array[Int8] & Impure =
+        let nothingRead = numberRead == -1;
+        let countBiggest = numberRead < count;
+        println(numberRead);
+        println(count);
+        println(countBiggest);
+        if (nothingRead) {
+            []
+        } else {
+            if (countBiggest) {
+                Array.slice(0, numberRead, bytes)
+            } else {
+                bytes
+            }
+        }
+
 }
