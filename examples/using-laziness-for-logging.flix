@@ -1,6 +1,6 @@
 /// Emulates some slow computation.
 def slowFunction(): String = {
-    import java.lang.Thread:sleep(Int64);
+    import static java.lang.Thread.sleep(Int64);
     let _ = sleep(5000i64) as & Pure;
     Int32.toString(42)
 }
