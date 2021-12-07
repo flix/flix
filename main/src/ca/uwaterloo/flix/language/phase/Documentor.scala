@@ -356,6 +356,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
         sig => visitSig(sig)
       }
 
+      // TODO: Sort instances.
       val instances = root.instances(sym).map(inst => visitInstance(sym, inst))
 
       ("sym" -> visitClassSym(sym)) ~
