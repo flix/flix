@@ -720,6 +720,21 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
           resultEff = Type.mkAnd(eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
+      case KindedAst.Expression.LetRec(sym, mod, exp1, exp2, loc) =>
+        // Ensure that `exp1` is a lambda.
+        val a = Type.freshVar(Kind.Star, loc)
+        val b = Type.freshVar(Kind.Star, loc)
+        val ef = Type.freshVar(Kind.Bool, loc)
+        val expectedType = Type.mkArrowWithEffect(a, ef, b, loc)
+        for {
+          (constrs1, tpe1, eff1) <- visitExp(exp1)
+          (constrs2, tpe2, eff2) <- visitExp(exp2)
+          arrowTyp <- unifyTypeM(expectedType, tpe1, loc)
+          boundVar <- unifyTypeM(sym.tvar.ascribedWith(Kind.Star), tpe1, loc)
+          resultTyp = tpe2
+          resultEff = Type.mkAnd(eff1, eff2, loc)
+        } yield (constrs1 ++ constrs2, resultTyp, resultEff)
+
       case KindedAst.Expression.LetRegion(sym, exp, evar, loc) =>
         // Introduce a rigid variable for the region of `exp`.
         val regionVar = Type.freshVar(Kind.Bool, loc, Rigidity.Rigid, Some(sym.text))
@@ -1611,6 +1626,13 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
         val tpe = e2.tpe
         val eff = Type.mkAnd(e1.eff, e2.eff, loc)
         TypedAst.Expression.Let(sym, mod, e1, e2, tpe, eff, loc)
+
+      case KindedAst.Expression.LetRec(sym, mod, exp1, exp2, loc) =>
+        val e1 = visitExp(exp1, subst0)
+        val e2 = visitExp(exp2, subst0)
+        val tpe = e2.tpe
+        val eff = Type.mkAnd(e1.eff, e2.eff, loc)
+        TypedAst.Expression.LetRec(sym, mod, e1, e2, tpe, eff, loc)
 
       case KindedAst.Expression.LetRegion(sym, exp, evar, loc) =>
         val e = visitExp(exp, subst0)

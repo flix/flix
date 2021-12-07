@@ -110,6 +110,9 @@ object CodeHinter {
     case Expression.Let(_, _, exp1, exp2, _, eff, loc) =>
       checkEffect(eff, loc) ++ visitExp(exp1) ++ visitExp(exp2)
 
+    case Expression.LetRec(_, _, exp1, exp2, _, eff, loc) =>
+      visitExp(exp1) ++ visitExp(exp2)
+
     case Expression.LetRegion(_, exp, _, _, _) =>
       visitExp(exp)
 

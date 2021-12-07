@@ -73,6 +73,10 @@ object TypedAstOps {
       case Expression.Let(sym, _, exp1, exp2, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0 + (sym -> exp1.tpe))
 
+      case Expression.LetRec(sym, _, exp1, exp2, tpe, eff, loc) =>
+        val env1 = env0 + (sym -> exp1.tpe)
+        visitExp(exp1, env1) ++ visitExp(exp2, env1)
+
       case Expression.LetRegion(_, exp, _, _, _) =>
         visitExp(exp, env0)
 
@@ -349,6 +353,7 @@ object TypedAstOps {
     case Expression.Unary(_, exp, _, _, _) => sigSymsOf(exp)
     case Expression.Binary(_, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.Let(_, _, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
+    case Expression.LetRec(_, _, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.LetRegion(_, exp, _, _, _) => sigSymsOf(exp)
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
     case Expression.Stm(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
@@ -493,6 +498,9 @@ object TypedAstOps {
       freeVars(exp1) ++ freeVars(exp2)
 
     case Expression.Let(sym, _, exp1, exp2, _, _, _) =>
+      (freeVars(exp1) ++ freeVars(exp2)) - sym
+
+    case Expression.LetRec(sym, _, exp1, exp2, _, _, _) =>
       (freeVars(exp1) ++ freeVars(exp2)) - sym
 
     case Expression.LetRegion(sym, exp, _, _, _) =>
