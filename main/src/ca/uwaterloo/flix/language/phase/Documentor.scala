@@ -39,7 +39,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * The "Pseudo-name" of the root namespace.
     */
-  val RootNS: String = "@Prelude"
+  val RootNS: String = "Prelude"
 
   /**
     * The directory where to write the ouput.
@@ -102,11 +102,12 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     //
     // Compute all namespaces.
     //
-    val namespaces = (classesByNS.keySet ++ enumsByNS.keySet ++ typeAliasesByNS.keySet ++ defsByNS.keySet).toList.sorted
+    val namespaces = classesByNS.keySet ++ enumsByNS.keySet ++ typeAliasesByNS.keySet ++ defsByNS.keySet
+    val namespacesSorted = RootNS :: (namespaces - RootNS).toList.sorted
 
     // Construct the JSON object.
     val json = JObject(
-      ("namespaces", namespaces),
+      ("namespaces", namespacesSorted),
       ("classes", classesByNS),
       ("enums", enumsByNS),
       ("typeAliases", typeAliasesByNS),
