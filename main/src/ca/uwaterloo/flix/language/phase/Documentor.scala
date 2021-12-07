@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.TypeConstraint
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
@@ -361,7 +361,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       ("sym" -> visitClassSym(sym)) ~
         ("doc" -> visitDoc(doc)) ~
         ("mod" -> visitModifier(mod)) ~
-        ("tparams" -> visitTypeParam(tparam)) ~
+        ("tparam" -> visitTypeParam(tparam)) ~
         ("superClasses" -> computedTypeConstraints) ~
         ("signatures" -> computedSig) ~
         ("loc" -> visitSourceLocation(loc))
