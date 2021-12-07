@@ -73,6 +73,10 @@ object TypedAstOps {
       case Expression.Let(sym, _, exp1, exp2, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0 + (sym -> exp1.tpe))
 
+      case Expression.LetRec(sym, _, exp1, exp2, tpe, eff, loc) =>
+        val env1 = env0 + (sym -> exp1.tpe)
+        visitExp(exp1, env1) ++ visitExp(exp2, env1)
+
       case Expression.LetRegion(_, exp, _, _, _) =>
         visitExp(exp, env0)
 
@@ -155,7 +159,7 @@ object TypedAstOps {
       case Expression.Ascribe(exp, tpe, eff, loc) =>
         visitExp(exp, env0)
 
-      case Expression.Cast(exp, tpe, eff, loc) =>
+      case Expression.Cast(exp, _, _, tpe, eff, loc) =>
         visitExp(exp, env0)
 
       case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
@@ -349,6 +353,7 @@ object TypedAstOps {
     case Expression.Unary(_, exp, _, _, _) => sigSymsOf(exp)
     case Expression.Binary(_, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.Let(_, _, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
+    case Expression.LetRec(_, _, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.LetRegion(_, exp, _, _, _) => sigSymsOf(exp)
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
     case Expression.Stm(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
@@ -370,7 +375,7 @@ object TypedAstOps {
     case Expression.Deref(exp, _, _, _) => sigSymsOf(exp)
     case Expression.Assign(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.Ascribe(exp, _, _, _) => sigSymsOf(exp)
-    case Expression.Cast(exp, _, _, _) => sigSymsOf(exp)
+    case Expression.Cast(exp, _, _, _, _, _) => sigSymsOf(exp)
     case Expression.TryCatch(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expression.InvokeConstructor(_, args, _, _, _) => args.flatMap(sigSymsOf).toSet
     case Expression.InvokeMethod(_, exp, args, _, _, _) => sigSymsOf(exp) ++ args.flatMap(sigSymsOf)
@@ -495,6 +500,9 @@ object TypedAstOps {
     case Expression.Let(sym, _, exp1, exp2, _, _, _) =>
       (freeVars(exp1) ++ freeVars(exp2)) - sym
 
+    case Expression.LetRec(sym, _, exp1, exp2, _, _, _) =>
+      (freeVars(exp1) ++ freeVars(exp2)) - sym
+
     case Expression.LetRegion(sym, exp, _, _, _) =>
       freeVars(exp) - sym
 
@@ -569,7 +577,7 @@ object TypedAstOps {
     case Expression.Ascribe(exp, _, _, _) =>
       freeVars(exp)
 
-    case Expression.Cast(exp, _, _, _) =>
+    case Expression.Cast(exp, _, _, _, _, _) =>
       freeVars(exp)
 
     case Expression.TryCatch(exp, rules, tpe, eff, loc) =>

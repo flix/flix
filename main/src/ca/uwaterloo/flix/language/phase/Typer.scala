@@ -256,13 +256,46 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
                 case Validation.Failure(errs) =>
                   val instanceErrs = errs.collect {
                     case UnificationError.NoMatchingInstance(tconstr) =>
-                      TypeError.NoMatchingInstance(tconstr.sym, tconstr.arg, tconstr.loc)
+                      if (tconstr.sym.name == "Eq")
+                        TypeError.MissingEq(tconstr.arg, tconstr.loc)
+                      else if (tconstr.sym.name == "Order")
+                        TypeError.MissingOrder(tconstr.arg, tconstr.loc)
+                      else if (tconstr.sym.name == "ToString")
+                        TypeError.MissingToString(tconstr.arg, tconstr.loc)
+                      else
+                        TypeError.NoMatchingInstance(tconstr.sym, tconstr.arg, tconstr.loc)
                   }
                   // Case 2: non instance error
                   if (instanceErrs.isEmpty) {
-                    return TypeError.GeneralizationError(declaredScheme, inferredSc, loc).toFailure
-                    // Case 3: instance error
+                    //
+                    // Determine the most precise type error to emit.
+                    //
+                    val inferredEff = inferredSc.base.arrowEffectType
+                    val declaredEff = declaredScheme.base.arrowEffectType
+
+                    if (declaredEff == Type.Pure && inferredEff == Type.Impure) {
+                      // Case 1: Declared as pure, but impure.
+                      return TypeError.ImpureDeclaredAsPure(loc).toFailure
+                    } else if (declaredEff == Type.Pure && inferredEff != Type.Pure) {
+                      // Case 2: Declared as pure, but effect polymorphic.
+                      return TypeError.EffectPolymorphicDeclaredAsPure(inferredEff, loc).toFailure
+                    } else {
+                      // Case 3: Check if it is the effect that cannot be generalized.
+                      val inferredEffScheme = Scheme(inferredSc.quantifiers, Nil, inferredEff)
+                      val declaredEffScheme = Scheme(declaredScheme.quantifiers, Nil, declaredEff)
+                      Scheme.checkLessThanEqual(inferredEffScheme, declaredEffScheme, classEnv) match {
+                        case Validation.Success(_) =>
+                        // Case 3.1: The effect is not the problem. Regular generalization error.
+                        // Fall through to below.
+                        case Validation.Failure(_) =>
+                          // Case 3.2: The effect cannot be generalized.
+                          return TypeError.EffectGeneralizationError(declaredEff, inferredEff, loc).toFailure
+                      }
+
+                      return TypeError.GeneralizationError(declaredScheme, inferredSc, loc).toFailure
+                    }
                   } else {
+                    // Case 3: instance error
                     return Validation.Failure(instanceErrs)
                   }
               }
@@ -682,6 +715,21 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
+          boundVar <- unifyTypeM(sym.tvar.ascribedWith(Kind.Star), tpe1, loc)
+          resultTyp = tpe2
+          resultEff = Type.mkAnd(eff1, eff2, loc)
+        } yield (constrs1 ++ constrs2, resultTyp, resultEff)
+
+      case KindedAst.Expression.LetRec(sym, mod, exp1, exp2, loc) =>
+        // Ensure that `exp1` is a lambda.
+        val a = Type.freshVar(Kind.Star, loc)
+        val b = Type.freshVar(Kind.Star, loc)
+        val ef = Type.freshVar(Kind.Bool, loc)
+        val expectedType = Type.mkArrowWithEffect(a, ef, b, loc)
+        for {
+          (constrs1, tpe1, eff1) <- visitExp(exp1)
+          (constrs2, tpe2, eff2) <- visitExp(exp2)
+          arrowTyp <- unifyTypeM(expectedType, tpe1, loc)
           boundVar <- unifyTypeM(sym.tvar.ascribedWith(Kind.Star), tpe1, loc)
           resultTyp = tpe2
           resultEff = Type.mkAnd(eff1, eff2, loc)
@@ -1579,6 +1627,13 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
         val eff = Type.mkAnd(e1.eff, e2.eff, loc)
         TypedAst.Expression.Let(sym, mod, e1, e2, tpe, eff, loc)
 
+      case KindedAst.Expression.LetRec(sym, mod, exp1, exp2, loc) =>
+        val e1 = visitExp(exp1, subst0)
+        val e2 = visitExp(exp2, subst0)
+        val tpe = e2.tpe
+        val eff = Type.mkAnd(e1.eff, e2.eff, loc)
+        TypedAst.Expression.LetRec(sym, mod, e1, e2, tpe, eff, loc)
+
       case KindedAst.Expression.LetRegion(sym, exp, evar, loc) =>
         val e = visitExp(exp, subst0)
         val tpe = e.tpe
@@ -1714,10 +1769,13 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
         val t = subst0(tvar)
         TypedAst.Expression.Null(t, loc)
 
-      case KindedAst.Expression.Cast(exp, _, declaredEff, tvar, loc) =>
+      case KindedAst.Expression.Cast(exp, declaredType, declaredEff, tvar, loc) =>
         val e = visitExp(exp, subst0)
+        val dt = declaredType.map(tpe => subst0(tpe))
+        val de = declaredEff.map(eff => subst0(eff))
+        val tpe = subst0(tvar)
         val eff = declaredEff.getOrElse(e.eff)
-        TypedAst.Expression.Cast(e, subst0(tvar), eff, loc)
+        TypedAst.Expression.Cast(e, dt, de, tpe, eff, loc)
 
       case KindedAst.Expression.TryCatch(exp, rules, loc) =>
         val e = visitExp(exp, subst0)
@@ -1727,7 +1785,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
             TypedAst.CatchRule(sym, clazz, b)
         }
         val tpe = rs.head.exp.tpe
-        val eff = Type.mkAnd(rs.map(_.exp.eff), loc)
+        val eff = Type.mkAnd(e.eff :: rs.map(_.exp.eff), loc)
         TypedAst.Expression.TryCatch(e, rs, tpe, eff, loc)
 
       case KindedAst.Expression.InvokeConstructor(constructor, args, loc) =>

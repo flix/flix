@@ -50,7 +50,7 @@ namespace File {
         try {
             import new java.io.File(String) as newFile;
             import java.io.File.toPath();
-            import java.nio.file.Files:isRegularFile(##java.nio.file.Path, Array[##java.nio.file.LinkOption]);
+            import static java.nio.file.Files.isRegularFile(##java.nio.file.Path, Array[##java.nio.file.LinkOption]);
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let isRegular = isRegularFile(javaPath, []);
@@ -80,7 +80,7 @@ namespace File {
         try {
             import new java.io.File(String) as newFile;
             import java.io.File.toPath();
-            import java.nio.file.Files:isSymbolicLink(##java.nio.file.Path);
+            import static java.nio.file.Files.isSymbolicLink(##java.nio.file.Path);
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let isSymbolic = isSymbolicLink(javaPath);
@@ -126,7 +126,7 @@ namespace File {
         try {
             import new java.io.File(String) as newFile;
             import java.io.File.toPath();
-            import java.nio.file.Files:readString(##java.nio.file.Path);
+            import static java.nio.file.Files.readString(##java.nio.file.Path);
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let result = readString(javaPath);
@@ -150,7 +150,7 @@ namespace File {
             import new java.io.FileInputStream(##java.io.File) as newInputStream;
             import java.io.FileInputStream.skip(Int64);
             import java.io.FileInputStream.read(Array[Int8], Int32, Int32);
-            import java.nio.charset.Charset:forName(String);
+            import static java.nio.charset.Charset.forName(String);
             import new java.lang.String(Array[Int8], ##java.nio.charset.Charset) as newString;
 
             let javaFile = newFile(f);
@@ -174,7 +174,7 @@ namespace File {
     pub def readLines(f: String): Result[List[String], String] & Impure = try {
             import new java.io.File(String) as newFile;
             import java.io.File.toPath();
-            import java.nio.file.Files:newBufferedReader(##java.nio.file.Path);
+            import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path);
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let reader = newBufferedReader(javaPath);
@@ -211,8 +211,8 @@ namespace File {
         try {
             import new java.io.File(String) as newFile;
             import java.io.File.toPath();
-            import java.nio.file.Files:newBufferedReader(##java.nio.file.Path, ##java.nio.charset.Charset);
-            import java.nio.charset.Charset:forName(String);
+            import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path, ##java.nio.charset.Charset);
+            import static java.nio.charset.Charset.forName(String);
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
@@ -231,7 +231,7 @@ namespace File {
         try {
             import new java.io.File(String) as newFile;
             import java.io.File.toPath();
-            import java.nio.file.Files:newBufferedReader(##java.nio.file.Path);
+            import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path);
             import java.io.BufferedReader.readLine();
 
             let javaFile = newFile(f);
@@ -269,8 +269,8 @@ namespace File {
         try {
             import new java.io.File(String) as newFile;
             import java.io.File.toPath();
-            import java.nio.file.Files:newBufferedReader(##java.nio.file.Path, ##java.nio.charset.Charset);
-            import java.nio.charset.Charset:forName(String);
+            import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path, ##java.nio.charset.Charset);
+            import static java.nio.charset.Charset.forName(String);
             import java.io.BufferedReader.readLine();
 
             let javaFile = newFile(f);

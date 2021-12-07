@@ -106,7 +106,7 @@ namespace String {
     ///
     @Time(1) @Space(1)
     pub def lineSeparator(): String =
-        import java.lang.System:lineSeparator();
+        import static java.lang.System.lineSeparator();
         lineSeparator() as & Pure
 
     ///
@@ -141,7 +141,7 @@ namespace String {
         if (i >= len)
             ()
         else {
-            let c = f(i) as & ef;
+            let c = f(i);
             StringBuilder.appendChar!(sb, c);
             initWorker(sb, f, len, i+1)
         }
@@ -303,7 +303,7 @@ namespace String {
     ///
     def isSubmatchHelper(pattern: String, s: String): Bool & Impure =
         try {
-            import java.util.regex.Pattern:compile(String);
+            import static java.util.regex.Pattern.compile(String);
             import java.util.regex.Pattern.matcher(##java.lang.CharSequence);
             import java.util.regex.Matcher.find(Int32);
             let cs1 = s as ##java.lang.CharSequence;
