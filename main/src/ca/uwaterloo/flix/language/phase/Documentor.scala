@@ -183,11 +183,11 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns the given instance `inst` as a JSON value.
     */
   private def visitInstance(sym: Symbol.ClassSym, inst: Instance): JObject = inst match {
-    case Instance(_, _, _, tpe, tconstrs, _, _, _) =>
+    case Instance(_, _, _, tpe, tcs, _, _, loc) =>
       ("sym" -> visitClassSym(sym)) ~
         ("tpe" -> visitType(tpe)) ~
-        ("tcs" -> tconstrs.map(visitTypeConstraint)) ~
-        ("loc" -> visitSourceLocation(sym.loc))
+        ("tcs" -> tcs.map(visitTypeConstraint)) ~
+        ("loc" -> visitSourceLocation(loc))
   }
 
   /**
@@ -357,7 +357,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       }
 
       // TODO: Sort instances.
-      val instances = root.instances(sym).map(inst => visitInstance(sym, inst))
+      val instances = root.instances(sym).sortBy(_.loc).map(inst => visitInstance(sym, inst))
 
       ("sym" -> visitClassSym(sym)) ~
         ("doc" -> visitDoc(doc)) ~
