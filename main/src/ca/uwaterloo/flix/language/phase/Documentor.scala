@@ -174,7 +174,6 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       ("fparams" -> defn0.spec.fparams.map(visitFormalParam)) ~
       ("result" -> FormatType.formatType(defn0.spec.retTpe)) ~
       ("effect" -> FormatType.formatType(defn0.spec.eff)) ~
-      ("comment" -> defn0.spec.doc.text.trim) ~
       ("loc" -> visitSourceLocation(defn0.spec.loc))
   }
 
