@@ -19,14 +19,10 @@ namespace Console {
     use Object.isNull;
 
     ///
-    /// Wrapper for `java.lang.System.Console().readLine()`.
-    /// Returns `None` if a there is no line to read or no console is available.
+    /// Alias for `Console.StdIn.readLine`.
     ///
     pub def readLine(): Option[String] & Impure =
-        import java.io.Console.readLine();
-        let* c = getConsole();
-        let line = readLine(c);
-        if (isNull(line)) None else Some(line)
+        Console/StdIn.readLine()
 
     ///
     /// Returns true if a console is available.
@@ -79,6 +75,23 @@ namespace Console {
         let nullableConsole = console();
         if (isNull(nullableConsole)) None
         else Some(nullableConsole)
+
+    ///
+    /// Operations on the Standard Input Stream.
+    ///
+    namespace StdIn {
+
+        ///
+        /// Wrapper for `java.lang.System.Console().readLine()`.
+        /// Returns `None` if a there is no line to read or no console is available.
+        ///
+        pub def readLine(): Option[String] & Impure =
+            import java.io.Console.readLine();
+            let* c = getConsole();
+            let line = readLine(c);
+            if (isNull(line)) None else Some(line)
+
+    }
 
     ///
     /// Operations on the Standard Output Stream.
